@@ -29,17 +29,42 @@ type Snapshot = {
 	secondaryState: any;
 };
 
+type AttemptOutcome = 'passed' | 'reproduced' | 'inconclusive';
+
+type AddAfterTiming = {
+	addAfterCompletedAt?: number;
+	label: string;
+	postMenuWaitMs: number;
+	typeCompletedAt?: number;
+	typeStartedAt?: number;
+};
+
 type AttemptResult = {
 	attempt: number;
 	error?: string;
+	outcome: AttemptOutcome;
+	phase?: string;
 	postId?: number;
 	reproduced: boolean;
 	snapshots: Snapshot[];
+	timings: AddAfterTiming[];
 };
 
 const OUTPUT_DIR = process.env.RTC_5FE7_ADD_AFTER_OUTPUT_DIR;
 const ATTEMPT_COUNT = Number.parseInt(
 	process.env.RTC_5FE7_ADD_AFTER_ATTEMPTS ?? '10',
+	10
+);
+const TYPE_DELAY_MS = Number.parseInt(
+	process.env.RTC_5FE7_ADD_AFTER_TYPE_DELAY_MS ?? '10',
+	10
+);
+const POST_MENU_DELAY_MS = Number.parseInt(
+	process.env.RTC_5FE7_ADD_AFTER_POST_MENU_DELAY_MS ?? '0',
+	10
+);
+const POST_MENU_JITTER_MS = Number.parseInt(
+	process.env.RTC_5FE7_ADD_AFTER_POST_MENU_JITTER_MS ?? '0',
 	10
 );
 const INITIAL_CONTENT = [
@@ -119,7 +144,9 @@ function writeAttemptResult( result: AttemptResult ) {
 	);
 }
 
-async function waitForSessionReady( collaborationUtils: CollaborationUtilsClass ) {
+async function waitForSessionReady(
+	collaborationUtils: CollaborationUtilsClass
+) {
 	await collaborationUtils.waitForMutualDiscovery( { timeout: 20000 } );
 	await collaborationUtils.waitForConvergence( { timeout: 20000 } );
 }
@@ -190,8 +217,9 @@ async function clickBlockByText( editor: Editor, page: Page, text: string ) {
 async function addParagraphAfterSelected(
 	editor: Editor,
 	page: Page,
-	content: string
-) {
+	content: string,
+	label: string
+): Promise< AddAfterTiming > {
 	await clickBlockByText( editor, page, TAIL_TEXT );
 	await editor.showBlockToolbar();
 	await page
@@ -204,7 +232,27 @@ async function addParagraphAfterSelected(
 	} else {
 		await page.getByRole( 'menuitem', { name: 'Insert after' } ).click();
 	}
-	await page.keyboard.type( content, { delay: 10 } );
+	const addAfterCompletedAt = Date.now();
+	const postMenuWaitMs = Math.max(
+		0,
+		POST_MENU_DELAY_MS +
+			Math.round( ( Math.random() * 2 - 1 ) * POST_MENU_JITTER_MS )
+	);
+
+	if ( postMenuWaitMs > 0 ) {
+		await page.waitForTimeout( postMenuWaitMs );
+	}
+
+	const typeStartedAt = Date.now();
+	await page.keyboard.type( content, { delay: TYPE_DELAY_MS } );
+
+	return {
+		addAfterCompletedAt,
+		label,
+		postMenuWaitMs,
+		typeCompletedAt: Date.now(),
+		typeStartedAt,
+	};
 }
 
 function assertExpectedState(
@@ -272,9 +320,12 @@ async function runAttempt( {
 } ): Promise< AttemptResult > {
 	const result: AttemptResult = {
 		attempt,
+		outcome: 'passed',
 		reproduced: false,
 		snapshots: [],
+		timings: [],
 	};
+	let phase = 'create-post';
 	const primaryParagraph = `RTC 5fe7 add-after primary paragraph ${ attempt }`;
 	const secondaryParagraph = `RTC 5fe7 add-after collaborator paragraph ${ attempt }`;
 	const post = await requestUtils.createPost( {
@@ -286,10 +337,14 @@ async function runAttempt( {
 	result.postId = post.id;
 
 	try {
+		phase = 'open-primary-post';
 		await collaborationUtils.openPost( post.id );
+		phase = 'join-collaborator';
 		const { editor: collaboratorEditor, page: collaboratorPage } =
 			await collaborationUtils.joinUser( post.id, collaboratorUser );
+		phase = 'wait-session-ready';
 		await waitForSessionReady( collaborationUtils );
+		phase = 'capture-before-state';
 		result.snapshots.push(
 			await captureSnapshot(
 				collaborationUtils,
@@ -299,20 +354,25 @@ async function runAttempt( {
 			)
 		);
 
-		await Promise.all( [
+		phase = 'concurrent-add-after-actions';
+		result.timings = await Promise.all( [
 			addParagraphAfterSelected(
 				collaborationUtils.editor,
 				page,
-				primaryParagraph
+				primaryParagraph,
+				'primary'
 			),
 			addParagraphAfterSelected(
 				collaboratorEditor,
 				collaboratorPage,
-				secondaryParagraph
+				secondaryParagraph,
+				'collaborator'
 			),
 		] );
 
+		phase = 'wait-after-concurrent-add-after';
 		await collaborationUtils.waitForConvergence( { timeout: 15000 } );
+		phase = 'capture-after-convergence-state';
 		const afterConvergence = await captureSnapshot(
 			collaborationUtils,
 			requestUtils,
@@ -320,15 +380,21 @@ async function runAttempt( {
 			'after-convergence'
 		);
 		result.snapshots.push( afterConvergence );
+		phase = 'assert-converged-state';
 		assertExpectedState(
 			afterConvergence,
 			primaryParagraph,
 			secondaryParagraph
 		);
 	} catch ( error ) {
-		result.reproduced = true;
+		result.phase = phase;
+		result.outcome =
+			phase === 'assert-converged-state' ? 'reproduced' : 'inconclusive';
+		result.reproduced = result.outcome === 'reproduced';
 		result.error =
-			error instanceof Error ? error.stack ?? error.message : String( error );
+			error instanceof Error
+				? error.stack ?? error.message
+				: String( error );
 		try {
 			result.snapshots.push(
 				await captureSnapshot(
@@ -374,6 +440,11 @@ for ( let attempt = 1; attempt <= ATTEMPT_COUNT; attempt++ ) {
 		if ( result.reproduced ) {
 			throw new Error(
 				`realistic concurrent add-after diverged on attempt ${ attempt }`
+			);
+		}
+		if ( result.outcome === 'inconclusive' ) {
+			throw new Error(
+				`realistic concurrent add-after attempt ${ attempt } was inconclusive during ${ result.phase }`
 			);
 		}
 	} );
