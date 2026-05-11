@@ -501,3 +501,63 @@ negative control proves the May 7 known-fixes base still preserves unseen
 remote inserts while reintroducing delivered-deleted blocks; the rebased fix
 preserves the unseen-insert behavior and removes delivered-deleted table,
 paragraph, and nested paragraph blocks.
+
+## Pass 178 current-trunk refresh
+
+Pass 178 rebased both requested branches onto current `origin/trunk` again:
+
+- `origin/trunk`: `3f566355931 Text: Fix render prop CSS defenses (#78172)`.
+- Relevant trunk movement since pass 177: `569ea262b57 e2e tests: use editPost and createNewPost helpers everywhere (#78170)` changed the collaboration fixture's `openPost()` helper to use `admin.editPost()`.
+- Explanation branch remained a documentation-only delta after rebase.
+- PR branch head after rebase:
+  `94637bc383d Advance RTC block merge base after remote delivery`.
+- PR branch commit order:
+  1. `56aed5919a3 Add RTC remote insert delete CRDT repro`
+  2. `3c309607d7d Add WebSocket table delete Playwright repro`
+  3. `94637bc383d Advance RTC block merge base after remote delivery`
+
+Pass 178 also reran the required known-fixes negative control in a fresh
+detached worktree at `f256024286d` plus only the new repro commit
+`56aed5919a3`:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache --testNamePattern='preserves a remote table insert|does not reintroduce a remote table|matches the source order|deletes delivered blocks while preserving unseen remote inserts|does not reintroduce a remote paragraph|does not reintroduce a remote nested paragraph'
+```
+
+Result on the May 7 known-fixes base:
+
+- `preserves a remote table insert when a stale local snapshot edits another block`: PASS.
+- `does not reintroduce a remote table after that remote insert has become the local base`: FAIL; received a trailing `core/table`.
+- `matches the source order: collaborator paragraph, primary table, collaborator table delete`: FAIL; received table content after the collaborator delete.
+- `deletes delivered blocks while preserving unseen remote inserts in the same stale snapshot`: FAIL; retained the delivered-deleted paragraph alongside the unseen table.
+- `does not reintroduce a remote paragraph after that remote insert has become the local base`: FAIL; retained the delivered-deleted paragraph.
+- `does not reintroduce a remote nested paragraph after that remote insert has become the local base`: FAIL; retained the delivered-deleted nested paragraph.
+
+Fresh verification on the pass-178 rebased PR branch:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+node ./tools/eslint/lint-js.cjs --config eslint.config.strict.cjs packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/crdt.ts packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts
+git diff --check origin/trunk..HEAD
+WP_ENV_PORT=9997 WP_BASE_URL=http://localhost:9997 npm run wp-env-test -- status
+WP_ENV_PORT=9997 WP_BASE_URL=http://localhost:9997 RTC_MANIFEST_WS_START_PORT=21176 RTC_MANIFEST_WS_FIXED_PORT=1 npm run wp-env-test -- start
+WP_ENV_PORT=9997 WP_BASE_URL=http://localhost:9997 RTC_MANIFEST_WS_START_PORT=21176 RTC_MANIFEST_WS_FIXED_PORT=1 RTC_98E7_REALISTIC_REPRO_DIR="$PWD/artifacts/pass-178/playwright-fixed-results" npm run test:e2e -- test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts --project=chromium --workers=1
+WP_ENV_PORT=9997 WP_BASE_URL=http://localhost:9997 npm run wp-env-test -- stop
+```
+
+Results:
+
+- Focused repro unit file: PASS, 6 tests.
+- Existing CRDT block unit file: PASS, 71 tests.
+- Targeted strict JS lint: exit 0.
+- `git diff --check origin/trunk..HEAD`: exit 0.
+- Natural Playwright repro: PASS, 2 scenarios in 42.3 s.
+- Pass-178 result JSONs showed `convergenceError: null`, matching block-name
+  arrays, and no `core/table` in either editor after deletion.
+
+Pass 178 keeps the practical-impact classification at `medium`. The stronger
+evidence added in this pass is branch/artifact sufficiency after current trunk
+advanced: the natural-user Playwright repro still passes after the upstream
+collaboration helper refactor, and the fix stack remains a clean three-commit
+delta on current `origin/trunk`.
