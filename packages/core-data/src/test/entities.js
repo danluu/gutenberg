@@ -391,6 +391,62 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
+	it.each( [
+		[ 'empty', '' ],
+		[ 'flattened', 'stale local content current content' ],
+	] )(
+		'replaces %s stale local content with CRDT blocks when latest content already matches CRDT',
+		async ( _label, localContent ) => {
+			const latestContent = pageContent( [
+				'Alpha',
+				'current content',
+				'collaborator content',
+			] );
+			const latestRecord = {
+				id: 123,
+				content: { raw: latestContent },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+				},
+			};
+			const syncManager = {
+				applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+				createPersistedCRDTDoc: jest
+					.fn()
+					.mockResolvedValue( 'merged-doc' ),
+				getCRDTRecordData: jest.fn( () => ( {
+					blocks: parse( latestContent ),
+					content: 'mangled serialized CRDT content',
+				} ) ),
+			};
+			apiFetch.mockResolvedValue( latestRecord );
+			getSyncManager.mockReturnValue( syncManager );
+			window._wpCollaborationEnabled = true;
+
+			const result = await prePersistPostType(
+				{
+					id: 123,
+					status: 'publish',
+					content: { raw: pageContent( [ 'Alpha' ] ) },
+				},
+				{ content: localContent },
+				'page',
+				false,
+				'/wp/v2/pages'
+			);
+
+			expect( syncManager.getCRDTRecordData ).toHaveBeenCalledWith(
+				'postType/page',
+				123
+			);
+			expect( result.content ).toBe( latestContent );
+			expect( result.content ).not.toContain( 'mangled' );
+			expect( result.meta ).toEqual( {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+			} );
+		}
+	);
+
 	it( 'merges non-conflicting stale serialized content edits with the latest saved content', async () => {
 		const latestRecord = {
 			id: 123,
@@ -558,8 +614,7 @@ describe( 'prePersistPostType', () => {
 			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( true ),
 			createPersistedCRDTDoc: jest
 				.fn()
-				.mockResolvedValueOnce( 'before-apply-doc' )
-				.mockResolvedValueOnce( 'after-apply-doc' ),
+				.mockResolvedValue( 'after-apply-doc' ),
 			getCRDTRecordData: jest.fn( () => ( {
 				content: 'partially flushed local crdt content',
 			} ) ),
