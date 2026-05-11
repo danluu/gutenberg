@@ -61,5 +61,29 @@ The PR branch `try/rtc-ws-post-checkpoint-concurrent-tail-append-drops-one-re-15
 2. `Add UI repro for checkpointed tail append loss`
 3. `Preserve concurrent appends over stale snapshots`
 4. `Avoid duplicating refreshed client-id blocks`
+5. `Tighten RTC tail append repro assertions`
 
 The explanation branch only records this analysis on top of `origin/trunk`, because the precise failing reconciliation code is currently part of the synthetic known-fixes base rather than plain trunk.
+
+## Pass 178 update
+
+Pass 178 hardened the browser repro after pass 177 showed that the earlier
+assertion could pass while the document prefix was duplicated after reload and
+client-ID refresh. The Playwright repro now checks that each expected top-level
+paragraph appears exactly once after the concurrent append, after reload, and in
+the persisted REST content. This makes the repro reject both the original
+content-loss failure and the duplicate-prefix failure mode from the first fix.
+
+Verification on the PR branch after this hardening:
+
+- `npx prettier --check test/e2e/specs/editor/collaboration/websocket/collaboration-15df6c950a26-pass171-checkpoint.spec.ts`
+- `npm run lint:js -- test/e2e/specs/editor/collaboration/websocket/collaboration-15df6c950a26-pass171-checkpoint.spec.ts`
+- `npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts --runInBand --testNamePattern='preserves a local append|refreshed client IDs'`
+- `npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts --runInBand`
+
+The focused CRDT run passed 2/2 matching tests, and the full CRDT block test
+file passed 78/78. The remaining browser gap is not a product-code gap in this
+branch: pass 177's improved-fix reruns were blocked before the append action by
+stale RTC session readiness contamination. The hardened repro should be rerun
+after the harness asserts the loaded post ID/title and rejects stale unrelated
+RTC documents before starting the append race.
