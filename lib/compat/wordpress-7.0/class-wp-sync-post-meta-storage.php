@@ -59,6 +59,14 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 		private array $room_update_counts = array();
 
 		/**
+		 * Cache of whether the last cursor read stopped before the latest update.
+		 *
+		 * @since 7.0.0
+		 * @var array<string, bool>
+		 */
+		private array $room_has_more_updates = array();
+
+		/**
 		 * Cache of storage post IDs by room hash.
 		 *
 		 * @since 7.0.0
@@ -403,23 +411,38 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 		}
 
 		/**
+		 * Returns whether the last cursor read for a room stopped before the
+		 * room's latest update.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param string $room Room identifier.
+		 * @return bool Whether more updates remain after the current cursor.
+		 */
+		public function has_more_updates( string $room ): bool {
+			return $this->room_has_more_updates[ $room ] ?? false;
+		}
+
+		/**
 		 * Retrieves sync updates from a room after the given cursor.
 		 *
 		 * @since 7.0.0
 		 *
 		 * @global wpdb $wpdb WordPress database abstraction object.
 		 *
-		 * @param string $room   Room identifier.
-		 * @param int    $cursor Return updates after this cursor (meta_id).
+		 * @param string   $room               Room identifier.
+		 * @param int      $cursor             Return updates after this cursor (meta_id).
+		 * @param int|null $max_response_bytes Optional byte budget for serialized updates.
 		 * @return array<int, mixed> Sync updates.
 		 */
-		public function get_updates_after_cursor( string $room, int $cursor ): array {
+		public function get_updates_after_cursor( string $room, int $cursor, ?int $max_response_bytes = null ): array {
 			global $wpdb;
 
 			$post_id = $this->get_storage_post_id( $room );
 			if ( null === $post_id ) {
-				$this->room_cursors[ $room ]       = 0;
-				$this->room_update_counts[ $room ] = 0;
+				$this->room_cursors[ $room ]          = 0;
+				$this->room_update_counts[ $room ]    = 0;
+				$this->room_has_more_updates[ $room ] = false;
 				return array();
 			}
 
@@ -435,11 +458,22 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 			$total_updates = $stats ? (int) $stats->total_updates : 0;
 			$max_meta_id   = $stats ? (int) $stats->max_meta_id : 0;
 
-			$this->room_update_counts[ $room ] = $total_updates;
-			$this->room_cursors[ $room ]       = $max_meta_id;
+			$this->room_update_counts[ $room ]    = $total_updates;
+			$this->room_cursors[ $room ]          = $cursor;
+			$this->room_has_more_updates[ $room ] = false;
 
 			if ( $max_meta_id <= $cursor ) {
+				$this->room_cursors[ $room ] = $max_meta_id;
 				return array();
+			}
+
+			if ( null !== $max_response_bytes && $max_response_bytes <= 0 ) {
+				$this->room_has_more_updates[ $room ] = true;
+				return array();
+			}
+
+			if ( null !== $max_response_bytes ) {
+				return $this->get_bounded_updates_after_cursor( $post_id, $room, $cursor, $max_meta_id, $max_response_bytes );
 			}
 
 			$rows = $wpdb->get_results(
@@ -453,6 +487,7 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 			);
 
 			if ( ! $rows ) {
+				$this->room_cursors[ $room ] = $max_meta_id;
 				return array();
 			}
 
@@ -464,6 +499,85 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 				}
 			}
 
+			$this->room_cursors[ $room ] = $max_meta_id;
+			return $updates;
+		}
+
+		/**
+		 * Retrieves updates after a cursor without exceeding a serialized-row byte budget.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @global wpdb $wpdb WordPress database abstraction object.
+		 *
+		 * @param int    $post_id            Storage post ID.
+		 * @param string $room               Room identifier.
+		 * @param int    $cursor             Return updates after this cursor (meta_id).
+		 * @param int    $max_meta_id        Highest meta_id captured for this read.
+		 * @param int    $max_response_bytes Byte budget for serialized updates.
+		 * @return array<int, mixed> Sync updates.
+		 */
+		private function get_bounded_updates_after_cursor( int $post_id, string $room, int $cursor, int $max_meta_id, int $max_response_bytes ): array {
+			global $wpdb;
+
+			$updates        = array();
+			$bytes_returned = 0;
+			$current_cursor = $cursor;
+			$rows_per_batch = 20;
+
+			while ( $current_cursor < $max_meta_id ) {
+				$rows = $wpdb->get_results(
+					$wpdb->prepare(
+						"SELECT meta_id, LENGTH(meta_value) AS meta_value_length FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s AND meta_id > %d AND meta_id <= %d ORDER BY meta_id ASC LIMIT %d",
+						$post_id,
+						self::SYNC_UPDATE_META_KEY,
+						$current_cursor,
+						$max_meta_id,
+						$rows_per_batch
+					)
+				);
+
+				if ( ! $rows ) {
+					$this->room_cursors[ $room ]          = $max_meta_id;
+					$this->room_has_more_updates[ $room ] = false;
+					return $updates;
+				}
+
+				foreach ( $rows as $row ) {
+					$row_meta_id = (int) $row->meta_id;
+					$row_size    = (int) $row->meta_value_length;
+
+					if ( $bytes_returned + $row_size > $max_response_bytes ) {
+						$this->room_cursors[ $room ]          = $current_cursor;
+						$this->room_has_more_updates[ $room ] = true;
+						return $updates;
+					}
+
+					$current_cursor  = $row_meta_id;
+					$bytes_returned += $row_size;
+
+					$meta_value = $wpdb->get_var(
+						$wpdb->prepare(
+							"SELECT meta_value FROM {$wpdb->postmeta} WHERE meta_id = %d AND post_id = %d AND meta_key = %s",
+							$row_meta_id,
+							$post_id,
+							self::SYNC_UPDATE_META_KEY
+						)
+					);
+
+					if ( null === $meta_value ) {
+						continue;
+					}
+
+					$decoded = json_decode( $meta_value, true );
+					if ( null !== $decoded ) {
+						$updates[] = $decoded;
+					}
+				}
+			}
+
+			$this->room_cursors[ $room ]          = $max_meta_id;
+			$this->room_has_more_updates[ $room ] = false;
 			return $updates;
 		}
 

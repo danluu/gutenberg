@@ -64,6 +64,14 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		const MAX_UPDATE_DATA_SIZE = MB_IN_BYTES;
 
 		/**
+		 * Maximum serialized update bytes returned across all rooms in one response.
+		 *
+		 * @since 7.0.0
+		 * @var int
+		 */
+		const MAX_RESPONSE_UPDATES_DATA_SIZE = 8 * MB_IN_BYTES;
+
+		/**
 		 * Sync update type: compaction.
 		 *
 		 * @since 7.0.0
@@ -286,10 +294,11 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		 * @return WP_REST_Response|WP_Error Response object or error.
 		 */
 		public function handle_request( WP_REST_Request $request ) {
-			$rooms    = $request['rooms'];
-			$response = array(
+			$rooms                        = $request['rooms'];
+			$response                     = array(
 				'rooms' => array(),
 			);
+			$response_updates_data_budget = self::MAX_RESPONSE_UPDATES_DATA_SIZE;
 
 			foreach ( $rooms as $room_request ) {
 				$awareness = $room_request['awareness'];
@@ -315,8 +324,10 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				}
 
 				// Get updates for this client.
-				$room_response              = $this->get_updates( $room, $client_id, $cursor, $is_compactor );
-				$room_response['awareness'] = $merged_awareness;
+				$room_response                = $this->get_updates( $room, $client_id, $cursor, $is_compactor, $response_updates_data_budget );
+				$room_response['awareness']   = $merged_awareness;
+				$response_updates_data_budget = max( 0, $response_updates_data_budget - $room_response['updates_data_size'] );
+				unset( $room_response['updates_data_size'] );
 
 				$response['rooms'][] = $room_response;
 			}
@@ -568,43 +579,55 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		 *
 		 * @since 7.0.0
 		 *
-		 * @param string $room         Room identifier.
-		 * @param int    $client_id    Client identifier.
-		 * @param int    $cursor       Return updates after this cursor.
-		 * @param bool   $is_compactor True if this client is nominated to perform compaction.
+		 * @param string $room               Room identifier.
+		 * @param int    $client_id          Client identifier.
+		 * @param int    $cursor             Return updates after this cursor.
+		 * @param bool   $is_compactor       True if this client is nominated to perform compaction.
+		 * @param int    $max_response_bytes Remaining serialized update bytes for this response.
 		 * @return array{
 		 *   end_cursor: int,
 		 *   should_compact: bool,
 		 *   room: string,
 		 *   total_updates: int,
 		 *   updates: array<int, array{data: string, type: string}>,
+		 *   updates_data_size: int,
 		 * } Response data for this room.
 		 */
-		private function get_updates( string $room, int $client_id, int $cursor, bool $is_compactor ): array {
-			$updates_after_cursor = $this->storage->get_updates_after_cursor( $room, $cursor );
+		private function get_updates( string $room, int $client_id, int $cursor, bool $is_compactor, int $max_response_bytes ): array {
+			$updates_after_cursor = $this->storage->get_updates_after_cursor( $room, $cursor, $max_response_bytes );
 			$total_updates        = $this->storage->get_update_count( $room );
+			$end_cursor           = $this->storage->get_cursor( $room );
+			$has_more_updates     = $this->storage->has_more_updates( $room );
 
 			// Filter out this client's updates, except compaction updates.
-			$typed_updates = array();
+			$typed_updates     = array();
+			$updates_data_size = 0;
 			foreach ( $updates_after_cursor as $update ) {
 				if ( $client_id === $update['client_id'] && self::UPDATE_TYPE_COMPACTION !== $update['type'] ) {
 					continue;
 				}
 
-				$typed_updates[] = array(
+				$typed_update    = array(
 					'data' => $update['data'],
 					'type' => $update['type'],
 				);
+				$typed_updates[] = $typed_update;
+
+				$encoded_update = wp_json_encode( $typed_update );
+				if ( is_string( $encoded_update ) ) {
+					$updates_data_size += strlen( $encoded_update );
+				}
 			}
 
-			$should_compact = $is_compactor && $total_updates > self::COMPACTION_THRESHOLD;
+			$should_compact = $is_compactor && ! $has_more_updates && $total_updates > self::COMPACTION_THRESHOLD;
 
 			return array(
-				'end_cursor'     => $this->storage->get_cursor( $room ),
-				'room'           => $room,
-				'should_compact' => $should_compact,
-				'total_updates'  => $total_updates,
-				'updates'        => $typed_updates,
+				'end_cursor'        => $end_cursor,
+				'room'              => $room,
+				'should_compact'    => $should_compact,
+				'total_updates'     => $total_updates,
+				'updates'           => $typed_updates,
+				'updates_data_size' => $updates_data_size,
 			);
 		}
 	}
