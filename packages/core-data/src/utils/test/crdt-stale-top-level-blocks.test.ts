@@ -178,6 +178,55 @@ describe( 'stale top-level block snapshots', () => {
 		remoteDoc.destroy();
 	} );
 
+	it( 'preserves a remote top-level delete through the post CRDT adapter when a stale base record is supplied', () => {
+		const initialBlocks = [
+			paragraph( 'local-edited', 'Alpha' ),
+			paragraph( 'unchanged', 'Beta' ),
+			paragraph( 'remote-deleted', 'Gamma' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: initialBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{
+				blocks: [
+					paragraph( 'local-edited', 'Alpha' ),
+					paragraph( 'unchanged', 'Beta' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [ 'Alpha', 'Beta' ] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: [
+					paragraph( 'local-edited', 'Alpha local edit' ),
+					paragraph( 'unchanged', 'Beta' ),
+					paragraph( 'remote-deleted', 'Gamma' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha local edit',
+			'Beta',
+		] );
+
+		remoteDoc.destroy();
+	} );
+
 	it( 'preserves a remote rich-text edit when a stale local edit touches a different block', () => {
 		const initialBlocks = [
 			paragraph( 'local-edited', 'Alpha' ),
