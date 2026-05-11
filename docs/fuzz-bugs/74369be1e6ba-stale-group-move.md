@@ -15,6 +15,14 @@ post edits to the sync manager with `baseRecord: editedRecord`. In
 stale full-block snapshot with a normal base record can still reintroduce a
 paragraph that a remote peer moved out of the top-level list.
 
+Pass 177 reproduced the same failure through `createSyncManager().update()`,
+not only through the post CRDT adapter. The sync manager's remote-version guard
+does filter local same-key updates that were scheduled before a remote update,
+but it intentionally permits local same-key updates scheduled after remote
+reconciliation starts. During that window the editor store can still hold the
+pre-reconciliation block tree, so the permitted update can carry a stale
+`baseRecord.blocks` into `mergeCrdtBlocks()`.
+
 The reduced sequence is:
 
 1. Both peers start with a top-level Paragraph after a Group.
@@ -34,7 +42,7 @@ supplied base blocks as the previous local snapshot instead of disabling
 reconciliation. That preserves the remote move while keeping the unrelated
 local text edit.
 
-Practical impact is low to medium. The user workflow is natural: two
+Practical impact is low. The user workflow is natural: two
 collaborators in the post editor over websocket RTC, Paragraph and Group blocks,
 one user moves a Paragraph into the Group, and another user's stale block tree
 flushes after an unrelated edit. The timing requirement is the rare part. If it
