@@ -105,17 +105,32 @@ Known-fixes base `f256024286dd80a4c0e2579f658c109256abf648` is still affected.
 Cherry-picking only the unit repro onto that SHA failed: the d29 equivalence
 test returned `blocks`, while the real changed-content control passed.
 
+Pass 177 rebased the explanation and PR branches onto `origin/trunk`
+`3d0da214614`. The d29 patch cherry-picked cleanly on that trunk, and the
+focused unit repro/fix check passed there.
+
 PR branch commit order:
 
 ```text
-a60dd9a93c3 Add RTC entity reference normalization CRDT repro
-8a1945c0b9d Add RTC d29 entity reference Playwright repro
-9d640711e68 Fix RTC entity reference normalization comparison
+dae89916538 Add RTC entity reference normalization CRDT repro
+bef797fd653 Add RTC d29 entity reference Playwright repro
+8db8734894a Fix RTC entity reference normalization comparison
 ```
 
 Final verification on the fixed branch:
 
 ```text
+Pass 177 refreshed branch:
+npm run --workspace @wordpress/icons build
+PASS
+
+npm run test:unit -- packages/core-data/src/utils/test/crdt.ts --testNamePattern='equivalent entity references|generated content really changed' --runInBand --no-cache
+PASS, 2 selected tests passed, 45 skipped
+
+git diff --check origin/trunk...HEAD
+PASS
+
+Pass 176 full branch:
 npm run test:unit -- packages/core-data/src/utils/test/crdt.ts --runInBand --no-cache
 PASS, 47 tests passed
 
