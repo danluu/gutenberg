@@ -128,12 +128,47 @@ git diff --check origin/trunk...HEAD
 PASS
 ```
 
+Pass 179 rebased both branches onto `origin/trunk`
+`fc8b3db6ace471328e39453e3eed552ad4f3de7a`. Current trunk still has the
+strict persisted-CRDT byte comparison, and the backlink-aware known-fixes SHA
+`f256024286dd80a4c0e2579f658c109256abf648` still has the same strict
+comparison without the d29 fallback.
+
+Pass 179 also added a fresh current-trunk A/B. A detached worktree at current
+trunk plus only the non-Playwright d29 repro commit failed exactly at the
+entity-equivalence assertion, while the real-content-change control passed:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/crdt.ts --testNamePattern='equivalent entity references|generated content really changed' --runInBand --no-cache
+FAIL, 1 failed, 1 passed, 45 skipped
+
+failing assertion:
+expect( changes ).not.toHaveProperty( 'blocks' )
+
+received blocks:
+core/paragraph and core/heading invalid blocks whose originalContent differs
+from persisted content only by entity spelling and link attribute ordering.
+```
+
+The same focused run on the rebased fixed branch passed:
+
+```text
+npm run --workspace @wordpress/icons build
+PASS
+
+npm run test:unit -- packages/core-data/src/utils/test/crdt.ts --testNamePattern='equivalent entity references|generated content really changed' --runInBand --no-cache
+PASS, 2 selected tests passed, 45 skipped
+
+git diff --check origin/trunk...HEAD
+PASS
+```
+
 PR branch commit order:
 
 ```text
-7202f58a717 Add RTC entity reference normalization CRDT repro
-e8011bbb08c Add RTC d29 entity reference Playwright repro
-da75fd4a253 Fix RTC entity reference normalization comparison
+2155079ac55 Add RTC entity reference normalization CRDT repro
+96e02171b37 Add RTC d29 entity reference Playwright repro
+d149023b3e5 Fix RTC entity reference normalization comparison
 ```
 
 Final verification on the fixed branch:
