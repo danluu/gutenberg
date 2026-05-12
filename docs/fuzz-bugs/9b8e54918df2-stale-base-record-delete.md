@@ -27,6 +27,8 @@ Received: [ "Seed 950584 baseline paragraph.", "Seed 950584 local follow-up edit
 
 The exact deleted inserted paragraph (`RTC realistic 9b8e paragraph`) was not resurrected in this probe. The surviving issue is adjacent stale-base corruption, not the older exact assertion.
 
+Pass 179 added a second non-browser repro at the `SyncManager` layer. That probe loads two synced post records, lets the first manager insert the paragraph, lets the second manager delete it, delivers the delete back to the first manager, and then applies a follow-up local edit with the stale `baseRecord` shape that `core-data` passes to `SyncManager.update()`. On the known-fixes base, both the direct post-adapter repro and the manager-level repro fail with the same duplicate stale seed paragraph. With the fix below, both pass.
+
 ## Root Cause
 
 The known-fixes stack added stale local block reconciliation for the no-explicit-base path, but `mergeCrdtBlocks()` bypasses that reconciliation when `baseBlocks` is supplied:
@@ -80,3 +82,5 @@ const blocksToSync = baseBlocksToSync
 Real-user likelihood is `low` overall and `medium` among active RTC collaborators. The workflow uses ordinary post-editor actions and ordinary top-level paragraph blocks, but it requires two active collaborators and a narrow timing gap between remote deletion, editor/entity reconciliation, and a follow-up local edit.
 
 Blast radius is user-visible content corruption and possible persistence if saved. I saw no evidence of a save loop, OOM/performance issue, or general persistence failure. Recovery is manual deletion/repair or restoring from another still-correct peer/revision.
+
+The browser hit rate remains unproven: the natural Playwright probe waits until the deleted paragraph disappears before editing the surviving paragraph, and that one-attempt probe passed before and after the fix. A better browser confidence test would keep collaborator A typing in the surviving paragraph while collaborator B deletes the newly inserted paragraph, then repeat the HTTP-polling attempt with instrumentation for `baseRecord.blocks`, current CRDT block IDs, and the scheduled remote key version.
