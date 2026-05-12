@@ -66,13 +66,20 @@ shape. The synthetic known-fixes integration commit
 `f256024286dd80a4c0e2579f658c109256abf648` preserves both operations for the
 exact archived row-append shape, as does the rebased PR branch.
 
-Pass 178 reran the full focused stale-table file against current
+Pass 178 reran the full focused stale-table file against then-current
 `origin/trunk` `96263113a87`, the synthetic known-fixes commit `f256024...`, and
 the rebased PR branch. Current trunk failed all six cases. The synthetic
 known-fixes commit passed the exact archived append-after-remote-edit case, but
 failed two broader stale-table cases: stale local edit plus append after remote
 delete, and stale local delete after remote replacement. The rebased PR branch
 passed all six cases.
+
+Pass 179 repeated the exact low-level boundary against fetched
+`origin/trunk` `fc8b3db6ace` from 2026-05-12. The exact test still fails on
+current upstream by preserving the append but reverting the collaborator cell
+edit to `initial row 1 B`. The same exact test passes on the frozen
+known-fixes base `f256024...`. The PR branch rebased cleanly to `fc8b3db6ace`
+and its full stale-table file passes 6/6.
 
 ## Root Cause
 
@@ -166,27 +173,24 @@ broader stale nested-array problem is not fully covered by that synthetic base.
 
 ## Verification
 
-After pass 178 rebased the PR branch onto current `origin/trunk`
-`96263113a87`, the commit order is:
+After pass 179 rebased the PR branch onto current `origin/trunk`
+`fc8b3db6ace`, the commit order is:
 
 ```text
-bdd73bcb751 Add stale table row CRDT repros
-dd586fbde66 Add natural table row append collaboration repro
-18bff057067 Fix stale table row append CRDT merge
+ae1fc823157 Add stale table row CRDT repros
+328d8b07460 Add natural table row append collaboration repro
+c93259ef797 Fix stale table row append CRDT merge
 ```
 
-Commands run on the pass-178 rebased PR branch:
+Commands run on the pass-179 rebased PR branch:
 
 ```text
-git diff --check origin/trunk...HEAD
-# passed
-
 npm run test:unit -- packages/core-data/src/utils/test/crdt-stale-table-row-append.test.ts --runInBand
 # 6 passed / 6
-
-npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt-stale-table-row-append.test.ts --runInBand
-# 77 passed / 77
 ```
+
+Pass 178 also ran the adjacent CRDT block suite on the previous rebase point:
+`crdt-blocks.ts` plus the focused stale-table file passed 77/77.
 
 Known artifacts:
 
