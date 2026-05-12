@@ -278,3 +278,34 @@ The prototype fix preserves the moved-and-deleted explicit-base order
 still rehydrates the original paragraph. That narrows this signature's root
 cause to stale explicit-base entity updates, and leaves the unbased stale reload
 corruption as related residual scope.
+
+## Pass 178 Update
+
+Pass 178 first rechecked exact known-fixes base
+`f256024286dd80a4c0e2579f658c109256abf648` in a clean detached worktree.
+After cherry-picking the focused 388717 regression tests, both tests still
+failed with the manifest duplicate-tail result:
+
+```text
+Expected: [ "Tail paragraph", "Follow-up heading" ]
+Received: [ "Tail paragraph", "Follow-up heading", "Tail paragraph" ]
+```
+
+Pass 178 checked whether the later top-level block reconciliation candidate
+`c8af86c24a5c70784e4604b66b772a0511859a00` subsumes this bug. It does not.
+After cherry-picking the focused 388717 regression tests onto a clean detached
+`c8af86c` worktree, both tests failed with survivor-order rollback instead of
+the original duplicate-tail shape:
+
+```text
+Expected: [ "Tail paragraph", "Follow-up heading" ]
+Received: [ "Follow-up heading", "Tail paragraph" ]
+```
+
+That differential is useful: passing the explicit `baseBlocks` through
+`reconcileStaleLocalBlocks()` can drop the remotely deleted long paragraph, but
+it still treats the stale incoming/base order as authoritative for surviving
+blocks. This exact signature needs both deletion preservation and moved survivor
+order preservation. The dedicated prototype branch
+`7d0e079fc07d7ad3f937f0921d68a0d3d183f481` was rechecked in a clean detached
+worktree during pass 178 and passed both focused regressions.
