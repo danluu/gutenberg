@@ -353,3 +353,74 @@ This pass does not change the practical likelihood classification. The
 deterministic product-code bug and fix remain strong, while the natural browser
 test remains workflow coverage rather than a reliably failing browser race
 capture.
+
+## Pass 178 Current-Trunk and Known-Fixes Verification
+
+Pass 178 rebased both branches on current `origin/trunk`
+`d52e35a291c17da7bc48a1efd4c77a601ed3ad67`
+(`Media: Guard gutenberg_delete_heic_companion_file() against non-string
+$metadata['original'] (#78128)`).
+
+The PR branch still has the requested three-commit order:
+
+1. `ef3b12a437d` adds the focused non-Playwright CRDT repros.
+2. `67e486b173e` adds the natural browser coverage.
+3. `fe94447afc8` applies the source fix.
+
+The fixed head passes both current-base deterministic checks:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-pullquote-move-into-group.test.ts -- --runTestsByPath --runInBand
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runTestsByPath --runInBand
+```
+
+Results:
+
+```text
+crdt-pullquote-move-into-group.test.ts: 2 passed
+crdt-blocks.ts: 71 passed
+```
+
+The pre-fix branch commit `67e486b173e` fails both focused repro cases on the
+same current trunk base, producing the original stale top-level Pullquote plus
+empty Group shape:
+
+```text
+[
+  "core/pullquote:pullquote-client-id:RTC Pullquote body",
+  "core/group:group-client-id"
+]
+```
+
+and for the local-edit case:
+
+```text
+[
+  "core/pullquote:pullquote-client-id:Local edit after stale view",
+  "core/group:group-client-id"
+]
+```
+
+Pass 178 also rechecked the exact known-fixes manifest commit
+`f256024286dd80a4c0e2579f658c109256abf648` in a detached worktree, because the
+named known-fixes checkout path was dirty and not itself at that commit. The
+unchanged stale Pullquote control passes there, but the stale-peer local-edit
+case still fails:
+
+```text
+Expected:
+[
+  "core/group:group-client-id[core/pullquote:pullquote-client-id:Local edit after stale view]"
+]
+
+Received:
+[
+  "core/group:group-client-id[core/pullquote:pullquote-client-id:Initial Pullquote body]"
+]
+```
+
+This narrows the surviving known-fixes gap: the May 7 fix stack can recognize
+and drop an unchanged stale top-level Pullquote after the same `clientId` moved
+inside a Group, but it still discards a stale collaborator's valid text edit
+because the reconciliation/deletion test only considers top-level current block
+ids.
