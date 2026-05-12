@@ -213,6 +213,32 @@ started because `@y/websocket-server` was missing from the rebased worktree's
 workspace path and reported "No tests found"; the final workspace-relative
 command above passed.
 
+Pass 179 rebased both existing branches onto current `origin/trunk`
+`fc8b3db6ace471328e39453e3eed552ad4f3de7a` ("Dashboard: use design animation
+tokens", #78204). The intervening trunk commits did not touch
+`packages/core-data/src/utils/crdt-blocks.ts`, `packages/core-data/src/utils/crdt.ts`,
+the focused CRDT tests, or the RTC WebSocket collaboration specs/config.
+
+Pass 179 reran the exact known-fixes survival check against the May 7 synthetic
+known-fixes SHA `f256024286dd80a4c0e2579f658c109256abf648`:
+
+```bash
+cd /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-177/943c670fbf29-knownfix-f256
+npm run test:unit -- packages/core-data/src/utils/test/crdt-943c670fbf29-pass177-applypost.test.ts --runInBand
+```
+
+Result: still failed with received rows `local-prepended,A1,A2` instead of
+`local-prepended,A1,A2,remote-appended`.
+
+Pass 179 reran the focused non-browser regression on the rebased PR branch:
+
+```bash
+cd /private/tmp/943c670fbf29-pass177-pr
+npm run test:unit -- packages/core-data/src/utils/test/crdt-stale-table-row-prepend.test.ts --runInBand
+```
+
+Result: passed, 2 tests.
+
 Pass 176 refreshed both branches onto current `origin/trunk`
 `5fc7223e96b2751c57b6c4ae840bb9e838bee9f0` ("Classic Block: Use onReplace prop
 for migration actions", #78113), which did not touch the RTC/table merge
