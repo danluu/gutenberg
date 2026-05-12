@@ -18,9 +18,12 @@ materialized as a `RichTextData` object and then serialized without the original
 HTML fallback. Pass 177 found an important boundary: a full single-user browser
 workflow that enters the same paragraph through the code editor, switches to the
 visual editor, types in the paragraph, and saves still preserves the anchor.
-That makes the RTC/CRDT rich-text hydration path the practical browser trigger
-for this bug; non-RTC impact is mostly limited to lower-level or plugin code
-that explicitly serializes such `RichTextData` values.
+Pass 179 found a second boundary: the committed two-session RTC browser spec
+also passes at the pre-fix commit when the receiver only saves, and a temporary
+variant where the receiver exits code editor, clicks the paragraph, types `!`,
+and saves also preserves the anchor. The durable reproduction is therefore the
+lower-level RTC/CRDT rich-text hydration path and historical fuzz evidence, not
+a currently minimized failing natural browser flow.
 
 The resulting paragraph HTML becomes malformed:
 
@@ -33,14 +36,16 @@ inside the unterminated anchor.
 
 ## User Workflow
 
-The natural workflow is uncommon but real:
+The likely workflow remains uncommon, and the exact natural browser trigger has
+not been minimized:
 
 1. Real-time collaboration is enabled for the post editor over the HTTP sync
    transport.
 2. User A opens the code editor or pastes valid paragraph HTML containing an
    empty inline anchor.
 3. User B receives the block through RTC.
-4. User B serializes or saves the received block state.
+4. Some subsequent path serializes the received `RichTextData` block attribute
+   rather than preserving the original HTML string.
 
 Pass 177 tested the most plausible single-user browser workflow on the
 unpatched known-fixes base: enter the paragraph through the code editor, switch
@@ -48,8 +53,12 @@ to visual mode, type `!` in the paragraph, save, and inspect REST
 `content.raw`. That workflow preserved
 `<p>Before <a id="empty-anchor"></a> after!</p>`. Direct code-editor save and
 the ordinary visual editor path therefore both appear to stay on a string or
-original-HTML preservation path unless RTC or plugin/lower-level code
-materializes and serializes a `RichTextData` object.
+original-HTML preservation path unless another RTC, plugin, or lower-level code
+path materializes and serializes a `RichTextData` object. Pass 179 repeated this
+kind of negative browser check in a detached pre-fix worktree for the RTC
+receiver path: receiver save-only passed, and receiver visual edit plus save
+also passed. The rich-text unit and CRDT hydration tests still fail pre-fix with
+the exact malformed output.
 
 The normal Advanced > HTML anchor UI creates a block-level paragraph anchor and
 does not trigger this issue. Inline anchors with linked text also do not trigger
@@ -89,8 +98,9 @@ Keep the fix at the rich-text serialization boundary:
    through `create()` and `toHTMLString()`.
 2. Add a core-data CRDT regression proving hydrated rich-text block attributes
    preserve the explicit closing anchor tag.
-3. Add a natural Playwright collaboration repro using two editor sessions and
-   valid code-editor input.
+3. Keep the Playwright collaboration coverage as a natural preservation check,
+   but do not treat it as a failing pre-fix browser repro unless a minimized
+   natural flow is found.
 4. Change `toHTMLString()` so object replacements keep opening-tag-only output
    only for HTML void elements. Non-void object replacements should emit a
    closing tag.
@@ -105,10 +115,10 @@ Real-user likelihood: `very-low`.
 
 The prerequisites are a normal editor surface and normal code-editor/paste
 workflow inside a collaborative post, but the content shape is uncommon: an
-empty inline anchor in paragraph rich text. The browser-proven trigger requires
-RTC and a second editor session receiving the rich-text value through the CRDT
-hydration path; the ordinary single-user code-editor-to-visual path tested in
-pass 177 did not corrupt the saved post. The blast radius is persistent
-malformed block HTML if a hydrated rich-text value is saved. Recovery is
-possible through code-editor repair or restoring a revision from before the
-malformed save.
+empty inline anchor in paragraph rich text. The lower-level trigger requires a
+`RichTextData` value created from the RTC/CRDT rich-text hydration path to be
+serialized. Pass 179 shows that the ordinary receiver save-only path and a
+simple receiver visual edit plus save path do not reach the corrupting
+serializer in the browser. The blast radius is persistent malformed block HTML
+if a hydrated rich-text value is saved. Recovery is possible through code-editor
+repair or restoring a revision from before the malformed save.
