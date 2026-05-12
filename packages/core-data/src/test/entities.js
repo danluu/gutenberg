@@ -472,6 +472,82 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
+	it( 'does not append trailing serialized blocks when shorter local content is a middle deletion', async () => {
+		const latestContent = pageContent( [ 'Alpha', 'Beta', 'Gamma' ] );
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'merged-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: latestContent,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( {
+			id: 123,
+			content: { raw: latestContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		} );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: latestContent },
+			},
+			{ content: pageContent( [ 'Alpha', 'Gamma' ] ) },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+			},
+		} );
+	} );
+
+	it( 'does not append trailing serialized blocks when shorter local content is a trailing deletion', async () => {
+		const latestContent = pageContent( [ 'Alpha', 'Beta', 'Gamma' ] );
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'merged-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: latestContent,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( {
+			id: 123,
+			content: { raw: latestContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		} );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: latestContent },
+			},
+			{ content: pageContent( [ 'Alpha', 'Beta' ] ) },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+			},
+		} );
+	} );
+
 	it( 'merges sibling serialized blocks appended from a shared stale base', async () => {
 		const latestRecord = {
 			id: 123,
@@ -580,11 +656,7 @@ describe( 'prePersistPostType', () => {
 			'/wp/v2/pages'
 		);
 
-		expect( syncManager.applyPersistedCRDTDoc ).toHaveBeenCalledWith(
-			'postType/page',
-			123,
-			latestRecord
-		);
+		expect( syncManager.applyPersistedCRDTDoc ).not.toHaveBeenCalled();
 		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
 		expect( result ).toEqual( {
 			meta: {
@@ -621,11 +693,54 @@ describe( 'prePersistPostType', () => {
 			'/wp/v2/pages'
 		);
 
-		expect( syncManager.applyPersistedCRDTDoc ).toHaveBeenCalledWith(
-			'postType/page',
-			123,
-			latestRecord
+		expect( syncManager.applyPersistedCRDTDoc ).not.toHaveBeenCalled();
+		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
+			},
+		} );
+	} );
+
+	it( 'does not replay an unchanged persisted CRDT document over local save edits', async () => {
+		const persistedCrdtDoc = 'same-persisted-doc';
+		const baseContent = pageContent( [ 'Alpha', 'Beta' ] );
+		const localContent = pageContent( [ 'Alpha', 'local edit', 'Beta' ] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: baseContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: persistedCrdtDoc,
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( true ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'local-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: 'stale CRDT content',
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: baseContent },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]:
+						persistedCrdtDoc,
+				},
+			},
+			{ content: localContent },
+			'page',
+			false,
+			'/wp/v2/pages'
 		);
+
+		expect( syncManager.applyPersistedCRDTDoc ).not.toHaveBeenCalled();
 		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
 		expect( result ).toEqual( {
 			meta: {
