@@ -112,3 +112,31 @@ Run JSON:
 ```
 
 That variant converged correctly and did not produce data corruption. This makes the duplicate-row artifact narrower, but also supports the root-cause interpretation: the bad behavior is the query-array identity case where two table rows have equal serialized content and concurrent edit/delete operations need stable row identity to merge correctly.
+
+## Two-Minute Idle Check
+
+I reran the duplicate-row corruption scenario with no video and a 120 second final idle wait before save/reload:
+
+```text
+/tmp/rtc-video-regeneration/77775/corruption-search-20260511-162821/attempts/prefix-clean-080-duplicate-row-a-then-b-2min-novideo/run-data-visible-core-text.json
+```
+
+Result:
+
+```json
+{
+  "finalACellTexts": [ "anchor", "same" ],
+  "finalBCellTexts": [ "anchor", "same" ],
+  "dataCorruptionDetected": true,
+  "persistedContentIncludesRemote": false,
+  "reloadAStoreIncludes": false
+}
+```
+
+The corrupted state did not self-heal after the two-minute idle window. Saving and reloading still lacked `edited-second-duplicate`.
+
+Hash:
+
+```text
+3d127858b69c5c8938aadd40ae763b67b2ff5cbc99c13b264725066eceea64ae  run-data-visible-core-text.json
+```
