@@ -422,3 +422,24 @@ table action in `waitForCollaborationReady()`, this time at
 trace are local harness artifacts under
 `test/e2e/artifacts/test-results/editor-collaboration-triag-9db65-prepend-and-stale-tail-edit-chromium/`.
 The environment was stopped after the attempt.
+
+Pass 179 rebased both artifact branches onto current `origin/trunk`
+`b41e4e944f7852d89ac58ecfd1dc854447173fa2`. The PR branch kept the requested
+three-commit order:
+
+- `20aea65d1b6 Add stale table body CRDT repro`
+- `3376af99af0 Add stale table body collaboration repro`
+- `4adaba6162b Fix stale table body structural merges`
+
+Pass 179 also tightened the real-user workflow evidence by checking the Table
+block implementation directly. `core/table` stores `attributes.body` as a
+query array of `tbody tr` rows in `packages/block-library/src/table/block.json`
+lines 66-110. The visible toolbar actions in `packages/block-library/src/table/edit.js`
+lines 258-298 call `setAttributes( insertRow( attributes, ... ) )` and
+`setAttributes( deleteRow( attributes, ... ) )`; those helpers in
+`packages/block-library/src/table/state.js` lines 161-216 return replacement
+row arrays using normal slice/filter operations. That means the low-level
+stale full-array rebase shape used by the CRDT repro is not a synthetic block
+tree mutation: it is the ordinary representation produced by Table block row
+insert/delete controls. The rare part remains RTC concurrency on the same table
+and the stale-local interleaving, not the editing operation itself.
