@@ -1172,3 +1172,92 @@ before the queued local Y.Doc write executes. The risk is real content
 corruption or loss if the stale edited record is saved; recovery is manual
 correction, undo when still usable, another peer's intact state, autosaves, or
 revisions.
+
+## Pass 179 Current-Trunk Recheck
+
+Pass 179 fetched `origin/trunk`
+`e69d233a6d8a726ab933eef28109228272883972`
+(`Experiment: Content types invaidate cache for synced taxonomies-post types
+(#78143)`). The only relevant upstream runtime/test change since the pass-178
+base was y-websocket test infrastructure; `packages/sync/src/manager.ts` still
+uses `yieldToEventLoop( updateCRDTDoc )`, and `_updateEntityRecord()` still
+reads the edited record without flushing queued local writes first.
+
+The lower-level repro was replayed independently on current trunk in a fresh
+detached worktree, with only the repro commit applied:
+
+```bash
+git worktree add --detach /private/tmp/4af28404874c-pass179-current.zPCmtG/repo origin/trunk
+cd /private/tmp/4af28404874c-pass179-current.zPCmtG/repo
+ln -s /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507/node_modules node_modules
+git cherry-pick 3cd60b90fff
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: FAIL. The observed stale projection is still exactly the product risk:
+`editRecord` receives `{ body: "Remote Body", title: "Initial Title" }` when it
+should only receive the remote body change.
+
+Applying the manager fix on that same current-trunk repro worktree:
+
+```bash
+git cherry-pick d6db01a675f3935b0dd8b27d007a7d41b9f18198
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: PASS.
+
+Pass 179 then rebased the PR branch onto `e69d233a6d8`. The Playwright repro
+commit conflicted only in
+`test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts`, where
+current trunk had added y-websocket-specific readiness handling and the repro
+branch had added transport-level HTTP awareness waits. The resolved helper keeps
+both: WebSocket tests continue to use the y-websocket readiness path, while the
+HTTP stress repro waits for the target room's `wp-sync` awareness payload rather
+than the rendered collaborator button.
+
+The rebased PR branch keeps the requested commit sequence:
+
+1. `1df7e3f525e Add RTC deferred update race repro`
+2. `93c82a99fbe Add RTC stress Playwright repro`
+3. `b71f99d4458 Flush RTC updates before remote reconciliation`
+
+Verification on the rebased PR branch:
+
+```bash
+git diff --check origin/trunk..HEAD
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand
+```
+
+Results: PASS, PASS (`27/27`), PASS (`73/73`).
+
+The single natural-user Playwright repro also passed on the rebased fixed branch
+over HTTP polling. Fresh `wp-env` needed both local test fixture plugins
+installed: the old CSS-animation plugin and the new
+`gutenberg-test-plugin-rtc-websocket-provider` fixture so global setup can
+deactivate it for non-WebSocket runs.
+
+```bash
+WP_ENV_PORT=10007 WP_BASE_URL=http://localhost:10007 \
+RTC_MANIFEST_WS_START_PORT=21256 RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run test:e2e -- \
+  test/e2e/specs/editor/collaboration/collaboration-stress.spec.ts \
+  --project=chromium --workers=1 \
+  --grep "two users preserve simultaneous paragraph edits"
+```
+
+Result: PASS, one Chromium test passed in 21.9s.
+
+Pass 179 does not change the likelihood classification. The bug remains
+`medium` for active RTC coediting sessions using HTTP polling, and `low` across
+all Gutenberg use. The sharp practical workflow is two editors in the post
+editor on the same post; one local edit is accepted into the edited entity
+record, the Y.Doc write is deferred to the next timer tick, and another peer's
+polling update arrives before that timer runs. Large generated posts, the exact
+stress choreography, and `Promise.all` overlap are fuzz amplifiers, not semantic
+requirements: the low-level repro shows ordinary title/body fields are enough.
