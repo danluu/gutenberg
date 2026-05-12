@@ -100,6 +100,24 @@ non-saving collaborator can leave the editor tab inactive while another user
 saves, return to the tab, and reload/rejoin before the remote-save refetch has
 purged or refreshed the stale browser backup.
 
+Pass 178 refreshed both artifact branches onto current `origin/trunk`
+`96263113a874ab1fc1668f7bb500c98766e90e76`
+(`Dashboard: staging layer for in-progress layout edits (#78071)`). The only
+new trunk commits touching the bounded RTC surface since pass 177 are
+`569ea262b57` (`e2e tests: use editPost and createNewPost helpers everywhere
+(#78170)`) and `939b0ff02a9` (`Add RTC y-websocket-server tests (#78179)`),
+and both are collaboration test/fixture changes rather than runtime autosave,
+editor-store, `core-data`, or sync-manager changes. A targeted grep still finds
+no editor-local `pagehide`/`beforeunload` local-autosave flush in current
+`origin/trunk` or in the required known-fixes base
+`f256024286dd80a4c0e2579f658c109256abf648`; the matching runtime lifecycle
+hooks remain only in the HTTP polling sync provider. Pass 178 also checked the
+exact source boundary: current trunk's `LocalAutosaveMonitor` creates stale
+restore notices from `sessionStorage`, purges only on local dirty/autosave
+transitions, and delegates all local writes to the interval-driven
+`AutosaveMonitor`. The fix branch adds the missing unload flush at that boundary
+without changing CRDT or remote-save semantics.
+
 ## Natural Repro
 
 The committed repro on the PR branch creates a draft post with one paragraph and uses two real browser users in the post editor:
@@ -256,9 +274,9 @@ PR branch:
 
 PR branch commits:
 
-1. `da4e4cb086f` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
-2. `d8dcda6cb04` - natural two-user Playwright repro.
-3. `ef05db3c953` - page-unload local autosave flush fix.
+1. `31de34797b9` - empty commit documenting why no lower-level non-Playwright repro honestly exercises the browser/page lifecycle race.
+2. `f2df55de25f` - natural two-user Playwright repro.
+3. `0013f4074b6` - page-unload local autosave flush fix.
 
 ## Verification
 
@@ -338,6 +356,22 @@ failed in global setup because the E2E test plugins were not mounted there. The
 test environment was restarted with `npm run wp-env-test -- start`, which uses
 `.wp-env.test.json` and mounts `packages/e2e-tests/plugins`; the same e2e command
 then passed on the rebased fixed branch.
+
+Pass 178 rebase verification on current `origin/trunk`
+`96263113a874ab1fc1668f7bb500c98766e90e76`:
+
+`WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
+
+Result after fix on rebased PR branch `0013f4074b6`: `1 passed (21.9s)`.
+
+`npm run lint:js -- packages/editor/src/components/local-autosave-monitor/index.js test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts`
+
+Result: exit code 0, with the same four existing
+`react-hooks/exhaustive-deps` warnings in `local-autosave-monitor/index.js`.
+
+`git diff --check origin/trunk..HEAD`
+
+Result: exit code 0.
 
 Video run:
 
