@@ -198,25 +198,31 @@ Local videos:
 User A places the cursor in `Delta`, which advertises
 `body.1.cells.1.content`. User B uses the table toolbar path
 `Edit table -> Delete row`; after the row delete, `Delta` moves to DOM key
-`body.0.cells.1.content`, so the old cursor key is stale. The updated video
-marks the stale key string in red and the actual Delta cell key in green.
+`body.0.cells.1.content`, so the old cursor key is stale. In the natural app
+path, Gutenberg clears the source awareness selection before a bad cursor
+paints. The final video segment is therefore explicitly marked `harness-only`:
+it preserves the stale key long enough to show the overlay cursor landing on
+the whole-block fallback instead of the actual Delta cell.
 
 Local videos:
 
-- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T225145673Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.mp4`
-- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T225145673Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.webm`
+- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T230019669Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.mp4`
+- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T230019669Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.webm`
 
 ### Issue 3: missing keyed RichText target falls back to the whole block
 
 User A advertises a nested keyed target. User B deletes the row containing that
 keyed target through the table toolbar. The keyed target no longer exists, and
-the current cursor lookup falls back to the table block. The updated video
-marks the missing keyed target in red and the whole-block fallback in blue.
+the current cursor lookup falls back to the table block. In the natural app
+path, Gutenberg clears the source awareness selection before a bad cursor
+paints. The final video segment is explicitly marked `harness-only`: it
+preserves the stale keyed selection long enough to show the cursor landing on
+the whole-block fallback.
 
 Local videos:
 
-- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-3-missing-keyed-richtext-target-falls-back-to-block-20260512T224918329Z/issue-3-missing-keyed-richtext-target-falls-back-to-block.mp4`
-- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-3-missing-keyed-richtext-target-falls-back-to-block-20260512T224918329Z/issue-3-missing-keyed-richtext-target-falls-back-to-block.webm`
+- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-3-missing-keyed-richtext-target-falls-back-to-block-20260512T230107434Z/issue-3-missing-keyed-richtext-target-falls-back-to-block.mp4`
+- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-3-missing-keyed-richtext-target-falls-back-to-block-20260512T230107434Z/issue-3-missing-keyed-richtext-target-falls-back-to-block.webm`
 
 ### Rejected candidate
 
