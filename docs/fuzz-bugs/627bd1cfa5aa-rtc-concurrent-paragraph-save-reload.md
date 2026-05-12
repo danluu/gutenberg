@@ -43,6 +43,13 @@ the full `packages/core-data/src/test/entities.js` file, passes a production
 build with `--skip-types`, and passes the natural same-user Playwright
 save/reload repro.
 
+Pass 178 re-checked the current branch state after fetching `origin/trunk`
+`96263113a874ab1fc1668f7bb500c98766e90e76`. The pre-fix PR commit
+`7bae19a2698` still fails the focused unit repro for the intended assertion:
+`applyPersistedCRDTDoc` is called once with the unchanged `_crdt_document`.
+The fixed PR head `7a2708df2ff` passes that unit repro and the committed
+natural same-user Playwright save/reload spec.
+
 ## Evidence
 
 - Manifest row:
@@ -56,6 +63,14 @@ save/reload repro.
   `npm run test:unit packages/core-data/src/test/entities.js -- --runInBand --testNamePattern='does not replay an unchanged persisted CRDT document over local save edits'`
   failed on `f256024286dd80a4c0e2579f658c109256abf648`; the unexpected call was
   `applyPersistedCRDTDoc( 'postType/page', 123, latestRecord )`.
+- Pass 178 repeated that negative check on the PR pre-fix commit
+  `7bae19a2698`: the focused unit repro fails because
+  `syncManager.applyPersistedCRDTDoc` is called once with
+  `{ meta: { _crdt_document: 'same-persisted-doc' } }`.
+- Pass 178 re-ran the fixed branch's focused unit repro and the committed
+  Playwright spec:
+  `test/e2e/specs/editor/collaboration/manifest/627bd1cfa5aa-concurrent-paragraph-save-reload.spec.ts`.
+  Both passed on `7a2708df2ff`.
 - Pass 174's final PR branch gates CRDT replay on a changed latest persisted
   CRDT document or a changed server saved field, and passes the focused unit
   repro plus the full `entities.js` unit file.
@@ -112,4 +127,4 @@ const shouldApplyLatestCRDTDoc =
 
 The fix needs to land in the same stack as the proposed stale-save protections
 that introduced `prePersistPostType`; `origin/trunk` at
-`80699422e63` does not yet contain that code path.
+`96263113a874ab1fc1668f7bb500c98766e90e76` does not yet contain that code path.
