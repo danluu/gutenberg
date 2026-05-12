@@ -127,6 +127,21 @@ Received: intro, middle, pullquote, heading, tail, group
 
 The PR branch head `74516c1fbb7` passed the same test in place. The pass-177 code audit also confirmed that the WebSocket transport is not the key data-corrupting layer: the failing path is shared once a provider delivers remote Yjs updates and a local full-block edit reaches `mergeCrdtBlocks()` with `baseRecord.blocks`.
 
+Pass 178 repeated the same fail/pass check in a fresh detached test-only worktree:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-178/work/747c653e7b3b-test-only
+```
+
+At `07e637acb29`, the test failed with the same dropped live block IDs:
+
+```text
+Expected: intro, remote-insert, middle, pullquote, local-insert, heading, tail, group
+Received: intro, middle, pullquote, heading, tail, group
+```
+
+At PR branch head `74516c1fbb7`, the same test passed. Pass 178 also inspected the local WebSocket e2e harness: `test/e2e/playwright.rtc-websocket.config.ts` enables the test provider plugin and starts `bin/rtc-test-ws-sync-server.mjs`, while `packages/e2e-tests/plugins/rtc-websocket-provider/index.js` exposes test controls for delaying the next message or closing the next socket. Those controls could force the historical transport disruption, but they would be an injected test fault. A strict natural-user Playwright repro still needs to create the stale explicit-base interleaving through editor timing, save/reload, and ordinary block actions alone.
+
 ## Fix Plan
 
 Initial fix: reconcile explicit `baseRecord.blocks` edits against the explicit base before merging.
@@ -148,4 +163,4 @@ Simplicity/performance check: the fix should reuse existing reconciliation/reord
 
 ## Missing Artifact
 
-This explanation does not include a natural-user Playwright repro or video. The exact manifest row is non-runnable, has no source spec, and the original exact result artifacts are unavailable locally. The shortest remaining experiment is a two-peer websocket Playwright test that intentionally moves the Group before post-live-edit convergence after checkpoint/reload, then asserts both peers' normalized block trees for dropped inserted Paragraphs and Pullquote/Group/Paragraph attribute leakage.
+This explanation does not include a natural-user Playwright repro or video. The exact manifest row is non-runnable, has no source spec, and the original exact result artifacts are unavailable locally. Pass 178 found that the local WebSocket harness can inject delay/socket-close events, but using those controls would not satisfy a strict natural-user-action repro. The shortest remaining experiment is a two-peer websocket Playwright test that uses ordinary editor actions, save/reload timing, and a final top-level Group move before post-live-edit convergence, then asserts both peers' normalized block trees for dropped inserted Paragraphs and Pullquote/Group/Paragraph attribute leakage.
