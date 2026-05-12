@@ -198,16 +198,15 @@ Local videos:
 User A places the cursor in `Delta`, which advertises
 `body.1.cells.1.content`. User B uses the table toolbar path
 `Edit table -> Delete row`; after the row delete, `Delta` moves to DOM key
-`body.0.cells.1.content`, so the old cursor key is stale. In the natural app
-path, Gutenberg clears the source awareness selection before a bad cursor
-paints. The final video segment is therefore explicitly marked `harness-only`:
-it preserves the stale key long enough to show the overlay cursor landing on
-the whole-block fallback instead of the actual Delta cell.
+`body.0.cells.1.content`, so the old cursor key is stale. Delta still exists
+and should still show User A's remote cursor to User B, but User B renders zero
+User A cursors. The updated video marks the expected cursor position in green
+and the actual missing remote cursor state in red.
 
 Local videos:
 
-- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T230019669Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.mp4`
-- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T230019669Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.webm`
+- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T231737484Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.mp4`
+- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T231737484Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.webm`
 
 ### Issue 3: missing keyed RichText target falls back to the whole block
 
