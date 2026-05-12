@@ -12,6 +12,8 @@ Pass 177 tightened the proof and fix. A single-room byte cap is not enough becau
 
 Pass 178 rechecked current `origin/trunk` at `96263113a874ab1fc1668f7bb500c98766e90e76`. The read-side gap is still present: `WP_HTTP_Polling_Sync_Server::handle_request()` appends each room into one response, and `WP_Sync_Post_Meta_Storage::get_updates_after_cursor()` still selects all `meta_value` rows after the cursor. The pass also verified the natural client path: the default HTTP polling provider registers every synced entity or collection room with one process-wide polling manager, sends all rooms in one request when the count is under `MAX_ROOMS_PER_REQUEST`, and registers collection rooms for `getEntityRecords()` calls with `per_page: -1`. The collection-room trigger is therefore a real editor path, even though the multi-MiB retained history remains uncommon.
 
+Pass 179 rechecked `origin/trunk` at `fc8b3db6ace471328e39453e3eed552ad4f3de7a`. No commits between the pass-178 base and this trunk head touched the sync server, sync storage interface, sync storage implementation, PHP collaboration sync tests, or collaboration e2e specs. The same unbounded read path remains in trunk and in the May 7 known-fixes SHA `f256024286dd80a4c0e2579f658c109256abf648`.
+
 ## Why This Matters
 
 The count-only compaction threshold does not bound bytes. A room can hold fewer than `COMPACTION_THRESHOLD` rows while still retaining many MiB of valid update data. The handoff describes exactly that shape: roughly 13.20 MiB retained after pruning, above the intended 8 MiB cap. With multiple rooms in one HTTP poll, response assembly can become much larger than either the request-body budget or PHP's practical memory headroom.
