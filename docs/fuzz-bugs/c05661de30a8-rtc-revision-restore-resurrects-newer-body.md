@@ -74,6 +74,8 @@ Revised plan after pass 173: keep the trunk-facing branch with parsed restore bl
 
 Pass 177 rebased the trunk-facing PR branch to `origin/trunk` `3841375c3f7`. Current trunk still does not contain the stale-save body merge from PR `77876`, so the branch remains a forward-compatible restore fix plus option plumbing; the pre-persist restore guard must be applied when that stale-save code lands.
 
+Pass 178 rebased the PR branch again to `origin/trunk` `d52e35a291c1`. The branch still has the required three-commit order: focused restore unit test, natural c056 Playwright repro, then the restore fix. This pass did not rerun the full browser repro because pass 173 already captured the exact natural failure and pass 177 already reran the clean `f256024...` low-level known-fixes proof. The new confidence improvement is narrower source-level workflow analysis: ordinary save/revision/restore actions are sufficient for the restore-shaped stale-content merge in the backlink-aware known-fixes base; the only unusual product prerequisites are RTC being enabled and an old revision being restored after newer collaborative body content exists.
+
 ## Verification
 
 Pass 173 exact c056 natural repro command:
@@ -105,3 +107,11 @@ npm run test:unit -- packages/editor/src/store/test/private-actions.js --testNam
 ```
 
 Result: passed after the branch was rebased to `origin/trunk` `3841375c3f7`.
+
+Focused unit verification on the pass-178 rebased PR branch:
+
+```bash
+npm run test:unit -- packages/editor/src/store/test/private-actions.js --testNamePattern=restoreRevision
+```
+
+Result: passed after the branch was rebased to `origin/trunk` `d52e35a291c1`.
