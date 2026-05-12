@@ -63,6 +63,35 @@ function areSerializedBlocksEqualAt( blocksA, blocksB, index ) {
 	);
 }
 
+function isSerializedBlockSubsequence( shorterBlocks, longerBlocks ) {
+	let longerIndex = 0;
+
+	for ( const block of shorterBlocks ) {
+		const blockValue = getSerializedBlockValue( block );
+		let didMatch = false;
+
+		while ( longerIndex < longerBlocks.length ) {
+			if (
+				block.name === longerBlocks[ longerIndex ].name &&
+				blockValue ===
+					getSerializedBlockValue( longerBlocks[ longerIndex ] )
+			) {
+				longerIndex++;
+				didMatch = true;
+				break;
+			}
+
+			longerIndex++;
+		}
+
+		if ( ! didMatch ) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 function mergeStaleSerializedBlockContent(
 	baseContent,
 	latestContent,
@@ -92,6 +121,17 @@ function mergeStaleSerializedBlockContent(
 		latestBlocks.length > localBlocks.length &&
 		baseBlocks.length === latestBlocks.length
 	) {
+		const isExactPrefix = localBlocks.every( ( _block, index ) =>
+			areSerializedBlocksEqualAt( localBlocks, latestBlocks, index )
+		);
+
+		if (
+			isExactPrefix ||
+			isSerializedBlockSubsequence( localBlocks, latestBlocks )
+		) {
+			return;
+		}
+
 		for ( let index = 0; index < localBlocks.length; index++ ) {
 			if ( localBlocks[ index ].name !== latestBlocks[ index ].name ) {
 				return;
@@ -434,7 +474,6 @@ export const prePersistPostType = async (
 	const objectId = persistedRecord?.id;
 	let syncManager;
 	let serializedDoc;
-	let hasSerializedDoc = false;
 	const editedSavedFields = POST_RAW_ATTRIBUTES.filter(
 		( key ) => key in edits
 	);
@@ -475,7 +514,6 @@ export const prePersistPostType = async (
 				objectType,
 				objectId
 			);
-			hasSerializedDoc = !! serializedDoc;
 			const latestRecord = await apiFetch( {
 				path: addQueryArgs( `${ baseURL }/${ objectId }`, {
 					context: 'edit',
@@ -495,11 +533,19 @@ export const prePersistPostType = async (
 				}
 			}
 
-			const hasLatestPersistedCRDTDoc = Boolean(
-				latestRecord?.meta?.[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]
-			);
+			const latestPersistedCRDTDoc =
+				latestRecord?.meta?.[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ];
+			const basePersistedCRDTDoc =
+				persistedRecord?.meta?.[
+					POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+				];
+			const hasLatestPersistedCRDTDoc = Boolean( latestPersistedCRDTDoc );
+			const hasChangedLatestPersistedCRDTDoc =
+				hasLatestPersistedCRDTDoc &&
+				latestPersistedCRDTDoc !== basePersistedCRDTDoc;
 			const shouldApplyLatestCRDTDoc =
-				hasLatestPersistedCRDTDoc || locallyChangedSavedFields.length;
+				serverChangedSavedFields.length ||
+				hasChangedLatestPersistedCRDTDoc;
 			const didApplyLatestCRDTDoc = shouldApplyLatestCRDTDoc
 				? ( await syncManager?.applyPersistedCRDTDoc?.(
 						objectType,
@@ -516,7 +562,6 @@ export const prePersistPostType = async (
 					objectType,
 					objectId
 				);
-				hasSerializedDoc = !! serializedDoc;
 
 				if (
 					hasLatestPersistedCRDTDoc &&
@@ -576,21 +621,7 @@ export const prePersistPostType = async (
 
 	// Add meta for persisted CRDT document.
 	if ( persistedRecord ) {
-		const objectType = `postType/${ name }`;
-		const objectId = persistedRecord.id;
-
-		let baseVersion = 0;
-		try {
-			const persistedCrdtDoc =
-				persistedRecord.meta?.[
-					POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-				];
-			if ( persistedCrdtDoc ) {
-				const parsed = JSON.parse( persistedCrdtDoc );
-				baseVersion = parsed.baseVersion ?? 0;
-			}
-		} catch {}
-		const serializedDoc = await getSyncManager()?.createPersistedCRDTDoc(
+		serializedDoc = await getSyncManager()?.createPersistedCRDTDoc(
 			objectType,
 			objectId,
 			{
