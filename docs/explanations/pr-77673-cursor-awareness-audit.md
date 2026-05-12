@@ -172,6 +172,56 @@ Recommended test:
   `clientId`, `innerBlocks`, and a nested `Y.Text`. A cursor inside that text
   should resolve to the outer block, not to the array item.
 
+## Reproduction Videos
+
+Videos were generated from the local PR 77673 fuzzing worktree at
+`/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz`.
+
+Each confirmed video uses a composite reproduction layout: User A and User B
+editor screens are visible side by side, with a running annotated log at the
+bottom.
+
+### Issue 1: nested table-cell cursor missing remotely
+
+User A places the cursor in the `Delta` table cell. The local selection is
+`body.1.cells.1.content` at offset 5, but User B renders zero collaborator
+cursors.
+
+Local videos:
+
+- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-1-nested-table-cell-cursor-missing-remotely-20260512T222752484Z/issue-1-nested-table-cell-cursor-missing-remotely.mp4`
+- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-1-nested-table-cell-cursor-missing-remotely-20260512T222752484Z/issue-1-nested-table-cell-cursor-missing-remotely.webm`
+
+### Issue 2: nested table-cell `attributeKey` becomes stale after row deletion
+
+User A places the cursor in `Delta`, which advertises
+`body.1.cells.1.content`. User B uses the table toolbar path
+`Edit table -> Delete row`; after the row delete, `Delta` moves to DOM key
+`body.0.cells.1.content`, so the old cursor key is stale.
+
+Local videos:
+
+- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T223546719Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.mp4`
+- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T223546719Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.webm`
+
+### Issue 3: missing keyed RichText target falls back to the whole block
+
+User A advertises a nested keyed target. User B deletes the row containing that
+keyed target through the table toolbar. The keyed target no longer exists, and
+the current cursor lookup falls back to the table block.
+
+Local videos:
+
+- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-3-missing-keyed-richtext-target-falls-back-to-block-20260512T223546719Z/issue-3-missing-keyed-richtext-target-falls-back-to-block.mp4`
+- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-3-missing-keyed-richtext-target-falls-back-to-block-20260512T223546719Z/issue-3-missing-keyed-richtext-target-falls-back-to-block.webm`
+
+### Rejected candidate
+
+The same-table-block cross-RichText candidate is not a confirmed issue video.
+Natural user-action probes on table cells and other multi-RichText blocks did
+not produce a cross-field editor selection. The earlier candidate capture had
+empty selection state, so it should not be used as a bug video.
+
 ## Follow-Up Risks
 
 These issues are real concerns, but I would not treat them as the primary
