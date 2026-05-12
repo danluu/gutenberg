@@ -92,3 +92,23 @@ The duplicate `same` rows make screenshots alone insufficient to prove which dup
 A skeptical reviewer may object that B acts from a stale view. That is the intended RTC conflict case: A edits one logical row while B deletes a different logical row. The expected merge preserves A's later-row edit after B's earlier-row delete.
 
 The persistence check is the strongest evidence that this is data corruption rather than UI-only loss: saved raw content and the reloaded editor store both lack `edited-second-duplicate`.
+
+## Negative Control
+
+I also tried the less-contestable unique-row version on the same pre-fix environment:
+
+```text
+Initial:  anchor | delete-this-row | edit-this-row
+A edit:   edit-this-row -> edited-unique-row
+B delete: delete-this-row
+Expected: anchor | edited-unique-row
+Actual:   anchor | edited-unique-row
+```
+
+Run JSON:
+
+```text
+/tmp/rtc-video-regeneration/77775/corruption-search-20260511-162821/attempts/prefix-clean-070-unique-row-a-then-b-novideo/run-data-visible-core-text.json
+```
+
+That variant converged correctly and did not produce data corruption. This makes the duplicate-row artifact narrower, but also supports the root-cause interpretation: the bad behavior is the query-array identity case where two table rows have equal serialized content and concurrent edit/delete operations need stable row identity to merge correctly.
