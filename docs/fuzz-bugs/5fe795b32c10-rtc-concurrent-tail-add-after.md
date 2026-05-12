@@ -368,6 +368,68 @@ that exact way. It does show why the current partial fix is not a general
 handles an exact stale replay, but a queued snapshot that differs from its base
 is still treated as authoritative and can overwrite a newer Y.Text value.
 
+## Pass 179 Follow-up
+
+Pass 179 promoted the pass-178 queued-snapshot probe into the PR branch and
+added a narrower guard for inserted blocks whose incoming `baseRecord` predates
+the inserted block. When the last local snapshot already matches the current
+Y.Doc value for that inserted block, an older base-record snapshot is treated as
+stale and cannot roll the block back to an older rich-text string.
+
+The new regression fails on PR head `e32f9d80c02` before the guard:
+
+```text
+Expected: Alpha, Beta, Tail, RTC primary paragraph
+Received: Alpha, Beta, Tail, RTC primary paragrap
+```
+
+After the pass-179 source change, the focused stale-top-level block file passes
+with 8 tests:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts --runInBand
+```
+
+Strict lint and whitespace checks also pass for the touched files:
+
+```bash
+node ./tools/eslint/lint-js.cjs --config eslint.config.strict.cjs \
+	packages/core-data/src/utils/crdt-blocks.ts \
+	packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts
+git diff --check -- \
+	packages/core-data/src/utils/crdt-blocks.ts \
+	packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts
+```
+
+A broader local unit command also ran:
+
+```bash
+npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-blocks.ts \
+	packages/core-data/src/utils/test/crdt.ts \
+	packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts \
+	--runInBand
+```
+
+`crdt-blocks.ts` and `crdt-stale-top-level-blocks.test.ts` passed, but
+`crdt.ts` could not start in this shared dependency setup because
+`framer-motion` is absent from the symlinked `node_modules`.
+
+Pass 179 also attempted the natural browser repro on the updated PR branch with
+160 ms/key typing and 2000 ms +/-500 ms post-menu waits. The browser attempt is
+not useful product evidence: even after resetting the e2e database and changing
+the WebSocket port, the editor opened with stale old seed content while REST
+confirmed that the newly created post contained the expected three-block
+`INITIAL_CONTENT`. The run failed in `concurrent-add-after-actions` while
+trying to click the expected tail paragraph, so it is a harness/build-state
+contamination failure rather than a pass or a surviving corruption result.
+
+This pass improves the partial fix by closing one stale queued inserted-block
+rollback shape. It still does not prove the full natural Add-after corruption
+is fixed; the next high-value browser pass should start from a clean buildable
+worktree and first assert that the pre-action editor state matches the REST
+post before running the concurrent Add-after actions.
+
 ## Artifacts
 
 - Failure JSON, pass-172 160 ms/key no post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay0-attempts20-output/attempt-6.json`
@@ -396,6 +458,10 @@ is still treated as authoritative and can overwrite a newer Y.Text value.
 - Pass-177 fixed-branch classified failure JSON after the inserted-block
   replay guard and local generated-bundle patch:
   `/tmp/5fe795b32c10-p177-prfix2-built-classified-type160-postdelay2000-jitter500-attempts20-output/attempt-1.json`
+- Pass-179 PR branch head with queued-snapshot guard:
+  `https://github.com/danluu/gutenberg/tree/try/rtc-concurrent-tail-insert-corrupts-or-diverges-top-level--5fe795b32c10-pr`
+- Pass-179 inconclusive browser attempt after e2e reset:
+  `/tmp/5fe795b32c10-p179-prfix3-reset-type160-postdelay2000-jitter500-attempts5-output/attempt-1.json`
 - Failure JSON, pass-170 160 ms/key: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1.json`
 - Failure screenshots: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-primary.png`, `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-secondary.png`
 - Trace copy: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-trace.zip`
