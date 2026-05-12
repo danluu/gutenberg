@@ -254,3 +254,35 @@ This independently confirms that the exact known-fixes base still reaches the po
 Pass 177 also reran the uncommitted natural WebSocket probe from pass 172 after starting the test `wp-env` config on `http://localhost:10161` with WebSocket port `22488`. The first run against the regular `wp-env` config failed before test execution because the WebSocket provider test plugin was not mounted. After switching to `.wp-env.test.json`, the probe loaded the editor but failed before the move/delete actions: the live editor block tree was replaced by older fuzz-seed content (`953376` on the first run, `956646` on the rerun) even though `wp post get` showed the database post still contained the intended four-block Paragraph/List/Pullquote/Paragraph fixture and `wp post meta list` showed no `_crdt_document` meta.
 
 That browser result is not a valid repro for this signature. It does, however, explain why the existing branch still lacks the requested natural-user video: the available probe is blocked by a separate WebSocket/e2e setup contamination problem before it can exercise the intended action interleaving. The practical likelihood classification stays `low`, not lower, because the CRDT-level product path remains real and the editor operations are ordinary; the missing data is frequency under a clean WebSocket browser schedule.
+
+## Pass 178 Update
+
+Pass 178 rebased this explanation branch onto `origin/trunk` `d52e35a291c17da7bc48a1efd4c77a601ed3ad67` and reran the repro/fix split from new detached worktrees under `bug-processing/deep-state/pass-178/work/a73-pass178-verify/`.
+
+Focused repro:
+
+```text
+21ca487683a Add RTC List/Pullquote stale snapshot repro
+FAIL packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
+Expected: false
+Received: true
+
+377adcfdae6 Avoid positional block smear after stale RTC snapshots
+PASS packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
+```
+
+Broader enumerator:
+
+```text
+21ca487683a Add RTC List/Pullquote stale snapshot repro
+FAIL packages/core-data/src/utils/test/crdt-a73ef852b497-pass171.test.ts
+Expected: []
+Received: 58 smear cases across 96 checked cases
+
+377adcfdae6 Avoid positional block smear after stale RTC snapshots
+PASS packages/core-data/src/utils/test/crdt-a73ef852b497-pass171.test.ts
+```
+
+The sharper pass-178 likelihood conclusion remains `low`, but it is `low` rather than `very-low`: the individual operations are ordinary toolbar/menu/List View/drag-drop block operations. The uncommon part is the RTC schedule: one peer's current Y.Array already reflects a remote move, while the other peer sends a stale full `blocks` snapshot that both deletes a neighboring block and reorders the same List/Pullquote region. That changed clientId set bypasses the current same-length clientId reorder helpers and falls into the positional update loop, where `mergeBlockIntoYBlock( yblocks.get( left ), blocksToSync[ left ], ... )` can rewrite one block's `name`, attributes, and `innerBlocks` into another block's Y.Map.
+
+The remaining evidence gap is still browser frequency, not product reachability. `useEntityBlockEditor` sends full `blocks` edits through `editEntityRecord`; `applyPostChangesToCRDTDoc` passes those edits into `mergeCrdtBlocks`; `moveBlocksToPosition` and `removeBlocks` provide normal editor paths for the move/delete inputs used by the low-level repro. The shortest confidence-improving follow-up is therefore still a clean WebSocket two-tab run, but it should first isolate or reset the provider room state so the initial post does not get replaced by stale fuzz-seed room content before the target actions run.
