@@ -29,6 +29,7 @@ Evidence for the classification:
 - The exact known-fixes base `f256024286dd80a4c0e2579f658c109256abf648` still saves revision restore through `restoreRevision()` with `blocks: undefined` and no restore option.
 - The same known-fixes base calls `entityConfig.__unstablePrePersist( persistedRecord, edits )` without forwarding save options, and `prePersistPostType()` can merge latest CRDT or latest serialized block content into a locally changed `content` save.
 - The known-fixes unit fixture `preserves latest trailing serialized blocks when a stale content edit submits an older shorter body` codifies the behavior that is correct for ordinary stale saves but wrong for revision restore.
+- Pass 179 reran the focused regression tests at the first PR-branch repro commit before the fix; both fail for the expected reasons: restore still edits `blocks: undefined`, and save options do not reach `__unstablePrePersist()`.
 
 Evidence against a higher overall likelihood:
 
@@ -42,7 +43,7 @@ Shortest experiment to improve confidence: run the natural browser repro with th
 
 Revision restore is an authoritative rollback, but the RTC save-preparation layer treats it as an ordinary stale local save.
 
-On current trunk `569ea262b573872d5f364e9f4829132c47c683d4`, `packages/editor/src/store/private-actions.js` still applies revision content this way:
+On current trunk `b41e4e944f7852d89ac58ecfd1dc854447173fa2`, `packages/editor/src/store/private-actions.js` still applies revision content this way:
 
 ```js
 const edits = {
@@ -86,23 +87,23 @@ Robustness audit:
 - Distributed-systems view: revision restore chooses an authoritative value; it is not a CRDT merge with the value being rolled back.
 - Simplicity/performance view: the fix adds no new network round trip or conflict algorithm. The main failure risk is option propagation, covered by focused unit tests.
 
-## Pass 178 Status
+## Pass 179 Status
 
-Pass 178 verified that current trunk `569ea262b573872d5f364e9f4829132c47c683d4` has not independently fixed the restore/save path. The PR branch was rebased cleanly onto that trunk and pushed to:
+Pass 179 verified that current trunk `b41e4e944f7852d89ac58ecfd1dc854447173fa2` has not independently fixed the restore/save path. The PR branch was rebased cleanly onto that trunk and pushed to:
 
 ```text
 https://github.com/danluu/gutenberg/tree/try/collaboration-revision-restore-reload-resurrects-newer-blo-58b782e101aa-pr
 ```
 
-Current PR-branch commit order after pass 178:
+Current PR-branch commit order after pass 179:
 
 ```text
-a2d5489daec Add revision restore RTC regression test
-bc2444e2972 Add RTC revision restore reload e2e repro
-b281140d099 Preserve restored revision as authoritative RTC save
+bd9f3f8d3f3 Add revision restore RTC regression test
+12534268678 Add RTC revision restore reload e2e repro
+ad01312950d Preserve restored revision as authoritative RTC save
 ```
 
-Focused checks after the pass-178 rebase:
+Focused checks after the pass-179 rebase:
 
 ```bash
 npm run test:unit -- packages/core-data/src/test/actions.js --testNamePattern="passes save options to the entity pre-persist hook"
@@ -112,6 +113,17 @@ git diff --check origin/trunk...HEAD
 ```
 
 All passed.
+
+Pass 179 also checked the first repro commit before the fix:
+
+```bash
+git switch --detach bd9f3f8d3f3
+npm run test:unit -- packages/core-data/src/test/actions.js --testNamePattern="passes save options to the entity pre-persist hook"
+npm run test:unit -- packages/editor/src/store/test/private-actions.js --testNamePattern="restoreRevision\\(\\)"
+git switch try/collaboration-revision-restore-reload-resurrects-newer-blo-58b782e101aa-pr
+```
+
+Both tests failed before the fix: the core-data test showed `__unstablePrePersist()` received only `( persistedRecord, edits )`, and the editor test showed `restoreRevision()` still passed `blocks: undefined`.
 
 Existing annotated video artifact:
 
