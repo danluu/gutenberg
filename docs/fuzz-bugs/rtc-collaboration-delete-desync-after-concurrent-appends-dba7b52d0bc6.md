@@ -16,6 +16,8 @@ I reconstructed the lowest useful failure at the CRDT merge layer. The editor sy
 
 Pass 178 refreshed this against `origin/trunk` `96263113a874ab1fc1668f7bb500c98766e90e76` and the current known-fixes checkout head `c8af86c24a5c70784e4604b66b772a0511859a00`. The rebased test-only commit still fails on current trunk, and the rebased fix commit passes the focused unit and HTTP-polling Chromium collaboration coverage. The current known-fixes head still fails the no-base CRDT repro immediately after the delete sync, but pass 177's temporary base-backed variant passed, which suggests the latest base-record path handles this exact workflow while lower-level/no-base merge callers remain vulnerable.
 
+Pass 179 refreshed the branch package again onto `origin/trunk` `fc8b3db6ace471328e39453e3eed552ad4f3de7a`. A fresh temporary current-trunk negative control still fails the test-only repro, the same fix still passes when applied on that trunk head, and the manifest-pinned known-fixes integration commit `f256024286dd80a4c0e2579f658c109256abf648` still fails the no-base repro. Pass 179 also identified the ordinary product-path reason a stale snapshot can exist: `editEntityRecord()` passes a captured full `blocks` edit to `SyncManager#update()`, and `SyncManager#update` is wrapped in `yieldToEventLoop()`, so a remote Yjs delete can be applied before the queued local full-snapshot merge runs.
+
 ## Practical Impact
 
 Real-user likelihood: `low`.
@@ -31,6 +33,8 @@ Natural workflow:
 - network delay: not strictly required, but the stale-snapshot ordering is timing-sensitive
 
 Common prerequisites: two collaborators editing the same post and deleting a recent peer paragraph are ordinary. Rare prerequisites: the stale full-block snapshot must be emitted after the Y.Doc has already applied the collaborator delete. Artificial part: the deterministic repro directly calls `mergeCrdtBlocks()` to force that stale snapshot ordering; pass 171 added a closer `applyPostChangesToCRDTDoc()` probe with a stale `baseRecord`, which reproduced the resurrection on the known-fixes base. Natural Playwright coverage for the visible delete/edit workflow still passed on current trunk.
+
+Pass 179 raises confidence that the stale-snapshot precondition is product-plausible: the current product path intentionally defers CRDT updates by one event-loop tick for performance. The classification remains `low`, not `medium`, because the original browser spec is missing, the existing Playwright coverage is passing coverage rather than a failing natural repro, and the race still needs RTC collaboration plus a narrow delete/update ordering.
 
 Blast radius if hit: pre-save UI/content divergence. The deleted paragraph can reappear for one collaborator and may later be saved, causing duplicate or resurrected content. This is not an OOM/performance bug or a save loop. Recovery is manual: the user can delete the resurrected paragraph again once the editors settle, but a save at the wrong time can persist the stale block.
 
@@ -67,6 +71,8 @@ The known-fixes base contains broader stale-snapshot work. Pass 171 found an imp
 
 Pass 173 also found a separate no-base ambiguity in the synthetic known-fixes integration: if the deleting peer calls `mergeCrdtBlocks()` without `baseBlocks`, the integration preserves a remote-only appended block that is absent from the local snapshot, treating the omission as a stale snapshot rather than an intentional delete. That is less representative of the normal `editEntityRecord()` path after `baseRecord` plumbing, but it reinforces the core problem: full snapshots cannot distinguish stale omissions from intentional structural edits unless the merge has a trustworthy pre-change base.
 
+Pass 179 narrows the origin chain. The ambiguous full-array merge was introduced by `84019935998c16f877e976ad85e84748355d7282` (`Improve CRDT "merge logic" for post entities (#72262)`). The normal deferred-update race window was introduced by `62054e939e02f730302c71be4f5fdc5d37ccfe58` (`Improve sync performance metrics (#75029)`), which wrapped `SyncManager#update` in `yieldToEventLoop()`. The edit path that supplies the captured pre-dispatch block edit comes from `editEntityRecord()` passing merged, uncleared edits to sync manager (`35c140938bbf195a14541f28f927848c7a45caf1`, `#74912`). None of those commits is independently "the bug"; the defect is the combination of a deferred full-snapshot update with a merge algorithm that lacks enough causal/base information to reject a block identity that was known locally and then deleted remotely.
+
 This branch fixes the narrower trunk failure: do not resurrect blocks that were in the last local snapshot and were subsequently deleted from the current CRDT.
 
 ## Fix Plan
@@ -101,6 +107,7 @@ Pre-fix:
 - Pass 177 rebased the branches onto `origin/trunk` `bf2d0cc1f1e82d0db286f4aa9851f151e407b163`. The rebased test-only commit `f59a4cad00327fae786c3244b0c528ba3efe533d` failed before the fix with `"First user append"` resurrected at the final stale-snapshot assertion. The first attempt used the wrong shared `node_modules` tree and failed before running tests; rerunning with the known-good dependency tree produced the product failure.
 - Pass 177 also cherry-picked the test-only repro onto the current known-fixes checkout head `c8af86c24a5c70784e4604b66b772a0511859a00`. The no-base repro failed immediately after delete sync, with `"First user append"` still present before the final stale-snapshot step. A temporary base-backed variant on the same known-fixes head passed, including the final stale-snapshot assertion.
 - Pass 178 rebased the branches onto `origin/trunk` `96263113a874ab1fc1668f7bb500c98766e90e76`. The rebased test-only commit `5e3153c9d82` failed before the fix with `"First user append"` resurrected at the final stale-snapshot assertion. Cherry-picking that same test onto known-fixes head `c8af86c24a5c70784e4604b66b772a0511859a00` failed earlier, immediately after delete sync, with `"First user append"` still present in the merged CRDT state.
+- Pass 179 rebased the branches onto `origin/trunk` `fc8b3db6ace471328e39453e3eed552ad4f3de7a`. A temporary current-trunk negative control at that SHA plus test-only commit `09b107bc8dc` failed at the final stale-snapshot assertion: expected `["Alpha", "Beta", "Second user append"]`, received the same list plus `"First user append"`. A temporary current-trunk worktree with the same test and fix commit `f72acb832c9` passed the focused unit repro. The manifest-pinned known-fixes integration `f256024286dd80a4c0e2579f658c109256abf648` plus the test-only repro failed earlier, immediately after delete sync, receiving `["Alpha", "Beta", "Second user append", "First user append"]`.
 
 Post-fix branch:
 
@@ -111,5 +118,6 @@ Post-fix branch:
 - After rebasing onto `origin/trunk` `5fc7223e96b2751c57b6c4ae840bb9e838bee9f0`, pass 176 reran the focused unit repro and the focused Chromium e2e; both passed.
 - After rebasing onto `origin/trunk` `bf2d0cc1f1e82d0db286f4aa9851f151e407b163`, pass 177 reran the focused unit repro and focused Chromium collaboration spec on fixed commit `b6ddf5baea13f6463d647c293f9fc837a7d49d76`; both passed.
 - After rebasing onto `origin/trunk` `96263113a874ab1fc1668f7bb500c98766e90e76`, pass 178 reran the focused unit repro and focused HTTP-polling Chromium collaboration spec on fixed commit `57ca860a7c778efd9e82c334a3acbfc87ac4eb80`; both passed.
+- After rebasing onto `origin/trunk` `fc8b3db6ace471328e39453e3eed552ad4f3de7a`, pass 179 reran the focused unit repro on fixed commit `f72acb832c9`; it passed. The pass did not rerun the browser spec because pass 178 already had a passing HTTP-polling Chromium run and pass 179's added evidence was focused on current-trunk unit freshness and product-path plausibility.
 
 Residual risk: this does not solve the broader "remote-only insert missing from stale local snapshot vs intentional remote-only delete" ambiguity without a true pre-change base snapshot. It prevents resurrecting blocks this peer had previously synced locally and later observed as deleted.
