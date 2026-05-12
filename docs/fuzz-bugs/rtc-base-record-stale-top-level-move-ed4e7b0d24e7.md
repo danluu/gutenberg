@@ -22,8 +22,8 @@ top-level Paragraph move can omit a remote-only top-level Pullquote from the
 snapshot being merged. The pre-existing stale-local reconciliation handles the
 cached-history path, but the explicit-base path bypasses that reconciliation.
 
-Current `origin/trunk` at `a0a24a30a3747f4b143a415a4fb5a80f8b8b005f`
-(fetched 2026-05-11) does not yet pass `baseRecord` through the same
+Current `origin/trunk` at `a6cc01ba412ca96982e977c3ffb734a091cb5626`
+(fetched 2026-05-12) does not yet pass `baseRecord` through the same
 `getSyncManager()?.update()` call, so this document tracks a proposed-stack
 regression risk rather than a directly reproduced trunk bug.
 
@@ -76,6 +76,19 @@ CRDT case and the `SyncManager.update()` race both dropped `remote-pullquote`.
 On PR-branch commit `425764ce85c9183550ba0fb17651e18b0541a461`, all three tests
 passed.
 
+A pass-179 verification refreshed `origin/trunk` again to
+`a6cc01ba412ca96982e977c3ffb734a091cb5626` and confirmed the same current-trunk
+boundary: `editEntityRecord()` still calls `getSyncManager()?.update()` with
+`{ isNewUndoLevel }`, and `applyPostChangesToCRDTDoc()` still calls
+`mergeCrdtBlocks()` without a base snapshot. The open PR #77924 head
+`1a46ebf1621c866c12a95c12c2097bc4e50c3eb5` was also checked directly. Its
+diff introduces `{ baseRecord: editedRecord, isNewUndoLevel }` and forwards
+`options.baseRecord?.blocks`, but its `mergeCrdtBlocks()` path has no
+`reconcileStaleLocalBlocks()` preservation step for remote-only blocks. A
+scratch attempt to run the existing reduced tests on that PR head did not reach
+the assertion because Jest failed to resolve `uuid` from the linked dependency
+tree; that run is test-environment evidence only, not a product pass or fail.
+
 ## Root Cause
 
 On `f256024286d`, `packages/core-data/src/actions.js` sends editor sync updates
@@ -117,14 +130,23 @@ action scheduled after that version increment captures the current version and
 is allowed through the reconciliation filter, even if its `baseRecord.blocks`
 and outgoing `blocks` were computed from the stale editor view.
 
+The direct PR #77924 head inspection matters because the May 7 known-fixes base
+is a conflict-resolved synthetic stack. The vulnerable ingredients are present
+in the PR head itself: the editor action passes an explicit pre-edit base, the
+post CRDT adapter forwards that base into block merging, and the block merge can
+fall back to whole-array diff/delete behavior when the current Y.Doc has an
+extra remote-only block. The pass-179 evidence therefore supports "proposed PR
+shape is vulnerable unless paired with the extra preservation fix", not a claim
+that current trunk is already affected.
+
 The proposed fix is small: let `reconcileStaleLocalBlocks()` accept the explicit
 base snapshot and call it in the explicit-base branch too.
 
 ## User Impact
 
 Practical likelihood: low for active RTC users of the May 7 proposed-stack
-shape; very low for ordinary single-user Gutenberg and for current trunk as of
-2026-05-11.
+shape or open PR #77924 without the extra preservation fix; very low for
+ordinary single-user Gutenberg and for current trunk as of 2026-05-12.
 
 Natural workflow:
 
