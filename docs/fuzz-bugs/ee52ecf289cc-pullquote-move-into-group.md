@@ -364,8 +364,8 @@ $metadata['original'] (#78128)`).
 The PR branch still has the requested three-commit order:
 
 1. `ef3b12a437d` adds the focused non-Playwright CRDT repros.
-2. `67e486b173e` adds the natural browser coverage.
-3. `fe94447afc8` applies the source fix.
+2. `034c2946367` adds the natural browser repro/coverage.
+3. `6a7de7126b4` applies the source fix.
 
 The fixed head passes both current-base deterministic checks:
 
@@ -381,7 +381,7 @@ crdt-pullquote-move-into-group.test.ts: 2 passed
 crdt-blocks.ts: 71 passed
 ```
 
-The pre-fix branch commit `67e486b173e` fails both focused repro cases on the
+The pre-fix branch commit `034c2946367` fails both focused repro cases on the
 same current trunk base, producing the original stale top-level Pullquote plus
 empty Group shape:
 
@@ -424,3 +424,23 @@ and drop an unchanged stale top-level Pullquote after the same `clientId` moved
 inside a Group, but it still discards a stale collaborator's valid text edit
 because the reconciliation/deletion test only considers top-level current block
 ids.
+
+Pass 178 also corrected the browser coverage helper so the Group drag target is
+the seeded Group containing `Nested group paragraph alpha.`, not a strict role
+query that fails as soon as duplicate Groups are present. After that correction,
+the targeted natural HTTP Playwright spec consistently reaches the product
+assertion and fails even at fixed head `6a7de7126b4`:
+
+```bash
+WP_ENV_PORT=10129 WP_BASE_URL=http://localhost:10129 \
+RTC_MANIFEST_WS_START_PORT=22232 RTC_MANIFEST_WS_FIXED_PORT=1 \
+npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-ee52ecf289cc-pullquote-move-into-group.spec.ts
+```
+
+The failing primary editor contains a stale top-level Pullquote with the
+collaborator's text edit, followed by duplicated copies of the initial heading,
+Group, and tail paragraph. The secondary editor has the expected single nested
+Pullquote. This is a stronger browser-level product failure than earlier passes
+had, but it also shows the current source fix is incomplete for the broader
+natural HTTP schedule. Treat the PR branch as a deterministic moved-block fix
+plus a current failing natural repro, not as a complete browser-level fix.
