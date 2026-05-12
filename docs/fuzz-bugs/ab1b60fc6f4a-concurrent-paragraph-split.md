@@ -169,6 +169,28 @@ Seed 953255 step 4 user 1 concurrent paragraph 169940
 
 That control passed below the browser, preserving the checkpoint and both inserted paragraphs. This sharpens the split: the duplicate-suffix part is a deterministic post-CRDT merge defect that survives the known-fixes base; the true-end typed-character loss is not explained by this lower-level merge alone and still needs the live editor/input timing path.
 
+Pass 179 reran the phase-instrumented browser probe on the same known-fixes commit with slower typing cadences. At both `80ms` and `120ms` per character the loose generated assertion passed because both typed strings survived as substrings, but the final block tree was still corrupt:
+
+```text
+rtc-save-paragraph-marker-95325
+Seed 953255 step 4 user 1 concurrent paragraph 1699405-3-0-end
+Seed 953255 step 4 user 0 concurrent paragraph 1851135-3-0-end
+```
+
+The phase state was the same at both cadences:
+
+```text
+after End:
+rtc-save-paragraph-marker-953255-3-0-end
+
+after concurrent Enter:
+rtc-save-paragraph-marker-95325
+5-3-0-end
+5-3-0-end
+```
+
+This is important for practical impact. Human-plausible typing speed can avoid the destructive character interleaving, but it does not avoid the structural content corruption from the concurrent split. A stricter product assertion should require the inherited suffix to appear exactly once, not merely require both inserted paragraphs to survive as substrings.
+
 ## Likely Root Cause
 
 `mergeCrdtBlocks` was introduced by `84019935998` (`Improve CRDT "merge logic" for post entities`, PR #72262). Its left/right sweep uses block positions as a fallback when reconciling full block snapshots into Yjs block arrays. Later RTC fix work added saved-base snapshots and client-id rebasing, but the observed failure still reaches a browser path where a local full snapshot, the current Yjs array, and the block-editor selection are changing while keyboard input continues to stream.
@@ -187,6 +209,8 @@ Pass 177 supports that root-cause split. A pure Yjs/`mergeCrdtBlocks()` probe ca
 
 Pass 178 strengthens the root-cause boundary on the known-fixes base. The post-level apply path still has no operation identity for "both peers split the same base paragraph at the same offset." The final Yjs block records only contain normal paragraph blocks with `clientId`, `name`, `attributes.content`, and `innerBlocks`; that is enough to converge, but not enough to distinguish an inherited suffix duplicated by a concurrent split from two legitimate adjacent paragraphs that happen to share a suffix. That is why a suffix-similarity cleanup remains unsafe even though it would satisfy the narrow failing unit assertion.
 
+Pass 179 adds that the browser behavior follows the same boundary: slower typing removes the live input-race symptom, but the suffix duplication created by concurrent `Enter` persists. The lowest-confidence layer is therefore not "can the user ever type fast enough"; it is "how often do two collaborators split the same visual line of the same paragraph before either remote split arrives."
+
 ## Practical Impact
 
 Likelihood for the destructive interleaving signature: `low`.
@@ -200,6 +224,8 @@ Pass 176 keeps the overall classification at `low` but makes the split more conc
 Pass 177 keeps the classification at `low`. The independent unit-level duplication proof raises confidence that the structural failure is real, but it does not raise normal-user frequency: users still need RTC collaboration and near-simultaneous same-paragraph splits or appends.
 
 Pass 178 keeps the destructive interleaving classification at `low`, while classifying the structural duplicate-suffix subcase as `medium` conditional on two collaborators splitting the same non-final paragraph position. The action sequence is ordinary enough that two users could hit it during active co-editing of a paragraph, especially on a wrapped line where `End` lands visually rather than at the logical paragraph end. The lower-level true-end control passed, so the practical clean-append typed-character-loss subcase remains `very-low` in current evidence.
+
+Pass 179 keeps the overall classification at `low`, but raises confidence in the structural corruption subcase. One-attempt browser probes at `80ms` and `120ms` per character both avoided destructive interleaving while still leaving two suffix-bearing inserted paragraphs. The original generated assertion would mark these runs as passed, so bug triage should not treat "both typed strings are present" as sufficient correctness.
 
 Blast radius is content corruption. The corrupted state appears in the block tree on both peers before save, so saving can persist truncated, duplicated, or interleaved paragraph text. At slower typing cadences, the severe interleaving did not reproduce in pass 172, but the concurrent split still duplicated the suffix text into both inserted paragraphs. There is no evidence of a save loop, OOM, or performance failure. Recovery is by undo, manual repair, or post revisions if the corrupted content has already been saved.
 
