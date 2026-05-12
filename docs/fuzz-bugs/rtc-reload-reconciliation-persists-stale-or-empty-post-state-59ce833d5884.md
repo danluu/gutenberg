@@ -11,7 +11,7 @@ The original fuzz row reported a late delete followed by reload collapsing both 
 The current known-fixes base includes the stale-save protection stack from PR `77876`. That code prevents one stale-save failure mode, but it also contains two gaps that let a realistic two-user workflow save the wrong body:
 
 1. A reloaded editor can apply an unchanged persisted CRDT document during an unrelated local save and replay stale server body state into the live CRDT document.
-2. The serialized fallback merge treats a shorter all-paragraph local body as a stale prefix based only on block name. A real middle deletion of `Alpha, Beta, Gamma` to `Alpha, Gamma` is therefore merged as `Alpha, Gamma, Gamma`.
+2. The serialized fallback merge treats a shorter all-paragraph local body as a stale prefix based only on block name. A real middle deletion of `Alpha, Beta, Gamma` to `Alpha, Gamma` is therefore merged as `Alpha, Gamma, Gamma`. A later pass also showed that an exact-prefix trailing deletion, `Alpha, Beta, Gamma` to `Alpha, Beta`, hits the same branch unless exact shorter prefixes are treated as deletes.
 
 ## User Workflow
 
@@ -45,7 +45,7 @@ The stale-save protection path in `packages/core-data/src/entities.js` fetches t
 In the reproduced sequence, the REST body is still the old three-block body because the collaborator's delete has not been saved to the server. The reloaded editor's live block tree has correctly converged to two blocks through RTC. During the title-only save, the save preparation code should serialize the local two-block CRDT state. Instead:
 
 - It applies the latest persisted CRDT document even when that document is unchanged from the editor's base record, so stale server body state can be replayed.
-- Its serialized content fallback appends the latest trailing block when `latest.length > local.length` and the overlapping block names match. For same-type paragraph blocks, that cannot distinguish a stale prefix from a middle deletion.
+- Its serialized content fallback appends the latest trailing block when `latest.length > local.length` and the overlapping block names match. For same-type paragraph blocks, that cannot distinguish a stale prefix from a middle deletion. An exact shorter prefix is also ambiguous; in the RTC reload/save path, treating that as a real deletion is safer because stale title-only saves should not need to submit unchanged content.
 
 `git blame` on the known-fixes base points both stale-save protection and the serialized fallback merge to `5bda437f0cc4` / PR `77876` (`Preserve saved content from stale editor snapshots`), with related regression coverage in `6aad4e5801af`.
 
@@ -54,7 +54,7 @@ In the reproduced sequence, the REST body is still the old three-block body beca
 The fix is intentionally narrow:
 
 1. Only apply the latest persisted CRDT document during pre-save reconciliation if the saved fields changed on the server or the latest CRDT document differs from the base record's CRDT document.
-2. Keep the stale-prefix fallback, but refuse to append latest trailing blocks when the shorter local serialized block list is a non-prefix subsequence of the latest saved block list. That case is more consistent with a real delete or reorder than a stale truncated snapshot.
+2. Keep the stale-content fallback for shorter bodies that actually changed overlapping content, but refuse to append latest trailing blocks when the shorter local serialized block list is an exact prefix or a subsequence of the latest saved block list. Those cases are more consistent with real deletes or reorders in the RTC reload/save path than with a stale truncated snapshot.
 3. Cover both decisions in `packages/core-data/src/test/entities.js`.
 4. Add a Playwright regression using normal editor actions and assert the final persisted REST body, not only the visible editor state.
 
