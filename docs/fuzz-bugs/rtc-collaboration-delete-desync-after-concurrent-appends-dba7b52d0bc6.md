@@ -14,7 +14,7 @@ The original browser artifacts are no longer present in the handoff checkout, bu
 
 I reconstructed the lowest useful failure at the CRDT merge layer. The editor syncs full block snapshots into a Y.Array. If a peer receives a collaborator's delete, then later emits a stale local snapshot that still contains the deleted block, the positional merge treats that block as a local insertion and recreates it with the same `clientId`.
 
-Pass 177 refreshed this against `origin/trunk` `bf2d0cc1f1e82d0db286f4aa9851f151e407b163` and the current known-fixes checkout head `c8af86c24a5c70784e4604b66b772a0511859a00`. The rebased test-only commit still fails on current trunk, and the rebased fix commit passes. The current known-fixes head still fails the no-base CRDT repro immediately after the delete sync, but a temporary base-backed variant passes, which suggests the latest base-record path handles this exact workflow while lower-level/no-base merge callers remain vulnerable.
+Pass 178 refreshed this against `origin/trunk` `96263113a874ab1fc1668f7bb500c98766e90e76` and the current known-fixes checkout head `c8af86c24a5c70784e4604b66b772a0511859a00`. The rebased test-only commit still fails on current trunk, and the rebased fix commit passes the focused unit and HTTP-polling Chromium collaboration coverage. The current known-fixes head still fails the no-base CRDT repro immediately after the delete sync, but pass 177's temporary base-backed variant passed, which suggests the latest base-record path handles this exact workflow while lower-level/no-base merge callers remain vulnerable.
 
 ## Practical Impact
 
@@ -37,7 +37,8 @@ Blast radius if hit: pre-save UI/content divergence. The deleted paragraph can r
 Strongest evidence for real risk:
 
 - The CRDT unit repro fails on `origin/trunk` before the fix.
-- The current known-fixes synthetic base (`f256024286dd80a4c0e2579f658c109256abf648`) fails pass-171 and pass-172 post-adapter probes: after the delete converges, a stale editor snapshot with `baseRecord` readds `First user append`.
+- Pass 178 rebased the repro to `origin/trunk` `96263113a874ab1fc1668f7bb500c98766e90e76`; the test-only negative control still resurrected `First user append`.
+- The manifest-era known-fixes synthetic base (`f256024286dd80a4c0e2579f658c109256abf648`) fails pass-171 and pass-172 post-adapter probes: after the delete converges, a stale editor snapshot with `baseRecord` readds `First user append`.
 - Pass 173 reproduced the same stale-`baseBlocks` resurrection on the specific `pr/77924` head (`1a46ebf1621c866c12a95c12c2097bc4e50c3eb5`), not just on the synthetic known-fixes integration.
 - Pass 174 independently reproduced the `f256024286dd80a4c0e2579f658c109256abf648` base-block failure directly through `mergeCrdtBlocks( ..., baseBlocks )`: after both Y.Docs had converged without `First user append`, a stale base-backed first-user snapshot restored it.
 - The source manifest describes the same visible symptom after an ordinary delete action.
@@ -99,6 +100,7 @@ Pre-fix:
 - Pass 176 rebased the branches onto `origin/trunk` `5fc7223e96b2751c57b6c4ae840bb9e838bee9f0`. The rebased test-only commit `67bf78fdde3` still failed before the fix with `"First user append"` resurrected at the final stale-snapshot assertion. Cherry-picking that same test onto known-fixes base `f256024286dd80a4c0e2579f658c109256abf648` failed earlier, immediately after delete sync, leaving `"First user append"` in the merged CRDT state.
 - Pass 177 rebased the branches onto `origin/trunk` `bf2d0cc1f1e82d0db286f4aa9851f151e407b163`. The rebased test-only commit `f59a4cad00327fae786c3244b0c528ba3efe533d` failed before the fix with `"First user append"` resurrected at the final stale-snapshot assertion. The first attempt used the wrong shared `node_modules` tree and failed before running tests; rerunning with the known-good dependency tree produced the product failure.
 - Pass 177 also cherry-picked the test-only repro onto the current known-fixes checkout head `c8af86c24a5c70784e4604b66b772a0511859a00`. The no-base repro failed immediately after delete sync, with `"First user append"` still present before the final stale-snapshot step. A temporary base-backed variant on the same known-fixes head passed, including the final stale-snapshot assertion.
+- Pass 178 rebased the branches onto `origin/trunk` `96263113a874ab1fc1668f7bb500c98766e90e76`. The rebased test-only commit `5e3153c9d82` failed before the fix with `"First user append"` resurrected at the final stale-snapshot assertion. Cherry-picking that same test onto known-fixes head `c8af86c24a5c70784e4604b66b772a0511859a00` failed earlier, immediately after delete sync, with `"First user append"` still present in the merged CRDT state.
 
 Post-fix branch:
 
@@ -108,5 +110,6 @@ Post-fix branch:
 - After rebasing onto `origin/trunk` `b38f9b4d86d0505199f5efd78c2adf213e428e78`, pass 174 reran the focused unit repro and the focused Chromium e2e; both passed.
 - After rebasing onto `origin/trunk` `5fc7223e96b2751c57b6c4ae840bb9e838bee9f0`, pass 176 reran the focused unit repro and the focused Chromium e2e; both passed.
 - After rebasing onto `origin/trunk` `bf2d0cc1f1e82d0db286f4aa9851f151e407b163`, pass 177 reran the focused unit repro and focused Chromium collaboration spec on fixed commit `b6ddf5baea13f6463d647c293f9fc837a7d49d76`; both passed.
+- After rebasing onto `origin/trunk` `96263113a874ab1fc1668f7bb500c98766e90e76`, pass 178 reran the focused unit repro and focused HTTP-polling Chromium collaboration spec on fixed commit `57ca860a7c778efd9e82c334a3acbfc87ac4eb80`; both passed.
 
 Residual risk: this does not solve the broader "remote-only insert missing from stale local snapshot vs intentional remote-only delete" ambiguity without a true pre-change base snapshot. It prevents resurrecting blocks this peer had previously synced locally and later observed as deleted.
