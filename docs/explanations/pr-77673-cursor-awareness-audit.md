@@ -1,312 +1,299 @@
-# PR 77673 Cursor Awareness Audit
+# PR 77673 Cursor Fuzz Issues
 
 Audit target: <https://github.com/WordPress/gutenberg/pull/77673>
 
-PR head audited: `cb1473de6557485ecb6961444cc818a561c77d85`
+Audited PR head: [`cb1473de6557485ecb6961444cc818a561c77d85`](https://github.com/danluu/gutenberg/commit/cb1473de6557485ecb6961444cc818a561c77d85)
 
-## Scope
+Regression-test upload: [`e086a6403270de7fe0a7ea3eedd5a577c0399028`](https://github.com/danluu/gutenberg/commit/e086a6403270de7fe0a7ea3eedd5a577c0399028)
 
-This audit focused on the updated cursor-awareness work in PR 77673, including
-Alec's latest changes:
+This pass only looked for cursor and presence-cursor bugs in the updated PR
+77673 fix. It did not triage unrelated collaboration, persistence, or CRDT
+content bugs.
 
-- `120e6e3c8ee` - `Update cell test to use non-first cell`
-- `1181f5b23df` - `Add attributeKey to ResolvedSelection, pass through to awareness overlay`
-- `05e42d4bb9e` - `Fix use-post-editor-awareness-state.ts unit tests`
-- `cb1473de655` - `Remove unnecessary comment contents`
+## Relevant History
 
-The requested named reviewers were used as technical review lenses, not as
-impersonated voices. I ran independent passes for:
+The three issues below come from the interaction of several real RTC changes:
 
-- systems-code correctness and API boundaries;
-- state-machine, CRDT, and invariant checking;
-- distributed failure modes, stale data, compatibility, and fallbacks;
-- empirical/fuzzing coverage and reproducibility;
-- adversarial/API-contract hardening;
-- a contrarian pass to reject weak findings.
+- [PR 75590](https://github.com/WordPress/gutenberg/pull/75590), merged as
+  [`d5add1a75a1f5b6954f2964466820567aee3d141`](https://github.com/WordPress/gutenberg/commit/d5add1a75a1f5b6954f2964466820567aee3d141),
+  removed block client IDs from awareness payloads. The receiver now resolves
+  a `Y.RelativePosition` back to a Yjs object, walks upward to the containing
+  block, and maps that block path to a local editor block.
+- [PR 76597](https://github.com/WordPress/gutenberg/pull/76597), merged as
+  [`80605517663ad969e0f6e853ee8be4c7c3cc8dd0`](https://github.com/WordPress/gutenberg/commit/80605517663ad969e0f6e853ee8be4c7c3cc8dd0),
+  made nested `RichTextData` values serializable, including table cell content.
+- [PR 76913](https://github.com/WordPress/gutenberg/pull/76913), merged as
+  [`09a21c64b5b92c2626bd93065d4a0192eb4fac47`](https://github.com/WordPress/gutenberg/commit/09a21c64b5b92c2626bd93065d4a0192eb4fac47),
+  changed `core/table` CRDT storage so each table cell content field is its own
+  nested `Y.Text`, for example `body[1].cells[1].content`.
+- PR 77673 then made nested table-cell awareness reachable. The important
+  commits are:
+  - [`3e7ae5a69976ac7833c65413108f7bf1cef7bba7`](https://github.com/danluu/gutenberg/commit/3e7ae5a69976ac7833c65413108f7bf1cef7bba7):
+    gives table cell `RichText` instances a positional identifier such as
+    `body.1.cells.1.content`, and resolves dotted attribute paths to nested
+    `Y.Text` instances.
+  - [`120e6e3c8eecb69d2c8359068bc9b594d67139e4`](https://github.com/danluu/gutenberg/commit/120e6e3c8eecb69d2c8359068bc9b594d67139e4):
+    updates the browser test to use a non-first table cell.
+  - [`1181f5b23df9897eae4bea8b6743a5f1daba69ce`](https://github.com/danluu/gutenberg/commit/1181f5b23df9897eae4bea8b6743a5f1daba69ce):
+    adds `attributeKey` to `ResolvedSelection` and passes it through to the
+    collaborators overlay.
+  - [`05e42d4bb9ee576eedd5c58ce9452b9ccbd57e39`](https://github.com/danluu/gutenberg/commit/05e42d4bb9ee576eedd5c58ce9452b9ccbd57e39)
+    and [`cb1473de6557485ecb6961444cc818a561c77d85`](https://github.com/danluu/gutenberg/commit/cb1473de6557485ecb6961444cc818a561c77d85):
+    follow-up test/comment cleanup.
 
-The final rankings below reflect the issues that survived the second pass.
+The core design tension is that the durable cursor location is the
+`Y.RelativePosition`, while the DOM target used by the overlay is now a
+sender-side positional string. Those two values can drift apart.
 
-## Findings
-
-### 1. Stale table-cell `attributeKey` can render the cursor in the wrong cell
+## Issue 1: Nested Table-Cell Cursor Can Disappear Remotely
 
 Severity: high.
 
-`packages/core-data/src/awareness/post-editor-awareness.ts` resolves the live
-`Y.RelativePosition` back to a concrete `Y.Text`, but then returns
-`cursorPos.attributeKey` from the sender's awareness payload:
+### User Impact
 
-```ts
-return {
-	richTextOffset: htmlIndexToRichTextOffset(
-		absolutePosition.type.toString(),
-		asHtmlStringIndex( absolutePosition.index )
-	),
-	localClientId,
-	attributeKey: cursorPos.attributeKey ?? null,
-};
+User A clicks into the `Delta` cell of a 2x2 table. User B should see User A's
+presence cursor in that same cell. Instead, User B renders zero collaborator
+cursors.
+
+Video:
+
+- `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-1-nested-table-cell-cursor-missing-remotely-visible-click-20260512T224543382Z/issue-1-nested-table-cell-cursor-missing-remotely-visible-click.mp4`
+
+The recorded sender state was:
+
+```json
+{
+  "attributeKey": "body.1.cells.1.content",
+  "offset": 5
+}
 ```
 
-For table cells, the new `RichText` identifier is positional:
+The receiver-side overlay summary was:
 
-```js
-identifier={ `${ name }.${ rowIndex }.cells.${ columnIndex }.content` }
+```json
+{
+  "cursorCount": 0,
+  "selectionRectCount": 0
+}
 ```
 
-That means a cursor in `body.1.cells.1.content` can become stale after a
-row or column is inserted before it. The `Y.RelativePosition` still points to
-the original cell's `Y.Text`, but the copied `attributeKey` can now point to a
-different DOM cell. The overlay then trusts that string in
-`packages/editor/src/components/collaborators-overlay/compute-selection.ts`:
+### How This Was Created
 
-```ts
-blockElement.querySelector< HTMLElement >(
-	`[data-wp-block-attribute-key="${ attrKey }"]`
-)
+This is the base failure mode for the new nested table-cell awareness path.
+
+Before [PR 76913](https://github.com/WordPress/gutenberg/pull/76913), a table
+cell did not have an independent nested `Y.Text` that could carry a precise
+awareness cursor. PR 76913 created that nested CRDT shape. PR 77673 commit
+[`3e7ae5a6997`](https://github.com/danluu/gutenberg/commit/3e7ae5a69976ac7833c65413108f7bf1cef7bba7)
+then made table cells emit nested `RichText` identifiers, and commit
+[`1181f5b23df`](https://github.com/danluu/gutenberg/commit/1181f5b23df9897eae4bea8b6743a5f1daba69ce)
+forwarded that key through `ResolvedSelection` to the overlay.
+
+That creates a new end-to-end invariant:
+
+```text
+sender DOM selection
+  -> nested attributeKey
+  -> nested Y.Text relative position
+  -> receiver local block path
+  -> receiver DOM element with the same data-wp-block-attribute-key
+  -> rendered collaborator cursor
 ```
 
-There is a second path to the same bug:
-`packages/core-data/src/utils/crdt-user-selections.ts` compares cursor
-positions using only the Yjs relative position and absolute offset. It ignores
-`attributeKey`, so a correction that only changes the rendered cell path can
-be suppressed as "unchanged".
+The fuzz/video repro shows that the invariant can still fail at the browser
+level: the sender has a valid table-cell key and offset, but the receiver draws
+no cursor.
 
-Recommended tests:
+### Fix Plan
 
-- Browser/e2e: place user A's cursor in the bottom-right table cell, insert a
-  row or column before it from user B, and assert the remote cursor stays in
-  the moved original cell rather than the old positional cell.
-- Unit: create two cursor states with the same `relativePosition` and
-  `absoluteOffset` but different `attributeKey`; `areSelectionsStatesEqual()`
-  should return `false`.
-- Unit: after resolving a text position, assert the resolved `attributeKey`
-  either is derived from `absolutePosition.type` in the receiver document, or
-  at least satisfies:
+1. Keep the browser regression that clicks a real non-first table cell and
+   asserts that the remote cursor is inside the same cell. PR test coverage for
+   this path is in
+   [`test/e2e/specs/editor/collaboration/collaboration-nested-awareness-selection.spec.ts`](https://github.com/danluu/gutenberg/blob/e086a6403270de7fe0a7ea3eedd5a577c0399028/test/e2e/specs/editor/collaboration/collaboration-nested-awareness-selection.spec.ts).
+2. On the receiver side, validate every resolved cursor before rendering:
+   the resolved `Y.Text` should map to a local block and to a DOM RichText
+   element for the same live field.
+3. Add debug assertions around the no-cursor path: distinguish "remote
+   awareness not received", "relative position did not resolve",
+   "local block path did not resolve", and "DOM key did not resolve". The
+   current symptom is just a missing visible cursor.
+4. If the `Y.RelativePosition` resolves to a live table-cell `Y.Text`, the
+   overlay target should be derived from that resolved Yjs object or verified
+   against it, rather than trusting an unrelated string.
 
-```ts
-getYTextByAttributeKey( attributes, resolved.attributeKey ) ===
-	absolutePosition.type
+## Issue 2: Positional Table-Cell `attributeKey` Becomes Stale After Row Deletion
+
+Severity: high.
+
+### User Impact
+
+User A places the cursor in `Delta`, which initially has DOM key
+`body.1.cells.1.content`. User B deletes the preceding row through the normal
+table toolbar. `Delta` still exists, now at `body.0.cells.1.content`. User B
+should still see User A's cursor in `Delta`, but the remote cursor disappears.
+
+Video:
+
+- `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T231737484Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.mp4`
+
+Before row deletion:
+
+```json
+{
+  "Delta": "body.1.cells.1.content"
+}
 ```
 
-### 2. Same-block selections across multiple RichText fields render as one field
+After row deletion:
 
-Severity: high/medium.
-
-`packages/core-data/src/utils/crdt-user-selections.ts` classifies selections by
-`clientId` only. A selection from one table cell to another has the same block
-client ID, but distinct RichText fields and distinct nested `attributeKey`
-values.
-
-The receiver-side rendering path then handles `SelectionInOneBlock` by
-resolving only the start target:
-
-```ts
-const result = computeSingleBlockRects( start, end, overlayContext );
+```json
+{
+  "Delta": "body.0.cells.1.content",
+  "renderedUserACursors": 0
+}
 ```
 
-`computeSingleBlockRects()` calls `resolveTargetElement()` with `start`, then
-passes both start and end offsets into that one DOM element. A range from
-`body.0.cells.0.content` to `body.0.cells.1.content` can therefore compute
-selection rectangles and caret placement inside the start cell only.
+### How This Was Created
 
-Recommended tests:
+The durable cursor location and the DOM lookup key have different stability
+properties:
 
-- Browser/e2e: select from one table cell into another within the same
-  `core/table` block. Assert sender state preserves distinct start/end
-  `attributeKey`s and the remote overlay spans both cells.
-- Unit: call `computeSelectionVisual()` with the same `localClientId` but
-  different start/end `attributeKey`s. Assert the end offset is not applied
-  inside the start element and that the active caret uses the active-end
-  element.
+- The `Y.RelativePosition` created for User A's cursor points into the actual
+  `Y.Text` for the `Delta` cell.
+- The `attributeKey` added by
+  [`1181f5b23df`](https://github.com/danluu/gutenberg/commit/1181f5b23df9897eae4bea8b6743a5f1daba69ce)
+  is copied from the sender's block-editor selection state.
+- The table cell identifiers added by
+  [`3e7ae5a6997`](https://github.com/danluu/gutenberg/commit/3e7ae5a69976ac7833c65413108f7bf1cef7bba7)
+  are positional: `body.<row>.cells.<column>.content`.
 
-### 3. Explicit `attributeKey` misses fail open to a block-level cursor
+When a row before `Delta` is deleted, Yjs can still keep the relative position
+attached to the live `Delta` text, but the string `body.1.cells.1.content` no
+longer describes the live DOM field. The new correct DOM key is
+`body.0.cells.1.content`.
+
+This is exposed by the combination of [PR 76913](https://github.com/WordPress/gutenberg/pull/76913)
+creating nested table-cell `Y.Text` objects and PR 77673 forwarding the
+sender's positional key to the receiver overlay.
+
+There is also a lower-level suppression risk in
+`packages/core-data/src/utils/crdt-user-selections.ts`: selection equality has
+historically focused on relative position and offsets. A correction that only
+updates the string path can be treated as "unchanged" unless `attributeKey`
+participates in equality.
+
+### Fix Plan
+
+1. Do not treat sender `attributeKey` as the source of truth after resolving a
+   `Y.RelativePosition`. Compute the live nested path from the resolved
+   `Y.Text` in the receiver document, or store a stable RichText identity that
+   survives row/column structural edits.
+2. If a positional key is kept, verify it:
+
+   ```ts
+   getYTextByAttributeKey( attributes, resolved.attributeKey ) ===
+       absolutePosition.type
+   ```
+
+   If the check fails, derive the current key or suppress the cursor with a
+   diagnosable error instead of using the stale key.
+3. Include `attributeKey` in cursor selection equality so a key-only correction
+   is sent and rendered.
+4. Keep the uploaded e2e regression from
+   [`e086a6403270`](https://github.com/danluu/gutenberg/commit/e086a6403270de7fe0a7ea3eedd5a577c0399028):
+   User A cursor in `Delta`, User B deletes the preceding row, assert the
+   remote cursor follows `Delta` to its new cell.
+
+## Issue 3: Missing Explicit Keyed Target Falls Back To Whole-Block Cursor
 
 Severity: medium.
 
-`resolveTargetElement()` falls back to the whole block if an explicit
-`attributeKey` is present but no matching RichText DOM node is found:
+### User Impact
+
+If a remote awareness payload names an explicit RichText target that no longer
+exists, the overlay can render a presence cursor against the whole table block.
+That is visually wrong: the cursor appears in unrelated block text instead of
+either following a valid field or disappearing.
+
+Video:
+
+- `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-3-missing-keyed-richtext-target-falls-back-to-block-20260512T230107434Z/issue-3-missing-keyed-richtext-target-falls-back-to-block.mp4`
+
+The natural app path clears the source awareness selection before the bad
+cursor paints, so the final segment of the video is explicitly marked
+`harness-only`. It preserves the stale keyed selection long enough to show the
+current fallback behavior:
+
+```json
+{
+  "blockExists": true,
+  "keyedTargetExists": false,
+  "fallbackWouldUseWholeBlock": true
+}
+```
+
+### How This Was Created
+
+Commit [`1181f5b23df`](https://github.com/danluu/gutenberg/commit/1181f5b23df9897eae4bea8b6743a5f1daba69ce)
+added `resolveTargetElement()` in
+`packages/editor/src/components/collaborators-overlay/compute-selection.ts`.
+The important behavior is:
 
 ```ts
 return (
-	blockElement.querySelector< HTMLElement >(
-		`[data-wp-block-attribute-key="${ attrKey }"]`
-	) ?? blockElement
+    blockElement.querySelector< HTMLElement >(
+        `[data-wp-block-attribute-key="${ attrKey }"]`
+    ) ?? blockElement
 );
 ```
 
-That fallback is useful for old payloads that have no `attributeKey`. It is not
-safe for a new payload with an explicit key. If the key is stale or malformed,
-the offset is RichText-relative, not block-relative. Falling back to the whole
-block can draw a visible cursor in unrelated text and mask the real lookup
-failure.
+That fallback is reasonable for old payloads that do not have `attributeKey` at
+all. It is not safe when a new payload explicitly names an `attributeKey` and
+the lookup misses. In that case, the offset is relative to one RichText field,
+not to the whole block's text content. Painting against the block root creates
+a misleading cursor.
 
-The same query also searches all descendants of the block element. If a parent
-container block and a child block both have a `content` RichText, a parent
-lookup can match the child unless candidates are filtered by their closest
+The same query searches all descendants of the block element. If a parent block
+and an inner child block both have a `content` RichText, a parent lookup can
+match the child's DOM unless candidates are filtered to the same closest
 `[data-block]`.
 
-Recommended tests:
+### Fix Plan
 
-- DOM/unit: explicit missing `attributeKey` should return no target or no
-  cursor, not the block root.
-- DOM/unit: parent block with an inner child block using
-  `data-wp-block-attribute-key="content"` should not resolve the parent
-  selection to the child RichText.
+1. Split missing-key and explicit-key-miss behavior:
 
-### 4. `getContainingBlockYMap()` can misidentify block-shaped attribute data
+   ```ts
+   if ( ! resolvedSelection.attributeKey ) {
+       return blockElement; // old payload / whole-block-compatible fallback
+   }
 
-Severity: medium/low.
+   const richTextElement = findRichTextElementInSameBlock( ... );
+   return richTextElement; // null on explicit miss
+   ```
 
-`packages/core-data/src/awareness/block-lookup.ts` identifies a block by shape:
-the candidate parent is a `Y.Map`, its parent is a `Y.Array`, it has a
-`clientId`, and it has an `innerBlocks` `Y.Array`.
+2. For explicit `attributeKey` misses, render no cursor and optionally expose a
+   debug reason. Do not use a RichText-relative offset against the whole block.
+3. Restrict the DOM lookup to RichText elements whose nearest
+   `[data-block]` is the resolved local block, so parent selections cannot
+   accidentally target child block RichText.
+4. Keep the uploaded unit regression in
+   [`packages/editor/src/components/collaborators-overlay/test/compute-selection.ts`](https://github.com/danluu/gutenberg/blob/e086a6403270de7fe0a7ea3eedd5a577c0399028/packages/editor/src/components/collaborators-overlay/test/compute-selection.ts).
+   It currently fails on the exposed behavior: the code still returns cursor
+   coordinates from the whole block when the keyed RichText target is absent.
 
-That is normally true for Gutenberg blocks, but it can also be true for a
-nested attribute array item in a custom block. The current test covers a
-block-like map directly under attributes, but the actual predicate is dangerous
-when the fake block-like object is inside a `Y.Array`.
+## Test Status
 
-Recommended test:
+Tests uploaded to PR 77673 in
+[`e086a6403270de7fe0a7ea3eedd5a577c0399028`](https://github.com/danluu/gutenberg/commit/e086a6403270de7fe0a7ea3eedd5a577c0399028):
 
-- Build a real root block whose `attributes.cards[0]` is a Y.Map containing
-  `clientId`, `innerBlocks`, and a nested `Y.Text`. A cursor inside that text
-  should resolve to the outer block, not to the array item.
+- Browser test for issue 2:
+  `test/e2e/specs/editor/collaboration/collaboration-nested-awareness-selection.spec.ts`.
+- Unit test for issue 3:
+  `packages/editor/src/components/collaborators-overlay/test/compute-selection.ts`.
 
-## Reproduction Videos
+Local verification:
 
-Videos were generated from the local PR 77673 fuzzing worktree at
-`/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz`.
-
-Each confirmed video uses a composite reproduction layout: User A and User B
-editor screens are visible side by side, with a running annotated log at the
-bottom.
-
-### Issue 1: nested table-cell cursor missing remotely
-
-User A places the cursor in the `Delta` table cell. The local selection is
-`body.1.cells.1.content` at offset 5, but User B renders zero collaborator
-cursors. The updated video zooms both users' table areas and marks the User A
-click point on-screen.
-
-Local videos:
-
-- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-1-nested-table-cell-cursor-missing-remotely-visible-click-20260512T224543382Z/issue-1-nested-table-cell-cursor-missing-remotely-visible-click.mp4`
-- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-1-nested-table-cell-cursor-missing-remotely-visible-click-20260512T224543382Z/issue-1-nested-table-cell-cursor-missing-remotely-visible-click.webm`
-
-### Issue 2: nested table-cell `attributeKey` becomes stale after row deletion
-
-User A places the cursor in `Delta`, which advertises
-`body.1.cells.1.content`. User B uses the table toolbar path
-`Edit table -> Delete row`; after the row delete, `Delta` moves to DOM key
-`body.0.cells.1.content`, so the old cursor key is stale. Delta still exists
-and should still show User A's remote cursor to User B, but User B renders zero
-User A cursors. The updated video marks the expected cursor position in green
-and the actual missing remote cursor state in red.
-
-Local videos:
-
-- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T231737484Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.mp4`
-- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-2-nested-attributekey-becomes-stale-after-row-deletion-20260512T231737484Z/issue-2-nested-attributekey-becomes-stale-after-row-deletion.webm`
-
-### Issue 3: missing keyed RichText target falls back to the whole block
-
-User A advertises a nested keyed target. User B deletes the row containing that
-keyed target through the table toolbar. The keyed target no longer exists, and
-the current cursor lookup falls back to the table block. In the natural app
-path, Gutenberg clears the source awareness selection before a bad cursor
-paints. The final video segment is explicitly marked `harness-only`: it
-preserves the stale keyed selection long enough to show the cursor landing on
-the whole-block fallback.
-
-Local videos:
-
-- MP4: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-3-missing-keyed-richtext-target-falls-back-to-block-20260512T230107434Z/issue-3-missing-keyed-richtext-target-falls-back-to-block.mp4`
-- WebM: `/Users/danluu/dev/fuzz/gutenberg-pr77673-cursor-fuzz/artifacts/cursor-videos/issue-3-missing-keyed-richtext-target-falls-back-to-block-20260512T230107434Z/issue-3-missing-keyed-richtext-target-falls-back-to-block.webm`
-
-### Rejected candidate
-
-The same-table-block cross-RichText candidate is not a confirmed issue video.
-Natural user-action probes on table cells and other multi-RichText blocks did
-not produce a cross-field editor selection. The earlier candidate capture had
-empty selection state, so it should not be used as a bug video.
-
-## Follow-Up Risks
-
-These issues are real concerns, but I would not treat them as the primary
-blockers for this PR without a more focused reproducer.
-
-### Nested rich-text cursor-scope merge misses
-
-`packages/core-data/src/utils/crdt-blocks.ts` still scopes cursor-guided
-rich-text merges by the top-level attribute name:
-
-```ts
-{ attributeKey: attributeName, clientId }
-```
-
-For table cell edits this is `body`, while the selection key is
-`body.0.cells.0.content`. `resolveRichTextCursorPosition()` requires exact key
-equality, so nested rich-text edits miss the cursor hint and fall back to an
-unscoped diff. This looks like an adjacent CRDT cursor-preservation bug, not a
-new overlay-only regression.
-
-Recommended test:
-
-- Edit repeated text in a table cell with the local cursor inside that cell.
-  Assert `Delta.diffWithCursor()` receives a non-null cursor index for the
-  exact nested cell `Y.Text`, matching top-level RichText behavior.
-
-### `RichText.identifier` contract drift
-
-The table change uses a nested dot path as `RichText.identifier`, while the
-RichText docs and several block-editor actions still describe `identifier` as
-the block attribute name and index into `block.attributes[ attributeKey ]`.
-
-This may be acceptable if nested identifiers become part of the supported
-selection contract, but it needs explicit coverage or documentation. Otherwise
-generic editor actions can observe an `attributeKey` that is not a top-level
-block attribute.
-
-Recommended tests:
-
-- Focus a table cell and exercise edit, backspace/delete, copy/cut, split, and
-  merge paths that read `block.attributes[ attributeKey ]`.
-- Assert no console error such as "The RichText identifier prop does not match
-  any attributes defined by the block" and no synthetic top-level
-  `body.0.cells.0.content` attribute is created.
-
-## Weaker / Out-of-Scope Items
-
-- Selector escaping: the new `attributeKey` selector uses `CSS.escape()`. The
-  existing `localClientId` interpolation is not escaped, but it is locally
-  resolved/generated and was already present in the old code. This is hardening
-  polish, not a PR-blocking cursor-awareness finding.
-- Awareness throttling: `setThrottledLocalStateField()` appears to publish
-  immediately on each call, but that behavior predates this PR. The relevant
-  bug for this audit is that `attributeKey` changes are ignored by cursor
-  equality, not throttling itself.
-
-## Verification
-
-This was a static/source audit of PR head
-`cb1473de6557485ecb6961444cc818a561c77d85`.
-
-I did not run the full test suite. In the original working tree,
-`npm run wp-env status` failed before reporting environment state because the
-local `node_modules` tree was missing `@sindresorhus/is`:
-
-```text
-Error: Cannot find module '@sindresorhus/is'
-```
-
-The final report therefore relies on code inspection and independent review
-passes, not local e2e/PHP execution.
-
-## Conclusion
-
-The narrow non-first-cell cursor bug is improved by Alec's latest change, but
-the new `attributeKey` path is still not a stable receiver-side identity. The
-main remaining blocker is that the receiver trusts a sender-owned positional
-table-cell key after resolving a live Yjs position. The second major gap is
-that same-block selections spanning multiple RichText instances are still
-modeled and rendered as a single RichText range.
+- `git diff --check` passed before the test commit.
+- Playwright `--list` saw both nested-awareness browser tests.
+- The new `compute-selection.ts` unit test compiles and fails on the expected
+  explicit-key-miss fallback behavior.
