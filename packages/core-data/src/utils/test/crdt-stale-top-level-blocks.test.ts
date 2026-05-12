@@ -471,4 +471,76 @@ describe( 'stale top-level block snapshots', () => {
 
 		remoteDoc.destroy();
 	} );
+
+	it( 'preserves current rich text when an older inserted-block snapshot is replayed after a newer one', () => {
+		const initialBlocks = [
+			paragraph( 'alpha', 'Alpha' ),
+			paragraph( 'beta', 'Beta' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: initialBlocks,
+				content: serializeBlocks( initialBlocks ),
+			},
+			SYNCED_POST_PROPERTIES
+		);
+
+		const olderQueuedBlocks = [
+			...initialBlocks,
+			paragraph( 'local-inserted', 'RTC primary paragrap' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: olderQueuedBlocks,
+				content: serializeBlocks( olderQueuedBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+
+		const newerQueuedBlocks = [
+			...initialBlocks,
+			paragraph( 'local-inserted', 'RTC primary paragraph' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: newerQueuedBlocks,
+				content: serializeBlocks( newerQueuedBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: olderQueuedBlocks } }
+		);
+
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Tail',
+			'RTC primary paragraph',
+		] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: olderQueuedBlocks,
+				content: serializeBlocks( olderQueuedBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Tail',
+			'RTC primary paragraph',
+		] );
+		expect( postContent( doc ) ).toContain( 'RTC primary paragraph' );
+		expect( postContent( doc ) ).not.toContain(
+			'<p>RTC primary paragrap</p>'
+		);
+	} );
 } );

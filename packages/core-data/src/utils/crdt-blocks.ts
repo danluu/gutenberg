@@ -425,11 +425,31 @@ function reconcileStaleLocalInsertedBlockValues(
 			return;
 		}
 
-		const previousLocalBlock =
-			previousLocalBlocksByClientId.get( clientId );
 		const currentBlock = currentBlocksByClientId.get( clientId );
 
-		if ( ! previousLocalBlock || ! currentBlock ) {
+		if ( ! currentBlock ) {
+			return;
+		}
+
+		const previousLocalBlock =
+			previousLocalBlocksByClientId.get( clientId );
+
+		// A base-record snapshot that predates this inserted block must not
+		// overwrite a later local snapshot that already reached the Y.Doc.
+		if (
+			previousLocalBlock &&
+			fastDeepEqual( previousLocalBlock, currentBlock ) &&
+			! fastDeepEqual( localBlock, currentBlock )
+		) {
+			if ( ! reconciledBlocks ) {
+				reconciledBlocks = [ ...localBlocks ];
+			}
+
+			reconciledBlocks[ index ] = currentBlock;
+			return;
+		}
+
+		if ( ! previousLocalBlock ) {
 			return;
 		}
 
