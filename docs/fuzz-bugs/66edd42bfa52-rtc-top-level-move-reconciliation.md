@@ -121,6 +121,16 @@ likelihood, but the surviving known-fixes residual is better described as
 `very-low` unless another ordinary editor path is found that mutates and
 reuses the exact top-level block array object across a move.
 
+Pass 179 refreshed both branches onto current `origin/trunk`
+(`a6cc01ba412ca96982e977c3ffb734a091cb5626`, 2026-05-12). The only
+intervening commit on a relevant collaboration path was
+`939b0ff02a9 Add RTC y-websocket-server tests (#78179)`, which changes e2e
+coverage and fixtures but not the product CRDT merge, sync manager, entity sync
+hook, or block-editor reducer paths. A fresh known-fixes negative control at
+`f256024286dd80a4c0e2579f658c109256abf648` again reproduced the split: the
+stale full-snapshot repro passed, while both same-array/cache-sensitive repros
+failed with `Inserted paragraph, Emoji and multibyte, Another paragraph`.
+
 Shortest confidence-improving experiment: run the natural Playwright sequence
 100-200 times with small randomized delays between delete, insert-before, and
 move-down while logging each emitted block array order and object identity.
@@ -274,24 +284,24 @@ PR branch:
 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
 ```
 
-Pass 178 rebased both branches onto:
+Pass 179 rebased both branches onto:
 
 ```text
-a0a24a30a37 Add SelectControl component to @wordpress/ui (#77809)
+a6cc01ba412 Shortcode: Offer block-specific transforms when text matches a registered shortcode (#77944)
 ```
 
-PR branch commit order after the pass 178 refresh:
+PR branch commit order after the pass 179 refresh:
 
 ```text
-640b2131bb6 Add RTC stale top-level move merge regressions
-4bdef744985 Add RTC top-level move Playwright repro
-6c5c069d04a Preserve RTC block order across stale snapshots
+1ba1ff24470 Add RTC stale top-level move merge regressions
+841e3e01a40 Add RTC top-level move Playwright repro
+a5621725e86 Preserve RTC block order across stale snapshots
 ```
 
-Local PR head after the pass 178 refresh:
+Local PR head after the pass 179 refresh:
 
 ```text
-6c5c069d04a13000100150088bbe36cbbca07c68 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
+a5621725e86ea925b82edd016f5465c9f3673b47 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
 ```
 
 ## Verification
@@ -508,3 +518,56 @@ git diff --check HEAD~3..HEAD
 ```
 
 Result: exit code 0.
+
+Pass 179 fixed-branch focused unit test after rebasing onto `origin/trunk`:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --testNamePattern='preserves a remotely inserted block and the moved sibling after a stale top-level move|observes reordered blocks when the editor reuses the same block array reference|preserves the moved sibling when a same-array move follows a remote insert echo'
+```
+
+Result: `PASS`, 3 passed, 75 skipped.
+
+Pass 179 full fixed-branch CRDT unit file:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand
+```
+
+Result: `PASS`, 78 passed.
+
+Pass 179 lint:
+
+```bash
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts
+```
+
+Result: exit code 0.
+
+Pass 179 known-fixes negative control:
+
+```bash
+git worktree add --detach /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-179/work/66edd42bfa52-knownfix-f256 f256024286dd80a4c0e2579f658c109256abf648
+git checkout try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr -- packages/core-data/src/utils/test/crdt-blocks.ts
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --testNamePattern='preserves a remotely inserted block and the moved sibling after a stale top-level move|observes reordered blocks when the editor reuses the same block array reference|preserves the moved sibling when a same-array move follows a remote insert echo'
+```
+
+Result: `FAIL`, 1 passed, 2 failed, 75 skipped. The stale full-snapshot repro
+passed, while both same-array/cache-sensitive repros received:
+
+```text
+Inserted paragraph, Emoji and multibyte, Another paragraph
+```
+
+Pass 179 attempted a one-attempt headless Playwright rerun on the rebased fixed
+branch:
+
+```bash
+WP_ENV_PORT=10026 WP_BASE_URL=http://localhost:10026 RTC_MANIFEST_WS_START_PORT=21408 RTC_MANIFEST_WS_FIXED_PORT=1 npm run wp-env start
+RTC_EC47_ATTEMPTS=1 RTC_EC47_OUTPUT_DIR=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-179/playwright-output/66edd42bfa52 WP_ENV_PORT=10026 WP_BASE_URL=http://localhost:10026 RTC_MANIFEST_WS_START_PORT=21408 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts --project=chromium --workers=1
+WP_ENV_PORT=10026 WP_BASE_URL=http://localhost:10026 npm run wp-env stop
+```
+
+Result: the test failed in global setup before the spec ran because
+`gutenberg-test-plugin-rtc-websocket-provider` is not installed in the
+wp-env plugin list. This is a harness/setup failure, not product evidence for
+or against the bug.
