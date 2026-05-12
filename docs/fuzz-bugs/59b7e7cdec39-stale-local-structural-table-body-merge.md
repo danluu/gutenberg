@@ -146,19 +146,19 @@ Revised plan:
 Current trunk check:
 
 ```bash
-git worktree add --detach /tmp/59b7-origin-b38f9 origin/trunk
+git worktree add --detach /tmp/59b7-origin-d52e35 origin/trunk
 git checkout try/stale-local-structural-table-body-merge-after-remote-diver-59b7e7cdec39-pr -- packages/core-data/src/utils/test/crdt-59b7e7cdec39-table-merge.test.ts
 npm run test:unit -- packages/core-data/src/utils/test/crdt-59b7e7cdec39-table-merge.test.ts --runInBand --testNamePattern='keeps a stale-local appended replacement row without resurrecting the remotely deleted tail row'
-# failed on origin/trunk b38f9b4d86d0505199f5efd78c2adf213e428e78
+# failed on origin/trunk d52e35a291c17da7bc48a1efd4c77a601ed3ad67
 ```
 
 Known-fixes base check:
 
 ```bash
-git -C /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507 rev-parse HEAD
+git -C /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-174/59b7-pass174-knownfix/f256 rev-parse HEAD
 # f256024286dd80a4c0e2579f658c109256abf648
 
-npm run test:unit -- packages/core-data/src/utils/test/crdt-stale-table-row-append.test.ts --runInBand --testNamePattern='keeps a stale-local append while dropping a stale edit to a remotely deleted row'
+npm run test:unit -- packages/core-data/src/utils/test/crdt-59b7e7cdec39-table-merge.test.ts --runInBand --testNamePattern='keeps a stale-local appended replacement row without resurrecting the remotely deleted tail row'
 # failed on the known-fixes base
 ```
 
@@ -174,9 +174,16 @@ npm run test:unit -- packages/core-data/src/utils/test/crdt-59b7e7cdec39-table-m
 npm run build -- --skip-types
 # PASS
 
-WP_ENV_PORT=10176 WP_BASE_URL=http://localhost:10176 WP_ENV_PHPMYADMIN_PORT=10177 RTC_MANIFEST_WS_START_PORT=22608 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-59b7e7cdec39-realistic.spec.ts --project=chromium --workers=1
+WP_ENV_PORT=10176 WP_BASE_URL=http://localhost:10176 RTC_MANIFEST_WS_START_PORT=22608 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-59b7e7cdec39-realistic.spec.ts --project=chromium
 # PASS, 1 test
 ```
+
+Pass 178 rebased the branches onto `origin/trunk`
+`d52e35a291c17da7bc48a1efd4c77a601ed3ad67` and reran the focused unit suites,
+`npm run build -- --skip-types`, and the natural two-editor Playwright repro in
+the `.wp-env.test.json` environment. The pinned known-fixes base still failed the
+focused stale-row replacement test with the stale deleted row present and the
+remote survivor-cell edit missing.
 
 Pass 174 rebased the branches onto `origin/trunk`
 `b38f9b4d86d0505199f5efd78c2adf213e428e78` and reran the focused unit suites,
