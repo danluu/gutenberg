@@ -23,6 +23,14 @@ known-fix stack passes `baseRecord` from `editEntityRecord()` through
 `syncManager.update()` into `applyPostChangesToCRDTDoc()`, so the base-record
 branch is not an artificial-only path.
 
+Pass 179 narrowed the race shape further. `editEntityRecord()` captures the
+current edited record as `baseRecord`, then `syncManager.update()` schedules the
+actual CRDT merge with `setTimeout( 0 )`. That means a normal local block move
+can carry an old `baseRecord` while a remote sync response updates the Yjs
+document before the queued local merge runs. The resulting state matches the
+reduced failure: `baseBlocks` omit the remote insert, while `yblocks` already
+contain it.
+
 ## User Workflow
 
 The natural workflow is:
@@ -31,16 +39,17 @@ The natural workflow is:
 2. The document contains a heterogeneous top-level region, such as paragraph,
    Search, table, and list blocks.
 3. One collaborator inserts a top-level block in that region.
-4. Another collaborator has a local move based on the older block order, such as
-   moving the table above the paragraph, while the shared CRDT document has
-   already seen the remote insert.
+4. Another collaborator moves a top-level block from an editor store snapshot
+   based on the older block order, such as moving the table above the
+   paragraph.
 5. The stale full block snapshot is merged into the CRDT document.
 
 No malformed blocks, direct store mutation, or synthetic invalid block trees are
 required for the product-level shape. The rare part is the event ordering: the
 second collaborator's full local block snapshot must be stale relative to the
-CRDT document. Network delay, reload/save churn, and busy editing make that
-window easier to hit, but the reduced CRDT repro does not require reload.
+CRDT document at the moment the queued local CRDT merge executes. Network
+delay, reload/save churn, and busy editing make that window easier to hit, but
+the reduced CRDT repro does not require reload.
 
 ## Root Cause
 
@@ -61,6 +70,16 @@ The backlink-aware known-fix stack changed the merge algorithm to use stable
 `baseBlocks` argument is supplied. When `baseBlocks` is supplied, the code uses
 `localBlocksToSync` directly, so remote-only current blocks are still missing
 from `blocksToSync` and the later positional fallback can delete them.
+
+The product path makes that stale explicit base plausible. In
+`packages/core-data/src/actions.js`, `editEntityRecord()` calls
+`getSyncManager()?.update( ..., { baseRecord: editedRecord, isNewUndoLevel } )`.
+In `packages/sync/src/manager.ts`, the public `update` method is
+`scheduleUpdateCRDTDoc()`, which captures those options and runs
+`updateCRDTDoc()` on the next timer tick. In `updateCRDTDoc()`, the current Yjs
+document is merged with the previously captured `baseRecord`. Any remote sync
+update applied during that timer gap can therefore be present in `yblocks` while
+absent from `baseRecord.blocks`.
 
 The later related branch commit `c8af86c24a5c` (`Preserve remote top-level
 blocks for base-record edits`) fixes this narrower gap by passing `baseBlocks`
@@ -85,7 +104,7 @@ checkout. The May 5 refresh copy uses natural two-user UI actions, but only
 asserts visibility of inserted text and does not assert final block identity or
 reload persistence.
 
-Pass 178 added an independent lower-level check:
+Passes 178 and 179 added an independent lower-level check:
 
 - Exact known-fixes base `f256024286d`: a temporary Jest test using real `Y.Doc`
   and production `mergeCrdtBlocks()` fails when the stale local move supplies
@@ -96,10 +115,13 @@ Pass 178 added an independent lower-level check:
   `[ table-a, paragraph-a, remote-paragraph, search-a, list-a ]` and the
   representative paragraph/Search/table/list attributes.
 
-The detached test command was:
+Pass 179 re-ran this on the requested worktree. The detached known-fixes base
+with only the regression test cherry-picked failed, omitting
+`remote-paragraph`; the PR branch passed the same test after the fix. The test
+command was:
 
 ```bash
-npm run test:unit -- packages/core-data/src/utils/test/crdt-5103347eaffd-pass178-base-record.test.ts --runInBand
+npm run test:unit -- packages/core-data/src/utils/test/crdt-5103347eaffd-base-record.test.ts --runInBand
 ```
 
 ## Practical Impact
