@@ -14,6 +14,8 @@ Pass 177 added an adapter-level reproduction through `applyPostChangesToCRDTDoc`
 
 Pass 178 rebased the proposed fix branch onto `origin/trunk` `5c6e65c85af5fefe411c43f1fe5ea7395b37d2ef` and rechecked the evidence. The committed non-Playwright repros now include both the direct `mergeCrdtBlocks` case and the post-adapter `applyPostChangesToCRDTDoc` stale-base case, and they pass on fixed head `4f598df5434`. The committed browser repro still uses natural editor actions: one collaborator appends a Paragraph by typing after `Enter`, another deletes it through the block toolbar, and the first collaborator concurrently types into a different Paragraph.
 
+Pass 179 rebased the explanation and fix branches onto `origin/trunk` `d52e35a291cc84b82fe259293cf568bd63dd4070`. The focused CRDT repros, the broader `crdt-blocks` unit suite, lint for the touched files, `git diff --check`, and the natural-action Playwright repro all pass on the rebased fix head `2012e1607a4`.
+
 ## User workflow
 
 The natural workflow is ordinary collaborative editing, but the timing is specific:
