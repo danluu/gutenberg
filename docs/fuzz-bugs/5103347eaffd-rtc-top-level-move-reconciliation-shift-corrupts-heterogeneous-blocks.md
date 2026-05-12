@@ -23,13 +23,16 @@ known-fix stack passes `baseRecord` from `editEntityRecord()` through
 `syncManager.update()` into `applyPostChangesToCRDTDoc()`, so the base-record
 branch is not an artificial-only path.
 
-Pass 179 narrowed the race shape further. `editEntityRecord()` captures the
-current edited record as `baseRecord`, then `syncManager.update()` schedules the
-actual CRDT merge with `setTimeout( 0 )`. That means a normal local block move
-can carry an old `baseRecord` while a remote sync response updates the Yjs
-document before the queued local merge runs. The resulting state matches the
-reduced failure: `baseBlocks` omit the remote insert, while `yblocks` already
-contain it.
+Pass 179 narrowed the race shape further and found one important guardrail.
+`editEntityRecord()` captures the current edited record as `baseRecord`, then
+`syncManager.update()` schedules the actual CRDT merge with `setTimeout( 0 )`.
+The sync manager also tracks same-key remote reconciliation, so the simplest
+case where a remote `blocks` update arrives after a local `blocks` update is
+scheduled is usually filtered out. The remaining product-level risk is narrower:
+the CRDT document can contain the remote insert while the edited record snapshot
+used as `baseRecord` is still stale, after remote reconciliation has cleared or
+timed out. In that state the base-record branch sees `baseBlocks` that omit the
+remote insert while `yblocks` already contain it.
 
 ## User Workflow
 
@@ -71,15 +74,22 @@ The backlink-aware known-fix stack changed the merge algorithm to use stable
 `localBlocksToSync` directly, so remote-only current blocks are still missing
 from `blocksToSync` and the later positional fallback can delete them.
 
-The product path makes that stale explicit base plausible. In
+The product path makes that stale explicit base plausible, but not for every
+interleaving. In
 `packages/core-data/src/actions.js`, `editEntityRecord()` calls
 `getSyncManager()?.update( ..., { baseRecord: editedRecord, isNewUndoLevel } )`.
 In `packages/sync/src/manager.ts`, the public `update` method is
 `scheduleUpdateCRDTDoc()`, which captures those options and runs
 `updateCRDTDoc()` on the next timer tick. In `updateCRDTDoc()`, the current Yjs
-document is merged with the previously captured `baseRecord`. Any remote sync
-update applied during that timer gap can therefore be present in `yblocks` while
-absent from `baseRecord.blocks`.
+document is merged with the previously captured `baseRecord`.
+
+The same file also records remote key versions and temporarily filters local
+same-key updates while remote reconciliation is active. That guard reduces the
+normal likelihood. However, `clearReconciledRemoteKeys()` eventually clears the
+key after bounded retries, and the editor record can still lag the CRDT document
+under save/reload or busy sync churn. A stale local `baseRecord.blocks` can then
+reach `applyPostChangesToCRDTDoc()` even though the current Yjs `blocks` array
+already contains the remote insert.
 
 The later related branch commit `c8af86c24a5c` (`Preserve remote top-level
 blocks for base-record edits`) fixes this narrower gap by passing `baseBlocks`
@@ -117,29 +127,41 @@ Passes 178 and 179 added an independent lower-level check:
 
 Pass 179 re-ran this on the requested worktree. The detached known-fixes base
 with only the regression test cherry-picked failed, omitting
-`remote-paragraph`; the PR branch passed the same test after the fix. The test
-command was:
+`remote-paragraph`; the PR branch passed the same test after the fix. The pass
+also added a temporary manager-level repro that exercises
+`createSyncManager()`, `applyPostChangesToCRDTDoc()`, remote Yjs updates, and
+the manager's bounded remote-reconciliation clearing. That repro fails on
+`f256024286d` and passes on the PR branch. The core test command was:
 
 ```bash
 npm run test:unit -- packages/core-data/src/utils/test/crdt-5103347eaffd-base-record.test.ts --runInBand
 ```
 
+The manager-level command was:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-5103347eaffd-manager-scheduling.test.ts --runInBand
+```
+
 ## Practical Impact
 
 Current unresolved likelihood on plain `origin/trunk` and the documented
-`f256024286d` known-fixes base is `low` to `medium`: the required workflow is
-normal collaboration and normal top-level block movement, but the stale snapshot
-race is timing-sensitive. If hit, the blast radius is real content loss or
-corruption, not only UI disagreement. Recovery is undo while the affected
-session still has useful undo history, manual cleanup, reload before save if the
-bad state has not persisted, or revisions/backups after persistence.
+`f256024286d` known-fixes base is `low`: the required workflow is normal
+collaboration and normal top-level block movement, but the stale snapshot race
+must get past the sync manager's same-key reconciliation guard. If hit, the
+blast radius is real content loss or corruption, not only UI disagreement.
+Recovery is undo while the affected session still has useful undo history,
+manual cleanup, reload before save if the bad state has not persisted, or
+revisions/backups after persistence.
 
 The strongest evidence against a high likelihood is that two active
 collaborators editing and moving blocks in the same top-level region is less
-common than single-user editing, and the reduced failure requires a narrow
-ordering window. The strongest evidence against dismissing it as fuzz-only is
-that all reduced operations are ordinary editor operations and the failing path
-is production `mergeCrdtBlocks()` with real Yjs types.
+common than single-user editing, the reduced failure requires a narrow ordering
+window, and the manager suppresses the simplest same-key remote/local overlap.
+The strongest evidence against dismissing it as fuzz-only is that all reduced
+operations are ordinary editor operations and the failing paths use production
+`mergeCrdtBlocks()`, `applyPostChangesToCRDTDoc()`, and `createSyncManager()`
+with real Yjs types.
 
 ## Fix Direction
 
