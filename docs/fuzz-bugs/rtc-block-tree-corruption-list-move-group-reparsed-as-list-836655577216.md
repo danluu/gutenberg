@@ -51,6 +51,14 @@ Strongest evidence against `medium`: the original generated spec/result artifact
 
 Shortest confidence-improving experiment: build an HTTP-provider scheduler repro that can separate upload from download for `/wp-sync/v1/updates`: let the stale collaborator upload the List move while withholding remote updates from that collaborator, then release both sides and assert both clients' `core/block-editor.getBlocks()` trees.
 
+## Normal Editor Reachability
+
+Pass 178 checked the production path from ordinary editor actions into the failing reducer shape. A user move from the block toolbar or List View dispatches the normal block-editor move actions, and `useBlockSync` observes the changed block array from the block-editor store. For the root post editor, `useBlockSync` passes that changed array to the `useEntityBlockEditor` `onChange`/`onInput` callback.
+
+`useEntityBlockEditor` includes the changed `blocks` value in the entity edits through `updateFootnotesFromMeta( newBlocks, meta )`; this helper returns `{ blocks }` even when footnotes metadata is absent. `editEntityRecord` then calls `SyncManager.update` before dispatching the Redux edit, with `baseRecord` set to the current `getEditedEntityRecord` result. Finally, `SyncManager.updateCRDTDoc` forwards that `baseRecord` to `applyPostChangesToCRDTDoc`, which passes `baseRecord.blocks` into `mergeCrdtBlocks`.
+
+That means the reconstructed reducer input is not an artificial direct-state mutation. It corresponds to a stale collaborator making an ordinary block move while its edited post record still reflects the older `Heading, List, Group, Quote` tree. The still-missing browser proof is narrower: it must show the HTTP provider can produce the harmful upload/download ordering on the known-fixes base, not merely that the editor can call `mergeCrdtBlocks` with an explicit stale base.
+
 ## Root Cause
 
 The original block CRDT merge logic came from `84019935998c16f877e976ad85e84748355d7282` (`Improve CRDT "merge logic" for post entities (#72262)`). It uses a generic left/right diff over the top-level `Y.Array` and updates the remaining middle segment by array index.
