@@ -25,6 +25,15 @@ preserved the remote sibling, but the explicit `baseBlocks` path did not. When
 skipped `reconcileStaleLocalBlocks`, fell through to the positional merge, and
 dropped the remote sibling.
 
+Pass 179 added a SyncManager-level proof that this is not only a direct
+`mergeCrdtBlocks` call shape. In the production path, `editEntityRecord` passes
+the pre-edit `editedRecord` as `baseRecord`, and `SyncManager.update` applies the
+CRDT write on a deferred tick. A remote Yjs update can already be present in the
+local Y.Doc while the async remote-to-store reconciliation is still awaiting the
+current edited record. In that window, a normal local block move is scheduled
+with a stale `baseRecord`, so the same explicit-base stale merge path is reached
+through the sync manager.
+
 ## Minimal Failing Shape
 
 Initial top-level blocks:
@@ -59,6 +68,16 @@ Observed on exact known-fixes base before the pass-178 patch:
 2. `Heading`
 3. `Another paragraph`
 
+The pass-179 SyncManager repro reaches the same final missing-sibling state
+after:
+
+1. A remote manager inserts `Remote sibling`.
+2. The remote Yjs update is applied to the local manager's Y.Doc.
+3. The local manager intentionally leaves the remote-to-store reconciliation
+   pending at `getEditedRecord`.
+4. The local manager schedules the stale top-level move with the old
+   `baseRecord`.
+
 ## Practical Impact
 
 Historical unfixed builds have low overall real-user likelihood, rising for
@@ -83,3 +102,15 @@ clientId rebase or positional fallback.
 
 This preserves remote top-level inserts/deletes while still allowing the local
 move intent to be applied by stable `clientId`.
+
+## Verification
+
+The PR branch contains two non-browser repros in its first commit:
+
+- `crdt-da9-pass178-base-record-gap.test.ts` exercises the minimal
+  `mergeCrdtBlocks` explicit-`baseBlocks` stale move.
+- `crdt-da9-pass179-sync-manager-base-record-gap.test.ts` exercises the
+  deferred `SyncManager.update`/pending remote-reconciliation timing path.
+
+Both tests fail on the test-only commit before the fix because `Remote sibling`
+is missing from the merged top-level block list. Both pass after the fix.
