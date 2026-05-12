@@ -77,6 +77,11 @@ rare. RTC itself is still not a default ordinary WordPress editing path.
   bundles, verified the rebuilt `build/scripts/core-data/index.js` no longer
   contains `serializableBlocksCache`, and ran the pass-171 a81 natural UI probe:
   3/3 passed, then 10/10 passed.
+- Pass 179 recreated an a81-specific low-level same-array Heading move probe in
+  two detached worktrees. Exact known-fixes commit
+  `f256024286dd80a4c0e2579f658c109256abf648` failed with
+  `live-paragraph` still before `live-heading`; pushed fix commit
+  `083540ed190d8d8fc1fd08757396397cc8e3fd79` passed the same probe.
 
 ## Origin
 
