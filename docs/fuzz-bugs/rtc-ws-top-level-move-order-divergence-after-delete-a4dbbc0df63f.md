@@ -70,6 +70,36 @@ same-key filtering. The block-level rebase code still lacks a correct
 three-way ordering rule for "remote moved old blocks plus remote inserted new
 blocks plus local-only stale append."
 
+Pass 179 added a smaller explicit-base `mergeCrdtBlocks` repro. It first
+sets the current CRDT block array to the collaborator's real-user-shaped
+`heading | second | baseline | step2` state, then applies the first editor's
+stale `baseline | second | shared | formatted` snapshot with the captured
+`baseline | second | shared` base record. The expected result is:
+
+```text
+heading | second | baseline | step2 | <em>italic</em>beta 954276 0
+```
+
+Observed results:
+
+```text
+origin/trunk fc8b3db6ace:
+baseline | second | shared | <em>italic</em>beta 954276 0
+
+known-fixes f256024286d:
+heading | second | baseline | <em>italic</em>beta 954276 0
+
+candidate a5621725e86 ("Preserve RTC block order across stale snapshots"):
+baseline | second | shared | <em>italic</em>beta 954276 0
+```
+
+That candidate branch is useful design evidence because it contains the
+current-CRDT-order skeleton idea, but it is not sufficient for this seed's
+explicit base-record path. The pass-179 repro shows the bug still survives
+current `origin/trunk` after a May 12 fetch and the pinned May 7 known-fixes
+base, and that a nearby stale-order candidate can still resurrect the deleted
+paragraph while dropping the remote heading and inserted paragraph.
+
 ## Root Cause
 
 `editEntityRecord` captures the current edited record and calls `getSyncManager().update(...)` before dispatching the local `EDIT_ENTITY_RECORD` reducer update. `SyncManager.update` is deferred to a later event-loop tick. If a remote Yjs transaction touches `blocks` before that deferred local update runs, the local update is based on stale top-level block order.
@@ -89,6 +119,12 @@ stale local order even though the remote order is `heading, second, baseline,
 step2`. Candidate fixes that try to preserve remote deletes but still use the
 stale local order as the structural skeleton can therefore keep content while
 corrupting order.
+
+Pass 179 shows an additional trap: the fix must be wired into the explicit
+`baseRecord.blocks` path as well as the implicit previous-local snapshot path.
+The scheduled local edit from `editEntityRecord` carries `baseRecord`, so a
+fix that only changes stale detection through the previous-block cache can
+miss the product path this seed exercises.
 
 ## Practical Impact
 
