@@ -430,6 +430,59 @@ is fixed; the next high-value browser pass should start from a clean buildable
 worktree and first assert that the pre-action editor state matches the REST
 post before running the concurrent Add-after actions.
 
+## Pass 180 Follow-up
+
+Pass 180 reran the fixed PR branch after verifying that the patched source was
+also present in `build/scripts/core-data/index.js` and
+`build/scripts/core-data/index.min.js`. The focused stale-snapshot unit file
+still passes:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts --runInBand
+```
+
+The natural WebSocket Add-after repro was then rerun on PR head
+`75acb16a83c05d26bf7d169de594c3ee49c69490` with 160 ms/key typing and
+2000 ms +/-500 ms post-menu waits. A five-attempt serial run passed attempts
+1-3, then attempt 4 failed before product actions because both editor pages
+showed a stale local "Pass 179" draft while REST for the newly created post was
+correct. That classifies the attempt-4 result as harness/browser-state
+contamination, not a product corruption.
+
+The useful fixed-branch signal is from fresh single-attempt runs, which avoid
+the serial dirty-draft carryover. One direct single-attempt run passed, then a
+bounded `--repeat-each=5` single-attempt run also passed all five repetitions:
+
+```bash
+WP_ENV_PORT=9970 \
+WP_BASE_URL=http://localhost:9970 \
+GUTENBERG_RTC_TEST_WS_PORT=20960 \
+GUTENBERG_RTC_TEST_WS_REUSE_SERVER=0 \
+RTC_MANIFEST_WS_START_PORT=20960 \
+RTC_MANIFEST_WS_FIXED_PORT=1 \
+RTC_5FE7_ADD_AFTER_OUTPUT_DIR=/tmp/5fe795b32c10-p180-prfix-single-repeat5-type160-postdelay2000-jitter500-output \
+RTC_5FE7_ADD_AFTER_ATTEMPTS=1 \
+RTC_5FE7_ADD_AFTER_TYPE_DELAY_MS=160 \
+RTC_5FE7_ADD_AFTER_POST_MENU_DELAY_MS=2000 \
+RTC_5FE7_ADD_AFTER_POST_MENU_JITTER_MS=500 \
+npm run test:e2e:rtc-websocket -- \
+	test/e2e/specs/editor/collaboration/websocket/collaboration-triage-5fe795b32c10-add-after-realistic.spec.ts \
+	--project=chromium --workers=1 --repeat-each=5
+```
+
+In the last repeated attempt, the two Add-after clicks completed 30 ms apart,
+both pages waited about 2.46-2.48 seconds after the menu action, and both peers
+converged to the original three blocks plus both exact inserted paragraphs:
+
+```text
+RTC 5fe7 add-after collaborator paragraph 1
+RTC 5fe7 add-after primary paragraph 1
+```
+
+This is not a mathematical proof that every rich-text interleaving is fixed,
+but it is the first clean browser evidence that the PR branch fixes the natural
+human-speed Add-after corruption path that failed on the known-fixes base.
+
 ## Artifacts
 
 - Failure JSON, pass-172 160 ms/key no post-menu pause: `/tmp/5fe795b32c10-p172-knownfix-type160-postdelay0-attempts20-output/attempt-6.json`
@@ -462,6 +515,13 @@ post before running the concurrent Add-after actions.
   `https://github.com/danluu/gutenberg/tree/try/rtc-concurrent-tail-insert-corrupts-or-diverges-top-level--5fe795b32c10-pr`
 - Pass-179 inconclusive browser attempt after e2e reset:
   `/tmp/5fe795b32c10-p179-prfix3-reset-type160-postdelay2000-jitter500-attempts5-output/attempt-1.json`
+- Pass-180 PR branch serial browser run with three product passes and one
+  harness-contaminated attempt:
+  `/tmp/5fe795b32c10-p180-prfix-clean-type160-postdelay2000-jitter500-attempts5-output/`
+- Pass-180 PR branch clean single-attempt browser pass:
+  `/tmp/5fe795b32c10-p180-prfix-single-type160-postdelay2000-jitter500-output/attempt-1.json`
+- Pass-180 PR branch clean single-attempt `--repeat-each=5` browser pass:
+  `/tmp/5fe795b32c10-p180-prfix-single-repeat5-type160-postdelay2000-jitter500-output/attempt-1.json`
 - Failure JSON, pass-170 160 ms/key: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1.json`
 - Failure screenshots: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-primary.png`, `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-output/attempt-1-secondary.png`
 - Trace copy: `/tmp/5fe795b32c10-p170-knownfix-default18991-type160-trace.zip`
