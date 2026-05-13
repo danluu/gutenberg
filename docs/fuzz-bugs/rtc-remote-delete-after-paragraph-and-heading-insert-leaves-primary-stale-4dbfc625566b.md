@@ -14,9 +14,9 @@ failure. The source manifest row in `likely-real-issues.jsonl` marks the
 canonical signature as high confidence and recommends filing the bug.
 
 The bug still reproduces on the backlink-aware known-fixes base
-`rtc-known-fixes-current-20260507` at `f256024286d`. Pass 179 independently
-reapplied the current unit repro to exact `f256024286d` and confirmed that the
-stale paragraph is resurrected. The low-level repro applies:
+`rtc-known-fixes-current-20260507` at `f256024286d`. Pass 180 independently
+reapplied the current rebased unit repro to exact `f256024286d` and confirmed
+that the stale paragraph is resurrected. The low-level repro applies:
 
 1. a full snapshot containing `inserted-paragraph` and `inserted-heading`;
 2. a newer snapshot after `inserted-paragraph` was deleted;
@@ -30,10 +30,12 @@ Expected: [ "follow-up", "inserted-heading", "tail", "moved-initial-paragraph" ]
 Received: [ "follow-up", "inserted-paragraph", "inserted-heading", "tail", "moved-initial-paragraph" ]
 ```
 
-The fix branch was rebased again in pass 179 onto current `origin/trunk`
-`e20ec719971` on 2026-05-12. The same focused CRDT repro and guard tests pass
-on the rebased fix branch, and the natural WebSocket spec passes under the
-upstream `#78179` y-websocket test harness at
+The fix branch was rebased again in pass 180 onto current `origin/trunk`
+`cb74beb786b3` on 2026-05-13. Current `origin/trunk` plus only the unit repro
+commit still fails with the same `inserted-paragraph` resurrection, while the
+same focused CRDT repro and guard tests pass on the rebased fix branch. The
+natural WebSocket spec from pass 179 also passes under the upstream `#78179`
+y-websocket test harness at
 `test/e2e/specs/editor/collaboration/websocket-only/collaboration-4dbfc625566b-realistic.spec.ts`.
 
 The archived browser reproduction also reached the natural UI delete action
