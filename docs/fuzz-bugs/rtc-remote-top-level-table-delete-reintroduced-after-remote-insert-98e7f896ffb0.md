@@ -620,3 +620,62 @@ evidence in this pass is a current-trunk refresh after the WebSocket suite moved
 to the dedicated `test:e2e:rtc-websocket` config: default-config runs failed in
 readiness before any table operation, but the correct WebSocket harness passed
 the natural-user repro on the fixed branch.
+
+## Pass 180 current-trunk refresh
+
+Pass 180 rebased both requested branches onto current `origin/trunk` again:
+
+- `origin/trunk`: `cb74beb786b Bump node-forge from 1.3.1 to 1.3.2 (#73601)`.
+- PR branch head after rebase:
+  `777ba04c4bb Advance RTC block merge base after remote delivery`.
+- PR branch commit order:
+  1. `d1a065e7b4b Add RTC remote insert delete CRDT repro`
+  2. `4abab080a27 Add WebSocket table delete Playwright repro`
+  3. `777ba04c4bb Advance RTC block merge base after remote delivery`
+
+Pass 180 reran the known-fixes negative control in a fresh detached worktree at
+the required May 7 backlink-aware base `f256024286d` plus only the rebased
+repro-test commit `d1a065e7b4b`:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache
+```
+
+Result on the May 7 known-fixes base:
+
+- `preserves a remote table insert when a stale local snapshot edits another block`: PASS.
+- `does not reintroduce a remote table after that remote insert has become the local base`: FAIL; received a trailing `core/table`.
+- `matches the source order: collaborator paragraph, primary table, collaborator table delete`: FAIL; received table content after the collaborator delete.
+- `deletes delivered blocks while preserving unseen remote inserts in the same stale snapshot`: FAIL; retained the delivered-deleted paragraph alongside the unseen table.
+- `does not reintroduce a remote paragraph after that remote insert has become the local base`: FAIL; retained the delivered-deleted paragraph.
+- `does not reintroduce a remote nested paragraph after that remote insert has become the local base`: FAIL; retained the delivered-deleted nested paragraph.
+
+Fresh verification on the pass-180 rebased PR branch:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts -- --runInBand --no-cache
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --no-cache
+node ./tools/eslint/lint-js.cjs --config eslint.config.strict.cjs packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/crdt.ts packages/core-data/src/utils/test/crdt-remote-insert-delete-base.test.ts test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts test/e2e/specs/editor/collaboration/websocket/collaboration-triage-98e7f896ffb0-realistic.spec.ts
+git diff --check FETCH_HEAD..HEAD
+WP_ENV_PORT=9997 WP_BASE_URL=http://localhost:9997 npm run wp-env-test -- status
+```
+
+Results:
+
+- Focused repro unit file: PASS, 6 tests.
+- Existing CRDT block unit file: PASS, 71 tests.
+- Targeted strict JS lint: exit 0.
+- `git diff --check FETCH_HEAD..HEAD`: exit 0.
+- `wp-env-test status`: `uninitialized`, so pass 180 did not spend a fresh
+  browser run rebuilding the local WordPress environment. The pass-179
+  dedicated WebSocket Playwright run and stitched video remain the browser/video
+  evidence for the same natural-user repro; pass 180 adds current-trunk rebase
+  freshness plus deterministic base/fix verification.
+
+Pass 180 keeps the practical-impact classification at `medium`. The sharper
+likelihood point from this pass is that the failure is not table-specific:
+the current known-fixes base also reintroduces delivered-deleted top-level
+paragraphs and nested paragraphs, while still correctly preserving truly unseen
+remote inserts. That keeps the blast radius at RTC content resurrection across
+normal block types, but the natural user route still requires multi-user
+WebSocket RTC and a delivered-then-deleted remote block interleaving.
