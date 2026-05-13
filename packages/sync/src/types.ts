@@ -120,28 +120,27 @@ export interface CollectionHandlers {
 
 export interface SyncManagerUpdateOptions {
 	baseRecord?: ObjectData;
-	// Whether this update represents a user-facing entity save.
 	isSave?: boolean;
 	isNewUndoLevel?: boolean;
 }
 
-export interface SyncUndoStackState {
-	hasRedo: boolean;
-	hasUndo: boolean;
+export interface CreatePersistedCRDTDocOptions {
+	basePersistedCRDTDoc?: string | null;
+	baseRecordSnapshot?: ObjectData | null;
+	recordSnapshot?: ObjectData | null;
 }
 
 export interface RecordHandlers {
 	addUndoMeta: ( ydoc: Y.Doc, meta: Map< string, any > ) => void;
 	editRecord: (
 		data: Partial< ObjectData >,
-		options?: { undoIgnore?: boolean }
+		options?: { undoIgnore?: boolean; __unstableSkipSyncUpdate?: boolean }
 	) => void;
 	getEditedRecord: () => Promise< ObjectData >;
 	onStatusChange: OnStatusChangeCallback;
 	persistCRDTDoc: () => void;
 	refetchRecord: () => Promise< void >;
 	restoreUndoMeta: ( ydoc: Y.Doc, meta: Map< string, any > ) => void;
-	onUndoStackChange?: ( state: SyncUndoStackState ) => void;
 }
 
 export interface SyncConfig {
@@ -163,14 +162,28 @@ export interface SyncConfig {
 		objectType: ObjectType,
 		objectId: ObjectID | null
 	) => boolean;
-	supportsPersistence?: boolean;
 }
 
 export interface SyncManager {
+	applyPersistedCRDTDoc: (
+		objectType: ObjectType,
+		objectId: ObjectID,
+		record: ObjectData
+	) => Promise< boolean >;
 	createPersistedCRDTDoc: (
 		objectType: ObjectType,
+		objectId: ObjectID,
+		options?: CreatePersistedCRDTDocOptions
+	) => Promise< string | null >;
+	hydrateRecordFromPersistedCRDTDoc: (
+		objectType: ObjectType,
+		objectId: ObjectID,
+		record: ObjectData
+	) => Promise< boolean >;
+	getCRDTRecordData: (
+		objectType: ObjectType,
 		objectId: ObjectID
-	) => string | null;
+	) => ObjectData | undefined;
 	getAwareness: < State extends Awareness >(
 		objectType: ObjectType,
 		objectId: ObjectID
@@ -203,10 +216,7 @@ export interface SyncManager {
 export interface SyncUndoManager extends WPUndoManager< ObjectData > {
 	addToScope: (
 		ymap: Y.Map< any >,
-		handlers: Pick<
-			RecordHandlers,
-			'addUndoMeta' | 'restoreUndoMeta' | 'onUndoStackChange'
-		>
+		handlers: Pick< RecordHandlers, 'addUndoMeta' | 'restoreUndoMeta' >
 	) => void;
 	stopCapturing: () => void;
 }
