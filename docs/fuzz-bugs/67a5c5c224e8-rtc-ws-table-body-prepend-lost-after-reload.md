@@ -29,6 +29,13 @@ known-fixes base generated the remote prepend through the real Table block
 state helpers, `createTable()`, `insertRow()`, and `updateSelectedCell()`,
 then reproduced the same no-base row loss.
 
+Pass 179 also reproduced the loss through `SyncManager.load()` itself. The
+probe serialized a persisted CRDT document containing the toolbar-shaped
+remote-prepended table, loaded a stale current record through the sync manager,
+and observed that the persisted-doc invalidation path called
+`applyChangesToCRDTDoc( ydoc, { blocks }, undefined )` before dropping the
+remote row.
+
 ## Evidence
 
 The handoff manifest row says seed `956467` repeatedly left collaborators on
@@ -53,6 +60,7 @@ Focused unit probes on that SHA:
 PASS packages/core-data/src/utils/test/crdt-67a5c5c224e8-persisted-no-base-pass176.test.ts
 PASS packages/core-data/src/utils/test/crdt-67a5c5c224e8-base-choice-pass177.test.ts
 PASS packages/core-data/src/utils/test/crdt-67a5c5c224e8-table-ui-path-pass178.test.ts
+PASS packages/core-data/src/utils/test/crdt-67a5c5c224e8-manager-persisted-pass179.test.ts
 ```
 
 The pass-178 probe observed:
@@ -61,6 +69,16 @@ The pass-178 probe observed:
 remote table rows: [["REMOTE-PREPEND"],["A1"],["A2"]]
 no base result:    [["LOCAL-A1"],["A2"]]
 old base result:   [["REMOTE-PREPEND"],["LOCAL-A1"],["A2"]]
+```
+
+The pass-179 `SyncManager.load()` probe observed the same manager-level
+failure:
+
+```text
+applyChangesToCRDTDoc changes: { blocks: stale two-row table }
+applyChangesToCRDTDoc options: undefined
+resulting body rows: [["LOCAL-A1"],["A2"]]
+persistCRDTDoc calls: 1
 ```
 
 ## Root Cause
