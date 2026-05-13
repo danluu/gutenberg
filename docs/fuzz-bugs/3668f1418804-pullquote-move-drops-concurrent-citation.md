@@ -166,6 +166,29 @@ divergence for paragraphs or headings. It does show the user-visible content-los
 mechanism is a general top-level same-block move/edit race for rich-text
 attributes.
 
+## Pass 179 HTTP Scheduling Audit
+
+Pass 179 checked the HTTP transport path around the low-level interleaving. The
+normal HTTP provider queues local Yjs document updates in `onDocUpdate()` and
+sends them on the polling loop; with collaborators present, the configured poll
+interval is `POLLING_INTERVAL_WITH_COLLABORATORS_IN_MS = 1000`. That means the
+required condition, "the edit has not reached the mover's local CRDT document
+before the move is encoded", can be a normal one-poll delivery window plus
+network/server latency. It is not only a sub-millisecond synthetic scheduler
+edge.
+
+Pass 179 also drafted a bounded browser probe under a detached known-fixes
+worktree. The probe used real editor focus, keyboard text insertion on the
+edited paragraph, and the toolbar "Move up" control for the moved paragraph,
+while Playwright routing held one collaborator's HTTP sync POST to make the
+ordinary polling window deterministic. The environment did not reach the actual
+assertion: the detached worktree's `build` symlink pointed at a missing build
+directory, so the Gutenberg plugin did not load its collaboration runtime; a
+full build failed in workspace token generation, and a direct `wp-build` failed
+later because the shared `node_modules` could not resolve `ajv/dist/*` imports.
+This leaves the browser probe as a concrete next experiment rather than a
+completed natural-action repro.
+
 ## Root Cause Hypothesis
 
 `mergeCrdtBlocks()` rebases top-level moves by `clientId`, but the Yjs array
@@ -195,9 +218,10 @@ and another collaborator moves that same block before the text update reaches th
 mover's local CRDT document. The Pullquote citation version is narrower because
 it requires a Pullquote and its citation field, but pass 177 reproduced the same
 loss with Heading and Paragraph content, which are common editor blocks. On the
-HTTP polling provider in this base, the collaborator poll interval is 1 second
-before network and server latency. No save or reload is required for the live
-loss. A later save can persist the stale text if no peer repairs it first.
+HTTP polling provider in this base, pass 179 confirmed that the collaborator
+poll interval is 1 second before network and server latency. No save or reload
+is required for the live loss. A later save can persist the stale text if no
+peer repairs it first.
 
 Common prerequisites: collaborative editing, editing paragraph or heading text,
 and moving blocks are ordinary editor behavior.
