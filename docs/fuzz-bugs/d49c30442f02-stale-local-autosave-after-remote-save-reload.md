@@ -118,6 +118,20 @@ transitions, and delegates all local writes to the interval-driven
 `AutosaveMonitor`. The fix branch adds the missing unload flush at that boundary
 without changing CRDT or remote-save semantics.
 
+Pass 179 refreshed both artifact branches onto current `origin/trunk`
+`be37a93529d83d6dbe4f19274357dbbad5cca578`
+(`Tools: Remove save-exact from .npmrc (#78196)`). The bounded runtime diff from
+pass 178's trunk base through this commit still has no upstream edit to
+`LocalAutosaveMonitor`, editor local autosave storage, `core-data`, or the RTC
+sync providers that could close this race; the final trunk advance observed
+during pass 179 only touched `.npmrc`. After replacing the stale shared
+dependency symlink with a local `npm install`, `npm run build -- --skip-types`
+completed successfully. The pass-179 pre-fix repro commit
+`f267d4d50b3` was rebuilt on current trunk and failed at the stale-warning
+assertion with `expected 0, received 2`. The rebased fixed PR branch
+`f8e2da42c42` was rebuilt and passed the same natural two-user Playwright repro:
+`1 passed (23.7s)`.
+
 ## Natural Repro
 
 The committed repro on the PR branch creates a draft post with one paragraph and uses two real browser users in the post editor:
@@ -363,6 +377,35 @@ Pass 178 rebase verification on current `origin/trunk`
 `WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
 
 Result after fix on rebased PR branch `0013f4074b6`: `1 passed (21.9s)`.
+
+`npm run lint:js -- packages/editor/src/components/local-autosave-monitor/index.js test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts`
+
+Result: exit code 0, with the same four existing
+`react-hooks/exhaustive-deps` warnings in `local-autosave-monitor/index.js`.
+
+`git diff --check origin/trunk..HEAD`
+
+Result: exit code 0.
+
+Pass 179 rebase verification on current `origin/trunk`
+`be37a93529d83d6dbe4f19274357dbbad5cca578`:
+
+`npm run build -- --skip-types`
+
+Result: exit code 0 after replacing the stale shared `node_modules` symlink
+with a local `npm install`.
+
+Pre-fix repro commit `f267d4d50b3`, rebuilt from source:
+
+`WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
+
+Result: failed at the stale warning assertion with `expected 0, received 2`.
+
+Fixed PR branch commit `f8e2da42c42`, rebuilt from source:
+
+`WP_ENV_PORT=10109 WP_BASE_URL=http://localhost:10109 RTC_MANIFEST_WS_START_PORT=22072 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts --project=chromium`
+
+Result: `1 passed (23.7s)`.
 
 `npm run lint:js -- packages/editor/src/components/local-autosave-monitor/index.js test/e2e/specs/editor/collaboration/collaboration-stale-local-autosave-after-remote-save.spec.ts`
 
