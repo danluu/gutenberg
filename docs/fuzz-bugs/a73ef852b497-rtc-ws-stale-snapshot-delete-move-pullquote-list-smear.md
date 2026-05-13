@@ -286,3 +286,34 @@ PASS packages/core-data/src/utils/test/crdt-a73ef852b497-pass171.test.ts
 The sharper pass-178 likelihood conclusion remains `low`, but it is `low` rather than `very-low`: the individual operations are ordinary toolbar/menu/List View/drag-drop block operations. The uncommon part is the RTC schedule: one peer's current Y.Array already reflects a remote move, while the other peer sends a stale full `blocks` snapshot that both deletes a neighboring block and reorders the same List/Pullquote region. That changed clientId set bypasses the current same-length clientId reorder helpers and falls into the positional update loop, where `mergeBlockIntoYBlock( yblocks.get( left ), blocksToSync[ left ], ... )` can rewrite one block's `name`, attributes, and `innerBlocks` into another block's Y.Map.
 
 The remaining evidence gap is still browser frequency, not product reachability. `useEntityBlockEditor` sends full `blocks` edits through `editEntityRecord`; `applyPostChangesToCRDTDoc` passes those edits into `mergeCrdtBlocks`; `moveBlocksToPosition` and `removeBlocks` provide normal editor paths for the move/delete inputs used by the low-level repro. The shortest confidence-improving follow-up is therefore still a clean WebSocket two-tab run, but it should first isolate or reset the provider room state so the initial post does not get replaced by stale fuzz-seed room content before the target actions run.
+
+## Pass 179 Update
+
+Pass 179 re-read the handoff manifest, pass-178 summary, known-fixes manifest, explanation branch, PR branch, focused repro, enumerator repro, known-fixes-base merge code, and proof-fix diff. The source artifact directory named by the manifest was still absent at both likely local roots, so the original archived browser trace/screenshots remain unavailable locally.
+
+Fresh detached pass-179 verification used:
+
+```text
+21ca487683a Add RTC List/Pullquote stale snapshot repro
+parent f256024286d Integrate RTC known-fix stack
+FAIL packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
+Expected: false
+Received: true
+
+377adcfdae6 Avoid positional block smear after stale RTC snapshots
+PASS packages/core-data/src/utils/test/crdt-a73ef852b497-pass175-root.test.ts
+
+21ca487683a Add RTC List/Pullquote stale snapshot repro
+FAIL packages/core-data/src/utils/test/crdt-a73ef852b497-pass171.test.ts
+Expected: []
+Received: 58 smear cases across 96 checked cases
+
+377adcfdae6 Avoid positional block smear after stale RTC snapshots
+PASS packages/core-data/src/utils/test/crdt-a73ef852b497-pass171.test.ts
+```
+
+Pass 179 narrows the root-cause proof to the changed-clientId-set gate. On known-fixes base `f256024286dd80a4c0e2579f658c109256abf648`, `canReorderBlocksByClientId` rejects the stale-delete case at the length/set check, so `rebaseYBlocksByClientId` cannot handle the schedule. `reorderYBlocksByClientId` has the same equal-length/same-set precondition. The code then calls the old positional fallback, whose update loop merges `blocksToSync[ left ]` into `yblocks.get( left )` without proving those entries have the same clientId. In the focused repro, the current Y.Array begins with `list` after the remote move, while the stale incoming array begins with `pullquote` after deleting `intro`; the fallback therefore rewrites the List Y.Map as Pullquote while retaining List Item descendants.
+
+The proof-fix commit adds `syncYBlocksByClientId` before that positional fallback. It first deletes current Y blocks whose clientId is absent from the incoming/reconciled block list, then moves existing Y blocks by clientId, inserts missing incoming ids, and finally calls `mergeYBlocksByClientId`. That changes the key safety property from "same index probably means same block" to "only merge values into the matching clientId".
+
+Current upstream `origin/trunk` after a pass-179 fetch was `f4df834d9f8b64b610fd677087e79d0cd6632598` (`UI: Improve docs for compound exports (#78212)`). It does not contain the proof-fix helper or the a73 regression tests. The pass-179 practical likelihood classification remains `low`: the editor actions are ordinary and the corruption is real/persistent if saved, but the schedule requires two RTC sessions to structurally edit the same small block neighborhood before a stale full-block snapshot is reconciled.
