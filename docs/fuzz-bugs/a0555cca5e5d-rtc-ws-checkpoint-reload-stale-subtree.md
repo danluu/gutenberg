@@ -35,6 +35,13 @@ shared WebSocket test harness, so the repro commit now only adds the a0555 spec
 and includes it in the WebSocket config. The focused core-data reducer
 regression still passes on the rebased PR branch.
 
+Pass 180 rebased both branches onto `origin/trunk`
+`d9c0340d5a68c34d340d30ac61e8f58e8bf9bd56`. The intervening trunk commits do
+not touch the affected core-data reducer/entity paths or the RTC WebSocket test
+harness paths. The exact known-fixes source probe still exposes stale raw
+`blocks` after a save response with fresh `content` and omitted `blocks`, and
+the focused reducer regression still passes on the rebased PR branch.
+
 ## Natural Workflow
 
 The repro uses ordinary post-editor actions over the WebSocket RTC transport:
