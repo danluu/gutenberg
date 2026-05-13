@@ -29,6 +29,8 @@ The exact deleted inserted paragraph (`RTC realistic 9b8e paragraph`) was not re
 
 Pass 179 added a second non-browser repro at the `SyncManager` layer. That probe loads two synced post records, lets the first manager insert the paragraph, lets the second manager delete it, delivers the delete back to the first manager, and then applies a follow-up local edit with the stale `baseRecord` shape that `core-data` passes to `SyncManager.update()`. On the known-fixes base, both the direct post-adapter repro and the manager-level repro fail with the same duplicate stale seed paragraph. With the fix below, both pass.
 
+Pass 180 rechecked that split from a clean tests-only commit and from the fixed head. The tests-only commit failed both focused regressions with the extra stale seed paragraph, while the fixed head passed both. The original refreshed browser artifact remains a negative control for the old exact assertion: after B deletes the paragraph, both pages show only the two seed paragraphs.
+
 ## Root Cause
 
 The known-fixes stack added stale local block reconciliation for the no-explicit-base path, but `mergeCrdtBlocks()` bypasses that reconciliation when `baseBlocks` is supplied:
@@ -79,7 +81,7 @@ const blocksToSync = baseBlocksToSync
 
 ## Practical Impact
 
-Real-user likelihood is `low` overall and `medium` among active RTC collaborators. The workflow uses ordinary post-editor actions and ordinary top-level paragraph blocks, but it requires two active collaborators and a narrow timing gap between remote deletion, editor/entity reconciliation, and a follow-up local edit.
+Real-user likelihood is `low` overall. The workflow uses ordinary post-editor actions and ordinary top-level paragraph blocks, but it requires two active collaborators and a narrow timing gap between remote deletion, editor/entity reconciliation, and a follow-up local edit. Among active RTC collaborators the prerequisites are plausible, but the available browser evidence still does not justify a higher classification.
 
 Blast radius is user-visible content corruption and possible persistence if saved. I saw no evidence of a save loop, OOM/performance issue, or general persistence failure. Recovery is manual deletion/repair or restoring from another still-correct peer/revision.
 
