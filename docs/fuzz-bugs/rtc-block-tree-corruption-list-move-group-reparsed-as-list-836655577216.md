@@ -59,6 +59,19 @@ Pass 178 checked the production path from ordinary editor actions into the faili
 
 That means the reconstructed reducer input is not an artificial direct-state mutation. It corresponds to a stale collaborator making an ordinary block move while its edited post record still reflects the older `Heading, List, Group, Quote` tree. The still-missing browser proof is narrower: it must show the HTTP provider can produce the harmful upload/download ordering on the known-fixes base, not merely that the editor can call `mergeCrdtBlocks` with an explicit stale base.
 
+## Post CRDT Adapter Reproduction
+
+Pass 179 added a second non-browser reduction against exact known-fixes SHA `f256024286dd80a4c0e2579f658c109256abf648` that drives the production post adapter, not just the lower-level block merge helper:
+
+```bash
+cd /Users/danluu/dev/fuzz/gutenberg-836-knownfix-reduction
+npm run test:unit -- packages/core-data/src/utils/test/crdt-836655577216-apply-post-reduction.ts --runTestsByPath
+```
+
+That test calls `applyPostChangesToCRDTDoc( doc, { blocks }, syncedProperties, { baseRecord } )` with valid post block arrays for the initial tree, the remote heading-delete/pullquote-insert, and the stale list move. It fails with the same states as the raw reducer: the same-document adapter path receives `core/heading:0:heading` where `core/group:2:group` is expected, and the two-client adapter path receives duplicate `core/list:3:list`.
+
+This narrows the remaining browser gap. The failure is not limited to direct calls to `mergeCrdtBlocks`; it occurs through the post CRDT adapter that `SyncManager.updateCRDTDoc` invokes for normal entity edits. The unresolved part is still the HTTP/UI scheduler proof: simple natural Playwright delay variants on the unpatched known-fixes base did not recreate this adapter ordering.
+
 ## Root Cause
 
 The original block CRDT merge logic came from `84019935998c16f877e976ad85e84748355d7282` (`Improve CRDT "merge logic" for post entities (#72262)`). It uses a generic left/right diff over the top-level `Y.Array` and updates the remaining middle segment by array index.
@@ -110,6 +123,15 @@ Known-fixes base failure:
 ```bash
 cd /Users/danluu/dev/fuzz/gutenberg-836-knownfix-reduction
 npm run test:unit -- packages/core-data/src/utils/test/crdt-836655577216-reduction.ts --runTestsByPath
+```
+
+Result: failed on `f256024286dd80a4c0e2579f658c109256abf648`; same-doc received `core/heading:0:heading` where `core/group:2:group` was expected, and two-client received `core/list:3:list` where `core/group:2:group` was expected.
+
+Post CRDT adapter failure:
+
+```bash
+cd /Users/danluu/dev/fuzz/gutenberg-836-knownfix-reduction
+npm run test:unit -- packages/core-data/src/utils/test/crdt-836655577216-apply-post-reduction.ts --runTestsByPath
 ```
 
 Result: failed on `f256024286dd80a4c0e2579f658c109256abf648`; same-doc received `core/heading:0:heading` where `core/group:2:group` was expected, and two-client received `core/list:3:list` where `core/group:2:group` was expected.
