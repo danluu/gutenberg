@@ -1125,11 +1125,20 @@ export function mergeCrdtBlocks(
 	const baseBlocksToSync = baseBlocks
 		? makeBlocksSerializable( baseBlocks )
 		: undefined;
-	const previousBlocks =
-		baseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
-	const blocksToSync = baseBlocksToSync
-		? localBlocksToSync
-		: reconcileStaleLocalBlocks( yblocks, localBlocksToSync );
+	const cachedPreviousBlocks = previousLocalBlocksCache.get( yblocks );
+	const baseBlocksMatchCurrent =
+		baseBlocksToSync &&
+		fastDeepEqual(
+			stripArrayElementIds( baseBlocksToSync ),
+			stripArrayElementIds( yblocks.toJSON() )
+		);
+	const previousBlocks = baseBlocksMatchCurrent
+		? cachedPreviousBlocks ?? baseBlocksToSync
+		: baseBlocksToSync ?? cachedPreviousBlocks;
+	const blocksToSync =
+		baseBlocksToSync && ! baseBlocksMatchCurrent
+			? localBlocksToSync
+			: reconcileStaleLocalBlocks( yblocks, localBlocksToSync );
 
 	if ( rebaseYBlocksByClientId( yblocks, previousBlocks, blocksToSync ) ) {
 		mergeYBlocksByClientId(
