@@ -43,7 +43,7 @@ Shortest experiment to improve confidence: run the natural browser repro with th
 
 Revision restore is an authoritative rollback, but the RTC save-preparation layer treats it as an ordinary stale local save.
 
-On current trunk `b41e4e944f7852d89ac58ecfd1dc854447173fa2`, `packages/editor/src/store/private-actions.js` still applies revision content this way:
+On current trunk `cb74beb786b366ff69dac328b04861add1a67974`, `packages/editor/src/store/private-actions.js` still applies revision content this way:
 
 ```js
 const edits = {
@@ -86,6 +86,48 @@ Robustness audit:
 - Kernel-maintainer view: the option is internal, narrow, and tied to one restore call site.
 - Distributed-systems view: revision restore chooses an authoritative value; it is not a CRDT merge with the value being rolled back.
 - Simplicity/performance view: the fix adds no new network round trip or conflict algorithm. The main failure risk is option propagation, covered by focused unit tests.
+
+## Pass 180 Status
+
+Pass 180 verified that current trunk `cb74beb786b366ff69dac328b04861add1a67974` has not independently fixed the restore/save path. The source still restores revisions with `blocks: undefined` and a plain `savePost()`, while `saveEntityRecord()` still calls `__unstablePrePersist( persistedRecord, edits )` without forwarding save options.
+
+The PR branch was rebased cleanly onto that trunk and pushed to:
+
+```text
+https://github.com/danluu/gutenberg/tree/try/collaboration-revision-restore-reload-resurrects-newer-blo-58b782e101aa-pr
+```
+
+Current PR-branch commit order after pass 180:
+
+```text
+1401f462f79 Add revision restore RTC regression test
+192ba6ecb1e Add RTC revision restore reload e2e repro
+2f0f6064f1b Preserve restored revision as authoritative RTC save
+```
+
+Focused checks after the pass-180 rebase:
+
+```bash
+npm run test:unit -- packages/core-data/src/test/actions.js --testNamePattern="passes save options to the entity pre-persist hook"
+npm run test:unit -- packages/editor/src/store/test/private-actions.js --testNamePattern="restoreRevision\\(\\)"
+npm run lint:js -- packages/core-data/src/actions.js packages/core-data/src/entities.js packages/core-data/src/test/actions.js packages/editor/src/store/private-actions.js packages/editor/src/store/test/private-actions.js test/e2e/specs/editor/collaboration/triage-58b782e101aa-realistic.spec.ts
+git diff --check origin/trunk...HEAD
+```
+
+All passed after the fix.
+
+Pass 180 also checked the first repro commit before the fix:
+
+```bash
+git switch --detach 1401f462f79
+npm run test:unit -- packages/core-data/src/test/actions.js --testNamePattern="passes save options to the entity pre-persist hook"
+npm run test:unit -- packages/editor/src/store/test/private-actions.js --testNamePattern="restoreRevision\\(\\)"
+git switch try/collaboration-revision-restore-reload-resurrects-newer-blo-58b782e101aa-pr
+```
+
+Both tests failed before the fix: the core-data test showed `__unstablePrePersist()` received only `( persistedRecord, edits )`, and the editor test showed `restoreRevision()` still passed `blocks: undefined`.
+
+`wp-env` was checked with `WP_ENV_PORT=9947` and reported `status: uninitialized`, so pass 180 did not spend a full environment initialization/build cycle on a fresh browser replay. The retained natural Playwright repro and annotated pass-170 video remain the browser-level evidence.
 
 ## Pass 179 Status
 
