@@ -309,3 +309,37 @@ blocks. This exact signature needs both deletion preservation and moved survivor
 order preservation. The dedicated prototype branch
 `7d0e079fc07d7ad3f937f0921d68a0d3d183f481` was rechecked in a clean detached
 worktree during pass 178 and passed both focused regressions.
+
+## Pass 179 Update
+
+Pass 179 rechecked the current known-fixes status from immutable commits because
+the local `/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507`
+worktree had been moved to a dirty `c8af86c` state by earlier analysis. On a
+fresh detached worktree at exact known-fixes commit
+`f256024286dd80a4c0e2579f658c109256abf648`, cherry-picking test commit
+`5461d73aedfadb00b454c710ee105408554d2ed2` and running the two focused tests
+still failed with:
+
+```text
+Expected: [ "Tail paragraph", "Follow-up heading" ]
+Received: [ "Tail paragraph", "Follow-up heading", "Tail paragraph" ]
+```
+
+The pushed prototype PR branch
+`try/rtc-reload-rehydrates-deleted-top-level-paragraph-as-dupli-388717ee691c-pr`
+at `7d0e079fc07d7ad3f937f0921d68a0d3d183f481` passed the same two tests and
+the surrounding `packages/core-data/src/utils/test/crdt-blocks.ts` suite
+(`76 passed`). `git diff --check HEAD~3..HEAD` was clean.
+
+Pass 179 also rechecked the natural editor path that makes the explicit-base
+test meaningful. In the known-fixes base, `editEntityRecord()` calls the sync
+manager with `{ baseRecord: editedRecord }`; the sync manager forwards that
+option into `syncConfig.applyChangesToCRDTDoc()`; post entities then call
+`applyPostChangesToCRDTDoc()` with the same options, and
+`applyPostChangesToCRDTDoc()` passes `options.baseRecord?.blocks` into
+`mergeCrdtBlocks()`. That means a normal follow-up editor edit after reload or
+rejoin can exercise the duplicate-tail branch. The practical likelihood remains
+`low` for RTC-enabled editing and `very-low` for the general Gutenberg
+population: the actions are ordinary, but the stale explicit-base timing window
+requires active collaboration plus reload/rejoin or delayed sync around a
+nearby move/delete.
