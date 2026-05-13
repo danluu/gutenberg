@@ -443,3 +443,71 @@ stale full-array rebase shape used by the CRDT repro is not a synthetic block
 tree mutation: it is the ordinary representation produced by Table block row
 insert/delete controls. The rare part remains RTC concurrency on the same table
 and the stale-local interleaving, not the editing operation itself.
+
+Pass 180 rebased both artifact branches onto current `origin/trunk`
+`cb74beb786b366ff69dac328b04861add1a67974`. The PR branch kept the requested
+three-commit order:
+
+- `bb449f1fc86 Add stale table body CRDT repro`
+- `d2e61ede566 Add stale table body collaboration repro`
+- `cc1fa4f35ec Fix stale table body structural merges`
+
+Fresh pass-180 checks:
+
+```bash
+git fetch origin trunk
+git -C /Users/danluu/dev/fuzz/gutenberg-bug-703ef0771ea5 \
+	rebase --autostash origin/trunk
+git -C .../pass-177/703ef0771ea5-pr-branch rebase origin/trunk
+git -C .../pass-177/703ef0771ea5-pr-branch diff --check origin/trunk..HEAD
+git -C .../pass-177/703ef0771ea5-pr-branch \
+	npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Results: both rebases completed cleanly. The explanation branch had a
+pre-existing `.cache/.gitkeep` deletion, so `--autostash` preserved it. The
+PR branch focused unit test passed, 1 suite / 1 test, and `git diff --check`
+reported no whitespace errors.
+
+Pass 180 also refreshed the negative controls:
+
+```bash
+git -C .../pass-178/703ef0771ea5-f256-exact rev-parse HEAD
+git -C .../pass-178/703ef0771ea5-f256-exact \
+	npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Result: exact known-fixes base `f256024286dd80a4c0e2579f658c109256abf648`
+still failed with an extra duplicate `remote append A` / `remote append B`
+row.
+
+```bash
+git fetch origin '+pull/77887/head:refs/heads/pr/77887'
+git rev-parse pr/77887
+git -C .../pass-178/703ef0771ea5-pr77887-head \
+	npm run test:unit -- \
+	packages/core-data/src/utils/test/crdt-703ef0771ea5-exact-sequence.test.ts \
+	--runInBand
+```
+
+Result: direct PR 77887 head is still
+`9c5dba15654eda53a98889978e6751c22e0ca2af` and still failed before the final
+row equality assertion because `tailRow` was already `undefined`.
+
+Current trunk remains a negative product-control for this exact signature:
+
+```bash
+git grep -n 'mergeYArrayLocalChanges\|__unstableSyncId' origin/trunk -- \
+	packages/core-data/src/utils/crdt-blocks.ts
+git grep -n 'mergeYArrayLocalChanges\|__unstableSyncId' \
+	f256024286dd80a4c0e2579f658c109256abf648 -- \
+	packages/core-data/src/utils/crdt-blocks.ts
+```
+
+Result: the first command found no matches on current trunk; the second found
+both `__unstableSyncId` and `mergeYArrayLocalChanges()` in the exact known-fixes
+base. The direct stale-local path is therefore still proposed-stack-specific.
