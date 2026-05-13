@@ -131,6 +131,23 @@ hook, or block-editor reducer paths. A fresh known-fixes negative control at
 stale full-snapshot repro passed, while both same-array/cache-sensitive repros
 failed with `Inserted paragraph, Emoji and multibyte, Another paragraph`.
 
+Pass 180 rebased both branches onto current `origin/trunk`
+(`5a651121865a9352b6ab782f70fe85e1bfebbe23`, 2026-05-13). The 24 intervening
+trunk commits did not touch `packages/core-data/src/utils/crdt-blocks.ts`,
+`packages/core-data/src/utils/crdt.ts`, `packages/sync/src`,
+`packages/block-editor/src/store/reducer.js`,
+`packages/block-editor/src/store/selectors.js`,
+`packages/core-data/src/hooks/use-entity-block-editor.js`,
+`packages/block-editor/src/components/provider/use-block-sync.js`, or the
+collaboration fixture/spec path. A fresh known-fixes negative control at
+`f256024286dd80a4c0e2579f658c109256abf648` again reproduced the same split:
+the stale full-snapshot repro passed, while both same-array/cache-sensitive
+repros failed with `Inserted paragraph, Emoji and multibyte, Another
+paragraph`. A fresh browser attempt on the rebased fixed branch reached
+Playwright but failed before the editing sequence because collaboration
+readiness did not initialize in 15 seconds; this is harness/readiness evidence,
+not a product counterexample.
+
 Shortest confidence-improving experiment: run the natural Playwright sequence
 100-200 times with small randomized delays between delete, insert-before, and
 move-down while logging each emitted block array order and object identity.
@@ -290,18 +307,24 @@ Pass 179 rebased both branches onto:
 a6cc01ba412 Shortcode: Offer block-specific transforms when text matches a registered shortcode (#77944)
 ```
 
-PR branch commit order after the pass 179 refresh:
+Pass 180 rebased both branches onto:
 
 ```text
-1ba1ff24470 Add RTC stale top-level move merge regressions
-841e3e01a40 Add RTC top-level move Playwright repro
-a5621725e86 Preserve RTC block order across stale snapshots
+5a651121865 Connectors: Increase right padding of callout for mobile layout (#78126)
 ```
 
-Local PR head after the pass 179 refresh:
+PR branch commit order after the pass 180 refresh:
 
 ```text
-a5621725e86ea925b82edd016f5465c9f3673b47 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
+946bcdd3f3d Add RTC stale top-level move merge regressions
+91287320c6f Add RTC top-level move Playwright repro
+0f0a0d09693 Preserve RTC block order across stale snapshots
+```
+
+Local PR head after the pass 180 refresh:
+
+```text
+0f0a0d0969391c3a2f61fd86ce8945d49dec8a57 try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr
 ```
 
 ## Verification
@@ -571,3 +594,55 @@ Result: the test failed in global setup before the spec ran because
 `gutenberg-test-plugin-rtc-websocket-provider` is not installed in the
 wp-env plugin list. This is a harness/setup failure, not product evidence for
 or against the bug.
+
+Pass 180 repeated the focused fixed-branch unit repros after rebasing onto
+`origin/trunk`:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --testNamePattern='preserves a remotely inserted block and the moved sibling after a stale top-level move|observes reordered blocks when the editor reuses the same block array reference|preserves the moved sibling when a same-array move follows a remote insert echo'
+```
+
+Result: `PASS`, 3 passed, 75 skipped.
+
+Pass 180 full fixed-branch CRDT unit file:
+
+```bash
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand
+```
+
+Result: `PASS`, 78 passed.
+
+Pass 180 lint:
+
+```bash
+npm run lint:js -- packages/core-data/src/utils/crdt-blocks.ts packages/core-data/src/utils/test/crdt-blocks.ts test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts
+```
+
+Result: exit code 0.
+
+Pass 180 known-fixes negative control:
+
+```bash
+git worktree add --detach /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-180/work/66edd42bfa52-knownfix-f256 f256024286dd80a4c0e2579f658c109256abf648
+git checkout try/rtc-top-level-move-reconciliation-preserves-inserted-block-66edd42bfa52-pr -- packages/core-data/src/utils/test/crdt-blocks.ts
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand --testNamePattern='preserves a remotely inserted block and the moved sibling after a stale top-level move|observes reordered blocks when the editor reuses the same block array reference|preserves the moved sibling when a same-array move follows a remote insert echo'
+```
+
+Result: `FAIL`, 1 passed, 2 failed, 75 skipped. The stale full-snapshot repro
+passed, while both same-array/cache-sensitive repros received:
+
+```text
+Inserted paragraph, Emoji and multibyte, Another paragraph
+```
+
+Pass 180 headless Playwright attempt on the rebased fixed branch:
+
+```bash
+RTC_EC47_ATTEMPTS=1 RTC_EC47_OUTPUT_DIR=/Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-180/playwright-output/66edd42bfa52 WP_ENV_PORT=10026 WP_BASE_URL=http://localhost:10026 RTC_MANIFEST_WS_START_PORT=21408 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-ec47d94c5251-realistic.spec.ts --project=chromium --workers=1
+WP_ENV_PORT=10026 WP_BASE_URL=http://localhost:10026 npm run wp-env-test -- stop
+```
+
+Result: `FAIL` before the editing sequence. `attempt-1.json` records
+`page.waitForFunction: Timeout 15000ms exceeded` in
+`CollaborationUtils.waitForCollaborationReady()`, and final
+`npm run wp-env-test -- status` reported `status: stopped`.
