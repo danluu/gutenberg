@@ -22,8 +22,8 @@ top-level Paragraph move can omit a remote-only top-level Pullquote from the
 snapshot being merged. The pre-existing stale-local reconciliation handles the
 cached-history path, but the explicit-base path bypasses that reconciliation.
 
-Current `origin/trunk` at `a6cc01ba412ca96982e977c3ffb734a091cb5626`
-(fetched 2026-05-12) does not yet pass `baseRecord` through the same
+Current `origin/trunk` at `5a651121865a9352b6ab782f70fe85e1bfebbe23`
+(fetched 2026-05-13) does not yet pass `baseRecord` through the same
 `getSyncManager()?.update()` call, so this document tracks a proposed-stack
 regression risk rather than a directly reproduced trunk bug.
 
@@ -89,6 +89,18 @@ scratch attempt to run the existing reduced tests on that PR head did not reach
 the assertion because Jest failed to resolve `uuid` from the linked dependency
 tree; that run is test-environment evidence only, not a product pass or fail.
 
+A pass-180 verification refreshed `origin/trunk` to
+`5a651121865a9352b6ab782f70fe85e1bfebbe23` and confirmed the current-trunk
+boundary still holds. It also checked the newer open PR #77924 head
+`1bda16e1a1921c35d84bfb11cfac025400ee15ae` directly. With only regression
+commit `e2766e12e73` cherry-picked, that PR head now reaches the assertions and
+fails all three reduced tests: the `SyncManager.update()` race drops
+`remote-pullquote`, the explicit-base CRDT case drops `remote-pullquote`, and
+the cached-history CRDT control also drops `remote-pullquote`. The exact May 7
+known-fixes base still fails the expected two explicit-base/manager cases, and
+PR-branch commit `425764ce85c9183550ba0fb17651e18b0541a461` still passes all
+three tests.
+
 ## Root Cause
 
 On `f256024286d`, `packages/core-data/src/actions.js` sends editor sync updates
@@ -135,9 +147,14 @@ is a conflict-resolved synthetic stack. The vulnerable ingredients are present
 in the PR head itself: the editor action passes an explicit pre-edit base, the
 post CRDT adapter forwards that base into block merging, and the block merge can
 fall back to whole-array diff/delete behavior when the current Y.Doc has an
-extra remote-only block. The pass-179 evidence therefore supports "proposed PR
-shape is vulnerable unless paired with the extra preservation fix", not a claim
-that current trunk is already affected.
+extra remote-only block. As of PR head
+`1bda16e1a1921c35d84bfb11cfac025400ee15ae`, `rebaseYBlocksByClientId()` only
+runs when the current and incoming arrays have the same length. In this bug's
+shape, current has five top-level blocks while incoming/base have four, so the
+merge falls through to the array diff and deletes the remote-only Pullquote.
+The pass-180 evidence therefore supports "the current PR #77924 shape is still
+vulnerable unless paired with the extra preservation fix", not a claim that
+current trunk is already affected.
 
 The proposed fix is small: let `reconcileStaleLocalBlocks()` accept the explicit
 base snapshot and call it in the explicit-base branch too.
@@ -146,7 +163,7 @@ base snapshot and call it in the explicit-base branch too.
 
 Practical likelihood: low for active RTC users of the May 7 proposed-stack
 shape or open PR #77924 without the extra preservation fix; very low for
-ordinary single-user Gutenberg and for current trunk as of 2026-05-12.
+ordinary single-user Gutenberg and for current trunk as of 2026-05-13.
 
 Natural workflow:
 
