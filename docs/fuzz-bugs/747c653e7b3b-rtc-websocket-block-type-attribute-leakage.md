@@ -142,6 +142,15 @@ Received: intro, middle, pullquote, heading, tail, group
 
 At PR branch head `74516c1fbb7`, the same test passed. Pass 178 also inspected the local WebSocket e2e harness: `test/e2e/playwright.rtc-websocket.config.ts` enables the test provider plugin and starts `bin/rtc-test-ws-sync-server.mjs`, while `packages/e2e-tests/plugins/rtc-websocket-provider/index.js` exposes test controls for delaying the next message or closing the next socket. Those controls could force the historical transport disruption, but they would be an injected test fault. A strict natural-user Playwright repro still needs to create the stale explicit-base interleaving through editor timing, save/reload, and ordinary block actions alone.
 
+Pass 179 repeated the focused fail/pass check again because the pass-178 detached worktree was no longer present locally. A fresh detached worktree at test-only commit `07e637acb29` failed for the intended product-shaped reason: the final CRDT block list dropped `remote-insert` and `local-insert`. The PR branch head `74516c1fbb7` passed the same test:
+
+```text
+PASS packages/core-data/src/utils/test/crdt-747c653e7b3b-pass175-explicit-base.test.ts
+Tests: 1 passed, 1 total
+```
+
+Pass 179 also tightened the practical-impact read. The low-level defect is in the shared post-entity CRDT merge path, not in the WebSocket socket code. The exact archived signature is WebSocket-shaped because the fuzz run used a WebSocket provider and transient disruption, but the product path that forwards `baseRecord.blocks` is ordinary post-editor sync code. Gutenberg's provider registry only creates providers when collaboration is enabled; its default provider is HTTP polling, and WebSocket transport requires a plugin/test provider through the `sync.providers` filter. That keeps this exact WebSocket signature low-likelihood in normal installs while leaving the underlying merge class relevant to RTC deployments.
+
 ## Fix Plan
 
 Initial fix: reconcile explicit `baseRecord.blocks` edits against the explicit base before merging.
