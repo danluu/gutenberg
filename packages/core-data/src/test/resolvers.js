@@ -11,7 +11,7 @@ import { getSyncManager } from '../sync';
 jest.mock( '@wordpress/api-fetch' );
 jest.mock( '../sync', () => ( {
 	getSyncManager: jest.fn(),
-	LOCAL_UNDO_IGNORED_ORIGIN: 'gutenberg-undo-ignored',
+	LOCAL_UNDO_IGNORED_ORIGIN: 'local-undo-ignored',
 } ) );
 
 /**

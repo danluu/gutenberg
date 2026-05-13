@@ -23,6 +23,7 @@ import {
 	getUserPermissionsFromAllowHeader,
 	ALLOWED_RESOURCE_ACTIONS,
 	RECEIVE_INTERMEDIATE_RESULTS,
+	clearUnchangedEdits,
 	isNumericID,
 	normalizeQueryForResolution,
 	saveCRDTDoc,
@@ -212,12 +213,22 @@ export const getEntityRecord =
 								return;
 							}
 
+							const persistedRecord = select.getRawEntityRecord(
+								kind,
+								name,
+								key
+							);
+							const normalizedEdits = clearUnchangedEdits(
+								edits,
+								persistedRecord
+							);
+
 							dispatch( {
 								type: 'EDIT_ENTITY_RECORD',
 								kind,
 								name,
 								recordId: key,
-								edits,
+								edits: normalizedEdits,
 								meta: {
 									undo: undefined,
 								},
