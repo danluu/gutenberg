@@ -473,7 +473,13 @@ export const prePersistPostType = async (
 			syncManager = getSyncManager();
 			serializedDoc = await syncManager?.createPersistedCRDTDoc(
 				objectType,
-				objectId
+				objectId,
+				{
+					basePersistedCRDTDoc:
+						persistedRecord?.meta?.[
+							POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+						] || null,
+				}
 			);
 			hasSerializedDoc = !! serializedDoc;
 			const latestRecord = await apiFetch( {
@@ -514,7 +520,13 @@ export const prePersistPostType = async (
 			) {
 				serializedDoc = await syncManager?.createPersistedCRDTDoc(
 					objectType,
-					objectId
+					objectId,
+					{
+						basePersistedCRDTDoc:
+							latestRecord?.meta?.[
+								POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+							] || null,
+					}
 				);
 				hasSerializedDoc = !! serializedDoc;
 
@@ -579,7 +591,12 @@ export const prePersistPostType = async (
 		if ( ! hasSerializedDoc ) {
 			serializedDoc = await (
 				syncManager ?? getSyncManager()
-			)?.createPersistedCRDTDoc( objectType, objectId );
+			)?.createPersistedCRDTDoc( objectType, objectId, {
+				basePersistedCRDTDoc:
+					persistedRecord?.meta?.[
+						POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+					] || null,
+			} );
 		}
 
 		if ( serializedDoc ) {

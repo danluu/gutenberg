@@ -17,6 +17,7 @@ import { logPerformanceTiming, passThru } from './performance';
 import { getProviderCreators } from './providers';
 import type {
 	CollectionHandlers,
+	CreatePersistedCRDTDocOptions,
 	CRDTDoc,
 	EntityID,
 	ObjectID,
@@ -34,6 +35,7 @@ import { createUndoManager } from './undo-manager';
 import {
 	createYjsDoc,
 	deserializeCrdtDoc,
+	getPersistedCrdtDocVersion,
 	initializeYjsDoc,
 	markEntityAsSaved,
 	serializeCrdtDoc,
@@ -68,6 +70,10 @@ function areUint8ArraysEqual( a: Uint8Array, b: Uint8Array ): boolean {
 	}
 
 	return a.every( ( value, index ) => value === b[ index ] );
+}
+
+interface ApplyPersistedCrdtDocOptions {
+	shouldPersist?: boolean;
 }
 
 /**
@@ -527,12 +533,15 @@ export function createSyncManager( debug = false ): SyncManager {
 	 * @param {ObjectType} objectType Object type.
 	 * @param {ObjectID}   objectId   Object ID.
 	 * @param {ObjectData} record     Entity record representing this object type.
+	 * @param {Object}     options    Options for applying the persisted CRDT document.
 	 */
 	function _applyPersistedCrdtDoc(
 		objectType: ObjectType,
 		objectId: ObjectID,
-		record: ObjectData
+		record: ObjectData,
+		options: ApplyPersistedCrdtDocOptions = {}
 	): void {
+		const { shouldPersist = true } = options;
 		const entityId = getEntityId( objectType, objectId );
 		const entityState = entityStates.get( entityId );
 
@@ -576,7 +585,9 @@ export function createSyncManager( debug = false ): SyncManager {
 			// calling `syncManager.createPersistedCRDTDoc`.
 			targetDoc.transact( () => {
 				applyChangesToCRDTDoc( targetDoc, record );
-				handlers.persistCRDTDoc();
+				if ( shouldPersist ) {
+					handlers.persistCRDTDoc();
+				}
 			}, LOCAL_SYNC_MANAGER_ORIGIN );
 			return;
 		}
@@ -633,7 +644,9 @@ export function createSyncManager( debug = false ): SyncManager {
 		// `syncManager.createPersistedCRDTDoc`.
 		targetDoc.transact( () => {
 			applyChangesToCRDTDoc( targetDoc, changes );
-			handlers.persistCRDTDoc();
+			if ( shouldPersist ) {
+				handlers.persistCRDTDoc();
+			}
 		}, LOCAL_SYNC_MANAGER_ORIGIN );
 	}
 
@@ -858,7 +871,8 @@ export function createSyncManager( debug = false ): SyncManager {
 	 */
 	async function createPersistedCRDTDoc(
 		objectType: ObjectType,
-		objectId: ObjectID
+		objectId: ObjectID,
+		options: CreatePersistedCRDTDocOptions = {}
 	): Promise< string | null > {
 		const entityId = getEntityId( objectType, objectId );
 		const entityState = entityStates.get( entityId );
@@ -872,7 +886,11 @@ export function createSyncManager( debug = false ): SyncManager {
 		// before we serialize the document.
 		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
-		return serializeCrdtDoc( entityState.ydoc );
+		return serializeCrdtDoc( entityState.ydoc, {
+			baseVersion: getPersistedCrdtDocVersion(
+				options.basePersistedCRDTDoc
+			),
+		} );
 	}
 
 	function scheduleUpdateCRDTDoc(
@@ -910,7 +928,10 @@ export function createSyncManager( debug = false ): SyncManager {
 			? Y.encodeStateVector( entityState.ydoc )
 			: null;
 
-		internal.applyPersistedCrdtDoc( objectType, objectId, record );
+		internal.applyPersistedCrdtDoc( objectType, objectId, record, {
+			shouldPersist: false,
+		} );
+		await internal.updateEntityRecord( objectType, objectId );
 
 		// Applying a persisted document can schedule local store updates. Yield so
 		// callers that immediately inspect the document see the completed merge.
