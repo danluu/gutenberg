@@ -136,4 +136,4 @@ cd /Users/danluu/dev/fuzz/gutenberg-bug-c05661de30a8
 npm run test:unit -- packages/editor/src/store/test/private-actions.js --testNamePattern=restoreRevision
 ```
 
-Result: passed before rebasing the PR branch from `d52e35a291c1` to current `origin/trunk` `f4df834d9f8`; the relevant trunk files had no intervening changes.
+Result: passed after rebasing the PR branch from `d52e35a291c1` to current `origin/trunk` `f4df834d9f8`.
