@@ -1261,3 +1261,108 @@ record, the Y.Doc write is deferred to the next timer tick, and another peer's
 polling update arrives before that timer runs. Large generated posts, the exact
 stress choreography, and `Promise.all` overlap are fuzz amplifiers, not semantic
 requirements: the low-level repro shows ordinary title/body fields are enough.
+
+## Pass 180 Current-Trunk Recheck
+
+Pass 180 fetched `origin/trunk`
+`5a651121865a9352b6ab782f70fe85e1bfebbe23`
+(`Connectors: Increase right padding of callout for mobile layout (#78126)`).
+The commits since pass 179 do not touch `packages/sync`, `packages/core-data`,
+or the collaboration E2E spec/helper paths. Current trunk still has the same
+ordering bug: `SyncManager.update()` schedules `updateCRDTDoc` with
+`setTimeout(..., 0)`, while `_updateEntityRecord()` reads
+`handlers.getEditedRecord()` without first flushing accepted local CRDT writes.
+
+Pass 180 re-read the refreshed source artifacts and again found semantic
+collaboration failures, not the bucketed OOM:
+
+- The large-post trace contains 59 `wp-sync` polling responses, all HTTP 200.
+- The list-item trace contains 28 `wp-sync` polling responses, all HTTP 200.
+- Targeted searches of both trace network streams found no HTTP 500/502/503/504
+  responses, PHP fatal strings, allowed-memory strings, or OOM strings.
+- The visible failures remain post-editor content/order assertions after normal
+  typing, toolbar moves, save, reload, and polling sync.
+
+The deterministic repro was replayed on current trunk in a detached worktree
+with only the repro commit applied:
+
+```bash
+git worktree add --detach \
+  /private/tmp/4af28404874c-pass180-current.mz0A5F/repo origin/trunk
+cd /private/tmp/4af28404874c-pass180-current.mz0A5F/repo
+ln -s /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507/node_modules node_modules
+git cherry-pick 1df7e3f525e3f1b745f62635739c52a5f3c06e5f
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: FAIL. `editRecord` receives
+`{ body: "Remote Body", title: "Initial Title" }`, proving that current trunk
+can still project a stale local CRDT field back into the edited record.
+
+Applying the manager fix in that same worktree:
+
+```bash
+git cherry-pick b71f99d44588348165ca1986f1be692c4292638e
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: PASS.
+
+The required May 7 known-fixes base was checked by exact commit,
+`f256024286dd80a4c0e2579f658c109256abf648`, with only the same repro commit
+applied:
+
+```bash
+git worktree add --detach \
+  /private/tmp/4af28404874c-pass180-knownfix.1S80Pu/repo \
+  f256024286dd80a4c0e2579f658c109256abf648
+cd /private/tmp/4af28404874c-pass180-knownfix.1S80Pu/repo
+ln -s /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-current-20260507/node_modules node_modules
+git cherry-pick 1df7e3f525e3f1b745f62635739c52a5f3c06e5f
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+```
+
+Result: FAIL. The known-fixes stack still produces two `editRecord` calls in
+this repro, so its remote-key reconciliation machinery still does not establish
+the missing local-update-before-remote-projection happens-before edge.
+
+The PR branch was rebased onto current trunk and keeps the requested
+three-commit sequence:
+
+1. `bf9a779e4b6 Add RTC deferred update race repro`
+2. `75674556126 Add RTC stress Playwright repro`
+3. `66927c737cb Flush RTC updates before remote reconciliation`
+
+Verification on the rebased PR branch:
+
+```bash
+git diff --check origin/trunk..HEAD
+npm run test:unit packages/sync/src/test/manager.ts -- \
+  --testNamePattern="flushes queued local changes before remote CRDT updates read the edited record" \
+  --runInBand
+npm run test:unit packages/sync/src/test/manager.ts -- --runInBand
+npm run test:unit packages/core-data/src/utils/test/crdt-blocks.ts -- --runInBand
+git push --force-with-lease danluu \
+  try/rtc-sync-http-polling-oom-due-to-oversized-shared-rooms-4af28404874c-pr
+```
+
+Results: PASS, PASS, PASS (`27/27`), PASS (`73/73`), and push succeeded to
+`66927c737cb`.
+
+Pass 180 sharpens the practical likelihood wording to `low` overall, with
+`medium` risk inside active RTC coediting sessions over HTTP polling. Across
+all Gutenberg use, the issue needs RTC enabled and at least two active editors
+or tabs on the same post, so it is not a high-frequency default editing bug.
+Inside the affected RTC workflow, the actions are ordinary: post editor,
+default HTTP polling provider, paragraph/list/title/body edits, optional save
+and reload, and no malformed blocks, direct state mutation, artificial network
+fault, or oversized-room/OOM condition. The remaining uncertainty is empirical
+rate: the shortest confidence-improving experiment is a small-post two-user
+browser loop under default HTTP polling that measures marker-loss frequency
+over hundreds of edits.
