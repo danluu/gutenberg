@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import type { Page, BrowserContext } from '@playwright/test';
+import type { Page, BrowserContext, Route } from '@playwright/test';
 
 /**
  * WordPress dependencies
@@ -36,10 +36,12 @@ interface NormalizedBlock {
 
 interface NormalizedCollaborativeState {
 	blocks: NormalizedBlock[];
+	crdtDocument: string | null;
 	title: string;
 }
 
 type CleanupUsersMode = 'all' | 'tracked' | 'none';
+type SyncFaultRouteHandler = ( route: Route ) => Promise< void >;
 
 export const SECOND_USER: UserCredentials = {
 	username: 'collaborator',
@@ -52,6 +54,7 @@ export const SECOND_USER: UserCredentials = {
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 const USE_TEST_WS_PROVIDER = process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1';
+const SYNC_ROUTE_PATTERN = '**/*wp-sync*';
 
 export default class CollaborationUtils {
 	private admin: Admin;
@@ -60,6 +63,7 @@ export default class CollaborationUtils {
 	private requestUtils: RequestUtils;
 	private primaryPage: Page;
 	private sessions: UserSession[] = [];
+	private syncFaultRoutes = new WeakMap< Page, SyncFaultRouteHandler >();
 	private trackedUserIds: number[] = [];
 
 	constructor( {
@@ -113,14 +117,48 @@ export default class CollaborationUtils {
 				? { storageState: { cookies: [], origins: [] } }
 				: {} ),
 		} );
-		const newPage = await context.newPage();
 
-		// Log in via the WordPress login form.
-		await newPage.goto( '/wp-login.php' );
-		await newPage.locator( '#user_login' ).fill( user.username );
-		await newPage.locator( '#user_pass' ).fill( user.password );
-		await newPage.getByRole( 'button', { name: 'Log In' } ).click();
-		await newPage.waitForURL( '**/wp-admin/**' );
+		let newPage: Page | undefined;
+
+		try {
+			// Authenticate through the context request API so browser cookies are
+			// ready before the editor page opens.
+			const loginPageResponse = await context.request.get(
+				'/wp-login.php',
+				{
+					failOnStatusCode: true,
+				}
+			);
+			await loginPageResponse.dispose();
+
+			const loginResponse = await context.request.post( '/wp-login.php', {
+				failOnStatusCode: true,
+				form: {
+					log: user.username,
+					pwd: user.password,
+					'wp-submit': 'Log In',
+					redirect_to: `${ BASE_URL }/wp-admin/`,
+					testcookie: '1',
+				},
+			} );
+			const loginUrl = loginResponse.url();
+			await loginResponse.dispose();
+
+			if ( loginUrl.includes( '/wp-login.php' ) ) {
+				throw new Error(
+					`Failed to authenticate collaborator user ${ user.username }.`
+				);
+			}
+		} catch {
+			newPage = await context.newPage();
+			await newPage.goto( '/wp-login.php' );
+			await newPage.locator( '#user_login' ).fill( user.username );
+			await newPage.locator( '#user_pass' ).fill( user.password );
+			await newPage.getByRole( 'button', { name: 'Log In' } ).click();
+			await newPage.waitForURL( '**/wp-admin/**' );
+		}
+
+		newPage ??= await context.newPage();
 
 		// Navigate to the post editor.
 		await newPage.goto( `/wp-admin/post.php?post=${ postId }&action=edit` );
@@ -450,19 +488,21 @@ export default class CollaborationUtils {
 	}
 
 	/**
-	 * Read the _crdt_document meta value for the current post.
+	 * Read the _crdt_document meta value from the currently loaded entity record.
 	 *
 	 * @param page The Playwright page to evaluate on.
 	 */
 	async getCrdtDocument( page: Page ): Promise< string | null > {
-		return page.evaluate( async () => {
+		return page.evaluate( () => {
 			const postId = ( window as any ).wp.data
 				.select( 'core/editor' )
 				.getCurrentPostId();
-			const post = await ( window as any ).wp.apiFetch( {
-				path: `/wp/v2/posts/${ postId }?context=edit`,
-			} );
-			return post?.meta?._crdt_document ?? null;
+			return (
+				( window as any ).wp.data
+					.select( 'core' )
+					.getEntityRecord( 'postType', 'post', postId )?.meta
+					?._crdt_document ?? null
+			);
 		} );
 	}
 
@@ -539,62 +579,139 @@ export default class CollaborationUtils {
 		}
 	}
 
+	async failNextSyncRequest( page: Page, status = 503 ) {
+		const responseStatus =
+			Number.isInteger( status ) && status >= 400 ? status : 503;
+
+		await this.interceptNextSyncRequest( page, async ( route ) => {
+			await route.fulfill( {
+				status: responseStatus,
+				contentType: 'application/json',
+				body: JSON.stringify( {
+					code: 'rtc_fuzz_sync_failure',
+					message: 'Injected sync failure from RTC fuzz harness.',
+					data: {
+						status: responseStatus,
+					},
+				} ),
+			} );
+		} );
+	}
+
+	async delayNextSyncRequest( page: Page, delayMs: number ) {
+		const boundedDelayMs =
+			Number.isFinite( delayMs ) && delayMs > 0 ? delayMs : 0;
+
+		await this.interceptNextSyncRequest( page, async ( route ) => {
+			await new Promise( ( resolve ) =>
+				setTimeout( resolve, boundedDelayMs )
+			);
+			await route.continue();
+		} );
+	}
+
+	private async interceptNextSyncRequest(
+		page: Page,
+		handleRoute: SyncFaultRouteHandler
+	) {
+		const previousRoute = this.syncFaultRoutes.get( page );
+		if ( previousRoute ) {
+			await page.unroute( SYNC_ROUTE_PATTERN, previousRoute );
+		}
+
+		let consumed = false;
+		const routeHandler = async ( route: Route ) => {
+			if ( consumed ) {
+				await route.continue();
+				return;
+			}
+
+			consumed = true;
+			this.syncFaultRoutes.delete( page );
+			await page.unroute( SYNC_ROUTE_PATTERN, routeHandler );
+			await handleRoute( route );
+		};
+
+		this.syncFaultRoutes.set( page, routeHandler );
+		await page.route( SYNC_ROUTE_PATTERN, routeHandler );
+	}
+
 	/**
 	 * Returns a normalized view of the current collaborative editor state for
 	 * equality checks across participants.
 	 *
-	 * @param page The page to inspect.
+	 * @param page                          The page to inspect.
+	 * @param [options]                     Optional settings.
+	 * @param [options.includeCrdtDocument] Whether to include the persisted
+	 *                                      _crdt_document in the returned state.
 	 */
 	async getNormalizedPostState(
-		page: Page
+		page: Page,
+		{ includeCrdtDocument = false }: { includeCrdtDocument?: boolean } = {}
 	): Promise< NormalizedCollaborativeState > {
-		return page.evaluate( () => {
-			const normalizeBlocks = (
-				blockTree: Array< {
-					attributes?: Record< string, unknown >;
-					innerBlocks?: Array< unknown >;
-					name: string;
-				} >
-			): NormalizedBlock[] =>
-				blockTree.map( ( block ) => ( {
-					name: block.name,
-					attributes: JSON.parse(
-						JSON.stringify( block.attributes ?? {} )
-					),
-					innerBlocks: normalizeBlocks(
-						( block.innerBlocks ?? [] ) as Array< {
-							attributes?: Record< string, unknown >;
-							innerBlocks?: Array< unknown >;
-							name: string;
-						} >
-					),
-				} ) );
+		return page.evaluate(
+			( { includePersistedDoc } ) => {
+				const normalizeBlocks = (
+					blockTree: Array< {
+						attributes?: Record< string, unknown >;
+						innerBlocks?: Array< unknown >;
+						name: string;
+					} >
+				): NormalizedBlock[] =>
+					blockTree.map( ( block ) => ( {
+						name: block.name,
+						attributes: JSON.parse(
+							JSON.stringify( block.attributes ?? {} )
+						),
+						innerBlocks: normalizeBlocks(
+							( block.innerBlocks ?? [] ) as Array< {
+								attributes?: Record< string, unknown >;
+								innerBlocks?: Array< unknown >;
+								name: string;
+							} >
+						),
+					} ) );
 
-			const blocks = ( window as any ).wp.data
-				.select( 'core/block-editor' )
-				.getBlocks();
+				const postId = ( window as any ).wp.data
+					.select( 'core/editor' )
+					.getCurrentPostId();
+				const record = ( window as any ).wp.data
+					.select( 'core' )
+					.getEntityRecord( 'postType', 'post', postId );
+				const blocks = ( window as any ).wp.data
+					.select( 'core/block-editor' )
+					.getBlocks();
 
-			return {
-				title:
-					( window as any ).wp.data
-						.select( 'core/editor' )
-						.getEditedPostAttribute( 'title' ) ?? '',
-				blocks: normalizeBlocks( blocks ),
-			};
-		} );
+				return {
+					title:
+						( window as any ).wp.data
+							.select( 'core/editor' )
+							.getEditedPostAttribute( 'title' ) ?? '',
+					blocks: normalizeBlocks( blocks ),
+					crdtDocument: includePersistedDoc
+						? record?.meta?._crdt_document ?? null
+						: null,
+				};
+			},
+			{ includePersistedDoc: includeCrdtDocument }
+		);
 	}
 
 	/**
 	 * Wait until all tracked pages converge on the same normalized editor state.
 	 *
-	 * @param [options]         Optional settings.
-	 * @param [options.pages]   Specific pages to compare.
-	 * @param [options.timeout] Maximum wait time in ms.
+	 * @param [options]                     Optional settings.
+	 * @param [options.includeCrdtDocument] Whether convergence should also
+	 *                                      include the persisted CRDT document.
+	 * @param [options.pages]               Specific pages to compare.
+	 * @param [options.timeout]             Maximum wait time in ms.
 	 */
 	async waitForConvergence( {
+		includeCrdtDocument = false,
 		pages = this.allPages,
 		timeout = 15000,
 	}: {
+		includeCrdtDocument?: boolean;
 		pages?: Page[];
 		timeout?: number;
 	} = {} ): Promise< NormalizedCollaborativeState > {
@@ -603,13 +720,31 @@ export default class CollaborationUtils {
 
 		while ( Date.now() < deadline ) {
 			lastStates = await Promise.all(
-				pages.map( ( page ) => this.getNormalizedPostState( page ) )
+				pages.map( ( page ) =>
+					this.getNormalizedPostState( page, {
+						includeCrdtDocument,
+					} )
+				)
 			);
 
-			const serializedFirstState = JSON.stringify( lastStates[ 0 ] );
-			const isSettled = lastStates.every(
-				( state ) => JSON.stringify( state ) === serializedFirstState
+			const comparableStates = lastStates.map( ( state ) => ( {
+				...state,
+				crdtDocument: includeCrdtDocument
+					? Boolean( state.crdtDocument )
+					: state.crdtDocument,
+			} ) );
+			const serializedFirstState = JSON.stringify(
+				comparableStates[ 0 ]
 			);
+			const allHaveCrdtDocument =
+				! includeCrdtDocument ||
+				lastStates.every( ( state ) => !! state.crdtDocument );
+			const isSettled =
+				allHaveCrdtDocument &&
+				comparableStates.every(
+					( state ) =>
+						JSON.stringify( state ) === serializedFirstState
+				);
 
 			if ( isSettled ) {
 				return lastStates[ 0 ];
