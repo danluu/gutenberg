@@ -81,6 +81,7 @@ const ARRAY_ELEMENT_ID_KEY = '__unstableSyncId';
 const ARRAY_ELEMENT_ID_SYMBOL = Symbol( 'wpSyncArrayElementId' );
 
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
+const previousLocalBlocksCache = new WeakMap< YBlocks, Block[] >();
 
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
@@ -916,9 +917,11 @@ export function mergeCrdtBlocks(
 	}
 
 	const blocksToSync = serializableBlocksCache.get( incomingBlocks ) ?? [];
-	const baseBlocksToSync = baseBlocks
+	const explicitBaseBlocksToSync = baseBlocks
 		? makeBlocksSerializable( baseBlocks )
 		: undefined;
+	const baseBlocksToSync =
+		explicitBaseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
 
 	if ( rebaseYBlocksByClientId( yblocks, baseBlocksToSync, blocksToSync ) ) {
 		mergeYBlocksByClientId(
@@ -928,6 +931,7 @@ export function mergeCrdtBlocks(
 			baseBlocksToSync
 		);
 		removeDuplicateClientIds( yblocks );
+		previousLocalBlocksCache.set( yblocks, blocksToSync );
 		return;
 	}
 
@@ -1013,6 +1017,7 @@ export function mergeCrdtBlocks(
 	}
 
 	removeDuplicateClientIds( yblocks );
+	previousLocalBlocksCache.set( yblocks, blocksToSync );
 }
 
 function removeDuplicateClientIds( yblocks: YBlocks ): void {
@@ -1110,6 +1115,110 @@ function stripArrayElementIds( value: unknown ): unknown {
 	return value;
 }
 
+function arePlainValuesEqual( a: unknown, b: unknown ): boolean {
+	return fastDeepEqual(
+		stripArrayElementIds( a ),
+		stripArrayElementIds( b )
+	);
+}
+
+function isYArrayEqualToPlainArray(
+	yArray: Y.Array< unknown >,
+	value: unknown[]
+): boolean {
+	return (
+		yArray.length === value.length &&
+		value.every( ( element, index ) =>
+			areArrayElementsEqual( element, yArray.get( index ) )
+		)
+	);
+}
+
+function findYArrayElementIndex(
+	yArray: Y.Array< unknown >,
+	previousElement: unknown,
+	preferredIndex: number,
+	previousLength: number
+): number {
+	const previousId = getArrayElementId( previousElement );
+
+	if ( previousId ) {
+		for ( let i = 0; i < yArray.length; i++ ) {
+			if ( getArrayElementId( yArray.get( i ) ) === previousId ) {
+				return i;
+			}
+		}
+	}
+
+	for ( let i = 0; i < yArray.length; i++ ) {
+		if ( areArrayElementsEqual( previousElement, yArray.get( i ) ) ) {
+			return i;
+		}
+	}
+
+	if ( yArray.length === previousLength && preferredIndex < yArray.length ) {
+		return preferredIndex;
+	}
+
+	return preferredIndex < yArray.length ? preferredIndex : -1;
+}
+
+function mergeYArrayLocalChanges(
+	yArray: Y.Array< unknown >,
+	newValue: unknown[],
+	previousValue: unknown[],
+	query: Record< string, BlockAttributeSchema >,
+	cursorPosition: MergeCursorPosition,
+	cursorScope: RichTextCursorScope
+): boolean {
+	if ( arePlainValuesEqual( newValue, previousValue ) ) {
+		return true;
+	}
+
+	// If the current CRDT value still equals the previous local value, use the
+	// normal merge path so local inserts/deletes/reorders are applied.
+	if ( isYArrayEqualToPlainArray( yArray, previousValue ) ) {
+		return false;
+	}
+
+	const sharedLength = Math.min( previousValue.length, newValue.length );
+
+	for ( let i = 0; i < sharedLength; i++ ) {
+		const previousElement = previousValue[ i ];
+		const newElement = newValue[ i ];
+
+		if ( arePlainValuesEqual( previousElement, newElement ) ) {
+			continue;
+		}
+
+		const currentIndex = findYArrayElementIndex(
+			yArray,
+			previousElement,
+			i,
+			previousValue.length
+		);
+
+		if ( currentIndex === -1 ) {
+			continue;
+		}
+
+		const currentElement = yArray.get( currentIndex );
+
+		if ( currentElement instanceof Y.Map && isRecord( newElement ) ) {
+			mergeYMapValues(
+				currentElement,
+				newElement,
+				query,
+				cursorPosition,
+				appendCursorScopeKey( cursorScope, currentIndex.toString() ),
+				isRecord( previousElement ) ? previousElement : undefined
+			);
+		}
+	}
+
+	return true;
+}
+
 function mergeYArrayByElementIds(
 	yArray: Y.Array< unknown >,
 	newValue: unknown[],
@@ -1196,6 +1305,20 @@ function mergeYArray(
 	}
 
 	const query = schema.query;
+
+	if (
+		Array.isArray( baseValue ) &&
+		mergeYArrayLocalChanges(
+			yArray,
+			newValue,
+			baseValue,
+			query,
+			cursorPosition,
+			cursorScope
+		)
+	) {
+		return;
+	}
 
 	if (
 		Array.isArray( baseValue ) &&
