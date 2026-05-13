@@ -23,12 +23,14 @@ Strongest evidence for `medium`:
 - Pass 173 ran the exact c056 natural Playwright flow against a worktree using the known-fixes build output. It reached the restore/reload invariant and failed because persisted `content.raw` contained both `rtc-triage-c05661de30a8-old` and `rtc-triage-c05661de30a8-new`.
 - Pass 172's lower-level probe showed the same semantic failure inside `prePersistPostType()`: a restore-shaped shorter body save from `[old, new]` to `[old]` is treated as stale local content and returns merged content containing `[old, new]`.
 - Pass 177 reran that low-level shape on a clean detached `f256024...` worktree. The focused `prePersistPostType()` probe again failed at the intended assertion because `result.content` contained both `rtc-triage-c05661de30a8-old` and `rtc-triage-c05661de30a8-new`.
+- Pass 179 reran the same focused `f256024...` probe. It still failed at the product invariant, proving the bug was not just a stale report from earlier passes.
 - Pass 177 rechecked the relevant stale-save PR head separately (`origin/pr/77876`, `6aad4e5801a`). That head independently has `restoreRevision()` using `blocks: undefined` and plain `savePost()`, plus `mergeStaleSerializedBlockContent()` and no revision-restore escape hatch, so this is not just an artifact of the synthetic known-fixes conflict resolution.
 
 Strongest evidence against `high`:
 
 - Revision restore is rarer than ordinary collaborative editing.
 - The workflow needs RTC collaboration and usually two tabs or two users.
+- Current `origin/trunk` as of `f4df834d9f8` does not contain the stale serialized-content merge from the known-fixes stack, so the immediate trunk-facing risk is lower until that RTC stale-save code or equivalent lands.
 - The preserved canonical source artifact is not runnable, so exact evidence now comes from reconstruction plus the manifest row rather than the original generated spec.
 - The Playwright path is harness-sensitive around wp-env config, build output, and revision-slider selection.
 
@@ -76,6 +78,8 @@ Pass 177 rebased the trunk-facing PR branch to `origin/trunk` `3841375c3f7`. Cur
 
 Pass 178 rebased the PR branch again to `origin/trunk` `d52e35a291c1`. The branch still has the required three-commit order: focused restore unit test, natural c056 Playwright repro, then the restore fix. This pass did not rerun the full browser repro because pass 173 already captured the exact natural failure and pass 177 already reran the clean `f256024...` low-level known-fixes proof. The new confidence improvement is narrower source-level workflow analysis: ordinary save/revision/restore actions are sufficient for the restore-shaped stale-content merge in the backlink-aware known-fixes base; the only unusual product prerequisites are RTC being enabled and an old revision being restored after newer collaborative body content exists.
 
+Pass 179 rebased the explanation branch to `origin/trunk` `f4df834d9f8` and independently reran the focused `f256024...` low-level known-fixes probe. It failed in the same place as pass 178: `prePersistPostType()` returned restored content containing both the old marker and the newer marker. Pass 179 also checked current trunk source and found no stale serialized-content merge there, which sharpens the practical-impact classification: this is a real bug in the backlink-aware RTC known-fixes/proposed-stale-save integration path, while current trunk exposure remains conditional on that code landing or equivalent behavior being enabled.
+
 ## Verification
 
 Pass 173 exact c056 natural repro command:
@@ -115,3 +119,21 @@ npm run test:unit -- packages/editor/src/store/test/private-actions.js --testNam
 ```
 
 Result: passed after the branch was rebased to `origin/trunk` `d52e35a291c1`.
+
+Pass 179 focused known-fixes verification:
+
+```bash
+cd /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-177/c05661de30a8-knownfix-probe
+npm run test:unit -- packages/core-data/src/test/entities.js --testNamePattern="authoritative revision restore"
+```
+
+Result on detached `f256024286dd80a4c0e2579f658c109256abf648`: failed at the intended assertion. The returned content contained both `rtc-triage-c05661de30a8-old` and `rtc-triage-c05661de30a8-new`.
+
+Pass 179 focused PR-branch verification:
+
+```bash
+cd /Users/danluu/dev/fuzz/gutenberg-bug-c05661de30a8
+npm run test:unit -- packages/editor/src/store/test/private-actions.js --testNamePattern=restoreRevision
+```
+
+Result: passed before rebasing the PR branch from `d52e35a291c1` to current `origin/trunk` `f4df834d9f8`; the relevant trunk files had no intervening changes.
