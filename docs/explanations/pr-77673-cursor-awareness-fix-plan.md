@@ -12,6 +12,30 @@ local user creates the selection, but on a receiver it is only a current
 RichText address for DOM targeting. For positional nested attributes such as
 table cells, it must be derived from the resolved Yjs object at read time.
 
+## Relevant PRs
+
+- [#74728](https://github.com/WordPress/gutenberg/pull/74728)
+  introduced the first RTC awareness payload containing user and selection
+  information.
+- [#74878](https://github.com/WordPress/gutenberg/pull/74878) added
+  relative positions to selection history and the undo stack.
+- [#75590](https://github.com/WordPress/gutenberg/pull/75590) removed block
+  client IDs from awareness and made receiver-side block lookup depend on the
+  Yjs block tree.
+- [#76107](https://github.com/WordPress/gutenberg/pull/76107) added the
+  collaborator rich-text selection overlay.
+- [#76597](https://github.com/WordPress/gutenberg/pull/76597),
+  [#76913](https://github.com/WordPress/gutenberg/pull/76913), and
+  [#77164](https://github.com/WordPress/gutenberg/pull/77164) extended RTC
+  serialization and merge behavior for nested attributes, especially table
+  data.
+- [#77136](https://github.com/WordPress/gutenberg/pull/77136) changed the
+  block-editor selection observer path for edge selections inside one block.
+- [#77673](https://github.com/WordPress/gutenberg/pull/77673) is the cursor
+  awareness PR under review. It starts carrying `attributeKey` for nested
+  RichText targeting, which fixes the initial missing-target bug but also
+  exposes stale-address and strict-targeting bugs.
+
 ## Known bugs
 
 1. Initial nested RichText cursors can target the wrong editor element.
@@ -22,8 +46,14 @@ table cells, it must be derived from the resolved Yjs object at read time.
    remote cursor against the block element can place the cursor in the wrong
    cell or first matching text root.
 
-   This was introduced by the original awareness model assuming one text
-   editing surface per block.
+   This was introduced by the original awareness and overlay split:
+   [#74728](https://github.com/WordPress/gutenberg/pull/74728) added
+   selection awareness around block-level identity, and
+   [#76107](https://github.com/WordPress/gutenberg/pull/76107) rendered
+   remote rich-text cursors from that model. Those PRs did not need to
+   distinguish multiple RichText roots inside one block. PR
+   [#77673](https://github.com/WordPress/gutenberg/pull/77673) is the first
+   pass at adding that missing RichText address.
 
 2. Stale table-cell `attributeKey` after row or column structure changes.
 
@@ -34,10 +64,15 @@ table cells, it must be derived from the resolved Yjs object at read time.
    inserts or deletes a preceding row, the same `Y.Text` may now have a new
    path.
 
-   This was introduced by the PR's attribute-key pass-through fix: it added the
-   right kind of data to the wire shape, but reused the sender's old address on
-   the read path instead of deriving the current address from the resolved
-   `Y.Text`.
+   This was introduced by PR
+   [#77673](https://github.com/WordPress/gutenberg/pull/77673)'s
+   attribute-key pass-through fix: it added the right kind of data to the wire
+   shape, but reused the sender's old address on the read path instead of
+   deriving the current address from the resolved `Y.Text`. The failure is most
+   visible in the table paths that became RTC-editable through
+   [#76913](https://github.com/WordPress/gutenberg/pull/76913) and more stable
+   under structural edits in
+   [#77164](https://github.com/WordPress/gutenberg/pull/77164).
 
 3. Deleted or missing keyed RichText targets can fall back to the whole block.
 
@@ -46,9 +81,12 @@ table cells, it must be derived from the resolved Yjs object at read time.
    node exists. That produces plausible but wrong cursors for removed captions,
    stale table-cell paths, and temporarily absent RichText targets.
 
-   This was introduced by making the nested-RichText lookup permissive. The
-   fallback is valid only for legacy unkeyed selections, not for keyed text
-   selections whose offsets are local to one RichText field.
+   This was introduced when PR
+   [#77673](https://github.com/WordPress/gutenberg/pull/77673) layered keyed
+   nested-RichText lookup onto the older overlay fallback from
+   [#76107](https://github.com/WordPress/gutenberg/pull/76107). The fallback
+   is valid only for legacy unkeyed selections, not for keyed text selections
+   whose offsets are local to one RichText field.
 
 4. Block-shaped nested attribute objects can be misclassified as real blocks.
 
@@ -58,9 +96,14 @@ table cells, it must be derived from the resolved Yjs object at read time.
    `attributes.cards[0] = { clientId, innerBlocks, content: Y.Text }` can be
    treated as a document block and resolve to the wrong local block path.
 
-   This was introduced by the generic nested-RichText support in PR 77673. It
-   correctly stopped assuming a fixed parent depth, but replaced that with
-   shape-based block detection rather than membership in the actual block tree.
+   This was introduced by the generic nested-RichText support in PR
+   [#77673](https://github.com/WordPress/gutenberg/pull/77673). It correctly
+   stopped assuming a fixed parent depth, but replaced that with shape-based
+   block detection rather than membership in the actual block tree. That became
+   dangerous because
+   [#75590](https://github.com/WordPress/gutenberg/pull/75590) intentionally
+   removed awareness block client IDs and made receivers recover the local
+   block by walking the Yjs block tree.
 
 5. Same-block selections across different RichText fields render as one text
    root.
@@ -71,8 +114,14 @@ table cells, it must be derived from the resolved Yjs object at read time.
    current single-block rendering path applies both offsets to the start
    element.
 
-   This comes from the older selection model and renderer assuming that "same
-   block" implies "same RichText instance".
+   This comes from the selection model introduced by
+   [#74728](https://github.com/WordPress/gutenberg/pull/74728) and the overlay
+   renderer added by
+   [#76107](https://github.com/WordPress/gutenberg/pull/76107): both treated
+   "same block" as enough information to render one continuous text selection.
+   PR [#77673](https://github.com/WordPress/gutenberg/pull/77673) adds
+   endpoint `attributeKey`s, but the rendering branch still conflates same
+   block with same RichText root.
 
 6. Same-block browser selections may lose independent start/end RichText keys.
 
@@ -82,9 +131,12 @@ table cells, it must be derived from the resolved Yjs object at read time.
    RichText fields, this can collapse the sender-side selection before
    awareness sees it.
 
-   This is an older block-editor selection-observer assumption. It should be
-   verified before rewriting the observer, because some cases may already
-   preserve separate keys downstream.
+   This was exposed by
+   [#77136](https://github.com/WordPress/gutenberg/pull/77136), which fixed a
+   writing-flow toolbar case by choosing a single RichText element for a
+   singular same-block selection. That is reasonable for toolbar focus, but RTC
+   awareness now needs independent start and end RichText identities when a
+   natural selection crosses table cells or other same-block fields.
 
 7. Nested RichText cursor scope in CRDT merges is top-level only.
 
@@ -94,8 +146,13 @@ table cells, it must be derived from the resolved Yjs object at read time.
    as `body.1.cells.1.content`. Cursor-scoped rich-text updates therefore do
    not reliably match nested RichText fields.
 
-   This was introduced by cursor-aware rich-text merge code that was designed
-   for top-level RichText attributes and not extended through query paths.
+   This was introduced in stages. The cursor-aware rich-text merge path was
+   designed around top-level RichText attributes. Then
+   [#76597](https://github.com/WordPress/gutenberg/pull/76597),
+   [#76913](https://github.com/WordPress/gutenberg/pull/76913), and
+   [#77164](https://github.com/WordPress/gutenberg/pull/77164) extended RTC
+   support into nested attributes and table structures without carrying the
+   accumulated nested RichText path through the cursor scope.
 
 8. Selection history and restore paths can replay stale `attributeKey`s.
 
@@ -104,8 +161,13 @@ table cells, it must be derived from the resolved Yjs object at read time.
    key. If the underlying `Y.Text` moved to a new nested path, undo/redo or
    restored selections can resurrect the old table-cell path.
 
-   This is the same identity/address bug as remote awareness, but in the local
-   selection-restoration path.
+   This was introduced by
+   [#74878](https://github.com/WordPress/gutenberg/pull/74878), which stores a
+   `Y.RelativePosition` plus an `attributeKey` in selection history. That is
+   safe while the key is a stable top-level address. PR
+   [#77673](https://github.com/WordPress/gutenberg/pull/77673) makes nested
+   positional keys part of cursor awareness, so the same stale-address bug now
+   applies to undo/redo and selection restore.
 
 9. Overlay DOM lookup is too broad and too selector-dependent.
 
@@ -115,8 +177,12 @@ table cells, it must be derived from the resolved Yjs object at read time.
    `localClientId` is not escaped. The safer contract is exact attribute
    comparison scoped to the resolved block element.
 
-   This was introduced by using convenient CSS selector lookup for data that is
-   not meant to be part of a selector grammar.
+   This was introduced by the selector-based lookup in
+   [#76107](https://github.com/WordPress/gutenberg/pull/76107), which was
+   adequate when the overlay only needed to find a block-level target. PR
+   [#77673](https://github.com/WordPress/gutenberg/pull/77673) extends that
+   pattern to nested `data-wp-block-attribute-key` values, where child-block
+   scoping and selector escaping become correctness issues.
 
 ## Fix plan
 
