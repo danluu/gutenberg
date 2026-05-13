@@ -1179,7 +1179,7 @@ describe( 'saveEntityRecord', () => {
 			'postType/post',
 			10,
 			updatedRecord,
-			undefined,
+			'gutenberg-undo-ignored',
 			{ isSave: true }
 		);
 		expect( result ).toBe( updatedRecord );

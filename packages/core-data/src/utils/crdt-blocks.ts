@@ -313,7 +313,7 @@ function createNewYAttributeValue(
 	attributeValue: unknown
 ): Y.Text | Y.Array< unknown > | Y.Map< unknown > | unknown {
 	const schema = getBlockAttributeSchema( blockName, attributeName );
-	return createYValueFromSchema( schema, attributeValue );
+	return createYValueFromSchema( schema, attributeValue, attributeName );
 }
 
 /**
@@ -331,7 +331,8 @@ function createNewYAttributeValue(
  */
 function createYValueFromSchema(
 	schema: BlockAttributeSchema | undefined,
-	value: unknown
+	value: unknown,
+	valuePath?: string
 ): Y.Text | Y.Array< unknown > | Y.Map< unknown > | unknown {
 	if ( ! schema ) {
 		return value;
@@ -347,14 +348,20 @@ function createYValueFromSchema(
 
 		yArray.insert(
 			0,
-			value.map( ( item ) => createYMapFromQuery( query, item ) )
+			value.map( ( item, index ) =>
+				createYMapFromQuery(
+					query,
+					item,
+					valuePath ? `${ valuePath }/${ index }` : true
+				)
+			)
 		);
 
 		return yArray;
 	}
 
 	if ( schema.type === 'object' && schema.query && isRecord( value ) ) {
-		return createYMapFromQuery( schema.query, value );
+		return createYMapFromQuery( schema.query, value, undefined, valuePath );
 	}
 
 	return value;
@@ -380,21 +387,38 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  */
 function createYMapFromQuery(
 	query: Record< string, BlockAttributeSchema >,
-	obj: unknown
+	obj: unknown,
+	arrayElementId?: string | true,
+	valuePath?: string
 ): Y.Map< unknown > {
 	if ( ! isRecord( obj ) ) {
 		return new Y.Map();
 	}
 
-	const arrayElementId = getArrayElementId( obj ) ?? uuidv4();
+	const nestedValuePath =
+		valuePath ??
+		( typeof arrayElementId === 'string' ? arrayElementId : undefined );
 	const entries: [ string, unknown ][] = Object.entries( obj )
 		.filter( ( [ key ] ) => key !== ARRAY_ELEMENT_ID_KEY )
 		.map( ( [ key, val ] ): [ string, unknown ] => {
 			const subSchema = query[ key ];
-			return [ key, createYValueFromSchema( subSchema, val ) ];
+			return [
+				key,
+				createYValueFromSchema(
+					subSchema,
+					val,
+					nestedValuePath ? `${ nestedValuePath }/${ key }` : key
+				),
+			];
 		} );
 
-	entries.push( [ ARRAY_ELEMENT_ID_KEY, arrayElementId ] );
+	const resolvedArrayElementId =
+		getArrayElementId( obj ) ??
+		( arrayElementId === true ? uuidv4() : arrayElementId );
+
+	if ( resolvedArrayElementId ) {
+		entries.push( [ ARRAY_ELEMENT_ID_KEY, resolvedArrayElementId ] );
+	}
 
 	return new Y.Map( entries );
 }
@@ -731,16 +755,6 @@ function mergeBlockIntoYBlock(
 
 				Object.entries( value ).forEach(
 					( [ attributeName, attributeValue ] ) => {
-						if (
-							baseBlock &&
-							fastDeepEqual(
-								baseAttributes[ attributeName ],
-								attributeValue
-							)
-						) {
-							return;
-						}
-
 						const currentAttribute =
 							currentAttributes?.get( attributeName );
 
@@ -749,6 +763,17 @@ function mergeBlockIntoYBlock(
 							attributeName,
 							currentAttribute
 						);
+
+						if (
+							baseBlock &&
+							isExpectedType &&
+							fastDeepEqual(
+								baseAttributes[ attributeName ],
+								attributeValue
+							)
+						) {
+							return;
+						}
 
 						// Y types (Y.Text, Y.Array, Y.Map) cannot be compared
 						// with fastDeepEqual against plain values. Delegate to
@@ -891,6 +916,100 @@ function mergeYBlocksByClientId(
 	}
 }
 
+function areYBlocksEqualToPlainBlocks(
+	yblocks: YBlocks,
+	blocks: Block[]
+): boolean {
+	return (
+		yblocks.length === blocks.length &&
+		blocks.every( ( block, index ) =>
+			areBlocksEqual( block, yblocks.get( index ) )
+		)
+	);
+}
+
+function findYBlockIndex(
+	yblocks: YBlocks,
+	baseBlock: Block,
+	preferredIndex: number,
+	baseLength: number
+): number {
+	const clientId = getBlockClientId( baseBlock );
+
+	if ( clientId ) {
+		for ( let index = 0; index < yblocks.length; index++ ) {
+			if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+				return index;
+			}
+		}
+	}
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		if ( areBlocksEqual( baseBlock, yblocks.get( index ) ) ) {
+			return index;
+		}
+	}
+
+	if ( yblocks.length === baseLength && preferredIndex < yblocks.length ) {
+		return preferredIndex;
+	}
+
+	return preferredIndex < yblocks.length ? preferredIndex : -1;
+}
+
+function mergeYBlocksLocalChanges(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): boolean {
+	if ( fastDeepEqual( blocksToSync, baseBlocks ) ) {
+		return true;
+	}
+
+	if ( areYBlocksEqualToPlainBlocks( yblocks, baseBlocks ) ) {
+		return false;
+	}
+
+	if (
+		yblocks.length === baseBlocks.length &&
+		blocksToSync.length === baseBlocks.length
+	) {
+		return false;
+	}
+
+	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
+
+	for ( let index = 0; index < sharedLength; index++ ) {
+		const baseBlock = baseBlocks[ index ];
+		const block = blocksToSync[ index ];
+
+		if ( fastDeepEqual( baseBlock, block ) ) {
+			continue;
+		}
+
+		const currentIndex = findYBlockIndex(
+			yblocks,
+			baseBlock,
+			index,
+			baseBlocks.length
+		);
+
+		if ( currentIndex === -1 ) {
+			continue;
+		}
+
+		mergeBlockIntoYBlock(
+			yblocks.get( currentIndex ),
+			block,
+			attributeCursor,
+			baseBlock
+		);
+	}
+
+	return true;
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
@@ -922,6 +1041,20 @@ export function mergeCrdtBlocks(
 		: undefined;
 	const baseBlocksToSync =
 		explicitBaseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
+
+	if (
+		baseBlocksToSync &&
+		mergeYBlocksLocalChanges(
+			yblocks,
+			blocksToSync,
+			baseBlocksToSync,
+			attributeCursor
+		)
+	) {
+		removeDuplicateClientIds( yblocks );
+		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		return;
+	}
 
 	if ( rebaseYBlocksByClientId( yblocks, baseBlocksToSync, blocksToSync ) ) {
 		mergeYBlocksByClientId(
@@ -1181,6 +1314,10 @@ function mergeYArrayLocalChanges(
 		return false;
 	}
 
+	if ( yArray.length === previousValue.length ) {
+		return false;
+	}
+
 	const sharedLength = Math.min( previousValue.length, newValue.length );
 
 	for ( let i = 0; i < sharedLength; i++ ) {
@@ -1262,7 +1399,7 @@ function mergeYArrayByElementIds(
 			}
 		} else {
 			yArray.insert( index, [
-				createYMapFromQuery( query, newElement ),
+				createYMapFromQuery( query, newElement, true ),
 			] );
 		}
 
@@ -1395,7 +1532,9 @@ function mergeYArray(
 			yArray.delete( 0, yArray.length );
 			yArray.insert(
 				0,
-				newValue.map( ( item ) => createYMapFromQuery( query, item ) )
+				newValue.map( ( item ) =>
+					createYMapFromQuery( query, item, true )
+				)
 			);
 			return;
 		}
@@ -1423,7 +1562,8 @@ function mergeYArray(
 		for ( let i = 0; i < numOfInsertionsNeeded; i++ ) {
 			itemsToInsert[ i ] = createYMapFromQuery(
 				query,
-				newValue[ insertAt + i ]
+				newValue[ insertAt + i ],
+				true
 			);
 		}
 
@@ -1452,7 +1592,7 @@ function mergeYArrayWithBase(
 	for (
 		;
 		left < numOfCommonEntries &&
-		fastDeepEqual( baseValue[ left ], newValue[ left ] );
+		arePlainValuesEqual( baseValue[ left ], newValue[ left ] );
 		left++
 	) {
 		/* nop */
@@ -1461,7 +1601,7 @@ function mergeYArrayWithBase(
 	for (
 		;
 		right < numOfCommonEntries - left &&
-		fastDeepEqual(
+		arePlainValuesEqual(
 			baseValue[ baseValue.length - right - 1 ],
 			newValue[ newValue.length - right - 1 ]
 		);
@@ -1501,7 +1641,7 @@ function mergeYArrayWithBase(
 			left,
 			newValue
 				.slice( left, left + insertCount )
-				.map( ( item ) => createYMapFromQuery( query, item ) )
+				.map( ( item ) => createYMapFromQuery( query, item, true ) )
 		);
 	}
 
@@ -1516,7 +1656,7 @@ function mergeYArrayWithBase(
 
 		if (
 			baseIndex !== undefined &&
-			fastDeepEqual( baseValue[ baseIndex ], newElement )
+			arePlainValuesEqual( baseValue[ baseIndex ], newElement )
 		) {
 			continue;
 		}
@@ -1537,7 +1677,7 @@ function mergeYArrayWithBase(
 		yArray.delete( 0, yArray.length );
 		yArray.insert(
 			0,
-			newValue.map( ( item ) => createYMapFromQuery( query, item ) )
+			newValue.map( ( item ) => createYMapFromQuery( query, item, true ) )
 		);
 		break;
 	}
@@ -1558,7 +1698,7 @@ function getPreferredSingleDeleteIndex(
 			...baseValue.slice( index + 1 ),
 		];
 
-		if ( ! fastDeepEqual( candidateValue, newValue ) ) {
+		if ( ! arePlainValuesEqual( candidateValue, newValue ) ) {
 			continue;
 		}
 
