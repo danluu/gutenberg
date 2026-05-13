@@ -191,6 +191,22 @@ rtc-save-paragraph-marker-95325
 
 This is important for practical impact. Human-plausible typing speed can avoid the destructive character interleaving, but it does not avoid the structural content corruption from the concurrent split. A stricter product assertion should require the inherited suffix to appear exactly once, not merely require both inserted paragraphs to survive as substrings.
 
+Pass 180 checked the lower-level reproduction against the manager path added by the recent RTC fixes. In normal edits, `packages/core-data/src/actions.js` passes the previous edited record as `baseRecord` to `getSyncManager().update()`, and `packages/sync/src/manager.ts` passes that base into `syncConfig.applyChangesToCRDTDoc()`. I added a scratch unit probe on the manifest-pinned known-fixes commit `f256024286dd80a4c0e2579f658c109256abf648` that applies both concurrent split snapshots with the shared checkpoint base record:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-ab1b60fc6f4a-pass180-base-record-split.test.ts --runTestsByPath
+```
+
+The true logical-end append control passed, but the non-final concurrent split still failed:
+
+```text
+Expected length: 1
+Received length: 2
+Received array:  ["User A 5-3-0-end", "User B 5-3-0-end"]
+```
+
+This makes the base-record fix boundary explicit: the latest snapshot rebasing can protect ordinary concurrent appends, but it still cannot represent "both peers split the same source paragraph at the same offset and inherited the same suffix" as a single split operation.
+
 ## Likely Root Cause
 
 `mergeCrdtBlocks` was introduced by `84019935998` (`Improve CRDT "merge logic" for post entities`, PR #72262). Its left/right sweep uses block positions as a fallback when reconciling full block snapshots into Yjs block arrays. Later RTC fix work added saved-base snapshots and client-id rebasing, but the observed failure still reaches a browser path where a local full snapshot, the current Yjs array, and the block-editor selection are changing while keyboard input continues to stream.
@@ -211,6 +227,8 @@ Pass 178 strengthens the root-cause boundary on the known-fixes base. The post-l
 
 Pass 179 adds that the browser behavior follows the same boundary: slower typing removes the live input-race symptom, but the suffix duplication created by concurrent `Enter` persists. The lowest-confidence layer is therefore not "can the user ever type fast enough"; it is "how often do two collaborators split the same visual line of the same paragraph before either remote split arrives."
 
+Pass 180 rules out a narrower false-negative in the previous unit proof: the structural failure is not only an artifact of omitting `baseRecord` in a scratch test. Even when each local apply gets the same pre-change checkpoint block snapshot that the manager normally supplies, the CRDT state only sees two new ordinary paragraph blocks. Without split provenance or an operation identity, it cannot know that two distinct blocks ending in `5-3-0-end` are duplicate inherited suffixes from one source paragraph rather than legitimate same-suffix user content.
+
 ## Practical Impact
 
 Likelihood for the destructive interleaving signature: `low`.
@@ -227,8 +245,10 @@ Pass 178 keeps the destructive interleaving classification at `low`, while class
 
 Pass 179 keeps the overall classification at `low`, but raises confidence in the structural corruption subcase. One-attempt browser probes at `80ms` and `120ms` per character both avoided destructive interleaving while still leaving two suffix-bearing inserted paragraphs. The original generated assertion would mark these runs as passed, so bug triage should not treat "both typed strings are present" as sufficient correctness.
 
+Pass 180 keeps the same classification. It raises confidence that the structural subcase is an unresolved product defect on the backlink-aware known-fixes base, but it does not make the user workflow more common: two collaborators still need to split the same non-final paragraph position before either receives the other's split.
+
 Blast radius is content corruption. The corrupted state appears in the block tree on both peers before save, so saving can persist truncated, duplicated, or interleaved paragraph text. At slower typing cadences, the severe interleaving did not reproduce in pass 172, but the concurrent split still duplicated the suffix text into both inserted paragraphs. There is no evidence of a save loop, OOM, or performance failure. Recovery is by undo, manual repair, or post revisions if the corrupted content has already been saved.
 
 ## Fix Direction
 
-Do not land a suffix-similarity cleanup. Pass 178 shows why that tempting patch is unsafe: the current CRDT record has no base-split provenance, so adjacent paragraphs ending in the same text could be either the bug or legitimate content. A safer fix needs split provenance, operation-level split modeling, or a manager-level reconciliation that can prove both suffix-bearing blocks came from the same base paragraph and offset before coalescing the suffix. The browser interleaving part still needs instrumentation in the live sync manager and RichText input path enough to compare, per keystroke, the DOM selection, block-editor selected `clientId`, Yjs block `clientId`, relative selection target, and paragraph text before and after applying remote changes.
+Do not land a suffix-similarity cleanup. Pass 178 shows why that tempting patch is unsafe, and pass 180 confirms that simply leaning on the current `baseRecord` path is insufficient: the current CRDT record has no base-split provenance, so adjacent paragraphs ending in the same text could be either the bug or legitimate content. A safer fix needs split provenance, operation-level split modeling, or a manager-level reconciliation that can prove both suffix-bearing blocks came from the same base paragraph and offset before coalescing the suffix. The browser interleaving part still needs instrumentation in the live sync manager and RichText input path enough to compare, per keystroke, the DOM selection, block-editor selected `clientId`, Yjs block `clientId`, relative selection target, and paragraph text before and after applying remote changes.
