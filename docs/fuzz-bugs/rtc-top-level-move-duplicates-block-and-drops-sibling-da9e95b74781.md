@@ -34,6 +34,16 @@ current edited record. In that window, a normal local block move is scheduled
 with a stale `baseRecord`, so the same explicit-base stale merge path is reached
 through the sync manager.
 
+Pass 180 tightened the naturalness argument and stabilized that SyncManager
+repro. The block toolbar's `Move down` button dispatches `moveBlocksDown`, which
+updates the normal block-editor store. The post editor then forwards the updated
+block list through `resetEditorBlocks` / `useEntityBlockEditor` to
+`editEntityRecord`; the core-data action always supplies the pre-edit
+`editedRecord` as `baseRecord` to `SyncManager.update`. The SyncManager repro now
+models provider delivery by cloning the local manager's initialized Y.Doc before
+applying the remote sibling update, avoiding an unrelated two-independent-Y.Map
+initialization race in the old test.
+
 ## Minimal Failing Shape
 
 Initial top-level blocks:
@@ -110,7 +120,9 @@ The PR branch contains two non-browser repros in its first commit:
 - `crdt-da9-pass178-base-record-gap.test.ts` exercises the minimal
   `mergeCrdtBlocks` explicit-`baseBlocks` stale move.
 - `crdt-da9-pass179-sync-manager-base-record-gap.test.ts` exercises the
-  deferred `SyncManager.update`/pending remote-reconciliation timing path.
+  deferred `SyncManager.update`/pending remote-reconciliation timing path, with
+  the remote update derived from the loaded local Y.Doc as a provider-delivered
+  update would be.
 
 Both tests fail on the test-only commit before the fix because `Remote sibling`
 is missing from the merged top-level block list. Both pass after the fix.
