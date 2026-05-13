@@ -30,6 +30,7 @@ import {
 	DISCONNECT_DIALOG_RETRY_MS,
 	MANUAL_RETRY_INTERVAL_MS,
 } from './config';
+import { LOCAL_SYNC_MANAGER_ORIGIN } from '../../config';
 import { ConnectionError, ConnectionErrorCode } from '../../errors';
 import type { ConnectionStatus } from '../../types';
 import {
@@ -990,7 +991,10 @@ function registerRoom( {
 	}
 
 	function onDocUpdate( update: Uint8Array, origin: unknown ): void {
-		if ( POLLING_MANAGER_ORIGIN === origin ) {
+		if (
+			POLLING_MANAGER_ORIGIN === origin ||
+			LOCAL_SYNC_MANAGER_ORIGIN === origin
+		) {
 			return;
 		}
 
