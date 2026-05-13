@@ -95,6 +95,7 @@ const ARRAY_ELEMENT_ID_KEY = '__unstableSyncId';
 const ARRAY_ELEMENT_ID_SYMBOL = Symbol( 'wpSyncArrayElementId' );
 
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
+const previousLocalBlocksCache = new WeakMap< YBlocks, Block[] >();
 
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
@@ -326,7 +327,7 @@ function createNewYAttributeValue(
 	attributeValue: unknown
 ): Y.Text | Y.Array< unknown > | Y.Map< unknown > | unknown {
 	const schema = getBlockAttributeSchema( blockName, attributeName );
-	return createYValueFromSchema( schema, attributeValue );
+	return createYValueFromSchema( schema, attributeValue, attributeName );
 }
 
 /**
@@ -338,13 +339,15 @@ function createNewYAttributeValue(
  * - `object` with query  -> Y.Map
  * - anything else        -> plain value (unchanged)
  *
- * @param schema The attribute type definition.
- * @param value  The plain JS value to convert.
+ * @param schema    The attribute type definition.
+ * @param value     The plain JS value to convert.
+ * @param valuePath Optional path used to identify array elements.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
 	schema: BlockAttributeSchema | undefined,
-	value: unknown
+	value: unknown,
+	valuePath?: string
 ): Y.Text | Y.Array< unknown > | Y.Map< unknown > | unknown {
 	if ( ! schema ) {
 		return value;
@@ -360,14 +363,20 @@ function createYValueFromSchema(
 
 		yArray.insert(
 			0,
-			value.map( ( item ) => createYMapFromQuery( query, item ) )
+			value.map( ( item, index ) =>
+				createYMapFromQuery(
+					query,
+					item,
+					valuePath ? `${ valuePath }/${ index }` : true
+				)
+			)
 		);
 
 		return yArray;
 	}
 
 	if ( schema.type === 'object' && schema.query && isRecord( value ) ) {
-		return createYMapFromQuery( schema.query, value );
+		return createYMapFromQuery( schema.query, value, undefined, valuePath );
 	}
 
 	return value;
@@ -387,27 +396,46 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query The query schema defining the properties.
- * @param obj   The plain object to convert.
+ * @param query          The query schema defining the properties.
+ * @param obj            The plain object to convert.
+ * @param arrayElementId Optional stable ID for an array element.
+ * @param valuePath      Optional path used to identify nested array elements.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
 	query: Record< string, BlockAttributeSchema >,
-	obj: unknown
+	obj: unknown,
+	arrayElementId?: string | true,
+	valuePath?: string
 ): Y.Map< unknown > {
 	if ( ! isRecord( obj ) ) {
 		return new Y.Map();
 	}
 
-	const arrayElementId = getArrayElementId( obj ) ?? uuidv4();
+	const nestedValuePath =
+		valuePath ??
+		( typeof arrayElementId === 'string' ? arrayElementId : undefined );
 	const entries: [ string, unknown ][] = Object.entries( obj )
 		.filter( ( [ key ] ) => key !== ARRAY_ELEMENT_ID_KEY )
 		.map( ( [ key, val ] ): [ string, unknown ] => {
 			const subSchema = query[ key ];
-			return [ key, createYValueFromSchema( subSchema, val ) ];
+			return [
+				key,
+				createYValueFromSchema(
+					subSchema,
+					val,
+					nestedValuePath ? `${ nestedValuePath }/${ key }` : key
+				),
+			];
 		} );
 
-	entries.push( [ ARRAY_ELEMENT_ID_KEY, arrayElementId ] );
+	const resolvedArrayElementId =
+		getArrayElementId( obj ) ??
+		( arrayElementId === true ? uuidv4() : arrayElementId );
+
+	if ( resolvedArrayElementId ) {
+		entries.push( [ ARRAY_ELEMENT_ID_KEY, resolvedArrayElementId ] );
+	}
 
 	return new Y.Map( entries );
 }
@@ -459,6 +487,20 @@ function getYBlockClientId( yblock: YBlock ): string | null {
 	return typeof clientId === 'string' && clientId ? clientId : null;
 }
 
+function findYBlockIndexByClientId(
+	yblocks: YBlocks,
+	clientId: string,
+	startIndex = 0
+): number {
+	for ( let index = startIndex; index < yblocks.length; index++ ) {
+		if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
 function normalizeBlockForIdentity( value: unknown ): unknown {
 	if ( Array.isArray( value ) ) {
 		return value.map( normalizeBlockForIdentity );
@@ -481,6 +523,53 @@ function normalizeBlockForIdentity( value: unknown ): unknown {
 
 function getBlockSemanticKey( block: Block ): string {
 	return JSON.stringify( normalizeBlockForIdentity( block ) );
+}
+
+function isSameBlockIdentity( firstBlock: Block, secondBlock: Block ): boolean {
+	const firstClientId = getBlockClientId( firstBlock );
+	const secondClientId = getBlockClientId( secondBlock );
+
+	if ( firstClientId || secondClientId ) {
+		return firstClientId === secondClientId;
+	}
+
+	return (
+		getBlockSemanticKey( firstBlock ) === getBlockSemanticKey( secondBlock )
+	);
+}
+
+function getYBlockSemanticKey( yblock: YBlock ): string {
+	return getBlockSemanticKey( yblock.toJSON() as unknown as Block );
+}
+
+function findEquivalentYBlockIndex( yblocks: YBlocks, block: Block ): number {
+	const clientId = getBlockClientId( block );
+
+	if ( clientId ) {
+		for ( let index = 0; index < yblocks.length; index++ ) {
+			if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+				return index;
+			}
+		}
+	}
+
+	const semanticKey = getBlockSemanticKey( block );
+	let matchingSemanticIndex = -1;
+	let semanticMatchCount = 0;
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const yblock = yblocks.get( index );
+
+		if (
+			getYBlockSemanticKey( yblock ) === semanticKey ||
+			areBlocksEqual( block, yblock )
+		) {
+			matchingSemanticIndex = index;
+			semanticMatchCount++;
+		}
+	}
+
+	return semanticMatchCount === 1 ? matchingSemanticIndex : -1;
 }
 
 function getUniqueKeys< T >(
@@ -576,6 +665,36 @@ function getBlockIdentityKeys(
 		baseKeys: baseSemanticKeys,
 		incomingKeys: incomingSemanticKeys,
 	};
+}
+
+function haveSameBlockClientIds(
+	firstBlocks: Block[],
+	secondBlocks: Block[]
+): boolean {
+	return (
+		firstBlocks.length === secondBlocks.length &&
+		firstBlocks.every( ( block, index ) => {
+			const firstClientId = getBlockClientId( block );
+			const secondClientId = getBlockClientId( secondBlocks[ index ] );
+
+			return !! firstClientId && firstClientId === secondClientId;
+		} )
+	);
+}
+
+function shouldUseCachedLocalBlocksAsBase(
+	blocksToSync: Block[],
+	explicitBaseBlocks: Block[] | undefined,
+	cachedBaseBlocks: Block[] | undefined,
+	attributeCursor: MergeCursorPosition
+): cachedBaseBlocks is Block[] {
+	return !! (
+		explicitBaseBlocks &&
+		cachedBaseBlocks &&
+		attributeCursor &&
+		! fastDeepEqual( blocksToSync, cachedBaseBlocks ) &&
+		haveSameBlockClientIds( blocksToSync, cachedBaseBlocks )
+	);
 }
 
 function getUniqueBlockMapBySemanticKey(
@@ -745,16 +864,6 @@ function mergeBlockIntoYBlock(
 
 				Object.entries( value ).forEach(
 					( [ attributeName, attributeValue ] ) => {
-						if (
-							baseBlock &&
-							fastDeepEqual(
-								baseAttributes[ attributeName ],
-								attributeValue
-							)
-						) {
-							return;
-						}
-
 						const currentAttribute =
 							currentAttributes?.get( attributeName );
 
@@ -763,6 +872,17 @@ function mergeBlockIntoYBlock(
 							attributeName,
 							currentAttribute
 						);
+
+						if (
+							baseBlock &&
+							isExpectedType &&
+							fastDeepEqual(
+								baseAttributes[ attributeName ],
+								attributeValue
+							)
+						) {
+							return;
+						}
 
 						// Y types (Y.Text, Y.Array, Y.Map) cannot be compared
 						// with fastDeepEqual against plain values. Delegate to
@@ -838,14 +958,11 @@ function mergeBlockIntoYBlock(
 					break;
 				}
 
-				if (
-					baseBlock &&
-					fastDeepEqual( baseBlock.clientId, value )
-				) {
+				if ( baseBlock && fastDeepEqual( baseBlock.clientId, value ) ) {
 					break;
 				}
 
-				if ( ! fastDeepEqual( value, yblock.get( key ) ) ) {
+				if ( value !== yblock.get( key ) ) {
 					yblock.set( key, value );
 				}
 				break;
@@ -928,6 +1045,260 @@ function mergeYBlocksByClientId(
 	}
 }
 
+function areYBlocksEqualToPlainBlocks(
+	yblocks: YBlocks,
+	blocks: Block[]
+): boolean {
+	return (
+		yblocks.length === blocks.length &&
+		blocks.every( ( block, index ) =>
+			areBlocksEqual( block, yblocks.get( index ) )
+		)
+	);
+}
+
+function findYBlockIndex(
+	yblocks: YBlocks,
+	baseBlock: Block,
+	preferredIndex: number,
+	baseLength: number
+): number {
+	const clientId = getBlockClientId( baseBlock );
+
+	if ( clientId ) {
+		for ( let index = 0; index < yblocks.length; index++ ) {
+			if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+				return index;
+			}
+		}
+	}
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		if ( areBlocksEqual( baseBlock, yblocks.get( index ) ) ) {
+			return index;
+		}
+	}
+
+	if ( yblocks.length === baseLength && preferredIndex < yblocks.length ) {
+		return preferredIndex;
+	}
+
+	return preferredIndex < yblocks.length ? preferredIndex : -1;
+}
+
+function findStrictYBlockIndex( yblocks: YBlocks, block: Block ): number {
+	const clientId = getBlockClientId( block );
+
+	if ( clientId ) {
+		for ( let index = 0; index < yblocks.length; index++ ) {
+			if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+				return index;
+			}
+		}
+
+		return -1;
+	}
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		if ( areBlocksEqual( block, yblocks.get( index ) ) ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
+function mergeYBlocksLocalSuffixAppend(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[]
+): void {
+	if ( blocksToSync.length <= baseBlocks.length || baseBlocks.length === 0 ) {
+		return;
+	}
+
+	if (
+		! fastDeepEqual(
+			blocksToSync.slice( 0, baseBlocks.length ),
+			baseBlocks
+		)
+	) {
+		return;
+	}
+
+	const anchorIndex = findStrictYBlockIndex(
+		yblocks,
+		baseBlocks[ baseBlocks.length - 1 ]
+	);
+
+	if ( anchorIndex === -1 ) {
+		return;
+	}
+
+	let insertIndex = anchorIndex + 1;
+
+	for ( const block of blocksToSync.slice( baseBlocks.length ) ) {
+		const existingIndex = findEquivalentYBlockIndex( yblocks, block );
+
+		if ( existingIndex !== -1 ) {
+			insertIndex = Math.max( insertIndex, existingIndex + 1 );
+			continue;
+		}
+
+		yblocks.insert( insertIndex, [ createNewYBlock( block ) ] );
+		insertIndex++;
+	}
+}
+
+function mergeYBlocksLocalChanges(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition,
+	options: MergeCrdtBlocksOptions
+): boolean {
+	if ( fastDeepEqual( blocksToSync, baseBlocks ) ) {
+		return true;
+	}
+
+	if ( areYBlocksEqualToPlainBlocks( yblocks, baseBlocks ) ) {
+		return false;
+	}
+
+	if (
+		yblocks.length === baseBlocks.length &&
+		blocksToSync.length === baseBlocks.length
+	) {
+		return false;
+	}
+
+	mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks );
+
+	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
+
+	for ( let index = 0; index < sharedLength; index++ ) {
+		const baseBlock = baseBlocks[ index ];
+		const block = blocksToSync[ index ];
+
+		if ( ! isSameBlockIdentity( baseBlock, block ) ) {
+			return false;
+		}
+
+		if ( fastDeepEqual( baseBlock, block ) ) {
+			continue;
+		}
+
+		const currentIndex = findYBlockIndex(
+			yblocks,
+			baseBlock,
+			index,
+			baseBlocks.length
+		);
+
+		if ( currentIndex === -1 ) {
+			continue;
+		}
+
+		mergeBlockIntoYBlock(
+			yblocks.get( currentIndex ),
+			block,
+			attributeCursor,
+			options,
+			baseBlock
+		);
+	}
+
+	deleteRemovedLocalBlocks( yblocks, blocksToSync, baseBlocks );
+	insertMissingLocalBlocks( yblocks, blocksToSync, baseBlocks, options );
+
+	return true;
+}
+
+function deleteRemovedLocalBlocks(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[]
+): void {
+	const incomingClientIds = new Set(
+		blocksToSync
+			.map( getBlockClientId )
+			.filter( ( clientId ): clientId is string => !! clientId )
+	);
+
+	for ( const baseBlock of baseBlocks ) {
+		const clientId = getBlockClientId( baseBlock );
+
+		if ( ! clientId || incomingClientIds.has( clientId ) ) {
+			continue;
+		}
+
+		const currentIndex = findYBlockIndexByClientId( yblocks, clientId );
+
+		if ( currentIndex !== -1 ) {
+			yblocks.delete( currentIndex, 1 );
+		}
+	}
+}
+
+function insertMissingLocalBlocks(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	options: MergeCrdtBlocksOptions
+): void {
+	const baseClientIds = new Set(
+		baseBlocks
+			.map( getBlockClientId )
+			.filter( ( clientId ): clientId is string => !! clientId )
+	);
+	let insertIndex = 0;
+	let hasInsertionAnchor = true;
+
+	for ( const block of blocksToSync ) {
+		const clientId = getBlockClientId( block );
+
+		if ( ! clientId ) {
+			continue;
+		}
+
+		if ( baseClientIds.has( clientId ) ) {
+			const matchingIndex = findYBlockIndexByClientId(
+				yblocks,
+				clientId
+			);
+
+			if ( matchingIndex !== -1 ) {
+				insertIndex = Math.max( insertIndex, matchingIndex + 1 );
+				hasInsertionAnchor = true;
+			} else {
+				hasInsertionAnchor = false;
+			}
+			continue;
+		}
+
+		const matchingIndex = findYBlockIndexByClientId( yblocks, clientId );
+
+		if ( matchingIndex !== -1 ) {
+			mergeBlockIntoYBlock(
+				yblocks.get( matchingIndex ),
+				block,
+				null,
+				options
+			);
+			insertIndex = Math.max( insertIndex, matchingIndex + 1 );
+			hasInsertionAnchor = true;
+			continue;
+		}
+
+		if ( ! hasInsertionAnchor ) {
+			continue;
+		}
+
+		yblocks.insert( insertIndex, [ createNewYBlock( block ) ] );
+		insertIndex++;
+	}
+}
+
 /**
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
@@ -957,9 +1328,34 @@ export function mergeCrdtBlocks(
 	}
 
 	const blocksToSync = serializableBlocksCache.get( incomingBlocks ) ?? [];
-	const baseBlocksToSync = mergeOptions.baseBlocks
+	const explicitBaseBlocksToSync = mergeOptions.baseBlocks
 		? makeBlocksSerializable( mergeOptions.baseBlocks )
 		: undefined;
+	const cachedBaseBlocksToSync = previousLocalBlocksCache.get( yblocks );
+	const useCachedLocalBlocksAsBase = shouldUseCachedLocalBlocksAsBase(
+		blocksToSync,
+		explicitBaseBlocksToSync,
+		cachedBaseBlocksToSync,
+		attributeCursor
+	);
+	const baseBlocksToSync = useCachedLocalBlocksAsBase
+		? cachedBaseBlocksToSync
+		: explicitBaseBlocksToSync ?? cachedBaseBlocksToSync;
+
+	if (
+		baseBlocksToSync &&
+		mergeYBlocksLocalChanges(
+			yblocks,
+			blocksToSync,
+			baseBlocksToSync,
+			attributeCursor,
+			mergeOptions
+		)
+	) {
+		removeDuplicateClientIds( yblocks );
+		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		return;
+	}
 
 	if ( rebaseYBlocksByClientId( yblocks, baseBlocksToSync, blocksToSync ) ) {
 		mergeYBlocksByClientId(
@@ -970,6 +1366,7 @@ export function mergeCrdtBlocks(
 			baseBlocksToSync
 		);
 		removeDuplicateClientIds( yblocks );
+		previousLocalBlocksCache.set( yblocks, blocksToSync );
 		return;
 	}
 
@@ -1056,6 +1453,7 @@ export function mergeCrdtBlocks(
 	}
 
 	removeDuplicateClientIds( yblocks );
+	previousLocalBlocksCache.set( yblocks, blocksToSync );
 }
 
 function removeDuplicateClientIds( yblocks: YBlocks ): void {
@@ -1153,6 +1551,195 @@ function stripArrayElementIds( value: unknown ): unknown {
 	return value;
 }
 
+function arePlainValuesEqual( a: unknown, b: unknown ): boolean {
+	return fastDeepEqual(
+		stripArrayElementIds( a ),
+		stripArrayElementIds( b )
+	);
+}
+
+function isYArrayEqualToPlainArray(
+	yArray: Y.Array< unknown >,
+	value: unknown[]
+): boolean {
+	return (
+		yArray.length === value.length &&
+		value.every( ( element, index ) =>
+			areArrayElementsEqual( element, yArray.get( index ) )
+		)
+	);
+}
+
+function hasSharedArrayElementAnchor(
+	firstElement: unknown,
+	secondElement: unknown
+): boolean {
+	const firstId = getArrayElementId( firstElement );
+	const secondId = getArrayElementId( secondElement );
+
+	if ( firstId && secondId ) {
+		return firstId === secondId;
+	}
+
+	const firstValue =
+		firstElement instanceof Y.Map ? firstElement.toJSON() : firstElement;
+	const secondValue =
+		secondElement instanceof Y.Map ? secondElement.toJSON() : secondElement;
+
+	if ( arePlainValuesEqual( firstValue, secondValue ) ) {
+		return true;
+	}
+
+	if ( Array.isArray( firstValue ) && Array.isArray( secondValue ) ) {
+		const sharedLength = Math.min( firstValue.length, secondValue.length );
+
+		for ( let index = 0; index < sharedLength; index++ ) {
+			if (
+				hasSharedArrayElementAnchor(
+					firstValue[ index ],
+					secondValue[ index ]
+				)
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	if ( isRecord( firstValue ) && isRecord( secondValue ) ) {
+		for ( const [ key, value ] of Object.entries( firstValue ) ) {
+			if (
+				key === ARRAY_ELEMENT_ID_KEY ||
+				! Object.hasOwn( secondValue, key )
+			) {
+				continue;
+			}
+
+			if ( hasSharedArrayElementAnchor( value, secondValue[ key ] ) ) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+function findYArrayElementIndex(
+	yArray: Y.Array< unknown >,
+	previousElement: unknown,
+	preferredIndex: number,
+	previousLength: number
+): number {
+	const previousId = getArrayElementId( previousElement );
+
+	if ( previousId ) {
+		for ( let i = 0; i < yArray.length; i++ ) {
+			if ( getArrayElementId( yArray.get( i ) ) === previousId ) {
+				return i;
+			}
+		}
+	}
+
+	for ( let i = 0; i < yArray.length; i++ ) {
+		if ( areArrayElementsEqual( previousElement, yArray.get( i ) ) ) {
+			return i;
+		}
+	}
+
+	if ( yArray.length === previousLength && preferredIndex < yArray.length ) {
+		return preferredIndex;
+	}
+
+	return preferredIndex < yArray.length ? preferredIndex : -1;
+}
+
+function mergeYArrayLocalChanges(
+	yArray: Y.Array< unknown >,
+	newValue: unknown[],
+	previousValue: unknown[],
+	query: Record< string, BlockAttributeSchema >,
+	cursorPosition: MergeCursorPosition,
+	cursorScope: RichTextCursorScope
+): boolean {
+	if ( arePlainValuesEqual( newValue, previousValue ) ) {
+		return true;
+	}
+
+	// If the current CRDT value still equals the previous local value, use the
+	// normal merge path so local inserts/deletes/reorders are applied.
+	if ( isYArrayEqualToPlainArray( yArray, previousValue ) ) {
+		return false;
+	}
+
+	if ( yArray.length === previousValue.length ) {
+		return false;
+	}
+
+	const sharedLength = Math.min( previousValue.length, newValue.length );
+
+	for ( let i = 0; i < sharedLength; i++ ) {
+		const previousElement = previousValue[ i ];
+		const newElement = newValue[ i ];
+
+		if ( arePlainValuesEqual( previousElement, newElement ) ) {
+			continue;
+		}
+
+		const currentIndex = findYArrayElementIndex(
+			yArray,
+			previousElement,
+			i,
+			previousValue.length
+		);
+
+		if ( currentIndex === -1 ) {
+			continue;
+		}
+
+		const currentElement = yArray.get( currentIndex );
+
+		if ( currentElement instanceof Y.Map && isRecord( newElement ) ) {
+			mergeYMapValues(
+				currentElement,
+				newElement,
+				query,
+				cursorPosition,
+				appendCursorScopeKey( cursorScope, currentIndex.toString() ),
+				isRecord( previousElement ) ? previousElement : undefined
+			);
+		}
+	}
+
+	for ( let i = sharedLength; i < newValue.length; i++ ) {
+		const newElement = newValue[ i ];
+
+		if ( i < yArray.length ) {
+			const currentElement = yArray.get( i );
+
+			if (
+				currentElement instanceof Y.Map &&
+				isRecord( newElement ) &&
+				hasSharedArrayElementAnchor( currentElement, newElement )
+			) {
+				mergeYMapValues(
+					currentElement,
+					newElement,
+					query,
+					cursorPosition,
+					appendCursorScopeKey( cursorScope, i.toString() )
+				);
+			}
+
+			continue;
+		}
+
+		yArray.insert( i, [ createYMapFromQuery( query, newElement, true ) ] );
+	}
+
+	return true;
+}
+
 function mergeYArrayByElementIds(
 	yArray: Y.Array< unknown >,
 	newValue: unknown[],
@@ -1196,7 +1783,7 @@ function mergeYArrayByElementIds(
 			}
 		} else {
 			yArray.insert( index, [
-				createYMapFromQuery( query, newElement ),
+				createYMapFromQuery( query, newElement, true ),
 			] );
 		}
 
@@ -1239,6 +1826,20 @@ function mergeYArray(
 	}
 
 	const query = schema.query;
+
+	if (
+		Array.isArray( baseValue ) &&
+		mergeYArrayLocalChanges(
+			yArray,
+			newValue,
+			baseValue,
+			query,
+			cursorPosition,
+			cursorScope
+		)
+	) {
+		return;
+	}
 
 	if (
 		Array.isArray( baseValue ) &&
@@ -1315,7 +1916,9 @@ function mergeYArray(
 			yArray.delete( 0, yArray.length );
 			yArray.insert(
 				0,
-				newValue.map( ( item ) => createYMapFromQuery( query, item ) )
+				newValue.map( ( item ) =>
+					createYMapFromQuery( query, item, true )
+				)
 			);
 			return;
 		}
@@ -1343,7 +1946,8 @@ function mergeYArray(
 		for ( let i = 0; i < numOfInsertionsNeeded; i++ ) {
 			itemsToInsert[ i ] = createYMapFromQuery(
 				query,
-				newValue[ insertAt + i ]
+				newValue[ insertAt + i ],
+				true
 			);
 		}
 
@@ -1372,7 +1976,7 @@ function mergeYArrayWithBase(
 	for (
 		;
 		left < numOfCommonEntries &&
-		fastDeepEqual( baseValue[ left ], newValue[ left ] );
+		arePlainValuesEqual( baseValue[ left ], newValue[ left ] );
 		left++
 	) {
 		/* nop */
@@ -1381,7 +1985,7 @@ function mergeYArrayWithBase(
 	for (
 		;
 		right < numOfCommonEntries - left &&
-		fastDeepEqual(
+		arePlainValuesEqual(
 			baseValue[ baseValue.length - right - 1 ],
 			newValue[ newValue.length - right - 1 ]
 		);
@@ -1421,7 +2025,7 @@ function mergeYArrayWithBase(
 			left,
 			newValue
 				.slice( left, left + insertCount )
-				.map( ( item ) => createYMapFromQuery( query, item ) )
+				.map( ( item ) => createYMapFromQuery( query, item, true ) )
 		);
 	}
 
@@ -1436,7 +2040,7 @@ function mergeYArrayWithBase(
 
 		if (
 			baseIndex !== undefined &&
-			fastDeepEqual( baseValue[ baseIndex ], newElement )
+			arePlainValuesEqual( baseValue[ baseIndex ], newElement )
 		) {
 			continue;
 		}
@@ -1457,7 +2061,7 @@ function mergeYArrayWithBase(
 		yArray.delete( 0, yArray.length );
 		yArray.insert(
 			0,
-			newValue.map( ( item ) => createYMapFromQuery( query, item ) )
+			newValue.map( ( item ) => createYMapFromQuery( query, item, true ) )
 		);
 		break;
 	}
@@ -1478,7 +2082,7 @@ function getPreferredSingleDeleteIndex(
 			...baseValue.slice( index + 1 ),
 		];
 
-		if ( ! fastDeepEqual( candidateValue, newValue ) ) {
+		if ( ! arePlainValuesEqual( candidateValue, newValue ) ) {
 			continue;
 		}
 
