@@ -50,6 +50,15 @@ Pass 178 re-checked the current branch state after fetching `origin/trunk`
 The fixed PR head `7a2708df2ff` passes that unit repro and the committed
 natural same-user Playwright save/reload spec.
 
+Pass 179 independently re-checked the same before/after unit evidence after
+fetching `origin/trunk` `be37a93529d83d6dbe4f19274357dbbad5cca578`. Current
+trunk still has the baseline CRDT persistence hooks in `prePersistPostType`, but
+not the proposed stale-save replay gate, so this bug remains a defect in the
+synthetic known-fixes/stale-save stack rather than a current-trunk regression.
+The pre-fix repro commit `7bae19a2698` fails because it replays an unchanged
+persisted CRDT document over local save edits; the fixed PR head
+`7a2708df2ff` passes the same focused unit test.
+
 ## Evidence
 
 - Manifest row:
@@ -71,6 +80,16 @@ natural same-user Playwright save/reload spec.
   Playwright spec:
   `test/e2e/specs/editor/collaboration/manifest/627bd1cfa5aa-concurrent-paragraph-save-reload.spec.ts`.
   Both passed on `7a2708df2ff`.
+- Pass 179 re-ran the focused unit repro on both sides. On pre-fix commit
+  `7bae19a2698`, Jest failed with one unexpected
+  `applyPersistedCRDTDoc( 'postType/page', 123, latestRecord )` call where
+  `latestRecord.meta._crdt_document === 'same-persisted-doc'`. On fixed head
+  `7a2708df2ff`, Jest passed with `1 passed, 22 skipped`.
+- Pass 179 found that the pass-178 artifact directory named in the summary now
+  contains only `storage-states/`; its `.last-run.json` is absent. That does not
+  invalidate the committed Playwright repro or previous console result, but it
+  means the local artifact directory is not currently sufficient as a standalone
+  audit record for the fixed browser run.
 - Pass 174's final PR branch gates CRDT replay on a changed latest persisted
   CRDT document or a changed server saved field, and passes the focused unit
   repro plus the full `entities.js` unit file.
@@ -127,4 +146,4 @@ const shouldApplyLatestCRDTDoc =
 
 The fix needs to land in the same stack as the proposed stale-save protections
 that introduced `prePersistPostType`; `origin/trunk` at
-`96263113a874ab1fc1668f7bb500c98766e90e76` does not yet contain that code path.
+`be37a93529d83d6dbe4f19274357dbbad5cca578` does not yet contain that code path.
