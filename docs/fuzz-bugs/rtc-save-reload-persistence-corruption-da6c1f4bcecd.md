@@ -799,3 +799,54 @@ Pass 179 also got a fresh local browser attempt farther than the previous Docker
 Pass 179 contribution: this pass re-read the preserved source spec, failure log, error context, and trace snippets instead of only trusting previous summaries. The source test uses normal editor actions: click visible text, `End`, `Enter`, keyboard typing, save, reload, and visible block deletion. The failure is not a locator-only flake: the final missing-marker click happens after the editor snapshot, normalized `blocks`, and serialized content already contain `rtc-9b9e-collaborator-1777975808112` and omit `rtc-9b9e-primary-1777975808112`.
 
 The practical-impact classification remains `medium` for active RTC collaboration and low across all Gutenberg usage. The natural trigger is ordinary and compact: two editors on one post, paragraph-level concurrent editing near the same anchor, a reloaded/joining editor with a causally stale hydrated block list, a later full `blocks` snapshot from that stale editor, and save/reload persistence. The required concurrency is timing-dependent, but it does not require malformed content, direct state mutation, rare block types, or network fault injection.
+
+## Pass 180 Verification
+
+Pass 180 fetched current `origin/trunk` and rebased both branches again:
+
+```text
+origin/trunk = cb74beb786b366ff69dac328b04861add1a67974
+```
+
+The PR branch still has exactly three commits over trunk:
+
+```text
+af02c1aca80 Add RTC stale top-level append regression test
+b83ba04833f Add RTC stale append persistence browser repro
+0a363ad284 Preserve RTC remote inserts across stale block snapshots
+```
+
+The rebased PR branch still passes the focused CRDT unit files:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts packages/core-data/src/utils/test/crdt.ts --runInBand
+
+PASS packages/core-data/src/utils/test/crdt.ts
+PASS packages/core-data/src/utils/test/crdt-blocks.ts
+Tests: 122 passed, 122 total
+```
+
+`git diff --check origin/trunk...HEAD` also passed on the PR branch.
+
+Pass 180 reran the exact known-fixes negative from the backlink-aware synthetic base:
+
+```text
+base = f256024286dd80a4c0e2579f658c109256abf648
+worktree = /Users/danluu/dev/fuzz/gutenberg-rtc-known-fixes-refresh-20260505/fuzz-handoff/distinct-manifest-20260505/bug-processing/deep-state/pass-177/exact-f256
+test file = packages/core-data/src/utils/test/da6c-pass177-crdt-read-stale.ts
+```
+
+The exact known-fixes base still drops the unobserved remote insert:
+
+```text
+npm run test:unit -- packages/core-data/src/utils/test/da6c-pass177-crdt-read-stale.ts --runInBand
+
+FAIL packages/core-data/src/utils/test/da6c-pass177-crdt-read-stale.ts
+Expected length: 5
+Received length: 4
+Received array: ["Baseline", "Shared anchor", "Collaborator paragraph", "Trailing"]
+```
+
+Pass 180 also independently checked the origin of the unsafe structural inference. `git blame` on `mergeCrdtBlocks()` shows the left/right full-array sweep, update/delete/insert counts, and recursive `innerBlocks` merge coming from `84019935998c16f877e976ad85e84748355d7282` (`Improve CRDT "merge logic" for post entities (#72262)`), with later RTC changes mostly modifying attribute handling. The defect is therefore not a browser-only locator failure: the algorithm can still infer deletion from absence in a causally stale full block snapshot unless the previous local block base is recorded.
+
+Pass 180 contribution: this verifies that the existing branch, browser repro, and fix still satisfy the requested standard after rebasing to the May 13 trunk head, and reruns the exact `f256024...` known-fixes negative. The practical-impact classification remains `medium` for active RTC collaboration and low across all Gutenberg usage. The clearest natural workflow is a reload/joining editor hydrating an older block list, another editor inserting a paragraph, the stale editor later emitting either a no-op or same-anchor full `blocks` snapshot, and the corrupted block tree being saved.
