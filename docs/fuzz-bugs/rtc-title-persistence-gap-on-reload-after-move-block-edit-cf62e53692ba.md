@@ -146,13 +146,17 @@ f256024286dd80a4c0e2579f658c109256abf648
 
 It includes the #77716 backlink-aware set and the earlier title reload
 reconciliation work from PR `77666`, including commits `573b567b8d4` and
-`957b5e83014`, but it does not contain the later cf62 fix commit
-`98f39bdcdd0`. In that base,
+`957b5e83014`. The final integrated history also has the cf62 fix commit
+`98f39bdcdd0` as an ancestor, but the final integration state no longer contains
+the critical cf62 mechanics. In `f256024286d`,
 `createPersistedCRDTDoc` serializes the manager Y.Doc with base-version metadata,
 but it does not overlay the exact record being saved, and
 `getPostChangesFromCRDTDoc` has no persisted raw record context for raw text
-fields. That leaves the cf62 stale persisted-title replay class unresolved by
-the known-fixes base.
+fields. A pass-180 negative control that applied only the dirty-title unit repro
+to `f256024286d` failed with the stale `"Persisted Title"` replayed into
+`changes.title`. That leaves the cf62 stale persisted-title replay class
+unresolved by the final known-fixes base despite the attempted inclusion in
+history.
 
 ## Origin Analysis
 
