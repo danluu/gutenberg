@@ -12,6 +12,9 @@ Yjs/core-data unit tests and with a natural two-editor Playwright flow over the
 HTTP polling transport. The current known-fixes base
 `f256024286dd80a4c0e2579f658c109256abf648` still fails the focused stale-row
 replacement case, so this is not covered by the May 7 known-fixes integration.
+The May 13 pass rebased the fix branch onto current `origin/trunk`
+`f4df834d9f8b64b610fd677087e79d0cd6632598` and reran the focused low-level and
+post-level repro suites.
 
 ## Practical Impact
 
@@ -176,6 +179,25 @@ npm run build -- --skip-types
 
 WP_ENV_PORT=10176 WP_BASE_URL=http://localhost:10176 RTC_MANIFEST_WS_START_PORT=22608 RTC_MANIFEST_WS_FIXED_PORT=1 npm run test:e2e -- test/e2e/specs/editor/collaboration/triage-59b7e7cdec39-realistic.spec.ts --project=chromium
 # PASS, 1 test
+```
+
+Pass 179 rebased the PR branch onto `origin/trunk`
+`f4df834d9f8b64b610fd677087e79d0cd6632598`. The branch still has the required
+commit order:
+
+1. `78d39d9e34e Add stale table body replacement repros`
+2. `722d286ea80 Add stale table body collaboration repro`
+3. `37dd7b1de4c Fix stale table body structural merges`
+
+On the rebased branch, the first focused unit run passed the pure table-body
+suite but the post-level suite failed before executing because the fresh
+temporary worktree lacked generated `@wordpress/icons` library files. After
+running `npm run build --workspace @wordpress/icons`, the focused repro suites
+passed:
+
+```bash
+npm run test:unit -- packages/core-data/src/utils/test/crdt-59b7e7cdec39-table-merge.test.ts packages/core-data/src/utils/test/crdt-59b7e7cdec39-post-table-merge.test.ts --runInBand
+# PASS, 2 suites, 11 tests
 ```
 
 Pass 178 rebased the branches onto `origin/trunk`
