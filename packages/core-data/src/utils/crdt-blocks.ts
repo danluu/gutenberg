@@ -486,7 +486,7 @@ function getBlockIdentityKeys(
 		const baseSet = new Set( baseClientIds );
 
 		if (
-			currentSet.size === baseSet.size &&
+			currentSet.size >= baseSet.size &&
 			incomingClientIds.length === baseClientIds.length &&
 			baseClientIds.every( ( key ) => currentSet.has( key ) ) &&
 			incomingClientIds.every( ( key ) => baseSet.has( key ) )
@@ -524,7 +524,7 @@ function getBlockIdentityKeys(
 	const baseSet = new Set( baseSemanticKeys );
 
 	if (
-		currentSet.size !== baseSet.size ||
+		currentSet.size < baseSet.size ||
 		incomingSemanticKeys.length !== baseSemanticKeys.length ||
 		! baseSemanticKeys.every( ( key ) => currentSet.has( key ) ) ||
 		! incomingSemanticKeys.every( ( key ) => baseSet.has( key ) )
@@ -632,7 +632,7 @@ function rebaseYBlocksByClientId(
 	baseBlocks: Block[] | undefined,
 	blocksToSync: Block[]
 ): boolean {
-	if ( ! baseBlocks || yblocks.length !== blocksToSync.length ) {
+	if ( ! baseBlocks ) {
 		return false;
 	}
 
@@ -646,23 +646,94 @@ function rebaseYBlocksByClientId(
 		return false;
 	}
 
-	const rebasedKeys = [ ...identityKeys.baseKeys ];
+	const baseKeySet = new Set( identityKeys.baseKeys );
+	const incomingKeySet = new Set( identityKeys.incomingKeys );
+	const hasSameBaseAndIncomingKeys =
+		baseKeySet.size === incomingKeySet.size &&
+		identityKeys.incomingKeys.every( ( key ) => baseKeySet.has( key ) );
+
+	if ( ! hasSameBaseAndIncomingKeys ) {
+		return false;
+	}
+
+	if ( identityKeys.currentKeys.length === identityKeys.baseKeys.length ) {
+		const rebasedKeys = [ ...identityKeys.baseKeys ];
+
+		for (
+			let targetIndex = 0;
+			targetIndex < blocksToSync.length;
+			targetIndex++
+		) {
+			const targetKey = identityKeys.incomingKeys[ targetIndex ];
+
+			if ( rebasedKeys[ targetIndex ] === targetKey ) {
+				continue;
+			}
+
+			const baseIndex = rebasedKeys.indexOf( targetKey );
+			const currentIndex = identityKeys.currentKeys.indexOf( targetKey );
+
+			if ( baseIndex === -1 || currentIndex === -1 ) {
+				return false;
+			}
+
+			const reorderedBlock = createNewYBlock(
+				yblocks.get( currentIndex ).toJSON() as unknown as Block
+			);
+			yblocks.delete( currentIndex, 1 );
+			yblocks.insert( targetIndex, [ reorderedBlock ] );
+
+			identityKeys.currentKeys.splice( currentIndex, 1 );
+			identityKeys.currentKeys.splice( targetIndex, 0, targetKey );
+			rebasedKeys.splice( baseIndex, 1 );
+			rebasedKeys.splice( targetIndex, 0, targetKey );
+		}
+
+		return true;
+	}
+
+	if (
+		identityKeys.incomingKeys.some(
+			( key ) => ! identityKeys.currentKeys.includes( key )
+		)
+	) {
+		return false;
+	}
 
 	for (
-		let targetIndex = 0;
-		targetIndex < blocksToSync.length;
-		targetIndex++
+		let targetLocalIndex = 0;
+		targetLocalIndex < identityKeys.incomingKeys.length;
+		targetLocalIndex++
 	) {
-		const targetKey = identityKeys.incomingKeys[ targetIndex ];
+		const targetKey = identityKeys.incomingKeys[ targetLocalIndex ];
+		let seenLocalKeys = 0;
+		let targetIndex = -1;
 
-		if ( rebasedKeys[ targetIndex ] === targetKey ) {
+		for (
+			let currentKeyIndex = 0;
+			currentKeyIndex < identityKeys.currentKeys.length;
+			currentKeyIndex++
+		) {
+			if ( incomingKeySet.has( identityKeys.currentKeys[ currentKeyIndex ] ) ) {
+				if ( seenLocalKeys === targetLocalIndex ) {
+					targetIndex = currentKeyIndex;
+					break;
+				}
+				seenLocalKeys++;
+			}
+		}
+
+		if ( targetIndex === -1 ) {
+			return false;
+		}
+
+		if ( identityKeys.currentKeys[ targetIndex ] === targetKey ) {
 			continue;
 		}
 
-		const baseIndex = rebasedKeys.indexOf( targetKey );
 		const currentIndex = identityKeys.currentKeys.indexOf( targetKey );
 
-		if ( baseIndex === -1 || currentIndex === -1 ) {
+		if ( currentIndex === -1 ) {
 			return false;
 		}
 
@@ -674,8 +745,6 @@ function rebaseYBlocksByClientId(
 
 		identityKeys.currentKeys.splice( currentIndex, 1 );
 		identityKeys.currentKeys.splice( targetIndex, 0, targetKey );
-		rebasedKeys.splice( baseIndex, 1 );
-		rebasedKeys.splice( targetIndex, 0, targetKey );
 	}
 
 	return true;
