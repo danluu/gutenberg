@@ -6,7 +6,14 @@ import { Y } from '@wordpress/sync';
 /**
  * External dependencies
  */
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
+import {
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	jest,
+} from '@jest/globals';
 
 /**
  * Mock getBlockTypes so CRDT merging can identify rich-text attributes.
@@ -46,15 +53,27 @@ jest.mock( '@wordpress/blocks', () => {
 	};
 } );
 
-/**
- * WordPress dependencies
- */
+jest.mock( '@wordpress/block-editor', () => ( {
+	store: { name: 'core/block-editor' },
+} ) );
+
+const {
+	__unstableSerializeAndClean,
+	getBlockType,
+	parse,
+	registerBlockType,
+	unregisterBlockType,
+} = jest.requireActual(
+	'@wordpress/blocks'
+) as typeof import('@wordpress/blocks');
+
+import { createElement, RawHTML } from '@wordpress/element';
 import { RichTextData } from '@wordpress/rich-text';
 
 /**
  * Internal dependencies
  */
-import { CRDT_RECORD_MAP_KEY } from '../../sync';
+import { CRDT_DOC_META_PERSISTENCE_KEY, CRDT_RECORD_MAP_KEY } from '../../sync';
 import {
 	applyPostChangesToCRDTDoc,
 	defaultCollectionSyncConfig,
@@ -67,6 +86,10 @@ import type { Block, YBlock, YBlockRecord, YBlocks } from '../crdt-blocks';
 import { updateSelectionHistory } from '../crdt-selection';
 import { createYMap, getRootMap, type YMapWrap } from '../crdt-utils';
 import type { Post } from '../../entity-types';
+
+function renderRichTextValue( value?: string | RichTextData ): string {
+	return typeof value === 'string' ? value : value?.toHTMLString() ?? '';
+}
 
 // Default synced properties matching the base set built in entities.js,
 // plus 'categories' and 'tags' as example taxonomy rest_base values.
@@ -124,12 +147,15 @@ describe( 'crdt', () => {
 	let doc: Y.Doc;
 
 	beforeEach( () => {
-		doc = new Y.Doc();
+		doc = new Y.Doc( { meta: new Map() } );
 		jest.clearAllMocks();
 	} );
 
 	afterEach( () => {
 		doc.destroy();
+		if ( getBlockType( 'core/paragraph' ) ) {
+			unregisterBlockType( 'core/paragraph' );
+		}
 	} );
 
 	describe( 'applyPostChangesToCRDTDoc', () => {
@@ -732,6 +758,139 @@ describe( 'crdt', () => {
 
 			expect( changes ).toHaveProperty( 'blocks' );
 			expect( changes.blocks ).toBeUndefined();
+		} );
+
+		it( 'does not invalidate persisted blocks when only entity-normalized originalContent differs from generated content', () => {
+			registerBlockType( 'core/paragraph', {
+				apiVersion: 3,
+				category: 'text',
+				title: 'Paragraph',
+				attributes: {
+					content: {
+						type: 'rich-text',
+						source: 'rich-text',
+						selector: 'p',
+					},
+				},
+				save: ( {
+					attributes,
+				}: {
+					attributes: { content?: string | RichTextData };
+				} ) =>
+					createElement(
+						'p',
+						null,
+						createElement(
+							RawHTML,
+							null,
+							renderRichTextValue( attributes.content )
+						)
+					),
+			} );
+
+			const originalContent = [
+				'<!-- wp:paragraph -->',
+				'<p>Entity refs: &notin; / &notin text, nbsp &nbsp gap, quote &quot;value&quot;, apos &apos;value&apos;, lt &lt and gt &gt.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+			const blocks = parse( originalContent );
+			const generatedBlocks = blocks.map( ( block ) => {
+				const generatedBlock = { ...block, isValid: true };
+				delete generatedBlock.__unstableBlockSource;
+				delete generatedBlock.originalContent;
+				delete generatedBlock.validationIssues;
+				return generatedBlock;
+			} );
+			const persistedContent =
+				__unstableSerializeAndClean( generatedBlocks ).trim();
+
+			expect( __unstableSerializeAndClean( blocks ).trim() ).not.toBe(
+				persistedContent
+			);
+			expect( console ).toHaveWarned();
+			expect( console ).toHaveErrored();
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks } as PostChanges,
+				defaultSyncedProperties
+			);
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					content: {
+						raw: persistedContent,
+						rendered: persistedContent,
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).not.toHaveProperty( 'blocks' );
+		} );
+
+		it( 'invalidates persisted blocks when generated content differs from persisted content', () => {
+			registerBlockType( 'core/paragraph', {
+				apiVersion: 3,
+				category: 'text',
+				title: 'Paragraph',
+				attributes: {
+					content: {
+						type: 'rich-text',
+						source: 'rich-text',
+						selector: 'p',
+					},
+				},
+				save: ( {
+					attributes,
+				}: {
+					attributes: { content?: string | RichTextData };
+				} ) =>
+					createElement(
+						'p',
+						null,
+						createElement(
+							RawHTML,
+							null,
+							renderRichTextValue( attributes.content )
+						)
+					),
+			} );
+
+			const originalContent = [
+				'<!-- wp:paragraph -->',
+				'<p>Entity refs: &notin; / &notin text, nbsp &nbsp gap.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+			const blocks = parse( originalContent );
+
+			expect( console ).toHaveWarned();
+			expect( console ).toHaveErrored();
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks } as PostChanges,
+				defaultSyncedProperties
+			);
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					content: {
+						raw: [
+							'<!-- wp:paragraph -->',
+							'<p>Changed server content.</p>',
+							'<!-- /wp:paragraph -->',
+						].join( '\n' ),
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).toHaveProperty( 'blocks' );
 		} );
 
 		it( 'detects content changes from string value', () => {
