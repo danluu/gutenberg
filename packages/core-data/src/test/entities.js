@@ -391,6 +391,104 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
+	it( 'does not persist empty content while the local CRDT blocks are non-empty', async () => {
+		const crdtContent = pageContent( [ 'Alpha', 'current content' ] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: crdtContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'local-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				blocks: parse( crdtContent ),
+				content: '',
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				title: { raw: 'Base title' },
+				content: { raw: crdtContent },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			{
+				title: 'Updated title',
+				content: { raw: '' },
+			},
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( syncManager.getCRDTRecordData ).toHaveBeenCalledWith(
+			'postType/page',
+			123
+		);
+		expect( result ).toEqual( {
+			content: crdtContent,
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
+			},
+		} );
+	} );
+
+	it( 'allows empty content when the local CRDT blocks are empty', async () => {
+		const latestRecord = {
+			id: 123,
+			content: { raw: pageContent( [ 'Alpha' ] ) },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'local-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				blocks: [],
+				content: '',
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: latestRecord.content.raw },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			{ content: '' },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( syncManager.getCRDTRecordData ).toHaveBeenCalledWith(
+			'postType/page',
+			123
+		);
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
+			},
+		} );
+	} );
+
 	it( 'merges non-conflicting stale serialized content edits with the latest saved content', async () => {
 		const latestRecord = {
 			id: 123,
