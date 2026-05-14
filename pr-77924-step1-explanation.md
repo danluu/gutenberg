@@ -146,15 +146,18 @@ case reliable.
 
 ## What Stayed Out
 
-The first split does not attempt to fix every current trunk RTC stress failure.
-In local validation, the other existing failure,
+The first split does not attempt to fix every RTC stress failure that remains
+when PR 77924's behavioral changes are layered onto PR 77920. In local
+validation, the other existing failure,
 `three users concurrently edit a large post with diverse blocks`, still failed
 after this reduced branch. Its failures were broader: same-paragraph convergence,
 block toolbar movement, and final paragraph propagation. Those require more of
 the full PR 77924 surface and should be reviewed in later splits.
 
-The table/query-array merge work and WebSocket/provider reload behavior should
-also remain separate review slices.
+The table/query-array merge work and WebSocket/provider reload behavior fixes
+should also remain separate review slices. The WebSocket test harness itself is
+not a later slice; it comes from PR 77920 and must be preserved by every split
+unless a future split explicitly replaces that harness.
 
 ## Guardrail For Later Splits
 
@@ -180,24 +183,44 @@ rather than adding duplicate `websocket-only` specs.
 
 ## Verification
 
-On `try/pr77924-step1-plan-20260513`:
+On `try/pr77924-step1-plan-20260513` at `eb2808efd4a`, after rebasing onto
+PR 77920 at `cbb630e754f`:
 
 ```sh
-npm run test:unit -- \
-  packages/core-data/src/utils/test/crdt-blocks.ts \
-  packages/core-data/src/test/actions.js \
-  packages/sync/src/test/manager.ts
+git merge-base --is-ancestor origin/pr/77920 HEAD
+
+git diff --name-status origin/pr/77920..HEAD -- \
+  bin/rtc-test-ws-sync-server.mjs \
+  test/e2e/bin/rtc-test-ws-sync-server.mjs \
+  test/e2e/config/rtc-websocket-setup.ts \
+  test/e2e/playwright.rtc-websocket.config.ts \
+  packages/e2e-tests/plugins/rtc-websocket-provider \
+  test/e2e/specs/editor/collaboration/websocket \
+  test/e2e/specs/editor/collaboration/websocket-only \
+  package.json \
+  test/e2e/package.json
 ```
 
-Result: passed, 134 tests.
+Result: PR 77920 is an ancestor, and the harness diff is empty.
+
+```sh
+npm run --workspace @wordpress/unit-tests test:unit -- \
+  packages/core-data/src/test/actions.js \
+  packages/core-data/src/utils/test/crdt.ts \
+  packages/core-data/src/utils/test/crdt-blocks.ts \
+  packages/sync/src/test/manager.ts \
+  --runInBand
+```
+
+Result: passed, 178 tests.
 
 ```sh
 npm run test:e2e:rtc-websocket -- \
   --grep "two users concurrently move list items" \
-  --repeat-each=10
+  --repeat-each=5
 ```
 
-Result during validation: passed, 10/10.
+Result during validation: passed, 5/5.
 
 ```sh
 npm run build
