@@ -145,6 +145,68 @@ describe( 'stale query-array block snapshots', () => {
 		expect( body[ 2 ].cells[ 0 ].content ).toBe( 'remote-A3' );
 	} );
 
+	it( 'preserves a remote appended row when an explicit base has the row but a stale local snapshot does not', () => {
+		const { docA, docB, yblocksA, yblocksB } = createSyncedDocs( [
+			[ '' ],
+			[ '' ],
+		] );
+
+		const explicitBaseWithRemoteRow = [
+			tableBlock( [ [ '' ], [ '' ], [ '' ] ] ),
+		];
+
+		mergeCrdtBlocks(
+			yblocksB,
+			[ tableBlock( [ [ '' ], [ '' ], [ '' ] ] ) ],
+			null
+		);
+		syncDocs( docB, docA );
+		expect( getTableBody( yblocksA ) ).toHaveLength( 3 );
+
+		mergeCrdtBlocks(
+			yblocksA,
+			[ tableBlock( [ [ 'local-A1' ], [ '' ] ] ) ],
+			{
+				attributeKey: 'body.0.cells.0.content',
+				clientId: 'table-1',
+				offset: 'local-A1'.length,
+			},
+			explicitBaseWithRemoteRow
+		);
+
+		const body = getTableBody( yblocksA );
+		expect( body ).toHaveLength( 3 );
+		expect( body[ 0 ].cells[ 0 ].content ).toBe( 'local-A1' );
+	} );
+
+	it( 'still applies an explicit-base row deletion when no rich-text edit cursor is present', () => {
+		const { docA, docB, yblocksA, yblocksB } = createSyncedDocs( [
+			[ '' ],
+			[ '' ],
+		] );
+
+		const explicitBaseWithRemoteRow = [
+			tableBlock( [ [ '' ], [ '' ], [ '' ] ] ),
+		];
+
+		mergeCrdtBlocks(
+			yblocksB,
+			[ tableBlock( [ [ '' ], [ '' ], [ '' ] ] ) ],
+			null
+		);
+		syncDocs( docB, docA );
+		expect( getTableBody( yblocksA ) ).toHaveLength( 3 );
+
+		mergeCrdtBlocks(
+			yblocksA,
+			[ tableBlock( [ [ '' ], [ '' ] ] ) ],
+			null,
+			explicitBaseWithRemoteRow
+		);
+
+		expect( getTableBody( yblocksA ) ).toHaveLength( 2 );
+	} );
+
 	it( 'does not resurrect a remotely deleted row from a stale local snapshot', () => {
 		const { docA, docB, yblocksA, yblocksB } = createSyncedDocs( [
 			[ 'A1' ],
