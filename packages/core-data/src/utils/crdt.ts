@@ -368,6 +368,35 @@ function hasInvalidBlockOriginalContent( blocks: Block[] ): boolean {
 	);
 }
 
+function parseHTMLFragmentForComparison(
+	html: string
+): DocumentFragment | null {
+	if ( typeof document === 'undefined' ) {
+		return null;
+	}
+
+	const template = document.createElement( 'template' );
+	template.innerHTML = html;
+
+	for ( const childNode of Array.from( template.content.childNodes ) ) {
+		if (
+			childNode.nodeType === Node.TEXT_NODE &&
+			childNode.textContent?.trim() === ''
+		) {
+			childNode.remove();
+		}
+	}
+
+	return template.content;
+}
+
+function areHTMLFragmentsEquivalent( first: string, second: string ): boolean {
+	const firstFragment = parseHTMLFragmentForComparison( first );
+	const secondFragment = parseHTMLFragmentForComparison( second );
+
+	return !! firstFragment && firstFragment.isEqualNode( secondFragment );
+}
+
 function hasPersistedBlockContentChanged(
 	blocks: Block[],
 	persistedContent: string | undefined
@@ -393,7 +422,15 @@ function hasPersistedBlockContentChanged(
 	}
 
 	try {
-		return getGeneratedBlockSerialization( blocks ) !== rawPersistedContent;
+		const generatedSerialization = getGeneratedBlockSerialization( blocks );
+
+		return (
+			generatedSerialization !== rawPersistedContent &&
+			! areHTMLFragmentsEquivalent(
+				generatedSerialization,
+				rawPersistedContent
+			)
+		);
 	} catch {
 		return true;
 	}
