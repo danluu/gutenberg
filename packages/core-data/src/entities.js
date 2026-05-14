@@ -586,6 +586,24 @@ export const prePersistPostType = async (
 		}
 	}
 
+	if (
+		window._wpCollaborationEnabled &&
+		POST_TYPES_WITH_STALE_SAVE_PROTECTION.has( name ) &&
+		objectId &&
+		locallyChangedSavedFieldSet.has( 'content' ) &&
+		getRawPostValue( edits.content ) === '' &&
+		! ( 'content' in newEdits )
+	) {
+		const crdtRecord = (
+			syncManager ?? getSyncManager()
+		)?.getCRDTRecordData?.( objectType, objectId );
+		const crdtContent = getSerializedCRDTBlockContent( crdtRecord );
+
+		if ( crdtContent ) {
+			newEdits.content = crdtContent;
+		}
+	}
+
 	// Add meta for persisted CRDT document.
 	if ( persistedRecord ) {
 		if ( ! hasSerializedDoc ) {
