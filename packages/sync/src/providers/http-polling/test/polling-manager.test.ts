@@ -154,6 +154,8 @@ describe( 'polling-manager', () => {
 		typeof import('../utils').postSyncUpdateNonBlocking
 	>;
 	let mockApplyFilters: jest.Mock;
+	let mockEncoding: jest.Mocked< typeof import('lib0/encoding') >;
+	let mockYjs: jest.Mocked< typeof import('yjs') >;
 
 	beforeEach( () => {
 		jest.useFakeTimers();
@@ -166,6 +168,8 @@ describe( 'polling-manager', () => {
 			mockPostSyncUpdateNonBlocking =
 				require( '../utils' ).postSyncUpdateNonBlocking;
 			mockApplyFilters = require( '@wordpress/hooks' ).applyFilters;
+			mockEncoding = require( 'lib0/encoding' );
+			mockYjs = require( 'yjs' );
 		} );
 	} );
 
@@ -271,6 +275,108 @@ describe( 'polling-manager', () => {
 					error: expect.objectContaining( {
 						code: 'document-size-limit-exceeded',
 					} ),
+				} )
+			);
+		} );
+
+		it( 'disconnects instead of queueing an oversized generated sync step 2 update', async () => {
+			const onStatusChange = jest.fn();
+			const doc = createMockDoc( 1 );
+
+			mockPostSyncUpdate.mockResolvedValueOnce( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness: {},
+						updates: [
+							{
+								type: 'sync_step1',
+								data: 'AQ==',
+							},
+						],
+					},
+				],
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			mockEncoding.toUint8Array.mockReturnValueOnce(
+				new Uint8Array( 11 )
+			);
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( onStatusChange ).toHaveBeenCalledWith( {
+				status: 'disconnected',
+				error: expect.objectContaining( {
+					code: 'document-size-limit-exceeded',
+				} ),
+			} );
+			expect( mockPostSyncUpdateNonBlocking ).toHaveBeenCalledWith(
+				expect.objectContaining( {
+					rooms: expect.arrayContaining( [
+						expect.objectContaining( {
+							room: 'test-room',
+							awareness: null,
+						} ),
+					] ),
+				} )
+			);
+		} );
+
+		it( 'disconnects instead of queueing an oversized generated compaction update', async () => {
+			const onStatusChange = jest.fn();
+			const doc = createMockDoc( 1 );
+
+			mockPostSyncUpdate.mockResolvedValueOnce( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness: {},
+						updates: [],
+						should_compact: true,
+					},
+				],
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			mockYjs.encodeStateAsUpdateV2.mockReturnValueOnce(
+				new Uint8Array( 11 )
+			);
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( onStatusChange ).toHaveBeenCalledWith( {
+				status: 'disconnected',
+				error: expect.objectContaining( {
+					code: 'document-size-limit-exceeded',
+				} ),
+			} );
+			expect( mockPostSyncUpdateNonBlocking ).toHaveBeenCalledWith(
+				expect.objectContaining( {
+					rooms: expect.arrayContaining( [
+						expect.objectContaining( {
+							room: 'test-room',
+							awareness: null,
+						} ),
+					] ),
 				} )
 			);
 		} );
