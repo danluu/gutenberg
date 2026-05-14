@@ -1077,6 +1077,19 @@ function getBlockSemanticKey( block: Block ): string {
 	return JSON.stringify( getComparableBlockValue( block ) );
 }
 
+function isSameBlockIdentity( firstBlock: Block, secondBlock: Block ): boolean {
+	const firstClientId = getBlockClientId( firstBlock );
+	const secondClientId = getBlockClientId( secondBlock );
+
+	if ( firstClientId || secondClientId ) {
+		return firstClientId === secondClientId;
+	}
+
+	return (
+		getBlockSemanticKey( firstBlock ) === getBlockSemanticKey( secondBlock )
+	);
+}
+
 function getUniqueKeys< T >(
 	items: T[],
 	getKey: ( item: T ) => string | null
@@ -1578,6 +1591,10 @@ function mergeYBlocksLocalChanges(
 	for ( let index = 0; index < sharedLength; index++ ) {
 		const baseBlock = baseBlocks[ index ];
 		const block = blocksToSync[ index ];
+
+		if ( ! isSameBlockIdentity( baseBlock, block ) ) {
+			return false;
+		}
 
 		if ( fastDeepEqual( baseBlock, block ) ) {
 			continue;
