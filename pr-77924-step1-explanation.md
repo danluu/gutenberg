@@ -6,26 +6,29 @@ Implementation branch:
 `try/pr77924-step1-plan-20260513`
 
 Required base:
-[WordPress/gutenberg#77920](https://github.com/WordPress/gutenberg/pull/77920)
-at `cbb630e754f` or newer.
+Current `origin/trunk`, which includes
+[WordPress/gutenberg#78179](https://github.com/WordPress/gutenberg/pull/78179)
+as `939b0ff02a9`.
 
 This branch explains the first split from
 [WordPress/gutenberg#77924](https://github.com/WordPress/gutenberg/pull/77924).
 It focuses on the list-item move convergence failure and intentionally does not
 try to absorb every fix from PR 77924.
 
-This branch is stacked directly on top of PR 77920 so it uses the current
-WebSocket e2e setup from that PR. In particular, the split must not re-add the
-older trunk harness shape under `test/e2e/bin/` or `websocket-only/`. PR 77920's
-current setup owns:
+This branch is stacked directly on top of current trunk so it uses the WebSocket
+e2e setup that landed in PR 78179. In particular, the split must not re-add the
+older PR 77920 wrapper-spec harness shape under `test/e2e/specs/editor/collaboration/websocket/`.
+PR 78179's current setup owns:
 
-- `bin/rtc-test-ws-sync-server.mjs`
+- `test/e2e/bin/rtc-test-ws-sync-server.mjs`
+- `test/e2e/config/rtc-websocket-setup.ts`
 - `test/e2e/playwright.rtc-websocket.config.ts`
-- `packages/e2e-tests/plugins/rtc-websocket-provider/`
-- `test/e2e/specs/editor/collaboration/websocket/*.spec.ts`
+- `packages/e2e-tests/plugins/rtc-websocket-provider/src/`
+- `test/e2e/specs/editor/collaboration/http-only/`
 
-The step-1 implementation delta against PR 77920 has no changes in those
-harness files.
+The step-1 implementation delta against trunk has no changes in those harness
+files. It strengthens the shared parent collaboration stress spec, which the
+PR 78179 WebSocket config runs directly.
 
 ## Relevant History
 
@@ -147,7 +150,7 @@ case reliable.
 ## What Stayed Out
 
 The first split does not attempt to fix every RTC stress failure that remains
-when PR 77924's behavioral changes are layered onto PR 77920. In local
+when PR 77924's behavioral changes are layered onto current trunk. In local
 validation, the other existing failure,
 `three users concurrently edit a large post with diverse blocks`, still failed
 after this reduced branch. Its failures were broader: same-paragraph convergence,
@@ -156,40 +159,16 @@ the full PR 77924 surface and should be reviewed in later splits.
 
 The table/query-array merge work and WebSocket/provider reload behavior fixes
 should also remain separate review slices. The WebSocket test harness itself is
-not a later slice; it comes from PR 77920 and must be preserved by every split
+not a later slice; it comes from PR 78179 and must be preserved by every split
 unless a future split explicitly replaces that harness.
 
 ## Guardrail For Later Splits
 
-Every later functional split should start from the latest PR 77920 head or from
-trunk after PR 77920 lands. Non-harness splits should show an empty diff for:
+Every later functional split should start from current trunk, which includes
+PR 78179. Non-harness splits should show an empty diff for:
 
 ```sh
-git diff --name-status <base>..HEAD -- \
-  bin/rtc-test-ws-sync-server.mjs \
-  test/e2e/bin/rtc-test-ws-sync-server.mjs \
-  test/e2e/playwright.rtc-websocket.config.ts \
-  packages/e2e-tests/plugins/rtc-websocket-provider \
-  test/e2e/specs/editor/collaboration/websocket \
-  test/e2e/specs/editor/collaboration/websocket-only \
-  package.json \
-  test/e2e/package.json
-```
-
-The expected result is empty unless the split is explicitly the WebSocket
-harness/provider slice. Existing collaboration tests should be strengthened in
-their parent spec files and then run through PR 77920's `websocket/` wrappers,
-rather than adding duplicate `websocket-only` specs.
-
-## Verification
-
-On `try/pr77924-step1-plan-20260513` at `eb2808efd4a`, after rebasing onto
-PR 77920 at `cbb630e754f`:
-
-```sh
-git merge-base --is-ancestor origin/pr/77920 HEAD
-
-git diff --name-status origin/pr/77920..HEAD -- \
+git diff --name-status origin/trunk..HEAD -- \
   bin/rtc-test-ws-sync-server.mjs \
   test/e2e/bin/rtc-test-ws-sync-server.mjs \
   test/e2e/config/rtc-websocket-setup.ts \
@@ -197,11 +176,40 @@ git diff --name-status origin/pr/77920..HEAD -- \
   packages/e2e-tests/plugins/rtc-websocket-provider \
   test/e2e/specs/editor/collaboration/websocket \
   test/e2e/specs/editor/collaboration/websocket-only \
+  test/e2e/specs/editor/collaboration/http-only \
   package.json \
+  package-lock.json \
   test/e2e/package.json
 ```
 
-Result: PR 77920 is an ancestor, and the harness diff is empty.
+The expected result is empty unless the split is explicitly the WebSocket
+harness/provider slice. Existing collaboration tests should be strengthened in
+their parent spec files and then run through PR 78179's WebSocket config,
+rather than adding duplicate wrapper specs.
+
+## Verification
+
+On `try/pr77924-step1-plan-20260513` at `2c8c8a72993`, after rebuilding on
+current trunk at `382292082c2`, which includes PR 78179 as `939b0ff02a9`:
+
+```sh
+git merge-base --is-ancestor origin/trunk HEAD
+
+git diff --name-status origin/trunk..HEAD -- \
+  bin/rtc-test-ws-sync-server.mjs \
+  test/e2e/bin/rtc-test-ws-sync-server.mjs \
+  test/e2e/config/rtc-websocket-setup.ts \
+  test/e2e/playwright.rtc-websocket.config.ts \
+  packages/e2e-tests/plugins/rtc-websocket-provider \
+  test/e2e/specs/editor/collaboration/websocket \
+  test/e2e/specs/editor/collaboration/websocket-only \
+  test/e2e/specs/editor/collaboration/http-only \
+  package.json \
+  package-lock.json \
+  test/e2e/package.json
+```
+
+Result: current trunk is an ancestor, and the harness diff is empty.
 
 ```sh
 npm run --workspace @wordpress/unit-tests test:unit -- \
@@ -212,7 +220,7 @@ npm run --workspace @wordpress/unit-tests test:unit -- \
   --runInBand
 ```
 
-Result: passed, 178 tests.
+Result: passed, 179 tests.
 
 ```sh
 npm run test:e2e:rtc-websocket -- \
