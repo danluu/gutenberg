@@ -88,9 +88,11 @@ The current red/green signal is:
 - The two new WebSocket e2e tests pass on the merged branch.
 
 Important caveat: these results only matter for branches based on the current
-WordPress/gutenberg PR 77920 WebSocket setup. A split PR is wrong if it makes
-its tests pass by carrying forward trunk's older setup. Treat the WebSocket
-harness as shared infrastructure, not incidental support code for a CRDT fix.
+WordPress/gutenberg PR 78179 WebSocket setup. PR 77920 is the closed,
+unmerged, hand-rolled WebSocket setup and should not be a base for follow-up
+work. A split PR is wrong if it makes its tests pass by carrying forward PR
+77920 or any other stale custom setup. Treat the WebSocket harness as shared
+infrastructure, not incidental support code for a CRDT fix.
 
 ## Recommended Split
 
@@ -98,23 +100,28 @@ Split by failure mode, not by package.
 
 ### 0. WebSocket Harness Baseline
 
-Goal: make sure every later slice uses the current WordPress/gutenberg PR 77920
-WebSocket setup, not trunk's older setup.
+Goal: make sure every later slice uses the merged WordPress/gutenberg PR 78179
+`@y/websocket-server` setup, not the superseded PR 77920 setup.
 
 Status: hard prerequisite. Base later functional split branches on
-`origin/pr/77920`, or on trunk only after trunk contains the same WebSocket setup
-from PR 77920. Do this before selecting code from PR 77924.
+`origin/trunk` after PR 78179 is present. Do this before selecting code from PR
+77924. Do not base the splits on `origin/pr/77920`.
 
-Current PR 77920 WebSocket setup paths:
+Current PR 78179 WebSocket setup paths:
 
-- `bin/rtc-test-ws-sync-server.mjs`
+- `test/e2e/bin/rtc-test-ws-sync-server.mjs`
 - `test/e2e/playwright.rtc-websocket.config.ts`
+- `test/e2e/config/rtc-websocket-setup.ts`
+- `test/e2e/config/global-setup.ts`
+- `test/e2e/playwright.config.ts`
+- `packages/e2e-tests/plugins/rtc-websocket-provider.php`
 - `packages/e2e-tests/plugins/rtc-websocket-provider/`
-- `test/e2e/specs/editor/collaboration/websocket/*.spec.ts`
+- `package.json`, `package-lock.json`, and `test/e2e/package.json` for the
+  `@y/websocket-server` / `y-websocket` dependencies
 
 Likely scope:
 
-- Current PR 77920 WebSocket setup only.
+- Current PR 78179 WebSocket setup only.
 - No CRDT merge, sync-manager, persistence, or regression-test logic.
 - No feature behavior beyond making the RTC WebSocket harness current and
   repeatable.
@@ -122,29 +129,36 @@ Likely scope:
 Preflight checks for every later functional split:
 
 ```sh
-git merge-base --is-ancestor origin/pr/77920 HEAD
+git merge-base --is-ancestor 939b0ff02a9d3eaa9da4eb0a1e96dc325b71a801 HEAD
 
-git diff --exit-code origin/pr/77920...HEAD -- \
-  bin/rtc-test-ws-sync-server.mjs \
+git diff --exit-code origin/trunk...HEAD -- \
+  package.json \
+  package-lock.json \
+  test/e2e/package.json \
+  test/e2e/bin/rtc-test-ws-sync-server.mjs \
   test/e2e/playwright.rtc-websocket.config.ts \
+  test/e2e/config/rtc-websocket-setup.ts \
+  test/e2e/config/global-setup.ts \
+  test/e2e/playwright.config.ts \
+  packages/e2e-tests/plugins/rtc-websocket-provider.php \
   packages/e2e-tests/plugins/rtc-websocket-provider/
 
-git diff --name-status origin/pr/77920...HEAD -- \
-  test/e2e/specs/editor/collaboration/websocket/
+git diff --name-status origin/trunk...HEAD -- \
+  test/e2e/specs/editor/collaboration/websocket-only/
 ```
 
-The first command confirms the branch is based on PR 77920. The second command
-must be empty for non-harness PRs. The third command should list only deliberate
-WebSocket e2e coverage for that split.
+The first command confirms the branch contains PR 78179's merge commit. The
+second command must be empty for non-harness PRs. The third command should list
+only deliberate WebSocket-only e2e coverage for that split.
 
 Acceptance checks:
 
 - Functional split PRs should normally have no diff in WebSocket harness files.
 - If harness changes are required, land them in this prerequisite PR first.
-- Run at least one WebSocket smoke test on `origin/pr/77920` and on the split
-  branch before claiming a feature red/green delta.
-- Do not cherry-pick older trunk setup, provider readiness code, or custom
-  server behavior unless that exact change is the harness PR.
+- Run at least one WebSocket smoke test on `origin/trunk` containing PR 78179
+  and on the split branch before claiming a feature red/green delta.
+- Do not cherry-pick PR 77920 setup, provider readiness code, or custom server
+  behavior unless that exact change is the harness PR.
 
 ### 1. Existing Stress Failures
 
@@ -180,7 +194,7 @@ Likely scope:
 Tests to include:
 
 - The duplicate table row unit tests.
-- `test/e2e/specs/editor/collaboration/websocket/collaboration-table-followups.spec.ts`
+- `test/e2e/specs/editor/collaboration/websocket-only/collaboration-table-followups.spec.ts`
 
 This should not be bundled with the list-move fix unless the two are truly
 inseparable.
@@ -194,7 +208,7 @@ Likely scope:
 
 - WebSocket test provider readiness changes.
 - Any explicit provider-to-sync-manager metadata contract.
-- `test/e2e/specs/editor/collaboration/websocket/collaboration-same-user-title-reload-loss.spec.ts`
+- `test/e2e/specs/editor/collaboration/websocket-only/collaboration-same-user-title-reload-loss.spec.ts`
 
 This has a different risk profile from CRDT block merging and should be reviewed
 separately.
@@ -217,20 +231,22 @@ presented as required for the current WebSocket e2e failures.
 
 Before opening each follow-up PR:
 
-- Start from `origin/pr/77920`, or from `origin/trunk` only after confirming
-  trunk contains the same WebSocket setup as PR 77920.
+- Start from `origin/trunk` after confirming it contains PR 78179.
+- Do not use `origin/pr/77920` as a base; it is closed unmerged and uses the
+  superseded hand-rolled WebSocket setup.
 - Cherry-pick only files required for that failure mode; do not copy old
   WebSocket setup files wholesale.
-- Run `git merge-base --is-ancestor origin/pr/77920 HEAD`.
-- Run `git diff --exit-code origin/pr/77920...HEAD -- bin/rtc-test-ws-sync-server.mjs test/e2e/playwright.rtc-websocket.config.ts packages/e2e-tests/plugins/rtc-websocket-provider/`.
+- Run `git merge-base --is-ancestor 939b0ff02a9d3eaa9da4eb0a1e96dc325b71a801 HEAD`.
+- Run `git diff --exit-code origin/trunk...HEAD -- package.json package-lock.json test/e2e/package.json test/e2e/bin/rtc-test-ws-sync-server.mjs test/e2e/playwright.rtc-websocket.config.ts test/e2e/config/rtc-websocket-setup.ts test/e2e/config/global-setup.ts test/e2e/playwright.config.ts packages/e2e-tests/plugins/rtc-websocket-provider.php packages/e2e-tests/plugins/rtc-websocket-provider/`.
   For non-harness PRs, the expected result is empty.
-- Run `git diff --name-status origin/pr/77920...HEAD -- test/e2e/specs/editor/collaboration/websocket/`.
-  Any listed files must be deliberate e2e coverage for that split.
-- Include the exact `origin/pr/77920` baseline command that fails and branch
+- Run `git diff --name-status origin/trunk...HEAD -- test/e2e/specs/editor/collaboration/websocket-only/`.
+  Any listed files must be deliberate WebSocket-only e2e coverage for that
+  split.
+- Include the exact `origin/trunk` baseline command that fails and branch
   command that passes.
 - If a split needs new WebSocket e2e tests, those tests must live under
-  `test/e2e/specs/editor/collaboration/websocket/` and rely on current PR 77920
-  harness APIs only.
+  `test/e2e/specs/editor/collaboration/websocket-only/` unless they are valid
+  shared RTC tests, and they must rely on current PR 78179 harness APIs only.
 
 ## Review Risks To Call Out
 
@@ -249,8 +265,9 @@ Before opening each follow-up PR:
 I can split this. Based on a clean rebuilt run, current trunk fails the two RTC
 stress tests while the PR merged into current trunk passes the full
 `npm run test:e2e:rtc-websocket` suite. Before opening functional splits, I will
-rebase onto the current PR 77920 WebSocket setup instead of trunk's older setup.
-If any harness delta is still needed, I will land it as its own prerequisite PR.
-The later feature PRs should not carry WebSocket setup changes except for the
-WebSocket-specific slice, and each one will include `origin/pr/77920` preflight
-diff checks in the PR description.
+rebase onto trunk containing PR 78179's `@y/websocket-server` harness. I will
+not base these splits on PR 77920. If any harness delta is still needed, I will
+land it as its own prerequisite PR. The later feature PRs should not carry
+WebSocket setup changes except for the WebSocket-specific slice, and each one
+will include the PR 78179 baseline and harness diff checks in the PR
+description.
