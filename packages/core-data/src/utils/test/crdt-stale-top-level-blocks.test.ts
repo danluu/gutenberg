@@ -65,10 +65,33 @@ function paragraph( clientId: string, content: string ): Block {
 	};
 }
 
+function group( clientId: string, innerBlocks: Block[] = [] ): Block {
+	return {
+		name: 'core/group',
+		clientId,
+		attributes: {},
+		innerBlocks,
+	};
+}
+
 function contentsOf( yblocks: YBlocks ): string[] {
 	return ( yblocks.toJSON() as Block[] ).map(
 		( block ) => block.attributes.content as string
 	);
+}
+
+function blockTreeOf( yblocks: YBlocks ): string[] {
+	return ( yblocks.toJSON() as Block[] ).map( blockTreeSignature );
+}
+
+function blockTreeSignature( block: Block ): string {
+	if ( block.name === 'core/group' ) {
+		return `${ block.clientId }:${ block.name }[${ block.innerBlocks
+			.map( blockTreeSignature )
+			.join( ',' ) }]`;
+	}
+
+	return `${ block.clientId }:${ block.attributes.content }`;
 }
 
 function postBlocks( doc: Y.Doc ): YBlocks {
@@ -213,6 +236,104 @@ describe( 'stale top-level block snapshots', () => {
 		expect( contentsOf( yblocks ) ).toEqual( [
 			'Alpha stale edit',
 			'Beta remote edit',
+		] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'preserves a remote move into a group when a stale local edit still has the moved source top-level', () => {
+		const initialBlocks = [
+			paragraph( 'moved', 'Moved' ),
+			group( 'target-group' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				group( 'target-group', [ paragraph( 'moved', 'Moved' ) ] ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( blockTreeOf( yblocks ) ).toEqual( [
+			'target-group:core/group[moved:Moved]',
+			'tail:Tail',
+		] );
+
+		const staleLocalBlocks = [
+			paragraph( 'moved', 'Moved' ),
+			group( 'target-group' ),
+			paragraph( 'tail', 'Tail local edit' ),
+		];
+		mergeCrdtBlocks( yblocks, staleLocalBlocks, null );
+
+		expect( blockTreeOf( yblocks ) ).toEqual( [
+			'target-group:core/group[moved:Moved]',
+			'tail:Tail local edit',
+		] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'preserves identity when a stale top-level move follows a remote append and group prepend', () => {
+		const initialBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			paragraph( 'tail', 'Tail' ),
+			paragraph( 'long', 'LongParagraph' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[ ...initialBlocks, paragraph( 'inserted', 'InsertedParagraph' ) ],
+			null
+		);
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				group( 'prepended-group' ),
+				...initialBlocks,
+				paragraph( 'inserted', 'InsertedParagraph' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( blockTreeOf( yblocks ) ).toEqual( [
+			'prepended-group:core/group[]',
+			'heading:Heading',
+			'tail:Tail',
+			'long:LongParagraph',
+			'inserted:InsertedParagraph',
+		] );
+
+		const staleLocalMove = [
+			group( 'prepended-group' ),
+			paragraph( 'heading', 'Heading' ),
+			paragraph( 'tail', 'Tail' ),
+			paragraph( 'inserted', 'InsertedParagraph' ),
+			paragraph( 'long', 'LongParagraph' ),
+		];
+		mergeCrdtBlocks( yblocks, staleLocalMove, null );
+
+		expect( blockTreeOf( yblocks ) ).toEqual( [
+			'prepended-group:core/group[]',
+			'heading:Heading',
+			'tail:Tail',
+			'inserted:InsertedParagraph',
+			'long:LongParagraph',
 		] );
 
 		remoteDoc.destroy();
