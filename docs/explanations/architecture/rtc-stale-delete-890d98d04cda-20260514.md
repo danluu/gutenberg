@@ -24,6 +24,13 @@ Local realistic video evidence:
   `realistic-results-no-77876-current/append-from-tail-enter-attempt-0.json`
   still records `statesEqualAfterInsert: true`, `exactDeleteBug: true`, and
   `statesEqualAfterDelete: false`.
+- Longer wait check: with `RTC_3AC3_DELETE_CONVERGENCE_TIMEOUT_MS=60000`, the
+  append-from-tail repros no longer diverged after delete, but they converged
+  to the wrong state. Both editors still contained the deleted paragraph:
+  `realistic-results-long-wait-60000-current/append-from-tail-enter-attempt-0.json`
+  and `append-from-tail-enter-attempt-2.json` record
+  `statesEqualAfterDelete: true`, `semanticDeleteBug: true`, and
+  `insertedPresentAfterDelete: true`.
 - Current-trunk lower-level family check: on `origin/trunk` at
   `2b5a7a9930490b13933a89c69f4455252072c14d`, the exact
   `3ac375556552` unit delete probe converges cleanly, but a sibling
