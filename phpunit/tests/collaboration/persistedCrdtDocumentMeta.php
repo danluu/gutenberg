@@ -78,4 +78,38 @@ class Tests_Collaboration_PersistedCrdtDocumentMeta extends WP_UnitTestCase {
 		$this->assertFalse( update_post_meta( self::$post_id, $meta_key, $stale_value ) );
 		$this->assertSame( $current_value, get_post_meta( self::$post_id, $meta_key, true ) );
 	}
+
+	public function test_restore_revision_removes_persisted_crdt_document_meta(): void {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_content' => '<!-- wp:paragraph --><p>Original content</p><!-- /wp:paragraph -->',
+				'post_title'   => 'Original title',
+			)
+		);
+
+		$original_value = $this->create_crdt_document_meta_value( 'original-document' );
+		$this->assertNotFalse( update_post_meta( $post_id, '_crdt_document', $original_value ) );
+
+		$revision_id = wp_save_post_revision( $post_id );
+		$this->assertIsInt( $revision_id );
+		$this->assertGreaterThan( 0, $revision_id );
+
+		wp_update_post(
+			array(
+				'ID'           => $post_id,
+				'post_content' => '<!-- wp:paragraph --><p>New content</p><!-- /wp:paragraph -->',
+				'post_title'   => 'New title',
+			)
+		);
+
+		$base_version = gutenberg_get_persisted_crdt_document_version( $original_value );
+		$new_value    = $this->create_crdt_document_meta_value( 'new-document', $base_version );
+		$this->assertNotFalse( update_post_meta( $post_id, '_crdt_document', $new_value ) );
+
+		$this->assertIsInt( wp_restore_post_revision( $revision_id ) );
+
+		$this->assertSame( '', get_post_meta( $post_id, '_crdt_document', true ) );
+
+		wp_delete_post( $post_id, true );
+	}
 }
