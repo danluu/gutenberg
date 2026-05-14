@@ -5,10 +5,27 @@ Date: 2026-05-14
 Implementation branch:
 `try/pr77924-step1-plan-20260513`
 
+Required base:
+[WordPress/gutenberg#77920](https://github.com/WordPress/gutenberg/pull/77920)
+at `cbb630e754f` or newer.
+
 This branch explains the first split from
 [WordPress/gutenberg#77924](https://github.com/WordPress/gutenberg/pull/77924).
 It focuses on the list-item move convergence failure and intentionally does not
 try to absorb every fix from PR 77924.
+
+This branch is stacked directly on top of PR 77920 so it uses the current
+WebSocket e2e setup from that PR. In particular, the split must not re-add the
+older trunk harness shape under `test/e2e/bin/` or `websocket-only/`. PR 77920's
+current setup owns:
+
+- `bin/rtc-test-ws-sync-server.mjs`
+- `test/e2e/playwright.rtc-websocket.config.ts`
+- `packages/e2e-tests/plugins/rtc-websocket-provider/`
+- `test/e2e/specs/editor/collaboration/websocket/*.spec.ts`
+
+The step-1 implementation delta against PR 77920 has no changes in those
+harness files.
 
 ## Relevant History
 
@@ -138,6 +155,28 @@ the full PR 77924 surface and should be reviewed in later splits.
 
 The table/query-array merge work and WebSocket/provider reload behavior should
 also remain separate review slices.
+
+## Guardrail For Later Splits
+
+Every later functional split should start from the latest PR 77920 head or from
+trunk after PR 77920 lands. Non-harness splits should show an empty diff for:
+
+```sh
+git diff --name-status <base>..HEAD -- \
+  bin/rtc-test-ws-sync-server.mjs \
+  test/e2e/bin/rtc-test-ws-sync-server.mjs \
+  test/e2e/playwright.rtc-websocket.config.ts \
+  packages/e2e-tests/plugins/rtc-websocket-provider \
+  test/e2e/specs/editor/collaboration/websocket \
+  test/e2e/specs/editor/collaboration/websocket-only \
+  package.json \
+  test/e2e/package.json
+```
+
+The expected result is empty unless the split is explicitly the WebSocket
+harness/provider slice. Existing collaboration tests should be strengthened in
+their parent spec files and then run through PR 77920's `websocket/` wrappers,
+rather than adding duplicate `websocket-only` specs.
 
 ## Verification
 
