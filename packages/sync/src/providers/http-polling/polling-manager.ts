@@ -228,6 +228,67 @@ function handleForbiddenError(
 
 const roomStates: Map< string, RoomState > = new Map();
 
+function disconnectRoomForDocumentSizeLimit(
+	state: RoomState,
+	updateSizeInBytes: number
+): void {
+	state.log( 'Document size limit exceeded', {
+		maxUpdateSizeInBytes: MAX_UPDATE_SIZE_IN_BYTES,
+		updateSizeInBytes,
+	} );
+
+	state.onStatusChange( {
+		status: 'disconnected',
+		error: new ConnectionError(
+			ConnectionErrorCode.DOCUMENT_SIZE_LIMIT_EXCEEDED,
+			'Document size limit exceeded'
+		),
+	} );
+
+	// This is an unrecoverable error. Unregister the room to prevent syncing.
+	unregisterRoom( state.room );
+}
+
+function getSyncUpdateByteLength( update: SyncUpdate ): number {
+	return base64ToUint8Array( update.data ).byteLength;
+}
+
+function queueUpdateOrDisconnect(
+	state: RoomState,
+	update: SyncUpdate
+): boolean {
+	const updateSizeInBytes = getSyncUpdateByteLength( update );
+
+	if ( updateSizeInBytes > MAX_UPDATE_SIZE_IN_BYTES ) {
+		disconnectRoomForDocumentSizeLimit( state, updateSizeInBytes );
+		return false;
+	}
+
+	state.updateQueue.add( update );
+	return true;
+}
+
+function queueUpdatesOrDisconnect(
+	state: RoomState,
+	updates: SyncUpdate[]
+): boolean {
+	const oversizedUpdate = updates.find(
+		( update ) =>
+			getSyncUpdateByteLength( update ) > MAX_UPDATE_SIZE_IN_BYTES
+	);
+
+	if ( oversizedUpdate ) {
+		disconnectRoomForDocumentSizeLimit(
+			state,
+			getSyncUpdateByteLength( oversizedUpdate )
+		);
+		return false;
+	}
+
+	state.updateQueue.addBulk( updates );
+	return true;
+}
+
 /**
  * Create a compaction update by merging existing updates. This preserves
  * the original operation metadata (client IDs, logical clocks) so that
@@ -785,7 +846,11 @@ function poll(): void {
 					}
 				}
 
-				roomState.updateQueue.addBulk( responseUpdates );
+				if (
+					! queueUpdatesOrDisconnect( roomState, responseUpdates )
+				) {
+					return;
+				}
 
 				// Respond to compaction requests from server. The server asks only one
 				// client at a time to compact (lowest active client ID). We encode our
@@ -793,13 +858,15 @@ function poll(): void {
 				if ( room.should_compact ) {
 					roomState.log( 'Server requested compaction update' );
 					roomState.updateQueue.clear();
-					roomState.updateQueue.add(
+					queueUpdateOrDisconnect(
+						roomState,
 						roomState.createCompactionUpdate()
 					);
 				} else if ( room.compaction_request ) {
 					// Deprecated
 					roomState.log( 'Server requested (old) compaction update' );
-					roomState.updateQueue.add(
+					queueUpdateOrDisconnect(
+						roomState,
 						createDeprecatedCompactionUpdate(
 							room.compaction_request
 						)
@@ -892,7 +959,10 @@ function poll(): void {
 
 					if ( room.updates.length > 0 && state.endCursor > 0 ) {
 						state.updateQueue.clear();
-						state.updateQueue.add( state.createCompactionUpdate() );
+						queueUpdateOrDisconnect(
+							state,
+							state.createCompactionUpdate()
+						);
 					} else if ( room.updates.length > 0 ) {
 						state.updateQueue.restore( room.updates );
 					}
@@ -1004,21 +1074,7 @@ function registerRoom( {
 				return;
 			}
 
-			state.log( 'Document size limit exceeded', {
-				maxUpdateSizeInBytes: MAX_UPDATE_SIZE_IN_BYTES,
-				updateSizeInBytes: update.byteLength,
-			} );
-
-			state.onStatusChange( {
-				status: 'disconnected',
-				error: new ConnectionError(
-					ConnectionErrorCode.DOCUMENT_SIZE_LIMIT_EXCEEDED,
-					'Document size limit exceeded'
-				),
-			} );
-
-			// This is an unrecoverable error. Unregister the room to prevent syncing.
-			unregisterRoom( room );
+			disconnectRoomForDocumentSizeLimit( state, update.byteLength );
 			return;
 		}
 
