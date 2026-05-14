@@ -3,6 +3,7 @@
  */
 import * as Y from 'yjs';
 import type { Awareness } from 'y-protocols/awareness';
+import fastDeepEqual from 'fast-deep-equal/es6/index.js';
 
 /**
  * Internal dependencies
@@ -11,6 +12,7 @@ import {
 	CRDT_RECORD_MAP_KEY,
 	CRDT_STATE_MAP_KEY,
 	CRDT_STATE_MAP_SAVED_AT_KEY as SAVED_AT_KEY,
+	CRDT_STATE_MAP_SAVED_BY_KEY as SAVED_BY_KEY,
 	LOCAL_SYNC_MANAGER_ORIGIN,
 } from './config';
 import { logPerformanceTiming, passThru } from './performance';
@@ -70,6 +72,44 @@ function areUint8ArraysEqual( a: Uint8Array, b: Uint8Array ): boolean {
 	}
 
 	return a.every( ( value, index ) => value === b[ index ] );
+}
+
+function getPersistableCrdtDocState( ydoc: CRDTDoc ) {
+	const state = ydoc.getMap( CRDT_STATE_MAP_KEY ).toJSON() as Record<
+		string,
+		unknown
+	>;
+
+	delete state[ SAVED_AT_KEY ];
+	delete state[ SAVED_BY_KEY ];
+
+	return {
+		record: ydoc.getMap( CRDT_RECORD_MAP_KEY ).toJSON(),
+		state,
+	};
+}
+
+function hasPersistableCrdtDocStateChanged(
+	ydoc: CRDTDoc,
+	basePersistedCRDTDoc: string | null | undefined
+): boolean {
+	if ( ! basePersistedCRDTDoc ) {
+		return true;
+	}
+
+	const baseDoc = deserializeCrdtDoc( basePersistedCRDTDoc );
+	if ( ! baseDoc ) {
+		return true;
+	}
+
+	try {
+		return ! fastDeepEqual(
+			getPersistableCrdtDocState( ydoc ),
+			getPersistableCrdtDocState( baseDoc )
+		);
+	} finally {
+		baseDoc.destroy();
+	}
 }
 
 interface ApplyPersistedCrdtDocOptions {
@@ -868,6 +908,7 @@ export function createSyncManager( debug = false ): SyncManager {
 	 *
 	 * @param {ObjectType} objectType Object type.
 	 * @param {ObjectID}   objectId   Object ID.
+	 * @param {Object}     options    Options for creating the persisted document.
 	 */
 	async function createPersistedCRDTDoc(
 		objectType: ObjectType,
@@ -885,6 +926,15 @@ export function createSyncManager( debug = false ): SyncManager {
 		// resolves on the next tick of the event loop so pending updates are flushed
 		// before we serialize the document.
 		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+		if (
+			! hasPersistableCrdtDocStateChanged(
+				entityState.ydoc,
+				options.basePersistedCRDTDoc
+			)
+		) {
+			return options.basePersistedCRDTDoc ?? null;
+		}
 
 		return serializeCrdtDoc( entityState.ydoc, {
 			baseVersion: getPersistedCrdtDocVersion(
