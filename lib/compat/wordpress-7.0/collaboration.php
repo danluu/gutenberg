@@ -79,11 +79,11 @@ if ( ! function_exists( 'wp_collaboration_register_meta' ) ) {
 					return user_can( $user_id, 'edit_post', $object_id );
 				},
 				/*
-				 * Revisions must be disabled because we always want to preserve
-				 * the latest persisted CRDT document, even when a revision is restored.
-				 * This ensures that we can continue to apply updates to a shared document
-				 * and peers can simply merge the restored revision like any other incoming
-				 * update.
+				 * Revisions must be disabled because persisted CRDT documents are
+				 * collaboration snapshots rather than revision fields. Restoring a
+				 * revision invalidates the snapshot below, so the next collaboration
+				 * load rebuilds from the restored raw post fields instead of applying
+				 * a CRDT document from newer content.
 				 *
 				 * If we want to persist CRDT documents alongside revisions in the
 				 * future, we should do so in a separate meta key.
@@ -96,6 +96,25 @@ if ( ! function_exists( 'wp_collaboration_register_meta' ) ) {
 		);
 	}
 	add_action( 'init', 'gutenberg_rest_api_crdt_post_meta' );
+}
+
+if ( ! function_exists( 'gutenberg_delete_crdt_document_meta_on_revision_restore' ) ) {
+	/**
+	 * Deletes persisted CRDT document meta after restoring an older post revision.
+	 *
+	 * The persisted CRDT document is a snapshot of collaborative state for the
+	 * current post content. If an older revision is restored while a newer CRDT
+	 * snapshot remains in post meta, the next collaborative load can apply that
+	 * newer snapshot and resurrect content that the restore just removed.
+	 *
+	 * @param int $post_id      Post ID.
+	 * @param int $_revision_id Revision ID.
+	 */
+	function gutenberg_delete_crdt_document_meta_on_revision_restore( int $post_id, int $_revision_id ): void {
+		unset( $_revision_id );
+		delete_post_meta( $post_id, '_crdt_document' );
+	}
+	add_action( 'wp_restore_post_revision', 'gutenberg_delete_crdt_document_meta_on_revision_restore', 10, 2 );
 }
 
 if ( ! function_exists( 'gutenberg_get_persisted_crdt_document_checksum' ) ) {
