@@ -27,7 +27,7 @@ Local realistic video evidence:
 - The browser repro uses normal UI actions: B appends by click, `End`, `Enter`, and typing, then A deletes by selecting the inserted paragraph and using block options `Delete`. No injected transport fault, reload, revision restore, parser edge case, or artificial block is needed.
 - Lower-level confirmation: `3ac375556552/unit-repro-result.json` records `remoteStillPresent: true`; after the delete, the Yjs state still contains `seed-954092-remote-paragraph`.
 - The browser and unit outcomes differ in shape but not in semantics. The browser run diverges with one peer at three blocks and the other at four. The unit probe can converge incorrectly with both replicas retaining the deleted block. Both are lost-delete evidence.
-- No-#77876 browser check: current local branch `codex/rtc-stale-delete-890d98d04cda-20260514` at
+- Branch check excluding PR #77876: current local branch `codex/rtc-stale-delete-890d98d04cda-20260514` at
   `2f59cd94b1ba41b004f4707ff25674506c81d796` does not contain PR #77876 head
   `6aad4e5801af23a5b42cd9fde4044895f06946ea`, but
   `realistic-results-no-77876-current/append-from-tail-enter-attempt-0.json`
@@ -80,9 +80,9 @@ remote top-level delete, because the left/right merge infers array structure
 operations from a stale full snapshot.
 
 Later stale-save/stale-snapshot fixes tried to repair that first side by
-preserving remote work from stale snapshots. The no-#77876 branch that
-reproduces the clean browser delete bug contains an earlier local copy of that
-repair line, including
+preserving remote work from stale snapshots. The local branch that reproduces
+the clean browser delete bug does not contain PR #77876, but it does contain an
+earlier local copy of that repair line, including
 [`7bc178d07b781ce5c24a7597e8e5c412534806d0`](https://github.com/danluu/gutenberg/commit/7bc178d07b781ce5c24a7597e8e5c412534806d0), cherry-picked from
 [`cd6822b89c95050e56d39cd217a6bf9e036af315`](https://github.com/danluu/gutenberg/commit/cd6822b89c95050e56d39cd217a6bf9e036af315). PR #77876 later carries related stale-snapshot work, but the browser repro shows #77876 itself is not the original introducer.
 
@@ -114,109 +114,58 @@ Nearby but not likely direct introducers:
 
 Scope caveat: most direct proof is for clean representative `3ac375556552`. The headline representative `890d98d04cda` is the same user-facing stale-delete family, but some audit passes flagged a possible additional stale editor-store refresh path through `getPostChangesFromCRDTDoc()`. `007e79caf228` also deserves separate reduction before treating every related hash as the same exact internal mechanism.
 
-## Initial Fix Plan
+## Fix Plan
 
-This section is superseded by the no-#77876/current-trunk reassessment below.
-The original plan correctly required distinguishing observed delete from unseen
-remote append, but it was framed too narrowly around #77876 and
-`reconcileStaleLocalBlocks()`.
-
-The older plan was:
-
-1. Add a deterministic unit regression for `3ac375556552`: two Y docs, B appends a paragraph, A receives it, A deletes that same visible paragraph while its previous local cache still predates the append, then both docs exchange updates. Assert the inserted `clientId` and unique text are absent from both docs.
-2. Add the negative control: if A emits a genuinely stale snapshot whose base did not include B's remote append, preserve the remote append.
-3. Add a repo-local WebSocket Playwright regression using normal UI actions only: B appends, wait for convergence, A deletes through block options, assert both editors converge to removal.
-4. Change reconciliation so an omitted current block is preserved only when the outgoing local snapshot did not observe it. If the outgoing snapshot's base included the block and the new local snapshot omits it, treat that omission as a delete.
-5. Keep stale-snapshot protection. Do not remove the preserve-remote-work behavior wholesale.
-6. Avoid wholesale Y.Array replacement. Preserve Yjs operation semantics, nested block attributes, cursor behavior, and existing stale-save protections.
-
-## Fix Plan Audit
-
-Raw audit outputs were written under:
-
-```text
-/tmp/rtc-stale-delete-codex-audits/round1
-/tmp/rtc-stale-delete-codex-audits/meta1
-/tmp/rtc-stale-delete-codex-audits/meta2
-```
-
-This audit predates the no-#77876/current-trunk evidence and is superseded by
-the no-#77876 audit below. It is retained as historical context.
-
-Round 1:
-
-- linus torvalds: the plan needs explicit per-snapshot provenance; current membership tests cannot distinguish unseen remote insert from observed delete. Tests must assert `clientId`, and the browser regression must not be an absolute artifact import.
-- kyle kingsbury: the ambiguous tuple is the core issue. A fix inside `reconcileStaleLocalBlocks()` is heuristic unless it receives a base/version/observed-state signal or explicit delete operation.
-- marc brooker: split the family by evidence. `3ac375556552` fits `crdt-blocks.ts`; `890d98d04cda` may also involve stale editor-store refresh; `007e79caf228` should not be collapsed without reduction.
-- dan luu: the proposed observed-base idea is directionally right, but "visible in editor" is too loose. The needed fact is the base of the exact outgoing snapshot.
-- tptacek: do not infer observation from current Y state, CRDT receipt, or global store dispatch. Unknown base should preserve remote work.
-- contrarian: the hard part is underspecified. Add stale no-op and repeated stale snapshot tests so a fix does not regress #77876.
-
-Meta round 1:
-
-- linus torvalds: #77876 is the likely proximate introducer; #72262 is only substrate. Add introduction history and avoid overclaiming browser-side cache instrumentation.
-- kyle kingsbury: frame this as missing causal provenance, not just a bad structural diff.
-- marc brooker: final doc should use an evidence matrix by representative and keep the `890` editor-store theory as a hypothesis until tested.
-- dan luu: trim the test plan to causal guardrails first; keep `__unstablePreviousValue` / WeakMap as a possible carrier, not a proven fix.
-- tptacek: separate `3ac`, `890`, and `007`; add a focused `crdt.ts` test if `890` remains the headline.
-- contrarian: add a "bad fixes" section and do not update `previousLocalBlocksCache` on remote receipt.
-
-Meta round 2:
-
-- linus torvalds: state plainly that membership tests cannot implement the intended policy.
-- kyle kingsbury: define `previousLocalBlocksCache` as last locally merged snapshot, not last editor-visible state.
-- marc brooker: lead with missing snapshot provenance; name #77876 as likely introducer.
-- dan luu: split confidence by representative and remove stale/nonexistent test-file references.
-- tptacek: keep the final P0 tests focused on observed delete, unseen stale preserve, stale no-op/unrelated edit, repeated stale snapshot, and a repo-local UI regression.
-- contrarian: replace "fix `reconcileStaleLocalBlocks()`" with "add snapshot provenance, then use it in reconciliation."
-
-## Revised Fix Plan
-
-After the no-#77876/current-trunk reassessment and the second audit, the v2
-fix plan is:
+The fix must address the shared full-snapshot ambiguity, not just one
+stale-preservation helper or one PR branch. The plan is:
 
 1. Treat this as missing operation/base provenance for full block-array
-   snapshots, not as a #77876-specific regression.
+   snapshots, not as a single-PR regression.
 2. Define `BlockSnapshotProvenance` as the exact immutable editor-visible base
    block tree that produced this outgoing `blocks` snapshot, or as explicit
    operations/tombstones carrying equivalent information.
-3. Capture that provenance at the editor/core-data boundary when the outgoing
+3. Preserve durable block identity or equivalent operation identity in the RTC
+   path. This does not require serializing Gutenberg `clientId`s into post
+   HTML, but a complete fix needs some persisted identity/provenance in the
+   CRDT/persistence path; serialized block shape, text, and position alone
+   cannot distinguish observed deletes from stale no-op snapshots.
+4. Capture that provenance at the editor/core-data boundary when the outgoing
    block array is produced. Pass it through `editEntityRecord()` /
    `SyncManager.update()` / `applyChangesToCRDTDoc()` into `mergeCrdtBlocks()`.
    Do not reconstruct it inside `mergeCrdtBlocks()` from current Y state.
-4. Make unknown provenance a compatibility fallback only. It should not occur
+5. Make unknown provenance a compatibility fallback only. It should not occur
    on ordinary editor edits.
-5. Define the invariant first:
+6. Define the invariant first:
    - if outgoing snapshot base contains block `R` and the new local snapshot omits `R`, delete wins;
    - if outgoing snapshot base does not contain `R`, preserve `R` as unseen remote work;
    - if current Y state no longer contains a block that the stale local snapshot still contains, preserve the remote delete unless there is explicit local reinsert intent;
    - if the base is unknown, preserve current remote work conservatively and record the ambiguity.
-6. Make provenance path-aware if the generic recursive merge is in scope. A
+7. Make provenance path-aware if the generic recursive merge is in scope. A
    flat `clientId` set is only a narrow top-level optimization; it does not
    prove moves, reparenting, nested `innerBlocks`, duplicate/missing
    `clientId`s, or delete-plus-reinsert semantics. If the first patch is
    top-level-only, state that scope and add a follow-up for nested block arrays.
-7. Use provenance for three-way structural reconciliation per parent block
+8. Use provenance for three-way structural reconciliation per parent block
    array: base, incoming local snapshot, and current Y state. Current-only
    blocks absent from the incoming local snapshot should be preserved only when
    the snapshot base did not include them. Blocks absent from current Y state
    should not be resurrected from a stale local snapshot unless provenance
    proves explicit local reinsert intent.
-8. Do not advance base/provenance caches on remote update receipt alone. A
+9. Do not advance base/provenance caches on remote update receipt alone. A
    queued stale snapshot can arrive after a remote update and must not become a
    false delete or false reinsert.
-9. Do not treat `previousLocalBlocksCache`, `yblocks.toJSON()`, CRDT receipt,
+10. Do not treat `previousLocalBlocksCache`, `yblocks.toJSON()`, CRDT receipt,
    provider sync, latest entity record, or global store dispatch as proof of
    user/editor observation. The relevant fact is what base produced the exact
    outgoing local snapshot.
-10. Serialize persistence from the post-merge block tree. If blocks participate
+11. Serialize persistence from the post-merge block tree. If blocks participate
    in the edit/save flow, REST `content`, CRDT `content`, and `_crdt_document`
    must not be overwritten by stale serialized HTML, including save-time
    content-only materialization and `prePersistPostType()` paths.
-11. Keep stale-snapshot protections as negative controls. The fix must cover
+12. Keep stale-snapshot protections as negative controls. The fix must cover
    both current trunk's "stale snapshot destroys remote work" and the local
    known-fix branch's "preservation hides observed delete".
-12. Add P0 tests:
+13. Add P0 tests:
    - current-trunk remote append plus stale no-op snapshot;
    - current-trunk remote append plus stale unrelated local edit;
    - current-trunk remote delete plus stale unrelated local edit;
@@ -233,22 +182,24 @@ fix plan is:
    - repo-local normal-UI browser repro for remote append loss under overlapping saves;
    - repo-local normal-UI browser repro for remote delete resurrection;
    - repo-local normal-UI WebSocket repro for visible remote append then block-options delete.
-13. Add follow-up or separate-reduction tests for the `890d98d04cda` stale editor-store refresh hypothesis and for `007e79caf228`.
+14. Add follow-up or separate-reduction tests for the `890d98d04cda` stale editor-store refresh hypothesis and for `007e79caf228`.
 
 Bad fixes to avoid:
 
 - wholesale Y.Array replacement;
 - global "remote update observed" flags;
 - treating current Y state as user observation;
+- dropping durable block identity and trying to infer causality from text,
+  position, or block count alone;
 - updating base caches on remote receipt;
 - relying on block count or text-only assertions instead of `clientId` or a unique marker.
 - fixing only the local stale-preservation branch while leaving current trunk's stale full-array merge behavior intact.
 - accepting unknown provenance on the normal editor path.
 
-## No-#77876 Fix Plan Audit
+## Fix Plan Audit
 
-A new audit was triggered after the no-#77876/current-trunk evidence changed the
-introduction history and fix scope. Raw Codex outputs are under:
+The current audit incorporates the branch-without-#77876 check and the
+current-trunk evidence. Raw Codex outputs are under:
 
 ```text
 /tmp/rtc-stale-delete-codex-audits/no77876-20260514/round1
@@ -258,11 +209,16 @@ introduction history and fix scope. Raw Codex outputs are under:
 
 The audit converged on these conclusions:
 
-- A new v2 fix plan is necessary. The root-cause framing is unchanged, but the
-  prior plan was still loose enough to permit another heuristic fix.
+- The provenance-based fix plan is necessary. A narrower
+  `reconcileStaleLocalBlocks()` heuristic would still permit stale snapshots to
+  erase unseen remote work or mask observed deletes.
 - Provenance must mean the exact immutable editor-visible block tree that
   produced the outgoing `blocks` snapshot, or explicit operations/tombstones
   with equivalent information.
+- A complete fix needs durable block identity or equivalent operation identity
+  in the RTC path. It does not need to write Gutenberg `clientId`s into
+  serialized post HTML, but it cannot rely only on block text, type, position,
+  or count.
 - `previousLocalBlocksCache`, current Y state, provider receipt, latest store
   state, and global dispatch are not valid observation signals.
 - Unknown provenance is acceptable only for compatibility/import paths. It
@@ -276,14 +232,16 @@ The audit converged on these conclusions:
 - Browser coverage must include current-trunk append loss, visible remote insert
   then local block-options delete, and remote-delete resurrection prevention.
 
-Meta round 2 reduced the action items to:
+The audit reduced the action items to:
 
 1. Capture exact per-outgoing-snapshot base provenance at the editor/store boundary.
 2. Thread it through the real sync pipeline into CRDT merge.
-3. Apply a three-way base/incoming/current merge policy.
-4. Preserve remote deletes unless provenance proves explicit local reinsert.
-5. Serialize persisted content from post-merge blocks.
-6. Prove the behavior with unit, adapter, save/reload, and normal-UI browser tests.
+3. Preserve durable block identity or equivalent operation identity through the
+   RTC persistence path.
+4. Apply a three-way base/incoming/current merge policy.
+5. Preserve remote deletes unless provenance proves explicit local reinsert.
+6. Serialize persisted content from post-merge blocks.
+7. Prove the behavior with unit, adapter, save/reload, and normal-UI browser tests.
 
 ## Real Bug Or False Positive
 
