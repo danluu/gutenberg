@@ -325,8 +325,9 @@ function createNewYAttributeValue(
  * - `object` with query  -> Y.Map
  * - anything else        -> plain value (unchanged)
  *
- * @param schema The attribute type definition.
- * @param value  The plain JS value to convert.
+ * @param schema    The attribute type definition.
+ * @param value     The plain JS value to convert.
+ * @param valuePath Optional path used to identify array elements.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
@@ -381,8 +382,10 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query The query schema defining the properties.
- * @param obj   The plain object to convert.
+ * @param query          The query schema defining the properties.
+ * @param obj            The plain object to convert.
+ * @param arrayElementId Optional stable ID for an array element.
+ * @param valuePath      Optional path used to identify nested array elements.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
@@ -492,6 +495,19 @@ function normalizeBlockForIdentity( value: unknown ): unknown {
 
 function getBlockSemanticKey( block: Block ): string {
 	return JSON.stringify( normalizeBlockForIdentity( block ) );
+}
+
+function isSameBlockIdentity( firstBlock: Block, secondBlock: Block ): boolean {
+	const firstClientId = getBlockClientId( firstBlock );
+	const secondClientId = getBlockClientId( secondBlock );
+
+	if ( firstClientId || secondClientId ) {
+		return firstClientId === secondClientId;
+	}
+
+	return (
+		getBlockSemanticKey( firstBlock ) === getBlockSemanticKey( secondBlock )
+	);
 }
 
 function getUniqueKeys< T >(
@@ -983,6 +999,10 @@ function mergeYBlocksLocalChanges(
 	for ( let index = 0; index < sharedLength; index++ ) {
 		const baseBlock = baseBlocks[ index ];
 		const block = blocksToSync[ index ];
+
+		if ( ! isSameBlockIdentity( baseBlock, block ) ) {
+			return false;
+		}
 
 		if ( fastDeepEqual( baseBlock, block ) ) {
 			continue;
