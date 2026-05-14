@@ -605,6 +605,36 @@ function getBlockIdentityKeys(
 	};
 }
 
+function haveSameBlockClientIds(
+	firstBlocks: Block[],
+	secondBlocks: Block[]
+): boolean {
+	return (
+		firstBlocks.length === secondBlocks.length &&
+		firstBlocks.every( ( block, index ) => {
+			const firstClientId = getBlockClientId( block );
+			const secondClientId = getBlockClientId( secondBlocks[ index ] );
+
+			return !! firstClientId && firstClientId === secondClientId;
+		} )
+	);
+}
+
+function shouldUseCachedLocalBlocksAsBase(
+	blocksToSync: Block[],
+	explicitBaseBlocks: Block[] | undefined,
+	cachedBaseBlocks: Block[] | undefined,
+	attributeCursor: MergeCursorPosition
+): cachedBaseBlocks is Block[] {
+	return !! (
+		explicitBaseBlocks &&
+		cachedBaseBlocks &&
+		attributeCursor &&
+		! fastDeepEqual( blocksToSync, cachedBaseBlocks ) &&
+		haveSameBlockClientIds( blocksToSync, cachedBaseBlocks )
+	);
+}
+
 function getUniqueBlockMapBySemanticKey(
 	blocks: Block[]
 ): Map< string, Block > | null {
@@ -1059,8 +1089,16 @@ export function mergeCrdtBlocks(
 	const explicitBaseBlocksToSync = baseBlocks
 		? makeBlocksSerializable( baseBlocks )
 		: undefined;
-	const baseBlocksToSync =
-		explicitBaseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
+	const cachedBaseBlocksToSync = previousLocalBlocksCache.get( yblocks );
+	const useCachedLocalBlocksAsBase = shouldUseCachedLocalBlocksAsBase(
+		blocksToSync,
+		explicitBaseBlocksToSync,
+		cachedBaseBlocksToSync,
+		attributeCursor
+	);
+	const baseBlocksToSync = useCachedLocalBlocksAsBase
+		? cachedBaseBlocksToSync
+		: explicitBaseBlocksToSync ?? cachedBaseBlocksToSync;
 
 	if (
 		baseBlocksToSync &&
