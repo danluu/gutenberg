@@ -5,6 +5,15 @@ This note covers the rank-1 score-4 RTC issue from
 
 The headline representative is `890d98d04cda`. The cleanest reduction for the same user-facing family is `3ac375556552`: one collaborator appends a normal top-level paragraph, both editors converge, and another collaborator deletes that visible paragraph through the normal block UI. The deleting peer removes it, but the other peer retains it, or the lower-level Yjs repro reintroduces it on both peers.
 
+Identifier note: short hexadecimal strings such as `890d98d04cda`,
+`3ac375556552`, and `007e79caf228` are RTC fuzzing finding identifiers, not
+Git commit hashes. The fuzzing and reduction pipeline uses them to name
+specific generated findings and their associated local repro artifacts. A
+"representative" is one concrete finding chosen to stand for a broader
+user-facing bug family after related findings have been clustered or reduced.
+These identifiers are useful for matching this explanation to local fuzzing
+metadata and videos, but they are not expected to resolve in GitHub.
+
 Local realistic video evidence:
 
 ```text
