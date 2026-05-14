@@ -33,7 +33,7 @@ import type {
 	RecordHandlers,
 	SyncConfig,
 } from '../types';
-import { serializeCrdtDoc } from '../utils';
+import { getPersistedCrdtDocVersion, serializeCrdtDoc } from '../utils';
 
 // Mock dependencies.
 jest.mock( '../providers', () => ( {
@@ -464,6 +464,115 @@ describe( 'SyncManager', () => {
 				// Verify that the CRDT doc was persisted.
 				expect( mockHandlers.persistCRDTDoc ).toHaveBeenCalledTimes(
 					1
+				);
+			} );
+
+			it( 'reuses the base persisted CRDT doc when only save metadata changed', async () => {
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				const basePersistedDoc = await manager.createPersistedCRDTDoc(
+					'post',
+					'123'
+				);
+				expect( basePersistedDoc ).toBeTruthy();
+
+				manager.update( 'post', '123', {}, LOCAL_EDITOR_ORIGIN, {
+					isSave: true,
+				} );
+
+				const nextPersistedDoc = await manager.createPersistedCRDTDoc(
+					'post',
+					'123',
+					{
+						basePersistedCRDTDoc: basePersistedDoc,
+					}
+				);
+				const awareness = manager.getAwareness< Awareness >(
+					'post',
+					'123'
+				);
+				const stateMap = awareness?.doc.getMap( CRDT_STATE_MAP_KEY );
+
+				expect( stateMap?.get( SAVED_AT_KEY ) ).toEqual(
+					expect.any( Number )
+				);
+				expect( stateMap?.get( SAVED_BY_KEY ) ).toEqual(
+					expect.any( Number )
+				);
+				expect( nextPersistedDoc ).toBe( basePersistedDoc );
+			} );
+
+			it( 'reuses the base persisted CRDT doc when durable state is unchanged', async () => {
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				const basePersistedDoc = await manager.createPersistedCRDTDoc(
+					'post',
+					'123'
+				);
+				expect( basePersistedDoc ).toBeTruthy();
+
+				const nextPersistedDoc = await manager.createPersistedCRDTDoc(
+					'post',
+					'123',
+					{
+						basePersistedCRDTDoc: basePersistedDoc,
+					}
+				);
+
+				expect( nextPersistedDoc ).toBe( basePersistedDoc );
+			} );
+
+			it( 'serializes a new persisted CRDT doc when record data changed', async () => {
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				const basePersistedDoc = await manager.createPersistedCRDTDoc(
+					'post',
+					'123'
+				);
+				expect( basePersistedDoc ).toBeTruthy();
+
+				manager.update(
+					'post',
+					'123',
+					{ title: 'Changed title' },
+					LOCAL_EDITOR_ORIGIN
+				);
+
+				const nextPersistedDoc = await manager.createPersistedCRDTDoc(
+					'post',
+					'123',
+					{
+						basePersistedCRDTDoc: basePersistedDoc,
+					}
+				);
+
+				expect( nextPersistedDoc ).not.toBe( basePersistedDoc );
+				expect( JSON.parse( nextPersistedDoc! ).baseVersion ).toBe(
+					getPersistedCrdtDocVersion( basePersistedDoc )
 				);
 			} );
 		} );
