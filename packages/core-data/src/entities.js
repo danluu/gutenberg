@@ -492,6 +492,9 @@ export const prePersistPostType = async (
 					getRawPostValue( latestRecord?.[ key ] ) !==
 					getRawPostValue( persistedRecord?.[ key ] )
 			);
+			const serverChangedSavedFieldSet = new Set(
+				serverChangedSavedFields
+			);
 			for ( const key of serverChangedSavedFields ) {
 				if (
 					! locallyChangedSavedFieldSet.has( key ) &&
@@ -551,10 +554,16 @@ export const prePersistPostType = async (
 								crdtRecord,
 								key
 							);
+							const editValue = getRawPostValue( edits[ key ] );
 
 							if (
+								! (
+									key === 'content' &&
+									crdtValue === '' &&
+									editValue !== ''
+								) &&
 								crdtValue !==
-								getRawPostValue( latestRecord?.[ key ] )
+									getRawPostValue( latestRecord?.[ key ] )
 							) {
 								newEdits[ key ] = crdtValue;
 							}
@@ -578,6 +587,57 @@ export const prePersistPostType = async (
 					mergedContent !== getRawPostValue( edits.content )
 				) {
 					newEdits.content = mergedContent;
+				}
+			}
+
+			const repairableSavedFields = editedSavedFields.filter(
+				( key ) =>
+					! ( key in newEdits ) &&
+					( key !== 'content' ||
+						! serverChangedSavedFieldSet.has( key ) )
+			);
+
+			if ( hasLatestPersistedCRDTDoc && repairableSavedFields.length ) {
+				const crdtRecord = syncManager?.getCRDTRecordData?.(
+					objectType,
+					objectId
+				);
+
+				for ( const key of repairableSavedFields ) {
+					const hasCRDTValue =
+						key === 'content'
+							? key in ( crdtRecord ?? {} ) ||
+							  Array.isArray( crdtRecord?.blocks )
+							: key in ( crdtRecord ?? {} );
+
+					if ( ! hasCRDTValue ) {
+						continue;
+					}
+
+					const crdtValue = getCRDTRawPostValue( crdtRecord, key );
+					const editValue = getRawPostValue( edits[ key ] );
+					const latestValue = getRawPostValue(
+						latestRecord?.[ key ]
+					);
+
+					if (
+						key === 'content' &&
+						crdtValue === '' &&
+						editValue !== ''
+					) {
+						continue;
+					}
+
+					if (
+						serverChangedSavedFieldSet.has( key ) &&
+						crdtValue !== latestValue
+					) {
+						continue;
+					}
+
+					if ( crdtValue !== editValue ) {
+						newEdits[ key ] = crdtValue;
+					}
 				}
 			}
 		} catch {
