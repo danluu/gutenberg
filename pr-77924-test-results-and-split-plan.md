@@ -87,9 +87,41 @@ The current red/green signal is:
 - Persistence is not a current trunk failure in the clean built run.
 - The two new WebSocket-only tests pass on the merged branch.
 
+Important caveat: these results only matter for branches based on the current
+WebSocket test setup. A split PR is wrong if it makes its tests pass by carrying
+forward the old custom WebSocket setup. Treat the WebSocket harness as shared
+infrastructure, not incidental support code for a CRDT fix.
+
 ## Recommended Split
 
 Split by failure mode, not by package.
+
+### 0. WebSocket Harness Baseline
+
+Goal: make sure every later slice uses the current trunk WebSocket setup.
+
+Status: prerequisite. If the separate WebSocket setup fix changes
+`test/e2e/playwright.rtc-websocket.config.ts`,
+`test/e2e/config/rtc-websocket-setup.ts`,
+`packages/e2e-tests/plugins/rtc-websocket-provider/`, or
+`bin/rtc-test-ws-sync-server.mjs`, rebase every split branch onto that fix
+before selecting code from PR 77924.
+
+Likely scope:
+
+- Current trunk WebSocket setup only.
+- No CRDT merge, sync-manager, persistence, or regression-test logic.
+- No feature behavior beyond making the RTC WebSocket harness current and
+  repeatable.
+
+Acceptance checks:
+
+- Functional split PRs should normally have no diff in WebSocket harness files.
+- If harness changes are required, land them in this prerequisite PR first.
+- Run at least one WebSocket smoke test on current trunk and on the split branch
+  before claiming a feature red/green delta.
+- Do not cherry-pick old `websocket-only` setup, old provider readiness code, or
+  old custom server behavior unless that exact change is the harness PR.
 
 ### 1. Existing Stress Failures
 
@@ -158,6 +190,19 @@ Likely scope:
 Because the persistence e2e tests passed on current trunk, this should not be
 presented as required for the current WebSocket e2e failures.
 
+## Per-Split Guardrails
+
+Before opening each follow-up PR:
+
+- Start from current `origin/trunk` after the WebSocket setup fix lands.
+- Cherry-pick only files required for that failure mode; do not copy old
+  WebSocket setup files wholesale.
+- Run `git diff origin/trunk -- test/e2e/playwright.rtc-websocket.config.ts test/e2e/config/rtc-websocket-setup.ts packages/e2e-tests/plugins/rtc-websocket-provider bin/rtc-test-ws-sync-server.mjs`.
+  For non-harness PRs, the expected result is empty.
+- Include the exact trunk command that fails and branch command that passes.
+- If a split needs new WebSocket-only tests, those tests must rely on current
+  harness APIs only.
+
 ## Review Risks To Call Out
 
 - The current PR mixes sync scheduling, block merge semantics, table merge
@@ -174,6 +219,8 @@ presented as required for the current WebSocket e2e failures.
 
 I can split this. Based on a clean rebuilt run, current trunk fails the two RTC
 stress tests while the PR merged into current trunk passes the full
-`npm run test:e2e:rtc-websocket` suite. I will make the first split target those
-existing stress failures and keep the table follow-up, WebSocket title reload
-behavior, and persistence-save narrowing as separate review slices.
+`npm run test:e2e:rtc-websocket` suite. Before opening functional splits, I will
+rebase onto the current WebSocket setup fix. If any harness delta is still
+needed, I will land it as its own prerequisite PR. The later feature PRs should
+not carry WebSocket setup changes except for the WebSocket-specific slice, and
+each one will include a harness diff check in the PR description.
