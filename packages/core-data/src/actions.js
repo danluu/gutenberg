@@ -600,12 +600,10 @@ export const __unstableCreateUndoLevel =
  * @param {Function} [options.__unstableFetch]                Internal use only. Function to
  *                                                            call instead of `apiFetch()`.
  *                                                            Must return a promise.
- * @param {boolean}  [options.__unstableSkipSyncUpdate=false] Whether to mark
- *                                                            synced entities
- *                                                            as saved without
- *                                                            applying the
- *                                                            server response to
- *                                                            the CRDT.
+ * @param {boolean}  [options.__unstableSkipSyncUpdate=false] Whether to skip
+ *                                                            applying the full
+ *                                                            save response to
+ *                                                            synced entities.
  * @param {boolean}  [options.throwOnError=false]             If false, this action suppresses all
  *                                                            the exceptions. Defaults to false.
  */
@@ -854,21 +852,39 @@ export const saveEntityRecord =
 							data: edits,
 						} );
 					}
+					// CRDT meta persistence saves a partial record, but REST returns
+					// a full post that can carry stale title/content fields.
+					const receivedRecord = __unstableSkipSyncUpdate
+						? Object.keys( edits ).reduce(
+								( acc, key ) => {
+									acc[ key ] =
+										key in updatedRecord
+											? updatedRecord[ key ]
+											: edits[ key ];
+									return acc;
+								},
+								recordId ? { [ entityIdKey ]: recordId } : {}
+						  )
+						: updatedRecord;
+
 					dispatch.receiveEntityRecords(
 						kind,
 						name,
-						updatedRecord,
+						receivedRecord,
 						undefined,
 						true,
 						edits
 					);
-					if ( entityConfig.syncConfig ) {
+					if (
+						entityConfig.syncConfig &&
+						! __unstableSkipSyncUpdate
+					) {
 						// Use an untracked origin so that the save
 						// response does not create undo levels.
 						getSyncManager()?.update(
 							`${ kind }/${ name }`,
 							recordId,
-							__unstableSkipSyncUpdate ? {} : updatedRecord,
+							updatedRecord,
 							LOCAL_UNDO_IGNORED_ORIGIN,
 							{ isSave: true }
 						);

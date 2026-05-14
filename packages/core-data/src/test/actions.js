@@ -946,12 +946,21 @@ describe( 'saveEntityRecord', () => {
 		expect( result ).toBe( updatedRecord );
 	} );
 
-	it( 'preserves the live sync title when a CRDT persistence save returns stale post fields', async () => {
+	it( 'receives only saved meta when a CRDT persistence save returns stale post fields', async () => {
 		const liveSyncState = {
 			isSaved: false,
 			title: 'synced title',
 		};
-		const post = { id: 10, title: 'synced title' };
+		const post = {
+			id: 10,
+			title: 'synced title',
+			content: 'synced content',
+			meta: { _crdt_document: 'base-doc' },
+		};
+		const metaSave = {
+			id: 10,
+			meta: { _crdt_document: 'next-doc' },
+		};
 		const configs = [
 			{
 				name: 'post',
@@ -979,25 +988,32 @@ describe( 'saveEntityRecord', () => {
 		};
 		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
 
-		const staleSaveResponse = { ...post, title: 'initial title' };
+		const staleSaveResponse = {
+			...post,
+			title: 'initial title',
+			content: 'initial content',
+			meta: { _crdt_document: 'next-doc' },
+		};
 		apiFetch.mockImplementation( () => {
 			return staleSaveResponse;
 		} );
 		getSyncManager.mockReturnValue( syncManager );
 
-		const result = await saveEntityRecord( 'postType', 'post', post, {
+		const result = await saveEntityRecord( 'postType', 'post', metaSave, {
 			__unstableSkipSyncUpdate: true,
 		} )( { select, dispatch, resolveSelect } );
 
-		expect( syncManager.update ).toHaveBeenCalledWith(
-			'postType/post',
-			10,
-			{},
-			'gutenberg-undo-ignored',
-			{ isSave: true }
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			{ id: 10, meta: { _crdt_document: 'next-doc' } },
+			undefined,
+			true,
+			metaSave
 		);
+		expect( syncManager.update ).not.toHaveBeenCalled();
 		expect( liveSyncState ).toEqual( {
-			isSaved: true,
+			isSaved: false,
 			title: 'synced title',
 		} );
 		expect( result ).toBe( staleSaveResponse );

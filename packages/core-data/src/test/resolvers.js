@@ -440,15 +440,23 @@ describe( 'getEntityRecord', () => {
 			{ id: 1, meta: {} },
 			{ __unstableSkipSyncUpdate: true }
 		);
-		expect( syncManager.update ).toHaveBeenCalledWith(
-			'postType/post',
-			1,
-			{},
-			'gutenberg-undo-ignored',
-			{ isSave: true }
+		expect( dispatch.receiveEntityRecords ).toHaveBeenLastCalledWith(
+			'postType',
+			'post',
+			{
+				id: 1,
+				meta: { _crdt_document: 'serialized-crdt-doc' },
+			},
+			undefined,
+			true,
+			{
+				id: 1,
+				meta: { _crdt_document: 'serialized-crdt-doc' },
+			}
 		);
+		expect( syncManager.update ).not.toHaveBeenCalled();
 		expect( liveSyncState ).toEqual( {
-			isSaved: true,
+			isSaved: false,
 			title: SYNCED_TITLE,
 		} );
 	} );
