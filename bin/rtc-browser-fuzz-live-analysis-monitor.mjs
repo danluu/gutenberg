@@ -29,12 +29,14 @@ if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 			'Environment:',
 			'  RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000',
 			'  RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=2',
-			'  RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4',
-			'  RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000',
-			'  RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=rtc-analysis-live',
-		].join( '\n' ) + '\n'
-	);
-	process.exit( 0 );
+				'  RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4',
+				'  RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000',
+				'  RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=rtc-analysis-live',
+				'  RTC_FUZZ_LIVE_ANALYSIS_ENABLE_DEEP=1',
+				'  RTC_FUZZ_LIVE_DEEP_ANALYSIS_MAX_PARALLEL=6',
+			].join( '\n' ) + '\n'
+		);
+		process.exit( 0 );
 }
 
 if ( ! RUN_ROOT ) {
@@ -70,8 +72,40 @@ const ANALYSIS_INTERVAL_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_LIVE_ANALYSIS_TIER_INTERVAL_MS',
 	30000
 );
+const DEEP_ANALYSIS_ENABLED =
+	process.env.RTC_FUZZ_LIVE_ANALYSIS_ENABLE_DEEP !== '0';
+const DEEP_ANALYSIS_MAX_PARALLEL = getPositiveIntegerEnv(
+	'RTC_FUZZ_LIVE_DEEP_ANALYSIS_MAX_PARALLEL',
+	6
+);
+const DEEP_ANALYSIS_MAX_ATTEMPTS = getPositiveIntegerEnv(
+	'RTC_FUZZ_LIVE_DEEP_ANALYSIS_MAX_ATTEMPTS',
+	2
+);
+const DEEP_ANALYSIS_CODEX_TIMEOUT_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_LIVE_DEEP_ANALYSIS_CODEX_TIMEOUT_MS',
+	90 * 60 * 1000
+);
+const DEEP_ANALYSIS_INTERVAL_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_LIVE_DEEP_ANALYSIS_TIER_INTERVAL_MS',
+	45000
+);
+const DEEP_ANALYSIS_MODEL =
+	process.env.RTC_FUZZ_LIVE_DEEP_ANALYSIS_MODEL ?? 'gpt-5.4';
+const DEEP_ANALYSIS_REASONING_EFFORT =
+	process.env.RTC_FUZZ_LIVE_DEEP_ANALYSIS_REASONING_EFFORT ?? 'xhigh';
+const DEFAULT_TMUX_PREFIX = `rtc-analysis-live-${ crypto
+	.createHash( 'sha1' )
+	.update( RUN_ROOT )
+	.digest( 'hex' )
+	.slice( 0, 8 ) }`;
 const TMUX_PREFIX =
-	process.env.RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX ?? 'rtc-analysis-live';
+	process.env.RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX ?? DEFAULT_TMUX_PREFIX;
+const DEEP_TMUX_PREFIX =
+	process.env.RTC_FUZZ_LIVE_DEEP_ANALYSIS_TMUX_PREFIX ??
+	`${ TMUX_PREFIX }-deep`;
+const CLEANUP_STALE_SESSIONS =
+	process.env.RTC_FUZZ_LIVE_ANALYSIS_CLEANUP_STALE_SESSIONS !== '0';
 
 let shuttingDown = false;
 
@@ -96,9 +130,9 @@ function sanitizeTmuxName( name ) {
 	return name.replace( /[^A-Za-z0-9_-]/g, '-' ).slice( 0, 160 );
 }
 
-function sessionNameForRunDir( runDir ) {
+function sessionNameForRunDir( runDir, prefix = TMUX_PREFIX ) {
 	const baseName = path.basename( runDir );
-	const rawName = `${ TMUX_PREFIX }-${ baseName }`;
+	const rawName = `${ prefix }-${ baseName }`;
 	if ( rawName.length <= 180 ) {
 		return sanitizeTmuxName( rawName );
 	}
@@ -202,8 +236,13 @@ async function hasTmuxSession( sessionName ) {
 }
 
 function buildAnalysisCommand( runDir ) {
+	const analysisLogPath = path.join(
+		runDir,
+		'.triage-watcher/analysis-tier/analysis-tier.log'
+	);
 	return [
 		`cd ${ shellQuote( REPO_ROOT ) }`,
+		`mkdir -p ${ shellQuote( path.dirname( analysisLogPath ) ) }`,
 		'while true; do',
 		`export RTC_FUZZ_ANALYSIS_MAX_PARALLEL=${ shellQuote(
 			ANALYSIS_MAX_PARALLEL
@@ -217,10 +256,49 @@ function buildAnalysisCommand( runDir ) {
 		`export RTC_FUZZ_ANALYSIS_CODEX_TIMEOUT_MS=${ shellQuote(
 			ANALYSIS_CODEX_TIMEOUT_MS
 		) }`,
-		`node bin/rtc-browser-fuzz-analysis-tier.mjs ${ shellQuote( runDir ) }`,
+		`node bin/rtc-browser-fuzz-analysis-tier.mjs ${ shellQuote(
+			runDir
+		) } >> ${ shellQuote( analysisLogPath ) } 2>&1`,
 		'code=$?',
 		'echo ANALYSIS_EXIT:$code $(date -u +%Y-%m-%dT%H:%M:%SZ)',
 		'sleep 30',
+		'done',
+		].join( '; ' );
+}
+
+function buildDeepAnalysisCommand( runDir ) {
+	const deepAnalysisLogPath = path.join(
+		runDir,
+		'.triage-watcher/deep-analysis-tier/deep-analysis-tier.log'
+	);
+	return [
+		`cd ${ shellQuote( REPO_ROOT ) }`,
+		`mkdir -p ${ shellQuote( path.dirname( deepAnalysisLogPath ) ) }`,
+		'while true; do',
+		`export RTC_FUZZ_DEEP_ANALYSIS_MAX_PARALLEL=${ shellQuote(
+			DEEP_ANALYSIS_MAX_PARALLEL
+		) }`,
+		`export RTC_FUZZ_DEEP_ANALYSIS_MAX_ATTEMPTS=${ shellQuote(
+			DEEP_ANALYSIS_MAX_ATTEMPTS
+		) }`,
+		`export RTC_FUZZ_DEEP_ANALYSIS_INTERVAL_MS=${ shellQuote(
+			DEEP_ANALYSIS_INTERVAL_MS
+		) }`,
+		`export RTC_FUZZ_DEEP_ANALYSIS_CODEX_TIMEOUT_MS=${ shellQuote(
+			DEEP_ANALYSIS_CODEX_TIMEOUT_MS
+		) }`,
+		`export RTC_FUZZ_DEEP_ANALYSIS_MODEL=${ shellQuote(
+			DEEP_ANALYSIS_MODEL
+		) }`,
+		`export RTC_FUZZ_DEEP_ANALYSIS_REASONING_EFFORT=${ shellQuote(
+			DEEP_ANALYSIS_REASONING_EFFORT
+		) }`,
+		`node bin/rtc-browser-fuzz-deep-analysis-tier.mjs ${ shellQuote(
+			runDir
+		) } >> ${ shellQuote( deepAnalysisLogPath ) } 2>&1`,
+		'code=$?',
+		'echo DEEP_ANALYSIS_EXIT:$code $(date -u +%Y-%m-%dT%H:%M:%SZ)',
+		'sleep 45',
 		'done',
 	].join( '; ' );
 }
@@ -266,6 +344,108 @@ async function ensureAnalysisSession( runDir ) {
 		sessionName,
 		started: true,
 	};
+}
+
+async function ensureDeepAnalysisSession( runDir ) {
+	const sessionName = sessionNameForRunDir( runDir, DEEP_TMUX_PREFIX );
+	if ( await hasTmuxSession( sessionName ) ) {
+		return {
+			sessionName,
+			started: false,
+		};
+	}
+
+	const result = await runCommand( 'tmux', [
+		'new-session',
+		'-d',
+		'-s',
+		sessionName,
+		buildDeepAnalysisCommand( runDir ),
+	] );
+
+	if ( ! result.ok ) {
+		await event( {
+			kind: 'deep-analysis-session-start-failed',
+			runDir,
+			sessionName,
+			code: result.code,
+			output: result.stderr || result.stdout,
+		} );
+		throw new Error(
+			`failed to start deep analysis tmux session ${ sessionName }: ${
+				result.stderr || result.stdout
+			}`
+		);
+	}
+
+	await event( {
+		kind: 'deep-analysis-session-started',
+		runDir,
+		sessionName,
+	} );
+	return {
+		sessionName,
+		started: true,
+	};
+}
+
+async function listTmuxSessions() {
+	const result = await runCommand( 'tmux', [ 'list-sessions', '-F', '#S' ] );
+	if ( ! result.ok ) {
+		return [];
+	}
+
+	return result.stdout
+		.split( '\n' )
+		.map( ( line ) => line.trim() )
+		.filter( Boolean );
+}
+
+async function cleanupStaleAnalysisSessions( activeRunDirs ) {
+	if ( ! CLEANUP_STALE_SESSIONS ) {
+		return [];
+	}
+
+	const activeSessions = new Set(
+		activeRunDirs.flatMap( ( { runDir } ) => [
+			sessionNameForRunDir( runDir ),
+			sessionNameForRunDir( runDir, DEEP_TMUX_PREFIX ),
+		] )
+	);
+	const sessions = await listTmuxSessions();
+	const cleaned = [];
+
+	for ( const sessionName of sessions ) {
+		if (
+			( ! sessionName.startsWith( `${ TMUX_PREFIX }-` ) &&
+				! sessionName.startsWith( `${ DEEP_TMUX_PREFIX }-` ) ) ||
+			activeSessions.has( sessionName )
+		) {
+			continue;
+		}
+
+		const result = await runCommand( 'tmux', [
+			'kill-session',
+			'-t',
+			sessionName,
+		] );
+		cleaned.push( {
+			sessionName,
+			ok: result.ok,
+			code: result.code,
+			output: result.stderr || result.stdout,
+		} );
+		await event( {
+			kind: result.ok
+				? 'stale-analysis-session-killed'
+				: 'stale-analysis-session-kill-failed',
+			sessionName,
+			code: result.code,
+			output: result.stderr || result.stdout,
+		} );
+	}
+
+	return cleaned;
 }
 
 async function runGateOnlyWatcher( runDir ) {
@@ -318,6 +498,9 @@ async function summarizeRunDir( runDir ) {
 	const analysisState = await readJsonFile(
 		path.join( runDir, '.triage-watcher/analysis-tier/state.json' )
 	);
+	const deepAnalysisState = await readJsonFile(
+		path.join( runDir, '.triage-watcher/deep-analysis-tier/state.json' )
+	);
 
 	return {
 		runDir,
@@ -328,6 +511,10 @@ async function summarizeRunDir( runDir ) {
 		analysisUpdatedAt: analysisState?.updatedAt ?? null,
 		analysisCounts: countStatuses(
 			Object.values( analysisState?.jobs ?? {} )
+		),
+		deepAnalysisUpdatedAt: deepAnalysisState?.updatedAt ?? null,
+		deepAnalysisCounts: countStatuses(
+			Object.values( deepAnalysisState?.jobs ?? {} )
 		),
 	};
 }
@@ -343,6 +530,8 @@ async function monitorOnce() {
 	const activeRunDirs = getActiveRunDirs( supervisorState );
 	const summaries = [];
 	const actions = [];
+	const staleSessionsCleaned =
+		await cleanupStaleAnalysisSessions( activeRunDirs );
 
 	for ( const { group, runDir } of activeRunDirs ) {
 		if ( ! fsSync.existsSync( runDir ) ) {
@@ -354,26 +543,36 @@ async function monitorOnce() {
 			continue;
 		}
 
-		const gateOutput = await runGateOnlyWatcher( runDir );
-		const analysisSession = await ensureAnalysisSession( runDir );
-		const secondGateOutput = await runGateOnlyWatcher( runDir );
-		const summary = await summarizeRunDir( runDir );
+			const gateOutput = await runGateOnlyWatcher( runDir );
+			const analysisSession = await ensureAnalysisSession( runDir );
+			const deepAnalysisSession = DEEP_ANALYSIS_ENABLED
+				? await ensureDeepAnalysisSession( runDir )
+				: null;
+			const secondGateOutput = await runGateOnlyWatcher( runDir );
+			const summary = await summarizeRunDir( runDir );
 
 		summaries.push( {
-			group,
-			...summary,
-			analysisSession: analysisSession.sessionName,
-		} );
-		actions.push( {
-			group,
-			runDir,
+				group,
+				...summary,
+				analysisSession: analysisSession.sessionName,
+				deepAnalysisSession: deepAnalysisSession?.sessionName ?? null,
+			} );
+			actions.push( {
+				group,
+				runDir,
 			action: analysisSession.started
 				? 'started-analysis-session'
 				: 'analysis-session-already-running',
-			sessionName: analysisSession.sessionName,
-			gateOutput,
-			secondGateOutput,
-		} );
+				sessionName: analysisSession.sessionName,
+				deepAnalysisSessionName: deepAnalysisSession?.sessionName ?? null,
+				deepAnalysisAction: deepAnalysisSession
+					? deepAnalysisSession.started
+						? 'started-deep-analysis-session'
+						: 'deep-analysis-session-already-running'
+					: 'deep-analysis-disabled',
+				gateOutput,
+				secondGateOutput,
+			} );
 	}
 
 	await writeJsonFile( STATE_PATH, {
@@ -382,11 +581,16 @@ async function monitorOnce() {
 		supervisorStatePath: SUPERVISOR_STATE_PATH,
 		supervisorLastUpdatedAt: supervisorState.lastUpdatedAt ?? null,
 		intervalMs: WATCH_INTERVAL_MS,
-		analysisMaxParallel: ANALYSIS_MAX_PARALLEL,
-		analysisMaxAttempts: ANALYSIS_MAX_ATTEMPTS,
-		analysisCodexTimeoutMs: ANALYSIS_CODEX_TIMEOUT_MS,
-		activeRunDirs: summaries,
-		actions,
+			analysisMaxParallel: ANALYSIS_MAX_PARALLEL,
+			analysisMaxAttempts: ANALYSIS_MAX_ATTEMPTS,
+			analysisCodexTimeoutMs: ANALYSIS_CODEX_TIMEOUT_MS,
+			deepAnalysisEnabled: DEEP_ANALYSIS_ENABLED,
+			deepAnalysisMaxParallel: DEEP_ANALYSIS_MAX_PARALLEL,
+			deepAnalysisMaxAttempts: DEEP_ANALYSIS_MAX_ATTEMPTS,
+			deepAnalysisCodexTimeoutMs: DEEP_ANALYSIS_CODEX_TIMEOUT_MS,
+			staleSessionsCleaned,
+			activeRunDirs: summaries,
+			actions,
 	} );
 
 	await event( {
@@ -396,8 +600,10 @@ async function monitorOnce() {
 			group: action.group,
 			runDir: action.runDir,
 			action: action.action,
-			sessionName: action.sessionName,
-		} ) ),
+				sessionName: action.sessionName,
+				deepAnalysisSessionName: action.deepAnalysisSessionName,
+				deepAnalysisAction: action.deepAnalysisAction,
+			} ) ),
 	} );
 
 	await log(
@@ -430,10 +636,14 @@ await event( {
 	runRoot: RUN_ROOT,
 	supervisorStatePath: SUPERVISOR_STATE_PATH,
 	intervalMs: WATCH_INTERVAL_MS,
-	analysisMaxParallel: ANALYSIS_MAX_PARALLEL,
-	analysisMaxAttempts: ANALYSIS_MAX_ATTEMPTS,
-	analysisCodexTimeoutMs: ANALYSIS_CODEX_TIMEOUT_MS,
-} );
+		analysisMaxParallel: ANALYSIS_MAX_PARALLEL,
+		analysisMaxAttempts: ANALYSIS_MAX_ATTEMPTS,
+		analysisCodexTimeoutMs: ANALYSIS_CODEX_TIMEOUT_MS,
+		deepAnalysisEnabled: DEEP_ANALYSIS_ENABLED,
+		deepAnalysisMaxParallel: DEEP_ANALYSIS_MAX_PARALLEL,
+		deepAnalysisMaxAttempts: DEEP_ANALYSIS_MAX_ATTEMPTS,
+		deepAnalysisCodexTimeoutMs: DEEP_ANALYSIS_CODEX_TIMEOUT_MS,
+	} );
 
 do {
 	try {

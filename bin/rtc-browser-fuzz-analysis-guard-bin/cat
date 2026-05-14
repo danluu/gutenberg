@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec "$(dirname "$0")/_rtc_text_guard.sh" cat "$@"

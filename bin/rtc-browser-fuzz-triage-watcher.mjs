@@ -177,8 +177,237 @@ async function readState() {
 
 async function writeState( state ) {
 	state.updatedAt = new Date().toISOString();
+	state.metrics = summarizeStateMetrics( state );
 	await fs.mkdir( STATE_DIR, { recursive: true } );
 	await fs.writeFile( STATE_PATH, JSON.stringify( state, null, 2 ) + '\n' );
+}
+
+function summarizeStateMetrics( state ) {
+	const signatures = Object.values( state.signatures ?? {} );
+	const statusCounts = {};
+	const classificationCounts = {};
+	const recommendedActionCounts = {};
+	const equivalenceClassCounts = {};
+	const preDecisionFamilyCounts = {};
+	const semanticFamilyCounts = {};
+	let likelyRealVisible = 0;
+	let likelyRealMerged = 0;
+	let likelyRealOracleQuestion = 0;
+	let bootstrapStalls = 0;
+	let normalizationNoiseCandidates = 0;
+
+	for ( const signature of signatures ) {
+		const status = signature.status ?? 'unknown';
+		statusCounts[ status ] = ( statusCounts[ status ] ?? 0 ) + 1;
+
+		const equivalenceClass = signature.equivalenceClass ?? 'unknown';
+		equivalenceClassCounts[ equivalenceClass ] =
+			( equivalenceClassCounts[ equivalenceClass ] ?? 0 ) + 1;
+
+		const preDecisionFamily = getPreDecisionFamilyLabel( signature );
+		preDecisionFamilyCounts[ preDecisionFamily ] =
+			( preDecisionFamilyCounts[ preDecisionFamily ] ?? 0 ) + 1;
+
+		if (
+			equivalenceClass === 'pre-action-bootstrap-stall' ||
+			status === 'bootstrap-stall'
+		) {
+			bootstrapStalls += 1;
+		}
+
+		if (
+			equivalenceClass === 'linebreak-representation-drift' ||
+			isLikelyNormalizationNoise( signature )
+		) {
+			normalizationNoiseCandidates += 1;
+		}
+
+		const decision = getSignatureDecision( signature );
+		if ( ! decision ) {
+			continue;
+		}
+
+		const classification = decision.classification ?? 'unknown';
+		classificationCounts[ classification ] =
+			( classificationCounts[ classification ] ?? 0 ) + 1;
+
+		const action =
+			decision.recommendedTriageAction ??
+			decision.candidateStatus ??
+			'unknown';
+		recommendedActionCounts[ action ] =
+			( recommendedActionCounts[ action ] ?? 0 ) + 1;
+
+		const semanticFamily = getSemanticFamilyLabel( signature );
+		semanticFamilyCounts[ semanticFamily ] =
+			( semanticFamilyCounts[ semanticFamily ] ?? 0 ) + 1;
+
+		if ( classification === 'likely_real' ) {
+			if (
+				action === 'merge_with_duplicate' ||
+				decision.isDuplicateOf ||
+				decision.duplicateOf
+			) {
+				likelyRealMerged += 1;
+			} else if (
+				signature.equivalenceClass ===
+					'linebreak-representation-drift' ||
+				isLikelyNormalizationNoise( signature )
+			) {
+				likelyRealOracleQuestion += 1;
+			} else {
+				likelyRealVisible += 1;
+			}
+		}
+	}
+
+	const topPreDecisionFamilies = Object.entries( preDecisionFamilyCounts )
+		.sort( ( left, right ) => right[ 1 ] - left[ 1 ] )
+		.slice( 0, 20 )
+		.map( ( [ family, count ] ) => ( { family, count } ) );
+	const topSemanticFamilies = Object.entries( semanticFamilyCounts )
+		.sort( ( left, right ) => right[ 1 ] - left[ 1 ] )
+		.slice( 0, 20 )
+		.map( ( [ family, count ] ) => ( { family, count } ) );
+	const topPreDecisionFamilyShare =
+		signatures.length === 0 || topPreDecisionFamilies.length === 0
+			? 0
+			: Number(
+					(
+						topPreDecisionFamilies[ 0 ].count / signatures.length
+					).toFixed( 4 )
+			  );
+	const topDuplicateFamilyShare =
+		signatures.length === 0 || topSemanticFamilies.length === 0
+			? 0
+			: Number(
+					(
+						topSemanticFamilies[ 0 ].count / signatures.length
+					).toFixed( 4 )
+			  );
+
+	return {
+		updatedAt: new Date().toISOString(),
+		signatureCount: signatures.length,
+		statusCounts,
+		classificationCounts,
+		recommendedActionCounts,
+		equivalenceClassCounts,
+		likelyRealVisible,
+		likelyRealMerged,
+		likelyRealOracleQuestion,
+		bootstrapStalls,
+		normalizationNoiseCandidates,
+		topPreDecisionFamilyShare,
+		topPreDecisionFamilies,
+		topDuplicateFamilyShare,
+		topSemanticFamilies,
+	};
+}
+
+function getSignatureDecision( signature ) {
+	return signature.analysisGate ?? signature.result ?? null;
+}
+
+function getSemanticFamilyLabel( signature ) {
+	const decision = getSignatureDecision( signature );
+	return canonicalizeSemanticLabel(
+		normalizeSemanticLabel(
+			decision?.distinctBugType ??
+				signature.equivalenceClass ??
+				signature.familyKey ??
+				signature.hash
+		)
+	);
+}
+
+function getPreDecisionFamilyLabel( signature ) {
+	return canonicalizeSemanticLabel(
+		normalizeSemanticLabel(
+			signature.equivalenceClass ?? signature.familyKey ?? signature.hash
+		)
+	);
+}
+
+function normalizeSemanticLabel( value ) {
+	return String( value ?? 'unknown' )
+		.toLowerCase()
+		.replaceAll( '`', '' )
+		.replaceAll( "'", '' )
+		.replaceAll( '"', '' )
+		.replace( /[^a-z0-9]+/g, '_' )
+		.replace( /_+/g, '_' )
+		.replace( /^_|_$/g, '' );
+}
+
+function isLikelyNormalizationNoise( signature ) {
+	const semanticFamily = getSemanticFamilyLabel( signature );
+	if (
+		[
+			'linebreak_representation_drift',
+			'cover_overlay_attribute_canonicalization',
+		].includes( semanticFamily )
+	) {
+		return true;
+	}
+
+	const normalized = signature.normalized ?? '';
+	return (
+		/(core\/code|core\/preformatted|core\/verse)/.test( normalized ) &&
+		/(<br\s*\/?>|\\n|linebreak|newline)/i.test( normalized )
+	);
+}
+
+function canonicalizeSemanticLabel( normalized ) {
+	if (
+		/linebreak|newline|br.*serialization|codeblock|preformatted|verse/.test(
+			normalized
+		)
+	) {
+		return 'linebreak_representation_drift';
+	}
+	if ( /isuseroverlaycolor|cover.*overlay/.test( normalized ) ) {
+		return 'cover_overlay_attribute_canonicalization';
+	}
+	if (
+		/awareness.*save.*reload|save.*reload.*awareness|http_awareness_loss_after_save_reload/.test(
+			normalized
+		)
+	) {
+		return 'awareness_loss_after_save_reload';
+	}
+	if (
+		/awareness.*reload|reload.*awareness|reload_rejoin/.test( normalized )
+	) {
+		return 'reload_rejoin_awareness_stall';
+	}
+	if ( /late.*join|late_join/.test( normalized ) ) {
+		return 'late_join_lifecycle';
+	}
+	if (
+		/blank.*content|empty.*content|content.*collapse|collapses_to_empty/.test(
+			normalized
+		)
+	) {
+		return 'persisted_content_collapse_or_empty_save';
+	}
+	if (
+		/hydration.*drop|drops_blocks|reload.*drops.*block/.test( normalized )
+	) {
+		return 'reload_hydration_drops_blocks';
+	}
+	if (
+		/stale.*save|overwrite|title.*revert|stale.*entity/.test( normalized )
+	) {
+		return 'stale_save_or_entity_overwrite';
+	}
+	if (
+		/move|delete|reorder|table|structural|block_order/.test( normalized )
+	) {
+		return 'structural_move_delete_or_table_divergence';
+	}
+
+	return normalized;
 }
 
 async function findSummaryFiles( directory ) {
@@ -282,19 +511,40 @@ function getFailureSignature( record ) {
 	const text = stripAnsi( getFailureText( record ) );
 	const normalized = normalizeFailureText( text );
 	const facts = getFailureFacts( record, text );
+	const family = getFailureFamily( facts, normalized );
 	const hash = crypto
 		.createHash( 'sha1' )
-		.update( JSON.stringify( facts ) )
+		.update( JSON.stringify( getSignatureHashFacts( facts, family ) ) )
 		.update( '\n' )
 		.update( normalized )
 		.digest( 'hex' )
 		.slice( 0, 12 );
 
 	return {
+		equivalenceClass: family.equivalenceClass,
 		facts,
+		familyKey: family.key,
 		hash,
 		normalized,
 	};
+}
+
+function getSignatureHashFacts( facts, family ) {
+	if ( family.equivalenceClass === 'operation-witness-missing' ) {
+		return {
+			actionProfile: facts.actionProfile,
+			equivalenceClass: family.equivalenceClass,
+			failureClass: facts.failureClass,
+			lifecycleContext: facts.lifecycleContext,
+			operationWitnessActions: facts.operationWitnessActions,
+			operationWitnessPhase: facts.operationWitnessPhase,
+			operationWitnessScopes: facts.operationWitnessScopes,
+			transport: facts.transport,
+			userCount: facts.userCount,
+		};
+	}
+
+	return facts;
 }
 
 function getPrimaryCoverageRecord( record ) {
@@ -320,6 +570,9 @@ function getPrimaryCoverageRecord( record ) {
 function classifyFailureText( text ) {
 	if ( /rest_meta_database_error/.test( text ) ) {
 		return 'rest-meta-database-error';
+	}
+	if ( /RTC operation witness missing/i.test( text ) ) {
+		return 'operation-witness-missing';
 	}
 	if ( /Collaborative state did not converge/i.test( text ) ) {
 		return 'collaboration-non-convergence';
@@ -351,12 +604,79 @@ function classifyFailureText( text ) {
 	return 'unknown';
 }
 
+function parseOperationWitnessMissing( text ) {
+	const match = text.match(
+		/RTC operation witness missing during ([^:]+):\s*(\[[^\n]*\])/i
+	);
+	if ( ! match ) {
+		return null;
+	}
+
+	const phase = match[ 1 ].trim();
+	let entries = [];
+	try {
+		entries = JSON.parse( match[ 2 ] );
+	} catch {
+		entries = [];
+	}
+
+	const actionLabels = [
+		...new Set(
+			entries
+				.map( ( entry ) => entry?.actionLabel )
+				.filter( Boolean )
+				.map( String )
+		),
+	].sort();
+	const scopes = [
+		...new Set(
+			entries
+				.map( ( entry ) => entry?.scope )
+				.filter( Boolean )
+				.map( String )
+		),
+	].sort();
+
+	return {
+		actionLabels,
+		phase,
+		scopes,
+	};
+}
+
+function getLifecycleContext( coverage, witness, lastHistoryEvent ) {
+	const phase = `${ witness?.phase ?? '' } ${
+		lastHistoryEvent?.phase ?? ''
+	}`.toLowerCase();
+
+	if ( /revision/.test( phase ) || coverage?.revisionRestore?.eligible ) {
+		return 'revision-restore';
+	}
+	if ( /late-join/.test( phase ) ) {
+		return 'late-join';
+	}
+	if ( /same-user|rejoin/.test( phase ) ) {
+		return 'same-user-rejoin';
+	}
+	if ( /reload/.test( phase ) || ( coverage?.reloads?.length ?? 0 ) > 0 ) {
+		return 'reload';
+	}
+	if (
+		/save|persisted/.test( phase ) ||
+		( coverage?.saveCheckpointSteps?.length ?? 0 ) > 0
+	) {
+		return 'save';
+	}
+	return 'editing';
+}
+
 function getFailureFacts( record, text ) {
 	const coverage = getPrimaryCoverageRecord( record );
 	const actions = coverage?.actions ?? [];
 	const historyEvents = coverage?.historyEvents ?? [];
 	const lastHistoryEvent = historyEvents.at( -1 );
 	const lastAction = actions.at( -1 );
+	const operationWitness = parseOperationWitnessMissing( text );
 
 	return {
 		failureClass: classifyFailureText( text ),
@@ -378,6 +698,14 @@ function getFailureFacts( record, text ) {
 		].sort(),
 		revisionEligible: coverage?.revisionRestore?.eligible === true,
 		blockTypes: coverage?.blockStats?.types ?? [],
+		lifecycleContext: getLifecycleContext(
+			coverage,
+			operationWitness,
+			lastHistoryEvent
+		),
+		operationWitnessActions: operationWitness?.actionLabels ?? [],
+		operationWitnessPhase: operationWitness?.phase ?? null,
+		operationWitnessScopes: operationWitness?.scopes ?? [],
 		userCount: coverage?.userCount ?? 0,
 	};
 }
@@ -385,6 +713,18 @@ function getFailureFacts( record, text ) {
 function normalizeFailureText( text ) {
 	if ( /rest_meta_database_error/.test( text ) ) {
 		return 'rest_meta_database_error wp_persisted_preferences';
+	}
+
+	const operationWitness = parseOperationWitnessMissing( text );
+	if ( operationWitness ) {
+		return [
+			'RTC operation witness missing',
+			`actions=${
+				operationWitness.actionLabels.join( ',' ) || 'unknown'
+			}`,
+			`scopes=${ operationWitness.scopes.join( ',' ) || 'unknown' }`,
+			`phase=${ operationWitness.phase || 'unknown' }`,
+		].join( ' ' );
 	}
 
 	const timeout = text.match( /TimeoutError: [^\n]+/ )?.[ 0 ];
@@ -407,7 +747,123 @@ function normalizeFailureText( text ) {
 		.filter( Boolean )
 		.join( '\n' )
 		.replaceAll( RUN_DIR, '<RUN_DIR>' )
-		.replaceAll( REPO_ROOT, '<REPO_ROOT>' );
+		.replaceAll( REPO_ROOT, '<REPO_ROOT>' )
+		.replace( /seed-\d+/g, 'seed-<n>' )
+		.replace( /test-failed-\d+\.(png|webm|zip)/g, 'test-failed-<n>.$1' )
+		.replace( /trace\.zip/g, 'trace.zip' )
+		.replace( /markerHash":"[^"]+"/g, 'markerHash":"<hash>"' )
+		.replace( /markerHash: [a-f0-9]{8,}/gi, 'markerHash: <hash>' );
+}
+
+function getFailureEquivalenceClass( facts, normalized ) {
+	if ( facts.failureClass === 'operation-witness-missing' ) {
+		return 'operation-witness-missing';
+	}
+
+	if (
+		/(core\/code|core\/preformatted|core\/verse)/.test( normalized ) &&
+		/(<br\s*\/?>|\\n)/i.test( normalized ) &&
+		facts.failureClass === 'collaboration-non-convergence'
+	) {
+		return 'linebreak-representation-drift';
+	}
+
+	if (
+		facts.userCount === 0 &&
+		facts.lastHistoryStatus === 'fail' &&
+		/(waitForCollaborationReady|setPreferences|_wpCollaborationEnabled|collaboration to become ready|page\.waitForFunction)/i.test(
+			normalized
+		)
+	) {
+		return 'pre-action-bootstrap-stall';
+	}
+
+	if (
+		/waitForMutualDiscovery|mutual discovery|awareness/i.test( normalized )
+	) {
+		return facts.userCount === 0
+			? 'pre-action-awareness-stall'
+			: 'late-session-awareness-stall';
+	}
+
+	return facts.failureClass;
+}
+
+function getBlockFamily( blockTypes = [] ) {
+	if ( ! blockTypes.length ) {
+		return 'none';
+	}
+
+	const structuralTypes = blockTypes.filter( ( blockType ) =>
+		[
+			'core/group',
+			'core/columns',
+			'core/column',
+			'core/list',
+			'core/list-item',
+			'core/table',
+			'core/table-row',
+		].includes( blockType )
+	);
+
+	return ( structuralTypes.length ? structuralTypes : blockTypes )
+		.slice()
+		.sort()
+		.join( ',' );
+}
+
+function getFailureFamily( facts, normalized ) {
+	const equivalenceClass = getFailureEquivalenceClass( facts, normalized );
+	if ( equivalenceClass === 'operation-witness-missing' ) {
+		const family = {
+			actionProfile: facts.actionProfile,
+			equivalenceClass,
+			failureClass: facts.failureClass,
+			lifecycleContext: facts.lifecycleContext,
+			operationWitnessActions:
+				facts.operationWitnessActions?.join( ',' ) || 'unknown',
+			operationWitnessPhase: facts.operationWitnessPhase ?? 'unknown',
+			operationWitnessScopes:
+				facts.operationWitnessScopes?.join( ',' ) || 'unknown',
+			saveCheckpointCount:
+				facts.saveCheckpointCount > 0 ? 'has-save-checkpoint' : 'none',
+			transport: facts.transport,
+			userCount: facts.userCount,
+		};
+
+		return {
+			key: crypto
+				.createHash( 'sha1' )
+				.update( JSON.stringify( family ) )
+				.digest( 'hex' )
+				.slice( 0, 12 ),
+			...family,
+		};
+	}
+
+	const family = {
+		actionProfile: facts.actionProfile,
+		blockFamily: getBlockFamily( facts.blockTypes ),
+		equivalenceClass,
+		failureClass: facts.failureClass,
+		initialContentProfile: facts.initialContentProfile,
+		lastAction: facts.lastAction,
+		lastHistoryPhase: facts.lastHistoryPhase,
+		revisionEligible: facts.revisionEligible,
+		saveCheckpointCount:
+			facts.saveCheckpointCount > 0 ? 'has-save-checkpoint' : 'none',
+		transport: facts.transport,
+		userCount: facts.userCount,
+	};
+
+	return {
+		key: crypto
+			.createHash( 'sha1' )
+			.update( JSON.stringify( family ) )
+			.digest( 'hex' )
+			.slice( 0, 12 ),
+		...family,
+	};
 }
 
 function groupCandidatesBySignature( candidates ) {
@@ -415,6 +871,8 @@ function groupCandidatesBySignature( candidates ) {
 
 	for ( const candidate of candidates ) {
 		const existing = groups.get( candidate.signature.hash ) ?? {
+			equivalenceClass: candidate.signature.equivalenceClass,
+			familyKey: candidate.signature.familyKey,
 			hash: candidate.signature.hash,
 			normalized: candidate.signature.normalized,
 			candidates: [],
@@ -429,6 +887,9 @@ function groupCandidatesBySignature( candidates ) {
 async function updateDiscoveredSignatures( state, groups ) {
 	for ( const group of groups ) {
 		const existing = state.signatures[ group.hash ];
+		const suppressedStatus = getSuppressedSignatureStatus(
+			group.candidates[ 0 ]?.signature
+		);
 		const examples = group.candidates
 			.slice( 0, 5 )
 			.map( ( candidate ) => ( {
@@ -453,14 +914,36 @@ async function updateDiscoveredSignatures( state, groups ) {
 				existing.facts ??
 				group.candidates[ 0 ]?.signature.facts ??
 				null;
+			existing.familyKey =
+				existing.familyKey ??
+				group.familyKey ??
+				group.candidates[ 0 ]?.signature.familyKey ??
+				null;
+			existing.equivalenceClass =
+				existing.equivalenceClass ??
+				group.equivalenceClass ??
+				group.candidates[ 0 ]?.signature.equivalenceClass ??
+				null;
+			if (
+				suppressedStatus &&
+				[ 'queued', 'retry', 'analysis-gated' ].includes(
+					existing.status
+				)
+			) {
+				existing.status = suppressedStatus;
+				existing.suppressedByWatcher =
+					getSuppressionReason( suppressedStatus );
+			}
 			existing.examples = mergeExamples( existing.examples, examples );
 			continue;
 		}
 
 		const jobDir = path.join( STATE_DIR, 'signatures', group.hash );
 		state.signatures[ group.hash ] = {
+			equivalenceClass: group.equivalenceClass,
+			familyKey: group.familyKey,
 			hash: group.hash,
-			status: 'queued',
+			status: suppressedStatus ?? 'queued',
 			facts: group.candidates[ 0 ]?.signature.facts ?? null,
 			normalized: group.normalized,
 			count: group.candidates.length,
@@ -471,12 +954,53 @@ async function updateDiscoveredSignatures( state, groups ) {
 			examples,
 			resultPath: path.join( jobDir, 'result.json' ),
 		};
+		if ( suppressedStatus ) {
+			state.signatures[ group.hash ].suppressedByWatcher =
+				getSuppressionReason( suppressedStatus );
+		}
 		await fs.mkdir( jobDir, { recursive: true } );
 		await fs.writeFile(
 			path.join( jobDir, 'failure.json' ),
 			JSON.stringify( state.signatures[ group.hash ], null, 2 ) + '\n'
 		);
 	}
+}
+
+function getSuppressedSignatureStatus( signature ) {
+	const facts = signature?.facts;
+	if ( ! facts ) {
+		return null;
+	}
+
+	if (
+		facts.failureClass === 'rest-meta-database-error' &&
+		/wp_persisted_preferences/.test( signature.normalized ?? '' )
+	) {
+		return 'known-infra';
+	}
+
+	if (
+		facts.userCount === 0 &&
+		facts.lastHistoryPhase === 'seed' &&
+		facts.lastHistoryStatus === 'fail' &&
+		[
+			'timeout',
+			'browser-closed',
+			'unknown',
+			'collaboration-non-convergence',
+		].includes( facts.failureClass )
+	) {
+		return 'bootstrap-stall';
+	}
+
+	return null;
+}
+
+function getSuppressionReason( status ) {
+	if ( status === 'known-infra' ) {
+		return 'known wp_persisted_preferences REST meta infra failure';
+	}
+	return 'pre-action startup/discovery failure';
 }
 
 function mergeExamples( currentExamples = [], newExamples = [] ) {
@@ -490,7 +1014,6 @@ function mergeExamples( currentExamples = [], newExamples = [] ) {
 }
 
 async function launchQueuedJobs( state ) {
-	const activeHashes = getActiveJobHashes( state );
 	const analysisDecisions = await readAnalysisDecisions();
 	const deepAnalysisDecisions = await readDeepAnalysisDecisions();
 	const sortedSignatures = sortSignaturesForLaunch(
@@ -508,6 +1031,7 @@ async function launchQueuedJobs( state ) {
 		return;
 	}
 
+	const activeHashes = getActiveJobHashes( state );
 	for ( const signature of sortedSignatures ) {
 		if ( activeHashes.size >= MAX_PARALLEL ) {
 			state.lastAnalysisGatedCount = analysisGated;
@@ -739,7 +1263,7 @@ function sortSignaturesForLaunch(
 	analysisDecisions,
 	deepAnalysisDecisions
 ) {
-	return [ ...signatures ].sort( ( left, right ) => {
+	const sorted = [ ...signatures ].sort( ( left, right ) => {
 		const leftPriority = getAnalysisLaunchPriority(
 			analysisDecisions.get( left.hash ),
 			deepAnalysisDecisions.get( left.hash )
@@ -755,6 +1279,22 @@ function sortSignaturesForLaunch(
 
 		return ( right.count ?? 0 ) - ( left.count ?? 0 );
 	} );
+	const seenFamilies = new Set();
+	const firstInFamily = [];
+	const duplicateFamilyRest = [];
+
+	for ( const signature of sorted ) {
+		const familyKey = signature.familyKey ?? signature.hash;
+		if ( seenFamilies.has( familyKey ) ) {
+			duplicateFamilyRest.push( signature );
+			continue;
+		}
+
+		seenFamilies.add( familyKey );
+		firstInFamily.push( signature );
+	}
+
+	return [ ...firstInFamily, ...duplicateFamilyRest ];
 }
 
 function getAnalysisLaunchPriority( analysisDecision, deepAnalysisDecision ) {
@@ -826,7 +1366,11 @@ async function reconcileExternallyCompletedJobs( state ) {
 		signature.pid = null;
 		signature.lastCompletedAt =
 			signature.lastCompletedAt ?? new Date().toISOString();
-		signature.status = getStatusFromResult( result, result ? 0 : 1 );
+		signature.status = getStatusFromResult(
+			result,
+			result ? 0 : 1,
+			signature
+		);
 		await writeStatusMarkdown(
 			path.join( signature.jobDir, 'STATUS.md' ),
 			signature
@@ -840,6 +1384,8 @@ function shouldLaunch( signature ) {
 			'completed',
 			'not-real',
 			'infra',
+			'bootstrap-stall',
+			'known-infra',
 			'no-realistic-repro',
 			'analysis-gated',
 		].includes( signature.status )
@@ -973,13 +1519,17 @@ async function launchCodexJob( state, signature ) {
 		} catch {}
 
 		nextSignature.result = result;
-		nextSignature.status = getStatusFromResult( result, code );
+		nextSignature.status = getStatusFromResult(
+			result,
+			code,
+			nextSignature
+		);
 		await writeStatusMarkdown( statusPath, nextSignature );
 		await writeState( nextState );
 	} );
 }
 
-function getStatusFromResult( result, code ) {
+function getStatusFromResult( result, code, signature = null ) {
 	if ( code !== 0 || ! result ) {
 		return 'retry';
 	}
@@ -996,7 +1546,69 @@ function getStatusFromResult( result, code ) {
 		return 'no-realistic-repro';
 	}
 
+	if (
+		result.realisticPlaywrightRepro?.status === 'produced' &&
+		! hasValidProducedPlaywrightRepro( result, signature )
+	) {
+		return 'retry';
+	}
+
 	return 'completed';
+}
+
+function hasValidProducedPlaywrightRepro( result, signature ) {
+	const repro = result.realisticPlaywrightRepro;
+	const reproPath = repro?.path;
+	const command = repro?.command;
+	const candidates = [];
+
+	if ( ! reproPath || typeof reproPath !== 'string' ) {
+		appendReproValidationNote(
+			repro,
+			'produced Playwright repro did not include a path'
+		);
+		return false;
+	}
+
+	if ( ! command || typeof command !== 'string' || ! command.trim() ) {
+		appendReproValidationNote(
+			repro,
+			'produced Playwright repro did not include a command'
+		);
+		return false;
+	}
+
+	if ( path.isAbsolute( reproPath ) ) {
+		candidates.push( reproPath );
+	} else {
+		candidates.push(
+			path.resolve( signature?.jobDir ?? REPO_ROOT, reproPath ),
+			path.resolve( REPO_ROOT, reproPath )
+		);
+	}
+
+	if ( candidates.some( ( candidate ) => fsSync.existsSync( candidate ) ) ) {
+		return true;
+	}
+
+	appendReproValidationNote(
+		repro,
+		`produced Playwright repro path was not found; checked ${ candidates.join(
+			', '
+		) }`
+	);
+	return false;
+}
+
+function appendReproValidationNote( repro, note ) {
+	if ( ! repro ) {
+		return;
+	}
+
+	repro.status = 'needs_more_time';
+	repro.notes = [ repro.notes, `Watcher validation: ${ note }.` ]
+		.filter( Boolean )
+		.join( '\n' );
 }
 
 function buildCodexPrompt( signature ) {
@@ -1013,6 +1625,8 @@ function buildCodexPrompt( signature ) {
 		`Fuzz run directory: ${ RUN_DIR }`,
 		`Triage job directory: ${ signature.jobDir }`,
 		`Failure signature: ${ signature.hash }`,
+		`Semantic family key: ${ signature.familyKey ?? 'unknown' }`,
+		`Equivalence class: ${ signature.equivalenceClass ?? 'unknown' }`,
 		`Maximum realistic-repro search time: ${ REPRO_HOURS } hours`,
 		'',
 		'Failure signature text:',
@@ -1051,6 +1665,8 @@ async function writeStatusMarkdown( statusPath, signature ) {
 		`# Deep triage ${ signature.hash }`,
 		'',
 		`Status: ${ signature.status }`,
+		`Family key: ${ signature.familyKey ?? 'unknown' }`,
+		`Equivalence class: ${ signature.equivalenceClass ?? 'unknown' }`,
 		`Attempts: ${ signature.attempts }`,
 		`Completed: ${ signature.lastCompletedAt ?? 'not completed' }`,
 		'',

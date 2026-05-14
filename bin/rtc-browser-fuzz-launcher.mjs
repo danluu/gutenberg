@@ -26,11 +26,16 @@ const SHARED_PATH = [
 	process.env.PATH ?? '',
 ].join( path.delimiter );
 const START_SEED = getPositiveIntegerEnv( 'RTC_FUZZ_START_SEED', 1007 );
+const START_SEEDS = getOptionalPositiveIntegerListEnv( 'RTC_FUZZ_START_SEEDS' );
 const STEP_COUNT = getPositiveIntegerEnv( 'RTC_FUZZ_STEP_COUNT', 12 );
 const DURATION_HOURS = getPositiveNumberEnv( 'RTC_FUZZ_DURATION_HOURS', 12 );
 const LANE_COUNT = getPositiveIntegerEnv(
 	'RTC_FUZZ_PARALLEL_LANES',
 	getPerformanceCoreCount()
+);
+const TOTAL_SEED_STRIDE = getPositiveIntegerEnv(
+	'RTC_FUZZ_TOTAL_SEED_STRIDE',
+	LANE_COUNT
 );
 const OUTPUT_DIR =
 	process.env.RTC_FUZZ_OUTPUT_DIR ??
@@ -70,6 +75,31 @@ function getPositiveNumberEnv( name, fallback ) {
 	}
 
 	return parsedValue;
+}
+
+function getOptionalPositiveIntegerListEnv( name ) {
+	const rawValue = process.env[ name ];
+
+	if ( ! rawValue ) {
+		return null;
+	}
+
+	const values = rawValue
+		.split( ',' )
+		.map( ( value ) => value.trim() )
+		.filter( Boolean )
+		.map( ( value ) => Number.parseInt( value, 10 ) );
+
+	if (
+		values.length === 0 ||
+		values.some( ( value ) => ! Number.isInteger( value ) || value <= 0 )
+	) {
+		throw new Error(
+			`Expected ${ name } to be a comma-separated list of positive integers.`
+		);
+	}
+
+	return values;
 }
 
 async function resolveExecutable( preferredPath, executableName ) {
@@ -169,8 +199,7 @@ async function runWpEnvStatusCheck() {
 }
 
 async function runWpInstallHealthCheck() {
-	const requiredPluginPath =
-		'gutenberg-test-plugins/disable-animations.php';
+	const requiredPluginPath = 'gutenberg-test-plugins/disable-animations.php';
 	const requiredTheme = 'twentytwentyone';
 	const php = [
 		`$plugin = WP_PLUGIN_DIR . '/${ requiredPluginPath }';`,
@@ -180,16 +209,7 @@ async function runWpInstallHealthCheck() {
 	].join( ' ' );
 	const result = spawn(
 		RESOLVED_NPM_BIN,
-		[
-			'run',
-			'wp-env-test',
-			'--',
-			'run',
-			'cli',
-			'wp',
-			'eval',
-			php,
-		],
+		[ 'run', 'wp-env-test', '--', 'run', 'cli', 'wp', 'eval', php ],
 		{
 			cwd: REPO_ROOT,
 			env: {
@@ -230,6 +250,12 @@ async function main() {
 	await runWpInstallHealthCheck();
 	await fs.mkdir( OUTPUT_DIR, { recursive: true } );
 
+	if ( START_SEEDS && START_SEEDS.length !== LANE_COUNT ) {
+		throw new Error(
+			`RTC_FUZZ_START_SEEDS has ${ START_SEEDS.length } entries, but RTC_FUZZ_PARALLEL_LANES is ${ LANE_COUNT }.`
+		);
+	}
+
 	const lanes = [];
 	for ( let laneIndex = 0; laneIndex < LANE_COUNT; laneIndex++ ) {
 		const laneLabel = `lane-${ laneIndex }`;
@@ -237,7 +263,7 @@ async function main() {
 		await fs.mkdir( laneOutputDir, { recursive: true } );
 		const launcherLogPath = path.join( laneOutputDir, 'launcher.log' );
 		const launcherLog = await fs.open( launcherLogPath, 'a' );
-		const laneSeed = START_SEED + laneIndex;
+		const laneSeed = START_SEEDS?.[ laneIndex ] ?? START_SEED + laneIndex;
 		const child = spawn(
 			RESOLVED_NODE_BIN,
 			[ 'bin/rtc-browser-fuzz-runner.mjs' ],
@@ -250,7 +276,7 @@ async function main() {
 					PATH: SHARED_PATH,
 					RTC_FUZZ_DURATION_HOURS: String( DURATION_HOURS ),
 					RTC_FUZZ_OUTPUT_DIR: laneOutputDir,
-					RTC_FUZZ_SEED_STRIDE: String( LANE_COUNT ),
+					RTC_FUZZ_SEED_STRIDE: String( TOTAL_SEED_STRIDE ),
 					RTC_FUZZ_START_SEED: String( laneSeed ),
 					RTC_FUZZ_STEP_COUNT: String( STEP_COUNT ),
 					RTC_FUZZ_LANE_LABEL: laneLabel,
@@ -271,7 +297,7 @@ async function main() {
 			outputDir: laneOutputDir,
 			pid: child.pid,
 			startSeed: laneSeed,
-			seedStride: LANE_COUNT,
+			seedStride: TOTAL_SEED_STRIDE,
 		} );
 	}
 
@@ -293,6 +319,8 @@ async function main() {
 		httpHealthTimeoutMs:
 			process.env.RTC_FUZZ_HTTP_HEALTH_TIMEOUT_MS ?? '10000',
 		startSeed: START_SEED,
+		startSeeds: START_SEEDS,
+		totalSeedStride: TOTAL_SEED_STRIDE,
 		stepCount: STEP_COUNT,
 		lanes,
 	};

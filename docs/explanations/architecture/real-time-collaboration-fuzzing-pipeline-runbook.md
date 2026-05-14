@@ -171,6 +171,33 @@ Watchdog controls:
     orphaned generated `~/.wp-env` directories that have no Docker resources
     attached. Leave this disabled if you want a manual confirmation step.
 
+## Low-Disk Fuzzing Mode
+
+The default Gutenberg Playwright config keeps `trace.zip` for every failing
+test. That is useful for one-off failures, but long fuzz runs intentionally
+produce many candidates and traces can dominate disk usage. A broad discovery
+generation can run in low-disk mode:
+
+```bash
+export RTC_FUZZ_LOW_DISK_MODE=1
+export RTC_FUZZ_ANALYSIS_RECHECKS=1
+```
+
+`RTC_FUZZ_LOW_DISK_MODE=1` makes the runner pass `--trace off --video off` to
+Playwright while keeping the default screenshot behavior. Use explicit
+overrides when needed:
+
+```bash
+export RTC_FUZZ_PLAYWRIGHT_TRACE=retain-on-failure
+export RTC_FUZZ_PLAYWRIGHT_SCREENSHOT=only-on-failure
+export RTC_FUZZ_PLAYWRIGHT_VIDEO=off
+```
+
+Use low-disk mode for wide exploration when disk pressure matters. For a
+canonical repro or report candidate, rerun the selected seed with
+`RTC_FUZZ_PLAYWRIGHT_TRACE=retain-on-failure` or `--trace retain-on-failure` so
+the report still has a trace when that trace is useful.
+
 ## Active wp-env And Docker Repair
 
 The supervisor owns active shared `wp-env` repair. Humans and Codex analysis
@@ -371,15 +398,30 @@ Important runner defaults and controls:
 -   `GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE=128`: cap the number of
     live witness markers checked after convergence, reload, save, and revision
     restore.
+-   `GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE=off|shadow|fail`: after
+    final convergence, explicitly save from one browser and compare canonical
+    REST content, title, `_crdt_document` presence, and persisted live operation
+    witnesses. Keep this off by default for broad/parser-stress runs; use `fail`
+    in low-noise persistence/revision/same-user lanes.
+-   `GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION=1`: after a forced late join
+    settles, make the late-joining browser append a witnessed paragraph and run
+    the normal convergence/invariant path. This checks that late joiners can
+    contribute new state, not just receive it.
+-   `GUTENBERG_RTC_BROWSER_CONVERGENCE_STABLE_SAMPLES=1` and
+    `GUTENBERG_RTC_BROWSER_CONVERGENCE_STABLE_INTERVAL_MS=250`: require
+    multiple consecutive equal normalized editor samples before declaring
+    convergence. Increase samples only for focused flake investigation because
+    it adds latency to every convergence wait.
 
 The operation ledger is deliberately narrow. It creates deterministic ASCII
 witness markers for low-noise actions such as paragraph/heading insertion,
-nested group insertion, concurrent paragraph insertion, title writes, and save
-checkpoints. A marker is acknowledged only after the user action returns,
+nested group insertion, paragraph/table edits, concurrent paragraph insertion,
+title writes, late-join post actions, and save checkpoints. A marker is
+acknowledged only after the user action returns,
 collaboration convergence succeeds, and the normalized editor state contains
 the marker. Later convergence, reload, save-persistence, late-join, final-state,
 and revision-restore checks verify that still-live witnesses survive. Broad
-parser, common-block, block-gauntlet, edit, and delete actions invalidate the
+parser, common-block, block-gauntlet, move, and delete actions invalidate the
 relevant content scope instead of guessing causal targets. Title witnesses use a
 last-writer-wins rule: a new witnessed title retires older live title witnesses.
 
@@ -395,7 +437,9 @@ Current focused action profiles:
 -   `persistence-no-title`: save/reload persistence without title edits.
 -   `structure`: nested group, move, delete, and tree-shape actions.
 -   `session-lifecycle`: late join, reload, and reconnect actions.
--   `three-user-late-join`: three-user coverage with a forced late join.
+-   `three-user-late-join`: three-user coverage with a forced late join. Novelty
+    runs should set `GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION=1` so the late
+    joiner also performs a witnessed mutation.
 -   `multi-reload-lifecycle`: two browser reload checkpoints in one seed.
 -   `common-blocks`: common block-library surfaces such as image, buttons,
     columns, code, and preformatted blocks.
@@ -756,6 +800,8 @@ Minimum resource checks:
 uptime
 top -l 1 -n 15 -o cpu -stats pid,ppid,state,time,cpu,mem,command
 memory_pressure
+vm_stat -c 6 1
+sysctl vm.swapusage
 pgrep -af "codex exec" | wc -l
 pgrep -af "chrome|headless|playwright" | wc -l
 node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --json --min-age-hours=24
@@ -824,10 +870,20 @@ Prefer adding raw fuzz lanes only when:
 Hold steady when:
 
 -   CPU idle is below roughly 10%
--   unused RAM is below roughly 3 GB
+-   macOS VM pressure shows active memory distress: `memory_pressure` free
+    below roughly 30%, nonzero throttled pages, sustained swapout above roughly
+    1 MB/s, pageout above roughly 5 MB/s, decompression churn above roughly
+    250 MB/s, or active swapout while swap free is below roughly 0.5 GB
 -   Chrome/Playwright process count is high
 -   `wp-env` is unstable
 -   queue growth is from analysis/repro backlog rather than lack of raw findings
+
+Do not use macOS `unused` or `free` memory alone as the headroom signal. macOS
+often runs with very low unused pages while memory pressure is still green. The
+novelty monitor samples `memory_pressure`, `vm_stat -c 6 1`, and
+`vm.swapusage`; it permits more work when unused RAM is low but swap/pageout
+rates are quiet, and holds back when VM rates indicate the machine is moving
+toward thrashing.
 
 If one issue dominates:
 
@@ -845,6 +901,23 @@ little new signal. It observes `rtc-behavioral-coverage.ndjson`, tracks action
 profiles, block types, action pairs, lifecycle events, fault types, and CDP
 coverage hashes, then can enable additional supervisor groups when novelty
 stalls and resources permit.
+
+Optional expansion controls:
+
+-   `RTC_FUZZ_NOVELTY_ENABLE_SAME_USER=1`: after the forced three-user late-join
+    lane reaches its lifecycle target, hand that browser slot to a same-user
+    lifecycle lane. This exercises two browser contexts using the same WordPress
+    account. Do not require distinct-user presence semantics in this lane.
+-   `RTC_FUZZ_NOVELTY_ENABLE_HTTP_PROBE=1`: add a low-fault HTTP persistence
+    probe only when there is spare browser budget.
+-   `RTC_FUZZ_NOVELTY_COMMON_BLOCK_MIN_RECORDS=25` and
+    `RTC_FUZZ_NOVELTY_BLOCK_GAUNTLET_MIN_RECORDS=20`: per-block coverage floors
+    for spare-slot top-offs. The monitor should not treat aggregate block counts
+    as complete if individual blocks such as `core/file`, `core/html`,
+    `core/preformatted`, or `core/column` are still thin.
+-   `RTC_FUZZ_NOVELTY_LATE_JOIN_MIN_RECORDS=300`: lifecycle-event target for
+    forced three-user late joins. The policy uses the actual late-join lifecycle
+    key, not just `users:3`.
 
 Example durable novelty monitor:
 
@@ -886,7 +959,10 @@ The implemented novelty profiles are:
     should stay enabled unless a real revision bug or a specific harness issue
     is documented.
 -   `three-user-late-join`: a third collaborator joins after editing has
-    started.
+    started and then performs a witnessed post-join mutation.
+-   `same-user-lifecycle`: optional same-account multi-tab lifecycle coverage.
+    Enable with `RTC_FUZZ_NOVELTY_ENABLE_SAME_USER=1`; the monitor schedules it
+    as a handoff after late-join coverage has reached the configured target.
 -   `common-blocks`: focused coverage for common blocks that were under-sampled
     by the default action mix.
 -   `block-gauntlet`: focused coverage for broader block-library surfaces,
@@ -909,6 +985,12 @@ The implemented novelty profiles are:
 
 These profiles are meant to broaden surface area, not to replace the full or
 persistence profiles.
+
+The novelty policy uses one spare fourth browser slot, when VM/load headroom is
+available, to top off under-covered common/block-gauntlet surfaces. It should
+not rotate out currently useful parser-transform, late-join, or multi-reload
+lanes just because a single block family is thin. Same-user coverage replaces a
+completed late-join lane instead of competing with it from startup.
 
 The novelty monitor tracks offsets per coverage file and skips triage/recheck
 directories by default. This keeps deep-triage reruns from inflating exploration

@@ -2,6 +2,7 @@
 import fs from 'fs/promises';
 import fsSync from 'fs';
 import path from 'path';
+import readline from 'readline';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
@@ -77,9 +78,21 @@ const MAX_ATTEMPTS = getPositiveIntegerEnv(
 	'RTC_FUZZ_ANALYSIS_MAX_ATTEMPTS',
 	2
 );
+const MAX_PER_FAMILY = getPositiveIntegerEnv(
+	'RTC_FUZZ_ANALYSIS_MAX_PER_FAMILY',
+	2
+);
 const TRANSIENT_CODEX_STARTUP_BACKOFF_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_ANALYSIS_TRANSIENT_CODEX_STARTUP_BACKOFF_MS',
 	5 * 60 * 1000
+);
+const CONTEXT_DUMP_RECOVERY_MAX_ATTEMPTS = getPositiveIntegerEnv(
+	'RTC_FUZZ_ANALYSIS_CONTEXT_DUMP_RECOVERY_MAX_ATTEMPTS',
+	1
+);
+const MAX_COMPACT_EXAMPLES = getPositiveIntegerEnv(
+	'RTC_FUZZ_ANALYSIS_MAX_COMPACT_EXAMPLES',
+	4
 );
 
 const activeJobs = new Map();
@@ -163,11 +176,26 @@ function isProcessAlive( pid ) {
 
 async function reconcileJobs( state ) {
 	for ( const job of Object.values( state.jobs ) ) {
+		const failureKind = await classifyFailedJob( job );
+		if ( failureKind ) {
+			job.failureKind = failureKind;
+		}
+
 		if (
 			job.status === 'failed' &&
 			( await isTransientCodexStartupFailure( job ) )
 		) {
 			markTransientCodexStartupRetry( job );
+			continue;
+		}
+
+		if (
+			job.status === 'failed' &&
+			failureKind === 'codex-context-dump-stdin' &&
+			( job.contextDumpRecoveryAttempts ?? 0 ) <
+				CONTEXT_DUMP_RECOVERY_MAX_ATTEMPTS
+		) {
+			markContextDumpRecoveryRetry( job );
 			continue;
 		}
 
@@ -189,7 +217,43 @@ async function reconcileJobs( state ) {
 		job.pid = null;
 		job.status = job.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
 		job.completedAt = new Date().toISOString();
+		job.durationMs =
+			Date.parse( job.completedAt ) - Date.parse( job.startedAt );
+		job.exitCode ??= null;
+		job.signal ??= 'process-missing';
+		job.timedOut ??= false;
+		await writeLauncherFailure( job, {
+			code: job.exitCode,
+			resultPath: job.resultPath,
+			signal: job.signal,
+			timedOut: job.timedOut,
+		} );
 	}
+}
+
+async function classifyFailedJob( job ) {
+	if ( job?.status !== 'failed' ) {
+		return null;
+	}
+
+	let stderr = '';
+	if ( job.stderrPath ) {
+		try {
+			stderr = await fs.readFile( job.stderrPath, 'utf8' );
+		} catch {
+			stderr = '';
+		}
+	}
+
+	if ( stderr.includes( 'Reading additional input from stdin' ) ) {
+		return 'codex-context-dump-stdin';
+	}
+
+	if ( stderr.includes( 'rtc analysis guard: refusing' ) ) {
+		return 'analysis-guard-refusal';
+	}
+
+	return null;
 }
 
 async function isTransientCodexStartupFailure( job ) {
@@ -221,6 +285,18 @@ function markTransientCodexStartupRetry( job ) {
 	job.completedAt = new Date().toISOString();
 }
 
+function markContextDumpRecoveryRetry( job ) {
+	job.pid = null;
+	job.status = 'retry';
+	job.contextDumpRecoveryAttempts =
+		( job.contextDumpRecoveryAttempts ?? 0 ) + 1;
+	job.contextDumpRecoveredFromAttempts = job.attempts ?? 0;
+	job.contextDumpRecoveryReason = 'codex-context-dump-stdin';
+	job.nextAttemptAt = null;
+	job.attempts = 0;
+	job.completedAt = new Date().toISOString();
+}
+
 function getActiveJobHashes( state ) {
 	const hashes = new Set( activeJobs.keys() );
 
@@ -239,10 +315,22 @@ function shouldAnalyzeSignature( signature, job ) {
 	}
 
 	if (
-		[ 'completed', 'not-real', 'infra', 'no-realistic-repro' ].includes(
-			signature.status
-		)
+		[
+			'completed',
+			'not-real',
+			'infra',
+			'known-infra',
+			'no-realistic-repro',
+		].includes( signature.status )
 	) {
+		return false;
+	}
+
+	if ( signature.status === 'bootstrap-stall' ) {
+		return false;
+	}
+
+	if ( signature.status === 'analysis-gated' ) {
 		return false;
 	}
 
@@ -291,11 +379,17 @@ function sortSignaturesForAnalysis( a, b ) {
 
 async function launchQueuedAnalysisJobs( sourceState, state ) {
 	const activeHashes = getActiveJobHashes( state );
-	const signatures = Object.values( sourceState.signatures ?? {} )
-		.filter( ( signature ) =>
-			shouldAnalyzeSignature( signature, state.jobs[ signature.hash ] )
-		)
-		.sort( sortSignaturesForAnalysis );
+	let familyLaunchCounts = null;
+	const signatures = interleaveFirstSignaturePerFamily(
+		Object.values( sourceState.signatures ?? {} )
+			.filter( ( signature ) =>
+				shouldAnalyzeSignature(
+					signature,
+					state.jobs[ signature.hash ]
+				)
+			)
+			.sort( sortSignaturesForAnalysis )
+	);
 
 	for ( const signature of signatures ) {
 		if ( activeHashes.size >= MAX_PARALLEL ) {
@@ -306,9 +400,63 @@ async function launchQueuedAnalysisJobs( sourceState, state ) {
 			continue;
 		}
 
+		familyLaunchCounts ??= getFamilyLaunchCounts( sourceState, state );
+		const familyKey = signature.familyKey ?? signature.hash;
+		if ( ( familyLaunchCounts.get( familyKey ) ?? 0 ) >= MAX_PER_FAMILY ) {
+			continue;
+		}
+
 		await launchCodexAnalysisJob( sourceState, state, signature );
 		activeHashes.add( signature.hash );
+		familyLaunchCounts.set(
+			familyKey,
+			( familyLaunchCounts.get( familyKey ) ?? 0 ) + 1
+		);
 	}
+}
+
+function getFamilyLaunchCounts( sourceState, state ) {
+	const signatureByHash = new Map(
+		Object.values( sourceState.signatures ?? {} ).map( ( signature ) => [
+			signature.hash,
+			signature,
+		] )
+	);
+	const counts = new Map();
+
+	for ( const job of Object.values( state.jobs ?? {} ) ) {
+		if ( ! [ 'completed', 'running' ].includes( job.status ) ) {
+			continue;
+		}
+
+		const signature = signatureByHash.get( job.hash );
+		const familyKey = signature?.familyKey ?? job.familyKey ?? job.hash;
+		if ( ! familyKey ) {
+			continue;
+		}
+		counts.set( familyKey, ( counts.get( familyKey ) ?? 0 ) + 1 );
+	}
+
+	return counts;
+}
+
+function interleaveFirstSignaturePerFamily( signatures ) {
+	const seenFamilies = new Set();
+	const firstInFamily = [];
+	const duplicateFamilyRest = [];
+
+	for ( const signature of signatures ) {
+		const familyKey = signature.familyKey ?? signature.hash;
+		if ( seenFamilies.has( familyKey ) ) {
+			duplicateFamilyRest.push( signature );
+			continue;
+		}
+
+		seenFamilies.add( familyKey );
+		firstInFamily.push( signature );
+	}
+
+	return [ ...firstInFamily, ...duplicateFamilyRest ];
 }
 
 async function launchCodexAnalysisJob( sourceState, state, signature ) {
@@ -319,26 +467,38 @@ async function launchCodexAnalysisJob( sourceState, state, signature ) {
 	const stderrPath = path.join( jobDir, 'stderr.log' );
 	const analysisPath = path.join( jobDir, 'analysis.md' );
 	const handoffPath = path.join( jobDir, 'handoff.md' );
+	const compactContextPath = path.join( jobDir, 'compact-context.json' );
 
 	await fs.mkdir( jobDir, { recursive: true } );
+	const previousJob = state.jobs[ signature.hash ];
+	await archivePreviousAttemptArtifacts( jobDir, previousJob?.attempts ?? 0 );
 	await fs.writeFile(
 		path.join( jobDir, 'failure.json' ),
 		JSON.stringify( signature, null, 2 ) + '\n'
+	);
+	await fs.writeFile(
+		compactContextPath,
+		JSON.stringify( await buildCompactContext( signature ), null, 2 ) + '\n'
 	);
 	await fs.writeFile(
 		promptPath,
 		buildCodexPrompt( sourceState, signature, {
 			jobDir,
 			analysisPath,
+			compactContextPath,
 			handoffPath,
 		} )
 	);
 
-	const previousJob = state.jobs[ signature.hash ];
 	const job = {
 		hash: signature.hash,
 		status: 'running',
 		attempts: ( previousJob?.attempts ?? 0 ) + 1,
+		contextDumpRecoveryAttempts:
+			previousJob?.contextDumpRecoveryAttempts ?? 0,
+		contextDumpRecoveredFromAttempts:
+			previousJob?.contextDumpRecoveredFromAttempts ?? null,
+		familyKey: signature.familyKey ?? signature.hash,
 		pid: null,
 		sourceStatus: signature.status,
 		sourceCount: signature.count ?? 0,
@@ -349,8 +509,11 @@ async function launchCodexAnalysisJob( sourceState, state, signature ) {
 		stdoutPath,
 		stderrPath,
 		analysisPath,
+		compactContextPath,
 		handoffPath,
 		nextAttemptAt: null,
+		timeoutMs: CODEX_TIMEOUT_MS,
+		timedOut: false,
 	};
 	state.jobs[ signature.hash ] = job;
 	await writeState( state );
@@ -394,8 +557,10 @@ async function launchCodexAnalysisJob( sourceState, state, signature ) {
 	activeJobs.set( signature.hash, child );
 	await writeState( state );
 
+	let timedOut = false;
 	const timeout = setTimeout( () => {
 		if ( ! child.killed ) {
+			timedOut = true;
 			child.kill( 'SIGTERM' );
 		}
 	}, CODEX_TIMEOUT_MS );
@@ -413,7 +578,11 @@ async function launchCodexAnalysisJob( sourceState, state, signature ) {
 		latestJob.pid = null;
 		latestJob.exitCode = code;
 		latestJob.signal = signal;
+		latestJob.timedOut = timedOut;
 		latestJob.completedAt = new Date().toISOString();
+		latestJob.durationMs =
+			Date.parse( latestJob.completedAt ) -
+			Date.parse( latestJob.startedAt );
 		if ( code === 0 && fsSync.existsSync( resultPath ) ) {
 			latestJob.status = 'completed';
 			latestJob.nextAttemptAt = null;
@@ -423,9 +592,246 @@ async function launchCodexAnalysisJob( sourceState, state, signature ) {
 			latestJob.status =
 				latestJob.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
 			latestJob.nextAttemptAt = null;
+			await writeLauncherFailure( latestJob, {
+				code,
+				resultPath,
+				signal,
+				timedOut,
+			} );
 		}
 		await writeState( latest );
 	} );
+}
+
+async function writeLauncherFailure( job, failure ) {
+	await fs.writeFile(
+		path.join( job.jobDir, 'launcher-failure.json' ),
+		JSON.stringify(
+			{
+				completedAt: job.completedAt,
+				durationMs: job.durationMs,
+				exitCode: failure.code,
+				resultPath: failure.resultPath,
+				resultWritten: fsSync.existsSync( failure.resultPath ),
+					signal: failure.signal,
+					status: job.status,
+					failureKind: job.failureKind ?? null,
+					timeoutMs: job.timeoutMs,
+					timedOut: failure.timedOut,
+				},
+			null,
+			2
+		) + '\n'
+	);
+}
+
+async function archivePreviousAttemptArtifacts( jobDir, attempt ) {
+	const stamp = `${ new Date()
+		.toISOString()
+		.replace( /[:.]/g, '-' ) }-attempt-${ attempt || 'unknown' }`;
+	const artifactNames = [
+		'analysis.md',
+		'compact-context.json',
+		'events.jsonl',
+		'handoff.md',
+		'launcher-failure.json',
+		'prompt.txt',
+		'result.json',
+		'stderr.log',
+	];
+
+	await Promise.all(
+		artifactNames.map( async ( artifactName ) => {
+			const artifactPath = path.join( jobDir, artifactName );
+			if ( ! fsSync.existsSync( artifactPath ) ) {
+				return;
+			}
+
+			await fs.rename(
+				artifactPath,
+				path.join( jobDir, `${ artifactName }.${ stamp }` )
+			);
+		} )
+	);
+}
+
+async function buildCompactContext( signature ) {
+	const examples = [];
+	for ( const example of ( signature.examples ?? [] ).slice(
+		0,
+		MAX_COMPACT_EXAMPLES
+	) ) {
+		examples.push( await buildCompactExampleContext( example ) );
+	}
+
+	return {
+		signatureHash: signature.hash,
+		familyKey: signature.familyKey ?? null,
+		equivalenceClass: signature.equivalenceClass ?? null,
+		status: signature.status ?? null,
+		count: signature.count ?? 0,
+		normalized: signature.normalized ?? null,
+		examples,
+	};
+}
+
+async function buildCompactExampleContext( example ) {
+	const record = await readSummaryRecord( example );
+	return {
+		seed: example.seed,
+		lineIndex: example.lineIndex,
+		summaryPath: example.summaryPath,
+		logPath: example.logPath,
+		artifactsDir: example.artifactsDir,
+		record,
+	};
+}
+
+async function readSummaryRecord( example ) {
+	if ( ! example.summaryPath || ! fsSync.existsSync( example.summaryPath ) ) {
+		return null;
+	}
+
+	let currentLineIndex = 0;
+	const input = readline.createInterface( {
+		crlfDelay: Infinity,
+		input: fsSync.createReadStream( example.summaryPath, 'utf8' ),
+	} );
+
+	for await ( const line of input ) {
+		if ( ! line.trim() ) {
+			currentLineIndex++;
+			continue;
+		}
+
+		let record;
+		try {
+			record = JSON.parse( line );
+		} catch {
+			currentLineIndex++;
+			continue;
+		}
+
+		const lineMatches =
+			example.lineIndex === undefined ||
+			currentLineIndex === example.lineIndex ||
+			currentLineIndex + 1 === example.lineIndex;
+		const seedMatches =
+			example.seed === undefined || record.seed === example.seed;
+		if ( lineMatches && seedMatches ) {
+			input.close();
+			return compactSummaryRecord( record, currentLineIndex );
+		}
+
+		currentLineIndex++;
+	}
+
+	return null;
+}
+
+function compactSummaryRecord( record, lineIndex ) {
+	const coverage = record.behavioralCoverage?.[ 0 ] ?? {};
+	const historyEvents = coverage.historyEvents ?? [];
+	const invariantEvents = coverage.invariantEvents ?? [];
+	const operationEvents = coverage.operationEvents ?? [];
+
+	return sanitizeForPrompt( {
+		lineIndex,
+		kind: record.kind,
+		seed: record.seed,
+		label: record.label,
+		code: record.code,
+		signal: record.signal,
+		ok: record.ok,
+		timedOut: record.timedOut,
+		durationMs: record.durationMs,
+		classification: record.classification,
+		logPath: record.logPath,
+		replayPath: record.replayPath,
+		artifactsDir: record.artifactsDir,
+		outputExcerpt: excerptFailureOutput( record.output ),
+		behavioralCoverageSummary: record.behavioralCoverageSummary,
+		coverage: {
+			actionProfile: coverage.actionProfile,
+			actions: coverage.actions,
+			blockStats: record.blockStats,
+			cdpCoverage: coverage.cdpCoverage ?? record.cdpCoverage,
+			collaboratorMode: coverage.collaboratorMode,
+			disableParserStress: coverage.disableParserStress,
+			disableReload: coverage.disableReload,
+			disableRevisionRestore: coverage.disableRevisionRestore,
+			disableSyncFaults: coverage.disableSyncFaults,
+			faults: coverage.faults,
+			initialContentProfile: coverage.initialContentProfile,
+			lifecycleEvents: coverage.lifecycleEvents,
+			reloadStep: coverage.reloadStep,
+			reloads: coverage.reloads,
+			revisionRestore: coverage.revisionRestore,
+			saveCheckpointSteps: coverage.saveCheckpointSteps,
+			status: coverage.status,
+			transport: coverage.transport,
+			userCount: coverage.userCount,
+		},
+		historyTail: historyEvents.slice( -12 ),
+		failedHistory: historyEvents
+			.filter( ( event ) => event.status === 'fail' )
+			.slice( -6 ),
+		failedInvariants: invariantEvents
+			.filter( ( event ) => event.status && event.status !== 'ok' )
+			.slice( -12 ),
+		notableOperationEvents: operationEvents
+			.filter( ( event ) =>
+				[ 'missing', 'fail', 'invalidated', 'retired' ].includes(
+					event.status
+				)
+			)
+			.slice( -16 ),
+	} );
+}
+
+function excerptFailureOutput( output ) {
+	if ( ! output ) {
+		return null;
+	}
+
+	const text = String( output ).replace( /\u001b\[[0-9;]*m/g, '' );
+	const failureStart = text.search( /\n\s*1\)|Error:|TimeoutError:/ );
+	const start =
+		failureStart === -1 ? Math.max( 0, text.length - 2400 ) : failureStart;
+	return text.slice( start, start + 4000 );
+}
+
+function sanitizeForPrompt( value, depth = 0 ) {
+	if ( value === null || value === undefined ) {
+		return value;
+	}
+
+	if ( typeof value === 'string' ) {
+		return value.length > 1200
+			? `${ value.slice( 0, 1200 ) }...[truncated ${ value.length } chars]`
+			: value;
+	}
+
+	if ( typeof value !== 'object' ) {
+		return value;
+	}
+
+	if ( depth > 5 ) {
+		return '[truncated-depth]';
+	}
+
+	if ( Array.isArray( value ) ) {
+		return value.slice( 0, 24 ).map( ( entry ) =>
+			sanitizeForPrompt( entry, depth + 1 )
+		);
+	}
+
+	return Object.fromEntries(
+		Object.entries( value ).map( ( [ key, entry ] ) => [
+			key,
+			sanitizeForPrompt( entry, depth + 1 ),
+		] )
+	);
 }
 
 function buildCodexPrompt( sourceState, signature, paths ) {
@@ -442,6 +848,7 @@ function buildCodexPrompt( sourceState, signature, paths ) {
 		currentCounts[ sourceSignature.status ] =
 			( currentCounts[ sourceSignature.status ] ?? 0 ) + 1;
 	}
+	const related = getRelatedAnalysisGateSummaries( sourceState, signature );
 
 	return [
 		'You are a high-parallel, analysis-only Codex worker for a Gutenberg RTC browser fuzz run.',
@@ -450,12 +857,24 @@ function buildCodexPrompt( sourceState, signature, paths ) {
 		`Triage watcher state: ${ TRIAGE_STATE_PATH }`,
 		`Analysis job directory: ${ paths.jobDir }`,
 		`Failure signature: ${ signature.hash }`,
+		`Semantic family key: ${ signature.familyKey ?? 'unknown' }`,
+		`Equivalence class: ${ signature.equivalenceClass ?? 'unknown' }`,
 		`Current watcher status counts: ${ JSON.stringify( currentCounts ) }`,
+		`Related analysis-gated signatures in this run: ${
+			related || '(none)'
+		}`,
 		'',
-		'Hard constraint: do not run Playwright, Chrome, npm test, npm run test:e2e, wp-env, docker, or any browser/repro command. This tier is for Codex-heavy thinking only.',
-		'Keep filesystem searches scoped to this run directory, this analysis job directory, and directly relevant source files. Do not scan historical artifact trees under test/e2e/artifacts or unrelated old fuzz runs.',
-		'Do not run broad `find` or `rg` scans rooted at the repository root, `artifacts/rtc-browser-fuzz`, `test/e2e/artifacts`, or parent directories. Search exact example paths, this run directory, this job directory, and specific source files discovered with `git ls-files` or direct paths.',
-		'Allowed work: inspect text logs, error-context markdown, trace zip metadata/files, source code, existing artifacts from this run, and other analysis-tier outputs from this run. You may use shell commands such as rg, sed, find, unzip, node scripts that only read files, and git commands that only read history.',
+			'Hard constraint: do not run Playwright, Chrome, npm test, npm run test:e2e, wp-env, docker, or any browser/repro command. This tier is for Codex-heavy thinking only.',
+			`Pre-extracted compact context: ${ paths.compactContextPath }`,
+			'Start with the compact context file. It contains bounded summaries of the failure examples so you should not need to inspect raw summary/event streams.',
+			'Keep filesystem searches scoped to this run directory, this analysis job directory, and directly relevant source files. Do not scan historical artifact trees under test/e2e/artifacts or unrelated old fuzz runs.',
+			'Do not run broad `find` or `rg` scans rooted at the repository root, `artifacts/rtc-browser-fuzz`, `test/e2e/artifacts`, or parent directories. Search exact example paths, this run directory, this job directory, and specific source files discovered with `git ls-files` or direct paths.',
+			'Do not dump whole summary/event streams or large Playwright error-context files. Never run `cat`, `sed`, `head`, or `tail` directly on `summary.ndjson`, `events.ndjson`, `events.jsonl`, or large files under the fuzz artifacts tree; use the compact context file or compact extractor instead. Do not bypass the guard wrappers with absolute paths such as `/bin/cat` or `/usr/bin/sed`.',
+			'When searching trace/network data, always bound output with a specific pattern plus `rg -m 40` or an equivalent small script. Do not emit broad trace/network payloads into the Codex event log.',
+			`Compact summary extractor: node bin/rtc-browser-fuzz-extract-summary-record.mjs <summary.ndjson> --seed ${
+				signature.examples?.[ 0 ]?.seed ?? '<seed>'
+			}`,
+			'Allowed work: inspect compact context, small text logs, small error-context excerpts, trace zip metadata/files, source code, existing artifacts from this run, and other analysis-tier outputs from this run. You may use shell commands such as rg, sed, find, unzip, compact node scripts that only read files, and git commands that only read history.',
 		'',
 		'Failure signature text:',
 		signature.normalized,
@@ -468,10 +887,52 @@ function buildCodexPrompt( sourceState, signature, paths ) {
 		`- ${ paths.handoffPath }: a concrete handoff plan for the lower-parallel deep-triage/repro tier, including what browser repro to attempt if needed.`,
 		'',
 		'Classify whether this looks like a real correctness bug, infra/harness issue, duplicate of another signature, or uncertain. Prefer specific evidence over generic guesses.',
+		'Be duplicate-aggressive: if this is likely real but materially the same mechanism as an existing signature in this run, set isDuplicateOf, shouldDeepTriage=false, and recommendedTriageAction="merge_with_duplicate". Do not spend lower-parallel browser-heavy triage on another variant unless it gives a cleaner repro, a higher user-hit likelihood score, or a genuinely new mechanism.',
+		'For pre-action startup/discovery failures with no editor actions and no users successfully joined, prefer classification="likely_infra", shouldDeepTriage=false, and recommendedTriageAction="suppress_as_infra" unless there is strong product evidence.',
 		'Score user-hit likelihood as userHitLikelihoodScore from 0 to 5, where 0 means harness-only/not user-visible, 1 means very rare or developer-only, 2 means uncommon edge workflow, 3 means plausible normal collaborative editing workflow, 4 means common workflow or common content shape, and 5 means very likely in default/common use. Explain the score in userHitLikelihoodRationale.',
 		'If this needs browser reproduction, provide a realistic Playwright/manual repro plan, but do not run it.',
 		'Output only JSON matching the schema.',
 	].join( '\n' );
+}
+
+function getRelatedAnalysisGateSummaries( sourceState, signature ) {
+	const familyKey = signature.familyKey ?? null;
+	const equivalenceClass = signature.equivalenceClass ?? null;
+	const summaries = [];
+
+	for ( const sourceSignature of Object.values(
+		sourceState.signatures ?? {}
+	) ) {
+		if ( sourceSignature.hash === signature.hash ) {
+			continue;
+		}
+
+		const gate = sourceSignature.analysisGate;
+		if ( ! gate ) {
+			continue;
+		}
+
+		if (
+			sourceSignature.familyKey !== familyKey &&
+			sourceSignature.equivalenceClass !== equivalenceClass
+		) {
+			continue;
+		}
+
+		summaries.push(
+			`- ${ sourceSignature.hash }: status=${
+				sourceSignature.status
+			} class=${ gate.classification } action=${
+				gate.recommendedTriageAction
+			} userHit=${ gate.userHitLikelihoodScore ?? 'unknown' } type=${
+				gate.distinctBugType ?? 'unknown'
+			} duplicateOf=${ gate.isDuplicateOf ?? 'none' } summary=${
+				gate.summary ?? ''
+			}`
+		);
+	}
+
+	return summaries.slice( 0, 20 ).join( '\n' );
 }
 
 async function runScanCycle() {

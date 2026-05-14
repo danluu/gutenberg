@@ -171,6 +171,7 @@ type OperationWitnessInput = {
 };
 
 type OperationLedgerMode = 'fail' | 'off' | 'shadow';
+type FinalPersistenceOracleMode = 'fail' | 'off' | 'shadow';
 
 type OperationLedgerEntry = OperationWitnessInput & {
 	actionLabel: string;
@@ -247,6 +248,7 @@ type BehaviorInvariantSnapshot = {
 	invalidBlockCount: number;
 	malformedInnerBlockCount: number;
 	maxDepth: number;
+	maxDepthByType: Record< string, number >;
 	missingClientIdCount: number;
 	objectObjectStringCount: number;
 	pageIndex: number;
@@ -305,6 +307,7 @@ type RawEditorInvariantSnapshot = {
 	} >;
 	malformedInnerBlockCount: number;
 	maxDepth: number;
+	maxDepthByType: Record< string, number >;
 	missingClientIdCount: number;
 	objectObjectStringCount: number;
 	rootBlockCount: number;
@@ -399,6 +402,8 @@ const SESSION_SETTLE_TIMEOUT_MS = Math.max(
 const DISABLE_SYNC_FAULTS =
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS === '1';
 const DISABLE_RELOAD = process.env.GUTENBERG_RTC_BROWSER_DISABLE_RELOAD === '1';
+const DISABLE_RANDOM_RELOAD =
+	process.env.GUTENBERG_RTC_BROWSER_DISABLE_RANDOM_RELOAD === '1';
 const DISABLE_REVISION_RESTORE =
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE === '1';
 const ENABLE_REVISION_RESTORE_PROBE =
@@ -410,6 +415,7 @@ const ACTION_PROFILE =
 	process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ?? 'full';
 const OPERATION_LEDGER_MODE =
 	process.env.GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE ?? 'auto';
+const FINAL_PERSISTENCE_ORACLE_MODE = getFinalPersistenceOracleMode();
 const DISABLE_PARSER_STRESS =
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS === '1';
 const EXTRA_COLLABORATOR_COUNT = getEnvNonNegativeInt(
@@ -433,12 +439,32 @@ const SAVE_CHECKPOINT_COUNT = getEnvNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT',
 	2
 );
+const FORCE_SAVE_STEPS = getEnvIntList(
+	'GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS'
+);
 const FORCE_LATE_JOIN_STEP = getEnvOptionalNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP'
 );
+const LATE_JOIN_POST_ACTION =
+	process.env.GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION === '1';
+const RELOAD_POST_ACTION =
+	process.env.GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION === '1';
+const RELOAD_POST_ACTION_KIND =
+	process.env.GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND ?? 'paragraph';
 const FORCE_RELOAD_STEPS = getEnvIntList(
 	'GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS'
 );
+const REAL_USER_EDITING_SEQUENCE = getEnvStringList(
+	'GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE'
+);
+const REAL_USER_EDITING_ACTION_LABELS = getEnvStringList(
+	'GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_ACTION_LABELS'
+) ?? [
+	'ui-type-paragraph',
+	'ui-format-paragraph',
+	'ui-heading-shortcut',
+	'ui-type-title',
+];
 const TEST_TIMEOUT_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS',
 	Math.max(
@@ -457,6 +483,9 @@ const MAX_OPERATION_LEDGER_LIVE = getEnvNonNegativeInt(
 	128
 );
 const RETRIABLE_SYNC_FAILURE_STATUSES = [ 429, 500, 503 ];
+const MODIFIER_KEY = process.platform === 'darwin' ? 'Meta' : 'Control';
+const ACCESS_MODIFIER_KEY =
+	process.platform === 'darwin' ? 'Control+Alt' : 'Shift+Alt';
 
 function getEnvInt( name: string, fallback: number ): number {
 	const rawValue = process.env[ name ];
@@ -533,6 +562,27 @@ function getEnvIntList( name: string ): number[] | null {
 	return [ ...new Set( values ) ];
 }
 
+function getEnvStringList( name: string ): string[] | null {
+	const rawValue = process.env[ name ];
+
+	if ( ! rawValue ) {
+		return null;
+	}
+
+	const values = rawValue
+		.split( ',' )
+		.map( ( value ) => value.trim() )
+		.filter( Boolean );
+
+	if ( values.length === 0 ) {
+		throw new Error(
+			`${ name } must be a comma-separated list of non-empty strings.`
+		);
+	}
+
+	return values;
+}
+
 function createRng( seed: number ): Random {
 	/* eslint-disable no-bitwise */
 	let state = seed >>> 0;
@@ -585,6 +635,8 @@ function isLowNoiseOperationLedgerProfile() {
 		'multi-reload-lifecycle',
 		'persistence',
 		'persistence-no-title',
+		'revision-persistence',
+		'real-user-editing',
 		'session-lifecycle',
 		'structure',
 		'three-user-late-join',
@@ -612,6 +664,19 @@ function getOperationLedgerMode(): OperationLedgerMode {
 			ACTION_PROFILE === 'persistence-no-title' )
 		? 'fail'
 		: 'shadow';
+}
+
+function getFinalPersistenceOracleMode(): FinalPersistenceOracleMode {
+	const mode =
+		process.env.GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE ?? 'off';
+
+	if ( mode === 'fail' || mode === 'off' || mode === 'shadow' ) {
+		return mode;
+	}
+
+	throw new Error(
+		`Unknown GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE "${ mode }".`
+	);
 }
 
 function createOperationLedgerSummary(
@@ -1292,6 +1357,7 @@ function invalidateOperationLedgerAfterAction( {
 
 function getBlockStats( blocks: Array< any > ) {
 	const counts: Record< string, number > = {};
+	const maxDepthByType: Record< string, number > = {};
 	let totalBlocks = 0;
 	let maxDepth = 0;
 
@@ -1301,6 +1367,10 @@ function getBlockStats( blocks: Array< any > ) {
 		for ( const block of currentBlocks ) {
 			totalBlocks += 1;
 			counts[ block.name ] = ( counts[ block.name ] ?? 0 ) + 1;
+			maxDepthByType[ block.name ] = Math.max(
+				maxDepthByType[ block.name ] ?? 0,
+				depth
+			);
 			visit( block.innerBlocks ?? [], depth + 1 );
 		}
 	};
@@ -1310,6 +1380,7 @@ function getBlockStats( blocks: Array< any > ) {
 	return {
 		counts,
 		maxDepth,
+		maxDepthByType,
 		totalBlocks,
 		types: Object.keys( counts ).sort(),
 	};
@@ -1360,6 +1431,7 @@ async function assertEditorInvariants( {
 				} > = [];
 				let malformedInnerBlockCount = 0;
 				let maxDepth = 0;
+				const maxDepthByType: Record< string, number > = {};
 				let missingClientIdCount = 0;
 				let objectObjectStringCount = 0;
 				let totalBlockCount = 0;
@@ -1397,6 +1469,10 @@ async function assertEditorInvariants( {
 					for ( const block of currentBlocks ) {
 						totalBlockCount += 1;
 						blockTypes.add( block.name );
+						maxDepthByType[ block.name ] = Math.max(
+							maxDepthByType[ block.name ] ?? 0,
+							depth
+						);
 
 						if ( block.clientId ) {
 							if ( seenClientIds.has( block.clientId ) ) {
@@ -1438,6 +1514,7 @@ async function assertEditorInvariants( {
 					invalidBlocks,
 					malformedInnerBlockCount,
 					maxDepth,
+					maxDepthByType,
 					missingClientIdCount,
 					objectObjectStringCount,
 					rootBlockCount: blocks.length,
@@ -1494,6 +1571,7 @@ async function assertEditorInvariants( {
 			invalidBlockCount: raw.invalidBlocks.length,
 			malformedInnerBlockCount: raw.malformedInnerBlockCount,
 			maxDepth: raw.maxDepth,
+			maxDepthByType: raw.maxDepthByType,
 			missingClientIdCount: raw.missingClientIdCount,
 			objectObjectStringCount: raw.objectObjectStringCount,
 			pageIndex,
@@ -2294,6 +2372,20 @@ async function getEditedPostTitle( page: Page ): Promise< string > {
 	);
 }
 
+async function getCanonicalPostContent(
+	page: Page,
+	content: string
+): Promise< string > {
+	return page.evaluate( ( postContent ) => {
+		const wp = ( window as any ).wp;
+		return wp.blocks.serialize( wp.blocks.parse( postContent ?? '' ) );
+	}, content );
+}
+
+async function getCanonicalEditedPostContent( page: Page ): Promise< string > {
+	return getCanonicalPostContent( page, await getEditedPostContent( page ) );
+}
+
 async function getPersistedPost(
 	requestUtils: RestRequestUtils,
 	postId: number
@@ -2583,27 +2675,34 @@ async function editExistingParagraph(
 	);
 
 	if ( paragraphBlocks.length === 0 ) {
-		await insertParagraph( page, seed, step, userIndex, rng );
-		return;
+		return insertParagraph( page, seed, step, userIndex, rng );
 	}
 
 	const targetBlock = pick( rng, paragraphBlocks );
+	const marker = createOperationMarker( {
+		kind: 'edit-paragraph',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const nextContent = `${ marker } updated paragraph`;
 
 	await page.evaluate(
-		( { clientId, content } ) => {
+		( { clientId, blockContent } ) => {
 			( window as any ).wp.data
 				.dispatch( 'core/block-editor' )
 				.updateBlockAttributes( clientId, {
-					content,
+					content: blockContent,
 				} );
 		},
 		{
 			clientId: targetBlock.clientId,
-			content: `Seed ${ seed } step ${ step } user ${ userIndex } updated paragraph ${ Math.floor(
-				rng() * 1000000
-			) }`,
+			blockContent: nextContent,
 		}
 	);
+
+	return [ createContentWitness( marker, 'edit-paragraph' ) ];
 }
 
 async function deleteTopLevelBlock(
@@ -3088,6 +3187,315 @@ async function editFormattedParagraphAtCursor(
 	);
 }
 
+async function focusRealUserTypingSurface( page: Page ) {
+	await dismissBlockingEditorGuide( page );
+	const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
+	const documents = canvas.getByRole( 'document' );
+	const documentCount = await documents.count();
+
+	if ( documentCount > 0 ) {
+		await documents.nth( documentCount - 1 ).click( { timeout: 10000 } );
+		return;
+	}
+
+	await canvas.locator( 'body' ).click( { timeout: 10000 } );
+}
+
+async function dismissBlockingEditorGuide( page: Page ) {
+	const closeButton = page
+		.getByRole( 'dialog' )
+		.getByRole( 'button', { name: /close/i } )
+		.first();
+
+	if (
+		await closeButton.isVisible( { timeout: 500 } ).catch( () => false )
+	) {
+		await closeButton.click( { timeout: 2000 } ).catch( async () => {
+			await page.keyboard.press( 'Escape' );
+		} );
+	}
+
+	await page
+		.locator( '.components-modal__screen-overlay' )
+		.waitFor( { state: 'hidden', timeout: 2000 } )
+		.catch( () => undefined );
+}
+
+async function waitForEditedContentMarker(
+	page: Page,
+	marker: string,
+	timeout = 10000
+) {
+	await page.waitForFunction(
+		( expectedMarker ) =>
+			( window as any ).wp.data
+				.select( 'core/editor' )
+				.getEditedPostContent()
+				.includes( expectedMarker ),
+		marker,
+		{ timeout }
+	);
+}
+
+async function waitForEditedTitleMarker( page: Page, marker: string ) {
+	await page.waitForFunction(
+		( expectedMarker ) =>
+			( window as any ).wp.data
+				.select( 'core/editor' )
+				.getEditedPostAttribute( 'title' )
+				.includes( expectedMarker ),
+		marker,
+		{ timeout: 10000 }
+	);
+}
+
+async function waitForEditedContentWithoutMarker(
+	page: Page,
+	marker: string,
+	timeout = 10000
+) {
+	await page.waitForFunction(
+		( expectedMarker ) =>
+			! ( window as any ).wp.data
+				.select( 'core/editor' )
+				.getEditedPostContent()
+				.includes( expectedMarker ),
+		marker,
+		{ timeout }
+	);
+}
+
+async function waitForEditedContentMarkerOrFalse(
+	page: Page,
+	marker: string,
+	timeout = 3000
+) {
+	try {
+		await waitForEditedContentMarker( page, marker, timeout );
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+async function waitForParagraphMarkerInInlineElement(
+	page: Page,
+	marker: string,
+	selector: string
+) {
+	await page.waitForFunction(
+		( { expectedMarker, inlineSelector } ) => {
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			const block = blocks.find(
+				( candidate: {
+					name: string;
+					attributes: { content?: string };
+				} ) =>
+					candidate.name === 'core/paragraph' &&
+					typeof candidate.attributes.content === 'string' &&
+					candidate.attributes.content.includes( expectedMarker )
+			);
+
+			if ( ! block ) {
+				return false;
+			}
+
+			const template = document.createElement( 'template' );
+			template.innerHTML = block.attributes.content;
+			return Array.from(
+				template.content.querySelectorAll( inlineSelector )
+			).some(
+				( element ) => element.textContent?.includes( expectedMarker )
+			);
+		},
+		{ expectedMarker: marker, inlineSelector: selector },
+		{ timeout: 10000 }
+	);
+}
+
+async function waitForBlockMarker(
+	page: Page,
+	marker: string,
+	blockName: string
+) {
+	await page.waitForFunction(
+		( { expectedMarker, expectedBlockName } ) =>
+			( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks()
+				.some(
+					( block: {
+						name: string;
+						attributes: Record< string, unknown >;
+					} ) =>
+						block.name === expectedBlockName &&
+						Object.values( block.attributes ?? {} ).some(
+							( value ) =>
+								typeof value === 'string' &&
+								value.includes( expectedMarker )
+						)
+				),
+		{ expectedMarker: marker, expectedBlockName: blockName },
+		{ timeout: 10000 }
+	);
+}
+
+async function typeRealUserParagraph(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random,
+	{ kind = 'ui-type-paragraph' }: { kind?: string } = {}
+) {
+	const marker = createOperationMarker( {
+		kind,
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const content = `${ marker } typed paragraph`;
+
+	await focusRealUserTypingSurface( page );
+	await page.keyboard.press( 'End' );
+	await page.keyboard.press( 'Enter' );
+	await page.keyboard.type( content, { delay: 2 } );
+	await waitForEditedContentMarker( page, marker );
+
+	return [ createContentWitness( marker, kind ) ];
+}
+
+async function typeRealUserFormattedParagraph(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const marker = createOperationMarker( {
+		kind: 'ui-format-paragraph',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+
+	await focusRealUserTypingSurface( page );
+	await page.keyboard.press( 'End' );
+	await page.keyboard.press( 'Enter' );
+	await page.keyboard.type( `formatted ${ seed } `, { delay: 2 } );
+	await page.keyboard.type( marker, { delay: 2 } );
+	for ( let index = 0; index < marker.length; index++ ) {
+		await page.keyboard.press( 'Shift+ArrowLeft' );
+	}
+	await page.keyboard.press( `${ MODIFIER_KEY }+I` );
+	await page.keyboard.press( 'ArrowRight' );
+	await page.keyboard.type( ' tail', { delay: 2 } );
+	await waitForEditedContentMarker( page, marker );
+	await waitForParagraphMarkerInInlineElement( page, marker, 'em,i' ).catch(
+		() => undefined
+	);
+
+	return [ createContentWitness( marker, 'ui-format-paragraph' ) ];
+}
+
+async function typeRealUserTitle(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random,
+	{ kind = 'ui-type-title' }: { kind?: string } = {}
+) {
+	const marker = createOperationMarker( {
+		kind,
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
+	const titleBox = canvas
+		.getByRole( 'textbox', { name: /add title/i } )
+		.first();
+
+	await titleBox.click( { timeout: 10000 } );
+	await page.keyboard.press( `${ MODIFIER_KEY }+A` );
+	await page.keyboard.press( 'Backspace' );
+	await page.keyboard.type( `${ marker } title`, { delay: 2 } );
+	await waitForEditedTitleMarker( page, marker );
+
+	return [ createTitleWitness( marker, kind ) ];
+}
+
+async function typeRealUserUndoRedoParagraph(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const marker = createOperationMarker( {
+		kind: 'ui-undo-redo-paragraph',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const content = `${ marker } undo redo paragraph`;
+
+	await focusRealUserTypingSurface( page );
+	await page.keyboard.press( 'End' );
+	await page.keyboard.press( 'Enter' );
+	await page.keyboard.type( content, { delay: 2 } );
+	await page.keyboard.press( `${ MODIFIER_KEY }+Z` );
+	await waitForEditedContentWithoutMarker( page, marker );
+
+	await page.keyboard.press( `${ MODIFIER_KEY }+Shift+Z` );
+	let restored = await waitForEditedContentMarkerOrFalse( page, marker );
+	if ( ! restored ) {
+		await page.keyboard.press( `${ MODIFIER_KEY }+Y` );
+		restored = await waitForEditedContentMarkerOrFalse( page, marker );
+	}
+	expect( restored ).toBe( true );
+	await waitForEditedContentMarker( page, marker );
+
+	return [ createContentWitness( marker, 'ui-undo-redo-paragraph' ) ];
+}
+
+async function typeRealUserHeadingShortcut(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const marker = createOperationMarker( {
+		kind: 'ui-heading-shortcut',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+
+	await focusRealUserTypingSurface( page );
+	await page.keyboard.press( 'End' );
+	await page.keyboard.press( 'Enter' );
+	await page.keyboard.press(
+		`${ ACCESS_MODIFIER_KEY }+${ 2 + ( ( seed + step ) % 3 ) }`
+	);
+	await page.keyboard.type( `${ marker } heading`, { delay: 2 } );
+	await waitForEditedContentMarker( page, marker );
+	await waitForBlockMarker( page, marker, 'core/heading' ).catch(
+		() => undefined
+	);
+
+	return [ createContentWitness( marker, 'ui-heading-shortcut' ) ];
+}
+
 async function editTableArrayAttributes(
 	page: Page,
 	seed: number,
@@ -3096,9 +3504,22 @@ async function editTableArrayAttributes(
 	rng: Random
 ) {
 	const variant = Math.floor( rng() * 5 );
+	const marker = createOperationMarker( {
+		kind: 'edit-table-array-attributes',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
 
 	await page.evaluate(
-		( { fuzzSeed, fuzzStep, fuzzUserIndex, tableVariant } ) => {
+		( {
+			fuzzSeed,
+			fuzzStep,
+			fuzzUserIndex,
+			tableMarker,
+			tableVariant,
+		} ) => {
 			const blockEditor = ( window as any ).wp.data.dispatch(
 				'core/block-editor'
 			);
@@ -3127,7 +3548,12 @@ async function editTableArrayAttributes(
 			if ( ! block ) {
 				block = ( window as any ).wp.blocks.createBlock( 'core/table', {
 					body: [
-						createRow( 'initial row 1' ),
+						{
+							cells: [
+								createCell( tableMarker ),
+								createCell( `${ tableMarker } sibling` ),
+							],
+						},
 						createRow( 'initial row 2' ),
 					],
 				} );
@@ -3142,37 +3568,35 @@ async function editTableArrayAttributes(
 			if ( body.length === 0 ) {
 				body.push( createRow( 'recreated row' ) );
 			}
-
-			const marker = `table-option-${ fuzzSeed }-${ fuzzStep }-${ fuzzUserIndex }-${ tableVariant }`;
-
 			switch ( tableVariant ) {
 				case 0:
-					body[ 0 ].cells[ 0 ].content = marker;
+					body[ 0 ].cells[ 0 ].content = tableMarker;
 					break;
 				case 1:
-					body[ body.length - 1 ].cells[ 1 ].content = marker;
+					body[ body.length - 1 ].cells[ 1 ].content = tableMarker;
 					break;
 				case 2:
 					body.push( {
 						cells: [
-							createCell( marker ),
-							createCell( `${ marker } sibling` ),
+							createCell( tableMarker ),
+							createCell( `${ tableMarker } sibling` ),
 						],
 					} );
 					break;
 				case 3:
 					body.unshift( {
 						cells: [
-							createCell( marker ),
-							createCell( `${ marker } sibling` ),
+							createCell( tableMarker ),
+							createCell( `${ tableMarker } sibling` ),
 						],
 					} );
 					break;
 				default:
 					if ( body.length > 1 ) {
 						body.splice( 1, 1 );
+						body[ 0 ].cells[ 0 ].content = tableMarker;
 					} else {
-						body.push( createRow( marker ) );
+						body.push( createRow( tableMarker ) );
 					}
 					break;
 			}
@@ -3183,9 +3607,12 @@ async function editTableArrayAttributes(
 			fuzzSeed: seed,
 			fuzzStep: step,
 			fuzzUserIndex: userIndex,
+			tableMarker: marker,
 			tableVariant: variant,
 		}
 	);
+
+	return [ createContentWitness( marker, 'edit-table-array-attributes' ) ];
 }
 
 async function insertCommonBlock(
@@ -3738,6 +4165,187 @@ async function saveDraft( page: Page ) {
 	);
 }
 
+async function maybeRunFinalPersistenceOracle( {
+	collaborationUtils,
+	coverage,
+	ledger,
+	pages,
+	postId,
+	requestUtils,
+	saver,
+}: {
+	collaborationUtils: CollaborationUtils;
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	pages: PageRef[];
+	postId: number;
+	requestUtils: RestRequestUtils;
+	saver: PageRef;
+} ) {
+	if ( FINAL_PERSISTENCE_ORACLE_MODE === 'off' ) {
+		return;
+	}
+
+	const phase = 'final-persistence-oracle';
+	recordHistory( coverage, {
+		phase,
+		status: 'invoke',
+		userIndex: saver.userIndex,
+	} );
+
+	const recordCheck = (
+		name: string,
+		status: BehaviorInvariantEvent[ 'status' ],
+		details?: Record< string, unknown >
+	) => {
+		recordInvariantEvent( coverage, {
+			details,
+			name,
+			phase,
+			status,
+		} );
+	};
+	const signalStatus = ( hasSignal: boolean ) => {
+		if ( ! hasSignal ) {
+			return 'ok';
+		}
+
+		return FINAL_PERSISTENCE_ORACLE_MODE === 'fail' ? 'fail' : 'observed';
+	};
+	const failures: Array< {
+		details?: Record< string, unknown >;
+		name: string;
+	} > = [];
+
+	await saveDraft( saver.page );
+	await collaborationUtils.waitForConvergence( {
+		includeCrdtDocument: true,
+		timeout: CONVERGENCE_TIMEOUT_MS,
+	} );
+
+	const finalCanonicalEditedContentByPage = await Promise.all(
+		pages.map( ( { page } ) => getCanonicalEditedPostContent( page ) )
+	);
+	const firstCanonicalEdited = finalCanonicalEditedContentByPage[ 0 ];
+	const canonicalEditedDivergences = finalCanonicalEditedContentByPage
+		.map( ( canonicalContent, pageIndex ) => ( {
+			canonicalContentHash: hashString( canonicalContent ),
+			pageIndex,
+		} ) )
+		.filter(
+			( snapshot, pageIndex ) =>
+				finalCanonicalEditedContentByPage[ pageIndex ] !==
+				firstCanonicalEdited
+		);
+
+	if ( canonicalEditedDivergences.length > 0 ) {
+		failures.push( {
+			details: { pages: canonicalEditedDivergences },
+			name: 'final-persistence-live-canonical-convergence',
+		} );
+	}
+	recordCheck(
+		'final-persistence-live-canonical-convergence',
+		signalStatus( canonicalEditedDivergences.length > 0 ),
+		canonicalEditedDivergences.length > 0
+			? { pages: canonicalEditedDivergences }
+			: undefined
+	);
+
+	const persistedPost = await getPersistedPost( requestUtils, postId );
+	const persistedContent = getRawFieldValue( persistedPost.content );
+	const persistedTitle = getRawFieldValue( persistedPost.title );
+	const canonicalPersistedContent = await getCanonicalPostContent(
+		saver.page,
+		persistedContent
+	);
+	const canonicalEditedContent = await getCanonicalEditedPostContent(
+		saver.page
+	);
+	const editedTitle = await getEditedPostTitle( saver.page );
+	const contentMatches = canonicalPersistedContent === canonicalEditedContent;
+	const titleMatches = persistedTitle === editedTitle;
+	const hasCrdtDocument = Boolean( persistedPost.meta?._crdt_document );
+
+	if ( ! contentMatches ) {
+		failures.push( {
+			details: {
+				editedHash: hashString( canonicalEditedContent ),
+				persistedHash: hashString( canonicalPersistedContent ),
+			},
+			name: 'final-persistence-canonical-content',
+		} );
+	}
+	recordCheck(
+		'final-persistence-canonical-content',
+		signalStatus( ! contentMatches ),
+		contentMatches
+			? undefined
+			: {
+					editedHash: hashString( canonicalEditedContent ),
+					persistedHash: hashString( canonicalPersistedContent ),
+			  }
+	);
+
+	if ( ! titleMatches ) {
+		failures.push( {
+			details: {
+				editedHash: hashString( editedTitle ),
+				persistedHash: hashString( persistedTitle ),
+			},
+			name: 'final-persistence-title',
+		} );
+	}
+	recordCheck(
+		'final-persistence-title',
+		signalStatus( ! titleMatches ),
+		titleMatches
+			? undefined
+			: {
+					editedHash: hashString( editedTitle ),
+					persistedHash: hashString( persistedTitle ),
+			  }
+	);
+
+	if ( ! hasCrdtDocument ) {
+		failures.push( {
+			name: 'final-persistence-crdt-document-present',
+		} );
+	}
+	recordCheck(
+		'final-persistence-crdt-document-present',
+		signalStatus( ! hasCrdtDocument )
+	);
+
+	if ( FINAL_PERSISTENCE_ORACLE_MODE === 'fail' ) {
+		await assertOperationLedgerPersisted( {
+			coverage,
+			ledger,
+			phase,
+			postId,
+			requestUtils,
+		} );
+	}
+
+	recordHistory( coverage, {
+		details: {
+			mode: FINAL_PERSISTENCE_ORACLE_MODE,
+			persistedContentHash: hashString( canonicalPersistedContent ),
+		},
+		phase,
+		status: failures.length > 0 ? 'fail' : 'ok',
+		userIndex: saver.userIndex,
+	} );
+
+	if ( FINAL_PERSISTENCE_ORACLE_MODE === 'fail' && failures.length > 0 ) {
+		throw new Error(
+			`RTC final persistence oracle failure: ${ JSON.stringify(
+				failures
+			) }`
+		);
+	}
+}
+
 async function reloadAndWait(
 	page: Page,
 	collaborationUtils: CollaborationUtils
@@ -4264,6 +4872,31 @@ const ACTIONS: PageAction[] = [
 				appendStressBlock: true,
 			} ),
 	},
+	{
+		label: 'ui-type-paragraph',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			typeRealUserParagraph( page, seed, step, userIndex, rng ),
+	},
+	{
+		label: 'ui-format-paragraph',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			typeRealUserFormattedParagraph( page, seed, step, userIndex, rng ),
+	},
+	{
+		label: 'ui-type-title',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			typeRealUserTitle( page, seed, step, userIndex, rng ),
+	},
+	{
+		label: 'ui-undo-redo-paragraph',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			typeRealUserUndoRedoParagraph( page, seed, step, userIndex, rng ),
+	},
+	{
+		label: 'ui-heading-shortcut',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			typeRealUserHeadingShortcut( page, seed, step, userIndex, rng ),
+	},
 ];
 
 function getActionsByWeightedLabels( labels: string[] ): PageAction[] {
@@ -4287,16 +4920,29 @@ function getActiveActions(): PageAction[] {
 		ACTION_PROFILE === 'full' ||
 		ACTION_PROFILE === 'parser-serialization'
 	) {
+		const profileExcludedActionLabels = new Set( [
+			'ui-type-paragraph',
+			'ui-format-paragraph',
+			'ui-type-title',
+			'ui-undo-redo-paragraph',
+			'ui-heading-shortcut',
+		] );
+
 		if ( ! DISABLE_PARSER_STRESS ) {
-			return ACTIONS;
+			return ACTIONS.filter(
+				( action ) => ! profileExcludedActionLabels.has( action.label )
+			);
 		}
 
-		const parserStressActionLabels = new Set( [
+		for ( const label of [
 			'reparse-edited-content',
 			'append-parser-stress-content',
-		] );
+		] ) {
+			profileExcludedActionLabels.add( label );
+		}
+
 		return ACTIONS.filter(
-			( action ) => ! parserStressActionLabels.has( action.label )
+			( action ) => ! profileExcludedActionLabels.has( action.label )
 		);
 	}
 
@@ -4313,6 +4959,12 @@ function getActiveActions(): PageAction[] {
 			'delete-block',
 			'move-block',
 		] );
+	}
+
+	if ( ACTION_PROFILE === 'real-user-editing' ) {
+		return getActionsByWeightedLabels(
+			REAL_USER_EDITING_SEQUENCE ?? REAL_USER_EDITING_ACTION_LABELS
+		);
 	}
 
 	if ( ACTION_PROFILE === 'common-blocks' ) {
@@ -4431,6 +5083,43 @@ function getActiveActions(): PageAction[] {
 	);
 }
 
+function pickActiveAction(
+	rng: Random,
+	actions: PageAction[],
+	previousActionLabel?: string,
+	step = 0
+) {
+	if (
+		ACTION_PROFILE === 'real-user-editing' &&
+		REAL_USER_EDITING_SEQUENCE
+	) {
+		const expectedLabel =
+			REAL_USER_EDITING_SEQUENCE[
+				step % REAL_USER_EDITING_SEQUENCE.length
+			];
+		const expectedAction = actions.find(
+			( action ) => action.label === expectedLabel
+		);
+		if ( expectedAction ) {
+			return expectedAction;
+		}
+	}
+
+	if (
+		ACTION_PROFILE === 'real-user-editing' &&
+		previousActionLabel === 'ui-type-paragraph'
+	) {
+		const alternatives = actions.filter(
+			( action ) => action.label !== previousActionLabel
+		);
+		if ( alternatives.length > 0 ) {
+			return pick( rng, alternatives );
+		}
+	}
+
+	return pick( rng, actions );
+}
+
 const ACTIVE_ACTIONS = getActiveActions();
 
 test.describe( 'Collaboration - Seeded Fuzzing', () => {
@@ -4537,15 +5226,27 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 								usedMilestones
 						  )
 						: null;
-				const saveSteps = chooseMilestoneSteps(
-					rng,
+				const forcedSaveSteps = reserveMilestoneSteps(
+					FORCE_SAVE_STEPS,
 					STEP_COUNT,
-					usedMilestones,
-					STEP_COUNT >= 3 ? SAVE_CHECKPOINT_COUNT : 1
+					usedMilestones
 				);
-				const reloadStep = DISABLE_RELOAD
-					? -1
-					: chooseMilestoneStep( rng, STEP_COUNT, usedMilestones );
+				const saveSteps =
+					forcedSaveSteps ??
+					chooseMilestoneSteps(
+						rng,
+						STEP_COUNT,
+						usedMilestones,
+						STEP_COUNT >= 3 ? SAVE_CHECKPOINT_COUNT : 1
+					);
+				const reloadStep =
+					DISABLE_RELOAD || DISABLE_RANDOM_RELOAD
+						? -1
+						: chooseMilestoneStep(
+								rng,
+								STEP_COUNT,
+								usedMilestones
+						  );
 				const lateJoinStep = chooseLateJoinStep(
 					rng,
 					STEP_COUNT,
@@ -4564,6 +5265,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 						  )
 						: new Set< number >();
 				const saveCheckpoints: SaveCheckpoint[] = [];
+				let finalPersistenceSaver = pages[ 0 ];
 				behavior.reloadStep = reloadStep;
 
 				for ( let step = 0; step < STEP_COUNT; step++ ) {
@@ -4613,6 +5315,75 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 								pages.slice( previousPageCount )
 							) )
 						);
+
+						if (
+							LATE_JOIN_POST_ACTION &&
+							pages.length > previousPageCount
+						) {
+							const lateActor = pages[ previousPageCount ];
+							const actionLabel = 'late-join-post-action';
+							behavior.actions.push( {
+								label: actionLabel,
+								step,
+								userIndex: lateActor.userIndex,
+							} );
+							behavior.lifecycleEvents.push( {
+								step,
+								type: actionLabel,
+								userCount: pages.length,
+							} );
+							recordHistory( behavior, {
+								label: actionLabel,
+								phase: 'action',
+								status: 'invoke',
+								step,
+								userIndex: lateActor.userIndex,
+							} );
+
+							const lateJoinWitnesses = await insertParagraph(
+								lateActor.page,
+								seed,
+								step,
+								lateActor.userIndex,
+								rng,
+								{ append: true }
+							);
+							recordHistory( behavior, {
+								label: actionLabel,
+								phase: 'action',
+								status: 'ok',
+								step,
+								userIndex: lateActor.userIndex,
+							} );
+							const lateJoinActionState =
+								await collaborationUtils.waitForConvergence( {
+									timeout: CONVERGENCE_TIMEOUT_MS,
+								} );
+							lastState = lateJoinActionState;
+							acknowledgeOperationWitnesses( {
+								actionLabel,
+								coverage: behavior,
+								ledger: operationLedger,
+								phase: 'late-join-post-action-convergence',
+								state: lateJoinActionState,
+								step,
+								userIndex: lateActor.userIndex,
+								witnesses: lateJoinWitnesses,
+							} );
+							assertOperationLedgerPreserved( {
+								coverage: behavior,
+								ledger: operationLedger,
+								phase: 'late-join-post-action-convergence',
+								state: lateJoinActionState,
+								step,
+							} );
+							await assertEditorInvariants( {
+								coverage: behavior,
+								pages,
+								phase: 'late-join-post-action-convergence',
+								step,
+							} );
+						}
 					}
 
 					const actor = pick( rng, pages );
@@ -4665,7 +5436,12 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 						);
 					}
 
-					const action = pick( rng, ACTIVE_ACTIONS );
+					const action = pickActiveAction(
+						rng,
+						ACTIVE_ACTIONS,
+						behavior.actions.at( -1 )?.label,
+						step
+					);
 					behavior.actions.push( {
 						label: action.label,
 						step,
@@ -4927,6 +5703,157 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 								userCount: pages.length,
 							} );
 						}
+
+						if ( RELOAD_POST_ACTION ) {
+							const actionLabel = 'reload-post-action';
+							let reloadPostWitnesses: OperationWitnessInput[] =
+								[];
+							behavior.actions.push( {
+								label: actionLabel,
+								step,
+								userIndex: reloader.userIndex,
+							} );
+							behavior.lifecycleEvents.push( {
+								step,
+								type: actionLabel,
+								userCount: pages.length,
+							} );
+							recordHistory( behavior, {
+								label: actionLabel,
+								phase: 'action',
+								status: 'invoke',
+								step,
+								userIndex: reloader.userIndex,
+							} );
+
+							try {
+								await test.step( `seed ${ seed } step ${ step } ${ actionLabel } user ${ reloader.userIndex }`, async () => {
+									if (
+										ACTION_PROFILE ===
+											'real-user-editing' &&
+										RELOAD_POST_ACTION_KIND === 'title'
+									) {
+										reloadPostWitnesses =
+											( await typeRealUserTitle(
+												reloader.page,
+												seed,
+												step,
+												reloader.userIndex,
+												rng,
+												{ kind: actionLabel }
+											) ) ?? [];
+									} else if (
+										ACTION_PROFILE ===
+											'real-user-editing' &&
+										RELOAD_POST_ACTION_KIND === 'format'
+									) {
+										reloadPostWitnesses =
+											( await typeRealUserFormattedParagraph(
+												reloader.page,
+												seed,
+												step,
+												reloader.userIndex,
+												rng
+											) ) ?? [];
+									} else if (
+										ACTION_PROFILE ===
+											'real-user-editing' &&
+										RELOAD_POST_ACTION_KIND === 'heading'
+									) {
+										reloadPostWitnesses =
+											( await typeRealUserHeadingShortcut(
+												reloader.page,
+												seed,
+												step,
+												reloader.userIndex,
+												rng
+											) ) ?? [];
+									} else {
+										reloadPostWitnesses =
+											( await typeRealUserParagraph(
+												reloader.page,
+												seed,
+												step,
+												reloader.userIndex,
+												rng,
+												{ kind: actionLabel }
+											) ) ?? [];
+									}
+								} );
+
+								recordHistory( behavior, {
+									label: actionLabel,
+									phase: 'action',
+									status: 'ok',
+									step,
+									userIndex: reloader.userIndex,
+								} );
+
+								const reloadPostState =
+									await collaborationUtils.waitForConvergence(
+										{
+											includeCrdtDocument: true,
+											timeout: CONVERGENCE_TIMEOUT_MS,
+										}
+									);
+								lastState = reloadPostState;
+								acknowledgeOperationWitnesses( {
+									actionLabel,
+									coverage: behavior,
+									ledger: operationLedger,
+									phase: 'reload-post-action-convergence',
+									state: reloadPostState,
+									step,
+									userIndex: reloader.userIndex,
+									witnesses: reloadPostWitnesses,
+								} );
+								assertOperationLedgerPreserved( {
+									coverage: behavior,
+									ledger: operationLedger,
+									phase: 'reload-post-action-convergence',
+									state: reloadPostState,
+									step,
+								} );
+								await assertEditorInvariants( {
+									coverage: behavior,
+									pages,
+									phase: 'reload-post-action-convergence',
+									step,
+								} );
+								recordHistory( behavior, {
+									phase: 'reload-post-action-save',
+									status: 'invoke',
+									step,
+									userIndex: reloader.userIndex,
+								} );
+								await saveDraft( reloader.page );
+								await assertOperationLedgerPersisted( {
+									coverage: behavior,
+									ledger: operationLedger,
+									phase: 'reload-post-action-persisted',
+									postId: post.id,
+									requestUtils,
+									step,
+								} );
+								recordHistory( behavior, {
+									phase: 'reload-post-action-save',
+									status: 'ok',
+									step,
+									userIndex: reloader.userIndex,
+								} );
+								finalPersistenceSaver = reloader;
+							} catch ( error ) {
+								recordHistory( behavior, {
+									error: errorToString( error ),
+									label: actionLabel,
+									phase: 'reload-post-action',
+									status: 'fail',
+									step,
+									userIndex: reloader.userIndex,
+								} );
+								throw error;
+							}
+						}
 					}
 					expect(
 						step === reloadStep || lifecycleReloadSteps.has( step )
@@ -4971,6 +5898,16 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 				expect( finalState.title ).not.toBe( '' );
 				expect( finalState.blocks.length ).toBeGreaterThan( 0 );
 				expect( finalState.crdtDocument ).not.toBeNull();
+
+				await maybeRunFinalPersistenceOracle( {
+					collaborationUtils,
+					coverage: behavior,
+					ledger: operationLedger,
+					pages,
+					postId: post.id,
+					requestUtils,
+					saver: finalPersistenceSaver,
+				} );
 
 				behavior.revisionRestore.eligible =
 					ENABLE_REVISION_RESTORE_PROBE &&

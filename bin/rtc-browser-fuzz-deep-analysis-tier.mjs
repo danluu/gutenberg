@@ -88,6 +88,14 @@ const TRANSIENT_CODEX_STARTUP_BACKOFF_MS = getPositiveIntegerEnv(
 const CODEX_MODEL = process.env.RTC_FUZZ_DEEP_ANALYSIS_MODEL ?? 'gpt-5.4';
 const REASONING_EFFORT =
 	process.env.RTC_FUZZ_DEEP_ANALYSIS_REASONING_EFFORT ?? 'xhigh';
+const MAX_PER_SEMANTIC_FAMILY = getPositiveIntegerEnv(
+	'RTC_FUZZ_DEEP_ANALYSIS_MAX_PER_SEMANTIC_FAMILY',
+	1
+);
+const MAX_HIGH_VALUE_PER_SEMANTIC_FAMILY = getPositiveIntegerEnv(
+	'RTC_FUZZ_DEEP_ANALYSIS_MAX_HIGH_VALUE_PER_SEMANTIC_FAMILY',
+	2
+);
 
 const activeJobs = new Map();
 let shuttingDown = false;
@@ -200,6 +208,17 @@ async function reconcileJobs( state ) {
 		job.pid = null;
 		job.status = job.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
 		job.completedAt = new Date().toISOString();
+		job.durationMs =
+			Date.parse( job.completedAt ) - Date.parse( job.startedAt );
+		job.exitCode ??= null;
+		job.signal ??= 'process-missing';
+		job.timedOut ??= false;
+		await writeLauncherFailure( job, {
+			code: job.exitCode,
+			resultPath: job.resultPath,
+			signal: job.signal,
+			timedOut: job.timedOut,
+		} );
 	}
 }
 
@@ -277,18 +296,17 @@ async function collectCandidates( sourceState, analysisState ) {
 				firstResult.classification
 			)
 		) {
-				relatedSummaries.push( {
-					hash: firstJob.hash,
-					classification: firstResult.classification,
-					confidence: firstResult.confidence,
-					userHitLikelihoodScore:
-						normalizeUserHitLikelihoodScore(
-							firstResult.userHitLikelihoodScore
-						),
-					action: firstResult.recommendedTriageAction,
-					distinctBugType: firstResult.distinctBugType,
-					duplicateOf: firstResult.isDuplicateOf,
-					summary: firstResult.summary,
+			relatedSummaries.push( {
+				hash: firstJob.hash,
+				classification: firstResult.classification,
+				confidence: firstResult.confidence,
+				userHitLikelihoodScore: normalizeUserHitLikelihoodScore(
+					firstResult.userHitLikelihoodScore
+				),
+				action: firstResult.recommendedTriageAction,
+				distinctBugType: firstResult.distinctBugType,
+				duplicateOf: firstResult.isDuplicateOf,
+				summary: firstResult.summary,
 			} );
 		}
 	}
@@ -301,6 +319,13 @@ async function collectCandidates( sourceState, analysisState ) {
 
 function isLikelyRealCandidate( firstResult ) {
 	if ( ! firstResult?.shouldDeepTriage ) {
+		return false;
+	}
+
+	if (
+		firstResult.recommendedTriageAction === 'merge_with_duplicate' ||
+		firstResult.isDuplicateOf
+	) {
 		return false;
 	}
 
@@ -398,6 +423,7 @@ async function launchQueuedDeepAnalysisJobs(
 	relatedSummaries
 ) {
 	const activeHashes = getActiveJobHashes( state );
+	let activeFamilyCounts = null;
 
 	for ( const candidate of candidates ) {
 		if ( activeHashes.size >= MAX_PARALLEL ) {
@@ -417,6 +443,14 @@ async function launchQueuedDeepAnalysisJobs(
 			continue;
 		}
 
+		activeFamilyCounts ??= getActiveAndCompletedFamilyCounts( state );
+		const semanticFamily = getSemanticFamilyKey( candidate );
+		const familyCount = activeFamilyCounts.get( semanticFamily ) ?? 0;
+		if ( familyCount >= getSemanticFamilyCap( candidate ) ) {
+			recordFamilyCappedJob( state, candidate, semanticFamily );
+			continue;
+		}
+
 		await launchCodexDeepAnalysisJob(
 			sourceState,
 			state,
@@ -424,7 +458,140 @@ async function launchQueuedDeepAnalysisJobs(
 			relatedSummaries
 		);
 		activeHashes.add( candidate.hash );
+		activeFamilyCounts.set( semanticFamily, familyCount + 1 );
 	}
+}
+
+function getActiveAndCompletedFamilyCounts( state ) {
+	const counts = new Map();
+
+	for ( const job of Object.values( state.jobs ?? {} ) ) {
+		if ( ! [ 'running', 'completed' ].includes( job.status ) ) {
+			continue;
+		}
+		const family = job.semanticFamilyKey ?? null;
+		if ( ! family ) {
+			continue;
+		}
+		counts.set( family, ( counts.get( family ) ?? 0 ) + 1 );
+	}
+
+	return counts;
+}
+
+function recordFamilyCappedJob( state, candidate, semanticFamily ) {
+	const existing = state.jobs[ candidate.hash ];
+	if ( existing?.status === 'family-capped' ) {
+		return;
+	}
+
+	state.jobs[ candidate.hash ] = {
+		hash: candidate.hash,
+		status: 'family-capped',
+		semanticFamilyKey: semanticFamily,
+		firstLevelClassification: candidate.firstResult.classification,
+		firstLevelConfidence: candidate.firstResult.confidence,
+		firstLevelAction: candidate.firstResult.recommendedTriageAction,
+		firstLevelResultPath: candidate.firstJob.resultPath,
+		sourceStatus: candidate.signature?.status ?? null,
+		sourceCount: candidate.signature?.count ?? 0,
+		startedAt: existing?.startedAt ?? new Date().toISOString(),
+		completedAt: new Date().toISOString(),
+		reason: 'semantic family already has enough active/completed second-level analysis',
+	};
+}
+
+function getSemanticFamilyCap( candidate ) {
+	const key = getSemanticFamilyKey( candidate );
+	if (
+		/linebreak|newline|br_normalization|isuseroverlaycolor|cover.*overlay/.test(
+			key
+		)
+	) {
+		return 1;
+	}
+
+	if (
+		/blank|empty|collapse|drop|hydration|stale|overwrite|rollback|structural|move|delete|table|persist/.test(
+			key
+		)
+	) {
+		return MAX_HIGH_VALUE_PER_SEMANTIC_FAMILY;
+	}
+
+	return MAX_PER_SEMANTIC_FAMILY;
+}
+
+function getSemanticFamilyKey( candidate ) {
+	const result = candidate.firstResult ?? {};
+	const signature = candidate.signature ?? {};
+	const raw =
+		result.distinctBugType ??
+		signature.equivalenceClass ??
+		signature.familyKey ??
+		candidate.hash;
+	const normalized = normalizeSemanticLabel( raw );
+
+	if (
+		/linebreak|newline|br.*serialization|codeblock|preformatted|verse/.test(
+			normalized
+		)
+	) {
+		return 'linebreak_representation_drift';
+	}
+	if ( /isuseroverlaycolor|cover.*overlay/.test( normalized ) ) {
+		return 'cover_overlay_attribute_canonicalization';
+	}
+	if (
+		/awareness.*save.*reload|save.*reload.*awareness|http_awareness_loss_after_save_reload/.test(
+			normalized
+		)
+	) {
+		return 'awareness_loss_after_save_reload';
+	}
+	if (
+		/awareness.*reload|reload.*awareness|reload_rejoin/.test( normalized )
+	) {
+		return 'reload_rejoin_awareness_stall';
+	}
+	if ( /late.*join|late_join/.test( normalized ) ) {
+		return 'late_join_lifecycle';
+	}
+	if (
+		/blank.*content|empty.*content|content.*collapse|collapses_to_empty/.test(
+			normalized
+		)
+	) {
+		return 'persisted_content_collapse_or_empty_save';
+	}
+	if (
+		/hydration.*drop|drops_blocks|reload.*drops.*block/.test( normalized )
+	) {
+		return 'reload_hydration_drops_blocks';
+	}
+	if (
+		/stale.*save|overwrite|title.*revert|stale.*entity/.test( normalized )
+	) {
+		return 'stale_save_or_entity_overwrite';
+	}
+	if (
+		/move|delete|reorder|table|structural|block_order/.test( normalized )
+	) {
+		return 'structural_move_delete_or_table_divergence';
+	}
+
+	return normalized;
+}
+
+function normalizeSemanticLabel( value ) {
+	return String( value ?? 'unknown' )
+		.toLowerCase()
+		.replaceAll( '`', '' )
+		.replaceAll( "'", '' )
+		.replaceAll( '"', '' )
+		.replace( /[^a-z0-9]+/g, '_' )
+		.replace( /_+/g, '_' )
+		.replace( /^_|_$/g, '' );
 }
 
 async function launchCodexDeepAnalysisJob(
@@ -475,6 +642,7 @@ async function launchCodexDeepAnalysisJob(
 		firstLevelConfidence: candidate.firstResult.confidence,
 		firstLevelAction: candidate.firstResult.recommendedTriageAction,
 		firstLevelResultPath: candidate.firstJob.resultPath,
+		semanticFamilyKey: getSemanticFamilyKey( candidate ),
 		startedAt: new Date().toISOString(),
 		completedAt: null,
 		jobDir,
@@ -484,6 +652,8 @@ async function launchCodexDeepAnalysisJob(
 		deepAnalysisPath,
 		reproHandoffPath,
 		nextAttemptAt: null,
+		timeoutMs: CODEX_TIMEOUT_MS,
+		timedOut: false,
 	};
 	state.jobs[ candidate.hash ] = job;
 	await writeState( state );
@@ -527,8 +697,10 @@ async function launchCodexDeepAnalysisJob(
 	activeJobs.set( candidate.hash, child );
 	await writeState( state );
 
+	let timedOut = false;
 	const timeout = setTimeout( () => {
 		if ( ! child.killed ) {
+			timedOut = true;
 			child.kill( 'SIGTERM' );
 		}
 	}, CODEX_TIMEOUT_MS );
@@ -546,7 +718,11 @@ async function launchCodexDeepAnalysisJob(
 		latestJob.pid = null;
 		latestJob.exitCode = code;
 		latestJob.signal = signal;
+		latestJob.timedOut = timedOut;
 		latestJob.completedAt = new Date().toISOString();
+		latestJob.durationMs =
+			Date.parse( latestJob.completedAt ) -
+			Date.parse( latestJob.startedAt );
 		if ( code === 0 && fsSync.existsSync( resultPath ) ) {
 			latestJob.status = 'completed';
 			latestJob.nextAttemptAt = null;
@@ -556,9 +732,36 @@ async function launchCodexDeepAnalysisJob(
 			latestJob.status =
 				latestJob.attempts >= MAX_ATTEMPTS ? 'failed' : 'retry';
 			latestJob.nextAttemptAt = null;
+			await writeLauncherFailure( latestJob, {
+				code,
+				resultPath,
+				signal,
+				timedOut,
+			} );
 		}
 		await writeState( latest );
 	} );
+}
+
+async function writeLauncherFailure( job, failure ) {
+	await fs.writeFile(
+		path.join( job.jobDir, 'launcher-failure.json' ),
+		JSON.stringify(
+			{
+				completedAt: job.completedAt,
+				durationMs: job.durationMs,
+				exitCode: failure.code,
+				resultPath: failure.resultPath,
+				resultWritten: fsSync.existsSync( failure.resultPath ),
+				signal: failure.signal,
+				status: job.status,
+				timeoutMs: job.timeoutMs,
+				timedOut: failure.timedOut,
+			},
+			null,
+			2
+		) + '\n'
+	);
 }
 
 function buildCodexPrompt( sourceState, candidate, relatedSummaries, paths ) {
@@ -632,12 +835,15 @@ function buildCodexPrompt( sourceState, candidate, relatedSummaries, paths ) {
 		'Hard constraints:',
 		'- Do not run Playwright, Chrome, npm test, npm run test:e2e, wp-env, docker, or any browser/repro command.',
 		'- Do not edit production/source files. Write only the durable artifacts requested under the deep analysis job directory.',
-		'- Keep filesystem searches scoped to the run directory, the first-level job directory, and relevant source files. Do not scan historical artifact trees under test/e2e/artifacts or unrelated old fuzz runs.',
-		'- Do not run broad `find` or `rg` scans rooted at the repository root, `artifacts/rtc-browser-fuzz`, `test/e2e/artifacts`, or parent directories. Search exact example paths, this run directory, this job directory, the first-level job directory, and specific source files discovered with `git ls-files` or direct paths.',
-		'',
-		'Allowed work:',
-		'- Inspect text logs, summary.ndjson lines, error-context markdown, trace zip metadata/files, first-level analysis artifacts, and relevant source code.',
-		'- Use read-only shell commands such as rg, sed, find scoped to this run, unzip/list trace files, jq/node snippets that only read files, and read-only git commands.',
+			'- Keep filesystem searches scoped to the run directory, the first-level job directory, and relevant source files. Do not scan historical artifact trees under test/e2e/artifacts or unrelated old fuzz runs.',
+			'- Do not run broad `find` or `rg` scans rooted at the repository root, `artifacts/rtc-browser-fuzz`, `test/e2e/artifacts`, or parent directories. Search exact example paths, this run directory, this job directory, the first-level job directory, and specific source files discovered with `git ls-files` or direct paths.',
+			'- Do not bypass the analysis guard wrappers with absolute tool paths such as `/bin/cat`, `/usr/bin/sed`, `/usr/bin/head`, or `/usr/bin/tail`.',
+			'',
+			'Allowed work:',
+			'- Inspect text logs, compact summary extracts, error-context markdown, trace zip metadata/files, first-level analysis artifacts, and relevant source code.',
+			'- Do not dump whole summary/event streams or large Playwright error-context files. Never run `cat`, `sed`, `head`, or `tail` directly on `summary.ndjson`, `events.ndjson`, `events.jsonl`, or large files under the fuzz artifacts tree; use `node bin/rtc-browser-fuzz-extract-summary-record.mjs <summary.ndjson> --seed <seed>` or first-level compact context instead.',
+			'- When searching trace/network data, always bound output with a specific pattern plus `rg -m 40` or an equivalent small script. Do not emit broad trace/network payloads into the Codex event log.',
+			'- Use read-only shell commands such as rg, sed, find scoped to this run, unzip/list trace files, compact jq/node snippets that only read files, and read-only git commands.',
 		'',
 		'First-level result JSON:',
 		JSON.stringify( firstResult, null, 2 ),

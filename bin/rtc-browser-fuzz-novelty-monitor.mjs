@@ -48,7 +48,9 @@ const FORCE_START = process.env.RTC_FUZZ_NOVELTY_FORCE_START === '1';
 const INCLUDE_RECHECK_COVERAGE =
 	process.env.RTC_FUZZ_NOVELTY_INCLUDE_RECHECK_COVERAGE === '1';
 const ENABLE_HTTP_PROBE =
-	process.env.RTC_FUZZ_NOVELTY_ENABLE_HTTP_PROBE === '1';
+	process.env.RTC_FUZZ_NOVELTY_ENABLE_HTTP_PROBE !== '0';
+const ENABLE_SAME_USER_PROBE =
+	process.env.RTC_FUZZ_NOVELTY_ENABLE_SAME_USER === '1';
 const MAX_ENABLED_GROUPS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS',
 	7
@@ -63,12 +65,92 @@ const STARTUP_FAILURE_LIMIT = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_LIMIT',
 	2
 );
-const EXPANSION_POLICY_VERSION = 2;
+const STARTUP_FAILURE_COOLDOWN_HOURS = getPositiveNumberEnv(
+	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_COOLDOWN_HOURS',
+	6
+);
+const MAC_MEMORY_PRESSURE_MIN_FREE_PERCENT = getPositiveIntegerEnv(
+	'RTC_FUZZ_MAC_MEMORY_PRESSURE_MIN_FREE_PERCENT',
+	30
+);
+const MAC_SWAPOUT_HOLD_MBPS = getPositiveNumberEnv(
+	'RTC_FUZZ_MAC_SWAPOUT_HOLD_MBPS',
+	1
+);
+const MAC_PAGEOUT_HOLD_MBPS = getPositiveNumberEnv(
+	'RTC_FUZZ_MAC_PAGEOUT_HOLD_MBPS',
+	5
+);
+const MAC_DECOMPRESS_HOLD_MBPS = getPositiveNumberEnv(
+	'RTC_FUZZ_MAC_DECOMPRESS_HOLD_MBPS',
+	250
+);
+const MAC_SWAP_FREE_MIN_GB = getPositiveNumberEnv(
+	'RTC_FUZZ_MAC_SWAP_FREE_MIN_GB',
+	0.5
+);
+const BROWSER_FREE_MEMORY_MIN_GB = getPositiveNumberEnv(
+	'RTC_FUZZ_NOVELTY_BROWSER_FREE_MEMORY_MIN_GB',
+	1
+);
+const COMMON_BLOCK_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_COMMON_BLOCK_MIN_RECORDS',
+	25
+);
+const BLOCK_GAUNTLET_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_BLOCK_GAUNTLET_MIN_RECORDS',
+	20
+);
+const LATE_JOIN_LIFECYCLE_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_LATE_JOIN_MIN_RECORDS',
+	300
+);
+const SAME_USER_CANARY_LATE_JOIN_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_SAME_USER_CANARY_LATE_JOIN_MIN_RECORDS',
+	250
+);
+const PARSER_TRANSFORM_ROTATE_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_PARSER_TRANSFORM_ROTATE_RECORDS',
+	200
+);
+const PARSER_TRANSFORM_ROTATE_INITIAL_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_PARSER_TRANSFORM_ROTATE_INITIAL_RECORDS',
+	150
+);
+const REAL_USER_EDITING_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_REAL_USER_EDITING_MIN_RECORDS',
+	80
+);
+const REAL_USER_EDITING_MIN_ACTION_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_REAL_USER_EDITING_MIN_ACTION_RECORDS',
+	5
+);
+const REAL_USER_EDITING_NO_YIELD_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_REAL_USER_EDITING_NO_YIELD_MIN_RECORDS',
+	250
+);
+const TRIAGE_DUPLICATE_SHARE_HOLD = getPositiveNumberEnv(
+	'RTC_FUZZ_NOVELTY_TRIAGE_DUPLICATE_SHARE_HOLD',
+	0.45
+);
+const TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES',
+	10
+);
+const REAL_USER_EDITING_ACTION_LABELS = [
+	'ui-type-paragraph',
+	'ui-format-paragraph',
+	'ui-heading-shortcut',
+	'reload-post-action',
+];
+const EXPANSION_POLICY_VERSION = 5;
 
 const NO_FAULT_WS_ENV = {
 	GUTENBERG_RTC_TEST_WS_SKIP_RESET: '1',
 	GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
 	GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '480000',
+	RTC_FUZZ_ANALYSIS_RECHECKS: '1',
+	RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '0',
 	RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
 	RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
 	RTC_FUZZ_RUN_TIMEOUT_MS: '720000',
@@ -82,12 +164,15 @@ const PROFILE_BY_GROUP = {
 	'novelty-ws-parser-serialization': 'parser-serialization',
 	'novelty-ws-parser-transform': 'parser-transform',
 	'novelty-ws-persistence-no-title': 'persistence-no-title',
+	'novelty-ws-real-user-editing': 'real-user-editing',
 	'novelty-ws-revision-persistence': 'revision-persistence',
+	'novelty-ws-same-user-lifecycle': 'session-lifecycle',
 	'novelty-ws-structure': 'structure',
 	'novelty-ws-three-user-late-join': 'three-user-late-join',
 };
 
 const HIGH_VALUE_EXPANSION_GROUPS = [
+	'novelty-ws-real-user-editing',
 	'novelty-ws-block-gauntlet',
 	'novelty-ws-parser-transform',
 	'novelty-ws-common-blocks',
@@ -95,6 +180,7 @@ const HIGH_VALUE_EXPANSION_GROUPS = [
 	'novelty-ws-revision-persistence',
 	'novelty-ws-three-user-late-join',
 	'novelty-ws-multi-reload-lifecycle',
+	'novelty-ws-same-user-lifecycle',
 ];
 
 const ROTATION_PAUSE_ORDER = [
@@ -106,15 +192,12 @@ const ROTATION_PAUSE_ORDER = [
 const COMMON_BLOCK_TYPES = [
 	'core/button',
 	'core/buttons',
-	'core/code',
 	'core/column',
 	'core/columns',
 	'core/image',
-	'core/preformatted',
 ];
 
 const BLOCK_GAUNTLET_TYPES = [
-	'core/cover',
 	'core/details',
 	'core/file',
 	'core/gallery',
@@ -127,7 +210,6 @@ const BLOCK_GAUNTLET_TYPES = [
 	'core/social-link',
 	'core/social-links',
 	'core/spacer',
-	'core/verse',
 ];
 
 const PARSER_TRANSFORM_INITIAL_PROFILES = [
@@ -200,6 +282,7 @@ const PROFILE_GROUPS = [
 		env: {
 			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
 		},
@@ -215,6 +298,7 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
 			GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE: '0',
 			GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
 			RTC_FUZZ_DISABLE_REVISION_RESTORE: '0',
 			RTC_FUZZ_ENABLE_REVISION_RESTORE_PROBE: '1',
@@ -232,6 +316,26 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+		},
+	},
+	{
+		name: 'novelty-ws-same-user-lifecycle',
+		actionProfile: 'session-lifecycle',
+		startSeed: 1050001,
+		stepCount: 8,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE: 'same-user',
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '0',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
 		},
 	},
 	{
@@ -253,6 +357,32 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: true,
 		env: {
 			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
+		},
+	},
+	{
+		name: 'novelty-ws-real-user-editing',
+		actionProfile: 'real-user-editing',
+		startSeed: 1060001,
+		stepCount: 8,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_RANDOM_RELOAD: '1',
+			GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS: '1',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '2',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_ACTION_LABELS:
+				'ui-type-paragraph,ui-format-paragraph,ui-heading-shortcut',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'ui-type-paragraph,ui-format-paragraph,ui-heading-shortcut,ui-type-paragraph',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'shadow',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'paragraph',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
 			RTC_FUZZ_DISABLE_SYNC_FAULTS: '1',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
@@ -295,8 +425,11 @@ const state = ( await readJsonFile( STATE_PATH ) ) ?? {
 	fileOffsets: {},
 	recordCountsByProfile: {},
 	recordCountsByTransport: {},
+	successfulActionCountsByProfile: {},
+	successfulRecordCountsByProfile: {},
 	startupFailureCountsByProfile: {},
 	pausedGroups: {},
+	disabledGroups: {},
 	recordsSeen: 0,
 	healthWarnings: [],
 	lastUpdatedAt: null,
@@ -307,6 +440,7 @@ state.expansionPolicyVersion ??= 0;
 
 if ( state.expansionPolicyVersion !== EXPANSION_POLICY_VERSION ) {
 	state.pausedGroups ??= {};
+	state.disabledGroups ??= {};
 	state.startupFailureCountsByProfile ??= {};
 
 	for ( const group of HIGH_VALUE_EXPANSION_GROUPS ) {
@@ -326,6 +460,8 @@ if ( state.expansionPolicyVersion !== EXPANSION_POLICY_VERSION ) {
 }
 state.recordCountsByProfile ??= {};
 state.recordCountsByTransport ??= {};
+state.successfulActionCountsByProfile ??= {};
+state.successfulRecordCountsByProfile ??= {};
 state.startupFailureCountsByProfile ??= {};
 state.pausedGroups ??= {};
 state.healthWarnings ??= [];
@@ -450,6 +586,246 @@ async function findCoverageFiles( roots ) {
 	return files.sort();
 }
 
+async function findTriageStateFiles( roots ) {
+	const files = [];
+	const seen = new Set();
+
+	async function walk( dir, depth ) {
+		if ( depth > 7 || seen.has( dir ) ) {
+			return;
+		}
+		seen.add( dir );
+
+		let entries;
+		try {
+			entries = await fs.readdir( dir, { withFileTypes: true } );
+		} catch {
+			return;
+		}
+
+		for ( const entry of entries ) {
+			const entryPath = path.join( dir, entry.name );
+			if ( entry.isDirectory() ) {
+				if ( entry.name === '.triage-watcher' ) {
+					files.push( path.join( entryPath, 'state.json' ) );
+					continue;
+				}
+				if (
+					[
+						'node_modules',
+						'.git',
+						'vendor',
+						'test-results',
+						'playwright-report',
+						'blob-report',
+						'codex-analysis',
+					].includes( entry.name )
+				) {
+					continue;
+				}
+				await walk( entryPath, depth + 1 );
+			}
+		}
+	}
+
+	for ( const root of roots ) {
+		await walk( root, 0 );
+	}
+
+	return [ ...new Set( files ) ].sort();
+}
+
+async function summarizeTriageYield( roots ) {
+	const files = await findTriageStateFiles( roots );
+	const familyCounts = {};
+	const summary = {
+		files: files.length,
+		signatureCount: 0,
+		likelyRealVisible: 0,
+		likelyRealMerged: 0,
+		likelyRealOracleQuestion: 0,
+		normalizationNoiseCandidates: 0,
+		bootstrapStalls: 0,
+		topDuplicateFamilyShare: 0,
+		topSemanticFamilies: [],
+	};
+
+	for ( const filePath of files ) {
+		const triageState = await readJsonFile( filePath );
+		const signatures = Object.values( triageState?.signatures ?? {} );
+		if ( signatures.length === 0 && triageState?.metrics ) {
+			addTriageMetricsSummary(
+				summary,
+				familyCounts,
+				triageState.metrics
+			);
+			continue;
+		}
+
+		for ( const signature of signatures ) {
+			summary.signatureCount += 1;
+			const family = getTriageSemanticFamily( signature );
+			familyCounts[ family ] = ( familyCounts[ family ] ?? 0 ) + 1;
+
+			if (
+				signature.equivalenceClass === 'pre-action-bootstrap-stall' ||
+				signature.status === 'bootstrap-stall'
+			) {
+				summary.bootstrapStalls += 1;
+			}
+			if ( isLikelyTriageNormalizationNoise( signature ) ) {
+				summary.normalizationNoiseCandidates += 1;
+			}
+
+			const decision = signature.analysisGate ?? signature.result;
+			if ( decision?.classification !== 'likely_real' ) {
+				continue;
+			}
+			const action =
+				decision.recommendedTriageAction ??
+				decision.candidateStatus ??
+				'unknown';
+			if (
+				action === 'merge_with_duplicate' ||
+				decision.isDuplicateOf ||
+				decision.duplicateOf
+			) {
+				summary.likelyRealMerged += 1;
+			} else if ( isLikelyTriageNormalizationNoise( signature ) ) {
+				summary.likelyRealOracleQuestion += 1;
+			} else {
+				summary.likelyRealVisible += 1;
+			}
+		}
+	}
+
+	summary.topSemanticFamilies = Object.entries( familyCounts )
+		.sort( ( left, right ) => right[ 1 ] - left[ 1 ] )
+		.slice( 0, 20 )
+		.map( ( [ family, count ] ) => ( { family, count } ) );
+	if ( summary.signatureCount > 0 && summary.topSemanticFamilies.length ) {
+		summary.topDuplicateFamilyShare = Number(
+			(
+				summary.topSemanticFamilies[ 0 ].count / summary.signatureCount
+			).toFixed( 4 )
+		);
+	}
+	return summary;
+}
+
+function addTriageMetricsSummary( summary, familyCounts, metrics ) {
+	summary.signatureCount += metrics.signatureCount ?? 0;
+	summary.likelyRealVisible += metrics.likelyRealVisible ?? 0;
+	summary.likelyRealMerged += metrics.likelyRealMerged ?? 0;
+	summary.likelyRealOracleQuestion += metrics.likelyRealOracleQuestion ?? 0;
+	summary.normalizationNoiseCandidates +=
+		metrics.normalizationNoiseCandidates ?? 0;
+	summary.bootstrapStalls += metrics.bootstrapStalls ?? 0;
+
+	for ( const item of metrics.topPreDecisionFamilies ?? [] ) {
+		if ( ! item.family ) {
+			continue;
+		}
+		familyCounts[ item.family ] =
+			( familyCounts[ item.family ] ?? 0 ) + ( item.count ?? 0 );
+	}
+	for ( const item of metrics.topSemanticFamilies ?? [] ) {
+		if ( ! item.family ) {
+			continue;
+		}
+		familyCounts[ item.family ] =
+			( familyCounts[ item.family ] ?? 0 ) + ( item.count ?? 0 );
+	}
+}
+
+function getTriageSemanticFamily( signature ) {
+	const decision = signature.analysisGate ?? signature.result;
+	return canonicalizeTriageSemanticFamily(
+		String(
+			decision?.distinctBugType ??
+				signature.equivalenceClass ??
+				signature.familyKey ??
+				signature.hash ??
+				'unknown'
+		)
+			.toLowerCase()
+			.replaceAll( '`', '' )
+			.replaceAll( "'", '' )
+			.replaceAll( '"', '' )
+			.replace( /[^a-z0-9]+/g, '_' )
+			.replace( /_+/g, '_' )
+			.replace( /^_|_$/g, '' )
+	);
+}
+
+function canonicalizeTriageSemanticFamily( value ) {
+	if (
+		/linebreak|newline|br.*serialization|preformatted|verse/.test( value )
+	) {
+		return 'linebreak_representation_drift';
+	}
+	if ( /cover.*overlay|isuseroverlaycolor/.test( value ) ) {
+		return 'cover_overlay_attribute_canonicalization';
+	}
+	if ( /bootstrap|discovery.*startup|startup.*discovery/.test( value ) ) {
+		return 'pre_action_bootstrap_stall';
+	}
+	if ( /operation.*witness.*missing|witness.*loss/.test( value ) ) {
+		return 'operation_witness_missing';
+	}
+	return value || 'unknown';
+}
+
+function isLikelyTriageNormalizationNoise( signature ) {
+	const family = getTriageSemanticFamily( signature );
+	if (
+		[
+			'linebreak_representation_drift',
+			'cover_overlay_attribute_canonicalization',
+		].includes( family )
+	) {
+		return true;
+	}
+
+	const normalized = String( signature.normalized ?? '' );
+	return (
+		/(core\/code|core\/preformatted|core\/verse)/.test( normalized ) &&
+		/(<br\s*\/?>|\\n|linebreak|newline)/i.test( normalized )
+	);
+}
+
+function shouldHoldNoisyBlockTopOff( triageYield ) {
+	if ( ! triageYield || triageYield.signatureCount === 0 ) {
+		return false;
+	}
+	return (
+		triageYield.topDuplicateFamilyShare >= TRIAGE_DUPLICATE_SHARE_HOLD &&
+		triageYield.normalizationNoiseCandidates >=
+			TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES &&
+		triageYield.normalizationNoiseCandidates > triageYield.likelyRealVisible
+	);
+}
+
+function shouldHoldDominantRealUserFamily( triageYield ) {
+	if ( ! triageYield || triageYield.signatureCount === 0 ) {
+		return false;
+	}
+	const topFamily = triageYield.topSemanticFamilies?.[ 0 ];
+	if (
+		! topFamily ||
+		topFamily.count < TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES
+	) {
+		return false;
+	}
+
+	return (
+		triageYield.topDuplicateFamilyShare >= TRIAGE_DUPLICATE_SHARE_HOLD &&
+		/operation_witness_missing|rest_meta_database_error_wp_persisted_preferences/.test(
+			topFamily.family
+		)
+	);
+}
+
 async function readCoverageRecords( files ) {
 	const records = [];
 	const nextOffsets = {};
@@ -503,6 +879,12 @@ function featureKeysForRecord( record ) {
 
 	keys.add( `profile:${ record.actionProfile ?? 'unknown' }` );
 	keys.add( `transport:${ record.transport ?? 'unknown' }` );
+	keys.add(
+		`transport-profile:${ record.transport ?? 'unknown' }:${
+			record.actionProfile ?? 'unknown'
+		}`
+	);
+	keys.add( `collaborator-mode:${ record.collaboratorMode ?? 'unknown' }` );
 	keys.add( `users:${ record.userCount ?? 0 }` );
 	keys.add( `initial:${ record.initialContentProfile ?? 'unknown' }` );
 	keys.add( `depth:${ Math.min( blockStats.maxDepth ?? 0, 4 ) }` );
@@ -511,6 +893,37 @@ function featureKeysForRecord( record ) {
 	keys.add(
 		`revision-eligible:${ record.revisionRestore?.eligible === true }`
 	);
+
+	if ( record.actionProfile === 'real-user-editing' ) {
+		const actionLabels = ( record.actions ?? [] ).map(
+			( action ) => action.label
+		);
+		const actionSet = new Set( actionLabels );
+		if (
+			saveCount > 0 &&
+			reloadCount > 0 &&
+			( actionSet.has( 'ui-type-paragraph' ) ||
+				actionSet.has( 'ui-format-paragraph' ) ||
+				actionSet.has( 'ui-heading-shortcut' ) )
+		) {
+			keys.add( 'real-user-template:body-save-reload' );
+		}
+		if (
+			saveCount > 0 &&
+			reloadCount > 0 &&
+			actionSet.has( 'ui-type-title' )
+		) {
+			keys.add( 'real-user-template:title-save-reload' );
+		}
+		if ( actionSet.has( 'ui-undo-redo-paragraph' ) ) {
+			keys.add( 'real-user-template:undo-redo-canary' );
+		}
+		keys.add(
+			`real-user-action-sequence:${ actionLabels
+				.slice( 0, 6 )
+				.join( '>' ) }`
+		);
+	}
 
 	for ( const type of blockStats.types ?? [] ) {
 		keys.add( `block:${ type }` );
@@ -584,13 +997,34 @@ function featureKeysForRecord( record ) {
 				( snapshot ) => snapshot.serializedContentLength ?? 0
 			)
 		);
-		keys.add( `invalid-blocks:${ Math.min( maxInvalidBlocks, 4 ) }` );
-		keys.add(
-			`serialized-size-log2:${ Math.min(
-				Math.floor( Math.log2( Math.max( maxSerializedLength, 1 ) ) ),
-				20
-			) }`
+		const serializedSizeBucket = Math.min(
+			Math.floor( Math.log2( Math.max( maxSerializedLength, 1 ) ) ),
+			20
 		);
+		keys.add( `invalid-blocks:${ Math.min( maxInvalidBlocks, 4 ) }` );
+		keys.add( `serialized-size-log2:${ serializedSizeBucket }` );
+		keys.add(
+			`payload-size-profile:${
+				record.actionProfile ?? 'unknown'
+			}:${ serializedSizeBucket }`
+		);
+		keys.add(
+			`payload-size-transport:${
+				record.transport ?? 'unknown'
+			}:${ serializedSizeBucket }`
+		);
+		for ( const snapshot of invariantSnapshots ) {
+			for ( const [ blockType, depth ] of Object.entries(
+				snapshot.maxDepthByType ?? {}
+			) ) {
+				keys.add(
+					`block-depth:${ blockType }:${ Math.min(
+						Number( depth ) || 0,
+						4
+					) }`
+				);
+			}
+		}
 		if (
 			invariantSnapshots.some(
 				( snapshot ) => snapshot.duplicateClientIds?.length > 0
@@ -663,6 +1097,19 @@ function summarizeNovelty( records ) {
 			( state.recordCountsByProfile[ profile ] ?? 0 ) + 1;
 		state.recordCountsByTransport[ transport ] =
 			( state.recordCountsByTransport[ transport ] ?? 0 ) + 1;
+		if ( record.status === 'passed' ) {
+			state.successfulRecordCountsByProfile[ profile ] =
+				( state.successfulRecordCountsByProfile[ profile ] ?? 0 ) + 1;
+			state.successfulActionCountsByProfile[ profile ] ??= {};
+			for ( const action of record.actions ?? [] ) {
+				state.successfulActionCountsByProfile[ profile ][
+					action.label
+				] =
+					( state.successfulActionCountsByProfile[ profile ][
+						action.label
+					] ?? 0 ) + 1;
+			}
+		}
 		if ( record.status === 'failed' ) {
 			byProfile[ profile ].failures += 1;
 		}
@@ -731,18 +1178,25 @@ function sampleResources() {
 	const freeMemoryGb = os.freemem() / 1024 ** 3;
 	const totalMemoryGb = os.totalmem() / 1024 ** 3;
 	const memoryPressureFreePercent = sampleMacMemoryPressureFreePercent();
-	const memoryHasHeadroom =
-		freeMemoryGb > 3 &&
-		( memoryPressureFreePercent === null ||
-			memoryPressureFreePercent >= 20 );
+	const macVmStats = sampleMacVmStats();
+	const macSwapUsage = sampleMacSwapUsage();
+	const memoryHeadroom = classifyMemoryHeadroom( {
+		freeMemoryGb,
+		macSwapUsage,
+		macVmStats,
+		memoryPressureFreePercent,
+	} );
 	return {
 		cores,
 		freeMemoryGb,
 		load1,
-		memoryHasHeadroom,
+		macSwapUsage,
+		macVmStats,
+		memoryHasHeadroom: memoryHeadroom.hasHeadroom,
+		memoryHeadroomReason: memoryHeadroom.reason,
 		memoryPressureFreePercent,
 		totalMemoryGb,
-		hasHeadroom: load1 < cores * 1.25 && memoryHasHeadroom,
+		hasHeadroom: load1 < cores * 1.25 && memoryHeadroom.hasHeadroom,
 	};
 }
 
@@ -760,6 +1214,30 @@ function getBlockGauntletCoverageCount() {
 			total + ( state.featureCounts?.[ `block:${ blockName }` ] ?? 0 ),
 		0
 	);
+}
+
+function getMinBlockCoverageCount( blockTypes ) {
+	if ( blockTypes.length === 0 ) {
+		return 0;
+	}
+
+	return Math.min(
+		...blockTypes.map(
+			( blockName ) =>
+				state.featureCounts?.[ `block:${ blockName }` ] ?? 0
+		)
+	);
+}
+
+function getUndercoveredBlockTypes( blockTypes, minCount ) {
+	return blockTypes
+		.map( ( blockName ) => ( {
+			blockName,
+			count: state.featureCounts?.[ `block:${ blockName }` ] ?? 0,
+		} ) )
+		.filter( ( item ) => item.count < minCount )
+		.sort( ( left, right ) => left.count - right.count )
+		.slice( 0, 8 );
 }
 
 function getParserTransformInitialCoverageCount() {
@@ -797,6 +1275,228 @@ function sampleMacMemoryPressureFreePercent() {
 	}
 }
 
+function sampleMacVmStats() {
+	if ( process.platform !== 'darwin' ) {
+		return null;
+	}
+
+	try {
+		const output = execFileSync( 'vm_stat', [ '-c', '6', '1' ], {
+			encoding: 'utf8',
+			timeout: 10000,
+		} );
+		return parseMacVmStatOutput( output );
+	} catch {
+		return null;
+	}
+}
+
+function sampleMacSwapUsage() {
+	if ( process.platform !== 'darwin' ) {
+		return null;
+	}
+
+	try {
+		const output = execFileSync( 'sysctl', [ 'vm.swapusage' ], {
+			encoding: 'utf8',
+			timeout: 5000,
+		} );
+		const match = output.match(
+			/total = ([\d.]+)M\s+used = ([\d.]+)M\s+free = ([\d.]+)M/
+		);
+		if ( ! match ) {
+			return null;
+		}
+		return {
+			totalGb: Number.parseFloat( match[ 1 ] ) / 1024,
+			usedGb: Number.parseFloat( match[ 2 ] ) / 1024,
+			freeGb: Number.parseFloat( match[ 3 ] ) / 1024,
+		};
+	} catch {
+		return null;
+	}
+}
+
+function parseMacVmStatOutput( output ) {
+	const pageSizeMatch = output.match( /page size of (\d+) bytes/ );
+	const pageSizeBytes = pageSizeMatch
+		? Number.parseInt( pageSizeMatch[ 1 ], 10 )
+		: 4096;
+	const lines = output
+		.split( '\n' )
+		.map( ( line ) => line.trim() )
+		.filter( Boolean );
+	const headerIndex = lines.findIndex( ( line ) =>
+		/^free\s+active\s+specul\s+inactive\s+throttle\b/.test( line )
+	);
+	if ( headerIndex === -1 || headerIndex + 2 >= lines.length ) {
+		return null;
+	}
+
+	const headers = lines[ headerIndex ].split( /\s+/ );
+	const rows = lines
+		.slice( headerIndex + 1 )
+		.map( ( line ) => line.split( /\s+/ ) )
+		.filter( ( values ) => values.length >= headers.length )
+		.map( ( values ) =>
+			Object.fromEntries(
+				headers.map( ( header, index ) => [
+					header,
+					parseMacVmStatNumber( values[ index ] ),
+				] )
+			)
+		);
+	const deltaRows = rows.slice( 1 );
+	if ( deltaRows.length === 0 ) {
+		return null;
+	}
+
+	const averagePagesPerSecond = ( field ) =>
+		deltaRows.reduce( ( total, row ) => total + ( row[ field ] ?? 0 ), 0 ) /
+		deltaRows.length;
+	const pagesToMbPerSecond = ( pagesPerSecond ) =>
+		( pagesPerSecond * pageSizeBytes ) / 1024 ** 2;
+
+	return {
+		decompressMbPerSecond: pagesToMbPerSecond(
+			averagePagesPerSecond( 'dcomprs' )
+		),
+		pageinMbPerSecond: pagesToMbPerSecond(
+			averagePagesPerSecond( 'pageins' )
+		),
+		pageoutMbPerSecond: pagesToMbPerSecond(
+			averagePagesPerSecond( 'pageout' )
+		),
+		pageSizeBytes,
+		sampleCount: deltaRows.length,
+		swapinMbPerSecond: pagesToMbPerSecond(
+			averagePagesPerSecond( 'swapins' )
+		),
+		swapoutMbPerSecond: pagesToMbPerSecond(
+			averagePagesPerSecond( 'swapouts' )
+		),
+		throttledPages: Math.max( ...rows.map( ( row ) => row.throttle ?? 0 ) ),
+	};
+}
+
+function parseMacVmStatNumber( value ) {
+	const match = String( value ).match( /^([\d.]+)([KMG])?$/i );
+	if ( ! match ) {
+		return 0;
+	}
+
+	const number = Number.parseFloat( match[ 1 ] );
+	const suffix = match[ 2 ]?.toUpperCase();
+	if ( suffix === 'K' ) {
+		return number * 1000;
+	}
+	if ( suffix === 'M' ) {
+		return number * 1000 * 1000;
+	}
+	if ( suffix === 'G' ) {
+		return number * 1000 * 1000 * 1000;
+	}
+	return number;
+}
+
+function classifyMemoryHeadroom( {
+	freeMemoryGb,
+	macSwapUsage,
+	macVmStats,
+	memoryPressureFreePercent,
+} ) {
+	if ( macVmStats ) {
+		const blockers = [];
+		if (
+			memoryPressureFreePercent !== null &&
+			memoryPressureFreePercent < MAC_MEMORY_PRESSURE_MIN_FREE_PERCENT
+		) {
+			blockers.push(
+				`memory_pressure free ${ memoryPressureFreePercent }% < ${ MAC_MEMORY_PRESSURE_MIN_FREE_PERCENT }%`
+			);
+		}
+		if ( freeMemoryGb < BROWSER_FREE_MEMORY_MIN_GB ) {
+			blockers.push(
+				`free memory ${ freeMemoryGb.toFixed(
+					2
+				) }G < ${ BROWSER_FREE_MEMORY_MIN_GB }G`
+			);
+		}
+		if ( macVmStats.throttledPages > 0 ) {
+			blockers.push(
+				`vm_stat reports ${ macVmStats.throttledPages } throttled pages`
+			);
+		}
+		if ( macVmStats.swapoutMbPerSecond >= MAC_SWAPOUT_HOLD_MBPS ) {
+			blockers.push(
+				`swapout ${ macVmStats.swapoutMbPerSecond.toFixed(
+					2
+				) } MB/s >= ${ MAC_SWAPOUT_HOLD_MBPS } MB/s`
+			);
+		}
+		if ( macVmStats.pageoutMbPerSecond >= MAC_PAGEOUT_HOLD_MBPS ) {
+			blockers.push(
+				`pageout ${ macVmStats.pageoutMbPerSecond.toFixed(
+					2
+				) } MB/s >= ${ MAC_PAGEOUT_HOLD_MBPS } MB/s`
+			);
+		}
+		if ( macVmStats.decompressMbPerSecond >= MAC_DECOMPRESS_HOLD_MBPS ) {
+			blockers.push(
+				`decompress ${ macVmStats.decompressMbPerSecond.toFixed(
+					2
+				) } MB/s >= ${ MAC_DECOMPRESS_HOLD_MBPS } MB/s`
+			);
+		}
+		if (
+			macSwapUsage &&
+			macSwapUsage.freeGb < MAC_SWAP_FREE_MIN_GB &&
+			macVmStats.swapoutMbPerSecond > 0
+		) {
+			blockers.push(
+				`swap free ${ macSwapUsage.freeGb.toFixed(
+					2
+				) }G < ${ MAC_SWAP_FREE_MIN_GB }G while swapout is active`
+			);
+		}
+
+		return {
+			hasHeadroom: blockers.length === 0,
+			reason: blockers.length ? blockers.join( '; ' ) : 'mac-vm-rates-ok',
+		};
+	}
+
+	const memoryHasHeadroom =
+		freeMemoryGb > 3 &&
+		( memoryPressureFreePercent === null ||
+			memoryPressureFreePercent >= 20 );
+	return {
+		hasHeadroom: memoryHasHeadroom,
+		reason: memoryHasHeadroom
+			? 'fallback-free-memory-ok'
+			: 'fallback-free-memory-low',
+	};
+}
+
+function hasRecentStartupFailurePause( group ) {
+	const cutoff = Date.now() - STARTUP_FAILURE_COOLDOWN_HOURS * 60 * 60 * 1000;
+
+	return ( state.changes ?? [] ).some( ( change ) => {
+		if (
+			change.action !== 'pause-group' ||
+			change.group !== group ||
+			! /pre-action .*startup|startup failures/i.test(
+				change.reason ?? ''
+			)
+		) {
+			return false;
+		}
+
+		const timestamp = Date.parse( change.at );
+		return Number.isFinite( timestamp ) && timestamp >= cutoff;
+	} );
+}
+
 function buildGroup( profile ) {
 	const transport = profile.transport ?? 'ws';
 	const transportEnv =
@@ -824,6 +1524,8 @@ function buildGroup( profile ) {
 			WP_ENV_PORT,
 			WP_BASE_URL: BASE_URL,
 			RTC_FUZZ_BASE_URL: BASE_URL,
+			RTC_FUZZ_ANALYSIS_RECHECKS: '1',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '0',
 			...transportEnv,
 			...( transport === 'ws' ? NO_FAULT_WS_ENV : {} ),
 			GUTENBERG_RTC_BROWSER_ACTION_PROFILE: profile.actionProfile,
@@ -834,10 +1536,8 @@ function buildGroup( profile ) {
 	};
 }
 
-async function applyPolicy( novelty, resources ) {
+async function applyPolicy( novelty, resources, triageYield ) {
 	const enabled = new Set( state.enabledGroups );
-	const blockGauntletEnabled = enabled.has( 'novelty-ws-block-gauntlet' );
-	const commonBlocksEnabled = enabled.has( 'novelty-ws-common-blocks' );
 	const lifecycleEnabled = enabled.has( 'novelty-ws-lifecycle' );
 	const persistenceNoTitleEnabled = enabled.has(
 		'novelty-ws-persistence-no-title'
@@ -848,10 +1548,16 @@ async function applyPolicy( novelty, resources ) {
 	const threeUserLateJoinEnabled = enabled.has(
 		'novelty-ws-three-user-late-join'
 	);
+	const sameUserLifecycleEnabled = enabled.has(
+		'novelty-ws-same-user-lifecycle'
+	);
 	const parserSerializationEnabled = enabled.has(
 		'novelty-ws-parser-serialization'
 	);
 	const parserTransformEnabled = enabled.has( 'novelty-ws-parser-transform' );
+	const realUserEditingEnabled = enabled.has(
+		'novelty-ws-real-user-editing'
+	);
 	const multiReloadLifecycleEnabled = enabled.has(
 		'novelty-ws-multi-reload-lifecycle'
 	);
@@ -860,14 +1566,22 @@ async function applyPolicy( novelty, resources ) {
 		state.recordCountsByProfile?.[ 'common-blocks' ] ??
 		novelty.byProfile[ 'common-blocks' ]?.records ??
 		0;
-	const commonBlockCoverageCount = getCommonBlockCoverageCount();
+	const commonBlockMinCount = getMinBlockCoverageCount( COMMON_BLOCK_TYPES );
+	const commonBlocksComplete =
+		commonBlockRecords >= 100 &&
+		commonBlockMinCount >= COMMON_BLOCK_MIN_RECORDS;
 	const blockGauntletRecords =
 		state.recordCountsByProfile?.[ 'block-gauntlet' ] ??
 		novelty.byProfile[ 'block-gauntlet' ]?.records ??
 		0;
-	const blockGauntletCoverageCount = getBlockGauntletCoverageCount();
+	const blockGauntletMinCount =
+		getMinBlockCoverageCount( BLOCK_GAUNTLET_TYPES );
 	const blockGauntletCoveredTypeCount =
 		getCoveredBlockTypeCount( BLOCK_GAUNTLET_TYPES );
+	const blockGauntletComplete =
+		blockGauntletRecords >= 100 &&
+		blockGauntletCoveredTypeCount === BLOCK_GAUNTLET_TYPES.length &&
+		blockGauntletMinCount >= BLOCK_GAUNTLET_MIN_RECORDS;
 	const structureRecords =
 		state.recordCountsByProfile?.structure ??
 		novelty.byProfile.structure?.records ??
@@ -890,7 +1604,32 @@ async function applyPolicy( novelty, resources ) {
 		0;
 	const parserTransformInitialCoverageCount =
 		getParserTransformInitialCoverageCount();
-	const users3Records = state.featureCounts?.[ 'users:3' ] ?? 0;
+	const parserTransformSaturated =
+		parserTransformRecords >= PARSER_TRANSFORM_ROTATE_RECORDS &&
+		parserTransformInitialCoverageCount >=
+			PARSER_TRANSFORM_ROTATE_INITIAL_RECORDS;
+	const realUserEditingRecords =
+		state.successfulRecordCountsByProfile?.[ 'real-user-editing' ] ?? 0;
+	const realUserEditingActionCounts =
+		state.successfulActionCountsByProfile?.[ 'real-user-editing' ] ?? {};
+	const realUserEditingMinActionRecords = Math.min(
+		...REAL_USER_EDITING_ACTION_LABELS.map(
+			( label ) => realUserEditingActionCounts[ label ] ?? 0
+		)
+	);
+	const realUserEditingNeedsCoverage =
+		realUserEditingRecords < REAL_USER_EDITING_MIN_RECORDS ||
+		realUserEditingMinActionRecords <
+			REAL_USER_EDITING_MIN_ACTION_RECORDS ||
+		( ( triageYield?.likelyRealVisible ?? 0 ) === 0 &&
+			realUserEditingRecords < REAL_USER_EDITING_NO_YIELD_MIN_RECORDS );
+	const holdNoisyBlockTopOff = shouldHoldNoisyBlockTopOff( triageYield );
+	const holdDominantRealUserFamilyActive =
+		shouldHoldDominantRealUserFamily( triageYield );
+	const lateJoin3Records =
+		state.featureCounts?.[ 'lifecycle:late-join:users-3' ] ?? 0;
+	const sameUserRecords =
+		state.featureCounts?.[ 'collaborator-mode:same-user' ] ?? 0;
 	const reload2Records = state.featureCounts?.[ 'reload-count:2' ] ?? 0;
 	const revisionEligibleRecords =
 		state.featureCounts?.[ 'revision-eligible:true' ] ?? 0;
@@ -898,15 +1637,9 @@ async function applyPolicy( novelty, resources ) {
 	function canRotateAwayFromGroup( group ) {
 		switch ( group ) {
 			case 'novelty-ws-block-gauntlet':
-				return (
-					blockGauntletRecords >= 75 &&
-					blockGauntletCoverageCount >= 75 &&
-					blockGauntletCoveredTypeCount >= 10
-				);
+				return blockGauntletComplete;
 			case 'novelty-ws-common-blocks':
-				return (
-					commonBlockRecords >= 50 && commonBlockCoverageCount >= 50
-				);
+				return commonBlocksComplete;
 			case 'novelty-ws-parser-serialization':
 				return parserRecords >= 50;
 			case 'novelty-ws-parser-transform':
@@ -914,12 +1647,16 @@ async function applyPolicy( novelty, resources ) {
 					parserTransformRecords >= 100 &&
 					parserTransformInitialCoverageCount >= 100
 				);
+			case 'novelty-ws-real-user-editing':
+				return ! realUserEditingNeedsCoverage;
 			case 'novelty-ws-revision-persistence':
 				return revisionEligibleRecords >= 500;
 			case 'novelty-ws-three-user-late-join':
-				return users3Records >= 100;
+				return lateJoin3Records >= LATE_JOIN_LIFECYCLE_MIN_RECORDS;
 			case 'novelty-ws-multi-reload-lifecycle':
 				return reload2Records >= 100;
+			case 'novelty-ws-same-user-lifecycle':
+				return sameUserRecords >= 150;
 			default:
 				return false;
 		}
@@ -955,11 +1692,41 @@ async function applyPolicy( novelty, resources ) {
 		reason,
 		{ allowRotation = false, budgetReserved = false } = {}
 	) {
+		if ( state.disabledGroups?.[ group ] ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'keep-disabled-group',
+				group,
+				reason: state.disabledGroups[ group ].reason ?? reason,
+			} );
+			return false;
+		}
+
 		if ( enabled.has( group ) ) {
 			return false;
 		}
 
 		if ( state.pausedGroups?.[ group ] && ! allowRotation ) {
+			return false;
+		}
+
+		const profile = PROFILE_BY_GROUP[ group ];
+		const startupFailures =
+			profile === undefined
+				? 0
+				: state.startupFailureCountsByProfile?.[ profile ] ?? 0;
+		if (
+			state.pausedGroups?.[ group ] &&
+			( startupFailures >= STARTUP_FAILURE_LIMIT ||
+				hasRecentStartupFailurePause( group ) )
+		) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'keep-paused-startup-failures',
+				group,
+				profile,
+				reason: `profile ${ profile } is still inside the pre-action startup failure cooldown`,
+			} );
 			return false;
 		}
 
@@ -983,7 +1750,6 @@ async function applyPolicy( novelty, resources ) {
 
 		if ( state.pausedGroups?.[ group ] ) {
 			delete state.pausedGroups[ group ];
-			const profile = PROFILE_BY_GROUP[ group ];
 			if ( profile ) {
 				delete state.startupFailureCountsByProfile[ profile ];
 				state.changes.push( {
@@ -1034,30 +1800,6 @@ async function applyPolicy( novelty, resources ) {
 		return true;
 	}
 
-	async function reserveBudgetForBlockGauntlet( reason ) {
-		if ( resources.hasHeadroom || enabled.size < TARGET_ENABLED_GROUPS ) {
-			return true;
-		}
-
-		for ( const candidate of [
-			'novelty-ws-three-user-late-join',
-			'novelty-ws-revision-persistence',
-			'novelty-ws-common-blocks',
-		] ) {
-			if ( ! enabled.has( candidate ) ) {
-				continue;
-			}
-
-			await pauseGroup(
-				candidate,
-				`rotating browser budget to novelty-ws-block-gauntlet: ${ reason }`
-			);
-			return true;
-		}
-
-		return false;
-	}
-
 	async function reserveBudgetForParserTransform( reason ) {
 		if ( resources.hasHeadroom || enabled.size < TARGET_ENABLED_GROUPS ) {
 			return true;
@@ -1083,25 +1825,92 @@ async function applyPolicy( novelty, resources ) {
 		return false;
 	}
 
-	if (
-		! blockGauntletEnabled &&
-		( blockGauntletRecords < 75 || blockGauntletCoveredTypeCount < 10 )
+	const hasSpareBrowserBudget = () =>
+		resources.hasHeadroom &&
+		enabled.size <
+			Math.min( MAX_ENABLED_GROUPS, TARGET_ENABLED_GROUPS + 1 );
+
+	if ( realUserEditingEnabled && holdDominantRealUserFamilyActive ) {
+		await pauseGroup(
+			'novelty-ws-real-user-editing',
+			`real-user lane is dominated by ${ triageYield.topSemanticFamilies[ 0 ].family } (${ triageYield.topSemanticFamilies[ 0 ].count } signatures, share=${ triageYield.topDuplicateFamilyShare }); pause until the family is analyzed or the lane config changes`
+		);
+	} else if (
+		realUserEditingNeedsCoverage &&
+		! realUserEditingEnabled &&
+		! holdDominantRealUserFamilyActive
 	) {
-		const reason =
-			'block-library gauntlet coverage is low: details/cover/media-text/gallery/file/social/spacer/html/shortcode are absent or rare';
-		await reserveBudgetForBlockGauntlet( reason );
+		await enableGroup(
+			'novelty-ws-real-user-editing',
+			`real-user keyboard editing coverage/yield is low: ${ realUserEditingRecords } / ${ REAL_USER_EDITING_MIN_RECORDS } successful records, min action count ${ realUserEditingMinActionRecords } / ${ REAL_USER_EDITING_MIN_ACTION_RECORDS }, visible likely-real ${
+				triageYield?.likelyRealVisible ?? 0
+			}; exercise a body-save-reload UI schedule with paragraph typing, formatting, heading shortcuts, and post-reload edits`,
+			{ allowRotation: true }
+		);
+	}
+
+	if (
+		parserTransformEnabled &&
+		parserTransformSaturated &&
+		enabled.size >= TARGET_ENABLED_GROUPS &&
+		( sameUserRecords < 150 || ! httpProbeEnabled )
+	) {
+		await pauseGroup(
+			'novelty-ws-parser-transform',
+			`parser-transform surface is saturated (${ parserTransformRecords } records, ${ parserTransformInitialCoverageCount } parser initial-profile hits); rotate budget to lower-noise same-user/HTTP canaries`
+		);
+	}
+
+	if (
+		hasSpareBrowserBudget() &&
+		! realUserEditingNeedsCoverage &&
+		! holdNoisyBlockTopOff &&
+		! enabled.has( 'novelty-ws-block-gauntlet' ) &&
+		! blockGauntletComplete
+	) {
+		const reason = `block-library gauntlet per-block coverage is low: min=${ blockGauntletMinCount } target=${ BLOCK_GAUNTLET_MIN_RECORDS }`;
 		await enableGroup( 'novelty-ws-block-gauntlet', reason );
 	}
 
 	if (
-		! commonBlocksEnabled &&
-		( commonBlockRecords < 50 || commonBlockCoverageCount < 50 )
+		hasSpareBrowserBudget() &&
+		! realUserEditingNeedsCoverage &&
+		! holdNoisyBlockTopOff &&
+		! enabled.has( 'novelty-ws-common-blocks' ) &&
+		! enabled.has( 'novelty-ws-block-gauntlet' ) &&
+		! commonBlocksComplete
 	) {
 		await enableGroup(
 			'novelty-ws-common-blocks',
-			'common block coverage is low: image/buttons/columns/code/preformatted are absent or rare',
-			{ allowRotation: true }
+			`common block per-block coverage is low: min=${ commonBlockMinCount } target=${ COMMON_BLOCK_MIN_RECORDS }`
 		);
+	}
+
+	if (
+		enabled.size >
+			Math.min( MAX_ENABLED_GROUPS, TARGET_ENABLED_GROUPS + 1 ) &&
+		enabled.has( 'novelty-ws-block-gauntlet' ) &&
+		enabled.has( 'novelty-ws-common-blocks' )
+	) {
+		await pauseGroup(
+			'novelty-ws-common-blocks',
+			'spare-slot guard: block-gauntlet and common-block top-offs were both enabled; keep only the thinner block-gauntlet lane'
+		);
+	}
+
+	if ( holdNoisyBlockTopOff ) {
+		for ( const group of [
+			'novelty-ws-common-blocks',
+			'novelty-ws-block-gauntlet',
+		] ) {
+			if ( ! enabled.has( group ) ) {
+				continue;
+			}
+			await pauseGroup(
+				group,
+				`triage yield is duplicate/noise dominated: top family share ${ triageYield.topDuplicateFamilyShare }, normalization noise candidates ${ triageYield.normalizationNoiseCandidates }, visible likely-real ${ triageYield.likelyRealVisible }`
+			);
+		}
 	}
 
 	if (
@@ -1165,11 +1974,32 @@ async function applyPolicy( novelty, resources ) {
 		);
 	}
 
-	if ( ! threeUserLateJoinEnabled && users3Records < 100 ) {
+	if (
+		! threeUserLateJoinEnabled &&
+		lateJoin3Records < LATE_JOIN_LIFECYCLE_MIN_RECORDS
+	) {
 		await enableGroup(
 			'novelty-ws-three-user-late-join',
 			'three-user late-join coverage is low; force a real late join early in the seed',
 			{ allowRotation: true }
+		);
+	}
+
+	if (
+		ENABLE_SAME_USER_PROBE &&
+		! sameUserLifecycleEnabled &&
+		sameUserRecords < 150 &&
+		lateJoin3Records >= SAME_USER_CANARY_LATE_JOIN_MIN_RECORDS
+	) {
+		if ( threeUserLateJoinEnabled ) {
+			await pauseGroup(
+				'novelty-ws-three-user-late-join',
+				`late-join coverage reached same-user canary threshold ${ lateJoin3Records }; hand off browser slot to same-user lifecycle`
+			);
+		}
+		await enableGroup(
+			'novelty-ws-same-user-lifecycle',
+			'same-user browser lifecycle coverage is absent; exercise two tabs under the same account'
 		);
 	}
 
@@ -1188,12 +2018,12 @@ async function applyPolicy( novelty, resources ) {
 	if (
 		! httpProbeEnabled &&
 		ENABLE_HTTP_PROBE &&
-		resources.hasHeadroom &&
-		enabled.size < MAX_ENABLED_GROUPS
+		( resources.hasHeadroom || parserTransformSaturated ) &&
+		enabled.size < Math.min( MAX_ENABLED_GROUPS, TARGET_ENABLED_GROUPS + 1 )
 	) {
 		await enableGroup(
 			'novelty-http-persistence-probe',
-			'HTTP probe explicitly enabled; run a low-fault persistence lane after quarantine'
+			'HTTP persistence canary is absent; run a low-fault persistence lane to keep transport coverage mixed'
 		);
 	}
 
@@ -1203,18 +2033,25 @@ async function applyPolicy( novelty, resources ) {
 			[ 'novelty-ws-common-blocks', 'common-blocks' ],
 			[ 'novelty-ws-parser-serialization', 'parser-serialization' ],
 			[ 'novelty-ws-parser-transform', 'parser-transform' ],
+			[ 'novelty-ws-real-user-editing', 'real-user-editing' ],
 			[ 'novelty-ws-multi-reload-lifecycle', 'multi-reload-lifecycle' ],
 			[ 'novelty-ws-three-user-late-join', 'three-user-late-join' ],
+			[ 'novelty-ws-same-user-lifecycle', 'session-lifecycle' ],
 			[ 'novelty-ws-revision-persistence', 'revision-persistence' ],
 		];
 
 		for ( const [ group, profile ] of pauseOrder ) {
 			const startupFailures =
 				state.startupFailureCountsByProfile?.[ profile ] ?? 0;
-			if ( startupFailures >= STARTUP_FAILURE_LIMIT ) {
+			if (
+				startupFailures >= STARTUP_FAILURE_LIMIT ||
+				hasRecentStartupFailurePause( group )
+			) {
 				await pauseGroup(
 					group,
-					`profile ${ profile } produced ${ startupFailures } pre-action WS discovery/startup failures`
+					startupFailures >= STARTUP_FAILURE_LIMIT
+						? `profile ${ profile } produced ${ startupFailures } pre-action WS discovery/startup failures`
+						: `profile ${ profile } is inside the pre-action WS discovery/startup failure cooldown`
 				);
 			}
 		}
@@ -1236,6 +2073,9 @@ async function applyPolicy( novelty, resources ) {
 		}
 	}
 
+	for ( const disabledGroup of Object.keys( state.disabledGroups ?? {} ) ) {
+		enabled.delete( disabledGroup );
+	}
 	state.enabledGroups = [ ...enabled ];
 	const groups = PROFILE_GROUPS.filter( ( profile ) =>
 		enabled.has( profile.name )
@@ -1362,7 +2202,7 @@ async function ensureSupervisor( resources ) {
 				2
 			) }, cores=${
 				resources.cores
-			}, free=${ resources.freeMemoryGb.toFixed( 1 ) }G`
+			}, memory=${ formatMemoryHeadroomSummary( resources ) }`
 		);
 		return;
 	}
@@ -1396,7 +2236,44 @@ function shellQuote( value ) {
 	return `'${ String( value ).replaceAll( "'", `'\\''` ) }'`;
 }
 
-function evaluateHealth( groups, coverageFiles ) {
+function formatMemoryHeadroomSummary( resources ) {
+	return [
+		`${ resources.freeMemoryGb.toFixed( 1 ) }G unused`,
+		`pressure=${
+			resources.memoryPressureFreePercent === null
+				? 'n/a'
+				: `${ resources.memoryPressureFreePercent }%`
+		}`,
+		formatMacVmStats( resources.macVmStats ),
+		formatMacSwapUsage( resources.macSwapUsage ),
+		`reason=${ resources.memoryHeadroomReason }`,
+	].join( ', ' );
+}
+
+function formatMacVmStats( macVmStats ) {
+	if ( ! macVmStats ) {
+		return 'n/a';
+	}
+
+	return [
+		`swapout=${ macVmStats.swapoutMbPerSecond.toFixed( 2 ) } MB/s`,
+		`pageout=${ macVmStats.pageoutMbPerSecond.toFixed( 2 ) } MB/s`,
+		`decompress=${ macVmStats.decompressMbPerSecond.toFixed( 2 ) } MB/s`,
+		`throttled=${ macVmStats.throttledPages } pages`,
+	].join( ', ' );
+}
+
+function formatMacSwapUsage( macSwapUsage ) {
+	if ( ! macSwapUsage ) {
+		return 'n/a';
+	}
+
+	return `${ macSwapUsage.usedGb.toFixed(
+		1
+	) }G used / ${ macSwapUsage.freeGb.toFixed( 1 ) }G free`;
+}
+
+function evaluateHealth( groups, coverageFiles, triageYield, supervisorState ) {
 	const warnings = [];
 	const enabledProfiles = new Set(
 		( groups ?? [] )
@@ -1453,13 +2330,41 @@ function evaluateHealth( groups, coverageFiles ) {
 		}
 	}
 
+	if ( shouldHoldNoisyBlockTopOff( triageYield ) ) {
+		warnings.push(
+			`triage yield is duplicate/noise dominated: top family share ${ triageYield.topDuplicateFamilyShare }, normalization noise candidates ${ triageYield.normalizationNoiseCandidates }, visible likely-real ${ triageYield.likelyRealVisible }`
+		);
+	}
+
+	for ( const group of supervisorState?.groups ?? [] ) {
+		for ( const warning of group.seedOverlapWarnings ?? [] ) {
+			warnings.push(
+				`active seed overlap in ${ group.name }: ${ warning.left } overlaps ${ warning.right }`
+			);
+		}
+	}
+
 	state.healthWarnings = warnings;
 	return warnings;
 }
 
-async function writeStatus( novelty, resources, coverageFiles, coverageStats ) {
+async function writeStatus(
+	novelty,
+	resources,
+	coverageFiles,
+	coverageStats,
+	triageYield
+) {
 	const groups = await readJsonFile( GROUPS_PATH );
 	const healthWarnings = state.healthWarnings ?? [];
+	const undercoveredCommonBlocks = getUndercoveredBlockTypes(
+		COMMON_BLOCK_TYPES,
+		COMMON_BLOCK_MIN_RECORDS
+	);
+	const undercoveredBlockGauntlet = getUndercoveredBlockTypes(
+		BLOCK_GAUNTLET_TYPES,
+		BLOCK_GAUNTLET_MIN_RECORDS
+	);
 	const lines = [
 		'# RTC Novelty Monitor',
 		'',
@@ -1480,6 +2385,9 @@ async function writeStatus( novelty, resources, coverageFiles, coverageStats ) {
 				? 'n/a'
 				: `${ resources.memoryPressureFreePercent }%`
 		}`,
+		`- memory VM rates: ${ formatMacVmStats( resources.macVmStats ) }`,
+		`- swap usage: ${ formatMacSwapUsage( resources.macSwapUsage ) }`,
+		`- memory headroom reason: ${ resources.memoryHeadroomReason }`,
 		`- headroom for adding groups: ${
 			resources.hasHeadroom ? 'yes' : 'no'
 		}`,
@@ -1495,11 +2403,53 @@ async function writeStatus( novelty, resources, coverageFiles, coverageStats ) {
 		`- all-time records by profile: ${ JSON.stringify(
 			state.recordCountsByProfile ?? {}
 		) }`,
+		`- successful records by profile: ${ JSON.stringify(
+			state.successfulRecordCountsByProfile ?? {}
+		) }`,
 		`- all-time records by transport: ${ JSON.stringify(
 			state.recordCountsByTransport ?? {}
 		) }`,
 		`- pre-action startup failures by profile: ${ JSON.stringify(
 			state.startupFailureCountsByProfile ?? {}
+		) }`,
+		`- common-block aggregate coverage: ${ getCommonBlockCoverageCount() }`,
+		`- common-block min coverage: ${ getMinBlockCoverageCount(
+			COMMON_BLOCK_TYPES
+		) } / ${ COMMON_BLOCK_MIN_RECORDS }`,
+		`- common-block undercovered: ${ JSON.stringify(
+			undercoveredCommonBlocks
+		) }`,
+		`- block-gauntlet aggregate coverage: ${ getBlockGauntletCoverageCount() }`,
+		`- block-gauntlet min coverage: ${ getMinBlockCoverageCount(
+			BLOCK_GAUNTLET_TYPES
+		) } / ${ BLOCK_GAUNTLET_MIN_RECORDS }`,
+		`- block-gauntlet undercovered: ${ JSON.stringify(
+			undercoveredBlockGauntlet
+		) }`,
+		`- late-join lifecycle records: ${
+			state.featureCounts?.[ 'lifecycle:late-join:users-3' ] ?? 0
+		} / ${ LATE_JOIN_LIFECYCLE_MIN_RECORDS }`,
+		`- same-user records: ${
+			state.featureCounts?.[ 'collaborator-mode:same-user' ] ?? 0
+		}`,
+		`- real-user editing successful records: ${
+			state.successfulRecordCountsByProfile?.[ 'real-user-editing' ] ?? 0
+		} / ${ REAL_USER_EDITING_MIN_RECORDS }`,
+		`- real-user editing successful action counts: ${ JSON.stringify(
+			state.successfulActionCountsByProfile?.[ 'real-user-editing' ] ?? {}
+		) }`,
+		'',
+		'## Triage Yield',
+		`- triage state files: ${ triageYield.files }`,
+		`- signatures: ${ triageYield.signatureCount }`,
+		`- likely-real visible: ${ triageYield.likelyRealVisible }`,
+		`- likely-real merged duplicates: ${ triageYield.likelyRealMerged }`,
+		`- likely-real oracle/noise questions: ${ triageYield.likelyRealOracleQuestion }`,
+		`- normalization-noise candidates: ${ triageYield.normalizationNoiseCandidates }`,
+		`- bootstrap stalls: ${ triageYield.bootstrapStalls }`,
+		`- top duplicate family share: ${ triageYield.topDuplicateFamilyShare }`,
+		`- top semantic families: ${ JSON.stringify(
+			triageYield.topSemanticFamilies
 		) }`,
 		'',
 		'## Health',
@@ -1538,17 +2488,32 @@ async function writeStatus( novelty, resources, coverageFiles, coverageStats ) {
 
 async function runPass() {
 	const coverageFiles = await findCoverageFiles( OBSERVED_RUN_DIRS );
+	const triageYield = await summarizeTriageYield( OBSERVED_RUN_DIRS );
+	state.triageYield = triageYield;
 	const { records, stats } = await readCoverageRecords( coverageFiles );
 	const novelty = summarizeNovelty( records );
 	const resources = sampleResources();
-	await applyPolicy( novelty, resources );
-	evaluateHealth( await readJsonFile( GROUPS_PATH ), coverageFiles );
+	await applyPolicy( novelty, resources, triageYield );
+	evaluateHealth(
+		await readJsonFile( GROUPS_PATH ),
+		coverageFiles,
+		triageYield,
+		await readJsonFile( path.join( OUTPUT_DIR, 'supervisor-state.json' ) )
+	);
 	await ensureSupervisor( resources );
 	state.lastUpdatedAt = new Date().toISOString();
 	await writeJsonFileAtomic( STATE_PATH, state );
-	await writeStatus( novelty, resources, coverageFiles, stats );
+	await writeStatus( novelty, resources, coverageFiles, stats, triageYield );
 	await log(
-		`pass: processed=${ novelty.processed } files=${ coverageFiles.length } newFeatures=${ novelty.newFeatureKeys } newCdp=${ novelty.newCoverageHashes } warnings=${ state.healthWarnings.length } headroom=${ resources.hasHeadroom }`
+		`pass: processed=${ novelty.processed } files=${
+			coverageFiles.length
+		} newFeatures=${ novelty.newFeatureKeys } newCdp=${
+			novelty.newCoverageHashes
+		} warnings=${ state.healthWarnings.length } headroom=${
+			resources.hasHeadroom
+		} likelyReal=${ triageYield.likelyRealVisible } duplicateShare=${
+			triageYield.topDuplicateFamilyShare
+		} memory=${ formatMemoryHeadroomSummary( resources ) }`
 	);
 }
 

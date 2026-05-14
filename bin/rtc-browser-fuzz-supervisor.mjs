@@ -91,10 +91,8 @@ function parseGroups() {
 		process.env.RTC_FUZZ_SUPERVISOR_GROUPS_JSON ??
 		( groupsPath ? readFileSync( groupsPath, 'utf8' ) : null );
 	const groups = rawGroups ? JSON.parse( rawGroups ) : DEFAULT_GROUPS;
-	if ( ! Array.isArray( groups ) || groups.length === 0 ) {
-		throw new Error(
-			'RTC_FUZZ_SUPERVISOR_GROUPS_JSON must be a non-empty array.'
-		);
+	if ( ! Array.isArray( groups ) ) {
+		throw new Error( 'RTC_FUZZ_SUPERVISOR_GROUPS_JSON must be an array.' );
 	}
 
 	return groups.map( ( group ) => {
@@ -1076,7 +1074,17 @@ async function ensureTransport( groupState ) {
 	);
 }
 
-function groupEnvForLaunch( group, groupState, baseUrl, runDir ) {
+function groupEnvForLaunch(
+	group,
+	groupState,
+	baseUrl,
+	runDir,
+	{
+		laneCount = groupState.lanes,
+		seedStride = groupState.lanes,
+		startSeeds = null,
+	} = {}
+) {
 	const transportEnv =
 		group.transport === 'ws'
 			? {
@@ -1105,8 +1113,14 @@ function groupEnvForLaunch( group, groupState, baseUrl, runDir ) {
 		RTC_FUZZ_BASE_URL: baseUrl,
 		WP_BASE_URL: baseUrl,
 		RTC_FUZZ_OUTPUT_DIR: runDir,
-		RTC_FUZZ_PARALLEL_LANES: String( groupState.lanes ),
-		RTC_FUZZ_START_SEED: String( groupState.nextStartSeed ),
+		RTC_FUZZ_PARALLEL_LANES: String( laneCount ),
+		RTC_FUZZ_START_SEED: String(
+			startSeeds?.[ 0 ] ?? groupState.nextStartSeed
+		),
+		...( startSeeds?.length
+			? { RTC_FUZZ_START_SEEDS: startSeeds.join( ',' ) }
+			: {} ),
+		RTC_FUZZ_TOTAL_SEED_STRIDE: String( seedStride ),
 		RTC_FUZZ_STEP_COUNT: String( groupState.stepCount ),
 		RTC_FUZZ_DURATION_HOURS: String(
 			Math.max( 0.1, ( END_AT - Date.now() ) / ( 60 * 60 * 1000 ) )
@@ -1119,7 +1133,12 @@ function groupEnvForLaunch( group, groupState, baseUrl, runDir ) {
 	} );
 }
 
-async function launchGroup( groupState, reason, laneCount = groupState.lanes ) {
+async function launchGroup(
+	groupState,
+	reason,
+	laneCount = groupState.lanes,
+	{ seedStride = groupState.lanes, startSeeds = null } = {}
+) {
 	const group = getGroupConfig( groupState.name );
 	const baseUrl = await ensureWpEnv( groupState );
 	await ensureTransport( groupState );
@@ -1136,7 +1155,13 @@ async function launchGroup( groupState, reason, laneCount = groupState.lanes ) {
 	await fs.mkdir( runDir, { recursive: true } );
 	const launchLogPath = path.join( runDir, 'supervisor-launcher.log' );
 	await log(
-		`${ group.name }: launching ${ laneCount } ${ group.transport } lane(s) from seed ${ groupState.nextStartSeed } at ${ baseUrl } (${ reason }).`
+		`${ group.name }: launching ${ laneCount } ${
+			group.transport
+		} lane(s) from seed(s) ${
+			startSeeds?.length
+				? startSeeds.join( ',' )
+				: groupState.nextStartSeed
+		} stride ${ seedStride } at ${ baseUrl } (${ reason }).`
 	);
 	await event( {
 		group: group.name,
@@ -1145,7 +1170,9 @@ async function launchGroup( groupState, reason, laneCount = groupState.lanes ) {
 		runDir,
 		baseUrl,
 		lanes: laneCount,
-		startSeed: groupState.nextStartSeed,
+		startSeed: startSeeds?.[ 0 ] ?? groupState.nextStartSeed,
+		startSeeds,
+		seedStride,
 		transport: group.transport,
 	} );
 
@@ -1154,7 +1181,11 @@ async function launchGroup( groupState, reason, laneCount = groupState.lanes ) {
 		args: [ 'bin/rtc-browser-fuzz-launcher.mjs' ],
 		cwd: group.repoRoot,
 		env: {
-			...groupEnvForLaunch( group, groupState, baseUrl, runDir ),
+			...groupEnvForLaunch( group, groupState, baseUrl, runDir, {
+				laneCount,
+				seedStride,
+				startSeeds,
+			} ),
 			RTC_FUZZ_PARALLEL_LANES: String( laneCount ),
 		},
 		timeoutMs: 180000,
@@ -1191,7 +1222,9 @@ async function launchGroup( groupState, reason, laneCount = groupState.lanes ) {
 		reason,
 		baseUrl,
 		lanes: laneCount,
-		startSeed: groupState.nextStartSeed,
+		startSeed: startSeeds?.[ 0 ] ?? groupState.nextStartSeed,
+		startSeeds,
+		seedStride,
 	} );
 	await writeState();
 }
@@ -1225,10 +1258,174 @@ function getActiveRunDirs( groupState ) {
 }
 
 function getResumeSeed( laneStates ) {
-	const seeds = laneStates
-		.map( ( lane ) => lane.state?.nextSeed )
-		.filter( ( value ) => Number.isInteger( value ) );
+	const seeds = getResumeSeeds( laneStates );
 	return seeds.length ? Math.min( ...seeds ) : null;
+}
+
+function getResumeSeeds( laneStates ) {
+	return [
+		...new Set(
+			laneStates
+				.map( getLaneResumeSeed )
+				.filter( ( value ) => Number.isInteger( value ) )
+		),
+	].sort( ( a, b ) => a - b );
+}
+
+function getLaneResumeSeed( lane ) {
+	if ( Number.isInteger( lane.state?.nextSeed ) ) {
+		return lane.state.nextSeed;
+	}
+
+	if ( Number.isInteger( lane.startSeed ) ) {
+		return lane.startSeed;
+	}
+
+	return null;
+}
+
+function getLaneSeedStride( lane ) {
+	return lane.seedStride ?? lane.state?.seedStride;
+}
+
+function getReplacementStartSeeds(
+	laneStates,
+	laneCount,
+	fallbackSeed,
+	seedStride,
+	activeLaneStates = []
+) {
+	const activeSequences = activeLaneStates
+		.map( ( lane ) => ( {
+			nextSeed: getLaneResumeSeed( lane ),
+			seedStride: getLaneSeedStride( lane ),
+		} ) )
+		.filter(
+			( lane ) =>
+				Number.isInteger( lane.nextSeed ) &&
+				Number.isInteger( lane.seedStride ) &&
+				lane.seedStride > 0
+		);
+	const seeds = [];
+	const seedAlreadyCovered = ( seed ) =>
+		activeSequences.some( ( activeSequence ) =>
+			seedSequencesOverlap(
+				{ nextSeed: seed, seedStride },
+				activeSequence
+			)
+		) ||
+		seeds.some( ( existingSeed ) =>
+			seedSequencesOverlap(
+				{ nextSeed: seed, seedStride },
+				{ nextSeed: existingSeed, seedStride }
+			)
+		);
+
+	for ( const seed of getResumeSeeds( laneStates ) ) {
+		if ( seeds.length >= laneCount ) {
+			break;
+		}
+		if ( ! seedAlreadyCovered( seed ) ) {
+			seeds.push( seed );
+		}
+	}
+
+	let nextSeed = Number.isInteger( fallbackSeed ) ? fallbackSeed : 1007;
+
+	while ( seeds.length < laneCount ) {
+		while ( seedAlreadyCovered( nextSeed ) ) {
+			nextSeed += 1;
+		}
+		seeds.push( nextSeed );
+		nextSeed += 1;
+	}
+
+	return seeds;
+}
+
+function getActiveSeedOverlapWarnings( snapshots ) {
+	const lanes = snapshots.flatMap( ( snapshot ) =>
+		snapshot.laneStates
+			.filter( ( lane ) => lane.pidAlive && ! lane.state?.stopReason )
+			.map( ( lane ) => ( {
+				nextSeed: getLaneResumeSeed( lane ),
+				runDir: snapshot.runDir,
+				seedStride: getLaneSeedStride( lane ),
+				laneLabel: lane.laneLabel,
+			} ) )
+	);
+	const warnings = [];
+
+	for ( let index = 0; index < lanes.length; index++ ) {
+		for (
+			let otherIndex = index + 1;
+			otherIndex < lanes.length;
+			otherIndex++
+		) {
+			const first = lanes[ index ];
+			const second = lanes[ otherIndex ];
+			if ( ! seedSequencesOverlap( first, second ) ) {
+				continue;
+			}
+			warnings.push( {
+				first,
+				second,
+			} );
+		}
+	}
+
+	return warnings;
+}
+
+function getSeedOverlapWarningKey( warnings ) {
+	return warnings
+		.map(
+			( warning ) =>
+				`${ warning.first.runDir }:${ warning.first.laneLabel }:${ warning.first.nextSeed }:${ warning.first.seedStride }|${ warning.second.runDir }:${ warning.second.laneLabel }:${ warning.second.nextSeed }:${ warning.second.seedStride }`
+		)
+		.sort()
+		.join( '\n' );
+}
+
+function formatSeedOverlapWarnings( warnings ) {
+	return warnings
+		.map(
+			( warning ) =>
+				`${ warning.first.laneLabel } next=${ warning.first.nextSeed } stride=${ warning.first.seedStride } run=${ warning.first.runDir } overlaps ${ warning.second.laneLabel } next=${ warning.second.nextSeed } stride=${ warning.second.seedStride } run=${ warning.second.runDir }`
+		)
+		.join( '; ' );
+}
+
+function seedSequencesOverlap( first, second ) {
+	if (
+		! Number.isInteger( first.nextSeed ) ||
+		! Number.isInteger( second.nextSeed ) ||
+		! Number.isInteger( first.seedStride ) ||
+		! Number.isInteger( second.seedStride ) ||
+		first.seedStride <= 0 ||
+		second.seedStride <= 0
+	) {
+		return false;
+	}
+
+	const strideGcd = greatestCommonDivisor(
+		first.seedStride,
+		second.seedStride
+	);
+	return Math.abs( first.nextSeed - second.nextSeed ) % strideGcd === 0;
+}
+
+function greatestCommonDivisor( left, right ) {
+	let a = Math.abs( left );
+	let b = Math.abs( right );
+
+	while ( b !== 0 ) {
+		const next = a % b;
+		a = b;
+		b = next;
+	}
+
+	return a;
 }
 
 async function readRunSnapshot( runDir ) {
@@ -1293,10 +1490,40 @@ async function monitorGroup( groupState ) {
 			( lane ) => ! lane.pidAlive || lane.state?.stopReason
 		)
 	);
+	const activeLaneStates = snapshots.flatMap( ( snapshot ) =>
+		snapshot.laneStates.filter(
+			( lane ) => lane.pidAlive && ! lane.state?.stopReason
+		)
+	);
 	const stoppedResumeSeed = getResumeSeed( stoppedLaneStates );
 	const anyResumeSeed = getResumeSeed(
 		snapshots.flatMap( ( snapshot ) => snapshot.laneStates )
 	);
+	groupState.seedOverlapWarnings = getActiveSeedOverlapWarnings( snapshots );
+	const seedOverlapWarningKey = getSeedOverlapWarningKey(
+		groupState.seedOverlapWarnings
+	);
+	if (
+		seedOverlapWarningKey &&
+		seedOverlapWarningKey !== groupState.lastSeedOverlapWarningKey
+	) {
+		groupState.lastSeedOverlapWarningKey = seedOverlapWarningKey;
+		await log(
+			`${
+				groupState.name
+			}: active seed overlap warning: ${ formatSeedOverlapWarnings(
+				groupState.seedOverlapWarnings
+			) }`
+		);
+		await event( {
+			group: groupState.name,
+			kind: 'warning',
+			warning: 'active-seed-overlap',
+			details: groupState.seedOverlapWarnings,
+		} );
+	} else if ( ! seedOverlapWarningKey ) {
+		delete groupState.lastSeedOverlapWarningKey;
+	}
 
 	groupState.activeRunDirs = snapshots
 		.filter( ( snapshot ) => snapshot.liveLaneCount > 0 )
@@ -1335,10 +1562,21 @@ async function monitorGroup( groupState ) {
 				startSeed: groupState.nextStartSeed,
 				reasons: [ ...new Set( stopReasons ) ],
 			} );
+			const startSeeds = getReplacementStartSeeds(
+				stoppedLaneStates,
+				missingLaneCount,
+				groupState.nextStartSeed,
+				groupState.lanes,
+				activeLaneStates
+			);
 			await launchGroup(
 				groupState,
 				`partial:${ missingLaneCount }-lane-replacement`,
-				missingLaneCount
+				missingLaneCount,
+				{
+					seedStride: groupState.lanes,
+					startSeeds,
+				}
 			);
 			return;
 		}
@@ -1387,7 +1625,16 @@ async function monitorGroup( groupState ) {
 	groupState.status = 'recovering';
 	groupState.activeRunDirs = [];
 	await writeState();
-	await launchGroup( groupState, reason );
+	const allResumeSeeds = getResumeSeeds(
+		snapshots.flatMap( ( snapshot ) => snapshot.laneStates )
+	);
+	await launchGroup( groupState, reason, groupState.lanes, {
+		seedStride: groupState.lanes,
+		startSeeds:
+			allResumeSeeds.length >= groupState.lanes
+				? allResumeSeeds.slice( 0, groupState.lanes )
+				: null,
+	} );
 }
 
 function sleep( ms ) {

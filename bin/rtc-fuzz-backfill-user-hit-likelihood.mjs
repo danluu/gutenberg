@@ -373,11 +373,24 @@ function inferUserHitLikelihood( result ) {
 }
 
 function isLikelyRealResult( result ) {
+	const classification = result?.classification;
+	const candidateStatus = result?.candidateStatus;
+	if (
+		[
+			'false_positive',
+			'infra',
+			'likely_infra',
+			'not_real',
+		].includes( classification )
+	) {
+		return candidateStatus === 'confirmed_likely_real';
+	}
+
 	return (
-		result?.classification === 'real' ||
-		result?.classification === 'likely_real' ||
-		result?.candidateStatus === 'confirmed_likely_real' ||
-		result?.candidateStatus === 'needs_realistic_repro_search'
+		classification === 'real' ||
+		classification === 'likely_real' ||
+		candidateStatus === 'confirmed_likely_real' ||
+		candidateStatus === 'needs_realistic_repro_search'
 	);
 }
 
@@ -587,14 +600,21 @@ function applyLikelihoodToObject( target, likelihood ) {
 
 function summarizeDistinctLikelyReal( entries ) {
 	const byType = new Map();
+	const entryByHash = new Map(
+		entries
+			.filter( ( entry ) => entry.hash )
+			.map( ( entry ) => [ entry.hash, entry ] )
+	);
 
 	for ( const entry of entries ) {
 		if ( ! entry.likelyReal ) {
 			continue;
 		}
 
-		const duplicateOf =
-			entry.result.isDuplicateOf ?? entry.result.duplicateOf ?? null;
+		const duplicateOf = resolveDuplicateOf(
+			entry.result.isDuplicateOf ?? entry.result.duplicateOf ?? null,
+			entryByHash
+		);
 		const groupKey = duplicateOf
 			? `duplicate-of:${ duplicateOf }`
 			: `type:${ entry.result.distinctBugType || entry.hash }`;
@@ -637,6 +657,24 @@ function summarizeDistinctLikelyReal( entries ) {
 
 		return left.groupKey.localeCompare( right.groupKey );
 	} );
+}
+
+function resolveDuplicateOf( duplicateOf, entryByHash ) {
+	let current = duplicateOf;
+	const seen = new Set();
+
+	while ( current && ! seen.has( current ) ) {
+		seen.add( current );
+		const target = entryByHash.get( current );
+		const next =
+			target?.result?.isDuplicateOf ?? target?.result?.duplicateOf ?? null;
+		if ( ! next ) {
+			break;
+		}
+		current = next;
+	}
+
+	return current;
 }
 
 function tierRank( tier ) {

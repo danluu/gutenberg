@@ -53,10 +53,20 @@ const CODEX_TIMEOUT_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_CODEX_TIMEOUT_MS',
 	20 * 60 * 1000
 );
-const ANALYSIS_RECHECKS = getPositiveIntegerEnv(
+const ANALYSIS_RECHECKS = getNonNegativeIntegerEnv(
 	'RTC_FUZZ_ANALYSIS_RECHECKS',
 	2
 );
+const BOOTSTRAP_STALL_RECHECKS = Math.min(
+	ANALYSIS_RECHECKS,
+	getNonNegativeIntegerEnv( 'RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS', 0 )
+);
+const LOW_DISK_MODE = process.env.RTC_FUZZ_LOW_DISK_MODE === '1';
+const PLAYWRIGHT_TRACE =
+	process.env.RTC_FUZZ_PLAYWRIGHT_TRACE ?? ( LOW_DISK_MODE ? 'off' : '' );
+const PLAYWRIGHT_SCREENSHOT = process.env.RTC_FUZZ_PLAYWRIGHT_SCREENSHOT ?? '';
+const PLAYWRIGHT_VIDEO =
+	process.env.RTC_FUZZ_PLAYWRIGHT_VIDEO ?? ( LOW_DISK_MODE ? 'off' : '' );
 const FULL_PREFLIGHT_INTERVAL_SEEDS = getPositiveIntegerEnv(
 	'RTC_FUZZ_FULL_PREFLIGHT_INTERVAL_SEEDS',
 	25
@@ -142,6 +152,39 @@ function getPositiveIntegerEnv( name, fallback ) {
 	}
 
 	return parsedValue;
+}
+
+function getNonNegativeIntegerEnv( name, fallback ) {
+	const rawValue = process.env[ name ];
+
+	if ( ! rawValue ) {
+		return fallback;
+	}
+
+	const parsedValue = Number.parseInt( rawValue, 10 );
+
+	if ( Number.isNaN( parsedValue ) || parsedValue < 0 ) {
+		throw new Error( `Expected ${ name } to be a non-negative integer.` );
+	}
+
+	return parsedValue;
+}
+
+function getPlaywrightArtifactArgs() {
+	const optionPairs = [
+		[ 'trace', PLAYWRIGHT_TRACE ],
+		[ 'screenshot', PLAYWRIGHT_SCREENSHOT ],
+		[ 'video', PLAYWRIGHT_VIDEO ],
+	];
+	const args = [];
+
+	for ( const [ name, value ] of optionPairs ) {
+		if ( value ) {
+			args.push( `--${ name }`, value );
+		}
+	}
+
+	return args;
 }
 
 function getPositiveNumberEnv( name, fallback ) {
@@ -698,6 +741,85 @@ function classifyLocalFailure( failureSnippet ) {
 	return 'product-or-test';
 }
 
+function isInfraLocalClassification( localClassification ) {
+	return [ 'harness', 'environment', 'bootstrap-stall' ].includes(
+		localClassification
+	);
+}
+
+function getPrimaryBehavioralCoverage( attempt ) {
+	return (
+		attempt.behavioralCoverage?.find( ( record ) => ! record.parseError ) ??
+		null
+	);
+}
+
+function getPreActionBootstrapStall( attempt, failureSnippet ) {
+	if ( attempt.ok ) {
+		return null;
+	}
+
+	const coverage = getPrimaryBehavioralCoverage( attempt );
+	if ( ! coverage ) {
+		return null;
+	}
+
+	const actions = coverage.actions ?? [];
+	const historyEvents = coverage.historyEvents ?? [];
+	const lastHistoryEvent = historyEvents.at( -1 ) ?? null;
+	const failureLooksLikeBootstrap =
+		/waitForCollaborationReady|setPreferences|_wpCollaborationEnabled|Timed out waiting for collaboration to become ready|TimeoutError: page\.waitForFunction/i.test(
+			failureSnippet
+		);
+
+	if (
+		actions.length === 0 &&
+		( coverage.userCount ?? 0 ) === 0 &&
+		( coverage.faults ?? [] ).length === 0 &&
+		( coverage.reloads ?? [] ).length === 0 &&
+		( coverage.saveCheckpointSteps ?? [] ).length === 0 &&
+		failureLooksLikeBootstrap &&
+		( ! lastHistoryEvent ||
+			[ 'seed', 'bootstrap', 'open', 'join' ].includes(
+				lastHistoryEvent.phase
+			) )
+	) {
+		return {
+			bucket: 'pre-action-bootstrap-stall',
+			lastHistoryPhase: lastHistoryEvent?.phase ?? null,
+			lastHistoryStatus: lastHistoryEvent?.status ?? null,
+			coverageStatus: coverage.status ?? null,
+			transport: coverage.transport ?? null,
+			actionProfile: coverage.actionProfile ?? null,
+			userCount: coverage.userCount ?? 0,
+		};
+	}
+
+	return null;
+}
+
+function getPreActionBootstrapStallGate( attempts ) {
+	const gates = attempts.map( ( attempt ) =>
+		getPreActionBootstrapStall(
+			attempt,
+			extractFailureSnippet( attempt.output ?? '' )
+		)
+	);
+
+	if ( gates.length > 0 && gates.every( Boolean ) ) {
+		return {
+			bucket: 'pre-action-bootstrap-stall',
+			recheckPolicy: {
+				analysisRechecks: ANALYSIS_RECHECKS,
+				bootstrapStallRechecks: BOOTSTRAP_STALL_RECHECKS,
+			},
+			attempts: gates,
+		};
+	}
+
+	return null;
+}
+
 function classifyReproducibility( attempts ) {
 	const failingAttempts = attempts.filter( ( attempt ) => ! attempt.ok );
 
@@ -820,11 +942,24 @@ function pickReplayEnv( env ) {
 		'GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS',
 		'GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS',
 		'GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS',
+		'GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE',
+		'GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE',
+		'GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION',
+		'GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP',
+		'GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS',
+		'GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT',
+		'GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT',
+		'GUTENBERG_RTC_BROWSER_CONVERGENCE_STABLE_SAMPLES',
+		'GUTENBERG_RTC_BROWSER_CONVERGENCE_STABLE_INTERVAL_MS',
 		'GUTENBERG_RTC_TEST_WS_PROVIDER',
 		'GUTENBERG_RTC_TEST_WS_PORT',
 		'GUTENBERG_RTC_TEST_WS_URL',
 		'GUTENBERG_RTC_TEST_WS_SKIP_RESET',
 		'GUTENBERG_RTC_LANE_LABEL',
+		'RTC_FUZZ_LOW_DISK_MODE',
+		'RTC_FUZZ_PLAYWRIGHT_TRACE',
+		'RTC_FUZZ_PLAYWRIGHT_SCREENSHOT',
+		'RTC_FUZZ_PLAYWRIGHT_VIDEO',
 	];
 	return Object.fromEntries(
 		names
@@ -868,7 +1003,14 @@ async function writeReplayManifest( {
 		label,
 		command: {
 			program: 'npm',
-			args: [ 'run', 'test:e2e', '--', SPEC_PATH, '--project=chromium' ],
+			args: [
+				'run',
+				'test:e2e',
+				'--',
+				SPEC_PATH,
+				'--project=chromium',
+				...getPlaywrightArtifactArgs(),
+			],
 			cwd: REPO_ROOT,
 		},
 		env: pickReplayEnv( env ),
@@ -880,6 +1022,12 @@ async function writeReplayManifest( {
 			bootTimeoutMs: BOOT_TIMEOUT_MS,
 			runTimeoutMs: RUN_TIMEOUT_MS,
 			baseUrl: BASE_URL,
+			artifactPolicy: {
+				lowDiskMode: LOW_DISK_MODE,
+				trace: PLAYWRIGHT_TRACE || 'config-default',
+				screenshot: PLAYWRIGHT_SCREENSHOT || 'config-default',
+				video: PLAYWRIGHT_VIDEO || 'config-default',
+			},
 			actionProfile:
 				ACTION_PROFILE || firstCoverage?.actionProfile || 'full',
 			collaboratorMode:
@@ -932,8 +1080,7 @@ async function writeReplayManifest( {
 
 function mapAnalysisKind( analysis, localClassification ) {
 	if ( ! analysis ) {
-		return localClassification === 'harness' ||
-			localClassification === 'environment'
+		return isInfraLocalClassification( localClassification )
 			? 'infra'
 			: 'uncertain';
 	}
@@ -943,11 +1090,12 @@ function mapAnalysisKind( analysis, localClassification ) {
 	}
 
 	if ( analysis.classification === 'uncertain' ) {
-		return 'uncertain';
+		return isInfraLocalClassification( localClassification )
+			? 'infra'
+			: 'uncertain';
 	}
 
-	return localClassification === 'harness' ||
-		localClassification === 'environment'
+	return isInfraLocalClassification( localClassification )
 		? 'infra'
 		: 'not-real';
 }
@@ -997,7 +1145,14 @@ async function runSeedAttempt( seed, label, convergenceTimeoutMs ) {
 	} );
 	const commandResult = await runCombinedCommand( {
 		command: 'npm',
-		args: [ 'run', 'test:e2e', '--', SPEC_PATH, '--project=chromium' ],
+		args: [
+			'run',
+			'test:e2e',
+			'--',
+			SPEC_PATH,
+			'--project=chromium',
+			...getPlaywrightArtifactArgs(),
+		],
 		env,
 		logPath: path.join( attemptDir, 'command.log' ),
 		timeoutMs: RUN_TIMEOUT_MS,
@@ -1358,12 +1513,29 @@ async function main() {
 			`Seed ${ seed } failed; starting deeper analysis. Log: ${ attempts[ 0 ].logPath }`
 		);
 
-		for ( let index = 0; index < ANALYSIS_RECHECKS; index++ ) {
+		const primaryFailureSnippet = extractFailureSnippet(
+			attempts[ 0 ].output
+		);
+		const primaryBootstrapStall = getPreActionBootstrapStall(
+			attempts[ 0 ],
+			primaryFailureSnippet
+		);
+		const recheckCount = primaryBootstrapStall
+			? BOOTSTRAP_STALL_RECHECKS
+			: ANALYSIS_RECHECKS;
+
+		if ( primaryBootstrapStall ) {
+			await log(
+				`Seed ${ seed } failed before any fuzz action (${ primaryBootstrapStall.bucket }); using ${ recheckCount } recheck(s).`
+			);
+		}
+
+		for ( let index = 0; index < recheckCount; index++ ) {
 			const label =
 				index === 0
 					? 'analysis-1-isolated-recheck'
 					: `analysis-${ index + 1 }-deeper-recheck`;
-			const timeoutFactor = index === ANALYSIS_RECHECKS - 1 ? 2 : 1;
+			const timeoutFactor = index === recheckCount - 1 ? 2 : 1;
 			await log( `Rechecking failing seed ${ seed } (${ label }).` );
 			attempts.push(
 				await runSeedAttempt(
@@ -1375,8 +1547,60 @@ async function main() {
 		}
 
 		const failureSnippet = extractFailureSnippet( attempts[ 0 ].output );
-		const localClassification = classifyLocalFailure( failureSnippet );
 		const reproducibility = classifyReproducibility( attempts );
+		const preAnalysisGate = getPreActionBootstrapStallGate( attempts );
+		const localClassification = preAnalysisGate
+			? 'bootstrap-stall'
+			: classifyLocalFailure( failureSnippet );
+
+		if ( preAnalysisGate ) {
+			const summaryRecord = {
+				kind: 'infra',
+				seed,
+				discoveredAt: new Date().toISOString(),
+				reproducibility,
+				localClassification,
+				failureSnippet,
+				preAnalysisGate,
+				attempts: attempts.map( ( { output, ...attempt } ) => attempt ),
+				codex: null,
+				postAnalysisPreflight: null,
+			};
+			await appendSummary( summaryRecord );
+			await appendEvent( {
+				kind: 'seed-classified',
+				seed,
+				result: 'infra',
+				reproducibility,
+				localClassification,
+				failureSnippet,
+				preAnalysisGate,
+				attempts: attempts.map( ( attempt ) => ( {
+					label: attempt.label,
+					ok: attempt.ok,
+					code: attempt.code,
+					durationMs: attempt.durationMs,
+					logPath: attempt.logPath,
+					artifactsDir: attempt.artifactsDir,
+					behavioralCoveragePath: attempt.behavioralCoveragePath,
+					behavioralCoverageSummary:
+						attempt.behavioralCoverageSummary,
+					replayPath: attempt.replayPath,
+				} ) ),
+			} );
+			await updateState( {
+				infraFailures: state.infraFailures + 1,
+			} );
+			await log(
+				`Seed ${ seed } classified as infra (${ preAnalysisGate.bucket }) on ${ LANE_LABEL }.`
+			);
+			seed += SEED_STRIDE;
+			await updateState( {
+				nextSeed: seed,
+			} );
+			continue;
+		}
+
 		const codexAnalysis = await runCodexFailureAnalysis( {
 			seed,
 			attempts,
