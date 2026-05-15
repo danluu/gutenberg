@@ -324,4 +324,110 @@ describe( 'stale top-level block snapshots', () => {
 
 		remoteDoc.destroy();
 	} );
+
+	it( 'deletes a cached previous-local top-level block without mutating it into the retained successor', () => {
+		const initialBlocks = [
+			paragraph( 'inserted', 'Inserted' ),
+			paragraph( 'deleted-original', 'Deleted original' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[ ...initialBlocks, paragraph( 'remote-appended', 'Remote' ) ],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		const deletedYBlock = yblocks.get( 1 );
+		const tailYBlock = yblocks.get( 2 );
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Inserted',
+			'Deleted original',
+			'Tail',
+			'Remote',
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'inserted', 'Inserted' ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Inserted',
+			'Tail',
+			'Remote',
+		] );
+		expect( yblocks.toArray() ).not.toContain( deletedYBlock );
+		expect( yblocks.get( 1 ) ).toBe( tailYBlock );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'deletes a cached previous-local top-level block through the post CRDT adapter', () => {
+		const initialBlocks = [
+			paragraph( 'inserted', 'Inserted' ),
+			paragraph( 'deleted-original', 'Deleted original' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: initialBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{
+				blocks: [
+					...initialBlocks,
+					paragraph( 'remote-appended', 'Remote' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		const yPostBlocks = postBlocks( doc );
+		const deletedYBlock = yPostBlocks.get( 1 );
+		const tailYBlock = yPostBlocks.get( 2 );
+		expect( contentsOf( yPostBlocks ) ).toEqual( [
+			'Inserted',
+			'Deleted original',
+			'Tail',
+			'Remote',
+		] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: [
+					paragraph( 'inserted', 'Inserted' ),
+					paragraph( 'tail', 'Tail' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		expect( contentsOf( yPostBlocks ) ).toEqual( [
+			'Inserted',
+			'Tail',
+			'Remote',
+		] );
+		expect( yPostBlocks.toArray() ).not.toContain( deletedYBlock );
+		expect( yPostBlocks.get( 1 ) ).toBe( tailYBlock );
+
+		remoteDoc.destroy();
+	} );
 } );
