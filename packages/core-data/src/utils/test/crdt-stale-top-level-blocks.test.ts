@@ -520,6 +520,102 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 	} );
 
+	it( 'applies a stale local middle insert while preserving a remote insert', () => {
+		const baseBlocks = [
+			paragraph( 'alpha', 'Alpha' ),
+			paragraph( 'beta', 'Beta' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, baseBlocks, null );
+
+		const currentBlocks = [
+			paragraph( 'alpha', 'Alpha' ),
+			paragraph( 'beta', 'Beta' ),
+			paragraph( 'remote-inserted', 'Remote' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Remote',
+			'Tail',
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'alpha', 'Alpha' ),
+				paragraph( 'inserted', 'Inserted' ),
+				paragraph( 'beta', 'Beta' ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null,
+			baseBlocks
+		);
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Inserted',
+			'Beta',
+			'Remote',
+			'Tail',
+		] );
+	} );
+
+	it( 'applies a stale local middle insert through the post CRDT adapter', () => {
+		const baseBlocks = [
+			paragraph( 'alpha', 'Alpha' ),
+			paragraph( 'beta', 'Beta' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: baseBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const currentBlocks = [
+			paragraph( 'alpha', 'Alpha' ),
+			paragraph( 'beta', 'Beta' ),
+			paragraph( 'remote-inserted', 'Remote' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: currentBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Remote',
+			'Tail',
+		] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: [
+					paragraph( 'alpha', 'Alpha' ),
+					paragraph( 'inserted', 'Inserted' ),
+					paragraph( 'beta', 'Beta' ),
+					paragraph( 'tail', 'Tail' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: baseBlocks } }
+		);
+
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Inserted',
+			'Beta',
+			'Remote',
+			'Tail',
+		] );
+	} );
+
 	it( 'derives post content from merged blocks instead of stale serialized content', () => {
 		const initialBlocks = [
 			paragraph( 'local-edited', 'Alpha' ),

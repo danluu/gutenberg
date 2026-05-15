@@ -31,6 +31,7 @@ interface BlockAttributes {
 }
 
 interface BlockAttributeSchema {
+	__unstablePreserveWhiteSpace?: boolean;
 	role?: string;
 	type?: string;
 	query?: Record< string, BlockAttributeSchema >;
@@ -79,9 +80,31 @@ export type MergeCursorPosition = WPBlockSelection | null;
 
 const ARRAY_ELEMENT_ID_KEY = '__unstableSyncId';
 const ARRAY_ELEMENT_ID_SYMBOL = Symbol( 'wpSyncArrayElementId' );
+const VOID_HTML_TAGS = new Set( [
+	'area',
+	'base',
+	'br',
+	'col',
+	'embed',
+	'hr',
+	'img',
+	'input',
+	'link',
+	'meta',
+	'param',
+	'source',
+	'track',
+	'wbr',
+] );
 
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
 const previousLocalBlocksCache = new WeakMap< YBlocks, Block[] >();
+
+type HTMLFragmentStructureNode =
+	| [ 'comment' ]
+	| [ 'element', string, HTMLFragmentStructureNode[] ]
+	| [ 'other', number ]
+	| [ 'text' ];
 
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
@@ -259,31 +282,360 @@ export function deserializeBlockAttributes( blocks: Block[] ): Block[] {
 	} );
 }
 
+function findHTMLTagEnd( html: string, tagStart: number ): number {
+	let quote: string | null = null;
+
+	for ( let index = tagStart + 1; index < html.length; index++ ) {
+		const char = html[ index ];
+
+		if ( quote ) {
+			if ( char === quote ) {
+				quote = null;
+			}
+			continue;
+		}
+
+		if ( char === '"' || char === "'" ) {
+			quote = char;
+			continue;
+		}
+
+		if ( char === '>' ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
+function areHTMLAttributesWellFormed( attributeText: string ): boolean {
+	const seenAttributes = new Set< string >();
+	let index = 0;
+
+	while ( index < attributeText.length ) {
+		while ( /\s/.test( attributeText[ index ] ?? '' ) ) {
+			index++;
+		}
+
+		if ( index >= attributeText.length ) {
+			return true;
+		}
+
+		const nameMatch = /^[^\s"'<>/=]+/.exec( attributeText.slice( index ) );
+
+		if ( ! nameMatch ) {
+			return false;
+		}
+
+		const attributeName = nameMatch[ 0 ].toLowerCase();
+		if ( seenAttributes.has( attributeName ) ) {
+			return false;
+		}
+		seenAttributes.add( attributeName );
+		index += nameMatch[ 0 ].length;
+
+		while ( /\s/.test( attributeText[ index ] ?? '' ) ) {
+			index++;
+		}
+
+		if ( attributeText[ index ] !== '=' ) {
+			continue;
+		}
+
+		index++;
+		while ( /\s/.test( attributeText[ index ] ?? '' ) ) {
+			index++;
+		}
+
+		const quote = attributeText[ index ];
+		if ( quote === '"' || quote === "'" ) {
+			const endQuote = attributeText.indexOf( quote, index + 1 );
+			if ( endQuote === -1 ) {
+				return false;
+			}
+			index = endQuote + 1;
+			continue;
+		}
+
+		const valueMatch = /^[^\s"'=<>`]+/.exec( attributeText.slice( index ) );
+		if ( ! valueMatch ) {
+			return false;
+		}
+		index += valueMatch[ 0 ].length;
+	}
+
+	return true;
+}
+
+function appendHTMLSourceTextStructure(
+	nodes: HTMLFragmentStructureNode[],
+	text: string
+): void {
+	if ( text ) {
+		nodes.push( [ 'text' ] );
+	}
+}
+
+function getHTMLFragmentSourceStructure(
+	html: string
+): HTMLFragmentStructureNode[] | null {
+	const rootNodes: HTMLFragmentStructureNode[] = [];
+	const nodeStack = [ rootNodes ];
+	const openTags: string[] = [];
+	let index = 0;
+
+	while ( index < html.length ) {
+		const tagStart = html.indexOf( '<', index );
+		if ( tagStart === -1 ) {
+			appendHTMLSourceTextStructure(
+				nodeStack[ nodeStack.length - 1 ],
+				html.slice( index )
+			);
+			return openTags.length === 0 ? rootNodes : null;
+		}
+
+		appendHTMLSourceTextStructure(
+			nodeStack[ nodeStack.length - 1 ],
+			html.slice( index, tagStart )
+		);
+
+		if ( html.startsWith( '<!--', tagStart ) ) {
+			const commentEnd = html.indexOf( '-->', tagStart + 4 );
+			if ( commentEnd === -1 ) {
+				return null;
+			}
+			nodeStack[ nodeStack.length - 1 ].push( [ 'comment' ] );
+			index = commentEnd + 3;
+			continue;
+		}
+
+		const tagEnd = findHTMLTagEnd( html, tagStart );
+		if ( tagEnd === -1 ) {
+			return null;
+		}
+
+		const tagText = html.slice( tagStart + 1, tagEnd ).trim();
+		if (
+			! tagText ||
+			tagText.startsWith( '!' ) ||
+			tagText.startsWith( '?' )
+		) {
+			return null;
+		}
+
+		if ( tagText.startsWith( '/' ) ) {
+			const closeMatch = /^\/([A-Za-z][A-Za-z0-9:-]*)\s*$/.exec(
+				tagText
+			);
+			if ( ! closeMatch ) {
+				return null;
+			}
+
+			const tagName = closeMatch[ 1 ].toLowerCase();
+			if ( VOID_HTML_TAGS.has( tagName ) || openTags.pop() !== tagName ) {
+				return null;
+			}
+
+			nodeStack.pop();
+			index = tagEnd + 1;
+			continue;
+		}
+
+		const openMatch = /^([A-Za-z][A-Za-z0-9:-]*)([\s\S]*)$/.exec( tagText );
+		if ( ! openMatch ) {
+			return null;
+		}
+
+		const tagName = openMatch[ 1 ].toLowerCase();
+		const rawAttributeText = openMatch[ 2 ];
+		const isSelfClosing = /\/\s*$/.test( rawAttributeText );
+		const attributeText = isSelfClosing
+			? rawAttributeText.replace( /\/\s*$/, '' )
+			: rawAttributeText;
+
+		if (
+			( isSelfClosing && ! VOID_HTML_TAGS.has( tagName ) ) ||
+			! areHTMLAttributesWellFormed( attributeText )
+		) {
+			return null;
+		}
+
+		const childNodes: HTMLFragmentStructureNode[] = [];
+		nodeStack[ nodeStack.length - 1 ].push( [
+			'element',
+			tagName,
+			childNodes,
+		] );
+		if ( ! VOID_HTML_TAGS.has( tagName ) ) {
+			openTags.push( tagName );
+			nodeStack.push( childNodes );
+		}
+
+		index = tagEnd + 1;
+	}
+
+	return openTags.length === 0 ? rootNodes : null;
+}
+
+function getHTMLFragmentDOMStructure(
+	nodes: Node[]
+): HTMLFragmentStructureNode[] {
+	return nodes.flatMap( ( node ): HTMLFragmentStructureNode[] => {
+		if ( node.nodeType === Node.TEXT_NODE ) {
+			return node.textContent ? [ [ 'text' ] ] : [];
+		}
+
+		if ( node.nodeType === Node.COMMENT_NODE ) {
+			return [ [ 'comment' ] ];
+		}
+
+		if ( node.nodeType === Node.ELEMENT_NODE ) {
+			const element = node as Element;
+			return [
+				[
+					'element',
+					element.tagName.toLowerCase(),
+					getHTMLFragmentDOMStructure(
+						Array.from( element.childNodes )
+					),
+				],
+			];
+		}
+
+		return [ [ 'other', node.nodeType ] ];
+	} );
+}
+
+function appendHTMLTextNode( nodes: unknown[], text: string ): void {
+	const lastNode = nodes[ nodes.length - 1 ];
+	if ( Array.isArray( lastNode ) && lastNode[ 0 ] === 'text' ) {
+		lastNode[ 1 ] = `${ lastNode[ 1 ] }${ text }`;
+		return;
+	}
+
+	nodes.push( [ 'text', text ] );
+}
+
+function getHTMLFragmentComparisonTree(
+	html: string,
+	preserveWhiteSpace = false
+): unknown {
+	if ( typeof document === 'undefined' ) {
+		return null;
+	}
+
+	const sourceStructure = getHTMLFragmentSourceStructure( html );
+	if ( ! sourceStructure ) {
+		return null;
+	}
+
+	const template = document.createElement( 'template' );
+	template.innerHTML = html;
+
+	if (
+		! fastDeepEqual(
+			sourceStructure,
+			getHTMLFragmentDOMStructure(
+				Array.from( template.content.childNodes )
+			)
+		)
+	) {
+		return null;
+	}
+
+	const normalizeNodes = ( nodes: Node[] ): unknown[] => {
+		const normalizedNodes: unknown[] = [];
+		nodes.forEach( ( node ) => {
+			const normalizedNode = normalizeNode( node );
+			if (
+				Array.isArray( normalizedNode ) &&
+				normalizedNode[ 0 ] === 'text'
+			) {
+				appendHTMLTextNode(
+					normalizedNodes,
+					normalizedNode[ 1 ] as string
+				);
+				return;
+			}
+
+			normalizedNodes.push( normalizedNode );
+		} );
+
+		return normalizedNodes;
+	};
+
+	const normalizeNode = ( node: Node ): unknown => {
+		if ( node.nodeType === Node.TEXT_NODE ) {
+			return [ 'text', node.textContent ?? '' ];
+		}
+
+		if ( node.nodeType === Node.ELEMENT_NODE ) {
+			const element = node as Element;
+			const tagName = element.tagName.toLowerCase();
+			if (
+				preserveWhiteSpace &&
+				tagName === 'br' &&
+				element.attributes.length === 0
+			) {
+				return [ 'text', '\n' ];
+			}
+
+			return [
+				'element',
+				tagName,
+				Array.from( element.attributes )
+					.map( ( attr ) => [ attr.name, attr.value ] )
+					.sort( ( [ a ], [ b ] ) => a.localeCompare( b ) ),
+				normalizeNodes( Array.from( element.childNodes ) ),
+			];
+		}
+
+		return [ node.nodeType, node.nodeName, node.textContent ?? '' ];
+	};
+
+	return normalizeNodes( Array.from( template.content.childNodes ) );
+}
+
+function getComparableRichTextValue(
+	value: string,
+	preserveWhiteSpace = false
+): unknown {
+	return getHTMLFragmentComparisonTree( value, preserveWhiteSpace ) ?? value;
+}
+
+function areRichTextValuesEquivalent(
+	currentValue: string,
+	incomingValue: string,
+	preserveWhiteSpace = false
+): boolean {
+	if ( currentValue === incomingValue ) {
+		return true;
+	}
+
+	const currentComparisonTree = getHTMLFragmentComparisonTree(
+		currentValue,
+		preserveWhiteSpace
+	);
+	const incomingComparisonTree = getHTMLFragmentComparisonTree(
+		incomingValue,
+		preserveWhiteSpace
+	);
+
+	return (
+		currentComparisonTree !== null &&
+		incomingComparisonTree !== null &&
+		fastDeepEqual( currentComparisonTree, incomingComparisonTree )
+	);
+}
+
 /**
  * @param {any}   gblock
  * @param {Y.Map} yblock
  */
 function areBlocksEqual( gblock: Block, yblock: YBlock ): boolean {
-	const yblockAsJson = yblock.toJSON();
-
-	// we must not sync clientId, as this can't be generated consistently and
-	// hence will lead to merge conflicts.
-	const overwrites = {
-		innerBlocks: null,
-		clientId: null,
-	};
-	const res = fastDeepEqual(
-		Object.assign( {}, gblock, overwrites ),
-		Object.assign( {}, yblockAsJson, overwrites )
-	);
-	const inners = gblock.innerBlocks || [];
-	const yinners = yblock.get( 'innerBlocks' );
-	return (
-		res &&
-		inners.length === yinners?.length &&
-		inners.every( ( block: Block, i: number ) =>
-			areBlocksEqual( block, yinners.get( i ) )
-		)
+	return areBlockRecordsEquivalent(
+		gblock,
+		yblock.toJSON() as unknown as Block
 	);
 }
 
@@ -327,7 +679,7 @@ function createNewYAttributeValue(
  *
  * @param schema    The attribute type definition.
  * @param value     The plain JS value to convert.
- * @param valuePath Optional path used to identify array elements.
+ * @param valuePath Path used to identify nested values in array/query attributes.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
@@ -384,8 +736,8 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  *
  * @param query          The query schema defining the properties.
  * @param obj            The plain object to convert.
- * @param arrayElementId Optional stable ID for an array element.
- * @param valuePath      Optional path used to identify nested array elements.
+ * @param arrayElementId Existing or requested stable array element identifier.
+ * @param valuePath      Path used to identify nested values in array/query attributes.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
@@ -473,19 +825,50 @@ function getYBlockClientId( yblock: YBlock ): string | null {
 	return typeof clientId === 'string' && clientId ? clientId : null;
 }
 
-function normalizeBlockForIdentity( value: unknown ): unknown {
+function normalizeBlockAttributeForComparison(
+	value: unknown,
+	schema: BlockAttributeSchema | undefined
+): unknown {
+	if ( schema?.type === 'rich-text' && typeof value === 'string' ) {
+		return getComparableRichTextValue(
+			value,
+			schema.__unstablePreserveWhiteSpace
+		);
+	}
+
+	if ( schema?.type === 'array' && schema.query && Array.isArray( value ) ) {
+		return value.map( ( item ) =>
+			normalizeQueryObjectForComparison( item, schema.query )
+		);
+	}
+
+	if ( schema?.type === 'object' && schema.query ) {
+		return normalizeQueryObjectForComparison( value, schema.query );
+	}
+
+	return normalizeBlockForComparison( value );
+}
+
+function normalizeQueryObjectForComparison(
+	value: unknown,
+	query: Record< string, BlockAttributeSchema >
+): unknown {
 	if ( Array.isArray( value ) ) {
-		return value.map( normalizeBlockForIdentity );
+		return value.map( ( item ) =>
+			normalizeQueryObjectForComparison( item, query )
+		);
 	}
 
 	if ( isRecord( value ) ) {
 		return Object.fromEntries(
 			Object.entries( value )
-				.filter( ( [ key ] ) => key !== 'clientId' )
 				.sort( ( [ a ], [ b ] ) => a.localeCompare( b ) )
 				.map( ( [ key, innerValue ] ) => [
 					key,
-					normalizeBlockForIdentity( innerValue ),
+					normalizeBlockAttributeForComparison(
+						innerValue,
+						query[ key ]
+					),
 				] )
 		);
 	}
@@ -493,8 +876,205 @@ function normalizeBlockForIdentity( value: unknown ): unknown {
 	return value;
 }
 
+function normalizeBlockAttributesForComparison(
+	blockName: string,
+	attributes: BlockAttributes
+): unknown {
+	return Object.fromEntries(
+		Object.entries( attributes )
+			.sort( ( [ a ], [ b ] ) => a.localeCompare( b ) )
+			.map( ( [ key, value ] ) => [
+				key,
+				normalizeBlockAttributeForComparison(
+					value,
+					getBlockAttributeSchema( blockName, key )
+				),
+			] )
+	);
+}
+
+function haveSameKeys(
+	left: Record< string, unknown >,
+	right: Record< string, unknown >
+): boolean {
+	const leftKeys = Object.keys( left ).sort();
+	const rightKeys = Object.keys( right ).sort();
+
+	return (
+		leftKeys.length === rightKeys.length &&
+		leftKeys.every( ( key, index ) => key === rightKeys[ index ] )
+	);
+}
+
+function areQueryValuesEquivalent(
+	left: unknown,
+	right: unknown,
+	query: Record< string, BlockAttributeSchema >
+): boolean {
+	if ( fastDeepEqual( left, right ) ) {
+		return true;
+	}
+
+	if ( Array.isArray( left ) && Array.isArray( right ) ) {
+		return (
+			left.length === right.length &&
+			left.every( ( value, index ) =>
+				areQueryValuesEquivalent( value, right[ index ], query )
+			)
+		);
+	}
+
+	if ( isRecord( left ) && isRecord( right ) ) {
+		return (
+			haveSameKeys( left, right ) &&
+			Object.keys( left ).every( ( key ) =>
+				areBlockAttributeValuesEquivalent(
+					left[ key ],
+					right[ key ],
+					query[ key ]
+				)
+			)
+		);
+	}
+
+	return false;
+}
+
+function areBlockAttributeValuesEquivalent(
+	left: unknown,
+	right: unknown,
+	schema: BlockAttributeSchema | undefined
+): boolean {
+	if ( fastDeepEqual( left, right ) ) {
+		return true;
+	}
+
+	if (
+		schema?.type === 'rich-text' &&
+		typeof left === 'string' &&
+		typeof right === 'string'
+	) {
+		return areRichTextValuesEquivalent(
+			left,
+			right,
+			schema.__unstablePreserveWhiteSpace
+		);
+	}
+
+	if (
+		schema?.type === 'array' &&
+		schema.query &&
+		Array.isArray( left ) &&
+		Array.isArray( right )
+	) {
+		const query = schema.query;
+		return (
+			left.length === right.length &&
+			left.every( ( value, index ) =>
+				areQueryValuesEquivalent( value, right[ index ], query )
+			)
+		);
+	}
+
+	if ( schema?.type === 'object' && schema.query ) {
+		return areQueryValuesEquivalent( left, right, schema.query );
+	}
+
+	return false;
+}
+
+function areBlockAttributesEquivalent(
+	blockName: string,
+	left: BlockAttributes,
+	right: BlockAttributes
+): boolean {
+	if ( fastDeepEqual( left, right ) ) {
+		return true;
+	}
+
+	return (
+		haveSameKeys( left, right ) &&
+		Object.keys( left ).every( ( key ) =>
+			areBlockAttributeValuesEquivalent(
+				left[ key ],
+				right[ key ],
+				getBlockAttributeSchema( blockName, key )
+			)
+		)
+	);
+}
+
+function getBlockFieldsForComparison(
+	block: Block
+): Record< string, unknown > {
+	return Object.fromEntries(
+		Object.entries( block ).filter(
+			( [ key ] ) =>
+				key !== 'attributes' &&
+				key !== 'clientId' &&
+				key !== 'innerBlocks'
+		)
+	);
+}
+
+function areBlockRecordsEquivalent( left: Block, right: Block ): boolean {
+	const leftInnerBlocks = left.innerBlocks ?? [];
+	const rightInnerBlocks = right.innerBlocks ?? [];
+
+	return (
+		fastDeepEqual(
+			getBlockFieldsForComparison( left ),
+			getBlockFieldsForComparison( right )
+		) &&
+		areBlockAttributesEquivalent(
+			left.name,
+			left.attributes ?? {},
+			right.attributes ?? {}
+		) &&
+		leftInnerBlocks.length === rightInnerBlocks.length &&
+		leftInnerBlocks.every( ( block, index ) =>
+			areBlockRecordsEquivalent( block, rightInnerBlocks[ index ] )
+		)
+	);
+}
+
+function normalizeBlockForComparison( value: unknown ): unknown {
+	if ( Array.isArray( value ) ) {
+		return value.map( normalizeBlockForComparison );
+	}
+
+	if ( isRecord( value ) ) {
+		const blockName = typeof value.name === 'string' ? value.name : '';
+
+		return Object.fromEntries(
+			Object.entries( value )
+				.filter( ( [ key ] ) => key !== 'clientId' )
+				.sort( ( [ a ], [ b ] ) => a.localeCompare( b ) )
+				.map( ( [ key, innerValue ] ) => {
+					if ( key === 'attributes' && isRecord( innerValue ) ) {
+						return [
+							key,
+							normalizeBlockAttributesForComparison(
+								blockName,
+								innerValue
+							),
+						];
+					}
+
+					return [ key, normalizeBlockForComparison( innerValue ) ];
+				} )
+		);
+	}
+
+	return value;
+}
+
+function getComparableBlockValue( block: Block ): unknown {
+	return normalizeBlockForComparison( block );
+}
+
 function getBlockSemanticKey( block: Block ): string {
-	return JSON.stringify( normalizeBlockForIdentity( block ) );
+	return JSON.stringify( getComparableBlockValue( block ) );
 }
 
 function isSameBlockIdentity( firstBlock: Block, secondBlock: Block ): boolean {
@@ -637,36 +1217,6 @@ function getBlockIdentityKeys(
 		baseKeys: baseSemanticKeys,
 		incomingKeys: incomingSemanticKeys,
 	};
-}
-
-function haveSameBlockClientIds(
-	firstBlocks: Block[],
-	secondBlocks: Block[]
-): boolean {
-	return (
-		firstBlocks.length === secondBlocks.length &&
-		firstBlocks.every( ( block, index ) => {
-			const firstClientId = getBlockClientId( block );
-			const secondClientId = getBlockClientId( secondBlocks[ index ] );
-
-			return !! firstClientId && firstClientId === secondClientId;
-		} )
-	);
-}
-
-function shouldUseCachedLocalBlocksAsBase(
-	blocksToSync: Block[],
-	explicitBaseBlocks: Block[] | undefined,
-	cachedBaseBlocks: Block[] | undefined,
-	attributeCursor: MergeCursorPosition
-): cachedBaseBlocks is Block[] {
-	return !! (
-		explicitBaseBlocks &&
-		cachedBaseBlocks &&
-		attributeCursor &&
-		! fastDeepEqual( blocksToSync, cachedBaseBlocks ) &&
-		haveSameBlockClientIds( blocksToSync, cachedBaseBlocks )
-	);
 }
 
 function getUniqueBlockMapBySemanticKey(
@@ -837,6 +1387,10 @@ function mergeBlockIntoYBlock(
 					( [ attributeName, attributeValue ] ) => {
 						const currentAttribute =
 							currentAttributes?.get( attributeName );
+						const schema = getBlockAttributeSchema(
+							block.name,
+							attributeName
+						);
 
 						const isExpectedType = isExpectedAttributeType(
 							block.name,
@@ -847,9 +1401,10 @@ function mergeBlockIntoYBlock(
 						if (
 							baseBlock &&
 							isExpectedType &&
-							fastDeepEqual(
+							areBlockAttributeValuesEquivalent(
 								baseAttributes[ attributeName ],
-								attributeValue
+								attributeValue,
+								schema
 							)
 						) {
 							return;
@@ -970,11 +1525,8 @@ function mergeYBlocksByClientId(
 			block,
 		] )
 	);
-	const incomingBlocksBySemanticKey =
-		getUniqueBlockMapBySemanticKey( blocksToSync );
-	const baseBlocksBySemanticKey = baseBlocks
-		? getUniqueBlockMapBySemanticKey( baseBlocks )
-		: null;
+	let incomingBlocksBySemanticKey: Map< string, Block > | null | undefined;
+	let baseBlocksBySemanticKey: Map< string, Block > | null | undefined;
 
 	for ( let index = 0; index < yblocks.length; index++ ) {
 		const yblock = yblocks.get( index );
@@ -982,12 +1534,22 @@ function mergeYBlocksByClientId(
 		let block = incomingBlocksByClientId.get( clientId );
 		let baseBlock = baseBlocksByClientId.get( clientId );
 
-		if ( ! block && incomingBlocksBySemanticKey ) {
-			const semanticKey = getBlockSemanticKey(
-				yblock.toJSON() as unknown as Block
-			);
-			block = incomingBlocksBySemanticKey.get( semanticKey );
-			baseBlock = baseBlocksBySemanticKey?.get( semanticKey );
+		if ( ! block ) {
+			if ( incomingBlocksBySemanticKey === undefined ) {
+				incomingBlocksBySemanticKey =
+					getUniqueBlockMapBySemanticKey( blocksToSync );
+				baseBlocksBySemanticKey = baseBlocks
+					? getUniqueBlockMapBySemanticKey( baseBlocks )
+					: null;
+			}
+
+			if ( incomingBlocksBySemanticKey ) {
+				const semanticKey = getBlockSemanticKey(
+					yblock.toJSON() as unknown as Block
+				);
+				block = incomingBlocksBySemanticKey.get( semanticKey );
+				baseBlock = baseBlocksBySemanticKey?.get( semanticKey );
+			}
 		}
 
 		if ( block ) {
@@ -1059,6 +1621,19 @@ function findStrictYBlockIndex( yblocks: YBlocks, block: Block ): number {
 	return -1;
 }
 
+function findYBlockIndexByClientId(
+	yblocks: YBlocks,
+	clientId: string
+): number {
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
 function mergeYBlocksLocalSuffixAppend(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
@@ -1101,11 +1676,210 @@ function mergeYBlocksLocalSuffixAppend(
 	}
 }
 
-function mergeYBlocksLocalChanges(
+function mergeYBlocksStaleBaseDelete(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
 	baseBlocks: Block[],
 	attributeCursor: MergeCursorPosition
+): boolean {
+	if (
+		blocksToSync.length === 0 ||
+		blocksToSync.length >= baseBlocks.length
+	) {
+		return false;
+	}
+
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if ( ! baseClientIds || ! incomingClientIds ) {
+		return false;
+	}
+
+	let baseIndex = 0;
+	const incomingMatches: Array< { block: Block; baseBlock: Block } > = [];
+
+	for (
+		let incomingIndex = 0;
+		incomingIndex < blocksToSync.length;
+		incomingIndex++
+	) {
+		const incomingClientId = incomingClientIds[ incomingIndex ];
+		const matchedBaseIndex = baseClientIds.indexOf(
+			incomingClientId,
+			baseIndex
+		);
+
+		if ( matchedBaseIndex === -1 ) {
+			return false;
+		}
+
+		incomingMatches.push( {
+			block: blocksToSync[ incomingIndex ],
+			baseBlock: baseBlocks[ matchedBaseIndex ],
+		} );
+		baseIndex = matchedBaseIndex + 1;
+	}
+
+	const incomingClientIdSet = new Set( incomingClientIds );
+	if (
+		incomingClientIds.some(
+			( clientId ) =>
+				findYBlockIndexByClientId( yblocks, clientId ) === -1
+		)
+	) {
+		return false;
+	}
+
+	const deleteIndexes = baseClientIds
+		.filter( ( clientId ) => ! incomingClientIdSet.has( clientId ) )
+		.map( ( clientId ) => findYBlockIndexByClientId( yblocks, clientId ) )
+		.filter( ( index ) => index !== -1 )
+		.sort( ( a, b ) => b - a );
+
+	for ( const deleteIndex of deleteIndexes ) {
+		yblocks.delete( deleteIndex, 1 );
+	}
+
+	for ( const { block, baseBlock } of incomingMatches ) {
+		const currentIndex = findYBlockIndexByClientId(
+			yblocks,
+			getBlockClientId( baseBlock )!
+		);
+
+		if ( currentIndex === -1 ) {
+			return false;
+		}
+
+		mergeBlockIntoYBlock(
+			yblocks.get( currentIndex ),
+			block,
+			attributeCursor,
+			baseBlock
+		);
+	}
+
+	return true;
+}
+
+function mergeYBlocksStaleBaseInsert(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): boolean {
+	if ( blocksToSync.length <= baseBlocks.length ) {
+		return false;
+	}
+
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if ( ! currentClientIds || ! baseClientIds || ! incomingClientIds ) {
+		return false;
+	}
+
+	const currentClientIdSet = new Set( currentClientIds );
+	const baseClientIdSet = new Set( baseClientIds );
+	const insertedClientIdSet = new Set< string >();
+	const insertions: Array< { beforeClientId: string; blocks: Block[] } > = [];
+	const incomingMatches: Array< { block: Block; baseBlock: Block } > = [];
+	let baseIndex = 0;
+	let pendingInsertedBlocks: Block[] = [];
+
+	for (
+		let incomingIndex = 0;
+		incomingIndex < blocksToSync.length;
+		incomingIndex++
+	) {
+		const incomingClientId = incomingClientIds[ incomingIndex ];
+
+		if (
+			baseIndex < baseClientIds.length &&
+			incomingClientId === baseClientIds[ baseIndex ]
+		) {
+			if ( pendingInsertedBlocks.length ) {
+				insertions.push( {
+					beforeClientId: incomingClientId,
+					blocks: pendingInsertedBlocks,
+				} );
+				pendingInsertedBlocks = [];
+			}
+
+			incomingMatches.push( {
+				block: blocksToSync[ incomingIndex ],
+				baseBlock: baseBlocks[ baseIndex ],
+			} );
+			baseIndex++;
+			continue;
+		}
+
+		if ( baseClientIdSet.has( incomingClientId ) ) {
+			return false;
+		}
+
+		insertedClientIdSet.add( incomingClientId );
+		pendingInsertedBlocks.push( blocksToSync[ incomingIndex ] );
+	}
+
+	if (
+		baseIndex !== baseClientIds.length ||
+		pendingInsertedBlocks.length ||
+		! insertions.length ||
+		! baseClientIds.every( ( clientId ) =>
+			currentClientIdSet.has( clientId )
+		) ||
+		Array.from( insertedClientIdSet ).some( ( clientId ) =>
+			currentClientIdSet.has( clientId )
+		)
+	) {
+		return false;
+	}
+
+	for ( const { beforeClientId, blocks } of insertions ) {
+		const insertIndex = findYBlockIndexByClientId(
+			yblocks,
+			beforeClientId
+		);
+
+		if ( insertIndex === -1 ) {
+			return false;
+		}
+
+		yblocks.insert( insertIndex, blocks.map( createNewYBlock ) );
+	}
+
+	for ( const { block, baseBlock } of incomingMatches ) {
+		const currentIndex = findYBlockIndexByClientId(
+			yblocks,
+			getBlockClientId( baseBlock )!
+		);
+
+		if ( currentIndex === -1 ) {
+			return false;
+		}
+
+		mergeBlockIntoYBlock(
+			yblocks.get( currentIndex ),
+			block,
+			attributeCursor,
+			baseBlock
+		);
+	}
+
+	return true;
+}
+
+function mergeYBlocksLocalChanges(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition,
+	hasExplicitBaseBlocks: boolean
 ): boolean {
 	if ( fastDeepEqual( blocksToSync, baseBlocks ) ) {
 		return true;
@@ -1123,6 +1897,30 @@ function mergeYBlocksLocalChanges(
 	}
 
 	mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks );
+
+	if (
+		hasExplicitBaseBlocks &&
+		mergeYBlocksStaleBaseDelete(
+			yblocks,
+			blocksToSync,
+			baseBlocks,
+			attributeCursor
+		)
+	) {
+		return true;
+	}
+
+	if (
+		hasExplicitBaseBlocks &&
+		mergeYBlocksStaleBaseInsert(
+			yblocks,
+			blocksToSync,
+			baseBlocks,
+			attributeCursor
+		)
+	) {
+		return true;
+	}
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
 
@@ -1189,16 +1987,9 @@ export function mergeCrdtBlocks(
 	const explicitBaseBlocksToSync = baseBlocks
 		? makeBlocksSerializable( baseBlocks )
 		: undefined;
-	const cachedBaseBlocksToSync = previousLocalBlocksCache.get( yblocks );
-	const useCachedLocalBlocksAsBase = shouldUseCachedLocalBlocksAsBase(
-		blocksToSync,
-		explicitBaseBlocksToSync,
-		cachedBaseBlocksToSync,
-		attributeCursor
-	);
-	const baseBlocksToSync = useCachedLocalBlocksAsBase
-		? cachedBaseBlocksToSync
-		: explicitBaseBlocksToSync ?? cachedBaseBlocksToSync;
+	const hasExplicitBaseBlocks = !! explicitBaseBlocksToSync;
+	const baseBlocksToSync =
+		explicitBaseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
 
 	if (
 		baseBlocksToSync &&
@@ -1206,7 +1997,8 @@ export function mergeCrdtBlocks(
 			yblocks,
 			blocksToSync,
 			baseBlocksToSync,
-			attributeCursor
+			attributeCursor,
+			hasExplicitBaseBlocks
 		)
 	) {
 		removeDuplicateClientIds( yblocks );
@@ -1904,6 +2696,16 @@ function mergeYValue(
 		typeof newVal === 'string' &&
 		currentVal instanceof Y.Text
 	) {
+		if (
+			areRichTextValuesEquivalent(
+				currentVal.toString(),
+				newVal,
+				schema.__unstablePreserveWhiteSpace
+			)
+		) {
+			return;
+		}
+
 		mergeRichTextUpdate(
 			currentVal,
 			newVal,
@@ -2136,8 +2938,21 @@ function getBlockAttributeSchema(
 				new Map< string, BlockAttributeSchema >(
 					Object.entries( blockType.attributes ?? {} ).map(
 						( [ name, definition ] ) => {
-							const { role, type, query } = definition;
-							return [ name, { role, type, query } ];
+							const {
+								__unstablePreserveWhiteSpace,
+								role,
+								type,
+								query,
+							} = definition;
+							return [
+								name,
+								{
+									__unstablePreserveWhiteSpace,
+									role,
+									type,
+									query,
+								},
+							];
 						}
 					)
 				)
