@@ -64,17 +64,45 @@ The smallest maintainable split is not one mega-PR. It is a set of mostly
 independent PRs, plus a stacked CRDT block-reconciliation series. The proposed
 split below optimizes for reviewability over minimizing the number of PRs.
 
+## How To Read Multi-Branch PR Entries
+
+When a proposed PR lists more than one branch, it does **not** mean GitHub would
+file one pull request with multiple head branches. GitHub PRs still have one
+head branch. The extra branch links are source branches from the Jetstream2
+fix-planning loop that should be used as inputs when building the final review
+branch.
+
+There are three cases in this report:
+
+- **Single-branch PRs**: the listed branch is expected to become the PR branch
+  after export, rebase, cleanup, and focused validation.
+- **Grouped fix branches**: several small branches cover adjacent subcases of
+  the same bug family. The intended final PR is one clean branch that combines
+  the compatible pieces, usually as one or a few commits, with duplicate tests
+  collapsed. PR 5, PR 6, PR 7, and PR 15 mostly fall into this category.
+- **Stacked-series branches**: the branches are not intended to be squashed into
+  one review unless maintainers ask for that. They are an ordered set of
+  dependency branches or focused commits that touch the same reconciliation
+  path. The final output may be a stack of several one-head-branch PRs, or a
+  single consolidated branch if reviewers prefer. PR 11, PR 12, and PR 13 are
+  the clearest examples.
+
+So "Branches: 5" means "five current source branches inform this proposed PR
+area." Before filing, those branches still need to be exported from Jetstream2,
+rebased onto the intended base, deduplicated, and shaped into one final head
+branch or an explicitly ordered stack.
+
 ## Proposed PR Sizes
 
 Size was measured in the Jetstream2 fix-planning repo at
 `/media/volume/danluu-fuzz-data/rtc-fix-plan-20260514/repo`.
 
-For single-branch PRs, the table is the branch diff. For grouped or stacked PRs,
-the table uses the intended review delta after splitting/rebasing: additive
-branch-local insertions/deletions and unique paths across the group. This is the
-right number for review planning. It can differ from the current as-is branch
-diff because some branches are stacked on earlier branches and include
-dependency commits when compared directly to the handoff base.
+For single-branch PRs, the table is the branch diff. For grouped or stacked
+areas, the table uses the intended review delta after splitting/rebasing:
+additive branch-local insertions/deletions and unique paths across the source
+branches. This is the right number for review planning. It can differ from the
+current as-is branch diff because some branches are stacked on earlier branches
+and include dependency commits when compared directly to the handoff base.
 
 | Proposed PR | Branches | Unique files | Insertions | Deletions |
 | --- | ---: | ---: | ---: | ---: |
