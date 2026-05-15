@@ -20,16 +20,18 @@ process.env.GUTENBERG_RTC_TEST_WS_PROVIDER = '1';
 process.env.GUTENBERG_RTC_TEST_WS_URL =
 	process.env.GUTENBERG_RTC_TEST_WS_URL || `ws://127.0.0.1:${ wsPort }`;
 
-const baseWebServer = Array.isArray( baseConfig.webServer )
-	? baseConfig.webServer
-	: baseConfig.webServer
-	? [ baseConfig.webServer ]
-	: [];
+let baseWebServer = [];
+if ( Array.isArray( baseConfig.webServer ) ) {
+	baseWebServer = baseConfig.webServer;
+} else if ( baseConfig.webServer ) {
+	baseWebServer = [ baseConfig.webServer ];
+}
 
 const config = defineConfig( {
 	...baseConfig,
 	testIgnore: [],
-	testMatch: '**/specs/editor/collaboration/websocket/collaboration-*.spec.ts',
+	testMatch:
+		'**/specs/editor/collaboration/websocket/collaboration-*.spec.ts',
 	webServer: [
 		...baseWebServer,
 		{

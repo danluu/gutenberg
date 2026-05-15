@@ -1,0 +1,134 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"classification",
+		"confidence",
+		"candidateStatus",
+		"distinctBugType",
+		"duplicateOf",
+		"severity",
+		"userImpact",
+		"userHitLikelihoodScore",
+		"userHitLikelihoodRationale",
+		"summary",
+		"rootCauseHypothesis",
+		"evidence",
+		"falsePositiveAnalysis",
+		"distinctnessAnalysis",
+		"realisticReproStrategy",
+		"nextLocalActions",
+		"relatedSignatures",
+		"artifacts"
+	],
+	"properties": {
+		"classification": {
+			"type": "string",
+			"enum": [ "likely_real", "likely_infra", "likely_not_real", "uncertain" ]
+		},
+		"confidence": {
+			"type": "string",
+			"enum": [ "low", "medium", "high" ]
+		},
+		"candidateStatus": {
+			"type": "string",
+			"enum": [
+				"confirmed_likely_real",
+				"likely_duplicate",
+				"likely_false_positive",
+				"needs_more_evidence",
+				"needs_realistic_repro_search"
+			]
+		},
+		"distinctBugType": {
+			"type": "string"
+		},
+		"duplicateOf": {
+			"type": [ "string", "null" ]
+		},
+		"severity": {
+			"type": "string",
+			"enum": [ "low", "medium", "high", "critical", "unknown" ]
+		},
+		"userImpact": {
+			"type": "string"
+		},
+		"userHitLikelihoodScore": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 5,
+			"description": "How likely a normal user is to hit this issue: 0 = not user-visible/harness-only, 5 = very likely in common default workflows."
+		},
+		"userHitLikelihoodRationale": {
+			"type": "string"
+		},
+		"summary": {
+			"type": "string"
+		},
+		"rootCauseHypothesis": {
+			"type": "string"
+		},
+		"evidence": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"falsePositiveAnalysis": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"distinctnessAnalysis": {
+			"type": "string"
+		},
+		"realisticReproStrategy": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": [
+				"unitOrApiLevel",
+				"browserManualLevel",
+				"playwrightLevel",
+				"missingEvidence",
+				"canUseRealUserActions"
+			],
+			"properties": {
+				"unitOrApiLevel": {
+					"type": "string"
+				},
+				"browserManualLevel": {
+					"type": "string"
+				},
+				"playwrightLevel": {
+					"type": "string"
+				},
+				"missingEvidence": {
+					"type": "string"
+				},
+				"canUseRealUserActions": {
+					"type": "boolean"
+				}
+			}
+		},
+		"nextLocalActions": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"relatedSignatures": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"artifacts": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		}
+	}
+}

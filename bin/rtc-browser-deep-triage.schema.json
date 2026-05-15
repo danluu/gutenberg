@@ -5,6 +5,8 @@
 	"required": [
 		"classification",
 		"confidence",
+		"userHitLikelihoodScore",
+		"userHitLikelihoodRationale",
 		"distinctBugType",
 		"isDuplicateOf",
 		"summary",
@@ -26,6 +28,15 @@
 		"confidence": {
 			"type": "string",
 			"enum": [ "low", "medium", "high" ]
+		},
+		"userHitLikelihoodScore": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 5,
+			"description": "How likely a normal user is to hit this issue: 0 = not user-visible/harness-only, 5 = very likely in common default workflows."
+		},
+		"userHitLikelihoodRationale": {
+			"type": "string"
 		},
 		"distinctBugType": {
 			"type": "string"

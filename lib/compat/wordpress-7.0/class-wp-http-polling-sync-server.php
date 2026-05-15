@@ -56,12 +56,17 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		const MAX_ROOMS_PER_REQUEST = 50;
 
 		/**
-		 * Maximum length of a single update data string.
+		 * Maximum length of a single base64-encoded update data string.
+		 *
+		 * The aggregate request body limit is the meaningful protection here. A
+		 * valid binary update near 1 MiB expands beyond 1 MiB when base64-encoded,
+		 * so keeping this lower than the body cap rejects otherwise valid
+		 * compaction updates before the sync handler can process them.
 		 *
 		 * @since 7.0.0
 		 * @var int
 		 */
-		const MAX_UPDATE_DATA_SIZE = MB_IN_BYTES;
+		const MAX_UPDATE_DATA_SIZE = 16 * MB_IN_BYTES;
 
 		/**
 		 * Sync update type: compaction.

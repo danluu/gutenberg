@@ -1,0 +1,103 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"type": "object",
+	"additionalProperties": false,
+	"required": [
+		"classification",
+		"confidence",
+		"userHitLikelihoodScore",
+		"userHitLikelihoodRationale",
+		"distinctBugType",
+		"isDuplicateOf",
+		"summary",
+		"evidence",
+		"rootCauseHypothesis",
+		"shouldDeepTriage",
+		"recommendedTriageAction",
+		"browserReproPlan",
+		"artifacts",
+		"changedFiles"
+	],
+	"properties": {
+		"classification": {
+			"type": "string",
+			"enum": [ "likely_real", "likely_infra", "likely_not_real", "uncertain" ]
+		},
+		"confidence": {
+			"type": "string",
+			"enum": [ "low", "medium", "high" ]
+		},
+		"userHitLikelihoodScore": {
+			"type": "integer",
+			"minimum": 0,
+			"maximum": 5,
+			"description": "How likely a normal user is to hit this issue: 0 = not user-visible/harness-only, 5 = very likely in common default workflows."
+		},
+		"userHitLikelihoodRationale": {
+			"type": "string"
+		},
+		"distinctBugType": {
+			"type": "string"
+		},
+		"isDuplicateOf": {
+			"type": [ "string", "null" ]
+		},
+		"summary": {
+			"type": "string"
+		},
+		"evidence": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"rootCauseHypothesis": {
+			"type": "string"
+		},
+		"shouldDeepTriage": {
+			"type": "boolean"
+		},
+		"recommendedTriageAction": {
+			"type": "string",
+			"enum": [
+				"prioritize_deep_triage",
+				"normal_deep_triage",
+				"suppress_as_infra",
+				"merge_with_duplicate",
+				"keep_collecting"
+			]
+		},
+		"browserReproPlan": {
+			"type": "object",
+			"additionalProperties": false,
+			"required": [ "needed", "priority", "plan", "risks" ],
+			"properties": {
+				"needed": {
+					"type": "boolean"
+				},
+				"priority": {
+					"type": "string",
+					"enum": [ "none", "low", "medium", "high" ]
+				},
+				"plan": {
+					"type": "string"
+				},
+				"risks": {
+					"type": "string"
+				}
+			}
+		},
+		"artifacts": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		},
+		"changedFiles": {
+			"type": "array",
+			"items": {
+				"type": "string"
+			}
+		}
+	}
+}

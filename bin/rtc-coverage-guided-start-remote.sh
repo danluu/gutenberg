@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
+TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
+REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
+BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
+mkdir -p "$TMUX_WRAP"
+cat > "$TMUX_WRAP/tmux" <<'SH'
+#!/usr/bin/env bash
+exec /usr/bin/tmux -L rtc-fuzz "$@"
+SH
+chmod +x "$TMUX_WRAP/tmux"
+export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
+STRICT=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/current-run-root.txt 2>/dev/null || true)
+ISO_HTTP=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-validation-isolated-20260515/current-http-run-root.txt 2>/dev/null || true)
+ISO_WS=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-validation-isolated-20260515/current-ws-run-root.txt 2>/dev/null || true)
+FOCUSED=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515/current-run-root.txt 2>/dev/null || true)
+GAP_BOOSTER=$(cat /media/volume/danluu-fuzz-data/rtc-gap-booster-20260515/current-run-root.txt 2>/dev/null || true)
+PREVIOUS_COVERAGE=$(cat "$BASE/current-output-dir.txt" 2>/dev/null || true)
+OBSERVED=""
+for ROOT in "$STRICT" "$ISO_HTTP" "$ISO_WS" "$FOCUSED" "$GAP_BOOSTER" "$PREVIOUS_COVERAGE"; do
+	if [ -n "$ROOT" ]; then
+		if [ -z "$OBSERVED" ]; then
+			OBSERVED="$ROOT"
+		else
+			OBSERVED="$OBSERVED:$ROOT"
+		fi
+	fi
+done
+OUT=$BASE/run-$(date -u +%Y%m%dT%H%M%SZ)
+mkdir -p "$OUT" "$BASE/logs"
+if [ -x /tmp/cleanup_rtc_coverage_guided_remote.sh ]; then
+	/tmp/cleanup_rtc_coverage_guided_remote.sh || true
+else
+	tmux kill-session -t rtc-coverage-guided-novelty 2>/dev/null || true
+	tmux kill-session -t rtc-coverage-guided-supervisor 2>/dev/null || true
+fi
+printf '%s\n' "$OUT" > "$BASE/current-output-dir.txt"
+{
+	for ROOT in "$STRICT" "$ISO_HTTP" "$ISO_WS" "$FOCUSED" "$GAP_BOOSTER" "$PREVIOUS_COVERAGE"; do
+		if [ -n "$ROOT" ]; then
+			printf '%s\n' "$ROOT"
+		fi
+	done
+} > "$OUT/observed-roots.txt"
+RUN_SCRIPT="$OUT/run-monitor.sh"
+cat > "$RUN_SCRIPT" <<RUN
+#!/usr/bin/env bash
+set -u
+cd '$REPO'
+export PATH='$TMUX_WRAP':'$NODE_BIN':\$PATH
+export CI=1
+export RTC_FUZZ_NOVELTY_OUTPUT_DIR='$OUT'
+export RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS='$OBSERVED'
+export RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION='rtc-coverage-guided-supervisor'
+export RTC_FUZZ_NOVELTY_BASE_URL='http://localhost:9540'
+export RTC_FUZZ_NOVELTY_WP_ENV_PORT='9540'
+export RTC_FUZZ_NOVELTY_WS_PORT='19380'
+export RTC_FUZZ_NOVELTY_DURATION_HOURS='12'
+export RTC_FUZZ_NOVELTY_INTERVAL_MS='60000'
+export RTC_FUZZ_NOVELTY_FORCE_START='1'
+export RTC_FUZZ_NOVELTY_ENABLE_SAME_USER='1'
+export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='12'
+export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='12'
+export RTC_FUZZ_NOVELTY_PAUSE_ON_STARTUP_FAILURE='0'
+export RTC_FUZZ_NOVELTY_PAUSE_ON_TRIAGE_NOISE='0'
+export RTC_FUZZ_NOVELTY_COVERAGE_CODEX='1'
+export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD='$REPO'
+export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_INTERVAL_MINUTES='30'
+export RTC_FUZZ_NOVELTY_COVERAGE_GUIDANCE_STALL_PASSES='2'
+node bin/rtc-browser-fuzz-novelty-monitor.mjs >> '$BASE/logs/monitor.log' 2>&1
+code=\$?
+stamp=\$(date -u +%Y-%m-%dT%H:%M:%SZ)
+printf '[%s] MONITOR_EXIT code=%s output=%s\n' "\$stamp" "\$code" '$OUT' >> '$BASE/logs/monitor.log'
+printf '[%s] MONITOR_EXIT code=%s\n' "\$stamp" "\$code" >> '$OUT/novelty-monitor.log'
+exit "\$code"
+RUN
+chmod +x "$RUN_SCRIPT"
+tmux new-session -d -s rtc-coverage-guided-novelty "$RUN_SCRIPT"
+echo "OUT=$OUT"
+tmux ls | grep -E 'rtc-coverage-guided|rtc-fuzz-strict|rtc-fuzz-iso' || true

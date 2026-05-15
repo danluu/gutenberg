@@ -54,6 +54,30 @@ export const SECOND_USER: UserCredentials = {
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 const SYNC_REQUEST_ROUTE = /wp-sync/;
 const USE_TEST_WS_PROVIDER = process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1';
+const DEFAULT_CONVERGENCE_STABLE_SAMPLES = getPositiveIntegerEnv(
+	'GUTENBERG_RTC_BROWSER_CONVERGENCE_STABLE_SAMPLES',
+	1
+);
+const DEFAULT_CONVERGENCE_STABLE_INTERVAL_MS = getPositiveIntegerEnv(
+	'GUTENBERG_RTC_BROWSER_CONVERGENCE_STABLE_INTERVAL_MS',
+	250
+);
+const DEFAULT_COLLABORATION_READY_TIMEOUT_MS = getPositiveIntegerEnv(
+	'GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS',
+	15000
+);
+
+function getPositiveIntegerEnv( name: string, fallback: number ) {
+	const rawValue = process.env[ name ];
+	if ( ! rawValue ) {
+		return fallback;
+	}
+	const parsedValue = Number.parseInt( rawValue, 10 );
+	if ( Number.isNaN( parsedValue ) || parsedValue <= 0 ) {
+		throw new Error( `Expected ${ name } to be a positive integer.` );
+	}
+	return parsedValue;
+}
 
 function isSyncRequestRoute( route: Route ) {
 	const request = route.request();
@@ -391,7 +415,7 @@ export default class CollaborationUtils {
 	 *
 	 * @param page              The Playwright page to wait on.
 	 * @param [options]         Optional settings.
-	 * @param [options.timeout] Maximum wait time in ms (default 15000).
+	 * @param [options.timeout] Maximum wait time in ms.
 	 */
 	async waitForEntityReadyAndSaveSettled(
 		page: Page,
@@ -450,25 +474,99 @@ export default class CollaborationUtils {
 	}
 
 	/**
+	 * Capture state useful for classifying collaboration startup stalls.
+	 *
+	 * @param page The Playwright page to inspect.
+	 */
+	async getCollaborationReadyDiagnostics( page: Page ) {
+		try {
+			return await page.evaluate( () => {
+				const wp = ( window as any ).wp;
+				let currentPostId = null;
+				let editorHasResolvedPost = null;
+				let syncStoreHasRecords = null;
+
+				try {
+					currentPostId =
+						wp?.data
+							?.select( 'core/editor' )
+							?.getCurrentPostId?.() ?? null;
+				} catch {}
+
+				try {
+					const record =
+						currentPostId !== null
+							? wp?.data
+									?.select( 'core' )
+									?.getEntityRecord?.(
+										'postType',
+										'post',
+										currentPostId
+									)
+							: null;
+					editorHasResolvedPost = !! record;
+				} catch {}
+
+				try {
+					syncStoreHasRecords =
+						typeof wp?.data?.select?.( 'core' )
+							?.getEntityRecords === 'function';
+				} catch {}
+
+				return {
+					url: window.location.href,
+					readyState: document.readyState,
+					collaborationEnabled:
+						( window as any )._wpCollaborationEnabled ?? null,
+					hasWpData: !! wp?.data,
+					hasWpBlocks: !! wp?.blocks,
+					currentPostId,
+					editorHasResolvedPost,
+					syncStoreHasRecords,
+				};
+			} );
+		} catch ( error ) {
+			return {
+				diagnosticError:
+					error instanceof Error ? error.message : String( error ),
+			};
+		}
+	}
+
+	/**
 	 * Wait for the collaboration runtime to be ready on a page.
 	 * Checks that `window._wpCollaborationEnabled` is true and wp.data is loaded.
 	 *
 	 * @param page              The Playwright page to wait on.
 	 * @param [options]         Optional settings.
-	 * @param [options.timeout] Maximum wait time in ms (default 15000).
+	 * @param [options.timeout] Maximum wait time in ms.
 	 */
 	async waitForCollaborationReady(
 		page: Page,
-		{ timeout = 15000 }: { timeout?: number } = {}
+		{
+			timeout = DEFAULT_COLLABORATION_READY_TIMEOUT_MS,
+		}: { timeout?: number } = {}
 	) {
-		await page.waitForFunction(
-			() =>
-				( window as any )._wpCollaborationEnabled === true &&
-				window?.wp?.data &&
-				window?.wp?.blocks,
-			undefined,
-			{ timeout }
-		);
+		try {
+			await page.waitForFunction(
+				() =>
+					( window as any )._wpCollaborationEnabled === true &&
+					window?.wp?.data &&
+					window?.wp?.blocks,
+				undefined,
+				{ timeout }
+			);
+		} catch ( error ) {
+			const diagnostics =
+				await this.getCollaborationReadyDiagnostics( page );
+			const message =
+				error instanceof Error ? error.message : String( error );
+			throw new Error(
+				`Timed out waiting for collaboration to become ready. Diagnostics: ${ JSON.stringify(
+					diagnostics
+				) }\n${ message }`
+			);
+		}
 	}
 
 	async clearPendingSyncRequestRoute( page: Page ) {
@@ -628,6 +726,79 @@ export default class CollaborationUtils {
 
 					return value;
 				};
+				const valuesMatch = ( left: unknown, right: unknown ) =>
+					JSON.stringify( normalizeValue( left ) ) ===
+					JSON.stringify( normalizeValue( right ) );
+				const normalizeLineBreakEquivalentRichTextValue = (
+					value: unknown
+				) => {
+					if ( typeof value !== 'string' ) {
+						return value;
+					}
+
+					return value
+						.replace( /\r\n?/g, '\n' )
+						.replace( /<br\s*\/?>/gi, '\n' );
+				};
+				const normalizeLineBreakEquivalentAttribute = (
+					blockName: string,
+					key: string,
+					value: unknown
+				) => {
+					const lineBreakEquivalentContentBlocks = new Set( [
+						'core/code',
+						'core/preformatted',
+						'core/verse',
+					] );
+
+					if (
+						key === 'content' &&
+						lineBreakEquivalentContentBlocks.has( blockName )
+					) {
+						return normalizeLineBreakEquivalentRichTextValue(
+							value
+						);
+					}
+
+					return value;
+				};
+				const normalizeAttributes = (
+					blockName: string,
+					attributes: Record< string, unknown >
+				) => {
+					const blockType = ( window as any ).wp.blocks.getBlockType(
+						blockName
+					);
+					const attributeSchema = blockType?.attributes ?? {};
+					const normalizedEntries = Object.entries( attributes )
+						.filter( ( [ key, value ] ) => {
+							const schema = attributeSchema[ key ];
+							return ! (
+								schema &&
+								Object.prototype.hasOwnProperty.call(
+									schema,
+									'default'
+								) &&
+								valuesMatch( value, schema.default )
+							);
+						} )
+						.map( ( [ key, value ] ) => [
+							key,
+							normalizeValue(
+								normalizeLineBreakEquivalentAttribute(
+									blockName,
+									key,
+									value
+								)
+							),
+						] );
+
+					return Object.fromEntries(
+						normalizedEntries.sort( ( [ a ], [ b ] ) =>
+							a.localeCompare( b )
+						)
+					);
+				};
 
 				const normalizeBlocks = (
 					blockTree: Array< {
@@ -638,7 +809,8 @@ export default class CollaborationUtils {
 				): NormalizedBlock[] =>
 					blockTree.map( ( block ) => ( {
 						name: block.name,
-						attributes: normalizeValue(
+						attributes: normalizeAttributes(
+							block.name,
 							JSON.parse(
 								JSON.stringify( block.attributes ?? {} )
 							)
@@ -684,19 +856,27 @@ export default class CollaborationUtils {
 	 * @param [options.includeCrdtDocument] Whether convergence should also
 	 *                                      include the persisted CRDT document.
 	 * @param [options.pages]               Specific pages to compare.
+	 * @param [options.stableIntervalMs]    Delay between stable samples.
+	 * @param [options.stableSamples]       Consecutive equal samples required.
 	 * @param [options.timeout]             Maximum wait time in ms.
 	 */
 	async waitForConvergence( {
 		includeCrdtDocument = false,
 		pages = this.allPages,
+		stableIntervalMs = DEFAULT_CONVERGENCE_STABLE_INTERVAL_MS,
+		stableSamples = DEFAULT_CONVERGENCE_STABLE_SAMPLES,
 		timeout = 15000,
 	}: {
 		includeCrdtDocument?: boolean;
 		pages?: Page[];
+		stableIntervalMs?: number;
+		stableSamples?: number;
 		timeout?: number;
 	} = {} ): Promise< NormalizedCollaborativeState > {
 		const deadline = Date.now() + timeout;
 		let lastStates: NormalizedCollaborativeState[] = [];
+		let lastSettledState = '';
+		let stableSampleCount = 0;
 
 		while ( Date.now() < deadline ) {
 			lastStates = await Promise.all(
@@ -715,10 +895,22 @@ export default class CollaborationUtils {
 			);
 
 			if ( isSettled ) {
-				return lastStates[ 0 ];
+				if ( serializedFirstState === lastSettledState ) {
+					stableSampleCount += 1;
+				} else {
+					lastSettledState = serializedFirstState;
+					stableSampleCount = 1;
+				}
+
+				if ( stableSampleCount >= stableSamples ) {
+					return lastStates[ 0 ];
+				}
+			} else {
+				lastSettledState = '';
+				stableSampleCount = 0;
 			}
 
-			await pages[ 0 ].waitForTimeout( 250 );
+			await pages[ 0 ].waitForTimeout( stableIntervalMs );
 		}
 
 		throw new Error(

@@ -5,7 +5,10 @@ import process from 'node:process';
 // eslint-disable-next-line import/no-extraneous-dependencies
 import ws from 'ws';
 
-const WebSocketServer = ws.WebSocketServer || ws.Server;
+const { WebSocketServer: NamedWebSocketServer } = ws;
+
+const TestWebSocketServer =
+	NamedWebSocketServer || ws.WebSocketServer || ws.Server;
 
 const DEFAULT_PORT = 18991;
 const PORT = parsePortArg();
@@ -65,11 +68,17 @@ function removeSocketFromRooms( socket ) {
 
 		if ( socket.clientId ) {
 			room.awareness.delete( String( socket.clientId ) );
+			if ( room.clients.size === 0 ) {
+				rooms.delete( roomName );
+				continue;
+			}
 			broadcastJson( room, {
 				type: 'remove-awareness',
 				room: roomName,
 				clientIds: [ socket.clientId ],
 			} );
+		} else if ( room.clients.size === 0 ) {
+			rooms.delete( roomName );
 		}
 	}
 }
@@ -231,7 +240,7 @@ const server = http.createServer( ( request, response ) => {
 	response.end( JSON.stringify( { ok: false } ) );
 } );
 
-const wss = new WebSocketServer( { server } );
+const wss = new TestWebSocketServer( { server } );
 wss.on( 'connection', ( socket ) => {
 	socket.on( 'message', ( message ) => handleMessage( socket, message ) );
 	socket.on( 'close', () => removeSocketFromRooms( socket ) );
