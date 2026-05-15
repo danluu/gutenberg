@@ -985,6 +985,24 @@ Optional expansion controls:
 -   `RTC_FUZZ_NOVELTY_LATE_JOIN_MIN_RECORDS=300`: lifecycle-event target for
     forced three-user late joins. The policy uses the actual late-join lifecycle
     key, not just `users:3`.
+-   `RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION=1` and
+    `RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD=8`: keep the coverage queue
+    from going empty. Each monitor pass checks the current unmet coverage-goal
+    count after ingesting coverage. If the count is at or below the threshold,
+    the monitor persists a bounded wave of new explicit goals in
+    `novelty-state.json` and immediately includes those goals in
+    `novelty-status.md`, `coverageGuidance`, and subsequent scheduling
+    decisions. Codex coverage-guidance reports should recommend changing the
+    threshold if the loop is either overfeeding low-value work or letting the
+    queue drain.
+-   `RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_BATCH_SIZE=12` and
+    `RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_MAX_WAVES_PER_PASS=2`: bound how many
+    automatic goals can be added in one monitor pass. The first automatic goals
+    are high-risk combinations such as rich-text action pairs, parser-transform
+    completed records, revision-restore history events, media/cross-entity
+    history events, operation-ledger coverage, and very-large-document coverage.
+    After those are exhausted, the monitor ratchets already-met goals to the
+    next count tier instead of reporting zero unmet goals.
 
 Example durable novelty monitor:
 
@@ -998,6 +1016,8 @@ while true; do
 	RTC_FUZZ_NOVELTY_BASE_URL=http://localhost:8889 \
 	RTC_FUZZ_NOVELTY_WP_ENV_PORT=8889 \
 	RTC_FUZZ_NOVELTY_WS_PORT=18991 \
+	RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION=1 \
+	RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD=8 \
 	RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION=rtc-fuzz-novelty-supervisor \
 	node bin/rtc-browser-fuzz-novelty-monitor.mjs
 	code=\$?
@@ -1014,6 +1034,12 @@ That supervisor session then writes its own `supervisor-state.json` under the
 novelty output directory. Attach a separate live-analysis monitor to that
 novelty output directory if novelty groups are expected to produce triage
 backlog.
+
+Automatic coverage-goal expansion is persisted in
+`novelty-state.json.autoCoverageGoals` and
+`novelty-state.json.autoCoverageGoalWaves`. Do not clear those fields during a
+restart unless the goal wave itself was bad; clearing them makes trend graphs
+look artificially complete again until the threshold is crossed on a later pass.
 
 The implemented novelty profiles are:
 

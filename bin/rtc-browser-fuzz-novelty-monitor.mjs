@@ -144,6 +144,20 @@ const COVERAGE_GUIDANCE_STALL_PASSES = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_COVERAGE_GUIDANCE_STALL_PASSES',
 	3
 );
+const AUTO_GOAL_EXPANSION_ENABLED =
+	process.env.RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION !== '0';
+const AUTO_GOAL_EXPANSION_THRESHOLD = getNonNegativeIntegerEnv(
+	'RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD',
+	8
+);
+const AUTO_GOAL_EXPANSION_BATCH_SIZE = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_BATCH_SIZE',
+	12
+);
+const AUTO_GOAL_EXPANSION_MAX_WAVES_PER_PASS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_MAX_WAVES_PER_PASS',
+	2
+);
 const COVERAGE_GUIDANCE_CODEX_ENABLED =
 	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX === '1';
 const COVERAGE_GUIDANCE_CODEX_FORCE =
@@ -278,6 +292,157 @@ const HIGH_VALUE_EXPANSION_GROUPS = [
 	'novelty-ws-media-cross-entity',
 	'novelty-ws-permissions-auth-locks',
 	'novelty-ws-long-session-large-doc',
+];
+
+const AUTO_EXPANSION_GOAL_CANDIDATES = [
+	{
+		id: 'auto-combo:real-user-rich-text-paste-link',
+		label: 'rich text paste followed by link edit',
+		countSource: {
+			kind: 'feature',
+			key: 'action-pair:ui-paste-paragraph->ui-link-paragraph',
+		},
+		target: 10,
+		groups: [ 'novelty-ws-real-user-rich-text' ],
+		rationale:
+			'real UI rich-text coverage should include selection-preserving paste/link sequences',
+	},
+	{
+		id: 'auto-combo:real-user-rich-text-link-list',
+		label: 'rich text link followed by list indentation',
+		countSource: {
+			kind: 'feature',
+			key: 'action-pair:ui-link-paragraph->ui-list-indent',
+		},
+		target: 10,
+		groups: [ 'novelty-ws-real-user-rich-text' ],
+		rationale:
+			'link editing followed by list indentation stresses rich-text selection mapping',
+	},
+	{
+		id: 'auto-combo:real-user-rich-text-list-composition',
+		label: 'rich text list followed by composition input',
+		countSource: {
+			kind: 'feature',
+			key: 'action-pair:ui-list-indent->ui-composition-paragraph',
+		},
+		target: 10,
+		groups: [ 'novelty-ws-real-user-rich-text' ],
+		rationale:
+			'IME/composition after list edits is a high-risk real-user editing path',
+	},
+	{
+		id: 'auto-combo:real-user-rich-text-composition-toolbar',
+		label: 'composition input followed by toolbar formatting',
+		countSource: {
+			kind: 'feature',
+			key: 'action-pair:ui-composition-paragraph->ui-toolbar-format-paragraph',
+		},
+		target: 10,
+		groups: [ 'novelty-ws-real-user-rich-text' ],
+		rationale:
+			'toolbar formatting after composition should not corrupt selection state',
+	},
+	{
+		id: 'auto-combo:real-user-rich-text-toolbar-copy',
+		label: 'toolbar formatting followed by cut/copy',
+		countSource: {
+			kind: 'feature',
+			key: 'action-pair:ui-toolbar-format-paragraph->ui-cut-copy-paragraph',
+		},
+		target: 10,
+		groups: [ 'novelty-ws-real-user-rich-text' ],
+		rationale:
+			'clipboard behavior after toolbar changes can diverge between editor state and DOM state',
+	},
+	{
+		id: 'auto-combo:real-user-rich-text-copy-table',
+		label: 'cut/copy followed by table cell editing',
+		countSource: {
+			kind: 'feature',
+			key: 'action-pair:ui-cut-copy-paragraph->ui-table-cell-edit',
+		},
+		target: 10,
+		groups: [ 'novelty-ws-real-user-rich-text' ],
+		rationale:
+			'table editing after clipboard operations exercises nested rich-text state',
+	},
+	{
+		id: 'auto-combo:real-user-rich-text-table-undo',
+		label: 'table cell editing followed by undo/redo',
+		countSource: {
+			kind: 'feature',
+			key: 'action-pair:ui-table-cell-edit->ui-undo-redo-paragraph',
+		},
+		target: 10,
+		groups: [ 'novelty-ws-real-user-rich-text' ],
+		rationale:
+			'undo/redo after table editing catches stale selection and block identity bugs',
+	},
+	{
+		id: 'auto-combo:parser-transform-ws-success',
+		label: 'successful parser-transform websocket records',
+		countSource: {
+			kind: 'success-profile',
+			profile: 'parser-transform',
+		},
+		target: 50,
+		groups: [ 'novelty-ws-parser-transform' ],
+		rationale:
+			'parser transform coverage should complete seeds, not only start them',
+	},
+	{
+		id: 'auto-combo:revision-restore-history-ok',
+		label: 'successful revision restore history events',
+		countSource: {
+			kind: 'feature',
+			key: 'history:revision-restore:ok',
+		},
+		target: 25,
+		groups: [ 'novelty-ws-revision-recovery' ],
+		rationale:
+			'revision restore coverage should include the browser-visible restore event',
+	},
+	{
+		id: 'auto-combo:media-cross-entity-history-ok',
+		label: 'successful media/cross-entity history events',
+		countSource: {
+			kind: 'feature',
+			key: 'history:media-cross-entity:ok',
+		},
+		target: 25,
+		groups: [ 'novelty-ws-media-cross-entity' ],
+		rationale:
+			'async media and reusable-block paths should complete their backing REST work',
+	},
+	{
+		id: 'auto-combo:operation-ledger-active',
+		label: 'operation ledger active records',
+		countSource: {
+			kind: 'feature',
+			key: 'operation-ledger:active',
+		},
+		target: 100,
+		groups: [
+			'novelty-ws-real-user-editing',
+			'novelty-ws-real-user-rich-text',
+			'novelty-ws-long-session-large-doc',
+		],
+		rationale:
+			'operation witness coverage is needed for stale or dropped user operations',
+	},
+	{
+		id: 'auto-combo:large-document-blocks-100',
+		label: 'very large document',
+		countSource: {
+			kind: 'feature',
+			key: 'large-document:blocks-100',
+		},
+		target: 10,
+		groups: [ 'novelty-ws-long-session-large-doc' ],
+		rationale:
+			'documents above 100 blocks exercise slow-path serialization and Yjs growth',
+	},
 ];
 
 const ROTATION_PAUSE_ORDER = [
@@ -640,6 +805,8 @@ const state = ( await readJsonFile( STATE_PATH ) ) ?? {
 	startupFailureCountsByProfile: {},
 	pausedGroups: {},
 	disabledGroups: {},
+	autoCoverageGoals: [],
+	autoCoverageGoalWaves: [],
 	recordsSeen: 0,
 	healthWarnings: [],
 	lastUpdatedAt: null,
@@ -675,6 +842,8 @@ state.successfulRecordCountsByProfile ??= {};
 state.startupFailureCountsByProfile ??= {};
 state.pausedGroups ??= {};
 state.healthWarnings ??= [];
+state.autoCoverageGoals ??= [];
+state.autoCoverageGoalWaves ??= [];
 
 function getPositiveIntegerEnv( name, fallback ) {
 	const rawValue = process.env[ name ];
@@ -684,6 +853,18 @@ function getPositiveIntegerEnv( name, fallback ) {
 	const parsedValue = Number.parseInt( rawValue, 10 );
 	if ( Number.isNaN( parsedValue ) || parsedValue <= 0 ) {
 		throw new Error( `Expected ${ name } to be a positive integer.` );
+	}
+	return parsedValue;
+}
+
+function getNonNegativeIntegerEnv( name, fallback ) {
+	const rawValue = process.env[ name ];
+	if ( ! rawValue ) {
+		return fallback;
+	}
+	const parsedValue = Number.parseInt( rawValue, 10 );
+	if ( Number.isNaN( parsedValue ) || parsedValue < 0 ) {
+		throw new Error( `Expected ${ name } to be a non-negative integer.` );
 	}
 	return parsedValue;
 }
@@ -1540,6 +1721,213 @@ function getSuccessfulProfileCount( profile ) {
 	return state.successfulRecordCountsByProfile?.[ profile ] ?? 0;
 }
 
+function getCdpCoverageRecordCount() {
+	return Object.values( state.coverageHashes ?? {} ).reduce(
+		( total, count ) => total + count,
+		0
+	);
+}
+
+function getUnmetCoverageGoals( goals ) {
+	return goals
+		.filter( ( goal ) => ! goal.met )
+		.sort(
+			( left, right ) =>
+				left.count / left.target - right.count / right.target
+		);
+}
+
+function getAutoCoverageGoalCount( goal, goalCountsById ) {
+	const source = goal.countSource;
+	if ( source?.kind === 'feature' ) {
+		return getFeatureCount( source.key );
+	}
+	if ( source?.kind === 'success-profile' ) {
+		return getSuccessfulProfileCount( source.profile );
+	}
+	if ( source?.kind === 'cdp-records' ) {
+		return getCdpCoverageRecordCount();
+	}
+	if ( source?.kind === 'goal' ) {
+		return goalCountsById.get( source.goalId ) ?? 0;
+	}
+	return getFeatureCount( goal.featureKey ?? goal.id );
+}
+
+function addAutoCoverageGoalToList( addGoal, goal, goalCountsById ) {
+	const count = getAutoCoverageGoalCount( goal, goalCountsById );
+	addGoal( {
+		id: goal.id,
+		label: goal.label,
+		count,
+		target: goal.target,
+		groups: goal.groups ?? [],
+		rationale: goal.rationale,
+		harnessAfter:
+			goal.harnessAfter === undefined
+				? goal.target * 4
+				: goal.harnessAfter,
+	} );
+	return count;
+}
+
+function maybeExpandAutoCoverageGoals( goals, unmetGoals, addGoal ) {
+	const expansion = {
+		enabled: AUTO_GOAL_EXPANSION_ENABLED,
+		threshold: AUTO_GOAL_EXPANSION_THRESHOLD,
+		batchSize: AUTO_GOAL_EXPANSION_BATCH_SIZE,
+		maxWavesPerPass: AUTO_GOAL_EXPANSION_MAX_WAVES_PER_PASS,
+		addedGoals: [],
+		waves: [],
+	};
+	if ( ! AUTO_GOAL_EXPANSION_ENABLED ) {
+		return { expansion, unmetGoals };
+	}
+
+	const existingGoalIds = new Set( goals.map( ( goal ) => goal.id ) );
+	for (
+		let waveIndex = 0;
+		waveIndex < AUTO_GOAL_EXPANSION_MAX_WAVES_PER_PASS &&
+		unmetGoals.length <= AUTO_GOAL_EXPANSION_THRESHOLD;
+		waveIndex++
+	) {
+		const goalCountsById = new Map(
+			goals.map( ( goal ) => [ goal.id, goal.count ] )
+		);
+		const candidates = buildAutoCoverageGoalCandidates(
+			goals,
+			goalCountsById,
+			existingGoalIds
+		);
+		const selectedGoals = candidates.slice(
+			0,
+			AUTO_GOAL_EXPANSION_BATCH_SIZE
+		);
+		if ( selectedGoals.length === 0 ) {
+			break;
+		}
+
+		const timestamp = new Date().toISOString();
+		for ( const goal of selectedGoals ) {
+			const storedGoal = {
+				...goal,
+				createdAt: timestamp,
+			};
+			state.autoCoverageGoals.push( storedGoal );
+			existingGoalIds.add( storedGoal.id );
+			addAutoCoverageGoalToList( addGoal, storedGoal, goalCountsById );
+		}
+
+		const wave = {
+			at: timestamp,
+			threshold: AUTO_GOAL_EXPANSION_THRESHOLD,
+			unmetBefore: unmetGoals.length,
+			addedGoals: selectedGoals.map( ( goal ) => goal.id ),
+		};
+		state.autoCoverageGoalWaves.push( wave );
+		state.changes.push( {
+			at: timestamp,
+			action: 'auto-expand-coverage-goals',
+			reason: `unmet coverage goals ${ unmetGoals.length } <= threshold ${ AUTO_GOAL_EXPANSION_THRESHOLD }; added ${ selectedGoals.length } goal(s)`,
+		} );
+		expansion.addedGoals.push( ...wave.addedGoals );
+		expansion.waves.push( wave );
+		unmetGoals = getUnmetCoverageGoals( goals );
+	}
+
+	return { expansion, unmetGoals };
+}
+
+function buildAutoCoverageGoalCandidates( goals, goalCountsById, existingIds ) {
+	const staticCandidates = AUTO_EXPANSION_GOAL_CANDIDATES.map( ( goal ) => ( {
+		...goal,
+		source: 'static-candidate',
+		harnessAfter: goal.harnessAfter ?? goal.target * 4,
+	} ) ).filter(
+		( goal ) =>
+			! existingIds.has( goal.id ) &&
+			getAutoCoverageGoalCount( goal, goalCountsById ) < goal.target
+	);
+
+	const ratchetCandidates = goals
+		.filter(
+			( goal ) =>
+				goal.count >= goal.target &&
+				( goal.groups?.length ?? 0 ) > 0
+		)
+		.map( ( goal ) => {
+			const sourceGoalId = goal.countSource?.goalId ?? goal.id;
+			const target = getNextAutoCoverageTarget( goal );
+			return {
+				id: `auto-ratchet:${ sourceGoalId }:target-${ target }`,
+				label: `${ goal.label } next coverage tier`,
+				countSource: {
+					kind: 'goal',
+					goalId: sourceGoalId,
+				},
+				target,
+				groups: goal.groups,
+				rationale: `auto-expanded after the previous goal was met; ${ goal.rationale }`,
+				harnessAfter:
+					goal.harnessAfter === null
+						? null
+						: Math.max( goal.harnessAfter ?? 0, target * 4 ),
+				source: 'ratchet',
+				sourceGoalId,
+			};
+		} )
+		.filter(
+			( goal ) =>
+				! existingIds.has( goal.id ) &&
+				getAutoCoverageGoalCount( goal, goalCountsById ) < goal.target
+		);
+
+	return [ ...staticCandidates, ...ratchetCandidates ].sort(
+		( left, right ) =>
+			getAutoCoverageGoalPriority( left ) -
+				getAutoCoverageGoalPriority( right ) ||
+			left.target - right.target ||
+			left.id.localeCompare( right.id )
+	);
+}
+
+function getNextAutoCoverageTarget( goal ) {
+	const increment = Math.max( 10, Math.ceil( goal.target * 0.5 ) );
+	return roundUpNiceNumber(
+		Math.max( goal.target * 2, goal.count + increment )
+	);
+}
+
+function roundUpNiceNumber( value ) {
+	if ( value <= 10 ) {
+		return Math.ceil( value );
+	}
+	const magnitude = 10 ** Math.floor( Math.log10( value ) );
+	const scaled = value / magnitude;
+	const niceScaled =
+		scaled <= 1
+			? 1
+			: scaled <= 2
+			? 2
+			: scaled <= 5
+			? 5
+			: 10;
+	return niceScaled * magnitude;
+}
+
+function getAutoCoverageGoalPriority( goal ) {
+	const groups = goal.groups ?? [];
+	const groupPriority = Math.min(
+		...groups.map( ( group ) => {
+			const index = HIGH_VALUE_EXPANSION_GROUPS.indexOf( group );
+			return index === -1 ? 1000 : index;
+		} ),
+		1000
+	);
+	const sourcePriority = goal.source === 'static-candidate' ? -100 : 0;
+	return sourcePriority + groupPriority;
+}
+
 function createCoverageGuidance( novelty ) {
 	const goals = [];
 	const addGoal = ( {
@@ -1878,10 +2266,7 @@ function createCoverageGuidance( novelty ) {
 		} );
 	}
 
-	const cdpRecordCount = Object.values( state.coverageHashes ?? {} ).reduce(
-		( total, count ) => total + count,
-		0
-	);
+	const cdpRecordCount = getCdpCoverageRecordCount();
 	addGoal( {
 		id: 'cdp-coverage-records',
 		label: 'CDP coverage records',
@@ -1901,12 +2286,23 @@ function createCoverageGuidance( novelty ) {
 		harnessAfter: 100,
 	} );
 
-	const unmetGoals = goals
-		.filter( ( goal ) => ! goal.met )
-		.sort(
-			( left, right ) =>
-				left.count / left.target - right.count / right.target
+	const goalCountsById = new Map(
+		goals.map( ( goal ) => [ goal.id, goal.count ] )
+	);
+	for ( const goal of state.autoCoverageGoals ?? [] ) {
+		goalCountsById.set(
+			goal.id,
+			addAutoCoverageGoalToList( addGoal, goal, goalCountsById )
 		);
+	}
+
+	let unmetGoals = getUnmetCoverageGoals( goals );
+	const autoExpansionResult = maybeExpandAutoCoverageGoals(
+		goals,
+		unmetGoals,
+		addGoal
+	);
+	unmetGoals = autoExpansionResult.unmetGoals;
 	const recommendedGroups = [
 		...new Set( unmetGoals.flatMap( ( goal ) => goal.groups ) ),
 	];
@@ -1936,6 +2332,7 @@ function createCoverageGuidance( novelty ) {
 		harnessWork: harnessWork.slice( 0, 20 ),
 		noProgressPasses: state.coverageGuidanceNoProgressPasses ?? 0,
 		recommendedGroups,
+		autoExpansion: autoExpansionResult.expansion,
 		newFeatureKeysThisPass: novelty.newFeatureKeys,
 		newCdpCoverageHashesThisPass: novelty.newCoverageHashes,
 	};
@@ -2999,6 +3396,7 @@ async function maybeLaunchCoverageCodex( guidance ) {
 	const shouldLaunch =
 		COVERAGE_GUIDANCE_CODEX_FORCE ||
 		guidance.harnessWork.length > 0 ||
+		( guidance.autoExpansion?.addedGoals?.length ?? 0 ) > 0 ||
 		( guidance.unmetGoals.length > 0 &&
 			guidance.noProgressPasses >= COVERAGE_GUIDANCE_STALL_PASSES );
 	if ( ! shouldLaunch ) {
@@ -3044,6 +3442,8 @@ async function maybeLaunchCoverageCodex( guidance ) {
 		session,
 		reason: guidance.harnessWork.length
 			? `${ guidance.harnessWork.length } coverage goal(s) need harness work`
+			: ( guidance.autoExpansion?.addedGoals?.length ?? 0 ) > 0
+			? `${ guidance.autoExpansion.addedGoals.length } auto-expanded coverage goal(s) added`
 			: `${ guidance.noProgressPasses } no-progress coverage pass(es) with ${ guidance.unmetGoals.length } unmet goal(s)`,
 	} );
 	await log( `Started coverage guidance Codex tmux session ${ session }.` );
@@ -3106,6 +3506,10 @@ function buildCoverageCodexPrompt( guidance, reportPath ) {
 		`- recommended built-in groups: ${ guidance.recommendedGroups.join(
 			', '
 		) }`,
+		`- auto-goal expansion threshold: ${ guidance.autoExpansion?.threshold }`,
+		`- auto-goals added this pass: ${
+			guidance.autoExpansion?.addedGoals?.join( ', ' ) || 'none'
+		}`,
 		'',
 		'Top unmet coverage goals:',
 		unmet || '- none',
@@ -3117,8 +3521,9 @@ function buildCoverageCodexPrompt( guidance, reportPath ) {
 		'1. Inspect the coverage records and existing fuzz profiles/actions.',
 		'2. If existing profiles can cover the gap, update the group policy/config so the gap is covered.',
 		'3. If the harness cannot currently generate the missing feature, add the smallest fuzz action/profile/env knob needed.',
-		'4. Run focused syntax/lint checks for changed files.',
-		'5. Write a concise report with changed files, commands run, and how the next monitor pass should prove coverage was added.',
+		'4. If the automatic expansion threshold is causing too much or too little queued coverage work, recommend a new RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD value and explain why.',
+		'5. Run focused syntax/lint checks for changed files.',
+		'6. Write a concise report with changed files, commands run, and how the next monitor pass should prove coverage was added.',
 		'',
 	].join( '\n' );
 }
@@ -3339,6 +3744,16 @@ async function writeStatus(
 		'',
 		'## Coverage Guidance',
 		`- unmet goals: ${ guidance.unmetGoals.length }`,
+		`- auto goal expansion: ${
+			guidance.autoExpansion?.enabled ? 'enabled' : 'disabled'
+		}`,
+		`- auto goal expansion threshold: ${
+			guidance.autoExpansion?.threshold ?? AUTO_GOAL_EXPANSION_THRESHOLD
+		}`,
+		`- auto coverage goals: ${ state.autoCoverageGoals?.length ?? 0 }`,
+		`- auto goals added this pass: ${
+			guidance.autoExpansion?.addedGoals?.length ?? 0
+		}`,
 		`- no-progress passes: ${ guidance.noProgressPasses } / ${ COVERAGE_GUIDANCE_STALL_PASSES }`,
 		`- recommended groups: ${
 			guidance.recommendedGroups.length
@@ -3346,6 +3761,11 @@ async function writeStatus(
 				: 'none'
 		}`,
 		`- harness-work candidates: ${ guidance.harnessWork.length }`,
+		...( guidance.autoExpansion?.addedGoals?.length
+			? guidance.autoExpansion.addedGoals.map(
+					( id ) => `- added auto goal ${ id }`
+			  )
+			: [] ),
 		...guidance.unmetGoals
 			.slice( 0, 20 )
 			.map(
@@ -3455,6 +3875,8 @@ async function runPass() {
 			novelty.newCoverageHashes
 		} unmetCoverage=${ guidance.unmetGoals.length } noProgress=${
 			guidance.noProgressPasses
+		} autoGoals=${ state.autoCoverageGoals?.length ?? 0 } autoAdded=${
+			guidance.autoExpansion?.addedGoals?.length ?? 0
 		} warnings=${ state.healthWarnings.length } headroom=${
 			resources.hasHeadroom
 		} likelyReal=${ triageYield.likelyRealVisible } duplicateShare=${
