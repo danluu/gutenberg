@@ -288,7 +288,10 @@ describe( 'getEntityRecord', () => {
 			'postType',
 			'post',
 			{ id: 1, meta: {} },
-			{ __unstableSkipSyncUpdate: true }
+			{
+				__unstablePersistedCRDTDocRecordSnapshot: EDITED_RECORD,
+				__unstableSkipSyncUpdate: true,
+			}
 		);
 	} );
 
@@ -340,7 +343,10 @@ describe( 'getEntityRecord', () => {
 			'postType',
 			'post',
 			{ id: 1, meta: {} },
-			{ __unstableSkipSyncUpdate: true }
+			{
+				__unstablePersistedCRDTDocRecordSnapshot: POST_RECORD,
+				__unstableSkipSyncUpdate: true,
+			}
 		);
 	} );
 
@@ -438,7 +444,10 @@ describe( 'getEntityRecord', () => {
 			'postType',
 			'post',
 			{ id: 1, meta: {} },
-			{ __unstableSkipSyncUpdate: true }
+			{
+				__unstablePersistedCRDTDocRecordSnapshot: EDITED_RECORD,
+				__unstableSkipSyncUpdate: true,
+			}
 		);
 		expect( syncManager.update ).toHaveBeenCalledWith(
 			'postType/post',

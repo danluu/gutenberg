@@ -260,7 +260,11 @@ export const getEntityRecord =
 											[ entityIdKey ]: key,
 											meta,
 										},
-										{ __unstableSkipSyncUpdate: true }
+										{
+											__unstablePersistedCRDTDocRecordSnapshot:
+												editedRecord,
+											__unstableSkipSyncUpdate: true,
+										}
 									);
 								} );
 						},

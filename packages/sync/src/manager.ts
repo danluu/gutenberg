@@ -3,6 +3,7 @@
  */
 import * as Y from 'yjs';
 import type { Awareness } from 'y-protocols/awareness';
+import isEqual from 'fast-deep-equal/es6';
 
 /**
  * Internal dependencies
@@ -35,6 +36,8 @@ import { createUndoManager } from './undo-manager';
 import {
 	createYjsDoc,
 	deserializeCrdtDoc,
+	getPersistedCrdtDocBaseRecordSnapshot,
+	getPersistedCrdtDocRecordSnapshot,
 	getPersistedCrdtDocVersion,
 	initializeYjsDoc,
 	markEntityAsSaved,
@@ -74,6 +77,61 @@ function areUint8ArraysEqual( a: Uint8Array, b: Uint8Array ): boolean {
 
 interface ApplyPersistedCrdtDocOptions {
 	shouldPersist?: boolean;
+}
+
+function getComparableSnapshotValue( value: unknown ): unknown {
+	if (
+		'object' === typeof value &&
+		null !== value &&
+		! Array.isArray( value ) &&
+		'raw' in value
+	) {
+		return ( value as { raw?: unknown } ).raw;
+	}
+
+	return value;
+}
+
+function filterStaleRecordSnapshotInvalidations(
+	invalidations: ObjectData,
+	record: ObjectData,
+	recordSnapshot: ObjectData | null,
+	baseRecordSnapshot: ObjectData | null
+): ObjectData {
+	if ( ! recordSnapshot ) {
+		return invalidations;
+	}
+
+	return Object.fromEntries(
+		Object.entries( invalidations ).filter( ( [ key ] ) => {
+			if (
+				! Object.prototype.hasOwnProperty.call( recordSnapshot, key )
+			) {
+				return true;
+			}
+
+			const recordValue = getComparableSnapshotValue( record[ key ] );
+			const snapshotValue = getComparableSnapshotValue(
+				recordSnapshot[ key ]
+			);
+
+			if ( isEqual( recordValue, snapshotValue ) ) {
+				return true;
+			}
+
+			return ! (
+				baseRecordSnapshot &&
+				Object.prototype.hasOwnProperty.call(
+					baseRecordSnapshot,
+					key
+				) &&
+				isEqual(
+					recordValue,
+					getComparableSnapshotValue( baseRecordSnapshot[ key ] )
+				)
+			);
+		} )
+	);
 }
 
 /**
@@ -614,7 +672,15 @@ export function createSyncManager( debug = false ): SyncManager {
 		// 3. Unsaved changes are synced from a peer _before_ this code runs. We
 		//    can't control when (or if) remote changes are synced, so this is a
 		//    race condition.
-		const invalidations = getChangesFromCRDTDoc( tempDoc, record );
+		const recordSnapshot = getPersistedCrdtDocRecordSnapshot( serialized );
+		const baseRecordSnapshot =
+			getPersistedCrdtDocBaseRecordSnapshot( serialized );
+		const invalidations = filterStaleRecordSnapshotInvalidations(
+			getChangesFromCRDTDoc( tempDoc, record ),
+			record,
+			recordSnapshot,
+			baseRecordSnapshot
+		);
 		const invalidatedKeys = Object.keys( invalidations );
 
 		// Destroy the temporary document to prevent leaks.
@@ -866,8 +932,9 @@ export function createSyncManager( debug = false ): SyncManager {
 	/**
 	 * Create object meta to persist the CRDT document in the entity record.
 	 *
-	 * @param {ObjectType} objectType Object type.
-	 * @param {ObjectID}   objectId   Object ID.
+	 * @param {ObjectType}                    objectType Object type.
+	 * @param {ObjectID}                      objectId   Object ID.
+	 * @param {CreatePersistedCRDTDocOptions} options    Options.
 	 */
 	async function createPersistedCRDTDoc(
 		objectType: ObjectType,
@@ -890,6 +957,8 @@ export function createSyncManager( debug = false ): SyncManager {
 			baseVersion: getPersistedCrdtDocVersion(
 				options.basePersistedCRDTDoc
 			),
+			baseRecordSnapshot: options.baseRecordSnapshot,
+			recordSnapshot: options.recordSnapshot,
 		} );
 	}
 

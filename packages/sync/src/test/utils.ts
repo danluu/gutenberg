@@ -10,6 +10,8 @@ import { describe, expect, it, beforeEach } from '@jest/globals';
  */
 import {
 	createYjsDoc,
+	getPersistedCrdtDocBaseRecordSnapshot,
+	getPersistedCrdtDocRecordSnapshot,
 	getPersistedCrdtDocVersion,
 	initializeYjsDoc,
 	markEntityAsSaved,
@@ -164,10 +166,50 @@ describe( 'utils', () => {
 			expect( parsed.baseVersion ).toBe( baseVersion );
 		} );
 
+		it( 'serializes and reads a record snapshot', () => {
+			const baseRecordSnapshot = {
+				id: 123,
+				title: 'Base Title',
+			};
+			const recordSnapshot = {
+				id: 123,
+				title: 'Snapshot Title',
+			};
+
+			const serialized = serializeCrdtDoc( testDoc, {
+				baseRecordSnapshot,
+				recordSnapshot,
+			} );
+
+			expect( JSON.parse( serialized ).baseRecordSnapshot ).toEqual(
+				baseRecordSnapshot
+			);
+			expect( JSON.parse( serialized ).recordSnapshot ).toEqual(
+				recordSnapshot
+			);
+			expect(
+				getPersistedCrdtDocBaseRecordSnapshot( serialized )
+			).toEqual( baseRecordSnapshot );
+			expect( getPersistedCrdtDocRecordSnapshot( serialized ) ).toEqual(
+				recordSnapshot
+			);
+		} );
+
+		it( 'ignores invalid record snapshot data', () => {
+			const serialized = serializeCrdtDoc( testDoc );
+			const withInvalidSnapshot = JSON.stringify( {
+				...JSON.parse( serialized ),
+				recordSnapshot: [ 'not', 'a', 'record' ],
+			} );
+
+			expect(
+				getPersistedCrdtDocRecordSnapshot( withInvalidSnapshot )
+			).toBeNull();
+		} );
+
 		it( 'changes the version when the document changes', () => {
 			const firstSerialized = serializeCrdtDoc( testDoc );
-			const firstVersion =
-				getPersistedCrdtDocVersion( firstSerialized );
+			const firstVersion = getPersistedCrdtDocVersion( firstSerialized );
 
 			testDoc.getMap( 'testMap' ).set( 'title', 'Changed Title' );
 			const secondSerialized = serializeCrdtDoc( testDoc );

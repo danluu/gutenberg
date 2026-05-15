@@ -299,7 +299,11 @@ describe( 'SyncManager', () => {
 
 		describe( 'persisted CRDT doc behavior', () => {
 			function createPersistedCRDTDoc(
-				persistedRecord: ObjectData
+				persistedRecord: ObjectData,
+				options: {
+					baseRecordSnapshot?: ObjectData;
+					recordSnapshot?: ObjectData;
+				} = {}
 			): string {
 				const persistedDoc = new Y.Doc();
 				const persistedRecordMap =
@@ -310,7 +314,10 @@ describe( 'SyncManager', () => {
 					}
 				);
 
-				return serializeCrdtDoc( persistedDoc );
+				return serializeCrdtDoc( persistedDoc, {
+					baseRecordSnapshot: options.baseRecordSnapshot,
+					recordSnapshot: options.recordSnapshot,
+				} );
 			}
 
 			it( 'applies the current record when no persisted CRDT doc exists', async () => {
@@ -465,6 +472,121 @@ describe( 'SyncManager', () => {
 				expect( mockHandlers.persistCRDTDoc ).toHaveBeenCalledTimes(
 					1
 				);
+			} );
+
+			it( 'preserves snapshot-backed persisted CRDT fields when the REST record is stale', async () => {
+				const staleRecord = {
+					...mockRecord,
+					title: {
+						raw: 'Initial title',
+						rendered: 'Initial title',
+					},
+				};
+				const remoteRecord = {
+					...staleRecord,
+					title: 'Remote title',
+				};
+
+				mockSyncConfig = {
+					...mockSyncConfig,
+					getPersistedCRDTDoc: jest.fn( () =>
+						createPersistedCRDTDoc( remoteRecord, {
+							baseRecordSnapshot: {
+								title: 'Initial title',
+							},
+							recordSnapshot: {
+								title: 'Remote title',
+							},
+						} )
+					),
+				};
+				mockHandlers.getEditedRecord.mockImplementation( async () =>
+					Promise.resolve( staleRecord )
+				);
+
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					staleRecord,
+					mockHandlers
+				);
+
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).not.toHaveBeenCalled();
+				expect( mockHandlers.persistCRDTDoc ).not.toHaveBeenCalled();
+				expect( mockHandlers.editRecord ).toHaveBeenCalledTimes( 1 );
+				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+					{ title: 'Remote title' },
+					{ undoIgnore: true }
+				);
+			} );
+
+			it( 'invalidates snapshot-backed persisted CRDT fields when the REST record changed after the snapshot', async () => {
+				const baseRecord = {
+					...mockRecord,
+					title: {
+						raw: 'Initial title',
+						rendered: 'Initial title',
+					},
+				};
+				const remoteRecord = {
+					...baseRecord,
+					title: 'Remote title',
+				};
+				const currentRecord = {
+					...baseRecord,
+					title: {
+						raw: 'Server title',
+						rendered: 'Server title',
+					},
+				};
+
+				mockSyncConfig = {
+					...mockSyncConfig,
+					getPersistedCRDTDoc: jest.fn( () =>
+						createPersistedCRDTDoc( remoteRecord, {
+							baseRecordSnapshot: {
+								title: 'Initial title',
+							},
+							recordSnapshot: {
+								title: 'Remote title',
+							},
+						} )
+					),
+				};
+				mockHandlers.getEditedRecord.mockImplementation( async () =>
+					Promise.resolve( currentRecord )
+				);
+
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					currentRecord,
+					mockHandlers
+				);
+
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).toHaveBeenCalledTimes( 1 );
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).toHaveBeenCalledWith( expect.any( Y.Doc ), {
+					title: {
+						raw: 'Server title',
+						rendered: 'Server title',
+					},
+				} );
+				expect( mockHandlers.persistCRDTDoc ).toHaveBeenCalledTimes(
+					1
+				);
+				expect( mockHandlers.editRecord ).not.toHaveBeenCalled();
 			} );
 		} );
 	} );
