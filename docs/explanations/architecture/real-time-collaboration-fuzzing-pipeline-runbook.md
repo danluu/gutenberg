@@ -1050,6 +1050,32 @@ the new output directory and preserves cumulative `observed-roots.txt` entries
 across restarts. That keeps quality and auto-goal decisions based on the full
 run history instead of only the immediately previous monitor output.
 
+## Fuzz-Only Assertion Loop
+
+Use `bin/rtc-fuzz-only-asserts-loop-remote.sh` on Jetstream2 to continuously
+look for assertions that can be added only to fuzzing. The loop writes cycles
+under `/media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260515/cycles/`.
+Each cycle:
+
+-   collects current novelty status, recent assertion/invariant failures,
+    existing assertion sites, git status, and prior assertion-loop reports;
+-   launches one xhigh Codex analysis in tmux for each of `linus torvalds`,
+    `kyle kingsbury`, `marc brooker`, `dan luu`, `tptacek`, and `contrarian`;
+-   runs two review rounds over the responses. By default round two analyzes
+    every round-one response, so the fan-out is intentionally large and should
+    run only on Jetstream2;
+-   launches one applier Codex job after the analysis rounds finish. That job is
+    the only job allowed to edit files. It must add assertions only behind the
+    RTC fuzzing harness or explicit fuzz-only guards, and it must remove or
+    tighten noisy fuzz-only assertions when current logs show duplicate/noise
+    dominated failures.
+
+The loop session is `rtc-fuzz-only-asserts-loop`; per-cycle jobs use
+`rtc-fuzz-asserts-*` tmux sessions. Reports are `round0/*.report.md`,
+`round1/*.report.md`, `round2/*.report.md`, and `apply.report.md` inside each
+cycle directory. If a cycle modifies active fuzzing behavior, the applier should
+restart only the affected RTC fuzz loop with the existing `/tmp/start_*` scripts.
+
 The implemented novelty profiles are:
 
 -   `structure`: nested groups, nested edits, group moves, deletes, and other
