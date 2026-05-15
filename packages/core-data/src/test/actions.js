@@ -2,6 +2,11 @@
  * WordPress dependencies
  */
 import apiFetch from '@wordpress/api-fetch';
+import {
+	parse,
+	registerBlockType,
+	unregisterBlockType,
+} from '@wordpress/blocks';
 
 jest.mock( '@wordpress/api-fetch' );
 
@@ -35,6 +40,14 @@ jest.mock( '../sync', () => ( {
 	LOCAL_EDITOR_ORIGIN: 'local-editor',
 	LOCAL_UNDO_IGNORED_ORIGIN: 'gutenberg-undo-ignored',
 } ) );
+
+const SAVE_RESPONSE_TEST_BLOCK_NAME = 'test/save-response-content-block';
+
+function saveResponseBlockContent( content ) {
+	return `<!-- wp:${ SAVE_RESPONSE_TEST_BLOCK_NAME } ${ JSON.stringify( {
+		content,
+	} ) } /-->`;
+}
 
 describe( 'editEntityRecord', () => {
 	it( 'throws when the edited entity does not have a loaded config.', async () => {
@@ -762,6 +775,24 @@ describe( 'saveEditedEntityRecord', () => {
 describe( 'saveEntityRecord', () => {
 	let dispatch;
 
+	beforeAll( () => {
+		registerBlockType( SAVE_RESPONSE_TEST_BLOCK_NAME, {
+			apiVersion: 3,
+			title: 'Save response content test block',
+			category: 'text',
+			attributes: {
+				content: {
+					type: 'string',
+				},
+			},
+			save: () => null,
+		} );
+	} );
+
+	afterAll( () => {
+		unregisterBlockType( SAVE_RESPONSE_TEST_BLOCK_NAME );
+	} );
+
 	beforeEach( async () => {
 		apiFetch.mockReset();
 		getSyncManager.mockReset();
@@ -1001,6 +1032,371 @@ describe( 'saveEntityRecord', () => {
 			title: 'synced title',
 		} );
 		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'uses saved CRDT content when a save response returns stale empty content', async () => {
+		const savedContent =
+			'<!-- wp:paragraph --><p>Synced body</p><!-- /wp:paragraph -->';
+		const post = {
+			id: 10,
+			content: { raw: savedContent },
+			meta: {},
+		};
+		const persistedRecord = {
+			id: 10,
+			content: { raw: '' },
+			meta: { _crdt_document: 'base-crdt-doc' },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			content: { raw: '' },
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: {},
+				__unstablePrePersist: jest.fn( () => ( {
+					meta: { _crdt_document: 'fresh-crdt-doc' },
+				} ) ),
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				content: savedContent,
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		const expectedReceivedRecord = {
+			...staleSaveResponse,
+			content: { raw: savedContent },
+		};
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			expectedReceivedRecord,
+			undefined,
+			true,
+			{
+				...post,
+				meta: { _crdt_document: 'fresh-crdt-doc' },
+			}
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			expectedReceivedRecord,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'uses saved CRDT block content when a save response returns stale base content', async () => {
+		const baseContent = saveResponseBlockContent( 'Base body' );
+		const savedContent = saveResponseBlockContent( 'Synced body' );
+		const post = {
+			id: 10,
+			content: { raw: savedContent },
+			meta: {},
+		};
+		const persistedRecord = {
+			id: 10,
+			content: { raw: baseContent },
+			meta: { _crdt_document: 'base-crdt-doc' },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			content: { raw: baseContent },
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: {},
+				__unstablePrePersist: jest.fn( () => ( {
+					meta: { _crdt_document: 'fresh-crdt-doc' },
+				} ) ),
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				blocks: parse( savedContent ),
+				content: baseContent,
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		const expectedReceivedRecord = {
+			...staleSaveResponse,
+			content: { raw: savedContent },
+		};
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			expectedReceivedRecord,
+			undefined,
+			true,
+			{
+				...post,
+				meta: { _crdt_document: 'fresh-crdt-doc' },
+			}
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			expectedReceivedRecord,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'keeps distinct non-empty content returned by a save response', async () => {
+		const savedContent =
+			'<!-- wp:paragraph --><p>Synced body</p><!-- /wp:paragraph -->';
+		const serverContent =
+			'<!-- wp:paragraph --><p>Server body</p><!-- /wp:paragraph -->';
+		const post = {
+			id: 10,
+			content: { raw: savedContent },
+			meta: {},
+		};
+		const persistedRecord = {
+			id: 10,
+			content: { raw: '' },
+			meta: { _crdt_document: 'base-crdt-doc' },
+		};
+		const saveResponse = {
+			id: 10,
+			content: { raw: serverContent },
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: {},
+				__unstablePrePersist: jest.fn( () => ( {
+					meta: { _crdt_document: 'fresh-crdt-doc' },
+				} ) ),
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				content: savedContent,
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => saveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			saveResponse,
+			undefined,
+			true,
+			{
+				...post,
+				meta: { _crdt_document: 'fresh-crdt-doc' },
+			}
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			saveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( saveResponse );
+	} );
+
+	it( 'does not replace empty save response content when live CRDT content differs', async () => {
+		const savedContent =
+			'<!-- wp:paragraph --><p>Synced body</p><!-- /wp:paragraph -->';
+		const liveContent =
+			'<!-- wp:paragraph --><p>Newer live body</p><!-- /wp:paragraph -->';
+		const post = {
+			id: 10,
+			content: { raw: savedContent },
+			meta: {},
+		};
+		const persistedRecord = {
+			id: 10,
+			content: { raw: '' },
+			meta: { _crdt_document: 'base-crdt-doc' },
+		};
+		const saveResponse = {
+			id: 10,
+			content: { raw: '' },
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: {},
+				__unstablePrePersist: jest.fn( () => ( {
+					meta: { _crdt_document: 'fresh-crdt-doc' },
+				} ) ),
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				content: liveContent,
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => saveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			saveResponse,
+			undefined,
+			true,
+			{
+				...post,
+				meta: { _crdt_document: 'fresh-crdt-doc' },
+			}
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			saveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( saveResponse );
+	} );
+
+	it( 'does not replace empty save response content without matching CRDT document evidence', async () => {
+		const savedContent =
+			'<!-- wp:paragraph --><p>Synced body</p><!-- /wp:paragraph -->';
+		const post = {
+			id: 10,
+			content: { raw: savedContent },
+			meta: {},
+		};
+		const persistedRecord = {
+			id: 10,
+			content: { raw: '' },
+			meta: { _crdt_document: 'base-crdt-doc' },
+		};
+		const saveResponse = {
+			id: 10,
+			content: { raw: '' },
+			meta: { _crdt_document: 'stale-crdt-doc' },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: {},
+				__unstablePrePersist: jest.fn( () => ( {
+					meta: { _crdt_document: 'fresh-crdt-doc' },
+				} ) ),
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				content: savedContent,
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => saveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			saveResponse,
+			undefined,
+			true,
+			{
+				...post,
+				meta: { _crdt_document: 'fresh-crdt-doc' },
+			}
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			saveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( saveResponse );
 	} );
 
 	it( 'triggers a PUT request for an existing record with a custom key', async () => {

@@ -8,6 +8,7 @@ import { v4 as uuid } from 'uuid';
  * WordPress dependencies
  */
 import apiFetch from '@wordpress/api-fetch';
+import { __unstableSerializeAndClean } from '@wordpress/blocks';
 import { addQueryArgs } from '@wordpress/url';
 import deprecated from '@wordpress/deprecated';
 
@@ -26,6 +27,12 @@ import {
 } from './sync';
 import logEntityDeprecation from './utils/log-entity-deprecation';
 
+const POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE = '_crdt_document';
+const POST_TYPES_WITH_STALE_CONTENT_RESPONSE_PROTECTION = new Set( [
+	'post',
+	'page',
+] );
+
 function addTitleToAutoDraft( record ) {
 	return record.status === 'auto-draft' ? { ...record, title: '' } : record;
 }
@@ -35,6 +42,144 @@ function isStaleCRDTDocumentError( error ) {
 		error?.code === 'rest_crdt_document_stale' &&
 		error?.data?.status === 409
 	);
+}
+
+function hasOwnProperty( object, key ) {
+	return Object.prototype.hasOwnProperty.call( object ?? {}, key );
+}
+
+function getRawPostValue( value ) {
+	return value && typeof value === 'object' && 'raw' in value
+		? value.raw
+		: value;
+}
+
+function getRawPostFieldWithValue( value, rawValue ) {
+	if (
+		value &&
+		typeof value === 'object' &&
+		hasOwnProperty( value, 'raw' )
+	) {
+		return {
+			...value,
+			raw: rawValue,
+		};
+	}
+
+	return rawValue;
+}
+
+function getPersistedCRDTDocument( record ) {
+	return record?.meta?.[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ];
+}
+
+function getSerializedCRDTBlockContent( crdtRecord ) {
+	if ( ! Array.isArray( crdtRecord?.blocks ) ) {
+		return undefined;
+	}
+
+	try {
+		return __unstableSerializeAndClean( crdtRecord.blocks ).trim();
+	} catch {
+		return undefined;
+	}
+}
+
+function getCRDTRecordContent( crdtRecord ) {
+	return (
+		getSerializedCRDTBlockContent( crdtRecord ) ??
+		getRawPostValue( crdtRecord?.content )
+	);
+}
+
+function isNonEmptyString( value ) {
+	return typeof value === 'string' && value.trim() !== '';
+}
+
+function shouldGuardStaleSaveResponseContent(
+	kind,
+	name,
+	baseRecord,
+	edits,
+	updatedRecord,
+	crdtRecord
+) {
+	if (
+		kind !== 'postType' ||
+		! POST_TYPES_WITH_STALE_CONTENT_RESPONSE_PROTECTION.has( name ) ||
+		! hasOwnProperty( edits, 'content' ) ||
+		! hasOwnProperty( updatedRecord, 'content' )
+	) {
+		return false;
+	}
+
+	const editedContent = getRawPostValue( edits.content );
+	const responseContent = getRawPostValue( updatedRecord.content );
+	const baseContent = getRawPostValue( baseRecord?.content );
+	const crdtContent = getCRDTRecordContent( crdtRecord );
+	const editedCRDTDocument = getPersistedCRDTDocument( edits );
+	const responseContentIsStaleBase =
+		hasOwnProperty( baseRecord, 'content' ) &&
+		fastDeepEqual( responseContent, baseContent );
+
+	return (
+		isNonEmptyString( editedContent ) &&
+		( responseContent === '' || responseContentIsStaleBase ) &&
+		! fastDeepEqual( responseContent, editedContent ) &&
+		isNonEmptyString( editedCRDTDocument ) &&
+		fastDeepEqual(
+			getPersistedCRDTDocument( updatedRecord ),
+			editedCRDTDocument
+		) &&
+		fastDeepEqual( crdtContent, editedContent )
+	);
+}
+
+function getGuardedStaleSaveResponseContentRecord(
+	kind,
+	name,
+	baseRecord,
+	edits,
+	updatedRecord,
+	syncManager,
+	objectType,
+	objectId
+) {
+	if ( ! updatedRecord || typeof updatedRecord !== 'object' ) {
+		return updatedRecord;
+	}
+
+	if ( objectId === undefined || objectId === null ) {
+		return updatedRecord;
+	}
+
+	let crdtRecord;
+	try {
+		crdtRecord = syncManager?.getCRDTRecordData?.( objectType, objectId );
+	} catch {
+		return updatedRecord;
+	}
+
+	if (
+		! shouldGuardStaleSaveResponseContent(
+			kind,
+			name,
+			baseRecord,
+			edits,
+			updatedRecord,
+			crdtRecord
+		)
+	) {
+		return updatedRecord;
+	}
+
+	return {
+		...updatedRecord,
+		content: getRawPostFieldWithValue(
+			updatedRecord.content,
+			getRawPostValue( edits.content )
+		),
+	};
 }
 
 /**
@@ -797,10 +942,8 @@ export const saveEntityRecord =
 						return edits;
 					};
 
-					let edits = await prepareEdits(
-						persistedRecord,
-						record
-					);
+					let edits = await prepareEdits( persistedRecord, record );
+					let saveResponseBaseRecord = persistedRecord;
 					try {
 						updatedRecord = await __unstableFetch( {
 							path,
@@ -848,16 +991,34 @@ export const saveEntityRecord =
 							latestRecord,
 							mergedRecord
 						);
+						saveResponseBaseRecord = latestRecord;
 						updatedRecord = await __unstableFetch( {
 							path,
 							method: 'PUT',
 							data: edits,
 						} );
 					}
+					let receivedRecord = updatedRecord;
+					let syncManager;
+					const objectType = `${ kind }/${ name }`;
+					if ( entityConfig.syncConfig ) {
+						syncManager = getSyncManager();
+						receivedRecord =
+							getGuardedStaleSaveResponseContentRecord(
+								kind,
+								name,
+								saveResponseBaseRecord,
+								edits,
+								updatedRecord,
+								syncManager,
+								objectType,
+								recordId
+							);
+					}
 					dispatch.receiveEntityRecords(
 						kind,
 						name,
-						updatedRecord,
+						receivedRecord,
 						undefined,
 						true,
 						edits
@@ -865,10 +1026,10 @@ export const saveEntityRecord =
 					if ( entityConfig.syncConfig ) {
 						// Use an untracked origin so that the save
 						// response does not create undo levels.
-						getSyncManager()?.update(
-							`${ kind }/${ name }`,
+						syncManager?.update(
+							objectType,
 							recordId,
-							__unstableSkipSyncUpdate ? {} : updatedRecord,
+							__unstableSkipSyncUpdate ? {} : receivedRecord,
 							LOCAL_UNDO_IGNORED_ORIGIN,
 							{ isSave: true }
 						);
