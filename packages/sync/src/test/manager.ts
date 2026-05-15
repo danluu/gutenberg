@@ -575,6 +575,63 @@ describe( 'SyncManager', () => {
 					getPersistedCrdtDocVersion( basePersistedDoc )
 				);
 			} );
+
+			it( 'hydrates from a persisted CRDT doc without invalidating missing record fields', async () => {
+				mockRecord = {
+					...mockRecord,
+					content: 'old content',
+				};
+				mockSyncConfig.getPersistedCRDTDoc = jest.fn( ( record ) => {
+					const meta = record.meta as
+						| { _crdt_document?: string | null }
+						| undefined;
+
+					return meta?._crdt_document ?? null;
+				} );
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+				manager.update(
+					'post',
+					'123',
+					{ content: 'accepted content' },
+					LOCAL_EDITOR_ORIGIN
+				);
+				await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+				const savedCRDTDocument = await manager.createPersistedCRDTDoc(
+					'post',
+					'123'
+				);
+
+				jest.clearAllMocks();
+				mockHandlers.getEditedRecord.mockResolvedValue( mockRecord );
+
+				await manager.hydrateRecordFromPersistedCRDTDoc(
+					'post',
+					'123',
+					{
+						id: '123',
+						meta: {
+							_crdt_document: savedCRDTDocument,
+						},
+					}
+				);
+
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).not.toHaveBeenCalled();
+				expect( mockHandlers.persistCRDTDoc ).not.toHaveBeenCalled();
+				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+					{ content: 'accepted content' },
+					{ undoIgnore: true }
+				);
+			} );
 		} );
 	} );
 
