@@ -8,6 +8,7 @@ import { v4 as uuid } from 'uuid';
  * WordPress dependencies
  */
 import apiFetch from '@wordpress/api-fetch';
+import { __unstableSerializeAndClean, parse } from '@wordpress/blocks';
 import { addQueryArgs } from '@wordpress/url';
 import deprecated from '@wordpress/deprecated';
 
@@ -34,6 +35,81 @@ function isStaleCRDTDocumentError( error ) {
 	return (
 		error?.code === 'rest_crdt_document_stale' &&
 		error?.data?.status === 409
+	);
+}
+
+function getSerializedCRDTBlockContent( crdtRecord ) {
+	return Array.isArray( crdtRecord?.blocks )
+		? __unstableSerializeAndClean( crdtRecord.blocks ).trim()
+		: undefined;
+}
+
+function getSerializedBlockValue( block ) {
+	return __unstableSerializeAndClean( [ block ] ).trim();
+}
+
+function areSerializedBlocksSuffix( suffixBlocks, fullBlocks ) {
+	if ( ! suffixBlocks.length || suffixBlocks.length >= fullBlocks.length ) {
+		return false;
+	}
+
+	const offset = fullBlocks.length - suffixBlocks.length;
+	return suffixBlocks.every(
+		( block, index ) =>
+			block.name === fullBlocks[ offset + index ]?.name &&
+			getSerializedBlockValue( block ) ===
+				getSerializedBlockValue( fullBlocks[ offset + index ] )
+	);
+}
+
+function getCRDTRawContent( crdtRecord ) {
+	return getSerializedCRDTBlockContent( crdtRecord ) ?? crdtRecord?.content;
+}
+
+function shouldUseFullCRDTContentForProjectedSave(
+	projectedContent,
+	crdtContent
+) {
+	if (
+		typeof projectedContent !== 'string' ||
+		typeof crdtContent !== 'string'
+	) {
+		return false;
+	}
+
+	const normalizedProjectedContent = projectedContent.trim();
+	const normalizedCRDTContent = crdtContent.trim();
+
+	if (
+		! normalizedCRDTContent ||
+		normalizedProjectedContent === normalizedCRDTContent
+	) {
+		return false;
+	}
+
+	if ( ! normalizedProjectedContent ) {
+		return true;
+	}
+
+	const projectedBlocks = parse( normalizedProjectedContent );
+	const crdtBlocks = parse( normalizedCRDTContent );
+
+	return areSerializedBlocksSuffix( projectedBlocks, crdtBlocks );
+}
+
+function getSaveProjectionCRDTContent( kind, name, recordId ) {
+	if (
+		typeof window === 'undefined' ||
+		! window._wpCollaborationEnabled ||
+		kind !== 'postType' ||
+		! [ 'post', 'page' ].includes( name ) ||
+		! recordId
+	) {
+		return;
+	}
+
+	return getCRDTRawContent(
+		getSyncManager()?.getCRDTRecordData?.( `${ kind }/${ name }`, recordId )
 	);
 }
 
@@ -642,9 +718,24 @@ export const saveEntityRecord =
 			// (Function edits that should be evaluated on save to avoid expensive computations on every edit.)
 			for ( const [ key, value ] of Object.entries( record ) ) {
 				if ( typeof value === 'function' ) {
-					const evaluatedValue = value(
+					let evaluatedValue = value(
 						select.getEditedEntityRecord( kind, name, recordId )
 					);
+					if ( key === 'content' && entityConfig.syncConfig ) {
+						const crdtContent = getSaveProjectionCRDTContent(
+							kind,
+							name,
+							recordId
+						);
+						if (
+							shouldUseFullCRDTContentForProjectedSave(
+								evaluatedValue,
+								crdtContent
+							)
+						) {
+							evaluatedValue = crdtContent;
+						}
+					}
 					dispatch.editEntityRecord(
 						kind,
 						name,
@@ -797,10 +888,7 @@ export const saveEntityRecord =
 						return edits;
 					};
 
-					let edits = await prepareEdits(
-						persistedRecord,
-						record
-					);
+					let edits = await prepareEdits( persistedRecord, record );
 					try {
 						updatedRecord = await __unstableFetch( {
 							path,
