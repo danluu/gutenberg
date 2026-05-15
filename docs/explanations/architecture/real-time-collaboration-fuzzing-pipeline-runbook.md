@@ -147,6 +147,8 @@ these names directly when it detects a missing or stale service.
 ```bash
 ssh "$JETSTREAM" "
 REMOTE_REPO='$REMOTE_REPO'
+mkdir -p \"\${HOME:-/home/exouser}/.local/bin\"
+npm install -g --prefix \"\${HOME:-/home/exouser}/.local\" @openai/codex@0.130.0
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-start-remote.sh\" /tmp/start_rtc_coverage_guided_remote.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-cleanup-remote.sh\" /tmp/cleanup_rtc_coverage_guided_remote.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-watchdog-start-remote.sh\" /tmp/start_rtc_coverage_guided_watchdog_remote.sh
@@ -154,10 +156,16 @@ install -m 755 \"\$REMOTE_REPO/bin/rtc-strict-expansion-start-remote.sh\" /tmp/s
 install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-start-remote.sh\" /tmp/start_rtc_focused_shards.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-cleanup-remote.sh\" /tmp/cleanup_rtc_focused_shards.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-gap-codex-loop-remote.sh\" /tmp/start_rtc_focused_gap_codex_loop.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-fuzz-only-asserts-loop-remote.sh\" /tmp/start_rtc_fuzz_only_asserts_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-gap-booster-start-remote.sh\" /tmp/start_rtc_gap_booster.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-jetstream-guard-remote.sh\" /tmp/start_rtc_jetstream_guard.sh
 "
 ```
+
+The remote scripts put `${HOME:-/home/exouser}/.local/bin` first in `PATH` and
+also pass `RTC_FUZZ_CODEX_BIN` to Codex-owning monitors. If Codex is absent or
+not on that path, analysis loops can appear to launch while producing empty
+reports with `codex: command not found`.
 
 The remote launchers are intentionally split by ownership:
 
@@ -172,14 +180,24 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-focused-shards-gap-codex-loop-remote.sh` keeps Codex analysis focused
     on deferred coverage gaps and feeds the results back into the focused shard
     setup.
+-   `rtc-fuzz-only-asserts-loop-remote.sh` runs the high-parallel fuzz-only
+    assertion analysis and critique loop. Only its final applier job should edit
+    files or restart fuzzing.
 -   `rtc-jetstream-guard-remote.sh` is the top-level guard. Run it in tmux and
     let it restart missing sessions instead of manually restarting individual
-    fuzzers.
+    fuzzers. The guard supervises coverage-guided, strict-expansion, focused
+    shards, the focused gap Codex loop, and the fuzz-only assertion loop.
 
-Start or refresh the guard after installing the launchers:
+Start or refresh the guard after installing the launchers. `stop` now kills the
+guard's sleeping child before releasing the lock, so a refresh should not leave
+an orphaned `sleep` process holding `guard.lock`.
 
 ```bash
-ssh "$JETSTREAM" "tmux kill-session -t rtc-jetstream-guard 2>/dev/null || true; tmux new-session -d -s rtc-jetstream-guard /tmp/start_rtc_jetstream_guard.sh"
+ssh "$JETSTREAM" "
+/tmp/start_rtc_jetstream_guard.sh stop || true
+/tmp/start_rtc_jetstream_guard.sh start
+/tmp/start_rtc_jetstream_guard.sh status
+"
 ```
 
 ## Stale wp-env Cleanup
