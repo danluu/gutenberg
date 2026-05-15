@@ -99,6 +99,8 @@ const VOID_HTML_TAGS = new Set( [
 
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
 const previousLocalBlocksCache = new WeakMap< YBlocks, Block[] >();
+const observedTopLevelClientIdsCache = new WeakMap< YBlocks, Set< string > >();
+const stalePostDeleteClientIdsCache = new WeakMap< YBlocks, Set< string > >();
 
 type HTMLFragmentStructureNode =
 	| [ 'comment' ]
@@ -1145,6 +1147,37 @@ function getUniqueKeys< T >(
 	return keys;
 }
 
+function cacheObservedTopLevelClientIds( yblocks: YBlocks ): void {
+	const observedClientIds =
+		observedTopLevelClientIdsCache.get( yblocks ) ?? new Set< string >();
+
+	yblocks.toArray().forEach( ( yblock ) => {
+		const clientId = getYBlockClientId( yblock );
+		if ( clientId ) {
+			observedClientIds.add( clientId );
+		}
+	} );
+
+	observedTopLevelClientIdsCache.set( yblocks, observedClientIds );
+}
+
+function getBlockTreeClientIdSet( blocks: Block[] ): Set< string > | null {
+	const clientIds = new Set< string >();
+	const visitBlock = ( block: Block ): boolean => {
+		const clientId = getBlockClientId( block );
+		if ( clientId ) {
+			if ( clientIds.has( clientId ) ) {
+				return false;
+			}
+			clientIds.add( clientId );
+		}
+
+		return ( block.innerBlocks ?? [] ).every( visitBlock );
+	};
+
+	return blocks.every( visitBlock ) ? clientIds : null;
+}
+
 function getBlockIdentityKeys(
 	yblocks: YBlocks,
 	baseBlocks: Block[],
@@ -1706,7 +1739,8 @@ function mergeBlockIntoYBlock(
 					yInnerBlocks,
 					value ?? [],
 					attributeCursor,
-					baseBlock?.innerBlocks
+					baseBlock?.innerBlocks,
+					false
 				);
 				break;
 			}
@@ -2292,6 +2326,236 @@ function findYBlockIndex(
 	return preferredIndex < yblocks.length ? preferredIndex : -1;
 }
 
+type StalePostDeleteFilterResult = {
+	blocks: Block[];
+	clientIds: Set< string >;
+	filteredClientIds: Set< string >;
+};
+
+function addStalePostDeleteClientIds(
+	yblocks: YBlocks,
+	clientIds: Set< string >
+): void {
+	if ( ! clientIds.size ) {
+		return;
+	}
+
+	const staleClientIds =
+		stalePostDeleteClientIdsCache.get( yblocks ) ?? new Set< string >();
+	clientIds.forEach( ( clientId ) => staleClientIds.add( clientId ) );
+	stalePostDeleteClientIdsCache.set( yblocks, staleClientIds );
+}
+
+// If a delete already reached the Y.Doc, an older local editor snapshot can
+// still try to re-send the deleted block. Use cached observed/corroborated
+// delete provenance; never treat current Y absence alone as proof that an
+// incoming block should be suppressed.
+function filterStalePostDeleteResurrections(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	previousBlocks: Block[] | undefined
+): StalePostDeleteFilterResult | null {
+	if ( ! previousBlocks ) {
+		return null;
+	}
+
+	const currentBlocks = yblocks.toArray().map( ( yblock ) => {
+		return yblock.toJSON() as unknown as Block;
+	} );
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+	const previousClientIds = getUniqueKeys( previousBlocks, getBlockClientId );
+	const currentTreeClientIds = getBlockTreeClientIdSet( currentBlocks );
+	const baseTreeClientIds = getBlockTreeClientIdSet( baseBlocks );
+	const incomingTreeClientIds = getBlockTreeClientIdSet( blocksToSync );
+
+	if (
+		! currentClientIds ||
+		! baseClientIds ||
+		! incomingClientIds ||
+		! previousClientIds ||
+		! currentTreeClientIds ||
+		! baseTreeClientIds ||
+		! incomingTreeClientIds
+	) {
+		return null;
+	}
+
+	const currentClientIdSet = new Set( currentClientIds );
+	if (
+		! baseClientIds.every( ( clientId ) =>
+			currentClientIdSet.has( clientId )
+		)
+	) {
+		return null;
+	}
+
+	const deleteReferenceClientIds = new Set( [
+		...previousClientIds.filter(
+			( clientId ) =>
+				observedTopLevelClientIdsCache.get( yblocks )?.has( clientId )
+		),
+		...( stalePostDeleteClientIdsCache.get( yblocks ) ?? [] ),
+	] );
+	const remotelyDeletedClientIds = new Set(
+		Array.from( deleteReferenceClientIds ).filter(
+			( clientId ) =>
+				! baseTreeClientIds.has( clientId ) &&
+				! currentTreeClientIds.has( clientId )
+		)
+	);
+	if ( ! remotelyDeletedClientIds.size ) {
+		return null;
+	}
+
+	const filteredClientIds = new Set< string >();
+	const filteredBlocks = blocksToSync.filter( ( block, index ) => {
+		const clientId = incomingClientIds[ index ];
+		if ( remotelyDeletedClientIds.has( clientId ) ) {
+			filteredClientIds.add( clientId );
+			return false;
+		}
+
+		return true;
+	} );
+
+	return {
+		blocks: filteredBlocks,
+		clientIds: remotelyDeletedClientIds,
+		filteredClientIds,
+	};
+}
+
+function cacheExplicitlyDeletedTopLevelClientIds(
+	yblocks: YBlocks,
+	baseBlocks: Block[],
+	blocksToSync: Block[],
+	preMergeClientIds: string[]
+): void {
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingTreeClientIds = getBlockTreeClientIdSet( blocksToSync );
+	const currentBlocks = yblocks.toArray().map( ( yblock ) => {
+		return yblock.toJSON() as unknown as Block;
+	} );
+	const currentTreeClientIds = getBlockTreeClientIdSet( currentBlocks );
+
+	if (
+		! baseClientIds ||
+		! incomingTreeClientIds ||
+		! currentTreeClientIds
+	) {
+		return;
+	}
+
+	const preMergeClientIdSet = new Set( preMergeClientIds );
+	if (
+		! baseClientIds.every( ( clientId ) =>
+			preMergeClientIdSet.has( clientId )
+		)
+	) {
+		return;
+	}
+
+	const deletedClientIds = new Set(
+		baseClientIds.filter(
+			( clientId ) =>
+				! incomingTreeClientIds.has( clientId ) &&
+				! currentTreeClientIds.has( clientId )
+		)
+	);
+
+	addStalePostDeleteClientIds( yblocks, deletedClientIds );
+}
+
+function mergeFilteredStalePostDeleteBlocks(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): boolean {
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if ( ! currentClientIds || ! baseClientIds || ! incomingClientIds ) {
+		return false;
+	}
+
+	const currentClientIdSet = new Set( currentClientIds );
+	if (
+		! baseClientIds.every( ( clientId ) =>
+			currentClientIdSet.has( clientId )
+		)
+	) {
+		return false;
+	}
+
+	const baseClientIdSet = new Set( baseClientIds );
+	const incomingClientIdSet = new Set( incomingClientIds );
+	const baseBlocksByClientId = new Map(
+		baseBlocks.map( ( block ) => [ getBlockClientId( block ), block ] )
+	);
+
+	for ( let index = yblocks.length - 1; index >= 0; index-- ) {
+		const clientId = getYBlockClientId( yblocks.get( index ) );
+		if (
+			clientId &&
+			baseClientIdSet.has( clientId ) &&
+			! incomingClientIdSet.has( clientId )
+		) {
+			yblocks.delete( index, 1 );
+		}
+	}
+
+	blocksToSync.forEach( ( block, targetIndex ) => {
+		const clientId = incomingClientIds[ targetIndex ];
+		const currentIndex = yblocks
+			.toArray()
+			.findIndex(
+				( yblock ) => getYBlockClientId( yblock ) === clientId
+			);
+
+		if ( currentIndex === -1 ) {
+			yblocks.insert( Math.min( targetIndex, yblocks.length ), [
+				createNewYBlock( block ),
+			] );
+			return;
+		}
+
+		const baseBlock = baseBlocksByClientId.get( clientId );
+		if ( ! baseBlock ) {
+			return;
+		}
+
+		let mergeIndex = currentIndex;
+		if ( currentIndex !== targetIndex ) {
+			const reorderedBlock = createNewYBlock(
+				yblocks.get( currentIndex ).toJSON() as unknown as Block
+			);
+			yblocks.delete( currentIndex, 1 );
+			mergeIndex = Math.min( targetIndex, yblocks.length );
+			yblocks.insert( mergeIndex, [ reorderedBlock ] );
+		}
+
+		mergeBlockIntoYBlock(
+			yblocks.get( mergeIndex ),
+			block,
+			attributeCursor,
+			baseBlock
+		);
+	} );
+
+	return true;
+}
+
 function findStrictYBlockIndex( yblocks: YBlocks, block: Block ): number {
 	const clientId = getBlockClientId( block );
 
@@ -2655,18 +2919,21 @@ function mergeYBlocksLocalChanges(
  * Merge incoming block data into the local Y.Doc.
  * This function is called to sync local block changes to a shared Y.Doc.
  *
- * @param yblocks         The blocks in the local Y.Doc.
- * @param incomingBlocks  Gutenberg blocks being synced.
- * @param attributeCursor When provided, describes a selection cursor falling within a
- *                        RichText field associated with a specific block and attribute.
- *                        Derived from the changes that produced the blocks.
- * @param baseBlocks      Optional pre-change block snapshot used for rebasing.
+ * @param yblocks                    The blocks in the local Y.Doc.
+ * @param incomingBlocks             Gutenberg blocks being synced.
+ * @param attributeCursor            When provided, describes a selection cursor falling within a
+ *                                   RichText field associated with a specific block and attribute.
+ *                                   Derived from the changes that produced the blocks.
+ * @param baseBlocks                 Optional pre-change block snapshot used for rebasing.
+ * @param allowStalePostDeleteFilter Whether to filter observed stale top-level
+ *                                   delete resurrections.
  */
 export function mergeCrdtBlocks(
 	yblocks: YBlocks,
 	incomingBlocks: Block[],
 	attributeCursor: MergeCursorPosition,
-	baseBlocks?: Block[]
+	baseBlocks?: Block[],
+	allowStalePostDeleteFilter = true
 ): void {
 	// Ensure we are working with serializable block data.
 	if ( ! serializableBlocksCache.has( incomingBlocks ) ) {
@@ -2676,14 +2943,71 @@ export function mergeCrdtBlocks(
 		);
 	}
 
-	const blocksToSync = serializableBlocksCache.get( incomingBlocks ) ?? [];
+	let blocksToSync = serializableBlocksCache.get( incomingBlocks ) ?? [];
 	const explicitBaseBlocksToSync = baseBlocks
 		? makeBlocksSerializable( baseBlocks )
 		: undefined;
 	const hasExplicitBaseBlocks = !! explicitBaseBlocksToSync;
 	const previousLocalBlocksToSync = previousLocalBlocksCache.get( yblocks );
+	const preMergeTopLevelClientIds =
+		explicitBaseBlocksToSync && allowStalePostDeleteFilter
+			? getUniqueKeys( yblocks.toArray(), getYBlockClientId )
+			: null;
+	let hasFilteredStalePostDeleteBlocks = false;
+
+	const finishMerge = () => {
+		removeDuplicateClientIds( yblocks );
+		if (
+			explicitBaseBlocksToSync &&
+			allowStalePostDeleteFilter &&
+			preMergeTopLevelClientIds
+		) {
+			cacheExplicitlyDeletedTopLevelClientIds(
+				yblocks,
+				explicitBaseBlocksToSync,
+				blocksToSync,
+				preMergeTopLevelClientIds
+			);
+		}
+		cacheObservedTopLevelClientIds( yblocks );
+		previousLocalBlocksCache.set( yblocks, blocksToSync );
+	};
+
+	if ( explicitBaseBlocksToSync && allowStalePostDeleteFilter ) {
+		const stalePostDeleteFilterResult = filterStalePostDeleteResurrections(
+			yblocks,
+			blocksToSync,
+			explicitBaseBlocksToSync,
+			previousLocalBlocksToSync
+		);
+
+		if ( stalePostDeleteFilterResult ) {
+			blocksToSync = stalePostDeleteFilterResult.blocks;
+			hasFilteredStalePostDeleteBlocks =
+				stalePostDeleteFilterResult.filteredClientIds.size > 0;
+			addStalePostDeleteClientIds(
+				yblocks,
+				stalePostDeleteFilterResult.clientIds
+			);
+		}
+	}
+
 	const baseBlocksToSync =
 		explicitBaseBlocksToSync ?? previousLocalBlocksToSync;
+
+	if (
+		explicitBaseBlocksToSync &&
+		hasFilteredStalePostDeleteBlocks &&
+		mergeFilteredStalePostDeleteBlocks(
+			yblocks,
+			blocksToSync,
+			explicitBaseBlocksToSync,
+			attributeCursor
+		)
+	) {
+		finishMerge();
+		return;
+	}
 
 	if (
 		! explicitBaseBlocksToSync &&
@@ -2695,8 +3019,7 @@ export function mergeCrdtBlocks(
 			attributeCursor
 		)
 	) {
-		removeDuplicateClientIds( yblocks );
-		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		finishMerge();
 		return;
 	}
 
@@ -2710,8 +3033,7 @@ export function mergeCrdtBlocks(
 			attributeCursor
 		)
 	) {
-		removeDuplicateClientIds( yblocks );
-		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		finishMerge();
 		return;
 	}
 
@@ -2725,8 +3047,7 @@ export function mergeCrdtBlocks(
 			attributeCursor
 		)
 	) {
-		removeDuplicateClientIds( yblocks );
-		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		finishMerge();
 		return;
 	}
 
@@ -2739,8 +3060,7 @@ export function mergeCrdtBlocks(
 			attributeCursor
 		)
 	) {
-		removeDuplicateClientIds( yblocks );
-		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		finishMerge();
 		return;
 	}
 
@@ -2753,8 +3073,7 @@ export function mergeCrdtBlocks(
 			attributeCursor
 		)
 	) {
-		removeDuplicateClientIds( yblocks );
-		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		finishMerge();
 		return;
 	}
 
@@ -2768,8 +3087,7 @@ export function mergeCrdtBlocks(
 			hasExplicitBaseBlocks
 		)
 	) {
-		removeDuplicateClientIds( yblocks );
-		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		finishMerge();
 		return;
 	}
 
@@ -2780,8 +3098,7 @@ export function mergeCrdtBlocks(
 			attributeCursor,
 			baseBlocksToSync
 		);
-		removeDuplicateClientIds( yblocks );
-		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		finishMerge();
 		return;
 	}
 
@@ -2866,8 +3183,7 @@ export function mergeCrdtBlocks(
 		yblocks.insert( left, newBlock );
 	}
 
-	removeDuplicateClientIds( yblocks );
-	previousLocalBlocksCache.set( yblocks, blocksToSync );
+	finishMerge();
 }
 
 function removeDuplicateClientIds( yblocks: YBlocks ): void {
