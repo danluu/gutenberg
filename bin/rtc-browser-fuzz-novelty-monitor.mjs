@@ -224,9 +224,10 @@ const ACTION_COVERAGE_GROUPS = {
 	'ui-table-cell-edit': [ 'novelty-ws-real-user-rich-text' ],
 	'reload-post-action': [ 'novelty-ws-real-user-editing' ],
 	'insert-async-server-block': [ 'novelty-ws-async-server-blocks' ],
+	'insert-media-cross-entity-block': [ 'novelty-ws-media-cross-entity' ],
 };
 const REQUIRED_ACTION_LABELS = Object.keys( ACTION_COVERAGE_GROUPS );
-const EXPANSION_POLICY_VERSION = 11;
+const EXPANSION_POLICY_VERSION = 12;
 
 const WS_ENV_DEFAULTS = {
 	GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
@@ -254,6 +255,7 @@ const PROFILE_BY_GROUP = {
 	'novelty-ws-same-user-stale-tabs': 'session-lifecycle',
 	'novelty-ws-same-user-lifecycle': 'session-lifecycle',
 	'novelty-ws-async-server-blocks': 'async-server-blocks',
+	'novelty-ws-media-cross-entity': 'media-cross-entity',
 	'novelty-ws-long-session-large-doc': 'long-session-large-doc',
 	'novelty-ws-structure': 'structure',
 	'novelty-ws-three-user-late-join': 'three-user-late-join',
@@ -273,6 +275,7 @@ const HIGH_VALUE_EXPANSION_GROUPS = [
 	'novelty-ws-same-user-stale-tabs',
 	'novelty-ws-real-user-rich-text',
 	'novelty-ws-async-server-blocks',
+	'novelty-ws-media-cross-entity',
 	'novelty-ws-permissions-auth-locks',
 	'novelty-ws-long-session-large-doc',
 ];
@@ -315,6 +318,14 @@ const ASYNC_SERVER_BLOCK_TYPES = [
 	'core/categories',
 	'core/template-part',
 	'core/block',
+];
+
+const MEDIA_CROSS_ENTITY_BLOCK_TYPES = [
+	'core/block',
+	'core/file',
+	'core/gallery',
+	'core/image',
+	'core/media-text',
 ];
 
 const PARSER_TRANSFORM_INITIAL_PROFILES = [
@@ -550,6 +561,22 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: true,
 		env: {
 			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
+		},
+	},
+	{
+		name: 'novelty-ws-media-cross-entity',
+		actionProfile: 'media-cross-entity',
+		startSeed: 1130001,
+		stepCount: 10,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'shadow',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
 		},
@@ -1149,6 +1176,29 @@ function featureKeysForRecord( record ) {
 	for ( const event of record.lifecycleEvents ?? [] ) {
 		keys.add( `lifecycle:${ event.type }:users-${ event.userCount }` );
 	}
+	for ( const event of record.historyEvents ?? [] ) {
+		keys.add( `history:${ event.phase }:${ event.status }` );
+		if ( event.label ) {
+			keys.add(
+				`history-label:${ event.phase }:${ event.label }:${ event.status }`
+			);
+		}
+		if (
+			event.phase === 'media-cross-entity' &&
+			event.status === 'ok' &&
+			event.label
+		) {
+			keys.add( `media-cross-entity:${ event.label }` );
+			const blockNames = Array.isArray( event.details?.blockNames )
+				? event.details.blockNames
+				: [];
+			for ( const blockName of blockNames ) {
+				if ( typeof blockName === 'string' ) {
+					keys.add( `media-cross-entity-block:${ blockName }` );
+				}
+			}
+		}
+	}
 	if (
 		record.revisionRestore?.eligible === true &&
 		( record.historyEvents ?? [] ).some(
@@ -1486,6 +1536,10 @@ function getFeatureCount( key ) {
 	return state.featureCounts?.[ key ] ?? 0;
 }
 
+function getSuccessfulProfileCount( profile ) {
+	return state.successfulRecordCountsByProfile?.[ profile ] ?? 0;
+}
+
 function createCoverageGuidance( novelty ) {
 	const goals = [];
 	const addGoal = ( {
@@ -1560,6 +1614,19 @@ function createCoverageGuidance( novelty ) {
 		} );
 	}
 
+	for ( const blockName of MEDIA_CROSS_ENTITY_BLOCK_TYPES ) {
+		addGoal( {
+			id: `media-cross-entity-block:${ blockName }`,
+			label: `uploaded/cross-entity block ${ blockName }`,
+			count: getFeatureCount( `media-cross-entity-block:${ blockName }` ),
+			target: 5,
+			groups: [ 'novelty-ws-media-cross-entity' ],
+			rationale:
+				'media and reusable-block coverage must include real REST-created entities',
+			harnessAfter: 50,
+		} );
+	}
+
 	for ( const profileName of PARSER_TRANSFORM_INITIAL_PROFILES ) {
 		addGoal( {
 			id: `initial:${ profileName }`,
@@ -1574,6 +1641,22 @@ function createCoverageGuidance( novelty ) {
 	}
 
 	const scalarGoals = [
+		{
+			id: 'media-cross-entity:media-upload',
+			label: 'real media upload',
+			target: 10,
+			groups: [ 'novelty-ws-media-cross-entity' ],
+			rationale:
+				'media coverage should exercise attachment creation, not only synthetic URLs',
+		},
+		{
+			id: 'media-cross-entity:reusable-block',
+			label: 'real reusable block entity',
+			target: 5,
+			groups: [ 'novelty-ws-media-cross-entity' ],
+			rationale:
+				'reusable/synced block coverage should exercise a real cross-entity reference',
+		},
 		{
 			id: 'fault:delay:delay',
 			label: 'delayed sync fault',
@@ -1751,6 +1834,50 @@ function createCoverageGuidance( novelty ) {
 		} );
 	}
 
+	for ( const goal of [
+		{
+			profile: 'real-user-editing',
+			target: REAL_USER_EDITING_MIN_RECORDS,
+			groups: [
+				'novelty-ws-real-user-editing',
+				'novelty-ws-real-user-rich-text',
+			],
+			rationale:
+				'real UI editing needs completed records, not just startup attempts',
+		},
+		{
+			profile: 'parser-serialization',
+			target: 50,
+			groups: [ 'novelty-ws-parser-serialization' ],
+			rationale:
+				'parser serialization needs completed records to prove load/save stability',
+		},
+		{
+			profile: 'multi-reload-lifecycle',
+			target: 50,
+			groups: [ 'novelty-ws-multi-reload-lifecycle' ],
+			rationale:
+				'multi-reload lifecycle coverage is only useful when the seed completes',
+		},
+		{
+			profile: 'media-cross-entity',
+			target: 25,
+			groups: [ 'novelty-ws-media-cross-entity' ],
+			rationale:
+				'media and cross-entity coverage needs successful end-to-end runs',
+		},
+	] ) {
+		addGoal( {
+			id: `success-profile:${ goal.profile }`,
+			label: `successful ${ goal.profile } records`,
+			count: getSuccessfulProfileCount( goal.profile ),
+			target: goal.target,
+			groups: goal.groups,
+			rationale: goal.rationale,
+			harnessAfter: goal.target * 4,
+		} );
+	}
+
 	const cdpRecordCount = Object.values( state.coverageHashes ?? {} ).reduce(
 		( total, count ) => total + count,
 		0
@@ -1767,6 +1894,7 @@ function createCoverageGuidance( novelty ) {
 			'novelty-ws-real-user-editing',
 			'novelty-ws-real-user-rich-text',
 			'novelty-ws-async-server-blocks',
+			'novelty-ws-media-cross-entity',
 			'novelty-ws-long-session-large-doc',
 		],
 		rationale: 'code coverage should confirm browser paths are changing',
@@ -2127,6 +2255,9 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 	const multiReloadLifecycleEnabled = enabled.has(
 		'novelty-ws-multi-reload-lifecycle'
 	);
+	const mediaCrossEntityEnabled = enabled.has(
+		'novelty-ws-media-cross-entity'
+	);
 	const httpProbeEnabled = enabled.has( 'novelty-http-persistence-probe' );
 	const commonBlockRecords =
 		state.recordCountsByProfile?.[ 'common-blocks' ] ??
@@ -2201,6 +2332,12 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 	const reload2Records = state.featureCounts?.[ 'reload-count:2' ] ?? 0;
 	const revisionEligibleRecords =
 		state.featureCounts?.[ 'revision-eligible:true' ] ?? 0;
+	const mediaUploadRecords =
+		state.featureCounts?.[ 'media-cross-entity:media-upload' ] ?? 0;
+	const reusableBlockRecords =
+		state.featureCounts?.[ 'media-cross-entity:reusable-block' ] ?? 0;
+	const mediaCrossEntitySuccessRecords =
+		getSuccessfulProfileCount( 'media-cross-entity' );
 
 	function canRotateAwayFromGroup( group ) {
 		switch ( group ) {
@@ -2223,6 +2360,12 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 				return lateJoin3Records >= LATE_JOIN_LIFECYCLE_MIN_RECORDS;
 			case 'novelty-ws-multi-reload-lifecycle':
 				return reload2Records >= 100;
+			case 'novelty-ws-media-cross-entity':
+				return (
+					mediaCrossEntitySuccessRecords >= 25 &&
+					mediaUploadRecords >= 10 &&
+					reusableBlockRecords >= 5
+				);
 			case 'novelty-ws-same-user-lifecycle':
 				return sameUserRecords >= 150;
 			default:
@@ -2584,6 +2727,19 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 	}
 
 	if (
+		! mediaCrossEntityEnabled &&
+		( mediaCrossEntitySuccessRecords < 25 ||
+			mediaUploadRecords < 10 ||
+			reusableBlockRecords < 5 )
+	) {
+		await enableGroup(
+			'novelty-ws-media-cross-entity',
+			`media/cross-entity coverage is low: success=${ mediaCrossEntitySuccessRecords }/25 media-upload=${ mediaUploadRecords }/10 reusable-block=${ reusableBlockRecords }/5`,
+			{ allowRotation: true }
+		);
+	}
+
+	if (
 		! httpProbeEnabled &&
 		ENABLE_HTTP_PROBE &&
 		( resources.hasHeadroom || parserTransformSaturated ) &&
@@ -2622,6 +2778,7 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 			[ 'novelty-ws-parser-serialization', 'parser-serialization' ],
 			[ 'novelty-ws-parser-transform', 'parser-transform' ],
 			[ 'novelty-ws-real-user-editing', 'real-user-editing' ],
+			[ 'novelty-ws-media-cross-entity', 'media-cross-entity' ],
 			[ 'novelty-ws-multi-reload-lifecycle', 'multi-reload-lifecycle' ],
 			[ 'novelty-ws-three-user-late-join', 'three-user-late-join' ],
 			[ 'novelty-ws-same-user-lifecycle', 'session-lifecycle' ],

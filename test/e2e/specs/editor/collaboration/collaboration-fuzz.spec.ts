@@ -203,7 +203,7 @@ type PageAction = {
 		userIndex: number,
 		rng: Random,
 		pages: PageRef[]
-	) => Promise< OperationWitnessInput[] | void >;
+	) => Promise< PageActionResult | void >;
 };
 
 type BehaviorActionTrace = {
@@ -211,6 +211,13 @@ type BehaviorActionTrace = {
 	step: number;
 	userIndex: number;
 };
+
+type PageActionResult =
+	| OperationWitnessInput[]
+	| {
+			historyEvents?: Array< Omit< BehaviorHistoryEvent, 'at' > >;
+			witnesses?: OperationWitnessInput[];
+	  };
 
 type BehaviorFaultTrace = {
 	delayMs?: number;
@@ -795,6 +802,30 @@ function recordHistory(
 		at: new Date().toISOString(),
 		...event,
 	} );
+}
+
+function normalizePageActionResult( result?: PageActionResult | void ): {
+	historyEvents: Array< Omit< BehaviorHistoryEvent, 'at' > >;
+	witnesses: OperationWitnessInput[];
+} {
+	if ( ! result ) {
+		return {
+			historyEvents: [],
+			witnesses: [],
+		};
+	}
+
+	if ( Array.isArray( result ) ) {
+		return {
+			historyEvents: [],
+			witnesses: result,
+		};
+	}
+
+	return {
+		historyEvents: result.historyEvents ?? [],
+		witnesses: result.witnesses ?? [],
+	};
 }
 
 function recordInvariantEvent(
@@ -4540,6 +4571,265 @@ async function insertAsyncServerBackedBlock(
 	return [ createContentWitness( marker, 'insert-async-server-block' ) ];
 }
 
+async function insertMediaCrossEntityBlock(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const blocks = await getTopLevelBlocks( page );
+	const index = Math.floor( rng() * ( blocks.length + 1 ) );
+	const variant = Math.floor( rng() * 5 );
+	const marker = `media-entity-${ seed }-${ step }-${ userIndex }-${ Math.floor(
+		rng() * 1000000
+	) }`;
+
+	const result = await page.evaluate(
+		async ( { blockIndex, blockMarker, blockVariant } ) => {
+			const wp = ( window as any ).wp;
+			const apiSettings = ( window as any ).wpApiSettings ?? {};
+			const apiRoot = apiSettings.root ?? '/wp-json/';
+			const nonce = apiSettings.nonce ?? '';
+			const createBlock = wp.blocks.createBlock;
+			const hasBlockType = ( name: string ) =>
+				Boolean( wp.blocks.getBlockType( name ) );
+			const safeBlock = (
+				name: string,
+				attributes: Record< string, unknown > = {},
+				innerBlocks: Array< any > = []
+			) =>
+				hasBlockType( name )
+					? createBlock(
+							name,
+							{
+								className: `rtc-${ blockMarker }`,
+								...attributes,
+							},
+							innerBlocks
+					  )
+					: createBlock( 'core/paragraph', {
+							content: `${ blockMarker } fallback for ${ name }`,
+					  } );
+			const restUrl = ( restPath: string ) =>
+				new URL( restPath.replace( /^\//, '' ), apiRoot ).toString();
+			const jsonHeaders: Record< string, string > = {
+				'Content-Type': 'application/json',
+			};
+			const uploadHeaders: Record< string, string > = {};
+			if ( nonce ) {
+				jsonHeaders[ 'X-WP-Nonce' ] = nonce;
+				uploadHeaders[ 'X-WP-Nonce' ] = nonce;
+			}
+			const decodeBase64 = ( value: string ) =>
+				Uint8Array.from( window.atob( value ), ( char ) =>
+					char.charCodeAt( 0 )
+				);
+			const pngBytes = decodeBase64(
+				'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII='
+			);
+			const file = new File( [ pngBytes ], `${ blockMarker }.png`, {
+				type: 'image/png',
+			} );
+			const formData = new FormData();
+			formData.append( 'file', file );
+			formData.append( 'title', `RTC media ${ blockMarker }` );
+			formData.append( 'alt_text', `RTC media ${ blockMarker }` );
+			formData.append( 'caption', blockMarker );
+			const mediaResponse = await window.fetch(
+				restUrl( 'wp/v2/media' ),
+				{
+					body: formData,
+					credentials: 'same-origin',
+					headers: uploadHeaders,
+					method: 'POST',
+				}
+			);
+			if ( ! mediaResponse.ok ) {
+				throw new Error(
+					`media upload failed ${
+						mediaResponse.status
+					}: ${ await mediaResponse.text() }`
+				);
+			}
+			const media = await mediaResponse.json();
+			const mediaId = Number( media.id ) || 0;
+			const mediaUrl =
+				media.source_url ??
+				media.guid?.rendered ??
+				media.media_details?.file;
+			if ( ! mediaId || ! mediaUrl ) {
+				throw new Error(
+					`media upload returned incomplete response for ${ blockMarker }`
+				);
+			}
+
+			let reusableId = 0;
+			let reusableError = '';
+			const reusableContent = `<!-- wp:paragraph --><p>${ blockMarker } reusable block entity</p><!-- /wp:paragraph -->`;
+			const reusableResponse = await window.fetch(
+				restUrl( 'wp/v2/blocks' ),
+				{
+					body: JSON.stringify( {
+						content: reusableContent,
+						status: 'publish',
+						title: `RTC reusable ${ blockMarker }`,
+					} ),
+					credentials: 'same-origin',
+					headers: jsonHeaders,
+					method: 'POST',
+				}
+			);
+			if ( reusableResponse.ok ) {
+				const reusable = await reusableResponse.json();
+				reusableId = Number( reusable.id ) || 0;
+			} else {
+				reusableError = `wp/v2/blocks ${
+					reusableResponse.status
+				}: ${ await reusableResponse.text() }`;
+			}
+
+			let block;
+			switch ( blockVariant ) {
+				case 0:
+					block = safeBlock( 'core/image', {
+						alt: `Uploaded image ${ blockMarker }`,
+						caption: blockMarker,
+						id: mediaId,
+						url: mediaUrl,
+					} );
+					break;
+				case 1:
+					block = safeBlock(
+						'core/gallery',
+						{
+							caption: `Uploaded gallery ${ blockMarker }`,
+							ids: [ mediaId ],
+						},
+						[
+							safeBlock( 'core/image', {
+								alt: `Uploaded gallery image ${ blockMarker }`,
+								caption: blockMarker,
+								id: mediaId,
+								url: mediaUrl,
+							} ),
+						]
+					);
+					break;
+				case 2:
+					block = safeBlock( 'core/file', {
+						fileName: `Uploaded file ${ blockMarker }`,
+						href: mediaUrl,
+						id: mediaId,
+						textLinkHref: mediaUrl,
+					} );
+					break;
+				case 3:
+					block = safeBlock(
+						'core/media-text',
+						{
+							mediaAlt: `Uploaded media-text ${ blockMarker }`,
+							mediaId,
+							mediaType: 'image',
+							mediaUrl,
+						},
+						[
+							createBlock( 'core/paragraph', {
+								content: `${ blockMarker } media-text body`,
+							} ),
+						]
+					);
+					break;
+				default:
+					block = reusableId
+						? safeBlock( 'core/block', { ref: reusableId } )
+						: createBlock( 'core/paragraph', {
+								content: `${ blockMarker } reusable fallback ${ reusableError }`,
+						  } );
+					break;
+			}
+
+			wp.data
+				.dispatch( 'core/block-editor' )
+				.insertBlock( block, blockIndex );
+
+			const blockNames: string[] = [];
+			const visit = ( currentBlock: any ) => {
+				blockNames.push( currentBlock.name );
+				for ( const innerBlock of currentBlock.innerBlocks ?? [] ) {
+					visit( innerBlock );
+				}
+			};
+			visit( block );
+
+			return {
+				blockNames,
+				mediaId,
+				mediaUrl,
+				reusableCreated: reusableId > 0,
+				reusableError,
+				reusableId,
+			};
+		},
+		{
+			blockIndex: index,
+			blockMarker: marker,
+			blockVariant: variant,
+		}
+	);
+
+	const historyEvents: Array< Omit< BehaviorHistoryEvent, 'at' > > = [
+		{
+			details: {
+				mediaId: result.mediaId,
+				mediaUrl: result.mediaUrl,
+			},
+			label: 'media-upload',
+			phase: 'media-cross-entity',
+			status: 'ok',
+			step,
+			userIndex,
+		},
+		{
+			details: {
+				blockNames: result.blockNames,
+				variant,
+			},
+			label: 'insert-blocks',
+			phase: 'media-cross-entity',
+			status: 'ok',
+			step,
+			userIndex,
+		},
+	];
+
+	historyEvents.push(
+		result.reusableCreated
+			? {
+					details: { reusableId: result.reusableId },
+					label: 'reusable-block',
+					phase: 'media-cross-entity',
+					status: 'ok',
+					step,
+					userIndex,
+			  }
+			: {
+					details: { error: result.reusableError },
+					error: result.reusableError,
+					label: 'reusable-block',
+					phase: 'media-cross-entity',
+					status: 'fail',
+					step,
+					userIndex,
+			  }
+	);
+
+	return {
+		historyEvents,
+		witnesses: [ createContentWitness( marker, 'media-cross-entity' ) ],
+	};
+}
+
 async function reparseEditedContent(
 	page: Page,
 	seed: number,
@@ -5314,6 +5604,11 @@ const ACTIONS: PageAction[] = [
 			insertAsyncServerBackedBlock( page, seed, step, userIndex, rng ),
 	},
 	{
+		label: 'insert-media-cross-entity-block',
+		run: async ( page, seed, step, userIndex, rng ) =>
+			insertMediaCrossEntityBlock( page, seed, step, userIndex, rng ),
+	},
+	{
 		label: 'insert-nested-group',
 		run: async ( page, seed, step, userIndex, rng ) =>
 			insertNestedGroup( page, seed, step, userIndex, rng ),
@@ -5501,6 +5796,17 @@ function getActiveActions(): PageAction[] {
 			'insert-async-server-block',
 			'edit-block-gauntlet-attributes',
 			'insert-common-block',
+			'move-block',
+		] );
+	}
+
+	if ( ACTION_PROFILE === 'media-cross-entity' ) {
+		return getActionsByWeightedLabels( [
+			'insert-media-cross-entity-block',
+			'insert-media-cross-entity-block',
+			'insert-media-cross-entity-block',
+			'insert-media-cross-entity-block',
+			'edit-block-gauntlet-attributes',
 			'move-block',
 		] );
 	}
@@ -6047,18 +6353,25 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					} );
 
 					let operationWitnesses: OperationWitnessInput[] = [];
+					let actionResult: PageActionResult | void;
 					try {
 						await test.step( `seed ${ seed } step ${ step } ${ action.label } user ${ actor.userIndex }`, async () => {
-							operationWitnesses =
-								( await action.run(
-									actor.page,
-									seed,
-									step,
-									actor.userIndex,
-									rng,
-									pages
-								) ) ?? [];
+							actionResult = await action.run(
+								actor.page,
+								seed,
+								step,
+								actor.userIndex,
+								rng,
+								pages
+							);
 						} );
+
+						const normalizedActionResult =
+							normalizePageActionResult( actionResult );
+						operationWitnesses = normalizedActionResult.witnesses;
+						for ( const event of normalizedActionResult.historyEvents ) {
+							recordHistory( behavior, event );
+						}
 
 						recordHistory( behavior, {
 							label: action.label,
