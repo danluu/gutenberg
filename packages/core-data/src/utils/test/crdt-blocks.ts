@@ -39,6 +39,15 @@ jest.mock( '@wordpress/blocks', () => ( {
 			},
 		},
 		{
+			name: 'core/preformatted',
+			attributes: {
+				content: {
+					type: 'rich-text',
+					__unstablePreserveWhiteSpace: true,
+				},
+			},
+		},
+		{
 			name: 'core/image',
 			attributes: {
 				blob: { type: 'string', role: 'local' },
@@ -280,6 +289,190 @@ describe( 'crdt-blocks', () => {
 				block.get( 'attributes' ) as YBlockAttributes
 			 ).get( 'content' ) as Y.Text;
 			expect( content.toString() ).toBe( initialContent );
+		} );
+
+		it( 'does not rewrite preserve-whitespace rich-text linebreak spellings', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one\nline two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const equivalentBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one<br>line two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const selfClosingEquivalentBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one<br />line two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+
+			mergeCrdtBlocks( yblocks, equivalentBlocks, null );
+
+			const updatedContent = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( updatedContent ).toBe( content );
+			expect( updatedContent.toString() ).toBe( 'line one\nline two' );
+
+			mergeCrdtBlocks( yblocks, selfClosingEquivalentBlocks, null );
+
+			expect( updatedContent.toString() ).toBe( 'line one\nline two' );
+		} );
+
+		it( 'does not rewrite preserve-whitespace rich-text newline spelling over br spelling', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one<br>line two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const equivalentBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one\nline two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+
+			mergeCrdtBlocks( yblocks, equivalentBlocks, null );
+
+			const updatedContent = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( updatedContent ).toBe( content );
+			expect( updatedContent.toString() ).toBe( 'line one<br>line two' );
+		} );
+
+		it( 'updates ordinary paragraph rich-text when newline becomes br', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'line one\nline two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'line one<br>line two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe( 'line one<br>line two' );
+		} );
+
+		it( 'updates preserve-whitespace rich-text when linebreak count changes', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one\nline two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one\n\nline two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe( 'line one\n\nline two' );
+		} );
+
+		it( 'updates preserve-whitespace rich-text when spaces change', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one  line two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one line two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe( 'line one line two' );
+		} );
+
+		it( 'updates preserve-whitespace rich-text when escaped br text changes semantics', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one\nline two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/preformatted',
+					attributes: { content: 'line one&lt;br&gt;line two' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe( 'line one&lt;br&gt;line two' );
 		} );
 
 		it( 'updates rich-text when equivalent-looking markup changes visible semantics', () => {
