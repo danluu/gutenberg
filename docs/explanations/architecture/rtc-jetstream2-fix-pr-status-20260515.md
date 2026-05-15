@@ -27,9 +27,9 @@ Current state:
 - `40/40` fix-planning iterations completed on Jetstream2.
 - Most production branches are source-local and touch two files: one product
   file and one focused test file.
-- The branches currently live in the Jetstream2 fix-planning repo. They still
-  need export to this machine, rebase onto the intended upstream base, and
-  final PR shaping.
+- The proposed PR branch refs have been exported from the Jetstream2
+  fix-planning repo and pushed to the `danluu` remote. They still need rebase
+  onto the intended upstream base and final PR shaping before filing.
 - Some earlier local/GitHub-facing `try/*-pr` branches already exist and should
   be reused as prior art or tests, but several are stacked or too broad against
   trunk and should not be filed as-is.
@@ -93,6 +93,29 @@ dependency commits when compared directly to the handoff base.
 | PR 13: Cross-parent source retirement and identity smear guards | 5 | 2 | 3328 | 60 |
 | PR 14: Table body nested array merge | 1 | 2 | 294 | 18 |
 | PR 15: Fallback group residual structural fixes | 3 | 2 | 481 | 12 |
+
+## Pushed Branch Links
+
+These are branch refs pushed to the `danluu` remote for the proposed PR split.
+They are review/export candidates, not opened PRs.
+
+| Proposed PR | Pushed branch links |
+| --- | --- |
+| PR 1: HTTP polling generated update size guard | [`fix/rtc-http-polling-generated-update-size`](https://github.com/danluu/gutenberg/tree/fix/rtc-http-polling-generated-update-size) |
+| PR 2: HTTP polling storage read window | [`fix/rtc-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/tree/fix/rtc-http-polling-storage-read-window) |
+| PR 3: Revision restore CRDT meta reset | [`fix/rtc-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/fix/rtc-revision-restore-crdt-reset) |
+| PR 4: Persisted CRDT save-meta idempotence | [`fix/rtc-crdt-save-meta-churn`](https://github.com/danluu/gutenberg/tree/fix/rtc-crdt-save-meta-churn) |
+| PR 5: Parser/entity normalization equivalence | [`fix/rtc-entity-normalization-save-loop`](https://github.com/danluu/gutenberg/tree/fix/rtc-entity-normalization-save-loop)<br>[`fix/rtc-entity-reference-normalization`](https://github.com/danluu/gutenberg/tree/fix/rtc-entity-reference-normalization)<br>[`fix/rtc-parser-entity-block-equivalence`](https://github.com/danluu/gutenberg/tree/fix/rtc-parser-entity-block-equivalence)<br>[`fix/rtc-preserve-whitespace-linebreak-equivalence`](https://github.com/danluu/gutenberg/tree/fix/rtc-preserve-whitespace-linebreak-equivalence) |
+| PR 6: Save request payload guards | [`fix/rtc-empty-content-crdt-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-empty-content-crdt-guard)<br>[`fix/rtc-stale-save-crdt-raw-fields`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-save-crdt-raw-fields)<br>[`fix/rtc-save-projection-content-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-projection-content-guard) |
+| PR 7: Save response guards | [`fix/rtc-save-response-stale-title-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-response-stale-title-guard)<br>[`fix/rtc-save-response-crdt-document-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-response-crdt-document-guard)<br>[`fix/rtc-save-response-stale-content-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-response-stale-content-guard)<br>[`fix/rtc-save-response-content-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-response-content-guard)<br>[`fix/rtc-base-record-stale-title-filter`](https://github.com/danluu/gutenberg/tree/fix/rtc-base-record-stale-title-filter) |
+| PR 8: Reload title and persisted-record hydration | [`fix/rtc-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/fix/rtc-title-reload-persisted-record) |
+| PR 9: Core-data lock fairness | [`fix/rtc-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/fix/rtc-store-lock-fairness) |
+| PR 10: CRDT block reconciliation foundation | [`fix/rtc-crdt-block-rebase`](https://github.com/danluu/gutenberg/tree/fix/rtc-crdt-block-rebase) |
+| PR 11: Explicit-base top-level block operations | [`fix/rtc-stale-base-record-block-append`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-record-block-append)<br>[`fix/rtc-stale-base-block-delete`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-block-delete)<br>[`fix/rtc-stale-base-block-middle-insert`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-block-middle-insert)<br>[`fix/rtc-stale-top-level-move-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-top-level-move-reorder)<br>[`fix/rtc-top-level-insert-anchor-after-delete`](https://github.com/danluu/gutenberg/tree/fix/rtc-top-level-insert-anchor-after-delete) |
+| PR 12: Previous-local-cache top-level block operations | [`fix/rtc-previous-local-cache-block-delete`](https://github.com/danluu/gutenberg/tree/fix/rtc-previous-local-cache-block-delete)<br>[`fix/rtc-previous-local-cache-block-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-previous-local-cache-block-reorder)<br>[`fix/rtc-previous-local-cache-delete-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-previous-local-cache-delete-reorder) |
+| PR 13: Cross-parent source retirement and identity smear guards | [`fix/rtc-cross-parent-move-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-cross-parent-move-source-retirement)<br>[`fix/rtc-current-only-cross-parent-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-current-only-cross-parent-source-retirement)<br>[`fix/rtc-stale-base-cross-parent-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-cross-parent-source-retirement)<br>[`fix/rtc-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-block-identity-smear-guard)<br>[`fix/rtc-observed-top-level-delete-provenance`](https://github.com/danluu/gutenberg/tree/fix/rtc-observed-top-level-delete-provenance) |
+| PR 14: Table body nested array merge | [`fix/rtc-table-body-array-stale-local-merge`](https://github.com/danluu/gutenberg/tree/fix/rtc-table-body-array-stale-local-merge) |
+| PR 15: Fallback group residual structural fixes | [`fix/rtc-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-fallback-group-move-stale-reorder)<br>[`fix/rtc-fallback-group-insert-anchor-stale-local`](https://github.com/danluu/gutenberg/tree/fix/rtc-fallback-group-insert-anchor-stale-local)<br>[`fix/rtc-fallback-group-delete-stale-local`](https://github.com/danluu/gutenberg/tree/fix/rtc-fallback-group-delete-stale-local) |
 
 The largest review risks by size are PR 13, PR 7, and PR 5. PR 13 has only two
 unique paths, but it is still large enough that it should probably be filed as a
@@ -665,15 +688,13 @@ individual branches. Examples include:
 
 What remains before PR filing:
 
-1. Export Jetstream2 fix branches to this machine or push them to the `danluu`
-   remote.
-2. Rebase or recreate each PR branch on the intended upstream base.
-3. Drop analysis-only artifacts and keep only product code plus focused tests.
-4. Run focused tests for every branch after rebase.
-5. Build a fresh combined validation stack from the final branches.
-6. Run the Jetstream2 coverage-guided and focused fuzz lanes on that final
+1. Rebase or recreate each PR branch on the intended upstream base.
+2. Drop analysis-only artifacts and keep only product code plus focused tests.
+3. Run focused tests for every branch after rebase.
+4. Build a fresh combined validation stack from the final branches.
+5. Run the Jetstream2 coverage-guided and focused fuzz lanes on that final
    stack; block PR filing if new visible likely-real failures appear.
-7. Resolve or explicitly defer the evidence-only gaps above.
+6. Resolve or explicitly defer the evidence-only gaps above.
 
 ## Current Recommendation
 
