@@ -325,8 +325,9 @@ function createNewYAttributeValue(
  * - `object` with query  -> Y.Map
  * - anything else        -> plain value (unchanged)
  *
- * @param schema The attribute type definition.
- * @param value  The plain JS value to convert.
+ * @param schema    The attribute type definition.
+ * @param value     The plain JS value to convert.
+ * @param valuePath Path to the nested value, when available.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
@@ -381,8 +382,11 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query The query schema defining the properties.
- * @param obj   The plain object to convert.
+ * @param query          The query schema defining the properties.
+ * @param obj            The plain object to convert.
+ * @param arrayElementId Array element identity, when the object comes from an
+ *                       array item.
+ * @param valuePath      Path to the nested value, when available.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
@@ -957,11 +961,137 @@ function findYBlockIndex(
 	return preferredIndex < yblocks.length ? preferredIndex : -1;
 }
 
-function mergeYBlocksLocalChanges(
+function findYBlockIndexByClientId(
+	yblocks: YBlocks,
+	clientId: string
+): number {
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
+function mergeYBlocksStaleBaseInsert(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
 	baseBlocks: Block[],
 	attributeCursor: MergeCursorPosition
+): boolean {
+	if ( blocksToSync.length <= baseBlocks.length ) {
+		return false;
+	}
+
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if ( ! currentClientIds || ! baseClientIds || ! incomingClientIds ) {
+		return false;
+	}
+
+	const currentClientIdSet = new Set( currentClientIds );
+	const baseClientIdSet = new Set( baseClientIds );
+	const insertedClientIdSet = new Set< string >();
+	const insertions: Array< { beforeClientId: string; blocks: Block[] } > = [];
+	const incomingMatches: Array< { block: Block; baseBlock: Block } > = [];
+	let baseIndex = 0;
+	let pendingInsertedBlocks: Block[] = [];
+
+	for (
+		let incomingIndex = 0;
+		incomingIndex < blocksToSync.length;
+		incomingIndex++
+	) {
+		const incomingClientId = incomingClientIds[ incomingIndex ];
+
+		if (
+			baseIndex < baseClientIds.length &&
+			incomingClientId === baseClientIds[ baseIndex ]
+		) {
+			if ( pendingInsertedBlocks.length ) {
+				insertions.push( {
+					beforeClientId: incomingClientId,
+					blocks: pendingInsertedBlocks,
+				} );
+				pendingInsertedBlocks = [];
+			}
+
+			incomingMatches.push( {
+				block: blocksToSync[ incomingIndex ],
+				baseBlock: baseBlocks[ baseIndex ],
+			} );
+			baseIndex++;
+			continue;
+		}
+
+		if ( baseClientIdSet.has( incomingClientId ) ) {
+			return false;
+		}
+
+		insertedClientIdSet.add( incomingClientId );
+		pendingInsertedBlocks.push( blocksToSync[ incomingIndex ] );
+	}
+
+	if (
+		baseIndex !== baseClientIds.length ||
+		pendingInsertedBlocks.length ||
+		! insertions.length ||
+		! baseClientIds.every( ( clientId ) =>
+			currentClientIdSet.has( clientId )
+		) ||
+		Array.from( insertedClientIdSet ).some( ( clientId ) =>
+			currentClientIdSet.has( clientId )
+		)
+	) {
+		return false;
+	}
+
+	for ( const { beforeClientId, blocks } of insertions ) {
+		const insertIndex = findYBlockIndexByClientId(
+			yblocks,
+			beforeClientId
+		);
+
+		if ( insertIndex === -1 ) {
+			return false;
+		}
+
+		yblocks.insert( insertIndex, blocks.map( createNewYBlock ) );
+	}
+
+	for ( const { block, baseBlock } of incomingMatches ) {
+		const currentIndex = findYBlockIndexByClientId(
+			yblocks,
+			getBlockClientId( baseBlock )!
+		);
+
+		if ( currentIndex === -1 ) {
+			return false;
+		}
+
+		mergeBlockIntoYBlock(
+			yblocks.get( currentIndex ),
+			block,
+			attributeCursor,
+			baseBlock
+		);
+	}
+
+	return true;
+}
+
+function mergeYBlocksLocalChanges(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition,
+	hasExplicitBaseBlocks: boolean
 ): boolean {
 	if ( fastDeepEqual( blocksToSync, baseBlocks ) ) {
 		return true;
@@ -976,6 +1106,18 @@ function mergeYBlocksLocalChanges(
 		blocksToSync.length === baseBlocks.length
 	) {
 		return false;
+	}
+
+	if (
+		hasExplicitBaseBlocks &&
+		mergeYBlocksStaleBaseInsert(
+			yblocks,
+			blocksToSync,
+			baseBlocks,
+			attributeCursor
+		)
+	) {
+		return true;
 	}
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
@@ -1039,6 +1181,7 @@ export function mergeCrdtBlocks(
 	const explicitBaseBlocksToSync = baseBlocks
 		? makeBlocksSerializable( baseBlocks )
 		: undefined;
+	const hasExplicitBaseBlocks = !! explicitBaseBlocksToSync;
 	const baseBlocksToSync =
 		explicitBaseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
 
@@ -1048,7 +1191,8 @@ export function mergeCrdtBlocks(
 			yblocks,
 			blocksToSync,
 			baseBlocksToSync,
-			attributeCursor
+			attributeCursor,
+			hasExplicitBaseBlocks
 		)
 	) {
 		removeDuplicateClientIds( yblocks );
