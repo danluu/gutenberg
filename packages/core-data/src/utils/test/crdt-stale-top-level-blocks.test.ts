@@ -113,6 +113,13 @@ function clientIdsOf( yblocks: YBlocks ): string[] {
 	);
 }
 
+function allClientIdsOf( blocks: Block[] ): string[] {
+	return blocks.flatMap( ( block ) => [
+		block.clientId as string,
+		...allClientIdsOf( block.innerBlocks ?? [] ),
+	] );
+}
+
 function blockIdentityLabels( yblocks: YBlocks ): string[] {
 	return ( yblocks.toJSON() as Block[] ).map(
 		( block ) => `${ block.name }:${ block.clientId }`
@@ -1209,6 +1216,253 @@ describe( 'stale top-level block snapshots', () => {
 			'shared',
 		] );
 		expect( contentsOf( yPostBlocks ) ).toEqual( [ 'Baseline', 'Shared' ] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'retires a cached previous-local top-level source when the block moves into a current-only group', () => {
+		const initialBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			paragraph( 'moved', 'Moved' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				paragraph( 'moved', 'Moved' ),
+				group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved',
+			'group',
+			'tail',
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				group( 'group', [
+					paragraph( 'nested', 'Nested' ),
+					paragraph( 'moved', 'Moved' ),
+				] ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'group',
+			'tail',
+		] );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( allClientIdsOf( blocks ) ).toEqual( [
+			'heading',
+			'group',
+			'nested',
+			'moved',
+			'tail',
+		] );
+		expect(
+			blocks[ 1 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested', 'moved' ] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'retires a cached previous-local top-level source through the post CRDT adapter', () => {
+		const initialBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			paragraph( 'moved', 'Moved' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: initialBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{
+				blocks: [
+					paragraph( 'heading', 'Heading' ),
+					paragraph( 'moved', 'Moved' ),
+					group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+					paragraph( 'tail', 'Tail' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		const yPostBlocks = postBlocks( doc );
+		expect( clientIdsOf( yPostBlocks ) ).toEqual( [
+			'heading',
+			'moved',
+			'group',
+			'tail',
+		] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: [
+					paragraph( 'heading', 'Heading' ),
+					group( 'group', [
+						paragraph( 'nested', 'Nested' ),
+						paragraph( 'moved', 'Moved' ),
+					] ),
+					paragraph( 'tail', 'Tail' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		expect( clientIdsOf( yPostBlocks ) ).toEqual( [
+			'heading',
+			'group',
+			'tail',
+		] );
+
+		const blocks = yPostBlocks.toJSON() as Block[];
+		expect( allClientIdsOf( blocks ) ).toEqual( [
+			'heading',
+			'group',
+			'nested',
+			'moved',
+			'tail',
+		] );
+		expect(
+			blocks[ 1 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested', 'moved' ] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'preserves a current source edit while retiring a cached previous-local top-level source', () => {
+		const initialBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			paragraph( 'moved', 'Moved' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				paragraph( 'moved', 'Moved remotely' ),
+				group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				group( 'group', [
+					paragraph( 'nested', 'Nested' ),
+					paragraph( 'moved', 'Moved' ),
+				] ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'group',
+			'tail',
+		] );
+		expect(
+			blocks[ 1 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested', 'moved' ] );
+		expect( blocks[ 1 ].innerBlocks[ 1 ].attributes.content ).toBe(
+			'Moved remotely'
+		);
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'preserves a current-only sibling while retiring a cached previous-local top-level source', () => {
+		const initialBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			paragraph( 'moved', 'Moved' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				paragraph( 'moved', 'Moved' ),
+				group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+				paragraph( 'note', 'Fresh remote note' ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				group( 'group', [
+					paragraph( 'nested', 'Nested' ),
+					paragraph( 'moved', 'Moved' ),
+				] ),
+				paragraph( 'note', 'Stale local note' ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'group',
+			'note',
+			'tail',
+		] );
+		expect(
+			blocks[ 1 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested', 'moved' ] );
+		expect( blocks[ 2 ].attributes.content ).toBe( 'Fresh remote note' );
 
 		remoteDoc.destroy();
 	} );
