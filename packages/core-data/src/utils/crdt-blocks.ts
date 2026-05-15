@@ -1788,6 +1788,139 @@ function mergeYBlocksByClientId(
 	}
 }
 
+function isOrderedSubsequence(
+	candidateKeys: string[],
+	baseKeys: string[]
+): boolean {
+	let baseIndex = 0;
+
+	for ( const candidateKey of candidateKeys ) {
+		while (
+			baseIndex < baseKeys.length &&
+			baseKeys[ baseIndex ] !== candidateKey
+		) {
+			baseIndex++;
+		}
+
+		if ( baseIndex >= baseKeys.length ) {
+			return false;
+		}
+
+		baseIndex++;
+	}
+
+	return true;
+}
+
+function mergeYBlocksPreviousLocalDelete(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): boolean {
+	if (
+		! blocksToSync.length ||
+		baseBlocks.length < 2 ||
+		blocksToSync.length >= baseBlocks.length
+	) {
+		return false;
+	}
+
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if ( ! currentClientIds || ! baseClientIds || ! incomingClientIds ) {
+		return false;
+	}
+
+	const baseSet = new Set( baseClientIds );
+
+	if (
+		! incomingClientIds.every( ( clientId ) => baseSet.has( clientId ) ) ||
+		! isOrderedSubsequence( incomingClientIds, baseClientIds )
+	) {
+		return false;
+	}
+
+	const currentSet = new Set( currentClientIds );
+
+	if (
+		! incomingClientIds.every( ( clientId ) => currentSet.has( clientId ) )
+	) {
+		return false;
+	}
+
+	const incomingSet = new Set( incomingClientIds );
+	const deletedClientIds = baseClientIds.filter(
+		( clientId ) => ! incomingSet.has( clientId )
+	);
+	const deletedSet = new Set( deletedClientIds );
+
+	if (
+		! deletedClientIds.length ||
+		! deletedClientIds.some( ( clientId ) => currentSet.has( clientId ) )
+	) {
+		return false;
+	}
+
+	const currentRetainedClientIds = currentClientIds.filter( ( clientId ) =>
+		incomingSet.has( clientId )
+	);
+
+	if (
+		currentRetainedClientIds.length !== incomingClientIds.length ||
+		! currentRetainedClientIds.every(
+			( clientId, index ) => clientId === incomingClientIds[ index ]
+		)
+	) {
+		return false;
+	}
+
+	const incomingBlocksByClientId = new Map(
+		blocksToSync.map( ( block ) => [
+			getBlockClientId( block ) as string,
+			block,
+		] )
+	);
+	const baseBlocksByClientId = new Map(
+		baseBlocks.map( ( block ) => [
+			getBlockClientId( block ) as string,
+			block,
+		] )
+	);
+
+	for ( let index = yblocks.length - 1; index >= 0; index-- ) {
+		const clientId = getYBlockClientId( yblocks.get( index ) );
+
+		if ( clientId && deletedSet.has( clientId ) ) {
+			yblocks.delete( index, 1 );
+		}
+	}
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const yblock = yblocks.get( index );
+		const clientId = getYBlockClientId( yblock );
+		const block = clientId
+			? incomingBlocksByClientId.get( clientId )
+			: undefined;
+
+		if ( block ) {
+			mergeBlockIntoYBlock(
+				yblock,
+				block,
+				attributeCursor,
+				baseBlocksByClientId.get( clientId as string )
+			);
+		}
+	}
+
+	return true;
+}
+
 function areYBlocksEqualToPlainBlocks(
 	yblocks: YBlocks,
 	blocks: Block[]
@@ -2218,8 +2351,24 @@ export function mergeCrdtBlocks(
 		? makeBlocksSerializable( baseBlocks )
 		: undefined;
 	const hasExplicitBaseBlocks = !! explicitBaseBlocksToSync;
+	const previousLocalBlocksToSync = previousLocalBlocksCache.get( yblocks );
 	const baseBlocksToSync =
-		explicitBaseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
+		explicitBaseBlocksToSync ?? previousLocalBlocksToSync;
+
+	if (
+		! explicitBaseBlocksToSync &&
+		previousLocalBlocksToSync &&
+		mergeYBlocksPreviousLocalDelete(
+			yblocks,
+			blocksToSync,
+			previousLocalBlocksToSync,
+			attributeCursor
+		)
+	) {
+		removeDuplicateClientIds( yblocks );
+		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		return;
+	}
 
 	if (
 		explicitBaseBlocksToSync &&
