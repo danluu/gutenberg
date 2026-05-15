@@ -32,6 +32,13 @@ jest.mock( '@wordpress/blocks', () => ( {
 			attributes: { content: { type: 'rich-text' } },
 		},
 		{
+			name: 'core/heading',
+			attributes: {
+				content: { type: 'rich-text' },
+				level: { type: 'number' },
+			},
+		},
+		{
 			name: 'core/image',
 			attributes: {
 				blob: { type: 'string', role: 'local' },
@@ -194,6 +201,343 @@ describe( 'crdt-blocks', () => {
 				block.get( 'attributes' ) as YBlockAttributes
 			 ).get( 'content' ) as Y.Text;
 			expect( content.toString() ).toBe( 'Updated content' );
+		} );
+
+		it( 'does not rewrite DOM-equivalent rich-text entity spellings', () => {
+			const initialContent =
+				'Seed 1040035 boundary refs: ©cat should stay text, ®-test, \u00a0x, ampersand &amp;=value, decimal © text, hex © text. <a title="A&amp; B © 2026 &quot; quoted&quot;" href="https://example.test/search?q=alpha&amp;beta=2&amp;-gamma=3&amp;-delta=4&amp;-epsilon=5">attribute refs</a> and <code title="code &amp; attr ©">AT&amp; T &amp;amp; &lt;script></code>';
+			const equivalentContent =
+				'Seed 1040035 boundary refs: ©cat should stay text, ®-test, &nbsp;x, ampersand &amp;=value, decimal © text, hex © text. <a href="https://example.test/search?q=alpha&amp;beta=2&amp;-gamma=3&amp;-delta=4&amp;-epsilon=5" title="A&amp; B © 2026 &quot; quoted&quot;">attribute refs</a> and <code title="code &amp; attr ©">AT&amp; T &amp;amp; &lt;script&gt;</code>';
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: initialContent },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const equivalentBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: equivalentContent },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+
+			mergeCrdtBlocks( yblocks, equivalentBlocks, null );
+
+			const updatedContent = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( updatedContent ).toBe( content );
+			expect( updatedContent.toString() ).toBe( initialContent );
+
+			mergeCrdtBlocks( yblocks, equivalentBlocks, null );
+
+			expect( updatedContent.toString() ).toBe( initialContent );
+		} );
+
+		it( 'matches DOM-equivalent rich-text blocks when parser reset changes client IDs', () => {
+			const initialContent =
+				'Heading refs &amp; optional © 1040035 with &amp; hex and \u00a0 gap';
+			const equivalentContent =
+				'Heading refs &amp; optional © 1040035 with &amp; hex and &nbsp; gap';
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/heading',
+					attributes: {
+						content: initialContent,
+						level: 3,
+					},
+					innerBlocks: [],
+					clientId: 'old-client-id',
+				},
+			];
+			const equivalentBlocks: Block[] = [
+				{
+					name: 'core/heading',
+					attributes: {
+						content: equivalentContent,
+						level: 3,
+					},
+					innerBlocks: [],
+					clientId: 'new-client-id',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, equivalentBlocks, null );
+
+			expect( yblocks.length ).toBe( 1 );
+			const block = yblocks.get( 0 );
+			const content = (
+				block.get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe( initialContent );
+		} );
+
+		it( 'updates rich-text when equivalent-looking markup changes visible semantics', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content:
+							'Link <a href="https://example.test/a">target</a>',
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content:
+							'Link <a href="https://example.test/b">target</a>',
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe(
+				'Link <a href="https://example.test/b">target</a>'
+			);
+		} );
+
+		it( 'does not treat a normal space as equivalent to a rich-text NBSP', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Space boundary:\u00a0x' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Space boundary: x' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe( 'Space boundary: x' );
+		} );
+
+		it( 'updates rich-text when literal escaped content becomes real markup', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content:
+							'Literal &amp;nbsp; and &lt;strong&gt;text&lt;/strong&gt;',
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content: 'Literal &nbsp; and <strong>text</strong>',
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe(
+				'Literal &nbsp; and <strong>text</strong>'
+			);
+		} );
+
+		it( 'does not treat parser-repaired rich-text markup as equivalent', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Malformed <strong>text' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content: 'Malformed <strong>text</strong>',
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe(
+				'Malformed <strong>text</strong>'
+			);
+		} );
+
+		it( 'does not treat browser-repaired rich-text nesting as equivalent', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content: 'Repaired <p><div>nested</div></p> markup',
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content:
+							'Repaired <p></p><div>nested</div><p></p> markup',
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe(
+				'Repaired <p></p><div>nested</div><p></p> markup'
+			);
+		} );
+
+		it( 'does not overwrite remote rich-text when local base changed only by entity spelling', () => {
+			const baseBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Entity spelling &nbsp; base' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const incomingBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: 'Entity spelling \u00a0 base' },
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, baseBlocks, null );
+
+			const content = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'content' ) as Y.Text;
+			content.delete( 0, content.length );
+			content.insert( 0, 'Remote visible edit' );
+
+			mergeCrdtBlocks( yblocks, incomingBlocks, null, baseBlocks );
+
+			expect( content.toString() ).toBe( 'Remote visible edit' );
+		} );
+
+		it( 'keeps non-rich-text string attributes byte-sensitive', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/image',
+					attributes: {
+						url: 'https://example.test/image?a=1&amp;b=2',
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/image',
+					attributes: {
+						url: 'https://example.test/image?a=1&b=2',
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const url = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'url' );
+			expect( url ).toBe( 'https://example.test/image?a=1&b=2' );
+		} );
+
+		it( 'keeps nested non-block clientId attributes byte-sensitive', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content: 'Stable content',
+						metadata: { clientId: 'attribute-client-old' },
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+			const updatedBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content: 'Stable content',
+						metadata: { clientId: 'attribute-client-new' },
+					},
+					innerBlocks: [],
+					clientId: 'block-1',
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+			mergeCrdtBlocks( yblocks, updatedBlocks, null );
+
+			const metadata = (
+				yblocks.get( 0 ).get( 'attributes' ) as YBlockAttributes
+			 ).get( 'metadata' );
+			expect( metadata ).toEqual( {
+				clientId: 'attribute-client-new',
+			} );
 		} );
 
 		it( 'deletes blocks that are removed', () => {
