@@ -325,8 +325,9 @@ function createNewYAttributeValue(
  * - `object` with query  -> Y.Map
  * - anything else        -> plain value (unchanged)
  *
- * @param schema The attribute type definition.
- * @param value  The plain JS value to convert.
+ * @param schema    The attribute type definition.
+ * @param value     The plain JS value to convert.
+ * @param valuePath Optional nested value path for stable array element ids.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
@@ -381,8 +382,10 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query The query schema defining the properties.
- * @param obj   The plain object to convert.
+ * @param query          The query schema defining the properties.
+ * @param obj            The plain object to convert.
+ * @param arrayElementId Optional explicit or generated array element id.
+ * @param valuePath      Optional nested value path for stable array element ids.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
@@ -513,6 +516,21 @@ function getUniqueKeys< T >(
 	}
 
 	return keys;
+}
+
+function areKeysInOrder( keys: string[], orderedKeys: string[] ): boolean {
+	let searchStart = 0;
+
+	return keys.every( ( key ) => {
+		const index = orderedKeys.indexOf( key, searchStart );
+
+		if ( index === -1 ) {
+			return false;
+		}
+
+		searchStart = index + 1;
+		return true;
+	} );
 }
 
 function getBlockIdentityKeys(
@@ -916,6 +934,68 @@ function mergeYBlocksByClientId(
 	}
 }
 
+function mergeYBlocksLocalDeletionsByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): boolean {
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if (
+		! currentClientIds ||
+		! baseClientIds ||
+		! incomingClientIds ||
+		incomingClientIds.length >= baseClientIds.length
+	) {
+		return false;
+	}
+
+	const currentSet = new Set( currentClientIds );
+	const baseSet = new Set( baseClientIds );
+	const incomingSet = new Set( incomingClientIds );
+
+	if (
+		! baseClientIds.every( ( clientId ) => currentSet.has( clientId ) ) ||
+		! incomingClientIds.every( ( clientId ) => baseSet.has( clientId ) ) ||
+		! areKeysInOrder( baseClientIds, currentClientIds ) ||
+		! areKeysInOrder( incomingClientIds, baseClientIds )
+	) {
+		return false;
+	}
+
+	let deletedLocalBlock = false;
+	for ( let index = yblocks.length - 1; index >= 0; index-- ) {
+		const clientId = getYBlockClientId( yblocks.get( index ) );
+
+		if (
+			clientId &&
+			baseSet.has( clientId ) &&
+			! incomingSet.has( clientId )
+		) {
+			yblocks.delete( index, 1 );
+			deletedLocalBlock = true;
+		}
+	}
+
+	if ( ! deletedLocalBlock ) {
+		return false;
+	}
+
+	mergeYBlocksByClientId(
+		yblocks,
+		blocksToSync,
+		attributeCursor,
+		baseBlocks
+	);
+	return true;
+}
+
 function areYBlocksEqualToPlainBlocks(
 	yblocks: YBlocks,
 	blocks: Block[]
@@ -976,6 +1056,17 @@ function mergeYBlocksLocalChanges(
 		blocksToSync.length === baseBlocks.length
 	) {
 		return false;
+	}
+
+	if (
+		mergeYBlocksLocalDeletionsByClientId(
+			yblocks,
+			blocksToSync,
+			baseBlocks,
+			attributeCursor
+		)
+	) {
+		return true;
 	}
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
