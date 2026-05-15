@@ -36,6 +36,48 @@ jest.mock( '@wordpress/blocks', () => {
 				name: 'core/paragraph',
 				attributes: { content: { type: 'rich-text' } },
 			},
+			{
+				name: 'core/table',
+				attributes: {
+					caption: { type: 'rich-text' },
+					head: {
+						type: 'array',
+						query: {
+							cells: {
+								type: 'array',
+								query: {
+									content: { type: 'rich-text' },
+									tag: { type: 'string' },
+								},
+							},
+						},
+					},
+					body: {
+						type: 'array',
+						query: {
+							cells: {
+								type: 'array',
+								query: {
+									content: { type: 'rich-text' },
+									tag: { type: 'string' },
+								},
+							},
+						},
+					},
+					foot: {
+						type: 'array',
+						query: {
+							cells: {
+								type: 'array',
+								query: {
+									content: { type: 'rich-text' },
+									tag: { type: 'string' },
+								},
+							},
+						},
+					},
+				},
+			},
 		],
 	};
 } );
@@ -71,6 +113,33 @@ function group( clientId: string, innerBlocks: Block[] = [] ): Block {
 		clientId,
 		attributes: {},
 		innerBlocks,
+	};
+}
+
+function table(
+	clientId: string,
+	cellContent: string,
+	caption: string
+): Block {
+	return {
+		name: 'core/table',
+		clientId,
+		attributes: {
+			caption,
+			head: [],
+			body: [
+				{
+					cells: [
+						{
+							content: cellContent,
+							tag: 'td',
+						},
+					],
+				},
+			],
+			foot: [],
+		},
+		innerBlocks: [],
 	};
 }
 
@@ -720,6 +789,312 @@ describe( 'stale top-level block snapshots', () => {
 		expect( contentsOf( yPostBlocks ) ).toEqual( [ 'Baseline', 'Shared' ] );
 
 		remoteDoc.destroy();
+	} );
+
+	it( 'does not merge a stale identified table into a different live paragraph', () => {
+		const baseBlocks = [
+			table( 'stale-table', 'A', 'Old caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'live-para', 'Live paragraph' ),
+			paragraph( 'tail', 'Tail' ),
+			paragraph( 'remote-extra', 'Remote append' ),
+		];
+		const staleIncomingBlocks = [
+			table( 'stale-table', 'A local', 'Local caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( blocks.map( ( block ) => block.clientId ) ).toEqual( [
+			'live-para',
+			'tail',
+			'remote-extra',
+		] );
+		expect( blocks[ 0 ].name ).toBe( 'core/paragraph' );
+		expect( blocks[ 0 ].attributes.content ).toBe( 'Live paragraph' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'caption' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'body' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'head' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'foot' );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'live-para', 'Edited live paragraph' ),
+				paragraph( 'tail', 'Tail' ),
+				paragraph( 'remote-extra', 'Remote append' ),
+			],
+			null
+		);
+
+		expect( ( yblocks.toJSON() as Block[] )[ 0 ].attributes.content ).toBe(
+			'Edited live paragraph'
+		);
+	} );
+
+	it( 'does not merge a stale identified table through the post CRDT adapter', () => {
+		const baseBlocks = [
+			table( 'stale-table', 'A', 'Old caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'live-para', 'Live paragraph' ),
+			paragraph( 'tail', 'Tail' ),
+			paragraph( 'remote-extra', 'Remote append' ),
+		];
+		const staleIncomingBlocks = [
+			table( 'stale-table', 'A local', 'Local caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: currentBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const yPostBlocks = postBlocks( doc );
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: staleIncomingBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: baseBlocks } }
+		);
+
+		const blocks = yPostBlocks.toJSON() as Block[];
+		expect( blocks.map( ( block ) => block.clientId ) ).toEqual( [
+			'live-para',
+			'tail',
+			'remote-extra',
+		] );
+		expect( blocks[ 0 ].name ).toBe( 'core/paragraph' );
+		expect( blocks[ 0 ].attributes.content ).toBe( 'Live paragraph' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'caption' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'body' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'head' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'foot' );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: [
+					paragraph( 'live-para', 'Edited live paragraph' ),
+					paragraph( 'tail', 'Tail' ),
+					paragraph( 'remote-extra', 'Remote append' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		expect(
+			( yPostBlocks.toJSON() as Block[] )[ 0 ].attributes.content
+		).toBe( 'Edited live paragraph' );
+	} );
+
+	it( 'does not positionally merge an equal-length stale identified table into a different live paragraph', () => {
+		const baseBlocks = [
+			table( 'stale-table', 'A', 'Old caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'live-para', 'Live paragraph' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			table( 'stale-table', 'A local', 'Local caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( blocks.map( ( block ) => block.clientId ) ).toEqual( [
+			'live-para',
+			'tail',
+		] );
+		expect( blocks[ 0 ].name ).toBe( 'core/paragraph' );
+		expect( blocks[ 0 ].attributes.content ).toBe( 'Live paragraph' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'caption' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'body' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'head' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'foot' );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'live-para', 'Edited live paragraph' ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		expect( ( yblocks.toJSON() as Block[] )[ 0 ].attributes.content ).toBe(
+			'Edited live paragraph'
+		);
+	} );
+
+	it( 'does not positionally merge an equal-length stale identified table through the post CRDT adapter', () => {
+		const baseBlocks = [
+			table( 'stale-table', 'A', 'Old caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'live-para', 'Live paragraph' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			table( 'stale-table', 'A local', 'Local caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: currentBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const yPostBlocks = postBlocks( doc );
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: staleIncomingBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: baseBlocks } }
+		);
+
+		const blocks = yPostBlocks.toJSON() as Block[];
+		expect( blocks.map( ( block ) => block.clientId ) ).toEqual( [
+			'live-para',
+			'tail',
+		] );
+		expect( blocks[ 0 ].name ).toBe( 'core/paragraph' );
+		expect( blocks[ 0 ].attributes.content ).toBe( 'Live paragraph' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'caption' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'body' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'head' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'foot' );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: [
+					paragraph( 'live-para', 'Edited live paragraph' ),
+					paragraph( 'tail', 'Tail' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		expect(
+			( yPostBlocks.toJSON() as Block[] )[ 0 ].attributes.content
+		).toBe( 'Edited live paragraph' );
+	} );
+
+	it( 'does not merge a stale block transform into a different live paragraph', () => {
+		const baseBlocks = [
+			paragraph( 'stale-block', 'Old paragraph' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'live-para', 'Live paragraph' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			table( 'stale-block', 'A local', 'Local caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( blocks.map( ( block ) => block.clientId ) ).toEqual( [
+			'live-para',
+			'tail',
+		] );
+		expect( blocks[ 0 ].name ).toBe( 'core/paragraph' );
+		expect( blocks[ 0 ].attributes.content ).toBe( 'Live paragraph' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'caption' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'body' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'head' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'foot' );
+	} );
+
+	it( 'does not semantically merge a stale block transform into a different live paragraph', () => {
+		const baseBlocks = [
+			paragraph( 'stale-block', 'Same' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'live-para', 'Same' ),
+			paragraph( 'tail', 'Tail' ),
+			paragraph( 'remote-extra', 'Remote append' ),
+		];
+		const staleIncomingBlocks = [
+			table( 'stale-block', 'A local', 'Local caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( blocks.map( ( block ) => block.clientId ) ).toEqual( [
+			'live-para',
+			'tail',
+			'remote-extra',
+		] );
+		expect( blocks[ 0 ].name ).toBe( 'core/paragraph' );
+		expect( blocks[ 0 ].attributes.content ).toBe( 'Same' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'caption' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'body' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'head' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'foot' );
+	} );
+
+	it( 'does not semantically merge a stale block transform through the post CRDT adapter', () => {
+		const baseBlocks = [
+			paragraph( 'stale-block', 'Same' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'live-para', 'Same' ),
+			paragraph( 'tail', 'Tail' ),
+			paragraph( 'remote-extra', 'Remote append' ),
+		];
+		const staleIncomingBlocks = [
+			table( 'stale-block', 'A local', 'Local caption' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: currentBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const yPostBlocks = postBlocks( doc );
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: staleIncomingBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: baseBlocks } }
+		);
+
+		const blocks = yPostBlocks.toJSON() as Block[];
+		expect( blocks.map( ( block ) => block.clientId ) ).toEqual( [
+			'live-para',
+			'tail',
+			'remote-extra',
+		] );
+		expect( blocks[ 0 ].name ).toBe( 'core/paragraph' );
+		expect( blocks[ 0 ].attributes.content ).toBe( 'Same' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'caption' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'body' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'head' );
+		expect( blocks[ 0 ].attributes ).not.toHaveProperty( 'foot' );
 	} );
 
 	it( 'retires a cached previous-local top-level source when the block moves into a current-only group', () => {

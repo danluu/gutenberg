@@ -473,6 +473,27 @@ function getYBlockClientId( yblock: YBlock ): string | null {
 	return typeof clientId === 'string' && clientId ? clientId : null;
 }
 
+function hasDifferentIdentifiedBlockName(
+	yblock: YBlock,
+	baseBlock?: Block,
+	block?: Block
+): boolean {
+	const blockClientId = baseBlock ? getBlockClientId( baseBlock ) : null;
+	const yblockClientId = getYBlockClientId( yblock );
+	const yblockName = yblock.get( 'name' );
+	const blockNames = [ baseBlock?.name, block?.name ].filter(
+		( name ): name is string => !! name
+	);
+
+	return !! (
+		typeof yblockName === 'string' &&
+		blockClientId &&
+		yblockClientId &&
+		blockClientId !== yblockClientId &&
+		blockNames.some( ( blockName ) => blockName !== yblockName )
+	);
+}
+
 function normalizeBlockForIdentity( value: unknown ): unknown {
 	if ( Array.isArray( value ) ) {
 		return value.map( normalizeBlockForIdentity );
@@ -1609,54 +1630,77 @@ function areYBlocksEqualToPlainBlocks(
 function findYBlockIndex(
 	yblocks: YBlocks,
 	baseBlock: Block,
-	preferredIndex: number,
-	baseLength: number
-): number {
+	block: Block,
+	preferredIndex: number
+): { index: number; guardedSkip: boolean } {
 	const clientId = getBlockClientId( baseBlock );
 
 	if ( clientId ) {
 		for ( let index = 0; index < yblocks.length; index++ ) {
 			if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
-				return index;
+				return { index, guardedSkip: false };
 			}
 		}
 	}
 
+	let guardedSkip = false;
+
 	for ( let index = 0; index < yblocks.length; index++ ) {
-		if ( areBlocksEqual( baseBlock, yblocks.get( index ) ) ) {
-			return index;
+		const yblock = yblocks.get( index );
+
+		if ( areBlocksEqual( baseBlock, yblock ) ) {
+			if ( hasDifferentIdentifiedBlockName( yblock, baseBlock, block ) ) {
+				guardedSkip = true;
+				continue;
+			}
+
+			return { index, guardedSkip: false };
 		}
 	}
 
-	if ( yblocks.length === baseLength && preferredIndex < yblocks.length ) {
-		return preferredIndex;
+	if ( preferredIndex < yblocks.length ) {
+		const preferredBlock = yblocks.get( preferredIndex );
+
+		if (
+			hasDifferentIdentifiedBlockName( preferredBlock, baseBlock, block )
+		) {
+			return { index: -1, guardedSkip: true };
+		}
+
+		return { index: preferredIndex, guardedSkip: false };
 	}
 
-	return preferredIndex < yblocks.length ? preferredIndex : -1;
+	return { index: -1, guardedSkip };
 }
+
+type MergeYBlocksLocalChangesResult = {
+	handled: boolean;
+	guardedSkip: boolean;
+};
 
 function mergeYBlocksLocalChanges(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
 	baseBlocks: Block[],
 	attributeCursor: MergeCursorPosition
-): boolean {
+): MergeYBlocksLocalChangesResult {
 	if ( fastDeepEqual( blocksToSync, baseBlocks ) ) {
-		return true;
+		return { handled: true, guardedSkip: false };
 	}
 
 	if ( areYBlocksEqualToPlainBlocks( yblocks, baseBlocks ) ) {
-		return false;
+		return { handled: false, guardedSkip: false };
 	}
 
 	if (
 		yblocks.length === baseBlocks.length &&
 		blocksToSync.length === baseBlocks.length
 	) {
-		return false;
+		return { handled: false, guardedSkip: false };
 	}
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
+	let guardedSkip = false;
 
 	for ( let index = 0; index < sharedLength; index++ ) {
 		const baseBlock = baseBlocks[ index ];
@@ -1666,26 +1710,22 @@ function mergeYBlocksLocalChanges(
 			continue;
 		}
 
-		const currentIndex = findYBlockIndex(
-			yblocks,
-			baseBlock,
-			index,
-			baseBlocks.length
-		);
+		const result = findYBlockIndex( yblocks, baseBlock, block, index );
 
-		if ( currentIndex === -1 ) {
+		if ( result.index === -1 ) {
+			guardedSkip = guardedSkip || result.guardedSkip;
 			continue;
 		}
 
 		mergeBlockIntoYBlock(
-			yblocks.get( currentIndex ),
+			yblocks.get( result.index ),
 			block,
 			attributeCursor,
 			baseBlock
 		);
 	}
 
-	return true;
+	return { handled: true, guardedSkip };
 }
 
 /**
@@ -1784,17 +1824,25 @@ export function mergeCrdtBlocks(
 		return;
 	}
 
-	if (
-		baseBlocksToSync &&
-		mergeYBlocksLocalChanges(
-			yblocks,
-			blocksToSync,
-			baseBlocksToSync,
-			attributeCursor
-		)
-	) {
+	const localChangesResult = baseBlocksToSync
+		? mergeYBlocksLocalChanges(
+				yblocks,
+				blocksToSync,
+				baseBlocksToSync,
+				attributeCursor
+		  )
+		: { handled: false, guardedSkip: false };
+
+	if ( localChangesResult.handled ) {
 		removeDuplicateClientIds( yblocks );
-		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		previousLocalBlocksCache.set(
+			yblocks,
+			localChangesResult.guardedSkip
+				? makeBlocksSerializable(
+						yblocks.toJSON() as unknown as Block[]
+				  )
+				: blocksToSync
+		);
 		return;
 	}
 
@@ -1869,16 +1917,19 @@ export function mergeCrdtBlocks(
 	);
 
 	// updates
+	let hasGuardedSkips = false;
+
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
 		const block = blocksToSync[ left ];
 		const yblock = yblocks.get( left );
+		const baseBlock = baseBlocksToSync?.[ left ];
 
-		mergeBlockIntoYBlock(
-			yblock,
-			block,
-			attributeCursor,
-			baseBlocksToSync?.[ left ]
-		);
+		if ( hasDifferentIdentifiedBlockName( yblock, baseBlock, block ) ) {
+			hasGuardedSkips = true;
+			continue;
+		}
+
+		mergeBlockIntoYBlock( yblock, block, attributeCursor, baseBlock );
 	}
 
 	// deletes
@@ -1892,7 +1943,12 @@ export function mergeCrdtBlocks(
 	}
 
 	removeDuplicateClientIds( yblocks );
-	previousLocalBlocksCache.set( yblocks, blocksToSync );
+	previousLocalBlocksCache.set(
+		yblocks,
+		hasGuardedSkips
+			? makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] )
+			: blocksToSync
+	);
 }
 
 function removeDuplicateClientIds( yblocks: YBlocks ): void {
