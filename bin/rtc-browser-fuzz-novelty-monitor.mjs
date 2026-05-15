@@ -144,6 +144,22 @@ const COVERAGE_GUIDANCE_STALL_PASSES = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_COVERAGE_GUIDANCE_STALL_PASSES',
 	3
 );
+const COVERAGE_QUALITY_ISSUE_PASSES = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_ISSUE_PASSES',
+	2
+);
+const COVERAGE_QUALITY_COMPLETION_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_COMPLETION_MIN_RECORDS',
+	25
+);
+const COVERAGE_QUALITY_STARTUP_FAILURE_MIN_COUNT = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_STARTUP_FAILURE_MIN_COUNT',
+	25
+);
+const COVERAGE_QUALITY_STARTUP_FAILURE_MIN_RATE = getPositiveNumberEnv(
+	'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_STARTUP_FAILURE_MIN_RATE',
+	0.3
+);
 const AUTO_GOAL_EXPANSION_ENABLED =
 	process.env.RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION !== '0';
 const AUTO_GOAL_EXPANSION_THRESHOLD = getNonNegativeIntegerEnv(
@@ -2338,6 +2354,141 @@ function createCoverageGuidance( novelty ) {
 	};
 }
 
+function updateCoverageQualityIssues( guidance, triageYield ) {
+	const qualityIssues = createCoverageQualityIssues( guidance, triageYield );
+	if ( qualityIssues.length > 0 ) {
+		state.coverageGuidanceQualityIssuePasses =
+			( state.coverageGuidanceQualityIssuePasses ?? 0 ) + 1;
+	} else {
+		state.coverageGuidanceQualityIssuePasses = 0;
+	}
+	guidance.qualityIssues = qualityIssues.slice( 0, 30 );
+	guidance.qualityIssuePasses =
+		state.coverageGuidanceQualityIssuePasses ?? 0;
+	return guidance.qualityIssues;
+}
+
+function createCoverageQualityIssues( guidance, triageYield ) {
+	const issues = [];
+	for ( const goal of guidance.goals ?? [] ) {
+		if ( goal.met || ! goal.id.startsWith( 'success-profile:' ) ) {
+			continue;
+		}
+		const profile = goal.id.slice( 'success-profile:'.length );
+		const records = state.recordCountsByProfile?.[ profile ] ?? 0;
+		const successful = state.successfulRecordCountsByProfile?.[ profile ] ?? 0;
+		const startupFailures =
+			state.startupFailureCountsByProfile?.[ profile ] ?? 0;
+		if (
+			records < COVERAGE_QUALITY_COMPLETION_MIN_RECORDS &&
+			startupFailures < COVERAGE_QUALITY_STARTUP_FAILURE_MIN_COUNT
+		) {
+			continue;
+		}
+		const successRate = records > 0 ? successful / records : 0;
+		const startupFailureRate =
+			records > 0 ? startupFailures / records : 0;
+		issues.push( {
+			id: `completion:${ profile }`,
+			severity: successRate < 0.1 ? 'high' : 'medium',
+			profile,
+			label: `${ profile } has low completed-record yield`,
+			evidence: `${ successful }/${ goal.target } successful goal records, ${ records } records seen, success rate ${ formatPercent(
+				successRate
+			) }, startup failure rate ${ formatPercent( startupFailureRate ) }`,
+			recommendedAction:
+				'improve profile completion before adding another large fuzz-action class',
+		} );
+	}
+
+	for ( const [ profile, records ] of Object.entries(
+		state.recordCountsByProfile ?? {}
+	) ) {
+		const startupFailures =
+			state.startupFailureCountsByProfile?.[ profile ] ?? 0;
+		if (
+			startupFailures < COVERAGE_QUALITY_STARTUP_FAILURE_MIN_COUNT ||
+			records <= 0
+		) {
+			continue;
+		}
+		const startupFailureRate = startupFailures / records;
+		if (
+			startupFailureRate < COVERAGE_QUALITY_STARTUP_FAILURE_MIN_RATE
+		) {
+			continue;
+		}
+		issues.push( {
+			id: `startup-stalls:${ profile }`,
+			severity: startupFailureRate >= 0.5 ? 'high' : 'medium',
+			profile,
+			label: `${ profile } has excessive pre-action startup stalls`,
+			evidence: `${ startupFailures } startup failures / ${ records } records = ${ formatPercent(
+				startupFailureRate
+			) }`,
+			recommendedAction:
+				'debug and reduce startup/discovery stalls so the lane produces completed records',
+		} );
+	}
+
+	if (
+		triageYield?.topDuplicateFamilyShare >= TRIAGE_DUPLICATE_SHARE_HOLD &&
+		triageYield.signatureCount >= TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES
+	) {
+		issues.push( {
+			id: 'triage-duplicate-dominated',
+			severity: 'medium',
+			label: 'triage is duplicate/noise dominated',
+			evidence: `top family share ${ triageYield.topDuplicateFamilyShare }, bootstrap stalls ${ triageYield.bootstrapStalls }, normalization-noise candidates ${ triageYield.normalizationNoiseCandidates }, visible likely-real ${ triageYield.likelyRealVisible }`,
+			recommendedAction:
+				'gate duplicate/noise families or fix the dominant infra failure before increasing browser action breadth',
+		} );
+	}
+
+	for ( const warning of state.healthWarnings ?? [] ) {
+		issues.push( {
+			id: `health:${ warning
+				.toLowerCase()
+				.replace( /[^a-z0-9]+/g, '-' )
+				.replace( /^-|-$/g, '' )
+				.slice( 0, 80 ) }`,
+			severity: 'medium',
+			label: 'novelty monitor health warning',
+			evidence: warning,
+			recommendedAction:
+				'fix the health warning before trusting coverage-guided scheduling for that surface',
+		} );
+	}
+
+	return dedupeCoverageQualityIssues( issues ).sort(
+		( left, right ) =>
+			getQualitySeverityRank( left.severity ) -
+				getQualitySeverityRank( right.severity ) ||
+			left.id.localeCompare( right.id )
+	);
+}
+
+function dedupeCoverageQualityIssues( issues ) {
+	const seen = new Set();
+	const deduped = [];
+	for ( const issue of issues ) {
+		if ( seen.has( issue.id ) ) {
+			continue;
+		}
+		seen.add( issue.id );
+		deduped.push( issue );
+	}
+	return deduped;
+}
+
+function getQualitySeverityRank( severity ) {
+	return severity === 'high' ? 0 : 1;
+}
+
+function formatPercent( value ) {
+	return `${ ( value * 100 ).toFixed( 1 ) }%`;
+}
+
 function isGroupEnabled( groupName ) {
 	return ( state.enabledGroups ?? [] ).includes( groupName );
 }
@@ -3397,6 +3548,9 @@ async function maybeLaunchCoverageCodex( guidance ) {
 		COVERAGE_GUIDANCE_CODEX_FORCE ||
 		guidance.harnessWork.length > 0 ||
 		( guidance.autoExpansion?.addedGoals?.length ?? 0 ) > 0 ||
+		( ( guidance.qualityIssues?.length ?? 0 ) > 0 &&
+			( guidance.qualityIssuePasses ?? 0 ) >=
+				COVERAGE_QUALITY_ISSUE_PASSES ) ||
 		( guidance.unmetGoals.length > 0 &&
 			guidance.noProgressPasses >= COVERAGE_GUIDANCE_STALL_PASSES );
 	if ( ! shouldLaunch ) {
@@ -3444,6 +3598,8 @@ async function maybeLaunchCoverageCodex( guidance ) {
 			? `${ guidance.harnessWork.length } coverage goal(s) need harness work`
 			: ( guidance.autoExpansion?.addedGoals?.length ?? 0 ) > 0
 			? `${ guidance.autoExpansion.addedGoals.length } auto-expanded coverage goal(s) added`
+			: ( guidance.qualityIssues?.length ?? 0 ) > 0
+			? `${ guidance.qualityIssues.length } coverage quality issue(s) persisted for ${ guidance.qualityIssuePasses } pass(es)`
 			: `${ guidance.noProgressPasses } no-progress coverage pass(es) with ${ guidance.unmetGoals.length } unmet goal(s)`,
 	} );
 	await log( `Started coverage guidance Codex tmux session ${ session }.` );
@@ -3484,6 +3640,13 @@ function buildCoverageCodexPrompt( guidance, reportPath ) {
 				}`
 		)
 		.join( '\n' );
+	const qualityIssues = ( guidance.qualityIssues ?? [] )
+		.slice( 0, 20 )
+		.map(
+			( issue ) =>
+				`- ${ issue.id } (${ issue.severity }): ${ issue.evidence }; action=${ issue.recommendedAction }`
+		)
+		.join( '\n' );
 
 	return [
 		'You are running inside a long-lived RTC browser fuzzing loop.',
@@ -3510,6 +3673,9 @@ function buildCoverageCodexPrompt( guidance, reportPath ) {
 		`- auto-goals added this pass: ${
 			guidance.autoExpansion?.addedGoals?.join( ', ' ) || 'none'
 		}`,
+		`- coverage quality issue passes: ${
+			guidance.qualityIssuePasses ?? 0
+		} / ${ COVERAGE_QUALITY_ISSUE_PASSES }`,
 		'',
 		'Top unmet coverage goals:',
 		unmet || '- none',
@@ -3517,13 +3683,17 @@ function buildCoverageCodexPrompt( guidance, reportPath ) {
 		'Harness-work candidates:',
 		harness || '- none',
 		'',
+		'Coverage quality issues:',
+		qualityIssues || '- none',
+		'',
 		'Do this loop:',
 		'1. Inspect the coverage records and existing fuzz profiles/actions.',
-		'2. If existing profiles can cover the gap, update the group policy/config so the gap is covered.',
-		'3. If the harness cannot currently generate the missing feature, add the smallest fuzz action/profile/env knob needed.',
-		'4. If the automatic expansion threshold is causing too much or too little queued coverage work, recommend a new RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD value and explain why.',
-		'5. Run focused syntax/lint checks for changed files.',
-		'6. Write a concise report with changed files, commands run, and how the next monitor pass should prove coverage was added.',
+		'2. If existing profiles can cover a missing goal, update the group policy/config so the gap is covered.',
+		'3. If completion or startup quality is bad, fix that before adding another large class of fuzz actions.',
+		'4. If the harness cannot currently generate the missing feature, add the smallest fuzz action/profile/env knob needed.',
+		'5. If the automatic expansion threshold is causing too much or too little queued coverage work, recommend a new RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD value and explain why.',
+		'6. Run focused syntax/lint checks for changed files.',
+		'7. Write a concise report with changed files, commands run, and how the next monitor pass should prove coverage or completion improved.',
 		'',
 	].join( '\n' );
 }
@@ -3755,6 +3925,10 @@ async function writeStatus(
 			guidance.autoExpansion?.addedGoals?.length ?? 0
 		}`,
 		`- no-progress passes: ${ guidance.noProgressPasses } / ${ COVERAGE_GUIDANCE_STALL_PASSES }`,
+		`- quality issue passes: ${
+			guidance.qualityIssuePasses ?? 0
+		} / ${ COVERAGE_QUALITY_ISSUE_PASSES }`,
+		`- quality issues: ${ guidance.qualityIssues?.length ?? 0 }`,
 		`- recommended groups: ${
 			guidance.recommendedGroups.length
 				? guidance.recommendedGroups.join( ', ' )
@@ -3764,6 +3938,12 @@ async function writeStatus(
 		...( guidance.autoExpansion?.addedGoals?.length
 			? guidance.autoExpansion.addedGoals.map(
 					( id ) => `- added auto goal ${ id }`
+			  )
+			: [] ),
+		...( guidance.qualityIssues?.length
+			? guidance.qualityIssues.slice( 0, 12 ).map(
+					( issue ) =>
+						`- quality ${ issue.id }: ${ issue.evidence }`
 			  )
 			: [] ),
 		...guidance.unmetGoals
@@ -3838,6 +4018,7 @@ async function runPass() {
 		triageYield,
 		await readJsonFile( path.join( OUTPUT_DIR, 'supervisor-state.json' ) )
 	);
+	updateCoverageQualityIssues( guidance, triageYield );
 	if ( shutdownRequested ) {
 		return;
 	}
@@ -3877,6 +4058,8 @@ async function runPass() {
 			guidance.noProgressPasses
 		} autoGoals=${ state.autoCoverageGoals?.length ?? 0 } autoAdded=${
 			guidance.autoExpansion?.addedGoals?.length ?? 0
+		} qualityIssues=${ guidance.qualityIssues?.length ?? 0 } qualityPasses=${
+			guidance.qualityIssuePasses ?? 0
 		} warnings=${ state.healthWarnings.length } headroom=${
 			resources.hasHeadroom
 		} likelyReal=${ triageYield.likelyRealVisible } duplicateShare=${

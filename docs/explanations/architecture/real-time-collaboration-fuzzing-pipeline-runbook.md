@@ -1003,6 +1003,11 @@ Optional expansion controls:
     history events, operation-ledger coverage, and very-large-document coverage.
     After those are exhausted, the monitor ratchets already-met goals to the
     next count tier instead of reporting zero unmet goals.
+-   `RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_ISSUE_PASSES=2`: run coverage-guidance
+    Codex when completion or health quality issues persist, even if feature keys
+    are still increasing. This catches the case where the fuzzer is broadening
+    but not completing valuable profiles such as media/cross-entity,
+    multi-reload lifecycle, parser serialization, or real-user editing.
 
 Example durable novelty monitor:
 
@@ -1040,6 +1045,10 @@ Automatic coverage-goal expansion is persisted in
 `novelty-state.json.autoCoverageGoalWaves`. Do not clear those fields during a
 restart unless the goal wave itself was bad; clearing them makes trend graphs
 look artificially complete again until the threshold is crossed on a later pass.
+The coverage-guided remote starter copies the previous `novelty-state.json` into
+the new output directory and preserves cumulative `observed-roots.txt` entries
+across restarts. That keeps quality and auto-goal decisions based on the full
+run history instead of only the immediately previous monitor output.
 
 The implemented novelty profiles are:
 

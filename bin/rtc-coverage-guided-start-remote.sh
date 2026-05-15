@@ -5,6 +5,7 @@ NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.1
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
+CUMULATIVE_ROOTS_FILE="$BASE/cumulative-observed-roots.txt"
 mkdir -p "$TMUX_WRAP"
 cat > "$TMUX_WRAP/tmux" <<'SH'
 #!/usr/bin/env bash
@@ -18,16 +19,6 @@ ISO_WS=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-validation-isolated-2026051
 FOCUSED=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515/current-run-root.txt 2>/dev/null || true)
 GAP_BOOSTER=$(cat /media/volume/danluu-fuzz-data/rtc-gap-booster-20260515/current-run-root.txt 2>/dev/null || true)
 PREVIOUS_COVERAGE=$(cat "$BASE/current-output-dir.txt" 2>/dev/null || true)
-OBSERVED=""
-for ROOT in "$STRICT" "$ISO_HTTP" "$ISO_WS" "$FOCUSED" "$GAP_BOOSTER" "$PREVIOUS_COVERAGE"; do
-	if [ -n "$ROOT" ]; then
-		if [ -z "$OBSERVED" ]; then
-			OBSERVED="$ROOT"
-		else
-			OBSERVED="$OBSERVED:$ROOT"
-		fi
-	fi
-done
 OUT=$BASE/run-$(date -u +%Y%m%dT%H%M%SZ)
 mkdir -p "$OUT" "$BASE/logs"
 if [ -x /tmp/cleanup_rtc_coverage_guided_remote.sh ]; then
@@ -43,7 +34,18 @@ printf '%s\n' "$OUT" > "$BASE/current-output-dir.txt"
 			printf '%s\n' "$ROOT"
 		fi
 	done
-} > "$OUT/observed-roots.txt"
+	if [ -n "$PREVIOUS_COVERAGE" ] && [ -f "$PREVIOUS_COVERAGE/observed-roots.txt" ]; then
+		cat "$PREVIOUS_COVERAGE/observed-roots.txt"
+	fi
+	if [ -f "$CUMULATIVE_ROOTS_FILE" ]; then
+		cat "$CUMULATIVE_ROOTS_FILE"
+	fi
+} | awk 'NF && !seen[$0]++' > "$OUT/observed-roots.txt"
+cp "$OUT/observed-roots.txt" "$CUMULATIVE_ROOTS_FILE"
+OBSERVED=$(paste -sd: "$OUT/observed-roots.txt")
+if [ -n "$PREVIOUS_COVERAGE" ] && [ -f "$PREVIOUS_COVERAGE/novelty-state.json" ]; then
+	cp "$PREVIOUS_COVERAGE/novelty-state.json" "$OUT/novelty-state.json"
+fi
 RUN_SCRIPT="$OUT/run-monitor.sh"
 cat > "$RUN_SCRIPT" <<RUN
 #!/usr/bin/env bash
@@ -72,6 +74,7 @@ export RTC_FUZZ_NOVELTY_COVERAGE_CODEX='1'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD='$REPO'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_INTERVAL_MINUTES='30'
 export RTC_FUZZ_NOVELTY_COVERAGE_GUIDANCE_STALL_PASSES='2'
+export RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_ISSUE_PASSES='2'
 node bin/rtc-browser-fuzz-novelty-monitor.mjs >> '$BASE/logs/monitor.log' 2>&1
 code=\$?
 stamp=\$(date -u +%Y-%m-%dT%H:%M:%SZ)
