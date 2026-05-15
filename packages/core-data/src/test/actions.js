@@ -1345,7 +1345,7 @@ describe( 'saveEntityRecord', () => {
 		expect( result ).toBe( staleSaveResponse );
 	} );
 
-	it( 'preserves live sync content from CRDT blocks when a normal save response returns stale post fields', async () => {
+	it( 'does not write stale normal save response content when CRDT blocks are current', async () => {
 		const persistedRecord = {
 			id: 10,
 			title: 'checkpoint title 8',
@@ -1371,12 +1371,13 @@ describe( 'saveEntityRecord', () => {
 			},
 			meta: { _crdt_document: 'fresh-crdt-doc' },
 		};
-		const guardedSaveResponse = {
-			...staleSaveResponse,
-			content: {
-				raw: post.content,
-				rendered: post.content,
+		const syncSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 9',
+				rendered: 'checkpoint title 9',
 			},
+			meta: { _crdt_document: 'fresh-crdt-doc' },
 		};
 		const configs = [
 			{
@@ -1411,7 +1412,7 @@ describe( 'saveEntityRecord', () => {
 		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
 			'postType',
 			'post',
-			guardedSaveResponse,
+			staleSaveResponse,
 			undefined,
 			true,
 			post
@@ -1419,7 +1420,7 @@ describe( 'saveEntityRecord', () => {
 		expect( syncManager.update ).toHaveBeenCalledWith(
 			'postType/post',
 			10,
-			guardedSaveResponse,
+			syncSaveResponse,
 			'gutenberg-undo-ignored',
 			{ isSave: true }
 		);
