@@ -1029,6 +1029,19 @@ function findStrictYBlockIndex( yblocks: YBlocks, block: Block ): number {
 	return -1;
 }
 
+function findYBlockIndexByClientId(
+	yblocks: YBlocks,
+	clientId: string
+): number {
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
 function mergeYBlocksLocalSuffixAppend(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
@@ -1071,11 +1084,98 @@ function mergeYBlocksLocalSuffixAppend(
 	}
 }
 
-function mergeYBlocksLocalChanges(
+function mergeYBlocksStaleBaseDelete(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
 	baseBlocks: Block[],
 	attributeCursor: MergeCursorPosition
+): boolean {
+	if (
+		blocksToSync.length === 0 ||
+		blocksToSync.length >= baseBlocks.length
+	) {
+		return false;
+	}
+
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if ( ! baseClientIds || ! incomingClientIds ) {
+		return false;
+	}
+
+	let baseIndex = 0;
+	const incomingMatches: Array< { block: Block; baseBlock: Block } > = [];
+
+	for (
+		let incomingIndex = 0;
+		incomingIndex < blocksToSync.length;
+		incomingIndex++
+	) {
+		const incomingClientId = incomingClientIds[ incomingIndex ];
+		const matchedBaseIndex = baseClientIds.indexOf(
+			incomingClientId,
+			baseIndex
+		);
+
+		if ( matchedBaseIndex === -1 ) {
+			return false;
+		}
+
+		incomingMatches.push( {
+			block: blocksToSync[ incomingIndex ],
+			baseBlock: baseBlocks[ matchedBaseIndex ],
+		} );
+		baseIndex = matchedBaseIndex + 1;
+	}
+
+	const incomingClientIdSet = new Set( incomingClientIds );
+	if (
+		incomingClientIds.some(
+			( clientId ) =>
+				findYBlockIndexByClientId( yblocks, clientId ) === -1
+		)
+	) {
+		return false;
+	}
+
+	const deleteIndexes = baseClientIds
+		.filter( ( clientId ) => ! incomingClientIdSet.has( clientId ) )
+		.map( ( clientId ) => findYBlockIndexByClientId( yblocks, clientId ) )
+		.filter( ( index ) => index !== -1 )
+		.sort( ( a, b ) => b - a );
+
+	for ( const deleteIndex of deleteIndexes ) {
+		yblocks.delete( deleteIndex, 1 );
+	}
+
+	for ( const { block, baseBlock } of incomingMatches ) {
+		const currentIndex = findYBlockIndexByClientId(
+			yblocks,
+			getBlockClientId( baseBlock )!
+		);
+
+		if ( currentIndex === -1 ) {
+			return false;
+		}
+
+		mergeBlockIntoYBlock(
+			yblocks.get( currentIndex ),
+			block,
+			attributeCursor,
+			baseBlock
+		);
+	}
+
+	return true;
+}
+
+function mergeYBlocksLocalChanges(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition,
+	hasExplicitBaseBlocks: boolean
 ): boolean {
 	if ( fastDeepEqual( blocksToSync, baseBlocks ) ) {
 		return true;
@@ -1090,6 +1190,18 @@ function mergeYBlocksLocalChanges(
 		blocksToSync.length === baseBlocks.length
 	) {
 		return false;
+	}
+
+	if (
+		hasExplicitBaseBlocks &&
+		mergeYBlocksStaleBaseDelete(
+			yblocks,
+			blocksToSync,
+			baseBlocks,
+			attributeCursor
+		)
+	) {
+		return true;
 	}
 
 	mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks );
@@ -1159,6 +1271,7 @@ export function mergeCrdtBlocks(
 	const explicitBaseBlocksToSync = baseBlocks
 		? makeBlocksSerializable( baseBlocks )
 		: undefined;
+	const hasExplicitBaseBlocks = !! explicitBaseBlocksToSync;
 	const baseBlocksToSync =
 		explicitBaseBlocksToSync ?? previousLocalBlocksCache.get( yblocks );
 
@@ -1168,7 +1281,8 @@ export function mergeCrdtBlocks(
 			yblocks,
 			blocksToSync,
 			baseBlocksToSync,
-			attributeCursor
+			attributeCursor,
+			hasExplicitBaseBlocks
 		)
 	) {
 		removeDuplicateClientIds( yblocks );
