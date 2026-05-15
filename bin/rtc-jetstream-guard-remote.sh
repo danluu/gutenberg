@@ -98,6 +98,9 @@ restart_pool() {
 		focused-gap)
 			/tmp/start_rtc_focused_gap_codex_loop.sh >> "$LOG_DIR/focused-gap-start.log" 2>&1 || log "focused gap loop start failed"
 			;;
+		asserts)
+			/tmp/start_rtc_fuzz_only_asserts_loop.sh >> "$LOG_DIR/fuzz-only-asserts-start.log" 2>&1 || log "fuzz-only asserts loop start failed"
+			;;
 	esac
 }
 
@@ -129,6 +132,10 @@ run_loop() {
 			restart_pool focused "missing focused-shards tmux session"
 		elif ! has_session rtc-focused-shards-gap-codex-loop; then
 			restart_pool focused-gap "missing focused Codex gap loop"
+		fi
+
+		if ! has_session rtc-fuzz-only-asserts-loop; then
+			restart_pool asserts "missing fuzz-only assertion loop"
 		fi
 
 		sleep 120
