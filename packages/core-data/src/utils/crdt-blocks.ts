@@ -2001,6 +2001,68 @@ function mergeYBlocksLocalInsertionsByClientId(
 	return true;
 }
 
+function mergeYBlocksLocalDeletionsByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): boolean {
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if (
+		! currentClientIds ||
+		! baseClientIds ||
+		! incomingClientIds ||
+		incomingClientIds.length >= baseClientIds.length
+	) {
+		return false;
+	}
+
+	const currentSet = new Set( currentClientIds );
+	const baseSet = new Set( baseClientIds );
+	const incomingSet = new Set( incomingClientIds );
+
+	if (
+		! baseClientIds.every( ( clientId ) => currentSet.has( clientId ) ) ||
+		! incomingClientIds.every( ( clientId ) => baseSet.has( clientId ) ) ||
+		! areKeysInOrder( baseClientIds, currentClientIds ) ||
+		! areKeysInOrder( incomingClientIds, baseClientIds )
+	) {
+		return false;
+	}
+
+	let deletedLocalBlock = false;
+	for ( let index = yblocks.length - 1; index >= 0; index-- ) {
+		const clientId = getYBlockClientId( yblocks.get( index ) );
+
+		if (
+			clientId &&
+			baseSet.has( clientId ) &&
+			! incomingSet.has( clientId )
+		) {
+			yblocks.delete( index, 1 );
+			deletedLocalBlock = true;
+		}
+	}
+
+	if ( ! deletedLocalBlock ) {
+		return false;
+	}
+
+	mergeYBlocksByClientId(
+		yblocks,
+		blocksToSync,
+		attributeCursor,
+		baseBlocks
+	);
+	return true;
+}
+
 function isOrderedSubsequence(
 	candidateKeys: string[],
 	baseKeys: string[]
@@ -3834,6 +3896,17 @@ function mergeYBlocksLocalChanges(
 			attributeCursor,
 			baseBlocks
 		);
+		return { handled: true, guardedSkip: false };
+	}
+
+	if (
+		mergeYBlocksLocalDeletionsByClientId(
+			yblocks,
+			blocksToSync,
+			baseBlocks,
+			attributeCursor
+		)
+	) {
 		return { handled: true, guardedSkip: false };
 	}
 
