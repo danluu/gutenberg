@@ -65,9 +65,24 @@ function paragraph( clientId: string, content: string ): Block {
 	};
 }
 
+function table( clientId: string ): Block {
+	return {
+		name: 'core/table',
+		clientId,
+		attributes: {},
+		innerBlocks: [],
+	};
+}
+
 function contentsOf( yblocks: YBlocks ): string[] {
 	return ( yblocks.toJSON() as Block[] ).map(
 		( block ) => block.attributes.content as string
+	);
+}
+
+function blockIdentityLabels( yblocks: YBlocks ): string[] {
+	return ( yblocks.toJSON() as Block[] ).map(
+		( block ) => `${ block.name }:${ block.clientId }`
 	);
 }
 
@@ -216,6 +231,115 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 
 		remoteDoc.destroy();
+	} );
+
+	it( 'applies a stale local top-level delete while preserving a remote append', () => {
+		const baseBlocks = [
+			paragraph( 'alpha', 'Alpha' ),
+			paragraph( 'deleted', 'Deleted' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, baseBlocks, null );
+
+		const currentBlocks = [
+			...baseBlocks,
+			paragraph( 'remote-appended', 'Remote' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Deleted',
+			'Tail',
+			'Remote',
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[ paragraph( 'alpha', 'Alpha' ), paragraph( 'tail', 'Tail' ) ],
+			null,
+			baseBlocks
+		);
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Tail',
+			'Remote',
+		] );
+	} );
+
+	it( 'applies a stale local trailing table delete while preserving a remote append', () => {
+		const baseBlocks = [ paragraph( 'alpha', 'Alpha' ), table( 'table' ) ];
+		mergeCrdtBlocks( yblocks, baseBlocks, null );
+
+		const currentBlocks = [
+			...baseBlocks,
+			paragraph( 'remote-appended', 'Remote' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		expect( blockIdentityLabels( yblocks ) ).toEqual( [
+			'core/paragraph:alpha',
+			'core/table:table',
+			'core/paragraph:remote-appended',
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[ paragraph( 'alpha', 'Alpha' ) ],
+			null,
+			baseBlocks
+		);
+
+		expect( blockIdentityLabels( yblocks ) ).toEqual( [
+			'core/paragraph:alpha',
+			'core/paragraph:remote-appended',
+		] );
+	} );
+
+	it( 'applies a stale local top-level delete through the post CRDT adapter', () => {
+		const baseBlocks = [
+			paragraph( 'alpha', 'Alpha' ),
+			paragraph( 'deleted', 'Deleted' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: baseBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const currentBlocks = [
+			...baseBlocks,
+			paragraph( 'remote-appended', 'Remote' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: currentBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Deleted',
+			'Tail',
+			'Remote',
+		] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: [
+					paragraph( 'alpha', 'Alpha' ),
+					paragraph( 'tail', 'Tail' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: baseBlocks } }
+		);
+
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha',
+			'Tail',
+			'Remote',
+		] );
 	} );
 
 	it( 'derives post content from merged blocks instead of stale serialized content', () => {
