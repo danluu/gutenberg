@@ -37,6 +37,85 @@ function isStaleCRDTDocumentError( error ) {
 	);
 }
 
+const POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE = '_crdt_document';
+const GUARDED_CRDT_SAVE_RESPONSE_FIELDS = [ 'title', 'excerpt', 'content' ];
+
+function hasOwnProperty( object, key ) {
+	return Object.prototype.hasOwnProperty.call( object ?? {}, key );
+}
+
+function getPersistedCRDTDocument( record ) {
+	return record?.meta?.[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ];
+}
+
+function isNonEmptyPersistedCRDTDocument( value ) {
+	return typeof value === 'string' && value !== '';
+}
+
+function getRawSaveResponseFieldValue( value ) {
+	return value && typeof value === 'object' && 'raw' in value
+		? value.raw
+		: value;
+}
+
+function saveResponseContradictsEdits( edits, updatedRecord ) {
+	for ( const key of GUARDED_CRDT_SAVE_RESPONSE_FIELDS ) {
+		if (
+			hasOwnProperty( edits, key ) &&
+			hasOwnProperty( updatedRecord, key ) &&
+			! fastDeepEqual(
+				getRawSaveResponseFieldValue( edits[ key ] ),
+				getRawSaveResponseFieldValue( updatedRecord[ key ] )
+			)
+		) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+function getGuardedCRDTDocumentSaveResponseRecord(
+	baseRecord,
+	edits,
+	updatedRecord
+) {
+	const editCRDTDocument = getPersistedCRDTDocument( edits );
+	if (
+		! isNonEmptyPersistedCRDTDocument( editCRDTDocument ) ||
+		! updatedRecord ||
+		typeof updatedRecord !== 'object'
+	) {
+		return updatedRecord;
+	}
+
+	const responseCRDTDocument = getPersistedCRDTDocument( updatedRecord );
+	const baseCRDTDocument = getPersistedCRDTDocument( baseRecord );
+	const responseClearedCRDTDocument =
+		responseCRDTDocument === undefined ||
+		responseCRDTDocument === null ||
+		responseCRDTDocument === '';
+	const responseKeptBaseCRDTDocument =
+		isNonEmptyPersistedCRDTDocument( baseCRDTDocument ) &&
+		responseCRDTDocument === baseCRDTDocument &&
+		responseCRDTDocument !== editCRDTDocument;
+
+	if (
+		( ! responseClearedCRDTDocument && ! responseKeptBaseCRDTDocument ) ||
+		saveResponseContradictsEdits( edits, updatedRecord )
+	) {
+		return updatedRecord;
+	}
+
+	return {
+		...updatedRecord,
+		meta: {
+			...( updatedRecord.meta ?? {} ),
+			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: editCRDTDocument,
+		},
+	};
+}
+
 /**
  * Returns an action object used in signalling that authors have been received.
  * Ignored from documentation as it's internal to the data store.
@@ -797,10 +876,8 @@ export const saveEntityRecord =
 						return edits;
 					};
 
-					let edits = await prepareEdits(
-						persistedRecord,
-						record
-					);
+					let edits = await prepareEdits( persistedRecord, record );
+					let saveResponseBaseRecord = persistedRecord;
 					try {
 						updatedRecord = await __unstableFetch( {
 							path,
@@ -848,16 +925,24 @@ export const saveEntityRecord =
 							latestRecord,
 							mergedRecord
 						);
+						saveResponseBaseRecord = latestRecord;
 						updatedRecord = await __unstableFetch( {
 							path,
 							method: 'PUT',
 							data: edits,
 						} );
 					}
+					const receivedRecord = entityConfig.syncConfig
+						? getGuardedCRDTDocumentSaveResponseRecord(
+								saveResponseBaseRecord,
+								edits,
+								updatedRecord
+						  )
+						: updatedRecord;
 					dispatch.receiveEntityRecords(
 						kind,
 						name,
-						updatedRecord,
+						receivedRecord,
 						undefined,
 						true,
 						edits
@@ -868,7 +953,7 @@ export const saveEntityRecord =
 						getSyncManager()?.update(
 							`${ kind }/${ name }`,
 							recordId,
-							__unstableSkipSyncUpdate ? {} : updatedRecord,
+							__unstableSkipSyncUpdate ? {} : receivedRecord,
 							LOCAL_UNDO_IGNORED_ORIGIN,
 							{ isSave: true }
 						);
