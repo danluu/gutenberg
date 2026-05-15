@@ -107,7 +107,14 @@ lib/compat/wordpress-7.0/class-gutenberg-rest-autosaves-controller.php
 
 ## How The Bug Was Introduced
 
-This is the best current causality chain. It is not a formal bisect.
+This is the best current causality chain. A direct historical Playwright bisect is
+not a reliable proof vehicle for this bug because the current repro spec is a
+diagnostic artifact, not a hard-failing test; the local WebSocket harness was
+added after parts of the relevant history; the repro is timing-sensitive; and the
+untracked repro depends on current fixture APIs. The stronger proof is the code
+transition below: #75841 changes the RTC persistence callback from "save current
+unsaved edits" to "save the whole current edited entity record", while the sync
+manager already calls that callback from reload/rejoin CRDT persistence paths.
 
 | Change | Link | Role |
 | --- | --- | --- |
@@ -126,6 +133,59 @@ This is the best current causality chain. It is not a formal bisect.
 | Attach observers after persisted CRDT hydration | [#77966](https://github.com/WordPress/gutenberg/pull/77966), [61c1dded0c8f69f1d7c5dd1bdcdaab4b1e6fcbf3](https://github.com/WordPress/gutenberg/commit/61c1dded0c8f69f1d7c5dd1bdcdaab4b1e6fcbf3) | Related hydration-order fix. |
 
 The likely introduction is not "local autosave was added". The older local autosave system became dangerous when RTC added persisted CRDT state and later full-record CRDT persistence saves. The most suspicious transition is #75841: reload/rejoin can ask core-data to persist a CRDT document by saving the current edited record, while the current edited record may still reflect a pre-hydration or stale browser-local snapshot.
+
+## Introduction Proof
+
+`ea2cfb87be4a91c9de5ce6430d1cda9ff9d0553c` / [#75841](https://github.com/WordPress/gutenberg/pull/75841) is the sharp introduction point for this specific persisted stale/prefix-content failure mode.
+
+Immediately before #75841, the core-data handler used by the sync manager saved only the entity's unsaved edits:
+
+```js
+// ea2cfb87be4^:packages/core-data/src/resolvers.js
+saveRecord: () => {
+	dispatch.saveEditedEntityRecord( kind, name, key );
+},
+```
+
+In #75841, the same handler changed to resolve the current edited entity record and save it as a full entity:
+
+```js
+// ea2cfb87be4:packages/core-data/src/resolvers.js
+saveRecord: () => {
+	resolveSelect
+		.getEditedEntityRecord( kind, name, key )
+		.then( ( editedRecord ) => {
+			dispatch.saveEntityRecord( kind, name, editedRecord );
+		} );
+},
+```
+
+That is not a naming-only change. In core-data, `getEditedEntityRecord` returns the raw record merged with current edits, and `saveEntityRecord` sends that record as the save request body. By contrast, `saveEditedEntityRecord` computes non-transient edits and saves only `{ id, ...edits }`.
+
+The sync manager already calls this callback from the persisted CRDT load path. If no persisted CRDT doc exists, or if the persisted doc is invalidated against the current record, it applies record changes to the Y.Doc and invokes `handlers.saveRecord()`. That path is reached by a newly joining or refreshing editor. Therefore:
+
+1. #72373 introduced the persisted CRDT reload/rejoin path and made the class of bug possible.
+2. Before #75841, that path could only ask core-data to save current unsaved edits.
+3. #75841 changed the callback to save the whole current edited entity record, whether or not there were unsaved edits.
+4. #76311 later renamed the callback to `persistCRDTDoc` and retained the same full-record `saveEntityRecord( ..., editedRecord )` behavior.
+5. The no-fault repro shows exactly the resulting failure: after local autosave, reload/rejoin, and another normal edit, both editors can show the step-5 paragraph while REST persists older full-record content that does not include step 5.
+
+Commands that prove the relevant transition:
+
+```sh
+git show ea2cfb87be4^:packages/core-data/src/resolvers.js | nl -ba | sed -n '232,235p'
+git show ea2cfb87be4:packages/core-data/src/resolvers.js | nl -ba | sed -n '232,244p'
+git show 22e3d7f93663:packages/core-data/src/resolvers.js | nl -ba | sed -n '239,258p'
+git show ea2cfb87be4^:packages/sync/src/manager.ts | nl -ba | sed -n '479,485p'
+```
+
+The old local autosave commits are not the introduction point:
+
+- [#16490](https://github.com/WordPress/gutenberg/pull/16490) / `e99c21244741cba21b9dfab1cc90951b7ed2524f` added browser `sessionStorage` local autosave.
+- [#17501](https://github.com/WordPress/gutenberg/pull/17501) / `3e43bccd1b51f11f6acf7f8eea5f70e3753444d5` separated local autosave helpers and remote/local autosave behavior.
+- [#23928](https://github.com/WordPress/gutenberg/pull/23928) / `95e4f3f06a449b9f8dd44654b5f9443c465ba354` added auto-draft key behavior.
+
+Those commits added a single-user recovery mechanism. They did not have RTC persisted CRDT state, reload/rejoin CRDT reconciliation, or the full edited-record persistence callback. They are trigger/enabler context for this repro, not the introduction of the RTC corruption bug.
 
 ## Initial Fix Plan
 
