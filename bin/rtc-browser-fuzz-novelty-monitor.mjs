@@ -3418,6 +3418,9 @@ async function runPass() {
 		triageYield,
 		await readJsonFile( path.join( OUTPUT_DIR, 'supervisor-state.json' ) )
 	);
+	if ( shutdownRequested ) {
+		return;
+	}
 	if ( START_SUPERVISOR ) {
 		await ensureSupervisor( resources );
 	} else if ( ! state.supervisorStartDisabledLoggedAt ) {
@@ -3430,6 +3433,9 @@ async function runPass() {
 		await log(
 			'Supervisor start disabled; monitor is running in coverage-guidance/watch-only mode.'
 		);
+	}
+	if ( shutdownRequested ) {
+		return;
 	}
 	await maybeLaunchCoverageCodex( guidance );
 	state.lastUpdatedAt = new Date().toISOString();

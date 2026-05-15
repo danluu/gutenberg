@@ -9,9 +9,20 @@ log="$BASE/logs/cleanup.log"
 
 printf '[%s] cleanup coverage-guided stale processes\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$log"
 
-for sess in rtc-coverage-guided-novelty rtc-coverage-guided-supervisor; do
-	tmux kill-session -t "$sess" 2>/dev/null || true
+kill_tmux_session() {
+	local sess="$1"
+	if /usr/bin/tmux -L rtc-fuzz has-session -t "$sess" 2>/dev/null; then
+		printf '[%s] kill tmux session=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$sess" >> "$log"
+		/usr/bin/tmux -L rtc-fuzz kill-session -t "$sess" 2>/dev/null || true
+	fi
+}
+
+for sess in rtc-coverage-guided-watchdog rtc-coverage-guided-novelty; do
+	kill_tmux_session "$sess"
 done
+
+sleep 5
+kill_tmux_session rtc-coverage-guided-supervisor
 
 patterns='bin/rtc-browser-fuzz-runner.mjs|collaboration-fuzz.spec.ts|wp-scripts test-playwright|@playwright/test/cli.js|packages/scripts/scripts/test-playwright.js'
 pids=$(pgrep -f "$patterns" || true)
