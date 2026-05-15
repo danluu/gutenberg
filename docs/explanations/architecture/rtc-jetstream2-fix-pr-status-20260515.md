@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-15T20:51:41Z`
+Snapshot time: `2026-05-15T21:18:21Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -27,10 +27,11 @@ Current state:
 - `40/40` fix-planning iterations completed on Jetstream2.
 - Most production branches are source-local and touch two files: one product
   file and one focused test file.
-- The original fix-planning branch refs plus the new PR 6A / PR 7A / PR 7B
-  review refs have been exported from Jetstream2 and pushed to the `danluu`
-  remote. These pushed refs are **provenance refs only**, not PR-ready branch
-  heads. Most still include a shared historical RTC integration stack.
+- The original `fix/rtc-*` and `shape/rtc-*` fix-planning branch refs have
+  been exported from Jetstream2 and pushed to the `danluu` remote as provenance
+  refs. Clean GitHub-facing review refs now also exist under `review/rtc-*`.
+  Use the compare links in "Clean Review Branch Links" below, not the old
+  provenance branch URLs.
 - Some earlier local/GitHub-facing `try/*-pr` branches already exist and should
   be reused as prior art or tests, but several are stacked or too broad against
   trunk and should not be filed as-is.
@@ -96,14 +97,11 @@ Examples:
 | `shape/rtc-save-response-actions-guard` | 54 | 59 | `30dedab0e83 Guard RTC base-version save responses` |
 | `shape/rtc-save-response-manager-base-record` | 56 | 59 | `53043dedb8e Filter stale base-record RTC title updates` |
 
-So the previous pushed-branch table should be read only as a map of source
-commits produced by the Jetstream2 fix-planning loop. The actual PR branches
-still need to be built by extracting the branch-specific commits, replaying them
-onto the intended upstream base or ordered stack, dropping the shared historical
-integration commits, and rerunning focused tests plus combined fuzz validation.
-
-Until those cleaned branches exist, the proposed PR split is a plan and source
-inventory, not a usable GitHub PR branch set.
+So the old pushed-branch table should be read only as a map of source commits
+produced by the Jetstream2 fix-planning loop. The cleaned review heads have now
+been pushed under `review/rtc-*`; they are linked below as compare URLs against
+their intended base branch. The remaining work is focused test/fuzz validation,
+not branch extraction.
 
 ## Cycle 6 Review Update
 
@@ -122,7 +120,11 @@ Observed live branch problem:
   provenance or review source-retirement and identity-smear changes on the
   wrong base.
 
-Required queue change before the next filing/review cycle:
+This has been corrected for the GitHub-facing `review/rtc-*` refs linked below.
+The older live `shape/rtc-crdt-pr13*` heads on Jetstream2 remain provenance refs
+and should still not be filed as-is.
+
+Required queue change before filing from the older Jetstream2 shaped refs:
 
 1. Restack from `shape/rtc-crdt-pr12-previous-local`.
 2. Create `shape/rtc-crdt-pr13a-observed-delete-provenance` from
@@ -151,18 +153,17 @@ split below optimizes for reviewability over minimizing the number of PRs.
 
 When a proposed PR lists more than one branch, it does **not** mean GitHub would
 file one pull request with multiple head branches. GitHub PRs still have one
-head branch. The extra branch links are source branches from the Jetstream2
-fix-planning loop that should be used as inputs when building the final review
-branch.
+head branch. The older extra branch links are source branches from the
+Jetstream2 fix-planning loop; the corrected `review/rtc-*` links below are the
+actual one-head review refs or explicit stacked review refs.
 
 There are three cases in this report:
 
-- **Single-branch PRs**: the listed branch is expected to become the PR branch
-  after export, rebase, cleanup, and focused validation.
-- **Grouped fix branches**: several small branches cover adjacent subcases of
-  the same bug family. The intended final PR is one clean branch that combines
-  the compatible pieces, usually as one or a few commits, with duplicate tests
-  collapsed. PR 5, PR 6, PR 13B, and PR 15 mostly fall into this category.
+- **Single-branch PRs**: the listed `review/rtc-*` branch is the current review
+  head.
+- **Grouped fix branches**: several source branches covered adjacent subcases
+  of the same bug family. Those are now represented by one cleaned review head
+  where they combined cleanly, or by explicitly split heads such as PR 15A/B/C.
 - **Stacked-series branches**: the branches are not intended to be squashed into
   one review unless maintainers ask for that. They are an ordered set of
   dependency branches or focused commits that touch the same reconciliation
@@ -170,86 +171,43 @@ There are three cases in this report:
   single consolidated branch if reviewers prefer. PR 11, PR 12, PR 13A/13B/13C,
   PR 14, and PR 15 are the clearest examples.
 
-So "Branches: 5" means "five current source branches inform this proposed PR
-area." Before filing, those branches still need to be exported from Jetstream2,
-rebased onto the intended base, deduplicated, and shaped into one final head
-branch or an explicitly ordered stack.
+## Clean Review Branch Links
 
-## Proposed PR Sizes
+These are the corrected GitHub-facing refs pushed to `danluu`. Each link is a
+compare URL against the intended review base, so it does not show the unrelated
+48-commit RTC handoff stack. `review/rtc-shared-base-20260515` is the common
+base for most branches; PR 7B, PR 11, and parts of PR 13 are intentionally
+stacked on earlier review refs.
 
-Size was measured in the Jetstream2 fix-planning repo at
-`/media/volume/danluu-fuzz-data/rtc-fix-plan-20260514/repo`.
+| Proposed PR | Review ref / compare link | Base | Commits | Files | Diff size |
+| --- | --- | --- | ---: | ---: | --- |
+| PR 1: HTTP polling generated update size guard | [`review/rtc-pr01-http-polling-generated-update-size`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr01-http-polling-generated-update-size) | `review/rtc-shared-base-20260515` | 1 | 2 | +181 / -19 |
+| PR 2: HTTP polling storage read window | [`review/rtc-pr02-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr02-http-polling-storage-read-window) | `review/rtc-shared-base-20260515` | 1 | 2 | +57 / -5 |
+| PR 3: Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr03-revision-restore-crdt-reset) | `review/rtc-shared-base-20260515` | 1 | 2 | +58 / -5 |
+| PR 4: Persisted CRDT save-meta idempotence | [`review/rtc-pr04-crdt-save-meta-idempotence`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr04-crdt-save-meta-idempotence) | `review/rtc-shared-base-20260515` | 1 | 2 | +160 / -1 |
+| PR 5: Parser/entity normalization equivalence | [`review/rtc-pr05-parser-entity-normalization-equivalence`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr05-parser-entity-normalization-equivalence) | `review/rtc-shared-base-20260515` | 4 | 4 | +1664 / -52 |
+| PR 6: Save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr06-save-request-payload-guards) | `review/rtc-shared-base-20260515` | 3 | 4 | +738 / -6 |
+| PR 6A: Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr06a-persisted-empty-content-guard) | `review/rtc-shared-base-20260515` | 1 | 2 | +64 / -1 |
+| PR 7A: Save response entity-state guards | [`review/rtc-pr07a-save-response-actions-guard`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr07a-save-response-actions-guard) | `review/rtc-shared-base-20260515` | 6 | 2 | +1339 / -8 |
+| PR 7B: Save response manager/base-record guards | [`review/rtc-pr07b-save-response-manager-base-record`](https://github.com/danluu/gutenberg/compare/review/rtc-pr07a-save-response-actions-guard...review/rtc-pr07b-save-response-manager-base-record) | `review/rtc-pr07a-save-response-actions-guard` | 2 | 5 | +404 / -8 |
+| PR 8: Reload title and persisted-record hydration | [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr08-title-reload-persisted-record) | `review/rtc-shared-base-20260515` | 1 | 11 | +618 / -61 |
+| PR 9: Core-data lock fairness | [`review/rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr09-store-lock-fairness) | `review/rtc-shared-base-20260515` | 1 | 2 | +185 / -2 |
+| PR 10: CRDT block reconciliation foundation | [`review/rtc-pr10-crdt-block-rebase-foundation`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr10-crdt-block-rebase-foundation) | `review/rtc-shared-base-20260515` | 1 | 2 | +145 / -4 |
+| PR 11: Explicit-base top-level block operations | [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/compare/review/rtc-pr10-crdt-block-rebase-foundation...review/rtc-pr11-explicit-base-top-level-ops) | `review/rtc-pr10-crdt-block-rebase-foundation` | 5 | 2 | +1145 / -4 |
+| PR 12: Previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr12-previous-local-cache-top-level-ops) | `review/rtc-shared-base-20260515` | 4 | 2 | +1391 / -5 |
+| PR 13A: Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr13a-observed-delete-provenance) | `review/rtc-shared-base-20260515` | 1 | 2 | +1171 / -21 |
+| PR 13B: Stale block identity smear guard | [`review/rtc-pr13b-stale-block-identity-smear`](https://github.com/danluu/gutenberg/compare/review/rtc-pr12-previous-local-cache-top-level-ops...review/rtc-pr13b-stale-block-identity-smear) | `review/rtc-pr12-previous-local-cache-top-level-ops` | 1 | 2 | +470 / -39 |
+| PR 13C: Cross-parent source retirement | [`review/rtc-pr13c-cross-parent-source-retirement`](https://github.com/danluu/gutenberg/compare/review/rtc-pr13b-stale-block-identity-smear...review/rtc-pr13c-cross-parent-source-retirement) | `review/rtc-pr13b-stale-block-identity-smear` | 2 | 2 | +1128 / -0 |
+| PR 14: Table body nested array merge | [`review/rtc-pr14-table-body-array-merge`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr14-table-body-array-merge) | `review/rtc-shared-base-20260515` | 1 | 2 | +294 / -18 |
+| PR 15A: Fallback group stale move/reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr15a-fallback-group-move-stale-reorder) | `review/rtc-shared-base-20260515` | 1 | 2 | +123 / -4 |
+| PR 15B: Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr15b-fallback-group-insert-anchor) | `review/rtc-shared-base-20260515` | 1 | 2 | +197 / -4 |
+| PR 15C: Fallback group stale delete | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/compare/review/rtc-shared-base-20260515...review/rtc-pr15c-fallback-group-delete) | `review/rtc-shared-base-20260515` | 1 | 2 | +161 / -4 |
 
-For single-branch PRs, the table is the branch diff. For grouped or stacked
-areas, the table uses the intended review delta after splitting/rebasing:
-additive branch-local insertions/deletions and unique paths across the source
-branches. This is the right number for review planning. It can differ from the
-current as-is branch diff because some branches are stacked on earlier branches
-and include dependency commits when compared directly to the handoff base.
-
-| Proposed PR | Branches | Unique files | Insertions | Deletions |
-| --- | ---: | ---: | ---: | ---: |
-| PR 1: HTTP polling generated update size guard | 1 | 2 | 181 | 19 |
-| PR 2: HTTP polling storage read window | 1 | 2 | 57 | 5 |
-| PR 3: Revision restore CRDT meta reset | 1 | 2 | 58 | 5 |
-| PR 4: Persisted CRDT save-meta idempotence | 1 | 2 | 160 | 1 |
-| PR 5: Parser/entity normalization equivalence | 4 | 4 | 1680 | 68 |
-| PR 6: Save request payload guards | 3 | 4 | 738 | 6 |
-| PR 6A: Persisted empty-content CRDT body guard | 1 | 2 | 64 | 1 |
-| PR 7A: Save response entity-state guards | 1 | 2 | 1339 | 8 |
-| PR 7B: Save response manager/base-record guards | 1 | 5 | 404 | 8 |
-| PR 8: Reload title and persisted-record hydration | 1 | 11 | 618 | 61 |
-| PR 9: Core-data lock fairness | 1 | 2 | 185 | 2 |
-| PR 10: CRDT block reconciliation foundation | 1 | 2 | 145 | 4 |
-| PR 11: Explicit-base top-level block operations | 5 | 2 | 1190 | 16 |
-| PR 12: Previous-local-cache top-level block operations | 3 | 2 | 833 | 6 |
-| PR 13A: Observed-delete top-level provenance | 1 | 2 | 1171 | 21 |
-| PR 13B: Cross-parent source retirement | 3 | 2 | 1687 | 0 |
-| PR 13C: Stale block identity smear guard | 1 | 2 | 470 | 39 |
-| PR 14: Table body nested array merge | 1 | 2 | 294 | 18 |
-| PR 15: Fallback group residual structural fixes | 3 | 2 | 481 | 12 |
-
-The largest remaining review risks by size are PR 13B, PR 5, and PR 7A. The
-former PR 13 is now explicitly split into PR 13A/13B/13C so reviewers can inspect
-observed-delete provenance, cross-parent source retirement, and identity-smear
-protection as separate CRDT invariants. PR 7 has also been split into two
-official review units: actions-side save-response entity-state guarding first,
-then the `SyncManager` / base-record stale-key filtering delta.
-
-## Pushed Branch Links
-
-These are branch refs pushed to the `danluu` remote for the proposed PR split.
-They are **source/provenance refs only**, not PR-ready heads. Most include the
-shared `c173c18fbcd` historical RTC integration base described above, so opening
-PRs directly from these refs would show nearly the same broad diff for many
-entries.
-
-| Proposed PR | Pushed branch links |
-| --- | --- |
-| PR 1: HTTP polling generated update size guard | [`fix/rtc-http-polling-generated-update-size`](https://github.com/danluu/gutenberg/tree/fix/rtc-http-polling-generated-update-size) |
-| PR 2: HTTP polling storage read window | [`fix/rtc-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/tree/fix/rtc-http-polling-storage-read-window) |
-| PR 3: Revision restore CRDT meta reset | [`fix/rtc-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/fix/rtc-revision-restore-crdt-reset) |
-| PR 4: Persisted CRDT save-meta idempotence | [`fix/rtc-crdt-save-meta-churn`](https://github.com/danluu/gutenberg/tree/fix/rtc-crdt-save-meta-churn) |
-| PR 5: Parser/entity normalization equivalence | [`fix/rtc-entity-normalization-save-loop`](https://github.com/danluu/gutenberg/tree/fix/rtc-entity-normalization-save-loop)<br>[`fix/rtc-entity-reference-normalization`](https://github.com/danluu/gutenberg/tree/fix/rtc-entity-reference-normalization)<br>[`fix/rtc-parser-entity-block-equivalence`](https://github.com/danluu/gutenberg/tree/fix/rtc-parser-entity-block-equivalence)<br>[`fix/rtc-preserve-whitespace-linebreak-equivalence`](https://github.com/danluu/gutenberg/tree/fix/rtc-preserve-whitespace-linebreak-equivalence) |
-| PR 6: Save request payload guards | [`fix/rtc-empty-content-crdt-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-empty-content-crdt-guard)<br>[`fix/rtc-stale-save-crdt-raw-fields`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-save-crdt-raw-fields)<br>[`fix/rtc-save-projection-content-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-projection-content-guard) |
-| PR 6A: Persisted empty-content CRDT body guard | [`fix/rtc-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-persisted-empty-content-guard) |
-| PR 7A: Save response entity-state guards | [`shape/rtc-save-response-actions-guard`](https://github.com/danluu/gutenberg/tree/shape/rtc-save-response-actions-guard) |
-| PR 7B: Save response manager/base-record guards | [`shape/rtc-save-response-manager-base-record`](https://github.com/danluu/gutenberg/tree/shape/rtc-save-response-manager-base-record) |
-| PR 8: Reload title and persisted-record hydration | [`fix/rtc-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/fix/rtc-title-reload-persisted-record) |
-| PR 9: Core-data lock fairness | [`fix/rtc-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/fix/rtc-store-lock-fairness) |
-| PR 10: CRDT block reconciliation foundation | [`fix/rtc-crdt-block-rebase`](https://github.com/danluu/gutenberg/tree/fix/rtc-crdt-block-rebase) |
-| PR 11: Explicit-base top-level block operations | [`fix/rtc-stale-base-record-block-append`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-record-block-append)<br>[`fix/rtc-stale-base-block-delete`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-block-delete)<br>[`fix/rtc-stale-base-block-middle-insert`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-block-middle-insert)<br>[`fix/rtc-stale-top-level-move-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-top-level-move-reorder)<br>[`fix/rtc-top-level-insert-anchor-after-delete`](https://github.com/danluu/gutenberg/tree/fix/rtc-top-level-insert-anchor-after-delete) |
-| PR 12: Previous-local-cache top-level block operations | [`fix/rtc-previous-local-cache-block-delete`](https://github.com/danluu/gutenberg/tree/fix/rtc-previous-local-cache-block-delete)<br>[`fix/rtc-previous-local-cache-block-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-previous-local-cache-block-reorder)<br>[`fix/rtc-previous-local-cache-delete-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-previous-local-cache-delete-reorder) |
-| PR 13A: Observed-delete top-level provenance | [`fix/rtc-observed-top-level-delete-provenance`](https://github.com/danluu/gutenberg/tree/fix/rtc-observed-top-level-delete-provenance) |
-| PR 13B: Cross-parent source retirement | [`fix/rtc-cross-parent-move-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-cross-parent-move-source-retirement)<br>[`fix/rtc-current-only-cross-parent-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-current-only-cross-parent-source-retirement)<br>[`fix/rtc-stale-base-cross-parent-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-cross-parent-source-retirement) |
-| PR 13C: Stale block identity smear guard | [`fix/rtc-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-block-identity-smear-guard) |
-| PR 14: Table body nested array merge | [`fix/rtc-table-body-array-stale-local-merge`](https://github.com/danluu/gutenberg/tree/fix/rtc-table-body-array-stale-local-merge) |
-| PR 15: Fallback group residual structural fixes | [`fix/rtc-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-fallback-group-move-stale-reorder)<br>[`fix/rtc-fallback-group-insert-anchor-stale-local`](https://github.com/danluu/gutenberg/tree/fix/rtc-fallback-group-insert-anchor-stale-local)<br>[`fix/rtc-fallback-group-delete-stale-local`](https://github.com/danluu/gutenberg/tree/fix/rtc-fallback-group-delete-stale-local) |
-
-The PR 13 links above are source branches only. The current live shaped
-`shape/rtc-crdt-pr13*` heads on Jetstream2 are intentionally **not** linked
-because cycle 6 found that they put source-retirement before observed-delete
-provenance. Repair that stack before pushing or reviewing shaped PR 13 heads.
+Note on PR 12 / PR 13: `review/rtc-pr12-previous-local-cache-top-level-ops`
+uses the validated source stack that already includes one cross-parent source
+retirement prerequisite (`9324f73ea6d`). The later PR 13B/13C compare links are
+therefore based on PR 12 and show only the additional identity-smear and
+source-retirement deltas.
 
 ### PR 1: HTTP polling generated update size guard
 
@@ -926,68 +884,57 @@ individual branches. Examples include:
 
 What remains before PR filing:
 
-1. Recreate clean PR heads by extracting the branch-specific fix commits from
-   the pushed source refs and replaying them onto the intended upstream base or
-   explicitly ordered stack. Do not file the current `fix/rtc-*` / `shape/rtc-*`
-   source refs directly.
-2. Repair the CRDT PR 13 shaped stack so observed-delete provenance is its own
-   first PR 13 delta after PR 12, then regenerate containment, range-diff, and
-   diff-stat evidence for each adjacent CRDT review delta.
+1. Treat the `review/rtc-*` compare links above as the current review heads.
+   Do not file the old `fix/rtc-*` / `shape/rtc-*` provenance refs directly.
+2. Regenerate containment, range-diff, and diff-stat evidence for each adjacent
+   stacked review delta before opening PRs.
 3. Drop analysis-only artifacts and keep only product code plus focused tests.
-4. Run focused tests for every branch after rebase.
-5. Build a fresh combined validation stack from the final branches.
+4. Run focused tests for every review ref.
+5. Build a fresh combined validation stack from the final review refs.
 6. Run the Jetstream2 coverage-guided and focused fuzz lanes on that final
    stack; block PR filing if new visible likely-real failures appear.
 7. Resolve or explicitly defer the evidence-only gaps above.
 
 ## Current Recommendation
 
-Do not file a single PR and do not file the large stacked `*-stock-repro-pr`
-branches as-is. File the small independent branches first:
+Do not file a single PR and do not file the old provenance branches as-is. File
+or review the corrected `review/rtc-*` refs in this order.
+
+File the small independent branches first:
 
 ```text
-fix/rtc-http-polling-generated-update-size
-fix/rtc-http-polling-storage-read-window
-fix/rtc-revision-restore-crdt-reset
-fix/rtc-crdt-save-meta-churn
-fix/rtc-entity-normalization-save-loop
-fix/rtc-entity-reference-normalization
-fix/rtc-empty-content-crdt-guard
-fix/rtc-stale-save-crdt-raw-fields
-fix/rtc-persisted-empty-content-guard
-fix/rtc-store-lock-fairness
+review/rtc-pr01-http-polling-generated-update-size
+review/rtc-pr02-http-polling-storage-read-window
+review/rtc-pr03-revision-restore-crdt-reset
+review/rtc-pr04-crdt-save-meta-idempotence
+review/rtc-pr05-parser-entity-normalization-equivalence
+review/rtc-pr06-save-request-payload-guards
+review/rtc-pr06a-persisted-empty-content-guard
+review/rtc-pr09-store-lock-fairness
 ```
 
 Then file the save-response and title/reload branches:
 
 ```text
-shape/rtc-save-response-actions-guard
-shape/rtc-save-response-manager-base-record
-fix/rtc-title-reload-persisted-record
+review/rtc-pr07a-save-response-actions-guard
+review/rtc-pr07b-save-response-manager-base-record
+review/rtc-pr08-title-reload-persisted-record
 ```
 
 Then file the CRDT block-reconciliation series as an explicitly ordered stack,
 because those branches touch the same core file and have overlapping tests:
 
 ```text
-fix/rtc-crdt-block-rebase
-fix/rtc-stale-base-record-block-append
-fix/rtc-stale-base-block-delete
-fix/rtc-stale-base-block-middle-insert
-fix/rtc-previous-local-cache-block-delete
-fix/rtc-previous-local-cache-block-reorder
-fix/rtc-previous-local-cache-delete-reorder
-fix/rtc-observed-top-level-delete-provenance
-fix/rtc-cross-parent-move-source-retirement
-fix/rtc-current-only-cross-parent-source-retirement
-fix/rtc-stale-base-cross-parent-source-retirement
-fix/rtc-stale-block-identity-smear-guard
-fix/rtc-stale-top-level-move-reorder
-fix/rtc-top-level-insert-anchor-after-delete
-fix/rtc-table-body-array-stale-local-merge
-fix/rtc-fallback-group-move-stale-reorder
-fix/rtc-fallback-group-insert-anchor-stale-local
-fix/rtc-fallback-group-delete-stale-local
+review/rtc-pr10-crdt-block-rebase-foundation
+review/rtc-pr11-explicit-base-top-level-ops
+review/rtc-pr12-previous-local-cache-top-level-ops
+review/rtc-pr13a-observed-delete-provenance
+review/rtc-pr13b-stale-block-identity-smear
+review/rtc-pr13c-cross-parent-source-retirement
+review/rtc-pr14-table-body-array-merge
+review/rtc-pr15a-fallback-group-move-stale-reorder
+review/rtc-pr15b-fallback-group-insert-anchor
+review/rtc-pr15c-fallback-group-delete
 ```
 
 This ordering keeps low-risk, independent fixes moving while the shared
