@@ -1226,6 +1226,15 @@ export const saveEntityRecord =
 								recordId
 							) );
 					}
+					const shouldHydrateFromSavedCRDTDocument =
+						entityConfig.syncConfig &&
+						! __unstableSkipSyncUpdate &&
+						recordId &&
+						syncManager?.hydrateRecordFromPersistedCRDTDoc &&
+						isSaveResponseForPersistedCRDTDocument(
+							edits,
+							receiveRecord
+						);
 					dispatch.receiveEntityRecords(
 						kind,
 						name,
@@ -1234,6 +1243,18 @@ export const saveEntityRecord =
 						true,
 						edits
 					);
+					if ( shouldHydrateFromSavedCRDTDocument ) {
+						try {
+							await syncManager.hydrateRecordFromPersistedCRDTDoc(
+								objectType,
+								recordId,
+								receiveRecord
+							);
+						} catch {
+							// The save already succeeded; a hydration failure should not
+							// turn it into an editor-visible save error.
+						}
+					}
 					if ( entityConfig.syncConfig ) {
 						// Use an untracked origin so that the save
 						// response does not create undo levels.

@@ -866,8 +866,9 @@ export function createSyncManager( debug = false ): SyncManager {
 	/**
 	 * Create object meta to persist the CRDT document in the entity record.
 	 *
-	 * @param {ObjectType} objectType Object type.
-	 * @param {ObjectID}   objectId   Object ID.
+	 * @param {ObjectType}                    objectType Object type.
+	 * @param {ObjectID}                      objectId   Object ID.
+	 * @param {CreatePersistedCRDTDocOptions} options    Options.
 	 */
 	async function createPersistedCRDTDoc(
 		objectType: ObjectType,
@@ -948,6 +949,56 @@ export function createSyncManager( debug = false ): SyncManager {
 		);
 	}
 
+	async function hydrateRecordFromPersistedCRDTDoc(
+		objectType: ObjectType,
+		objectId: ObjectID,
+		record: ObjectData
+	): Promise< boolean > {
+		const entityId = getEntityId( objectType, objectId );
+		const entityState = entityStates.get( entityId );
+		const previousStateVector = entityState?.ydoc
+			? Y.encodeStateVector( entityState.ydoc )
+			: null;
+
+		if ( ! entityState ) {
+			log(
+				'hydrateRecordFromPersistedCRDTDoc',
+				'no entity state',
+				entityId
+			);
+			return false;
+		}
+
+		const serialized =
+			entityState.syncConfig.getPersistedCRDTDoc?.( record );
+		const tempDoc = serialized ? deserializeCrdtDoc( serialized ) : null;
+
+		if ( tempDoc ) {
+			const update = Y.encodeStateAsUpdateV2( tempDoc );
+			Y.applyUpdateV2( entityState.ydoc, update );
+			tempDoc.destroy();
+		} else {
+			log(
+				'hydrateRecordFromPersistedCRDTDoc',
+				'no persisted doc',
+				entityId
+			);
+		}
+
+		await internal.hydrateRecordFromCrdtDoc( objectType, objectId );
+
+		// Hydration can schedule local store updates. Yield so callers that
+		// immediately inspect the record see the completed merge.
+		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+		const nextStateVector = Y.encodeStateVector( entityState.ydoc );
+
+		return !! (
+			previousStateVector &&
+			! areUint8ArraysEqual( previousStateVector, nextStateVector )
+		);
+	}
+
 	function getCRDTRecordData(
 		objectType: ObjectType,
 		objectId: ObjectID
@@ -971,6 +1022,9 @@ export function createSyncManager( debug = false ): SyncManager {
 	return {
 		applyPersistedCRDTDoc: debugWrap( applyPersistedCRDTDoc ),
 		createPersistedCRDTDoc: debugWrap( createPersistedCRDTDoc ),
+		hydrateRecordFromPersistedCRDTDoc: debugWrap(
+			hydrateRecordFromPersistedCRDTDoc
+		),
 		getCRDTRecordData: debugWrap( getCRDTRecordData ),
 		getAwareness,
 		load: debugWrap( loadEntity ),
