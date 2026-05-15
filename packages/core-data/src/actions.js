@@ -8,7 +8,7 @@ import { v4 as uuid } from 'uuid';
  * WordPress dependencies
  */
 import apiFetch from '@wordpress/api-fetch';
-import { __unstableSerializeAndClean } from '@wordpress/blocks';
+import { __unstableSerializeAndClean, parse } from '@wordpress/blocks';
 import { addQueryArgs } from '@wordpress/url';
 import deprecated from '@wordpress/deprecated';
 
@@ -108,15 +108,47 @@ function getPersistedCRDTDocument( record ) {
 	return record?.meta?._crdt_document;
 }
 
+function parsePersistedCRDTDocumentMetadata( serialized ) {
+	if ( typeof serialized !== 'string' ) {
+		return null;
+	}
+
+	try {
+		const parsed = JSON.parse( serialized );
+
+		return {
+			baseVersion:
+				typeof parsed?.baseVersion === 'string'
+					? parsed.baseVersion
+					: null,
+			version:
+				typeof parsed?.version === 'string' ? parsed.version : null,
+		};
+	} catch {
+		return null;
+	}
+}
+
 function isSaveResponseForPersistedCRDTDocument( edits, updatedRecord ) {
 	const editCRDTDocument = getPersistedCRDTDocument( edits );
+	const responseCRDTDocument = getPersistedCRDTDocument( updatedRecord );
 
-	return (
-		editCRDTDocument !== undefined &&
-		fastDeepEqual(
-			getPersistedCRDTDocument( updatedRecord ),
-			editCRDTDocument
-		)
+	if ( editCRDTDocument === undefined ) {
+		return false;
+	}
+
+	if ( fastDeepEqual( responseCRDTDocument, editCRDTDocument ) ) {
+		return true;
+	}
+
+	const editMetadata =
+		parsePersistedCRDTDocumentMetadata( editCRDTDocument );
+	const responseMetadata =
+		parsePersistedCRDTDocumentMetadata( responseCRDTDocument );
+
+	return !! (
+		editMetadata?.version &&
+		responseMetadata?.baseVersion === editMetadata.version
 	);
 }
 
@@ -124,6 +156,88 @@ function getRecordWithoutKey( record, key ) {
 	const nextRecord = { ...record };
 	delete nextRecord[ key ];
 	return nextRecord;
+}
+
+function getCanonicalSerializedBlockContent( value ) {
+	if ( typeof value !== 'string' ) {
+		return;
+	}
+
+	const blocks = parse( value );
+
+	if ( ! blocks.length ) {
+		return;
+	}
+
+	return __unstableSerializeAndClean( blocks ).trim();
+}
+
+function areRawAttributeValuesEqual( key, valueA, valueB ) {
+	if ( fastDeepEqual( valueA, valueB ) ) {
+		return true;
+	}
+
+	if ( key !== 'content' ) {
+		return false;
+	}
+
+	const canonicalA = getCanonicalSerializedBlockContent( valueA );
+	const canonicalB = getCanonicalSerializedBlockContent( valueB );
+	const comparableA =
+		canonicalA ?? ( typeof valueA === 'string' ? valueA.trim() : undefined );
+	const comparableB =
+		canonicalB ?? ( typeof valueB === 'string' ? valueB.trim() : undefined );
+
+	return (
+		comparableA !== undefined &&
+		comparableB !== undefined &&
+		comparableA === comparableB
+	);
+}
+
+function getComparableBlockTree( blocks ) {
+	return blocks.map( ( block ) => ( {
+		attributes: block.attributes ?? {},
+		innerBlocks: getComparableBlockTree( block.innerBlocks ?? [] ),
+		name: block.name,
+	} ) );
+}
+
+function doesCRDTBlockContentMatchValue( crdtRecord, value ) {
+	if ( ! Array.isArray( crdtRecord?.blocks ) || typeof value !== 'string' ) {
+		return false;
+	}
+
+	const valueBlocks = parse( value );
+
+	return (
+		valueBlocks.length > 0 &&
+		fastDeepEqual(
+			getComparableBlockTree( crdtRecord.blocks ),
+			getComparableBlockTree( valueBlocks )
+		)
+	);
+}
+
+function getRecordWithRawAttributeValue( record, key, value ) {
+	return {
+		...record,
+		[ key ]: getRawAttributeFieldWithValue( record[ key ], value ),
+	};
+}
+
+function getRecordWithPersistedCRDTDocument( record, crdtDocument ) {
+	if ( crdtDocument === undefined ) {
+		return record;
+	}
+
+	return {
+		...record,
+		meta: {
+			...record.meta,
+			_crdt_document: crdtDocument,
+		},
+	};
 }
 
 function getGuardedSaveResponseRecords(
@@ -182,30 +296,53 @@ function getGuardedSaveResponseRecords(
 		);
 
 		const responseIsStaleBaseValue =
-			fastDeepEqual( responseValue, baseValue ) &&
-			! fastDeepEqual( editValue, baseValue );
+			areRawAttributeValuesEqual( key, responseValue, baseValue ) &&
+			! areRawAttributeValuesEqual( key, editValue, baseValue );
 
 		if ( ! responseIsStaleBaseValue ) {
 			continue;
 		}
 
-		const crdtMatchesSavedEdit = fastDeepEqual( crdtValue, editValue );
+		const crdtMatchesSavedEdit =
+			( key === 'content' &&
+				doesCRDTBlockContentMatchValue( crdtRecord, editValue ) ) ||
+			areRawAttributeValuesEqual( key, crdtValue, editValue );
 		if ( isPersistedCRDTDocumentSaveResponse && crdtMatchesSavedEdit ) {
-			const guardedField = getRawAttributeFieldWithValue(
-				updatedRecord[ key ],
-				editValue
-			);
 			receiveRecord =
 				receiveRecord === updatedRecord
-					? { ...updatedRecord }
-					: receiveRecord;
-			receiveRecord[ key ] = guardedField;
+					? getRecordWithRawAttributeValue(
+							updatedRecord,
+							key,
+							editValue
+					  )
+					: getRecordWithRawAttributeValue(
+							receiveRecord,
+							key,
+							editValue
+					  );
 			syncRecord =
 				syncRecord === updatedRecord
-					? { ...updatedRecord }
-					: syncRecord;
-			syncRecord[ key ] = guardedField;
-		} else if ( ! fastDeepEqual( crdtValue, responseValue ) ) {
+					? getRecordWithRawAttributeValue(
+							updatedRecord,
+							key,
+							editValue
+					  )
+					: getRecordWithRawAttributeValue(
+							syncRecord,
+							key,
+							editValue
+					  );
+			receiveRecord = getRecordWithPersistedCRDTDocument(
+				receiveRecord,
+				getPersistedCRDTDocument( edits )
+			);
+			syncRecord = getRecordWithPersistedCRDTDocument(
+				syncRecord,
+				getPersistedCRDTDocument( edits )
+			);
+		} else if (
+			! areRawAttributeValuesEqual( key, crdtValue, responseValue )
+		) {
 			syncRecord =
 				syncRecord === updatedRecord
 					? getRecordWithoutKey( updatedRecord, key )
