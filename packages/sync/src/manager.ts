@@ -1,6 +1,7 @@
 /**
  * External dependencies
  */
+import fastDeepEqual from 'fast-deep-equal/es6/index.js';
 import * as Y from 'yjs';
 import type { Awareness } from 'y-protocols/awareness';
 
@@ -755,18 +756,21 @@ export function createSyncManager( debug = false ): SyncManager {
 			const { syncConfig, ydoc } = entityState;
 			let changesToApply = changes;
 
-			if (
-				! isSave &&
-				! options.baseRecord &&
-				entityState.reconcilingRemoteKeys.size > 0
-			) {
+			if ( ! isSave && entityState.reconcilingRemoteKeys.size > 0 ) {
 				changesToApply = Object.fromEntries(
-					Object.entries( changes ).filter( ( [ key ] ) => {
+					Object.entries( changes ).filter( ( [ key, value ] ) => {
 						if ( key === 'blocks' ) {
 							return true;
 						}
 
 						if ( ! entityState.reconcilingRemoteKeys.has( key ) ) {
+							return true;
+						}
+
+						if (
+							options.baseRecord &&
+							! fastDeepEqual( options.baseRecord[ key ], value )
+						) {
 							return true;
 						}
 
@@ -907,7 +911,7 @@ export function createSyncManager( debug = false ): SyncManager {
 	 *
 	 * @param {ObjectType}                    objectType Object type.
 	 * @param {ObjectID}                      objectId   Object ID.
-	 * @param {CreatePersistedCRDTDocOptions} options    Options.
+	 * @param {CreatePersistedCRDTDocOptions} options    Persisted CRDT document options.
 	 */
 	async function createPersistedCRDTDoc(
 		objectType: ObjectType,
