@@ -156,6 +156,23 @@ function getRawAttributeFieldWithValue( value, rawValue ) {
 	return rawValue;
 }
 
+function hasCRDTRawAttributeValue( crdtRecord, key ) {
+	return key === 'content'
+		? hasOwnProperty( crdtRecord, key ) || Array.isArray( crdtRecord?.blocks )
+		: hasOwnProperty( crdtRecord, key );
+}
+
+function getCRDTRawAttributeValue( entityConfig, key, crdtRecord ) {
+	if ( key === 'content' ) {
+		return (
+			getSerializedCRDTBlockContent( crdtRecord ) ??
+			getRawAttributeValue( entityConfig, key, crdtRecord?.content )
+		);
+	}
+
+	return getRawAttributeValue( entityConfig, key, crdtRecord?.[ key ] );
+}
+
 function getPersistedCRDTDocument( record ) {
 	return record?.meta?._crdt_document;
 }
@@ -207,7 +224,7 @@ function getGuardedSaveResponseRecords(
 		if (
 			! hasOwnProperty( updatedRecord, key ) ||
 			! hasOwnProperty( edits, key ) ||
-			! hasOwnProperty( crdtRecord, key )
+			! hasCRDTRawAttributeValue( crdtRecord, key )
 		) {
 			continue;
 		}
@@ -227,10 +244,10 @@ function getGuardedSaveResponseRecords(
 			key,
 			edits[ key ]
 		);
-		const crdtValue = getRawAttributeValue(
+		const crdtValue = getCRDTRawAttributeValue(
 			entityConfig,
 			key,
-			crdtRecord[ key ]
+			crdtRecord
 		);
 
 		const responseIsStaleBaseValue =
