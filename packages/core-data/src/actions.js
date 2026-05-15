@@ -117,7 +117,11 @@ function hasOwnProperty( object, key ) {
 	return Object.prototype.hasOwnProperty.call( object ?? {}, key );
 }
 
-const GUARDED_SAVE_RESPONSE_RAW_ATTRIBUTES = new Set( [ 'title' ] );
+const GUARDED_SAVE_RESPONSE_RAW_ATTRIBUTES = new Set( [
+	'title',
+	'excerpt',
+	'content',
+] );
 
 function getGuardedSaveResponseRawAttributes( entityConfig ) {
 	return ( entityConfig.rawAttributes ?? [] ).filter( ( key ) =>
