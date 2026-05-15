@@ -173,6 +173,11 @@ export interface SyncManager {
 		objectId: ObjectID,
 		options?: CreatePersistedCRDTDocOptions
 	) => Promise< string | null >;
+	hydrateRecordFromPersistedCRDTDoc: (
+		objectType: ObjectType,
+		objectId: ObjectID,
+		record: ObjectData
+	) => Promise< boolean >;
 	getCRDTRecordData: (
 		objectType: ObjectType,
 		objectId: ObjectID
