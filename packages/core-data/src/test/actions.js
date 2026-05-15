@@ -1050,6 +1050,89 @@ describe( 'saveEntityRecord', () => {
 		expect( result ).toBe( staleSaveResponse );
 	} );
 
+	it( 'receives guarded CRDT meta when a skipped sync save response is based on the saved document', async () => {
+		const savedCRDTDocument = JSON.stringify( {
+			document: 'saved-document',
+			version: 'document:saved',
+		} );
+		const staleResponseCRDTDocument = JSON.stringify( {
+			document: 'stale-document',
+			version: 'document:stale',
+			baseVersion: 'document:saved',
+		} );
+		const baseContent = blockContent( 'base' );
+		const savedContent = blockContent( 'checkpoint content 9' );
+		const persistedRecord = {
+			id: 10,
+			title: 'checkpoint title 8',
+			content: { raw: baseContent },
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			title: 'checkpoint title 9',
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 9',
+				rendered: 'checkpoint title 9',
+			},
+			content: {
+				raw: baseContent,
+				rendered: '<p>base</p>',
+			},
+			meta: { _crdt_document: staleResponseCRDTDocument },
+		};
+		const guardedReceiveRecord = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 9',
+				rendered: 'checkpoint title 9',
+			},
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'checkpoint title 9',
+				blocks: parse( savedContent ),
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord( 'postType', 'post', post, {
+			__unstableSkipSyncUpdate: true,
+		} )( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			guardedReceiveRecord,
+			undefined,
+			true,
+			post
+		);
+		expect( syncManager.update ).not.toHaveBeenCalled();
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
 	it( 'preserves the live sync title when a normal save response returns stale post fields', async () => {
 		const persistedRecord = {
 			id: 10,
