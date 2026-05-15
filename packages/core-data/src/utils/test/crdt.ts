@@ -1127,6 +1127,39 @@ describe( 'crdt', () => {
 			expect( changes ).not.toHaveProperty( 'content' );
 		} );
 
+		it( 'does not invalidate non-empty persisted CRDT blocks from an empty persisted record body', () => {
+			doc.destroy();
+			doc = new Y.Doc( {
+				meta: new Map( [ [ CRDT_DOC_META_PERSISTENCE_KEY, true ] ] ),
+			} );
+			map = getRootMap< YPostRecord >( doc, CRDT_RECORD_MAP_KEY );
+			map.set( 'title', new Y.Text( 'Checkpoint Title' ) );
+			map.set( 'status', 'draft' );
+			map.set(
+				'content',
+				new Y.Text(
+					'<!-- wp:paragraph --><p>Checkpoint body</p><!-- /wp:paragraph -->'
+				)
+			);
+			addBlockToDoc( map, 'checkpoint-body', 'Checkpoint body' );
+
+			const editedRecord = {
+				title: { raw: 'Checkpoint Title' },
+				status: 'draft',
+				content: { raw: '', rendered: '' },
+				blocks: [],
+			} as unknown as Post;
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				editedRecord,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).not.toHaveProperty( 'blocks' );
+			expect( changes ).not.toHaveProperty( 'content' );
+		} );
+
 		it( 'includes meta in changes', () => {
 			const metaMap = createYMap();
 			metaMap.set( 'public_meta', 'new value' );
