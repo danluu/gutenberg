@@ -324,6 +324,19 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
 	return getRootMap( crdtDoc, CRDT_RECORD_MAP_KEY ).toJSON();
 }
 
+function hasNonEmptyPersistedCRDTBody(
+	ymap: YMapWrap< YPostRecord >
+): boolean {
+	const blocks = ymap.get( 'blocks' );
+	const content = ymap.get( 'content' );
+
+	return (
+		( content instanceof Y.Text && content.toString().trim().length > 0 ) ||
+		( blocks instanceof Y.Array &&
+			__unstableSerializeAndClean( blocks.toJSON() ).trim().length > 0 )
+	);
+}
+
 /**
  * Given a local Y.Doc that *may* contain changes from remote peers, compare
  * against the local record and determine if there are changes (edits) we want
@@ -340,6 +353,12 @@ export function getPostChangesFromCRDTDoc(
 	syncedProperties: Set< string >
 ): PostChanges {
 	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
+	// During persistence recovery, an empty REST body can race with a newer
+	// persisted CRDT document. Do not turn that mismatch into a CRDT body wipe.
+	const shouldKeepNonEmptyPersistedContent =
+		Boolean( ydoc.meta?.get( CRDT_DOC_META_PERSISTENCE_KEY ) ) &&
+		getRawValue( editedRecord.content ) === '' &&
+		hasNonEmptyPersistedCRDTBody( ymap );
 
 	let allowedMetaChanges: Post[ 'meta' ] = {};
 
@@ -353,6 +372,10 @@ export function getPostChangesFromCRDTDoc(
 
 			switch ( key ) {
 				case 'blocks': {
+					if ( shouldKeepNonEmptyPersistedContent ) {
+						return false;
+					}
+
 					// When we are passed a persisted CRDT document, make a special
 					// comparison of the content and blocks.
 					//
@@ -441,6 +464,13 @@ export function getPostChangesFromCRDTDoc(
 				case 'content':
 				case 'excerpt':
 				case 'title': {
+					if (
+						key === 'content' &&
+						shouldKeepNonEmptyPersistedContent
+					) {
+						return false;
+					}
+
 					return haveValuesChanged(
 						getRawValue( currentValue ),
 						newValue
