@@ -600,6 +600,50 @@ describe( 'stale top-level block snapshots', () => {
 		remoteDoc.destroy();
 	} );
 
+	it( 'preserves a stale fallback group delete after a remote append', () => {
+		const initialBlocks = [
+			paragraph( 'paragraph-a', 'Alpha' ),
+			group( 'fallback-group' ),
+			paragraph( 'paragraph-b', 'Beta' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[ ...initialBlocks, paragraph( 'remote-tail', 'Gamma' ) ],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( blockSummaries( yblocks ) ).toEqual( [
+			'paragraph-a:core/paragraph:Alpha',
+			'fallback-group:core/group',
+			'paragraph-b:core/paragraph:Beta',
+			'remote-tail:core/paragraph:Gamma',
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'paragraph-a', 'Alpha' ),
+				paragraph( 'paragraph-b', 'Beta' ),
+			],
+			null
+		);
+
+		expect( blockSummaries( yblocks ) ).toEqual( [
+			'paragraph-a:core/paragraph:Alpha',
+			'paragraph-b:core/paragraph:Beta',
+			'remote-tail:core/paragraph:Gamma',
+		] );
+
+		remoteDoc.destroy();
+	} );
+
 	it( 'preserves a remote move into a group when a stale local edit still has the moved source top-level', () => {
 		const initialBlocks = [
 			paragraph( 'moved', 'Moved' ),
