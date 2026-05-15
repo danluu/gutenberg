@@ -2,6 +2,7 @@
  * WordPress dependencies
  */
 import apiFetch from '@wordpress/api-fetch';
+import { parse } from '@wordpress/blocks';
 
 jest.mock( '@wordpress/api-fetch' );
 
@@ -1125,6 +1126,87 @@ describe( 'saveEntityRecord', () => {
 			getCRDTRecordData: jest.fn( () => ( {
 				title: 'checkpoint title 9',
 				content: 'checkpoint content 9',
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			guardedSaveResponse,
+			undefined,
+			true,
+			post
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			guardedSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'preserves live sync content from CRDT blocks when a normal save response returns stale post fields', async () => {
+		const persistedRecord = {
+			id: 10,
+			title: 'checkpoint title 8',
+			content: { raw: '<!-- wp:paragraph --><p>base</p><!-- /wp:paragraph -->' },
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			title: 'checkpoint title 9',
+			content:
+				'<!-- wp:paragraph --><p>checkpoint content 9</p><!-- /wp:paragraph -->',
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 9',
+				rendered: 'checkpoint title 9',
+			},
+			content: {
+				raw: '<!-- wp:paragraph --><p>base</p><!-- /wp:paragraph -->',
+				rendered: '<p>base</p>',
+			},
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const guardedSaveResponse = {
+			...staleSaveResponse,
+			content: {
+				raw: post.content,
+				rendered: post.content,
+			},
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'checkpoint title 9',
+				blocks: parse( post.content ),
 			} ) ),
 			update: jest.fn(),
 		};
