@@ -37,6 +37,10 @@ jest.mock( '@wordpress/blocks', () => {
 				attributes: { content: { type: 'rich-text' } },
 			},
 			{
+				name: 'core/group',
+				attributes: {},
+			},
+			{
 				name: 'core/pullquote',
 				attributes: {
 					value: { type: 'rich-text' },
@@ -167,6 +171,15 @@ function contentsOf( yblocks: YBlocks ): string[] {
 
 function blockTreeOf( yblocks: YBlocks ): string[] {
 	return ( yblocks.toJSON() as Block[] ).map( blockTreeSignature );
+}
+
+function blockSummaries( yblocks: YBlocks ): string[] {
+	return ( yblocks.toJSON() as Block[] ).map( ( block ) => {
+		const content = block.attributes.content
+			? `:${ block.attributes.content }`
+			: '';
+		return `${ block.clientId }:${ block.name }${ content }`;
+	} );
 }
 
 function blockTreeSignature( block: Block ): string {
@@ -495,6 +508,49 @@ describe( 'stale top-level block snapshots', () => {
 		expect( contentsOf( yblocks ) ).toEqual( [
 			'Alpha stale edit',
 			'Beta remote edit',
+		] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'preserves a move after a fallback-created top-level group arrives', () => {
+		const initialBlocks = [
+			paragraph( 'paragraph-a', 'Alpha' ),
+			paragraph( 'paragraph-b', 'Beta' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[ group( 'fallback-group' ), ...initialBlocks ],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( blockSummaries( yblocks ) ).toEqual( [
+			'fallback-group:core/group',
+			'paragraph-a:core/paragraph:Alpha',
+			'paragraph-b:core/paragraph:Beta',
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				group( 'fallback-group' ),
+				paragraph( 'paragraph-b', 'Beta' ),
+				paragraph( 'paragraph-a', 'Alpha' ),
+			],
+			null
+		);
+
+		expect( blockSummaries( yblocks ) ).toEqual( [
+			'fallback-group:core/group',
+			'paragraph-b:core/paragraph:Beta',
+			'paragraph-a:core/paragraph:Alpha',
 		] );
 
 		remoteDoc.destroy();
