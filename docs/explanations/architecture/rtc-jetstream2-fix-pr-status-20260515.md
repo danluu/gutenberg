@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-15T20:37:00Z`
+Snapshot time: `2026-05-15T20:51:41Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -29,8 +29,8 @@ Current state:
   file and one focused test file.
 - The original fix-planning branch refs plus the new PR 6A / PR 7A / PR 7B
   review refs have been exported from Jetstream2 and pushed to the `danluu`
-  remote. They still need rebase onto the intended upstream base and final PR
-  shaping before filing.
+  remote. These pushed refs are **provenance refs only**, not PR-ready branch
+  heads. Most still include a shared historical RTC integration stack.
 - Some earlier local/GitHub-facing `try/*-pr` branches already exist and should
   be reused as prior art or tests, but several are stacked or too broad against
   trunk and should not be filed as-is.
@@ -75,6 +75,35 @@ media/cross-entity coverage: uploads 5/10, reusable-block 3/5, image 3/5, galler
 The main caution is that "no visible likely-real bugs" means "in the current
 validation stack and current fuzz lanes." It does not by itself prove every
 newly created fix-planning branch is PR-ready.
+
+## Branch Push Correction
+
+The branch refs pushed under `fix/rtc-*` and `shape/rtc-*` on the `danluu`
+remote should **not** be opened as GitHub PRs against `trunk`. A follow-up
+sanity check found that `39` of the `42` pushed RTC fix/shape refs contain the
+same shared base commit `c173c18fbcd` (`Add RTC likely-real bug handoff report`).
+That base is already `48` commits ahead of `origin/trunk`, including earlier
+table, stale-save, cursor-awareness, merge, and handoff-report commits.
+
+Examples:
+
+| Ref | Commits vs `origin/trunk` | Files vs `origin/trunk` | Branch-specific tip |
+| --- | ---: | ---: | --- |
+| `fix/rtc-http-polling-generated-update-size` | 49 | 59 | `919df3e820a Guard generated HTTP polling update size` |
+| `fix/rtc-revision-restore-crdt-reset` | 49 | 59 | `55736c63979 Reset CRDT document meta on revision restore` |
+| `fix/rtc-store-lock-fairness` | 49 | 61 | `25bbdd2e39b Respect older pending store locks` |
+| `fix/rtc-current-only-cross-parent-source-retirement` | 54 | 59 | `fc0372bc42e Retire current-only cross-parent block sources` |
+| `shape/rtc-save-response-actions-guard` | 54 | 59 | `30dedab0e83 Guard RTC base-version save responses` |
+| `shape/rtc-save-response-manager-base-record` | 56 | 59 | `53043dedb8e Filter stale base-record RTC title updates` |
+
+So the previous pushed-branch table should be read only as a map of source
+commits produced by the Jetstream2 fix-planning loop. The actual PR branches
+still need to be built by extracting the branch-specific commits, replaying them
+onto the intended upstream base or ordered stack, dropping the shared historical
+integration commits, and rerunning focused tests plus combined fuzz validation.
+
+Until those cleaned branches exist, the proposed PR split is a plan and source
+inventory, not a usable GitHub PR branch set.
 
 ## Cycle 6 Review Update
 
@@ -190,7 +219,10 @@ then the `SyncManager` / base-record stale-key filtering delta.
 ## Pushed Branch Links
 
 These are branch refs pushed to the `danluu` remote for the proposed PR split.
-They are review/export candidates, not opened PRs.
+They are **source/provenance refs only**, not PR-ready heads. Most include the
+shared `c173c18fbcd` historical RTC integration base described above, so opening
+PRs directly from these refs would show nearly the same broad diff for many
+entries.
 
 | Proposed PR | Pushed branch links |
 | --- | --- |
@@ -894,7 +926,10 @@ individual branches. Examples include:
 
 What remains before PR filing:
 
-1. Rebase or recreate each PR branch on the intended upstream base.
+1. Recreate clean PR heads by extracting the branch-specific fix commits from
+   the pushed source refs and replaying them onto the intended upstream base or
+   explicitly ordered stack. Do not file the current `fix/rtc-*` / `shape/rtc-*`
+   source refs directly.
 2. Repair the CRDT PR 13 shaped stack so observed-delete provenance is its own
    first PR 13 delta after PR 12, then regenerate containment, range-diff, and
    diff-stat evidence for each adjacent CRDT review delta.
