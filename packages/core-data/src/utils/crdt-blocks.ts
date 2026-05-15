@@ -510,6 +510,40 @@ function isSameBlockIdentity( firstBlock: Block, secondBlock: Block ): boolean {
 	);
 }
 
+function getYBlockSemanticKey( yblock: YBlock ): string {
+	return getBlockSemanticKey( yblock.toJSON() as unknown as Block );
+}
+
+function findEquivalentYBlockIndex( yblocks: YBlocks, block: Block ): number {
+	const clientId = getBlockClientId( block );
+
+	if ( clientId ) {
+		for ( let index = 0; index < yblocks.length; index++ ) {
+			if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+				return index;
+			}
+		}
+
+		return -1;
+	}
+
+	const semanticKey = getBlockSemanticKey( block );
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const yblock = yblocks.get( index );
+
+		if ( getYBlockSemanticKey( yblock ) === semanticKey ) {
+			return index;
+		}
+
+		if ( areBlocksEqual( block, yblock ) ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
 function getUniqueKeys< T >(
 	items: T[],
 	getKey: ( item: T ) => string | null
@@ -974,42 +1008,6 @@ function areYBlocksEqualToPlainBlocks(
 	);
 }
 
-function mergeYBlocksLocalSuffixAppend(
-	yblocks: YBlocks,
-	blocksToSync: Block[],
-	baseBlocks: Block[]
-): boolean {
-	if ( blocksToSync.length <= baseBlocks.length ) {
-		return false;
-	}
-
-	if (
-		! baseBlocks.every( ( baseBlock, index ) =>
-			fastDeepEqual( baseBlock, blocksToSync[ index ] )
-		)
-	) {
-		return false;
-	}
-
-	const insertionIndex = Math.min( baseBlocks.length, yblocks.length );
-	const appendedBlocks = blocksToSync.slice( baseBlocks.length );
-
-	if (
-		appendedBlocks.every( ( block, offset ) => {
-			const currentIndex = insertionIndex + offset;
-			return (
-				currentIndex < yblocks.length &&
-				areBlocksEqual( block, yblocks.get( currentIndex ) )
-			);
-		} )
-	) {
-		return true;
-	}
-
-	yblocks.insert( insertionIndex, appendedBlocks.map( createNewYBlock ) );
-	return true;
-}
-
 function findYBlockIndex(
 	yblocks: YBlocks,
 	baseBlock: Block,
@@ -1039,6 +1037,70 @@ function findYBlockIndex(
 	return preferredIndex < yblocks.length ? preferredIndex : -1;
 }
 
+function findStrictYBlockIndex( yblocks: YBlocks, block: Block ): number {
+	const clientId = getBlockClientId( block );
+
+	if ( clientId ) {
+		for ( let index = 0; index < yblocks.length; index++ ) {
+			if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+				return index;
+			}
+		}
+
+		return -1;
+	}
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		if ( areBlocksEqual( block, yblocks.get( index ) ) ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
+function mergeYBlocksLocalSuffixAppend(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[]
+): void {
+	if ( blocksToSync.length <= baseBlocks.length || baseBlocks.length === 0 ) {
+		return;
+	}
+
+	if (
+		! fastDeepEqual(
+			blocksToSync.slice( 0, baseBlocks.length ),
+			baseBlocks
+		)
+	) {
+		return;
+	}
+
+	const anchorIndex = findStrictYBlockIndex(
+		yblocks,
+		baseBlocks[ baseBlocks.length - 1 ]
+	);
+
+	if ( anchorIndex === -1 ) {
+		return;
+	}
+
+	let insertIndex = anchorIndex + 1;
+
+	for ( const block of blocksToSync.slice( baseBlocks.length ) ) {
+		const existingIndex = findEquivalentYBlockIndex( yblocks, block );
+
+		if ( existingIndex !== -1 ) {
+			insertIndex = Math.max( insertIndex, existingIndex + 1 );
+			continue;
+		}
+
+		yblocks.insert( insertIndex, [ createNewYBlock( block ) ] );
+		insertIndex++;
+	}
+}
+
 function mergeYBlocksLocalChanges(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
@@ -1060,9 +1122,7 @@ function mergeYBlocksLocalChanges(
 		return false;
 	}
 
-	if ( mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks ) ) {
-		return true;
-	}
+	mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks );
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
 

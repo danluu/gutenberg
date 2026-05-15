@@ -94,6 +94,12 @@ function blockTreeSignature( block: Block ): string {
 	return `${ block.clientId }:${ block.attributes.content }`;
 }
 
+function clientIdsOf( yblocks: YBlocks ): string[] {
+	return ( yblocks.toJSON() as Block[] ).map(
+		( block ) => block.clientId ?? ''
+	);
+}
+
 function postBlocks( doc: Y.Doc ): YBlocks {
 	return getRootMap< YPostRecord >( doc, CRDT_RECORD_MAP_KEY ).get(
 		'blocks'
@@ -125,6 +131,154 @@ describe( 'stale top-level block snapshots', () => {
 
 	afterEach( () => {
 		doc.destroy();
+	} );
+
+	it( 'applies a local suffix append when the explicit base differs from current blocks', () => {
+		const baseBlocks = [
+			paragraph( 'canonicalized', 'Alpha' ),
+			paragraph( 'unchanged', 'Beta' ),
+		];
+		const currentBlocks = [
+			paragraph( 'canonicalized', 'Alpha canonicalized' ),
+			paragraph( 'unchanged', 'Beta' ),
+		];
+		const blocksWithLocalAppend = [
+			...baseBlocks,
+			paragraph( 'checkpoint-paragraph', 'Checkpoint paragraph' ),
+			paragraph( 'checkpoint-search', 'Checkpoint search' ),
+		];
+
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		mergeCrdtBlocks( yblocks, blocksWithLocalAppend, null, baseBlocks );
+		mergeCrdtBlocks( yblocks, blocksWithLocalAppend, null, baseBlocks );
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha canonicalized',
+			'Beta',
+			'Checkpoint paragraph',
+			'Checkpoint search',
+		] );
+	} );
+
+	it( 'inserts a missing local checkpoint paragraph before an already-present suffix block', () => {
+		const baseBlocks = [
+			paragraph( 'intro', 'Alpha' ),
+			paragraph( 'unchanged', 'Beta' ),
+		];
+		const currentBlocks = [
+			...baseBlocks,
+			paragraph( 'checkpoint-search', 'Checkpoint search' ),
+		];
+		const blocksWithLocalAppend = [
+			...baseBlocks,
+			paragraph( 'checkpoint-paragraph', 'Checkpoint paragraph' ),
+			paragraph( 'checkpoint-search', 'Checkpoint search' ),
+		];
+
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		mergeCrdtBlocks( yblocks, blocksWithLocalAppend, null, baseBlocks );
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Checkpoint paragraph',
+			'Checkpoint search',
+		] );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'intro',
+			'unchanged',
+			'checkpoint-paragraph',
+			'checkpoint-search',
+		] );
+	} );
+
+	it( 'does not collapse distinct appended blocks with matching content', () => {
+		const baseBlocks = [ paragraph( 'base', 'Alpha' ) ];
+		const currentBlocks = [
+			...baseBlocks,
+			paragraph( 'remote-appended', 'Duplicate content' ),
+		];
+		const blocksWithLocalAppend = [
+			...baseBlocks,
+			paragraph( 'local-appended', 'Duplicate content' ),
+		];
+
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		mergeCrdtBlocks( yblocks, blocksWithLocalAppend, null, baseBlocks );
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Duplicate content',
+			'Duplicate content',
+		] );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'base',
+			'local-appended',
+			'remote-appended',
+		] );
+	} );
+
+	it( 'does not append a stale suffix when the base tail anchor is absent', () => {
+		const baseBlocks = [
+			paragraph( 'base-start', 'Alpha' ),
+			paragraph( 'base-tail', 'Beta' ),
+		];
+		const currentBlocks = [
+			paragraph( 'base-start', 'Alpha' ),
+			paragraph( 'replacement', 'Beta' ),
+			paragraph( 'remote-tail', 'Remote tail' ),
+		];
+		const blocksWithLocalAppend = [
+			...baseBlocks,
+			paragraph( 'local-appended', 'Local suffix' ),
+		];
+
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		mergeCrdtBlocks( yblocks, blocksWithLocalAppend, null, baseBlocks );
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			'Remote tail',
+		] );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'base-start',
+			'replacement',
+			'remote-tail',
+		] );
+	} );
+
+	it( 'applies an explicit-base suffix append through the post CRDT adapter', () => {
+		const baseBlocks = [
+			paragraph( 'canonicalized', 'Alpha' ),
+			paragraph( 'unchanged', 'Beta' ),
+		];
+		const currentBlocks = [
+			paragraph( 'canonicalized', 'Alpha canonicalized' ),
+			paragraph( 'unchanged', 'Beta' ),
+		];
+		const blocksWithLocalAppend = [
+			...baseBlocks,
+			paragraph( 'checkpoint-paragraph', 'Checkpoint paragraph' ),
+		];
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: currentBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: blocksWithLocalAppend },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: baseBlocks } }
+		);
+
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Alpha canonicalized',
+			'Beta',
+			'Checkpoint paragraph',
+		] );
 	} );
 
 	it( 'preserves a remote top-level append when a stale local edit touches a different block', () => {
