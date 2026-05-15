@@ -113,6 +113,157 @@ function getSaveProjectionCRDTContent( kind, name, recordId ) {
 	);
 }
 
+function hasOwnProperty( object, key ) {
+	return Object.prototype.hasOwnProperty.call( object ?? {}, key );
+}
+
+const GUARDED_SAVE_RESPONSE_RAW_ATTRIBUTES = new Set( [ 'title' ] );
+
+function getGuardedSaveResponseRawAttributes( entityConfig ) {
+	return ( entityConfig.rawAttributes ?? [] ).filter( ( key ) =>
+		GUARDED_SAVE_RESPONSE_RAW_ATTRIBUTES.has( key )
+	);
+}
+
+function getRawAttributeValue( entityConfig, key, value ) {
+	return entityConfig.rawAttributes?.includes( key ) &&
+		value &&
+		typeof value === 'object' &&
+		'raw' in value
+		? value.raw
+		: value;
+}
+
+function getRawAttributeFieldWithValue( value, rawValue ) {
+	if (
+		value &&
+		typeof value === 'object' &&
+		hasOwnProperty( value, 'raw' )
+	) {
+		return {
+			...value,
+			raw: rawValue,
+			...( hasOwnProperty( value, 'rendered' )
+				? { rendered: rawValue }
+				: {} ),
+		};
+	}
+
+	return rawValue;
+}
+
+function getPersistedCRDTDocument( record ) {
+	return record?.meta?._crdt_document;
+}
+
+function isSaveResponseForPersistedCRDTDocument( edits, updatedRecord ) {
+	const editCRDTDocument = getPersistedCRDTDocument( edits );
+
+	return (
+		editCRDTDocument !== undefined &&
+		fastDeepEqual(
+			getPersistedCRDTDocument( updatedRecord ),
+			editCRDTDocument
+		)
+	);
+}
+
+function getRecordWithoutKey( record, key ) {
+	const nextRecord = { ...record };
+	delete nextRecord[ key ];
+	return nextRecord;
+}
+
+function getGuardedSaveResponseRecords(
+	entityConfig,
+	baseRecord,
+	edits,
+	updatedRecord,
+	syncManager,
+	objectType,
+	objectId
+) {
+	const defaultRecords = {
+		receiveRecord: updatedRecord,
+		syncRecord: updatedRecord,
+	};
+	const rawAttributes = getGuardedSaveResponseRawAttributes( entityConfig );
+	const crdtRecord = syncManager?.getCRDTRecordData?.( objectType, objectId );
+
+	if ( ! rawAttributes.length || ! crdtRecord || ! updatedRecord ) {
+		return defaultRecords;
+	}
+
+	let receiveRecord = updatedRecord;
+	let syncRecord = updatedRecord;
+	const isPersistedCRDTDocumentSaveResponse =
+		isSaveResponseForPersistedCRDTDocument( edits, updatedRecord );
+
+	for ( const key of rawAttributes ) {
+		if (
+			! hasOwnProperty( updatedRecord, key ) ||
+			! hasOwnProperty( edits, key ) ||
+			! hasOwnProperty( crdtRecord, key )
+		) {
+			continue;
+		}
+
+		const responseValue = getRawAttributeValue(
+			entityConfig,
+			key,
+			updatedRecord[ key ]
+		);
+		const baseValue = getRawAttributeValue(
+			entityConfig,
+			key,
+			baseRecord?.[ key ]
+		);
+		const editValue = getRawAttributeValue(
+			entityConfig,
+			key,
+			edits[ key ]
+		);
+		const crdtValue = getRawAttributeValue(
+			entityConfig,
+			key,
+			crdtRecord[ key ]
+		);
+
+		const responseIsStaleBaseValue =
+			fastDeepEqual( responseValue, baseValue ) &&
+			! fastDeepEqual( editValue, baseValue );
+
+		if ( ! responseIsStaleBaseValue ) {
+			continue;
+		}
+
+		const crdtMatchesSavedEdit = fastDeepEqual( crdtValue, editValue );
+		if ( isPersistedCRDTDocumentSaveResponse && crdtMatchesSavedEdit ) {
+			const guardedField = getRawAttributeFieldWithValue(
+				updatedRecord[ key ],
+				editValue
+			);
+			receiveRecord =
+				receiveRecord === updatedRecord
+					? { ...updatedRecord }
+					: receiveRecord;
+			receiveRecord[ key ] = guardedField;
+			syncRecord =
+				syncRecord === updatedRecord
+					? { ...updatedRecord }
+					: syncRecord;
+			syncRecord[ key ] = guardedField;
+		} else if ( ! fastDeepEqual( crdtValue, responseValue ) ) {
+			syncRecord =
+				syncRecord === updatedRecord
+					? getRecordWithoutKey( updatedRecord, key )
+					: getRecordWithoutKey( syncRecord, key );
+		}
+	}
+
+	return { receiveRecord, syncRecord };
+}
+
 /**
  * Returns an action object used in signalling that authors have been received.
  * Ignored from documentation as it's internal to the data store.
@@ -889,6 +1040,7 @@ export const saveEntityRecord =
 					};
 
 					let edits = await prepareEdits( persistedRecord, record );
+					let saveResponseBaseRecord = persistedRecord;
 					try {
 						updatedRecord = await __unstableFetch( {
 							path,
@@ -936,16 +1088,34 @@ export const saveEntityRecord =
 							latestRecord,
 							mergedRecord
 						);
+						saveResponseBaseRecord = latestRecord;
 						updatedRecord = await __unstableFetch( {
 							path,
 							method: 'PUT',
 							data: edits,
 						} );
 					}
+					let receiveRecord = updatedRecord;
+					let syncRecord = updatedRecord;
+					let syncManager;
+					const objectType = `${ kind }/${ name }`;
+					if ( entityConfig.syncConfig ) {
+						syncManager = getSyncManager();
+						( { receiveRecord, syncRecord } =
+							getGuardedSaveResponseRecords(
+								entityConfig,
+								saveResponseBaseRecord,
+								edits,
+								updatedRecord,
+								syncManager,
+								objectType,
+								recordId
+							) );
+					}
 					dispatch.receiveEntityRecords(
 						kind,
 						name,
-						updatedRecord,
+						receiveRecord,
 						undefined,
 						true,
 						edits
@@ -953,10 +1123,10 @@ export const saveEntityRecord =
 					if ( entityConfig.syncConfig ) {
 						// Use an untracked origin so that the save
 						// response does not create undo levels.
-						getSyncManager()?.update(
-							`${ kind }/${ name }`,
+						syncManager?.update(
+							objectType,
 							recordId,
-							__unstableSkipSyncUpdate ? {} : updatedRecord,
+							__unstableSkipSyncUpdate ? {} : syncRecord,
 							LOCAL_UNDO_IGNORED_ORIGIN,
 							{ isSave: true }
 						);

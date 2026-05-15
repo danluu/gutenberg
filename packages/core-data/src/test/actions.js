@@ -1188,6 +1188,364 @@ describe( 'saveEntityRecord', () => {
 		);
 	} );
 
+	it( 'preserves the live sync title when a normal save response returns stale post fields', async () => {
+		const persistedRecord = {
+			id: 10,
+			title: 'checkpoint title 8',
+			content: { raw: 'checkpoint content 8' },
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			title: 'checkpoint title 9',
+			content: 'checkpoint content 9',
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 8',
+				rendered: 'checkpoint title 8',
+			},
+			content: { raw: 'checkpoint content 9' },
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const guardedSaveResponse = {
+			...staleSaveResponse,
+			title: {
+				raw: 'checkpoint title 9',
+				rendered: 'checkpoint title 9',
+			},
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'checkpoint title 9',
+				content: 'checkpoint content 9',
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			guardedSaveResponse,
+			undefined,
+			true,
+			post
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			guardedSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'does not write a stale normal save response title to sync after the live title advances', async () => {
+		const persistedRecord = {
+			id: 10,
+			title: 'checkpoint title 8',
+			content: { raw: 'checkpoint content 8' },
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			title: 'checkpoint title 9',
+			content: 'checkpoint content 9',
+			meta: { _crdt_document: 'save-title-9-crdt-doc' },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 8',
+				rendered: 'checkpoint title 8',
+			},
+			content: { raw: 'checkpoint content 9' },
+			meta: { _crdt_document: 'save-title-9-crdt-doc' },
+		};
+		const syncSaveResponse = {
+			id: 10,
+			content: { raw: 'checkpoint content 9' },
+			meta: { _crdt_document: 'save-title-9-crdt-doc' },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'checkpoint title 10',
+				content: 'checkpoint content 9',
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			staleSaveResponse,
+			undefined,
+			true,
+			post
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			syncSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'does not rewrite a stale normal save response title without outgoing CRDT document evidence', async () => {
+		const persistedRecord = {
+			id: 10,
+			title: 'checkpoint title 8',
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			title: 'checkpoint title 9',
+			meta: {},
+		};
+		const staleSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 8',
+				rendered: 'checkpoint title 8',
+			},
+			meta: {},
+		};
+		const syncSaveResponse = {
+			id: 10,
+			meta: {},
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'checkpoint title 9',
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			staleSaveResponse,
+			undefined,
+			true,
+			post
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			syncSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'does not rewrite a stale normal save response title for a different CRDT document', async () => {
+		const persistedRecord = {
+			id: 10,
+			title: 'checkpoint title 8',
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			title: 'checkpoint title 9',
+			meta: { _crdt_document: 'save-title-9-crdt-doc' },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 8',
+				rendered: 'checkpoint title 8',
+			},
+			meta: { _crdt_document: 'server-different-crdt-doc' },
+		};
+		const syncSaveResponse = {
+			id: 10,
+			meta: { _crdt_document: 'server-different-crdt-doc' },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'checkpoint title 9',
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			staleSaveResponse,
+			undefined,
+			true,
+			post
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			syncSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'keeps a normal save response title that changed from the save base', async () => {
+		const persistedRecord = {
+			id: 10,
+			title: 'draft title',
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			title: 'local title',
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const serverChangedSaveResponse = {
+			id: 10,
+			title: 'server title',
+			meta: { _crdt_document: 'fresh-crdt-doc' },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'local title',
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => serverChangedSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( {
+			select,
+			dispatch,
+			resolveSelect,
+		} );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			serverChangedSaveResponse,
+			undefined,
+			true,
+			post
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			serverChangedSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+	} );
+
 	it( 'triggers a PUT request for an existing record with a custom key', async () => {
 		const postType = { slug: 'page', title: 'Pages' };
 		const configs = [
