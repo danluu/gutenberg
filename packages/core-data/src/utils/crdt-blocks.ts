@@ -4164,29 +4164,98 @@ function findYArrayElementIndex(
 	yArray: Y.Array< unknown >,
 	previousElement: unknown,
 	preferredIndex: number,
-	previousLength: number
+	previousLength: number,
+	usedIndices: Set< number >
 ): number {
-	const previousId = getArrayElementId( previousElement );
+	const previousElementId = getArrayElementId( previousElement );
 
-	if ( previousId ) {
+	if ( previousElementId ) {
 		for ( let i = 0; i < yArray.length; i++ ) {
-			if ( getArrayElementId( yArray.get( i ) ) === previousId ) {
+			if (
+				! usedIndices.has( i ) &&
+				getArrayElementId( yArray.get( i ) ) === previousElementId
+			) {
 				return i;
 			}
 		}
+
+		return -1;
 	}
 
 	for ( let i = 0; i < yArray.length; i++ ) {
-		if ( areArrayElementsEqual( previousElement, yArray.get( i ) ) ) {
+		if (
+			! usedIndices.has( i ) &&
+			areArrayElementsEqual( previousElement, yArray.get( i ) )
+		) {
 			return i;
 		}
 	}
 
-	if ( yArray.length === previousLength && preferredIndex < yArray.length ) {
+	if (
+		yArray.length === previousLength &&
+		preferredIndex < yArray.length &&
+		! usedIndices.has( preferredIndex )
+	) {
 		return preferredIndex;
 	}
 
-	return preferredIndex < yArray.length ? preferredIndex : -1;
+	return preferredIndex < yArray.length && ! usedIndices.has( preferredIndex )
+		? preferredIndex
+		: -1;
+}
+
+function getYArrayElementIndexSnapshot(
+	yArray: Y.Array< unknown >,
+	previousValue: unknown[]
+): number[] {
+	const usedIndices = new Set< number >();
+
+	return previousValue.map( ( previousElement, index ) => {
+		const currentIndex = findYArrayElementIndex(
+			yArray,
+			previousElement,
+			index,
+			previousValue.length,
+			usedIndices
+		);
+
+		if ( currentIndex !== -1 ) {
+			usedIndices.add( currentIndex );
+		}
+
+		return currentIndex;
+	} );
+}
+
+function findYArrayLocalChangeInsertIndex(
+	yArray: Y.Array< unknown >,
+	previousValue: unknown[],
+	left: number,
+	previousMiddleEnd: number,
+	pairedCount: number,
+	currentIndicesByPreviousIndex: number[]
+): number {
+	for ( let index = left + pairedCount - 1; index >= 0; index-- ) {
+		const currentIndex = currentIndicesByPreviousIndex[ index ];
+
+		if ( currentIndex !== -1 ) {
+			return Math.min( currentIndex + 1, yArray.length );
+		}
+	}
+
+	for (
+		let index = previousMiddleEnd;
+		index < previousValue.length;
+		index++
+	) {
+		const currentIndex = currentIndicesByPreviousIndex[ index ];
+
+		if ( currentIndex !== -1 ) {
+			return Math.min( currentIndex, yArray.length );
+		}
+	}
+
+	return Math.min( left, yArray.length );
 }
 
 function mergeYArrayLocalChanges(
@@ -4212,8 +4281,43 @@ function mergeYArrayLocalChanges(
 	}
 
 	const sharedLength = Math.min( previousValue.length, newValue.length );
+	let left = 0;
+	let right = 0;
 
-	for ( let i = 0; i < sharedLength; i++ ) {
+	for (
+		;
+		left < sharedLength &&
+		arePlainValuesEqual( previousValue[ left ], newValue[ left ] );
+		left++
+	) {
+		/* nop */
+	}
+
+	for (
+		;
+		right < sharedLength - left &&
+		arePlainValuesEqual(
+			previousValue[ previousValue.length - right - 1 ],
+			newValue[ newValue.length - right - 1 ]
+		);
+		right++
+	) {
+		/* nop */
+	}
+
+	const previousMiddleEnd = previousValue.length - right;
+	const newMiddleEnd = newValue.length - right;
+	const pairedCount = Math.min(
+		previousMiddleEnd - left,
+		newMiddleEnd - left
+	);
+	const currentIndicesByPreviousIndex = getYArrayElementIndexSnapshot(
+		yArray,
+		previousValue
+	);
+
+	for ( let offset = 0; offset < pairedCount; offset++ ) {
+		const i = left + offset;
 		const previousElement = previousValue[ i ];
 		const newElement = newValue[ i ];
 
@@ -4221,12 +4325,7 @@ function mergeYArrayLocalChanges(
 			continue;
 		}
 
-		const currentIndex = findYArrayElementIndex(
-			yArray,
-			previousElement,
-			i,
-			previousValue.length
-		);
+		const currentIndex = currentIndicesByPreviousIndex[ i ];
 
 		if ( currentIndex === -1 ) {
 			continue;
@@ -4244,6 +4343,43 @@ function mergeYArrayLocalChanges(
 				isRecord( previousElement ) ? previousElement : undefined
 			);
 		}
+	}
+
+	const rawInsertIndex =
+		newMiddleEnd > left + pairedCount
+			? findYArrayLocalChangeInsertIndex(
+					yArray,
+					previousValue,
+					left,
+					previousMiddleEnd,
+					pairedCount,
+					currentIndicesByPreviousIndex
+			  )
+			: 0;
+	const deleteIndices = currentIndicesByPreviousIndex
+		.slice( left + pairedCount, previousMiddleEnd )
+		.filter( ( index ) => index !== -1 )
+		.sort( ( a, b ) => b - a );
+
+	for ( const currentIndex of deleteIndices ) {
+		if ( currentIndex < yArray.length ) {
+			yArray.delete( currentIndex, 1 );
+		}
+	}
+
+	if ( newMiddleEnd > left + pairedCount ) {
+		const deletedBeforeInsert = deleteIndices.filter(
+			( currentIndex ) => currentIndex < rawInsertIndex
+		).length;
+		const insertIndex = Math.max(
+			0,
+			Math.min( rawInsertIndex - deletedBeforeInsert, yArray.length )
+		);
+		const itemsToInsert = newValue
+			.slice( left + pairedCount, newMiddleEnd )
+			.map( ( item ) => createYMapFromQuery( query, item, true ) );
+
+		yArray.insert( insertIndex, itemsToInsert );
 	}
 
 	return true;
