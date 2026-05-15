@@ -89,7 +89,8 @@ function getSerializedCRDTBlockContent( crdtRecord ) {
 
 function hasCRDTRawAttributeValue( crdtRecord, key ) {
 	return key === 'content'
-		? hasOwnProperty( crdtRecord, key ) || Array.isArray( crdtRecord?.blocks )
+		? hasOwnProperty( crdtRecord, key ) ||
+				Array.isArray( crdtRecord?.blocks )
 		: hasOwnProperty( crdtRecord, key );
 }
 
@@ -131,18 +132,18 @@ function parsePersistedCRDTDocumentMetadata( serialized ) {
 
 function isSaveResponseForPersistedCRDTDocument( edits, updatedRecord ) {
 	const editCRDTDocument = getPersistedCRDTDocument( edits );
-	const responseCRDTDocument = getPersistedCRDTDocument( updatedRecord );
 
 	if ( editCRDTDocument === undefined ) {
 		return false;
 	}
 
+	const responseCRDTDocument = getPersistedCRDTDocument( updatedRecord );
+
 	if ( fastDeepEqual( responseCRDTDocument, editCRDTDocument ) ) {
 		return true;
 	}
 
-	const editMetadata =
-		parsePersistedCRDTDocumentMetadata( editCRDTDocument );
+	const editMetadata = parsePersistedCRDTDocumentMetadata( editCRDTDocument );
 	const responseMetadata =
 		parsePersistedCRDTDocumentMetadata( responseCRDTDocument );
 
@@ -184,9 +185,11 @@ function areRawAttributeValuesEqual( key, valueA, valueB ) {
 	const canonicalA = getCanonicalSerializedBlockContent( valueA );
 	const canonicalB = getCanonicalSerializedBlockContent( valueB );
 	const comparableA =
-		canonicalA ?? ( typeof valueA === 'string' ? valueA.trim() : undefined );
+		canonicalA ??
+		( typeof valueA === 'string' ? valueA.trim() : undefined );
 	const comparableB =
-		canonicalB ?? ( typeof valueB === 'string' ? valueB.trim() : undefined );
+		canonicalB ??
+		( typeof valueB === 'string' ? valueB.trim() : undefined );
 
 	return (
 		comparableA !== undefined &&
@@ -268,7 +271,6 @@ function getGuardedSaveResponseRecords(
 	for ( const key of rawAttributes ) {
 		if (
 			! hasOwnProperty( updatedRecord, key ) ||
-			! hasOwnProperty( edits, key ) ||
 			! hasCRDTRawAttributeValue( crdtRecord, key )
 		) {
 			continue;
@@ -284,11 +286,10 @@ function getGuardedSaveResponseRecords(
 			key,
 			baseRecord?.[ key ]
 		);
-		const editValue = getRawAttributeValue(
-			entityConfig,
-			key,
-			edits[ key ]
-		);
+		const hasSavedEdit = hasOwnProperty( edits, key );
+		const editValue = hasSavedEdit
+			? getRawAttributeValue( entityConfig, key, edits[ key ] )
+			: undefined;
 		const crdtValue = getCRDTRawAttributeValue(
 			entityConfig,
 			key,
@@ -297,41 +298,80 @@ function getGuardedSaveResponseRecords(
 
 		const responseIsStaleBaseValue =
 			areRawAttributeValuesEqual( key, responseValue, baseValue ) &&
-			! areRawAttributeValuesEqual( key, editValue, baseValue );
+			( ! hasSavedEdit ||
+				! areRawAttributeValuesEqual( key, editValue, baseValue ) );
 
 		if ( ! responseIsStaleBaseValue ) {
 			continue;
 		}
 
 		const crdtMatchesSavedEdit =
-			( key === 'content' &&
+			hasSavedEdit &&
+			( ( key === 'content' &&
 				doesCRDTBlockContentMatchValue( crdtRecord, editValue ) ) ||
-			areRawAttributeValuesEqual( key, crdtValue, editValue );
-		if ( isPersistedCRDTDocumentSaveResponse && crdtMatchesSavedEdit ) {
+				areRawAttributeValuesEqual( key, crdtValue, editValue ) );
+		const crdtMatchesStaleResponse = areRawAttributeValuesEqual(
+			key,
+			crdtValue,
+			responseValue
+		);
+		if (
+			isPersistedCRDTDocumentSaveResponse &&
+			hasSavedEdit &&
+			editValue !== undefined
+		) {
+			if ( crdtMatchesSavedEdit || crdtMatchesStaleResponse ) {
+				receiveRecord =
+					receiveRecord === updatedRecord
+						? getRecordWithRawAttributeValue(
+								updatedRecord,
+								key,
+								editValue
+						  )
+						: getRecordWithRawAttributeValue(
+								receiveRecord,
+								key,
+								editValue
+						  );
+				syncRecord =
+					syncRecord === updatedRecord
+						? getRecordWithRawAttributeValue(
+								updatedRecord,
+								key,
+								editValue
+						  )
+						: getRecordWithRawAttributeValue(
+								syncRecord,
+								key,
+								editValue
+						  );
+			} else {
+				receiveRecord =
+					receiveRecord === updatedRecord
+						? getRecordWithoutKey( updatedRecord, key )
+						: getRecordWithoutKey( receiveRecord, key );
+				syncRecord =
+					syncRecord === updatedRecord
+						? getRecordWithoutKey( updatedRecord, key )
+						: getRecordWithoutKey( syncRecord, key );
+			}
+			receiveRecord = getRecordWithPersistedCRDTDocument(
+				receiveRecord,
+				getPersistedCRDTDocument( edits )
+			);
+			syncRecord = getRecordWithPersistedCRDTDocument(
+				syncRecord,
+				getPersistedCRDTDocument( edits )
+			);
+		} else if ( isPersistedCRDTDocumentSaveResponse && ! hasSavedEdit ) {
 			receiveRecord =
 				receiveRecord === updatedRecord
-					? getRecordWithRawAttributeValue(
-							updatedRecord,
-							key,
-							editValue
-					  )
-					: getRecordWithRawAttributeValue(
-							receiveRecord,
-							key,
-							editValue
-					  );
+					? getRecordWithoutKey( updatedRecord, key )
+					: getRecordWithoutKey( receiveRecord, key );
 			syncRecord =
 				syncRecord === updatedRecord
-					? getRecordWithRawAttributeValue(
-							updatedRecord,
-							key,
-							editValue
-					  )
-					: getRecordWithRawAttributeValue(
-							syncRecord,
-							key,
-							editValue
-					  );
+					? getRecordWithoutKey( updatedRecord, key )
+					: getRecordWithoutKey( syncRecord, key );
 			receiveRecord = getRecordWithPersistedCRDTDocument(
 				receiveRecord,
 				getPersistedCRDTDocument( edits )
