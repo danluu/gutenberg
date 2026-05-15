@@ -31,6 +31,7 @@ interface BlockAttributes {
 }
 
 interface BlockAttributeSchema {
+	__unstablePreserveWhiteSpace?: boolean;
 	role?: string;
 	type?: string;
 	query?: Record< string, BlockAttributeSchema >;
@@ -505,7 +506,20 @@ function getHTMLFragmentDOMStructure(
 	} );
 }
 
-function getHTMLFragmentComparisonTree( html: string ): unknown {
+function appendHTMLTextNode( nodes: unknown[], text: string ): void {
+	const lastNode = nodes[ nodes.length - 1 ];
+	if ( Array.isArray( lastNode ) && lastNode[ 0 ] === 'text' ) {
+		lastNode[ 1 ] = `${ lastNode[ 1 ] }${ text }`;
+		return;
+	}
+
+	nodes.push( [ 'text', text ] );
+}
+
+function getHTMLFragmentComparisonTree(
+	html: string,
+	preserveWhiteSpace = false
+): unknown {
 	if ( typeof document === 'undefined' ) {
 		return null;
 	}
@@ -529,6 +543,27 @@ function getHTMLFragmentComparisonTree( html: string ): unknown {
 		return null;
 	}
 
+	const normalizeNodes = ( nodes: Node[] ): unknown[] => {
+		const normalizedNodes: unknown[] = [];
+		nodes.forEach( ( node ) => {
+			const normalizedNode = normalizeNode( node );
+			if (
+				Array.isArray( normalizedNode ) &&
+				normalizedNode[ 0 ] === 'text'
+			) {
+				appendHTMLTextNode(
+					normalizedNodes,
+					normalizedNode[ 1 ] as string
+				);
+				return;
+			}
+
+			normalizedNodes.push( normalizedNode );
+		} );
+
+		return normalizedNodes;
+	};
+
 	const normalizeNode = ( node: Node ): unknown => {
 		if ( node.nodeType === Node.TEXT_NODE ) {
 			return [ 'text', node.textContent ?? '' ];
@@ -536,37 +571,55 @@ function getHTMLFragmentComparisonTree( html: string ): unknown {
 
 		if ( node.nodeType === Node.ELEMENT_NODE ) {
 			const element = node as Element;
+			const tagName = element.tagName.toLowerCase();
+			if (
+				preserveWhiteSpace &&
+				tagName === 'br' &&
+				element.attributes.length === 0
+			) {
+				return [ 'text', '\n' ];
+			}
+
 			return [
 				'element',
-				element.tagName.toLowerCase(),
+				tagName,
 				Array.from( element.attributes )
 					.map( ( attr ) => [ attr.name, attr.value ] )
 					.sort( ( [ a ], [ b ] ) => a.localeCompare( b ) ),
-				Array.from( element.childNodes ).map( normalizeNode ),
+				normalizeNodes( Array.from( element.childNodes ) ),
 			];
 		}
 
 		return [ node.nodeType, node.nodeName, node.textContent ?? '' ];
 	};
 
-	return Array.from( template.content.childNodes ).map( normalizeNode );
+	return normalizeNodes( Array.from( template.content.childNodes ) );
 }
 
-function getComparableRichTextValue( value: string ): unknown {
-	return getHTMLFragmentComparisonTree( value ) ?? value;
+function getComparableRichTextValue(
+	value: string,
+	preserveWhiteSpace = false
+): unknown {
+	return getHTMLFragmentComparisonTree( value, preserveWhiteSpace ) ?? value;
 }
 
 function areRichTextValuesEquivalent(
 	currentValue: string,
-	incomingValue: string
+	incomingValue: string,
+	preserveWhiteSpace = false
 ): boolean {
 	if ( currentValue === incomingValue ) {
 		return true;
 	}
 
-	const currentComparisonTree = getHTMLFragmentComparisonTree( currentValue );
-	const incomingComparisonTree =
-		getHTMLFragmentComparisonTree( incomingValue );
+	const currentComparisonTree = getHTMLFragmentComparisonTree(
+		currentValue,
+		preserveWhiteSpace
+	);
+	const incomingComparisonTree = getHTMLFragmentComparisonTree(
+		incomingValue,
+		preserveWhiteSpace
+	);
 
 	return (
 		currentComparisonTree !== null &&
@@ -777,7 +830,10 @@ function normalizeBlockAttributeForComparison(
 	schema: BlockAttributeSchema | undefined
 ): unknown {
 	if ( schema?.type === 'rich-text' && typeof value === 'string' ) {
-		return getComparableRichTextValue( value );
+		return getComparableRichTextValue(
+			value,
+			schema.__unstablePreserveWhiteSpace
+		);
 	}
 
 	if ( schema?.type === 'array' && schema.query && Array.isArray( value ) ) {
@@ -898,7 +954,11 @@ function areBlockAttributeValuesEquivalent(
 		typeof left === 'string' &&
 		typeof right === 'string'
 	) {
-		return areRichTextValuesEquivalent( left, right );
+		return areRichTextValuesEquivalent(
+			left,
+			right,
+			schema.__unstablePreserveWhiteSpace
+		);
 	}
 
 	if (
@@ -2281,7 +2341,13 @@ function mergeYValue(
 		typeof newVal === 'string' &&
 		currentVal instanceof Y.Text
 	) {
-		if ( areRichTextValuesEquivalent( currentVal.toString(), newVal ) ) {
+		if (
+			areRichTextValuesEquivalent(
+				currentVal.toString(),
+				newVal,
+				schema.__unstablePreserveWhiteSpace
+			)
+		) {
 			return;
 		}
 
@@ -2517,8 +2583,21 @@ function getBlockAttributeSchema(
 				new Map< string, BlockAttributeSchema >(
 					Object.entries( blockType.attributes ?? {} ).map(
 						( [ name, definition ] ) => {
-							const { role, type, query } = definition;
-							return [ name, { role, type, query } ];
+							const {
+								__unstablePreserveWhiteSpace,
+								role,
+								type,
+								query,
+							} = definition;
+							return [
+								name,
+								{
+									__unstablePreserveWhiteSpace,
+									role,
+									type,
+									query,
+								},
+							];
 						}
 					)
 				)
