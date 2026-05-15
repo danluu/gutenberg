@@ -15,7 +15,7 @@ import {
 	CRDT_STATE_MAP_SAVED_BY_KEY as SAVED_BY_KEY,
 	CRDT_STATE_MAP_VERSION_KEY as VERSION_KEY,
 } from './config';
-import type { CRDTDoc } from './types';
+import type { CRDTDoc, ObjectData } from './types';
 
 // An object representation of CRDT document metadata.
 type DocumentMeta = Record< string, DocumentMetaValue >;
@@ -23,13 +23,17 @@ type DocumentMetaValue = boolean | number | string;
 
 interface SerializedCrdtDoc {
 	baseVersion?: string;
+	baseRecordSnapshot?: ObjectData;
 	document: string;
+	recordSnapshot?: ObjectData;
 	updateId?: number;
 	version?: string;
 }
 
 interface SerializeCrdtDocOptions {
 	baseVersion?: string | null;
+	baseRecordSnapshot?: ObjectData | null;
+	recordSnapshot?: ObjectData | null;
 }
 
 /**
@@ -78,6 +82,7 @@ function pseudoRandomID(): number {
 	return Math.floor( Math.random() * 1000000000 );
 }
 
+/* eslint-disable no-bitwise */
 function toUint32Hex( value: number ): string {
 	return ( value >>> 0 ).toString( 16 ).padStart( 8, '0' );
 }
@@ -89,16 +94,14 @@ function getPersistedCrdtDocDocumentVersion( document: string ): string {
 	for ( let i = 0; i < document.length; i++ ) {
 		const charCode = document.charCodeAt( i );
 		hashA = Math.imul( hashA ^ charCode, 0x01000193 );
-		hashB = Math.imul(
-			hashB ^ charCode ^ ( i & 0xff ),
-			0x01000193
-		);
+		hashB = Math.imul( hashB ^ charCode ^ ( i & 0xff ), 0x01000193 );
 	}
 
 	return `document:${ document.length }:${ toUint32Hex(
 		hashA
 	) }${ toUint32Hex( hashB ) }`;
 }
+/* eslint-enable no-bitwise */
 
 function parseSerializedCrdtDoc(
 	serializedCrdtDoc: string
@@ -116,6 +119,12 @@ function parseSerializedCrdtDoc(
 	}
 }
 
+function isObjectData( value: unknown ): value is ObjectData {
+	return (
+		'object' === typeof value && null !== value && ! Array.isArray( value )
+	);
+}
+
 export function getPersistedCrdtDocVersion(
 	serializedCrdtDoc: string | null | undefined
 ): string | null {
@@ -126,6 +135,32 @@ export function getPersistedCrdtDocVersion(
 	const parsed = parseSerializedCrdtDoc( serializedCrdtDoc );
 	return parsed
 		? getPersistedCrdtDocDocumentVersion( parsed.document )
+		: null;
+}
+
+export function getPersistedCrdtDocRecordSnapshot(
+	serializedCrdtDoc: string | null | undefined
+): ObjectData | null {
+	if ( ! serializedCrdtDoc ) {
+		return null;
+	}
+
+	const parsed = parseSerializedCrdtDoc( serializedCrdtDoc );
+	return parsed && isObjectData( parsed.recordSnapshot )
+		? parsed.recordSnapshot
+		: null;
+}
+
+export function getPersistedCrdtDocBaseRecordSnapshot(
+	serializedCrdtDoc: string | null | undefined
+): ObjectData | null {
+	if ( ! serializedCrdtDoc ) {
+		return null;
+	}
+
+	const parsed = parseSerializedCrdtDoc( serializedCrdtDoc );
+	return parsed && isObjectData( parsed.baseRecordSnapshot )
+		? parsed.baseRecordSnapshot
 		: null;
 }
 
@@ -142,6 +177,14 @@ export function serializeCrdtDoc(
 
 	if ( options.baseVersion ) {
 		serialized.baseVersion = options.baseVersion;
+	}
+
+	if ( options.baseRecordSnapshot ) {
+		serialized.baseRecordSnapshot = options.baseRecordSnapshot;
+	}
+
+	if ( options.recordSnapshot ) {
+		serialized.recordSnapshot = options.recordSnapshot;
 	}
 
 	return JSON.stringify( serialized );

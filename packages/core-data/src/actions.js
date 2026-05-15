@@ -592,22 +592,26 @@ export const __unstableCreateUndoLevel =
 /**
  * Action triggered to save an entity record.
  *
- * @param {string}   kind                                     Kind of the received entity.
- * @param {string}   name                                     Name of the received entity.
- * @param {Object}   record                                   Record to be saved.
- * @param {Object}   options                                  Saving options.
- * @param {boolean}  [options.isAutosave=false]               Whether this is an autosave.
- * @param {Function} [options.__unstableFetch]                Internal use only. Function to
- *                                                            call instead of `apiFetch()`.
- *                                                            Must return a promise.
- * @param {boolean}  [options.__unstableSkipSyncUpdate=false] Whether to mark
- *                                                            synced entities
- *                                                            as saved without
- *                                                            applying the
- *                                                            server response to
- *                                                            the CRDT.
- * @param {boolean}  [options.throwOnError=false]             If false, this action suppresses all
- *                                                            the exceptions. Defaults to false.
+ * @param {string}   kind                                               Kind of the received entity.
+ * @param {string}   name                                               Name of the received entity.
+ * @param {Object}   record                                             Record to be saved.
+ * @param {Object}   options                                            Saving options.
+ * @param {boolean}  [options.isAutosave=false]                         Whether this is an autosave.
+ * @param {Function} [options.__unstableFetch]                          Internal use only. Function to
+ *                                                                      call instead of `apiFetch()`.
+ *                                                                      Must return a promise.
+ * @param {Object}   [options.__unstablePersistedCRDTDocRecordSnapshot]
+ *                                                                      Internal use only. Record snapshot
+ *                                                                      used when serializing a
+ *                                                                      persisted CRDT document.
+ * @param {boolean}  [options.__unstableSkipSyncUpdate=false]           Whether to mark
+ *                                                                      synced entities
+ *                                                                      as saved without
+ *                                                                      applying the
+ *                                                                      server response to
+ *                                                                      the CRDT.
+ * @param {boolean}  [options.throwOnError=false]                       If false, this action suppresses all
+ *                                                                      the exceptions. Defaults to false.
  */
 export const saveEntityRecord =
 	( kind, name, record, options = {} ) =>
@@ -615,6 +619,7 @@ export const saveEntityRecord =
 		const {
 			isAutosave = false,
 			__unstableFetch = apiFetch,
+			__unstablePersistedCRDTDocRecordSnapshot,
 			__unstableSkipSyncUpdate = false,
 			throwOnError = false,
 		} = options;
@@ -786,21 +791,24 @@ export const saveEntityRecord =
 					) => {
 						let edits = recordToPersist;
 						if ( entityConfig.__unstablePrePersist ) {
+							const prePersistOptions = {};
+							if ( __unstablePersistedCRDTDocRecordSnapshot ) {
+								prePersistOptions.recordSnapshot =
+									__unstablePersistedCRDTDocRecordSnapshot;
+							}
 							edits = {
 								...edits,
 								...( await entityConfig.__unstablePrePersist(
 									baseRecord,
-									edits
+									edits,
+									prePersistOptions
 								) ),
 							};
 						}
 						return edits;
 					};
 
-					let edits = await prepareEdits(
-						persistedRecord,
-						record
-					);
+					let edits = await prepareEdits( persistedRecord, record );
 					try {
 						updatedRecord = await __unstableFetch( {
 							path,

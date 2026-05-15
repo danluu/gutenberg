@@ -1184,6 +1184,38 @@ describe( 'saveEntityRecord', () => {
 		);
 		expect( result ).toBe( updatedRecord );
 	} );
+
+	it( 'passes persisted CRDT record snapshots to pre-persist hooks', async () => {
+		const post = { id: 10, title: 'local title', meta: {} };
+		const recordSnapshot = {
+			id: 10,
+			title: 'snapshot title',
+			meta: {},
+		};
+		const prePersist = jest.fn().mockResolvedValue( {} );
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: {},
+				__unstablePrePersist: prePersist,
+			},
+		];
+		const select = {
+			getRawEntityRecord: jest.fn( () => post ),
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+		apiFetch.mockResolvedValue( post );
+
+		await saveEntityRecord( 'postType', 'post', post, {
+			__unstablePersistedCRDTDocRecordSnapshot: recordSnapshot,
+		} )( { select, dispatch, resolveSelect } );
+
+		expect( prePersist ).toHaveBeenCalledWith( post, post, {
+			recordSnapshot,
+		} );
+	} );
 } );
 
 describe( 'receiveUserPermission', () => {

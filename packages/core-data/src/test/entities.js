@@ -189,6 +189,194 @@ describe( 'prePersistPostType', () => {
 		getSyncManager.mockReset();
 	} );
 
+	it( 'passes record snapshots when serializing persisted CRDT docs', async () => {
+		const mockSerializedDoc = 'serialized-crdt-doc-data';
+		const createPersistedCRDTDoc = jest
+			.fn()
+			.mockReturnValue( mockSerializedDoc );
+		getSyncManager.mockReturnValue( {
+			createPersistedCRDTDoc,
+		} );
+
+		const basePersistedCRDTDoc = 'base-crdt-doc-data';
+		const recordSnapshot = {
+			id: 123,
+			title: 'Snapshot Title',
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]:
+					'nested-doc-should-not-be-serialized',
+			},
+		};
+		const record = {
+			id: 123,
+			status: 'publish',
+			title: {
+				raw: 'Base Title',
+				rendered: 'Base Title',
+			},
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]:
+					basePersistedCRDTDoc,
+			},
+		};
+
+		await prePersistPostType( record, {}, 'post', false, undefined, {
+			recordSnapshot,
+		} );
+
+		expect( createPersistedCRDTDoc ).toHaveBeenCalledWith(
+			'postType/post',
+			123,
+			{
+				basePersistedCRDTDoc,
+				baseRecordSnapshot: {
+					title: 'Base Title',
+				},
+				recordSnapshot: {
+					title: 'Snapshot Title',
+				},
+			}
+		);
+
+		getSyncManager.mockReset();
+	} );
+
+	it( 'adds sanitized record snapshots when normal saves serialize persisted CRDT docs', async () => {
+		const mockSerializedDoc = 'serialized-crdt-doc-data';
+		const createPersistedCRDTDoc = jest
+			.fn()
+			.mockReturnValue( mockSerializedDoc );
+		getSyncManager.mockReturnValue( {
+			createPersistedCRDTDoc,
+		} );
+
+		const basePersistedCRDTDoc = 'base-crdt-doc-data';
+		const record = {
+			id: 123,
+			status: 'publish',
+			title: {
+				raw: 'Base Title',
+				rendered: 'Base Title',
+			},
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]:
+					basePersistedCRDTDoc,
+			},
+		};
+
+		await prePersistPostType(
+			record,
+			{
+				title: 'Local Title',
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]:
+						'nested-doc-should-not-be-serialized',
+				},
+			},
+			'post',
+			false
+		);
+
+		expect( createPersistedCRDTDoc ).toHaveBeenCalledWith(
+			'postType/post',
+			123,
+			{
+				basePersistedCRDTDoc,
+				baseRecordSnapshot: {
+					title: 'Base Title',
+				},
+				recordSnapshot: {
+					title: 'Local Title',
+				},
+			}
+		);
+
+		getSyncManager.mockReset();
+	} );
+
+	it( 'uses the latest record as the base snapshot when reserializing persisted CRDT docs', async () => {
+		const mockSerializedDoc = 'serialized-crdt-doc-data';
+		const createPersistedCRDTDoc = jest
+			.fn()
+			.mockReturnValue( mockSerializedDoc );
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( true ),
+			createPersistedCRDTDoc,
+			getCRDTRecordData: jest.fn( () => ( {
+				content: 'merged content',
+			} ) ),
+		};
+		getSyncManager.mockReturnValue( syncManager );
+
+		const recordSnapshot = {
+			id: 123,
+			title: 'local title',
+			meta: {},
+		};
+		const persistedRecord = {
+			id: 123,
+			title: {
+				raw: 'base title',
+				rendered: 'base title',
+			},
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+			},
+		};
+		const latestRecord = {
+			id: 123,
+			title: {
+				raw: 'latest title',
+				rendered: 'latest title',
+			},
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		window._wpCollaborationEnabled = true;
+
+		await prePersistPostType(
+			persistedRecord,
+			{ title: 'local title' },
+			'page',
+			false,
+			'/wp/v2/pages',
+			{ recordSnapshot }
+		);
+
+		expect( createPersistedCRDTDoc ).toHaveBeenNthCalledWith(
+			1,
+			'postType/page',
+			123,
+			{
+				basePersistedCRDTDoc: 'base-doc',
+				baseRecordSnapshot: {
+					title: 'base title',
+				},
+				recordSnapshot: {
+					title: 'local title',
+				},
+			}
+		);
+		expect( createPersistedCRDTDoc ).toHaveBeenNthCalledWith(
+			2,
+			'postType/page',
+			123,
+			{
+				basePersistedCRDTDoc: 'latest-doc',
+				baseRecordSnapshot: {
+					title: 'latest title',
+				},
+				recordSnapshot: {
+					title: 'local title',
+				},
+			}
+		);
+
+		getSyncManager.mockReset();
+	} );
+
 	it( 'preserves latest saved content when a full-record save only changes other fields', async () => {
 		const baseContent = pageContent( [ 'Alpha', 'Beta' ] );
 		const latestContent = pageContent( [ 'Alpha', 'current content' ] );
