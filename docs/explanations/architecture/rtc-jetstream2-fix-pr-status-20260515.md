@@ -64,6 +64,42 @@ The smallest maintainable split is not one mega-PR. It is a set of mostly
 independent PRs, plus a stacked CRDT block-reconciliation series. The proposed
 split below optimizes for reviewability over minimizing the number of PRs.
 
+## Proposed PR Sizes
+
+Size was measured in the Jetstream2 fix-planning repo at
+`/media/volume/danluu-fuzz-data/rtc-fix-plan-20260514/repo`.
+
+For single-branch PRs, the table is the branch diff. For grouped or stacked PRs,
+the table uses the intended review delta after splitting/rebasing: additive
+branch-local insertions/deletions and unique paths across the group. This is the
+right number for review planning. It can differ from the current as-is branch
+diff because some branches are stacked on earlier branches and include
+dependency commits when compared directly to the handoff base.
+
+| Proposed PR | Branches | Unique files | Insertions | Deletions |
+| --- | ---: | ---: | ---: | ---: |
+| PR 1: HTTP polling generated update size guard | 1 | 2 | 181 | 19 |
+| PR 2: HTTP polling storage read window | 1 | 2 | 57 | 5 |
+| PR 3: Revision restore CRDT meta reset | 1 | 2 | 58 | 5 |
+| PR 4: Persisted CRDT save-meta idempotence | 1 | 2 | 160 | 1 |
+| PR 5: Parser/entity normalization equivalence | 4 | 4 | 1680 | 68 |
+| PR 6: Save request payload guards | 3 | 4 | 738 | 6 |
+| PR 7: Save response guards | 5 | 5 | 1860 | 32 |
+| PR 8: Reload title and persisted-record hydration | 1 | 11 | 618 | 61 |
+| PR 9: Core-data lock fairness | 1 | 2 | 185 | 2 |
+| PR 10: CRDT block reconciliation foundation | 1 | 2 | 145 | 4 |
+| PR 11: Explicit-base top-level block operations | 5 | 2 | 1190 | 16 |
+| PR 12: Previous-local-cache top-level block operations | 3 | 2 | 833 | 6 |
+| PR 13: Cross-parent source retirement and identity smear guards | 5 | 2 | 3328 | 60 |
+| PR 14: Table body nested array merge | 1 | 2 | 294 | 18 |
+| PR 15: Fallback group residual structural fixes | 3 | 2 | 481 | 12 |
+
+The largest review risks by size are PR 13, PR 7, and PR 5. PR 13 has only two
+unique paths, but it is still large enough that it should probably be filed as a
+stacked series if reviewers want to inspect each structural invariant
+separately. PR 7 and PR 5 touch multiple subsystems or equivalence policies and
+are also reasonable candidates for further split if review latency matters.
+
 ### PR 1: HTTP polling generated update size guard
 
 Branch:
