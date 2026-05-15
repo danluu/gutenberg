@@ -2,6 +2,7 @@
 set -euo pipefail
 
 NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
+CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
@@ -12,7 +13,7 @@ cat > "$TMUX_WRAP/tmux" <<'SH'
 exec /usr/bin/tmux -L rtc-fuzz "$@"
 SH
 chmod +x "$TMUX_WRAP/tmux"
-export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
+export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 STRICT=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/current-run-root.txt 2>/dev/null || true)
 ISO_HTTP=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-validation-isolated-20260515/current-http-run-root.txt 2>/dev/null || true)
 ISO_WS=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-validation-isolated-20260515/current-ws-run-root.txt 2>/dev/null || true)
@@ -51,7 +52,7 @@ cat > "$RUN_SCRIPT" <<RUN
 #!/usr/bin/env bash
 set -u
 cd '$REPO'
-export PATH='$TMUX_WRAP':'$NODE_BIN':\$PATH
+export PATH='$CODEX_BIN_DIR':'$TMUX_WRAP':'$NODE_BIN':\$PATH
 export CI=1
 export RTC_FUZZ_NOVELTY_OUTPUT_DIR='$OUT'
 export RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS='$OBSERVED'
@@ -72,6 +73,7 @@ export RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD='8'
 export RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_BATCH_SIZE='12'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX='1'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD='$REPO'
+export RTC_FUZZ_CODEX_BIN='$CODEX_BIN_DIR/codex'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_INTERVAL_MINUTES='30'
 export RTC_FUZZ_NOVELTY_COVERAGE_GUIDANCE_STALL_PASSES='2'
 export RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_ISSUE_PASSES='2'

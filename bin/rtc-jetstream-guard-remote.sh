@@ -2,6 +2,7 @@
 set -euo pipefail
 
 NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
+CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
 REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
@@ -16,7 +17,7 @@ cat > "$TMUX_WRAP/tmux" <<'SH'
 exec /usr/bin/tmux -L rtc-fuzz "$@"
 SH
 chmod +x "$TMUX_WRAP/tmux"
-export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
+export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
 log() {
 	printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG_DIR/guard.log"
@@ -74,7 +75,7 @@ Task:
 5. Write a concise report to: $report
 PROMPT
 	log "launching $session for repeated restarts in $pool: $reason"
-	tmux new-session -d -s "$session" "bash -lc 'cd \"$REPO\"; export PATH=\"$TMUX_WRAP:$NODE_BIN:\$PATH\"; codex -a never exec --skip-git-repo-check -m gpt-5.5 -c model_reasoning_effort=xhigh -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
+	tmux new-session -d -s "$session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m gpt-5.5 -c model_reasoning_effort=xhigh -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
 }
 
 restart_pool() {

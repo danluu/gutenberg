@@ -2,6 +2,7 @@
 set -euo pipefail
 
 NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
+CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
@@ -12,7 +13,7 @@ cat > "$TMUX_WRAP/tmux" <<'SH'
 exec /usr/bin/tmux -L rtc-fuzz "$@"
 SH
 chmod +x "$TMUX_WRAP/tmux"
-export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
+export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
 tmux kill-session -t rtc-focused-shards-gap-codex-loop 2>/dev/null || true
 
@@ -21,13 +22,14 @@ cat > "$BASE/gap-codex-loop.sh" <<'LOOP'
 set -euo pipefail
 
 NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
+CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 STATE="$BASE/logs/gap-codex-loop-state.tsv"
 LOG="$BASE/logs/gap-codex-loop.log"
-export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
+export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
 mkdir -p "$BASE/logs"
 touch "$STATE"
@@ -110,7 +112,7 @@ Task:
 PROMPT
 
 	printf '[%s] launching %s reason=%s records=%s prev=%s\n' "$now" "$session" "$reason" "$records" "$prev_records" >> "$LOG"
-	tmux new-session -d -s "$session" "bash -lc 'cd \"$SRC\"; export PATH=\"$TMUX_WRAP:$NODE_BIN:\$PATH\"; codex -a never exec --skip-git-repo-check -m gpt-5.5 -c model_reasoning_effort=xhigh -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
+	tmux new-session -d -s "$session" "bash -lc 'cd \"$SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m gpt-5.5 -c model_reasoning_effort=xhigh -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
 	sleep 600
 done
 LOOP
