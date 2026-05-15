@@ -974,6 +974,42 @@ function areYBlocksEqualToPlainBlocks(
 	);
 }
 
+function mergeYBlocksLocalSuffixAppend(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[]
+): boolean {
+	if ( blocksToSync.length <= baseBlocks.length ) {
+		return false;
+	}
+
+	if (
+		! baseBlocks.every( ( baseBlock, index ) =>
+			fastDeepEqual( baseBlock, blocksToSync[ index ] )
+		)
+	) {
+		return false;
+	}
+
+	const insertionIndex = Math.min( baseBlocks.length, yblocks.length );
+	const appendedBlocks = blocksToSync.slice( baseBlocks.length );
+
+	if (
+		appendedBlocks.every( ( block, offset ) => {
+			const currentIndex = insertionIndex + offset;
+			return (
+				currentIndex < yblocks.length &&
+				areBlocksEqual( block, yblocks.get( currentIndex ) )
+			);
+		} )
+	) {
+		return true;
+	}
+
+	yblocks.insert( insertionIndex, appendedBlocks.map( createNewYBlock ) );
+	return true;
+}
+
 function findYBlockIndex(
 	yblocks: YBlocks,
 	baseBlock: Block,
@@ -1022,6 +1058,10 @@ function mergeYBlocksLocalChanges(
 		blocksToSync.length === baseBlocks.length
 	) {
 		return false;
+	}
+
+	if ( mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks ) ) {
+		return true;
 	}
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
