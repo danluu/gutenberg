@@ -1168,6 +1168,21 @@ function getUniqueKeys< T >(
 	return keys;
 }
 
+function areKeysInOrder( keys: string[], orderedKeys: string[] ): boolean {
+	let searchStart = 0;
+
+	return keys.every( ( key ) => {
+		const index = orderedKeys.indexOf( key, searchStart );
+
+		if ( index === -1 ) {
+			return false;
+		}
+
+		searchStart = index + 1;
+		return true;
+	} );
+}
+
 function cacheObservedTopLevelClientIds( yblocks: YBlocks ): void {
 	const observedClientIds =
 		observedTopLevelClientIdsCache.get( yblocks ) ?? new Set< string >();
@@ -1882,6 +1897,104 @@ function mergeYBlocksByClientId(
 			mergeBlockIntoYBlock( yblock, block, attributeCursor, baseBlock );
 		}
 	}
+}
+
+function mergeYBlocksLocalInsertionsByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): boolean {
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if (
+		! currentClientIds ||
+		! baseClientIds ||
+		! incomingClientIds ||
+		incomingClientIds.length <= baseClientIds.length
+	) {
+		return false;
+	}
+
+	const baseSet = new Set( baseClientIds );
+	const currentSet = new Set( currentClientIds );
+
+	if (
+		! baseClientIds.every(
+			( clientId ) =>
+				currentSet.has( clientId ) &&
+				incomingClientIds.includes( clientId )
+		) ||
+		! areKeysInOrder( baseClientIds, currentClientIds ) ||
+		! areKeysInOrder( baseClientIds, incomingClientIds )
+	) {
+		return false;
+	}
+
+	const nextClientIds = [ ...currentClientIds ];
+
+	for ( let index = 0; index < incomingClientIds.length; index++ ) {
+		const clientId = incomingClientIds[ index ];
+
+		if ( baseSet.has( clientId ) ) {
+			continue;
+		}
+
+		if ( nextClientIds.includes( clientId ) ) {
+			return false;
+		}
+
+		let previousAnchor: string | null = null;
+		for (
+			let previousIndex = index - 1;
+			previousIndex >= 0;
+			previousIndex--
+		) {
+			const previousClientId = incomingClientIds[ previousIndex ];
+			if ( nextClientIds.includes( previousClientId ) ) {
+				previousAnchor = previousClientId;
+				break;
+			}
+		}
+
+		let nextAnchor: string | null = null;
+		for (
+			let nextIndex = index + 1;
+			nextIndex < incomingClientIds.length;
+			nextIndex++
+		) {
+			const nextClientId = incomingClientIds[ nextIndex ];
+			if ( nextClientIds.includes( nextClientId ) ) {
+				nextAnchor = nextClientId;
+				break;
+			}
+		}
+
+		let insertIndex = nextClientIds.length;
+		if ( previousAnchor ) {
+			insertIndex = nextClientIds.indexOf( previousAnchor ) + 1;
+		} else if ( nextAnchor ) {
+			insertIndex = nextClientIds.indexOf( nextAnchor );
+		}
+
+		yblocks.insert( insertIndex, [
+			createNewYBlock( blocksToSync[ index ] ),
+		] );
+		nextClientIds.splice( insertIndex, 0, clientId );
+	}
+
+	mergeYBlocksByClientId(
+		yblocks,
+		blocksToSync,
+		attributeCursor,
+		baseBlocks
+	);
+	return true;
 }
 
 function isOrderedSubsequence(
@@ -3717,6 +3830,17 @@ function mergeYBlocksLocalChanges(
 			attributeCursor,
 			baseBlocks
 		);
+		return { handled: true, guardedSkip: false };
+	}
+
+	if (
+		mergeYBlocksLocalInsertionsByClientId(
+			yblocks,
+			blocksToSync,
+			baseBlocks,
+			attributeCursor
+		)
+	) {
 		return { handled: true, guardedSkip: false };
 	}
 
