@@ -41,19 +41,32 @@ clear_stale_lock_holder() {
 	fi
 
 	for pid in $(fuser "$LOCK_FILE" 2>/dev/null || true); do
-		comm=$(ps -o comm= -p "$pid" 2>/dev/null | awk '{$1=$1};1')
-		ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+		comm=$(ps -o comm= -p "$pid" 2>/dev/null || true)
+		comm=$(printf '%s' "$comm" | awk '{$1=$1};1')
+		ppid=$(ps -o ppid= -p "$pid" 2>/dev/null || true)
+		ppid=$(printf '%s' "$ppid" | tr -d ' ')
 		args=$(ps -o args= -p "$pid" 2>/dev/null || true)
 		case "$args" in
 			*"start_rtc_jetstream_guard.sh run"*|*"rtc-jetstream-guard-remote.sh run"*)
 				log "killing stale guard run lock holder pid=$pid"
+				for child in $(pgrep -P "$pid" 2>/dev/null || true); do
+					kill "$child" 2>/dev/null || true
+				done
 				kill "$pid" 2>/dev/null || true
+				sleep 1
+				if kill -0 "$pid" 2>/dev/null; then
+					kill -KILL "$pid" 2>/dev/null || true
+				fi
 				continue
 				;;
 		esac
 		if [ "$comm" = sleep ] && [ "$ppid" = 1 ]; then
 			log "killing stale guard sleep lock holder pid=$pid"
 			kill "$pid" 2>/dev/null || true
+			sleep 1
+			if kill -0 "$pid" 2>/dev/null; then
+				kill -KILL "$pid" 2>/dev/null || true
+			fi
 		fi
 	done
 }
@@ -186,6 +199,7 @@ case "${1:-start}" in
 			exit 0
 		fi
 		clear_stale_lock_holder
+		sleep 1
 		nohup "$0" run >> "$LOG_DIR/guard.out" 2>&1 &
 		echo "guard pid=$!"
 		;;
