@@ -1361,6 +1361,47 @@ function reorderYBlocksByClientId(
 	}
 }
 
+function reorderCurrentYBlocksByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[]
+): boolean {
+	if ( ! canReorderYBlocksByClientId( yblocks, blocksToSync ) ) {
+		return false;
+	}
+
+	for (
+		let targetIndex = 0;
+		targetIndex < blocksToSync.length;
+		targetIndex++
+	) {
+		const targetClientId = getBlockClientId( blocksToSync[ targetIndex ] );
+
+		if (
+			getYBlockClientId( yblocks.get( targetIndex ) ) === targetClientId
+		) {
+			continue;
+		}
+
+		const currentIndex = yblocks
+			.toArray()
+			.findIndex(
+				( yblock ) => getYBlockClientId( yblock ) === targetClientId
+			);
+
+		if ( currentIndex === -1 ) {
+			return false;
+		}
+
+		const reorderedBlock = createNewYBlock(
+			yblocks.get( currentIndex ).toJSON() as unknown as Block
+		);
+		yblocks.delete( currentIndex, 1 );
+		yblocks.insert( targetIndex, [ reorderedBlock ] );
+	}
+
+	return true;
+}
+
 function rebaseYBlocksByClientId(
 	yblocks: YBlocks,
 	baseBlocks: Block[] | undefined,
@@ -3666,6 +3707,16 @@ function mergeYBlocksLocalChanges(
 			attributeCursor
 		)
 	) {
+		return { handled: true, guardedSkip: false };
+	}
+
+	if ( reorderCurrentYBlocksByClientId( yblocks, blocksToSync ) ) {
+		mergeYBlocksByClientId(
+			yblocks,
+			blocksToSync,
+			attributeCursor,
+			baseBlocks
+		);
 		return { handled: true, guardedSkip: false };
 	}
 
