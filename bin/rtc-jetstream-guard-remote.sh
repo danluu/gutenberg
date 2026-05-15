@@ -111,6 +111,15 @@ run_loop() {
 		exit 0
 	fi
 	printf '%s\n' "$$" > "$PID_FILE"
+	child_pid=""
+	cleanup() {
+		if [ -n "$child_pid" ]; then
+			kill "$child_pid" 2>/dev/null || true
+			wait "$child_pid" 2>/dev/null || true
+		fi
+		rm -f "$PID_FILE"
+	}
+	trap cleanup INT TERM EXIT
 	touch "$EVENTS"
 	log "guard loop started pid=$$"
 	while true; do
@@ -138,7 +147,10 @@ run_loop() {
 			restart_pool asserts "missing fuzz-only assertion loop"
 		fi
 
-		sleep 120
+		sleep 120 &
+		child_pid=$!
+		wait "$child_pid" 2>/dev/null || true
+		child_pid=""
 	done
 }
 
