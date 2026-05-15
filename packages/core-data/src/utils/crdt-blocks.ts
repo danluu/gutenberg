@@ -325,8 +325,9 @@ function createNewYAttributeValue(
  * - `object` with query  -> Y.Map
  * - anything else        -> plain value (unchanged)
  *
- * @param schema The attribute type definition.
- * @param value  The plain JS value to convert.
+ * @param schema    The attribute type definition.
+ * @param value     The plain JS value to convert.
+ * @param valuePath Optional path used to identify nested array items.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
@@ -381,8 +382,10 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query The query schema defining the properties.
- * @param obj   The plain object to convert.
+ * @param query          The query schema defining the properties.
+ * @param obj            The plain object to convert.
+ * @param arrayElementId Optional stable array item identifier.
+ * @param valuePath      Optional path used to identify nested array items.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
@@ -928,6 +931,42 @@ function areYBlocksEqualToPlainBlocks(
 	);
 }
 
+function mergeYBlocksLocalSuffixAppend(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[]
+): boolean {
+	if ( blocksToSync.length <= baseBlocks.length ) {
+		return false;
+	}
+
+	if (
+		! baseBlocks.every( ( baseBlock, index ) =>
+			fastDeepEqual( baseBlock, blocksToSync[ index ] )
+		)
+	) {
+		return false;
+	}
+
+	const insertionIndex = Math.min( baseBlocks.length, yblocks.length );
+	const appendedBlocks = blocksToSync.slice( baseBlocks.length );
+
+	if (
+		appendedBlocks.every( ( block, offset ) => {
+			const currentIndex = insertionIndex + offset;
+			return (
+				currentIndex < yblocks.length &&
+				areBlocksEqual( block, yblocks.get( currentIndex ) )
+			);
+		} )
+	) {
+		return true;
+	}
+
+	yblocks.insert( insertionIndex, appendedBlocks.map( createNewYBlock ) );
+	return true;
+}
+
 function findYBlockIndex(
 	yblocks: YBlocks,
 	baseBlock: Block,
@@ -976,6 +1015,10 @@ function mergeYBlocksLocalChanges(
 		blocksToSync.length === baseBlocks.length
 	) {
 		return false;
+	}
+
+	if ( mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks ) ) {
+		return true;
 	}
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
