@@ -458,6 +458,44 @@ class Tests_Collaboration_WpSyncPostMetaStorage extends WP_UnitTestCase {
 		$this->assertSame( $valid_update_2, $updates[1] );
 	}
 
+	public function test_get_updates_after_cursor_returns_bounded_windows_from_cursor_zero() {
+		$storage     = new WP_Sync_Post_Meta_Storage();
+		$room        = $this->get_room() . ':cursor-zero-window';
+		$window_size = WP_Sync_Post_Meta_Storage::MAX_UPDATES_PER_CURSOR_READ;
+		$total       = $window_size + 25;
+		$seeded      = array();
+
+		for ( $i = 1; $i <= $total; $i++ ) {
+			$update   = array(
+				'client_id' => $i,
+				'type'      => 'update',
+				'data'      => base64_encode( "cursor-window-$i" ),
+			);
+			$seeded[] = $update;
+
+			$this->assertTrue( $storage->add_update( $room, $update ) );
+		}
+
+		$first_window = $storage->get_updates_after_cursor( $room, 0 );
+		$first_cursor = $storage->get_cursor( $room );
+
+		$this->assertCount( $window_size, $first_window );
+		$this->assertSame( $seeded[0], $first_window[0] );
+		$this->assertSame( $seeded[ $window_size - 1 ], $first_window[ $window_size - 1 ] );
+		$this->assertGreaterThan( 0, $first_cursor );
+
+		$second_window = $storage->get_updates_after_cursor( $room, $first_cursor );
+		$second_cursor = $storage->get_cursor( $room );
+
+		$this->assertCount( $total - $window_size, $second_window );
+		$this->assertSame( $seeded[ $window_size ], $second_window[0] );
+		$this->assertSame( $seeded[ $total - 1 ], $second_window[ $total - $window_size - 1 ] );
+		$this->assertGreaterThan( $first_cursor, $second_cursor );
+
+		$this->assertEmpty( $storage->get_updates_after_cursor( $room, $second_cursor ) );
+		$this->assertSame( $second_cursor, $storage->get_cursor( $room ) );
+	}
+
 	public function test_duplicate_awareness_rows_coalesces_on_latest_row() {
 		global $wpdb;
 

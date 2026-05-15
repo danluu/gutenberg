@@ -43,6 +43,14 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 		const SYNC_UPDATE_META_KEY = 'wp_sync_update_data';
 
 		/**
+		 * Maximum number of sync updates to read in a single cursor request.
+		 *
+		 * @since 7.0.0
+		 * @var int
+		 */
+		const MAX_UPDATES_PER_CURSOR_READ = 100;
+
+		/**
 		 * Cache of cursors by room.
 		 *
 		 * @since 7.0.0
@@ -200,7 +208,7 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 		 * Gets the current cursor for a given room.
 		 *
 		 * The cursor is set during get_updates_after_cursor() and represents the
-		 * highest meta_id seen for the room's sync updates.
+		 * highest meta_id examined for the room's sync updates.
 		 *
 		 * @since 7.0.0
 		 *
@@ -436,33 +444,39 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 			$max_meta_id   = $stats ? (int) $stats->max_meta_id : 0;
 
 			$this->room_update_counts[ $room ] = $total_updates;
-			$this->room_cursors[ $room ]       = $max_meta_id;
 
 			if ( $max_meta_id <= $cursor ) {
+				$this->room_cursors[ $room ] = $max_meta_id;
 				return array();
 			}
 
 			$rows = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s AND meta_id > %d AND meta_id <= %d ORDER BY meta_id ASC",
+					"SELECT meta_id, meta_value FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key = %s AND meta_id > %d AND meta_id <= %d ORDER BY meta_id ASC LIMIT %d",
 					$post_id,
 					self::SYNC_UPDATE_META_KEY,
 					$cursor,
-					$max_meta_id
+					$max_meta_id,
+					self::MAX_UPDATES_PER_CURSOR_READ
 				)
 			);
 
 			if ( ! $rows ) {
+				$this->room_cursors[ $room ] = $max_meta_id;
 				return array();
 			}
 
-			$updates = array();
+			$updates           = array();
+			$last_seen_meta_id = $cursor;
 			foreach ( $rows as $row ) {
+				$last_seen_meta_id = (int) $row->meta_id;
 				$decoded = json_decode( $row->meta_value, true );
 				if ( null !== $decoded ) {
 					$updates[] = $decoded;
 				}
 			}
+
+			$this->room_cursors[ $room ] = $last_seen_meta_id;
 
 			return $updates;
 		}
