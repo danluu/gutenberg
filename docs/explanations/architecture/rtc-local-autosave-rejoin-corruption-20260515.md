@@ -187,6 +187,37 @@ The old local autosave commits are not the introduction point:
 
 Those commits added a single-user recovery mechanism. They did not have RTC persisted CRDT state, reload/rejoin CRDT reconciliation, or the full edited-record persistence callback. They are trigger/enabler context for this repro, not the introduction of the RTC corruption bug.
 
+## Timing Sensitivity And Self-Healing
+
+The timing dependence is not the CRDT merge algorithm making a random choice. It comes from several asynchronous editor, RTC, autosave, and unload paths that do not have a single happens-before relationship.
+
+The long visible wait in the natural video is mostly the ordinary editor/autosave/list-promotion path. In the captured current-trunk repro, the draft takes about a minute to become visible after the first edit/save flow. That delay is relevant because it lets the user reach the same state a real collaboration session can reach, but it is not the subtle race by itself.
+
+The subtle part is what happens after the stale collaborator edits and leaves:
+
+1. Save-disabled edits still enter the RTC document.
+   - In the natural repro, the stale collaborator can clear the title while the Save button is disabled.
+   - That disabled button prevents a normal user-initiated REST save from that tab.
+   - It does not prevent the edit from updating the local synced entity state and the Yjs/RTC document through the sync path.
+
+2. RTC delivery is deferred and polling-based in the default provider.
+   - Local CRDT updates are queued and sent on provider turns rather than synchronously committed to all peers.
+   - Closing a tab uses unload/pagehide-style cleanup and a nonblocking disconnect path. That does not strongly order "last local CRDT update was delivered", "peer received current good state", "local client cleared state", and "fresh editor reopened".
+
+3. Fresh editor load races persisted state against remote unsaved state.
+   - A newly opened editor creates and connects the sync provider before all persisted CRDT reconciliation is a complete readiness barrier.
+   - `packages/sync/src/manager.ts` explicitly accounts for unsaved changes syncing from another peer before persisted CRDT reconciliation runs.
+   - That means the fresh editor can observe a stale remote unsaved snapshot before the saved REST record and persisted CRDT document have become the only authority.
+
+4. CRDT persistence and save serialization are also asynchronous.
+   - The persistence path serializes `_crdt_document` after pending Y.Doc/store work has had a chance to run.
+   - `syncManager.update()` and related observer work are deferred.
+   - Save response handling, persisted CRDT metadata, saved-state markers, and queued provider updates are therefore not globally ordered.
+
+This explains both the frequency and the self-healing behavior observed on current trunk. The exact natural video sequence reproduced the full failure in 7 out of 10 attempts. When the stale collaborator tab was left open for an additional wait before closing, the tested variants stopped reproducing the full failure in 0 out of 2 attempts. That sample is small, but it matches the mechanism: if the stale tab remains alive long enough, it can receive and reconcile the good saved state from the other user before it is closed. Closing it quickly preserves a window where stale unsaved RTC state can still affect the next fresh load even though the REST record and persisted CRDT may already contain the saved body.
+
+The short version is: the nondeterminism comes from racing stale unsaved RTC state, saved/persisted CRDT state, provider polling delivery, fresh editor hydration, and tab unload/disconnect. Given the same visible user actions, small scheduling differences decide whether the fresh reopen hydrates from the good persisted document or first applies stale blank/prefix state from the previous collaborator session.
+
 ## Initial Fix Plan
 
 1. Add a per-entity RTC readiness barrier.
