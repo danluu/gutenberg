@@ -325,8 +325,9 @@ function createNewYAttributeValue(
  * - `object` with query  -> Y.Map
  * - anything else        -> plain value (unchanged)
  *
- * @param schema The attribute type definition.
- * @param value  The plain JS value to convert.
+ * @param schema    The attribute type definition.
+ * @param value     The plain JS value to convert.
+ * @param valuePath Path used to identify nested values in array/query attributes.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
@@ -381,8 +382,10 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query The query schema defining the properties.
- * @param obj   The plain object to convert.
+ * @param query          The query schema defining the properties.
+ * @param obj            The plain object to convert.
+ * @param arrayElementId Existing or requested stable array element identifier.
+ * @param valuePath      Path used to identify nested values in array/query attributes.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
@@ -492,6 +495,40 @@ function normalizeBlockForIdentity( value: unknown ): unknown {
 
 function getBlockSemanticKey( block: Block ): string {
 	return JSON.stringify( normalizeBlockForIdentity( block ) );
+}
+
+function getYBlockSemanticKey( yblock: YBlock ): string {
+	return getBlockSemanticKey( yblock.toJSON() as unknown as Block );
+}
+
+function findEquivalentYBlockIndex( yblocks: YBlocks, block: Block ): number {
+	const clientId = getBlockClientId( block );
+
+	if ( clientId ) {
+		for ( let index = 0; index < yblocks.length; index++ ) {
+			if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+				return index;
+			}
+		}
+
+		return -1;
+	}
+
+	const semanticKey = getBlockSemanticKey( block );
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const yblock = yblocks.get( index );
+
+		if ( getYBlockSemanticKey( yblock ) === semanticKey ) {
+			return index;
+		}
+
+		if ( areBlocksEqual( block, yblock ) ) {
+			return index;
+		}
+	}
+
+	return -1;
 }
 
 function getUniqueKeys< T >(
@@ -957,6 +994,70 @@ function findYBlockIndex(
 	return preferredIndex < yblocks.length ? preferredIndex : -1;
 }
 
+function findStrictYBlockIndex( yblocks: YBlocks, block: Block ): number {
+	const clientId = getBlockClientId( block );
+
+	if ( clientId ) {
+		for ( let index = 0; index < yblocks.length; index++ ) {
+			if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+				return index;
+			}
+		}
+
+		return -1;
+	}
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		if ( areBlocksEqual( block, yblocks.get( index ) ) ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
+function mergeYBlocksLocalSuffixAppend(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[]
+): void {
+	if ( blocksToSync.length <= baseBlocks.length || baseBlocks.length === 0 ) {
+		return;
+	}
+
+	if (
+		! fastDeepEqual(
+			blocksToSync.slice( 0, baseBlocks.length ),
+			baseBlocks
+		)
+	) {
+		return;
+	}
+
+	const anchorIndex = findStrictYBlockIndex(
+		yblocks,
+		baseBlocks[ baseBlocks.length - 1 ]
+	);
+
+	if ( anchorIndex === -1 ) {
+		return;
+	}
+
+	let insertIndex = anchorIndex + 1;
+
+	for ( const block of blocksToSync.slice( baseBlocks.length ) ) {
+		const existingIndex = findEquivalentYBlockIndex( yblocks, block );
+
+		if ( existingIndex !== -1 ) {
+			insertIndex = Math.max( insertIndex, existingIndex + 1 );
+			continue;
+		}
+
+		yblocks.insert( insertIndex, [ createNewYBlock( block ) ] );
+		insertIndex++;
+	}
+}
+
 function mergeYBlocksLocalChanges(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
@@ -977,6 +1078,8 @@ function mergeYBlocksLocalChanges(
 	) {
 		return false;
 	}
+
+	mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks );
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
 
