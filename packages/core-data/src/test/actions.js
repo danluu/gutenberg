@@ -1599,6 +1599,86 @@ describe( 'saveEntityRecord', () => {
 		expect( result ).toBe( staleSaveResponse );
 	} );
 
+	it( 'hydrates after receiving a guarded CRDT document save response', async () => {
+		const savedCRDTDocument = JSON.stringify( {
+			document: 'saved-document',
+			version: 'document:saved',
+		} );
+		const persistedRecord = {
+			id: 10,
+			content: { raw: 'checkpoint content 8' },
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			content: 'checkpoint content 9',
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			content: {
+				raw: 'checkpoint content 8',
+				rendered: 'checkpoint content 8',
+			},
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const guardedSaveResponse = {
+			id: 10,
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			hydrateRecordFromPersistedCRDTDoc: jest
+				.fn()
+				.mockResolvedValue( true ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: 'checkpoint content 10',
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			guardedSaveResponse,
+			undefined,
+			true,
+			post
+		);
+		expect(
+			syncManager.hydrateRecordFromPersistedCRDTDoc
+		).toHaveBeenCalledWith( 'postType/post', 10, guardedSaveResponse );
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			guardedSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
 	it( 'does not write a stale normal save response title to sync after the live title advances', async () => {
 		const persistedRecord = {
 			id: 10,
