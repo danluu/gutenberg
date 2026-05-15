@@ -1229,10 +1229,14 @@ export const saveEntityRecord =
 					if ( __unstableSkipSyncUpdate ) {
 						receiveRecord = Object.keys( edits ).reduce(
 							( acc, key ) => {
-								acc[ key ] =
-									key in updatedRecord
-										? updatedRecord[ key ]
-										: edits[ key ];
+								if ( key in receiveRecord ) {
+									acc[ key ] = receiveRecord[ key ];
+								} else if (
+									receiveRecord === updatedRecord ||
+									! ( key in updatedRecord )
+								) {
+									acc[ key ] = edits[ key ];
+								}
 								return acc;
 							},
 							recordId ? { [ entityIdKey ]: recordId } : {}
