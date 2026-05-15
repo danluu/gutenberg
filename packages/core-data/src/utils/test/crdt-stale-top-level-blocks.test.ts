@@ -324,4 +324,54 @@ describe( 'stale top-level block snapshots', () => {
 
 		remoteDoc.destroy();
 	} );
+
+	it( 'preserves top-level order when a stale insert follows a converged delete through the post CRDT adapter', () => {
+		const initialBlocks = [
+			paragraph( 'deleted-remotely', 'Alpha' ),
+			paragraph( 'first-survivor', 'Beta' ),
+			paragraph( 'second-survivor', 'Gamma' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: initialBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+		const afterRemoteDeleteBlocks = [
+			paragraph( 'first-survivor', 'Beta' ),
+			paragraph( 'second-survivor', 'Gamma' ),
+		];
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{ blocks: afterRemoteDeleteBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Beta',
+			'Gamma',
+		] );
+
+		const staleLocalInsertedBlocks = [
+			...afterRemoteDeleteBlocks,
+			paragraph( 'inserted-locally', 'Delta' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: staleLocalInsertedBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+
+		expect( contentsOf( postBlocks( doc ) ) ).toEqual( [
+			'Beta',
+			'Gamma',
+			'Delta',
+		] );
+
+		remoteDoc.destroy();
+	} );
 } );
