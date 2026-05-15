@@ -37,6 +37,13 @@ jest.mock( '@wordpress/blocks', () => {
 				attributes: { content: { type: 'rich-text' } },
 			},
 			{
+				name: 'core/pullquote',
+				attributes: {
+					value: { type: 'rich-text' },
+					citation: { type: 'rich-text' },
+				},
+			},
+			{
 				name: 'core/table',
 				attributes: {
 					caption: { type: 'rich-text' },
@@ -113,6 +120,15 @@ function group( clientId: string, innerBlocks: Block[] = [] ): Block {
 		clientId,
 		attributes: {},
 		innerBlocks,
+	};
+}
+
+function pullquote( clientId: string, value: string, citation: string ): Block {
+	return {
+		name: 'core/pullquote',
+		clientId,
+		attributes: { value, citation },
+		innerBlocks: [],
 	};
 }
 
@@ -1349,6 +1365,406 @@ describe( 'stale top-level block snapshots', () => {
 		expect( blocks[ 2 ].attributes.content ).toBe( 'Fresh remote note' );
 
 		remoteDoc.destroy();
+	} );
+
+	it( 'retires an explicit-base stale top-level source moved into a group', () => {
+		const baseBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Base quote', 'Base citation' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Current quote', 'Current citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group', [
+				paragraph( 'nested', 'Nested' ),
+				pullquote( 'moved', 'Base quote', 'Base citation' ),
+			] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'group',
+			'tail',
+		] );
+		expect( allClientIdsOf( blocks ) ).toEqual( [
+			'heading',
+			'group',
+			'nested',
+			'moved',
+			'tail',
+		] );
+		expect(
+			blocks[ 1 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested', 'moved' ] );
+		expect( blocks[ 1 ].innerBlocks[ 1 ].name ).toBe( 'core/pullquote' );
+		expect( blocks[ 1 ].innerBlocks[ 1 ].attributes.value ).toBe(
+			'Current quote'
+		);
+		expect( blocks[ 1 ].innerBlocks[ 1 ].attributes.citation ).toBe(
+			'Current citation'
+		);
+		expect( blocks[ 2 ].name ).toBe( 'core/paragraph' );
+		expect( blocks[ 2 ].attributes.content ).toBe( 'Tail' );
+		expect( blocks[ 2 ].attributes ).not.toHaveProperty( 'value' );
+		expect( blocks[ 2 ].attributes ).not.toHaveProperty( 'citation' );
+	} );
+
+	it( 'retires an explicit-base stale top-level source through the post CRDT adapter', () => {
+		const baseBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Base quote', 'Base citation' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Current quote', 'Current citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group', [
+				paragraph( 'nested', 'Nested' ),
+				pullquote( 'moved', 'Base quote', 'Base citation' ),
+			] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: currentBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const yPostBlocks = postBlocks( doc );
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: staleIncomingBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: baseBlocks } }
+		);
+
+		const blocks = yPostBlocks.toJSON() as Block[];
+		expect( clientIdsOf( yPostBlocks ) ).toEqual( [
+			'heading',
+			'group',
+			'tail',
+		] );
+		expect( allClientIdsOf( blocks ) ).toEqual( [
+			'heading',
+			'group',
+			'nested',
+			'moved',
+			'tail',
+		] );
+		expect( blocks[ 1 ].innerBlocks[ 1 ].attributes.value ).toBe(
+			'Current quote'
+		);
+		expect( blocks[ 1 ].innerBlocks[ 1 ].attributes.citation ).toBe(
+			'Current citation'
+		);
+		expect( blocks[ 2 ].attributes ).not.toHaveProperty( 'value' );
+		expect( blocks[ 2 ].attributes ).not.toHaveProperty( 'citation' );
+	} );
+
+	it( 'does not retire an explicit-base source when the destination has independent nested content', () => {
+		const baseBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Base quote', 'Base citation' ),
+			group( 'group' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Current quote', 'Current citation' ),
+			group( 'group', [ paragraph( 'note', 'Current-only note' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group', [
+				pullquote( 'moved', 'Base quote', 'Base citation' ),
+			] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved',
+			'group',
+			'tail',
+		] );
+		expect( blocks[ 1 ].name ).toBe( 'core/pullquote' );
+		expect( blocks[ 1 ].attributes.value ).toBe( 'Current quote' );
+		expect( blocks[ 1 ].attributes.citation ).toBe( 'Current citation' );
+		expect(
+			blocks[ 2 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'note' ] );
+		expect( blocks[ 2 ].innerBlocks[ 0 ].attributes.content ).toBe(
+			'Current-only note'
+		);
+	} );
+
+	it( 'preserves a current-only sibling while retiring an explicit-base stale top-level source', () => {
+		const baseBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Base quote', 'Base citation' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Current quote', 'Current citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'note', 'Fresh current note' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group', [
+				paragraph( 'nested', 'Nested' ),
+				pullquote( 'moved', 'Base quote', 'Base citation' ),
+			] ),
+			paragraph( 'note', 'Stale incoming note' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'group',
+			'note',
+			'tail',
+		] );
+		expect(
+			blocks[ 1 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested', 'moved' ] );
+		expect( blocks[ 1 ].innerBlocks[ 1 ].attributes.value ).toBe(
+			'Current quote'
+		);
+		expect( blocks[ 2 ].attributes.content ).toBe( 'Fresh current note' );
+	} );
+
+	it( 'does not retire an explicit-base source when the top-level order also changes', () => {
+		const baseBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Base quote', 'Base citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Current quote', 'Current citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			group( 'group', [
+				paragraph( 'nested', 'Nested' ),
+				pullquote( 'moved', 'Base quote', 'Base citation' ),
+			] ),
+			paragraph( 'heading', 'Heading' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved',
+			'group',
+			'tail',
+		] );
+		expect( blocks[ 1 ].name ).toBe( 'core/pullquote' );
+		expect( blocks[ 1 ].attributes.value ).toBe( 'Current quote' );
+		expect(
+			blocks[ 2 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested' ] );
+	} );
+
+	it( 'does not retire multiple explicit-base top-level sources in one guarded merge', () => {
+		const baseBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved-a', 'Base quote A', 'Base citation A' ),
+			pullquote( 'moved-b', 'Base quote B', 'Base citation B' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved-a', 'Current quote A', 'Current citation A' ),
+			pullquote( 'moved-b', 'Current quote B', 'Current citation B' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group', [
+				paragraph( 'nested', 'Nested' ),
+				pullquote( 'moved-a', 'Base quote A', 'Base citation A' ),
+				pullquote( 'moved-b', 'Base quote B', 'Base citation B' ),
+			] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved-a',
+			'moved-b',
+			'group',
+			'tail',
+		] );
+		expect( blocks[ 1 ].attributes.value ).toBe( 'Current quote A' );
+		expect( blocks[ 2 ].attributes.value ).toBe( 'Current quote B' );
+		expect(
+			blocks[ 3 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested' ] );
+	} );
+
+	it( 'does not retire an explicit-base source when top-level incoming IDs are duplicated', () => {
+		const baseBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Base quote', 'Base citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Current quote', 'Current citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group', [
+				paragraph( 'nested', 'Nested' ),
+				pullquote( 'moved', 'Base quote', 'Base citation' ),
+			] ),
+			paragraph( 'heading', 'Duplicate heading' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved',
+			'group',
+			'tail',
+		] );
+		expect( blocks[ 1 ].name ).toBe( 'core/pullquote' );
+		expect( blocks[ 1 ].attributes.value ).toBe( 'Current quote' );
+		expect(
+			blocks[ 2 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested' ] );
+	} );
+
+	it( 'does not retire an explicit-base source when a top-level incoming ID is missing', () => {
+		const baseBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Base quote', 'Base citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Current quote', 'Current citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group', [
+				paragraph( 'nested', 'Nested' ),
+				pullquote( 'moved', 'Base quote', 'Base citation' ),
+			] ),
+			{
+				name: 'core/paragraph',
+				attributes: { content: 'Missing id' },
+				innerBlocks: [],
+			},
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved',
+			'group',
+			'tail',
+		] );
+		expect( blocks[ 1 ].name ).toBe( 'core/pullquote' );
+		expect( blocks[ 1 ].attributes.value ).toBe( 'Current quote' );
+		expect(
+			blocks[ 2 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested' ] );
+	} );
+
+	it( 'does not merge an explicit-base source that appears both top-level and nested', () => {
+		const baseBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Base quote', 'Base citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const currentBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Current quote', 'Current citation' ),
+			group( 'group', [ paragraph( 'nested', 'Nested' ) ] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		const staleIncomingBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			pullquote( 'moved', 'Base quote', 'Base citation' ),
+			group( 'group', [
+				paragraph( 'nested', 'Nested' ),
+				pullquote( 'moved', 'Base quote', 'Base citation' ),
+			] ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+
+		mergeCrdtBlocks( yblocks, staleIncomingBlocks, null, baseBlocks );
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved',
+			'group',
+			'tail',
+		] );
+		expect( blocks[ 1 ].name ).toBe( 'core/pullquote' );
+		expect( blocks[ 1 ].attributes.value ).toBe( 'Current quote' );
+		expect(
+			blocks[ 2 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'nested' ] );
 	} );
 
 	it( 'retires a current-only table source when a stale snapshot moves it into a group', () => {
