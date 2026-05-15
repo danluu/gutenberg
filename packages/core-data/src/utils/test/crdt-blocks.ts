@@ -2009,6 +2009,19 @@ describe( 'crdt-blocks', () => {
 	} );
 
 	describe( 'table block', () => {
+		const createTableBlocksFromBody = (
+			body: {
+				cells: { content: string; tag: string }[];
+			}[]
+		): Block[] => [
+			{
+				name: 'core/table',
+				clientId: 'table-block',
+				attributes: { body },
+				innerBlocks: [],
+			},
+		];
+
 		it( 'preserves table cell content through CRDT round-trip', () => {
 			const tableBlocks: Block[] = [
 				{
@@ -2726,6 +2739,130 @@ describe( 'crdt-blocks', () => {
 			expect( body[ 0 ].cells[ 0 ].content ).toBe( 'anchor' );
 			expect( body[ 1 ].cells[ 0 ].content ).toBe( 'edited-duplicate' );
 			expect( body[ 1 ].cells[ 1 ].content ).toBe( 'extra' );
+		} );
+
+		it( 'preserves a stale local table row append after a remote row append', () => {
+			const initialBody = [
+				{
+					cells: [ { content: 'A1', tag: 'td' } ],
+				},
+				{
+					cells: [ { content: 'B1', tag: 'td' } ],
+				},
+			];
+			const initialBlocks = createTableBlocksFromBody( initialBody );
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			mergeCrdtBlocks(
+				yblocks,
+				createTableBlocksFromBody( [
+					{
+						cells: [ { content: 'A1', tag: 'td' } ],
+					},
+					{
+						cells: [ { content: 'B1', tag: 'td' } ],
+					},
+					{
+						cells: [ { content: 'remote-row', tag: 'td' } ],
+					},
+				] ),
+				null,
+				initialBlocks
+			);
+
+			mergeCrdtBlocks(
+				yblocks,
+				createTableBlocksFromBody( [
+					{
+						cells: [ { content: 'A1', tag: 'td' } ],
+					},
+					{
+						cells: [ { content: 'B1-local', tag: 'td' } ],
+					},
+					{
+						cells: [ { content: 'local-row', tag: 'td' } ],
+					},
+				] ),
+				null,
+				initialBlocks
+			);
+
+			const attrs = yblocks
+				.get( 0 )
+				.get( 'attributes' ) as YBlockAttributes;
+			const body = (
+				attrs.get( 'body' ) as Y.Array< unknown >
+			 ).toJSON() as { cells: { content: string }[] }[];
+			const rowContents = body.map( ( row ) => row.cells[ 0 ].content );
+
+			expect( rowContents ).toHaveLength( 4 );
+			expect( rowContents.slice( 0, 2 ) ).toEqual( [ 'A1', 'B1-local' ] );
+			expect( rowContents ).toEqual(
+				expect.arrayContaining( [ 'remote-row', 'local-row' ] )
+			);
+		} );
+
+		it( 'preserves a stale local table row prepend after a remote row append', () => {
+			const initialBody = [
+				{
+					cells: [ { content: 'A1', tag: 'td' } ],
+				},
+				{
+					cells: [ { content: 'B1', tag: 'td' } ],
+				},
+			];
+			const initialBlocks = createTableBlocksFromBody( initialBody );
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			mergeCrdtBlocks(
+				yblocks,
+				createTableBlocksFromBody( [
+					{
+						cells: [ { content: 'A1', tag: 'td' } ],
+					},
+					{
+						cells: [ { content: 'B1', tag: 'td' } ],
+					},
+					{
+						cells: [ { content: 'remote-row', tag: 'td' } ],
+					},
+				] ),
+				null,
+				initialBlocks
+			);
+
+			mergeCrdtBlocks(
+				yblocks,
+				createTableBlocksFromBody( [
+					{
+						cells: [ { content: 'local-row', tag: 'td' } ],
+					},
+					{
+						cells: [ { content: 'A1', tag: 'td' } ],
+					},
+					{
+						cells: [ { content: 'B1', tag: 'td' } ],
+					},
+				] ),
+				null,
+				initialBlocks
+			);
+
+			const attrs = yblocks
+				.get( 0 )
+				.get( 'attributes' ) as YBlockAttributes;
+			const body = (
+				attrs.get( 'body' ) as Y.Array< unknown >
+			 ).toJSON() as { cells: { content: string }[] }[];
+
+			expect( body.map( ( row ) => row.cells[ 0 ].content ) ).toEqual( [
+				'local-row',
+				'A1',
+				'B1',
+				'remote-row',
+			] );
 		} );
 
 		it( 'preserves remote sibling fields when a stale local nested object changes another field', () => {
