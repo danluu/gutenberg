@@ -118,7 +118,9 @@ enabled_groups <- tibble(
 			str_detect( group, "real-user" ) ~ "real-user",
 			str_detect( group, "media|async" ) ~ "async/media",
 			str_detect( group, "parser" ) ~ "parser",
-			str_detect( group, "reload|lifecycle|long-session" ) ~ "lifecycle",
+			str_detect( group, "revision|autosave|persistence" ) ~ "persistence",
+			str_detect( group, "permission|auth|lock" ) ~ "auth/locks",
+			str_detect( group, "reload|lifecycle|long-session|same-user|three-user" ) ~ "lifecycle",
 			str_detect( group, "block|common|structure" ) ~ "block-structure",
 			str_detect( group, "http" ) ~ "http",
 			TRUE ~ "other"
@@ -145,7 +147,7 @@ profile_counts <- named_number_frame( state$recordCountsByProfile, "profile", "r
 			str_detect( profile, "real-user" ) ~ "real-user",
 			str_detect( profile, "media|async" ) ~ "async/media",
 			str_detect( profile, "parser" ) ~ "parser",
-			str_detect( profile, "reload|lifecycle|session|long" ) ~ "lifecycle",
+			str_detect( profile, "reload|lifecycle|session|long|same-user|three-user" ) ~ "lifecycle",
 			str_detect( profile, "revision|persistence" ) ~ "persistence",
 			str_detect( profile, "block|common|structure|full" ) ~ "block-structure",
 			str_detect( profile, "permission|auth|lock" ) ~ "auth/locks",
@@ -183,6 +185,12 @@ feature_counts <- named_number_frame( state$featureCounts, "feature", "count" ) 
 			str_starts( feature, "step-count" ) ~ "step-count",
 			str_starts( feature, "payload-size" ) ~ "payload-size",
 			str_starts( feature, "serialized-size" ) ~ "serialized-size",
+			str_starts( feature, "users:" ) ~ "users",
+			str_starts( feature, "lifecycle:" ) ~ "lifecycle",
+			str_starts( feature, "auth-session-expiry-probe" ) ~ "auth",
+			str_starts( feature, "local-autosave" ) ~ "autosave",
+			str_starts( feature, "media-cross-entity" ) ~ "media/cross-entity",
+			str_starts( feature, "cdp" ) ~ "code coverage",
 			TRUE ~ "other"
 		)
 	)
@@ -275,15 +283,12 @@ write_csv( review_durations, file.path( data_dir, "pr_review_durations.csv" ) )
 write_csv( feedback_durations, file.path( data_dir, "pr_feedback_durations.csv" ) )
 
 coverage_long <- monitor %>%
-	select( timestamp, coverage_files, processed, new_features, new_cdp, unmet_coverage ) %>%
+	select( timestamp, coverage_files, unmet_coverage ) %>%
 	pivot_longer( -timestamp, names_to = "metric", values_to = "value" ) %>%
 	mutate(
 		metric = recode(
 			metric,
 			coverage_files = "coverage files",
-			processed = "records processed this pass",
-			new_features = "new behavioral features",
-			new_cdp = "new CDP hashes",
 			unmet_coverage = "unmet coverage goals"
 		)
 	)
@@ -291,7 +296,7 @@ coverage_long <- monitor %>%
 write_plot(
 	"monitor-coverage-intake.png",
 	ggplot( coverage_long, aes( x = timestamp, y = value, color = metric ) ) +
-		geom_point( alpha = 0.72, size = 1.9 ) +
+		geom_point( alpha = 0.5, size = 0.75 ) +
 		facet_wrap( vars( metric ), scales = "free_y", ncol = 1 ) +
 		scale_color_brewer( palette = "Dark2" ) +
 		scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
@@ -307,13 +312,50 @@ write_plot(
 	height = 8
 )
 
+yield_long <- monitor %>%
+	mutate( coverage_delta = coverage_files - lag( coverage_files ) ) %>%
+	select( timestamp, processed, new_features, new_cdp, coverage_delta ) %>%
+	pivot_longer( -timestamp, names_to = "metric", values_to = "value" ) %>%
+	mutate(
+		reset_artifact = metric == "coverage_delta" & value < 0,
+		plot_value = log1p( pmax( value, 0 ) ),
+		metric = recode(
+			metric,
+			processed = "records processed this pass",
+			new_features = "new behavioral features",
+			new_cdp = "new CDP hashes",
+			coverage_delta = "coverage file delta"
+		),
+		pass_kind = if_else( reset_artifact, "negative reset artifact", "normal pass" )
+	)
+
+write_plot(
+	"monitor-per-pass-yield.png",
+	ggplot( yield_long, aes( x = timestamp, y = plot_value, color = metric, shape = pass_kind ) ) +
+		geom_point( alpha = 0.35, size = 0.75 ) +
+		facet_wrap( vars( metric ), scales = "free_y", ncol = 1 ) +
+		scale_color_brewer( palette = "Dark2" ) +
+		scale_shape_manual( values = c( "normal pass" = 16, "negative reset artifact" = 4 ) ) +
+		scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
+		labs(
+			title = "Per-pass fuzz yield over time",
+			x = "UTC time on 2026-05-15",
+			y = "log1p(value)",
+			color = NULL,
+			shape = NULL,
+			caption = "Negative coverage-file deltas are reset/restart artifacts and are plotted at zero on the log1p scale."
+		) +
+		theme_rtc(),
+	width = 9,
+	height = 7
+)
+
 health_long <- monitor %>%
-	select( timestamp, likely_real, warnings, duplicate_share, memory_free_gb, no_progress ) %>%
+	select( timestamp, warnings, duplicate_share, memory_free_gb, no_progress ) %>%
 	pivot_longer( -timestamp, names_to = "metric", values_to = "value" ) %>%
 	mutate(
 		metric = recode(
 			metric,
-			likely_real = "visible likely-real failures",
 			warnings = "monitor warnings",
 			duplicate_share = "top duplicate/noise share",
 			memory_free_gb = "free memory (GiB)",
@@ -324,7 +366,7 @@ health_long <- monitor %>%
 write_plot(
 	"monitor-health-yield.png",
 	ggplot( health_long, aes( x = timestamp, y = value, color = metric ) ) +
-		geom_point( alpha = 0.72, size = 1.9 ) +
+		geom_point( alpha = 0.5, size = 0.75 ) +
 		facet_wrap( vars( metric ), scales = "free_y", ncol = 1 ) +
 		scale_color_brewer( palette = "Set2" ) +
 		scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
@@ -341,131 +383,222 @@ write_plot(
 )
 
 if ( nrow( enabled_groups ) > 0 ) {
+	enabled_group_summary <- enabled_groups %>%
+		group_by( group, group_family ) %>%
+		summarise(
+			first_enabled = min( timestamp ),
+			last_seen = max( timestamp ),
+			enable_events = n(),
+			.groups = "drop"
+		) %>%
+		mutate(
+			current_state = if_else( group %in% state$enabledGroups, "current", "historical" ),
+			group_label = str_remove( group, "^novelty-(ws|http)-" )
+		)
+
 	write_plot(
 		"enabled-groups-over-time.png",
-		ggplot( enabled_groups, aes( x = timestamp, y = reorder( group, timestamp ), color = group_family ) ) +
-			geom_point( alpha = 0.82, size = 2.6 ) +
+		ggplot( enabled_group_summary, aes( x = first_enabled, y = reorder( group_label, first_enabled ), color = group_family, size = enable_events, shape = current_state ) ) +
+			geom_point( alpha = 0.82 ) +
 			scale_color_brewer( palette = "Set2" ) +
+			scale_size_continuous( range = c( 2, 7 ), breaks = pretty_breaks( n = 4 ) ) +
+			scale_shape_manual( values = c( "current" = 16, "historical" = 1 ) ) +
 			scale_x_datetime( date_labels = "%H:%M", date_breaks = "1 hour" ) +
 			labs(
-				title = "Coverage-guided group enable events",
+				title = "Coverage-guided groups by first enable time",
 				x = "UTC time on 2026-05-15",
 				y = NULL,
-				color = "surface"
+				color = "surface",
+				size = "events",
+				shape = NULL,
+				caption = "Point size counts enable log events. Repeated events are restart/re-enable noise, not new surface coverage."
 			) +
 			theme_rtc(),
-		width = 9,
+		width = 10,
 		height = 6
 	)
 }
 
+profile_success_goals <- coverage_goals %>%
+	filter( str_starts( id, "success-profile:" ) ) %>%
+	transmute(
+		profile = str_remove( id, "^success-profile:" ),
+		success_goal_state = if_else( met, "success goal met", "success goal unmet" )
+	)
+
+profile_plot_data <- profile_counts %>%
+	left_join( profile_success_goals, by = "profile" ) %>%
+	mutate(
+		startup_rate = if_else( records_seen > 0, startup_failures / records_seen, NA_real_ ),
+		success_goal_state = replace_na( success_goal_state, "no success goal" ),
+		label_profile = success_goal_state == "success goal unmet",
+		label_y = case_when(
+			profile == "parser-serialization" ~ success_rate + 0.04,
+			profile == "real-user-editing" ~ success_rate + 0.04,
+			profile == "multi-reload-lifecycle" ~ pmax( success_rate - 0.012, 0.005 ),
+			TRUE ~ success_rate
+		),
+		label_hjust = if_else( profile == "multi-reload-lifecycle", 1.05, -0.05 )
+	)
+
 write_plot(
 	"profile-success-scatter.png",
-	ggplot( profile_counts, aes( x = records_seen + 1, y = successful_records + 1, color = profile_family ) ) +
-		geom_point( alpha = 0.82, size = 3 ) +
+	ggplot( profile_plot_data, aes( x = records_seen, y = success_rate, color = profile_family, size = startup_rate, shape = success_goal_state ) ) +
+		geom_point( alpha = 0.82 ) +
 		geom_text(
-			aes( label = profile ),
+			data = profile_plot_data %>% filter( label_profile ),
+			aes( y = label_y, label = profile, hjust = label_hjust ),
+			vjust = 0.5,
+			size = 2.7,
+			check_overlap = TRUE,
+			show.legend = FALSE
+		) +
+		scale_x_log10( labels = comma ) +
+		scale_y_continuous( labels = percent_format( accuracy = 1 ), limits = c( 0, 1 ) ) +
+		scale_color_brewer( palette = "Set2" ) +
+		scale_size_continuous( labels = percent_format( accuracy = 1 ), range = c( 2, 7 ) ) +
+		scale_shape_manual( values = c( "success goal unmet" = 17, "success goal met" = 16, "no success goal" = 1 ) ) +
+		coord_cartesian( clip = "off" ) +
+		labs(
+			title = "Profile completion bottlenecks",
+			x = "records seen, log scale",
+			y = "successful records / records seen",
+			color = "profile family",
+			size = "startup failure rate",
+			shape = NULL,
+			caption = "Labels emphasize unmet success-goal profiles. Startup rate is a diagnostic, not the only cause of low completion."
+		) +
+		guides(
+			color = guide_legend( nrow = 2, byrow = TRUE ),
+			size = guide_legend( nrow = 1 ),
+			shape = guide_legend( nrow = 1 )
+		) +
+		theme_rtc() +
+		theme(
+			legend.box = "vertical",
+			plot.margin = margin( 5.5, 95, 5.5, 5.5 )
+		),
+	width = 10.5,
+	height = 7.2
+)
+
+goal_plot_data <- coverage_goals %>%
+	filter( ! met ) %>%
+	mutate(
+		remaining = pmax( target - count, 0 ),
+		count_target = paste0( comma( count ), " / ", comma( target ) ),
+		label = str_wrap( label, width = 42 )
+	) %>%
+	filter( ! is.na( remaining ) ) %>%
+	arrange( desc( remaining ) )
+
+write_plot(
+	"coverage-goal-progress.png",
+	ggplot( goal_plot_data, aes( x = remaining, y = reorder( label, remaining ), color = goal_family, size = target ) ) +
+		geom_point( alpha = 0.78 ) +
+		geom_text(
+			aes( label = count_target ),
+			hjust = -0.15,
+			vjust = 0.5,
+			size = 2.8,
+			show.legend = FALSE
+		) +
+		scale_x_continuous( labels = comma, expand = expansion( mult = c( 0.02, 0.26 ) ) ) +
+		scale_color_brewer( palette = "Set2" ) +
+		scale_size_continuous( labels = comma, range = c( 2, 6 ) ) +
+		labs(
+			title = "Remaining unmet coverage goals",
+			x = "additional observations needed to meet target",
+			y = NULL,
+			color = "surface",
+			size = "target",
+			caption = "Only unmet goals are shown. Point labels are current count / target; full goal table is data/coverage_goals.csv."
+		) +
+		theme_rtc(),
+	width = 12,
+	height = 6.2
+)
+
+feature_category_plot <- feature_categories %>%
+	mutate(
+		category_family = case_when(
+			feature_category %in% c( "action", "action-pair" ) ~ "actions",
+			feature_category %in% c( "block", "block-depth", "initial-content", "media/cross-entity" ) ~ "content",
+			feature_category %in% c( "history", "operation-ledger", "invariant" ) ~ "state/invariants",
+			feature_category %in% c( "real-user", "collaborator", "revision", "save", "reload", "autosave", "lifecycle", "users", "auth" ) ~ "user/lifecycle",
+			feature_category %in% c( "large-document", "step-count", "payload-size", "serialized-size" ) ~ "scale",
+			feature_category %in% c( "fault", "transport", "profile", "code coverage" ) ~ "harness",
+			TRUE ~ "other"
+		),
+		label_category = total_count >= quantile( total_count, 0.7 ) | keys >= quantile( keys, 0.7 )
+	)
+
+write_plot(
+	"feature-category-coverage.png",
+	ggplot( feature_category_plot, aes( x = keys, y = total_count, color = category_family, size = max_count ) ) +
+		geom_point( alpha = 0.78 ) +
+		geom_text(
+			data = feature_category_plot %>% filter( label_category ),
+			aes( label = feature_category ),
 			hjust = -0.05,
 			vjust = 0.5,
 			size = 2.7,
-			check_overlap = TRUE
+			check_overlap = TRUE,
+			show.legend = FALSE
 		) +
 		scale_x_log10( labels = comma ) +
 		scale_y_log10( labels = comma ) +
 		scale_color_brewer( palette = "Set2" ) +
+		scale_size_continuous( labels = comma, range = c( 2, 7 ) ) +
 		coord_cartesian( clip = "off" ) +
 		labs(
-			title = "Records seen vs. successful records by profile",
-			x = "records seen + 1, log scale",
-			y = "successful records + 1, log scale",
-			color = "profile family",
-			caption = "The +1 offset keeps zero-success profiles visible on the log scale."
+			title = "Feature coverage breadth vs. repetition",
+			x = "distinct feature keys, log scale",
+			y = "total feature observations, log scale",
+			color = "category family",
+			size = "max key count"
 		) +
 		theme_rtc() +
-		theme( plot.margin = margin( 5.5, 42, 5.5, 5.5 ) ),
-	width = 9.5,
+		theme( plot.margin = margin( 5.5, 70, 5.5, 5.5 ) ),
+	width = 10,
 	height = 6.5
 )
 
-goal_plot_data <- coverage_goals %>%
-	arrange( progress ) %>%
-	slice_head( n = 45 ) %>%
-	mutate(
-		progress_capped = pmin( progress, 4 ),
-		label = str_wrap( label, width = 42 ),
-		met_label = if_else( met, "met", "unmet" )
-	) %>%
-	filter( ! is.na( progress_capped ) )
-
-write_plot(
-	"coverage-goal-progress.png",
-	ggplot( goal_plot_data, aes( x = progress_capped, y = reorder( label, progress ), color = goal_family, shape = met_label ) ) +
-		geom_vline( xintercept = 1, linetype = "dashed", color = "grey35", linewidth = 0.4 ) +
-		geom_point( alpha = 0.78, size = 2.4 ) +
-		scale_x_continuous(
-			labels = function( x ) ifelse( x >= 4, "4x+", paste0( x, "x" ) ),
-			breaks = c( 0, 0.5, 1, 2, 3, 4 )
-		) +
-		scale_color_brewer( palette = "Set3" ) +
-		labs(
-			title = "Lowest-progress coverage goals by surface",
-			x = "observed count / target, capped at 4x",
-			y = NULL,
-			color = "surface",
-			shape = "goal state",
-			caption = "Dashed line marks the target. Full goal table is committed as data/coverage_goals.csv."
-		) +
-		guides(
-			color = guide_legend( nrow = 2, byrow = TRUE ),
-			shape = guide_legend( nrow = 1 )
-		) +
-		theme_rtc(),
-	width = 12,
-	height = 9
-)
-
-feature_category_palette <- colorRampPalette( brewer.pal( 12, "Paired" ) )(
-	n_distinct( feature_categories$feature_category )
-)
-names( feature_category_palette ) <- sort( unique( feature_categories$feature_category ) )
-
-write_plot(
-	"feature-category-coverage.png",
-	ggplot( feature_categories, aes( x = total_count, y = reorder( feature_category, total_count ), color = feature_category, size = keys ) ) +
-		geom_point( alpha = 0.78 ) +
-		scale_x_log10( labels = comma ) +
-		scale_color_manual( values = feature_category_palette ) +
-		scale_size_continuous( range = c( 2, 8 ) ) +
-		labs(
-			title = "Feature-key coverage by category",
-			x = "total feature observations, log scale",
-			y = NULL,
-			color = NULL,
-			size = "distinct keys"
-		) +
-		theme_rtc(),
-	width = 9,
-	height = 6.5
-)
+weak_profiles <- profile_plot_data %>%
+	filter( success_rate < 0.1 | success_goal_state == "success goal unmet" ) %>%
+	pull( profile )
 
 top_actions <- action_counts %>%
-	slice_max( count, n = 30, with_ties = FALSE )
+	inner_join( profile_counts %>% select( profile, profile_family ), by = "profile" ) %>%
+	filter( profile %in% weak_profiles ) %>%
+	group_by( profile ) %>%
+	slice_max( count, n = 8, with_ties = FALSE ) %>%
+	arrange( count, .by_group = TRUE ) %>%
+	mutate(
+		action_display = str_wrap( action, width = 28 ),
+		action_key = paste( profile, action_display, sep = "___" )
+	) %>%
+	ungroup() %>%
+	mutate( action_key = factor( action_key, levels = unique( action_key ) ) )
 
 write_plot(
 	"successful-actions-by-profile.png",
-	ggplot( top_actions, aes( x = count, y = reorder( paste( profile, action, sep = " / " ), count ), color = profile ) ) +
+	ggplot( top_actions, aes( x = count, y = action_key, color = profile_family ) ) +
 		geom_point( alpha = 0.78, size = 2.4 ) +
+		facet_wrap( vars( profile ), scales = "free_y", ncol = 2 ) +
 		scale_x_continuous( labels = comma ) +
-		scale_color_brewer( palette = "Set3" ) +
+		scale_y_discrete( labels = function( x ) str_remove( x, "^.*___" ) ) +
+		scale_color_brewer( palette = "Set2" ) +
 		labs(
-			title = "Most common successful fuzz actions",
+			title = "Successful actions within weak-completion profiles",
 			x = "successful action count",
 			y = NULL,
-			color = "profile"
+			color = "profile family",
+			caption = "Profiles with zero successful action records do not appear in this chart."
 		) +
 		theme_rtc(),
 	width = 10,
-	height = 7
+	height = 8
 )
 
 write_plot(

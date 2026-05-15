@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-15T20:46:21Z`
+Snapshot generated: `2026-05-15T21:42:40Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -22,17 +22,15 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`943` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-15T20:41:52Z`, coverage files grew from `272` to `9219`, a delta of
-`8947`. The monitor's visible likely-real count stayed at `0` throughout this
+`991` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-15T21:41:58Z`, coverage files grew from `272` to `10649`, a delta of
+`10377`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
 goals falling from `24` to `0` earlier in the run, then rising again when new
-surfaces were enabled and ending at `11` in the last logged monitor pass. The
-latest copied novelty state, updated at `2026-05-15T20:43:05Z`, has `99` total
-goals and `9` unmet goals. That difference is from the monitor log and state
-snapshot being taken at slightly different points in the loop.
+surfaces were enabled and ending at `4` in the last logged monitor pass. The
+latest copied novelty state has `99` total goals and `4` unmet goals.
 
 The run is currently broad but still completion-limited on some expensive UI and
 cross-entity surfaces. The main remaining gaps are successful end-to-end records
@@ -46,22 +44,29 @@ target.
 
 The important trend is the bottom facet: unmet goals trended down materially,
 then rose after the latest surface expansion. The top facet shows the coverage
-file corpus growing steadily after restarts and expansions. The large processed
-record spikes are monitor restart/intake effects, not individual seed runtime.
+file corpus growing steadily after restarts and expansions. Dense monitor-pass
+points are intentionally small and partially transparent so repeated samples do
+not visually turn into a misleading line.
+
+![Per-pass fuzz yield over time](rtc-jetstream2-fuzz-trends-20260515/plots/monitor-per-pass-yield.png)
+
+Per-pass yield is split out from cumulative state. `processed`, `new_features`,
+`new_cdp`, and coverage-file deltas are shown on a `log1p` scale. Negative
+coverage-file deltas are reset/restart artifacts and are marked separately.
 
 ## Health And Yield
 
 ![Fuzz yield and resource health over time](rtc-jetstream2-fuzz-trends-20260515/plots/monitor-health-yield.png)
 
 The current loop is not finding visible likely-real failures. That is good for
-the active validation stack, but the duplicate/noise share remains around `0.60`,
+the active validation stack, but the duplicate/noise share remains around `0.59`,
 so the signal-to-noise ratio is still a major constraint. Free memory remained
 high at the end of the snapshot, around `425G`, so the remaining bottleneck is
 more about useful work selection and completion rate than raw RAM.
 
 ## Enabled Surfaces
 
-![Coverage-guided group enable events](rtc-jetstream2-fuzz-trends-20260515/plots/enabled-groups-over-time.png)
+![Coverage-guided groups by first enable time](rtc-jetstream2-fuzz-trends-20260515/plots/enabled-groups-over-time.png)
 
 The current enabled set is:
 
@@ -81,25 +86,35 @@ The current enabled set is:
 This covers the user-requested missing areas: same-user/reload lifecycle,
 revision/autosave/recovery, real UI rich text, parser/serialization transforms,
 async/server-backed blocks, permissions/auth/locks, and long/large sessions.
+The plot is now one row per group at first enable time; point size reflects
+repeated enable log events, which are mostly restart/re-enable noise rather than
+new coverage launches.
+
 The weakest newly-added area is not absence of launch coverage, but low
 successful completion for the heaviest browser/UI and cross-entity profiles.
 
 ## Profile Completion
 
-![Records seen vs successful records by profile](rtc-jetstream2-fuzz-trends-20260515/plots/profile-success-scatter.png)
+![Profile completion bottlenecks](rtc-jetstream2-fuzz-trends-20260515/plots/profile-success-scatter.png)
 
 Profiles with high successful counts include async/server blocks,
 permissions/auth/locks, same-user/session lifecycle, three-user late join, and
-HTTP persistence. Profiles with low success rates are the places to target next:
+HTTP persistence. The scatter now uses records seen on the x-axis, completion
+rate on the y-axis, startup-failure rate as point size, and unmet success goals
+as triangle markers. Startup failures are one diagnostic signal, not the whole
+cause of low completion. Profiles with low success rates are the places to
+target next:
 
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
-| `media-cross-entity` | 6 | 0 | 0 | 0.0% |
-| `multi-reload-lifecycle` | 1145 | 14 | 808 | 1.2% |
-| `real-user-editing` | 1535 | 32 | 801 | 2.1% |
-| `revision-persistence` | 1284 | 29 | 851 | 2.3% |
-| `parser-serialization` | 486 | 17 | 310 | 3.5% |
-| `parser-transform` | 1320 | 47 | 923 | 3.6% |
+| `multi-reload-lifecycle` | 1198 | 20 | 824 | 1.7% |
+| `revision-persistence` | 1341 | 31 | 882 | 2.3% |
+| `media-cross-entity` | 37 | 1 | 0 | 2.7% |
+| `real-user-editing` | 1746 | 69 | 825 | 4.0% |
+| `parser-transform` | 1402 | 61 | 941 | 4.4% |
+| `parser-serialization` | 556 | 26 | 333 | 4.7% |
+| `common-blocks` | 597 | 40 | 376 | 6.7% |
+| `block-gauntlet` | 1748 | 127 | 1140 | 7.3% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -107,42 +122,39 @@ expensive profiles.
 
 ## Coverage Goals
 
-![Lowest-progress coverage goals by surface](rtc-jetstream2-fuzz-trends-20260515/plots/coverage-goal-progress.png)
+![Remaining unmet coverage goals](rtc-jetstream2-fuzz-trends-20260515/plots/coverage-goal-progress.png)
 
 Current unmet goals from the latest state:
 
 | Goal | Current | Target |
 | --- | ---: | ---: |
-| successful media-cross-entity records | 0 | 25 |
-| successful multi-reload-lifecycle records | 14 | 50 |
-| successful parser-serialization records | 17 | 50 |
-| successful real-user-editing records | 32 | 80 |
-| uploaded/cross-entity block `core/media-text` | 3 | 5 |
-| uploaded/cross-entity block `core/block` | 4 | 5 |
-| uploaded/cross-entity block `core/file` | 4 | 5 |
-| uploaded/cross-entity block `core/gallery` | 4 | 5 |
-| real media upload | 9 | 10 |
+| successful media-cross-entity records | 1 | 25 |
+| successful multi-reload-lifecycle records | 20 | 50 |
+| successful parser-serialization records | 26 | 50 |
+| successful real-user-editing records | 69 | 80 |
 
-These are narrow enough that the recommended next change is focused: improve
-media/cross-entity completion and reduce startup stalls in real-user,
-multi-reload, and parser-serialization lanes before adding another large class
-of fuzz actions.
+The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
+remaining work is now concentrated in completed-record depth for four expensive
+profiles; the media/cross-entity block and upload goals have moved past target.
 
 ## Feature Mix
 
-![Feature-key coverage by category](rtc-jetstream2-fuzz-trends-20260515/plots/feature-category-coverage.png)
+![Feature coverage breadth vs repetition](rtc-jetstream2-fuzz-trends-20260515/plots/feature-category-coverage.png)
 
 The feature-key mix is dominated by history, operation-ledger, invariant,
 action-pair, block-depth, block, and action observations. That is the right
 shape for RTC data-loss work because it means the harness is observing both
-semantic state transitions and low-level block/action combinations.
+semantic state transitions and low-level block/action combinations. The plot
+separates breadth (`keys`) from repeated observations (`total_count`) so broad
+coverage is not hidden inside raw event volume.
 
-![Most common successful fuzz actions](rtc-jetstream2-fuzz-trends-20260515/plots/successful-actions-by-profile.png)
+![Successful actions within weak-completion profiles](rtc-jetstream2-fuzz-trends-20260515/plots/successful-actions-by-profile.png)
 
-The successful-action plot confirms coverage for ordinary structural edits and
-newer UI-heavy actions such as paste, link editing, table-cell editing, toolbar
-formatting, cut/copy, composition, and undo/redo. The issue is that several of
-those UI-heavy profiles still need more completed full records.
+The successful-action plot is restricted to weak-completion profiles instead of
+global top actions, so high-volume async and permissions lanes no longer hide
+the profiles that still need more completed full records. `media-cross-entity`
+now has a small number of successful action records, but still far too few
+completed end-to-end records.
 
 ## PR Review Loop
 
@@ -151,10 +163,11 @@ those UI-heavy profiles still need more completed full records.
 ![PR split loop duration by phase](rtc-jetstream2-fuzz-trends-20260515/plots/pr-review-loop-durations.png)
 
 After the loop was corrected to `max_parallel=6` and `interval=0s`, completed
-review cycles took roughly `4.5` to `6.7` minutes. Feedback actions ran every
-two cycles and took roughly `5.9` to `8.3` minutes. The cadence is now
-continuous enough for persona feedback to affect the PR split promptly, rather
-than only hourly.
+review cycles took roughly `3.8` to `6.7` minutes in this snapshot. Feedback
+actions ran every two cycles and took roughly `2.0` to `12.9` minutes. The
+cadence is now continuous enough for persona feedback to affect the PR split
+promptly, rather than only hourly; the sample is still too small for trend
+claims.
 
 ## Interpretation
 
@@ -164,8 +177,8 @@ small number of high-value expensive lanes:
 
 - media/cross-entity needs more successful end-to-end records, not just launch
   attempts;
-- multi-reload, parser-serialization, and real-user editing need startup-stall
-  reduction and completed-record boosting;
+- multi-reload, parser-serialization, and real-user editing need completed-record
+  boosting, with startup-stall reduction as one likely lever;
 - duplicate/noise triage is still consuming a large share of observed failures;
 - no visible likely-real failures appeared in this snapshot, so new PR work
   should stay gated on a fresh validation-stack fuzz run after branch rebase and
