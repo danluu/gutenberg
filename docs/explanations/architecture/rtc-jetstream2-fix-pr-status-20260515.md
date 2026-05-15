@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-15T19:30:08Z`
+Snapshot time: `2026-05-15T20:37:00Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -27,9 +27,10 @@ Current state:
 - `40/40` fix-planning iterations completed on Jetstream2.
 - Most production branches are source-local and touch two files: one product
   file and one focused test file.
-- The proposed PR branch refs have been exported from the Jetstream2
-  fix-planning repo and pushed to the `danluu` remote. They still need rebase
-  onto the intended upstream base and final PR shaping before filing.
+- The original fix-planning branch refs plus the new PR 6A / PR 7A / PR 7B
+  review refs have been exported from Jetstream2 and pushed to the `danluu`
+  remote. They still need rebase onto the intended upstream base and final PR
+  shaping before filing.
 - Some earlier local/GitHub-facing `try/*-pr` branches already exist and should
   be reused as prior art or tests, but several are stacked or too broad against
   trunk and should not be filed as-is.
@@ -38,7 +39,8 @@ Current state:
   That validates the active stack, but the final exported PR set still needs a
   fresh combined validation run after rebase.
 
-At the fuzz snapshot, the coverage-guided monitor was healthy:
+At the earlier `2026-05-15T19:30:08Z` fuzz snapshot, the coverage-guided monitor
+was healthy:
 
 ```text
 coverage files: 8271
@@ -54,9 +56,61 @@ memory: 438.0G free / 492.0G total
 disk: 100G used / 3.5T total
 ```
 
+Latest coverage-guided status at `2026-05-15T20:36:50Z`:
+
+```text
+coverage files: 9077
+total records seen: 17144
+unmet goals: 11
+recommended groups: novelty-ws-media-cross-entity, novelty-ws-multi-reload-lifecycle, novelty-ws-parser-serialization, novelty-ws-real-user-editing, novelty-ws-real-user-rich-text
+harness-work candidates: 0
+likely-real visible: 0
+likely-real merged duplicates: 0
+oracle/noise questions: 0
+load1: 57.03 / 64 cores
+memory: 427.8G free / 492.0G total
+media/cross-entity coverage: uploads 5/10, reusable-block 3/5, image 3/5, gallery 3/5, core/block 2/5, file 2/5, media-text 2/5
+```
+
 The main caution is that "no visible likely-real bugs" means "in the current
 validation stack and current fuzz lanes." It does not by itself prove every
 newly created fix-planning branch is PR-ready.
+
+## Cycle 6 Review Update
+
+The two latest split-review iterations agree that the written PR 13 split is
+the right review shape, but the current live shaped branch stack does not match
+it. Do not file or review the current `shape/rtc-crdt-pr13*` heads as the
+documented PR 13A/13B/13C sequence.
+
+Observed live branch problem:
+
+- `shape/rtc-crdt-pr13a-cross-parent-source-retirement` starts PR 13 at
+  cross-parent source retirement.
+- `fix/rtc-observed-top-level-delete-provenance` is not represented as the
+  first shaped PR 13 delta after `shape/rtc-crdt-pr12-previous-local`.
+- Reviewing the current shaped PR 13 heads would either omit observed-delete
+  provenance or review source-retirement and identity-smear changes on the
+  wrong base.
+
+Required queue change before the next filing/review cycle:
+
+1. Restack from `shape/rtc-crdt-pr12-previous-local`.
+2. Create `shape/rtc-crdt-pr13a-observed-delete-provenance` from
+   `fix/rtc-observed-top-level-delete-provenance`.
+3. Replay/relabel the source-retirement and identity-smear deltas after that
+   observed-delete branch.
+4. Produce branch containment checks, a branch graph, `range-diff`, and
+   per-adjacent `diff --stat --numstat` for each intended CRDT PR delta.
+5. Rerun the focused stale top-level CRDT unit test, `npm run lint:js`, and
+   `git diff --check` on the repaired stack.
+
+The same review iterations also repeat the reload-hydration empty-live-editor
+guardrail: keep `e75c8829e4e9` / `3bbdc3cdb393` out of PR 6, PR 6A, and PR 8
+claims until the focused WebSocket gate has product evidence, and keep the
+reconstructed reload-hydration E2E spec off the fallback-group CRDT branch.
+No new broad fuzz campaign should start until the corrected, rebased PR stack
+exists.
 
 ## Proposed PR Split
 
@@ -79,13 +133,13 @@ There are three cases in this report:
 - **Grouped fix branches**: several small branches cover adjacent subcases of
   the same bug family. The intended final PR is one clean branch that combines
   the compatible pieces, usually as one or a few commits, with duplicate tests
-  collapsed. PR 5, PR 6, PR 7, and PR 15 mostly fall into this category.
+  collapsed. PR 5, PR 6, PR 13B, and PR 15 mostly fall into this category.
 - **Stacked-series branches**: the branches are not intended to be squashed into
   one review unless maintainers ask for that. They are an ordered set of
   dependency branches or focused commits that touch the same reconciliation
   path. The final output may be a stack of several one-head-branch PRs, or a
-  single consolidated branch if reviewers prefer. PR 11, PR 12, and PR 13 are
-  the clearest examples.
+  single consolidated branch if reviewers prefer. PR 11, PR 12, PR 13A/13B/13C,
+  PR 14, and PR 15 are the clearest examples.
 
 So "Branches: 5" means "five current source branches inform this proposed PR
 area." Before filing, those branches still need to be exported from Jetstream2,
@@ -112,15 +166,26 @@ and include dependency commits when compared directly to the handoff base.
 | PR 4: Persisted CRDT save-meta idempotence | 1 | 2 | 160 | 1 |
 | PR 5: Parser/entity normalization equivalence | 4 | 4 | 1680 | 68 |
 | PR 6: Save request payload guards | 3 | 4 | 738 | 6 |
-| PR 7: Save response guards | 5 | 5 | 1860 | 32 |
+| PR 6A: Persisted empty-content CRDT body guard | 1 | 2 | 64 | 1 |
+| PR 7A: Save response entity-state guards | 1 | 2 | 1339 | 8 |
+| PR 7B: Save response manager/base-record guards | 1 | 5 | 404 | 8 |
 | PR 8: Reload title and persisted-record hydration | 1 | 11 | 618 | 61 |
 | PR 9: Core-data lock fairness | 1 | 2 | 185 | 2 |
 | PR 10: CRDT block reconciliation foundation | 1 | 2 | 145 | 4 |
 | PR 11: Explicit-base top-level block operations | 5 | 2 | 1190 | 16 |
 | PR 12: Previous-local-cache top-level block operations | 3 | 2 | 833 | 6 |
-| PR 13: Cross-parent source retirement and identity smear guards | 5 | 2 | 3328 | 60 |
+| PR 13A: Observed-delete top-level provenance | 1 | 2 | 1171 | 21 |
+| PR 13B: Cross-parent source retirement | 3 | 2 | 1687 | 0 |
+| PR 13C: Stale block identity smear guard | 1 | 2 | 470 | 39 |
 | PR 14: Table body nested array merge | 1 | 2 | 294 | 18 |
 | PR 15: Fallback group residual structural fixes | 3 | 2 | 481 | 12 |
+
+The largest remaining review risks by size are PR 13B, PR 5, and PR 7A. The
+former PR 13 is now explicitly split into PR 13A/13B/13C so reviewers can inspect
+observed-delete provenance, cross-parent source retirement, and identity-smear
+protection as separate CRDT invariants. PR 7 has also been split into two
+official review units: actions-side save-response entity-state guarding first,
+then the `SyncManager` / base-record stale-key filtering delta.
 
 ## Pushed Branch Links
 
@@ -135,21 +200,24 @@ They are review/export candidates, not opened PRs.
 | PR 4: Persisted CRDT save-meta idempotence | [`fix/rtc-crdt-save-meta-churn`](https://github.com/danluu/gutenberg/tree/fix/rtc-crdt-save-meta-churn) |
 | PR 5: Parser/entity normalization equivalence | [`fix/rtc-entity-normalization-save-loop`](https://github.com/danluu/gutenberg/tree/fix/rtc-entity-normalization-save-loop)<br>[`fix/rtc-entity-reference-normalization`](https://github.com/danluu/gutenberg/tree/fix/rtc-entity-reference-normalization)<br>[`fix/rtc-parser-entity-block-equivalence`](https://github.com/danluu/gutenberg/tree/fix/rtc-parser-entity-block-equivalence)<br>[`fix/rtc-preserve-whitespace-linebreak-equivalence`](https://github.com/danluu/gutenberg/tree/fix/rtc-preserve-whitespace-linebreak-equivalence) |
 | PR 6: Save request payload guards | [`fix/rtc-empty-content-crdt-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-empty-content-crdt-guard)<br>[`fix/rtc-stale-save-crdt-raw-fields`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-save-crdt-raw-fields)<br>[`fix/rtc-save-projection-content-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-projection-content-guard) |
-| PR 7: Save response guards | [`fix/rtc-save-response-stale-title-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-response-stale-title-guard)<br>[`fix/rtc-save-response-crdt-document-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-response-crdt-document-guard)<br>[`fix/rtc-save-response-stale-content-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-response-stale-content-guard)<br>[`fix/rtc-save-response-content-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-save-response-content-guard)<br>[`fix/rtc-base-record-stale-title-filter`](https://github.com/danluu/gutenberg/tree/fix/rtc-base-record-stale-title-filter) |
+| PR 6A: Persisted empty-content CRDT body guard | [`fix/rtc-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-persisted-empty-content-guard) |
+| PR 7A: Save response entity-state guards | [`shape/rtc-save-response-actions-guard`](https://github.com/danluu/gutenberg/tree/shape/rtc-save-response-actions-guard) |
+| PR 7B: Save response manager/base-record guards | [`shape/rtc-save-response-manager-base-record`](https://github.com/danluu/gutenberg/tree/shape/rtc-save-response-manager-base-record) |
 | PR 8: Reload title and persisted-record hydration | [`fix/rtc-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/fix/rtc-title-reload-persisted-record) |
 | PR 9: Core-data lock fairness | [`fix/rtc-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/fix/rtc-store-lock-fairness) |
 | PR 10: CRDT block reconciliation foundation | [`fix/rtc-crdt-block-rebase`](https://github.com/danluu/gutenberg/tree/fix/rtc-crdt-block-rebase) |
 | PR 11: Explicit-base top-level block operations | [`fix/rtc-stale-base-record-block-append`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-record-block-append)<br>[`fix/rtc-stale-base-block-delete`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-block-delete)<br>[`fix/rtc-stale-base-block-middle-insert`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-block-middle-insert)<br>[`fix/rtc-stale-top-level-move-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-top-level-move-reorder)<br>[`fix/rtc-top-level-insert-anchor-after-delete`](https://github.com/danluu/gutenberg/tree/fix/rtc-top-level-insert-anchor-after-delete) |
 | PR 12: Previous-local-cache top-level block operations | [`fix/rtc-previous-local-cache-block-delete`](https://github.com/danluu/gutenberg/tree/fix/rtc-previous-local-cache-block-delete)<br>[`fix/rtc-previous-local-cache-block-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-previous-local-cache-block-reorder)<br>[`fix/rtc-previous-local-cache-delete-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-previous-local-cache-delete-reorder) |
-| PR 13: Cross-parent source retirement and identity smear guards | [`fix/rtc-cross-parent-move-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-cross-parent-move-source-retirement)<br>[`fix/rtc-current-only-cross-parent-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-current-only-cross-parent-source-retirement)<br>[`fix/rtc-stale-base-cross-parent-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-cross-parent-source-retirement)<br>[`fix/rtc-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-block-identity-smear-guard)<br>[`fix/rtc-observed-top-level-delete-provenance`](https://github.com/danluu/gutenberg/tree/fix/rtc-observed-top-level-delete-provenance) |
+| PR 13A: Observed-delete top-level provenance | [`fix/rtc-observed-top-level-delete-provenance`](https://github.com/danluu/gutenberg/tree/fix/rtc-observed-top-level-delete-provenance) |
+| PR 13B: Cross-parent source retirement | [`fix/rtc-cross-parent-move-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-cross-parent-move-source-retirement)<br>[`fix/rtc-current-only-cross-parent-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-current-only-cross-parent-source-retirement)<br>[`fix/rtc-stale-base-cross-parent-source-retirement`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-base-cross-parent-source-retirement) |
+| PR 13C: Stale block identity smear guard | [`fix/rtc-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/fix/rtc-stale-block-identity-smear-guard) |
 | PR 14: Table body nested array merge | [`fix/rtc-table-body-array-stale-local-merge`](https://github.com/danluu/gutenberg/tree/fix/rtc-table-body-array-stale-local-merge) |
 | PR 15: Fallback group residual structural fixes | [`fix/rtc-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/fix/rtc-fallback-group-move-stale-reorder)<br>[`fix/rtc-fallback-group-insert-anchor-stale-local`](https://github.com/danluu/gutenberg/tree/fix/rtc-fallback-group-insert-anchor-stale-local)<br>[`fix/rtc-fallback-group-delete-stale-local`](https://github.com/danluu/gutenberg/tree/fix/rtc-fallback-group-delete-stale-local) |
 
-The largest review risks by size are PR 13, PR 7, and PR 5. PR 13 has only two
-unique paths, but it is still large enough that it should probably be filed as a
-stacked series if reviewers want to inspect each structural invariant
-separately. PR 7 and PR 5 touch multiple subsystems or equivalence policies and
-are also reasonable candidates for further split if review latency matters.
+The PR 13 links above are source branches only. The current live shaped
+`shape/rtc-crdt-pr13*` heads on Jetstream2 are intentionally **not** linked
+because cycle 6 found that they put source-retirement before observed-delete
+provenance. Repair that stack before pushing or reviewing shaped PR 13 heads.
 
 ### PR 1: HTTP polling generated update size guard
 
@@ -293,9 +361,10 @@ Files:
 - `packages/core-data/src/test/actions.js`
 
 Fix:
-Prevent outgoing saves from persisting empty, stale, title-only, search-only, or
-otherwise truncated `content`/`title` when local CRDT/editor evidence has the
-current body and title.
+Prevent outgoing saves from persisting empty or stale raw `content`/`title`
+payloads when local CRDT/editor evidence has the current body and title. This
+PR covers save-request projection and raw-field repair; it does not claim the
+browser-only reload-hydration or pre-save search/live-document collapse gates.
 
 Representative bugs:
 `4784204aa5e0`, `cc9352f66288`, `b946488b6e6f`, `d90167363d42`,
@@ -307,27 +376,44 @@ Earlier stale-save protections could repair `_crdt_document` while leaving stale
 raw `title` or `content` in the actual outgoing save payload. The save
 projection path could also collapse body content before persistence.
 
-### PR 7: Save response guards
+### PR 6A: Persisted empty-content CRDT body guard
 
-Branches:
+Branch:
+`fix/rtc-persisted-empty-content-guard`
 
-- `fix/rtc-save-response-stale-title-guard`
-- `fix/rtc-save-response-crdt-document-guard`
-- `fix/rtc-save-response-stale-content-guard`
-- `fix/rtc-save-response-content-guard`
-- `fix/rtc-base-record-stale-title-filter`
+Files:
+
+- `packages/core-data/src/utils/crdt.ts`
+- `packages/core-data/src/utils/test/crdt.ts`
+
+Fix:
+Preserve the persisted CRDT body when the incoming persisted record has an empty
+body/title-only shape but the CRDT document still contains durable content.
+
+Representative bugs:
+`1133c7f51e41`, `134abb018a9a`.
+
+Introduction analysis:
+The persisted-record merge path could treat an empty or title-only REST record
+as authoritative even when the CRDT body still represented the durable editor
+state. Keep this as a narrow persisted-body guard near PR 6, not as proof that
+reload-hydration or pre-save live-document collapse is fixed.
+
+### PR 7A: Save response entity-state guards
+
+Branch:
+
+`shape/rtc-save-response-actions-guard`
 
 Files:
 
 - `packages/core-data/src/actions.js`
 - `packages/core-data/src/test/actions.js`
-- `packages/sync/src/manager.ts`
-- `packages/sync/src/test/manager.ts`
 
 Fix:
 Do not replay stale successful REST save responses back into local entity state
-or CRDT state when the outgoing save and live CRDT state prove the title,
-content, or `_crdt_document` should be newer.
+when the outgoing save and live CRDT/editor state prove the title, content, or
+`_crdt_document` should be newer.
 
 Representative bugs:
 `f9d1e1c8a6cc`, `8406e3878be3`, `4776bffd5407`, `7d6faa1f8935`,
@@ -335,13 +421,44 @@ Representative bugs:
 `a26f2eee5c44`, `c85df9d75fc2`, `01f80d2f28b`.
 
 Introduction analysis:
-The normal save path still trusted the full REST `updatedRecord`. It then sent
-the stale response through `receiveEntityRecords()` and `SyncManager.update()`,
-where save updates bypassed some stale-key filtering.
+The normal save path still trusted the full REST `updatedRecord` and sent stale
+response fields through `receiveEntityRecords()`. Keep this PR focused on the
+core-data save-response arbitration; it should be rebased after PR 6's save
+projection branch because both touch `saveEntityRecord()` and adjacent tests.
+
+### PR 7B: Save response manager/base-record guards
+
+Branch:
+
+`shape/rtc-save-response-manager-base-record`
+
+Files:
+
+- `packages/core-data/src/actions.js`
+- `packages/core-data/src/test/actions.js`
+- `packages/sync/src/manager.ts`
+- `packages/sync/src/test/manager.ts`
+- `packages/sync/src/types.ts`
+
+Fix:
+Filter stale base-record local keys and save-response CRDT updates in
+`SyncManager` after the actions-side response guard is in place.
+
+Representative bugs:
+`f9d1e1c8a6cc`, `8406e3878be3`, `4776bffd5407`, `7d6faa1f8935`,
+`f5b2df85700d`, `4a94c4ed191d`; conditional `a811f15f6bc6`,
+`a26f2eee5c44`, `c85df9d75fc2`, `01f80d2f28b`.
+
+Introduction analysis:
+After entity-state response guarding, save updates could still reach
+`SyncManager.update()` and bypass some stale-key filtering. This branch is
+stacked on PR 7A; review it as the manager/base-record delta, not as the broad
+five-branch PR 7 aggregate.
 
 Review note:
-This probably wants two PRs: one for response guarding in `actions.js`, one for
-manager/base-record stale-key filtering.
+The broad original `fix/rtc-save-response-content-guard` branch is too tangled
+to file as-is because it includes stale-base block-append / `crdt-blocks.ts`
+work outside the save-response boundary.
 
 ### PR 8: Reload title and persisted-record hydration
 
@@ -372,7 +489,9 @@ had entered the doc.
 Review note:
 This branch is larger than most fix-plan branches. Before filing, compare it
 against `try/rtc-title-reload-pr` and split test helpers from product logic if
-possible.
+possible. Do not claim the reload-hydration empty-live-editor family
+(`e75c8829e4e9` / `3bbdc3cdb393`) from this PR until the focused WebSocket gate
+produces product evidence.
 
 ### PR 9: Core-data lock fairness for stuck saves
 
@@ -485,15 +604,13 @@ Introduction analysis:
 `previousLocalBlocksCache` supplied a stale base, but the positional fallback
 could mutate retained blocks instead of deleting/reordering by stable client id.
 
-### PR 13: Cross-parent source retirement and identity smear guards
+### PR 13A: Observed-delete top-level provenance
 
-Branches:
+Branch:
+`fix/rtc-observed-top-level-delete-provenance`
 
-- `fix/rtc-cross-parent-move-source-retirement`
-- `fix/rtc-current-only-cross-parent-source-retirement`
-- `fix/rtc-stale-base-cross-parent-source-retirement`
-- `fix/rtc-stale-block-identity-smear-guard`
-- `fix/rtc-observed-top-level-delete-provenance`
+Intended shaped head after the cycle-6 branch repair:
+`shape/rtc-crdt-pr13a-observed-delete-provenance`
 
 Files:
 
@@ -501,19 +618,75 @@ Files:
 - `packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts`
 
 Fix:
-When a block moves between parents, retire the old source by client id and do
-not smear a stale block's name/attributes into a different live block by
-position. Preserve observed remote deletes without resurrecting later stale
-copies.
+Track top-level block IDs that were actually observed in local Y state and then
+deleted remotely, so later stale local snapshots cannot resurrect those deleted
+blocks.
 
 Representative bugs:
-`130a60214fea`, `04cb3b53b722`, `15818a9948ef`, `12d3326bd344`,
-`123203b4fdfa`, `6fed843e6120`, `890d98d04cda`, `3ac375556552`.
+Observed delete provenance / stale post-delete resurrection rows from iteration
+26.
+
+Introduction analysis:
+Earlier stale-delete filtering inferred delete provenance from stale incoming
+or previous-local snapshots too broadly, and in some partial-snapshot cases too
+narrowly. This PR should be reviewed before the source-retirement and
+identity-smear guards because it changes the evidence used by later top-level
+block reconciliation decisions.
+
+Cycle-6 branch-shape gate:
+The current live `shape/rtc-crdt-pr13*` heads do not include this branch as the
+first PR 13 delta. Repair that stack before filing or reviewing PR 13.
+
+### PR 13B: Cross-parent source retirement
+
+Branches:
+
+- `fix/rtc-cross-parent-move-source-retirement`
+- `fix/rtc-current-only-cross-parent-source-retirement`
+- `fix/rtc-stale-base-cross-parent-source-retirement`
+
+Files:
+
+- `packages/core-data/src/utils/crdt-blocks.ts`
+- `packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts`
+
+Fix:
+When a block moves between parents, retire the old source by client id across
+the direct, current-only, and stale-explicit-base shapes.
+
+Representative bugs:
+`130a60214fea`, `04cb3b53b722`; conditional source-retirement portions of
+`15818a9948ef`, `12d3326bd344`, `123203b4fdfa`, `6fed843e6120`.
 
 Introduction analysis:
 Nested/cross-parent moves entered a merge path that could update the new
-destination while leaving the old parent source alive, or match the stale source
-to a different live block by index.
+destination while leaving the old parent source alive. Keep the table/attribute
+smear portions conditional unless the branch-specific tests prove that exact
+source-retirement mechanism.
+
+### PR 13C: Stale block identity smear guard
+
+Branch:
+`fix/rtc-stale-block-identity-smear-guard`
+
+Files:
+
+- `packages/core-data/src/utils/crdt-blocks.ts`
+- `packages/core-data/src/utils/test/crdt-stale-top-level-blocks.test.ts`
+
+Fix:
+Do not smear a stale block's name or attributes into a different live block by
+position when stable client-id evidence says the incoming block is stale.
+
+Representative bugs:
+Identity-smear portions of `12d3326bd344`, `123203b4fdfa`, `6fed843e6120`,
+and related stale structural rows.
+
+Introduction analysis:
+After source retirement, stale snapshots could still match by index and mutate a
+different live block's identity. This should stay separate from PR 13B so
+reviewers can distinguish "remove the old source" from "do not mutate the wrong
+target."
 
 ### PR 14: Table body nested array merge
 
@@ -611,14 +784,17 @@ storage, and transport fixes. Those should be split or rebased before filing.
 | Parser/entity/reference normalization save loops | fix branches exist | PR 5 |
 | Preserve-whitespace newline vs `<br>` equivalence | fix branch exists | PR 5 |
 | Empty/stale outgoing save payloads | fix branches exist | PR 6 |
-| Stale save response title/content/meta replay | fix branches exist | PR 7 |
-| Reload title/persisted-record hydration | fix branch exists, needs branch comparison | PR 8 |
+| Persisted empty/title-only body collapse | fix branch exists | PR 6A |
+| Stale save response entity-state replay | shape branch exists | PR 7A |
+| Stale save response manager/base-record replay | stacked shape branch exists | PR 7B |
+| Reload title/persisted-record hydration | fix branch exists, needs branch comparison; does not claim empty-live-editor gate | PR 8 |
 | Stuck save from core-data lock unfairness | fix branch exists | PR 9 |
 | General stale CRDT block rebase | fix branch exists | PR 10 |
 | Explicit-base top-level append/delete/insert/move/order | fix branches exist | PR 11 |
 | Previous-local-cache delete/reorder/delete+reorder | fix branches exist | PR 12 |
-| Cross-parent source copies and stale block identity smear | fix branches exist | PR 13 |
-| Observed delete provenance / stale post-delete resurrection | fix branch exists | PR 13 |
+| Observed delete provenance / stale post-delete resurrection | fix branch exists | PR 13A |
+| Cross-parent source copies | fix branches exist | PR 13B |
+| Stale block identity smear | fix branch exists | PR 13C |
 | Table nested `body[]` duplicate/loss | fix branch exists | PR 14 |
 | Fallback group move/insert/delete residuals | fix branches exist | PR 15 |
 | Autosave autodraft loss | older PR branch exists | `fix/rtc-autodraft-autosave-loss-pr` |
@@ -641,8 +817,10 @@ Evidence gate only. The exact WebSocket evidence branch is
 was blocked by `wp-env` / Playwright startup trouble, not product evidence.
 
 Next step:
-Run the focused WebSocket replay with `WP_ENV_PORT=9763` and
-`WP_BASE_URL=http://localhost:9763`, then only create a fix branch if live
+Run the focused WebSocket replay from `try/rtc-reload-hydration-gate-e75c8829`
+with `WP_ENV_PORT=9763`, `WP_ENV_TESTS_PORT=9764`, and
+`WP_BASE_URL=http://localhost:9763`. Keep the reconstructed gate spec out of
+`fix/rtc-fallback-group-delete-stale-local`. Only create a fix branch if live
 editor state stays empty after exact-room WebSocket sync while REST body and
 persisted `_crdt_document` remain populated.
 
@@ -717,12 +895,15 @@ individual branches. Examples include:
 What remains before PR filing:
 
 1. Rebase or recreate each PR branch on the intended upstream base.
-2. Drop analysis-only artifacts and keep only product code plus focused tests.
-3. Run focused tests for every branch after rebase.
-4. Build a fresh combined validation stack from the final branches.
-5. Run the Jetstream2 coverage-guided and focused fuzz lanes on that final
+2. Repair the CRDT PR 13 shaped stack so observed-delete provenance is its own
+   first PR 13 delta after PR 12, then regenerate containment, range-diff, and
+   diff-stat evidence for each adjacent CRDT review delta.
+3. Drop analysis-only artifacts and keep only product code plus focused tests.
+4. Run focused tests for every branch after rebase.
+5. Build a fresh combined validation stack from the final branches.
+6. Run the Jetstream2 coverage-guided and focused fuzz lanes on that final
    stack; block PR filing if new visible likely-real failures appear.
-6. Resolve or explicitly defer the evidence-only gaps above.
+7. Resolve or explicitly defer the evidence-only gaps above.
 
 ## Current Recommendation
 
@@ -738,12 +919,20 @@ fix/rtc-entity-normalization-save-loop
 fix/rtc-entity-reference-normalization
 fix/rtc-empty-content-crdt-guard
 fix/rtc-stale-save-crdt-raw-fields
+fix/rtc-persisted-empty-content-guard
 fix/rtc-store-lock-fairness
 ```
 
-Then file the save-response and title/reload branches. After that, file the
-CRDT block-reconciliation series as an explicitly ordered stack, because those
-branches touch the same core file and have overlapping tests:
+Then file the save-response and title/reload branches:
+
+```text
+shape/rtc-save-response-actions-guard
+shape/rtc-save-response-manager-base-record
+fix/rtc-title-reload-persisted-record
+```
+
+Then file the CRDT block-reconciliation series as an explicitly ordered stack,
+because those branches touch the same core file and have overlapping tests:
 
 ```text
 fix/rtc-crdt-block-rebase
@@ -752,12 +941,12 @@ fix/rtc-stale-base-block-delete
 fix/rtc-stale-base-block-middle-insert
 fix/rtc-previous-local-cache-block-delete
 fix/rtc-previous-local-cache-block-reorder
-fix/rtc-cross-parent-move-source-retirement
 fix/rtc-previous-local-cache-delete-reorder
-fix/rtc-stale-block-identity-smear-guard
+fix/rtc-observed-top-level-delete-provenance
+fix/rtc-cross-parent-move-source-retirement
 fix/rtc-current-only-cross-parent-source-retirement
 fix/rtc-stale-base-cross-parent-source-retirement
-fix/rtc-observed-top-level-delete-provenance
+fix/rtc-stale-block-identity-smear-guard
 fix/rtc-stale-top-level-move-reorder
 fix/rtc-top-level-insert-anchor-after-delete
 fix/rtc-table-body-array-stale-local-merge
