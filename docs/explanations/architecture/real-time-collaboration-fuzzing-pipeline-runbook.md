@@ -191,7 +191,8 @@ The remote launchers are intentionally split by ownership:
 Start or refresh the guard after installing the launchers. `stop` now kills the
 guard's sleeping child before releasing the lock, so a refresh should not leave
 an orphaned `sleep` process holding `guard.lock`. `start` also clears the known
-stale-lock case where an older guard left a parentless `sleep` holding the lock.
+stale-lock cases where an older guard left a parentless `sleep` or pid-file-less
+guard `run` process holding the lock.
 
 ```bash
 ssh "$JETSTREAM" "

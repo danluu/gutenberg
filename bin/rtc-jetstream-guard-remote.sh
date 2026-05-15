@@ -34,7 +34,7 @@ record_restart() {
 }
 
 clear_stale_lock_holder() {
-	local pid comm ppid
+	local pid comm ppid args
 
 	if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
 		return
@@ -43,6 +43,14 @@ clear_stale_lock_holder() {
 	for pid in $(fuser "$LOCK_FILE" 2>/dev/null || true); do
 		comm=$(ps -o comm= -p "$pid" 2>/dev/null | awk '{$1=$1};1')
 		ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+		args=$(ps -o args= -p "$pid" 2>/dev/null || true)
+		case "$args" in
+			*"start_rtc_jetstream_guard.sh run"*|*"rtc-jetstream-guard-remote.sh run"*)
+				log "killing stale guard run lock holder pid=$pid"
+				kill "$pid" 2>/dev/null || true
+				continue
+				;;
+		esac
 		if [ "$comm" = sleep ] && [ "$ppid" = 1 ]; then
 			log "killing stale guard sleep lock holder pid=$pid"
 			kill "$pid" 2>/dev/null || true
