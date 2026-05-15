@@ -33,6 +33,23 @@ record_restart() {
 	printf '%s\t%s\t%s\n' "$(date -u +%s)" "$pool" "$reason" >> "$EVENTS"
 }
 
+clear_stale_lock_holder() {
+	local pid comm ppid
+
+	if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+		return
+	fi
+
+	for pid in $(fuser "$LOCK_FILE" 2>/dev/null || true); do
+		comm=$(ps -o comm= -p "$pid" 2>/dev/null | awk '{$1=$1};1')
+		ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ')
+		if [ "$comm" = sleep ] && [ "$ppid" = 1 ]; then
+			log "killing stale guard sleep lock holder pid=$pid"
+			kill "$pid" 2>/dev/null || true
+		fi
+	done
+}
+
 maybe_launch_codex() {
 	local pool=$1
 	local reason=$2
@@ -160,6 +177,7 @@ case "${1:-start}" in
 			log "guard already running pid=$(cat "$PID_FILE")"
 			exit 0
 		fi
+		clear_stale_lock_holder
 		nohup "$0" run >> "$LOG_DIR/guard.out" 2>&1 &
 		echo "guard pid=$!"
 		;;
