@@ -71,6 +71,12 @@ function contentsOf( yblocks: YBlocks ): string[] {
 	);
 }
 
+function clientIdsOf( yblocks: YBlocks ): string[] {
+	return ( yblocks.toJSON() as Block[] ).map(
+		( block ) => block.clientId as string
+	);
+}
+
 function postBlocks( doc: Y.Doc ): YBlocks {
 	return getRootMap< YPostRecord >( doc, CRDT_RECORD_MAP_KEY ).get(
 		'blocks'
@@ -427,6 +433,165 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 		expect( yPostBlocks.toArray() ).not.toContain( deletedYBlock );
 		expect( yPostBlocks.get( 1 ) ).toBe( tailYBlock );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'reorders cached previous-local top-level blocks without mutating a block into a current-only insert', () => {
+		const initialBlocks = [
+			paragraph( 'anchor', 'Anchor' ),
+			paragraph( 'moved', 'Moved' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'anchor', 'Anchor' ),
+				paragraph( 'moved', 'Moved' ),
+				paragraph( 'remote', 'Remote' ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'anchor',
+			'moved',
+			'remote',
+			'tail',
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'anchor', 'Anchor' ),
+				paragraph( 'remote', 'Remote' ),
+				paragraph( 'tail', 'Tail' ),
+				paragraph( 'moved', 'Moved' ),
+			],
+			null
+		);
+
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'anchor',
+			'remote',
+			'tail',
+			'moved',
+		] );
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Anchor',
+			'Remote',
+			'Tail',
+			'Moved',
+		] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'reorders a one-block previous-local cache without mutating it into a current-only insert', () => {
+		const initialBlocks = [ paragraph( 'anchor', 'Anchor' ) ];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'anchor', 'Anchor' ),
+				paragraph( 'remote', 'Remote' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( clientIdsOf( yblocks ) ).toEqual( [ 'anchor', 'remote' ] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'remote', 'Remote' ),
+				paragraph( 'anchor', 'Anchor' ),
+			],
+			null
+		);
+
+		expect( clientIdsOf( yblocks ) ).toEqual( [ 'remote', 'anchor' ] );
+		expect( contentsOf( yblocks ) ).toEqual( [ 'Remote', 'Anchor' ] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'reorders cached previous-local top-level blocks through the post CRDT adapter', () => {
+		const initialBlocks = [
+			paragraph( 'anchor', 'Anchor' ),
+			paragraph( 'moved', 'Moved' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: initialBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{
+				blocks: [
+					paragraph( 'anchor', 'Anchor' ),
+					paragraph( 'moved', 'Moved' ),
+					paragraph( 'remote', 'Remote' ),
+					paragraph( 'tail', 'Tail' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		const yPostBlocks = postBlocks( doc );
+		expect( clientIdsOf( yPostBlocks ) ).toEqual( [
+			'anchor',
+			'moved',
+			'remote',
+			'tail',
+		] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: [
+					paragraph( 'anchor', 'Anchor' ),
+					paragraph( 'remote', 'Remote' ),
+					paragraph( 'tail', 'Tail' ),
+					paragraph( 'moved', 'Moved' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		expect( clientIdsOf( yPostBlocks ) ).toEqual( [
+			'anchor',
+			'remote',
+			'tail',
+			'moved',
+		] );
+		expect( contentsOf( yPostBlocks ) ).toEqual( [
+			'Anchor',
+			'Remote',
+			'Tail',
+			'Moved',
+		] );
 
 		remoteDoc.destroy();
 	} );
