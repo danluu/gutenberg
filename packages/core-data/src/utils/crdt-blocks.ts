@@ -325,8 +325,9 @@ function createNewYAttributeValue(
  * - `object` with query  -> Y.Map
  * - anything else        -> plain value (unchanged)
  *
- * @param schema The attribute type definition.
- * @param value  The plain JS value to convert.
+ * @param schema    The attribute type definition.
+ * @param value     The plain JS value to convert.
+ * @param valuePath Optional nested value path for stable array element ids.
  * @return A Y.js type or the original value.
  */
 function createYValueFromSchema(
@@ -381,8 +382,10 @@ function isRecord( value: unknown ): value is Record< string, unknown > {
  * Create a Y.Map from a plain object, using a query schema to decide which
  * properties should become nested Y.js types (Y.Text, Y.Array, Y.Map).
  *
- * @param query The query schema defining the properties.
- * @param obj   The plain object to convert.
+ * @param query          The query schema defining the properties.
+ * @param obj            The plain object to convert.
+ * @param arrayElementId Optional explicit or generated array element id.
+ * @param valuePath      Optional nested value path for stable array element ids.
  * @return A Y.Map with typed values.
  */
 function createYMapFromQuery(
@@ -675,6 +678,47 @@ function reorderYBlocksByClientId(
 		yblocks.delete( currentIndex, 1 );
 		yblocks.insert( targetIndex, [ reorderedBlock ] );
 	}
+}
+
+function reorderCurrentYBlocksByClientId(
+	yblocks: YBlocks,
+	blocksToSync: Block[]
+): boolean {
+	if ( ! canReorderYBlocksByClientId( yblocks, blocksToSync ) ) {
+		return false;
+	}
+
+	for (
+		let targetIndex = 0;
+		targetIndex < blocksToSync.length;
+		targetIndex++
+	) {
+		const targetClientId = getBlockClientId( blocksToSync[ targetIndex ] );
+
+		if (
+			getYBlockClientId( yblocks.get( targetIndex ) ) === targetClientId
+		) {
+			continue;
+		}
+
+		const currentIndex = yblocks
+			.toArray()
+			.findIndex(
+				( yblock ) => getYBlockClientId( yblock ) === targetClientId
+			);
+
+		if ( currentIndex === -1 ) {
+			return false;
+		}
+
+		const reorderedBlock = createNewYBlock(
+			yblocks.get( currentIndex ).toJSON() as unknown as Block
+		);
+		yblocks.delete( currentIndex, 1 );
+		yblocks.insert( targetIndex, [ reorderedBlock ] );
+	}
+
+	return true;
 }
 
 function rebaseYBlocksByClientId(
@@ -976,6 +1020,16 @@ function mergeYBlocksLocalChanges(
 		blocksToSync.length === baseBlocks.length
 	) {
 		return false;
+	}
+
+	if ( reorderCurrentYBlocksByClientId( yblocks, blocksToSync ) ) {
+		mergeYBlocksByClientId(
+			yblocks,
+			blocksToSync,
+			attributeCursor,
+			baseBlocks
+		);
+		return true;
 	}
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
