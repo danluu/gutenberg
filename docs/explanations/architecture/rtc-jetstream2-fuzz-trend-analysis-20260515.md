@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-15T21:42:40Z`
+Snapshot generated: `2026-05-15T22:35:58Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -12,9 +12,11 @@ Source inputs:
 - coverage monitor log:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest novelty state:
-  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260515T202556Z/novelty-state.json`
+  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260515T222031Z/novelty-state.json`
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
+- CPU history:
+  `/var/log/sysstat/sa15`
 
 The plotting script and summarized CSV inputs are committed under
 [`rtc-jetstream2-fuzz-trends-20260515/`](rtc-jetstream2-fuzz-trends-20260515/).
@@ -22,15 +24,16 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`991` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-15T21:41:58Z`, coverage files grew from `272` to `10649`, a delta of
-`10377`. The monitor's visible likely-real count stayed at `0` throughout this
+`1028` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-15T22:34:29Z`, coverage files grew from `272` to `18780`, a delta of
+`18508`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
 goals falling from `24` to `0` earlier in the run, then rising again when new
-surfaces were enabled and ending at `4` in the last logged monitor pass. The
-latest copied novelty state has `99` total goals and `4` unmet goals.
+surfaces and auto-ratcheted targets were enabled and ending at `15` in the last
+logged monitor pass. The latest copied novelty state has `111` total goals and
+`15` unmet goals.
 
 The run is currently broad but still completion-limited on some expensive UI and
 cross-entity surfaces. The main remaining gaps are successful end-to-end records
@@ -61,8 +64,18 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 The current loop is not finding visible likely-real failures. That is good for
 the active validation stack, but the duplicate/noise share remains around `0.59`,
 so the signal-to-noise ratio is still a major constraint. Free memory remained
-high at the end of the snapshot, around `425G`, so the remaining bottleneck is
+high at the end of the snapshot, around `417G`, so the remaining bottleneck is
 more about useful work selection and completion rate than raw RAM.
+
+![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
+
+CPU utilization rose materially later in the run. Sysstat samples average about
+`53%` across May 15, peak around `76%`, and end near `75%` at `22:30 UTC`.
+This says the machine is being used more aggressively than the earlier memory
+view alone implied; spare RAM does not necessarily mean spare browser/CPU
+capacity.
+
+![Project activity index over time](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-index.png)
 
 ## Enabled Surfaces
 
@@ -107,14 +120,13 @@ target next:
 
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
-| `multi-reload-lifecycle` | 1198 | 20 | 824 | 1.7% |
-| `revision-persistence` | 1341 | 31 | 882 | 2.3% |
-| `media-cross-entity` | 37 | 1 | 0 | 2.7% |
-| `real-user-editing` | 1746 | 69 | 825 | 4.0% |
-| `parser-transform` | 1402 | 61 | 941 | 4.4% |
-| `parser-serialization` | 556 | 26 | 333 | 4.7% |
-| `common-blocks` | 597 | 40 | 376 | 6.7% |
-| `block-gauntlet` | 1748 | 127 | 1140 | 7.3% |
+| `media-cross-entity` | 59 | 1 | 1 | 1.7% |
+| `full` | 840 | 18 | 476 | 2.1% |
+| `multi-reload-lifecycle` | 1619 | 38 | 941 | 2.3% |
+| `revision-persistence` | 2089 | 75 | 1078 | 3.6% |
+| `parser-serialization` | 848 | 42 | 389 | 5.0% |
+| `real-user-editing` | 2647 | 177 | 1010 | 6.7% |
+| `parser-transform` | 2041 | 168 | 1062 | 8.2% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -129,13 +141,25 @@ Current unmet goals from the latest state:
 | Goal | Current | Target |
 | --- | ---: | ---: |
 | successful media-cross-entity records | 1 | 25 |
-| successful multi-reload-lifecycle records | 20 | 50 |
-| successful parser-serialization records | 26 | 50 |
-| successful real-user-editing records | 69 | 80 |
+| CDP coverage records next coverage tier | 2346 | 5000 |
+| action reload-post-action next coverage tier | 240 | 500 |
+| action ui-format-paragraph next coverage tier | 330 | 500 |
+| action ui-type-title next coverage tier | 345 | 500 |
+| action ui-undo-redo-paragraph next coverage tier | 378 | 500 |
+| successful multi-reload-lifecycle records | 38 | 50 |
+| real-user title save/reload next coverage tier | 38 | 50 |
+| action ui-type-paragraph next coverage tier | 405 | 500 |
+| successful parser-serialization records | 42 | 50 |
+| successful real-user-editing records next coverage tier | 177 | 200 |
+| gauntlet block core/more next coverage tier | 183 | 200 |
+| action ui-heading-shortcut next coverage tier | 184 | 200 |
+| gauntlet block core/html next coverage tier | 185 | 200 |
+| real-user body save/reload next coverage tier | 93 | 100 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
-remaining work is now concentrated in completed-record depth for four expensive
-profiles; the media/cross-entity block and upload goals have moved past target.
+remaining work now mixes completed-record depth for expensive profiles with
+auto-ratcheted depth targets for CDP hashes, real-user actions, and gauntlet
+blocks.
 
 ## Feature Mix
 
@@ -163,7 +187,7 @@ completed end-to-end records.
 ![PR split loop duration by phase](rtc-jetstream2-fuzz-trends-20260515/plots/pr-review-loop-durations.png)
 
 After the loop was corrected to `max_parallel=6` and `interval=0s`, completed
-review cycles took roughly `3.8` to `6.7` minutes in this snapshot. Feedback
+review cycles took roughly `2.9` to `8.0` minutes in this snapshot. Feedback
 actions ran every two cycles and took roughly `2.0` to `12.9` minutes. The
 cadence is now continuous enough for persona feedback to affect the PR split
 promptly, rather than only hourly; the sample is still too small for trend
@@ -179,6 +203,9 @@ small number of high-value expensive lanes:
   attempts;
 - multi-reload, parser-serialization, and real-user editing need completed-record
   boosting, with startup-stall reduction as one likely lever;
+- CPU utilization has climbed substantially, so adding more browser-heavy work
+  should be balanced against completion rate rather than judged from memory
+  headroom alone;
 - duplicate/noise triage is still consuming a large share of observed failures;
 - no visible likely-real failures appeared in this snapshot, so new PR work
   should stay gated on a fresh validation-stack fuzz run after branch rebase and

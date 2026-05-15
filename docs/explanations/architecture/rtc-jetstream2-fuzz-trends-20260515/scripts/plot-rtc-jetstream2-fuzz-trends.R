@@ -28,6 +28,8 @@ raw_dir <- Sys.getenv( "RTC_TREND_RAW_DIR", unset = file.path( artifact_dir, "ra
 monitor_path <- file.path( raw_dir, "monitor.log" )
 loop_path <- file.path( raw_dir, "pr-split-loop.log" )
 state_path <- file.path( raw_dir, "novelty-state.json" )
+cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
+activity_path <- file.path( data_dir, "activity_index.csv" )
 
 stopifnot( file.exists( monitor_path ) )
 stopifnot( file.exists( loop_path ) )
@@ -381,6 +383,52 @@ write_plot(
 	width = 9,
 	height = 8
 )
+
+if ( file.exists( cpu_path ) ) {
+	cpu_utilization <- read_csv( cpu_path, show_col_types = FALSE ) %>%
+		mutate( timestamp = ymd_hms( timestamp, tz = "UTC" ) )
+
+	write_plot(
+		"cpu-utilization-over-time.png",
+		ggplot( cpu_utilization, aes( x = timestamp, y = cpu_utilization ) ) +
+			geom_point( aes( color = iowait_pct ), alpha = 0.72, size = 1.6 ) +
+			scale_color_distiller( palette = "YlOrRd", direction = 1, labels = label_percent( scale = 1 ) ) +
+			scale_y_continuous( labels = label_percent( scale = 1 ), limits = c( 0, 100 ) ) +
+			scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
+			labs(
+				title = "CPU utilization over time",
+				x = "UTC time on 2026-05-15",
+				y = "CPU utilization",
+				color = "I/O wait",
+				caption = "Each point is one sysstat sample for all CPUs. Color indicates the I/O-wait share."
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 5.4
+	)
+}
+
+if ( file.exists( activity_path ) ) {
+	activity_index <- read_csv( activity_path, show_col_types = FALSE ) %>%
+		mutate( timestamp = ymd_hms( timestamp, tz = "UTC" ) )
+
+	write_plot(
+		"project-activity-index.png",
+		ggplot( activity_index, aes( x = timestamp, y = value ) ) +
+			geom_point( aes( size = samples ), alpha = 0.62, color = brewer.pal( 8, "Dark2" )[ 3 ] ) +
+			scale_size_continuous( range = c( 1.4, 4.4 ), guide = "none" ) +
+			scale_y_continuous( limits = c( 0, 100 ) ) +
+			scale_x_datetime( date_labels = "%m-%d %H:%M", date_breaks = "4 hours" ) +
+			labs(
+				title = "Project activity index over time",
+				x = "UTC time",
+				y = "normalized index"
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 4.8
+	)
+}
 
 if ( nrow( enabled_groups ) > 0 ) {
 	enabled_group_summary <- enabled_groups %>%
