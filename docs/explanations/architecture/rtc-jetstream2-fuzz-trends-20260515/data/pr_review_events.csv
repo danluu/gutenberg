@@ -1,0 +1,27 @@
+timestamp,message,event_type,cycle,max_parallel,interval_s
+2026-05-15T19:38:14Z,loop started interval=3600s max_parallel=3,loop start,NA,3,3600
+2026-05-15T19:38:14Z,starting PR split review cycle 20260515T193814Z,review start,20260515T193814Z,NA,NA
+2026-05-15T19:42:56Z,loop started interval=3600s max_parallel=6,loop start,NA,6,3600
+2026-05-15T19:42:56Z,starting PR split review cycle 20260515T194256Z,review start,20260515T194256Z,NA,NA
+2026-05-15T19:44:43Z,loop started interval=0s max_parallel=6 action_every_cycles=2,loop start,NA,6,0
+2026-05-15T19:44:43Z,starting PR split review cycle 20260515T194443Z,review start,20260515T194443Z,NA,NA
+2026-05-15T19:45:14Z,loop started interval=0s max_parallel=6 action_every_cycles=2,loop start,NA,6,0
+2026-05-15T19:45:14Z,starting PR split review cycle 20260515T194514Z,review start,20260515T194514Z,NA,NA
+2026-05-15T19:50:54Z,finished PR split review cycle 20260515T194514Z,review finish,20260515T194514Z,NA,NA
+2026-05-15T19:50:54Z,starting PR split review cycle 20260515T195054Z,review start,20260515T195054Z,NA,NA
+2026-05-15T19:55:25Z,finished PR split review cycle 20260515T195054Z,review finish,20260515T195054Z,NA,NA
+2026-05-15T19:55:25Z,running feedback action after cycle 2,feedback start,2,NA,NA
+2026-05-15T20:03:05Z,finished feedback action after cycle 2,feedback finish,2,NA,NA
+2026-05-15T20:03:05Z,starting PR split review cycle 20260515T200305Z,review start,20260515T200305Z,NA,NA
+2026-05-15T20:08:08Z,finished PR split review cycle 20260515T200305Z,review finish,20260515T200305Z,NA,NA
+2026-05-15T20:08:08Z,starting PR split review cycle 20260515T200808Z,review start,20260515T200808Z,NA,NA
+2026-05-15T20:13:58Z,finished PR split review cycle 20260515T200808Z,review finish,20260515T200808Z,NA,NA
+2026-05-15T20:13:58Z,running feedback action after cycle 4,feedback start,4,NA,NA
+2026-05-15T20:19:50Z,finished feedback action after cycle 4,feedback finish,4,NA,NA
+2026-05-15T20:19:50Z,starting PR split review cycle 20260515T201950Z,review start,20260515T201950Z,NA,NA
+2026-05-15T20:26:30Z,finished PR split review cycle 20260515T201950Z,review finish,20260515T201950Z,NA,NA
+2026-05-15T20:26:30Z,starting PR split review cycle 20260515T202630Z,review start,20260515T202630Z,NA,NA
+2026-05-15T20:31:20Z,finished PR split review cycle 20260515T202630Z,review finish,20260515T202630Z,NA,NA
+2026-05-15T20:31:20Z,running feedback action after cycle 6,feedback start,6,NA,NA
+2026-05-15T20:39:38Z,finished feedback action after cycle 6,feedback finish,6,NA,NA
+2026-05-15T20:39:38Z,starting PR split review cycle 20260515T203938Z,review start,20260515T203938Z,NA,NA
