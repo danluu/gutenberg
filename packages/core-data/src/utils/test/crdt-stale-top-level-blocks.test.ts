@@ -162,6 +162,13 @@ function allClientIdsOf( blocks: Block[] ): string[] {
 	] );
 }
 
+function allBlocksOf( blocks: Block[] ): Block[] {
+	return blocks.flatMap( ( block ) => [
+		block,
+		...allBlocksOf( block.innerBlocks ?? [] ),
+	] );
+}
+
 function postBlocks( doc: Y.Doc ): YBlocks {
 	return getRootMap< YPostRecord >( doc, CRDT_RECORD_MAP_KEY ).get(
 		'blocks'
@@ -1340,6 +1347,179 @@ describe( 'stale top-level block snapshots', () => {
 			blocks[ 1 ].innerBlocks.map( ( block ) => block.clientId )
 		).toEqual( [ 'nested', 'moved' ] );
 		expect( blocks[ 2 ].attributes.content ).toBe( 'Fresh remote note' );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'retires a current-only table source when a stale snapshot moves it into a group', () => {
+		const currentTable = table( 'moved-table', 'Cell', 'Caption' );
+		const initialBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				currentTable,
+				group( 'group' ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved-table',
+			'group',
+			'tail',
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				group( 'group', [ table( 'moved-table', 'Cell', 'Caption' ) ] ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		const blocks = yblocks.toJSON() as Block[];
+		const tables = allBlocksOf( blocks ).filter(
+			( block ) => block.name === 'core/table'
+		);
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'group',
+			'tail',
+		] );
+		expect( tables ).toHaveLength( 1 );
+		expect(
+			blocks[ 1 ].innerBlocks.map( ( block ) => block.clientId )
+		).toEqual( [ 'moved-table' ] );
+		expect( blocks[ 1 ].innerBlocks[ 0 ].attributes.caption ).toBe(
+			'Caption'
+		);
+		expect(
+			blocks[ 1 ].innerBlocks[ 0 ].attributes.body[ 0 ].cells[ 0 ].content
+		).toBe( 'Cell' );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'does not retire a current-only table source when the destination has current-only nested content', () => {
+		const initialBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				table( 'moved-table', 'Cell', 'Caption' ),
+				group( 'group', [ paragraph( 'note', 'Note' ) ] ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				group( 'group', [
+					paragraph( 'note', 'Note' ),
+					table( 'moved-table', 'Cell', 'Caption' ),
+				] ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved-table',
+			'group',
+			'tail',
+		] );
+		expect( blocks[ 1 ].attributes.caption ).toBe( 'Caption' );
+		expect( blocks[ 1 ].attributes.body[ 0 ].cells[ 0 ].content ).toBe(
+			'Cell'
+		);
+		expect(
+			blocks[ 2 ].innerBlocks.map( ( block ) => block.clientId )
+		).toContain( 'note' );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'does not retire a current-only table source when the nested payload differs', () => {
+		const initialBlocks = [
+			paragraph( 'heading', 'Heading' ),
+			group( 'group' ),
+			paragraph( 'tail', 'Tail' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				table( 'moved-table', 'Current cell', 'Current caption' ),
+				group( 'group' ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'heading', 'Heading' ),
+				group( 'group', [
+					table( 'moved-table', 'Incoming cell', 'Incoming caption' ),
+				] ),
+				paragraph( 'tail', 'Tail' ),
+			],
+			null
+		);
+
+		const blocks = yblocks.toJSON() as Block[];
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'heading',
+			'moved-table',
+			'group',
+			'tail',
+		] );
+		expect( blocks[ 1 ].attributes.caption ).toBe( 'Current caption' );
+		expect( blocks[ 1 ].attributes.body[ 0 ].cells[ 0 ].content ).toBe(
+			'Current cell'
+		);
 
 		remoteDoc.destroy();
 	} );
