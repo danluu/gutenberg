@@ -1170,6 +1170,118 @@ function mergeYBlocksStaleBaseDelete(
 	return true;
 }
 
+function mergeYBlocksStaleBaseInsert(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): boolean {
+	if ( blocksToSync.length <= baseBlocks.length ) {
+		return false;
+	}
+
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if ( ! currentClientIds || ! baseClientIds || ! incomingClientIds ) {
+		return false;
+	}
+
+	const currentClientIdSet = new Set( currentClientIds );
+	const baseClientIdSet = new Set( baseClientIds );
+	const insertedClientIdSet = new Set< string >();
+	const insertions: Array< { beforeClientId: string; blocks: Block[] } > = [];
+	const incomingMatches: Array< { block: Block; baseBlock: Block } > = [];
+	let baseIndex = 0;
+	let pendingInsertedBlocks: Block[] = [];
+
+	for (
+		let incomingIndex = 0;
+		incomingIndex < blocksToSync.length;
+		incomingIndex++
+	) {
+		const incomingClientId = incomingClientIds[ incomingIndex ];
+
+		if (
+			baseIndex < baseClientIds.length &&
+			incomingClientId === baseClientIds[ baseIndex ]
+		) {
+			if ( pendingInsertedBlocks.length ) {
+				insertions.push( {
+					beforeClientId: incomingClientId,
+					blocks: pendingInsertedBlocks,
+				} );
+				pendingInsertedBlocks = [];
+			}
+
+			incomingMatches.push( {
+				block: blocksToSync[ incomingIndex ],
+				baseBlock: baseBlocks[ baseIndex ],
+			} );
+			baseIndex++;
+			continue;
+		}
+
+		if ( baseClientIdSet.has( incomingClientId ) ) {
+			return false;
+		}
+
+		insertedClientIdSet.add( incomingClientId );
+		pendingInsertedBlocks.push( blocksToSync[ incomingIndex ] );
+	}
+
+	if (
+		baseIndex !== baseClientIds.length ||
+		pendingInsertedBlocks.length ||
+		! insertions.length ||
+		! baseClientIds.every( ( clientId ) =>
+			currentClientIdSet.has( clientId )
+		) ||
+		Array.from( insertedClientIdSet ).some( ( clientId ) =>
+			currentClientIdSet.has( clientId )
+		)
+	) {
+		return false;
+	}
+
+	for ( const { beforeClientId, blocks } of insertions ) {
+		const insertIndex = findYBlockIndexByClientId(
+			yblocks,
+			beforeClientId
+		);
+
+		if ( insertIndex === -1 ) {
+			return false;
+		}
+
+		yblocks.insert( insertIndex, blocks.map( createNewYBlock ) );
+	}
+
+	for ( const { block, baseBlock } of incomingMatches ) {
+		const currentIndex = findYBlockIndexByClientId(
+			yblocks,
+			getBlockClientId( baseBlock )!
+		);
+
+		if ( currentIndex === -1 ) {
+			return false;
+		}
+
+		mergeBlockIntoYBlock(
+			yblocks.get( currentIndex ),
+			block,
+			attributeCursor,
+			baseBlock
+		);
+	}
+
+	return true;
+}
+
 function mergeYBlocksLocalChanges(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
@@ -1197,6 +1309,18 @@ function mergeYBlocksLocalChanges(
 	if (
 		hasExplicitBaseBlocks &&
 		mergeYBlocksStaleBaseDelete(
+			yblocks,
+			blocksToSync,
+			baseBlocks,
+			attributeCursor
+		)
+	) {
+		return true;
+	}
+
+	if (
+		hasExplicitBaseBlocks &&
+		mergeYBlocksStaleBaseInsert(
 			yblocks,
 			blocksToSync,
 			baseBlocks,
