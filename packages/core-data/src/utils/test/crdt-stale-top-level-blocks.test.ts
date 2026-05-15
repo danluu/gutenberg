@@ -713,6 +713,127 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 	} );
 
+	it( 'preserves retained top-level siblings when a stale explicit-base move follows a current-only insert', () => {
+		const baseBlocks = [
+			paragraph( 'baseline', 'Seed 953452 baseline paragraph.' ),
+			paragraph(
+				'second',
+				'Seed 953452 keeps a second paragraph for deletes and moves.'
+			),
+			paragraph( 'shared', 'Shared editing target paragraph.' ),
+		];
+		const currentBlocks = [
+			paragraph( 'baseline', 'Seed 953452 baseline paragraph.' ),
+			paragraph( 'inserted', 'Inserted after the base snapshot.' ),
+			paragraph(
+				'second',
+				'Seed 953452 keeps a second paragraph for deletes and moves.'
+			),
+			paragraph( 'shared', 'Shared editing target paragraph.' ),
+		];
+		const staleMovedBlocks = [
+			paragraph( 'inserted', 'Inserted after the base snapshot.' ),
+			paragraph(
+				'second',
+				'Seed 953452 keeps a second paragraph for deletes and moves.'
+			),
+			paragraph( 'baseline', 'Seed 953452 baseline paragraph.' ),
+			paragraph( 'shared', 'Shared editing target paragraph.' ),
+		];
+
+		mergeCrdtBlocks( yblocks, baseBlocks, null );
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'baseline',
+			'inserted',
+			'second',
+			'shared',
+		] );
+
+		mergeCrdtBlocks( yblocks, staleMovedBlocks, null, baseBlocks );
+
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'inserted',
+			'second',
+			'baseline',
+			'shared',
+		] );
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Inserted after the base snapshot.',
+			'Seed 953452 keeps a second paragraph for deletes and moves.',
+			'Seed 953452 baseline paragraph.',
+			'Shared editing target paragraph.',
+		] );
+	} );
+
+	it( 'preserves retained top-level siblings with an explicit base through the post CRDT adapter', () => {
+		const baseBlocks = [
+			paragraph( 'baseline', 'Seed 953452 baseline paragraph.' ),
+			paragraph(
+				'second',
+				'Seed 953452 keeps a second paragraph for deletes and moves.'
+			),
+			paragraph( 'shared', 'Shared editing target paragraph.' ),
+		];
+		const currentBlocks = [
+			paragraph( 'baseline', 'Seed 953452 baseline paragraph.' ),
+			paragraph( 'inserted', 'Inserted after the base snapshot.' ),
+			paragraph(
+				'second',
+				'Seed 953452 keeps a second paragraph for deletes and moves.'
+			),
+			paragraph( 'shared', 'Shared editing target paragraph.' ),
+		];
+		const staleMovedBlocks = [
+			paragraph( 'inserted', 'Inserted after the base snapshot.' ),
+			paragraph(
+				'second',
+				'Seed 953452 keeps a second paragraph for deletes and moves.'
+			),
+			paragraph( 'baseline', 'Seed 953452 baseline paragraph.' ),
+			paragraph( 'shared', 'Shared editing target paragraph.' ),
+		];
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: baseBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: currentBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const yPostBlocks = postBlocks( doc );
+		expect( clientIdsOf( yPostBlocks ) ).toEqual( [
+			'baseline',
+			'inserted',
+			'second',
+			'shared',
+		] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: staleMovedBlocks },
+			SYNCED_BLOCK_PROPERTIES,
+			{ baseRecord: { blocks: baseBlocks } }
+		);
+
+		expect( clientIdsOf( yPostBlocks ) ).toEqual( [
+			'inserted',
+			'second',
+			'baseline',
+			'shared',
+		] );
+		expect( contentsOf( yPostBlocks ) ).toEqual( [
+			'Inserted after the base snapshot.',
+			'Seed 953452 keeps a second paragraph for deletes and moves.',
+			'Seed 953452 baseline paragraph.',
+			'Shared editing target paragraph.',
+		] );
+	} );
+
 	it( 'derives post content from merged blocks instead of stale serialized content', () => {
 		const initialBlocks = [
 			paragraph( 'local-edited', 'Alpha' ),
