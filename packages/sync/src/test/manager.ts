@@ -1096,6 +1096,181 @@ describe( 'SyncManager', () => {
 			} );
 		} );
 
+		it( 'filters stale base-record local keys before the edited record lookup resolves', async () => {
+			let capturedDoc: Y.Doc | null = null;
+			mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
+				capturedDoc = ydoc;
+				return mockProviderResult;
+			} );
+			mockSyncConfig.applyChangesToCRDTDoc = jest.fn(
+				( ydoc: CRDTDoc, changes: Partial< ObjectData > ) => {
+					const ymap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+					Object.entries( changes ).forEach( ( [ key, value ] ) =>
+						ymap.set( key, value )
+					);
+				}
+			);
+
+			const manager = createSyncManager();
+
+			await manager.load(
+				mockSyncConfig,
+				'post',
+				'123',
+				mockRecord,
+				mockHandlers
+			);
+
+			mockSyncConfig.applyChangesToCRDTDoc.mockClear();
+			mockHandlers.editRecord.mockClear();
+
+			let resolveEditedRecord!: ( record: ObjectData ) => void;
+			const editedRecordPromise = new Promise< ObjectData >(
+				( resolve ) => {
+					resolveEditedRecord = resolve;
+				}
+			);
+			mockHandlers.getEditedRecord.mockImplementationOnce(
+				() => editedRecordPromise
+			);
+
+			manager.update(
+				'post',
+				'123',
+				{
+					content: 'Local content edit',
+					title: mockRecord.title,
+				},
+				LOCAL_EDITOR_ORIGIN,
+				{ baseRecord: mockRecord }
+			);
+
+			const remoteDoc = new Y.Doc();
+			Y.applyUpdateV2(
+				remoteDoc,
+				Y.encodeStateAsUpdateV2( capturedDoc as unknown as Y.Doc )
+			);
+			const remoteStateVector = Y.encodeStateVector( remoteDoc );
+			remoteDoc
+				.getMap( CRDT_RECORD_MAP_KEY )
+				.set( 'title', 'Title from remote peer' );
+			Y.applyUpdateV2(
+				capturedDoc as unknown as Y.Doc,
+				Y.encodeStateAsUpdateV2( remoteDoc, remoteStateVector )
+			);
+			remoteDoc.destroy();
+
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+			expect( mockSyncConfig.applyChangesToCRDTDoc ).toHaveBeenCalledWith(
+				capturedDoc as unknown as Y.Doc,
+				{
+					content: 'Local content edit',
+				},
+				{ baseRecord: mockRecord }
+			);
+
+			mockHandlers.getEditedRecord.mockImplementation( async () => ( {
+				...mockRecord,
+				content: 'Local content edit',
+				title: 'Title from remote peer',
+			} ) );
+			resolveEditedRecord( {
+				...mockRecord,
+				content: 'Local content edit',
+			} );
+
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
+				title: 'Title from remote peer',
+			} );
+		} );
+
+		it( 'allows base-record same-key edits that differ from their base record', async () => {
+			let capturedDoc: Y.Doc | null = null;
+			mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
+				capturedDoc = ydoc;
+				return mockProviderResult;
+			} );
+			mockSyncConfig.applyChangesToCRDTDoc = jest.fn(
+				( ydoc: CRDTDoc, changes: Partial< ObjectData > ) => {
+					const ymap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+					Object.entries( changes ).forEach( ( [ key, value ] ) =>
+						ymap.set( key, value )
+					);
+				}
+			);
+
+			const manager = createSyncManager();
+
+			await manager.load(
+				mockSyncConfig,
+				'post',
+				'123',
+				mockRecord,
+				mockHandlers
+			);
+
+			mockSyncConfig.applyChangesToCRDTDoc.mockClear();
+			mockHandlers.editRecord.mockClear();
+
+			let resolveEditedRecord!: ( record: ObjectData ) => void;
+			const editedRecordPromise = new Promise< ObjectData >(
+				( resolve ) => {
+					resolveEditedRecord = resolve;
+				}
+			);
+			mockHandlers.getEditedRecord.mockImplementationOnce(
+				() => editedRecordPromise
+			);
+
+			manager.update(
+				'post',
+				'123',
+				{
+					title: 'Local title edit',
+				},
+				LOCAL_EDITOR_ORIGIN,
+				{ baseRecord: mockRecord }
+			);
+
+			const remoteDoc = new Y.Doc();
+			Y.applyUpdateV2(
+				remoteDoc,
+				Y.encodeStateAsUpdateV2( capturedDoc as unknown as Y.Doc )
+			);
+			const remoteStateVector = Y.encodeStateVector( remoteDoc );
+			remoteDoc
+				.getMap( CRDT_RECORD_MAP_KEY )
+				.set( 'title', 'Title from remote peer' );
+			Y.applyUpdateV2(
+				capturedDoc as unknown as Y.Doc,
+				Y.encodeStateAsUpdateV2( remoteDoc, remoteStateVector )
+			);
+			remoteDoc.destroy();
+
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+			expect( mockSyncConfig.applyChangesToCRDTDoc ).toHaveBeenCalledWith(
+				capturedDoc as unknown as Y.Doc,
+				{
+					title: 'Local title edit',
+				},
+				{ baseRecord: mockRecord }
+			);
+
+			mockHandlers.getEditedRecord.mockImplementation( async () => ( {
+				...mockRecord,
+				title: 'Local title edit',
+			} ) );
+			resolveEditedRecord( {
+				...mockRecord,
+			} );
+
+			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+		} );
+
 		it( 'allows local same-key updates scheduled after remote reconciliation starts', async () => {
 			let capturedDoc: Y.Doc | null = null;
 			mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
