@@ -1099,6 +1099,116 @@ describe( 'stale top-level block snapshots', () => {
 		remoteDoc.destroy();
 	} );
 
+	it( 'reorders retained previous-local blocks after a cached delete', () => {
+		const initialBlocks = [
+			paragraph( 'baseline', 'Baseline' ),
+			paragraph( 'middle', 'Middle' ),
+			paragraph( 'shared', 'Shared' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'baseline', 'Baseline' ),
+				paragraph( 'shared', 'Shared' ),
+			],
+			null
+		);
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				paragraph( 'shared', 'Shared' ),
+				paragraph( 'baseline', 'Baseline' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( clientIdsOf( yblocks ) ).toEqual( [ 'shared', 'baseline' ] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[
+				paragraph( 'baseline', 'Baseline' ),
+				paragraph( 'shared', 'Shared' ),
+			],
+			null
+		);
+
+		expect( clientIdsOf( yblocks ) ).toEqual( [ 'baseline', 'shared' ] );
+		expect( contentsOf( yblocks ) ).toEqual( [ 'Baseline', 'Shared' ] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'reorders retained previous-local blocks after a cached delete through the post CRDT adapter', () => {
+		const initialBlocks = [
+			paragraph( 'baseline', 'Baseline' ),
+			paragraph( 'middle', 'Middle' ),
+			paragraph( 'shared', 'Shared' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{ blocks: initialBlocks },
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{
+				blocks: [
+					paragraph( 'baseline', 'Baseline' ),
+					paragraph( 'shared', 'Shared' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{
+				blocks: [
+					paragraph( 'shared', 'Shared' ),
+					paragraph( 'baseline', 'Baseline' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		const yPostBlocks = postBlocks( doc );
+		expect( clientIdsOf( yPostBlocks ) ).toEqual( [
+			'shared',
+			'baseline',
+		] );
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: [
+					paragraph( 'baseline', 'Baseline' ),
+					paragraph( 'shared', 'Shared' ),
+				],
+			},
+			SYNCED_BLOCK_PROPERTIES
+		);
+
+		expect( clientIdsOf( yPostBlocks ) ).toEqual( [
+			'baseline',
+			'shared',
+		] );
+		expect( contentsOf( yPostBlocks ) ).toEqual( [ 'Baseline', 'Shared' ] );
+
+		remoteDoc.destroy();
+	} );
+
 	it( 'derives post content from merged blocks instead of stale serialized content', () => {
 		const initialBlocks = [
 			paragraph( 'local-edited', 'Alpha' ),
