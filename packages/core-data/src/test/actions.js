@@ -2,6 +2,12 @@
  * WordPress dependencies
  */
 import apiFetch from '@wordpress/api-fetch';
+import {
+	__unstableSerializeAndClean,
+	parse,
+	registerBlockType,
+	unregisterBlockType,
+} from '@wordpress/blocks';
 
 jest.mock( '@wordpress/api-fetch' );
 
@@ -35,6 +41,18 @@ jest.mock( '../sync', () => ( {
 	LOCAL_EDITOR_ORIGIN: 'local-editor',
 	LOCAL_UNDO_IGNORED_ORIGIN: 'gutenberg-undo-ignored',
 } ) );
+
+const TEST_BLOCK_NAME = 'test/save-projection-block';
+
+function blockMarkup( content ) {
+	return `<!-- wp:${ TEST_BLOCK_NAME } ${ JSON.stringify( {
+		content,
+	} ) } /-->`;
+}
+
+function pageContent( contents ) {
+	return contents.map( blockMarkup ).join( '\n\n' );
+}
 
 describe( 'editEntityRecord', () => {
 	it( 'throws when the edited entity does not have a loaded config.', async () => {
@@ -761,15 +779,39 @@ describe( 'saveEditedEntityRecord', () => {
 
 describe( 'saveEntityRecord', () => {
 	let dispatch;
+	let originalCollaborationEnabled;
+
+	beforeAll( () => {
+		registerBlockType( TEST_BLOCK_NAME, {
+			apiVersion: 3,
+			title: 'Save projection test block',
+			category: 'text',
+			attributes: {
+				content: {
+					type: 'string',
+				},
+			},
+			save: () => null,
+		} );
+	} );
+
+	afterAll( () => {
+		unregisterBlockType( TEST_BLOCK_NAME );
+	} );
 
 	beforeEach( async () => {
 		apiFetch.mockReset();
 		getSyncManager.mockReset();
+		originalCollaborationEnabled = window._wpCollaborationEnabled;
 		dispatch = Object.assign( jest.fn(), {
 			receiveEntityRecords: jest.fn(),
 			__unstableAcquireStoreLock: jest.fn(),
 			__unstableReleaseStoreLock: jest.fn(),
 		} );
+	} );
+
+	afterEach( () => {
+		window._wpCollaborationEnabled = originalCollaborationEnabled;
 	} );
 
 	it( 'triggers a POST request for a new record', async () => {
@@ -1001,6 +1043,149 @@ describe( 'saveEntityRecord', () => {
 			title: 'synced title',
 		} );
 		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'does not persist search-only evaluated content when local CRDT blocks contain the full body', async () => {
+		const fullContent = pageContent( [
+			'checkpoint paragraph',
+			'checkpoint search block',
+		] );
+		const searchOnlyContent = pageContent( [ 'checkpoint search block' ] );
+		const post = {
+			id: 10,
+			title: 'checkpoint title',
+			meta: {},
+			content: ( { blocks: blocksForSerialization = [] } ) =>
+				__unstableSerializeAndClean( blocksForSerialization ),
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: {},
+			},
+		];
+		const select = {
+			getRawEntityRecord: () => ( {
+				id: 10,
+				title: 'base title',
+				content: { raw: fullContent },
+				meta: {},
+			} ),
+			getEditedEntityRecord: jest.fn( () => ( {
+				id: 10,
+				title: 'checkpoint title',
+				blocks: parse( searchOnlyContent ),
+				meta: {},
+			} ) ),
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				blocks: parse( fullContent ),
+			} ) ),
+			update: jest.fn(),
+		};
+		dispatch.editEntityRecord = jest.fn();
+		window._wpCollaborationEnabled = true;
+		getSyncManager.mockReturnValue( syncManager );
+		apiFetch.mockImplementation( ( { data } ) => ( { ...data } ) );
+
+		await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( {
+			select,
+			dispatch,
+			resolveSelect,
+		} );
+
+		expect( apiFetch ).toHaveBeenCalledWith( {
+			path: '/wp/v2/posts/10',
+			method: 'PUT',
+			data: {
+				id: 10,
+				title: 'checkpoint title',
+				meta: {},
+				content: fullContent,
+			},
+		} );
+		expect( syncManager.getCRDTRecordData ).toHaveBeenCalledWith(
+			'postType/post',
+			10
+		);
+	} );
+
+	it( 'does not replace evaluated content that is not a suffix projection of the local CRDT blocks', async () => {
+		const fullContent = pageContent( [ 'Alpha', 'Beta' ] );
+		const localContent = pageContent( [ 'Alpha' ] );
+		const post = {
+			id: 10,
+			title: 'local title',
+			meta: {},
+			content: ( { blocks: blocksForSerialization = [] } ) =>
+				__unstableSerializeAndClean( blocksForSerialization ),
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: {},
+			},
+		];
+		const select = {
+			getRawEntityRecord: () => ( {
+				id: 10,
+				title: 'base title',
+				content: { raw: fullContent },
+				meta: {},
+			} ),
+			getEditedEntityRecord: jest.fn( () => ( {
+				id: 10,
+				title: 'local title',
+				blocks: parse( localContent ),
+				meta: {},
+			} ) ),
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				blocks: parse( fullContent ),
+			} ) ),
+			update: jest.fn(),
+		};
+		dispatch.editEntityRecord = jest.fn();
+		window._wpCollaborationEnabled = true;
+		getSyncManager.mockReturnValue( syncManager );
+		apiFetch.mockImplementation( ( { data } ) => ( { ...data } ) );
+
+		await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( {
+			select,
+			dispatch,
+			resolveSelect,
+		} );
+
+		expect( apiFetch ).toHaveBeenCalledWith( {
+			path: '/wp/v2/posts/10',
+			method: 'PUT',
+			data: {
+				id: 10,
+				title: 'local title',
+				meta: {},
+				content: localContent,
+			},
+		} );
+		expect( syncManager.getCRDTRecordData ).toHaveBeenCalledWith(
+			'postType/post',
+			10
+		);
 	} );
 
 	it( 'triggers a PUT request for an existing record with a custom key', async () => {
