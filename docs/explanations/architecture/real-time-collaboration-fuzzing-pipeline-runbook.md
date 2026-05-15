@@ -188,9 +188,9 @@ The remote launchers are intentionally split by ownership:
     fuzzers. The guard supervises coverage-guided, strict-expansion, focused
     shards, the focused gap Codex loop, and the fuzz-only assertion loop.
 
-Start or refresh the guard after installing the launchers. `stop` now kills the
-guard's sleeping child before releasing the lock, so a refresh should not leave
-an orphaned `sleep` process holding `guard.lock`. `start` also clears the known
+Start or refresh the guard after installing the launchers. `stop` exits the
+guard process after killing its sleeping child, so a refresh should not leave an
+orphaned `sleep` process holding `guard.lock`. `start` also clears the known
 stale-lock cases where an older guard left a parentless `sleep` or pid-file-less
 guard `run` process holding the lock.
 

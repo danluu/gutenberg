@@ -157,7 +157,8 @@ run_loop() {
 		fi
 		rm -f "$PID_FILE"
 	}
-	trap cleanup INT TERM EXIT
+	trap cleanup EXIT
+	trap 'cleanup; exit 0' INT TERM
 	touch "$EVENTS"
 	log "guard loop started pid=$$"
 	while true; do
