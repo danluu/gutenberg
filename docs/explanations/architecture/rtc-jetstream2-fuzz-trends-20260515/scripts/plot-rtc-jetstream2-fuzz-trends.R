@@ -894,41 +894,39 @@ if ( nrow( fuzz_level_executions ) > 0 ) {
 
 	write_plot(
 		"fuzz-level-executions-cumulative.png",
-		ggplot( fuzz_execution_counts, aes( x = bucket, y = cumulative_executions, color = fuzz_level ) ) +
+		ggplot( fuzz_execution_counts, aes( x = bucket, y = cumulative_executions ) ) +
 			geom_line( alpha = 0.35 ) +
-			geom_point( alpha = 0.74, size = 1.4 ) +
-			scale_color_brewer( palette = "Dark2" ) +
+			geom_point( alpha = 0.74, size = 1.4, color = "grey25" ) +
+			facet_wrap( vars( fuzz_level ), scales = "free_y", ncol = 2 ) +
 			scale_y_continuous( labels = comma ) +
 			scale_time_axis( date_breaks = "4 hours" ) +
 			labs(
 				title = "Cumulative fuzz executions by level",
 				x = "UTC time",
 				y = "completed seed attempts",
-				color = "fuzzing level",
 				caption = "Execution means one completed seed-attempt-complete event from lane events.ndjson; rechecks count as executions."
 			) +
 			theme_rtc(),
 		width = 10,
-		height = 5.8
+		height = 8.2
 	)
 
 	write_plot(
 		"fuzz-level-execution-rate.png",
-		ggplot( fuzz_execution_counts, aes( x = bucket, y = executions_per_hour, color = fuzz_level ) ) +
-			geom_point( alpha = 0.72, size = 1.5 ) +
-			scale_color_brewer( palette = "Dark2" ) +
+		ggplot( fuzz_execution_counts, aes( x = bucket, y = executions_per_hour ) ) +
+			geom_point( alpha = 0.72, size = 1.5, color = "grey25" ) +
+			facet_wrap( vars( fuzz_level ), scales = "free_y", ncol = 2 ) +
 			scale_y_continuous( labels = comma ) +
 			scale_time_axis( date_breaks = "4 hours" ) +
 			labs(
 				title = "Fuzz execution rate by level",
 				x = "UTC time",
 				y = "completed seed attempts per hour",
-				color = "fuzzing level",
 				caption = "Rates are bucketed in 15-minute windows and scaled to attempts/hour."
 			) +
 			theme_rtc(),
 		width = 10,
-		height = 5.8
+		height = 8.2
 	)
 }
 
