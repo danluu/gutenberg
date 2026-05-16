@@ -589,3 +589,14 @@ timestamp,group,group_family
 2026-05-16T13:12:12Z,novelty-ws-persistence-no-title,persistence
 2026-05-16T13:12:12Z,novelty-ws-media-cross-entity,async/media
 2026-05-16T13:14:29Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-16T13:21:20Z,novelty-ws-real-user-editing,real-user
+2026-05-16T13:26:31Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T13:26:31Z,novelty-http-persistence-probe,persistence
+2026-05-16T13:26:31Z,novelty-ws-real-user-rich-text,real-user
+2026-05-16T13:26:31Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-16T13:26:31Z,novelty-ws-common-blocks,auth/locks
+2026-05-16T13:26:39Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T13:26:39Z,novelty-http-persistence-probe,persistence
+2026-05-16T13:26:39Z,novelty-ws-real-user-rich-text,real-user
+2026-05-16T13:26:39Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-16T13:26:39Z,novelty-ws-common-blocks,auth/locks
