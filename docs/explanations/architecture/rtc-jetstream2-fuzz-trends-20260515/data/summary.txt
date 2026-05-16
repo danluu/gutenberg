@@ -1,18 +1,18 @@
-generated_at_utc: 2026-05-16T17:43:01Z
-monitor_passes: 1622
+generated_at_utc: 2026-05-16T17:49:53Z
+monitor_passes: 1625
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T17:40:42Z
+last_pass_utc: 2026-05-16T17:47:15Z
 coverage_files_first: 272
-coverage_files_last: 34481
-coverage_files_delta: 34209
+coverage_files_last: 34497
+coverage_files_delta: 34225
 unmet_coverage_first: 24
 unmet_coverage_last: 5
 likely_real_max: 0
-duplicate_share_current_last: 1
+duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.5862
 summary_startup_failures_last: 0
-quality_issues_last: 2
-memory_free_gb_last: 431.1
+quality_issues_last: 0
+memory_free_gb_last: 428.5
 load_1_last: 67.76
 load_5_last: 74.04
 load_15_last: 73.23
@@ -22,12 +22,12 @@ enabled_groups_current:
 fuzz_level_mix_snapshots: 180
 fuzz_level_mix_campaigns: coverage-guided,coverage-guided-lower-level,focused-shards,gap-booster,strict-expansion,unit-property
 fuzz_level_mix_latest: browser-e2e=25 lanes/25 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups
-fuzz_level_test_executions: 1015519
+fuzz_level_test_executions: 1043682
 fuzz_level_test_executions_has_approximate_rows: TRUE
-fuzz_level_execution_latest: browser-e2e=58739 cumulative/5348 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=931176 cumulative/154112 per-hour; coverage-guided-lower-level=22598 cumulative/6592 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_latest: browser-e2e=59502 cumulative/2096 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=957664 cumulative/72240 per-hour; coverage-guided-lower-level=23510 cumulative/2496 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 120
 goals_unmet: 5
-pr_review_events: 9908
-pr_suggested_net_loc_snapshots: 128
+pr_review_events: 9910
+pr_suggested_net_loc_snapshots: 129
 pr_suggested_net_loc_latest_total: 11244
