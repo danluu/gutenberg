@@ -903,8 +903,8 @@ if ( nrow( fuzz_level_executions ) > 0 ) {
 			labs(
 				title = "Cumulative fuzz executions by level",
 				x = "UTC time",
-				y = "completed seed attempts",
-				caption = "Execution means one completed seed-attempt-complete event from lane events.ndjson; rechecks count as executions."
+				y = "completed execution units",
+				caption = "Execution units are level-specific work units from lane events.ndjson: browser seed attempts, unit/property generated cases, coverage-guided inputs, or protocol/backend cases."
 			) +
 			theme_rtc(),
 		width = 10,
@@ -921,8 +921,8 @@ if ( nrow( fuzz_level_executions ) > 0 ) {
 			labs(
 				title = "Fuzz execution rate by level",
 				x = "UTC time",
-				y = "completed seed attempts per hour",
-				caption = "Rates are bucketed in 15-minute windows and scaled to attempts/hour."
+				y = "completed execution units per hour",
+				caption = "Rates are bucketed in 15-minute windows and scaled to level-specific execution units/hour."
 			) +
 			theme_rtc(),
 		width = 10,
@@ -1286,7 +1286,7 @@ summary_lines <- c(
 	paste0( "fuzz_level_mix_snapshots: ", n_distinct( fuzz_level_mix$timestamp ) ),
 	paste0( "fuzz_level_mix_campaigns: ", fuzz_level_campaigns_text ),
 	paste0( "fuzz_level_mix_latest: ", fuzz_level_latest_text ),
-	paste0( "fuzz_level_execution_events: ", ifelse( nrow( fuzz_level_executions ) > 0, sum( fuzz_level_executions$executions, na.rm = TRUE ), 0 ) ),
+	paste0( "fuzz_level_execution_units: ", ifelse( nrow( fuzz_level_executions ) > 0, sum( fuzz_level_executions$executions, na.rm = TRUE ), 0 ) ),
 	paste0( "fuzz_level_execution_latest: ", fuzz_execution_latest_text ),
 	paste0( "profiles_seen: ", nrow( profile_counts ) ),
 	paste0( "goals_total: ", nrow( coverage_goals ) ),
