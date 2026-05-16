@@ -295,8 +295,7 @@ monitor <- tibble(
 	duplicate_share_current = coalesce(
 		extract_num( pass_lines, "actionableDuplicateShareCurrent=([0-9.]+)" ),
 		extract_num( pass_lines, "duplicateShareCurrent=([0-9.]+)" ),
-		extract_num( pass_lines, "rawDuplicateShareCurrent=([0-9.]+)" ),
-		extract_num( pass_lines, "duplicateShare=([0-9.]+)" )
+		extract_num( pass_lines, "rawDuplicateShareCurrent=([0-9.]+)" )
 	),
 	duplicate_share_historical = coalesce(
 		extract_num( pass_lines, "actionableDuplicateShareHistorical=([0-9.]+)" ),
