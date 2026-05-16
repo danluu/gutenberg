@@ -57,8 +57,8 @@ append-paragraph,1358,long-session-large-doc
 delete-block,1336,long-session-large-doc
 edit-block-gauntlet-attributes,1223,block-gauntlet
 insert-media-cross-entity-block,991,media-cross-entity
-append-parser-stress-content,660,parser-transform
-reparse-edited-content,514,parser-transform
+append-parser-stress-content,662,parser-transform
+reparse-edited-content,519,parser-transform
 insert-heading,481,persistence-no-title
 delete-block,468,persistence-no-title
 insert-paragraph,458,persistence-no-title
@@ -84,7 +84,7 @@ insert-block-gauntlet-block,283,common-blocks
 delete-block,282,block-gauntlet
 insert-common-block,280,common-blocks
 insert-paragraph,276,common-blocks
-insert-heading,273,parser-transform
+insert-heading,274,parser-transform
 insert-nested-group,265,block-gauntlet
 move-block-into-group,264,common-blocks
 delete-block,261,common-blocks
@@ -96,7 +96,7 @@ delete-block,231,parser-transform
 ui-composition-paragraph,223,real-user-editing
 ui-toolbar-format-paragraph,223,real-user-editing
 edit-nested-paragraph,219,common-blocks
-move-block,213,parser-transform
+move-block,215,parser-transform
 edit-block-gauntlet-attributes,210,common-blocks
 ui-undo-redo-paragraph,205,real-user-editing
 append-paragraph,195,common-blocks
