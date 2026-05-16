@@ -122,6 +122,29 @@ write_independent_progress_gate() {
   echo
 }
 
+write_controller_health() {
+  echo "## Controller Health"
+  echo
+  echo "Recent controller-health signals. Repeated lock rejections, repeated wait-only actions, or progress-unblock launches are automation problems the persona loop should diagnose and fix, not just summarize."
+  echo
+  echo "### Loop log signals"
+  if [ -f "$BASE/logs/loop.log" ]; then
+    rg -n 'another PR split review loop already holds|wait-only feedback|progress unblock|previous review cycle still active|loop started' "$BASE/logs/loop.log" 2>/dev/null | tail -120 || true
+  else
+    echo "loop log missing"
+  fi
+  echo
+  echo "### Current loop processes"
+  pgrep -af "^bash $BASE/rtc-pr-split-review-loop\\.sh$" 2>/dev/null | sed -n '1,40p' || true
+  if [ -f "$BASE/rtc-pr-split-review-loop.pid" ]; then
+    echo "controller pid: $(cat "$BASE/rtc-pr-split-review-loop.pid" 2>/dev/null)"
+  fi
+  echo
+  echo "### Recent progress-unblock jobs"
+  find "$BASE/runs" -maxdepth 4 -type d -path '*/jobs/*progress-unblock*' 2>/dev/null | sort | tail -20 || true
+  echo
+}
+
 write_context() {
   local run_dir="$1"
   local coverage_root
@@ -141,6 +164,7 @@ write_context() {
     echo "- Coverage root: ${coverage_root:-none}"
     echo
     write_independent_progress_gate
+    write_controller_health
     echo
     echo "## Fix-plan repo status"
     echo
