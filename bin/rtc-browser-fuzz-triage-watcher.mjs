@@ -979,10 +979,53 @@ function getSuppressedSignatureStatus( signature ) {
 		return 'known-infra';
 	}
 
+	if ( isStrictPreActionStartupSignature( signature ) ) {
+		return 'bootstrap-stall';
+	}
+
+	return null;
+}
+
+function isStrictPreActionStartupSignature( signature ) {
+	const facts = signature?.facts;
+	if ( ! facts ) {
+		return false;
+	}
+
+	const normalized = signature.normalized ?? '';
+	const equivalenceClass = signature.equivalenceClass ?? '';
+	const isStartupFamily = [
+		'pre-action-bootstrap-stall',
+		'pre-action-awareness-stall',
+	].includes( equivalenceClass );
+	const hasStartupText =
+		/waitForCollaborationReady|collaboration to become ready|setPreferences|_wpCollaborationEnabled|page\.waitForFunction|waitForMutualDiscovery|mutual discovery|awareness/i.test(
+			normalized
+		);
+
+	if ( ! isStartupFamily && ! hasStartupText ) {
+		return false;
+	}
+
+	const lastHistoryPhase = String( facts.lastHistoryPhase ?? '' );
+	const hasStartupPhase =
+		lastHistoryPhase === '' ||
+		/seed|bootstrap|open|join|startup|setup|discovery|ready/i.test(
+			lastHistoryPhase
+		);
+
 	if (
 		facts.userCount === 0 &&
-		facts.lastHistoryPhase === 'seed' &&
-		facts.lastHistoryStatus === 'fail' &&
+		! facts.lastAction &&
+		hasStartupPhase &&
+		( ! facts.lastHistoryStatus || facts.lastHistoryStatus === 'fail' ) &&
+		( facts.reloadCount ?? 0 ) === 0 &&
+		( facts.saveCheckpointCount ?? 0 ) === 0 &&
+		facts.revisionEligible !== true &&
+		( facts.faultTypes?.length ?? 0 ) === 0 &&
+		( facts.operationWitnessActions?.length ?? 0 ) === 0 &&
+		( facts.operationWitnessScopes?.length ?? 0 ) === 0 &&
+		! facts.operationWitnessPhase &&
 		[
 			'timeout',
 			'browser-closed',
@@ -990,10 +1033,10 @@ function getSuppressedSignatureStatus( signature ) {
 			'collaboration-non-convergence',
 		].includes( facts.failureClass )
 	) {
-		return 'bootstrap-stall';
+		return true;
 	}
 
-	return null;
+	return false;
 }
 
 function getSuppressionReason( status ) {
