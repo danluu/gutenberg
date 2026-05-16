@@ -465,7 +465,10 @@ for level in all_levels:
     if tmux_levels[level] and not event_levels[level]:
         status = "TELEMETRY-INVARIANT-FAIL: tmux session exists but no observed events in root inventory"
     elif event_levels[level] and not tmux_levels[level]:
-        status = "check-stale-events: events exist but no matching tmux session"
+        if level == "browser-e2e":
+            status = "ok: browser groups are supervised; not one tmux session per group"
+        else:
+            status = "check-stale-events: events exist but no matching tmux session"
     print(f"| {level} | {tmux_levels[level]} | {event_levels[level]} | {at} | {label}:{root} | {status} |")
 
 if tmux_levels["unit-property"] and not event_levels["unit-property"]:
