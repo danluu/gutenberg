@@ -265,10 +265,16 @@ monitor <- tibble(
 	headroom = extract_chr( pass_lines, "headroom=([^ ]+)" ),
 	likely_real = extract_num( pass_lines, "likelyReal=([0-9]+)" ),
 	duplicate_share_current = coalesce(
+		extract_num( pass_lines, "actionableDuplicateShareCurrent=([0-9.]+)" ),
 		extract_num( pass_lines, "duplicateShareCurrent=([0-9.]+)" ),
+		extract_num( pass_lines, "rawDuplicateShareCurrent=([0-9.]+)" ),
 		extract_num( pass_lines, "duplicateShare=([0-9.]+)" )
 	),
-	duplicate_share_historical = extract_num( pass_lines, "duplicateShareHistorical=([0-9.]+)" ),
+	duplicate_share_historical = coalesce(
+		extract_num( pass_lines, "actionableDuplicateShareHistorical=([0-9.]+)" ),
+		extract_num( pass_lines, "duplicateShareHistorical=([0-9.]+)" ),
+		extract_num( pass_lines, "rawDuplicateShareHistorical=([0-9.]+)" )
+	),
 	memory_free_gb = extract_num( pass_lines, "memory=([0-9.]+)G" )
 ) %>%
 	filter( ! is.na( timestamp ) ) %>%

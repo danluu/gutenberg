@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T06:38:57Z`
+Snapshot generated: `2026-05-16T06:46:38Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -12,7 +12,7 @@ Source inputs:
 - coverage monitor log:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest novelty state:
-  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T062428Z/novelty-state.json`
+  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T064057Z/novelty-state.json`
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
 - CPU and load-average history:
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1319` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T06:37:06Z`, coverage files grew from `272` to `25220`, a delta of
-`24948`. The monitor's visible likely-real count stayed at `0` throughout this
+`1322` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T06:43:58Z`, coverage files grew from `272` to `25355`, a delta of
+`25083`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -35,15 +35,14 @@ surfaces and auto-ratcheted targets were enabled. The latest copied
 coverage-guidance state has `120` total goals and `10` unmet goals.
 
 The run has broad historical coverage, but the current active output directory
-was just restarted at `2026-05-16T06:24:39Z` and is still a live-health check,
+was just restarted at `2026-05-16T06:41:08Z` and is still a live-health check,
 not a mature sample. The latest copied state has seven active lanes:
 `novelty-ws-common-blocks`, `novelty-ws-long-session-large-doc`,
 `novelty-ws-async-server-blocks`, `novelty-ws-real-user-editing`,
 `novelty-ws-real-user-rich-text`, `novelty-ws-media-cross-entity`, and
-`novelty-ws-block-gauntlet`. The only paused group in the copied state is
-`novelty-http-persistence-probe`, held by the max-enabled-group resource budget
-guard. The main remaining coverage gaps are depth targets for real-user editing,
-gauntlet blocks, CDP coverage records, and reload/save actions.
+`novelty-ws-block-gauntlet`. The copied state has no paused groups. The main
+remaining coverage gaps are depth targets for real-user editing, gauntlet
+blocks, CDP coverage records, and reload/save actions.
 Previously weak media/cross-entity, parser-serialization, and
 paragraph-formatting targets have improved enough that they are no longer in the
 unmet-goal table, but their completion rates remain worth watching.
@@ -70,7 +69,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active coverage run, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `419G`, so the remaining
+remained high at the end of the snapshot, around `419.5G`, so the remaining
 bottleneck is more about useful work selection, fresh-output health, and
 completion rate than raw RAM.
 
@@ -79,24 +78,24 @@ the live current-output-dir metric, `duplicateShareCurrent`, plus current summar
 startup failures. The latest pass has current-run duplicate/noise share `0` and
 `0` summary startup failures; the copied state has `0` current-run triage
 signatures, no current-run summary startup failure counters, and no health
-warnings.
-Historical triage remains duplicate/noise dominated, with historical top
-duplicate family share `0.5982`, but persona-loop feedback continues to reject
-reading that historical aggregate as a current product-failure signal. The
-latest duplicate/noise synthesis says the safe fix is a strict all-record
-no-user/no-action startup predicate wired through the runner, triage watcher,
-analysis tier, and novelty monitor. It explicitly rejects suppressing failures
-from a historical family name or primary-record-only classification, because an
-action-bearing seed was previously misclassified. The newest duplicate/noise
-feedback-action file is empty; the latest nonempty action only changed the
-novelty-monitor scheduling/counter side and restarted the active run, so the
-watcher, analysis-tier, and runner fixes remain unapplied in this loop.
+warnings. Historical triage remains duplicate/noise dominated, with raw
+historical top duplicate family share about `0.5977`, but persona-loop feedback
+continues to reject reading that historical aggregate as a current
+product-failure signal. The latest duplicate/noise synthesis says the safe fix
+is a strict all-record no-user/no-action startup predicate wired through the
+runner, triage watcher, analysis tier, and novelty monitor. It explicitly
+rejects suppressing failures from a historical family name or primary-record-only
+classification, because an action-bearing seed was previously misclassified. The
+newest duplicate/noise feedback-action file is empty; the latest nonempty action
+only changed the novelty-monitor scheduling/counter side and restarted the
+active run, so the watcher, analysis-tier, and runner fixes remain unapplied in
+this loop.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
 CPU utilization rose materially later in the run. Current-run sysstat samples
-from `2026-05-15T01:30:00Z` through `2026-05-16T06:30:01Z` average about
-`58.5%`, peak around `84.9%`, and end near `65.6%`. This says the machine is
+from `2026-05-15T01:30:00Z` through `2026-05-16T06:40:00Z` average about
+`58.6%`, peak around `84.9%`, and end near `73.8%`. This says the machine is
 being used more aggressively than the earlier memory view alone implied; spare
 RAM does not necessarily mean spare browser/CPU capacity.
 
@@ -104,9 +103,9 @@ RAM does not necessarily mean spare browser/CPU capacity.
 
 Load average tells a similar story with more queueing detail. In the plotted
 current-run window, the 1-minute, 5-minute, and 15-minute load averages average
-about `57.7`, `58.0`, and `57.6`, against `64` logical CPUs. The latest sampled
-load is `71.68`, `63.30`, and `56.80` for 1/5/15 minutes respectively, with
-the 1-minute sample above the core-count reference line.
+about `57.8`, `58.0`, and `57.6`, against `64` logical CPUs. The latest sampled
+load is `63.44`, `67.46`, and `62.68` for 1/5/15 minutes respectively, with
+the 5-minute sample above the core-count reference line.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
 
@@ -126,8 +125,7 @@ The latest copied state reports this current enabled set:
 - `novelty-ws-media-cross-entity`
 - `novelty-ws-block-gauntlet`
 
-The latest copied state has one paused group: `novelty-http-persistence-probe`,
-paused by the max-enabled-group resource budget guard. The current active output
+The latest copied state has no paused groups. The current active output
 directory is very young, so this enabled set is a live scheduling snapshot
 rather than proof that the active output directory has useful depth.
 
@@ -159,13 +157,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 2709 | 76 | 0 | 2.8% |
-| `multi-reload-lifecycle` | 1989 | 58 | 0 | 2.9% |
-| `parser-serialization` | 1410 | 60 | 0 | 4.3% |
-| `real-user-editing` | 3791 | 233 | 0 | 6.1% |
-| `common-blocks` | 2317 | 212 | 0 | 9.1% |
-| `parser-transform` | 2594 | 267 | 0 | 10.3% |
-| `block-gauntlet` | 3060 | 452 | 0 | 14.8% |
+| `revision-persistence` | 2716 | 76 | 0 | 2.8% |
+| `multi-reload-lifecycle` | 1996 | 58 | 0 | 2.9% |
+| `parser-serialization` | 1415 | 60 | 0 | 4.2% |
+| `real-user-editing` | 3816 | 235 | 0 | 6.2% |
+| `common-blocks` | 2328 | 213 | 0 | 9.1% |
+| `parser-transform` | 2605 | 267 | 0 | 10.2% |
+| `block-gauntlet` | 3073 | 455 | 0 | 14.8% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -179,16 +177,16 @@ Current unmet goals from the latest state:
 
 | Goal | Current | Target |
 | --- | ---: | ---: |
-| successful real-user-editing records next coverage tier | 233 | 500 |
-| gauntlet block core/html next coverage tier | 291 | 500 |
-| gauntlet block core/more next coverage tier | 314 | 500 |
-| gauntlet block core/details next coverage tier | 327 | 500 |
-| action ui-heading-shortcut next coverage tier | 337 | 500 |
-| action reload-post-action next coverage tier | 355 | 500 |
-| CDP coverage records next coverage tier | 3921 | 5000 |
-| gauntlet block core/gallery next coverage tier | 401 | 500 |
-| real-user body save/reload next coverage tier | 161 | 200 |
-| gauntlet block core/file next coverage tier | 472 | 500 |
+| successful real-user-editing records next coverage tier | 235 | 500 |
+| gauntlet block core/html next coverage tier | 296 | 500 |
+| gauntlet block core/more next coverage tier | 317 | 500 |
+| gauntlet block core/details next coverage tier | 331 | 500 |
+| action ui-heading-shortcut next coverage tier | 338 | 500 |
+| action reload-post-action next coverage tier | 360 | 500 |
+| CDP coverage records next coverage tier | 3946 | 5000 |
+| gauntlet block core/gallery next coverage tier | 403 | 500 |
+| real-user body save/reload next coverage tier | 164 | 200 |
+| gauntlet block core/file next coverage tier | 474 | 500 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
 remaining work now mixes completed-record depth for expensive profiles with
@@ -229,18 +227,17 @@ After the loop was corrected to `max_parallel=6` and `interval=0s`, `100`
 completed review cycles took roughly `2.9` to `8.0` minutes in this snapshot;
 the latest included review took `6.5` minutes. Feedback actions ran every two
 cycles and took roughly `1.8` to `13.8` minutes in the completed duration data,
-with the latest completed feedback action taking `3.1` minutes. The copied
-input set includes PR-split syntheses through `20260516T063020Z`, an empty
-PR-split feedback-action file at `20260516T063020Z`, the latest nonempty
-PR-split feedback action at `20260516T061642Z`, duplicate/noise syntheses
-through `20260516T062141Z`, an empty duplicate/noise feedback-action file at
-`20260516T062141Z`, and the latest nonempty duplicate/noise feedback action at
-`20260516T055200Z`.
+with the latest completed feedback action taking `5.8` minutes. The copied
+input set includes PR-split syntheses through `20260516T063020Z`, the latest
+nonempty PR-split feedback action at `20260516T063020Z`, duplicate/noise
+syntheses through `20260516T062141Z`, an empty duplicate/noise feedback-action
+file at `20260516T062141Z`, and the latest nonempty duplicate/noise feedback
+action at `20260516T055200Z`.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
 split history. The total chart sums additions minus deletions across the whole
 suggested PR set for each status snapshot; the faceted chart shows the same net
-LOC series per PR. The latest parsed snapshot, `2026-05-16T06:31:32Z`, has `21`
+LOC series per PR. The latest parsed snapshot, `2026-05-16T06:37:49Z`, has `21`
 suggested rows totaling `11801` net LOC. The largest current rows by net LOC are
 `PR 13B` (`1668`), `PR 5` (`1612`), `PR 12` (`1386`), `PR 7A` (`1331`), and
 `PR 11` (`1141`), which matches the review concern that the CRDT and parser
@@ -252,8 +249,9 @@ and the next step is importing/rebasing those refs into the fix-plan repo. It
 also says `PR 8`, ref hygiene, focused checks, and final combined-stack
 validation remain blocking, and that deferred reload-hydration, pre-save,
 rich-text, malformed-save, and HTTP room-isolation evidence must not be promoted
-without repeated review consensus. The latest PR-split feedback-action file is
-empty, so no newer action supersedes the `20260516T061642Z` update.
+without repeated review consensus. The latest PR-split feedback action applied
+cycle-100 guidance to the split notes and created an unlaunched import/rebase
+prompt; it launched no jobs.
 
 ## Interpretation
 
