@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T13:35:57Z`
+Snapshot generated: `2026-05-16T13:40:26Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1514` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T13:35:29Z`, coverage files grew from `272` to `32537`, a delta of
-`32265`. The monitor's visible likely-real count stayed at `0`.
+`1515` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T13:37:40Z`, coverage files grew from `272` to `32559`, a delta of
+`32287`. The monitor's visible likely-real count stayed at `0`.
 
 Coverage-goal pressure is down but not finished. The latest copied
 coverage-guidance state has `120` total goals and `6` unmet goals. The remaining
@@ -34,9 +34,9 @@ goals are depth targets for real-user editing, gauntlet blocks, CDP coverage
 records, and the heading shortcut action.
 
 The active output directory is `run-20260516T130839Z`. Its latest live-health
-sample is noisy again: `duplicateShareCurrent` is `0.8696`, summary startup
+sample is noisy again: `duplicateShareCurrent` is `0.88`, summary startup
 failures are `2`, quality issues are `2`, warnings are `1`, free memory is
-`427.7G`, and resource headroom is true. The current enabled group set has
+`428.9G`, and resource headroom is true. The current enabled group set has
 collapsed to `novelty-ws-real-user-editing`. This report treats
 current-output-dir duplicate/noise and startup-failure metrics as live status;
 historical aggregate duplicate/noise is only context.
@@ -48,7 +48,9 @@ startup noise, keeping `novelty-ws-real-user-editing` active despite
 `pre_action_bootstrap_stall` dominance. The latest PR-split synthesis,
 `20260516T132918Z`, says the 28-head split shape is stable, but filing remains
 blocked because final-stack WS validation still fails before sync-cycle, first
-fuzz action, and behavioral coverage.
+fuzz action, and behavioral coverage. Its feedback action recorded the Cycle
+144 consensus and launched no new jobs because the WS diagnostic was already
+active.
 
 ## Coverage Intake
 
@@ -71,8 +73,8 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 ![Fuzz yield and resource health over time](rtc-jetstream2-fuzz-trends-20260515/plots/monitor-health-yield.png)
 
 The live health signal is not clean. The latest five current-output-dir samples
-include duplicate shares `1`, `0`, `0.9333`, `0.8571`, and `0.8696`, with one
-sample showing `18` summary startup failures and the latest showing `2`. The
+include duplicate shares `0`, `0.9333`, `0.8571`, `0.8696`, and `0.88`, with
+one sample showing `18` summary startup failures and the latest showing `2`. The
 plot uses `duplicateShareCurrent` and current summary startup failures for the
 live health view; it does not use historical aggregate duplicate/noise as the
 plotted live signal.
@@ -91,11 +93,11 @@ profile.
 
 ![Load average over time](rtc-jetstream2-fuzz-trends-20260515/plots/load-average-over-time.png)
 
-Current-run sysstat samples through `2026-05-16T13:30:00Z` average about
-`60.3%` CPU utilization, peak around `84.9%`, and end near `69.6%`. Load average
-shows similar pressure: 1/5/15-minute load averages average about `59.1`,
-`59.2`, and `58.9` against `64` logical CPUs. The latest sampled load is
-`61.81`, `58.79`, and `59.75`, so the immediate blocker is canary quality and
+Current-run sysstat samples through `2026-05-16T13:40:00Z` average about
+`61.4%` CPU utilization, peak around `84.9%`, and end near `58.8%`. Load average
+shows similar sustained pressure: 1/5/15-minute load averages average about
+`60.3`, `60.3`, and `60.1` against `64` logical CPUs. The latest sampled load is
+`34.89`, `44.02`, and `51.63`, so the immediate blocker is canary quality and
 coverage depth rather than raw memory headroom.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
@@ -138,9 +140,9 @@ rechecks counted as executions, and bucket rates in 15-minute windows scaled to
 attempts per hour. This is more precise than supervisor launches or lane counts,
 but it only covers fuzzers that emit these lane events.
 
-The latest collected execution data has `51,347` completed attempts:
-`48,344` browser/e2e and `3,003` transport/integration. The latest 15-minute
-bucket reports about `340` browser/e2e attempts/hour and `8`
+The latest collected execution data has `51,453` completed attempts:
+`48,448` browser/e2e and `3,005` transport/integration. The latest 15-minute
+bucket reports about `756` browser/e2e attempts/hour and `16`
 transport/integration attempts/hour. `unit-property`,
 `coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
 `fuzz-assertion` levels remain at `0` executions in this counter.
@@ -158,14 +160,14 @@ triangle markers. Low-completion profiles are the next depth targets:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 3284 | 76 | 0 | 2.3% |
-| `multi-reload-lifecycle` | 2467 | 58 | 0 | 2.4% |
-| `parser-serialization` | 1935 | 60 | 0 | 3.1% |
-| `real-user-editing` | 4964 | 282 | 11 | 5.7% |
+| `revision-persistence` | 3286 | 76 | 0 | 2.3% |
+| `multi-reload-lifecycle` | 2470 | 58 | 0 | 2.3% |
+| `parser-serialization` | 1938 | 60 | 0 | 3.1% |
+| `real-user-editing` | 4965 | 282 | 14 | 5.7% |
 | `common-blocks` | 2970 | 254 | 6 | 8.6% |
-| `parser-transform` | 3161 | 279 | 0 | 8.8% |
+| `parser-transform` | 3164 | 279 | 0 | 8.8% |
 | `long-session-large-doc` | 2087 | 280 | 0 | 13.4% |
-| `block-gauntlet` | 3788 | 541 | 7 | 14.3% |
+| `block-gauntlet` | 3791 | 541 | 7 | 14.3% |
 | `structure` | 536 | 95 | 0 | 17.7% |
 | `persistence-no-title` | 1939 | 346 | 7 | 17.8% |
 
@@ -236,14 +238,15 @@ The same synthesis rejects treating the final-stack graph's `0` visible
 likely-real failures as filing approval. The required WS diagnostics report is
 still absent and its tmux session is still active. The expected artifact is
 `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T131309Z/jobs/outputs/rtc-final-stack-fuzz-ws-provider-sync-cycle-diagnostics-post-pr11-20260516T131309Z/report.md`.
-The latest feedback-action file for `20260516T132918Z` is empty, so the latest
-non-empty feedback action remains `20260516T131309Z`; it launched exactly that
-bounded WS provider sync-cycle diagnostic and still deferred broad fuzz, extra
-final-stack lanes, reload diagnostics, PR13 repair/import, PR6B/PR6C work, and
-another split-review loop.
+The latest feedback-action file for `20260516T132918Z` records the Cycle 144
+consensus, flags stale-ref and dirty-worktree contamination as the main filing
+risk, launches no new jobs, and still defers reload-hydration empty-live-editor,
+pre-save search/live-collapse, rich-text suffix corruption, broader malformed
+save residuals, HTTP room-isolation/`PR1A`, seed `5500002`, and former
+`PR6B`/`PR6C`.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
-split history. The latest parsed snapshot, `2026-05-16T13:26:50Z`, has `26`
+split history. The latest parsed snapshot, `2026-05-16T13:33:16Z`, has `26`
 suggested rows totaling `11244` net LOC. The largest current rows by net LOC are
 `PR 13B` (`1668`), `PR 12` (`1386`), `PR 7A` (`1331`), `PR 13A` (`1126`), and
 `PR 5B` (`883`). These charts remain size telemetry from parsed status
@@ -254,7 +257,7 @@ snapshots, not filing authority for split shape.
 The coverage graph is still positive on breadth and depth intake: files and
 coverage observations continue to grow, likely-real visible failures remain
 `0`, and unmet goals are down to `6`. But the live health graph is not clean.
-The current-output duplicate/noise sample is back near `0.87`, startup failures
+The current-output duplicate/noise sample is back near `0.88`, startup failures
 are still present, and the enabled set is a single real-user editing group.
 
 The duplicate/noise persona loop rejects a graph-only "resolved" read. The
