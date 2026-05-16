@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T23:05:06Z`
+Snapshot generated: `2026-05-16T23:11:38Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -12,8 +12,8 @@ Source inputs:
 - coverage monitor log:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest copied novelty state:
-  current coverage output-dir state (`startedAt=2026-05-16T22:58:00.876Z`,
-  `lastUpdatedAt=2026-05-16T23:04:32.291Z`)
+  current coverage output-dir state (`startedAt=2026-05-16T23:05:11.885Z`,
+  `lastUpdatedAt=2026-05-16T23:09:36.949Z`)
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
 - CPU and load-average history:
@@ -25,9 +25,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1742` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T23:04:32Z`, coverage files grew from `272` to `36741`, a delta of
-`36469`. The monitor's visible likely-real count stayed at `0`.
+`1744` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T23:09:37Z`, coverage files grew from `272` to `36766`, a delta of
+`36494`. The monitor's visible likely-real count stayed at `0`.
 
 Coverage-goal pressure is down but not finished. The latest copied
 coverage-guidance state has `126` total goals and `7` unmet goals. The remaining
@@ -36,9 +36,9 @@ goals are mostly real-user lifecycle/action depth and gauntlet block targets.
 The latest plotted current-output-dir sample is below the 0.50 duplicate-share
 gate and startup-clean: `duplicateShareCurrent` is `0` and current summary
 startup failures are `0`. The same sample has `1` quality issue, `1` warning,
-`437.5G` free memory, and the monitor headroom flag is true. The copied
+`434.6G` free memory, and the monitor headroom flag is true. The copied
 novelty state scopes current-run triage to one output-dir root,
-`run-20260516T225752Z`, and five enabled groups:
+`run-20260516T230503Z`, and five enabled groups:
 `novelty-ws-persistence-no-title`, `novelty-ws-lifecycle`,
 `novelty-http-persistence-probe`, `novelty-ws-real-user-editing`, and
 `novelty-ws-real-user-rich-text`. It still reports no current-run behavioral
@@ -52,12 +52,15 @@ latest duplicate/noise synthesis, `20260516T223603Z`, says the remaining problem
 is control-plane consistency: stale roots, stale pause state, provisional or
 product-free records, and over-specific family capping can still spend browser
 and Codex capacity on known noise. The latest duplicate/noise feedback-action,
-`20260516T223603Z`, is empty; the latest nonempty feedback-action,
-`20260516T220113Z`, applied a bounded control-plane fix and reported clean
-current-run triage (`roots=1`, `signatures=0`, `likelyRealVisible=0`), but
-`wp-env` was still uninitialized because MySQL exited during compose startup.
-The clean current-output duplicate/startup graph sample is therefore partial
-evidence only, not closure.
+`20260516T223603Z`, is nonempty and applied a bounded control-plane guard pass
+across triage, analysis tiers, live analysis, and novelty monitoring. Syntax
+checks and gate-only validation passed, current output had `0` current triage
+signatures and `0` actionable signatures, and strict-expansion queued `0`
+strict startup and `0` no-product infra signatures while preserving `13`
+product-evidence signatures. `wp-env` was still uninitialized because MySQL
+exited during compose startup, and focused-shards/gap-booster live-analysis
+monitors still need restart if active. The clean current-output
+duplicate/startup graph sample is therefore improvement evidence, not closure.
 
 The latest PR-split synthesis, `20260516T225001Z`, rejects a filing-ready or
 final-validation interpretation. The `ready/rtc-*` PR01-PR15C prefix plus PR02A
@@ -98,22 +101,24 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The latest current-output-dir sample is below the live duplicate-share gate and
 startup-clean: `duplicateShareCurrent=0` and current summary startup failures
-are `0`. The sample has `1` quality issue and `1` warning, with `437.5G` free
+are `0`. The sample has `1` quality issue and `1` warning, with `434.6G` free
 memory and the monitor headroom flag true. The plot uses
 `duplicateShareCurrent` and current summary startup failures for the live health
 view; it does not use historical aggregate duplicate/noise as the plotted live
 signal.
 
-The latest nonempty duplicate/noise feedback-action says the bounded
-control-plane fix landed: strict no-product startup gating was aligned, novelty
-current-run scope includes the output root, stale live-analysis roots are
-auto-detected, and gate-only validation removed the known strict-startup
-leakage while preserving product-evidence signatures. The latest synthesis
-still says the policy must be run-local, product-evidence-aware, and shared
-across the producer, triage, scheduler, and analysis control path. Fresh browser
-coverage was still blocked at the time of the last nonempty feedback-action
-because `wp-env` was uninitialized and MySQL exited during compose startup; the
-refreshed current root is active but has no current behavioral files yet.
+The latest duplicate/noise feedback-action says the bounded control-plane fix
+landed across the RTC fuzzer control plane: no-product startup and infra/setup
+failures are gated out of actionable analysis, analysis tiers have stale-source
+protection, duplicate/noise capping uses semantic family keys, and novelty
+known-noise pauses are tied to the current run. Gate-only validation queued `0`
+strict startup and `0` no-product infra signatures for sampled noisy roots while
+preserving product-evidence queues. The latest synthesis still says the policy
+must remain run-local, product-evidence-aware, and shared across producer,
+triage, scheduler, and analysis consumers. Fresh browser coverage was still
+blocked because `wp-env` was uninitialized and MySQL exited during compose
+startup; the refreshed current root has no current behavioral files yet, and
+focused-shards/gap-booster live-analysis monitors still need restart if active.
 Persona-loop feedback therefore rejects treating the clean current
 duplicate/startup graph state as proof that duplicate/noise leakage is fully
 fixed.
@@ -122,12 +127,12 @@ fixed.
 
 ![Load average over time](rtc-jetstream2-fuzz-trends-20260515/plots/load-average-over-time.png)
 
-Recent sysstat samples through `2026-05-16T23:00:00Z` show sustained CPU
+Recent sysstat samples through `2026-05-16T23:10:01Z` show sustained CPU
 pressure with a late spike and then partial easing: the latest 25 samples range
-from `32.8%` to `91.8%` utilization, with the latest sample at `56.3%`.
-One-minute load exceeded the logical CPU count in `13` of those `25` sampled
-windows, while the latest sampled 1/5/15-minute load is `34.9`, `37.4`, and
-`36.8` against `64` logical CPUs. Raw memory remains ample, but the recent load
+from `32.8%` to `91.8%` utilization, with the latest sample at `52.4%`.
+One-minute load exceeded the logical CPU count in `12` of those `25` sampled
+windows, while the latest sampled 1/5/15-minute load is `47.6`, `39.4`, and
+`37.8` against `64` logical CPUs. Raw memory remains ample, but the recent load
 history still shows pressure; fresh `wp-env` recovery, current-output
 duplicate/noise validation, and PR-split repair decisions remain live blockers.
 
@@ -153,12 +158,14 @@ current-output-dir duplicate/noise and summary startup failures. The latest
 current sample has `duplicateShareCurrent=0` and `0` current summary startup
 failures, so the latest duplicate/startup live health is clean even though the
 same row has `1` quality issue and `1` warning. Persona-loop evidence still
-rejects that as closure because fresh browser coverage was blocked by
-`wp-env`/MySQL startup at the last nonempty duplicate/noise feedback-action,
+rejects that as closure because the latest duplicate/noise action only proves a
+bounded guard pass: gate-only validation is clean and product-evidence queues
+are preserved, but fresh browser coverage was blocked by `wp-env`/MySQL startup
 and the refreshed current root still has no current behavioral files.
-Historical `pre_action_bootstrap_stall` remains a hold reason until current-run
-noise gating is validated. Product-evidence failures must remain visible while
-product-free startup/infra noise is gated before expensive analysis.
+Historical `pre_action_bootstrap_stall` remains context, while live graph status
+comes from current-output-dir duplicate/noise and current summary startup
+failures. Product-evidence failures must remain visible while product-free
+startup/infra noise is gated before expensive analysis.
 
 ## Fuzzing Level Mix
 
@@ -172,7 +179,7 @@ snapshots, the mix shows `30` browser/e2e lanes across `30` groups, plus `1`
 `unit-property` lane and `1` `coverage-guided-lower-level` lane. The latest
 browser/e2e lanes are `5` coverage-guided, `9` focused-shards, `6` gap-booster,
 and `10` strict-expansion. The freshest coverage-guided root,
-`run-20260516T225752Z`, is browser/e2e-only, with five enabled groups.
+`run-20260516T230503Z`, is browser/e2e-only, with five enabled groups.
 
 Live fuzzing is still concentrated in browser/e2e lanes, but lower-level work is
 active in `unit-property` and `coverage-guided-lower-level`, including the
@@ -194,13 +201,13 @@ supervisor launches or lane counts, but it only covers fuzzers that emit these
 lane events. Lower-level counts reconstructed from batch metadata or legacy
 batch-count fields are approximate.
 
-The latest collected execution data has about `2,211,447` completed test
-executions: `89,871` browser/e2e, `3,006` transport/integration, `1,929,292`
-unit-property, and `189,278` coverage-guided-lower-level. Some historical rows
+The latest collected execution data has about `2,243,198` completed test
+executions: `90,090` browser/e2e, `3,006` transport/integration, `1,956,984`
+unit-property, and `193,118` coverage-guided-lower-level. Some historical rows
 include approximate lower-level counts reconstructed from batch metadata or
-legacy batch-count fields. The latest 15-minute bucket reports about `1,652`
-browser/e2e test executions/hour, `81,872` unit-property test executions/hour,
-`11,520` coverage-guided-lower-level test
+legacy batch-count fields. The latest 15-minute bucket reports about `1,528`
+browser/e2e test executions/hour, `192,640` unit-property test executions/hour,
+`26,880` coverage-guided-lower-level test
 executions/hour, and `0` transport/integration test executions/hour.
 `backend-api`, `protocol-server`, and standalone `fuzz-assertion` levels remain
 at `0` executions in this counter.
@@ -218,15 +225,15 @@ triangle markers. Low-completion profiles are the next depth targets:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `multi-reload-lifecycle` | 2845 | 82 | 0 | 2.9% |
+| `multi-reload-lifecycle` | 2848 | 83 | 0 | 2.9% |
 | `revision-persistence` | 3810 | 117 | 0 | 3.1% |
-| `parser-serialization` | 2548 | 100 | 0 | 3.9% |
-| `real-user-editing` | 5573 | 346 | 0 | 6.2% |
-| `parser-transform` | 3604 | 347 | 0 | 9.6% |
-| `common-blocks` | 3455 | 351 | 0 | 10.2% |
+| `parser-serialization` | 2554 | 100 | 0 | 3.9% |
+| `real-user-editing` | 5579 | 346 | 0 | 6.2% |
+| `parser-transform` | 3610 | 347 | 0 | 9.6% |
+| `common-blocks` | 3458 | 351 | 0 | 10.2% |
 | `long-session-large-doc` | 2247 | 319 | 0 | 14.2% |
-| `persistence-no-title` | 2652 | 435 | 0 | 16.4% |
-| `block-gauntlet` | 5159 | 903 | 0 | 17.5% |
+| `persistence-no-title` | 2656 | 435 | 0 | 16.4% |
+| `block-gauntlet` | 5178 | 906 | 0 | 17.5% |
 | `structure` | 536 | 95 | 0 | 17.7% |
 
 The data suggests the next productive improvement is less about adding brand-new
@@ -244,10 +251,10 @@ Current unmet goals from the latest state:
 | real-user title save/reload next coverage tier | 225 | 500 |
 | real-user body save/reload next coverage tier | 284 | 500 |
 | action reload-post-action next coverage tier | 613 | 1000 |
-| action ui-heading-shortcut next coverage tier | 641 | 1000 |
+| action ui-heading-shortcut next coverage tier | 644 | 1000 |
 | successful real-user-editing records next coverage tier | 346 | 500 |
 | action ui-format-paragraph next coverage tier | 922 | 1000 |
-| gauntlet block core/html next coverage tier | 474 | 500 |
+| gauntlet block core/html next coverage tier | 476 | 500 |
 
 The remaining queue mixes real-user save/reload lifecycle depth, action depth,
 completed-record depth for real-user editing, and a gauntlet block ratchet.
@@ -308,7 +315,7 @@ active `5700084` replay, launch `1020002`, publish PR16, name PR18A, rebuild
 validation, start final-stack fuzz, or file.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
-split history. The latest parsed snapshot, `2026-05-16T22:58:12Z`, has `27`
+split history. The latest parsed snapshot, `2026-05-16T23:05:25Z`, has `27`
 suggested rows totaling `11359` net LOC. The largest current rows by net LOC are
 `PR 13B` (`1668`), `PR 12` (`1386`), `PR 7A` (`1331`), `PR 13A` (`1126`), and
 `PR 5B` (`883`). These charts remain size telemetry from parsed status
@@ -321,7 +328,7 @@ coverage observations continue to grow, likely-real visible failures remain
 `0`, and unmet goals are down from the initial `24` to `7`. The latest live
 current-output duplicate/startup sample is clean: current duplicate share is
 `duplicateShareCurrent=0`, latest current summary startup failures are `0`, and
-the latest monitor row has `1` quality issue and `1` warning, with `437.5G`
+the latest monitor row has `1` quality issue and `1` warning, with `434.6G`
 free memory and the headroom flag true. The copied novelty state scopes
 current-run triage to one output-dir root and five enabled groups, but the root
 has no current behavioral files or signatures. The live health read comes from
@@ -334,13 +341,14 @@ duplicate/noise synthesis, `20260516T223603Z`, says the root cause is still
 fragmented duplicate/noise control across producer, triage, scheduler, and
 analysis consumers: stale roots, stale pause state, no-product or provisional
 records, and over-specific family capping can still leak work. The latest
-feedback-action is empty, and the latest nonempty feedback-action reports that
-strict no-product startup gating, novelty current-run scope, and stale
-live-root detection were patched, with gate-only validation preserving
-product-evidence signatures. It also says `wp-env` was still uninitialized
-because MySQL exited during compose startup; the refreshed current root is now
-active, but duplicate/noise validation is still not closure while it has no
-current behavioral files.
+feedback-action is nonempty and reports that strict no-product startup gating,
+novelty current-run scope, stale-source analysis protection, semantic-family
+caps, and run-local known-noise pauses were patched, with gate-only validation
+preserving product-evidence signatures. It also says `wp-env` was still
+uninitialized because MySQL exited during compose startup; the refreshed current
+root is now active, but duplicate/noise validation is still not closure while it
+has no current behavioral files and some live-analysis monitors may still need
+restart.
 Historical aggregate duplicate/noise remains context, while current-output-dir
 duplicate share and summary startup failures are the live graph status.
 
@@ -364,8 +372,8 @@ The remaining fuzzing weakness is completion depth and level diversity. Live
 work is still concentrated in browser/e2e in the latest mix snapshots, but
 unit-property and coverage-guided-lower-level lanes are active.
 Transport-integration has historical completed executions but no latest-bucket
-rate; the latest execution bucket has about `1,652` browser/e2e test
-executions/hour, `81,872` unit-property test executions/hour, `11,520`
+rate; the latest execution bucket has about `1,528` browser/e2e test
+executions/hour, `192,640` unit-property test executions/hour, `26,880`
 coverage-guided-lower-level test executions/hour, `0` transport/integration
 test executions/hour, and `0` backend-api/protocol-server/fuzz-assertion
 executions. The next narrow operational checks are `wp-env`/MySQL recovery,
