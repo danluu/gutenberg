@@ -180,6 +180,25 @@ annotation. The browser/e2e fuzzers should continue running while lower-level
 targets are added unless there is clear evidence that they are blocking the
 lower-level work.
 
+`bin/rtc-native-assert-protocol-work-start-remote.sh` starts three additional
+parallel Jetstream2 workstreams:
+
+-   a native/coverage-guided lower-level harness loop using the standard six
+    personas at `MAX_PARALLEL=6`; after every two review cycles it runs an
+    action job to build a ready harness rather than treating missing native
+    harness setup as a blocker;
+-   a protocol/server fuzz loop using the same standard persona cadence; after
+    two review cycles it builds the smallest ready protocol/server harness with
+    concrete oracle and event accounting;
+-   fuzz-only assertion unblock/repair Codex jobs, used for live blockage such
+    as stale `rtc-fuzz-asserts-*` tmux sessions and loop timeout hardening.
+
+These jobs write under
+`/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516/`. They
+should not stop productive browser fuzzing. Native and protocol harness action
+jobs must write `supervisor-groups.json` and `events.ndjson` with the appropriate
+fuzzing level so trend graphs can show the new executions.
+
 ## Jetstream Remote Scripts
 
 The Jetstream2 run uses `/media/volume/danluu-fuzz-data` for the repository and
