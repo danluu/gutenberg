@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T04:35:26Z`
+Snapshot generated: `2026-05-16T04:39:22Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,16 +24,16 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1254` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T04:35:00Z`, coverage files grew from `272` to `23784`, a delta of
-`23512`. The monitor's visible likely-real count stayed at `0` throughout this
+`1256` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T04:38:43Z`, coverage files grew from `272` to `23831`, a delta of
+`23559`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
 goals falling from `24` to `0` earlier in the run, then rising again when new
-surfaces and auto-ratcheted targets were enabled and ending at `13` in the last
+surfaces and auto-ratcheted targets were enabled and ending at `12` in the last
 logged monitor pass. The latest copied novelty state has `120` total goals and
-`13` unmet goals.
+`12` unmet goals.
 
 The run has broad historical coverage, and the current active budget has
 re-expanded after duplicate/noise churn. The latest copied state lists HTTP
@@ -41,9 +41,9 @@ persistence probing as resource-budget paused, with active WS lanes for
 real-user editing, rich text, block-gauntlet, common blocks, parser transform,
 async/server blocks, and media/cross-entity. The main remaining gaps are depth
 targets for real-user editing, gauntlet blocks, CDP coverage records, and
-reload/save actions. Previously weak media/cross-entity and
-parser-serialization surfaces have improved enough that they are no longer in
-the unmet-goal table, but their completion rates remain worth watching.
+reload/save actions. Previously weak media/cross-entity, parser-serialization,
+and paragraph-formatting targets have improved enough that they are no longer
+in the unmet-goal table, but their completion rates remain worth watching.
 
 ## Coverage Intake
 
@@ -67,7 +67,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active validation stack, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `424.6G`, so the remaining
+remained high at the end of the snapshot, around `423.0G`, so the remaining
 bottleneck is more about useful work selection and completion rate than raw RAM.
 
 Persona-loop feedback rejects reading the historical duplicate/noise share as a
@@ -78,7 +78,8 @@ startup counters stay empty, and watcher/analysis paths can still spend work on
 known-noise variants. The Cycle 6 monitor-side cleanup remains applied:
 historical known-noise is advisory/reporting only and current-run startup
 counters gate browser groups. The newest duplicate/noise feedback-action file
-was empty; the remaining recommended work is triage-watcher and analysis-tier
+was empty, while the newest synthesis still recommends strict current-run
+summary-level startup accounting plus triage-watcher and analysis-tier
 backstops. Scheduling/backpressure changes remain disputed and should not be
 inferred from graph history alone.
 
@@ -140,13 +141,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 2552 | 76 | 0 | 3.0% |
-| `multi-reload-lifecycle` | 1918 | 58 | 0 | 3.0% |
-| `parser-serialization` | 1262 | 60 | 0 | 4.8% |
-| `real-user-editing` | 3489 | 229 | 0 | 6.6% |
-| `common-blocks` | 2037 | 208 | 0 | 10.2% |
-| `parser-transform` | 2480 | 259 | 0 | 10.4% |
-| `block-gauntlet` | 2929 | 431 | 0 | 14.7% |
+| `revision-persistence` | 2557 | 76 | 0 | 3.0% |
+| `multi-reload-lifecycle` | 1921 | 58 | 0 | 3.0% |
+| `parser-serialization` | 1265 | 60 | 0 | 4.7% |
+| `real-user-editing` | 3499 | 231 | 0 | 6.6% |
+| `common-blocks` | 2045 | 208 | 0 | 10.2% |
+| `parser-transform` | 2483 | 259 | 0 | 10.4% |
+| `block-gauntlet` | 2934 | 432 | 0 | 14.7% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -160,19 +161,18 @@ Current unmet goals from the latest state:
 
 | Goal | Current | Target |
 | --- | ---: | ---: |
-| successful real-user-editing records next coverage tier | 229 | 500 |
+| successful real-user-editing records next coverage tier | 231 | 500 |
 | gauntlet block core/html next coverage tier | 283 | 500 |
-| action ui-heading-shortcut next coverage tier | 290 | 500 |
-| gauntlet block core/more next coverage tier | 302 | 500 |
-| gauntlet block core/details next coverage tier | 317 | 500 |
-| action reload-post-action next coverage tier | 337 | 500 |
-| CDP coverage records next coverage tier | 3643 | 5000 |
-| gauntlet block core/gallery next coverage tier | 371 | 500 |
-| real-user body save/reload next coverage tier | 151 | 200 |
-| gauntlet block core/file next coverage tier | 443 | 500 |
-| real-user title save/reload next coverage tier | 92 | 100 |
-| action ui-undo-redo-paragraph next coverage tier | 461 | 500 |
-| action ui-format-paragraph next coverage tier | 496 | 500 |
+| action ui-heading-shortcut next coverage tier | 293 | 500 |
+| gauntlet block core/more next coverage tier | 303 | 500 |
+| gauntlet block core/details next coverage tier | 318 | 500 |
+| action reload-post-action next coverage tier | 339 | 500 |
+| CDP coverage records next coverage tier | 3663 | 5000 |
+| gauntlet block core/gallery next coverage tier | 374 | 500 |
+| real-user body save/reload next coverage tier | 153 | 200 |
+| gauntlet block core/file next coverage tier | 445 | 500 |
+| action ui-undo-redo-paragraph next coverage tier | 463 | 500 |
+| real-user title save/reload next coverage tier | 94 | 100 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
 remaining work now mixes completed-record depth for expensive profiles with
@@ -209,18 +209,19 @@ After the loop was corrected to `max_parallel=6` and `interval=0s`, `82`
 completed review cycles took roughly `2.9` to `8.0` minutes in this snapshot;
 the latest included review took `4.2` minutes. Feedback actions ran every two
 cycles and took roughly `1.8` to `13.8` minutes in the completed duration data,
-with completed events through Cycle `80`, which took `2.5` minutes. The copied
+with completed events through Cycle `82`, which took `2.0` minutes. The copied
 Cycle `82` persona action file applied the same consensus and launched no
-automatic jobs, although the graph event data only contains the Cycle `82`
-feedback start.
+automatic jobs. The event data also shows the next review cycle starting at
+`20260516T043545Z`, but that latest synthesis file is empty, so the latest
+substantive PR-split synthesis remains `20260516T042932Z`.
 
 ## Interpretation
 
 The coverage data says the harness is now broad enough to exercise the major
 surfaces requested earlier. The current active fuzz has `0` visible likely-real
-failures and `13` unmet goals, but the latest non-empty PR-split synthesis says
-this is structurally on track and operationally blocked, not final-file-ready
-and not final-stack validation. The latest `20260516T042932Z` PR-split
+failures and `12` unmet goals, but the latest substantive PR-split synthesis
+says this is structurally on track and operationally blocked, not
+final-file-ready and not final-stack validation. The latest non-empty PR-split
 synthesis and Cycle `82` feedback reject a split redesign, reject promoting
 deferred browser-only families into PR claims, and say not to auto-launch more
 Codex or fuzz work. The remaining weakness is depth and completion on a small
@@ -232,8 +233,9 @@ number of high-value expensive lanes:
   than broad parallelism increases;
 - duplicate/noise history should not pause live browser groups or be read as a
   current product-failure signal; the applied monitor cleanup matches that
-  feedback, while watcher/analysis backstops remain unlanded and scheduling
-  changes remain disputed;
+  feedback, while strict current-run summary accounting plus watcher/analysis
+  backstops remain the next recommended control-plane fix and scheduling changes
+  remain disputed;
 - PR 13 should be reviewed only through the repaired 13A/13B/13C heads;
 - reload-hydration empty-live-editor remains product-evidence-inconclusive;
 - no visible likely-real failures appeared in this snapshot, so new PR work
