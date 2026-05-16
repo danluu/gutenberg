@@ -163,6 +163,7 @@ const groups = specs.map((spec, i) => {
 		name,
 		repoRoot: `${base}/repos/${name}`,
 		transport,
+		fuzzLevel: 'browser-e2e',
 		lanes: 1,
 		startSeed,
 		stepCount,

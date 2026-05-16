@@ -3400,6 +3400,7 @@ function buildGroup( profile ) {
 		name: profile.name,
 		repoRoot: REPO_ROOT,
 		transport,
+		fuzzLevel: profile.fuzzLevel ?? 'browser-e2e',
 		lanes: 1,
 		startSeed: profile.startSeed,
 		stepCount: profile.stepCount,

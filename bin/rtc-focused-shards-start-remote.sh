@@ -267,6 +267,7 @@ const groups = specs.filter(
 			name: `focused-${ name }`,
 			repoRoot: `${ base }/repos/${ name }`,
 			transport: 'ws',
+			fuzzLevel: 'browser-e2e',
 			lanes: 1,
 			startSeed,
 			stepCount,

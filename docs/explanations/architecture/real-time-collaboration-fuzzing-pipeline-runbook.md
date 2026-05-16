@@ -115,6 +115,32 @@ fighting each other and makes recovery auditable.
 -   A periodic Codex monitor owns human-readable status updates and bounded job
     adjustments. It should append every decision to `monitor-status.md`.
 
+## Fuzzing Level Mix
+
+Supervisor group JSON should include `fuzzLevel`. Existing browser campaigns use
+`browser-e2e`, but the policy loop should reason about more than browser action
+profiles. When coverage stalls or duplicate/noise dominates, ask whether the
+next useful work belongs at one of these levels:
+
+-   `browser-e2e`: Playwright RTC flows through the editor UI.
+-   `transport-integration`: HTTP/WS persistence and sync probes that still
+    exercise WordPress services but avoid full UI breadth.
+-   `unit-property`: seeded Jest/property checks for CRDT, parser,
+    serialization, rich-text, and selection logic.
+-   `backend-api`: PHP or REST/API checks for post locks, autosaves,
+    revisions, permissions, nonces, and entity persistence.
+-   `protocol-server`: sync server, provider, and message-ordering checks.
+-   `fuzz-assertion`: fuzz-only assertions and oracles added to surface latent
+    invariants during any of the above runs.
+
+The focused gap Codex loop is responsible for making this decision whenever it
+runs. It should not automatically start a broad new campaign; the default
+action is a bounded lower-level target with a clear oracle, or a group-policy
+change that shifts a small amount of work from over-saturated levels to the
+blocked one. The trend graph report includes the observed level mix over time so
+reviewers can see whether all live work is still concentrated in browser/e2e
+lanes.
+
 ## Jetstream Remote Scripts
 
 The Jetstream2 run uses `/media/volume/danluu-fuzz-data` for the repository and

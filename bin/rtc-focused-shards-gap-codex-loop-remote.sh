@@ -104,11 +104,13 @@ Repo root: $SRC
 
 Task:
 1. Inspect focused shard yield and current coverage-guided gaps.
-2. If the focused shards are not producing useful coverage, make the smallest useful adjustment to shard env/group policy or harness code.
-3. Do not add behavior-disable flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
-4. Run focused syntax/lint checks for any changed files.
-5. If a change must affect active fuzzing, restart only focused shards with /tmp/start_rtc_focused_shards.sh; do not stop strict-expansion or coverage-guided sessions unless there is clear evidence they are blocking the focused run.
-6. Write a concise report to: $report
+2. Explicitly evaluate the mix of fuzzing levels, not only the mix of browser action profiles. Consider browser/e2e Playwright RTC, transport/integration HTTP or WS probes, fuzz-only assertions/oracles, seeded unit or property fuzzing for CRDT/parser/rich-text logic, PHP/backend API checks, and protocol/server-only fuzzing. If the useful work is too concentrated at one level, propose the smallest concrete rebalancing step.
+3. If the focused shards are not producing useful coverage, make the smallest useful adjustment to shard env/group policy or harness code.
+4. If a lower-level target should be added, prefer a bounded target with a clear oracle and a handoff note over a broad new campaign. Do not stop active browser fuzzing just to experiment with lower-level fuzzing.
+5. Do not add behavior-disable flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
+6. Run focused syntax/lint checks for any changed files.
+7. If a change must affect active fuzzing, restart only focused shards with /tmp/start_rtc_focused_shards.sh; do not stop strict-expansion or coverage-guided sessions unless there is clear evidence they are blocking the focused run.
+8. Write a concise report to: $report. Include the observed fuzz-level mix and whether it should change.
 PROMPT
 
 	printf '[%s] launching %s reason=%s records=%s prev=%s\n' "$now" "$session" "$reason" "$records" "$prev_records" >> "$LOG"
