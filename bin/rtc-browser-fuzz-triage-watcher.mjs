@@ -184,6 +184,8 @@ async function writeState( state ) {
 
 function summarizeStateMetrics( state ) {
 	const signatures = Object.values( state.signatures ?? {} );
+	const suppressedStrictStartup =
+		state.suppressedKnownNoise?.strictPreActionStartup ?? {};
 	const statusCounts = {};
 	const classificationCounts = {};
 	const recommendedActionCounts = {};
@@ -302,6 +304,9 @@ function summarizeStateMetrics( state ) {
 		topPreDecisionFamilies,
 		topDuplicateFamilyShare,
 		topSemanticFamilies,
+		suppressedKnownNoise: {
+			strictPreActionStartup: suppressedStrictStartup,
+		},
 	};
 }
 
@@ -448,6 +453,7 @@ async function readFailureCandidates() {
 
 	const summaryFiles = await findSummaryFiles( RUN_DIR );
 	const candidates = [];
+	const strictPreActionStartup = createStrictStartupNoiseSummary();
 
 	for ( const summaryPath of summaryFiles ) {
 		const text = await fs.readFile( summaryPath, 'utf8' );
@@ -465,16 +471,115 @@ async function readFailureCandidates() {
 				continue;
 			}
 
-			candidates.push( {
+			const candidate = {
 				record,
 				summaryPath,
 				lineIndex: lineIndex + 1,
 				signature: getFailureSignature( record ),
-			} );
+			};
+
+			if ( isStrictPreActionStartupSignature( candidate.signature ) ) {
+				recordSuppressedStrictStartupNoise(
+					strictPreActionStartup,
+					candidate
+				);
+				continue;
+			}
+
+			candidates.push( candidate );
 		}
 	}
 
-	return candidates;
+	return {
+		candidates,
+		suppressedKnownNoise: {
+			strictPreActionStartup:
+				finalizeStrictStartupNoiseSummary(
+					strictPreActionStartup
+				),
+		},
+	};
+}
+
+function createStrictStartupNoiseSummary() {
+	return {
+		recordCount: 0,
+		identityCount: 0,
+		recordsByProfile: {},
+		knownNoiseByFamily: {},
+		knownNoiseByProfile: {},
+		knownStartupNoiseByProfile: {},
+		samples: [],
+		identityKeys: new Set(),
+	};
+}
+
+function recordSuppressedStrictStartupNoise( summary, candidate ) {
+	const { record, signature, summaryPath, lineIndex } = candidate;
+	const family = getStrictStartupKnownNoiseFamily( signature );
+	const profile = getSignatureMetricProfile( signature );
+	const seed = record.seed ?? 'unknown-seed';
+	const source =
+		record.logPath ??
+		record.artifactsDir ??
+		record.attempts?.[ 0 ]?.logPath ??
+		record.attempts?.[ 0 ]?.artifactsDir ??
+		summaryPath;
+	const identityKey =
+		seed === 'unknown-seed'
+			? [ family, profile, source, signature.hash ].join( '\0' )
+			: [ family, profile, seed ].join( '\0' );
+
+	summary.recordCount += 1;
+	incrementCounter( summary.recordsByProfile, profile );
+
+	if ( ! summary.identityKeys.has( identityKey ) ) {
+		summary.identityKeys.add( identityKey );
+		summary.identityCount += 1;
+		incrementCounter( summary.knownNoiseByFamily, family );
+		incrementCounter( summary.knownNoiseByProfile, profile );
+		incrementCounter( summary.knownStartupNoiseByProfile, profile );
+	}
+
+	if ( summary.samples.length >= 10 ) {
+		return;
+	}
+
+	summary.samples.push( {
+		summaryPath,
+		lineIndex,
+		kind: record.kind,
+		seed: record.seed ?? null,
+		family,
+		profile,
+		transport: signature.facts?.transport ?? 'unknown',
+		logPath:
+			record.logPath ?? record.attempts?.[ 0 ]?.logPath ?? null,
+		artifactsDir:
+			record.artifactsDir ??
+			record.attempts?.[ 0 ]?.artifactsDir ??
+			null,
+	} );
+}
+
+function finalizeStrictStartupNoiseSummary( summary ) {
+	const { identityKeys, ...serializableSummary } = summary;
+	return serializableSummary;
+}
+
+function getStrictStartupKnownNoiseFamily( signature ) {
+	const family = getPreDecisionFamilyLabel( signature );
+	return family === 'pre_action_awareness_stall'
+		? 'pre_action_bootstrap_stall'
+		: family;
+}
+
+function getSignatureMetricProfile( signature ) {
+	return signature?.facts?.actionProfile ?? 'unknown';
+}
+
+function incrementCounter( counter, key ) {
+	counter[ key ] = ( counter[ key ] ?? 0 ) + 1;
 }
 
 function isFailureRecord( record ) {
@@ -885,6 +990,8 @@ function groupCandidatesBySignature( candidates ) {
 }
 
 async function updateDiscoveredSignatures( state, groups ) {
+	pruneStrictPreActionStartupSignatures( state );
+
 	for ( const group of groups ) {
 		const existing = state.signatures[ group.hash ];
 		const suppressedStatus = getSuppressedSignatureStatus(
@@ -963,6 +1070,35 @@ async function updateDiscoveredSignatures( state, groups ) {
 			path.join( jobDir, 'failure.json' ),
 			JSON.stringify( state.signatures[ group.hash ], null, 2 ) + '\n'
 		);
+	}
+}
+
+function pruneStrictPreActionStartupSignatures( state ) {
+	let pruned = 0;
+
+	for ( const [ hash, signature ] of Object.entries(
+		state.signatures ?? {}
+	) ) {
+		if ( ! isStrictPreActionStartupSignature( signature ) ) {
+			continue;
+		}
+
+		if ( signature.pid && isProcessAlive( signature.pid ) ) {
+			try {
+				process.kill( signature.pid, 'SIGTERM' );
+			} catch {}
+		}
+		delete state.signatures[ hash ];
+		pruned += 1;
+	}
+
+	if ( pruned > 0 ) {
+		state.lastStrictPreActionStartupPrune = {
+			at: new Date().toISOString(),
+			count: pruned,
+			reason:
+				'strict pre-action startup/discovery records are aggregated as known-noise metrics instead of triage signatures',
+		};
 	}
 }
 
@@ -1780,7 +1916,9 @@ async function writeStatusMarkdown( statusPath, signature ) {
 
 async function runScanCycle() {
 	const state = await readState();
-	const candidates = await readFailureCandidates();
+	const { candidates, suppressedKnownNoise } =
+		await readFailureCandidates();
+	state.suppressedKnownNoise = suppressedKnownNoise;
 	const groups = groupCandidatesBySignature( candidates );
 	await updateDiscoveredSignatures( state, groups );
 	await reconcileExternallyCompletedJobs( state );
@@ -1789,6 +1927,8 @@ async function runScanCycle() {
 	process.stdout.write(
 		`[${ new Date().toISOString() }] candidates=${
 			candidates.length
+		} suppressedStartup=${
+			suppressedKnownNoise.strictPreActionStartup.recordCount
 		} signatures=${ groups.length } active=${
 			getActiveJobHashes( state ).size
 		} analysisGated=${ state.lastAnalysisGatedCount ?? 0 }\n`

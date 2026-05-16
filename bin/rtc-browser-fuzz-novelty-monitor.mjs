@@ -1251,6 +1251,8 @@ async function summarizeTriageYield( roots ) {
 		likelyRealOracleQuestion: 0,
 		normalizationNoiseCandidates: 0,
 		bootstrapStalls: 0,
+		suppressedStrictStartupRecords: 0,
+		suppressedStrictStartupIdentities: 0,
 		topDuplicateFamilyShare: 0,
 		topSemanticFamilies: [],
 	};
@@ -1326,6 +1328,12 @@ function addTriageMetricsSummary( summary, familyCounts, metrics ) {
 	summary.normalizationNoiseCandidates +=
 		metrics.normalizationNoiseCandidates ?? 0;
 	summary.bootstrapStalls += metrics.bootstrapStalls ?? 0;
+	const suppressedStrictStartup =
+		metrics.suppressedKnownNoise?.strictPreActionStartup ?? {};
+	summary.suppressedStrictStartupRecords +=
+		suppressedStrictStartup.recordCount ?? 0;
+	summary.suppressedStrictStartupIdentities +=
+		suppressedStrictStartup.identityCount ?? 0;
 
 	for ( const item of metrics.topPreDecisionFamilies ?? [] ) {
 		if ( ! item.family ) {
@@ -4806,6 +4814,8 @@ function formatTriageYieldStatusLines( triageYield ) {
 		`- likely-real oracle/noise questions: ${ triageYield.likelyRealOracleQuestion }`,
 		`- normalization-noise candidates: ${ triageYield.normalizationNoiseCandidates }`,
 		`- bootstrap stalls: ${ triageYield.bootstrapStalls }`,
+		`- suppressed strict startup records: ${ triageYield.suppressedStrictStartupRecords }`,
+		`- suppressed strict startup identities: ${ triageYield.suppressedStrictStartupIdentities }`,
 		`- top duplicate family share: ${ triageYield.topDuplicateFamilyShare }`,
 		`- top semantic families: ${ JSON.stringify(
 			triageYield.topSemanticFamilies

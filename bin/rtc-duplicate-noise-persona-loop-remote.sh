@@ -40,6 +40,58 @@ latest_coverage_root() {
   ls -td "$COVERAGE_BASE"/run-* 2>/dev/null | head -1 || true
 }
 
+write_duplicate_noise_gate() {
+  local coverage_root="$1"
+  echo "## Current duplicate/noise action gate"
+  echo
+  echo "This loop is failing if current-run triage remains duplicate/noise dominated. Treat top duplicate family share >= 0.50 with zero visible likely-real failures, or pre_action_bootstrap_stall as the current-run top family after strict startup suppression, as ACTION-NEEDED. In that state, a review-only response is insufficient: identify the exact producer/consumer leak and make or restart a bounded control-plane change in the feedback action."
+  echo
+  if [ -n "$coverage_root" ] && [ -f "$coverage_root/novelty-status.md" ]; then
+    awk '
+      /^## Current-run triage yield/ { in_section = 1; print; next }
+      /^## / && in_section { exit }
+      in_section { print }
+    ' "$coverage_root/novelty-status.md"
+  else
+    echo "No current-run triage yield section found."
+  fi
+  echo
+}
+
+write_live_triage_state_summary() {
+  echo "## Live triage state sample"
+  echo
+  find /media/volume/danluu-fuzz-data \
+    -path '*/.triage-watcher/state.json' \
+    -type f \
+    -mmin -240 \
+    2>/dev/null |
+    sort |
+    tail -40 |
+    while read -r state_file; do
+      node - "$state_file" <<'NODE' 2>/dev/null || true
+const fs = require( 'fs' );
+const statePath = process.argv[ 2 ];
+const state = JSON.parse( fs.readFileSync( statePath, 'utf8' ) );
+const metrics = state.metrics || {};
+const top = metrics.topSemanticFamilies?.[ 0 ] || {};
+const suppressed = metrics.suppressedKnownNoise?.strictPreActionStartup || {};
+const root = statePath.replace( /\/\.triage-watcher\/state\.json$/, '' );
+console.log(
+	[
+		root,
+		`signatures=${ metrics.signatureCount ?? Object.keys( state.signatures || {} ).length }`,
+		`top=${ top.family || 'none' }:${ top.count ?? 0 }`,
+		`share=${ metrics.topDuplicateFamilyShare ?? 0 }`,
+		`likelyRealVisible=${ metrics.likelyRealVisible ?? 0 }`,
+		`suppressedStrictStartup=${ suppressed.recordCount ?? 0 }/${ suppressed.identityCount ?? 0 }`,
+	].join( ' | ' )
+);
+NODE
+    done
+  echo
+}
+
 write_context() {
   local run_dir="$1"
   local coverage_root
@@ -60,6 +112,8 @@ write_context() {
     echo "- Coverage base: $COVERAGE_BASE"
     echo "- Coverage root: ${coverage_root:-none}"
     echo
+    write_duplicate_noise_gate "$coverage_root"
+    write_live_triage_state_summary
     echo "## Active fuzz repo status"
     echo
     if [ -d "$FUZZ_REPO/.git" ]; then
@@ -133,12 +187,15 @@ write_context() {
 run_codex_review() {
   local run_dir="$1"
   local persona="$2"
+  local tmux_prefix="$3"
   local slug
   slug="$(slugify "$persona")"
   local prompt="$run_dir/prompts/$slug.md"
   local out="$run_dir/reports/$slug.md"
   local err="$run_dir/logs/$slug.stderr.log"
   local rc_file="$run_dir/logs/$slug.rc"
+  local run_script="$run_dir/logs/$slug.run.sh"
+  local session="$tmux_prefix-$slug"
 
   cat > "$prompt" <<EOF
 Name: $persona
@@ -170,15 +227,50 @@ Return:
 Do not edit files in this review pass.
 EOF
 
-  (
-    cd "$FUZZ_REPO" || exit 1
-    "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
-    echo "$?" > "$rc_file"
-  ) &
+  cat > "$run_script" <<EOF
+#!/usr/bin/env bash
+set -uo pipefail
+cd "$FUZZ_REPO" || exit 1
+"$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+rc=\$?
+echo "\$rc" > "$rc_file"
+exit "\$rc"
+EOF
+  chmod +x "$run_script"
+
+  if tmux has-session -t "$session" 2>/dev/null; then
+    tmux kill-session -t "$session" 2>/dev/null || true
+  fi
+  tmux new-session -d -s "$session" "$run_script"
+  printf '%s\n' "$session" >> "$run_dir/logs/tmux-sessions.txt"
 }
 
 wait_for_parallel_slot() {
-  while [ "$(jobs -pr | wc -l | tr -d ' ')" -ge "$MAX_PARALLEL" ]; do
+  local tmux_prefix="$1"
+  while [ "$(active_review_sessions "$tmux_prefix")" -ge "$MAX_PARALLEL" ]; do
+    sleep 5
+  done
+}
+
+active_review_sessions() {
+  local tmux_prefix="$1"
+  tmux list-sessions -F '#S' 2>/dev/null | grep -c "^${tmux_prefix}-" || true
+}
+
+wait_for_review_sessions() {
+  local run_dir="$1"
+  local tmux_prefix="$2"
+  local expected="${#PERSONAS[@]}"
+  while true; do
+    local completed
+    completed="$(find "$run_dir/logs" -maxdepth 1 -type f -name '*.rc' ! -name 'synthesis.rc' ! -name 'feedback-action.rc' | wc -l | tr -d ' ')"
+    if [ "$completed" -ge "$expected" ]; then
+      break
+    fi
+    if [ "$(active_review_sessions "$tmux_prefix")" -eq 0 ]; then
+      log "review tmux sessions ended with only $completed/$expected rc files"
+      break
+    fi
     sleep 5
   done
 }
@@ -236,6 +328,8 @@ $recent_runs
 
 Use the persona reviews and syntheses from those two runs to implement the smallest safe fix that reduces duplicate/noise dominated fuzzing. The target is the active Jetstream2 RTC fuzzer, not WordPress product fixes.
 
+The current duplicate/noise action gate in context.md is binding. If it is ACTION-NEEDED, do not stop at analysis or scheduling advice. Apply a bounded code/config/restart change that prevents the leaking family from being queued, analyzed, or counted as productive triage, unless doing so would hide product-evidence failures. If no safe change exists, write the exact blocker and the next experiment that would remove it.
+
 You may edit only:
 - $FUZZ_REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs
 - $FUZZ_REPO/bin/rtc-browser-fuzz-supervisor.mjs
@@ -280,15 +374,16 @@ run_cycle() {
   local stamp run_dir
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   run_dir="$BASE/runs/$stamp"
+  local tmux_prefix="rtc-dup-${stamp}"
   mkdir -p "$run_dir/prompts" "$run_dir/reports" "$run_dir/logs"
   log "starting duplicate/noise review cycle $stamp"
   write_context "$run_dir"
 
   for persona in "${PERSONAS[@]}"; do
-    wait_for_parallel_slot
-    run_codex_review "$run_dir" "$persona"
+    wait_for_parallel_slot "$tmux_prefix"
+    run_codex_review "$run_dir" "$persona" "$tmux_prefix"
   done
-  wait
+  wait_for_review_sessions "$run_dir" "$tmux_prefix"
 
   run_synthesis "$run_dir"
   ln -sfn "$run_dir" "$BASE/latest-run"
@@ -314,6 +409,8 @@ main() {
   log "loop started model=$MODEL reasoning=$REASONING max_parallel=$MAX_PARALLEL interval=${INTERVAL_SECONDS}s action_every=${ACTION_EVERY_CYCLES}"
   while true; do
     if mkdir "$BASE/loop.lock" 2>/dev/null; then
+      echo "$$" > "$BASE/loop.lock/pid"
+      date -u +%s > "$BASE/loop.lock/created-at-epoch"
       local cycle_index
       cycle_index="$(increment_cycle_count)"
       run_cycle
@@ -326,9 +423,17 @@ main() {
           log "finished duplicate/noise feedback action after cycle $cycle_index"
         fi
       fi
-      rmdir "$BASE/loop.lock" 2>/dev/null || true
+      rm -rf "$BASE/loop.lock"
     else
-      log "previous duplicate/noise loop cycle still locked; skipping"
+      local lock_pid lock_age
+      lock_pid="$(sed -n '1p' "$BASE/loop.lock/pid" 2>/dev/null || true)"
+      lock_age="$(find "$BASE/loop.lock" -maxdepth 0 -mmin +180 -print 2>/dev/null || true)"
+      if { [ -z "$lock_pid" ] || ! kill -0 "$lock_pid" 2>/dev/null; } && [ -n "$lock_age" ]; then
+        log "removing stale duplicate/noise lock pid=${lock_pid:-unknown}"
+        rm -rf "$BASE/loop.lock"
+        continue
+      fi
+      log "previous duplicate/noise loop cycle still locked by pid=${lock_pid:-unknown}; skipping"
     fi
     sleep "$INTERVAL_SECONDS"
   done
