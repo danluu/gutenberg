@@ -145,6 +145,26 @@ browser action profiles. For isolated lower-level code, that target should
 include the option of a libFuzzer/AFL-style coverage-guided harness, or an
 equivalent JS/PHP coverage-guided loop if native libFuzzer is not practical.
 
+## Fuzzing Level Executions
+
+![Cumulative fuzz executions by level](rtc-jetstream2-fuzz-trends-20260515/plots/fuzz-level-executions-cumulative.png)
+
+![Fuzz execution rate by level](rtc-jetstream2-fuzz-trends-20260515/plots/fuzz-level-execution-rate.png)
+
+The current durable execution counter is the browser runner's
+`seed-attempt-complete` event in each lane `events.ndjson` file. The plots count
+completed seed attempts, including analysis rechecks, and bucket rates in
+15-minute windows scaled to attempts per hour. This is more precise than
+supervisor launches or lane counts, but it only covers fuzzers that emit these
+lane events.
+
+The latest collected execution data has `43,621` completed attempts:
+`40,676` browser/e2e and `2,945` transport/integration. The latest 15-minute
+bucket is running at about `420` browser/e2e attempts/hour and `8`
+transport/integration attempts/hour. `unit-property`,
+`coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
+`fuzz-assertion` levels are still at `0` executions in this counter.
+
 The latest copied state reports this current enabled set:
 
 - `novelty-ws-common-blocks`

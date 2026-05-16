@@ -33,6 +33,7 @@ cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
 load_path <- file.path( data_dir, "load_average.csv" )
 activity_path <- file.path( data_dir, "project_activity.csv" )
 fuzz_level_mix_path <- file.path( data_dir, "fuzz_level_mix.csv" )
+fuzz_level_executions_path <- file.path( data_dir, "fuzz_level_executions.csv" )
 status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
 status_report_path <- file.path( root, status_report_rel )
 
@@ -371,6 +372,50 @@ if ( file.exists( fuzz_level_mix_path ) ) {
 		) %>%
 		filter( ! is.na( timestamp ) )
 	write_csv( fuzz_level_mix, fuzz_level_mix_path )
+}
+
+fuzz_level_executions <- tibble()
+if ( file.exists( fuzz_level_executions_path ) ) {
+	fuzz_level_executions <- read_csv( fuzz_level_executions_path, show_col_types = FALSE )
+	if ( ! "executions" %in% names( fuzz_level_executions ) ) {
+		fuzz_level_executions <- fuzz_level_executions %>%
+			mutate(
+				is_primary = case_when(
+					is.logical( is_primary ) ~ is_primary,
+					str_to_lower( as.character( is_primary ) ) == "true" ~ TRUE,
+					TRUE ~ FALSE
+				),
+				ok = case_when(
+					is.logical( ok ) ~ ok,
+					str_to_lower( as.character( ok ) ) == "true" ~ TRUE,
+					TRUE ~ FALSE
+				),
+				executions = 1,
+				primary_executions = if_else( is_primary, 1, 0 ),
+				successful_executions = if_else( ok, 1, 0 )
+			)
+	}
+	fuzz_level_executions <- fuzz_level_executions %>%
+		mutate(
+			timestamp = parse_utc_timestamp( timestamp ),
+			across( c( executions, primary_executions, successful_executions ), ~ replace_na( as.numeric( .x ), 0 ) ),
+			fuzz_level = replace_na( fuzz_level, "other" ),
+			fuzz_level = factor(
+				fuzz_level,
+				levels = c(
+					"browser-e2e",
+					"transport-integration",
+					"unit-property",
+					"coverage-guided-lower-level",
+					"backend-api",
+					"protocol-server",
+					"fuzz-assertion",
+					"other"
+				)
+			)
+		) %>%
+		filter( ! is.na( timestamp ) )
+	write_csv( fuzz_level_executions, fuzz_level_executions_path )
 }
 
 profile_counts <- named_number_frame( state$recordCountsByProfile, "profile", "records_seen" ) %>%
@@ -815,6 +860,78 @@ if ( nrow( fuzz_level_mix ) > 0 ) {
 	)
 }
 
+fuzz_execution_counts <- tibble()
+if ( nrow( fuzz_level_executions ) > 0 ) {
+	fuzz_execution_counts <- fuzz_level_executions %>%
+		mutate( bucket = floor_date( timestamp, "15 minutes" ) ) %>%
+		group_by( bucket, fuzz_level ) %>%
+		summarise(
+			executions = sum( executions, na.rm = TRUE ),
+			primary_executions = sum( primary_executions, na.rm = TRUE ),
+			successful_executions = sum( successful_executions, na.rm = TRUE ),
+			campaigns = n_distinct( campaign ),
+			.groups = "drop"
+		) %>%
+		complete(
+			bucket = seq( min( bucket ), max( bucket ), by = "15 min" ),
+			fuzz_level = unique( fuzz_level_executions$fuzz_level ),
+			fill = list(
+				executions = 0,
+				primary_executions = 0,
+				successful_executions = 0,
+				campaigns = 0
+			)
+		) %>%
+		arrange( fuzz_level, bucket ) %>%
+		group_by( fuzz_level ) %>%
+		mutate(
+			cumulative_executions = cumsum( executions ),
+			executions_per_hour = executions * 4
+		) %>%
+		ungroup()
+
+	write_csv( fuzz_execution_counts, file.path( data_dir, "fuzz_level_execution_counts.csv" ) )
+
+	write_plot(
+		"fuzz-level-executions-cumulative.png",
+		ggplot( fuzz_execution_counts, aes( x = bucket, y = cumulative_executions, color = fuzz_level ) ) +
+			geom_line( alpha = 0.35 ) +
+			geom_point( alpha = 0.74, size = 1.4 ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			scale_y_continuous( labels = comma ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
+			labs(
+				title = "Cumulative fuzz executions by level",
+				x = "UTC time",
+				y = "completed seed attempts",
+				color = "fuzzing level",
+				caption = "Execution means one completed seed-attempt-complete event from lane events.ndjson; rechecks count as executions."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 5.8
+	)
+
+	write_plot(
+		"fuzz-level-execution-rate.png",
+		ggplot( fuzz_execution_counts, aes( x = bucket, y = executions_per_hour, color = fuzz_level ) ) +
+			geom_point( alpha = 0.72, size = 1.5 ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			scale_y_continuous( labels = comma ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
+			labs(
+				title = "Fuzz execution rate by level",
+				x = "UTC time",
+				y = "completed seed attempts per hour",
+				color = "fuzzing level",
+				caption = "Rates are bucketed in 15-minute windows and scaled to attempts/hour."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 5.8
+	)
+}
+
 profile_success_goals <- coverage_goals %>%
 	filter( str_starts( id, "success-profile:" ) ) %>%
 	transmute(
@@ -1124,6 +1241,28 @@ fuzz_level_campaigns_text <- if ( nrow( fuzz_level_mix ) > 0 ) {
 	NA_character_
 }
 
+fuzz_execution_latest <- if ( nrow( fuzz_execution_counts ) > 0 ) {
+	fuzz_execution_counts %>%
+		filter( bucket == max( bucket, na.rm = TRUE ) ) %>%
+		arrange( fuzz_level )
+} else {
+	tibble()
+}
+
+fuzz_execution_latest_text <- if ( nrow( fuzz_execution_latest ) > 0 ) {
+	paste0(
+		fuzz_execution_latest$fuzz_level,
+		"=",
+		fuzz_execution_latest$cumulative_executions,
+		" cumulative/",
+		fuzz_execution_latest$executions_per_hour,
+		" per-hour",
+		collapse = "; "
+	)
+} else {
+	NA_character_
+}
+
 summary_lines <- c(
 	paste0( "generated_at_utc: ", format( with_tz( now(), "UTC" ), "%Y-%m-%dT%H:%M:%SZ" ) ),
 	paste0( "monitor_passes: ", nrow( monitor ) ),
@@ -1149,6 +1288,8 @@ summary_lines <- c(
 	paste0( "fuzz_level_mix_snapshots: ", n_distinct( fuzz_level_mix$timestamp ) ),
 	paste0( "fuzz_level_mix_campaigns: ", fuzz_level_campaigns_text ),
 	paste0( "fuzz_level_mix_latest: ", fuzz_level_latest_text ),
+	paste0( "fuzz_level_execution_events: ", ifelse( nrow( fuzz_level_executions ) > 0, sum( fuzz_level_executions$executions, na.rm = TRUE ), 0 ) ),
+	paste0( "fuzz_level_execution_latest: ", fuzz_execution_latest_text ),
 	paste0( "profiles_seen: ", nrow( profile_counts ) ),
 	paste0( "goals_total: ", nrow( coverage_goals ) ),
 	paste0( "goals_unmet: ", sum( ! coverage_goals$met ) ),
