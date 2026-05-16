@@ -174,9 +174,16 @@ fuzz-level mix controller on Jetstream2. This loop must not wait for stalls,
 errors, or harness-work candidates before reviewing the mix. Every cycle it:
 
 -   builds context from the current coverage-guided, focused, strict-expansion,
-    and gap-booster run roots;
+    gap-booster, unit/property, coverage-guided lower-level, and native sidecar
+    run roots;
+-   reconciles root inventory against live tmux/process state and marks
+    `TELEMETRY-INVARIANT-FAIL` when a live event-producing sidecar is not
+    visible through `events.ndjson`;
 -   records the active lane mix and current-root execution counters by fuzzing
     level;
+-   includes coverage-guided lower-level quality counters such as recent
+    `newCoverageKeys`, `newFeatureKeys`, input count, nonzero exits, and corpus
+    growth so "lane is running" is not treated as sufficient progress;
 -   launches one xhigh Codex tmux session per standard persona, with
     `RTC_FUZZ_LEVEL_MIX_MAX_PARALLEL=6` by default so all six personas think in
     parallel;
@@ -184,14 +191,17 @@ errors, or harness-work candidates before reviewing the mix. Every cycle it:
 -   after every two review cycles, launches one action Codex job that must make
     a concrete control decision.
 
-The action job should either add or launch the smallest bounded lower-level
-target with a clear oracle, or write the exact blocker and next command/code
-change needed. A mix with zero active `unit-property`,
-`coverage-guided-lower-level`, `backend-api`, `protocol-server`, and
-`fuzz-assertion` lanes is an actionable control-loop input, not merely a graph
-annotation. The browser/e2e fuzzers should continue running while lower-level
-targets are added unless there is clear evidence that they are blocking the
-lower-level work.
+The action job should first repair any telemetry invariant failure, then either
+add or launch the smallest bounded lower-level target with a clear oracle, or
+write the exact blocker and next command/code change needed. A mix with zero
+active `unit-property`, `coverage-guided-lower-level`, `backend-api`,
+`protocol-server`, and `fuzz-assertion` lanes is an actionable control-loop
+input, not merely a graph annotation. A visible lower-level lane is necessary
+but not sufficient: if novelty or useful execution quality stalls, the action
+job should improve guidance, target shape, mutation, corpus selection, or
+oracle coverage. The browser/e2e fuzzers should continue running while
+lower-level targets are added unless there is clear evidence that they are
+blocking the lower-level work.
 
 `bin/rtc-native-assert-protocol-work-start-remote.sh` starts three additional
 parallel Jetstream2 workstreams:

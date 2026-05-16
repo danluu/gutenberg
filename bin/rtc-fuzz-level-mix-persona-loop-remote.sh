@@ -27,6 +27,10 @@ COVERAGE_BASE="${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-
 FOCUSED_BASE="${RTC_FOCUSED_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515}"
 STRICT_BASE="${RTC_STRICT_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515}"
 GAP_BASE="${RTC_GAP_BASE:-/media/volume/danluu-fuzz-data/rtc-gap-booster-20260515}"
+LOWER_LEVEL_BASE="${RTC_LOWER_LEVEL_BASE:-/media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516}"
+CG_LOWER_LEVEL_BASE="${RTC_CG_LOWER_LEVEL_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516}"
+NATIVE_ASSERT_BASE="${RTC_NATIVE_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516}"
+FUZZ_ASSERT_BASE="${RTC_FUZZ_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260516}"
 CODEX_BIN="${CODEX_BIN:-/home/exouser/.npm-global/bin/codex}"
 MODEL="${RTC_FUZZ_LEVEL_MIX_MODEL:-gpt-5.5}"
 REASONING="${RTC_FUZZ_LEVEL_MIX_REASONING:-xhigh}"
@@ -72,13 +76,74 @@ latest_coverage_root() {
   fi
 }
 
-write_context() {
-  local run_dir="$1"
-  local coverage_root focused_root strict_root gap_root
+add_root() {
+  local roots_file="$1"
+  local label="$2"
+  local root="${3:-}"
+  if [ -n "$root" ] && [ -d "$root" ]; then
+    printf '%s\t%s\n' "$label" "$root" >> "$roots_file"
+  fi
+}
+
+add_process_roots() {
+  local roots_file="$1"
+  local label="$2"
+  local env_name="$3"
+  local env_file root
+  for env_file in /proc/[0-9]*/environ; do
+    [ -r "$env_file" ] || continue
+    root="$(tr '\0' '\n' < "$env_file" 2>/dev/null | sed -n "s/^${env_name}=//p" | sed -n '1p')"
+    add_root "$roots_file" "$label" "$root"
+  done
+}
+
+write_root_inventory() {
+  local roots_file="$1"
+  local coverage_root focused_root strict_root gap_root lower_root cg_lower_root
+  : > "$roots_file"
   coverage_root="$(latest_coverage_root)"
   focused_root="$(current_root "$FOCUSED_BASE")"
   strict_root="$(current_root "$STRICT_BASE")"
   gap_root="$(current_root "$GAP_BASE")"
+  lower_root="$(current_root "$LOWER_LEVEL_BASE")"
+  cg_lower_root="$(current_root "$CG_LOWER_LEVEL_BASE")"
+
+  add_root "$roots_file" "browser-coverage-current" "$coverage_root"
+  add_root "$roots_file" "focused-current" "$focused_root"
+  add_root "$roots_file" "strict-current" "$strict_root"
+  add_root "$roots_file" "gap-current" "$gap_root"
+  add_root "$roots_file" "unit-property-current" "$lower_root"
+  add_root "$roots_file" "coverage-guided-lower-current" "$cg_lower_root"
+  add_process_roots "$roots_file" "unit-property-process" "RTC_LOWER_LEVEL_RUN_ROOT"
+  add_process_roots "$roots_file" "coverage-guided-lower-process" "RTC_CG_LOWER_LEVEL_RUN_ROOT"
+
+  if [ -d "$NATIVE_ASSERT_BASE" ]; then
+    while IFS= read -r marker; do
+      add_root "$roots_file" "native-sidecar-current" "$(sed -n '1p' "$marker" 2>/dev/null || true)"
+    done < <(
+      find "$NATIVE_ASSERT_BASE" -path '*/current-run-root.txt' -printf '%p\n' 2>/dev/null |
+        grep -E '/(coverage-guided-lower-level-live|protocol|backend|fuzz-assert)/' |
+        sort
+    )
+  fi
+
+  if [ -d "$FUZZ_ASSERT_BASE" ]; then
+    add_root "$roots_file" "fuzz-assert-current" "$(current_root "$FUZZ_ASSERT_BASE")"
+  fi
+
+  awk -F '\t' 'NF == 2 && ! seen[$2]++ { print }' "$roots_file" > "$roots_file.tmp"
+  mv "$roots_file.tmp" "$roots_file"
+}
+
+write_context() {
+  local run_dir="$1"
+  local coverage_root focused_root strict_root gap_root roots_file
+  coverage_root="$(latest_coverage_root)"
+  focused_root="$(current_root "$FOCUSED_BASE")"
+  strict_root="$(current_root "$STRICT_BASE")"
+  gap_root="$(current_root "$GAP_BASE")"
+  roots_file="$run_dir/observed-roots.tsv"
+  write_root_inventory "$roots_file"
   {
     echo "# RTC fuzz-level mix control context"
     echo
@@ -96,15 +161,31 @@ write_context() {
     echo "- Strict root: ${strict_root:-none}"
     echo "- Gap booster root: ${gap_root:-none}"
     echo
+    echo "## Observed Root Inventory"
+    if [ -s "$roots_file" ]; then
+      sed 's/^/- /; s/\t/: /' "$roots_file"
+    else
+      echo "- none"
+    fi
+    echo
     echo "## Active Fuzz-Level Mix"
-    python3 - "$coverage_root" "$focused_root" "$strict_root" "$gap_root" <<'PY'
+    python3 - "$roots_file" <<'PY'
 import json
 import os
 import re
 import sys
 from collections import Counter
 
-roots = [root for root in sys.argv[1:] if root]
+roots_file = sys.argv[1]
+roots = []
+try:
+    with open(roots_file, errors="ignore") as handle:
+        for line in handle:
+            parts = line.rstrip("\n").split("\t", 1)
+            if len(parts) == 2 and parts[1] and os.path.isdir(parts[1]):
+                roots.append((parts[0], parts[1]))
+except OSError:
+    pass
 
 def infer_level(group):
     name = str(group.get("name") or "").lower()
@@ -128,9 +209,10 @@ def infer_level(group):
 
 counts = Counter()
 groups = []
-for root in roots:
+for label, root in roots:
     path = os.path.join(root, "supervisor-groups.json")
     if not os.path.exists(path):
+        groups.append(("missing-supervisor-groups", label, 0, "", root))
         continue
     try:
         parsed = json.load(open(path))
@@ -143,28 +225,42 @@ for root in roots:
         lanes = int(group.get("lanes", 1) or 1)
         level = group.get("fuzzLevel") or group.get("fuzz_level") or infer_level(group)
         counts[level] += lanes
-        groups.append((level, group.get("name", ""), lanes, group.get("transport", ""), (group.get("env") or {}).get("GUTENBERG_RTC_BROWSER_ACTION_PROFILE") or (group.get("env") or {}).get("RTC_FUZZ_ACTION_PROFILE") or ""))
+        groups.append((level, group.get("name", ""), lanes, group.get("transport", ""), (group.get("env") or {}).get("GUTENBERG_RTC_BROWSER_ACTION_PROFILE") or (group.get("env") or {}).get("RTC_FUZZ_ACTION_PROFILE") or "", label, root))
 
 for level in sorted(counts):
     print(f"- {level}: {counts[level]} lane(s)")
 if not any(level in counts for level in ("unit-property", "coverage-guided-lower-level", "backend-api", "protocol-server", "fuzz-assertion")):
     print("- gap: 0 active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes")
 print()
-print("| level | group | lanes | transport | profile |")
-print("| --- | --- | ---: | --- | --- |")
-for level, name, lanes, transport, profile in groups:
-    print(f"| {level} | {name} | {lanes} | {transport} | {profile} |")
+print("| level | group | lanes | transport | profile | root label | root |")
+print("| --- | --- | ---: | --- | --- | --- | --- |")
+for row in groups:
+    if row[0] == "missing-supervisor-groups":
+        level, label, lanes, transport, root = row
+        print(f"| {level} | missing | {lanes} | {transport} |  | {label} | {root} |")
+        continue
+    level, name, lanes, transport, profile, label, root = row
+    print(f"| {level} | {name} | {lanes} | {transport} | {profile} | {label} | {root} |")
 PY
     echo
     echo "## Current Execution Counters"
-    python3 - "$coverage_root" "$focused_root" "$strict_root" "$gap_root" <<'PY'
+    python3 - "$roots_file" <<'PY'
 import json
 import os
 import re
 import sys
 from collections import Counter
 
-roots = [root for root in sys.argv[1:] if root]
+roots_file = sys.argv[1]
+roots = []
+try:
+    with open(roots_file, errors="ignore") as handle:
+        for line in handle:
+            parts = line.rstrip("\n").split("\t", 1)
+            if len(parts) == 2 and parts[1] and os.path.isdir(parts[1]):
+                roots.append((parts[0], parts[1]))
+except OSError:
+    pass
 
 def infer_level(group):
     name = str(group.get("name") or "").lower()
@@ -201,7 +297,8 @@ def group_levels(root):
     return out
 
 counts = Counter()
-for root in roots:
+recent = {}
+for label, root in roots:
     levels = group_levels(root)
     for dirpath, _, files in os.walk(root):
         if "events.ndjson" not in files:
@@ -215,13 +312,223 @@ for root in roots:
             with open(path, errors="ignore") as events:
                 for line in events:
                     if '"kind":"seed-attempt-complete"' in line:
-                        counts[level] += 1
+                        try:
+                            event = json.loads(line)
+                        except Exception:
+                            event = {}
+                        value = event.get("testExecutionCount") or event.get("individualTestExecutionCount")
+                        if not value and level == "coverage-guided-lower-level":
+                            value = event.get("inputCount")
+                        if not value:
+                            value = 1
+                        try:
+                            value = max(1, int(value))
+                        except (TypeError, ValueError):
+                            value = 1
+                        counts[level] += value
+                        recent[level] = (event.get("at") or "", label, root, value)
         except OSError:
             pass
 for level in sorted(counts):
-    print(f"- {level}: {counts[level]} completed seed attempts in current roots")
+    at, label, root, value = recent.get(level, ("", "", "", ""))
+    print(f"- {level}: {counts[level]} estimated individual executions in observed roots; latest={at} label={label} latest_count={value}")
 if not counts:
     print("- no current execution counters found")
+PY
+    echo
+    echo "## Telemetry Reconciliation"
+    python3 - "$roots_file" <<'PY'
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+from collections import Counter
+
+roots_file = sys.argv[1]
+roots = []
+try:
+    with open(roots_file, errors="ignore") as handle:
+        for line in handle:
+            parts = line.rstrip("\n").split("\t", 1)
+            if len(parts) == 2 and parts[1] and os.path.isdir(parts[1]):
+                roots.append((parts[0], parts[1]))
+except OSError:
+    pass
+
+def infer_level_from_text(text):
+    text = text.lower()
+    session = text.split(":", 1)[0].strip()
+    if session.startswith("rtc-coverage-guided-lower-level"):
+        return "coverage-guided-lower-level"
+    if session.startswith("rtc-lower-level-fuzz-loop") or "unit-property" in session:
+        return "unit-property"
+    if session.startswith("rtc-protocol-fuzz") or session.startswith("rtc-protocol-server-fuzz"):
+        return "protocol-server"
+    if session.startswith("rtc-backend-api-fuzz") or session.startswith("rtc-rest-api-fuzz"):
+        return "backend-api"
+    if session.startswith("rtc-fuzz-assertion-runner") or session.startswith("rtc-fuzz-only-assertion-runner"):
+        return "fuzz-assertion"
+    if "coverage-guided-lower" in text or "libfuzzer" in text or "afl" in text:
+        return "coverage-guided-lower-level"
+    if "lower-level-fuzz" in text or "unit-property" in text or "property" in text:
+        return "unit-property"
+    if "protocol-server" in text and "fuzz" in text and "persona" not in text and "action" not in text:
+        return "protocol-server"
+    if ("backend-api" in text or "rest-api" in text) and "fuzz" in text:
+        return "backend-api"
+    if ("fuzz-only" in text or "assert" in text) and "runner" in text:
+        return "fuzz-assertion"
+    return ""
+
+def event_level(root, dirpath, event):
+    if event.get("fuzzLevel"):
+        return event["fuzzLevel"]
+    groups_path = os.path.join(root, "supervisor-groups.json")
+    group_levels = {}
+    try:
+        groups = json.load(open(groups_path))
+        for group in groups if isinstance(groups, list) else []:
+            if isinstance(group, dict):
+                name = str(group.get("name") or "")
+                text = " ".join([name, str(group.get("transport") or ""), str(group.get("profile") or "")])
+                group_levels[name] = group.get("fuzzLevel") or infer_level_from_text(text)
+    except Exception:
+        pass
+    gen = os.path.basename(os.path.dirname(dirpath))
+    match = re.match(r"^(.*)-gen-[0-9]+-", gen)
+    group = match.group(1) if match else gen
+    return group_levels.get(group) or infer_level_from_text(" ".join([root, dirpath, group])) or "browser-e2e"
+
+def event_value(level, event):
+    for key in ("testExecutionCount", "individualTestExecutionCount"):
+        try:
+            value = int(event.get(key) or 0)
+        except (TypeError, ValueError):
+            value = 0
+        if value > 0:
+            return value
+    if level == "coverage-guided-lower-level":
+        try:
+            return max(1, int(event.get("inputCount") or 1))
+        except (TypeError, ValueError):
+            return 1
+    return 1
+
+tmux_levels = Counter()
+try:
+    proc = subprocess.run(["tmux", "ls"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+except FileNotFoundError:
+    proc = subprocess.CompletedProcess([], 127, "")
+for line in proc.stdout.splitlines():
+    level = infer_level_from_text(line)
+    if level:
+        tmux_levels[level] += 1
+
+event_levels = Counter()
+latest = {}
+now = time.time()
+for label, root in roots:
+    for dirpath, _, files in os.walk(root):
+        if "events.ndjson" not in files:
+            continue
+        path = os.path.join(dirpath, "events.ndjson")
+        try:
+            with open(path, errors="ignore") as events:
+                for line in events:
+                    if '"kind":"seed-attempt-complete"' not in line:
+                        continue
+                    try:
+                        event = json.loads(line)
+                    except Exception:
+                        event = {}
+                    level = event_level(root, dirpath, event)
+                    value = event_value(level, event)
+                    event_levels[level] += value
+                    at = event.get("at") or ""
+                    latest[level] = (at, label, root, value)
+        except OSError:
+            continue
+
+print("| level | tmux sessions | observed executions | latest event | latest root | status |")
+print("| --- | ---: | ---: | --- | --- | --- |")
+all_levels = sorted(set(tmux_levels) | set(event_levels) | {"unit-property", "coverage-guided-lower-level", "backend-api", "protocol-server", "fuzz-assertion"})
+for level in all_levels:
+    at, label, root, value = latest.get(level, ("", "", "", ""))
+    status = "ok"
+    if tmux_levels[level] and not event_levels[level]:
+        status = "TELEMETRY-INVARIANT-FAIL: tmux session exists but no observed events in root inventory"
+    elif event_levels[level] and not tmux_levels[level]:
+        status = "check-stale-events: events exist but no matching tmux session"
+    print(f"| {level} | {tmux_levels[level]} | {event_levels[level]} | {at} | {label}:{root} | {status} |")
+
+if tmux_levels["unit-property"] and not event_levels["unit-property"]:
+    print("- telemetry-invariant-failure: unit-property tmux is live but context roots do not show unit-property events.")
+if tmux_levels["coverage-guided-lower-level"] and not event_levels["coverage-guided-lower-level"]:
+    print("- telemetry-invariant-failure: coverage-guided-lower-level tmux is live but context roots do not show coverage-guided-lower-level events.")
+if tmux_levels["protocol-server"] and not event_levels["protocol-server"]:
+    print("- telemetry-invariant-failure: protocol-server tmux is live but context roots do not show protocol-server events.")
+if tmux_levels["fuzz-assertion"] and not event_levels["fuzz-assertion"]:
+    print("- telemetry-invariant-failure: fuzz-assertion tmux is live but context roots do not show fuzz-assertion events.")
+PY
+    echo
+    echo "## Coverage-Guided Lower-Level Quality"
+    python3 - "$roots_file" <<'PY'
+import json
+import os
+import sys
+from collections import deque
+
+roots = []
+try:
+    with open(sys.argv[1], errors="ignore") as handle:
+        for line in handle:
+            parts = line.rstrip("\n").split("\t", 1)
+            if len(parts) == 2 and parts[1] and os.path.isdir(parts[1]):
+                roots.append((parts[0], parts[1]))
+except OSError:
+    pass
+
+events = deque(maxlen=25)
+for label, root in roots:
+    for dirpath, _, files in os.walk(root):
+        if "events.ndjson" not in files:
+            continue
+        path = os.path.join(dirpath, "events.ndjson")
+        try:
+            with open(path, errors="ignore") as handle:
+                for line in handle:
+                    if '"kind":"seed-attempt-complete"' not in line or '"coverage-guided-lower-level"' not in line:
+                        continue
+                    try:
+                        event = json.loads(line)
+                    except Exception:
+                        continue
+                    events.append((event.get("at") or "", label, root, event))
+        except OSError:
+            pass
+
+if not events:
+    print("- no coverage-guided lower-level completion events in observed roots")
+else:
+    coverage_new = sum(int(event.get("newCoverageKeys") or 0) for _, _, _, event in events)
+    feature_new = sum(int(event.get("newFeatureKeys") or 0) for _, _, _, event in events)
+    inputs = sum(int(event.get("inputCount") or 0) for _, _, _, event in events)
+    crashes = sum(1 for _, _, _, event in events if event.get("exitCode") not in (0, "0", None))
+    latest_at, latest_label, latest_root, latest_event = events[-1]
+    print(f"- recent events sampled: {len(events)}")
+    print(f"- recent inputs: {inputs}")
+    print(f"- recent new coverage keys: {coverage_new}")
+    print(f"- recent new semantic feature keys: {feature_new}")
+    print(f"- recent nonzero exits: {crashes}")
+    print(f"- latest: {latest_at} label={latest_label} inputCount={latest_event.get('inputCount')} newCoverageKeys={latest_event.get('newCoverageKeys')} newFeatureKeys={latest_event.get('newFeatureKeys')} corpusSize={latest_event.get('corpusSize')}")
+    if coverage_new == 0 and feature_new == 0:
+        print("- action-needed: coverage-guided lower-level novelty is stalled; improve target shape, semantic features, mutation, corpus selection, or split targets.")
+    elif coverage_new == 0:
+        print("- action-needed: V8 coverage novelty is stalled but semantic novelty remains; consider target split, deeper oracles, or mutation changes rather than only adding corpus.")
+    elif feature_new == 0:
+        print("- action-needed: semantic novelty is stalled; add feature feedback or oracle classes if the target is still important.")
 PY
     echo
     echo "## Latest coverage-guided status"
@@ -263,12 +570,15 @@ Read:
 
 This controller must run continuously. Do not wait for stalls or error conditions. Treat zero active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes as a control decision that needs justification or correction.
 
+Before recommending work, audit the context itself. Treat any TELEMETRY-INVARIANT-FAIL line as the highest-priority bug: the loop must not ask personas to reason from a view that disagrees with tmux, current-run roots, status.tsv, or events.ndjson. A lane merely existing is not enough; evaluate whether its executions, novelty counters, crash/noise counters, and corpus growth are visible and useful.
+
 Return:
 1. Whether the current level mix should change now.
 2. The smallest useful change, with exact files/scripts/commands.
 3. Which lower-level target, if any, should be added first and why.
 4. How to validate without stopping productive browser fuzzing.
-5. Risks or reasons to reject changing the mix now.
+5. Any telemetry/accounting blind spot that would make this recommendation unreliable, and the smallest fix.
+6. Risks or reasons to reject changing the mix now.
 
 Do not edit files in this review pass.
 EOF
@@ -312,9 +622,10 @@ Also read:
 Return:
 1. Consensus on whether the mix should change.
 2. The concrete next change if action is warranted.
-3. Disagreements or blockers.
-4. Exact validation/restart plan.
-5. Short status note for another agent.
+3. Telemetry/accounting defects that must be fixed before trusting the mix.
+4. Disagreements or blockers.
+5. Exact validation/restart plan.
+6. Short status note for another agent.
 
 Do not edit files.
 EOF
@@ -349,6 +660,8 @@ $recent
 
 The controller should not wait for error conditions. If the current mix still has zero active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes, either add or launch the smallest bounded lower-level target with a clear oracle, or write the exact blocker and the next command/code change needed. Do not stop productive browser fuzzing to do this.
 
+If context.md contains TELEMETRY-INVARIANT-FAIL, fix the accounting/context-builder blind spot first, validate by regenerating a context that no longer contradicts live tmux/events, and only then make fuzzing mix changes. If coverage-guided lower-level quality says action-needed, make a concrete guidance-quality improvement or write the exact blocker; do not treat "the lane is running" as success by itself.
+
 You may edit files in $FUZZ_REPO or Jetstream loop scripts if needed. Prefer small, reversible changes. Run syntax checks for changed files. Restart only the relevant loop or lane if a restart is needed.
 
 Write:
@@ -356,7 +669,8 @@ Write:
 2. Changes made, with paths.
 3. Validation run.
 4. Whether any new lower-level executions should appear in the graph.
-5. Remaining blocker if no lower-level target was launched.
+5. Whether telemetry reconciliation is clean after the change.
+6. Remaining blocker if no lower-level target was launched or coverage-guidance quality was not improved.
 EOF
 
   (
