@@ -631,3 +631,5 @@ timestamp,group,group_family
 2026-05-16T14:07:53Z,novelty-ws-parser-transform,parser
 2026-05-16T14:12:35Z,novelty-ws-long-session-large-doc,lifecycle
 2026-05-16T14:15:17Z,novelty-ws-common-blocks,auth/locks
+2026-05-16T14:21:29Z,novelty-ws-persistence-no-title,persistence
+2026-05-16T14:21:29Z,novelty-ws-real-user-editing,real-user
