@@ -638,3 +638,4 @@ timestamp,group,group_family
 2026-05-16T14:26:26Z,novelty-ws-common-blocks,auth/locks
 2026-05-16T14:28:17Z,novelty-ws-common-blocks,auth/locks
 2026-05-16T14:29:04Z,novelty-http-persistence-probe,persistence
+2026-05-16T15:13:11Z,novelty-ws-lifecycle,lifecycle
