@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T03:58:19Z`
+Snapshot time: `2026-05-16T04:02:20Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -24,11 +24,12 @@ the same split and do not recommend another redesign.
 Current state:
 
 - The split is reviewable, but it is not final-file-ready.
-- The remaining filing blockers are export/rebase, evidence cleanup, focused
+- The remaining filing blockers are export/rebase, evidence cleanup, branch
+  graph/containment evidence, adjacent range-diffs/diffstats, focused
   post-rebase checks, and a fresh final combined-stack validation run.
 - Current coverage-guided fuzzing reports `0` visible likely-real failures, but
-  it is not running against a final rebased PR stack and must not be treated as
-  final-stack validation.
+  this is health evidence only. It is not running against a final rebased PR
+  stack and must not be treated as PR-filing or final-stack validation.
 - PR 13 repair/import is no longer missing. The repaired source-repo heads exist
   and passed the source-import gate with `63/63` focused CRDT tests, touched-file
   JS lint, and `git diff --check`.
@@ -91,25 +92,25 @@ the repaired source heads above.
 Latest coverage-guided novelty monitor:
 
 ```text
-updated: 2026-05-16T03:56:49.214Z
+updated: 2026-05-16T04:02:03.111Z
 output dir: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T030920Z
-coverage files: 23380
-total records seen: 34505
+coverage files: 23430
+total records seen: 34585
 unmet goals: 13
 likely-real visible: 0
 likely-real merged duplicates: 0
 oracle/noise questions: 0
 enabled groups: novelty-http-persistence-probe
 headroom for adding groups: yes
-load1: 48.52 / 64 cores
-memory: 432.5G free / 492.0G total
+load1: 43.27 / 64 cores
+memory: 429.7G free / 492.0G total
 ```
 
 Current-run triage is clean, but the run is capacity constrained:
 
 - Current-run triage has `0` signatures and `0` likely-real visible failures.
-- Historical triage has `14560` signatures, including `8440`
-  `pre_action_bootstrap_stall` signatures.
+- Historical triage has `14638` signatures, including `8510`
+  `pre_action_bootstrap_stall` signatures and `8735` bootstrap stalls.
 - Several WS groups are paused or held because historical known-noise and recent
   startup failures are dominating scheduling.
 - The latest duplicate/noise persona synthesis treats this as a fuzz
@@ -145,15 +146,19 @@ What remains before filing:
 
 1. Export or recreate each intended PR branch on the intended upstream base.
 2. Drop analysis-only artifacts and keep only product code plus focused tests.
-3. Rerun focused checks on every branch after rebase.
-4. Assemble a fresh final combined validation stack from the actual PR heads.
-5. Run final focused and coverage-guided fuzzing on that stack.
-6. Block filing if new visible likely-real failures appear.
+3. Regenerate branch graph/containment evidence and adjacent
+   range-diffs/diffstats from the rebased branch heads.
+4. Rerun focused checks, touched-file lint, and `git diff --check` on every
+   branch after rebase.
+5. Assemble a fresh final combined validation stack from the actual PR heads.
+6. Run final focused and coverage-guided fuzzing on that stack.
+7. Block filing if new visible likely-real failures appear.
 
 ## Status-Persona Analysis
 
-The completed status-report persona synthesis at `20260516T035208Z-iter-1`
-agrees on these report updates:
+The completed status-report persona syntheses at
+`20260516T035208Z-iter-1` and `20260516T035706Z-iter-2` agree on these report
+updates:
 
 - Replace stale 2026-05-15 coverage snapshots with the verified 2026-05-16
   novelty monitor status.
@@ -163,13 +168,24 @@ agrees on these report updates:
 - Remove stale language that PR 13 repair/import is still missing.
 - Call out the dirty reload-hydration E2E spec as an evidence-contamination
   risk.
+- Treat current `0` visible likely-real failures as health evidence only, not
+  PR-filing evidence.
+- Make the filing gates explicit: export/rebase, evidence cleanup, branch
+  graph/containment, adjacent range-diffs/diffstats, focused post-rebase tests,
+  lint, `git diff --check`, and fresh combined-stack validation.
 - Do not add `PR 1A`, `PR 6B`, reload-hydration, pre-save collapse,
   rich-text suffix, malformed-save residuals, or HTTP room-isolation residuals
   to the split.
 - Launch no automatic follow-up jobs from this status update.
 
-The only bounded follow-up job the analysis keeps as a possible manual action is
-the reload-hydration checkpoint/phase diagnostics prompt:
+The latest duplicate/noise persona synthesis also identifies a fuzz
+control-plane scheduling issue: historical `pre_action_bootstrap_stall` noise
+is pausing live WS groups even though current-run triage has no signatures.
+That supports a separate bounded monitor-scheduling fix only if explicitly
+authorized; no such job or code change was launched from this report update.
+
+The split-review analysis keeps this bounded manual action available for
+reload-hydration evidence:
 
 ```text
 /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T021951Z/jobs/rtc-reload-hydration-checkpoint-diagnostics-next-action.md
