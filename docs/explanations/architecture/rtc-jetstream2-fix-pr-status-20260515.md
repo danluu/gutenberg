@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T17:26:50Z`
+Snapshot time: `2026-05-16T17:32:12Z`
 
 Trigger event:
-`pr-split-2026-05-16T17-24-29Z-20260516T171930Z`
+`pr-split-2026-05-16T17-31-22Z-20260516T172434Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T17-24-29Z-20260516T171930Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T17-31-22Z-20260516T172434Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -27,83 +27,67 @@ or the original split merely for continuity.
 
 ## Executive Status
 
-Filing remains blocked. The current split is not a complete filing split; it is
-a known-fix 28-head prefix plus one active post-`PR15C` product blocker for
-seed `1020002`.
+Filing remains blocked. The explicit PR01 through PR15C set is only a
+known-fix prefix, not a filing-ready stack.
 
-Latest split-persona synthesis, `pr-split-20260516T171930Z-synthesis.md`,
-replaces the old "28-head allow-list is filing-ready" assumption with this
-shape:
+The latest split-persona synthesis,
+`pr-split-20260516T172434Z-synthesis.md`, updates the blocker state:
 
 ```text
-known-fix 28-head prefix
+explicit 28-head known-fix prefix
 -> new narrow post-PR15C seed 1020002 WebSocket/Yjs store-transition repair PR
 -> rebuilt combined validation stack
 -> focused seed 1020002 gate
 -> final-stack fuzz
 ```
 
-Seed `1020002` is product-confirmed WebSocket/Yjs divergence. Page 1 and the
-relay materialize marker `async-server-1020002-0-1-589451`; page 0 remains
-`connected`/`synced` but lacks it locally. The completed state-vector/diff
-diagnostic shows page 0 advertising peer client `353740376` through clock `820`
-while storing that range as deleted; relay/page 1 retain live marker-bearing
-structs. The completed `153219Z` peer-client store-transition report reproduced
-the failure without a passing product repair and narrowed the next owner to
-`@wordpress/sync` manager load/hydrate replay after provider-synced state.
+Seed `1020002` is confirmed WebSocket/Yjs marker divergence. Page 0 reports
+connected/synced but lacks marker `async-server-1020002-0-1-589451`; page 1
+and the relay retain it.
 
-The active bounded repair/evidence job is:
-
-```text
-rtc-ws-seed-1020002-sync-manager-load-hydrate-repair-20260516T160617Z
-```
-
-The latest split feedback action applied the Cycle 170 report update, launched
-no new work, and verified that the active tmux session is still running. The
-most recent repair evidence remains from that active session:
-`packages/sync/src/test/manager.ts` passes (`37/37`), but the focused seed
-`1020002` marker-convergence check still fails because page 0 lacks
-`async-server-1020002-0-1-589451` while page 1 retains it. The expected final
-report is still not present:
+The previously missing repair report now exists:
 
 ```text
 /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T160617Z/jobs/outputs/rtc-ws-seed-1020002-sync-manager-load-hydrate-repair-20260516T160617Z/report.md
 ```
 
-The newest split synthesis allows only one bounded follow-up if that active job
-exits without a usable report: rerun the existing
-`run-rtc-ws-seed-1020002-sync-manager-load-hydrate-repair-20260516T160617Z.sh`
-script exactly once, then consume that result before any new split or fuzz work.
+Treat that report as diagnostic evidence, not a fix branch. Its candidate did
+not pass the focused seed gate: seed `1020002` still fails with page 0 missing
+the marker while page 1 and the relay retain it. The latest synthesis moves
+the likely boundary away from pure `@wordpress/sync` load/hydrate replay and
+toward Gutenberg-origin store-to-CRDT replacement / receiver-side Yjs
+integration.
 
-Do not fold the seed `1020002` work into PR13, PR15A-C, PR6B/PR6C, old PR16,
-reload hydration, pre-save collapse, rich-text suffix, malformed-save residuals,
-or HTTP room isolation unless the active repair proves the same source owner.
-PR6B remains dropped/deferred. Reload hydration, pre-save collapse, rich-text
-suffix, malformed-save residuals, HTTP residuals, seed `5500002`, and old PR16
-remain evidence-only or deferred.
-
-The clean structural validation ref remains:
+The next maintainer-facing split should therefore keep the known-fix prefix and
+append a new post-`PR15C` WebSocket/Yjs repair PR only after a bounded repair
+passes the focused `1020002` gate. The recommended next bounded repair is:
 
 ```text
-validation/rtc-final-combined-stack-post-pr11-20260516T110608Z
-921f093cc47b46844bf8fb48552483686c55ef6b
+RTC WebSocket Seed 1020002 Gutenberg-Origin Store-To-CRDT Replacement Repair
 ```
 
-That rebuild reported focused CRDT checks, touched-file JS lint,
-`git diff --check`, containment, range-diff, and diffstat evidence passing.
-Treat it as structural and focused-check evidence for the known-fix prefix. It
-is not final-stack fuzz validation and no longer represents the complete filing
-stack because seed `1020002` still needs the post-`PR15C` repair decision.
+Scope it to `packages/core-data/src/utils/crdt*.ts`,
+`syncConfig.applyChangesToCRDTDoc`, and receiver-side Yjs integration where a
+new marker-bearing client range is present but fully deleted.
 
-The latest duplicate/noise persona work does not change the product PR split.
-It classifies the duplicate/noise issue as control-plane startup noise, not
-product failure evidence. The follow-up action has now applied the bounded
-novelty-monitor global startup-noise admission hold; current supervisor groups
-are empty while the underlying startup/bootstrap failure remains unfixed.
+Do not fold seed `1020002` into PR13, PR15A-C, PR6B/PR6C, old PR16, reload
+hydration, pre-save collapse, rich-text suffix, malformed-save residuals, or
+HTTP room isolation unless a later passing repair proves exact same-source
+ownership. Do not restart broad final-stack fuzz, extra fuzz lanes, reload
+diagnostics, PR6B/PR6C work, old PR16 replay, PR13 repair/import work, or
+another split-review loop before the bounded `1020002` repair passes or is
+explicitly reclassified.
+
+The latest duplicate/noise work is control-plane evidence, not product PR
+evidence. The completed feedback action applied a global startup-noise
+admission hold in `rtc-browser-fuzz-novelty-monitor.mjs` and validated it, but
+the later duplicate/noise synthesis still recommends a narrower triage-watcher
+quarantine for strict pre-action startup stalls. Neither item unblocks
+final-stack fuzz.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T17:26:46Z`.
+The collected remote status input was generated at `2026-05-16T17:32:06Z`.
 
 The fix-planning repo is checked out at:
 
@@ -129,11 +113,11 @@ The fuzz repo remains on the validation stack:
 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-That stack still has modified product/test files and many untracked fuzz,
-analysis, and documentation artifacts. It is active validation infrastructure,
-not the final PR stack and not a filing source.
+That stack has modified product/test files and many untracked fuzz, analysis,
+and documentation artifacts. It is active validation infrastructure, not the
+final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T17:26:50Z` from fetched
+The branch-link audit was generated at `2026-05-16T17:32:12Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -156,20 +140,19 @@ is pushed only so the repaired PR 13A compare link has the source base.
 ## Proposed PR Split
 
 Every proposed row either uses a clickable branch link from the verified
-branch-link audit or explicitly says `No verified branch link yet`. Treat this
-table as the known-fix prefix plus the current post-`PR15C` filing slot for
-seed `1020002`. The post-`PR15C` row still needs a branch after the
-sync-manager load/hydrate repair is implemented and validated.
+branch-link audit or explicitly says `No verified branch link yet`. This table
+is the maintainer-facing split recommendation: the known-fix prefix plus the
+current post-`PR15C` blocker slot for seed `1020002`.
 
 | PR | Scope | Audit branch link | Files | Diff | Current status |
 | --- | --- | --- | ---: | ---: | --- |
 | PR 1 | HTTP polling generated update size guard | [`review/rtc-pr01-http-polling-generated-update-size`](https://github.com/danluu/gutenberg/tree/review/rtc-pr01-http-polling-generated-update-size) | 2 | +181 / -19 | verified branch; keep in known-fix prefix |
 | PR 2 | HTTP polling storage read window | [`review/rtc-pr02-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/tree/review/rtc-pr02-http-polling-storage-read-window) | 2 | +57 / -5 | verified branch; keep in known-fix prefix |
-| PR 3 | Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/review/rtc-pr03-revision-restore-crdt-reset) | 2 | +58 / -5 | verified branch; seed `5500002` marker-retention remains a separate follow-up |
+| PR 3 | Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/review/rtc-pr03-revision-restore-crdt-reset) | 2 | +58 / -5 | verified branch; seed `5500002` marker-retention remains separate follow-up |
 | PR 4 | Persisted CRDT save-meta idempotence | [`review/rtc-pr04-crdt-save-meta-idempotence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr04-crdt-save-meta-idempotence) | 2 | +160 / -1 | verified branch; keep in known-fix prefix |
-| PR 5A | Entity/entity-reference normalization in `crdt.ts` | No verified branch link yet | 2 | +465 / -8 | replacement for old aggregate PR 5; allow-list head exists but needs audited review branch |
-| PR 5B | Parser/rich-text HTML equivalence in `crdt-blocks.ts` | No verified branch link yet | 2 | +925 / -42 | replacement for old aggregate PR 5; allow-list head exists but needs audited review branch |
-| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | 2 | +287 / -15 | replacement for old aggregate PR 5; allow-list head exists but needs audited review branch |
+| PR 5A | Entity/entity-reference normalization in `crdt.ts` | No verified branch link yet | 2 | +465 / -8 | replacement for old aggregate PR 5; needs audited review branch |
+| PR 5B | Parser/rich-text HTML equivalence in `crdt-blocks.ts` | No verified branch link yet | 2 | +925 / -42 | replacement for old aggregate PR 5; needs audited review branch |
+| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | 2 | +287 / -15 | replacement for old aggregate PR 5; needs audited review branch |
 | PR 6 | Save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | 4 | +738 / -6 | verified branch; excludes dropped PR 6B and broader malformed-save residuals |
 | PR 6A | Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06a-persisted-empty-content-guard) | 2 | +64 / -1 | verified branch; narrow persisted-body guard |
 | PR 7A | Save response entity-state guards | [`review/rtc-pr07a-save-response-actions-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07a-save-response-actions-guard) | 2 | +1339 / -8 | verified branch; repaired split head |
@@ -190,9 +173,9 @@ sync-manager load/hydrate repair is implemented and validated.
 | PR 15A | Fallback group move stale reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 | +123 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15B | Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 | +197 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15C | Fallback group delete | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 | +161 / -4 | verified branch; keep reload-hydration gate spec out |
-| New post-PR15C PR | WS seed `1020002` sync-manager load/hydrate replay after provider-synced state / live editor-Yjs peer-client propagation divergence | No verified branch link yet | TBD | TBD | active blocker; latest partial repair evidence has manager tests passing but focused seed marker convergence still failing |
+| New post-PR15C PR | Seed `1020002` WebSocket/Yjs store-transition repair, now narrowed toward Gutenberg-origin store-to-CRDT replacement / receiver-side Yjs integration | No verified branch link yet | TBD | TBD | active blocker; `160617Z` repair report exists but failed the focused seed gate; launch bounded store-to-CRDT repair before shaping branch |
 
-Verified branches that are now prior art or staging only:
+Verified branches that are prior art or staging only:
 
 - [`review/rtc-pr05-parser-entity-normalization-equivalence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr05-parser-entity-normalization-equivalence)
   is verified content for old aggregate PR 5 (`4` files, `+1664 / -52`), not
@@ -215,20 +198,33 @@ above.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T17:26:46Z
+collected_at_utc: 2026-05-16T17:32:06Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T163736Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
+The clean structural validation ref remains:
+
+```text
+validation/rtc-final-combined-stack-post-pr11-20260516T110608Z
+921f093cc47b46844bf8fb48552483686c55ef6b
+```
+
+That rebuild reported focused CRDT checks, touched-file JS lint,
+`git diff --check`, containment, range-diff, and diffstat evidence passing.
+Treat it as structural and focused-check evidence for the known-fix prefix. It
+is not final-stack fuzz validation and no longer represents the complete filing
+stack because seed `1020002` still needs the post-`PR15C` repair decision.
+
 The fresh `novelty-status.md` snapshot was updated at
-`2026-05-16T17:25:29.996Z` for
+`2026-05-16T17:29:49.007Z` for
 `run-20260516T163736Z`:
 
 ```text
-coverage files: 34434
-total records seen: 51310
-records processed this pass: 14
+coverage files: 34447
+total records seen: 51340
+records processed this pass: 20
 current-run records: async-server-blocks=3, block-gauntlet=3, common-blocks=3,
   long-session-large-doc=3, media-cross-entity=3, parser-transform=3,
   persistence-no-title=2, real-user-editing=4, session-lifecycle=3
@@ -237,14 +233,9 @@ current-run pre-action startup failures: async-server-blocks=3,
   block-gauntlet=3, common-blocks=3, long-session-large-doc=3,
   media-cross-entity=3, parser-transform=3, persistence-no-title=2,
   real-user-editing=4, session-lifecycle=3
-current-run summary-only startup failures: async-server-blocks=2,
-  block-gauntlet=1, common-blocks=1, long-session-large-doc=2,
-  media-cross-entity=2, parser-transform=2, persistence-no-title=2,
-  real-user-editing=4, session-lifecycle=2
-unmet goals: 5
 recommended groups: none
 enabled groups: none
-startup-noise held groups: novelty-ws-real-user-editing,
+startup-noise held recommended groups: novelty-ws-real-user-editing,
   novelty-ws-real-user-rich-text, novelty-ws-block-gauntlet,
   novelty-ws-common-blocks, novelty-ws-parser-transform,
   novelty-ws-async-server-blocks, novelty-ws-media-cross-entity,
@@ -257,24 +248,23 @@ current-run signatures: 36
 known-noise signatures: 18
 current-run top duplicate family share: 1
 historical top duplicate family share: 0.5862
-headroom for adding groups: no
-load1: 70.14 / 64 cores
-memory: 429.8G free / 492.0G total
+headroom for adding groups: yes
+load1: 64.47 / 64 cores
+memory: 430.4G free / 492.0G total
 ```
 
-The same novelty snapshot lists no enabled groups. `novelty-http-persistence-probe`
-and `novelty-ws-lifecycle` are held by startup-noise expansion, and the WS
-real-user, rich-text, parser-transform, async-server, block-gauntlet,
-common-block, media-cross-entity, and long-session-large-doc groups are held
-because current-run triage is dominated by strict startup known-noise.
+The current-run triage family is fully dominated by strict
+`pre_action_bootstrap_stall` startup noise (`36/36`, share `1`). This is useful
+control-plane health evidence, not final-stack validation and not product
+failure evidence.
 
-The latest trend evidence packet was generated at `2026-05-16T17:16:12Z` from
-monitor data through `2026-05-16T17:14:10Z`:
+The latest trend evidence packet was generated at `2026-05-16T17:23:17Z` from
+monitor data through `2026-05-16T17:21:14Z`:
 
 ```text
-monitor passes: 1610
-coverage files: 272 -> 34398
-coverage files delta: 34126
+monitor passes: 1613
+coverage files: 272 -> 34419
+coverage files delta: 34147
 unmet coverage goals: 24 -> 5
 likely_real_max: 0
 duplicate_share_current_last: 1
@@ -282,102 +272,66 @@ duplicate_share_historical_last: 0.5862
 summary_startup_failures_last: 0
 quality_issues_last: 2
 enabled groups current in trend snapshot: none
-fuzz level mix: browser-e2e=25 lanes/25 groups; unit-property=1 lane/1 group; coverage-guided-lower-level=1 lane/1 group
-browser-e2e execution: 55873 cumulative / 416 per-hour
+fuzz level mix: browser-e2e=25 lanes/25 groups; unit-property=1 lane/1 group;
+  coverage-guided-lower-level=1 lane/1 group
+browser-e2e execution: 56651 cumulative / 3528 per-hour
 transport-integration execution: 3006 cumulative / 0 per-hour
-unit-property execution: 843284 cumulative / 14448 per-hour
-coverage-guided-lower-level execution: 19494 cumulative / 192 per-hour
-load1: 74.39 / 64 cores
-memory: 430.4G free
+unit-property execution: 867364 cumulative / 110768 per-hour
+coverage-guided-lower-level execution: 20038 cumulative / 2368 per-hour
+load1: 57.95 / 64 cores
+memory: 427.4G free
 ```
 
-The trend enabled-group list is older than the `17:25:29Z` novelty snapshot,
-but both currently show no enabled groups. Use the novelty snapshot above for
-the current scheduler state.
-
-Largest remaining current unmet goals from the latest trend packet:
+Largest remaining current unmet goals from the trend packet:
 
 - successful real-user-editing records: `287/500`
 - CDP coverage records: `4887/5000`
-- `core/html`: `388/500` in the trend packet, `390/500` in the later novelty snapshot
-- `core/details`: `435/500` in the trend packet, `439/500` in the later novelty snapshot
-- `core/more`: `466/500` in the trend packet, `469/500` in the later novelty snapshot
+- `core/html`: `389/500` in the trend packet, `390/500` in the later novelty snapshot
+- `core/details`: `439/500`
+- `core/more`: `467/500` in the trend packet, `469/500` in the later novelty snapshot
 
-Weak completion profiles remain a reason to prefer guarded top-offs and
-startup-stall reduction over simply increasing browser concurrency. The weakest
-success ratios in the trend packet are `full` (`18/840`),
-`revision-persistence` (`92/3499`), `multi-reload-lifecycle` (`79/2678`),
-`parser-serialization` (`72/2164`), and `real-user-editing` (`287/5250`).
-
-This novelty/trend evidence is background fuzz-health and control-plane
-evidence. It is not final-stack validation because the final-stack WebSocket
-path is blocked on the seed `1020002` sync-manager load/hydrate repair decision
-and the resulting rebuilt validation stack.
+Weak completion profiles still argue for startup-stall reduction and guarded
+top-offs over simply increasing browser concurrency. The weakest success ratios
+in the trend packet are `full` (`18/840`), `revision-persistence`
+(`92/3502`), `multi-reload-lifecycle` (`79/2678`),
+`parser-serialization` (`72/2166`), and `real-user-editing` (`287/5252`).
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T171930Z-synthesis.md`. Its consensus:
+`pr-split-20260516T172434Z-synthesis.md`. Its consensus:
 
-- Filing remains blocked and the split must change.
-- Keep the explicit 28-head allow-list only as the known-fix prefix.
-- Treat seed `1020002` as product-confirmed WebSocket/Yjs divergence, narrowed
-  to `@wordpress/sync` manager load/hydrate replay after provider-synced state.
-- Append a new narrow post-`PR15C` PR for the seed `1020002` repair, then
-  rebuild and validate the combined stack.
-- Do not fold this into PR13, PR15A-C, PR6B/PR6C, old PR16, reload hydration,
-  pre-save collapse, rich-text suffix, malformed-save, or HTTP residual work
-  unless the active repair proves the exact same source owner.
-- PR6B stays dropped/deferred. Reload hydration, pre-save collapse, rich-text
-  suffix, malformed-save residuals, HTTP room isolation, and seed `5500002`
-  remain evidence-only or deferred.
-- Consume the already-running
-  `rtc-ws-seed-1020002-sync-manager-load-hydrate-repair-20260516T160617Z`
-  job. Its report was not present at the time of synthesis.
-- If that job exits without a usable report, rerun the existing job script
-  exactly once before launching any other automated work.
-- After that report lands, shape the repair as the new post-`PR15C` PR unless
-  it proves a narrower existing owner, rerun the focused seed `1020002`
-  diagnostic/gate, rebuild the combined stack, regenerate graph/containment/
-  range-diff/diffstat evidence, then run focused checks, lint,
-  `git diff --check`, and final-stack fuzz.
+- Filing remains blocked and the split still needs the known-fix prefix plus a
+  new post-`PR15C` seed `1020002` repair PR.
+- The `160617Z` sync-manager load/hydrate repair report now exists, but did
+  not produce a seed-passing repair.
+- The report narrows the remaining boundary toward Gutenberg-origin
+  store-to-CRDT replacement / receiver-side Yjs integration.
+- Before the next review cycle, run one bounded repair for that path, require
+  a passing focused `1020002` gate, then shape the repair as the post-`PR15C`
+  PR or reclassify only if ownership is proven.
+- After seed `1020002` passes, rebuild the combined stack, regenerate graph,
+  containment, range-diff, and diffstat evidence, rerun focused tests, lint,
+  and `git diff --check`, then run final-stack fuzz.
+- Keep broad PR8, PR8A until shaped/validated, PR1A HTTP room isolation, PR6B,
+  PR6C, old PR16, reload hydration, pre-save collapse, rich-text suffix,
+  malformed-save residuals, seed `7410083`, possible seed `5200001`, and other
+  secondary families deferred.
 
-The latest split feedback-action file,
-`pr-split-20260516T170807Z-feedback-action.md`, is non-empty. It applied the
-Cycle 170 consensus to the remote split report, recorded seeds `7410083` and
-possibly `5200001` as queued behind `1020002`, launched no new jobs, and
-verified the same active tmux job:
+The latest `pr-split-20260516T172434Z-feedback-action.md` file is zero bytes,
+so there was no completed feedback action after that synthesis.
 
-```text
-rtc-ws-seed-1020002-sync-manager-load-hydrate-repair-20260516T160617Z
-```
+The latest duplicate/noise synthesis is
+`duplicate-noise-20260516T171859Z-synthesis.md`. It says the current run is
+still dominated by strict pre-action startup noise: `36/36` current triage
+signatures are `pre_action_bootstrap_stall`, with `0` visible likely-real
+failures. Its smallest safe next control-plane fix is to quarantine strict
+no-user/no-action/no-product-evidence startup records in
+`rtc-browser-fuzz-triage-watcher.mjs` before normal failure signature
+insertion, while retaining aggregate known-noise metrics.
 
-The earlier `pr-split-20260516T165317Z-feedback-action.md` still supplies the
-latest partial repair evidence from that tmux session: manager unit tests pass
-(`37/37`), but focused seed verification variants still fail marker convergence
-and the expected repair report remains missing. Duplicate repair, broad
-final-stack fuzz, extra fuzz lanes, reload diagnostics, PR6B/PR6C work, old
-PR16 replay, PR13 repair/import, and another split-review loop remain deferred
-until the `1020002` report is consumed, the new post-`PR15C` repair PR is shaped
-or reclassified, the combined stack is rebuilt, and the focused seed gate passes.
-
-The latest duplicate/noise synthesis,
-`duplicate-noise-20260516T170226Z-synthesis.md`, says the duplicate/noise leak
-is in `bin/rtc-browser-fuzz-novelty-monitor.mjs`, specifically
-`shouldHoldGroupForStartupNoiseProbation()`: current-run
-`pre_action_bootstrap_stall` dominance is detected, but the hold is applied
-profile-by-profile, so fresh profiles with no current evidence are still
-admitted and reproduce zero-user/zero-action bootstrap failures. The smallest
-safe next fix is to make strict current-run startup dominance a global
-admission hold when `likelyRealVisible === 0`, while preserving escapes for
-explicit canaries/capacity floors and profiles with clean current-run success
-evidence. Secondary cleanup is to coalesce duplicate strict startup records in
-`rtc-browser-fuzz-triage-watcher.mjs`. This is control-plane work, not product
-PR content, and it does not unblock final-stack fuzz.
-
-The latest duplicate/noise feedback-action file,
-`duplicate-noise-20260516T170226Z-feedback-action.md`, is non-empty and applies
-that scheduler fix. It changed only
+The latest completed duplicate/noise feedback action remains
+`duplicate-noise-20260516T170226Z-feedback-action.md`. It changed
 `bin/rtc-browser-fuzz-novelty-monitor.mjs`: current-run strict startup
 dominance now holds every non-clean-release, non-floor profile instead of
 rotating into fresh profiles with no current startup sample, and
@@ -391,35 +345,25 @@ node --check bin/rtc-browser-fuzz-deep-analysis-tier.mjs
 node --check bin/rtc-browser-fuzz-live-analysis-monitor.mjs
 ```
 
-The gate-only triage check found `36` signatures, all `bootstrap-stall`, with
-`0` queued/retry and no analysis/deep-analysis state created. Restart action
-restarted `rtc-coverage-guided-novelty` on the existing active run script and
-killed one orphaned old-code novelty monitor process. The current state is:
-`supervisor-groups.json` is `[]`, `novelty-state.json` has
-`runLocalNoisePolicyVersion=16` and `enabledGroups=[]`, and active triage has
-`36` total signatures, all bootstrap stalls, with `0` queued and `0` retry.
+The isolated gate-only triage check found `36` signatures, all
+`bootstrap-stall`, with `0` queued/retry and no analysis/deep-analysis state
+created. Restart action restarted `rtc-coverage-guided-novelty` on the
+existing active run script and killed one orphaned old-code novelty monitor
+process. Current state from that feedback action:
 
-The earlier `duplicate-noise-20260516T162553Z-feedback-action.md` remains
-relevant as the consumer-gating fix: it updated
-`rtc-browser-fuzz-live-analysis-monitor.mjs`,
-`rtc-browser-fuzz-triage-watcher.mjs`, `rtc-browser-fuzz-analysis-tier.mjs`,
-`rtc-browser-fuzz-deep-analysis-tier.mjs`, and
-`rtc-browser-fuzz-supervisor.mjs` so paused/stale groups do not keep live
-analysis alive, strict no-product startup suppression is terminal, and
-analysis/deep-analysis recheck source signatures before launching stale
-queued/running jobs. Historical duplicate-heavy roots will still show in trend
-views until they age out or are excluded, and the stricter predicate may
-down-rank real bugs before the first user/action; failures with users, actions,
-reload/save/revision/fault/operation evidence remain visible. This is
-control-plane work, not product PR content, and it does not unblock final-stack
-fuzz.
+```text
+supervisor-groups.json: []
+novelty-state.json runLocalNoisePolicyVersion: 16
+novelty-state.json enabledGroups: []
+active triage: 36 total signatures, all bootstrap stalls, 0 queued, 0 retry
+```
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
 separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older warning
 that GitHub-facing PR13 review links were stale is superseded by the
-`2026-05-16T17:26:50Z` branch-link audit, which verifies the repaired PR 13
+`2026-05-16T17:32:12Z` branch-link audit, which verifies the repaired PR 13
 review refs listed above.
 
 ## Deferred Or Evidence-Only Work
@@ -430,14 +374,16 @@ These must not be described as fixed.
 | --- | --- | --- | --- |
 | Dropped PR 6B save snapshot/no-op guard | `final/rtc-pr06b-save-snapshot-noop-guard`; seeds `5500001`, `5500002`, `5500006` | dropped from filing path and allow-list after corrected replay classification | Do not rerun as the next gate; track seed `5500002` separately as revision-restore marker retention if it reproduces cleanly |
 | PR 6C malformed evaluated save content | no verified filing branch | blocked/deferred pending focused Jest, lint, and replay evidence | Promote only after focused product evidence and a verified branch link exist |
-| Broad PR 8 persisted-record hydration | old audit branch [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | deferred; no active filing unit | Shape and audit a narrowed title-reload branch only if PR 8A is revived; give any persisted-record hydration claim separate product evidence and a verified branch link |
-| Reload hydration empty live editor | `e75c8829e4e9`, `3bbdc3cdb393`; gate branch `try/rtc-reload-hydration-gate-e75c8829` | evidence-only; not in PR 6, PR 6A, PR 8, PR 15, or fallback-group claims | Promote only if a clean gate reaches the post-reload assertion and live editor state stays empty after exact-room WebSocket sync while REST body and persisted `_crdt_document` remain populated |
+| Broad PR 8 persisted-record hydration | old audit branch [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | deferred; no active filing unit | Shape and audit a narrowed title-reload branch only if PR 8A is revived; give persisted-record hydration claims separate product evidence and a verified branch link |
+| Reload hydration empty live editor | `e75c8829e4e9`, `3bbdc3cdb393`; gate branch `try/rtc-reload-hydration-gate-e75c8829` | evidence-only; not in PR 6, PR 6A, PR 8A, PR 15, or fallback-group claims | Promote only if a clean gate reaches the post-reload assertion and live editor state stays empty after exact-room WebSocket sync while REST body and persisted `_crdt_document` remain populated |
 | Pre-save search/live document collapse | `ddf9559af37e`, `0932bed35c7a`, conditional `1e0ade5ec5a8`; `try/rtc-pre-save-search-collapse-gate-ddf9559` | evidence-only; not in active split | Capture editor blocks, serialized content, core-data edited record, live CRDT record, provider state, REST body, and save state before/after `core/search` insertion |
 | Rich-text formatted suffix corruption | `4148230f681d`, `b0db7b80c6f2`, `dc8ea6e78d4d`, `1ccac75d7faa`, `2722f0e897de`, `712b98ba96ff` | not fixed; latest split keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Malformed save payload and save-settlement residuals | `fc154ebec48c`, `e40aa1b7863d`, `f51c425df8a5`, `f46859898576`, `afd389d7f139`, `02289235f55f`, `eef8b8932e11`, `b60eecd4ac03` | deferred beyond dropped PR 6B and isolated PR 6C candidate | Create a source-level `saveEntityRecord()` / `prePersistPostType()` repro where clean local blocks exist but evaluated outgoing `content` is malformed |
-| Seed `1020002` WebSocket marker divergence | Cycle 152 classifier report; completed `143821Z` repair report; completed `151306Z` state-vector/diff diagnostic; completed `153219Z` peer-client store-transition report; active `160617Z` sync-manager load/hydrate repair job | active final-stack blocker; classified as product divergence; page 0 stores peer client `353740376` as deleted `0..820` while relay/page 1 retain live marker-bearing structs; next owner narrowed to `@wordpress/sync` manager load/hydrate replay after provider-synced state; current partial repair evidence has `packages/sync/src/test/manager.ts` passing (`37/37`) but focused seed `1020002` still failing marker convergence and no final report yet | Consume `rtc-ws-seed-1020002-sync-manager-load-hydrate-repair-20260516T160617Z`; if it exits without a usable report, rerun its script exactly once; rerun focused seed `1020002`, then create a new narrow post-`PR15C` PR with a verified branch link before filing |
+| Seed `1020002` WebSocket marker divergence | completed `143821Z` repair report; completed `151306Z` state-vector/diff diagnostic; completed `153219Z` peer-client store-transition report; completed `160617Z` sync-manager load/hydrate report | active final-stack blocker; classified as product divergence; `160617Z` report exists but failed the focused gate; page 0 still misses marker `async-server-1020002-0-1-589451` while page 1/relay retain it; likely owner is now Gutenberg-origin store-to-CRDT replacement / receiver-side Yjs integration | Run one bounded store-to-CRDT/Yjs repair, require focused seed `1020002` to pass, then shape a new post-`PR15C` PR with a verified branch link before filing |
+| Seed `7410083` final-persistence `_crdt_document` absence | queued by latest split persona | queued behind seed `1020002`; no automatic PR slot | Triage only after `1020002` is repaired, reclassified, and the rebuilt stack is available |
+| Possible seed `5200001` same-user reload stale title/body | queued by latest split persona | possible follow-up only; no automatic PR slot | Deep-triage after `1020002` if it remains visible on the rebuilt stack |
 | PR 16 valid-block `originalContent` candidate | seed replay candidate only | blocked/deferred; latest split synthesis says it is not part of the filing stack | Replay and classify the seed before considering any product branch or verified branch link |
-| HTTP smoke `rest_crdt_document_stale` | final-stack bootstrap repair reached one HTTP action before this signal | separate triage signal; not split coverage and not a final-stack fuzz pass | Classify separately after the seed `1020002` sync-manager repair/split decision |
+| HTTP smoke `rest_crdt_document_stale` | final-stack bootstrap repair reached one HTTP action before this signal | separate triage signal; not split coverage and not a final-stack fuzz pass | Classify separately after the seed `1020002` repair/split decision |
 | HTTP polling room-isolation residuals | `f5738470d026`, `fda8d2334e65`, conditional `fc99825fb6c2`, `b75435787be1`; possible PR 1A | deferred; possible PR 1A is not in the active split | Promote only if fuzzing still shows healthy post rooms stalled by auxiliary room failures after PR 1/2 |
 
 ## Filing Gates And Current Recommendation
@@ -466,26 +412,21 @@ Before filing any maintainer-facing PR:
 7. Rerun focused checks, touched-file lint, and `git diff --check` on every
    imported/rebased branch.
 8. Keep dirty analysis-only artifacts out of product PR branches.
-9. Consume the active
-   `rtc-ws-seed-1020002-sync-manager-load-hydrate-repair-20260516T160617Z`
-   job, with at most one rerun of its existing script if it exits without a
-   usable report, before launching broad final-stack fuzz, extra fuzz lanes, reload
-   diagnostics, PR13 repair/import, PR6B/PR6C work, old PR16 replay work, or
-   another split-review loop.
-10. After the new post-`PR15C` sync-manager repair PR exists, rebuild the
-   combined stack from the 28-head known-fix prefix plus that new PR, rerun
-   focused seed `1020002`, then rerun bounded final-stack validation against
+9. Run the bounded store-to-CRDT/Yjs repair for seed `1020002`, require the
+   focused seed gate to pass, then shape the new post-`PR15C` repair PR and
+   add a verified branch link before filing.
+10. Rebuild the combined stack from the 28-head known-fix prefix plus the new
+   seed `1020002` repair PR, then rerun bounded final-stack validation against
    the rebuilt stack. Count it only if it reaches action-level product coverage.
 11. Block filing if new visible likely-real failures appear.
 
 Existing fuzz infrastructure can continue where healthy. The latest trend
 evidence has `likely_real_max: 0`, `5` unmet goals, current-run duplicate share
 `1`, historical duplicate share `0.5862`, summary startup failures `0`,
-quality issues `2`, and browser-e2e execution at `55873` cumulative / `416`
-per hour. The latest novelty snapshot has `34434` coverage files, `51310`
-total records seen, `36` current-run signatures, `0`
-visible likely-real failures, strict startup known-noise as the current-run dominant
-triage family, no enabled groups, the broader WS groups held by startup-noise
-probation, and the global startup-noise admission hold applied. Treat these
-remote status, novelty, and trend packets as useful control-plane and
-fuzz-health evidence, not final-stack fuzz validation.
+quality issues `2`, and browser-e2e execution at `56651` cumulative / `3528`
+per hour. The latest novelty snapshot has `34447` coverage files, `51340`
+total records seen, `36` current-run signatures, `0` visible likely-real
+failures, strict startup known-noise as the current-run dominant triage family,
+no enabled groups, and the broader WS groups held by startup-noise probation.
+Treat these remote status, novelty, and trend packets as useful control-plane
+and fuzz-health evidence, not final-stack fuzz validation.
