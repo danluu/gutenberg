@@ -70,7 +70,7 @@ independent_gate_has_work() {
 feedback_action_wait_only() {
   local out="$1"
   if grep -Eiq 'Jobs launched:[[:space:]]*$|Jobs launched:[[:space:]]*None|None now|Launch nothing|No jobs launched|Do not launch any new|launch no new' "$out" 2>/dev/null; then
-    if ! grep -Eiq 'rtc-prsplit-progress-unblock|rtc-deferred-job-|tmux new-session|Launched Job|session.*rtc-|push manifest|branch audit|review branch' "$out" 2>/dev/null; then
+    if ! grep -Eiq 'rtc-prsplit-progress-unblock|progress-unblock|rtc-deferred-job-|push-manifest|push manifest|branch audit|branch-link|verified branch link|review branch|deferred candidate|PR ?02A|PR ?5[ABC]?|PR ?11[A-E]?' "$out" 2>/dev/null; then
       return 0
     fi
   fi
@@ -230,6 +230,8 @@ wait-only feedback while the Parallel Progress Gate has actionable rows, call
 that a loop bug and recommend the exact loop/prompt/job change. Seed 1020002 can
 block final-stack fuzz and filing, but it must not block independent branch
 audit/linking, deferred candidate promotion, or push-manifest generation.
+Treat "an active 1020002 session exists" as no progress for the Parallel
+Progress Gate unless an independent artifact or job is also created or verified.
 
 Return:
 1. Status: on track / blocked / needs split change.
@@ -335,6 +337,10 @@ Hard progress rule:
 - If the Parallel Progress Gate in context.md has actionable rows, a wait-only
   feedback action is invalid. Launch or create at least one bounded independent
   action, or write proof that every gate row is stale/inactionable.
+- Mentioning an active or newly launched seed-1020002 diagnostic session does
+  not satisfy the Parallel Progress Gate; the action must also create or verify
+  independent branch audit/link, push-manifest, deferred promotion, PR02A/PR5/
+  PR11 shaping, or loop-repair progress.
 - If the loop/prompt itself caused serial waiting, fix the loop or write a
   bounded loop-repair job. Do not merely note the structural issue.
 
