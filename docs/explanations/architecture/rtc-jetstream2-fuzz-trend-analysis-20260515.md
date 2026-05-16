@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T04:43:48Z`
+Snapshot generated: `2026-05-16T04:49:45Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1259` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T04:43:16Z`, coverage files grew from `272` to `23883`, a delta of
-`23611`. The monitor's visible likely-real count stayed at `0` throughout this
+`1262` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T04:49:01Z`, coverage files grew from `272` to `23957`, a delta of
+`23685`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -39,9 +39,9 @@ The run has broad historical coverage, and the current active budget has
 re-expanded after duplicate/noise churn. The latest copied state has seven
 active WS lanes: real-user editing, rich text, block-gauntlet, common blocks,
 parser transform, async/server blocks, and media/cross-entity. No groups are
-marked paused in that state, but the active output directory has not yet emitted
-behavioral coverage files. The main remaining gaps are depth targets for
-real-user editing, gauntlet blocks, CDP coverage records, and reload/save
+marked paused in that state, and the active output directory has started
+emitting behavioral coverage files. The main remaining gaps are depth targets
+for real-user editing, gauntlet blocks, CDP coverage records, and reload/save
 actions. Previously weak media/cross-entity, parser-serialization, and
 paragraph-formatting targets have improved enough that they are no longer in the
 unmet-goal table, but their completion rates remain worth watching.
@@ -68,7 +68,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active validation stack, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `432.7G`, so the remaining
+remained high at the end of the snapshot, around `421.6G`, so the remaining
 bottleneck is more about useful work selection, fresh-output health, and
 completion rate than raw RAM.
 
@@ -77,13 +77,12 @@ current-run product-failure signal or as a reason to pause live browser groups.
 The latest duplicate/noise synthesis instead identifies a control-plane leak:
 strict pre-action startup stalls can reach summary history while current-run
 startup counters stay empty, and watcher/analysis paths can still spend work on
-known-noise variants. The copied state has `0` current-run signatures and `0`
-current-run bootstrap stalls, while historical triage remains dominated by
-`pre_action_bootstrap_stall`. The newest duplicate/noise feedback-action file
-was empty, while the newest synthesis still recommends strict current-run
-summary-level startup accounting plus triage-watcher and analysis-tier
-backstops. Scheduling/backpressure changes remain disputed and should not be
-inferred from graph history alone.
+known-noise variants. The latest feedback action reports that monitor-side
+strict current-run summary accounting was added and the active loop restarted.
+The copied state still has `0` current-run signatures, `0` current-run bootstrap
+stalls, and empty strict startup counters. The synthesis still recommends
+triage-watcher and analysis-tier backstops. Scheduling/backpressure changes
+remain disputed and should not be inferred from graph history alone.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
@@ -113,9 +112,10 @@ The latest copied state reports this current enabled set:
 - `novelty-ws-async-server-blocks`
 - `novelty-ws-media-cross-entity`
 
-The latest copied state has no paused groups. It still reports a medium health
-warning because the current active output directory has no behavioral coverage
-files yet.
+The latest copied state has no paused groups and no health warnings. The
+current active output directory is young, but it has begun producing records in
+the block-gauntlet, parser-transform, async/server, media/cross-entity,
+common-blocks, and real-user editing lanes.
 
 The historical enabled set covers the user-requested missing areas:
 same-user/reload lifecycle, revision/autosave/recovery, real UI rich text,
@@ -144,13 +144,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 2561 | 76 | 0 | 3.0% |
-| `multi-reload-lifecycle` | 1923 | 58 | 0 | 3.0% |
-| `parser-serialization` | 1268 | 60 | 0 | 4.7% |
-| `real-user-editing` | 3511 | 231 | 0 | 6.6% |
-| `common-blocks` | 2058 | 208 | 0 | 10.1% |
-| `parser-transform` | 2488 | 259 | 0 | 10.4% |
-| `block-gauntlet` | 2937 | 433 | 0 | 14.7% |
+| `revision-persistence` | 2573 | 76 | 0 | 3.0% |
+| `multi-reload-lifecycle` | 1926 | 58 | 0 | 3.0% |
+| `parser-serialization` | 1277 | 60 | 0 | 4.7% |
+| `real-user-editing` | 3525 | 231 | 0 | 6.6% |
+| `common-blocks` | 2073 | 208 | 0 | 10.0% |
+| `parser-transform` | 2495 | 261 | 0 | 10.5% |
+| `block-gauntlet` | 2949 | 438 | 0 | 14.9% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -166,16 +166,16 @@ Current unmet goals from the latest state:
 | --- | ---: | ---: |
 | successful real-user-editing records next coverage tier | 231 | 500 |
 | gauntlet block core/html next coverage tier | 286 | 500 |
-| action ui-heading-shortcut next coverage tier | 295 | 500 |
+| action ui-heading-shortcut next coverage tier | 298 | 500 |
 | gauntlet block core/more next coverage tier | 304 | 500 |
 | gauntlet block core/details next coverage tier | 320 | 500 |
-| action reload-post-action next coverage tier | 339 | 500 |
-| CDP coverage records next coverage tier | 3675 | 5000 |
-| gauntlet block core/gallery next coverage tier | 374 | 500 |
-| real-user body save/reload next coverage tier | 153 | 200 |
-| gauntlet block core/file next coverage tier | 447 | 500 |
-| action ui-undo-redo-paragraph next coverage tier | 464 | 500 |
-| real-user title save/reload next coverage tier | 94 | 100 |
+| action reload-post-action next coverage tier | 341 | 500 |
+| CDP coverage records next coverage tier | 3699 | 5000 |
+| gauntlet block core/gallery next coverage tier | 375 | 500 |
+| real-user body save/reload next coverage tier | 154 | 200 |
+| gauntlet block core/file next coverage tier | 450 | 500 |
+| action ui-undo-redo-paragraph next coverage tier | 466 | 500 |
+| real-user title save/reload next coverage tier | 95 | 100 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
 remaining work now mixes completed-record depth for expensive profiles with
@@ -212,10 +212,9 @@ After the loop was corrected to `max_parallel=6` and `interval=0s`, `84`
 completed review cycles took roughly `2.9` to `8.0` minutes in this snapshot;
 the latest included review took `4.0` minutes. Feedback actions ran every two
 cycles and took roughly `1.8` to `13.8` minutes in the completed duration data,
-with completed events through Cycle `82`, which took `2.0` minutes. Cycle `84`
-feedback had started but had not produced a non-empty action file in this copied
-input set. The latest substantive PR-split synthesis is
-`20260516T043923Z`.
+with completed events through Cycle `84`, which took `2.4` minutes. The latest
+substantive PR-split synthesis and feedback action are `20260516T043923Z`; the
+newer `20260516T044545Z` synthesis file was empty in this copied input set.
 
 ## Interpretation
 
@@ -235,10 +234,10 @@ number of high-value expensive lanes:
 - CPU utilization has climbed substantially, so guarded top-off is a better fit
   than broad parallelism increases;
 - duplicate/noise history should not pause live browser groups or be read as a
-  current product-failure signal; the current copied state has empty current-run
-  counters for the new output dir, while strict current-run summary accounting
-  plus watcher/analysis backstops remain the next recommended control-plane fix
-  and scheduling changes remain disputed;
+  current product-failure signal; monitor-side strict current-run summary
+  accounting has landed, but the copied state still shows `0` current-run
+  signatures/bootstrap stalls and the synthesis still calls for
+  triage-watcher/analysis backstops;
 - PR 13 should be reviewed only through the repaired 13A/13B/13C heads;
 - reload-hydration empty-live-editor remains product-evidence-inconclusive;
 - no visible likely-real failures appeared in this snapshot, so new PR work
