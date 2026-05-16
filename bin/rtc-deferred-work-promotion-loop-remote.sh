@@ -33,6 +33,7 @@ STRICT_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515
 ASSERT_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260515
 LOG="$BASE/logs/deferred-work-promotion-loop.log"
 STATE="$BASE/logs/family-launches.tsv"
+CURSOR_STATE="$BASE/logs/family-cursor.txt"
 QUEUE="$BASE/current-deferred-queue.tsv"
 STATUS="$BASE/current-deferred-status.md"
 FAMILIES=${RTC_DEFERRED_WORK_FAMILIES:-"reload-hydration pre-save-search-live-collapse rich-text-suffix-corruption malformed-save-payload http-room-isolation"}
@@ -75,6 +76,38 @@ recently_launched() {
 		$2 == family { last = $1 }
 		END { exit !(last != "" && now - last < interval) }
 	' "$STATE" 2>/dev/null
+}
+
+rotated_families() {
+	local families count cursor i index
+	read -r -a families <<< "$FAMILIES"
+	count=${#families[@]}
+	if [ "$count" -eq 0 ]; then
+		return
+	fi
+	cursor=$(cat "$CURSOR_STATE" 2>/dev/null || printf '0')
+	if ! [[ "$cursor" =~ ^[0-9]+$ ]]; then
+		cursor=0
+	fi
+	cursor=$(( cursor % count ))
+	for (( i = 0; i < count; i++ )); do
+		index=$(( ( cursor + i ) % count ))
+		printf '%s\n' "${families[$index]}"
+	done
+}
+
+advance_family_cursor() {
+	local families count cursor
+	read -r -a families <<< "$FAMILIES"
+	count=${#families[@]}
+	if [ "$count" -eq 0 ]; then
+		return
+	fi
+	cursor=$(cat "$CURSOR_STATE" 2>/dev/null || printf '0')
+	if ! [[ "$cursor" =~ ^[0-9]+$ ]]; then
+		cursor=0
+	fi
+	printf '%s\n' $(( ( cursor + 1 ) % count )) > "$CURSOR_STATE"
 }
 
 family_title() {
@@ -367,6 +400,7 @@ write_status() {
 		echo "- max active jobs: $MAX_ACTIVE_JOBS"
 		echo "- active deferred jobs: $(active_deferred_sessions)"
 		echo "- cycle sleep seconds: $CYCLE_SLEEP_SECONDS"
+		echo "- next family cursor: $(cat "$CURSOR_STATE" 2>/dev/null || printf '0')"
 		echo "- current coverage output: ${coverage:-missing}"
 		echo
 		echo "## Queue"
@@ -406,7 +440,7 @@ while true; do
 		continue
 	fi
 
-	for family in $FAMILIES; do
+	while IFS= read -r family; do
 		active=$(active_deferred_sessions)
 		if [ "$active" -ge "$MAX_ACTIVE_JOBS" ]; then
 			log "max active jobs reached active=$active max=$MAX_ACTIVE_JOBS"
@@ -421,7 +455,8 @@ while true; do
 			continue
 		fi
 		launch_family_job "$family" || true
-	done
+	done < <( rotated_families )
+	advance_family_cursor
 
 	write_status
 	sleep "$CYCLE_SLEEP_SECONDS"
