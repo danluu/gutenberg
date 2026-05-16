@@ -61,10 +61,10 @@ family_active() {
 }
 
 load_too_high() {
-	local load cores
-	load=$(awk '{ print $1 }' /proc/loadavg 2>/dev/null || printf '0')
+	local load_average cores
+	load_average=$(awk '{ print $1 }' /proc/loadavg 2>/dev/null || printf '0')
 	cores=$(nproc 2>/dev/null || printf '1')
-	awk -v load="$load" -v cores="$cores" -v multiplier="$MAX_LOAD_MULTIPLIER" 'BEGIN { exit !(load > cores * multiplier) }'
+	awk -v load_average="$load_average" -v cores="$cores" -v multiplier="$MAX_LOAD_MULTIPLIER" 'BEGIN { exit !(load_average > cores * multiplier) }'
 }
 
 recently_launched() {
