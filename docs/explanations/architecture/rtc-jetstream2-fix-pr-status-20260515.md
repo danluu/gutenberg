@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T19:26:36Z`
+Snapshot time: `2026-05-16T19:33:24Z`
 
 Trigger event:
-`pr-split-2026-05-16T19-25-16Z-20260516T191949Z`
+`duplicate-noise-2026-05-16T19-31-50Z-70`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T19-25-16Z-20260516T191949Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T19-31-50Z-70/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -27,9 +27,9 @@ or the original split merely for continuity.
 
 ## Executive Status
 
-Filing remains blocked. The latest split-persona consensus says the previous
-`PR01` through `PR15C` set is only a known-fix prefix, not a complete filing
-stack.
+Filing remains blocked. The latest split-persona consensus, including Cycle
+186, says the previous `PR01` through `PR15C` set is only a known-fix prefix,
+not a complete filing stack.
 
 The current maintainer-facing filing shape is:
 
@@ -58,6 +58,17 @@ marker `async-server-1020002-0-1-589451` while page 1 and the relay retain it.
 The sync-manager load/hydrate report, the Gutenberg store-to-CRDT candidate,
 and the `180529Z` CRDT block-array semantic-diff repair report are now all
 diagnostic-only because their candidates did not pass the focused seed gate.
+Cycle 186 adds a partial caller/base clue: `baseRecord.blocks` is present at
+`updateCRDTDoc`, but the failing path still reaches a current-empty,
+base-populated semantic-insert merge before the required diagnostic report
+exists.
+
+The duplicate/noise control-plane action from
+`duplicate-noise-20260516T190835Z-feedback-action.md` completed. It separates
+raw and actionable triage signatures, keeps REST/meta known-infra noise visible
+as raw/non-actionable, and excludes known/non-actionable families from the
+productive duplicate-share gate. This is fuzz control-plane hygiene, not
+product validation and not a filing unblocker.
 
 The current bounded follow-up job is still active and reportless:
 
@@ -84,7 +95,7 @@ without proof of exact same-source ownership.
 
 ## Latest Branch And Ref Status
 
-The remote status input was generated at `2026-05-16T19:26:31Z`.
+The remote status input was generated at `2026-05-16T19:33:17Z`.
 
 The fix-planning repo is checked out at:
 
@@ -114,7 +125,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T19:26:36Z` from fetched
+The branch-link audit was generated at `2026-05-16T19:33:24Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -192,7 +203,7 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T19:26:31Z
+collected_at_utc: 2026-05-16T19:33:17Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T185058Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -213,21 +224,21 @@ stack because PR02A still needs a verified review branch and seed `1020002`
 still needs the post-PR15C repair decision.
 
 The latest `novelty-status.md` snapshot was updated at
-`2026-05-16T19:25:54.522Z` for `run-20260516T185058Z`:
+`2026-05-16T19:31:23.985Z` for `run-20260516T185058Z`:
 
 ```text
-coverage files: 35487
-total records seen: 53340
-records processed this pass: 46
-new behavioral feature keys this pass: 12
-new CDP coverage hashes this pass: 12
+coverage files: 35528
+total records seen: 53420
+records processed this pass: 41
+new behavioral feature keys this pass: 6
+new CDP coverage hashes this pass: 6
 current-run records by profile:
-  async-server-blocks=27, block-gauntlet=32, session-lifecycle=20,
-  long-session-large-doc=9, real-user-editing=23
+  async-server-blocks=31, block-gauntlet=35, session-lifecycle=22,
+  long-session-large-doc=11, real-user-editing=27
 current-run successful records by profile:
-  async-server-blocks=22, block-gauntlet=23, session-lifecycle=15,
-  real-user-editing=10
-current-run records by transport: ws=111
+  async-server-blocks=24, block-gauntlet=26, session-lifecycle=15,
+  real-user-editing=11
+current-run records by transport: ws=126
 current-run pre-action startup failures: none
 current-run summary-only startup failures: none
 enabled groups:
@@ -242,34 +253,34 @@ recommended groups:
 current-output triage roots: 6
 current-output state files: 6
 current-output actionable signatures: 28
-current-output raw signatures: 103
-current-output non-actionable signatures: 75
-current-output known-infra signatures: 26
+current-output raw signatures: 86
+current-output non-actionable signatures: 58
+current-output known-infra signatures: 19
 likely-real visible: 0
-likely-real merged duplicates: 32
+likely-real merged duplicates: 20
 oracle/noise questions: 0
 normalization-noise candidates: 6
 bootstrap stalls: 0
-actionable top duplicate family share: 0.4643
-raw top duplicate family share: 0.2524
+actionable top duplicate family share: 0.5357
+raw top duplicate family share: 0.2209
 top actionable semantic families:
-  unknown=13, collaboration_non_convergence=6, timeout=5, assertion=4
+  unknown=15, timeout=5, collaboration_non_convergence=4, assertion=4
 top raw semantic families:
-  rest_meta_database_error=26,
-  revision_restore_reverts_block_content_to_an_older_checkpoint_but_leaves_the_editor_title_at_a_newer_checkpoint_title=16,
-  test_oracle_false_negative_marker_split_by_inline_markup=15,
-  unknown=13, collaboration_non_convergence=6,
-  rtc_revision_restore_leaves_newer_collaborative_content_in_the_editor_after_restoring_an_older_revision=6
-historical likely-real merged duplicates: 344
+  rest_meta_database_error=19,
+  test_oracle_false_negative_marker_split_by_inline_markup=17,
+  unknown=15,
+  rtc_revision_restore_leaves_newer_collaborative_content_in_the_editor_after_restoring_an_older_revision=8,
+  timeout=5
+historical likely-real merged duplicates: 351
 historical normalization-noise candidates: 430
 historical bootstrap stalls: 14433
-historical actionable top duplicate family share: 0.3538
-historical raw top duplicate family share: 0.5490
-quality issues: 1
+historical actionable top duplicate family share: 0.3539
+historical raw top duplicate family share: 0.5487
+quality issues: 2
 health: ok
 headroom for adding groups: no
-load1: 80.43 / 64 cores
-memory: 427.8G free / 492.0G total
+load1: 72.10 / 64 cores
+memory: 426.3G free / 492.0G total
 ```
 
 At `2026-05-16T18:51:08Z`, the novelty state moved from
@@ -284,37 +295,41 @@ advisory/control-plane evidence; do not treat it as live product failure or as
 final-stack validation. The latest novelty snapshot still has
 `novelty-ws-common-blocks` paused after startup/discovery failures, so any
 broad concurrency increase should wait for control-plane cleanup or a guarded
-top-off.
+top-off. The newest duplicate/noise action says known-infra REST/meta noise no
+longer drives the binding product-policy gate, but the current novelty
+snapshot still has actionable `unknown` as the top family and a quality issue
+count of `2`, so treat the control-plane fix as completed but still requiring
+ordinary follow-up monitoring.
 
-The latest trend evidence packet was generated at `2026-05-16T19:20:41Z` from
-monitor data through `2026-05-16T19:19:59Z`. Use it for trend shape, while the
+The latest trend evidence packet was generated at `2026-05-16T19:27:17Z` from
+monitor data through `2026-05-16T19:25:54Z`. Use it for trend shape, while the
 later novelty snapshot above is the current group and policy state:
 
 ```text
-monitor passes: 1663
-coverage files: 272 -> 35444
-coverage files delta: 35172
+monitor passes: 1665
+coverage files: 272 -> 35487
+coverage files delta: 35215
 unmet coverage goals: 24 -> 9
 likely_real_max: 0
-duplicate_share_current_last: 0.3026
-duplicate_share_historical_last: 0.5492
+duplicate_share_current_last: 0.4643
+duplicate_share_historical_last: 0.3538
 summary_startup_failures_last: 0
-quality_issues_last: 0
+quality_issues_last: 1
 fuzz level mix: browser-e2e=31 lanes/31 groups; unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 1321494
-browser-e2e execution: 69372 cumulative / 2408 per-hour
-unit-property execution: 1185220 cumulative / 57792 per-hour
-coverage-guided-lower-level execution: 63896 cumulative / 11008 per-hour
+total fuzz-level test executions: 1343674
+browser-e2e execution: 70100 cumulative / 5320 per-hour
+unit-property execution: 1203280 cumulative / 130032 per-hour
+coverage-guided-lower-level execution: 67288 cumulative / 24576 per-hour
 load1: 73.00 / 64 cores
-memory: 422.1G free
+memory: 427.8G free
 ```
 
 Largest remaining coverage gaps in the later novelty snapshot are
-`reload-post-action` (`575/1000`), `ui-heading-shortcut` (`593/1000`),
-title-save-reload (`195/500` and `195/200`), body-save-reload (`254/500`),
-successful real-user-editing records (`321/500`), `ui-format-paragraph`
-(`873/1000`), `core/html` (`428/500`), and `core/details` (`484/500`).
+`reload-post-action` (`576/1000`), `ui-heading-shortcut` (`596/1000`),
+title-save-reload (`196/500` and `196/200`), body-save-reload (`255/500`),
+successful real-user-editing records (`322/500`), `ui-format-paragraph`
+(`875/1000`), `core/html` (`428/500`), and `core/details` (`487/500`).
 
 This is useful fuzz-health and control-plane evidence. It is not final-stack
 validation for filing.
@@ -339,90 +354,94 @@ The newest completed split-persona synthesis is
   missing, and the corresponding tmux session is still active.
 
 The latest split feedback action file,
-`pr-split-20260516T191949Z-feedback-action.md`, is empty. The latest non-empty
-split feedback action remains `pr-split-20260516T190541Z-feedback-action.md`;
-it added the Cycle 184 consensus to `current-pr-split.md`, kept seed `1020002`
-as the required narrow post-PR15C repair unless caller/base provenance proves
-exact ownership in an existing ready head, recorded the active
-caller/base-provenance diagnostic as the only bounded next action, and launched
-no new jobs.
+`pr-split-20260516T191949Z-feedback-action.md`, is non-empty. It added the
+Cycle 186 consensus to `current-pr-split.md`, kept seed `1020002` as the
+required narrow post-PR15C repair unless caller/base provenance proves exact
+ownership in an existing ready head, recorded the partial clue that
+`baseRecord.blocks` is present at `updateCRDTDoc` but the failing path still
+enters a current-empty/base-populated semantic-insert merge, and launched no
+new jobs.
 
 The latest duplicate/noise synthesis is
-`duplicate-noise-20260516T190835Z-synthesis.md`. It classifies the remaining
+`duplicate-noise-20260516T190835Z-synthesis.md`. It classified the pre-action
 duplicate/noise issue as control-plane accounting, primarily in
 `bin/rtc-browser-fuzz-novelty-monitor.mjs`: non-actionable signatures such as
 `known-infra`, `bootstrap-stall`, stale/source-suppressed records, and
-analysis-gated duplicates are still counted as ordinary current-run signatures.
+analysis-gated duplicates were still counted as ordinary current-run signatures.
 That lets known noise, currently `rest_meta_database_error`, dominate
 duplicate/noise policy even though strict startup suppression is clean in the
-current run. The smallest safe next fix is to split raw noise volume from
+current run. Its smallest safe next fix was to split raw noise volume from
 actionable triage yield, compute duplicate-family share and policy decisions
 from actionable current-run signatures, and narrowly canonicalize the
 persisted-preferences/database-noise pattern without hiding broader REST/meta
 or database failures with product evidence.
 
 The latest duplicate/noise feedback action file,
-`duplicate-noise-20260516T190835Z-feedback-action.md`, is empty. The latest
-non-empty duplicate/noise feedback action remains
-`duplicate-noise-20260516T183238Z-feedback-action.md`. It implemented the
-bounded control-plane fix:
+`duplicate-noise-20260516T190835Z-feedback-action.md`, is non-empty. It
+implemented the next bounded control-plane fix:
 
-- capped first-tier analysis to `RTC_FUZZ_ANALYSIS_MAX_PER_FAMILY=1` by
-  default and made family-capped jobs terminal/non-actionable;
-- propagated high-confidence non-actionable family gates through triage while
-  preserving product-evidence failures;
-- made live analysis ignore capped, suppressed, and stale tier jobs, clean
-  inactive run state, avoid stale-root sessions, and start deep analysis only
-  after first-tier completed candidates request it;
-- scoped novelty current-run accounting to active supervisor run dirs instead
-  of the whole output root;
-- counted suppressed strict startup noise even when signatures exist.
+- separated raw and actionable triage signatures in
+  `rtc-browser-fuzz-novelty-monitor.mjs`;
+- excluded known/non-actionable noise from productive duplicate-share policy
+  while preserving raw noise reporting;
+- narrowly canonicalized persisted-preferences REST-meta noise as known infra
+  without suppressing broader REST/meta/database failures with product
+  evidence;
+- aligned the duplicate/noise hold threshold with the binding `0.50` gate.
 
 Validation for that completed duplicate/noise action:
 
 ```text
 node --check passed:
   rtc-browser-fuzz-novelty-monitor.mjs
-  rtc-browser-fuzz-analysis-tier.mjs
-  rtc-browser-fuzz-deep-analysis-tier.mjs
-  rtc-browser-fuzz-live-analysis-monitor.mjs
   rtc-browser-fuzz-triage-watcher.mjs
 
-active triage consumer-path check:
-  files=7
-  signatures=22
-  strictZeroEvidenceQueued=0
-  strictZeroEvidenceNonActionable=7
-  statuses: known-infra=12, queued=10
-
-active analysis-tier check:
-  jobs=4
-  maxJobsPerFamily=1
+gate-only watcher refreshed active generation dirs
+consumer path:
+  no queued/running strict startup signatures
+  no queued/running known-infra triage signatures
+  no queued/running analysis/deep-analysis jobs from strict startup or known infra
 ```
 
-The action also killed stale `rtc-coverage-guided-analysis*` sessions attached
-to old root `run-20260516T175536Z`, ran a bounded live-analysis pass against
-active root `run-20260516T185058Z`, started persistent
-`rtc-coverage-guided-analysis` for that active root, verified child sessions
-export `RTC_FUZZ_ANALYSIS_MAX_PER_FAMILY=1`, and aligned novelty/supervisor to
-`run-20260516T185058Z`.
+The action restarted `rtc-coverage-guided-novelty`, cleaned stale orphan
+novelty monitor PIDs, did not restart the supervisor, and killed a
+briefly-started unrelated `rtc-coverage-guidance-codex-20260516T192836Z`
+session. Its measured post-action status was:
+
+```text
+raw signatures: 112
+actionable signatures: 31
+non-actionable signatures: 81
+known-infra signatures: 28
+raw top family: rest_meta_database_error at 28/112, raw/non-actionable
+actionable top share: 0.4516, below the binding 0.50 action gate
+strict/bootstrap queued signatures: 0
+```
+
+The earlier non-empty duplicate/noise feedback action
+`duplicate-noise-20260516T183238Z-feedback-action.md` remains relevant prior
+control-plane work: it capped first-tier analysis by family, propagated
+high-confidence non-actionable gates through triage, scoped novelty current-run
+accounting to active supervisor run dirs, counted suppressed strict startup
+noise, cleaned stale old-root analysis sessions, and aligned novelty/supervisor
+to `run-20260516T185058Z`.
 
 Remaining duplicate/noise risk: active triage still has actionable
 `unknown`/`assertion`/`timeout` style failures. Those are intentionally left
 visible because they include product evidence such as users, actions,
-reload/save/fault context. The newest novelty snapshot now reports actionable
-and raw signature counts separately after the policy reset, but the latest
-duplicate/noise synthesis still requires verification that known-infra REST
-meta noise cannot drive product policy and that raw noise remains visible
-without suppressing real REST/meta/database failures.
+reload/save/fault context. The newest novelty snapshot reports actionable and
+raw signature counts separately after the policy reset and control-plane fix;
+known-infra REST/meta noise should no longer drive browser/Codex policy, but
+the current actionable `unknown` family remains close enough to watch on the
+next cycle.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
 separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older PR13
 GitHub-facing review-ref warnings and then-current constrained group mix are
-superseded by the `2026-05-16T19:26:36Z` branch-link audit and the
-`2026-05-16T19:25:54Z` novelty snapshot. The audit verifies the repaired PR13
+superseded by the `2026-05-16T19:33:24Z` branch-link audit and the
+`2026-05-16T19:31:23Z` novelty snapshot. The audit verifies the repaired PR13
 review refs listed above, while the novelty snapshot still does not count as
 final-stack validation.
 
@@ -440,7 +459,7 @@ These must not be described as fixed or filing-ready.
 | Pre-save search/live document collapse | `ddf9559af37e`, `0932bed35c7a`, conditional `1e0ade5ec5a8`; `try/rtc-pre-save-search-collapse-gate-ddf9559` | evidence-only; not in active split | Capture editor blocks, serialized content, edited core-data record, live CRDT record, provider state, REST body, and save state around `core/search` insertion |
 | Rich-text formatted suffix corruption | `4148230f681d`, `b0db7b80c6f2`, `dc8ea6e78d4d`, `1ccac75d7faa`, `2722f0e897de`, `712b98ba96ff` | not fixed; latest split keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Malformed save payload and save-settlement residuals | `fc154ebec48c`, `e40aa1b7863d`, `f51c425df8a5`, `f46859898576`, `afd389d7f139`, `02289235f55f`, `eef8b8932e11`, `b60eecd4ac03` | deferred beyond dropped PR 6B and isolated PR 6C candidate | Create a source-level `saveEntityRecord()` / `prePersistPostType()` repro where clean local blocks exist but evaluated outgoing `content` is malformed |
-| Seed `1020002` WebSocket marker divergence | completed `143821Z`, `151306Z`, `153219Z`, `160617Z`, `172434Z`, and `180529Z` reports; active `185531Z` caller/base-provenance diagnostic | active final-stack blocker; page 0 still misses marker `async-server-1020002-0-1-589451` while page 1/relay retain it | Consume the caller/base-provenance report, require focused seed `1020002` to pass or be explicitly reclassified, then shape a new post-PR15C PR with a verified branch link before filing |
+| Seed `1020002` WebSocket marker divergence | completed `143821Z`, `151306Z`, `153219Z`, `160617Z`, `172434Z`, and `180529Z` reports; active `185531Z` caller/base-provenance diagnostic | active final-stack blocker; page 0 still misses marker `async-server-1020002-0-1-589451` while page 1/relay retain it; Cycle 186 adds only a partial clue that `baseRecord.blocks` is present at `updateCRDTDoc` before the failing semantic-insert path | Consume the caller/base-provenance report, require focused seed `1020002` to pass or be explicitly reclassified, then shape a new post-PR15C PR with a verified branch link before filing |
 | Seed `7410083` final-persistence `_crdt_document` absence | queued by latest split persona | queued behind seed `1020002`; no automatic PR slot | Triage only after `1020002` is repaired, reclassified, and the rebuilt stack is available |
 | Possible seed `5200001` same-user reload stale title/body | queued by latest split persona | possible follow-up only; no automatic PR slot | Deep-triage after `1020002` if it remains visible on the rebuilt stack |
 | PR 16 valid-block `originalContent` candidate | seed replay candidate only | blocked/deferred; latest split synthesis says it is not part of the filing stack | Replay and classify the seed before considering any product branch or verified branch link |
@@ -486,6 +505,7 @@ Existing fuzz infrastructure can continue where healthy, but do not add broad
 lanes while the seed `1020002` diagnostic is active. The latest remote status,
 novelty, and trend packets show current fuzz health with zero visible
 likely-real failures, one current common-blocks WS startup/discovery pause, and
-an actionable/raw duplicate-noise accounting split that still needs verification
-against known-infra REST meta noise. None of that is final-stack fuzz
-validation, and none of it unblocks filing.
+an actionable/raw duplicate-noise accounting split whose known-infra REST/meta
+handling has now been patched in the control plane. The latest actionable
+`unknown` family still needs ordinary monitoring, and none of this is
+final-stack fuzz validation or a filing unblocker.
