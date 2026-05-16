@@ -32,6 +32,7 @@ state_path <- file.path( raw_dir, "novelty-state.json" )
 cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
 load_path <- file.path( data_dir, "load_average.csv" )
 activity_path <- file.path( data_dir, "project_activity.csv" )
+fuzz_level_mix_path <- file.path( data_dir, "fuzz_level_mix.csv" )
 status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
 status_report_path <- file.path( root, status_report_rel )
 
@@ -336,6 +337,40 @@ enabled_groups <- tibble(
 write_csv( enabled_groups, file.path( data_dir, "enabled_groups.csv" ) )
 
 state <- fromJSON( state_path, flatten = TRUE )
+
+fuzz_level_mix <- tibble()
+if ( file.exists( fuzz_level_mix_path ) ) {
+	fuzz_level_mix <- read_csv( fuzz_level_mix_path, show_col_types = FALSE )
+	if ( ! "is_latest" %in% names( fuzz_level_mix ) ) {
+		fuzz_level_mix$is_latest <- FALSE
+	}
+	fuzz_level_mix <- fuzz_level_mix %>%
+		mutate(
+			timestamp = parse_utc_timestamp( timestamp ),
+			lanes = replace_na( as.numeric( lanes ), 1 ),
+			step_count = replace_na( as.numeric( step_count ), 0 ),
+			is_latest = case_when(
+				is.logical( is_latest ) ~ is_latest,
+				str_to_lower( as.character( is_latest ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
+			fuzz_level = replace_na( fuzz_level, "other" ),
+			fuzz_level = factor(
+				fuzz_level,
+				levels = c(
+					"browser-e2e",
+					"transport-integration",
+					"unit-property",
+					"backend-api",
+					"protocol-server",
+					"fuzz-assertion",
+					"other"
+				)
+			)
+		) %>%
+		filter( ! is.na( timestamp ) )
+	write_csv( fuzz_level_mix, fuzz_level_mix_path )
+}
 
 profile_counts <- named_number_frame( state$recordCountsByProfile, "profile", "records_seen" ) %>%
 	full_join(
@@ -743,6 +778,42 @@ if ( nrow( enabled_groups ) > 0 ) {
 	)
 }
 
+if ( nrow( fuzz_level_mix ) > 0 ) {
+	fuzz_level_summary <- fuzz_level_mix %>%
+		group_by( timestamp, campaign, fuzz_level ) %>%
+		summarise(
+			lanes = sum( lanes, na.rm = TRUE ),
+			groups = n(),
+			is_latest = any( is_latest ),
+			.groups = "drop"
+		) %>%
+		mutate(
+			latest_state = if_else( is_latest, "latest campaign snapshot", "historical snapshot" )
+		)
+
+	write_plot(
+		"fuzz-level-mix-over-time.png",
+		ggplot( fuzz_level_summary, aes( x = timestamp, y = fuzz_level, color = campaign, size = lanes, shape = latest_state ) ) +
+			geom_point( alpha = 0.78 ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			scale_size_continuous( range = c( 1.4, 6.2 ), breaks = pretty_breaks( n = 4 ) ) +
+			scale_shape_manual( values = c( "latest campaign snapshot" = 16, "historical snapshot" = 1 ) ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
+			labs(
+				title = "Fuzzing level mix over time",
+				x = "UTC time",
+				y = "fuzzing level",
+				color = "campaign",
+				size = "lanes",
+				shape = NULL,
+				caption = "Each point aggregates one campaign snapshot at one fuzzing level. Size is active lanes in that snapshot."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 5.8
+	)
+}
+
 profile_success_goals <- coverage_goals %>%
 	filter( str_starts( id, "success-profile:" ) ) %>%
 	transmute(
@@ -1031,6 +1102,27 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 	)
 }
 
+fuzz_level_latest <- if ( nrow( fuzz_level_mix ) > 0 ) {
+	fuzz_level_mix %>%
+		filter( is_latest ) %>%
+		group_by( fuzz_level ) %>%
+		summarise( lanes = sum( lanes, na.rm = TRUE ), groups = n(), .groups = "drop" )
+} else {
+	tibble()
+}
+
+fuzz_level_latest_text <- if ( nrow( fuzz_level_latest ) > 0 ) {
+	paste0( fuzz_level_latest$fuzz_level, "=", fuzz_level_latest$lanes, " lanes/", fuzz_level_latest$groups, " groups", collapse = "; " )
+} else {
+	NA_character_
+}
+
+fuzz_level_campaigns_text <- if ( nrow( fuzz_level_mix ) > 0 ) {
+	paste( sort( unique( fuzz_level_mix$campaign ) ), collapse = "," )
+} else {
+	NA_character_
+}
+
 summary_lines <- c(
 	paste0( "generated_at_utc: ", format( with_tz( now(), "UTC" ), "%Y-%m-%dT%H:%M:%SZ" ) ),
 	paste0( "monitor_passes: ", nrow( monitor ) ),
@@ -1053,6 +1145,9 @@ summary_lines <- c(
 	paste0( "core_count: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$core_count ), NA ) ),
 	paste0( "enabled_group_events: ", nrow( enabled_groups ) ),
 	paste0( "enabled_groups_current: ", paste( state$enabledGroups, collapse = "," ) ),
+	paste0( "fuzz_level_mix_snapshots: ", n_distinct( fuzz_level_mix$timestamp ) ),
+	paste0( "fuzz_level_mix_campaigns: ", fuzz_level_campaigns_text ),
+	paste0( "fuzz_level_mix_latest: ", fuzz_level_latest_text ),
 	paste0( "profiles_seen: ", nrow( profile_counts ) ),
 	paste0( "goals_total: ", nrow( coverage_goals ) ),
 	paste0( "goals_unmet: ", sum( ! coverage_goals$met ) ),
