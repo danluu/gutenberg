@@ -795,6 +795,22 @@ Browser triage requirements are strict:
 -   do not use fault injection, artificial route blocking, direct store mutation, or artificial sleeps as the cause of a browser repro
 -   if a realistic repro cannot be found within the time budget, mark that explicitly instead of pretending the issue is confirmed
 
+Strict pre-action startup/discovery failures are control-plane telemetry, not
+normal product-failure signatures. The triage watcher aggregates these under
+`metrics.suppressedKnownNoise.strictPreActionStartup` and prunes any stale
+strict-startup signatures from `.triage-watcher/state.json`. They should not
+enter browser triage, first-level analysis, deep analysis, live-analysis
+startup, or the current-run duplicate-share denominator. Product-evidence
+failures after users/actions/reload/save/revision/fault operations must remain
+visible.
+
+The duplicate/noise persona loop treats current-run duplicate dominance as a
+hard action gate. If `novelty-status.md` reports top duplicate family share
+`>= 0.50` with zero visible likely-real failures, or if
+`pre_action_bootstrap_stall` is still the current-run top family after strict
+startup suppression, the next feedback action must make or restart a bounded
+control-plane change instead of only writing analysis.
+
 ### Level 1: High-Parallel Codex-Only Analysis
 
 `bin/rtc-browser-fuzz-analysis-tier.mjs` consumes the triage watcher state and
