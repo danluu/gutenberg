@@ -66,6 +66,13 @@ extract_chr <- function( lines, pattern ) {
 	str_match( lines, pattern )[ , 2 ]
 }
 
+parse_utc_timestamp <- function( timestamp ) {
+	if ( inherits( timestamp, "POSIXt" ) ) {
+		return( with_tz( timestamp, "UTC" ) )
+	}
+	ymd_hms( timestamp, tz = "UTC" )
+}
+
 named_number_frame <- function( values, name_col, value_col ) {
 	if ( is.null( values ) || length( values ) == 0 ) {
 		return( tibble( !!name_col := character(), !!value_col := numeric() ) )
@@ -304,7 +311,7 @@ write_plot(
 		scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
 		labs(
 			title = "Coverage-guided fuzz intake over time",
-			x = "UTC time on 2026-05-15",
+			x = "UTC time",
 			y = NULL,
 			color = NULL,
 			caption = "Each point is one novelty monitor pass. Points are shown without connecting lines."
@@ -341,7 +348,7 @@ write_plot(
 		scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
 		labs(
 			title = "Per-pass fuzz yield over time",
-			x = "UTC time on 2026-05-15",
+			x = "UTC time",
 			y = "log1p(value)",
 			color = NULL,
 			shape = NULL,
@@ -374,7 +381,7 @@ write_plot(
 		scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
 		labs(
 			title = "Fuzz yield and resource health over time",
-			x = "UTC time on 2026-05-15",
+			x = "UTC time",
 			y = NULL,
 			color = NULL,
 			caption = "Likely-real stayed at zero in the monitor log; duplicate/noise share remained high."
@@ -386,7 +393,8 @@ write_plot(
 
 if ( file.exists( cpu_path ) ) {
 	cpu_utilization <- read_csv( cpu_path, show_col_types = FALSE ) %>%
-		mutate( timestamp = ymd_hms( timestamp, tz = "UTC" ) )
+		mutate( timestamp = parse_utc_timestamp( timestamp ) ) %>%
+		filter( timestamp >= floor_date( min( monitor$timestamp ), "day" ) )
 
 	write_plot(
 		"cpu-utilization-over-time.png",
@@ -397,7 +405,7 @@ if ( file.exists( cpu_path ) ) {
 			scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
 			labs(
 				title = "CPU utilization over time",
-				x = "UTC time on 2026-05-15",
+				x = "UTC time",
 				y = "CPU utilization",
 				color = "I/O wait",
 				caption = "Each point is one sysstat sample for all CPUs. Color indicates the I/O-wait share."
@@ -410,7 +418,7 @@ if ( file.exists( cpu_path ) ) {
 
 if ( file.exists( activity_path ) ) {
 	activity <- read_csv( activity_path, show_col_types = FALSE ) %>%
-		mutate( timestamp = ymd_hms( timestamp, tz = "UTC" ) )
+		mutate( timestamp = parse_utc_timestamp( timestamp ) )
 
 	write_plot(
 		"project-activity-cumulative.png",
@@ -469,7 +477,7 @@ if ( nrow( enabled_groups ) > 0 ) {
 			scale_x_datetime( date_labels = "%H:%M", date_breaks = "1 hour" ) +
 			labs(
 				title = "Coverage-guided groups by first enable time",
-				x = "UTC time on 2026-05-15",
+				x = "UTC time",
 				y = NULL,
 				color = "surface",
 				size = "events",
@@ -672,7 +680,7 @@ write_plot(
 		scale_x_datetime( date_labels = "%H:%M", date_breaks = "10 mins" ) +
 		labs(
 			title = "PR split review loop events",
-			x = "UTC time on 2026-05-15",
+			x = "UTC time",
 			y = NULL,
 			color = NULL
 		) +
@@ -697,7 +705,7 @@ if ( nrow( duration_plot ) > 0 ) {
 			scale_x_datetime( date_labels = "%H:%M", date_breaks = "10 mins" ) +
 			labs(
 				title = "PR split loop duration by phase",
-				x = "UTC start time on 2026-05-15",
+				x = "UTC start time",
 				y = "duration in minutes",
 				color = NULL
 			) +
