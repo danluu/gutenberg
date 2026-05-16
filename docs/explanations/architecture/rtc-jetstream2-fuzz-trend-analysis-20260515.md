@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T08:57:01Z`
+Snapshot generated: `2026-05-16T09:02:45Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1385` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T08:55:02Z`, coverage files grew from `272` to `27818`, a delta of
-`27546`. The monitor's visible likely-real count stayed at `0` throughout this
+`1388` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T09:01:22Z`, coverage files grew from `272` to `27927`, a delta of
+`27655`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -70,7 +70,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active coverage run, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `420.5G`, so the remaining
+remained high at the end of the snapshot, around `415.9G`, so the remaining
 bottleneck is more about useful work selection, fresh-output health, and
 completion rate than raw RAM.
 
@@ -96,8 +96,8 @@ so `0` current signatures is not complete likely-real visibility.
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
 CPU utilization rose materially later in the run. Current-run sysstat samples
-from `2026-05-15T01:30:00Z` through `2026-05-16T08:50:00Z` average about
-`59.7%`, peak around `84.9%`, and end near `75.2%`. This says the machine is
+from `2026-05-15T01:30:00Z` through `2026-05-16T09:00:00Z` average about
+`59.8%`, peak around `84.9%`, and end near `74.1%`. This says the machine is
 being used more aggressively than the earlier memory view alone implied; spare
 RAM does not necessarily mean spare browser/CPU capacity.
 
@@ -106,7 +106,7 @@ RAM does not necessarily mean spare browser/CPU capacity.
 Load average tells a similar story with more queueing detail. In the plotted
 current-run window, the 1-minute, 5-minute, and 15-minute load averages average
 about `59.2`, `59.2`, and `58.7`, against `64` logical CPUs. The latest sampled
-load is `76.22`, `74.43`, and `72.81` for 1/5/15 minutes respectively. All
+load is `70.39`, `70.50`, and `72.50` for 1/5/15 minutes respectively. All
 three latest samples are above the core-count reference line.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
@@ -151,9 +151,9 @@ rechecks counted as executions, and bucket rates in 15-minute windows scaled to
 attempts per hour. This is more precise than supervisor launches or lane counts,
 but it only covers fuzzers that emit these lane events.
 
-The latest collected execution data has `45,066` completed attempts:
-`42,103` browser/e2e and `2,963` transport/integration. The latest 15-minute
-bucket is running at about `1276` browser/e2e attempts/hour and `16`
+The latest collected execution data has `45,219` completed attempts:
+`42,253` browser/e2e and `2,966` transport/integration. The latest 15-minute
+bucket is running at about `276` browser/e2e attempts/hour and `4`
 transport/integration attempts/hour. `unit-property`,
 `coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
 `fuzz-assertion` levels are still at `0` executions in this counter.
@@ -201,13 +201,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 2915 | 76 | 0 | 2.6% |
-| `multi-reload-lifecycle` | 2137 | 58 | 0 | 2.7% |
-| `parser-serialization` | 1580 | 60 | 0 | 3.8% |
-| `real-user-editing` | 4211 | 260 | 0 | 6.2% |
-| `common-blocks` | 2574 | 247 | 0 | 9.6% |
-| `parser-transform` | 2764 | 267 | 0 | 9.7% |
-| `block-gauntlet` | 3339 | 506 | 0 | 15.2% |
+| `revision-persistence` | 2925 | 76 | 0 | 2.6% |
+| `multi-reload-lifecycle` | 2142 | 58 | 0 | 2.7% |
+| `parser-serialization` | 1587 | 60 | 0 | 3.8% |
+| `real-user-editing` | 4229 | 264 | 0 | 6.2% |
+| `common-blocks` | 2581 | 247 | 0 | 9.6% |
+| `parser-transform` | 2772 | 267 | 0 | 9.6% |
+| `block-gauntlet` | 3348 | 508 | 0 | 15.2% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -221,15 +221,15 @@ Current unmet goals from the latest state:
 
 | Goal | Current | Target |
 | --- | ---: | ---: |
-| successful real-user-editing records next coverage tier | 260 | 500 |
+| successful real-user-editing records next coverage tier | 264 | 500 |
 | gauntlet block core/html next coverage tier | 320 | 500 |
-| gauntlet block core/details next coverage tier | 362 | 500 |
-| gauntlet block core/more next coverage tier | 365 | 500 |
-| action ui-heading-shortcut next coverage tier | 405 | 500 |
-| action reload-post-action next coverage tier | 425 | 500 |
-| CDP coverage records next coverage tier | 4443 | 5000 |
-| gauntlet block core/gallery next coverage tier | 474 | 500 |
-| real-user body save/reload next coverage tier | 193 | 200 |
+| gauntlet block core/details next coverage tier | 364 | 500 |
+| gauntlet block core/more next coverage tier | 366 | 500 |
+| action ui-heading-shortcut next coverage tier | 409 | 500 |
+| action reload-post-action next coverage tier | 433 | 500 |
+| CDP coverage records next coverage tier | 4466 | 5000 |
+| gauntlet block core/gallery next coverage tier | 482 | 500 |
+| real-user body save/reload next coverage tier | 197 | 200 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
 remaining work now mixes completed-record depth for expensive profiles with
@@ -266,13 +266,13 @@ completed-record depth.
 
 ![Suggested PR net LOC by PR over time](rtc-jetstream2-fuzz-trends-20260515/plots/pr-suggested-net-loc-by-pr-over-time.png)
 
-After the loop was corrected to `max_parallel=6` and `interval=0s`, `114`
+After the loop was corrected to `max_parallel=6` and `interval=0s`, `115`
 completed review cycles took roughly `2.9` to `10.3` minutes in this snapshot;
-the latest completed review took `6.0` minutes. Feedback actions ran every two
+the latest completed review took `6.4` minutes. Feedback actions ran every two
 cycles and took roughly `1.8` to `13.8` minutes in the completed duration data,
 with the latest completed feedback action taking `2.8` minutes. The latest
-PR-split synthesis file, `20260516T085107Z`, is empty; the latest nonempty
-synthesis is `20260516T083742Z`, and the latest completed feedback action is
+PR-split synthesis file, `20260516T085735Z`, is empty; the latest nonempty
+synthesis is `20260516T085107Z`, and the latest completed feedback action is
 `20260516T084215Z`. They say the current PR13 split is still not filing-ready
 and reject the older graph-only read that `PR13B1`/`PR13B2`/`PR13B3` are
 accepted: the combined validation stack passes, but each standalone PR13B head
@@ -287,7 +287,7 @@ nonempty feedback action through `20260516T081555Z`.
 The suggested-PR size charts are parsed from the status report's proposed PR
 split history. The total chart sums additions minus deletions across the whole
 suggested PR set for each status snapshot; the faceted chart shows the same net
-LOC series per PR. The latest parsed snapshot, `2026-05-16T08:49:08Z`, has `24`
+LOC series per PR. The latest parsed snapshot, `2026-05-16T08:58:37Z`, has `24`
 suggested rows totaling `11244` net LOC. The largest current rows by net LOC are
 `PR 12` (`1386`), `PR 7A` (`1331`), `PR 11` (`1141`), `PR 13A` (`1126`), and
 `PR 5B` (`883`), with `PR 13B3` the largest failed PR13B subhead at `776` net
