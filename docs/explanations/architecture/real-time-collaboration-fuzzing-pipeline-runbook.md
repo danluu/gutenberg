@@ -141,6 +141,13 @@ blocked one. The trend graph report includes the observed level mix over time so
 reviewers can see whether all live work is still concentrated in browser/e2e
 lanes.
 
+The graph refresh watcher uses `bin/rtc-trend-collect-graph-inputs.sh` to copy
+supervisor group history from Jetstream and write
+`data/fuzz_level_mix.csv`. `bin/rtc-trend-run-codex-refresh.sh` tells the graph
+refresh Codex job to preserve and interpret the level-mix plot, and
+`bin/rtc-trend-generate-evidence.sh` includes the latest level-mix summary in
+the persona-loop evidence packet.
+
 ## Jetstream Remote Scripts
 
 The Jetstream2 run uses `/media/volume/danluu-fuzz-data` for the repository and
