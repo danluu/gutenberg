@@ -19,10 +19,9 @@ Base handoff:
 
 ## Executive Status
 
-The Jetstream2 fix-planning loop completed all `40/40` requested iterations and
-produced a stable RTC split. The split is still accepted: no latest persona or
-status-analysis report recommends a redesign, and the old aggregate PR 15 is
-replaced by PR 15A/15B/15C.
+The continuous Jetstream2 PR split review loop is active. The split is still
+accepted: no latest persona or status-analysis report recommends a redesign,
+and the old aggregate PR 15 is replaced by PR 15A/15B/15C.
 
 The latest split synthesis, `pr-split-20260516T063020Z-synthesis`, keeps the
 split unchanged and makes the current blocker operational: only repaired
