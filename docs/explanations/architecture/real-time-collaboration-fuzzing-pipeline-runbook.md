@@ -159,6 +159,16 @@ preserve and interpret the level-mix and execution-rate plots, and
 `bin/rtc-trend-generate-evidence.sh` includes the latest level-mix and
 execution summaries in the persona-loop evidence packet.
 
+The lower-level rich-text/CRDT coverage-guided lane uses
+`bin/rtc-coverage-guided-lower-level-runner.mjs` with V8 coverage and semantic
+feature feedback from
+`packages/core-data/src/utils/test/rtc-rich-text-crdt-merge.coverage-fuzz.test.js`.
+The runner writes `GUTENBERG_RTC_CG_FEATURE_FILE` for each batch and retains
+corpus inputs when they discover either new V8 ranges or new domain features
+such as cursor position classes, entity/formatting shapes, text-growth classes,
+and oracle paths. Its `events.ndjson` and `status.tsv` rows include
+`featureKeys` and `newFeatureKeys` next to the coverage counters.
+
 `bin/rtc-fuzz-level-mix-persona-loop-remote.sh` starts the continuous
 fuzz-level mix controller on Jetstream2. This loop must not wait for stalls,
 errors, or harness-work candidates before reviewing the mix. Every cycle it:
@@ -219,8 +229,10 @@ git archive --format=tar FETCH_HEAD \
 	bin/rtc-browser-*.schema.json \
 	bin/rtc-browser-fuzz-analysis-guard-bin \
 	bin/rtc-browser-fuzz-*.mjs \
+	bin/rtc-coverage-guided-lower-level-runner.mjs \
 	bin/rtc-fuzz-*.mjs \
 	bin/rtc-test-ws-sync-server.mjs \
+	packages/core-data/src/utils/test/rtc-rich-text-crdt-merge.coverage-fuzz.test.js \
 	test/e2e/playwright.rtc-websocket.config.ts \
 	test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts \
 	test/e2e/specs/editor/collaboration/fixtures/collaboration-utils.ts \
@@ -237,6 +249,7 @@ REMOTE_REPO='$REMOTE_REPO'
 mkdir -p \"\${HOME:-/home/exouser}/.local/bin\"
 npm install -g --prefix \"\${HOME:-/home/exouser}/.local\" @openai/codex@0.130.0
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-start-remote.sh\" /tmp/start_rtc_coverage_guided_remote.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-lower-level-start-remote.sh\" /tmp/start_rtc_coverage_guided_lower_level.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-cleanup-remote.sh\" /tmp/cleanup_rtc_coverage_guided_remote.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-watchdog-start-remote.sh\" /tmp/start_rtc_coverage_guided_watchdog_remote.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-strict-expansion-start-remote.sh\" /tmp/start_rtc_strict_expansion.sh
@@ -260,6 +273,10 @@ The remote launchers are intentionally split by ownership:
 
 -   `rtc-coverage-guided-start-remote.sh` starts the coverage-guided novelty
     monitor and its generated supervisor groups.
+-   `rtc-coverage-guided-lower-level-start-remote.sh` starts the isolated
+    rich-text/CRDT lower-level runner. It emits V8 coverage counters and
+    semantic feature counters, and keeps corpus inputs for either kind of new
+    feedback.
 -   `rtc-coverage-guided-watchdog-start-remote.sh` runs
     `rtc-browser-fuzz-session-watchdog.mjs` and restarts the coverage-guided
     session through the stable `/tmp` launchers.
