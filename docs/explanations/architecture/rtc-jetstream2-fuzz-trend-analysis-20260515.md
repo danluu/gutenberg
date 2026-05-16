@@ -103,8 +103,6 @@ window, the 1-minute, 5-minute, and 15-minute load averages each average about
 and `52.06` for 1/5/15 minutes respectively, below the core-count reference
 line, while short spikes exceeded it earlier.
 
-The two activity plots below are intentionally left unlabeled.
-
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-rate.png)

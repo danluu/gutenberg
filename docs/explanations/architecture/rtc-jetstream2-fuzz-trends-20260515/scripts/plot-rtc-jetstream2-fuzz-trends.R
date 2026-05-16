@@ -639,13 +639,14 @@ if ( file.exists( load_path ) ) {
 if ( file.exists( activity_path ) ) {
 	activity <- read_csv( activity_path, show_col_types = FALSE ) %>%
 		mutate( timestamp = parse_utc_timestamp( timestamp ) )
+	billions_label <- label_number( scale = 1e-9, accuracy = 0.1, trim = TRUE )
 
 	write_plot(
 		"project-activity-cumulative.png",
 		ggplot( activity, aes( x = timestamp, y = cumulative ) ) +
 			geom_point( aes( size = samples ), alpha = 0.68, color = brewer.pal( 8, "Dark2" )[ 3 ] ) +
 			scale_size_continuous( range = c( 1.2, 4.2 ), guide = "none" ) +
-			scale_y_continuous( labels = label_number( scale_cut = cut_short_scale() ) ) +
+			scale_y_continuous( labels = billions_label ) +
 			scale_time_axis( date_breaks = "8 hours" ) +
 			labs(
 				x = "UTC time",
@@ -661,7 +662,7 @@ if ( file.exists( activity_path ) ) {
 		ggplot( activity, aes( x = timestamp, y = rate ) ) +
 			geom_point( aes( size = samples ), alpha = 0.68, color = brewer.pal( 8, "Dark2" )[ 5 ] ) +
 			scale_size_continuous( range = c( 1.2, 4.2 ), guide = "none" ) +
-			scale_y_continuous( labels = label_number( scale_cut = cut_short_scale() ) ) +
+			scale_y_continuous( labels = billions_label ) +
 			scale_time_axis( date_breaks = "8 hours" ) +
 			labs(
 				x = "UTC time",
