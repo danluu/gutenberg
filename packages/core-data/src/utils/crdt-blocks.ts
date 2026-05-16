@@ -1933,6 +1933,48 @@ function getUniqueBlockTreeClientIdOccurrences(
 	return occurrences;
 }
 
+function removeBlockFromTreeByClientId(
+	blocks: Block[],
+	clientIdToRemove: string
+): Block[] {
+	return blocks.flatMap( ( block ) => {
+		if ( getBlockClientId( block ) === clientIdToRemove ) {
+			return [];
+		}
+
+		return [
+			{
+				...block,
+				innerBlocks: removeBlockFromTreeByClientId(
+					block.innerBlocks ?? [],
+					clientIdToRemove
+				),
+			},
+		];
+	} );
+}
+
+function replaceBlockInTreeByClientId(
+	blocks: Block[],
+	clientIdToReplace: string,
+	replacementBlock: Block
+): Block[] {
+	return blocks.map( ( block ) => {
+		if ( getBlockClientId( block ) === clientIdToReplace ) {
+			return replacementBlock;
+		}
+
+		return {
+			...block,
+			innerBlocks: replaceBlockInTreeByClientId(
+				block.innerBlocks ?? [],
+				clientIdToReplace,
+				replacementBlock
+			),
+		};
+	} );
+}
+
 function mergeYBlocksPreviousLocalDelete(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
@@ -2177,6 +2219,176 @@ function mergeYBlocksPreviousLocalDeleteReorder(
 
 		if ( block ) {
 			mergeBlockIntoYBlock( yblock, block, attributeCursor, baseBlock );
+		}
+	}
+
+	return true;
+}
+
+function mergeYBlocksPreviousLocalCrossParentMove(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): boolean {
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+
+	if ( ! currentClientIds || ! baseClientIds || ! incomingClientIds ) {
+		return false;
+	}
+
+	const currentSet = new Set( currentClientIds );
+	const baseSet = new Set( baseClientIds );
+	const incomingSet = new Set( incomingClientIds );
+	const sourceClientIds = baseClientIds.filter(
+		( clientId ) =>
+			currentSet.has( clientId ) && ! incomingSet.has( clientId )
+	);
+
+	if ( sourceClientIds.length !== 1 ) {
+		return false;
+	}
+
+	const sourceClientId = sourceClientIds[ 0 ];
+	const currentClientIdsWithoutSource = currentClientIds.filter(
+		( clientId ) => clientId !== sourceClientId
+	);
+
+	if (
+		currentClientIdsWithoutSource.length !== incomingClientIds.length ||
+		! currentClientIdsWithoutSource.every(
+			( clientId, index ) => clientId === incomingClientIds[ index ]
+		)
+	) {
+		return false;
+	}
+
+	const currentBlocks = yblocks
+		.toArray()
+		.map( ( yblock ) => yblock.toJSON() as unknown as Block );
+	const currentOccurrences =
+		getUniqueBlockTreeClientIdOccurrences( currentBlocks );
+	const incomingOccurrences =
+		getUniqueBlockTreeClientIdOccurrences( blocksToSync );
+
+	if ( ! currentOccurrences || ! incomingOccurrences ) {
+		return false;
+	}
+
+	const incomingSourceOccurrences = incomingOccurrences.filter(
+		( occurrence ) => occurrence.clientId === sourceClientId
+	);
+
+	if (
+		incomingSourceOccurrences.length !== 1 ||
+		incomingSourceOccurrences[ 0 ].depth === 0 ||
+		! incomingSourceOccurrences[ 0 ].parentClientId
+	) {
+		return false;
+	}
+
+	const destinationClientId = incomingSourceOccurrences[ 0 ].parentClientId;
+
+	if (
+		! incomingSet.has( destinationClientId ) ||
+		! currentSet.has( destinationClientId )
+	) {
+		return false;
+	}
+
+	const incomingDestinationBlock = blocksToSync.find(
+		( block ) => getBlockClientId( block ) === destinationClientId
+	);
+	const currentDestinationIndex =
+		currentClientIds.indexOf( destinationClientId );
+
+	if ( ! incomingDestinationBlock || currentDestinationIndex === -1 ) {
+		return false;
+	}
+
+	const incomingDestinationWithoutSource = {
+		...incomingDestinationBlock,
+		innerBlocks: removeBlockFromTreeByClientId(
+			incomingDestinationBlock.innerBlocks ?? [],
+			sourceClientId
+		),
+	};
+
+	if (
+		! areBlocksEqual(
+			incomingDestinationWithoutSource,
+			yblocks.get( currentDestinationIndex )
+		)
+	) {
+		return false;
+	}
+
+	const incomingBlocksByClientId = new Map(
+		blocksToSync.map( ( block ) => [
+			getBlockClientId( block ) as string,
+			block,
+		] )
+	);
+	const baseBlocksByClientId = new Map(
+		baseBlocks.map( ( block ) => [
+			getBlockClientId( block ) as string,
+			block,
+		] )
+	);
+	const sourceIndex = currentClientIds.indexOf( sourceClientId );
+
+	if ( sourceIndex === -1 ) {
+		return false;
+	}
+
+	const sourceYBlock = yblocks.get( sourceIndex );
+	mergeBlockIntoYBlock(
+		sourceYBlock,
+		incomingSourceOccurrences[ 0 ].block,
+		attributeCursor,
+		baseBlocksByClientId.get( sourceClientId )
+	);
+	const mergedSourceBlock = sourceYBlock.toJSON() as unknown as Block;
+	const incomingDestinationWithMergedSource = {
+		...incomingDestinationBlock,
+		innerBlocks: replaceBlockInTreeByClientId(
+			incomingDestinationBlock.innerBlocks ?? [],
+			sourceClientId,
+			mergedSourceBlock
+		),
+	};
+	const currentOnlyRetainedSet = new Set(
+		currentClientIdsWithoutSource.filter(
+			( clientId ) =>
+				! baseSet.has( clientId ) && clientId !== destinationClientId
+		)
+	);
+
+	yblocks.delete( sourceIndex, 1 );
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const yblock = yblocks.get( index );
+		const clientId = getYBlockClientId( yblock );
+		let block: Block | undefined;
+
+		if ( clientId === destinationClientId ) {
+			block = incomingDestinationWithMergedSource;
+		} else if ( clientId ) {
+			block = incomingBlocksByClientId.get( clientId );
+		}
+
+		if ( block && clientId && ! currentOnlyRetainedSet.has( clientId ) ) {
+			mergeBlockIntoYBlock(
+				yblock,
+				block,
+				attributeCursor,
+				baseBlocksByClientId.get( clientId )
+			);
 		}
 	}
 
@@ -3161,6 +3373,22 @@ export function mergeCrdtBlocks(
 		)
 	) {
 		finishMerge();
+		return;
+	}
+
+	if (
+		! explicitBaseBlocksToSync &&
+		previousLocalBlocksToSync &&
+		mergeYBlocksPreviousLocalCrossParentMove(
+			yblocks,
+			blocksToSync,
+			previousLocalBlocksToSync,
+			attributeCursor
+		)
+	) {
+		finishMerge(
+			makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] )
+		);
 		return;
 	}
 
