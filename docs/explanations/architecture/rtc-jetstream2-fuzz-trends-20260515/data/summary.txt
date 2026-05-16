@@ -1,18 +1,18 @@
-generated_at_utc: 2026-05-16T09:02:45Z
-monitor_passes: 1388
+generated_at_utc: 2026-05-16T09:07:11Z
+monitor_passes: 1391
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T09:01:22Z
+last_pass_utc: 2026-05-16T09:06:52Z
 coverage_files_first: 272
-coverage_files_last: 27927
-coverage_files_delta: 27655
+coverage_files_last: 28024
+coverage_files_delta: 27752
 unmet_coverage_first: 24
 unmet_coverage_last: 9
 likely_real_max: 0
-duplicate_share_current_last: 0
+duplicate_share_current_last: 0.7558
 duplicate_share_historical_last: 0.4672
 summary_startup_failures_last: 0
-quality_issues_last: 1
-memory_free_gb_last: 415.9
+quality_issues_last: 2
+memory_free_gb_last: 415.6
 load_1_last: 70.39
 load_5_last: 70.5
 load_15_last: 72.5
@@ -22,11 +22,11 @@ enabled_groups_current: novelty-ws-common-blocks,novelty-ws-long-session-large-d
 fuzz_level_mix_snapshots: 117
 fuzz_level_mix_campaigns: coverage-guided,focused-shards,gap-booster,strict-expansion
 fuzz_level_mix_latest: browser-e2e=31 lanes/31 groups; transport-integration=1 lanes/1 groups
-fuzz_level_execution_events: 45219
-fuzz_level_execution_latest: browser-e2e=42253 cumulative/276 per-hour; transport-integration=2966 cumulative/4 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_events: 45339
+fuzz_level_execution_latest: browser-e2e=42372 cumulative/752 per-hour; transport-integration=2967 cumulative/8 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 120
 goals_unmet: 9
-pr_review_events: 9734
+pr_review_events: 9736
 pr_suggested_net_loc_snapshots: 53
 pr_suggested_net_loc_latest_total: 11244
