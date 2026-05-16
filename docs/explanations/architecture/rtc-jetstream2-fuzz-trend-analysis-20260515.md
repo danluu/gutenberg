@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T15:43:53Z`
+Snapshot generated: `2026-05-16T15:49:23Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,46 +24,46 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1570` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T15:41:36Z`, coverage files grew from `272` to `33375`, a delta of
-`33103`. The monitor's visible likely-real count stayed at `0`.
+`1573` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T15:48:20Z`, coverage files grew from `272` to `33417`, a delta of
+`33145`. The monitor's visible likely-real count stayed at `0`.
 
 Coverage-goal pressure is down but not finished. The latest copied
 coverage-guidance state has `120` total goals and `5` unmet goals. The remaining
 goals are depth targets for real-user editing, gauntlet blocks, and CDP coverage
 records.
 
-The latest plotted current-output-dir sample is clean on duplicate and startup
-status: `duplicateShareCurrent` is `0`, summary startup failures are `0`,
-warnings are `1`, free memory is `443.8G`, resource headroom is true, and
-quality issues are `1`. The copied novelty state lists one enabled
-coverage-guided group, `novelty-http-persistence-probe`. This report treats
-current-output-dir duplicate/noise and startup-failure metrics as live status;
-historical aggregate duplicate/noise is only context.
+The latest plotted current-output-dir sample regressed on duplicate status:
+`duplicateShareCurrent` is `1`, summary startup failures are `0`, warnings are
+`1`, free memory is `430.8G`, resource headroom is true, and quality issues are
+`1`. The copied novelty state lists one enabled coverage-guided group,
+`novelty-ws-lifecycle`. This report treats current-output-dir duplicate/noise
+and startup-failure metrics as live status; historical aggregate duplicate/noise
+is only context.
 
-Persona-loop evidence rejects a graph-only "resolved" interpretation. The
-latest usable duplicate/noise synthesis, `20260516T152629Z`, says strict
-pre-action startup noise is recognized but not suppressed early enough: triage
-can leave `pre-action-bootstrap-stall` and `pre-action-awareness-stall`
-signatures queued, and the analysis tier can still spend Codex work on them.
-The newer `20260516T153431Z` synthesis file is empty, so it adds no contrary
-evidence. The latest duplicate/noise feedback-action, `20260516T145914Z`,
-implemented novelty-monitor gating and disabled the noisy
-`novelty-ws-lifecycle` producer, but it explicitly left triage-watcher and
-analysis-tier unchanged. The refreshed graph now shows
-`duplicateShareCurrent=0` with `0` current summary startup failures, so
-current-output duplicate/startup health is clean while queued/analysis-state
-startup-noise suppression remains unfinished.
+Persona-loop evidence rejects a graph-only "resolved" interpretation, and the
+refreshed graph now agrees. The latest duplicate/noise synthesis,
+`20260516T153431Z`, says strict zero-user pre-action bootstrap and awareness
+stalls are recognized by parts of the pipeline but are not consistently
+suppressed before triage and analysis. The latest non-empty duplicate/noise
+feedback-action, `20260516T145914Z`, improved novelty-monitor gating and
+reported disabling `novelty-ws-lifecycle`, but it explicitly left
+triage-watcher and analysis-tier unchanged. The current copied state has
+`novelty-ws-lifecycle` enabled again and `duplicateShareCurrent=1`, so startup
+and duplicate containment remains unresolved even though summary startup
+failures are `0`.
 
-The latest PR-split synthesis, `20260516T153219Z`, says the explicit 28-head
-split is only a known-fix prefix, not a complete filing split. Seed `1020002`
-is product-confirmed WebSocket/Yjs divergence. The state-vector diagnostic has
-completed and reports that page 0 falsely covers client `353740376` through
-clock `820` as one deleted range while relay/page 1 retain live marker-bearing
-structs. The latest PR-split feedback-action file, `20260516T153219Z`, is
-empty; the latest non-empty feedback-action, `20260516T151306Z`, launched the
-diagnostic. Filing remains blocked on a new narrow post-`PR15C` repair decision
-and one bounded peer-client store-transition repair/evidence job.
+The latest usable PR-split synthesis, `20260516T153219Z`, says the explicit
+28-head split is only a known-fix prefix, not a complete filing split. The newer
+`20260516T154448Z` synthesis is empty, so it adds no contrary evidence. Seed
+`1020002` is product-confirmed WebSocket/Yjs divergence. The state-vector
+diagnostic has completed and reports that page 0 falsely covers client
+`353740376` through clock `820` as one deleted range while relay/page 1 retain
+live marker-bearing structs. The latest PR-split feedback-action,
+`20260516T153219Z`, applied that feedback and launched the bounded
+peer-client store-transition repair/evidence job. Filing remains blocked until
+that repair report is consumed, focused seed `1020002` is rerun, and the stack
+is rebuilt.
 
 ## Coverage Intake
 
@@ -141,18 +141,17 @@ time and triage/analysis suppression is applied.
 ![Fuzzing level mix over time](rtc-jetstream2-fuzz-trends-20260515/plots/fuzz-level-mix-over-time.png)
 
 The level-mix plot reads supervisor group history, not just the novelty monitor
-log. The latest copied snapshots cover `coverage-guided`, `focused-shards`,
-`gap-booster`, and `strict-expansion`. Across the latest copied campaign
-snapshots, the mix shows `26` browser/e2e lanes across `26` groups and no
-lower-level lanes: `1` coverage-guided, `9` focused-shards, `6` gap-booster,
-and `10` strict-expansion. The latest coverage-guided supervisor snapshot and
-copied novelty state both show one enabled browser/e2e group,
-`novelty-http-persistence-probe`.
+log. The latest copied snapshots now cover `coverage-guided`,
+`coverage-guided-lower-level`, `focused-shards`, `gap-booster`,
+`strict-expansion`, and `unit-property`. Across the latest copied campaign
+snapshots, the mix shows `26` browser/e2e lanes across `26` groups, plus `1`
+active `unit-property` lane and `1` active `coverage-guided-lower-level` lane.
+The latest coverage-guided supervisor snapshot and copied novelty state both
+show one enabled browser/e2e group, `novelty-ws-lifecycle`.
 
-Live fuzzing is currently concentrated entirely in browser/e2e lanes. No active
-`transport-integration`, `unit-property`, `coverage-guided-lower-level`,
-`backend-api`, `protocol-server`, or standalone `fuzz-assertion` fuzz-only
-assertion lanes appear in the latest level-mix snapshot.
+Live fuzzing is still heavily browser/e2e weighted, but it is no longer only
+browser/e2e. `backend-api`, `protocol-server`, and standalone `fuzz-assertion`
+lanes are still not emitting execution events in the current graph.
 
 ## Fuzzing Level Executions
 
@@ -166,12 +165,13 @@ rechecks counted as executions, and bucket rates in 15-minute windows scaled to
 attempts per hour. This is more precise than supervisor launches or lane counts,
 but it only covers fuzzers that emit these lane events.
 
-The latest collected execution data has `54,467` completed attempts:
-`51,461` browser/e2e and `3,006` transport/integration. The latest 15-minute
-bucket reports about `2,580` browser/e2e attempts/hour and `0`
-transport/integration attempts/hour. `unit-property`,
-`coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
-`fuzz-assertion` levels remain at `0` executions in this counter.
+The latest collected execution data has `56,207` completed attempts:
+`51,694` browser/e2e, `3,006` transport/integration, `518` unit/property, and
+`989` coverage-guided lower-level attempts. The latest 15-minute bucket reports
+about `472` browser/e2e attempts/hour, `28` unit/property attempts/hour, and
+`56` coverage-guided lower-level attempts/hour. `backend-api`,
+`protocol-server`, and standalone `fuzz-assertion` levels remain at `0`
+executions in this counter.
 
 ## Profile Completion
 
@@ -307,10 +307,12 @@ corruption for peer client structs. The next gate is one bounded repair/evidence
 job for that transition, not filing or broad final-stack fuzz.
 
 The remaining fuzzing weakness is completion depth and level diversity. Live
-work is currently all browser/e2e in the latest mix snapshots, with no active
-lower-level lane. Transport-integration still has historical completed
-executions, but the latest execution bucket has `2,580` browser/e2e
-attempts/hour, `0` transport/integration attempts/hour, and the other
-lower-level buckets remain at `0` executions. The next narrow operational
-checks are triage/analysis suppression for strict startup noise and seed
-`1020002` peer-client store-transition repair evidence.
+work is still browser/e2e heavy, but the latest mix snapshot includes one
+unit/property lane and one coverage-guided lower-level lane. Transport
+integration has historical completed executions, while the latest execution
+bucket has nonzero unit/property and coverage-guided lower-level rates.
+`backend-api`, `protocol-server`, and standalone fuzz-only assertion execution
+telemetry are still absent. The next narrow operational checks are keeping the
+strict startup-noise suppression active, seed `1020002` peer-client
+store-transition repair evidence, and converting the protocol/assertion work
+from persona/action reports into event-emitting harnesses.

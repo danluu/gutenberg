@@ -1,32 +1,32 @@
-generated_at_utc: 2026-05-16T15:43:53Z
-monitor_passes: 1570
+generated_at_utc: 2026-05-16T15:50:52Z
+monitor_passes: 1573
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T15:41:36Z
+last_pass_utc: 2026-05-16T15:48:20Z
 coverage_files_first: 272
-coverage_files_last: 33375
-coverage_files_delta: 33103
+coverage_files_last: 33417
+coverage_files_delta: 33145
 unmet_coverage_first: 24
 unmet_coverage_last: 5
 likely_real_max: 0
-duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.5891
+duplicate_share_current_last: 1
+duplicate_share_historical_last: 0.5879
 summary_startup_failures_last: 0
 quality_issues_last: 1
-memory_free_gb_last: 443.8
-load_1_last: 35.83
-load_5_last: 52.75
-load_15_last: 81.19
+memory_free_gb_last: 430.8
+load_1_last: 53.36
+load_5_last: 47.92
+load_15_last: 64.15
 core_count: 64
-enabled_group_events: 641
-enabled_groups_current: novelty-http-persistence-probe
-fuzz_level_mix_snapshots: 160
-fuzz_level_mix_campaigns: coverage-guided,focused-shards,gap-booster,strict-expansion
-fuzz_level_mix_latest: browser-e2e=26 lanes/26 groups
-fuzz_level_execution_events: 54467
-fuzz_level_execution_latest: browser-e2e=51461 cumulative/2580 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+enabled_group_events: 642
+enabled_groups_current: novelty-ws-lifecycle
+fuzz_level_mix_snapshots: 166
+fuzz_level_mix_campaigns: coverage-guided,coverage-guided-lower-level,focused-shards,gap-booster,strict-expansion,unit-property
+fuzz_level_mix_latest: browser-e2e=26 lanes/26 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups
+fuzz_level_execution_events: 56207
+fuzz_level_execution_latest: browser-e2e=51694 cumulative/472 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=518 cumulative/28 per-hour; coverage-guided-lower-level=989 cumulative/56 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 120
 goals_unmet: 5
-pr_review_events: 9862
-pr_suggested_net_loc_snapshots: 109
+pr_review_events: 9864
+pr_suggested_net_loc_snapshots: 110
 pr_suggested_net_loc_latest_total: 11244
