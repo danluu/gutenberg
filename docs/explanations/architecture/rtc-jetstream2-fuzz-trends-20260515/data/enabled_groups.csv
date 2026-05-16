@@ -565,3 +565,6 @@ timestamp,group,group_family
 2026-05-16T10:58:54Z,novelty-ws-common-blocks,auth/locks
 2026-05-16T11:05:29Z,novelty-ws-parser-transform,parser
 2026-05-16T11:12:03Z,novelty-ws-async-server-blocks,async/media
+2026-05-16T11:26:30Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-16T11:26:30Z,novelty-ws-parser-transform,parser
+2026-05-16T11:26:30Z,novelty-ws-async-server-blocks,async/media
