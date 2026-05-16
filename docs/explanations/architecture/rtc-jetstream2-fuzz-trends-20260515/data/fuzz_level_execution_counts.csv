@@ -154,7 +154,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,campaigns,
 2026-05-16T14:45:00Z,browser-e2e,210,163,104,3,50398,840
 2026-05-16T15:00:00Z,browser-e2e,224,187,130,3,50622,896
 2026-05-16T15:15:00Z,browser-e2e,194,151,99,3,50816,776
-2026-05-16T15:30:00Z,browser-e2e,45,35,28,3,50861,180
+2026-05-16T15:30:00Z,browser-e2e,133,114,89,3,50949,532
 2026-05-15T00:45:00Z,transport-integration,1,1,0,1,1,4
 2026-05-15T01:00:00Z,transport-integration,3,2,0,1,4,12
 2026-05-15T01:15:00Z,transport-integration,25,17,0,2,29,100
