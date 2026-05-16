@@ -158,6 +158,8 @@ install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-cleanup-remote.sh\" /tmp/c
 install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-gap-codex-loop-remote.sh\" /tmp/start_rtc_focused_gap_codex_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-fuzz-only-asserts-loop-remote.sh\" /tmp/start_rtc_fuzz_only_asserts_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-gap-booster-start-remote.sh\" /tmp/start_rtc_gap_booster.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-deferred-work-promotion-loop-remote.sh\" /tmp/start_rtc_deferred_work_promotion_loop.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-pr-finalization-loop-remote.sh\" /tmp/start_rtc_pr_finalization_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-jetstream-guard-remote.sh\" /tmp/start_rtc_jetstream_guard.sh
 "
 ```
@@ -183,10 +185,18 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-fuzz-only-asserts-loop-remote.sh` runs the high-parallel fuzz-only
     assertion analysis and critique loop. Only its final applier job should edit
     files or restart fuzzing.
+-   `rtc-deferred-work-promotion-loop-remote.sh` turns deferred bug families
+    into local candidate branches, targeted diagnostics, or explicit downscope
+    reports. It reads current fuzz output and PR-split reports, creates one
+    worktree per job, and keeps default Codex concurrency conservative.
+-   `rtc-pr-finalization-loop-remote.sh` audits candidate branches and produces
+    branch-split corrections, diffstats, validation notes, and push commands for
+    the local host. It does not push from Jetstream.
 -   `rtc-jetstream-guard-remote.sh` is the top-level guard. Run it in tmux and
     let it restart missing sessions instead of manually restarting individual
     fuzzers. The guard supervises coverage-guided, strict-expansion, focused
-    shards, the focused gap Codex loop, and the fuzz-only assertion loop.
+    shards, the focused gap Codex loop, the fuzz-only assertion loop, the
+    deferred-work promotion loop, and the PR-finalization loop.
 
 Start or refresh the guard after installing the launchers. `stop` exits the
 guard process after killing its sleeping child, so a refresh should not leave an
@@ -201,6 +211,59 @@ ssh "$JETSTREAM" "
 /tmp/start_rtc_jetstream_guard.sh status
 "
 ```
+
+## Deferred Work And PR Finalization Loops
+
+`rtc-deferred-work-promotion-loop-remote.sh` owns the path from "deferred" to
+"reviewable branch". It runs as `rtc-deferred-work-promotion-loop`, writes
+status to
+`/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/current-deferred-status.md`,
+and launches bounded jobs named `rtc-deferred-job-*`.
+
+Each deferred job gets a separate worktree under
+`/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/worktrees/`
+and a local branch named `deferred/rtc-<family>-<timestamp>`. Jobs must use that
+worktree for code changes so the live fuzzer checkout is not disturbed. The
+default families are:
+
+-   `reload-hydration`
+-   `pre-save-search-live-collapse`
+-   `rich-text-suffix-corruption`
+-   `malformed-save-payload`
+-   `http-room-isolation`
+
+The loop also writes
+`/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/current-deferred-queue.tsv`.
+That queue combines the fixed deferred families with current novelty, focused,
+and strict-expansion fuzz output, so jobs see the latest fuzzing feedback instead
+of only stale report text.
+
+Useful controls:
+
+-   `RTC_DEFERRED_WORK_MAX_ACTIVE_JOBS=2`: maximum concurrent deferred Codex jobs.
+-   `RTC_DEFERRED_WORK_CYCLE_SLEEP_SECONDS=900`: delay between queue passes.
+-   `RTC_DEFERRED_WORK_MIN_FAMILY_INTERVAL_SECONDS=1800`: per-family launch
+    cooldown.
+-   `RTC_DEFERRED_WORK_MAX_LOAD_MULTIPLIER=1.20`: skip launching new jobs when
+    1-minute load is above this multiple of core count.
+-   `RTC_DEFERRED_WORK_FAMILIES="..."`: override the family list.
+
+`rtc-pr-finalization-loop-remote.sh` runs as `rtc-pr-finalization-loop`, writes
+status to
+`/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/current-finalization-status.md`,
+and launches one `rtc-pr-finalize-job-*` by default. Its job is branch hygiene:
+detect branches that accidentally contain the whole stack, create or correct
+local split branches when safe, record file counts and diffstats, and write exact
+push commands for the local host. It should not push from Jetstream.
+
+Useful controls:
+
+-   `RTC_PR_FINALIZATION_MAX_ACTIVE_JOBS=1`: maximum concurrent finalization jobs.
+-   `RTC_PR_FINALIZATION_CYCLE_SLEEP_SECONDS=1200`: delay between finalization
+    passes.
+-   `RTC_PR_FINALIZATION_MIN_INTERVAL_SECONDS=1800`: launch cooldown.
+-   `RTC_PR_FINALIZATION_MAX_LOAD_MULTIPLIER=1.30`: skip launching new
+    finalization jobs under high load.
 
 ## Stale wp-env Cleanup
 

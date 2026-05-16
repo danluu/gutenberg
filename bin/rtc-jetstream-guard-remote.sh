@@ -184,6 +184,12 @@ restart_pool() {
 		asserts)
 			/tmp/start_rtc_fuzz_only_asserts_loop.sh >> "$LOG_DIR/fuzz-only-asserts-start.log" 2>&1 || log "fuzz-only asserts loop start failed"
 			;;
+		deferred)
+			/tmp/start_rtc_deferred_work_promotion_loop.sh >> "$LOG_DIR/deferred-work-start.log" 2>&1 || log "deferred work promotion loop start failed"
+			;;
+		finalization)
+			/tmp/start_rtc_pr_finalization_loop.sh >> "$LOG_DIR/pr-finalization-start.log" 2>&1 || log "PR finalization loop start failed"
+			;;
 	esac
 }
 
@@ -248,6 +254,14 @@ run_loop() {
 
 		if ! has_session rtc-fuzz-only-asserts-loop; then
 			restart_pool asserts "missing fuzz-only assertion loop"
+		fi
+
+		if ! has_session rtc-deferred-work-promotion-loop; then
+			restart_pool deferred "missing deferred work promotion loop"
+		fi
+
+		if ! has_session rtc-pr-finalization-loop; then
+			restart_pool finalization "missing PR finalization loop"
 		fi
 
 		sleep 120 &
