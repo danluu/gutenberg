@@ -758,7 +758,7 @@ This controller must run continuously. Do not wait for stalls or error condition
 
 Before recommending work, audit the context itself. Treat any TELEMETRY-INVARIANT-FAIL line as the highest-priority bug: the loop must not ask personas to reason from a view that disagrees with tmux, current-run roots, status.tsv, or events.ndjson. A lane merely existing is not enough; evaluate whether its executions, novelty counters, crash/noise counters, and corpus growth are visible and useful.
 
-Also audit runner throughput. Treat any ACTION-NEEDED line in "Runner Throughput Diagnostics" as an actionable loop failure, not background data. A low-level lane that repeatedly launches `npm run test:unit`/Jest per batch, spends most wall time in startup/transforms/coverage setup, or sleeps between batches should either be changed to amortize startup, replaced with a persistent/direct lower-level harness, given a larger useful batch, or explicitly justified with evidence.
+Also audit runner throughput. Treat any ACTION-NEEDED line in "Runner Throughput Diagnostics" as an actionable loop failure, not background data. A low-level lane that repeatedly launches npm-run-test-unit/Jest per batch, spends most wall time in startup/transforms/coverage setup, or sleeps between batches should either be changed to amortize startup, replaced with a persistent/direct lower-level harness, given a larger useful batch, or explicitly justified with evidence.
 
 Return:
 1. Whether the current level mix should change now.
