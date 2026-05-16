@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T17:48:54Z`
+Snapshot time: `2026-05-16T17:58:06Z`
 
 Trigger event:
-`pr-split-2026-05-16T17-47-51Z-20260516T174159Z`
+`pr-split-2026-05-16T17-56-58Z-20260516T175136Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T17-47-51Z-20260516T174159Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T17-56-58Z-20260516T175136Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -31,7 +31,7 @@ Filing remains blocked. The explicit PR01 through PR15C set is only a
 known-fix prefix, not a filing-ready stack.
 
 The latest split-persona synthesis,
-`pr-split-20260516T174159Z-synthesis.md`, keeps the blocker state:
+`pr-split-20260516T175136Z-synthesis.md`, keeps the blocker state:
 
 ```text
 explicit 28-head known-fix prefix
@@ -71,7 +71,7 @@ Scope it to `packages/core-data/src/utils/crdt*.ts`,
 `syncConfig.applyChangesToCRDTDoc`, and receiver-side Yjs integration where a
 new marker-bearing client range is present but fully deleted.
 
-As of the `174159Z` synthesis, the expected report was still absent and the
+As of the `175136Z` synthesis, the expected report was still absent and the
 tmux session was active:
 
 ```text
@@ -102,13 +102,15 @@ recommends narrower runner, triage-watcher, novelty-monitor, and optional
 supervisor handling for strict zero-product pre-action startup stalls. Neither
 item unblocks final-stack fuzz.
 
-The latest `pr-split-20260516T174159Z-feedback-action.md` is also zero bytes,
-so no new PR split or repair action landed after the active `172434Z` repair
-job was launched.
+The latest split feedback action with content is
+`pr-split-20260516T174159Z-feedback-action.md`. It applied the repeated Cycle
+174 feedback to `current-pr-split.md`, confirmed PR01-PR15C as only the
+28-head known-fix prefix, launched no new jobs, and left the active `172434Z`
+repair job as the next blocker.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T17:48:50Z`.
+The collected remote status input was generated at `2026-05-16T17:58:01Z`.
 
 The fix-planning repo is checked out at:
 
@@ -138,7 +140,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T17:48:54Z` from fetched
+The branch-link audit was generated at `2026-05-16T17:58:06Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -219,8 +221,8 @@ above.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T17:48:50Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T163736Z
+collected_at_utc: 2026-05-16T17:58:01Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T175536Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
@@ -239,89 +241,91 @@ is not final-stack fuzz validation and no longer represents the complete filing
 stack because seed `1020002` still needs the post-`PR15C` repair decision.
 
 The fresh `novelty-status.md` snapshot was updated at
-`2026-05-16T17:47:15.322Z` for
-`run-20260516T163736Z`:
+`2026-05-16T17:57:03.251Z` for
+`run-20260516T175536Z`:
 
 ```text
-coverage files: 34497
-total records seen: 51450
-records processed this pass: 20
-current-run records: async-server-blocks=3, block-gauntlet=3, common-blocks=3,
-  long-session-large-doc=3, media-cross-entity=3, parser-transform=3,
-  persistence-no-title=2, real-user-editing=4, session-lifecycle=3
-current-run successful records: 0
-current-run pre-action startup failures: async-server-blocks=3,
-  block-gauntlet=3, common-blocks=3, long-session-large-doc=3,
-  media-cross-entity=3, parser-transform=3, persistence-no-title=2,
-  real-user-editing=4, session-lifecycle=3
-recommended groups: none
-enabled groups: none
-startup-noise held recommended groups: novelty-ws-real-user-editing,
+coverage files: 34692
+total records seen: 51914
+records processed this pass: 28
+current-run records: {}
+current-run successful records: {}
+current-run pre-action startup failures: {}
+recommended groups: novelty-ws-real-user-editing,
   novelty-ws-real-user-rich-text, novelty-ws-block-gauntlet,
   novelty-ws-common-blocks, novelty-ws-parser-transform,
   novelty-ws-async-server-blocks, novelty-ws-media-cross-entity,
   novelty-ws-long-session-large-doc
+enabled groups: novelty-ws-common-blocks, novelty-ws-parser-transform,
+  novelty-ws-real-user-editing, novelty-ws-real-user-rich-text,
+  novelty-ws-async-server-blocks, novelty-ws-media-cross-entity,
+  novelty-ws-long-session-large-doc
+paused groups: novelty-http-persistence-probe
 likely-real visible: 0
 likely-real merged duplicates: 0
 oracle/noise questions: 0
 normalization-noise candidates: 0
-current-run normal signatures: 0
-current-run bootstrap stalls: 36
-known-noise signatures: 18
-current-run top duplicate family share: 0
-historical top duplicate family share: 0.5862
+current-output triage signatures: 0
+current-output bootstrap stalls: 0
+historical likely-real merged duplicates: 124
+historical bootstrap stalls: 14433
+historical top duplicate family share: 0.5555
+quality issues: 1
+health warning: no behavioral coverage files found under the new output dir
 headroom for adding groups: yes
-load1: 56.71 / 64 cores
-memory: 428.5G free / 492.0G total
+load1: 64.33 / 64 cores
+memory: 430.2G free / 492.0G total
 ```
 
-The current run has no normal actionable signatures. Its startup evidence is
-still dominated by strict `pre_action_bootstrap_stall` noise (`36` bootstrap
-stalls and `18` known startup-noise signatures). This is useful control-plane
-health evidence, not final-stack validation and not product failure evidence.
+The current output dir has no visible actionable signatures and no visible
+likely-real product failures. Because the new run also reports no behavioral
+coverage files yet, treat the enabled WS groups as restarted health/coverage
+work, not as final-stack validation. Historical triage remains dominated by
+known startup/control-plane noise, especially `pre_action_bootstrap_stall`, and
+must not be presented as live product failure.
 
-The latest trend evidence packet was generated at `2026-05-16T17:43:01Z` from
-monitor data through `2026-05-16T17:40:42Z`:
+The latest trend evidence packet was generated at `2026-05-16T17:49:53Z` from
+monitor data through `2026-05-16T17:47:15Z`:
 
 ```text
-monitor passes: 1622
-coverage files: 272 -> 34481
-coverage files delta: 34209
+monitor passes: 1625
+coverage files: 272 -> 34497
+coverage files delta: 34225
 unmet coverage goals: 24 -> 5
 likely_real_max: 0
-duplicate_share_current_last: 1
+duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.5862
 summary_startup_failures_last: 0
-quality_issues_last: 2
+quality_issues_last: 0
 enabled groups current in trend snapshot: none
 fuzz level mix: browser-e2e=25 lanes/25 groups; unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-browser-e2e execution: 58739 cumulative / 5348 per-hour
+browser-e2e execution: 59502 cumulative / 2096 per-hour
 transport-integration execution: 3006 cumulative / 0 per-hour
-unit-property execution: 931176 cumulative / 154112 per-hour
-coverage-guided-lower-level execution: 22598 cumulative / 6592 per-hour
+unit-property execution: 957664 cumulative / 72240 per-hour
+coverage-guided-lower-level execution: 23510 cumulative / 2496 per-hour
 load1: 67.76 / 64 cores
-memory: 431.1G free
+memory: 428.5G free
 ```
 
 Largest remaining current unmet goals from the trend packet:
 
 - successful real-user-editing records: `287/500`
-- CDP coverage records: `4887/5000`
-- `core/html`: `392/500`
-- `core/details`: `440/500`
-- `core/more`: `472/500` in the trend packet, `473/500` in the later novelty snapshot
+- CDP coverage records: `4887/5000` in the trend packet, `4897/5000` in the later novelty snapshot
+- `core/html`: `392/500` in the trend packet, `398/500` in the later novelty snapshot
+- `core/details`: `440/500` in the trend packet, `444/500` in the later novelty snapshot
+- `core/more`: `473/500` in the trend packet, `490/500` in the later novelty snapshot
 
 Weak completion profiles still argue for startup-stall reduction and guarded
 top-offs over simply increasing browser concurrency. The weakest success ratios
 in the trend packet are `full` (`18/840`), `revision-persistence`
-(`94/3512`), `multi-reload-lifecycle` (`79/2678`),
-`parser-serialization` (`72/2171`), and `real-user-editing` (`287/5262`).
+(`94/3517`), `multi-reload-lifecycle` (`79/2678`),
+`parser-serialization` (`72/2173`), and `real-user-editing` (`287/5264`).
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T174159Z-synthesis.md`. Its consensus:
+`pr-split-20260516T175136Z-synthesis.md`. Its consensus:
 
 - Filing remains blocked and the split still needs the known-fix prefix plus a
   new post-`PR15C` seed `1020002` repair PR.
@@ -331,7 +335,7 @@ The newest completed split-persona synthesis is
   store-to-CRDT replacement / receiver-side Yjs integration.
 - The `172434Z` feedback action launched one bounded repair for that path:
   `rtc-ws-seed-1020002-gutenberg-store-crdt-repair-20260516T172434Z`.
-- As of the `174159Z` synthesis, that repair report was still absent and the
+- As of the `175136Z` synthesis, that repair report was still absent and the
   tmux session was active. Consume it before launching new review or fuzz
   expansion work.
 - Require a passing focused `1020002` gate, then shape the repair as the
@@ -344,20 +348,21 @@ The newest completed split-persona synthesis is
   malformed-save residuals, seed `7410083`, possible seed `5200001`, and other
   secondary families deferred.
 
-The latest `pr-split-20260516T172434Z-feedback-action.md` completed the
-feedback action by updating `current-pr-split.md`, treating PR01-PR15C as a
-28-head known-fix prefix only, consuming the failed `160617Z` sync-manager
-repair report as diagnostic-only, and launching the bounded
-`rtc-ws-seed-1020002-gutenberg-store-crdt-repair-20260516T172434Z` tmux job.
-The latest `pr-split-20260516T174159Z-feedback-action.md` is zero bytes, so
-there is no newer split-action patch after that launch.
+The latest split feedback action with content is
+`pr-split-20260516T174159Z-feedback-action.md`. It updated
+`current-pr-split.md` at the Cycle 174 section, treated PR01-PR15C as a
+28-head known-fix prefix only, and launched no new jobs because the bounded
+`rtc-ws-seed-1020002-gutenberg-store-crdt-repair-20260516T172434Z` tmux job was
+already active.
 
 The latest duplicate/noise synthesis is
 `duplicate-noise-20260516T172740Z-synthesis.md`. It edited no files. It says
 raw startup evidence is still dominated by strict pre-action startup noise:
-`36` bootstrap stalls, with `0` visible likely-real failures. The later
-novelty snapshot has `0` normal current-run signatures after gating. Its
-smallest safe next control-plane fix is to write only one gated infra/noise
+`36` bootstrap stalls, with `0` visible likely-real failures. The newer
+novelty snapshot moved to `run-20260516T175536Z`, has `0` current-output
+actionable signatures and `0` visible likely-real failures, but also warns that
+no behavioral coverage files are present yet under the new output dir. Its
+smallest safe next control-plane fix remains to write only one gated infra/noise
 record for strict pre-action startup stalls in `rtc-browser-fuzz-runner.mjs`,
 aggregate those stalls outside normal actionable signature state in
 `rtc-browser-fuzz-triage-watcher.mjs`, make startup-noise probation a hard
@@ -399,10 +404,12 @@ active triage: 36 total signatures, all bootstrap stalls, 0 queued, 0 retry
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
 separate current fuzz health from historical noise, keep evidence-only
-families out of the split, and make filing gates explicit. Their older warning
-that GitHub-facing PR13 review links were stale is superseded by the
-`2026-05-16T17:48:54Z` branch-link audit, which verifies the repaired PR 13
-review refs listed above.
+families out of the split, and make filing gates explicit. Their older warnings
+about stale PR13 GitHub-facing review refs and the then-current constrained
+group mix are superseded by the `2026-05-16T17:58:06Z` branch-link audit and
+the `2026-05-16T17:57:03Z` novelty snapshot. The audit verifies the repaired
+PR 13 review refs listed above, while the novelty snapshot still does not count
+as final-stack validation.
 
 ## Deferred Or Evidence-Only Work
 
@@ -417,7 +424,7 @@ These must not be described as fixed.
 | Pre-save search/live document collapse | `ddf9559af37e`, `0932bed35c7a`, conditional `1e0ade5ec5a8`; `try/rtc-pre-save-search-collapse-gate-ddf9559` | evidence-only; not in active split | Capture editor blocks, serialized content, core-data edited record, live CRDT record, provider state, REST body, and save state before/after `core/search` insertion |
 | Rich-text formatted suffix corruption | `4148230f681d`, `b0db7b80c6f2`, `dc8ea6e78d4d`, `1ccac75d7faa`, `2722f0e897de`, `712b98ba96ff` | not fixed; latest split keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Malformed save payload and save-settlement residuals | `fc154ebec48c`, `e40aa1b7863d`, `f51c425df8a5`, `f46859898576`, `afd389d7f139`, `02289235f55f`, `eef8b8932e11`, `b60eecd4ac03` | deferred beyond dropped PR 6B and isolated PR 6C candidate | Create a source-level `saveEntityRecord()` / `prePersistPostType()` repro where clean local blocks exist but evaluated outgoing `content` is malformed |
-| Seed `1020002` WebSocket marker divergence | completed `143821Z` repair report; completed `151306Z` state-vector/diff diagnostic; completed `153219Z` peer-client store-transition report; completed `160617Z` sync-manager load/hydrate report; active `172434Z` Gutenberg-origin store-to-CRDT/Yjs repair job | active final-stack blocker; classified as product divergence; `160617Z` report exists but failed the focused gate; page 0 still misses marker `async-server-1020002-0-1-589451` while page 1/relay retain it; likely owner is now Gutenberg-origin store-to-CRDT replacement / receiver-side Yjs integration; `172434Z` report was absent as of the `174159Z` synthesis | Consume the active `172434Z` repair report, require focused seed `1020002` to pass or be explicitly reclassified, then shape a new post-`PR15C` PR with a verified branch link before filing |
+| Seed `1020002` WebSocket marker divergence | completed `143821Z` repair report; completed `151306Z` state-vector/diff diagnostic; completed `153219Z` peer-client store-transition report; completed `160617Z` sync-manager load/hydrate report; active `172434Z` Gutenberg-origin store-to-CRDT/Yjs repair job | active final-stack blocker; classified as product divergence; `160617Z` report exists but failed the focused gate; page 0 still misses marker `async-server-1020002-0-1-589451` while page 1/relay retain it; likely owner is now Gutenberg-origin store-to-CRDT replacement / receiver-side Yjs integration; `172434Z` report was absent as of the `175136Z` synthesis | Consume the active `172434Z` repair report, require focused seed `1020002` to pass or be explicitly reclassified, then shape a new post-`PR15C` PR with a verified branch link before filing |
 | Seed `7410083` final-persistence `_crdt_document` absence | queued by latest split persona | queued behind seed `1020002`; no automatic PR slot | Triage only after `1020002` is repaired, reclassified, and the rebuilt stack is available |
 | Possible seed `5200001` same-user reload stale title/body | queued by latest split persona | possible follow-up only; no automatic PR slot | Deep-triage after `1020002` if it remains visible on the rebuilt stack |
 | PR 16 valid-block `originalContent` candidate | seed replay candidate only | blocked/deferred; latest split synthesis says it is not part of the filing stack | Replay and classify the seed before considering any product branch or verified branch link |
@@ -461,11 +468,12 @@ Before filing any maintainer-facing PR:
 
 Existing fuzz infrastructure can continue where healthy. The latest trend
 evidence has `likely_real_max: 0`, `5` unmet goals, current-run duplicate share
-`1`, historical duplicate share `0.5862`, summary startup failures `0`,
-quality issues `2`, and browser-e2e execution at `58739` cumulative / `5348`
-per hour. The latest novelty snapshot has `34497` coverage files, `51450`
-total records seen, `0` normal current-run signatures, `36` bootstrap stalls,
-`18` known startup-noise signatures, `0` visible likely-real failures, no
-enabled groups, and the broader WS groups held by startup-noise probation.
-Treat these remote status, novelty, and trend packets as useful control-plane
-and fuzz-health evidence, not final-stack fuzz validation.
+`0`, historical duplicate share `0.5862`, summary startup failures `0`,
+quality issues `0`, and browser-e2e execution at `59502` cumulative / `2096`
+per hour. The latest novelty snapshot has `34692` coverage files, `51914`
+total records seen, `0` current-output triage signatures, `0` visible
+likely-real failures, seven enabled WS novelty groups, and
+`novelty-http-persistence-probe` paused by the max-enabled-group resource
+budget. It also warns that no behavioral coverage files were found under the
+new output dir yet. Treat these remote status, novelty, and trend packets as
+useful control-plane and fuzz-health evidence, not final-stack fuzz validation.
