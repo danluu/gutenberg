@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T22:51:14Z`
+Snapshot time: `2026-05-16T22:58:12Z`
 
 Trigger event:
-`pr-split-2026-05-16T22-49-56Z-20260516T224352Z`
+`pr-split-2026-05-16T22-56-49Z-20260516T225001Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T22-49-56Z-20260516T224352Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T22-56-49Z-20260516T225001Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,7 +28,7 @@ or the original split merely for continuity.
 ## Executive Status
 
 Filing remains blocked. The latest completed split-persona synthesis,
-`pr-split-20260516T224352Z-synthesis.md`, keeps the known-fix prefix but
+`pr-split-20260516T225001Z-synthesis.md`, keeps the known-fix prefix but
 continues to replace the tail with explicit pass/drop,
 repair/reclassification, and residual source-reduction gates:
 
@@ -91,10 +91,12 @@ edited content, serialized content, and collaboration apply/sync logs after step
 naming any PR18A.
 
 The latest split feedback action,
-`pr-split-20260516T222853Z-feedback-action.md`, is nonempty. It appended the
-Cycle 202 update, kept `ready/rtc-*` PR01-PR15C plus PR02A as a known-fix prefix
-only, reconfirmed the PR16/PR17/strict residual tail, recorded that rootfs
-recovery completed while PR16 seed `950109` still failed, launched
+`pr-split-20260516T225001Z-feedback-action.md`, is zero bytes. The latest
+nonempty split feedback action remains
+`pr-split-20260516T222853Z-feedback-action.md`: it appended the Cycle 202
+update, kept `ready/rtc-*` PR01-PR15C plus PR02A as a known-fix prefix only,
+reconfirmed the PR16/PR17/strict residual tail, recorded that rootfs recovery
+completed while PR16 seed `950109` still failed, launched
 `rtc-strict-5700084-focused-replay-20260516T224004Z`, and patched the split
 loop so zero-byte progress-unblock reports count as no progress and reports are
 written atomically. Do not launch broad final-stack fuzz, push GitHub branches
@@ -127,13 +129,13 @@ suppressed `64` startup-only records while keeping `56` product-evidence
 signatures visible, and restarted novelty. This is fuzzer control-plane
 remediation only; it is not product validation or a filing unblocker.
 
-Current coverage-guided novelty and trend evidence still show `0` visible
-likely-real current-run failures, but that is health/control-plane evidence
-only. It is not final-stack validation.
+The latest trend evidence still reports `likely_real_max: 0`, but the collected
+`raw/novelty-status.md` for this update is zero bytes. Treat the current fuzz
+state as health/control-plane evidence only, not final-stack validation.
 
 ## Branch And Ref Status
 
-The remote status input was generated at `2026-05-16T22:51:09Z`.
+The remote status input was generated at `2026-05-16T22:58:07Z`.
 
 The fix-planning repo is checked out at:
 
@@ -163,7 +165,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T22:51:14Z` from fetched
+The branch-link audit was generated at `2026-05-16T22:58:12Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -238,8 +240,8 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T22:51:09Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T224827Z
+collected_at_utc: 2026-05-16T22:58:07Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T225752Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
@@ -260,8 +262,11 @@ focused `950109` pass/drop diagnostic, PR17 still needs the seed `1020002`
 follower-side update repair or proof-based reclassification, and strict
 residual source reduction is required before any PR18x is named.
 
-The collected `raw/novelty-status.md` was updated at
-`2026-05-16T22:50:04.888Z` for `run-20260516T224827Z` and reported:
+The collected `raw/novelty-status.md` for this update is zero bytes, so there
+is no fresh detailed novelty-status body for `run-20260516T225752Z`. Do not
+carry forward older novelty counters as if they came from this update. The
+latest usable novelty detail remains the previous `2026-05-16T22:50:04.888Z`
+snapshot for `run-20260516T224827Z`, which reported:
 
 ```text
 coverage files: 36674
@@ -291,40 +296,37 @@ novelty-ws-lifecycle
 novelty-http-persistence-probe
 ```
 
-Current-run novelty is clean of visible likely-real failures, but the new run
-root has not yet produced current-run behavioral records. This is fuzz-health
-and control-plane evidence only. Recent changes show the supervisor restarted
-on `run-20260516T224827Z`, high-noise WS and HTTP expansion groups are on sticky
-known-noise cooldowns until each profile reaches successful current-run records,
-and `novelty-ws-block-gauntlet` is still skipped because its recent
-triage-duplicate-noise cooldown is active. Do not count this as final-stack
-validation.
+The current update does not include a nonempty novelty-status body. This is a
+reporting gap, not a product pass. The previous detail showed no visible
+likely-real current-run failures and no current-run behavioral records under
+the then-new output dir; continue to treat that as fuzz-health and
+control-plane evidence only. Do not count it as final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-16T22:44:59Z` from
-monitor data through `2026-05-16T22:42:54Z`:
+The latest trend evidence packet was generated at `2026-05-16T22:51:34Z` from
+monitor data through `2026-05-16T22:50:04Z`:
 
 ```text
-monitor passes: 1733
-coverage files: 272 -> 36636
-coverage files delta: 36364
+monitor passes: 1736
+coverage files: 272 -> 36674
+coverage files delta: 36402
 unmet coverage goals: 24 -> 7
 likely_real_max: 0
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.3465
+duplicate_share_historical_last: 0.3542
 summary_startup_failures_last: 0
 quality_issues_last: 1
 fuzz level mix: browser-e2e=26 lanes/26 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 2118726
-browser-e2e execution: 89210 cumulative / 1928 per-hour
-unit-property execution: 1848624 cumulative / 240800 per-hour
-coverage-guided-lower-level execution: 177886 cumulative / 32512 per-hour
-load1/load5/load15: 34.41 / 34.33 / 35.34 on 64 cores
-memory: 437.9G free
+total fuzz-level test executions: 2147809
+browser-e2e execution: 89425 cumulative / 804 per-hour
+unit-property execution: 1873908 cumulative / 96320 per-hour
+coverage-guided-lower-level execution: 181470 cumulative / 13568 per-hour
+load1/load5/load15: 31.77 / 32.09 / 33.96 on 64 cores
+memory: 438.7G free
 ```
 
-Largest remaining coverage gaps in the latest novelty status are
+Largest remaining coverage gaps in the previous usable novelty detail are
 `reload-post-action` `613/1000`, `ui-heading-shortcut` `641/1000`,
 title-save-reload `225/500`, body-save-reload `284/500`, successful
 real-user-editing records `346/500`, `ui-format-paragraph` `920/1000`, and
@@ -336,8 +338,9 @@ for filing.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T224352Z-synthesis.md`. It keeps `PR01` through `PR15C` plus
-PR02A as a known-fix prefix, then requires:
+`pr-split-20260516T225001Z-synthesis.md`. It keeps `PR01` through `PR15C` plus
+PR02A as a known-fix prefix, says the stack still needs a split change before
+filing, and requires:
 
 - treat rootfs recovery as completed, with `/` recovered to about `42G` free,
   but keep environment health as a precondition for replay evidence;
@@ -359,11 +362,13 @@ PR02A as a known-fix prefix, then requires:
   satisfy the Parallel Progress Gate while actionable rows remain.
 
 The latest split feedback action,
-`pr-split-20260516T222853Z-feedback-action.md`, is nonempty. It recorded that
-Cycle 202 was applied to `current-pr-split.md`, rootfs recovery completed while
-PR16 seed `950109` still failed, the prior `5700084` source-reduction job still
-had not run the real replay, the bounded `5700084` focused replay was launched,
-and the split-review loop was hardened so zero-byte progress reports count as no
+`pr-split-20260516T225001Z-feedback-action.md`, is zero bytes. The latest
+nonempty split feedback action remains
+`pr-split-20260516T222853Z-feedback-action.md`: it recorded that Cycle 202 was
+applied to `current-pr-split.md`, rootfs recovery completed while PR16 seed
+`950109` still failed, the prior `5700084` source-reduction job still had not
+run the real replay, the bounded `5700084` focused replay was launched, and the
+split-review loop was hardened so zero-byte progress reports count as no
 progress and progress-unblock reports are written atomically. The current split
 synthesis also points at the explicit manifest
 `progress-unblock-20260516T215710Z/push-manifest.tsv`, now nonempty with `34`
@@ -412,7 +417,7 @@ The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
 separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older PR13
-review-ref warning is superseded by the `2026-05-16T22:51:14Z` branch-link
+review-ref warning is superseded by the `2026-05-16T22:58:12Z` branch-link
 audit, which contains repaired `verified-content` PR13A/B/C review links.
 
 ## Deferred Or Evidence-Only Work
@@ -495,9 +500,8 @@ Existing fuzz infrastructure can continue only where healthy, and
 strict-expansion source reduction is an allowed analysis gate after the
 environment preflight is healthy. Do not run broad/final-stack fuzz while the
 PR16/PR17 decisions, strict residual source reduction, and rebuilt validation
-are open. Current collected inputs show zero visible likely-real failures in
-coverage-guided novelty and trend evidence, with historical bootstrap noise
-separated from current live product evidence, but the current run still has no
-current-run behavioral records under the latest output dir and only one enabled
-novelty group. None of this is final-stack fuzz validation or a filing
-unblocker.
+are open. The latest trend packet reports `likely_real_max: 0`, with
+historical bootstrap noise separated from current live product evidence, but
+this update's collected `raw/novelty-status.md` is empty. The trend packet shows
+only one enabled novelty group, `novelty-ws-persistence-no-title`. None of this
+is final-stack fuzz validation or a filing unblocker.
