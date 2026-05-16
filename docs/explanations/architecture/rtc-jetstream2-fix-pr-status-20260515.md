@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T11:03:11Z`
+Snapshot time: `2026-05-16T11:07:59Z`
 
 Trigger event:
-`duplicate-noise-2026-05-16T11-02-34Z-34`
+`pr-split-2026-05-16T11-03-22Z-20260516T105719Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T11-02-34Z-34/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T11-03-22Z-20260516T105719Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,7 +28,7 @@ or the original split merely for continuity.
 ## Executive Status
 
 The plan remains filing-blocked on the active `PR 11A-E` shaping/check job.
-The latest split-persona synthesis, `pr-split-20260516T105143Z-synthesis.md`,
+The latest split-persona synthesis, `pr-split-20260516T105719Z-synthesis.md`,
 keeps the current split direction but says filing must wait for usable PR11A-E
 evidence.
 
@@ -42,8 +42,10 @@ evidence.
   `PR 11A-E` explicit-base split-shaping/check job:
   `append -> delete -> middle insert -> move/reorder -> delete+insert anchor`.
   Its expected `report.md` is still `0 bytes`; the active tmux session still
-  exists. Current generated evidence has touched-file lint exit `0`, but
-  focused unit exits are `1` for PR11A-E/PR12, so this is not clean yet.
+  exists. The current focused CRDT checks are failing during package-local Jest
+  dependency resolution, with `@emotion/css` following the earlier
+  `framer-motion` issue, so treat the job as incomplete setup rather than
+  product evidence.
 - The active PR13/14/15 recommendation remains the green identity-first
   sequence:
   `PR 13A -> PR 13B0 -> PR 13B1 -> PR 13B2 -> PR 13B3 -> PR 14 -> PR 15A -> PR 15B -> PR 15C`.
@@ -63,7 +65,7 @@ empty-live-editor, pre-save search/live-collapse, rich-text formatted suffix
 corruption, broader malformed-save/save-settlement residuals, HTTP polling
 room-isolation residuals, and `PR 1A`.
 
-The branch-link audit generated at `2026-05-16T11:03:11Z` verifies current
+The branch-link audit generated at `2026-05-16T11:07:59Z` verifies current
 review content links for most proposed PR rows. The maintainer-facing table
 below uses only audit rows marked `verified-content`, or says
 `No verified branch link yet`. For repaired PR 13 content, use only these audit
@@ -81,7 +83,7 @@ Do not link the stale or misordered PR 13 refs listed in the audit under
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T11:03:06Z`.
+The collected remote status input was generated at `2026-05-16T11:07:54Z`.
 
 The fix-planning repo is currently checked out at:
 
@@ -136,11 +138,11 @@ branch-link audit or explicitly says `No verified branch link yet`.
 | PR 8A | Narrow reload-title prior-art path | No verified branch link yet | TBD | TBD | replace broad PR 8; broader persisted-record hydration remains deferred |
 | PR 9 | Core-data lock fairness | [`review/rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/review/rtc-pr09-store-lock-fairness) | 2 | +185 / -2 | verified branch; final rebase/checks still required |
 | PR 10 | CRDT block reconciliation foundation | [`review/rtc-pr10-crdt-block-rebase-foundation`](https://github.com/danluu/gutenberg/tree/review/rtc-pr10-crdt-block-rebase-foundation) | 2 | +145 / -4 | verified branch; start CRDT stack |
-| PR 11A | Explicit-base stale suffix append | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; next split-shaping/check job |
-| PR 11B | Explicit-base top-level delete | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; next split-shaping/check job |
-| PR 11C | Explicit-base middle insert | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; next split-shaping/check job |
-| PR 11D | Explicit-base top-level move/reorder | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; next split-shaping/check job |
-| PR 11E | Explicit-base delete-plus-insert anchor | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; next split-shaping/check job |
+| PR 11A | Explicit-base stale suffix append | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; active split-shaping/check gate |
+| PR 11B | Explicit-base top-level delete | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; active split-shaping/check gate |
+| PR 11C | Explicit-base middle insert | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; active split-shaping/check gate |
+| PR 11D | Explicit-base top-level move/reorder | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; active split-shaping/check gate |
+| PR 11E | Explicit-base delete-plus-insert anchor | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; active split-shaping/check gate |
 | PR 12 | Previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr12-previous-local-cache-top-level-ops) | 2 | +1391 / -5 | verified branch; final export/rebase still required |
 | PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 | +1151 / -25 | repaired audit link; green filing head still needs import/rebase/audit |
 | PR 13B | Cross-parent source retirement | [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement) | 2 | +1672 / -4 | repaired audit link; green identity-first replacement should split this into PR 13B1/B2/B3 once those heads are pushed/audited |
@@ -173,36 +175,40 @@ verified branch-link-audit rows. Until they do, use only the repaired
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T11:03:06Z
+collected_at_utc: 2026-05-16T11:07:54Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T105736Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty input is nonempty and was updated at
-`2026-05-16T11:00:59.966Z` for the same active coverage root. Current-run triage
-is still immature, but it no longer shows the old broad WS pause state:
+`2026-05-16T11:07:42.277Z` for the same active coverage root. Current-run triage
+is still immature and has no visible likely-real failures. One WS lifecycle
+group is paused for current-run profile-local startup failure evidence, while
+the other WS coverage groups remain enabled:
 
 ```text
-coverage files: 29968
-total records seen: 43993
-records processed this pass: 36
-current-run triage signatures: 1
+coverage files: 30071
+total records seen: 44142
+records processed this pass: 40
+current-run records: 13 (http=3, ws=10)
+current-run successful records: 0
+current-run triage signatures: 22
 current-run likely-real visible: 0
-current-run known-noise family: rest_meta_database_error=1
-current-run bootstrap stalls: 0
-paused groups: none
+current-run known-noise families: rest_meta_database_error=4, pre_action_bootstrap_stall=2
+current-run bootstrap stalls: 4
+paused groups: novelty-ws-lifecycle
 enabled groups: novelty-ws-common-blocks, novelty-ws-block-gauntlet,
-  novelty-ws-lifecycle, novelty-ws-real-user-editing,
+  novelty-ws-parser-transform, novelty-ws-real-user-editing,
   novelty-ws-real-user-rich-text, novelty-http-persistence-probe
-policy version: 7
 quality issues: 1
+top duplicate family share: 0.4545
 ```
 
-The raw novelty warning still says no behavioral coverage files were found under
-the current output dir, and the current-run counters are sparse after the run
-root moved to `run-20260516T105736Z`. Treat this as active fuzz infrastructure
-health, not as proof that the final PR stack is clean.
+Treat this as active fuzz infrastructure health, not as proof that the final PR
+stack is clean. The current-run snapshot is scoped to the current output dir;
+historical and external-live triage remain reporting context only and must not
+be presented as live product failure.
 
 The latest trend evidence packet was generated at `2026-05-16T10:57:02Z` from
 monitor data through `2026-05-16T10:56:24Z`; use it for trend interpretation and
@@ -245,17 +251,17 @@ is `18/840`, `revision-persistence` is `76/3075`, `multi-reload-lifecycle` is
 Health caveat: the latest trend evidence still has `likely_real_max: 0`, but
 this is health evidence for the active validation infrastructure, not a clean
 fuzz pass on the final maintainer-facing PR stack. The raw novelty body now has
-a current-run snapshot with no visible likely-real failures, but PR11A-E is not
-clean and the final combined stack has not been rebuilt from audited/rebased PR
-heads.
+a current-run snapshot with no visible likely-real failures, but one lifecycle
+group is paused for current-run startup failures, PR11A-E is not clean, and the
+final combined stack has not been rebuilt from audited/rebased PR heads.
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T105143Z-synthesis.md`. It says:
+`pr-split-20260516T105719Z-synthesis.md`. It says:
 
-- The split direction is accepted, but PR filing is blocked on the active
-  PR11A-E shaping/check job.
+- The replacement split direction is accepted, but PR filing is blocked on the
+  active PR11A-E shaping/check job.
 - Remove `final/rtc-pr06b-save-snapshot-noop-guard` from the filing path and
   allow-list. Do not rerun it as the next gate.
 - Treat seed `5500002` as a separate revision-restore marker-retention
@@ -274,9 +280,10 @@ The newest completed split-persona synthesis is
 - That report must include branch graph, containment, adjacent `range-diff`,
   adjacent diffstat/numstat, focused CRDT tests, touched-file JS lint, and
   `git diff --check`.
-- Current evidence has touched-file lint exit `0`, but focused unit exits are
-  `1` for PR11A-E/PR12. If the active session exits with an empty or unusable
-  report, rerun exactly once from
+- The active job has ancestry/containment and lint signal, but focused CRDT
+  checks are not green because package-local Jest dependency resolution is
+  still failing. If the active session exits with an empty or unusable report,
+  rerun exactly once from
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T104057Z/jobs/run-rtc-pr11a-e-split-shaping-check-20260516T104057Z.sh`.
 - After clean PR11 evidence, rebuild the final combined validation stack from
   an explicit allow-list that excludes `PR 6B` and old aggregate/red heads.
@@ -284,10 +291,10 @@ The newest completed split-persona synthesis is
   duplicate PR11 shaping, broad fuzz, or final-stack fuzz jobs while PR11A-E is
   unresolved.
 
-A newer split-persona filename,
-`pr-split-20260516T105719Z-synthesis.md`, exists in the collected inputs but is
-`0 bytes`, so the latest completed split synthesis remains
-`pr-split-20260516T105143Z-synthesis.md`.
+The matching `pr-split-20260516T105719Z-feedback-action.md` recorded the
+current-split update, confirmed the same active session, and launched no new
+jobs. Final-stack fuzz remains deferred until PR11A-E has a usable green report
+and the final combined validation stack is rebuilt.
 
 The latest duplicate-noise synthesis is
 `duplicate-noise-20260516T103851Z-synthesis.md`. It classifies the current
@@ -315,9 +322,10 @@ and supervisor pass that was in scope:
 The remaining duplicate/noise risk is that the persona reviews also recommended
 triage-watcher and analysis-tier suppression for strict no-user/no-action
 startup noise; those files were outside the feedback action's edit scope. The
-current raw novelty snapshot shows no paused groups and no current-run
-bootstrap stalls, but only one current-run triage signature, so this is a
-bounded control-plane improvement, not a substitute for PR 11A-E split shaping,
+current raw novelty snapshot shows `novelty-ws-lifecycle` paused after `3/3`
+pre-action WS discovery/startup failures, but that is current-run profile-local
+evidence rather than historical/external-live dominance. This bounded
+control-plane improvement is not a substitute for PR 11A-E split shaping,
 focused post-rebase checks, public branch audit, or fresh combined-stack
 validation.
 
@@ -325,11 +333,12 @@ The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
 separate current-run fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older PR 13
-review-link warning is superseded by the `11:03:11Z` branch-link audit, which
+review-link warning is superseded by the `11:07:59Z` branch-link audit, which
 verifies the repaired PR 13 review refs listed above. Their older "only
 `novelty-http-persistence-probe` is enabled" warning is superseded by the latest
-raw novelty snapshot, which shows active WS canary/common-blocks/block-gauntlet
-and real-user groups with `paused groups: none`.
+raw novelty snapshot, which shows active WS common-blocks, block-gauntlet,
+parser-transform, and real-user groups, with only the WS lifecycle canary
+paused on current-run startup evidence.
 
 ## Deferred Or Evidence-Only Work
 
@@ -381,8 +390,10 @@ Before filing any maintainer-facing PR:
 
 Existing fuzz infrastructure can continue where healthy. The latest trend
 evidence has `likely_real_max: 0` and `8` unmet goals, and the latest raw
-novelty snapshot shows `paused groups: none` with active HTTP plus WS canary,
-real-user, common-block, and block-gauntlet groups. Current-run triage is still
-immature, PR11A-E evidence is still not clean, and none of this is broad
-final-stack coverage or PR-filing validation. Broad fuzzing waits for corrected
-final PR heads, a fresh combined validation stack, and clean PR 11A-E evidence.
+novelty snapshot shows no visible likely-real failures, active HTTP plus WS
+real-user/common-block/block-gauntlet/parser-transform groups, and
+`novelty-ws-lifecycle` paused for current-run startup failures. Current-run
+triage is still immature, PR11A-E evidence is still not clean, and none of this
+is broad final-stack coverage or PR-filing validation. Broad fuzzing waits for
+corrected final PR heads, a fresh combined validation stack, and clean PR
+11A-E evidence.
