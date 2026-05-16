@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T09:50:20Z`
+Snapshot time: `2026-05-16T10:03:40Z`
 
 Trigger event:
-`pr-split-2026-05-16T09-49-23Z-20260516T093801Z`
+`pr-split-2026-05-16T10-02-33Z-20260516T095712Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -18,7 +18,7 @@ Base handoff:
 `docs/explanations/architecture/rtc-likely-real-bug-handoff-20260514.md`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T09-49-23Z-20260516T093801Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T10-02-33Z-20260516T095712Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -30,61 +30,46 @@ or the original split merely for continuity.
 
 ## Executive Status
 
-The plan is not whole-stack filing-ready, but the blocker moved. The latest
-completed split-persona synthesis, `pr-split-20260516T093801Z-synthesis.md`,
-reports that the PR 13 green finalization reconciliation report is now
-nonempty and green. It says focused CRDT tests, touched-file lint, and
-`git diff --check` passed for the green PR 13 identity-first sequence and the
-reattached green PR 14/PR 15 refs.
+The plan is still filing-blocked. The latest split-persona synthesis,
+`pr-split-20260516T095712Z-synthesis.md`, keeps most of the current split but
+adds one required replacement: do not file aggregate PR 11. Split it into
+PR 11A-E for explicit-base append, delete, middle insert, top-level
+move/reorder, and delete-plus-insert anchor behavior.
 
-Current PR 13 decision:
+Current filing blockers:
 
-- Drop the old aggregate `final/rtc-pr13b-source-retirement` as a filing head.
-- Drop the old standalone PR 13C wording/head as a filing head.
-- Drop the Cycle 110 red `PR 13B1` / `PR 13B2` / `PR 13B3` filing heads.
-- Use the Cycle 118 green identity-first sequence:
-  `final/rtc-pr13a-observed-delete-provenance-green` at `737fbaf0fca`,
-  `final/rtc-pr13b0-identity-provenance-guard` at `b64158c44d8`,
-  `final/rtc-pr13b1-direct-source-retirement-green` at `404f9b14231`,
-  `final/rtc-pr13b2-current-only-source-retirement-green` at `0492a7ae759`,
-  and `final/rtc-pr13b3-explicit-base-source-retirement-green` at
-  `ba95f820097`.
-- Reattach PR 14 and PR 15 on the green PR 13B3 stack:
-  `final/rtc-pr14-table-body-array-green`,
-  `final/rtc-pr15a-fallback-group-move-green`,
-  `final/rtc-pr15b-fallback-group-insert-anchor-green`, and
-  `final/rtc-pr15c-fallback-group-delete-green`.
+- PR 6B remains blocked on the focused replay job
+  `rtc-pr06b-ws-parser-transform-replay-5500001-5500002-5500006-20260516T095229Z`.
+  The latest synthesis reports that the tmux session is active and its
+  `report.md` is still zero bytes. If it exits empty, rerun that exact job once;
+  if marker duplication reproduces or no usable oracle is produced, drop PR 6B.
+- PR 11A-E need a bounded split-shaping/check job before maintainer filing.
+  The current audit still verifies only aggregate PR 11, so the proposed
+  PR 11A-E rows below intentionally say `No verified branch link yet`.
+- Broad PR 8 remains replaced by a narrow PR 8A title-reload branch; the
+  broader persisted-record hydration work stays deferred.
+- Broad final-stack fuzzing is premature until the final filing branches are
+  shaped, rebased, checked, and assembled into a fresh validation stack.
 
-The branch-link audit has not caught up with those green final refs. It still
-verifies only the repaired review PR 13 links and the older review PR 14/PR 15
-content links. Treat the green report as PR-shape and check evidence, not as a
-public branch-link audit. Proposed PR rows below either use an audit row marked
-`verified-content` or explicitly say `No verified branch link yet`.
+Current completed branch-link audit status:
 
-Other split decisions:
+- All currently audited review rows are fetched from `danluu` refs and marked
+  `verified-content`.
+- For PR 13, use only the repaired review refs from the audit:
+  `review/rtc-pr13a-observed-delete-provenance-repaired`,
+  `review/rtc-pr13b-source-retirement`, and
+  `review/rtc-pr13c-stale-block-identity-smear-guard`.
+- Do not link the stale or misordered PR 13 refs listed under
+  "Explicitly Not PR-Content Links" as current PR content.
 
-- Keep the accepted `PR 5A/5B/5C`, `PR 7A/7B`, and `PR 15A/15B/15C` shapes.
-- Replace broad PR 8 with a narrow title-reload path around
-  `origin/try/rtc-title-reload-pr`; keep broader persisted-record hydration
-  deferred.
-- Keep PR 6B blocked until focused replay of `ws-parser-transform` seeds
-  `5500001`, `5500002`, and `5500006` passes; drop PR 6B if replay fails.
-- Keep PR 6C malformed evaluated save content blocked pending Jest, lint, and
-  replay evidence.
-- Keep reload-hydration empty-live-editor, pre-save search/live-collapse,
-  rich-text suffix corruption, malformed-save residuals, and HTTP
-  room-isolation residuals evidence-only/deferred.
-
-The next bounded PR work is PR 6B replay. The latest
-`pr-split-20260516T093801Z-feedback-action.md` file collected for this run is
-zero bytes, so this status update records the recommendation but does not claim
-that a PR 6B replay job was launched. Do not start broad fuzzing, final-stack
-fuzzing, reload diagnostics, duplicate PR 13 repair, or validation-lineage
-rebuilds in parallel with that replay.
+Deferred/evidence-only work remains outside the filing split: reload-hydration
+empty-live-editor, pre-save search/live-collapse, rich-text formatted suffix
+corruption, broader malformed-save/save-settlement residuals, and HTTP polling
+room-isolation residuals.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T09:50:16Z`.
+The collected remote status input was generated at `2026-05-16T10:03:35Z`.
 
 The fix-planning repo is currently checked out at:
 
@@ -99,7 +84,7 @@ That checkout still has an untracked reload-hydration E2E gate spec:
 test/e2e/specs/editor/collaboration/websocket-only/collaboration-reload-hydration-empty-live-gate.spec.ts
 ```
 
-Keep that spec out of PR 15A/15B/15C, PR 6, PR 6A, PR 8, fallback-group
+Keep that spec out of PR 15A/15B/15C, PR 6, PR 6A, PR 8A, fallback-group
 evidence, and any final branch claim unless it is deliberately copied into a
 clean evidence worktree for the reload-hydration gate.
 
@@ -110,21 +95,20 @@ The fuzz repo remains on the validation stack:
 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-That stack still has modified fuzz harness files and many untracked fuzz and
-analysis scripts. It is active validation infrastructure, not the final PR
-stack.
+That stack still has modified product/test files plus many untracked fuzz,
+analysis, and documentation artifacts. It is active validation infrastructure,
+not the final PR stack.
 
-The branch-link audit was generated at `2026-05-16T09:50:20Z` from fetched
+The branch-link audit was generated at `2026-05-16T10:03:40Z` from fetched
 `danluu` refs. Use only rows marked `verified-content` as PR-content links.
 
-Use only these repaired PR 13 audit refs when mentioning current audited PR 13
-review content:
+Current repaired PR 13 audit refs:
 
 | Purpose | Verified branch containing audited content | Current SHA | Status |
 | --- | --- | --- | --- |
-| PR 13A observed-delete provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | `eddf2dd38c09` | repaired audit link; green filing head is separate and not audit-verified |
-| Aggregate PR 13B source-retirement provenance | [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement) | `6ea7f425b009` | verified content, but rejected as a filing head |
-| PR 13C stale block identity smear guard | [`review/rtc-pr13c-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13c-stale-block-identity-smear-guard) | `fa0f00a1c025` | verified content; old standalone PR 13C wording is superseded by green PR 13B0/B3 |
+| PR 13A observed-delete provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | `eddf2dd38c09` | repaired audit link; use this for PR 13A review content |
+| PR 13B source retirement | [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement) | `6ea7f425b009` | repaired audit link; replaces stale/misordered PR 13B links |
+| PR 13C stale block identity smear guard | [`review/rtc-pr13c-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13c-stale-block-identity-smear-guard) | `fa0f00a1c025` | repaired audit link; replaces stale/misordered PR 13C links |
 
 Do not use these stale or misordered refs as PR-content links for repaired
 PR 13:
@@ -139,10 +123,9 @@ is pushed only so the repaired PR 13A compare link has the source base.
 
 ## Proposed PR Split
 
-The old aggregate PR 5, broad PR 8, aggregate PR 13B, old standalone PR 13C
-wording, and aggregate PR 15 rows are stale for maintainer-facing filing. The
-table is the current working split. Rows without an audited branch explicitly
-say `No verified branch link yet`.
+This table is the current working split. Every proposed row either uses a
+clickable branch link from the `verified-content` branch-link audit or
+explicitly says `No verified branch link yet`.
 
 | PR | Scope | Audit branch link | Files | Diff | Current status |
 | --- | --- | --- | ---: | ---: | --- |
@@ -150,29 +133,31 @@ say `No verified branch link yet`.
 | PR 2 | HTTP polling storage read window | [`review/rtc-pr02-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/tree/review/rtc-pr02-http-polling-storage-read-window) | 2 | +57 / -5 | verified branch; final rebase/checks still required |
 | PR 3 | Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/review/rtc-pr03-revision-restore-crdt-reset) | 2 | +58 / -5 | verified branch; final rebase/checks still required |
 | PR 4 | Persisted CRDT save-meta idempotence | [`review/rtc-pr04-crdt-save-meta-idempotence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr04-crdt-save-meta-idempotence) | 2 | +160 / -1 | verified branch; final rebase/checks still required |
-| PR 5A | Entity/entity-reference normalization in `crdt.ts` | No verified branch link yet | 2 | about +465 / -8 | accepted replacement for old aggregate PR 5; create/audit from `f39c621c90d` plus `589226af0fe` |
-| PR 5B | Parser/rich-text HTML equivalence in `crdt-blocks.ts` | No verified branch link yet | 2 | about +925 / -42 | accepted replacement for old aggregate PR 5; create/audit from `1a78db8d4ab` |
-| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | 2 | about +287 / -15 | accepted replacement for old aggregate PR 5; create/audit from `a517f83913c`, stacked after PR 5B |
-| PR 6 | Save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | 4 | +738 / -6 | does not claim browser-only gates, PR 6B, or malformed-save residuals beyond audited scope |
+| PR 5A | Entity/entity-reference normalization in `crdt.ts` | No verified branch link yet | 2 | TBD | accepted replacement for old aggregate PR 5; needs reviewed branch audit |
+| PR 5B | Parser/rich-text HTML equivalence in `crdt-blocks.ts` | No verified branch link yet | 2 | TBD | accepted replacement for old aggregate PR 5; needs reviewed branch audit |
+| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | 2 | TBD | accepted replacement for old aggregate PR 5; needs reviewed branch audit |
+| PR 6 | Save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | 4 | +738 / -6 | verified scope does not include PR 6B or broader malformed-save residuals |
 | PR 6A | Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06a-persisted-empty-content-guard) | 2 | +64 / -1 | narrow persisted-body guard |
-| PR 7A | Save response entity-state guards | [`review/rtc-pr07a-save-response-actions-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07a-save-response-actions-guard) | 2 | +1339 / -8 | accepted split; repaired final head exists separately, but filing refresh still required |
-| PR 7B | Save response manager/base-record guards | [`review/rtc-pr07b-save-response-manager-base-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07b-save-response-manager-base-record) | 5 | +404 / -8 | accepted split; stacked after PR 7A, final filing refresh still required |
-| PR 8A | Narrow reload-title prior-art path | No verified branch link yet | TBD | TBD | replace broad PR 8 with a narrow branch shaped from `origin/try/rtc-title-reload-pr`; broader persisted-record hydration remains deferred |
+| PR 7A | Save response entity-state guards | [`review/rtc-pr07a-save-response-actions-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07a-save-response-actions-guard) | 2 | +1339 / -8 | accepted split; final filing refresh still required |
+| PR 7B | Save response manager/base-record guards | [`review/rtc-pr07b-save-response-manager-base-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07b-save-response-manager-base-record) | 5 | +404 / -8 | stacked after PR 7A; final filing refresh still required |
+| PR 8A | Narrow reload-title prior-art path | No verified branch link yet | TBD | TBD | replace broad PR 8; broader persisted-record hydration remains deferred |
 | PR 9 | Core-data lock fairness | [`review/rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/review/rtc-pr09-store-lock-fairness) | 2 | +185 / -2 | verified branch; final rebase/checks still required |
 | PR 10 | CRDT block reconciliation foundation | [`review/rtc-pr10-crdt-block-rebase-foundation`](https://github.com/danluu/gutenberg/tree/review/rtc-pr10-crdt-block-rebase-foundation) | 2 | +145 / -4 | start CRDT stack |
-| PR 11 | Explicit-base top-level block operations | [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr11-explicit-base-top-level-ops) | 2 | +1145 / -4 | stacked on PR 10 |
+| PR 11A | Explicit-base stale suffix append | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; split-shaping/check job required |
+| PR 11B | Explicit-base top-level delete | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; split-shaping/check job required |
+| PR 11C | Explicit-base middle insert | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; split-shaping/check job required |
+| PR 11D | Explicit-base top-level move/reorder | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; split-shaping/check job required |
+| PR 11E | Explicit-base delete-plus-insert anchor | No verified branch link yet | TBD | TBD | replacement for aggregate PR 11; split-shaping/check job required |
 | PR 12 | Previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr12-previous-local-cache-top-level-ops) | 2 | +1391 / -5 | verified branch; final export/rebase still required |
-| PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 | +1151 / -25 | audit link for repaired content; green filing ref `final/rtc-pr13a-observed-delete-provenance-green` passed reconciliation checks but has no verified green branch link yet |
-| PR 13B0 | Identity-smear/provenance guard before source retirement | No verified branch link yet | 2 | about +430 / -50 | green filing ref `final/rtc-pr13b0-identity-provenance-guard` passed reconciliation checks; no verified branch link yet |
-| PR 13B1 | Direct cross-parent source retirement | No verified branch link yet | 2 | about +482 / -0 | green filing ref `final/rtc-pr13b1-direct-source-retirement-green` passed reconciliation checks; replaces red Cycle 110 subhead |
-| PR 13B2 | Current-only cross-parent source retirement | No verified branch link yet | 2 | about +410 / -0 | green filing ref `final/rtc-pr13b2-current-only-source-retirement-green` passed reconciliation checks; replaces red Cycle 110 subhead |
-| PR 13B3 | Explicit-base source retirement plus old accepted identity-smear tree | No verified branch link yet | 2 | about +758 / -0 | green filing ref `final/rtc-pr13b3-explicit-base-source-retirement-green` passed reconciliation checks and is reported tree-equivalent to the old accepted PR 13C filing tree |
-| PR 14 | Table body nested array merge | [`review/rtc-pr14-table-body-array-merge`](https://github.com/danluu/gutenberg/tree/review/rtc-pr14-table-body-array-merge) | 2 | +294 / -18 | audited content link; green reattached ref `final/rtc-pr14-table-body-array-green` passed reconciliation checks but still needs public branch-link audit |
-| PR 15A | Fallback group move stale reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 | +123 / -4 | audited content link; green reattached ref passed reconciliation checks; keep reload-hydration gate spec out |
-| PR 15B | Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 | +197 / -4 | audited content link; green reattached ref passed reconciliation checks; keep reload-hydration gate spec out |
-| PR 15C | Fallback group delete | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 | +161 / -4 | audited content link; green reattached ref passed reconciliation checks; keep reload-hydration gate spec out |
+| PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 | +1151 / -25 | repaired audit link; do not use stale PR 13A ref |
+| PR 13B | Cross-parent source retirement | [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement) | 2 | +1672 / -4 | repaired audit link; do not use stale/misordered PR 13B ref |
+| PR 13C | Stale block identity smear guard | [`review/rtc-pr13c-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13c-stale-block-identity-smear-guard) | 2 | +345 / -51 | repaired audit link; do not use stale/misordered PR 13C ref |
+| PR 14 | Table body nested array merge | [`review/rtc-pr14-table-body-array-merge`](https://github.com/danluu/gutenberg/tree/review/rtc-pr14-table-body-array-merge) | 2 | +294 / -18 | verified branch; final rebase/checks still required |
+| PR 15A | Fallback group move stale reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 | +123 / -4 | verified branch; keep reload-hydration gate spec out |
+| PR 15B | Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 | +197 / -4 | verified branch; keep reload-hydration gate spec out |
+| PR 15C | Fallback group delete | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 | +161 / -4 | verified branch; keep reload-hydration gate spec out |
 
-Old verified branches that are now prior art only:
+Old verified branches that are now prior art or staging only:
 
 - [`review/rtc-pr05-parser-entity-normalization-equivalence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr05-parser-entity-normalization-equivalence)
   remains a verified content link for old aggregate PR 5 (`4` files,
@@ -180,21 +165,18 @@ Old verified branches that are now prior art only:
 - [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record)
   remains a verified content link for old broad PR 8 (`11` files,
   `+618 / -61`), but not the active PR 8A shape.
-- [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement)
-  remains the verified aggregate source-retirement content link (`2` files,
-  `+1672 / -4`), but the latest split says not to file it.
-- [`review/rtc-pr13c-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13c-stale-block-identity-smear-guard)
-  remains a verified content link for old standalone PR 13C (`2` files,
-  `+345 / -51`), but the latest split says the accepted content is covered by
-  green PR 13B0/B3 after filing refs are audited.
+- [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr11-explicit-base-top-level-ops)
+  remains a verified content link for old aggregate PR 11 (`2` files,
+  `+1145 / -4`), but the latest split-persona synthesis recommends replacing
+  it with PR 11A-E.
 
 ## Fuzz And Validation Status
 
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T09:50:16Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T094459Z
+collected_at_utc: 2026-05-16T10:03:35Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T095910Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
@@ -202,42 +184,38 @@ fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 Latest novelty monitor snapshot:
 
 ```text
-updated: 2026-05-16T09:48:24.811Z
-coverage files: 28743
-total records seen: 42142
-records processed this pass: 57
-coverage lines seen this pass: 43633
-summary files read this pass: 0
-summary startup failures processed this pass: 0
+updated: 2026-05-16T10:02:21.939Z
+coverage files: 29014
+total records seen: 42521
+records processed this pass: 44
+coverage lines seen this pass: 44038
+summary startup failures processed this pass: 4
 new behavioral feature keys this pass: 0
 new CDP coverage hashes this pass: 0
 unmet goals: 8
 likely-real visible: 0
 likely-real merged duplicates: 0
 likely-real oracle/noise questions: 0
-load1: 62.79 / 64 cores
-memory: 418.6G free / 492.0G total
+load1: 48.90 / 64 cores
+memory: 420.6G free / 492.0G total
 headroom for adding groups: yes
 ```
 
 Enabled coverage-guided groups in the latest monitor snapshot:
 
-- `novelty-ws-common-blocks`
-- `novelty-ws-block-gauntlet`
-- `novelty-ws-parser-transform`
-- `novelty-ws-real-user-editing`
-- `novelty-ws-real-user-rich-text`
-- `novelty-ws-async-server-blocks`
-- `novelty-ws-media-cross-entity`
-- `novelty-ws-long-session-large-doc`
+- `novelty-ws-lifecycle`
+- `novelty-ws-persistence-no-title`
 - `novelty-http-persistence-probe`
 
-Paused groups:
-
-- `novelty-ws-persistence-no-title`: rotated browser budget to media-cross
-  entity for the CDP coverage-record gap.
-- `novelty-ws-lifecycle`: rotated browser budget to long-session-large-doc for
-  the same CDP coverage-record gap.
+High-noise WS expansion is currently held while current-run triage is immature
+and external live observed triage is dominated by strict startup known-noise.
+The held recommended groups are `novelty-ws-real-user-editing`,
+`novelty-ws-real-user-rich-text`, `novelty-ws-block-gauntlet`,
+`novelty-ws-common-blocks`, `novelty-ws-parser-transform`,
+`novelty-ws-async-server-blocks`, `novelty-ws-media-cross-entity`, and
+`novelty-ws-long-session-large-doc`. Three high-noise groups are explicitly
+paused: `novelty-ws-parser-transform`, `novelty-ws-async-server-blocks`, and
+`novelty-ws-media-cross-entity`.
 
 Current-run triage is immature in the new output directory and has no visible
 likely-real signal:
@@ -261,62 +239,57 @@ current-run evidence confirms product failures:
 
 ```text
 closed historical scope:
-triage roots: 97
-triage state files: 155
-signatures: 8801
-bootstrap stalls: 4209
-top duplicate family share: 0.4782
+triage roots: 101
+triage state files: 158
+signatures: 9460
+bootstrap stalls: 4364
+top duplicate family share: 0.4613
 top semantic family: pre_action_bootstrap_stall
 
 external live sidecar scope:
-triage roots: 4
-triage state files: 101
-signatures: 11098
-bootstrap stalls: 7712
-top duplicate family share: 0.6949
+triage roots: 3
+triage state files: 100
+signatures: 10729
+bootstrap stalls: 7747
+top duplicate family share: 0.7221
 top semantic family: pre_action_bootstrap_stall
 
 combined reporting scope:
-triage roots: 102
-triage state files: 257
-signatures: 19904
-bootstrap stalls: 11925
-top duplicate family share: 0.5991
+triage roots: 105
+triage state files: 259
+signatures: 20189
+bootstrap stalls: 12111
+top duplicate family share: 0.5999
 top semantic family: pre_action_bootstrap_stall
 ```
 
-The monitor also warns that no behavioral coverage files were found under the
-new novelty output directory. Treat the current `0` likely-real status as
-health and triage signal only, not final rebased-stack validation.
-
-The trend evidence packet was generated at `2026-05-16T09:42:05Z` from monitor
-data through `2026-05-16T09:41:45Z`, before the new `run-20260516T094459Z`
-coverage root and group rotation. Use it for trend interpretation, not current
-enabled-group membership:
-
-```text
-monitor passes: 1408
-coverage files: 272 -> 28632
-coverage files delta: 28360
-unmet coverage goals: 24 -> 8
-likely_real_max: 0
-duplicate_share_current_last: 0.6286
-duplicate_share_historical_last: 0.4782
-summary_startup_failures_last: 0
-quality_issues_last: 3
-fuzz level mix: browser-e2e=27 lanes/27 groups; transport-integration=1 lane/1 group
-```
-
-Largest current unmet goals in the latest monitor snapshot:
+Largest current unmet goals:
 
 - CDP coverage records: `4559/5000`
-- successful real-user-editing records: `266/500`
-- `core/html`: `332/500`
-- `core/details`: `371/500`
-- `core/more`: `376/500`
-- `ui-heading-shortcut`: `428/500`
-- `reload-post-action`: `445/500`
+- successful real-user-editing records: `267/500`
+- `core/html`: `335/500`
+- `core/details`: `373/500`
+- `core/more`: `377/500`
+- `ui-heading-shortcut`: `430/500`
+- `reload-post-action`: `448/500`
 - `core/gallery`: `492/500`
+
+The trend evidence packet was generated at `2026-05-16T09:56:46Z` from monitor
+data through `2026-05-16T09:54:44Z`, before the latest current-run group hold.
+Use it for trend interpretation, not current enabled-group membership:
+
+```text
+monitor passes: 1414
+coverage files: 272 -> 28872
+coverage files delta: 28600
+unmet coverage goals: 24 -> 8
+likely_real_max: 0
+duplicate_share_current_last: 0
+duplicate_share_historical_last: 0.4588
+summary_startup_failures_last: 0
+quality_issues_last: 1
+fuzz level mix: browser-e2e=30 lanes/30 groups; transport-integration=1 lane/1 group
+```
 
 This fuzz status is health and coverage-depth evidence for active validation
 infrastructure. It is not final-stack validation and does not make the PR split
@@ -328,58 +301,47 @@ Completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` are still useful for report hygiene:
 separate current-run fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older PR 13
-and enabled-group conclusions are stale and superseded by later split-persona
-and novelty inputs.
+review-link warning is superseded by the `10:03:40Z` branch-link audit, which
+now verifies the repaired PR 13 review refs.
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T093801Z-synthesis.md`. It says:
+`pr-split-20260516T095712Z-synthesis.md`. It says:
 
-- The PR 13 green reconciliation report is nonempty and green.
-- The filing shape should be PR 13A observed-delete provenance, PR 13B0
-  identity/provenance guard, PR 13B1 direct source retirement, PR 13B2
-  current-only source retirement, and PR 13B3 explicit-base source retirement.
-- Reattached green PR 14 and PR 15 refs are part of that sequence.
-- Old aggregate PR 13B, old PR 13C wording/head, old PR 14/PR 15 refs, red
-  Cycle 110 PR 13B1/B2/B3 heads, and wildcard `final/rtc-pr*` should not be
-  filed.
-- Current fuzz has `0` visible likely-real failures, but that is background
-  signal, not final rebased-stack validation.
-- The next concrete action is exactly one bounded PR 6B focused replay for
-  `ws-parser-transform` seeds `5500001`, `5500002`, and `5500006`.
-- Do not launch broad fuzz, final-stack fuzz, reload diagnostics, PR 13
-  reconciliation, or validation-lineage rebuild now.
-
-The latest `pr-split-20260516T093801Z-feedback-action.md` is zero bytes, so no
-post-synthesis action artifact confirms a launched PR 6B job from this loop.
-The previous nonempty pr-split feedback action remains
-`pr-split-20260516T091517Z-feedback-action.md`; it launched the now-completed
-PR 13 green finalization reconciliation job.
+- The project is still filing-blocked.
+- Keep `PR 5A/5B/5C`; do not resurrect aggregate PR 5.
+- Replace broad PR 8 with narrow PR 8A from `origin/try/rtc-title-reload-pr`.
+- Exclude PR 6B from filing unless the active focused replay passes cleanly.
+- Do not file old aggregate PR 13B, old separate PR 13C, Cycle 110 red
+  PR 13 refs, broad PR 8, PR 6C, or wildcard `final/rtc-pr*`.
+- Split aggregate PR 11 into PR 11A-E.
+- Do not start new fuzz lanes, duplicate PR 6B work, PR 13 repair work,
+  reload diagnostics, another split-review loop, or final-stack fuzz while the
+  PR 6B replay is unresolved.
 
 The newest completed duplicate-noise synthesis is
-`duplicate-noise-20260516T093712Z-synthesis.md`; the newest nonempty
-duplicate-noise feedback action remains
-`duplicate-noise-20260516T091615Z-feedback-action.md`.
+`duplicate-noise-20260516T094506Z-synthesis.md`; the matching
+`duplicate-noise-20260516T094506Z-feedback-action.md` is zero bytes. That
+analysis changes no product PR validation status. It identifies a control-loop
+leak: strict pre-action bootstrap/startup stalls are being ingested as many
+distinct signatures, and the novelty monitor can re-enable noisy WS groups
+before current-run triage/startup counters mature.
 
-Completed duplicate/noise analysis changes no product PR validation status. It
-records control-plane admission and classification issues:
+Consensus duplicate/noise remediation remains control-plane only:
 
-- The latest duplicate-noise synthesis recommends a watcher-first fix:
-  dedupe raw attempt records against final per-seed records, add a strict
-  no-product-evidence pre-action startup predicate, canonicalize only those
-  startup signatures, and keep structural/content/post-action failures visible.
-- The latest duplicate-noise feedback action implemented only the allowed
-  monitor-side part in `bin/rtc-browser-fuzz-novelty-monitor.mjs`, validated
-  it with `node --check`, and respawned only `rtc-coverage-guided-novelty`.
-- Summary-row dedupe, stale queued-analysis skipping, and better `unknown`
-  classification remain unresolved because that action did not edit
-  `rtc-browser-fuzz-triage-watcher.mjs` or analysis-tier code.
-- Historical known-noise remains advisory only. Do not suppress current
-  `unknown`, non-convergence, assertion, save/reload, user/action, fault, or
-  product-evidence failures with a historical blanket rule.
+- In `bin/rtc-browser-fuzz-triage-watcher.mjs`, dedupe raw attempts against
+  strict classified pre-action bootstrap stalls, canonicalize only those
+  no-product-evidence startup signatures, and normalize seed/run/artifact path
+  noise.
+- In `bin/rtc-browser-fuzz-novelty-monitor.mjs`, keep high-noise WS expansion
+  held while current-run startup noise dominates and `likelyRealVisible === 0`,
+  while allowing a small canary set.
+- Do not broadly suppress `unknown`, `timeout`, `assertion`,
+  `collaboration_non_convergence`, late-session stalls, or any failure with
+  user/action/product evidence.
 
-This control-plane work is useful, but it is not a substitute for public branch
-audit of green filing refs, focused post-rebase tests, PR 6B replay, or fresh
-combined-stack validation.
+This control-plane work is useful, but it is not a substitute for PR 6B replay,
+PR 11A-E split shaping, focused post-rebase tests, public branch audit, or
+fresh combined-stack validation.
 
 ## Deferred Or Evidence-Only Work
 
@@ -387,7 +349,7 @@ These must not be described as fixed.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| PR 6B save snapshot/no-op guard candidate | `final/rtc-pr06b-save-snapshot-noop-guard`; seeds `5500001`, `5500002`, `5500006` | next bounded gate, but still blocked candidate; not part of filing-ready split; exclude from wildcard final-ref import and from PR 6 claims | Run exactly one bounded focused `ws-parser-transform` replay; pass condition is no duplicated content marker at `save-checkpoint-persisted-crdt-projection`; drop PR 6B if replay fails |
+| PR 6B save snapshot/no-op guard candidate | `final/rtc-pr06b-save-snapshot-noop-guard`; seeds `5500001`, `5500002`, `5500006` | blocked candidate; not part of filing-ready split; exclude from wildcard final-ref import and from PR 6 claims | Wait for active focused `ws-parser-transform` replay; rerun exactly once only if the active report exits empty; drop PR 6B if replay fails |
 | PR 6C malformed evaluated save content | no verified filing branch | blocked pending Jest, lint, and replay evidence | Promote only after focused product evidence and a verified branch link exist |
 | Broad PR 8 persisted-record hydration | old audit branch [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | deferred; active PR 8A is only the narrow title-reload prior-art path | Shape and audit the narrowed title-reload branch; give any remaining persisted-record hydration claim separate product evidence and a verified branch link |
 | Reload hydration empty live editor | `e75c8829e4e9`, `3bbdc3cdb393`; gate branch `try/rtc-reload-hydration-gate-e75c8829` | evidence-only; not in PR 6, PR 6A, PR 8A, PR 15, or fallback-group claims | Promote only if a clean gate reaches the post-reload assertion and live editor state stays empty after exact-room WebSocket sync while REST body and persisted `_crdt_document` remain populated |
@@ -403,23 +365,24 @@ Do not file a single mega-PR and do not file the large stacked
 
 Before filing any maintainer-facing PR, require:
 
-1. Use only the explicit green final-head filing/push allow-list produced by
-   the PR 13 reconciliation report. Do not wildcard import or file
+1. Use only an explicit filing/push allow-list. Do not wildcard import or file
    `final/rtc-pr*`.
-2. Keep old aggregate PR 13B, old PR 13C wording/head, red Cycle 110
-   PR 13B1/B2/B3 heads, and old PR 14/PR 15 refs out of filing branches and
+2. Keep old aggregate PR 5, broad PR 8, aggregate PR 11, stale/misordered
+   PR 13 refs, PR 6C, and dirty evidence branches out of filing branches and
    push allow-lists.
-3. Push or expose the green final PR 13B0/B1/B2/B3 and reattached PR 14/PR 15
-   refs, then regenerate the branch-link audit so every proposed row has a
-   verified public PR-content link or explicitly remains unverified.
-4. Rebase or recreate each intended PR branch on the intended upstream base.
-5. Regenerate branch graph/containment evidence and adjacent
+3. Let the active PR 6B replay finish; rerun it exactly once only if it exits
+   with an empty report, and drop PR 6B if seeds `5500001`, `5500002`, or
+   `5500006` still reproduce duplicated persisted CRDT projection or produce no
+   usable oracle.
+4. Run one bounded PR 11A-E split-shaping/check job after PR 6B is classified.
+   Require branch graph, containment checks, adjacent range-diffs/diffstats,
+   focused CRDT tests, touched-file lint, and `git diff --check`.
+5. Shape and audit PR 5A/5B/5C and narrow PR 8A, or explicitly defer them.
+6. Rebase or recreate each intended PR branch on the intended upstream base.
+7. Regenerate branch graph/containment evidence and adjacent
    range-diffs/diffstats from the actual filing repo.
-6. Rerun focused checks, touched-file lint, and `git diff --check` on every
+8. Rerun focused checks, touched-file lint, and `git diff --check` on every
    imported/rebased branch.
-7. Run the bounded PR 6B replay and drop PR 6B if seeds `5500001`, `5500002`,
-   or `5500006` still reproduce duplicated persisted CRDT projection.
-8. Shape and audit PR 5A/5B/5C and narrow PR 8A, or explicitly defer them.
 9. Keep dirty analysis-only artifacts and the untracked reload-hydration gate
    spec out of product PR branches.
 10. Assemble a fresh final combined validation stack from the actual PR heads.
@@ -428,7 +391,7 @@ Before filing any maintainer-facing PR, require:
 
 Existing fuzz infrastructure can continue where healthy. The current novelty
 snapshot has `0` visible likely-real failures and `8` unmet goals, but the new
-current-run triage directory is immature and has a behavioral-coverage warning.
+current-run triage directory is immature and high-noise WS expansion is held.
 None of this is broad final-stack coverage or PR-filing validation. Broad
-fuzzing waits for corrected public final PR heads and a fresh combined
-validation stack.
+fuzzing waits for corrected final PR heads and a fresh combined validation
+stack.
