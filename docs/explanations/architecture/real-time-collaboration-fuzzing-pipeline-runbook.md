@@ -156,6 +156,30 @@ tells the graph refresh Codex job to preserve and interpret the level-mix and
 execution-rate plots, and `bin/rtc-trend-generate-evidence.sh` includes the
 latest level-mix and execution summaries in the persona-loop evidence packet.
 
+`bin/rtc-fuzz-level-mix-persona-loop-remote.sh` starts the continuous
+fuzz-level mix controller on Jetstream2. This loop must not wait for stalls,
+errors, or harness-work candidates before reviewing the mix. Every cycle it:
+
+-   builds context from the current coverage-guided, focused, strict-expansion,
+    and gap-booster run roots;
+-   records the active lane mix and current-root execution counters by fuzzing
+    level;
+-   launches one xhigh Codex tmux session per standard persona, with
+    `RTC_FUZZ_LEVEL_MIX_MAX_PARALLEL=6` by default so all six personas think in
+    parallel;
+-   synthesizes the six reports;
+-   after every two review cycles, launches one action Codex job that must make
+    a concrete control decision.
+
+The action job should either add or launch the smallest bounded lower-level
+target with a clear oracle, or write the exact blocker and next command/code
+change needed. A mix with zero active `unit-property`,
+`coverage-guided-lower-level`, `backend-api`, `protocol-server`, and
+`fuzz-assertion` lanes is an actionable control-loop input, not merely a graph
+annotation. The browser/e2e fuzzers should continue running while lower-level
+targets are added unless there is clear evidence that they are blocking the
+lower-level work.
+
 ## Jetstream Remote Scripts
 
 The Jetstream2 run uses `/media/volume/danluu-fuzz-data` for the repository and
