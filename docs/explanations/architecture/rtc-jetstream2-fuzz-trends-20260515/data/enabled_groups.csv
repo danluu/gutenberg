@@ -609,3 +609,16 @@ timestamp,group,group_family
 2026-05-16T13:40:12Z,novelty-ws-common-blocks,auth/locks
 2026-05-16T13:42:11Z,novelty-ws-persistence-no-title,persistence
 2026-05-16T13:42:11Z,novelty-ws-parser-transform,parser
+2026-05-16T13:46:54Z,novelty-ws-parser-transform,parser
+2026-05-16T13:46:54Z,novelty-ws-async-server-blocks,async/media
+2026-05-16T13:46:54Z,novelty-ws-media-cross-entity,async/media
+2026-05-16T13:46:54Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-16T13:50:31Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T13:50:31Z,novelty-http-persistence-probe,persistence
+2026-05-16T13:50:31Z,novelty-ws-real-user-rich-text,real-user
+2026-05-16T13:50:31Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-16T13:50:31Z,novelty-ws-common-blocks,auth/locks
+2026-05-16T13:50:31Z,novelty-ws-parser-transform,parser
+2026-05-16T13:50:31Z,novelty-ws-async-server-blocks,async/media
+2026-05-16T13:50:31Z,novelty-ws-media-cross-entity,async/media
+2026-05-16T13:50:31Z,novelty-ws-long-session-large-doc,lifecycle
