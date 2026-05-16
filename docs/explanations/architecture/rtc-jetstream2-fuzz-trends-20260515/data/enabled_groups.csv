@@ -586,3 +586,6 @@ timestamp,group,group_family
 2026-05-16T13:10:03Z,novelty-ws-common-blocks,auth/locks
 2026-05-16T13:10:03Z,novelty-ws-parser-transform,parser
 2026-05-16T13:10:03Z,novelty-ws-async-server-blocks,async/media
+2026-05-16T13:12:12Z,novelty-ws-persistence-no-title,persistence
+2026-05-16T13:12:12Z,novelty-ws-media-cross-entity,async/media
+2026-05-16T13:14:29Z,novelty-ws-long-session-large-doc,lifecycle
