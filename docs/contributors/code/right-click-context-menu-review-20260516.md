@@ -30,6 +30,12 @@ Impact:
 
 This should not ship as an unconditional editor feature. Remove it, make it explicitly opt-in and site-controlled, or route it through a configured service that installations can audit and disable.
 
+Actual Playwright evidence from the patched WordPress editor:
+
+![LanguageTool network egress from Check spelling](right-click-context-menu-review-20260516-assets/actual/spellcheck-languagetool-egress-confirmed.png)
+
+The browser run selected text in the editor, opened the actual right-click menu, clicked `Check spelling`, and captured a POST to `https://api.languagetool.org/v2/check`. The request body contained `text=Thiss+sentance+has+severl+erors+and+a+privacy+sensitive+secret+token+abc123.&language=en-US`; the request was intercepted after the real editor code initiated it so the test did not depend on LanguageTool availability.
+
 ### High: captured DOM selection is not tied to the block that was right-clicked
 
 The context-menu handler derives the target block from the right-click target, then separately captures the current document selection:
