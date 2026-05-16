@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T08:13:24Z`
+Snapshot generated: `2026-05-16T08:18:57Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1365` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T08:12:41Z`, coverage files grew from `272` to `27022`, a delta of
-`26750`. The monitor's visible likely-real count stayed at `0` throughout this
+`1367` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T08:16:58Z`, coverage files grew from `272` to `27095`, a delta of
+`26823`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -70,7 +70,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active coverage run, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `417.9G`, so the remaining
+remained high at the end of the snapshot, around `420.4G`, so the remaining
 bottleneck is more about useful work selection, fresh-output health, and
 completion rate than raw RAM.
 
@@ -150,9 +150,9 @@ rechecks counted as executions, and bucket rates in 15-minute windows scaled to
 attempts per hour. This is more precise than supervisor launches or lane counts,
 but it only covers fuzzers that emit these lane events.
 
-The latest collected execution data has `43,871` completed attempts:
-`40,923` browser/e2e and `2,948` transport/integration. The latest 15-minute
-bucket is running at about `1408` browser/e2e attempts/hour and `20`
+The latest collected execution data has `44,023` completed attempts:
+`41,073` browser/e2e and `2,950` transport/integration. The latest 15-minute
+bucket is running at about `396` browser/e2e attempts/hour and `4`
 transport/integration attempts/hour. `unit-property`,
 `coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
 `fuzz-assertion` levels are still at `0` executions in this counter.
@@ -200,13 +200,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 2851 | 76 | 0 | 2.7% |
-| `multi-reload-lifecycle` | 2093 | 58 | 0 | 2.8% |
-| `parser-serialization` | 1525 | 60 | 0 | 3.9% |
-| `real-user-editing` | 4082 | 253 | 0 | 6.2% |
-| `common-blocks` | 2495 | 239 | 0 | 9.6% |
-| `parser-transform` | 2715 | 267 | 0 | 9.8% |
-| `block-gauntlet` | 3247 | 484 | 0 | 14.9% |
+| `revision-persistence` | 2858 | 76 | 0 | 2.7% |
+| `multi-reload-lifecycle` | 2095 | 58 | 0 | 2.8% |
+| `parser-serialization` | 1527 | 60 | 0 | 3.9% |
+| `real-user-editing` | 4093 | 255 | 0 | 6.2% |
+| `common-blocks` | 2508 | 240 | 0 | 9.6% |
+| `parser-transform` | 2718 | 267 | 0 | 9.8% |
+| `block-gauntlet` | 3258 | 487 | 0 | 14.9% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -220,15 +220,15 @@ Current unmet goals from the latest state:
 
 | Goal | Current | Target |
 | --- | ---: | ---: |
-| successful real-user-editing records next coverage tier | 253 | 500 |
-| gauntlet block core/html next coverage tier | 311 | 500 |
-| gauntlet block core/details next coverage tier | 344 | 500 |
+| successful real-user-editing records next coverage tier | 255 | 500 |
+| gauntlet block core/html next coverage tier | 313 | 500 |
+| gauntlet block core/details next coverage tier | 348 | 500 |
 | gauntlet block core/more next coverage tier | 354 | 500 |
-| action ui-heading-shortcut next coverage tier | 385 | 500 |
-| action reload-post-action next coverage tier | 405 | 500 |
-| CDP coverage records next coverage tier | 4277 | 5000 |
-| gauntlet block core/gallery next coverage tier | 448 | 500 |
-| real-user body save/reload next coverage tier | 184 | 200 |
+| action ui-heading-shortcut next coverage tier | 387 | 500 |
+| action reload-post-action next coverage tier | 408 | 500 |
+| CDP coverage records next coverage tier | 4298 | 5000 |
+| gauntlet block core/gallery next coverage tier | 451 | 500 |
+| real-user body save/reload next coverage tier | 185 | 200 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
 remaining work now mixes completed-record depth for expensive profiles with
@@ -269,37 +269,37 @@ After the loop was corrected to `max_parallel=6` and `interval=0s`, `110`
 completed review cycles took roughly `2.9` to `8.0` minutes in this snapshot;
 the latest completed review took `5.9` minutes. Feedback actions ran every two
 cycles and took roughly `1.8` to `13.8` minutes in the completed duration data,
-with the latest completed feedback action taking `4.0` minutes. The copied
+with the latest completed feedback action taking `5.6` minutes. The copied
 input set includes PR-split synthesis and feedback action through
-`20260516T080500Z`; that latest PR-split feedback-action file is empty, so the
-latest non-empty PR-split feedback action remains `20260516T074802Z`. The copied
-input set includes duplicate/noise synthesis and feedback action through
-`20260516T073829Z`.
+`20260516T080500Z`, and that feedback action applied Cycle 110 by launching the
+bounded PR13B tri-split shaping/check job. The copied input set includes
+duplicate/noise synthesis through `20260516T080631Z` and duplicate/noise feedback
+action through `20260516T073829Z`.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
 split history. The total chart sums additions minus deletions across the whole
 suggested PR set for each status snapshot; the faceted chart shows the same net
-LOC series per PR. The latest parsed snapshot, `2026-05-16T08:05:28Z`, has `25`
-suggested rows totaling `11801` net LOC. The largest current rows by net LOC are
+LOC series per PR. The latest parsed snapshot, `2026-05-16T08:12:05Z`, has `24`
+suggested rows totaling `11244` net LOC. The largest current rows by net LOC are
 `PR 12` (`1386`), `PR 7A` (`1331`), `PR 11` (`1141`), `PR 13A` (`1126`), and
 `PR 5B` (`883`), with `PR 13B3` now the largest piece of the accepted `PR 13B`
 tri-split at `776` net LOC. The latest PR-split persona synthesis, together
-with the latest non-empty feedback action, supersedes the older graph-only
-branch-shape read: aggregate `PR 13B` is now officially replaced by
+with the latest feedback action, supersedes the older graph-only branch-shape
+read: aggregate `PR 13B` is now officially replaced by
 `PR 13B1`/`PR 13B2`/`PR 13B3`, while
 `PR 5A`/`PR 5B`/`PR 5C`, `PR 7A` -> `PR 7B`, and `PR 15A` -> `PR 15B` ->
-`PR 15C` remain accepted. `PR 8` and `PR 6B` remain blocked. The latest PR-split
-synthesis rejects review or fuzz validation from the current final refs because
-they still include aggregate `final/rtc-pr13b-source-retirement`; it calls for
-one bounded tri-split shaping/check job before filing. The persona files reject
+`PR 15C` remain accepted. Broad `PR 8` remains blocked, with the narrower
+`origin/try/rtc-title-reload-pr` path now the intended next shape, and `PR 6B`
+remains blocked pending focused replay. The latest PR-split synthesis rejects
+review or fuzz validation from the current final refs because they still include
+aggregate `final/rtc-pr13b-source-retirement`; the feedback action launched one
+bounded tri-split shaping/check job before any filing. The persona files reject
 filing `shape/*`, `finalize/*`, `deferred/*`, dirty worktrees, wildcard
 `final/rtc-pr*`, old aggregate `PR 15`, `try/rtc-fix-stack-validation`,
 `PR 1A`, and deferred reload-hydration, pre-save, broad rich-text,
-malformed-save, or HTTP room-isolation evidence. The prior non-empty feedback
-action left the cycle-104 import/rebase/check job alone while it was active; the
-latest synthesis has since reviewed final-ref evidence and says it still
-contains aggregate `PR 13B`. The LOC chart remains size telemetry from the
-parsed status snapshots, not filing authority for split shape.
+malformed-save, or HTTP room-isolation evidence. The LOC chart remains size
+telemetry from the parsed status snapshots, not filing authority for split
+shape.
 
 ## Interpretation
 
@@ -312,9 +312,9 @@ Current-run triage also has `0` files and `0` signatures, so likely-real
 visibility is not complete. The latest PR-split persona evidence rejects the
 graph-only interpretation that a stable LOC chart or broad coverage makes the
 current final refs filing-ready: the active branch evidence still contains
-aggregate `final/rtc-pr13b-source-retirement`, so one bounded
-`PR 13B1`/`PR 13B2`/`PR 13B3` shaping/check job is required before review or
-fuzz validation. Both persona evidence and graph data reject the graph-only
+aggregate `final/rtc-pr13b-source-retirement`, so review or fuzz validation must
+wait for the launched `PR 13B1`/`PR 13B2`/`PR 13B3` shaping/check job to produce
+clean evidence. Both persona evidence and graph data reject the graph-only
 interpretation that broad coverage or `0` visible likely-real failures is enough
 to file/promote deferred browser-only families into PR claims. The latest
 duplicate/noise evidence also rejects treating historical aggregate
@@ -338,12 +338,14 @@ depth and completion on a small number of high-value expensive lanes:
   duplicate/noise feedback action updated the novelty monitor and supervisor,
   restarted the active output directory, and left the watcher and analysis-tier
   gates unapplied in this loop;
-- review only explicit repaired final refs from `pr-stack-20260516T065952Z`;
+- review only explicit repaired final refs after the PR13B tri-split evidence is
+  clean;
   do not file/review `shape/*`, `finalize/*`, `deferred/*`, dirty worktrees,
   old aggregate `PR 15`, `PR 1A`, wildcard `final/rtc-pr*`,
   `try/rtc-fix-stack-validation`, or `PR 6B`;
-- `PR 8` remains blocked pending comparison with `try/rtc-title-reload-pr`, and
-  must not claim reload-hydration empty-live-editor coverage;
+- broad `PR 8` remains blocked; the next PR 8 shape should use the narrow
+  `origin/try/rtc-title-reload-pr` path and must not claim reload-hydration
+  empty-live-editor coverage;
 - reload-hydration empty-live-editor, pre-save search/live-collapse, rich-text,
   malformed-save, and HTTP room-isolation evidence remain evidence-only until
   repeated review consensus accepts them;
@@ -352,18 +354,17 @@ depth and completion on a small number of high-value expensive lanes:
   validation-stack fuzz run.
 
 The next operational change should be conservative: keep existing coverage fuzz
-running, avoid new broad fuzz or duplicate split-review launches, and do exactly
-one bounded `PR 13B1`/`PR 13B2`/`PR 13B3` shaping/check job from the cycle-104
-rebase clone because the latest PR-split synthesis says the current final refs
-still validate aggregate `PR 13B`. That job should produce branch graph,
-containment, adjacent range-diff, diffstat/numstat, focused CRDT tests, touched
-lint or a justified lint scope, `git diff --check`, and a combined validation
-stack without aggregate `final/rtc-pr13b-source-retirement`. After that
-succeeds, the next review-side action is exactly one bounded `PR 6B` replay for
-parser-transform seeds `5500001`, `5500002`, and `5500006`; drop `PR 6B` if it
-fails. Broad final-stack fuzz waits until the rebased combined validation stack
-exists and the trunk port/rebase base is explicit. For coverage-guided fuzzing,
-spend capacity on completion-focused lanes for the unmet profiles while the loop
+running, avoid new broad fuzz or duplicate split-review launches, and wait for
+the already-launched bounded `PR 13B1`/`PR 13B2`/`PR 13B3` shaping/check job from
+the cycle-104 rebase clone. That job should produce branch graph, containment,
+adjacent range-diff, diffstat/numstat, focused CRDT tests, touched lint or a
+justified lint scope, `git diff --check`, and a combined validation stack without
+aggregate `final/rtc-pr13b-source-retirement`. After that succeeds, the next
+review-side action is exactly one bounded `PR 6B` replay for parser-transform
+seeds `5500001`, `5500002`, and `5500006`; drop `PR 6B` if it fails. Broad
+final-stack fuzz waits until the rebased combined validation stack exists and
+the trunk port/rebase base is explicit. For coverage-guided fuzzing, spend
+capacity on completion-focused lanes for the unmet profiles while the loop
 continues to re-prioritize based on these same goal ratios; the latest CPU/load
 samples are already above the 64-core reference, so extra browser capacity would
 need a stronger reason than spare RAM.

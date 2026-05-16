@@ -1,10 +1,10 @@
-generated_at_utc: 2026-05-16T08:13:24Z
-monitor_passes: 1365
+generated_at_utc: 2026-05-16T08:18:57Z
+monitor_passes: 1367
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T08:12:41Z
+last_pass_utc: 2026-05-16T08:16:58Z
 coverage_files_first: 272
-coverage_files_last: 27022
-coverage_files_delta: 26750
+coverage_files_last: 27095
+coverage_files_delta: 26823
 unmet_coverage_first: 24
 unmet_coverage_last: 9
 likely_real_max: 0
@@ -12,7 +12,7 @@ duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.4672
 summary_startup_failures_last: 0
 quality_issues_last: 0
-memory_free_gb_last: 417.9
+memory_free_gb_last: 420.4
 load_1_last: 90.16
 load_5_last: 79.74
 load_15_last: 75.32
@@ -22,11 +22,11 @@ enabled_groups_current: novelty-ws-common-blocks,novelty-ws-long-session-large-d
 fuzz_level_mix_snapshots: 117
 fuzz_level_mix_campaigns: coverage-guided,focused-shards,gap-booster,strict-expansion
 fuzz_level_mix_latest: browser-e2e=31 lanes/31 groups; transport-integration=1 lanes/1 groups
-fuzz_level_execution_events: 43871
-fuzz_level_execution_latest: browser-e2e=40923 cumulative/1408 per-hour; transport-integration=2948 cumulative/20 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_events: 44023
+fuzz_level_execution_latest: browser-e2e=41073 cumulative/396 per-hour; transport-integration=2950 cumulative/4 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 120
 goals_unmet: 9
-pr_review_events: 9718
-pr_suggested_net_loc_snapshots: 45
-pr_suggested_net_loc_latest_total: 11801
+pr_review_events: 9720
+pr_suggested_net_loc_snapshots: 46
+pr_suggested_net_loc_latest_total: 11244
