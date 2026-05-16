@@ -16,6 +16,11 @@ chmod +x "$TMUX_WRAP/tmux"
 export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
 
 tmux kill-session -t rtc-fuzz-level-mix-persona-loop 2>/dev/null || true
+tmux ls 2>/dev/null |
+	awk -F: '/^rtc-level-mix-/ { print $1 }' |
+	while IFS= read -r session; do
+		tmux kill-session -t "$session" 2>/dev/null || true
+	done
 
 cat > "$BASE/rtc-fuzz-level-mix-persona-loop.sh" <<'LOOP'
 #!/usr/bin/env bash
