@@ -355,16 +355,24 @@ with open(os.path.join(out, "data", "fuzz_level_mix.csv"), "w", newline="") as f
 				path,
 			])
 
-execution_counts = defaultdict(lambda: [0, 0, 0])
+execution_counts = defaultdict(lambda: [0, 0, 0, False])
 
-def event_execution_units(event, meta, campaign):
+def event_test_executions(event, meta, campaign):
+	for key in ("testExecutionCount", "individualTestExecutionCount"):
+		try:
+			value = int(event.get(key) or 0)
+		except (TypeError, ValueError):
+			value = 0
+		if value > 0:
+			return value, False
+
 	for key in ("executionUnitCount", "executionUnits", "unitExecutionCount", "testCaseCount"):
 		try:
 			value = int(event.get(key) or 0)
 		except (TypeError, ValueError):
 			value = 0
 		if value > 0:
-			return value
+			return value, key != "testCaseCount"
 
 	fuzz_level = str(meta.get("fuzz_level") or "").lower()
 
@@ -375,9 +383,9 @@ def event_execution_units(event, meta, campaign):
 			placement_case_count = max(0, int(event.get("placementCaseCount") or 0))
 			fixed_case_count = max(0, int(event.get("fixedUnitCaseCount") or 4))
 		except (TypeError, ValueError):
-			return 1
-		unit_cases = seed_count * (case_count + placement_case_count) + fixed_case_count
-		return max(1, unit_cases)
+			return 1, True
+		test_cases = seed_count * (case_count + placement_case_count) + fixed_case_count
+		return max(1, test_cases), True
 
 	if fuzz_level == "coverage-guided-lower-level":
 		try:
@@ -385,7 +393,7 @@ def event_execution_units(event, meta, campaign):
 		except (TypeError, ValueError):
 			input_count = 0
 		if input_count > 0:
-			return input_count
+			return input_count, False
 
 	if fuzz_level in ("backend-api", "protocol-server"):
 		try:
@@ -395,9 +403,9 @@ def event_execution_units(event, meta, campaign):
 			case_count = 0
 			seed_count = 1
 		if case_count > 0:
-			return case_count * seed_count
+			return case_count * seed_count, False
 
-	return 1
+	return 1, False
 
 for campaign, base in campaign_roots:
 	if not os.path.isdir(base):
@@ -447,10 +455,11 @@ for campaign, base in campaign_roots:
 							meta["transport"] or event.get("transport", ""),
 							meta["profile"] or event.get("actionProfile", ""),
 						)
-						units = event_execution_units(event, meta, campaign)
-						execution_counts[key][0] += units
-						execution_counts[key][1] += units if label == "primary" else 0
-						execution_counts[key][2] += units if event.get("ok") else 0
+						test_executions, approximate = event_test_executions(event, meta, campaign)
+						execution_counts[key][0] += test_executions
+						execution_counts[key][1] += test_executions if label == "primary" else 0
+						execution_counts[key][2] += test_executions if event.get("ok") else 0
+						execution_counts[key][3] = execution_counts[key][3] or approximate
 			except OSError:
 				continue
 
@@ -466,6 +475,7 @@ with open(os.path.join(out, "data", "fuzz_level_executions.csv"), "w", newline="
 		"executions",
 		"primary_executions",
 		"successful_executions",
+		"approximate",
 	])
 	for key, counts in sorted(execution_counts.items()):
 		writer.writerow([*key, *counts])

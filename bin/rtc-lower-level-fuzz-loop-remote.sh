@@ -66,6 +66,7 @@ const event = {
 	jestTestCount: 6,
 	fixedUnitCaseCount,
 	generatedUnitCaseCount,
+	testExecutionCount: fixedUnitCaseCount + generatedUnitCaseCount,
 	executionUnitCount: fixedUnitCaseCount + generatedUnitCaseCount,
 	durationMs: Number.parseInt( durationMs, 10 ),
 	transport: 'in-process',

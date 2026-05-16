@@ -123,6 +123,8 @@ for key in [
 	"fuzz_level_mix_snapshots",
 	"fuzz_level_mix_campaigns",
 	"fuzz_level_mix_latest",
+	"fuzz_level_test_executions",
+	"fuzz_level_test_executions_has_approximate_rows",
 	"fuzz_level_execution_events",
 	"fuzz_level_execution_latest",
 ]:
