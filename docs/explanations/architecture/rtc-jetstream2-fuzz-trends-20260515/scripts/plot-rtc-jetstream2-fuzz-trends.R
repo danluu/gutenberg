@@ -259,10 +259,16 @@ monitor <- tibble(
 	new_cdp = extract_num( pass_lines, "newCdp=([0-9]+)" ),
 	unmet_coverage = extract_num( pass_lines, "unmetCoverage=([0-9]+)" ),
 	no_progress = extract_num( pass_lines, "noProgress=([0-9]+)" ),
+	quality_issues = extract_num( pass_lines, "qualityIssues=([0-9]+)" ),
+	summary_startup_failures = extract_num( pass_lines, "summaryStartupFailures=([0-9]+)" ),
 	warnings = extract_num( pass_lines, "warnings=([0-9]+)" ),
 	headroom = extract_chr( pass_lines, "headroom=([^ ]+)" ),
 	likely_real = extract_num( pass_lines, "likelyReal=([0-9]+)" ),
-	duplicate_share = extract_num( pass_lines, "duplicateShare=([0-9.]+)" ),
+	duplicate_share_current = coalesce(
+		extract_num( pass_lines, "duplicateShareCurrent=([0-9.]+)" ),
+		extract_num( pass_lines, "duplicateShare=([0-9.]+)" )
+	),
+	duplicate_share_historical = extract_num( pass_lines, "duplicateShareHistorical=([0-9.]+)" ),
 	memory_free_gb = extract_num( pass_lines, "memory=([0-9.]+)G" )
 ) %>%
 	filter( ! is.na( timestamp ) ) %>%
@@ -522,13 +528,21 @@ write_plot(
 )
 
 health_long <- monitor %>%
-	select( timestamp, warnings, duplicate_share, memory_free_gb, no_progress ) %>%
+	select(
+		timestamp,
+		warnings,
+		duplicate_share_current,
+		summary_startup_failures,
+		memory_free_gb,
+		no_progress
+	) %>%
 	pivot_longer( -timestamp, names_to = "metric", values_to = "value" ) %>%
 	mutate(
 		metric = recode(
 			metric,
 			warnings = "monitor warnings",
-			duplicate_share = "top duplicate/noise share",
+			duplicate_share_current = "current-run duplicate/noise share",
+			summary_startup_failures = "summary startup failures this pass",
 			memory_free_gb = "free memory (GiB)",
 			no_progress = "no-progress passes"
 		)
@@ -546,11 +560,11 @@ write_plot(
 			x = "UTC time",
 			y = NULL,
 			color = NULL,
-			caption = "Likely-real stayed at zero in the monitor log; duplicate/noise share remained high."
+			caption = "Duplicate/noise share is scoped to the current output directory; historical aggregate duplicate/noise is intentionally not plotted here."
 		) +
 		theme_rtc(),
 	width = 9,
-	height = 8
+	height = 9
 )
 
 if ( file.exists( cpu_path ) ) {
@@ -998,7 +1012,10 @@ summary_lines <- c(
 	paste0( "unmet_coverage_first: ", first( monitor$unmet_coverage ) ),
 	paste0( "unmet_coverage_last: ", last( monitor$unmet_coverage ) ),
 	paste0( "likely_real_max: ", max( monitor$likely_real, na.rm = TRUE ) ),
-	paste0( "duplicate_share_last: ", last( monitor$duplicate_share ) ),
+	paste0( "duplicate_share_current_last: ", last( monitor$duplicate_share_current ) ),
+	paste0( "duplicate_share_historical_last: ", last( monitor$duplicate_share_historical ) ),
+	paste0( "summary_startup_failures_last: ", last( monitor$summary_startup_failures ) ),
+	paste0( "quality_issues_last: ", last( monitor$quality_issues ) ),
 	paste0( "memory_free_gb_last: ", last( monitor$memory_free_gb ) ),
 	paste0( "load_1_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_1 ), NA ) ),
 	paste0( "load_5_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_5 ), NA ) ),
