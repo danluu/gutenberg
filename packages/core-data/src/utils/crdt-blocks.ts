@@ -1911,6 +1911,35 @@ function getBlockTreeClientIdOccurrences(
 	return occurrences;
 }
 
+function getKnownBlockTreeClientIdOccurrences(
+	blocks: Block[],
+	parentClientId: string | null = null,
+	depth = 0
+): BlockClientIdOccurrence[] {
+	return blocks.flatMap( ( block ) => {
+		const clientId = getBlockClientId( block );
+		const occurrence = clientId
+			? [
+					{
+						block,
+						clientId,
+						depth,
+						parentClientId,
+					},
+			  ]
+			: [];
+
+		return [
+			...occurrence,
+			...getKnownBlockTreeClientIdOccurrences(
+				block.innerBlocks ?? [],
+				clientId ?? parentClientId,
+				depth + 1
+			),
+		];
+	} );
+}
+
 function getUniqueBlockTreeClientIdOccurrences(
 	blocks: Block[]
 ): BlockClientIdOccurrence[] | null {
@@ -2393,6 +2422,251 @@ function mergeYBlocksPreviousLocalCrossParentMove(
 	}
 
 	return true;
+}
+
+type MergeYBlocksExplicitBaseCrossParentMoveResult =
+	| 'merged'
+	| 'guarded-skip'
+	| 'unhandled';
+
+function mergeYBlocksExplicitBaseCrossParentMove(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
+): MergeYBlocksExplicitBaseCrossParentMoveResult {
+	const currentClientIds = getUniqueKeys(
+		yblocks.toArray(),
+		getYBlockClientId
+	);
+	const baseClientIds = getUniqueKeys( baseBlocks, getBlockClientId );
+
+	if ( ! currentClientIds || ! baseClientIds ) {
+		return 'unhandled';
+	}
+
+	const incomingClientIds = getUniqueKeys( blocksToSync, getBlockClientId );
+	const currentSet = new Set( currentClientIds );
+	const incomingOccurrencesWithKnownClientIds =
+		getKnownBlockTreeClientIdOccurrences( blocksToSync );
+	const currentBaseClientIdsNestedInIncoming = baseClientIds.filter(
+		( clientId ) =>
+			currentSet.has( clientId ) &&
+			incomingOccurrencesWithKnownClientIds.some(
+				( occurrence ) =>
+					occurrence.clientId === clientId && occurrence.depth > 0
+			)
+	);
+
+	if ( ! incomingClientIds ) {
+		return currentBaseClientIdsNestedInIncoming.length > 0
+			? 'guarded-skip'
+			: 'unhandled';
+	}
+
+	const baseSet = new Set( baseClientIds );
+	const incomingSet = new Set( incomingClientIds );
+	const sourceClientIds = baseClientIds.filter(
+		( clientId ) =>
+			currentSet.has( clientId ) && ! incomingSet.has( clientId )
+	);
+
+	if ( sourceClientIds.length === 0 ) {
+		return currentBaseClientIdsNestedInIncoming.length > 0
+			? 'guarded-skip'
+			: 'unhandled';
+	}
+
+	const incomingOccurrences =
+		getUniqueBlockTreeClientIdOccurrences( blocksToSync );
+
+	const sourceAppearsNestedInIncoming = sourceClientIds.some( ( clientId ) =>
+		incomingOccurrencesWithKnownClientIds.some(
+			( occurrence ) =>
+				occurrence.clientId === clientId && occurrence.depth > 0
+		)
+	);
+
+	if ( ! incomingOccurrences ) {
+		return sourceAppearsNestedInIncoming ? 'guarded-skip' : 'unhandled';
+	}
+
+	if ( sourceClientIds.length !== 1 ) {
+		return sourceAppearsNestedInIncoming ? 'guarded-skip' : 'unhandled';
+	}
+
+	const sourceClientId = sourceClientIds[ 0 ];
+	const currentClientIdsWithoutSource = currentClientIds.filter(
+		( clientId ) => clientId !== sourceClientId
+	);
+	const incomingSourceOccurrences = incomingOccurrences.filter(
+		( occurrence ) => occurrence.clientId === sourceClientId
+	);
+
+	if (
+		currentClientIdsWithoutSource.length !== incomingClientIds.length ||
+		! currentClientIdsWithoutSource.every(
+			( clientId, index ) => clientId === incomingClientIds[ index ]
+		)
+	) {
+		return incomingSourceOccurrences.some(
+			( occurrence ) => occurrence.depth > 0
+		)
+			? 'guarded-skip'
+			: 'unhandled';
+	}
+
+	const currentBlocks = yblocks
+		.toArray()
+		.map( ( yblock ) => yblock.toJSON() as unknown as Block );
+	const currentOccurrences =
+		getUniqueBlockTreeClientIdOccurrences( currentBlocks );
+	const baseOccurrences = getUniqueBlockTreeClientIdOccurrences( baseBlocks );
+
+	if ( ! currentOccurrences || ! baseOccurrences ) {
+		return 'guarded-skip';
+	}
+
+	const currentSourceOccurrences = currentOccurrences.filter(
+		( occurrence ) => occurrence.clientId === sourceClientId
+	);
+	const baseSourceOccurrences = baseOccurrences.filter(
+		( occurrence ) => occurrence.clientId === sourceClientId
+	);
+
+	if (
+		currentSourceOccurrences.length !== 1 ||
+		currentSourceOccurrences[ 0 ].depth !== 0 ||
+		baseSourceOccurrences.length !== 1 ||
+		baseSourceOccurrences[ 0 ].depth !== 0
+	) {
+		return 'guarded-skip';
+	}
+
+	if ( incomingSourceOccurrences.length === 0 ) {
+		return 'unhandled';
+	}
+
+	if (
+		incomingSourceOccurrences.length !== 1 ||
+		incomingSourceOccurrences[ 0 ].depth !== 1 ||
+		! incomingSourceOccurrences[ 0 ].parentClientId
+	) {
+		return 'guarded-skip';
+	}
+
+	const destinationClientId = incomingSourceOccurrences[ 0 ].parentClientId;
+
+	if (
+		! incomingSet.has( destinationClientId ) ||
+		! currentSet.has( destinationClientId )
+	) {
+		return 'guarded-skip';
+	}
+
+	const currentOnlyRetainedClientIds = currentClientIdsWithoutSource.filter(
+		( clientId ) =>
+			! baseSet.has( clientId ) && clientId !== destinationClientId
+	);
+	const currentOnlyRetainedSet = new Set( currentOnlyRetainedClientIds );
+
+	const incomingDestinationBlock = blocksToSync.find(
+		( block ) => getBlockClientId( block ) === destinationClientId
+	);
+	const currentDestinationIndex =
+		currentClientIds.indexOf( destinationClientId );
+
+	if ( ! incomingDestinationBlock || currentDestinationIndex === -1 ) {
+		return 'guarded-skip';
+	}
+
+	const incomingDestinationWithoutSource = {
+		...incomingDestinationBlock,
+		innerBlocks: removeBlockFromTreeByClientId(
+			incomingDestinationBlock.innerBlocks ?? [],
+			sourceClientId
+		),
+	};
+
+	if (
+		! areBlocksEqual(
+			incomingDestinationWithoutSource,
+			yblocks.get( currentDestinationIndex )
+		)
+	) {
+		return 'guarded-skip';
+	}
+
+	const sourceIndex = currentClientIds.indexOf( sourceClientId );
+
+	if ( sourceIndex === -1 ) {
+		return 'guarded-skip';
+	}
+
+	const sourceYBlock = yblocks.get( sourceIndex );
+	const currentSourceBlock = sourceYBlock.toJSON() as unknown as Block;
+	const baseSourceBlock = baseSourceOccurrences[ 0 ].block;
+	const incomingSourceBlock = incomingSourceOccurrences[ 0 ].block;
+
+	if (
+		currentSourceBlock.name !== baseSourceBlock.name ||
+		currentSourceBlock.name !== incomingSourceBlock.name
+	) {
+		return 'guarded-skip';
+	}
+
+	mergeBlockIntoYBlock(
+		sourceYBlock,
+		incomingSourceBlock,
+		attributeCursor,
+		baseSourceBlock
+	);
+	const mergedSourceBlock = sourceYBlock.toJSON() as unknown as Block;
+	const incomingDestinationWithMergedSource = {
+		...incomingDestinationBlock,
+		innerBlocks: replaceBlockInTreeByClientId(
+			incomingDestinationBlock.innerBlocks ?? [],
+			sourceClientId,
+			mergedSourceBlock
+		),
+	};
+	const incomingBlocksByClientId = new Map(
+		blocksToSync.map( ( block ) => [
+			getBlockClientId( block ) as string,
+			block,
+		] )
+	);
+	const baseBlocksByClientId = new Map(
+		baseBlocks.map( ( block ) => [
+			getBlockClientId( block ) as string,
+			block,
+		] )
+	);
+
+	yblocks.delete( sourceIndex, 1 );
+
+	for ( let index = 0; index < yblocks.length; index++ ) {
+		const yblock = yblocks.get( index );
+		const clientId = getYBlockClientId( yblock );
+		let block: Block | undefined;
+
+		if ( clientId === destinationClientId ) {
+			block = incomingDestinationWithMergedSource;
+		} else if ( clientId ) {
+			block = incomingBlocksByClientId.get( clientId );
+		}
+
+		if ( block && clientId && ! currentOnlyRetainedSet.has( clientId ) ) {
+			mergeBlockIntoYBlock(
+				yblock,
+				block,
+				attributeCursor,
+				baseBlocksByClientId.get( clientId )
+			);
+		}
+	}
+
+	return 'merged';
 }
 
 function mergeYBlocksPreviousLocalCurrentOnlyCrossParentMove(
@@ -3507,6 +3781,32 @@ export function mergeCrdtBlocks(
 
 	const baseBlocksToSync =
 		explicitBaseBlocksToSync ?? previousLocalBlocksToSync;
+
+	const explicitBaseCrossParentMoveResult = explicitBaseBlocksToSync
+		? mergeYBlocksExplicitBaseCrossParentMove(
+				yblocks,
+				blocksToSync,
+				explicitBaseBlocksToSync,
+				attributeCursor
+		  )
+		: 'unhandled';
+
+	if ( explicitBaseCrossParentMoveResult === 'merged' ) {
+		removeDuplicateClientIds( yblocks );
+		previousLocalBlocksCache.set(
+			yblocks,
+			makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] )
+		);
+		return;
+	}
+
+	if ( explicitBaseCrossParentMoveResult === 'guarded-skip' ) {
+		previousLocalBlocksCache.set(
+			yblocks,
+			makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] )
+		);
+		return;
+	}
 
 	if (
 		explicitBaseBlocksToSync &&
