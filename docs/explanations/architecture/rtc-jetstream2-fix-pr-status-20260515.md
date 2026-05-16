@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T07:20:50Z`
+Snapshot time: `2026-05-16T07:32:07Z`
 
 Trigger event:
-`pr-split-2026-05-16T07-19-33Z-20260516T071308Z`
+`duplicate-noise-2026-05-16T07-30-59Z-20`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -19,9 +19,13 @@ Base handoff:
 
 ## Executive Status
 
-The latest split synthesis, `pr-split-20260516T071308Z-synthesis`, keeps the
+The latest split synthesis, `pr-split-20260516T072624Z-synthesis`, keeps the
 targeted split change and still leaves the stack blocked rather than
-filing-ready.
+filing-ready. The active tmux job
+`rtc-final-refs-import-rebase-check-20260516T071308Z` is still running in the
+remote split-review queue; its report was still empty in the latest synthesis,
+so do not launch a duplicate job.
+
 Current aggregate `PR 5` is now too broad to preserve. Replace it with:
 
 - `PR 5A`: entity/entity-reference normalization in `crdt.ts`
@@ -39,17 +43,20 @@ replay later proves it.
 
 Current blockers:
 
-1. Run one corrected import/rebase/check pass from
-   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T063020Z/jobs/rtc-final-refs-import-rebase-next-action.prompt.md`.
-2. Source repaired heads from the latest finalization worktree:
+1. Wait for
+   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T071308Z/jobs/outputs/rtc-final-refs-import-rebase-check-20260516T071308Z/report.md`.
+2. If that report stays empty or missing after the active job exits, rerun
+   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T071308Z/jobs/run-rtc-final-refs-import-rebase-check-20260516T071308Z.sh`
+   exactly once.
+3. Source repaired heads from the latest finalization worktree:
    `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/worktrees/pr-stack-20260516T065952Z`.
-3. Use an explicit final-ref allow-list; do not wildcard-import blocked
+4. Use an explicit final-ref allow-list; do not wildcard-import blocked
    candidates such as `final/rtc-pr06b-*`.
-4. Apply or adjudicate the new PR 5A/5B/5C branches and branch links.
-5. Resolve PR 8 against `origin/try/rtc-title-reload-pr`.
-6. Rebase or recreate each intended head on the upstream target base.
-7. Rerun focused checks, touched-file lint, and `git diff --check`.
-8. Build and fuzz a fresh combined validation stack from the rebased final
+5. Apply or adjudicate the new PR 5A/5B/5C branches and branch links.
+6. Resolve PR 8 against `origin/try/rtc-title-reload-pr`.
+7. Rebase or recreate each intended head on the upstream target base.
+8. Rerun focused checks, touched-file lint, and `git diff --check`.
+9. Build and fuzz a fresh combined validation stack from the rebased final
    heads.
 
 Background coverage-guided fuzzing is healthy but is not final-stack
@@ -60,7 +67,7 @@ failures, `9` unmet goals, `7` enabled WS groups, and both
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T07:20:45Z`.
+The collected remote status input was generated at `2026-05-16T07:32:03Z`.
 
 The fix-planning repo is currently checked out at:
 
@@ -89,7 +96,7 @@ The fuzz repo remains on the validation stack:
 That stack has modified fuzz harness files and many untracked fuzz/analysis
 scripts. It is active validation infrastructure, not the final PR stack.
 
-The branch-link audit was generated at `2026-05-16T07:20:50Z` from fetched
+The branch-link audit was generated at `2026-05-16T07:32:07Z` from fetched
 `danluu` refs. The proposed PR table below uses only audit rows marked
 `verified-content` as PR-content links. For PR 5A/5B/5C, no verified branch
 links exist yet, so those rows explicitly say `No verified branch link yet`.
@@ -118,11 +125,11 @@ is pushed only so the PR 13A compare link has the repaired source base.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T07:20:45Z
+collected_at_utc: 2026-05-16T07:32:03Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T064057Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
-novelty-status.md: populated at 2026-05-16T07:20:31.740Z
+novelty-status.md: populated at 2026-05-16T07:31:04.472Z
 current visible likely-real signatures: 0
 enabled groups: 7 WS groups
 paused groups: novelty-ws-parser-transform and novelty-ws-lifecycle in 6h startup cooldown
@@ -131,18 +138,18 @@ paused groups: novelty-ws-parser-transform and novelty-ws-lifecycle in 6h startu
 Current novelty monitor snapshot:
 
 ```text
-coverage files: 26034
-total records seen: 38271
-records processed this pass: 49
-coverage lines seen this pass: 39463
+coverage files: 26250
+total records seen: 38570
+records processed this pass: 62
+coverage lines seen this pass: 39787
 summary files read this pass: 7
 summary startup failures processed this pass: 0
 unmet goals: 9
 likely-real visible: 0
 likely-real merged duplicates: 0
 likely-real oracle/noise questions: 0
-load1: 66.75 / 64 cores
-memory: 421.0G free / 492.0G total
+load1: 77.82 / 64 cores
+memory: 419.9G free / 492.0G total
 ```
 
 Enabled groups:
@@ -165,27 +172,28 @@ Paused recommended groups:
   failures from `1` current-run behavioral record and no current successful
   records.
 
-Current-run triage remains clean: `0` raw signatures, `0` actionable
-signatures, `0` likely-real visible, `0` likely-real merged duplicates, and
-current duplicate share `0`. Historical triage is still noisy but separated
-from current-run product health: `17297` raw signatures, `6692` actionable
-signatures, `10605` suppressed known-noise signatures, and `10579` bootstrap
-stalls, with `pre_action_bootstrap_stall` dominating raw historical signatures.
+Current-run triage remains clean in the generated snapshot: `0` raw signatures,
+`0` actionable signatures, `0` likely-real visible, `0` likely-real merged
+duplicates, and current duplicate share `0`. Historical triage is still noisy
+but separated from current-run product health: `17442` raw signatures, `6732`
+actionable signatures, `10710` suppressed known-noise signatures, and `10683`
+bootstrap stalls, with `pre_action_bootstrap_stall` dominating raw historical
+signatures.
 
-The trend evidence packet was generated at `2026-05-16T07:17:30Z` from monitor
-data through `2026-05-16T07:16:28Z`. It supports longer-running coverage
+The trend evidence packet was generated at `2026-05-16T07:22:40Z` from monitor
+data through `2026-05-16T07:20:31Z`. It supports longer-running coverage
 progress with no visible likely-real failures so far:
 
 ```text
-monitor passes: 1338
-coverage files: 272 -> 25949
-coverage files delta: 25677
-unmet coverage goals: 24 -> 10
+monitor passes: 1340
+coverage files: 272 -> 26034
+coverage files delta: 25762
+unmet coverage goals: 24 -> 9
 likely_real_max: 0
 duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.3975
 summary_startup_failures_last: 0
-pr_review_events: 9698
+pr_review_events: 9700
 pr_suggested_net_loc_latest_total: 10189
 ```
 
@@ -201,28 +209,31 @@ Completed validation evidence:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260515T212143Z/jobs/outputs/pr13-source-import-verify-retry3-20260515T212143Z/report.md`
 - That report records `63/63` focused stale top-level CRDT tests passing,
   touched-file JS lint passing, and `git diff --check` passing.
-- The latest split synthesis keeps PR 7A/7B, PR 13A/13B/13C, and
-  PR 15A/15B/15C as repaired split shapes, but the final heads still need the
-  corrected import/rebase/check pass from `pr-stack-20260516T065952Z`.
+- The latest split synthesis keeps PR 5A/5B/5C, PR 7A/7B,
+  PR 13A/13B/13C, and PR 15A/15B/15C as repaired split shapes, but the final
+  heads still need the active import/rebase/check pass from
+  `pr-stack-20260516T065952Z`.
 
 What remains before filing:
 
-1. Import or fetch the explicitly allowed repaired final heads if the queue
+1. Wait for the active import/rebase/check report, or rerun that job once if it
+   exits without a report.
+2. Import or fetch the explicitly allowed repaired final heads if the queue
    audit still finds gaps.
-2. Create or verify PR 5A/5B/5C and refresh verified branch links after push.
-3. Exclude `final/rtc-pr06b-*` from filing-ready heads until a focused replay
+3. Create or verify PR 5A/5B/5C and refresh verified branch links after push.
+4. Exclude `final/rtc-pr06b-*` from filing-ready heads until a focused replay
    proves it.
-4. Run the bounded PR 8 title-reload comparison against
+5. Run the bounded PR 8 title-reload comparison against
    `origin/try/rtc-title-reload-pr`.
-5. Rebase or recreate each intended PR branch on the intended upstream base.
-6. Drop analysis-only artifacts and keep only product code plus focused tests.
-7. Regenerate branch graph/containment evidence and adjacent
+6. Rebase or recreate each intended PR branch on the intended upstream base.
+7. Drop analysis-only artifacts and keep only product code plus focused tests.
+8. Regenerate branch graph/containment evidence and adjacent
    range-diffs/diffstats from the rebased branch heads.
-8. Rerun focused checks, touched-file lint, and `git diff --check` on every
+9. Rerun focused checks, touched-file lint, and `git diff --check` on every
    branch after rebase.
-9. Assemble a fresh final combined validation stack from the actual PR heads.
-10. Run final focused checks and coverage-guided fuzzing on that stack.
-11. Block filing if new visible likely-real failures appear.
+10. Assemble a fresh final combined validation stack from the actual PR heads.
+11. Run final focused checks and coverage-guided fuzzing on that stack.
+12. Block filing if new visible likely-real failures appear.
 
 ## Status-Persona Analysis
 
@@ -235,10 +246,12 @@ links until the repaired refs were pushed; the current `branch-link-audit.md`
 now verifies the repaired PR 13 review refs, so this report uses those repaired
 audit links.
 
-The newest split persona synthesis is `pr-split-20260516T071308Z-synthesis`.
+The newest split persona synthesis is `pr-split-20260516T072624Z-synthesis`.
 It says:
 
-- The split needs a targeted change and is still not filing-ready.
+- The split is largely converged but still not filing-ready.
+- The active `rtc-final-refs-import-rebase-check-20260516T071308Z` job should
+  finish or be rerun once if it exits with an empty/missing report.
 - Replace the old aggregate PR 5 with PR 5A/5B/5C.
 - Keep PR 7A/7B, PR 13A/13B/13C, and PR 15A/15B/15C.
 - Use the latest finalization worktree
@@ -250,28 +263,31 @@ It says:
   broad rich-text suffix corruption, malformed-save residuals beyond isolated
   PR 6B evidence, and HTTP room-isolation residuals deferred or evidence-only.
 - Do not start broad fuzzing or final-stack fuzzing until the rebased final
-  stack exists.
+  stack exists; launch exactly one bounded PR 6B replay only after a successful
+  import/rebase/check report.
 
 The newest duplicate-noise synthesis,
-`duplicate-noise-20260516T070811Z-synthesis.md`, changes no product PR
+`duplicate-noise-20260516T071608Z-synthesis.md`, changes no product PR
 validation status. It identifies the remaining control-plane leak as strict
 zero-user pre-action bootstrap/open/join startup noise that can still reach
 `rtc-browser-fuzz-triage-watcher.mjs` and
-`rtc-browser-fuzz-analysis-tier.mjs`. The latest nonempty feedback action,
-`duplicate-noise-20260516T065434Z-feedback-action.md`, changed startup-failure
-cross-run carryover in `rtc-browser-fuzz-novelty-monitor.mjs` from `15` minutes
-to the full configured `STARTUP_FAILURE_COOLDOWN_HOURS` window, passed
+`rtc-browser-fuzz-analysis-tier.mjs`. The latest feedback action,
+`duplicate-noise-20260516T071608Z-feedback-action.md`, made strict pre-action
+discovery/startup cooldowns profile-wide in
+`rtc-browser-fuzz-novelty-monitor.mjs`, passed
 `node --check bin/rtc-browser-fuzz-novelty-monitor.mjs`, and restarted only the
-active coverage-guided novelty monitor. It did not change product PR readiness;
-the watcher/analysis-tier strict bootstrap admission gates remain a separate
-control-plane risk.
+active coverage-guided novelty monitor. It did not change product PR readiness.
+The watcher/analysis-tier strict bootstrap admission gates remain a separate
+control-plane risk, and current duplicate share can remain artificially `0`
+until current-run live triage is wired or started.
 
 ## Proposed PR Split
 
 The old aggregate PR 15 is stale. Use PR 15A/15B/15C. The old aggregate PR 5 is
-also stale. Use PR 5A/5B/5C if the import/rebase/check pass can produce clean
-audited branches. The table below includes only verified `branch-link-audit.md`
-PR-content links, or explicitly says `No verified branch link yet`.
+also stale; the current working split is PR 5A/5B/5C, pending clean audited
+branches from the import/rebase/check pass. The table below includes only
+verified `branch-link-audit.md` PR-content links, or explicitly says
+`No verified branch link yet`.
 
 For PRs whose final filing head is expected to come from a repaired
 `final/rtc-pr*` ref, the audit link is the latest verified GitHub content link,
@@ -284,9 +300,9 @@ final validation.
 | PR 2 | HTTP polling storage read window | [`review/rtc-pr02-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/tree/review/rtc-pr02-http-polling-storage-read-window) | 2 | +57 / -5 | verified GitHub branch; final rebase/checks still required |
 | PR 3 | Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/review/rtc-pr03-revision-restore-crdt-reset) | 2 | +58 / -5 | verified GitHub branch; final rebase/checks still required |
 | PR 4 | Persisted CRDT save-meta idempotence | [`review/rtc-pr04-crdt-save-meta-idempotence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr04-crdt-save-meta-idempotence) | 2 | +160 / -1 | verified GitHub branch; final rebase/checks still required |
-| PR 5A | Entity/entity-reference normalization in `crdt.ts` | No verified branch link yet | pending split audit | pending split audit | replacement for old PR 5; adjudicate from `f39c621c90d` plus `589226af0fe` |
-| PR 5B | Parser/rich-text HTML equivalence in `crdt-blocks.ts` | No verified branch link yet | pending split audit | pending split audit | replacement for old PR 5; adjudicate from `1a78db8d4ab` |
-| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | pending split audit | pending split audit | replacement for old PR 5; adjudicate from `a517f83913c`, stacked after PR 5B |
+| PR 5A | Entity/entity-reference normalization in `crdt.ts` | No verified branch link yet | 2 | +465 / -8 | replacement for old PR 5; create/audit from `f39c621c90d` plus `589226af0fe` |
+| PR 5B | Parser/rich-text HTML equivalence in `crdt-blocks.ts` | No verified branch link yet | 2 | +925 / -42 | replacement for old PR 5; create/audit from `1a78db8d4ab` |
+| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | 2 | +287 / -15 | replacement for old PR 5; create/audit from `a517f83913c`, stacked after PR 5B |
 | PR 6 | Save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | 4 | +738 / -6 | does not claim browser-only gates, PR 6B, or malformed-save residuals beyond audited scope |
 | PR 6A | Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06a-persisted-empty-content-guard) | 2 | +64 / -1 | narrow persisted-body guard |
 | PR 7A | Save response entity-state guards | [`review/rtc-pr07a-save-response-actions-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07a-save-response-actions-guard) | 2 | +1339 / -8 | repaired final head expected; import/push/rebase/link refresh still required |
@@ -308,7 +324,7 @@ The current large PR 5 audit branch,
 [`review/rtc-pr05-parser-entity-normalization-equivalence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr05-parser-entity-normalization-equivalence),
 is still a verified content link for the old grouping (`4` files,
 `+1664 / -52`), but it is no longer the recommended maintainer-facing split.
-Use it only as prior art unless the PR 5A/5B/5C adjudication fails.
+Use it only as prior art unless the PR 5A/5B/5C import/rebase/check pass fails.
 
 ## Deferred Or Evidence-Only Work
 
@@ -331,9 +347,9 @@ Do not file a single mega-PR and do not file the large stacked
 Use this filing order after import, rebase, evidence cleanup, branch-link
 refresh, focused checks, and validation:
 
-1. Small independent HTTP, revision, CRDT-save-meta, save-request,
-   persisted-body, and lock-fairness fixes, plus PR 5A/5B/5C if the replacement
-   split produces clean audited branches.
+1. Small independent HTTP, revision, CRDT-save-meta, PR 5A/5B/5C,
+   save-request, persisted-body, and lock-fairness fixes after their final heads
+   are cleanly imported, rebased, checked, and linked.
 2. Save-response PR 7A/7B from repaired final heads after
    import/push/rebase/link refresh.
 3. PR 8 only after the bounded title-reload comparison confirms its changed
@@ -350,4 +366,6 @@ enabled WS groups, and `novelty-ws-parser-transform` plus
 broad final-stack coverage or PR-filing validation. Do not start broad
 final-stack fuzzing until the rebased combined stack exists. Do not start
 duplicate finalization, another PR 13 repair/import, another split-review loop,
-or open-ended control-plane jobs from this status update.
+or open-ended control-plane jobs from this status update; the only queued action
+to preserve is the already-running import/rebase/check job, with a single rerun
+allowed if it exits without a report.
