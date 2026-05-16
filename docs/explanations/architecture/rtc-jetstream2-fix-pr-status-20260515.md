@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T23:46:22Z`
+Snapshot time: `2026-05-16T23:51:22Z`
 
 Trigger event:
-`pr-split-2026-05-16T23-45-38Z-20260516T233834Z`
+`duplicate-noise-2026-05-16T23-47-03Z-84`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T23-45-38Z-20260516T233834Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T23-47-03Z-84/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -73,14 +73,16 @@ classifies it as PR5C-covered plus strict oracle/exact-content drift, not
 PR18A or PR5D. Keep strict-expansion rows as source-reduction evidence only
 until they are source-reduced to uncovered product behavior.
 
-Do not launch broad final-stack fuzz or file PRs yet. Final filing still waits
-on the malformed-save restack/audit, PR17 repair or reclassification, rebuilt
-combined validation, a focused `1020002` gate, and final-stack fuzz over the
-rebuilt stack.
+The latest duplicate/noise feedback action applied a bounded fuzzer
+control-plane fix, but that is infrastructure progress rather than product
+validation. Do not launch broad final-stack fuzz or file PRs yet. Final filing
+still waits on the malformed-save restack/audit, PR17 repair or
+reclassification, rebuilt combined validation, a focused `1020002` gate, and
+final-stack fuzz over the rebuilt stack.
 
 ## Branch And Ref Status
 
-The remote status input was generated at `2026-05-16T23:46:18Z`.
+The remote status input was generated at `2026-05-16T23:51:17Z`.
 
 The fix-planning repo is checked out at:
 
@@ -110,7 +112,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T23:46:22Z` from fetched
+The branch-link audit was generated at `2026-05-16T23:51:22Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -184,7 +186,7 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T23:46:18Z
+collected_at_utc: 2026-05-16T23:51:17Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T233749Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -207,12 +209,18 @@ repair/reclassification, and the rebuilt validation stack has not been rerun
 over those final decisions.
 
 The collected `raw/novelty-status.md` is non-empty for this update. It was
-updated at `2026-05-16T23:45:05.457Z` and reports current-output-dir-only
+updated at `2026-05-16T23:50:28.150Z` and reports current-output-dir-only
 triage with `0` signatures, `0` likely-real visible, `0` likely-real merged
-duplicates, and no paused groups. It also reports `current-run records by
-profile: {}` and a health warning that no behavioral coverage files were found
-under the current novelty output dir, so treat the raw novelty data as current
-health/control-plane evidence, not product validation.
+duplicates, and no paused groups. It saw `36,978` coverage files and `56,541`
+total records, but still reports `current-run records by profile: {}` and a
+health warning that no behavioral coverage files were found under the current
+novelty output dir. Treat the raw novelty data as current health/control-plane
+evidence, not product validation.
+
+The same novelty status is holding open-ended coverage-guidance Codex because
+historical raw `pre_action_bootstrap_stall` noise dominates observed triage
+(`13,828/26,528`, share `0.5213`). That hold is a control-plane safeguard; it
+does not change the maintainer-facing PR split.
 
 The latest trend evidence packet was generated at `2026-05-16T23:40:52Z` from
 monitor data through `2026-05-16T23:39:46Z`:
@@ -290,23 +298,42 @@ The latest split synthesis asks for only bounded follow-up work:
   stale manifests, missing rc files, disk-preflight-only reports, and
   wait-only feedback do not count as progress while independent work remains.
 
+The raw current split report also records that Cycle 208 created bounded job
+scripts for malformed-save restack/audit, push-manifest refresh, and the PR17
+`1020002` follower-apply diagnostic:
+
+```text
+runs/20260516T233834Z/jobs/run-rtc-pr06b-malformed-save-restack-audit-20260516T234705Z.sh
+runs/20260516T233834Z/jobs/run-rtc-push-manifest-refresh-cycle208-20260516T234705Z.sh
+runs/20260516T233834Z/jobs/run-rtc-ws-seed-1020002-follower-apply-live-struct-diagnostic-20260516T234705Z.sh
+```
+
+Those jobs are progress on blockers, not completed filing evidence. Active or
+new `1020002` diagnostics still do not satisfy the Parallel Progress Gate by
+themselves while independent non-`1020002` rows remain actionable.
+
 Do not launch broad final-stack fuzz or extra fuzz lanes from this state.
 
 The latest duplicate/noise synthesis is
 `duplicate-noise-20260516T231459Z-synthesis.md`; its matching feedback-action
-file is zero bytes and edited no files. The synthesis still converges on a
-fuzzer control-plane leak, not a confirmed RTC product failure. It recommends a
-shared conservative no-product startup/bootstrap predicate across triage,
-analysis, deep analysis, live monitoring, and supervisor/novelty scheduling;
-failing closed on missing or stale current-output pointers; and preserving all
-product-evidence failures.
+file is non-empty and reports a bounded fuzzer control-plane patch, not product
+code changes. The synthesis still converges on a fuzzer control-plane leak, not
+a confirmed RTC product failure. The feedback action reports these completed
+control-plane changes: strict no-product `pre-action-bootstrap-stall` records
+are suppressed before triage/analysis, stale or bad current-root pointers fail
+closed, live-analysis avoids exporting missing or stale child pointers,
+historical duplicate awareness families are canonicalized/capped, novelty uses
+raw duplicate/noise dominance, and supervisor backs off repeated
+`wp-env start failed` startup loops. Syntax checks and targeted fixtures passed,
+but `wp-env status` remained infra-blocked, so fresh current-run improvement
+cannot be measured until productive startup succeeds.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
 separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older
 "keep existing split", "do not add PR6B", and stale PR13 review-ref warnings
-are superseded by the `2026-05-16T23:46:22Z` branch-link audit and the
+are superseded by the `2026-05-16T23:51:22Z` branch-link audit and the
 `20260516T233834Z` split synthesis.
 
 ## Deferred Or Evidence-Only Work
@@ -325,7 +352,7 @@ These must not be described as fixed or filing-ready.
 | Rich-text formatted suffix corruption | current diagnostic publication candidate `deferred/rtc-rich-text-formatted-suffix-20260516T230547Z` | not fixed; latest split keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Broader HTTP polling room-isolation residuals | deferred HTTP room-isolation residual rows; PR02A has no verified branch link yet | PR02A remains in the known-fix prefix, but broader residuals stay deferred | Publish/fetch/audit a PR02A review branch before filing; promote additional residuals only with narrowed evidence |
 | Revision-restore marker retention | seed `5500002`; active lifecycle triage | queued behind final-stack blockers; no automatic PR slot | Triage only after `1020002` is repaired or reclassified and the rebuilt stack is available |
-| Duplicate/noise control-plane leak | latest duplicate/noise synthesis `20260516T231459Z` | fuzzer infrastructure issue, not product validation | Apply only bounded control-plane gates/backoff; do not suppress failures with real product evidence |
+| Duplicate/noise control-plane leak | latest duplicate/noise synthesis and feedback action `20260516T231459Z` | bounded control-plane fix applied and syntax/fixture checks passed; this is fuzzer infrastructure progress, not product validation, and current-run improvement is still unmeasured while productive `wp-env` startup is blocked | Verify fresh productive current-run triage after startup recovers; keep no-product startup noise gated without suppressing failures that have real product evidence |
 
 ## Filing Gates And Current Recommendation
 
