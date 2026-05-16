@@ -234,6 +234,11 @@ NODE
 
 materialization_needs_remediation() {
 	local enabled=$1 desired_target=$2 active=$3 paused=$4 running=$5 stale_seconds=$6
+	local status_counts=${7:-}
+	if printf '%s' "$status_counts" | grep -Eq '(^|\|)(starting|launching|recovering):[1-9]' &&
+		[ "${stale_seconds:-0}" -lt "$MATERIALIZATION_STALE_SECONDS" ]; then
+		return 1
+	fi
 	if [ "${enabled:-0}" -le 0 ]; then
 		return 1
 	fi
@@ -401,7 +406,7 @@ while true; do
 		last_restart_epoch=$(epoch)
 		up_streak=0
 		down_streak=0
-	elif materialization_needs_remediation "$enabled" "$desired_target" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_state_age_seconds"; then
+	elif materialization_needs_remediation "$enabled" "$desired_target" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_state_age_seconds" "$supervisor_status_counts"; then
 		action=materialization_remediation
 		reason=materialization_invariant_failed
 		write_materialization_diagnostic "$now" "$supervisor_state_path" "$enabled" "$target" "$max" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail"
