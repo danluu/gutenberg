@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T12:58:36Z`
+Snapshot time: `2026-05-16T13:03:07Z`
 
 Trigger event:
-`duplicate-noise-2026-05-16T12-55-11Z-42`
+`pr-split-2026-05-16T13-00-52Z-20260516T125324Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T12-55-11Z-42/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T13-00-52Z-20260516T125324Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -29,7 +29,7 @@ or the original split merely for continuity.
 
 Filing remains blocked. The final combined validation-stack rebuild is clean,
 but final-stack fuzz has not yet produced a filing-quality pass. The newest
-split-persona synthesis, `pr-split-20260516T124831Z-synthesis.md`, keeps the
+split-persona synthesis, `pr-split-20260516T125324Z-synthesis.md`, keeps the
 replacement split on the explicit 28-head allow-list from:
 
 ```text
@@ -48,7 +48,7 @@ That rebuild reports focused CRDT checks, touched-file JS lint,
 The remaining hard validation blocker is final-stack fuzz on this ref. The
 latest split synthesis classifies the active final-stack fuzz signal as
 startup/bootstrap dominated and says `0` visible likely-real failures is not
-useful validation yet. The newer raw coverage-guided monitor records `34`
+useful validation yet. The newer raw coverage-guided monitor records `36`
 current-run successful records, so the general coverage infrastructure is no
 longer zero-action, but that is not the final-stack validation run.
 
@@ -124,7 +124,7 @@ and `PR 1A`.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T12:58:31Z`.
+The collected remote status input was generated at `2026-05-16T13:03:02Z`.
 
 The fix-planning repo is checked out at:
 
@@ -154,7 +154,7 @@ That stack still has modified product/test files and many untracked fuzz,
 analysis, and documentation artifacts. It is active validation infrastructure,
 not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T12:58:36Z` from fetched
+The branch-link audit was generated at `2026-05-16T13:03:07Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -231,7 +231,7 @@ above.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T12:58:31Z
+collected_at_utc: 2026-05-16T13:03:02Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T121121Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -249,68 +249,74 @@ Treat that as structural and focused-check evidence for the rebuilt stack. It
 is not final-stack fuzz validation.
 
 The latest raw novelty input is nonempty and was updated at
-`2026-05-16T12:57:37.852Z` for the active coverage root:
+`2026-05-16T13:02:32.464Z` for the active coverage root:
 
 ```text
-coverage files: 31945
-total records seen: 46942
-records processed this pass: 62
-coverage lines seen this pass: 48733
+coverage files: 32030
+total records seen: 47072
+records processed this pass: 53
+coverage lines seen this pass: 48870
 summary files read this pass: 8
-summary startup failures processed this pass: 0
-current-run records: ws=109, http=5
-current-run successful records: 34
+summary startup failures processed this pass: 6
+current-run records: ws=122, http=5
+current-run successful records: 36
 current-run pre-action startup failures: persistence-no-title=2,
-  common-blocks=3
+  common-blocks=3, async-server-blocks=2, block-gauntlet=2,
+  real-user-editing=2
 current-run summary-only startup failures: persistence-no-title=1,
-  common-blocks=2
-current-run triage signatures: 174
+  common-blocks=2, async-server-blocks=2, block-gauntlet=2,
+  real-user-editing=2
+current-run triage signatures: 200
 current-run likely-real visible: 0
-current-run bootstrap stalls: 10
-current-run known-noise signatures: 25
+current-run bootstrap stalls: 12
+current-run known-noise signatures: 28
 current-run known startup-noise by profile:
-  persistence-no-title=1, common-blocks=2, block-gauntlet=1,
+  persistence-no-title=1, common-blocks=2, block-gauntlet=2,
   async-server-blocks=1
-current-run top duplicate family share: 0.1264
+current-run top duplicate family share: 0.11
 current-run top semantic families: collaboration_non_convergence=22,
-  rest_meta_database_error=20, pre_action_bootstrap_stall=10,
+  rest_meta_database_error=22, pre_action_bootstrap_stall=12,
   timeout=9, 403330405319=4,
-  49e788d57c42=4, ac1df9cd7836=4, 8d9cec93db70=4,
-  695db893ecce=4, 693b746af293=3, assertion=3
+  49e788d57c42=4, ac1df9cd7836=4, 693b746af293=4,
+  8d9cec93db70=4, 695db893ecce=4, assertion=4
 enabled groups: novelty-ws-block-gauntlet, novelty-ws-lifecycle,
-  novelty-ws-parser-transform, novelty-ws-real-user-editing,
-  novelty-ws-real-user-rich-text, novelty-ws-async-server-blocks
-paused groups: novelty-http-persistence-probe, novelty-ws-common-blocks
+  novelty-ws-parser-transform, novelty-ws-media-cross-entity,
+  novelty-ws-long-session-large-doc
+paused groups: novelty-http-persistence-probe, novelty-ws-common-blocks,
+  novelty-ws-real-user-editing, novelty-ws-real-user-rich-text,
+  novelty-ws-async-server-blocks
 headroom for adding groups: no
-quality issues: 0
+quality issues: 1
 health: ok
-load1: 84.91 / 64 cores
-memory: 413.3G free / 492.0G total
+load1: 66.45 / 64 cores
+memory: 420.9G free / 492.0G total
 ```
 
 Current fuzz health has no visible likely-real failures, but this is not a
 clean fuzz pass on the final maintainer-facing stack. The current run has moved
-past the earlier zero-success state and now has `34` successful current-run
+past the earlier zero-success state and now has `36` successful current-run
 records across block-gauntlet, common-blocks, session-lifecycle,
 real-user-editing, parser-transform, and async-server-blocks. That is useful
 progress after the novelty-monitor restart, but `novelty-ws-common-blocks`
-is still paused after startup failures and `novelty-http-persistence-probe`
-remains held until the `persistence-no-title` profile reaches enough clean
-current-run successes. The latest split synthesis still treats the active
-final-stack fuzz signal as startup/bootstrap dominated and requires valid
-action-level product coverage on the validation ref before counting it as
-validation.
+is still paused after startup failures, `novelty-ws-real-user-editing`,
+`novelty-ws-real-user-rich-text`, and `novelty-ws-async-server-blocks` are
+paused by the profile-scoped startup-noise hold, and
+`novelty-http-persistence-probe` remains held until the `persistence-no-title`
+profile reaches enough clean current-run successes. The latest split synthesis
+still treats the active final-stack fuzz signal as startup/bootstrap dominated
+and requires valid action-level product coverage on the validation ref before
+counting it as validation.
 
-The latest trend evidence packet was generated at `2026-05-16T12:53:54Z` from
-monitor data through `2026-05-16T12:52:59Z`:
+The latest trend evidence packet was generated at `2026-05-16T12:58:28Z` from
+monitor data through `2026-05-16T12:57:37Z`:
 
 ```text
-monitor passes: 1496
-coverage files: 272 -> 31868
-coverage files delta: 31596
+monitor passes: 1498
+coverage files: 272 -> 31945
+coverage files delta: 31673
 unmet coverage goals: 24 -> 7
 likely_real_max: 0
-duplicate_share_current_last: 0.1333
+duplicate_share_current_last: 0.1264
 duplicate_share_historical_last: 0.4556
 summary_startup_failures_last: 0
 quality_issues_last: 0
@@ -319,32 +325,32 @@ enabled groups at trend snapshot: novelty-ws-lifecycle,
   novelty-ws-block-gauntlet, novelty-ws-parser-transform,
   novelty-ws-async-server-blocks
 fuzz level mix: browser-e2e=30 lanes/30 groups; transport-integration=1 lane/1 group
-browser-e2e execution: 47535 cumulative / 816 per-hour
-transport-integration execution: 2986 cumulative / 16 per-hour
+browser-e2e execution: 47652 cumulative / 1284 per-hour
+transport-integration execution: 2987 cumulative / 20 per-hour
 load1: 82.95 / 64 cores
-memory: 417.6G free / 492.0G total
+memory: 413.3G free / 492.0G total
 ```
 
 Largest unmet trend goals:
 
-- CDP coverage records: `4736/5000`
-- successful real-user-editing records: `279/500`
+- CDP coverage records: `4750/5000`
+- successful real-user-editing records: `280/500`
 - `core/html`: `352/500`
 - `core/details`: `403/500`
-- `core/more`: `406/500`
-- `ui-heading-shortcut`: `480/500`
-- `reload-post-action`: `490/500`
+- `core/more`: `407/500`
+- `ui-heading-shortcut`: `481/500`
+- `reload-post-action`: `492/500`
 
 Weak completion profiles remain a reason to prefer guarded top-offs and
 startup-stall reduction over simply increasing browser concurrency. The weakest
 success ratios in the trend packet are `full` (`18/840`),
-`revision-persistence` (`76/3245`), `multi-reload-lifecycle` (`58/2408`),
-`parser-serialization` (`60/1878`), and `real-user-editing` (`279/4889`).
+`revision-persistence` (`76/3250`), `multi-reload-lifecycle` (`58/2417`),
+`parser-serialization` (`60/1881`), and `real-user-editing` (`280/4899`).
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T124831Z-synthesis.md`. It says the replacement split is the
+`pr-split-20260516T125324Z-synthesis.md`. It says the replacement split is the
 Cycle 134/138 explicit 28-head allow-list and that filing is blocked on valid
 final-stack validation, not split design. It explicitly says the active
 final-stack fuzz signal is not approval: fuzz against
@@ -359,7 +365,8 @@ The split synthesis supersedes the older zero-byte rebuild blocker from
 `pr-split-20260516T121150Z` snapshots. It also supersedes
 `pr-split-20260516T122029Z-synthesis.md`,
 `pr-split-20260516T123312Z-synthesis.md`, and
-`pr-split-20260516T124012Z-synthesis.md` only on latest inspection status; the
+`pr-split-20260516T124012Z-synthesis.md`, plus
+`pr-split-20260516T124831Z-synthesis.md` only on latest inspection status; the
 split and negative filing rules are unchanged:
 
 - Do not file or validate from wildcard `final/rtc-pr*`.
@@ -372,12 +379,13 @@ split and negative filing rules are unchanged:
 - If the upstream base changes before filing, recreate or rebase the allow-list
   heads and rerun focused checks plus final-stack validation.
 
-The latest split feedback action,
+The latest nonempty split feedback action,
 `pr-split-20260516T124012Z-feedback-action.md`, records that the Cycle 134
 explicit 28-head allow-list remained the current replacement split and that no
 new jobs were launched because the bounded collaboration-bootstrap repair job
-is already active. No newer split feedback-action file was present with the
-`124831Z` synthesis:
+is already active. The newer
+`pr-split-20260516T125324Z-feedback-action.md` file is zero bytes, so it does
+not change the action record:
 
 ```text
 rtc-final-stack-fuzz-collab-bootstrap-repair-post-pr11-20260516T122029Z
@@ -420,9 +428,10 @@ supervisor restart was needed. Its measured post-action state at
 `novelty-http-persistence-probe` and `novelty-ws-common-blocks`, kept current
 likely-real visible at `0`, reported `6` current bootstrap stalls, and emitted
 known startup-noise by profile for `persistence-no-title` and `common-blocks`.
-The newer raw novelty snapshot above has since advanced to `10` current
-bootstrap stalls and also reports startup-noise for `block-gauntlet` and
-`async-server-blocks`.
+The newer raw novelty snapshot above has since advanced to `12` current
+bootstrap stalls, also reports known startup-noise for `block-gauntlet` and
+`async-server-blocks`, and records pre-action startup failures for
+`real-user-editing`.
 
 The remaining triage-watcher/analysis-tier gate is still a control-plane
 follow-up after the monitor-side probation change, not a product-code PR:
@@ -447,9 +456,10 @@ The completed status-analysis reports through
 separate current-run fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older "only
 `novelty-http-persistence-probe` is enabled" warning is superseded by the latest
-raw novelty snapshot, which shows six WS coverage groups enabled while HTTP
-persistence and common-blocks are paused after startup failures. Their old
-"review links still stale" warning is superseded by the `12:58:36Z`
+raw novelty snapshot, which shows five WS coverage groups enabled while HTTP
+persistence, common-blocks, real-user editing, real-user rich-text, and
+async-server blocks are paused after startup/noise holds. Their old
+"review links still stale" warning is superseded by the `13:03:07Z`
 branch-link audit, which verifies the repaired PR 13 review refs listed above.
 
 ## Deferred Or Evidence-Only Work
@@ -503,7 +513,8 @@ Before filing any maintainer-facing PR:
 Existing fuzz infrastructure can continue where healthy. The latest trend
 evidence has `likely_real_max: 0` and `7` unmet goals, and the latest raw
 novelty snapshot shows no visible likely-real failures on the newly rolled
-output dir. Six WS coverage groups are enabled, the HTTP persistence probe and
-common-blocks are paused after startup failures, and current-run successful
-product records have moved from zero to `34`. This is useful infrastructure
-health and early product coverage, not final-stack fuzz validation.
+output dir. Five WS coverage groups are enabled, the HTTP persistence probe,
+common-blocks, real-user editing, real-user rich-text, and async-server blocks
+are paused after startup/noise holds, and current-run successful product
+records have moved from zero to `36`. This is useful infrastructure health and
+early product coverage, not final-stack fuzz validation.
