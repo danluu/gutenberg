@@ -163,19 +163,22 @@ HTTP persistence probe is enabled.
 
 ![Fuzz execution rate by level](rtc-jetstream2-fuzz-trends-20260515/plots/fuzz-level-execution-rate.png)
 
-The current execution metric is completed level-specific execution units derived
-from lane `events.ndjson` files: browser seed attempts, unit/property generated
-cases, coverage-guided lower-level inputs, or protocol/backend cases. Rechecks
-count as executions. This is more precise than supervisor launches or lane
-counts, but it only covers fuzzers that emit these lane events.
+The current execution metric is estimated individual test/case executions
+derived from lane `events.ndjson` files: browser seed attempts, unit/property
+fixed tests plus generated fuzz cases, coverage-guided lower-level inputs, or
+protocol/backend cases. Rechecks count as executions. This is more precise than
+supervisor launches or lane counts, but it only covers fuzzers that emit these
+lane events. Lower-level counts reconstructed from batch metadata or legacy
+batch-count fields are approximate.
 
-The latest collected execution data has `56,901` completed execution units:
-`52,240` browser/e2e, `3,006` transport/integration, `573` unit-property, and
-`1,082` coverage-guided-lower-level. The latest 15-minute bucket reports about
-`596` browser/e2e execution units/hour, `96` unit-property execution units/hour,
-`108` coverage-guided-lower-level execution units/hour, and `0`
-transport/integration execution units/hour. `backend-api`, `protocol-server`,
-and standalone `fuzz-assertion` levels remain at `0` executions in this counter.
+The latest collected execution data has about `762,094` completed test
+executions: `52,358` browser/e2e, `3,006` transport/integration, `689,172`
+unit-property, and `17,558` coverage-guided-lower-level. The latest 15-minute
+bucket reports about `84` browser/e2e test executions/hour, `19,264`
+unit-property test executions/hour, `192` coverage-guided-lower-level test
+executions/hour, and `0` transport/integration test executions/hour.
+`backend-api`, `protocol-server`, and standalone `fuzz-assertion` levels remain
+at `0` executions in this counter.
 
 ## Profile Completion
 
@@ -316,9 +319,9 @@ The remaining fuzzing weakness is completion depth and level diversity. Live
 work is still mostly browser/e2e in the latest mix snapshots, but unit-property
 and coverage-guided-lower-level lanes are active. Transport-integration has
 historical completed executions but no latest-bucket rate; the latest execution
-bucket has `596` browser/e2e execution units/hour, `96` unit-property execution
-units/hour, `108` coverage-guided-lower-level execution units/hour, `0`
-transport/integration execution units/hour, and `0`
+bucket has about `84` browser/e2e test executions/hour, `19,264` unit-property
+test executions/hour, `192` coverage-guided-lower-level test executions/hour,
+`0` transport/integration test executions/hour, and `0`
 backend-api/protocol-server/fuzz-assertion executions.
 The next narrow operational checks are the remaining startup-noise control-plane
 follow-ups and seed `1020002` peer-client store-transition repair evidence.

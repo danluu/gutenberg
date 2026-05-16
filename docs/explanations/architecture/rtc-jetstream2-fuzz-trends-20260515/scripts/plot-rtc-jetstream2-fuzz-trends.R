@@ -395,10 +395,19 @@ if ( file.exists( fuzz_level_executions_path ) ) {
 				successful_executions = if_else( ok, 1, 0 )
 			)
 	}
+	if ( ! "approximate" %in% names( fuzz_level_executions ) ) {
+		fuzz_level_executions <- fuzz_level_executions %>%
+			mutate( approximate = FALSE )
+	}
 	fuzz_level_executions <- fuzz_level_executions %>%
 		mutate(
 			timestamp = parse_utc_timestamp( timestamp ),
 			across( c( executions, primary_executions, successful_executions ), ~ replace_na( as.numeric( .x ), 0 ) ),
+			approximate = case_when(
+				is.logical( approximate ) ~ approximate,
+				str_to_lower( as.character( approximate ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
 			fuzz_level = replace_na( fuzz_level, "other" ),
 			fuzz_level = factor(
 				fuzz_level,
@@ -869,6 +878,7 @@ if ( nrow( fuzz_level_executions ) > 0 ) {
 			executions = sum( executions, na.rm = TRUE ),
 			primary_executions = sum( primary_executions, na.rm = TRUE ),
 			successful_executions = sum( successful_executions, na.rm = TRUE ),
+			approximate = any( approximate, na.rm = TRUE ),
 			campaigns = n_distinct( campaign ),
 			.groups = "drop"
 		) %>%
@@ -879,6 +889,7 @@ if ( nrow( fuzz_level_executions ) > 0 ) {
 				executions = 0,
 				primary_executions = 0,
 				successful_executions = 0,
+				approximate = FALSE,
 				campaigns = 0
 			)
 		) %>%
@@ -903,8 +914,8 @@ if ( nrow( fuzz_level_executions ) > 0 ) {
 			labs(
 				title = "Cumulative fuzz executions by level",
 				x = "UTC time",
-				y = "completed execution units",
-				caption = "Execution units are level-specific work units from lane events.ndjson: browser seed attempts, unit/property generated cases, coverage-guided inputs, or protocol/backend cases."
+				y = "completed test executions",
+				caption = "Counts are estimated individual test/case executions from lane events.ndjson. Browser/e2e counts seed attempts; unit/property counts fixed tests plus generated cases; coverage-guided lower-level counts tested inputs. Historical lower-level rows reconstructed from batch metadata or legacy batch-count fields are approximate."
 			) +
 			theme_rtc(),
 		width = 10,
@@ -921,8 +932,8 @@ if ( nrow( fuzz_level_executions ) > 0 ) {
 			labs(
 				title = "Fuzz execution rate by level",
 				x = "UTC time",
-				y = "completed execution units per hour",
-				caption = "Rates are bucketed in 15-minute windows and scaled to level-specific execution units/hour."
+				y = "test executions per hour",
+				caption = "Rates are bucketed in 15-minute windows and scaled to estimated individual test/case executions per hour."
 			) +
 			theme_rtc(),
 		width = 10,
@@ -1286,7 +1297,8 @@ summary_lines <- c(
 	paste0( "fuzz_level_mix_snapshots: ", n_distinct( fuzz_level_mix$timestamp ) ),
 	paste0( "fuzz_level_mix_campaigns: ", fuzz_level_campaigns_text ),
 	paste0( "fuzz_level_mix_latest: ", fuzz_level_latest_text ),
-	paste0( "fuzz_level_execution_units: ", ifelse( nrow( fuzz_level_executions ) > 0, sum( fuzz_level_executions$executions, na.rm = TRUE ), 0 ) ),
+	paste0( "fuzz_level_test_executions: ", ifelse( nrow( fuzz_level_executions ) > 0, sum( fuzz_level_executions$executions, na.rm = TRUE ), 0 ) ),
+	paste0( "fuzz_level_test_executions_has_approximate_rows: ", ifelse( nrow( fuzz_level_executions ) > 0, any( fuzz_level_executions$approximate, na.rm = TRUE ), FALSE ) ),
 	paste0( "fuzz_level_execution_latest: ", fuzz_execution_latest_text ),
 	paste0( "profiles_seen: ", nrow( profile_counts ) ),
 	paste0( "goals_total: ", nrow( coverage_goals ) ),
