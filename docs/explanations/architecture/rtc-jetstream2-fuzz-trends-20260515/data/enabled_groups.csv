@@ -622,3 +622,4 @@ timestamp,group,group_family
 2026-05-16T13:50:31Z,novelty-ws-async-server-blocks,async/media
 2026-05-16T13:50:31Z,novelty-ws-media-cross-entity,async/media
 2026-05-16T13:50:31Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-16T13:52:41Z,novelty-ws-persistence-no-title,persistence
