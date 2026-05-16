@@ -504,3 +504,4 @@ timestamp,group,group_family
 2026-05-16T05:47:26Z,novelty-ws-long-session-large-doc,lifecycle
 2026-05-16T05:56:37Z,novelty-ws-lifecycle,lifecycle
 2026-05-16T05:56:37Z,novelty-ws-async-server-blocks,async/media
+2026-05-16T05:58:31Z,novelty-ws-persistence-no-title,persistence
