@@ -341,6 +341,184 @@ if not counts:
     print("- no current execution counters found")
 PY
     echo
+    echo "## Runner Throughput Diagnostics"
+    python3 - "$roots_file" <<'PY'
+import json
+import os
+import re
+import statistics
+import sys
+from collections import defaultdict, deque
+
+roots = []
+try:
+    with open(sys.argv[1], errors="ignore") as handle:
+        for line in handle:
+            parts = line.rstrip("\n").split("\t", 1)
+            if len(parts) == 2 and parts[1] and os.path.isdir(parts[1]):
+                roots.append((parts[0], parts[1]))
+except OSError:
+    pass
+
+def infer_level_from_text(text):
+    text = text.lower()
+    if "coverage-guided-lower" in text or "libfuzzer" in text or "afl" in text:
+        return "coverage-guided-lower-level"
+    if "unit-property" in text or "lower-level-fuzz" in text or "property" in text:
+        return "unit-property"
+    if "protocol" in text and "fuzz" in text:
+        return "protocol-server"
+    if "backend-api" in text or "rest-api" in text:
+        return "backend-api"
+    if "fuzz-only" in text or "assertion" in text:
+        return "fuzz-assertion"
+    return "browser-e2e"
+
+def load_group_metadata(root):
+    metadata = {}
+    path = os.path.join(root, "supervisor-groups.json")
+    try:
+        groups = json.load(open(path))
+    except Exception:
+        return metadata
+    for group in groups if isinstance(groups, list) else []:
+        if not isinstance(group, dict):
+            continue
+        name = str(group.get("name") or "")
+        text = " ".join([
+            name,
+            str(group.get("transport") or ""),
+            str(group.get("profile") or ""),
+            str(group.get("target") or ""),
+        ])
+        metadata[name] = {
+            "fuzzLevel": group.get("fuzzLevel") or group.get("fuzz_level") or infer_level_from_text(text),
+            "runnerCommand": group.get("runnerCommand") or "",
+            "executionStrategy": group.get("executionStrategy") or "",
+            "sleepSeconds": group.get("sleepSeconds"),
+            "batchSize": group.get("batchSize") or group.get("seedBatchCount") or group.get("stepCount"),
+        }
+    return metadata
+
+def group_name_from_dir(dirpath):
+    gen = os.path.basename(os.path.dirname(dirpath))
+    match = re.match(r"^(.*)-gen-[0-9]+-", gen)
+    return match.group(1) if match else gen
+
+def event_execution_count(level, event):
+    for key in ("testExecutionCount", "individualTestExecutionCount", "executionUnitCount"):
+        try:
+            value = int(event.get(key) or 0)
+        except (TypeError, ValueError):
+            value = 0
+        if value > 0:
+            return value
+    if level == "coverage-guided-lower-level":
+        try:
+            return max(1, int(event.get("inputCount") or 1))
+        except (TypeError, ValueError):
+            return 1
+    return 1
+
+def read_command_from_log(event):
+    command = str(event.get("runnerCommand") or "")
+    if command:
+        return command
+    log_path = event.get("logPath")
+    if not log_path:
+        return ""
+    try:
+        with open(log_path, errors="ignore") as handle:
+            for index, line in enumerate(handle):
+                if line.startswith("command="):
+                    return line.rstrip("\n").split("=", 1)[1]
+                if index > 40:
+                    break
+    except OSError:
+        pass
+    return ""
+
+records = defaultdict(lambda: deque(maxlen=20))
+startup_heavy_patterns = ("npm run test:unit", "jest", "wp-scripts test-unit")
+for label, root in roots:
+    group_meta = load_group_metadata(root)
+    for dirpath, _, files in os.walk(root):
+        if "events.ndjson" not in files:
+            continue
+        group = group_name_from_dir(dirpath)
+        meta = group_meta.get(group, {})
+        path = os.path.join(dirpath, "events.ndjson")
+        try:
+            with open(path, errors="ignore") as handle:
+                for line in handle:
+                    try:
+                        event = json.loads(line)
+                    except Exception:
+                        continue
+                    if event.get("kind") == "run-start":
+                        meta = {
+                            **meta,
+                            "runnerCommand": event.get("runnerCommand") or meta.get("runnerCommand") or "",
+                            "executionStrategy": event.get("executionStrategy") or meta.get("executionStrategy") or "",
+                            "sleepSeconds": event.get("sleepSeconds", meta.get("sleepSeconds")),
+                            "batchSize": event.get("batchSize") or meta.get("batchSize"),
+                        }
+                        continue
+                    if event.get("kind") != "seed-attempt-complete":
+                        continue
+                    level = event.get("fuzzLevel") or meta.get("fuzzLevel") or infer_level_from_text(" ".join([root, dirpath, group]))
+                    try:
+                        duration_ms = int(event.get("durationMs") or 0)
+                    except (TypeError, ValueError):
+                        duration_ms = 0
+                    if duration_ms <= 0:
+                        continue
+                    executions = event_execution_count(level, event)
+                    command = read_command_from_log(event) or meta.get("runnerCommand") or ""
+                    strategy = event.get("executionStrategy") or meta.get("executionStrategy") or ""
+                    sleep_seconds = event.get("sleepSeconds", meta.get("sleepSeconds"))
+                    records[(level, group)].append({
+                        "at": event.get("at") or "",
+                        "durationMs": duration_ms,
+                        "executions": executions,
+                        "command": command,
+                        "strategy": strategy,
+                        "sleepSeconds": sleep_seconds,
+                        "label": label,
+                        "root": root,
+                    })
+        except OSError:
+            continue
+
+if not records:
+    print("- no recent duration-bearing execution events found")
+    raise SystemExit
+
+print("| level | group | recent events | avg batch sec | avg ms per execution | executions/hour/lane | sleep sec | command shape | status |")
+print("| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |")
+for (level, group), rows in sorted(records.items()):
+    durations = [row["durationMs"] for row in rows]
+    executions = [max(1, row["executions"]) for row in rows]
+    avg_duration = statistics.mean(durations)
+    total_exec = sum(executions)
+    total_ms = sum(durations)
+    ms_per_exec = total_ms / total_exec if total_exec else 0
+    per_hour = total_exec * 3600000 / total_ms if total_ms else 0
+    latest = rows[-1]
+    command = latest["command"]
+    shape = latest["strategy"] or ("spawn-npm-jest-per-batch" if any(pattern in command for pattern in startup_heavy_patterns) else "unknown")
+    sleep = latest["sleepSeconds"]
+    sleep_display = "" if sleep is None else str(sleep)
+    status = "ok"
+    if sleep not in (None, "", 0, "0"):
+        status = f"ACTION-NEEDED: fixed sleep of {sleep}s between batches"
+    elif shape == "spawn-npm-jest-per-batch" and avg_duration > 5000 and level in ("unit-property", "coverage-guided-lower-level"):
+        status = "ACTION-NEEDED: per-batch npm/Jest startup dominates; consider persistent harness, larger batches, or direct runner"
+    elif ms_per_exec > 1000 and level in ("unit-property", "coverage-guided-lower-level"):
+        status = "ACTION-NEEDED: low execution throughput for lower-level target"
+    print(f"| {level} | {group} | {len(rows)} | {avg_duration/1000:.2f} | {ms_per_exec:.1f} | {per_hour:.1f} | {sleep_display} | {shape} | {status} |")
+PY
+    echo
     echo "## Telemetry Reconciliation"
     python3 - "$roots_file" <<'PY'
 import json
@@ -580,13 +758,16 @@ This controller must run continuously. Do not wait for stalls or error condition
 
 Before recommending work, audit the context itself. Treat any TELEMETRY-INVARIANT-FAIL line as the highest-priority bug: the loop must not ask personas to reason from a view that disagrees with tmux, current-run roots, status.tsv, or events.ndjson. A lane merely existing is not enough; evaluate whether its executions, novelty counters, crash/noise counters, and corpus growth are visible and useful.
 
+Also audit runner throughput. Treat any ACTION-NEEDED line in "Runner Throughput Diagnostics" as an actionable loop failure, not background data. A low-level lane that repeatedly launches `npm run test:unit`/Jest per batch, spends most wall time in startup/transforms/coverage setup, or sleeps between batches should either be changed to amortize startup, replaced with a persistent/direct lower-level harness, given a larger useful batch, or explicitly justified with evidence.
+
 Return:
 1. Whether the current level mix should change now.
 2. The smallest useful change, with exact files/scripts/commands.
 3. Which lower-level target, if any, should be added first and why.
 4. How to validate without stopping productive browser fuzzing.
 5. Any telemetry/accounting blind spot that would make this recommendation unreliable, and the smallest fix.
-6. Risks or reasons to reject changing the mix now.
+6. Any throughput blind spot or overhead-dominated runner that would make the current mix less useful than the lane count suggests.
+7. Risks or reasons to reject changing the mix now.
 
 Do not edit files in this review pass.
 EOF
@@ -670,6 +851,8 @@ The controller should not wait for error conditions. If the current mix still ha
 
 If context.md contains TELEMETRY-INVARIANT-FAIL, fix the accounting/context-builder blind spot first, validate by regenerating a context that no longer contradicts live tmux/events, and only then make fuzzing mix changes. If coverage-guided lower-level quality says action-needed, make a concrete guidance-quality improvement or write the exact blocker; do not treat "the lane is running" as success by itself.
 
+If "Runner Throughput Diagnostics" contains ACTION-NEEDED, make a concrete throughput improvement or write the exact blocker and next code change. Examples of acceptable fixes: remove fixed normal-path sleeps, increase batch size when it improves useful executions without hiding crashes, bypass per-batch npm/Jest startup with a direct Node runner, split out an in-process persistent harness, or add telemetry proving the apparent overhead is not actually on the critical path.
+
 You may edit files in $FUZZ_REPO or Jetstream loop scripts if needed. Prefer small, reversible changes. Run syntax checks for changed files. Restart only the relevant loop or lane if a restart is needed.
 
 Write:
@@ -678,7 +861,8 @@ Write:
 3. Validation run.
 4. Whether any new lower-level executions should appear in the graph.
 5. Whether telemetry reconciliation is clean after the change.
-6. Remaining blocker if no lower-level target was launched or coverage-guidance quality was not improved.
+6. Whether runner throughput diagnostics are clean after the change.
+7. Remaining blocker if no lower-level target was launched, coverage-guidance quality was not improved, or throughput remained overhead-dominated.
 EOF
 
   (

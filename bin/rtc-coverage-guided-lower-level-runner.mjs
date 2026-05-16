@@ -64,6 +64,8 @@ const coverageTargets = [
 	'packages/sync/src/quill-delta/Delta.ts',
 	'rtc-rich-text-crdt-merge.coverage-fuzz.test',
 ];
+const runnerCommand = `nice -n ${ niceLevel } timeout ${ timeoutSeconds }s npm run test:unit -- ${ testPath } --runInBand --ci`;
+const executionStrategy = 'spawn-npm-jest-per-batch';
 
 if ( ! runRoot ) {
 	console.error( 'RTC_CG_LOWER_LEVEL_RUN_ROOT is required' );
@@ -108,6 +110,9 @@ appendEvent( {
 	timeoutSeconds,
 	sleepSeconds,
 	nice: niceLevel,
+	runnerCommand,
+	executionStrategy,
+	startupAmortizationInputs: batchSize,
 	semanticFeatureFeedback: true,
 } );
 
@@ -199,7 +204,7 @@ while ( true ) {
 	fs.writeFileSync(
 		logPath,
 		[
-			`command=nice -n ${ niceLevel } timeout ${ timeoutSeconds }s npm run test:unit -- ${ testPath } --runInBand --ci`,
+			`command=${ runnerCommand }`,
 			`input=${ inputPath }`,
 			`features=${ featurePath }`,
 			`coverage=${ coverageDir }`,
@@ -257,6 +262,10 @@ while ( true ) {
 		exitCode,
 		attempt,
 		inputCount: batch.length,
+		testExecutionCount: batch.length,
+		runnerCommand,
+		executionStrategy,
+		startupAmortizationInputs: batch.length,
 		inputPath,
 		featurePath,
 		logPath,
@@ -340,6 +349,8 @@ function writeSupervisorGroups() {
 			timeoutSeconds,
 			sleepSeconds,
 			nice: niceLevel,
+			runnerCommand,
+			executionStrategy,
 			corpusFeedback: true,
 			semanticFeatureFeedback: true,
 			repoRoot: repo,

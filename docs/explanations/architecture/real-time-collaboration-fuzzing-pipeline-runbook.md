@@ -184,6 +184,11 @@ errors, or harness-work candidates before reviewing the mix. Every cycle it:
 -   includes coverage-guided lower-level quality counters such as recent
     `newCoverageKeys`, `newFeatureKeys`, input count, nonzero exits, and corpus
     growth so "lane is running" is not treated as sufficient progress;
+-   includes runner throughput diagnostics: recent batch duration, approximate
+    milliseconds per individual execution/input, executions per hour per lane,
+    fixed normal-path sleeps, and command shape. If the loop sees per-batch
+    `npm run test:unit`/Jest startup dominating a lower-level runner, or a fixed
+    sleep between useful batches, it marks that as `ACTION-NEEDED`;
 -   launches one xhigh Codex tmux session per standard persona, with
     `RTC_FUZZ_LEVEL_MIX_MAX_PARALLEL=6` by default so all six personas think in
     parallel;
@@ -199,7 +204,10 @@ active `unit-property`, `coverage-guided-lower-level`, `backend-api`,
 input, not merely a graph annotation. A visible lower-level lane is necessary
 but not sufficient: if novelty or useful execution quality stalls, the action
 job should improve guidance, target shape, mutation, corpus selection, or
-oracle coverage. The browser/e2e fuzzers should continue running while
+oracle coverage. If runner throughput is overhead-dominated, the action job
+should remove unnecessary sleeps, amortize startup with larger useful batches,
+or build a persistent/direct lower-level harness before claiming the lower-level
+lane is productive. The browser/e2e fuzzers should continue running while
 lower-level targets are added unless there is clear evidence that they are
 blocking the lower-level work.
 

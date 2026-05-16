@@ -35,7 +35,8 @@ write_event() {
 	local placement_case_count="$5"
 	local exit_code="$6"
 	local duration_ms="$7"
-	node - "$events_path" "$seed_start" "$seed_count" "$case_count" "$placement_case_count" "$exit_code" "$duration_ms" <<'NODE'
+	local runner_command="$8"
+	node - "$events_path" "$seed_start" "$seed_count" "$case_count" "$placement_case_count" "$exit_code" "$duration_ms" "$runner_command" <<'NODE'
 const fs = require( 'fs' );
 const [
 	eventsPath,
@@ -45,6 +46,7 @@ const [
 	placementCaseCount,
 	exitCode,
 	durationMs,
+	runnerCommand,
 ] = process.argv.slice( 2 );
 const code = Number.parseInt( exitCode, 10 );
 const seedBatchCount = Number.parseInt( seedCount, 10 );
@@ -69,6 +71,9 @@ const event = {
 	testExecutionCount: fixedUnitCaseCount + generatedUnitCaseCount,
 	executionUnitCount: fixedUnitCaseCount + generatedUnitCaseCount,
 	durationMs: Number.parseInt( durationMs, 10 ),
+	runnerCommand,
+	executionStrategy: 'spawn-npm-jest-per-batch',
+	startupAmortizationInputs: fixedUnitCaseCount + generatedUnitCaseCount,
 	transport: 'in-process',
 	actionProfile: 'rtc-rich-text-offset-space',
 };
@@ -104,8 +109,10 @@ run_loop() {
 		local duration_ms
 		local log_path
 		local exit_code
+		local runner_command
 		ts="$(date -u +%Y%m%dT%H%M%SZ)"
 		log_path="$run_root/logs/${GROUP_NAME}-${ts}-seed-${seed_start}.log"
+		runner_command="nice -n $nice_level timeout ${timeout_seconds}s npm run test:unit -- $TEST_PATH --runInBand --ci"
 		started_s="$(date -u +%s)"
 		set +e
 		env \
@@ -121,13 +128,14 @@ run_loop() {
 		set -e
 		ended_s="$(date -u +%s)"
 		duration_ms=$(( ( ended_s - started_s ) * 1000 ))
-		write_event "$events_path" "$seed_start" "$seed_count" "$case_count" "$placement_case_count" "$exit_code" "$duration_ms"
-		printf '%s\tseed_start=%s\tseed_count=%s\tcase_count=%s\tplacement_case_count=%s\texit=%s\tlog=%s\n' \
+		write_event "$events_path" "$seed_start" "$seed_count" "$case_count" "$placement_case_count" "$exit_code" "$duration_ms" "$runner_command"
+		printf '%s\tseed_start=%s\tseed_count=%s\tcase_count=%s\tplacement_case_count=%s\tduration_ms=%s\texit=%s\tlog=%s\n' \
 			"$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
 			"$seed_start" \
 			"$seed_count" \
 			"$case_count" \
 			"$placement_case_count" \
+			"$duration_ms" \
 			"$exit_code" \
 			"$log_path" >> "$status_path"
 		seed_start=$(( seed_start + seed_count ))
@@ -154,16 +162,20 @@ start_loop() {
 	local seed_count
 	local case_count
 	local placement_case_count
+	local timeout_seconds
+	local nice_level
 	run_started="$(date -u +%Y%m%dT%H%M%SZ)"
 	run_root="$BASE/runs/unit-property-$run_started"
 	seed_start="${RTC_LOWER_LEVEL_SEED_START:-${GUTENBERG_RTC_RICH_TEXT_FUZZ_SEED_START:-1592594996}}"
 	seed_count="${RTC_LOWER_LEVEL_SEED_COUNT:-${GUTENBERG_RTC_RICH_TEXT_FUZZ_SEED_COUNT:-2}}"
 	case_count="${RTC_LOWER_LEVEL_CASE_COUNT:-${GUTENBERG_RTC_RICH_TEXT_FUZZ_CASE_COUNT:-100}}"
 	placement_case_count="${RTC_LOWER_LEVEL_PLACEMENT_CASE_COUNT:-${GUTENBERG_RTC_RICH_TEXT_PLACEMENT_CASE_COUNT:-500}}"
+	timeout_seconds="${RTC_LOWER_LEVEL_TIMEOUT_SECONDS:-1200}"
+	nice_level="${RTC_LOWER_LEVEL_NICE:-15}"
 
 	mkdir -p "$run_root/logs"
 	printf '%s\n' "$run_root" > "$BASE/current-run-root.txt"
-	node - "$run_root/supervisor-groups.json" "$GROUP_NAME" "$PROFILE" "$TEST_PATH" "$seed_start" "$seed_count" "$case_count" "$placement_case_count" "$REPO" <<'NODE'
+	node - "$run_root/supervisor-groups.json" "$GROUP_NAME" "$PROFILE" "$TEST_PATH" "$seed_start" "$seed_count" "$case_count" "$placement_case_count" "$REPO" "$timeout_seconds" "$nice_level" <<'NODE'
 const fs = require( 'fs' );
 const [
 	outPath,
@@ -175,6 +187,8 @@ const [
 	caseCount,
 	placementCaseCount,
 	repoRoot,
+	timeoutSeconds,
+	niceLevel,
 ] = process.argv.slice( 2 );
 const groups = [
 	{
@@ -190,6 +204,8 @@ const groups = [
 		placementCaseCount: Number.parseInt( placementCaseCount, 10 ),
 		repoRoot,
 		testPath,
+		runnerCommand: `nice -n ${ niceLevel } timeout ${ timeoutSeconds }s npm run test:unit -- ${ testPath } --runInBand --ci`,
+		executionStrategy: 'spawn-npm-jest-per-batch',
 	},
 ];
 fs.writeFileSync( outPath, `${ JSON.stringify( groups, null, 2 ) }\n` );
