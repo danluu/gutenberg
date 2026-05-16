@@ -537,3 +537,4 @@ timestamp,group,group_family
 2026-05-16T10:04:19Z,novelty-ws-block-gauntlet,auth/locks
 2026-05-16T10:04:19Z,novelty-ws-common-blocks,auth/locks
 2026-05-16T10:04:19Z,novelty-ws-parser-transform,parser
+2026-05-16T10:15:06Z,novelty-ws-lifecycle,lifecycle
