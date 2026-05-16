@@ -559,3 +559,7 @@ timestamp,group,group_family
 2026-05-16T10:54:25Z,novelty-ws-parser-transform,parser
 2026-05-16T10:54:28Z,novelty-ws-lifecycle,lifecycle
 2026-05-16T10:54:28Z,novelty-ws-async-server-blocks,async/media
+2026-05-16T10:58:54Z,novelty-ws-real-user-editing,real-user
+2026-05-16T10:58:54Z,novelty-ws-real-user-rich-text,real-user
+2026-05-16T10:58:54Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-16T10:58:54Z,novelty-ws-common-blocks,auth/locks
