@@ -117,21 +117,29 @@ start_loop() {
 	local timeout_seconds
 	local nice_level
 	local max_input_bytes
-	run_started="$(date -u +%Y%m%dT%H%M%SZ)"
+	local sleep_seconds
+	local previous_root
+	run_started="$(date -u +%Y%m%dT%H%M%S%NZ)"
 	run_root="$BASE/runs/coverage-guided-lower-level-$run_started"
 	batch_size="${RTC_CG_LOWER_LEVEL_BATCH_SIZE:-${RTC_CG_LOWER_LEVEL_RUNS:-32}}"
 	timeout_seconds="${RTC_CG_LOWER_LEVEL_TIMEOUT_SECONDS:-1200}"
 	nice_level="${RTC_CG_LOWER_LEVEL_NICE:-19}"
 	max_input_bytes="${RTC_CG_LOWER_LEVEL_MAX_INPUT_BYTES:-64}"
+	sleep_seconds="${RTC_CG_LOWER_LEVEL_SLEEP_SECONDS:-0}"
+	previous_root="$(sed -n '1p' "$BASE/current-run-root.txt" 2>/dev/null || true)"
 
-	mkdir -p "$run_root/logs"
+	mkdir -p "$run_root/logs" "$run_root/corpus/queue" "$run_root/coverage"
+	if [ "${RTC_CG_LOWER_LEVEL_CARRYOVER_CORPUS:-1}" = "1" ] && [ -n "$previous_root" ] && [ -d "$previous_root" ]; then
+		cp -n "$previous_root"/corpus/queue/*.bin "$run_root/corpus/queue/" 2>/dev/null || true
+		cp -n "$previous_root"/coverage/coverage-state.json "$run_root/coverage/coverage-state.json" 2>/dev/null || true
+	fi
 	printf '%s\n' "$run_root" > "$BASE/current-run-root.txt"
 	write_supervisor_groups "$run_root" "$batch_size" "$timeout_seconds" "$nice_level" "$max_input_bytes"
 	cp "$run_root/supervisor-groups.json" "$BASE/supervisor-groups.json"
 
 	tmux new-session -d -s "$SESSION" \
-		"bash -lc 'cd \"$REPO\"; export PATH=\"$TMUX_WRAP:$NODE_BIN:\$PATH\"; RTC_CG_LOWER_LEVEL_REPO=\"$REPO\" RTC_CG_LOWER_LEVEL_RUN_ROOT=\"$run_root\" RTC_CG_LOWER_LEVEL_RUN_STARTED=\"$run_started\" RTC_CG_LOWER_LEVEL_GROUP=\"$GROUP_NAME\" RTC_CG_LOWER_LEVEL_TEST_PATH=\"$TEST_PATH\" RTC_CG_LOWER_LEVEL_BATCH_SIZE=\"$batch_size\" RTC_CG_LOWER_LEVEL_TIMEOUT_SECONDS=\"$timeout_seconds\" RTC_CG_LOWER_LEVEL_NICE=\"$nice_level\" RTC_CG_LOWER_LEVEL_MAX_INPUT_BYTES=\"$max_input_bytes\" node \"$RUNNER_PATH\" >> \"$BASE/logs/coverage-guided-lower-level.log\" 2>&1'"
-	printf 'started %s root=%s\n' "$SESSION" "$run_root"
+		"bash -lc 'cd \"$REPO\"; export PATH=\"$TMUX_WRAP:$NODE_BIN:\$PATH\"; RTC_CG_LOWER_LEVEL_REPO=\"$REPO\" RTC_CG_LOWER_LEVEL_RUN_ROOT=\"$run_root\" RTC_CG_LOWER_LEVEL_RUN_STARTED=\"$run_started\" RTC_CG_LOWER_LEVEL_GROUP=\"$GROUP_NAME\" RTC_CG_LOWER_LEVEL_TEST_PATH=\"$TEST_PATH\" RTC_CG_LOWER_LEVEL_BATCH_SIZE=\"$batch_size\" RTC_CG_LOWER_LEVEL_TIMEOUT_SECONDS=\"$timeout_seconds\" RTC_CG_LOWER_LEVEL_SLEEP_SECONDS=\"$sleep_seconds\" RTC_CG_LOWER_LEVEL_NICE=\"$nice_level\" RTC_CG_LOWER_LEVEL_MAX_INPUT_BYTES=\"$max_input_bytes\" node \"$RUNNER_PATH\" >> \"$BASE/logs/coverage-guided-lower-level.log\" 2>&1'"
+	printf 'started %s root=%s sleep=%s previous=%s\n' "$SESSION" "$run_root" "$sleep_seconds" "${previous_root:-none}"
 }
 
 run_once() {
@@ -144,7 +152,7 @@ run_once() {
 	local timeout_seconds
 	local nice_level
 	local max_input_bytes
-	run_started="$(date -u +%Y%m%dT%H%M%SZ)"
+	run_started="$(date -u +%Y%m%dT%H%M%S%NZ)"
 	run_root="$BASE/runs/coverage-guided-lower-level-smoke-$run_started"
 	batch_size="${RTC_CG_LOWER_LEVEL_BATCH_SIZE:-${RTC_CG_LOWER_LEVEL_RUNS:-2}}"
 	timeout_seconds="${RTC_CG_LOWER_LEVEL_TIMEOUT_SECONDS:-300}"

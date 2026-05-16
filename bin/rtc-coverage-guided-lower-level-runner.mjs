@@ -32,7 +32,7 @@ const maxInputBytes = readIntegerEnv(
 );
 const sleepSeconds = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_SLEEP_SECONDS' ],
-	30,
+	0,
 	0,
 	3600
 );
@@ -106,6 +106,7 @@ appendEvent( {
 	batchSize,
 	maxInputBytes,
 	timeoutSeconds,
+	sleepSeconds,
 	nice: niceLevel,
 	semanticFeatureFeedback: true,
 } );
@@ -337,6 +338,7 @@ function writeSupervisorGroups() {
 			batchSize,
 			maxInputBytes,
 			timeoutSeconds,
+			sleepSeconds,
 			nice: niceLevel,
 			corpusFeedback: true,
 			semanticFeatureFeedback: true,

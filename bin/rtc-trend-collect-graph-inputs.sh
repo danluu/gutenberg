@@ -234,6 +234,8 @@ campaign_roots = [
 	("unit-property", "/media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516"),
 	("coverage-guided-lower-level", "/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516"),
 ]
+for path in sorted(glob.glob("/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516/native-runs/*/coverage-guided-lower-level-live")):
+	campaign_roots.append(("coverage-guided-lower-level", path))
 group_paths = []
 for campaign, base in campaign_roots:
 	if not os.path.isdir(base):
