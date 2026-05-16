@@ -1,18 +1,18 @@
-generated_at_utc: 2026-05-16T19:50:29Z
-monitor_passes: 1673
+generated_at_utc: 2026-05-16T19:57:43Z
+monitor_passes: 1676
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T19:48:35Z
+last_pass_utc: 2026-05-16T19:56:52Z
 coverage_files_first: 272
-coverage_files_last: 35669
-coverage_files_delta: 35397
+coverage_files_last: 35742
+coverage_files_delta: 35470
 unmet_coverage_first: 24
 unmet_coverage_last: 8
 likely_real_max: 0
-duplicate_share_current_last: 0.4063
-duplicate_share_historical_last: 0.3539
-summary_startup_failures_last: 1
+duplicate_share_current_last: 0.3056
+duplicate_share_historical_last: 0.354
+summary_startup_failures_last: 0
 quality_issues_last: 1
-memory_free_gb_last: 427.4
+memory_free_gb_last: 428.3
 load_1_last: 65.57
 load_5_last: 73.26
 load_15_last: 74.84
@@ -22,12 +22,12 @@ enabled_groups_current: novelty-ws-real-user-editing,novelty-ws-real-user-rich-t
 fuzz_level_mix_snapshots: 186
 fuzz_level_mix_campaigns: coverage-guided,coverage-guided-lower-level,focused-shards,gap-booster,strict-expansion,unit-property
 fuzz_level_mix_latest: browser-e2e=31 lanes/31 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups
-fuzz_level_test_executions: 1418245
+fuzz_level_test_executions: 1443150
 fuzz_level_test_executions_has_approximate_rows: TRUE
-fuzz_level_execution_latest: browser-e2e=72631 cumulative/2264 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=1263480 cumulative/52976 per-hour; coverage-guided-lower-level=79128 cumulative/10496 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_latest: browser-e2e=73420 cumulative/5420 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=1283948 cumulative/134848 per-hour; coverage-guided-lower-level=82776 cumulative/25088 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 126
 goals_unmet: 8
-pr_review_events: 10029
-pr_suggested_net_loc_snapshots: 145
+pr_review_events: 10040
+pr_suggested_net_loc_snapshots: 146
 pr_suggested_net_loc_latest_total: 11359

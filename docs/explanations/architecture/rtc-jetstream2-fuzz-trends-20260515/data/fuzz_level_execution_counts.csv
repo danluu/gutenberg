@@ -171,7 +171,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T19:00:00Z,browser-e2e,1620,861,85,FALSE,3,68770,6480
 2026-05-16T19:15:00Z,browser-e2e,1672,874,71,FALSE,3,70442,6688
 2026-05-16T19:30:00Z,browser-e2e,1623,846,71,FALSE,3,72065,6492
-2026-05-16T19:45:00Z,browser-e2e,566,299,33,FALSE,3,72631,2264
+2026-05-16T19:45:00Z,browser-e2e,1355,714,72,FALSE,3,73420,5420
 2026-05-15T00:45:00Z,transport-integration,1,1,0,FALSE,1,1,4
 2026-05-15T01:00:00Z,transport-integration,3,2,0,FALSE,1,4,12
 2026-05-15T01:15:00Z,transport-integration,25,17,0,FALSE,2,29,100
@@ -517,7 +517,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T19:00:00Z,unit-property,32508,32508,32508,FALSE,1,1170772,130032
 2026-05-16T19:15:00Z,unit-property,43344,43344,40936,FALSE,1,1214116,173376
 2026-05-16T19:30:00Z,unit-property,36120,36120,34916,FALSE,1,1250236,144480
-2026-05-16T19:45:00Z,unit-property,13244,13244,13244,FALSE,1,1263480,52976
+2026-05-16T19:45:00Z,unit-property,33712,33712,33712,FALSE,1,1283948,134848
 2026-05-15T00:45:00Z,coverage-guided-lower-level,0,0,0,FALSE,0,0,0
 2026-05-15T01:00:00Z,coverage-guided-lower-level,0,0,0,FALSE,0,0,0
 2026-05-15T01:15:00Z,coverage-guided-lower-level,0,0,0,FALSE,0,0,0
@@ -690,7 +690,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T19:00:00Z,coverage-guided-lower-level,7616,7616,7616,FALSE,1,61144,30464
 2026-05-16T19:15:00Z,coverage-guided-lower-level,7744,7744,7744,FALSE,1,68888,30976
 2026-05-16T19:30:00Z,coverage-guided-lower-level,7616,7616,7616,FALSE,1,76504,30464
-2026-05-16T19:45:00Z,coverage-guided-lower-level,2624,2624,2624,FALSE,1,79128,10496
+2026-05-16T19:45:00Z,coverage-guided-lower-level,6272,6272,6272,FALSE,1,82776,25088
 2026-05-15T00:45:00Z,backend-api,0,0,0,FALSE,0,0,0
 2026-05-15T01:00:00Z,backend-api,0,0,0,FALSE,0,0,0
 2026-05-15T01:15:00Z,backend-api,0,0,0,FALSE,0,0,0
