@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T21:19:13Z`
+Snapshot generated: `2026-05-16T21:24:58Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -12,7 +12,7 @@ Source inputs:
 - coverage monitor log:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest copied novelty state:
-  current coverage output-dir state (`startedAt=2026-05-16T21:11:52.230Z`)
+  current coverage output-dir state (`startedAt=2026-05-16T21:18:08.708Z`)
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
 - CPU and load-average history:
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1701` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T21:16:21Z`, coverage files grew from `272` to `36295`, a delta of
-`36023`. The monitor's visible likely-real count stayed at `0`.
+`1703` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T21:22:09Z`, coverage files grew from `272` to `36330`, a delta of
+`36058`. The monitor's visible likely-real count stayed at `0`.
 
 Coverage-goal pressure is down but not finished. The latest copied
 coverage-guidance state has `126` total goals and `7` unmet goals. The remaining
@@ -35,7 +35,7 @@ goals are mostly real-user lifecycle/action depth and gauntlet block targets.
 The latest plotted current-output-dir sample is below the 0.50 duplicate-share
 gate and startup-clean: `duplicateShareCurrent` is `0` and current summary
 startup failures are `0`. The same sample has `0` quality issues, `0` warnings,
-`429.7G` free memory, and the monitor headroom flag is true. The copied novelty
+`431.1G` free memory, and the monitor headroom flag is true. The copied novelty
 state has six enabled groups in the fresh active root. This report treats
 current-output-dir duplicate/noise and startup-failure metrics as live status;
 historical aggregate duplicate/noise is only context.
@@ -54,20 +54,20 @@ for a meaningful validation window. The graph now shows a clean current sample;
 the persona-loop evidence treats that as partial validation, not proof that the
 control-plane duplicate/noise leak is closed.
 
-The latest PR-split synthesis, `20260516T210039Z`, rejects a filing-ready
-interpretation. The `ready/rtc-*` PR01-PR15C prefix plus PR02A is useful branch
-hygiene, but the stack is still blocked for filing and final-stack fuzz. PR16 is
-conditional until malformed-save built-assets replay passes, and PR17 remains a
-separate seed `1020002` WebSocket/Yjs merge-update-emission repair: marker
-evidence reaches page 1's `applyPostChangesToCRDTDoc`, but no marker-bearing
-Yjs/relay update is emitted after the semantic insert helper. The latest
-feedback-action, `20260516T210039Z`, added the cycle consensus note, kept the
-topology unchanged, and patched the review loop so feedback actions require
-fresh non-`1020002` evidence or one bounded replacement/downscope/loop-repair
-job when independent rows are actionable. It launched only loop-progress hygiene
-jobs. The synthesis rejects duplicate PR16/PR17 jobs and broad/final fuzz while
-the active bounded sessions remain reportless, and rejects reading the graph's
-`0` likely-real failures as filing approval.
+The latest PR-split synthesis, `20260516T211251Z`, rejects a filing-ready
+interpretation. The `ready/rtc-*` PR01-PR15C prefix plus PR02A remains the
+known-good filing prefix, but it is not a complete split. The synthesis inserts
+a strict-expansion residual split-audit gate before rebuilt validation and
+final-stack fuzz, with PR18x branches only for source-reduced uncovered
+families. PR16 is now blocked by a malformed-save built-assets replay that
+reported `1` pass and `7` failures, with seed `950109` needing focused
+localization before PR16 can stay in the stack. PR17 remains a separate seed
+`1020002` WebSocket/Yjs merge-update-emission repair/reclassification. The
+latest feedback-action, `20260516T210039Z`, patched the review loop's progress
+gate and launched only loop-progress hygiene jobs; the newer synthesis says to
+launch one strict-expansion split audit and one focused PR16 seed `950109`
+diagnostic, not broad final-stack fuzz or duplicate PR17 work. It also rejects
+reading the graph's `0` likely-real failures as filing approval.
 
 ## Coverage Intake
 
@@ -91,7 +91,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The latest current-output-dir sample is below the live duplicate-share gate and
 startup-clean: `duplicateShareCurrent=0` and current summary startup failures
-are `0`. The sample has `0` quality issues and `0` warnings, with `429.7G` free
+are `0`. The sample has `0` quality issues and `0` warnings, with `431.1G` free
 memory and the monitor headroom flag true. The plot uses
 `duplicateShareCurrent` and current summary startup failures for the live health
 view; it does not use historical aggregate duplicate/noise as the plotted live
@@ -113,14 +113,14 @@ itself.
 
 ![Load average over time](rtc-jetstream2-fuzz-trends-20260515/plots/load-average-over-time.png)
 
-Recent sysstat samples through `2026-05-16T21:10:00Z` show sustained CPU
-pressure with a late spike: the latest 25 samples range from `73.3%` to `91.8%`
-utilization, with the latest sample at `75.4%`. One-minute load exceeded the
-logical CPU count in `22` of those `25` sampled windows, and the latest sampled
-1/5/15-minute load is `70.0`, `69.7`, and `72.2` against `64` logical CPUs. Raw
-memory remains ample, but load remains above the logical CPU count; the
-current-output duplicate/noise sample and PR-split repair decisions are live
-blockers.
+Recent sysstat samples through `2026-05-16T21:20:00Z` show sustained CPU
+pressure with a late spike and then easing: the latest 25 samples range from
+`66.6%` to `91.8%` utilization, with the latest sample at `66.6%`. One-minute
+load exceeded the logical CPU count in `21` of those `25` sampled windows, while
+the latest sampled 1/5/15-minute load is `49.0`, `55.5`, and `63.4` against `64`
+logical CPUs. Raw memory remains ample, but the recent load history still shows
+pressure; the current-output duplicate/noise validation window and PR-split
+repair decisions remain live blockers.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
 
@@ -180,11 +180,11 @@ supervisor launches or lane counts, but it only covers fuzzers that emit these
 lane events. Lower-level counts reconstructed from batch metadata or legacy
 batch-count fields are approximate.
 
-The latest collected execution data has about `1,734,920` completed test
-executions: `81,786` browser/e2e, `3,006` transport/integration, `1,527,156`
-unit-property, and `122,972` coverage-guided-lower-level. The latest 15-minute
-bucket reports about `1,740` browser/e2e test executions/hour, `57,792`
-unit-property test executions/hour, `8,192` coverage-guided-lower-level test
+The latest collected execution data has about `1,759,176` completed test
+executions: `82,438` browser/e2e, `3,006` transport/integration, `1,547,624`
+unit-property, and `126,108` coverage-guided-lower-level. The latest 15-minute
+bucket reports about `4,348` browser/e2e test executions/hour, `139,664`
+unit-property test executions/hour, `20,736` coverage-guided-lower-level test
 executions/hour, and `0` transport/integration test executions/hour.
 `backend-api`, `protocol-server`, and standalone `fuzz-assertion` levels remain
 at `0` executions in this counter.
@@ -202,15 +202,15 @@ triangle markers. Low-completion profiles are the next depth targets:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `multi-reload-lifecycle` | 2797 | 81 | 0 | 2.9% |
-| `revision-persistence` | 3757 | 113 | 0 | 3.0% |
-| `parser-serialization` | 2449 | 91 | 0 | 3.7% |
-| `real-user-editing` | 5529 | 346 | 0 | 6.3% |
-| `parser-transform` | 3552 | 343 | 0 | 9.7% |
-| `common-blocks` | 3400 | 343 | 0 | 10.1% |
+| `multi-reload-lifecycle` | 2798 | 82 | 0 | 2.9% |
+| `revision-persistence` | 3760 | 113 | 0 | 3.0% |
+| `parser-serialization` | 2454 | 91 | 0 | 3.7% |
+| `real-user-editing` | 5534 | 346 | 0 | 6.3% |
+| `parser-transform` | 3556 | 344 | 0 | 9.7% |
+| `common-blocks` | 3402 | 344 | 0 | 10.1% |
 | `long-session-large-doc` | 2240 | 319 | 0 | 14.2% |
-| `persistence-no-title` | 2545 | 434 | 0 | 17.1% |
-| `block-gauntlet` | 4900 | 855 | 0 | 17.4% |
+| `persistence-no-title` | 2558 | 435 | 0 | 17.0% |
+| `block-gauntlet` | 4928 | 857 | 0 | 17.4% |
 | `structure` | 536 | 95 | 0 | 17.7% |
 
 The data suggests the next productive improvement is less about adding brand-new
@@ -228,9 +228,9 @@ Current unmet goals from the latest state:
 | real-user title save/reload next coverage tier | 223 | 500 |
 | real-user body save/reload next coverage tier | 282 | 500 |
 | action reload-post-action next coverage tier | 610 | 1000 |
-| action ui-heading-shortcut next coverage tier | 633 | 1000 |
+| action ui-heading-shortcut next coverage tier | 634 | 1000 |
 | successful real-user-editing records next coverage tier | 346 | 500 |
-| action ui-format-paragraph next coverage tier | 915 | 1000 |
+| action ui-format-paragraph next coverage tier | 916 | 1000 |
 | gauntlet block core/html next coverage tier | 463 | 500 |
 
 The remaining queue mixes real-user save/reload lifecycle depth, action depth,
@@ -263,29 +263,30 @@ the profiles that still need more completed full records.
 
 ![Suggested PR net LOC by PR over time](rtc-jetstream2-fuzz-trends-20260515/plots/pr-suggested-net-loc-by-pr-over-time.png)
 
-With the live loop at `max_parallel=6`, `194`
+With the live loop at `max_parallel=6`, `195`
 completed review cycles took roughly `2.9` to `11.4` minutes in this snapshot;
-the latest completed review, `20260516T210039Z`, took `5.8` minutes. The parsed
+the latest completed review, `20260516T211251Z`, took `8.1` minutes. The parsed
 feedback-action duration series' latest row is cycle `194` at `6.3` minutes.
 
-The newest PR-split synthesis, `20260516T210039Z`, says the split design is
+The newest PR-split synthesis, `20260516T211251Z`, says the split design is
 blocked for filing and final-stack fuzz, not blocked for all work. The current
-PR01-PR15C set plus PR02A is only a known-fix prefix. The consensus shape
-remains the `ready/rtc-*` prefix, PR02A, a conditional PR16 malformed-save
-payload candidate after built-assets replay, a separate PR17 seed `1020002`
-WebSocket/Yjs merge-update-emission repair, rebuilt combined validation,
-focused seed gates, and only then final-stack fuzz.
+PR01-PR15C set plus PR02A is only a known-fix prefix. The updated consensus
+tail is a conditional PR16 malformed-save payload branch, a separate PR17 seed
+`1020002` WebSocket/Yjs merge-update-emission repair or proof-based
+reclassification, a new strict-expansion residual split-audit gate, PR18x
+source-reduced branches only for confirmed uncovered families, rebuilt combined
+validation, focused seed gates, and only then final-stack fuzz.
 
 The same synthesis rejects treating the graph's `0` visible likely-real
 failures as filing approval. Filing and final-stack fuzz remain blocked because
-PR16 still needs built-assets replay pass/drop evidence and PR17 still needs a
-passing repair branch or proof-based reclassification. The latest
-feedback-action, `20260516T210039Z`, kept PR16 conditional, kept PR17 separate,
-patched the review loop's progress gate, and launched loop-progress hygiene
-jobs rather than duplicate PR16 or PR17 product diagnostics. The newest
-synthesis says not to duplicate the active reportless PR16/PR17 jobs; if one
-exits without a usable report, rerun exactly one bounded replacement from its
-existing launcher.
+PR16's malformed-save built-assets replay produced `1` pass and `7` failures,
+with seed `950109` needing focused localization, and PR17 still needs a passing
+repair branch or proof-based reclassification. The latest feedback-action,
+`20260516T210039Z`, patched the review loop's progress gate and launched
+loop-progress hygiene jobs rather than duplicate PR16 or PR17 product
+diagnostics. The newest synthesis says to launch one bounded strict-expansion
+split audit and one focused PR16 seed `950109` diagnostic, while avoiding broad
+final-stack fuzz and duplicate PR17 work.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
 split history. The latest parsed snapshot, `2026-05-16T21:08:00Z`, has `27`
@@ -301,7 +302,7 @@ coverage observations continue to grow, likely-real visible failures remain
 `0`, and unmet goals are down from the initial `24` to `7`. The latest live
 current-output sample is clean: current duplicate share is
 `duplicateShareCurrent=0`, latest current summary startup failures are `0`, and
-the latest monitor row has `0` quality issues and `0` warnings, with `429.7G`
+the latest monitor row has `0` quality issues and `0` warnings, with `431.1G`
 free memory and the headroom flag true.
 
 The duplicate/noise persona loop rejects both raw historical duplicate/noise as
@@ -318,24 +319,25 @@ share and startup failures are the live status.
 
 The PR-split persona loop rejects a filing-ready read. The split shape has
 moved from the PR01-PR15C 28-head list to a `ready/rtc-*` known-fix prefix with
-PR02A, a conditional independent PR16 malformed-save candidate after
-built-assets replay, and a separate PR17 seed `1020002` WebSocket/Yjs
-merge-update-emission repair. The latest synthesis, `20260516T210039Z`, keeps
-that status: no duplicate PR16/PR17 jobs and no broad/final fuzz while the
-active bounded sessions are reportless, but independent progress must continue
-through PR16 replay, manifest/audit publication handoff, deferred evidence
-lanes, and loop self-repair. The latest feedback-action patched the loop
-progress gate and launched loop-progress hygiene jobs; it did not launch a
-duplicate product diagnostic.
+PR02A, a conditional independent PR16 malformed-save candidate, a separate PR17
+seed `1020002` WebSocket/Yjs merge-update-emission repair, and now a
+strict-expansion residual split-audit gate before rebuilt validation and
+final-stack fuzz. The latest synthesis, `20260516T211251Z`, says PR16 is
+blocked by a built-assets replay with `1` pass and `7` failures and needs
+focused seed `950109` localization; PR17 remains separate and must produce a
+repair branch, report, or proof-based reclassification. The latest
+feedback-action patched the loop progress gate and launched loop-progress
+hygiene jobs; it did not launch a duplicate product diagnostic.
 
 The remaining fuzzing weakness is completion depth and level diversity. Live
 work is still concentrated in browser/e2e in the latest mix snapshots, but
 unit-property and coverage-guided-lower-level lanes are active.
 Transport-integration has historical completed executions but no latest-bucket
-rate; the latest execution bucket has about `1,740` browser/e2e test
-executions/hour, `57,792` unit-property test executions/hour, `8,192`
+rate; the latest execution bucket has about `4,348` browser/e2e test
+executions/hour, `139,664` unit-property test executions/hour, `20,736`
 coverage-guided-lower-level test executions/hour, `0` transport/integration
 test executions/hour, and `0` backend-api/protocol-server/fuzz-assertion
 executions. The next narrow operational checks are duplicate/noise validation on
-the fresh root, malformed-save built-assets replay evidence, and seed `1020002`
-WebSocket/Yjs merge-update-emission repair evidence.
+the fresh root, PR16 seed `950109` malformed-save localization, strict-expansion
+residual split-audit evidence, and seed `1020002` WebSocket/Yjs
+merge-update-emission repair evidence.
