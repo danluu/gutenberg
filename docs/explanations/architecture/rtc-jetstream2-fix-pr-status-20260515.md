@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T22:27:45Z`
+Snapshot time: `2026-05-16T22:33:35Z`
 
 Trigger event:
-`duplicate-noise-2026-05-16T22-26-37Z-80`
+`pr-split-2026-05-16T22-28-48Z-20260516T222155Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T22-26-37Z-80/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T22-28-48Z-20260516T222155Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,18 +28,18 @@ or the original split merely for continuity.
 ## Executive Status
 
 Filing remains blocked. The latest completed split-persona synthesis,
-`pr-split-20260516T220607Z-synthesis.md`, keeps the known-fix prefix but
+`pr-split-20260516T222155Z-synthesis.md`, keeps the known-fix prefix but
 continues to replace the tail with explicit pass/drop,
 repair/reclassification, and residual source-reduction gates:
 
 ```text
 ready PR01-PR15C + PR02A
--> PR16 malformed-save: focused seed 950109 diagnostic, then pass/drop
--> PR17 seed 1020002: separate follower-side WebSocket/Yjs update-application
+-> PR16 malformed-save seed 950109 diagnostic, then pass/drop
+-> PR17 seed 1020002 follower-side Yjs update-application
    repair or reclassification
 -> strict-expansion residual source-reduction gate
--> PR18x only for source-reduced uncovered families
--> rebuilt combined validation
+-> PR18x only for source-reduced uncovered product owners
+-> rebuilt combined validation stack
 -> focused seed 1020002 gate
 -> final-stack fuzz and filing
 ```
@@ -49,14 +49,15 @@ produced `1 passed` and `7 failed`, and seed `950109` still needs focused
 localization before PR16 can be repaired, dropped, or downscoped. Cycle 200
 launched root-filesystem cleanup and preflight after both the PR16 `950109`
 diagnostic and strict-expansion `5700084` source-reduction scripts stopped at
-disk preflight. The latest split feedback action saw root space recover to
-about `7.7G` while the cleanup/resume job was still active, and the latest
-duplicate/noise action later reported about `20G` free. That clears the old
-"only tens of MB free" state, but not the replay gate: `wp-env` still reports
-uninitialized and MySQL exits during compose startup, so Docker/browser replay
-is still not trustworthy. Cycle 198 records that the stuck interactive
-`wp-env destroy` tmux session `rtc-pr16-950109-diagnostic-20260516T212950Z` was
-terminated, and a bounded noninteractive replacement was launched:
+disk preflight. The latest split synthesis says `/` now has enough space, but
+the rootfs recovery/resume job was still in `xargs rm -rf` and had no final
+report. The PR16 rerun reached setup, then failed before useful product
+evidence on a REST redirect/port issue, so the replay gate is still not clean.
+The latest duplicate/noise action also reported `wp-env` still `uninitialized`
+with MySQL exiting during compose startup. Cycle 198 records that the stuck
+interactive `wp-env destroy` tmux session
+`rtc-pr16-950109-diagnostic-20260516T212950Z` was terminated, and a bounded
+noninteractive replacement was launched:
 
 ```text
 run-rtc-malformed-save-payload-950109-diagnostic-noninteractive-destroy-20260516T215150Z.sh
@@ -80,9 +81,12 @@ Cycle 198 launched the first source-reduction target:
 run-rtc-strict-expansion-source-reduce-5700084-live-ws-block-tree-divergence-20260516T215150Z.sh
 ```
 
-That replay stopped at the same preflight stage as PR16. Compare the reduced
-source ownership against PR13/PR15 before naming any PR18A, and require a fresh
-environment-preflight pass before treating the replay as complete.
+That replay stopped at the same preflight stage as PR16 and still needs to
+resume after cleanup. Capture both peers' block trees, edited content,
+serialized content, and collaboration apply/sync logs after step 1. Compare the
+reduced source ownership against PR13/PR15/PR16/PR17 before naming any PR18A,
+and require a fresh environment-preflight pass before treating the replay as
+complete.
 
 The latest split feedback action,
 `pr-split-20260516T220607Z-feedback-action.md`, is the latest nonempty split
@@ -95,10 +99,13 @@ Jetstream, or create speculative PR18x branches. Final-stack fuzz, rebuilt
 combined validation, and filing stay blocked by PR16 pass/drop, PR17
 repair/reclassification, and strict residual source reduction.
 
-The latest split synthesis also flags a loop-health rule: an active job only
-counts as progress when it has fresh logs, artifacts, a report, branch output,
-or a bounded replacement/downscope/loop-repair action. Waiting only for
-`1020002` while other Parallel Progress Gate rows exist is a loop bug.
+The latest split synthesis also flags a loop-health rule: zero-byte reports,
+stale active sessions, active `1020002` work by itself, and
+disk-preflight-only reports do not count as progress while actionable Parallel
+Progress Gate rows exist. An active job only counts when it has fresh logs,
+artifacts, a report, branch output, or a bounded replacement/downscope or
+loop-repair action. Waiting only for `1020002` while other gate rows exist is a
+loop bug.
 
 The latest duplicate/noise synthesis,
 `duplicate-noise-20260516T220113Z-synthesis.md`, still treats duplicate/noise
@@ -123,7 +130,7 @@ only. It is not final-stack validation.
 
 ## Branch And Ref Status
 
-The remote status input was generated at `2026-05-16T22:27:38Z`.
+The remote status input was generated at `2026-05-16T22:33:29Z`.
 
 The fix-planning repo is checked out at:
 
@@ -153,7 +160,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T22:27:45Z` from fetched
+The branch-link audit was generated at `2026-05-16T22:33:35Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -208,9 +215,9 @@ branch-link audit or explicitly says `No verified branch link yet`.
 | PR 15A | Fallback group move stale reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 | +123 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15B | Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 | +197 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15C | Fallback group delete | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 | +161 / -4 | verified branch; keep reload-hydration gate spec out |
-| PR 16 | Malformed-save payload candidate lane | No verified branch link yet | TBD | TBD | held, not publishable; bounded `950109` noninteractive replacement hit disk preflight, root space has since recovered, and replay now needs a healthy `wp-env`/MySQL preflight before repair/drop/downscope |
+| PR 16 | Malformed-save payload candidate lane | No verified branch link yet | TBD | TBD | held, not publishable; bounded `950109` replacement got past disk preflight/setup but failed before useful product evidence on a REST redirect/port issue; rerun once after cleanup and a healthy environment preflight before repair/drop/downscope |
 | PR 17 | Seed `1020002` WebSocket/Yjs marker-propagation repair | No verified branch link yet | TBD | TBD | active final-stack blocker; follower-side evidence points to page 0 applying marker-bearing update as a deleted remote client range; fresh browser replay remains blocked by environment startup health |
-| PR 18x | Source-reduced strict-expansion residual branches | No verified branch link yet | TBD | TBD | not speculative; strict-expansion audit found `307` likely-real rows, `58` buckets, and `9` split-relevant clusters; seed `5700084` source reduction needs a healthy environment preflight before any PR18A naming |
+| PR 18x | Source-reduced strict-expansion residual branches | No verified branch link yet | TBD | TBD | not speculative; strict-expansion audit found `307` likely-real rows, `58` buckets, and `9` split-relevant clusters; seed `5700084` source reduction needs cleanup/environment preflight, peer block-tree/apply-log evidence, and ownership comparison before any PR18A naming |
 
 Verified branches that are prior art or staging only:
 
@@ -228,8 +235,8 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T22:27:38Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T221127Z
+collected_at_utc: 2026-05-16T22:33:29Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T222754Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
@@ -251,12 +258,12 @@ follower-side update repair or proof-based reclassification, and strict
 residual source reduction is required before any PR18x is named.
 
 The collected `raw/novelty-status.md` was updated at
-`2026-05-16T22:26:13.624Z` for `run-20260516T221127Z` and reported:
+`2026-05-16T22:32:27.442Z` for `run-20260516T222754Z` and reported:
 
 ```text
-coverage files: 36552
-total records seen: 55530
-records processed this pass: 33
+coverage files: 36584
+total records seen: 55605
+records processed this pass: 27
 current-run records by profile: {}
 current-run triage roots: 1
 current-run raw/actionable signatures: 0 / 0
@@ -284,34 +291,34 @@ novelty-http-persistence-probe
 Current-run novelty is clean of visible likely-real failures, but the new run
 root has not yet produced current-run behavioral records. This is fuzz-health
 and control-plane evidence only. Recent changes show the supervisor restarted
-on `run-20260516T221127Z`, high-noise WS and HTTP expansion groups are on sticky
+on `run-20260516T222754Z`, high-noise WS and HTTP expansion groups are on sticky
 known-noise cooldowns until each profile reaches successful current-run records,
 and `novelty-ws-block-gauntlet` is still skipped because its recent
 triage-duplicate-noise cooldown is active. Do not count this as final-stack
 validation.
 
-The latest trend evidence packet was generated at `2026-05-16T22:16:31Z` from
-monitor data through `2026-05-16T22:15:24Z`:
+The latest trend evidence packet was generated at `2026-05-16T22:22:55Z` from
+monitor data through `2026-05-16T22:20:12Z`:
 
 ```text
-monitor passes: 1723
-coverage files: 272 -> 36514
-coverage files delta: 36242
+monitor passes: 1725
+coverage files: 272 -> 36526
+coverage files delta: 36254
 unmet coverage goals: 24 -> 7
 likely_real_max: 0
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.353
+duplicate_share_historical_last: 0.3486
 summary_startup_failures_last: 0
 quality_issues_last: 1
 fuzz level mix: browser-e2e=30 lanes/30 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 1988574
-browser-e2e execution: 88246 cumulative / 384 per-hour
-unit-property execution: 1736652 cumulative / 9632 per-hour
-coverage-guided-lower-level execution: 160670 cumulative / 4608 per-hour
-load1/load5/load15: 40.71 / 39.13 / 39.82 on 64 cores
-memory: 442.8G free
+total fuzz-level test executions: 2016969
+browser-e2e execution: 88517 cumulative / 1468 per-hour
+unit-property execution: 1759528 cumulative / 101136 per-hour
+coverage-guided-lower-level execution: 165918 cumulative / 25600 per-hour
+load1/load5/load15: 25.13 / 25.96 / 32.55 on 64 cores
+memory: 442.4G free
 ```
 
 Largest remaining coverage gaps in the latest novelty status are
@@ -326,25 +333,27 @@ for filing.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T220607Z-synthesis.md`. It keeps `PR01` through `PR15C` plus
+`pr-split-20260516T222155Z-synthesis.md`. It keeps `PR01` through `PR15C` plus
 PR02A as a known-fix prefix, then requires:
 
+- consume or finish rootfs recovery/resume; `/` has enough space, but the
+  cleanup job still had no final report in the latest synthesis;
 - consume PR16 focused seed `950109` diagnostics before PR16 can remain in the
-  filing stack;
-- treat the Cycle 198 PR16 disk-preflight-blocked report as evidence that the
-  noninteractive rerun path is preserved, but not as durable progress until root
-  disk cleanup and verified free-space recovery are paired with it;
+  filing stack; the current rerun reached setup but failed before useful
+  product evidence on a REST redirect/port issue;
 - consume PR17 seed `1020002` follower-side Yjs update-application diagnostics
   before PR17 can be repaired or proof-classified;
-- consume the completed strict-expansion audit and source-reduce the residual
-  families before naming any PR18x branch;
-- treat the strict-expansion `5700084` replay as disk-preflight-blocked until
-  root cleanup/free-space verification permits the exact bounded script to run;
+- resume strict-expansion seed `5700084` source reduction and capture both
+  peers' block trees, edited content, serialized content, and collaboration
+  apply/sync logs before naming any PR18x branch;
+- continue branch publication/push-manifest work and deferred-family
+  promotion/downscope work in parallel instead of serializing every path behind
+  `1020002`;
 - rebuild combined validation only after PR16, PR17, and strict residual
   classification are resolved;
-- keep loop feedback from satisfying the Parallel Progress Gate by waiting only
-  on active jobs without fresh logs, artifacts, reports, branch output, or a
-  bounded replacement/downscope/loop-repair action.
+- keep loop feedback from satisfying the Parallel Progress Gate with zero-byte
+  reports, stale active sessions, active `1020002` alone, or
+  disk-preflight-only reports.
 
 The latest split feedback action,
 `pr-split-20260516T220607Z-feedback-action.md`, is nonempty. It records that
@@ -391,7 +400,7 @@ The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
 separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older PR13
-review-ref warning is superseded by the `2026-05-16T22:27:45Z` branch-link
+review-ref warning is superseded by the `2026-05-16T22:33:35Z` branch-link
 audit, which contains repaired `verified-content` PR13A/B/C review links.
 
 ## Deferred Or Evidence-Only Work
@@ -403,11 +412,11 @@ These must not be described as fixed or filing-ready.
 | Dropped PR 6B save snapshot/no-op guard | `final/rtc-pr06b-save-snapshot-noop-guard`; seeds `5500001`, `5500002`, `5500006` | dropped from filing path and allow-list after corrected replay classification | Do not rerun as the next gate; track seed `5500002` separately as revision-restore marker retention if it reproduces cleanly |
 | Revision-restore marker retention | seed `5500002`; active lifecycle seed `970001` triage | queued behind final-stack blockers; no automatic PR slot | Triage only after `1020002` is repaired or reclassified and the rebuilt stack is available |
 | Possible PR03A revision-restore marker-retention sidecar | no verified filing branch; latest split synthesis calls this a strong minority signal only | not in the consensus split and not a proposed PR row yet | Run independent replay/promotion only if capacity allows; insert after PR03 only if it proves a maintainer-sized product branch, otherwise keep deferred |
-| PR 16 malformed-save payload candidate lane | `deferred/rtc-malformed-save-payload-20260516T215029Z` at `2270c2e955a`; no verified filing branch; stuck `rtc-pr16-950109-diagnostic-20260516T212950Z` terminated; `run-rtc-malformed-save-payload-950109-diagnostic-noninteractive-destroy-20260516T215150Z.sh` hit disk preflight | independent conditional lane, not filing-ready and not the dropped PR 6B candidate; latest built-assets replay is `1 passed` / `7 failed`; root disk recovery has begun/reported free space, but Docker/browser replay is still blocked by unhealthy `wp-env`/MySQL startup | Verify free space and `wp-env`/MySQL health, rerun exactly one bounded replacement from the same current-run script, then decide repair vs drop/downscope and require focused Jest/lint/replay evidence plus a verified branch link before PR16 can stay in the filing stack |
+| PR 16 malformed-save payload candidate lane | `deferred/rtc-malformed-save-payload-20260516T215029Z` at `2270c2e955a`; no verified filing branch; stuck `rtc-pr16-950109-diagnostic-20260516T212950Z` terminated; `run-rtc-malformed-save-payload-950109-diagnostic-noninteractive-destroy-20260516T215150Z.sh` preserved the bounded rerun path | independent conditional lane, not filing-ready and not the dropped PR 6B candidate; latest built-assets replay is `1 passed` / `7 failed`; root disk space has recovered, but the replacement got only to setup and then failed before useful product evidence on a REST redirect/port issue, with `wp-env`/MySQL health still suspect | Verify free space and `wp-env`/MySQL/REST port health, rerun exactly one bounded replacement from the same current-run script, then decide repair vs drop/downscope and require focused Jest/lint/replay evidence plus a verified branch link before PR16 can stay in the filing stack |
 | PR 6C malformed evaluated save content | no verified filing branch | superseded by the broader PR16 candidate-lane decision unless focused evidence narrows it again | Promote only after focused product evidence and a verified branch link exist |
 | Broad PR 8 persisted-record hydration | old audit branch [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | deferred; no active filing unit | Shape and audit a narrowed title-reload branch only if PR 8A is revived |
 | Reload hydration empty live editor | `e75c8829e4e9`, `3bbdc3cdb393`; latest local candidate `deferred/rtc-reload-hydration-20260516T212023Z`; gate branch `try/rtc-reload-hydration-gate-e75c8829` | evidence-only; not in PR 6, PR 6A, PR 8A, PR 15, or fallback-group claims | Promote only if a clean gate reaches the post-reload assertion and live editor state stays empty after exact-room WebSocket sync while REST body and persisted `_crdt_document` remain populated |
-| Strict-expansion residual source reduction / PR18x | `strict-expansion-20260516T165042Z`; audit found `307` likely-real rows, `58` buckets, and `9` split-relevant clusters; `run-rtc-strict-expansion-source-reduce-5700084-live-ws-block-tree-divergence-20260516T215150Z.sh` stopped at disk preflight | required source-reduction gate before final validation; not itself a PR and not speculative filing content | Verify free space and `wp-env`/MySQL health, rerun/complete the `5700084` source-reduction replay, and compare ownership against PR13/PR15 before naming PR18A; continue with `5200001`, `5200101`, `5400020`/`5600031`, and `5500003` |
+| Strict-expansion residual source reduction / PR18x | `strict-expansion-20260516T165042Z`; audit found `307` likely-real rows, `58` buckets, and `9` split-relevant clusters; `run-rtc-strict-expansion-source-reduce-5700084-live-ws-block-tree-divergence-20260516T215150Z.sh` still needs a healthy replay after cleanup | required source-reduction gate before final validation; not itself a PR and not speculative filing content | Verify free space and `wp-env`/MySQL health, rerun/complete the `5700084` source-reduction replay, capture both peers' block trees/content/apply logs, and compare ownership against PR13/PR15/PR16/PR17 before naming PR18A; continue with `5200001`, `5200101`, `5400020`/`5600031`, and `5500003` |
 | Reload/rejoin unsaved-edits UI repro (`PR18` idea) | Tptacek reload/rejoin gate from split synthesis history | evidence-only and lower priority; not a consensus PR slot by itself | Run only as a bounded UI repro job; promote only if a real UI repro proves the family and source reduction supports a branch-sized fix |
 | Pre-save search/live document collapse | `ddf9559af37e`, `0932bed35c7a`, conditional `1e0ade5ec5a8`; latest diagnostic `deferred/rtc-pre-save-search-collapse-20260516T213525Z`; `try/rtc-pre-save-search-collapse-gate-ddf9559` | evidence-only; not in active split | Capture editor blocks, serialized content, edited core-data record, live CRDT record, provider state, REST body, and save state around `core/search` insertion |
 | Rich-text formatted suffix corruption | `4148230f681d`, `b0db7b80c6f2`, `dc8ea6e78d4d`, `1ccac75d7faa`, `2722f0e897de`, `712b98ba96ff`; latest diagnostic `deferred/rtc-rich-text-formatted-suffix-20260516T213527Z` | not fixed; latest split keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
@@ -427,12 +436,14 @@ Do not file a single mega-PR and do not file the large stacked
 Before filing any maintainer-facing PR:
 
 1. Verify environment health first. Cycle 200 root cleanup recovered space
-   according to the latest feedback/action files, but `wp-env` remains
-   `uninitialized` and MySQL exits during compose startup. A
-   `disk-preflight-blocked` report is not durable progress unless paired with
-   cleanup/free-space recovery and a healthy replay preflight; rerun exactly one
-   bounded replacement from the same current-run script before treating either
-   PR16 `950109` or strict-expansion `5700084` replay as complete.
+   according to the latest feedback/action files and `/` now has enough space,
+   but the recovery job still lacked a final report, `wp-env` remained
+   unhealthy in duplicate/noise evidence, and PR16 then failed before product
+   evidence on a REST redirect/port issue. A `disk-preflight-blocked` report is
+   not durable progress unless paired with cleanup/free-space recovery and a
+   healthy replay preflight; rerun exactly one bounded replacement from the same
+   current-run script before treating either PR16 `950109` or strict-expansion
+   `5700084` replay as complete.
 2. Use the explicit `ready/rtc-*` prefix from the `20260516T181934Z`
    finalization report. Do not wildcard import or file `final/rtc-pr*`.
 3. Keep old aggregate PR 5, broad PR 8, aggregate PR 11, stale/misordered
@@ -445,8 +456,8 @@ Before filing any maintainer-facing PR:
    table rows marked `No verified branch link yet`.
 5. Use the repaired audited PR13A/B/C review refs for maintainer-facing PR13
    links until any finer PR13 subheads have verified audit rows.
-6. After free-space and `wp-env`/MySQL preflight pass, rerun the focused PR16
-   seed `950109` noninteractive path launched as
+6. After free-space and `wp-env`/MySQL/REST port preflight pass, rerun the
+   focused PR16 seed `950109` noninteractive path launched as
    `run-rtc-malformed-save-payload-950109-diagnostic-noninteractive-destroy-20260516T215150Z.sh`
    and decide repair vs drop/downscope before PR16 can stay in the stack. Add a
    verified branch link before filing it.
@@ -455,9 +466,11 @@ Before filing any maintainer-facing PR:
    gate to pass or be explicitly reclassified, then shape PR17 and add a
    verified branch link before filing.
 8. Complete the strict-expansion `5700084` source-reduction replay after the
-   environment preflight passes before final validation. Add PR18x branches only
-   for source-reduced uncovered product families, and give every added row a
-   verified branch link or `No verified branch link yet`.
+   environment preflight passes before final validation. Capture both peers'
+   block trees, edited content, serialized content, and collaboration
+   apply/sync logs. Add PR18x branches only for source-reduced uncovered product
+   families, and give every added row a verified branch link or `No verified
+   branch link yet`.
 9. Rebase or recreate each intended PR branch on the intended upstream base if
    that base moves.
 10. Regenerate branch graph/containment evidence and adjacent
