@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T16:13:22Z`
+Snapshot generated: `2026-05-16T16:19:40Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1583` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T16:11:11Z`, coverage files grew from `272` to `33728`, a delta of
-`33456`. The monitor's visible likely-real count stayed at `0`.
+`1586` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T16:17:55Z`, coverage files grew from `272` to `33821`, a delta of
+`33549`. The monitor's visible likely-real count stayed at `0`.
 
 Coverage-goal pressure is down but not finished. The latest copied
 coverage-guidance state has `120` total goals and `5` unmet goals. The remaining
@@ -35,7 +35,7 @@ records.
 
 The latest plotted current-output-dir sample is mixed on live duplicate/noise:
 `duplicateShareCurrent` is `0.5`, summary startup failures are `0`, warnings
-are `0`, free memory is `424.5G`, resource headroom is false, and quality issues
+are `0`, free memory is `428.4G`, resource headroom is true, and quality issues
 are `0`. The copied novelty state lists one enabled coverage-guided group,
 `novelty-http-persistence-probe`. This report treats current-output-dir
 duplicate/noise and startup-failure metrics as live status; historical aggregate
@@ -86,7 +86,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The latest current-output-dir sample is not clean on live duplicate share:
 `duplicateShareCurrent=0.5` with `0` summary startup failures. The sample has
-`0` quality issues and `0` warnings, while resource headroom is false.
+`0` quality issues and `0` warnings, while resource headroom is true.
 The plot uses
 `duplicateShareCurrent` and current summary startup failures for the live health
 view; it does not use historical aggregate duplicate/noise as the plotted live
@@ -107,7 +107,7 @@ suppression. The refreshed graph shows current duplicate/noise is still live:
 Recent sysstat samples through `2026-05-16T16:10:00Z` show sustained CPU
 pressure: the 12:30-16:10 samples range from `46.2%` to `86.2%` utilization and
 the latest sample is `70.8%`. Load exceeded the logical CPU count in sampled
-windows from 12:30 through 13:10, at 14:20, from 15:10 through 15:30, and again
+windows from 12:30 through 13:10, at 14:20, from 15:10 through 15:50, and again
 at 16:10; the latest sampled 1/5/15-minute load is `81.03`, `64.39`, and
 `61.64` against `64` logical CPUs.
 The immediate blocker is still duplicate/noise containment, coverage depth, and
@@ -167,11 +167,11 @@ cases, coverage-guided lower-level inputs, or protocol/backend cases. Rechecks
 count as executions. This is more precise than supervisor launches or lane
 counts, but it only covers fuzzers that emit these lane events.
 
-The latest collected execution data has `56,660` completed execution units:
-`52,057` browser/e2e, `3,006` transport/integration, `546` unit-property, and
-`1,051` coverage-guided-lower-level. The latest 15-minute bucket reports about
-`828` browser/e2e execution units/hour, `64` unit-property execution units/hour,
-`144` coverage-guided-lower-level execution units/hour, and `0`
+The latest collected execution data has `56,793` completed execution units:
+`52,161` browser/e2e, `3,006` transport/integration, `559` unit-property, and
+`1,067` coverage-guided-lower-level. The latest 15-minute bucket reports about
+`280` browser/e2e execution units/hour, `40` unit-property execution units/hour,
+`48` coverage-guided-lower-level execution units/hour, and `0`
 transport/integration execution units/hour. `backend-api`, `protocol-server`,
 and standalone `fuzz-assertion` levels remain at `0` executions in this counter.
 
@@ -188,16 +188,16 @@ triangle markers. Low-completion profiles are the next depth targets:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 3444 | 86 | 0 | 2.5% |
-| `multi-reload-lifecycle` | 2603 | 66 | 0 | 2.5% |
-| `parser-serialization` | 2127 | 68 | 0 | 3.2% |
-| `real-user-editing` | 5185 | 286 | 0 | 5.5% |
-| `common-blocks` | 3130 | 275 | 0 | 8.8% |
-| `parser-transform` | 3327 | 308 | 0 | 9.3% |
-| `long-session-large-doc` | 2159 | 295 | 0 | 13.7% |
-| `block-gauntlet` | 3986 | 584 | 0 | 14.7% |
+| `revision-persistence` | 3449 | 86 | 0 | 2.5% |
+| `multi-reload-lifecycle` | 2619 | 71 | 0 | 2.7% |
+| `parser-serialization` | 2133 | 68 | 0 | 3.2% |
+| `real-user-editing` | 5192 | 286 | 0 | 5.5% |
+| `common-blocks` | 3143 | 280 | 0 | 8.9% |
+| `parser-transform` | 3333 | 309 | 0 | 9.3% |
+| `long-session-large-doc` | 2167 | 299 | 0 | 13.8% |
+| `block-gauntlet` | 4002 | 590 | 0 | 14.7% |
 | `structure` | 536 | 95 | 0 | 17.7% |
-| `persistence-no-title` | 2056 | 385 | 0 | 18.7% |
+| `persistence-no-title` | 2067 | 396 | 0 | 19.2% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -213,8 +213,8 @@ Current unmet goals from the latest state:
 | --- | ---: | ---: |
 | successful real-user-editing records next coverage tier | 286 | 500 |
 | gauntlet block core/html next coverage tier | 382 | 500 |
-| gauntlet block core/details next coverage tier | 417 | 500 |
-| gauntlet block core/more next coverage tier | 442 | 500 |
+| gauntlet block core/details next coverage tier | 420 | 500 |
+| gauntlet block core/more next coverage tier | 451 | 500 |
 | CDP coverage records next coverage tier | 4887 | 5000 |
 
 Reload-post and heading-shortcut action coverage have moved out of the unmet set
@@ -278,7 +278,7 @@ PR6B/PR6C replay, old PR16 replay, or another split-review loop before that
 repair is validated.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
-split history. The latest parsed snapshot, `2026-05-16T16:07:01Z`, has `26`
+split history. The latest parsed snapshot, `2026-05-16T16:12:15Z`, has `26`
 suggested rows totaling `11244` net LOC. The largest current rows by net LOC are
 `PR 13B` (`1668`), `PR 12` (`1386`), `PR 7A` (`1331`), `PR 13A` (`1126`), and
 `PR 5B` (`883`). These charts remain size telemetry from parsed status
@@ -291,7 +291,7 @@ coverage observations continue to grow, likely-real visible failures remain
 `0`, and unmet goals are down to `5`. The latest live current-output sample has
 no summary startup failures, but it is not clean on current duplicates:
 `duplicateShareCurrent=0.5`. The latest monitor row has `0` quality issues and
-`0` warnings, with resource headroom false.
+`0` warnings, with resource headroom true.
 
 The duplicate/noise persona loop rejects a graph-only "resolved" read. The
 latest synthesis says this is control-plane leakage, not a proven product bug,
@@ -312,8 +312,8 @@ The remaining fuzzing weakness is completion depth and level diversity. Live
 work is still mostly browser/e2e in the latest mix snapshots, but unit-property
 and coverage-guided-lower-level lanes are active. Transport-integration has
 historical completed executions but no latest-bucket rate; the latest execution
-bucket has `828` browser/e2e execution units/hour, `64` unit-property execution
-units/hour, `144` coverage-guided-lower-level execution units/hour, `0`
+bucket has `280` browser/e2e execution units/hour, `40` unit-property execution
+units/hour, `48` coverage-guided-lower-level execution units/hour, `0`
 transport/integration execution units/hour, and `0`
 backend-api/protocol-server/fuzz-assertion executions.
 The next narrow operational checks are triage/analysis suppression for strict
