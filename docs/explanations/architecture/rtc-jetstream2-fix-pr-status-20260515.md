@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T17:21:47Z`
+Snapshot time: `2026-05-16T17:26:50Z`
 
 Trigger event:
-`duplicate-noise-2026-05-16T17-18-59Z-60`
+`pr-split-2026-05-16T17-24-29Z-20260516T171930Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T17-18-59Z-60/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T17-24-29Z-20260516T171930Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -31,7 +31,7 @@ Filing remains blocked. The current split is not a complete filing split; it is
 a known-fix 28-head prefix plus one active post-`PR15C` product blocker for
 seed `1020002`.
 
-Latest split-persona synthesis, `pr-split-20260516T170807Z-synthesis.md`,
+Latest split-persona synthesis, `pr-split-20260516T171930Z-synthesis.md`,
 replaces the old "28-head allow-list is filing-ready" assumption with this
 shape:
 
@@ -103,7 +103,7 @@ are empty while the underlying startup/bootstrap failure remains unfixed.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T17:21:42Z`.
+The collected remote status input was generated at `2026-05-16T17:26:46Z`.
 
 The fix-planning repo is checked out at:
 
@@ -133,7 +133,7 @@ That stack still has modified product/test files and many untracked fuzz,
 analysis, and documentation artifacts. It is active validation infrastructure,
 not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T17:21:47Z` from fetched
+The branch-link audit was generated at `2026-05-16T17:26:50Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -215,20 +215,20 @@ above.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T17:21:42Z
+collected_at_utc: 2026-05-16T17:26:46Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T163736Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The fresh `novelty-status.md` snapshot was updated at
-`2026-05-16T17:21:14.476Z` for
+`2026-05-16T17:25:29.996Z` for
 `run-20260516T163736Z`:
 
 ```text
-coverage files: 34419
-total records seen: 51281
-records processed this pass: 16
+coverage files: 34434
+total records seen: 51310
+records processed this pass: 14
 current-run records: async-server-blocks=3, block-gauntlet=3, common-blocks=3,
   long-session-large-doc=3, media-cross-entity=3, parser-transform=3,
   persistence-no-title=2, real-user-editing=4, session-lifecycle=3
@@ -257,9 +257,9 @@ current-run signatures: 36
 known-noise signatures: 18
 current-run top duplicate family share: 1
 historical top duplicate family share: 0.5862
-headroom for adding groups: yes
-load1: 61.62 / 64 cores
-memory: 427.4G free / 492.0G total
+headroom for adding groups: no
+load1: 70.14 / 64 cores
+memory: 429.8G free / 492.0G total
 ```
 
 The same novelty snapshot lists no enabled groups. `novelty-http-persistence-probe`
@@ -291,7 +291,7 @@ load1: 74.39 / 64 cores
 memory: 430.4G free
 ```
 
-The trend enabled-group list is older than the `17:21:14Z` novelty snapshot,
+The trend enabled-group list is older than the `17:25:29Z` novelty snapshot,
 but both currently show no enabled groups. Use the novelty snapshot above for
 the current scheduler state.
 
@@ -299,9 +299,9 @@ Largest remaining current unmet goals from the latest trend packet:
 
 - successful real-user-editing records: `287/500`
 - CDP coverage records: `4887/5000`
-- `core/html`: `388/500` in the trend packet, `389/500` in the later novelty snapshot
+- `core/html`: `388/500` in the trend packet, `390/500` in the later novelty snapshot
 - `core/details`: `435/500` in the trend packet, `439/500` in the later novelty snapshot
-- `core/more`: `466/500` in the trend packet, `467/500` in the later novelty snapshot
+- `core/more`: `466/500` in the trend packet, `469/500` in the later novelty snapshot
 
 Weak completion profiles remain a reason to prefer guarded top-offs and
 startup-stall reduction over simply increasing browser concurrency. The weakest
@@ -317,7 +317,7 @@ and the resulting rebuilt validation stack.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T170807Z-synthesis.md`. Its consensus:
+`pr-split-20260516T171930Z-synthesis.md`. Its consensus:
 
 - Filing remains blocked and the split must change.
 - Keep the explicit 28-head allow-list only as the known-fix prefix.
@@ -419,7 +419,7 @@ The completed status-analysis reports through
 separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older warning
 that GitHub-facing PR13 review links were stale is superseded by the
-`2026-05-16T17:21:47Z` branch-link audit, which verifies the repaired PR 13
+`2026-05-16T17:26:50Z` branch-link audit, which verifies the repaired PR 13
 review refs listed above.
 
 ## Deferred Or Evidence-Only Work
@@ -482,7 +482,8 @@ Existing fuzz infrastructure can continue where healthy. The latest trend
 evidence has `likely_real_max: 0`, `5` unmet goals, current-run duplicate share
 `1`, historical duplicate share `0.5862`, summary startup failures `0`,
 quality issues `2`, and browser-e2e execution at `55873` cumulative / `416`
-per hour. The latest novelty snapshot has `36` current-run signatures, `0`
+per hour. The latest novelty snapshot has `34434` coverage files, `51310`
+total records seen, `36` current-run signatures, `0`
 visible likely-real failures, strict startup known-noise as the current-run dominant
 triage family, no enabled groups, the broader WS groups held by startup-noise
 probation, and the global startup-noise admission hold applied. Treat these
