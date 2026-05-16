@@ -1,32 +1,32 @@
-generated_at_utc: 2026-05-16T08:40:07Z
-monitor_passes: 1377
+generated_at_utc: 2026-05-16T08:45:27Z
+monitor_passes: 1380
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T08:37:54Z
+last_pass_utc: 2026-05-16T08:44:16Z
 coverage_files_first: 272
-coverage_files_last: 27495
-coverage_files_delta: 27223
+coverage_files_last: 27604
+coverage_files_delta: 27332
 unmet_coverage_first: 24
 unmet_coverage_last: 9
 likely_real_max: 0
 duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.4672
 summary_startup_failures_last: 0
-quality_issues_last: 0
-memory_free_gb_last: 418.3
-load_1_last: 79.53
-load_5_last: 75.8
-load_15_last: 74.8
+quality_issues_last: 1
+memory_free_gb_last: 422.2
+load_1_last: 77.15
+load_5_last: 71.45
+load_15_last: 72.1
 core_count: 64
 enabled_group_events: 510
 enabled_groups_current: novelty-ws-common-blocks,novelty-ws-long-session-large-doc,novelty-ws-async-server-blocks,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text,novelty-ws-media-cross-entity,novelty-ws-block-gauntlet
 fuzz_level_mix_snapshots: 117
 fuzz_level_mix_campaigns: coverage-guided,focused-shards,gap-booster,strict-expansion
 fuzz_level_mix_latest: browser-e2e=31 lanes/31 groups; transport-integration=1 lanes/1 groups
-fuzz_level_execution_events: 44607
-fuzz_level_execution_latest: browser-e2e=41650 cumulative/1064 per-hour; transport-integration=2957 cumulative/12 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_events: 44754
+fuzz_level_execution_latest: browser-e2e=41795 cumulative/44 per-hour; transport-integration=2959 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 120
 goals_unmet: 9
-pr_review_events: 9726
-pr_suggested_net_loc_snapshots: 49
+pr_review_events: 9728
+pr_suggested_net_loc_snapshots: 50
 pr_suggested_net_loc_latest_total: 11244
