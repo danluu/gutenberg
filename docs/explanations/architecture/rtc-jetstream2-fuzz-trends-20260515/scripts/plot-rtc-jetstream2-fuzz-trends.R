@@ -30,6 +30,7 @@ monitor_path <- file.path( raw_dir, "monitor.log" )
 loop_path <- file.path( raw_dir, "pr-split-loop.log" )
 state_path <- file.path( raw_dir, "novelty-state.json" )
 cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
+load_path <- file.path( data_dir, "load_average.csv" )
 activity_path <- file.path( data_dir, "project_activity.csv" )
 status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
 status_report_path <- file.path( root, status_report_rel )
@@ -577,6 +578,50 @@ if ( file.exists( cpu_path ) ) {
 	)
 }
 
+if ( file.exists( load_path ) ) {
+	load_average <- read_csv( load_path, show_col_types = FALSE ) %>%
+		mutate( timestamp = parse_utc_timestamp( timestamp ) ) %>%
+		filter( timestamp >= floor_date( min( monitor$timestamp ), "day" ) )
+
+	load_average_long <- load_average %>%
+		select( timestamp, core_count, load_1, load_5, load_15 ) %>%
+		pivot_longer( starts_with( "load_" ), names_to = "metric", values_to = "load_average" ) %>%
+		mutate(
+			metric = recode(
+				metric,
+				load_1 = "1-minute",
+				load_5 = "5-minute",
+				load_15 = "15-minute"
+			)
+		)
+
+	write_plot(
+		"load-average-over-time.png",
+		ggplot( load_average_long, aes( x = timestamp, y = load_average, color = metric ) ) +
+			geom_point( alpha = 0.68, size = 1.5 ) +
+			geom_hline(
+				data = load_average %>% distinct( core_count ),
+				aes( yintercept = core_count ),
+				linetype = "dashed",
+				color = "grey45",
+				inherit.aes = FALSE
+			) +
+			scale_color_brewer( palette = "Dark2" ) +
+			scale_y_continuous( labels = comma ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
+			labs(
+				title = "Load average over time",
+				x = "UTC time",
+				y = "load average",
+				color = NULL,
+				caption = "Each point is one sysstat sample. The dashed line is the logical CPU count."
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 5.4
+	)
+}
+
 if ( file.exists( activity_path ) ) {
 	activity <- read_csv( activity_path, show_col_types = FALSE ) %>%
 		mutate( timestamp = parse_utc_timestamp( timestamp ) )
@@ -955,6 +1000,10 @@ summary_lines <- c(
 	paste0( "likely_real_max: ", max( monitor$likely_real, na.rm = TRUE ) ),
 	paste0( "duplicate_share_last: ", last( monitor$duplicate_share ) ),
 	paste0( "memory_free_gb_last: ", last( monitor$memory_free_gb ) ),
+	paste0( "load_1_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_1 ), NA ) ),
+	paste0( "load_5_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_5 ), NA ) ),
+	paste0( "load_15_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_15 ), NA ) ),
+	paste0( "core_count: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$core_count ), NA ) ),
 	paste0( "enabled_group_events: ", nrow( enabled_groups ) ),
 	paste0( "enabled_groups_current: ", paste( state$enabledGroups, collapse = "," ) ),
 	paste0( "profiles_seen: ", nrow( profile_counts ) ),

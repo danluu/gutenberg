@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T05:00:18Z`
+Snapshot generated: `2026-05-16T05:29:32Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -12,10 +12,10 @@ Source inputs:
 - coverage monitor log:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest novelty state:
-  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T045537Z/novelty-state.json`
+  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T052845Z/novelty-state.json`
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
-- CPU history:
+- CPU and load-average history:
   `/var/log/sysstat/sa15` and `/var/log/sysstat/sa16`
 
 The plotting script and summarized CSV inputs are committed under
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1267` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T04:58:28Z`, coverage files grew from `272` to `24073`, a delta of
-`23801`. The monitor's visible likely-real count stayed at `0` throughout this
+`1282` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T05:27:17Z`, coverage files grew from `272` to `24372`, a delta of
+`24100`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -89,10 +89,18 @@ remain disputed and should not be inferred from graph history alone.
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
 CPU utilization rose materially later in the run. Sysstat samples from
-`2026-05-15T01:21:42Z` through `2026-05-16T05:00:00Z` average about `58.3%`,
-peak around `84.9%`, and end near `70.9%`. This says the machine is being used
+`2026-05-15T00:10:00Z` through `2026-05-16T05:20:00Z` average about `57.1%`,
+peak around `84.9%`, and end near `58.6%`. This says the machine is being used
 more aggressively than the earlier memory view alone implied; spare RAM does not
 necessarily mean spare browser/CPU capacity.
+
+![Load average over time](rtc-jetstream2-fuzz-trends-20260515/plots/load-average-over-time.png)
+
+Load average tells a similar story with more queueing detail. In the plotted
+window, the 1-minute, 5-minute, and 15-minute load averages each average about
+`56`, against `64` logical CPUs. The latest sampled load is `47.95`, `49.11`,
+and `53.22` for 1/5/15 minutes respectively, below the core-count reference
+line, while short spikes exceeded it earlier.
 
 The two activity plots below are intentionally left unlabeled.
 

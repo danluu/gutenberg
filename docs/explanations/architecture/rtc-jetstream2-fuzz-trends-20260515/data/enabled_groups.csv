@@ -488,3 +488,11 @@ timestamp,group,group_family
 2026-05-16T04:56:32Z,novelty-ws-lifecycle,lifecycle
 2026-05-16T04:56:32Z,novelty-http-persistence-probe,persistence
 2026-05-16T04:56:32Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-16T05:10:05Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T05:10:05Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-16T05:10:24Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T05:13:02Z,novelty-ws-persistence-no-title,persistence
+2026-05-16T05:13:02Z,novelty-ws-async-server-blocks,async/media
+2026-05-16T05:13:02Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-16T05:23:27Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-16T05:23:27Z,novelty-ws-parser-transform,parser
