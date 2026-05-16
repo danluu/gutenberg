@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T18:26:03Z`
+Snapshot time: `2026-05-16T18:31:06Z`
 
 Trigger event:
-`duplicate-noise-2026-05-16T18-25-00Z-66`
+`pr-split-2026-05-16T18-30-22Z-20260516T182326Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T18-25-00Z-66/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T18-30-22Z-20260516T182326Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -31,7 +31,7 @@ Filing remains blocked. The explicit PR01 through PR15C set is only a
 known-fix prefix, not a filing-ready stack.
 
 The latest split-persona synthesis,
-`pr-split-20260516T181436Z-synthesis.md`, keeps the blocker state and makes
+`pr-split-20260516T182326Z-synthesis.md`, keeps the blocker state and makes
 the current filing policy explicit: the PR01 through PR15C stack is only a
 known-fix prefix, not a complete PR set.
 
@@ -117,7 +117,7 @@ lanes, or final-stack fuzz work.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T18:25:57Z`.
+The collected remote status input was generated at `2026-05-16T18:31:01Z`.
 
 The fix-planning repo is checked out at:
 
@@ -147,7 +147,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T18:26:03Z` from fetched
+The branch-link audit was generated at `2026-05-16T18:31:06Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -228,7 +228,7 @@ above.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T18:25:57Z
+collected_at_utc: 2026-05-16T18:31:01Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T175536Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -248,111 +248,110 @@ is not final-stack fuzz validation and no longer represents the complete filing
 stack because seed `1020002` still needs the post-`PR15C` repair decision.
 
 The fresh `novelty-status.md` snapshot was updated at
-`2026-05-16T18:23:49.814Z` for
+`2026-05-16T18:28:54.145Z` for
 `run-20260516T175536Z`:
 
 ```text
-coverage files: 34925
-total records seen: 52351
-records processed this pass: 33
-current-run records by profile: common-blocks=19, parser-transform=20,
-  async-server-blocks=18, long-session-large-doc=8, media-cross-entity=15,
-  real-user-editing=18
-current-run successful records by profile: common-blocks=12,
-  parser-transform=13, async-server-blocks=12, real-user-editing=9,
-  media-cross-entity=6
-current-run records by transport: ws=98
+coverage files: 34975
+total records seen: 52436
+records processed this pass: 45
+current-run records by profile: common-blocks=25, parser-transform=20,
+  async-server-blocks=24, long-session-large-doc=10, media-cross-entity=16,
+  real-user-editing=23, block-gauntlet=1
+current-run successful records by profile: common-blocks=17,
+  parser-transform=13, async-server-blocks=16, real-user-editing=11,
+  media-cross-entity=6, block-gauntlet=1
+current-run records by transport: ws=119
 current-run pre-action startup failures: parser-transform=2,
   media-cross-entity=2
 current-run summary-only startup failures: media-cross-entity=1,
   parser-transform=1
 recommended groups: novelty-ws-real-user-editing,
-  novelty-ws-real-user-rich-text, novelty-ws-block-gauntlet,
-  novelty-ws-common-blocks, novelty-ws-parser-transform,
-  novelty-ws-async-server-blocks, novelty-ws-media-cross-entity,
-  novelty-ws-long-session-large-doc
-enabled groups: novelty-ws-common-blocks, novelty-ws-real-user-editing,
-  novelty-ws-real-user-rich-text, novelty-ws-async-server-blocks,
-  novelty-ws-long-session-large-doc
+  novelty-ws-real-user-rich-text, novelty-ws-block-gauntlet
+enabled groups: novelty-ws-common-blocks, novelty-ws-block-gauntlet,
+  novelty-ws-real-user-editing, novelty-ws-real-user-rich-text,
+  novelty-ws-async-server-blocks, novelty-ws-long-session-large-doc
 paused groups: novelty-http-persistence-probe, novelty-ws-parser-transform,
   novelty-ws-media-cross-entity
 likely-real visible: 0
-likely-real merged duplicates: 0
+likely-real merged duplicates: 3
 oracle/noise questions: 0
 normalization-noise candidates: 0
-current-output triage signatures: 47
+current-output triage signatures: 68
 current-output bootstrap stalls: 0
-current top duplicate family share: 0.2979
-current top semantic families: unknown=14, rest_meta_database_error=14,
-  assertion=8, collaboration_non_convergence=6, timeout=5
-historical likely-real merged duplicates: 158
+current top duplicate family share: 0.3088
+current top semantic families: unknown=21, rest_meta_database_error=16,
+  timeout=11, collaboration_non_convergence=10, assertion=6
+historical likely-real merged duplicates: 162
 historical normalization-noise candidates: 415
 historical bootstrap stalls: 14433
-historical top duplicate family share: 0.5543
+historical top duplicate family share: 0.554
 quality issues: 0
 health: ok
 headroom for adding groups: no
-load1: 69.93 / 64 cores
-memory: 426.3G free / 492.0G total
+load1: 80.05 / 64 cores
+memory: 426.0G free / 492.0G total
 ```
 
 The current output dir has visible triage signatures, but no visible likely-real
-product failures and no current bootstrap-stall signatures. The duplicate/noise
-feedback action's current-root triage scan reported `55` total records, `39`
-queued, `0` queued strict startup records, `0` bootstrap status records, `47`
-product-visible records, `4` suppressed records, and `2` suppressed identities.
+product failures and no current bootstrap-stall signatures. It does have three
+merged likely-real duplicates that are not currently visible failures. The
+duplicate/noise feedback action's current-root triage scan reported `55` total
+records, `39` queued, `0` queued strict startup records, `0` bootstrap status
+records, `47` product-visible records, `4` suppressed records, and `2`
+suppressed identities.
 The new run has WS behavioral coverage, but this is still coverage-guided
 health evidence, not final-stack validation. Historical triage remains
 dominated by known startup/control-plane noise, especially
 `pre_action_bootstrap_stall`, and must not be presented as live product
 failure.
 
-The latest trend evidence packet was generated at `2026-05-16T18:15:54Z` from
-monitor data through `2026-05-16T18:14:03Z`:
+The latest trend evidence packet was generated at `2026-05-16T18:23:15Z` from
+monitor data through `2026-05-16T18:21:28Z`:
 
 ```text
-monitor passes: 1636
-coverage files: 272 -> 34843
-coverage files delta: 34571
+monitor passes: 1639
+coverage files: 272 -> 34907
+coverage files delta: 34635
 unmet coverage goals: 24 -> 5
 likely_real_max: 0
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.5547
-summary_startup_failures_last: 0
+duplicate_share_historical_last: 0.5545
+summary_startup_failures_last: 2
 quality_issues_last: 0
 enabled groups current in trend snapshot: novelty-ws-real-user-editing,
   novelty-ws-real-user-rich-text, novelty-ws-common-blocks,
-  novelty-ws-parser-transform, novelty-ws-async-server-blocks,
-  novelty-ws-media-cross-entity, novelty-ws-long-session-large-doc
-fuzz level mix: browser-e2e=32 lanes/32 groups; unit-property=1 lane/1 group;
+  novelty-ws-async-server-blocks, novelty-ws-media-cross-entity,
+  novelty-ws-long-session-large-doc
+fuzz level mix: browser-e2e=31 lanes/31 groups; unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-browser-e2e execution: 62350 cumulative / 264 per-hour
+browser-e2e execution: 63151 cumulative / 3468 per-hour
 transport-integration execution: 3006 cumulative / 0 per-hour
-unit-property execution: 1023884 cumulative / 9632 per-hour
-coverage-guided-lower-level execution: 30742 cumulative / 1280 per-hour
-load1: 71.77 / 64 cores
-memory: 430.6G free
+unit-property execution: 1044352 cumulative / 91504 per-hour
+coverage-guided-lower-level execution: 34518 cumulative / 16384 per-hour
+load1: 67.24 / 64 cores
+memory: 426.6G free
 ```
 
 Largest remaining current unmet goals from the trend packet:
 
-- successful real-user-editing records: `291/500` in the trend packet,
-  `296/500` in the later novelty snapshot
-- `core/html`: `402/500` in the trend packet, `404/500` in the later novelty snapshot
-- `core/details`: `447/500` in the trend packet, `450/500` in the later novelty snapshot
-- CDP coverage records: `4956/5000` in the trend packet, `4992/5000` in the later novelty snapshot
-- `core/more`: `496/500` in the trend packet and the later novelty snapshot
+- successful real-user-editing records: `295/500` in the trend packet,
+  `299/500` in the later novelty snapshot
+- `core/html`: `403/500` in the trend packet, `405/500` in the later novelty snapshot
+- `core/details`: `450/500` in the trend packet, `451/500` in the later novelty snapshot
+- CDP coverage records: `4984/5000` in the trend packet
+- `core/more`: `496/500` in the trend packet, `499/500` in the later novelty snapshot
 
 Weak completion profiles still argue for startup-stall reduction and guarded
 top-offs over simply increasing browser concurrency. The weakest success ratios
 in the trend packet are `full` (`18/840`), `revision-persistence`
-(`100/3577`), `multi-reload-lifecycle` (`80/2713`),
-`parser-serialization` (`75/2237`), and `real-user-editing` (`291/5326`).
+(`102/3588`), `multi-reload-lifecycle` (`80/2718`),
+`parser-serialization` (`75/2243`), and `real-user-editing` (`295/5337`).
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T181436Z-synthesis.md`. Its consensus:
+`pr-split-20260516T182326Z-synthesis.md`. Its consensus:
 
 - Filing remains blocked and the split still needs the known-fix prefix plus a
   new post-`PR15C` seed `1020002` WebSocket/Yjs repair PR.
@@ -458,8 +457,8 @@ The completed status-analysis reports through
 separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older warnings
 about stale PR13 GitHub-facing review refs and the then-current constrained
-group mix are superseded by the `2026-05-16T18:26:03Z` branch-link audit and
-the `2026-05-16T18:23:49Z` novelty snapshot. The audit verifies the repaired
+group mix are superseded by the `2026-05-16T18:31:06Z` branch-link audit and
+the `2026-05-16T18:28:54Z` novelty snapshot. The audit verifies the repaired
 PR 13 review refs listed above, while the novelty snapshot still does not count
 as final-stack validation.
 
@@ -522,11 +521,11 @@ Before filing any maintainer-facing PR:
 
 Existing fuzz infrastructure can continue where healthy. The latest trend
 evidence has `likely_real_max: 0`, `5` unmet goals, current-run duplicate share
-`0`, historical duplicate share `0.5547`, summary startup failures `0`,
-quality issues `0`, and browser-e2e execution at `62350` cumulative / `264`
-per hour. The latest novelty snapshot has `34925` coverage files, `52351`
-total records seen, `98` current-run WS records, `47` current-output triage
-signatures, `0` visible likely-real failures, five enabled WS novelty groups,
+`0`, historical duplicate share `0.5545`, summary startup failures `2`,
+quality issues `0`, and browser-e2e execution at `63151` cumulative / `3468`
+per hour. The latest novelty snapshot has `34975` coverage files, `52436`
+total records seen, `119` current-run WS records, `68` current-output triage
+signatures, `0` visible likely-real failures, six enabled WS novelty groups,
 `novelty-http-persistence-probe` paused by the max-enabled-group resource
 budget, `novelty-ws-parser-transform` paused after `2/19` current-run
 pre-action WS discovery/startup failures, and `novelty-ws-media-cross-entity`
