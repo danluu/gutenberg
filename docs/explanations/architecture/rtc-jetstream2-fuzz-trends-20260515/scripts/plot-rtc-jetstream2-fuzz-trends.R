@@ -950,7 +950,7 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 	write_plot(
 		"pr-suggested-total-net-loc-over-time.png",
 		ggplot( pr_suggested_total, aes( x = timestamp, y = net_loc ) ) +
-			geom_point( aes( size = files ), alpha = 0.78, color = brewer.pal( 8, "Dark2" )[ 2 ] ) +
+			geom_point( aes( size = files ), alpha = 0.78, color = "grey25" ) +
 			scale_y_continuous( labels = comma ) +
 			scale_size_continuous( labels = comma, range = c( 2.4, 6.8 ) ) +
 			scale_time_axis( date_breaks = "30 mins", date_labels = "%H:%M\n%m-%d" ) +
@@ -973,10 +973,9 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 
 	write_plot(
 		"pr-suggested-net-loc-by-pr-over-time.png",
-		ggplot( pr_suggested_plot, aes( x = timestamp, y = net_loc, color = net_loc, size = files ) ) +
-			geom_point( alpha = 0.76 ) +
+		ggplot( pr_suggested_plot, aes( x = timestamp, y = net_loc, size = files ) ) +
+			geom_point( alpha = 0.76, color = "grey25" ) +
 			facet_wrap( vars( pr ), ncol = 4, scales = "free_y" ) +
-			scale_color_distiller( palette = "RdYlBu", direction = -1, labels = comma, breaks = pretty_breaks( n = 4 ) ) +
 			scale_size_continuous( labels = comma, range = c( 1.6, 4.8 ) ) +
 			scale_y_continuous( labels = comma, limits = c( 0, NA ) ) +
 			scale_time_axis( date_breaks = "1 hour", date_labels = "%H:%M" ) +
@@ -984,13 +983,11 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 				title = "Suggested PR net LOC by PR over time",
 				x = "UTC snapshot time",
 				y = "net LOC",
-				color = "net LOC",
 				size = "files",
 				caption = "Each facet is one suggested PR row from the Proposed PR Split table. Net LOC is additions minus deletions."
 			) +
 			theme_rtc() +
 			guides(
-				color = guide_colorbar( title.position = "top", barwidth = unit( 6, "cm" ), barheight = unit( 0.35, "cm" ) ),
 				size = guide_legend( title.position = "top", nrow = 1 )
 			) +
 			theme(
