@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T21:01:47Z`
+Snapshot time: `2026-05-16T21:08:00Z`
 
 Trigger event:
-`pr-split-2026-05-16T21-00-34Z-20260516T205415Z`
+`pr-split-2026-05-16T21-06-27Z-20260516T210039Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T21-00-34Z-20260516T205415Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T21-06-27Z-20260516T210039Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,7 +28,7 @@ or the original split merely for continuity.
 ## Executive Status
 
 Filing remains blocked. The latest split-persona consensus from
-`pr-split-20260516T205415Z-synthesis.md` keeps the replacement split: the
+`pr-split-20260516T210039Z-synthesis.md` keeps the replacement split: the
 `PR01` through `PR15C` `ready/rtc-*` set plus PR02A is useful and auditable, but
 still only a known-fix prefix. The tail remains conditional `PR16`
 malformed-save replay/restack, then separate `PR17` seed `1020002`
@@ -37,7 +37,7 @@ produces a filing-ready repair: PR16 is maintainer-sized but its replay failed
 before product evidence because the throwaway clone lacked built assets, and
 PR17 still fails marker propagation for seed `1020002`. The current PR16
 built-assets replay and PR17 semantic-exit instrumentation jobs are active and
-reportless in the latest synthesis; do not duplicate them.
+missing `report.md` as of the latest synthesis; do not duplicate them.
 
 The current maintainer-facing filing shape is:
 
@@ -94,21 +94,23 @@ replay before filing: `npm run build`, isolated `wp-env-test`, malformed rows
 link. Do not revive the dropped old `PR6B` save-snapshot/no-op candidate.
 
 The duplicate/noise control plane has two completed relevant fixes plus one new
-actionable follow-up from `duplicate-noise-20260516T204441Z-synthesis.md`. The
+actionable follow-up from `duplicate-noise-20260516T205241Z-synthesis.md`. The
 `194153Z` action made source state authoritative across watcher and novelty
 accounting. The `201946Z` action completed the sticky scheduler fix:
 duplicate/noise pauses now hold for a 6h cooldown, a
 `.triage-watcher/no-analysis.json` sentinel is written for producer-side
 no-product-evidence groups, and triage/analysis/deep-analysis/live analysis
 consumers honor that sentinel while preserving product-evidence failures. The
-newest synthesis says strict pre-action bootstrap suppression is mostly working
-downstream, but remaining no-product noise can still leak through producer and
-analysis controls. Its smallest safe next pass is to map
-`novelty-http-persistence-probe` to `persistence-no-title`, let suppressed
-strict startup counts/identities drive per-profile or per-group pauses, preserve
-all `hasProductEvidence` paths, and fix mechanical duplicate-analysis gates if
-confirmed. This is fuzz control-plane hygiene, not product validation and not a
-filing unblocker.
+newest synthesis says no files were edited in that pass and consensus remains
+that strict pre-action bootstrap suppression is mostly working downstream, but
+producer pause logic, novelty/live accounting, and duplicate-analysis gates
+still leak no-product duplicate/noise. Its smallest safe next pass is to map
+`novelty-http-persistence-probe` to `persistence-no-title`, fold completed
+analysis/deep-analysis decisions into effective actionability, gate repeated
+Codex work by canonical semantic family, write `no-analysis.json` for active
+noisy current-run dirs, preserve all product-evidence paths, and fix mechanical
+duplicate-analysis gates if confirmed. This is fuzz control-plane hygiene, not
+product validation and not a filing unblocker.
 
 The prior bounded `1020002` caller/base diagnostic has completed, and the
 earlier PR16/PR17 `195842Z` jobs now have reports. The latest split synthesis
@@ -146,7 +148,8 @@ The latest novelty snapshot confirms the completed duplicate/noise scheduler
 fix is active: `novelty-ws-block-gauntlet` is held by sticky
 triage-duplicate-noise cooldown, coverage recommendations still include it, and
 the monitor skips re-enable while the cooldown is active and likely-real remains
-zero.
+zero. The current run has `14` actionable signatures and `0` visible likely-real
+failures; that is fuzz-health evidence, not final-stack validation.
 
 Do not launch broad final-stack fuzz yet. Do not fold seed `1020002` into PR13,
 PR15, PR6B/PR6C, old PR16, PR8, reload hydration, pre-save collapse,
@@ -158,7 +161,7 @@ or control-plane loop repair.
 
 ## Latest Branch And Ref Status
 
-The remote status input was generated at `2026-05-16T21:01:41Z`.
+The remote status input was generated at `2026-05-16T21:07:54Z`.
 
 The fix-planning repo is checked out at:
 
@@ -188,7 +191,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T21:01:47Z` from fetched
+The branch-link audit was generated at `2026-05-16T21:08:00Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -269,7 +272,7 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T21:01:41Z
+collected_at_utc: 2026-05-16T21:07:54Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T185058Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -291,28 +294,28 @@ malformed-save candidate needs restack/replay/audit, and seed `1020002` still
 needs the PR17 repair decision.
 
 The latest `novelty-status.md` snapshot was updated at
-`2026-05-16T21:00:40.480Z` for `run-20260516T185058Z`:
+`2026-05-16T21:06:40.970Z` for `run-20260516T185058Z`:
 
 ```text
-coverage files: 36187
-total records seen: 54722
-records processed this pass: 41
-new behavioral feature keys this pass: 2
-new CDP coverage hashes this pass: 2
+coverage files: 36231
+total records seen: 54818
+records processed this pass: 50
+new behavioral feature keys this pass: 6
+new CDP coverage hashes this pass: 6
 current-run records by profile:
-  async-server-blocks=97, block-gauntlet=87, session-lifecycle=64,
-  long-session-large-doc=29, real-user-editing=80, persistence-no-title=18
+  async-server-blocks=99, block-gauntlet=87, session-lifecycle=67,
+  long-session-large-doc=30, real-user-editing=82, persistence-no-title=22
 current-run successful records by profile:
-  async-server-blocks=76, block-gauntlet=66, session-lifecycle=45,
+  async-server-blocks=77, block-gauntlet=66, session-lifecycle=48,
   real-user-editing=34, persistence-no-title=3
-current-run records by transport: ws=360, http=15
+current-run records by transport: ws=368, http=19
 current-run pre-action startup failures:
-  async-server-blocks=10, persistence-no-title=7,
+  async-server-blocks=11, persistence-no-title=9,
   block-gauntlet=4, session-lifecycle=4,
-  long-session-large-doc=2, real-user-editing=8
+  long-session-large-doc=2, real-user-editing=10
 current-run summary-only startup failures:
-  block-gauntlet=3, async-server-blocks=5, session-lifecycle=2,
-  long-session-large-doc=1, real-user-editing=4
+  block-gauntlet=3, async-server-blocks=6, session-lifecycle=2,
+  long-session-large-doc=1, real-user-editing=5
 enabled groups:
   novelty-ws-lifecycle, novelty-ws-real-user-editing,
   novelty-ws-real-user-rich-text, novelty-ws-async-server-blocks,
@@ -326,39 +329,41 @@ recommended groups:
   novelty-ws-block-gauntlet
 current-output triage roots: 6
 current-output state files: 6
-current-output signatures: 21
-current-output actionable signatures: 21
-current-output raw signatures: 76
-current-output non-actionable signatures: 55
-current-output known-infra signatures: 18
-current-output family-capped signatures: 16
-current-output analysis-gated non-actionable signatures: 21
+current-output signatures: 14
+current-output actionable signatures: 14
+current-output raw signatures: 89
+current-output non-actionable signatures: 75
+current-output known-infra signatures: 21
+current-output family-capped signatures: 22
+current-output analysis-gated non-actionable signatures: 32
 likely-real visible: 0
-likely-real merged duplicates: 12
+likely-real merged duplicates: 15
 oracle/noise questions: 0
 normalization-noise candidates: 0
 bootstrap stalls: 0
-suppressed strict startup records: 38
-suppressed strict startup identities: 19
+suppressed strict startup records: 42
+suppressed strict startup identities: 21
 actionable top duplicate family share: 0.4286
-raw top duplicate family share: 0.2368
+raw top duplicate family share: 0.236
 top actionable semantic families:
-  timeout=9, collaboration_non_convergence=6, unknown=4,
+  collaboration_non_convergence=6, timeout=6,
   save_checkpoint_convergence_compares_unsynced_persisted_crdt_meta_across_pages=1,
   assertion=1
 top raw semantic families:
-  rest_meta_database_error=18, timeout=17, collaboration_non_convergence=9,
-  unknown=5, assertion=5
+  rest_meta_database_error=21, timeout=16, collaboration_non_convergence=11,
+  ws_reload_sync_ready_stall_after_faulted_session=6,
+  test_harness_async_embed_preview_single_sample_convergence_race=5,
+  assertion=5
 historical likely-real merged duplicates: 480
-historical normalization-noise candidates: 459
+historical normalization-noise candidates: 460
 historical bootstrap stalls: 14433
-historical actionable top duplicate family share: 0.3545
-historical raw top duplicate family share: 0.5447
+historical actionable top duplicate family share: 0.3544
+historical raw top duplicate family share: 0.5444
 quality issues: 1
 health: ok
-headroom for adding groups: yes
-load1: 59.07 / 64 cores
-memory: 420.2G free / 492.0G total
+headroom for adding groups: no
+load1: 74.95 / 64 cores
+memory: 426.6G free / 492.0G total
 ```
 
 At `2026-05-16T18:51:08Z`, the novelty state moved from
@@ -377,7 +382,8 @@ that group was paused to rotate browser budget back to block-gauntlet. At
 sticky triage-duplicate-noise cooldown. The monitor then skipped
 coverage-guided re-enable for that group at `20:40:15Z`, `20:43:03Z`, and
 `20:45:47Z`, `20:48:53Z`, `20:51:42Z`, `20:54:43Z`, `20:57:44Z`, and
-`21:00:40Z` because the cooldown was still active.
+`21:00:40Z`, `21:03:39Z`, and `21:06:40Z` because the cooldown was still
+active.
 The current `0` visible likely-real count is fuzz-health evidence only.
 Historical known-noise remains advisory/control-plane evidence; do not treat it
 as live product failure or as final-stack validation.
@@ -386,41 +392,41 @@ The latest novelty snapshot still has `novelty-ws-common-blocks` paused after
 startup/discovery failures and `novelty-ws-persistence-no-title` paused for
 budget rotation. `novelty-ws-block-gauntlet` is now paused for sticky
 duplicate/noise cooldown rather than immediately reenabled for the `core/html`
-coverage gap. The current novelty snapshot has `21` actionable signatures
+coverage gap. The current novelty snapshot has `14` actionable signatures
 visible and reports health `ok`. Treat the completed `194153Z`
 source-state fix, the completed `201946Z` sticky cooldown/no-analysis-sentinel
-fix, and the `204441Z` follow-up synthesis as control-plane evidence, not
+fix, and the `205241Z` follow-up synthesis as control-plane evidence, not
 product validation.
 
-The latest trend evidence packet was generated at `2026-05-16T20:52:07Z` from
-monitor data through `2026-05-16T20:48:53Z`. Use it for trend shape, while the
+The latest trend evidence packet was generated at `2026-05-16T20:58:23Z` from
+monitor data through `2026-05-16T20:57:44Z`. Use it for trend shape, while the
 later novelty snapshot above is the current group and policy state:
 
 ```text
-monitor passes: 1692
-coverage files: 272 -> 36108
-coverage files delta: 35836
+monitor passes: 1695
+coverage files: 272 -> 36168
+coverage files delta: 35896
 unmet coverage goals: 24 -> 7
 likely_real_max: 0
-duplicate_share_current_last: 0.3571
-duplicate_share_historical_last: 0.3543
+duplicate_share_current_last: 0.35
+duplicate_share_historical_last: 0.3545
 summary_startup_failures_last: 1
 quality_issues_last: 1
 fuzz level mix: browser-e2e=31 lanes/31 groups; unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 1621516
-browser-e2e execution: 78784 cumulative / 2908 per-hour
-unit-property execution: 1430836 cumulative / 81872 per-hour
-coverage-guided-lower-level execution: 108890 cumulative / 13824 per-hour
+total fuzz-level test executions: 1650770
+browser-e2e execution: 79490 cumulative / 5732 per-hour
+unit-property execution: 1456120 cumulative / 183008 per-hour
+coverage-guided-lower-level execution: 112154 cumulative / 26880 per-hour
 load1: 80.74 / 64 cores
-memory: 424.5G free
+memory: 425.9G free
 ```
 
 Largest remaining coverage gaps in the later novelty snapshot are
-`reload-post-action` (`609/1000`), `ui-heading-shortcut` (`632/1000`),
+`reload-post-action` (`609/1000`), `ui-heading-shortcut` (`633/1000`),
 title-save-reload (`223/500`), body-save-reload (`282/500`), successful
-real-user-editing records (`345/500`), `ui-format-paragraph` (`912/1000`),
-and `core/html` (`460/500`).
+real-user-editing records (`345/500`), `ui-format-paragraph` (`913/1000`),
+and `core/html` (`462/500`).
 
 This is useful fuzz-health and control-plane evidence. It is not final-stack
 validation for filing.
@@ -428,7 +434,7 @@ validation for filing.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T205415Z-synthesis.md`. Its consensus:
+`pr-split-20260516T210039Z-synthesis.md`. Its consensus:
 
 - Keep the replacement shape; no new structural PR split is justified.
 - Treat `PR01` through `PR15C` plus PR02A as a useful and auditable known-fix
@@ -453,9 +459,11 @@ The newest completed split-persona synthesis is
   remains deferred.
 - Do not launch broad final-stack fuzz. The Jetstream loop has already launched
   the PR16 built-assets replay and PR17 source-helper/exit-instrumentation
-  repair, and the latest synthesis reports both active and reportless. Do not
-  duplicate those jobs. A lower-priority reload/rejoin unsaved-edits UI repro
-  remains evidence-only.
+  repair, and the latest synthesis reports both active and missing `report.md`.
+  Do not duplicate those jobs. A lower-priority reload/rejoin unsaved-edits UI
+  repro remains evidence-only; the next independent candidate after current
+  non-`1020002` progress is verified is a bounded canonical WebSocket replay
+  for `deferred/rtc-pre-save-search-live-collapse-20260516T195003Z`.
 - Treat wait-only feedback as invalid while the Parallel Progress Gate still has
   actionable rows. Active `1020002`, an active tmux session without an artifact,
   or a zero-byte `report.md` must not satisfy the gate while non-`1020002`
@@ -468,7 +476,9 @@ The newest completed split-persona synthesis is
 
 The latest split feedback action file in the collected inputs is still
 `pr-split-20260516T203941Z-feedback-action.md`, and it was non-empty. There is
-no newer feedback-action paired with the `205415Z` synthesis. The `203941Z`
+no newer non-empty feedback-action paired with the `210039Z` split synthesis;
+`pr-split-20260516T210039Z-feedback-action.md` is zero bytes.
+The `203941Z`
 action added Cycle 192 consensus to the remote split report, kept the tail as
 conditional PR16, then PR17/`1020002`, rebuilt validation, focused seed gate,
 and final fuzz/filing, recorded that the explicit `33`-row push manifest is
@@ -492,18 +502,21 @@ PR02A, PR5A-C, PR8A, PR11A-E, PR16, or PR17, so those table rows remain
 manifest, not wildcard refs.
 
 The latest duplicate/noise synthesis is
-`duplicate-noise-20260516T204441Z-synthesis.md`. It says strict
-`pre_action_bootstrap_stall` suppression is no longer the main
-triage-analysis leak; the remaining leak is control-plane code that measures
-suppressed or known no-product noise but does not consistently stop producers,
-cool down noisy groups, or prevent duplicate analysis launches. The clearest
-shared concrete leak is `novelty-http-persistence-probe` missing from
-`PROFILE_BY_GROUP`, so `persistence-no-title` startup failures can bypass
-profile-based pause logic. Its next bounded action is to add that profile
-mapping, make suppressed strict startup counts/identities drive per-profile or
-per-group pauses, preserve all `hasProductEvidence` paths, and fix mechanical
-duplicate-analysis gates such as the analysis family-count cap or attempt/final
-duplicate ingestion if confirmed.
+`duplicate-noise-20260516T205241Z-synthesis.md`. It says no files were edited
+in that pass. Its consensus is that strict `pre_action_bootstrap_stall`
+suppression is no longer the main triage-analysis leak; the remaining leak is
+control-plane code that measures suppressed or known no-product noise but does
+not consistently stop producers, cool down noisy groups, or prevent duplicate
+analysis launches. The clearest shared concrete leak is
+`novelty-http-persistence-probe` missing from `PROFILE_BY_GROUP`, so
+`persistence-no-title` startup failures can bypass profile-based pause logic.
+Its next bounded action is to add that profile mapping, let suppressed strict
+startup counts/identities drive per-profile or per-group pauses, fold completed
+analysis/deep-analysis decisions into effective actionability, gate repeated
+Codex work by canonical semantic family, write `no-analysis.json` for active
+noisy current-run dirs, preserve all `hasProductEvidence` paths, and fix
+mechanical duplicate-analysis gates such as the analysis family-count cap or
+attempt/final duplicate ingestion if confirmed.
 
 The previous duplicate/noise synthesis,
 `duplicate-noise-20260516T201946Z-synthesis.md`, identified the scheduler
@@ -549,14 +562,14 @@ coverage-guided live/deep analysis sessions for block-gauntlet. The latest
 novelty snapshot now reports:
 
 ```text
-actionable signatures: 21
-raw signatures: 76
-non-actionable signatures: 55
+actionable signatures: 14
+raw signatures: 89
+non-actionable signatures: 75
 bootstrap-stall signatures: 0
-family-capped signatures: 16
-analysis-gated non-actionable signatures: 21
+family-capped signatures: 22
+analysis-gated non-actionable signatures: 32
 top duplicate family share: 0.4286
-raw top duplicate family share: 0.2368
+raw top duplicate family share: 0.236
 ```
 
 The previous duplicate/noise synthesis,
@@ -582,8 +595,8 @@ accounting to active supervisor run dirs, counted suppressed strict startup
 noise, cleaned stale old-root analysis sessions, and aligned novelty/supervisor
 to `run-20260516T185058Z`.
 
-Remaining duplicate/noise risk: active triage now has `21` actionable
-signatures, led by `timeout`, collaboration non-convergence, `unknown`, one
+Remaining duplicate/noise risk: active triage now has `14` actionable
+signatures, led by collaboration non-convergence, timeout, one
 save-checkpoint persisted-CRDT-meta signal, and one assertion. Those are
 intentionally left visible because they may include product evidence such as
 users, actions, reload/save/fault context. The newest novelty snapshot reports
@@ -600,8 +613,8 @@ The completed status-analysis reports through
 separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older PR13
 GitHub-facing review-ref warnings and then-current constrained group mix are
-superseded by the `2026-05-16T21:01:47Z` branch-link audit and the
-`2026-05-16T21:00:40Z` novelty snapshot. The audit verifies the repaired PR13
+superseded by the `2026-05-16T21:08:00Z` branch-link audit and the
+`2026-05-16T21:06:40Z` novelty snapshot. The audit verifies the repaired PR13
 review refs listed above, while the novelty snapshot still does not count as
 final-stack validation.
 
@@ -685,10 +698,10 @@ failures, current common-blocks WS startup/discovery pause, persistence-no-title
 browser-budget rotation, a low-fault HTTP persistence canary, and block-gauntlet
 held by sticky duplicate/noise cooldown. The actionable/raw duplicate-noise
 accounting split, source-state reconciliation, sticky pause cooldown, and
-no-analysis sentinel are now patched in the control plane; the current `21`
-actionable signatures need ordinary monitoring; the `204441Z` duplicate/noise
+no-analysis sentinel are now patched in the control plane; the current `14`
+actionable signatures need ordinary monitoring; the `205241Z` duplicate/noise
 synthesis identifies one more bounded producer/startup/analysis control-plane
-pass; the `205415Z` split synthesis leaves possible PR03A as minority
+pass; the `210039Z` split synthesis leaves possible PR03A as minority
 deferred replay/promotion work; and old historical bootstrap noise should stay
 separated from current live product evidence.
 None of this is final-stack fuzz validation or a filing unblocker.
