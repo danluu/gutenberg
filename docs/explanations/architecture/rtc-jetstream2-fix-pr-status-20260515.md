@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T05:35:33Z`
+Snapshot time: `2026-05-16T05:41:13Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -38,12 +38,12 @@ Current state:
   validation.
 - The earlier historical-noise scheduling problem is separated from current-run
   triage. The new collection selected coverage root
-  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T053502Z`,
-  but the collected `novelty-status.md` is empty. Use the latest trend packet,
-  generated at `2026-05-16T05:29:32Z`, as health evidence only: it shows
-  `likely_real_max: 0`, `24,372` coverage files, `12` unmet goals, and enabled
-  groups limited to HTTP persistence, async-server blocks, block-gauntlet, and
-  parser-transform. This is not proof of final-stack validation.
+  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T053837Z`.
+  The current monitor detail body is present again: it reports `0` current
+  visible likely-real failures, `24,512` coverage files, `36,114` total records,
+  `11` unmet goals, and seven enabled groups. `novelty-ws-async-server-blocks`
+  is paused on a current-run startup cooldown. This is health evidence only, not
+  proof of final-stack validation.
 - PR 13 repair/import is no longer missing. The repaired source-repo heads exist
   and passed the source-import gate with `63/63` focused CRDT tests, touched-file
   JS lint, and `git diff --check`.
@@ -115,47 +115,72 @@ current PR-content links for the repaired PR 13 split.
 Latest collected coverage-guided fuzz state:
 
 ```text
-collected_at_utc: 2026-05-16T05:35:28Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T053502Z
+collected_at_utc: 2026-05-16T05:41:09Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T053837Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
-raw novelty-status.md: 0 bytes in this input snapshot
+raw novelty-status.md updated: 2026-05-16T05:39:36.622Z
 ```
 
-The collector selected a fresh coverage root, but it did not capture a current
-monitor detail body in `raw/novelty-status.md`; that file is empty in this run.
-Do not carry forward the previous `05:29:39Z` output-dir counters as exact
-current monitor state. Use the trend packet below for trend/health only, and use
-the selected coverage root above only as the latest remote location.
+The current monitor snapshot reports:
+
+```text
+coverage files: 24512
+total records seen: 36114
+records processed this pass: 24
+new behavioral feature keys this pass: 1
+new CDP coverage hashes this pass: 1
+unmet goals: 11
+current output-dir signatures: 0
+current visible likely-real failures: 0
+historical signatures: 15928
+historical bootstrap stalls: 9665
+load1: 47.88 on 64 cores
+memory free: 429.0G
+```
+
+Current-output-dir triage is clean: one current triage root, zero signatures,
+zero visible likely-real failures, and zero current-run summary startup failures.
+Historical triage remains noisy but reporting-only: `88` observed prior roots,
+`15,928` signatures, `9,665` bootstrap stalls, and `pre_action_bootstrap_stall`
+as the dominant family. The monitor also warns that no behavioral coverage files
+were found under the newly selected output dir; treat that as a current-run
+quality caveat rather than a product failure.
+
+Enabled groups are `novelty-ws-common-blocks`, `novelty-ws-block-gauntlet`,
+`novelty-ws-parser-transform`, `novelty-ws-real-user-editing`,
+`novelty-ws-real-user-rich-text`, `novelty-ws-media-cross-entity`, and
+`novelty-http-persistence-probe`. `novelty-ws-async-server-blocks` is paused
+inside a 6-hour current-run pre-action startup cooldown from
+`2026-05-16T05:34:55.975Z`.
 
 Latest graph trend evidence:
 
 ```text
-generated_at_utc: 2026-05-16T05:29:32Z
-monitor passes: 1282
-coverage files: 272 -> 24372
-coverage files delta: 24100
-unmet coverage goals: 24 -> 12
+generated_at_utc: 2026-05-16T05:36:12Z
+monitor passes: 1286
+coverage files: 272 -> 24461
+coverage files delta: 24189
+unmet coverage goals: 24 -> 11
 likely_real_max: 0
 enabled groups current: novelty-http-persistence-probe,
-  novelty-ws-async-server-blocks, novelty-ws-block-gauntlet,
-  novelty-ws-parser-transform
-goals_unmet: 12
-pr_review_events: 278
+  novelty-ws-block-gauntlet, novelty-ws-parser-transform,
+  novelty-ws-real-user-editing, novelty-ws-real-user-rich-text,
+  novelty-ws-common-blocks, novelty-ws-media-cross-entity
+goals_unmet: 11
+pr_review_events: 280
 pr_suggested_net_loc_latest_total: 11801
-memory free: 426.7G
-load: 47.95 / 49.11 / 53.22 on 64 cores
+memory free: 422.7G
+load: 50.12 / 51.19 / 52.06 on 64 cores
 ```
 
 This supports longer-running coverage progress with no visible likely-real
 product failures so far. It also shows remaining coverage depth gaps: the
 largest unmet goals are CDP coverage records, real-user-editing successes,
 `core/html`, `core/more`, heading shortcut, `core/details`, reload-post action,
-`core/gallery`, body save/reload, `core/file`, undo/redo paragraph, and title
-save/reload. Treat those as fuzz-depth gaps, not PR blockers by themselves. The
-graph packet is not a final-stack validation result, and the empty
-`novelty-status.md` means this report should not state exact current monitor
-pause or current-run behavioral-record counters.
+`core/gallery`, body save/reload, `core/file`, and undo/redo paragraph. Treat
+those as fuzz-depth gaps, not PR blockers by themselves. The graph packet and
+current monitor snapshot are not final-stack validation results.
 
 Completed validation evidence:
 
@@ -185,18 +210,18 @@ The completed status-report persona syntheses at
 `20260516T035208Z-iter-1`, `20260516T035706Z-iter-2`,
 `20260516T040218Z-iter-3`, and final analysis
 `20260516T040744Z-final-analysis`, plus the split persona syntheses through
-`pr-split-20260516T052552Z-synthesis`, agree that the split needs status
+`pr-split-20260516T053120Z-synthesis`, agree that the split needs status
 updates, not a redesign. Cycle 90 split the old aggregate PR 15 into
 PR 15A/15B/15C, marked only `final/rtc-pr*` refs as PR-head candidates, and
 marked PR 7A/7B, PR 8, PR 14, and PR 15A-C blocked/not filing-ready. The
-`052552Z` split synthesis keeps that shape: the split is valid in concept, but
+`053120Z` split synthesis keeps that shape: the split is valid in concept, but
 not filing-ready until a bounded branch-shape/evidence pass resolves PR 7A on
 PR 6, then PR 7B, PR 14 after repaired PR 13C, and PR 15A -> PR 15B -> PR 15C
 after PR 14.
 
 - Replace stale 2026-05-15 coverage snapshots with the verified 2026-05-16
-  trend packet and the current coverage root. Do not invent exact current
-  monitor counters from `novelty-status.md`, because the collected file is empty.
+  trend packet, the current coverage root, and the nonempty current monitor
+  snapshot.
 - Say explicitly that current fuzz has `0` visible likely-real failures but is
   not final-stack validation.
 - Separate current-run triage from historical triage noise.
@@ -212,18 +237,21 @@ after PR 14.
   rich-text suffix, malformed-save residuals, or HTTP room-isolation residuals
   to the split.
 - The latest split persona recommends exactly one bounded branch-shape/evidence
-  job, preferably `rtc-final-branch-shape-blocked-prs-20260516T052552Z`, to
-  produce branch graph, containment, adjacent `range-diff`, diffstat/numstat,
-  focused tests, touched-file lint or `npm run lint:js`, and `git diff --check`.
-  This report update did not launch that job.
+  job, `rtc-final-branch-shape-blocked-prs-20260516T053120Z`, to produce branch
+  graph, containment, adjacent `range-diff`, diffstat/numstat, focused tests,
+  touched-file lint or `npm run lint:js`, and `git diff --check`. The latest
+  feedback-action created the prompt and launcher for that intended session, and
+  `current-pr-split.md` records the job as queued. Expected output path:
+  `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T053120Z/jobs/outputs/rtc-final-branch-shape-blocked-prs-*/report.md`.
+  This updater did not launch a duplicate job.
 - Do not launch new fuzz lanes, broad final-stack fuzzing, PR 13 repair/import,
   duplicate reload-hydration diagnostics, or another split-review loop from this
   updater. Existing coverage fuzz may continue, but final-stack fuzz still waits
   for resolved/rebased final branches.
-- The final status-analysis report predates the current `05:29Z` trend packet.
+- The final status-analysis report predates the current `05:36Z` trend packet.
   For group enablement and fuzz health, use `remote-status.md`,
-  `latest-trend-evidence.md`, and the empty `novelty-status.md` caveat in this
-  report. The latest duplicate-noise synthesis at
+  `latest-trend-evidence.md`, and the nonempty `novelty-status.md` snapshot in
+  this report. The latest duplicate-noise synthesis at
   `duplicate-noise-20260516T052614Z-synthesis` edited no files and changes no PR
   validation status; it keeps control-plane hardening as a separate follow-up.
 
@@ -231,9 +259,10 @@ The earlier duplicate/noise remediation completed the narrow novelty-monitor
 recovery: historical `pre_action_bootstrap_stall` noise is now
 advisory/reporting-only for browser group scheduling, stale historical holds are
 cleared, and startup cooldown checks are current-output-dir scoped. The latest
-input set does not include a nonempty current monitor snapshot, so do not
-describe browser scheduling as fully recovered. The latest duplicate/noise
-synthesis, `duplicate-noise-20260516T052614Z-synthesis`, converges on the same
+current monitor snapshot still has `novelty-ws-async-server-blocks` paused on a
+current-run startup cooldown, so do not describe browser scheduling as fully
+recovered. The latest duplicate/noise synthesis,
+`duplicate-noise-20260516T052614Z-synthesis`, converges on the same
 control-plane gap: strict no-user/no-action bootstrap/open/join stalls can still
 leak from runner summaries into triage and analysis as queued `timeout` or
 `unknown` variants. The next safe control-plane pass is to add the runner's
@@ -298,7 +327,7 @@ protection so reviewers can evaluate each CRDT invariant separately.
 
 The status loop now generates a branch-link audit and the report updater is
 required to use only rows marked `verified-content`. The latest audit was
-generated at `2026-05-16T05:35:33Z` from fetched `danluu` refs. A verified row
+generated at `2026-05-16T05:41:13Z` from fetched `danluu` refs. A verified row
 means the branch exists on `danluu` and has a non-empty diff against the listed
 base.
 
@@ -362,15 +391,16 @@ File order after export/rebase should be:
    ordered-integration blockers, and evidence hygiene are clean.
 
 Existing fuzz infrastructure can continue where healthy. The latest collection
-selected `run-20260516T053502Z` as the coverage root, but the collected
-`novelty-status.md` is empty, so this report should not state exact current
-monitor pause, current-run triage, or current-run behavioral-record counters.
-The trend packet still shows coverage growth to `24,372` files, `12` unmet
-goals, and `likely_real_max: 0`; that is health evidence only, not broad
-final-stack coverage or PR-filing validation.
+selected `run-20260516T053837Z` as the coverage root. The current monitor
+snapshot reports `24,512` coverage files, `36,114` total records, `11` unmet
+goals, seven enabled groups, `novelty-ws-async-server-blocks` paused on a
+current-run startup cooldown, and `0` current visible likely-real failures. The
+trend packet shows coverage growth to `24,461` files and `likely_real_max: 0`;
+that is health evidence only, not broad final-stack coverage or PR-filing
+validation.
 
-The next concrete branch action is the bounded branch-shape/evidence pass
-recommended by the latest split persona for PR 7A/7B, PR 14, and PR 15A/15B/15C.
-Do not start new fuzz lanes, broad final-stack fuzzing, PR 13 repair/import,
-duplicate reload-hydration harness work, or another split-review loop from this
-status update.
+The next concrete branch action is to consume the bounded branch-shape/evidence
+job output for PR 7A/7B, PR 14, and PR 15A/15B/15C once present, or run that
+single intended job if it was not actually started. Do not start new fuzz lanes,
+broad final-stack fuzzing, PR 13 repair/import, duplicate reload-hydration
+harness work, or another split-review loop from this status update.
