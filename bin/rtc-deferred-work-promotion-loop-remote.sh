@@ -96,18 +96,20 @@ rotated_families() {
 	done
 }
 
-advance_family_cursor() {
-	local families count cursor
+set_family_cursor_after() {
+	local family=$1
+	local families count cursor i
 	read -r -a families <<< "$FAMILIES"
 	count=${#families[@]}
 	if [ "$count" -eq 0 ]; then
 		return
 	fi
-	cursor=$(cat "$CURSOR_STATE" 2>/dev/null || printf '0')
-	if ! [[ "$cursor" =~ ^[0-9]+$ ]]; then
-		cursor=0
-	fi
-	printf '%s\n' $(( ( cursor + 1 ) % count )) > "$CURSOR_STATE"
+	for (( i = 0; i < count; i++ )); do
+		if [ "${families[$i]}" = "$family" ]; then
+			printf '%s\n' $(( ( i + 1 ) % count )) > "$CURSOR_STATE"
+			return
+		fi
+	done
 }
 
 family_title() {
@@ -412,6 +414,20 @@ write_status() {
 		echo "## Launch History"
 		tail -40 "$STATE" 2>/dev/null || true
 		echo
+		echo "## Family Fairness"
+		for family in $FAMILIES; do
+			awk -F '\t' -v family="$family" '
+				$2 == family { count++; last = $1 }
+				END {
+					if (count == "") {
+						print family "\tlaunches=0\tlast=never"
+					} else {
+						print family "\tlaunches=" count "\tlast_epoch=" last
+					}
+				}
+			' "$STATE" 2>/dev/null
+		done
+		echo
 		echo "## Local Candidate Branches"
 		git -C "$SRC" for-each-ref --sort=-creatordate --format='%(creatordate:iso8601)%09%(refname:short)%09%(objectname:short)' 'refs/heads/deferred/rtc-*' 2>/dev/null |
 			head -80 || true
@@ -440,6 +456,8 @@ while true; do
 		continue
 	fi
 
+	launched_any=0
+	last_launched_family=""
 	while IFS= read -r family; do
 		active=$(active_deferred_sessions)
 		if [ "$active" -ge "$MAX_ACTIVE_JOBS" ]; then
@@ -454,9 +472,16 @@ while true; do
 			log "family launched recently family=$family"
 			continue
 		fi
-		launch_family_job "$family" || true
+		if launch_family_job "$family"; then
+			launched_any=1
+			last_launched_family="$family"
+		fi
 	done < <( rotated_families )
-	advance_family_cursor
+	if [ "$launched_any" -eq 1 ]; then
+		set_family_cursor_after "$last_launched_family"
+	else
+		log "no eligible deferred family launched; cursor unchanged"
+	fi
 
 	write_status
 	sleep "$CYCLE_SLEEP_SECONDS"
