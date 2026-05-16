@@ -356,6 +356,49 @@ with open(os.path.join(out, "data", "fuzz_level_mix.csv"), "w", newline="") as f
 			])
 
 execution_counts = defaultdict(lambda: [0, 0, 0])
+
+def event_execution_units(event, meta, campaign):
+	for key in ("executionUnitCount", "executionUnits", "unitExecutionCount", "testCaseCount"):
+		try:
+			value = int(event.get(key) or 0)
+		except (TypeError, ValueError):
+			value = 0
+		if value > 0:
+			return value
+
+	fuzz_level = str(meta.get("fuzz_level") or "").lower()
+
+	if fuzz_level == "unit-property" or campaign == "unit-property":
+		try:
+			seed_count = max(1, int(event.get("seedCount") or 1))
+			case_count = max(0, int(event.get("caseCount") or 0))
+			placement_case_count = max(0, int(event.get("placementCaseCount") or 0))
+			fixed_case_count = max(0, int(event.get("fixedUnitCaseCount") or 4))
+		except (TypeError, ValueError):
+			return 1
+		unit_cases = seed_count * (case_count + placement_case_count) + fixed_case_count
+		return max(1, unit_cases)
+
+	if fuzz_level == "coverage-guided-lower-level":
+		try:
+			input_count = int(event.get("inputCount") or 0)
+		except (TypeError, ValueError):
+			input_count = 0
+		if input_count > 0:
+			return input_count
+
+	if fuzz_level in ("backend-api", "protocol-server"):
+		try:
+			case_count = int(event.get("caseCount") or 0)
+			seed_count = max(1, int(event.get("seedCount") or 1))
+		except (TypeError, ValueError):
+			case_count = 0
+			seed_count = 1
+		if case_count > 0:
+			return case_count * seed_count
+
+	return 1
+
 for campaign, base in campaign_roots:
 	if not os.path.isdir(base):
 		continue
@@ -404,9 +447,10 @@ for campaign, base in campaign_roots:
 							meta["transport"] or event.get("transport", ""),
 							meta["profile"] or event.get("actionProfile", ""),
 						)
-						execution_counts[key][0] += 1
-						execution_counts[key][1] += 1 if label == "primary" else 0
-						execution_counts[key][2] += 1 if event.get("ok") else 0
+						units = event_execution_units(event, meta, campaign)
+						execution_counts[key][0] += units
+						execution_counts[key][1] += units if label == "primary" else 0
+						execution_counts[key][2] += units if event.get("ok") else 0
 			except OSError:
 				continue
 

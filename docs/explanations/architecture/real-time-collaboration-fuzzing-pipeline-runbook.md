@@ -149,12 +149,15 @@ concentrated in browser/e2e lanes.
 The graph refresh watcher uses `bin/rtc-trend-collect-graph-inputs.sh` to copy
 supervisor group history from Jetstream and write
 `data/fuzz_level_mix.csv`. It also derives `data/fuzz_level_executions.csv`
-from lane `events.ndjson` files by counting `seed-attempt-complete` records. The
-execution metric is completed seed attempts, including rechecks; it is a real
-runner counter, not just a supervisor launch count. `bin/rtc-trend-run-codex-refresh.sh`
-tells the graph refresh Codex job to preserve and interpret the level-mix and
-execution-rate plots, and `bin/rtc-trend-generate-evidence.sh` includes the
-latest level-mix and execution summaries in the persona-loop evidence packet.
+from lane `events.ndjson` files. The execution metric is a level-specific
+runner counter, not just a supervisor launch count: browser/e2e lanes count
+completed seed attempts, unit/property lanes count generated unit/property
+cases, coverage-guided lower-level lanes count covered inputs when emitted, and
+backend/protocol lanes count emitted cases. Rechecks count as executions.
+`bin/rtc-trend-run-codex-refresh.sh` tells the graph refresh Codex job to
+preserve and interpret the level-mix and execution-rate plots, and
+`bin/rtc-trend-generate-evidence.sh` includes the latest level-mix and
+execution summaries in the persona-loop evidence packet.
 
 `bin/rtc-fuzz-level-mix-persona-loop-remote.sh` starts the continuous
 fuzz-level mix controller on Jetstream2. This loop must not wait for stalls,
