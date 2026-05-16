@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T08:33:26Z`
+Snapshot time: `2026-05-16T08:37:20Z`
 
 Trigger event:
-`pr-split-2026-05-16T08-32-14Z-20260516T082656Z`
+`duplicate-noise-2026-05-16T08-33-11Z-24`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -18,7 +18,7 @@ Base handoff:
 `docs/explanations/architecture/rtc-likely-real-bug-handoff-20260514.md`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T08-32-14Z-20260516T082656Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T08-33-11Z-24/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -59,15 +59,17 @@ Other split decisions from the latest persona analysis:
   rich-text suffix corruption, HTTP room isolation, and `PR 1A`
   evidence-only/deferred.
 
-The next maintainer-facing branch step is one bounded PR 13 restack/adjudication
-job using the Cycle 110 evidence. This status update did not launch that job.
+The next maintainer-facing branch step is already in progress: the latest
+`pr-split-20260516T082656Z-feedback-action.md` launched one bounded PR 13
+identity-first source-retirement adjudication job from the Cycle 110 evidence.
 Do not start broad fuzzing, final-stack fuzzing, reload diagnostics, duplicate
-tri-split work, or `PR 6B` replay until PR 13 has independently green filing
-heads.
+tri-split work, a second PR 13 adjudication job, or `PR 6B` replay until that
+job either produces independently green PR 13 filing heads or documents a
+collapsed source-retirement/identity-smear PR.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T08:33:22Z`.
+The collected remote status input was generated at `2026-05-16T08:37:15Z`.
 
 The fix-planning repo is currently checked out at:
 
@@ -97,7 +99,7 @@ That stack still has modified fuzz harness files and many untracked fuzz and
 analysis scripts. It is active validation infrastructure, not the final PR
 stack.
 
-The branch-link audit was generated at `2026-05-16T08:33:26Z` from fetched
+The branch-link audit was generated at `2026-05-16T08:37:20Z` from fetched
 `danluu` refs. The proposed PR table below uses only rows marked
 `verified-content` as PR-content links, or explicitly says
 `No verified branch link yet`.
@@ -152,7 +154,7 @@ final validation.
 | PR 11 | Explicit-base top-level block operations | [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr11-explicit-base-top-level-ops) | 2 | +1145 / -4 | stacked on PR 10 |
 | PR 12 | Previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr12-previous-local-cache-top-level-ops) | 2 | +1391 / -5 | verified branch; final export/rebase still required |
 | PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 | +1151 / -25 | repaired first PR 13 head |
-| PR 13B0 | Identity-smear/provenance guard before source retirement | No verified branch link yet | TBD | TBD | preferred repair step after PR 13A; must make later source-retirement heads independently green |
+| PR 13B0 | Identity-smear/provenance guard before source retirement | No verified branch link yet | TBD | TBD | preferred repair step after PR 13A; Cycle 112 adjudication job launched, and any filed head must pass focused CRDT tests |
 | PR 13B1 | Direct cross-parent source retirement | No verified branch link yet | 2 | about +484 / -0 | do not file current failed subhead; repair/adjudicate with focused CRDT tests |
 | PR 13B2 | Current-only cross-parent source retirement | No verified branch link yet | 2 | about +412 / -4 | do not file current failed subhead; repair/adjudicate with focused CRDT tests |
 | PR 13B3 | Explicit-base source retirement | No verified branch link yet | 2 | about +778 / -2 | do not file current failed subhead; repair/adjudicate with focused CRDT tests |
@@ -179,7 +181,7 @@ Old verified branches that are now prior art only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T08:33:22Z
+collected_at_utc: 2026-05-16T08:37:15Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T080053Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -188,22 +190,22 @@ fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 Latest novelty monitor snapshot:
 
 ```text
-updated: 2026-05-16T08:31:40.085Z
-coverage files: 27381
-total records seen: 40203
-records processed this pass: 54
-coverage lines seen this pass: 41534
+updated: 2026-05-16T08:35:48.572Z
+coverage files: 27453
+total records seen: 40309
+records processed this pass: 51
+coverage lines seen this pass: 41646
 summary files read this pass: 7
 summary startup failures processed this pass: 0
-new behavioral feature keys this pass: 9
-new CDP coverage hashes this pass: 9
+new behavioral feature keys this pass: 10
+new CDP coverage hashes this pass: 10
 unmet goals: 9
 likely-real visible: 0
 likely-real merged duplicates: 0
 likely-real oracle/noise questions: 0
-load1: 75.53 / 64 cores
-memory: 417.6G free / 492.0G total
-headroom for adding groups: no
+load1: 57.54 / 64 cores
+memory: 419.4G free / 492.0G total
+headroom for adding groups: yes
 ```
 
 Enabled coverage-guided groups:
@@ -252,16 +254,16 @@ top semantic family: pre_action_bootstrap_stall
 external live sidecar scope:
 triage roots: 3
 triage state files: 98
-signatures: 9473
-bootstrap stalls: 6968
-top duplicate family share: 0.7199
+signatures: 9530
+bootstrap stalls: 7002
+top duplicate family share: 0.7192
 top semantic family: pre_action_bootstrap_stall
 
 combined reporting scope:
 triage roots: 101
 triage state files: 253
-signatures: 18274
-bootstrap stalls: 11177
+signatures: 18331
+bootstrap stalls: 11211
 top duplicate family share: 0.5982
 top semantic family: pre_action_bootstrap_stall
 ```
@@ -317,7 +319,7 @@ PR 13 repair-missing language, separate current-run fuzz health from historical
 noise, keep evidence-only families out of the split, and make filing gates
 explicit. Some older status-analysis details are stale, including the claim
 that only an HTTP persistence probe was enabled; the raw
-`2026-05-16T08:31:40Z` novelty snapshot is the source for the current enabled
+`2026-05-16T08:35:48Z` novelty snapshot is the source for the current enabled
 WS groups and current triage status.
 
 The newest split persona synthesis is
@@ -338,12 +340,20 @@ The newest split persona synthesis is
   focused evidence lands.
 
 The matching latest pr-split feedback-action,
-`pr-split-20260516T082656Z-feedback-action.md`, is zero bytes, so this cycle
-records no newer automatic split action. The previous actionable feedback file,
-`pr-split-20260516T080500Z-feedback-action.md`, launched
-`rtc-pr13b-trisplit-shape-check-20260516T080500Z`; the latest synthesis consumes
-the resulting Cycle 110 evidence and says that tri-split needs repair, not
-filing.
+`pr-split-20260516T082656Z-feedback-action.md`, is now actionable. It updated
+`current-pr-split.md` with Cycle 112 status, marked the Cycle 108/110
+`PR 13B1/13B2/13B3` tri-split as red candidate evidence rather than
+filing-ready content, and launched exactly one bounded job:
+
+```text
+session: rtc-pr13-identity-first-source-retirement-check-20260516T082656Z
+script:  /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T082656Z/jobs/run-rtc-pr13-identity-first-source-retirement-check-20260516T082656Z.sh
+output:  /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T082656Z/jobs/outputs/rtc-pr13-identity-first-source-retirement-check-20260516T082656Z
+```
+
+That job must produce repaired/replaced PR 13 refs with every filed head green,
+or an explicit collapse decision. No broad fuzz, final-stack fuzz, reload
+diagnostics, duplicate tri-split shaping, or `PR 6B` replay was launched.
 
 The newest duplicate-noise synthesis is
 `duplicate-noise-20260516T081555Z-synthesis.md`. It changes no product PR
@@ -369,7 +379,8 @@ product-evidence visibility. `node --check bin/rtc-browser-fuzz-supervisor.mjs`
 passed, the coverage-guided supervisor was restarted, and the active state shows
 `strictStartupRecords`, `productEvidenceRecords`, `otherRecords`, and
 `strictStartupRecordShare`. Current-run triage is still absent
-(`signatures=0`), and external live sidecar noise remains advisory.
+(`signatures=0` in the `08:35:48Z` novelty snapshot), and external live sidecar
+noise remains advisory.
 
 This control-plane work is useful, but it is not a substitute for PR 13 repair,
 focused post-rebase tests, or fresh combined-stack validation.
@@ -395,9 +406,9 @@ Do not file a single mega-PR and do not file the large stacked
 
 Before filing any maintainer-facing PR, require:
 
-1. Repair or adjudicate PR 13 so every filed intermediate head passes focused
-   CRDT tests; otherwise collapse the source-retirement plus identity-smear
-   work into one complete PR.
+1. Consume the launched Cycle 112 PR 13 adjudication job and file only repaired
+   intermediate heads that pass focused CRDT tests; otherwise collapse the
+   source-retirement plus identity-smear work into one complete PR.
 2. Rebuild the final combined validation stack from explicit accepted heads
    only. Do not wildcard-import blocked candidates such as `final/rtc-pr06b-*`.
 3. Shape and audit PR 5A/5B/5C and narrow PR 8, or explicitly defer them.
@@ -413,7 +424,8 @@ Before filing any maintainer-facing PR, require:
 
 Existing fuzz infrastructure can continue where healthy. The current populated
 novelty snapshot has `0` visible likely-real failures, `9` unmet goals,
-`7` enabled WS coverage-guided groups, no paused groups, and no headroom for
+`7` enabled WS coverage-guided groups, no paused groups, and headroom for
 adding groups, but none of this is broad final-stack coverage or PR-filing
-validation. Do not start broad final-stack fuzzing until the rebased combined
-stack exists.
+validation. Do not add more groups solely because the latest snapshot reports
+headroom; PR 13 repair and a rebased combined stack still gate broad final-stack
+fuzzing.
