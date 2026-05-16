@@ -167,7 +167,8 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T18:00:00Z,browser-e2e,1703,893,82,FALSE,3,62284,6812
 2026-05-16T18:15:00Z,browser-e2e,1615,849,72,FALSE,3,63899,6460
 2026-05-16T18:30:00Z,browser-e2e,1588,831,73,FALSE,3,65487,6352
-2026-05-16T18:45:00Z,browser-e2e,1652,875,88,FALSE,3,67139,6608
+2026-05-16T18:45:00Z,browser-e2e,1663,882,89,FALSE,3,67150,6652
+2026-05-16T19:00:00Z,browser-e2e,851,454,44,FALSE,3,68001,3404
 2026-05-15T00:45:00Z,transport-integration,1,1,0,FALSE,1,1,4
 2026-05-15T01:00:00Z,transport-integration,3,2,0,FALSE,1,4,12
 2026-05-15T01:15:00Z,transport-integration,25,17,0,FALSE,2,29,100
@@ -337,6 +338,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T18:15:00Z,transport-integration,0,0,0,FALSE,0,3006,0
 2026-05-16T18:30:00Z,transport-integration,0,0,0,FALSE,0,3006,0
 2026-05-16T18:45:00Z,transport-integration,0,0,0,FALSE,0,3006,0
+2026-05-16T19:00:00Z,transport-integration,0,0,0,FALSE,0,3006,0
 2026-05-15T00:45:00Z,unit-property,0,0,0,FALSE,0,0,0
 2026-05-15T01:00:00Z,unit-property,0,0,0,FALSE,0,0,0
 2026-05-15T01:15:00Z,unit-property,0,0,0,FALSE,0,0,0
@@ -506,6 +508,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T18:15:00Z,unit-property,38528,38528,37324,FALSE,1,1060004,154112
 2026-05-16T18:30:00Z,unit-property,30100,30100,30100,FALSE,1,1090104,120400
 2026-05-16T18:45:00Z,unit-property,48160,48160,48160,FALSE,1,1138264,192640
+2026-05-16T19:00:00Z,unit-property,18060,18060,18060,FALSE,1,1156324,72240
 2026-05-15T00:45:00Z,coverage-guided-lower-level,0,0,0,FALSE,0,0,0
 2026-05-15T01:00:00Z,coverage-guided-lower-level,0,0,0,FALSE,0,0,0
 2026-05-15T01:15:00Z,coverage-guided-lower-level,0,0,0,FALSE,0,0,0
@@ -674,7 +677,8 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T18:00:00Z,coverage-guided-lower-level,5120,5120,5120,FALSE,1,30422,20480
 2026-05-16T18:15:00Z,coverage-guided-lower-level,7680,7680,7680,FALSE,1,38102,30720
 2026-05-16T18:30:00Z,coverage-guided-lower-level,7616,7616,7616,FALSE,1,45718,30464
-2026-05-16T18:45:00Z,coverage-guided-lower-level,7746,7746,7746,FALSE,1,53464,30984
+2026-05-16T18:45:00Z,coverage-guided-lower-level,7810,7810,7810,FALSE,1,53528,31240
+2026-05-16T19:00:00Z,coverage-guided-lower-level,3968,3968,3968,FALSE,1,57496,15872
 2026-05-15T00:45:00Z,backend-api,0,0,0,FALSE,0,0,0
 2026-05-15T01:00:00Z,backend-api,0,0,0,FALSE,0,0,0
 2026-05-15T01:15:00Z,backend-api,0,0,0,FALSE,0,0,0
@@ -844,6 +848,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T18:15:00Z,backend-api,0,0,0,FALSE,0,0,0
 2026-05-16T18:30:00Z,backend-api,0,0,0,FALSE,0,0,0
 2026-05-16T18:45:00Z,backend-api,0,0,0,FALSE,0,0,0
+2026-05-16T19:00:00Z,backend-api,0,0,0,FALSE,0,0,0
 2026-05-15T00:45:00Z,protocol-server,0,0,0,FALSE,0,0,0
 2026-05-15T01:00:00Z,protocol-server,0,0,0,FALSE,0,0,0
 2026-05-15T01:15:00Z,protocol-server,0,0,0,FALSE,0,0,0
@@ -1013,6 +1018,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T18:15:00Z,protocol-server,0,0,0,FALSE,0,0,0
 2026-05-16T18:30:00Z,protocol-server,0,0,0,FALSE,0,0,0
 2026-05-16T18:45:00Z,protocol-server,0,0,0,FALSE,0,0,0
+2026-05-16T19:00:00Z,protocol-server,0,0,0,FALSE,0,0,0
 2026-05-15T00:45:00Z,fuzz-assertion,0,0,0,FALSE,0,0,0
 2026-05-15T01:00:00Z,fuzz-assertion,0,0,0,FALSE,0,0,0
 2026-05-15T01:15:00Z,fuzz-assertion,0,0,0,FALSE,0,0,0
@@ -1182,6 +1188,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T18:15:00Z,fuzz-assertion,0,0,0,FALSE,0,0,0
 2026-05-16T18:30:00Z,fuzz-assertion,0,0,0,FALSE,0,0,0
 2026-05-16T18:45:00Z,fuzz-assertion,0,0,0,FALSE,0,0,0
+2026-05-16T19:00:00Z,fuzz-assertion,0,0,0,FALSE,0,0,0
 2026-05-15T00:45:00Z,other,0,0,0,FALSE,0,0,0
 2026-05-15T01:00:00Z,other,0,0,0,FALSE,0,0,0
 2026-05-15T01:15:00Z,other,0,0,0,FALSE,0,0,0
@@ -1351,3 +1358,4 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,approximat
 2026-05-16T18:15:00Z,other,0,0,0,FALSE,0,0,0
 2026-05-16T18:30:00Z,other,0,0,0,FALSE,0,0,0
 2026-05-16T18:45:00Z,other,0,0,0,FALSE,0,0,0
+2026-05-16T19:00:00Z,other,0,0,0,FALSE,0,0,0
