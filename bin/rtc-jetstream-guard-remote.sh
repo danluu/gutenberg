@@ -5,6 +5,8 @@ NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.1
 CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
 REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
+COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
+COVERAGE_START_LOCK=$COVERAGE_BASE/start.lock
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 LOG_DIR=$BASE/logs
 PID_FILE=$BASE/guard.pid
@@ -25,6 +27,49 @@ log() {
 
 has_session() {
 	tmux has-session -t "$1" 2>/dev/null
+}
+
+file_age_seconds() {
+	local file=$1
+	local now mtime
+
+	[ -e "$file" ] || return 1
+	now=$(date -u +%s)
+	mtime=$(stat -c %Y "$file" 2>/dev/null) || return 1
+	printf '%s\n' "$(( now - mtime ))"
+}
+
+coverage_supervisor_in_startup_grace() {
+	local grace=${RTC_GUARD_COVERAGE_SUPERVISOR_STARTUP_GRACE_SECONDS:-420}
+	local age
+
+	has_session rtc-coverage-guided-novelty || return 1
+	has_session rtc-coverage-guided-watchdog || return 1
+	has_session rtc-coverage-guided-supervisor && return 1
+	age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt") || return 1
+	if [ "$age" -ge 0 ] && [ "$age" -lt "$grace" ]; then
+		log "coverage supervisor missing within startup grace age=${age}s grace=${grace}s"
+		return 0
+	fi
+	return 1
+}
+
+coverage_start_in_progress() {
+	local grace=${RTC_GUARD_COVERAGE_START_GRACE_SECONDS:-420}
+	local age
+
+	[ -e "$COVERAGE_START_LOCK" ] || return 1
+	if (
+		flock -n 8
+	) 8>>"$COVERAGE_START_LOCK"; then
+		return 1
+	fi
+	age=$(file_age_seconds "$COVERAGE_START_LOCK") || return 1
+	if [ "$age" -ge 0 ] && [ "$age" -lt "$grace" ]; then
+		log "coverage start already in progress age=${age}s grace=${grace}s"
+		return 0
+	fi
+	return 1
 }
 
 record_restart() {
@@ -162,9 +207,28 @@ run_loop() {
 	touch "$EVENTS"
 	log "guard loop started pid=$$"
 	while true; do
-		if ! has_session rtc-coverage-guided-novelty ||
-			! has_session rtc-coverage-guided-supervisor ||
-			! has_session rtc-coverage-guided-watchdog; then
+		coverage_needs_restart=0
+			if ! has_session rtc-coverage-guided-novelty; then
+				if coverage_start_in_progress; then
+					:
+				else
+					coverage_needs_restart=1
+				fi
+			elif ! has_session rtc-coverage-guided-watchdog; then
+				if coverage_start_in_progress; then
+					:
+				else
+					log "coverage watchdog missing; restarting watchdog sidecar"
+					/tmp/start_rtc_coverage_guided_watchdog_remote.sh >> "$LOG_DIR/coverage-watchdog-start.log" 2>&1 || log "coverage watchdog start failed"
+				fi
+			elif ! has_session rtc-coverage-guided-supervisor; then
+				if coverage_start_in_progress || coverage_supervisor_in_startup_grace; then
+					:
+			else
+				coverage_needs_restart=1
+			fi
+		fi
+		if [ "$coverage_needs_restart" = 1 ]; then
 			restart_pool coverage "missing coverage-guided tmux session"
 		fi
 
@@ -201,8 +265,13 @@ case "${1:-start}" in
 		fi
 		clear_stale_lock_holder
 		sleep 1
-		nohup "$0" run >> "$LOG_DIR/guard.out" 2>&1 &
-		echo "guard pid=$!"
+		setsid -f "$0" run >> "$LOG_DIR/guard.out" 2>&1 < /dev/null &
+		sleep 1
+		if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+			echo "guard pid=$(cat "$PID_FILE")"
+		else
+			echo "guard start requested"
+		fi
 		;;
 	run)
 		run_loop

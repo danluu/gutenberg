@@ -244,10 +244,87 @@ async function runWpInstallHealthCheck() {
 	}
 }
 
+async function runWpEnvLifecycleCommand( action, timeoutMs ) {
+	const result = spawn(
+		RESOLVED_NPM_BIN,
+		[ 'run', 'wp-env-test', '--', action ],
+		{
+			cwd: REPO_ROOT,
+			env: {
+				...process.env,
+				PATH: SHARED_PATH,
+			},
+			stdio: [ 'ignore', 'pipe', 'pipe' ],
+		}
+	);
+	const chunks = [];
+	const timeout = setTimeout( () => {
+		result.kill( 'SIGTERM' );
+		setTimeout( () => result.kill( 'SIGKILL' ), 5000 ).unref();
+	}, timeoutMs );
+
+	result.stdout.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
+	result.stderr.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
+
+	const { code } = await new Promise( ( resolve, reject ) => {
+		result.on( 'error', reject );
+		result.on( 'close', ( exitCode ) => {
+			clearTimeout( timeout );
+			resolve( { code: exitCode } );
+		} );
+	} );
+
+	return {
+		code,
+		output: chunks.join( '' ),
+	};
+}
+
+function truncateOutput( output ) {
+	const trimmed = String( output ?? '' ).trim();
+	if ( trimmed.length <= 4000 ) {
+		return trimmed;
+	}
+	return `${ trimmed.slice( 0, 4000 ) }\n...<truncated>`;
+}
+
+async function refreshWpEnvAfterFailedHealthCheck( error ) {
+	process.stderr.write(
+		`wp-env-test install health check failed; restarting wp-env-test once before launching lanes.\n${ truncateOutput(
+			error.stack ?? error.message
+		) }\n`
+	);
+
+	const stopResult = await runWpEnvLifecycleCommand( 'stop', 120000 );
+	if ( stopResult.code !== 0 ) {
+		process.stderr.write(
+			`wp-env-test stop exited with code=${ stopResult.code } during health recovery.\n${ truncateOutput(
+				stopResult.output
+			) }\n`
+		);
+	}
+
+	const startResult = await runWpEnvLifecycleCommand(
+		'start',
+		10 * 60 * 1000
+	);
+	if ( startResult.code !== 0 ) {
+		throw new Error(
+			`wp-env-test restart failed during health recovery.\n${ startResult.output }`
+		);
+	}
+}
+
 async function main() {
 	await ensureLocalNodeToolchain();
 	await runWpEnvStatusCheck();
-	await runWpInstallHealthCheck();
+	try {
+		await runWpInstallHealthCheck();
+	} catch ( error ) {
+		await refreshWpEnvAfterFailedHealthCheck( error );
+		await runWpEnvStatusCheck();
+		await runWpInstallHealthCheck();
+	}
 	await fs.mkdir( OUTPUT_DIR, { recursive: true } );
 
 	if ( START_SEEDS && START_SEEDS.length !== LANE_COUNT ) {

@@ -1006,7 +1006,7 @@ Optional expansion controls:
     forced three-user late joins. The policy uses the actual late-join lifecycle
     key, not just `users:3`.
 -   `RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION=1` and
-    `RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD=8`: keep the coverage queue
+    `RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD=3`: keep the coverage queue
     from going empty. Each monitor pass checks the current unmet coverage-goal
     count after ingesting coverage. If the count is at or below the threshold,
     the monitor persists a bounded wave of new explicit goals in
@@ -1028,6 +1028,10 @@ Optional expansion controls:
     are still increasing. This catches the case where the fuzzer is broadening
     but not completing valuable profiles such as media/cross-entity,
     multi-reload lifecycle, parser serialization, or real-user editing.
+-   `RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS=8`: when quality
+    issues persist and the host has no headroom, keep the current gap groups
+    running and rotate out extra canary/top-off groups so browser slots produce
+    completed coverage records instead of startup stalls.
 
 Example durable novelty monitor:
 
@@ -1042,7 +1046,7 @@ while true; do
 	RTC_FUZZ_NOVELTY_WP_ENV_PORT=8889 \
 	RTC_FUZZ_NOVELTY_WS_PORT=18991 \
 	RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION=1 \
-	RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD=8 \
+	RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD=3 \
 	RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION=rtc-fuzz-novelty-supervisor \
 	node bin/rtc-browser-fuzz-novelty-monitor.mjs
 	code=\$?

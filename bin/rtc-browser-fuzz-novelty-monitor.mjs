@@ -26,6 +26,9 @@ const LOG_PATH = path.join( OUTPUT_DIR, 'novelty-monitor.log' );
 const SUPERVISOR_SESSION =
 	process.env.RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION ??
 	'rtc-fuzz-novelty-supervisor-20260502';
+const FORCE_COVERAGE_GUIDED_POLICY_GUARDS =
+	process.env.RTC_FUZZ_NOVELTY_ALLOW_DISABLED_POLICY_GUARDS !== '1' &&
+	SUPERVISOR_SESSION === 'rtc-coverage-guided-supervisor';
 const INTERVAL_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_INTERVAL_MS',
 	5 * 60 * 1000
@@ -41,9 +44,16 @@ const BASE_URL =
 const WP_ENV_PORT = process.env.RTC_FUZZ_NOVELTY_WP_ENV_PORT ?? '8889';
 const WS_PORT = process.env.RTC_FUZZ_NOVELTY_WS_PORT ?? '18991';
 const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
-const OBSERVED_RUN_DIRS = parsePathList(
-	process.env.RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS
-).concat( OUTPUT_DIR );
+const CURRENT_RUN_DIRS = [ OUTPUT_DIR ];
+const HISTORICAL_OBSERVED_RUN_DIRS = uniquePathList(
+	parsePathList( process.env.RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS ).filter(
+		( root ) => path.resolve( root ) !== path.resolve( OUTPUT_DIR )
+	)
+);
+const OBSERVED_RUN_DIRS = uniquePathList( [
+	...HISTORICAL_OBSERVED_RUN_DIRS,
+	...CURRENT_RUN_DIRS,
+] );
 const FORCE_START = process.env.RTC_FUZZ_NOVELTY_FORCE_START === '1';
 const START_SUPERVISOR = process.env.RTC_FUZZ_NOVELTY_START_SUPERVISOR !== '0';
 const INCLUDE_RECHECK_COVERAGE =
@@ -60,10 +70,16 @@ const TARGET_ENABLED_GROUPS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS',
 	3
 );
+const LOAD_HEADROOM_MULTIPLIER = getPositiveNumberEnv(
+	'RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER',
+	1.25
+);
 const PAUSE_ON_STARTUP_FAILURE =
-	process.env.RTC_FUZZ_NOVELTY_PAUSE_ON_STARTUP_FAILURE !== '0';
+	process.env.RTC_FUZZ_NOVELTY_PAUSE_ON_STARTUP_FAILURE !== '0' ||
+	FORCE_COVERAGE_GUIDED_POLICY_GUARDS;
 const PAUSE_ON_TRIAGE_NOISE =
-	process.env.RTC_FUZZ_NOVELTY_PAUSE_ON_TRIAGE_NOISE !== '0';
+	process.env.RTC_FUZZ_NOVELTY_PAUSE_ON_TRIAGE_NOISE !== '0' ||
+	FORCE_COVERAGE_GUIDED_POLICY_GUARDS;
 const STARTUP_FAILURE_LIMIT = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_LIMIT',
 	2
@@ -160,11 +176,23 @@ const COVERAGE_QUALITY_STARTUP_FAILURE_MIN_RATE = getPositiveNumberEnv(
 	'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_STARTUP_FAILURE_MIN_RATE',
 	0.3
 );
+const STARTUP_FAILURE_RATE_LIMIT = getPositiveNumberEnv(
+	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_RATE_LIMIT',
+	COVERAGE_QUALITY_STARTUP_FAILURE_MIN_RATE
+);
+const STARTUP_FAILURE_MIN_RECORDS_FOR_RATE = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_MIN_RECORDS_FOR_RATE',
+	COVERAGE_QUALITY_COMPLETION_MIN_RECORDS
+);
+const COVERAGE_QUALITY_MAX_ENABLED_GROUPS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS',
+	8
+);
 const AUTO_GOAL_EXPANSION_ENABLED =
 	process.env.RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION !== '0';
 const AUTO_GOAL_EXPANSION_THRESHOLD = getNonNegativeIntegerEnv(
 	'RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD',
-	8
+	3
 );
 const AUTO_GOAL_EXPANSION_BATCH_SIZE = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_BATCH_SIZE',
@@ -203,6 +231,14 @@ const TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES',
 	10
 );
+const RUN_LOCAL_NOISE_POLICY_VERSION = 3;
+const HISTORICAL_KNOWN_NOISE_FAMILIES = new Set( [
+	'pre_action_bootstrap_stall',
+	'pre_action_awareness_stall',
+	'linebreak_representation_drift',
+	'cover_overlay_attribute_canonicalization',
+	'rest_meta_database_error',
+] );
 const REAL_USER_EDITING_ACTION_LABELS = [
 	'ui-type-paragraph',
 	'ui-format-paragraph',
@@ -243,7 +279,10 @@ const ACTION_COVERAGE_GROUPS = {
 	'ui-type-paragraph': [ 'novelty-ws-real-user-editing' ],
 	'ui-format-paragraph': [ 'novelty-ws-real-user-editing' ],
 	'ui-type-title': [ 'novelty-ws-real-user-editing' ],
-	'ui-undo-redo-paragraph': [ 'novelty-ws-real-user-editing' ],
+	'ui-undo-redo-paragraph': [
+		'novelty-ws-real-user-editing',
+		'novelty-ws-real-user-rich-text',
+	],
 	'ui-heading-shortcut': [ 'novelty-ws-real-user-editing' ],
 	'ui-paste-paragraph': [ 'novelty-ws-real-user-rich-text' ],
 	'ui-cut-copy-paragraph': [ 'novelty-ws-real-user-rich-text' ],
@@ -252,12 +291,15 @@ const ACTION_COVERAGE_GROUPS = {
 	'ui-composition-paragraph': [ 'novelty-ws-real-user-rich-text' ],
 	'ui-toolbar-format-paragraph': [ 'novelty-ws-real-user-rich-text' ],
 	'ui-table-cell-edit': [ 'novelty-ws-real-user-rich-text' ],
-	'reload-post-action': [ 'novelty-ws-real-user-editing' ],
+	'reload-post-action': [
+		'novelty-ws-real-user-editing',
+		'novelty-ws-real-user-rich-text',
+	],
 	'insert-async-server-block': [ 'novelty-ws-async-server-blocks' ],
 	'insert-media-cross-entity-block': [ 'novelty-ws-media-cross-entity' ],
 };
 const REQUIRED_ACTION_LABELS = Object.keys( ACTION_COVERAGE_GROUPS );
-const EXPANSION_POLICY_VERSION = 12;
+const EXPANSION_POLICY_VERSION = 14;
 
 const WS_ENV_DEFAULTS = {
 	GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
@@ -265,6 +307,7 @@ const WS_ENV_DEFAULTS = {
 	GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '480000',
 	RTC_FUZZ_ANALYSIS_RECHECKS: '1',
 	RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '0',
+	RTC_FUZZ_BOOT_TIMEOUT_MS: '60000',
 	RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
 	RTC_FUZZ_RUN_TIMEOUT_MS: '720000',
 };
@@ -554,7 +597,6 @@ const PROFILE_GROUPS = [
 		stepCount: 12,
 		collectCdpCoverage: true,
 		env: {
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
@@ -578,7 +620,6 @@ const PROFILE_GROUPS = [
 		stepCount: 10,
 		collectCdpCoverage: false,
 		env: {
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
@@ -594,7 +635,6 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '2',
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
@@ -613,7 +653,6 @@ const PROFILE_GROUPS = [
 		stepCount: 10,
 		collectCdpCoverage: false,
 		env: {
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
@@ -629,7 +668,6 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE: 'same-user',
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '0',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
@@ -646,7 +684,6 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE: 'same-user',
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
@@ -679,18 +716,18 @@ const PROFILE_GROUPS = [
 		name: 'novelty-ws-real-user-editing',
 		actionProfile: 'real-user-editing',
 		startSeed: 1060001,
-		stepCount: 8,
+		stepCount: 10,
 		collectCdpCoverage: true,
 		env: {
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '2',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
 			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_ACTION_LABELS:
-				'ui-type-paragraph,ui-format-paragraph,ui-heading-shortcut',
+				'ui-type-paragraph,ui-format-paragraph,ui-type-title,ui-heading-shortcut,ui-undo-redo-paragraph',
 			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
-				'ui-type-paragraph,ui-format-paragraph,ui-heading-shortcut,ui-type-paragraph',
+				'ui-type-paragraph,ui-format-paragraph,ui-type-title,ui-heading-shortcut,ui-undo-redo-paragraph',
 			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'shadow',
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'paragraph',
@@ -705,11 +742,11 @@ const PROFILE_GROUPS = [
 		stepCount: 14,
 		collectCdpCoverage: true,
 		env: {
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '8',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
 			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'shadow',
 			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_ACTION_LABELS:
 				'ui-paste-paragraph,ui-cut-copy-paragraph,ui-link-paragraph,ui-list-indent,ui-composition-paragraph,ui-toolbar-format-paragraph,ui-table-cell-edit,ui-undo-redo-paragraph',
@@ -728,7 +765,6 @@ const PROFILE_GROUPS = [
 		stepCount: 12,
 		collectCdpCoverage: false,
 		env: {
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
@@ -741,7 +777,6 @@ const PROFILE_GROUPS = [
 		stepCount: 12,
 		collectCdpCoverage: true,
 		env: {
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
 		},
@@ -753,7 +788,6 @@ const PROFILE_GROUPS = [
 		stepCount: 10,
 		collectCdpCoverage: true,
 		env: {
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '6',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
@@ -770,7 +804,6 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_ROLES: 'contributor',
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'shadow',
 			GUTENBERG_RTC_BROWSER_INCLUDE_AUTH_SYNC_FAILURES: '1',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
@@ -784,7 +817,6 @@ const PROFILE_GROUPS = [
 		stepCount: 48,
 		collectCdpCoverage: true,
 		env: {
-			GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS: '1',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'shadow',
 			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '96',
@@ -810,15 +842,24 @@ const PROFILE_GROUPS = [
 await fs.mkdir( OUTPUT_DIR, { recursive: true } );
 const state = ( await readJsonFile( STATE_PATH ) ) ?? {
 	startedAt: new Date().toISOString(),
+	outputDir: OUTPUT_DIR,
 	enabledGroups: [ 'novelty-ws-structure' ],
 	featureCounts: {},
 	coverageHashes: {},
 	fileOffsets: {},
+	summaryFileOffsets: {},
 	recordCountsByProfile: {},
 	recordCountsByTransport: {},
 	successfulActionCountsByProfile: {},
 	successfulRecordCountsByProfile: {},
+	currentRunRecordCountsByProfile: {},
+	currentRunRecordCountsByTransport: {},
+	currentRunSuccessfulActionCountsByProfile: {},
+	currentRunSuccessfulRecordCountsByProfile: {},
 	startupFailureCountsByProfile: {},
+	currentRunSummaryStartupFailureCountsByProfile: {},
+	currentRunCountersInitializedForOutputDir: null,
+	runLocalNoisePolicyVersion: RUN_LOCAL_NOISE_POLICY_VERSION,
 	pausedGroups: {},
 	disabledGroups: {},
 	autoCoverageGoals: [],
@@ -855,11 +896,68 @@ state.recordCountsByProfile ??= {};
 state.recordCountsByTransport ??= {};
 state.successfulActionCountsByProfile ??= {};
 state.successfulRecordCountsByProfile ??= {};
+state.currentRunRecordCountsByProfile ??= {};
+state.currentRunRecordCountsByTransport ??= {};
+state.currentRunSuccessfulActionCountsByProfile ??= {};
+state.currentRunSuccessfulRecordCountsByProfile ??= {};
 state.startupFailureCountsByProfile ??= {};
+state.currentRunSummaryStartupFailureCountsByProfile ??= {};
+state.currentRunCountersInitializedForOutputDir ??= null;
+state.runLocalNoisePolicyVersion ??= 0;
+state.summaryFileOffsets ??= {};
 state.pausedGroups ??= {};
 state.healthWarnings ??= [];
 state.autoCoverageGoals ??= [];
 state.autoCoverageGoalWaves ??= [];
+state.changes ??= [];
+if ( state.outputDir !== OUTPUT_DIR ) {
+	const previousOutputDir = state.outputDir ?? 'unknown';
+	state.outputDir = OUTPUT_DIR;
+	state.startedAt = new Date().toISOString();
+	resetCurrentRunCounters();
+	state.currentRunCountersInitializedForOutputDir = null;
+	state.pausedGroups = {};
+	state.healthWarnings = [];
+	state.coverageGuidanceQualityIssuePasses = 0;
+	state.coverageGuidanceNoProgressPasses = 0;
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'reset-run-local-noise-state',
+		reason: `novelty state moved from ${ previousOutputDir } to ${ OUTPUT_DIR }; preserving coverage counters but resetting run-local pause/startup/quality gates`,
+	} );
+}
+if ( state.runLocalNoisePolicyVersion !== RUN_LOCAL_NOISE_POLICY_VERSION ) {
+	resetCurrentRunCounters();
+	state.currentRunCountersInitializedForOutputDir = null;
+	state.runLocalNoisePolicyVersion = RUN_LOCAL_NOISE_POLICY_VERSION;
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'reset-run-local-noise-policy',
+		reason: 'historical known-noise is advisory/Codex-only; rebuilt run-local startup/quality counters',
+	} );
+}
+const clearedHistoricalNoisePauses = clearHistoricalKnownNoisePauses();
+if ( clearedHistoricalNoisePauses > 0 ) {
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'clear-historical-noise-pauses',
+		reason: `cleared ${ clearedHistoricalNoisePauses } historical known-noise group pause(s); current-run startup and triage evidence now control browser scheduling`,
+	} );
+}
+const normalizedAutoCoverageGoals = normalizeStoredAutoCoverageGoals(
+	state.autoCoverageGoals
+);
+if (
+	JSON.stringify( normalizedAutoCoverageGoals ) !==
+	JSON.stringify( state.autoCoverageGoals )
+) {
+	state.autoCoverageGoals = normalizedAutoCoverageGoals;
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'normalize-auto-coverage-goals',
+		reason: 'dedupe ratchet goals and normalize nested ratchet source IDs',
+	} );
+}
 
 function getPositiveIntegerEnv( name, fallback ) {
 	const rawValue = process.env[ name ];
@@ -917,6 +1015,20 @@ function parsePathList( value ) {
 		.filter( Boolean );
 }
 
+function uniquePathList( paths ) {
+	const seen = new Set();
+	const unique = [];
+	for ( const item of paths ) {
+		const resolved = path.resolve( item );
+		if ( seen.has( resolved ) ) {
+			continue;
+		}
+		seen.add( resolved );
+		unique.push( item );
+	}
+	return unique;
+}
+
 async function log( message ) {
 	const line = `[${ new Date().toISOString() }] ${ message }\n`;
 	process.stdout.write( line );
@@ -936,6 +1048,43 @@ async function writeJsonFileAtomic( filePath, value ) {
 	await fs.mkdir( path.dirname( filePath ), { recursive: true } );
 	await fs.writeFile( tmpPath, JSON.stringify( value, null, 2 ) + '\n' );
 	await fs.rename( tmpPath, filePath );
+}
+
+function incrementCounter( target, key, amount = 1 ) {
+	target[ key ] = ( target[ key ] ?? 0 ) + amount;
+}
+
+function resetCurrentRunCounters() {
+	state.currentRunRecordCountsByProfile = {};
+	state.currentRunRecordCountsByTransport = {};
+	state.currentRunSuccessfulActionCountsByProfile = {};
+	state.currentRunSuccessfulRecordCountsByProfile = {};
+	state.startupFailureCountsByProfile = {};
+	state.currentRunSummaryStartupFailureCountsByProfile = {};
+}
+
+function isPathInsideRoot( filePath, root ) {
+	const relative = path.relative(
+		path.resolve( root ),
+		path.resolve( filePath )
+	);
+	return (
+		relative === '' ||
+		( relative &&
+			! relative.startsWith( '..' ) &&
+			! path.isAbsolute( relative ) )
+	);
+}
+
+function isCurrentRunCoverageFile( filePath ) {
+	return isPathInsideRoot( filePath, OUTPUT_DIR );
+}
+
+function isCurrentRunCoverageRecord( record ) {
+	return (
+		typeof record.coverageFile === 'string' &&
+		isCurrentRunCoverageFile( record.coverageFile )
+	);
 }
 
 async function findCoverageFiles( roots ) {
@@ -981,6 +1130,54 @@ async function findCoverageFiles( roots ) {
 				}
 				await walk( entryPath, depth + 1 );
 			} else if ( entry.name === 'rtc-behavioral-coverage.ndjson' ) {
+				files.push( entryPath );
+			}
+		}
+	}
+
+	for ( const root of roots ) {
+		await walk( root, 0 );
+	}
+
+	return files.sort();
+}
+
+async function findSummaryFiles( roots ) {
+	const files = [];
+	const seen = new Set();
+
+	async function walk( dir, depth ) {
+		if ( depth > 7 || seen.has( dir ) ) {
+			return;
+		}
+		seen.add( dir );
+
+		let entries;
+		try {
+			entries = await fs.readdir( dir, { withFileTypes: true } );
+		} catch {
+			return;
+		}
+
+		for ( const entry of entries ) {
+			const entryPath = path.join( dir, entry.name );
+			if ( entry.isDirectory() ) {
+				if (
+					[
+						'.triage-watcher',
+						'node_modules',
+						'.git',
+						'vendor',
+						'test-results',
+						'playwright-report',
+						'blob-report',
+						'codex-analysis',
+					].includes( entry.name )
+				) {
+					continue;
+				}
+				await walk( entryPath, depth + 1 );
+			} else if ( entry.name === 'summary.ndjson' ) {
 				files.push( entryPath );
 			}
 		}
@@ -1046,6 +1243,7 @@ async function summarizeTriageYield( roots ) {
 	const files = await findTriageStateFiles( roots );
 	const familyCounts = {};
 	const summary = {
+		roots: roots.length,
 		files: files.length,
 		signatureCount: 0,
 		likelyRealVisible: 0,
@@ -1276,6 +1474,246 @@ async function readCoverageRecords( files ) {
 
 	state.fileOffsets = nextOffsets;
 	return { records, stats };
+}
+
+async function readAllCoverageRecords( files ) {
+	const records = [];
+	for ( const filePath of files ) {
+		const text = await fs.readFile( filePath, 'utf8' ).catch( () => '' );
+		for ( const line of text.split( '\n' ) ) {
+			if ( ! line.trim() ) {
+				continue;
+			}
+			try {
+				records.push( {
+					...JSON.parse( line ),
+					coverageFile: filePath,
+				} );
+			} catch {}
+		}
+	}
+	return records;
+}
+
+function createSummaryStartupStats() {
+	return {
+		filesRead: 0,
+		linesSeen: 0,
+		linesProcessed: 0,
+		parseErrors: 0,
+		startupFailures: 0,
+	};
+}
+
+function hasActionableBehavioralCoverageSummary( summary ) {
+	if ( ! summary || typeof summary !== 'object' ) {
+		return false;
+	}
+
+	if (
+		( summary.actionCount ?? 0 ) > 0 ||
+		( summary.faultCount ?? 0 ) > 0 ||
+		( summary.lifecycleEventCount ?? 0 ) > 0 ||
+		( summary.reloadCount ?? 0 ) > 0 ||
+		( summary.saveCheckpointCount ?? 0 ) > 0
+	) {
+		return true;
+	}
+
+	if (
+		( summary.statuses?.passed ?? 0 ) > 0 ||
+		( summary.statuses?.ok ?? 0 ) > 0
+	) {
+		return true;
+	}
+
+	if (
+		( summary.recordCount ?? 0 ) > 0 &&
+		( summary.statuses?.failed ?? 0 ) !== summary.recordCount
+	) {
+		return true;
+	}
+
+	return Object.entries( summary.userCounts ?? {} ).some(
+		( [ userCount, count ] ) => userCount !== '0' && count > 0
+	);
+}
+
+function isStrictPreActionStartupGateAttempt( attempt ) {
+	if ( attempt?.bucket !== 'pre-action-bootstrap-stall' ) {
+		return false;
+	}
+	if ( ( attempt.userCount ?? 0 ) > 0 ) {
+		return false;
+	}
+	if ( attempt.lastAction ) {
+		return false;
+	}
+	if (
+		attempt.lastHistoryPhase &&
+		! [ 'seed', 'bootstrap', 'open', 'join' ].includes(
+			attempt.lastHistoryPhase
+		)
+	) {
+		return false;
+	}
+	return true;
+}
+
+function getStrictPreActionStartupSummaryProfile( record ) {
+	if ( record?.preAnalysisGate?.bucket !== 'pre-action-bootstrap-stall' ) {
+		return null;
+	}
+
+	const attempts = Array.isArray( record.attempts ) ? record.attempts : [];
+	if ( attempts.length === 0 ) {
+		return null;
+	}
+
+	const profiles = [];
+	for ( const attempt of attempts ) {
+		if (
+			hasActionableBehavioralCoverageSummary(
+				attempt.behavioralCoverageSummary
+			)
+		) {
+			return null;
+		}
+
+		const coverageRecords = Array.isArray( attempt.behavioralCoverage )
+			? attempt.behavioralCoverage
+			: [];
+		if (
+			coverageRecords.length > 0 &&
+			! coverageRecords.every( isStartupDiscoveryFailure )
+		) {
+			return null;
+		}
+		for ( const coverageRecord of coverageRecords ) {
+			if ( coverageRecord.actionProfile ) {
+				profiles.push( coverageRecord.actionProfile );
+			}
+		}
+	}
+
+	const gateAttempts = Array.isArray( record.preAnalysisGate.attempts )
+		? record.preAnalysisGate.attempts
+		: [];
+	if (
+		gateAttempts.length === 0 ||
+		! gateAttempts.every( isStrictPreActionStartupGateAttempt )
+	) {
+		return null;
+	}
+	for ( const attempt of gateAttempts ) {
+		if ( attempt.actionProfile ) {
+			profiles.push( attempt.actionProfile );
+		}
+	}
+
+	return profiles[ 0 ] ?? record.parameters?.actionProfile ?? 'unknown';
+}
+
+function countSummaryStartupFailureRecord( record, stats ) {
+	const profile = getStrictPreActionStartupSummaryProfile( record );
+	if ( ! profile ) {
+		return;
+	}
+
+	incrementCounter( state.startupFailureCountsByProfile, profile );
+	incrementCounter(
+		state.currentRunSummaryStartupFailureCountsByProfile,
+		profile
+	);
+	stats.startupFailures += 1;
+}
+
+async function readSummaryStartupFailures( files ) {
+	const stats = createSummaryStartupStats();
+	const nextOffsets = {};
+
+	for ( const filePath of files ) {
+		const text = await fs.readFile( filePath, 'utf8' ).catch( () => '' );
+		const lines = text.split( '\n' ).filter( ( line ) => line.trim() );
+		const previousOffset =
+			state.summaryFileOffsets?.[ filePath ]?.lineCount ?? 0;
+		const nextOffset = Math.min( previousOffset, lines.length );
+		stats.filesRead += 1;
+		stats.linesSeen += lines.length;
+		for ( const line of lines.slice( nextOffset ) ) {
+			try {
+				countSummaryStartupFailureRecord( JSON.parse( line ), stats );
+				stats.linesProcessed += 1;
+			} catch {
+				stats.parseErrors += 1;
+			}
+		}
+		nextOffsets[ filePath ] = {
+			lineCount: lines.length,
+			lastSeenAt: new Date().toISOString(),
+		};
+	}
+
+	state.summaryFileOffsets = nextOffsets;
+	return stats;
+}
+
+async function backfillSummaryStartupFailures( files ) {
+	state.summaryFileOffsets = {};
+	return readSummaryStartupFailures( files );
+}
+
+function updateCurrentRunCounters( record ) {
+	const profile = record.actionProfile ?? 'unknown';
+	const transport = record.transport ?? 'unknown';
+	incrementCounter( state.currentRunRecordCountsByProfile, profile );
+	incrementCounter( state.currentRunRecordCountsByTransport, transport );
+
+	if ( record.status === 'passed' ) {
+		incrementCounter(
+			state.currentRunSuccessfulRecordCountsByProfile,
+			profile
+		);
+		state.currentRunSuccessfulActionCountsByProfile[ profile ] ??= {};
+		for ( const action of record.actions ?? [] ) {
+			incrementCounter(
+				state.currentRunSuccessfulActionCountsByProfile[ profile ],
+				action.label
+			);
+		}
+	}
+
+	if ( isStartupDiscoveryFailure( record ) ) {
+		incrementCounter( state.startupFailureCountsByProfile, profile );
+	}
+}
+
+async function ensureCurrentRunCounters(
+	currentCoverageFiles,
+	currentSummaryFiles
+) {
+	if (
+		state.runLocalNoisePolicyVersion === RUN_LOCAL_NOISE_POLICY_VERSION &&
+		state.currentRunCountersInitializedForOutputDir === OUTPUT_DIR
+	) {
+		return;
+	}
+
+	resetCurrentRunCounters();
+	const records = await readAllCoverageRecords( currentCoverageFiles );
+	for ( const record of records ) {
+		updateCurrentRunCounters( record );
+	}
+	const summaryStats = await backfillSummaryStartupFailures(
+		currentSummaryFiles
+	);
+	state.currentRunCountersInitializedForOutputDir = OUTPUT_DIR;
+	state.runLocalNoisePolicyVersion = RUN_LOCAL_NOISE_POLICY_VERSION;
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'backfill-current-run-noise-counters',
+		reason: `rebuilt startup/quality counters from ${ records.length } current-run behavioral coverage record(s) and ${ summaryStats.startupFailures } strict summary startup failure(s)`,
+	} );
 }
 
 function featureKeysForRecord( record ) {
@@ -1570,6 +2008,9 @@ function summarizeNovelty( records ) {
 			( state.recordCountsByProfile[ profile ] ?? 0 ) + 1;
 		state.recordCountsByTransport[ transport ] =
 			( state.recordCountsByTransport[ transport ] ?? 0 ) + 1;
+		if ( isCurrentRunCoverageRecord( record ) ) {
+			updateCurrentRunCounters( record );
+		}
 		if ( record.status === 'passed' ) {
 			state.successfulRecordCountsByProfile[ profile ] =
 				( state.successfulRecordCountsByProfile[ profile ] ?? 0 ) + 1;
@@ -1585,10 +2026,6 @@ function summarizeNovelty( records ) {
 		}
 		if ( record.status === 'failed' ) {
 			byProfile[ profile ].failures += 1;
-		}
-		if ( isStartupDiscoveryFailure( record ) ) {
-			state.startupFailureCountsByProfile[ profile ] =
-				( state.startupFailureCountsByProfile[ profile ] ?? 0 ) + 1;
 		}
 
 		for ( const key of featureKeysForRecord( record ) ) {
@@ -1632,6 +2069,37 @@ function isStartupDiscoveryFailure( record ) {
 	if ( ( record.userCount ?? 0 ) > 0 ) {
 		return false;
 	}
+	if ( ( record.faults?.length ?? 0 ) > 0 ) {
+		return false;
+	}
+	if ( ( record.reloads?.length ?? 0 ) > 0 ) {
+		return false;
+	}
+	if ( ( record.saveCheckpointSteps?.length ?? 0 ) > 0 ) {
+		return false;
+	}
+	if ( ( record.autosaveSteps?.length ?? 0 ) > 0 ) {
+		return false;
+	}
+	if ( ( record.lifecycleEvents?.length ?? 0 ) > 0 ) {
+		return false;
+	}
+	if ( ( record.operationEvents?.length ?? 0 ) > 0 ) {
+		return false;
+	}
+
+	const failedHistoryPhases = ( record.historyEvents ?? [] )
+		.filter( ( event ) => event.status === 'fail' )
+		.map( ( event ) => event.phase )
+		.filter( Boolean );
+	if (
+		failedHistoryPhases.length > 0 &&
+		! failedHistoryPhases.some( ( phase ) =>
+			[ 'seed', 'bootstrap', 'open', 'join' ].includes( phase )
+		)
+	) {
+		return false;
+	}
 
 	const errorText = [
 		record.error,
@@ -1640,8 +2108,10 @@ function isStartupDiscoveryFailure( record ) {
 		.filter( Boolean )
 		.join( '\n' );
 
-	return /waitForMutualDiscovery|waitForTestWebSocketAwarenessPeerCount|Target page, context or browser has been closed|Test timeout/i.test(
-		errorText
+	return (
+		/waitForMutualDiscovery|waitForTestWebSocketAwarenessPeerCount|waitForCollaborationReady|setPreferences|_wpCollaborationEnabled|collaboration (?:session )?to become ready|page\.waitForFunction|waitForSyncCycle|Target page, context or browser has been closed|Test timeout/i.test(
+			errorText
+		)
 	);
 }
 
@@ -1669,7 +2139,10 @@ function sampleResources() {
 		memoryHeadroomReason: memoryHeadroom.reason,
 		memoryPressureFreePercent,
 		totalMemoryGb,
-		hasHeadroom: load1 < cores * 1.25 && memoryHeadroom.hasHeadroom,
+		loadHeadroomLimit: cores * LOAD_HEADROOM_MULTIPLIER,
+		hasHeadroom:
+			load1 < cores * LOAD_HEADROOM_MULTIPLIER &&
+			memoryHeadroom.hasHeadroom,
 	};
 }
 
@@ -1770,19 +2243,88 @@ function getAutoCoverageGoalCount( goal, goalCountsById ) {
 	return getFeatureCount( goal.featureKey ?? goal.id );
 }
 
-function addAutoCoverageGoalToList( addGoal, goal, goalCountsById ) {
+function normalizeAutoRatchetSourceGoalId( goalId ) {
+	let sourceGoalId = goalId;
+	while ( sourceGoalId?.startsWith( 'auto-ratchet:' ) ) {
+		const match = sourceGoalId.match( /^auto-ratchet:(.+):target-\d+$/ );
+		if ( ! match ) {
+			break;
+		}
+		sourceGoalId = match[ 1 ];
+	}
+	return sourceGoalId;
+}
+
+function getAutoRatchetSourceGoalId( goal ) {
+	return normalizeAutoRatchetSourceGoalId(
+		goal.sourceGoalId ?? goal.countSource?.goalId ?? goal.id
+	);
+}
+
+function normalizeStoredAutoCoverageGoals( goals ) {
+	const seen = new Set();
+	const normalizedGoals = [];
+
+	for ( const goal of goals ?? [] ) {
+		const normalizedGoal = { ...goal };
+		if ( normalizedGoal.source === 'ratchet' ) {
+			const sourceGoalId = getAutoRatchetSourceGoalId( normalizedGoal );
+			normalizedGoal.sourceGoalId = sourceGoalId;
+			normalizedGoal.id = `auto-ratchet:${ sourceGoalId }:target-${ normalizedGoal.target }`;
+			if ( normalizedGoal.countSource?.kind === 'goal' ) {
+				normalizedGoal.countSource = {
+					...normalizedGoal.countSource,
+					goalId: sourceGoalId,
+				};
+			}
+		}
+
+		if ( seen.has( normalizedGoal.id ) ) {
+			continue;
+		}
+		seen.add( normalizedGoal.id );
+		normalizedGoals.push( normalizedGoal );
+	}
+
+	return normalizedGoals;
+}
+
+function addAutoCoverageGoalToList(
+	addGoal,
+	goal,
+	goalCountsById,
+	goalsById = new Map()
+) {
+	const sourceGoalId =
+		goal.source === 'ratchet' ? getAutoRatchetSourceGoalId( goal ) : null;
+	const sourceGoal =
+		sourceGoalId === null ? null : goalsById.get( sourceGoalId );
+	const id =
+		sourceGoalId === null
+			? goal.id
+			: `auto-ratchet:${ sourceGoalId }:target-${ goal.target }`;
+	const countSource =
+		sourceGoalId === null || goal.countSource?.kind !== 'goal'
+			? goal.countSource
+			: {
+					...goal.countSource,
+					goalId: sourceGoalId,
+			  };
 	const count = getAutoCoverageGoalCount( goal, goalCountsById );
 	addGoal( {
-		id: goal.id,
+		id,
 		label: goal.label,
 		count,
 		target: goal.target,
-		groups: goal.groups ?? [],
+		groups: sourceGoal?.groups ?? goal.groups ?? [],
 		rationale: goal.rationale,
+		countSource,
 		harnessAfter:
 			goal.harnessAfter === undefined
 				? goal.target * 4
 				: goal.harnessAfter,
+		source: goal.source,
+		sourceGoalId,
 	} );
 	return count;
 }
@@ -1868,11 +2410,10 @@ function buildAutoCoverageGoalCandidates( goals, goalCountsById, existingIds ) {
 	const ratchetCandidates = goals
 		.filter(
 			( goal ) =>
-				goal.count >= goal.target &&
-				( goal.groups?.length ?? 0 ) > 0
+				goal.count >= goal.target && ( goal.groups?.length ?? 0 ) > 0
 		)
 		.map( ( goal ) => {
-			const sourceGoalId = goal.countSource?.goalId ?? goal.id;
+			const sourceGoalId = getAutoRatchetSourceGoalId( goal );
 			const target = getNextAutoCoverageTarget( goal );
 			return {
 				id: `auto-ratchet:${ sourceGoalId }:target-${ target }`,
@@ -1920,14 +2461,14 @@ function roundUpNiceNumber( value ) {
 	}
 	const magnitude = 10 ** Math.floor( Math.log10( value ) );
 	const scaled = value / magnitude;
-	const niceScaled =
-		scaled <= 1
-			? 1
-			: scaled <= 2
-			? 2
-			: scaled <= 5
-			? 5
-			: 10;
+	let niceScaled = 10;
+	if ( scaled <= 1 ) {
+		niceScaled = 1;
+	} else if ( scaled <= 2 ) {
+		niceScaled = 2;
+	} else if ( scaled <= 5 ) {
+		niceScaled = 5;
+	}
 	return niceScaled * magnitude;
 }
 
@@ -1946,6 +2487,7 @@ function getAutoCoverageGoalPriority( goal ) {
 
 function createCoverageGuidance( novelty ) {
 	const goals = [];
+	const seenGoalIds = new Set();
 	const addGoal = ( {
 		id,
 		label,
@@ -1954,7 +2496,14 @@ function createCoverageGuidance( novelty ) {
 		groups = [],
 		rationale,
 		harnessAfter = null,
+		countSource,
+		source,
+		sourceGoalId,
 	} ) => {
+		if ( seenGoalIds.has( id ) ) {
+			return;
+		}
+		seenGoalIds.add( id );
 		const numericCount = Number.isFinite( count ) ? count : 0;
 		const numericTarget = Number.isFinite( target ) ? target : 1;
 		goals.push( {
@@ -1966,6 +2515,9 @@ function createCoverageGuidance( novelty ) {
 			groups,
 			rationale,
 			harnessAfter,
+			...( countSource ? { countSource } : {} ),
+			...( source ? { source } : {} ),
+			...( sourceGoalId ? { sourceGoalId } : {} ),
 		} );
 	};
 
@@ -2305,10 +2857,16 @@ function createCoverageGuidance( novelty ) {
 	const goalCountsById = new Map(
 		goals.map( ( goal ) => [ goal.id, goal.count ] )
 	);
+	const goalsById = new Map( goals.map( ( goal ) => [ goal.id, goal ] ) );
 	for ( const goal of state.autoCoverageGoals ?? [] ) {
 		goalCountsById.set(
 			goal.id,
-			addAutoCoverageGoalToList( addGoal, goal, goalCountsById )
+			addAutoCoverageGoalToList(
+				addGoal,
+				goal,
+				goalCountsById,
+				goalsById
+			)
 		);
 	}
 
@@ -2363,20 +2921,23 @@ function updateCoverageQualityIssues( guidance, triageYield ) {
 		state.coverageGuidanceQualityIssuePasses = 0;
 	}
 	guidance.qualityIssues = qualityIssues.slice( 0, 30 );
-	guidance.qualityIssuePasses =
-		state.coverageGuidanceQualityIssuePasses ?? 0;
+	guidance.qualityIssuePasses = state.coverageGuidanceQualityIssuePasses ?? 0;
 	return guidance.qualityIssues;
 }
 
 function createCoverageQualityIssues( guidance, triageYield ) {
 	const issues = [];
 	for ( const goal of guidance.goals ?? [] ) {
-		if ( goal.met || ! goal.id.startsWith( 'success-profile:' ) ) {
+		const sourceGoalId = normalizeAutoRatchetSourceGoalId(
+			goal.sourceGoalId ?? goal.countSource?.goalId ?? goal.id
+		);
+		if ( goal.met || ! sourceGoalId.startsWith( 'success-profile:' ) ) {
 			continue;
 		}
-		const profile = goal.id.slice( 'success-profile:'.length );
-		const records = state.recordCountsByProfile?.[ profile ] ?? 0;
-		const successful = state.successfulRecordCountsByProfile?.[ profile ] ?? 0;
+		const profile = sourceGoalId.slice( 'success-profile:'.length );
+		const records = state.currentRunRecordCountsByProfile?.[ profile ] ?? 0;
+		const successful =
+			state.currentRunSuccessfulRecordCountsByProfile?.[ profile ] ?? 0;
 		const startupFailures =
 			state.startupFailureCountsByProfile?.[ profile ] ?? 0;
 		if (
@@ -2386,14 +2947,13 @@ function createCoverageQualityIssues( guidance, triageYield ) {
 			continue;
 		}
 		const successRate = records > 0 ? successful / records : 0;
-		const startupFailureRate =
-			records > 0 ? startupFailures / records : 0;
+		const startupFailureRate = records > 0 ? startupFailures / records : 0;
 		issues.push( {
 			id: `completion:${ profile }`,
 			severity: successRate < 0.1 ? 'high' : 'medium',
 			profile,
 			label: `${ profile } has low completed-record yield`,
-			evidence: `${ successful }/${ goal.target } successful goal records, ${ records } records seen, success rate ${ formatPercent(
+			evidence: `${ successful } current-run successful records, ${ records } current-run records seen, success rate ${ formatPercent(
 				successRate
 			) }, startup failure rate ${ formatPercent( startupFailureRate ) }`,
 			recommendedAction:
@@ -2402,7 +2962,7 @@ function createCoverageQualityIssues( guidance, triageYield ) {
 	}
 
 	for ( const [ profile, records ] of Object.entries(
-		state.recordCountsByProfile ?? {}
+		state.currentRunRecordCountsByProfile ?? {}
 	) ) {
 		const startupFailures =
 			state.startupFailureCountsByProfile?.[ profile ] ?? 0;
@@ -2413,9 +2973,7 @@ function createCoverageQualityIssues( guidance, triageYield ) {
 			continue;
 		}
 		const startupFailureRate = startupFailures / records;
-		if (
-			startupFailureRate < COVERAGE_QUALITY_STARTUP_FAILURE_MIN_RATE
-		) {
+		if ( startupFailureRate < COVERAGE_QUALITY_STARTUP_FAILURE_MIN_RATE ) {
 			continue;
 		}
 		issues.push( {
@@ -2423,7 +2981,7 @@ function createCoverageQualityIssues( guidance, triageYield ) {
 			severity: startupFailureRate >= 0.5 ? 'high' : 'medium',
 			profile,
 			label: `${ profile } has excessive pre-action startup stalls`,
-			evidence: `${ startupFailures } startup failures / ${ records } records = ${ formatPercent(
+			evidence: `${ startupFailures } current-run startup failures / ${ records } current-run records = ${ formatPercent(
 				startupFailureRate
 			) }`,
 			recommendedAction:
@@ -2722,6 +3280,7 @@ function classifyMemoryHeadroom( {
 
 function hasRecentStartupFailurePause( group ) {
 	const cutoff = Date.now() - STARTUP_FAILURE_COOLDOWN_HOURS * 60 * 60 * 1000;
+	const runStartedAt = Date.parse( state.startedAt ?? '' );
 
 	return ( state.changes ?? [] ).some( ( change ) => {
 		if (
@@ -2735,8 +3294,79 @@ function hasRecentStartupFailurePause( group ) {
 		}
 
 		const timestamp = Date.parse( change.at );
-		return Number.isFinite( timestamp ) && timestamp >= cutoff;
+		if ( ! Number.isFinite( timestamp ) || timestamp < cutoff ) {
+			return false;
+		}
+		if ( Number.isFinite( runStartedAt ) && timestamp < runStartedAt ) {
+			return false;
+		}
+		if (
+			typeof change.outputDir === 'string' &&
+			path.resolve( change.outputDir ) !== path.resolve( OUTPUT_DIR )
+		) {
+			return false;
+		}
+		return true;
 	} );
+}
+
+function clearHistoricalKnownNoisePauses() {
+	let cleared = 0;
+	for ( const [ group, value ] of Object.entries( state.pausedGroups ?? {} ) ) {
+		if ( ! /^historical known-noise hold\b/.test( value?.reason ?? '' ) ) {
+			continue;
+		}
+		delete state.pausedGroups[ group ];
+		cleared += 1;
+	}
+	return cleared;
+}
+
+function getStartupFailureStats( profile ) {
+	const failures = state.startupFailureCountsByProfile?.[ profile ] ?? 0;
+	const records = state.currentRunRecordCountsByProfile?.[ profile ] ?? 0;
+	const rate = records > 0 ? failures / records : 0;
+
+	return { failures, records, rate };
+}
+
+function hasExcessiveStartupFailures( profile ) {
+	const { failures, records, rate } = getStartupFailureStats( profile );
+
+	if ( failures < STARTUP_FAILURE_LIMIT ) {
+		return false;
+	}
+
+	if ( records < STARTUP_FAILURE_MIN_RECORDS_FOR_RATE ) {
+		return true;
+	}
+
+	return rate >= STARTUP_FAILURE_RATE_LIMIT;
+}
+
+function hasActiveStartupFailureCooldown( group, profile ) {
+	return (
+		hasRecentStartupFailurePause( group ) &&
+		hasExcessiveStartupFailures( profile )
+	);
+}
+
+function isBehaviorDisableEnvName( name ) {
+	return /(?:^|_)DISABLE_(SYNC_FAULTS|PARSER_STRESS|REVISION_RESTORE|RELOAD|RANDOM_RELOAD)$/.test(
+		name
+	);
+}
+
+function assertNoBehaviorDisableEnv( env, context ) {
+	const disabledKeys = Object.keys( env ).filter( isBehaviorDisableEnvName );
+	if ( disabledKeys.length === 0 ) {
+		return;
+	}
+	throw new Error(
+		`${ context } must not set behavior-disable env keys: ${ disabledKeys.join(
+			', '
+		) }`
+	);
 }
 
 function buildGroup( profile ) {
@@ -2749,8 +3379,22 @@ function buildGroup( profile ) {
 					GUTENBERG_RTC_TEST_WS_URL: `ws://127.0.0.1:${ WS_PORT }`,
 			  }
 			: {
-					GUTENBERG_RTC_TEST_WS_PROVIDER: '0',
+			GUTENBERG_RTC_TEST_WS_PROVIDER: '0',
 			  };
+		const env = {
+			WP_ENV_PORT,
+			WP_BASE_URL: BASE_URL,
+			RTC_FUZZ_BASE_URL: BASE_URL,
+			...( transport === 'ws' ? WS_ENV_DEFAULTS : {} ),
+			RTC_FUZZ_ANALYSIS_RECHECKS: '1',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '0',
+			...transportEnv,
+			GUTENBERG_RTC_BROWSER_ACTION_PROFILE: profile.actionProfile,
+			GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE:
+				profile.collectCdpCoverage ? '1' : '0',
+		...profile.env,
+	};
+	assertNoBehaviorDisableEnv( env, profile.name );
 
 	return {
 		name: profile.name,
@@ -2762,19 +3406,7 @@ function buildGroup( profile ) {
 		...( transport === 'ws'
 			? { wsPort: Number.parseInt( WS_PORT, 10 ) }
 			: {} ),
-		env: {
-			WP_ENV_PORT,
-			WP_BASE_URL: BASE_URL,
-			RTC_FUZZ_BASE_URL: BASE_URL,
-			RTC_FUZZ_ANALYSIS_RECHECKS: '1',
-			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '0',
-			...transportEnv,
-			...( transport === 'ws' ? WS_ENV_DEFAULTS : {} ),
-			GUTENBERG_RTC_BROWSER_ACTION_PROFILE: profile.actionProfile,
-			GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE:
-				profile.collectCdpCoverage ? '1' : '0',
-			...profile.env,
-		},
+		env,
 	};
 }
 
@@ -2886,6 +3518,9 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		state.featureCounts?.[ 'media-cross-entity:reusable-block' ] ?? 0;
 	const mediaCrossEntitySuccessRecords =
 		getSuccessfulProfileCount( 'media-cross-entity' );
+	const recommendedGroupsForPass = new Set(
+		guidance?.recommendedGroups ?? []
+	);
 
 	function canRotateAwayFromGroup( group ) {
 		switch ( group ) {
@@ -2932,7 +3567,11 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		];
 
 		for ( const candidate of candidates ) {
-			if ( candidate === group || ! enabled.has( candidate ) ) {
+			if (
+				candidate === group ||
+				! enabled.has( candidate ) ||
+				recommendedGroupsForPass.has( candidate )
+			) {
 				continue;
 			}
 
@@ -2970,21 +3609,22 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		}
 
 		const profile = PROFILE_BY_GROUP[ group ];
-		const startupFailures =
-			profile === undefined
-				? 0
-				: state.startupFailureCountsByProfile?.[ profile ] ?? 0;
 		if (
 			state.pausedGroups?.[ group ] &&
-			( startupFailures >= STARTUP_FAILURE_LIMIT ||
-				hasRecentStartupFailurePause( group ) )
+			profile !== undefined &&
+			( hasExcessiveStartupFailures( profile ) ||
+				hasActiveStartupFailureCooldown( group, profile ) )
 		) {
+			const { failures, records, rate } =
+				getStartupFailureStats( profile );
 			state.changes.push( {
 				at: new Date().toISOString(),
 				action: 'keep-paused-startup-failures',
 				group,
 				profile,
-				reason: `profile ${ profile } is still inside the pre-action startup failure cooldown`,
+				reason: `profile ${ profile } is still inside the pre-action startup failure cooldown (${ failures }/${ records } startup failures, rate=${ formatPercent(
+					rate
+				) })`,
 			} );
 			return false;
 		}
@@ -3112,7 +3752,8 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		parserTransformEnabled &&
 		parserTransformSaturated &&
 		enabled.size >= TARGET_ENABLED_GROUPS &&
-		( sameUserRecords < 150 || ! httpProbeEnabled )
+		( sameUserRecords < 150 || ! httpProbeEnabled ) &&
+		! recommendedGroupsForPass.has( 'novelty-ws-parser-transform' )
 	) {
 		await pauseGroup(
 			'novelty-ws-parser-transform',
@@ -3149,7 +3790,8 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		enabled.size >
 			Math.min( MAX_ENABLED_GROUPS, TARGET_ENABLED_GROUPS + 1 ) &&
 		enabled.has( 'novelty-ws-block-gauntlet' ) &&
-		enabled.has( 'novelty-ws-common-blocks' )
+		enabled.has( 'novelty-ws-common-blocks' ) &&
+		! recommendedGroupsForPass.has( 'novelty-ws-common-blocks' )
 	) {
 		await pauseGroup(
 			'novelty-ws-common-blocks',
@@ -3320,7 +3962,7 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 	}
 
 	if ( PAUSE_ON_STARTUP_FAILURE ) {
-		const pauseOrder = [
+		const basePauseOrder = [
 			[ 'novelty-ws-block-gauntlet', 'block-gauntlet' ],
 			[ 'novelty-ws-common-blocks', 'common-blocks' ],
 			[ 'novelty-ws-parser-serialization', 'parser-serialization' ],
@@ -3332,19 +3974,31 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 			[ 'novelty-ws-same-user-lifecycle', 'session-lifecycle' ],
 			[ 'novelty-ws-revision-persistence', 'revision-persistence' ],
 		];
+		const pauseOrderGroups = new Set(
+			basePauseOrder.map( ( [ group ] ) => group )
+		);
+		const pauseOrder = [
+			...basePauseOrder,
+			...( state.enabledGroups ?? [] )
+				.filter(
+					( group ) =>
+						! pauseOrderGroups.has( group ) && PROFILE_BY_GROUP[ group ]
+				)
+				.map( ( group ) => [ group, PROFILE_BY_GROUP[ group ] ] ),
+		];
 
 		for ( const [ group, profile ] of pauseOrder ) {
-			const startupFailures =
-				state.startupFailureCountsByProfile?.[ profile ] ?? 0;
 			if (
-				startupFailures >= STARTUP_FAILURE_LIMIT ||
-				hasRecentStartupFailurePause( group )
+				hasExcessiveStartupFailures( profile ) ||
+				hasActiveStartupFailureCooldown( group, profile )
 			) {
+				const { failures, records, rate } =
+					getStartupFailureStats( profile );
 				await pauseGroup(
 					group,
-					startupFailures >= STARTUP_FAILURE_LIMIT
-						? `profile ${ profile } produced ${ startupFailures } pre-action WS discovery/startup failures`
-						: `profile ${ profile } is inside the pre-action WS discovery/startup failure cooldown`
+					`profile ${ profile } produced ${ failures }/${ records } pre-action WS discovery/startup failures (rate=${ formatPercent(
+						rate
+					) })`
 				);
 			}
 		}
@@ -3353,16 +4007,82 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 			for ( const [ group, profile ] of pauseOrder.slice( 0, 2 ) ) {
 				if (
 					enabled.size <= 5 ||
-					( state.startupFailureCountsByProfile?.[ profile ] ??
-						0 ) === 0
+					! hasExcessiveStartupFailures( profile )
 				) {
 					continue;
 				}
 				await pauseGroup(
 					group,
-					`temporary resource guard: no headroom and profile ${ profile } already hit a pre-action startup failure`
+					`temporary resource guard: no headroom and profile ${ profile } has excessive pre-action startup failures`
 				);
 			}
+		}
+	}
+
+	if (
+		! resources.hasHeadroom &&
+		( guidance?.qualityIssues?.length ?? 0 ) > 0 &&
+		( guidance?.qualityIssuePasses ?? 0 ) >=
+			COVERAGE_QUALITY_ISSUE_PASSES &&
+		enabled.size > COVERAGE_QUALITY_MAX_ENABLED_GROUPS
+	) {
+		const qualityBudgetPauseOrder = [
+			'novelty-http-persistence-probe',
+			'novelty-ws-structure',
+			'novelty-ws-parser-serialization',
+			'novelty-ws-multi-reload-lifecycle',
+			'novelty-ws-three-user-late-join',
+			'novelty-ws-revision-persistence',
+			'novelty-ws-persistence-no-title',
+			'novelty-ws-same-user-lifecycle',
+		];
+
+		for ( const group of qualityBudgetPauseOrder ) {
+			if (
+				enabled.size <= COVERAGE_QUALITY_MAX_ENABLED_GROUPS ||
+				! enabled.has( group ) ||
+				recommendedGroupsForPass.has( group )
+			) {
+				continue;
+			}
+			await pauseGroup(
+				group,
+				`coverage-quality budget guard: ${ guidance.qualityIssues.length } quality issue(s) persisted for ${ guidance.qualityIssuePasses } pass(es) with no resource headroom; reserve browser slots for current gap groups`
+			);
+		}
+	}
+
+	if ( enabled.size > MAX_ENABLED_GROUPS ) {
+		const maxBudgetPauseOrder = [
+			'novelty-http-persistence-probe',
+			'novelty-ws-structure',
+			'novelty-ws-common-blocks',
+			'novelty-ws-parser-serialization',
+			'novelty-ws-block-gauntlet',
+			'novelty-ws-multi-reload-lifecycle',
+			'novelty-ws-three-user-late-join',
+			'novelty-ws-revision-persistence',
+			'novelty-ws-persistence-no-title',
+			'novelty-ws-same-user-lifecycle',
+			'novelty-ws-async-server-blocks',
+			'novelty-ws-media-cross-entity',
+			'novelty-ws-long-session-large-doc',
+			'novelty-ws-real-user-rich-text',
+			'novelty-ws-real-user-editing',
+			'novelty-ws-parser-transform',
+		];
+
+		for ( const group of maxBudgetPauseOrder ) {
+			if ( enabled.size <= MAX_ENABLED_GROUPS ) {
+				break;
+			}
+			if ( ! enabled.has( group ) || recommendedGroupsForPass.has( group ) ) {
+				continue;
+			}
+			await pauseGroup(
+				group,
+				`max-enabled-group resource budget guard: enabled=${ enabled.size } max=${ MAX_ENABLED_GROUPS }`
+			);
 		}
 	}
 
@@ -3556,6 +4276,24 @@ async function maybeLaunchCoverageCodex( guidance ) {
 	if ( ! shouldLaunch ) {
 		return;
 	}
+	const historicalKnownNoiseHold = getHistoricalKnownNoiseHoldReason();
+	if ( ! COVERAGE_GUIDANCE_CODEX_FORCE && historicalKnownNoiseHold ) {
+		if (
+			state.coverageGuidanceHistoricalNoiseHoldReason !==
+			historicalKnownNoiseHold
+		) {
+			state.coverageGuidanceHistoricalNoiseHoldReason =
+				historicalKnownNoiseHold;
+			state.coverageGuidanceHistoricalNoiseHoldLastAt =
+				new Date().toISOString();
+			state.changes.push( {
+				at: state.coverageGuidanceHistoricalNoiseHoldLastAt,
+				action: 'hold-coverage-guidance-codex',
+				reason: historicalKnownNoiseHold,
+			} );
+		}
+		return;
+	}
 
 	const timestamp = createTimestamp();
 	const session = `${ COVERAGE_GUIDANCE_CODEX_SESSION_PREFIX }-${ timestamp }`;
@@ -3590,17 +4328,19 @@ async function maybeLaunchCoverageCodex( guidance ) {
 	} ).unref();
 
 	state.coverageGuidanceLastCodexLaunchAt = new Date().toISOString();
+	let reason = `${ guidance.noProgressPasses } no-progress coverage pass(es) with ${ guidance.unmetGoals.length } unmet goal(s)`;
+	if ( guidance.harnessWork.length ) {
+		reason = `${ guidance.harnessWork.length } coverage goal(s) need harness work`;
+	} else if ( ( guidance.autoExpansion?.addedGoals?.length ?? 0 ) > 0 ) {
+		reason = `${ guidance.autoExpansion.addedGoals.length } auto-expanded coverage goal(s) added`;
+	} else if ( ( guidance.qualityIssues?.length ?? 0 ) > 0 ) {
+		reason = `${ guidance.qualityIssues.length } coverage quality issue(s) persisted for ${ guidance.qualityIssuePasses } pass(es)`;
+	}
 	state.changes.push( {
 		at: state.coverageGuidanceLastCodexLaunchAt,
 		action: 'start-coverage-guidance-codex',
 		session,
-		reason: guidance.harnessWork.length
-			? `${ guidance.harnessWork.length } coverage goal(s) need harness work`
-			: ( guidance.autoExpansion?.addedGoals?.length ?? 0 ) > 0
-			? `${ guidance.autoExpansion.addedGoals.length } auto-expanded coverage goal(s) added`
-			: ( guidance.qualityIssues?.length ?? 0 ) > 0
-			? `${ guidance.qualityIssues.length } coverage quality issue(s) persisted for ${ guidance.qualityIssuePasses } pass(es)`
-			: `${ guidance.noProgressPasses } no-progress coverage pass(es) with ${ guidance.unmetGoals.length } unmet goal(s)`,
+		reason,
 	} );
 	await log( `Started coverage guidance Codex tmux session ${ session }.` );
 }
@@ -3620,6 +4360,31 @@ function hasActiveCoverageCodexSession() {
 		.some( ( line ) =>
 			line.startsWith( `${ COVERAGE_GUIDANCE_CODEX_SESSION_PREFIX }-` )
 		);
+}
+
+function getHistoricalKnownNoiseHoldReason() {
+	const historical = state.triageYieldHistorical;
+	if (
+		! historical ||
+		historical.signatureCount < TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES
+	) {
+		return null;
+	}
+	const topFamily = historical.topSemanticFamilies?.[ 0 ];
+	if (
+		! topFamily ||
+		! HISTORICAL_KNOWN_NOISE_FAMILIES.has( topFamily.family )
+	) {
+		return null;
+	}
+	if ( historical.topDuplicateFamilyShare < TRIAGE_DUPLICATE_SHARE_HOLD ) {
+		return null;
+	}
+	if ( ( state.triageYieldCurrent?.likelyRealVisible ?? 0 ) > 0 ) {
+		return null;
+	}
+
+	return `historical known-noise family ${ topFamily.family } dominates observed triage (${ topFamily.count }/${ historical.signatureCount }, share=${ historical.topDuplicateFamilyShare }); hold open-ended coverage Codex until current-run noise gating is validated`;
 }
 
 function buildCoverageCodexPrompt( guidance, reportPath ) {
@@ -3825,7 +4590,10 @@ async function writeStatus(
 	resources,
 	coverageFiles,
 	coverageStats,
+	summaryStats,
 	triageYield,
+	historicalTriageYield,
+	combinedTriageYield,
 	guidance
 ) {
 	const groups = await readJsonFile( GROUPS_PATH );
@@ -3871,6 +4639,9 @@ async function writeStatus(
 		`- records processed this pass: ${ novelty.processed }`,
 		`- files read this pass: ${ coverageStats.filesRead }`,
 		`- coverage lines seen this pass: ${ coverageStats.linesSeen }`,
+		`- summary files read this pass: ${ summaryStats.filesRead }`,
+		`- summary lines seen this pass: ${ summaryStats.linesSeen }`,
+		`- summary startup failures processed this pass: ${ summaryStats.startupFailures }`,
 		`- new behavioral feature keys this pass: ${ novelty.newFeatureKeys }`,
 		`- new CDP coverage hashes this pass: ${ novelty.newCoverageHashes }`,
 		`- all-time records by profile: ${ JSON.stringify(
@@ -3882,8 +4653,20 @@ async function writeStatus(
 		`- all-time records by transport: ${ JSON.stringify(
 			state.recordCountsByTransport ?? {}
 		) }`,
-		`- pre-action startup failures by profile: ${ JSON.stringify(
+		`- current-run records by profile: ${ JSON.stringify(
+			state.currentRunRecordCountsByProfile ?? {}
+		) }`,
+		`- current-run successful records by profile: ${ JSON.stringify(
+			state.currentRunSuccessfulRecordCountsByProfile ?? {}
+		) }`,
+		`- current-run records by transport: ${ JSON.stringify(
+			state.currentRunRecordCountsByTransport ?? {}
+		) }`,
+		`- current-run pre-action startup failures by profile: ${ JSON.stringify(
 			state.startupFailureCountsByProfile ?? {}
+		) }`,
+		`- current-run summary-only startup failures by profile: ${ JSON.stringify(
+			state.currentRunSummaryStartupFailureCountsByProfile ?? {}
 		) }`,
 		`- common-block aggregate coverage: ${ getCommonBlockCoverageCount() }`,
 		`- common-block min coverage: ${ getMinBlockCoverageCount(
@@ -3920,20 +4703,29 @@ async function writeStatus(
 		`- auto goal expansion threshold: ${
 			guidance.autoExpansion?.threshold ?? AUTO_GOAL_EXPANSION_THRESHOLD
 		}`,
-		`- auto coverage goals: ${ state.autoCoverageGoals?.length ?? 0 }`,
-		`- auto goals added this pass: ${
-			guidance.autoExpansion?.addedGoals?.length ?? 0
-		}`,
-		`- no-progress passes: ${ guidance.noProgressPasses } / ${ COVERAGE_GUIDANCE_STALL_PASSES }`,
-		`- quality issue passes: ${
-			guidance.qualityIssuePasses ?? 0
-		} / ${ COVERAGE_QUALITY_ISSUE_PASSES }`,
-		`- quality issues: ${ guidance.qualityIssues?.length ?? 0 }`,
-		`- recommended groups: ${
-			guidance.recommendedGroups.length
-				? guidance.recommendedGroups.join( ', ' )
-				: 'none'
-		}`,
+			`- auto coverage goals: ${ state.autoCoverageGoals?.length ?? 0 }`,
+			`- auto goals added this pass: ${
+				guidance.autoExpansion?.addedGoals?.length ?? 0
+			}`,
+			`- no-progress passes: ${ guidance.noProgressPasses } / ${ COVERAGE_GUIDANCE_STALL_PASSES }`,
+			`- quality issue passes: ${
+				guidance.qualityIssuePasses ?? 0
+			} / ${ COVERAGE_QUALITY_ISSUE_PASSES }`,
+			`- quality issues: ${ guidance.qualityIssues?.length ?? 0 }`,
+			`- policy guards: startup=${
+				PAUSE_ON_STARTUP_FAILURE ? 'enabled' : 'disabled'
+			}, triage-noise=${
+				PAUSE_ON_TRIAGE_NOISE ? 'enabled' : 'disabled'
+			}${
+				FORCE_COVERAGE_GUIDED_POLICY_GUARDS
+					? ' (coverage-guided forced)'
+					: ''
+			}`,
+			`- recommended groups: ${
+				guidance.recommendedGroups.length
+					? guidance.recommendedGroups.join( ', ' )
+					: 'none'
+			}`,
 		`- harness-work candidates: ${ guidance.harnessWork.length }`,
 		...( guidance.autoExpansion?.addedGoals?.length
 			? guidance.autoExpansion.addedGoals.map(
@@ -3941,10 +4733,12 @@ async function writeStatus(
 			  )
 			: [] ),
 		...( guidance.qualityIssues?.length
-			? guidance.qualityIssues.slice( 0, 12 ).map(
-					( issue ) =>
-						`- quality ${ issue.id }: ${ issue.evidence }`
-			  )
+			? guidance.qualityIssues
+					.slice( 0, 12 )
+					.map(
+						( issue ) =>
+							`- quality ${ issue.id }: ${ issue.evidence }`
+					)
 			: [] ),
 		...guidance.unmetGoals
 			.slice( 0, 20 )
@@ -3954,21 +4748,20 @@ async function writeStatus(
 						goal.target
 					}, groups=${ goal.groups.join( ',' ) || 'none' }`
 			),
-		'',
-		'## Triage Yield',
-		`- triage state files: ${ triageYield.files }`,
-		`- signatures: ${ triageYield.signatureCount }`,
-		`- likely-real visible: ${ triageYield.likelyRealVisible }`,
-		`- likely-real merged duplicates: ${ triageYield.likelyRealMerged }`,
-		`- likely-real oracle/noise questions: ${ triageYield.likelyRealOracleQuestion }`,
-		`- normalization-noise candidates: ${ triageYield.normalizationNoiseCandidates }`,
-		`- bootstrap stalls: ${ triageYield.bootstrapStalls }`,
-		`- top duplicate family share: ${ triageYield.topDuplicateFamilyShare }`,
-		`- top semantic families: ${ JSON.stringify(
-			triageYield.topSemanticFamilies
-		) }`,
-		'',
-		'## Health',
+			'',
+			'## Triage Yield',
+			'- scope: current output dir only; policy, health, and Codex launch decisions use this scope',
+			...formatTriageYieldStatusLines( triageYield ),
+			'',
+			'## Historical Triage Yield',
+			'- scope: observed prior roots only; used only to hold open-ended coverage Codex when a known-noise family dominates',
+			...formatTriageYieldStatusLines( historicalTriageYield ),
+			'',
+			'## Combined Triage Yield',
+			'- scope: current output dir plus observed prior roots; reporting only',
+			...formatTriageYieldStatusLines( combinedTriageYield ),
+			'',
+			'## Health',
 		...( healthWarnings.length
 			? healthWarnings.map( ( warning ) => `- warning: ${ warning }` )
 			: [ '- ok' ] ),
@@ -4002,23 +4795,55 @@ async function writeStatus(
 	await fs.writeFile( STATUS_PATH, lines.join( '\n' ) );
 }
 
+function formatTriageYieldStatusLines( triageYield ) {
+	return [
+		`- triage roots: ${ triageYield.roots ?? 0 }`,
+		`- triage state files: ${ triageYield.files }`,
+		`- signatures: ${ triageYield.signatureCount }`,
+		`- likely-real visible: ${ triageYield.likelyRealVisible }`,
+		`- likely-real merged duplicates: ${ triageYield.likelyRealMerged }`,
+		`- likely-real oracle/noise questions: ${ triageYield.likelyRealOracleQuestion }`,
+		`- normalization-noise candidates: ${ triageYield.normalizationNoiseCandidates }`,
+		`- bootstrap stalls: ${ triageYield.bootstrapStalls }`,
+		`- top duplicate family share: ${ triageYield.topDuplicateFamilyShare }`,
+		`- top semantic families: ${ JSON.stringify(
+			triageYield.topSemanticFamilies
+		) }`,
+	];
+}
+
 async function runPass() {
 	const coverageFiles = await findCoverageFiles( OBSERVED_RUN_DIRS );
-	const triageYield = await summarizeTriageYield( OBSERVED_RUN_DIRS );
-	state.triageYield = triageYield;
+	const currentCoverageFiles = coverageFiles.filter(
+		isCurrentRunCoverageFile
+	);
+	const currentSummaryFiles = await findSummaryFiles( CURRENT_RUN_DIRS );
+	const triageYieldCurrent = await summarizeTriageYield( CURRENT_RUN_DIRS );
+	const triageYieldHistorical = await summarizeTriageYield(
+		HISTORICAL_OBSERVED_RUN_DIRS
+	);
+	const triageYieldCombined = await summarizeTriageYield( OBSERVED_RUN_DIRS );
+	state.triageYield = triageYieldCurrent;
+	state.triageYieldCurrent = triageYieldCurrent;
+	state.triageYieldHistorical = triageYieldHistorical;
+	state.triageYieldCombined = triageYieldCombined;
 	const { records, stats } = await readCoverageRecords( coverageFiles );
 	const novelty = summarizeNovelty( records );
+	await ensureCurrentRunCounters( currentCoverageFiles, currentSummaryFiles );
+	const summaryStats = await readSummaryStartupFailures(
+		currentSummaryFiles
+	);
 	const guidance = createCoverageGuidance( novelty );
 	state.coverageGuidance = guidance;
 	const resources = sampleResources();
-	await applyPolicy( novelty, resources, triageYield, guidance );
 	evaluateHealth(
 		await readJsonFile( GROUPS_PATH ),
 		coverageFiles,
-		triageYield,
+		triageYieldCurrent,
 		await readJsonFile( path.join( OUTPUT_DIR, 'supervisor-state.json' ) )
 	);
-	updateCoverageQualityIssues( guidance, triageYield );
+	updateCoverageQualityIssues( guidance, triageYieldCurrent );
+	await applyPolicy( novelty, resources, triageYieldCurrent, guidance );
 	if ( shutdownRequested ) {
 		return;
 	}
@@ -4044,11 +4869,14 @@ async function runPass() {
 	await writeStatus(
 		novelty,
 		resources,
-		coverageFiles,
-		stats,
-		triageYield,
-		guidance
-	);
+			coverageFiles,
+			stats,
+			summaryStats,
+			triageYieldCurrent,
+			triageYieldHistorical,
+			triageYieldCombined,
+			guidance
+		);
 	await log(
 		`pass: processed=${ novelty.processed } files=${
 			coverageFiles.length
@@ -4058,15 +4886,21 @@ async function runPass() {
 			guidance.noProgressPasses
 		} autoGoals=${ state.autoCoverageGoals?.length ?? 0 } autoAdded=${
 			guidance.autoExpansion?.addedGoals?.length ?? 0
-		} qualityIssues=${ guidance.qualityIssues?.length ?? 0 } qualityPasses=${
-			guidance.qualityIssuePasses ?? 0
-		} warnings=${ state.healthWarnings.length } headroom=${
-			resources.hasHeadroom
-		} likelyReal=${ triageYield.likelyRealVisible } duplicateShare=${
-			triageYield.topDuplicateFamilyShare
-		} memory=${ formatMemoryHeadroomSummary( resources ) }`
-	);
-}
+		} qualityIssues=${
+			guidance.qualityIssues?.length ?? 0
+		} qualityPasses=${ guidance.qualityIssuePasses ?? 0 } warnings=${
+			state.healthWarnings.length
+			} summaryStartupFailures=${
+				summaryStats.startupFailures
+			} headroom=${ resources.hasHeadroom } likelyReal=${
+				triageYieldCurrent.likelyRealVisible
+			} duplicateShareCurrent=${
+				triageYieldCurrent.topDuplicateFamilyShare
+			} duplicateShareHistorical=${
+				triageYieldHistorical.topDuplicateFamilyShare
+			} memory=${ formatMemoryHeadroomSummary( resources ) }`
+		);
+	}
 
 function sleep( ms ) {
 	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );

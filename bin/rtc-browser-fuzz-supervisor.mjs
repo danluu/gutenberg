@@ -22,6 +22,10 @@ const DURATION_HOURS = getPositiveNumberEnv(
 	getPositiveNumberEnv( 'RTC_FUZZ_DURATION_HOURS', 14 )
 );
 const POLL_MS = getPositiveIntegerEnv( 'RTC_FUZZ_SUPERVISOR_POLL_MS', 60000 );
+const STATE_HEARTBEAT_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_SUPERVISOR_STATE_HEARTBEAT_MS',
+	60000
+);
 const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 const STATE_PATH = path.join( OUTPUT_DIR, 'supervisor-state.json' );
 const LOG_PATH = path.join( OUTPUT_DIR, 'supervisor.log' );
@@ -34,6 +38,23 @@ const ORBSTACK_DOCKER_RESTART_COOLDOWN_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_SUPERVISOR_ORBSTACK_DOCKER_RESTART_COOLDOWN_MS',
 	10 * 60 * 1000
 );
+const WP_ENV_MARIADB_HEALTHCHECK_SOURCE =
+	"test: [ 'CMD', 'healthcheck.sh', '--connect', '--innodb_initialized' ]";
+const WP_ENV_MARIADB_HEALTHCHECK_TARGET =
+	"test: [ 'CMD', 'healthcheck.sh', '--no-defaults', '--connect' ]";
+const COMPOSE_MARIADB_HEALTHCHECK_SOURCE = [
+	'        - CMD',
+	'        - healthcheck.sh',
+	"        - '--connect'",
+	"        - '--innodb_initialized'",
+].join( '\n' );
+const COMPOSE_MARIADB_HEALTHCHECK_TARGET = [
+	'        - CMD',
+	'        - healthcheck.sh',
+	"        - '--no-defaults'",
+	"        - '--connect'",
+].join( '\n' );
+const WP_ENV_DATABASE_FAILURE_RETRY_DELAYS_MS = [ 30000, 60000, 90000 ];
 const DEFAULT_GROUPS = [
 	{
 		name: 'default-http',
@@ -48,9 +69,12 @@ const DEFAULT_GROUPS = [
 
 let lastOrbStackDockerRestartAt = 0;
 let groupConfigs = parseGroups();
+const patchedWpEnvHealthcheckFiles = new Set();
+let stateWritePromise = Promise.resolve();
 await fs.mkdir( OUTPUT_DIR, { recursive: true } );
 const state = await loadInitialState();
 await writeState();
+startStateHeartbeat();
 
 function getPositiveIntegerEnv( name, fallback ) {
 	const rawValue = process.env[ name ];
@@ -145,6 +169,7 @@ async function loadInitialState() {
 				activeRunDirs: getActiveRunDirs( groupState ),
 			};
 		} );
+		existingState.groups = orderGroupStatesByConfig( existingState.groups );
 		existingState.outputDir = OUTPUT_DIR;
 		existingState.durationHours = DURATION_HOURS;
 		existingState.endsAt = new Date( END_AT ).toISOString();
@@ -185,6 +210,22 @@ function createInitialGroupState( group ) {
 	};
 }
 
+function orderGroupStatesByConfig( groupStates ) {
+	const groupOrder = new Map(
+		groupConfigs.map( ( group, index ) => [ group.name, index ] )
+	);
+	return [ ...groupStates ].sort( ( left, right ) => {
+		const leftIndex =
+			groupOrder.get( left.name ) ?? Number.MAX_SAFE_INTEGER;
+		const rightIndex =
+			groupOrder.get( right.name ) ?? Number.MAX_SAFE_INTEGER;
+		if ( leftIndex !== rightIndex ) {
+			return leftIndex - rightIndex;
+		}
+		return left.name.localeCompare( right.name );
+	} );
+}
+
 async function log( message ) {
 	const line = `[${ new Date().toISOString() }] ${ message }\n`;
 	process.stdout.write( line );
@@ -202,8 +243,29 @@ async function event( record ) {
 }
 
 async function writeState() {
-	state.lastUpdatedAt = new Date().toISOString();
-	await fs.writeFile( STATE_PATH, JSON.stringify( state, null, 2 ) + '\n' );
+	stateWritePromise = stateWritePromise
+		.catch( () => {} )
+		.then( async () => {
+			state.lastUpdatedAt = new Date().toISOString();
+			await fs.writeFile(
+				STATE_PATH,
+				JSON.stringify( state, null, 2 ) + '\n'
+			);
+		} );
+	return stateWritePromise;
+}
+
+function startStateHeartbeat() {
+	const heartbeat = setInterval( () => {
+		void writeState().catch( async ( error ) => {
+			const line = `[${ new Date().toISOString() }] supervisor state heartbeat failed: ${
+				error.message
+			}\n`;
+			process.stderr.write( line );
+			await fs.appendFile( LOG_PATH, line ).catch( () => {} );
+		} );
+	}, STATE_HEARTBEAT_MS );
+	heartbeat.unref();
 }
 
 function getGroupConfig( name ) {
@@ -272,6 +334,7 @@ async function syncGroupConfigs() {
 		}
 	}
 
+	state.groups = orderGroupStatesByConfig( state.groups );
 	await writeState();
 }
 
@@ -374,6 +437,16 @@ function parseHttpPort( statusOutput ) {
 	return match ? Number.parseInt( match[ 1 ], 10 ) : null;
 }
 
+function isWpEnvRunningStatus( result ) {
+	return result.ok && /\bstatus:\s+running\b/i.test( result.output );
+}
+
+function isWpEnvUninitializedStatus( result ) {
+	return /status:\s+uninitialized|Environment not initialized/i.test(
+		result.output
+	);
+}
+
 function parseWpEnvInstallPath( output ) {
 	const match = String( output ?? '' ).match( /install path:\s+(.+)/i );
 	return match ? match[ 1 ].trim() : null;
@@ -387,6 +460,36 @@ function getComposePath( installPath ) {
 	return path.join( installPath, 'docker-compose.yml' );
 }
 
+async function findGeneratedWpEnvInstallPath( group ) {
+	const wpEnvHome = buildEnv( group ).WP_ENV_HOME;
+	if ( ! wpEnvHome ) {
+		return null;
+	}
+
+	let entries;
+	try {
+		entries = await fs.readdir( wpEnvHome, { withFileTypes: true } );
+	} catch {
+		return null;
+	}
+
+	const candidates = [];
+	for ( const entry of entries ) {
+		if ( ! entry.isDirectory() ) {
+			continue;
+		}
+		const installPath = path.join( wpEnvHome, entry.name );
+		const composePath = getComposePath( installPath );
+		try {
+			const stats = await fs.stat( composePath );
+			candidates.push( { installPath, mtimeMs: stats.mtimeMs } );
+		} catch {}
+	}
+
+	candidates.sort( ( left, right ) => right.mtimeMs - left.mtimeMs );
+	return candidates[ 0 ]?.installPath ?? null;
+}
+
 function getOutputSnippet( output, maxLength = 1200 ) {
 	const normalized = String( output ?? '' )
 		.replaceAll( '\r', '' )
@@ -396,6 +499,17 @@ function getOutputSnippet( output, maxLength = 1200 ) {
 		return normalized;
 	}
 	return `${ normalized.slice( 0, maxLength ) }...`;
+}
+
+function getAttemptLogPath( logPath, attempt ) {
+	if ( ! logPath || attempt === 1 ) {
+		return logPath;
+	}
+	const extension = path.extname( logPath );
+	const basename = extension
+		? logPath.slice( 0, -extension.length )
+		: logPath;
+	return `${ basename }-attempt-${ attempt }${ extension }`;
 }
 
 function looksLikeStaleDockerEndpoint( output ) {
@@ -414,6 +528,44 @@ function looksLikeWordPressDbFailure( output ) {
 	return /Error establishing a database connection|database connection/i.test(
 		String( output ?? '' )
 	);
+}
+
+async function retryWpEnvStartAfterDatabaseFailure(
+	group,
+	startResult,
+	{ action, logPath }
+) {
+	let result = startResult;
+	for (
+		let index = 0;
+		index < WP_ENV_DATABASE_FAILURE_RETRY_DELAYS_MS.length;
+		index++
+	) {
+		if ( result.ok || ! looksLikeWordPressDbFailure( result.output ) ) {
+			return result;
+		}
+
+		const attempt = index + 1;
+		const delayMs = WP_ENV_DATABASE_FAILURE_RETRY_DELAYS_MS[ index ];
+		await log(
+			`${ group.name }: wp-env start reported database connection failure; waiting ${ delayMs }ms before retry ${ attempt }/${ WP_ENV_DATABASE_FAILURE_RETRY_DELAYS_MS.length }.`
+		);
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action,
+			reason: 'database-connection-failure',
+			attempt,
+			delayMs,
+		} );
+		await sleep( delayMs );
+		result = await runWpEnv( group, [ 'start' ], {
+			timeoutMs: 10 * 60 * 1000,
+			logPath: getAttemptLogPath( logPath, attempt ),
+		} );
+	}
+
+	return result;
 }
 
 function normalizeBaseUrl( value ) {
@@ -550,6 +702,87 @@ async function getWpEnvComposeServices( group, installPath ) {
 		: services.filter( ( service ) => ! service.includes( 'phpmyadmin' ) );
 }
 
+async function patchWpEnvMariaDbHealthcheck( group ) {
+	const sourcePath = path.join(
+		group.repoRoot,
+		'node_modules',
+		'@wordpress',
+		'env',
+		'lib',
+		'runtime',
+		'docker',
+		'build-docker-compose-config.js'
+	);
+	if ( patchedWpEnvHealthcheckFiles.has( sourcePath ) ) {
+		return;
+	}
+	patchedWpEnvHealthcheckFiles.add( sourcePath );
+
+	try {
+		const source = await fs.readFile( sourcePath, 'utf8' );
+		if ( ! source.includes( WP_ENV_MARIADB_HEALTHCHECK_SOURCE ) ) {
+			return;
+		}
+		await fs.writeFile(
+			sourcePath,
+			source.replace(
+				WP_ENV_MARIADB_HEALTHCHECK_SOURCE,
+				WP_ENV_MARIADB_HEALTHCHECK_TARGET
+			)
+		);
+		await log(
+			`${ group.name }: patched wp-env MariaDB healthcheck for stale healthcheck credentials.`
+		);
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'wp-env-mariadb-healthcheck-template-patch',
+			sourcePath,
+		} );
+	} catch ( error ) {
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'wp-env-mariadb-healthcheck-template-patch-failed',
+			error: error.message,
+			sourcePath,
+		} );
+	}
+}
+
+async function patchGeneratedComposeMariaDbHealthcheck( group, composePath ) {
+	try {
+		const source = await fs.readFile( composePath, 'utf8' );
+		if ( ! source.includes( COMPOSE_MARIADB_HEALTHCHECK_SOURCE ) ) {
+			return;
+		}
+		await fs.writeFile(
+			composePath,
+			source.replace(
+				COMPOSE_MARIADB_HEALTHCHECK_SOURCE,
+				COMPOSE_MARIADB_HEALTHCHECK_TARGET
+			)
+		);
+		await log(
+			`${ group.name }: patched generated-compose MariaDB healthcheck for stale healthcheck credentials.`
+		);
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'wp-env-generated-compose-mariadb-healthcheck-patch',
+			composePath,
+		} );
+	} catch ( error ) {
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'wp-env-generated-compose-mariadb-healthcheck-patch-failed',
+			error: error.message,
+			composePath,
+		} );
+	}
+}
+
 async function runWpEnvCompose( group, installPath, args, label, timeoutMs ) {
 	const composePath = getComposePath( installPath );
 	const projectName = getComposeProjectName( installPath );
@@ -678,7 +911,19 @@ async function repairWpEnvWithGeneratedCompose( {
 		return false;
 	}
 
-	const installPath = parseWpEnvInstallPath( statusOutput );
+	let installPath = parseWpEnvInstallPath( statusOutput );
+	if ( ! installPath ) {
+		installPath = await findGeneratedWpEnvInstallPath( group );
+		if ( installPath ) {
+			await event( {
+				group: group.name,
+				kind: 'repair',
+				action: 'wp-env-generated-compose-install-path-fallback',
+				reason,
+				installPath,
+			} );
+		}
+	}
 	if ( ! installPath ) {
 		await event( {
 			group: group.name,
@@ -703,6 +948,7 @@ async function repairWpEnvWithGeneratedCompose( {
 		return false;
 	}
 
+	await patchGeneratedComposeMariaDbHealthcheck( group, composePath );
 	await maybeRunSafeDockerPrune( group, reason, diagnosticOutput );
 
 	const services = await getWpEnvComposeServices( group, installPath );
@@ -866,15 +1112,13 @@ async function setWpBaseUrl( group, baseUrl ) {
 
 async function ensureWpEnv( groupState ) {
 	const group = getGroupConfig( groupState.name );
+	await patchWpEnvMariaDbHealthcheck( group );
 	let statusResult = await runWpEnv( group, [ 'status' ], {
 		timeoutMs: 120000,
 		logPath: path.join( OUTPUT_DIR, `${ group.name }-wp-env-status.log` ),
 	} );
 
-	if (
-		! statusResult.ok ||
-		! statusResult.output.includes( 'status: running' )
-	) {
+	if ( ! isWpEnvRunningStatus( statusResult ) ) {
 		await log( `${ group.name }: wp-env is not running; starting it.` );
 		await event( {
 			group: group.name,
@@ -888,28 +1132,17 @@ async function ensureWpEnv( groupState ) {
 				`${ group.name }-wp-env-start.log`
 			),
 		} );
-		if (
-			! startResult.ok &&
-			looksLikeWordPressDbFailure( startResult.output )
-		) {
-			await log(
-				`${ group.name }: wp-env start reported container health failure; retrying once.`
-			);
-			await event( {
-				group: group.name,
-				kind: 'repair',
+		startResult = await retryWpEnvStartAfterDatabaseFailure(
+			group,
+			startResult,
+			{
 				action: 'wp-env-start-retry',
-				reason: 'container-health-failure',
-			} );
-			await sleep( 30000 );
-			startResult = await runWpEnv( group, [ 'start' ], {
-				timeoutMs: 10 * 60 * 1000,
 				logPath: path.join(
 					OUTPUT_DIR,
 					`${ group.name }-wp-env-start-retry.log`
 				),
-			} );
-		}
+			}
+		);
 		if ( ! startResult.ok ) {
 			const repaired = await repairWpEnvWithGeneratedCompose( {
 				group,
@@ -922,6 +1155,37 @@ async function ensureWpEnv( groupState ) {
 					`${ group.name }: wp-env start failed; see ${ group.name }-wp-env-start.log`
 				);
 			}
+			await log(
+				`${ group.name }: retrying wp-env start after generated-compose repair.`
+			);
+			await event( {
+				group: group.name,
+				kind: 'repair',
+				action: 'wp-env-start-after-compose-repair',
+			} );
+			startResult = await runWpEnv( group, [ 'start' ], {
+				timeoutMs: 10 * 60 * 1000,
+				logPath: path.join(
+					OUTPUT_DIR,
+					`${ group.name }-wp-env-start-after-compose-repair.log`
+				),
+			} );
+			startResult = await retryWpEnvStartAfterDatabaseFailure(
+				group,
+				startResult,
+				{
+					action: 'wp-env-start-after-compose-repair-db-retry',
+					logPath: path.join(
+						OUTPUT_DIR,
+						`${ group.name }-wp-env-start-after-compose-repair-db-retry.log`
+					),
+				}
+			);
+			if ( ! startResult.ok ) {
+				throw new Error(
+					`${ group.name }: wp-env start failed after generated-compose repair; see ${ group.name }-wp-env-start-after-compose-repair.log`
+				);
+			}
 		}
 		statusResult = await runWpEnv( group, [ 'status' ], {
 			timeoutMs: 120000,
@@ -930,10 +1194,33 @@ async function ensureWpEnv( groupState ) {
 				`${ group.name }-wp-env-status.log`
 			),
 		} );
-		if (
-			! statusResult.ok ||
-			! statusResult.output.includes( 'status: running' )
-		) {
+		if ( ! isWpEnvRunningStatus( statusResult ) ) {
+			if ( isWpEnvUninitializedStatus( statusResult ) ) {
+				await log(
+					`${ group.name }: wp-env still reports uninitialized after start; retrying start once.`
+				);
+				await event( {
+					group: group.name,
+					kind: 'repair',
+					action: 'wp-env-start-after-uninitialized-status',
+				} );
+				await runWpEnv( group, [ 'start' ], {
+					timeoutMs: 10 * 60 * 1000,
+					logPath: path.join(
+						OUTPUT_DIR,
+						`${ group.name }-wp-env-start-after-uninitialized-status.log`
+					),
+				} );
+				statusResult = await runWpEnv( group, [ 'status' ], {
+					timeoutMs: 120000,
+					logPath: path.join(
+						OUTPUT_DIR,
+						`${ group.name }-wp-env-status.log`
+					),
+				} );
+			}
+		}
+		if ( ! isWpEnvRunningStatus( statusResult ) ) {
 			throw new Error(
 				`${ group.name }: wp-env repair did not restore running status.`
 			);
