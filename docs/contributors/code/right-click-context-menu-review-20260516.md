@@ -101,6 +101,14 @@ Impact:
 
 Split is semantically a replace/remove operation and should honor the same block lock constraints. Remove locks are the strongest source-confirmed repro target. Template-lock variants should still get UI coverage because `replaceBlocks` checks insertability and can no-op under stricter template locks.
 
+Actual Playwright evidence from the patched WordPress editor:
+
+![Remove-locked block context menu does not show Delete](right-click-context-menu-review-20260516-assets/actual/split-lock-menu-no-delete.png)
+
+![Split block replaces the remove-locked block](right-click-context-menu-review-20260516-assets/actual/split-lock-bypass-after-split.png)
+
+The browser run used the actual context menu against `http://localhost:9137`. It first observed `canRemoveBlocks=false` and no Delete item for the locked block, then selected `Split block`; the editor ended with three paragraph blocks carrying `lock: { "remove": true }`, confirming that Split performed the replacement despite the remove lock.
+
 ### Medium: spell-check replacements always write the top-level `content` attribute
 
 The menu enables `Check spelling` for any highlighted text:
@@ -140,6 +148,12 @@ Impact:
 -   The bug is easy to miss in ordinary paragraph testing because paragraph whitespace is often visually collapsed.
 
 Split should copy only attributes that are semantically valid for each fragment, and it should preserve whitespace for block types that require it.
+
+Actual Playwright evidence from the same patched-editor run:
+
+![Split block trims whitespace in a Code block](right-click-context-menu-review-20260516-assets/actual/split-code-whitespace-after-split.png)
+
+The run seeded a Code block with leading spaces before `alpha` and a leading space before `gamma`, then split it through the context menu. The resulting saved block contents were `alpha`, `beta`, and `gamma<br> second line`, showing that leading whitespace was stripped. The anchor-duplication subcase did not reproduce in this run: after splitting an anchored paragraph the resulting blocks had `anchors=[null,null,null]`, so that part remains source-risk rather than browser-confirmed evidence.
 
 ### Medium: non-iframed editors can close the menu before menu-item clicks fire
 
@@ -279,7 +293,7 @@ A follow-up pass ran four analysis iterations per finding across the same named 
 | Paste as new block treats text as RichText HTML | Real, 6/6 | High content-integrity bug; not claimed as confirmed XSS. |
 | Split block bypasses locks | Real with narrowed wording, 6/6 | Strongest confirmed case is `lock.remove` / `canRemoveBlocks`; broad template-lock bypass wording is overstated because insertion checks can still no-op. |
 | Spell check writes only top-level `content` | Real, 6/6 | Medium integrity bug for fields backed by another attribute or nested structure. |
-| Split duplicates attributes and trims content | Real, 5/6; real but needs UI validation, 1/6 | Medium; source-confirmed for same-type/original split fragments, higher for anchors and whitespace-sensitive blocks. |
+| Split duplicates attributes and trims content | Real, 5/6; real but needs UI validation, 1/6 | Medium; Playwright confirmed whitespace trimming in a Code block. Anchor duplication remains source-risk only; it did not reproduce in the first browser run. |
 | Non-iframed editors can dismiss menu before item click | Real but needs UI validation, 6/6 | Medium and scoped to non-iframed/custom `BlockCanvas` consumers, not necessarily the default iframed editor. |
 | Add block above/below can replace an empty default block | Real but needs UI validation, 6/6 | Medium-low/medium workflow integrity issue; unlikely to delete authored text, but contradicts the command label and can discard empty-block state. |
 | Copy Text writes selected text as `text/html` | Real, 6/6 | Medium clipboard data-integrity bug; not claimed as confirmed XSS. |
