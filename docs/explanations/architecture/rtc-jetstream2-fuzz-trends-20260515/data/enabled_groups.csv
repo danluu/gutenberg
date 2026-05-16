@@ -485,3 +485,6 @@ timestamp,group,group_family
 2026-05-16T04:14:41Z,novelty-ws-parser-transform,parser
 2026-05-16T04:14:41Z,novelty-ws-async-server-blocks,async/media
 2026-05-16T04:14:41Z,novelty-ws-media-cross-entity,async/media
+2026-05-16T04:56:32Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T04:56:32Z,novelty-http-persistence-probe,persistence
+2026-05-16T04:56:32Z,novelty-ws-long-session-large-doc,lifecycle
