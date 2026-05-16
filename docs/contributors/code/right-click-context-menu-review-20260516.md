@@ -98,6 +98,14 @@ Impact:
 
 The fix should escape text or build RichText values from text instead of assigning raw text to HTML-valued attributes.
 
+Actual Playwright evidence from the patched WordPress editor:
+
+![Paste as new block renders clipboard plain text as strong markup](right-click-context-menu-review-20260516-assets/actual/paste-as-block-rendered-strong.png)
+
+![Inserted paragraph crop after Paste as new block](right-click-context-menu-review-20260516-assets/actual/paste-as-block-inserted-crop.png)
+
+The browser run wrote plain text `<strong>paste-as-new-block-literal</strong>` to the clipboard, opened the actual right-click menu, chose `Paste as new block -> Paragraph`, and inspected the inserted block. The resulting block attribute was `<strong>paste-as-new-block-literal</strong>`, while the visible text was only `paste-as-new-block-literal` and the DOM HTML contained a `<strong>` element. That confirms the plain-text payload was treated as RichText HTML.
+
 ### High: `Split block` bypasses removal/template-lock checks
 
 The menu enables split based on `canSplitBlock`, but not on whether the target can be removed or replaced:
