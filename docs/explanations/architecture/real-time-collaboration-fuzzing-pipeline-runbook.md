@@ -671,6 +671,12 @@ Important runner defaults and controls:
     settles, make the late-joining browser append a witnessed paragraph and run
     the normal convergence/invariant path. This checks that late joiners can
     contribute new state, not just receive it.
+-   `GUTENBERG_RTC_BROWSER_REAL_USER_TYPING_DELAY_MS=0`: do not add an
+    artificial per-character delay to real-user keyboard actions. Raise this
+    only for focused slow-typing coverage.
+-   `GUTENBERG_RTC_BROWSER_PERSISTED_POST_MARKER_POLL_INTERVAL_MS=50`: poll
+    REST persistence/revision marker checks quickly. This is a polling interval,
+    not a required settle sleep.
 -   `GUTENBERG_RTC_BROWSER_CONVERGENCE_STABLE_SAMPLES=1` and
     `GUTENBERG_RTC_BROWSER_CONVERGENCE_STABLE_INTERVAL_MS=250`: require
     multiple consecutive equal normalized editor samples before declaring
