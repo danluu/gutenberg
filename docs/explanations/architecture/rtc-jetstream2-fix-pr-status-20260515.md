@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T04:02:20Z`
+Snapshot time: `2026-05-16T04:09:09Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -27,9 +27,14 @@ Current state:
 - The remaining filing blockers are export/rebase, evidence cleanup, branch
   graph/containment evidence, adjacent range-diffs/diffstats, focused
   post-rebase checks, and a fresh final combined-stack validation run.
-- Current coverage-guided fuzzing reports `0` visible likely-real failures, but
-  this is health evidence only. It is not running against a final rebased PR
-  stack and must not be treated as PR-filing or final-stack validation.
+- Current coverage-guided fuzzing still reports `0` visible likely-real
+  failures, but this is health evidence only. It is not running against a final
+  rebased PR stack and must not be treated as PR-filing or final-stack
+  validation.
+- The latest monitor restart hit a fuzz control-plane `ReferenceError` after
+  briefly enabling WS groups, so current coverage progress is blocked until the
+  monitor policy fix is corrected and restarted. This is not a product failure
+  signal.
 - PR 13 repair/import is no longer missing. The repaired source-repo heads exist
   and passed the source-import gate with `63/63` focused CRDT tests, touched-file
   JS lint, and `git diff --check`.
@@ -89,43 +94,60 @@ the repaired source heads above.
 
 ## Fuzz And Validation Status
 
-Latest coverage-guided novelty monitor:
+Latest durable coverage-guided novelty state:
 
 ```text
-updated: 2026-05-16T04:02:03.111Z
+updated: 2026-05-16T04:07:11.932Z
 output dir: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T030920Z
-coverage files: 23430
-total records seen: 34585
+coverage files observed: 23481
+total records seen: 34664
 unmet goals: 13
 likely-real visible: 0
 likely-real merged duplicates: 0
 oracle/noise questions: 0
 enabled groups: novelty-http-persistence-probe
-headroom for adding groups: yes
-load1: 43.27 / 64 cores
-memory: 429.7G free / 492.0G total
 ```
 
-Current-run triage is clean, but the run is capacity constrained:
+Current-run triage is clean, but the browser scheduling/control plane is not:
 
-- Current-run triage has `0` signatures and `0` likely-real visible failures.
-- Historical triage has `14638` signatures, including `8510`
-  `pre_action_bootstrap_stall` signatures and `8735` bootstrap stalls.
+- Current-run triage has `0` signatures, `0` bootstrap stalls, and `0`
+  likely-real visible failures.
+- Historical triage has `14718` signatures, including `8566`
+  `pre_action_bootstrap_stall` signatures and `8793` bootstrap stalls.
 - Several WS groups are paused or held because historical known-noise and recent
   startup failures are dominating scheduling.
 - The latest duplicate/noise persona synthesis treats this as a fuzz
   control-plane issue: historical bootstrap noise should not pause live WS
   browser coverage when current-run triage has no product signal.
 
+The collector also captured a later monitor restart attempt:
+
+```text
+2026-05-16T04:08:08.508Z started run-20260516T040758Z
+2026-05-16T04:08:54Z enabled novelty-ws-real-user-editing,
+  novelty-ws-lifecycle, novelty-ws-real-user-rich-text,
+  novelty-ws-block-gauntlet, novelty-ws-common-blocks,
+  novelty-ws-parser-transform, novelty-ws-async-server-blocks,
+  novelty-ws-media-cross-entity, and novelty-ws-long-session-large-doc
+2026-05-16T04:08:54Z pass failed:
+  ReferenceError: historicalKnownNoiseHoldReason is not defined
+  at applyPolicy (.../bin/rtc-browser-fuzz-novelty-monitor.mjs:3795:2)
+```
+
+Treat that as a live monitor-health blocker. Do not claim fresh broad WS
+coverage progress after the restart until the policy patch passes `node --check`
+and the monitor completes a bounded validation pass.
+
 Latest trend evidence:
 
 ```text
-generated_at_utc: 2026-05-16T03:53:42Z
-monitor passes: 1233
-coverage files: 272 -> 23346
+generated_at_utc: 2026-05-16T04:06:21Z
+monitor passes: 1240
+coverage files: 272 -> 23466
 unmet coverage goals: 24 -> 13
 likely_real_max: 0
 enabled groups current: novelty-http-persistence-probe
+memory free: 426.5G
 ```
 
 This supports continued coverage progress with no visible likely-real product
@@ -157,11 +179,13 @@ What remains before filing:
 ## Status-Persona Analysis
 
 The completed status-report persona syntheses at
-`20260516T035208Z-iter-1` and `20260516T035706Z-iter-2` agree on these report
-updates:
+`20260516T035208Z-iter-1`, `20260516T035706Z-iter-2`,
+`20260516T040218Z-iter-3`, and final analysis
+`20260516T040744Z-final-analysis` agree on these report updates:
 
 - Replace stale 2026-05-15 coverage snapshots with the verified 2026-05-16
-  novelty monitor status.
+  novelty monitor status, using a compact timestamped snapshot because exact
+  counts differ by read time.
 - Say explicitly that current fuzz has `0` visible likely-real failures but is
   not final-stack validation.
 - Separate current-run triage from historical triage noise.
@@ -182,7 +206,12 @@ The latest duplicate/noise persona synthesis also identifies a fuzz
 control-plane scheduling issue: historical `pre_action_bootstrap_stall` noise
 is pausing live WS groups even though current-run triage has no signatures.
 That supports a separate bounded monitor-scheduling fix only if explicitly
-authorized; no such job or code change was launched from this report update.
+authorized. Its minimum validation is `node --check` on the touched monitor,
+triage-watcher, and analysis-tier scripts, a gate-only pass, monitor restart,
+and a short check that WS groups are no longer paused solely by historical
+noise. The later `historicalKnownNoiseHoldReason` `ReferenceError` makes this
+control-plane fix more urgent, but no job or code change was launched from this
+report update.
 
 The split-review analysis keeps this bounded manual action available for
 reload-hydration evidence:
@@ -308,6 +337,9 @@ File order after export/rebase should be:
 4. Table and fallback-group structural residuals after evidence hygiene is
    clean.
 
-Existing fuzz can continue. Do not start new fuzz lanes, broad final-stack
-fuzzing, PR 13 repair/import, gate shaping, duplicate reload-hydration harness
-work, or another split-review loop from this status update.
+Existing fuzz infrastructure can continue where healthy, but do not rely on
+fresh broad coverage-guided WS progress until the live monitor-health issue is
+fixed or the previous healthy monitor is restored. Do not start new fuzz lanes,
+broad final-stack fuzzing, PR 13 repair/import, gate shaping, duplicate
+reload-hydration harness work, or another split-review loop from this status
+update.
