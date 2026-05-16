@@ -182,6 +182,32 @@ parse_pr_split_table <- function( lines, commit, commit_time ) {
 	} )
 }
 
+pr_number_levels <- function( pr_values ) {
+	pr_values <- unique( pr_values[ ! is.na( pr_values ) ] )
+	if ( length( pr_values ) == 0 ) {
+		return( character() )
+	}
+
+	tibble( pr = pr_values ) %>%
+		mutate(
+			pr_text = str_to_upper( str_remove_all( pr, "[`*]" ) ),
+			pr_number = as.integer(
+				str_match( pr_text, "PR\\s*0*([0-9]+)\\s*([A-Z]*)" )[ , 2 ]
+			),
+			pr_suffix = coalesce(
+				str_match( pr_text, "PR\\s*0*([0-9]+)\\s*([A-Z]*)" )[ , 3 ],
+				""
+			)
+		) %>%
+		arrange(
+			is.na( pr_number ),
+			pr_number,
+			pr_suffix,
+			str_to_upper( pr )
+		) %>%
+		pull( pr )
+}
+
 status_report_history <- function() {
 	if ( ! file.exists( status_report_path ) ) {
 		return( tibble() )
@@ -974,7 +1000,7 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 
 	pr_suggested_plot <- pr_suggested_loc %>%
 		mutate(
-			pr = factor( pr, levels = unique( pr[ order( net_loc ) ] ) )
+			pr = factor( pr, levels = pr_number_levels( pr ) )
 		)
 
 	write_plot(
