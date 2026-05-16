@@ -23,6 +23,13 @@ The continuous Jetstream2 PR split review loop is active. The split is still
 accepted: no latest persona or status-analysis report recommends a redesign,
 and the old aggregate PR 15 is replaced by PR 15A/15B/15C.
 
+That acceptance is provisional. The current PR split is a working hypothesis,
+not a constraint: the continuous review loop should replace, merge, split,
+reorder, or drop PRs when new fixes, fuzz evidence, branch shape, or
+reviewability show a better maintainer-facing split that still covers the
+significant bugs. Old PR numbers, old branch groupings, and the original split
+are not privileged merely for continuity.
+
 The latest split synthesis, `pr-split-20260516T063020Z-synthesis`, keeps the
 split unchanged and makes the current blocker operational: only repaired
 `final/rtc-pr*` refs are valid PR-head candidates, and the latest finalization
