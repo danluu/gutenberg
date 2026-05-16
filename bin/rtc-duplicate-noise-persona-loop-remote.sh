@@ -48,7 +48,7 @@ write_duplicate_noise_gate() {
   echo
   if [ -n "$coverage_root" ] && [ -f "$coverage_root/novelty-status.md" ]; then
     awk '
-      /^## Current-run triage yield/ { in_section = 1; print; next }
+      /^## (Current-run )?Triage Yield/ { in_section = 1; print; next }
       /^## / && in_section { exit }
       in_section { print }
     ' "$coverage_root/novelty-status.md"
