@@ -275,6 +275,35 @@ for campaign, path in deduped_paths:
 	if campaign not in latest_by_campaign or mtime > latest_by_campaign[campaign][0]:
 		latest_by_campaign[campaign] = (mtime, path)
 
+group_metadata = {}
+fallback_group_metadata = {}
+
+def load_groups(path):
+	try:
+		with open(path) as group_file:
+			groups = json.load(group_file)
+	except Exception:
+		return []
+	if isinstance(groups, dict):
+		groups = groups.get("groups", [])
+	if not isinstance(groups, list):
+		return []
+	return [group for group in groups if isinstance(group, dict)]
+
+for campaign, path in sorted(deduped_paths):
+	run = os.path.basename(os.path.dirname(path))
+	for group in load_groups(path):
+		name = group.get("name", "")
+		if not name:
+			continue
+		meta = {
+			"fuzz_level": group.get("fuzzLevel") or group.get("fuzz_level") or infer_fuzz_level(group, campaign),
+			"transport": group.get("transport", ""),
+			"profile": group_profile(group),
+		}
+		group_metadata[(campaign, run, name)] = meta
+		fallback_group_metadata[(campaign, name)] = meta
+
 with open(os.path.join(out, "data", "fuzz_level_mix.csv"), "w", newline="") as f:
 	writer = csv.writer(f)
 	writer.writerow([
@@ -291,21 +320,16 @@ with open(os.path.join(out, "data", "fuzz_level_mix.csv"), "w", newline="") as f
 		"source_path",
 	])
 	for campaign, path in sorted(deduped_paths):
-		try:
-			with open(path) as group_file:
-				groups = json.load(group_file)
-			mtime = datetime.fromtimestamp(os.path.getmtime(path), tz=timezone.utc)
-		except Exception:
+		groups = load_groups(path)
+		if not groups:
 			continue
-		if isinstance(groups, dict):
-			groups = groups.get("groups", [])
-		if not isinstance(groups, list):
+		try:
+			mtime = datetime.fromtimestamp(os.path.getmtime(path), tz=timezone.utc)
+		except OSError:
 			continue
 		latest_path = latest_by_campaign.get(campaign, (None, ""))[1]
 		run = os.path.basename(os.path.dirname(path))
 		for group in groups:
-			if not isinstance(group, dict):
-				continue
 			try:
 				lanes = int(group.get("lanes", 1) or 1)
 			except (TypeError, ValueError):
@@ -328,6 +352,77 @@ with open(os.path.join(out, "data", "fuzz_level_mix.csv"), "w", newline="") as f
 				str(os.path.realpath(path) == os.path.realpath(latest_path)).lower(),
 				path,
 			])
+
+execution_counts = defaultdict(lambda: [0, 0, 0])
+for campaign, base in campaign_roots:
+	if not os.path.isdir(base):
+		continue
+	for pattern in (
+		os.path.join(base, "run-*", "*-gen-*", "lane-*", "events.ndjson"),
+		os.path.join(base, "runs", "*", "*-gen-*", "lane-*", "events.ndjson"),
+	):
+		for events_path in glob.glob(pattern):
+			lane_dir = os.path.basename(os.path.dirname(events_path))
+			generation_dir = os.path.basename(os.path.dirname(os.path.dirname(events_path)))
+			run = os.path.basename(os.path.dirname(os.path.dirname(os.path.dirname(events_path))))
+			match = re.match(r"^(.*)-gen-[0-9]+-", generation_dir)
+			group_name = match.group(1) if match else generation_dir
+			meta = group_metadata.get((campaign, run, group_name)) or fallback_group_metadata.get((campaign, group_name)) or {
+				"fuzz_level": "browser-e2e",
+				"transport": "",
+				"profile": "",
+			}
+			try:
+				with open(events_path) as events_file:
+					for line in events_file:
+						if '"kind":"seed-attempt-complete"' not in line:
+							continue
+						try:
+							event = json.loads(line)
+						except json.JSONDecodeError:
+							continue
+						timestamp = event.get("at")
+						if not timestamp:
+							continue
+						label = str(event.get("label") or "")
+						try:
+							parsed_timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+						except ValueError:
+							continue
+						bucket = parsed_timestamp.replace(
+							minute=(parsed_timestamp.minute // 15) * 15,
+							second=0,
+							microsecond=0,
+						)
+						key = (
+							bucket.strftime("%Y-%m-%dT%H:%M:%SZ"),
+							campaign,
+							group_name,
+							meta["fuzz_level"],
+							meta["transport"] or event.get("transport", ""),
+							meta["profile"] or event.get("actionProfile", ""),
+						)
+						execution_counts[key][0] += 1
+						execution_counts[key][1] += 1 if label == "primary" else 0
+						execution_counts[key][2] += 1 if event.get("ok") else 0
+			except OSError:
+				continue
+
+with open(os.path.join(out, "data", "fuzz_level_executions.csv"), "w", newline="") as f:
+	writer = csv.writer(f)
+	writer.writerow([
+		"timestamp",
+		"campaign",
+		"group",
+		"fuzz_level",
+		"transport",
+		"profile",
+		"executions",
+		"primary_executions",
+		"successful_executions",
+	])
+	for key, counts in sorted(execution_counts.items()):
+		writer.writerow([*key, *counts])
 
 with open(os.path.join(out, "summary", "remote-source-paths.env"), "w") as f:
 	f.write(f"coverage_root={os.environ.get('coverage_root', '')}\n")
@@ -358,6 +453,7 @@ cp "$INPUT_DIR/remote/data/cpu_utilization.csv" "$ARTIFACT_DIR/data/cpu_utilizat
 cp "$INPUT_DIR/remote/data/load_average.csv" "$ARTIFACT_DIR/data/load_average.csv"
 cp "$INPUT_DIR/remote/data/project_activity.csv" "$ARTIFACT_DIR/data/project_activity.csv"
 cp "$INPUT_DIR/remote/data/fuzz_level_mix.csv" "$ARTIFACT_DIR/data/fuzz_level_mix.csv"
+cp "$INPUT_DIR/remote/data/fuzz_level_executions.csv" "$ARTIFACT_DIR/data/fuzz_level_executions.csv"
 
 mkdir -p "$INPUT_DIR/persona-inputs"
 if compgen -G "$INPUT_DIR/remote/persona/*.md" > /dev/null; then

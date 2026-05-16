@@ -123,6 +123,8 @@ for key in [
 	"fuzz_level_mix_snapshots",
 	"fuzz_level_mix_campaigns",
 	"fuzz_level_mix_latest",
+	"fuzz_level_execution_events",
+	"fuzz_level_execution_latest",
 ]:
 	if key in summary:
 		lines.append(f"- {key}: {summary[key]}")
