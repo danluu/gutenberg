@@ -231,6 +231,8 @@ campaign_roots = [
 	("strict-expansion", "/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515"),
 	("focused-shards", "/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515"),
 	("gap-booster", "/media/volume/danluu-fuzz-data/rtc-gap-booster-20260515"),
+	("unit-property", "/media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516"),
+	("coverage-guided-lower-level", "/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516"),
 ]
 group_paths = []
 for campaign, base in campaign_roots:
