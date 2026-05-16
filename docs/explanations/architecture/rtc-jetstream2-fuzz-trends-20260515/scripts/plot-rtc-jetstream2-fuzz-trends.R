@@ -563,6 +563,15 @@ pr_events <- tibble(
 review_durations <- pr_events %>%
 	filter( event_type %in% c( "review start", "review finish" ) ) %>%
 	select( timestamp, event_type, cycle ) %>%
+	group_by( cycle, event_type ) %>%
+	summarise(
+		timestamp = if ( first( event_type ) == "review finish" ) {
+			max( timestamp )
+		} else {
+			min( timestamp )
+		},
+		.groups = "drop"
+	) %>%
 	pivot_wider( names_from = event_type, values_from = timestamp ) %>%
 	filter( ! is.na( `review start` ), ! is.na( `review finish` ) ) %>%
 	mutate( duration_minutes = as.numeric( difftime( `review finish`, `review start`, units = "mins" ) ) )
@@ -570,6 +579,15 @@ review_durations <- pr_events %>%
 feedback_durations <- pr_events %>%
 	filter( event_type %in% c( "feedback start", "feedback finish" ) ) %>%
 	select( timestamp, event_type, cycle ) %>%
+	group_by( cycle, event_type ) %>%
+	summarise(
+		timestamp = if ( first( event_type ) == "feedback finish" ) {
+			max( timestamp )
+		} else {
+			min( timestamp )
+		},
+		.groups = "drop"
+	) %>%
 	pivot_wider( names_from = event_type, values_from = timestamp ) %>%
 	filter( ! is.na( `feedback start` ), ! is.na( `feedback finish` ) ) %>%
 	mutate( duration_minutes = as.numeric( difftime( `feedback finish`, `feedback start`, units = "mins" ) ) )
