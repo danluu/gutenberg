@@ -642,3 +642,13 @@ timestamp,group,group_family
 2026-05-16T15:22:17Z,novelty-http-persistence-probe,persistence
 2026-05-16T15:45:46Z,novelty-ws-lifecycle,lifecycle
 2026-05-16T15:57:42Z,novelty-http-persistence-probe,persistence
+2026-05-16T16:48:25Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T16:48:25Z,novelty-ws-real-user-editing,real-user
+2026-05-16T16:48:25Z,novelty-ws-real-user-rich-text,real-user
+2026-05-16T16:48:25Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-16T16:48:25Z,novelty-ws-common-blocks,auth/locks
+2026-05-16T16:48:25Z,novelty-ws-parser-transform,parser
+2026-05-16T16:48:25Z,novelty-ws-async-server-blocks,async/media
+2026-05-16T16:50:53Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T16:50:53Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-16T16:50:53Z,novelty-ws-common-blocks,auth/locks
