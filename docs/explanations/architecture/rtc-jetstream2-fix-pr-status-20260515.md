@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T06:37:49Z`
+Snapshot time: `2026-05-16T06:47:08Z`
 
 Trigger event:
-`pr-split-2026-05-16T06-36-49Z-20260516T063020Z`
+`duplicate-noise-2026-05-16T06-46-02Z-16`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -43,16 +43,15 @@ validation.
 Current state:
 
 - The live coverage root is
-  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T062428Z`.
+  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T064057Z`.
   The current novelty monitor snapshot is populated at
-  `2026-05-16T06:37:06.913Z`: `25220` coverage files, `37132` total records,
+  `2026-05-16T06:45:52.413Z`: `25393` coverage files, `37375` total records,
   `10` unmet goals, `0` current visible likely-real signatures, `7` enabled WS
-  groups, and `novelty-http-persistence-probe` paused by the max-enabled-group
-  resource guard.
+  groups, and no currently paused groups.
 - The latest trend evidence still shows clean visible likely-real product
   health: `likely_real_max: 0`, current duplicate share `0`, historical
-  duplicate share about `0.5983`, and `10` unmet goals through
-  `2026-05-16T06:31:14Z`; the current monitor has since advanced to `25220`
+  duplicate share about `0.5982`, and `10` unmet goals through
+  `2026-05-16T06:37:06Z`; the current monitor has since advanced to `25393`
   coverage files with the same unmet-goal count. This is background health
   evidence only, not final-stack validation.
 - PR 13 repair/import is complete. The repaired source-repo heads passed the
@@ -100,7 +99,7 @@ The fuzz repo remains on the validation stack:
 That stack has modified fuzz harness files and many untracked fuzz/analysis
 scripts. It is active validation infrastructure, not the final PR stack.
 
-The branch-link audit was generated at `2026-05-16T06:37:49Z` from fetched
+The branch-link audit was generated at `2026-05-16T06:47:08Z` from fetched
 `danluu` refs. It verifies GitHub-facing `review/rtc-pr*` branches with
 non-empty diffs against the listed bases. The proposed PR table below uses only
 audit rows marked `verified-content` as PR-content links.
@@ -139,23 +138,23 @@ is pushed only so the PR 13A compare link has the repaired source base.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T06:37:44Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T062428Z
+collected_at_utc: 2026-05-16T06:47:03Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T064057Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
-novelty-status.md: populated at 2026-05-16T06:37:06.913Z
+novelty-status.md: populated at 2026-05-16T06:45:52.413Z
 current visible likely-real signatures: 0
 enabled groups: 7 WS groups
-paused groups: novelty-http-persistence-probe
+paused groups: none
 ```
 
-The current `novelty-status.md` file is populated for the `062428Z` root. It is
+The current `novelty-status.md` file is populated for the `064057Z` root. It is
 usable as a current-run health snapshot, but still not final PR-stack
 validation because the repaired final PR heads have not been imported, rebased,
 assembled into a fresh combined validation stack, and fuzzed as that stack.
 
 The `latest-trend-evidence.md` packet was generated at
-`2026-05-16T06:31:42Z` from monitor data through `2026-05-16T06:31:14Z`. At
+`2026-05-16T06:38:57Z` from monitor data through `2026-05-16T06:37:06Z`. At
 that trend snapshot, the enabled-group list was:
 
 - `novelty-ws-common-blocks`
@@ -166,31 +165,32 @@ that trend snapshot, the enabled-group list was:
 - `novelty-ws-media-cross-entity`
 - `novelty-ws-block-gauntlet`
 
-The current novelty monitor has since reset to the `062428Z` output root and
-now reports `7` enabled WS groups. `novelty-http-persistence-probe` is paused by
-the max-enabled-group resource guard, while `session-lifecycle` is still held
-out by the existing pre-action startup-failure cooldown. Current-run triage
-remains clean: `0` signatures, `0` likely-real visible, `0` likely-real merged
-duplicates, and top duplicate family share `0`.
+The current novelty monitor has since reset to the `064057Z` output root and
+now reports `7` enabled WS groups with no paused groups. Current-run triage
+remains clean: `0` raw signatures, `0` actionable signatures, `0` likely-real
+visible, `0` likely-real merged duplicates, and current duplicate share `0`.
+Historical raw duplicate share remains high at about `0.5976`, but the patched
+monitor now reports a lower actionable historical duplicate share of about
+`0.4013` after separating suppressed known-noise signatures.
 
 The latest trend packet supports longer-running coverage progress with no
 visible likely-real failures so far:
 
 ```text
-monitor passes: 1316
-coverage files: 272 -> 25119
-coverage files delta: 24847
+monitor passes: 1319
+coverage files: 272 -> 25220
+coverage files delta: 24948
 unmet coverage goals: 24 -> 10
 likely_real_max: 0
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.5983
+duplicate_share_historical_last: 0.5982
 summary_startup_failures_last: 0
-pr_review_events: 304
+pr_review_events: 306
 pr_suggested_net_loc_latest_total: 11801
 ```
 
 The current novelty monitor has advanced slightly beyond the trend packet:
-`25220` coverage files, `37132` total records, `45` records processed in the
+`25393` coverage files, `37375` total records, `56` records processed in the
 pass, `10` unmet goals, and no quality issues. The largest unmet goals remain
 CDP coverage records, real-user-editing success count, `core/html`,
 `core/more`, `core/details`, heading shortcuts, reload-post actions,
@@ -257,16 +257,16 @@ strict no-user/no-action startup predicate across the runner, triage watcher,
 analysis tier, and novelty monitor, while preserving any seed with users,
 actions, saves, reloads, faults, lifecycle events, operation evidence,
 non-convergence, assertions, or persistence mismatches. Its paired
-`duplicate-noise-20260516T062141Z-feedback-action.md` is zero bytes.
-
-The latest completed duplicate-noise feedback action remains
-`duplicate-noise-20260516T055200Z-feedback-action.md`. It patched
-`rtc-browser-fuzz-novelty-monitor.mjs` to dedupe current-run pre-action startup
-failures by profile/seed, avoid double-counting matching summary pre-analysis
-records, make early startup pausing success-aware, ignore stale low-rate
-cooldowns, and bump run-local noise policy to `5`. Validation passed
-`node --check` plus a mini monitor pass over copied block-gauntlet and
-parser-transform data, with no paused groups in that mini validation.
+`duplicate-noise-20260516T062141Z-feedback-action.md` is now the latest
+completed duplicate-noise action. It patched
+`rtc-browser-fuzz-novelty-monitor.mjs` to add the
+`novelty-http-persistence-probe -> persistence-no-title` mapping, make startup
+pause/cooldown handling transport-neutral, make current-run startup failure
+counting seed-evidence based, split raw triage signatures from actionable
+signatures, and keep `bootstrap-stall` / `known-infra` out of actionable
+duplicate-share policy metrics. Validation passed
+`node --check bin/rtc-browser-fuzz-novelty-monitor.mjs`, then the watchdog
+restarted the active novelty monitor onto the `064057Z` output root.
 
 The remaining duplicate-noise control-plane gap is the stricter
 runner/watcher/analysis-tier suppression path. The synthesis still explicitly
@@ -274,12 +274,14 @@ rejects broad suppression of `timeout`, `unknown`, assertions,
 late-session-awareness, non-convergence, save/reload/persistence/revision/media
 failures, or linebreak drift.
 
-The paired `pr-split-20260516T063020Z-feedback-action.md` is zero bytes. The
-latest non-empty split feedback action,
-`pr-split-20260516T061642Z-feedback-action.md`, applied the Cycle 98 report
-update and launched no jobs. The latest split synthesis,
-`pr-split-20260516T063020Z-synthesis`, is the newest completed status-persona
-input for branch status.
+The latest split feedback action,
+`pr-split-20260516T063020Z-feedback-action.md`, applied the Cycle 100 guidance,
+launched no jobs, and wrote an unlaunched next-action prompt for final-ref
+import/rebase/check work. The newest split synthesis by filename,
+`pr-split-20260516T064237Z-synthesis.md`, is zero bytes and should be ignored
+as no-op input. The latest non-empty split synthesis,
+`pr-split-20260516T063020Z-synthesis`, is still the newest completed
+status-persona input for branch status.
 
 ## Proposed PR Split
 
@@ -349,11 +351,11 @@ File order after import, rebase, evidence cleanup, and validation should be:
    after evidence hygiene is clean.
 
 Existing fuzz infrastructure can continue where healthy. The current populated
-novelty snapshot has `0` visible likely-real failures and `10` unmet goals, but
-none of this is broad final-stack coverage or PR-filing validation. The next
-concrete branch work is importing the repaired final refs into the fix-plan
-repo, verifying and rebasing them, resolving the PR 8 comparison, and then
-assembling a fresh combined validation stack. Do not start new fuzz lanes,
-broad final-stack fuzzing, duplicate finalization, another PR 13 repair/import,
-another split-review loop, or duplicate open-ended control-plane jobs from this
-status update.
+novelty snapshot has `0` visible likely-real failures, `10` unmet goals, and no
+paused groups, but none of this is broad final-stack coverage or PR-filing
+validation. The next concrete branch work is importing the repaired final refs
+into the fix-plan repo, verifying and rebasing them, resolving the PR 8
+comparison, and then assembling a fresh combined validation stack. Do not start
+new fuzz lanes, broad final-stack fuzzing, duplicate finalization, another
+PR 13 repair/import, another split-review loop, or duplicate open-ended
+control-plane jobs from this status update.
