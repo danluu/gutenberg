@@ -975,7 +975,7 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 		"pr-suggested-net-loc-by-pr-over-time.png",
 		ggplot( pr_suggested_plot, aes( x = timestamp, y = net_loc, color = net_loc, size = files ) ) +
 			geom_point( alpha = 0.76 ) +
-			facet_wrap( vars( pr ), ncol = 4 ) +
+			facet_wrap( vars( pr ), ncol = 4, scales = "free_y" ) +
 			scale_color_distiller( palette = "RdYlBu", direction = -1, labels = comma, breaks = pretty_breaks( n = 4 ) ) +
 			scale_size_continuous( labels = comma, range = c( 1.6, 4.8 ) ) +
 			scale_y_continuous( labels = comma, limits = c( 0, NA ) ) +
