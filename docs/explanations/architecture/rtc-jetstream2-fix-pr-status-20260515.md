@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T05:00:38Z`
+Snapshot time: `2026-05-16T05:03:58Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -33,13 +33,12 @@ Current state:
   validation.
 - The earlier historical-noise scheduling problem has been remediated enough for
   browser groups to run again: the latest collected novelty monitor snapshot,
-  last updated at `2026-05-16T05:00:27Z`, shows six WS browser groups plus one
-  HTTP persistence probe enabled and monitor health `ok`. The active output dir
-  is still `run-20260516T045537Z`. Current-run counters are no longer empty
-  (`8` WS records and `1` HTTP record), but `novelty-ws-block-gauntlet` and
-  `novelty-ws-parser-transform` were paused after `2/2` current-run pre-action
-  WS discovery/startup failures each. Treat this as active monitor recovery and
-  scheduler health evidence, not proof of final-stack validation.
+  last updated at `2026-05-16T05:02:57Z`, shows six WS browser groups plus one
+  HTTP persistence probe enabled and no paused groups. The active output dir was
+  reset to `run-20260516T050205Z`, so current-run counters are empty again and
+  the monitor warns that no behavioral coverage files have appeared under that
+  output dir yet. Treat this as active monitor recovery and scheduler health
+  evidence, not proof of final-stack validation.
 - PR 13 repair/import is no longer missing. The repaired source-repo heads exist
   and passed the source-import gate with `63/63` focused CRDT tests, touched-file
   JS lint, and `git diff --check`.
@@ -102,20 +101,17 @@ current PR-content links for the repaired PR 13 split.
 Latest collected coverage-guided novelty state:
 
 ```text
-updated: 2026-05-16T05:00:27.842Z
-output dir: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T045537Z
-coverage files: 24097
-total records seen: 35529
-records processed this pass: 38
-summary files read this pass: 6
-summary startup failures processed this pass: 2
-current-run records by profile: {"block-gauntlet":2,"common-blocks":2,
-  "parser-transform":2,"persistence-no-title":1,"async-server-blocks":1,
-  "media-cross-entity":1}
-current-run successful records by profile: {"parser-transform":1}
-current-run records by transport: {"ws":8,"http":1}
-current-run pre-action startup failures by profile:
-  {"block-gauntlet":2,"parser-transform":2}
+updated: 2026-05-16T05:02:57.226Z
+output dir: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T050205Z
+coverage files: 24133
+total records seen: 35578
+records processed this pass: 49
+summary files read this pass: 0
+summary startup failures processed this pass: 0
+current-run records by profile: {}
+current-run successful records by profile: {}
+current-run records by transport: {}
+current-run pre-action startup failures by profile: {}
 unmet goals: 12
 likely-real visible: 0
 likely-real merged duplicates: 0
@@ -125,25 +121,25 @@ enabled groups: novelty-ws-common-blocks, novelty-ws-real-user-editing,
   novelty-ws-real-user-rich-text, novelty-ws-async-server-blocks,
   novelty-ws-media-cross-entity, novelty-ws-long-session-large-doc,
   novelty-http-persistence-probe
-paused groups: novelty-ws-lifecycle, novelty-ws-block-gauntlet,
-  novelty-ws-parser-transform
-health: ok
+paused groups: none
+health warning: no behavioral coverage files found under active output dir
 ```
 
 The current `novelty-status.md` now contains monitor output, and the remote
 summary selected the same coverage root,
-`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T045537Z`,
-at collection time. Treat the output-dir and counter values as point-in-time
-state, not as final validation. The current-run count is still early after the
-run-local noise-state reset; all-time coverage counters were preserved.
+`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T050205Z`,
+at `2026-05-16T05:03:53Z` collection time. Treat the output-dir and counter
+values as point-in-time state, not as final validation. The current-run count is
+empty because the monitor reset run-local noise state at `05:02:14Z`; all-time
+coverage counters were preserved.
 
 Current-run triage is clean, and the captured novelty state shows browser
 scheduling recovered after the earlier historical-noise hold:
 
 - Current-run triage has `0` signatures, `0` bootstrap stalls, and `0`
   likely-real visible failures.
-- Historical triage has `15410` signatures, including `9058`
-  `pre_action_bootstrap_stall` signatures and `9285` bootstrap stalls. That
+- Historical triage has `15433` signatures, including `9072`
+  `pre_action_bootstrap_stall` signatures and `9299` bootstrap stalls. That
   historical signal remains reporting/advisory only and must not be presented as
   a current product failure.
 - The duplicate/noise remediation changed the novelty monitor so historical
@@ -159,9 +155,9 @@ scheduling recovered after the earlier historical-noise hold:
   triage-watcher and analysis-tier backstops, but those were not part of the
   completed remediation.
 - The active output dir was reset shortly before this snapshot, so current-run
-  evidence is still shallow. It shows browser and HTTP lanes enabled after the
-  scheduler restart, plus current-run startup holds for two WS profiles, but it
-  is not broad final-stack coverage.
+  evidence is still empty. It shows browser and HTTP lanes enabled after the
+  scheduler restart and no current paused groups, but it is not broad current-run
+  or final-stack coverage.
 
 The collector also captured this monitor sequence:
 
@@ -197,34 +193,40 @@ The collector also captured this monitor sequence:
   pre-action WS discovery/startup failures
 2026-05-16T05:00:22Z paused novelty-ws-parser-transform after 2/2 current-run
   pre-action WS discovery/startup failures
+2026-05-16T05:02:14Z reset-run-local-noise-state and moved the active
+  output dir to run-20260516T050205Z while preserving coverage counters and
+  resetting run-local pause/startup/quality gates
+2026-05-16T05:02:57Z rebuilt current-run noise counters from 0 current-run
+  behavioral coverage records and restarted rtc-coverage-guided-supervisor
 ```
 
 This supersedes the earlier "only HTTP enabled" state. It does not supersede the
 final-stack-validation blocker. It proves WS and HTTP groups are schedulable
-again, with one lifecycle WS group paused for budget rotation and two WS groups
-paused by current-run startup gates, but it does not prove broad current-run or
+again, with no paused groups after the `05:02Z` reset, but the active output dir
+has no behavioral coverage records yet and does not prove broad current-run or
 final-stack WS coverage.
 
 Latest graph trend evidence:
 
 ```text
-generated_at_utc: 2026-05-16T04:55:56Z
-monitor passes: 1265
-coverage files: 272 -> 24026
+generated_at_utc: 2026-05-16T05:00:18Z
+monitor passes: 1267
+coverage files: 272 -> 24073
 unmet coverage goals: 24 -> 12
 likely_real_max: 0
 enabled groups current at graph time: novelty-ws-real-user-editing,
   novelty-ws-real-user-rich-text, novelty-ws-block-gauntlet,
   novelty-ws-common-blocks, novelty-ws-parser-transform,
-  novelty-ws-async-server-blocks, novelty-ws-media-cross-entity
-memory free: 422.6G
+  novelty-ws-async-server-blocks, novelty-ws-media-cross-entity,
+  novelty-http-persistence-probe, novelty-ws-long-session-large-doc
+memory free: 420.9G
 ```
 
 This supports longer-running coverage progress with no visible likely-real
-product failures so far. The graph packet predates the `04:56Z` scheduler reset
-and the later `05:00Z` WS startup pauses, so use the captured novelty state
-above for exact current monitor counters, use the graph packet for trend
-evidence, and do not treat either source as broad final-stack validation.
+product failures so far. The graph packet predates the later `05:02Z` output-dir
+reset, so use the captured novelty state above for exact current monitor
+counters, use the graph packet for trend evidence, and do not treat either
+source as broad final-stack validation.
 
 Completed validation evidence:
 
@@ -281,10 +283,13 @@ structural split change.
 - The latest split persona still finds no structural split redesign. Its
   proposed next reload-hydration checkpoint diagnostics remain a manual,
   explicitly authorized evidence pass, not an updater-launched job.
-- The final status-analysis report predates the `05:00Z` monitor state. For
-  group enablement and current monitor health, use the newer
+- The final status-analysis report predates the current `05:02Z` monitor state.
+  For group enablement and current monitor health, use the newer
   `novelty-status.md`, `remote-status.md`, and trend evidence in this report.
-  The latest split feedback-action file adds no new split structure.
+  The later `05:02Z` monitor reset also supersedes the `05:00Z` paused-group
+  state. The latest split feedback-action file adds no new split structure, and
+  the newest split/duplicate-noise synthesis files collected after it are
+  zero-byte files.
 
 The earlier duplicate/noise remediation completed the narrow monitor-scheduling
 recovery: historical `pre_action_bootstrap_stall` noise is now
@@ -355,7 +360,7 @@ protection so reviewers can evaluate each CRDT invariant separately.
 
 The status loop now generates a branch-link audit and the report updater is
 required to use only rows marked `verified-content`. The latest audit was
-generated at `2026-05-16T05:00:38Z` from fetched `danluu` refs. A verified row
+generated at `2026-05-16T05:03:58Z` from fetched `danluu` refs. A verified row
 means the branch exists on `danluu` and has a non-empty diff against the listed
 base.
 
@@ -418,13 +423,13 @@ File order after export/rebase should be:
    clean.
 
 Existing fuzz infrastructure can continue where healthy. The captured novelty
-state for `run-20260516T045537Z` shows six WS groups and one HTTP probe enabled,
-`novelty-ws-lifecycle` paused for browser-budget rotation,
-`novelty-ws-block-gauntlet` and `novelty-ws-parser-transform` paused by
-current-run pre-action startup gates, current-run counters at `8` WS records and
-`1` HTTP record, current-run triage still clean, and all-time coverage at
-`24097` files. The collector's `05:00:33Z` summary selected the same run as the
-coverage root. Do not present that point-in-time run as broad final-stack
-coverage or PR-filing validation. Do not start new fuzz lanes, broad final-stack
-fuzzing, PR 13 repair/import, gate shaping, duplicate reload-hydration harness
-work, or another split-review loop from this status update.
+state for `run-20260516T050205Z` shows six WS groups and one HTTP probe enabled,
+no paused groups, empty current-run counters immediately after the `05:02Z`
+run-local reset, current-run triage still clean, a health warning that no
+behavioral coverage files exist yet under the active output dir, and all-time
+coverage at `24133` files. The collector's `05:03:53Z` summary selected the same
+run as the coverage root. Do not present that point-in-time run as broad
+final-stack coverage or PR-filing validation. Do not start new fuzz lanes, broad
+final-stack fuzzing, PR 13 repair/import, gate shaping, duplicate
+reload-hydration harness work, or another split-review loop from this status
+update.
