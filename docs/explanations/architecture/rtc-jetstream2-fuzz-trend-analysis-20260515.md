@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T09:31:21Z`
+Snapshot generated: `2026-05-16T09:37:09Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1403` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T09:29:58Z`, coverage files grew from `272` to `28439`, a delta of
-`28167`. The monitor's visible likely-real count stayed at `0` throughout this
+`1405` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T09:35:19Z`, coverage files grew from `272` to `28512`, a delta of
+`28240`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -36,12 +36,14 @@ coverage-guidance state has `120` total goals and `8` unmet goals.
 
 The run has broad historical coverage, but the current active output directory
 is `run-20260516T080053Z` and is still a live-health check, not a mature
-sample. The latest copied state has seven active groups:
-`novelty-ws-common-blocks`, `novelty-ws-long-session-large-doc`,
-`novelty-ws-async-server-blocks`, `novelty-ws-real-user-editing`,
-`novelty-ws-real-user-rich-text`, `novelty-ws-media-cross-entity`, and
-`novelty-ws-block-gauntlet`, with no paused groups in the copied state. The
-main remaining coverage gaps are depth targets for real-user editing, gauntlet
+sample. The latest copied state has five enabled groups:
+`novelty-ws-common-blocks`, `novelty-ws-async-server-blocks`,
+`novelty-ws-block-gauntlet`, `novelty-http-persistence-probe`, and
+`novelty-ws-parser-transform`. Four groups are paused in that state for
+current-run pre-action WS discovery/startup failure rates:
+`novelty-ws-real-user-editing`, `novelty-ws-long-session-large-doc`,
+`novelty-ws-real-user-rich-text`, and `novelty-ws-media-cross-entity`. The main
+remaining coverage gaps are depth targets for real-user editing, gauntlet
 blocks, CDP coverage records, reload-post actions, and the heading shortcut
 action.
 Previously weak media/cross-entity, parser-serialization, and
@@ -70,14 +72,14 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active coverage run, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `420.2G`, so the remaining
+remained high at the end of the snapshot, around `411.1G`, so the remaining
 bottleneck is more about useful work selection, fresh-output health, and
 completion rate than raw RAM.
 
 The stale aggregate duplicate/noise series has been replaced in this plot with
 the live current-output-dir metric, `duplicateShareCurrent`, plus current summary
 startup failures. The latest pass has current-output duplicate/noise share
-`0.7567`, `14` summary startup failures, `2` quality issues, and no current
+`0.6643`, `18` summary startup failures, `3` quality issues, and no current
 health warnings, with the resource headroom flag false. That current-output-dir
 series, not historical aggregate duplicate/noise, is the live health signal for
 the current output directory.
@@ -93,7 +95,11 @@ collaboration-non-convergence, and late-session failures must remain visible.
 The latest feedback-action file, `20260516T091615Z`, is empty in the copied
 inputs. The last nonempty action, `20260516T084305Z`, made current-run gate-only
 triage measurable and restarted the coverage-guided novelty/supervisor sessions,
-but left the triage-watcher and analysis-tier admission fixes unapplied.
+but left the triage-watcher and analysis-tier admission fixes unapplied. Since
+then, current-run triage has grown to `557` signatures with `0` visible
+likely-real failures and a top duplicate-family share of `0.6643`; the novelty
+policy has also paused four startup-noise-dominated groups. That is useful live
+scheduling evidence, not proof that the admission-path enforcement gap is fixed.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
@@ -125,7 +131,7 @@ three latest samples are above the core-count reference line.
 
 The level-mix plot reads supervisor group history, not just the novelty monitor
 log. The latest copied snapshots cover `coverage-guided`, `focused-shards`,
-`gap-booster`, and `strict-expansion`. They show `31` browser/e2e lanes and `1`
+`gap-booster`, and `strict-expansion`. They show `29` browser/e2e lanes and `1`
 transport/integration lane. Live fuzzing is concentrated in browser/e2e lanes,
 with one transport-integration lane active. There are no latest active
 `unit-property`,
@@ -153,9 +159,9 @@ rechecks counted as executions, and bucket rates in 15-minute windows scaled to
 attempts per hour. This is more precise than supervisor launches or lane counts,
 but it only covers fuzzers that emit these lane events.
 
-The latest collected execution data has `45,987` completed attempts:
-`43,012` browser/e2e and `2,975` transport/integration. The latest 15-minute
-bucket is running at about `104` browser/e2e attempts/hour and `0`
+The latest collected execution data has `46,101` completed attempts:
+`43,187` browser/e2e and `2,914` transport/integration. The latest 15-minute
+bucket is running at about `552` browser/e2e attempts/hour and `8`
 transport/integration attempts/hour. `unit-property`,
 `coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
 `fuzz-assertion` levels are still at `0` executions in this counter.
@@ -163,16 +169,17 @@ transport/integration attempts/hour. `unit-property`,
 The latest copied state reports this current enabled set:
 
 - `novelty-ws-common-blocks`
-- `novelty-ws-long-session-large-doc`
 - `novelty-ws-async-server-blocks`
-- `novelty-ws-real-user-editing`
-- `novelty-ws-real-user-rich-text`
-- `novelty-ws-media-cross-entity`
 - `novelty-ws-block-gauntlet`
+- `novelty-http-persistence-probe`
+- `novelty-ws-parser-transform`
 
-The latest copied state has no paused groups. The current active output
-directory is very young, so this enabled set is a live scheduling snapshot
-rather than proof that the active output directory has useful depth.
+The latest copied state has four paused groups:
+`novelty-ws-real-user-editing`, `novelty-ws-long-session-large-doc`,
+`novelty-ws-real-user-rich-text`, and `novelty-ws-media-cross-entity`. The
+current active output directory is very young, so this enabled set is a live
+scheduling snapshot rather than proof that the active output directory has
+useful depth.
 
 The historical enabled set covers the user-requested missing areas:
 same-user/reload lifecycle, revision/autosave/recovery, real UI rich text,
@@ -203,13 +210,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 2963 | 76 | 0 | 2.6% |
-| `multi-reload-lifecycle` | 2174 | 58 | 0 | 2.7% |
-| `parser-serialization` | 1619 | 60 | 0 | 3.7% |
-| `real-user-editing` | 4313 | 266 | 12 | 6.2% |
-| `parser-transform` | 2811 | 267 | 0 | 9.5% |
-| `common-blocks` | 2624 | 252 | 2 | 9.6% |
-| `long-session-large-doc` | 1851 | 280 | 8 | 15.1% |
+| `revision-persistence` | 2966 | 76 | 0 | 2.6% |
+| `multi-reload-lifecycle` | 2179 | 58 | 0 | 2.7% |
+| `parser-serialization` | 1628 | 60 | 0 | 3.7% |
+| `real-user-editing` | 4329 | 266 | 26 | 6.1% |
+| `parser-transform` | 2816 | 267 | 0 | 9.5% |
+| `common-blocks` | 2633 | 252 | 11 | 9.6% |
+| `long-session-large-doc` | 1858 | 280 | 13 | 15.1% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -225,10 +232,10 @@ Current unmet goals from the latest state:
 | --- | ---: | ---: |
 | successful real-user-editing records next coverage tier | 266 | 500 |
 | gauntlet block core/html next coverage tier | 330 | 500 |
-| gauntlet block core/details next coverage tier | 369 | 500 |
+| gauntlet block core/details next coverage tier | 370 | 500 |
 | gauntlet block core/more next coverage tier | 371 | 500 |
-| action ui-heading-shortcut next coverage tier | 421 | 500 |
-| action reload-post-action next coverage tier | 443 | 500 |
+| action ui-heading-shortcut next coverage tier | 423 | 500 |
+| action reload-post-action next coverage tier | 444 | 500 |
 | CDP coverage records next coverage tier | 4550 | 5000 |
 | gauntlet block core/gallery next coverage tier | 487 | 500 |
 
@@ -314,20 +321,20 @@ status snapshots, not filing authority for split shape.
 The coverage data says the harness is broad enough to exercise the major
 surfaces requested earlier, but the current live output directory is too young to
 treat as a mature health sample. The active fuzz has `0` visible likely-real
-failures, `8` unmet goals, current-output duplicate share `0.7567`, `14` summary
-startup failures in the latest plotted pass, `2` quality issues, and no health
+failures, `8` unmet goals, current-output duplicate share `0.6643`, `18` summary
+startup failures in the latest plotted pass, `3` quality issues, and no health
 warnings, with the resource headroom flag false. The current-output
 duplicate/share and startup-failure metrics are the live health signal.
-Current-run gate-only triage is now measurable, but the latest duplicate/noise
-synthesis still calls the problem an enforcement gap: strict startup-noise
-classification, duplicate summary intake, and analysis-tier gating need the
-recommended current-run-first admission work before current likely-real
-visibility can be treated as complete. The latest PR-split persona evidence
-rejects the graph-only interpretation that a stable LOC chart, broad coverage,
-or the old PR13 heads make the refs filing-ready: the green identity-first PR13
-sequence has now been recorded and a reconciliation job has been launched, but
-filing still waits on evidence from the actual repaired refs. Both persona
-evidence and graph data
+Current-run triage is now measurable at `557` signatures and has paused four
+startup-noise-dominated groups, but the latest duplicate/noise synthesis still
+calls the problem an enforcement gap: strict startup-noise classification,
+duplicate summary intake, and analysis-tier gating need the recommended
+current-run-first admission work before current likely-real visibility can be
+treated as complete. The latest PR-split persona evidence rejects the graph-only
+interpretation that a stable LOC chart, broad coverage, or the old PR13 heads
+make the refs filing-ready: the green identity-first PR13 sequence has now been
+recorded and a reconciliation job has been launched, but filing still waits on
+evidence from the actual repaired refs. Both persona evidence and graph data
 reject the graph-only interpretation that broad coverage or `0` visible
 likely-real failures is enough to file or promote deferred browser-only families
 into PR claims. The latest duplicate/noise evidence also rejects treating
@@ -339,15 +346,17 @@ weakness is depth and completion on a small number of high-value expensive lanes
 - gauntlet block depth, CDP coverage, heading shortcut, and reload-post actions
   still need more observations;
 - current-output duplicate/noise is the live health metric: the latest current
-  duplicate share is `0.7567`, summary startup failures are `14`, quality issues
-  are `2`, current health warnings are empty in the plotted pass, and the
+  duplicate share is `0.6643`, summary startup failures are `18`, quality issues
+  are `3`, current health warnings are empty in the plotted pass, and the
   resource headroom flag is false; historical duplicate/noise remains reporting
   context only;
 - the duplicate/noise persona consensus wants one strict current-run
   startup-noise predicate wired through triage, analysis, novelty counters, and
   scheduling, plus summary-row dedupe; the latest feedback-action file is empty,
   and the last nonempty action made gate-only triage measurable but left
-  triage-watcher and analysis-tier admission fixes unapplied;
+  triage-watcher and analysis-tier admission fixes unapplied; the current paused
+  groups are a scheduling response, not acceptance of the broader graph-only
+  duplicate/noise interpretation;
 - PR13 now has a selected green repair sequence and a launched reconciliation
   job, but filing still needs branch graph, containment, adjacent range-diff,
   diffstat/numstat, focused tests, lint, `git diff --check`, and validation
