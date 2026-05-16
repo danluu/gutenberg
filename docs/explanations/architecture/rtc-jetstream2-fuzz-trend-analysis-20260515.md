@@ -75,7 +75,12 @@ This says the machine is being used more aggressively than the earlier memory
 view alone implied; spare RAM does not necessarily mean spare browser/CPU
 capacity.
 
-![Project activity index over time](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-index.png)
+The two unlabeled activity plots below use raw cumulative values and hourly
+bucketed rates; they are no longer normalized.
+
+![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
+
+![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-rate.png)
 
 ## Enabled Surfaces
 

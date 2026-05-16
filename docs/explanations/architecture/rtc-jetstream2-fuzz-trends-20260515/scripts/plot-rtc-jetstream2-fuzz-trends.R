@@ -29,7 +29,7 @@ monitor_path <- file.path( raw_dir, "monitor.log" )
 loop_path <- file.path( raw_dir, "pr-split-loop.log" )
 state_path <- file.path( raw_dir, "novelty-state.json" )
 cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
-activity_path <- file.path( data_dir, "activity_index.csv" )
+activity_path <- file.path( data_dir, "project_activity.csv" )
 
 stopifnot( file.exists( monitor_path ) )
 stopifnot( file.exists( loop_path ) )
@@ -409,20 +409,35 @@ if ( file.exists( cpu_path ) ) {
 }
 
 if ( file.exists( activity_path ) ) {
-	activity_index <- read_csv( activity_path, show_col_types = FALSE ) %>%
+	activity <- read_csv( activity_path, show_col_types = FALSE ) %>%
 		mutate( timestamp = ymd_hms( timestamp, tz = "UTC" ) )
 
 	write_plot(
-		"project-activity-index.png",
-		ggplot( activity_index, aes( x = timestamp, y = value ) ) +
-			geom_point( aes( size = samples ), alpha = 0.62, color = brewer.pal( 8, "Dark2" )[ 3 ] ) +
-			scale_size_continuous( range = c( 1.4, 4.4 ), guide = "none" ) +
-			scale_y_continuous( limits = c( 0, 100 ) ) +
+		"project-activity-cumulative.png",
+		ggplot( activity, aes( x = timestamp, y = cumulative ) ) +
+			geom_point( aes( size = samples ), alpha = 0.68, color = brewer.pal( 8, "Dark2" )[ 3 ] ) +
+			scale_size_continuous( range = c( 1.2, 4.2 ), guide = "none" ) +
+			scale_y_continuous( labels = label_number( scale_cut = cut_short_scale() ) ) +
 			scale_x_datetime( date_labels = "%m-%d %H:%M", date_breaks = "4 hours" ) +
 			labs(
-				title = "Project activity index over time",
 				x = "UTC time",
-				y = "normalized index"
+				y = NULL
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 4.8
+	)
+
+	write_plot(
+		"project-activity-rate.png",
+		ggplot( activity, aes( x = timestamp, y = rate ) ) +
+			geom_point( aes( size = samples ), alpha = 0.68, color = brewer.pal( 8, "Dark2" )[ 5 ] ) +
+			scale_size_continuous( range = c( 1.2, 4.2 ), guide = "none" ) +
+			scale_y_continuous( labels = label_number( scale_cut = cut_short_scale() ) ) +
+			scale_x_datetime( date_labels = "%m-%d %H:%M", date_breaks = "4 hours" ) +
+			labs(
+				x = "UTC time",
+				y = NULL
 			) +
 			theme_rtc(),
 		width = 9,
