@@ -1975,6 +1975,10 @@ function mergeYBlocksLocalInsertionsByClientId(
 			}
 		}
 
+		if ( ! nextAnchor ) {
+			return false;
+		}
+
 		let insertIndex = nextClientIds.length;
 		if ( previousAnchor ) {
 			insertIndex = nextClientIds.indexOf( previousAnchor ) + 1;
