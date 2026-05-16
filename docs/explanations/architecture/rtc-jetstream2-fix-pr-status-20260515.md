@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T07:13:57Z`
+Snapshot time: `2026-05-16T07:20:50Z`
 
 Trigger event:
-`pr-split-2026-05-16T07-13-03Z-20260516T070609Z`
+`pr-split-2026-05-16T07-19-33Z-20260516T071308Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -19,8 +19,9 @@ Base handoff:
 
 ## Executive Status
 
-The latest split synthesis, `pr-split-20260516T070609Z-synthesis`, changes the
-working split and still keeps the stack blocked rather than filing-ready.
+The latest split synthesis, `pr-split-20260516T071308Z-synthesis`, keeps the
+targeted split change and still leaves the stack blocked rather than
+filing-ready.
 Current aggregate `PR 5` is now too broad to preserve. Replace it with:
 
 - `PR 5A`: entity/entity-reference normalization in `crdt.ts`
@@ -44,7 +45,7 @@ Current blockers:
    `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/worktrees/pr-stack-20260516T065952Z`.
 3. Use an explicit final-ref allow-list; do not wildcard-import blocked
    candidates such as `final/rtc-pr06b-*`.
-4. Produce or adjudicate the new PR 5A/5B/5C branches and branch links.
+4. Apply or adjudicate the new PR 5A/5B/5C branches and branch links.
 5. Resolve PR 8 against `origin/try/rtc-title-reload-pr`.
 6. Rebase or recreate each intended head on the upstream target base.
 7. Rerun focused checks, touched-file lint, and `git diff --check`.
@@ -53,13 +54,13 @@ Current blockers:
 
 Background coverage-guided fuzzing is healthy but is not final-stack
 validation. The latest novelty monitor snapshot reports `0` visible likely-real
-failures, `10` unmet goals, `7` enabled WS groups, and
-`novelty-ws-parser-transform` paused in a strict 6-hour pre-action startup
-cooldown.
+failures, `9` unmet goals, `7` enabled WS groups, and both
+`novelty-ws-parser-transform` and `novelty-ws-lifecycle` paused in strict
+6-hour pre-action startup cooldowns.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T07:13:51Z`.
+The collected remote status input was generated at `2026-05-16T07:20:45Z`.
 
 The fix-planning repo is currently checked out at:
 
@@ -88,7 +89,7 @@ The fuzz repo remains on the validation stack:
 That stack has modified fuzz harness files and many untracked fuzz/analysis
 scripts. It is active validation infrastructure, not the final PR stack.
 
-The branch-link audit was generated at `2026-05-16T07:13:57Z` from fetched
+The branch-link audit was generated at `2026-05-16T07:20:50Z` from fetched
 `danluu` refs. The proposed PR table below uses only audit rows marked
 `verified-content` as PR-content links. For PR 5A/5B/5C, no verified branch
 links exist yet, so those rows explicitly say `No verified branch link yet`.
@@ -117,31 +118,31 @@ is pushed only so the PR 13A compare link has the repaired source base.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T07:13:51Z
+collected_at_utc: 2026-05-16T07:20:45Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T064057Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
-novelty-status.md: populated at 2026-05-16T07:12:34.534Z
+novelty-status.md: populated at 2026-05-16T07:20:31.740Z
 current visible likely-real signatures: 0
 enabled groups: 7 WS groups
-paused groups: novelty-ws-parser-transform in 6h startup cooldown
+paused groups: novelty-ws-parser-transform and novelty-ws-lifecycle in 6h startup cooldown
 ```
 
 Current novelty monitor snapshot:
 
 ```text
-coverage files: 25878
-total records seen: 38067
-records processed this pass: 58
-coverage lines seen this pass: 39240
+coverage files: 26034
+total records seen: 38271
+records processed this pass: 49
+coverage lines seen this pass: 39463
 summary files read this pass: 7
 summary startup failures processed this pass: 0
-unmet goals: 10
+unmet goals: 9
 likely-real visible: 0
 likely-real merged duplicates: 0
 likely-real oracle/noise questions: 0
-load1: 82.87 / 64 cores
-memory: 421.5G free / 492.0G total
+load1: 66.75 / 64 cores
+memory: 421.0G free / 492.0G total
 ```
 
 Enabled groups:
@@ -154,41 +155,45 @@ Enabled groups:
 - `novelty-ws-media-cross-entity`
 - `novelty-ws-long-session-large-doc`
 
-Paused recommended group:
+Paused recommended groups:
 
 - `novelty-ws-parser-transform`: strict pre-action startup cooldown from
   `2026-05-16T05:00:22.923Z` after `2/2` pre-action WS discovery/startup
   failures.
+- `novelty-ws-lifecycle`: strict pre-action startup cooldown from
+  `2026-05-16T06:00:30.712Z` after `2/2` pre-action WS discovery/startup
+  failures from `1` current-run behavioral record and no current successful
+  records.
 
 Current-run triage remains clean: `0` raw signatures, `0` actionable
 signatures, `0` likely-real visible, `0` likely-real merged duplicates, and
 current duplicate share `0`. Historical triage is still noisy but separated
-from current-run product health: `17180` raw signatures, `6649` actionable
-signatures, `10531` suppressed known-noise signatures, and `10505` bootstrap
+from current-run product health: `17297` raw signatures, `6692` actionable
+signatures, `10605` suppressed known-noise signatures, and `10579` bootstrap
 stalls, with `pre_action_bootstrap_stall` dominating raw historical signatures.
 
-The trend evidence packet was generated at `2026-05-16T07:03:32Z` from monitor
-data through `2026-05-16T07:01:39Z`. It supports longer-running coverage
+The trend evidence packet was generated at `2026-05-16T07:17:30Z` from monitor
+data through `2026-05-16T07:16:28Z`. It supports longer-running coverage
 progress with no visible likely-real failures so far:
 
 ```text
-monitor passes: 1331
-coverage files: 272 -> 25680
-coverage files delta: 25408
+monitor passes: 1338
+coverage files: 272 -> 25949
+coverage files delta: 25677
 unmet coverage goals: 24 -> 10
 likely_real_max: 0
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.3993
+duplicate_share_historical_last: 0.3975
 summary_startup_failures_last: 0
-pr_review_events: 9694
-pr_suggested_net_loc_latest_total: 11801
+pr_review_events: 9698
+pr_suggested_net_loc_latest_total: 10189
 ```
 
 The largest unmet fuzz-depth goals remain CDP coverage records,
 real-user-editing success count, `core/html`, `core/more`, `core/details`,
-heading shortcuts, reload-post actions, `core/gallery`, body save/reload, and
-`core/file`. Treat these as fuzz-depth gaps, not as proof of final-stack
-readiness or product failure.
+heading shortcuts, reload-post actions, `core/gallery`, and the real-user body
+save/reload template. Treat these as fuzz-depth gaps, not as proof of
+final-stack readiness or product failure.
 
 Completed validation evidence:
 
@@ -230,7 +235,7 @@ links until the repaired refs were pushed; the current `branch-link-audit.md`
 now verifies the repaired PR 13 review refs, so this report uses those repaired
 audit links.
 
-The newest split persona synthesis is `pr-split-20260516T070609Z-synthesis`.
+The newest split persona synthesis is `pr-split-20260516T071308Z-synthesis`.
 It says:
 
 - The split needs a targeted change and is still not filing-ready.
@@ -248,16 +253,18 @@ It says:
   stack exists.
 
 The newest duplicate-noise synthesis,
-`duplicate-noise-20260516T065434Z-synthesis.md`, changes no product PR
+`duplicate-noise-20260516T070811Z-synthesis.md`, changes no product PR
 validation status. It identifies the remaining control-plane leak as strict
 zero-user pre-action bootstrap/open/join startup noise that can still reach
 `rtc-browser-fuzz-triage-watcher.mjs` and
-`rtc-browser-fuzz-analysis-tier.mjs`. The paired feedback action changed
-startup-failure cross-run carryover in `rtc-browser-fuzz-novelty-monitor.mjs`
-from `15` minutes to the full configured `STARTUP_FAILURE_COOLDOWN_HOURS`
-window, passed `node --check bin/rtc-browser-fuzz-novelty-monitor.mjs`, and
-restarted only the active coverage-guided novelty monitor. It did not change
-product PR readiness.
+`rtc-browser-fuzz-analysis-tier.mjs`. The latest nonempty feedback action,
+`duplicate-noise-20260516T065434Z-feedback-action.md`, changed startup-failure
+cross-run carryover in `rtc-browser-fuzz-novelty-monitor.mjs` from `15` minutes
+to the full configured `STARTUP_FAILURE_COOLDOWN_HOURS` window, passed
+`node --check bin/rtc-browser-fuzz-novelty-monitor.mjs`, and restarted only the
+active coverage-guided novelty monitor. It did not change product PR readiness;
+the watcher/analysis-tier strict bootstrap admission gates remain a separate
+control-plane risk.
 
 ## Proposed PR Split
 
@@ -337,10 +344,10 @@ refresh, focused checks, and validation:
    after evidence hygiene is clean.
 
 Existing fuzz infrastructure can continue where healthy. The current populated
-novelty snapshot has `0` visible likely-real failures, `10` unmet goals, `7`
-enabled WS groups, and `novelty-ws-parser-transform` paused in the strict
-startup cooldown, but none of this is broad final-stack coverage or PR-filing
-validation. Do not start broad final-stack fuzzing until the rebased combined
-stack exists. Do not start duplicate finalization, another PR 13 repair/import,
-another split-review loop, or open-ended control-plane jobs from this status
-update.
+novelty snapshot has `0` visible likely-real failures, `9` unmet goals, `7`
+enabled WS groups, and `novelty-ws-parser-transform` plus
+`novelty-ws-lifecycle` paused in strict startup cooldowns, but none of this is
+broad final-stack coverage or PR-filing validation. Do not start broad
+final-stack fuzzing until the rebased combined stack exists. Do not start
+duplicate finalization, another PR 13 repair/import, another split-review loop,
+or open-ended control-plane jobs from this status update.
