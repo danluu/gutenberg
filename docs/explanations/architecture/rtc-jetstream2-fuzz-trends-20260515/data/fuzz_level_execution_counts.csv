@@ -124,7 +124,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,campaigns,
 2026-05-16T07:15:00Z,browser-e2e,416,319,157,4,39778,1664
 2026-05-16T07:30:00Z,browser-e2e,384,278,118,4,40162,1536
 2026-05-16T07:45:00Z,browser-e2e,409,302,134,4,40571,1636
-2026-05-16T08:00:00Z,browser-e2e,105,82,34,4,40676,420
+2026-05-16T08:00:00Z,browser-e2e,192,146,64,4,40763,768
 2026-05-15T00:45:00Z,transport-integration,1,1,0,1,1,4
 2026-05-15T01:00:00Z,transport-integration,3,2,0,1,4,12
 2026-05-15T01:15:00Z,transport-integration,25,17,0,2,29,100
@@ -250,7 +250,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,campaigns,
 2026-05-16T07:15:00Z,transport-integration,5,2,0,1,2932,20
 2026-05-16T07:30:00Z,transport-integration,6,3,0,1,2938,24
 2026-05-16T07:45:00Z,transport-integration,5,3,1,1,2943,20
-2026-05-16T08:00:00Z,transport-integration,2,1,0,1,2945,8
+2026-05-16T08:00:00Z,transport-integration,3,1,0,1,2946,12
 2026-05-15T00:45:00Z,unit-property,0,0,0,0,0,0
 2026-05-15T01:00:00Z,unit-property,0,0,0,0,0,0
 2026-05-15T01:15:00Z,unit-property,0,0,0,0,0,0
