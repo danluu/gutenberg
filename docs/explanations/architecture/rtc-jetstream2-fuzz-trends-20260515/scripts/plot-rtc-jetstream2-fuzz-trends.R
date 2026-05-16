@@ -953,7 +953,7 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 			geom_point( aes( size = files ), alpha = 0.78, color = brewer.pal( 8, "Dark2" )[ 2 ] ) +
 			scale_y_continuous( labels = comma ) +
 			scale_size_continuous( labels = comma, range = c( 2.4, 6.8 ) ) +
-			scale_time_axis( date_breaks = "4 hours" ) +
+			scale_time_axis( date_breaks = "30 mins", date_labels = "%H:%M\n%m-%d" ) +
 			labs(
 				title = "Suggested PR set net LOC over time",
 				x = "UTC snapshot time",
@@ -979,7 +979,7 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 			scale_color_distiller( palette = "RdYlBu", direction = -1, labels = comma, breaks = pretty_breaks( n = 4 ) ) +
 			scale_size_continuous( labels = comma, range = c( 1.6, 4.8 ) ) +
 			scale_y_continuous( labels = comma, limits = c( 0, NA ) ) +
-			scale_time_axis( date_breaks = "4 hours" ) +
+			scale_time_axis( date_breaks = "1 hour", date_labels = "%H:%M" ) +
 			labs(
 				title = "Suggested PR net LOC by PR over time",
 				x = "UTC snapshot time",
