@@ -64,6 +64,7 @@ EOF
 	echo "started_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$RUN_DIR/metadata.env"
 
+set +e
 (
 	cd "$CHECKOUT"
 	"$CODEX_BIN" -a never exec \
@@ -76,8 +77,8 @@ EOF
 		--output-last-message "$last_message" \
 		< "$prompt" > "$stdout" 2> "$stderr"
 )
-
 status=$?
+set -e
 {
 	echo "finished_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 	echo "exit_status=$status"
