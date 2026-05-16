@@ -500,3 +500,7 @@ timestamp,group,group_family
 2026-05-16T05:29:39Z,novelty-ws-real-user-rich-text,real-user
 2026-05-16T05:29:39Z,novelty-ws-common-blocks,auth/locks
 2026-05-16T05:29:39Z,novelty-ws-media-cross-entity,async/media
+2026-05-16T05:47:26Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T05:47:26Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-16T05:56:37Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T05:56:37Z,novelty-ws-async-server-blocks,async/media
