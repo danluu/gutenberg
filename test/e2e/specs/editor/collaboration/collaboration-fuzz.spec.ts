@@ -507,6 +507,14 @@ const REAL_USER_EDITING_ACTION_LABELS = getEnvStringList(
 	'ui-composition-paragraph',
 	'ui-toolbar-format-paragraph',
 ];
+const REAL_USER_TYPING_DELAY_MS = getEnvNonNegativeInt(
+	'GUTENBERG_RTC_BROWSER_REAL_USER_TYPING_DELAY_MS',
+	0
+);
+const PERSISTED_POST_MARKER_POLL_INTERVAL_MS = getEnvInt(
+	'GUTENBERG_RTC_BROWSER_PERSISTED_POST_MARKER_POLL_INTERVAL_MS',
+	50
+);
 const TEST_TIMEOUT_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS',
 	Math.max(
@@ -2582,7 +2590,9 @@ async function waitForPersistedPostContentMarker(
 			return lastContent;
 		}
 
-		await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+		await new Promise( ( resolve ) =>
+			setTimeout( resolve, PERSISTED_POST_MARKER_POLL_INTERVAL_MS )
+		);
 	}
 
 	throw new Error(
@@ -2605,7 +2615,9 @@ async function waitForPersistedPostTitleMarker(
 			return lastTitle;
 		}
 
-		await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+		await new Promise( ( resolve ) =>
+			setTimeout( resolve, PERSISTED_POST_MARKER_POLL_INTERVAL_MS )
+		);
 	}
 
 	throw new Error(
@@ -2635,7 +2647,9 @@ async function waitForRevisionContainingMarkers(
 			return revision;
 		}
 
-		await new Promise( ( resolve ) => setTimeout( resolve, 250 ) );
+		await new Promise( ( resolve ) =>
+			setTimeout( resolve, PERSISTED_POST_MARKER_POLL_INTERVAL_MS )
+		);
 	}
 
 	throw new Error(
@@ -3486,7 +3500,7 @@ async function typeRealUserParagraph(
 	await focusRealUserTypingSurface( page );
 	await page.keyboard.press( 'End' );
 	await page.keyboard.press( 'Enter' );
-	await page.keyboard.type( content, { delay: 2 } );
+	await page.keyboard.type( content, { delay: REAL_USER_TYPING_DELAY_MS } );
 	await waitForEditedContentMarker( page, marker );
 
 	return [ createContentWitness( marker, kind ) ];
@@ -3510,14 +3524,16 @@ async function typeRealUserFormattedParagraph(
 	await focusRealUserTypingSurface( page );
 	await page.keyboard.press( 'End' );
 	await page.keyboard.press( 'Enter' );
-	await page.keyboard.type( `formatted ${ seed } `, { delay: 2 } );
-	await page.keyboard.type( marker, { delay: 2 } );
+	await page.keyboard.type( `formatted ${ seed } `, {
+		delay: REAL_USER_TYPING_DELAY_MS,
+	} );
+	await page.keyboard.type( marker, { delay: REAL_USER_TYPING_DELAY_MS } );
 	for ( let index = 0; index < marker.length; index++ ) {
 		await page.keyboard.press( 'Shift+ArrowLeft' );
 	}
 	await page.keyboard.press( `${ MODIFIER_KEY }+I` );
 	await page.keyboard.press( 'ArrowRight' );
-	await page.keyboard.type( ' tail', { delay: 2 } );
+	await page.keyboard.type( ' tail', { delay: REAL_USER_TYPING_DELAY_MS } );
 	await waitForEditedContentMarker( page, marker );
 	await waitForParagraphMarkerInInlineElement( page, marker, 'em,i' ).catch(
 		() => undefined
@@ -3549,7 +3565,9 @@ async function typeRealUserTitle(
 	await titleBox.click( { timeout: 10000 } );
 	await page.keyboard.press( `${ MODIFIER_KEY }+A` );
 	await page.keyboard.press( 'Backspace' );
-	await page.keyboard.type( `${ marker } title`, { delay: 2 } );
+	await page.keyboard.type( `${ marker } title`, {
+		delay: REAL_USER_TYPING_DELAY_MS,
+	} );
 	await waitForEditedTitleMarker( page, marker );
 
 	return [ createTitleWitness( marker, kind ) ];
@@ -3574,7 +3592,7 @@ async function typeRealUserUndoRedoParagraph(
 	await focusRealUserTypingSurface( page );
 	await page.keyboard.press( 'End' );
 	await page.keyboard.press( 'Enter' );
-	await page.keyboard.type( content, { delay: 2 } );
+	await page.keyboard.type( content, { delay: REAL_USER_TYPING_DELAY_MS } );
 	await page.keyboard.press( `${ MODIFIER_KEY }+Z` );
 	await waitForEditedContentWithoutMarker( page, marker );
 
@@ -3611,7 +3629,9 @@ async function typeRealUserHeadingShortcut(
 	await page.keyboard.press(
 		`${ ACCESS_MODIFIER_KEY }+${ 2 + ( ( seed + step ) % 3 ) }`
 	);
-	await page.keyboard.type( `${ marker } heading`, { delay: 2 } );
+	await page.keyboard.type( `${ marker } heading`, {
+		delay: REAL_USER_TYPING_DELAY_MS,
+	} );
 	await waitForEditedContentMarker( page, marker );
 	await waitForBlockMarker( page, marker, 'core/heading' ).catch(
 		() => undefined
@@ -3651,7 +3671,9 @@ async function typeRealUserPastedParagraph(
 		.catch( () => undefined );
 	await page.keyboard.press( `${ MODIFIER_KEY }+V` );
 	if ( ! ( await waitForEditedContentMarkerOrFalse( page, marker ) ) ) {
-		await page.keyboard.type( content, { delay: 2 } );
+		await page.keyboard.type( content, {
+			delay: REAL_USER_TYPING_DELAY_MS,
+		} );
 	}
 	await waitForEditedContentMarker( page, marker );
 
@@ -3677,7 +3699,7 @@ async function typeRealUserCutCopyParagraph(
 	await focusRealUserTypingSurface( page );
 	await page.keyboard.press( 'End' );
 	await page.keyboard.press( 'Enter' );
-	await page.keyboard.type( content, { delay: 2 } );
+	await page.keyboard.type( content, { delay: REAL_USER_TYPING_DELAY_MS } );
 	for ( let index = 0; index < content.length; index++ ) {
 		await page.keyboard.press( 'Shift+ArrowLeft' );
 	}
@@ -3686,7 +3708,9 @@ async function typeRealUserCutCopyParagraph(
 	await waitForEditedContentWithoutMarker( page, marker );
 	await page.keyboard.press( `${ MODIFIER_KEY }+V` );
 	if ( ! ( await waitForEditedContentMarkerOrFalse( page, marker ) ) ) {
-		await page.keyboard.type( content, { delay: 2 } );
+		await page.keyboard.type( content, {
+			delay: REAL_USER_TYPING_DELAY_MS,
+		} );
 	}
 	await waitForEditedContentMarker( page, marker );
 
@@ -3711,7 +3735,9 @@ async function typeRealUserLinkParagraph(
 	await focusRealUserTypingSurface( page );
 	await page.keyboard.press( 'End' );
 	await page.keyboard.press( 'Enter' );
-	await page.keyboard.type( `${ marker } link target`, { delay: 2 } );
+	await page.keyboard.type( `${ marker } link target`, {
+		delay: REAL_USER_TYPING_DELAY_MS,
+	} );
 	for ( let index = 0; index < marker.length; index++ ) {
 		await page.keyboard.press( 'Shift+ArrowLeft' );
 	}
@@ -3746,10 +3772,14 @@ async function typeRealUserListIndent(
 	await focusRealUserTypingSurface( page );
 	await page.keyboard.press( 'End' );
 	await page.keyboard.press( 'Enter' );
-	await page.keyboard.type( `- ${ marker } parent`, { delay: 2 } );
+	await page.keyboard.type( `- ${ marker } parent`, {
+		delay: REAL_USER_TYPING_DELAY_MS,
+	} );
 	await page.keyboard.press( 'Enter' );
 	await page.keyboard.press( 'Tab' );
-	await page.keyboard.type( `${ marker } child`, { delay: 2 } );
+	await page.keyboard.type( `${ marker } child`, {
+		delay: REAL_USER_TYPING_DELAY_MS,
+	} );
 	await waitForEditedContentMarker( page, marker );
 	await waitForBlockMarker( page, marker, 'core/list' ).catch(
 		() => undefined
@@ -3802,7 +3832,9 @@ async function typeRealUserToolbarFormattedParagraph(
 	await focusRealUserTypingSurface( page );
 	await page.keyboard.press( 'End' );
 	await page.keyboard.press( 'Enter' );
-	await page.keyboard.type( `${ marker } toolbar format`, { delay: 2 } );
+	await page.keyboard.type( `${ marker } toolbar format`, {
+		delay: REAL_USER_TYPING_DELAY_MS,
+	} );
 	for ( let index = 0; index < marker.length; index++ ) {
 		await page.keyboard.press( 'Shift+ArrowLeft' );
 	}
