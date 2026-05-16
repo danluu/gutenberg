@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T06:47:08Z`
+Snapshot time: `2026-05-16T06:51:56Z`
 
 Trigger event:
-`duplicate-noise-2026-05-16T06-46-02Z-16`
+`pr-split-2026-05-16T06-47-11Z-20260516T064237Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -30,7 +30,7 @@ reviewability show a better maintainer-facing split that still covers the
 significant bugs. Old PR numbers, old branch groupings, and the original split
 are not privileged merely for continuity.
 
-The latest split synthesis, `pr-split-20260516T063020Z-synthesis`, keeps the
+The latest split synthesis, `pr-split-20260516T064237Z-synthesis`, keeps the
 split unchanged and makes the current blocker operational: only repaired
 `final/rtc-pr*` refs are valid PR-head candidates, and the latest finalization
 source to import is
@@ -45,13 +45,13 @@ Current state:
 - The live coverage root is
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T064057Z`.
   The current novelty monitor snapshot is populated at
-  `2026-05-16T06:45:52.413Z`: `25393` coverage files, `37375` total records,
+  `2026-05-16T06:49:46.796Z`: `25453` coverage files, `37458` total records,
   `10` unmet goals, `0` current visible likely-real signatures, `7` enabled WS
   groups, and no currently paused groups.
 - The latest trend evidence still shows clean visible likely-real product
   health: `likely_real_max: 0`, current duplicate share `0`, historical
-  duplicate share about `0.5982`, and `10` unmet goals through
-  `2026-05-16T06:37:06Z`; the current monitor has since advanced to `25393`
+  actionable duplicate share about `0.4014`, and `10` unmet goals through
+  `2026-05-16T06:43:58Z`; the current monitor has since advanced to `25453`
   coverage files with the same unmet-goal count. This is background health
   evidence only, not final-stack validation.
 - PR 13 repair/import is complete. The repaired source-repo heads passed the
@@ -99,7 +99,7 @@ The fuzz repo remains on the validation stack:
 That stack has modified fuzz harness files and many untracked fuzz/analysis
 scripts. It is active validation infrastructure, not the final PR stack.
 
-The branch-link audit was generated at `2026-05-16T06:47:08Z` from fetched
+The branch-link audit was generated at `2026-05-16T06:51:56Z` from fetched
 `danluu` refs. It verifies GitHub-facing `review/rtc-pr*` branches with
 non-empty diffs against the listed bases. The proposed PR table below uses only
 audit rows marked `verified-content` as PR-content links.
@@ -112,7 +112,7 @@ worktree,
 One report also named `053947Z`, but the consensus and latest finalization point
 to `061949Z`. Do not file or review `shape/*`, `finalize/*`, `deferred/*`,
 `try/rtc-fix-stack-validation`, dirty worktrees, or the old aggregate PR 15 as
-current PR heads. As of `pr-split-20260516T063020Z-synthesis`, the repaired
+current PR heads. As of `pr-split-20260516T064237Z-synthesis`, the repaired
 final heads are not yet imported into the fix-plan repo.
 
 PR 13 must use the repaired review refs from the audit:
@@ -138,11 +138,11 @@ is pushed only so the PR 13A compare link has the repaired source base.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T06:47:03Z
+collected_at_utc: 2026-05-16T06:51:51Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T064057Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
-novelty-status.md: populated at 2026-05-16T06:45:52.413Z
+novelty-status.md: populated at 2026-05-16T06:49:46.796Z
 current visible likely-real signatures: 0
 enabled groups: 7 WS groups
 paused groups: none
@@ -154,7 +154,7 @@ validation because the repaired final PR heads have not been imported, rebased,
 assembled into a fresh combined validation stack, and fuzzed as that stack.
 
 The `latest-trend-evidence.md` packet was generated at
-`2026-05-16T06:38:57Z` from monitor data through `2026-05-16T06:37:06Z`. At
+`2026-05-16T06:46:38Z` from monitor data through `2026-05-16T06:43:58Z`. At
 that trend snapshot, the enabled-group list was:
 
 - `novelty-ws-common-blocks`
@@ -169,28 +169,28 @@ The current novelty monitor has since reset to the `064057Z` output root and
 now reports `7` enabled WS groups with no paused groups. Current-run triage
 remains clean: `0` raw signatures, `0` actionable signatures, `0` likely-real
 visible, `0` likely-real merged duplicates, and current duplicate share `0`.
-Historical raw duplicate share remains high at about `0.5976`, but the patched
+Historical raw duplicate share remains high at about `0.5979`, but the patched
 monitor now reports a lower actionable historical duplicate share of about
-`0.4013` after separating suppressed known-noise signatures.
+`0.4005` after separating suppressed known-noise signatures.
 
 The latest trend packet supports longer-running coverage progress with no
 visible likely-real failures so far:
 
 ```text
-monitor passes: 1319
-coverage files: 272 -> 25220
-coverage files delta: 24948
+monitor passes: 1322
+coverage files: 272 -> 25355
+coverage files delta: 25083
 unmet coverage goals: 24 -> 10
 likely_real_max: 0
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.5982
+duplicate_share_historical_last: 0.4014
 summary_startup_failures_last: 0
-pr_review_events: 306
+pr_review_events: 308
 pr_suggested_net_loc_latest_total: 11801
 ```
 
 The current novelty monitor has advanced slightly beyond the trend packet:
-`25393` coverage files, `37375` total records, `56` records processed in the
+`25453` coverage files, `37458` total records, `39` records processed in the
 pass, `10` unmet goals, and no quality issues. The largest unmet goals remain
 CDP coverage records, real-user-editing success count, `core/html`,
 `core/more`, `core/details`, heading shortcuts, reload-post actions,
@@ -233,12 +233,15 @@ from historical noise, keep evidence-only families out of the split, and make
 filing gates explicit.
 
 The newest split persona synthesis is
-`pr-split-20260516T063020Z-synthesis`. It says:
+`pr-split-20260516T064237Z-synthesis`. It says:
 
 - The split is on track but not filing-ready.
 - The main blocker is branch-head hygiene: import the repaired `final/rtc-pr*`
   refs from `pr-stack-20260516T061949Z`, then verify, push or link, rebase, and
   validate them before filing.
+- The repaired heads exist in the finalization worktree, but the active
+  fix-plan repo has not imported them and is still dirty with the untracked
+  reload-hydration gate spec.
 - PR 8 is still blocked on comparison against `try/rtc-title-reload-pr`.
 - The final refs still need import, verification, push, upstream rebase,
   focused checks, and final combined-stack validation.
@@ -247,8 +250,8 @@ The newest split persona synthesis is
   residuals remain evidence-only.
 - Do not add `PR 1A` or `PR 6B`; malformed save-payload work is either
   deferred or already represented by PR 6.
-- Launch no automatic new fuzz lanes, broad final-stack fuzz, duplicate
-  finalization, or another split-review loop from this updater pass.
+- Launch no automatic fuzzing now. If the controller chooses automation, the
+  only acceptable bounded job is the existing import/rebase/check prompt.
 
 The newest duplicate-noise synthesis,
 `duplicate-noise-20260516T062141Z-synthesis.md`, changes no product PR
@@ -277,11 +280,11 @@ failures, or linebreak drift.
 The latest split feedback action,
 `pr-split-20260516T063020Z-feedback-action.md`, applied the Cycle 100 guidance,
 launched no jobs, and wrote an unlaunched next-action prompt for final-ref
-import/rebase/check work. The newest split synthesis by filename,
-`pr-split-20260516T064237Z-synthesis.md`, is zero bytes and should be ignored
-as no-op input. The latest non-empty split synthesis,
-`pr-split-20260516T063020Z-synthesis`, is still the newest completed
-status-persona input for branch status.
+import/rebase/check work. The newest split synthesis,
+`pr-split-20260516T064237Z-synthesis.md`, is non-empty and confirms that the
+split remains stable while filing stays blocked on final-ref import/rebase,
+PR 8 comparison, focused checks, lint, `git diff --check`, and a fresh final
+combined validation stack.
 
 ## Proposed PR Split
 
