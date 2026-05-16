@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T21:33:27Z`
+Snapshot time: `2026-05-16T21:44:13Z`
 
 Trigger event:
-`pr-split-2026-05-16T21-28-12Z-20260516T212100Z`
+`pr-split-2026-05-16T21-41-56Z-20260516T213513Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T21-28-12Z-20260516T212100Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T21-41-56Z-20260516T213513Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,83 +28,71 @@ or the original split merely for continuity.
 ## Executive Status
 
 Filing remains blocked. The latest completed split-persona synthesis,
-`pr-split-20260516T212100Z-synthesis.md`, keeps the known-fix prefix but changes
-the tail again. Do not publish PR16 now, and do not go directly from PR16/PR17
-into final validation/fuzz. The current Cycle 196 tail is:
+`pr-split-20260516T213513Z-synthesis.md`, keeps the known-fix prefix but
+continues to replace the tail with explicit pass/drop, repair/reclassification,
+and residual source-reduction gates:
 
 ```text
 ready PR01-PR15C known-fix prefix, plus PR02A as the PR02 sidecar
 -> PR16 malformed-save held for focused seed 950109 diagnostic, then pass/drop
 -> separate PR17 seed 1020002 WebSocket/Yjs follower-side update repair or
    proof-based reclassification
--> strict-expansion residual split audit gate
--> PR18x source-reduced branches only for confirmed uncovered families
+-> strict-expansion residual source-reduction gate
+-> PR18x only for source-reduced uncovered families
 -> rebuilt combined validation stack
 -> focused seed 1020002 gate
 -> final-stack fuzz and filing
 ```
 
-That is a known-fix prefix plus a conditional tail, not a complete filing
-stack. PR16 is not publishable. The latest synthesis says the built-assets
-replay produced `1 passed` and `7 failed`; seed `950109` reached product
-actions and failed before `wp-env` stopped. Treat PR16 as blocked pending a
-focused `950109` localization and a repair/drop/downscope decision, not as a
-ready branch. The latest feedback action launched
-`rtc-pr16-950109-diagnostic-20260516T212950Z` for that gate.
+The split is not filing-ready. PR16 is not publishable: the built-assets replay
+produced `1 passed` and `7 failed`, and seed `950109` still needs the focused
+diagnostic before PR16 can be repaired, dropped, or downscoped. PR17 remains a
+separate final-stack blocker. Latest PR17 evidence points past merge-update
+emission: the marker-bearing update reaches the relay, but the follower applies
+the remote client range as deleted and stays marker-free. Do not fold PR17 into
+PR6, PR13, PR15, PR16, reload hydration, pre-save search/live-collapse, HTTP
+room isolation, or rich-text work without exact same-source proof.
 
-PR17 remains separate and unfixed. Seed `1020002` is still the WebSocket/Yjs
-marker-propagation blocker. Do not fold it into PR6, PR13, PR15, PR16, reload
-hydration, pre-save search/live-collapse, HTTP room-isolation, or rich-text
-work without exact same-source proof. Latest PR17 evidence moved the boundary
-past merge-update emission: the relay receives the marker-bearing update, but
-the follower applies the remote client range as deleted and remains
-marker-free. The next PR17 work is follower-side Yjs update application, not
-another broad merge-emission diagnostic.
+There is also an immediate operational blocker: the latest split synthesis says
+remote `/` is still full at `100%`, with about `68M` free. Free disk or redirect
+Codex/session output to `/media/volume` before trusting active job artifacts or
+rerunning bounded replacements.
 
-The new strict-expansion residual split-audit gate is analysis-only until it
-source-reduces an uncovered family. Candidate PR18x branches must come from
-confirmed residuals, especially live WebSocket block-tree divergence,
-same-user/reload loss, post-save non-convergence, revision-restore leakage, and
-awareness/reconnect stalls. The latest feedback action launched
-`rtc-strict-expansion-split-audit-20260516T212950Z`, and the loop now harvests
-strict-expansion `likely_real` `result.json` rows into the Parallel Progress
-Gate so those residuals cannot be hidden behind the narrower coverage-guided
-`0 likely-real visible` snapshot.
+The strict-expansion split audit is no longer just "launched". The latest split
+synthesis reports `307` likely-real rows, `58` buckets, and `9` split-relevant
+clusters. Those rows are evidence for source reduction, not PRs by themselves.
+Start with the live WebSocket block-tree divergence cluster, seed `5700084`,
+and compare source ownership against PR13/PR15 before naming any PR18A.
 
-Cycle 194 fixed split-loop progress hygiene, and Cycle 196 tightened it. The
-loop now throttles duplicate singleton-lock rejection logs, recognizes
-job-health/hygiene artifacts as independent progress, harvests strict-expansion
-`likely_real` rows, and requires fresh logs, reports, manifests, branch output,
-or one bounded replacement/downscope/loop-repair job before a pre-existing
-non-`1020002` job satisfies the Parallel Progress Gate.
-
-The latest duplicate/noise feedback action completed a bounded fuzzer-side
-control-plane patch, not a product-code change. It mapped
-`novelty-http-persistence-probe` to `persistence-no-title`, added a strict
-startup cap, bumped run-local noise policy to `6`, removed the global
-`likelyRealVisible` bypass from sticky noise cooldown, added the HTTP
-persistence probe to strict startup pause ordering, and restarted the novelty
-and analysis monitors. Validation from that action:
+The latest split feedback action, `pr-split-20260516T212100Z-feedback-action.md`,
+launched these bounded jobs:
 
 ```text
-node --check bin/rtc-browser-fuzz-novelty-monitor.mjs: exit 0
-previous root live-analysis --once: active=0
-fresh live-analysis: one block-gauntlet session with product evidence
-HTTP persistence probe: skipped as no actionable signature
+rtc-pr16-950109-diagnostic-20260516T212950Z
+rtc-strict-expansion-split-audit-20260516T212950Z
+rtc-pr17-1020002-follower-update-20260516T213345Z
 ```
 
-This improved duplicate/noise scheduling and analysis accounting, but the
-newest duplicate/noise synthesis, `duplicate-noise-20260516T211828Z-synthesis.md`,
-still treats duplicate/noise as a control-plane leak, not product failure
-evidence. It recommends durable cooldowns across output-dir rotation,
-current-root live-analysis lifecycle cleanup, stale-root live-analysis exits,
-no-analysis sentinels for supervisor startup-stall pauses, and only narrow
-zero-product-evidence startup classifier hardening. None of this is final-stack
-validation or a filing unblocker.
+It did not launch broad final-stack fuzz, push GitHub branches from Jetstream,
+or create speculative PR18x branches.
+
+The latest duplicate/noise synthesis,
+`duplicate-noise-20260516T212846Z-synthesis.md`, still treats duplicate/noise
+as a control-plane lifecycle leak, not product failure evidence. The next
+control-plane fix is to make coverage-guided analysis lifecycle current-root
+owned, write no-analysis sentinels for supervisor startup-stall pauses, and make
+stale live-analysis monitors exit. The matching
+`duplicate-noise-20260516T212846Z-feedback-action.md` is empty, so the latest
+non-empty duplicate/noise action remains prior fuzzer-side control-plane work;
+do not treat it as product validation or a filing unblocker.
+
+Current coverage-guided novelty and trend evidence still shows `0` visible
+likely-real current-run failures, but that is health/control-plane evidence
+only. It is not final-stack validation.
 
 ## Branch And Ref Status
 
-The remote status input was generated at `2026-05-16T21:33:21Z`.
+The remote status input was generated at `2026-05-16T21:44:13Z`.
 
 The fix-planning repo is checked out at:
 
@@ -134,7 +122,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T21:33:27Z` from fetched
+The branch-link audit was generated at `2026-05-16T21:44:25Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -189,9 +177,9 @@ branch-link audit or explicitly says `No verified branch link yet`.
 | PR 15A | Fallback group move stale reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 | +123 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15B | Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 | +197 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15C | Fallback group delete | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 | +161 / -4 | verified branch; keep reload-hydration gate spec out |
-| PR 16 | Malformed-save payload candidate lane | No verified branch link yet | TBD | TBD | held, not publishable; focused seed `950109` diagnostic `rtc-pr16-950109-diagnostic-20260516T212950Z` must decide pass/repair/drop/downscope before PR16 can stay in the stack |
-| PR 17 | Seed `1020002` WebSocket/Yjs marker-propagation repair | No verified branch link yet | TBD | TBD | active final-stack blocker; latest evidence points past merge-update emission to follower-side Yjs update application, with repair or proof-based reclassification still required |
-| PR 18x | Source-reduced strict-expansion residual branches | No verified branch link yet | TBD | TBD | not speculative; add only after strict-expansion split audit `rtc-strict-expansion-split-audit-20260516T212950Z` proves uncovered product families and branch-sized fixes |
+| PR 16 | Malformed-save payload candidate lane | No verified branch link yet | TBD | TBD | held, not publishable; consume focused seed `950109` diagnostic `rtc-pr16-950109-diagnostic-20260516T212950Z`, then repair/drop/downscope before PR16 can stay in the stack |
+| PR 17 | Seed `1020002` WebSocket/Yjs marker-propagation repair | No verified branch link yet | TBD | TBD | active final-stack blocker; consume `rtc-pr17-1020002-follower-update-20260516T213345Z`, then repair or proof-classify follower-side Yjs update application |
+| PR 18x | Source-reduced strict-expansion residual branches | No verified branch link yet | TBD | TBD | not speculative; strict-expansion audit found `307` likely-real rows, `58` buckets, and `9` split-relevant clusters; source-reduce before adding any branch |
 
 Verified branches that are prior art or staging only:
 
@@ -209,8 +197,8 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T21:33:21Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T211759Z
+collected_at_utc: 2026-05-16T21:44:13Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T213832Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
@@ -228,19 +216,19 @@ Treat it as structural and focused-check evidence for the known-fix prefix. It
 is not final-stack fuzz validation and no longer represents the complete filing
 stack because PR02A still needs a verified review branch, PR16 needs the
 focused `950109` pass/drop diagnostic, PR17 still needs the seed `1020002`
-follower-side update repair or proof-based reclassification, and the
-strict-expansion residual split audit is now required before final validation.
+follower-side update repair or proof-based reclassification, and strict
+residual source reduction is required before any PR18x is named.
 
-The collected `raw/novelty-status.md` is now non-empty for
-`run-20260516T211759Z`. It was updated at `2026-05-16T21:32:03.798Z` and
-reported:
+The collected `raw/novelty-status.md` was updated at
+`2026-05-16T21:42:55.852Z` for `run-20260516T213832Z` and reported:
 
 ```text
-coverage files: 36376
-total records seen: 55128
-current-run records: 8
-current-run successful records: 0
-current-run triage roots: 1
+coverage files: 36404
+total records seen: 55188
+records processed this pass: 10
+current-run records: 2
+current-run successful records: 1
+current-run triage roots: 5
 current-run raw/actionable signatures: 0 / 0
 visible likely-real failures: 0
 unmet coverage goals: 7
@@ -250,125 +238,92 @@ health: ok
 Enabled groups:
 
 ```text
+novelty-ws-block-gauntlet
+novelty-ws-lifecycle
+novelty-ws-persistence-no-title
 novelty-ws-real-user-editing
 novelty-ws-real-user-rich-text
+novelty-http-persistence-probe
 ```
 
 Paused groups:
 
 ```text
-novelty-ws-block-gauntlet: 2/2 strict pre-action discovery/startup failures
-novelty-http-persistence-probe: 2/4 strict pre-action discovery/startup failures
-novelty-ws-persistence-no-title: 2/4 strict pre-action discovery/startup failures
-novelty-ws-lifecycle: 2/2 strict pre-action discovery/startup failures
+none
 ```
 
-The current-run novelty status is clean of visible likely-real failures, but
-there are no successful current-run records yet. Recent changes show the
-strict-startup cooldown/no-analysis controls holding noisy groups paused rather
-than relaunching them through coverage recommendations. This is fuzz-health and
-control-plane evidence only.
+Current-run novelty is clean of visible likely-real failures and has one
+successful current-run record, but this is still fuzz-health evidence only.
+Recent changes show the run root rotated, run-local pause/startup state was
+rebuilt, and previously paused lifecycle, HTTP persistence, block-gauntlet, and
+persistence-no-title groups were re-enabled. Do not count this as final-stack
+validation.
 
-The latest trend evidence packet was generated at `2026-05-16T21:24:58Z` from
-monitor data through `2026-05-16T21:22:09Z`:
+The latest trend evidence packet was generated at `2026-05-16T21:37:15Z` from
+monitor data through `2026-05-16T21:36:45Z`:
 
 ```text
-monitor passes: 1703
-coverage files: 272 -> 36330
-coverage files delta: 36058
+monitor passes: 1709
+coverage files: 272 -> 36388
+coverage files delta: 36116
 unmet coverage goals: 24 -> 7
 likely_real_max: 0
 duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.3533
 summary_startup_failures_last: 0
 quality_issues_last: 0
-fuzz level mix: browser-e2e=31 lanes/31 groups;
+fuzz level mix: browser-e2e=27 lanes/27 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 1759176
-browser-e2e execution: 82438 cumulative / 4348 per-hour
-unit-property execution: 1547624 cumulative / 139664 per-hour
-coverage-guided-lower-level execution: 126108 cumulative / 20736 per-hour
-load1/load5/load15: 49.04 / 55.48 / 63.44 on 64 cores
-memory: 431.1G free
+total fuzz-level test executions: 1813163
+browser-e2e execution: 83887 cumulative / 3220 per-hour
+unit-property execution: 1593376 cumulative / 101136 per-hour
+coverage-guided-lower-level execution: 132894 cumulative / 15368 per-hour
+load1/load5/load15: 35.65 / 44.6 / 55.38 on 64 cores
+memory: 434.4G free
 ```
 
-Largest remaining coverage gaps in that packet are `reload-post-action`
-`610/1000`, `ui-heading-shortcut` `634/1000`, title-save-reload `223/500`,
+Largest remaining coverage gaps are `reload-post-action` `610/1000`,
+`ui-heading-shortcut` `637/1000`, title-save-reload `223/500`,
 body-save-reload `282/500`, successful real-user-editing records `346/500`,
-`ui-format-paragraph` `916/1000`, and `core/html` `463/500`.
+`ui-format-paragraph` `916/1000`, and `core/html` `464/500`.
 
-This is useful fuzz-health and control-plane evidence. It is not final-stack
-validation for filing.
+This is useful health and coverage evidence. It is not final-stack validation
+for filing.
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T212100Z-synthesis.md`. It keeps the Cycle 196 known-fix
-prefix but replaces the tail with explicit PR16 pass/drop, PR17 follower-side
-repair/reclassification, and strict-expansion residual audit gates:
+`pr-split-20260516T213513Z-synthesis.md`. It keeps `PR01` through `PR15C` plus
+PR02A as a known-fix prefix, then requires:
 
-- Keep `PR01` through `PR15C` plus PR02A as a known-fix prefix, not a
-  filing-ready final stack.
-- Keep PR13 logically as the green source sequence `13A`, `13B0`, `13B1`,
-  `13B2`, and `13B3`, followed by PR14 and PR15A-C. The table still uses the
-  repaired audited PR13A/B/C links because those are the current
-  `verified-content` PR13 links.
-- Hold conditional PR16 malformed-save payload work until the focused seed
-  `950109` diagnostic passes, repairs, drops, or downscopes it. The latest
-  built-assets replay produced `1 passed` and `7 failed`.
-- Keep PR17 as the seed `1020002` WebSocket/Yjs marker-propagation repair
-  unless exact same-source ownership by an existing ready PR is proven. Latest
-  evidence points to follower-side Yjs update application after relay emission,
-  not to another broad merge-emission diagnostic.
-- Add a strict-expansion likely-real split audit before rebuilding the combined
-  validation stack. Create PR18x branches only for source-reduced, uncovered
-  product families, not for speculative residuals.
-- Treat the PR03A revision-restore proposal as a strong minority signal, not a
-  consensus PR row.
-- Treat Tptacek's PR18 reload/rejoin gate as evidence-only until a real UI
-  repro proves a distinct product bug.
-- After PR16, PR17, and the strict-expansion audit are decided, rebuild the
-  combined validation stack, run the focused `1020002` gate, then run final
-  stack fuzz.
+- clear or route around the full remote `/` filesystem before trusting active
+  job outputs;
+- consume PR16 focused seed `950109` diagnostics before PR16 can remain in the
+  filing stack;
+- consume PR17 seed `1020002` follower-side Yjs update-application diagnostics
+  before PR17 can be repaired or proof-classified;
+- consume the completed strict-expansion audit and source-reduce the residual
+  families before naming any PR18x branch;
+- start strict-expansion source reduction with live WebSocket block-tree
+  divergence, seed `5700084`, then continue with `5200001`, `5200101`,
+  `5400020`/`5600031`, and `5500003`;
+- rebuild combined validation only after PR16, PR17, and strict residual
+  classification are resolved.
 
-The latest split synthesis recommends two bounded next actions, not broad
-final-stack fuzz:
-
-```text
-strict-expansion split audit root:
-/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-20260516T165042Z
-
-focused PR16 diagnostic:
-seed 950109, using the command in the new PR16 report
-```
-
-The latest non-empty split feedback action,
+The latest split feedback action,
 `pr-split-20260516T212100Z-feedback-action.md`, recorded Cycle 196 in the
-remote split report and patched `rtc-pr-split-review-loop.sh` so
-strict-expansion `likely_real` `result.json` rows are included in the Parallel
-Progress Gate. It launched:
-
-```text
-rtc-pr16-950109-diagnostic-20260516T212950Z
-rtc-strict-expansion-split-audit-20260516T212950Z
-```
-
-It intentionally did not launch broad final-stack fuzz, GitHub pushes from
-Jetstream, duplicate PR17/`1020002` diagnostics, or speculative PR18x branch
-creation.
+remote split report, patched the review loop to include strict-expansion
+`likely_real` `result.json` rows in the Parallel Progress Gate, and launched
+the bounded PR16, PR17, and strict-expansion audit sessions listed above.
 
 The latest duplicate/noise synthesis is
-`duplicate-noise-20260516T211828Z-synthesis.md`; the latest duplicate/noise
-feedback action remains
-`duplicate-noise-20260516T205241Z-feedback-action.md`. The synthesis converged
-on a control-plane duplicate/noise leak: cooldowns must survive output-dir
-rotation, analysis sessions must be current-root scoped, stale live-analysis
-children should exit, and supervisor startup-stall pauses should write
-no-analysis sentinels. The `205241Z` action implemented the narrow first
-fuzzer-side patch described in the executive status and restarted the
-coverage-guided novelty/analysis services. Product-evidence failures remain
-visible by design.
+`duplicate-noise-20260516T212846Z-synthesis.md`. It converges on stale
+coverage-guided analysis lifecycle plus missing no-analysis sentinels for
+supervisor startup-stall pauses. Patch only control-plane lifecycle/sentinel
+paths if that work is authorized; preserve all product-evidence exceptions.
+The latest duplicate feedback-action file is empty, so no new fuzzer-side
+change should be inferred from it.
 
 Earlier duplicate/noise actions remain relevant control-plane history:
 
@@ -387,9 +342,9 @@ Earlier duplicate/noise actions remain relevant control-plane history:
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
 separate current fuzz health from historical noise, keep evidence-only
-families out of the split, and make filing gates explicit. Their older
-PR13-ref warnings and then-current constrained group mix are superseded by the
-`2026-05-16T21:33:27Z` branch-link audit and the latest collected fuzz state.
+families out of the split, and make filing gates explicit. Their older PR13
+review-ref warning is superseded by the `2026-05-16T21:44:25Z` branch-link
+audit, which contains repaired `verified-content` PR13A/B/C review links.
 
 ## Deferred Or Evidence-Only Work
 
@@ -400,18 +355,18 @@ These must not be described as fixed or filing-ready.
 | Dropped PR 6B save snapshot/no-op guard | `final/rtc-pr06b-save-snapshot-noop-guard`; seeds `5500001`, `5500002`, `5500006` | dropped from filing path and allow-list after corrected replay classification | Do not rerun as the next gate; track seed `5500002` separately as revision-restore marker retention if it reproduces cleanly |
 | Revision-restore marker retention | seed `5500002`; active lifecycle seed `970001` triage | queued behind final-stack blockers; no automatic PR slot | Triage only after `1020002` is repaired or reclassified and the rebuilt stack is available |
 | Possible PR03A revision-restore marker-retention sidecar | no verified filing branch; latest split synthesis calls this a strong minority signal only | not in the consensus split and not a proposed PR row yet | Run independent replay/promotion only if capacity allows; insert after PR03 only if it proves a maintainer-sized product branch, otherwise keep deferred |
-| PR 16 malformed-save payload candidate lane | `deferred/rtc-malformed-save-payload-20260516T202017Z` at `2270c2e955a`; no verified filing branch; `rtc-pr16-950109-diagnostic-20260516T212950Z` launched | independent conditional lane, not filing-ready and not the dropped PR 6B candidate; latest built-assets replay is `1 passed` / `7 failed` and seed `950109` reached product actions before failing | Consume the focused `950109` diagnostic, decide repair vs drop/downscope, then require focused Jest/lint/replay evidence and a verified branch link before PR16 can stay in the filing stack |
+| PR 16 malformed-save payload candidate lane | `deferred/rtc-malformed-save-payload-20260516T202017Z` at `2270c2e955a`; no verified filing branch; `rtc-pr16-950109-diagnostic-20260516T212950Z` launched | independent conditional lane, not filing-ready and not the dropped PR 6B candidate; latest built-assets replay is `1 passed` / `7 failed` | First resolve disk/artifact writability, then consume the focused `950109` diagnostic, decide repair vs drop/downscope, and require focused Jest/lint/replay evidence plus a verified branch link before PR16 can stay in the filing stack |
 | PR 6C malformed evaluated save content | no verified filing branch | superseded by the broader PR16 candidate-lane decision unless focused evidence narrows it again | Promote only after focused product evidence and a verified branch link exist |
 | Broad PR 8 persisted-record hydration | old audit branch [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | deferred; no active filing unit | Shape and audit a narrowed title-reload branch only if PR 8A is revived |
 | Reload hydration empty live editor | `e75c8829e4e9`, `3bbdc3cdb393`; gate branch `try/rtc-reload-hydration-gate-e75c8829` | evidence-only; not in PR 6, PR 6A, PR 8A, PR 15, or fallback-group claims | Promote only if a clean gate reaches the post-reload assertion and live editor state stays empty after exact-room WebSocket sync while REST body and persisted `_crdt_document` remain populated |
-| Strict-expansion residual split audit / PR18x | `strict-expansion-20260516T165042Z`; `rtc-strict-expansion-split-audit-20260516T212950Z` launched; no verified filing branch | required audit gate before final validation; not itself a PR and not speculative filing content | Source-reduce likely-real strict-expansion residuals; add PR18x rows only for confirmed uncovered product families with branch-sized fixes |
-| Reload/rejoin unsaved-edits UI repro (`PR18` idea) | Tptacek reload/rejoin gate from latest split synthesis | evidence-only and lower priority; not a consensus PR slot by itself | Run only as a bounded UI repro job; promote only if a real UI repro proves the family and the strict-expansion audit supports a source-reduced branch |
+| Strict-expansion residual source reduction / PR18x | `strict-expansion-20260516T165042Z`; split audit launched as `rtc-strict-expansion-split-audit-20260516T212950Z`; latest synthesis says audit found `307` likely-real rows, `58` buckets, and `9` split-relevant clusters | required source-reduction gate before final validation; not itself a PR and not speculative filing content | Start with live WebSocket block-tree divergence seed `5700084`; compare ownership against PR13/PR15 before naming PR18A; continue with `5200001`, `5200101`, `5400020`/`5600031`, and `5500003` |
+| Reload/rejoin unsaved-edits UI repro (`PR18` idea) | Tptacek reload/rejoin gate from split synthesis history | evidence-only and lower priority; not a consensus PR slot by itself | Run only as a bounded UI repro job; promote only if a real UI repro proves the family and source reduction supports a branch-sized fix |
 | Pre-save search/live document collapse | `ddf9559af37e`, `0932bed35c7a`, conditional `1e0ade5ec5a8`; `try/rtc-pre-save-search-collapse-gate-ddf9559` | evidence-only; not in active split | Capture editor blocks, serialized content, edited core-data record, live CRDT record, provider state, REST body, and save state around `core/search` insertion |
 | Rich-text formatted suffix corruption | `4148230f681d`, `b0db7b80c6f2`, `dc8ea6e78d4d`, `1ccac75d7faa`, `2722f0e897de`, `712b98ba96ff` | not fixed; latest split keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Malformed save payload and save-settlement residuals outside PR16 | `fc154ebec48c`, `e40aa1b7863d`, `f51c425df8a5`, `f46859898576`, `afd389d7f139`, `02289235f55f`, `eef8b8932e11`, `b60eecd4ac03` | still not fixed or filing-ready outside the conditional PR16 lane | Keep broader residuals deferred until a source-level `saveEntityRecord()` / `prePersistPostType()` repro proves clean local blocks but malformed evaluated outgoing `content` |
-| Seed `1020002` WebSocket marker divergence | completed `143821Z`, `151306Z`, `153219Z`, `160617Z`, `172434Z`, `180529Z`, `185531Z`, and merge-update-emission reports; latest evidence says relay emission succeeds but the follower applies the remote client range as deleted | active PR17/final-stack blocker; no verified filing branch exists | Repair or proof-classify follower-side Yjs update application; require focused seed `1020002` to pass or be explicitly reclassified, then shape PR17 with a verified branch link before filing |
-| Seed `7410083` final-persistence `_crdt_document` absence | queued by latest split persona | queued behind seed `1020002`; no automatic PR slot | Triage only after `1020002` is repaired, reclassified, and the rebuilt stack is available |
-| Possible seed `5200001` same-user reload stale title/body | queued by latest split persona | possible follow-up only; no automatic PR slot | Deep-triage after `1020002` if it remains visible on the rebuilt stack |
+| Seed `1020002` WebSocket marker divergence | completed `143821Z`, `151306Z`, `153219Z`, `160617Z`, `172434Z`, `180529Z`, `185531Z`, merge-update-emission reports, and active `rtc-pr17-1020002-follower-update-20260516T213345Z` | active PR17/final-stack blocker; no verified filing branch exists | Resolve disk/artifact writability if needed, then repair or proof-classify follower-side Yjs update application; require focused seed `1020002` to pass or be explicitly reclassified, then shape PR17 with a verified branch link before filing |
+| Seed `7410083` final-persistence `_crdt_document` absence | queued by split persona | queued behind seed `1020002`; no automatic PR slot | Triage only after `1020002` is repaired, reclassified, and the rebuilt stack is available |
+| Possible seed `5200001` same-user reload stale title/body | queued by split persona and strict-expansion source-reduction order | possible follow-up only; no automatic PR slot | Deep-triage after `1020002` unless strict-expansion source reduction proves a separate branch-sized family |
 | Old PR16 valid-block `originalContent` candidate | seed replay candidate only | still blocked/deferred; distinct from the new malformed-save PR16 lane | Replay and classify the seed before considering any product branch or verified branch link |
 | HTTP smoke `rest_crdt_document_stale` | final-stack bootstrap repair reached one HTTP action before this signal | separate triage signal; not split coverage and not a final-stack fuzz pass | Classify separately after the seed `1020002` repair/split decision |
 | Broader HTTP polling room-isolation residuals | `f5738470d026`, `fda8d2334e65`, conditional `fc99825fb6c2`, `b75435787be1`; PR02A local ready head exists but has no remote verified branch link yet | PR02A is in the current split recommendation, but broader room-isolation residuals stay deferred until focused evidence narrows them | Publish/fetch/audit a PR02A review branch before filing; promote additional residuals only if fuzzing still shows healthy post rooms stalled by auxiliary room failures after PR 1/2/2A |
@@ -423,49 +378,51 @@ Do not file a single mega-PR and do not file the large stacked
 
 Before filing any maintainer-facing PR:
 
-1. Use the explicit `ready/rtc-*` prefix from the `20260516T181934Z`
+1. Clear remote `/` disk pressure or redirect Codex/session output to
+   `/media/volume`, then verify active PR16/PR17/source-reduction jobs can
+   write complete reports.
+2. Use the explicit `ready/rtc-*` prefix from the `20260516T181934Z`
    finalization report. Do not wildcard import or file `final/rtc-pr*`.
-2. Keep old aggregate PR 5, broad PR 8, aggregate PR 11, stale/misordered
+3. Keep old aggregate PR 5, broad PR 8, aggregate PR 11, stale/misordered
    PR13 refs, dropped PR 6B, PR 6C, old PR16 seed-replay candidates, dirty
    evidence branches, and the untracked reload-hydration gate spec out of
    filing branches and push allow-lists.
-3. Publish/fetch only the explicit `33` rows from the progress-unblock
+4. Publish/fetch only the explicit `33` rows from the progress-unblock
    `push-manifest.tsv` if doing branch publication. Push/import and audit PR02A
    plus individual PR 5A/5B/5C, PR 8A, and PR11A-E review branches, or keep the
    table rows marked `No verified branch link yet`.
-4. Use the repaired audited PR13A/B/C review refs for maintainer-facing PR13
-   links until the green PR13B0/B1/B2/B3 subheads have verified audit rows.
-5. Consume the latest PR16 malformed-save built-assets replay report. Because
-   it produced `1 passed` and `7 failed`, consume the focused seed `950109`
-   diagnostic launched as `rtc-pr16-950109-diagnostic-20260516T212950Z` and
-   decide repair vs drop/downscope before PR16 can stay in the stack. Add a
-   verified branch link before filing it.
-6. Rebase or recreate each intended PR branch on the intended upstream base if
+5. Use the repaired audited PR13A/B/C review refs for maintainer-facing PR13
+   links until any finer PR13 subheads have verified audit rows.
+6. Consume the focused PR16 seed `950109` diagnostic launched as
+   `rtc-pr16-950109-diagnostic-20260516T212950Z` and decide repair vs
+   drop/downscope before PR16 can stay in the stack. Add a verified branch link
+   before filing it.
+7. Consume the PR17 follower-side Yjs update application result from
+   `rtc-pr17-1020002-follower-update-20260516T213345Z`. Require the focused seed
+   gate to pass or be explicitly reclassified, then shape PR17 and add a
+   verified branch link before filing.
+8. Consume the strict-expansion audit and source-reduce residuals before final
+   validation. Add PR18x branches only for source-reduced uncovered product
+   families, and give every added row a verified branch link or
+   `No verified branch link yet`.
+9. Rebase or recreate each intended PR branch on the intended upstream base if
    that base moves.
-7. Regenerate branch graph/containment evidence and adjacent
-   range-diffs/diffstats from the actual filing repo.
-8. Rerun focused checks, touched-file lint, and `git diff --check` on every
-   imported/rebased branch.
-9. Keep dirty analysis-only artifacts out of product PR branches.
-10. Consume the PR17 follower-side Yjs update application result. Require the
-    focused seed gate to pass or be explicitly reclassified, then shape PR17 and
-    add a verified branch link before filing.
-11. Consume the strict-expansion residual split audit launched as
-    `rtc-strict-expansion-split-audit-20260516T212950Z` before final
-    validation. Add PR18x branches only for source-reduced uncovered product
-    families, and give every added row a verified branch link or
-    `No verified branch link yet`.
-12. Rebuild the combined stack from the explicit `ready/rtc-*` known-fix
+10. Regenerate branch graph/containment evidence and adjacent
+    range-diffs/diffstats from the actual filing repo.
+11. Rerun focused checks, touched-file lint, and `git diff --check` on every
+    imported/rebased branch.
+12. Keep dirty analysis-only artifacts out of product PR branches.
+13. Rebuild the combined stack from the explicit `ready/rtc-*` known-fix
     prefix, PR02A, the accepted PR16 decision, the PR17 `1020002` decision, and
     any accepted PR18x branches, then rerun bounded final-stack validation
     against the rebuilt stack. Count it only if it reaches action-level product
     coverage.
-13. Block filing if new visible likely-real failures appear.
+14. Block filing if new visible likely-real failures appear.
 
-Existing fuzz infrastructure can continue where healthy, and the
-strict-expansion audit is an allowed analysis gate. Do not run broad/final-stack
-fuzz while the PR16/PR17 decisions and residual audit are open. The latest
-collected inputs show zero visible likely-real failures in current novelty and
-trend evidence, with historical bootstrap noise separated from current live
-product evidence. None of this is final-stack fuzz validation or a filing
-unblocker.
+Existing fuzz infrastructure can continue where healthy, and strict-expansion
+source reduction is an allowed analysis gate. Do not run broad/final-stack fuzz
+while the PR16/PR17 decisions, strict residual source reduction, and rebuilt
+validation are open. Current collected inputs show zero visible likely-real
+failures in coverage-guided novelty and trend evidence, with historical
+bootstrap noise separated from current live product evidence. None of this is
+final-stack fuzz validation or a filing unblocker.
