@@ -505,3 +505,6 @@ timestamp,group,group_family
 2026-05-16T05:56:37Z,novelty-ws-lifecycle,lifecycle
 2026-05-16T05:56:37Z,novelty-ws-async-server-blocks,async/media
 2026-05-16T05:58:31Z,novelty-ws-persistence-no-title,persistence
+2026-05-16T06:04:52Z,novelty-ws-real-user-editing,real-user
+2026-05-16T06:04:52Z,novelty-ws-real-user-rich-text,real-user
+2026-05-16T06:04:52Z,novelty-ws-media-cross-entity,async/media
