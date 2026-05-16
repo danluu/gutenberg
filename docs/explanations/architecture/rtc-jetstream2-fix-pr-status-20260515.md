@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T18:47:59Z`
+Snapshot time: `2026-05-16T18:54:55Z`
 
 Trigger event:
-`pr-split-2026-05-16T18-46-54Z-20260516T184130Z`
+`pr-split-2026-05-16T18-53-34Z-20260516T184659Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T18-46-54Z-20260516T184130Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T18-53-34Z-20260516T184659Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -72,7 +72,7 @@ Expected report:
 ```
 
 At the latest split-persona check, that tmux session was still active and the
-report was still missing. Do not launch a duplicate Codex repair, broad
+report was still missing/empty. Do not launch a duplicate Codex repair, broad
 final-stack fuzz, extra fuzz lanes, PR13 work, PR6B/PR6C work, reload
 diagnostics, old PR16 replay, or another split-review loop while it is active.
 If it exits without a usable report, rerun exactly one bounded instance of:
@@ -88,7 +88,7 @@ broader HTTP room isolation, seed `5500002`, seed `7410083`, or possible seed
 
 ## Latest Branch And Ref Status
 
-The remote status input was generated at `2026-05-16T18:47:53Z`.
+The remote status input was generated at `2026-05-16T18:54:50Z`.
 
 The fix-planning repo is checked out at:
 
@@ -118,7 +118,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T18:47:59Z` from fetched
+The branch-link audit was generated at `2026-05-16T18:54:55Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -191,8 +191,8 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T18:47:53Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T175536Z
+collected_at_utc: 2026-05-16T18:54:50Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T185058Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
@@ -212,79 +212,80 @@ stack because PR02A still needs a verified review branch and seed `1020002`
 still needs the post-PR15C repair decision.
 
 The latest `novelty-status.md` snapshot was updated at
-`2026-05-16T18:45:44.005Z` for `run-20260516T175536Z`:
+`2026-05-16T18:52:35.415Z` for `run-20260516T185058Z`:
 
 ```text
-coverage files: 35127
-total records seen: 52703
-records processed this pass: 34
-current-run records by profile: common-blocks=39, parser-transform=20,
-  async-server-blocks=41, long-session-large-doc=16, media-cross-entity=16,
-  real-user-editing=37, block-gauntlet=16
-current-run successful records by profile: common-blocks=27,
-  parser-transform=13, async-server-blocks=31, real-user-editing=19,
-  media-cross-entity=6, block-gauntlet=12
-current-run records by transport: ws=185
-current-run pre-action startup failures: parser-transform=2,
-  media-cross-entity=2
-current-run summary-only startup failures: media-cross-entity=1,
-  parser-transform=1
+coverage files: 35187
+total records seen: 52804
+records processed this pass: 31
+new behavioral feature keys this pass: 7
+new CDP coverage hashes this pass: 7
+current-run records by profile: none yet after run-local reset
+current-run successful records by profile: none yet after run-local reset
+current-run records by transport: none yet after run-local reset
+current-run pre-action startup failures: none
+current-run summary-only startup failures: none
 enabled groups: novelty-ws-common-blocks, novelty-ws-block-gauntlet,
-  novelty-ws-real-user-editing, novelty-ws-real-user-rich-text,
-  novelty-ws-async-server-blocks, novelty-ws-long-session-large-doc
-paused groups: novelty-http-persistence-probe, novelty-ws-parser-transform,
-  novelty-ws-media-cross-entity
+  novelty-ws-lifecycle, novelty-ws-real-user-editing,
+  novelty-ws-real-user-rich-text, novelty-ws-async-server-blocks,
+  novelty-ws-long-session-large-doc
+paused groups: none
+recommended groups: novelty-ws-real-user-editing,
+  novelty-ws-real-user-rich-text, novelty-ws-block-gauntlet
 likely-real visible: 0
-likely-real merged duplicates: 18
+likely-real merged duplicates: 0
 oracle/noise questions: 0
 normalization-noise candidates: 0
-current-output triage signatures: 116
+current-output triage signatures: 0
 current-output bootstrap stalls: 0
-current top duplicate family share: 0.2241
-historical likely-real merged duplicates: 188
-historical normalization-noise candidates: 419
+current top duplicate family share: 0
+historical likely-real merged duplicates: 292
+combined likely-real merged duplicates: 296
+historical normalization-noise candidates: 424
 historical bootstrap stalls: 14433
-historical top duplicate family share: 0.5533
+historical top duplicate family share: 0.5501
 quality issues: 1
-health: ok
-headroom for adding groups: no
-load1: 86.52 / 64 cores
-memory: 422.2G free / 492.0G total
+health warning: no behavioral coverage files found under new output dir
+headroom for adding groups: yes
+load1: 58.75 / 64 cores
+memory: 431.3G free / 492.0G total
 ```
 
-The current output dir has visible triage signatures, but no visible
-likely-real product failures and no current bootstrap-stall signatures. Current
-top semantic families are `unknown`, `rest_meta_database_error`, `assertion`,
-`timeout`, and `collaboration_non_convergence`; do not blanket-suppress these
-product-evidence families.
+At `2026-05-16T18:51:08Z`, the novelty state moved from
+`run-20260516T175536Z` to `run-20260516T185058Z`, preserving coverage counters
+but resetting run-local startup, pause, and quality gates. The current output
+dir had not yet accumulated behavioral coverage or triage signatures in this
+snapshot, so the current `0` likely-real count is fuzz-health evidence only.
+Historical known-noise remains advisory/control-plane evidence; do not treat it
+as live product failure or as final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-16T18:43:19Z` from
-monitor data through `2026-05-16T18:40:59Z`:
+The latest trend evidence packet was generated at `2026-05-16T18:48:58Z` from
+monitor data through `2026-05-16T18:48:06Z`:
 
 ```text
-monitor passes: 1647
-coverage files: 272 -> 35086
-coverage files delta: 34814
+monitor passes: 1650
+coverage files: 272 -> 35148
+coverage files delta: 34876
 unmet coverage goals: 24 -> 9
 likely_real_max: 0
-duplicate_share_current_last: 0.2476
-duplicate_share_historical_last: 0.5535
+duplicate_share_current_last: 0.2066
+duplicate_share_historical_last: 0.5533
 summary_startup_failures_last: 0
 quality_issues_last: 1
 fuzz level mix: browser-e2e=31 lanes/31 groups; unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-browser-e2e execution: 65283 cumulative / 5536 per-hour
-unit-property execution: 1086492 cumulative / 105952 per-hour
-coverage-guided-lower-level execution: 44694 cumulative / 26368 per-hour
+browser-e2e execution: 65879 cumulative / 1568 per-hour
+unit-property execution: 1096124 cumulative / 24080 per-hour
+coverage-guided-lower-level execution: 47574 cumulative / 7424 per-hour
 load1: 76.5 / 64 cores
-memory: 427.5G free
+memory: 425.8G free
 ```
 
 Largest remaining coverage gaps in the later novelty snapshot are
-`reload-post-action` (`554/1000`), `ui-heading-shortcut` (`577/1000`),
-title-save-reload (`181/500` and `181/200`), body-save-reload (`240/500`),
-successful real-user-editing records (`307/500`), `ui-format-paragraph`
-(`849/1000`), `core/html` (`411/500`), and `core/details` (`460/500`).
+`reload-post-action` (`559/1000`), `ui-heading-shortcut` (`581/1000`),
+title-save-reload (`185/500` and `185/200`), body-save-reload (`244/500`),
+successful real-user-editing records (`311/500`), `ui-format-paragraph`
+(`853/1000`), `core/html` (`414/500`), and `core/details` (`465/500`).
 
 This is useful fuzz-health and control-plane evidence. It is not final-stack
 validation for filing.
@@ -292,7 +293,7 @@ validation for filing.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T184130Z-synthesis.md`. Its consensus:
+`pr-split-20260516T184659Z-synthesis.md`. Its consensus:
 
 - Filing remains blocked because the current `PR01` through `PR15C` stack is
   only a known-fix prefix.
@@ -306,10 +307,12 @@ The newest completed split-persona synthesis is
 - Launch no new automatic Codex or fuzzing jobs now.
 
 The latest split feedback action,
-`pr-split-20260516T183027Z-feedback-action.md`, updated
+`pr-split-20260516T184659Z-feedback-action.md`, is empty and adds no completed
+action. The latest completed split feedback action remains
+`pr-split-20260516T183027Z-feedback-action.md`: it updated
 `current-pr-split.md` to Cycle 180 consensus, launched no new jobs, verified
 the existing `1020002` semantic-diff repair tmux session was still active, and
-verified the expected report was still missing.
+verified the expected report was still missing/empty.
 
 The latest duplicate/noise synthesis is
 `duplicate-noise-20260516T183238Z-synthesis.md`. It classifies the remaining
@@ -343,8 +346,8 @@ The completed status-analysis reports through
 separate current fuzz health from historical noise, keep evidence-only families
 out of the split, and make filing gates explicit. Their older warnings about
 stale PR13 GitHub-facing review refs and the then-current constrained group mix
-are superseded by the `2026-05-16T18:47:59Z` branch-link audit and the
-`2026-05-16T18:45:44Z` novelty snapshot. The audit verifies the repaired PR13
+are superseded by the `2026-05-16T18:54:55Z` branch-link audit and the
+`2026-05-16T18:52:35Z` novelty snapshot. The audit verifies the repaired PR13
 review refs listed above, while the novelty snapshot still does not count as
 final-stack validation.
 
