@@ -43,7 +43,7 @@ block:core/more,gauntlet block core/more,580,20,TRUE,novelty-ws-block-gauntlet,l
 action:edit-rich-text-pair-block,action edit-rich-text-pair-block,312,10,TRUE,novelty-ws-parser-serialization,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,31.2,action coverage
 local-autosave:true,local post recovery autosave,797,25,TRUE,novelty-ws-revision-recovery,local autosave recovery can diverge from remote save and revision state,100,NA,NA,NA,NA,31.88,persistence/revision
 block:core/gallery,gauntlet block core/gallery,643,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,32.15,block coverage
-collaborator-mode:same-user,same-user two-tab mode,5269,150,TRUE,"novelty-ws-same-user-lifecycle,novelty-ws-same-user-stale-tabs",same-user tabs have different identity semantics,600,NA,NA,NA,NA,35.126666666666665,lifecycle/scale
+collaborator-mode:same-user,same-user two-tab mode,5272,150,TRUE,"novelty-ws-same-user-lifecycle,novelty-ws-same-user-stale-tabs",same-user tabs have different identity semantics,600,NA,NA,NA,NA,35.14666666666667,lifecycle/scale
 reload-count:2,multi reload,3814,100,TRUE,novelty-ws-multi-reload-lifecycle,multiple reloads exercise repeated teardown/rejoin,400,NA,NA,NA,NA,38.14,lifecycle/scale
 block:core/file,gauntlet block core/file,779,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,38.95,block coverage
 real-user-template:title-save-reload,real-user title save/reload,224,5,TRUE,novelty-ws-real-user-editing,title typing can diverge from block body sync,20,NA,NA,NA,NA,44.8,real-user UI
@@ -100,10 +100,10 @@ action:edit-title,action edit-title,2840,10,TRUE,novelty-ws-lifecycle,every fuzz
 action:insert-block-gauntlet-block,action insert-block-gauntlet-block,2899,10,TRUE,novelty-ws-block-gauntlet,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,289.9,action coverage
 revision-restored:true,revision restored through browser UI,7382,25,TRUE,novelty-ws-revision-recovery,"revision restore has to actually execute, not just be eligible",100,NA,NA,NA,NA,295.28,persistence/revision
 initial:deprecated-block-content,initial content deprecated-block-content,7628,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,305.12,parser seeds
-initial:equivalent-html-content,initial content equivalent-html-content,7652,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,306.08,parser seeds
-initial:freeform-parser-content,initial content freeform-parser-content,7750,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,310,parser seeds
-initial:validation-fix-content,initial content validation-fix-content,7975,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,319,parser seeds
-initial:html-entity-reference,initial content html-entity-reference,8056,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,322.24,parser seeds
+initial:equivalent-html-content,initial content equivalent-html-content,7655,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,306.2,parser seeds
+initial:freeform-parser-content,initial content freeform-parser-content,7752,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,310.08,parser seeds
+initial:validation-fix-content,initial content validation-fix-content,7976,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,319.04,parser seeds
+initial:html-entity-reference,initial content html-entity-reference,8061,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,322.44,parser seeds
 fault:delay:delay,delayed sync fault,20152,50,TRUE,novelty-ws-structure,delay faults exercise retry and convergence paths,200,NA,NA,NA,NA,403.04,fault coverage
 action:insert-common-block,action insert-common-block,4205,10,TRUE,novelty-ws-common-blocks,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,420.5,action coverage
 block:core/separator,gauntlet block core/separator,9122,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,456.1,block coverage

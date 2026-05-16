@@ -10153,3 +10153,6 @@ timestamp,message,event_type,cycle,max_parallel,interval_s
 2026-05-16T22:09:36Z,another PR split review loop already holds /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/rtc-pr-split-review-loop.lock; exiting holder=pid=1772887 alive,other,NA,NA,NA
 2026-05-16T22:12:48Z,finished PR split review cycle 20260516T220607Z,review finish,20260516T220607Z,NA,NA
 2026-05-16T22:12:48Z,running feedback action after cycle 200,feedback start,200,NA,NA
+2026-05-16T22:21:50Z,wait-only feedback while independent gate has work; launching progress unblock job,other,NA,NA,NA
+2026-05-16T22:21:50Z,finished feedback action after cycle 200,feedback finish,200,NA,NA
+2026-05-16T22:21:55Z,starting PR split review cycle 20260516T222155Z,review start,20260516T222155Z,NA,NA
