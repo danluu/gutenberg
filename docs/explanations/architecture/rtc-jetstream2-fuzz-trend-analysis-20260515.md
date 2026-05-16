@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T03:42:23Z`
+Snapshot generated: `2026-05-16T03:47:02Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1226` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T03:41:01Z`, coverage files grew from `272` to `23217`, a delta of
-`22945`. The monitor's visible likely-real count stayed at `0` throughout this
+`1229` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T03:46:11Z`, coverage files grew from `272` to `23269`, a delta of
+`22997`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -36,12 +36,11 @@ logged monitor pass. The latest copied novelty state has `120` total goals and
 `13` unmet goals.
 
 The run has broad historical coverage, but the current active budget is narrower:
-media/cross-entity, lifecycle, and HTTP persistence probing are enabled in the
-latest state. The main remaining gaps are depth targets for real-user editing,
-gauntlet blocks, CDP coverage records, and reload/save actions. Previously weak
-media/cross-entity and parser-serialization surfaces have improved enough that
-they are no longer in the unmet-goal table, but their completion rates remain
-worth watching.
+the latest copied state lists only HTTP persistence probing as currently enabled.
+The main remaining gaps are depth targets for real-user editing, gauntlet blocks,
+CDP coverage records, and reload/save actions. Previously weak media/cross-entity
+and parser-serialization surfaces have improved enough that they are no longer
+in the unmet-goal table, but their completion rates remain worth watching.
 
 ## Coverage Intake
 
@@ -65,23 +64,22 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active validation stack, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `428G`, so the remaining
+remained high at the end of the snapshot, around `425G`, so the remaining
 bottleneck is more about useful work selection and completion rate than raw RAM.
 
 Persona-loop feedback rejects reading the historical duplicate/noise share as a
-current-run product-failure signal. The duplicate/noise remediation split current
-triage from historical triage: the latest current-run triage had not accumulated
-new watcher state, while historical triage still showed a roughly `0.573`
-dominant duplicate share and many bootstrap stalls as reporting-only context.
-The actionable interpretation is narrow gating for known startup/discovery noise,
-not broad suppression of post-action, persistence, save/reload, assertion,
-unknown, or likely-real failures. The duplicate/noise feedback also says to fix
-the invalid live-analysis shell loop before relying on analysis-tier gating.
+current-run product-failure signal. The latest duplicate/noise synthesis reports
+`14089` historical signatures, `8088` pre-action bootstrap stalls, a `0.5741`
+dominant duplicate share, and `0` visible likely-real failures. The actionable
+interpretation is narrow gating for known startup/discovery noise, not broad
+suppression of post-action, persistence, save/reload, assertion, unknown, or
+likely-real failures. The duplicate/noise feedback also says to fix the invalid
+live-analysis shell loop before relying on analysis-tier gating.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
 CPU utilization rose materially later in the run. Sysstat samples from
-`2026-05-15T00:10:00Z` through `2026-05-16T03:40:00Z` average about `56.7%`,
+`2026-05-15T01:21:42Z` through `2026-05-16T03:40:00Z` average about `57.9%`,
 peak around `84.9%`, and end near `60.4%`. This says the machine is being used
 more aggressively than the earlier memory view alone implied; spare RAM does not
 necessarily mean spare browser/CPU capacity.
@@ -97,20 +95,17 @@ bucketed rates; they are no longer normalized.
 
 ![Coverage-guided groups by first enable time](rtc-jetstream2-fuzz-trends-20260515/plots/enabled-groups-over-time.png)
 
-The latest current enabled set is:
+The latest copied state reports this current enabled set:
 
-- `novelty-ws-media-cross-entity`
-- `novelty-ws-lifecycle`
 - `novelty-http-persistence-probe`
 
 The historical enabled set covers the user-requested missing areas:
 same-user/reload lifecycle, revision/autosave/recovery, real UI rich text,
 parser/serialization transforms, async/server-backed blocks,
-permissions/auth/locks, and long/large sessions. The current budget focuses on
-the three groups above after the duplicate/noise and restart churn. The plot is
-one row per group at first enable time; point size reflects repeated enable log
-events, which are mostly restart/re-enable noise rather than new coverage
-launches.
+permissions/auth/locks, and long/large sessions. The current state is much
+narrower after duplicate/noise and restart churn. The plot is one row per group
+at first enable time; point size reflects repeated enable log events, which are
+mostly restart/re-enable noise rather than new coverage launches.
 
 The weakest newly-added area is not absence of launch coverage, but low
 successful completion for the heaviest browser/UI and cross-entity profiles.
@@ -130,13 +125,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `multi-reload-lifecycle` | 1890 | 58 | 11 | 3.1% |
-| `revision-persistence` | 2474 | 76 | 29 | 3.1% |
-| `parser-serialization` | 1195 | 60 | 19 | 5.0% |
-| `real-user-editing` | 3368 | 228 | 37 | 6.8% |
-| `parser-transform` | 2434 | 251 | 9 | 10.3% |
-| `common-blocks` | 1893 | 205 | 41 | 10.8% |
-| `block-gauntlet` | 2881 | 420 | 11 | 14.6% |
+| `revision-persistence` | 2481 | 76 | 0 | 3.1% |
+| `multi-reload-lifecycle` | 1892 | 58 | 0 | 3.1% |
+| `parser-serialization` | 1201 | 60 | 0 | 5.0% |
+| `real-user-editing` | 3379 | 228 | 0 | 6.7% |
+| `parser-transform` | 2438 | 252 | 0 | 10.3% |
+| `common-blocks` | 1910 | 205 | 0 | 10.7% |
+| `block-gauntlet` | 2884 | 421 | 0 | 14.6% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -151,18 +146,18 @@ Current unmet goals from the latest state:
 | Goal | Current | Target |
 | --- | ---: | ---: |
 | successful real-user-editing records next coverage tier | 228 | 500 |
-| action ui-heading-shortcut next coverage tier | 276 | 500 |
+| action ui-heading-shortcut next coverage tier | 277 | 500 |
 | gauntlet block core/html next coverage tier | 279 | 500 |
 | gauntlet block core/more next coverage tier | 296 | 500 |
 | gauntlet block core/details next coverage tier | 317 | 500 |
-| action reload-post-action next coverage tier | 333 | 500 |
-| CDP coverage records next coverage tier | 3561 | 5000 |
+| action reload-post-action next coverage tier | 334 | 500 |
+| CDP coverage records next coverage tier | 3568 | 5000 |
 | gauntlet block core/gallery next coverage tier | 362 | 500 |
-| real-user body save/reload next coverage tier | 148 | 200 |
+| real-user body save/reload next coverage tier | 149 | 200 |
 | gauntlet block core/file next coverage tier | 431 | 500 |
-| real-user title save/reload next coverage tier | 89 | 100 |
-| action ui-undo-redo-paragraph next coverage tier | 447 | 500 |
-| action ui-format-paragraph next coverage tier | 476 | 500 |
+| action ui-undo-redo-paragraph next coverage tier | 448 | 500 |
+| real-user title save/reload next coverage tier | 90 | 100 |
+| action ui-format-paragraph next coverage tier | 478 | 500 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
 remaining work now mixes completed-record depth for expensive profiles with
@@ -195,9 +190,9 @@ completed-record depth.
 
 ![PR split loop duration by phase](rtc-jetstream2-fuzz-trends-20260515/plots/pr-review-loop-durations.png)
 
-After the loop was corrected to `max_parallel=6` and `interval=0s`, `72`
+After the loop was corrected to `max_parallel=6` and `interval=0s`, `73`
 completed review cycles took roughly `2.9` to `8.0` minutes in this snapshot;
-the latest included review took `4.5` minutes. Feedback actions ran every two
+the latest included review took `3.6` minutes. Feedback actions ran every two
 cycles and took roughly `1.8` to `13.8` minutes, with the latest taking `2.4`
 minutes. The cadence is now continuous enough for persona feedback to affect the
 PR split promptly, rather than only hourly.
@@ -206,11 +201,11 @@ PR split promptly, rather than only hourly.
 
 The coverage data says the harness is now broad enough to exercise the major
 surfaces requested earlier. The current active fuzz has `0` visible likely-real
-failures and `13` unmet goals, but Cycle 72 persona-loop feedback says this is
-reviewable, not final-file-ready, and not final-stack validation. It also
-rejects promoting deferred browser-only families into PR claims. The remaining
-weakness is depth and completion on a small number of high-value expensive
-lanes:
+failures and `13` unmet goals, but the latest PR-split synthesis says this is
+structurally on track and operationally blocked, not final-file-ready and not
+final-stack validation. Feedback also rejects promoting deferred browser-only
+families into PR claims. The remaining weakness is depth and completion on a
+small number of high-value expensive lanes:
 
 - real-user editing is the largest explicit unmet depth target;
 - gauntlet block depth and reload/save actions still need more observations;
