@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T07:38:37Z`
+Snapshot time: `2026-05-16T07:44:07Z`
 
 Trigger event:
-`pr-split-2026-05-16T07-32-02Z-20260516T072624Z`
+`pr-split-2026-05-16T07-38-23Z-20260516T073207Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -20,8 +20,8 @@ Base handoff:
 ## Executive Status
 
 The latest split synthesis, `pr-split-20260516T073207Z-synthesis`, keeps the
-stack blocked rather than filing-ready and adds one reviewability change on top
-of the prior `PR 5A/5B/5C` split. The active tmux job
+stack blocked rather than filing-ready and proposes one reviewability
+replacement on top of the prior `PR 5A/5B/5C` split. The active tmux job
 `rtc-final-refs-import-rebase-check-20260516T071308Z` is still running in the
 remote split-review queue; its report was still empty in the latest synthesis,
 so do not launch a duplicate job.
@@ -50,6 +50,11 @@ the repaired aggregate `review/rtc-pr13b-source-retirement` audit row. Do not
 import or file by wildcard `final/rtc-pr*`: the latest synthesis reports that
 `final/rtc-pr06b-save-snapshot-noop-guard` exists, but it is blocked and must
 be excluded from filing-ready heads unless a focused replay later proves it.
+The latest feedback-action file recorded the 13B1/13B2/13B3 shape as deferred
+because the immediately prior iteration kept aggregate 13B. This report keeps
+the finer source-retirement stack as the recommended maintainer-facing working
+hypothesis, per the split policy, but marks every finer row unaudited until
+verified branch links exist.
 
 Current blockers:
 
@@ -79,7 +84,7 @@ failures, `9` unmet goals, `7` enabled WS groups, and both
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T07:38:32Z`.
+The collected remote status input was generated at `2026-05-16T07:44:02Z`.
 
 The fix-planning repo is currently checked out at:
 
@@ -108,7 +113,7 @@ The fuzz repo remains on the validation stack:
 That stack has modified fuzz harness files and many untracked fuzz/analysis
 scripts. It is active validation infrastructure, not the final PR stack.
 
-The branch-link audit was generated at `2026-05-16T07:38:37Z` from fetched
+The branch-link audit was generated at `2026-05-16T07:44:07Z` from fetched
 `danluu` refs. The proposed PR table below uses only audit rows marked
 `verified-content` as PR-content links. For PR 5A/5B/5C and the proposed
 PR 13B1/13B2/13B3 replacement split, no verified branch links exist yet, so
@@ -138,11 +143,11 @@ is pushed only so the PR 13A compare link has the repaired source base.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T07:38:32Z
+collected_at_utc: 2026-05-16T07:44:02Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T064057Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
-novelty-status.md: populated at 2026-05-16T07:37:09.835Z
+novelty-status.md: populated at 2026-05-16T07:43:21.966Z
 current visible likely-real signatures: 0
 enabled groups: 7 WS groups
 paused groups: novelty-ws-parser-transform and novelty-ws-lifecycle in 6h startup cooldown
@@ -151,18 +156,18 @@ paused groups: novelty-ws-parser-transform and novelty-ws-lifecycle in 6h startu
 Current novelty monitor snapshot:
 
 ```text
-coverage files: 26360
-total records seen: 38744
-records processed this pass: 59
-coverage lines seen this pass: 39975
+coverage files: 26464
+total records seen: 38898
+records processed this pass: 51
+coverage lines seen this pass: 40140
 summary files read this pass: 7
 summary startup failures processed this pass: 0
 unmet goals: 9
 likely-real visible: 0
 likely-real merged duplicates: 0
 likely-real oracle/noise questions: 0
-load1: 73.40 / 64 cores
-memory: 417.8G free / 492.0G total
+load1: 67.68 / 64 cores
+memory: 418.3G free / 492.0G total
 ```
 
 Enabled groups:
@@ -188,25 +193,25 @@ Paused recommended groups:
 Current-run triage remains clean in the generated snapshot: `0` raw signatures,
 `0` actionable signatures, `0` likely-real visible, `0` likely-real merged
 duplicates, and current duplicate share `0`. Historical triage is still noisy
-but separated from current-run product health: `17538` raw signatures, `6762`
-actionable signatures, `10776` suppressed known-noise signatures, and `10749`
+but separated from current-run product health: `17617` raw signatures, `6792`
+actionable signatures, `10825` suppressed known-noise signatures, and `10795`
 bootstrap stalls, with `pre_action_bootstrap_stall` still dominating raw
 historical signatures.
 
-The trend evidence packet was generated at `2026-05-16T07:29:07Z` from monitor
-data through `2026-05-16T07:26:32Z`. It supports longer-running coverage
+The trend evidence packet was generated at `2026-05-16T07:35:07Z` from monitor
+data through `2026-05-16T07:33:02Z`. It supports longer-running coverage
 progress with no visible likely-real failures so far:
 
 ```text
-monitor passes: 1343
-coverage files: 272 -> 26161
-coverage files delta: 25889
+monitor passes: 1346
+coverage files: 272 -> 26291
+coverage files delta: 26019
 unmet coverage goals: 24 -> 9
 likely_real_max: 0
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.397
+duplicate_share_historical_last: 0.3959
 summary_startup_failures_last: 0
-pr_review_events: 9702
+pr_review_events: 9704
 pr_suggested_net_loc_latest_total: 10189
 ```
 
@@ -273,6 +278,10 @@ It says:
   can be produced: direct cross-parent source retirement, current-only
   cross-parent source retirement, then explicit-base source retirement, between
   repaired PR 13A and PR 13C.
+- The matching feedback-action file did not launch that ref-shaping work and
+  recorded the finer PR 13B split as deferred pending repeated review or active
+  import/rebase/check evidence. Until audited refs exist, use the repaired
+  aggregate PR 13B link only as fallback/provenance.
 - Use the latest finalization worktree
   `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/worktrees/pr-stack-20260516T065952Z`.
 - Import/rebase/check by explicit final-ref allow-list; exclude
