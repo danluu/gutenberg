@@ -52,6 +52,19 @@ log() {
 	printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"
 }
 
+acquire_singleton_lock() {
+	local lock_file pid_file
+	lock_file="$BASE/deferred-work-promotion-loop.lock"
+	pid_file="$BASE/deferred-work-promotion-loop.pid"
+	exec 9>"$lock_file"
+	if ! flock -n 9; then
+		log "another deferred work promotion loop already holds $lock_file; exiting"
+		exit 0
+	fi
+	printf '%s\n' "$$" > "$pid_file"
+	trap 'rm -f "$BASE/deferred-work-promotion-loop.pid"' EXIT
+}
+
 active_deferred_sessions() {
 	tmux ls 2>/dev/null | awk -F: '/^rtc-deferred-job-/ { count++ } END { print count + 0 }'
 }
@@ -356,7 +369,8 @@ Task:
 5. If a product fix is not ready, prefer adding narrow diagnostics or a focused replay/fuzzer improvement that will make the next run conclusive. Commit that change if it is useful and safe.
 6. Avoid behavior-disable flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
 7. Keep the result reviewable. Do not combine unrelated families or broad refactors into this branch.
-8. Write a concise report to $report with these exact headings: Status, Evidence, Branch, Changes, Validation, Fuzzing Feedback, Next Action.
+8. If the branch is a product candidate or useful fuzzer/instrumentation candidate, write a push manifest next to the report at $cycle_dir/push-manifest.tsv with columns: source_branch, source_commit, intended_danluu_branch, base_ref, files_changed, insertions, deletions, validation_summary, reason. Jetstream should not push to GitHub; the manifest is for the local machine to publish.
+9. Write a concise report to $report with these exact headings: Status, Evidence, Branch, Changes, Validation, Fuzzing Feedback, Next Action.
 
 Family-specific notes:
 $(family_notes "$family")
@@ -445,6 +459,7 @@ write_status() {
 	mv "$STATUS.tmp" "$STATUS"
 }
 
+acquire_singleton_lock
 log "deferred work promotion loop started pid=$$"
 while true; do
 	write_deferred_queue

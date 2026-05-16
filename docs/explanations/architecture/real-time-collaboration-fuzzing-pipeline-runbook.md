@@ -811,6 +811,19 @@ hard action gate. If `novelty-status.md` reports top duplicate family share
 startup suppression, the next feedback action must make or restart a bounded
 control-plane change instead of only writing analysis.
 
+The PR split review loop has a separate parallel-progress gate. A final-stack
+blocker such as seed `1020002` may stop filing, final-stack fuzz, and rebuilt
+full-stack validation, but it must not stop independent branch audit/linking,
+push-manifest generation, PR02A/PR5/PR11 branch shaping, deferred candidate
+promotion, or loop self-repair. If the loop emits wait-only feedback while
+`current-pr-split.md` still has `No verified branch link yet` rows or the
+deferred promotion loop has validated candidates, the loop launches a bounded
+progress-unblock job under the review run's `jobs/` directory. Jetstream jobs
+write push manifests for the local machine instead of pushing to GitHub. The
+PR split and deferred promotion controllers both take singleton locks before
+entering their main loops, so persona/guard jobs can patch or restart a
+controller but cannot accidentally leave competing controller copies running.
+
 ### Level 1: High-Parallel Codex-Only Analysis
 
 `bin/rtc-browser-fuzz-analysis-tier.mjs` consumes the triage watcher state and
