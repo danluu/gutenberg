@@ -1,10 +1,10 @@
-generated_at_utc: 2026-05-16T08:24:47Z
-monitor_passes: 1370
+generated_at_utc: 2026-05-16T08:26:39Z
+monitor_passes: 1371
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T08:23:15Z
+last_pass_utc: 2026-05-16T08:25:20Z
 coverage_files_first: 272
-coverage_files_last: 27213
-coverage_files_delta: 26941
+coverage_files_last: 27251
+coverage_files_delta: 26979
 unmet_coverage_first: 24
 unmet_coverage_last: 9
 likely_real_max: 0
@@ -12,7 +12,7 @@ duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.4672
 summary_startup_failures_last: 0
 quality_issues_last: 0
-memory_free_gb_last: 418.6
+memory_free_gb_last: 419.6
 load_1_last: 77.9
 load_5_last: 76.37
 load_15_last: 75.02
@@ -22,8 +22,8 @@ enabled_groups_current: novelty-ws-common-blocks,novelty-ws-long-session-large-d
 fuzz_level_mix_snapshots: 117
 fuzz_level_mix_campaigns: coverage-guided,focused-shards,gap-booster,strict-expansion
 fuzz_level_mix_latest: browser-e2e=31 lanes/31 groups; transport-integration=1 lanes/1 groups
-fuzz_level_execution_events: 44187
-fuzz_level_execution_latest: browser-e2e=41235 cumulative/1044 per-hour; transport-integration=2952 cumulative/12 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_events: 44238
+fuzz_level_execution_latest: browser-e2e=41285 cumulative/1244 per-hour; transport-integration=2953 cumulative/16 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 120
 goals_unmet: 9
