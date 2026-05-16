@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T04:49:45Z`
+Snapshot generated: `2026-05-16T04:55:56Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1262` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T04:49:01Z`, coverage files grew from `272` to `23957`, a delta of
-`23685`. The monitor's visible likely-real count stayed at `0` throughout this
+`1265` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T04:54:45Z`, coverage files grew from `272` to `24026`, a delta of
+`23754`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -68,15 +68,16 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active validation stack, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `421.6G`, so the remaining
+remained high at the end of the snapshot, around `422.6G`, so the remaining
 bottleneck is more about useful work selection, fresh-output health, and
 completion rate than raw RAM.
 
 Persona-loop feedback rejects reading the historical duplicate/noise share as a
 current-run product-failure signal or as a reason to pause live browser groups.
-The latest duplicate/noise synthesis instead identifies a control-plane leak:
-strict pre-action startup stalls can reach summary history while current-run
-startup counters stay empty, and watcher/analysis paths can still spend work on
+The newest duplicate/noise synthesis file copied for this snapshot is empty; the
+latest non-empty synthesis identifies a control-plane leak instead: strict
+pre-action startup stalls can reach summary history while current-run startup
+counters stay empty, and watcher/analysis paths can still spend work on
 known-noise variants. The latest feedback action reports that monitor-side
 strict current-run summary accounting was added and the active loop restarted.
 The copied state still has `0` current-run signatures, `0` current-run bootstrap
@@ -87,8 +88,8 @@ remain disputed and should not be inferred from graph history alone.
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
 CPU utilization rose materially later in the run. Sysstat samples from
-`2026-05-15T01:21:42Z` through `2026-05-16T04:40:01Z` average about `58.1%`,
-peak around `84.9%`, and end near `70.9%`. This says the machine is being used
+`2026-05-15T01:21:42Z` through `2026-05-16T04:50:00Z` average about `58.2%`,
+peak around `84.9%`, and end near `67.5%`. This says the machine is being used
 more aggressively than the earlier memory view alone implied; spare RAM does not
 necessarily mean spare browser/CPU capacity.
 
@@ -144,13 +145,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 2573 | 76 | 0 | 3.0% |
-| `multi-reload-lifecycle` | 1926 | 58 | 0 | 3.0% |
-| `parser-serialization` | 1277 | 60 | 0 | 4.7% |
-| `real-user-editing` | 3525 | 231 | 0 | 6.6% |
-| `common-blocks` | 2073 | 208 | 0 | 10.0% |
-| `parser-transform` | 2495 | 261 | 0 | 10.5% |
-| `block-gauntlet` | 2949 | 438 | 0 | 14.9% |
+| `revision-persistence` | 2579 | 76 | 0 | 2.9% |
+| `multi-reload-lifecycle` | 1928 | 58 | 0 | 3.0% |
+| `parser-serialization` | 1285 | 60 | 0 | 4.7% |
+| `real-user-editing` | 3538 | 231 | 0 | 6.5% |
+| `common-blocks` | 2088 | 208 | 0 | 10.0% |
+| `parser-transform` | 2505 | 261 | 0 | 10.4% |
+| `block-gauntlet` | 2956 | 440 | 0 | 14.9% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -166,15 +167,15 @@ Current unmet goals from the latest state:
 | --- | ---: | ---: |
 | successful real-user-editing records next coverage tier | 231 | 500 |
 | gauntlet block core/html next coverage tier | 286 | 500 |
-| action ui-heading-shortcut next coverage tier | 298 | 500 |
-| gauntlet block core/more next coverage tier | 304 | 500 |
-| gauntlet block core/details next coverage tier | 320 | 500 |
-| action reload-post-action next coverage tier | 341 | 500 |
-| CDP coverage records next coverage tier | 3699 | 5000 |
-| gauntlet block core/gallery next coverage tier | 375 | 500 |
+| action ui-heading-shortcut next coverage tier | 301 | 500 |
+| gauntlet block core/more next coverage tier | 305 | 500 |
+| gauntlet block core/details next coverage tier | 322 | 500 |
+| action reload-post-action next coverage tier | 342 | 500 |
+| CDP coverage records next coverage tier | 3725 | 5000 |
+| gauntlet block core/gallery next coverage tier | 379 | 500 |
 | real-user body save/reload next coverage tier | 154 | 200 |
-| gauntlet block core/file next coverage tier | 450 | 500 |
-| action ui-undo-redo-paragraph next coverage tier | 466 | 500 |
+| gauntlet block core/file next coverage tier | 453 | 500 |
+| action ui-undo-redo-paragraph next coverage tier | 470 | 500 |
 | real-user title save/reload next coverage tier | 95 | 100 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
@@ -208,13 +209,14 @@ completed-record depth.
 
 ![PR split loop duration by phase](rtc-jetstream2-fuzz-trends-20260515/plots/pr-review-loop-durations.png)
 
-After the loop was corrected to `max_parallel=6` and `interval=0s`, `84`
+After the loop was corrected to `max_parallel=6` and `interval=0s`, `86`
 completed review cycles took roughly `2.9` to `8.0` minutes in this snapshot;
-the latest included review took `4.0` minutes. Feedback actions ran every two
+the latest included review took `4.3` minutes. Feedback actions ran every two
 cycles and took roughly `1.8` to `13.8` minutes in the completed duration data,
 with completed events through Cycle `84`, which took `2.4` minutes. The latest
-substantive PR-split synthesis and feedback action are `20260516T043923Z`; the
-newer `20260516T044545Z` synthesis file was empty in this copied input set.
+PR-split synthesis is `20260516T044950Z`; its matching feedback-action file is
+empty in this copied input set, so the latest non-empty feedback action remains
+`20260516T043923Z`.
 
 ## Interpretation
 
@@ -226,8 +228,10 @@ validation. That synthesis rejects the graph-only interpretation that broad
 coverage or `0` visible likely-real failures is enough to promote deferred
 browser-only families into PR claims. It keeps the split unchanged, keeps PR 13
 limited to the repaired 13A/13B/13C heads, and says not to auto-launch more
-Codex or fuzz work. The remaining weakness is depth and completion on a small
-number of high-value expensive lanes:
+Codex or fuzz work. The latest duplicate/noise evidence also rejects treating
+historical duplicate share as a current product-failure signal. The remaining
+weakness is depth and completion on a small number of high-value expensive
+lanes:
 
 - real-user editing is the largest explicit unmet depth target;
 - gauntlet block depth and reload/save actions still need more observations;
