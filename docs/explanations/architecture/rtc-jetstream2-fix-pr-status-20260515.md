@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T06:19:33Z`
+Snapshot time: `2026-05-16T06:24:23Z`
 
 Trigger event:
-`pr-split-2026-05-16T06-16-42Z-20260516T061120Z`
+`pr-split-2026-05-16T06-22-15Z-20260516T061642Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -24,7 +24,7 @@ produced a stable RTC split. The split is still accepted: no latest persona or
 status-analysis report recommends a redesign, and the old aggregate PR 15 is
 replaced by PR 15A/15B/15C.
 
-The latest split synthesis, `pr-split-20260516T061120Z-synthesis`, keeps the
+The latest split synthesis, `pr-split-20260516T061642Z-synthesis`, keeps the
 split unchanged and makes the current blocker operational: the repaired
 `final/rtc-pr*` heads exist in
 `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/worktrees/pr-stack-20260516T053947Z`,
@@ -38,12 +38,12 @@ Current state:
 - The live coverage root is
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T061254Z`.
   The current novelty monitor snapshot is populated at
-  `2026-05-16T06:17:42.202Z`: `24911` coverage files, `36686` total records,
+  `2026-05-16T06:23:11.812Z`: `24954` coverage files, `36738` total records,
   `11` unmet goals, `0` current visible likely-real signatures, and `8` enabled
   groups.
 - The latest trend evidence still shows clean visible likely-real product
   health: `likely_real_max: 0`, current duplicate share `0`, quality issues
-  `0`, and `11` unmet goals through `2026-05-16T06:11:41Z`. This is background
+  `0`, and `11` unmet goals through `2026-05-16T06:17:42Z`. This is background
   health evidence only, not final-stack validation.
 - PR 13 repair/import is complete. The repaired source-repo heads passed the
   source-import gate with `63/63` focused stale top-level CRDT tests, touched
@@ -90,7 +90,7 @@ The fuzz repo remains on the validation stack:
 That stack has modified fuzz harness files and many untracked fuzz/analysis
 scripts. It is active validation infrastructure, not the final PR stack.
 
-The branch-link audit was generated at `2026-05-16T06:19:33Z` from fetched
+The branch-link audit was generated at `2026-05-16T06:24:23Z` from fetched
 `danluu` refs. It verifies GitHub-facing `review/rtc-pr*` branches with
 non-empty diffs against the listed bases. The proposed PR table below uses only
 audit rows marked `verified-content` as PR-content links.
@@ -101,7 +101,7 @@ repaired `final/rtc-pr*` heads from
 as PR-head candidates after they are imported, pushed or linked, rebased, and
 validated. Do not file or review `shape/*`, `finalize/*`, `deferred/*`,
 `try/rtc-fix-stack-validation`, dirty worktrees, or the old aggregate PR 15 as
-current PR heads. As of `pr-split-20260516T061120Z-synthesis`, the repaired
+current PR heads. As of `pr-split-20260516T061642Z-synthesis`, the repaired
 final heads are not yet imported into the fix-plan repo.
 
 PR 13 must use the repaired review refs from the audit:
@@ -127,11 +127,11 @@ is pushed only so the PR 13A compare link has the repaired source base.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T06:19:28Z
+collected_at_utc: 2026-05-16T06:24:19Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T061254Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
-novelty-status.md: populated at 2026-05-16T06:17:42.202Z
+novelty-status.md: populated at 2026-05-16T06:23:11.812Z
 current visible likely-real signatures: 0
 enabled groups: 8
 paused groups: novelty-ws-lifecycle only
@@ -143,7 +143,7 @@ validation because the repaired final PR heads have not been imported, rebased,
 assembled into a fresh combined validation stack, and fuzzed as that stack.
 
 The `latest-trend-evidence.md` packet was generated at
-`2026-05-16T06:13:25Z` from monitor data through `2026-05-16T06:11:41Z`. Its
+`2026-05-16T06:19:19Z` from monitor data through `2026-05-16T06:17:42Z`. Its
 enabled-group list was:
 
 - `novelty-http-persistence-probe`
@@ -165,20 +165,20 @@ The latest trend packet supports longer-running coverage progress with no
 visible likely-real failures so far:
 
 ```text
-monitor passes: 1306
-coverage files: 272 -> 24847
-coverage files delta: 24575
+monitor passes: 1309
+coverage files: 272 -> 24911
+coverage files delta: 24639
 unmet coverage goals: 24 -> 11
 likely_real_max: 0
 duplicate_share_current_last: 0
 summary_startup_failures_last: 0
 quality_issues_last: 0
-pr_review_events: 296
+pr_review_events: 298
 pr_suggested_net_loc_latest_total: 11801
 ```
 
 The current novelty monitor has advanced slightly beyond the trend packet:
-`24911` coverage files, `36686` total records, `24` records processed in the
+`24954` coverage files, `36738` total records, `21` records processed in the
 pass, `11` unmet goals, and no quality issues. The largest unmet goals remain
 CDP coverage records, real-user-editing success count, `core/html`,
 `core/more`, `core/details`, heading shortcuts, reload-post actions,
@@ -219,7 +219,7 @@ from historical noise, keep evidence-only families out of the split, and make
 filing gates explicit.
 
 The newest split persona synthesis is
-`pr-split-20260516T061120Z-synthesis`. It says:
+`pr-split-20260516T061642Z-synthesis`. It says:
 
 - The split is on track but not filing-ready.
 - The main blocker is branch-head hygiene: repaired `final/rtc-pr*` heads exist
@@ -229,9 +229,10 @@ The newest split persona synthesis is
 - PR 8 is still blocked on comparison against `try/rtc-title-reload-pr`.
 - The final refs still need import, verification, push, upstream rebase,
   focused checks, and final combined-stack validation.
-- Reload-hydration empty-live-editor and pre-save search/live-collapse remain
-  evidence-only; the `060001Z` pre-save report was still empty while its tmux
-  session was active.
+- Reload-hydration empty-live-editor, pre-save search/live-collapse, and broad
+  rich-text suffix corruption remain evidence-only. The deferred pre-save and
+  rich-text reports are now nonempty inputs for the next review cycle, but they
+  should not be promoted without consensus.
 - Do not add `PR 1A` or `PR 6B`; malformed save-payload work is either
   deferred or already represented by PR 6.
 
@@ -256,10 +257,11 @@ The synthesis still explicitly rejects broad suppression of `timeout`,
 save/reload/persistence/revision/media failures, or linebreak drift.
 
 The latest collected split feedback action,
-`pr-split-20260516T060039Z-feedback-action.md`, applied the Cycle 96 report
-update and launched no jobs. The latest split synthesis,
-`pr-split-20260516T061120Z-synthesis`, is therefore the newest completed
-status-persona input for branch status.
+`pr-split-20260516T061642Z-feedback-action.md`, is zero bytes. The latest
+non-empty split feedback action, `pr-split-20260516T060039Z-feedback-action.md`,
+applied the Cycle 96 report update and launched no jobs. The latest split
+synthesis, `pr-split-20260516T061642Z-synthesis`, is therefore the newest
+completed status-persona input for branch status.
 
 ## Proposed PR Split
 
@@ -305,8 +307,8 @@ These must not be described as fixed.
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
 | Reload hydration empty live editor | `e75c8829e4e9`, `3bbdc3cdb393`; gate branch `try/rtc-reload-hydration-gate-e75c8829` | evidence-only; latest bounded retry fixed throwaway plugin mapping/build setup and passed collaboration readiness, but the focused reload-hydration spec failed before the reload product assertion at post-checkpoint convergence; final classification `product-evidence-inconclusive` | Reuse the corrected harness mapping, then collect phase diagnostics around every pre-reload convergence wait; promote only if the gate reaches the post-reload assertion and live editor state stays empty after exact-room WebSocket sync while REST body and persisted `_crdt_document` remain populated |
-| Pre-save search/live document collapse | `ddf9559af37e`, `0932bed35c7a`, conditional `1e0ade5ec5a8`; `rtc-deferred-job-pre-save-search-live-collapse-20260516T060001Z` active | evidence-only; not in active split; latest split synthesis says the `060001Z` report was still empty | Capture editor blocks, serialized content, core-data edited record, live CRDT record, provider state, REST body, and save state before/after `core/search` insertion |
-| Rich-text formatted suffix corruption | `4148230f681d`, `b0db7b80c6f2`, `dc8ea6e78d4d`, `1ccac75d7faa`, `2722f0e897de`, `712b98ba96ff` | not fixed; latest split synthesis still keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
+| Pre-save search/live document collapse | `ddf9559af37e`, `0932bed35c7a`, conditional `1e0ade5ec5a8`; `rtc-deferred-job-pre-save-search-live-collapse-20260516T060001Z` active | evidence-only; not in active split; latest split synthesis says the deferred report is now nonempty input for the next review cycle, not a promotion signal | Capture editor blocks, serialized content, core-data edited record, live CRDT record, provider state, REST body, and save state before/after `core/search` insertion |
+| Rich-text formatted suffix corruption | `4148230f681d`, `b0db7b80c6f2`, `dc8ea6e78d4d`, `1ccac75d7faa`, `2722f0e897de`, `712b98ba96ff` | not fixed; latest split synthesis keeps it out of the active PR split and says the now-nonempty deferred report should be reviewed before any promotion | Recover exact replay artifact or emitted delta before product changes |
 | Malformed save payload and save-settlement residuals | `fc154ebec48c`, `e40aa1b7863d`, `f51c425df8a5`, `f46859898576`, `afd389d7f139`, `02289235f55f`, `eef8b8932e11`, `b60eecd4ac03` | deferred; possible `PR 6B` is not consensus, and the latest synthesis says malformed save-payload work is either deferred or already represented by PR 6 | Create a source-level `saveEntityRecord()` / `prePersistPostType()` repro where clean local blocks exist but evaluated outgoing `content` is malformed |
 | HTTP polling room-isolation residuals | `f5738470d026`, `fda8d2334e65`, conditional `fc99825fb6c2`, `b75435787be1` | deferred; possible `PR 1A` is not consensus | Promote only if fuzzing still shows healthy post rooms stalled by auxiliary room failures after PR 1/2 |
 
