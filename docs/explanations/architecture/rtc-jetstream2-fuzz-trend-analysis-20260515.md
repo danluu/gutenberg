@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T06:57:33Z`
+Snapshot generated: `2026-05-16T07:03:32Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1328` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T06:55:44Z`, coverage files grew from `272` to `25560`, a delta of
-`25288`. The monitor's visible likely-real count stayed at `0` throughout this
+`1331` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T07:01:39Z`, coverage files grew from `272` to `25680`, a delta of
+`25408`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -69,7 +69,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active coverage run, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `417.3G`, so the remaining
+remained high at the end of the snapshot, around `420.2G`, so the remaining
 bottleneck is more about useful work selection, fresh-output health, and
 completion rate than raw RAM.
 
@@ -79,24 +79,26 @@ startup failures. The latest pass has current-run duplicate/noise share `0`, `0`
 summary startup failures, `0` quality issues, and no current health warnings.
 Historical triage remains duplicate/noise dominated, with raw historical top
 duplicate family share about `0.5977`; the copied monitor data now reports
-actionable historical duplicate share near `0.3996` after known-noise
+actionable historical duplicate share near `0.3993` after known-noise
 suppression. Persona-loop feedback continues to reject reading either historical
 aggregate as a current product-failure signal. The latest duplicate/noise
 synthesis keeps the narrow consensus: add one strict all-facts pre-action
 startup-noise predicate before analysis, only for zero-user/no-action records
 with no reload/save/fault/lifecycle/operation/success evidence and startup
-timeout semantics in `seed`, `bootstrap`, `open`, or `join`. It rejects broader
-historical duplicate suppression and says history should only guide scheduling
-after current strict proof plus zero current successes. The latest
+timeout semantics in `seed`, `bootstrap`, `open`, or `join`. It also calls out
+the observability/control split where coverage-guided live analysis is often
+empty for the active output. It rejects broad timeout, unknown, assertion,
+collaboration, or history-only suppression. The latest nonempty
 duplicate/noise feedback action changed only the novelty-monitor side, split raw
 from actionable noise accounting, and restarted the active run, so the watcher
-and analysis-tier gates remain unapplied in this loop.
+and analysis-tier gates remain unapplied in this loop. The newest copied
+duplicate/noise feedback-action file is empty.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
 CPU utilization rose materially later in the run. Current-run sysstat samples
-from `2026-05-15T01:30:00Z` through `2026-05-16T06:50:00Z` average about
-`58.7%`, peak around `84.9%`, and end near `72.4%`. This says the machine is
+from `2026-05-15T01:30:00Z` through `2026-05-16T07:00:00Z` average about
+`58.8%`, peak around `84.9%`, and end near `77.0%`. This says the machine is
 being used more aggressively than the earlier memory view alone implied; spare
 RAM does not necessarily mean spare browser/CPU capacity.
 
@@ -104,8 +106,8 @@ RAM does not necessarily mean spare browser/CPU capacity.
 
 Load average tells a similar story with more queueing detail. In the plotted
 current-run window, the 1-minute, 5-minute, and 15-minute load averages average
-about `57.9`, `58.1`, and `57.7`, against `64` logical CPUs. The latest sampled
-load is `73.91`, `69.29`, and `65.47` for 1/5/15 minutes respectively, with
+about `57.9`, `58.2`, and `57.8`, against `64` logical CPUs. The latest sampled
+load is `69.80`, `74.31`, and `70.72` for 1/5/15 minutes respectively, with
 all three latest samples above the core-count reference line.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
@@ -158,13 +160,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 2738 | 76 | 0 | 2.8% |
-| `multi-reload-lifecycle` | 2007 | 58 | 0 | 2.9% |
-| `parser-serialization` | 1430 | 60 | 0 | 4.2% |
-| `real-user-editing` | 3845 | 236 | 0 | 6.1% |
-| `common-blocks` | 2353 | 216 | 0 | 9.2% |
-| `parser-transform` | 2621 | 267 | 0 | 10.2% |
-| `block-gauntlet` | 3094 | 460 | 0 | 14.9% |
+| `revision-persistence` | 2745 | 76 | 0 | 2.8% |
+| `multi-reload-lifecycle` | 2011 | 58 | 0 | 2.9% |
+| `parser-serialization` | 1435 | 60 | 0 | 4.2% |
+| `real-user-editing` | 3867 | 237 | 0 | 6.1% |
+| `common-blocks` | 2364 | 217 | 0 | 9.2% |
+| `parser-transform` | 2629 | 267 | 0 | 10.2% |
+| `block-gauntlet` | 3108 | 465 | 0 | 15.0% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -178,16 +180,16 @@ Current unmet goals from the latest state:
 
 | Goal | Current | Target |
 | --- | ---: | ---: |
-| successful real-user-editing records next coverage tier | 236 | 500 |
-| gauntlet block core/html next coverage tier | 297 | 500 |
-| gauntlet block core/more next coverage tier | 325 | 500 |
-| gauntlet block core/details next coverage tier | 332 | 500 |
-| action ui-heading-shortcut next coverage tier | 341 | 500 |
-| action reload-post-action next coverage tier | 365 | 500 |
-| CDP coverage records next coverage tier | 3994 | 5000 |
-| gauntlet block core/gallery next coverage tier | 411 | 500 |
-| real-user body save/reload next coverage tier | 165 | 200 |
-| gauntlet block core/file next coverage tier | 483 | 500 |
+| successful real-user-editing records next coverage tier | 237 | 500 |
+| gauntlet block core/html next coverage tier | 299 | 500 |
+| gauntlet block core/more next coverage tier | 326 | 500 |
+| gauntlet block core/details next coverage tier | 335 | 500 |
+| action ui-heading-shortcut next coverage tier | 344 | 500 |
+| action reload-post-action next coverage tier | 369 | 500 |
+| CDP coverage records next coverage tier | 4021 | 5000 |
+| gauntlet block core/gallery next coverage tier | 413 | 500 |
+| real-user body save/reload next coverage tier | 167 | 200 |
+| gauntlet block core/file next coverage tier | 491 | 500 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
 remaining work now mixes completed-record depth for expensive profiles with
@@ -224,15 +226,17 @@ completed-record depth.
 
 ![Suggested PR net LOC by PR over time](rtc-jetstream2-fuzz-trends-20260515/plots/pr-suggested-net-loc-by-pr-over-time.png)
 
-After the loop was corrected to `max_parallel=6` and `interval=0s`, `101`
+After the loop was corrected to `max_parallel=6` and `interval=0s`, `102`
 completed review cycles took roughly `2.9` to `8.0` minutes in this snapshot;
-the latest included review took `4.6` minutes. Feedback actions ran every two
+the latest included review took `6.7` minutes. Feedback actions ran every two
 cycles and took roughly `1.8` to `13.8` minutes in the completed duration data,
 with the latest completed feedback action taking `5.8` minutes. The copied
-input set includes PR-split syntheses through `20260516T064237Z`, the latest
-nonempty PR-split feedback action at `20260516T063020Z`, duplicate/noise
-syntheses through `20260516T064602Z`, and the latest nonempty duplicate/noise
-feedback action at `20260516T062141Z`.
+input set includes PR-split syntheses through `20260516T065416Z`, an empty
+latest PR-split feedback-action file at `20260516T065416Z`, the latest nonempty
+PR-split feedback action at `20260516T063020Z`, duplicate/noise syntheses
+through `20260516T065434Z`, an empty latest duplicate/noise feedback-action file
+at `20260516T065434Z`, and the latest nonempty duplicate/noise feedback action
+at `20260516T062141Z`.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
 split history. The total chart sums additions minus deletions across the whole
@@ -243,16 +247,21 @@ suggested rows totaling `11801` net LOC. The largest current rows by net LOC are
 `PR 11` (`1141`), which matches the review concern that the CRDT and parser
 normalization slices need the most careful branch hygiene and range-diff review.
 The latest PR-split persona synthesis supersedes the graph-only branch-shape
-read: it says the split remains structurally sound but not filing-ready, repaired
-`final/rtc-pr*` heads from `pr-stack-20260516T061949Z` are the only valid PR-head
-candidates, and those refs still need to be imported/rebased into the active
-fix-plan repo. It also says the active repo is dirty with an untracked
-reload-hydration gate spec, `PR 8`, ref hygiene, focused checks, and final
-combined-stack validation remain blocking, and deferred reload-hydration,
-pre-save, rich-text, malformed-save, and HTTP room-isolation evidence must not
-be promoted without repeated review consensus. The latest PR-split feedback
-action applied cycle-100 guidance to the split notes and created an unlaunched
-import/rebase prompt; it launched no jobs.
+read: it says the split remains structurally sound but not filing-ready,
+repaired `final/rtc-pr*` heads from `pr-stack-20260516T061949Z` are the only
+valid PR-head candidates, and those refs still need import into the fix-plan
+repo, upstream rebase/recreation, focused checks, and final combined-stack
+validation. It also keeps `PR 8` blocked on comparison with
+`try/rtc-title-reload-pr`, rejects promoting deferred reload-hydration,
+pre-save, rich-text, malformed-save, and HTTP room-isolation evidence, and says
+not to file/review `shape/*`, `finalize/*`, `deferred/*`, dirty worktrees, or
+the old aggregate `PR 15`. The graph confirms `PR 5` is one of the largest
+current rows; the latest persona synthesis carries a non-unanimous but plausible
+`PR 5A/5B/5C` split override into the import/rebase job for adjudication rather
+than treating the size chart alone as consensus. The latest nonempty PR-split
+feedback action applied cycle-100 guidance to the split notes and created an
+unlaunched import/rebase prompt; the newest copied feedback-action file is
+empty.
 
 ## Interpretation
 
@@ -279,9 +288,10 @@ depth and completion on a small number of high-value expensive lanes:
   warnings are empty; historical duplicate/noise remains reporting context only;
 - the duplicate/noise persona consensus wants one strict all-facts pre-action
   startup predicate in the watcher plus an analysis-tier backstop, with history
-  used only as a scheduling prior after current strict proof; the latest
-  nonempty feedback action applied only the novelty-monitor accounting and
-  cooldown side, so those gates remain unapplied in this loop;
+  used only as a scheduling prior after current strict proof and zero current
+  successes; the latest nonempty feedback action applied only the
+  novelty-monitor accounting and cooldown side, so those gates remain unapplied
+  in this loop;
 - review only repaired `final/rtc-pr*` heads; do not file/review `shape/*`,
   `finalize/*`, `deferred/*`, dirty worktrees, old aggregate `PR 15`, `PR 1A`,
   or `PR 6B`;
@@ -295,8 +305,11 @@ depth and completion on a small number of high-value expensive lanes:
   validation-stack fuzz run.
 
 The next operational change should be conservative: keep existing coverage fuzz
-running, avoid automatic new broad fuzz or duplicate split-review launches,
-import/rebase the repaired final refs, and do only bounded `PR 8` comparison
-work after preserving review-cycle order. For coverage-guided fuzzing, spend
-capacity on completion-focused lanes for the unmet profiles while the loop
-continues to re-prioritize based on these same goal ratios.
+running, avoid new broad fuzz or duplicate split-review launches, and run at
+most one bounded import/rebase/check job for the repaired final refs if it has
+not already started. That job should include the `PR 5A/5B/5C` override for
+adjudication, resolve `PR 8` against `try/rtc-title-reload-pr`, rerun focused
+checks plus lint and diff-check, and only then build a fresh final validation
+stack. For coverage-guided fuzzing, spend capacity on completion-focused lanes
+for the unmet profiles while the loop continues to re-prioritize based on these
+same goal ratios.
