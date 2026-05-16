@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T10:58:13Z`
+Snapshot time: `2026-05-16T11:03:11Z`
 
 Trigger event:
-`pr-split-2026-05-16T10-57-14Z-20260516T105143Z`
+`duplicate-noise-2026-05-16T11-02-34Z-34`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T10-57-14Z-20260516T105143Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T11-02-34Z-34/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -50,6 +50,12 @@ evidence.
   Until the green PR13B0/B1/B2/B3 heads are pushed and audited, the only
   verified PR13 review-content links are the repaired PR13A/B/C refs from the
   branch-link audit.
+- The duplicate/noise control-plane feedback action completed a bounded monitor
+  pass in the fuzz infrastructure: novelty monitor scheduling now uses
+  current-run triage instead of historical/external-live dominance, stale
+  historical pause reasons are cleared by policy version `7`, WS canary rotation
+  was protected, and `node --check` passed for the touched monitor/supervisor
+  scripts. This is not a product-code PR and not final-stack validation.
 
 Deferred/evidence-only work remains outside the filing split: dropped `PR 6B`,
 `PR 6C`, broad PR8 persisted-record hydration, reload-hydration
@@ -57,7 +63,7 @@ empty-live-editor, pre-save search/live-collapse, rich-text formatted suffix
 corruption, broader malformed-save/save-settlement residuals, HTTP polling
 room-isolation residuals, and `PR 1A`.
 
-The branch-link audit generated at `2026-05-16T10:58:13Z` verifies current
+The branch-link audit generated at `2026-05-16T11:03:11Z` verifies current
 review content links for most proposed PR rows. The maintainer-facing table
 below uses only audit rows marked `verified-content`, or says
 `No verified branch link yet`. For repaired PR 13 content, use only these audit
@@ -75,7 +81,7 @@ Do not link the stale or misordered PR 13 refs listed in the audit under
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T10:58:08Z`.
+The collected remote status input was generated at `2026-05-16T11:03:06Z`.
 
 The fix-planning repo is currently checked out at:
 
@@ -167,62 +173,81 @@ verified branch-link-audit rows. Until they do, use only the repaired
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T10:58:08Z
+collected_at_utc: 2026-05-16T11:03:06Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T105736Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-The latest raw novelty input collected for this update is empty:
+The latest raw novelty input is nonempty and was updated at
+`2026-05-16T11:00:59.966Z` for the same active coverage root. Current-run triage
+is still immature, but it no longer shows the old broad WS pause state:
 
 ```text
-raw/novelty-status.md: 0 bytes
+coverage files: 29968
+total records seen: 43993
+records processed this pass: 36
+current-run triage signatures: 1
+current-run likely-real visible: 0
+current-run known-noise family: rest_meta_database_error=1
+current-run bootstrap stalls: 0
+paused groups: none
+enabled groups: novelty-ws-common-blocks, novelty-ws-block-gauntlet,
+  novelty-ws-lifecycle, novelty-ws-real-user-editing,
+  novelty-ws-real-user-rich-text, novelty-http-persistence-probe
+policy version: 7
+quality issues: 1
 ```
 
-Do not infer a fresh `10:58Z` per-run novelty count from this update. The trend
-evidence packet was generated at `2026-05-16T10:50:13Z` from monitor data
-through `2026-05-16T10:48:07Z`; use it for trend interpretation, enabled-group
-membership, and broad health context, not as final-stack validation.
+The raw novelty warning still says no behavioral coverage files were found under
+the current output dir, and the current-run counters are sparse after the run
+root moved to `run-20260516T105736Z`. Treat this as active fuzz infrastructure
+health, not as proof that the final PR stack is clean.
+
+The latest trend evidence packet was generated at `2026-05-16T10:57:02Z` from
+monitor data through `2026-05-16T10:56:24Z`; use it for trend interpretation and
+broad health context, not as final-stack validation.
 
 ```text
-monitor passes: 1440
-coverage files: 272 -> 29764
-coverage files delta: 29492
+monitor passes: 1444
+coverage files: 272 -> 29893
+coverage files delta: 29621
 unmet coverage goals: 24 -> 8
 likely_real_max: 0
-duplicate_share_current_last: 0
+duplicate_share_current_last: 0.2063
 duplicate_share_historical_last: 0.4614
 summary_startup_failures_last: 0
-quality_issues_last: 1
+quality_issues_last: 0
 enabled groups: novelty-http-persistence-probe, novelty-ws-lifecycle
-fuzz level mix: browser-e2e=26 lanes/26 groups; transport-integration=1 lane/1 group
-browser-e2e execution: 44779 cumulative / 408 per-hour
-transport-integration execution: 2941 cumulative / 8 per-hour
-load1: 70.64 / 64 cores
-memory: 424.2G free / 492.0G total
+fuzz level mix: browser-e2e=30 lanes/30 groups; transport-integration=1 lane/1 group
+browser-e2e execution: 44919 cumulative / 968 per-hour
+transport-integration execution: 2943 cumulative / 16 per-hour
+load1: 61.66 / 64 cores
+memory: 419.2G free / 492.0G total
 ```
 
 Largest unmet goals in the latest trend packet:
 
 - CDP coverage records: `4578/5000`
 - successful real-user-editing records: `268/500`
-- `core/html`: `340/500`
-- `core/details`: `377/500`
+- `core/html`: `341/500`
+- `core/details`: `378/500`
 - `core/more`: `384/500`
 - `ui-heading-shortcut`: `450/500`
 - `reload-post-action`: `455/500`
 - `core/gallery`: `495/500`
 
 Weak completion profiles still show that validation depth is uneven: `full`
-is `18/840`, `revision-persistence` is `76/3074`, `multi-reload-lifecycle` is
-`58/2263`, `parser-serialization` is `60/1716`, and `real-user-editing` is
-`268/4547`.
+is `18/840`, `revision-persistence` is `76/3075`, `multi-reload-lifecycle` is
+`58/2263`, `parser-serialization` is `60/1722`, and `real-user-editing` is
+`268/4548`.
 
 Health caveat: the latest trend evidence still has `likely_real_max: 0`, but
 this is health evidence for the active validation infrastructure, not a clean
-fuzz pass on the final maintainer-facing PR stack. The raw novelty body for
-this collection is empty, PR11A-E is not clean, and the final combined stack
-has not been rebuilt from audited/rebased PR heads.
+fuzz pass on the final maintainer-facing PR stack. The raw novelty body now has
+a current-run snapshot with no visible likely-real failures, but PR11A-E is not
+clean and the final combined stack has not been rebuilt from audited/rebased PR
+heads.
 
 ## Status-Persona Analysis
 
@@ -259,6 +284,11 @@ The newest completed split-persona synthesis is
   duplicate PR11 shaping, broad fuzz, or final-stack fuzz jobs while PR11A-E is
   unresolved.
 
+A newer split-persona filename,
+`pr-split-20260516T105719Z-synthesis.md`, exists in the collected inputs but is
+`0 bytes`, so the latest completed split synthesis remains
+`pr-split-20260516T105143Z-synthesis.md`.
+
 The latest duplicate-noise synthesis is
 `duplicate-noise-20260516T103851Z-synthesis.md`. It classifies the current
 duplicate/noise issue as a control-plane boundary bug, not a product-code bug:
@@ -266,15 +296,28 @@ historical and external-live `pre_action_bootstrap_stall` dominance is still
 affecting current-run WS browser scheduling, and strict pre-action startup
 failures are only partially suppressed before analysis.
 
-The proposed smallest control-plane pass is to make browser scheduling
-current-run authoritative in the novelty monitor, keep a WS canary such as
-`novelty-ws-lifecycle` able to unpause during probation, broaden the triage
-watcher suppression predicate to strict no-user/no-action startup phases, and
-add the same analysis-tier backstop for stale queued startup-noise signatures.
-The latest trend evidence shows `novelty-ws-lifecycle` enabled as a canary,
-but no automatic control-plane job should start from this report. Supervisor
-threshold and live-analysis sidecar changes are optional follow-ups after a
-bounded canary validation. This is not a substitute for PR 11A-E split shaping,
+The corresponding feedback action for that cycle completed the smallest monitor
+and supervisor pass that was in scope:
+
+- `rtc-browser-fuzz-novelty-monitor.mjs` now bases startup-noise probation on
+  current-run triage rather than historical/external-live dominance.
+- The run-local policy is bumped to `7` and clears stale
+  historical/external-live pause reasons.
+- Canary groups are protected from non-canary rotation, allowing the WS
+  lifecycle canary and other active WS groups to stay unpaused when headroom is
+  available.
+- `rtc-browser-fuzz-supervisor.mjs` now terminates live lane snapshots before
+  clearing state for removed-policy groups.
+- `node --check` passed for both touched scripts, the supervisor and novelty
+  sessions were restarted, the active root moved to `run-20260516T105736Z`, and
+  an orphaned old monitor PID from `run-20260516T102020Z` was killed.
+
+The remaining duplicate/noise risk is that the persona reviews also recommended
+triage-watcher and analysis-tier suppression for strict no-user/no-action
+startup noise; those files were outside the feedback action's edit scope. The
+current raw novelty snapshot shows no paused groups and no current-run
+bootstrap stalls, but only one current-run triage signature, so this is a
+bounded control-plane improvement, not a substitute for PR 11A-E split shaping,
 focused post-rebase checks, public branch audit, or fresh combined-stack
 validation.
 
@@ -282,8 +325,11 @@ The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
 separate current-run fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older PR 13
-review-link warning is superseded by the `10:58:13Z` branch-link audit, which
-verifies the repaired PR 13 review refs listed above.
+review-link warning is superseded by the `11:03:11Z` branch-link audit, which
+verifies the repaired PR 13 review refs listed above. Their older "only
+`novelty-http-persistence-probe` is enabled" warning is superseded by the latest
+raw novelty snapshot, which shows active WS canary/common-blocks/block-gauntlet
+and real-user groups with `paused groups: none`.
 
 ## Deferred Or Evidence-Only Work
 
@@ -334,9 +380,9 @@ Before filing any maintainer-facing PR:
 12. Block filing if new visible likely-real failures appear.
 
 Existing fuzz infrastructure can continue where healthy. The latest trend
-evidence has `likely_real_max: 0`, `8` unmet goals, and enabled groups
-`novelty-http-persistence-probe` plus `novelty-ws-lifecycle`, but this
-update's `10:58Z` raw novelty input is empty and PR11A-E evidence is still not
-clean. None of this is broad final-stack coverage or PR-filing validation.
-Broad fuzzing waits for corrected final PR heads, a fresh combined validation
-stack, and clean PR 11A-E evidence.
+evidence has `likely_real_max: 0` and `8` unmet goals, and the latest raw
+novelty snapshot shows `paused groups: none` with active HTTP plus WS canary,
+real-user, common-block, and block-gauntlet groups. Current-run triage is still
+immature, PR11A-E evidence is still not clean, and none of this is broad
+final-stack coverage or PR-filing validation. Broad fuzzing waits for corrected
+final PR heads, a fresh combined validation stack, and clean PR 11A-E evidence.
