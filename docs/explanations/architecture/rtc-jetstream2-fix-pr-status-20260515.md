@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T04:49:50Z`
+Snapshot time: `2026-05-16T04:52:54Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -33,10 +33,11 @@ Current state:
   validation.
 - The earlier historical-noise scheduling problem has been remediated enough for
   browser groups to run again: the latest collected novelty monitor snapshot,
-  last updated at `2026-05-16T04:49:01Z`, shows seven WS browser groups enabled,
-  no paused groups, and headroom available. Its current-run counters restarted
+  last updated at `2026-05-16T04:50:56Z`, shows seven WS browser groups enabled,
+  no paused groups, and no headroom for adding groups under the current
+  resource-budget policy. Its current-run counters restarted
   after the active output dir moved to `run-20260516T044219Z`, so the snapshot
-  has `26` current-run WS records. Treat this as active monitor recovery and
+  has `30` current-run WS records. Treat this as active monitor recovery and
   fresh-run health evidence, not proof of final-stack validation.
 - PR 13 repair/import is no longer missing. The repaired source-repo heads exist
   and passed the source-import gate with `63/63` focused CRDT tests, touched-file
@@ -100,18 +101,20 @@ current PR-content links for the repaired PR 13 split.
 Latest collected coverage-guided novelty state:
 
 ```text
-updated: 2026-05-16T04:49:01.049Z
+updated: 2026-05-16T04:50:56.606Z
 output dir: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T044219Z
-coverage files: 23957
-total records seen: 35332
-current-run records by profile: {"block-gauntlet":7,"common-blocks":3,"parser-transform":5,"async-server-blocks":4,"media-cross-entity":4,"real-user-editing":3}
-current-run successful records by profile: {"block-gauntlet":5,"parser-transform":2,"async-server-blocks":2,"media-cross-entity":1}
-current-run records by transport: {"ws":26}
+coverage files: 23972
+total records seen: 35355
+summary files read this pass: 7
+summary startup failures processed this pass: 0
+current-run records by profile: {"block-gauntlet":8,"common-blocks":3,"parser-transform":6,"async-server-blocks":5,"media-cross-entity":5,"real-user-editing":3}
+current-run successful records by profile: {"block-gauntlet":5,"parser-transform":2,"async-server-blocks":2,"media-cross-entity":2}
+current-run records by transport: {"ws":30}
 unmet goals: 12
 likely-real visible: 0
 likely-real merged duplicates: 0
 oracle/noise questions: 0
-headroom for adding groups: yes
+headroom for adding groups: no
 enabled groups: novelty-ws-common-blocks, novelty-ws-block-gauntlet,
   novelty-ws-parser-transform, novelty-ws-real-user-editing,
   novelty-ws-real-user-rich-text, novelty-ws-async-server-blocks,
@@ -132,8 +135,8 @@ scheduling recovered after the earlier historical-noise hold:
 
 - Current-run triage has `0` signatures, `0` bootstrap stalls, and `0`
   likely-real visible failures.
-- Historical triage has `15256` signatures, including `8951`
-  `pre_action_bootstrap_stall` signatures and `9178` bootstrap stalls. That
+- Historical triage has `15271` signatures, including `8961`
+  `pre_action_bootstrap_stall` signatures and `9188` bootstrap stalls. That
   historical signal remains reporting/advisory only and must not be presented as
   a current product failure.
 - The duplicate/noise remediation changed the novelty monitor so historical
@@ -144,7 +147,7 @@ scheduling recovered after the earlier historical-noise hold:
   `node --check bin/rtc-browser-fuzz-novelty-monitor.mjs`. The persona report
   also recommended triage-watcher and analysis-tier backstops, but those were
   not part of the completed remediation.
-- The active run has begun producing current-run WS records, with `26`
+- The active run has begun producing current-run WS records, with `30`
   current-run WS records visible in this fresh output-dir snapshot. This shows
   the browser lanes restarted and are active again, but it is still not broad
   final-stack coverage.
@@ -228,8 +231,9 @@ The completed status-report persona syntheses at
 `20260516T035208Z-iter-1`, `20260516T035706Z-iter-2`,
 `20260516T040218Z-iter-3`, and final analysis
 `20260516T040744Z-final-analysis`, plus the latest non-empty split persona
-syntheses through `pr-split-20260516T043923Z-synthesis`, agree on these report
-updates:
+syntheses through `pr-split-20260516T044545Z-synthesis`, agree on these report
+updates. The newer `pr-split-20260516T044950Z-synthesis` file is empty and adds
+no status evidence.
 
 - Replace stale 2026-05-15 coverage snapshots with the verified 2026-05-16
   novelty monitor status, using a compact timestamped snapshot because exact
@@ -252,7 +256,7 @@ updates:
 - The latest split persona still finds no structural split redesign. Its
   proposed next reload-hydration checkpoint diagnostics remain a manual,
   explicitly authorized evidence pass, not an updater-launched job.
-- The final status-analysis report predates the `04:49Z` monitor state. For
+- The final status-analysis report predates the `04:50Z` monitor state. For
   group enablement and current monitor health, use the newer
   `novelty-status.md`, `remote-status.md`, and trend evidence in this report.
   The latest split feedback-action file records no launched jobs and repeats the
@@ -321,7 +325,7 @@ protection so reviewers can evaluate each CRDT invariant separately.
 
 The status loop now generates a branch-link audit and the report updater is
 required to use only rows marked `verified-content`. The latest audit was
-generated at `2026-05-16T04:49:50Z` from fetched `danluu` refs. A verified row
+generated at `2026-05-16T04:52:54Z` from fetched `danluu` refs. A verified row
 means the branch exists on `danluu` and has a non-empty diff against the listed
 base.
 
@@ -385,8 +389,8 @@ File order after export/rebase should be:
 
 Existing fuzz infrastructure can continue where healthy. The captured novelty
 state for `run-20260516T044219Z` shows the current-run WS counters restarted and
-had reached `26` records at the snapshot, while all-time coverage had reached
-`23957` files. The collector's `04:49:44Z` summary selected the same run as the
+had reached `30` records at the snapshot, while all-time coverage had reached
+`23972` files. The collector's `04:52:50Z` summary selected the same run as the
 coverage root. Do not present that point-in-time run as broad final-stack
 coverage or PR-filing validation. Do not start new fuzz lanes, broad final-stack
 fuzzing, PR 13 repair/import, gate shaping, duplicate reload-hydration harness
