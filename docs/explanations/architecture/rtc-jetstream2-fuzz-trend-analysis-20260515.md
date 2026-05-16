@@ -133,15 +133,17 @@ The level-mix plot reads supervisor group history, not just the novelty monitor
 log. The latest copied snapshots cover `coverage-guided`, `focused-shards`,
 `gap-booster`, and `strict-expansion`. They show `31` browser/e2e lanes and `1`
 transport/integration lane. There are no latest active `unit-property`,
-`backend-api`, `protocol-server`, or standalone `fuzz-assertion` fuzzer lanes in
-the committed snapshot.
+`coverage-guided-lower-level`, `backend-api`, `protocol-server`, or standalone
+`fuzz-assertion` fuzzer lanes in the committed snapshot.
 
 This does not mean lower-level checks are useless; it means the current active
 compute mix is still dominated by browser Playwright RTC fuzzing. The focused
 gap loop should now treat that as an explicit control variable: when browser
 lanes stall or only rediscover known failures, it should consider a bounded
 lower-level target with a clear oracle instead of only adding or reshuffling
-browser action profiles.
+browser action profiles. For isolated lower-level code, that target should
+include the option of a libFuzzer/AFL-style coverage-guided harness, or an
+equivalent JS/PHP coverage-guided loop if native libFuzzer is not practical.
 
 The latest copied state reports this current enabled set:
 

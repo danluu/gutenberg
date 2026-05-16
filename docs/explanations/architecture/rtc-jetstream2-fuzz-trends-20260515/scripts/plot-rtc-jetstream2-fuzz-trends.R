@@ -361,6 +361,7 @@ if ( file.exists( fuzz_level_mix_path ) ) {
 					"browser-e2e",
 					"transport-integration",
 					"unit-property",
+					"coverage-guided-lower-level",
 					"backend-api",
 					"protocol-server",
 					"fuzz-assertion",
