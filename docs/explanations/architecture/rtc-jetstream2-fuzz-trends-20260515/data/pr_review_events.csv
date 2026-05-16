@@ -9657,3 +9657,37 @@ timestamp,message,event_type,cycle,max_parallel,interval_s
 2026-05-16T06:50:53Z,previous review cycle still active; skipping,other,NA,NA,NA
 2026-05-16T06:50:58Z,loop started interval=5s max_parallel=6 action_every_cycles=2,loop start,NA,6,5
 2026-05-16T06:50:58Z,starting PR split review cycle 20260516T065058Z,review start,20260516T065058Z,NA,NA
+2026-05-16T06:51:36Z,loop started interval=5s max_parallel=6 action_every_cycles=2,loop start,NA,6,5
+2026-05-16T06:51:36Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:51:41Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:51:46Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:51:51Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:51:56Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:01Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:06Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:11Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:16Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:21Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:26Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:31Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:36Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:41Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:46Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:51Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:52:56Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:01Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:06Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:11Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:16Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:21Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:26Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:31Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:36Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:41Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:46Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:51Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:53:56Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:54:01Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:54:06Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:54:11Z,previous review cycle still active; skipping,other,NA,NA,NA
+2026-05-16T06:54:16Z,starting PR split review cycle 20260516T065416Z,review start,20260516T065416Z,NA,NA

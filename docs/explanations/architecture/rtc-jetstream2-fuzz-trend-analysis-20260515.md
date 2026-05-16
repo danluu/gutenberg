@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-16T06:51:13Z`
+Snapshot generated: `2026-05-16T06:57:33Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -24,9 +24,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1325` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T06:49:46Z`, coverage files grew from `272` to `25453`, a delta of
-`25181`. The monitor's visible likely-real count stayed at `0` throughout this
+`1328` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-16T06:55:44Z`, coverage files grew from `272` to `25560`, a delta of
+`25288`. The monitor's visible likely-real count stayed at `0` throughout this
 window.
 
 Coverage-goal pressure changed in phases. The monitor log shows unmet coverage
@@ -69,7 +69,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The current loop is not finding visible likely-real failures. That is good for
 the active coverage run, but it is not final-stack validation. Free memory
-remained high at the end of the snapshot, around `418.4G`, so the remaining
+remained high at the end of the snapshot, around `417.3G`, so the remaining
 bottleneck is more about useful work selection, fresh-output health, and
 completion rate than raw RAM.
 
@@ -79,17 +79,18 @@ startup failures. The latest pass has current-run duplicate/noise share `0`, `0`
 summary startup failures, `0` quality issues, and no current health warnings.
 Historical triage remains duplicate/noise dominated, with raw historical top
 duplicate family share about `0.5977`; the copied monitor data now reports
-actionable historical duplicate share near `0.4005` after known-noise
+actionable historical duplicate share near `0.3996` after known-noise
 suppression. Persona-loop feedback continues to reject reading either historical
 aggregate as a current product-failure signal. The latest duplicate/noise
-synthesis says the safe fix is a strict all-record no-user/no-action startup
-predicate wired through the runner, triage watcher, analysis tier, and novelty
-monitor. It explicitly rejects suppressing failures from a historical family name
-or primary-record-only classification, because an action-bearing seed was
-previously misclassified. The latest duplicate/noise feedback action changed only
-the novelty-monitor side, split raw from actionable noise accounting, and
-restarted the active run, so the watcher, analysis-tier, and runner fixes remain
-unapplied in this loop.
+synthesis keeps the narrow consensus: add one strict all-facts pre-action
+startup-noise predicate before analysis, only for zero-user/no-action records
+with no reload/save/fault/lifecycle/operation/success evidence and startup
+timeout semantics in `seed`, `bootstrap`, `open`, or `join`. It rejects broader
+historical duplicate suppression and says history should only guide scheduling
+after current strict proof plus zero current successes. The latest
+duplicate/noise feedback action changed only the novelty-monitor side, split raw
+from actionable noise accounting, and restarted the active run, so the watcher
+and analysis-tier gates remain unapplied in this loop.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
@@ -157,13 +158,13 @@ target next:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `revision-persistence` | 2725 | 76 | 0 | 2.8% |
-| `multi-reload-lifecycle` | 2002 | 58 | 0 | 2.9% |
-| `parser-serialization` | 1422 | 60 | 0 | 4.2% |
-| `real-user-editing` | 3829 | 235 | 0 | 6.1% |
-| `common-blocks` | 2340 | 213 | 0 | 9.1% |
-| `parser-transform` | 2611 | 267 | 0 | 10.2% |
-| `block-gauntlet` | 3085 | 455 | 0 | 14.7% |
+| `revision-persistence` | 2738 | 76 | 0 | 2.8% |
+| `multi-reload-lifecycle` | 2007 | 58 | 0 | 2.9% |
+| `parser-serialization` | 1430 | 60 | 0 | 4.2% |
+| `real-user-editing` | 3845 | 236 | 0 | 6.1% |
+| `common-blocks` | 2353 | 216 | 0 | 9.2% |
+| `parser-transform` | 2621 | 267 | 0 | 10.2% |
+| `block-gauntlet` | 3094 | 460 | 0 | 14.9% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -177,16 +178,16 @@ Current unmet goals from the latest state:
 
 | Goal | Current | Target |
 | --- | ---: | ---: |
-| successful real-user-editing records next coverage tier | 235 | 500 |
+| successful real-user-editing records next coverage tier | 236 | 500 |
 | gauntlet block core/html next coverage tier | 297 | 500 |
-| gauntlet block core/more next coverage tier | 322 | 500 |
-| gauntlet block core/details next coverage tier | 331 | 500 |
-| action ui-heading-shortcut next coverage tier | 339 | 500 |
-| action reload-post-action next coverage tier | 363 | 500 |
-| CDP coverage records next coverage tier | 3969 | 5000 |
-| gauntlet block core/gallery next coverage tier | 405 | 500 |
-| real-user body save/reload next coverage tier | 164 | 200 |
-| gauntlet block core/file next coverage tier | 475 | 500 |
+| gauntlet block core/more next coverage tier | 325 | 500 |
+| gauntlet block core/details next coverage tier | 332 | 500 |
+| action ui-heading-shortcut next coverage tier | 341 | 500 |
+| action reload-post-action next coverage tier | 365 | 500 |
+| CDP coverage records next coverage tier | 3994 | 5000 |
+| gauntlet block core/gallery next coverage tier | 411 | 500 |
+| real-user body save/reload next coverage tier | 165 | 200 |
+| gauntlet block core/file next coverage tier | 483 | 500 |
 
 The chart is an unmet-work queue rather than a capped all-goals ratio plot. The
 remaining work now mixes completed-record depth for expensive profiles with
@@ -230,13 +231,13 @@ cycles and took roughly `1.8` to `13.8` minutes in the completed duration data,
 with the latest completed feedback action taking `5.8` minutes. The copied
 input set includes PR-split syntheses through `20260516T064237Z`, the latest
 nonempty PR-split feedback action at `20260516T063020Z`, duplicate/noise
-syntheses through `20260516T062141Z`, and the latest nonempty duplicate/noise
+syntheses through `20260516T064602Z`, and the latest nonempty duplicate/noise
 feedback action at `20260516T062141Z`.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
 split history. The total chart sums additions minus deletions across the whole
 suggested PR set for each status snapshot; the faceted chart shows the same net
-LOC series per PR. The latest parsed snapshot, `2026-05-16T06:47:08Z`, has `21`
+LOC series per PR. The latest parsed snapshot, `2026-05-16T06:51:56Z`, has `21`
 suggested rows totaling `11801` net LOC. The largest current rows by net LOC are
 `PR 13B` (`1668`), `PR 5` (`1612`), `PR 12` (`1386`), `PR 7A` (`1331`), and
 `PR 11` (`1141`), which matches the review concern that the CRDT and parser
@@ -266,21 +267,21 @@ refs are imported, rebased, checked, and validated as a combined stack. It
 rejects the graph-only interpretation that broad coverage or `0` visible
 likely-real failures is enough to file/promote deferred browser-only families
 into PR claims. The latest duplicate/noise evidence also rejects treating
-historical aggregate duplicate/noise as a current product failure signal; live
-status is the current-output-dir duplicate share and summary startup-failure
-count. The remaining weakness is depth and completion on a small number of
-high-value expensive lanes:
+historical aggregate duplicate/noise as a current product failure signal or
+adding broad historical family suppression; live status is the current-output-dir
+duplicate share and summary startup-failure count. The remaining weakness is
+depth and completion on a small number of high-value expensive lanes:
 
 - real-user editing is the largest explicit unmet depth target;
 - gauntlet block depth and reload/save actions still need more observations;
 - current-run duplicate/noise is the live health metric: the latest current-run
   duplicate share is `0`, summary startup failures are `0`, and current health
   warnings are empty; historical duplicate/noise remains reporting context only;
-- the duplicate/noise persona consensus wants an all-record strict startup
-  predicate across runner, triage watcher, analysis tier, and novelty monitor;
-  the latest nonempty feedback action applied only the novelty-monitor side and
-  split raw from actionable noise accounting, so the other gates remain
-  unapplied in this loop;
+- the duplicate/noise persona consensus wants one strict all-facts pre-action
+  startup predicate in the watcher plus an analysis-tier backstop, with history
+  used only as a scheduling prior after current strict proof; the latest
+  nonempty feedback action applied only the novelty-monitor accounting and
+  cooldown side, so those gates remain unapplied in this loop;
 - review only repaired `final/rtc-pr*` heads; do not file/review `shape/*`,
   `finalize/*`, `deferred/*`, dirty worktrees, old aggregate `PR 15`, `PR 1A`,
   or `PR 6B`;
