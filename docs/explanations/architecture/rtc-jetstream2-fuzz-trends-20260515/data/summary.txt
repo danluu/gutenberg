@@ -1,33 +1,33 @@
-generated_at_utc: 2026-05-16T21:04:17Z
-monitor_passes: 1697
+generated_at_utc: 2026-05-16T21:12:27Z
+monitor_passes: 1699
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T21:03:39Z
+last_pass_utc: 2026-05-16T21:09:36Z
 coverage_files_first: 272
-coverage_files_last: 36205
-coverage_files_delta: 35933
+coverage_files_last: 36250
+coverage_files_delta: 35978
 unmet_coverage_first: 24
 unmet_coverage_last: 7
 likely_real_max: 0
-duplicate_share_current_last: 0.4444
-duplicate_share_historical_last: 0.3543
+duplicate_share_current_last: 0.4286
+duplicate_share_historical_last: 0.3545
 summary_startup_failures_last: 0
-quality_issues_last: 1
-memory_free_gb_last: 424.4
-load_1_last: 64.28
-load_5_last: 67.77
-load_15_last: 74.38
+quality_issues_last: 0
+memory_free_gb_last: 428.1
+load_1_last: 69.99
+load_5_last: 69.7
+load_15_last: 72.23
 core_count: 64
 enabled_group_events: 681
-enabled_groups_current: novelty-ws-real-user-editing,novelty-ws-real-user-rich-text,novelty-ws-async-server-blocks,novelty-ws-long-session-large-doc,novelty-ws-lifecycle,novelty-http-persistence-probe
+enabled_groups_current:
 fuzz_level_mix_snapshots: 187
 fuzz_level_mix_campaigns: coverage-guided,coverage-guided-lower-level,focused-shards,gap-booster,strict-expansion,unit-property
-fuzz_level_mix_latest: browser-e2e=31 lanes/31 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups
-fuzz_level_test_executions: 1673681
+fuzz_level_mix_latest: browser-e2e=25 lanes/25 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups
+fuzz_level_test_executions: 1705296
 fuzz_level_test_executions_has_approximate_rows: TRUE
-fuzz_level_execution_latest: browser-e2e=80129 cumulative/1712 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=1475384 cumulative/62608 per-hour; coverage-guided-lower-level=115162 cumulative/8192 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_latest: browser-e2e=81030 cumulative/5316 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=1501872 cumulative/168560 per-hour; coverage-guided-lower-level=119388 cumulative/25096 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 126
 goals_unmet: 7
-pr_review_events: 10123
-pr_suggested_net_loc_snapshots: 153
+pr_review_events: 10131
+pr_suggested_net_loc_snapshots: 154
 pr_suggested_net_loc_latest_total: 11359
