@@ -1,18 +1,18 @@
-generated_at_utc: 2026-05-16T22:51:34Z
-monitor_passes: 1736
+generated_at_utc: 2026-05-16T22:58:17Z
+monitor_passes: 1738
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T22:50:04Z
+last_pass_utc: 2026-05-16T22:55:22Z
 coverage_files_first: 272
-coverage_files_last: 36674
-coverage_files_delta: 36402
+coverage_files_last: 36693
+coverage_files_delta: 36421
 unmet_coverage_first: 24
 unmet_coverage_last: 7
 likely_real_max: 0
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.3542
+duplicate_share_historical_last: 0.3529
 summary_startup_failures_last: 0
 quality_issues_last: 1
-memory_free_gb_last: 438.7
+memory_free_gb_last: 437.4
 load_1_last: 31.77
 load_5_last: 32.09
 load_15_last: 33.96
@@ -22,12 +22,12 @@ enabled_groups_current: novelty-ws-persistence-no-title
 fuzz_level_mix_snapshots: 195
 fuzz_level_mix_campaigns: coverage-guided,coverage-guided-lower-level,focused-shards,gap-booster,strict-expansion,unit-property
 fuzz_level_mix_latest: browser-e2e=26 lanes/26 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups
-fuzz_level_test_executions: 2147809
+fuzz_level_test_executions: 2176953
 fuzz_level_test_executions_has_approximate_rows: TRUE
-fuzz_level_execution_latest: browser-e2e=89425 cumulative/804 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=1873908 cumulative/96320 per-hour; coverage-guided-lower-level=181470 cumulative/13568 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_latest: browser-e2e=89637 cumulative/1652 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=1899192 cumulative/197456 per-hour; coverage-guided-lower-level=185118 cumulative/28160 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 126
 goals_unmet: 7
-pr_review_events: 10167
-pr_suggested_net_loc_snapshots: 166
+pr_review_events: 10170
+pr_suggested_net_loc_snapshots: 167
 pr_suggested_net_loc_latest_total: 11359
