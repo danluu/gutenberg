@@ -1,32 +1,32 @@
-generated_at_utc: 2026-05-16T12:49:03Z
-monitor_passes: 1494
+generated_at_utc: 2026-05-16T12:53:54Z
+monitor_passes: 1496
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-16T12:48:25Z
+last_pass_utc: 2026-05-16T12:52:59Z
 coverage_files_first: 272
-coverage_files_last: 31791
-coverage_files_delta: 31519
+coverage_files_last: 31868
+coverage_files_delta: 31596
 unmet_coverage_first: 24
 unmet_coverage_last: 7
 likely_real_max: 0
-duplicate_share_current_last: 0.152
+duplicate_share_current_last: 0.1333
 duplicate_share_historical_last: 0.4556
 summary_startup_failures_last: 0
 quality_issues_last: 0
-memory_free_gb_last: 421.7
-load_1_last: 73.7
-load_5_last: 73.6
-load_15_last: 72.28
+memory_free_gb_last: 417.6
+load_1_last: 82.95
+load_5_last: 76.87
+load_15_last: 74.54
 core_count: 64
 enabled_group_events: 577
 enabled_groups_current: novelty-ws-lifecycle,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text,novelty-ws-block-gauntlet,novelty-ws-parser-transform,novelty-ws-async-server-blocks
 fuzz_level_mix_snapshots: 130
 fuzz_level_mix_campaigns: coverage-guided,focused-shards,gap-booster,strict-expansion
 fuzz_level_mix_latest: browser-e2e=30 lanes/30 groups; transport-integration=1 lanes/1 groups
-fuzz_level_execution_events: 50400
-fuzz_level_execution_latest: browser-e2e=47416 cumulative/340 per-hour; transport-integration=2984 cumulative/8 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_events: 50521
+fuzz_level_execution_latest: browser-e2e=47535 cumulative/816 per-hour; transport-integration=2986 cumulative/16 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 120
 goals_unmet: 7
-pr_review_events: 9804
-pr_suggested_net_loc_snapshots: 83
+pr_review_events: 9806
+pr_suggested_net_loc_snapshots: 84
 pr_suggested_net_loc_latest_total: 11244
