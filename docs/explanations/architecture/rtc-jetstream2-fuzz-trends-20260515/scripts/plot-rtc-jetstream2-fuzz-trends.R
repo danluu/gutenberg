@@ -42,8 +42,21 @@ theme_rtc <- function() {
 			plot.title.position = "plot",
 			plot.caption.position = "plot",
 			legend.position = "bottom",
-			strip.text = element_text( face = "bold" )
+			strip.text = element_text( face = "bold" ),
+			axis.text.x = element_text( size = 8 ),
+			axis.title.x = element_text( margin = margin( t = 8 ) )
 		)
+}
+
+scale_time_axis <- function(
+	date_breaks = "4 hours",
+	date_labels = "%m-%d\n%H:%M"
+) {
+	scale_x_datetime(
+		date_labels = date_labels,
+		date_breaks = date_breaks,
+		guide = guide_axis( check.overlap = TRUE )
+	)
 }
 
 write_plot <- function( name, plot, width = 9, height = 6 ) {
@@ -308,7 +321,7 @@ write_plot(
 		geom_point( alpha = 0.5, size = 0.75 ) +
 		facet_wrap( vars( metric ), scales = "free_y", ncol = 1 ) +
 		scale_color_brewer( palette = "Dark2" ) +
-		scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
+		scale_time_axis( date_breaks = "4 hours" ) +
 		labs(
 			title = "Coverage-guided fuzz intake over time",
 			x = "UTC time",
@@ -345,7 +358,7 @@ write_plot(
 		facet_wrap( vars( metric ), scales = "free_y", ncol = 1 ) +
 		scale_color_brewer( palette = "Dark2" ) +
 		scale_shape_manual( values = c( "normal pass" = 16, "negative reset artifact" = 4 ) ) +
-		scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
+		scale_time_axis( date_breaks = "4 hours" ) +
 		labs(
 			title = "Per-pass fuzz yield over time",
 			x = "UTC time",
@@ -378,7 +391,7 @@ write_plot(
 		geom_point( alpha = 0.5, size = 0.75 ) +
 		facet_wrap( vars( metric ), scales = "free_y", ncol = 1 ) +
 		scale_color_brewer( palette = "Set2" ) +
-		scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
+		scale_time_axis( date_breaks = "4 hours" ) +
 		labs(
 			title = "Fuzz yield and resource health over time",
 			x = "UTC time",
@@ -402,7 +415,7 @@ if ( file.exists( cpu_path ) ) {
 			geom_point( aes( color = iowait_pct ), alpha = 0.72, size = 1.6 ) +
 			scale_color_distiller( palette = "YlOrRd", direction = 1, labels = label_percent( scale = 1 ) ) +
 			scale_y_continuous( labels = label_percent( scale = 1 ), limits = c( 0, 100 ) ) +
-			scale_x_datetime( date_labels = "%H:%M", date_breaks = "2 hours" ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
 			labs(
 				title = "CPU utilization over time",
 				x = "UTC time",
@@ -426,7 +439,7 @@ if ( file.exists( activity_path ) ) {
 			geom_point( aes( size = samples ), alpha = 0.68, color = brewer.pal( 8, "Dark2" )[ 3 ] ) +
 			scale_size_continuous( range = c( 1.2, 4.2 ), guide = "none" ) +
 			scale_y_continuous( labels = label_number( scale_cut = cut_short_scale() ) ) +
-			scale_x_datetime( date_labels = "%m-%d %H:%M", date_breaks = "4 hours" ) +
+			scale_time_axis( date_breaks = "8 hours" ) +
 			labs(
 				x = "UTC time",
 				y = NULL
@@ -442,7 +455,7 @@ if ( file.exists( activity_path ) ) {
 			geom_point( aes( size = samples ), alpha = 0.68, color = brewer.pal( 8, "Dark2" )[ 5 ] ) +
 			scale_size_continuous( range = c( 1.2, 4.2 ), guide = "none" ) +
 			scale_y_continuous( labels = label_number( scale_cut = cut_short_scale() ) ) +
-			scale_x_datetime( date_labels = "%m-%d %H:%M", date_breaks = "4 hours" ) +
+			scale_time_axis( date_breaks = "8 hours" ) +
 			labs(
 				x = "UTC time",
 				y = NULL
@@ -474,7 +487,7 @@ if ( nrow( enabled_groups ) > 0 ) {
 			scale_color_brewer( palette = "Set2" ) +
 			scale_size_continuous( range = c( 2, 7 ), breaks = pretty_breaks( n = 4 ) ) +
 			scale_shape_manual( values = c( "current" = 16, "historical" = 1 ) ) +
-			scale_x_datetime( date_labels = "%H:%M", date_breaks = "1 hour" ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
 			labs(
 				title = "Coverage-guided groups by first enable time",
 				x = "UTC time",
@@ -677,7 +690,7 @@ write_plot(
 	ggplot( pr_events, aes( x = timestamp, y = event_type, color = event_type ) ) +
 		geom_point( alpha = 0.82, size = 2.6 ) +
 		scale_color_brewer( palette = "Dark2" ) +
-		scale_x_datetime( date_labels = "%H:%M", date_breaks = "10 mins" ) +
+		scale_time_axis( date_breaks = "30 mins", date_labels = "%H:%M" ) +
 		labs(
 			title = "PR split review loop events",
 			x = "UTC time",
@@ -702,7 +715,7 @@ if ( nrow( duration_plot ) > 0 ) {
 		ggplot( duration_plot, aes( x = timestamp, y = duration_minutes, color = phase ) ) +
 			geom_point( alpha = 0.82, size = 3 ) +
 			scale_color_brewer( palette = "Set1" ) +
-			scale_x_datetime( date_labels = "%H:%M", date_breaks = "10 mins" ) +
+			scale_time_axis( date_breaks = "30 mins", date_labels = "%H:%M" ) +
 			labs(
 				title = "PR split loop duration by phase",
 				x = "UTC start time",
