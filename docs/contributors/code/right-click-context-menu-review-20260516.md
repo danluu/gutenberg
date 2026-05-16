@@ -67,6 +67,14 @@ Impact:
 
 The implementation should disable selection-powered menu items unless the range's editable element belongs to the right-clicked block. Prefer carrying the editable's owning client ID through menu state and checking it before each action. This finding is source/fuzz confirmed, but a browser E2E pass should still pin down exact right-click selection behavior across browsers and editor modes.
 
+Actual Playwright evidence from the patched WordPress editor:
+
+![Context menu opened on target block while range belongs to source block](right-click-context-menu-review-20260516-assets/actual/selection-menu-open-target-b-source-range.png)
+
+![Bold action overwrote the target block with source block text](right-click-context-menu-review-20260516-assets/actual/selection-after-bold-target-overwritten.png)
+
+The Chrome run has a reachability caveat. A native right-click on the target block cleared the old selection and disabled `Bold`, so that path did not reproduce in this browser. The same run then dispatched a `contextmenu` event inside the actual editor while preserving the source-block DOM range; the patched handler accepted `targetClientId=target block` and `rangeStartClientId=source block`, and `Bold` rewrote the target paragraph to `[SOURCE BLOCK A] <strong>FormatThisToken</strong> ...`. That confirms the missing invariant in the browser, but normal-user frequency remains browser/event-order dependent.
+
 ### High: `Paste as new block` treats plain text as RichText HTML
 
 The manual paste-as-block path reads clipboard plain text, then writes it directly into RichText-backed attributes:
@@ -227,6 +235,12 @@ Impact:
 
 This is not proof that the example payload executes in WordPress. It is proof that the menu writes the wrong MIME payload.
 
+Actual Playwright evidence from the patched WordPress editor:
+
+![Copy Text writes literal selection as text/html](right-click-context-menu-review-20260516-assets/actual/copy-text-clipboard-html-evidence.png)
+
+The browser run selected the literal text `<strong>literal HTML copied by Copy Text</strong>`, invoked the actual right-click `Copy Text` item, and read the system clipboard through Playwright permissions. The clipboard contained both `text/plain` and `text/html`, and both payloads were the unescaped literal string. The screenshot also renders the `text/html` payload as bold text, demonstrating that receiving applications can parse it as markup.
+
 ### Medium: context-menu block copy bypasses native wrapper-on-copy behavior
 
 The new copy path serializes selected blocks directly:
@@ -295,7 +309,7 @@ A follow-up pass ran four analysis iterations per finding across the same named 
 | Finding | False-positive result | Impact adjustment |
 | --- | --- | --- |
 | Spell check sends selected text to LanguageTool | Real, 6/6 | High privacy/compliance risk, but user-triggered and limited to selected text. |
-| Selection range not tied to right-clicked block | Real but needs UI validation, 6/6 | High potential data corruption if normal right-click behavior preserves the stale range; frequency still browser/editor-mode dependent. |
+| Selection range not tied to right-clicked block | Real but needs UI validation, 6/6 | Playwright confirmed the corruption path when a stale source range is preserved, but native Chrome cleared the selection in this run; frequency remains browser/editor-mode dependent. |
 | Paste as new block treats text as RichText HTML | Real, 6/6 | High content-integrity bug; not claimed as confirmed XSS. |
 | Split block bypasses locks | Real with narrowed wording, 6/6 | Strongest confirmed case is `lock.remove` / `canRemoveBlocks`; broad template-lock bypass wording is overstated because insertion checks can still no-op. |
 | Spell check writes only top-level `content` | Real, 6/6 | Medium integrity bug for fields backed by another attribute or nested structure. |
