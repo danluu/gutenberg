@@ -212,7 +212,9 @@ completed-record depth.
 
 ![PR split loop duration by phase](rtc-jetstream2-fuzz-trends-20260515/plots/pr-review-loop-durations.png)
 
-![Suggested PR net LOC over time](rtc-jetstream2-fuzz-trends-20260515/plots/pr-suggested-net-loc-over-time.png)
+![Suggested PR set net LOC over time](rtc-jetstream2-fuzz-trends-20260515/plots/pr-suggested-total-net-loc-over-time.png)
+
+![Suggested PR net LOC by PR over time](rtc-jetstream2-fuzz-trends-20260515/plots/pr-suggested-net-loc-by-pr-over-time.png)
 
 After the loop was corrected to `max_parallel=6` and `interval=0s`, `86`
 completed review cycles took roughly `2.9` to `8.0` minutes in this snapshot;
@@ -223,11 +225,14 @@ non-empty PR-split synthesis and feedback-action files are both
 `20260516T044950Z`; a newer `20260516T045621Z` synthesis file is present but
 empty in this copied input set.
 
-The suggested-PR size chart is parsed from the status report's proposed PR split
-history. The latest parsed snapshot has `19` suggested rows totaling `11801`
-net LOC. The largest current rows by net LOC are `PR 13B`, `PR 5`, `PR 12`,
-`PR 7A`, and `PR 11`, which matches the review concern that the CRDT and parser
-normalization slices need the most careful branch hygiene and range-diff review.
+The suggested-PR size charts are parsed from the status report's proposed PR
+split history. The total chart sums additions minus deletions across the whole
+suggested PR set for each status snapshot; the faceted chart shows the same net
+LOC series per PR. The latest parsed snapshot has `19` suggested rows totaling
+`11801` net LOC. The largest current rows by net LOC are `PR 13B`, `PR 5`,
+`PR 12`, `PR 7A`, and `PR 11`, which matches the review concern that the CRDT
+and parser normalization slices need the most careful branch hygiene and
+range-diff review.
 
 ## Interpretation
 

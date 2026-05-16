@@ -880,40 +880,53 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 	pr_suggested_total <- pr_suggested_loc %>%
 		group_by( timestamp, commit ) %>%
 		summarise(
-			pr = "total suggested PR set",
-			scope = "total",
 			files = sum( files, na.rm = TRUE ),
 			additions = sum( additions, na.rm = TRUE ),
 			deletions = sum( deletions, na.rm = TRUE ),
 			net_loc = sum( net_loc, na.rm = TRUE ),
-			status = NA_character_,
 			.groups = "drop"
 		)
 
-	pr_suggested_plot <- bind_rows(
-		pr_suggested_loc %>% mutate( series_type = "per PR" ),
-		pr_suggested_total %>% mutate( series_type = "total" )
-	) %>%
+	write_plot(
+		"pr-suggested-total-net-loc-over-time.png",
+		ggplot( pr_suggested_total, aes( x = timestamp, y = net_loc ) ) +
+			geom_point( aes( size = files ), alpha = 0.78, color = brewer.pal( 8, "Dark2" )[ 2 ] ) +
+			scale_y_continuous( labels = comma ) +
+			scale_size_continuous( labels = comma, range = c( 2.4, 6.8 ) ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
+			labs(
+				title = "Suggested PR set net LOC over time",
+				x = "UTC snapshot time",
+				y = "net LOC",
+				size = "files",
+				caption = "Each point sums additions minus deletions across all rows in the Proposed PR Split table for one status-report snapshot."
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 5
+	)
+
+	pr_suggested_plot <- pr_suggested_loc %>%
 		mutate(
-			series_label = if_else( series_type == "total", "total suggested PR set", pr ),
-			series_label = factor( series_label, levels = rev( unique( series_label[ order( series_type, net_loc ) ] ) ) )
+			pr = factor( pr, levels = unique( pr[ order( net_loc ) ] ) )
 		)
 
 	write_plot(
-		"pr-suggested-net-loc-over-time.png",
-		ggplot( pr_suggested_plot, aes( x = timestamp, y = series_label, color = net_loc, size = abs( net_loc ) ) ) +
+		"pr-suggested-net-loc-by-pr-over-time.png",
+		ggplot( pr_suggested_plot, aes( x = timestamp, y = net_loc, color = net_loc, size = files ) ) +
 			geom_point( alpha = 0.76 ) +
-			facet_grid( vars( series_type ), scales = "free_y", space = "free_y" ) +
+			facet_wrap( vars( pr ), ncol = 4 ) +
 			scale_color_distiller( palette = "RdYlBu", direction = -1, labels = comma, breaks = pretty_breaks( n = 4 ) ) +
-			scale_size_continuous( labels = comma, range = c( 1.4, 7.5 ) ) +
+			scale_size_continuous( labels = comma, range = c( 1.6, 4.8 ) ) +
+			scale_y_continuous( labels = comma, limits = c( 0, NA ) ) +
 			scale_time_axis( date_breaks = "4 hours" ) +
 			labs(
-				title = "Suggested PR net LOC over time",
+				title = "Suggested PR net LOC by PR over time",
 				x = "UTC snapshot time",
-				y = NULL,
+				y = "net LOC",
 				color = "net LOC",
-				size = "absolute net LOC",
-				caption = "Net LOC is additions minus deletions parsed from the Proposed PR Split table in each status-report snapshot. The total row sums current suggested PR rows, so split changes can move the total."
+				size = "files",
+				caption = "Each facet is one suggested PR row from the Proposed PR Split table. Net LOC is additions minus deletions."
 			) +
 			theme_rtc() +
 			guides(
@@ -924,8 +937,8 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 				legend.box = "vertical",
 				strip.placement = "outside"
 			),
-		width = 11,
-		height = 8
+		width = 12,
+		height = 9.5
 	)
 }
 
