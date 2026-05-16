@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T04:09:09Z`
+Snapshot time: `2026-05-16T04:13:09Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -31,10 +31,10 @@ Current state:
   failures, but this is health evidence only. It is not running against a final
   rebased PR stack and must not be treated as PR-filing or final-stack
   validation.
-- The latest monitor restart hit a fuzz control-plane `ReferenceError` after
-  briefly enabling WS groups, so current coverage progress is blocked until the
-  monitor policy fix is corrected and restarted. This is not a product failure
-  signal.
+- A `04:08Z` monitor pass hit a fuzz control-plane `ReferenceError` after
+  briefly enabling WS groups. A later `04:13Z` monitor start was captured, but
+  the inputs do not yet show a completed healthy pass from that run. Treat this
+  as a monitor-health blocker, not a product failure signal.
 - PR 13 repair/import is no longer missing. The repaired source-repo heads exist
   and passed the source-import gate with `63/63` focused CRDT tests, touched-file
   JS lint, and `git diff --check`.
@@ -99,13 +99,14 @@ Latest durable coverage-guided novelty state:
 ```text
 updated: 2026-05-16T04:07:11.932Z
 output dir: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T030920Z
-coverage files observed: 23481
+coverage files observed by latest trend: 23507
 total records seen: 34664
 unmet goals: 13
 likely-real visible: 0
 likely-real merged duplicates: 0
 oracle/noise questions: 0
 enabled groups: novelty-http-persistence-probe
+paused/held groups: 10
 ```
 
 Current-run triage is clean, but the browser scheduling/control plane is not:
@@ -120,7 +121,7 @@ Current-run triage is clean, but the browser scheduling/control plane is not:
   control-plane issue: historical bootstrap noise should not pause live WS
   browser coverage when current-run triage has no product signal.
 
-The collector also captured a later monitor restart attempt:
+The collector also captured later monitor activity:
 
 ```text
 2026-05-16T04:08:08.508Z started run-20260516T040758Z
@@ -132,22 +133,23 @@ The collector also captured a later monitor restart attempt:
 2026-05-16T04:08:54Z pass failed:
   ReferenceError: historicalKnownNoiseHoldReason is not defined
   at applyPolicy (.../bin/rtc-browser-fuzz-novelty-monitor.mjs:3795:2)
+2026-05-16T04:13:01.601Z started run-20260516T041251Z
 ```
 
-Treat that as a live monitor-health blocker. Do not claim fresh broad WS
-coverage progress after the restart until the policy patch passes `node --check`
-and the monitor completes a bounded validation pass.
+The captured `04:13Z` log only proves the monitor started. Do not claim fresh
+broad WS coverage progress until a healthy post-restart pass is captured after
+the policy patch passes `node --check`.
 
 Latest trend evidence:
 
 ```text
-generated_at_utc: 2026-05-16T04:06:21Z
-monitor passes: 1240
-coverage files: 272 -> 23466
+generated_at_utc: 2026-05-16T04:11:05Z
+monitor passes: 1242
+coverage files: 272 -> 23507
 unmet coverage goals: 24 -> 13
 likely_real_max: 0
 enabled groups current: novelty-http-persistence-probe
-memory free: 426.5G
+memory free: 429.8G
 ```
 
 This supports continued coverage progress with no visible likely-real product
@@ -181,7 +183,8 @@ What remains before filing:
 The completed status-report persona syntheses at
 `20260516T035208Z-iter-1`, `20260516T035706Z-iter-2`,
 `20260516T040218Z-iter-3`, and final analysis
-`20260516T040744Z-final-analysis` agree on these report updates:
+`20260516T040744Z-final-analysis`, plus the latest split persona synthesis
+`pr-split-20260516T040856Z-synthesis`, agree on these report updates:
 
 - Replace stale 2026-05-15 coverage snapshots with the verified 2026-05-16
   novelty monitor status, using a compact timestamped snapshot because exact
@@ -201,6 +204,9 @@ The completed status-report persona syntheses at
   rich-text suffix, malformed-save residuals, or HTTP room-isolation residuals
   to the split.
 - Launch no automatic follow-up jobs from this status update.
+- The latest split persona still finds no structural split redesign. Its
+  proposed next reload-hydration checkpoint diagnostics remain a manual,
+  explicitly authorized evidence pass, not an updater-launched job.
 
 The latest duplicate/noise persona synthesis also identifies a fuzz
 control-plane scheduling issue: historical `pre_action_bootstrap_stall` noise
@@ -338,8 +344,7 @@ File order after export/rebase should be:
    clean.
 
 Existing fuzz infrastructure can continue where healthy, but do not rely on
-fresh broad coverage-guided WS progress until the live monitor-health issue is
-fixed or the previous healthy monitor is restored. Do not start new fuzz lanes,
-broad final-stack fuzzing, PR 13 repair/import, gate shaping, duplicate
-reload-hydration harness work, or another split-review loop from this status
-update.
+fresh broad coverage-guided WS progress until a healthy post-`04:13Z` monitor
+pass is captured. Do not start new fuzz lanes, broad final-stack fuzzing, PR 13
+repair/import, gate shaping, duplicate reload-hydration harness work, or another
+split-review loop from this status update.
