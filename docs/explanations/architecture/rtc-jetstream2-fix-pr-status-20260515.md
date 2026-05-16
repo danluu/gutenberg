@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T15:41:20Z`
+Snapshot time: `2026-05-16T15:51:09Z`
 
 Trigger event:
-`pr-split-2026-05-16T15-40-29Z-20260516T153219Z`
+`pr-split-2026-05-16T15-50-29Z-20260516T154448Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T15-40-29Z-20260516T153219Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T15-50-29Z-20260516T154448Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,7 +28,7 @@ or the original split merely for continuity.
 ## Executive Status
 
 Filing remains blocked and the split must change. The newest split-persona
-synthesis, `pr-split-20260516T153219Z-synthesis.md`, keeps the explicit
+synthesis, `pr-split-20260516T154448Z-synthesis.md`, keeps the explicit
 28-head allow-list only as a known-fix prefix, not a complete filing split.
 Seed `1020002` is product-confirmed WebSocket/Yjs divergence: page 1 and the
 relay materialize the inserted `core/search` marker, while page 0 stays
@@ -100,15 +100,22 @@ base evidence: /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/
 report: /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T151306Z/jobs/outputs/rtc-ws-seed-1020002-state-vector-diff-diagnostic-20260516T151306Z/report.md
 ```
 
-Next product-directed step: shape exactly one bounded peer-client
-store-transition repair/evidence pass to trace page 0 inbound update summaries
-and Yjs store transitions for client `353740376`, identify the update/origin
-that turns live peer structs into the deleted `0..820` range, attempt the
-smallest product fix, and rerun focused seed `1020002`. Do not launch broad
-final-stack fuzz, extra fuzz lanes, reload diagnostics, PR13 repair/import,
-PR6B/PR6C work, old PR16 replay work, or another split-review loop until that
-repair slot has evidence and the combined stack is rebuilt. Existing
-coverage-guided background fuzz can continue.
+The next product-directed step is already active as the bounded
+peer-client store-transition repair/evidence job:
+
+```text
+rtc-ws-seed-1020002-peer-client-store-transition-repair-20260516T153219Z
+/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T153219Z/jobs/outputs/rtc-ws-seed-1020002-peer-client-store-transition-repair-20260516T153219Z/report.md
+```
+
+At the latest split-persona read, that report was still missing and the tmux
+job was active. Consume that report before launching more work. If the session
+exits without a usable report, rerun that bounded script exactly once. Do not
+launch broad final-stack fuzz, extra fuzz lanes, reload diagnostics, PR13
+repair/import, PR6B/PR6C work, old PR16 replay work, or another split-review
+loop until the repair report is consumed, focused seed `1020002` passes or is
+explicitly reclassified, and the combined stack is rebuilt. Existing
+coverage-guided background fuzz can continue, but it is not filing evidence.
 
 Deferred/evidence-only work remains outside the filing split: reload-hydration
 empty-live-editor, pre-save search/live-collapse, rich-text suffix corruption,
@@ -120,7 +127,7 @@ is ready.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T15:41:16Z`.
+The collected remote status input was generated at `2026-05-16T15:51:04Z`.
 
 The fix-planning repo is checked out at:
 
@@ -150,7 +157,7 @@ That stack still has modified product/test files and many untracked fuzz,
 analysis, and documentation artifacts. It is active validation infrastructure,
 not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-16T15:41:20Z` from fetched
+The branch-link audit was generated at `2026-05-16T15:51:09Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -206,7 +213,7 @@ peer-client store-transition repair is implemented and validated.
 | PR 15A | Fallback group move stale reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 | +123 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15B | Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 | +197 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15C | Fallback group delete | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 | +161 / -4 | verified branch; keep reload-hydration gate spec out |
-| New post-PR15C PR | WS seed `1020002` post-sync remote-update materialization / live editor-Yjs peer-client propagation divergence | No verified branch link yet | TBD | TBD | replacement PR after the completed diagnostic showed page-local peer-client store corruption; shape one bounded repair/evidence pass, then rerun focused seed `1020002`; not the old PR 16 valid-block candidate |
+| New post-PR15C PR | WS seed `1020002` post-sync remote-update materialization / live editor-Yjs peer-client propagation divergence | No verified branch link yet | TBD | TBD | replacement PR after the completed diagnostic showed page-local peer-client store corruption; bounded peer-client store-transition repair job is active; consume its report before shaping this branch; not the old PR 16 valid-block candidate |
 
 Verified branches that are now prior art or staging only:
 
@@ -231,70 +238,102 @@ above.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T15:41:16Z
+collected_at_utc: 2026-05-16T15:51:04Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T154021Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-The raw `novelty-status.md` input for this collection is zero bytes, so this
-update does not publish exact current-root novelty counters. Use the refreshed
-trend packet for fuzz-health context only, and do not present it as final-stack
-validation or product approval.
-
-The latest available trend evidence packet was generated at
-`2026-05-16T15:38:10Z` from monitor data through `2026-05-16T15:37:29Z`:
+The raw novelty monitor status was updated at
+`2026-05-16T15:50:29.570Z` for the same coverage root:
 
 ```text
-monitor passes: 1568
-coverage files: 272 -> 33351
-coverage files delta: 33079
+coverage files: 33442
+total records seen: 49761
+records processed this pass: 45
+unmet goals: 5
+current-run records: persistence-no-title=3, session-lifecycle=2
+current-run successful records: persistence-no-title=1, session-lifecycle=2
+current-run pre-action startup failures: persistence-no-title=2
+current-run triage: signatures=2, likely-real visible=0, bootstrap stalls=2
+current-run known-noise: 1 pre_action_bootstrap_stall
+enabled groups: novelty-ws-lifecycle
+paused groups: none
+```
+
+The current-root result is health/control-plane evidence only: it shows no
+visible likely-real product failures, but it is dominated by strict startup
+known-noise and is not final-stack validation for the filing stack.
+
+Historical and sidecar triage are also clean for likely-real product signals
+but remain noise-heavy:
+
+```text
+historical triage: signatures=24344, likely-real visible=0, bootstrap stalls=14312
+historical known-noise: 6634 signatures, including 6403 pre_action_bootstrap_stall
+external live triage: signatures=6, likely-real visible=0, bootstrap stalls=2
+combined triage: signatures=24354, likely-real visible=0, bootstrap stalls=14316
+```
+
+The novelty monitor has cleared historical-noise pauses, but current-run
+startup-noise probation still holds recommended WS expansion groups until each
+held profile reaches 10 successful current-run records. The latest enabled
+group is the low-noise `novelty-ws-lifecycle` capacity-floor canary.
+
+The latest available trend evidence packet was generated at
+`2026-05-16T15:43:53Z` from monitor data through `2026-05-16T15:41:36Z`:
+
+```text
+monitor passes: 1570
+coverage files: 272 -> 33375
+coverage files delta: 33103
 unmet coverage goals: 24 -> 5
 likely_real_max: 0
 duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.5891
 summary_startup_failures_last: 0
-quality_issues_last: 0
+quality_issues_last: 1
 enabled groups current: novelty-http-persistence-probe
 fuzz level mix: browser-e2e=26 lanes/26 groups
-browser-e2e execution: 50949 cumulative / 532 per-hour
+browser-e2e execution: 51461 cumulative / 2580 per-hour
 transport-integration execution: 3006 cumulative / 0 per-hour
-load1: 49.32 / 64 cores
-memory: 426.6G free
+load1: 35.83 / 64 cores
+memory: 443.8G free
 ```
 
-Largest remaining trend goals:
+The trend packet predates the newer novelty snapshot, so use the novelty
+snapshot above for current enabled-group status. Largest remaining current
+goals from the latest monitor status:
 
-- successful real-user-editing records: `284/500`
-- `core/html`: `369/500`
-- CDP coverage records: `4874/5000`
-- `core/details`: `411/500`
-- `core/more`: `431/500`
+- successful real-user-editing records: `285/500`
+- `core/html`: `376/500`
+- CDP coverage records: `4876/5000`
+- `core/details`: `412/500`
+- `core/more`: `433/500`
 
 Weak completion profiles remain a reason to prefer guarded top-offs and
 startup-stall reduction over simply increasing browser concurrency. The weakest
 success ratios in the trend packet are `full` (`18/840`),
-`revision-persistence` (`78/3404`), `multi-reload-lifecycle` (`63/2557`),
-`parser-serialization` (`66/2099`), and `real-user-editing` (`284/5144`).
+`revision-persistence` (`79/3408`), `multi-reload-lifecycle` (`63/2560`),
+`parser-serialization` (`66/2110`), and `real-user-editing` (`284/5150`).
 
 This trend packet is background fuzz-health and control-plane evidence. It is
 not final-stack validation because the final-stack WebSocket path is blocked on
-the seed `1020002` peer-client store-transition repair and the resulting
-rebuilt validation stack. It also predates the `15:40:21Z` coverage root from
-the collected status input, so do not infer current-root counters from it.
+the active seed `1020002` peer-client store-transition repair and the resulting
+rebuilt validation stack.
 
 The previous bootstrap/classifier/repair state has advanced: the active blocker
 is no longer "WS bootstrap report missing," "classifier missing," or "repair
 report missing." Seed `1020002` is classified as product divergence, the
 bounded repair reproduced it but found no bounded fix, and the completed
 state-vector/diff diagnostic points at page-local peer-client store
-corruption. The only justified next product-directed step is one bounded
-peer-client store-transition repair/evidence pass.
+corruption. The only justified product-directed work is the already-active
+bounded peer-client store-transition repair/evidence pass.
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260516T153219Z-synthesis.md`. Its consensus:
+`pr-split-20260516T154448Z-synthesis.md`. Its consensus:
 
 - The report needs a split change and filing remains blocked.
 - Keep the explicit 28-head allow-list only as the known-fix prefix.
@@ -314,19 +353,24 @@ The newest completed split-persona synthesis is
 - Keep PR1A, PR6B, PR6C, old PR16, PR8A/title reload, reload hydration,
   pre-save search/live-collapse, rich-text suffix, malformed-save residuals,
   HTTP room isolation, and seed `5500002` deferred/evidence-only.
-- Shape one bounded peer-client store-transition repair/evidence pass, rerun
-  focused seed `1020002`, then rebuild the combined stack from the known-fix
-  prefix plus the new repair PR before final-stack validation or fuzz resumes.
+- The bounded peer-client store-transition repair job is already running and
+  its report is still missing; consume it before launching more work.
+- After the report exists, shape the new post-`PR15C` repair PR, rerun focused
+  seed `1020002`, regenerate graph/containment/range-diff/diffstat evidence,
+  then rebuild and validate the combined stack from the known-fix prefix plus
+  that new PR before final-stack validation or fuzz resumes.
 
 The latest split feedback action file,
-`pr-split-20260516T153219Z-feedback-action.md`, is empty. The previous
-non-empty split action, `pr-split-20260516T151306Z-feedback-action.md`,
-launched the now-completed bounded
-`rtc-ws-seed-1020002-state-vector-diff-diagnostic-20260516T151306Z` job and
-did not edit product files.
+`pr-split-20260516T153219Z-feedback-action.md`, launched the bounded
+`rtc-ws-seed-1020002-peer-client-store-transition-repair-20260516T153219Z`
+job and deferred broad final-stack fuzz, extra fuzz lanes, duplicate
+state-vector diagnostics, reload diagnostics, PR6B/PR6C work, old PR16 replay,
+and another split-review loop until that report is consumed. The earlier
+`pr-split-20260516T151306Z-feedback-action.md` launched the now-completed
+state-vector/diff diagnostic job.
 
 The newest duplicate/noise synthesis,
-`duplicate-noise-20260516T152629Z-synthesis.md`, keeps the remaining
+`duplicate-noise-20260516T153431Z-synthesis.md`, keeps the remaining
 duplicate/noise problem scoped to admission control, not product code. Its
 strongest consensus is that strict pre-action startup/bootstrap/open/join stalls
 with zero users, no actions, and no product evidence are recognized as startup
@@ -346,8 +390,8 @@ with both available `node --check` invocations, only
 `requestedStartGraceMs: 180000`. This reduces restart churn and helps preserve
 current-run evidence.
 
-The latest duplicate/noise feedback action,
-`duplicate-noise-20260516T145914Z-feedback-action.md`, then implemented a
+The latest non-empty duplicate/noise feedback action,
+`duplicate-noise-20260516T145914Z-feedback-action.md`, implemented a
 narrow novelty-scheduler remediation in
 `bin/rtc-browser-fuzz-novelty-monitor.mjs`. It added per-profile
 bootstrap/awareness stall accounting, made current startup evidence feed group
@@ -361,12 +405,14 @@ startup-noise identity by `family + profile + seed`. Validation passed with
 was restarted, the watchdog rotated the active output dir, and the supervisor
 was left running.
 
-That scheduler fix changed the producer side, but it does not replace the
-triage-watcher/analysis-tier admission gate. The latest trend packet still
-shows only `novelty-http-persistence-probe` enabled; the raw novelty status
-file in this collection is empty, so current-root WebSocket admission counters
-were not available. Remaining duplicate/noise follow-up from the latest
-syntheses:
+The zero-byte
+`duplicate-noise-20260516T153431Z-feedback-action.md` did not add another
+control-plane patch. The scheduler fix changed the producer side, but it does
+not replace the triage-watcher/analysis-tier admission gate. The latest trend
+packet still shows the older `novelty-http-persistence-probe` enabled state,
+while the newer raw novelty status shows `novelty-ws-lifecycle` enabled, no
+paused groups, and current-run startup-noise holds on WS expansion groups.
+Remaining duplicate/noise follow-up from the latest syntheses:
 
 - Add one shared strict pre-action startup-noise predicate in
   `bin/rtc-browser-fuzz-triage-watcher.mjs` and apply it narrowly.
@@ -399,7 +445,7 @@ The completed status-analysis reports through
 separate current fuzz health from historical noise, keep evidence-only families
 out of the split, and make filing gates explicit. Their older warning that the
 GitHub-facing PR13 review links were stale is superseded by the
-`2026-05-16T15:41:20Z` branch-link audit, which verifies the repaired PR 13
+`2026-05-16T15:51:09Z` branch-link audit, which verifies the repaired PR 13
 review refs listed above.
 
 ## Deferred Or Evidence-Only Work
@@ -415,7 +461,7 @@ These must not be described as fixed.
 | Pre-save search/live document collapse | `ddf9559af37e`, `0932bed35c7a`, conditional `1e0ade5ec5a8`; `try/rtc-pre-save-search-collapse-gate-ddf9559` | evidence-only; not in active split | Capture editor blocks, serialized content, core-data edited record, live CRDT record, provider state, REST body, and save state before/after `core/search` insertion |
 | Rich-text formatted suffix corruption | `4148230f681d`, `b0db7b80c6f2`, `dc8ea6e78d4d`, `1ccac75d7faa`, `2722f0e897de`, `712b98ba96ff` | not fixed; latest split keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Malformed save payload and save-settlement residuals | `fc154ebec48c`, `e40aa1b7863d`, `f51c425df8a5`, `f46859898576`, `afd389d7f139`, `02289235f55f`, `eef8b8932e11`, `b60eecd4ac03` | deferred beyond dropped PR 6B and isolated PR 6C candidate | Create a source-level `saveEntityRecord()` / `prePersistPostType()` repro where clean local blocks exist but evaluated outgoing `content` is malformed |
-| Seed `1020002` WebSocket marker divergence | Cycle 152 classifier report; completed repair job `rtc-ws-seed-1020002-product-divergence-repair`; completed diagnostic `rtc-ws-seed-1020002-state-vector-diff-diagnostic-20260516T151306Z` | active final-stack blocker; classified as product divergence; repair pass reproduced the marker split and found no bounded fix; diagnostic shows page 0 stores peer client `353740376` as deleted `0..820` while relay/page 1 retain live marker-bearing structs | Shape one bounded peer-client store-transition repair/evidence pass, rerun focused seed `1020002`, then create a new narrow post-`PR15C` PR with a verified branch link before filing |
+| Seed `1020002` WebSocket marker divergence | Cycle 152 classifier report; completed repair job `rtc-ws-seed-1020002-product-divergence-repair`; completed diagnostic `rtc-ws-seed-1020002-state-vector-diff-diagnostic-20260516T151306Z`; active job `rtc-ws-seed-1020002-peer-client-store-transition-repair-20260516T153219Z` | active final-stack blocker; classified as product divergence; repair pass reproduced the marker split and found no bounded fix; diagnostic shows page 0 stores peer client `353740376` as deleted `0..820` while relay/page 1 retain live marker-bearing structs; active store-transition repair report is still missing | Consume the active repair report, rerun focused seed `1020002`, then create a new narrow post-`PR15C` PR with a verified branch link before filing; if the active job exits without a usable report, rerun that bounded script once |
 | PR 16 valid-block `originalContent` candidate | seed replay candidate only | blocked/deferred; latest split synthesis says it is not part of the filing stack | Replay and classify the seed before considering any product branch or verified branch link |
 | HTTP smoke `rest_crdt_document_stale` | final-stack bootstrap repair reached one HTTP action before this signal | separate triage signal; not split coverage and not a final-stack fuzz pass | Classify separately after the seed `1020002` peer-client repair/split decision |
 | HTTP polling room-isolation residuals | `f5738470d026`, `fda8d2334e65`, conditional `fc99825fb6c2`, `b75435787be1`; possible PR 1A | deferred; possible PR 1A is not in the active split | Promote only if fuzzing still shows healthy post rooms stalled by auxiliary room failures after PR 1/2 |
@@ -446,11 +492,11 @@ Before filing any maintainer-facing PR:
 7. Rerun focused checks, touched-file lint, and `git diff --check` on every
    imported/rebased branch.
 8. Keep dirty analysis-only artifacts out of product PR branches.
-9. Shape exactly one bounded seed `1020002` peer-client store-transition
-   repair/evidence pass from the completed state-vector/diff diagnostic. Do not
-   launch broad final-stack fuzz, extra fuzz lanes, reload diagnostics, PR13
-   repair/import, PR6B/PR6C work, old PR16 replay work, or another split-review
-   loop until that repair slot has evidence.
+9. Consume the active bounded seed `1020002` peer-client store-transition
+   repair/evidence report from the completed state-vector/diff diagnostic. Do
+   not launch broad final-stack fuzz, extra fuzz lanes, reload diagnostics,
+   PR13 repair/import, PR6B/PR6C work, old PR16 replay work, or another
+   split-review loop until that report exists and has been evaluated.
 10. After the new post-`PR15C` repair PR exists, rebuild the combined stack from
    the 28-head known-fix prefix plus that new PR, rerun focused seed `1020002`,
    then rerun bounded final-stack validation against
@@ -461,8 +507,9 @@ Before filing any maintainer-facing PR:
 
 Existing fuzz infrastructure can continue where healthy. The latest trend
 evidence has `likely_real_max: 0`, `5` unmet goals, graph current duplicate
-share `0`, and browser-e2e execution at `50949` cumulative / `532` per-hour.
-The raw `novelty-status.md` for this collection is empty, so current-root
-novelty counters are unavailable. Treat the trend packet and remote status as
-useful control-plane and fuzz-health evidence, not final-stack fuzz
-validation.
+share `0`, and browser-e2e execution at `51461` cumulative / `2580` per-hour.
+The latest novelty status has `0` current visible likely-real failures,
+`2` current startup signatures, `5` unmet goals, `novelty-ws-lifecycle`
+enabled, and no paused groups. Treat the trend packet, novelty monitor status,
+and remote status as useful control-plane and fuzz-health evidence, not
+final-stack fuzz validation.
