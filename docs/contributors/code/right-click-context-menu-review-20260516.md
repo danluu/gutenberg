@@ -218,6 +218,14 @@ Impact:
 
 This needs a UI regression test with empty paragraph targets, both with and without a following sibling.
 
+Actual Playwright evidence from the patched WordPress editor:
+
+![Add block above menu opened from the canvas context menu](right-click-context-menu-review-20260516-assets/actual/add-block-above-menu-open.png)
+
+![Empty paragraph replaced by Heading after Add block above](right-click-context-menu-review-20260516-assets/actual/add-block-after-heading-replaced-empty-paragraph.png)
+
+The browser run seeded `Paragraph, empty Paragraph, Paragraph`, right-clicked the empty paragraph in the canvas, chose `Blocks -> Add block above`, selected `Heading`, and then inspected the block tree. The result was still three blocks, but the middle block changed from `core/paragraph` to `core/heading`; the first and last paragraph client IDs stayed the same. This confirms replacement, not insertion.
+
 ### Medium: `Copy Text` writes literal selected text as `text/html`
 
 `writeSystemClipboard` always publishes both MIME types:
@@ -292,6 +300,14 @@ Impact:
 
 The table context menu should derive the target cell from the context-menu event target, not only from the last focused RichText state.
 
+Actual Playwright evidence from the patched WordPress editor:
+
+![Table context menu opened on the B2 cell](right-click-context-menu-review-20260516-assets/actual/table-menu-opened-on-right-click-target-b2.png)
+
+![Delete row removed the clicked B row in Chrome](right-click-context-menu-review-20260516-assets/actual/table-after-delete-row-clicked-row-removed.png)
+
+This specific Chrome run did **not** reproduce the stale-focused-cell bug. The test first focused `FOCUSED ROW - A1`, then right-clicked `RIGHT-CLICK TARGET - B2` and chose `Row edit -> Delete row`; the resulting table removed the B row and kept the previously focused A row. That reduces confidence for default Chrome behavior. The remaining risk is scoped to browsers or editor integrations where right-click does not update table cell focus before the menu action runs.
+
 ### Low: clipboard read fallback misses `readText`-only browsers
 
 `readSystemClipboard` returns `null` when `navigator.clipboard.read` is absent:
@@ -323,10 +339,10 @@ A follow-up pass ran four analysis iterations per finding across the same named 
 | Spell check writes only top-level `content` | Real, 6/6 | Medium integrity bug for fields backed by another attribute or nested structure. |
 | Split duplicates attributes and trims content | Real, 5/6; real but needs UI validation, 1/6 | Medium; Playwright confirmed whitespace trimming in a Code block. Anchor duplication remains source-risk only; it did not reproduce in the first browser run. |
 | Non-iframed editors can dismiss menu before item click | Real but needs UI validation, 6/6 | Medium and scoped to non-iframed/custom `BlockCanvas` consumers, not necessarily the default iframed editor. |
-| Add block above/below can replace an empty default block | Real but needs UI validation, 6/6 | Medium-low/medium workflow integrity issue; unlikely to delete authored text, but contradicts the command label and can discard empty-block state. |
+| Add block above/below can replace an empty default block | Real, browser-confirmed | Medium-low/medium workflow integrity issue; the Playwright run replaced the clicked empty paragraph with a heading instead of inserting a fourth block. |
 | Copy Text writes selected text as `text/html` | Real, 6/6 | Medium clipboard data-integrity bug; not claimed as confirmed XSS. |
 | Context-menu block copy bypasses wrapper-on-copy behavior | Real, 2/6; real but needs UI validation, 4/6 | Medium; source-confirmed divergence from native copy, exact paste symptoms still need browser evidence. |
-| Table operations use focused cell, not clicked cell | Real but needs UI validation, 6/6 | Medium, rising if Playwright confirms common-browser right-click does not update table cell focus before destructive actions. |
+| Table operations use focused cell, not clicked cell | Source/model risk, not reproduced in Chrome | Playwright focused A1, right-clicked B2, and Delete row removed the clicked B row. Keep only as a scoped browser/event-order risk unless another browser reproduces stale focus. |
 | Clipboard read fallback misses `readText`-only browsers | Real, 6/6 | Low compatibility bug; source/fuzz confirmed, browser-market impact depends on the target browser mix. |
 
 ## Fuzz and Test Evidence
