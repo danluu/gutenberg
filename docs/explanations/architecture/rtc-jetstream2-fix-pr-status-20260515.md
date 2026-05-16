@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T07:48:50Z`
+Snapshot time: `2026-05-16T07:55:39Z`
 
 Trigger event:
-`pr-split-2026-05-16T07-47-57Z-20260516T074123Z`
+`pr-split-2026-05-16T07-54-42Z-20260516T074802Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -27,7 +27,7 @@ or the original split merely for continuity.
 
 ## Executive Status
 
-The latest split synthesis, `pr-split-20260516T074123Z-synthesis`, keeps the
+The latest split synthesis, `pr-split-20260516T074802Z-synthesis`, keeps the
 stack blocked rather than filing-ready and now treats the source-retirement
 tri-split as the replacement for the broad `PR 13B`. The active tmux job
 `rtc-final-refs-import-rebase-check-20260516T071308Z` is still running in the
@@ -92,7 +92,7 @@ paused in strict 6-hour pre-action startup cooldowns.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T07:48:45Z`.
+The collected remote status input was generated at `2026-05-16T07:55:35Z`.
 
 The fix-planning repo is currently checked out at:
 
@@ -121,7 +121,7 @@ The fuzz repo remains on the validation stack:
 That stack has modified fuzz harness files and many untracked fuzz/analysis
 scripts. It is active validation infrastructure, not the final PR stack.
 
-The branch-link audit was generated at `2026-05-16T07:48:50Z` from fetched
+The branch-link audit was generated at `2026-05-16T07:55:39Z` from fetched
 `danluu` refs. The proposed PR table below uses only audit rows marked
 `verified-content` as PR-content links. For PR 5A/5B/5C and the proposed
 PR 13B1/13B2/13B3 replacement split, no verified branch links exist yet, so
@@ -151,11 +151,11 @@ is pushed only so the PR 13A compare link has the repaired source base.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T07:48:45Z
+collected_at_utc: 2026-05-16T07:55:35Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T064057Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
-novelty-status.md: populated at 2026-05-16T07:47:31.444Z
+novelty-status.md: populated at 2026-05-16T07:53:47.028Z
 current visible likely-real signatures: 0
 enabled groups: 7 WS groups
 paused groups: novelty-ws-parser-transform and novelty-ws-lifecycle in 6h startup cooldown
@@ -164,18 +164,18 @@ paused groups: novelty-ws-parser-transform and novelty-ws-lifecycle in 6h startu
 Current novelty monitor snapshot:
 
 ```text
-coverage files: 26542
-total records seen: 39013
-records processed this pass: 69
-coverage lines seen this pass: 40262
+coverage files: 26652
+total records seen: 39171
+records processed this pass: 50
+coverage lines seen this pass: 40431
 summary files read this pass: 7
 summary startup failures processed this pass: 0
 unmet goals: 9
 likely-real visible: 0
 likely-real merged duplicates: 0
 likely-real oracle/noise questions: 0
-load1: 73.96 / 64 cores
-memory: 417.7G free / 492.0G total
+load1: 80.70 / 64 cores
+memory: 410.9G free / 492.0G total
 headroom for adding groups: no
 ```
 
@@ -202,8 +202,8 @@ Paused recommended groups:
 Current-run triage remains clean in the generated snapshot: `0` raw signatures,
 `0` actionable signatures, `0` likely-real visible, `0` likely-real merged
 duplicates, and current duplicate share `0`. Historical triage is still noisy
-but separated from current-run product health: `17678` raw signatures, `6819`
-actionable signatures, `10859` suppressed known-noise signatures, and `10829`
+but separated from current-run product health: `17754` raw signatures, `6857`
+actionable signatures, `10897` suppressed known-noise signatures, and `10867`
 bootstrap stalls, with `pre_action_bootstrap_stall` still dominating raw
 historical signatures.
 
@@ -224,10 +224,10 @@ pr_review_events: 9708
 pr_suggested_net_loc_latest_total: 11801
 ```
 
-The largest unmet fuzz-depth goals remain CDP coverage records (`4196/5000`),
-real-user-editing success count (`249/500`), `core/html` (`308/500`),
+The largest unmet fuzz-depth goals remain CDP coverage records (`4216/5000`),
+real-user-editing success count (`250/500`), `core/html` (`309/500`),
 `core/details` (`344/500`), `core/more` (`349/500`), heading shortcuts
-(`366/500`), reload-post actions (`396/500`), `core/gallery` (`437/500`), and
+(`370/500`), reload-post actions (`398/500`), `core/gallery` (`440/500`), and
 the real-user body save/reload template (`182/200`). Treat these as fuzz-depth
 gaps, not as proof of final-stack readiness or product failure.
 
@@ -275,10 +275,11 @@ explicit. Earlier status-analysis warned not to claim corrected PR 13 GitHub
 links until the repaired refs were pushed; the current `branch-link-audit.md`
 now verifies the repaired PR 13 review refs, so this report uses those repaired
 audit links. One older status-analysis claim that only an HTTP persistence probe
-was enabled is stale; the raw `2026-05-16T07:47:31Z` novelty snapshot is the
+was enabled is stale; the raw `2026-05-16T07:53:47Z` novelty snapshot is the
 source for the current seven enabled WS groups.
 
-The newest split persona synthesis is `pr-split-20260516T074123Z-synthesis`.
+The newest split persona synthesis is `pr-split-20260516T074802Z-synthesis`;
+its matching feedback-action file is empty.
 It says:
 
 - The split is largely converged but still not filing-ready.
