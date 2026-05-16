@@ -270,6 +270,7 @@ install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-start-remote.sh\" /tmp/st
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-lower-level-start-remote.sh\" /tmp/start_rtc_coverage_guided_lower_level.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-cleanup-remote.sh\" /tmp/cleanup_rtc_coverage_guided_remote.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-watchdog-start-remote.sh\" /tmp/start_rtc_coverage_guided_watchdog_remote.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-resource-autoscaler-remote.sh\" /tmp/start_rtc_resource_autoscaler.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-strict-expansion-start-remote.sh\" /tmp/start_rtc_strict_expansion.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-start-remote.sh\" /tmp/start_rtc_focused_shards.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-cleanup-remote.sh\" /tmp/cleanup_rtc_focused_shards.sh
@@ -298,6 +299,14 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-coverage-guided-watchdog-start-remote.sh` runs
     `rtc-browser-fuzz-session-watchdog.mjs` and restarts the coverage-guided
     session through the stable `/tmp` launchers.
+-   `rtc-resource-autoscaler-remote.sh` watches CPU, memory, requested
+    coverage-guided budget, and browser/e2e materialization. It does not treat
+    requested budget as success unless `supervisor-state.json` shows live run
+    directories or running groups. If the novelty monitor is alive but the
+    supervisor is stale, has zero active run dirs, or all groups are paused on
+    infra startup, it writes
+    `/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/materialization/latest.md`
+    and restarts the coverage-guided path after the remediation cooldown.
 -   `rtc-strict-expansion-start-remote.sh`, `rtc-focused-shards-start-remote.sh`,
     and `rtc-gap-booster-start-remote.sh` start independent fuzz campaigns for
     high-value gaps.
@@ -318,7 +327,8 @@ The remote launchers are intentionally split by ownership:
     let it restart missing sessions instead of manually restarting individual
     fuzzers. The guard supervises coverage-guided, strict-expansion, focused
     shards, the focused gap Codex loop, the fuzz-only assertion loop, the
-    deferred-work promotion loop, and the PR-finalization loop.
+    deferred-work promotion loop, the PR-finalization loop, and the resource
+    autoscaler.
 
 Start or refresh the guard after installing the launchers. `stop` exits the
 guard process after killing its sleeping child, so a refresh should not leave an
@@ -1372,7 +1382,11 @@ explicitly want recheck/repro coverage to affect novelty scoring.
 The novelty status file includes health warnings when enabled profiles do not
 produce ingested coverage or when a profile requests CDP coverage but no CDP
 hashes are observed. Treat those warnings as instrumentation failures before
-making scheduling decisions from novelty counts.
+making scheduling decisions from novelty counts. Also check the resource
+autoscaler status before concluding that CPU headroom means usable browser/e2e
+capacity. A live novelty monitor with `materialized_active_run_dirs: 0`, stale
+`supervisor-state.json`, or nonzero `paused_infra_startup_groups` is a
+materialization failure, not a successful high-level fuzzing run.
 
 The parser-transform lane can produce a high volume of likely-real but
 duplicative failures. In recent runs, the common families were:

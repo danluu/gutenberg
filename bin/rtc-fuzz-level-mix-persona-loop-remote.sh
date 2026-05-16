@@ -717,6 +717,73 @@ else:
         print("- action-needed: semantic novelty is stalled; add feature feedback or oracle classes if the target is still important.")
 PY
     echo
+    echo "## Resource Autoscaler And Browser Materialization"
+    if [ -f /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md ]; then
+      sed -n '1,120p' /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md
+    else
+      echo "No resource-autoscaler-status.md found."
+    fi
+    echo
+    python3 - "$coverage_root" <<'PY'
+import json
+import os
+import sys
+import time
+from datetime import datetime
+from collections import Counter
+
+root = sys.argv[1] if len(sys.argv) > 1 else ""
+state_path = os.path.join(root, "supervisor-state.json") if root else ""
+if not state_path or not os.path.exists(state_path):
+    print("- no current supervisor-state.json found")
+    raise SystemExit
+try:
+    state = json.load(open(state_path))
+except Exception as exc:
+    print(f"- could not read {state_path}: {exc}")
+    raise SystemExit
+groups = state.get("groups") if isinstance(state, dict) else []
+if not isinstance(groups, list):
+    groups = []
+active_dirs = set()
+status_counts = Counter()
+details = []
+for group in groups:
+    if not isinstance(group, dict):
+        continue
+    status = group.get("status") or "unknown"
+    status_counts[status] += 1
+    for run_dir in [group.get("currentRunDir"), *(group.get("activeRunDirs") or [])]:
+        if run_dir:
+            active_dirs.add(run_dir)
+    if status == "paused-infra-startup":
+        details.append(
+            f"{group.get('name')}: {str(group.get('lastReason') or '')[:180]}"
+        )
+updated_raw = state.get("lastUpdatedAt") or state.get("startedAt")
+try:
+    updated = datetime.fromisoformat(str(updated_raw).replace("Z", "+00:00")).timestamp()
+except Exception:
+    updated = None
+age = int(max(0, time.time() - updated)) if updated else "unknown"
+print(f"- supervisor_state: {state_path}")
+print(f"- supervisor_state_age_seconds: {age}")
+print(f"- supervisor_status_counts: {dict(status_counts)}")
+print(f"- materialized_active_run_dirs: {len(active_dirs)}")
+print(f"- paused_infra_startup_groups: {status_counts.get('paused-infra-startup', 0)}")
+if not active_dirs and status_counts.get("paused-infra-startup", 0):
+    print("- ACTION-NEEDED: browser/e2e budget is requested but no supervisor run directories materialized.")
+if isinstance(age, int) and age > 600 and not active_dirs:
+    print("- ACTION-NEEDED: supervisor state is stale while no browser/e2e run directories are active.")
+for detail in details[:8]:
+    print(f"- {detail}")
+PY
+    if [ -f /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/materialization/latest.md ]; then
+      echo
+      echo "### Latest materialization diagnostic"
+      sed -n '1,120p' /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/materialization/latest.md
+    fi
+    echo
     echo "## Latest coverage-guided status"
     if [ -n "$coverage_root" ] && [ -f "$coverage_root/novelty-status.md" ]; then
       tail -220 "$coverage_root/novelty-status.md"
@@ -757,6 +824,8 @@ Read:
 This controller must run continuously. Do not wait for stalls or error conditions. Treat zero active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes as a control decision that needs justification or correction.
 
 Before recommending work, audit the context itself. Treat any TELEMETRY-INVARIANT-FAIL line as the highest-priority bug: the loop must not ask personas to reason from a view that disagrees with tmux, current-run roots, status.tsv, or events.ndjson. A lane merely existing is not enough; evaluate whether its executions, novelty counters, crash/noise counters, and corpus growth are visible and useful.
+
+Also audit materialization. Treat any ACTION-NEEDED line in "Resource Autoscaler And Browser Materialization" as a control-loop failure: requested browser/e2e budget does not count as useful work unless the supervisor has live run directories or running groups. If the novelty monitor is alive but the supervisor is stale or all groups are paused on infra startup, recommend or make the smallest bounded fix that restarts/remediates the materialization path and exposes the failure in the status graph/context.
 
 Also audit runner throughput. Treat any ACTION-NEEDED line in "Runner Throughput Diagnostics" as an actionable loop failure, not background data. A low-level lane that repeatedly launches npm-run-test-unit/Jest per batch, spends most wall time in startup/transforms/coverage setup, or sleeps between batches should either be changed to amortize startup, replaced with a persistent/direct lower-level harness, given a larger useful batch, or explicitly justified with evidence.
 
@@ -850,6 +919,8 @@ $recent
 The controller should not wait for error conditions. If the current mix still has zero active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes, either add or launch the smallest bounded lower-level target with a clear oracle, or write the exact blocker and the next command/code change needed. Do not stop productive browser fuzzing to do this.
 
 If context.md contains TELEMETRY-INVARIANT-FAIL, fix the accounting/context-builder blind spot first, validate by regenerating a context that no longer contradicts live tmux/events, and only then make fuzzing mix changes. If coverage-guided lower-level quality says action-needed, make a concrete guidance-quality improvement or write the exact blocker; do not treat "the lane is running" as success by itself.
+
+If "Resource Autoscaler And Browser Materialization" contains ACTION-NEEDED, fix or restart the materialization path before treating CPU headroom or requested browser budget as success. The acceptable result is current supervisor run directories or a written blocker with the exact failed startup artifact and next remediation command.
 
 If "Runner Throughput Diagnostics" contains ACTION-NEEDED, make a concrete throughput improvement or write the exact blocker and next code change. Examples of acceptable fixes: remove fixed normal-path sleeps, increase batch size when it improves useful executions without hiding crashes, bypass per-batch npm/Jest startup with a direct Node runner, split out an in-process persistent harness, or add telemetry proving the apparent overhead is not actually on the critical path.
 

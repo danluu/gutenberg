@@ -190,6 +190,11 @@ restart_pool() {
 		finalization)
 			/tmp/start_rtc_pr_finalization_loop.sh >> "$LOG_DIR/pr-finalization-start.log" 2>&1 || log "PR finalization loop start failed"
 			;;
+		resource)
+			tmux kill-session -t rtc-resource-autoscaler 2>/dev/null || true
+			tmux new-session -d -s rtc-resource-autoscaler "bash -lc '/tmp/start_rtc_resource_autoscaler.sh >> \"$LOG_DIR/resource-autoscaler-start.log\" 2>&1'" ||
+				log "resource autoscaler start failed"
+			;;
 	esac
 }
 
@@ -262,6 +267,10 @@ run_loop() {
 
 		if ! has_session rtc-pr-finalization-loop; then
 			restart_pool finalization "missing PR finalization loop"
+		fi
+
+		if ! has_session rtc-resource-autoscaler; then
+			restart_pool resource "missing resource autoscaler"
 		fi
 
 		sleep 120 &
