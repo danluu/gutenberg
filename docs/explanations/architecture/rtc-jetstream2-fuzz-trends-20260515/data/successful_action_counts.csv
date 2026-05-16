@@ -56,7 +56,7 @@ delete-nested-block,1352,long-session-large-doc
 append-paragraph,1349,long-session-large-doc
 delete-block,1325,long-session-large-doc
 edit-block-gauntlet-attributes,990,block-gauntlet
-insert-media-cross-entity-block,670,media-cross-entity
+insert-media-cross-entity-block,674,media-cross-entity
 append-parser-stress-content,602,parser-transform
 insert-heading,476,persistence-no-title
 reparse-edited-content,470,parser-transform
@@ -89,14 +89,14 @@ insert-paragraph,216,common-blocks
 delete-block,213,common-blocks
 move-block-into-group,212,common-blocks
 reparse-edited-content,204,block-gauntlet
+edit-block-gauntlet-attributes,204,media-cross-entity
 ui-format-paragraph,200,real-user-editing
-edit-block-gauntlet-attributes,199,media-cross-entity
 move-block,197,parser-transform
 ui-composition-paragraph,179,real-user-editing
 ui-toolbar-format-paragraph,179,real-user-editing
 ui-heading-shortcut,175,real-user-editing
 edit-nested-paragraph,174,common-blocks
-move-block,171,media-cross-entity
+move-block,172,media-cross-entity
 edit-block-gauntlet-attributes,165,common-blocks
 append-paragraph,156,common-blocks
 ui-table-cell-edit,153,real-user-editing
