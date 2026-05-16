@@ -59,14 +59,23 @@ write_duplicate_noise_gate() {
 }
 
 write_live_triage_state_summary() {
+  local coverage_root="$1"
+  local state_files=()
   echo "## Live triage state sample"
   echo
-  find /media/volume/danluu-fuzz-data \
-    -path '*/.triage-watcher/state.json' \
-    -type f \
-    -mmin -240 \
-    2>/dev/null |
-    sort |
+  if [ -n "$coverage_root" ] && [ -f "$coverage_root/.triage-watcher/state.json" ]; then
+    state_files+=( "$coverage_root/.triage-watcher/state.json" )
+  fi
+  for state_file in \
+    /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-*/.triage-watcher/state.json \
+    /media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/runs/*/*/.triage-watcher/state.json \
+    /media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515/runs/*/*/.triage-watcher/state.json \
+    /media/volume/danluu-fuzz-data/rtc-gap-booster-20260515/runs/*/*/.triage-watcher/state.json \
+    /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/*/jobs/outputs/*/coverage/.triage-watcher/state.json; do
+    [ -f "$state_file" ] && state_files+=( "$state_file" )
+  done
+  printf '%s\n' "${state_files[@]}" |
+    sort -u |
     tail -40 |
     while read -r state_file; do
       node - "$state_file" <<'NODE' 2>/dev/null || true
@@ -113,7 +122,7 @@ write_context() {
     echo "- Coverage root: ${coverage_root:-none}"
     echo
     write_duplicate_noise_gate "$coverage_root"
-    write_live_triage_state_summary
+    write_live_triage_state_summary "$coverage_root"
     echo "## Active fuzz repo status"
     echo
     if [ -d "$FUZZ_REPO/.git" ]; then
