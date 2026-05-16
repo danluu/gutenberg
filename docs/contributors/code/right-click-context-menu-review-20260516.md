@@ -14,6 +14,25 @@ The original generated evidence-card screenshots have been removed from this rep
 
 ## Findings
 
+## Actual Playwright Status
+
+These runs used the patched Gutenberg build in wp-admin at `http://localhost:9137` with Playwright driving the real editor UI. Several screenshots contain small Playwright-added evidence overlays after the action; the editor state and network/clipboard data shown in those overlays came from the live browser run.
+
+| Finding | Browser status |
+| --- | --- |
+| Spell check sends selected text to LanguageTool | Confirmed. Actual `Check spelling` sent selected draft text to `https://api.languagetool.org/v2/check`. |
+| Selection range not tied to right-clicked block | Invariant confirmed in the browser with a preserved source range; native Chrome right-click cleared the stale selection in this run. |
+| Paste as new block treats text as RichText HTML | Confirmed. Clipboard plain text rendered as `<strong>` markup in the inserted paragraph. |
+| Split block bypasses locks | Confirmed for `lock.remove`. |
+| Spell check writes only top-level `content` | Source-confirmed; no separate browser screenshot yet. |
+| Split duplicates attributes and trims content | Whitespace trimming confirmed in a Code block. Anchor duplication did not reproduce in the first browser run. |
+| Non-iframed editors can dismiss menu before item click | Blocked: current environment used a block theme with no Customizer widget areas, so the non-iframed widget editor repro did not reach the menu step. |
+| Add block above/below can replace an empty default block | Confirmed. Empty paragraph was replaced by a heading rather than preserving four blocks. |
+| Copy Text writes selected text as `text/html` | Confirmed. The actual clipboard contained the literal selection in both `text/plain` and `text/html`. |
+| Context-menu block copy bypasses wrapper-on-copy behavior | Source-confirmed divergence; no separate browser paste screenshot yet. |
+| Table operations use focused cell, not clicked cell | Not reproduced in Chrome. Right-clicking B2 and deleting the row removed the clicked B row, not the previously focused A row. |
+| Clipboard read fallback misses `readText`-only browsers | Source/fuzz-confirmed; no separate browser-compat screenshot because this Chrome exposes rich clipboard read. |
+
 ### High: spell check sends selected editor text to a hard-coded third-party service
 
 The new spell-check popover hard-codes LanguageTool and posts the selected text to it:
