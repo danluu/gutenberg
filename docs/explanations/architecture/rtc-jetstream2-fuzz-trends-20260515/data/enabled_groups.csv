@@ -513,3 +513,4 @@ timestamp,group,group_family
 2026-05-16T09:34:22Z,novelty-ws-parser-transform,parser
 2026-05-16T09:35:15Z,novelty-http-persistence-probe,persistence
 2026-05-16T09:35:15Z,novelty-ws-parser-transform,parser
+2026-05-16T09:41:45Z,novelty-ws-lifecycle,lifecycle
