@@ -690,3 +690,7 @@ timestamp,group,group_family
 2026-05-16T21:40:11Z,novelty-http-persistence-probe,persistence
 2026-05-16T21:40:11Z,novelty-ws-block-gauntlet,auth/locks
 2026-05-16T21:42:55Z,novelty-ws-persistence-no-title,persistence
+2026-05-16T22:59:32Z,novelty-ws-lifecycle,lifecycle
+2026-05-16T22:59:32Z,novelty-http-persistence-probe,persistence
+2026-05-16T22:59:32Z,novelty-ws-real-user-editing,real-user
+2026-05-16T22:59:32Z,novelty-ws-real-user-rich-text,real-user
