@@ -38,7 +38,7 @@ edit-paragraph,1478,session-lifecycle
 edit-title,1464,session-lifecycle
 edit-nested-paragraph,1455,session-lifecycle
 concurrent-paragraphs,1446,session-lifecycle
-insert-block-gauntlet-block,1437,block-gauntlet
+insert-block-gauntlet-block,1441,block-gauntlet
 insert-heading,1429,session-lifecycle
 move-block,1416,session-lifecycle
 insert-paragraph,1411,long-session-large-doc
@@ -55,7 +55,7 @@ edit-nested-paragraph,1363,long-session-large-doc
 delete-nested-block,1352,long-session-large-doc
 append-paragraph,1349,long-session-large-doc
 delete-block,1325,long-session-large-doc
-edit-block-gauntlet-attributes,993,block-gauntlet
+edit-block-gauntlet-attributes,998,block-gauntlet
 insert-media-cross-entity-block,674,media-cross-entity
 append-parser-stress-content,602,parser-transform
 insert-heading,476,persistence-no-title
@@ -69,16 +69,16 @@ concurrent-paragraphs,430,persistence-no-title
 edit-table-array-attributes,413,persistence-no-title
 ui-type-paragraph,315,real-user-editing
 edit-nested-paragraph,302,block-gauntlet
+delete-nested-block,285,block-gauntlet
 move-block,285,common-blocks
-delete-nested-block,284,block-gauntlet
 insert-paragraph,282,parser-transform
 reload-post-action,275,real-user-editing
-move-block-into-group,263,block-gauntlet
+move-block-into-group,266,block-gauntlet
 move-block,258,block-gauntlet
+edit-common-block-attributes,257,block-gauntlet
 edit-paragraph,256,parser-transform
-edit-common-block-attributes,254,block-gauntlet
 insert-heading,253,parser-transform
-insert-common-block,240,block-gauntlet
+insert-common-block,243,block-gauntlet
 edit-common-block-attributes,233,common-blocks
 insert-common-block,231,common-blocks
 delete-block,229,block-gauntlet
@@ -88,7 +88,7 @@ insert-paragraph,218,common-blocks
 delete-block,218,parser-transform
 delete-block,213,common-blocks
 move-block-into-group,212,common-blocks
-reparse-edited-content,204,block-gauntlet
+reparse-edited-content,205,block-gauntlet
 edit-block-gauntlet-attributes,204,media-cross-entity
 ui-format-paragraph,200,real-user-editing
 move-block,197,parser-transform
