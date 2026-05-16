@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T08:37:20Z`
+Snapshot time: `2026-05-16T08:43:26Z`
 
 Trigger event:
-`duplicate-noise-2026-05-16T08-33-11Z-24`
+`pr-split-2026-05-16T08-42-10Z-20260516T083742Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -18,7 +18,7 @@ Base handoff:
 `docs/explanations/architecture/rtc-likely-real-bug-handoff-20260514.md`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-16T08-33-11Z-24/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-16T08-42-10Z-20260516T083742Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -31,7 +31,7 @@ or the original split merely for continuity.
 ## Executive Status
 
 The current plan is not filing-ready. The latest split persona synthesis,
-`pr-split-20260516T082656Z-synthesis.md`, confirms the active PR 13 status is
+`pr-split-20260516T083742Z-synthesis.md`, confirms the active PR 13 status is
 "tri-split needs repair."
 
 Current PR 13 conclusion:
@@ -60,16 +60,18 @@ Other split decisions from the latest persona analysis:
   evidence-only/deferred.
 
 The next maintainer-facing branch step is already in progress: the latest
-`pr-split-20260516T082656Z-feedback-action.md` launched one bounded PR 13
-identity-first source-retirement adjudication job from the Cycle 110 evidence.
-Do not start broad fuzzing, final-stack fuzzing, reload diagnostics, duplicate
+`pr-split-20260516T083742Z-synthesis.md` says to wait for the already launched
+PR 13 identity-first source-retirement adjudication job. At check time, the
+required `report.md` was still `0` bytes and the tmux session was active. Do
+not start broad fuzzing, final-stack fuzzing, reload diagnostics, duplicate
 tri-split work, a second PR 13 adjudication job, or `PR 6B` replay until that
 job either produces independently green PR 13 filing heads or documents a
-collapsed source-retirement/identity-smear PR.
+collapsed source-retirement/identity-smear PR. If it exits without a usable
+report, rerun that same bounded script exactly once.
 
 ## Latest Branch And Ref Status
 
-The collected remote status input was generated at `2026-05-16T08:37:15Z`.
+The collected remote status input was generated at `2026-05-16T08:43:22Z`.
 
 The fix-planning repo is currently checked out at:
 
@@ -99,7 +101,7 @@ That stack still has modified fuzz harness files and many untracked fuzz and
 analysis scripts. It is active validation infrastructure, not the final PR
 stack.
 
-The branch-link audit was generated at `2026-05-16T08:37:20Z` from fetched
+The branch-link audit was generated at `2026-05-16T08:43:26Z` from fetched
 `danluu` refs. The proposed PR table below uses only rows marked
 `verified-content` as PR-content links, or explicitly says
 `No verified branch link yet`.
@@ -154,7 +156,7 @@ final validation.
 | PR 11 | Explicit-base top-level block operations | [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr11-explicit-base-top-level-ops) | 2 | +1145 / -4 | stacked on PR 10 |
 | PR 12 | Previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr12-previous-local-cache-top-level-ops) | 2 | +1391 / -5 | verified branch; final export/rebase still required |
 | PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 | +1151 / -25 | repaired first PR 13 head |
-| PR 13B0 | Identity-smear/provenance guard before source retirement | No verified branch link yet | TBD | TBD | preferred repair step after PR 13A; Cycle 112 adjudication job launched, and any filed head must pass focused CRDT tests |
+| PR 13B0 | Identity-smear/provenance guard before source retirement | No verified branch link yet | TBD | TBD | preferred repair step after PR 13A; Cycle 112 adjudication job is active, report still pending, and any filed head must pass focused CRDT tests |
 | PR 13B1 | Direct cross-parent source retirement | No verified branch link yet | 2 | about +484 / -0 | do not file current failed subhead; repair/adjudicate with focused CRDT tests |
 | PR 13B2 | Current-only cross-parent source retirement | No verified branch link yet | 2 | about +412 / -4 | do not file current failed subhead; repair/adjudicate with focused CRDT tests |
 | PR 13B3 | Explicit-base source retirement | No verified branch link yet | 2 | about +778 / -2 | do not file current failed subhead; repair/adjudicate with focused CRDT tests |
@@ -181,7 +183,7 @@ Old verified branches that are now prior art only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-16T08:37:15Z
+collected_at_utc: 2026-05-16T08:43:22Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T080053Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -190,21 +192,21 @@ fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 Latest novelty monitor snapshot:
 
 ```text
-updated: 2026-05-16T08:35:48.572Z
-coverage files: 27453
-total records seen: 40309
-records processed this pass: 51
-coverage lines seen this pass: 41646
+updated: 2026-05-16T08:42:08.663Z
+coverage files: 27570
+total records seen: 40482
+records processed this pass: 54
+coverage lines seen this pass: 41831
 summary files read this pass: 7
 summary startup failures processed this pass: 0
-new behavioral feature keys this pass: 10
-new CDP coverage hashes this pass: 10
+new behavioral feature keys this pass: 4
+new CDP coverage hashes this pass: 4
 unmet goals: 9
 likely-real visible: 0
 likely-real merged duplicates: 0
 likely-real oracle/noise questions: 0
-load1: 57.54 / 64 cores
-memory: 419.4G free / 492.0G total
+load1: 63.48 / 64 cores
+memory: 419.7G free / 492.0G total
 headroom for adding groups: yes
 ```
 
@@ -254,47 +256,48 @@ top semantic family: pre_action_bootstrap_stall
 external live sidecar scope:
 triage roots: 3
 triage state files: 98
-signatures: 9530
-bootstrap stalls: 7002
-top duplicate family share: 0.7192
+signatures: 9617
+bootstrap stalls: 7058
+top duplicate family share: 0.7185
 top semantic family: pre_action_bootstrap_stall
 
 combined reporting scope:
 triage roots: 101
 triage state files: 253
-signatures: 18331
-bootstrap stalls: 11211
-top duplicate family share: 0.5982
+signatures: 18418
+bootstrap stalls: 11267
+top duplicate family share: 0.5984
 top semantic family: pre_action_bootstrap_stall
 ```
 
-The trend evidence packet was generated at `2026-05-16T08:26:39Z` from monitor
-data through `2026-05-16T08:25:20Z`. It supports continuing coverage progress
+The trend evidence packet was generated at `2026-05-16T08:40:07Z` from monitor
+data through `2026-05-16T08:37:54Z`. It supports continuing coverage progress
 with no visible likely-real failures so far:
 
 ```text
-monitor passes: 1371
-coverage files: 272 -> 27251
-coverage files delta: 26979
+monitor passes: 1377
+coverage files: 272 -> 27495
+coverage files delta: 27223
 unmet coverage goals: 24 -> 9
 likely_real_max: 0
 duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.4672
 summary_startup_failures_last: 0
+quality_issues_last: 0
 fuzz level mix: browser-e2e=31 lanes/31 groups; transport-integration=1 lane/1 group
 ```
 
 Largest current unmet goals in the trend packet:
 
-- CDP coverage records: `4328/5000`
-- successful real-user-editing records: `255/500`
-- `core/html`: `314/500`
-- `core/details`: `350/500`
-- `core/more`: `358/500`
-- `ui-heading-shortcut`: `390/500`
-- `reload-post-action`: `410/500`
-- `core/gallery`: `455/500`
-- real-user body save/reload template: `186/200`
+- CDP coverage records: `4382/5000`
+- successful real-user-editing records: `258/500`
+- `core/html`: `318/500`
+- `core/details`: `353/500`
+- `core/more`: `362/500`
+- `ui-heading-shortcut`: `399/500`
+- `reload-post-action`: `418/500`
+- `core/gallery`: `459/500`
+- real-user body save/reload template: `190/200`
 
 This fuzz status is health and coverage-depth evidence for the active
 validation infrastructure. It is not final-stack validation and does not make
@@ -319,11 +322,11 @@ PR 13 repair-missing language, separate current-run fuzz health from historical
 noise, keep evidence-only families out of the split, and make filing gates
 explicit. Some older status-analysis details are stale, including the claim
 that only an HTTP persistence probe was enabled; the raw
-`2026-05-16T08:35:48Z` novelty snapshot is the source for the current enabled
+`2026-05-16T08:42:08Z` novelty snapshot is the source for the current enabled
 WS groups and current triage status.
 
 The newest split persona synthesis is
-`pr-split-20260516T082656Z-synthesis.md`. It says:
+`pr-split-20260516T083742Z-synthesis.md`. It says:
 
 - The split needs a change and is not filing-ready.
 - The old aggregate `final/rtc-pr13b-source-retirement` must not be filed.
@@ -338,9 +341,11 @@ The newest split persona synthesis is
 - PR 8 must be narrowed around `origin/try/rtc-title-reload-pr`.
 - PR 6B and reload/pre-save/rich-text/HTTP residuals remain deferred until
   focused evidence lands.
+- The active PR 13 adjudication job's `report.md` was still `0` bytes and the
+  tmux session was active; launch no duplicate work.
 
-The matching latest pr-split feedback-action,
-`pr-split-20260516T082656Z-feedback-action.md`, is now actionable. It updated
+The latest pr-split feedback-action remains
+`pr-split-20260516T082656Z-feedback-action.md`. It updated
 `current-pr-split.md` with Cycle 112 status, marked the Cycle 108/110
 `PR 13B1/13B2/13B3` tri-split as red candidate evidence rather than
 filing-ready content, and launched exactly one bounded job:
@@ -356,30 +361,35 @@ or an explicit collapse decision. No broad fuzz, final-stack fuzz, reload
 diagnostics, duplicate tri-split shaping, or `PR 6B` replay was launched.
 
 The newest duplicate-noise synthesis is
-`duplicate-noise-20260516T081555Z-synthesis.md`. It changes no product PR
-validation status. Its consensus is that the remaining duplicate/noise issue is
-mostly control-plane mismatch:
+`duplicate-noise-20260516T083311Z-synthesis.md`. It changes no product PR
+validation status. Its consensus is that duplicate/noise remains a
+control-plane admission problem, not evidence that product fixes should move
+into the PR split:
 
-- Current-run live triage is effectively absent or broken, including invalid
-  generated shell loops in the live-analysis command builder.
-- The triage watcher should suppress or canonicalize strict no-user/no-action
-  pre-action bootstrap stalls before Codex/deep analysis sees them.
-- Live-analysis startup should be gated on non-suppressed launchable
-  candidates.
-- Supervisor startup-stall handling should use a dominance/rate guard while
-  preserving real product failures.
+- Add strict no-product-evidence startup-noise helpers in the triage watcher
+  before expensive analysis launch.
+- Aggregate or mark exact pre-action bootstrap/awareness startup noise instead
+  of creating one analysis job per duplicate signature.
+- Update the analysis tier to skip new known-noise statuses and cap by
+  semantic family, not only fine `familyKey`.
+- Align supervisor/novelty startup accounting so paired primary attempt rows
+  are not counted as "other" when they are strict startup failures.
+- Fix the live-analysis monitor shell loop construction that can emit invalid
+  `do;` syntax.
+- Validate gate-only against noisy sidecar generations, then restart affected
+  sidecars with low analysis fanout.
 - Do not suppress late-session stalls, post-action failures, assertions,
   non-convergence, operation-witness issues, persistence/save/title/content
   failures, unknowns after user activity, or non-exact REST/meta cases.
 
-The matching duplicate-noise feedback-action updated only
+The latest completed duplicate-noise feedback-action updated only
 `bin/rtc-browser-fuzz-supervisor.mjs` in the remote fuzz repo, adding a
 conservative mixed-lane startup-stall dominance/rate gate while preserving
 product-evidence visibility. `node --check bin/rtc-browser-fuzz-supervisor.mjs`
 passed, the coverage-guided supervisor was restarted, and the active state shows
 `strictStartupRecords`, `productEvidenceRecords`, `otherRecords`, and
 `strictStartupRecordShare`. Current-run triage is still absent
-(`signatures=0` in the `08:35:48Z` novelty snapshot), and external live sidecar
+(`signatures=0` in the `08:42:08Z` novelty snapshot), and external live sidecar
 noise remains advisory.
 
 This control-plane work is useful, but it is not a substitute for PR 13 repair,
@@ -427,5 +437,7 @@ novelty snapshot has `0` visible likely-real failures, `9` unmet goals,
 `7` enabled WS coverage-guided groups, no paused groups, and headroom for
 adding groups, but none of this is broad final-stack coverage or PR-filing
 validation. Do not add more groups solely because the latest snapshot reports
-headroom; PR 13 repair and a rebased combined stack still gate broad final-stack
-fuzzing.
+headroom; the monitor is also holding open-ended coverage Codex while
+current-run triage has no state files and historical known-noise dominates
+observed triage. PR 13 repair and a rebased combined stack still gate broad
+final-stack fuzzing.
