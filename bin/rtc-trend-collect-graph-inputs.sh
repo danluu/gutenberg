@@ -205,6 +205,8 @@ def infer_fuzz_level(group, campaign):
 	text = " ".join([name, transport, profile, campaign.lower()])
 	if "fuzz-only" in text or "assert" in text:
 		return "fuzz-assertion"
+	if "libfuzzer" in text or "lib-fuzzer" in text or "afl" in text or "coverage-guided-lower" in text:
+		return "coverage-guided-lower-level"
 	if "unit" in text or "property" in text or "jest" in text:
 		return "unit-property"
 	if "php" in text or "rest" in text or "backend" in text:

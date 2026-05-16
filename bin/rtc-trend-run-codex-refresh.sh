@@ -43,7 +43,7 @@ Required work:
 5. Update docs/explanations/architecture/rtc-jetstream2-fuzz-trend-analysis-20260515.md so the status and interpretation reflect the refreshed graph data and the standard persona-loop feedback. Keep it concise and concrete. If the feedback rejects a graph interpretation, say that in the report.
    Preserve the suggested-PR net LOC graph section when data/pr_suggested_net_loc.csv, plots/pr-suggested-total-net-loc-over-time.png, and plots/pr-suggested-net-loc-by-pr-over-time.png are present; update its latest total and largest rows from the refreshed CSV.
    Preserve the load-average graph section when data/load_average.csv and plots/load-average-over-time.png are present.
-   Preserve the fuzzing-level mix section when data/fuzz_level_mix.csv and plots/fuzz-level-mix-over-time.png are present. Explicitly note whether live fuzzing is concentrated in browser/e2e lanes or whether lower-level targets such as transport-integration, unit-property, backend-api, protocol-server, or fuzz-only assertion work are active.
+   Preserve the fuzzing-level mix section when data/fuzz_level_mix.csv and plots/fuzz-level-mix-over-time.png are present. Explicitly note whether live fuzzing is concentrated in browser/e2e lanes or whether lower-level targets such as transport-integration, unit-property, coverage-guided-lower-level, backend-api, protocol-server, or fuzz-only assertion work are active.
 6. Run:
    $OPS_DIR/generate-trend-evidence.sh
    $OPS_DIR/publish-trend-evidence.sh

@@ -127,6 +127,9 @@ next useful work belongs at one of these levels:
     exercise WordPress services but avoid full UI breadth.
 -   `unit-property`: seeded Jest/property checks for CRDT, parser,
     serialization, rich-text, and selection logic.
+-   `coverage-guided-lower-level`: libFuzzer/AFL-style in-process harnesses, or
+    equivalent JS/PHP coverage-guided loops, for isolated parser,
+    serialization, rich-text, CRDT, sync-message, or API codec logic.
 -   `backend-api`: PHP or REST/API checks for post locks, autosaves,
     revisions, permissions, nonces, and entity persistence.
 -   `protocol-server`: sync server, provider, and message-ordering checks.
@@ -137,9 +140,11 @@ The focused gap Codex loop is responsible for making this decision whenever it
 runs. It should not automatically start a broad new campaign; the default
 action is a bounded lower-level target with a clear oracle, or a group-policy
 change that shifts a small amount of work from over-saturated levels to the
-blocked one. The trend graph report includes the observed level mix over time so
-reviewers can see whether all live work is still concentrated in browser/e2e
-lanes.
+blocked one. When lower-level code can be isolated enough to run in process, the
+loop should explicitly consider libFuzzer-style coverage guidance before
+settling for random seed replay. The trend graph report includes the observed
+level mix over time so reviewers can see whether all live work is still
+concentrated in browser/e2e lanes.
 
 The graph refresh watcher uses `bin/rtc-trend-collect-graph-inputs.sh` to copy
 supervisor group history from Jetstream and write

@@ -167,7 +167,7 @@ lines += [
 	"## Interpretation To Challenge",
 	"- Treat current-run duplicate/noise and current summary startup failures separately from historical aggregate duplicate/noise.",
 	"- Prioritize completion-depth fixes for profiles with many records but low success rate before adding another broad class of actions.",
-	"- Challenge whether the current fuzzing level mix is too browser/e2e-heavy. If it is, propose a bounded lower-level target with a clear oracle instead of merely adding more browser lanes.",
+	"- Challenge whether the current fuzzing level mix is too browser/e2e-heavy. If it is, propose a bounded lower-level target with a clear oracle instead of merely adding more browser lanes; explicitly consider libFuzzer/AFL-style coverage-guided lower-level fuzzing where code can be isolated enough to make it useful.",
 	"- If CPU is already high, prefer guarded top-offs and startup-stall reduction over simply increasing browser concurrency.",
 	"- Reject or qualify any of the above if the latest persona reports or current logs contradict it.",
 ]
