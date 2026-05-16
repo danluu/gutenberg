@@ -12,6 +12,7 @@ suppressPackageStartupMessages({
 	library(scales)
 	library(tibble)
 	library(purrr)
+	library(grid)
 })
 
 root <- getwd()
@@ -30,6 +31,8 @@ loop_path <- file.path( raw_dir, "pr-split-loop.log" )
 state_path <- file.path( raw_dir, "novelty-state.json" )
 cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
 activity_path <- file.path( data_dir, "project_activity.csv" )
+status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
+status_report_path <- file.path( root, status_report_rel )
 
 stopifnot( file.exists( monitor_path ) )
 stopifnot( file.exists( loop_path ) )
@@ -84,6 +87,148 @@ parse_utc_timestamp <- function( timestamp ) {
 		return( with_tz( timestamp, "UTC" ) )
 	}
 	ymd_hms( timestamp, tz = "UTC" )
+}
+
+parse_status_snapshot_time <- function( lines, fallback ) {
+	snapshot <- str_match( lines, "^Snapshot time: `([^`]+)`" )[ , 2 ]
+	snapshot <- snapshot[ ! is.na( snapshot ) ][ 1 ]
+	if ( is.na( snapshot ) || length( snapshot ) == 0 ) {
+		return( fallback )
+	}
+	parsed <- ymd_hms( snapshot, tz = "UTC", quiet = TRUE )
+	if ( is.na( parsed ) ) {
+		return( fallback )
+	}
+	parsed
+}
+
+extract_markdown_section <- function( lines, heading ) {
+	start <- which( lines == heading )[ 1 ]
+	if ( is.na( start ) ) {
+		return( character() )
+	}
+	next_heading <- which( seq_along( lines ) > start & str_detect( lines, "^## " ) )[ 1 ]
+	end <- if ( is.na( next_heading ) ) length( lines ) else next_heading - 1
+	lines[ start:end ]
+}
+
+parse_pr_split_table <- function( lines, commit, commit_time ) {
+	section <- extract_markdown_section( lines, "## Proposed PR Split" )
+	if ( length( section ) == 0 ) {
+		return( tibble() )
+	}
+
+	table_lines <- section[ str_detect( section, "^\\| PR" ) ]
+	if ( length( table_lines ) < 2 ) {
+		return( tibble() )
+	}
+
+	header <- table_lines[ 1 ] %>%
+		str_remove_all( "^\\||\\|$" ) %>%
+		str_split( "\\|", simplify = TRUE ) %>%
+		as.character() %>%
+		str_trim()
+
+	rows <- table_lines[ -1 ]
+	rows <- rows[ ! str_detect( rows, "^\\|\\s*---" ) ]
+	if ( length( rows ) == 0 ) {
+		return( tibble() )
+	}
+
+	diff_idx <- match( "Diff", header )
+	pr_idx <- match( "PR", header )
+	scope_idx <- match( "Scope", header )
+	files_idx <- match( "Files", header )
+	status_idx <- match( "Current status", header )
+	if ( any( is.na( c( diff_idx, pr_idx ) ) ) ) {
+		return( tibble() )
+	}
+
+	snapshot_time <- parse_status_snapshot_time( lines, commit_time )
+
+	map_dfr( rows, function( row ) {
+		cells <- row %>%
+			str_remove_all( "^\\||\\|$" ) %>%
+			str_split( "\\|", simplify = TRUE ) %>%
+			as.character() %>%
+			str_trim()
+		if ( length( cells ) < max( diff_idx, pr_idx ) ) {
+			return( tibble() )
+		}
+		diff <- cells[ diff_idx ]
+		diff_match <- str_match( diff, "\\+([0-9,]+)\\s*/\\s*-([0-9,]+)" )
+		if ( any( is.na( diff_match[ 1, 2:3 ] ) ) ) {
+			return( tibble() )
+		}
+		additions <- as.numeric( str_remove_all( diff_match[ 1, 2 ], "," ) )
+		deletions <- as.numeric( str_remove_all( diff_match[ 1, 3 ], "," ) )
+		files <- if ( ! is.na( files_idx ) && length( cells ) >= files_idx ) {
+			as.numeric( str_remove_all( cells[ files_idx ], "[^0-9]" ) )
+		} else {
+			NA_real_
+		}
+		tibble(
+			timestamp = snapshot_time,
+			commit = commit,
+			pr = cells[ pr_idx ],
+			scope = if ( ! is.na( scope_idx ) && length( cells ) >= scope_idx ) cells[ scope_idx ] else NA_character_,
+			files = files,
+			additions = additions,
+			deletions = deletions,
+			net_loc = additions - deletions,
+			status = if ( ! is.na( status_idx ) && length( cells ) >= status_idx ) cells[ status_idx ] else NA_character_
+		)
+	} )
+}
+
+status_report_history <- function() {
+	if ( ! file.exists( status_report_path ) ) {
+		return( tibble() )
+	}
+
+	log_output <- tryCatch(
+		system2(
+			"git",
+			c( "log", "--follow", "--format=%H%x09%cI", "--", status_report_rel ),
+			stdout = TRUE,
+			stderr = FALSE
+		),
+		error = function( e ) character()
+	)
+	if ( length( log_output ) == 0 ) {
+		return( parse_pr_split_table( read_lines( status_report_path, progress = FALSE ), "working-tree", now( tzone = "UTC" ) ) )
+	}
+
+	entries <- tibble( raw = rev( log_output ) ) %>%
+		separate( raw, into = c( "commit", "commit_time_raw" ), sep = "\t", extra = "merge", fill = "right" ) %>%
+		mutate( commit_time = ymd_hms( commit_time_raw, tz = "UTC", quiet = TRUE ) ) %>%
+		filter( ! is.na( commit ), commit != "" )
+
+	history <- map_dfr( seq_len( nrow( entries ) ), function( index ) {
+		commit <- entries$commit[ index ]
+		content <- tryCatch(
+			system2( "git", c( "show", paste0( commit, ":", status_report_rel ) ), stdout = TRUE, stderr = FALSE ),
+			error = function( e ) character()
+		)
+		if ( length( content ) == 0 ) {
+			return( tibble() )
+		}
+		parse_pr_split_table( content, commit, entries$commit_time[ index ] )
+	} )
+
+	current <- parse_pr_split_table( read_lines( status_report_path, progress = FALSE ), "working-tree", now( tzone = "UTC" ) )
+	if ( nrow( current ) > 0 ) {
+		latest_commit <- tail( unique( history$commit ), 1 )
+		latest_snapshot <- if ( nrow( history ) > 0 ) max( history$timestamp, na.rm = TRUE ) else as.POSIXct( NA )
+		if ( is.na( latest_snapshot ) || max( current$timestamp, na.rm = TRUE ) > latest_snapshot || latest_commit != "working-tree" ) {
+			history <- bind_rows( history, current )
+		}
+	}
+
+	history %>%
+		filter( ! is.na( timestamp ), ! is.na( net_loc ) ) %>%
+		distinct( timestamp, pr, additions, deletions, net_loc, .keep_all = TRUE ) %>%
+		arrange( timestamp, pr )
 }
 
 named_number_frame <- function( values, name_col, value_col ) {
@@ -303,6 +448,9 @@ feedback_durations <- pr_events %>%
 write_csv( pr_events, file.path( data_dir, "pr_review_events.csv" ) )
 write_csv( review_durations, file.path( data_dir, "pr_review_durations.csv" ) )
 write_csv( feedback_durations, file.path( data_dir, "pr_feedback_durations.csv" ) )
+
+pr_suggested_loc <- status_report_history()
+write_csv( pr_suggested_loc, file.path( data_dir, "pr_suggested_net_loc.csv" ) )
 
 coverage_long <- monitor %>%
 	select( timestamp, coverage_files, unmet_coverage ) %>%
@@ -728,6 +876,59 @@ if ( nrow( duration_plot ) > 0 ) {
 	)
 }
 
+if ( nrow( pr_suggested_loc ) > 0 ) {
+	pr_suggested_total <- pr_suggested_loc %>%
+		group_by( timestamp, commit ) %>%
+		summarise(
+			pr = "total suggested PR set",
+			scope = "total",
+			files = sum( files, na.rm = TRUE ),
+			additions = sum( additions, na.rm = TRUE ),
+			deletions = sum( deletions, na.rm = TRUE ),
+			net_loc = sum( net_loc, na.rm = TRUE ),
+			status = NA_character_,
+			.groups = "drop"
+		)
+
+	pr_suggested_plot <- bind_rows(
+		pr_suggested_loc %>% mutate( series_type = "per PR" ),
+		pr_suggested_total %>% mutate( series_type = "total" )
+	) %>%
+		mutate(
+			series_label = if_else( series_type == "total", "total suggested PR set", pr ),
+			series_label = factor( series_label, levels = rev( unique( series_label[ order( series_type, net_loc ) ] ) ) )
+		)
+
+	write_plot(
+		"pr-suggested-net-loc-over-time.png",
+		ggplot( pr_suggested_plot, aes( x = timestamp, y = series_label, color = net_loc, size = abs( net_loc ) ) ) +
+			geom_point( alpha = 0.76 ) +
+			facet_grid( vars( series_type ), scales = "free_y", space = "free_y" ) +
+			scale_color_distiller( palette = "RdYlBu", direction = -1, labels = comma, breaks = pretty_breaks( n = 4 ) ) +
+			scale_size_continuous( labels = comma, range = c( 1.4, 7.5 ) ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
+			labs(
+				title = "Suggested PR net LOC over time",
+				x = "UTC snapshot time",
+				y = NULL,
+				color = "net LOC",
+				size = "absolute net LOC",
+				caption = "Net LOC is additions minus deletions parsed from the Proposed PR Split table in each status-report snapshot. The total row sums current suggested PR rows, so split changes can move the total."
+			) +
+			theme_rtc() +
+			guides(
+				color = guide_colorbar( title.position = "top", barwidth = unit( 6, "cm" ), barheight = unit( 0.35, "cm" ) ),
+				size = guide_legend( title.position = "top", nrow = 1 )
+			) +
+			theme(
+				legend.box = "vertical",
+				strip.placement = "outside"
+			),
+		width = 11,
+		height = 8
+	)
+}
+
 summary_lines <- c(
 	paste0( "generated_at_utc: ", format( with_tz( now(), "UTC" ), "%Y-%m-%dT%H:%M:%SZ" ) ),
 	paste0( "monitor_passes: ", nrow( monitor ) ),
@@ -746,7 +947,9 @@ summary_lines <- c(
 	paste0( "profiles_seen: ", nrow( profile_counts ) ),
 	paste0( "goals_total: ", nrow( coverage_goals ) ),
 	paste0( "goals_unmet: ", sum( ! coverage_goals$met ) ),
-	paste0( "pr_review_events: ", nrow( pr_events ) )
+	paste0( "pr_review_events: ", nrow( pr_events ) ),
+	paste0( "pr_suggested_net_loc_snapshots: ", n_distinct( pr_suggested_loc$timestamp ) ),
+	paste0( "pr_suggested_net_loc_latest_total: ", ifelse( nrow( pr_suggested_loc ) > 0, pr_suggested_loc %>% filter( timestamp == max( timestamp, na.rm = TRUE ) ) %>% summarise( total = sum( net_loc, na.rm = TRUE ) ) %>% pull( total ), NA ) )
 )
 
 write_lines( summary_lines, file.path( data_dir, "summary.txt" ) )

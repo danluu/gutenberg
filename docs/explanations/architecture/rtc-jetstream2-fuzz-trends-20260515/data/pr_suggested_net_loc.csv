@@ -1,0 +1,305 @@
+timestamp,commit,pr,scope,files,additions,deletions,net_loc,status
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 1,HTTP polling generated update size guard,2,181,19,162,fix branch exists
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 11,Explicit-base top-level block operations,2,1190,16,1174,stacked CRDT review unit
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 12,Previous-local-cache top-level block operations,2,833,6,827,stacked CRDT review unit
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 13A,Observed-delete top-level provenance,2,1171,21,1150,repaired/source-verified head exists
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 13B,Cross-parent source retirement,2,1687,0,1687,repaired/source-verified head exists
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 13C,Stale block identity smear guard,2,470,39,431,repaired/source-verified head exists
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 14,Table body nested array merge,2,294,18,276,fix branch exists
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 2,HTTP polling storage read window,2,57,5,52,fix branch exists
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 3,Revision restore CRDT meta reset,2,58,5,53,fix branch exists
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,fix branch exists
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 5,Parser/entity normalization equivalence,4,1680,68,1612,split if reviewers prefer
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 8,Reload title and persisted-record hydration,11,618,61,557,compare with `try/rtc-title-reload-pr`; does not claim empty-live-editor
+2026-05-16T03:58:19Z,f6cfe1eb9f12443c0c3be7262eca6096aaa93214,PR 9,Core-data lock fairness,2,185,2,183,fix branch exists
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 1,HTTP polling generated update size guard,2,181,19,162,fix branch exists
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 11,Explicit-base top-level block operations,2,1190,16,1174,stacked CRDT review unit
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 12,Previous-local-cache top-level block operations,2,833,6,827,stacked CRDT review unit
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 13A,Observed-delete top-level provenance,2,1171,21,1150,repaired/source-verified head exists
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 13B,Cross-parent source retirement,2,1687,0,1687,repaired/source-verified head exists
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 13C,Stale block identity smear guard,2,470,39,431,repaired/source-verified head exists
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 14,Table body nested array merge,2,294,18,276,fix branch exists
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 2,HTTP polling storage read window,2,57,5,52,fix branch exists
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 3,Revision restore CRDT meta reset,2,58,5,53,fix branch exists
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,fix branch exists
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 5,Parser/entity normalization equivalence,4,1680,68,1612,split if reviewers prefer
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 8,Reload title and persisted-record hydration,11,618,61,557,compare with `try/rtc-title-reload-pr`; does not claim empty-live-editor
+2026-05-16T04:02:20Z,7b7f7b56ce19d7f53fbad459b6ff3c8d7514f08d,PR 9,Core-data lock fairness,2,185,2,183,fix branch exists
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 1,HTTP polling generated update size guard,2,181,19,162,fix branch exists
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 11,Explicit-base top-level block operations,2,1190,16,1174,stacked CRDT review unit
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 12,Previous-local-cache top-level block operations,2,833,6,827,stacked CRDT review unit
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 13A,Observed-delete top-level provenance,2,1171,21,1150,repaired/source-verified head exists
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 13B,Cross-parent source retirement,2,1687,0,1687,repaired/source-verified head exists
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 13C,Stale block identity smear guard,2,470,39,431,repaired/source-verified head exists
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 14,Table body nested array merge,2,294,18,276,fix branch exists
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 2,HTTP polling storage read window,2,57,5,52,fix branch exists
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 3,Revision restore CRDT meta reset,2,58,5,53,fix branch exists
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,fix branch exists
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 5,Parser/entity normalization equivalence,4,1680,68,1612,split if reviewers prefer
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 8,Reload title and persisted-record hydration,11,618,61,557,compare with `try/rtc-title-reload-pr`; does not claim empty-live-editor
+2026-05-16T04:09:09Z,bb9c8d93252dcda74da03dbb6504b7471a2c9f6c,PR 9,Core-data lock fairness,2,185,2,183,fix branch exists
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 1,HTTP polling generated update size guard,2,181,19,162,fix branch exists
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 11,Explicit-base top-level block operations,2,1190,16,1174,stacked CRDT review unit
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 12,Previous-local-cache top-level block operations,2,833,6,827,stacked CRDT review unit
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 13A,Observed-delete top-level provenance,2,1171,21,1150,repaired/source-verified head exists
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 13B,Cross-parent source retirement,2,1687,0,1687,repaired/source-verified head exists
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 13C,Stale block identity smear guard,2,470,39,431,repaired/source-verified head exists
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 14,Table body nested array merge,2,294,18,276,fix branch exists
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 2,HTTP polling storage read window,2,57,5,52,fix branch exists
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 3,Revision restore CRDT meta reset,2,58,5,53,fix branch exists
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,fix branch exists
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 5,Parser/entity normalization equivalence,4,1680,68,1612,split if reviewers prefer
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 8,Reload title and persisted-record hydration,11,618,61,557,compare with `try/rtc-title-reload-pr`; does not claim empty-live-editor
+2026-05-16T04:13:09Z,edb344c3cf0cb0efb32be1351560c6090316862f,PR 9,Core-data lock fairness,2,185,2,183,fix branch exists
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 1,HTTP polling generated update size guard,2,181,19,162,fix branch exists
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 11,Explicit-base top-level block operations,2,1190,16,1174,stacked CRDT review unit
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 12,Previous-local-cache top-level block operations,2,833,6,827,stacked CRDT review unit
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 13A,Observed-delete top-level provenance,2,1171,21,1150,repaired/source-verified head exists
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 13B,Cross-parent source retirement,2,1687,0,1687,repaired/source-verified head exists
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 13C,Stale block identity smear guard,2,470,39,431,repaired/source-verified head exists
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 14,Table body nested array merge,2,294,18,276,fix branch exists
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 2,HTTP polling storage read window,2,57,5,52,fix branch exists
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 3,Revision restore CRDT meta reset,2,58,5,53,fix branch exists
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,fix branch exists
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 5,Parser/entity normalization equivalence,4,1680,68,1612,split if reviewers prefer
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 8,Reload title and persisted-record hydration,11,618,61,557,compare with `try/rtc-title-reload-pr`; does not claim empty-live-editor
+2026-05-16T04:16:28Z,299a38dd5d8270d5f5fe79e5bd5e2d9eca917b10,PR 9,Core-data lock fairness,2,185,2,183,fix branch exists
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 1,HTTP polling generated update size guard,2,181,19,162,fix branch exists
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 11,Explicit-base top-level block operations,2,1190,16,1174,stacked CRDT review unit
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 12,Previous-local-cache top-level block operations,2,833,6,827,stacked CRDT review unit
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 13A,Observed-delete top-level provenance,2,1171,21,1150,repaired/source-verified head exists
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 13B,Cross-parent source retirement,2,1687,0,1687,repaired/source-verified head exists
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 13C,Stale block identity smear guard,2,470,39,431,repaired/source-verified head exists
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 14,Table body nested array merge,2,294,18,276,fix branch exists
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 2,HTTP polling storage read window,2,57,5,52,fix branch exists
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 3,Revision restore CRDT meta reset,2,58,5,53,fix branch exists
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,fix branch exists
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 5,Parser/entity normalization equivalence,4,1680,68,1612,split if reviewers prefer
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 8,Reload title and persisted-record hydration,11,618,61,557,compare with `try/rtc-title-reload-pr`; does not claim empty-live-editor
+2026-05-16T04:21:35Z,6ae3db1ed60e4c82911e26b91a59f972227ebb38,PR 9,Core-data lock fairness,2,185,2,183,fix branch exists
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 1,HTTP polling generated update size guard,2,181,19,162,fix branch exists
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 11,Explicit-base top-level block operations,2,1190,16,1174,stacked CRDT review unit
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 12,Previous-local-cache top-level block operations,2,833,6,827,stacked CRDT review unit
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 13A,Observed-delete top-level provenance,2,1171,21,1150,repaired/source-verified head exists
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 13B,Cross-parent source retirement,2,1687,0,1687,repaired/source-verified head exists
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 13C,Stale block identity smear guard,2,470,39,431,repaired/source-verified head exists
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 14,Table body nested array merge,2,294,18,276,fix branch exists
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 2,HTTP polling storage read window,2,57,5,52,fix branch exists
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 3,Revision restore CRDT meta reset,2,58,5,53,fix branch exists
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,fix branch exists
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 5,Parser/entity normalization equivalence,4,1680,68,1612,split if reviewers prefer
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 8,Reload title and persisted-record hydration,11,618,61,557,compare with `try/rtc-title-reload-pr`; does not claim empty-live-editor
+2026-05-16T04:24:39Z,9ab8525153a23f9e59bd99e1375afd8bfbedd8a9,PR 9,Core-data lock fairness,2,185,2,183,fix branch exists
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 1,HTTP polling generated update size guard,2,181,19,162,verified GitHub branch
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 11,Explicit-base top-level block operations,2,1145,4,1141,stacked on PR 10
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified content branch; final export/rebase still required
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,corrected repaired review branch
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 13B,Cross-parent source retirement,2,1672,4,1668,corrected repaired review branch
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 13C,Stale block identity smear guard,2,345,51,294,corrected repaired review branch
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 14,Table body nested array merge,2,294,18,276,verified GitHub branch
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 2,HTTP polling storage read window,2,57,5,52,verified GitHub branch
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified GitHub branch
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified GitHub branch
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 5,Parser/entity normalization equivalence,4,1664,52,1612,split if reviewers prefer
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 8,Reload title and persisted-record hydration,11,618,61,557,does not claim empty-live-editor
+2026-05-16T04:35:11Z,c22431e7476ce0c1d61a9a73f65dd2cf473bf596,PR 9,Core-data lock fairness,2,185,2,183,verified GitHub branch
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 1,HTTP polling generated update size guard,2,181,19,162,verified GitHub branch
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 11,Explicit-base top-level block operations,2,1145,4,1141,stacked on PR 10
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified content branch; final export/rebase still required
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,corrected repaired review branch
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 13B,Cross-parent source retirement,2,1672,4,1668,corrected repaired review branch
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 13C,Stale block identity smear guard,2,345,51,294,corrected repaired review branch
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 14,Table body nested array merge,2,294,18,276,verified GitHub branch
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 2,HTTP polling storage read window,2,57,5,52,verified GitHub branch
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified GitHub branch
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified GitHub branch
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 5,Parser/entity normalization equivalence,4,1664,52,1612,split if reviewers prefer
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 8,Reload title and persisted-record hydration,11,618,61,557,does not claim empty-live-editor
+2026-05-16T04:40:34Z,a9e566c97303d7be5a9360d86311136bd6d7ec81,PR 9,Core-data lock fairness,2,185,2,183,verified GitHub branch
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 1,HTTP polling generated update size guard,2,181,19,162,verified GitHub branch
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 11,Explicit-base top-level block operations,2,1145,4,1141,stacked on PR 10
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified content branch; final export/rebase still required
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,corrected repaired review branch
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 13B,Cross-parent source retirement,2,1672,4,1668,corrected repaired review branch
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 13C,Stale block identity smear guard,2,345,51,294,corrected repaired review branch
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 14,Table body nested array merge,2,294,18,276,verified GitHub branch
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 2,HTTP polling storage read window,2,57,5,52,verified GitHub branch
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified GitHub branch
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified GitHub branch
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 5,Parser/entity normalization equivalence,4,1664,52,1612,split if reviewers prefer
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 8,Reload title and persisted-record hydration,11,618,61,557,does not claim empty-live-editor
+2026-05-16T04:45:42Z,2a753b5662748b27fbad0fa99fea8390ad841c61,PR 9,Core-data lock fairness,2,185,2,183,verified GitHub branch
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 1,HTTP polling generated update size guard,2,181,19,162,verified GitHub branch
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 11,Explicit-base top-level block operations,2,1145,4,1141,stacked on PR 10
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified content branch; final export/rebase still required
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,corrected repaired review branch
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 13B,Cross-parent source retirement,2,1672,4,1668,corrected repaired review branch
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 13C,Stale block identity smear guard,2,345,51,294,corrected repaired review branch
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 14,Table body nested array merge,2,294,18,276,verified GitHub branch
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 2,HTTP polling storage read window,2,57,5,52,verified GitHub branch
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified GitHub branch
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified GitHub branch
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 5,Parser/entity normalization equivalence,4,1664,52,1612,split if reviewers prefer
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 8,Reload title and persisted-record hydration,11,618,61,557,does not claim empty-live-editor
+2026-05-16T04:49:50Z,427740795a6e9deb9eede4951a22d22397680bc7,PR 9,Core-data lock fairness,2,185,2,183,verified GitHub branch
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 1,HTTP polling generated update size guard,2,181,19,162,verified GitHub branch
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 11,Explicit-base top-level block operations,2,1145,4,1141,stacked on PR 10
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified content branch; final export/rebase still required
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,corrected repaired review branch
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 13B,Cross-parent source retirement,2,1672,4,1668,corrected repaired review branch
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 13C,Stale block identity smear guard,2,345,51,294,corrected repaired review branch
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 14,Table body nested array merge,2,294,18,276,verified GitHub branch
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 2,HTTP polling storage read window,2,57,5,52,verified GitHub branch
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified GitHub branch
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified GitHub branch
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 5,Parser/entity normalization equivalence,4,1664,52,1612,split if reviewers prefer
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 8,Reload title and persisted-record hydration,11,618,61,557,does not claim empty-live-editor
+2026-05-16T04:52:54Z,fafb7632b383f93ffb9fcf8eb197deee16e83c06,PR 9,Core-data lock fairness,2,185,2,183,verified GitHub branch
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 1,HTTP polling generated update size guard,2,181,19,162,verified GitHub branch
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 11,Explicit-base top-level block operations,2,1145,4,1141,stacked on PR 10
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified content branch; final export/rebase still required
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,corrected repaired review branch
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 13B,Cross-parent source retirement,2,1672,4,1668,corrected repaired review branch
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 13C,Stale block identity smear guard,2,345,51,294,corrected repaired review branch
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 14,Table body nested array merge,2,294,18,276,verified GitHub branch
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 2,HTTP polling storage read window,2,57,5,52,verified GitHub branch
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified GitHub branch
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified GitHub branch
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 5,Parser/entity normalization equivalence,4,1664,52,1612,split if reviewers prefer
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 8,Reload title and persisted-record hydration,11,618,61,557,does not claim empty-live-editor
+2026-05-16T04:56:45Z,4a887df5f639c51559527f5a2c199fb1fd4138a6,PR 9,Core-data lock fairness,2,185,2,183,verified GitHub branch
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 1,HTTP polling generated update size guard,2,181,19,162,verified GitHub branch
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 11,Explicit-base top-level block operations,2,1145,4,1141,stacked on PR 10
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified content branch; final export/rebase still required
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,corrected repaired review branch
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 13B,Cross-parent source retirement,2,1672,4,1668,corrected repaired review branch
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 13C,Stale block identity smear guard,2,345,51,294,corrected repaired review branch
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 14,Table body nested array merge,2,294,18,276,verified GitHub branch
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 2,HTTP polling storage read window,2,57,5,52,verified GitHub branch
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified GitHub branch
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified GitHub branch
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 5,Parser/entity normalization equivalence,4,1664,52,1612,split if reviewers prefer
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 8,Reload title and persisted-record hydration,11,618,61,557,does not claim empty-live-editor
+2026-05-16T05:00:38Z,ba8682cda27a746bfc606807365394c2f549d9e3,PR 9,Core-data lock fairness,2,185,2,183,verified GitHub branch
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 1,HTTP polling generated update size guard,2,181,19,162,verified GitHub branch
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 11,Explicit-base top-level block operations,2,1145,4,1141,stacked on PR 10
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified content branch; final export/rebase still required
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,corrected repaired review branch
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 13B,Cross-parent source retirement,2,1672,4,1668,corrected repaired review branch
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 13C,Stale block identity smear guard,2,345,51,294,corrected repaired review branch
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 14,Table body nested array merge,2,294,18,276,verified GitHub branch
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 2,HTTP polling storage read window,2,57,5,52,verified GitHub branch
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified GitHub branch
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified GitHub branch
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 5,Parser/entity normalization equivalence,4,1664,52,1612,split if reviewers prefer
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 8,Reload title and persisted-record hydration,11,618,61,557,does not claim empty-live-editor
+2026-05-16T05:03:58Z,71e21bb88defa741034e2142181bcdd7565cf136,PR 9,Core-data lock fairness,2,185,2,183,verified GitHub branch
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 1,HTTP polling generated update size guard,2,181,19,162,verified GitHub branch
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 10,CRDT block reconciliation foundation,2,145,4,141,start CRDT stack
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 11,Explicit-base top-level block operations,2,1145,4,1141,stacked on PR 10
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified content branch; final export/rebase still required
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,corrected repaired review branch
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 13B,Cross-parent source retirement,2,1672,4,1668,corrected repaired review branch
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 13C,Stale block identity smear guard,2,345,51,294,corrected repaired review branch
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 14,Table body nested array merge,2,294,18,276,verified GitHub branch
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 15,Fallback group residual structural fixes,2,481,12,469,keep reload-hydration gate spec out
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 2,HTTP polling storage read window,2,57,5,52,verified GitHub branch
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified GitHub branch
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified GitHub branch
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 5,Parser/entity normalization equivalence,4,1664,52,1612,split if reviewers prefer
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 6,Save request payload guards,4,738,6,732,does not claim browser-only gates
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,narrow persisted-body guard
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 7A,Save response entity-state guards,2,1339,8,1331,actions-side response guard
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 7B,Save response manager/base-record guards,5,404,8,396,stacked on PR 7A
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 8,Reload title and persisted-record hydration,11,618,61,557,does not claim empty-live-editor
+2026-05-16T05:07:26Z,058b47681794c44e5b07d6f1a3577d0f2f0308fe,PR 9,Core-data lock fairness,2,185,2,183,verified GitHub branch

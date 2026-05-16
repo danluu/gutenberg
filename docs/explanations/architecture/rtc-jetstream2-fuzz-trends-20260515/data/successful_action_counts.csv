@@ -1,8 +1,8 @@
 action,count,profile
-insert-async-server-block,33960,async-server-blocks
-insert-common-block,4027,async-server-blocks
-move-block,4016,async-server-blocks
-edit-block-gauntlet-attributes,3997,async-server-blocks
+insert-async-server-block,33967,async-server-blocks
+insert-common-block,4029,async-server-blocks
+move-block,4023,async-server-blocks
+edit-block-gauntlet-attributes,3999,async-server-blocks
 insert-heading,1992,permissions-auth-locks
 insert-nested-group,1957,permissions-auth-locks
 move-block,1951,permissions-auth-locks
@@ -56,7 +56,7 @@ delete-nested-block,1352,long-session-large-doc
 append-paragraph,1349,long-session-large-doc
 delete-block,1325,long-session-large-doc
 edit-block-gauntlet-attributes,979,block-gauntlet
-insert-media-cross-entity-block,650,media-cross-entity
+insert-media-cross-entity-block,657,media-cross-entity
 append-parser-stress-content,588,parser-transform
 insert-heading,476,persistence-no-title
 reparse-edited-content,463,parser-transform
@@ -91,12 +91,12 @@ move-block-into-group,211,common-blocks
 reparse-edited-content,202,block-gauntlet
 ui-format-paragraph,198,real-user-editing
 move-block,196,parser-transform
-edit-block-gauntlet-attributes,192,media-cross-entity
+edit-block-gauntlet-attributes,194,media-cross-entity
 ui-composition-paragraph,179,real-user-editing
 ui-toolbar-format-paragraph,179,real-user-editing
 ui-heading-shortcut,173,real-user-editing
 edit-nested-paragraph,173,common-blocks
-move-block,168,media-cross-entity
+move-block,169,media-cross-entity
 edit-block-gauntlet-attributes,163,common-blocks
 append-paragraph,156,common-blocks
 ui-table-cell-edit,153,real-user-editing
