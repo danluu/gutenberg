@@ -1,6 +1,6 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-16T05:50:11Z`
+Snapshot time: `2026-05-16T05:55:08Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -40,7 +40,7 @@ Current state:
   triage. The new collection selected coverage root
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T053837Z`.
   The current monitor detail body is present again: it reports `0` current
-  visible likely-real failures, `24,619` coverage files, `36,269` total records,
+  visible likely-real failures, `24,667` coverage files, `36,335` total records,
   `11` unmet goals, and five enabled groups. `novelty-ws-async-server-blocks`,
   `novelty-ws-real-user-editing`, `novelty-ws-real-user-rich-text`, and
   `novelty-ws-media-cross-entity` are paused from current-run startup
@@ -118,29 +118,29 @@ current PR-content links for the repaired PR 13 split.
 Latest collected coverage-guided fuzz state:
 
 ```text
-collected_at_utc: 2026-05-16T05:50:06Z
+collected_at_utc: 2026-05-16T05:55:02Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260516T053837Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
-raw novelty-status.md updated: 2026-05-16T05:49:26.630Z
+raw novelty-status.md updated: 2026-05-16T05:53:14.639Z
 ```
 
 The current monitor snapshot reports:
 
 ```text
-coverage files: 24619
-total records seen: 36269
+coverage files: 24667
+total records seen: 36335
 records processed this pass: 33
-new behavioral feature keys this pass: 2
-new CDP coverage hashes this pass: 2
+new behavioral feature keys this pass: 5
+new CDP coverage hashes this pass: 5
 unmet goals: 11
 current output-dir signatures: 0
 current visible likely-real failures: 0
-historical signatures: 16059
-historical bootstrap stalls: 9758
+historical signatures: 16111
+historical bootstrap stalls: 9800
 headroom for adding groups: yes
-load1: 62.54 on 64 cores
-memory free: 418.7G
+load1: 47.08 on 64 cores
+memory free: 425.3G
 ```
 
 Current-output-dir triage is clean: one current triage root, zero signatures,
@@ -150,7 +150,7 @@ clean, though: the monitor saw pre-action startup failures for
 summary-only startup failures for `real-user-editing` and
 `media-cross-entity`. Treat those as scheduling/quality signals, not product
 failures. Historical triage remains noisy but reporting-only: `88` observed
-prior roots, `16,059` signatures, `9,758` bootstrap stalls, and
+prior roots, `16,111` signatures, `9,800` bootstrap stalls, and
 `pre_action_bootstrap_stall` as the dominant family.
 
 Enabled groups are `novelty-ws-common-blocks`, `novelty-ws-block-gauntlet`,
@@ -191,7 +191,7 @@ largest unmet goals are CDP coverage records, real-user-editing successes,
 `core/gallery`, body save/reload, `core/file`, and undo/redo paragraph. Treat
 those as fuzz-depth gaps, not PR blockers by themselves. The graph packet and
 current monitor snapshot are not final-stack validation results. The graph
-packet predates the latest `05:49Z` monitor pauses, so use the current
+packet predates the latest `05:53Z` monitor pauses, so use the current
 `novelty-status.md` snapshot for live group enablement.
 
 Completed validation evidence:
@@ -222,14 +222,14 @@ The completed status-report persona syntheses at
 `20260516T035208Z-iter-1`, `20260516T035706Z-iter-2`,
 `20260516T040218Z-iter-3`, and final analysis
 `20260516T040744Z-final-analysis`, plus the split persona syntheses through
-`pr-split-20260516T054227Z-synthesis`, agree that the split needs status
+`pr-split-20260516T054808Z-synthesis`, agree that the split needs status
 updates, not a redesign. Cycle 90 split the old aggregate PR 15 into
 PR 15A/15B/15C, marked only `final/rtc-pr*` refs as PR-head candidates, and
 marked PR 7A/7B, PR 8, PR 14, and PR 15A-C blocked/not filing-ready. The
-`054227Z` split synthesis keeps that shape: the split is valid in concept, but
-not filing-ready until a bounded branch-shape/evidence pass resolves PR 7A on
-PR 6, then PR 7B, PR 14 after repaired PR 13C, and PR 15A -> PR 15B -> PR 15C
-after PR 14.
+`054808Z` split synthesis keeps that shape: the split is valid in concept, but
+not filing-ready until the already-active bounded branch-shape/evidence pass
+resolves PR 7A on PR 6, then PR 7B, PR 14 after repaired PR 13C, and
+PR 15A -> PR 15B -> PR 15C after PR 14.
 
 - Replace stale 2026-05-15 coverage snapshots with the verified 2026-05-16
   trend packet, the current coverage root, and the nonempty current monitor
@@ -255,8 +255,8 @@ after PR 14.
   feedback-action created the prompt/launcher and launched that single bounded
   job with initial output root
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T053120Z/jobs/outputs/rtc-final-branch-shape-blocked-prs-20260516T054134Z/`.
-  The `054227Z` synthesis checked read-only that the tmux session is active and
-  the expected report is not present yet.
+  The `054808Z` synthesis and feedback-action checked read-only that the tmux
+  session is active and the expected report is not present yet.
   Expected report path:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260516T053120Z/jobs/outputs/rtc-final-branch-shape-blocked-prs-*/report.md`.
   This updater did not launch a duplicate job. If the active session exits
@@ -270,11 +270,14 @@ after PR 14.
   For group enablement and fuzz health, use `remote-status.md`,
   `latest-trend-evidence.md`, and the nonempty `novelty-status.md` snapshot in
   this report. The latest duplicate-noise synthesis at
-  `duplicate-noise-20260516T052614Z-synthesis` changes no PR validation status;
-  it keeps remaining control-plane hardening as a separate follow-up.
+  `duplicate-noise-20260516T054310Z-synthesis` changes no PR validation status;
+  it identifies a remaining triage/analysis intake leak for strict
+  pre-action bootstrap/open/join stalls and keeps that narrow control-plane
+  hardening as a separate follow-up.
 
-The latest duplicate/noise feedback-action completed the allowed-scope
-novelty-monitor remediation on the remote fuzz checkout and restarted the active
+The duplicate/noise feedback-action at `20260516T052614Z` completed the
+allowed-scope novelty-monitor remediation on the remote fuzz checkout and
+restarted the active
 coverage-guided monitor/supervisor path. Startup failure rates now use
 `attempts = max(current-run behavioral records, strict startup failures)`, and
 historical startup noise is only a scheduling prior when paired with fresh
@@ -285,7 +288,12 @@ analysis as queued `timeout` or `unknown` variants. Do not present the
 monitor-only fix as PR validation or full browser-scheduling recovery; the
 current monitor still has async-server, real-user, and media-cross groups
 paused from current-run startup evidence/cooldowns, plus lifecycle paused by
-browser-budget rotation.
+browser-budget rotation. The later `054310Z` duplicate/noise synthesis says the
+next safe control-plane fix is a narrow strict pre-action startup-noise gate in
+`rtc-browser-fuzz-triage-watcher.mjs` and a defensive skip in
+`rtc-browser-fuzz-analysis-tier.mjs`; do not broaden that into generic
+`timeout`, `unknown`, `assertion`, late-session awareness, or collaboration
+non-convergence suppression.
 
 The split-review analysis keeps this bounded manual action available for
 reload-hydration evidence:
@@ -342,7 +350,7 @@ protection so reviewers can evaluate each CRDT invariant separately.
 
 The status loop now generates a branch-link audit and the report updater is
 required to use only rows marked `verified-content`. The latest audit was
-generated at `2026-05-16T05:50:11Z` from fetched `danluu` refs. A verified row
+generated at `2026-05-16T05:55:08Z` from fetched `danluu` refs. A verified row
 means the branch exists on `danluu` and has a non-empty diff against the listed
 base.
 
@@ -407,7 +415,7 @@ File order after export/rebase should be:
 
 Existing fuzz infrastructure can continue where healthy. The latest collection
 selected `run-20260516T053837Z` as the coverage root. The current monitor
-snapshot reports `24,619` coverage files, `36,269` total records, `11` unmet
+snapshot reports `24,667` coverage files, `36,335` total records, `11` unmet
 goals, five enabled groups, `novelty-ws-async-server-blocks`,
 `novelty-ws-real-user-editing`, `novelty-ws-real-user-rich-text`, and
 `novelty-ws-media-cross-entity` paused from current-run startup
