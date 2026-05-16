@@ -10,7 +10,7 @@ Code links below are SHA-pinned to the reviewed head. The report branch is [`try
 
 The change adds a custom block context menu, clipboard helpers, paste-as-block helpers, split-block behavior, paragraph formatting fills, a spell-check popover, and table context menu fills. The downloaded patch was 16 files and 2690 insertions.
 
-The screenshots below are generated evidence cards from direct source inspection and focused fuzz/model results. They are not all full Gutenberg browser recordings. UI-dependent issues are explicitly labeled as needing browser E2E validation.
+The original generated evidence-card screenshots have been removed from this report. Actual WordPress/Gutenberg Playwright screenshots are being added as each browser repro completes. UI-dependent issues are explicitly labeled as needing browser E2E validation until a real-browser run confirms them.
 
 ## Findings
 
@@ -20,8 +20,6 @@ The new spell-check popover hard-codes LanguageTool and posts the selected text 
 
 -   [`spell-check-popover.js:16`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/spell-check-popover.js#L16)
 -   [`spell-check-popover.js:73-L80`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/spell-check-popover.js#L73-L80)
-
-![Spell check privacy impact](right-click-context-menu-review-20260516-assets/spellcheck-privacy-impact.png)
 
 Impact:
 
@@ -47,8 +45,6 @@ Several later actions trust the range and the target client ID together:
 -   spell check sends and applies replacements from the captured range to `clientId`: [`spell-check-popover.js:62-L67`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/spell-check-popover.js#L62-L67), [`spell-check-popover.js:143-L145`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/spell-check-popover.js#L143-L145)
 -   inline paste restores the captured range and executes DOM insertion: [`use-clipboard-helpers.js:263-L313`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/use-clipboard-helpers.js#L263-L313)
 
-![Selection range mismatch impact](right-click-context-menu-review-20260516-assets/selection-range-mismatch-impact.png)
-
 The focused fuzz harness reproduced the missing invariant:
 
 ```text
@@ -71,8 +67,6 @@ The manual paste-as-block path reads clipboard plain text, then writes it direct
 
 -   clipboard text selection: [`use-clipboard-helpers.js:346-L352`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/use-clipboard-helpers.js#L346-L352)
 -   paragraph/preformatted/list/table assignment: [`use-clipboard-helpers.js:371-L399`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/use-clipboard-helpers.js#L371-L399)
-
-![Paste as block HTML impact](right-click-context-menu-review-20260516-assets/paste-as-block-html-impact.png)
 
 The fuzz harness found this immediately:
 
@@ -98,8 +92,6 @@ The menu enables split based on `canSplitBlock`, but not on whether the target c
 -   replacement call: [`index.js:503`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/index.js#L503)
 -   action-level insertability check without a remove check: [`actions.js:379-L395`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/store/actions.js#L379-L395)
 
-![Split lock and anchor impact](right-click-context-menu-review-20260516-assets/split-lock-anchor-impact.png)
-
 Impact:
 
 -   A block whose Delete action is unavailable through `canRemove` can still be replaced by split pieces if the replacement block types are insertable.
@@ -118,8 +110,6 @@ The menu enables `Check spelling` for any highlighted text:
 The replacement path always reads and writes the target block's top-level `content` attribute:
 
 -   [`spell-check-popover.js:122-L145`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/spell-check-popover.js#L122-L145)
-
-![Spell check wrong attribute impact](right-click-context-menu-review-20260516-assets/spellcheck-wrong-attribute-impact.png)
 
 Impact:
 
@@ -142,8 +132,6 @@ The same code trims all split fragments:
 -   trim calls: [`index.js:465-L471`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/index.js#L465-L471)
 -   generic enablement for any block with a `content` attribute and no inner blocks: [`index.js:311-L329`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/index.js#L311-L329)
 
-![Split lock and anchor impact](right-click-context-menu-review-20260516-assets/split-lock-anchor-impact.png)
-
 Impact:
 
 -   Blocks with an `anchor` can produce multiple blocks with the same DOM ID. Anchor navigation, table-of-contents links, CSS, and scripts that target that ID can go to or affect the wrong block.
@@ -162,8 +150,6 @@ The menu installs capture-phase `mousedown` and `keydown` listeners on the canva
 The popover is rendered in the same document context for non-iframed editors:
 
 -   [`index.js:565-L570`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/index.js#L565-L570)
-
-![Non-iframed click impact](right-click-context-menu-review-20260516-assets/non-iframed-click-impact.png)
 
 Impact:
 
@@ -187,8 +173,6 @@ The shared QuickInserter insertion hook replaces the selected block when it is a
 
 -   [`use-insertion-point.js:149-L162`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/inserter/hooks/use-insertion-point.js#L149-L162)
 
-![Add block replacement impact](right-click-context-menu-review-20260516-assets/add-block-replace-impact.png)
-
 Impact:
 
 -   The commands are named "Add block above" and "Add block below", so users expect insertion, not replacement of the clicked block.
@@ -207,8 +191,6 @@ This needs a UI regression test with empty paragraph targets, both with and with
 `useCopyTextToClipboard` passes the same selected text as both HTML and plain text:
 
 -   [`use-clipboard-helpers.js:162-L170`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/use-clipboard-helpers.js#L162-L170)
-
-![Copy clipboard impact](right-click-context-menu-review-20260516-assets/copy-clipboard-impact.png)
 
 The fuzz harness reproduced a literal selected string becoming an HTML clipboard payload:
 
@@ -239,8 +221,6 @@ The native copy path has special handling for block types that require their par
 
 -   [`list-item/index.js:36`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-library/src/list-item/index.js#L36)
 
-![Copy clipboard impact](right-click-context-menu-review-20260516-assets/copy-clipboard-impact.png)
-
 Impact:
 
 -   Copying list items through the context menu can produce different clipboard HTML from keyboard/native copy.
@@ -261,8 +241,6 @@ The row and column actions operate on `selectedCell`:
 -   column operations: [`table/edit.js:312-L330`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-library/src/table/edit.js#L312-L330)
 -   focus-derived state update: [`table/edit.js:885-L891`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-library/src/table/edit.js#L885-L891)
 
-![Table selected cell impact](right-click-context-menu-review-20260516-assets/table-selected-cell-impact.png)
-
 Impact:
 
 -   If a user right-clicks a cell different from the one currently focused and the browser does not update focus before the context menu action runs, row and column operations can apply to the old cell.
@@ -282,8 +260,6 @@ The `readText` fallback only runs inside the `read()` catch path:
 
 -   [`use-clipboard-helpers.js:38-L43`](https://github.com/s1sfa/gutenberg-right-click/blob/da42e798c4514e3f76d9920e33bab155da060b1b/packages/block-editor/src/components/block-context-menu/use-clipboard-helpers.js#L38-L43)
 
-![Clipboard read fallback impact](right-click-context-menu-review-20260516-assets/clipboard-read-fallback-impact.png)
-
 Impact:
 
 -   Paste commands fail unnecessarily in browsers that expose `readText()` but not rich `read()`.
@@ -291,6 +267,25 @@ Impact:
 -   This disproportionately affects fallback/browser-compatibility paths, which are exactly where graceful degradation matters.
 
 The fallback should be attempted whenever `readText` exists and rich clipboard read is unavailable.
+
+## False-Positive Review
+
+A follow-up pass ran four analysis iterations per finding across the same named review set plus a contrarian pass. The results below are the current report status; "needs UI validation" means the source/fuzz argument is coherent but normal browser reachability or exact browser behavior still needs actual Playwright evidence.
+
+| Finding | False-positive result | Impact adjustment |
+| --- | --- | --- |
+| Spell check sends selected text to LanguageTool | Real, 6/6 | High privacy/compliance risk, but user-triggered and limited to selected text. |
+| Selection range not tied to right-clicked block | Real but needs UI validation, 6/6 | High potential data corruption if normal right-click behavior preserves the stale range; frequency still browser/editor-mode dependent. |
+| Paste as new block treats text as RichText HTML | Real, 6/6 | High content-integrity bug; not claimed as confirmed XSS. |
+| Split block bypasses locks | Real with narrowed wording, 6/6 | Strongest confirmed case is `lock.remove` / `canRemoveBlocks`; broad template-lock bypass wording is overstated because insertion checks can still no-op. |
+| Spell check writes only top-level `content` | Real, 6/6 | Medium integrity bug for fields backed by another attribute or nested structure. |
+| Split duplicates attributes and trims content | Real, 5/6; real but needs UI validation, 1/6 | Medium; source-confirmed for same-type/original split fragments, higher for anchors and whitespace-sensitive blocks. |
+| Non-iframed editors can dismiss menu before item click | Real but needs UI validation, 6/6 | Medium and scoped to non-iframed/custom `BlockCanvas` consumers, not necessarily the default iframed editor. |
+| Add block above/below can replace an empty default block | Real but needs UI validation, 6/6 | Medium-low/medium workflow integrity issue; unlikely to delete authored text, but contradicts the command label and can discard empty-block state. |
+| Copy Text writes selected text as `text/html` | Real, 6/6 | Medium clipboard data-integrity bug; not claimed as confirmed XSS. |
+| Context-menu block copy bypasses wrapper-on-copy behavior | Real, 2/6; real but needs UI validation, 4/6 | Medium; source-confirmed divergence from native copy, exact paste symptoms still need browser evidence. |
+| Table operations use focused cell, not clicked cell | Real but needs UI validation, 6/6 | Medium, rising if Playwright confirms common-browser right-click does not update table cell focus before destructive actions. |
+| Clipboard read fallback misses `readText`-only browsers | Real, 6/6 | Low compatibility bug; source/fuzz confirmed, browser-market impact depends on the target browser mix. |
 
 ## Fuzz and Test Evidence
 
