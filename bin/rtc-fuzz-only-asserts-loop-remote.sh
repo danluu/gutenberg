@@ -74,7 +74,12 @@ wait_for_prefix() {
 			return 0
 		fi
 		if [ "$(date -u +%s)" -ge "$deadline" ]; then
-			log "$prefix timed out with $active active session(s); continuing with completed reports"
+			log "$prefix timed out with $active active session(s); killing timed-out sessions and continuing with completed reports"
+			tmux ls 2>/dev/null |
+				awk -F: -v prefix="$prefix" 'index($1, prefix) == 1 { print $1 }' |
+				while IFS= read -r session; do
+					tmux kill-session -t "$session" 2>/dev/null || true
+				done
 			return 0
 		fi
 		log "$prefix active=$active"
@@ -88,7 +93,7 @@ launch_codex() {
 	local report=$3
 	local codex_log=$4
 	tmux new-session -d -s "$session" \
-		"bash -lc 'cd \"$SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m \"$CODEX_MODEL\" -c model_reasoning_effort=\"$CODEX_REASONING_EFFORT\" -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
+		"bash -lc 'cd \"$SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; timeout --kill-after=60s \"$ROUND_TIMEOUT_SECONDS\" \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m \"$CODEX_MODEL\" -c model_reasoning_effort=\"$CODEX_REASONING_EFFORT\" -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
 }
 
 collect_context() {

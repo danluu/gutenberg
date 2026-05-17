@@ -357,7 +357,8 @@ The remote launchers are intentionally split by ownership:
     setup.
 -   `rtc-fuzz-only-asserts-loop-remote.sh` runs the high-parallel fuzz-only
     assertion analysis and critique loop. Only its final applier job should edit
-    files or restart fuzzing.
+    files or restart fuzzing. Timed-out round sessions are killed before the
+    next cycle so stale assertion analysis cannot block the loop forever.
 -   `rtc-duplicate-noise-persona-loop-remote.sh` runs the duplicate/noise
     remediation persona loop. It should run under the named
     `rtc-duplicate-noise-persona-loop` tmux session, takes a process singleton
@@ -366,10 +367,13 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-fuzz-level-mix-persona-loop-remote.sh` runs the level-mix controller
     and its watchdog. The top-level guard should restart the existing generated
     loop/watchdog scripts when possible instead of rerunning the destructive
-    launcher while a review cycle is active.
+    launcher while a review cycle is active. Its persona, synthesis, and action
+    Codex jobs are bounded by timeout so a hung review cannot prevent the next
+    control decision.
 -   `rtc-native-assert-protocol-work-start-remote.sh` creates the native-harness
     and protocol-server persona loops. The top-level guard restarts the
-    generated loop scripts if those controllers disappear.
+    generated loop scripts if those controllers disappear. Generated native and
+    protocol Codex jobs are also timeout-bounded.
 -   `rtc-deferred-work-promotion-loop-remote.sh` turns deferred bug families
     into local candidate branches, targeted diagnostics, or explicit downscope
     reports. It reads current fuzz output and PR-split reports, creates one
@@ -380,6 +384,9 @@ The remote launchers are intentionally split by ownership:
     branch-split corrections, diffstats, validation notes, and push commands for
     the local host. It does not push from Jetstream and does not independently
     throttle analysis jobs based on load average.
+-   `rtc-pr-split-review-loop-remote.sh` runs bounded persona, synthesis,
+    feedback, and progress-unblock Codex jobs. A single hung review or action
+    must not pin the PR split loop indefinitely.
 -   `rtc-jetstream-guard-remote.sh` is the top-level guard. Run it in tmux and
     let it restart missing sessions instead of manually restarting individual
     fuzzers. The guard supervises coverage-guided, strict-expansion, focused

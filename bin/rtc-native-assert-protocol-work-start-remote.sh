@@ -8,6 +8,7 @@ TMUX=/usr/bin/tmux
 TMUX_ARGS=(-L rtc-fuzz)
 MODEL=gpt-5.5
 REASONING=xhigh
+CODEX_TIMEOUT_SECONDS=${RTC_NATIVE_ASSERT_CODEX_TIMEOUT_SECONDS:-7200}
 
 mkdir -p "$BASE/prompts" "$BASE/reports" "$BASE/logs" "$BASE/run-scripts" "$BASE/protocol"
 
@@ -64,7 +65,7 @@ launch_codex_job() {
 #!/usr/bin/env bash
 set -uo pipefail
 cd "$SRC" || exit 1
-"$CODEX" -a never exec --skip-git-repo-check -m "$MODEL" -c model_reasoning_effort="$REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$log"
+timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX" -a never exec --skip-git-repo-check -m "$MODEL" -c model_reasoning_effort="$REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$log"
 echo "\$?" > "$rc"
 RUNNER
 	chmod +x "$runner"
@@ -138,6 +139,7 @@ CODEX=/home/exouser/.npm-global/bin/codex
 TMUX=/usr/bin/tmux
 MODEL=gpt-5.5
 REASONING=xhigh
+CODEX_TIMEOUT_SECONDS=${RTC_NATIVE_ASSERT_CODEX_TIMEOUT_SECONDS:-7200}
 MAX_PARALLEL=6
 ACTION_EVERY=2
 PERSONAS=( "linus torvalds" "kyle kingsbury" "marc brooker" "dan luu" "tptacek" "contrarian" )
@@ -165,7 +167,7 @@ launch_job() {
 #!/usr/bin/env bash
 set -uo pipefail
 cd "$SRC" || exit 1
-"$CODEX" -a never exec --skip-git-repo-check -m "$MODEL" -c model_reasoning_effort="$REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$log_file"
+timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX" -a never exec --skip-git-repo-check -m "$MODEL" -c model_reasoning_effort="$REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$log_file"
 echo "\$?" > "$rc"
 RUNNER
 	chmod +x "$runner"
@@ -307,6 +309,7 @@ CODEX=/home/exouser/.npm-global/bin/codex
 TMUX=/usr/bin/tmux
 MODEL=gpt-5.5
 REASONING=xhigh
+CODEX_TIMEOUT_SECONDS=${RTC_PROTOCOL_SERVER_CODEX_TIMEOUT_SECONDS:-7200}
 MAX_PARALLEL=6
 ACTION_EVERY=2
 PERSONAS=( "linus torvalds" "kyle kingsbury" "marc brooker" "dan luu" "tptacek" "contrarian" )
@@ -334,7 +337,7 @@ launch_job() {
 #!/usr/bin/env bash
 set -uo pipefail
 cd "$SRC" || exit 1
-"$CODEX" -a never exec --skip-git-repo-check -m "$MODEL" -c model_reasoning_effort="$REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$log_file"
+timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX" -a never exec --skip-git-repo-check -m "$MODEL" -c model_reasoning_effort="$REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$log_file"
 echo "\$?" > "$rc"
 RUNNER
 	chmod +x "$runner"

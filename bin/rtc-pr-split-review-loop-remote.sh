@@ -14,6 +14,7 @@ REASONING="${RTC_PR_SPLIT_REVIEW_REASONING:-xhigh}"
 INTERVAL_SECONDS="${RTC_PR_SPLIT_REVIEW_INTERVAL_SECONDS:-5}"
 MAX_PARALLEL="${RTC_PR_SPLIT_REVIEW_MAX_PARALLEL:-6}"
 ACTION_EVERY_CYCLES="${RTC_PR_SPLIT_REVIEW_ACTION_EVERY_CYCLES:-2}"
+CODEX_TIMEOUT_SECONDS="${RTC_PR_SPLIT_REVIEW_CODEX_TIMEOUT_SECONDS:-7200}"
 
 export PATH="/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin:/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin:$PATH"
 
@@ -249,7 +250,7 @@ EOF
 
   (
     cd "$FIX_REPO" || exit 1
-    "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
   ) &
 }
@@ -299,7 +300,7 @@ EOF
 
   (
     cd "$FIX_REPO" || exit 1
-    "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
   )
 }
@@ -393,7 +394,7 @@ EOF
   mkdir -p "$run_dir/jobs"
   (
     cd "$FIX_REPO" || exit 1
-    "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
   )
   cp "$out" "$BASE/latest-feedback-action.md" 2>/dev/null || true
@@ -468,7 +469,7 @@ EOF
 #!/usr/bin/env bash
 set -uo pipefail
 cd "$FIX_REPO" || exit 1
-"$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
 echo "\$?" > "$rc"
 EOF
   chmod +x "$runner"
@@ -515,7 +516,7 @@ increment_cycle_count() {
 }
 
 acquire_singleton_lock
-log "loop started interval=${INTERVAL_SECONDS}s max_parallel=${MAX_PARALLEL} action_every_cycles=${ACTION_EVERY_CYCLES}"
+log "loop started interval=${INTERVAL_SECONDS}s max_parallel=${MAX_PARALLEL} action_every_cycles=${ACTION_EVERY_CYCLES} codex_timeout=${CODEX_TIMEOUT_SECONDS}s"
 while true; do
   (
     flock -n 9 || {

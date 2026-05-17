@@ -43,6 +43,7 @@ REASONING="${RTC_FUZZ_LEVEL_MIX_REASONING:-xhigh}"
 MAX_PARALLEL="${RTC_FUZZ_LEVEL_MIX_MAX_PARALLEL:-6}"
 ACTION_EVERY_CYCLES="${RTC_FUZZ_LEVEL_MIX_ACTION_EVERY_CYCLES:-2}"
 INTERVAL_SECONDS="${RTC_FUZZ_LEVEL_MIX_INTERVAL_SECONDS:-0}"
+CODEX_TIMEOUT_SECONDS="${RTC_FUZZ_LEVEL_MIX_CODEX_TIMEOUT_SECONDS:-7200}"
 
 export PATH="/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin:/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin:$PATH"
 
@@ -1008,7 +1009,7 @@ Return:
 Do not edit files in this review pass.
 EOF
 
-  tmux new-session -d -s "rtc-level-mix-$slug-$(basename "$run_dir")" "bash -lc 'cd \"$FUZZ_REPO\"; \"$CODEX_BIN\" -a never exec --skip-git-repo-check -m \"$MODEL\" -c model_reasoning_effort=\"$REASONING\" -s danger-full-access < \"$prompt\" > \"$out\" 2> \"$err\"; echo \$? > \"$rc_file\"'"
+  tmux new-session -d -s "rtc-level-mix-$slug-$(basename "$run_dir")" "bash -lc 'cd \"$FUZZ_REPO\"; timeout --kill-after=60s \"$CODEX_TIMEOUT_SECONDS\" \"$CODEX_BIN\" -a never exec --skip-git-repo-check -m \"$MODEL\" -c model_reasoning_effort=\"$REASONING\" -s danger-full-access < \"$prompt\" > \"$out\" 2> \"$err\"; echo \$? > \"$rc_file\"'"
 }
 
 wait_for_reports() {
@@ -1057,7 +1058,7 @@ EOF
 
   (
     cd "$FUZZ_REPO" || exit 1
-    "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
   )
 }
@@ -1107,13 +1108,13 @@ EOF
 
   (
     cd "$FUZZ_REPO" || exit 1
-    "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
   )
 }
 
 cycle=0
-log "level-mix persona loop started model=$MODEL reasoning=$REASONING max_parallel=$MAX_PARALLEL action_every=$ACTION_EVERY_CYCLES interval=${INTERVAL_SECONDS}s"
+log "level-mix persona loop started model=$MODEL reasoning=$REASONING max_parallel=$MAX_PARALLEL action_every=$ACTION_EVERY_CYCLES interval=${INTERVAL_SECONDS}s codex_timeout=${CODEX_TIMEOUT_SECONDS}s"
 while true; do
   cycle=$(( cycle + 1 ))
   ts="$(date -u +%Y%m%dT%H%M%SZ)"
