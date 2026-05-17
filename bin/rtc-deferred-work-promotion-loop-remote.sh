@@ -6,26 +6,6 @@ CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
-
-mkdir -p "$BASE/logs" "$BASE/cycles" "$BASE/worktrees" "$TMUX_WRAP"
-cat > "$TMUX_WRAP/tmux" <<'SH'
-#!/usr/bin/env bash
-exec /usr/bin/tmux -L rtc-fuzz "$@"
-SH
-chmod +x "$TMUX_WRAP/tmux"
-export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
-
-tmux kill-session -t rtc-deferred-work-promotion-loop 2>/dev/null || true
-
-cat > "$BASE/deferred-work-promotion-loop.sh" <<'LOOP'
-#!/usr/bin/env bash
-set -euo pipefail
-
-NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
-CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
-TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
-SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
-BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 PR_SPLIT_BASE=/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515
 FOCUSED_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
@@ -37,9 +17,10 @@ CURSOR_STATE="$BASE/logs/family-cursor.txt"
 QUEUE="$BASE/current-deferred-queue.tsv"
 STATUS="$BASE/current-deferred-status.md"
 FAMILIES=${RTC_DEFERRED_WORK_FAMILIES:-"reload-hydration pre-save-search-live-collapse rich-text-suffix-corruption malformed-save-payload http-room-isolation"}
-MAX_ACTIVE_JOBS=${RTC_DEFERRED_WORK_MAX_ACTIVE_JOBS:-2}
-CYCLE_SLEEP_SECONDS=${RTC_DEFERRED_WORK_CYCLE_SLEEP_SECONDS:-900}
-MIN_FAMILY_INTERVAL_SECONDS=${RTC_DEFERRED_WORK_MIN_FAMILY_INTERVAL_SECONDS:-1800}
+ALLOW_DIAGNOSTIC_FAMILIES=${RTC_DEFERRED_WORK_ALLOW_DIAGNOSTIC_FAMILIES:-"pre-save-search-live-collapse rich-text-suffix-corruption"}
+MAX_ACTIVE_JOBS=${RTC_DEFERRED_WORK_MAX_ACTIVE_JOBS:-3}
+CYCLE_SLEEP_SECONDS=${RTC_DEFERRED_WORK_CYCLE_SLEEP_SECONDS:-300}
+MIN_FAMILY_INTERVAL_SECONDS=${RTC_DEFERRED_WORK_MIN_FAMILY_INTERVAL_SECONDS:-900}
 CODEX_MODEL=${RTC_DEFERRED_WORK_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_DEFERRED_WORK_CODEX_REASONING_EFFORT:-xhigh}
 
@@ -181,6 +162,54 @@ TXT
 	esac
 }
 
+write_deferred_queue_row() {
+	local family=$1
+	local coverage=$2
+	local ts
+	ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+	case "$family" in
+		reload-hydration)
+			printf '%s\t%s\thigh\treload/post-save residuals still need replay reduction beyond PR07B saved-response hydration\t%s\n' "$ts" "$family" "$coverage"
+			;;
+		pre-save-search-live-collapse)
+			printf '%s\t%s\tdiagnostic\tdiagnostic branch exists; product promotion waits for focused replay to identify product owner\t%s\n' "$ts" "$family" "$coverage"
+			;;
+		rich-text-suffix-corruption)
+			printf '%s\t%s\tdiagnostic\tdiagnostic branch exists; replay evidence or explicit downscope decision needed before product promotion\t%s\n' "$ts" "$family" "$coverage"
+			;;
+		malformed-save-payload)
+			printf '%s\t%s\tdownscoped\tcovered by canonical PR6B minimal; raw deferred malformed-save heads are superseded\t%s\n' "$ts" "$family" "$coverage"
+			;;
+		http-room-isolation)
+			printf '%s\t%s\tdownscoped\tready PR02A exists; no fresh healthy-user HTTP room-isolation product evidence\t%s\n' "$ts" "$family" "$coverage"
+			;;
+		*)
+			printf '%s\t%s\tmedium\toperator-specified deferred family\t%s\n' "$ts" "$family" "$coverage"
+			;;
+	esac
+}
+
+family_should_launch() {
+	case "$1" in
+		malformed-save-payload|http-room-isolation)
+			return 1
+			;;
+		pre-save-search-live-collapse|rich-text-suffix-corruption)
+			local family allowed
+			family=$1
+			for allowed in $ALLOW_DIAGNOSTIC_FAMILIES; do
+				if [ "$allowed" = "$family" ]; then
+					return 0
+				fi
+			done
+			return 1
+			;;
+		*)
+			return 0
+			;;
+	esac
+}
+
 write_deferred_queue() {
 	local coverage focused strict family
 	coverage=$(cat "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
@@ -189,17 +218,7 @@ write_deferred_queue() {
 	{
 		printf 'generated_at\tfamily\tpriority\treason\tprimary_context\n'
 		for family in $FAMILIES; do
-			case "$family" in
-				reload-hydration|pre-save-search-live-collapse|malformed-save-payload|http-room-isolation)
-					printf '%s\t%s\thigh\tdeferred significant RTC bug family still needs a maintainer-sized candidate branch\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$family" "$coverage"
-					;;
-				rich-text-suffix-corruption)
-					printf '%s\t%s\tmedium\treplay evidence or explicit downscope decision needed\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$family" "$coverage"
-					;;
-				*)
-					printf '%s\t%s\tmedium\toperator-specified deferred family\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$family" "$coverage"
-					;;
-			esac
+			write_deferred_queue_row "$family" "$coverage"
 		done
 		if [ -n "$coverage" ] && [ -f "$coverage/novelty-status.md" ]; then
 			awk '
@@ -371,7 +390,7 @@ PROMPT
 
 launch_family_job() {
 	local family=$1
-	local ts cycle_dir branch worktree prompt report codex_log session
+	local ts cycle_dir branch worktree prompt report codex_log stdout_log last_message rc_file session runner
 	ts=$(date -u +%Y%m%dT%H%M%SZ)
 	cycle_dir="$BASE/cycles/$ts/$family"
 	branch="deferred/rtc-$family-$ts"
@@ -390,12 +409,72 @@ launch_family_job() {
 	prompt="$cycle_dir/$family.prompt.md"
 	report="$cycle_dir/$family.report.md"
 	codex_log="$cycle_dir/$family.stderr.log"
+	stdout_log="$cycle_dir/$family.stdout.log"
+	last_message="$cycle_dir/$family.last-message.tmp"
+	rc_file="$cycle_dir/$family.rc"
+	runner="$cycle_dir/run-codex.sh"
 	write_prompt "$prompt" "$family" "$branch" "$worktree" "$cycle_dir/context.md" "$report"
+	cat > "$runner" <<RUNNER
+#!/usr/bin/env bash
+set -euo pipefail
+
+worktree="$worktree"
+prompt="$prompt"
+report="$report"
+stdout_log="$stdout_log"
+last_message="$last_message"
+stderr_log="$codex_log"
+rc_file="$rc_file"
+invalid="$cycle_dir/invalid-empty-report.md"
+
+file_has_nonblank_content() {
+	local file="\$1"
+	[ -f "\$file" ] || return 1
+	[ -s "\$file" ] || return 1
+	awk 'NF { found = 1; exit } END { exit found ? 0 : 1 }' "\$file"
+}
+
+rm -f "\$report" "\$stdout_log" "\$last_message" "\$invalid"
+
+set +e
+cd "\$worktree"
+export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH"
+"$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access -o "\$last_message" - < "\$prompt" > "\$stdout_log" 2> "\$stderr_log"
+rc=\$?
+set -e
+
+if file_has_nonblank_content "\$report"; then
+	rm -f "\$last_message"
+	printf '%s\n' "\$rc" > "\$rc_file"
+	exit "\$rc"
+fi
+
+rm -f "\$report"
+if file_has_nonblank_content "\$last_message"; then
+	mv "\$last_message" "\$report"
+	printf '%s\n' "\$rc" > "\$rc_file"
+	exit "\$rc"
+fi
+
+{
+	printf '# Invalid Empty Deferred Work Report\n\n'
+	printf -- '- completed: \`%s\`\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+	printf -- '- family: \`%s\`\n' "$family"
+	printf -- '- branch: \`%s\`\n' "$branch"
+	printf -- '- codex_rc: \`%s\`\n' "\$rc"
+	printf -- '- required_report: \`%s\`\n' "\$report"
+	printf -- '- stdout_log: \`%s\`\n' "\$stdout_log"
+	printf -- '- stderr_log: \`%s\`\n' "\$stderr_log"
+	printf '\nCodex produced neither a nonempty required report nor a nonempty last-message file. This artifact is not Parallel Progress Gate progress.\n'
+} > "\$invalid"
+printf '%s\n' 66 > "\$rc_file"
+exit 66
+RUNNER
+	chmod +x "$runner"
 	session="rtc-deferred-job-$family-$ts"
 	printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$family" "$session" "$branch" "$worktree" >> "$STATE"
 	log "launching $session branch=$branch worktree=$worktree"
-	tmux new-session -d -s "$session" \
-		"bash -lc 'cd \"$worktree\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m \"$CODEX_MODEL\" -c model_reasoning_effort=\"$CODEX_REASONING_EFFORT\" -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
+	tmux new-session -d -s "$session" "bash '$runner'"
 }
 
 write_status() {
@@ -408,6 +487,9 @@ write_status() {
 		echo "- max active jobs: $MAX_ACTIVE_JOBS"
 		echo "- active deferred jobs: $(active_deferred_sessions)"
 		echo "- cycle sleep seconds: $CYCLE_SLEEP_SECONDS"
+		echo "- min family interval seconds: $MIN_FAMILY_INTERVAL_SECONDS"
+		echo "- loop pid: $$"
+		echo "- loop script mtime: $(stat -c %y "$0" 2>/dev/null || true)"
 		echo "- next family cursor: $(cat "$CURSOR_STATE" 2>/dev/null || printf '0')"
 		echo "- current coverage output: ${coverage:-missing}"
 		echo
@@ -460,6 +542,10 @@ while true; do
 	launched_any=0
 	last_launched_family=""
 	while IFS= read -r family; do
+		if ! family_should_launch "$family"; then
+			log "family downscoped; not launching family=$family"
+			continue
+		fi
 		active=$(active_deferred_sessions)
 		if [ "$active" -ge "$MAX_ACTIVE_JOBS" ]; then
 			log "max active jobs reached active=$active max=$MAX_ACTIVE_JOBS"
@@ -487,8 +573,3 @@ while true; do
 	write_status
 	sleep "$CYCLE_SLEEP_SECONDS"
 done
-LOOP
-
-chmod +x "$BASE/deferred-work-promotion-loop.sh"
-tmux new-session -d -s rtc-deferred-work-promotion-loop "$BASE/deferred-work-promotion-loop.sh"
-tmux ls | grep -E 'rtc-deferred' || true

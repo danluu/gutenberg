@@ -6,35 +6,15 @@ CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
-
-mkdir -p "$BASE/logs" "$BASE/cycles" "$BASE/worktrees" "$TMUX_WRAP"
-cat > "$TMUX_WRAP/tmux" <<'SH'
-#!/usr/bin/env bash
-exec /usr/bin/tmux -L rtc-fuzz "$@"
-SH
-chmod +x "$TMUX_WRAP/tmux"
-export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
-
-tmux kill-session -t rtc-pr-finalization-loop 2>/dev/null || true
-
-cat > "$BASE/pr-finalization-loop.sh" <<'LOOP'
-#!/usr/bin/env bash
-set -euo pipefail
-
-NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
-CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
-TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
-SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
-BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 PR_SPLIT_BASE=/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 LOG="$BASE/logs/pr-finalization-loop.log"
 STATE="$BASE/logs/finalization-launches.tsv"
 STATUS="$BASE/current-finalization-status.md"
-MAX_ACTIVE_JOBS=${RTC_PR_FINALIZATION_MAX_ACTIVE_JOBS:-1}
-CYCLE_SLEEP_SECONDS=${RTC_PR_FINALIZATION_CYCLE_SLEEP_SECONDS:-1200}
-MIN_INTERVAL_SECONDS=${RTC_PR_FINALIZATION_MIN_INTERVAL_SECONDS:-1800}
+MAX_ACTIVE_JOBS=${RTC_PR_FINALIZATION_MAX_ACTIVE_JOBS:-2}
+CYCLE_SLEEP_SECONDS=${RTC_PR_FINALIZATION_CYCLE_SLEEP_SECONDS:-300}
+MIN_INTERVAL_SECONDS=${RTC_PR_FINALIZATION_MIN_INTERVAL_SECONDS:-600}
 CODEX_MODEL=${RTC_PR_FINALIZATION_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_PR_FINALIZATION_CODEX_REASONING_EFFORT:-xhigh}
 
@@ -104,6 +84,13 @@ collect_context() {
 			sed -n '1,320p' "$PR_SPLIT_BASE/current-pr-split.md"
 		else
 			echo "missing $PR_SPLIT_BASE/current-pr-split.md"
+		fi
+		echo
+		echo "## Local Publish Manifest"
+		if [ -f "$BASE/latest-local-publish-manifest.tsv" ]; then
+			sed -n '1,220p' "$BASE/latest-local-publish-manifest.tsv"
+		else
+			echo "missing $BASE/latest-local-publish-manifest.tsv"
 		fi
 		echo
 		echo "## Deferred Work Status"
@@ -194,6 +181,8 @@ write_status() {
 		echo "- max active jobs: $MAX_ACTIVE_JOBS"
 		echo "- active finalization jobs: $(active_finalization_sessions)"
 		echo "- cycle sleep seconds: $CYCLE_SLEEP_SECONDS"
+		echo "- min launch interval seconds: $MIN_INTERVAL_SECONDS"
+		echo "- local publish manifest: $([ -s "$BASE/latest-local-publish-manifest.tsv" ] && printf present || printf missing)"
 		echo
 		echo "## Active Sessions"
 		tmux ls 2>/dev/null | rg '^rtc-pr-finalize-job-' || true
@@ -230,8 +219,3 @@ while true; do
 	write_status
 	sleep "$CYCLE_SLEEP_SECONDS"
 done
-LOOP
-
-chmod +x "$BASE/pr-finalization-loop.sh"
-tmux new-session -d -s rtc-pr-finalization-loop "$BASE/pr-finalization-loop.sh"
-tmux ls | grep -E 'rtc-pr-finalization|rtc-pr-finalize' || true

@@ -1678,6 +1678,33 @@ for (const group of state.groups || []) {
 NODE
 ```
 
+## Fix-Progress Controllers
+
+The Jetstream fix-progress loops are intentionally separate from the fuzzing
+lanes, but they must share state. In particular:
+
+-   `bin/rtc-critical-path-pr-executor-loop-remote.sh` consumes the local
+    publication manifest at
+    `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/latest-local-publish-manifest.tsv`.
+    It enables the reserved `PR07C` browser preflight by default and only gates
+    that reserved slot under severe or unknown resource pressure.
+-   `bin/rtc-pr-finalization-loop-remote.sh` runs two finalization jobs at most,
+    checks every five minutes, and includes the local publication manifest in
+    its context so GitHub publishing from the local host clears stale
+    publication blockers.
+-   `bin/rtc-deferred-work-promotion-loop-remote.sh` runs up to three deferred
+    promotion jobs, rotates families every five minutes, and records loop pid
+    and script mtime in status so a patched-but-not-restarted loop is visible.
+-   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
+    manifest in review context. A feedback action that creates no independent
+    progress now launches a bounded progress-unblock job, not only actions that
+    contain obvious wait-only wording.
+
+After changing one of these scripts on Jetstream, restart the matching tmux
+session on the `rtc-fuzz` socket and confirm that the status file shows the new
+script behavior. Do not treat a script copy as deployed until the live status
+shows the new pid, script mtime, or new setting.
+
 ## Safety Rules
 
 -   Do not manually clean or restart shared `wp-env`s while lanes or browser

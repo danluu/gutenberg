@@ -8,6 +8,7 @@ SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517
 PR_SPLIT_BASE=/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515
 FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
+LOCAL_PUBLISH_MANIFEST=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
@@ -25,6 +26,8 @@ BRANCH_AUDIT=$BASE/current-branch-audit.tsv
 PUSH_MANIFEST=$BASE/current-push-manifest.tsv
 VALIDATION_MATRIX=$BASE/current-validation-matrix.tsv
 EVENTS=$BASE/events.ndjson
+TERMINAL_LEDGER=$BASE/terminal-ledger.tsv
+ACTIVE_SPLIT_FILE=$PR_SPLIT_BASE/current-pr-split.md
 LAUNCHES=$BASE/logs/launches.tsv
 LOG=$BASE/logs/critical-path-pr-executor.log
 LOCK_FILE=$BASE/critical-path-pr-executor.lock
@@ -39,7 +42,7 @@ BASE_REF=${RTC_CRITICAL_PR_EXECUTOR_BASE_REF:-trunk}
 CODEX_MODEL=${RTC_CRITICAL_PR_EXECUTOR_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_CRITICAL_PR_EXECUTOR_CODEX_REASONING_EFFORT:-xhigh}
 CODEX_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_CODEX_TIMEOUT_SECONDS:-5400}
-ENABLE_BROWSER_PREFLIGHT=${RTC_CRITICAL_PR_EXECUTOR_ENABLE_BROWSER_PREFLIGHT:-0}
+ENABLE_BROWSER_PREFLIGHT=${RTC_CRITICAL_PR_EXECUTOR_ENABLE_BROWSER_PREFLIGHT:-1}
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$BASE/worktrees" "$TMUX_WRAP"
 cat > "$TMUX_WRAP/tmux" <<'SH'
@@ -143,6 +146,182 @@ allow_heavy_work() {
 	esac
 }
 
+allow_critical_browser_preflight() {
+	[ "$ENABLE_BROWSER_PREFLIGHT" = 1 ] || return 1
+	case "$(resource_reason)" in
+		severe_pressure|unknown)
+			return 1
+			;;
+		*)
+			return 0
+			;;
+	esac
+}
+
+latest_local_publish_summary() {
+	if [ ! -s "$LOCAL_PUBLISH_MANIFEST" ]; then
+		printf 'missing'
+		return
+	fi
+	awk -F '\t' '
+		NR > 1 && NF >= 5 { rows++; last = $1 }
+		END {
+			if (rows > 0) {
+				printf "rows=%d latest=%s", rows, last
+			} else {
+				printf "empty"
+			}
+		}
+	' "$LOCAL_PUBLISH_MANIFEST"
+}
+
+latest_pr17_classification() {
+	find "$BASE/runs" -path '*/continuations/pr17-1020002/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+pr17_terminal_downscoped() {
+	local classification class
+	classification=$(latest_pr17_classification || true)
+	[ -n "$classification" ] || return 1
+	class=$(awk -F '\t' 'NR > 1 && $1 == "pr17-1020002" { print $2; exit }' "$classification" 2>/dev/null)
+	[ "$class" = "reclassify_downscope_not_product_owned" ]
+}
+
+fresh_pr17_product_evidence_after_terminal() {
+	local classification file
+	classification=$(latest_pr17_classification || true)
+	[ -n "$classification" ] || return 1
+	find "$BASE/runs" "$PR_SPLIT_BASE/runs" -type f \
+		\( -name 'classification.tsv' -o -name 'report.md' -o -name 'validation-head.tsv' -o -name 'validation-checks.tsv' \) \
+		-size +0c -newer "$classification" -print 2>/dev/null |
+		while IFS= read -r file; do
+			case "$file" in
+				*/continuations/pr17-1020002/classification.tsv|*/continuations/pr17-1020002/report.md)
+					continue
+					;;
+			esac
+			if rg -qi '1020002.*(fresh product evidence|product-owned|product owned|product branch|head_sha|owning head)|fresh.*1020002.*product' "$file" 2>/dev/null; then
+				printf '%s\n' "$file"
+				return 0
+			fi
+		done |
+		sed -n '1p'
+}
+
+pr17_suppressed_terminal() {
+	pr17_terminal_downscoped || return 1
+	[ -z "$(fresh_pr17_product_evidence_after_terminal || true)" ]
+}
+
+latest_lane_classification() {
+	local lane=$1
+	find "$BASE/runs" -path "*/continuations/${lane}/classification.tsv" -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+lane_classification_value() {
+	local lane=$1 path class
+	path=$(latest_lane_classification "$lane" || true)
+	[ -n "$path" ] || return 1
+	class=$(awk -F '\t' -v lane="$lane" 'NR > 1 && $1 == lane { print $2; exit }' "$path" 2>/dev/null)
+	[ -n "$class" ] || return 1
+	printf '%s' "$class"
+}
+
+lane_terminal_suppressed() {
+	local lane=$1 class
+	class=$(lane_classification_value "$lane" || true)
+	case "$lane:$class" in
+		pr17-1020002:reclassify_downscope_not_product_owned|\
+		seed-5200005-reducer:resolved_by_active_artifacts|\
+		seed-1060015-reducer:resolved_by_active_artifact_downscoped)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+canonical_manifest_path() {
+	if [ -s "$PUSH_MANIFEST" ]; then
+		printf '%s' "$PUSH_MANIFEST"
+	elif [ -s "$PR_SPLIT_BASE/runs/20260517T142930Z/jobs/outputs/rtc-cycle276-critical-executor-consume-cycle274-manifest-and-queue-proof/push-manifest.tsv" ]; then
+		printf '%s' "$PR_SPLIT_BASE/runs/20260517T142930Z/jobs/outputs/rtc-cycle276-critical-executor-consume-cycle274-manifest-and-queue-proof/push-manifest.tsv"
+	fi
+}
+
+canonical_manifest_branches() {
+	local manifest
+	manifest=$(canonical_manifest_path || true)
+	[ -n "$manifest" ] || return 1
+	awk -F '\t' '
+		NR == 1 { next }
+		{
+			branch = $2
+			publication = $9
+			cycle_status = $11
+			if (branch == "") {
+				next
+			}
+			if (cycle_status == "accept" || publication ~ /^publishable-/ || publication == "publishable-main-spine-or-pr05c-adjacent") {
+				print branch
+			}
+		}
+	' "$manifest" | awk '!seen[$0]++'
+}
+
+
+active_split_text() {
+	[ -s "$ACTIVE_SPLIT_FILE" ] || return 0
+	awk '
+		/^## Cycle [0-9]+ Review Update/ { start = NR }
+		{ lines[NR] = $0 }
+		END {
+			if (!start) {
+				exit
+			}
+			for (i = start; i <= NR; i++) {
+				if (i > start && lines[i] ~ /^## Cycle [0-9]+ Review Update/) {
+					exit
+				}
+				print lines[i]
+			}
+		}
+	' "$ACTIVE_SPLIT_FILE"
+}
+
+active_branch_allowed() {
+	local branch=$1
+	case "$branch" in
+		cycle264/pr05d-clean-base/semicolonless-entity-validation|\
+		finalized/cycle268/no-pr03b/rtc-*|\
+		finalized/cycle268/sidecar/rtc-pr06b-malformed-save-request-payload-minimal-on-pr07b|\
+		finalized/cycle268/sidecar/rtc-pr07c-reload-record-snapshots|\
+		ready-pr03b/rtc-pr01-*|\
+		ready-pr03b/rtc-pr02-*|\
+		ready-pr03b/rtc-pr03-*)
+			return 0
+			;;
+		ready/rtc-pr06b-*|ready/rtc-pr07c-*|ready/rtc-pr15a-fallback-group-move-green|\
+		ready/rtc-pr15b-fallback-group-insert-anchor-green|ready/rtc-pr15c-fallback-group-delete-green|\
+		deferred/rtc-*|fix/rtc-*|try/rtc-*|validation/rtc-*)
+			return 1
+			;;
+		ready/rtc-*|review/rtc-*|pr/rtc-*)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
 tmux_sessions() {
 	tmux list-sessions -F '#S' 2>/dev/null || true
 }
@@ -187,15 +366,71 @@ resolve_base_ref() {
 	fi
 }
 
+resolve_existing_ref() {
+	local fallback=$1
+	shift || true
+	local ref
+	for ref in "$@"; do
+		[ -n "$ref" ] || continue
+		if git -C "$SRC" rev-parse --verify -q "$ref^{commit}" >/dev/null; then
+			printf '%s' "$ref"
+			return
+		fi
+	done
+	printf '%s' "$fallback"
+}
+
+branch_base_ref() {
+	local branch=$1 default_base
+	default_base=$(resolve_base_ref)
+	case "$branch" in
+		ready/rtc-pr06b-*|review/rtc-pr06b-*|pr/rtc-pr06b-*)
+			resolve_existing_ref "$default_base" "ready/rtc-pr06a-persisted-empty-content-guard" "review/rtc-pr06a-persisted-empty-content-guard" "pr/rtc-pr06a-persisted-empty-content-guard"
+			;;
+		ready/rtc-pr07c-*|review/rtc-pr07c-*|pr/rtc-pr07c-*)
+			resolve_existing_ref "$default_base" "ready/rtc-pr07b-save-response-manager-base-record" "review/rtc-pr07b-save-response-manager-base-record" "pr/rtc-pr07b-save-response-manager-base-record"
+			;;
+		ready/rtc-pr14b-*|review/rtc-pr14b-*|pr/rtc-pr14b-*)
+			resolve_existing_ref "$default_base" "ready/rtc-pr14-table-body-array-green" "review/rtc-pr14-table-body-array-green" "pr/rtc-pr14-table-body-array-green"
+			;;
+		ready/rtc-pr15a-*|review/rtc-pr15a-*|pr/rtc-pr15a-*)
+			resolve_existing_ref "$default_base" "ready/rtc-pr14b-table-query-array-local-suffix-append" "review/rtc-pr14b-table-query-array-local-suffix-append" "pr/rtc-pr14b-table-query-array-local-suffix-append"
+			;;
+		ready/rtc-pr15b-*|review/rtc-pr15b-*|pr/rtc-pr15b-*)
+			resolve_existing_ref "$default_base" "ready/rtc-pr15a-fallback-group-move-green-on-pr14b" "review/rtc-pr15a-fallback-group-move-green-on-pr14b" "pr/rtc-pr15a-fallback-group-move-green-on-pr14b"
+			;;
+		ready/rtc-pr15c-*|review/rtc-pr15c-*|pr/rtc-pr15c-*)
+			resolve_existing_ref "$default_base" "ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b" "review/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b" "pr/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
+			;;
+		*)
+			printf '%s' "$default_base"
+			;;
+	esac
+}
+
 candidate_branches() {
+	if canonical_manifest_branches >/dev/null 2>&1; then
+		canonical_manifest_branches |
+			while IFS= read -r branch; do
+				[ -n "$branch" ] || continue
+				active_branch_allowed "$branch" || continue
+				git -C "$SRC" rev-parse --verify -q "$branch^{commit}" >/dev/null || continue
+				printf '%s\n' "$branch"
+			done |
+			head -n "$MAX_VALIDATION_BRANCHES_PER_CYCLE"
+		return
+	fi
 	git -C "$SRC" for-each-ref --sort=-committerdate --format='%(refname:short)' \
-		'refs/heads/ready/rtc-*' \
-		'refs/heads/review/rtc-*' \
-		'refs/heads/pr/rtc-*' \
-		'refs/heads/finalize/rtc-*' \
-		'refs/heads/fix/rtc-*' \
-		'refs/heads/deferred/rtc-*' 2>/dev/null |
+		'refs/heads/finalized/cycle268/no-pr03b/rtc-*' \
+		'refs/heads/finalized/cycle268/sidecar/rtc-pr06b-malformed-save-request-payload-minimal-on-pr07b' \
+		'refs/heads/finalized/cycle268/sidecar/rtc-pr07c-reload-record-snapshots' \
+		'refs/heads/ready-pr03b/rtc-pr0*' \
+		'refs/heads/cycle264/pr05d-clean-base/semicolonless-entity-validation' 2>/dev/null |
 		awk '!seen[$0]++' |
+		while IFS= read -r branch; do
+			active_branch_allowed "$branch" || continue
+			printf '%s\n' "$branch"
+		done |
 		head -n "$MAX_VALIDATION_BRANCHES_PER_CYCLE"
 }
 
@@ -254,6 +489,7 @@ latest_finalization	report	${latest_finalization:-missing}
 latest_progress_unblock	artifact	${latest_progress_unblock:-missing}
 latest_deferred_report	report	${latest_deferred_report:-missing}
 latest_coverage_status	status	${latest_coverage:-missing}/novelty-status.md
+latest_local_publish_manifest	publication	$LOCAL_PUBLISH_MANIFEST
 EOF
 	} > "$tmp"
 	atomic_move "$tmp" "$INPUTS"
@@ -275,24 +511,54 @@ write_no_progress() {
 			while IFS= read -r file; do
 				printf '%s\tzero_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
 			done
-		find "$BASE/runs" -maxdepth 7 -type f -name '*.tmp' -print 2>/dev/null |
-			head -100 |
-			while IFS= read -r file; do
-				printf '%s\ttmp_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
-			done
+			find "$BASE/runs" -maxdepth 7 -type f -name '*.tmp' -print 2>/dev/null |
+				head -100 |
+				while IFS= read -r file; do
+					printf '%s\ttmp_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
+				done
+			find "$BASE/runs" -maxdepth 7 -type f -name 'report.md' -size +0c -print 2>/dev/null |
+				while IFS= read -r file; do
+					if rg -qi 'disk[- ]preflight[- ]only|pre[- ]oracle|before oracle|runtime.*failed before|report\.tmp|header[- ]only' "$file" 2>/dev/null; then
+						printf '%s\tpre_oracle_or_preflight_only\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
+					fi
+				done
 	} > "$tmp"
 	atomic_move "$tmp" "$NO_PROGRESS"
 }
 
+write_terminal_ledger() {
+	local tmp=$TERMINAL_LEDGER.tmp lane classification class
+	{
+		printf 'lane_id\tclassification\tevidence_path\tevidence_mtime\tqueue_state\treopen_condition\n'
+		for lane in pr17-1020002 seed-5200005-reducer seed-1060015-reducer; do
+			classification=$(latest_lane_classification "$lane" || true)
+			[ -n "$classification" ] || continue
+			class=$(lane_classification_value "$lane" || true)
+			case "$lane:$class" in
+				pr17-1020002:reclassify_downscope_not_product_owned)
+					printf '%s\t%s\t%s\t%s\tterminal\tfresh rebuilt product evidence for seed 1020002 newer than terminal classification\n' "$lane" "$class" "$classification" "$(file_mtime "$classification")"
+					;;
+				seed-5200005-reducer:resolved_by_active_artifacts)
+					printf '%s\t%s\t%s\t%s\tterminal\tfresh source/replay evidence newer than active artifact resolution\n' "$lane" "$class" "$classification" "$(file_mtime "$classification")"
+					;;
+				seed-1060015-reducer:resolved_by_active_artifact_downscoped)
+					printf '%s\t%s\t%s\t%s\tterminal\tfresh browser/source red evidence newer than downscope classification\n' "$lane" "$class" "$classification" "$(file_mtime "$classification")"
+					;;
+			esac
+		done
+	} > "$tmp"
+	atomic_move "$tmp" "$TERMINAL_LEDGER"
+}
+
 write_lanes() {
 	local tmp=$LANES.tmp branch base_ref base_sha head_sha lane_id pr_id publication_class state output_dir
-	base_ref=$(resolve_base_ref)
-	base_sha=$(git -C "$SRC" rev-parse --short=12 "$base_ref" 2>/dev/null || true)
 	{
 		printf 'lane_id\tpr_id\tlane_kind\tpublication_class\tsource_repo\tsource_ref\tbase_ref\tbase_sha\thead_sha\tresource_class\tdependencies\tstate\toutput_dir\n'
 		for branch in $(candidate_branches); do
 			head_sha=$(git -C "$SRC" rev-parse --short=12 "$branch" 2>/dev/null || true)
 			[ -n "$head_sha" ] || continue
+			base_ref=$(branch_base_ref "$branch")
+			base_sha=$(git -C "$SRC" rev-parse --short=12 "$base_ref" 2>/dev/null || true)
 			lane_id="branch-$(slugify "$branch" | cut -c1-64)"
 			pr_id=$(pr_id_for_branch "$branch")
 			publication_class=$(publication_class_for_branch "$branch")
@@ -300,11 +566,18 @@ write_lanes() {
 			printf '%s\t%s\tbranch-validation\t%s\t%s\t%s\t%s\t%s\t%s\tgit-export\tnone\tqueued\t%s\n' \
 				"$lane_id" "$pr_id" "$publication_class" "$SRC" "$branch" "$base_ref" "$base_sha" "$head_sha" "$output_dir"
 		done
-		printf 'pr17-1020002\tPR17\tproof-reclassification\tvalidation-only\t%s\t1020002\t%s\t%s\t\tcodex-analysis\tnone\tqueued\t%s/runs/pr17-1020002\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		base_ref=$(resolve_base_ref)
+		base_sha=$(git -C "$SRC" rev-parse --short=12 "$base_ref" 2>/dev/null || true)
+		if ! lane_terminal_suppressed pr17-1020002; then
+			printf 'pr17-1020002\tPR17\tproof-reclassification\tvalidation-only\t%s\t1020002\t%s\t%s\t\tcodex-analysis\tnone\tqueued\t%s/runs/pr17-1020002\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		fi
 		printf 'pr07c-browser-env\tPR07C\tbrowser-env-preflight\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tresource-and-env\tgated\t%s/runs/pr07c-browser-env\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
-		printf 'seed-7510029-ui-discriminator\tPR18?\tui-discriminator\tvalidation-only\t%s\t7510029\t%s\t%s\t\tbrowser-e2e\tpr07c-browser-env\tgated\t%s/runs/7510029-ui-discriminator\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
-		printf 'seed-5200005-reducer\tPR05?\treducer\tvalidation-only\t%s\t5200005\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/5200005-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
-		printf 'seed-1060015-reducer\tPR05?\treducer\tvalidation-only\t%s\t1060015\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/1060015-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		if ! lane_terminal_suppressed seed-5200005-reducer; then
+			printf 'seed-5200005-reducer\tPR05?\treducer\tvalidation-only\t%s\t5200005\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/5200005-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		fi
+		if ! lane_terminal_suppressed seed-1060015-reducer; then
+			printf 'seed-1060015-reducer\tPR05?\treducer\tvalidation-only\t%s\t1060015\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/1060015-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		fi
 	} > "$tmp"
 	atomic_move "$tmp" "$LANES"
 }
@@ -319,47 +592,60 @@ write_blockers_and_queue() {
 	reason=$(resource_reason)
 	{
 		printf 'blocker_id\tkind\tpriority\tstate\tsource_input\tblocks\tblocked_by\trequired_artifacts\tactive_session\tnext_action\tupdated_at\n'
-		printf 'pr17-1020002\tfinal-stack-join\thigh\t%s\tpr_split/finalization\tfinal-stack-validation,filing\t%s\tclassification.tsv,report.md\t%s\tproof-or-reclassify PR17 seed 1020002\t%s\n' \
-			"$([ -n "$pr17_active" ] && printf active || printf runnable)" \
-			"$([ -n "$pr17_active" ] && printf active-job || printf none)" \
-			"${pr17_active:-}" "$now"
+		if pr17_suppressed_terminal; then
+			printf 'pr17-1020002\tfinal-stack-join\thigh\tterminal\tpr_split/finalization\tfinal-stack-validation,filing\tterminal-ledger\tclassification.tsv\t\tterminal downscope; reopen only with fresh product evidence newer than classification.tsv\t%s\n' "$now"
+		else
+			printf 'pr17-1020002\tfinal-stack-join\thigh\t%s\tpr_split/finalization\tfinal-stack-validation,filing\t%s\tclassification.tsv,report.md\t%s\tproof-or-reclassify PR17 seed 1020002\t%s\n' \
+				"$([ -n "$pr17_active" ] && printf active || printf runnable)" \
+				"$([ -n "$pr17_active" ] && printf active-job || printf none)" \
+				"${pr17_active:-}" "$now"
+		fi
 		printf 'pr07c-browser-env\tbrowser-environment\thigh\t%s\tpr_split/finalization\tPR07C replay,7510029\t%s\tvalidation.tsv,report.md\t\tbrowser environment preflight only; replay stays gated\t%s\n' \
-			"$([ "$ENABLE_BROWSER_PREFLIGHT" = 1 ] && allow_heavy_work && printf runnable || printf gated)" \
-			"$([ "$ENABLE_BROWSER_PREFLIGHT" = 1 ] && allow_heavy_work && printf none || printf "resource_or_env:$reason")" "$now"
-		printf 'seed-7510029-ui-discriminator\tui-discriminator\tmedium\tgated\tpr_split/finalization\tPR18? classification\tpr07c-browser-env\tclassification.tsv,report.md\t\twait for PR07C browser environment lane\t%s\n' "$now"
-		printf 'seed-5200005-reducer\treducer\thigh\t%s\tpr_split/progress-unblock\tPR05 residual decision\t%s\tclassification.tsv,report.md\t%s\tadopt active reducer or launch bounded continuation if missing\t%s\n' \
-			"$([ -n "$s5200005" ] && printf active || printf runnable)" \
-			"$([ -n "$s5200005" ] && printf active-job || printf none)" \
-			"${s5200005:-}" "$now"
-		printf 'seed-1060015-reducer\treducer\thigh\t%s\tpr_split/progress-unblock\tPR05 residual decision\t%s\tclassification.tsv,report.md\t%s\tadopt active reducer or launch bounded continuation if missing\t%s\n' \
-			"$([ -n "$s1060015" ] && printf active || printf runnable)" \
-			"$([ -n "$s1060015" ] && printf active-job || printf none)" \
-			"${s1060015:-}" "$now"
+			"$(allow_critical_browser_preflight && printf runnable || printf gated)" \
+			"$(allow_critical_browser_preflight && printf none || printf "resource_or_env:$reason")" "$now"
+		if lane_terminal_suppressed seed-5200005-reducer; then
+			printf 'seed-5200005-reducer	reducer	high	terminal	pr_split/progress-unblock	PR05 residual decision	terminal-ledger	classification.tsv		resolved by active artifacts; reopen only with fresh newer product-owned evidence	%s
+' "$now"
+		else
+			printf 'seed-5200005-reducer	reducer	high	%s	pr_split/progress-unblock	PR05 residual decision	%s	classification.tsv,report.md	%s	adopt active reducer or launch bounded continuation if missing	%s
+' \
+				"$([ -n "$s5200005" ] && printf active || printf runnable)" \
+				"$([ -n "$s5200005" ] && printf active-job || printf none)" \
+				"${s5200005:-}" "$now"
+		fi
+		if lane_terminal_suppressed seed-1060015-reducer; then
+			printf 'seed-1060015-reducer	reducer	high	terminal	pr_split/progress-unblock	PR05 residual decision	terminal-ledger	classification.tsv		resolved/downscoped by active artifact; reopen only with fresh newer product-owned evidence	%s
+' "$now"
+		else
+			printf 'seed-1060015-reducer	reducer	high	%s	pr_split/progress-unblock	PR05 residual decision	%s	classification.tsv,report.md	%s	adopt active reducer or launch bounded continuation if missing	%s
+' \
+				"$([ -n "$s1060015" ] && printf active || printf runnable)" \
+				"$([ -n "$s1060015" ] && printf active-job || printf none)" \
+				"${s1060015:-}" "$now"
+		fi
 		printf 'reload-hydration\tdeferred-family\thigh\t%s\tdeferred_status\tdeferred PR candidate\t%s\tclassification.tsv,report.md\t%s\tadopt deferred promotion; do not relaunch by interval alone\t%s\n' \
 			"$([ -n "$reload_active" ] && printf active || printf queued)" \
 			"$([ -n "$reload_active" ] && printf active-job || printf deferred-loop)" \
 			"${reload_active:-}" "$now"
-		if [ -f "$PR_SPLIT_BASE/current-pr-split.md" ]; then
-			rg -ni 'No verified branch link yet|same full stack|whole stack|wildcard|polluted|not ready|blocked|missing push|push manifest' "$PR_SPLIT_BASE/current-pr-split.md" 2>/dev/null |
-				head -80 |
-				while IFS= read -r line; do
-					local id
-					id="split-$(hash_key "$line")"
-					printf '%s\treport-signal\tmedium\tdiscovered\tcurrent-pr-split.md\tbranch/export progress\treconcile\tbranch-audit.tsv,push-manifest.tsv\t\treconcile report signal: %s\t%s\n' "$id" "$(printf '%s' "$line" | tr '\t' ' ' | cut -c1-180)" "$now"
-				done
-		fi
 	} > "$blockers_tmp"
 	{
 		printf 'job_id\tlane_id\tblocker_id\taction_kind\tdedupe_key\tresource_class\tpriority\tstate\tattempt\tsession\tworktree\toutput_dir\tcreated_at\tstarted_at\tupdated_at\texit_code\tresult\n'
-		printf 'job-pr17-1020002\tpr17-1020002\tpr17-1020002\tproof-reclassify\tpr17-1020002-proof\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/pr17-1020002\t%s\t\t%s\t\t%s\n' \
-			"$([ -n "$pr17_active" ] && printf active || printf runnable)" "${pr17_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr17_active" ] && printf adopted || printf pending)"
+		if ! lane_terminal_suppressed pr17-1020002; then
+			printf 'job-pr17-1020002\tpr17-1020002\tpr17-1020002\tproof-reclassify\tpr17-1020002-proof\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/pr17-1020002\t%s\t\t%s\t\t%s\n' \
+				"$([ -n "$pr17_active" ] && printf active || printf runnable)" "${pr17_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr17_active" ] && printf adopted || printf pending)"
+		fi
 		printf 'job-pr07c-browser-env\tpr07c-browser-env\tpr07c-browser-env\tbrowser-env-preflight\tpr07c-browser-env\tbrowser-e2e\thigh\t%s\t0\t\t\t%s/runs/pr07c-browser-env\t%s\t\t%s\t\t%s\n' \
-			"$([ "$ENABLE_BROWSER_PREFLIGHT" = 1 ] && allow_heavy_work && printf runnable || printf gated)" "$BASE" "$now" "$now" "$([ "$ENABLE_BROWSER_PREFLIGHT" = 1 ] && allow_heavy_work && printf pending || printf resource_or_env_gated)"
-		printf 'job-7510029-ui-discriminator\tseed-7510029-ui-discriminator\tseed-7510029-ui-discriminator\tui-discriminator\t7510029-ui-discriminator\tbrowser-e2e\tmedium\tgated\t0\t\t\t%s/runs/7510029-ui-discriminator\t%s\t\t%s\t\tblocked_by_pr07c_browser_env\n' "$BASE" "$now" "$now"
-		printf 'job-5200005-reducer\tseed-5200005-reducer\tseed-5200005-reducer\treducer\t5200005-reducer\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/5200005-reducer\t%s\t\t%s\t\t%s\n' \
-			"$([ -n "$s5200005" ] && printf active || printf queued)" "${s5200005:-}" "$BASE" "$now" "$now" "$([ -n "$s5200005" ] && printf adopted || printf queued_for_later)"
-		printf 'job-1060015-reducer\tseed-1060015-reducer\tseed-1060015-reducer\treducer\t1060015-reducer\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/1060015-reducer\t%s\t\t%s\t\t%s\n' \
-			"$([ -n "$s1060015" ] && printf active || printf queued)" "${s1060015:-}" "$BASE" "$now" "$now" "$([ -n "$s1060015" ] && printf adopted || printf queued_for_later)"
+			"$(allow_critical_browser_preflight && printf runnable || printf gated)" "$BASE" "$now" "$now" "$(allow_critical_browser_preflight && printf pending || printf resource_or_env_gated)"
+		if ! lane_terminal_suppressed seed-5200005-reducer; then
+			printf 'job-5200005-reducer	seed-5200005-reducer	seed-5200005-reducer	reducer	5200005-reducer	codex-analysis	high	%s	0	%s		%s/runs/5200005-reducer	%s		%s		%s
+' \
+				"$([ -n "$s5200005" ] && printf active || printf queued)" "${s5200005:-}" "$BASE" "$now" "$now" "$([ -n "$s5200005" ] && printf adopted || printf queued_for_later)"
+		fi
+		if ! lane_terminal_suppressed seed-1060015-reducer; then
+			printf 'job-1060015-reducer	seed-1060015-reducer	seed-1060015-reducer	reducer	1060015-reducer	codex-analysis	high	%s	0	%s		%s/runs/1060015-reducer	%s		%s		%s
+' \
+				"$([ -n "$s1060015" ] && printf active || printf queued)" "${s1060015:-}" "$BASE" "$now" "$now" "$([ -n "$s1060015" ] && printf adopted || printf queued_for_later)"
+		fi
 		while IFS=$'\t' read -r lane_id _pr_id lane_kind _publication_class _source_repo _source_ref _base_ref _base_sha _head_sha _resource_class _deps _state output_dir; do
 			[ "$lane_kind" = "branch-validation" ] || continue
 			printf 'validate-%s\t%s\tbranch-export-%s\tvalidate-export\tvalidate-%s\tgit-export\tmedium\tqueued\t0\t\t\t%s\t%s\t\t%s\t\tpending\n' \
@@ -405,7 +691,7 @@ write_branch_export_headers() {
 launch_validation_job() {
 	local lane_id=$1 branch=$2 base_ref=$3 publication_class=$4 head_sha=$5
 	local dedupe session run_dir worktree runner report rc log_file
-	dedupe="validate-$lane_id-$head_sha"
+	dedupe="validate-$lane_id-$head_sha-$(slugify "$base_ref" | cut -c1-32)"
 	if task_recently_launched "$dedupe" "$MIN_TASK_INTERVAL_SECONDS"; then
 		return
 	fi
@@ -591,34 +877,47 @@ EOF
 }
 
 launch_continuation_jobs() {
-	launch_continuation_job \
-		"pr17-1020002" \
-		"pr17-1020002-proof" \
-		"1020002|pr17|critical-continuation-pr17" \
-		"PR17 / seed 1020002 proof-or-reclassification for final-stack validation and filing"
-	launch_continuation_job \
-		"seed-5200005-reducer" \
-		"5200005-reducer" \
-		"5200005|critical-continuation-seed-5200005" \
-		"bounded reducer/classification for seed 5200005 without launching broad fuzzing"
-	launch_continuation_job \
-		"seed-1060015-reducer" \
-		"1060015-reducer" \
-		"1060015|critical-continuation-seed-1060015" \
-		"bounded reducer/classification for seed 1060015 without launching broad fuzzing"
+	if ! lane_terminal_suppressed pr17-1020002; then
+		launch_continuation_job \
+			"pr17-1020002" \
+			"pr17-1020002-proof" \
+			"1020002|pr17|critical-continuation-pr17" \
+			"PR17 / seed 1020002 proof-or-reclassification for final-stack validation and filing"
+	fi
+	if ! lane_terminal_suppressed seed-5200005-reducer; then
+		launch_continuation_job \
+			"seed-5200005-reducer" \
+			"5200005-reducer" \
+			"5200005|critical-continuation-seed-5200005" \
+			"bounded reducer/classification for seed 5200005 without launching broad fuzzing"
+	fi
+	if ! lane_terminal_suppressed seed-1060015-reducer; then
+		launch_continuation_job \
+			"seed-1060015-reducer" \
+			"1060015-reducer" \
+			"1060015|critical-continuation-seed-1060015" \
+			"bounded reducer/classification for seed 1060015 without launching broad fuzzing"
+	fi
+	if allow_critical_browser_preflight; then
+		launch_continuation_job \
+			"pr07c-browser-env" \
+			"pr07c-browser-env" \
+			"pr07c-browser-env|pr07c|browser-env" \
+			"PR07C browser-environment preflight and owner-proof readiness. Reserve unique WP_ENV_PORT and WP_ENV_PHPMYADMIN_PORT if running browser checks; write validation.tsv/report.md or classification.tsv with the exact runtime blocker."
+	fi
 }
 
 launch_validation_jobs() {
 	local active branch lane_id base_ref publication_class head_sha
 	active=$(active_count_matching '^rtc-critical-validate-')
 	[ "$active" -lt "$MAX_ACTIVE_VALIDATIONS" ] || return
-	base_ref=$(resolve_base_ref)
 	while IFS= read -r branch; do
 		[ -n "$branch" ] || continue
 		active=$(active_count_matching '^rtc-critical-validate-')
 		[ "$active" -lt "$MAX_ACTIVE_VALIDATIONS" ] || break
 		head_sha=$(git -C "$SRC" rev-parse --short=12 "$branch" 2>/dev/null || true)
 		[ -n "$head_sha" ] || continue
+		base_ref=$(branch_base_ref "$branch")
 		lane_id="branch-$(slugify "$branch" | cut -c1-64)"
 		publication_class=$(publication_class_for_branch "$branch")
 		launch_validation_job "$lane_id" "$branch" "$base_ref" "$publication_class" "$head_sha" || true
@@ -633,6 +932,8 @@ write_status() {
 		echo "- updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 		echo "- session: $SESSION"
 		echo "- resource reason: $(resource_reason)"
+		echo "- critical browser preflight: $(allow_critical_browser_preflight && printf enabled || printf gated)"
+		echo "- latest local publish manifest: $(latest_local_publish_summary)"
 		echo "- max active continuations: $MAX_ACTIVE_CONTINUATIONS"
 		echo "- max active validations: $MAX_ACTIVE_VALIDATIONS"
 		echo "- cycle sleep seconds: $CYCLE_SLEEP_SECONDS"
@@ -665,6 +966,7 @@ reconcile_once() {
 	write_branch_export_headers
 	write_inputs
 	write_no_progress
+	write_terminal_ledger
 	write_lanes
 	write_blockers_and_queue
 	write_active_jobs
