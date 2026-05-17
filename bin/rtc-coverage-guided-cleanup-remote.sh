@@ -11,7 +11,8 @@ printf '[%s] cleanup coverage-guided stale processes\n' "$(date -u +%Y-%m-%dT%H:
 
 kill_tmux_session() {
 	local sess="$1"
-	if /usr/bin/tmux -L rtc-fuzz has-session -t "$sess" 2>/dev/null; then
+	if /usr/bin/tmux -L rtc-fuzz list-sessions -F '#S' 2>/dev/null |
+		grep -Fxq "$sess"; then
 		printf '[%s] kill tmux session=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$sess" >> "$log"
 		/usr/bin/tmux -L rtc-fuzz kill-session -t "$sess" 2>/dev/null || true
 	fi

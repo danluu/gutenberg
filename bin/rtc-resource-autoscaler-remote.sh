@@ -139,7 +139,8 @@ current_repo_roots() {
 }
 
 session_running() {
-	"$TMUX" -L "$TMUX_SOCKET" has-session -t rtc-coverage-guided-novelty 2>/dev/null
+	"$TMUX" -L "$TMUX_SOCKET" list-sessions -F '#S' 2>/dev/null |
+		grep -Fxq rtc-coverage-guided-novelty
 }
 
 cleanup_orphan_monitors() {

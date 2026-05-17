@@ -11,6 +11,7 @@ INTERVAL_SECONDS="${RTC_DUP_NOISE_INTERVAL_SECONDS:-0}"
 MAX_PARALLEL="${RTC_DUP_NOISE_MAX_PARALLEL:-6}"
 ACTION_EVERY_CYCLES="${RTC_DUP_NOISE_ACTION_EVERY_CYCLES:-2}"
 CODEX_TIMEOUT_SECONDS="${RTC_DUP_NOISE_CODEX_TIMEOUT_SECONDS:-7200}"
+STALE_LOOP_LOCK_SECONDS="${RTC_DUP_NOISE_STALE_LOOP_LOCK_SECONDS:-300}"
 
 export PATH="/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin:/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin:$PATH"
 
@@ -42,6 +43,10 @@ acquire_process_singleton() {
 
 slugify() {
   printf '%s' "$1" | tr '[:upper:] ' '[:lower:]-' | tr -cd 'a-z0-9-'
+}
+
+has_exact_session() {
+  tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$1"
 }
 
 latest_coverage_root() {
@@ -251,6 +256,7 @@ EOF
   cat > "$run_script" <<EOF
 #!/usr/bin/env bash
 set -uo pipefail
+exec 8>&- 2>/dev/null || true
 cd "$FUZZ_REPO" || exit 1
 timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
 rc=\$?
@@ -259,7 +265,7 @@ exit "\$rc"
 EOF
   chmod +x "$run_script"
 
-  if tmux has-session -t "$session" 2>/dev/null; then
+  if has_exact_session "$session"; then
     tmux kill-session -t "$session" 2>/dev/null || true
   fi
   tmux new-session -d -s "$session" "$run_script"
@@ -321,6 +327,7 @@ Do not edit files.
 EOF
 
   (
+    exec 8>&- 2>/dev/null || true
     cd "$FUZZ_REPO" || exit 1
     timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
@@ -384,6 +391,7 @@ EOF
 
   mkdir -p "$run_dir/artifacts"
   (
+    exec 8>&- 2>/dev/null || true
     cd "$FUZZ_REPO" || exit 1
     timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
@@ -428,7 +436,7 @@ increment_cycle_count() {
 
 main() {
   acquire_process_singleton
-  log "loop started model=$MODEL reasoning=$REASONING max_parallel=$MAX_PARALLEL interval=${INTERVAL_SECONDS}s action_every=${ACTION_EVERY_CYCLES} codex_timeout=${CODEX_TIMEOUT_SECONDS}s"
+  log "loop started model=$MODEL reasoning=$REASONING max_parallel=$MAX_PARALLEL interval=${INTERVAL_SECONDS}s action_every=${ACTION_EVERY_CYCLES} codex_timeout=${CODEX_TIMEOUT_SECONDS}s stale_loop_lock=${STALE_LOOP_LOCK_SECONDS}s"
   while true; do
     if mkdir "$BASE/loop.lock" 2>/dev/null; then
       echo "$$" > "$BASE/loop.lock/pid"
@@ -447,15 +455,25 @@ main() {
       fi
       rm -rf "$BASE/loop.lock"
     else
-      local lock_pid lock_age
+      local lock_pid lock_started lock_age_seconds sleep_seconds
       lock_pid="$(sed -n '1p' "$BASE/loop.lock/pid" 2>/dev/null || true)"
-      lock_age="$(find "$BASE/loop.lock" -maxdepth 0 -mmin +180 -print 2>/dev/null || true)"
-      if { [ -z "$lock_pid" ] || ! kill -0 "$lock_pid" 2>/dev/null; } && [ -n "$lock_age" ]; then
-        log "removing stale duplicate/noise lock pid=${lock_pid:-unknown}"
+      lock_started="$(sed -n '1p' "$BASE/loop.lock/created-at-epoch" 2>/dev/null || true)"
+      case "$lock_started" in
+        ''|*[!0-9]*) lock_age_seconds=$(( STALE_LOOP_LOCK_SECONDS + 1 )) ;;
+        *) lock_age_seconds=$(( $(date -u +%s) - lock_started )) ;;
+      esac
+      if { [ -z "$lock_pid" ] || ! kill -0 "$lock_pid" 2>/dev/null; } && [ "$lock_age_seconds" -ge "$STALE_LOOP_LOCK_SECONDS" ]; then
+        log "removing stale duplicate/noise loop.lock pid=${lock_pid:-unknown} age=${lock_age_seconds}s"
         rm -rf "$BASE/loop.lock"
         continue
       fi
-      log "previous duplicate/noise loop cycle still locked by pid=${lock_pid:-unknown}; skipping"
+      log "previous duplicate/noise loop cycle still locked by pid=${lock_pid:-unknown} age=${lock_age_seconds}s; skipping"
+      sleep_seconds="$INTERVAL_SECONDS"
+      if [ "$sleep_seconds" -lt 15 ]; then
+        sleep_seconds=15
+      fi
+      sleep "$sleep_seconds"
+      continue
     fi
     sleep "$INTERVAL_SECONDS"
   done

@@ -193,6 +193,17 @@ errors, or harness-work candidates before reviewing the mix. Every cycle it:
 -   builds context from the current coverage-guided, focused, strict-expansion,
     gap-booster, unit/property, coverage-guided lower-level, and native sidecar
     run roots;
+-   performs a control-plane self-audit before making mix recommendations:
+    expected controller tmux sessions must be exact matches, not prefix matches;
+    an alive watchdog must not mask a missing main loop; coverage-guided novelty
+    must not sit with an empty `supervisor-groups.json` or zero materialized
+    supervisor groups when current-run duplicate/noise is clear; and historical
+    known-noise holds must not starve current clean runs. The audit also checks
+    whether the duplicate/noise singleton lock is held without a live controller
+    PID, which usually means a long-running child inherited the lock and will
+    block restart attempts. A stale duplicate/noise per-cycle `loop.lock` with
+    no live owner is also an action item because it prevents review/action cycles
+    from running even when the main tmux session exists;
 -   reconciles root inventory against live tmux/process state and marks
     `TELEMETRY-INVARIANT-FAIL` when a live event-producing sidecar is not
     visible through `events.ndjson`;
@@ -239,7 +250,12 @@ blocking the lower-level work.
 The launcher also starts `rtc-fuzz-level-mix-persona-loop-watchdog`, which
 restarts `rtc-fuzz-level-mix-persona-loop` if the controller exits. A missing
 level-mix tmux session is a service failure, not a state that should wait for a
-human prompt.
+human prompt. Watchdogs and guards must use exact session-name checks, because
+`tmux has-session -t name` can prefix-match `name-watchdog` and falsely report
+that the main session exists. Long-running child processes launched by singleton
+controllers must close the controller lock file descriptor before running Codex
+or tests; otherwise a killed parent can leave an orphan child holding the lock
+and make every subsequent restart exit immediately.
 
 `bin/rtc-native-assert-protocol-work-start-remote.sh` starts three additional
 parallel Jetstream2 workstreams:
@@ -349,6 +365,9 @@ The remote launchers are intentionally split by ownership:
     pressure can reduce the coverage-guided budget below the normal pressure
     floor, and scale-up is blocked while the longer load averages still show a
     backlog.
+    Coverage-guided historical duplicate/noise is advisory unless the
+    current-run duplicate/noise gate is also active; otherwise the loop must keep
+    at least one bounded browser/e2e lane materialized.
 -   `rtc-strict-expansion-start-remote.sh`, `rtc-focused-shards-start-remote.sh`,
     and `rtc-gap-booster-start-remote.sh` start independent fuzz campaigns for
     high-value gaps.
@@ -394,7 +413,9 @@ The remote launchers are intentionally split by ownership:
     the focused gap Codex loop, duplicate/noise remediation, level-mix,
     native/protocol harness loops, the fuzz-only assertion loop, the
     deferred-work promotion loop, the PR-finalization loop, and the resource
-    autoscaler.
+    autoscaler. It uses exact tmux session-name checks and treats a
+    coverage-guided novelty run with an empty work queue and clear current-run
+    noise as a materialization stall to restart and escalate.
 
 Start or refresh the guard after installing the launchers. `stop` exits the
 guard process after killing its sleeping child, so a refresh should not leave an

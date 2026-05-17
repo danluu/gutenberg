@@ -661,6 +661,221 @@ if tmux_levels["fuzz-assertion"] and not event_levels["fuzz-assertion"]:
     print("- telemetry-invariant-failure: fuzz-assertion tmux is live but context roots do not show fuzz-assertion events.")
 PY
     echo
+    echo "## Control-Plane Self-Audit"
+    python3 - "$coverage_root" <<'PY'
+import json
+import fcntl
+import os
+import re
+import subprocess
+import sys
+import time
+from datetime import datetime, timezone
+
+coverage_root = sys.argv[1] if len(sys.argv) > 1 else ""
+try:
+    proc = subprocess.run(
+        ["tmux", "list-sessions", "-F", "#S"],
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    sessions = [line.strip() for line in proc.stdout.splitlines() if line.strip()]
+except Exception:
+    sessions = []
+session_set = set(sessions)
+
+expected = [
+    "rtc-coverage-guided-novelty",
+    "rtc-coverage-guided-supervisor",
+    "rtc-coverage-guided-watchdog",
+    "rtc-fuzz-level-mix-persona-loop",
+    "rtc-fuzz-level-mix-persona-loop-watchdog",
+    "rtc-duplicate-noise-persona-loop",
+    "rtc-resource-autoscaler",
+    "rtc-native-harness-persona-loop",
+    "rtc-protocol-server-persona-loop",
+]
+
+print("| check | status | detail |")
+print("| --- | --- | --- |")
+for name in expected:
+    if name in session_set:
+        print(f"| exact-session:{name} | ok | exact tmux session present |")
+        continue
+    prefix_matches = [session for session in sessions if session.startswith(name)]
+    if prefix_matches:
+        print(
+            f"| exact-session:{name} | ACTION-NEEDED | missing exact session but prefix matches exist: {', '.join(prefix_matches[:5])}; do not use prefix tmux has-session checks |"
+        )
+    else:
+        print(f"| exact-session:{name} | ACTION-NEEDED | exact tmux session missing |")
+
+def pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+def singleton_lock_state(lock_path):
+    try:
+        handle = open(lock_path, "a")
+    except OSError as exc:
+        return ("unknown", f"cannot open lock: {exc}")
+    try:
+        acquired = False
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            acquired = True
+        except BlockingIOError:
+            return ("held", "lock is held")
+        finally:
+            if acquired:
+                try:
+                    fcntl.flock(handle, fcntl.LOCK_UN)
+                except OSError:
+                    pass
+        return ("free", "lock is free")
+    finally:
+        handle.close()
+
+dup_base = "/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516"
+dup_pid_path = os.path.join(dup_base, "process.pid")
+dup_lock_path = os.path.join(dup_base, "process.lock")
+dup_pid = None
+try:
+    raw_pid = open(dup_pid_path).read().strip()
+    if raw_pid:
+        dup_pid = int(raw_pid)
+except Exception:
+    dup_pid = None
+dup_pid_is_alive = pid_alive(dup_pid) if dup_pid is not None else False
+dup_lock_state, dup_lock_detail = singleton_lock_state(dup_lock_path)
+if "rtc-duplicate-noise-persona-loop" not in session_set and dup_lock_state == "held" and not dup_pid_is_alive:
+    print("| duplicate-noise-singleton | ACTION-NEEDED | exact session missing but process.lock is held with no live process.pid; likely inherited by an orphan Codex child, so restart attempts will silently fail until the orphan holder is killed or the lock inheritance bug is fixed |")
+elif "rtc-duplicate-noise-persona-loop" not in session_set and dup_lock_state == "free":
+    print("| duplicate-noise-singleton | ACTION-NEEDED | exact session missing and singleton lock is free; guard should restart this loop immediately |")
+elif "rtc-duplicate-noise-persona-loop" in session_set and dup_lock_state == "free":
+    print("| duplicate-noise-singleton | ACTION-NEEDED | exact session present but singleton process.lock is free; the tmux session may not be running the controller body |")
+else:
+    pid_detail = f"pid={dup_pid} alive={dup_pid_is_alive}" if dup_pid is not None else "no process.pid"
+    print(f"| duplicate-noise-singleton | ok | {dup_lock_detail}; {pid_detail} |")
+
+dup_loop_lock = os.path.join(dup_base, "loop.lock")
+dup_loop_pid = None
+dup_loop_started = None
+try:
+    raw_loop_pid = open(os.path.join(dup_loop_lock, "pid")).read().strip()
+    if raw_loop_pid:
+        dup_loop_pid = int(raw_loop_pid)
+except Exception:
+    dup_loop_pid = None
+try:
+    raw_started = open(os.path.join(dup_loop_lock, "created-at-epoch")).read().strip()
+    if raw_started:
+        dup_loop_started = int(raw_started)
+except Exception:
+    dup_loop_started = None
+if os.path.isdir(dup_loop_lock):
+    dup_loop_age = int(time.time() - dup_loop_started) if dup_loop_started else None
+    dup_loop_alive = pid_alive(dup_loop_pid) if dup_loop_pid is not None else False
+    if not dup_loop_alive and (dup_loop_age is None or dup_loop_age >= 300):
+        print(f"| duplicate-noise-cycle-lock | ACTION-NEEDED | loop.lock is stale pid={dup_loop_pid} alive={dup_loop_alive} age={dup_loop_age}; the duplicate/noise loop will skip work until stale lock cleanup removes it |")
+    else:
+        print(f"| duplicate-noise-cycle-lock | check | loop.lock present pid={dup_loop_pid} alive={dup_loop_alive} age={dup_loop_age} |")
+else:
+    print("| duplicate-noise-cycle-lock | ok | no per-cycle loop.lock present |")
+
+def parse_status_number(text, label):
+    match = re.search(rf"- {re.escape(label)}:\s*([0-9.]+)", text)
+    if not match:
+        return None
+    value = match.group(1)
+    try:
+        if "." in value:
+            return float(value)
+        return int(value)
+    except ValueError:
+        return None
+
+def file_age(path):
+    try:
+        return max(0, int(time.time() - os.path.getmtime(path)))
+    except OSError:
+        return None
+
+groups_path = os.path.join(coverage_root, "supervisor-groups.json") if coverage_root else ""
+state_path = os.path.join(coverage_root, "supervisor-state.json") if coverage_root else ""
+status_path = os.path.join(coverage_root, "novelty-status.md") if coverage_root else ""
+status_text = ""
+try:
+    status_text = open(status_path, errors="replace").read()
+except OSError:
+    pass
+
+groups = None
+if groups_path:
+    try:
+        parsed = json.load(open(groups_path))
+        groups = parsed if isinstance(parsed, list) else []
+    except Exception:
+        groups = None
+
+state_groups = None
+active_run_dirs = 0
+state_age = None
+try:
+    state = json.load(open(state_path))
+    parsed_groups = state.get("groups")
+    state_groups = parsed_groups if isinstance(parsed_groups, list) else []
+    for group in state_groups:
+        if isinstance(group, dict):
+            active_run_dirs += len([d for d in group.get("activeRunDirs") or [] if d])
+    updated = state.get("lastUpdatedAt") or state.get("startedAt")
+    if updated:
+        state_age = int(max(0, time.time() - datetime.fromisoformat(str(updated).replace("Z", "+00:00")).timestamp()))
+except Exception:
+    pass
+
+current_signatures = parse_status_number(status_text, "signatures")
+current_duplicate_share = parse_status_number(status_text, "top duplicate family share")
+likely_real = parse_status_number(status_text, "likely-real visible")
+current_noise_clear = (
+    (current_signatures in (None, 0) or (current_duplicate_share is not None and current_duplicate_share == 0))
+    and (likely_real in (None, 0))
+)
+historical_hold_present = "hold-coverage-guidance-codex" in status_text and "historical" in status_text
+
+if groups is None:
+    age = file_age(coverage_root) if coverage_root else None
+    print(f"| coverage-supervisor-groups | ACTION-NEEDED | missing/unreadable supervisor-groups.json in current coverage root {coverage_root}; age={age}s |")
+elif not groups:
+    age = file_age(groups_path)
+    status = "ACTION-NEEDED" if current_noise_clear else "check"
+    print(f"| coverage-supervisor-groups | {status} | supervisor-groups.json is empty; age={age}s current_noise_clear={current_noise_clear} |")
+else:
+    print(f"| coverage-supervisor-groups | ok | {len(groups)} group(s) configured |")
+
+if state_groups is not None and len(state_groups) == 0:
+    age = state_age if state_age is not None else "unknown"
+    status = "ACTION-NEEDED" if current_noise_clear else "check"
+    print(f"| coverage-materialization | {status} | supervisor-state has zero groups; age={age}s current_noise_clear={current_noise_clear} |")
+elif state_groups is not None:
+    status = "ok" if active_run_dirs > 0 else "ACTION-NEEDED"
+    print(f"| coverage-materialization | {status} | supervisor groups={len(state_groups)} active_run_dirs={active_run_dirs} age={state_age} |")
+else:
+    print("| coverage-materialization | check | supervisor-state.json missing or unreadable |")
+
+if historical_hold_present and current_noise_clear:
+    print("| historical-noise-hold | ACTION-NEEDED | historical known-noise hold is present while current-run duplicate/noise is clear; do not let historical noise starve current work |")
+elif historical_hold_present:
+    print("| historical-noise-hold | check | historical hold present; verify current-run duplicate/noise still justifies it |")
+else:
+    print("| historical-noise-hold | ok | no historical-noise hold detected in current novelty status |")
+PY
+    echo
     echo "## Coverage-Guided Lower-Level Quality"
     python3 - "$roots_file" <<'PY'
 import json
@@ -991,6 +1206,8 @@ This controller must run continuously. Do not wait for stalls or error condition
 
 Before recommending work, audit the context itself. Treat any TELEMETRY-INVARIANT-FAIL line as the highest-priority bug: the loop must not ask personas to reason from a view that disagrees with tmux, current-run roots, status.tsv, or events.ndjson. A lane merely existing is not enough; evaluate whether its executions, novelty counters, crash/noise counters, and corpus growth are visible and useful.
 
+Also audit the control plane itself. Treat any ACTION-NEEDED row in "Control-Plane Self-Audit" as a controller bug to fix before making mix recommendations. Missing exact tmux sessions, prefix-only session matches, empty coverage supervisor groups, zero materialized coverage groups, or a historical-noise hold while current-run noise is clear are not acceptable steady states.
+
 Also audit materialization. Treat any ACTION-NEEDED line in "Resource Autoscaler And Browser Materialization" as a control-loop failure: requested browser/e2e budget does not count as useful work unless the supervisor has live run directories or running groups. If the novelty monitor is alive but the supervisor is stale or all groups are paused on infra startup, recommend or make the smallest bounded fix that restarts/remediates the materialization path and exposes the failure in the status graph/context.
 
 Also audit runner throughput. Treat any ACTION-NEEDED line in "Runner Throughput Diagnostics" as an actionable loop failure, not background data. A low-level lane that repeatedly launches npm-run-test-unit/Jest per batch, spends most wall time in startup/transforms/coverage setup, or sleeps between batches should either be changed to amortize startup, replaced with a persistent/direct lower-level harness, given a larger useful batch, or explicitly justified with evidence.
@@ -1087,6 +1304,8 @@ $recent
 The controller should not wait for error conditions. If the current mix still has zero active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes, either add or launch the smallest bounded lower-level target with a clear oracle, or write the exact blocker and the next command/code change needed. Do not stop productive browser fuzzing to do this.
 
 If context.md contains TELEMETRY-INVARIANT-FAIL, fix the accounting/context-builder blind spot first, validate by regenerating a context that no longer contradicts live tmux/events, and only then make fuzzing mix changes. If coverage-guided lower-level quality says action-needed, make a concrete guidance-quality improvement or write the exact blocker; do not treat "the lane is running" as success by itself.
+
+If "Control-Plane Self-Audit" contains ACTION-NEEDED, fix that controller failure first. Do not accept an alive watchdog as proof the main loop is alive; use exact tmux session checks. Do not allow coverage-guided novelty to sit with empty supervisor groups when current-run duplicate/noise is clear; repair the gating policy or restart the coverage path after applying the fix.
 
 If "Resource Autoscaler And Browser Materialization" contains ACTION-NEEDED, fix or restart the materialization path before treating CPU headroom or requested browser budget as success. The acceptable result is current supervisor run directories or a written blocker with the exact failed startup artifact and next remediation command.
 

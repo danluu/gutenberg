@@ -21,6 +21,10 @@ SH
 chmod +x "$TMUX_WRAP/tmux"
 export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
 
+has_exact_session() {
+	tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$1"
+}
+
 validate_harness() {
 	if [ "${RTC_CG_LOWER_LEVEL_SKIP_PREFLIGHT:-0}" = "1" ]; then
 		return 0
@@ -105,7 +109,7 @@ NODE
 
 start_loop() {
 	mkdir -p "$BASE/logs" "$BASE/runs"
-	if tmux has-session -t "$SESSION" 2>/dev/null; then
+	if has_exact_session "$SESSION"; then
 		printf '%s\n' "$SESSION already running"
 		return 0
 	fi

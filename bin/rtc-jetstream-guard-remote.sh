@@ -74,6 +74,67 @@ coverage_start_in_progress() {
 	return 1
 }
 
+coverage_materialization_stalled() {
+	local grace=${RTC_GUARD_COVERAGE_MATERIALIZATION_GRACE_SECONDS:-900}
+	local root age
+
+	[ -f "$COVERAGE_BASE/current-output-dir.txt" ] || return 1
+	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
+	[ -n "$root" ] && [ -d "$root" ] || return 1
+	age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt") || return 1
+	if [ "$age" -lt "$grace" ]; then
+		return 1
+	fi
+
+	node - "$root" <<'NODE'
+const fs = require( 'fs' );
+const path = require( 'path' );
+const root = process.argv[ 2 ];
+const readJson = ( file ) => {
+	try {
+		return JSON.parse( fs.readFileSync( file, 'utf8' ) );
+	} catch {
+		return null;
+	}
+};
+const readText = ( file ) => {
+	try {
+		return fs.readFileSync( file, 'utf8' );
+	} catch {
+		return '';
+	}
+};
+const groups = readJson( path.join( root, 'supervisor-groups.json' ) );
+const state = readJson( path.join( root, 'supervisor-state.json' ) );
+const status = readText( path.join( root, 'novelty-status.md' ) );
+const parseMetric = ( label ) => {
+	const match = status.match( new RegExp( `- ${ label.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }:\\s*([0-9.]+)` ) );
+	if ( ! match ) {
+		return null;
+	}
+	return Number( match[ 1 ] );
+};
+const signatures = parseMetric( 'signatures' );
+const duplicateShare = parseMetric( 'top duplicate family share' );
+const likelyReal = parseMetric( 'likely-real visible' );
+const currentNoiseClear =
+	( signatures === null || signatures === 0 || duplicateShare === 0 ) &&
+	( likelyReal === null || likelyReal === 0 );
+const groupCount = Array.isArray( groups ) ? groups.length : null;
+const stateGroups = Array.isArray( state?.groups ) ? state.groups : null;
+const activeRunDirs = ( stateGroups || [] ).reduce(
+	( count, group ) => count + ( Array.isArray( group.activeRunDirs ) ? group.activeRunDirs.filter( Boolean ).length : 0 ),
+	0
+);
+const emptyGroupFile = groupCount === 0;
+const noMaterializedState = stateGroups && stateGroups.length === 0 && activeRunDirs === 0;
+if ( currentNoiseClear && ( emptyGroupFile || noMaterializedState ) ) {
+	process.exit( 0 );
+}
+process.exit( 1 );
+NODE
+}
+
 record_restart() {
 	local pool=$1
 	local reason=$2
@@ -294,6 +355,8 @@ run_loop() {
 		fi
 		if [ "$coverage_needs_restart" = 1 ]; then
 			restart_pool coverage "missing coverage-guided tmux session"
+		elif has_session rtc-coverage-guided-novelty && coverage_materialization_stalled; then
+			restart_pool coverage "coverage-guided novelty materialization stalled with empty groups while current-run noise is clear"
 		fi
 
 		if ! has_session rtc-fuzz-strict-expansion ||

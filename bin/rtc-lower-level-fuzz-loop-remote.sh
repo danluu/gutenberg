@@ -18,6 +18,10 @@ SH
 chmod +x "$TMUX_WRAP/tmux"
 export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
 
+has_exact_session() {
+	tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$1"
+}
+
 write_event() {
 	local events_path="$1"
 	local seed_start="$2"
@@ -139,7 +143,7 @@ run_loop() {
 
 start_loop() {
 	mkdir -p "$BASE/logs" "$BASE/runs"
-	if tmux has-session -t "$SESSION" 2>/dev/null; then
+	if has_exact_session "$SESSION"; then
 		printf '%s\n' "$SESSION already running"
 		return 0
 	fi
