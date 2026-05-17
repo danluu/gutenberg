@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T12:38:50Z`
+Snapshot time: `2026-05-17T12:47:21Z`
 
 Trigger event:
-`pr-split-2026-05-17T12-38-16Z-20260517T123002Z`
+`pr-split-2026-05-17T12-45-36Z-20260517T123821Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T12-38-16Z-20260517T123002Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T12-45-36Z-20260517T123821Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -73,12 +73,12 @@ Current blockers:
   `reclassify_downscope_not_product_owned` classification. Do not launch another
   `1020002` repair or product PR job unless rebuilt validation produces fresh
   product evidence.
-- Repair the critical-path executor if it revives stale `pr17-1020002` or raw
-  reload work as active product work.
-- Run the isolated sync undo/history owner replay for `1090016`, including table
-  keyboard, store-dispatch redo, no-table keyboard/store redo,
-  sync-faults-disabled, and `1090017` only if needed. Do not name a product PR
-  until it emits nonempty owner evidence.
+- Launch or track only the bounded follow-ups named by the latest split
+  synthesis: first `rtc-cycle268-critical-executor-terminal-downscope-and-active-manifest-filter`
+  so `pr17-1020002` is terminally downscoped and stale manifests are ignored,
+  then `rtc-cycle268-sync-undo-history-isolated-runtime-replay` with job-owned
+  WP/runtime config. Do not name a sync undo/history product PR until nonempty
+  owner evidence exists.
 - Publish/fetch/audit PR05D and the remaining sidecar-aware product refs before
   treating them as maintainer-facing links.
 - The latest duplicate/noise persona work is control-plane evidence only. It
@@ -87,7 +87,7 @@ Current blockers:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T12:38:45Z`.
+Remote status was collected at `2026-05-17T12:47:16Z`.
 
 The fix-planning repo is checked out at:
 
@@ -117,7 +117,7 @@ That repo has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T12:38:50Z` from fetched
+The branch-link audit was generated at `2026-05-17T12:47:21Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -218,97 +218,104 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T12:38:45Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T123057Z
+collected_at_utc: 2026-05-17T12:47:16Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T124122Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-Raw novelty status is present for `run-20260517T123057Z`, but it is
+Raw novelty status is present for `run-20260517T124122Z`, but it is
 coverage/control-plane health evidence only. It is not rebuilt final-stack
 validation and must not be treated as either filing readiness or a validated
 final-stack failure.
 
-Latest novelty monitor snapshot, updated at `2026-05-17T12:37:54.995Z`:
+Latest novelty monitor snapshot, updated at `2026-05-17T12:46:45.343Z`:
 
 ```text
-coverage files: 44211
-total records seen: 68412
-records processed this pass: 80
-new behavioral feature keys this pass: 2
-new CDP coverage hashes this pass: 2
-current-run records by profile: {"real-user-editing":2}
+coverage files: 44312
+total records seen: 68579
+records processed this pass: 16
+new behavioral feature keys this pass: 0
+new CDP coverage hashes this pass: 0
+current-run records by profile: {}
 current-run successful records by profile: {}
-current-run actionable signatures: 2
+current-run actionable signatures: 0
 current-run likely-real visible: 0
-current-run product-evidence signatures: 2
-current drain actionable signatures: 2
+current-run product-evidence signatures: 0
+current drain actionable signatures: 0
 current drain likely-real visible: 0
-historical signatures: 9961
-historical product-evidence signatures: 9870
-historical likely-real visible: 170
+historical signatures: 9967
+historical product-evidence signatures: 9876
+historical likely-real visible: 177
 enabled groups: novelty-ws-real-user-rich-text
 paused groups: novelty-ws-lifecycle, novelty-http-persistence-probe,
   novelty-ws-real-user-editing
-load1: 80.66 / cores: 64
-memory free: 417.3G / 492.0G
-headroom for adding groups: no
-quality issues: 0
+load1: 33.25 / cores: 64
+memory free: 437.3G / 492.0G
+headroom for adding groups: yes
+quality issues: 1
 ```
 
-The current coverage-guided run reset from `run-20260517T122844Z` to
-`run-20260517T123057Z` at `2026-05-17T12:31:09Z`. The supervisor kept recent
-startup-noise cooldowns for `novelty-http-persistence-probe` and
-`novelty-ws-real-user-editing`, skipped re-enabling the noisy real-user editing
-group, and allowed sibling `novelty-ws-real-user-rich-text` to run. Current
-triage has no visible likely-real product failure.
+The current coverage-guided run reset from `run-20260517T123057Z` to
+`run-20260517T124122Z` at `2026-05-17T12:41:34Z`. The supervisor preserved the
+three recent startup-noise cooldowns, bootstrapped bounded supervisor groups
+before the first coverage scan, kept `novelty-ws-real-user-rich-text` enabled,
+and skipped re-enabling the noisy real-user editing group. Current triage has no
+visible likely-real product failure, but the new run also has no current-run
+behavioral coverage records yet and reports a health warning:
+`no behavioral coverage files found under novelty output dir`. At
+`2026-05-17T12:46:45Z`, one coverage quality issue had persisted for two passes
+and triggered `rtc-coverage-guidance-codex-20260517T124645Z`; treat that as
+control-plane follow-up, not product split or filing evidence.
 
-Largest current novelty gaps are title-save-reload `412/500`,
-`ui-heading-shortcut` `899/1000`, reload-post-action `926/1000`, and
-body-save-reload `471/500`.
+Largest current novelty gaps are title-save-reload `414/500`,
+`ui-heading-shortcut` `901/1000`, reload-post-action `928/1000`, and
+body-save-reload `473/500`.
 
-The latest trend evidence packet was generated at `2026-05-17T12:32:07Z` from
-monitor data through `2026-05-17T12:28:28Z`:
+The latest trend evidence packet was generated at `2026-05-17T12:40:25Z` from
+monitor data through `2026-05-17T12:37:54Z`:
 
 ```text
-monitor passes: 1971
-coverage files: 272 -> 44089
-coverage files delta: 43817
+monitor passes: 1973
+coverage files: 272 -> 44211
+coverage files delta: 43939
 unmet coverage goals: 4
 likely_real_max: 4
-duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.352
+duplicate_share_current_last: 1
+duplicate_share_historical_last: 0.3514
 summary_startup_failures_last: 0
-quality issues: 1
+quality issues: 0
 enabled groups current: novelty-ws-real-user-rich-text
 fuzz level mix: browser-e2e=27 lanes/26 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5252070
-browser-e2e execution: 102617 cumulative / 100 per-hour
-unit-property execution: 4718112 cumulative / 2176 per-hour
+total fuzz-level test executions: 5255049
+browser-e2e execution: 102748 cumulative / 624 per-hour
+unit-property execution: 4720960 cumulative / 13568 per-hour
 coverage-guided-lower-level execution: 428335 cumulative / 0 per-hour
 load1/load5/load15: 63.28 / 55.93 / 47.34 on 64 cores
-memory: 428.9G free
-browser-e2e likely-real findings: 497 over 1800.0 runner-hours
+memory: 417.3G free
+browser-e2e likely-real findings: 510 over 1803.9 runner-hours
 ```
 
 The trend packet remains graph-derived input evidence, not an instruction and
 not a product-bug count. Browser E2E remains the only level with confirmed
 likely-real findings in the trend packet, but lower-level lanes are under-
-triaged and should not be declared useless from zero likely-real output. Current
-load is high and the novelty monitor reports no headroom, so prefer guarded
-top-offs, startup-stall reduction, and bounded lower-level targets with clear
-oracles over broad browser concurrency increases.
+triaged and should not be declared useless from zero likely-real output. Recent
+load has been variable, and the newest novelty snapshot reports headroom, but
+current-run behavioral coverage is empty and startup-noise cooldowns remain
+active. Prefer guarded top-offs, startup-stall reduction, and bounded
+lower-level targets with clear oracles over broad browser concurrency increases.
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260517T123002Z-synthesis.md`. It says the split itself is no longer
+`pr-split-20260517T123821Z-synthesis.md`. It says the split itself is no longer
 the undecided blocker. The active topology is Cycle 266; the operational
-blockers are stale-work revival in the executor, lack of an isolated sync
-undo/history owner replay, and final-stack validation not yet consuming the
-refreshed Cycle 266 validation head.
+blockers are stale-work revival in the executor, independent work serialized
+behind seed `1020002`, lack of an isolated sync undo/history owner replay, and
+final-stack validation not yet consuming the refreshed Cycle 266 validation
+head.
 
 The preceding feedback action `pr-split-20260517T121005Z-feedback-action.md`
 applied the Cycle 266 consensus to `current-pr-split.md`, recorded `1020002` as
@@ -323,8 +330,15 @@ The same split synthesis says to launch only bounded follow-up jobs:
 - `rtc-cycle268-critical-executor-terminal-downscope-and-active-manifest-filter`
 - `rtc-cycle268-sync-undo-history-isolated-runtime-replay`
 
-It also says not to launch another `1020002` job, not to treat raw reload rows
-as PR07D, and not to create PR07D, PR17, PR18, or PR18x from current evidence.
+The executor repair should run first and must make
+`reclassify_downscope_not_product_owned` terminal for `pr17-1020002`, parse only
+the latest active topology/manifest, and reject stale `ready/*`, raw deferred
+reload, HTTP, pre-save, rich-text, zero-byte, disk-preflight-only, and
+stale-manifest "progress." The sync undo/history replay should use job-owned
+runtime config and run `1090016` table keyboard, table store-dispatch redo,
+no-table keyboard/store redo, sync-faults-disabled, and `1090017` only if
+needed. Do not launch another `1020002` job, do not treat raw reload rows as
+PR07D, and do not create PR07D, PR17, PR18, or PR18x from current evidence.
 Marc's standalone-PR05D idea is a minority optimization and should not replace
 Cycle 266 unless a bounded restack proves it cleaner.
 
@@ -370,7 +384,7 @@ These must not be described as fixed or filing-ready.
 | Pre-save search/live document collapse | prior candidate rows | evidence-only; not in active split | Capture editor blocks, serialized content, edited core-data record, live CRDT record, provider state, REST body, and save state around `core/search` insertion |
 | Broader HTTP polling room-isolation residuals | PR02A sidecar plus stale deferred relaunches | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred | Publish/fetch/audit PR02A before filing; promote additional residuals only with narrowed healthy-user product evidence |
 | Revision-restore marker retention | seed `5500002`; active lifecycle triage | queued behind final-stack preparation; no automatic PR slot | Triage only after rebuilt stack is available |
-| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T121544Z-synthesis.md`; novelty snapshot at `2026-05-17T12:37:54Z` | product-evidence signatures remain visible, current likely-real visible is zero, and startup-noise cooldowns are active; remaining risk is scheduler leakage, not product split content | Hard-quarantine current-run no-product startup producers/fallbacks/Codex launch while preserving product-evidence analysis; do not broaden suppression or change the product split from duplicate/noise evidence |
+| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T121544Z-synthesis.md`; novelty snapshot at `2026-05-17T12:46:45Z` | product-evidence signatures remain visible historically, current-run likely-real visible is zero, current-run behavioral coverage is empty after the `run-20260517T124122Z` reset, startup-noise cooldowns are active, and one coverage quality issue launched coverage-guidance Codex; remaining risk is scheduler leakage, not product split content | Hard-quarantine current-run no-product startup producers/fallbacks/Codex launch while preserving product-evidence analysis; do not broaden suppression or change the product split from duplicate/noise evidence |
 
 ## Filing Gates And Current Recommendation
 
