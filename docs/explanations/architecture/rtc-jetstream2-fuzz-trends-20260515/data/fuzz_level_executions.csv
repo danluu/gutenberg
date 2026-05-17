@@ -7176,6 +7176,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T13:45:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,8,5,1,8,7,441783,FALSE
 2026-05-17T13:45:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,1,1,0,1,1,76389,FALSE
 2026-05-17T13:45:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2624,2624,2176,82,14,462000,FALSE
-2026-05-17T14:00:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,6,2,0,6,6,135130,FALSE
-2026-05-17T14:00:00Z,coverage-guided,novelty-ws-real-user-save-reload,browser-e2e,ws,real-user-editing,4,2,0,4,4,121188,FALSE
-2026-05-17T14:00:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,192,192,192,6,0,35000,FALSE
+2026-05-17T14:00:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,10,6,2,10,8,692939,FALSE
+2026-05-17T14:00:00Z,coverage-guided,novelty-ws-real-user-save-reload,browser-e2e,ws,real-user-editing,16,14,10,16,6,944050,FALSE
+2026-05-17T14:00:00Z,focused-shards,focused-late-join-a,browser-e2e,ws,three-user-late-join,2,2,2,2,0,85404,FALSE
+2026-05-17T14:00:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,1312,1312,1024,41,9,303000,FALSE
