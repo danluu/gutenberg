@@ -237,6 +237,7 @@ campaign_roots = [
 for path in sorted(glob.glob("/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516/native-runs/*/coverage-guided-lower-level-live")):
 	campaign_roots.append(("coverage-guided-lower-level", path))
 group_paths = []
+run_roots = defaultdict(set)
 for campaign, base in campaign_roots:
 	if not os.path.isdir(base):
 		continue
@@ -254,12 +255,14 @@ for campaign, base in campaign_roots:
 		path = os.path.join(current_root, "supervisor-groups.json")
 		if os.path.exists(path):
 			group_paths.append((campaign, path))
+			run_roots[campaign].add(os.path.dirname(path))
 	for pattern in (
 		os.path.join(base, "run-*", "supervisor-groups.json"),
 		os.path.join(base, "runs", "*", "supervisor-groups.json"),
 	):
 		for path in glob.glob(pattern):
 			group_paths.append((campaign, path))
+			run_roots[campaign].add(os.path.dirname(path))
 
 deduped_paths = []
 seen_paths = set()
@@ -357,7 +360,7 @@ with open(os.path.join(out, "data", "fuzz_level_mix.csv"), "w", newline="") as f
 				path,
 			])
 
-execution_counts = defaultdict(lambda: [0, 0, 0, False])
+execution_counts = defaultdict(lambda: [0, 0, 0, 0, 0, 0, False])
 
 def event_test_executions(event, meta, campaign):
 	for key in ("testExecutionCount", "individualTestExecutionCount"):
@@ -458,10 +461,17 @@ for campaign, base in campaign_roots:
 							meta["profile"] or event.get("actionProfile", ""),
 						)
 						test_executions, approximate = event_test_executions(event, meta, campaign)
+						try:
+							duration_ms = max(0, int(event.get("durationMs") or 0))
+						except (TypeError, ValueError):
+							duration_ms = 0
 						execution_counts[key][0] += test_executions
 						execution_counts[key][1] += test_executions if label == "primary" else 0
 						execution_counts[key][2] += test_executions if event.get("ok") else 0
-						execution_counts[key][3] = execution_counts[key][3] or approximate
+						execution_counts[key][3] += 1
+						execution_counts[key][4] += 0 if event.get("ok") else 1
+						execution_counts[key][5] += duration_ms
+						execution_counts[key][6] = execution_counts[key][6] or approximate
 			except OSError:
 				continue
 
@@ -477,10 +487,176 @@ with open(os.path.join(out, "data", "fuzz_level_executions.csv"), "w", newline="
 		"executions",
 		"primary_executions",
 		"successful_executions",
+		"attempts",
+		"failed_attempts",
+		"duration_ms",
 		"approximate",
 	])
 	for key, counts in sorted(execution_counts.items()):
 		writer.writerow([*key, *counts])
+
+bug_finding_rows = []
+
+def safe_read_json(path):
+	try:
+		with open(path) as f:
+			return json.load(f)
+	except Exception:
+		return None
+
+def generation_group_name(path):
+	name = os.path.basename(path)
+	match = re.match(r"^(.*)-gen-[0-9]+-", name)
+	return match.group(1) if match else name
+
+def result_source_tier(path):
+	if "/deep-analysis-tier/" in path:
+		return "deep-analysis-tier"
+	if "/analysis-tier/" in path:
+		return "analysis-tier"
+	return "unknown"
+
+def failure_for_result(result_path, signature_hash):
+	triage_root = result_path.split("/.triage-watcher/", 1)[0] + "/.triage-watcher"
+	candidates = [
+		os.path.join(os.path.dirname(result_path), "failure.json"),
+		os.path.join(triage_root, "signatures", signature_hash, "failure.json"),
+		os.path.join(os.path.dirname(result_path), "candidate.json"),
+	]
+	for candidate in candidates:
+		if os.path.exists(candidate):
+			parsed = safe_read_json(candidate)
+			if isinstance(parsed, dict):
+				return parsed, candidate
+	return {}, ""
+
+def parse_result_timestamp(result_path, failure):
+	for key in ("firstSeenAt", "lastSeenAt", "updatedAt", "createdAt"):
+		value = failure.get(key)
+		if value:
+			try:
+				return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+			except ValueError:
+				pass
+	try:
+		return datetime.fromtimestamp(os.path.getmtime(result_path), tz=timezone.utc)
+	except OSError:
+		return datetime.now(timezone.utc)
+
+def truthy_duplicate(value):
+	if value is None:
+		return ""
+	text = str(value).strip()
+	return "" if text.lower() in ("", "none", "null", "false") else text
+
+for campaign, base in campaign_roots:
+	if not os.path.isdir(base):
+		continue
+	for tier in ("analysis-tier", "deep-analysis-tier"):
+		result_patterns = []
+		for run_root in sorted(run_roots.get(campaign, set())):
+			if not os.path.isdir(run_root):
+				continue
+			result_patterns.extend([
+				os.path.join(run_root, ".triage-watcher", tier, "signatures", "*", "result.json"),
+				os.path.join(run_root, "*-gen-*", ".triage-watcher", tier, "signatures", "*", "result.json"),
+			])
+		seen_results = set()
+		for pattern in result_patterns:
+			for result_path in glob.glob(pattern):
+				real_result_path = os.path.realpath(result_path)
+				if real_result_path in seen_results:
+					continue
+				seen_results.add(real_result_path)
+				result = safe_read_json(result_path)
+				if not isinstance(result, dict):
+					continue
+				signature_hash = os.path.basename(os.path.dirname(result_path))
+				failure, failure_path = failure_for_result(result_path, signature_hash)
+				facts = failure.get("facts") if isinstance(failure.get("facts"), dict) else {}
+				group_dir = result_path.split("/.triage-watcher/", 1)[0]
+				group_name = generation_group_name(group_dir)
+				run_name = os.path.basename(os.path.dirname(group_dir))
+				meta = group_metadata.get((campaign, run_name, group_name)) or fallback_group_metadata.get((campaign, group_name)) or {}
+				classification = str(result.get("classification") or "").strip()
+				candidate_status = str(result.get("candidateStatus") or "").strip()
+				recommended_action = str(result.get("recommendedTriageAction") or "").strip()
+				duplicate_of = truthy_duplicate(result.get("isDuplicateOf") or result.get("duplicateOf"))
+				is_duplicate = bool(duplicate_of) or "duplicate" in recommended_action.lower() or "merge_with_duplicate" in recommended_action.lower()
+				distinct_bug_type = str(result.get("distinctBugType") or failure.get("equivalenceClass") or signature_hash)
+				family_key = str(failure.get("familyKey") or "")
+				semantic_family = str(failure.get("semanticFamilyKey") or "")
+				if duplicate_of:
+					canonical_bug_key = f"duplicate:{duplicate_of}"
+				elif distinct_bug_type and distinct_bug_type != signature_hash:
+					canonical_bug_key = f"distinct:{distinct_bug_type.lower()}"
+				elif family_key:
+					canonical_bug_key = f"family:{semantic_family}:{family_key}"
+				else:
+					canonical_bug_key = f"signature:{signature_hash}"
+				timestamp = parse_result_timestamp(result_path, failure)
+				bug_finding_rows.append({
+					"timestamp": timestamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
+					"triaged_at": datetime.fromtimestamp(os.path.getmtime(result_path), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+					"campaign": campaign,
+					"run": run_name,
+					"group": group_name,
+					"fuzz_level": meta.get("fuzz_level") or infer_fuzz_level({"name": group_name, "transport": facts.get("transport", ""), "profile": facts.get("actionProfile", "")}, campaign),
+					"transport": meta.get("transport") or facts.get("transport", ""),
+					"profile": meta.get("profile") or facts.get("actionProfile", ""),
+					"signature_hash": signature_hash,
+					"family_key": family_key,
+					"semantic_family": semantic_family,
+					"canonical_bug_key": canonical_bug_key,
+					"classification": classification,
+					"confidence": str(result.get("confidence") or ""),
+					"candidate_status": candidate_status,
+					"distinct_bug_type": distinct_bug_type,
+					"duplicate_of": duplicate_of,
+					"is_duplicate": str(is_duplicate).lower(),
+					"recommended_action": recommended_action,
+					"user_hit_likelihood_score": result.get("userHitLikelihoodScore", ""),
+					"severity": str(result.get("severity") or ""),
+					"source_tier": result_source_tier(result_path),
+					"failure_class": str(facts.get("failureClass", "")),
+					"last_action": str(facts.get("lastAction", "")),
+					"lifecycle_context": str(facts.get("lifecycleContext", "")),
+					"source_path": result_path,
+					"failure_path": failure_path,
+				})
+
+with open(os.path.join(out, "data", "bug_findings.csv"), "w", newline="") as f:
+	writer = csv.DictWriter(f, fieldnames=[
+		"timestamp",
+		"triaged_at",
+		"campaign",
+		"run",
+		"group",
+		"fuzz_level",
+		"transport",
+		"profile",
+		"signature_hash",
+		"family_key",
+		"semantic_family",
+		"canonical_bug_key",
+		"classification",
+		"confidence",
+		"candidate_status",
+		"distinct_bug_type",
+		"duplicate_of",
+		"is_duplicate",
+		"recommended_action",
+		"user_hit_likelihood_score",
+		"severity",
+		"source_tier",
+		"failure_class",
+		"last_action",
+		"lifecycle_context",
+		"source_path",
+		"failure_path",
+	])
+	writer.writeheader()
+	writer.writerows(sorted(bug_finding_rows, key=lambda row: (row["timestamp"], row["campaign"], row["group"], row["signature_hash"], row["source_tier"])))
 
 with open(os.path.join(out, "summary", "remote-source-paths.env"), "w") as f:
 	f.write(f"coverage_root={os.environ.get('coverage_root', '')}\n")
@@ -512,6 +688,7 @@ cp "$INPUT_DIR/remote/data/load_average.csv" "$ARTIFACT_DIR/data/load_average.cs
 cp "$INPUT_DIR/remote/data/project_activity.csv" "$ARTIFACT_DIR/data/project_activity.csv"
 cp "$INPUT_DIR/remote/data/fuzz_level_mix.csv" "$ARTIFACT_DIR/data/fuzz_level_mix.csv"
 cp "$INPUT_DIR/remote/data/fuzz_level_executions.csv" "$ARTIFACT_DIR/data/fuzz_level_executions.csv"
+cp "$INPUT_DIR/remote/data/bug_findings.csv" "$ARTIFACT_DIR/data/bug_findings.csv"
 
 mkdir -p "$INPUT_DIR/persona-inputs"
 if compgen -G "$INPUT_DIR/remote/persona/*.md" > /dev/null; then

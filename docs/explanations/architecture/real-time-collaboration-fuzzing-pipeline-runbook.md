@@ -158,6 +158,12 @@ backend/protocol lanes count emitted cases. Rechecks count as executions.
 preserve and interpret the level-mix and execution-rate plots, and
 `bin/rtc-trend-generate-evidence.sh` includes the latest level-mix and
 execution summaries in the persona-loop evidence packet.
+The collector also writes `data/bug_findings.csv`,
+`data/bug_effectiveness_by_level.csv`, and
+`data/bug_effectiveness_by_profile.csv`; the report plots unique
+non-duplicate likely-real findings per 100 runner-hours and pre-triage failed
+attempts per 100 runner-hours by fuzzing level and by test profile within each
+level.
 
 The lower-level rich-text/CRDT coverage-guided lane uses
 `bin/rtc-coverage-guided-lower-level-runner.mjs` with V8 coverage and semantic
