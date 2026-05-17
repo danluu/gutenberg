@@ -196,6 +196,10 @@ errors, or harness-work candidates before reviewing the mix. Every cycle it:
 -   includes coverage-guided lower-level quality counters such as recent
     `newCoverageKeys`, `newFeatureKeys`, input count, nonzero exits, and corpus
     growth so "lane is running" is not treated as sufficient progress;
+-   includes a lower-level output effectiveness gate that compares current-root
+    lower-level executions, assertion rows, and unique semantic failure keys.
+    High execution volume that collapses to one or two semantic assertion
+    families is marked `ACTION-NEEDED` even when the lane is alive and fast;
 -   includes runner throughput diagnostics: recent batch duration, approximate
     milliseconds per individual execution/input, executions per hour per lane,
     fixed normal-path sleeps, and command shape. If the loop sees per-batch
@@ -216,12 +220,21 @@ active `unit-property`, `coverage-guided-lower-level`, `backend-api`,
 input, not merely a graph annotation. A visible lower-level lane is necessary
 but not sufficient: if novelty or useful execution quality stalls, the action
 job should improve guidance, target shape, mutation, corpus selection, or
-oracle coverage. If runner throughput is overhead-dominated, the action job
+oracle coverage. If lower-level executions collapse to too few unique semantic
+outputs, the action job should add or improve a bounded target/oracle, semantic
+failure key, mutation strategy, or triage-ready failure artifact before
+claiming the lower-level lane is productive. If runner throughput is
+overhead-dominated, the action job
 should remove unnecessary sleeps, amortize startup with larger useful batches,
 or build a persistent/direct lower-level harness before claiming the lower-level
 lane is productive. The browser/e2e fuzzers should continue running while
 lower-level targets are added unless there is clear evidence that they are
 blocking the lower-level work.
+
+The launcher also starts `rtc-fuzz-level-mix-persona-loop-watchdog`, which
+restarts `rtc-fuzz-level-mix-persona-loop` if the controller exits. A missing
+level-mix tmux session is a service failure, not a state that should wait for a
+human prompt.
 
 `bin/rtc-native-assert-protocol-work-start-remote.sh` starts three additional
 parallel Jetstream2 workstreams:

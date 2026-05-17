@@ -16,6 +16,7 @@ chmod +x "$TMUX_WRAP/tmux"
 export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
 
 tmux kill-session -t rtc-fuzz-level-mix-persona-loop 2>/dev/null || true
+tmux kill-session -t rtc-fuzz-level-mix-persona-loop-watchdog 2>/dev/null || true
 tmux ls 2>/dev/null |
 	awk -F: '/^rtc-level-mix-/ { print $1 }' |
 	while IFS= read -r session; do
@@ -717,6 +718,170 @@ else:
         print("- action-needed: semantic novelty is stalled; add feature feedback or oracle classes if the target is still important.")
 PY
     echo
+    echo "## Lower-Level Output Effectiveness Gate"
+    python3 - "$roots_file" <<'PY'
+import os
+import re
+import sys
+from collections import Counter
+
+roots = []
+try:
+    with open(sys.argv[1], errors="ignore") as handle:
+        for line in handle:
+            parts = line.rstrip("\n").split("\t", 1)
+            if len(parts) == 2 and parts[1] and os.path.isdir(parts[1]):
+                roots.append((parts[0], parts[1]))
+except OSError:
+    pass
+
+lower_levels = ("unit-property", "coverage-guided-lower-level")
+
+def infer_level(text):
+    lower = text.lower()
+    if "coverage-guided-lower" in lower:
+        return "coverage-guided-lower-level"
+    if "unit-property" in lower or "lower-level-fuzz" in lower:
+        return "unit-property"
+    return ""
+
+def parse_status_line(line):
+    parts = line.rstrip("\n").split("\t")
+    row = {"timestamp": parts[0] if parts else ""}
+    for part in parts[1:]:
+        if "=" in part:
+            key, value = part.split("=", 1)
+            row[key] = value
+    return row
+
+def log_tail(path, max_bytes=65536):
+    if not path:
+        return ""
+    try:
+        size = os.path.getsize(path)
+        with open(path, "rb") as handle:
+            if size > max_bytes:
+                handle.seek(-max_bytes, os.SEEK_END)
+            return handle.read().decode("utf-8", errors="replace")
+    except OSError:
+        return ""
+
+def classify(log_text):
+    lower = log_text.lower()
+    if "no space left on device" in lower or "enospc" in lower:
+        return "infra-enospc"
+    if "tests:       0 total" in lower or "tests: 0 total" in lower:
+        return "harness-no-tests"
+    if "cannot find module" in lower or "module not found" in lower:
+        return "harness-import"
+    if "assert" in lower or "expected" in lower or "test suites: 1 failed" in lower:
+        return "lower-level-assertion"
+    return "failed-run"
+
+def semantic_key(log_text, fallback):
+    patterns = [
+        r"at (?:Object\.)?([A-Za-z0-9_$<>.]+) \((packages/[^:]+):([0-9]+):[0-9]+\)",
+        r"at ([A-Za-z0-9_$<>.]+) \((packages/[^:]+):([0-9]+):[0-9]+\)",
+        r"(packages/[^:\s]+):([0-9]+):[0-9]+",
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, log_text)
+        if not match:
+            continue
+        if len(match.groups()) == 3:
+            fn, path, line = match.groups()
+        else:
+            path, line = match.groups()
+            fn = "unknown"
+        return f"{path}:{line}:{fn}"
+    return fallback
+
+stats = {
+    level: {
+        "roots": set(),
+        "status_rows": 0,
+        "failed_rows": 0,
+        "candidate_rows": 0,
+        "executions": 0,
+        "failure_classes": Counter(),
+        "semantic_keys": Counter(),
+    }
+    for level in lower_levels
+}
+
+for label, root in roots:
+    level = infer_level(" ".join([label, root]))
+    if level not in stats:
+        continue
+    stats[level]["roots"].add(root)
+    status_path = os.path.join(root, "status.tsv")
+    if os.path.exists(status_path):
+        try:
+            lines = open(status_path, errors="replace").read().splitlines()
+        except OSError:
+            lines = []
+        for line in lines:
+            row = parse_status_line(line)
+            stats[level]["status_rows"] += 1
+            try:
+                exit_code = int(str(row.get("exit", row.get("exitCode", "0"))))
+            except ValueError:
+                exit_code = 0
+            if exit_code == 0:
+                continue
+            stats[level]["failed_rows"] += 1
+            log_text = log_tail(row.get("log") or row.get("logPath") or "")
+            failure_class = classify(log_text)
+            stats[level]["failure_classes"][failure_class] += 1
+            if failure_class == "lower-level-assertion":
+                stats[level]["candidate_rows"] += 1
+                fallback = f"{os.path.basename(root)}:{row.get('seed_start', row.get('attempt', 'unknown'))}:{exit_code}"
+                stats[level]["semantic_keys"][semantic_key(log_text, fallback)] += 1
+
+    for dirpath, _, files in os.walk(root):
+        if "events.ndjson" not in files:
+            continue
+        path = os.path.join(dirpath, "events.ndjson")
+        try:
+            with open(path, errors="ignore") as events:
+                for line in events:
+                    if '"kind":"seed-attempt-complete"' not in line:
+                        continue
+                    for key in ("testExecutionCount", "individualTestExecutionCount", "executionUnitCount", "inputCount"):
+                        match = re.search(rf'"{key}"\s*:\s*([0-9]+)', line)
+                        if match:
+                            stats[level]["executions"] += max(1, int(match.group(1)))
+                            break
+                    else:
+                        stats[level]["executions"] += 1
+        except OSError:
+            pass
+
+print("| level | roots | executions | failed rows | assertion rows | unique semantic outputs | top semantic outputs | status |")
+print("| --- | ---: | ---: | ---: | ---: | ---: | --- | --- |")
+for level in lower_levels:
+    data = stats[level]
+    unique_outputs = len(data["semantic_keys"])
+    top = ", ".join(f"{key} ({count})" for key, count in data["semantic_keys"].most_common(3)) or "none"
+    status = "ok"
+    if data["executions"] >= 50000 and unique_outputs <= 2:
+        status = (
+            "ACTION-NEEDED: lower-level executions are collapsing to too few unique semantic outputs; "
+            "add a new bounded target/oracle or improve canonical failure keys"
+        )
+    if data["failed_rows"] and not data["candidate_rows"] and data["failure_classes"]:
+        top_class, _ = data["failure_classes"].most_common(1)[0]
+        if top_class.startswith("infra-") or top_class.startswith("harness-"):
+            status = f"ACTION-NEEDED: lower-level failures are dominated by {top_class}; fix infra/harness noise before treating the lane as productive"
+    print(
+        f"| {level} | {len(data['roots'])} | {data['executions']} | {data['failed_rows']} | "
+        f"{data['candidate_rows']} | {unique_outputs} | {top} | {status} |"
+    )
+
+print()
+print("- Gate policy: a lower-level lane is not productive merely because it is alive or fast. If high execution count yields only one or two semantic assertion families, the feedback action must improve semantic-output diversity by changing the target, oracle, corpus/mutation strategy, or canonicalization.")
+PY
+    echo
     echo "## Resource Autoscaler And Browser Materialization"
     if [ -f /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md ]; then
       sed -n '1,120p' /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md
@@ -829,6 +994,8 @@ Also audit materialization. Treat any ACTION-NEEDED line in "Resource Autoscaler
 
 Also audit runner throughput. Treat any ACTION-NEEDED line in "Runner Throughput Diagnostics" as an actionable loop failure, not background data. A low-level lane that repeatedly launches npm-run-test-unit/Jest per batch, spends most wall time in startup/transforms/coverage setup, or sleeps between batches should either be changed to amortize startup, replaced with a persistent/direct lower-level harness, given a larger useful batch, or explicitly justified with evidence.
 
+Also audit lower-level output effectiveness. Treat any ACTION-NEEDED line in "Lower-Level Output Effectiveness Gate" as binding. A lower-level lane that executes many cases but collapses to one or two semantic assertion families is not productive enough; recommend the smallest concrete target/oracle/canonicalization change that should increase unique semantic bug output. Do not answer only that the lane is running.
+
 Return:
 1. Whether the current level mix should change now.
 2. The smallest useful change, with exact files/scripts/commands.
@@ -924,6 +1091,8 @@ If "Resource Autoscaler And Browser Materialization" contains ACTION-NEEDED, fix
 
 If "Runner Throughput Diagnostics" contains ACTION-NEEDED, make a concrete throughput improvement or write the exact blocker and next code change. Examples of acceptable fixes: remove fixed normal-path sleeps, increase batch size when it improves useful executions without hiding crashes, bypass per-batch npm/Jest startup with a direct Node runner, split out an in-process persistent harness, or add telemetry proving the apparent overhead is not actually on the critical path.
 
+If "Lower-Level Output Effectiveness Gate" contains ACTION-NEEDED, make a concrete lower-level yield improvement or write the exact blocker and next code change. Acceptable fixes include adding a new bounded lower-level target with a real oracle, expanding semantic feature feedback, improving mutation/corpus selection, emitting richer canonical failure keys, or routing lower-level assertion families into triage-ready failure artifacts. Do not treat high execution count or an alive lower-level tmux session as success.
+
 You may edit files in $FUZZ_REPO or Jetstream loop scripts if needed. Prefer small, reversible changes. Run syntax checks for changed files. Restart only the relevant loop or lane if a restart is needed.
 
 Write:
@@ -933,7 +1102,7 @@ Write:
 4. Whether any new lower-level executions should appear in the graph.
 5. Whether telemetry reconciliation is clean after the change.
 6. Whether runner throughput diagnostics are clean after the change.
-7. Remaining blocker if no lower-level target was launched, coverage-guidance quality was not improved, or throughput remained overhead-dominated.
+7. Remaining blocker if no lower-level target was launched, coverage-guidance quality was not improved, output diversity remained collapsed, or throughput remained overhead-dominated.
 EOF
 
   (
@@ -978,4 +1147,21 @@ LOOP
 
 chmod +x "$BASE/rtc-fuzz-level-mix-persona-loop.sh"
 tmux new-session -d -s rtc-fuzz-level-mix-persona-loop "$BASE/rtc-fuzz-level-mix-persona-loop.sh"
+cat > "$BASE/rtc-fuzz-level-mix-watchdog.sh" <<'WATCHDOG'
+#!/usr/bin/env bash
+set -uo pipefail
+BASE="${RTC_FUZZ_LEVEL_MIX_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20260516}"
+LOOP="$BASE/rtc-fuzz-level-mix-persona-loop.sh"
+LOG="$BASE/logs/watchdog.log"
+mkdir -p "$BASE/logs"
+while true; do
+	if ! tmux has-session -t rtc-fuzz-level-mix-persona-loop 2>/dev/null; then
+		printf '%s restarting rtc-fuzz-level-mix-persona-loop\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$LOG"
+		tmux new-session -d -s rtc-fuzz-level-mix-persona-loop "$LOOP"
+	fi
+	sleep 60
+done
+WATCHDOG
+chmod +x "$BASE/rtc-fuzz-level-mix-watchdog.sh"
+tmux new-session -d -s rtc-fuzz-level-mix-persona-loop-watchdog "$BASE/rtc-fuzz-level-mix-watchdog.sh"
 tmux ls | grep -E 'rtc-fuzz-level-mix|rtc-level-mix' || true
