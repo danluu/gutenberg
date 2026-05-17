@@ -7,6 +7,8 @@ REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 COVERAGE_START_LOCK=$COVERAGE_BASE/start.lock
+LEVEL_MIX_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20260516
+NATIVE_ASSERT_BASE=/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 LOG_DIR=$BASE/logs
 PID_FILE=$BASE/guard.pid
@@ -148,6 +150,12 @@ Inspect these logs and current tmux/process state:
 - Coverage guided: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/
 - Strict expansion: /media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/logs/
 - Focused shards: /media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515/logs/
+- Gap booster: /media/volume/danluu-fuzz-data/rtc-gap-booster-20260515/logs/
+- Lower-level fuzzing: /media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516/ and /media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516/
+- Duplicate/noise persona loop: /media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516/
+- Level-mix controller: $LEVEL_MIX_BASE/
+- Native/protocol harness loops: $NATIVE_ASSERT_BASE/
+- Fuzz-only assertion loop: /media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260515/
 - Repo root: $REPO
 
 Task:
@@ -180,6 +188,51 @@ restart_pool() {
 			;;
 		focused-gap)
 			/tmp/start_rtc_focused_gap_codex_loop.sh >> "$LOG_DIR/focused-gap-start.log" 2>&1 || log "focused gap loop start failed"
+			;;
+		gap-booster)
+			/tmp/start_rtc_gap_booster.sh >> "$LOG_DIR/gap-booster-start.log" 2>&1 || log "gap booster start failed"
+			;;
+		lower-level)
+			if ! has_session rtc-lower-level-fuzz-loop; then
+				bash "$REPO/bin/rtc-lower-level-fuzz-loop-remote.sh" start >> "$LOG_DIR/lower-level-start.log" 2>&1 || log "unit/property lower-level start failed"
+			fi
+			if ! has_session rtc-coverage-guided-lower-level-b64; then
+				RTC_CG_LOWER_LEVEL_SESSION=rtc-coverage-guided-lower-level-b64 bash "$REPO/bin/rtc-coverage-guided-lower-level-start-remote.sh" start >> "$LOG_DIR/cg-lower-level-start.log" 2>&1 || log "coverage-guided lower-level start failed"
+			fi
+			;;
+		duplicate-noise)
+			tmux kill-session -t rtc-duplicate-noise-persona-loop 2>/dev/null || true
+			tmux new-session -d -s rtc-duplicate-noise-persona-loop \
+				"bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; bash \"$REPO/bin/rtc-duplicate-noise-persona-loop-remote.sh\" >> \"$LOG_DIR/duplicate-noise-loop.log\" 2>&1'" ||
+				log "duplicate/noise persona loop start failed"
+			;;
+		level-mix)
+			if [ -x "$LEVEL_MIX_BASE/rtc-fuzz-level-mix-persona-loop.sh" ] && [ -x "$LEVEL_MIX_BASE/rtc-fuzz-level-mix-watchdog.sh" ]; then
+				if ! has_session rtc-fuzz-level-mix-persona-loop; then
+					tmux new-session -d -s rtc-fuzz-level-mix-persona-loop "$LEVEL_MIX_BASE/rtc-fuzz-level-mix-persona-loop.sh" ||
+						log "level-mix loop start failed"
+				fi
+				if ! has_session rtc-fuzz-level-mix-persona-loop-watchdog; then
+					tmux new-session -d -s rtc-fuzz-level-mix-persona-loop-watchdog "$LEVEL_MIX_BASE/rtc-fuzz-level-mix-watchdog.sh" ||
+						log "level-mix watchdog start failed"
+				fi
+			else
+				bash "$REPO/bin/rtc-fuzz-level-mix-persona-loop-remote.sh" >> "$LOG_DIR/level-mix-start.log" 2>&1 || log "level-mix loop start failed"
+			fi
+			;;
+		native-protocol)
+			if [ -x "$NATIVE_ASSERT_BASE/native-harness-persona-loop.sh" ] && [ -x "$NATIVE_ASSERT_BASE/protocol/protocol-server-persona-loop.sh" ]; then
+				if ! has_session rtc-native-harness-persona-loop; then
+					tmux new-session -d -s rtc-native-harness-persona-loop "$NATIVE_ASSERT_BASE/native-harness-persona-loop.sh" ||
+						log "native harness loop start failed"
+				fi
+				if ! has_session rtc-protocol-server-persona-loop; then
+					tmux new-session -d -s rtc-protocol-server-persona-loop "$NATIVE_ASSERT_BASE/protocol/protocol-server-persona-loop.sh" ||
+						log "protocol server loop start failed"
+				fi
+			else
+				bash "$REPO/bin/rtc-native-assert-protocol-work-start-remote.sh" >> "$LOG_DIR/native-protocol-start.log" 2>&1 || log "native/protocol loop start failed"
+			fi
 			;;
 		asserts)
 			/tmp/start_rtc_fuzz_only_asserts_loop.sh >> "$LOG_DIR/fuzz-only-asserts-start.log" 2>&1 || log "fuzz-only asserts loop start failed"
@@ -255,6 +308,31 @@ run_loop() {
 			restart_pool focused "missing focused-shards tmux session"
 		elif ! has_session rtc-focused-shards-gap-codex-loop; then
 			restart_pool focused-gap "missing focused Codex gap loop"
+		fi
+
+		if ! has_session rtc-gap-booster ||
+			! has_session rtc-gap-booster-watchdog ||
+			! has_session rtc-gap-booster-analysis; then
+			restart_pool gap-booster "missing gap-booster tmux session"
+		fi
+
+		if ! has_session rtc-lower-level-fuzz-loop ||
+			! has_session rtc-coverage-guided-lower-level-b64; then
+			restart_pool lower-level "missing lower-level fuzz tmux session"
+		fi
+
+		if ! has_session rtc-duplicate-noise-persona-loop; then
+			restart_pool duplicate-noise "missing duplicate/noise persona loop"
+		fi
+
+		if ! has_session rtc-fuzz-level-mix-persona-loop ||
+			! has_session rtc-fuzz-level-mix-persona-loop-watchdog; then
+			restart_pool level-mix "missing level-mix persona loop or watchdog"
+		fi
+
+		if ! has_session rtc-native-harness-persona-loop ||
+			! has_session rtc-protocol-server-persona-loop; then
+			restart_pool native-protocol "missing native/protocol persona loop"
 		fi
 
 		if ! has_session rtc-fuzz-only-asserts-loop; then

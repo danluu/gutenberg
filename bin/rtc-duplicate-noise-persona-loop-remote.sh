@@ -10,6 +10,7 @@ REASONING="${RTC_DUP_NOISE_REASONING:-xhigh}"
 INTERVAL_SECONDS="${RTC_DUP_NOISE_INTERVAL_SECONDS:-0}"
 MAX_PARALLEL="${RTC_DUP_NOISE_MAX_PARALLEL:-6}"
 ACTION_EVERY_CYCLES="${RTC_DUP_NOISE_ACTION_EVERY_CYCLES:-2}"
+CODEX_TIMEOUT_SECONDS="${RTC_DUP_NOISE_CODEX_TIMEOUT_SECONDS:-7200}"
 
 export PATH="/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin:/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin:$PATH"
 
@@ -26,6 +27,17 @@ mkdir -p "$BASE/logs"
 
 log() {
   printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee -a "$BASE/logs/loop.log"
+}
+
+acquire_process_singleton() {
+  exec 8>"$BASE/process.lock"
+  if ! flock -n 8; then
+    log "another duplicate/noise controller already holds $BASE/process.lock; exiting"
+    exit 0
+  fi
+  printf '%s\n' "$$" > "$BASE/process.pid"
+  trap 'rm -f "$BASE/process.pid"' EXIT
+  trap 'exit 0' INT TERM
 }
 
 slugify() {
@@ -240,7 +252,7 @@ EOF
 #!/usr/bin/env bash
 set -uo pipefail
 cd "$FUZZ_REPO" || exit 1
-"$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
 rc=\$?
 echo "\$rc" > "$rc_file"
 exit "\$rc"
@@ -310,7 +322,7 @@ EOF
 
   (
     cd "$FUZZ_REPO" || exit 1
-    "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
   )
 }
@@ -373,7 +385,7 @@ EOF
   mkdir -p "$run_dir/artifacts"
   (
     cd "$FUZZ_REPO" || exit 1
-    "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
   )
   cp "$out" "$BASE/latest-feedback-action.md" 2>/dev/null || true
@@ -415,7 +427,8 @@ increment_cycle_count() {
 }
 
 main() {
-  log "loop started model=$MODEL reasoning=$REASONING max_parallel=$MAX_PARALLEL interval=${INTERVAL_SECONDS}s action_every=${ACTION_EVERY_CYCLES}"
+  acquire_process_singleton
+  log "loop started model=$MODEL reasoning=$REASONING max_parallel=$MAX_PARALLEL interval=${INTERVAL_SECONDS}s action_every=${ACTION_EVERY_CYCLES} codex_timeout=${CODEX_TIMEOUT_SECONDS}s"
   while true; do
     if mkdir "$BASE/loop.lock" 2>/dev/null; then
       echo "$$" > "$BASE/loop.lock/pid"

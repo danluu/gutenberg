@@ -158,6 +158,11 @@ backend/protocol lanes count emitted cases. Rechecks count as executions.
 preserve and interpret the level-mix and execution-rate plots, and
 `bin/rtc-trend-generate-evidence.sh` includes the latest level-mix and
 execution summaries in the persona-loop evidence packet.
+The collector also copies recent PR-split, duplicate/noise, level-mix,
+native-harness, protocol-server, and fuzz-only-assertion synthesis/action
+reports into the graph refresh persona-input directory. Graph interpretation
+jobs should treat those reports as controller evidence and may reject the graph
+summary if it disagrees with live loop state.
 The collector also writes `data/bug_findings.csv`,
 `data/bug_outputs.csv`, `data/bug_effectiveness_by_level.csv`,
 `data/bug_effectiveness_by_profile.csv`,
@@ -302,6 +307,9 @@ install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-cleanup-remote.sh\" /tmp/c
 install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-gap-codex-loop-remote.sh\" /tmp/start_rtc_focused_gap_codex_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-fuzz-only-asserts-loop-remote.sh\" /tmp/start_rtc_fuzz_only_asserts_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-gap-booster-start-remote.sh\" /tmp/start_rtc_gap_booster.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-duplicate-noise-persona-loop-remote.sh\" /tmp/start_rtc_duplicate_noise_persona_loop.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-fuzz-level-mix-persona-loop-remote.sh\" /tmp/start_rtc_fuzz_level_mix_persona_loop.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-native-assert-protocol-work-start-remote.sh\" /tmp/start_rtc_native_assert_protocol_work.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-deferred-work-promotion-loop-remote.sh\" /tmp/start_rtc_deferred_work_promotion_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-pr-finalization-loop-remote.sh\" /tmp/start_rtc_pr_finalization_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-jetstream-guard-remote.sh\" /tmp/start_rtc_jetstream_guard.sh
@@ -350,6 +358,18 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-fuzz-only-asserts-loop-remote.sh` runs the high-parallel fuzz-only
     assertion analysis and critique loop. Only its final applier job should edit
     files or restart fuzzing.
+-   `rtc-duplicate-noise-persona-loop-remote.sh` runs the duplicate/noise
+    remediation persona loop. It should run under the named
+    `rtc-duplicate-noise-persona-loop` tmux session, takes a process singleton
+    lock, and has bounded Codex action timeouts so one hung action cannot block
+    the loop indefinitely.
+-   `rtc-fuzz-level-mix-persona-loop-remote.sh` runs the level-mix controller
+    and its watchdog. The top-level guard should restart the existing generated
+    loop/watchdog scripts when possible instead of rerunning the destructive
+    launcher while a review cycle is active.
+-   `rtc-native-assert-protocol-work-start-remote.sh` creates the native-harness
+    and protocol-server persona loops. The top-level guard restarts the
+    generated loop scripts if those controllers disappear.
 -   `rtc-deferred-work-promotion-loop-remote.sh` turns deferred bug families
     into local candidate branches, targeted diagnostics, or explicit downscope
     reports. It reads current fuzz output and PR-split reports, creates one
@@ -363,7 +383,9 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-jetstream-guard-remote.sh` is the top-level guard. Run it in tmux and
     let it restart missing sessions instead of manually restarting individual
     fuzzers. The guard supervises coverage-guided, strict-expansion, focused
-    shards, the focused gap Codex loop, the fuzz-only assertion loop, the
+    shards, gap booster, lower-level unit/property and coverage-guided lanes,
+    the focused gap Codex loop, duplicate/noise remediation, level-mix,
+    native/protocol harness loops, the fuzz-only assertion loop, the
     deferred-work promotion loop, the PR-finalization loop, and the resource
     autoscaler.
 

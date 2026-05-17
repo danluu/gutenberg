@@ -21,6 +21,9 @@ TAR="$REMOTE_STAGE_ROOT/rtc-graphs-refresh-latest.tar.gz"
 COVERAGE_BASE="${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}"
 PR_LOOP_BASE="${RTC_PR_LOOP_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515}"
 DUP_LOOP_BASE="${RTC_DUP_LOOP_BASE:-/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516}"
+LEVEL_MIX_LOOP_BASE="${RTC_LEVEL_MIX_LOOP_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20260516}"
+NATIVE_ASSERT_BASE="${RTC_NATIVE_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516}"
+FUZZ_ASSERT_BASE="${RTC_FUZZ_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260515}"
 
 rm -rf "$OUT" "$TAR"
 mkdir -p "$REMOTE_STAGE_ROOT" "$OUT/raw" "$OUT/data" "$OUT/persona" "$OUT/summary"
@@ -65,6 +68,30 @@ else
 	: > "$OUT/raw/duplicate-noise-loop.log"
 fi
 
+if [ -f "$LEVEL_MIX_LOOP_BASE/logs/loop.log" ]; then
+	cp "$LEVEL_MIX_LOOP_BASE/logs/loop.log" "$OUT/raw/level-mix-loop.log"
+else
+	: > "$OUT/raw/level-mix-loop.log"
+fi
+
+if [ -f "$NATIVE_ASSERT_BASE/native-loop.log" ]; then
+	cp "$NATIVE_ASSERT_BASE/native-loop.log" "$OUT/raw/native-harness-loop.log"
+else
+	: > "$OUT/raw/native-harness-loop.log"
+fi
+
+if [ -f "$NATIVE_ASSERT_BASE/protocol/loop.log" ]; then
+	cp "$NATIVE_ASSERT_BASE/protocol/loop.log" "$OUT/raw/protocol-server-loop.log"
+else
+	: > "$OUT/raw/protocol-server-loop.log"
+fi
+
+if [ -f "$FUZZ_ASSERT_BASE/logs/fuzz-only-asserts-loop.log" ]; then
+	cp "$FUZZ_ASSERT_BASE/logs/fuzz-only-asserts-loop.log" "$OUT/raw/fuzz-only-asserts-loop.log"
+else
+	: > "$OUT/raw/fuzz-only-asserts-loop.log"
+fi
+
 copy_latest_persona_files() {
 	local base="$1"
 	local label="$2"
@@ -86,10 +113,38 @@ copy_latest_persona_files() {
 	)
 }
 
+copy_latest_nested_files() {
+	local root="$1"
+	local label="$2"
+	local kind="$3"
+	local pattern="$4"
+	if [ ! -d "$root" ]; then
+		return
+	fi
+	while IFS= read -r line; do
+		local path
+		path="${line#* }"
+		local run
+		run="$(basename "$(dirname "$path")")"
+		cp "$path" "$OUT/persona/${label}-${run}-${kind}.md"
+	done < <(
+		find "$root" -mindepth 2 -maxdepth 2 -name "$pattern" -printf '%T@ %p\n' 2>/dev/null |
+			sort -nr |
+			sed -n '1,6p'
+	)
+}
+
 copy_latest_persona_files "$PR_LOOP_BASE" "pr-split" "synthesis" "synthesis.md"
 copy_latest_persona_files "$PR_LOOP_BASE" "pr-split" "feedback-action" "feedback-action.md"
 copy_latest_persona_files "$DUP_LOOP_BASE" "duplicate-noise" "synthesis" "synthesis.md"
 copy_latest_persona_files "$DUP_LOOP_BASE" "duplicate-noise" "feedback-action" "feedback-action.md"
+copy_latest_persona_files "$LEVEL_MIX_LOOP_BASE" "level-mix" "synthesis" "synthesis.md"
+copy_latest_persona_files "$LEVEL_MIX_LOOP_BASE" "level-mix" "feedback-action" "feedback-action.md"
+copy_latest_nested_files "$NATIVE_ASSERT_BASE/native-runs" "native-harness" "synthesis" "synthesis.md"
+copy_latest_nested_files "$NATIVE_ASSERT_BASE/native-runs" "native-harness" "action" "action.md"
+copy_latest_nested_files "$NATIVE_ASSERT_BASE/protocol/runs" "protocol-server" "synthesis" "synthesis.md"
+copy_latest_nested_files "$NATIVE_ASSERT_BASE/protocol/runs" "protocol-server" "action" "action.md"
+copy_latest_nested_files "$FUZZ_ASSERT_BASE/cycles" "fuzz-asserts" "apply" "apply.report.md"
 
 RTC_REMOTE_COLLECT_OUT="$OUT" python3 - <<'PY'
 import csv
