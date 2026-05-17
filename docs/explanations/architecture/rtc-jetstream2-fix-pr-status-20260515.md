@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T12:10:49Z`
+Snapshot time: `2026-05-17T12:21:02Z`
 
 Trigger event:
-`pr-split-2026-05-17T12-10-00Z-20260517T115956Z`
+`pr-split-2026-05-17T12-19-51Z-20260517T121005Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T12-10-00Z-20260517T115956Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T12-19-51Z-20260517T121005Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -27,26 +27,27 @@ or the original split merely for continuity.
 
 ## Executive Status
 
-Filing remains blocked. The Cycle 264 no-PR03B topology is still the baseline,
-but the newest split-persona synthesis downgrades PR05D's inline placement to
-provisional. PR05D is real semicolonless entity/reference block-validation work
-in `packages/blocks`, not an RTC/core-data merge fix, and should now be tested
-as a standalone/sidecar PR05-family follow-up. If a standalone-base restack
-passes, prefer `PR05C -> PR06` on the main spine plus standalone/sidecar PR05D;
-if standalone is not clean, keep the current clean PR05C-based PR05D.
+Filing remains blocked, but the current state is not wait-only blocked. The
+latest split-persona synthesis makes Cycle 264 the replacement split: PR05D is
+a real PR05-family review slot after PR05C for the semicolonless
+entity/reference block-validation fix in `packages/blocks`. It is not
+file-ready because the clean PR05D head currently exists only in the Cycle 264
+job bundle/output, not as a verified shared fix-plan ref with a fetched
+`verified-content` branch-link audit.
 
 Cycle 264 completed the clean-base PR05D restack/verify job and rejected the
 older Cycle 262 fallback-tail manifest. The clean PR05C-based PR05D branch has
 local red/green evidence, a branch audit, push manifest, bundle verification,
-focused validation unit coverage, touched-file JS lint, and `git diff --check`;
-it still needs a fetched `verified-content` branch-link audit before it can be
-treated as a maintainer-facing PR link.
+focused validation unit coverage, touched-file JS lint, and `git diff --check`.
+The next action is to import and verify that bundle in the shared fix-plan repo,
+refresh the global push manifest and validation head against newer reload
+candidates, then run final-stack validation when runtime readiness is classified.
 
 Current maintainer-facing product spine, excluding runtime-gated and
 validation-only sidecars:
 
 ```text
-PR01 -> PR02 -> PR03 -> PR04 -> PR05A -> PR05B -> PR05C
+PR01 -> PR02 -> PR03 -> PR04 -> PR05A -> PR05B -> PR05C -> PR05D
 -> PR06 -> PR06A -> PR07A -> PR07B
 -> PR09 -> PR10 -> PR11A-E -> PR12
 -> PR13A/B0/B1/B2/B3 -> PR14 -> PR14B
@@ -58,7 +59,6 @@ Sidecar and validation-only shape:
 ```text
 PR02A after PR02: HTTP room-isolation regression
 PR03B after PR03: browser restoreRevision CRDT invalidation, runtime-gated
-PR05D: provisional standalone/sidecar semicolonless block-validation follow-up
 PR06B after PR07B: repaired malformed-save request-payload sidecar candidate
 PR07C after PR07B: reload record snapshots
 validation heads: fetch-only evidence, not product PRs
@@ -68,36 +68,37 @@ Current blockers:
 
 - Do not file or push product PRs yet.
 - Do not run broad final-stack fuzzing yet.
-- Rebuild stack-wide validation only after PR05D placement is settled and
-  dependency/runtime readiness is classified.
-- Focused seed `1020002` should run only if rebuilt validation still requires
-  it; it is a final-stack proof/reclassification gate, not a product branch
-  slot or branch-discovery gate.
+- Rebuild stack-wide validation only after the Cycle 264 PR05D bundle is
+  imported/verified into the shared fix-plan repo and dependency/runtime
+  readiness is classified.
+- Seed `1020002` now has a nonempty `reclassify_downscope_not_product_owned`
+  classification. Treat it as downscoped unless rebuilt validation produces
+  fresh product evidence; do not launch another `1020002` repair rerun now.
 - Use the Cycle 264 PR05C-based PR05D clean-base artifacts instead of the stale
-  Cycle 262 wrong-base manifest, but run a standalone-base PR05D restack before
-  freezing the PR05D placement. Before filing, publish/fetch/audit whichever
-  PR05D shape wins so it has a `verified-content` branch-link row.
+  Cycle 262 wrong-base manifest. Before filing, publish/fetch/audit the PR05D
+  branch so it has a `verified-content` branch-link row.
 - Do not publish raw `72854f05ed2` /
-  `deferred/rtc-reload-hydration-20260517T103640Z` as PR07D. The latest reload
-  `20260517T113646Z` candidate invalidates older no-PR07D freshness claims and
-  needs a new PR07B/PR07C ownership audit before any raw PR07D claim is accepted.
+  `deferred/rtc-reload-hydration-20260517T103640Z` as PR07D. The latest persona
+  asks for reload ownership and manifest refresh against the newer
+  `20260517T113646Z` / `20260517T120649Z` candidates before any raw PR07D claim
+  is accepted.
 - Do not create PR17, PR18, or PR18x from current evidence. PR05B/PR05C
   comparison downscopes linebreak/core-verse rows to PR05C and routes
   semicolonless validation to PR05D, not PR18x.
 - The next independent owner proof is the launched narrow sync undo/history
   replay for `9f4dcc759070`, `44110608ba86`, and `977ed437bafe`, not a broad
   PR18x bucket.
-- Cycle 266 should run bounded jobs for PR05D standalone-base restack,
-  reload-`113646` PR07B/PR07C ownership freshness, and Cycle264 topology
-  dependency/runtime readiness. Do not duplicate the Cycle 264 sync undo/history
-  owner-replay unless it exits or stalls without required nonempty artifacts.
+- Cycle 266 should run one bounded non-`1020002` PR05D import plus reload
+  ownership plus manifest/validation refresh job. Do not duplicate the Cycle
+  264 sync undo/history owner-replay unless it exits or stalls without required
+  nonempty artifacts.
 - The completed duplicate/noise persona action was a fuzz control-plane fix. It
   does not change the product PR split and must preserve product-evidence
   visibility.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T12:10:44Z`.
+Remote status was collected at `2026-05-17T12:20:56Z`.
 
 The fix-planning repo is checked out at:
 
@@ -127,7 +128,7 @@ That repo has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T12:10:49Z` from fetched
+The branch-link audit was generated at `2026-05-17T12:21:02Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -170,9 +171,9 @@ branch-link audit and are not used as PR-content links below:
   `cycle264/pr05d-clean-base/semicolonless-entity-validation` at
   `27c6e7924217038ed9b4ff71585e8041c67765a4`, based on PR05C
   `6a2eba716e070c8db1ffbb583fbc77ea9c033845`. This is the active PR05D content
-  candidate only if the requested standalone-base restack is not clean. It is
-  still unaudited by the fetched branch-link audit and is not used as a
-  PR-content link below.
+  candidate, but it is still only in the Cycle 264 job bundle/output and is not
+  a verified shared fix-plan ref in the fetched branch-link audit. It is not
+  used as a PR-content link below.
 
 For PR13, use only these repaired audited review refs:
 
@@ -199,7 +200,7 @@ branch-link audit or explicitly says `No verified branch link yet`.
 | PR 5A | Entity/reference normalization equivalence | No verified branch link yet | 2 | +465 / -8 | replacement for old aggregate PR 5; needs verified GitHub branch link |
 | PR 5B | Parser/rich-text HTML equivalence | No verified branch link yet | 2 | +925 / -42 | corrected no-PR03B local ref exists; latest owner-comparison rejects a PR18x follow-up |
 | PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | 2 | +287 / -15 | corrected no-PR03B local ref exists; linebreak/core-verse rows are PR05C-covered or downscoped |
-| PR 5D | Standalone/sidecar semicolonless entity/reference block validation follow-up | No verified branch link yet | TBD | TBD | Cycle 264 PR05C-based candidate exists at `27c6e7924217` with red/green proof, focused validation, lint, diff check, and bundle verification; latest persona consensus says inline placement is provisional, so run standalone-base restack/manifest and publish/fetch/audit the winning shape before filing |
+| PR 5D | Semicolonless entity/reference block validation after PR 5C | No verified branch link yet | TBD | TBD | Cycle 264 PR05C-based candidate exists at `27c6e7924217` with red/green proof, focused validation, lint, diff check, and bundle verification; import/verify the bundle into the shared fix-plan repo, then publish/fetch/audit before filing |
 | PR 6 | Save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | 4 | +738 / -6 | verified original branch; excludes malformed-save sidecar and broader residuals |
 | PR 6A | Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06a-persisted-empty-content-guard) | 2 | +64 / -1 | verified original branch; narrow persisted-body guard |
 | PR 6B | Malformed outgoing RTC save request-payload guard, revised against PR07B helper shape | No verified branch link yet | TBD | TBD | active local candidate is `cycle258/sidecar/rtc-pr06b-malformed-save-request-payload-minimal-on-pr07b`; publish/fetch/audit before filing |
@@ -244,7 +245,7 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T12:10:44Z
+collected_at_utc: 2026-05-17T12:20:56Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T120146Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -255,20 +256,20 @@ coverage/control-plane health evidence only. It is not rebuilt final-stack
 validation and must not be treated as either filing readiness or a validated
 final-stack failure.
 
-Latest novelty monitor snapshot, updated at `2026-05-17T12:10:25.474Z`:
+Latest novelty monitor snapshot, updated at `2026-05-17T12:18:54.895Z`:
 
 ```text
-coverage files: 44032
-total records seen: 68084
-records processed this pass: 8
-new behavioral feature keys this pass: 0
-new CDP coverage hashes this pass: 0
-current-run records by profile: {"real-user-editing":4}
-current-run successful records by profile: {}
-current-run actionable signatures: 0
+coverage files: 44044
+total records seen: 68108
+records processed this pass: 11
+new behavioral feature keys this pass: 2
+new CDP coverage hashes this pass: 2
+current-run records by profile: {"real-user-editing":4,"parser-serialization":3}
+current-run successful records by profile: {"parser-serialization":2}
+current-run actionable signatures: 1
 current-run likely-real visible: 0
-current-run product-evidence signatures: 0
-current drain actionable signatures: 0
+current-run product-evidence signatures: 1
+current drain actionable signatures: 1
 current drain likely-real visible: 0
 current-run no-product actionable signatures: 0
 current-run no-product likely-real visible: 0
@@ -276,39 +277,40 @@ historical signatures: 9938
 historical product-evidence signatures: 9847
 historical likely-real visible: 158
 historical no-product actionable signatures: 91
-enabled groups: novelty-ws-parser-transform
+enabled groups: novelty-ws-parser-serialization
 paused groups: novelty-ws-lifecycle, novelty-http-persistence-probe,
-  novelty-ws-real-user-editing, novelty-ws-real-user-rich-text
-load1: 37.08 / cores: 64
-memory free: 442.9G / 492.0G
+  novelty-ws-real-user-editing, novelty-ws-real-user-rich-text,
+  novelty-ws-parser-transform
+load1: 26.13 / cores: 64
+memory free: 443.1G / 492.0G
 headroom for adding groups: yes
 quality issues: 0
 ```
 
 The current coverage-guided run reset from `run-20260517T115528Z` to
-`run-20260517T120146Z` at `2026-05-17T12:01:58Z`. By `12:10:25Z`, the novelty
-monitor had cleared the historical-noise hold and enabled a minimum productive
-`novelty-ws-parser-transform` fallback, but it also paused both real-user groups
-inside a new startup-noise cooldown after `2/4` strict pre-action discovery
-failures. Treat older current-run likely-real counts from prior roots as
-superseded by the `120146Z` novelty snapshot.
+`run-20260517T120146Z` at `2026-05-17T12:01:58Z`. By `12:18:54Z`, the novelty
+monitor had parser-serialization running as the minimum productive fallback,
+kept the real-user groups inside startup-noise cooldown, and wrote a
+no-analysis sentinel for a no-product parser-serialization startup signature
+while preserving the product-evidence signature in the same run. Treat older
+current-run likely-real counts from prior roots as superseded by the `120146Z`
+novelty snapshot.
 
 Largest current novelty gaps in the newer novelty monitor are
 title-save-reload `412/500`, `ui-heading-shortcut` `896/1000`,
 reload-post-action `922/1000`, and body-save-reload `471/500`.
 
-The latest trend evidence packet was generated at `2026-05-17T11:59:03Z` from
-monitor data through `2026-05-17T11:58:03Z`, just before the `120146Z` run
-reset:
+The latest trend evidence packet was generated at `2026-05-17T12:08:12Z` from
+monitor data through `2026-05-17T12:04:10Z`, early in the `120146Z` run:
 
 ```text
-monitor passes: 1961
-coverage files: 272 -> 43932
-coverage files delta: 43660
+monitor passes: 1963
+coverage files: 272 -> 44022
+coverage files delta: 43750
 unmet coverage goals: 4
 likely_real_max: 4
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.3522
+duplicate_share_historical_last: 0.352
 summary_startup_failures_last: 0
 quality issues: 1
 enabled groups current: novelty-ws-real-user-rich-text,
@@ -316,34 +318,33 @@ enabled groups current: novelty-ws-real-user-rich-text,
 fuzz level mix: browser-e2e=29 lanes/27 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5239704
-browser-e2e execution: 102411 cumulative / 752 per-hour
+total fuzz-level test executions: 5242812
+browser-e2e execution: 102479 cumulative / 164 per-hour
 transport-integration execution: 3006 cumulative / 0 per-hour
-unit-property execution: 4705952 cumulative / 164688 per-hour
+unit-property execution: 4708992 cumulative / 10368 per-hour
 coverage-guided-lower-level execution: 428335 cumulative / 0 per-hour
-load1/load5/load15: 49.24 / 41.59 / 46.06 on 64 cores
-memory: 415.9G free
-browser-e2e likely-real findings: 492 over 1793.5 runner-hours
+load1/load5/load15: 65.57 / 66.78 / 56.79 on 64 cores
+memory: 423.2G free
+browser-e2e likely-real findings: 492 over 1795.8 runner-hours
 ```
 
 The trend packet remains graph-derived input evidence, not an instruction and
 not a product-bug count. Its `enabled_groups_current` row predates the later
-`12:10:25Z` novelty snapshot, where the current enabled group is
-`novelty-ws-parser-transform`. Browser E2E remains the only level with
+`12:18:54Z` novelty snapshot, where the current enabled group is
+`novelty-ws-parser-serialization`. Browser E2E remains the only level with
 confirmed likely-real findings in the trend packet, but lower-level lanes are
-under triaged and should not be declared useless from zero likely-real output.
+under-triaged and should not be declared useless from zero likely-real output.
 Prefer guarded top-offs, startup-stall reduction, and bounded lower-level
 targets with clear oracles over broad browser concurrency increases.
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260517T115956Z-synthesis.md`. All six nonempty review reports agree
-that Cycle 264 no-PR03B is the right baseline and still not filing-ready. The
-new structural change is to downgrade PR05D's inline placement to provisional:
-run a standalone-base PR05D restack/manifest, prefer standalone/sidecar PR05D if
-it passes, and keep the current PR05C-based PR05D only if standalone is not
-clean.
+`pr-split-20260517T121005Z-synthesis.md`. It agrees that filing is blocked, but
+not wait-only blocked. The replacement split is Cycle 264 with PR05D as a real
+PR05-family slot after PR05C; PR05D is not file-ready only because the clean
+head exists in the Cycle 264 job bundle/output rather than as a verified shared
+fix-plan ref.
 
 The preceding Cycle 264 feedback action
 `pr-split-20260517T113645Z-feedback-action.md` launched and completed
@@ -356,7 +357,9 @@ nonempty `report.md`, `classification.tsv`, `branch-audit.tsv`,
 focused validation unit coverage (`69` tests), touched-file JS lint,
 `git diff --check`, and bundle verification. This supersedes the older Cycle
 262 PR05D wrong-base manifest, but it does not yet create a verified branch
-link in the fetched audit.
+link in the fetched audit. The next review action is to import and verify that
+bundle in the shared fix-plan repo, rebuild the global push manifest and
+validation head, and only then run final-stack validation.
 
 The same feedback action launched `rtc-cycle264-sync-undo-history-owner-replay`
 for `9f4dcc759070`, `44110608ba86`, and `977ed437bafe`. That job must emit
@@ -365,23 +368,25 @@ nonempty `report.md`, `classification.tsv`, `replay-comparison.tsv`, and
 undo/history behavior.
 
 Reload `103640` / `110644` was PR07B-covered by the Cycle 262 ownership audit,
-and `100637` remains diagnostic-only, but the latest reload `20260517T113646Z`
-candidate needs a new PR07B/PR07C freshness audit before accepting or rejecting
-any raw PR07D claim. Current evidence still rejects PR07D/PR17/PR18/PR18x
-product slots.
+and `100637` remains diagnostic-only, but the latest persona calls for reload
+ownership and manifest refresh against the newer `20260517T113646Z` /
+`20260517T120649Z` candidates before accepting or rejecting any raw PR07D
+claim. Current evidence still rejects PR07D/PR17/PR18/PR18x product slots.
 
 The latest duplicate/noise feedback action is
-`duplicate-noise-20260517T113758Z-feedback-action.md`. It implemented a bounded
-control-plane fix across triage watcher, live-analysis monitor, novelty
+`duplicate-noise-20260517T113758Z-feedback-action.md`; the newest synthesis is
+`duplicate-noise-20260517T120534Z-synthesis.md`. The action implemented a
+bounded control-plane fix across triage watcher, live-analysis monitor, novelty
 monitor, and analysis/deep-analysis tiers; `node --check` passed for all five
 changed `.mjs` files, gate-only triage on current active dirs passed, and live
-analysis was relaunched against `run-20260517T120146Z`. The action's measured
-state had `queuedStrictStartup=0`, `noProductQueued=0`, and product evidence
-visible/analyzable. The later `12:10:25Z` novelty snapshot has no active
-current-run signatures and pauses the real-user groups under a fresh
-startup-noise cooldown, while enabling `novelty-ws-parser-transform` as the
-fallback group. This is fuzz-control-plane health work, not a product PR split
-change.
+analysis was relaunched against `run-20260517T120146Z`. The duplicate/noise
+synthesis identifies the remaining scheduler risk as group/run-dir scoping in
+the novelty monitor and fallback selection, while preserving product-evidence
+signatures. The later `12:18:54Z` novelty snapshot has one current-run
+product-evidence signature, no visible likely-real failures, a no-analysis
+sentinel for no-product parser-serialization startup noise, and
+`novelty-ws-parser-serialization` enabled as fallback. This is fuzz
+control-plane health work, not a product PR split change.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -390,9 +395,11 @@ out of the split, and make filing gates explicit. Their older "keep existing
 split", "do not add PR06B", stale PR13 review-ref warnings, and "only
 novelty-http is enabled" claims are superseded by the current branch-link
 audit, current novelty/trend inputs, Cycle 260/262/264 persona synthesis plus
-the latest `115956Z` split synthesis, repaired PR13 audit refs, PR06B/PR07B
-composability evidence, PR05D provisional standalone testing, reload-`113646`
-freshness requirements, and the no-PR18x classification.
+the latest `121005Z` split synthesis, repaired PR13 audit refs, PR06B/PR07B
+composability evidence, PR05D's real Cycle 264 slot after PR05C, reload
+`113646` / `120649` freshness requirements, the `1020002`
+`reclassify_downscope_not_product_owned` status, and the no-PR18x
+classification.
 
 ## Deferred Or Evidence-Only Work
 
@@ -400,22 +407,22 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| PR05D semicolonless entity validation | Cycle 262 red/green proof at `46ea178373c690e0a8799a02583a66efb6a5fff4`; Cycle 264 clean-base branch `cycle264/pr05d-clean-base/semicolonless-entity-validation` at `27c6e7924217` | real PR05-family work; Cycle 264 produced clean PR05C-based artifacts, validation, lint, diff check, and bundle verification, but latest persona says inline placement is provisional and no fetched `verified-content` branch link exists yet | Run PR05D standalone-base restack/manifest; if it passes, publish/fetch/audit standalone PR05D, otherwise publish/fetch/audit the PR05C-based branch; keep the Cycle 262 fallback-tail manifest rejected |
+| PR05D semicolonless entity validation | Cycle 262 red/green proof at `46ea178373c690e0a8799a02583a66efb6a5fff4`; Cycle 264 clean-base branch `cycle264/pr05d-clean-base/semicolonless-entity-validation` at `27c6e7924217` | real PR05-family work after PR05C; Cycle 264 produced clean PR05C-based artifacts, validation, lint, diff check, and bundle verification, but no fetched `verified-content` branch link exists yet | Import/verify the Cycle 264 bundle into the shared fix-plan repo, rebuild the global manifest and validation head, publish/fetch/audit PR05D, and keep the Cycle 262 fallback-tail manifest rejected |
 | PR06B / PR07B helper dedupe | Cycle258 repair artifacts; `cycle258/sidecar/rtc-pr06b-malformed-save-request-payload-minimal-on-pr07b` at `b7addcd16ae9ca4a2f7a1255e6580a74f89ccb88` | old independent PR06A sidecar is superseded; repaired PR06B-on-PR07B candidate and fetch-only validation head exist locally; `actions.js`, `entities.js`, touched JS lint, and `git diff --check` passed in Cycle258 evidence | Publish/fetch/audit an explicit PR06B product branch before filing; classify runtime readiness and rebuild stack validation against the Cycle258 topology |
 | PR14B / PR15-on-PR14B finalization | Cycle 252 no-PR03B branch-shaping artifacts | mandatory replacement topology; active no-PR03B main spine tip is `98034aa49b4b`, but no current `verified-content` branch links exist for PR14B or PR15-on-PR14B | Publish/fetch/audit explicit no-PR03B product refs after sidecar-aware audit and keep validation-only heads out of product PRs |
 | PR07C reload record snapshots | accepted sidecar after PR07B; `finalized/cycle252/sidecar/rtc-pr07c-reload-record-snapshots` at `2d112932f0e3` | included in the Cycle258 fetch-only validation topology; no current `verified-content` branch-link row exists | Publish/fetch/audit the sidecar-aware PR07C product branch and keep validation-only heads out of product PR rows |
 | PR03B browser `restoreRevision` CRDT invalidation | `ready-pr03b/rtc-pr03b-browser-revision-restore-crdt-invalidation` at `cbab481fe760` | PR03 sidecar / validation-only sidecar until browser/PHP runtime replay passes; current replay is still runtime-readiness gated | Finish bounded runtime replay for PR03B; do not put PR03B back into the main spine without passing evidence |
 | PR05B/PR05C owner comparison | Cycle260 job `rtc-cycle260-pr05b-pr05c-owner-comparison` | comparison is sufficient to reject PR18x from current parser/rich-text/linebreak evidence; semicolonless/entity false-invalid rows are routed to PR05D | Consume nonempty comparison artifacts into filing notes; reopen PR18x only on fresh source-owned evidence outside PR05B/PR05C/PR05D |
 | PR13 finer split | PR13B0/B1/B2/B3 source-level evidence; repaired audited PR13A/B/C fallback links | preferred source split remains PR13A/B0/B1/B2/B3, but proposed rows currently use only repaired audited PR13A/B/C links | Publish/fetch/audit PR13B0/B1/B2/B3 before replacing repaired PR13B/C fallback rows |
-| Seed `1020002` WebSocket marker divergence | final-stack validation/fuzz history | final-stack validation/fuzz/filing-only; not an independent-work blocker and not a current PR17 product slot | Keep it out of product blocker scans unless later evidence proves product ownership; settle only after runtime readiness is classified and rebuilt validation still requires it |
+| Seed `1020002` WebSocket marker divergence | final-stack validation/fuzz history; nonempty `reclassify_downscope_not_product_owned` classification | downscoped unless rebuilt validation produces fresh product evidence; not an independent-work blocker and not a current PR17 product slot | Do not launch another `1020002` repair rerun now; revisit only after runtime readiness is classified and rebuilt validation produces fresh product evidence |
 | `980007` / `980017` marker-divergence owner comparison | Cycle 248/250 owner-comparison queue; runtime unblock replays | no PR18x from current evidence; replay `980007` against the validation head first, then PR12, PR15C, and PR07C only if still red; keep `980017` blocked on missing `result.json` and `handoff.md` | Emit provider snapshots and consume runtime replay outputs before assigning ownership |
 | Sync undo/history issue | `9f4dcc759070`, `44110608ba86`, `977ed437bafe`; seeds `1090016` / `1090017` | classified as sync undo/history owner work around redo behavior, not PR05B/PR05C and not PR18x; Cycle 264 owner-replay job is launched | Wait for nonempty `report.md`, `classification.tsv`, `replay-comparison.tsv`, and `artifact-verification.tsv` before naming any product PR |
-| Reload-hydration diagnostics | `045710`, `055716`, `062719`, `065722`, `073541`, `093634`, `100637`, `103640`, `110644`, and latest `20260517T113646Z` diagnostics | diagnostic-only; `103640` / `110644` were PR07B-covered and `100637` is diagnostic-only, but latest `113646Z` makes older no-PR07D freshness stale | Run the `113646Z` PR07B/PR07C ownership freshness audit; reopen PR07D only if that newer audit proves a distinct non-PR07B/PR07C product delta and emits a clean branch manifest |
+| Reload-hydration diagnostics | `045710`, `055716`, `062719`, `065722`, `073541`, `093634`, `100637`, `103640`, `110644`, and latest `20260517T113646Z` / `20260517T120649Z` diagnostics | diagnostic-only; `103640` / `110644` were PR07B-covered and `100637` is diagnostic-only, but newer reload candidates make older no-PR07D freshness stale | Refresh PR07B/PR07C ownership and the manifest against the newer reload candidates; reopen PR07D only if that newer audit proves a distinct non-PR07B/PR07C product delta and emits a clean branch manifest |
 | Rich-text formatted suffix corruption | diagnostic candidates and prior deferred refs | not fixed; latest split keeps it out of active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Pre-save search/live document collapse | prior candidate rows | evidence-only; not in active split | Capture editor blocks, serialized content, edited core-data record, live CRDT record, provider state, REST body, and save state around `core/search` insertion |
 | Broader HTTP polling room-isolation residuals | PR02A sidecar plus stale deferred relaunches | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred | Publish/fetch/audit PR02A before filing; promote additional residuals only with narrowed healthy-user product evidence |
 | Revision-restore marker retention | seed `5500002`; active lifecycle triage | queued behind final-stack preparation; no automatic PR slot | Triage only after rebuilt stack is available |
-| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T113758Z-feedback-action.md`; novelty snapshot at `2026-05-17T12:10:25Z` | bounded control-plane fix implemented and validated; newest active status has no current-run signatures, real-user groups paused under fresh startup-noise cooldown, historical-noise hold cleared, and parser-transform fallback enabled | Keep monitoring current-run gating; do not broaden suppression or change the product split from duplicate/noise evidence |
+| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T113758Z-feedback-action.md`; `duplicate-noise-20260517T120534Z-synthesis.md`; novelty snapshot at `2026-05-17T12:18:54Z` | bounded control-plane fix implemented and validated; newest active status has one product-evidence signature, no visible likely-real failures, no-product parser-serialization startup noise marked no-analysis, real-user groups paused under fresh startup-noise cooldown, and parser-serialization fallback enabled | Keep monitoring current-run gating and group/run-dir pause scoping; do not broaden suppression or change the product split from duplicate/noise evidence |
 
 ## Filing Gates And Current Recommendation
 
@@ -438,12 +445,11 @@ Before filing any maintainer-facing PR:
    `cycle258/validation/no-pr03b-main-plus-pr03b-pr06b-on-pr07b-pr07c-sidecars`
    at `b13c888954fce271c3f64e48d2f83e9b1403fbbf` as fetch-only validation
    evidence, not product content.
-5. Before rebuilt combined validation or filing, settle PR05D placement by
-   running the standalone-base restack/manifest or explicitly keeping the
-   PR05C-based Cycle 264 branch if standalone is not clean; then
-   publish/fetch/audit the winning PR05D shape, classify runtime readiness
-   against the repaired topology, and rerun any feasible PR03B/PR07C runtime
-   checks.
+5. Before rebuilt combined validation or filing, import and verify the
+   PR05C-based Cycle 264 PR05D bundle in the shared fix-plan repo, refresh the
+   global push manifest and validation head, publish/fetch/audit PR05D, classify
+   runtime readiness against the repaired topology, and rerun any feasible
+   PR03B/PR07C runtime checks.
 6. Publish/fetch and audit explicit sidecar-aware product refs for PR02A,
    PR03B, PR04-through-PR07B, PR05A/B/C, clean-base PR05D, repaired PR06B,
    PR07C, PR11A-E, PR13B0/B1/B2/B3 if available, PR14B, and
@@ -454,22 +460,24 @@ Before filing any maintainer-facing PR:
    PR13A/B/C links from the audit for PR13 content.
 8. Do not publish raw reload-hydration deferred refs as PR07D. Current
    split-persona evidence treats reload `103640` / `110644` as PR07B-covered
-   and `100637` as diagnostic-only, but latest `20260517T113646Z` still needs a
-   fresh PR07B/PR07C ownership audit; create a PR07D sidecar only after that
-   newer audit proves a distinct non-PR07B/PR07C product delta.
+   and `100637` as diagnostic-only, but latest `20260517T113646Z` /
+   `20260517T120649Z` candidates still need fresh PR07B/PR07C ownership and
+   manifest refresh; create a PR07D sidecar only after that newer audit proves a
+   distinct non-PR07B/PR07C product delta.
 9. Rerun focused checks, touched-file lint, branch graph/containment evidence,
    adjacent range-diffs/diffstats/numstats, `git diff --check`, and any feasible
    PR03B/PR07C runtime checks.
-10. Settle seed `1020002` only as a final-stack validation/fuzz/filing gate
-    after runtime readiness is classified against the repaired topology and
-    rebuilt validation still requires it.
+10. Treat seed `1020002` as downscoped by the
+    `reclassify_downscope_not_product_owned` classification. Do not launch a new
+    `1020002` repair rerun unless runtime readiness is classified against the
+    repaired topology and rebuilt validation produces fresh product evidence.
 11. Consume `980007`, `5900001`, and `5400002` runtime replay outputs; keep
     `980017` blocked until its missing `result.json` and `handoff.md` exist.
 12. Treat PR18x as rejected for the current parser/rich-text/linebreak evidence.
-    The narrow PR05D semicolonless entity-validation path has clean-base Cycle
-    264 artifacts, but inline placement is now provisional and the winning shape
-    still needs a fetched verified branch link before filing. Do not promote
-    sync undo/history until its owner replay emits a smaller proof.
+    The narrow PR05D semicolonless entity-validation path belongs after PR05C,
+    but its Cycle 264 branch still needs shared-repo import/verification and a
+    fetched verified branch link before filing. Do not promote sync undo/history
+    until its owner replay emits a smaller proof.
 13. Keep reload-hydration diagnostics diagnostic-only until focused replay
     proves ownership outside PR07B/PR07C and a clean branch is shaped.
 14. Treat the current novelty status and trend packet as fuzz/control-plane
