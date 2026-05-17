@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T20:12:23Z`
+Snapshot time: `2026-05-17T20:21:48Z`
 
 Trigger event:
-`pr-split-2026-05-17T20-10-56Z-20260517T200249Z`
+`pr-split-2026-05-17T20-20-50Z-20260517T201101Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T20-10-56Z-20260517T200249Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T20-20-50Z-20260517T201101Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,20 +28,24 @@ or the original split merely for continuity.
 ## Executive Status
 
 The logical split still converges on the Cycle 293 explicit-ref topology. The
-Cycle 298 manifest/deferred harvest is now the fresh local-machine publication
-artifact, and the latest split-persona synthesis at `20260517T200249Z` confirms
-that the topology should not change while the active PR07 readiness/replay job
-is outstanding. Filing, GitHub PR opening, broad final-stack fuzzing, and
-rebuilt stack-wide validation remain blocked because PR07 reload/post-save
-ownership has still not replayed through a healthy runtime and the stack still
-needs validation against audited refs.
+latest split-persona synthesis at `20260517T201101Z` confirms that no topology
+change is justified, but it updates the blocker state: the Cycle 298 PR07
+readiness/replay job now has a nonempty report and ended
+`disk-preflight-blocked` with `/` at `1935 MB` free, below the `2048 MB` replay
+threshold. Filing, GitHub PR opening, broad final-stack fuzzing, and rebuilt
+stack-wide validation remain blocked because PR07 reload/post-save ownership
+has still not replayed through a healthy runtime and the stack still needs
+validation against audited refs.
 
 Use the explicit `finalized/cycle293/*` publication shape as the current
-source-of-truth for local-machine publication instructions. The accepted PR01
-range is the two-file HTTP polling generated-update-size delta based on
+source-of-truth topology. The accepted PR01 range is the two-file HTTP polling
+generated-update-size delta based on
 `finalized/cycle293/base/rtc-likely-real-bug-handoff-base`; the old
 `origin/trunk..PR01` / `ready/*` / `ready-pr03b/*` shape remains rejected as
-the 1048-file handoff hazard. Do not push from Jetstream.
+the 1048-file handoff hazard. The latest completed Cycle 298 manifest/deferred
+harvest is now stale for progress-gate accounting because it predates the
+context deferred queue timestamp at `2026-05-17T20:06:16Z`; refresh it before
+claiming current manifest/deferred freshness. Do not push from Jetstream.
 
 Current maintainer-facing topology:
 
@@ -97,49 +101,53 @@ runtime-gate evidence:
   evidence only, not PR07 coverage, not PR07D justification, not filing
   readiness, and not final-stack validation.
 - `pr-split-20260517T194638Z-feedback-action.md` launched
-  `rtc-cycle298-pr07-collaboration-enabled-readiness-repair-and-replay`, which
-  must prove `window._wpCollaborationEnabled === true` before any seeded replay
-  can count as PR07 owner evidence.
+  `rtc-cycle298-pr07-collaboration-enabled-readiness-repair-and-replay`. The
+  post-review read-only check in `pr-split-20260517T201101Z-synthesis.md`
+  found that this job wrote a nonempty `report.md`, but stopped as
+  `disk-preflight-blocked` with `/` at `1935 MB` free. Its PR07B0/PR07B1/PR07C
+  replay rows are disk-preflight-only setup evidence, not PR07 coverage.
 - The completed Cycle 298 manifest/deferred harvest was generated at
   `2026-05-17T20:01:20Z`, newer than the deferred queue timestamp it observed
   at `2026-05-17T20:01:14Z`. It reports `0` branch audit failures, `0` base
   sanity failures, `0` base allowlist/disallowed-ref failures, and `0`
-  repo/head/bundle/manifest agreement failures. Use its `push-manifest.tsv` as
-  the fresh local-machine publication instruction artifact for the Cycle 293
-  explicit-ref topology.
+  repo/head/bundle/manifest agreement failures. It remains useful completed
+  publication-shape evidence, but the later `20260517T201101Z` synthesis says
+  it predates the context deferred queue at `2026-05-17T20:06:16Z` and should be
+  refreshed before satisfying the Parallel Progress Gate.
 
-The latest split-persona synthesis at `20260517T200249Z` keeps PR07D, PR17,
-PR18, and PR18x absent. It says to consume the active Cycle 298 PR07
-readiness/replay output rather than duplicate it; if not already covered, the
-only new automatic job it recommends is one bounded non-Docker owner/downscope
-comparison for pre-save live-collapse and rich-text suffix diagnostics. Active
-sessions, active `1020002`, zero-byte reports, `report.tmp`, stderr/log growth,
-disk-preflight-only output, stale manifests, and duplicate active-slot rows are
-not durable progress while actionable Parallel Progress Gate rows remain.
+The latest split-persona synthesis at `20260517T201101Z` keeps PR07D, PR17,
+PR18, and PR18x absent. It recommends one bounded root-space, manifest, and
+PR07-unblock pass: recover `/` above `2048 MB`, refresh the Cycle 293
+manifest/deferred harvest newer than the latest deferred queue, then rerun the
+PR07B0/PR07B1/PR07C owner matrix for seeds `5200011`, `5200017`, `5200010`,
+`7110004`, `7110017`, and `5200008`, with `5200002`/`5200005` included only if
+the harness fits. Active sessions, active `1020002`, zero-byte reports,
+`report.tmp`, stderr/log growth, disk-preflight-only output, stale manifests,
+and duplicate active-slot rows are not durable progress while actionable
+Parallel Progress Gate rows remain.
 
 The duplicate/noise issue is a control-plane status item, not a product split
 change. The earlier `duplicate-noise-20260517T193222Z-feedback-action.md`
 implemented consumer-side family-cap/session-gating and live-analysis
 housekeeping in `rtc-browser-fuzz-live-analysis-monitor.mjs` and
 `rtc-browser-fuzz-analysis-tier.mjs`. The newest
-`duplicate-noise-20260517T195834Z-synthesis.md` says the remaining problem is
-producer-side scheduler backpressure: once repeated
-`reload_rejoin_awareness_stall` signatures are family-capped, they stop showing
-as actionable while the raw duplicate-dominant family can still consume browser
-capacity. The latest `2026-05-17T20:11:49.027Z` novelty snapshot is on
-`run-20260517T194224Z`, has four active-current product-evidence signatures,
-fifteen current family-capped signatures, `0` no-product actionable signatures,
-and two active-current visible likely-real signatures. It keeps
-`novelty-ws-real-user-rich-text` and `novelty-http-persistence-probe` enabled,
-keeps the real-user save/reload and editing groups in startup-noise cooldown,
-and marks no-product startup signatures as no-analysis while preserving
-product-evidence cases. The next safe control-plane fix is novelty-monitor
-producer pause/rotation for raw duplicate-dominant product-evidence families
-with `preserveProductEvidence`; this is not a PR split change.
+`duplicate-noise-20260517T200948Z-synthesis.md` says the remaining problem is
+producer scheduling: producers and analysis capacity are not steered by the same
+raw duplicate/noise signal that triage sees. The latest
+`2026-05-17T20:20:14.022Z` novelty snapshot is on `run-20260517T194224Z`, has
+five active-current product-evidence signatures, twenty current family-capped
+signatures, `0` no-product actionable signatures, and three active-current
+visible likely-real signatures. It keeps `novelty-ws-real-user-rich-text` and
+`novelty-http-persistence-probe` enabled, keeps the real-user save/reload and
+editing groups in startup-noise cooldown, and marks no-product startup
+signatures as no-analysis while preserving product-evidence cases. The next
+safe control-plane fix is a narrow novelty-monitor scheduling patch that uses
+raw current-run duplicate dominance and thresholded mixed-startup holds while
+preserving product-evidence signatures; this is not a PR split change.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T20:12:18Z`.
+Remote status was collected at `2026-05-17T20:21:43Z`.
 
 The fix-planning repo is checked out at:
 
@@ -169,7 +177,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T20:12:23Z` from fetched
+The branch-link audit was generated at `2026-05-17T20:21:48Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. The fresh
 Cycle 293 audit is publication-shape evidence for local refs; it does not by
@@ -253,83 +261,86 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T20:12:18Z
+collected_at_utc: 2026-05-17T20:21:43Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T194224Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The raw `novelty-status.md` snapshot was updated at
-`2026-05-17T20:11:49.027Z`:
+`2026-05-17T20:20:14.022Z`:
 
 ```text
-coverage files: 47468
-total records seen: 73407
-records processed this pass: 44
-new behavioral feature keys this pass: 1
-new CDP coverage hashes this pass: 1
+coverage files: 47511
+total records seen: 73481
+records processed this pass: 29
+new behavioral feature keys this pass: 2
+new CDP coverage hashes this pass: 2
 unmet goals: 6
 headroom for adding groups: yes
-load1: 52.70 / 64 cores
-memory: 418.3G free / 492.0G total
-quality issues: 0
-active-current actionable signatures: 4
-active-current likely-real visible: 2
-active-current product-evidence signatures: 4
-active-current family-capped signatures: 15
+load1: 46.95 / 64 cores
+memory: 424.4G free / 492.0G total
+quality issues: 1
+active-current actionable signatures: 5
+active-current likely-real visible: 3
+active-current product-evidence signatures: 5
+active-current family-capped signatures: 20
 active-current no-product actionable signatures: 0
-current-drain actionable signatures: 4
-current-drain likely-real visible: 2
+current-drain actionable signatures: 5
+current-drain likely-real visible: 3
 enabled groups: novelty-ws-real-user-rich-text,
   novelty-http-persistence-probe
 paused groups: novelty-ws-real-user-save-reload,
   novelty-ws-lifecycle, novelty-ws-real-user-editing
-raw top current semantic family: reload_rejoin_awareness_stall
-raw top duplicate family share: 0.7391
+raw top current semantic families: reload_rejoin_awareness_stall=21,
+  pre_action_bootstrap_stall=8, timeout=3, awareness_loss_after_save_reload=2
+raw top duplicate family share: 0.6176
 health: ok
 ```
 
-This is health/triage evidence only. The 20:11 snapshot has two visible
+This is health/triage evidence only. The 20:20 snapshot has three visible
 likely-real product-evidence signatures in active current and current-drain
 scope, but it is not final-stack validation and does not make any PR
 filing-ready. The active current-run and current-drain triage scopes now show
-four product-evidence signatures, fifteen family-capped siblings, and no
+five product-evidence signatures, twenty family-capped siblings, and no
 no-product actionable signatures. The raw current signal is still dominated by
 `reload_rejoin_awareness_stall` product-evidence duplicates, with raw
-duplicate-family share `0.7391`; that is control-plane/triage evidence for
-producer backpressure, not proof that product-evidence reload/rejoin,
-save/reload/autosave, revision, timeout, unknown, assertion, convergence, or
+duplicate-family share `0.6176`; `pre_action_bootstrap_stall` appears only in
+the no-product raw side and remains non-actionable after suppression. This is
+control-plane/triage evidence for producer scheduling and startup-noise
+backpressure, not proof that product-evidence reload/rejoin, save/reload,
+autosave, revision, timeout, unknown, assertion, convergence, or
 operation-witness families can be hidden. Historical triage remains dominated
 by prior product-evidence duplicate families and no-product startup noise; it
 should guide control-plane cleanup but must not be reported as active current
 product failure.
 
-The latest trend packet was generated at `2026-05-17T20:03:43Z` from monitor
-data through `2026-05-17T20:00:00Z`:
+The latest trend packet was generated at `2026-05-17T20:09:58Z` from monitor
+data through `2026-05-17T20:07:35Z`:
 
 ```text
-monitor passes: 2095
-coverage files: 272 -> 47404
-coverage files delta: 47132
+monitor passes: 2097
+coverage files: 272 -> 47445
+coverage files delta: 47173
 unmet goals: 6
 likely_real_max: 4
-duplicate_share_current_last: 1
-duplicate_share_historical_last: 0.3458
+duplicate_share_current_last: 0.6667
+duplicate_share_historical_last: 0.3462
 summary startup failures last: 0
-quality issues last: 1
+quality issues last: 0
 enabled groups current: novelty-ws-real-user-rich-text,
   novelty-http-persistence-probe
 latest fuzz level mix: browser-e2e=31 lanes/27 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5345595
-browser-e2e execution: 117358 cumulative / 444 per-hour
-unit-property execution: 4796896 cumulative / 2048 per-hour
+total fuzz-level test executions: 5346706
+browser-e2e execution: 117637 cumulative / 1560 per-hour
+unit-property execution: 4797728 cumulative / 5376 per-hour
 coverage-guided-lower-level execution: 428335 cumulative / 0 per-hour
-browser-e2e likely-real findings: 595 over 1920.8 runner-hours
+browser-e2e likely-real findings: 598 over 1923.0 runner-hours
 largest unmet goals: reload-post-action 1038/2000,
-  title-save-reload 494/1000, ui-format-paragraph 1564/2000,
-  body-save-reload 553/1000, real-user-editing success 576/1000
+  title-save-reload 494/1000, body-save-reload 553/1000,
+  ui-format-paragraph 1575/2000, real-user-editing success 576/1000
 ```
 
 The trend packet is graph-derived input evidence, not an instruction and not a
@@ -348,7 +359,7 @@ concurrency increases.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260517T200249Z-synthesis.md`. It confirms:
+`pr-split-20260517T201101Z-synthesis.md`. It confirms:
 
 - The split shape has converged on the Cycle 293 explicit-ref topology.
 - Filing and final-stack validation remain blocked by missing PR07
@@ -357,44 +368,44 @@ The newest completed split-persona synthesis is
   `finalized/cycle293/base/rtc-likely-real-bug-handoff-base`.
 - Reject old `origin/trunk`, `ready/*`, `ready-pr03b/*`, monolithic `PR07B`,
   fallback/PR15-tail `PR05D`, raw `PR07D`, `PR17`, `PR18`, and `PR18x`.
-- The now-completed Cycle 296 replay wrote nonempty artifacts, but all `15`
+- The completed Cycle 296 replay wrote nonempty artifacts, but all `15`
   PR07B0/PR07B1/PR07C replay rows are `runtime-readiness-blocked` with
   `collaborationEnabled=null`.
-- Treat Cycle 296 as setup evidence only: no PR07D, no filing, and no
-  final-stack fuzz from it.
-- Consume the active Cycle 298 PR07 collaboration-readiness job rather than
-  duplicating it. It must prove `window._wpCollaborationEnabled === true`, then
-  rerun seeds `5200011`, `5200017`, `5200010`, `7110004`, `7110017`, and reload
-  residual seed `5200008` against finalized PR07B0, PR07B1, and PR07C with
-  snapshots.
-- The completed Cycle 298 manifest/deferred harvest supplies fresh
-  local-machine publication evidence newer than the deferred queue it observed,
-  with `0` branch audit, base sanity, allowlist, and head/bundle/manifest
-  agreement failures.
+- The completed Cycle 298 PR07 collaboration-readiness job also wrote a
+  nonempty report, but stopped at `disk-preflight-blocked`: `/` had `1935 MB`
+  free, below the `2048 MB` threshold. Its replay rows are setup evidence only,
+  not PR07 coverage, PR07D justification, filing readiness, or final-stack fuzz.
+- The completed Cycle 298 manifest/deferred harvest has `0` branch audit, base
+  sanity, allowlist, and head/bundle/manifest agreement failures, but it
+  predates the context deferred queue at `2026-05-17T20:06:16Z`; refresh it
+  before using manifest freshness as a current progress-gate item.
 - Continue independent deferred replay, manifest freshness, PR02A/PR05/PR11
   shaping, and loop durable-progress repair instead of waiting on `1020002`.
 
 The most recent split feedback-action file remains
 `pr-split-20260517T194638Z-feedback-action.md`; the later
-`pr-split-20260517T200249Z-synthesis.md` reports no files edited. Cycle 298
-feedback was applied to `current-pr-split.md`, kept the active topology on
-explicit `finalized/cycle293/*` refs, recorded Cycle 296 as setup-only
+`pr-split-20260517T201101Z-synthesis.md` reports no files edited. Cycle 298
+feedback was applied earlier to `current-pr-split.md`, kept the active topology
+on explicit `finalized/cycle293/*` refs, recorded Cycle 296 as setup-only
 evidence, launched the PR07 collaboration-readiness repair/replay, and
-completed the non-Docker Cycle 298 manifest/deferred harvest. PR07D remains
-deferred because no replay has yet proven red-at-active-PR07C non-coverage with
-first-divergence snapshots. The latest synthesis recommends consuming the
-active PR07 readiness job, running one bounded owner/downscope comparison for
-pre-save live-collapse and rich-text suffix diagnostics if it is not already
-covered, and still rejects broad fuzzing, PR17/PR18/PR18x automation, and raw
-PR07D fuzz.
+completed the non-Docker Cycle 298 manifest/deferred harvest. The latest
+synthesis says the next split-review action should be exactly one bounded
+root-space plus manifest plus PR07-unblock job, followed by a PR07 continuation
+after root recovery. It also adds a bounded default-HTTP reload/rejoin
+awareness comparison for seeds `1030001`/`1030002`, checking PR03 and held PR03B
+first for revision-restore-shaped evidence. PR07D remains deferred because no
+replay has yet proven red-at-active-PR07C non-coverage with first-divergence
+snapshots; broad fuzzing, PR17/PR18/PR18x automation, and raw PR07D fuzz remain
+rejected.
 
 The newest duplicate/noise synthesis,
-`duplicate-noise-20260517T195834Z-synthesis.md`, says strict no-product
+`duplicate-noise-20260517T200948Z-synthesis.md`, says strict no-product
 `pre_action_bootstrap_stall` is no longer the main consumer leak. The remaining
-problem is scheduler/control-plane backpressure for raw product-evidence
-duplicate families: after `reload_rejoin_awareness_stall` peers become
-family-capped, the raw duplicate-dominant producer can still consume browser
-capacity while the product-evidence representative is intentionally preserved.
+problem is a control-plane scheduling mismatch: mixed product-evidence
+producers can keep running because product evidence protects them from pause,
+while raw duplicate families such as `reload_rejoin_awareness_stall` and
+product-evidence `timeout` still dominate after family caps collapse the
+actionable set.
 
 The latest duplicate/noise feedback-action file,
 `duplicate-noise-20260517T193222Z-feedback-action.md`, implemented that bounded
@@ -406,9 +417,10 @@ session was restarted; strict startup queued in triage, analysis, and deep
 analysis is `0`; queued `reload_rejoin_awareness_stall` duplicates are `0`;
 and one active product-evidence representative remains visible intentionally.
 Remaining risk is producer-side raw duplicate recurrence; the next safe change
-is to patch `rtc-browser-fuzz-novelty-monitor.mjs` so raw/family-capped
-duplicate dominance pauses or rotates only the producing real-user lane while
-preserving product-evidence signatures.
+is to patch `rtc-browser-fuzz-novelty-monitor.mjs` so duplicate/noise holds use
+raw current-run family dominance plus family-capped or likely-real
+representative evidence, pause/rotate/throttle only the noisy producer group,
+and preserve product-evidence signatures.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -428,8 +440,8 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| PR07B split and deferred adoption | `PR07B0` saved-response hydration at `e746c32e3f9` / deferred `72854f05ed2`; `PR07B1` stale base-record/title filter at `4bdd9465a97`; Cycle 293/Cycle 294 audit evidence; Cycle 298 manifest/deferred harvest | Local publication shape is current and freshly harvested at `2026-05-17T20:01:20Z`, but no branch-link-audit verified GitHub PR links exist for PR07B0/PR07B1 and PR07 runtime ownership is still missing | Publish/fetch/audit explicit PR07B0 and PR07B1 GitHub-facing product branches, then run focused checks and rebuilt stack validation against audited refs |
-| PR07 runtime / root-space gate | seeds `5200011`, `5200017`, `5200010`, `7110004`, `7110017`, plus reload residual `5200008`; Cycle 288 replay; Cycle 294 cleanup; Cycle 296 runtime-readiness replay; active Cycle 298 collaboration-readiness repair/replay | Cycle 288 failed before seeded action/reload/checkpoint at `collaborationEnabled=null`; Cycle 294 cleanup removed stale work dirs but did not launch replay; completed Cycle 296 wrote nonempty artifacts but all `15` PR07B0/PR07B1/PR07C replay rows are `runtime-readiness-blocked` with `collaborationEnabled=null`; Cycle 298 PR07 readiness/replay is the active pending gate | Consume Cycle 298 output; require `window._wpCollaborationEnabled === true`, then rerun the PR07B0/PR07B1/PR07C seed matrix with snapshots and capture first-divergence snapshots before naming PR07D |
+| PR07B split and deferred adoption | `PR07B0` saved-response hydration at `e746c32e3f9` / deferred `72854f05ed2`; `PR07B1` stale base-record/title filter at `4bdd9465a97`; Cycle 293/Cycle 294 audit evidence; Cycle 298 manifest/deferred harvest | Cycle 293 explicit-ref topology remains current, but the last completed manifest/deferred harvest at `2026-05-17T20:01:20Z` predates the context deferred queue at `2026-05-17T20:06:16Z`; no branch-link-audit verified GitHub PR links exist for PR07B0/PR07B1 and PR07 runtime ownership is still missing | Refresh the manifest/deferred harvest newer than the latest deferred queue; publish/fetch/audit explicit PR07B0 and PR07B1 GitHub-facing product branches, then run focused checks and rebuilt stack validation against audited refs |
+| PR07 runtime / root-space gate | seeds `5200011`, `5200017`, `5200010`, `7110004`, `7110017`, plus reload residual `5200008`; include `5200002`/`5200005` only if the harness fits; Cycle 288 replay; Cycle 294 cleanup; Cycle 296 runtime-readiness replay; Cycle 298 collaboration-readiness repair/replay | Cycle 288 failed before seeded action/reload/checkpoint at `collaborationEnabled=null`; Cycle 294 cleanup removed stale work dirs but did not launch replay; completed Cycle 296 wrote nonempty artifacts but all `15` PR07B0/PR07B1/PR07C replay rows are `runtime-readiness-blocked` with `collaborationEnabled=null`; completed Cycle 298 wrote a nonempty report but stopped `disk-preflight-blocked` with `/` at `1935 MB` free, below the `2048 MB` threshold | Recover `/` above `2048 MB`, then rerun the PR07B0/PR07B1/PR07C seed matrix with snapshots and capture first-divergence snapshots before naming PR07D |
 | PR05D semicolonless entity validation | Cycle 264 clean-base branch `cycle264/pr05d-clean-base/semicolonless-entity-validation` at `27c6e7924217`; Cycle 266 validation head `b9bf4ccb7940` | real PR05-family work after PR05C; no fetched `verified-content` product branch link exists yet | Publish/fetch/audit PR05D; keep fallback/PR15-tail PR05D rows rejected |
 | PR06B / PR07B helper dedupe | active candidate `finalized/cycle268/sidecar/rtc-pr06b-malformed-save-request-payload-minimal-on-pr07b` at `e91d2fe829f2` | old independent PR06A sidecar is superseded; active topology places the sidecar after PR07B1 and still lacks a verified branch link | Publish/fetch/audit an explicit PR06B product branch after PR07B0/PR07B1 and rebuild validation against the active topology |
 | PR14B / PR15-on-PR14B finalization | Cycle 252 no-PR03B branch-shaping artifacts | mandatory replacement topology, but no current `verified-content` branch links exist for PR14B or PR15-on-PR14B | Publish/fetch/audit explicit no-PR03B product refs after sidecar-aware audit and keep validation-only heads out of product PRs |
@@ -443,7 +455,7 @@ These must not be described as fixed or filing-ready.
 | Rich-text formatted suffix corruption | diagnostic candidates and prior deferred refs | evidence-only; current owner-comparison keeps it out of active PR split and out of PR18/PR18x | Compare against PR05B/PR05C first and recover exact replay artifact or emitted delta before naming any later product owner |
 | Pre-save search/live document collapse | seed `961308` / `ddf9559af37e`; only run `0932bed35c7a` if red or ambiguous | evidence-only; not in active split; latest split-persona keeps the row actionable and says it must not block behind `1020002` | Run one bounded owner comparison against PR06, PR06A, PR07B0, PR07B1, and PR07C after PR07 stops consuming E2E capacity |
 | Broader HTTP polling room-isolation residuals | PR02A sidecar plus stale deferred relaunches | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred | Publish/fetch/audit PR02A before filing; promote additional residuals only with narrowed healthy-user product evidence |
-| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T193222Z-feedback-action.md`; `duplicate-noise-20260517T195834Z-synthesis.md`; nonempty `novelty-status.md` at `2026-05-17T20:11:49.027Z` | consumer-side family-cap/session-gating and live-analysis housekeeping fixes are applied and validated; latest novelty snapshot has four active-current product-evidence signatures, fifteen family-capped siblings, `0` no-product actionable signatures, two visible likely-real signatures, health `ok`, raw duplicate-family share `0.7391`, rich-text plus HTTP persistence groups enabled, and startup-noise pauses on the real-user save/reload and editing groups; no product split change | Preserve product evidence and avoid broad suppression; patch novelty-monitor producer backpressure so raw/family-capped duplicate dominance pauses or rotates only the producing real-user lane with `preserveProductEvidence` |
+| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T193222Z-feedback-action.md`; `duplicate-noise-20260517T200948Z-synthesis.md`; nonempty `novelty-status.md` at `2026-05-17T20:20:14.022Z` | consumer-side family-cap/session-gating and live-analysis housekeeping fixes are applied and validated; latest novelty snapshot has five active-current product-evidence signatures, twenty family-capped siblings, `0` no-product actionable signatures, three visible likely-real signatures, health `ok`, raw duplicate-family share `0.6176`, rich-text plus HTTP persistence groups enabled, and startup-noise pauses on the real-user save/reload and editing groups; no product split change | Preserve product evidence and avoid broad suppression; patch novelty-monitor scheduling so raw duplicate dominance and thresholded mixed-startup holds pause or rotate only the noisy producer lane while preserving product-evidence signatures |
 
 ## Filing Gates And Current Recommendation
 
@@ -457,10 +469,12 @@ Before filing any maintainer-facing PR:
    downstream `ready/*` refs, stale `ready-pr03b/*` main-spine refs, or
    validation-only heads.
 2. Treat the Cycle 293/Cycle 294 audit harvest plus the completed Cycle 298
-   manifest/deferred harvest as current local-machine publication-shape
-   evidence: they verify explicit `finalized/cycle293/*` refs with
-   branch/head/bundle/manifest agreement and the corrected PR01 base. They are
-   not GitHub PR opening, not final-stack validation, and not a substitute for
+   manifest/deferred harvest as useful local-machine publication-shape evidence:
+   they verify explicit `finalized/cycle293/*` refs with branch/head/bundle/
+   manifest agreement and the corrected PR01 base. The Cycle 298 harvest
+   predates the context deferred queue at `2026-05-17T20:06:16Z`, so refresh it
+   before claiming current manifest/deferred freshness. It is not GitHub PR
+   opening, not final-stack validation, and not a substitute for
    branch-link-audit verified GitHub PR-content links.
 3. Keep old aggregate PR 5, broad PR 8, aggregate PR 11, stale/misordered PR13
    refs, old PR06B/PR16 material, dirty evidence branches, and the untracked
@@ -484,13 +498,12 @@ Before filing any maintainer-facing PR:
 9. Do not publish raw reload-hydration deferred refs as PR07D. Current evidence
    treats the raw reload branch as rejected/held unless fresh replay proves
    PR07B0/PR07B1/PR07C non-coverage.
-10. Treat the completed Cycle 296 bounded PR07 runtime-readiness replay as
-    setup-blocked evidence only: it wrote nonempty artifacts, but every
-    PR07B0/PR07B1/PR07C row stopped at `runtime-readiness-blocked` with
-    `collaborationEnabled=null`. Consume the active Cycle 298 PR07
-    collaboration-readiness repair/replay before any PR07D decision; it must
-    prove `window._wpCollaborationEnabled === true`, then rerun the same
-    residual seeds with snapshots.
+10. Treat the completed Cycle 296 and Cycle 298 PR07 replay attempts as
+    setup-blocked evidence only: Cycle 296 stopped every PR07B0/PR07B1/PR07C row
+    at `runtime-readiness-blocked` with `collaborationEnabled=null`, and Cycle
+    298 stopped at `disk-preflight-blocked` with `/` at `1935 MB` free. Recover
+    `/` above `2048 MB`, prove `window._wpCollaborationEnabled === true`, then
+    rerun the same residual seeds with snapshots before any PR07D decision.
 11. Run one bounded pre-save-search/live collapse owner comparison for seed
     `961308` / `ddf9559af37e` and one rich-text suffix owner/downscope
     comparison only if those diagnostics are not already covered by the active
@@ -504,9 +517,9 @@ Before filing any maintainer-facing PR:
     PR03B/PR07B0/PR07B1/PR07C runtime checks.
 14. Treat the raw novelty snapshot, trend packet, and duplicate/noise synthesis
     as fuzz/control-plane health and triage evidence. The current novelty status
-    supports producer backpressure work for raw duplicate-dominant
-    product-evidence families, but it is not final-stack validation, a
-    validated final-stack pass or failure, or filing readiness.
+    supports a narrow novelty-monitor scheduling fix for raw duplicate dominance
+    and mixed-startup holds, but it is not final-stack validation, a validated
+    final-stack pass or failure, or filing readiness.
 
 Existing fuzz infrastructure can continue only where healthy, and bounded
 source reduction is allowed after environment preflight is healthy. None of the
