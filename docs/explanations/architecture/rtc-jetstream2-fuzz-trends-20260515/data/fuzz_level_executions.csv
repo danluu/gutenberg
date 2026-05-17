@@ -7918,8 +7918,8 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T22:30:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,4,3,1,4,3,869907,FALSE
 2026-05-17T22:30:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2304,2304,1856,72,14,482000,FALSE
 2026-05-17T22:45:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,4,4,2,4,2,463307,FALSE
-2026-05-17T22:45:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,9,5,1,9,8,1755499,FALSE
-2026-05-17T22:45:00Z,focused-shards,focused-late-join-b,browser-e2e,ws,three-user-late-join,95,48,0,95,95,431307,FALSE
-2026-05-17T22:45:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,292058,FALSE
-2026-05-17T22:45:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,3,3,2,3,1,486553,FALSE
-2026-05-17T22:45:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,960,960,672,30,9,183000,FALSE
+2026-05-17T22:45:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,21,13,1,21,20,3223841,FALSE
+2026-05-17T22:45:00Z,focused-shards,focused-late-join-b,browser-e2e,ws,three-user-late-join,188,94,0,188,188,853783,FALSE
+2026-05-17T22:45:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,3,2,0,3,3,748819,FALSE
+2026-05-17T22:45:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,6,6,4,6,2,912441,FALSE
+2026-05-17T22:45:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2720,2720,2368,85,11,530000,FALSE
