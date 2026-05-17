@@ -744,3 +744,6 @@ timestamp,group,group_family
 2026-05-17T17:13:18Z,novelty-http-persistence-probe,persistence
 2026-05-17T17:16:37Z,novelty-ws-real-user-editing,real-user
 2026-05-17T17:16:37Z,novelty-ws-real-user-rich-text,real-user
+2026-05-17T17:19:56Z,novelty-ws-real-user-save-reload,real-user
+2026-05-17T17:23:09Z,novelty-ws-real-user-save-reload,real-user
+2026-05-17T17:25:59Z,novelty-ws-parser-transform,parser
