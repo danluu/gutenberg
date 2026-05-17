@@ -1699,6 +1699,14 @@ lanes, but they must share state. In particular:
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that
     contain obvious wait-only wording.
+-   Local branch publication should be invoked by the same local loop that
+    publishes
+    `docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md`.
+    The helper is `bin/rtc-local-pr-branch-publisher-loop.sh`; use `once` mode
+    after a status refresh rather than running it as a separate polling daemon.
+    It reads Jetstream push manifests, asks Codex for a conservative push plan,
+    validates refs and SHAs deterministically, pushes safe branches to `danluu`,
+    and writes the resulting local publish manifest back to Jetstream.
 
 After changing one of these scripts on Jetstream, restart the matching tmux
 session on the `rtc-fuzz` socket and confirm that the status file shows the new
