@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T23:33:34Z`
+Snapshot time: `2026-05-17T23:40:47Z`
 
 Trigger event:
-`pr-split-2026-05-17T23-31-33Z-20260517T232422Z`
+`duplicate-noise-2026-05-17T23-39-09Z-156`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T23-31-33Z-20260517T232422Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T23-39-09Z-156/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -76,11 +76,13 @@ Hard blockers remain:
 
 - Do not file GitHub PRs, launch broad final-stack fuzz, or claim rebuilt
   stack-wide validation yet.
-- i33 lacks a fresh accepted audit manifest. The next bounded job should
-  produce `report.md`, `push-manifest.tsv`, manifest age, base allowlist,
-  head/bundle/manifest agreement, branch graph, adjacent diffstat/numstat,
-  patch-id/range-diff versus i31/i32/Cycle306, deferred audit, finalization
-  staleness audit, and artifact verification.
+- The Cycle 314 i33 non-Docker audit/manifest completed and is the current
+  branch-shape evidence, but it does not make the stack filing-ready by itself.
+  It produced `42` manifest rows, `7` passing topology checks, `0` hard check
+  failures, `0` head/bundle/manifest agreement failures, and `0` i33-vs-i31
+  alias failures.
+- Rows that still say `No verified branch link yet` need explicit product refs
+  published, fetched, and audited before filing.
 - PR07 runtime ownership remains product-evidence blocked. Prior PR07 owner
   matrix rows were setup-only or readiness-blocked; they are not product
   coverage and do not justify PR07D.
@@ -94,7 +96,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T23:33:29Z`.
+Remote status was collected at `2026-05-17T23:40:42Z`.
 
 The fix-planning repo is checked out at:
 
@@ -124,7 +126,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T23:33:34Z` from fetched
+The branch-link audit was generated at `2026-05-17T23:40:47Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. A verified
 branch link confirms that the linked ref exists and has a non-empty audited
@@ -186,7 +188,7 @@ branch-link audit or explicitly says `No verified branch link yet`.
 
 | PR | Scope | Audit branch link | Files | Diff | Current status |
 | --- | --- | --- | ---: | ---: | --- |
-| PR 9 | Core-data lock fairness from PR06D | [`review/rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/review/rtc-pr09-store-lock-fairness) | 2 | +185 / -2 | verified content; i33 audit must prove PR06D ancestry and PR07 non-ancestry |
+| PR 9 | Core-data lock fairness from PR06D | [`review/rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/review/rtc-pr09-store-lock-fairness) | 2 | +185 / -2 | verified content; Cycle 314 audit proves PR06D ancestry and PR07 non-ancestry for the i33 manifest |
 | PR 10 | CRDT block reconciliation foundation after PR9 | [`review/rtc-pr10-crdt-block-rebase-foundation`](https://github.com/danluu/gutenberg/tree/review/rtc-pr10-crdt-block-rebase-foundation) | 2 | +145 / -4 | verified content |
 | PR 11A | Explicit-base top-level delete operation | No verified branch link yet | TBD | TBD | active i33 row |
 | PR 11B | Explicit-base top-level insert operation | No verified branch link yet | TBD | TBD | active i33 row |
@@ -203,8 +205,8 @@ branch-link audit or explicitly says `No verified branch link yet`.
 | PR 13B3 | Explicit-base cross-parent source retirement microhead | No verified branch link yet | TBD | TBD | active i33 row |
 | PR 14 | Table body nested array merge | [`review/rtc-pr14-table-body-array-merge`](https://github.com/danluu/gutenberg/tree/review/rtc-pr14-table-body-array-merge) | 2 | +294 / -18 | verified content; seed `7110017` still shows PR14 alone is incomplete |
 | PR 14B | Stale-shorter query-array local suffix append after PR14 | No verified branch link yet | TBD | TBD | required before PR15A-C |
-| PR 15A | Fallback group move stale reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 | +123 / -4 | verified component content; i33 audit must confirm PR14B ancestry |
-| PR 15B | Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 | +197 / -4 | verified component content; i33 audit must confirm placement |
+| PR 15A | Fallback group move stale reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 | +123 / -4 | verified component content; Cycle 314 audit records the active i33 placement |
+| PR 15B | Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 | +197 / -4 | verified component content; Cycle 314 audit records the active i33 placement |
 | PR 15C | Fallback group delete | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 | +161 / -4 | verified component content; not a clean PR05D substitute |
 
 ### Held Sidecars, Fallbacks, And Prior Art
@@ -228,50 +230,54 @@ branch-link audit or explicitly says `No verified branch link yet`.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T23:33:29Z
+collected_at_utc: 2026-05-17T23:40:42Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T230103Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The current novelty/control-plane snapshot was updated at
-`2026-05-17T23:28:12.370Z`:
+`2026-05-17T23:38:36.870Z`:
 
 ```text
-coverage files: 48227
-total records seen: 74731
-records processed this pass: 12
-coverage lines seen this pass: 77091
-new behavioral feature keys this pass: 1
-new CDP coverage hashes this pass: 1
+coverage files: 48283
+total records seen: 74791
+records processed this pass: 25
+coverage lines seen this pass: 77151
+new behavioral feature keys this pass: 2
+new CDP coverage hashes this pass: 2
 current-run records by group:
-  novelty-http-persistence-probe=10
-  novelty-ws-real-user-save-reload=9
+  novelty-http-persistence-probe=13
 current-run successful records:
   persistence-no-title=1
-  real-user-editing=1
-active current-run triage signatures: 5
-active current-run product-evidence signatures: 5
-active current-run likely-real visible: 4
-current-run no-product raw signatures: 5
-suppressed strict startup records: 6
-top duplicate family share: 0.8
+active current-run triage signatures: 0
+active current-run product-evidence signatures: 0
+active current-run raw product-evidence signatures: 11
+active current-run likely-real visible: 3
+current-drain product-evidence signatures: 3
+current-drain likely-real visible: 4
+current-run no-product raw signatures: 1
+suppressed strict startup records: 2
+top duplicate family share: 0
+current-drain top duplicate family share: 1.0
 unmet goals: 5
 quality issues: 0
 health: ok
 enabled groups:
-  novelty-ws-real-user-save-reload
+  novelty-ws-real-user-editing
   novelty-http-persistence-probe
 paused groups:
   novelty-ws-parser-transform
   novelty-ws-lifecycle
+  novelty-ws-real-user-save-reload
 ```
 
 This is current fuzz/control-plane health, not final-stack validation and not a
-filing-readiness claim. The active current run has visible product-evidence
-signals (`likely-real visible: 4`) dominated by timeout and reload/rejoin
-awareness-stall families. The no-product `pre_action_bootstrap_stall` family
-is still visible as suppressed startup/no-product noise and must not be
+filing-readiness claim. The active current-run scope has no actionable
+product-evidence signatures after the latest pass, while the current-drain
+scope still retains visible product-evidence representatives from paused
+no-analysis drain directories. The no-product `pre_action_bootstrap_stall`
+family is still visible as suppressed startup/no-product noise and must not be
 reported as a product failure.
 
 Coverage guidance still has five unmet auto-ratchet goals:
@@ -281,30 +287,30 @@ title-save-reload: 536/1000
 reload-post-action: 1080/2000
 body-save-reload: 595/1000
 real-user-editing success: 601/1000
-ui-format-paragraph: 1706/2000
+ui-format-paragraph: 1709/2000
 ```
 
-The latest trend packet was generated at `2026-05-17T23:24:07Z` from monitor
-data through `2026-05-17T23:22:28Z`:
+The latest trend packet was generated at `2026-05-17T23:32:01Z` from monitor
+data through `2026-05-17T23:28:12Z`:
 
 ```text
-monitor passes: 2145
-coverage files: 272 -> 48218
-coverage files delta: 47946
+monitor passes: 2146
+coverage files: 272 -> 48227
+coverage files delta: 47955
 unmet goals: 5
 likely_real_max: 4
 duplicate_share_current_last: 0.8
-duplicate_share_historical_last: 0.3451
+duplicate_share_historical_last: 0.3456
 summary startup failures last: 0
 quality issues last: 0
-memory free: 425.3 GB
-load averages: 37.33 / 58.18 / 60.63 on 64 cores
+memory free: 419.0 GB
+load averages: 74.15 / 73.49 / 66.59 on 64 cores
 latest fuzz level mix:
   browser-e2e=28 lanes/27 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5389978
-browser-e2e likely-real findings: 627 over 1968.4 runner-hours
+total fuzz-level test executions: 5392930
+browser-e2e likely-real findings: 628 over 1970.5 runner-hours
 latest suggested PR net LOC total: 2621
 ```
 
@@ -330,13 +336,33 @@ The newest completed split-persona synthesis is
   `deferred/*`, fallback-tail PR05D, raw PR07D, PR17, PR18, and PR18x.
 - Clean PR05D is only `27c6e7924217038ed9b4ff71585e8041c67765a4`.
 - Filing, final-stack fuzz, and rebuilt stack validation remain blocked, but
-  independent work remains actionable: run i33 audit/manifest, then PR07
-  readiness/owner replay, and continue deferred downscope/promotion work.
+  independent work remains actionable: consume the completed i33
+  audit/manifest, then run PR07 readiness/owner replay after root/ports/wp-env
+  are healthy, and continue deferred downscope/promotion work.
 
 The previous `pr-split-20260517T231630Z-synthesis.md` i32 recommendation is
 now superseded. The Cycle312 i31 audit/manifest remains prior evidence only:
 it produced durable nonzero artifacts and useful alias checks, but it is not
 the current filing manifest.
+
+The Cycle 314 action pass completed the bounded i33 audit/manifest and
+stale-finalization guard. The artifact directory is:
+
+```text
+/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260517T232422Z/jobs/outputs/rtc-cycle314-current-fresh-audit-manifest-and-stale-finalization-guard/
+```
+
+It produced `report.md`, `push-manifest.tsv`, `manifest-age.tsv`,
+`base-allowlist.tsv`, `head-bundle-manifest-check.tsv`, `branch-graph.txt`,
+`adjacent-diffstat-numstat.tsv`, `adjacent-patch-id.tsv`,
+`i33-vs-i31-i32-cycle306-drift.tsv`, `deferred-output-audit.tsv`,
+`latest-fresh-audit.tsv`, `finalization-staleness-audit.tsv`, and
+`artifact-verification.tsv`. It records `42` manifest rows, `7` passing
+topology checks, `0` hard check failures, `0` head/bundle/manifest agreement
+failures, and `0` i33-vs-i31 alias failures. The push manifest was refreshed
+at `2026-05-17T23:36:59Z`, newer than the deferred queue timestamp
+`2026-05-17T23:33:08Z` and the latest fresh split timestamp
+`2026-05-17T23:26:18Z`.
 
 The latest duplicate/noise synthesis,
 `duplicate-noise-20260517T231501Z-synthesis.md`, says the active leak is not
@@ -353,12 +379,16 @@ first-level family caps:
   jobs instead of leaving them queued;
 - mirror the same key in the live-analysis monitor.
 
-The matching latest duplicate/noise feedback-action file is zero bytes, so it
-is not durable progress. The earlier completed duplicate/noise action remains
-useful control-plane evidence: it separated launch dirs from no-analysis drain
-dirs, stopped no-analysis drain dirs from launching live/deep analysis, passed
-`node --check` for touched scripts, and showed no strict no-product pre-action
-startup queued/running/retry count after restart. That is not product
+The matching latest duplicate/noise feedback-action file is durable progress.
+It implemented the consumer-side cap in
+`bin/rtc-browser-fuzz-analysis-tier.mjs` and
+`bin/rtc-browser-fuzz-live-analysis-monitor.mjs`: source-stable launch-family
+keys, terminal `family-capped` siblings, and mirrored live-monitor counting.
+Validation passed `node --check` on both scripts. The patched active HTTP pass
+reported `sourceSignatures=10`, `analysisJobs=10`, `completed=4`, and
+`family-capped=6`; after restart, the active HTTP timeout family had no active
+first-level analysis/codex process and product-evidence representatives
+remained visible. This is control-plane duplicate/noise hygiene, not product
 validation, final-stack fuzzing, or PR filing readiness.
 
 The completed status-analysis reports through
@@ -376,14 +406,14 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| i33 split audit | `fresh-prset/iteration-33/*` | active working target, but not audited as a filing manifest | Run bounded fresh i33 audit/manifest newer than the latest fresh split, stale finalization artifacts, and deferred queue |
-| Required i33 artifacts | `report.md`, `push-manifest.tsv`, manifest age, base allowlist, head/bundle/manifest agreement, branch graph, adjacent diffstat/numstat, patch-id/range-diff, deferred audit, finalization staleness audit, artifact verification | missing for the new i33 recommendation | Produce nonempty allowlisted artifacts; reject zero-byte or stale reports |
+| i33 split audit | `fresh-prset/iteration-33/*` | Cycle 314 non-Docker audit/manifest completed with nonempty artifacts and `0` hard failures | Consume this as branch-shape evidence, but refresh if a newer fresh split or deferred queue supersedes it before filing |
+| Required i33 artifacts | `report.md`, `push-manifest.tsv`, manifest age, base allowlist, head/bundle/manifest agreement, branch graph, adjacent diffstat/numstat, patch-id/range-diff, deferred audit, finalization staleness audit, artifact verification | present in the Cycle 314 artifact directory | Keep zero-byte, stale, wrong-base, setup-only, and preflight-only artifacts out of filing evidence |
 | Missing verified product refs | PR02A, PR05A-D, PR06A-E, PR07A1-A3, PR07B0-B2, held PR07C, PR11A-E, PR12A-C, PR13B0-B3, PR14B | rows correctly say `No verified branch link yet` | Publish/fetch/audit explicit GitHub refs before filing |
 | PR07 runtime / owner gate | PR07A1-A3, PR07B0-B2, held PR07C; seeds `5200011`, `5200015`, `5200017`, `5200010`, `5200008`, `7110004`, `7110017`, `1100001`, and `1100002` | prior matrix was setup-only or readiness-blocked | Run PR07 readiness/root-cause repair before Docker replay, then rerun owner matrix with REST/meta/Y.Doc/provider/awareness/block-tree first-divergence snapshots |
 | PR07D | reload/post-save/rejoin residuals | raw PR07D is rejected | Add only after fresh PR07 replay proves red-at-held-PR07C non-coverage |
 | PR05D semicolonless entity validation | clean PR05C-adjacent branch `27c6e7924217` | real PR05-family work after PR05C; no verified product branch link yet | Publish/fetch/audit clean PR05D; keep fallback-tail PR05D rejected |
 | PR06E malformed-save sidecar | outgoing RTC save request-payload guard | useful only as a PR06D sidecar | Publish/fetch/audit explicit sidecar and prove PR07 is not in its ancestry |
-| PR09 placement | PR09 through PR15C | independent CRDT/data-loss lane must fork from PR06D, not PR07 | Prove `PR06D -> PR09` and `PR07 !-> PR09/PR15C` in filing refs |
+| PR09 placement | PR09 through PR15C | Cycle 314 audit proves the active i33 branch-shape requirement: `PR06D -> PR09`, `PR07B1 !-> PR09`, `PR07B2 !-> PR09`, and `PR07B2 !-> PR15C` | Preserve those ancestry checks in filing refs |
 | PR13 finer split | PR13A plus desired PR13B0/B1/B2/B3 | PR13A has repaired verified link; PR13B/C repaired links are fallback/supporting evidence | Publish/fetch/audit PR13B0/B1/B2/B3 before replacing fallback refs |
 | PR14B / PR15 placement | table query-array suffix and PR15A-C after PR14B | PR15A-C have verified component links, but active topology lacks verified PR14B placement proof | Publish/fetch/audit explicit PR14B-based PR15A-C refs and confirm ancestry |
 | PR03B browser restoreRevision invalidation | held PR03 sidecar | held until runtime replay distinguishes PR03 from PR03B ownership | Run PR03 vs PR03B after runtime readiness is healthy |
@@ -391,7 +421,7 @@ These must not be described as fixed or filing-ready.
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzz, filing, and rebuilt validation only | Revisit only after refreshed stack validation produces newer product evidence |
 | Active deferred sessions | reload-hydration, pre-save search/live-collapse, rich-text suffix | active sessions are not progress by themselves | Count only nonempty durable reports/artifacts or a clear downscope/promotion decision |
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families | evidence-only unless a focused owner replay proves otherwise | Keep out of PR rows until branch, owner, and fuzz evidence are refreshed |
-| Duplicate/noise product-evidence duplicate leak | timeout/reload-rejoin current-run families | latest synthesis proposes source-stable terminal family caps; latest action file is zero bytes | Implement or consume a nonempty action report before claiming the new duplicate/noise fix completed |
+| Duplicate/noise product-evidence duplicate leak | timeout/reload-rejoin current-run families | consumer-side source-stable terminal family caps are implemented and validated in the latest feedback-action report | Let normal monitor/reporting passes absorb the control-plane fix; keep product-evidence representatives visible |
 
 ## Filing Gates And Current Recommendation
 
@@ -402,9 +432,9 @@ raw deferred/candidate refs, or zero-byte/stale finalization artifacts as-is.
 Before filing any maintainer-facing PR:
 
 1. Use the i33 topology as the current working target.
-2. Produce a fresh i33 audit/manifest with nonempty durable artifacts newer
-   than the latest fresh split, stale finalization artifacts, and deferred
-   queue.
+2. Use the completed Cycle 314 i33 audit/manifest as current branch-shape
+   evidence, and refresh it if a newer fresh split, stale finalization artifact,
+   or deferred queue supersedes it before filing.
 3. Publish/fetch/audit explicit product refs for every row that currently says
    `No verified branch link yet`.
 4. Prove `PR06D -> PR06E`, `PR07 !-> PR06E`, `PR06D -> PR09`,
@@ -433,7 +463,7 @@ Before filing any maintainer-facing PR:
     health and triage evidence. They are not final-stack validation, a
     validated final-stack pass or failure, or filing readiness.
 
-The next useful work is a bounded i33 audit/manifest and stale-finalization
-guard, then targeted PR07 readiness and owner replay after the audit and
-readiness pass. Do not launch broad final-stack fuzz, a duplicate seed
-`1020002` job, raw PR07D, PR17, PR18, or PR18x.
+The next useful work is targeted PR07 readiness and owner replay after root,
+ports, and `wp-env` are healthy, plus continued deferred downscope/promotion
+work that produces nonempty durable artifacts. Do not launch broad final-stack
+fuzz, a duplicate seed `1020002` job, raw PR07D, PR17, PR18, or PR18x.
