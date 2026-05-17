@@ -189,6 +189,42 @@ describe( 'prePersistPostType', () => {
 		getSyncManager.mockReset();
 	} );
 
+	it( 'does not create a persisted CRDT doc when edits explicitly clear it', async () => {
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn(),
+			createPersistedCRDTDoc: jest.fn(),
+			getCRDTRecordData: jest.fn(),
+		};
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: 'newer saved content' },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+				},
+			},
+			{
+				content: 'older revision content',
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: '',
+				},
+			},
+			'post',
+			false,
+			'/wp/v2/posts'
+		);
+
+		expect( result ).toEqual( {} );
+		expect( apiFetch ).not.toHaveBeenCalled();
+		expect( syncManager.applyPersistedCRDTDoc ).not.toHaveBeenCalled();
+		expect( syncManager.createPersistedCRDTDoc ).not.toHaveBeenCalled();
+		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
+	} );
+
 	it( 'preserves latest saved content when a full-record save only changes other fields', async () => {
 		const baseContent = pageContent( [ 'Alpha', 'Beta' ] );
 		const latestContent = pageContent( [ 'Alpha', 'current content' ] );

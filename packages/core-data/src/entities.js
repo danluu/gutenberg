@@ -55,6 +55,21 @@ function getCRDTRawPostValue( crdtRecord, key ) {
 	return getRawPostValue( crdtRecord?.[ key ] );
 }
 
+function isPersistedCRDTDocumentInvalidation( edits ) {
+	if (
+		! Object.prototype.hasOwnProperty.call(
+			edits?.meta ?? {},
+			POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+		)
+	) {
+		return false;
+	}
+
+	const persistedCRDTDocument =
+		edits.meta[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ];
+	return persistedCRDTDocument === '' || persistedCRDTDocument === null;
+}
+
 function areSerializedBlocksEqualAt( blocksA, blocksB, index ) {
 	return (
 		blocksA[ index ]?.name === blocksB[ index ]?.name &&
@@ -460,6 +475,10 @@ export const prePersistPostType = async (
 		) {
 			newEdits.title = '';
 		}
+	}
+
+	if ( isPersistedCRDTDocumentInvalidation( edits ) ) {
+		return newEdits;
 	}
 
 	if (

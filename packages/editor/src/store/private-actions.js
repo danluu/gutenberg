@@ -19,6 +19,8 @@ import isTemplateRevertable from './utils/is-template-revertable';
 import { buildRevisionsPageQuery } from './private-selectors';
 export * from '../dataviews/store/private-actions';
 
+const PERSISTED_CRDT_DOCUMENT_META_KEY = '_crdt_document';
+
 /**
  * Returns an action object used to set which template is currently being used/edited.
  *
@@ -691,8 +693,19 @@ export const restoreRevision =
 		if ( revision.excerpt?.raw !== undefined ) {
 			edits.excerpt = revision.excerpt.raw;
 		}
-		if ( revision.meta !== undefined ) {
-			edits.meta = revision.meta;
+		if (
+			revision.meta !== undefined ||
+			( typeof window !== 'undefined' && window._wpCollaborationEnabled )
+		) {
+			edits.meta = {
+				...( revision.meta ?? {} ),
+			};
+			if (
+				typeof window !== 'undefined' &&
+				window._wpCollaborationEnabled
+			) {
+				edits.meta[ PERSISTED_CRDT_DOCUMENT_META_KEY ] = '';
+			}
 		}
 
 		// Apply edits and save.

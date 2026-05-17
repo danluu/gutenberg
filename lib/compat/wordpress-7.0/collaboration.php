@@ -216,6 +216,10 @@ if ( ! function_exists( 'gutenberg_validate_persisted_crdt_document_base_version
 			true
 		);
 
+		if ( '' === $meta_value || null === $meta_value ) {
+			return true;
+		}
+
 		if ( ! is_string( $current_value ) || '' === $current_value ) {
 			return true;
 		}
@@ -258,6 +262,8 @@ if ( ! function_exists( 'gutenberg_prevent_stale_crdt_document_meta_update' ) ) 
 	 * @return null|bool Whether to short-circuit the update.
 	 */
 	function gutenberg_prevent_stale_crdt_document_meta_update( $check, int $object_id, string $meta_key, $meta_value, $prev_value ) {
+		unset( $prev_value );
+
 		if ( null !== $check || '_crdt_document' !== $meta_key ) {
 			return $check;
 		}
@@ -287,6 +293,8 @@ if ( ! function_exists( 'gutenberg_prevent_stale_crdt_document_meta_add' ) ) {
 	 * @return null|bool Whether to short-circuit the add.
 	 */
 	function gutenberg_prevent_stale_crdt_document_meta_add( $check, int $object_id, string $meta_key, $meta_value, bool $unique ) {
+		unset( $meta_value, $unique );
+
 		if ( null !== $check || '_crdt_document' !== $meta_key ) {
 			return $check;
 		}
