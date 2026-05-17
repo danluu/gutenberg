@@ -7400,4 +7400,15 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T16:45:00Z,strict-expansion,ws-revision-persistence,browser-e2e,ws,revision-persistence,3,3,2,3,1,386108,FALSE
 2026-05-17T16:45:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,8,7,6,8,2,522209,FALSE
 2026-05-17T16:45:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,3,2,2,3,1,381740,FALSE
-2026-05-17T16:45:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2176,2176,1664,68,16,412000,FALSE
+2026-05-17T16:45:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2208,2208,1696,69,16,417000,FALSE
+2026-05-17T17:00:00Z,coverage-guided,novelty-ws-real-user-save-reload,browser-e2e,ws,real-user-editing,5,4,0,5,5,412629,FALSE
+2026-05-17T17:00:00Z,focused-shards,focused-async-server-a,browser-e2e,ws,async-server-blocks,3,3,3,3,0,130243,FALSE
+2026-05-17T17:00:00Z,focused-shards,focused-async-server-b,browser-e2e,ws,async-server-blocks,1,1,1,1,0,86423,FALSE
+2026-05-17T17:00:00Z,focused-shards,focused-late-join-a,browser-e2e,ws,three-user-late-join,9,9,9,9,0,265462,FALSE
+2026-05-17T17:00:00Z,focused-shards,focused-late-join-b,browser-e2e,ws,three-user-late-join,2,2,2,2,0,212067,FALSE
+2026-05-17T17:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,2,1,2,1,377761,FALSE
+2026-05-17T17:00:00Z,strict-expansion,ws-parser-transform,browser-e2e,ws,parser-transform,2,2,2,2,0,110239,FALSE
+2026-05-17T17:00:00Z,strict-expansion,ws-revision-persistence,browser-e2e,ws,revision-persistence,1,1,1,1,0,29821,FALSE
+2026-05-17T17:00:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,4,4,4,4,0,123128,FALSE
+2026-05-17T17:00:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,1,1,1,1,0,134899,FALSE
+2026-05-17T17:00:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,832,832,576,26,8,143000,FALSE
