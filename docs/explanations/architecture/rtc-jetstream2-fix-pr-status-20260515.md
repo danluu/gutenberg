@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T21:51:18Z`
+Snapshot time: `2026-05-17T21:58:42Z`
 
 Trigger event:
-`pr-split-2026-05-17T21-49-54Z-20260517T213858Z`
+`duplicate-noise-2026-05-17T21-51-34Z-150`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T21-49-54Z-20260517T213858Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T21-51-34Z-150/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -80,7 +80,7 @@ owner is named.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T21:51:12Z`.
+Remote status was collected at `2026-05-17T21:58:37Z`.
 
 The fix-planning repo is checked out at:
 
@@ -110,7 +110,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T21:51:18Z` from fetched
+The branch-link audit was generated at `2026-05-17T21:58:42Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -196,7 +196,7 @@ an older aggregate branch as if it were the current PR content.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T21:51:12Z
+collected_at_utc: 2026-05-17T21:58:37Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T205339Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -206,24 +206,25 @@ The raw `novelty-status.md` collected for this run is nonempty and gives the
 freshest bounded control-plane view:
 
 ```text
-novelty updated: 2026-05-17T21:48:40.561Z
-coverage files: 47861
-records seen: 74067
-current-run records: 27
+novelty updated: 2026-05-17T21:56:06.041Z
+coverage files: 47873
+records seen: 74083
+current-run records: 18
 current-run records by group:
-  novelty-http-persistence-probe=2
-  novelty-ws-parser-serialization=11
-  novelty-ws-real-user-editing=14
-current-run successful records: 11
-current-run pre-action startup failures: 4
+  novelty-ws-parser-serialization=16
+  novelty-ws-three-user-late-join=2
+current-run successful records: 8
+current-run pre-action startup failures: 3
 unmet goals: 5
-current active signatures: 1
-current active product-evidence signatures: 1
+current active signatures: 0
+current active product-evidence signatures: 0
 current active likely-real visible: 0
 current drain actionable signatures: 2
 current drain product-evidence signatures: 2
 current drain likely-real visible: 1
-current active top semantic family: timeout
+current active raw top semantic families:
+  reload_rejoin_awareness_stall, pre_action_bootstrap_stall,
+  fuzz_helper_rest_endpoint_construction
 current drain top semantic families: timeout, reload_rejoin_awareness_stall
 historical top duplicate family share: 0.3462
 health: ok
@@ -231,23 +232,24 @@ enabled groups:
   novelty-ws-three-user-late-join: ws, lanes=1
   novelty-ws-parser-serialization: ws, lanes=1
 paused groups:
-  novelty-http-persistence-probe
   novelty-ws-real-user-save-reload
   novelty-ws-real-user-rich-text
   novelty-ws-parser-transform
   novelty-ws-block-gauntlet
   novelty-ws-common-blocks
+  novelty-http-persistence-probe
   novelty-ws-real-user-editing
 ```
 
 This is current fuzz/control-plane health, not final-stack validation and not a
-no-bugs claim. Active current-run triage has one product-evidence actionable
-`timeout` signature but still has zero visible likely-real findings. The drain
-view intentionally preserves product-evidence `reload_rejoin_awareness_stall`
-representatives while holding noisy real-user save/reload, real-user editing,
-and rich-text producers in duplicate/noise pauses. The latest pass also shows
-max-enabled-group/materialization-floor churn around clean group selection; that
-is control-plane scheduling churn to fix, not new PR-content evidence.
+no-bugs claim. Active current-run triage has zero actionable signatures and
+zero visible likely-real findings; raw current-run product evidence remains
+visible but family-capped. The drain view intentionally preserves
+product-evidence `reload_rejoin_awareness_stall` and `timeout`
+representatives. Real-user save/reload, real-user editing, rich-text, and other
+duplicate/noise-heavy producers remain paused; the latest pass records
+`hold-materialization-floor-no-safe-group` instead of re-enabling a paused or
+noise-held group to satisfy the browser materialization floor.
 
 The latest trend packet was generated at `2026-05-17T21:45:46Z` from monitor
 data through `2026-05-17T21:42:42Z`:
@@ -282,7 +284,7 @@ largest unmet goals:
   ui-format-paragraph 1661/2000
 ```
 
-The novelty state at `21:48:40Z` supersedes the trend packet for current
+The novelty state at `21:56:06Z` supersedes the trend packet for current
 enabled/paused groups. The trend packet remains graph-derived evidence for
 coverage, load, and fuzzing effectiveness. Browser E2E remains the only level
 with confirmed likely-real findings in the trend packet, but lower-level lanes
@@ -318,49 +320,46 @@ The newest completed split-persona synthesis is
 - After root recovery, run the bounded PR07 owner matrix against PR07B0,
   PR07B1, and held PR07C for seeds `5200011`, `5200017`, `5200010`,
   `7110004`, `7110017`, and `5200008`.
-- Repair the loop gate. `rtc-pr-split-review-loop.sh` still has an invalid
-  `rg -Eiq` call, and zero-byte reports, active sessions, stderr growth,
-  `report.tmp`, stale manifests, disk-preflight-only reports, and
-  runtime-readiness-only reports must not count as progress while actionable
-  rows remain.
+- Loop repair completed in the paired `pr-split-20260517T213858Z` feedback
+  action: `rtc-pr-split-review-loop.sh` replaced the invalid `rg -Eiq`
+  predicate with `rg -iq -e` and passed `bash -n`. Keep enforcing that
+  zero-byte reports, active sessions, stderr growth, `report.tmp`, stale
+  manifests, disk-preflight-only reports, and runtime-readiness-only reports do
+  not count as progress while actionable rows remain.
 - The strict-expansion PR05 owner comparison completed at
   `2026-05-17T21:29:52Z` with `0` check failures; it keeps parser/rich-text,
   linebreak, suffix, and semicolonless residuals on the
   `PR05B -> PR05C -> clean PR05D` path and assigns no `PR18x` owner.
 
 The latest duplicate/noise synthesis is
-`duplicate-noise-20260517T212928Z-synthesis.md`; its paired feedback-action
-file is zero bytes, so no newer duplicate/noise remediation action completed in
-that slot. The previous completed action,
-`duplicate-noise-20260517T204820Z-feedback-action.md`, still matters because it:
+`duplicate-noise-20260517T212928Z-synthesis.md`; its paired feedback action
+completed the narrow producer/control-plane fix:
 
-- Patched `rtc-browser-fuzz-novelty-monitor.mjs` so startup/noise holds are
-  tighter, unsafe save/reload bypass is removed, and actively noise-paused
-  groups are not used to satisfy materialization floor.
-- Patched `rtc-browser-fuzz-supervisor.mjs` to preserve unexpired
-  startup-stall/no-analysis cooldown metadata across disable/remove/re-add.
-- Patched `rtc-browser-fuzz-analysis-tier.mjs` and
-  `rtc-browser-fuzz-live-analysis-monitor.mjs` so current-output family caps
-  count completed first-level representatives.
-- Passed `node --check` for all changed `.mjs` files and other present
-  allowed scripts that were checked.
-- Restarted the active coverage-guided novelty monitor, supervisor, and live
-  analysis child.
-- Left existing product-evidence analysis/deep-analysis sessions running to
-  avoid hiding likely-real evidence.
+- Added a one-hit threshold only for zero-product strict
+  `pre_action_bootstrap_stall`.
+- Made supervisor startup-stall pausing use that same zero-product rule.
+- Changed materialization-floor refill so it uses normal enable gates and
+  rejects paused, disabled, noise-held, and max-budget-blocked groups.
+- Bumped novelty run-local noise policy version to `20`.
+- Passed `node --check` for `rtc-browser-fuzz-novelty-monitor.mjs`,
+  `rtc-browser-fuzz-supervisor.mjs`, `rtc-browser-fuzz-triage-watcher.mjs`,
+  `rtc-browser-fuzz-analysis-tier.mjs`,
+  `rtc-browser-fuzz-deep-analysis-tier.mjs`, and
+  `rtc-browser-fuzz-live-analysis-monitor.mjs`.
+- Refreshed gate-only triage for `17` run dirs, ran live analysis once, and
+  verified zero queued/retry/running startup-family triage, analysis-tier, or
+  deep-analysis-tier jobs.
+- Restarted the active novelty monitor, supervisor, and live-analysis child.
 
-Current duplicate/noise status after the latest synthesis: active current-run
-triage has one product-evidence actionable timeout signature and zero visible
-likely-real findings; the drain view intentionally keeps
-`reload_rejoin_awareness_stall` product-evidence visible. Save/reload,
-real-user editing, and rich-text are paused and were not re-enabled through
-coverage recommendations. The unresolved control-plane issue is narrower:
-one-hit, zero-product strict `pre_action_bootstrap_stall` producer draining and
-the scheduler contradiction where max-enabled-group budget and the browser
-materialization floor can pause and then re-enable the same group. The next
-duplicate/noise fix should make materialization-floor enabling respect normal
-pause/hold/max-group gates and allow the run to remain temporarily below the
-floor when no clean group is available.
+Current duplicate/noise status after the latest action: active current-run
+triage has zero actionable signatures and zero visible likely-real findings;
+the drain view intentionally keeps `timeout` and
+`reload_rejoin_awareness_stall` product evidence visible. Save/reload,
+real-user editing, and rich-text remain paused or family-capped rather than
+hidden. Strict no-product startup stalls are no longer being queued for
+triage/analysis or kept alive as productive work. The remaining risk is
+duplicate-heavy product-evidence `reload_rejoin_awareness_stall`, which should
+stay visible or family-capped rather than suppressed.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -391,7 +390,7 @@ These must not be described as fixed or filing-ready.
 | PR13 finer split | PR13A/B0/B1/B2/B3 target; repaired PR13A/B/C fallback links | preferred source split is finer than the repaired audited fallback links | Publish/fetch/audit PR13B0/B1/B2/B3 before replacing repaired PR13B/C fallback rows |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzz, filing, and rebuilt validation only | Revisit only after rebuilt validation produces fresh product evidence newer than terminal/downscope classifications |
 | Pre-save search/live document collapse | seed `961308` / `ddf9559af37e`; run `0932bed35c7a` only if red or ambiguous | evidence-only; not in active split | Run one bounded owner comparison against PR06A-D, PR06E, PR07B0, PR07B1, and PR07C after PR07 stops consuming E2E capacity |
-| Duplicate/noise control-plane recycling | duplicate synthesis `20260517T212928Z`; previous completed action `20260517T204820Z`; novelty status `2026-05-17T21:48:40.561Z` | active current-run triage has one actionable timeout but no visible likely-real finding; product evidence remains visible in drain; save/reload, real-user editing, and rich-text stay paused; unresolved issue is one-hit zero-product startup draining plus max-enabled/materialization-floor churn around clean group selection | Patch novelty-monitor/supervisor so strict zero-product startup drain triggers on one hit and materialization-floor enabling respects pause/hold/max-group gates; verify no unsafe re-enable of paused noisy groups and product evidence remains visible |
+| Duplicate/noise control-plane recycling | duplicate synthesis/action `20260517T212928Z`; novelty status `2026-05-17T21:56:06.041Z` | one-hit zero-product strict startup draining and materialization-floor gating are patched; active current-run triage has no actionable signatures and no visible likely-real findings; drain product evidence remains visible; save/reload, real-user editing, and rich-text stay paused or family-capped | Monitor that startup-family signatures stay out of queued/running triage and analysis, keep product-evidence families visible or capped, and tune lane/family policy only with fresh product evidence |
 
 ## Filing Gates And Current Recommendation
 
@@ -435,9 +434,10 @@ Before filing any maintainer-facing PR:
     zero-byte artifacts, `report.tmp`, stale manifests, disk/runtime-preflight
     reports, and stderr growth are not counted as durable progress while
     actionable rows exist.
-11. Fix the remaining duplicate/noise scheduler leak before it spends more
-    browser capacity: one-hit zero-product strict startup drain, and
-    materialization-floor enabling that respects pause/hold/max-group gates.
+11. Keep the duplicate/noise scheduler fix enforced: one-hit zero-product
+    strict startup drain, materialization-floor enabling that respects
+    pause/hold/max-group gates, and product-evidence families visible or
+    family-capped rather than hidden.
 12. Run focused checks, touched-file lint, branch graph/containment evidence,
     adjacent range-diffs/diffstats/numstats, `git diff --check`, and feasible
     runtime checks on refreshed audited refs.
@@ -449,6 +449,7 @@ Existing fuzz infrastructure can continue only where healthy, and bounded
 source reduction is allowed after environment preflight is healthy. The next
 useful work is one bounded `rtc-cycle306-fresh-iteration23-audit-pr07-owner-matrix`
 job, publishing/fetching/auditing explicit corrected Cycle304 review refs,
-root-space cleanup, loop-gate and duplicate/noise scheduler repair, and after
-root recovery the bounded PR07 owner matrix. Do not launch broad final-stack
+root-space cleanup, loop-gate enforcement, post-patch duplicate/noise
+monitoring, and after root recovery the bounded PR07 owner matrix. Do not
+launch broad final-stack
 fuzz, a duplicate seed `1020002` job, raw `PR07D`, or `PR18x`.
