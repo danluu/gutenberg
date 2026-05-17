@@ -1,33 +1,33 @@
-generated_at_utc: 2026-05-17T01:01:46Z
-monitor_passes: 1779
+generated_at_utc: 2026-05-17T01:09:09Z
+monitor_passes: 1781
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-17T00:58:21Z
+last_pass_utc: 2026-05-17T01:07:15Z
 coverage_files_first: 272
-coverage_files_last: 37549
-coverage_files_delta: 37277
+coverage_files_last: 37689
+coverage_files_delta: 37417
 unmet_coverage_first: 24
 unmet_coverage_last: 6
 likely_real_max: 0
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.3526
+duplicate_share_historical_last: 0.3524
 summary_startup_failures_last: 0
 quality_issues_last: 1
-memory_free_gb_last: 423
+memory_free_gb_last: 437.3
 load_1_last: 66.58
 load_5_last: 112.54
 load_15_last: 129.42
 core_count: 64
-enabled_group_events: 695
-enabled_groups_current: novelty-ws-real-user-editing,novelty-ws-real-user-rich-text
-fuzz_level_mix_snapshots: 211
+enabled_group_events: 697
+enabled_groups_current: novelty-ws-real-user-editing,novelty-ws-real-user-rich-text,novelty-ws-lifecycle,novelty-http-persistence-probe
+fuzz_level_mix_snapshots: 213
 fuzz_level_mix_campaigns: coverage-guided,coverage-guided-lower-level,focused-shards,gap-booster,strict-expansion,unit-property
-fuzz_level_mix_latest: browser-e2e=27 lanes/27 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups
-fuzz_level_test_executions: 2669073
+fuzz_level_mix_latest: browser-e2e=29 lanes/29 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups
+fuzz_level_test_executions: 2696226
 fuzz_level_test_executions_has_approximate_rows: TRUE
-fuzz_level_execution_latest: browser-e2e=93143 cumulative/88 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=2319388 cumulative/19264 per-hour; coverage-guided-lower-level=253536 cumulative/3072 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+fuzz_level_execution_latest: browser-e2e=93324 cumulative/812 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=2342264 cumulative/110768 per-hour; coverage-guided-lower-level=257632 cumulative/19456 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
 profiles_seen: 16
 goals_total: 126
 goals_unmet: 6
-pr_review_events: 10213
-pr_suggested_net_loc_snapshots: 181
+pr_review_events: 10215
+pr_suggested_net_loc_snapshots: 183
 pr_suggested_net_loc_latest_total: 11359
