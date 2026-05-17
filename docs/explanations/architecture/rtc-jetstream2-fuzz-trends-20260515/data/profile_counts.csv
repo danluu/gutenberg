@@ -1,7 +1,7 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
 three-user-late-join,8201,3177,0,0.3873917814900622,lifecycle
 session-lifecycle,7616,2209,0,0.29004726890756305,lifecycle
-real-user-editing,6293,448,0,0.07119021134593993,real-user
+real-user-editing,6295,448,0,0.07116759332803813,real-user
 async-server-blocks,6114,3441,0,0.5628066732090284,async/media
 block-gauntlet,5972,1078,0,0.18050904219691896,block-structure
 permissions-auth-locks,5744,3168,0,0.5515320334261838,auth/locks
@@ -10,7 +10,7 @@ parser-transform,4051,398,0,0.09824734633423846,parser
 common-blocks,3852,381,0,0.09890965732087227,block-structure
 multi-reload-lifecycle,3170,102,0,0.032176656151419555,lifecycle
 parser-serialization,3099,148,0,0.047757341077767024,parser
-persistence-no-title,3031,667,0,0.22005938634114153,persistence
+persistence-no-title,3037,671,1,0.2209417188014488,persistence
 long-session-large-doc,2499,453,0,0.18127250900360145,lifecycle
 full,840,18,0,0.02142857142857143,block-structure
 structure,536,95,0,0.17723880597014927,block-structure
