@@ -94,18 +94,25 @@ collect_snapshot() {
 	local snapshot="$1"
 	local index="$snapshot/index.tsv"
 	local files="$snapshot/files"
-	local path safe
 	rm -rf "$snapshot"
 	mkdir -p "$files"
-	printf 'remote_path\tlocal_path\n' > "$index"
 	remote_manifest_paths > "$snapshot/remote-paths.txt"
-	while IFS= read -r path; do
-		[ -n "$path" ] || continue
-		safe="$(printf '%s' "$path" | cksum | awk '{ print $1 }')-$(basename "$path")"
-		if scp -q "$REMOTE:$path" "$files/$safe" 2>/dev/null; then
-			printf '%s\tfiles/%s\n' "$path" "$safe" >> "$index"
-		fi
-	done < "$snapshot/remote-paths.txt"
+	ssh "$REMOTE" '
+		set -e
+		tmp=$(mktemp -d)
+		mkdir -p "$tmp/files"
+		printf "remote_path\tlocal_path\n" > "$tmp/index.tsv"
+		while IFS= read -r path; do
+			[ -n "$path" ] || continue
+			[ -f "$path" ] || continue
+			safe="$(printf "%s" "$path" | cksum | awk "{ print \$1 }")-$(basename "$path")"
+			if cp "$path" "$tmp/files/$safe" 2>/dev/null; then
+				printf "%s\tfiles/%s\n" "$path" "$safe" >> "$tmp/index.tsv"
+			fi
+		done
+		tar -C "$tmp" -czf - .
+		rm -rf "$tmp"
+	' < "$snapshot/remote-paths.txt" | tar -C "$snapshot" -xzf -
 	cp "$PUBLISHED" "$snapshot/current-local-publish-manifest.tsv" 2>/dev/null || true
 	{
 		echo "# Snapshot"
