@@ -26,12 +26,25 @@ import {
 
 export const DEFAULT_ENTITY_KEY = 'id';
 const POST_RAW_ATTRIBUTES = [ 'title', 'excerpt', 'content' ];
+const POST_SNAPSHOT_RAW_ATTRIBUTES = [ 'title', 'excerpt' ];
 const POST_TYPES_WITH_STALE_SAVE_PROTECTION = new Set( [ 'post', 'page' ] );
 
 function getRawPostValue( value ) {
 	return value && typeof value === 'object' && 'raw' in value
 		? value.raw
 		: value;
+}
+
+function getRawPostSnapshot( record ) {
+	if ( ! record ) {
+		return {};
+	}
+
+	return Object.fromEntries(
+		POST_SNAPSHOT_RAW_ATTRIBUTES.filter( ( key ) => key in record ).map(
+			( key ) => [ key, getRawPostValue( record[ key ] ) ]
+		)
+	);
 }
 
 function getSerializedBlockValue( block ) {
@@ -415,11 +428,14 @@ export const additionalEntityConfigLoaders = [
 /**
  * Apply extra edits before persisting a post type.
  *
- * @param {Object}  persistedRecord Already persisted Post
- * @param {Object}  edits           Edits.
- * @param {string}  name            Post type name.
- * @param {boolean} isTemplate      Whether the post type is a template.
- * @param {string}  baseURL         REST base URL for the post type.
+ * @param {Object}  persistedRecord        Already persisted Post
+ * @param {Object}  edits                  Edits.
+ * @param {string}  name                   Post type name.
+ * @param {boolean} isTemplate             Whether the post type is a template.
+ * @param {string}  baseURL                REST base URL for the post type.
+ * @param {Object}  options                Pre-persist options.
+ * @param {Object}  options.recordSnapshot Current record snapshot to store
+ *                                         with the CRDT document.
  * @return {Promise< Object >} Updated edits.
  */
 export const prePersistPostType = async (
@@ -427,7 +443,8 @@ export const prePersistPostType = async (
 	edits,
 	name,
 	isTemplate,
-	baseURL
+	baseURL,
+	options = {}
 ) => {
 	const newEdits = {};
 	const objectType = `postType/${ name }`;
@@ -435,6 +452,25 @@ export const prePersistPostType = async (
 	let syncManager;
 	let serializedDoc;
 	let hasSerializedDoc = false;
+	const createPersistedCRDTDocOptions = (
+		basePersistedCRDTDoc,
+		baseRecordSnapshot = persistedRecord
+	) => {
+		const recordSnapshot = getRawPostSnapshot(
+			options.recordSnapshot ?? edits
+		);
+
+		return {
+			basePersistedCRDTDoc,
+			...( Object.keys( recordSnapshot ).length
+				? {
+						baseRecordSnapshot:
+							getRawPostSnapshot( baseRecordSnapshot ),
+						recordSnapshot,
+				  }
+				: {} ),
+		};
+	};
 	const editedSavedFields = POST_RAW_ATTRIBUTES.filter(
 		( key ) => key in edits
 	);
@@ -474,12 +510,11 @@ export const prePersistPostType = async (
 			serializedDoc = await syncManager?.createPersistedCRDTDoc(
 				objectType,
 				objectId,
-				{
-					basePersistedCRDTDoc:
-						persistedRecord?.meta?.[
-							POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-						] || null,
-				}
+				createPersistedCRDTDocOptions(
+					persistedRecord?.meta?.[
+						POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+					] || null
+				)
 			);
 			hasSerializedDoc = !! serializedDoc;
 			const latestRecord = await apiFetch( {
@@ -524,12 +559,12 @@ export const prePersistPostType = async (
 				serializedDoc = await syncManager?.createPersistedCRDTDoc(
 					objectType,
 					objectId,
-					{
-						basePersistedCRDTDoc:
-							latestRecord?.meta?.[
-								POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-							] || null,
-					}
+					createPersistedCRDTDocOptions(
+						latestRecord?.meta?.[
+							POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+						] || null,
+						latestRecord
+					)
 				);
 				hasSerializedDoc = !! serializedDoc;
 
@@ -669,12 +704,15 @@ export const prePersistPostType = async (
 		if ( ! hasSerializedDoc ) {
 			serializedDoc = await (
 				syncManager ?? getSyncManager()
-			)?.createPersistedCRDTDoc( objectType, objectId, {
-				basePersistedCRDTDoc:
+			)?.createPersistedCRDTDoc(
+				objectType,
+				objectId,
+				createPersistedCRDTDocOptions(
 					persistedRecord?.meta?.[
 						POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-					] || null,
-			} );
+					] || null
+				)
+			);
 		}
 
 		if ( serializedDoc ) {
@@ -748,13 +786,14 @@ async function loadPostTypeEntities() {
 				( isTemplate
 					? capitalCase( record.slug ?? '' )
 					: String( record.id ) ),
-			__unstablePrePersist: ( persistedRecord, edits ) =>
+			__unstablePrePersist: ( persistedRecord, edits, options ) =>
 				prePersistPostType(
 					persistedRecord,
 					edits,
 					name,
 					isTemplate,
-					`/${ namespace }/${ postType.rest_base }`
+					`/${ namespace }/${ postType.rest_base }`,
+					options
 				),
 			__unstable_rest_base: postType.rest_base,
 			supportsPagination: true,
