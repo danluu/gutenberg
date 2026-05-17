@@ -223,6 +223,47 @@ Verified branches that are prior art or staging only:
   is verified content for old aggregate PR 11, but the active recommendation
   is the PR11A-E split.
 
+## Bug Coverage By Proposed PR
+
+"Fixed" below means fixed by the proposed branch when the row has a verified
+branch link. Rows without a verified branch link are intended coverage claims
+from local ready heads, validation-stack work, or active investigation; they
+still need the branch-link and validation gates in the main PR split table
+before filing.
+
+| PR | Bugs fixed or intended to fix |
+| --- | --- |
+| PR 1 | Fixes HTTP polling sessions that generate or accept oversized update payloads, which can stall or corrupt sync state before clients converge. |
+| PR 2 | Fixes HTTP polling storage reads that scan the wrong update window, so late or reconnecting pollers can miss needed updates or reprocess stale data. |
+| PR 2A | Intended to fix the narrowed HTTP room-isolation regression where one post/session can observe or retain another room's polling state; broader HTTP residuals remain deferred until separately source-proven. |
+| PR 3 | Fixes revision restore leaving stale `_crdt_document` metadata attached to restored content, which can make collaborators reload or save against the pre-restore CRDT state. It does not yet cover the separate seed `5500002` marker-retention follow-up. |
+| PR 4 | Fixes repeated save/meta churn around persisted CRDT metadata, where equivalent saved RTC state can be treated as a new edit and feed stale save loops or unnecessary persistence writes. |
+| PR 5A | Intended to fix entity/reference normalization false differences, where semantically equivalent entity references are treated as RTC content changes and can trigger avoidable save or merge churn. |
+| PR 5B | Intended to fix parser/rich-text HTML equivalence false differences, where equivalent rich-text serialization is treated as a destructive CRDT delta instead of a no-op. |
+| PR 5C | Intended to fix preserve-whitespace linebreak equivalence, including the `\n` versus `<br>` class represented by seed `5700084`; the current conclusion is that `5700084` is PR5C-covered plus strict-oracle drift, not a new product PR. |
+| PR 6 | Fixes outgoing save requests built from stale, empty, or unsafe CRDT projections, including cases where the save payload can drop valid block content or repair from stale raw content incorrectly. Malformed evaluated-content residuals are split to PR6B. |
+| PR 6A | Fixes persisted empty-content records overwriting a valid CRDT-backed post body, preserving the saved CRDT body when the REST/entity record is empty or incomplete. |
+| PR 6B | Intended to fix malformed outgoing RTC save request payloads using only commits `8340c5d794a` and `008b7258fe4`: valid block `originalContent` must not be used as malformed CRDT save content, and evaluated content must be guarded before REST save. |
+| PR 7A | Fixes stale save-response actions overwriting newer RTC entity/block state, including base-version regressions and stale block content returned by delayed saves. |
+| PR 7B | Fixes save-response manager/base-record handling that can invalidate or overwrite newer CRDT-backed state, especially stale title/base-record updates after a save completes. |
+| PR 8A | If revived, would cover only a narrowed title reload/persisted-record replacement bug. The broad PR8 branch is prior art and no active PR8A filing unit is currently verified. |
+| PR 9 | Fixes core-data store lock unfairness where older pending locks can be bypassed by newer work, allowing stale or out-of-order entity operations to win. |
+| PR 10 | Fixes the CRDT block reconciliation foundation for stale block identity rebasing, preventing local stale snapshots from applying edits to the wrong logical block after remote structural changes. |
+| PR 11A | Intended to fix explicit-base stale suffix append failures, where a stale local suffix append can drop or reorder remote top-level block changes. |
+| PR 11B | Intended to fix explicit-base top-level delete failures, where a stale local snapshot mishandles a remote or concurrent top-level block deletion. |
+| PR 11C | Intended to fix explicit-base middle insert failures, preserving remote top-level order when a local stale snapshot inserts into the middle of the block list. |
+| PR 11D | Intended to fix explicit-base top-level move/reorder failures, preventing stale snapshots from undoing or corrupting remote block reorders. |
+| PR 11E | Intended to fix explicit-base delete-plus-insert anchor failures, where a delete and insert in the same stale-base window can attach to the wrong block position. |
+| PR 12 | Fixes previous-local-cache top-level block operations: remote top-level appends, deletes, and reorders must not be lost or resurrected when a stale local snapshot edits a different block. |
+| PR 13A | Fixes observed-delete provenance for top-level blocks, preventing a stale local merge from resurrecting a block after this client has already observed the remote delete. |
+| PR 13B | Fixes cross-parent source retirement, preventing moved blocks from leaving source-side ghosts or duplicate content after cross-parent/current-only or explicit-base moves. |
+| PR 13C | Fixes stale block identity smear, where stale identity data can cause later edits or deletes to affect the wrong block after reconciliation. |
+| PR 14 | Fixes nested table-body/query-array stale local merges, preserving remote table row/cell array edits instead of replacing the nested array with an older local shape. |
+| PR 15A | Fixes fallback-group move/reorder stale merges, where block groups without a better explicit identity fallback can reorder incorrectly under stale local snapshots. |
+| PR 15B | Fixes fallback-group insert-anchor stale merges, preserving the intended insertion anchor when local stale state and remote structural edits interact. |
+| PR 15C | Fixes fallback-group delete stale merges, preventing fallback-group deletes from resurrecting or deleting the wrong grouped blocks under stale local state. |
+| PR 17 | Not fixed yet. This row owns seed `1020002` only if browser/provider diagnostics prove a WordPress-owned WebSocket/Yjs marker divergence; otherwise the current evidence points toward reclassification or deferral rather than a product PR. |
+
 ## Validation And Fuzz Status
 
 Latest collected status input:
