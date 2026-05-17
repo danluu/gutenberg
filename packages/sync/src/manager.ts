@@ -37,6 +37,8 @@ import { createUndoManager } from './undo-manager';
 import {
 	createYjsDoc,
 	deserializeCrdtDoc,
+	getPersistedCrdtDocBaseRecordSnapshot,
+	getPersistedCrdtDocRecordSnapshot,
 	getPersistedCrdtDocVersion,
 	initializeYjsDoc,
 	markEntityAsSaved,
@@ -114,6 +116,88 @@ function hasPersistableCrdtDocStateChanged(
 
 interface ApplyPersistedCrdtDocOptions {
 	shouldPersist?: boolean;
+}
+
+function getComparableSnapshotValue( value: unknown ): unknown {
+	if (
+		'object' === typeof value &&
+		null !== value &&
+		! Array.isArray( value ) &&
+		'raw' in value
+	) {
+		return ( value as { raw?: unknown } ).raw;
+	}
+
+	return value;
+}
+
+function filterStaleRecordSnapshotInvalidations(
+	invalidations: ObjectData,
+	record: ObjectData,
+	recordSnapshot: ObjectData | null,
+	baseRecordSnapshot: ObjectData | null
+): ObjectData {
+	if ( ! recordSnapshot ) {
+		return invalidations;
+	}
+
+	return Object.fromEntries(
+		Object.entries( invalidations ).filter( ( [ key ] ) => {
+			if (
+				! Object.prototype.hasOwnProperty.call( recordSnapshot, key )
+			) {
+				return true;
+			}
+
+			const recordValue = getComparableSnapshotValue( record[ key ] );
+			const snapshotValue = getComparableSnapshotValue(
+				recordSnapshot[ key ]
+			);
+
+			if ( fastDeepEqual( recordValue, snapshotValue ) ) {
+				return true;
+			}
+
+			return ! (
+				baseRecordSnapshot &&
+				Object.prototype.hasOwnProperty.call(
+					baseRecordSnapshot,
+					key
+				) &&
+				fastDeepEqual(
+					recordValue,
+					getComparableSnapshotValue( baseRecordSnapshot[ key ] )
+				)
+			);
+		} )
+	);
+}
+
+function hasPersistedRecordSnapshotChanged(
+	basePersistedCRDTDoc: string | null | undefined,
+	options: CreatePersistedCRDTDocOptions
+): boolean {
+	if ( ! basePersistedCRDTDoc ) {
+		return false;
+	}
+
+	if (
+		'baseRecordSnapshot' in options &&
+		! fastDeepEqual(
+			getPersistedCrdtDocBaseRecordSnapshot( basePersistedCRDTDoc ),
+			options.baseRecordSnapshot ?? null
+		)
+	) {
+		return true;
+	}
+
+	return (
+		'recordSnapshot' in options &&
+		! fastDeepEqual(
+			getPersistedCrdtDocRecordSnapshot( basePersistedCRDTDoc ),
+			options.recordSnapshot ?? null
+		)
+	);
 }
 
 /**
@@ -654,7 +738,15 @@ export function createSyncManager( debug = false ): SyncManager {
 		// 3. Unsaved changes are synced from a peer _before_ this code runs. We
 		//    can't control when (or if) remote changes are synced, so this is a
 		//    race condition.
-		const invalidations = getChangesFromCRDTDoc( tempDoc, record );
+		const recordSnapshot = getPersistedCrdtDocRecordSnapshot( serialized );
+		const baseRecordSnapshot =
+			getPersistedCrdtDocBaseRecordSnapshot( serialized );
+		const invalidations = filterStaleRecordSnapshotInvalidations(
+			getChangesFromCRDTDoc( tempDoc, record ),
+			record,
+			recordSnapshot,
+			baseRecordSnapshot
+		);
 		const invalidatedKeys = Object.keys( invalidations );
 
 		// Destroy the temporary document to prevent leaks.
@@ -931,6 +1023,10 @@ export function createSyncManager( debug = false ): SyncManager {
 			! hasPersistableCrdtDocStateChanged(
 				entityState.ydoc,
 				options.basePersistedCRDTDoc
+			) &&
+			! hasPersistedRecordSnapshotChanged(
+				options.basePersistedCRDTDoc,
+				options
 			)
 		) {
 			return options.basePersistedCRDTDoc ?? null;
@@ -940,6 +1036,8 @@ export function createSyncManager( debug = false ): SyncManager {
 			baseVersion: getPersistedCrdtDocVersion(
 				options.basePersistedCRDTDoc
 			),
+			baseRecordSnapshot: options.baseRecordSnapshot,
+			recordSnapshot: options.recordSnapshot,
 		} );
 	}
 

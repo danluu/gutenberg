@@ -126,6 +126,8 @@ export interface SyncManagerUpdateOptions {
 
 export interface CreatePersistedCRDTDocOptions {
 	basePersistedCRDTDoc?: string | null;
+	baseRecordSnapshot?: ObjectData | null;
+	recordSnapshot?: ObjectData | null;
 }
 
 export interface RecordHandlers {
