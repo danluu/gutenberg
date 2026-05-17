@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T15:29:09Z`
+Snapshot time: `2026-05-17T15:37:34Z`
 
 Trigger event:
-`pr-split-2026-05-17T15-28-15Z-20260517T151727Z`
+`duplicate-noise-2026-05-17T15-36-50Z-132`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T15-28-15Z-20260517T151727Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T15-36-50Z-132/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -86,9 +86,16 @@ launch broad final-stack fuzzing, a duplicate PR07 replay, or any new
 `1020002` job while the PR07 continuation and manifest/audit refresh are the
 current gates.
 
+This duplicate-noise event does not change the proposed PR split. It does
+confirm that the bounded scheduler-control fix is active: novelty monitor
+policy `17` preserves only unexpired explicit no-product startup-noise producer
+cooldowns across output-root rotation, while current-run triage remains scoped
+to the active root and product-evidence failures remain visible for bounded
+analysis.
+
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T15:29:04Z`.
+Remote status was collected at `2026-05-17T15:37:29Z`.
 
 The fix-planning repo is checked out at:
 
@@ -118,7 +125,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T15:29:09Z` from fetched
+The branch-link audit was generated at `2026-05-17T15:37:34Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -195,69 +202,70 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T15:29:04Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T145558Z
+collected_at_utc: 2026-05-17T15:37:29Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T153426Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-Raw `novelty-status.md` was updated at `2026-05-17T15:26:01.470Z` for
-`run-20260517T145558Z`. Treat it as coverage/control-plane state, not as
+Raw `novelty-status.md` was updated at `2026-05-17T15:36:45.442Z` for
+`run-20260517T153426Z`. Treat it as coverage/control-plane state, not as
 final-stack validation, filing readiness, or a validated final-stack pass or
 failure.
 
 ```text
-coverage files: 45610
-total records seen: 70525
-current-run records: real-user-editing=2
+coverage files: 45785
+total records seen: 70753
+current-run records: none
 current-run successful records: none
-current-run product-evidence signatures: 2
+current-run product-evidence signatures: 0
 current-run likely-real visible: 0
-current-run top duplicate family share: 1
-current-run top family: reload_rejoin_awareness_stall=2
-historical product-evidence signatures: 9978
+current-run top duplicate family share: 0
+current-run top family: none
+historical product-evidence signatures: 10012
 historical likely-real visible: 221
 combined likely-real visible: 221
-enabled group: novelty-ws-block-gauntlet
-paused groups: persistence-no-title, real-user-save-reload,
-  http-persistence-probe, real-user-editing, real-user-rich-text,
-  parser-serialization, parser-transform, lifecycle
-health: ok
+enabled group: novelty-ws-common-blocks
+paused groups: real-user-save-reload, http-persistence-probe,
+  real-user-editing, real-user-rich-text, parser-serialization,
+  parser-transform, lifecycle, block-gauntlet
+health: warning: no behavioral coverage files found under active output dir
 unmet coverage goals: 7
-resource snapshot: load1=58.58 on 64 cores, memory=420.9G free,
+resource snapshot: load1=57.43 on 64 cores, memory=425.5G free,
   headroom for adding groups=yes
 ```
 
-The monitor recent-change log shows the startup/no-product noise policy has
-been reset to active current dirs while preserving unexpired explicit
-no-product startup producer cooldowns across output-root rotation. It restored
-seven cooldowns, skipped re-enabling noisy recommended real-user groups inside
-their cooldowns, and enabled `novelty-ws-block-gauntlet` as an unrelated
-productive fallback. Preserve product-evidence failures for bounded analysis.
+The monitor recent-change log shows the policy survived another output-root
+rotation. It preserved startup-noise cooldowns inside their six-hour windows,
+skipped re-enabling noisy recommended real-user groups, cleared one stale
+pause, reset active-current counters for the new root, and enabled
+`novelty-ws-common-blocks` as the current unrelated productive fallback.
+Preserve product-evidence failures for bounded analysis; the current active
+root has no actionable or product-evidence signatures yet.
 
-The latest trend packet was generated at `2026-05-17T15:20:59Z` from monitor
-data through `2026-05-17T15:17:49Z`:
+The latest trend packet was generated at `2026-05-17T15:27:52Z` from monitor
+data through `2026-05-17T15:26:01Z`:
 
 ```text
-monitor passes: 2017
-coverage files: 272 -> 45470
-coverage files delta: 45198
+monitor passes: 2019
+coverage files: 272 -> 45610
+coverage files delta: 45338
 unmet coverage goals: 7
 likely_real_max: 4
-duplicate_share_current_last: 0.5455
-duplicate_share_historical_last: 0.3483
+duplicate_share_current_last: 1
+duplicate_share_historical_last: 0.3477
 summary startup failures last: 0
-quality issues last: 1
-fuzz level mix: browser-e2e=27 lanes/26 groups;
+quality issues last: 0
+fuzz level mix: browser-e2e=26 lanes/26 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5288548
-browser-e2e execution: 104567 cumulative / 416 per-hour
-unit-property execution: 4752640 cumulative / 3712 per-hour
+total fuzz-level test executions: 5289524
+browser-e2e execution: 104679 cumulative / 864 per-hour
+unit-property execution: 4753504 cumulative / 7168 per-hour
 coverage-guided-lower-level execution: 428335 cumulative / 0 per-hour
-browser-e2e likely-real findings: 575 over 1842.7 runner-hours
-largest unmet goals: reload-post-action 1003/2000,
-  ui-format-paragraph 1451/2000, title-save-reload 472/1000,
+browser-e2e likely-real findings: 575 over 1845.1 runner-hours
+largest unmet goals: reload-post-action 1004/2000,
+  ui-format-paragraph 1453/2000, title-save-reload 472/1000,
   body-save-reload 531/1000, real-user-editing success 561/1000
 ```
 
@@ -294,9 +302,12 @@ startup-noise cooldowns across output-root changes while keeping current-run
 triage metrics scoped to active current dirs and preserving all product-evidence
 failures.
 
-The current novelty status indicates that policy has now been applied or
-restored in the running monitor. Continue to treat duplicate/noise work as
-control-plane hardening, not as product split evidence.
+The paired feedback action says that bounded fix was implemented in
+`rtc-browser-fuzz-novelty-monitor.mjs`, policy version `17` is active, the
+novelty monitor was restarted, and current consumer-path checks showed
+`strictStartupQueuedOrRunning: 0` and `noProductQueuedOrRunning: 0`. Continue to
+treat duplicate/noise work as control-plane hardening, not as product split
+evidence.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -329,7 +340,7 @@ These must not be described as fixed or filing-ready.
 | Pre-save search/live document collapse | prior candidate rows | evidence-only; not in active split | Capture editor blocks, serialized content, edited core-data record, live CRDT record, provider state, REST body, and save state around `core/search` insertion |
 | Broader HTTP polling room-isolation residuals | PR02A sidecar plus stale deferred relaunches | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred | Publish/fetch/audit PR02A before filing; promote additional residuals only with narrowed healthy-user product evidence |
 | Revision-restore marker retention | seed `5500002`; active lifecycle triage | queued behind final-stack preparation; no automatic PR slot | Triage only after rebuilt stack is available |
-| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T150403Z-synthesis.md`; `novelty-status.md` updated `2026-05-17T15:26:01.470Z` | no product split change; unexpired explicit no-product startup cooldowns are now preserved across output-root rotation, and product-evidence reload/rejoin signatures are preserved for bounded analysis | Keep current-run triage active-scope-only, cap duplicate product-evidence siblings only when preserving one representative, and validate with `node --check`, gate-only triage, live-analysis `--once`, and control-plane restart if patched again |
+| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T150403Z-synthesis.md`; `duplicate-noise-20260517T150403Z-feedback-action.md`; `novelty-status.md` updated `2026-05-17T15:36:45.442Z` | no product split change; policy `17` preserves unexpired explicit no-product startup cooldowns across output-root rotation, current-run triage remains active-scope-only, and product-evidence failures remain preserved for bounded analysis | Keep current-run triage active-scope-only, keep startup cooldowns bounded by their existing six-hour expiry, cap duplicate product-evidence siblings only when preserving one representative, and validate with `node --check`, gate-only triage, live-analysis `--once`, and control-plane restart if patched again |
 
 ## Filing Gates And Current Recommendation
 
@@ -398,8 +409,9 @@ Before filing any maintainer-facing PR:
     synthesis as fuzz/control-plane health and triage evidence. The raw novelty
     status file is populated now, but it is still not final-stack validation, a
     validated final-stack pass or failure, or filing readiness. Current novelty
-    shows zero visible likely-real signatures and two current-run product-
-    evidence signatures, both in `reload_rejoin_awareness_stall`.
+    shows zero visible likely-real signatures and zero current-run product-
+    evidence signatures in the new active root; historical product-evidence
+    families remain preserved for bounded analysis.
 
 Existing fuzz infrastructure can continue only where healthy, and bounded
 source reduction is allowed after environment preflight is healthy. None of the
