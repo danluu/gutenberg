@@ -285,9 +285,15 @@ materialization_logs_show_wp_env_infra_failure() {
 }
 
 repo_has_live_browser_runner() {
-	local repo=$1 pid cwd
-	for pid in $(pgrep -f 'bin/rtc-browser-fuzz-runner\.mjs|collaboration-fuzz\.spec\.ts|wp-scripts test-playwright|@playwright/test/cli\.js' || true); do
+	local repo=$1 pid cwd cmd
+	for pid in $(pgrep -f 'bin/rtc-browser-fuzz-runner\.mjs|wp-scripts test-playwright|@playwright/test/cli\.js' || true); do
 		[ -d "/proc/$pid" ] || continue
+		cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
+		case "$cmd" in
+			*'/codex '*|*' codex '*)
+				continue
+				;;
+		esac
 		cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null || true)
 		if [ "$cwd" = "$repo" ]; then
 			return 0
