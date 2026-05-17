@@ -36,7 +36,7 @@ GAP_BASE="${RTC_GAP_BASE:-/media/volume/danluu-fuzz-data/rtc-gap-booster-2026051
 LOWER_LEVEL_BASE="${RTC_LOWER_LEVEL_BASE:-/media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516}"
 CG_LOWER_LEVEL_BASE="${RTC_CG_LOWER_LEVEL_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516}"
 NATIVE_ASSERT_BASE="${RTC_NATIVE_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516}"
-FUZZ_ASSERT_BASE="${RTC_FUZZ_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260516}"
+FUZZ_ASSERT_BASE="${RTC_FUZZ_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260515}"
 CODEX_BIN="${CODEX_BIN:-/home/exouser/.npm-global/bin/codex}"
 MODEL="${RTC_FUZZ_LEVEL_MIX_MODEL:-gpt-5.5}"
 REASONING="${RTC_FUZZ_LEVEL_MIX_REASONING:-xhigh}"
@@ -92,6 +92,21 @@ add_root() {
   fi
 }
 
+has_tmux_session() {
+  local session="$1"
+  tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$session"
+}
+
+add_root_if_session_live() {
+  local roots_file="$1"
+  local label="$2"
+  local root="${3:-}"
+  local session="$4"
+  if has_tmux_session "$session"; then
+    add_root "$roots_file" "$label" "$root"
+  fi
+}
+
 add_process_roots() {
   local roots_file="$1"
   local label="$2"
@@ -99,43 +114,69 @@ add_process_roots() {
   local env_file root
   for env_file in /proc/[0-9]*/environ; do
     [ -r "$env_file" ] || continue
-    root="$(tr '\0' '\n' < "$env_file" 2>/dev/null | sed -n "s/^${env_name}=//p" | sed -n '1p')"
+    root="$(tr '\0' '\n' 2>/dev/null < "$env_file" | sed -n "s/^${env_name}=//p" | sed -n '1p')"
+    if [ "$label" = "coverage-guided-lower-process" ]; then
+      case "$root" in
+        /tmp/rtc-cg-lower-level-review*) continue ;;
+      esac
+    fi
     add_root "$roots_file" "$label" "$root"
+  done
+}
+
+add_protocol_process_roots() {
+  local roots_file="$1"
+  local env_file output_dir run_id
+  for env_file in /proc/[0-9]*/environ; do
+    [ -r "$env_file" ] || continue
+    output_dir="$(tr '\0' '\n' 2>/dev/null < "$env_file" | sed -n 's/^RTC_PROTOCOL_SERVER_FUZZ_OUTPUT_DIR=//p' | sed -n '1p')"
+    run_id="$(tr '\0' '\n' 2>/dev/null < "$env_file" | sed -n 's/^RTC_PROTOCOL_SERVER_FUZZ_RUN_ID=//p' | sed -n '1p')"
+    if [ -n "$output_dir" ] && [ -n "$run_id" ]; then
+      add_root "$roots_file" "protocol-process" "$output_dir/runs/$run_id"
+    fi
+  done
+}
+
+add_coverage_supervisor_process_roots() {
+  local roots_file="$1"
+  local current_output env_file root
+  current_output="$(latest_coverage_root)"
+  for env_file in /proc/[0-9]*/environ; do
+    [ -r "$env_file" ] || continue
+    root="$(tr '\0' '\n' 2>/dev/null < "$env_file" | sed -n 's/^RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=//p' | sed -n '1p')"
+    case "$root" in
+      "$COVERAGE_BASE"/*)
+        if [ "$root" = "$current_output" ]; then
+          add_root "$roots_file" "browser-supervisor-process" "$root"
+        fi
+        ;;
+    esac
   done
 }
 
 write_root_inventory() {
   local roots_file="$1"
-  local coverage_root focused_root strict_root gap_root lower_root cg_lower_root
+  local coverage_root focused_root strict_root gap_root lower_root
   : > "$roots_file"
   coverage_root="$(latest_coverage_root)"
   focused_root="$(current_root "$FOCUSED_BASE")"
   strict_root="$(current_root "$STRICT_BASE")"
   gap_root="$(current_root "$GAP_BASE")"
   lower_root="$(current_root "$LOWER_LEVEL_BASE")"
-  cg_lower_root="$(current_root "$CG_LOWER_LEVEL_BASE")"
 
   add_root "$roots_file" "browser-coverage-current" "$coverage_root"
-  add_root "$roots_file" "focused-current" "$focused_root"
-  add_root "$roots_file" "strict-current" "$strict_root"
-  add_root "$roots_file" "gap-current" "$gap_root"
+  add_root_if_session_live "$roots_file" "focused-current" "$focused_root" "rtc-focused-shards"
+  add_root_if_session_live "$roots_file" "strict-current" "$strict_root" "rtc-fuzz-strict-expansion"
+  add_root_if_session_live "$roots_file" "gap-current" "$gap_root" "rtc-gap-booster"
   add_root "$roots_file" "unit-property-current" "$lower_root"
-  add_root "$roots_file" "coverage-guided-lower-current" "$cg_lower_root"
+  add_coverage_supervisor_process_roots "$roots_file"
   add_process_roots "$roots_file" "unit-property-process" "RTC_LOWER_LEVEL_RUN_ROOT"
   add_process_roots "$roots_file" "coverage-guided-lower-process" "RTC_CG_LOWER_LEVEL_RUN_ROOT"
-
-  if [ -d "$NATIVE_ASSERT_BASE" ]; then
-    while IFS= read -r marker; do
-      add_root "$roots_file" "native-sidecar-current" "$(sed -n '1p' "$marker" 2>/dev/null || true)"
-    done < <(
-      find "$NATIVE_ASSERT_BASE" -path '*/current-run-root.txt' -printf '%p\n' 2>/dev/null |
-        grep -E '/(coverage-guided-lower-level-live|protocol|backend|fuzz-assert)/' |
-        sort
-    )
-  fi
+  add_protocol_process_roots "$roots_file"
 
   if [ -d "$FUZZ_ASSERT_BASE" ]; then
-    add_root "$roots_file" "fuzz-assert-current" "$(current_root "$FUZZ_ASSERT_BASE")"
+    add_root "$roots_file" "fuzz-assert-base" "$FUZZ_ASSERT_BASE"
+    add_root "$roots_file" "fuzz-assert-latest-cycle" "$(ls -td "$FUZZ_ASSERT_BASE"/cycles/* 2>/dev/null | head -1 || true)"
   fi
 
   awk -F '\t' 'NF == 2 && ! seen[$2]++ { print }' "$roots_file" > "$roots_file.tmp"
@@ -160,6 +201,8 @@ write_context() {
     echo
     echo "Continuously review the Jetstream2 RTC fuzzing level mix, run the standard personas in parallel, and after every two review cycles make concrete control changes. Do not wait for stalls or error conditions before reviewing whether the mix should change."
     echo
+    echo "Primary optimization target: maximize unique maintainer-relevant product bug output and triage-ready assertion families per unit of resource. Execution count, semantic feature novelty, and lane diversity are supporting signals only; they are not success if unique bug/assertion output stays flat."
+    echo
     echo "## Current roots"
     echo
     echo "- Fuzz repo: $FUZZ_REPO"
@@ -181,10 +224,14 @@ import json
 import os
 import re
 import sys
+import time
 from collections import Counter
+from datetime import datetime
 
 roots_file = sys.argv[1]
+
 roots = []
+
 try:
     with open(roots_file, errors="ignore") as handle:
         for line in handle:
@@ -214,40 +261,162 @@ def infer_level(group):
         return "transport-integration"
     return "browser-e2e"
 
+def parse_ts(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return None
+
+def load_json(path):
+    try:
+        with open(path, errors="ignore") as handle:
+            return json.load(handle), None
+    except Exception as exc:
+        return None, exc
+
+def lane_count(group):
+    try:
+        return max(1, int(group.get("lanes", 1) or 1))
+    except (TypeError, ValueError):
+        return 1
+
+def group_profile(group):
+    env = group.get("env") if isinstance(group.get("env"), dict) else {}
+    return (
+        env.get("GUTENBERG_RTC_BROWSER_ACTION_PROFILE")
+        or env.get("RTC_FUZZ_ACTION_PROFILE")
+        or group.get("profile")
+        or ""
+    )
+
+def state_run_dirs(group_state):
+    if not isinstance(group_state, dict):
+        return []
+    dirs = []
+    for candidate in [group_state.get("currentRunDir"), *(group_state.get("activeRunDirs") or [])]:
+        if candidate and candidate not in dirs and os.path.isdir(candidate):
+            dirs.append(candidate)
+    return dirs
+
 counts = Counter()
-groups = []
+active_rows = []
+held_browser_rows = []
+browser_summaries = []
+invariant_failures = []
 for label, root in roots:
     path = os.path.join(root, "supervisor-groups.json")
     if not os.path.exists(path):
-        groups.append(("missing-supervisor-groups", label, 0, "", root))
+        if label.startswith("fuzz-assert"):
+            active_rows.append(("fuzz-assertion", "fuzz-assertion-unaudited", 0, "", "", "unaudited-present", "", label, root))
+        else:
+            active_rows.append(("missing-supervisor-groups", "missing", 0, "", "", "", "", label, root))
         continue
-    try:
-        parsed = json.load(open(path))
-    except Exception as exc:
+    parsed, exc = load_json(path)
+    if exc is not None:
         print(f"- could not read {path}: {exc}")
         continue
+    state_path = os.path.join(root, "supervisor-state.json")
+    state, state_exc = load_json(state_path)
+    if isinstance(state, list):
+        state_groups = state
+    elif isinstance(state, dict):
+        state_groups = state.get("groups")
+    else:
+        state_groups = None
+    if not isinstance(state_groups, list):
+        state_groups = None
+    state_by_name = {
+        str(group.get("name") or ""): group
+        for group in state_groups or []
+        if isinstance(group, dict)
+    }
+    updated = parse_ts((state or {}).get("lastUpdatedAt") or (state or {}).get("updatedAt") or (state or {}).get("startedAt")) if isinstance(state, dict) else None
+    if updated is None:
+        try:
+            updated = os.path.getmtime(state_path)
+        except OSError:
+            updated = None
+    state_age = int(max(0, time.time() - updated)) if updated is not None else None
+    state_fresh = state_age is not None and state_age <= 600
+    status_counts = Counter(
+        str(group.get("status") or "unknown")
+        for group in state_groups or []
+        if isinstance(group, dict)
+    )
+    configured_browser = 0
+    active_browser = 0
+    paused_browser = 0
+    disabled_browser = 0
+    active_browser_dirs = set()
     for group in parsed if isinstance(parsed, list) else []:
         if not isinstance(group, dict):
             continue
-        lanes = int(group.get("lanes", 1) or 1)
+        lanes = lane_count(group)
         level = group.get("fuzzLevel") or group.get("fuzz_level") or infer_level(group)
+        name = str(group.get("name") or "")
+        transport = str(group.get("transport") or "")
+        profile = group_profile(group)
+        if level == "browser-e2e":
+            configured_browser += lanes
+            state_row = state_by_name.get(name)
+            status = str((state_row or {}).get("status") or "missing-state-row")
+            dirs = state_run_dirs(state_row)
+            reason = str((state_row or {}).get("lastReason") or "")
+            if state_groups is None:
+                status = "missing-supervisor-state"
+                reason = str(state_exc or "no supervisor-state.json")
+                invariant_failures.append(f"{label}:{name} is configured but {root}/supervisor-state.json is missing or unreadable")
+            elif not state_fresh:
+                status = "stale-supervisor-state"
+                reason = f"age={state_age if state_age is not None else 'unknown'}s"
+                invariant_failures.append(f"{label}:{name} has stale or undated supervisor-state.json")
+            elif status == "running" and dirs:
+                counts[level] += lanes
+                active_browser += lanes
+                active_browser_dirs.update(dirs)
+                active_rows.append((level, name, lanes, transport, profile, status, dirs[0], label, root))
+                continue
+            elif status == "running" and not dirs:
+                reason = reason or "running state has no live currentRunDir/activeRunDirs"
+                invariant_failures.append(f"{label}:{name} is running but has no live currentRunDir/activeRunDirs")
+            if status.startswith("paused"):
+                paused_browser += lanes
+            elif status.startswith("disabled"):
+                disabled_browser += lanes
+            held_browser_rows.append((label, name, lanes, status, reason[:180], root))
+            continue
         counts[level] += lanes
-        groups.append((level, group.get("name", ""), lanes, group.get("transport", ""), (group.get("env") or {}).get("GUTENBERG_RTC_BROWSER_ACTION_PROFILE") or (group.get("env") or {}).get("RTC_FUZZ_ACTION_PROFILE") or "", label, root))
+        active_rows.append((level, name, lanes, transport, profile, "configured", "", label, root))
+    if configured_browser:
+        browser_summaries.append((label, configured_browser, active_browser, paused_browser, disabled_browser, len(active_browser_dirs), state_age, dict(status_counts), root))
 
 for level in sorted(counts):
     print(f"- {level}: {counts[level]} lane(s)")
 if not any(level in counts for level in ("unit-property", "coverage-guided-lower-level", "backend-api", "protocol-server", "fuzz-assertion")):
     print("- gap: 0 active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes")
+for failure in invariant_failures:
+    print(f"- TELEMETRY-INVARIANT-FAIL: {failure}")
 print()
-print("| level | group | lanes | transport | profile | root label | root |")
-print("| --- | --- | ---: | --- | --- | --- | --- |")
-for row in groups:
-    if row[0] == "missing-supervisor-groups":
-        level, label, lanes, transport, root = row
-        print(f"| {level} | missing | {lanes} | {transport} |  | {label} | {root} |")
-        continue
-    level, name, lanes, transport, profile, label, root = row
-    print(f"| {level} | {name} | {lanes} | {transport} | {profile} | {label} | {root} |")
+print("| level | group | lanes | transport | profile | state | active run dir | root label | root |")
+print("| --- | --- | ---: | --- | --- | --- | --- | --- | --- |")
+for level, name, lanes, transport, profile, state, run_dir, label, root in active_rows:
+    print(f"| {level} | {name} | {lanes} | {transport} | {profile} | {state} | {run_dir} | {label} | {root} |")
+if browser_summaries:
+    print()
+    print("### Browser Supervisor Materialization Summary")
+    print("| root label | configured browser | active running browser | paused browser | disabled browser | active run dirs | state age sec | status counts | root |")
+    print("| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- |")
+    for label, configured, active, paused, disabled, active_dirs, age, status_counts, root in browser_summaries:
+        print(f"| {label} | {configured} | {active} | {paused} | {disabled} | {active_dirs} | {age if age is not None else 'unknown'} | {status_counts} | {root} |")
+if held_browser_rows:
+    print()
+    print("### Held Browser Groups")
+    print("| root label | group | lanes | state | reason | root |")
+    print("| --- | --- | ---: | --- | --- | --- |")
+    for label, name, lanes, state, reason, root in held_browser_rows:
+        print(f"| {label} | {name} | {lanes} | {state} | {reason} | {root} |")
 PY
     echo
     echo "## Current Execution Counters"
@@ -259,6 +428,7 @@ import sys
 from collections import Counter
 
 roots_file = sys.argv[1]
+
 roots = []
 try:
     with open(roots_file, errors="ignore") as handle:
@@ -305,6 +475,7 @@ def group_levels(root):
 
 counts = Counter()
 recent = {}
+seen_event_lines = set()
 for label, root in roots:
     levels = group_levels(root)
     for dirpath, _, files in os.walk(root):
@@ -319,11 +490,32 @@ for label, root in roots:
             with open(path, errors="ignore") as events:
                 for line in events:
                     if '"kind":"seed-attempt-complete"' in line:
+                        event_key = line.strip()
+                        if event_key in seen_event_lines:
+                            continue
+                        seen_event_lines.add(event_key)
                         try:
                             event = json.loads(line)
                         except Exception:
                             event = {}
-                        value = event.get("testExecutionCount") or event.get("individualTestExecutionCount")
+                        event_group = str(event.get("groupName") or event.get("group") or group)
+                        level = event.get("fuzzLevel") or levels.get(event_group) or levels.get(group)
+                        if not level:
+                            text = " ".join([label, root, dirpath, event_group, line[:400]]).lower()
+                            if "coverage-guided-lower-level" in text:
+                                level = "coverage-guided-lower-level"
+                            elif "protocol-server" in text:
+                                level = "protocol-server"
+                            elif "unit-property" in text or "lower-level-fuzz" in text:
+                                level = "unit-property"
+                            else:
+                                level = "browser-e2e"
+                        value = (
+                            event.get("testExecutionCount")
+                            or event.get("individualTestExecutionCount")
+                            or event.get("executionUnitCount")
+                            or event.get("caseCount")
+                        )
                         if not value and level == "coverage-guided-lower-level":
                             value = event.get("inputCount")
                         if not value:
@@ -333,7 +525,10 @@ for label, root in roots:
                         except (TypeError, ValueError):
                             value = 1
                         counts[level] += value
-                        recent[level] = (event.get("at") or "", label, root, value)
+                        at = event.get("at") or ""
+                        previous = recent.get(level)
+                        if previous is None or at > previous[0]:
+                            recent[level] = (at, label, root, value)
         except OSError:
             pass
 for level in sorted(counts):
@@ -408,7 +603,7 @@ def group_name_from_dir(dirpath):
     return match.group(1) if match else gen
 
 def event_execution_count(level, event):
-    for key in ("testExecutionCount", "individualTestExecutionCount", "executionUnitCount"):
+    for key in ("testExecutionCount", "individualTestExecutionCount", "executionUnitCount", "caseCount"):
         try:
             value = int(event.get(key) or 0)
         except (TypeError, ValueError):
@@ -442,6 +637,7 @@ def read_command_from_log(event):
 
 records = defaultdict(lambda: deque(maxlen=20))
 startup_heavy_patterns = ("npm run test:unit", "jest", "wp-scripts test-unit")
+seen_event_lines = set()
 for label, root in roots:
     group_meta = load_group_metadata(root)
     for dirpath, _, files in os.walk(root):
@@ -468,7 +664,12 @@ for label, root in roots:
                         continue
                     if event.get("kind") != "seed-attempt-complete":
                         continue
-                    level = event.get("fuzzLevel") or meta.get("fuzzLevel") or infer_level_from_text(" ".join([root, dirpath, group]))
+                    event_key = line.strip()
+                    if event_key in seen_event_lines:
+                        continue
+                    seen_event_lines.add(event_key)
+                    event_group = str(event.get("groupName") or event.get("group") or group)
+                    level = event.get("fuzzLevel") or meta.get("fuzzLevel") or infer_level_from_text(" ".join([root, dirpath, event_group]))
                     try:
                         duration_ms = int(event.get("durationMs") or 0)
                     except (TypeError, ValueError):
@@ -479,9 +680,12 @@ for label, root in roots:
                     command = read_command_from_log(event) or meta.get("runnerCommand") or ""
                     strategy = event.get("executionStrategy") or meta.get("executionStrategy") or ""
                     sleep_seconds = event.get("sleepSeconds", meta.get("sleepSeconds"))
-                    records[(level, group)].append({
+                    records[(level, event_group)].append({
                         "at": event.get("at") or "",
                         "durationMs": duration_ms,
+                        "executionDurationMs": event.get("executionDurationMs"),
+                        "failureIsolationAttempted": event.get("failureIsolationAttempted"),
+                        "failureIsolationCheckedInputCount": event.get("failureIsolationCheckedInputCount"),
                         "executions": executions,
                         "command": command,
                         "strategy": strategy,
@@ -496,12 +700,22 @@ if not records:
     print("- no recent duration-bearing execution events found")
     raise SystemExit
 
-print("| level | group | recent events | avg batch sec | avg ms per execution | executions/hour/lane | sleep sec | command shape | status |")
-print("| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |")
+print("| level | group | recent events | avg batch sec | avg exec sec | avg overhead sec | avg ms per execution | executions/hour/lane | sleep sec | command shape | overhead note | status |")
+print("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |")
 for (level, group), rows in sorted(records.items()):
     durations = [row["durationMs"] for row in rows]
+    execution_durations = []
+    for row in rows:
+        try:
+            value = int(row.get("executionDurationMs") or 0)
+        except (TypeError, ValueError):
+            value = 0
+        if value > 0:
+            execution_durations.append(value)
     executions = [max(1, row["executions"]) for row in rows]
     avg_duration = statistics.mean(durations)
+    avg_execution = statistics.mean(execution_durations) if execution_durations else avg_duration
+    avg_overhead = max(0, avg_duration - avg_execution)
     total_exec = sum(executions)
     total_ms = sum(durations)
     ms_per_exec = total_ms / total_exec if total_exec else 0
@@ -511,6 +725,14 @@ for (level, group), rows in sorted(records.items()):
     shape = latest["strategy"] or ("spawn-npm-jest-per-batch" if any(pattern in command for pattern in startup_heavy_patterns) else "unknown")
     sleep = latest["sleepSeconds"]
     sleep_display = "" if sleep is None else str(sleep)
+    isolation_attempts = sum(1 for row in rows if row.get("failureIsolationAttempted"))
+    isolation_checks = sum(int(row.get("failureIsolationCheckedInputCount") or 0) for row in rows)
+    overhead_note = ""
+    if avg_duration and avg_overhead / avg_duration > 0.5:
+        if isolation_attempts:
+            overhead_note = f"failure-isolation/minimization: attempts={isolation_attempts} checked={isolation_checks}"
+        else:
+            overhead_note = "non-execution overhead dominates"
     status = "ok"
     if sleep not in (None, "", 0, "0"):
         status = f"ACTION-NEEDED: fixed sleep of {sleep}s between batches"
@@ -518,7 +740,7 @@ for (level, group), rows in sorted(records.items()):
         status = "ACTION-NEEDED: per-batch npm/Jest startup dominates; consider persistent harness, larger batches, or direct runner"
     elif ms_per_exec > 1000 and level in ("unit-property", "coverage-guided-lower-level"):
         status = "ACTION-NEEDED: low execution throughput for lower-level target"
-    print(f"| {level} | {group} | {len(rows)} | {avg_duration/1000:.2f} | {ms_per_exec:.1f} | {per_hour:.1f} | {sleep_display} | {shape} | {status} |")
+    print(f"| {level} | {group} | {len(rows)} | {avg_duration/1000:.2f} | {avg_execution/1000:.2f} | {avg_overhead/1000:.2f} | {ms_per_exec:.1f} | {per_hour:.1f} | {sleep_display} | {shape} | {overhead_note} | {status} |")
 PY
     echo
     echo "## Telemetry Reconciliation"
@@ -532,6 +754,15 @@ import time
 from collections import Counter
 
 roots_file = sys.argv[1]
+
+def tmux_command(*args):
+    return [
+        os.environ.get("RTC_TMUX_BIN", "/usr/bin/tmux"),
+        "-L",
+        os.environ.get("RTC_TMUX_SOCKET", "rtc-fuzz"),
+        *args,
+    ]
+
 roots = []
 try:
     with open(roots_file, errors="ignore") as handle:
@@ -553,7 +784,12 @@ def infer_level_from_text(text):
         return "protocol-server"
     if session.startswith("rtc-backend-api-fuzz") or session.startswith("rtc-rest-api-fuzz"):
         return "backend-api"
-    if session.startswith("rtc-fuzz-assertion-runner") or session.startswith("rtc-fuzz-only-assertion-runner"):
+    if (
+        session.startswith("rtc-fuzz-assertion-runner")
+        or session.startswith("rtc-fuzz-only-assertion-runner")
+        or session.startswith("rtc-fuzz-only-asserts-loop")
+        or session.startswith("rtc-fuzz-asserts-")
+    ):
         return "fuzz-assertion"
     if "coverage-guided-lower" in text or "libfuzzer" in text or "afl" in text:
         return "coverage-guided-lower-level"
@@ -587,7 +823,7 @@ def event_level(root, dirpath, event):
     return group_levels.get(group) or infer_level_from_text(" ".join([root, dirpath, group])) or "browser-e2e"
 
 def event_value(level, event):
-    for key in ("testExecutionCount", "individualTestExecutionCount"):
+    for key in ("testExecutionCount", "individualTestExecutionCount", "executionUnitCount", "caseCount"):
         try:
             value = int(event.get(key) or 0)
         except (TypeError, ValueError):
@@ -603,7 +839,7 @@ def event_value(level, event):
 
 tmux_levels = Counter()
 try:
-    proc = subprocess.run(["tmux", "ls"], text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
+    proc = subprocess.run(tmux_command("ls"), text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
 except FileNotFoundError:
     proc = subprocess.CompletedProcess([], 127, "")
 for line in proc.stdout.splitlines():
@@ -614,6 +850,7 @@ for line in proc.stdout.splitlines():
 event_levels = Counter()
 latest = {}
 now = time.time()
+seen_event_lines = set()
 for label, root in roots:
     for dirpath, _, files in os.walk(root):
         if "events.ndjson" not in files:
@@ -624,6 +861,10 @@ for label, root in roots:
                 for line in events:
                     if '"kind":"seed-attempt-complete"' not in line:
                         continue
+                    event_key = line.strip()
+                    if event_key in seen_event_lines:
+                        continue
+                    seen_event_lines.add(event_key)
                     try:
                         event = json.loads(line)
                     except Exception:
@@ -632,7 +873,9 @@ for label, root in roots:
                     value = event_value(level, event)
                     event_levels[level] += value
                     at = event.get("at") or ""
-                    latest[level] = (at, label, root, value)
+                    previous = latest.get(level)
+                    if previous is None or at > previous[0]:
+                        latest[level] = (at, label, root, value)
         except OSError:
             continue
 
@@ -642,8 +885,13 @@ all_levels = sorted(set(tmux_levels) | set(event_levels) | {"unit-property", "co
 for level in all_levels:
     at, label, root, value = latest.get(level, ("", "", "", ""))
     status = "ok"
-    if tmux_levels[level] and not event_levels[level]:
-        status = "TELEMETRY-INVARIANT-FAIL: tmux session exists but no observed events in root inventory"
+    if level in {"backend-api", "fuzz-assertion"} and not tmux_levels[level] and not event_levels[level]:
+        status = "blocked: no active audited lane; held pending run-root/events harness wiring"
+    elif tmux_levels[level] and not event_levels[level]:
+        if level == "fuzz-assertion":
+            status = "unaudited-present: tmux session exists but no audited current-run-root/status.tsv/events.ndjson wiring"
+        else:
+            status = "TELEMETRY-INVARIANT-FAIL: tmux session exists but no observed events in root inventory"
     elif event_levels[level] and not tmux_levels[level]:
         if level == "browser-e2e":
             status = "ok: browser groups are supervised; not one tmux session per group"
@@ -658,7 +906,16 @@ if tmux_levels["coverage-guided-lower-level"] and not event_levels["coverage-gui
 if tmux_levels["protocol-server"] and not event_levels["protocol-server"]:
     print("- telemetry-invariant-failure: protocol-server tmux is live but context roots do not show protocol-server events.")
 if tmux_levels["fuzz-assertion"] and not event_levels["fuzz-assertion"]:
-    print("- telemetry-invariant-failure: fuzz-assertion tmux is live but context roots do not show fuzz-assertion events.")
+    print("- fuzz-assertion-unaudited-present: fuzz-assertion tmux is live but has no audited current-run-root/status.tsv/events.ndjson wiring.")
+
+protocol_marker = "/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516/protocol/current-run-root.txt"
+try:
+    marker_root = open(protocol_marker, errors="ignore").read().strip()
+except OSError:
+    marker_root = ""
+protocol_latest_root = latest.get("protocol-server", ("", "", "", ""))[2]
+if marker_root and protocol_latest_root and marker_root != protocol_latest_root:
+    print(f"- TELEMETRY-INVARIANT-FAIL: protocol current-run-root marker {marker_root} differs from live protocol event root {protocol_latest_root}.")
 PY
     echo
     echo "## Control-Plane Self-Audit"
@@ -673,9 +930,18 @@ import time
 from datetime import datetime, timezone
 
 coverage_root = sys.argv[1] if len(sys.argv) > 1 else ""
+
+def tmux_command(*args):
+    return [
+        os.environ.get("RTC_TMUX_BIN", "/usr/bin/tmux"),
+        "-L",
+        os.environ.get("RTC_TMUX_SOCKET", "rtc-fuzz"),
+        *args,
+    ]
+
 try:
     proc = subprocess.run(
-        ["tmux", "list-sessions", "-F", "#S"],
+        tmux_command("list-sessions", "-F", "#S"),
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
@@ -690,6 +956,12 @@ expected = [
     "rtc-coverage-guided-novelty",
     "rtc-coverage-guided-supervisor",
     "rtc-coverage-guided-watchdog",
+    "rtc-focused-shards",
+    "rtc-focused-shards-watchdog",
+    "rtc-fuzz-strict-expansion",
+    "rtc-fuzz-strict-expansion-watchdog",
+    "rtc-gap-booster",
+    "rtc-gap-booster-watchdog",
     "rtc-fuzz-level-mix-persona-loop",
     "rtc-fuzz-level-mix-persona-loop-watchdog",
     "rtc-duplicate-noise-persona-loop",
@@ -711,6 +983,29 @@ for name in expected:
         )
     else:
         print(f"| exact-session:{name} | ACTION-NEEDED | exact tmux session missing |")
+
+if coverage_root:
+    groups_path = os.path.join(coverage_root, "supervisor-groups.json")
+    state_path = os.path.join(coverage_root, "supervisor-state.json")
+    if not os.path.exists(groups_path) and not os.path.exists(state_path):
+        print(
+            f"| current-coverage-materialization | ACTION-NEEDED | current coverage root has no supervisor-groups.json or supervisor-state.json: {coverage_root} |"
+        )
+    try:
+        pane_proc = subprocess.run(
+            tmux_command("list-panes", "-t", "rtc-coverage-guided-novelty", "-F", "#{pane_start_command}"),
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+        pane_commands = [line.strip() for line in pane_proc.stdout.splitlines() if line.strip()]
+    except Exception:
+        pane_commands = []
+    if pane_commands and all(coverage_root not in command for command in pane_commands):
+        print(
+            f"| novelty-marker-pane-root | ACTION-NEEDED | current-output-dir root {coverage_root} does not match rtc-coverage-guided-novelty pane command(s): {'; '.join(pane_commands[:2])} |"
+        )
 
 def pid_alive(pid):
     try:
@@ -806,6 +1101,14 @@ def file_age(path):
     except OSError:
         return None
 
+def parse_iso_ts(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return None
+
 groups_path = os.path.join(coverage_root, "supervisor-groups.json") if coverage_root else ""
 state_path = os.path.join(coverage_root, "supervisor-state.json") if coverage_root else ""
 status_path = os.path.join(coverage_root, "novelty-status.md") if coverage_root else ""
@@ -814,6 +1117,13 @@ try:
     status_text = open(status_path, errors="replace").read()
 except OSError:
     pass
+
+novelty_state_path = os.path.join(coverage_root, "novelty-state.json") if coverage_root else ""
+novelty_state = None
+try:
+    novelty_state = json.load(open(novelty_state_path))
+except Exception:
+    novelty_state = None
 
 groups = None
 if groups_path:
@@ -828,14 +1138,21 @@ active_run_dirs = 0
 state_age = None
 try:
     state = json.load(open(state_path))
-    parsed_groups = state.get("groups")
+    if isinstance(state, list):
+        parsed_groups = state
+    elif isinstance(state, dict):
+        parsed_groups = state.get("groups")
+    else:
+        parsed_groups = []
     state_groups = parsed_groups if isinstance(parsed_groups, list) else []
     for group in state_groups:
         if isinstance(group, dict):
             active_run_dirs += len([d for d in group.get("activeRunDirs") or [] if d])
-    updated = state.get("lastUpdatedAt") or state.get("startedAt")
+    updated = (state.get("lastUpdatedAt") or state.get("startedAt")) if isinstance(state, dict) else None
     if updated:
         state_age = int(max(0, time.time() - datetime.fromisoformat(str(updated).replace("Z", "+00:00")).timestamp()))
+    else:
+        state_age = int(max(0, time.time() - os.path.getmtime(state_path)))
 except Exception:
     pass
 
@@ -846,7 +1163,36 @@ current_noise_clear = (
     (current_signatures in (None, 0) or (current_duplicate_share is not None and current_duplicate_share == 0))
     and (likely_real in (None, 0))
 )
-historical_hold_present = "hold-coverage-guidance-codex" in status_text and "historical" in status_text
+
+historical_hold_present = False
+if isinstance(novelty_state, dict):
+    hold_reason = novelty_state.get("coverageGuidanceHistoricalNoiseHoldReason")
+    hold_at = parse_iso_ts(novelty_state.get("coverageGuidanceHistoricalNoiseHoldLastAt"))
+    latest_reset_at = None
+    for change in novelty_state.get("changes") or []:
+        if not isinstance(change, dict):
+            continue
+        if change.get("action") == "reset-run-local-noise-state":
+            changed_at = parse_iso_ts(change.get("at"))
+            if changed_at is not None:
+                latest_reset_at = max(latest_reset_at or changed_at, changed_at)
+    historical_hold_present = bool(
+        hold_reason and (latest_reset_at is None or hold_at is None or hold_at >= latest_reset_at)
+    )
+else:
+    recent_hold = None
+    recent_reset = None
+    for match in re.finditer(r"- ([0-9TZ:.\-]+): ([a-z0-9-]+)\\s+(.*)", status_text):
+        changed_at = parse_iso_ts(match.group(1))
+        if changed_at is None:
+            continue
+        action = match.group(2)
+        detail = match.group(3)
+        if action == "hold-coverage-guidance-codex" and "historical" in detail:
+            recent_hold = max(recent_hold or changed_at, changed_at)
+        elif action == "reset-run-local-noise-state":
+            recent_reset = max(recent_reset or changed_at, changed_at)
+    historical_hold_present = bool(recent_hold and (recent_reset is None or recent_hold >= recent_reset))
 
 if groups is None:
     age = file_age(coverage_root) if coverage_root else None
@@ -881,7 +1227,7 @@ PY
 import json
 import os
 import sys
-from collections import deque
+from collections import defaultdict, deque
 
 roots = []
 try:
@@ -894,6 +1240,8 @@ except OSError:
     pass
 
 events = deque(maxlen=25)
+group_events = defaultdict(lambda: deque(maxlen=20))
+seen_event_lines = set()
 for label, root in roots:
     for dirpath, _, files in os.walk(root):
         if "events.ndjson" not in files:
@@ -904,11 +1252,17 @@ for label, root in roots:
                 for line in handle:
                     if '"kind":"seed-attempt-complete"' not in line or '"coverage-guided-lower-level"' not in line:
                         continue
+                    event_key = line.strip()
+                    if event_key in seen_event_lines:
+                        continue
+                    seen_event_lines.add(event_key)
                     try:
                         event = json.loads(line)
                     except Exception:
                         continue
+                    group = event.get("groupName") or event.get("group") or label
                     events.append((event.get("at") or "", label, root, event))
+                    group_events[str(group)].append((event.get("at") or "", label, root, event))
         except OSError:
             pass
 
@@ -929,13 +1283,32 @@ else:
     if coverage_new == 0 and feature_new == 0:
         print("- action-needed: coverage-guided lower-level novelty is stalled; improve target shape, semantic features, mutation, corpus selection, or split targets.")
     elif coverage_new == 0:
-        print("- action-needed: V8 coverage novelty is stalled but semantic novelty remains; consider target split, deeper oracles, or mutation changes rather than only adding corpus.")
+        print("- check: V8 coverage novelty is stalled but semantic novelty remains; keep improving branch-like semantic features, target split, or mutation changes rather than only adding corpus.")
     elif feature_new == 0:
-        print("- action-needed: semantic novelty is stalled; add feature feedback or oracle classes if the target is still important.")
+        print("- check: semantic novelty is stalled; add feature feedback or oracle classes if the target is still important.")
+    print()
+    print("| group | recent events | recent inputs | new coverage keys | new semantic feature keys | nonzero exits | latest corpus | status |")
+    print("| --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |")
+    for group in sorted(group_events):
+        samples = list(group_events[group])
+        group_coverage_new = sum(int(event.get("newCoverageKeys") or 0) for _, _, _, event in samples)
+        group_feature_new = sum(int(event.get("newFeatureKeys") or 0) for _, _, _, event in samples)
+        group_inputs = sum(int(event.get("inputCount") or 0) for _, _, _, event in samples)
+        group_crashes = sum(1 for _, _, _, event in samples if event.get("exitCode") not in (0, "0", None))
+        latest_group_event = samples[-1][3]
+        status = "ok"
+        if group_coverage_new == 0 and group_feature_new == 0:
+            status = "ACTION-NEEDED: no recent coverage or semantic novelty; hold, retarget, or change mutation/corpus policy"
+        elif group_coverage_new == 0:
+            status = "check: semantic novelty only; inspect target split/oracle depth before adding capacity"
+        elif group_feature_new == 0:
+            status = "check: coverage novelty only; improve semantic feature feedback if target remains important"
+        print(f"| {group} | {len(samples)} | {group_inputs} | {group_coverage_new} | {group_feature_new} | {group_crashes} | {latest_group_event.get('corpusSize')} | {status} |")
 PY
     echo
     echo "## Lower-Level Output Effectiveness Gate"
     python3 - "$roots_file" <<'PY'
+import json
 import os
 import re
 import sys
@@ -982,6 +1355,11 @@ def log_tail(path, max_bytes=65536):
     except OSError:
         return ""
 
+def normalize_semantic_key(value):
+    key = re.sub(r"\s+", "_", str(value or "").strip())
+    key = re.sub(r"[^A-Za-z0-9_./:-]+", "_", key).strip("_")
+    return key[:220]
+
 def classify(log_text):
     lower = log_text.lower()
     if "no space left on device" in lower or "enospc" in lower:
@@ -995,6 +1373,17 @@ def classify(log_text):
     return "failed-run"
 
 def semantic_key(log_text, fallback):
+    explicit_patterns = [
+        r'"(?:failureSummary|failureCanonicalKey|failureKey|canonicalFailureKey|semanticFailureKey)"\s*:\s*"([^"]{4,220})"',
+        r"(?:failureSummary|failureCanonicalKey|failureKey|canonicalFailureKey|semanticFailureKey)[:=]\s*([^\r\n]{4,220})",
+        r"\b(RTC_[A-Z0-9_]+(?::[A-Za-z0-9_.-]+){0,24})\b",
+    ]
+    for pattern in explicit_patterns:
+        match = re.search(pattern, log_text)
+        if match:
+            key = normalize_semantic_key(match.group(1))
+            if key:
+                return key
     patterns = [
         r"at (?:Object\.)?([A-Za-z0-9_$<>.]+) \((packages/[^:]+):([0-9]+):[0-9]+\)",
         r"at ([A-Za-z0-9_$<>.]+) \((packages/[^:]+):([0-9]+):[0-9]+\)",
@@ -1021,6 +1410,8 @@ stats = {
         "executions": 0,
         "failure_classes": Counter(),
         "semantic_keys": Counter(),
+        "feature_keys": Counter(),
+        "bug_keys": Counter(),
     }
     for level in lower_levels
 }
@@ -1052,8 +1443,11 @@ for label, root in roots:
             if failure_class == "lower-level-assertion":
                 stats[level]["candidate_rows"] += 1
                 fallback = f"{os.path.basename(root)}:{row.get('seed_start', row.get('attempt', 'unknown'))}:{exit_code}"
-                stats[level]["semantic_keys"][semantic_key(log_text, fallback)] += 1
+                key = semantic_key(log_text, fallback)
+                stats[level]["semantic_keys"][key] += 1
+                stats[level]["bug_keys"][key] += 1
 
+    seen_event_lines = set()
     for dirpath, _, files in os.walk(root):
         if "events.ndjson" not in files:
             continue
@@ -1063,6 +1457,14 @@ for label, root in roots:
                 for line in events:
                     if '"kind":"seed-attempt-complete"' not in line:
                         continue
+                    event_key = line.strip()
+                    if event_key in seen_event_lines:
+                        continue
+                    seen_event_lines.add(event_key)
+                    try:
+                        event = json.loads(line)
+                    except Exception:
+                        event = {}
                     for key in ("testExecutionCount", "individualTestExecutionCount", "executionUnitCount", "inputCount"):
                         match = re.search(rf'"{key}"\s*:\s*([0-9]+)', line)
                         if match:
@@ -1070,20 +1472,54 @@ for label, root in roots:
                             break
                     else:
                         stats[level]["executions"] += 1
+                    is_failure = event.get("ok") is False or str(event.get("exitCode") or "0") not in ("0", "")
+                    semantic_features = event.get("semanticFeatureKeys") or event.get("semanticFeatures")
+                    if isinstance(semantic_features, list):
+                        for feature in semantic_features:
+                            feature_key = normalize_semantic_key(feature)
+                            if feature_key:
+                                key = f"feature:{feature_key}"
+                                stats[level]["semantic_keys"][key] += 1
+                                stats[level]["feature_keys"][key] += 1
+                    if is_failure:
+                        semantic = (
+                            event.get("failureCanonicalKey")
+                            or event.get("canonicalFailureKey")
+                            or event.get("semanticFailureKey")
+                            or event.get("failureSummary")
+                        )
+                        semantic = normalize_semantic_key(semantic)
+                        if semantic:
+                            stats[level]["semantic_keys"][semantic] += 1
+                            stats[level]["bug_keys"][semantic] += 1
+                            stats[level]["candidate_rows"] += 1
         except OSError:
             pass
 
-print("| level | roots | executions | failed rows | assertion rows | unique semantic outputs | top semantic outputs | status |")
-print("| --- | ---: | ---: | ---: | ---: | ---: | --- | --- |")
+print("| level | roots | executions | failed rows | assertion rows | unique semantic outputs | unique feature outputs | unique bug/assertion outputs | top bug/assertion outputs | top semantic outputs | status |")
+print("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- | --- | --- |")
 for level in lower_levels:
     data = stats[level]
     unique_outputs = len(data["semantic_keys"])
+    unique_features = len(data["feature_keys"])
+    unique_bug_outputs = len(data["bug_keys"])
+    top_bug = ", ".join(f"{key} ({count})" for key, count in data["bug_keys"].most_common(3)) or "none"
     top = ", ".join(f"{key} ({count})" for key, count in data["semantic_keys"].most_common(3)) or "none"
     status = "ok"
-    if data["executions"] >= 50000 and unique_outputs <= 2:
+    if data["executions"] >= 20000 and unique_bug_outputs == 0:
         status = (
-            "ACTION-NEEDED: lower-level executions are collapsing to too few unique semantic outputs; "
-            "add a new bounded target/oracle or improve canonical failure keys"
+            "ACTION-NEEDED: high execution count but zero unique bug/assertion outputs; "
+            "do not count semantic feature novelty as yield, cap exploration and retarget to a stronger oracle"
+        )
+    elif data["executions"] >= 50000 and unique_bug_outputs <= 2:
+        status = (
+            "ACTION-NEEDED: lower-level executions are collapsing to too few unique bug/assertion outputs; "
+            "add a new bounded target/oracle, improve the oracle, or demote the lane"
+        )
+    elif unique_features > 0 and unique_bug_outputs == 0 and data["executions"] >= 5000:
+        status = (
+            "ACTION-NEEDED: semantic features are flowing but no bug/assertion output is visible; "
+            "feature novelty is not enough to keep expanding this lane"
         )
     if data["failed_rows"] and not data["candidate_rows"] and data["failure_classes"]:
         top_class, _ = data["failure_classes"].most_common(1)[0]
@@ -1091,11 +1527,256 @@ for level in lower_levels:
             status = f"ACTION-NEEDED: lower-level failures are dominated by {top_class}; fix infra/harness noise before treating the lane as productive"
     print(
         f"| {level} | {len(data['roots'])} | {data['executions']} | {data['failed_rows']} | "
-        f"{data['candidate_rows']} | {unique_outputs} | {top} | {status} |"
+        f"{data['candidate_rows']} | {unique_outputs} | {unique_features} | {unique_bug_outputs} | {top_bug} | {top} | {status} |"
     )
 
 print()
-print("- Gate policy: a lower-level lane is not productive merely because it is alive or fast. If high execution count yields only one or two semantic assertion families, the feedback action must improve semantic-output diversity by changing the target, oracle, corpus/mutation strategy, or canonicalization.")
+print("- Gate policy: a lower-level lane is not productive merely because it is alive, fast, or emitting semantic feature keys. Semantic feature novelty is useful guidance, but the optimization target is unique product-bug or assertion output. If high execution count yields zero or very few bug/assertion outputs, the feedback action must cap, demote, retarget, or add a stronger oracle instead of only adding feature buckets.")
+PY
+    echo
+    echo "## Bug-Finding Yield Gate"
+    python3 - "$roots_file" "$coverage_root" <<'PY'
+import json
+import os
+import re
+import sys
+import time
+from collections import Counter
+from datetime import datetime
+
+roots_file = sys.argv[1]
+coverage_root = sys.argv[2] if len(sys.argv) > 2 else ""
+e2e_floor = int(os.environ.get("RTC_FUZZ_LEVEL_MIX_E2E_MIN_LANES", "24"))
+unit_explore_cap = int(os.environ.get("RTC_FUZZ_LEVEL_MIX_UNIT_EXPLORE_CAP", "1"))
+
+roots = []
+try:
+    with open(roots_file, errors="ignore") as handle:
+        for line in handle:
+            parts = line.rstrip("\n").split("\t", 1)
+            if len(parts) == 2 and parts[1] and os.path.isdir(parts[1]):
+                roots.append((parts[0], parts[1]))
+except OSError:
+    pass
+
+def load_json(path):
+    try:
+        with open(path, errors="ignore") as handle:
+            return json.load(handle)
+    except Exception:
+        return None
+
+def parse_ts(value):
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
+    except Exception:
+        return None
+
+def lane_count(group):
+    try:
+        return max(1, int(group.get("lanes", 1) or 1))
+    except Exception:
+        return 1
+
+def group_level(group):
+    name = str(group.get("name") or "").lower()
+    transport = str(group.get("transport") or "").lower()
+    env = group.get("env") if isinstance(group.get("env"), dict) else {}
+    profile = str(env.get("GUTENBERG_RTC_BROWSER_ACTION_PROFILE") or env.get("RTC_FUZZ_ACTION_PROFILE") or group.get("profile") or "").lower()
+    text = " ".join([name, transport, profile])
+    if "coverage-guided-lower" in text:
+        return "coverage-guided-lower-level"
+    if "unit" in text or "property" in text or "jest" in text:
+        return "unit-property"
+    if "protocol" in text:
+        return "protocol-server"
+    if "assert" in text or "fuzz-only" in text:
+        return "fuzz-assertion"
+    return "browser-e2e"
+
+def event_level(label, root):
+    lower = " ".join([label, root]).lower()
+    if "coverage-guided-lower" in lower:
+        return "coverage-guided-lower-level"
+    if "unit-property" in lower or "lower-level-fuzz" in lower:
+        return "unit-property"
+    if "protocol" in lower or "native-assert" in lower:
+        return "protocol-server"
+    if "fuzz-only" in lower or "fuzz-assert" in lower:
+        return "fuzz-assertion"
+    return "browser-e2e"
+
+def live_dirs(group_state):
+    if not isinstance(group_state, dict):
+        return []
+    dirs = []
+    for candidate in [group_state.get("currentRunDir"), *(group_state.get("activeRunDirs") or [])]:
+        if candidate and candidate not in dirs and os.path.isdir(candidate):
+            dirs.append(candidate)
+    return dirs
+
+def normalize(value):
+    key = re.sub(r"\s+", "_", str(value or "").strip())
+    key = re.sub(r"[^A-Za-z0-9_./:-]+", "_", key).strip("_")
+    return key[:220]
+
+def is_infra_or_harness_output(value):
+    text = str(value or "").lower()
+    infra_markers = (
+        "harness-no-tests",
+        "no tests found",
+        "tests: 0 total",
+        "cannot find module",
+        "module not found",
+        "enospc",
+        "no space left on device",
+        "playwright_host_dependency",
+        "startup",
+        "bootstrap",
+        "wp-env",
+        "rest health",
+        "ecconnrefused",
+        "unknown-failure",
+    )
+    return any(marker in text for marker in infra_markers)
+
+active_lanes = Counter()
+paused_browser = 0
+for label, root in roots:
+    groups = load_json(os.path.join(root, "supervisor-groups.json"))
+    if not isinstance(groups, list):
+        continue
+    state_path = os.path.join(root, "supervisor-state.json")
+    state = load_json(state_path)
+    if isinstance(state, list):
+        state_groups = state
+    elif isinstance(state, dict):
+        state_groups = state.get("groups") if isinstance(state.get("groups"), list) else []
+    else:
+        state_groups = []
+    state_by_name = {
+        str(group.get("name") or ""): group
+        for group in state_groups
+        if isinstance(group, dict)
+    }
+    state_time = parse_ts((state or {}).get("lastUpdatedAt") or (state or {}).get("updatedAt") or (state or {}).get("startedAt")) if isinstance(state, dict) else None
+    if state_time is None:
+        try:
+            state_time = os.path.getmtime(state_path)
+        except OSError:
+            state_time = None
+    state_fresh = state_time is not None and time.time() - state_time <= 600
+    for group in groups:
+        if not isinstance(group, dict):
+            continue
+        lanes = lane_count(group)
+        level = group.get("fuzzLevel") or group.get("fuzz_level") or group_level(group)
+        if level == "browser-e2e":
+            state_row = state_by_name.get(str(group.get("name") or ""))
+            status = str((state_row or {}).get("status") or "")
+            if state_fresh and status == "running" and live_dirs(state_row):
+                active_lanes[level] += lanes
+            elif status.startswith("paused"):
+                paused_browser += lanes
+        else:
+            active_lanes[level] += lanes
+
+execution_counts = Counter()
+bug_outputs = {level: Counter() for level in ("unit-property", "coverage-guided-lower-level", "protocol-server", "fuzz-assertion")}
+failed_rows = Counter()
+for label, root in roots:
+    level = event_level(label, root)
+    if level in bug_outputs:
+        status_path = os.path.join(root, "status.tsv")
+        if os.path.exists(status_path):
+            try:
+                for line in open(status_path, errors="replace"):
+                    if "\texit=0" in line or "\texitCode=0" in line:
+                        continue
+                    if "\texit=" in line or "\texitCode=" in line:
+                        failed_rows[level] += 1
+            except OSError:
+                pass
+    seen = set()
+    for dirpath, _, files in os.walk(root):
+        if "events.ndjson" not in files:
+            continue
+        try:
+            for line in open(os.path.join(dirpath, "events.ndjson"), errors="ignore"):
+                if '"kind":"seed-attempt-complete"' not in line:
+                    continue
+                line_key = line.strip()
+                if line_key in seen:
+                    continue
+                seen.add(line_key)
+                try:
+                    event = json.loads(line)
+                except Exception:
+                    event = {}
+                for key in ("testExecutionCount", "individualTestExecutionCount", "executionUnitCount", "inputCount", "caseCount"):
+                    value = event.get(key)
+                    if isinstance(value, int):
+                        execution_counts[level] += max(1, value)
+                        break
+                else:
+                    execution_counts[level] += 1
+                is_failure = event.get("ok") is False or str(event.get("exitCode") or "0") not in ("0", "")
+                if is_failure and level in bug_outputs:
+                    semantic = (
+                        event.get("failureCanonicalKey")
+                        or event.get("canonicalFailureKey")
+                        or event.get("semanticFailureKey")
+                        or event.get("failureSummary")
+                        or event.get("error")
+                        or "unknown-failure"
+                    )
+                    if not is_infra_or_harness_output(semantic):
+                        bug_outputs[level][normalize(semantic)] += 1
+        except OSError:
+            pass
+
+likely_real = 0
+if coverage_root:
+    status_path = os.path.join(coverage_root, "novelty-status.md")
+    try:
+        text = open(status_path, errors="ignore").read()
+        matches = re.findall(r"^- likely-real visible:\s*([0-9]+)", text, flags=re.M)
+        if matches:
+            likely_real = int(matches[-1])
+    except OSError:
+        pass
+
+print("- policy: optimize for unique product-bug or assertion output per resource, not raw execution count or semantic feature novelty.")
+print("- infra/harness failures are excluded from bug/assertion output; they are blockers, not yield.")
+print(f"- e2e minimum active lane floor: {e2e_floor}")
+print(f"- unit/property exploration cap when bug output is zero: {unit_explore_cap} lane(s)")
+print(f"- browser/e2e likely-real visible from current coverage status: {likely_real}")
+print()
+print("| level | active lanes | executions | failed rows | unique bug/assertion outputs | status |")
+print("| --- | ---: | ---: | ---: | ---: | --- |")
+
+e2e_status = "ok"
+if active_lanes["browser-e2e"] < e2e_floor and likely_real > 0:
+    e2e_status = "ACTION-NEEDED: browser/e2e is the visible bug-yield source but active lanes are below floor; backfill e2e or write the exact load/noise blocker"
+print(f"| browser-e2e | {active_lanes['browser-e2e']} | {execution_counts['browser-e2e']} | n/a | {likely_real} likely-real visible | {e2e_status} |")
+
+for level in ("unit-property", "coverage-guided-lower-level", "protocol-server", "fuzz-assertion"):
+    unique = len(bug_outputs[level])
+    status = "ok"
+    if level == "unit-property" and execution_counts[level] >= 20000 and unique == 0:
+        status = "ACTION-NEEDED: high unit/property volume with zero bug/assertion output; cap at exploration budget and retarget before spending more cycles"
+    elif level == "coverage-guided-lower-level" and execution_counts[level] >= 5000 and unique == 0:
+        status = "ACTION-NEEDED: coverage-guided lower-level has no bug/assertion output; retarget or strengthen oracle before expanding"
+    elif active_lanes[level] == 0:
+        status = "blocked-or-zero: justify explicitly before claiming full-level coverage"
+    print(f"| {level} | {active_lanes[level]} | {execution_counts[level]} | {failed_rows[level]} | {unique} | {status} |")
+
+if active_lanes["unit-property"] > unit_explore_cap and len(bug_outputs["unit-property"]) == 0:
+    print(f"- ACTION-NEEDED: unit/property has {active_lanes['unit-property']} lanes but zero bug/assertion output; reduce to {unit_explore_cap} or retarget.")
+if active_lanes["browser-e2e"] < e2e_floor and paused_browser:
+    print(f"- ACTION-NEEDED: {paused_browser} browser lane(s) are paused while e2e is below floor; backfill with non-paused high-yield e2e groups or fix the startup/noise pause.")
 PY
     echo
     echo "## Resource Autoscaler And Browser Materialization"
@@ -1116,14 +1797,19 @@ from collections import Counter
 root = sys.argv[1] if len(sys.argv) > 1 else ""
 state_path = os.path.join(root, "supervisor-state.json") if root else ""
 if not state_path or not os.path.exists(state_path):
-    print("- no current supervisor-state.json found")
+    print("- ACTION-NEEDED: no current supervisor-state.json found; browser/e2e materialization has no current supervisor state artifact.")
     raise SystemExit
 try:
     state = json.load(open(state_path))
 except Exception as exc:
     print(f"- could not read {state_path}: {exc}")
     raise SystemExit
-groups = state.get("groups") if isinstance(state, dict) else []
+if isinstance(state, list):
+    groups = state
+elif isinstance(state, dict):
+    groups = state.get("groups")
+else:
+    groups = []
 if not isinstance(groups, list):
     groups = []
 active_dirs = set()
@@ -1141,11 +1827,14 @@ for group in groups:
         details.append(
             f"{group.get('name')}: {str(group.get('lastReason') or '')[:180]}"
         )
-updated_raw = state.get("lastUpdatedAt") or state.get("startedAt")
+updated_raw = (state.get("lastUpdatedAt") or state.get("startedAt")) if isinstance(state, dict) else None
 try:
     updated = datetime.fromisoformat(str(updated_raw).replace("Z", "+00:00")).timestamp()
 except Exception:
-    updated = None
+    try:
+        updated = os.path.getmtime(state_path)
+    except OSError:
+        updated = None
 age = int(max(0, time.time() - updated)) if updated else "unknown"
 print(f"- supervisor_state: {state_path}")
 print(f"- supervisor_state_age_seconds: {age}")
@@ -1160,9 +1849,40 @@ for detail in details[:8]:
     print(f"- {detail}")
 PY
     if [ -f /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/materialization/latest.md ]; then
+      materialization_diag=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/materialization/latest.md
+      materialization_diag_age="$(python3 - "$materialization_diag" <<'PY'
+import re
+import sys
+import time
+from datetime import datetime
+
+try:
+    text = open(sys.argv[1], errors="ignore").read(4096)
+except OSError:
+    print("unknown")
+    raise SystemExit
+match = re.search(r"^- at:\s*(\S+)", text, re.MULTILINE)
+if not match:
+    print("unknown")
+    raise SystemExit
+try:
+    ts = datetime.fromisoformat(match.group(1).replace("Z", "+00:00")).timestamp()
+except Exception:
+    print("unknown")
+    raise SystemExit
+print(int(max(0, time.time() - ts)))
+PY
+)"
       echo
-      echo "### Latest materialization diagnostic"
-      sed -n '1,120p' /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/materialization/latest.md
+      if [ "$materialization_diag_age" != "unknown" ] && [ "$materialization_diag_age" -gt 1800 ]; then
+        echo "### Historical materialization diagnostic (stale; not current state)"
+        echo
+        echo "- diagnostic_age_seconds: $materialization_diag_age"
+        awk '/^## tmux/ { exit } { print }' "$materialization_diag"
+      else
+        echo "### Latest materialization diagnostic"
+        sed -n '1,120p' "$materialization_diag"
+      fi
     fi
     echo
     echo "## Latest coverage-guided status"
@@ -1214,14 +1934,17 @@ Also audit runner throughput. Treat any ACTION-NEEDED line in "Runner Throughput
 
 Also audit lower-level output effectiveness. Treat any ACTION-NEEDED line in "Lower-Level Output Effectiveness Gate" as binding. A lower-level lane that executes many cases but collapses to one or two semantic assertion families is not productive enough; recommend the smallest concrete target/oracle/canonicalization change that should increase unique semantic bug output. Do not answer only that the lane is running.
 
+Also audit bug-finding yield. Treat any ACTION-NEEDED line in "Bug-Finding Yield Gate" as binding. Optimize for unique product-bug output and triage-ready assertion families, not execution count, semantic feature novelty, or equal lane diversity. If browser/e2e is the visible source of likely product bugs and is below its active-lane floor, recommend e2e backfill or the exact load/noise blocker. If unit/property has high execution volume but zero bug/assertion output, keep it at a small exploration budget and retarget rather than expanding or calling it healthy.
+
 Return:
 1. Whether the current level mix should change now.
-2. The smallest useful change, with exact files/scripts/commands.
+2. The smallest useful bug-finding change, with exact files/scripts/commands.
 3. Which lower-level target, if any, should be added first and why.
 4. How to validate without stopping productive browser fuzzing.
 5. Any telemetry/accounting blind spot that would make this recommendation unreliable, and the smallest fix.
 6. Any throughput blind spot or overhead-dominated runner that would make the current mix less useful than the lane count suggests.
-7. Risks or reasons to reject changing the mix now.
+7. Any reason to keep spending resources on a low-yield lane despite zero unique bug/assertion output.
+8. Risks or reasons to reject changing the mix now.
 
 Do not edit files in this review pass.
 EOF
@@ -1313,6 +2036,8 @@ If "Runner Throughput Diagnostics" contains ACTION-NEEDED, make a concrete throu
 
 If "Lower-Level Output Effectiveness Gate" contains ACTION-NEEDED, make a concrete lower-level yield improvement or write the exact blocker and next code change. Acceptable fixes include adding a new bounded lower-level target with a real oracle, expanding semantic feature feedback, improving mutation/corpus selection, emitting richer canonical failure keys, or routing lower-level assertion families into triage-ready failure artifacts. Do not treat high execution count or an alive lower-level tmux session as success.
 
+If "Bug-Finding Yield Gate" contains ACTION-NEEDED, make a concrete bug-finding allocation change or write the exact blocker and next code change. Browser/e2e active lanes should be protected when it is the visible source of likely product bugs. Unit/property work with high execution volume and zero bug/assertion output must remain capped at exploration budget and be retargeted to a stronger oracle; adding semantic feature buckets alone is not an acceptable fix. Coverage-guided lower-level work must either produce triage-ready assertion/failure families or be retargeted.
+
 You may edit files in $FUZZ_REPO or Jetstream loop scripts if needed. Prefer small, reversible changes. Run syntax checks for changed files. Restart only the relevant loop or lane if a restart is needed.
 
 Write:
@@ -1322,7 +2047,8 @@ Write:
 4. Whether any new lower-level executions should appear in the graph.
 5. Whether telemetry reconciliation is clean after the change.
 6. Whether runner throughput diagnostics are clean after the change.
-7. Remaining blocker if no lower-level target was launched, coverage-guidance quality was not improved, output diversity remained collapsed, or throughput remained overhead-dominated.
+7. Whether bug-finding yield should improve, and which graph/metric should show it.
+8. Remaining blocker if no lower-level target was launched, coverage-guidance quality was not improved, output diversity remained collapsed, bug/assertion output remained zero, or throughput remained overhead-dominated.
 EOF
 
   (
@@ -1333,6 +2059,12 @@ EOF
 }
 
 cycle=0
+if [ -n "${RTC_FUZZ_LEVEL_MIX_WRITE_CONTEXT_ONCE:-}" ]; then
+  mkdir -p "$RTC_FUZZ_LEVEL_MIX_WRITE_CONTEXT_ONCE"
+  write_context "$RTC_FUZZ_LEVEL_MIX_WRITE_CONTEXT_ONCE"
+  exit 0
+fi
+
 log "level-mix persona loop started model=$MODEL reasoning=$REASONING max_parallel=$MAX_PARALLEL action_every=$ACTION_EVERY_CYCLES interval=${INTERVAL_SECONDS}s codex_timeout=${CODEX_TIMEOUT_SECONDS}s"
 while true; do
   cycle=$(( cycle + 1 ))

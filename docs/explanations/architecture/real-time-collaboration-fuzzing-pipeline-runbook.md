@@ -178,13 +178,16 @@ confirmed bug counts.
 
 The lower-level rich-text/CRDT coverage-guided lane uses
 `bin/rtc-coverage-guided-lower-level-runner.mjs` with V8 coverage and semantic
-feature feedback from
-`packages/core-data/src/utils/test/rtc-rich-text-crdt-merge.coverage-fuzz.test.js`.
+feature feedback from profile-specific unit/property harnesses such as
+`packages/core-data/src/utils/test/rtc-rich-text-crdt-merge.coverage-fuzz.test.js`
+and
+`packages/core-data/src/utils/test/rtc-table-query-array-crdt.coverage-fuzz.test.js`.
 The runner writes `GUTENBERG_RTC_CG_FEATURE_FILE` for each batch and retains
 corpus inputs when they discover either new V8 ranges or new domain features
 such as cursor position classes, entity/formatting shapes, text-growth classes,
-and oracle paths. Its `events.ndjson` and `status.tsv` rows include
-`featureKeys` and `newFeatureKeys` next to the coverage counters.
+query-array table shapes, and oracle paths. Its `events.ndjson` and
+`status.tsv` rows include `featureKeys` and `newFeatureKeys` next to the
+coverage counters.
 
 `bin/rtc-fuzz-level-mix-persona-loop-remote.sh` starts the continuous
 fuzz-level mix controller on Jetstream2. This loop must not wait for stalls,
@@ -212,10 +215,16 @@ errors, or harness-work candidates before reviewing the mix. Every cycle it:
 -   includes coverage-guided lower-level quality counters such as recent
     `newCoverageKeys`, `newFeatureKeys`, input count, nonzero exits, and corpus
     growth so "lane is running" is not treated as sufficient progress;
--   includes a lower-level output effectiveness gate that compares current-root
-    lower-level executions, assertion rows, and unique semantic failure keys.
-    High execution volume that collapses to one or two semantic assertion
-    families is marked `ACTION-NEEDED` even when the lane is alive and fast;
+-   includes a bug-finding yield gate that makes unique maintainer-relevant
+    product bugs and triage-ready assertion families the primary optimization
+    target. Raw execution count, semantic feature novelty, and lane diversity
+    are supporting signals only. Infra/harness failures such as missing tests,
+    module load failures, startup stalls, and wp-env/REST bootstrap failures are
+    treated as blockers, not bug yield;
+-   includes a lower-level output effectiveness gate that separates semantic
+    feature outputs from bug/assertion outputs. High execution volume that
+    produces feature novelty but no triage-ready bug/assertion families is
+    marked `ACTION-NEEDED` even when the lane is alive and fast;
 -   includes runner throughput diagnostics: recent batch duration, approximate
     milliseconds per individual execution/input, executions per hour per lane,
     fixed normal-path sleeps, and command shape. If the loop sees per-batch
