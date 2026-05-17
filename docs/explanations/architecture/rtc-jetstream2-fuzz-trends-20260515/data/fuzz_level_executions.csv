@@ -7456,6 +7456,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T17:15:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,6,5,5,6,1,386984,FALSE
 2026-05-17T17:15:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,3,2,0,3,3,474604,FALSE
 2026-05-17T17:15:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2464,2464,1984,77,15,447000,FALSE
-2026-05-17T17:30:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,4,2,1,4,3,195937,FALSE
-2026-05-17T17:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,1,1,1,0,100485,FALSE
-2026-05-17T17:30:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,512,512,416,16,3,89000,FALSE
+2026-05-17T17:30:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,20,13,8,20,12,709103,FALSE
+2026-05-17T17:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,6,6,5,6,1,622787,FALSE
+2026-05-17T17:30:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,2,2,2,2,0,44461,FALSE
+2026-05-17T17:30:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,1952,1952,1568,61,12,330000,FALSE
