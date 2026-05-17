@@ -739,3 +739,8 @@ timestamp,group,group_family
 2026-05-17T16:35:42Z,novelty-ws-three-user-late-join,lifecycle
 2026-05-17T16:57:03Z,novelty-ws-real-user-save-reload,real-user
 2026-05-17T17:00:27Z,novelty-ws-lifecycle,lifecycle
+2026-05-17T17:06:27Z,novelty-ws-lifecycle,lifecycle
+2026-05-17T17:10:08Z,novelty-ws-persistence-no-title,persistence
+2026-05-17T17:13:18Z,novelty-http-persistence-probe,persistence
+2026-05-17T17:16:37Z,novelty-ws-real-user-editing,real-user
+2026-05-17T17:16:37Z,novelty-ws-real-user-rich-text,real-user
