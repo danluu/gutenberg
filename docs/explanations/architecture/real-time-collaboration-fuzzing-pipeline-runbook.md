@@ -306,7 +306,12 @@ The remote launchers are intentionally split by ownership:
     supervisor is stale, has zero active run dirs, or all groups are paused on
     infra startup, it writes
     `/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/materialization/latest.md`
-    and restarts the coverage-guided path after the remediation cooldown.
+    and restarts the coverage-guided path after the remediation cooldown. If all
+    enabled coverage groups are paused on wp-env infra startup and no browser
+    runner is using the affected repo cwd, it can run
+    `npm run wp-env-test -- destroy --force` before restarting. That reset is
+    cooldown-limited and is intended for persistent test-environment corruption
+    such as a MariaDB volume that repeatedly exits during `wp-env start`.
 -   `rtc-strict-expansion-start-remote.sh`, `rtc-focused-shards-start-remote.sh`,
     and `rtc-gap-booster-start-remote.sh` start independent fuzz campaigns for
     high-value gaps.

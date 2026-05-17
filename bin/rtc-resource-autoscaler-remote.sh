@@ -14,11 +14,14 @@ LOCK="$BASE/resource-autoscaler.lock"
 BUDGET_ENV="$BASE/current-budget.env"
 MATERIALIZATION_DIR="$BASE/materialization"
 MATERIALIZATION_LAST_REMEDIATION="$BASE/materialization-last-remediation-epoch"
+WP_ENV_RESET_LAST="$BASE/wp-env-reset-last-epoch"
 POLL_SECONDS=${RTC_RESOURCE_AUTOSCALER_POLL_SECONDS:-120}
 MIN_SCALE_UP_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_SCALE_UP_SECONDS:-1200}
 MIN_SCALE_DOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_SCALE_DOWN_SECONDS:-300}
 MIN_MATERIALIZATION_REMEDIATION_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_MATERIALIZATION_REMEDIATION_SECONDS:-900}
 MATERIALIZATION_STALE_SECONDS=${RTC_RESOURCE_AUTOSCALER_MATERIALIZATION_STALE_SECONDS:-600}
+WP_ENV_RESET_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_WP_ENV_RESET_COOLDOWN_SECONDS:-1800}
+RESET_WP_ENV_ON_INFRA_FAILURE=${RTC_RESOURCE_AUTOSCALER_RESET_WP_ENV_ON_INFRA_FAILURE:-1}
 
 mkdir -p "$BASE" "$MATERIALIZATION_DIR"
 exec 9>"$LOCK"
@@ -116,6 +119,15 @@ enabled_groups() {
 		return
 	fi
 	node -e "const fs=require('fs'); const p=process.argv[1]; const j=JSON.parse(fs.readFileSync(p,'utf8')); const groups=Array.isArray(j)?j:Object.values(j); console.log(groups.filter(g=>g.enabled!==false && !g.paused).length);" "$latest/supervisor-groups.json" 2>/dev/null || echo 0
+}
+
+current_repo_roots() {
+	local latest
+	latest=$(latest_run)
+	if [ -z "$latest" ] || [ ! -f "$latest/supervisor-groups.json" ]; then
+		return
+	fi
+	node -e "const fs=require('fs'); const groups=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); console.log([...new Set((Array.isArray(groups)?groups:[]).map(g=>g.repoRoot).filter(Boolean))].join('\n'));" "$latest/supervisor-groups.json" 2>/dev/null || true
 }
 
 session_running() {
@@ -255,6 +267,68 @@ materialization_needs_remediation() {
 		return 0
 	fi
 	return 1
+}
+
+materialization_logs_show_wp_env_infra_failure() {
+	local latest file
+	latest=$(latest_run)
+	if [ -z "$latest" ]; then
+		return 1
+	fi
+	for file in "$latest"/*-wp-env-start*.log; do
+		[ -f "$file" ] || continue
+		if grep -Eqi 'dependency failed to start: container .*mysql.*exited|Can'\''t init tc log|wp-env start failed|Environment not initialized' "$file"; then
+			return 0
+		fi
+	done
+	return 1
+}
+
+repo_has_live_browser_runner() {
+	local repo=$1 pid cwd
+	for pid in $(pgrep -f 'bin/rtc-browser-fuzz-runner\.mjs|collaboration-fuzz\.spec\.ts|wp-scripts test-playwright|@playwright/test/cli\.js' || true); do
+		[ -d "/proc/$pid" ] || continue
+		cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null || true)
+		if [ "$cwd" = "$repo" ]; then
+			return 0
+		fi
+	done
+	return 1
+}
+
+reset_wp_env_if_safe() {
+	local enabled=$1 active=$2 paused=$3 now=$4
+	local last_reset repo did_reset=0
+	if [ "$RESET_WP_ENV_ON_INFRA_FAILURE" = "0" ]; then
+		return
+	fi
+	if [ "${enabled:-0}" -le 0 ] || [ "${active:-0}" -ne 0 ] || [ "${paused:-0}" -lt "${enabled:-0}" ]; then
+		return
+	fi
+	if ! materialization_logs_show_wp_env_infra_failure; then
+		return
+	fi
+	last_reset=$(cat "$WP_ENV_RESET_LAST" 2>/dev/null || echo 0)
+	if [ $(( $(epoch) - last_reset )) -lt "$WP_ENV_RESET_COOLDOWN_SECONDS" ]; then
+		echo "[$now] wp-env reset skipped by cooldown" >> "$LOG"
+		return
+	fi
+	while IFS= read -r repo; do
+		[ -n "$repo" ] || continue
+		if repo_has_live_browser_runner "$repo"; then
+			echo "[$now] wp-env reset skipped repo=$repo because live browser runners are using that cwd" >> "$LOG"
+			continue
+		fi
+		echo "[$now] resetting wp-env repo=$repo after full materialization infra failure" >> "$LOG"
+		(
+			cd "$repo" || exit 1
+			npm run wp-env-test -- destroy --force
+		) >> "$LOG" 2>&1 || echo "[$now] wp-env reset failed repo=$repo" >> "$LOG"
+		did_reset=1
+	done < <(current_repo_roots)
+	if [ "$did_reset" = 1 ]; then
+		echo "$(epoch)" > "$WP_ENV_RESET_LAST"
+	fi
 }
 
 csv_field() {
@@ -412,6 +486,7 @@ while true; do
 		write_materialization_diagnostic "$now" "$supervisor_state_path" "$enabled" "$target" "$max" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail"
 		last_materialization_epoch=$(cat "$MATERIALIZATION_LAST_REMEDIATION" 2>/dev/null || echo 0)
 		if [ $(( $(epoch) - last_materialization_epoch )) -ge "$MIN_MATERIALIZATION_REMEDIATION_SECONDS" ]; then
+			reset_wp_env_if_safe "$enabled" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$now"
 			restart_coverage "$desired_target" "$desired_max" materialization_invariant_failed
 			echo "$(epoch)" > "$MATERIALIZATION_LAST_REMEDIATION"
 			last_restart_epoch=$(epoch)
