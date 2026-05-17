@@ -571,7 +571,7 @@ write_lanes() {
 		if ! lane_terminal_suppressed pr17-1020002; then
 			printf 'pr17-1020002\tPR17\tproof-reclassification\tvalidation-only\t%s\t1020002\t%s\t%s\t\tcodex-analysis\tnone\tqueued\t%s/runs/pr17-1020002\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
-		printf 'pr07c-browser-env\tPR07C\tbrowser-env-preflight\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tresource-and-env\tgated\t%s/runs/pr07c-browser-env\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		printf 'pr07c-browser-env\tPR07C\tbrowser-env-repair\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tresource-and-env\tgated\t%s/runs/pr07c-browser-env\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		if ! lane_terminal_suppressed seed-5200005-reducer; then
 			printf 'seed-5200005-reducer\tPR05?\treducer\tvalidation-only\t%s\t5200005\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/5200005-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
@@ -600,7 +600,7 @@ write_blockers_and_queue() {
 				"$([ -n "$pr17_active" ] && printf active-job || printf none)" \
 				"${pr17_active:-}" "$now"
 		fi
-		printf 'pr07c-browser-env\tbrowser-environment\thigh\t%s\tpr_split/finalization\tPR07C replay,7510029\t%s\tvalidation.tsv,report.md\t\tbrowser environment preflight only; replay stays gated\t%s\n' \
+		printf 'pr07c-browser-env\tbrowser-environment\thigh\t%s\tpr_split/finalization\tPR07C replay,7510029\t%s\tvalidation.tsv,report.md,classification.tsv,repair-branch.txt\t\trepair collaboration readiness so PR07C replay reaches seeded action/reload/checkpoint phase; runtime-readiness-blocked is not terminal\t%s\n' \
 			"$(allow_critical_browser_preflight && printf runnable || printf gated)" \
 			"$(allow_critical_browser_preflight && printf none || printf "resource_or_env:$reason")" "$now"
 		if lane_terminal_suppressed seed-5200005-reducer; then
@@ -634,8 +634,8 @@ write_blockers_and_queue() {
 			printf 'job-pr17-1020002\tpr17-1020002\tpr17-1020002\tproof-reclassify\tpr17-1020002-proof\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/pr17-1020002\t%s\t\t%s\t\t%s\n' \
 				"$([ -n "$pr17_active" ] && printf active || printf runnable)" "${pr17_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr17_active" ] && printf adopted || printf pending)"
 		fi
-		printf 'job-pr07c-browser-env\tpr07c-browser-env\tpr07c-browser-env\tbrowser-env-preflight\tpr07c-browser-env\tbrowser-e2e\thigh\t%s\t0\t\t\t%s/runs/pr07c-browser-env\t%s\t\t%s\t\t%s\n' \
-			"$(allow_critical_browser_preflight && printf runnable || printf gated)" "$BASE" "$now" "$now" "$(allow_critical_browser_preflight && printf pending || printf resource_or_env_gated)"
+		printf 'job-pr07c-browser-env\tpr07c-browser-env\tpr07c-browser-env\tbrowser-env-repair\tpr07c-browser-env\tbrowser-e2e\thigh\t%s\t0\t\t\t%s/runs/pr07c-browser-env\t%s\t\t%s\t\t%s\n' \
+			"$(allow_critical_browser_preflight && printf runnable || printf gated)" "$BASE" "$now" "$now" "$(allow_critical_browser_preflight && printf repair_pending || printf resource_or_env_gated)"
 		if ! lane_terminal_suppressed seed-5200005-reducer; then
 			printf 'job-5200005-reducer	seed-5200005-reducer	seed-5200005-reducer	reducer	5200005-reducer	codex-analysis	high	%s	0	%s		%s/runs/5200005-reducer	%s		%s		%s
 ' \
@@ -797,6 +797,53 @@ EOF
 
 write_continuation_prompt() {
 	local prompt=$1 report=$2 classification=$3 lane=$4 goal=$5
+	if [ "$lane" = "pr07c-browser-env" ]; then
+		cat > "$prompt" <<EOF
+You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+Lane: $lane
+Goal: repair the PR07C browser/runtime environment so owner-proof replay can run. The known failure is "Timed out waiting for collaboration to become ready" with window._wpCollaborationEnabled null while wp.data/wp.blocks/editor state are loaded.
+Report path: $report
+Required classification TSV: $classification
+Required validation TSV: ${report%/*}/validation.tsv
+Required repair branch file: ${report%/*}/repair-branch.txt
+
+Task:
+1. Read the critical-path executor state files:
+   - $STATUS
+   - $BLOCKERS
+   - $QUEUE
+   - $LANES
+   - $INPUTS
+   - $NO_PROGRESS
+2. Read the latest runtime-readiness blocker artifact if present:
+   - /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260517T191553Z/jobs/outputs/rtc-cycle296-pr07-runtime-readiness-after-root-recovery/report.md
+   - /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260517T191553Z/jobs/outputs/rtc-cycle296-pr07-runtime-readiness-after-root-recovery/replay-classification.tsv
+   - /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260517T191553Z/jobs/outputs/rtc-cycle296-pr07-runtime-readiness-after-root-recovery/live-replay/PR07C/same-user-primary/replay.log
+3. Do not treat an existing runtime-readiness-blocked artifact as success. That artifact is the problem to repair.
+4. Debug why wp option update wp_collaboration_enabled succeeds but window._wpCollaborationEnabled remains null on the post editor page. Check, at minimum:
+   - whether the Gutenberg plugin and e2e plugin mappings are active in the replay wp-env;
+   - whether lib/compat/wordpress-7.0/collaboration.php is loaded;
+   - whether wp_is_collaboration_enabled() and wp_is_collaboration_allowed() return true inside wp-env;
+   - whether wp-core-data is enqueued and whether the inline script attached by gutenberg_inject_real_time_collaboration_setting is present in the rendered editor HTML;
+   - whether the replay clone's .wp-env.json, plugin activation, or checkout shape prevents the injection.
+5. You may run focused environment probes, wp-env commands, and a bounded PR07C readiness replay when resources permit. Do not run broad fuzzing. Reserve unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT if starting wp-env. Do not stop shared fuzzing loops.
+6. If a fix is needed, create only a new non-destructive local branch in this worktree, for example repair/rtc-pr07c-collaboration-readiness-<timestamp>. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+7. Produce durable artifacts:
+   - Write a concise report to $report.
+   - Write ${report%/*}/validation.tsv with header: check, result, detail.
+   - Write $classification with header: lane_id,classification,evidence,next_action,artifact_path.
+   - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
+8. Classification rules:
+   - Use repaired_ready only if a focused replay reaches the seeded action/reload/checkpoint phase, or if a minimal readiness probe proves window._wpCollaborationEnabled true and the remaining command to run owner replay is exact.
+   - Use repair_branch_created if you created a local branch and validation proves the readiness injection issue is fixed.
+   - Use repair_blocked only with a specific failing check and an exact next command/artifact path.
+   - Do not use resolved_by_active_artifact_runtime_readiness_not_product for this lane; that is the old structural failure.
+
+This job exists to make PR07C evidence runnable. Passive classification without repair evidence is a failure.
+EOF
+		return
+	fi
 	cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
@@ -903,7 +950,7 @@ launch_continuation_jobs() {
 			"pr07c-browser-env" \
 			"pr07c-browser-env" \
 			"pr07c-browser-env|pr07c|browser-env" \
-			"PR07C browser-environment preflight and owner-proof readiness. Reserve unique WP_ENV_PORT and WP_ENV_PHPMYADMIN_PORT if running browser checks; write validation.tsv/report.md or classification.tsv with the exact runtime blocker."
+			"PR07C browser-environment repair: debug and fix collaboration readiness null so owner-proof replay can reach seeded action/reload/checkpoint phase. Reserve unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT if running browser checks; write validation.tsv/report.md/classification.tsv and repair-branch.txt."
 	fi
 }
 

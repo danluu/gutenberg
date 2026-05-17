@@ -531,8 +531,11 @@ handoff artifacts. It must not become another passive report loop:
 -   It dedupes by blocker/action/ref/SHA/input fingerprint.
 -   It keeps branch audit/export moving even while PR17/seed `1020002` blocks
     final-stack validation, final fuzzing, or filing.
--   It gates browser/e2e work behind the resource autoscaler and an explicit
-    environment preflight; PR07C and seed `7510029` stay gated by default.
+-   It gates browser/e2e work behind the resource autoscaler, but the PR07C
+    browser lane is a repair lane, not a passive preflight. A
+    `runtime-readiness-blocked` artifact, including `_wpCollaborationEnabled`
+    remaining `null`, must be treated as the environment bug to repair before
+    PR07C/seed `7510029` ownership evidence can be accepted.
 -   It never pushes from Jetstream and must not mark raw `deferred/*`,
     `try/*`, `finalize/*`, `validation/*`, old polluted PR refs, or
     `candidate/*` refs as product-ready without classification.
@@ -1686,8 +1689,11 @@ lanes, but they must share state. In particular:
 -   `bin/rtc-critical-path-pr-executor-loop-remote.sh` consumes the local
     publication manifest at
     `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/latest-local-publish-manifest.tsv`.
-    It enables the reserved `PR07C` browser preflight by default and only gates
-    that reserved slot under severe or unknown resource pressure.
+    It enables the reserved `PR07C` browser readiness repair lane by default
+    and only gates that reserved slot under severe or unknown resource pressure.
+    The lane must produce `validation.tsv`, `classification.tsv`,
+    `repair-branch.txt`, and `report.md`; it must not classify an existing
+    `runtime-readiness-blocked` replay as completed progress.
 -   `bin/rtc-pr-finalization-loop-remote.sh` runs two finalization jobs at most,
     checks every five minutes, and includes the local publication manifest in
     its context so GitHub publishing from the local host clears stale
