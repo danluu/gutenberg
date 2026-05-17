@@ -531,6 +531,10 @@ handoff artifacts. It must not become another passive report loop:
 -   It dedupes by blocker/action/ref/SHA/input fingerprint.
 -   It keeps branch audit/export moving even while PR17/seed `1020002` blocks
     final-stack validation, final fuzzing, or filing.
+-   It runs each reconcile pass under a hard timeout, and the PR17 fresh
+    evidence check uses a bounded scan over historical artifacts. A stale
+    historical artifact walk must not prevent PR07C repair or branch validation
+    scheduling.
 -   It gates browser/e2e work behind the resource autoscaler, but the PR07C
     browser lane is a repair lane, not a passive preflight. A
     `runtime-readiness-blocked` artifact, including `_wpCollaborationEnabled`
@@ -548,6 +552,10 @@ Useful controls:
     branch validation/export jobs.
 -   `RTC_CRITICAL_PR_EXECUTOR_CYCLE_SLEEP_SECONDS=60`: delay between reconcile
     passes.
+-   `RTC_CRITICAL_PR_EXECUTOR_RECONCILE_TIMEOUT_SECONDS=300`: upper bound for a
+    single reconcile pass before the loop logs the stall and continues.
+-   `RTC_CRITICAL_PR_EXECUTOR_FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS=12`: upper
+    bound for historical fresh-evidence artifact scans.
 -   `RTC_CRITICAL_PR_EXECUTOR_MIN_TASK_INTERVAL_SECONDS=900`: per-dedupe-key
     launch cooldown.
 -   `RTC_CRITICAL_PR_EXECUTOR_ENABLE_BROWSER_PREFLIGHT=0`: browser preflight is

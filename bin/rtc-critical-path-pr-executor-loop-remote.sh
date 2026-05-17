@@ -43,6 +43,8 @@ CODEX_MODEL=${RTC_CRITICAL_PR_EXECUTOR_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_CRITICAL_PR_EXECUTOR_CODEX_REASONING_EFFORT:-xhigh}
 CODEX_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_CODEX_TIMEOUT_SECONDS:-5400}
 ENABLE_BROWSER_PREFLIGHT=${RTC_CRITICAL_PR_EXECUTOR_ENABLE_BROWSER_PREFLIGHT:-1}
+RECONCILE_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_RECONCILE_TIMEOUT_SECONDS:-300}
+FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS:-12}
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$BASE/worktrees" "$TMUX_WRAP"
 cat > "$TMUX_WRAP/tmux" <<'SH'
@@ -194,9 +196,10 @@ fresh_pr17_product_evidence_after_terminal() {
 	local classification file
 	classification=$(latest_pr17_classification || true)
 	[ -n "$classification" ] || return 1
-	find "$BASE/runs" "$PR_SPLIT_BASE/runs" -type f \
-		\( -name 'classification.tsv' -o -name 'report.md' -o -name 'validation-head.tsv' -o -name 'validation-checks.tsv' \) \
-		-size +0c -newer "$classification" -print 2>/dev/null |
+	timeout --kill-after=5s "$FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS" \
+		find "$BASE/runs" "$PR_SPLIT_BASE/runs" -maxdepth 6 -type f \
+			\( -name 'classification.tsv' -o -name 'report.md' -o -name 'validation-head.tsv' -o -name 'validation-checks.tsv' \) \
+			-size +0c -newer "$classification" -print 2>/dev/null |
 		while IFS= read -r file; do
 			case "$file" in
 				*/continuations/pr17-1020002/classification.tsv|*/continuations/pr17-1020002/report.md)
@@ -984,6 +987,8 @@ write_status() {
 		echo "- max active continuations: $MAX_ACTIVE_CONTINUATIONS"
 		echo "- max active validations: $MAX_ACTIVE_VALIDATIONS"
 		echo "- cycle sleep seconds: $CYCLE_SLEEP_SECONDS"
+		echo "- reconcile timeout seconds: $RECONCILE_TIMEOUT_SECONDS"
+		echo "- fresh evidence scan timeout seconds: $FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS"
 		echo
 		echo "## Active Critical Jobs"
 		tmux_sessions | rg '^rtc-critical-(validate|continuation)-' || true
@@ -1024,6 +1029,7 @@ reconcile_once() {
 }
 
 run_loop() {
+	local rc
 	exec 9>"$LOCK_FILE"
 	if ! flock -n 9; then
 		log "another critical-path PR executor already holds $LOCK_FILE"
@@ -1033,7 +1039,13 @@ run_loop() {
 	trap 'rm -f "$PID_FILE"' EXIT
 	log "critical-path PR executor loop started pid=$$"
 	while true; do
-		reconcile_once || log "reconcile failed"
+		set +e
+		timeout --kill-after=15s "$RECONCILE_TIMEOUT_SECONDS" "$0" reconcile-once >> "$LOG" 2>&1
+		rc=$?
+		set -e
+		if [ "$rc" -ne 0 ]; then
+			log "reconcile failed or timed out rc=$rc timeout=${RECONCILE_TIMEOUT_SECONDS}s"
+		fi
 		sleep "$CYCLE_SLEEP_SECONDS"
 	done
 }
@@ -1049,6 +1061,9 @@ case "${1:-start}" in
 		;;
 	run)
 		run_loop
+		;;
+	reconcile-once)
+		reconcile_once
 		;;
 	stop)
 		tmux kill-session -t "$SESSION" 2>/dev/null || true
