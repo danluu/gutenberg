@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T19:32:39Z`
+Snapshot time: `2026-05-17T19:38:56Z`
 
 Trigger event:
-`duplicate-noise-2026-05-17T19-20-36Z-142`
+`pr-split-2026-05-17T19-24-52Z-20260517T191553Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T19-20-36Z-142/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T19-24-52Z-20260517T191553Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -102,17 +102,20 @@ The duplicate/noise issue is a control-plane status item, not a product split
 change. The `20260517T185417Z` feedback action completed the consumer-side cap:
 the live-analysis monitor and analysis tier now honor current-output semantic
 family caps before launching first-level Codex analysis, both scripts passed
-`node --check`, and product-evidence signatures stayed visible. The latest
-`20260517T192036Z` duplicate/noise synthesis says the remaining leak is the
-novelty scheduler: mixed producers keep running because unrelated product
-evidence exists even when current-run no-product duplicate/noise dominates and
-there are zero visible likely-real results. The recommended follow-up is a
-narrow novelty-monitor pause/rotate fix that preserves product evidence, not a
-product PR split change or broad suppression.
+`node --check`, and product-evidence signatures stayed visible. The later
+`2026-05-17T19:37:36.410Z` novelty snapshot reports `health: ok` with `0`
+current active signatures, `0` current active product-evidence signatures, and
+`0` visible likely-real failures. The latest `20260517T192036Z`
+duplicate/noise synthesis still identifies a recurrence risk in the novelty
+scheduler: mixed producers can keep running because unrelated product evidence
+exists even when current-run no-product duplicate/noise dominates and there are
+zero visible likely-real results. The recommended follow-up is a narrow
+novelty-monitor pause/rotate fix that preserves product evidence, not a product
+PR split change or broad suppression.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T19:32:35Z`.
+Remote status was collected at `2026-05-17T19:38:51Z`.
 
 The fix-planning repo is checked out at:
 
@@ -142,7 +145,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T19:32:39Z` from fetched
+The branch-link audit was generated at `2026-05-17T19:38:56Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. The fresh
 Cycle 293 audit is publication-shape evidence for local refs; it does not by
@@ -226,68 +229,62 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T19:32:35Z
+collected_at_utc: 2026-05-17T19:38:51Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T183817Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The raw `novelty-status.md` snapshot was updated at
-`2026-05-17T19:30:55.256Z`:
+`2026-05-17T19:37:36.410Z`:
 
 ```text
-coverage files: 47289
-total records seen: 73037
-records processed this pass: 8
-new behavioral feature keys this pass: 3
-new CDP coverage hashes this pass: 3
+coverage files: 47303
+total records seen: 73064
+records processed this pass: 13
+new behavioral feature keys this pass: 1
+new CDP coverage hashes this pass: 1
 unmet goals: 6
 headroom for adding groups: yes
-load1: 44.31 / 64 cores
-memory: 426.6G free / 492.0G total
-quality issues: 2
-current-run records: 42
-current-run successful records: 12
-current-run pre-action startup failures: 9
-active-current actionable signatures: 9
+load1: 35.15 / 64 cores
+memory: 427.2G free / 492.0G total
+quality issues: 0
+active-current actionable signatures: 0
 active-current likely-real visible: 0
-active-current product-evidence signatures: 9
-family-capped signatures: 21
-raw active semantic families: reload_rejoin_awareness_stall=30,
-  unknown=16, pre_action_bootstrap_stall=10,
-  host_disk_exhaustion_causing_npm_enospc_during_playwright_e2e_launch_or_artifact_writing=1,
-  startup_rest_user_creation_wp_roles_crash=1
-no-product raw duplicate share: 0.6154
+active-current product-evidence signatures: 0
+current-drain actionable signatures: 0
+current-drain likely-real visible: 0
 enabled groups: novelty-ws-real-user-editing,
   novelty-ws-real-user-save-reload
-paused groups: novelty-http-persistence-probe, novelty-ws-lifecycle
+paused groups: novelty-http-persistence-probe, novelty-ws-lifecycle,
+  novelty-ws-parser-transform
 recommended groups: novelty-ws-real-user-save-reload,
   novelty-ws-real-user-editing, novelty-ws-real-user-rich-text
-health warning: triage yield is duplicate/noise dominated
+health: ok
 ```
 
 This is health/triage evidence only. It reports no visible current-run
 likely-real product failures, but it is not final-stack validation and does not
-make any PR filing-ready. The visible current product-evidence signatures are
-still concentrated in the `reload_rejoin_awareness_stall` family; cap/steer
-repeated analysis for that semantic family, but do not hide product-evidence
-reload/rejoin, save/reload/autosave/revision, timeout, unknown, assertion,
-convergence, or operation-witness families. The latest duplicate/noise
-synthesis rounds the no-product raw duplicate share to about `0.64` and calls
-out `unknown=16` plus startup noise as the producer-side leak to pause or
-rotate.
+make any PR filing-ready. The active current-run and current-drain triage
+scopes now show `0` signatures; that reflects the consumer-side cap and current
+health, not proof that product-evidence reload/rejoin, save/reload/autosave,
+revision, timeout, unknown, assertion, convergence, or operation-witness
+families can be hidden. The duplicate/noise synthesis still calls out a
+producer-side scheduling leak to prevent: pause or rotate mixed producers when
+no-product duplicate/noise dominates and `likelyRealVisible === 0`, while
+preserving product-evidence signatures.
 
-The latest trend packet was generated at `2026-05-17T19:25:24Z` from monitor
-data through `2026-05-17T19:21:41Z`:
+The latest trend packet was generated at `2026-05-17T19:33:58Z` from monitor
+data through `2026-05-17T19:30:55Z`:
 
 ```text
-monitor passes: 2084
-coverage files: 272 -> 47263
-coverage files delta: 46991
+monitor passes: 2087
+coverage files: 272 -> 47289
+coverage files delta: 47017
 unmet goals: 6
 likely_real_max: 4
 duplicate_share_current_last: 1
-duplicate_share_historical_last: 0.3455
+duplicate_share_historical_last: 0.3454
 summary startup failures last: 0
 quality issues last: 2
 enabled groups current: novelty-ws-real-user-save-reload,
@@ -295,26 +292,28 @@ enabled groups current: novelty-ws-real-user-save-reload,
 latest fuzz level mix: browser-e2e=35 lanes/27 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5336268
-browser-e2e execution: 114719 cumulative / 3972 per-hour
-unit-property execution: 4790208 cumulative / 5632 per-hour
+total fuzz-level test executions: 5338460
+browser-e2e execution: 115215 cumulative / 656 per-hour
+unit-property execution: 4791904 cumulative / 2944 per-hour
 coverage-guided-lower-level execution: 428335 cumulative / 0 per-hour
-browser-e2e likely-real findings: 587 over 1910.9 runner-hours
-largest unmet goals: reload-post-action 1034/2000,
-  title-save-reload 490/1000, ui-format-paragraph 1525/2000,
-  body-save-reload 549/1000, real-user-editing success 572/1000
+browser-e2e likely-real findings: 590 over 1912.4 runner-hours
+largest unmet goals: reload-post-action 1038/2000,
+  title-save-reload 494/1000, ui-format-paragraph 1536/2000,
+  body-save-reload 553/1000, real-user-editing success 576/1000
 ```
 
 The trend packet is graph-derived input evidence, not an instruction and not a
 product-bug count. The raw novelty snapshot is newer than the trend packet and
-supersedes the trend packet's exact current-health counters when they differ.
-Browser E2E remains the only level with confirmed likely-real findings in the
-trend packet, but lower-level lanes are under-triaged and should not be
-declared useless from zero likely-real output. The latest novelty snapshot says
-headroom exists, but recent CPU/load has still been high enough that any
-increase should be guarded; prefer startup-stall reduction, PR07 runtime
-preflight, reload/rejoin duplicate control, and bounded lower-level targets
-with clear oracles over broad browser concurrency increases.
+supersedes the trend packet's exact current-health counters when they differ;
+for example, the trend packet still records `quality issues last: 2`, while the
+newer novelty snapshot reports `quality issues: 0` and `health: ok`. Browser
+E2E remains the only level with confirmed likely-real findings in the trend
+packet, but lower-level lanes are under-triaged and should not be declared
+useless from zero likely-real output. The latest novelty snapshot says headroom
+exists, but recent CPU/load has still been high enough that any increase should
+be guarded; prefer startup-stall reduction, PR07 runtime preflight,
+reload/rejoin duplicate control, and bounded lower-level targets with clear
+oracles over broad browser concurrency increases.
 
 ## Status-Persona Analysis
 
@@ -364,7 +363,9 @@ smallest next fix is in `rtc-browser-fuzz-novelty-monitor.mjs`: pause or rotate
 mixed product-evidence producers when current-run no-product duplicate/noise
 dominates and `likelyRealVisible === 0`, while keeping
 `preserveProductEvidence: true` and keeping product-evidence signatures
-visible.
+visible. The later novelty-status snapshot is currently `health: ok`, so this
+is a recurrence-prevention/control-plane follow-up, not a product PR split
+change.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -398,7 +399,7 @@ These must not be described as fixed or filing-ready.
 | Rich-text formatted suffix corruption | diagnostic candidates and prior deferred refs | evidence-only; current owner-comparison keeps it out of active PR split and out of PR18/PR18x | Compare against PR05B/PR05C first and recover exact replay artifact or emitted delta before naming any later product owner |
 | Pre-save search/live document collapse | seed `961308` / `ddf9559af37e`; only run `0932bed35c7a` if red or ambiguous | evidence-only; not in active split; latest split-persona keeps the row actionable and says it must not block behind `1020002` | Run one bounded owner comparison against PR06, PR06A, PR07B0, PR07B1, and PR07C after PR07 stops consuming E2E capacity |
 | Broader HTTP polling room-isolation residuals | PR02A sidecar plus stale deferred relaunches | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred | Publish/fetch/audit PR02A before filing; promote additional residuals only with narrowed healthy-user product evidence |
-| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T185417Z-feedback-action.md`; `duplicate-noise-20260517T192036Z-synthesis.md`; nonempty `novelty-status.md` at `2026-05-17T19:30:55.256Z` | consumer-side family-cap/session-gating fix is applied and validated; latest synthesis says novelty scheduling still keeps mixed producers running when no-product duplicate/noise dominates; product evidence remains visible; no product split change | Patch `rtc-browser-fuzz-novelty-monitor.mjs` narrowly so dominant current-run no-product duplicate/noise can pause/rotate mixed producers when `likelyRealVisible === 0`, while preserving product evidence and avoiding broad suppression |
+| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T185417Z-feedback-action.md`; `duplicate-noise-20260517T192036Z-synthesis.md`; nonempty `novelty-status.md` at `2026-05-17T19:37:36.410Z` | consumer-side family-cap/session-gating fix is applied and validated; latest novelty snapshot is `health: ok` with `0` current active signatures; latest synthesis still says novelty scheduling can keep mixed producers running when no-product duplicate/noise dominates; product evidence remains visible; no product split change | Patch `rtc-browser-fuzz-novelty-monitor.mjs` narrowly so dominant current-run no-product duplicate/noise can pause/rotate mixed producers when `likelyRealVisible === 0`, while preserving product evidence and avoiding broad suppression |
 
 ## Filing Gates And Current Recommendation
 
