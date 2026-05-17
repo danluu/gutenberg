@@ -10255,3 +10255,10 @@ timestamp,message,event_type,cycle,max_parallel,interval_s
 2026-05-17T03:17:43Z,finished PR split review cycle 20260517T031103Z,review finish,20260517T031103Z,NA,NA
 2026-05-17T03:17:43Z,running feedback action after cycle 226,feedback start,226,NA,NA
 2026-05-17T03:25:12Z,finished feedback action after cycle 226,feedback finish,226,NA,NA
+2026-05-17T03:25:17Z,starting PR split review cycle 20260517T032517Z,review start,20260517T032517Z,NA,NA
+2026-05-17T03:25:50Z,another PR split review loop already holds /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/rtc-pr-split-review-loop.lock; exiting holder=pid=1772887 alive,other,NA,NA,NA
+2026-05-17T03:34:34Z,finished PR split review cycle 20260517T032517Z,review finish,20260517T032517Z,NA,NA
+2026-05-17T03:34:40Z,starting PR split review cycle 20260517T033440Z,review start,20260517T033440Z,NA,NA
+2026-05-17T03:40:52Z,another PR split review loop already holds /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/rtc-pr-split-review-loop.lock; exiting holder=pid=1772887 alive,other,NA,NA,NA
+2026-05-17T03:41:52Z,finished PR split review cycle 20260517T033440Z,review finish,20260517T033440Z,NA,NA
+2026-05-17T03:41:52Z,running feedback action after cycle 228,feedback start,228,NA,NA
