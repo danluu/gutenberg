@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T02:53:36Z`
+Snapshot time: `2026-05-17T03:11:28Z`
 
 Trigger event:
-`pr-split-2026-05-17T02-52-06Z-20260517T024253Z`
+`pr-split-2026-05-17T03-10-58Z-20260517T030103Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T02-52-06Z-20260517T024253Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T03-10-58Z-20260517T030103Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -27,130 +27,94 @@ or the original split merely for continuity.
 
 ## Executive Status
 
-Filing remains blocked for the final stack, but not all useful work is blocked.
-The latest split-persona synthesis, `pr-split-20260517T024253Z-synthesis.md`,
-still classifies the stack as needing the Cycle 222 split change before filing
-and not ready for final-stack fuzz. It keeps the PR6B sidecar topology, but
-replaces the old polluted PR6B with a minimal two-file sidecar branch. Do not
-revive the older linear `PR6B -> PR07A-PR15C` restack, the old post-`PR15C`
-`PR16` tail, or stale malformed-save candidate refs.
+Filing remains blocked. The newest split-persona synthesis,
+`pr-split-20260517T030103Z-synthesis.md`, keeps Cycle 224 as authoritative and
+adds concrete gates that are not satisfied by waiting on PR17 alone: PR14 seed
+`7110017` coverage, reload/post-save seed `5200005`, parser-sensitive seed
+`1060015`, PR17 / seed `1020002`, rebuilt combined validation, focused
+`1020002` rerun, and final-stack fuzz.
 
-PR6B remains the malformed outgoing save request-payload lane after PR06A. The
-old `ready/rtc-pr06b-malformed-save-request-payload` at
-`87e0ed20ab8eafdb6a6e814400da20a658a7331d` is historical only because it
-includes unrelated `cc3d7bf663a` / `crdt-blocks.ts` work. The conflict-resolution
-job now reports a replacement product branch:
-`ready/rtc-pr06b-malformed-save-request-payload-minimal` at
-`7b123e0ef2334a03b22e9a968d402de9da4c5379`, based on PR06A. Its validation-only
-PR6B+PR15C sidecar head is
-`validation/rtc-pr06b-minimal-plus-pr15c-sidecar-20260517T021111Z` at
-`243411d461698180088b5280587b2fb7ad0ba8cd`. Treat the old
-`validation/rtc-pr06b-plus-pr15c-sidecar-20260517T004623Z` head at
-`0662b838eaf0961605a95ecb1bd83bd4713e33d3` as historical evidence only because
-it contains the old polluted PR6B.
-
-The minimal PR6B branch is current Cycle 222 product-sidecar evidence, but it
-still has no GitHub `verified-content` branch-link audit row. The conflict
-resolution job produced the replacement branch, validation head, branch audit,
-bundle artifacts, range-diff, diffstat, numstat, and push manifest. The
-finalization pass then imported the minimal PR6B branch and validation-only
-head into a dependency-equipped stack worktree and verified adjacency,
-containment, exclusion of `cc3d7bf663a` / `crdt-blocks.ts`, `git diff --check`,
-and `node --check`. Before filing, publish/fetch an actual GitHub review branch
-for PR6B, regenerate a `verified-content` branch-link audit row, run any focused
-unit/lint/formatting checks not covered by finalization, and include PR6B in the
-rebuilt combined validation stack after PR17 is settled. Until then PR6B must
-stay `No verified branch link yet`.
-
-PR17 remains the final-stack blocker, but only for PR17 settlement, rebuilt
-combined validation, the focused seed `1020002` gate, final-stack fuzz, and
-filing. The current nonempty PR17 report says local single-module
-Yjs/y-protocols replay does not reproduce the deletion and the evidence is not
-product-owned. The next PR17 decision is whether that medium-confidence
-evidence is enough to reclassify seed `1020002`; if not, run exactly one
-browser/provider ownership diagnostic that captures runtime Yjs/module
-identity, the exact raw update entering `applyUpdate`, and the emitted doc
-update before shaping any product branch. Active or newly launched `1020002`
-work is not progress by itself while non-`1020002` rows remain actionable.
-
-The current maintainer-facing recommendation is:
+The current operational topology is:
 
 ```text
 ready PR01 -> PR02, with PR02A as a PR02 sidecar
 -> PR03 -> PR04 -> PR05A/B/C -> PR06 -> PR06A
--> replacement PR6B malformed outgoing RTC save payloads as a PR06A sidecar
--> existing PR07A/B -> PR09 -> PR10 -> PR11A-E -> PR12
--> PR13A/B/C using repaired audited review refs until any finer PR13 split has
-   verified branch links
--> PR14 -> PR15A/B/C
--> validation-only PR6B+PR15C integration head, not a product PR
--> PR17 seed 1020002 proof/reclassification/repair decision
--> reload/post-save persistence and rehydration evidence gate
+-> PR6B minimal malformed outgoing RTC save payloads as a PR06A sidecar
+-> PR07A/B -> PR09 -> PR10 -> PR11A-E -> PR12
+-> PR13A/B0/B1/B2/B3 -> PR14
+-> conditional PR14B only if seed 7110017 is not covered by PR14
+-> PR15A/B/C
+-> validation-only PR6B-minimal+PR15C integration head, not a product PR
+-> PR17 seed 1020002 proof/reclassification or repair
+-> reload/post-save residual gate for 5200005 and parser-sensitive 1060015
 -> rebuilt combined validation stack
 -> focused 1020002 gate
 -> final-stack fuzz and filing
 ```
 
-The ready heads remain a known-fix prefix, not a complete filing stack. The
-minimal PR6B replacement now has local finalization and manifest evidence, but
-it still needs a verified GitHub branch link and final combined-stack validation
-before filing. Do not file the raw `deferred/rtc-malformed-save-payload-*`, old
-`ready/rtc-pr06b-malformed-save-request-payload`, `candidate/rtc-pr16-*`, or
-scratch `candidate/rtc-pr06b-*` heads as-is. They are evidence or fallback
-labels, not current product PR links. The old `87e0ed20ab8` candidate contained
-these request-payload commits plus extra `cc3d7bf663a` work that is now
-split/drop-pending:
+PR6B is no longer the old polluted sidecar and no longer a post-PR15C `PR16`
+tail. Use the minimal product branch:
 
 ```text
-8340c5d794a Avoid valid block originalContent in CRDT saves
-008b7258fe4 Protect RTC saves from malformed evaluated content
+ready/rtc-pr06b-malformed-save-request-payload-minimal
+7b123e0ef2334a03b22e9a968d402de9da4c5379
 ```
 
-The previous deterministic restack audit, blind linear-restack plan, and
-default PR16 malformed-save tail are superseded by the PR6B sidecar topology,
-unless the replacement PR6B import or rebuilt validation proves that route
-unusable. Broader malformed post-save settlement residuals and sidecar seed
-`7410076` stay deferred.
+That branch is based on PR06A, touches only
+`packages/core-data/src/actions.js` and
+`packages/core-data/src/test/actions.js`, and excludes `cc3d7bf663a` /
+`crdt-blocks.ts`. It still has no GitHub `verified-content` branch-link audit
+row, so PR6B remains `No verified branch link yet` in the proposed PR table.
 
-PR17 remains separate from PR6, PR13, PR15, PR16, reload hydration, pre-save
-search/live-collapse, HTTP room isolation, and rich-text suffix work. Current
-evidence still says the marker-bearing update reaches the relay/page 1 while
-page 0 applies the remote client range as deleted, but the newest PR17 report
-points away from product-owned single-module Yjs apply behavior and toward
-browser/provider runtime ownership or reclassification.
+Use this PR6B+PR15C head only as fetch-only validation evidence:
 
-Seed `5700084` is not a product PR candidate. The latest comparison classifies
-it as PR5C-covered plus strict oracle/exact-content drift, not PR18A or PR5D.
-Fresh strict-expansion residuals, such as invalid/deprecated/parser-stress
-delete divergence around seed `5200021`, remain evidence-only source-reduction
-inputs unless they are reduced to uncovered product behavior. Do not create
-speculative PR18x branches.
+```text
+validation/rtc-pr06b-minimal-plus-pr15c-sidecar-20260517T021111Z
+243411d461698180088b5280587b2fb7ad0ba8cd
+```
 
-The duplicate/noise evidence still classifies the remaining startup/no-product
-noise as fuzz control-plane work, not product validation. The newest nonempty
-duplicate/noise synthesis, `duplicate-noise-20260517T023424Z-synthesis.md`,
-keeps that consensus: this is a control-plane leak around no-product startup
-and duplicate accounting, not a product-regression signal. The latest
-implemented feedback action is still `duplicate-noise-20260517T020802Z-*`: the
-triage watcher now coalesces same seed/source candidates, the novelty monitor
-reads completed analysis/deep-analysis `likely_real` result JSON, and
-analysis/deep family caps ignore inactive no-product completed jobs unless they
-have visible `likely_real` results. Broad suppression remains blocked; only a
-bounded current-run no-product gate, strict startup predicate alignment, and
-current-run producer pause with expiry are justified if the leak reproduces.
-The latest collected `raw/novelty-status.md` is empty, so the trend packet is
-the freshest usable fuzz summary for this update. It reports
-`likely_real_max: 1`, `duplicate_share_current_last: 1`,
-`duplicate_share_historical_last: 0.3524`, and `0` current quality issues.
-Historical/no-product duplicate noise must stay separated from current product
-evidence. Do not launch broad final-stack fuzz or file PRs yet. Final filing
-still waits on a verified PR6B branch link, PR17 repair or reclassification,
-reload/post-save and new-seed reductions, rebuilt combined validation, a
-focused `1020002` gate, and final-stack fuzz over the rebuilt stack.
+Do not file the old `ready/rtc-pr06b-malformed-save-request-payload` at
+`87e0ed20ab8eafdb6a6e814400da20a658a7331d`, the old
+`validation/rtc-pr06b-plus-pr15c-sidecar-20260517T004623Z` head at
+`0662b838eaf0961605a95ecb1bd83bd4713e33d3`, raw malformed-save deferred heads,
+or the old post-PR15C `PR16` tail. They are historical evidence only.
+
+Cycle 224 also fixed a deferred-work loop regression. The completed
+`rtc-cycle224-deferred-hard-deny-reexec-and-manifest-verify-20260517T025409Z`
+job reported `rc=0`, killed the stale malformed-save deferred session,
+invalidated the stale HTTP room-isolation relaunch for progress accounting,
+restarted the deferred loop from the patched script, and wrote current-run
+PR6B branch-audit and push-manifest artifacts. Jetstream must not push those
+refs; the local machine may publish explicit manifest refs only after review.
+
+The latest split-persona synthesis says the Cycle 224 residual reducer has now
+produced a nonempty report with `rc=0`; "wait for reducer" is no longer a
+useful next action. The next bounded work is PR14/seed `7110017` coverage,
+generated `5200005` deterministic reduction, generated `1060015` parser-invalid
+repro, and at most one focused PR17 browser/provider ownership diagnostic if
+proof-based reclassification is not accepted. Do not start broad final-stack
+fuzz until those gates are resolved or explicitly classified out.
+
+PR17 remains separate. Current PR17 evidence says local single-module
+Yjs/y-protocols replay does not reproduce seed `1020002`'s deletion and the
+evidence is not product-owned. Decide whether that medium-confidence evidence
+is enough to reclassify seed `1020002`; if not, run exactly one
+browser/provider ownership diagnostic that captures runtime Yjs/module
+identity, the raw update entering `applyUpdate`, and the emitted document
+update. Do not fold `1020002` into PR6, PR13, PR15, PR6B, reload hydration,
+pre-save search/live-collapse, HTTP room isolation, or rich-text suffix without
+exact same-source proof.
+
+The latest `raw/novelty-status.md` is empty, so it is not a current-monitor
+override. The trend packet generated at `2026-05-17T03:03:34Z` reports
+`likely_real_max: 1`, `duplicate_share_current_last: 0`,
+`duplicate_share_historical_last: 0.3521`, `0` startup summary failures, and
+`0` current quality issues. Treat this as current fuzz health evidence, not
+final-stack validation.
 
 ## Branch And Ref Status
 
-The remote status input was generated at `2026-05-17T02:53:27Z`.
+The remote status input was generated at `2026-05-17T03:11:23Z`.
 
 The fix-planning repo is checked out at:
 
@@ -165,9 +129,9 @@ That checkout still has an untracked reload-hydration E2E gate spec:
 test/e2e/specs/editor/collaboration/websocket-only/collaboration-reload-hydration-empty-live-gate.spec.ts
 ```
 
-Keep that spec out of PR 6, PR 6A, PR 8A, PR 15A/15B/15C, fallback-group
-evidence, and final branch claims unless it is deliberately copied into a clean
-evidence worktree.
+Keep that spec out of PR 6, PR 6A, PR 8A, PR 15A/15B/15C,
+fallback-group evidence, and final branch claims unless it is deliberately
+copied into a clean evidence worktree.
 
 The fuzz repo remains on the validation stack:
 
@@ -180,11 +144,11 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T02:53:36Z` from fetched
+The branch-link audit was generated at `2026-05-17T03:11:28Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
-For repaired PR 13 content, use only these audit refs:
+For repaired PR13 content, these are the only current audited PR13 review refs:
 
 - [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired)
 - [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement)
@@ -203,28 +167,30 @@ is pushed only so the repaired PR13A compare link has the source base.
 ## Proposed PR Split
 
 Every proposed row either uses a clickable branch link from the verified
-branch-link audit or explicitly says `No verified branch link yet`. The latest
-split synthesis still points at a finer local PR13A/B0/B1/B2/B3 shape, but the
-current audit only verifies the repaired PR13A/B/C review refs, so those remain
-the maintainer-facing links in this report until finer PR13 rows have verified
-branch links.
+branch-link audit or explicitly says `No verified branch link yet`.
+
+The preferred PR13 shape is now the finer Cycle 118/224
+`PR13A -> PR13B0 -> PR13B1 -> PR13B2 -> PR13B3` sequence. The current GitHub
+audit does not yet have `verified-content` branch links for PR13B0/B1/B2/B3.
+Until those refs are published and audited, the only audited PR13 fallback refs
+are the repaired PR13A/B/C review refs listed above; do not claim they are the
+finer split.
 
 | PR | Scope | Audit branch link | Files | Diff | Current status |
 | --- | --- | --- | ---: | ---: | --- |
 | PR 1 | HTTP polling generated update size guard | [`review/rtc-pr01-http-polling-generated-update-size`](https://github.com/danluu/gutenberg/tree/review/rtc-pr01-http-polling-generated-update-size) | 2 | +181 / -19 | verified branch; keep in known-fix prefix |
 | PR 2 | HTTP polling storage read window | [`review/rtc-pr02-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/tree/review/rtc-pr02-http-polling-storage-read-window) | 2 | +57 / -5 | verified branch; keep in known-fix prefix |
-| PR 2A | HTTP room-isolation regression sidecar after PR 2 | No verified branch link yet | 1 | +115 / -0 | local ready head exists per prior manifest work; publish/fetch/audit a remote review branch or fold/restack before filing |
+| PR 2A | HTTP room-isolation regression sidecar after PR 2 | No verified branch link yet | 1 | +115 / -0 | local ready head exists per manifest work; publish/fetch/audit before filing |
 | PR 3 | Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/review/rtc-pr03-revision-restore-crdt-reset) | 2 | +58 / -5 | verified branch; seed `5500002` marker-retention remains separate follow-up |
 | PR 4 | Persisted CRDT save-meta idempotence | [`review/rtc-pr04-crdt-save-meta-idempotence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr04-crdt-save-meta-idempotence) | 2 | +160 / -1 | verified branch; keep in known-fix prefix |
 | PR 5A | Entity/reference normalization equivalence | No verified branch link yet | 2 | +465 / -8 | replacement for old aggregate PR 5; local ready head still needs remote verified-content branch link |
 | PR 5B | Parser/rich-text HTML equivalence | No verified branch link yet | 2 | +925 / -42 | replacement for old aggregate PR 5; local ready head still needs remote verified-content branch link |
-| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | 2 | +287 / -15 | replacement for old aggregate PR 5; seed `5700084` now classifies as PR5C-covered plus strict oracle/exact-content drift, not a new product PR |
+| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | 2 | +287 / -15 | seed `5700084` is PR5C-covered plus strict oracle/exact-content drift, not a new product PR |
 | PR 6 | Save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | 4 | +738 / -6 | verified branch; excludes malformed-save restack and broader residuals |
 | PR 6A | Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06a-persisted-empty-content-guard) | 2 | +64 / -1 | verified branch; narrow persisted-body guard |
-| PR 6B | Malformed outgoing RTC save request-payload guard, replacing old `ready/rtc-pr06b-malformed-save-request-payload` at `87e0ed20ab8` with `ready/rtc-pr06b-malformed-save-request-payload-minimal` at `7b123e0ef233` after PR06A | No verified branch link yet | 2 | TBD | PR06A sidecar remains the recommended topology; conflict resolution and finalization produced/imported the minimal branch plus validation-only `validation/rtc-pr06b-minimal-plus-pr15c-sidecar-20260517T021111Z` at `243411d46169`, verified adjacency/containment/`cc3d7bf663a` exclusion/`git diff --check`/`node --check`, and wrote local audit/manifest artifacts; no GitHub `verified-content` branch link exists yet, and the validation ref is fetch-only evidence, not a product PR |
+| PR 6B | Malformed outgoing RTC save request-payload guard, replacing old `87e0ed20ab8` with minimal branch `7b123e0ef233` after PR06A | No verified branch link yet | 2 | TBD | recommended PR06A sidecar; Cycle 222/224 evidence verifies local minimal branch and fetch-only PR6B+PR15C validation head, but no GitHub `verified-content` branch link exists yet |
 | PR 7A | Save response entity-state guards | [`review/rtc-pr07a-save-response-actions-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07a-save-response-actions-guard) | 2 | +1339 / -8 | verified branch; repaired split head |
 | PR 7B | Save response manager/base-record guards | [`review/rtc-pr07b-save-response-manager-base-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07b-save-response-manager-base-record) | 5 | +404 / -8 | verified branch stacked after PR 7A; scoped to saved-CRDT-response hydration, not broader reload/post-save residuals |
-| PR 8A | Narrow title reload replacement | No verified branch link yet | TBD | TBD | not in the current `20260517T024253Z` topology; broad verified PR 8 is prior art only, and any PR8A revival needs a shaped and audited branch |
 | PR 9 | Core-data lock fairness | [`review/rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/review/rtc-pr09-store-lock-fairness) | 2 | +185 / -2 | verified branch; keep in known-fix prefix |
 | PR 10 | CRDT block reconciliation foundation | [`review/rtc-pr10-crdt-block-rebase-foundation`](https://github.com/danluu/gutenberg/tree/review/rtc-pr10-crdt-block-rebase-foundation) | 2 | +145 / -4 | verified branch; start CRDT block stack |
 | PR 11A | Explicit-base stale suffix append | No verified branch link yet | 2 | +257 / -3 | green in validation-stack rebuild; local ready head still needs remote verified-content branch link |
@@ -233,15 +199,18 @@ branch links.
 | PR 11D | Explicit-base top-level move/reorder | No verified branch link yet | 2 | +259 / -0 | green in validation-stack rebuild; local ready head still needs remote verified-content branch link |
 | PR 11E | Explicit-base delete-plus-insert anchor | No verified branch link yet | 2 | +170 / -0 | green in validation-stack rebuild; local ready head still needs remote verified-content branch link |
 | PR 12 | Previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr12-previous-local-cache-top-level-ops) | 2 | +1391 / -5 | verified branch; keep in known-fix prefix |
-| PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 | +1151 / -25 | repaired audit link; first maintainer-facing PR13 delta |
-| PR 13B | Cross-parent source retirement | [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement) | 2 | +1672 / -4 | repaired audit link; carries the source-retirement delta |
-| PR 13C | Stale block identity smear guard | [`review/rtc-pr13c-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13c-stale-block-identity-smear-guard) | 2 | +345 / -51 | repaired audit link; third maintainer-facing PR13 delta |
-| PR 14 | Table body nested array merge | [`review/rtc-pr14-table-body-array-merge`](https://github.com/danluu/gutenberg/tree/review/rtc-pr14-table-body-array-merge) | 2 | +294 / -18 | verified branch; keep after PR13 source sequence |
+| PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 | +1151 / -25 | repaired audit link; first PR13 delta |
+| PR 13B0 | Identity/provenance guard, moving stale block identity protection before source-retirement deltas | No verified branch link yet | 2 | +430 / -50 | preferred finer split from green Cycle 118/224 sequence; publish/fetch/audit before filing |
+| PR 13B1 | Direct cross-parent source retirement | No verified branch link yet | 2 | +482 / -0 | preferred finer split; publish/fetch/audit before filing |
+| PR 13B2 | Current-only cross-parent source retirement | No verified branch link yet | 2 | +410 / -0 | preferred finer split; publish/fetch/audit before filing |
+| PR 13B3 | Explicit-base cross-parent source retirement | No verified branch link yet | 2 | +758 / -0 | preferred finer split; publish/fetch/audit before filing |
+| PR 14 | Table body nested array merge | [`review/rtc-pr14-table-body-array-merge`](https://github.com/danluu/gutenberg/tree/review/rtc-pr14-table-body-array-merge) | 2 | +294 / -18 | verified branch; run bounded seed `7110017` coverage job before final filing |
+| PR 14B | Stale-shorter query-array local suffix append, only if seed `7110017` is not covered by PR14 | No verified branch link yet | TBD | TBD | conditional only; create immediately after PR14 only if the focused PR14 coverage job fails |
 | PR 15A | Fallback group move stale reorder | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 | +123 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15B | Fallback group insert anchor | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 | +197 / -4 | verified branch; keep reload-hydration gate spec out |
 | PR 15C | Fallback group delete | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 | +161 / -4 | verified branch; keep reload-hydration gate spec out |
-| PR 17 | Seed `1020002` WebSocket/Yjs proof, reclassification, or repair | No verified branch link yet | TBD | TBD | active final-stack blocker; latest nonempty report says local single-module Yjs replay does not reproduce the deletion and current evidence is not product-owned, so decide whether to reclassify or run one browser/provider ownership diagnostic before shaping a product branch; do not let this serialize independent non-`1020002` work |
-| PR 18x | Future strict-expansion or focused-shard residuals only if source-reduced to uncovered product behavior | No verified branch link yet | TBD | TBD | no current product PR; seed `5700084` is PR5C/oracle drift, and newer invalid/deprecated/parser-stress or nested/move/delete rows need source reduction before any PR18x branch is named |
+| PR 17 | Seed `1020002` WebSocket/Yjs proof, reclassification, or repair | No verified branch link yet | TBD | TBD | active final-stack blocker; latest report says local single-module replay does not reproduce the deletion and current evidence is not product-owned |
+| PR 18x | Future strict-expansion or focused-shard residuals only if source-reduced to uncovered product behavior | No verified branch link yet | TBD | TBD | no current product PR; seed `5700084` is PR5C/oracle drift, and newer parser/reload residuals need source reduction before any PR18x branch is named |
 
 Verified branches that are prior art or staging only:
 
@@ -253,55 +222,18 @@ Verified branches that are prior art or staging only:
 - [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr11-explicit-base-top-level-ops)
   is verified content for old aggregate PR 11, but the active recommendation
   is the PR11A-E split.
-
-## Bug Coverage By Proposed PR
-
-"Fixed" below means fixed by the proposed branch when the row has a verified
-branch link. Rows without a verified branch link are intended coverage claims
-from local ready heads, validation-stack work, or active investigation; they
-still need the branch-link and validation gates in the main PR split table
-before filing.
-
-| PR | Bugs fixed or intended to fix |
-| --- | --- |
-| PR 1 | Fixes HTTP polling sessions that generate or accept oversized update payloads, which can stall or corrupt sync state before clients converge. |
-| PR 2 | Fixes HTTP polling storage reads that scan the wrong update window, so late or reconnecting pollers can miss needed updates or reprocess stale data. |
-| PR 2A | Intended to fix the narrowed HTTP room-isolation regression where one post/session can observe or retain another room's polling state; broader HTTP residuals remain deferred until separately source-proven. |
-| PR 3 | Fixes revision restore leaving stale `_crdt_document` metadata attached to restored content, which can make collaborators reload or save against the pre-restore CRDT state. It does not yet cover the separate seed `5500002` marker-retention follow-up. |
-| PR 4 | Fixes repeated save/meta churn around persisted CRDT metadata, where equivalent saved RTC state can be treated as a new edit and feed stale save loops or unnecessary persistence writes. |
-| PR 5A | Intended to fix entity/reference normalization false differences, where semantically equivalent entity references are treated as RTC content changes and can trigger avoidable save or merge churn. |
-| PR 5B | Intended to fix parser/rich-text HTML equivalence false differences, where equivalent rich-text serialization is treated as a destructive CRDT delta instead of a no-op. |
-| PR 5C | Intended to fix preserve-whitespace linebreak equivalence, including the `\n` versus `<br>` class represented by seed `5700084`; the current conclusion is that `5700084` is PR5C-covered plus strict-oracle drift, not a new product PR. |
-| PR 6 | Fixes outgoing save requests built from stale, empty, or unsafe CRDT projections, including cases where the save payload can drop valid block content or repair from stale raw content incorrectly. Malformed evaluated-content residuals are split to PR6B. |
-| PR 6A | Fixes persisted empty-content records overwriting a valid CRDT-backed post body, preserving the saved CRDT body when the REST/entity record is empty or incomplete. |
-| PR 6B | Intended to fix malformed outgoing RTC save request payloads. The current replacement is the minimal two-file `ready/rtc-pr06b-malformed-save-request-payload-minimal` branch at `7b123e0ef233`, based on PR06A; Cycle 222 finalization verified local adjacency, containment, `cc3d7bf663a` / `crdt-blocks.ts` exclusion, `git diff --check`, and `node --check`. It still needs a verified GitHub branch link, any missing focused tests/lint/formatting, and rebuilt combined validation before filing. The old `87e0ed20ab8` branch is no longer file-ready because it carries extra `cc3d7bf663a` / `crdt-blocks.ts` work. |
-| PR 7A | Fixes stale save-response actions overwriting newer RTC entity/block state, including base-version regressions and stale block content returned by delayed saves. |
-| PR 7B | Fixes save-response manager/base-record handling that can invalidate or overwrite newer CRDT-backed state, especially stale title/base-record updates after a save completes. It does not cover same-user stale-tab or broader reload/post-save persistence residuals. |
-| PR 8A | If revived, would cover only a narrowed title reload/persisted-record replacement bug. The broad PR8 branch is prior art and no active PR8A filing unit is currently verified. |
-| PR 9 | Fixes core-data store lock unfairness where older pending locks can be bypassed by newer work, allowing stale or out-of-order entity operations to win. |
-| PR 10 | Fixes the CRDT block reconciliation foundation for stale block identity rebasing, preventing local stale snapshots from applying edits to the wrong logical block after remote structural changes. |
-| PR 11A | Intended to fix explicit-base stale suffix append failures, where a stale local suffix append can drop or reorder remote top-level block changes. |
-| PR 11B | Intended to fix explicit-base top-level delete failures, where a stale local snapshot mishandles a remote or concurrent top-level block deletion. |
-| PR 11C | Intended to fix explicit-base middle insert failures, preserving remote top-level order when a local stale snapshot inserts into the middle of the block list. |
-| PR 11D | Intended to fix explicit-base top-level move/reorder failures, preventing stale snapshots from undoing or corrupting remote block reorders. |
-| PR 11E | Intended to fix explicit-base delete-plus-insert anchor failures, where a delete and insert in the same stale-base window can attach to the wrong block position. |
-| PR 12 | Fixes previous-local-cache top-level block operations: remote top-level appends, deletes, and reorders must not be lost or resurrected when a stale local snapshot edits a different block. |
-| PR 13A | Fixes observed-delete provenance for top-level blocks, preventing a stale local merge from resurrecting a block after this client has already observed the remote delete. |
-| PR 13B | Fixes cross-parent source retirement, preventing moved blocks from leaving source-side ghosts or duplicate content after cross-parent/current-only or explicit-base moves. |
-| PR 13C | Fixes stale block identity smear, where stale identity data can cause later edits or deletes to affect the wrong block after reconciliation. |
-| PR 14 | Fixes nested table-body/query-array stale local merges, preserving remote table row/cell array edits instead of replacing the nested array with an older local shape. |
-| PR 15A | Fixes fallback-group move/reorder stale merges, where block groups without a better explicit identity fallback can reorder incorrectly under stale local snapshots. |
-| PR 15B | Fixes fallback-group insert-anchor stale merges, preserving the intended insertion anchor when local stale state and remote structural edits interact. |
-| PR 15C | Fixes fallback-group delete stale merges, preventing fallback-group deletes from resurrecting or deleting the wrong grouped blocks under stale local state. |
-| PR 17 | Not fixed yet. This row owns seed `1020002` only if browser/provider diagnostics prove a WordPress-owned WebSocket/Yjs marker divergence; otherwise the current evidence points toward reclassification or deferral rather than a product PR. |
+- [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement)
+  and [`review/rtc-pr13c-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13c-stale-block-identity-smear-guard)
+  are repaired audited fallback PR13 links, not verified links for the finer
+  PR13B0/B1/B2/B3 sequence.
 
 ## Validation And Fuzz Status
 
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T02:53:27Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T024927Z
+collected_at_utc: 2026-05-17T03:11:23Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T031038Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
@@ -317,143 +249,114 @@ That rebuild reported focused CRDT checks, touched-file JS lint,
 `git diff --check`, containment, range-diff, and diffstat evidence passing.
 Treat it as structural and focused-check evidence for the known-fix prefix. It
 is not final-stack fuzz validation and no longer represents the complete filing
-stack because PR02A still needs a verified review branch, PR6B still needs
-replacement and a verified branch link, PR17 still needs a
-repair/reclassification decision, and the rebuilt validation stack has not
+stack because PR02A, PR5A/B/C, PR11A-E, PR6B, and the finer PR13B0-B3 rows still
+need verified branch links, PR14 may need a conditional PR14B, PR17 still needs
+a repair/reclassification decision, and the rebuilt validation stack has not
 been rerun over those final decisions.
 
-The collected `raw/novelty-status.md` is empty in this update, so it is not a
-usable current-monitor override. Use the trend evidence packet and the latest
-persona reports as the active fuzz summary until the next nonempty monitor
-snapshot is collected.
+The collected `raw/novelty-status.md` is zero bytes in this update, so it is
+not a usable current-monitor override. Use the trend evidence packet and the
+latest persona reports as the active fuzz summary until the next nonempty
+monitor snapshot is collected.
 
-The latest trend evidence packet was generated at `2026-05-17T02:44:38Z` from
-monitor data through `2026-05-17T02:42:44Z`:
+The latest trend evidence packet was generated at `2026-05-17T03:03:34Z` from
+monitor data through `2026-05-17T03:01:12Z`:
 
 ```text
-monitor passes: 1808
-coverage files: 272 -> 38422
-coverage files delta: 38150
-unmet coverage goals: 24 -> 6
+monitor passes: 1812
+coverage files: 272 -> 38874
+coverage files delta: 38602
+unmet coverage goals: 24 -> 5
 likely_real_max: 1
-duplicate_share_current_last: 1
-duplicate_share_historical_last: 0.3524
+duplicate_share_current_last: 0
+duplicate_share_historical_last: 0.3521
 summary_startup_failures_last: 0
 quality_issues_last: 0
+enabled groups: novelty-ws-real-user-editing
 fuzz level mix: browser-e2e=26 lanes/26 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 3029549
-browser-e2e execution: 95112 cumulative / 832 per-hour
-unit-property execution: 2624000 cumulative / 173376 per-hour
-coverage-guided-lower-level execution: 307431 cumulative / 27656 per-hour
-load1/load5/load15: 100.64 / 84.44 / 80.28 on 64 cores
-memory: 425.1G free
+total fuzz-level test executions: 3095286
+browser-e2e execution: 95365 cumulative / 196 per-hour
+unit-property execution: 2680588 cumulative / 28896 per-hour
+coverage-guided-lower-level execution: 316327 cumulative / 5632 per-hour
+load1/load5/load15: 66.74 / 174.79 / 193.55 on 64 cores
+memory: 423.1G free
 ```
 
 Largest remaining coverage gaps in the trend evidence are
-`ui-heading-shortcut` `706/1000`, `reload-post-action` `707/1000`,
-title-save-reload `278/500`, body-save-reload `337/500`,
-successful real-user-editing records `418/500`, and `ui-format-paragraph`
-`990/1000`.
+`ui-heading-shortcut` `718/1000`, `reload-post-action` `724/1000`,
+title-save-reload `286/500`, body-save-reload `345/500`, and successful
+real-user-editing records `425/500`.
 
 The trend packet shows a current likely-real maximum but does not provide a
 nonempty raw novelty record in this collection. Treat that as an open
 classification input, not final-stack validation. Historical duplicate/noise
 remains a separate control-plane concern and must not be presented as current
-product failure. The latest duplicate/noise action implemented consumer-side
-source coalescing, completed-analysis `likely_real` visibility, and
-inactive/no-product family-cap filtering.
+product failure.
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260517T024253Z-synthesis.md`. It says filing remains blocked and
-the Cycle 222 replacement split is still the active recommendation: use the
-minimal PR6B sidecar at `7b123e0ef233`, keep `243411d46169` as fetch-only
-PR6B-minimal+PR15C validation evidence, and keep PR17/seed `1020002` as a
-final-stack blocker only. Independent branch audits, manifests, deferred queue
-hard-deny/reexec, reload/post-save reductions, and new-seed reductions should
-continue instead of waiting on active `1020002` work.
+`pr-split-20260517T030103Z-synthesis.md`. It says the split has changed and
+Cycle 224 is authoritative: PR6B is the minimal two-file PR06A sidecar at
+`7b123e0ef233`, the old PR6B/PR16 path is historical, PR6B-minimal+PR15C at
+`243411d46169` is validation-only, and final stack filing is blocked by PR17,
+PR14/`7110017`, `5200005`, `1060015`, rebuilt validation, focused `1020002`,
+and final-stack fuzz.
 
-The latest PR-split feedback artifact,
-`pr-split-20260517T024253Z-feedback-action.md`, is zero bytes, so it is not
-durable progress. The latest nonempty PR-split feedback action remains
-`pr-split-20260517T021947Z-feedback-action.md`.
+That synthesis also says the Cycle 224 residual reducer report now exists and
+generated focused next-action prompts. The next actions are bounded:
 
-The latest synthesis recommends only bounded follow-up work:
-`rtc-deferred-queue-hard-deny-reexec-and-cycle222-manifest-20260517T0250Z`,
-`rtc-reload-postsave-5200005-source-reduce-20260517T0250Z`,
-`run-rtc-postreload-parser-1060015-replay-reduce.sh`, and
-`rtc-pr17-focused-provider-ownership-1020002` only if no equivalent active
-diagnostic exists or proof-based reclassification is rejected. It explicitly
-rejects broad final-stack fuzz and new broad fuzz lanes at this point.
+- run `rtc-pr14-query-array-local-suffix-7110017-compare`;
+- run the generated `next-action-5200005-product-reduce.prompt.md`;
+- run the generated `next-action-1060015-parser-invalid-repro.prompt.md`;
+- run at most one focused `1020002` browser/provider ownership diagnostic if
+  proof-based reclassification is not accepted.
 
-The latest PR-split feedback action,
-`pr-split-20260517T021947Z-feedback-action.md`, is nonempty and applied the
-latest two-review feedback. It updated `current-pr-split.md` with the Cycle 222
-review update, replaced the polluted old PR6B with
-`ready/rtc-pr06b-malformed-save-request-payload-minimal` at `7b123e0ef233`,
-marked `validation/rtc-pr06b-minimal-plus-pr15c-sidecar-20260517T021111Z` at
-`243411d46169` as validation evidence only, kept old PR6B/PR16/deferred
-malformed-save heads historical, preserved the rule that seed `1020002` blocks
-only PR17/final-stack work, repaired deferred queue downscope rows, and wrote
-current-run PR6B branch-audit and push-manifest artifacts for the local machine.
-It recorded this completed loop-repair job:
+Do not start broad/final-stack fuzz until PR14 coverage, `5200005`, `1060015`,
+and PR17 are resolved or explicitly classified out.
 
-```text
-rtc-cycle222-loop-repair-20260517T023022Z: completed rc 0; verified queue
-downscope rows, loop syntax, generator hardening, and current PR6B
-manifest/audit artifacts
-```
+The latest nonempty PR-split feedback action,
+`pr-split-20260517T024253Z-feedback-action.md`, applied Cycle 224 feedback. It
+reaffirmed PR6B minimal as authoritative, patched and restarted the
+deferred-work loop so malformed-save and HTTP stay hard-denied, invalidated the
+stale malformed-save and HTTP deferred launches, wrote fresh Cycle 224 PR6B
+branch audit and push manifest artifacts, completed
+`rtc-cycle224-deferred-hard-deny-reexec-and-manifest-verify-20260517T025409Z`
+with `rc=0`, and launched the bounded `5200005` / `1060015` reducer that the
+newest synthesis now treats as completed enough to move to next-action prompts.
 
-The current synthesis and raw split log now say Cycle 222 finalization imported
-the PR6B minimal branch and validation-only head into a dependency-equipped
-stack worktree and verified adjacency, containment, `cc3d7bf663a` exclusion,
-`git diff --check`, and `node --check`. What remains open is not the old
-zero-byte finalization problem; it is publication/audit of a GitHub review
-branch, any focused tests/lint/formatting not covered by finalization, PR17
-settlement, and rebuilt combined validation. The active reload/post-save lane
-remains independent product-evidence work, especially seed `5200005` and any
-still-open `5300002` product/oracle question.
+The newest duplicate/noise synthesis is
+`duplicate-noise-20260517T024456Z-synthesis.md`. It keeps duplicate/noise in
+the fuzz control-plane lane, not product validation. Consensus is that strict
+startup filters mostly exist in consumers, but duplicate/noise knowledge is
+too local, so noisy current-run producer groups and sibling run dirs can keep
+feeding triage/analysis. The smallest safe next fix is a narrow current-run
+known-noise producer/run-dir gate that preserves product-evidence signatures;
+do not add blanket family suppression and do not suppress current
+`collaboration_non_convergence` or records with action/reload/save/revision,
+fault, or operation-witness evidence.
 
-The newest nonempty duplicate/noise synthesis is
-`duplicate-noise-20260517T023424Z-synthesis.md`; it preserves the same
-bounded-control-plane conclusion and blocks broad suppression. The latest
-implemented duplicate/noise patch is still the
+The latest implemented duplicate/noise patch remains the
 `duplicate-noise-20260517T020802Z-*` feedback action. It updated
 `bin/rtc-browser-fuzz-triage-watcher.mjs`,
 `bin/rtc-browser-fuzz-novelty-monitor.mjs`,
 `bin/rtc-browser-fuzz-analysis-tier.mjs`, and
 `bin/rtc-browser-fuzz-deep-analysis-tier.mjs` in the remote fuzz repo. The
-changes coalesce same seed/source candidates before signature creation, prefer
-product-evidence/artifact-rich candidates over disabled inline-analysis or
-summary-only duplicates, count completed analysis/deep-analysis `likely_real`
+changes coalesce same seed/source candidates, prefer product-evidence or
+artifact-rich candidates, count completed analysis/deep-analysis `likely_real`
 JSON in novelty summaries, and keep inactive/no-product completed jobs out of
 family caps unless they have visible `likely_real` results.
 
-Validation for that duplicate/noise action passed `node --check` on all touched
-scripts. A historical replay of the leaking `20260517T014736Z` roots retained
-one product-evidence signature per source, and novelty replay reported
-`likely-real visible: 2` for that observed root with actionable duplicate share
-`0`. The action restarted only `rtc-coverage-guided-novelty`; live analysis was
-already skipping because there were no actionable signatures. The latest
-duplicate/noise synthesis says any next fix should be a narrow current-run
-no-product gate plus strict startup predicate alignment, with product-evidence
-failures such as post-action convergence, reload/save, persistence, op-witness,
-or likely-real signatures preserved. The remaining duplicate/noise risk is
-runner-side emission of an initial strict startup record before the supervisor
-pauses a noisy group. This control-plane work must stay separate from product PR
-validation.
-
 The completed status-analysis reports through
-`final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
-separate current fuzz health from historical noise, keep evidence-only
-families out of the split, and make filing gates explicit. Their older
-"keep existing split", "do not add PR6B", "only novelty-http is enabled", and
-stale PR13 review-ref warnings are superseded by the
-`2026-05-17T02:53:36Z` branch-link audit, the current empty raw novelty status,
-the latest trend packet, and the latest split syntheses.
+`final-20260516T040744Z-final-analysis.md` remain useful only for report
+hygiene: separate current fuzz health from historical noise, keep
+evidence-only families out of the split, and make filing gates explicit. Their
+older "keep existing split", "do not add PR6B", "only novelty-http is enabled",
+and stale PR13 review-ref warnings are superseded by the
+`2026-05-17T03:11:28Z` branch-link audit, the current empty raw novelty status,
+the latest trend packet, and the Cycle 224 split syntheses.
 
 ## Deferred Or Evidence-Only Work
 
@@ -461,19 +364,21 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| Malformed-save request-payload PR6B | Old `ready/rtc-pr06b-malformed-save-request-payload` at `87e0ed20ab8`; minimal replacement `ready/rtc-pr06b-malformed-save-request-payload-minimal` at `7b123e0ef233`; validation-only `validation/rtc-pr06b-minimal-plus-pr15c-sidecar-20260517T021111Z` at `243411d46169`; split/drop-pending `cc3d7bf663a`; completed reconcile report `runs/20260517T015400Z/jobs/outputs/rtc-pr06b-minimal-reconcile-20260517T020421Z/report.md`; conflict report `runs/20260517T015400Z/jobs/outputs/rtc-pr06b-minimal-conflict-resolve-20260517T021111Z/report.md`; finalization report `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/cycles/20260517T022000Z/finalization.report.md`; current-run PR6B audit/manifest artifacts `runs/20260517T021947Z/jobs/cycle222-pr6b-minimal-branch-audit.tsv` and `cycle222-pr6b-minimal-push-manifest.tsv`; old validation-only head `validation/rtc-pr06b-plus-pr15c-sidecar-20260517T004623Z` at `0662b838eaf0961605a95ecb1bd83bd4713e33d3`; stale deferred job `rtc-deferred-job-malformed-save-payload-20260517T023737Z` | active recommended topology after PR6A as an explicit sidecar; Cycle 222 finalization imported the minimal branch and validation-only head and verified adjacency, containment, `cc3d7bf663a` / `crdt-blocks.ts` exclusion, `git diff --check`, and `node --check`; no current GitHub `verified-content` branch-link audit row exists, and the old PR6B+PR15C validation head is historical only because it contains the polluted PR6B; latest synthesis says invalidate/stop the stale deferred job because malformed-save is downscoped by canonical PR6B minimal | Publish/fetch the minimal PR6B product branch to a GitHub review ref, regenerate branch-link audit and push manifest from fetched refs, run any focused unit/lint/formatting checks not already covered, keep `243411d46169` fetch-only, then decide PR17 and rebuild combined validation including PR6B |
-| Malformed post-save settlement residuals and sidecar | `f51c425df8a5`, `f46859898576`, `7410076` | deferred/evidence-only; not part of PR6B or PR16 unless separately source-proven | Keep source-reducing; promote only with clean local source evidence and a verified branch link |
-| Seed `1020002` WebSocket marker divergence | marker-bearing relay/page-1 evidence plus latest nonempty PR17 report saying local single-module Yjs replay does not reproduce the deletion and current evidence is not product-owned | active PR17/final-stack blocker; no verified filing branch exists | Decide whether the report is enough to reclassify. If not, run one browser/provider ownership diagnostic with runtime fingerprints and exact raw update capture; then repair, reclassify, or defer |
+| Malformed-save request-payload PR6B | Old `ready/rtc-pr06b-malformed-save-request-payload` at `87e0ed20ab8`; minimal replacement `ready/rtc-pr06b-malformed-save-request-payload-minimal` at `7b123e0ef233`; validation-only `validation/rtc-pr06b-minimal-plus-pr15c-sidecar-20260517T021111Z` at `243411d46169`; old validation-only head `validation/rtc-pr06b-plus-pr15c-sidecar-20260517T004623Z` at `0662b838eaf0961605a95ecb1bd83bd4713e33d3`; Cycle 224 audit/manifest artifacts | active recommended topology after PR6A as an explicit sidecar; local finalization verified adjacency, containment, `cc3d7bf663a` / `crdt-blocks.ts` exclusion, `git diff --check`, and `node --check`; no current GitHub `verified-content` branch-link audit row exists | Publish/fetch the minimal PR6B product branch to a GitHub review ref, regenerate branch-link audit and push manifest from fetched refs, run missing focused tests/lint/formatting, keep `243411d46169` fetch-only, decide PR17, then rebuild combined validation including PR6B |
+| PR13 finer split | `final/rtc-pr13b0-identity-provenance-guard`, `final/rtc-pr13b1-direct-source-retirement-green`, `final/rtc-pr13b2-current-only-source-retirement-green`, `final/rtc-pr13b3-explicit-base-source-retirement-green` in the raw split history; repaired audited fallback refs PR13A/B/C on GitHub | preferred reviewability split is PR13A/B0/B1/B2/B3, but only repaired PR13A/B/C fallback links are verified in the current branch-link audit | Publish/fetch/audit PR13B0/B1/B2/B3 before claiming them as maintainer-facing links; otherwise use only repaired PR13A/B/C fallback refs |
+| PR14 seed `7110017` coverage | stale-shorter query-array local suffix append coverage question | unresolved coverage gate, not yet a product branch | Run bounded `rtc-pr14-query-array-local-suffix-7110017-compare`; create PR14B immediately after PR14 only if PR14 fails the focused test |
+| Reload/post-save `5200005` | generated `next-action-5200005-product-reduce.prompt.md`; previous reload/post-save replay lane | residual reducer report now exists; still no product branch assignment | Run the generated deterministic reducer to classify marker retirement vs reload/post-reload edit/delete product ownership before any branch |
+| Parser-sensitive seed `1060015` | `f3f7e9990751` / seed `1060015`; generated `next-action-1060015-parser-invalid-repro.prompt.md` | unassigned evidence; do not assign to PR05, PR07B, PR13, PR15, PR17, or PR18 before focused repro | Run parser-invalid repro with clean-content control; only create a PR05-near branch after invalid-content failure with clean control |
+| Seed `1020002` WebSocket marker divergence | marker-bearing relay/page-1 evidence plus latest PR17 report saying local single-module Yjs replay does not reproduce the deletion and current evidence is not product-owned | active PR17/final-stack blocker; no verified filing branch exists | Accept proof-based reclassification or run one browser/provider ownership diagnostic with runtime fingerprints and exact raw update capture; then repair, reclassify, or defer |
 | Seed `5700084` strict linebreak divergence | live `core/verse.attributes.content` `\n` vs `<br>` comparison | no product PR and no active PR18x row; classified as PR5C-covered plus strict oracle/exact-content drift | Downscope/update the strict oracle; do not create PR18A or PR5D for this seed |
-| Fresh strict-expansion residuals | invalid/deprecated/parser-stress delete divergence such as seed `5200021`; nested/move/delete focused-shard residual clusters | source-reduction input only; no current PR18x branch and no verified branch link | Source-reduce and compare against PR5, PR11, PR13, PR14, PR15, PR17, and existing parser/oracle coverage before naming any PR18x product branch |
-| Broad PR 8 persisted-record hydration | old audit branch [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | deferred; no active filing unit and not in the current `20260517T024253Z` topology | Shape and audit a narrowed title-reload branch only if PR 8A is revived |
-| Reload hydration empty live editor / broader reload-post-save sync loss | active/latest deferred candidate `deferred/rtc-reload-hydration-20260517T010615Z`; replay job `rtc-reload-postsave-replay-20260517T013904Z`; replay seeds `5300002`, `5700013`, `5200005`, `5200009`, and `6000004` or `6000005`; prior row `20260516T233554Z` plus older gate branches | evidence-only; not in PR 6, PR 6A, PR 8A, PR 15, or fallback-group claims; latest split synthesis says `5200005` still needs bounded reload/post-save reduction and any still-open `5300002` needs product-vs-oracle classification | Promote only if a clean replay classifies each seed with command evidence and, for product rows, reaches the post-reload assertion with live editor state, REST body, persisted `_crdt_document`, provider phase, provider-synced skip path, and update/application witnesses |
-| New post-reload/parser candidate | `f3f7e9990751` / seed `1060015`; proposed job `run-rtc-postreload-parser-1060015-replay-reduce.sh` | unassigned evidence; latest synthesis says do not assign it to PR05, PR07B, PR13, or PR15 before focused replay/reduction | Replay/source-reduce first, then classify as covered, separate product candidate, duplicate, oracle/harness/infra, or blocked with exact command evidence |
+| Fresh strict-expansion and focused-shard residuals | invalid/deprecated/parser-stress delete divergence such as seed `5200021`; nested/move/delete focused-shard residual clusters | source-reduction input only; no current PR18x branch and no verified branch link | Source-reduce and compare against PR5, PR11, PR13, PR14, PR15, PR17, and existing parser/oracle coverage before naming any PR18x product branch |
+| Broad PR 8 persisted-record hydration | old audit branch [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | deferred; no active filing unit and not in Cycle 224 topology | Shape and audit a narrowed title-reload branch only if PR8A is revived |
+| Reload hydration empty live editor / broader reload-post-save sync loss | `deferred/rtc-reload-hydration-20260517T010615Z`, prior replay seeds `5300002`, `5700013`, `5200005`, `5200009`, and `6000004` or `6000005` | evidence-only; not in PR 6, PR 6A, PR 8A, PR 15, or fallback-group claims | Promote only with clean replay, command evidence, live editor state, REST body, persisted `_crdt_document`, provider phase, provider-synced skip path, and update/application witnesses |
 | Pre-save search/live document collapse | latest deferred row `20260516T233555Z` plus prior pre-save search/live-collapse candidate rows | evidence-only; not in active split | Capture editor blocks, serialized content, edited core-data record, live CRDT record, provider state, REST body, and save state around `core/search` insertion |
 | Rich-text formatted suffix corruption | current diagnostic publication candidate `20260516T235057Z` plus prior `deferred/rtc-rich-text-formatted-suffix-20260516T230547Z` | not fixed; latest split keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
-| Broader HTTP polling room-isolation residuals | HTTP downscope row `20260516T232052Z`; PR02A has no verified branch link yet; stale deferred job `rtc-deferred-job-http-room-isolation-20260517T023739Z` | PR02A remains in the known-fix prefix and points back to `ready/rtc-pr02a-http-room-isolation-regression`, but broader residuals stay deferred; latest synthesis says invalidate/stop the stale deferred job because HTTP room isolation is downscoped by PR02A absent fresh healthy-user evidence | Publish/fetch/audit a PR02A review branch before filing; promote additional residuals only with narrowed healthy-user product evidence |
+| Broader HTTP polling room-isolation residuals | PR02A local ready head; stale deferred job `rtc-deferred-job-http-room-isolation-20260517T023739Z` | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred; Cycle 224 invalidated stale generic HTTP relaunches | Publish/fetch/audit a PR02A review branch before filing; promote additional residuals only with narrowed healthy-user product evidence |
 | Revision-restore marker retention | seed `5500002`; active lifecycle triage | queued behind final-stack blockers; no automatic PR slot | Triage only after `1020002` is repaired or reclassified and the rebuilt stack is available |
-| Duplicate/noise control-plane leak | latest synthesis `duplicate-noise-20260517T023424Z-synthesis.md`; implemented action `duplicate-noise-20260517T020802Z-*`; active root now `run-20260517T020817Z`; action artifacts `duplicate-noise-remediation-cycle-92.patch`, `.stat.txt`, and `-status.md` | control-plane issue, not product validation; the cycle-92 action updated triage watcher, novelty monitor, analysis tier, and deep-analysis tier so same-source duplicates coalesce, completed `likely_real` analyses are visible, and inactive/no-product completed jobs do not consume family caps; latest raw novelty file is empty, while the trend packet reports `likely_real_max: 1`, current duplicate share `1`, historical duplicate share about `0.3524`, `0` startup summary failures, and `0` current quality issues | Remaining risk is runner-side initial strict startup emission before supervisor pause; continue only bounded control-plane hardening with strict current-run no-product gates, preserving all product-evidence failures and keeping product PR validation separate |
+| Duplicate/noise control-plane leak | latest synthesis `duplicate-noise-20260517T024456Z-synthesis.md`; implemented action `duplicate-noise-20260517T020802Z-*` | control-plane issue, not product validation; current duplicate share is `0`, historical duplicate share is about `0.3521`, and raw novelty is empty | Continue only bounded current-run known-noise producer/run-dir gating, preserving all product-evidence failures and keeping product PR validation separate |
 
 ## Filing Gates And Current Recommendation
 
@@ -483,71 +388,60 @@ Do not file a single mega-PR and do not file the large stacked
 Before filing any maintainer-facing PR:
 
 1. Verify environment health first. A disk-preflight-only report, zero-byte
-   report, missing rc file, or stale active session is not durable progress
-   while actionable Parallel Progress Gate rows remain.
+   report, missing rc file, stale active session, stderr growth, lock holder,
+   `report.tmp`, or "job launched" alone is not durable progress while
+   actionable Parallel Progress Gate rows remain.
 2. Use the explicit ready prefix. Do not wildcard import or file
    `final/rtc-pr*`, validation-stack branches, deferred branches, or dirty
    evidence branches.
 3. Keep old aggregate PR 5, broad PR 8, aggregate PR 11, stale/misordered
-   PR13 refs, old dropped save snapshot/no-op PR6B material, PR 6C, dirty
-   evidence branches, and the untracked reload-hydration gate spec out of
-   filing branches and push allow-lists.
-4. Publish/fetch and audit PR02A plus individual PR 5A/5B/5C, PR11A-E, and
-   PR6B, plus PR 8A only if it is revived and shaped, or keep rows marked
-   `No verified branch link yet`.
-5. Use the repaired audited PR13A/B/C review refs for maintainer-facing PR13
-   links until any finer PR13 subheads have verified audit rows.
-6. Finish PR6B publication and branch-link verification before filing. The
-   minimal replacement branch now exists as
-   `ready/rtc-pr06b-malformed-save-request-payload-minimal` at
-   `7b123e0ef233`, and the validation-only PR6B+PR15C head exists at
-   `243411d46169`. Cycle 222 finalization imported both into a
-   dependency-equipped worktree and verified adjacency, containment,
-   `cc3d7bf663a` / `crdt-blocks.ts` exclusion, `git diff --check`, and
-   `node --check`; keep the old PR16 fallback superseded unless PR6B
-   publication or rebuilt combined validation fails. Require a clean GitHub
-   review ref, sidecar manifest/validation evidence, any missing focused tests,
-   lint, formatting, build, seed replay evidence, branch audit, explicit
-   inclusion beside the existing PR15C chain, and a verified branch link before
-   filing it.
+   PR13 refs, old PR6B/PR16 material, PR6C, dirty evidence branches, and the
+   untracked reload-hydration gate spec out of filing branches and push
+   allow-lists.
+4. Publish/fetch and audit PR02A, PR5A/B/C, PR11A-E, PR6B minimal, and
+   PR13B0/B1/B2/B3 before treating them as maintainer-facing links. Until then,
+   keep rows marked `No verified branch link yet` and use only repaired PR13A/B/C
+   fallback links from the audit.
+5. Finish PR6B publication and branch-link verification before filing. Require
+   a clean GitHub review ref, sidecar manifest/validation evidence, any missing
+   focused tests, lint, formatting, build, seed replay evidence, branch audit,
+   explicit inclusion beside the existing PR15C chain, and a verified branch
+   link before filing it.
+6. Run the bounded PR14 seed `7110017` coverage job. If PR14 does not cover
+   stale-shorter query-array local suffix append, create PR14B immediately after
+   PR14 and require a verified branch link before filing that row.
 7. Consume the latest PR17 report. If medium-confidence "not product-owned"
    evidence is enough, reclassify seed `1020002`; otherwise run one focused
-   browser/provider ownership diagnostic with runtime fingerprints and exact
-   raw update capture. Require seed `1020002` to pass or be explicitly
-   reclassified, then shape PR17 and add a verified branch link only if a
-   product branch is still warranted.
-8. Treat `5700084` as PR5C-covered plus strict oracle/exact-content drift. Do
+   browser/provider ownership diagnostic with runtime fingerprints and exact raw
+   update capture. Add a verified PR17 branch link only if a product branch is
+   still warranted.
+8. Run the generated `5200005` and `1060015` next actions before assigning those
+   signals to PR05, PR07B, PR13, PR15, PR17, PR18, or a new reload/post-save PR.
+9. Treat `5700084` as PR5C-covered plus strict oracle/exact-content drift. Do
    not name PR18A or PR5D from that seed. Source-reduce fresh strict-expansion
-   residuals, including invalid/deprecated/parser-stress delete divergence such
-   as seed `5200021`, and nested/move/delete focused-shard residuals before
-   naming any PR18x branch; compare against PR5, PR11, PR13, PR14, PR15, and
-   PR17 first.
-9. Rebase or recreate each intended PR branch on the intended upstream base if
-   that base moves.
-10. Regenerate branch graph/containment evidence and adjacent
+   residuals before naming any PR18x branch.
+10. Rebase or recreate each intended PR branch on the intended upstream base if
+    that base moves.
+11. Regenerate branch graph/containment evidence and adjacent
     range-diffs/diffstats from the actual filing repo.
-11. Rerun focused checks, touched-file lint, and `git diff --check` on every
+12. Rerun focused checks, touched-file lint, and `git diff --check` on every
     imported/rebased branch.
-12. Keep dirty analysis-only artifacts out of product PR branches.
-13. Rebuild the combined stack from explicit PR01-PR06A heads, PR02A, PR6B as
-    a sidecar, the existing PR07A-PR15C chain, the PR17 `1020002` decision, and
-    any accepted source-reduced residual branches. Rerun bounded final-stack
-    validation against the rebuilt stack and count it only if it reaches
-    action-level product coverage and proves PR6B was included.
-14. Block filing while the latest trend packet's current likely-real signal is
-    unclassified, and block again if any additional visible likely-real
-    failures appear. The current raw novelty file is empty, so do not claim a
-    named current signal from this collection without a fresh nonempty monitor
-    snapshot.
+13. Keep dirty analysis-only artifacts out of product PR branches.
+14. Rebuild the combined stack from explicit PR01-PR06A heads, PR02A, PR6B as
+    a sidecar, PR07A-PR15C, the PR13 finer split or audited fallback decision,
+    PR14B if needed, the PR17 `1020002` decision, and any accepted
+    source-reduced residual branches. Rerun bounded final-stack validation
+    against the rebuilt stack and count it only if it reaches action-level
+    product coverage and proves PR6B was included.
+15. Block filing while the latest trend packet's current likely-real signal is
+    unclassified, and block again if any additional visible likely-real failures
+    appear. This collection's `raw/novelty-status.md` is empty, so do not claim
+    a named current signal without a fresh nonempty monitor snapshot.
 
 Existing fuzz infrastructure can continue only where healthy, and bounded
 source reduction is allowed after the environment preflight is healthy. Do not
-run broad/final-stack fuzz while the PR6B GitHub branch link, the PR17 decision,
-the reload/post-save evidence gate, rebuilt validation, and branch-link audits
-are open. The latest trend packet reports `likely_real_max: 1` and `0` current
-quality issues, while this collection's `raw/novelty-status.md` is empty.
-Reduce/classify the reload/post-save residuals, especially `5200005` and any
-still-open `5300002`, and source-reduce `f3f7e9990751` / seed `1060015` before
-assigning it to PR05, PR07B, PR13, or PR15. The duplicate/noise evidence keeps
-startup/no-product noise classified as control-plane work. None of that is
+run broad/final-stack fuzz while PR14 coverage, PR6B GitHub branch link, PR13
+finer branch links or fallback decision, the PR17 decision, the `5200005` and
+`1060015` evidence gates, rebuilt validation, and branch-link audits are open.
+None of the current trend, duplicate/noise, or residual-reducer evidence is
 final-stack fuzz validation or a filing unblocker.
