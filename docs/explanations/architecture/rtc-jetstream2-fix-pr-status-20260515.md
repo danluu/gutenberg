@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T21:18:56Z`
+Snapshot time: `2026-05-17T21:25:42Z`
 
 Trigger event:
-`pr-split-2026-05-17T21-18-13Z-20260517T210532Z`
+`duplicate-noise-2026-05-17T21-18-04Z-148`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T21-18-13Z-20260517T210532Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T21-18-04Z-148/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -78,7 +78,7 @@ first-divergence proof. Rich-text/parser/linebreak reductions must compare
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T21:18:52Z`.
+Remote status was collected at `2026-05-17T21:25:37Z`.
 
 The fix-planning repo is checked out at:
 
@@ -108,7 +108,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T21:18:56Z` from fetched
+The branch-link audit was generated at `2026-05-17T21:25:42Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -205,7 +205,7 @@ substitute an older aggregate branch as if it were the current PR content.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T21:18:52Z
+collected_at_utc: 2026-05-17T21:25:37Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T205339Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -215,14 +215,16 @@ The raw `novelty-status.md` collected for this run is nonempty and gives the
 freshest bounded control-plane view:
 
 ```text
-novelty updated: 2026-05-17T21:17:47.369Z
-coverage files: 47759
-records seen: 73930
-current-run records: 2
+novelty updated: 2026-05-17T21:25:04.985Z
+coverage files: 47782
+records seen: 73960
+current-run records: 9
 current-run records by group:
-  novelty-ws-real-user-save-reload=2
-current-run successful records: 2
-current-run pre-action startup failures: 0
+  novelty-ws-parser-serialization=6
+  novelty-ws-parser-transform=1
+  novelty-ws-real-user-editing=2
+current-run successful records: 3
+current-run pre-action startup failures: 1
 unmet goals: 5
 current active signatures: 0
 current active product-evidence signatures: 0
@@ -234,11 +236,12 @@ current drain top semantic family: reload_rejoin_awareness_stall
 historical top duplicate family share: 0.3461
 health: ok
 enabled groups:
+  novelty-ws-block-gauntlet: ws, lanes=1
   novelty-ws-parser-serialization: ws, lanes=1
-  novelty-ws-parser-transform: ws, lanes=1
   novelty-ws-real-user-editing: ws, lanes=2
 paused groups:
   novelty-http-persistence-probe
+  novelty-ws-parser-transform
   novelty-ws-real-user-save-reload
   novelty-ws-real-user-rich-text
 ```
@@ -247,41 +250,45 @@ This is current fuzz/control-plane health, not final-stack validation and not a
 no-bugs claim. Active current-run triage is clean at the snapshot. The drain
 view intentionally preserves one product-evidence `reload_rejoin_awareness_stall`
 representative while holding noisy real-user save/reload and rich-text
-producers in duplicate/noise pauses.
+producers in duplicate/noise pauses. The latest pass also paused
+`novelty-ws-parser-transform` for current-run no-product startup noise after a
+materialization-floor re-enable; that is control-plane churn to watch, not new
+PR-content evidence.
 
-The latest trend packet was generated at `2026-05-17T21:07:11Z` from monitor
-data through `2026-05-17T21:04:16Z`:
+The latest trend packet was generated at `2026-05-17T21:17:34Z` from monitor
+data through `2026-05-17T21:14:17Z`:
 
 ```text
-monitor passes: 2111
-coverage files: 272 -> 47715
-coverage files delta: 47443
-unmet goals: 6
+monitor passes: 2113
+coverage files: 272 -> 47749
+coverage files delta: 47477
+unmet goals: 5
 likely_real_max: 4
 duplicate_share_current_last: 1
 duplicate_share_historical_last: 0.3461
 summary startup failures last: 0
 quality issues last: 0
-memory free: 417 GB
-load averages: 41.78 / 50.52 / 56.96 on 64 cores
+memory free: 411.9 GB
+load averages: 95.52 / 77.13 / 66.75 on 64 cores
 trend enabled groups current:
-  novelty-ws-real-user-save-reload,
-  novelty-ws-real-user-rich-text
+  novelty-ws-real-user-editing,
+  novelty-ws-parser-transform,
+  novelty-ws-parser-serialization
 latest fuzz level mix:
-  browser-e2e=33 lanes/26 groups;
+  browser-e2e=31 lanes/27 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5358148
-browser-e2e likely-real findings: 610 over 1939.8 runner-hours
+total fuzz-level test executions: 5360643
+browser-e2e likely-real findings: 612 over 1943.4 runner-hours
 largest unmet goals:
-  reload-post-action 1043/2000,
-  title-save-reload 499/1000,
-  body-save-reload 558/1000,
-  real-user-editing success 578/1000,
-  ui-format-paragraph 1625/2000
+  reload-post-action 1054/2000,
+  title-save-reload 510/1000,
+  body-save-reload 569/1000,
+  real-user-editing success 585/1000,
+  ui-format-paragraph 1644/2000
 ```
 
-The novelty state at `21:17:47Z` supersedes the trend packet for current
+The novelty state at `21:25:04Z` supersedes the trend packet for current
 enabled/paused groups. The trend packet remains graph-derived evidence for
 coverage, load, and fuzzing effectiveness. Browser E2E remains the only level
 with confirmed likely-real findings in the trend packet, but lower-level lanes
@@ -342,12 +349,14 @@ sealed and that the remaining leak was producer/control-plane churn in
   avoid hiding likely-real evidence.
 
 Current duplicate/noise status after the action: save/reload and rich-text are
-paused as duplicate/noise-dominated, product-evidence representatives remain
-visible by design, and live analysis has moved on to cleaner parser groups.
-Remaining control-plane risk is residual churn between the max-enabled-group
-guard and materialization-floor guard when only clean one-lane replacements are
-available; the latest status does not show it re-enabling the noisy
-save/reload or rich-text groups.
+still paused as duplicate/noise-dominated, product-evidence representatives
+remain visible by design, and the latest current-run active view has zero
+actionable or product-evidence signatures. The remaining control-plane risk is
+now visible in the latest pass: materialization-floor/max-enabled-group churn
+briefly re-enabled `novelty-ws-parser-transform`, then paused it for
+no-product `pre_action_bootstrap_stall` startup noise. The important guardrail
+still holds for this snapshot: the noisy save/reload and rich-text groups were
+not re-enabled through coverage recommendations.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -377,7 +386,7 @@ These must not be described as fixed or filing-ready.
 | PR13 finer split | PR13A/B0/B1/B2/B3 target; repaired PR13A/B/C fallback links | preferred source split is finer than the repaired audited fallback links | Publish/fetch/audit PR13B0/B1/B2/B3 before replacing repaired PR13B/C fallback rows |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzz, filing, and rebuilt validation only | Revisit only after rebuilt validation produces fresh product evidence newer than terminal/downscope classifications |
 | Pre-save search/live document collapse | seed `961308` / `ddf9559af37e`; run `0932bed35c7a` only if red or ambiguous | evidence-only; not in active split | Run one bounded owner comparison against PR06A-D, PR06E, PR07B0, PR07B1, and PR07C after PR07 stops consuming E2E capacity |
-| Duplicate/noise control-plane recycling | duplicate synthesis/action `20260517T204820Z`; novelty status `2026-05-17T21:17:47.369Z` | scheduler and family-cap fixes are applied and restarted; save/reload and rich-text remain paused while preserving product evidence | Watch for 30-45 minutes equivalent evidence: no unsafe startup/noise bypass, no materialization-floor re-enable of noisy groups, and product-evidence representatives still visible |
+| Duplicate/noise control-plane recycling | duplicate synthesis/action `20260517T204820Z`; novelty status `2026-05-17T21:25:04.985Z` | scheduler and family-cap fixes are applied and restarted; save/reload and rich-text remain paused while preserving product evidence; parser-transform was re-enabled by the materialization floor and then paused for no-product startup noise | Watch for 30-45 minutes equivalent evidence: no unsafe startup/noise bypass, no re-enable of save/reload or rich-text through coverage recommendations, bounded handling of parser-transform/max-enabled churn, and product-evidence representatives still visible |
 
 ## Filing Gates And Current Recommendation
 
