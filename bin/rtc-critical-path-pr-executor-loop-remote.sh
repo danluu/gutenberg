@@ -948,7 +948,7 @@ launch_continuation_jobs() {
 	if allow_critical_browser_preflight; then
 		launch_continuation_job \
 			"pr07c-browser-env" \
-			"pr07c-browser-env" \
+			"pr07c-browser-env-repair-v2" \
 			"pr07c-browser-env|pr07c|browser-env" \
 			"PR07C browser-environment repair: debug and fix collaboration readiness null so owner-proof replay can reach seeded action/reload/checkpoint phase. Reserve unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT if running browser checks; write validation.tsv/report.md/classification.tsv and repair-branch.txt."
 	fi
