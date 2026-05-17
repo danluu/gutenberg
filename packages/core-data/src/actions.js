@@ -8,7 +8,11 @@ import { v4 as uuid } from 'uuid';
  * WordPress dependencies
  */
 import apiFetch from '@wordpress/api-fetch';
-import { __unstableSerializeAndClean, parse } from '@wordpress/blocks';
+import {
+	__unstableSerializeAndClean,
+	getBlockType,
+	parse,
+} from '@wordpress/blocks';
 import { addQueryArgs } from '@wordpress/url';
 import deprecated from '@wordpress/deprecated';
 
@@ -38,9 +42,17 @@ function isStaleCRDTDocumentError( error ) {
 	);
 }
 
+const SAVE_PROJECTION_POST_TYPES = new Set( [ 'post', 'page' ] );
+
 function getSerializedCRDTBlockContent( crdtRecord ) {
 	return Array.isArray( crdtRecord?.blocks )
 		? __unstableSerializeAndClean( crdtRecord.blocks ).trim()
+		: undefined;
+}
+
+function getSerializedBlockContent( blocks ) {
+	return Array.isArray( blocks ) && blocks.length
+		? __unstableSerializeAndClean( blocks ).trim()
 		: undefined;
 }
 
@@ -60,6 +72,103 @@ function areSerializedBlocksSuffix( suffixBlocks, fullBlocks ) {
 			getSerializedBlockValue( block ) ===
 				getSerializedBlockValue( fullBlocks[ offset + index ] )
 	);
+}
+
+function areParsedBlocksValid( blocks ) {
+	return blocks.every(
+		( block ) =>
+			block.isValid !== false &&
+			block.name !== 'core/missing' &&
+			!! getBlockType( block.name ) &&
+			areParsedBlocksValid( block.innerBlocks ?? [] )
+	);
+}
+
+function doesBlockContentMatchBlocks(
+	value,
+	blocks,
+	{ requireValidBlocks = false } = {}
+) {
+	if ( ! Array.isArray( blocks ) || ! blocks.length ) {
+		return false;
+	}
+
+	if ( typeof value !== 'string' ) {
+		return false;
+	}
+
+	const valueBlocks = parse( value );
+
+	return (
+		valueBlocks.length > 0 &&
+		( ! requireValidBlocks || areParsedBlocksValid( valueBlocks ) ) &&
+		fastDeepEqual(
+			getComparableBlockTree( blocks ),
+			getComparableBlockTree( valueBlocks )
+		)
+	);
+}
+
+function isMalformedBlockContent( value ) {
+	if ( typeof value !== 'string' || ! value.includes( '<!-- wp:' ) ) {
+		return false;
+	}
+
+	const blocks = parse( value );
+
+	if ( ! blocks.length || ! areParsedBlocksValid( blocks ) ) {
+		return true;
+	}
+
+	return __unstableSerializeAndClean( blocks ).trim() !== value.trim();
+}
+
+function getCleanBlockContentForEvaluatedSave(
+	kind,
+	name,
+	recordId,
+	editedRecord,
+	evaluatedContent
+) {
+	if (
+		typeof window === 'undefined' ||
+		! window._wpCollaborationEnabled ||
+		kind !== 'postType' ||
+		! SAVE_PROJECTION_POST_TYPES.has( name ) ||
+		! recordId
+	) {
+		return evaluatedContent;
+	}
+
+	if ( ! isMalformedBlockContent( evaluatedContent ) ) {
+		return evaluatedContent;
+	}
+
+	const syncBlocks = getSyncManager()?.getCRDTRecordData?.(
+		`${ kind }/${ name }`,
+		recordId
+	)?.blocks;
+	const blockCandidates = [ editedRecord?.blocks, syncBlocks ].filter(
+		( blocks ) => Array.isArray( blocks ) && blocks.length
+	);
+
+	if ( ! blockCandidates.length ) {
+		return evaluatedContent;
+	}
+
+	for ( const blocks of blockCandidates ) {
+		const cleanContent = getSerializedBlockContent( blocks );
+
+		if (
+			doesBlockContentMatchBlocks( cleanContent, blocks, {
+				requireValidBlocks: true,
+			} )
+		) {
+			return cleanContent;
+		}
+	}
+
+	return evaluatedContent;
 }
 
 function getCRDTRawContent( crdtRecord ) {
@@ -102,7 +211,7 @@ function getSaveProjectionCRDTContent( kind, name, recordId ) {
 		typeof window === 'undefined' ||
 		! window._wpCollaborationEnabled ||
 		kind !== 'postType' ||
-		! [ 'post', 'page' ].includes( name ) ||
+		! SAVE_PROJECTION_POST_TYPES.has( name ) ||
 		! recordId
 	) {
 		return;
@@ -1067,10 +1176,20 @@ export const saveEntityRecord =
 			// (Function edits that should be evaluated on save to avoid expensive computations on every edit.)
 			for ( const [ key, value ] of Object.entries( record ) ) {
 				if ( typeof value === 'function' ) {
-					let evaluatedValue = value(
-						select.getEditedEntityRecord( kind, name, recordId )
+					const editedRecord = select.getEditedEntityRecord(
+						kind,
+						name,
+						recordId
 					);
+					let evaluatedValue = value( editedRecord );
 					if ( key === 'content' && entityConfig.syncConfig ) {
+						evaluatedValue = getCleanBlockContentForEvaluatedSave(
+							kind,
+							name,
+							recordId,
+							editedRecord,
+							evaluatedValue
+						);
 						const crdtContent = getSaveProjectionCRDTContent(
 							kind,
 							name,
