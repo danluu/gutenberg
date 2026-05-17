@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T19:55:41Z`
+Snapshot time: `2026-05-17T20:00:22Z`
 
 Trigger event:
-`pr-split-2026-05-17T19-55-09Z-20260517T194638Z`
+`duplicate-noise-2026-05-17T19-58-34Z-144`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T19-55-09Z-20260517T194638Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T19-58-34Z-144/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -105,26 +105,28 @@ disk-preflight-only output, stale manifests, and duplicate active-slot rows are
 not durable progress while actionable Parallel Progress Gate rows remain.
 
 The duplicate/noise issue is a control-plane status item, not a product split
-change. The `20260517T185417Z` feedback action completed the consumer-side cap:
-the live-analysis monitor and analysis tier now honor current-output semantic
-family caps before launching first-level Codex analysis, both scripts passed
-`node --check`, and product-evidence signatures stayed visible. The latest
-`2026-05-17T19:53:10.327Z` novelty snapshot is on
-`run-20260517T194224Z`, has one active-current product-evidence signature in
-the `reload_rejoin_awareness_stall` family, and still has `0` visible
-likely-real failures. It paused `novelty-ws-real-user-save-reload` and
-`novelty-ws-real-user-editing` for startup-noise cooldown and left only
-`novelty-ws-real-user-rich-text` enabled. The newest
-`duplicate-noise-20260517T193222Z-synthesis.md` says strict no-product startup
-noise is mostly fixed, but capped product-evidence duplicate families can still
-remain actionable until live analysis materializes terminal `family-capped`
-state. The smallest next fix is live-analysis housekeeping that invokes the
-existing analysis tier once for capped duplicates, preserves product evidence,
-and avoids launching new Codex for those capped siblings.
+change. The `duplicate-noise-20260517T193222Z-synthesis.md` report identified
+the remaining consumer leak: capped product-evidence duplicate families could
+stay actionable until live analysis materialized terminal `family-capped`
+state. The matching `duplicate-noise-20260517T193222Z-feedback-action.md`
+implemented that bounded housekeeping path in
+`rtc-browser-fuzz-live-analysis-monitor.mjs` and
+`rtc-browser-fuzz-analysis-tier.mjs`; both scripts passed `node --check`, the
+active live-analysis tmux session was restarted, strict startup queued/running
+analysis dropped to `0`, and repeated `reload_rejoin_awareness_stall` peers are
+now family-capped while the product-evidence representative stays visible. The
+latest `2026-05-17T20:00:00.060Z` novelty snapshot is on
+`run-20260517T194224Z`, has one active-current product-evidence
+`reload_rejoin_awareness_stall` signature, eight current family-capped
+siblings, `0` no-product actionable signatures, and `0` visible likely-real
+failures. It keeps `novelty-ws-real-user-rich-text` enabled, adds the
+`novelty-http-persistence-probe` canary, and keeps the real-user save/reload
+and editing groups in startup-noise cooldown. Remaining risk is producer-side
+raw noise recurrence, not a PR split change.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T19:55:36Z`.
+Remote status was collected at `2026-05-17T20:00:18Z`.
 
 The fix-planning repo is checked out at:
 
@@ -154,7 +156,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T19:55:41Z` from fetched
+The branch-link audit was generated at `2026-05-17T20:00:22Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. The fresh
 Cycle 293 audit is publication-shape evidence for local refs; it does not by
@@ -238,51 +240,54 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T19:55:36Z
+collected_at_utc: 2026-05-17T20:00:18Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T194224Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The raw `novelty-status.md` snapshot was updated at
-`2026-05-17T19:53:10.327Z`:
+`2026-05-17T20:00:00.060Z`:
 
 ```text
-coverage files: 47370
-total records seen: 73211
-records processed this pass: 54
-new behavioral feature keys this pass: 1
-new CDP coverage hashes this pass: 1
+coverage files: 47404
+total records seen: 73279
+records processed this pass: 17
+new behavioral feature keys this pass: 2
+new CDP coverage hashes this pass: 2
 unmet goals: 6
-headroom for adding groups: no
-load1: 65.59 / 64 cores
-memory: 412.4G free / 492.0G total
-quality issues: 0
+headroom for adding groups: yes
+load1: 31.82 / 64 cores
+memory: 420.9G free / 492.0G total
+quality issues: 1
 active-current actionable signatures: 1
 active-current likely-real visible: 0
 active-current product-evidence signatures: 1
+active-current family-capped signatures: 8
+active-current no-product actionable signatures: 0
 current-drain actionable signatures: 1
 current-drain likely-real visible: 0
-enabled groups: novelty-ws-real-user-rich-text
+enabled groups: novelty-ws-real-user-rich-text,
+  novelty-http-persistence-probe
 paused groups: novelty-ws-real-user-save-reload,
   novelty-ws-lifecycle, novelty-ws-real-user-editing
 recommended groups: novelty-ws-real-user-save-reload,
   novelty-ws-real-user-editing, novelty-ws-real-user-rich-text
 top current semantic family: reload_rejoin_awareness_stall
-health: ok
+health: warning: duplicate/noise dominated current triage yield
 ```
 
 This is health/triage evidence only. It reports no visible current-run
 likely-real product failures, but it is not final-stack validation and does not
 make any PR filing-ready. The active current-run and current-drain triage
-scopes now show one product-evidence `reload_rejoin_awareness_stall` signature
-and no visible likely-real classification. That is a control-plane/triage
-signal, not proof that product-evidence reload/rejoin, save/reload/autosave,
-revision, timeout, unknown, assertion, convergence, or operation-witness
-families can be hidden. Historical triage remains dominated by prior
-product-evidence duplicate families and no-product startup noise; it should
-guide control-plane cleanup but must not be reported as active current product
-failure.
+scopes now show one product-evidence `reload_rejoin_awareness_stall` signature,
+eight family-capped siblings, no no-product actionable signatures, and no
+visible likely-real classification. That is a control-plane/triage signal, not
+proof that product-evidence reload/rejoin, save/reload/autosave, revision,
+timeout, unknown, assertion, convergence, or operation-witness families can be
+hidden. Historical triage remains dominated by prior product-evidence duplicate
+families and no-product startup noise; it should guide control-plane cleanup
+but must not be reported as active current product failure.
 
 The latest trend packet was generated at `2026-05-17T19:47:55Z` from monitor
 data through `2026-05-17T19:45:23Z`:
@@ -317,11 +322,13 @@ product-bug count. The raw novelty snapshot is newer than the trend packet and
 supersedes the trend packet's exact current-health counters when they differ.
 Browser E2E remains the only level with confirmed likely-real findings in the
 trend packet, but lower-level lanes are under-triaged and should not be declared
-useless from zero likely-real output. The latest novelty snapshot says there is
-no headroom for adding groups and shows load slightly above the core count, so
-prefer startup-stall reduction, PR07 runtime preflight, live-analysis
-family-cap housekeeping, and bounded lower-level targets with clear oracles over
-broad browser concurrency increases.
+useless from zero likely-real output. The raw novelty snapshot is newer than the
+trend packet: it now reports group headroom and lower load, but still has a
+duplicate/noise warning and startup-noise cooldowns on two recommended
+real-user groups. Prefer startup-stall reduction, PR07 runtime preflight,
+completed live-analysis family-cap housekeeping, producer-noise follow-up only
+if raw no-product noise recurs, and bounded lower-level targets with clear
+oracles over broad browser concurrency increases.
 
 ## Status-Persona Analysis
 
@@ -361,26 +368,25 @@ collaboration-readiness repair/replay job and, if needed, a small non-Docker
 manifest/deferred harvest; it still rejects broad fuzzing, PR17/PR18/PR18x
 automation, and raw PR07D fuzz.
 
-The latest duplicate/noise feedback-action file,
-`duplicate-noise-20260517T185417Z-feedback-action.md`, reports that
-`rtc-browser-fuzz-live-analysis-monitor.mjs` and
-`rtc-browser-fuzz-analysis-tier.mjs` were patched on the remote fuzz workspace.
-Both passed `node --check`; bounded live-monitor passes after the patch skipped
-all active records as `skipped-analysis-no-actionable-signature`; after restart
-there were no strict startup signatures queued/running/analysis-gated, no
-analysis/deep-analysis jobs queued/running, and product-evidence signatures
-remained visible.
-
 The newest duplicate/noise synthesis,
 `duplicate-noise-20260517T193222Z-synthesis.md`, says strict no-product
-`pre_action_bootstrap_stall` is mostly fixed. It now prioritizes a smaller
-live-analysis housekeeping patch before producer-pause work: when signatures
-are actionable only because current-output family-cap state has not been
-materialized, run `bin/rtc-browser-fuzz-analysis-tier.mjs <runDir> --once` and
-refresh gate-only triage so duplicates become terminal `family-capped` instead
-of staying actionable. Do not suppress product-evidence failures; if fresh
-real-user lanes keep replenishing the family after that validation, follow with
-a novelty/supervisor producer-pause patch.
+`pre_action_bootstrap_stall` is mostly fixed and identified the remaining
+consumer leak: current-output family caps could leave duplicate
+product-evidence signatures actionable until terminal `family-capped` state was
+materialized.
+
+The latest duplicate/noise feedback-action file,
+`duplicate-noise-20260517T193222Z-feedback-action.md`, implemented that bounded
+housekeeping path. It patched `rtc-browser-fuzz-live-analysis-monitor.mjs` and
+`rtc-browser-fuzz-analysis-tier.mjs` so live analysis can run the existing
+analysis tier once in no-Codex family-cap-only mode, then refresh gate-only
+triage. Both scripts passed `node --check`; the active live-analysis tmux
+session was restarted; strict startup queued in triage, analysis, and deep
+analysis is `0`; queued `reload_rejoin_awareness_stall` duplicates are `0`;
+and one active product-evidence representative remains visible intentionally.
+Remaining risk is producer-side raw noise recurrence; if raw no-product startup
+or unknown noise keeps accumulating, the next safe change is the novelty
+producer pause/rotation policy from the earlier synthesis.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -390,8 +396,8 @@ split", old PR13 review-ref warnings, old enabled-group claims, and "do not add
 PR06B" recommendations are superseded by the repaired PR13 audit links, the
 Cycle 282+ PR07B0/PR07B1 split/adoption proof, the Cycle 293/Cycle 294
 publication-shape evidence, PR06B/PR07C sidecar placement after PR07B1, PR05D's
-real slot after PR05C, the completed consumer-side duplicate/noise cap, and the
-newer live-analysis housekeeping follow-up.
+real slot after PR05C, and the completed duplicate/noise consumer-side
+family-cap plus live-analysis housekeeping fixes.
 
 ## Deferred Or Evidence-Only Work
 
@@ -414,7 +420,7 @@ These must not be described as fixed or filing-ready.
 | Rich-text formatted suffix corruption | diagnostic candidates and prior deferred refs | evidence-only; current owner-comparison keeps it out of active PR split and out of PR18/PR18x | Compare against PR05B/PR05C first and recover exact replay artifact or emitted delta before naming any later product owner |
 | Pre-save search/live document collapse | seed `961308` / `ddf9559af37e`; only run `0932bed35c7a` if red or ambiguous | evidence-only; not in active split; latest split-persona keeps the row actionable and says it must not block behind `1020002` | Run one bounded owner comparison against PR06, PR06A, PR07B0, PR07B1, and PR07C after PR07 stops consuming E2E capacity |
 | Broader HTTP polling room-isolation residuals | PR02A sidecar plus stale deferred relaunches | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred | Publish/fetch/audit PR02A before filing; promote additional residuals only with narrowed healthy-user product evidence |
-| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T185417Z-feedback-action.md`; `duplicate-noise-20260517T193222Z-synthesis.md`; nonempty `novelty-status.md` at `2026-05-17T19:53:10.327Z` | consumer-side family-cap/session-gating fix is applied and validated; latest novelty snapshot has one active-current product-evidence `reload_rejoin_awareness_stall` signature, `0` visible likely-real failures, health `ok`, and startup-noise pauses on the real-user save/reload and editing groups; latest synthesis says strict startup noise is mostly fixed but durable `family-capped` materialization can still leak actionable product-evidence duplicates; no product split change | Patch live-analysis housekeeping so capped duplicate signatures invoke one analysis-tier materialization pass and refresh gate-only triage; preserve product evidence and avoid broad suppression, then decide whether a novelty/supervisor producer-pause patch is still needed |
+| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T193222Z-synthesis.md`; `duplicate-noise-20260517T193222Z-feedback-action.md`; nonempty `novelty-status.md` at `2026-05-17T20:00:00.060Z` | consumer-side family-cap/session-gating and live-analysis housekeeping fixes are applied and validated; latest novelty snapshot has one active-current product-evidence `reload_rejoin_awareness_stall` signature, eight family-capped siblings, `0` no-product actionable signatures, `0` visible likely-real failures, a duplicate/noise health warning, rich-text plus HTTP persistence groups enabled, and startup-noise pauses on the real-user save/reload and editing groups; no product split change | Preserve product evidence and avoid broad suppression; watch for producer-side raw no-product or unknown noise recurrence, then apply the novelty producer pause/rotation policy only if the completed consumer fixes are insufficient |
 
 ## Filing Gates And Current Recommendation
 
