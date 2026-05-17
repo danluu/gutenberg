@@ -18,15 +18,6 @@ SH
 chmod +x "$TMUX_WRAP/tmux"
 export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
 
-load_too_high() {
-	local load_average cores multiplier
-	load_average=$(awk '{ print $1 }' /proc/loadavg 2>/dev/null || printf '0')
-	cores=$(nproc 2>/dev/null || printf '1')
-	multiplier="${RTC_LOWER_LEVEL_MAX_LOAD_MULTIPLIER:-1.20}"
-	awk -v load_average="$load_average" -v cores="$cores" -v multiplier="$multiplier" \
-		'BEGIN { exit !(load_average > cores * multiplier) }'
-}
-
 write_event() {
 	local events_path="$1"
 	local seed_start="$2"
@@ -90,7 +81,6 @@ run_loop() {
 	local placement_case_count="${RTC_LOWER_LEVEL_PLACEMENT_CASE_COUNT:-${GUTENBERG_RTC_RICH_TEXT_PLACEMENT_CASE_COUNT:-500}}"
 	local sleep_seconds="${RTC_LOWER_LEVEL_SLEEP_SECONDS:-0}"
 	local failure_sleep_seconds="${RTC_LOWER_LEVEL_FAILURE_SLEEP_SECONDS:-30}"
-	local load_sleep_seconds="${RTC_LOWER_LEVEL_LOAD_SLEEP_SECONDS:-30}"
 	local timeout_seconds="${RTC_LOWER_LEVEL_TIMEOUT_SECONDS:-1200}"
 	local nice_level="${RTC_LOWER_LEVEL_NICE:-15}"
 	local generation_dir="$run_root/${GROUP_NAME}-gen-0-$run_started"
@@ -141,8 +131,6 @@ run_loop() {
 		seed_start=$(( seed_start + seed_count ))
 		if [ "$exit_code" -ne 0 ]; then
 			sleep "$failure_sleep_seconds"
-		elif load_too_high; then
-			sleep "$load_sleep_seconds"
 		elif [ "$sleep_seconds" -gt 0 ]; then
 			sleep "$sleep_seconds"
 		fi

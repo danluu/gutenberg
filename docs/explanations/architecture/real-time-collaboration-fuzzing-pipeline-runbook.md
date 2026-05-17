@@ -334,10 +334,13 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-deferred-work-promotion-loop-remote.sh` turns deferred bug families
     into local candidate branches, targeted diagnostics, or explicit downscope
     reports. It reads current fuzz output and PR-split reports, creates one
-    worktree per job, and keeps default Codex concurrency conservative.
+    worktree per job, and keeps default Codex concurrency conservative. It does
+    not apply an independent load-average launch gate; resource pressure is
+    observed in status/context and handled by the shared scaling policy.
 -   `rtc-pr-finalization-loop-remote.sh` audits candidate branches and produces
     branch-split corrections, diffstats, validation notes, and push commands for
-    the local host. It does not push from Jetstream.
+    the local host. It does not push from Jetstream and does not independently
+    throttle analysis jobs based on load average.
 -   `rtc-jetstream-guard-remote.sh` is the top-level guard. Run it in tmux and
     let it restart missing sessions instead of manually restarting individual
     fuzzers. The guard supervises coverage-guided, strict-expansion, focused
@@ -391,8 +394,6 @@ Useful controls:
 -   `RTC_DEFERRED_WORK_CYCLE_SLEEP_SECONDS=900`: delay between queue passes.
 -   `RTC_DEFERRED_WORK_MIN_FAMILY_INTERVAL_SECONDS=1800`: per-family launch
     cooldown.
--   `RTC_DEFERRED_WORK_MAX_LOAD_MULTIPLIER=1.20`: skip launching new jobs when
-    1-minute load is above this multiple of core count.
 -   `RTC_DEFERRED_WORK_FAMILIES="..."`: override the family list.
 
 `rtc-pr-finalization-loop-remote.sh` runs as `rtc-pr-finalization-loop`, writes
@@ -409,8 +410,11 @@ Useful controls:
 -   `RTC_PR_FINALIZATION_CYCLE_SLEEP_SECONDS=1200`: delay between finalization
     passes.
 -   `RTC_PR_FINALIZATION_MIN_INTERVAL_SECONDS=1800`: launch cooldown.
--   `RTC_PR_FINALIZATION_MAX_LOAD_MULTIPLIER=1.30`: skip launching new
-    finalization jobs under high load.
+
+These Codex-heavy loops are intentionally not separately throttled by load
+average. The standard policy is: decide the work mix first, keep analysis moving
+unless it launches CPU-intensive tests, and let the resource autoscaler scale
+browser/e2e materialization when the machine is under pressure.
 
 ## Stale wp-env Cleanup
 

@@ -40,7 +40,6 @@ FAMILIES=${RTC_DEFERRED_WORK_FAMILIES:-"reload-hydration pre-save-search-live-co
 MAX_ACTIVE_JOBS=${RTC_DEFERRED_WORK_MAX_ACTIVE_JOBS:-2}
 CYCLE_SLEEP_SECONDS=${RTC_DEFERRED_WORK_CYCLE_SLEEP_SECONDS:-900}
 MIN_FAMILY_INTERVAL_SECONDS=${RTC_DEFERRED_WORK_MIN_FAMILY_INTERVAL_SECONDS:-1800}
-MAX_LOAD_MULTIPLIER=${RTC_DEFERRED_WORK_MAX_LOAD_MULTIPLIER:-1.20}
 CODEX_MODEL=${RTC_DEFERRED_WORK_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_DEFERRED_WORK_CODEX_REASONING_EFFORT:-xhigh}
 
@@ -72,13 +71,6 @@ active_deferred_sessions() {
 family_active() {
 	local family=$1
 	tmux ls 2>/dev/null | awk -F: -v prefix="rtc-deferred-job-$family-" 'index($1, prefix) == 1 { found = 1 } END { exit found ? 0 : 1 }'
-}
-
-load_too_high() {
-	local load_average cores
-	load_average=$(awk '{ print $1 }' /proc/loadavg 2>/dev/null || printf '0')
-	cores=$(nproc 2>/dev/null || printf '1')
-	awk -v load_average="$load_average" -v cores="$cores" -v multiplier="$MAX_LOAD_MULTIPLIER" 'BEGIN { exit !(load_average > cores * multiplier) }'
 }
 
 recently_launched() {
@@ -464,12 +456,6 @@ log "deferred work promotion loop started pid=$$"
 while true; do
 	write_deferred_queue
 	write_status
-
-	if load_too_high; then
-		log "load guard active; skipping launches this cycle"
-		sleep "$CYCLE_SLEEP_SECONDS"
-		continue
-	fi
 
 	launched_any=0
 	last_launched_family=""

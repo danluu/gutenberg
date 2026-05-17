@@ -35,7 +35,6 @@ STATUS="$BASE/current-finalization-status.md"
 MAX_ACTIVE_JOBS=${RTC_PR_FINALIZATION_MAX_ACTIVE_JOBS:-1}
 CYCLE_SLEEP_SECONDS=${RTC_PR_FINALIZATION_CYCLE_SLEEP_SECONDS:-1200}
 MIN_INTERVAL_SECONDS=${RTC_PR_FINALIZATION_MIN_INTERVAL_SECONDS:-1800}
-MAX_LOAD_MULTIPLIER=${RTC_PR_FINALIZATION_MAX_LOAD_MULTIPLIER:-1.30}
 CODEX_MODEL=${RTC_PR_FINALIZATION_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_PR_FINALIZATION_CODEX_REASONING_EFFORT:-xhigh}
 
@@ -49,13 +48,6 @@ log() {
 
 active_finalization_sessions() {
 	tmux ls 2>/dev/null | awk -F: '/^rtc-pr-finalize-job-/ { count++ } END { print count + 0 }'
-}
-
-load_too_high() {
-	local load_average cores
-	load_average=$(awk '{ print $1 }' /proc/loadavg 2>/dev/null || printf '0')
-	cores=$(nproc 2>/dev/null || printf '1')
-	awk -v load_average="$load_average" -v cores="$cores" -v multiplier="$MAX_LOAD_MULTIPLIER" 'BEGIN { exit !(load_average > cores * multiplier) }'
 }
 
 recently_launched() {
@@ -230,11 +222,6 @@ write_status() {
 log "PR finalization loop started pid=$$"
 while true; do
 	write_status
-	if load_too_high; then
-		log "load guard active; skipping finalization launch"
-		sleep "$CYCLE_SLEEP_SECONDS"
-		continue
-	fi
 	if [ "$(active_finalization_sessions)" -lt "$MAX_ACTIVE_JOBS" ] && ! recently_launched; then
 		launch_finalization_job || true
 	else
