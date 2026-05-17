@@ -6755,8 +6755,9 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T09:00:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,10,7,5,10,5,868622,FALSE
 2026-05-17T09:00:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,6,3,3,6,3,993703,FALSE
 2026-05-17T09:00:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,58996,58996,58996,49,0,893000,FALSE
+2026-05-17T09:15:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,4,3,2,4,2,301534,FALSE
 2026-05-17T09:15:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,2,1,1,2,1,162378,FALSE
-2026-05-17T09:15:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,2,2,1,2,1,383902,FALSE
+2026-05-17T09:15:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,4,3,1,4,3,655541,FALSE
 2026-05-17T09:15:00Z,gap-booster,boost-real-user-title-rich-text,browser-e2e,ws,real-user-editing,1,1,0,1,1,290006,FALSE
 2026-05-17T09:15:00Z,gap-booster,boost-revision-autosave-recovery,browser-e2e,ws,revision-persistence,1,1,0,1,1,189426,FALSE
 2026-05-17T09:15:00Z,gap-booster,boost-three-user-late-join,browser-e2e,ws,three-user-late-join,1,1,0,1,1,271946,FALSE
@@ -6768,5 +6769,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T09:15:00Z,strict-expansion,ws-real-user-editing,browser-e2e,ws,real-user-editing,1,1,0,1,1,294516,FALSE
 2026-05-17T09:15:00Z,strict-expansion,ws-revision-persistence,browser-e2e,ws,revision-persistence,1,0,0,1,1,236111,FALSE
 2026-05-17T09:15:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,3,2,2,3,1,181180,FALSE
-2026-05-17T09:15:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,2,1,1,2,1,382930,FALSE
-2026-05-17T09:15:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,18060,18060,18060,15,0,448000,FALSE
+2026-05-17T09:15:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,3,2,2,3,1,505457,FALSE
+2026-05-17T09:15:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,46956,46956,46956,39,0,872000,FALSE
+2026-05-17T09:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,2,2,2,2,0,139662,FALSE
+2026-05-17T09:30:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,7224,7224,7224,6,0,96000,FALSE
