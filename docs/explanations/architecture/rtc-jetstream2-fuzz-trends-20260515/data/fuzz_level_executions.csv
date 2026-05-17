@@ -6525,8 +6525,9 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T06:15:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,9,8,8,9,1,418267,FALSE
 2026-05-17T06:15:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,4,3,2,4,2,424024,FALSE
 2026-05-17T06:15:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,61404,61404,61404,51,0,880000,FALSE
-2026-05-17T06:30:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,1,0,0,1,1,198931,FALSE
-2026-05-17T06:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,1,1,1,0,163209,FALSE
-2026-05-17T06:30:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,234278,FALSE
-2026-05-17T06:30:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,2,2,0,2,2,417114,FALSE
-2026-05-17T06:30:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,4816,4816,4816,4,0,66000,FALSE
+2026-05-17T06:30:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,5,2,0,5,5,688104,FALSE
+2026-05-17T06:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,4,4,2,4,2,751368,FALSE
+2026-05-17T06:30:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,6,5,0,6,6,1326243,FALSE
+2026-05-17T06:30:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,6,6,0,6,6,1282532,FALSE
+2026-05-17T06:30:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,2,2,2,2,0,46843,FALSE
+2026-05-17T06:30:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,49364,49364,49364,41,0,662000,FALSE
