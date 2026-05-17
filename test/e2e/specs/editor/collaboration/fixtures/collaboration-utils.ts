@@ -40,6 +40,35 @@ interface NormalizedCollaborativeState {
 	title: string;
 }
 
+interface StringStateDivergence {
+	commonPrefixLength?: number;
+	commonSuffixLength?: number;
+	firstLength?: number;
+	firstPresent?: boolean;
+	firstSnippet?: string;
+	kind:
+		| 'string-path-divergence'
+		| 'string-suffix-divergence'
+		| 'string-value-divergence';
+	missingSuffix?: string;
+	missingSuffixPageIndex?: number;
+	operationMarkers?: StringStateOperationMarker[];
+	otherLength?: number;
+	otherPresent?: boolean;
+	otherSnippet?: string;
+	pageIndex: number;
+	path: string;
+}
+
+interface StringStateOperationMarker {
+	kind: string;
+	raw: string;
+	seed: number;
+	step: number;
+	suffix: string;
+	userIndex: number;
+}
+
 type CleanupUsersMode = 'all' | 'tracked' | 'none';
 
 export const SECOND_USER: UserCredentials = {
@@ -647,11 +676,260 @@ export default class CollaborationUtils {
 			await pages[ 0 ].waitForTimeout( 250 );
 		}
 
+		const stringDivergence = this.getStringStateDivergence( lastStates );
+		if ( stringDivergence ) {
+			throw new Error(
+				`Collaborative string state diverged after ${ timeout }ms: ${ JSON.stringify(
+					stringDivergence
+				) }`
+			);
+		}
+
 		throw new Error(
 			`Collaborative state did not converge within ${ timeout }ms: ${ JSON.stringify(
 				lastStates
 			) }`
 		);
+	}
+
+	private getStringStateDivergence(
+		states: NormalizedCollaborativeState[]
+	): StringStateDivergence | null {
+		if ( states.length < 2 ) {
+			return null;
+		}
+
+		const firstEntries = this.getStringEntries( states[ 0 ] );
+
+		for ( let pageIndex = 1; pageIndex < states.length; pageIndex++ ) {
+			const otherEntries = this.getStringEntries( states[ pageIndex ] );
+			const paths = Array.from(
+				new Set( [
+					...Object.keys( firstEntries ),
+					...Object.keys( otherEntries ),
+				] )
+			).sort();
+
+			for ( const path of paths ) {
+				const firstValue = firstEntries[ path ];
+				const otherValue = otherEntries[ path ];
+
+				if ( firstValue === otherValue ) {
+					continue;
+				}
+
+				if (
+					typeof firstValue !== 'string' ||
+					typeof otherValue !== 'string'
+				) {
+					return {
+						firstPresent: typeof firstValue === 'string',
+						kind: 'string-path-divergence',
+						otherPresent: typeof otherValue === 'string',
+						pageIndex,
+						path,
+					};
+				}
+
+				return this.describeStringValueDivergence(
+					path,
+					pageIndex,
+					firstValue,
+					otherValue
+				);
+			}
+		}
+
+		return null;
+	}
+
+	private getStringEntries(
+		state: NormalizedCollaborativeState
+	): Record< string, string > {
+		const entries: Record< string, string > = {};
+
+		const visit = ( value: unknown, path: string ) => {
+			if ( typeof value === 'string' ) {
+				entries[ path ] = value;
+				return;
+			}
+
+			if ( Array.isArray( value ) ) {
+				value.forEach( ( item, index ) =>
+					visit( item, `${ path }.${ index }` )
+				);
+				return;
+			}
+
+			if ( value && typeof value === 'object' ) {
+				Object.keys( value as Record< string, unknown > )
+					.sort()
+					.forEach( ( key ) =>
+						visit(
+							( value as Record< string, unknown > )[ key ],
+							path ? `${ path }.${ key }` : key
+						)
+					);
+			}
+		};
+
+		visit(
+			{
+				blocks: state.blocks,
+				crdtDocument: state.crdtDocument,
+				title: state.title,
+			},
+			''
+		);
+
+		return entries;
+	}
+
+	private describeStringValueDivergence(
+		path: string,
+		pageIndex: number,
+		firstValue: string,
+		otherValue: string
+	): StringStateDivergence {
+		const commonPrefixLength = this.getCommonPrefixLength(
+			firstValue,
+			otherValue
+		);
+		const commonSuffixLength = this.getCommonSuffixLength(
+			firstValue,
+			otherValue,
+			commonPrefixLength
+		);
+		const firstHasOtherPrefix = firstValue.startsWith( otherValue );
+		const otherHasFirstPrefix = otherValue.startsWith( firstValue );
+		let missingSuffix: string | undefined;
+		let missingSuffixPageIndex: number | undefined;
+
+		if ( firstHasOtherPrefix ) {
+			missingSuffix = firstValue.slice(
+				otherValue.length,
+				otherValue.length + 80
+			);
+			missingSuffixPageIndex = pageIndex;
+		} else if ( otherHasFirstPrefix ) {
+			missingSuffix = otherValue.slice(
+				firstValue.length,
+				firstValue.length + 80
+			);
+			missingSuffixPageIndex = 0;
+		}
+
+		const operationMarkers = this.getStringStateOperationMarkers(
+			firstValue,
+			otherValue
+		);
+		const divergence: StringStateDivergence = {
+			commonPrefixLength,
+			commonSuffixLength,
+			firstLength: firstValue.length,
+			firstSnippet: this.getStringDivergenceSnippet(
+				firstValue,
+				commonPrefixLength
+			),
+			kind:
+				firstHasOtherPrefix || otherHasFirstPrefix
+					? 'string-suffix-divergence'
+					: 'string-value-divergence',
+			missingSuffix,
+			missingSuffixPageIndex,
+			otherLength: otherValue.length,
+			otherSnippet: this.getStringDivergenceSnippet(
+				otherValue,
+				commonPrefixLength
+			),
+			pageIndex,
+			path,
+		};
+
+		if ( operationMarkers.length > 0 ) {
+			divergence.operationMarkers = operationMarkers;
+		}
+
+		return divergence;
+	}
+
+	private getStringStateOperationMarkers(
+		...values: string[]
+	): StringStateOperationMarker[] {
+		const markers = new Map< string, StringStateOperationMarker >();
+		const markerPattern =
+			/\brtcw-(\d+)-(\d+)-u(\d+)-([a-z0-9-]+)-([a-z0-9]+)\b/g;
+
+		for ( const value of values ) {
+			markerPattern.lastIndex = 0;
+			let match = markerPattern.exec( value );
+
+			while ( match ) {
+				const raw = match[ 0 ];
+				markers.set( raw, {
+					kind: match[ 4 ],
+					raw,
+					seed: Number.parseInt( match[ 1 ], 10 ),
+					step: Number.parseInt( match[ 2 ], 10 ),
+					suffix: match[ 5 ],
+					userIndex: Number.parseInt( match[ 3 ], 10 ),
+				} );
+				match = markerPattern.exec( value );
+			}
+		}
+
+		return Array.from( markers.values() ).sort(
+			( firstMarker, secondMarker ) =>
+				firstMarker.step - secondMarker.step ||
+				firstMarker.userIndex - secondMarker.userIndex ||
+				firstMarker.raw.localeCompare( secondMarker.raw )
+		);
+	}
+
+	private getCommonPrefixLength( first: string, second: string ): number {
+		const maxLength = Math.min( first.length, second.length );
+		let index = 0;
+
+		while (
+			index < maxLength &&
+			first.charCodeAt( index ) === second.charCodeAt( index )
+		) {
+			index++;
+		}
+
+		return index;
+	}
+
+	private getCommonSuffixLength(
+		first: string,
+		second: string,
+		commonPrefixLength: number
+	): number {
+		const maxLength =
+			Math.min( first.length, second.length ) - commonPrefixLength;
+		let index = 0;
+
+		while (
+			index < maxLength &&
+			first.charCodeAt( first.length - 1 - index ) ===
+				second.charCodeAt( second.length - 1 - index )
+		) {
+			index++;
+		}
+
+		return index;
+	}
+
+	private getStringDivergenceSnippet(
+		value: string,
+		commonPrefixLength: number
+	): string {
+		const start = Math.max( 0, commonPrefixLength - 60 );
+		const end = Math.min( value.length, commonPrefixLength + 100 );
+		const prefix = start > 0 ? '...' : '';
+		const suffix = end < value.length ? '...' : '';
+
+		return `${ prefix }${ value.slice( start, end ) }${ suffix }`;
 	}
 
 	/**
