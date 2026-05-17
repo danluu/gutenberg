@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T10:40:27Z`
+Snapshot time: `2026-05-17T10:49:23Z`
 
 Trigger event:
-`pr-split-2026-05-17T10-39-11Z-20260517T103155Z`
+`pr-split-2026-05-17T10-48-08Z-20260517T103916Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T10-39-11Z-20260517T103155Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T10-48-08Z-20260517T103916Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,7 +28,7 @@ or the original split merely for continuity.
 ## Executive Status
 
 Filing remains blocked. The newest completed split-persona synthesis,
-`pr-split-20260517T103155Z-synthesis.md`, keeps the Cycle 252/254 no-PR03B main
+`pr-split-20260517T103916Z-synthesis.md`, keeps the Cycle 252/254 no-PR03B main
 spine, but it invalidates the current PR06B sidecar assumption. The Cycle 256
 validation head fails JS parse/lint because `packages/core-data/src/actions.js`
 declares `getComparableBlockTree()` twice after combining PR06B with
@@ -85,13 +85,14 @@ keeps the issue in the control plane: strict no-product startup noise is mostly
 suppressed on the normal path, but stale live-analysis sessions, fragile
 gate-only refresh, paused/no-analysis directory scoping, and per-run-only
 family caps can still recycle noise into scheduling. Product-evidence failures
-must remain visible, especially because the latest novelty status now has one
-current-run product-evidence / likely-real signature. Do not make broad
-suppression changes or start new fuzz/Codex campaigns from that evidence.
+must remain visible when they appear, but the reset current run now has zero
+current-run actionable, product-evidence, or likely-real signatures. Do not
+make broad suppression changes or start new fuzz/Codex campaigns from that
+control-plane evidence.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T10:40:22Z`.
+Remote status was collected at `2026-05-17T10:49:18Z`.
 
 The fix-planning repo is checked out at:
 
@@ -121,7 +122,7 @@ That repo has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T10:40:27Z` from fetched
+The branch-link audit was generated at `2026-05-17T10:49:23Z` from fetched
 `danluu` refs. Proposed PR rows below use only rows marked `verified-content`,
 or explicitly say `No verified branch link yet`.
 
@@ -222,78 +223,80 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T10:40:22Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T101235Z
+collected_at_utc: 2026-05-17T10:49:18Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T104119Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-Raw novelty status is present for `run-20260517T101235Z`, but it is
+Raw novelty status is present for `run-20260517T104119Z`, but it is
 coverage/control-plane health evidence only. It is not rebuilt final-stack
 validation and must not be treated as either filing readiness or a validated
 final-stack failure.
 
-Latest novelty monitor snapshot, updated at `2026-05-17T10:38:11.764Z`:
+Latest novelty monitor snapshot, updated at `2026-05-17T10:48:30.379Z`:
 
 ```text
-coverage files: 43016
-total records seen: 66598
-records processed this pass: 81
-new behavioral feature keys this pass: 4
+coverage files: 43134
+total records seen: 66774
+records processed this pass: 58
+new behavioral feature keys this pass: 5
 new CDP coverage hashes this pass: 4
-current-run actionable signatures: 1
-current-run likely-real visible: 1
-current-run product-evidence signatures: 1
-current-run records by profile: real-user-editing=22
-current-run successful records by profile: real-user-editing=18
-historical signatures: 9870
+current-run actionable signatures: 0
+current-run likely-real visible: 0
+current-run product-evidence signatures: 0
+current-run records by profile: real-user-editing=4
+current-run successful records by profile: real-user-editing=4
+historical signatures: 9884
 historical likely-real visible: 156
-top historical duplicate family share: 0.3536
+top historical duplicate family share: 0.3531
 enabled groups: novelty-ws-real-user-editing, novelty-ws-real-user-rich-text
 paused groups: novelty-ws-lifecycle, novelty-http-persistence-probe
-load1: 71.38 / cores: 64
-memory free: 424.1G / 492.0G
+load1: 67.65 / cores: 64
+memory free: 425.8G / 492.0G
 headroom for adding groups: no
 ```
 
-The current run is still producing successful `real-user-editing` records and
-now has one current-run actionable, likely-real, product-evidence signature.
-That is a live triage signal to investigate, but it is still
+The current run reset from `run-20260517T101235Z` to `run-20260517T104119Z` at
+`2026-05-17T10:41:31Z`, preserving the two unexpired startup-noise cooldowns
+while resetting current-run startup and quality counters. It is producing
+successful `real-user-editing` records, but it currently has no current-run
+actionable, likely-real, or product-evidence signatures. That is
 coverage/control-plane health evidence, not rebuilt final-stack validation. The
 paused lifecycle and HTTP probe groups remain inside startup-noise cooldowns;
 the enabled groups are the two WS real-user lanes.
 
-The latest trend evidence packet was generated at `2026-05-17T10:28:59Z` from
-monitor data through `2026-05-17T10:27:03Z`:
+The latest trend evidence packet was generated at `2026-05-17T10:36:56Z` from
+monitor data through `2026-05-17T10:34:32Z`:
 
 ```text
-monitor passes: 1935
-coverage files: 272 -> 42870
-coverage files delta: 42598
+monitor passes: 1937
+coverage files: 272 -> 42960
+coverage files delta: 42688
 unmet coverage goals: 5
 likely_real_max: 4
-duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.3536
+duplicate_share_current_last: 1
+duplicate_share_historical_last: 0.3537
 summary_startup_failures_last: 0
 quality issues: 0
 enabled groups current: novelty-ws-real-user-rich-text,
   novelty-ws-real-user-editing
-fuzz level mix: browser-e2e=27 lanes/27 groups;
+fuzz level mix: browser-e2e=28 lanes/27 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 4886697
-browser-e2e execution: 101208 cumulative / 788 per-hour
+total fuzz-level test executions: 4918126
+browser-e2e execution: 101333 cumulative / 356 per-hour
 transport-integration execution: 3006 cumulative / 0 per-hour
-unit-property execution: 4354148 cumulative / 207088 per-hour
+unit-property execution: 4385452 cumulative / 91504 per-hour
 coverage-guided-lower-level execution: 428335 cumulative / 0 per-hour
-load1/load5/load15: 60.48 / 62.56 / 58.85 on 64 cores
-memory: 427.5G free
+load1/load5/load15: 59.94 / 62 / 60.41 on 64 cores
+memory: 423.7G free
 ```
 
-Largest current novelty gaps are `ui-heading-shortcut` `816/1000`,
-`reload-post-action` `834/1000`, title-save-reload `343/500`,
-body-save-reload `402/500`, and successful real-user-editing records
-`469/500`.
+Largest current novelty gaps in the newer novelty monitor are
+`ui-heading-shortcut` `823/1000`, `reload-post-action` `842/1000`,
+title-save-reload `349/500`, body-save-reload `408/500`, and successful
+real-user-editing records `474/500`.
 
 The fuzzing level mix is still browser-heavy. With current headroom closed,
 prefer guarded top-offs, startup-stall reduction, and bounded lower-level
@@ -302,7 +305,7 @@ targets with clear oracles over broad browser concurrency.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260517T103155Z-synthesis.md`. It says:
+`pr-split-20260517T103916Z-synthesis.md`. It says:
 
 - status remains blocked and not filing-ready;
 - keep the Cycle 252/254 no-PR03B main spine;
@@ -321,6 +324,15 @@ The newest completed split-persona synthesis is
   validation refs, and `20260517T100637Z` reload-hydration diagnostic, but the
   active helper-dedupe job still counts only after nonempty required outputs
   exist;
+- partial Cycle 258 artifacts can be useful progress, but the
+  report/classification/artifact-verification package was incomplete when
+  checked, so do not launch a duplicate helper-dedupe job; if Cycle 258 exits
+  incomplete, run one bounded continuation or replacement for the same
+  PR06B/PR07B repair;
+- bounded follow-up work can proceed on PR05B/PR05C strict parser/rich-text
+  owner comparison, the `9f4dcc759070` sync undo/history red or instrumented
+  test, and stale split-tail/ref filtering if the controller loops still
+  consume stale inputs;
 - after runtime is usable, replay `6dffde406703` / seed `5900001` against
   `candidate/rtc-reload-ws-provider-lifecycle-diagnostics-20260517T100637Z`
   as diagnostic evidence, not product promotion.
