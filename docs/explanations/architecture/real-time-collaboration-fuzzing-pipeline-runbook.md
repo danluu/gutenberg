@@ -362,9 +362,12 @@ The remote launchers are intentionally split by ownership:
     cooldown-limited and is intended for persistent test-environment corruption
     such as a MariaDB volume that repeatedly exits during `wp-env start`.
     Resource pressure decisions use 1-, 5-, and 15-minute load averages. Severe
-    pressure can reduce the coverage-guided budget below the normal pressure
-    floor, and scale-up is blocked while the longer load averages still show a
-    backlog.
+    pressure drops the coverage-guided budget to the minimum browser/e2e floor,
+    high pressure keeps it near that floor, and pressure keeps it below the
+    steady-state budget. Scale-up is blocked while the 1-, 5-, or 15-minute load
+    averages still show a backlog, so the controller cannot increase browser
+    work merely because a severe spike decayed into a still-overloaded high
+    pressure state.
     Coverage-guided historical duplicate/noise is advisory unless the
     current-run duplicate/noise gate is also active; otherwise the loop must keep
     at least one bounded browser/e2e lane materialized.

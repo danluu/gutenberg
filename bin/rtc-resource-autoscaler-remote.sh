@@ -164,13 +164,15 @@ choose_budget() {
 	local ncpu=$6
 	awk -v cpu="$cpu" -v loadv="$load_value" -v load5v="$load5_value" -v load15v="$load15_value" -v avail="$avail" -v ncpu="$ncpu" '
 		BEGIN {
-			severe_load = ncpu * 1.75;
-			severe_load5 = ncpu * 1.50;
-			high_pressure_load = ncpu * 1.25;
-			high_pressure_load5 = ncpu * 1.10;
-			high_pressure_load15 = ncpu * 1.05;
+			severe_load = ncpu * 1.35;
+			severe_load5 = ncpu * 1.20;
+			severe_load15 = ncpu * 1.12;
+			high_pressure_load = ncpu * 1.05;
+			high_pressure_load5 = ncpu * 1.02;
+			high_pressure_load15 = ncpu * 1.00;
 			pressure_load = ncpu * 0.92;
 			pressure_load5 = ncpu * 0.95;
+			pressure_load15 = ncpu * 0.96;
 			high_load = ncpu * 0.86;
 			high_load5 = ncpu * 0.88;
 			high_load15 = ncpu * 0.92;
@@ -180,12 +182,12 @@ choose_budget() {
 			low_load = ncpu * 0.66;
 			low_load5 = ncpu * 0.70;
 			low_load15 = ncpu * 0.85;
-			if (cpu >= 96 || loadv >= severe_load || load5v >= severe_load5) {
-				print "2 3 severe_pressure";
+			if (cpu >= 96 || loadv >= severe_load || load5v >= severe_load5 || load15v >= severe_load15) {
+				print "1 2 severe_pressure";
 			} else if (cpu >= 92 || loadv >= high_pressure_load || load5v >= high_pressure_load5 || load15v >= high_pressure_load15) {
-				print "4 5 high_pressure";
-			} else if (cpu >= 88 || loadv >= pressure_load || load5v >= pressure_load5 || avail < 120) {
-				print "6 7 pressure";
+				print "2 3 high_pressure";
+			} else if (cpu >= 88 || loadv >= pressure_load || load5v >= pressure_load5 || load15v >= pressure_load15 || avail < 120) {
+				print "4 5 pressure";
 			} else if (cpu <= 62 && loadv <= low_load && load5v <= low_load5 && load15v <= low_load15 && avail >= 300) {
 				print "11 12 large_headroom";
 			} else if (cpu <= 72 && loadv <= mid_load && load5v <= mid_load5 && load15v <= mid_load15 && avail >= 250) {
@@ -195,6 +197,18 @@ choose_budget() {
 			} else {
 				print "8 9 steady";
 			}
+		}
+	'
+}
+
+scale_up_backlog_clear() {
+	local load_value=$1
+	local load5_value=$2
+	local load15_value=$3
+	local ncpu=$4
+	awk -v loadv="$load_value" -v load5v="$load5_value" -v load15v="$load15_value" -v ncpu="$ncpu" '
+		BEGIN {
+			exit !(loadv <= ncpu * 0.86 && load5v <= ncpu * 0.88 && load15v <= ncpu * 0.92);
 		}
 	'
 }
@@ -567,8 +581,13 @@ while true; do
 		up_streak=0
 		down_streak=0
 	elif [ "$desired_target" -gt "${target:-0}" ]; then
-		up_streak=$(( up_streak + 1 ))
 		down_streak=0
+		if ! scale_up_backlog_clear "$load" "$load_five" "$load_fifteen" "$ncpu"; then
+			action=scale_up_blocked_backlog
+			up_streak=0
+		else
+			up_streak=$(( up_streak + 1 ))
+		fi
 		if [ "$up_streak" -ge 2 ] && [ $(( $(epoch) - last_restart_epoch )) -ge "$MIN_SCALE_UP_SECONDS" ]; then
 			action=scale_up
 			restart_coverage "$desired_target" "$desired_max" "$reason"
