@@ -710,3 +710,7 @@ timestamp,group,group_family
 2026-05-17T07:40:22Z,novelty-ws-persistence-no-title,persistence
 2026-05-17T08:12:59Z,novelty-ws-real-user-editing,real-user
 2026-05-17T08:35:36Z,novelty-ws-real-user-rich-text,real-user
+2026-05-17T09:01:16Z,novelty-ws-lifecycle,lifecycle
+2026-05-17T09:01:16Z,novelty-http-persistence-probe,persistence
+2026-05-17T09:04:00Z,novelty-ws-persistence-no-title,persistence
+2026-05-17T09:07:11Z,novelty-ws-real-user-editing,real-user
