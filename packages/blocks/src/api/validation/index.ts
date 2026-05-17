@@ -148,6 +148,7 @@ const MEANINGFUL_ATTRIBUTES: string[] = [
  */
 const TEXT_NORMALIZATIONS: Array< ( text: string ) => string > = [
 	identity,
+	decodeSemicolonlessCharacterReferences,
 	getTextWithCollapsedWhitespace,
 ];
 
@@ -196,6 +197,13 @@ const REGEXP_DECIMAL_CHARACTER_REFERENCE = /^#\d+$/;
 const REGEXP_HEXADECIMAL_CHARACTER_REFERENCE = /^#x[\da-f]+$/i;
 
 /**
+ * Regular expression matching semicolonless character references in text.
+ * Semicolon-terminated references are already handled by the tokenizer.
+ */
+const REGEXP_SEMICONLESS_CHARACTER_REFERENCE =
+	/&(#[x][\da-f]+|#\d+|[\da-z]+)(?=$|[^\da-z;])/gi;
+
+/**
  * Returns true if the given string is a valid character reference segment, or
  * false otherwise. The text should be stripped of `&` and `;` demarcations.
  *
@@ -208,6 +216,22 @@ export function isValidCharacterReference( text: string ): boolean {
 		REGEXP_NAMED_CHARACTER_REFERENCE.test( text ) ||
 		REGEXP_DECIMAL_CHARACTER_REFERENCE.test( text ) ||
 		REGEXP_HEXADECIMAL_CHARACTER_REFERENCE.test( text )
+	);
+}
+
+function decodeSemicolonlessCharacterReferences( text: string ): string {
+	if ( text.indexOf( '&' ) === -1 ) {
+		return text;
+	}
+
+	return text.replace(
+		REGEXP_SEMICONLESS_CHARACTER_REFERENCE,
+		( match: string, entity: string ): string => {
+			const reference = '&' + entity + ';';
+			const decoded = decodeEntities( reference );
+
+			return decoded === reference ? match : decoded;
+		}
 	);
 }
 

@@ -539,6 +539,15 @@ describe( 'validation', () => {
 			expect( isEquivalent ).toBe( true );
 		} );
 
+		it( 'should return true for semicolonless character references equivalent to Unicode text', () => {
+			const isEquivalent = isEquivalentHTML(
+				'<p>Equivalent entity paragraph: &copy and &copy; plus decimal &#169 and hex &#xA9.</p>',
+				'<p>Equivalent entity paragraph: © and © plus decimal © and hex ©.</p>'
+			);
+
+			expect( isEquivalent ).toBe( true );
+		} );
+
 		it( 'should account for character reference validity', () => {
 			// Regression: Previously the validator would wrongly evaluate the
 			// segment of text ` Test</h2><h2>Test &amp` as a character
