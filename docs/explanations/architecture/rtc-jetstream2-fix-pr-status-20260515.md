@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T22:33:35Z`
+Snapshot time: `2026-05-17T22:39:25Z`
 
 Trigger event:
-`pr-split-2026-05-17T22-32-15Z-20260517T222450Z`
+`duplicate-noise-2026-05-17T22-34-39Z-152`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T22-32-15Z-20260517T222450Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T22-34-39Z-152/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -81,7 +81,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T22:33:29Z`.
+Remote status was collected at `2026-05-17T22:39:19Z`.
 
 The fix-planning repo is checked out at:
 
@@ -111,7 +111,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T22:33:35Z` from fetched
+The branch-link audit was generated at `2026-05-17T22:39:25Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -186,44 +186,56 @@ diff; it does not remove the filing blockers above.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T22:33:29Z
+collected_at_utc: 2026-05-17T22:39:19Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T222443Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The current novelty/control-plane snapshot was updated at
-`2026-05-17T22:31:06.972Z`:
+`2026-05-17T22:36:45.848Z`:
 
 ```text
-coverage files: 48013
-total records seen: 74383
-coverage lines seen this pass: 76743
+coverage files: 48048
+total records seen: 74454
+coverage lines seen this pass: 76814
 new behavioral feature keys this pass: 2
 new CDP coverage hashes this pass: 2
 all-time records by transport:
-  ws=70994
-  http=3389
-current-run records by profile/group: {}
-current-run triage signatures: 0
+  ws=71058
+  http=3396
+current-run records by profile/group:
+  persistence-no-title=4
+  real-user-editing=4
+  novelty-http-persistence-probe=4
+  novelty-ws-real-user-save-reload=4
+current-run pre-action startup failures:
+  persistence-no-title=3
+  real-user-editing=2
+current-run triage signatures: 2
+raw current-run signatures: 8
+raw no-product current-run signatures: 5
+current-run product-evidence signatures: 2
 current-run likely-real visible: 0
 current-drain likely-real visible: 0
+suppressed strict startup records: 9
 unmet goals: 5
-quality issues: 0
-health: ok
-enabled groups:
-  novelty-ws-real-user-save-reload
-  novelty-http-persistence-probe
+quality issues: 1
+health: duplicate/noise dominated warning
+enabled groups: none listed
 paused groups:
   novelty-ws-parser-transform
   novelty-ws-lifecycle
+  novelty-ws-real-user-save-reload
+  novelty-http-persistence-probe
 ```
 
 This is current fuzz/control-plane health, not final-stack validation and not a
-no-bugs claim. The new coverage root had no current-run records in the latest
-novelty pass, so current-run triage is clean but still shallow. The live
-scheduler is aimed at the remaining real-user coverage gaps plus an HTTP
-persistence canary.
+no-bugs claim. The latest current-run product-evidence signatures are
+`timeout` and `reload_rejoin_awareness_stall`, with no visible likely-real
+failure. The no-product `pre_action_bootstrap_stall` startup failures are being
+suppressed and used to pause/block the two product-oriented producers rather
+than being hidden as product failures.
 
 The latest trend packet was generated at `2026-05-17T22:26:59Z` from monitor
 data through `2026-05-17T22:21:39Z`:
@@ -303,8 +315,14 @@ mixed product-evidence producers can classify no-product
 current no-product `pre_action_bootstrap_stall` as startup-pause-worthy for
 pause, enable, materialization/top-off, and coverage-Codex gating while
 preserving product-evidence signatures. The latest collected
-`duplicate-noise-20260517T220328Z-feedback-action.md` is empty, so no completed
-feedback action accompanies that synthesis in these inputs.
+`duplicate-noise-20260517T220328Z-feedback-action.md` implements that bounded
+fix: policy version `21`, producer pause/blocking for current no-product
+startup dominance even when it previously surfaced as `known-noise`,
+product-evidence-preserving no-analysis sentinels, and coverage-Codex launch
+holds. It passed `node --check` on the novelty monitor and related consumers,
+gate-path scans found no startup-noise sessions queued/running, and the monitor
+was restarted in place. The new root is still young, so this is control-plane
+and immediate-cleanup evidence, not long-run proof against recurrence.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -334,7 +352,7 @@ These must not be described as fixed or filing-ready.
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzz, filing, and rebuilt validation only | Revisit only after refreshed stack validation produces newer product evidence |
 | Pre-save search/live document collapse | seed `961308` / `ddf9559af37e`; run `0932bed35c7a` only if red or ambiguous | evidence-only; not in active split | Run a bounded owner comparison after PR07 stops consuming E2E capacity |
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families | evidence-only unless a focused owner replay proves otherwise | Keep out of PR rows until branch, owner, and fuzz evidence are refreshed |
-| Duplicate/noise producer scheduling | `duplicate-noise-20260517T220328Z-synthesis.md` | strict startup noise is suppressed downstream, but mixed product-evidence producers can still leak capacity | Patch novelty scheduling for current no-product startup dominance while preserving product evidence |
+| Duplicate/noise producer scheduling | `duplicate-noise-20260517T220328Z-synthesis.md`, `duplicate-noise-20260517T220328Z-feedback-action.md` | policy `21` patch is applied and restarted; latest snapshot shows no visible likely-real failures, product-evidence signatures preserved, and current no-product startup dominance pausing the affected producers | Watch for recurrence in the young root; keep startup holds product-evidence-preserving and do not treat suppressed startup noise as product failure |
 
 ## Filing Gates And Current Recommendation
 
@@ -360,9 +378,9 @@ Before filing any maintainer-facing PR:
    `1020002`, zero-byte artifacts, `report.tmp`, stale manifests,
    disk/runtime-preflight-only reports, and stderr growth are not counted as
    durable progress while actionable rows exist.
-8. Apply the duplicate/noise mixed-run scheduler follow-up so current
-   no-product startup dominance gates producer scheduling while product-evidence
-   families stay visible or family-capped.
+8. Keep the duplicate/noise policy-21 scheduler behavior in force: current
+   no-product startup dominance should gate producer scheduling while
+   product-evidence families stay visible or family-capped.
 9. Run focused checks, touched-file lint, branch graph/containment evidence,
    adjacent range-diffs/diffstats/numstats, `git diff --check`, and feasible
    runtime checks on refreshed audited refs.
@@ -373,6 +391,6 @@ Before filing any maintainer-facing PR:
 The next useful work is keeping the Cycle308 iteration-26 manifest current,
 publishing/fetching/auditing the missing GitHub refs, PR07 collaboration
 bootstrap/root-cause work, the bounded PR07 owner matrix after readiness is
-true, loop-gate enforcement, and the duplicate/noise producer-scheduling patch.
-Do not launch broad final-stack fuzz, a duplicate seed `1020002` job, raw
-`PR07D`, `PR17`, or `PR18x`.
+true, loop-gate enforcement, and monitoring the policy-21 duplicate/noise
+producer scheduling fix in the young root. Do not launch broad final-stack
+fuzz, a duplicate seed `1020002` job, raw `PR07D`, `PR17`, or `PR18x`.
