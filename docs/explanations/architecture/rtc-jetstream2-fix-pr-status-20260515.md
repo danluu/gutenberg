@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T21:40:21Z`
+Snapshot time: `2026-05-17T21:51:18Z`
 
 Trigger event:
-`pr-split-2026-05-17T21-38-53Z-20260517T213104Z`
+`pr-split-2026-05-17T21-49-54Z-20260517T213858Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T21-38-53Z-20260517T213104Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T21-49-54Z-20260517T213858Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,13 +28,13 @@ or the original split merely for continuity.
 ## Executive Status
 
 The latest completed split-persona synthesis,
-`pr-split-20260517T213104Z-synthesis.md`, keeps the Cycle304 lane split as the
-active maintainer-facing recommendation. Cycle293 is now supporting evidence
-only because it serializes `PR09+` behind the unresolved `PR07B1` runtime/reload
-lane. Prefer the newest verified `fresh-prset/iteration-*` heads with the
-Cycle304 shape; the latest local audit found no `fresh-prset/iteration-20/*`
-refs and therefore used the latest present `fresh-prset/iteration-18/*` refs
-only as source evidence while recording the iteration-20 gap.
+`pr-split-20260517T213858Z-synthesis.md`, replaces the prior Cycle293 and
+Cycle304 iteration-18 shapes with a corrected Cycle304-style lane split.
+Cycle293 remains supporting evidence only because it serializes `PR09+` behind
+the unresolved `PR07B1` runtime/reload lane. Cycle304 iteration-18 is rejected
+as an active filing source because `PR06E` is still downstream of `PR07B1`.
+Use `fresh-prset/iteration-23/*` only after a fresh manifest/audit proves the
+corrected branch shape.
 
 Final filing, GitHub PR opening, broad final-stack fuzzing, and rebuilt
 stack-wide validation remain blocked. The common blockers are still unresolved
@@ -50,35 +50,37 @@ Common mainline:
 PR01 -> PR02 (+ PR02A sidecar)
 -> PR03 (hold PR03B)
 -> PR04 -> PR05A -> PR05B -> PR05C -> clean PR05D
--> PR06A -> PR06B -> PR06C -> PR06D
+-> grouped PR06A-D save-request-payload guards
+(+ PR06E sidecar from PR06D, not from PR07B1)
 
 Runtime-gated lane:
 PR07A1 -> PR07A2 -> PR07A3 -> PR07B0 -> PR07B1
-(+ PR06E sidecar; hold PR07C)
+(hold PR07C)
 
 Independent CRDT/data-loss lane from PR06D:
-PR09 -> PR10 -> PR11A-E -> PR12A-C
+PR09 -> PR10 -> grouped PR11 -> grouped PR12
 -> PR13A -> PR13B0 -> PR13B1 -> PR13B2 -> PR13B3
--> PR14 -> PR14B -> PR15A -> PR15B -> PR15C
+-> PR14 -> PR14B -> grouped PR15
 ```
 
-The current branch-link audit does not yet verify the finer Cycle304 PR rows as
-GitHub review PR-content links. Proposed rows that only exist in that
-replacement split therefore say `No verified branch link yet` even when older
-aggregate or prior-art `review/*` refs exist. Those older refs remain useful
-for content comparison, but they are not maintainer-facing links for the
-replacement split unless the row itself is still the active unit.
+The current branch-link audit does not yet verify the corrected grouped or
+rebased Cycle304 PR rows as GitHub review PR-content links. Proposed rows that
+only exist in that replacement split therefore say `No verified branch link
+yet` even when older aggregate or prior-art `review/*` refs exist. Those older
+refs remain useful for content comparison, but they are not maintainer-facing
+links for the replacement split unless the row itself is still the active unit.
 
-Keep out or held: raw `PR07D`, `PR17`, `PR18`, `PR18x`, monolithic `PR07B`,
-fallback/PR15-tail `PR05D`, old `origin/trunk`, `ready/*`, stale
-`ready-pr03b/*`, dirty evidence branches, validation-stack heads, and stale or
-misordered PR13 refs. `PR07D` requires fresh red-at-active-PR07C
-first-divergence proof. Rich-text/parser/linebreak reductions must compare
-`PR05B`, `PR05C`, and clean `PR05D` before any later owner is named.
+Keep out or held: Cycle293, Cycle304 iteration-18 for `PR06E`, raw `PR07D`,
+`PR17`, `PR18`, `PR18x`, monolithic `PR07B`, fallback/PR15-tail `PR05D`, old
+`origin/trunk`, `ready/*`, stale `ready-pr03b/*`, dirty evidence branches,
+validation-stack heads, and stale or misordered PR13 refs. `PR07D` requires
+fresh red-at-active-PR07C first-divergence proof. Rich-text/parser/linebreak
+reductions must compare `PR05B`, `PR05C`, and clean `PR05D` before any later
+owner is named.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T21:40:16Z`.
+Remote status was collected at `2026-05-17T21:51:12Z`.
 
 The fix-planning repo is checked out at:
 
@@ -108,7 +110,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T21:40:21Z` from fetched
+The branch-link audit was generated at `2026-05-17T21:51:18Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -144,20 +146,11 @@ an older aggregate branch as if it were the current PR content.
 | PR 5B | Parser/rich-text HTML equivalence | No verified branch link yet | TBD | TBD | progress-unblock local-machine evidence exists; GitHub verified-content link is still missing |
 | PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | TBD | TBD | strict seed `5700084` remains covered by PR05C in current evidence |
 | PR 5D | Semicolonless entity/reference block validation after PR 5C | No verified branch link yet | TBD | TBD | only the clean PR05C-adjacent branch is valid; fallback/PR15-tail PR05D is rejected |
-| PR 6A | First save-payload guard split row | No verified branch link yet | TBD | TBD | Cycle304 row; do not substitute old aggregate PR 6 |
-| PR 6B | Second save-payload guard split row | No verified branch link yet | TBD | TBD | Cycle304 row; needs GitHub review-link audit and diffstat |
-| PR 6C | Third save-payload guard split row | No verified branch link yet | TBD | TBD | Cycle304 row; needs GitHub review-link audit and diffstat |
-| PR 6D | Fourth save-payload guard split row and PR09 base | No verified branch link yet | TBD | TBD | Cycle304 audit passed PR09 ancestry checks, but no verified review link exists yet |
+| PR 6A-D | Grouped save-request-payload guards and PR09 base | No verified branch link yet | TBD | TBD | corrected Cycle304-style grouped row; requires iteration-23 audit proving `PR06D -> PR09` before filing |
 | PR 9 | Core-data lock fairness, rebased onto PR06D | No verified branch link yet | TBD | TBD | Cycle304 row; old verified PR09 branch is prior art until the PR06D-based row has a verified review link |
 | PR 10 | CRDT block reconciliation foundation | No verified branch link yet | TBD | TBD | Cycle304 row; audit after refreshed PR09 placement |
-| PR 11A | Explicit-base stale suffix append | No verified branch link yet | TBD | TBD | finer split target; GitHub verified-content link is still missing |
-| PR 11B | Explicit-base top-level delete | No verified branch link yet | TBD | TBD | finer split target; GitHub verified-content link is still missing |
-| PR 11C | Explicit-base middle insert | No verified branch link yet | TBD | TBD | source-local evidence marks seed `5200005` covered here; verified-content link is still missing |
-| PR 11D | Explicit-base top-level move/reorder | No verified branch link yet | TBD | TBD | finer split target; GitHub verified-content link is still missing |
-| PR 11E | Explicit-base delete-plus-insert anchor | No verified branch link yet | TBD | TBD | finer split target; GitHub verified-content link is still missing |
-| PR 12A | Previous-local-cache top-level block operations split row 1 | No verified branch link yet | TBD | TBD | Cycle304 finer split; old aggregate PR12 is prior art only |
-| PR 12B | Previous-local-cache top-level block operations split row 2 | No verified branch link yet | TBD | TBD | Cycle304 finer split; needs fetched GitHub review-link audit |
-| PR 12C | Previous-local-cache top-level block operations split row 3 | No verified branch link yet | TBD | TBD | Cycle304 finer split; needs fetched GitHub review-link audit |
+| PR 11 | Grouped explicit-base top-level block operations | No verified branch link yet | TBD | TBD | corrected grouped row; old aggregate PR11 review ref is prior art until iteration-23 content is audited |
+| PR 12 | Grouped previous-local-cache top-level block operations | No verified branch link yet | TBD | TBD | corrected grouped row; old aggregate PR12 review ref is prior art until iteration-23 content is audited |
 | PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 | +1151 / -25 | repaired audit link; current PR13 first delta |
 | PR 13B0 | PR13 source-retirement finer split row 0 | No verified branch link yet | TBD | TBD | preferred source split target; publish/fetch/audit before replacing repaired fallback links |
 | PR 13B1 | PR13 source-retirement finer split row 1 | No verified branch link yet | TBD | TBD | preferred source split target; publish/fetch/audit before replacing repaired fallback links |
@@ -165,9 +158,7 @@ an older aggregate branch as if it were the current PR content.
 | PR 13B3 | PR13 source-retirement finer split row 3 | No verified branch link yet | TBD | TBD | preferred source split target; publish/fetch/audit before replacing repaired fallback links |
 | PR 14 | Table body nested array merge | [`review/rtc-pr14-table-body-array-merge`](https://github.com/danluu/gutenberg/tree/review/rtc-pr14-table-body-array-merge) | 2 | +294 / -18 | verified content; seed `7110017` proves PR14 alone is incomplete |
 | PR 14B | Stale-shorter query-array local suffix append after PR 14 | No verified branch link yet | TBD | TBD | mandatory replacement topology; publish/fetch/audit before filing |
-| PR 15A | Fallback group move stale reorder, restacked on PR14B | No verified branch link yet | TBD | TBD | use PR14B topology; old pre-PR14B audited branch is prior art only |
-| PR 15B | Fallback group insert anchor, restacked on PR14B | No verified branch link yet | TBD | TBD | use PR14B topology; publish/fetch/audit before filing |
-| PR 15C | Fallback group delete, restacked on PR14B | No verified branch link yet | TBD | TBD | use PR14B topology; do not file until audited |
+| PR 15 | Grouped fallback-group move/insert/delete, restacked on PR14B | No verified branch link yet | TBD | TBD | corrected grouped row; old pre-PR14B audited branches are prior art only |
 
 ### Runtime-Gated Side Lane
 
@@ -185,27 +176,27 @@ an older aggregate branch as if it were the current PR content.
 | Row | Scope | Audit branch link | Current status |
 | --- | --- | --- | --- |
 | PR 3B | Browser `restoreRevision` CRDT invalidation after PR 3 | No verified branch link yet | held until PR03-vs-PR03B replay proves revision-restore ownership |
-| PR 6 aggregate | Save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | verified content for the older aggregate shape; do not use as the Cycle304 PR06A-D filing unit |
-| PR 6A prior art | Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06a-persisted-empty-content-guard) | verified content for the older narrow persisted-body guard; remap only after Cycle304 review-link audit |
-| PR 6E sidecar | Malformed outgoing RTC save request-payload guard | No verified branch link yet | preserve as renamed sidecar after PR06A-D; avoid colliding with the fresh PR06 split |
+| PR 6 aggregate | Save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | verified content for the older aggregate shape; compare only until the grouped iteration-23 row has a verified link |
+| PR 6A prior art | Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06a-persisted-empty-content-guard) | verified content for the older narrow persisted-body guard; remap only after the grouped PR06A-D review-link audit |
+| PR 6E sidecar | Malformed outgoing RTC save request-payload guard | No verified branch link yet | must be a sidecar from PR06D, not PR07B1; iteration-18 is rejected for this row |
 | PR 7A aggregate | Save response entity-state guards | [`review/rtc-pr07a-save-response-actions-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07a-save-response-actions-guard) | verified content for old aggregate PR07A; active target is PR07A1/A2/A3 |
 | PR 7B aggregate | Save response manager/base-record guards | [`review/rtc-pr07b-save-response-manager-base-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07b-save-response-manager-base-record) | verified content for old opaque PR07B; active target is PR07B0/B1 |
 | PR 8 | Reload title and persisted-record hydration | [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | verified content for old broad PR 8, not an active filing unit |
 | PR 5 aggregate | Parser/entity normalization equivalence | [`review/rtc-pr05-parser-entity-normalization-equivalence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr05-parser-entity-normalization-equivalence) | verified content for old aggregate PR 5, not the recommended PR05A/B/C/D split |
 | PR 9 prior art | Core-data lock fairness on old base | [`review/rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/review/rtc-pr09-store-lock-fairness) | verified content, but active PR09 must be audited on PR06D |
 | PR 10 prior art | CRDT block reconciliation foundation on old base | [`review/rtc-pr10-crdt-block-rebase-foundation`](https://github.com/danluu/gutenberg/tree/review/rtc-pr10-crdt-block-rebase-foundation) | verified content, but active PR10 follows the refreshed PR09 placement |
-| PR 11 aggregate | Explicit-base top-level block operations | [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr11-explicit-base-top-level-ops) | verified content for old aggregate PR11; active target is PR11A-E |
-| PR 12 aggregate | Previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr12-previous-local-cache-top-level-ops) | verified content for old aggregate PR12; active target is PR12A-C |
+| PR 11 aggregate | Explicit-base top-level block operations | [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr11-explicit-base-top-level-ops) | verified prior art for the grouped PR11 scope; do not use as the iteration-23 PR-content link |
+| PR 12 aggregate | Previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr12-previous-local-cache-top-level-ops) | verified prior art for the grouped PR12 scope; do not use as the iteration-23 PR-content link |
 | PR13 fallback B | Cross-parent source retirement fallback | [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement) | repaired audited fallback link; use only until PR13B0/B1/B2/B3 are published and audited |
 | PR13 fallback C | Stale block identity smear guard fallback | [`review/rtc-pr13c-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13c-stale-block-identity-smear-guard) | repaired audited fallback link; use only until PR13B0/B1/B2/B3 are published and audited |
-| PR15 prior art | Pre-PR14B fallback group rows | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder), [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor), [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | verified content for the pre-PR14B PR15 shape, not the recommended PR15A/B/C-on-PR14B replacement |
+| PR15 prior art | Pre-PR14B fallback group rows | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder), [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor), [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | verified content for the pre-PR14B PR15 shape, not the recommended grouped PR15-on-PR14B replacement |
 
 ## Validation And Fuzz Status
 
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T21:40:16Z
+collected_at_utc: 2026-05-17T21:51:12Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T205339Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -215,81 +206,83 @@ The raw `novelty-status.md` collected for this run is nonempty and gives the
 freshest bounded control-plane view:
 
 ```text
-novelty updated: 2026-05-17T21:39:09.053Z
-coverage files: 47834
-records seen: 74030
-current-run records: 14
+novelty updated: 2026-05-17T21:48:40.561Z
+coverage files: 47861
+records seen: 74067
+current-run records: 27
 current-run records by group:
-  novelty-ws-common-blocks=1
-  novelty-ws-parser-serialization=4
-  novelty-ws-real-user-editing=9
-current-run successful records: 6
-current-run pre-action startup failures: 1
+  novelty-http-persistence-probe=2
+  novelty-ws-parser-serialization=11
+  novelty-ws-real-user-editing=14
+current-run successful records: 11
+current-run pre-action startup failures: 4
 unmet goals: 5
-current active signatures: 0
-current active product-evidence signatures: 0
+current active signatures: 1
+current active product-evidence signatures: 1
 current active likely-real visible: 0
 current drain actionable signatures: 2
 current drain product-evidence signatures: 2
 current drain likely-real visible: 1
-current drain top semantic family: reload_rejoin_awareness_stall
-historical top duplicate family share: 0.3461
+current active top semantic family: timeout
+current drain top semantic families: timeout, reload_rejoin_awareness_stall
+historical top duplicate family share: 0.3462
 health: ok
 enabled groups:
-  novelty-ws-common-blocks: ws, lanes=1
+  novelty-ws-three-user-late-join: ws, lanes=1
   novelty-ws-parser-serialization: ws, lanes=1
-  novelty-ws-real-user-editing: ws, lanes=2
 paused groups:
   novelty-http-persistence-probe
   novelty-ws-real-user-save-reload
   novelty-ws-real-user-rich-text
   novelty-ws-parser-transform
   novelty-ws-block-gauntlet
+  novelty-ws-common-blocks
+  novelty-ws-real-user-editing
 ```
 
 This is current fuzz/control-plane health, not final-stack validation and not a
-no-bugs claim. Active current-run triage is clean at the snapshot. The drain
+no-bugs claim. Active current-run triage has one product-evidence actionable
+`timeout` signature but still has zero visible likely-real findings. The drain
 view intentionally preserves product-evidence `reload_rejoin_awareness_stall`
-representative while holding noisy real-user save/reload and rich-text
-producers in duplicate/noise pauses. The latest pass also shows
-max-enabled-group/materialization-floor churn around `novelty-ws-common-blocks`
-and a paused `novelty-ws-block-gauntlet`; that is control-plane scheduling
-churn to fix or watch, not new PR-content evidence.
+representatives while holding noisy real-user save/reload, real-user editing,
+and rich-text producers in duplicate/noise pauses. The latest pass also shows
+max-enabled-group/materialization-floor churn around clean group selection; that
+is control-plane scheduling churn to fix, not new PR-content evidence.
 
-The latest trend packet was generated at `2026-05-17T21:27:25Z` from monitor
-data through `2026-05-17T21:25:04Z`:
+The latest trend packet was generated at `2026-05-17T21:45:46Z` from monitor
+data through `2026-05-17T21:42:42Z`:
 
 ```text
-monitor passes: 2116
-coverage files: 272 -> 47782
-coverage files delta: 47510
+monitor passes: 2121
+coverage files: 272 -> 47849
+coverage files delta: 47577
 unmet goals: 5
 likely_real_max: 4
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.3461
+duplicate_share_historical_last: 0.3462
 summary startup failures last: 0
-quality issues last: 0
-memory free: 426.2 GB
-load averages: 39.67 / 48.34 / 57.82 on 64 cores
+quality issues last: 1
+memory free: 428.6 GB
+load averages: 41.36 / 40.63 / 45.04 on 64 cores
 trend enabled groups current:
   novelty-ws-real-user-editing,
-  novelty-ws-block-gauntlet,
-  novelty-ws-parser-serialization
+  novelty-ws-parser-serialization,
+  novelty-http-persistence-probe
 latest fuzz level mix:
   browser-e2e=31 lanes/27 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5362407
-browser-e2e likely-real findings: 613 over 1944.7 runner-hours
+total fuzz-level test executions: 5366337
+browser-e2e likely-real findings: 613 over 1947.3 runner-hours
 largest unmet goals:
-  reload-post-action 1058/2000,
-  title-save-reload 514/1000,
-  body-save-reload 573/1000,
-  real-user-editing success 587/1000,
-  ui-format-paragraph 1652/2000
+  reload-post-action 1066/2000,
+  title-save-reload 522/1000,
+  body-save-reload 581/1000,
+  real-user-editing success 592/1000,
+  ui-format-paragraph 1661/2000
 ```
 
-The novelty state at `21:39:09Z` supersedes the trend packet for current
+The novelty state at `21:48:40Z` supersedes the trend packet for current
 enabled/paused groups. The trend packet remains graph-derived evidence for
 coverage, load, and fuzzing effectiveness. Browser E2E remains the only level
 with confirmed likely-real findings in the trend packet, but lower-level lanes
@@ -299,40 +292,37 @@ output.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260517T213104Z-synthesis.md`. It confirms:
+`pr-split-20260517T213858Z-synthesis.md`. It confirms:
 
 - The current status is blocked, and the split should change.
-- Move off Cycle293 as the primary split because it serializes `PR09+` behind
-  PR07/root/browser blockers.
-- Use the Cycle304 lane split: common work through `PR06D`, a runtime-gated
-  `PR07A1..PR07B1` lane, and an independent `PR09..PR15C` CRDT/data-loss lane
+- Move off Cycle293 and Cycle304 iteration-18 as primary filing shapes. Cycle293
+  serializes `PR09+` behind PR07/root/browser blockers; iteration-18 still has
+  `PR06E` downstream of `PR07B1`.
+- Use the corrected Cycle304-style lane split: common work through grouped
+  `PR06A-D`, `PR06E` as a sidecar from `PR06D`, a runtime-gated
+  `PR07A1..PR07B1` lane, and an independent `PR09..PR15` CRDT/data-loss lane
   based on `PR06D`.
-- Treat `fresh-prset/iteration-20/*` as the preferred source set if present,
-  but record that the completed Cycle304 action found no local iteration-20
-  refs and used latest present `fresh-prset/iteration-18/*` refs as evidence.
-- The Cycle304 manifest/audit artifact was generated at
-  `2026-05-17T21:27:59Z`, after the observed `2026-05-17T21:27:00Z` deferred
-  queue timestamp, and reported `0` hard check failures.
-- Hard checks passed: `PR06D` is an ancestor of `PR09`; `PR07B1` is not an
-  ancestor of `PR09` or `PR15C`; clean `PR05D` is `27c6e7924217`; and
-  `fix/rtc-fallback-group-delete-stale-local` / `d06e3528cbd` are absent from
-  the manifest.
-- Publication-current manifest status still needs care: refresh the Cycle304
-  audit if the deferred queue advances after the completed artifact.
+- Treat `fresh-prset/iteration-23/*` as the preferred source set only after a
+  fresh audit/manifest newer than the current deferred queue timestamp at job
+  start.
+- The next audit must prove `PR06D -> PR06E`, `PR07B1 !-> PR06E`,
+  `PR06D -> PR09`, and `PR07B1 !-> PR09/PR15C`.
+- Keep clean `PR05D` as `27c6e7924217`; reject
+  `fix/rtc-fallback-group-delete-stale-local`, `d06e3528cbd`, and any
+  PR15/fallback-tail manifest row as `PR05D`.
 - Do not file GitHub PRs or launch broad final-stack fuzz from the current
   state.
 - Do not wait only on seed `1020002`; it blocks final-stack
   validation/filing, not branch audit, split replacement, deferred promotion,
   or loop repair.
-- Root `/` is still below the `2048 MB` browser replay floor; the completed
-  Cycle304 artifact recorded only `11 MB` free, so Docker/wp-env/browser PR07
-  replay remains skipped.
 - After root recovery, run the bounded PR07 owner matrix against PR07B0,
   PR07B1, and held PR07C for seeds `5200011`, `5200017`, `5200010`,
   `7110004`, `7110017`, and `5200008`.
-- Repair the loop gate so zero-byte reports, active sessions, stderr growth,
-  `report.tmp`, stale manifests, `disk-preflight-blocked`, and wait-only
-  feedback do not count as progress while actionable rows remain.
+- Repair the loop gate. `rtc-pr-split-review-loop.sh` still has an invalid
+  `rg -Eiq` call, and zero-byte reports, active sessions, stderr growth,
+  `report.tmp`, stale manifests, disk-preflight-only reports, and
+  runtime-readiness-only reports must not count as progress while actionable
+  rows remain.
 - The strict-expansion PR05 owner comparison completed at
   `2026-05-17T21:29:52Z` with `0` check failures; it keeps parser/rich-text,
   linebreak, suffix, and semicolonless residuals on the
@@ -360,11 +350,11 @@ that slot. The previous completed action,
   avoid hiding likely-real evidence.
 
 Current duplicate/noise status after the latest synthesis: active current-run
-triage has zero actionable signatures, zero product-evidence signatures, and
-zero visible likely-real findings; the drain view intentionally keeps
-`reload_rejoin_awareness_stall` product-evidence visible. Save/reload and
-rich-text are still paused and were not re-enabled through coverage
-recommendations. The unresolved control-plane issue is narrower:
+triage has one product-evidence actionable timeout signature and zero visible
+likely-real findings; the drain view intentionally keeps
+`reload_rejoin_awareness_stall` product-evidence visible. Save/reload,
+real-user editing, and rich-text are paused and were not re-enabled through
+coverage recommendations. The unresolved control-plane issue is narrower:
 one-hit, zero-product strict `pre_action_bootstrap_stall` producer draining and
 the scheduler contradiction where max-enabled-group budget and the browser
 materialization floor can pause and then re-enable the same group. The next
@@ -378,8 +368,9 @@ separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older "keep
 existing split", old PR13 review-ref warnings, old enabled-group claims, and
 "do not add PR06B" recommendations are superseded by the repaired PR13 audit
-links, the Cycle304 split recommendation, the PR07 runtime-gated
-lane, and the later Cycle304/duplicate-noise evidence.
+links, the corrected Cycle304-style split recommendation, the PR07
+runtime-gated lane, grouped PR06/PR11/PR12/PR15 rows, and the later
+duplicate/noise evidence.
 
 ## Deferred Or Evidence-Only Work
 
@@ -387,20 +378,20 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| Cycle304 split audit | Cycle304 lane split; preferred `fresh-prset/iteration-20/*`, latest present `fresh-prset/iteration-18/*` evidence | completed non-Docker audit at `2026-05-17T21:27:59Z` with `0` hard check failures, but no finer-row GitHub `verified-content` review links yet | Refresh publication manifest/audit if the deferred queue advances; publish/fetch/audit explicit review refs before treating finer rows as maintainer-facing links |
-| PR09+ mainline placement | PR09 through PR15C | Cycle304 audit passed: `PR06D` is an ancestor of `PR09`, and `PR07B1` is not an ancestor of `PR09` or `PR15C`; Cycle293 is supporting evidence only | Preserve that base shape in any refreshed publication manifest and review-link audit |
+| Corrected Cycle304 split audit | corrected Cycle304-style lane split; preferred `fresh-prset/iteration-23/*` after fresh audit | not completed in the collected inputs; prior iteration-18 evidence is rejected for active filing because `PR06E` is downstream of `PR07B1`, and finer/current grouped GitHub `verified-content` links are missing | Launch exactly one bounded `rtc-cycle306-fresh-iteration23-audit-pr07-owner-matrix` job; publish/fetch/audit explicit review refs before treating grouped rows as maintainer-facing links |
+| PR09+ mainline placement | PR09 through grouped PR15 | must prove `PR06D` is an ancestor of `PR09`, and `PR07B1` is not an ancestor of `PR09` or `PR15C`; Cycle293 remains supporting evidence only | Preserve that base shape in the iteration-23 manifest and review-link audit |
 | PR07 runtime / root-space gate | PR07A1/A2/A3, PR07B0, PR07B1, held PR07C; seeds `5200011`, `5200017`, `5200010`, `7110004`, `7110017`, and `5200008` | unresolved; `/` is below the `2048 MB` browser replay floor and the latest completed artifact recorded `11 MB` free | Recover `/` above threshold with before/after free-space evidence and cleanup ledger, repair runtime readiness, then run the PR07 owner matrix with snapshots |
 | PR07D | reload/post-save/rejoin residuals | absent; not justified by current evidence | Add only after fresh replay proves red-at-active-PR07C non-coverage with first-divergence snapshots |
 | PR05D semicolonless entity validation | clean PR05C-adjacent branch `27c6e7924217` | real PR05-family work after PR05C; Cycle304 audit rejects fallback/PR15-tail `PR05D`; no fetched `verified-content` product branch link exists yet | Publish/fetch/audit PR05D; keep `fix/rtc-fallback-group-delete-stale-local` and `d06e3528cbd` rejected |
-| PR06E malformed-save sidecar | current PR06B-style sidecar | still useful, but must be renamed or explicitly labeled to avoid collision with PR06A-D | Publish/fetch/audit as `PR06E` or explicit `PR06-sidecar` after fresh PR06A-D naming exists |
-| PR14B / PR15-on-PR14B finalization | PR14B and PR15A/B/C-on-PR14B | mandatory replacement topology, but no current `verified-content` branch links exist | Publish/fetch/audit explicit no-PR03B product refs; keep old pre-PR14B PR15 audit links as prior art only |
+| PR06E malformed-save sidecar | current PR06B-style sidecar | still useful, but must attach to `PR06D`, not `PR07B1`; iteration-18 is rejected for this row | Publish/fetch/audit as `PR06E` or explicit `PR06-sidecar` after the grouped PR06A-D row is fresh |
+| PR14B / grouped PR15-on-PR14B finalization | PR14B and grouped PR15-on-PR14B | mandatory replacement topology, but no current `verified-content` branch links exist | Publish/fetch/audit explicit no-PR03B product refs; keep old pre-PR14B PR15 audit links as prior art only |
 | PR03B browser `restoreRevision` CRDT invalidation | held PR03 sidecar | held until runtime replay distinguishes PR03 from PR03B ownership | Run PR03 vs PR03B for revision-restore-shaped residuals after runtime readiness is healthy |
 | PR05B/PR05C/PR05D owner comparison | strict seed `5700084`; parser/rich-text/linebreak/suffix residuals | completed at `2026-05-17T21:29:52Z` with `0` check failures; residuals stay on PR05B/PR05C/clean-PR05D and no `PR18x` owner is assigned | Keep future residuals on this comparison path unless fresh evidence disproves earlier ownership |
-| PR12 finer split | PR12A/B/C target; old aggregate PR12 audit link | preferred split is finer than the repaired audited aggregate link | Publish/fetch/audit PR12A/B/C before replacing aggregate prior-art rows |
+| PR11 / PR12 grouped rows | grouped PR11 and grouped PR12 targets; old aggregate PR11/PR12 audit links | corrected split now groups these rows, but no iteration-23 `verified-content` links exist | Publish/fetch/audit grouped PR11 and grouped PR12 before replacing aggregate prior-art rows |
 | PR13 finer split | PR13A/B0/B1/B2/B3 target; repaired PR13A/B/C fallback links | preferred source split is finer than the repaired audited fallback links | Publish/fetch/audit PR13B0/B1/B2/B3 before replacing repaired PR13B/C fallback rows |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzz, filing, and rebuilt validation only | Revisit only after rebuilt validation produces fresh product evidence newer than terminal/downscope classifications |
 | Pre-save search/live document collapse | seed `961308` / `ddf9559af37e`; run `0932bed35c7a` only if red or ambiguous | evidence-only; not in active split | Run one bounded owner comparison against PR06A-D, PR06E, PR07B0, PR07B1, and PR07C after PR07 stops consuming E2E capacity |
-| Duplicate/noise control-plane recycling | duplicate synthesis `20260517T212928Z`; previous completed action `20260517T204820Z`; novelty status `2026-05-17T21:39:09.053Z` | active current-run triage is clean and product evidence remains visible in drain; save/reload and rich-text stay paused; unresolved issue is one-hit zero-product startup draining plus max-enabled/materialization-floor churn around clean group selection | Patch novelty-monitor/supervisor so strict zero-product startup drain triggers on one hit and materialization-floor enabling respects pause/hold/max-group gates; verify no unsafe re-enable of paused noisy groups and product evidence remains visible |
+| Duplicate/noise control-plane recycling | duplicate synthesis `20260517T212928Z`; previous completed action `20260517T204820Z`; novelty status `2026-05-17T21:48:40.561Z` | active current-run triage has one actionable timeout but no visible likely-real finding; product evidence remains visible in drain; save/reload, real-user editing, and rich-text stay paused; unresolved issue is one-hit zero-product startup draining plus max-enabled/materialization-floor churn around clean group selection | Patch novelty-monitor/supervisor so strict zero-product startup drain triggers on one hit and materialization-floor enabling respects pause/hold/max-group gates; verify no unsafe re-enable of paused noisy groups and product evidence remains visible |
 
 ## Filing Gates And Current Recommendation
 
@@ -414,15 +405,17 @@ Before filing any maintainer-facing PR:
    validation-stack branches, deferred branches, dirty evidence branches, old
    downstream `ready/*` refs, stale `ready-pr03b/*` main-spine refs, or
    validation-only heads.
-2. Use the Cycle304 split as the active replacement shape. Treat Cycle293 and
-   older local push manifests as historical progress only.
-3. Keep the completed Cycle304 ancestry checks true in any refreshed manifest:
-   PR09 based on PR06D, PR07B1 not an ancestor of PR09 or PR15C, clean PR05D
-   only, and no fallback-tail `PR05D`.
+2. Use the corrected Cycle304-style split as the active replacement shape.
+   Treat Cycle293, Cycle304 iteration-18 for `PR06E`, and older local push
+   manifests as historical progress only.
+3. Prove the corrected ancestry checks true in the iteration-23 manifest:
+   `PR06D -> PR06E`, `PR07B1 !-> PR06E`, `PR06D -> PR09`,
+   `PR07B1 !-> PR09/PR15C`, clean `PR05D` only, and no fallback-tail
+   `PR05D`.
 4. Publish/fetch and audit explicit product refs for PR02A, PR05A/B/C, clean
-   PR05D, PR06A/B/C/D, PR06E, PR07A1/A2/A3, PR07B0, PR07B1, held PR07C,
-   PR11A-E, PR12A-C, PR13B0/B1/B2/B3, PR14B, and PR15A/B/C-on-PR14B before
-   treating those finer rows as maintainer-facing links.
+   PR05D, grouped PR06A-D, PR06E, PR07A1/A2/A3, PR07B0, PR07B1, held PR07C,
+   grouped PR11, grouped PR12, PR13B0/B1/B2/B3, PR14B, and grouped
+   PR15-on-PR14B before treating those rows as maintainer-facing links.
 5. Until PR13B0/B1/B2/B3 have verified branch links, use only the repaired
    PR13A/B/C audit links listed above for PR13 fallback content.
 6. Keep old aggregate PR 5, aggregate PR 6, broad PR 8, aggregate PR 11,
@@ -454,7 +447,8 @@ Before filing any maintainer-facing PR:
 
 Existing fuzz infrastructure can continue only where healthy, and bounded
 source reduction is allowed after environment preflight is healthy. The next
-useful work is publishing/fetching/auditing explicit Cycle304 review refs,
-refreshing the manifest if the deferred queue advances, root-space cleanup,
-loop-gate and duplicate/noise scheduler repair, and after root recovery the
-bounded PR07 owner matrix.
+useful work is one bounded `rtc-cycle306-fresh-iteration23-audit-pr07-owner-matrix`
+job, publishing/fetching/auditing explicit corrected Cycle304 review refs,
+root-space cleanup, loop-gate and duplicate/noise scheduler repair, and after
+root recovery the bounded PR07 owner matrix. Do not launch broad final-stack
+fuzz, a duplicate seed `1020002` job, raw `PR07D`, or `PR18x`.
