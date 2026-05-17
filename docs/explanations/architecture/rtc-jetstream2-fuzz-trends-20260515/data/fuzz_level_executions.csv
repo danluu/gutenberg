@@ -7428,6 +7428,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T17:00:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,12,10,9,12,3,751639,FALSE
 2026-05-17T17:00:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,4,4,4,4,0,620446,FALSE
 2026-05-17T17:00:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2144,2144,1600,67,17,387000,FALSE
+2026-05-17T17:15:00Z,coverage-guided,novelty-ws-parser-transform,browser-e2e,ws,parser-transform,5,5,4,5,1,128474,FALSE
 2026-05-17T17:15:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,2,2,0,2,2,144141,FALSE
 2026-05-17T17:15:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,4,4,0,4,4,293407,FALSE
 2026-05-17T17:15:00Z,coverage-guided,novelty-ws-real-user-save-reload,browser-e2e,ws,real-user-editing,2,2,0,2,2,147038,FALSE
@@ -7440,7 +7441,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T17:15:00Z,focused-shards,focused-long-doc-b,browser-e2e,ws,long-session-large-doc,6,6,6,6,0,502845,FALSE
 2026-05-17T17:15:00Z,focused-shards,focused-rich-text-b,browser-e2e,ws,real-user-editing,2,1,0,2,2,349493,FALSE
 2026-05-17T17:15:00Z,focused-shards,focused-same-user-stale-tabs,browser-e2e,ws,session-lifecycle,4,2,1,4,3,468720,FALSE
-2026-05-17T17:15:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,6,6,0,6,6,661672,FALSE
+2026-05-17T17:15:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,8,8,1,8,7,900921,FALSE
 2026-05-17T17:15:00Z,gap-booster,boost-real-user-title-rich-text,browser-e2e,ws,real-user-editing,2,2,0,2,2,410330,FALSE
 2026-05-17T17:15:00Z,gap-booster,boost-revision-autosave-recovery,browser-e2e,ws,revision-persistence,2,2,0,2,2,457881,FALSE
 2026-05-17T17:15:00Z,gap-booster,boost-three-user-late-join,browser-e2e,ws,three-user-late-join,2,1,0,2,2,467809,FALSE
@@ -7454,4 +7455,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T17:15:00Z,strict-expansion,ws-revision-persistence,browser-e2e,ws,revision-persistence,3,1,2,3,1,536000,FALSE
 2026-05-17T17:15:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,6,5,5,6,1,386984,FALSE
 2026-05-17T17:15:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,3,2,0,3,3,474604,FALSE
-2026-05-17T17:15:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,1856,1856,1504,58,11,342000,FALSE
+2026-05-17T17:15:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2464,2464,1984,77,15,447000,FALSE
+2026-05-17T17:30:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,4,2,1,4,3,195937,FALSE
+2026-05-17T17:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,1,1,1,0,100485,FALSE
+2026-05-17T17:30:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,512,512,416,16,3,89000,FALSE
