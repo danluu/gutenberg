@@ -10285,3 +10285,8 @@ timestamp,message,event_type,cycle,max_parallel,interval_s
 2026-05-17T04:52:01Z,starting PR split review cycle 20260517T045201Z,review start,20260517T045201Z,NA,NA
 2026-05-17T05:00:01Z,finished PR split review cycle 20260517T045201Z,review finish,20260517T045201Z,NA,NA
 2026-05-17T05:00:01Z,running feedback action after cycle 234,feedback start,234,NA,NA
+2026-05-17T05:08:30Z,wait-only feedback while independent gate has work; launching progress unblock job,other,NA,NA,NA
+2026-05-17T05:08:30Z,finished feedback action after cycle 234,feedback finish,234,NA,NA
+2026-05-17T05:08:35Z,starting PR split review cycle 20260517T050835Z,review start,20260517T050835Z,NA,NA
+2026-05-17T05:08:46Z,loop started interval=5s max_parallel=6 action_every_cycles=2,loop start,NA,6,5
+2026-05-17T05:08:46Z,starting PR split review cycle 20260517T050846Z,review start,20260517T050846Z,NA,NA
