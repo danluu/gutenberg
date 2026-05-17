@@ -189,6 +189,64 @@ describe( 'prePersistPostType', () => {
 		getSyncManager.mockReset();
 	} );
 
+	it( 'passes title and excerpt snapshots when serializing a persisted CRDT document', async () => {
+		const syncManager = {
+			createPersistedCRDTDoc: jest
+				.fn()
+				.mockResolvedValue( 'snapshot-doc' ),
+		};
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				title: { raw: 'Base title' },
+				excerpt: { raw: 'Base excerpt' },
+				content: { raw: pageContent( [ 'Base content' ] ) },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			{
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			'post',
+			false,
+			'/wp/v2/posts',
+			{
+				recordSnapshot: {
+					title: 'Live title',
+					excerpt: { raw: 'Live excerpt' },
+					content: pageContent( [ 'Ignored content' ] ),
+				},
+			}
+		);
+
+		expect( syncManager.createPersistedCRDTDoc ).toHaveBeenCalledWith(
+			'postType/post',
+			123,
+			{
+				basePersistedCRDTDoc: 'base-doc',
+				baseRecordSnapshot: {
+					excerpt: 'Base excerpt',
+					title: 'Base title',
+				},
+				recordSnapshot: {
+					excerpt: 'Live excerpt',
+					title: 'Live title',
+				},
+			}
+		);
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'snapshot-doc',
+			},
+		} );
+	} );
+
 	it( 'preserves latest saved content when a full-record save only changes other fields', async () => {
 		const baseContent = pageContent( [ 'Alpha', 'Beta' ] );
 		const latestContent = pageContent( [ 'Alpha', 'current content' ] );

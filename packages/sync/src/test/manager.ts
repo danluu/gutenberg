@@ -26,6 +26,7 @@ import {
 } from '../config';
 import { getProviderCreators } from '../providers';
 import type {
+	CreatePersistedCRDTDocOptions,
 	CRDTDoc,
 	ObjectData,
 	ProviderCreator,
@@ -299,7 +300,8 @@ describe( 'SyncManager', () => {
 
 		describe( 'persisted CRDT doc behavior', () => {
 			function createPersistedCRDTDoc(
-				persistedRecord: ObjectData
+				persistedRecord: ObjectData,
+				options: CreatePersistedCRDTDocOptions = {}
 			): string {
 				const persistedDoc = new Y.Doc();
 				const persistedRecordMap =
@@ -310,7 +312,7 @@ describe( 'SyncManager', () => {
 					}
 				);
 
-				return serializeCrdtDoc( persistedDoc );
+				return serializeCrdtDoc( persistedDoc, options );
 			}
 
 			it( 'applies the current record when no persisted CRDT doc exists', async () => {
@@ -346,6 +348,47 @@ describe( 'SyncManager', () => {
 				// Verify that the CRDT doc was persisted.
 				expect( mockHandlers.persistCRDTDoc ).toHaveBeenCalledTimes(
 					1
+				);
+			} );
+
+			it( 'ignores stale record invalidations covered by persisted record snapshots', async () => {
+				mockRecord = {
+					...mockRecord,
+					title: 'Base title',
+				};
+				mockSyncConfig = {
+					...mockSyncConfig,
+					getPersistedCRDTDoc: jest.fn( () =>
+						createPersistedCRDTDoc(
+							{
+								...mockRecord,
+								title: 'Snapshot title',
+							},
+							{
+								baseRecordSnapshot: { title: 'Base title' },
+								recordSnapshot: { title: 'Snapshot title' },
+							}
+						)
+					),
+				};
+
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).not.toHaveBeenCalled();
+				expect( mockHandlers.persistCRDTDoc ).not.toHaveBeenCalled();
+				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+					{ title: 'Snapshot title' },
+					{ undoIgnore: true }
 				);
 			} );
 
@@ -536,6 +579,42 @@ describe( 'SyncManager', () => {
 				);
 
 				expect( nextPersistedDoc ).toBe( basePersistedDoc );
+			} );
+
+			it( 'serializes a new persisted CRDT doc when only record snapshots changed', async () => {
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				const basePersistedDoc = await manager.createPersistedCRDTDoc(
+					'post',
+					'123'
+				);
+				expect( basePersistedDoc ).toBeTruthy();
+
+				const nextPersistedDoc = await manager.createPersistedCRDTDoc(
+					'post',
+					'123',
+					{
+						basePersistedCRDTDoc: basePersistedDoc,
+						baseRecordSnapshot: { title: 'Base title' },
+						recordSnapshot: { title: 'Snapshot title' },
+					}
+				);
+
+				expect( nextPersistedDoc ).not.toBe( basePersistedDoc );
+				expect( JSON.parse( nextPersistedDoc! ) ).toEqual(
+					expect.objectContaining( {
+						baseRecordSnapshot: { title: 'Base title' },
+						recordSnapshot: { title: 'Snapshot title' },
+					} )
+				);
 			} );
 
 			it( 'serializes a new persisted CRDT doc when record data changed', async () => {
