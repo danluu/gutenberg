@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T17:52:57Z`
+Snapshot time: `2026-05-17T18:01:12Z`
 
 Trigger event:
-`pr-split-2026-05-17T17-52-09Z-20260517T174423Z`
+`duplicate-noise-2026-05-17T17-51-33Z-138`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T17-52-09Z-20260517T174423Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T17-51-33Z-138/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -147,13 +147,14 @@ bypass, the feedback action applied the fuzzer-side hard-cooldown fix in
 bypassed by sibling product evidence, producer enablement and coverage-guidance
 Codex gates include active plus paused no-analysis drain scope, and product
 evidence remains visible for analysis. The current raw novelty snapshot still
-shows no visible likely-real failures. It has five active current-scope
-product-evidence signatures and suppressed strict startup drain noise, with
+shows no visible likely-real failures. It has seven active current-scope
+product-evidence signatures, `23` suppressed strict startup records in the
+current drain scope, and active current-run startup-noise hold emissions, with
 `novelty-ws-parser-serialization` as the only enabled group.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T17:52:51Z`.
+Remote status was collected at `2026-05-17T17:58:49Z`.
 
 The fix-planning repo is checked out at:
 
@@ -183,7 +184,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T17:52:57Z` from fetched
+The branch-link audit was generated at `2026-05-17T17:58:54Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -264,31 +265,31 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T17:52:51Z
+collected_at_utc: 2026-05-17T17:58:49Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T170355Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The collected raw `novelty-status.md` snapshot is now nonempty and was updated
-at `2026-05-17T17:49:49.492Z`:
+at `2026-05-17T17:56:22.276Z`:
 
 ```text
-coverage files: 46993
-total records seen: 72383
+coverage files: 46998
+total records seen: 72392
 unmet goals: 6
-headroom for adding groups: yes
-load1: 53.95 / 64 cores
-memory: 427.5G free / 492.0G total
-current-run actionable signatures: 5
+headroom for adding groups: no
+load1: 65.40 / 64 cores
+memory: 422.0G free / 492.0G total
+current-run actionable signatures: 7
 current-run likely-real visible: 0
-current-run product-evidence signatures: 5
-current-run raw signatures: 10
-current-run top semantic families: unknown=3,
-  reload_rejoin_awareness_stall=2
-current-drain raw signatures: 21
-current-drain no-product raw signatures: 11
-current-drain suppressed strict startup records: 22
+current-run product-evidence signatures: 7
+current-run raw signatures: 13
+current-run top semantic families:
+  reload_rejoin_awareness_stall=4, unknown=3
+current-drain raw signatures: 24
+current-drain no-product raw signatures: 12
+current-drain suppressed strict startup records: 23
 enabled groups: novelty-ws-parser-serialization
 paused groups: novelty-ws-lifecycle, novelty-ws-persistence-no-title,
   novelty-http-persistence-probe, novelty-ws-real-user-editing,
@@ -305,16 +306,16 @@ paused or under cooldown, and the hard-cooldown scheduler fix now keeps strict
 startup drain noise out of producer/Codex scheduling while preserving
 product-evidence signatures for analysis.
 
-The latest trend packet was generated at `2026-05-17T17:42:07Z` from monitor
-data through `2026-05-17T17:39:58Z`:
+The latest trend packet was generated at `2026-05-17T17:52:34Z` from monitor
+data through `2026-05-17T17:49:49Z`:
 
 ```text
-monitor passes: 2055
-coverage files: 272 -> 46982
-coverage files delta: 46710
+monitor passes: 2058
+coverage files: 272 -> 46993
+coverage files delta: 46721
 unmet goals: 6
 likely_real_max: 4
-duplicate_share_current_last: 0.8
+duplicate_share_current_last: 0.6
 duplicate_share_historical_last: 0.3462
 summary startup failures last: 0
 quality issues last: 0
@@ -322,11 +323,11 @@ enabled groups current: novelty-ws-parser-serialization
 fuzz level mix: browser-e2e=26 lanes/26 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5311610
-browser-e2e execution: 106285 cumulative / 112 per-hour
-unit-property execution: 4773984 cumulative / 7808 per-hour
+total fuzz-level test executions: 5313634
+browser-e2e execution: 106773 cumulative / 1588 per-hour
+unit-property execution: 4775520 cumulative / 3456 per-hour
 coverage-guided-lower-level execution: 428335 cumulative / 0 per-hour
-browser-e2e likely-real findings: 580 over 1872.5 runner-hours
+browser-e2e likely-real findings: 580 over 1875.2 runner-hours
 largest unmet goals: reload-post-action 1019/2000,
   title-save-reload 475/1000, ui-format-paragraph 1484/2000,
   body-save-reload 534/1000, real-user-editing success 561/1000
@@ -422,7 +423,7 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| PR07B split and deferred adoption | `PR07B0` saved-response hydration at `e746c32e3f9` / deferred `72854f05ed2`; `PR07B1` stale base-record/title filter at `4bdd9465a97`; Cycle 282 manifest at `2026-05-17T16:15:44Z`; Cycle 286 manifest-age at `2026-05-17T17:11:41Z`; local publish manifest at `2026-05-17T17:12:18Z`; branch-link audit refreshed at `2026-05-17T17:52:57Z`; Cycle 288 finalization reports at `20260517T172949Z` and `20260517T173952Z` | Cycle 286 records all audited rows as `base-is-ancestor`, but current persona synthesis treats the later finalization reports as branch-hygiene / push-instruction evidence only; the refreshed branch-link audit verifies existing review links but still has no `verified-content` PR links for PR07B0/PR07B1 | Regenerate a fresh non-Docker manifest/audit newer than the latest deferred queue; publish/fetch/audit explicit PR07B0 and PR07B1 product branches; rerun focused checks and rebuilt stack validation against those audited refs |
+| PR07B split and deferred adoption | `PR07B0` saved-response hydration at `e746c32e3f9` / deferred `72854f05ed2`; `PR07B1` stale base-record/title filter at `4bdd9465a97`; Cycle 282 manifest at `2026-05-17T16:15:44Z`; Cycle 286 manifest-age at `2026-05-17T17:11:41Z`; local publish manifest at `2026-05-17T17:12:18Z`; branch-link audit refreshed at `2026-05-17T17:58:54Z`; Cycle 288 finalization reports at `20260517T172949Z` and `20260517T173952Z` | Cycle 286 records all audited rows as `base-is-ancestor`, but current persona synthesis treats the later finalization reports as branch-hygiene / push-instruction evidence only; the refreshed branch-link audit verifies existing review links but still has no `verified-content` PR links for PR07B0/PR07B1 | Regenerate a fresh non-Docker manifest/audit newer than the latest deferred queue; publish/fetch/audit explicit PR07B0 and PR07B1 product branches; rerun focused checks and rebuilt stack validation against those audited refs |
 | Reload/post-save residual witnesses | latest seeds `5200011`, `5200017`, `5200010`, `7110004`, `7110017`; include `7700005` if capacity allows | focused residual replay target after PR07B split/adoption; not a product PR slot yet; Cycle 288 launched `rtc-cycle288-pr07-live-replay-with-snapshots`, but the latest persona synthesis says durable replay artifacts are still missing | Consume nonempty Cycle 288 PR07 replay artifacts, or run exactly one bounded replacement if the job exits without them; compare against PR07B0/PR07B1/PR07C before naming PR07D and capture block trees, serialized content, clientIds, marker attributes, REST content, REST `_crdt_document`, Y.Doc vectors, operation ledger, focus/selection, and snapshots after each save/reload/mutation |
 | PR05D semicolonless entity validation | Cycle 264 clean-base branch `cycle264/pr05d-clean-base/semicolonless-entity-validation` at `27c6e7924217`; Cycle 266 validation head `b9bf4ccb7940` | real PR05-family work after PR05C; bundle import and validation-head refresh completed, but no fetched `verified-content` product branch link exists yet | Publish/fetch/audit PR05D; consume the Cycle 266 validation head; keep the Cycle 262 fallback-tail manifest rejected |
 | PR06B / PR07B helper dedupe | active candidate `finalized/cycle268/sidecar/rtc-pr06b-malformed-save-request-payload-minimal-on-pr07b` at `e91d2fe829f2`; stale `ready/rtc-pr06b-*` manifest rows | old independent PR06A sidecar is superseded; Cycle 274/278/280/282 evidence rejects stale rows and Cycle 286/Cycle 288 branch-hygiene evidence preserves sidecar placement, but there is still no verified branch link and the active topology places the sidecar after PR07B1 | Publish/fetch/audit an explicit PR06B product branch after PR07B0/PR07B1, classify runtime readiness, and rebuild stack validation against the active topology |
@@ -439,7 +440,7 @@ These must not be described as fixed or filing-ready.
 | Pre-save search/live document collapse | seed `961308` / `ddf9559af37e`; only run `0932bed35c7a` if red or ambiguous | evidence-only; not in active split; latest split-persona synthesis keeps the active pre-save/rich-text gate row actionable and says it must not block behind `1020002` | Run one bounded pre-save owner comparison against `PR06`, `PR06A`, `PR07B0`, `PR07B1`, and `PR07C`, capturing editor blocks, serialized content, edited core-data record, live CRDT record, provider state, REST body, and save state around `core/search` insertion before naming an owner |
 | Broader HTTP polling room-isolation residuals | PR02A sidecar plus stale deferred relaunches | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred | Publish/fetch/audit PR02A before filing; promote additional residuals only with narrowed healthy-user product evidence |
 | Revision-restore marker retention | seed `5500002`; active lifecycle triage | queued behind final-stack preparation; no automatic PR slot | Triage only after rebuilt stack is available |
-| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T154741Z-feedback-action.md`; `duplicate-noise-20260517T163139Z-feedback-action.md`; `duplicate-noise-20260517T172447Z-synthesis.md`; `duplicate-noise-20260517T172447Z-feedback-action.md`; nonempty `novelty-status.md` at `2026-05-17T17:49:49.492Z` | bounded fuzzer-side startup gate, policy-`19`, and hard startup-noise cooldown patch are implemented; latest monitor pass shows five active current-scope product-evidence signatures, suppressed strict startup drain noise, and `novelty-ws-parser-serialization` as the only enabled group | Let paused no-analysis drain clear; keep product-evidence signatures visible for analysis while preventing no-product startup noise from bypassing scheduler holds |
+| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T154741Z-feedback-action.md`; `duplicate-noise-20260517T163139Z-feedback-action.md`; `duplicate-noise-20260517T172447Z-synthesis.md`; `duplicate-noise-20260517T172447Z-feedback-action.md`; nonempty `novelty-status.md` at `2026-05-17T17:56:22.276Z` | bounded fuzzer-side startup gate, policy-`19`, and hard startup-noise cooldown patch are implemented; latest monitor pass shows seven active current-scope product-evidence signatures, `23` suppressed strict startup records in current drain scope, active startup-noise hold emissions, and `novelty-ws-parser-serialization` as the only enabled group | Let paused no-analysis drain clear; keep product-evidence signatures visible for analysis while preventing no-product startup noise from bypassing scheduler holds |
 
 ## Filing Gates And Current Recommendation
 
@@ -523,10 +524,11 @@ Before filing any maintainer-facing PR:
     duplicate/noise feedback action as fuzz/control-plane health and triage
     evidence. The collected raw novelty snapshot for this update is nonempty
     and fresher than the trend packet. It shows zero visible likely-real
-    failures, five active current-scope product-evidence signatures, suppressed
-    strict startup drain noise, and a validated hard startup-noise cooldown
-    scheduler fix; neither source is final-stack validation, a validated
-    final-stack pass or failure, or filing readiness.
+    failures, seven active current-scope product-evidence signatures, `23`
+    suppressed strict startup records in the current drain scope, and a
+    validated hard startup-noise cooldown scheduler fix; neither source is
+    final-stack validation, a validated final-stack pass or failure, or filing
+    readiness.
 
 Existing fuzz infrastructure can continue only where healthy, and bounded
 source reduction is allowed after environment preflight is healthy. None of the
