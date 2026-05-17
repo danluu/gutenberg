@@ -753,3 +753,6 @@ timestamp,group,group_family
 2026-05-17T18:40:54Z,novelty-ws-lifecycle,lifecycle
 2026-05-17T18:40:54Z,novelty-ws-real-user-save-reload,real-user
 2026-05-17T18:48:24Z,novelty-ws-real-user-editing,real-user
+2026-05-17T19:34:21Z,novelty-ws-parser-transform,parser
+2026-05-17T19:37:36Z,novelty-ws-real-user-save-reload,real-user
+2026-05-17T19:37:36Z,novelty-ws-real-user-editing,real-user
