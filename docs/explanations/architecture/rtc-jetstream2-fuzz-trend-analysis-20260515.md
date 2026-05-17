@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-17T01:55:21Z`
+Snapshot generated: `2026-05-17T02:15:50Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -12,8 +12,8 @@ Source inputs:
 - coverage monitor log:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest copied novelty state:
-  current coverage output-dir state (`startedAt=2026-05-17T01:48:11.151Z`,
-  `lastUpdatedAt=2026-05-17T01:53:44.346Z`)
+  current coverage output-dir state (`startedAt=2026-05-17T02:08:26.582Z`,
+  `lastUpdatedAt=2026-05-17T02:13:05.118Z`)
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
 - CPU and load-average history:
@@ -25,9 +25,9 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1793` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-17T01:53:44Z`, coverage files grew from `272` to `38126`, a delta of
-`37854`. The monitor's visible likely-real count stayed at `0`.
+`1799` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-17T02:13:05Z`, coverage files grew from `272` to `38340`, a delta of
+`38068`. The monitor's visible likely-real count stayed at `0`.
 
 Coverage-goal pressure is down but not finished. The latest copied
 coverage-guidance state has `126` total goals and `6` unmet goals. The remaining
@@ -37,7 +37,7 @@ for real-user editing.
 The latest plotted current-output-dir duplicate/noise sample is currently clear:
 `duplicateShareCurrent` is `0`, and current summary startup failures are `0`.
 The same sample has `1` quality issue, `1` warning, a false headroom flag, and
-`420.5G` free memory. The copied novelty state is using
+`439.2G` free memory. The copied novelty state is using
 `supervisor-active-run-dirs`; current triage has `2` roots, `0` files, `0` raw
 signatures, `0` actionable signatures, no visible likely-real failures, top
 duplicate family share `0`, and a health warning that no behavioral coverage
@@ -113,13 +113,13 @@ non-convergence failures.
 
 ![Load average over time](rtc-jetstream2-fuzz-trends-20260515/plots/load-average-over-time.png)
 
-Recent sysstat samples through `2026-05-17T01:50:02Z` show heavy CPU and load
+Recent sysstat samples through `2026-05-17T02:10:00Z` show heavy CPU and load
 pressure: the latest 25 CPU samples range from `32.8%` to `90.4%`
-utilization, with the latest sample at `90.4%`. One-minute load exceeded the
-logical CPU count in `8` of those `25` sampled windows, while the latest sampled
-1/5/15-minute load is `309.95`, `354.25`, and `215.03` against `64` logical
+utilization, with the latest sample at `71.9%`. One-minute load exceeded the
+logical CPU count in `9` of those `25` sampled windows, while the latest sampled
+1/5/15-minute load is `41.37`, `68.83`, and `113.24` against `64` logical
 CPUs. Raw memory remains ample, but current monitor headroom is false and the
-15-minute load remains far above core count.
+15-minute load remains above core count.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
 
@@ -186,14 +186,59 @@ supervisor launches or lane counts, but it only covers fuzzers that emit these
 lane events. Lower-level counts reconstructed from batch metadata or legacy
 batch-count fields are approximate.
 
-The latest collected execution data has about `2,849,400` completed test
-executions: `93,923` browser/e2e, `3,006` transport/integration, `2,471,092`
-unit-property, and `281,379` coverage-guided-lower-level. The latest partial
-15-minute bucket reports about `340` browser/e2e test executions/hour, `48,160`
-unit-property test executions/hour, `16,128` coverage-guided-lower-level test
-executions/hour, and `0` transport/integration test executions/hour.
+The latest collected execution data has about `2,911,884` completed test
+executions: `94,521` browser/e2e, `3,006` transport/integration, `2,522,864`
+unit-property, and `291,493` coverage-guided-lower-level. The latest partial
+15-minute bucket reports about `2,116` browser/e2e test executions/hour,
+`158,928` unit-property test executions/hour, `29,448`
+coverage-guided-lower-level test executions/hour, and `0`
+transport/integration test executions/hour.
 `backend-api`, `protocol-server`, and standalone `fuzz-assertion` levels remain
 at `0` executions in this counter.
+
+## Bug-Finding Effectiveness
+
+![Likely-real bug-finding effectiveness by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/bug-effectiveness-likely-real-by-level.png)
+
+![Failure-candidate effectiveness by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/failure-candidate-effectiveness-by-level.png)
+
+The confirmed bug-finding metric counts unique non-duplicate triage results
+classified `likely_real`, deduped by canonical bug key and attributed to the
+failure first-seen time. The compute proxy is summed runner wall-clock
+`durationMs` from lane `events.ndjson`, reported as runner-hours. This is not
+measured CPU time, so it is best interpreted as per-runner efficiency rather
+than per-core efficiency.
+
+On that confirmed metric, browser/e2e currently dominates: `202` unique
+likely-real findings over about `1,613.8` runner-hours, or `12.52` likely-real
+findings per 100 runner-hours. `transport-integration`, `unit-property`,
+`coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
+`fuzz-assertion` all have `0` confirmed likely-real findings in the collected
+triage rows so far. That does not prove the lower-level lanes are unproductive;
+it means their current findings have not yet flowed through the same
+non-duplicate likely-real triage path.
+
+The failure-candidate plot is a pre-triage lead indicator: failed seed or batch
+attempts per 100 runner-hours. It is useful for comparing where the system is
+still producing interesting work before duplicate/noise analysis, but it is not
+a confirmed bug count. Current rates are about `4,811.7` for browser/e2e,
+`4,537.5` for transport/integration, `1,120.5` for coverage-guided lower-level,
+and `854.8` for unit/property.
+
+![Likely-real bug-finding effectiveness within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/bug-effectiveness-by-profile-within-level.png)
+
+![Failure-candidate effectiveness within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/failure-candidate-effectiveness-by-profile-within-level.png)
+
+Within browser/e2e, the strongest confirmed profiles by likely-real findings
+per 100 runner-hours are `permissions-auth-locks` (`26.17`),
+`session-lifecycle` (`25.83`), `three-user-late-join` (`18.42`),
+`block-gauntlet` (`16.24`), and `persistence-no-title` (`14.59`). The
+pre-triage failure-candidate view has similar but not identical pressure:
+`permissions-auth-locks`, `async-server-blocks`, `three-user-late-join`,
+`long-session-large-doc`, and `session-lifecycle` are the top current
+browser/e2e sources. Lower-level and transport lanes should continue to be
+judged partly by this candidate-rate graph until their triage pipeline is
+producing comparable likely-real/non-duplicate findings.
 
 ## Profile Completion
 
