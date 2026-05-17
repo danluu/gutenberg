@@ -6932,7 +6932,13 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T11:15:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,8,8,5,8,3,749900,FALSE
 2026-05-17T11:15:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,4,3,0,4,4,892092,FALSE
 2026-05-17T11:15:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,57792,57792,56588,48,1,876000,FALSE
-2026-05-17T11:30:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,7,6,6,7,1,554691,FALSE
-2026-05-17T11:30:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,4,3,3,4,1,512243,FALSE
-2026-05-17T11:30:00Z,strict-expansion,ws-block-gauntlet,browser-e2e,ws,block-gauntlet,16,14,12,16,4,657154,FALSE
-2026-05-17T11:30:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,45752,45752,45752,38,0,627000,FALSE
+2026-05-17T11:30:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,13,12,12,13,1,1064275,FALSE
+2026-05-17T11:30:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,9,7,6,9,3,1089117,FALSE
+2026-05-17T11:30:00Z,strict-expansion,ws-block-gauntlet,browser-e2e,ws,block-gauntlet,32,24,16,32,16,939786,FALSE
+2026-05-17T11:30:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,65016,65016,65016,54,0,892000,FALSE
+2026-05-17T11:45:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,5,4,3,5,2,368212,FALSE
+2026-05-17T11:45:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,3,2,2,3,1,371057,FALSE
+2026-05-17T11:45:00Z,focused-shards,focused-late-join-a,browser-e2e,ws,three-user-late-join,1,1,1,1,0,31661,FALSE
+2026-05-17T11:45:00Z,strict-expansion,ws-block-gauntlet,browser-e2e,ws,block-gauntlet,39,20,0,39,39,168082,FALSE
+2026-05-17T11:45:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,3,3,3,3,0,100492,FALSE
+2026-05-17T11:45:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,13244,13244,13244,11,0,183000,FALSE
