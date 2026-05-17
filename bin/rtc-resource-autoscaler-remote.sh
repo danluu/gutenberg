@@ -14,11 +14,13 @@ LOCK="$BASE/resource-autoscaler.lock"
 BUDGET_ENV="$BASE/current-budget.env"
 MATERIALIZATION_DIR="$BASE/materialization"
 MATERIALIZATION_LAST_REMEDIATION="$BASE/materialization-last-remediation-epoch"
+OPTIONAL_BROWSER_SHED_LAST="$BASE/optional-browser-shed-last-epoch"
 WP_ENV_RESET_LAST="$BASE/wp-env-reset-last-epoch"
 POLL_SECONDS=${RTC_RESOURCE_AUTOSCALER_POLL_SECONDS:-120}
 MIN_SCALE_UP_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_SCALE_UP_SECONDS:-1200}
 MIN_SCALE_DOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_SCALE_DOWN_SECONDS:-300}
 MIN_MATERIALIZATION_REMEDIATION_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_MATERIALIZATION_REMEDIATION_SECONDS:-900}
+OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS:-900}
 MATERIALIZATION_STALE_SECONDS=${RTC_RESOURCE_AUTOSCALER_MATERIALIZATION_STALE_SECONDS:-600}
 WP_ENV_RESET_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_WP_ENV_RESET_COOLDOWN_SECONDS:-1800}
 RESET_WP_ENV_ON_INFRA_FAILURE=${RTC_RESOURCE_AUTOSCALER_RESET_WP_ENV_ON_INFRA_FAILURE:-1}
@@ -153,6 +155,37 @@ cleanup_orphan_monitors() {
 		echo "[$(stamp)] killing orphan novelty monitor pid=$pid" >> "$LOG"
 		kill -9 "$pid" 2>/dev/null || true
 	done
+}
+
+shed_optional_browser_pools_if_needed() {
+	local reason=$1
+	local now=$2
+	local last_shed session killed=0
+	if [ "$reason" != "severe_pressure" ]; then
+		return 1
+	fi
+	last_shed=$(cat "$OPTIONAL_BROWSER_SHED_LAST" 2>/dev/null || echo 0)
+	if [ $(( $(epoch) - last_shed )) -lt "$OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS" ]; then
+		return 1
+	fi
+	for session in \
+		rtc-gap-booster \
+		rtc-gap-booster-watchdog \
+		rtc-focused-shards \
+		rtc-focused-shards-watchdog \
+		rtc-fuzz-strict-expansion \
+		rtc-fuzz-strict-expansion-watchdog; do
+		if "$TMUX" -L "$TMUX_SOCKET" has-session -t "$session" 2>/dev/null; then
+			echo "[$now] stopping optional browser session under severe pressure: $session" >> "$LOG"
+			"$TMUX" -L "$TMUX_SOCKET" kill-session -t "$session" 2>/dev/null || true
+			killed=1
+		fi
+	done
+	if [ "$killed" = 1 ]; then
+		echo "$(epoch)" > "$OPTIONAL_BROWSER_SHED_LAST"
+		return 0
+	fi
+	return 1
 }
 
 choose_budget() {
@@ -610,6 +643,13 @@ while true; do
 	else
 		up_streak=0
 		down_streak=0
+	fi
+	if shed_optional_browser_pools_if_needed "$reason" "$now"; then
+		if [ "$action" = "scale_down" ]; then
+			action=scale_down_and_shed_optional_browser
+		else
+			action=shed_optional_browser
+		fi
 	fi
 
 	append_csv "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds"

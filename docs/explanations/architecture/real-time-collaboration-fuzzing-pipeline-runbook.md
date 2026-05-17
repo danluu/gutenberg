@@ -368,6 +368,11 @@ The remote launchers are intentionally split by ownership:
     averages still show a backlog, so the controller cannot increase browser
     work merely because a severe spike decayed into a still-overloaded high
     pressure state.
+    During severe pressure it can also stop optional browser/e2e supervisors
+    (`gap-booster`, `focused-shards`, and `strict-expansion`) without stopping
+    analysis-only loops. The Jetstream guard consults the autoscaler status and
+    does not restart those optional browser pools while the autoscaler reports
+    high or severe pressure.
     Coverage-guided historical duplicate/noise is advisory unless the
     current-run duplicate/noise gate is also active; otherwise the loop must keep
     at least one bounded browser/e2e lane materialized.

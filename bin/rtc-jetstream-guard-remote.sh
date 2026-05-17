@@ -31,6 +31,30 @@ has_session() {
 	tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$1"
 }
 
+resource_pressure_blocks_optional_browser() {
+	local status=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md
+	local reason
+	reason=$(sed -n 's/^- reason: //p' "$status" 2>/dev/null | tail -1)
+	case "$reason" in
+		severe_pressure|high_pressure)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+maybe_restart_optional_browser_pool() {
+	local pool=$1
+	local reason=$2
+	if resource_pressure_blocks_optional_browser; then
+		log "skipping optional browser pool restart under resource pressure pool=$pool reason=$reason"
+		return
+	fi
+	restart_pool "$pool" "$reason"
+}
+
 file_age_seconds() {
 	local file=$1
 	local now mtime
@@ -362,13 +386,13 @@ run_loop() {
 		if ! has_session rtc-fuzz-strict-expansion ||
 			! has_session rtc-fuzz-strict-expansion-watchdog ||
 			! has_session rtc-fuzz-strict-expansion-analysis; then
-			restart_pool strict "missing strict-expansion tmux session"
+			maybe_restart_optional_browser_pool strict "missing strict-expansion tmux session"
 		fi
 
 		if ! has_session rtc-focused-shards ||
 			! has_session rtc-focused-shards-watchdog ||
 			! has_session rtc-focused-shards-analysis; then
-			restart_pool focused "missing focused-shards tmux session"
+			maybe_restart_optional_browser_pool focused "missing focused-shards tmux session"
 		elif ! has_session rtc-focused-shards-gap-codex-loop; then
 			restart_pool focused-gap "missing focused Codex gap loop"
 		fi
@@ -376,7 +400,7 @@ run_loop() {
 		if ! has_session rtc-gap-booster ||
 			! has_session rtc-gap-booster-watchdog ||
 			! has_session rtc-gap-booster-analysis; then
-			restart_pool gap-booster "missing gap-booster tmux session"
+			maybe_restart_optional_browser_pool gap-booster "missing gap-booster tmux session"
 		fi
 
 		if ! has_session rtc-lower-level-fuzz-loop ||
