@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T03:11:28Z`
+Snapshot time: `2026-05-17T03:18:34Z`
 
 Trigger event:
-`pr-split-2026-05-17T03-10-58Z-20260517T030103Z`
+`pr-split-2026-05-17T03-17-43Z-20260517T031103Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T03-10-58Z-20260517T030103Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T03-17-43Z-20260517T031103Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,11 +28,11 @@ or the original split merely for continuity.
 ## Executive Status
 
 Filing remains blocked. The newest split-persona synthesis,
-`pr-split-20260517T030103Z-synthesis.md`, keeps Cycle 224 as authoritative and
-adds concrete gates that are not satisfied by waiting on PR17 alone: PR14 seed
-`7110017` coverage, reload/post-save seed `5200005`, parser-sensitive seed
-`1060015`, PR17 / seed `1020002`, rebuilt combined validation, focused
-`1020002` rerun, and final-stack fuzz.
+`pr-split-20260517T031103Z-synthesis.md`, keeps the Cycle 224 replacement
+topology authoritative and again adds concrete gates that are not satisfied by
+waiting on PR17 alone: PR14 seed `7110017` coverage, reload/post-save seed
+`5200005`, parser-sensitive seed `1060015`, PR17 / seed `1020002`, rebuilt
+combined validation, focused `1020002` rerun, and final-stack fuzz.
 
 The current operational topology is:
 
@@ -105,16 +105,24 @@ update. Do not fold `1020002` into PR6, PR13, PR15, PR6B, reload hydration,
 pre-save search/live-collapse, HTTP room isolation, or rich-text suffix without
 exact same-source proof.
 
-The latest `raw/novelty-status.md` is empty, so it is not a current-monitor
-override. The trend packet generated at `2026-05-17T03:03:34Z` reports
+The latest `raw/novelty-status.md` is now nonempty. Its
+`2026-05-17T03:15:50.182Z` monitor snapshot reports `39035` coverage files,
+`60250` total records, `5` unmet goals, `0` current signatures, and `0`
+current visible likely-real failures. It also carries a health warning that no
+behavioral coverage files were found under the active novelty output dir after
+the run-root reset, so treat this as current fuzz health evidence, not
+final-stack validation.
+
+The trend packet generated at `2026-05-17T03:11:27Z` reports
 `likely_real_max: 1`, `duplicate_share_current_last: 0`,
 `duplicate_share_historical_last: 0.3521`, `0` startup summary failures, and
-`0` current quality issues. Treat this as current fuzz health evidence, not
-final-stack validation.
+`0` current quality issues. The current monitor snapshot has no named
+current-run likely-real signal; the rolling `likely_real_max` does not unblock
+filing.
 
 ## Branch And Ref Status
 
-The remote status input was generated at `2026-05-17T03:11:23Z`.
+The remote status input was generated at `2026-05-17T03:18:28Z`.
 
 The fix-planning repo is checked out at:
 
@@ -144,7 +152,7 @@ That stack has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T03:11:28Z` from fetched
+The branch-link audit was generated at `2026-05-17T03:18:34Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -232,7 +240,7 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T03:11:23Z
+collected_at_utc: 2026-05-17T03:18:28Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T031038Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
@@ -254,18 +262,43 @@ need verified branch links, PR14 may need a conditional PR14B, PR17 still needs
 a repair/reclassification decision, and the rebuilt validation stack has not
 been rerun over those final decisions.
 
-The collected `raw/novelty-status.md` is zero bytes in this update, so it is
-not a usable current-monitor override. Use the trend evidence packet and the
-latest persona reports as the active fuzz summary until the next nonempty
-monitor snapshot is collected.
-
-The latest trend evidence packet was generated at `2026-05-17T03:03:34Z` from
-monitor data through `2026-05-17T03:01:12Z`:
+The collected `raw/novelty-status.md` is a usable current monitor snapshot:
 
 ```text
-monitor passes: 1812
-coverage files: 272 -> 38874
-coverage files delta: 38602
+updated: 2026-05-17T03:15:50.182Z
+coverage files: 39035
+total records seen: 60250
+unmet coverage goals: 5
+recommended groups: novelty-ws-real-user-editing,
+  novelty-ws-real-user-rich-text
+current signatures: 0
+current likely-real visible: 0
+current likely-real merged duplicates: 0
+current oracle/noise questions: 0
+enabled groups: novelty-ws-real-user-editing
+paused groups: novelty-http-persistence-probe,
+  novelty-ws-persistence-no-title, novelty-ws-lifecycle,
+  novelty-ws-real-user-rich-text
+headroom for adding groups: yes
+load1: 52.08 / 64 cores
+memory: 434.4G free / 492.0G total
+health warning: no behavioral coverage files found under active novelty output
+```
+
+Historical triage remains separate: the novelty snapshot reports `42`
+historical visible likely-real signatures, `1190` merged duplicate historical
+likely-real entries, `12` historical oracle/noise questions, historical
+duplicate share about `0.3519`, and raw historical duplicate share about
+`0.5072` dominated by `pre_action_bootstrap_stall`. Do not present historical
+noise as a current product failure.
+
+The latest trend evidence packet was generated at `2026-05-17T03:11:27Z` from
+monitor data through `2026-05-17T03:06:47Z`:
+
+```text
+monitor passes: 1814
+coverage files: 272 -> 38959
+coverage files delta: 38687
 unmet coverage goals: 24 -> 5
 likely_real_max: 1
 duplicate_share_current_last: 0
@@ -276,34 +309,34 @@ enabled groups: novelty-ws-real-user-editing
 fuzz level mix: browser-e2e=26 lanes/26 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 3095286
-browser-e2e execution: 95365 cumulative / 196 per-hour
-unit-property execution: 2680588 cumulative / 28896 per-hour
-coverage-guided-lower-level execution: 316327 cumulative / 5632 per-hour
-load1/load5/load15: 66.74 / 174.79 / 193.55 on 64 cores
-memory: 423.1G free
+total fuzz-level test executions: 3128714
+browser-e2e execution: 95545 cumulative / 916 per-hour
+unit-property execution: 2709484 cumulative / 144480 per-hour
+coverage-guided-lower-level execution: 320679 cumulative / 23040 per-hour
+load1/load5/load15: 42.03 / 73.09 / 131.28 on 64 cores
+memory: 427.8G free
 ```
 
 Largest remaining coverage gaps in the trend evidence are
-`ui-heading-shortcut` `718/1000`, `reload-post-action` `724/1000`,
-title-save-reload `286/500`, body-save-reload `345/500`, and successful
-real-user-editing records `425/500`.
+`ui-heading-shortcut` `721/1000`, `reload-post-action` `727/1000`,
+title-save-reload `289/500`, body-save-reload `348/500`, and successful
+real-user-editing records `428/500`.
 
-The trend packet shows a current likely-real maximum but does not provide a
-nonempty raw novelty record in this collection. Treat that as an open
-classification input, not final-stack validation. Historical duplicate/noise
-remains a separate control-plane concern and must not be presented as current
-product failure.
+The current monitor snapshot shows no current visible likely-real failures.
+Treat the trend packet's rolling `likely_real_max: 1` as an open historical or
+rolling classification input, not final-stack validation. Historical
+duplicate/noise remains a separate control-plane concern and must not be
+presented as current product failure.
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis is
-`pr-split-20260517T030103Z-synthesis.md`. It says the split has changed and
-Cycle 224 is authoritative: PR6B is the minimal two-file PR06A sidecar at
-`7b123e0ef233`, the old PR6B/PR16 path is historical, PR6B-minimal+PR15C at
-`243411d46169` is validation-only, and final stack filing is blocked by PR17,
-PR14/`7110017`, `5200005`, `1060015`, rebuilt validation, focused `1020002`,
-and final-stack fuzz.
+`pr-split-20260517T031103Z-synthesis.md`. It says the split has changed and
+Cycle 224 plus the PR14/`7110017` coverage gate is authoritative: PR6B is the
+minimal two-file PR06A sidecar at `7b123e0ef233`, the old PR6B/PR16 path is
+historical, PR6B-minimal+PR15C at `243411d46169` is validation-only, and final
+stack filing is blocked by PR17, PR14/`7110017`, `5200005`, `1060015`, rebuilt
+validation, focused `1020002`, and final-stack fuzz.
 
 That synthesis also says the Cycle 224 residual reducer report now exists and
 generated focused next-action prompts. The next actions are bounded:
@@ -338,16 +371,27 @@ do not add blanket family suppression and do not suppress current
 `collaboration_non_convergence` or records with action/reload/save/revision,
 fault, or operation-witness evidence.
 
-The latest implemented duplicate/noise patch remains the
-`duplicate-noise-20260517T020802Z-*` feedback action. It updated
-`bin/rtc-browser-fuzz-triage-watcher.mjs`,
-`bin/rtc-browser-fuzz-novelty-monitor.mjs`,
-`bin/rtc-browser-fuzz-analysis-tier.mjs`, and
-`bin/rtc-browser-fuzz-deep-analysis-tier.mjs` in the remote fuzz repo. The
-changes coalesce same seed/source candidates, prefer product-evidence or
-artifact-rich candidates, count completed analysis/deep-analysis `likely_real`
-JSON in novelty summaries, and keep inactive/no-product completed jobs out of
-family caps unless they have visible `likely_real` results.
+The latest implemented duplicate/noise patch is the
+`duplicate-noise-20260517T024456Z-feedback-action.md` action. It updated
+`bin/rtc-browser-fuzz-novelty-monitor.mjs` with a current-run duplicate/noise
+hold that fires only when there are zero likely-real/product-evidence
+signatures, narrows the hold to matching active producer run dirs, and pauses
+only those producers through the existing `no-analysis` sentinel with
+`preserveProductEvidence=true`. It also updated
+`bin/rtc-browser-fuzz-live-analysis-monitor.mjs` so missing or invalid
+supervisor state during run-root bootstrap is a wait state rather than an
+analysis launch or crash.
+
+Validation for that action passed `node --check` on both touched fuzz
+control-plane scripts, `git diff --check` on the touched files, and one-shot
+gate/analysis/deep/live-analysis checks against the active root. The action
+respawned the coverage-guided novelty monitor, signaled the live-analysis
+wrapper to restart, removed older orphan novelty monitors, and left the active
+coverage-guided root at
+`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T031038Z`.
+Remaining risk: the producer hold has not yet been exercised by a fresh
+post-restart recurrence of the no-product startup leak because the active root
+currently has no signatures.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful only for report
@@ -355,8 +399,8 @@ hygiene: separate current fuzz health from historical noise, keep
 evidence-only families out of the split, and make filing gates explicit. Their
 older "keep existing split", "do not add PR6B", "only novelty-http is enabled",
 and stale PR13 review-ref warnings are superseded by the
-`2026-05-17T03:11:28Z` branch-link audit, the current empty raw novelty status,
-the latest trend packet, and the Cycle 224 split syntheses.
+`2026-05-17T03:18:34Z` branch-link audit, the current nonempty raw novelty
+snapshot, the latest trend packet, and the Cycle 224 split syntheses.
 
 ## Deferred Or Evidence-Only Work
 
@@ -378,7 +422,7 @@ These must not be described as fixed or filing-ready.
 | Rich-text formatted suffix corruption | current diagnostic publication candidate `20260516T235057Z` plus prior `deferred/rtc-rich-text-formatted-suffix-20260516T230547Z` | not fixed; latest split keeps it out of the active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Broader HTTP polling room-isolation residuals | PR02A local ready head; stale deferred job `rtc-deferred-job-http-room-isolation-20260517T023739Z` | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred; Cycle 224 invalidated stale generic HTTP relaunches | Publish/fetch/audit a PR02A review branch before filing; promote additional residuals only with narrowed healthy-user product evidence |
 | Revision-restore marker retention | seed `5500002`; active lifecycle triage | queued behind final-stack blockers; no automatic PR slot | Triage only after `1020002` is repaired or reclassified and the rebuilt stack is available |
-| Duplicate/noise control-plane leak | latest synthesis `duplicate-noise-20260517T024456Z-synthesis.md`; implemented action `duplicate-noise-20260517T020802Z-*` | control-plane issue, not product validation; current duplicate share is `0`, historical duplicate share is about `0.3521`, and raw novelty is empty | Continue only bounded current-run known-noise producer/run-dir gating, preserving all product-evidence failures and keeping product PR validation separate |
+| Duplicate/noise control-plane leak | latest synthesis `duplicate-noise-20260517T024456Z-synthesis.md`; implemented action `duplicate-noise-20260517T024456Z-feedback-action.md` | control-plane issue, not product validation; current duplicate share is `0`, current raw novelty has `0` signatures / `0` visible likely-real failures, historical duplicate share is about `0.3519`, and raw historical duplicate share is about `0.5072` | Continue only bounded current-run known-noise producer/run-dir gating, preserving all product-evidence failures and keeping product PR validation separate; verify behavior on the next fresh no-product startup recurrence |
 
 ## Filing Gates And Current Recommendation
 
@@ -433,10 +477,11 @@ Before filing any maintainer-facing PR:
     source-reduced residual branches. Rerun bounded final-stack validation
     against the rebuilt stack and count it only if it reaches action-level
     product coverage and proves PR6B was included.
-15. Block filing while the latest trend packet's current likely-real signal is
-    unclassified, and block again if any additional visible likely-real failures
-    appear. This collection's `raw/novelty-status.md` is empty, so do not claim
-    a named current signal without a fresh nonempty monitor snapshot.
+15. Block filing if any visible current likely-real failures appear. This
+    collection's `raw/novelty-status.md` is nonempty and reports `0` current
+    signatures / `0` current visible likely-real failures, but it also carries
+    a health warning and is not final-stack fuzz validation. Do not claim a
+    named current product signal without a fresh nonempty monitor snapshot.
 
 Existing fuzz infrastructure can continue only where healthy, and bounded
 source reduction is allowed after the environment preflight is healthy. Do not
