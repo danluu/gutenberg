@@ -186,7 +186,13 @@ run_codex_plan() {
 	write_codex_prompt "$snapshot" "$plan"
 	rm -f "$plan"
 	set +e
-	timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$stderr"
+	if command -v timeout >/dev/null 2>&1; then
+		timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$stderr"
+	elif command -v gtimeout >/dev/null 2>&1; then
+		gtimeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$stderr"
+	else
+		"$CODEX_BIN" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING" -s danger-full-access < "$prompt" > "$report" 2> "$stderr"
+	fi
 	local rc=$?
 	set -e
 	printf '%s\n' "$rc" > "$snapshot/codex.rc"
