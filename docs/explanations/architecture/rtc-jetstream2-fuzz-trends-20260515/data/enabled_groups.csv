@@ -757,3 +757,5 @@ timestamp,group,group_family
 2026-05-17T19:37:36Z,novelty-ws-real-user-save-reload,real-user
 2026-05-17T19:37:36Z,novelty-ws-real-user-editing,real-user
 2026-05-17T19:40:41Z,novelty-ws-real-user-rich-text,real-user
+2026-05-17T19:49:15Z,novelty-ws-lifecycle,lifecycle
+2026-05-17T19:49:15Z,novelty-ws-real-user-editing,real-user
