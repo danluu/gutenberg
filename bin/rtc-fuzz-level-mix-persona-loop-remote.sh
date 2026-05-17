@@ -1155,8 +1155,11 @@ BASE="${RTC_FUZZ_LEVEL_MIX_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-level-m
 LOOP="$BASE/rtc-fuzz-level-mix-persona-loop.sh"
 LOG="$BASE/logs/watchdog.log"
 mkdir -p "$BASE/logs"
+has_session() {
+	tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$1"
+}
 while true; do
-	if ! tmux has-session -t rtc-fuzz-level-mix-persona-loop 2>/dev/null; then
+	if ! has_session rtc-fuzz-level-mix-persona-loop; then
 		printf '%s restarting rtc-fuzz-level-mix-persona-loop\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$LOG"
 		tmux new-session -d -s rtc-fuzz-level-mix-persona-loop "$LOOP"
 	fi

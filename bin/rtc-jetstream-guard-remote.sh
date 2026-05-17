@@ -28,7 +28,7 @@ log() {
 }
 
 has_session() {
-	tmux has-session -t "$1" 2>/dev/null
+	tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$1"
 }
 
 file_age_seconds() {

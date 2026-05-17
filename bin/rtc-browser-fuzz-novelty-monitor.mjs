@@ -23,6 +23,10 @@ const GROUPS_PATH =
 const STATE_PATH = path.join( OUTPUT_DIR, 'novelty-state.json' );
 const STATUS_PATH = path.join( OUTPUT_DIR, 'novelty-status.md' );
 const LOG_PATH = path.join( OUTPUT_DIR, 'novelty-monitor.log' );
+const NO_ANALYSIS_SENTINEL_RELATIVE_PATH = path.join(
+	'.triage-watcher',
+	'no-analysis.json'
+);
 const SUPERVISOR_SESSION =
 	process.env.RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION ??
 	'rtc-fuzz-novelty-supervisor-20260502';
@@ -45,6 +49,13 @@ const WP_ENV_PORT = process.env.RTC_FUZZ_NOVELTY_WP_ENV_PORT ?? '8889';
 const WS_PORT = process.env.RTC_FUZZ_NOVELTY_WS_PORT ?? '18991';
 const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 const CURRENT_RUN_DIRS = [ OUTPUT_DIR ];
+let currentRunCoverageRoots = CURRENT_RUN_DIRS;
+const ACTIVE_GROUP_STATUSES = new Set( [
+	'starting',
+	'launching',
+	'recovering',
+	'running',
+] );
 const HISTORICAL_OBSERVED_RUN_DIRS = uniquePathList(
 	parsePathList( process.env.RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS ).filter(
 		( root ) => path.resolve( root ) !== path.resolve( OUTPUT_DIR )
@@ -83,6 +94,10 @@ const PAUSE_ON_TRIAGE_NOISE =
 const STARTUP_FAILURE_LIMIT = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_LIMIT',
 	2
+);
+const STARTUP_FAILURE_ABSOLUTE_LIMIT = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_ABSOLUTE_LIMIT',
+	4
 );
 const STARTUP_FAILURE_COOLDOWN_HOURS = getPositiveNumberEnv(
 	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_COOLDOWN_HOURS',
@@ -225,16 +240,40 @@ const CODEX_REASONING_EFFORT =
 	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_REASONING_EFFORT ?? 'xhigh';
 const TRIAGE_DUPLICATE_SHARE_HOLD = getPositiveNumberEnv(
 	'RTC_FUZZ_NOVELTY_TRIAGE_DUPLICATE_SHARE_HOLD',
-	0.45
+	0.5
 );
 const TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES',
 	10
 );
-const RUN_LOCAL_NOISE_POLICY_VERSION = 3;
+const TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS = getPositiveNumberEnv(
+	'RTC_FUZZ_NOVELTY_TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS',
+	6
+);
+const NON_ACTIONABLE_ANALYSIS_JOB_STATUSES = new Set( [
+	'family-capped',
+	'source-suppressed',
+	'stale-source',
+] );
+const RUN_LOCAL_NOISE_POLICY_VERSION = 9;
+const STARTUP_DISCOVERY_PHASES = new Set( [
+	'seed',
+	'bootstrap',
+	'open',
+	'join',
+	'startup',
+	'setup',
+	'discovery',
+	'ready',
+] );
+const NO_PRODUCT_INFRA_NOISE_PATTERN =
+	/ENOSPC|no space left|wp-env|docker compose|docker.*(?:exited|failed)|mysql.*(?:exited|failed)|dependency failed|Cannot find module|ERR_MODULE_NOT_FOUND|Host system is missing dependencies|playwright install-deps|browser dependencies/i;
 const HISTORICAL_KNOWN_NOISE_FAMILIES = new Set( [
+	'awareness_loss_after_save_reload',
+	'late_session_awareness_stall',
 	'pre_action_bootstrap_stall',
 	'pre_action_awareness_stall',
+	'reload_rejoin_awareness_stall',
 	'linebreak_representation_drift',
 	'cover_overlay_attribute_canonicalization',
 	'rest_meta_database_error',
@@ -299,7 +338,7 @@ const ACTION_COVERAGE_GROUPS = {
 	'insert-media-cross-entity-block': [ 'novelty-ws-media-cross-entity' ],
 };
 const REQUIRED_ACTION_LABELS = Object.keys( ACTION_COVERAGE_GROUPS );
-const EXPANSION_POLICY_VERSION = 14;
+const EXPANSION_POLICY_VERSION = 15;
 
 const WS_ENV_DEFAULTS = {
 	GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
@@ -319,6 +358,7 @@ const PROFILE_BY_GROUP = {
 	'novelty-ws-multi-reload-lifecycle': 'multi-reload-lifecycle',
 	'novelty-ws-parser-serialization': 'parser-serialization',
 	'novelty-ws-parser-transform': 'parser-transform',
+	'novelty-http-persistence-probe': 'persistence-no-title',
 	'novelty-ws-persistence-no-title': 'persistence-no-title',
 	'novelty-ws-permissions-auth-locks': 'permissions-auth-locks',
 	'novelty-ws-real-user-editing': 'real-user-editing',
@@ -751,7 +791,7 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_ACTION_LABELS:
 				'ui-paste-paragraph,ui-cut-copy-paragraph,ui-link-paragraph,ui-list-indent,ui-composition-paragraph,ui-toolbar-format-paragraph,ui-table-cell-edit,ui-undo-redo-paragraph',
 			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
-				'ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-composition-paragraph,ui-toolbar-format-paragraph,ui-cut-copy-paragraph,ui-table-cell-edit,ui-undo-redo-paragraph',
+				'ui-paste-paragraph,ui-link-paragraph,ui-composition-paragraph,ui-toolbar-format-paragraph,ui-list-indent,ui-cut-copy-paragraph,ui-table-cell-edit,ui-undo-redo-paragraph',
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
@@ -889,7 +929,7 @@ if ( state.expansionPolicyVersion !== EXPANSION_POLICY_VERSION ) {
 	state.changes.push( {
 		at: new Date().toISOString(),
 		action: 'reset-expansion-pauses',
-		reason: 'new low-noise/rotation policy; retry under-covered expansion profiles',
+		reason: 'startup-noise cooldowns are run-local; retry under-covered expansion profiles',
 	} );
 }
 state.recordCountsByProfile ??= {};
@@ -912,30 +952,40 @@ state.autoCoverageGoalWaves ??= [];
 state.changes ??= [];
 if ( state.outputDir !== OUTPUT_DIR ) {
 	const previousOutputDir = state.outputDir ?? 'unknown';
+	const preservedNoisePausedGroups = getUnexpiredNoisePausedGroups(
+		state.pausedGroups
+	);
+	await importSupervisorStartupStallPausesFromOutputDir(
+		preservedNoisePausedGroups,
+		previousOutputDir
+	);
+	const preservedNoisePauseCount = Object.keys(
+		preservedNoisePausedGroups
+	).length;
 	state.outputDir = OUTPUT_DIR;
 	state.startedAt = new Date().toISOString();
 	resetCurrentRunCounters();
 	state.currentRunCountersInitializedForOutputDir = null;
-	state.pausedGroups = {};
+	state.pausedGroups = preservedNoisePausedGroups;
 	state.healthWarnings = [];
 	state.coverageGuidanceQualityIssuePasses = 0;
 	state.coverageGuidanceNoProgressPasses = 0;
 	state.changes.push( {
 		at: new Date().toISOString(),
 		action: 'reset-run-local-noise-state',
-		reason: `novelty state moved from ${ previousOutputDir } to ${ OUTPUT_DIR }; preserving coverage counters but resetting run-local pause/startup/quality gates`,
+		reason: `novelty state moved from ${ previousOutputDir } to ${ OUTPUT_DIR }; preserving coverage counters and ${ preservedNoisePauseCount } explicit unexpired noise cooldown(s) while resetting current-run startup/quality counters`,
 	} );
 }
-if ( state.runLocalNoisePolicyVersion !== RUN_LOCAL_NOISE_POLICY_VERSION ) {
-	resetCurrentRunCounters();
-	state.currentRunCountersInitializedForOutputDir = null;
-	state.runLocalNoisePolicyVersion = RUN_LOCAL_NOISE_POLICY_VERSION;
-	state.changes.push( {
-		at: new Date().toISOString(),
-		action: 'reset-run-local-noise-policy',
-		reason: 'historical known-noise is advisory/Codex-only; rebuilt run-local startup/quality counters',
-	} );
-}
+	if ( state.runLocalNoisePolicyVersion !== RUN_LOCAL_NOISE_POLICY_VERSION ) {
+		resetCurrentRunCounters();
+		state.currentRunCountersInitializedForOutputDir = null;
+		state.runLocalNoisePolicyVersion = RUN_LOCAL_NOISE_POLICY_VERSION;
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'reset-run-local-noise-policy',
+			reason: 'startup/no-product noise policy now treats suppressed-only strict startup records as a current-run hold and classifies no-product known-noise as non-actionable; rebuilt run-local startup/quality counters',
+		} );
+	}
 const clearedHistoricalNoisePauses = clearHistoricalKnownNoisePauses();
 if ( clearedHistoricalNoisePauses > 0 ) {
 	state.changes.push( {
@@ -1076,8 +1126,71 @@ function isPathInsideRoot( filePath, root ) {
 	);
 }
 
+function getCurrentRunDirs( supervisorState ) {
+	const dirs = [];
+	const seen = new Set();
+	const addDir = ( dir ) => {
+		if ( ! dir ) {
+			return;
+		}
+		const resolved = path.resolve( dir );
+		if ( seen.has( resolved ) ) {
+			return;
+		}
+		seen.add( resolved );
+		dirs.push( resolved );
+	};
+
+	if ( supervisorState ) {
+		for ( const group of supervisorState.groups ?? [] ) {
+			if ( ! ACTIVE_GROUP_STATUSES.has( group.status ) ) {
+				continue;
+			}
+			const groupDirs =
+				group.activeRunDirs?.length > 0
+					? group.activeRunDirs
+					: [ group.currentRunDir ];
+			for ( const dir of groupDirs ) {
+				addDir( dir );
+			}
+		}
+		if ( dirs.length > 0 ) {
+			return dirs;
+		}
+	}
+
+	for ( const dir of CURRENT_RUN_DIRS ) {
+		addDir( dir );
+	}
+	return dirs;
+}
+
+function getCurrentRunDirSource( supervisorState ) {
+	if ( ! supervisorState ) {
+		return 'output-dir-fallback';
+	}
+
+	for ( const group of supervisorState.groups ?? [] ) {
+		if ( ! ACTIVE_GROUP_STATUSES.has( group.status ) ) {
+			continue;
+		}
+		const groupDirs =
+			group.activeRunDirs?.length > 0
+				? group.activeRunDirs
+				: [ group.currentRunDir ];
+		if ( groupDirs.some( Boolean ) ) {
+			return 'supervisor-active-run-dirs';
+		}
+	}
+	return 'output-dir-fallback-no-active-supervisor-run-dirs';
+}
+
+function isCoverageFileInRunDirs( filePath, runDirs ) {
+	return runDirs.some( ( root ) => isPathInsideRoot( filePath, root ) );
+}
+
 function isCurrentRunCoverageFile( filePath ) {
-	return isPathInsideRoot( filePath, OUTPUT_DIR );
+	return isCoverageFileInRunDirs( filePath, currentRunCoverageRoots );
 }
 
 function isCurrentRunCoverageRecord( record ) {
@@ -1242,11 +1355,28 @@ async function findTriageStateFiles( roots ) {
 async function summarizeTriageYield( roots ) {
 	const files = await findTriageStateFiles( roots );
 	const familyCounts = {};
+	const rawFamilyCounts = {};
 	const summary = {
 		roots: roots.length,
 		files: files.length,
+		rawSignatureCount: 0,
 		signatureCount: 0,
-		likelyRealVisible: 0,
+		actionableSignatureCount: 0,
+		nonActionableSignatureCount: 0,
+		knownInfraSignatures: 0,
+		bootstrapStallSignatures: 0,
+		familyCappedSignatures: 0,
+		sourceSuppressedSignatures: 0,
+		staleSourceSignatures: 0,
+		notRealSignatures: 0,
+		infraSignatures: 0,
+		noRealisticReproSignatures: 0,
+		analysisGatedNonActionableSignatures: 0,
+		mergedDuplicateSignatures: 0,
+			normalizationNoiseSignatures: 0,
+			rawProductEvidenceSignatures: 0,
+			productEvidenceSignatures: 0,
+			likelyRealVisible: 0,
 		likelyRealMerged: 0,
 		likelyRealOracleQuestion: 0,
 		normalizationNoiseCandidates: 0,
@@ -1255,24 +1385,45 @@ async function summarizeTriageYield( roots ) {
 		suppressedStrictStartupIdentities: 0,
 		topDuplicateFamilyShare: 0,
 		topSemanticFamilies: [],
+		rawTopDuplicateFamilyShare: 0,
+		rawTopSemanticFamilies: [],
 	};
 
 	for ( const filePath of files ) {
 		const triageState = await readJsonFile( filePath );
+		const analysisJobs = await readAnalysisJobStatusMap(
+			path.join( path.dirname( filePath ), 'analysis-tier', 'state.json' )
+		);
+		const deepAnalysisJobs = await readAnalysisJobStatusMap(
+			path.join(
+				path.dirname( filePath ),
+				'deep-analysis-tier',
+				'state.json'
+			)
+		);
 		const signatures = Object.values( triageState?.signatures ?? {} );
+		if ( triageState?.metrics ) {
+			addSuppressedKnownNoiseSummary( summary, triageState.metrics );
+		}
 		if ( signatures.length === 0 && triageState?.metrics ) {
-			addTriageMetricsSummary(
-				summary,
-				familyCounts,
-				triageState.metrics
-			);
+				addTriageMetricsSummary(
+					summary,
+					familyCounts,
+					rawFamilyCounts,
+					triageState.metrics,
+					{ includeSuppressedKnownNoise: false }
+				);
 			continue;
 		}
 
-		for ( const signature of signatures ) {
-			summary.signatureCount += 1;
-			const family = getTriageSemanticFamily( signature );
-			familyCounts[ family ] = ( familyCounts[ family ] ?? 0 ) + 1;
+			for ( const signature of signatures ) {
+				summary.rawSignatureCount += 1;
+				if ( hasSignatureProductEvidence( signature ) ) {
+					summary.rawProductEvidenceSignatures += 1;
+				}
+				const family = getTriageSemanticFamily( signature );
+			rawFamilyCounts[ family ] =
+				( rawFamilyCounts[ family ] ?? 0 ) + 1;
 
 			if (
 				signature.equivalenceClass === 'pre-action-bootstrap-stall' ||
@@ -1284,26 +1435,46 @@ async function summarizeTriageYield( roots ) {
 				summary.normalizationNoiseCandidates += 1;
 			}
 
-			const decision = signature.analysisGate ?? signature.result;
-			if ( decision?.classification !== 'likely_real' ) {
-				continue;
-			}
-			const action =
-				decision.recommendedTriageAction ??
-				decision.candidateStatus ??
-				'unknown';
-			if (
-				action === 'merge_with_duplicate' ||
-				decision.isDuplicateOf ||
-				decision.duplicateOf
-			) {
+			const analysisJob = analysisJobs.get( signature.hash );
+			const deepAnalysisJob = deepAnalysisJobs.get( signature.hash );
+			const decision = getEffectiveTriageDecision(
+				signature,
+				analysisJob,
+				deepAnalysisJob
+			);
+			const likelyRealDisposition = getLikelyRealDisposition(
+				signature,
+				decision
+			);
+			if ( likelyRealDisposition === 'merged-duplicate' ) {
 				summary.likelyRealMerged += 1;
-			} else if ( isLikelyTriageNormalizationNoise( signature ) ) {
+			} else if ( likelyRealDisposition === 'oracle-question' ) {
 				summary.likelyRealOracleQuestion += 1;
-			} else {
+			} else if ( likelyRealDisposition === 'visible' ) {
 				summary.likelyRealVisible += 1;
 			}
-		}
+
+			const nonActionableReason = getTriageNonActionableReason(
+				signature,
+				decision,
+				analysisJob,
+				deepAnalysisJob
+			);
+			if ( nonActionableReason ) {
+				recordNonActionableTriageSignature(
+					summary,
+					nonActionableReason
+				);
+				continue;
+			}
+
+				summary.signatureCount += 1;
+				summary.actionableSignatureCount += 1;
+				if ( hasSignatureProductEvidence( signature ) ) {
+					summary.productEvidenceSignatures += 1;
+				}
+				familyCounts[ family ] = ( familyCounts[ family ] ?? 0 ) + 1;
+			}
 	}
 
 	summary.topSemanticFamilies = Object.entries( familyCounts )
@@ -1317,38 +1488,400 @@ async function summarizeTriageYield( roots ) {
 			).toFixed( 4 )
 		);
 	}
+	summary.rawTopSemanticFamilies = Object.entries( rawFamilyCounts )
+		.sort( ( left, right ) => right[ 1 ] - left[ 1 ] )
+		.slice( 0, 20 )
+		.map( ( [ family, count ] ) => ( { family, count } ) );
+	if (
+		summary.rawSignatureCount > 0 &&
+		summary.rawTopSemanticFamilies.length
+	) {
+		summary.rawTopDuplicateFamilyShare = Number(
+			(
+				summary.rawTopSemanticFamilies[ 0 ].count /
+				summary.rawSignatureCount
+			).toFixed( 4 )
+		);
+	}
 	return summary;
 }
 
-function addTriageMetricsSummary( summary, familyCounts, metrics ) {
-	summary.signatureCount += metrics.signatureCount ?? 0;
-	summary.likelyRealVisible += metrics.likelyRealVisible ?? 0;
+async function readAnalysisJobStatusMap( filePath ) {
+	const analysisState = await readJsonFile( filePath );
+	const jobs = new Map();
+
+	for ( const job of Object.values( analysisState?.jobs ?? {} ) ) {
+		if ( ! job.hash ) {
+			continue;
+		}
+		jobs.set( job.hash, {
+			...job,
+			result: await readAnalysisJobResult( job ),
+		} );
+	}
+
+	return jobs;
+}
+
+async function readAnalysisJobResult( job ) {
+	if ( job.status !== 'completed' || ! job.resultPath ) {
+		return null;
+	}
+	return readJsonFile( job.resultPath );
+}
+
+function addTriageMetricsSummary(
+	summary,
+	familyCounts,
+	rawFamilyCounts,
+	metrics,
+	{ includeSuppressedKnownNoise = true } = {}
+) {
+	const rawSignatureCount =
+		metrics.rawSignatureCount ?? metrics.signatureCount ?? 0;
+	const actionableSignatureCount =
+		metrics.actionableSignatureCount ?? metrics.signatureCount ?? 0;
+	summary.rawSignatureCount += rawSignatureCount;
+	summary.signatureCount += actionableSignatureCount;
+	summary.actionableSignatureCount += actionableSignatureCount;
+	summary.nonActionableSignatureCount +=
+		metrics.nonActionableSignatureCount ??
+		Math.max( 0, rawSignatureCount - actionableSignatureCount );
+	summary.knownInfraSignatures +=
+		metrics.knownInfraSignatures ??
+		metrics.statusCounts?.[ 'known-infra' ] ??
+		0;
+	summary.bootstrapStallSignatures +=
+		metrics.bootstrapStallSignatures ??
+		metrics.statusCounts?.[ 'bootstrap-stall' ] ??
+		0;
+	summary.familyCappedSignatures +=
+		metrics.familyCappedSignatures ??
+		metrics.statusCounts?.[ 'family-capped' ] ??
+		0;
+	summary.sourceSuppressedSignatures +=
+		metrics.sourceSuppressedSignatures ??
+		metrics.statusCounts?.[ 'source-suppressed' ] ??
+		0;
+	summary.staleSourceSignatures +=
+		metrics.staleSourceSignatures ??
+		metrics.statusCounts?.[ 'stale-source' ] ??
+		0;
+	summary.notRealSignatures +=
+		metrics.notRealSignatures ?? metrics.statusCounts?.[ 'not-real' ] ?? 0;
+	summary.infraSignatures +=
+		metrics.infraSignatures ?? metrics.statusCounts?.infra ?? 0;
+	summary.noRealisticReproSignatures +=
+		metrics.noRealisticReproSignatures ??
+		metrics.statusCounts?.[ 'no-realistic-repro' ] ??
+		0;
+	summary.analysisGatedNonActionableSignatures +=
+		metrics.analysisGatedNonActionableSignatures ?? 0;
+	summary.mergedDuplicateSignatures += metrics.mergedDuplicateSignatures ?? 0;
+		summary.normalizationNoiseSignatures +=
+			metrics.normalizationNoiseSignatures ?? 0;
+		summary.rawProductEvidenceSignatures +=
+			metrics.rawProductEvidenceSignatures ??
+			metrics.productEvidenceSignatures ??
+			0;
+		summary.productEvidenceSignatures +=
+			metrics.productEvidenceSignatures ?? 0;
+		summary.likelyRealVisible += metrics.likelyRealVisible ?? 0;
 	summary.likelyRealMerged += metrics.likelyRealMerged ?? 0;
 	summary.likelyRealOracleQuestion += metrics.likelyRealOracleQuestion ?? 0;
 	summary.normalizationNoiseCandidates +=
 		metrics.normalizationNoiseCandidates ?? 0;
 	summary.bootstrapStalls += metrics.bootstrapStalls ?? 0;
+	if ( includeSuppressedKnownNoise ) {
+		addSuppressedKnownNoiseSummary( summary, metrics );
+	}
+
+	for ( const item of metrics.topActionableSemanticFamilies ??
+		metrics.topSemanticFamilies ??
+		[] ) {
+		if ( ! item.family ) {
+			continue;
+		}
+		familyCounts[ item.family ] =
+			( familyCounts[ item.family ] ?? 0 ) + ( item.count ?? 0 );
+	}
+	for ( const item of metrics.rawTopSemanticFamilies ??
+		metrics.topPreDecisionFamilies ??
+		metrics.topSemanticFamilies ??
+		[] ) {
+		if ( ! item.family ) {
+			continue;
+		}
+		rawFamilyCounts[ item.family ] =
+			( rawFamilyCounts[ item.family ] ?? 0 ) + ( item.count ?? 0 );
+	}
+}
+
+function addSuppressedKnownNoiseSummary( summary, metrics ) {
 	const suppressedStrictStartup =
 		metrics.suppressedKnownNoise?.strictPreActionStartup ?? {};
 	summary.suppressedStrictStartupRecords +=
 		suppressedStrictStartup.recordCount ?? 0;
 	summary.suppressedStrictStartupIdentities +=
 		suppressedStrictStartup.identityCount ?? 0;
+}
 
-	for ( const item of metrics.topPreDecisionFamilies ?? [] ) {
-		if ( ! item.family ) {
-			continue;
-		}
-		familyCounts[ item.family ] =
-			( familyCounts[ item.family ] ?? 0 ) + ( item.count ?? 0 );
+const NON_ACTIONABLE_TRIAGE_STATUSES = new Set( [
+	'known-infra',
+	'bootstrap-stall',
+	'family-capped',
+	'source-suppressed',
+	'stale-source',
+	'not-real',
+	'infra',
+	'no-realistic-repro',
+] );
+
+const NON_ACTIONABLE_TRIAGE_ACTIONS = new Set( [
+	'merge_with_duplicate',
+	'likely_duplicate',
+	'suppress_as_infra',
+	'keep_collecting',
+	'false_positive',
+	'not_real',
+	'no_realistic_repro',
+] );
+
+const NON_ACTIONABLE_TRIAGE_CLASSIFICATIONS = new Set( [
+	'not_real',
+	'infra',
+	'false_positive',
+] );
+
+function recordNonActionableTriageSignature( summary, reason ) {
+	summary.nonActionableSignatureCount += 1;
+	summary[ reason ] = ( summary[ reason ] ?? 0 ) + 1;
+}
+
+function getTriageDecisionAction( decision ) {
+	return (
+		decision?.recommendedTriageAction ??
+		decision?.candidateStatus ??
+		'unknown'
+	);
+}
+
+function getEffectiveTriageDecision(
+	signature,
+	analysisJob,
+	deepAnalysisJob
+) {
+	const decision = signature.analysisGate ?? signature.result ?? null;
+	if ( decision ) {
+		return decision;
 	}
-	for ( const item of metrics.topSemanticFamilies ?? [] ) {
-		if ( ! item.family ) {
-			continue;
-		}
-		familyCounts[ item.family ] =
-			( familyCounts[ item.family ] ?? 0 ) + ( item.count ?? 0 );
+
+	const positiveJob = getEffectivePositiveAnalysisJob(
+		analysisJob,
+		deepAnalysisJob
+	);
+	if ( positiveJob ) {
+		return {
+			...positiveJob.result,
+			resultPath: positiveJob.resultPath ?? positiveJob.result?.resultPath,
+			sourceTier: positiveJob.sourceTier ?? positiveJob.tierName ?? null,
+		};
 	}
+
+	const job = getEffectiveNonActionableAnalysisJob(
+		analysisJob,
+		deepAnalysisJob
+	);
+	if ( ! job ) {
+		return null;
+	}
+
+	return {
+		classification: null,
+		candidateStatus: job.status,
+		recommendedTriageAction:
+			getRecommendedActionForAnalysisJobStatus( job.status ),
+		distinctBugType: signature.equivalenceClass ?? signature.familyKey,
+		summary: job.reason ?? getAnalysisJobStatusReason( job.status ),
+	};
+}
+
+function getEffectivePositiveAnalysisJob( analysisJob, deepAnalysisJob ) {
+	for ( const job of [ deepAnalysisJob, analysisJob ] ) {
+		if ( isVisiblePositiveAnalysisResult( job?.result ) ) {
+			return job;
+		}
+	}
+
+	return null;
+}
+
+function isVisiblePositiveAnalysisResult( result ) {
+	if ( result?.classification !== 'likely_real' ) {
+		return false;
+	}
+	const action = getTriageDecisionAction( result );
+	return ! isLikelyRealMergedDecision( result, action );
+}
+
+function getEffectiveNonActionableAnalysisJob(
+	analysisJob,
+	deepAnalysisJob
+) {
+	for ( const job of [ deepAnalysisJob, analysisJob ] ) {
+		if (
+			job &&
+			NON_ACTIONABLE_ANALYSIS_JOB_STATUSES.has(
+				job.status ?? 'unknown'
+			)
+		) {
+			return job;
+		}
+	}
+
+	return null;
+}
+
+function getRecommendedActionForAnalysisJobStatus( status ) {
+	if ( status === 'family-capped' ) {
+		return 'merge_with_duplicate';
+	}
+	if ( status === 'source-suppressed' ) {
+		return 'suppress_as_infra';
+	}
+	return 'keep_collecting';
+}
+
+function getAnalysisJobStatusReason( status ) {
+	if ( status === 'family-capped' ) {
+		return 'semantic family already has an active or completed representative analysis';
+	}
+	if ( status === 'source-suppressed' ) {
+		return 'source signature is no longer actionable for analysis';
+	}
+	return 'source signature is stale';
+}
+
+function isLikelyRealMergedDecision( decision, action ) {
+	return (
+		action === 'merge_with_duplicate' ||
+		decision?.isDuplicateOf ||
+		decision?.duplicateOf
+	);
+}
+
+function getLikelyRealDisposition( signature, decision ) {
+	if ( decision?.classification !== 'likely_real' ) {
+		return null;
+	}
+	const action = getTriageDecisionAction( decision );
+	if ( isLikelyRealMergedDecision( decision, action ) ) {
+		return 'merged-duplicate';
+	}
+	if ( isLikelyTriageNormalizationNoise( signature ) ) {
+		return 'oracle-question';
+	}
+	return 'visible';
+}
+
+function getTriageNonActionableReason(
+	signature,
+	decision,
+	analysisJob = null,
+	deepAnalysisJob = null
+) {
+	const status = signature?.status ?? 'unknown';
+	if ( status === 'known-infra' ) {
+		return 'knownInfraSignatures';
+	}
+		if (
+			status === 'bootstrap-stall' ||
+				signature?.equivalenceClass === 'pre-action-bootstrap-stall'
+		) {
+			return 'bootstrapStallSignatures';
+		}
+		if ( isNoProductInfraNoiseSignature( signature ) ) {
+			return 'knownInfraSignatures';
+		}
+		if ( status === 'family-capped' ) {
+			return 'familyCappedSignatures';
+		}
+	if ( status === 'source-suppressed' ) {
+		return 'sourceSuppressedSignatures';
+	}
+	if ( status === 'stale-source' ) {
+		return 'staleSourceSignatures';
+	}
+	const analysisJobStatus = getEffectiveNonActionableAnalysisJob(
+		analysisJob,
+		deepAnalysisJob
+	)?.status;
+	if ( analysisJobStatus === 'family-capped' ) {
+		return 'familyCappedSignatures';
+	}
+	if ( analysisJobStatus === 'source-suppressed' ) {
+		return 'sourceSuppressedSignatures';
+	}
+	if ( analysisJobStatus === 'stale-source' ) {
+		return 'staleSourceSignatures';
+	}
+	if ( status === 'not-real' ) {
+		return 'notRealSignatures';
+	}
+	if ( status === 'infra' ) {
+		return 'infraSignatures';
+	}
+	if ( status === 'no-realistic-repro' ) {
+		return 'noRealisticReproSignatures';
+	}
+	if (
+		NON_ACTIONABLE_TRIAGE_STATUSES.has( status ) ||
+		status === 'analysis-gated'
+	) {
+		const action = getTriageDecisionAction( decision );
+		if (
+			isLikelyRealMergedDecision( decision, action ) ||
+			NON_ACTIONABLE_TRIAGE_ACTIONS.has( action ) ||
+			NON_ACTIONABLE_TRIAGE_CLASSIFICATIONS.has(
+				decision?.classification
+			)
+		) {
+			return 'analysisGatedNonActionableSignatures';
+		}
+	}
+	if ( decision?.classification === 'likely_real' ) {
+		const action = getTriageDecisionAction( decision );
+		if ( isLikelyRealMergedDecision( decision, action ) ) {
+			return 'mergedDuplicateSignatures';
+		}
+	}
+	if ( isLikelyTriageNormalizationNoise( signature ) ) {
+		return 'normalizationNoiseSignatures';
+	}
+	return null;
+}
+
+function hasSignatureProductEvidence( signature ) {
+	const facts = signature?.facts ?? {};
+	return (
+		( facts.userCount ?? 0 ) > 0 ||
+		!! facts.lastAction ||
+		( facts.reloadCount ?? 0 ) > 0 ||
+		( facts.saveCheckpointCount ?? 0 ) > 0 ||
+		facts.revisionEligible === true ||
+		( facts.faultTypes?.length ?? 0 ) > 0 ||
+		( facts.operationWitnessActions?.length ?? 0 ) > 0 ||
+		( facts.operationWitnessScopes?.length ?? 0 ) > 0 ||
+		!! facts.operationWitnessPhase
+	);
+}
+
+function isNoProductInfraNoiseSignature( signature ) {
+	if ( ! signature || hasSignatureProductEvidence( signature ) ) {
+		return false;
+	}
+
+	return NO_PRODUCT_INFRA_NOISE_PATTERN.test( signature.normalized ?? '' );
 }
 
 function getTriageSemanticFamily( signature ) {
@@ -1373,6 +1906,13 @@ function getTriageSemanticFamily( signature ) {
 
 function canonicalizeTriageSemanticFamily( value ) {
 	if (
+		/rest_meta_database_error|rest.*meta.*database|wp_persisted_preferences/.test(
+			value
+		)
+	) {
+		return 'rest_meta_database_error';
+	}
+	if (
 		/linebreak|newline|br.*serialization|preformatted|verse/.test( value )
 	) {
 		return 'linebreak_representation_drift';
@@ -1382,6 +1922,19 @@ function canonicalizeTriageSemanticFamily( value ) {
 	}
 	if ( /bootstrap|discovery.*startup|startup.*discovery/.test( value ) ) {
 		return 'pre_action_bootstrap_stall';
+	}
+	if (
+		/awareness.*save.*reload|save.*reload.*awareness|http_awareness_loss_after_save_reload/.test(
+			value
+		)
+	) {
+		return 'awareness_loss_after_save_reload';
+	}
+	if ( /awareness.*reload|reload.*awareness|reload_rejoin/.test( value ) ) {
+		return 'reload_rejoin_awareness_stall';
+	}
+	if ( /late.*session.*awareness|late_session_awareness/.test( value ) ) {
+		return 'late_session_awareness_stall';
 	}
 	if ( /operation.*witness.*missing|witness.*loss/.test( value ) ) {
 		return 'operation_witness_missing';
@@ -1407,16 +1960,565 @@ function isLikelyTriageNormalizationNoise( signature ) {
 	);
 }
 
-function shouldHoldNoisyBlockTopOff( triageYield ) {
-	if ( ! triageYield || triageYield.signatureCount === 0 ) {
-		return false;
+function getDominantTriageFamily( triageYield ) {
+	const actionableTop = triageYield?.topSemanticFamilies?.[ 0 ] ?? null;
+	const rawTop = triageYield?.rawTopSemanticFamilies?.[ 0 ] ?? null;
+	const actionableShare = triageYield?.topDuplicateFamilyShare ?? 0;
+	const rawShare = triageYield?.rawTopDuplicateFamilyShare ?? 0;
+	if ( rawTop && rawShare >= actionableShare ) {
+		return {
+			family: rawTop.family ?? '',
+			count: rawTop.count ?? 0,
+			share: rawShare,
+			source: 'raw',
+		};
 	}
-	return (
-		triageYield.topDuplicateFamilyShare >= TRIAGE_DUPLICATE_SHARE_HOLD &&
+	if ( actionableTop ) {
+		return {
+			family: actionableTop.family ?? '',
+			count: actionableTop.count ?? 0,
+			share: actionableShare,
+			source: 'actionable',
+		};
+	}
+	return null;
+}
+
+function getCurrentRunDuplicateNoiseHold(
+	triageYield,
+	{ allowGenericDuplicate = false, requireNoProductEvidence = true } = {}
+) {
+	if (
+		! triageYield ||
+		Math.max(
+			triageYield.signatureCount ?? 0,
+			triageYield.rawSignatureCount ?? 0,
+			triageYield.suppressedStrictStartupRecords ?? 0
+		) === 0
+	) {
+		return null;
+	}
+	if ( ( triageYield.likelyRealVisible ?? 0 ) > 0 ) {
+		return null;
+	}
+	if (
+		requireNoProductEvidence &&
+		Math.max(
+			triageYield.productEvidenceSignatures ?? 0,
+			triageYield.rawProductEvidenceSignatures ?? 0
+		) > 0
+	) {
+		return null;
+	}
+	const topFamily = triageYield.topSemanticFamilies?.[ 0 ]?.family ?? '';
+	const rawTopFamily = triageYield.rawTopSemanticFamilies?.[ 0 ]?.family ?? '';
+	const dominantFamily = getDominantTriageFamily( triageYield );
+	const dominantShare = Math.max(
+		triageYield.topDuplicateFamilyShare ?? 0,
+		triageYield.rawTopDuplicateFamilyShare ?? 0
+	);
+	const suppressedStrictStartupRecords =
+		triageYield.suppressedStrictStartupRecords ?? 0;
+	const dominantSignatureCount = Math.max(
+		triageYield.signatureCount ?? 0,
+		triageYield.rawSignatureCount ?? 0
+	);
+	const suppressedStartupOnly =
+		suppressedStrictStartupRecords > 0 && dominantSignatureCount === 0;
+	const duplicateDominated =
+		dominantShare >= TRIAGE_DUPLICATE_SHARE_HOLD &&
+		( triageYield.likelyRealVisible ?? 0 ) === 0;
+	const normalizationNoiseDominates =
+		dominantShare >= TRIAGE_DUPLICATE_SHARE_HOLD &&
 		triageYield.normalizationNoiseCandidates >=
 			TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES &&
-		triageYield.normalizationNoiseCandidates > triageYield.likelyRealVisible
+		triageYield.normalizationNoiseCandidates > triageYield.likelyRealVisible;
+	const bootstrapNoiseDominates =
+		( suppressedStartupOnly ||
+			( duplicateDominated &&
+				( topFamily === 'pre_action_bootstrap_stall' ||
+					rawTopFamily === 'pre_action_bootstrap_stall' ) ) ) &&
+		Math.max(
+			dominantFamily?.family === 'pre_action_bootstrap_stall'
+				? dominantFamily.count
+				: 0,
+			triageYield.bootstrapStalls ?? 0,
+			suppressedStrictStartupRecords
+		) > 0;
+	const knownNoiseFamilyDominates =
+		duplicateDominated &&
+		dominantSignatureCount >= TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES &&
+		HISTORICAL_KNOWN_NOISE_FAMILIES.has( dominantFamily?.family ?? '' );
+	const genericDuplicateNoiseDominates =
+		allowGenericDuplicate &&
+		duplicateDominated &&
+		dominantSignatureCount >= TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES;
+
+	if ( bootstrapNoiseDominates ) {
+		return {
+			kind: 'startup-noise',
+			family: 'pre_action_bootstrap_stall',
+			count: Math.max(
+				dominantFamily?.family === 'pre_action_bootstrap_stall'
+					? dominantFamily.count
+					: 0,
+				triageYield.bootstrapStalls ?? 0,
+				suppressedStrictStartupRecords
+			),
+			share: suppressedStartupOnly ? 1 : dominantShare,
+			source: suppressedStartupOnly
+				? 'suppressed-strict-startup-only'
+				: dominantFamily?.source ?? 'suppressed-startup',
+		};
+	}
+	if ( normalizationNoiseDominates ) {
+		return {
+			kind: 'known-noise',
+			family: dominantFamily?.family ?? 'normalization-noise',
+			count: triageYield.normalizationNoiseCandidates,
+			share: dominantShare,
+			source: dominantFamily?.source ?? 'normalization',
+		};
+	}
+	if ( knownNoiseFamilyDominates || genericDuplicateNoiseDominates ) {
+		return {
+			kind: knownNoiseFamilyDominates
+				? 'known-noise'
+				: 'triage-duplicate-noise',
+			family: dominantFamily?.family ?? 'unknown',
+			count: dominantSignatureCount,
+			share: dominantShare,
+			source: dominantFamily?.source ?? 'current-run',
+		};
+	}
+	return null;
+}
+
+function shouldHoldNoisyBlockTopOff( triageYield ) {
+	return !! getCurrentRunDuplicateNoiseHold( triageYield, {
+		allowGenericDuplicate: true,
+		requireNoProductEvidence: false,
+	} );
+}
+
+function getNoisePauseKind( reason ) {
+	if ( ! reason ) {
+		return null;
+	}
+
+	if ( /triage yield is duplicate\/noise dominated/i.test( reason ) ) {
+		return 'triage-duplicate-noise';
+	}
+	if (
+		/pre[-_ ]?action.*startup|startup failures?|startup-stall|startup\/discovery|strict startup|bootstrap.*stall|pre_action_bootstrap_stall|startup known-noise|observed startup known-noise prior/i.test(
+			reason
+		)
+	) {
+		return 'startup-noise';
+	}
+	if (
+		/historical known-noise|normalization noise|known-noise/i.test(
+			reason
+		)
+	) {
+		return 'known-noise';
+	}
+	return null;
+}
+
+function isNoisePauseReason( reason ) {
+	return getNoisePauseKind( reason ) !== null;
+}
+
+function isExplicitStartupNoisePauseReason( reason ) {
+	const value = reason ?? '';
+	if (
+		/continuing sticky known-noise|current-run triage is dominated|observed startup known-noise prior|historical known-noise/i.test(
+			value
+		)
+	) {
+		return false;
+	}
+	return /profile .* produced \d+\/\d+ strict pre-action discovery\/startup failures|supervisor paused-startup-stall|strict pre-action bootstrap noise guard|startup-stall/i.test(
+		value
 	);
+}
+
+function isCrossRunNoisePauseReason( reason ) {
+	const kind = getNoisePauseKind( reason );
+	if ( kind === 'startup-noise' ) {
+		return isExplicitStartupNoisePauseReason( reason );
+	}
+	return kind !== null;
+}
+
+function getPauseExpirationMs( value, cooldownHours ) {
+	const explicitExpiresAt = Date.parse( value?.expiresAt ?? '' );
+	if ( Number.isFinite( explicitExpiresAt ) ) {
+		return explicitExpiresAt;
+	}
+
+	const pausedAt = Date.parse( value?.at ?? '' );
+	if ( ! Number.isFinite( pausedAt ) ) {
+		return 0;
+	}
+	return pausedAt + cooldownHours * 60 * 60 * 1000;
+}
+
+function getUnexpiredNoisePausedGroups( pausedGroups ) {
+	const preserved = {};
+	for ( const [ group, value ] of Object.entries( pausedGroups ?? {} ) ) {
+		if ( ! isCrossRunNoisePauseReason( value?.reason ) ) {
+			continue;
+		}
+		const expiresAtMs = getPauseExpirationMs(
+			value,
+			TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS
+		);
+		if ( expiresAtMs <= Date.now() ) {
+			continue;
+		}
+		preserved[ group ] = {
+			...value,
+			expiresAt: new Date( expiresAtMs ).toISOString(),
+		};
+	}
+	return preserved;
+}
+
+function isRecentTimestamp( timestamp, cooldownHours ) {
+	const parsed = Date.parse( timestamp ?? '' );
+	if ( ! Number.isFinite( parsed ) ) {
+		return false;
+	}
+	return Date.now() - parsed < cooldownHours * 60 * 60 * 1000;
+}
+
+function getActiveNoisePauseCooldown( group ) {
+	const paused = state.pausedGroups?.[ group ];
+	const pausedExpiresAtMs = getPauseExpirationMs(
+		paused,
+		TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS
+	);
+	const pausedKind = getNoisePauseKind( paused?.reason );
+	if (
+		paused &&
+		pausedKind &&
+		pausedExpiresAtMs > Date.now() &&
+		( pausedKind !== 'startup-noise' ||
+			isExplicitStartupNoisePauseReason( paused.reason ) )
+	) {
+		return {
+			at: paused.at,
+			expiresAt: new Date( pausedExpiresAtMs ).toISOString(),
+			reason: paused.reason,
+			kind: pausedKind,
+			source: 'paused-groups',
+		};
+	}
+
+	return null;
+}
+
+function isNoProductSupervisorStartupPause( groupState ) {
+	if ( ! groupState || typeof groupState !== 'object' ) {
+		return false;
+	}
+
+	const pauseUntilMs = Date.parse(
+		groupState.startupStallPausedUntil ?? ''
+	);
+	if ( ! Number.isFinite( pauseUntilMs ) || pauseUntilMs <= Date.now() ) {
+		return false;
+	}
+
+	if (
+		groupState.status !== 'paused-startup-stall' &&
+		! groupState.startupStallPausedUntil
+	) {
+		return false;
+	}
+
+	const reason = groupState.lastReason ?? '';
+	if (
+		getNoisePauseKind( reason ) !== 'startup-noise' &&
+		!/startup-stall|startup failures?|bootstrap noise guard/i.test( reason )
+	) {
+		return false;
+	}
+
+	const productEvidenceRecords =
+		groupState.startupStallNoiseSummary?.productEvidenceRecords;
+	if ( Number.isFinite( productEvidenceRecords ) ) {
+		return productEvidenceRecords === 0;
+	}
+
+	return /0 product-evidence record/.test( reason );
+}
+
+function createSupervisorStartupPause( groupState, outputDir ) {
+	const reason = groupState.lastReason
+		? `supervisor paused-startup-stall: ${ groupState.lastReason }`
+		: 'supervisor paused-startup-stall: no-product startup/discovery noise';
+	return {
+		at: groupState.startupStallPausedAt ?? new Date().toISOString(),
+		reason,
+		reasonKind: 'startup-stall',
+		source: 'supervisor-paused-startup-stall',
+		outputDir,
+		expiresAt: new Date(
+			Date.parse( groupState.startupStallPausedUntil )
+		).toISOString(),
+	};
+}
+
+async function importSupervisorStartupStallPausesFromOutputDir(
+	pausedGroups,
+	outputDir
+) {
+	if ( ! outputDir || outputDir === 'unknown' ) {
+		return 0;
+	}
+
+	const supervisorState = await readJsonFile(
+		path.join( outputDir, 'supervisor-state.json' )
+	);
+	let imported = 0;
+	for ( const groupState of supervisorState?.groups ?? [] ) {
+		if ( ! isNoProductSupervisorStartupPause( groupState ) ) {
+			continue;
+		}
+		const existingExpiresAt = Date.parse(
+			pausedGroups[ groupState.name ]?.expiresAt ?? ''
+		);
+		const nextPause = createSupervisorStartupPause(
+			groupState,
+			outputDir
+		);
+		const nextExpiresAt = Date.parse( nextPause.expiresAt );
+		if (
+			Number.isFinite( existingExpiresAt ) &&
+			existingExpiresAt >= nextExpiresAt
+		) {
+			continue;
+		}
+		pausedGroups[ groupState.name ] = nextPause;
+		imported += 1;
+	}
+	if ( imported > 0 ) {
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'import-supervisor-startup-stall-pauses',
+			outputDir,
+			count: imported,
+			reason:
+				'preserved explicit no-product supervisor startup-stall pauses across output-root rotation',
+		} );
+	}
+	return imported;
+}
+
+async function syncSupervisorStartupStallPauses( supervisorState ) {
+	let synced = 0;
+	for ( const groupState of supervisorState?.groups ?? [] ) {
+		if ( ! isNoProductSupervisorStartupPause( groupState ) ) {
+			continue;
+		}
+		const nextPause = createSupervisorStartupPause(
+			groupState,
+			OUTPUT_DIR
+		);
+		const existing = state.pausedGroups?.[ groupState.name ];
+		if (
+			existing?.source === nextPause.source &&
+			existing.expiresAt === nextPause.expiresAt &&
+			existing.reason === nextPause.reason
+		) {
+			continue;
+		}
+		state.pausedGroups[ groupState.name ] = nextPause;
+		synced += 1;
+	}
+	if ( synced > 0 ) {
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'sync-supervisor-startup-stall-pauses',
+			count: synced,
+			reason:
+				'imported current supervisor no-product startup-stall pauses into novelty scheduling state',
+		} );
+	}
+	return synced;
+}
+
+function getRecentResetPreviousOutputDirs() {
+	const dirs = [];
+	for ( const change of [ ...( state.changes ?? [] ) ].reverse() ) {
+		if ( change.action !== 'reset-run-local-noise-state' ) {
+			continue;
+		}
+		const marker = 'novelty state moved from ';
+		const reason = change.reason ?? '';
+		if ( ! reason.startsWith( marker ) ) {
+			continue;
+		}
+		const [ previousOutputDir ] = reason
+			.slice( marker.length )
+			.split( ' to ' );
+		if (
+			previousOutputDir &&
+			previousOutputDir !== 'unknown' &&
+			path.resolve( previousOutputDir ) !== path.resolve( OUTPUT_DIR )
+		) {
+			dirs.push( previousOutputDir );
+		}
+		if ( dirs.length >= 3 ) {
+			break;
+		}
+	}
+	return dirs;
+}
+
+async function syncRecentSupervisorStartupStallPausesFromResetHistory() {
+	let imported = 0;
+	for ( const outputDir of getRecentResetPreviousOutputDirs() ) {
+		imported += await importSupervisorStartupStallPausesFromOutputDir(
+			state.pausedGroups,
+			outputDir
+		);
+	}
+	return imported;
+}
+
+function supervisorGroupHasProductEvidence( groupState ) {
+	return (
+		( groupState?.startupStallNoiseSummary?.productEvidenceRecords ?? 0 ) >
+		0
+	);
+}
+
+function getSupervisorGroupRunDirs( groupState ) {
+	return [
+		...( groupState?.activeRunDirs ?? [] ),
+		groupState?.currentRunDir,
+	].filter( Boolean );
+}
+
+function noiseHoldsMatch( rootHold, groupHold ) {
+	if ( ! rootHold || ! groupHold ) {
+		return false;
+	}
+	if ( rootHold.family && groupHold.family === rootHold.family ) {
+		return true;
+	}
+	return (
+		rootHold.kind === 'startup-noise' &&
+		groupHold.kind === 'startup-noise'
+	);
+}
+
+function getSupervisorStartupNoiseHold( groupState ) {
+	const summary = groupState?.startupStallNoiseSummary;
+	if (
+		! summary ||
+		( summary.strictStartupRecords ?? 0 ) === 0 ||
+		( summary.productEvidenceRecords ?? 0 ) > 0
+	) {
+		return null;
+	}
+	return {
+		kind: 'startup-noise',
+		family: 'pre_action_bootstrap_stall',
+		count: summary.strictStartupRecords,
+		share: summary.strictStartupRecordShare ?? 1,
+		source: 'supervisor-startup-summary',
+	};
+}
+
+async function getActiveDuplicateNoiseProducerGroups(
+	supervisorState,
+	rootHold
+) {
+	const groups = [];
+	for ( const groupState of supervisorState?.groups ?? [] ) {
+		if (
+			! groupState?.name ||
+			! ACTIVE_GROUP_STATUSES.has( groupState.status )
+		) {
+			continue;
+		}
+		const runDirs = [ ...new Set( getSupervisorGroupRunDirs( groupState ) ) ];
+		if ( runDirs.length === 0 ) {
+			continue;
+		}
+		const groupTriageYield = await summarizeTriageYield( runDirs );
+		const groupHold =
+			getCurrentRunDuplicateNoiseHold( groupTriageYield ) ??
+			getSupervisorStartupNoiseHold( groupState );
+		if ( ! noiseHoldsMatch( rootHold, groupHold ) ) {
+			continue;
+		}
+		groups.push( {
+			name: groupState.name,
+			runDirs,
+			hold: groupHold,
+			triageYield: groupTriageYield,
+		} );
+	}
+	return groups;
+}
+
+async function applyActiveNoiseCooldownsToEnabledGroups( supervisorState ) {
+	const enabled = new Set( state.enabledGroups ?? [] );
+	const supervisorGroupsByName = new Map(
+		( supervisorState?.groups ?? [] ).map( ( groupState ) => [
+			groupState.name,
+			groupState,
+		] )
+	);
+	let paused = 0;
+
+	for ( const group of [ ...enabled ] ) {
+		const activeNoisePause = getActiveNoisePauseCooldown( group );
+		if ( ! activeNoisePause ) {
+			continue;
+		}
+		if ( supervisorGroupHasProductEvidence( supervisorGroupsByName.get( group ) ) ) {
+			delete state.pausedGroups[ group ];
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'keep-enabled-product-evidence-group',
+				group,
+				reason: `current supervisor state has product evidence; not applying ${ activeNoisePause.kind } cooldown from ${ activeNoisePause.at }`,
+			} );
+			continue;
+		}
+
+		enabled.delete( group );
+		state.pausedGroups[ group ] = {
+			at: activeNoisePause.at ?? new Date().toISOString(),
+			reason: activeNoisePause.reason,
+			expiresAt: activeNoisePause.expiresAt,
+			reasonKind: activeNoisePause.kind,
+			source: activeNoisePause.source ?? 'active-noise-cooldown',
+			outputDir: state.pausedGroups?.[ group ]?.outputDir ?? OUTPUT_DIR,
+		};
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'restore-paused-noise-cooldown',
+			group,
+			reason: `removing enabled group during active ${ activeNoisePause.kind } cooldown: ${ activeNoisePause.reason }`,
+			expiresAt: activeNoisePause.expiresAt,
+		} );
+		await writeNoAnalysisSentinelsForGroup( group, activeNoisePause.reason );
+		await terminateGroupLanes( group, activeNoisePause.reason );
+		paused += 1;
+	}
+
+	if ( paused > 0 ) {
+		state.enabledGroups = [ ...enabled ];
+	}
+	return paused;
 }
 
 function shouldHoldDominantRealUserFamily( triageYield ) {
@@ -1433,7 +2535,7 @@ function shouldHoldDominantRealUserFamily( triageYield ) {
 
 	return (
 		triageYield.topDuplicateFamilyShare >= TRIAGE_DUPLICATE_SHARE_HOLD &&
-		/operation_witness_missing|rest_meta_database_error_wp_persisted_preferences/.test(
+		/operation_witness_missing|rest_meta_database_error/.test(
 			topFamily.family
 		)
 	);
@@ -1559,9 +2661,7 @@ function isStrictPreActionStartupGateAttempt( attempt ) {
 	}
 	if (
 		attempt.lastHistoryPhase &&
-		! [ 'seed', 'bootstrap', 'open', 'join' ].includes(
-			attempt.lastHistoryPhase
-		)
+		! STARTUP_DISCOVERY_PHASES.has( attempt.lastHistoryPhase )
 	) {
 		return false;
 	}
@@ -1838,8 +2938,8 @@ function featureKeysForRecord( record ) {
 			for ( const blockName of blockNames ) {
 				if ( typeof blockName === 'string' ) {
 					keys.add( `media-cross-entity-block:${ blockName }` );
-				}
 			}
+		}
 		}
 	}
 	if (
@@ -2103,7 +3203,7 @@ function isStartupDiscoveryFailure( record ) {
 	if (
 		failedHistoryPhases.length > 0 &&
 		! failedHistoryPhases.some( ( phase ) =>
-			[ 'seed', 'bootstrap', 'open', 'join' ].includes( phase )
+			STARTUP_DISCOVERY_PHASES.has( phase )
 		)
 	) {
 		return false;
@@ -3005,7 +4105,7 @@ function createCoverageQualityIssues( guidance, triageYield ) {
 			id: 'triage-duplicate-dominated',
 			severity: 'medium',
 			label: 'triage is duplicate/noise dominated',
-			evidence: `top family share ${ triageYield.topDuplicateFamilyShare }, bootstrap stalls ${ triageYield.bootstrapStalls }, normalization-noise candidates ${ triageYield.normalizationNoiseCandidates }, visible likely-real ${ triageYield.likelyRealVisible }`,
+			evidence: `actionable top family share ${ triageYield.topDuplicateFamilyShare }, actionable signatures ${ triageYield.signatureCount }, raw signatures ${ triageYield.rawSignatureCount ?? triageYield.signatureCount }, non-actionable ${ triageYield.nonActionableSignatureCount ?? 0 }, bootstrap stalls ${ triageYield.bootstrapStalls }, normalization-noise candidates ${ triageYield.normalizationNoiseCandidates }, visible likely-real ${ triageYield.likelyRealVisible }`,
 			recommendedAction:
 				'gate duplicate/noise families or fix the dominant infra failure before increasing browser action breadth',
 		} );
@@ -3288,7 +4388,6 @@ function classifyMemoryHeadroom( {
 
 function hasRecentStartupFailurePause( group ) {
 	const cutoff = Date.now() - STARTUP_FAILURE_COOLDOWN_HOURS * 60 * 60 * 1000;
-	const runStartedAt = Date.parse( state.startedAt ?? '' );
 
 	return ( state.changes ?? [] ).some( ( change ) => {
 		if (
@@ -3305,15 +4404,6 @@ function hasRecentStartupFailurePause( group ) {
 		if ( ! Number.isFinite( timestamp ) || timestamp < cutoff ) {
 			return false;
 		}
-		if ( Number.isFinite( runStartedAt ) && timestamp < runStartedAt ) {
-			return false;
-		}
-		if (
-			typeof change.outputDir === 'string' &&
-			path.resolve( change.outputDir ) !== path.resolve( OUTPUT_DIR )
-		) {
-			return false;
-		}
 		return true;
 	} );
 }
@@ -3321,13 +4411,37 @@ function hasRecentStartupFailurePause( group ) {
 function clearHistoricalKnownNoisePauses() {
 	let cleared = 0;
 	for ( const [ group, value ] of Object.entries( state.pausedGroups ?? {} ) ) {
-		if ( ! /^historical known-noise hold\b/.test( value?.reason ?? '' ) ) {
+		if ( ! isStaleHistoricalNoisePause( value ) ) {
 			continue;
 		}
 		delete state.pausedGroups[ group ];
 		cleared += 1;
 	}
 	return cleared;
+}
+
+function isStaleHistoricalNoisePause( value ) {
+	const reason = value?.reason ?? '';
+	if ( ! isNoisePauseReason( reason ) ) {
+		return false;
+	}
+	const expiresAtMs = getPauseExpirationMs(
+		value,
+		TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS
+	);
+	if ( expiresAtMs <= Date.now() ) {
+		return true;
+	}
+	if ( /^historical known-noise hold\b/.test( reason ) ) {
+		return true;
+	}
+	if ( getNoisePauseKind( reason ) === 'startup-noise' ) {
+		return ! isExplicitStartupNoisePauseReason( reason );
+	}
+	return (
+		typeof value?.outputDir === 'string' &&
+		path.resolve( value.outputDir ) !== path.resolve( OUTPUT_DIR )
+	);
 }
 
 function getStartupFailureStats( profile ) {
@@ -3343,6 +4457,10 @@ function hasExcessiveStartupFailures( profile ) {
 
 	if ( failures < STARTUP_FAILURE_LIMIT ) {
 		return false;
+	}
+
+	if ( failures >= STARTUP_FAILURE_ABSOLUTE_LIMIT ) {
+		return true;
 	}
 
 	if ( records < STARTUP_FAILURE_MIN_RECORDS_FOR_RATE ) {
@@ -3419,7 +4537,13 @@ function buildGroup( profile ) {
 	};
 }
 
-async function applyPolicy( novelty, resources, triageYield, guidance ) {
+async function applyPolicy(
+	novelty,
+	resources,
+	triageYield,
+	guidance,
+	supervisorState = null
+) {
 	const enabled = new Set( state.enabledGroups );
 	const lifecycleEnabled = enabled.has( 'novelty-ws-lifecycle' );
 	const persistenceNoTitleEnabled = enabled.has(
@@ -3509,6 +4633,9 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 			REAL_USER_EDITING_MIN_ACTION_RECORDS ||
 		( ( triageYield?.likelyRealVisible ?? 0 ) === 0 &&
 			realUserEditingRecords < REAL_USER_EDITING_NO_YIELD_MIN_RECORDS );
+	const currentRunDuplicateNoiseHold = PAUSE_ON_TRIAGE_NOISE
+		? getCurrentRunDuplicateNoiseHold( triageYield )
+		: null;
 	const holdNoisyBlockTopOff =
 		PAUSE_ON_TRIAGE_NOISE && shouldHoldNoisyBlockTopOff( triageYield );
 	const holdDominantRealUserFamilyActive =
@@ -3613,6 +4740,32 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 			return false;
 		}
 
+		const activeNoisePause = getActiveNoisePauseCooldown(
+			group,
+			triageYield
+		);
+		if ( activeNoisePause ) {
+			const currentRunNoiseHold =
+				getCurrentRunDuplicateNoiseHold( triageYield );
+			if ( enabled.size === 0 && ! currentRunNoiseHold ) {
+				delete state.pausedGroups[ group ];
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'override-noise-cooldown-to-avoid-empty-coverage',
+					group,
+					reason: `all coverage-guided browser groups are paused and current-run duplicate/noise hold is clear; retrying despite recent ${ activeNoisePause.kind } pause at ${ activeNoisePause.at }: ${ activeNoisePause.reason }`,
+				} );
+			} else {
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'keep-paused-noise-cooldown',
+					group,
+					reason: `recent ${ activeNoisePause.kind } pause at ${ activeNoisePause.at } is still inside the ${ TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS }h cooldown: ${ activeNoisePause.reason }`,
+				} );
+				return false;
+			}
+		}
+
 		if ( state.pausedGroups?.[ group ] && ! allowRotation ) {
 			return false;
 		}
@@ -3657,8 +4810,9 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		}
 
 		if ( state.pausedGroups?.[ group ] ) {
+			const pausedReason = state.pausedGroups[ group ]?.reason ?? '';
 			delete state.pausedGroups[ group ];
-			if ( profile ) {
+			if ( profile && ! isNoisePauseReason( pausedReason ) ) {
 				delete state.startupFailureCountsByProfile[ profile ];
 				state.changes.push( {
 					at: new Date().toISOString(),
@@ -3693,17 +4847,31 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		}
 
 		enabled.delete( group );
+		const pausedAt = new Date().toISOString();
+		const noisePauseKind = getNoisePauseKind( reason );
+		const expiresAt = noisePauseKind
+			? new Date(
+					Date.now() +
+						TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS * 60 * 60 * 1000
+			  ).toISOString()
+			: null;
 		state.pausedGroups[ group ] = {
-			at: new Date().toISOString(),
+			at: pausedAt,
 			reason,
+			...( expiresAt ? { expiresAt } : {} ),
 		};
 		state.changes.push( {
-			at: new Date().toISOString(),
+			at: pausedAt,
 			action: 'pause-group',
 			group,
 			reason,
+			outputDir: OUTPUT_DIR,
+			...( expiresAt ? { expiresAt } : {} ),
 		} );
 		await log( `Paused ${ group } group: ${ reason }` );
+		if ( noisePauseKind ) {
+			await writeNoAnalysisSentinelsForGroup( group, reason );
+		}
 		await terminateGroupLanes( group, reason );
 		return true;
 	}
@@ -3738,10 +4906,49 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		enabled.size <
 			Math.min( MAX_ENABLED_GROUPS, TARGET_ENABLED_GROUPS + 1 );
 
+	if ( PAUSE_ON_TRIAGE_NOISE ) {
+		for ( const group of [ ...enabled ] ) {
+			const activeNoisePause = getActiveNoisePauseCooldown(
+				group,
+				triageYield
+			);
+			if ( ! activeNoisePause ) {
+				continue;
+			}
+			await pauseGroup(
+				group,
+				`continuing sticky ${ activeNoisePause.kind } cooldown after recent pause at ${ activeNoisePause.at }: ${ activeNoisePause.reason }`
+			);
+		}
+	}
+
+	if ( currentRunDuplicateNoiseHold ) {
+		const noisyProducerGroups = await getActiveDuplicateNoiseProducerGroups(
+			supervisorState,
+			currentRunDuplicateNoiseHold
+		);
+		if ( noisyProducerGroups.length === 0 ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'current-run-noise-hold-no-producer-match',
+				reason: `current-run duplicate/noise hold is active for ${ currentRunDuplicateNoiseHold.family } (${ currentRunDuplicateNoiseHold.count } signatures, share=${ currentRunDuplicateNoiseHold.share }) but no active no-product producer run dir matched it`,
+			} );
+		}
+		for ( const producer of noisyProducerGroups ) {
+			if ( ! enabled.has( producer.name ) ) {
+				continue;
+			}
+			await pauseGroup(
+				producer.name,
+				`triage yield is duplicate/noise dominated: current-run known-noise family ${ producer.hold.family } from active producer ${ producer.name } (${ producer.hold.count } signatures, share=${ producer.hold.share }, source=${ producer.hold.source }); no product-evidence signatures are present in the contributing run dir, so pause lanes and mark no-analysis for no-product signatures only`
+			);
+		}
+	}
+
 	if ( realUserEditingEnabled && holdDominantRealUserFamilyActive ) {
 		await pauseGroup(
 			'novelty-ws-real-user-editing',
-			`real-user lane is dominated by ${ triageYield.topSemanticFamilies[ 0 ].family } (${ triageYield.topSemanticFamilies[ 0 ].count } signatures, share=${ triageYield.topDuplicateFamilyShare }); pause until the family is analyzed or the lane config changes`
+			`real-user lane is dominated by actionable family ${ triageYield.topSemanticFamilies[ 0 ].family } (${ triageYield.topSemanticFamilies[ 0 ].count } actionable signatures, share=${ triageYield.topDuplicateFamilyShare }); pause until the family is analyzed or the lane config changes`
 		);
 	} else if (
 		realUserEditingNeedsCoverage &&
@@ -3818,10 +5025,10 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 			}
 			await pauseGroup(
 				group,
-				`triage yield is duplicate/noise dominated: top family share ${ triageYield.topDuplicateFamilyShare }, normalization noise candidates ${ triageYield.normalizationNoiseCandidates }, visible likely-real ${ triageYield.likelyRealVisible }`
+				`triage yield is duplicate/noise dominated: actionable top family share ${ triageYield.topDuplicateFamilyShare }, actionable signatures ${ triageYield.signatureCount }, raw signatures ${ triageYield.rawSignatureCount ?? triageYield.signatureCount }, non-actionable ${ triageYield.nonActionableSignatureCount ?? 0 }, bootstrap stalls ${ triageYield.bootstrapStalls }, normalization noise candidates ${ triageYield.normalizationNoiseCandidates }, visible likely-real ${ triageYield.likelyRealVisible }`
 			);
+			}
 		}
-	}
 
 	if (
 		! parserTransformEnabled &&
@@ -3954,6 +5161,48 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		if ( enabled.has( group ) ) {
 			continue;
 		}
+		const activeNoisePause = getActiveNoisePauseCooldown(
+			group,
+			triageYield
+		);
+		if ( activeNoisePause ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'skip-enable-noisy-recommended-group',
+				group,
+				reason: `recent ${ activeNoisePause.kind } pause at ${ activeNoisePause.at } is still inside the ${ TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS }h cooldown; do not re-enable through coverage recommendations`,
+			} );
+			continue;
+		}
+		if (
+			holdNoisyBlockTopOff &&
+			[
+				'novelty-ws-common-blocks',
+				'novelty-ws-block-gauntlet',
+			].includes( group )
+		) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'skip-enable-noisy-recommended-group',
+				group,
+				reason:
+					'triage-noise hold is active; do not re-enable block top-off through coverage recommendations',
+			} );
+			continue;
+		}
+		if (
+			holdDominantRealUserFamilyActive &&
+			group === 'novelty-ws-real-user-editing'
+		) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'skip-enable-noisy-recommended-group',
+				group,
+				reason:
+					'real-user duplicate-family hold is active; do not re-enable through coverage recommendations',
+			} );
+			continue;
+		}
 		await enableGroup(
 			group,
 			`coverage-guidance gap: ${ guidance.unmetGoals
@@ -3974,6 +5223,8 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 		const basePauseOrder = [
 			[ 'novelty-ws-block-gauntlet', 'block-gauntlet' ],
 			[ 'novelty-ws-common-blocks', 'common-blocks' ],
+			[ 'novelty-http-persistence-probe', 'persistence-no-title' ],
+			[ 'novelty-ws-persistence-no-title', 'persistence-no-title' ],
 			[ 'novelty-ws-parser-serialization', 'parser-serialization' ],
 			[ 'novelty-ws-parser-transform', 'parser-transform' ],
 			[ 'novelty-ws-real-user-editing', 'real-user-editing' ],
@@ -4003,12 +5254,12 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 			) {
 				const { failures, records, rate } =
 					getStartupFailureStats( profile );
-				await pauseGroup(
-					group,
-					`profile ${ profile } produced ${ failures }/${ records } pre-action WS discovery/startup failures (rate=${ formatPercent(
-						rate
-					) })`
-				);
+					await pauseGroup(
+						group,
+						`profile ${ profile } produced ${ failures }/${ records } strict pre-action discovery/startup failures (rate=${ formatPercent(
+							rate
+						) })`
+					);
 			}
 		}
 
@@ -4106,16 +5357,7 @@ async function applyPolicy( novelty, resources, triageYield, guidance ) {
 }
 
 async function terminateGroupLanes( groupName, reason ) {
-	const supervisorState = await readJsonFile(
-		path.join( OUTPUT_DIR, 'supervisor-state.json' )
-	);
-	const groupState = ( supervisorState?.groups ?? [] ).find(
-		( group ) => group.name === groupName
-	);
-	const runDirs = [
-		...( groupState?.activeRunDirs ?? [] ),
-		groupState?.currentRunDir,
-	].filter( Boolean );
+	const runDirs = await getSupervisorRunDirsForGroup( groupName );
 	const terminated = [];
 
 	for ( const runDir of new Set( runDirs ) ) {
@@ -4153,6 +5395,51 @@ async function terminateGroupLanes( groupName, reason ) {
 		await log(
 			`Terminated ${ killedCount } process(es) for paused group ${ groupName }.`
 		);
+	}
+}
+
+async function getSupervisorRunDirsForGroup( groupName ) {
+	const supervisorState = await readJsonFile(
+		path.join( OUTPUT_DIR, 'supervisor-state.json' )
+	);
+	const groupState = ( supervisorState?.groups ?? [] ).find(
+		( group ) => group.name === groupName
+	);
+	return getSupervisorGroupRunDirs( groupState );
+}
+
+async function writeNoAnalysisSentinelsForGroup( groupName, reason ) {
+	const runDirs = await getSupervisorRunDirsForGroup( groupName );
+	const kind = getNoisePauseKind( reason );
+	const written = [];
+
+	for ( const runDir of new Set( runDirs ) ) {
+		const sentinelPath = path.join(
+			runDir,
+			NO_ANALYSIS_SENTINEL_RELATIVE_PATH
+		);
+		await writeJsonFileAtomic( sentinelPath, {
+			version: 1,
+			createdAt: new Date().toISOString(),
+			outputDir: OUTPUT_DIR,
+			group: groupName,
+			reason,
+			reasonKind: kind,
+			preserveProductEvidence: true,
+			note:
+				'Producer paused by novelty duplicate/noise policy. Consumers must not spend analysis on signatures without product evidence from this run.',
+		} );
+		written.push( runDir );
+	}
+
+	if ( written.length ) {
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'write-no-analysis-sentinel',
+			group: groupName,
+			reason,
+			count: written.length,
+		} );
 	}
 }
 
@@ -4375,25 +5662,55 @@ function getHistoricalKnownNoiseHoldReason() {
 	const historical = state.triageYieldHistorical;
 	if (
 		! historical ||
-		historical.signatureCount < TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES
+		Math.max(
+			historical.signatureCount ?? 0,
+			historical.rawSignatureCount ?? 0,
+			historical.suppressedStrictStartupRecords ?? 0
+		) < TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES
 	) {
-		return null;
-	}
-	const topFamily = historical.topSemanticFamilies?.[ 0 ];
-	if (
-		! topFamily ||
-		! HISTORICAL_KNOWN_NOISE_FAMILIES.has( topFamily.family )
-	) {
-		return null;
-	}
-	if ( historical.topDuplicateFamilyShare < TRIAGE_DUPLICATE_SHARE_HOLD ) {
 		return null;
 	}
 	if ( ( state.triageYieldCurrent?.likelyRealVisible ?? 0 ) > 0 ) {
 		return null;
 	}
+	if ( ! getCurrentRunDuplicateNoiseHold( state.triageYieldCurrent ) ) {
+		return null;
+	}
 
-	return `historical known-noise family ${ topFamily.family } dominates observed triage (${ topFamily.count }/${ historical.signatureCount }, share=${ historical.topDuplicateFamilyShare }); hold open-ended coverage Codex until current-run noise gating is validated`;
+	const candidates = [
+		{
+			kind: 'actionable',
+			topFamily: historical.topSemanticFamilies?.[ 0 ],
+			share: historical.topDuplicateFamilyShare ?? 0,
+			total: historical.signatureCount ?? 0,
+		},
+		{
+			kind: 'raw',
+			topFamily: historical.rawTopSemanticFamilies?.[ 0 ],
+			share: historical.rawTopDuplicateFamilyShare ?? 0,
+			total: historical.rawSignatureCount ?? 0,
+		},
+	];
+	for ( const candidate of candidates ) {
+		if (
+			! candidate.topFamily ||
+			! HISTORICAL_KNOWN_NOISE_FAMILIES.has( candidate.topFamily.family )
+		) {
+			continue;
+		}
+		if ( candidate.share < TRIAGE_DUPLICATE_SHARE_HOLD ) {
+			continue;
+		}
+		return `historical ${ candidate.kind } known-noise family ${ candidate.topFamily.family } dominates observed triage (${ candidate.topFamily.count }/${ candidate.total }, share=${ candidate.share }); hold open-ended coverage Codex until current-run noise gating is validated`;
+	}
+
+	const suppressedStartupRecords =
+		historical.suppressedStrictStartupRecords ?? 0;
+	if ( suppressedStartupRecords >= TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES ) {
+		return `historical strict pre-action startup suppression is high (${ suppressedStartupRecords } suppressed record(s)); hold open-ended coverage Codex until current-run noise gating is validated`;
+	}
+
+	return null;
 }
 
 function buildCoverageCodexPrompt( guidance, reportPath ) {
@@ -4571,15 +5888,17 @@ function evaluateHealth( groups, coverageFiles, triageYield, supervisorState ) {
 	}
 
 	if ( shouldHoldNoisyBlockTopOff( triageYield ) ) {
-		warnings.push(
-			`triage yield is duplicate/noise dominated${
-				PAUSE_ON_TRIAGE_NOISE ? '' : ' (coverage pause disabled)'
-			}: top family share ${
-				triageYield.topDuplicateFamilyShare
-			}, normalization noise candidates ${
-				triageYield.normalizationNoiseCandidates
-			}, visible likely-real ${ triageYield.likelyRealVisible }`
-		);
+			warnings.push(
+				`triage yield is duplicate/noise dominated${
+					PAUSE_ON_TRIAGE_NOISE ? '' : ' (coverage pause disabled)'
+				}: top family share ${
+					triageYield.topDuplicateFamilyShare
+				}, bootstrap stalls ${
+					triageYield.bootstrapStalls
+				}, normalization noise candidates ${
+					triageYield.normalizationNoiseCandidates
+				}, visible likely-real ${ triageYield.likelyRealVisible }`
+			);
 	}
 
 	for ( const group of supervisorState?.groups ?? [] ) {
@@ -4809,6 +6128,43 @@ function formatTriageYieldStatusLines( triageYield ) {
 		`- triage roots: ${ triageYield.roots ?? 0 }`,
 		`- triage state files: ${ triageYield.files }`,
 		`- signatures: ${ triageYield.signatureCount }`,
+		`- raw signatures: ${
+			triageYield.rawSignatureCount ?? triageYield.signatureCount
+		}`,
+		`- actionable signatures: ${
+			triageYield.actionableSignatureCount ?? triageYield.signatureCount
+		}`,
+		`- non-actionable signatures: ${
+			triageYield.nonActionableSignatureCount ?? 0
+		}`,
+		`- known-infra signatures: ${ triageYield.knownInfraSignatures ?? 0 }`,
+		`- bootstrap-stall signatures: ${
+			triageYield.bootstrapStallSignatures ?? 0
+		}`,
+		`- family-capped signatures: ${
+			triageYield.familyCappedSignatures ?? 0
+		}`,
+		`- source-suppressed signatures: ${
+			triageYield.sourceSuppressedSignatures ?? 0
+		}`,
+		`- stale-source signatures: ${
+			triageYield.staleSourceSignatures ?? 0
+		}`,
+		`- analysis-gated non-actionable signatures: ${
+			triageYield.analysisGatedNonActionableSignatures ?? 0
+		}`,
+		`- merged duplicate signatures: ${
+			triageYield.mergedDuplicateSignatures ?? 0
+		}`,
+		`- normalization-noise excluded signatures: ${
+			triageYield.normalizationNoiseSignatures ?? 0
+		}`,
+		`- product-evidence signatures: ${
+			triageYield.productEvidenceSignatures ?? 0
+		}`,
+		`- raw product-evidence signatures: ${
+			triageYield.rawProductEvidenceSignatures ?? 0
+		}`,
 		`- likely-real visible: ${ triageYield.likelyRealVisible }`,
 		`- likely-real merged duplicates: ${ triageYield.likelyRealMerged }`,
 		`- likely-real oracle/noise questions: ${ triageYield.likelyRealOracleQuestion }`,
@@ -4820,24 +6176,47 @@ function formatTriageYieldStatusLines( triageYield ) {
 		`- top semantic families: ${ JSON.stringify(
 			triageYield.topSemanticFamilies
 		) }`,
+		`- raw top duplicate family share: ${
+			triageYield.rawTopDuplicateFamilyShare ?? 0
+		}`,
+		`- raw top semantic families: ${ JSON.stringify(
+			triageYield.rawTopSemanticFamilies ?? []
+		) }`,
 	];
 }
 
 async function runPass() {
+	const supervisorState = await readJsonFile(
+		path.join( OUTPUT_DIR, 'supervisor-state.json' )
+	);
+	await syncRecentSupervisorStartupStallPausesFromResetHistory();
+	await syncSupervisorStartupStallPauses( supervisorState );
+	await applyActiveNoiseCooldownsToEnabledGroups( supervisorState );
+	const currentRunDirs = getCurrentRunDirs( supervisorState );
+	currentRunCoverageRoots = currentRunDirs;
+	const observedTriageRunDirs = uniquePathList( [
+		...HISTORICAL_OBSERVED_RUN_DIRS,
+		...CURRENT_RUN_DIRS,
+		...currentRunDirs,
+	] );
 	const coverageFiles = await findCoverageFiles( OBSERVED_RUN_DIRS );
 	const currentCoverageFiles = coverageFiles.filter(
-		isCurrentRunCoverageFile
+		( filePath ) => isCoverageFileInRunDirs( filePath, currentRunDirs )
 	);
-	const currentSummaryFiles = await findSummaryFiles( CURRENT_RUN_DIRS );
-	const triageYieldCurrent = await summarizeTriageYield( CURRENT_RUN_DIRS );
+	const currentSummaryFiles = await findSummaryFiles( currentRunDirs );
+	const triageYieldCurrent = await summarizeTriageYield( currentRunDirs );
 	const triageYieldHistorical = await summarizeTriageYield(
 		HISTORICAL_OBSERVED_RUN_DIRS
 	);
-	const triageYieldCombined = await summarizeTriageYield( OBSERVED_RUN_DIRS );
+	const triageYieldCombined = await summarizeTriageYield(
+		observedTriageRunDirs
+	);
 	state.triageYield = triageYieldCurrent;
 	state.triageYieldCurrent = triageYieldCurrent;
 	state.triageYieldHistorical = triageYieldHistorical;
 	state.triageYieldCombined = triageYieldCombined;
+	state.currentRunDirs = currentRunDirs;
+	state.currentRunDirSource = getCurrentRunDirSource( supervisorState );
 	const { records, stats } = await readCoverageRecords( coverageFiles );
 	const novelty = summarizeNovelty( records );
 	await ensureCurrentRunCounters( currentCoverageFiles, currentSummaryFiles );
@@ -4851,10 +6230,16 @@ async function runPass() {
 		await readJsonFile( GROUPS_PATH ),
 		coverageFiles,
 		triageYieldCurrent,
-		await readJsonFile( path.join( OUTPUT_DIR, 'supervisor-state.json' ) )
+		supervisorState
 	);
 	updateCoverageQualityIssues( guidance, triageYieldCurrent );
-	await applyPolicy( novelty, resources, triageYieldCurrent, guidance );
+	await applyPolicy(
+		novelty,
+		resources,
+		triageYieldCurrent,
+		guidance,
+		supervisorState
+	);
 	if ( shutdownRequested ) {
 		return;
 	}
