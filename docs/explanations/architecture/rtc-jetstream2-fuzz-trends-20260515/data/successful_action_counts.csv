@@ -4,14 +4,14 @@ move-block,13795,async-server-blocks
 insert-common-block,13723,async-server-blocks
 edit-block-gauntlet-attributes,13331,async-server-blocks
 delete-nested-block,5282,three-user-late-join
-move-block-into-group,5255,three-user-late-join
+move-block-into-group,5256,three-user-late-join
 move-block,5167,permissions-auth-locks
-insert-nested-group,5118,three-user-late-join
+insert-nested-group,5121,three-user-late-join
 insert-heading,5117,permissions-auth-locks
-move-block,5068,three-user-late-join
-delete-block,5036,three-user-late-join
+move-block,5071,three-user-late-join
+delete-block,5037,three-user-late-join
 edit-paragraph,5008,three-user-late-join
-insert-paragraph,4942,three-user-late-join
+insert-paragraph,4943,three-user-late-join
 delete-nested-block,4917,permissions-auth-locks
 insert-nested-group,4883,permissions-auth-locks
 insert-heading,4877,three-user-late-join
@@ -20,7 +20,7 @@ append-paragraph,4822,three-user-late-join
 append-paragraph,4804,permissions-auth-locks
 edit-paragraph,4794,permissions-auth-locks
 insert-async-server-block,4792,three-user-late-join
-concurrent-paragraphs,4788,three-user-late-join
+concurrent-paragraphs,4789,three-user-late-join
 insert-async-server-block,4778,permissions-auth-locks
 concurrent-paragraphs,4758,permissions-auth-locks
 move-block-into-group,4733,permissions-auth-locks
@@ -39,7 +39,7 @@ concurrent-paragraphs,4097,session-lifecycle
 delete-block,4092,session-lifecycle
 edit-nested-paragraph,3926,session-lifecycle
 insert-heading,3904,session-lifecycle
-late-join-post-action,3886,three-user-late-join
+late-join-post-action,3887,three-user-late-join
 move-block,3781,session-lifecycle
 insert-block-gauntlet-block,3090,block-gauntlet
 edit-nested-paragraph,3051,long-session-large-doc
