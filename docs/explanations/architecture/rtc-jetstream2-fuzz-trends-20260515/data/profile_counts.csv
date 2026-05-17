@@ -1,9 +1,9 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-three-user-late-join,8800,3518,0,0.3997727272727273,lifecycle
+three-user-late-join,8805,3519,0,0.39965928449744464,lifecycle
 session-lifecycle,7913,2361,0,0.2983697712624795,lifecycle
-real-user-editing,6677,531,0,0.07952673356297739,real-user
-async-server-blocks,6557,3760,0,0.5734329723959127,async/media
-permissions-auth-locks,6208,3435,0,0.5533182989690721,auth/locks
+real-user-editing,6681,531,0,0.0794791198922317,real-user
+async-server-blocks,6565,3761,0,0.5728865194211729,async/media
+permissions-auth-locks,6222,3436,0,0.5522340083574413,auth/locks
 block-gauntlet,6135,1133,0,0.18467807660961696,block-structure
 revision-persistence,4422,155,0,0.03505201266395296,persistence
 parser-transform,4157,413,0,0.0993504931440943,parser
@@ -11,7 +11,7 @@ common-blocks,3948,396,0,0.10030395136778116,block-structure
 multi-reload-lifecycle,3247,108,0,0.033261472128118266,lifecycle
 parser-serialization,3199,157,0,0.0490778368240075,parser
 persistence-no-title,3146,769,0,0.24443738080101715,persistence
-long-session-large-doc,2685,521,0,0.1940409683426443,lifecycle
+long-session-large-doc,2693,521,0,0.19346453769030822,lifecycle
 full,840,18,0,0.02142857142857143,block-structure
 structure,536,95,0,0.17723880597014927,block-structure
 media-cross-entity,491,160,0,0.3258655804480652,async/media
