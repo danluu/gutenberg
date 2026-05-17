@@ -157,6 +157,48 @@ cleanup_orphan_monitors() {
 	done
 }
 
+cleanup_optional_browser_process_groups() {
+	local now=$1
+	local pgids pgid killed=0
+	pgids=$(
+		ps -eo pid,pgid,cmd |
+			awk '
+				/rtc-gap-booster-20260515|rtc-fuzz-focused-shards-20260515|rtc-fuzz-strict-expansion-20260515/ &&
+				/playwright|chrome-headless|ffmpeg|rtc-browser-fuzz-runner|test-playwright|wp-scripts/ &&
+				!/codex/ {
+					print $2;
+				}
+			' |
+			sort -u
+	)
+	if [ -z "$pgids" ]; then
+		return 1
+	fi
+	for pgid in $pgids; do
+		case "$pgid" in
+			''|0|1)
+				continue
+				;;
+		esac
+		echo "[$now] terminating optional browser process group under severe pressure: pgid=$pgid" >> "$LOG"
+		kill -TERM "-$pgid" 2>/dev/null || true
+		killed=1
+	done
+	if [ "$killed" = 1 ]; then
+		sleep 5
+		for pgid in $pgids; do
+			case "$pgid" in
+				''|0|1)
+					continue
+					;;
+			esac
+			kill -KILL "-$pgid" 2>/dev/null || true
+		done
+		return 0
+	fi
+	return 1
+}
+
 shed_optional_browser_pools_if_needed() {
 	local reason=$1
 	local now=$2
@@ -164,9 +206,13 @@ shed_optional_browser_pools_if_needed() {
 	if [ "$reason" != "severe_pressure" ]; then
 		return 1
 	fi
+	if cleanup_optional_browser_process_groups "$now"; then
+		killed=1
+	fi
 	last_shed=$(cat "$OPTIONAL_BROWSER_SHED_LAST" 2>/dev/null || echo 0)
 	if [ $(( $(epoch) - last_shed )) -lt "$OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS" ]; then
-		return 1
+		[ "$killed" = 1 ]
+		return
 	fi
 	for session in \
 		rtc-gap-booster \
