@@ -302,6 +302,32 @@ repo_has_live_browser_runner() {
 	return 1
 }
 
+wp_env_generated_dirs_for_repo() {
+	local repo=$1
+	find /home/exouser/wp-env -mindepth 2 -maxdepth 2 -name docker-compose.yml -print 2>/dev/null |
+		while IFS= read -r compose_path; do
+			if grep -Fq "$repo" "$compose_path"; then
+				dirname "$compose_path"
+			fi
+		done
+}
+
+reset_generated_wp_env_dirs() {
+	local repo=$1 now=$2 dir did_reset=0
+	while IFS= read -r dir; do
+		[ -n "$dir" ] || continue
+		[ -f "$dir/docker-compose.yml" ] || continue
+		echo "[$now] fallback wp-env reset dir=$dir repo=$repo" >> "$LOG"
+		if docker compose -f "$dir/docker-compose.yml" down -v --remove-orphans >> "$LOG" 2>&1; then
+			rm -f "$dir/wp-env-cache.json"
+			did_reset=1
+		else
+			echo "[$now] fallback wp-env reset failed dir=$dir repo=$repo" >> "$LOG"
+		fi
+	done < <(wp_env_generated_dirs_for_repo "$repo")
+	[ "$did_reset" = 1 ]
+}
+
 reset_wp_env_if_safe() {
 	local enabled=$1 active=$2 paused=$3 now=$4
 	local last_reset repo did_reset=0
@@ -326,11 +352,19 @@ reset_wp_env_if_safe() {
 			continue
 		fi
 		echo "[$now] resetting wp-env repo=$repo after full materialization infra failure" >> "$LOG"
-		(
+		if (
 			cd "$repo" || exit 1
 			npm run wp-env-test -- destroy --force
-		) >> "$LOG" 2>&1 || echo "[$now] wp-env reset failed repo=$repo" >> "$LOG"
-		did_reset=1
+		) >> "$LOG" 2>&1; then
+			did_reset=1
+		else
+			echo "[$now] wp-env reset via wp-env failed repo=$repo; trying generated compose fallback" >> "$LOG"
+			if reset_generated_wp_env_dirs "$repo" "$now"; then
+				did_reset=1
+			else
+				echo "[$now] wp-env reset failed repo=$repo" >> "$LOG"
+			fi
+		fi
 	done < <(current_repo_roots)
 	if [ "$did_reset" = 1 ]; then
 		echo "$(epoch)" > "$WP_ENV_RESET_LAST"
