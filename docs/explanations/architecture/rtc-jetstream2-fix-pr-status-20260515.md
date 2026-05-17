@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T23:06:58Z`
+Snapshot time: `2026-05-17T23:13:02Z`
 
 Trigger event:
-`pr-split-2026-05-17T23-05-28Z-20260517T225642Z`
+`duplicate-noise-2026-05-17T23-05-40Z-154`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T23-05-28Z-20260517T225642Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T23-05-40Z-154/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -33,6 +33,10 @@ the stale Cycle310 iteration-27 microhead view and the stale i28/i29 grouped
 views to a fresh `fresh-prset/iteration-30/*` target. This is a filing
 hypothesis, not a filing-ready branch stack. A fresh i30 audit/manifest is
 required before any maintainer-facing PR filing or final-stack validation claim.
+The duplicate/noise trigger for this update does not change that PR split: the
+newest duplicate/noise synthesis file is zero bytes, so the completed
+`duplicate-noise-20260517T224618Z` control-plane fix remains the latest durable
+duplicate/noise status.
 
 Current replacement target:
 
@@ -91,7 +95,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T23:06:52Z`.
+Remote status was collected at `2026-05-17T23:12:57Z`.
 
 The fix-planning repo is checked out at:
 
@@ -121,7 +125,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T23:06:58Z` from fetched
+The branch-link audit was generated at `2026-05-17T23:13:02Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`.
 
@@ -227,28 +231,26 @@ or final-stack validation blockers.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T23:06:52Z
+collected_at_utc: 2026-05-17T23:12:57Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T230103Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The current novelty/control-plane snapshot was updated at
-`2026-05-17T23:04:01.130Z`:
+`2026-05-17T23:08:55.839Z`:
 
 ```text
-coverage files: 48131
-total records seen: 74611
-records processed this pass: 9
-coverage lines seen this pass: 76971
+coverage files: 48134
+total records seen: 74618
+records processed this pass: 7
+coverage lines seen this pass: 76978
 new behavioral feature keys this pass: 1
 new CDP coverage hashes this pass: 1
-current-run records by profile:
-  parser-transform=1
-current-run successful records:
-  parser-transform=1
+current-run records by profile: {}
+current-run successful records: {}
 all-time records by transport:
-  ws=71207
+  ws=71214
   http=3404
 active current-run triage signatures: 0
 active current-run raw signatures: 0
@@ -343,7 +345,12 @@ deferred queue and latest fresh split, with `0` hard failures,
 terminal iteration-27 microhead SHAs. That is useful prior evidence, but it is
 superseded by the later i30 recommendation and is not a fresh i30 manifest.
 
-The newest duplicate/noise synthesis is
+The trigger event produced
+`duplicate-noise-20260517T230540Z-synthesis.md`, but the collected file is
+zero bytes. It is not durable analysis and does not supersede the prior
+completed duplicate/noise pass.
+
+The newest nonempty duplicate/noise synthesis is
 `duplicate-noise-20260517T224618Z-synthesis.md`. It says the producer-side
 strict `pre_action_bootstrap_stall` path is mostly controlled: active-current
 triage is clean, strict no-product startup records are suppressed before
@@ -405,6 +412,7 @@ These must not be described as fixed or filing-ready.
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzz, filing, and rebuilt validation only | Revisit only after refreshed stack validation produces newer product evidence |
 | Active deferred sessions | reload-hydration, pre-save search/live-collapse, rich-text suffix | active sessions are not progress by themselves | Count only nonempty durable reports/artifacts or a clear downscope/promotion decision |
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families | evidence-only unless a focused owner replay proves otherwise | Keep out of PR rows until branch, owner, and fuzz evidence are refreshed |
+| Duplicate/noise trigger `230540` | `duplicate-noise-20260517T230540Z-synthesis.md` | zero-byte synthesis; no status change and no durable progress claim | Consume a nonempty synthesis or action report before changing duplicate/noise status |
 | Duplicate/noise live-analysis leak | `duplicate-noise-20260517T224618Z-feedback-action.md` | narrow control-plane fix completed; inactive product-evidence drain dirs remain visible but no longer auto-launch analysis | Watch active/current runs or explicit manual analysis selection; do not treat this as product validation |
 
 ## Filing Gates And Current Recommendation
