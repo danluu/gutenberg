@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-17T00:02:08Z`
+Snapshot generated: `2026-05-17T00:09:52Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -12,8 +12,8 @@ Source inputs:
 - coverage monitor log:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest copied novelty state:
-  current coverage output-dir state (`startedAt=2026-05-16T23:54:36.019Z`,
-  `lastUpdatedAt=2026-05-16T23:59:07.520Z`)
+  current coverage output-dir state (`startedAt=2026-05-17T00:07:23.301Z`,
+  `lastUpdatedAt=2026-05-17T00:08:56.835Z`)
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
 - CPU and load-average history:
@@ -25,20 +25,20 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1762` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-16T23:59:07Z`, coverage files grew from `272` to `37019`, a delta of
-`36747`. The monitor's visible likely-real count stayed at `0`.
+`1765` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-17T00:08:56Z`, coverage files grew from `272` to `37074`, a delta of
+`36802`. The monitor's visible likely-real count stayed at `0`.
 
 Coverage-goal pressure is down but not finished. The latest copied
-coverage-guidance state has `126` total goals and `7` unmet goals. The remaining
-goals are mostly real-user lifecycle/action depth and gauntlet block targets.
+coverage-guidance state has `126` total goals and `6` unmet goals. The remaining
+goals are mostly real-user lifecycle/action depth and completed-record depth.
 
 The latest plotted current-output-dir sample is below the 0.50 duplicate-share
 gate and startup-clean: `duplicateShareCurrent` is `0` and current summary
 startup failures are `0`. The same sample has `1` quality issue, `1` warning,
-`431.7G` free memory, and the monitor headroom flag is true. The copied
+`431.2G` free memory, and the monitor headroom flag is true. The copied
 novelty state scopes current-run triage to one output-dir root,
-`run-20260516T235427Z`, and five enabled groups:
+`run-20260517T000714Z`, and five enabled groups:
 `novelty-ws-persistence-no-title`, `novelty-ws-lifecycle`,
 `novelty-http-persistence-probe`, `novelty-ws-real-user-editing`, and
 `novelty-ws-real-user-rich-text`. It still reports no current-run behavioral
@@ -49,41 +49,38 @@ failure metrics as live graph status; historical aggregate duplicate/noise is
 only context.
 
 Persona-loop evidence rejects a graph-only clean-live-status conclusion. The
-latest duplicate/noise synthesis, `20260516T234703Z`, says the root is still a
-fuzzing control-plane/admission leak: strict no-product bootstrap stalls are
-mostly suppressed once seen, but current-run triage is empty because the active
-run is stuck in infra startup, historical known-noise is mostly advisory, live
-analysis may lack a current-output pointer, stale sessions can outlive the
-current run, and family caps are too fragmented to prevent repeated Codex work.
-The latest feedback-action, `20260516T231459Z`, applied the bounded gate/backoff
-patch and restarted the relevant sessions, but `wp-env` was still uninitialized.
-The clean current-output duplicate/startup graph sample is therefore live status
-for the current root, not closure.
+latest duplicate/noise synthesis, `20260516T235736Z`, says the dominant issue is
+still control-plane leakage: the current coverage-guided run is infra-stalled,
+current-run triage is empty, coverage-guided starts do not yet reliably run the
+live-analysis monitor with a current-output pointer, stale analysis sessions can
+outlive old roots, and family caps are too local. The latest duplicate/noise
+feedback-action file, `20260516T235736Z`, is empty, so the latest usable action
+evidence remains `20260516T231459Z`: it applied the bounded gate/backoff patch
+and restarted relevant sessions, but `wp-env` was still uninitialized. The clean
+current-output duplicate/startup graph sample is therefore live status for the
+current root, not closure.
 
-The latest usable PR-split synthesis, `20260516T235306Z`, rejects a filing-ready
-or final-validation interpretation. A later copied synthesis file,
-`20260516T235827Z`, is zero bytes, so this report treats `20260516T235306Z` as
-the latest usable synthesis. The ready PR01-PR15C heads plus PR02A remain useful
-only as a known-fix prefix. The replacement tail is a clean malformed-save
-restack from only `8340c5d794a` and `008b7258fe4`, preferably as PR6B after PR6A
-if clean there, otherwise as a clean post-PR15C PR16; then a separate seed
-`1020002` follower-side Yjs update-application repair or proof
-reclassification; then rebuilt combined validation, focused `1020002` gate,
-final-stack fuzz, and filing. The synthesis drops speculative PR18x for
+The latest PR-split synthesis, `20260516T235827Z`, rejects a filing-ready or
+final-validation interpretation. The ready PR01-PR15C heads plus PR02A remain
+useful only as a known-fix prefix. The replacement tail is a clean
+malformed-save restack from only `8340c5d794a` and `008b7258fe4`, preferably as
+PR6B after PR6A if clean there, otherwise as a clean post-PR15C PR16; then a
+separate PR17/seed `1020002` follower-side Yjs update-application repair or
+proof reclassification; then rebuilt combined validation, focused `1020002`
+gate, final-stack fuzz, and filing. The synthesis drops speculative PR18x for
 `5700084`, classifying it as PR5C-covered plus strict oracle `\n` versus `<br>`
 equivalence unless a reduced uncovered product bug appears. The graph's `0`
-visible likely-real failures is not filing approval. The latest PR-split
-feedback-action applied Cycle 208, excluded the base-contaminated malformed-save
-branch from publication manifests, completed a bounded PR6B restack attempt that
-found conflicts plus a manifest refresh, and left final-stack fuzz, validation,
-and filing blocked while PR6B/PR16 conflict resolution and the seed `1020002`
-diagnostic continue.
+visible likely-real failures is not filing approval. The paired feedback-action
+applied Cycle 210, kept contaminated malformed-save heads as evidence only,
+refreshed a 32-row manifest with `0` audit failures, and left broad fuzz,
+final-stack fuzz, duplicate PR6B/PR16 work, and duplicate `1020002` work
+blocked while the active PR6B resolver continues.
 
 ## Coverage Intake
 
 ![Coverage-guided fuzz intake over time](rtc-jetstream2-fuzz-trends-20260515/plots/monitor-coverage-intake.png)
 
-The bottom facet is the operational queue: unmet goals fell from `24` to `7`
+The bottom facet is the operational queue: unmet goals fell from `24` to `6`
 after restarts, expansion, and auto-ratcheting. The top facet shows continued
 coverage-file growth. Dense monitor-pass points are intentionally small and
 partially transparent so repeated samples do not visually turn into a misleading
@@ -101,22 +98,23 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 
 The latest current-output-dir sample is below the live duplicate-share gate and
 startup-clean: `duplicateShareCurrent=0` and current summary startup failures
-are `0`. The sample has `1` quality issue and `1` warning, with `431.7G` free
+are `0`. The sample has `1` quality issue and `1` warning, with `431.2G` free
 memory and the monitor headroom flag true. The plot uses
 `duplicateShareCurrent` and current summary startup failures for the live health
 view; it does not use historical aggregate duplicate/noise as the plotted live
 signal.
 
-The latest duplicate/noise synthesis says the next safe control-plane pass is
-to fix/restart `wp-env`, run live analysis as a coverage-guided sidecar with a
-current-output pointer, fail closed on missing or stale current-output pointers,
-and add watcher/analysis semantic-family caps before Codex launch. The paired
-feedback-action had already applied a bounded gate/backoff patch, passed syntax
-and fixture checks, restarted the relevant sessions, and then measured the
-current root as empty because `wp-env start` was still failing before productive
-runs began. Persona-loop evidence therefore rejects treating the clean current
-duplicate/startup graph state as proof that duplicate/noise leakage is fully
-fixed.
+The latest duplicate/noise synthesis says the next safe control-plane pass is to
+fix/restart `wp-env`, start bounded coverage-guided live analysis with
+`RTC_FUZZ_LIVE_ANALYSIS_CURRENT_OUTPUT_POINTER`, fail closed on missing or stale
+current-output pointers, clean stale analysis/deep-analysis sessions, and avoid
+broader suppression changes around `userCount > 0` until targeted evidence
+settles that disagreement. The latest feedback-action file is empty; the latest
+usable action evidence is still the Cycle 84 bounded gate/backoff patch and
+restart, which measured the current root as empty because `wp-env start` was
+still failing before productive runs began. Persona-loop evidence therefore
+rejects treating the clean current duplicate/startup graph state as proof that
+duplicate/noise leakage is fully fixed.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
@@ -156,10 +154,11 @@ same row has `1` quality issue and `1` warning. Persona-loop evidence still
 rejects that as closure because the latest duplicate/noise synthesis says the
 control plane still admits repeated work through missing or stale current-output
 pointers, absent live-analysis sidecar wiring, and fragmented family caps while
-the active run is stuck in infra startup. The paired feedback-action applied the
-shared gate/backoff patch, but `wp-env` remained uninitialized and the refreshed
-current root `run-20260516T235427Z` still has no current behavioral files or
-signatures.
+the active run is stuck in infra startup. The latest feedback-action file is
+empty; the latest usable action evidence is still the shared gate/backoff patch
+from `20260516T231459Z`, after which `wp-env` remained uninitialized. The
+refreshed current root `run-20260517T000714Z` still has no current behavioral
+files or signatures.
 Historical `pre_action_bootstrap_stall` remains context, while live graph status
 comes from current-output-dir duplicate/noise and current summary startup
 failures. Product-evidence failures must remain visible while product-free
@@ -177,7 +176,7 @@ snapshots, the mix shows `30` browser/e2e lanes across `30` groups, plus `1`
 `unit-property` lane and `1` `coverage-guided-lower-level` lane. The latest
 browser/e2e lanes are `5` coverage-guided, `9` focused-shards, `6` gap-booster,
 and `10` strict-expansion. The freshest coverage-guided root,
-`run-20260516T235427Z`, is browser/e2e-only, with five enabled groups.
+`run-20260517T000714Z`, is browser/e2e-only, with five enabled groups.
 
 Live fuzzing is still concentrated in browser/e2e lanes, but lower-level work is
 active in `unit-property` and `coverage-guided-lower-level`, including the
@@ -199,13 +198,13 @@ supervisor launches or lane counts, but it only covers fuzzers that emit these
 lane events. Lower-level counts reconstructed from batch metadata or legacy
 batch-count fields are approximate.
 
-The latest collected execution data has about `2,467,012` completed test
-executions: `91,760` browser/e2e, `3,006` transport/integration, `2,149,624`
-unit-property, and `222,622` coverage-guided-lower-level. Some historical rows
+The latest collected execution data has about `2,505,293` completed test
+executions: `91,977` browser/e2e, `3,006` transport/integration, `2,183,336`
+unit-property, and `226,974` coverage-guided-lower-level. Some historical rows
 include approximate lower-level counts reconstructed from batch metadata or
-legacy batch-count fields. The latest 15-minute bucket reports about `248`
-browser/e2e test executions/hour, `28,896` unit-property test executions/hour,
-`4,096` coverage-guided-lower-level test
+legacy batch-count fields. The latest 15-minute bucket reports about `1,116`
+browser/e2e test executions/hour, `163,744` unit-property test executions/hour,
+`21,504` coverage-guided-lower-level test
 executions/hour, and `0` transport/integration test executions/hour.
 `backend-api`, `protocol-server`, and standalone `fuzz-assertion` levels remain
 at `0` executions in this counter.
@@ -223,16 +222,16 @@ triangle markers. Low-completion profiles are the next depth targets:
 | Profile | Seen | Successful | Startup failures | Success rate |
 | --- | ---: | ---: | ---: | ---: |
 | `full` | 840 | 18 | 0 | 2.1% |
-| `multi-reload-lifecycle` | 2873 | 87 | 0 | 3.0% |
-| `revision-persistence` | 3842 | 119 | 0 | 3.1% |
-| `parser-serialization` | 2627 | 108 | 0 | 4.1% |
-| `real-user-editing` | 5598 | 346 | 0 | 6.2% |
-| `parser-transform` | 3652 | 351 | 0 | 9.6% |
-| `common-blocks` | 3497 | 356 | 0 | 10.2% |
+| `multi-reload-lifecycle` | 2881 | 87 | 0 | 3.0% |
+| `revision-persistence` | 3845 | 119 | 0 | 3.1% |
+| `parser-serialization` | 2647 | 110 | 0 | 4.2% |
+| `real-user-editing` | 5604 | 347 | 0 | 6.2% |
+| `parser-transform` | 3660 | 353 | 0 | 9.6% |
+| `common-blocks` | 3502 | 358 | 0 | 10.2% |
 | `long-session-large-doc` | 2247 | 319 | 0 | 14.2% |
 | `persistence-no-title` | 2656 | 435 | 0 | 16.4% |
 | `structure` | 536 | 95 | 0 | 17.7% |
-| `block-gauntlet` | 5344 | 948 | 0 | 17.7% |
+| `block-gauntlet` | 5371 | 955 | 0 | 17.8% |
 
 The data suggests the next productive improvement is less about adding brand-new
 surface labels and more about increasing completed records for existing
@@ -246,16 +245,15 @@ Current unmet goals from the latest state:
 
 | Goal | Current | Target |
 | --- | ---: | ---: |
-| real-user title save/reload next coverage tier | 225 | 500 |
-| real-user body save/reload next coverage tier | 284 | 500 |
-| action reload-post-action next coverage tier | 613 | 1000 |
-| action ui-heading-shortcut next coverage tier | 651 | 1000 |
-| successful real-user-editing records next coverage tier | 346 | 500 |
-| action ui-format-paragraph next coverage tier | 927 | 1000 |
-| gauntlet block core/html next coverage tier | 494 | 500 |
+| real-user title save/reload next coverage tier | 226 | 500 |
+| real-user body save/reload next coverage tier | 285 | 500 |
+| action reload-post-action next coverage tier | 614 | 1000 |
+| action ui-heading-shortcut next coverage tier | 652 | 1000 |
+| successful real-user-editing records next coverage tier | 347 | 500 |
+| action ui-format-paragraph next coverage tier | 931 | 1000 |
 
 The remaining queue mixes real-user save/reload lifecycle depth, action depth,
-completed-record depth for real-user editing, and a gauntlet block ratchet.
+and completed-record depth for real-user editing.
 
 ## Feature Mix
 
@@ -284,21 +282,20 @@ the profiles that still need more completed full records.
 
 ![Suggested PR net LOC by PR over time](rtc-jetstream2-fuzz-trends-20260515/plots/pr-suggested-net-loc-by-pr-over-time.png)
 
-With the live loop at `max_parallel=6`, `209`
+With the live loop at `max_parallel=6`, `210`
 completed review cycles took roughly `2.9` to `11.4` minutes in this snapshot;
-the latest completed review, `20260516T235306Z`, took `5.3` minutes. The event
-log also shows feedback for cycle `208` finishing after `7.4` minutes, followed
-by review `20260516T235306Z` completing and review `20260516T235827Z` starting.
+the latest completed review, `20260516T235827Z`, took `5.8` minutes. The event
+log also shows feedback for cycle `210` finishing after `4.8` minutes, followed
+by review `20260517T000906Z` starting.
 
-The newest nonempty PR-split synthesis, `20260516T235306Z`, says the split
-design still needs change and remains blocked for filing and final validation.
-The later copied `20260516T235827Z` synthesis is empty. The current PR01-PR15C
-heads plus PR02A are only a known-fix prefix. The replacement tail is a clean
-malformed-save restack from only commits `8340c5d794a` and `008b7258fe4`,
-preferably as PR6B after PR6A if it is clean there, otherwise as clean PR16
-after PR15C; separate seed `1020002` follower-side Yjs update-application
-repair or proof-based reclassification; rebuilt combined validation; focused
-`1020002` gate; and only then final-stack fuzz and filing.
+The newest PR-split synthesis, `20260516T235827Z`, says the split design still
+needs change and remains blocked for filing and final validation. The current
+PR01-PR15C heads plus PR02A are only a known-fix prefix. The replacement tail is
+a clean malformed-save restack from only commits `8340c5d794a` and
+`008b7258fe4`, preferably as PR6B after PR6A if it is clean there, otherwise as
+clean PR16 after PR15C; separate PR17/seed `1020002` follower-side Yjs
+update-application repair or proof-based reclassification; rebuilt combined
+validation; focused `1020002` gate; and only then final-stack fuzz and filing.
 
 The same synthesis rejects treating the graph's `0` visible likely-real
 failures as filing approval. Seed `1020002` should no longer be described as
@@ -308,23 +305,20 @@ application. Seed `5700084` is PR5C-covered plus strict oracle `\n` versus
 product bug appears. Reload hydration, pre-save search/live-collapse, rich-text
 suffix, HTTP residuals, and post-save settlement residuals remain
 deferred/diagnostic unless separately promoted. Broad fuzz, final-stack fuzz,
-filing, duplicate `1020002`, duplicate PR16 replay, and PR18x naming remain
-blocked.
+filing, duplicate `1020002`, duplicate PR6B/PR16 replay, and PR18x naming
+remain blocked.
 
-The paired feedback-action applied Cycle 208 by treating ready PR01-PR15C plus
-PR02A as a known-fix prefix, keeping malformed-save as PR6B after PR6A if clean
-or a clean post-PR15C PR16 otherwise, keeping `1020002` as follower-side Yjs
-update-application work, dropping `5700084` from PR18x, and excluding the
-base-contaminated malformed-save branch from publication manifests. It launched
-bounded follow-up jobs: PR6B restack completed with conflicts in `actions.js`
-and its tests, manifest refresh completed with 32 rows and 0 audit failures,
-and PR6B conflict-resolution plus `1020002` diagnostic jobs remained active.
-The `20260516T235306Z` synthesis adds that active `1020002` diagnostics and
-zero-byte or temp reports do not satisfy the Parallel Progress Gate while
-actionable PR6B/PR16 work remains.
+The paired feedback-action applied Cycle 210 by preserving the Cycle 208
+replacement tail, marking both malformed-save deferred heads as evidence only,
+keeping PR17 as follower-side Yjs update-application work, dropping `5700084`
+from PR18x, and filling the previously empty feedback-action file. It launched a
+manifest-refresh job that completed with 32 rows and `0` audit failures. It did
+not launch duplicate PR6B/PR16 resolution because the Cycle 208 PR6B resolver
+was still active, and it did not launch broad fuzz, final-stack fuzz, or
+duplicate seed `1020002` work.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
-split history. The latest parsed snapshot, `2026-05-16T23:51:22Z`, has `27`
+split history. The latest parsed snapshot, `2026-05-17T00:05:08Z`, has `27`
 suggested rows totaling `11359` net LOC. The largest current rows by net LOC are
 `PR 13B` (`1668`), `PR 12` (`1386`), `PR 7A` (`1331`), `PR 13A` (`1126`), and
 `PR 5B` (`883`). These charts remain size telemetry from parsed status
@@ -334,29 +328,31 @@ snapshots, not filing authority for split shape.
 
 The coverage graph is still positive on breadth and depth intake: files and
 coverage observations continue to grow, likely-real visible failures remain
-`0`, and unmet goals are down from the initial `24` to `7`. The latest live
+`0`, and unmet goals are down from the initial `24` to `6`. The latest live
 current-output duplicate/startup sample is clean: current duplicate share is
 `duplicateShareCurrent=0`, latest current summary startup failures are `0`, and
-the latest monitor row has `1` quality issue and `1` warning, with `431.7G`
+the latest monitor row has `1` quality issue and `1` warning, with `431.2G`
 free memory and the headroom flag true. The copied novelty state scopes
-current-run triage to `run-20260516T235427Z` and five enabled groups, but the
-root has no current behavioral files or signatures. The live health read comes from
-`duplicateShareCurrent` and current summary startup failures rather than
+current-run triage to `run-20260517T000714Z` and five enabled groups, but the
+root has no current behavioral files or signatures. The live health read comes
+from `duplicateShareCurrent` and current summary startup failures rather than
 historical aggregate duplicate/noise.
 
 The duplicate/noise persona loop rejects both raw historical duplicate/noise as
 a live health signal and a graph-only clean-live-status conclusion. The latest
-duplicate/noise synthesis, `20260516T234703Z`, says the root cause is still a
+duplicate/noise synthesis, `20260516T235736Z`, says the root cause is still a
 control-plane/admission leak: current-run triage is empty because the active run
-is stuck in infra startup, historical known-noise is advisory rather than a hard
-launch gate, live analysis may not have a current-output pointer, stale sessions
-can outlive the current run, and family caps are too local. The paired
-feedback-action applied the bounded shared gate/backoff patch, passed
-syntax/gate checks, restarted the relevant sessions, and then measured the
-current root as empty because `wp-env start` was still failing before productive
-runs began. The synthesis therefore recommends `wp-env`/MySQL recovery,
+is stuck in infra startup, coverage-guided starts do not yet reliably start the
+bounded live-analysis monitor with a current-output pointer, stale sessions can
+outlive old current roots, and family caps are too local. The latest
+feedback-action file is empty; the latest usable action evidence remains
+`20260516T231459Z`, which applied the bounded shared gate/backoff patch, passed
+syntax/gate checks, restarted relevant sessions, and then measured the current
+root as empty because `wp-env start` was still failing before productive runs
+began. The synthesis therefore recommends `wp-env`/MySQL recovery,
 current-output-pointer-aware live analysis, fail-closed stale current-output
-handling, and watcher/analysis family caps before Codex launch.
+handling, stale session cleanup, and watcher/analysis family caps before Codex
+launch.
 Historical aggregate duplicate/noise remains context, while current-output-dir
 duplicate share and summary startup failures are the live graph status.
 
@@ -365,7 +361,7 @@ moved from the PR01-PR15C 28-head list to a `ready/rtc-*` known-fix prefix with
 PR02A, a malformed-save restack that must include only `8340c5d794a` and
 `008b7258fe4`, a separate seed `1020002` follower-side Yjs update-application
 repair or proof-based reclassification, and rebuilt validation before
-final-stack fuzz. The latest usable synthesis, `20260516T235306Z`, says
+final-stack fuzz. The latest synthesis, `20260516T235827Z`, says
 malformed-save should be PR6B after PR6A if clean or PR16 after PR15C if not;
 `5700084` should be dropped from product PR consideration as PR5C-covered plus
 strict oracle `\n` versus `<br>` equivalence; and reload hydration, pre-save
@@ -373,18 +369,17 @@ search/live-collapse, rich-text suffix, HTTP room isolation, and post-save
 settlement residuals stay deferred unless separately promoted with clean source
 evidence. Final-stack fuzz, filing, duplicate `1020002`, duplicate PR6B/PR16
 replay, and PR18x naming remain blocked. The latest PR-split feedback-action
-applied those constraints, excluded the contaminated malformed-save branch from
-publication manifests, completed a bounded manifest refresh, and left PR6B
-conflict resolution plus `1020002` diagnostics active. The copied
-`20260516T235827Z` synthesis file is empty, so it does not supersede the
-`20260516T235306Z` interpretation.
+applied those constraints, marked both malformed-save deferred heads as evidence
+only, completed a bounded 32-row manifest refresh with `0` audit failures, and
+left PR6B conflict resolution active. It did not launch broad fuzz,
+final-stack fuzz, duplicate PR6B/PR16 resolution, or duplicate `1020002` work.
 
 The remaining fuzzing weakness is completion depth and level diversity. Live
 work is still concentrated in browser/e2e in the latest mix snapshots, but
 unit-property and coverage-guided-lower-level lanes are active.
 Transport-integration has historical completed executions but no latest-bucket
-rate; the latest execution bucket has about `248` browser/e2e test
-executions/hour, `28,896` unit-property test executions/hour, `4,096`
+rate; the latest execution bucket has about `1,116` browser/e2e test
+executions/hour, `163,744` unit-property test executions/hour, `21,504`
 coverage-guided-lower-level test executions/hour, `0` transport/integration
 test executions/hour, and `0` backend-api/protocol-server/fuzz-assertion
 executions. The next narrow operational checks are `wp-env`/MySQL recovery,
