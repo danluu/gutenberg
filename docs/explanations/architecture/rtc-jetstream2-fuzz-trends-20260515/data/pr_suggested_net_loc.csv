@@ -6674,3 +6674,17 @@ timestamp,commit,pr,scope,files,additions,deletions,net_loc,status
 2026-05-17T20:21:48Z,2ea4708f86be6fad4436ed2c8b675bf1997e2595,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,verified branch; narrow persisted-body guard
 2026-05-17T20:21:48Z,2ea4708f86be6fad4436ed2c8b675bf1997e2595,PR 7A,Save response entity-state guards,2,1339,8,1331,verified branch; no-PR03B product ref still needs verified audit if republished
 2026-05-17T20:21:48Z,2ea4708f86be6fad4436ed2c8b675bf1997e2595,PR 9,Core-data lock fairness,2,185,2,183,verified branch; keep in known-fix prefix
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 1,HTTP polling generated update size guard,2,181,19,162,verified branch exists; Cycle 294 accepts the Cycle 293 explicit-base two-file PR01 range and keeps `origin/trunk..PR01` rejected
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 10,CRDT block reconciliation foundation,2,145,4,141,verified branch; start CRDT block stack
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 12,Previous-local-cache top-level block operations,2,1391,5,1386,verified branch; old `5200005` table-delete replay is PR12-covered
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 13A,Observed-delete top-level provenance,2,1151,25,1126,repaired audit link; first PR13 delta
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 13B,Cross-parent source retirement,2,1672,4,1668,repaired audit link; maintainer-facing fallback until PR13B0/B1/B2/B3 are published and audited
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 13C,Stale block identity smear guard,2,345,51,294,repaired audit link; use instead of stale/misordered PR13C refs
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 14,Table body nested array merge,2,294,18,276,verified branch; seed `7110017` proves PR14 alone is incomplete
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 2,HTTP polling storage read window,2,57,5,52,verified branch; keep in known-fix prefix
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 3,Revision restore CRDT meta reset,2,58,5,53,verified branch; seed `5500002` marker-retention remains separate follow-up
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 4,Persisted CRDT save-meta idempotence,2,160,1,159,verified branch; no-PR03B product ref still needs verified audit if republished
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 6,Save request payload guards,4,738,6,732,verified branch; excludes malformed-save sidecar and broader residuals
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 6A,Persisted empty-content CRDT body guard,2,64,1,63,verified branch; narrow persisted-body guard
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 7A,Save response entity-state guards,2,1339,8,1331,verified branch; no-PR03B product ref still needs verified audit if republished
+2026-05-17T20:37:28Z,a9e178508d755fd1dae0a68b17efd8727d33aa3b,PR 9,Core-data lock fairness,2,185,2,183,verified branch; keep in known-fix prefix
