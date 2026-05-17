@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T09:32:12Z`
+Snapshot time: `2026-05-17T09:38:05Z`
 
 Trigger event:
-`pr-split-2026-05-17T09-31-31Z-20260517T092129Z`
+`duplicate-noise-2026-05-17T09-37-18Z-114`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T09-31-31Z-20260517T092129Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T09-37-18Z-114/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -92,12 +92,15 @@ novelty accounting. It recommends strict no-product startup classification,
 Playwright `--retries=0` for fuzz attempts, source-aware family selection,
 paused `no-analysis` dirs in current-run accounting, and live-analysis drain
 dir fixes. The matching `duplicate-noise-20260517T091228Z-feedback-action.md`
-is zero bytes in this collection, so this is recommended control-plane work,
-not completed product progress.
+now records completed control-plane remediation in the fuzzer scripts, with
+`node --check` passing on touched `.mjs` files and the known retry
+misnormalization leak changing to a suppressed bootstrap-stall while a separate
+product-evidence late-session signature remained queued. This is completed
+fuzzer control-plane progress, not a product PR or filing unblocker.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T09:32:07Z`.
+Remote status was collected at `2026-05-17T09:38:00Z`.
 
 The fix-planning repo is checked out at:
 
@@ -127,7 +130,7 @@ That repo has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T09:32:12Z` from fetched
+The branch-link audit was generated at `2026-05-17T09:38:05Z` from fetched
 `danluu` refs. Proposed PR rows below use only rows marked `verified-content`,
 or explicitly say `No verified branch link yet`.
 
@@ -200,68 +203,69 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T09:32:07Z
+collected_at_utc: 2026-05-17T09:38:00Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T092302Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The raw novelty status input is populated in this collection. It was updated at
-`2026-05-17T09:31:21.342Z` for
+`2026-05-17T09:35:40.252Z` for
 `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T092302Z`.
 It reports health `ok`, no current-run visible likely-real failures, and two
 current-run actionable/product-evidence signatures:
 
 ```text
-coverage files: 42497
-total records seen: 65829
-records processed this pass: 1
+coverage files: 42501
+total records seen: 65833
+records processed this pass: 0
 summary startup failures processed this pass: 0
-current-run records by profile: persistence-no-title=3, real-user-editing=1
-current-run successful records by profile: persistence-no-title=2
-current-run records by transport: http=3, ws=1
+current-run records by profile: persistence-no-title=6, real-user-editing=2
+current-run successful records by profile: persistence-no-title=4
+current-run records by transport: http=6, ws=2
 current-run triage roots: 2
 current-run signatures/actionable/product-evidence signatures: 2 / 2 / 2
 current-run likely-real visible: 0
 current-run top duplicate family share: 0.5
 current-run top semantic families: timeout=1, unknown=1
-historical top duplicate family share: 0.3535
-historical raw top duplicate family share: 0.6
+historical top duplicate family share: 0.3538
+historical raw top duplicate family share: 0.597
 ```
 
 The monitor lists `novelty-ws-real-user-rich-text` and
 `novelty-http-persistence-probe` as enabled, with `novelty-ws-lifecycle` paused
 inside a six-hour strict startup-noise cooldown. Its recent-change log also
 records `novelty-ws-real-user-editing` being unpaused/enabled at
-`2026-05-17T09:20:55Z`; the trend packet below lists all three as currently
-enabled. Treat that as control-plane state to verify before using exact enabled
-group lists for decisions.
+`2026-05-17T09:20:55Z`, but the latest monitor and trend snapshot list only the
+rich-text and HTTP persistence groups as currently enabled. Treat the bare
+real-user-editing entry as recent control-plane history, not a current active
+group, unless a newer monitor pass says otherwise.
 
-The latest trend evidence packet was generated at `2026-05-17T09:24:53Z` from
-monitor data through `2026-05-17T09:20:56Z`:
+The latest trend evidence packet was generated at `2026-05-17T09:32:40Z` from
+monitor data through `2026-05-17T09:31:21Z`:
 
 ```text
-monitor passes: 1916
-coverage files: 272 -> 42485
-coverage files delta: 42213
+monitor passes: 1919
+coverage files: 272 -> 42497
+coverage files delta: 42225
 unmet coverage goals: 5
 likely_real_max: 4
-duplicate_share_current_last: 1
-duplicate_share_historical_last: 0.3537
+duplicate_share_current_last: 0.5
+duplicate_share_historical_last: 0.3535
 summary_startup_failures_last: 0
-quality issues: 1
+quality issues: 0
 enabled groups current: novelty-ws-real-user-rich-text,
-  novelty-http-persistence-probe, novelty-ws-real-user-editing
-fuzz level mix: browser-e2e=28 lanes/28 groups;
+  novelty-http-persistence-probe
+fuzz level mix: browser-e2e=27 lanes/27 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 4611710
-browser-e2e execution: 100733 cumulative / 84 per-hour
+total fuzz-level test executions: 4647839
+browser-e2e execution: 100742 cumulative / 8 per-hour
 transport-integration execution: 3006 cumulative / 0 per-hour
-unit-property execution: 4079636 cumulative / 72240 per-hour
+unit-property execution: 4115756 cumulative / 28896 per-hour
 coverage-guided-lower-level execution: 428335 cumulative / 0 per-hour
-load1/load5/load15: 659.22 / 367.34 / 179.87 on 64 cores
-memory: 435.7G free
+load1/load5/load15: 29 / 143.96 / 172.96 on 64 cores
+memory: 445.6G free
 ```
 
 Largest trend-recorded novelty gaps are `ui-heading-shortcut` `785/1000`,
@@ -318,8 +322,15 @@ Playwright internal retries for fuzz attempts, applying the gate before retry
 coverage can veto suppression, making semantic family selection source-aware,
 including paused `no-analysis` dirs in current-run accounting, fixing
 `live-analysis-monitor` drain dir recursion, and preserving any product
-evidence or visible likely-real signature. The matching feedback-action file is
-empty in this input set, so those fixes are not completed by this collection.
+evidence or visible likely-real signature. The matching feedback-action file now
+records the completed control-plane pass: novelty, live-analysis, triage-watcher,
+analysis-tier, and deep-analysis-tier scripts were updated; `node --check`
+passed for all five touched `.mjs` files; the known
+`ws_test_provider_pre_action_bootstrap_stall_retry_misnormalization` leak is
+source-gated as bootstrap-stall; analysis/deep-analysis copied-state checks
+mark the bootstrap-stall job `source-suppressed`; novelty and live-analysis
+were restarted; and the remaining current duplicate share is product-evidence
+`timeout` / `unknown`, so it is intentionally not suppressed.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -357,7 +368,7 @@ These must not be described as fixed or filing-ready.
 | Rich-text formatted suffix corruption | diagnostic candidates and prior deferred refs | not fixed; latest split keeps it out of active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Broader HTTP polling room-isolation residuals | PR02A sidecar plus stale deferred relaunches | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred | Publish/fetch/audit PR02A before filing; promote additional residuals only with narrowed healthy-user product evidence |
 | Revision-restore marker retention | seed `5500002`; active lifecycle triage | queued behind final-stack preparation; no automatic PR slot | Triage only after rebuilt stack is available |
-| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T091228Z-synthesis.md`; empty matching feedback action | no product-code split change; latest synthesis recommends source-truth/control-plane fixes but does not show completed action in this collection | Preserve product-evidence signatures, implement the strict no-product startup path, and validate on the known retry-misnormalization leak before restarting the fuzz control plane |
+| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T091228Z-synthesis.md`; completed `duplicate-noise-20260517T091228Z-feedback-action.md` | no product-code split change; strict no-product startup gating, retry suppression, source-aware family handling, current-run accounting, and live-analysis drain handling were patched and validated on the known retry-misnormalization leak | Let the running analysis classify the remaining product-evidence `timeout` / `unknown` signatures; only add suppression after non-real/infra/duplicate evidence, not from the historical aggregate |
 
 ## Filing Gates And Current Recommendation
 
