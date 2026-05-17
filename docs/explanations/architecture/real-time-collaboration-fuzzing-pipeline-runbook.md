@@ -312,6 +312,10 @@ The remote launchers are intentionally split by ownership:
     `npm run wp-env-test -- destroy --force` before restarting. That reset is
     cooldown-limited and is intended for persistent test-environment corruption
     such as a MariaDB volume that repeatedly exits during `wp-env start`.
+    Resource pressure decisions use 1-, 5-, and 15-minute load averages. Severe
+    pressure can reduce the coverage-guided budget below the normal pressure
+    floor, and scale-up is blocked while the longer load averages still show a
+    backlog.
 -   `rtc-strict-expansion-start-remote.sh`, `rtc-focused-shards-start-remote.sh`,
     and `rtc-gap-booster-start-remote.sh` start independent fuzz campaigns for
     high-value gaps.

@@ -87,6 +87,14 @@ load1() {
 	awk '{ print $1 }' /proc/loadavg
 }
 
+load5() {
+	awk '{ print $2 }' /proc/loadavg
+}
+
+load15() {
+	awk '{ print $3 }' /proc/loadavg
+}
+
 cores() {
 	nproc
 }
@@ -149,21 +157,39 @@ cleanup_orphan_monitors() {
 choose_budget() {
 	local cpu=$1
 	local load_value=$2
-	local avail=$3
-	local ncpu=$4
-	awk -v cpu="$cpu" -v loadv="$load_value" -v avail="$avail" -v ncpu="$ncpu" '
+	local load5_value=$3
+	local load15_value=$4
+	local avail=$5
+	local ncpu=$6
+	awk -v cpu="$cpu" -v loadv="$load_value" -v load5v="$load5_value" -v load15v="$load15_value" -v avail="$avail" -v ncpu="$ncpu" '
 		BEGIN {
+			severe_load = ncpu * 1.75;
+			severe_load5 = ncpu * 1.50;
+			high_pressure_load = ncpu * 1.25;
+			high_pressure_load5 = ncpu * 1.10;
+			high_pressure_load15 = ncpu * 1.05;
 			pressure_load = ncpu * 0.92;
+			pressure_load5 = ncpu * 0.95;
 			high_load = ncpu * 0.86;
+			high_load5 = ncpu * 0.88;
+			high_load15 = ncpu * 0.92;
 			mid_load = ncpu * 0.78;
+			mid_load5 = ncpu * 0.82;
+			mid_load15 = ncpu * 0.88;
 			low_load = ncpu * 0.66;
-			if (cpu >= 88 || loadv >= pressure_load || avail < 120) {
+			low_load5 = ncpu * 0.70;
+			low_load15 = ncpu * 0.85;
+			if (cpu >= 96 || loadv >= severe_load || load5v >= severe_load5) {
+				print "2 3 severe_pressure";
+			} else if (cpu >= 92 || loadv >= high_pressure_load || load5v >= high_pressure_load5 || load15v >= high_pressure_load15) {
+				print "4 5 high_pressure";
+			} else if (cpu >= 88 || loadv >= pressure_load || load5v >= pressure_load5 || avail < 120) {
 				print "6 7 pressure";
-			} else if (cpu <= 62 && loadv <= low_load && avail >= 300) {
+			} else if (cpu <= 62 && loadv <= low_load && load5v <= low_load5 && load15v <= low_load15 && avail >= 300) {
 				print "11 12 large_headroom";
-			} else if (cpu <= 72 && loadv <= mid_load && avail >= 250) {
+			} else if (cpu <= 72 && loadv <= mid_load && load5v <= mid_load5 && load15v <= mid_load15 && avail >= 250) {
 				print "10 11 headroom";
-			} else if (cpu <= 80 && loadv <= high_load && avail >= 180) {
+			} else if (cpu <= 80 && loadv <= high_load && load5v <= high_load5 && load15v <= high_load15 && avail >= 180) {
 				print "9 10 modest_headroom";
 			} else {
 				print "8 9 steady";
@@ -378,13 +404,15 @@ csv_field() {
 
 write_status() {
 	local now=$1 cpu=$2 load=$3 avail=$4 ncpu=$5 enabled=$6 target=$7 max=$8 desired_target=$9 desired_max=${10} action=${11} reason=${12}
-	local materialized_active=${13} paused_infra=${14} running_groups=${15} status_counts=${16} stale_seconds=${17} materialization_detail=${18}
+	local materialized_active=${13} paused_infra=${14} running_groups=${15} status_counts=${16} stale_seconds=${17} materialization_detail=${18} load5_value=${19} load15_value=${20}
 	cat > "$STATUS" <<EOF_STATUS
 # RTC Jetstream2 Resource Autoscaler
 
 - updated: $now
 - cpu_percent: $cpu
 - load1: $load / $ncpu cores
+- load5: $load5_value / $ncpu cores
+- load15: $load15_value / $ncpu cores
 - mem_available_gib: $avail
 - enabled_groups: $enabled
 - current_budget: target=$target max=$max
@@ -502,12 +530,14 @@ while true; do
 	now=$(stamp)
 	cpu=$(cpu_percent)
 	load=$(load1)
+	load_five=$(load5)
+	load_fifteen=$(load15)
 	avail=$(mem_available_gib)
 	ncpu=$(cores)
 	enabled=$(enabled_groups)
 	target=$(current_target)
 	max=$(current_max)
-	read -r desired_target desired_max reason <<<"$(choose_budget "$cpu" "$load" "$avail" "$ncpu")"
+	read -r desired_target desired_max reason <<<"$(choose_budget "$cpu" "$load" "$load_five" "$load_fifteen" "$avail" "$ncpu")"
 	action=observe
 	IFS=$'\t' read -r supervisor_state_path materialized_group_count materialized_active_run_dirs paused_infra_startup_groups materialized_running_groups supervisor_status_counts supervisor_state_age_seconds materialization_detail <<<"$(materialization_snapshot)"
 	if [ "${target:-0}" -gt 0 ] && [ "${max:-0}" -gt 0 ]; then
@@ -547,7 +577,11 @@ while true; do
 	elif [ "$desired_target" -lt "${target:-0}" ]; then
 		down_streak=$(( down_streak + 1 ))
 		up_streak=0
-		if [ "$down_streak" -ge 1 ] && [ $(( $(epoch) - last_restart_epoch )) -ge "$MIN_SCALE_DOWN_SECONDS" ]; then
+		if [ "$down_streak" -ge 1 ] && {
+			[ $(( $(epoch) - last_restart_epoch )) -ge "$MIN_SCALE_DOWN_SECONDS" ] ||
+				[ "$reason" = "high_pressure" ] ||
+				[ "$reason" = "severe_pressure" ]
+		}; then
 			action=scale_down
 			restart_coverage "$desired_target" "$desired_max" "$reason"
 			last_restart_epoch=$(epoch)
@@ -559,7 +593,7 @@ while true; do
 	fi
 
 	append_csv "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds"
-	write_status "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail"
-	echo "[$now] cpu=$cpu load1=$load/$ncpu mem_avail=${avail}GiB enabled=$enabled current=$target/$max desired=$desired_target/$desired_max materialized=$materialized_active_run_dirs running=$materialized_running_groups paused_infra=$paused_infra_startup_groups stale=${supervisor_state_age_seconds}s action=$action reason=$reason" >> "$LOG"
+	write_status "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail" "$load_five" "$load_fifteen"
+	echo "[$now] cpu=$cpu load1=$load/$ncpu load5=$load_five/$ncpu load15=$load_fifteen/$ncpu mem_avail=${avail}GiB enabled=$enabled current=$target/$max desired=$desired_target/$desired_max materialized=$materialized_active_run_dirs running=$materialized_running_groups paused_infra=$paused_infra_startup_groups stale=${supervisor_state_age_seconds}s action=$action reason=$reason" >> "$LOG"
 	sleep "$POLL_SECONDS"
 done
