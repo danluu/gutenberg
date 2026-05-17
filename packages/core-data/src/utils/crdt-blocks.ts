@@ -2191,6 +2191,27 @@ function findYArrayLocalChangeInsertIndex(
 	return Math.min( left, yArray.length );
 }
 
+function getExistingYArrayInsertionPrefixLength(
+	yArray: Y.Array< unknown >,
+	insertIndex: number,
+	insertedElements: unknown[]
+): number {
+	let prefixLength = 0;
+
+	while (
+		prefixLength < insertedElements.length &&
+		insertIndex + prefixLength < yArray.length &&
+		areArrayElementsEqual(
+			insertedElements[ prefixLength ],
+			yArray.get( insertIndex + prefixLength )
+		)
+	) {
+		prefixLength++;
+	}
+
+	return prefixLength;
+}
+
 function mergeYArrayLocalChanges(
 	yArray: Y.Array< unknown >,
 	newValue: unknown[],
@@ -2308,11 +2329,22 @@ function mergeYArrayLocalChanges(
 			0,
 			Math.min( rawInsertIndex - deletedBeforeInsert, yArray.length )
 		);
-		const itemsToInsert = newValue
-			.slice( left + pairedCount, newMiddleEnd )
+		const insertedElements = newValue.slice(
+			left + pairedCount,
+			newMiddleEnd
+		);
+		const existingPrefixLength = getExistingYArrayInsertionPrefixLength(
+			yArray,
+			insertIndex,
+			insertedElements
+		);
+		const itemsToInsert = insertedElements
+			.slice( existingPrefixLength )
 			.map( ( item ) => createYMapFromQuery( query, item, true ) );
 
-		yArray.insert( insertIndex, itemsToInsert );
+		if ( itemsToInsert.length > 0 ) {
+			yArray.insert( insertIndex + existingPrefixLength, itemsToInsert );
+		}
 	}
 
 	return true;
