@@ -65,6 +65,28 @@ scale_time_axis <- function(
 	)
 }
 
+scale_y_log2_powers <- function() {
+	scale_y_continuous(
+		trans = scales::log_trans( base = 2 ),
+		breaks = function( limits ) {
+			positive_limits <- limits[ is.finite( limits ) & limits > 0 ]
+			if ( length( positive_limits ) == 0 ) {
+				return( numeric() )
+			}
+			lower <- max( min( positive_limits, na.rm = TRUE ), 1 )
+			upper <- max( positive_limits, na.rm = TRUE )
+			powers <- 2 ^ seq(
+				floor( log2( lower ) ),
+				ceiling( log2( upper ) ),
+				by = 1
+			)
+			powers[ powers >= lower & powers <= upper ]
+		},
+		minor_breaks = NULL,
+		labels = comma
+	)
+}
+
 write_plot <- function( name, plot, width = 9, height = 6 ) {
 	ggsave(
 		filename = file.path( plot_dir, name ),
@@ -739,6 +761,7 @@ if ( file.exists( load_path ) ) {
 	load_average_long <- load_average %>%
 		select( timestamp, core_count, load_1, load_5, load_15 ) %>%
 		pivot_longer( starts_with( "load_" ), names_to = "metric", values_to = "load_average" ) %>%
+		filter( load_average > 0 ) %>%
 		mutate(
 			metric = recode(
 				metric,
@@ -760,14 +783,14 @@ if ( file.exists( load_path ) ) {
 				inherit.aes = FALSE
 			) +
 			scale_color_brewer( palette = "Dark2" ) +
-			scale_y_continuous( labels = comma ) +
+			scale_y_log2_powers() +
 			scale_time_axis( date_breaks = "4 hours" ) +
 			labs(
 				title = "Load average over time",
 				x = "UTC time",
 				y = "load average",
 				color = NULL,
-				caption = "Each point is one sysstat sample. The dashed line is the logical CPU count."
+				caption = "Each point is one sysstat sample. The y-axis uses a base-2 log scale; the dashed line is the logical CPU count."
 			) +
 			theme_rtc(),
 		width = 9,
