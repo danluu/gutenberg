@@ -10246,3 +10246,6 @@ timestamp,message,event_type,cycle,max_parallel,interval_s
 2026-05-17T02:42:53Z,starting PR split review cycle 20260517T024253Z,review start,20260517T024253Z,NA,NA
 2026-05-17T02:52:06Z,finished PR split review cycle 20260517T024253Z,review finish,20260517T024253Z,NA,NA
 2026-05-17T02:52:06Z,running feedback action after cycle 224,feedback start,224,NA,NA
+2026-05-17T02:55:48Z,another PR split review loop already holds /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/rtc-pr-split-review-loop.lock; exiting holder=pid=1772887 alive,other,NA,NA,NA
+2026-05-17T03:00:58Z,finished feedback action after cycle 224,feedback finish,224,NA,NA
+2026-05-17T03:01:03Z,starting PR split review cycle 20260517T030103Z,review start,20260517T030103Z,NA,NA
