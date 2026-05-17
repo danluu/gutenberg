@@ -10435,3 +10435,5 @@ timestamp,message,event_type,cycle,max_parallel,interval_s
 2026-05-17T15:37:45Z,running feedback action after cycle 280,feedback start,280,NA,NA
 2026-05-17T15:46:29Z,finished feedback action after cycle 280,feedback finish,280,NA,NA
 2026-05-17T15:46:34Z,starting PR split review cycle 20260517T154634Z,review start,20260517T154634Z,NA,NA
+2026-05-17T15:58:52Z,finished PR split review cycle 20260517T154634Z,review finish,20260517T154634Z,NA,NA
+2026-05-17T15:58:57Z,starting PR split review cycle 20260517T155857Z,review start,20260517T155857Z,NA,NA
