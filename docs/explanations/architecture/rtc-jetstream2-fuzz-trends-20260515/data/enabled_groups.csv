@@ -706,3 +706,4 @@ timestamp,group,group_family
 2026-05-17T05:19:25Z,novelty-ws-real-user-editing,real-user
 2026-05-17T05:19:25Z,novelty-ws-real-user-rich-text,real-user
 2026-05-17T06:09:04Z,novelty-http-persistence-probe,persistence
+2026-05-17T06:44:33Z,novelty-ws-lifecycle,lifecycle
