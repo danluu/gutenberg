@@ -6965,6 +6965,8 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T11:45:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,6,4,4,6,2,749459,FALSE
 2026-05-17T11:45:00Z,unit-property,unit-property-rich-text,unit-property,in-process,rtc-rich-text-offset-space,39732,39732,39732,33,0,570000,FALSE
 2026-05-17T11:45:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,1888,1888,1888,59,0,327000,FALSE
+2026-05-17T12:00:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,2,2,2,2,0,72467,FALSE
+2026-05-17T12:00:00Z,coverage-guided,novelty-ws-parser-transform,browser-e2e,ws,parser-transform,2,1,1,2,1,103102,FALSE
 2026-05-17T12:00:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,2,2,0,2,2,270109,FALSE
 2026-05-17T12:00:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,6,2,0,6,6,752442,FALSE
 2026-05-17T12:00:00Z,focused-shards,focused-async-server-a,browser-e2e,ws,async-server-blocks,2,2,2,2,0,98712,FALSE
@@ -6975,9 +6977,9 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T12:00:00Z,focused-shards,focused-late-join-b,browser-e2e,ws,three-user-late-join,3,3,3,3,0,142788,FALSE
 2026-05-17T12:00:00Z,focused-shards,focused-long-doc-b,browser-e2e,ws,long-session-large-doc,2,2,2,2,0,165884,FALSE
 2026-05-17T12:00:00Z,focused-shards,focused-same-user-stale-tabs,browser-e2e,ws,session-lifecycle,1,1,0,1,1,158689,FALSE
-2026-05-17T12:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,4,4,4,4,0,591676,FALSE
-2026-05-17T12:00:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,247558,FALSE
-2026-05-17T12:00:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,3,3,3,3,0,492991,FALSE
+2026-05-17T12:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,6,6,5,6,1,974352,FALSE
+2026-05-17T12:00:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,3,2,0,3,3,731380,FALSE
+2026-05-17T12:00:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,6,6,5,6,1,977161,FALSE
 2026-05-17T12:00:00Z,gap-booster,boost-revision-autosave-recovery,browser-e2e,ws,revision-persistence,1,1,0,1,1,222893,FALSE
 2026-05-17T12:00:00Z,gap-booster,boost-three-user-late-join,browser-e2e,ws,three-user-late-join,1,1,0,1,1,225507,FALSE
 2026-05-17T12:00:00Z,strict-expansion,http-persistence-probe,browser-e2e,http,persistence-no-title,1,1,1,1,0,86859,FALSE
@@ -6986,4 +6988,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T12:00:00Z,strict-expansion,ws-parser-transform,browser-e2e,ws,parser-transform,1,1,0,1,1,177312,FALSE
 2026-05-17T12:00:00Z,strict-expansion,ws-real-user-editing,browser-e2e,ws,real-user-editing,1,1,0,1,1,225276,FALSE
 2026-05-17T12:00:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,1,1,0,1,1,182183,FALSE
-2026-05-17T12:00:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2592,2592,2592,81,0,416000,FALSE
+2026-05-17T12:00:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,5632,5632,5632,176,0,879000,FALSE
+2026-05-17T12:15:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,1,1,1,0,99454,FALSE
+2026-05-17T12:15:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,1,1,1,1,0,98853,FALSE
+2026-05-17T12:15:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,352,352,352,11,0,51000,FALSE
