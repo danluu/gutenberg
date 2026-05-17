@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-17T08:54:14Z`
+Snapshot time: `2026-05-17T09:02:11Z`
 
 Trigger event:
-`pr-split-2026-05-17T08-53-34Z-20260517T084549Z`
+`duplicate-noise-2026-05-17T09-01-37Z-112`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-17T08-53-34Z-20260517T084549Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-17T09-01-37Z-112/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -74,10 +74,11 @@ Current blockers and status changes:
   Keep `980017` blocked until its missing `result.json` and `handoff.md` exist.
 - Provider-lifecycle diagnostics for seeds `5900001` and `5400002` remain
   bounded diagnostic work before any reload-hydration product promotion.
-- The latest raw novelty summary in this collection is empty. Do not carry
-  forward older "current visible likely-real" counts as current-root evidence.
-  The trend packet remains graph-derived health evidence, not rebuilt
-  final-stack validation.
+- The latest raw novelty summary is populated for
+  `run-20260517T085929Z`: current-run triage has `0` signatures, `0`
+  product-evidence signatures, and `0` visible likely-real failures. This is an
+  early post-restart control-plane sample, not rebuilt final-stack validation.
+  Historical duplicate/noise and likely-real aggregates remain historical only.
 
 PR17, PR18, and PR18x remain absent as product slots. Seed `1020002` is
 final-stack validation/fuzz/filing-only unless newer product-owned evidence
@@ -85,15 +86,18 @@ appears. Parser, rich-text, entity, and linebreak residual rows must compare
 against PR05B/PR05C before assigning any later owner.
 
 The duplicate/noise work is fuzzer control-plane health work, not product PR
-work. The latest completed action hardened no-product known-noise handling and
-restarted into `run-20260517T081057Z`. The newest duplicate/noise synthesis,
-`duplicate-noise-20260517T082922Z-synthesis.md`, recommends a run-local
-`no-analysis.json` gate for no-product startup/known-noise work, with
-product-evidence and visible likely-real signatures preserved and drained.
+work. The newest duplicate/noise action,
+`duplicate-noise-20260517T082922Z-feedback-action.md`, implemented the
+run-local `no-analysis.json` gate for no-product startup/known-noise work,
+keeps product-evidence and visible likely-real signatures analyzable, restarted
+the novelty/supervisor path into `run-20260517T085929Z`, and found the next
+blocker is environment health: browser groups are blocked by `wp-env` REST
+HTTP 500, default `wp-env` is uninitialized, and `npm run wp-env start` failed
+because port `8888` is already allocated.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-17T08:54:09Z`.
+Remote status was collected at `2026-05-17T09:02:05Z`.
 
 The fix-planning repo is checked out at:
 
@@ -123,7 +127,7 @@ That repo has modified product/test files and many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-17T08:54:14Z` from fetched
+The branch-link audit was generated at `2026-05-17T09:02:11Z` from fetched
 `danluu` refs. Proposed PR rows below use only rows marked `verified-content`,
 or explicitly say `No verified branch link yet`.
 
@@ -196,54 +200,86 @@ Verified branches that are prior art or staging only:
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-17T08:54:09Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T085345Z
+collected_at_utc: 2026-05-17T09:02:05Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260517T085929Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-The required raw novelty status input for this collection is empty:
+The raw novelty monitor input was updated at `2026-05-17T09:01:16.760Z`
+for `run-20260517T085929Z`. Current output-dir triage is clean, but early:
 
 ```text
-raw/novelty-status.md: 0 bytes
+coverage files: 42397
+total records seen: 65631
+records processed this pass: 17
+current-run records by profile: {}
+current-run successful records by profile: {}
+unmet coverage goals: 5
+quality issues: 1
+current-run signatures: 0
+current-run product-evidence signatures: 0
+current-run likely-real visible: 0
+current-run likely-real merged duplicates: 0
+enabled groups: novelty-ws-lifecycle,
+  novelty-ws-real-user-editing,
+  novelty-ws-real-user-rich-text,
+  novelty-http-persistence-probe
+health warning: no behavioral coverage files found under novelty output dir
 ```
 
-Because the current raw summary is missing, do not claim a current visible
-likely-real count from this input bundle. The latest populated fuzz-health input
-is the trend evidence packet generated at `2026-05-17T08:44:17Z` from monitor
-data through `2026-05-17T08:41:03Z`:
+The enabled group list is scheduler intent, not proof of active browser
+generation. The latest duplicate/noise action records that both browser groups
+are currently blocked by `wp-env` REST health returning HTTP 500.
+
+The same raw novelty input reports historical aggregate triage separately:
 
 ```text
-monitor passes: 1904
-coverage files: 272 -> 42281
-coverage files delta: 42009
+historical triage roots: 260
+historical signatures: 9838
+historical raw signatures: 35055
+historical product-evidence signatures: 9747
+historical likely-real visible: 128
+historical likely-real merged duplicates: 1309
+historical top duplicate family share: 0.3533
+historical no-product raw top duplicate family share: 0.9501
+```
+
+Keep current-run triage and historical triage separate. Historical aggregate
+counts are useful for control-plane health, but must not be promoted into
+current product blockers.
+
+The latest trend evidence packet was generated at `2026-05-17T08:52:40Z` from
+monitor data through `2026-05-17T08:49:15Z`:
+
+```text
+monitor passes: 1907
+coverage files: 272 -> 42283
+coverage files delta: 42011
 unmet coverage goals: 5
 likely_real_max: 4
 duplicate_share_current_last: 0.6667
 duplicate_share_historical_last: 0.3526
 summary_startup_failures_last: 0
 quality issues: 0
-enabled groups current: novelty-ws-lifecycle, novelty-ws-real-user-editing
+enabled groups current: novelty-ws-real-user-editing,
+  novelty-ws-real-user-rich-text
 fuzz level mix: browser-e2e=27 lanes/27 groups;
   unit-property=1 lane/1 group;
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 4461052
-browser-e2e execution: 100575 cumulative / 116 per-hour
-unit-property execution: 3929136 cumulative / 202272 per-hour
+total fuzz-level test executions: 4497213
+browser-e2e execution: 100616 cumulative / 128 per-hour
+transport-integration execution: 3006 cumulative / 0 per-hour
+unit-property execution: 3965256 cumulative / 115584 per-hour
 coverage-guided-lower-level execution: 428335 cumulative / 0 per-hour
-load1/load5/load15: 32.67 / 124.39 / 120.93 on 64 cores
-memory: 446.8G free
+load1/load5/load15: 42.13 / 50.46 / 81.25 on 64 cores
+memory: 443.4G free
 ```
 
-Largest trend-recorded novelty gaps are `ui-heading-shortcut` `779/1000`,
+Largest trend-recorded novelty gaps are `ui-heading-shortcut` `780/1000`,
 `reload-post-action` `793/1000`, title-save-reload `314/500`,
 body-save-reload `373/500`, and successful real-user-editing records
 `446/500`.
-
-Current-run triage and historical triage must remain separate. This collection
-does not provide a populated current-run novelty summary, while historical
-aggregates still include duplicate/noise and prior likely-real signals. Do not
-promote historical aggregate counts into current product blockers.
 
 This is coverage/control-plane health evidence only. It is not rebuilt
 final-stack validation and must not be treated as either filing readiness or a
@@ -273,15 +309,19 @@ PR03B runtime replay because `wp-env` was unavailable or uninitialized.
 
 The latest duplicate/noise synthesis,
 `duplicate-noise-20260517T082922Z-synthesis.md`, keeps duplicate/noise work in
-the fuzzer control plane. It says the next safe pass is an authoritative
-run-local `no-analysis.json` gate for no-product startup/known-noise work,
+the fuzzer control plane. It recommended an authoritative run-local
+`no-analysis.json` gate for no-product startup/known-noise work,
 product-evidence drain preservation, live-analysis suppression for
 no-product-only gated runs, and sentinel propagation before producer enabled
-checks. The latest completed action,
-`duplicate-noise-20260517T075352Z-feedback-action.md`, already completed
-no-product infra/startup suppression before Codex launch, current-run state
-reset on output-root rotation, and old-output startup-cooldown cleanup. Neither
-pass should suppress product-evidence failures.
+checks. The matching completed action,
+`duplicate-noise-20260517T082922Z-feedback-action.md`, patched novelty,
+supervisor, triage, analysis, deep-analysis, and live-analysis consumers;
+`node --check` passed for all changed `.mjs` files; gate-only validation found
+`badStartupQueued=0` and `noProductLaunchable=0`; and
+`live-analysis-monitor --once` started analysis only for product-evidence
+signatures. It restarted
+novelty and supervisor into `run-20260517T085929Z`, but post-restart browser
+generation is blocked by `wp-env` REST HTTP 500.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -289,8 +329,8 @@ separate current fuzz health from historical noise, keep evidence-only families
 out of the split, and make filing gates explicit. Their older "keep existing
 split", "do not add PR6B", stale PR13 review-ref warnings, and "only
 novelty-http is enabled" claims are superseded by the current branch-link
-audit, raw novelty status, trend packet, and latest split and duplicate/noise
-syntheses/actions.
+audit, raw novelty status, trend packet, PR03B sidecar synthesis, and completed
+duplicate/noise gate action.
 
 ## Deferred Or Evidence-Only Work
 
@@ -312,13 +352,13 @@ These must not be described as fixed or filing-ready.
 | Reload-hydration diagnostics | `045710`, `055716`, `062719`, `065722`, `073541` diagnostics | diagnostic-only unless newer evidence proves product ownership; latest mapped diagnostic is `20260517T073541Z` | Replay seeds `5900001` and `5400002` plus strict reload/revision-persistence families against the provider-lifecycle diagnostics before any product promotion |
 | Seed `7700055` table query-array identity loss | earlier minority signal | lower-priority evidence-only; do not create a generic PR18 bucket | Run a lower-priority red test only after comparing against PR14/PR14B |
 | Seed `5700084` strict linebreak divergence | Cycle 240 owner/downscope artifacts | consumed as PR05C-covered / oracle-equivalence downscope; not an open PR18x gate | Keep out of PR18x/PR5D unless new source-owned product evidence appears |
-| Fresh strict/focused/current likely-real residuals | current strict-expansion and focused-shard rows; latest raw novelty status input is empty; trend packet has `likely_real_max: 4` historically | owner-triage input only; do not name PR18x from historical duplicate/noise aggregates or missing current novelty data | Compare parser/rich-text/entity/linebreak rows against PR05B/PR05C first, revision rows against PR03/PR03B/PR07C, and block-tree rows against PR11C/PR12 before later owners |
+| Fresh strict/focused/current likely-real residuals | current strict-expansion and focused-shard rows; raw novelty current-run triage has `0` signatures and `0` visible likely-real failures; trend packet still has `likely_real_max: 4` historically | owner-triage input only; do not name PR18x from historical duplicate/noise aggregates or early post-restart current-run emptiness | Compare parser/rich-text/entity/linebreak rows against PR05B/PR05C first, revision rows against PR03/PR03B/PR07C, and block-tree rows against PR11C/PR12 before later owners |
 | Broad PR 8 persisted-record hydration | old audit branch [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | deferred; no active filing unit | Shape and audit a narrowed title-reload branch only if PR8A is revived |
 | Pre-save search/live document collapse | prior candidate rows | evidence-only; not in active split | Capture editor blocks, serialized content, edited core-data record, live CRDT record, provider state, REST body, and save state around `core/search` insertion |
 | Rich-text formatted suffix corruption | diagnostic candidates and prior deferred refs | not fixed; latest split keeps it out of active PR split | Recover exact replay artifact or emitted delta before product changes |
 | Broader HTTP polling room-isolation residuals | PR02A sidecar plus stale deferred relaunches | PR02A remains in the known-fix prefix but has no verified branch link; broader residuals stay deferred | Publish/fetch/audit PR02A before filing; promote additional residuals only with narrowed healthy-user product evidence |
 | Revision-restore marker retention | seed `5500002`; active lifecycle triage | queued behind final-stack preparation; no automatic PR slot | Triage only after rebuilt stack is available |
-| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T075352Z-*`; `duplicate-noise-20260517T082922Z-synthesis.md`; empty current raw novelty status | no product-code split change; completed no-product hardening is in place, and the latest synthesis proposes an authoritative run-local no-analysis gate with product-evidence preservation | Keep current-run and historical duplicate/noise scopes separate, preserve real product-evidence signatures, resolve the narrow `userCount`-only suppression question before broadening semantics, and require rebuilt final-stack monitor evidence before filing |
+| Duplicate/noise control-plane recycling | `duplicate-noise-20260517T082922Z-synthesis.md`; `duplicate-noise-20260517T082922Z-feedback-action.md`; raw novelty `run-20260517T085929Z` | no product-code split change; run-local no-analysis gating and product-evidence drain preservation are implemented, but post-restart browser generation is blocked by `wp-env` REST HTTP 500 and default `wp-env` is uninitialized | Keep current-run and historical duplicate/noise scopes separate, preserve real product-evidence signatures, resolve the environment health blocker, and require rebuilt final-stack monitor evidence before filing |
 
 ## Filing Gates And Current Recommendation
 
@@ -351,11 +391,14 @@ Before filing any maintainer-facing PR:
    `handoff.md` exist.
 9. Keep reload-hydration diagnostics diagnostic-only until focused replay proves
    product ownership and a clean branch is shaped.
-10. Refresh the missing current raw novelty summary and block filing if fresh
-    final-stack monitor evidence shows visible product failures.
+10. Treat the populated raw novelty summary as current-run control-plane
+    health only. Refresh it after browser generation is healthy and block
+    filing if fresh final-stack monitor evidence shows visible product
+    failures.
 
 Existing fuzz infrastructure can continue only where healthy, and bounded
 source reduction is allowed after environment preflight is healthy. The current
-raw novelty input is empty; none of the current trend, duplicate/noise, residual
-reducer, or status-persona evidence is final-stack fuzz validation or a filing
-unblocker.
+raw novelty input is populated and clean for the active output dir, but it is an
+early post-restart sample with browser generation blocked by `wp-env` REST
+health. None of the current trend, duplicate/noise, residual reducer, or
+status-persona evidence is final-stack fuzz validation or a filing unblocker.
