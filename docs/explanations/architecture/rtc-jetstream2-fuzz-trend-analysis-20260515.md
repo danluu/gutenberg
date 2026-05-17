@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-17T02:26:48Z`
+Snapshot generated: `2026-05-17T02:40:47Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -13,7 +13,7 @@ Source inputs:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest copied novelty state:
   current coverage output-dir state (`startedAt=2026-05-17T02:08:26.582Z`,
-  `lastUpdatedAt=2026-05-17T02:25:22.244Z`)
+  `lastUpdatedAt=2026-05-17T02:35:56.283Z`)
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
 - CPU and load-average history:
@@ -25,22 +25,21 @@ The plotting script and summarized CSV inputs are committed under
 ## High-level readout
 
 The coverage-guided loop is still expanding coverage, not merely cycling. Across
-`1803` monitor passes from `2026-05-15T01:21:42Z` through
-`2026-05-17T02:25:22Z`, coverage files grew from `272` to `38370`, a delta of
-`38098`. The monitor's visible likely-real count stayed at `0`.
+`1806` monitor passes from `2026-05-15T01:21:42Z` through
+`2026-05-17T02:35:56Z`, coverage files grew from `272` to `38403`, a delta of
+`38131`. The monitor's visible likely-real count stayed at `0`.
 
 Coverage-goal pressure is down but not finished. The latest copied
 coverage-guidance state has `126` total goals and `6` unmet goals. The remaining
 goals are real-user save/reload depth, action depth, and completed-record depth
 for real-user editing.
 
-The latest plotted current-output-dir duplicate/noise sample is currently clear:
-`duplicateShareCurrent` is `0`, and current summary startup failures are `0`.
+The latest plotted current-output-dir duplicate/noise sample is not yet clean:
+`duplicateShareCurrent` is `1`, while current summary startup failures are `0`.
 The same sample has `0` quality issues, `0` warnings, a false headroom flag, and
-`427.8G` free memory. The copied novelty state is using
-`supervisor-active-run-dirs`; current triage has `1` root, `1` file, `0` raw
-signatures, `0` actionable signatures, no visible likely-real failures, top
-duplicate family share `0`, and no health warnings.
+`426.7G` free memory. Because this is a current-output-dir signal, a high value
+on a small current triage sample should trigger targeted duplicate/noise review,
+not a historical conclusion about the whole project.
 This report treats current-output-dir duplicate/noise and summary startup
 failure metrics as live graph status; historical aggregate duplicate/noise is
 only context.
@@ -183,60 +182,91 @@ supervisor launches or lane counts, but it only covers fuzzers that emit these
 lane events. Lower-level counts reconstructed from batch metadata or legacy
 batch-count fields are approximate.
 
-The latest collected execution data has about `2,963,852` completed test
-executions: `94,837` browser/e2e, `3,006` transport/integration, `2,567,412`
-unit-property, and `298,597` coverage-guided-lower-level. The latest partial
-15-minute bucket reports about `900` browser/e2e test executions/hour,
-`154,112` unit-property test executions/hour, `24,832`
+The latest collected execution data has about `3,005,992` completed test
+executions: `95,031` browser/e2e, `3,006` transport/integration, `2,603,532`
+unit-property, and `304,423` coverage-guided-lower-level. The latest partial
+15-minute bucket reports about `508` browser/e2e test executions/hour,
+`91,504` unit-property test executions/hour, `15,624`
 coverage-guided-lower-level test executions/hour, and `0`
 transport/integration test executions/hour.
 `backend-api`, `protocol-server`, and standalone `fuzz-assertion` levels remain
 at `0` executions in this counter.
 
-## Bug-Finding Effectiveness
+## Fuzz Output Effectiveness
 
-![Likely-real bug-finding effectiveness by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/bug-effectiveness-likely-real-by-level.png)
+![Triaged likely-real output rate by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/bug-effectiveness-likely-real-by-level.png)
 
-![Failure-candidate effectiveness by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/failure-candidate-effectiveness-by-level.png)
-
-Likely-real effectiveness counts non-duplicate triage results classified
+This graph has been relabeled because it is not a total bug-finding graph. It
+counts only non-duplicate `.triage-watcher/**/result.json` rows classified
 `likely_real` per 100 runner-hours, deduped by canonical bug key and attributed
 to the failure first-seen time. The compute proxy is summed runner wall-clock
-`durationMs` from lane `events.ndjson`, reported as runner-hours. This is not
-measured CPU time, so it is best interpreted as per-runner efficiency rather
-than per-core efficiency.
+`durationMs` from lane `events.ndjson`, reported as runner-hours. This is best
+interpreted as per-runner triage-output efficiency, not per-core efficiency and
+not all bugs found by fuzzing.
 
-On that confirmed metric, browser/e2e currently dominates: `206` unique
-likely-real findings over about `1,619.0` runner-hours, or `12.72` likely-real
-findings per 100 runner-hours. `transport-integration`, `unit-property`,
-`coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
-`fuzz-assertion` all have `0` confirmed likely-real findings in the collected
-triage rows so far. That does not prove the lower-level lanes are unproductive;
-it means their current findings have not yet flowed through the same
-non-duplicate likely-real triage path.
+On that confirmed triage-output metric, browser/e2e currently dominates:
+`222` unique likely-real outputs over about `1,623.9` runner-hours, or `13.67`
+likely-real outputs per 100 runner-hours. `transport-integration`,
+`unit-property`, `coverage-guided-lower-level`, `backend-api`,
+`protocol-server`, and standalone `fuzz-assertion` still have `0` confirmed
+likely-real outputs in the collected triage rows. That does not prove the
+lower-level lanes are unproductive; it means their findings have not yet flowed
+through the same non-duplicate likely-real triage result path.
+
+![Unique bug-output candidates by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-level.png)
+
+![Unique bug-output candidate rate by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-rate-by-level.png)
+
+The two unique bug-output candidate plots are the broader effectiveness view.
+They dedupe by canonical output key and include non-infra likely-real/uncertain
+triage rows, untriaged raw browser or transport failure signatures, and
+lower-level assertion failures. Obvious infra, harness, and no-product-output
+classifications are excluded from the candidate count. This is intentionally
+broader than confirmed bugs and narrower than raw failed attempts; untriaged
+candidates still need follow-up before being treated as maintainer-ready bugs.
+
+Current unique bug-output candidate rates are: browser/e2e `4,245` candidates
+over `1,623.9` runner-hours (`261.41` per 100 runner-hours),
+transport/integration `106` over `59.5` runner-hours (`178.14` per 100
+runner-hours), coverage-guided lower-level `2` over `14.6` runner-hours
+(`13.71` per 100 runner-hours), and unit/property `1` over `10.9` runner-hours
+(`9.19` per 100 runner-hours). `backend-api`, `protocol-server`, standalone
+`fuzz-assertion`, and `other` remain at `0` in this candidate-output metric.
+
+![Unique bug-output candidates within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-profile-within-level.png)
+
+![Unique bug-output candidate rate within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-rate-by-profile-within-level.png)
+
+Within-level candidate output is still dominated by browser/e2e raw signatures,
+with transport/integration also producing a visible raw-signature stream. The
+lower-level lanes now show nonzero assertion-output candidates, but the counts
+are small because those lanes are much newer and still lack the same mature
+promotion path into confirmed `.triage-watcher` likely-real results.
+
+![Failure-candidate effectiveness by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/failure-candidate-effectiveness-by-level.png)
 
 The failure-candidate plot is a pre-triage lead indicator: failed seed or batch
 attempts per 100 runner-hours before duplicate/noise triage. It is useful for
 comparing where the system is still producing interesting work before
 duplicate/noise analysis, but it is not a confirmed bug count. Current rates
-are about `4,809.7` for browser/e2e,
-`4,537.5` for transport/integration, `1,103.9` for coverage-guided lower-level,
-and `858.1` for unit/property.
+are about `4,799.8` for browser/e2e,
+`4,537.5` for transport/integration, `1,090.0` for coverage-guided lower-level,
+and `872.8` for unit/property.
 
-![Likely-real bug-finding effectiveness within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/bug-effectiveness-by-profile-within-level.png)
+![Triaged likely-real output rate within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/bug-effectiveness-by-profile-within-level.png)
 
 ![Failure-candidate effectiveness within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/failure-candidate-effectiveness-by-profile-within-level.png)
 
-Within browser/e2e, the strongest confirmed profiles by likely-real findings
-per 100 runner-hours are `session-lifecycle` (`27.05`),
-`permissions-auth-locks` (`26.12`), `three-user-late-join` (`18.83`),
-`block-gauntlet` (`16.18`), and `persistence-no-title` (`14.46`). The
-pre-triage failure-candidate view has similar but not identical pressure:
+Within browser/e2e, the strongest confirmed profiles by likely-real triage
+output per 100 runner-hours remain concentrated in session lifecycle,
+permissions/auth/locks, three-user late-join, block-gauntlet, and persistence
+profiles. The pre-triage failure-candidate view has similar but not identical
+pressure:
 `permissions-auth-locks`, `async-server-blocks`, `three-user-late-join`,
 `long-session-large-doc`, and `persistence-no-title` are the top current
 browser/e2e sources. Lower-level and transport lanes should continue to be
-judged partly by this candidate-rate graph until their triage pipeline is
-producing comparable likely-real/non-duplicate findings.
+judged partly by the new unique-output candidate graphs until their triage
+pipeline is producing comparable likely-real/non-duplicate results.
 
 ## Profile Completion
 

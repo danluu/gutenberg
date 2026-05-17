@@ -35,6 +35,7 @@ activity_path <- file.path( data_dir, "project_activity.csv" )
 fuzz_level_mix_path <- file.path( data_dir, "fuzz_level_mix.csv" )
 fuzz_level_executions_path <- file.path( data_dir, "fuzz_level_executions.csv" )
 bug_findings_path <- file.path( data_dir, "bug_findings.csv" )
+bug_outputs_path <- file.path( data_dir, "bug_outputs.csv" )
 status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
 status_report_path <- file.path( root, status_report_rel )
 
@@ -510,6 +511,139 @@ if ( file.exists( bug_findings_path ) ) {
 			filter( ! is.na( timestamp ) )
 	}
 	write_csv( bug_findings, bug_findings_path )
+}
+
+bug_outputs <- tibble()
+if ( file.exists( bug_outputs_path ) ) {
+	bug_outputs <- read_csv( bug_outputs_path, show_col_types = FALSE )
+} else if ( nrow( bug_findings ) > 0 ) {
+	bug_outputs <- bug_findings %>%
+		transmute(
+			timestamp,
+			campaign,
+			run,
+			group,
+			fuzz_level,
+			transport,
+			profile,
+			output_type = "triage-result",
+			signal_kind = classification,
+			classification,
+			is_confirmed_likely_real = is_likely_real & ! is_duplicate,
+			is_duplicate,
+			canonical_output_key = canonical_bug_key,
+			source_key = signature_hash,
+			failure_class,
+			last_action,
+			lifecycle_context,
+			source_path,
+			log_path = "",
+			detail = distinct_bug_type
+		)
+}
+if ( nrow( bug_outputs ) > 0 ) {
+	required_bug_output_columns <- c(
+		"timestamp",
+		"campaign",
+		"run",
+		"group",
+		"fuzz_level",
+		"transport",
+		"profile",
+		"output_type",
+		"signal_kind",
+		"classification",
+		"is_confirmed_likely_real",
+		"is_duplicate",
+		"canonical_output_key",
+		"source_key",
+		"failure_class",
+		"last_action",
+		"lifecycle_context",
+		"source_path",
+		"log_path",
+		"detail"
+	)
+	for ( column in required_bug_output_columns ) {
+		if ( ! column %in% names( bug_outputs ) ) {
+			bug_outputs[[ column ]] <- ""
+		}
+	}
+	bug_outputs <- bug_outputs %>%
+		mutate(
+			timestamp = parse_utc_timestamp( timestamp ),
+			is_confirmed_likely_real = case_when(
+				is.logical( is_confirmed_likely_real ) ~ is_confirmed_likely_real,
+				str_to_lower( as.character( is_confirmed_likely_real ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
+			is_duplicate = case_when(
+				is.logical( is_duplicate ) ~ is_duplicate,
+				str_to_lower( as.character( is_duplicate ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
+			across(
+				c(
+					campaign,
+					run,
+					group,
+					transport,
+					profile,
+					output_type,
+					signal_kind,
+					classification,
+					canonical_output_key,
+					source_key,
+					failure_class,
+					last_action,
+					lifecycle_context,
+					source_path,
+					log_path,
+					detail
+				),
+				~ replace_na( as.character( .x ), "" )
+			),
+			profile = if_else( profile == "", "unknown", profile ),
+			fuzz_level = replace_na( as.character( fuzz_level ), "other" ),
+			canonical_output_key = if_else(
+				canonical_output_key == "",
+				paste( output_type, campaign, group, source_key, detail, sep = ":" ),
+				canonical_output_key
+			),
+			is_unique_bug_output_candidate = ! is_duplicate &
+				! signal_kind %in% c(
+					"likely_not_real",
+					"likely_infra",
+					"infra-enospc",
+					"harness-no-tests",
+					"harness-import"
+				) &
+				(
+					is_confirmed_likely_real |
+						signal_kind %in% c(
+							"likely_real",
+							"uncertain",
+							"raw-failure-signature",
+							"lower-level-assertion",
+							"failed-run"
+						)
+				),
+			fuzz_level = factor(
+				fuzz_level,
+				levels = c(
+					"browser-e2e",
+					"transport-integration",
+					"unit-property",
+					"coverage-guided-lower-level",
+					"backend-api",
+					"protocol-server",
+					"fuzz-assertion",
+					"other"
+				)
+			)
+		) %>%
+		filter( ! is.na( timestamp ) )
+	write_csv( bug_outputs, bug_outputs_path )
 }
 
 profile_counts <- named_number_frame( state$recordCountsByProfile, "profile", "records_seen" ) %>%
@@ -1144,11 +1278,11 @@ if ( nrow( fuzz_execution_counts ) > 0 ) {
 				scale_size_continuous( labels = comma, range = c( 1.2, 4.8 ) ) +
 				scale_time_axis( date_breaks = "4 hours" ) +
 				labs(
-					title = "Likely-real bug-finding effectiveness by fuzzing level",
+					title = "Triaged likely-real output rate by fuzzing level",
 					x = "UTC time",
-					y = "unique likely-real findings per 100 runner-hours",
+					y = "unique triaged likely-real outputs per 100 runner-hours",
 					size = "cumulative runner-hours",
-					caption = "Findings are non-duplicate triage results classified likely_real. Runner-hours sum durationMs from lane events and are a wall-clock compute proxy, not measured CPU cycles."
+					caption = "This plot only counts non-duplicate .triage-watcher result.json rows classified likely_real. It is a triage-output metric, not all bugs found by fuzzing. Runner-hours sum durationMs from lane events."
 				) +
 				theme_rtc(),
 			width = 10,
@@ -1288,11 +1422,11 @@ if ( nrow( fuzz_execution_counts ) > 0 ) {
 				scale_y_continuous( labels = number_format( accuracy = 0.01 ) ) +
 				scale_time_axis( date_breaks = "4 hours" ) +
 				labs(
-					title = "Likely-real bug-finding effectiveness within fuzzing levels",
+					title = "Triaged likely-real output rate within fuzzing levels",
 					x = "UTC time",
-					y = "unique likely-real findings per 100 runner-hours",
+					y = "unique triaged likely-real outputs per 100 runner-hours",
 					color = "test type",
-					caption = "Within-level test type is the action profile or lower-level harness profile. Each facet keeps the top profiles by findings, failed attempts, then runner-hours."
+					caption = "This only counts non-duplicate .triage-watcher likely_real rows. Within-level test type is the action profile or lower-level harness profile."
 				) +
 				theme_rtc() +
 				guides( color = guide_legend( nrow = 3, byrow = TRUE ) ),
@@ -1314,6 +1448,256 @@ if ( nrow( fuzz_execution_counts ) > 0 ) {
 					y = "failed attempts per 100 runner-hours",
 					color = "test type",
 					caption = "Failure candidates are pre-triage failed attempts. They help expose lower-level signal before likely-real triage exists."
+				) +
+				theme_rtc() +
+				guides( color = guide_legend( nrow = 3, byrow = TRUE ) ),
+			width = 11,
+			height = 8.5
+		)
+	}
+}
+
+bug_outputs_unique <- if ( nrow( bug_outputs ) > 0 ) {
+	bug_outputs %>%
+		filter( is_unique_bug_output_candidate ) %>%
+		arrange(
+			timestamp,
+			desc( is_confirmed_likely_real ),
+			output_type,
+			signal_kind,
+			canonical_output_key
+		) %>%
+		distinct( canonical_output_key, .keep_all = TRUE )
+} else {
+	tibble()
+}
+
+bug_output_effectiveness_by_level <- tibble()
+bug_output_effectiveness_by_profile <- tibble()
+if ( nrow( fuzz_execution_counts ) > 0 ) {
+	unique_outputs_by_level <- if ( nrow( bug_outputs_unique ) > 0 ) {
+		bug_outputs_unique %>%
+			mutate(
+				bucket = floor_date( timestamp, "15 minutes" ),
+				fuzz_level = as.character( fuzz_level )
+			) %>%
+			count( bucket, fuzz_level, name = "unique_bug_outputs" )
+	} else {
+		tibble( bucket = as.POSIXct( character() ), fuzz_level = character(), unique_bug_outputs = numeric() )
+	}
+
+	confirmed_outputs_by_level <- if ( nrow( bug_outputs_unique ) > 0 ) {
+		bug_outputs_unique %>%
+			filter( is_confirmed_likely_real ) %>%
+			mutate(
+				bucket = floor_date( timestamp, "15 minutes" ),
+				fuzz_level = as.character( fuzz_level )
+			) %>%
+			count( bucket, fuzz_level, name = "confirmed_likely_real_outputs" )
+	} else {
+		tibble( bucket = as.POSIXct( character() ), fuzz_level = character(), confirmed_likely_real_outputs = numeric() )
+	}
+
+	bug_output_effectiveness_by_level <- fuzz_execution_counts %>%
+		mutate( fuzz_level = as.character( fuzz_level ) ) %>%
+		left_join( unique_outputs_by_level, by = c( "bucket", "fuzz_level" ) ) %>%
+		left_join( confirmed_outputs_by_level, by = c( "bucket", "fuzz_level" ) ) %>%
+		mutate(
+			unique_bug_outputs = replace_na( unique_bug_outputs, 0 ),
+			confirmed_likely_real_outputs = replace_na( confirmed_likely_real_outputs, 0 )
+		) %>%
+		arrange( fuzz_level, bucket ) %>%
+		group_by( fuzz_level ) %>%
+		mutate(
+			cumulative_unique_bug_outputs = cumsum( unique_bug_outputs ),
+			cumulative_confirmed_likely_real_outputs = cumsum( confirmed_likely_real_outputs ),
+			unique_bug_outputs_per_100_runner_hours = if_else(
+				cumulative_runner_hours > 0,
+				100 * cumulative_unique_bug_outputs / cumulative_runner_hours,
+				0
+			),
+			confirmed_likely_real_outputs_per_100_runner_hours = if_else(
+				cumulative_runner_hours > 0,
+				100 * cumulative_confirmed_likely_real_outputs / cumulative_runner_hours,
+				0
+			)
+		) %>%
+		ungroup()
+
+	write_csv( bug_output_effectiveness_by_level, file.path( data_dir, "bug_output_effectiveness_by_level.csv" ) )
+
+	bug_output_level_plot_data <- bug_output_effectiveness_by_level %>%
+		filter( cumulative_runner_hours > 0 )
+
+	if ( nrow( bug_output_level_plot_data ) > 0 ) {
+		write_plot(
+			"unique-bug-output-cumulative-by-level.png",
+			ggplot( bug_output_level_plot_data, aes( x = bucket, y = cumulative_unique_bug_outputs ) ) +
+				geom_point( alpha = 0.76, size = 1.45, color = "grey25" ) +
+				facet_wrap( vars( fuzz_level ), scales = "free_y", ncol = 2 ) +
+				scale_y_continuous( labels = comma ) +
+				scale_time_axis( date_breaks = "4 hours" ) +
+				labs(
+					title = "Unique bug-output candidates by fuzzing level",
+					x = "UTC time",
+					y = "cumulative unique bug-output candidates",
+					caption = "Counts dedupe by canonical output key. Inputs include non-infra .triage-watcher likely_real/uncertain rows, untriaged raw browser failure signatures, and lower-level assertion failures. This is broader than confirmed bugs and narrower than raw failed attempts."
+				) +
+				theme_rtc(),
+			width = 10,
+			height = 8.2
+		)
+
+		write_plot(
+			"unique-bug-output-rate-by-level.png",
+			ggplot( bug_output_level_plot_data, aes( x = bucket, y = unique_bug_outputs_per_100_runner_hours ) ) +
+				geom_point( aes( size = cumulative_runner_hours ), alpha = 0.72, color = "grey25" ) +
+				facet_wrap( vars( fuzz_level ), scales = "free_y", ncol = 2 ) +
+				scale_y_continuous( labels = number_format( accuracy = 0.01 ) ) +
+				scale_size_continuous( labels = comma, range = c( 1.2, 4.8 ) ) +
+				scale_time_axis( date_breaks = "4 hours" ) +
+				labs(
+					title = "Unique bug-output candidate rate by fuzzing level",
+					x = "UTC time",
+					y = "unique bug-output candidates per 100 runner-hours",
+					size = "cumulative runner-hours",
+					caption = "Runner-hours are lane wall-clock durationMs. Candidate outputs are deduped and exclude obvious infra/harness/no-product classifications, but untriaged candidates are not equivalent to confirmed maintainer-ready bugs."
+				) +
+				theme_rtc(),
+			width = 10,
+			height = 8.2
+		)
+	}
+
+	bug_output_profile_compute <- fuzz_level_executions %>%
+		mutate(
+			bucket = floor_date( timestamp, "15 minutes" ),
+			fuzz_level = as.character( fuzz_level ),
+			profile = replace_na( profile, "unknown" )
+		) %>%
+		group_by( bucket, fuzz_level, profile ) %>%
+		summarise(
+			duration_ms = sum( duration_ms, na.rm = TRUE ),
+			.groups = "drop"
+		) %>%
+		arrange( fuzz_level, profile, bucket ) %>%
+		group_by( fuzz_level, profile ) %>%
+		mutate(
+			runner_hours = duration_ms / 3600000,
+			cumulative_runner_hours = cumsum( runner_hours )
+		) %>%
+		ungroup()
+
+	unique_outputs_by_profile <- if ( nrow( bug_outputs_unique ) > 0 ) {
+		bug_outputs_unique %>%
+			mutate(
+				bucket = floor_date( timestamp, "15 minutes" ),
+				fuzz_level = as.character( fuzz_level ),
+				profile = replace_na( profile, "unknown" )
+			) %>%
+			count( bucket, fuzz_level, profile, name = "unique_bug_outputs" )
+	} else {
+		tibble( bucket = as.POSIXct( character() ), fuzz_level = character(), profile = character(), unique_bug_outputs = numeric() )
+	}
+
+	confirmed_outputs_by_profile <- if ( nrow( bug_outputs_unique ) > 0 ) {
+		bug_outputs_unique %>%
+			filter( is_confirmed_likely_real ) %>%
+			mutate(
+				bucket = floor_date( timestamp, "15 minutes" ),
+				fuzz_level = as.character( fuzz_level ),
+				profile = replace_na( profile, "unknown" )
+			) %>%
+			count( bucket, fuzz_level, profile, name = "confirmed_likely_real_outputs" )
+	} else {
+		tibble( bucket = as.POSIXct( character() ), fuzz_level = character(), profile = character(), confirmed_likely_real_outputs = numeric() )
+	}
+
+	bug_output_effectiveness_by_profile <- bug_output_profile_compute %>%
+		left_join( unique_outputs_by_profile, by = c( "bucket", "fuzz_level", "profile" ) ) %>%
+		left_join( confirmed_outputs_by_profile, by = c( "bucket", "fuzz_level", "profile" ) ) %>%
+		mutate(
+			unique_bug_outputs = replace_na( unique_bug_outputs, 0 ),
+			confirmed_likely_real_outputs = replace_na( confirmed_likely_real_outputs, 0 )
+		) %>%
+		arrange( fuzz_level, profile, bucket ) %>%
+		group_by( fuzz_level, profile ) %>%
+		mutate(
+			cumulative_unique_bug_outputs = cumsum( unique_bug_outputs ),
+			cumulative_confirmed_likely_real_outputs = cumsum( confirmed_likely_real_outputs ),
+			unique_bug_outputs_per_100_runner_hours = if_else(
+				cumulative_runner_hours > 0,
+				100 * cumulative_unique_bug_outputs / cumulative_runner_hours,
+				0
+			),
+			confirmed_likely_real_outputs_per_100_runner_hours = if_else(
+				cumulative_runner_hours > 0,
+				100 * cumulative_confirmed_likely_real_outputs / cumulative_runner_hours,
+				0
+			)
+		) %>%
+		ungroup()
+
+	write_csv( bug_output_effectiveness_by_profile, file.path( data_dir, "bug_output_effectiveness_by_profile.csv" ) )
+
+	bug_output_profile_selection <- bug_output_effectiveness_by_profile %>%
+		group_by( fuzz_level, profile ) %>%
+		summarise(
+			total_unique_bug_outputs = max( cumulative_unique_bug_outputs, na.rm = TRUE ),
+			total_runner_hours = max( cumulative_runner_hours, na.rm = TRUE ),
+			.groups = "drop"
+		) %>%
+		group_by( fuzz_level ) %>%
+		arrange( desc( total_unique_bug_outputs ), desc( total_runner_hours ), profile, .by_group = TRUE ) %>%
+		slice_head( n = 8 ) %>%
+		ungroup()
+
+	bug_output_profile_plot_data <- bug_output_effectiveness_by_profile %>%
+		semi_join( bug_output_profile_selection, by = c( "fuzz_level", "profile" ) ) %>%
+		filter( cumulative_runner_hours > 0 )
+
+	if ( nrow( bug_output_profile_plot_data ) > 0 ) {
+		bug_output_profile_palette_levels <- sort( unique( bug_output_profile_plot_data$profile ) )
+		bug_output_profile_palette <- setNames(
+			colorRampPalette( brewer.pal( 8, "Set2" ) )( length( bug_output_profile_palette_levels ) ),
+			bug_output_profile_palette_levels
+		)
+
+		write_plot(
+			"unique-bug-output-cumulative-by-profile-within-level.png",
+			ggplot( bug_output_profile_plot_data, aes( x = bucket, y = cumulative_unique_bug_outputs, color = profile ) ) +
+				geom_point( alpha = 0.74, size = 1.55 ) +
+				facet_wrap( vars( fuzz_level ), scales = "free_y", ncol = 2 ) +
+				scale_color_manual( values = bug_output_profile_palette ) +
+				scale_y_continuous( labels = comma ) +
+				scale_time_axis( date_breaks = "4 hours" ) +
+				labs(
+					title = "Unique bug-output candidates within fuzzing levels",
+					x = "UTC time",
+					y = "cumulative unique bug-output candidates",
+					color = "test type",
+					caption = "Within-level test type is the browser action profile or lower-level harness profile. Each facet keeps top profiles by unique candidate outputs."
+				) +
+				theme_rtc() +
+				guides( color = guide_legend( nrow = 3, byrow = TRUE ) ),
+			width = 11,
+			height = 8.5
+		)
+
+		write_plot(
+			"unique-bug-output-rate-by-profile-within-level.png",
+			ggplot( bug_output_profile_plot_data, aes( x = bucket, y = unique_bug_outputs_per_100_runner_hours, color = profile ) ) +
+				geom_point( alpha = 0.74, size = 1.55 ) +
+				facet_wrap( vars( fuzz_level ), scales = "free_y", ncol = 2 ) +
+				scale_color_manual( values = bug_output_profile_palette ) +
+				scale_y_continuous( labels = number_format( accuracy = 0.01 ) ) +
+				scale_time_axis( date_breaks = "4 hours" ) +
+				labs(
+					title = "Unique bug-output candidate rate within fuzzing levels",
+					x = "UTC time",
+					y = "unique bug-output candidates per 100 runner-hours",
+					color = "test type",
+					caption = "Rates use deduped candidate outputs and lane wall-clock runner-hours. Untriaged candidates are not the same as confirmed bugs."
 				) +
 				theme_rtc() +
 				guides( color = guide_legend( nrow = 3, byrow = TRUE ) ),
@@ -1692,6 +2076,30 @@ failure_candidate_latest_text <- if ( nrow( bug_effectiveness_latest ) > 0 ) {
 	NA_character_
 }
 
+bug_output_effectiveness_latest <- if ( nrow( bug_output_effectiveness_by_level ) > 0 ) {
+	bug_output_effectiveness_by_level %>%
+		filter( bucket == max( bucket, na.rm = TRUE ) ) %>%
+		arrange( fuzz_level )
+} else {
+	tibble()
+}
+
+bug_output_effectiveness_latest_text <- if ( nrow( bug_output_effectiveness_latest ) > 0 ) {
+	paste0(
+		bug_output_effectiveness_latest$fuzz_level,
+		"=",
+		number( bug_output_effectiveness_latest$cumulative_unique_bug_outputs, accuracy = 1 ),
+		" unique-candidates/",
+		number( bug_output_effectiveness_latest$cumulative_runner_hours, accuracy = 0.1 ),
+		" runner-hours/",
+		number( bug_output_effectiveness_latest$unique_bug_outputs_per_100_runner_hours, accuracy = 0.01 ),
+		" per-100-runner-hours",
+		collapse = "; "
+	)
+} else {
+	NA_character_
+}
+
 summary_lines <- c(
 	paste0( "generated_at_utc: ", format( with_tz( now(), "UTC" ), "%Y-%m-%dT%H:%M:%SZ" ) ),
 	paste0( "monitor_passes: ", nrow( monitor ) ),
@@ -1723,8 +2131,11 @@ summary_lines <- c(
 	paste0( "bug_findings_rows: ", nrow( bug_findings ) ),
 	paste0( "bug_findings_unique_likely_real: ", nrow( bug_findings_unique ) ),
 	paste0( "bug_findings_unique_candidate_signals: ", nrow( bug_candidate_unique ) ),
+	paste0( "bug_outputs_rows: ", nrow( bug_outputs ) ),
+	paste0( "bug_outputs_unique_candidates: ", nrow( bug_outputs_unique ) ),
 	paste0( "bug_effectiveness_latest: ", bug_effectiveness_latest_text ),
 	paste0( "failure_candidate_effectiveness_latest: ", failure_candidate_latest_text ),
+	paste0( "bug_output_effectiveness_latest: ", bug_output_effectiveness_latest_text ),
 	paste0( "profiles_seen: ", nrow( profile_counts ) ),
 	paste0( "goals_total: ", nrow( coverage_goals ) ),
 	paste0( "goals_unmet: ", sum( ! coverage_goals$met ) ),
