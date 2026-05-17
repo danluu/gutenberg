@@ -6,6 +6,7 @@ CHECKOUT="${RTC_TREND_CHECKOUT:-/private/tmp/gutenberg-fuzz-progress-explain}"
 ARTIFACT_DIR="$CHECKOUT/docs/explanations/architecture/rtc-jetstream2-fuzz-trends-20260515"
 RUN_DIR="${1:-$OPS_DIR/runs/manual-$(date -u +%Y%m%dT%H%M%SZ)}"
 INPUT_DIR="$RUN_DIR/inputs"
+REMOTE_STAGE_ROOT="${RTC_REMOTE_STAGE_ROOT:-/media/volume/danluu-fuzz-data/rtc-graph-refresh-tmp}"
 
 mkdir -p "$INPUT_DIR"
 
@@ -14,14 +15,15 @@ cat > "$remote_script" <<'REMOTE'
 #!/usr/bin/env bash
 set -euo pipefail
 
-OUT="/tmp/rtc-graphs-refresh-latest"
-TAR="/tmp/rtc-graphs-refresh-latest.tar.gz"
+REMOTE_STAGE_ROOT="${RTC_REMOTE_STAGE_ROOT:-/media/volume/danluu-fuzz-data/rtc-graph-refresh-tmp}"
+OUT="$REMOTE_STAGE_ROOT/rtc-graphs-refresh-latest"
+TAR="$REMOTE_STAGE_ROOT/rtc-graphs-refresh-latest.tar.gz"
 COVERAGE_BASE="${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}"
 PR_LOOP_BASE="${RTC_PR_LOOP_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515}"
 DUP_LOOP_BASE="${RTC_DUP_LOOP_BASE:-/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516}"
 
 rm -rf "$OUT" "$TAR"
-mkdir -p "$OUT/raw" "$OUT/data" "$OUT/persona" "$OUT/summary"
+mkdir -p "$REMOTE_STAGE_ROOT" "$OUT/raw" "$OUT/data" "$OUT/persona" "$OUT/summary"
 
 coverage_root=""
 if [ -f "$COVERAGE_BASE/current-output-dir.txt" ]; then
@@ -89,7 +91,7 @@ copy_latest_persona_files "$PR_LOOP_BASE" "pr-split" "feedback-action" "feedback
 copy_latest_persona_files "$DUP_LOOP_BASE" "duplicate-noise" "synthesis" "synthesis.md"
 copy_latest_persona_files "$DUP_LOOP_BASE" "duplicate-noise" "feedback-action" "feedback-action.md"
 
-python3 - <<'PY'
+RTC_REMOTE_COLLECT_OUT="$OUT" python3 - <<'PY'
 import csv
 import glob
 import json
@@ -100,7 +102,7 @@ import subprocess
 from collections import defaultdict
 from datetime import datetime, timezone
 
-out = "/tmp/rtc-graphs-refresh-latest"
+out = os.environ.get("RTC_REMOTE_COLLECT_OUT", "/tmp/rtc-graphs-refresh-latest")
 
 cpu_rows = {}
 load_rows = {}
@@ -234,8 +236,6 @@ campaign_roots = [
 	("unit-property", "/media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516"),
 	("coverage-guided-lower-level", "/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516"),
 ]
-for path in sorted(glob.glob("/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516/native-runs/*/coverage-guided-lower-level-live")):
-	campaign_roots.append(("coverage-guided-lower-level", path))
 group_paths = []
 run_roots = defaultdict(set)
 for campaign, base in campaign_roots:
@@ -496,6 +496,7 @@ with open(os.path.join(out, "data", "fuzz_level_executions.csv"), "w", newline="
 		writer.writerow([*key, *counts])
 
 bug_finding_rows = []
+triage_result_keys = set()
 
 def safe_read_json(path):
 	try:
@@ -508,6 +509,12 @@ def generation_group_name(path):
 	name = os.path.basename(path)
 	match = re.match(r"^(.*)-gen-[0-9]+-", name)
 	return match.group(1) if match else name
+
+def result_campaign(path):
+	for campaign, base in campaign_roots:
+		if os.path.realpath(path).startswith(os.path.realpath(base) + os.sep):
+			return campaign, base
+	return "unknown", ""
 
 def result_source_tier(path):
 	if "/deep-analysis-tier/" in path:
@@ -575,6 +582,7 @@ for campaign, base in campaign_roots:
 				failure, failure_path = failure_for_result(result_path, signature_hash)
 				facts = failure.get("facts") if isinstance(failure.get("facts"), dict) else {}
 				group_dir = result_path.split("/.triage-watcher/", 1)[0]
+				triage_result_keys.add((campaign, os.path.realpath(group_dir), signature_hash))
 				group_name = generation_group_name(group_dir)
 				run_name = os.path.basename(os.path.dirname(group_dir))
 				meta = group_metadata.get((campaign, run_name, group_name)) or fallback_group_metadata.get((campaign, group_name)) or {}
@@ -658,6 +666,309 @@ with open(os.path.join(out, "data", "bug_findings.csv"), "w", newline="") as f:
 	writer.writeheader()
 	writer.writerows(sorted(bug_finding_rows, key=lambda row: (row["timestamp"], row["campaign"], row["group"], row["signature_hash"], row["source_tier"])))
 
+bug_output_rows = []
+
+def add_bug_output(row):
+	defaults = {
+		"timestamp": "",
+		"campaign": "",
+		"run": "",
+		"group": "",
+		"fuzz_level": "other",
+		"transport": "",
+		"profile": "",
+		"output_type": "",
+		"signal_kind": "",
+		"classification": "",
+		"is_confirmed_likely_real": "false",
+		"is_duplicate": "false",
+		"canonical_output_key": "",
+		"source_key": "",
+		"failure_class": "",
+		"last_action": "",
+		"lifecycle_context": "",
+		"source_path": "",
+		"log_path": "",
+		"detail": "",
+	}
+	defaults.update(row)
+	if defaults["timestamp"]:
+		bug_output_rows.append(defaults)
+
+for row in bug_finding_rows:
+	classification = str(row.get("classification") or "")
+	is_duplicate = str(row.get("is_duplicate") or "false").lower() == "true"
+	if row.get("duplicate_of"):
+		canonical_output_key = f"duplicate:{row['duplicate_of']}"
+	else:
+		canonical_output_key = row.get("canonical_bug_key") or f"signature:{row.get('signature_hash', '')}"
+	add_bug_output({
+		"timestamp": row["timestamp"],
+		"campaign": row["campaign"],
+		"run": row["run"],
+		"group": row["group"],
+		"fuzz_level": row["fuzz_level"],
+		"transport": row["transport"],
+		"profile": row["profile"],
+		"output_type": "triage-result",
+		"signal_kind": classification or "unknown-triage",
+		"classification": classification,
+		"is_confirmed_likely_real": str(classification == "likely_real" and not is_duplicate).lower(),
+		"is_duplicate": str(is_duplicate).lower(),
+		"canonical_output_key": canonical_output_key,
+		"source_key": row.get("signature_hash", ""),
+		"failure_class": row.get("failure_class", ""),
+		"last_action": row.get("last_action", ""),
+		"lifecycle_context": row.get("lifecycle_context", ""),
+		"source_path": row.get("source_path", ""),
+		"log_path": "",
+		"detail": row.get("distinct_bug_type", ""),
+	})
+
+def failure_timestamp(failure, fallback_path):
+	for key in ("firstSeenAt", "lastSeenAt", "updatedAt", "createdAt"):
+		value = failure.get(key)
+		if value:
+			try:
+				return datetime.fromisoformat(str(value).replace("Z", "+00:00")).strftime("%Y-%m-%dT%H:%M:%SZ")
+			except ValueError:
+				pass
+	try:
+		return datetime.fromtimestamp(os.path.getmtime(fallback_path), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+	except OSError:
+		return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def group_meta_for(campaign, run_name, group_name, fallback_facts=None):
+	fallback_facts = fallback_facts or {}
+	return group_metadata.get((campaign, run_name, group_name)) or fallback_group_metadata.get((campaign, group_name)) or {
+		"fuzz_level": infer_fuzz_level({"name": group_name, "transport": fallback_facts.get("transport", ""), "profile": fallback_facts.get("actionProfile", "")}, campaign),
+		"transport": fallback_facts.get("transport", ""),
+		"profile": fallback_facts.get("actionProfile", ""),
+	}
+
+for campaign, _base in campaign_roots:
+	for run_root in sorted(run_roots.get(campaign, set())):
+		if not os.path.isdir(run_root):
+			continue
+		for pattern in (
+			os.path.join(run_root, ".triage-watcher", "signatures", "*", "failure.json"),
+			os.path.join(run_root, "*-gen-*", ".triage-watcher", "signatures", "*", "failure.json"),
+		):
+			for failure_path in glob.glob(pattern):
+				signature_hash = os.path.basename(os.path.dirname(failure_path))
+				group_dir = failure_path.split("/.triage-watcher/", 1)[0]
+				if (campaign, os.path.realpath(group_dir), signature_hash) in triage_result_keys:
+					continue
+				failure = safe_read_json(failure_path)
+				if not isinstance(failure, dict):
+					continue
+				facts = failure.get("facts") if isinstance(failure.get("facts"), dict) else {}
+				group_name = generation_group_name(group_dir)
+				run_name = os.path.basename(os.path.dirname(group_dir)) if group_dir != run_root else os.path.basename(run_root)
+				meta = group_meta_for(campaign, run_name, group_name, facts)
+				family_key = str(failure.get("familyKey") or "")
+				semantic_family = str(failure.get("semanticFamilyKey") or "")
+				if family_key:
+					canonical = f"raw-family:{semantic_family}:{family_key}"
+				else:
+					canonical = f"raw-signature:{signature_hash}"
+				add_bug_output({
+					"timestamp": failure_timestamp(failure, failure_path),
+					"campaign": campaign,
+					"run": run_name,
+					"group": group_name,
+					"fuzz_level": meta.get("fuzz_level") or "other",
+					"transport": meta.get("transport") or facts.get("transport", ""),
+					"profile": meta.get("profile") or facts.get("actionProfile", ""),
+					"output_type": "raw-triage-signature",
+					"signal_kind": "raw-failure-signature",
+					"classification": "untriaged",
+					"is_confirmed_likely_real": "false",
+					"is_duplicate": "false",
+					"canonical_output_key": canonical,
+					"source_key": signature_hash,
+					"failure_class": str(facts.get("failureClass", "")),
+					"last_action": str(facts.get("lastAction", "")),
+					"lifecycle_context": str(facts.get("lifecycleContext", "")),
+					"source_path": failure_path,
+					"log_path": "",
+					"detail": semantic_family or family_key,
+				})
+
+def parse_status_line(line):
+	parts = line.rstrip("\n").split("\t")
+	if not parts:
+		return None
+	row = {"timestamp": parts[0]}
+	for part in parts[1:]:
+		if "=" in part:
+			key, value = part.split("=", 1)
+			row[key] = value
+	return row
+
+def parse_status_timestamp(value, fallback_path):
+	try:
+		return datetime.fromisoformat(str(value).replace("Z", "+00:00")).strftime("%Y-%m-%dT%H:%M:%SZ")
+	except ValueError:
+		pass
+	try:
+		return datetime.fromtimestamp(os.path.getmtime(fallback_path), tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+	except OSError:
+		return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+def read_log_tail(path, max_bytes=65536):
+	if not path or not os.path.exists(path):
+		return ""
+	try:
+		size = os.path.getsize(path)
+		with open(path, "rb") as f:
+			if size > max_bytes:
+				f.seek(-max_bytes, os.SEEK_END)
+			return f.read().decode("utf-8", errors="replace")
+	except OSError:
+		return ""
+
+def classify_lower_failure(log_text):
+	lower = log_text.lower()
+	if "no space left on device" in lower or "enospc" in lower:
+		return "infra-enospc"
+	if "tests:       0 total" in lower or "tests: 0 total" in lower:
+		return "harness-no-tests"
+	if "cannot find module" in lower or "module not found" in lower:
+		return "harness-import"
+	if "test suites: 1 failed" in lower and ("tests:       1 failed" in lower or "tests: 1 failed" in lower):
+		return "lower-level-assertion"
+	if "assert" in lower or "expected" in lower:
+		return "lower-level-assertion"
+	return "failed-run"
+
+def lower_failure_key(log_text, campaign, profile, fallback):
+	patterns = [
+		r"at (?:Object\.)?([A-Za-z0-9_$<>.]+) \((packages/[^:]+):([0-9]+):[0-9]+\)",
+		r"at ([A-Za-z0-9_$<>.]+) \((packages/[^:]+):([0-9]+):[0-9]+\)",
+		r"(packages/[^:\s]+):([0-9]+):[0-9]+",
+	]
+	for pattern in patterns:
+		match = re.search(pattern, log_text)
+		if match:
+			if len(match.groups()) == 3:
+				fn, path, line = match.groups()
+			else:
+				path, line = match.groups()
+				fn = "unknown"
+			return f"lower:{campaign}:{profile}:{path}:{line}:{fn}", f"{path}:{line}:{fn}"
+	return f"lower:{campaign}:{profile}:{fallback}", fallback
+
+for campaign in ("unit-property", "coverage-guided-lower-level"):
+	for run_root in sorted(run_roots.get(campaign, set())):
+		status_path = os.path.join(run_root, "status.tsv")
+		if not os.path.exists(status_path):
+			continue
+		run_name = os.path.basename(run_root)
+		meta_candidates = [(key, value) for key, value in group_metadata.items() if key[0] == campaign and key[1] == run_name]
+		group_name = meta_candidates[0][0][2] if meta_candidates else ("unit-property-rich-text" if campaign == "unit-property" else "coverage-guided-lower-level-rich-text-crdt")
+		meta = meta_candidates[0][1] if meta_candidates else group_meta_for(campaign, run_name, group_name, {})
+		try:
+			lines = open(status_path, errors="replace").read().splitlines()
+		except OSError:
+			continue
+		for line in lines:
+			row = parse_status_line(line)
+			if not row:
+				continue
+			exit_text = row.get("exit", row.get("exitCode", "0"))
+			try:
+				exit_code = int(str(exit_text))
+			except ValueError:
+				exit_code = 0
+			if exit_code == 0:
+				continue
+			log_path = row.get("log", row.get("logPath", ""))
+			log_tail = read_log_tail(log_path)
+			signal_kind = classify_lower_failure(log_tail)
+			fallback_key = f"{run_name}:{row.get('attempt', row.get('seed_start', row.get('seedStart', 'unknown')))}:{exit_code}"
+			canonical, detail = lower_failure_key(log_tail, campaign, meta.get("profile") or "", fallback_key)
+			add_bug_output({
+				"timestamp": parse_status_timestamp(row.get("timestamp", ""), status_path),
+				"campaign": campaign,
+				"run": run_name,
+				"group": group_name,
+				"fuzz_level": meta.get("fuzz_level") or infer_fuzz_level({"name": group_name}, campaign),
+				"transport": meta.get("transport") or "in-process",
+				"profile": meta.get("profile") or "",
+				"output_type": "lower-level-status-failure",
+				"signal_kind": signal_kind,
+				"classification": "untriaged",
+				"is_confirmed_likely_real": "false",
+				"is_duplicate": "false",
+				"canonical_output_key": canonical,
+				"source_key": fallback_key,
+				"failure_class": signal_kind,
+				"last_action": "",
+				"lifecycle_context": "",
+				"source_path": status_path,
+				"log_path": log_path,
+				"detail": detail,
+			})
+
+def parse_bug_output_time(row):
+	try:
+		return datetime.fromisoformat(str(row.get("timestamp", "")).replace("Z", "+00:00"))
+	except ValueError:
+		return datetime.max.replace(tzinfo=timezone.utc)
+
+def bug_output_rank(row):
+	signal = str(row.get("signal_kind") or "")
+	classification = str(row.get("classification") or "")
+	if str(row.get("is_confirmed_likely_real") or "").lower() == "true":
+		return 0
+	if classification == "likely_real":
+		return 1
+	if classification == "uncertain":
+		return 2
+	if signal in ("raw-failure-signature", "lower-level-assertion"):
+		return 3
+	if signal.startswith("harness-") or signal.startswith("infra-"):
+		return 8
+	return 5
+
+def dedupe_bug_outputs(rows):
+	by_key = {}
+	for row in sorted(rows, key=lambda candidate: (parse_bug_output_time(candidate), bug_output_rank(candidate), candidate.get("output_type", ""))):
+		key = row.get("canonical_output_key") or f"{row.get('campaign', '')}:{row.get('source_key', '')}:{row.get('source_path', '')}"
+		if key not in by_key:
+			by_key[key] = row
+	return list(by_key.values())
+
+bug_output_rows = dedupe_bug_outputs(bug_output_rows)
+
+with open(os.path.join(out, "data", "bug_outputs.csv"), "w", newline="") as f:
+	fieldnames = [
+		"timestamp",
+		"campaign",
+		"run",
+		"group",
+		"fuzz_level",
+		"transport",
+		"profile",
+		"output_type",
+		"signal_kind",
+		"classification",
+		"is_confirmed_likely_real",
+		"is_duplicate",
+		"canonical_output_key",
+		"source_key",
+		"failure_class",
+		"last_action",
+		"lifecycle_context",
+		"source_path",
+		"log_path",
+		"detail",
+	]
+	writer = csv.DictWriter(f, fieldnames=fieldnames)
+	writer.writeheader()
+	writer.writerows(sorted(bug_output_rows, key=lambda row: (row["timestamp"], row["fuzz_level"], row["profile"], row["canonical_output_key"], row["output_type"])))
+
 with open(os.path.join(out, "summary", "remote-source-paths.env"), "w") as f:
 	f.write(f"coverage_root={os.environ.get('coverage_root', '')}\n")
 PY
@@ -673,7 +984,7 @@ REMOTE
 
 "$OPS_DIR/jetstream-scp.sh" to "$remote_script" /tmp/rtc-graphs-refresh-collect.sh
 "$OPS_DIR/jetstream-ssh.sh" "chmod +x /tmp/rtc-graphs-refresh-collect.sh && /tmp/rtc-graphs-refresh-collect.sh"
-"$OPS_DIR/jetstream-scp.sh" from /tmp/rtc-graphs-refresh-latest.tar.gz "$INPUT_DIR/remote.tar.gz"
+"$OPS_DIR/jetstream-scp.sh" from "$REMOTE_STAGE_ROOT/rtc-graphs-refresh-latest.tar.gz" "$INPUT_DIR/remote.tar.gz"
 
 rm -rf "$INPUT_DIR/remote"
 mkdir -p "$INPUT_DIR/remote"
@@ -689,6 +1000,7 @@ cp "$INPUT_DIR/remote/data/project_activity.csv" "$ARTIFACT_DIR/data/project_act
 cp "$INPUT_DIR/remote/data/fuzz_level_mix.csv" "$ARTIFACT_DIR/data/fuzz_level_mix.csv"
 cp "$INPUT_DIR/remote/data/fuzz_level_executions.csv" "$ARTIFACT_DIR/data/fuzz_level_executions.csv"
 cp "$INPUT_DIR/remote/data/bug_findings.csv" "$ARTIFACT_DIR/data/bug_findings.csv"
+cp "$INPUT_DIR/remote/data/bug_outputs.csv" "$ARTIFACT_DIR/data/bug_outputs.csv"
 
 mkdir -p "$INPUT_DIR/persona-inputs"
 if compgen -G "$INPUT_DIR/remote/persona/*.md" > /dev/null; then
