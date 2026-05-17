@@ -7192,9 +7192,12 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-17T14:15:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,5,4,0,5,5,892108,FALSE
 2026-05-17T14:15:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,8,8,6,8,2,959728,FALSE
 2026-05-17T14:15:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,1984,1984,1376,62,19,317000,FALSE
-2026-05-17T14:30:00Z,coverage-guided,novelty-ws-lifecycle,browser-e2e,ws,session-lifecycle,3,2,1,3,2,340364,FALSE
+2026-05-17T14:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,4,2,0,4,4,246151,FALSE
+2026-05-17T14:30:00Z,coverage-guided,novelty-ws-lifecycle,browser-e2e,ws,session-lifecycle,5,3,3,5,2,415565,FALSE
+2026-05-17T14:30:00Z,coverage-guided,novelty-ws-persistence-no-title,browser-e2e,ws,persistence-no-title,10,6,6,10,4,492008,FALSE
+2026-05-17T14:30:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,1,1,1,1,0,91176,FALSE
 2026-05-17T14:30:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,4,3,0,4,4,764193,FALSE
-2026-05-17T14:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,3,3,2,3,1,372934,FALSE
-2026-05-17T14:30:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,197583,FALSE
-2026-05-17T14:30:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,3,3,2,3,1,304268,FALSE
-2026-05-17T14:30:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,1408,1408,1312,44,3,230000,FALSE
+2026-05-17T14:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,8,8,7,8,1,903889,FALSE
+2026-05-17T14:30:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,3,3,0,3,3,714557,FALSE
+2026-05-17T14:30:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,7,7,5,7,2,835103,FALSE
+2026-05-17T14:30:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2496,2496,2016,78,15,405000,FALSE
