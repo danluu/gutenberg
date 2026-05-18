@@ -784,3 +784,5 @@ timestamp,group,group_family
 2026-05-18T01:02:55Z,novelty-ws-real-user-rich-text,real-user
 2026-05-18T01:03:03Z,novelty-ws-lifecycle,lifecycle
 2026-05-18T01:03:03Z,novelty-ws-real-user-save-reload,real-user
+2026-05-18T01:32:07Z,novelty-ws-parser-transform,parser
+2026-05-18T01:32:07Z,novelty-ws-parser-serialization,parser

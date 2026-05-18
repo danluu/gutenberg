@@ -1,9 +1,9 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
 three-user-late-join,9664,3894,0,0.4029387417218543,lifecycle
 session-lifecycle,8444,2544,0,0.3012790146849834,lifecycle
-async-server-blocks,7888,4291,0,0.5439908722109533,async/media
-real-user-editing,7560,602,0,0.07962962962962963,real-user
-permissions-auth-locks,7069,3717,0,0.5258169472344038,auth/locks
+async-server-blocks,7891,4292,0,0.5439107844379673,async/media
+real-user-editing,7570,602,0,0.07952443857331572,real-user
+permissions-auth-locks,7071,3718,0,0.5258096450289916,auth/locks
 block-gauntlet,6384,1190,0,0.18640350877192982,block-structure
 revision-persistence,4761,184,0,0.03864734299516908,persistence
 parser-transform,4363,461,0,0.1056612422644969,parser
