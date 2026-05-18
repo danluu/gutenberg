@@ -696,11 +696,11 @@ launch_validation_job() {
 	local dedupe session run_dir worktree runner report rc log_file
 	dedupe="validate-$lane_id-$head_sha-$(slugify "$base_ref" | cut -c1-32)"
 	if task_recently_launched "$dedupe" "$MIN_TASK_INTERVAL_SECONDS"; then
-		return
+		return 0
 	fi
 	session="rtc-critical-validate-$(slugify "$lane_id" | cut -c1-48)-$(date -u +%Y%m%dT%H%M%SZ)"
 	if has_session "$session"; then
-		return
+		return 0
 	fi
 	run_dir="$BASE/runs/$(date -u +%Y%m%dT%H%M%SZ)/validations/$lane_id"
 	worktree="$BASE/worktrees/validation-$lane_id-$(date -u +%Y%m%dT%H%M%SZ)"
@@ -881,12 +881,12 @@ launch_continuation_job() {
 	local lane=$1 dedupe=$2 active_pattern=$3 goal=$4
 	local active session ts run_dir worktree prompt report classification stderr rc runner slug
 	active=$(active_session_matching "$active_pattern" || true)
-	[ -z "$active" ] || return
+	[ -z "$active" ] || return 0
 	if task_recently_launched "$dedupe" "$MIN_TASK_INTERVAL_SECONDS"; then
-		return
+		return 0
 	fi
 	if [ "$(active_count_matching '^rtc-critical-continuation-')" -ge "$MAX_ACTIVE_CONTINUATIONS" ]; then
-		return
+		return 0
 	fi
 	ts=$(date -u +%Y%m%dT%H%M%SZ)
 	slug=$(slugify "$lane" | cut -c1-48)
@@ -896,7 +896,7 @@ launch_continuation_job() {
 	mkdir -p "$run_dir"
 	if ! git -C "$SRC" worktree add --detach "$worktree" HEAD > "$run_dir/worktree.log" 2>&1; then
 		log "failed to create continuation worktree for $lane; see $run_dir/worktree.log"
-		return
+		return 0
 	fi
 	prompt="$run_dir/prompt.md"
 	report="$run_dir/report.md"
@@ -960,7 +960,7 @@ launch_continuation_jobs() {
 launch_validation_jobs() {
 	local active branch lane_id base_ref publication_class head_sha
 	active=$(active_count_matching '^rtc-critical-validate-')
-	[ "$active" -lt "$MAX_ACTIVE_VALIDATIONS" ] || return
+	[ "$active" -lt "$MAX_ACTIVE_VALIDATIONS" ] || return 0
 	while IFS= read -r branch; do
 		[ -n "$branch" ] || continue
 		active=$(active_count_matching '^rtc-critical-validate-')
