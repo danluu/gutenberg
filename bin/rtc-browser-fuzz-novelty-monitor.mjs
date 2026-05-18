@@ -23,6 +23,9 @@ const GROUPS_PATH =
 const STATE_PATH = path.join( OUTPUT_DIR, 'novelty-state.json' );
 const STATUS_PATH = path.join( OUTPUT_DIR, 'novelty-status.md' );
 const LOG_PATH = path.join( OUTPUT_DIR, 'novelty-monitor.log' );
+const CURRENT_OUTPUT_POINTER_PATH =
+	process.env.RTC_FUZZ_NOVELTY_CURRENT_OUTPUT_POINTER ??
+	path.join( path.dirname( OUTPUT_DIR ), 'current-output-dir.txt' );
 const NO_ANALYSIS_SENTINEL_RELATIVE_PATH = path.join(
 	'.triage-watcher',
 	'no-analysis.json'
@@ -71,23 +74,49 @@ const OBSERVED_RUN_DIRS = uniquePathList( [
 ] );
 const FORCE_START = process.env.RTC_FUZZ_NOVELTY_FORCE_START === '1';
 const START_SUPERVISOR = process.env.RTC_FUZZ_NOVELTY_START_SUPERVISOR !== '0';
+const ALLOW_FLEET_STARTUP_NOISE_CANARY =
+	process.env.RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY === '1';
 const INCLUDE_RECHECK_COVERAGE =
 	process.env.RTC_FUZZ_NOVELTY_INCLUDE_RECHECK_COVERAGE === '1';
 const ENABLE_HTTP_PROBE =
 	process.env.RTC_FUZZ_NOVELTY_ENABLE_HTTP_PROBE !== '0';
 const ENABLE_SAME_USER_PROBE =
 	process.env.RTC_FUZZ_NOVELTY_ENABLE_SAME_USER === '1';
-const MAX_ENABLED_GROUPS = getPositiveIntegerEnv(
+const REQUESTED_MAX_ENABLED_GROUPS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS',
 	7
 );
-const TARGET_ENABLED_GROUPS = getPositiveIntegerEnv(
+const REQUESTED_TARGET_ENABLED_GROUPS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS',
 	3
 );
+const COVERAGE_GUIDED_MAX_ENABLED_GROUPS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS',
+	2
+);
+const COVERAGE_GUIDED_TARGET_ENABLED_GROUPS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS',
+	1
+);
+const MAX_ENABLED_GROUPS = FORCE_COVERAGE_GUIDED_POLICY_GUARDS
+	? Math.min(
+			REQUESTED_MAX_ENABLED_GROUPS,
+			COVERAGE_GUIDED_MAX_ENABLED_GROUPS
+	  )
+	: REQUESTED_MAX_ENABLED_GROUPS;
+const TARGET_ENABLED_GROUPS = FORCE_COVERAGE_GUIDED_POLICY_GUARDS
+	? Math.min(
+			REQUESTED_TARGET_ENABLED_GROUPS,
+			COVERAGE_GUIDED_TARGET_ENABLED_GROUPS,
+			MAX_ENABLED_GROUPS
+	  )
+	: Math.min( REQUESTED_TARGET_ENABLED_GROUPS, MAX_ENABLED_GROUPS );
 const MIN_ENABLED_BROWSER_LANES = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES',
-	FORCE_COVERAGE_GUIDED_POLICY_GUARDS ? 4 : 1
+	Math.min(
+		FORCE_COVERAGE_GUIDED_POLICY_GUARDS ? TARGET_ENABLED_GROUPS : 1,
+		MAX_ENABLED_GROUPS
+	)
 );
 const LOAD_HEADROOM_MULTIPLIER = getPositiveNumberEnv(
 	'RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER',
@@ -277,12 +306,27 @@ const TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS = getPositiveNumberEnv(
 	'RTC_FUZZ_NOVELTY_TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS',
 	6
 );
+const FLEET_STARTUP_NOISE_HOLD_MIN_GROUPS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_HOLD_MIN_GROUPS',
+	FORCE_COVERAGE_GUIDED_POLICY_GUARDS ? 2 : 4
+);
+const FLEET_STARTUP_NOISE_HOLD_MIN_SHARE = getPositiveNumberEnv(
+	'RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_HOLD_MIN_SHARE',
+	FORCE_COVERAGE_GUIDED_POLICY_GUARDS ? 0.25 : 0.5
+);
+const FLEET_STARTUP_NOISE_CANARY_GROUP =
+	process.env.RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP ??
+	'novelty-ws-media-cross-entity';
+const NO_ANALYSIS_SENTINEL_COMPATIBILITY_HOURS = getPositiveNumberEnv(
+	'RTC_FUZZ_NO_ANALYSIS_SENTINEL_COMPATIBILITY_HOURS',
+	TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS
+);
 const NON_ACTIONABLE_ANALYSIS_JOB_STATUSES = new Set( [
 	'family-capped',
 	'source-suppressed',
 	'stale-source',
 ] );
-const RUN_LOCAL_NOISE_POLICY_VERSION = 23;
+const RUN_LOCAL_NOISE_POLICY_VERSION = 34;
 const STARTUP_FAILURE_DEDUPE_POLICY_VERSION = 3;
 const STARTUP_DISCOVERY_PHASES = new Set( [
 	'seed',
@@ -326,7 +370,18 @@ const REAL_USER_DUPLICATE_FAMILY_HOLD_GROUPS = [
 	'novelty-ws-real-user-editing',
 	'novelty-ws-real-user-rich-text',
 ];
+const PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS = [
+	...REAL_USER_DUPLICATE_FAMILY_HOLD_GROUPS,
+	'novelty-ws-lifecycle',
+	'novelty-ws-same-user-lifecycle',
+	'novelty-ws-same-user-stale-tabs',
+	'novelty-ws-three-user-late-join',
+	'novelty-ws-multi-reload-lifecycle',
+	'novelty-ws-revision-persistence',
+	'novelty-ws-revision-recovery',
+];
 const PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES = new Set( [
+	'late_session_awareness_stall',
 	'operation_witness_missing',
 	'reload_rejoin_awareness_stall',
 	'rest_meta_database_error',
@@ -457,6 +512,14 @@ const PRODUCTIVE_FALLBACK_GROUPS = [
 	'novelty-ws-common-blocks',
 	'novelty-http-persistence-probe',
 	'novelty-ws-three-user-late-join',
+	'novelty-ws-revision-persistence',
+	'novelty-ws-revision-recovery',
+	'novelty-ws-multi-reload-lifecycle',
+	'novelty-ws-same-user-lifecycle',
+	'novelty-ws-same-user-stale-tabs',
+	'novelty-ws-async-server-blocks',
+	'novelty-ws-permissions-auth-locks',
+	'novelty-ws-long-session-large-doc',
 	'novelty-ws-real-user-save-reload',
 	'novelty-ws-real-user-editing',
 	'novelty-ws-real-user-rich-text',
@@ -855,6 +918,7 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'paragraph',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '30000',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
 		},
 	},
@@ -878,6 +942,7 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'paragraph',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '30000',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
 		},
 	},
@@ -903,6 +968,7 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
 			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '30000',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
 		},
 	},
@@ -1063,7 +1129,7 @@ if ( state.expansionPolicyVersion !== EXPANSION_POLICY_VERSION ) {
 	state.changes.push( {
 		at: new Date().toISOString(),
 		action: 'reset-expansion-pauses',
-		reason: `startup-noise counters are run-local; cleared ${ clearedExpansionPauses } stale expansion pause(s) while preserving ${ preservedExpansionNoisePauses } unexpired non-startup/current-output noise cooldown(s)`,
+		reason: `startup-noise counters are run-local; cleared ${ clearedExpansionPauses } stale expansion pause(s) while preserving ${ preservedExpansionNoisePauses } unexpired current-output or explicit no-product startup noise cooldown(s)`,
 	} );
 }
 state.recordCountsByProfile ??= {};
@@ -1110,13 +1176,17 @@ if ( state.outputDir !== OUTPUT_DIR ) {
 	state.currentRunCountersInitializedForOutputDir = null;
 	resetRunScopedTriageState();
 	state.pausedGroups = preservedNoisePausedGroups;
+	const importedSupervisorStartupPauseCount =
+		await importSupervisorStartupStallPausesFromOutputDir(
+			previousOutputDir
+		);
 	state.healthWarnings = [];
 	state.coverageGuidanceQualityIssuePasses = 0;
 	state.coverageGuidanceNoProgressPasses = 0;
 	state.changes.push( {
 		at: new Date().toISOString(),
 		action: 'reset-run-local-noise-state',
-		reason: `novelty state moved from ${ previousOutputDir } to ${ OUTPUT_DIR }; preserving coverage counters and ${ preservedNoisePauseCount } unexpired non-startup/current-output noise cooldown(s), clearing ${
+		reason: `novelty state moved from ${ previousOutputDir } to ${ OUTPUT_DIR }; preserving coverage counters, ${ preservedNoisePauseCount } unexpired current-output or explicit no-product startup noise cooldown(s), and importing ${ importedSupervisorStartupPauseCount } previous-root supervisor startup cooldown(s), clearing ${
 			previousPausedGroupCount - preservedNoisePauseCount
 		} stale pause(s), and resetting active-current triage/startup/quality counters`,
 	} );
@@ -1125,11 +1195,12 @@ if ( state.runLocalNoisePolicyVersion !== RUN_LOCAL_NOISE_POLICY_VERSION ) {
 	resetCurrentRunCounters();
 	state.currentRunCountersInitializedForOutputDir = null;
 	resetRunScopedTriageState();
+	delete state.emptyMaterializationRescueCooldownBypass;
 	state.runLocalNoisePolicyVersion = RUN_LOCAL_NOISE_POLICY_VERSION;
 	state.changes.push( {
 		at: new Date().toISOString(),
 		action: 'reset-run-local-noise-policy',
-		reason: 'startup/no-product noise policy now scopes metrics and startup-noise cooldowns to active current dirs; no-analysis sentinels continue to preserve product-evidence signatures',
+		reason: 'historical no-product startup-noise pauses are advisory only; current-output startup evidence still gates scheduling, and product-evidence signatures remain visible and eligible',
 	} );
 }
 if (
@@ -1343,10 +1414,63 @@ async function readSupervisorStateAfterStartup() {
 	return supervisorState;
 }
 
+async function readSupervisorStateWithMaterializedRunDirs( {
+	timeoutMs = 75000,
+	intervalMs = 5000,
+} = {} ) {
+	const startedAt = Date.now();
+	let supervisorState = await readSupervisorState();
+	let currentRunDirs = filterPolicyInactiveCurrentRunDirs(
+		getCurrentRunDirs( supervisorState ),
+		supervisorState
+	);
+	if ( currentRunDirs.length > 0 ) {
+		return supervisorState;
+	}
+
+	while (
+		Date.now() - startedAt < timeoutMs &&
+		tmuxHasSession( getCurrentSupervisorSession() )
+	) {
+		const groups = await readJsonFile( GROUPS_PATH );
+		if ( ! Array.isArray( groups ) || groups.length === 0 ) {
+			return supervisorState;
+		}
+
+		await sleep( Math.min( intervalMs, timeoutMs - ( Date.now() - startedAt ) ) );
+		supervisorState = await readSupervisorState();
+		currentRunDirs = filterPolicyInactiveCurrentRunDirs(
+			getCurrentRunDirs( supervisorState ),
+			supervisorState
+		);
+		if ( currentRunDirs.length > 0 ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'refresh-supervisor-active-run-dirs-after-empty-materialization',
+				activeRunDirs: currentRunDirs.length,
+				waitMs: Date.now() - startedAt,
+				reason: 'waited for the supervisor poll after policy changed groups before writing active-current novelty status',
+			} );
+			return supervisorState;
+		}
+	}
+
+	return supervisorState;
+}
+
 async function writeJsonFileAtomic( filePath, value ) {
 	const tmpPath = `${ filePath }.tmp-${ process.pid }`;
 	await fs.mkdir( path.dirname( filePath ), { recursive: true } );
 	await fs.writeFile( tmpPath, JSON.stringify( value, null, 2 ) + '\n' );
+	await fs.rename( tmpPath, filePath );
+}
+
+async function writeTextFileAtomic( filePath, text ) {
+	const tmpPath = `${ filePath }.tmp-${ process.pid }-${ Date.now() }-${ Math.random()
+		.toString( 16 )
+		.slice( 2 ) }`;
+	await fs.mkdir( path.dirname( filePath ), { recursive: true } );
+	await fs.writeFile( tmpPath, text );
 	await fs.rename( tmpPath, filePath );
 }
 
@@ -1391,7 +1515,41 @@ function isPathInsideRoot( filePath, root ) {
 		( relative &&
 			! relative.startsWith( '..' ) &&
 			! path.isAbsolute( relative ) )
+		);
+}
+
+function getNoAnalysisSentinelExpirationMs( sentinel ) {
+	const explicitExpirationMs = Date.parse(
+		sentinel?.expiresAt ?? sentinel?.pauseUntil ?? ''
 	);
+	if ( Number.isFinite( explicitExpirationMs ) ) {
+		return explicitExpirationMs;
+	}
+
+	const createdAtMs = Date.parse( sentinel?.createdAt ?? '' );
+	if ( ! Number.isFinite( createdAtMs ) ) {
+		return 0;
+	}
+	return (
+		createdAtMs +
+		NO_ANALYSIS_SENTINEL_COMPATIBILITY_HOURS * 60 * 60 * 1000
+	);
+}
+
+function isActiveNoAnalysisSentinel(
+	sentinel,
+	{ runDir = null, rootDir = OUTPUT_DIR } = {}
+) {
+	if ( sentinel?.preserveProductEvidence !== true || ! sentinel.outputDir ) {
+		return false;
+	}
+	if ( runDir && ! isPathInsideRoot( runDir, rootDir ) ) {
+		return false;
+	}
+	if ( path.resolve( sentinel.outputDir ) !== path.resolve( OUTPUT_DIR ) ) {
+		return false;
+	}
+	return getNoAnalysisSentinelExpirationMs( sentinel ) > Date.now();
 }
 
 function getCurrentRunDirs(
@@ -1423,8 +1581,12 @@ function getCurrentRunDirs(
 					group.activeRunDirs?.length > 0
 						? group.activeRunDirs
 						: [ group.currentRunDir ];
-			} else if ( includePausedNoAnalysis ) {
-				groupDirs = getSupervisorPausedNoAnalysisRunDirs( group );
+			}
+			if ( includePausedNoAnalysis ) {
+				groupDirs = [
+					...groupDirs,
+					...getSupervisorPausedNoAnalysisRunDirs( group ),
+				];
 			}
 			for ( const dir of groupDirs ?? [] ) {
 				addDir( dir );
@@ -1445,17 +1607,39 @@ function getCurrentRunDirs(
 	return dirs;
 }
 
-function filterPolicyInactiveCurrentRunDirs( runDirs ) {
+function getSupervisorActiveRunDirSet( supervisorState ) {
+	const activeRunDirs = new Set();
+	for ( const group of supervisorState?.groups ?? [] ) {
+		if ( ! ACTIVE_GROUP_STATUSES.has( group.status ) ) {
+			continue;
+		}
+		const groupDirs =
+			group.activeRunDirs?.length > 0
+				? group.activeRunDirs
+				: [ group.currentRunDir ];
+		for ( const dir of groupDirs ?? [] ) {
+			if ( dir ) {
+				activeRunDirs.add( path.resolve( dir ) );
+			}
+		}
+	}
+	return activeRunDirs;
+}
+
+function filterPolicyInactiveCurrentRunDirs( runDirs, supervisorState = null ) {
 	const enabled = new Set( state.enabledGroups ?? [] );
+	const supervisorActiveRunDirs =
+		getSupervisorActiveRunDirSet( supervisorState );
 	return uniquePathList( runDirs ).filter( ( runDir ) => {
 		const group = getRunGroupNameFromPath( runDir );
 		if ( ! group ) {
-			return true;
+			return supervisorActiveRunDirs.has( path.resolve( runDir ) );
 		}
 		if ( state.pausedGroups?.[ group ] ) {
 			return false;
 		}
-		return enabled.has( group );
+		return enabled.has( group ) &&
+			supervisorActiveRunDirs.has( path.resolve( runDir ) );
 	} );
 }
 
@@ -1729,11 +1913,10 @@ async function findPreservedNoAnalysisRunDirs( rootDir = OUTPUT_DIR ) {
 				);
 				const runDir = path.dirname( entryPath );
 				if (
-					sentinel?.preserveProductEvidence === true &&
-					isPathInsideRoot( runDir, rootDir ) &&
-					( ! sentinel.outputDir ||
-						path.resolve( sentinel.outputDir ) ===
-							path.resolve( OUTPUT_DIR ) )
+					isActiveNoAnalysisSentinel( sentinel, {
+						runDir,
+						rootDir,
+					} )
 				) {
 					dirs.push( runDir );
 				}
@@ -1758,6 +1941,134 @@ async function findPreservedNoAnalysisRunDirs( rootDir = OUTPUT_DIR ) {
 
 	await walk( rootDir, 0 );
 	return uniquePathList( dirs ).sort();
+}
+
+async function restoreNoisePausesFromNoAnalysisSentinels(
+	rootDir = OUTPUT_DIR
+) {
+	let restored = 0;
+	const seen = new Set();
+
+	async function walk( dir, depth ) {
+		const resolved = path.resolve( dir );
+		if ( depth > 5 || seen.has( resolved ) ) {
+			return;
+		}
+		seen.add( resolved );
+
+		let entries;
+		try {
+			entries = await fs.readdir( resolved, { withFileTypes: true } );
+		} catch {
+			return;
+		}
+
+		for ( const entry of entries ) {
+			const entryPath = path.join( resolved, entry.name );
+			if ( ! entry.isDirectory() ) {
+				continue;
+			}
+			if ( entry.name === '.triage-watcher' ) {
+				const sentinel = await readJsonFile(
+					path.join( entryPath, 'no-analysis.json' )
+				);
+				const runDir = path.dirname( entryPath );
+				if (
+					! isActiveNoAnalysisSentinel( sentinel, {
+						runDir,
+						rootDir,
+					} )
+				) {
+					continue;
+				}
+				const reason = sentinel.reason ?? '';
+				if ( ! /\bpause lanes\b/i.test( reason ) ) {
+					continue;
+				}
+				const group =
+					sentinel.group ?? getRunGroupNameFromPath( runDir );
+				if ( ! group || ! PROFILE_BY_GROUP[ group ] ) {
+					continue;
+				}
+				const reasonKind = getNoisePauseKind(
+					reason,
+					sentinel.reasonKind
+				);
+				if ( ! reasonKind ) {
+					continue;
+				}
+				const expiresAtMs = getNoAnalysisSentinelExpirationMs(
+					sentinel
+				);
+				if ( expiresAtMs <= Date.now() ) {
+					continue;
+				}
+				const existingPause = getActiveNoisePauseForEntry(
+					group,
+					state.pausedGroups?.[ group ]
+				);
+				if ( existingPause ) {
+					continue;
+				}
+				state.pausedGroups ??= {};
+				state.pausedGroups[ group ] = {
+					at: sentinel.createdAt ?? new Date().toISOString(),
+					reason,
+					outputDir: sentinel.outputDir ?? OUTPUT_DIR,
+					reasonKind,
+					family:
+						sentinel.family ?? getNoisePauseFamily( reasonKind ),
+					source:
+						sentinel.source ??
+						'product-preserving-no-analysis-sentinel',
+					preserveProductEvidence: true,
+					expiresAt: new Date( expiresAtMs ).toISOString(),
+					...( sentinel.noProductOnly !== undefined
+						? { noProductOnly: sentinel.noProductOnly }
+						: {} ),
+					...( sentinel.productEvidenceRecords !== undefined
+						? {
+								productEvidenceRecords:
+									sentinel.productEvidenceRecords,
+						  }
+						: {} ),
+				};
+				state.enabledGroups = ( state.enabledGroups ?? [] ).filter(
+					( enabledGroup ) => enabledGroup !== group
+				);
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'restore-noise-pause-from-no-analysis-sentinel',
+					group,
+					reason,
+					outputDir: state.pausedGroups[ group ].outputDir,
+					reasonKind,
+					family: state.pausedGroups[ group ].family,
+					source: state.pausedGroups[ group ].source,
+					expiresAt: state.pausedGroups[ group ].expiresAt,
+				} );
+				restored += 1;
+				continue;
+			}
+			if (
+				[
+					'node_modules',
+					'.git',
+					'vendor',
+					'test-results',
+					'playwright-report',
+					'blob-report',
+					'codex-analysis',
+				].includes( entry.name )
+			) {
+				continue;
+			}
+			await walk( entryPath, depth + 1 );
+		}
+	}
+
+	await walk( rootDir, 0 );
+	return restored;
 }
 
 async function refreshCurrentRunTriageGates( runDirs ) {
@@ -1827,6 +2138,8 @@ function runGateOnlyTriageWatcher( runDir, supervisorStatePath ) {
 				env: {
 					...process.env,
 					RTC_FUZZ_TRIAGE_SUPERVISOR_STATE_PATH: supervisorStatePath,
+					RTC_FUZZ_TRIAGE_CURRENT_OUTPUT_POINTER:
+						CURRENT_OUTPUT_POINTER_PATH,
 				},
 				stdio: [ 'ignore', 'pipe', 'pipe' ],
 			}
@@ -1941,7 +2254,9 @@ async function summarizeTriageYield( roots ) {
 		noProductTopSemanticFamilies: [],
 		noProductRawTopDuplicateFamilyShare: 0,
 		noProductRawTopSemanticFamilies: [],
-	};
+		productEvidenceDuplicateRepresentativeFamilies: {},
+		productEvidenceDuplicateRepresentatives: 0,
+		};
 
 	for ( const filePath of files ) {
 		const triageState = await readJsonFile( filePath );
@@ -1957,12 +2272,7 @@ async function summarizeTriageYield( roots ) {
 		);
 		const signatures = Object.values( triageState?.signatures ?? {} );
 		if ( triageState?.metrics ) {
-			addSuppressedKnownNoiseSummary(
-				summary,
-				triageState.metrics,
-				rawFamilyCounts,
-				noProductRawFamilyCounts
-			);
+			addSuppressedKnownNoiseSummary( summary, triageState.metrics );
 		}
 		if ( signatures.length === 0 && triageState?.metrics ) {
 			addTriageMetricsSummary(
@@ -2011,6 +2321,24 @@ async function summarizeTriageYield( roots ) {
 				analysisJob,
 				deepAnalysisJob
 			);
+			if (
+				hasProductEvidence &&
+				PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES.has(
+					family
+				) &&
+				isProductEvidenceDuplicateRepresentative(
+					signature,
+					analysisJob,
+					deepAnalysisJob,
+					decision
+				)
+			) {
+				summary.productEvidenceDuplicateRepresentatives += 1;
+				summary.productEvidenceDuplicateRepresentativeFamilies[ family ] =
+					( summary.productEvidenceDuplicateRepresentativeFamilies[
+						family
+					] ?? 0 ) + 1;
+			}
 			const likelyRealDisposition = getLikelyRealDisposition(
 				signature,
 				decision
@@ -2135,6 +2463,50 @@ async function readAnalysisJobResult( job ) {
 	return readJsonFile( job.resultPath );
 }
 
+const PRODUCT_EVIDENCE_REPRESENTATIVE_SIGNATURE_STATUSES = new Set( [
+	'queued',
+	'running',
+	'completed',
+	'analysis-gated',
+	'family-capped',
+] );
+const PRODUCT_EVIDENCE_REPRESENTATIVE_JOB_STATUSES = new Set( [
+	'queued',
+	'running',
+	'completed',
+	'family-capped',
+] );
+
+function isProductEvidenceDuplicateRepresentative(
+	signature,
+	analysisJob,
+	deepAnalysisJob,
+	decision
+) {
+	if (
+		PRODUCT_EVIDENCE_REPRESENTATIVE_SIGNATURE_STATUSES.has(
+			signature?.status
+		)
+	) {
+		return true;
+	}
+	if (
+		PRODUCT_EVIDENCE_REPRESENTATIVE_JOB_STATUSES.has(
+			analysisJob?.status
+		)
+	) {
+		return true;
+	}
+	if (
+		PRODUCT_EVIDENCE_REPRESENTATIVE_JOB_STATUSES.has(
+			deepAnalysisJob?.status
+		)
+	) {
+		return true;
+	}
+	return getLikelyRealDisposition( signature, decision ) === 'visible';
+}
+
 function addTriageMetricsSummary(
 	summary,
 	familyCounts,
@@ -2224,12 +2596,7 @@ function addTriageMetricsSummary(
 	}
 	summary.bootstrapStalls += metrics.bootstrapStalls ?? 0;
 	if ( includeSuppressedKnownNoise ) {
-		addSuppressedKnownNoiseSummary(
-			summary,
-			metrics,
-			rawFamilyCounts,
-			noProductRawFamilyCounts
-		);
+		addSuppressedKnownNoiseSummary( summary, metrics );
 	}
 
 	for ( const item of metrics.topActionableSemanticFamilies ??
@@ -2263,12 +2630,7 @@ function addTriageMetricsSummary(
 	}
 }
 
-function addSuppressedKnownNoiseSummary(
-	summary,
-	metrics,
-	rawFamilyCounts = null,
-	noProductRawFamilyCounts = null
-) {
+function addSuppressedKnownNoiseSummary( summary, metrics ) {
 	const suppressedStrictStartup =
 		metrics.suppressedKnownNoise?.strictPreActionStartup ?? {};
 	summary.suppressedStrictStartupRecords +=
@@ -2283,17 +2645,6 @@ function addSuppressedKnownNoiseSummary(
 		return;
 	}
 	summary.suppressedStrictStartupVirtualSignatures += virtualCount;
-	summary.rawSignatureCount += virtualCount;
-	summary.noProductRawSignatureCount += virtualCount;
-	if ( rawFamilyCounts ) {
-		rawFamilyCounts.pre_action_bootstrap_stall =
-			( rawFamilyCounts.pre_action_bootstrap_stall ?? 0 ) + virtualCount;
-	}
-	if ( noProductRawFamilyCounts ) {
-		noProductRawFamilyCounts.pre_action_bootstrap_stall =
-			( noProductRawFamilyCounts.pre_action_bootstrap_stall ?? 0 ) +
-			virtualCount;
-	}
 }
 
 const NON_ACTIONABLE_TRIAGE_STATUSES = new Set( [
@@ -3028,6 +3379,92 @@ function isProductEvidenceDuplicateFamilyHold( hold ) {
 	);
 }
 
+function hasProductEvidenceDuplicatePauseEvidence( value ) {
+	const productEvidenceRecords = Number( value?.productEvidenceRecords );
+	return (
+		value?.hasProductEvidence === true ||
+		( Number.isFinite( productEvidenceRecords ) &&
+			productEvidenceRecords > 0 ) ||
+		/product-evidence/i.test( value?.reason ?? '' )
+	);
+}
+
+function getProductEvidenceDuplicateFamilyCooldownFromValue( value ) {
+	const kind = getStoredNoisePauseKind( value );
+	const family = canonicalizeTriageSemanticFamily(
+		normalizeTriageSemanticFamilyLabel(
+			value?.family ?? getNoisePauseFamily( kind ) ?? ''
+		)
+	);
+	if (
+		kind !== 'triage-duplicate-noise' ||
+		! PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES.has( family ) ||
+		! hasProductEvidenceDuplicatePauseEvidence( value )
+	) {
+		return null;
+	}
+	const expiresAtMs = getPauseExpirationMs(
+		value,
+		TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS
+	);
+	if ( expiresAtMs <= Date.now() ) {
+		return null;
+	}
+	const productEvidenceRecords = Number( value?.productEvidenceRecords );
+	const count =
+		Number.isFinite( productEvidenceRecords ) && productEvidenceRecords > 0
+			? productEvidenceRecords
+			: 1;
+	return {
+		kind: 'triage-duplicate-noise',
+		family,
+		count,
+		total: count,
+		share: 1,
+		source: value?.source ?? 'recent-product-evidence-family-cooldown',
+		representativeSignal: `productEvidenceRecords=${ count }`,
+		at: value?.at ?? null,
+		expiresAt: new Date( expiresAtMs ).toISOString(),
+		preserveProductEvidence: true,
+	};
+}
+
+function getRecentProductEvidenceDuplicateFamilyCooldown() {
+	let best = null;
+	const consider = ( candidate ) => {
+		const cooldown =
+			getProductEvidenceDuplicateFamilyCooldownFromValue( candidate );
+		if ( ! cooldown ) {
+			return;
+		}
+		if (
+			! best ||
+			Date.parse( cooldown.expiresAt ?? '' ) >
+				Date.parse( best.expiresAt ?? '' )
+		) {
+			best = cooldown;
+		}
+	};
+
+	for ( const paused of Object.values( state.pausedGroups ?? {} ) ) {
+		consider( paused );
+	}
+
+	const eligibleActions = new Set( [
+		'pause-group',
+		'write-no-analysis-sentinel',
+		'allow-noise-pause-below-materialization-floor',
+	] );
+	for ( const change of state.changes ?? [] ) {
+		if ( ! eligibleActions.has( change?.action ) ) {
+			continue;
+		}
+		consider( change );
+	}
+
+	return best;
+}
+
 function isNoisePauseReason( reason ) {
 	return getNoisePauseKind( reason ) !== null;
 }
@@ -3049,9 +3486,15 @@ function isExplicitStartupNoisePauseReason( reason ) {
 function isCrossRunNoisePause( value ) {
 	const kind = getStoredNoisePauseKind( value );
 	if ( kind === 'startup-noise' ) {
-		return isCurrentOutputPause( value );
+		return isCurrentOutputStartupNoiseCooldown( value );
 	}
-	return kind !== null;
+	if (
+		kind === 'triage-duplicate-noise' &&
+		getProductEvidenceDuplicateFamilyCooldownFromValue( value )
+	) {
+		return true;
+	}
+	return kind !== null && isCurrentOutputPause( value );
 }
 
 function getPauseExpirationMs( value, cooldownHours ) {
@@ -3074,11 +3517,113 @@ function isCurrentOutputPause( value ) {
 	);
 }
 
+function isCurrentOutputStartupNoiseCooldown( pause ) {
+	if ( ! pause ) {
+		return false;
+	}
+
+	if (
+		pause.currentOutputPause === false ||
+		pause.reusableStartupNoisePause === true
+	) {
+		return false;
+	}
+
+	if (
+		typeof pause.outputDir === 'string' &&
+		path.resolve( pause.outputDir ) !== path.resolve( OUTPUT_DIR )
+	) {
+		return false;
+	}
+
+	if (
+		typeof pause.originOutputDir === 'string' &&
+		path.resolve( pause.originOutputDir ) !== path.resolve( OUTPUT_DIR )
+	) {
+		return false;
+	}
+
+	return pause.currentOutputPause === true || isCurrentOutputPause( pause );
+}
+
+function hasNoProductStartupPauseEvidence( value ) {
+	const reason = `${ value?.reason ?? '' } ${
+		value?.originalPauseReason ?? ''
+	}`;
+	const productEvidenceRecords = Number( value?.productEvidenceRecords );
+	if (
+		value?.hasProductEvidence === true ||
+		( Number.isFinite( productEvidenceRecords ) &&
+			productEvidenceRecords > 0 ) ||
+		/mixed-product-evidence|product evidence present|product-evidence signatures are present|current supervisor state has product evidence|product-evidence representative visible|product-evidence coverage/i.test(
+			reason
+		)
+	) {
+		return false;
+	}
+	if ( value?.noProductOnly === true ) {
+		return true;
+	}
+	if (
+		Number.isFinite( productEvidenceRecords ) &&
+		productEvidenceRecords === 0
+	) {
+		return true;
+	}
+	return /0 product-evidence record|no product-evidence signatures are present|current-run no-product startup-noise|strict\/no-product startup noise|no-product startup\/discovery noise/i.test(
+		reason
+	);
+}
+
+function hasPauseProductEvidence( value ) {
+	const reason = `${ value?.reason ?? '' } ${
+		value?.originalPauseReason ?? ''
+	}`;
+	const productEvidenceRecords = Number( value?.productEvidenceRecords );
+	return (
+		value?.hasProductEvidence === true ||
+		( Number.isFinite( productEvidenceRecords ) &&
+			productEvidenceRecords > 0 ) ||
+		/mixed-product-evidence|product evidence present|product-evidence signatures are present|current supervisor state has product evidence|product-evidence representative visible|product-evidence coverage/i.test(
+			reason
+		)
+	);
+}
+
+function normalizeReusableStartupNoisePause( value ) {
+	const originOutputDir = value?.originOutputDir ?? value?.outputDir;
+	const outputDir = originOutputDir ?? value?.outputDir;
+	const productEvidenceRecords = Number( value?.productEvidenceRecords );
+	const hasProductEvidence =
+		value?.hasProductEvidence === true ||
+		( Number.isFinite( productEvidenceRecords ) &&
+			productEvidenceRecords > 0 );
+	const noProductOnly =
+		value?.noProductOnly ?? ( hasProductEvidence ? false : true );
+	return {
+		...value,
+		reasonKind: 'startup-noise',
+		family: 'pre_action_bootstrap_stall',
+		...( outputDir ? { outputDir } : {} ),
+		...( originOutputDir ? { originOutputDir } : {} ),
+		currentOutputPause: false,
+		reusableStartupNoisePause: true,
+		noProductOnly,
+		...( hasProductEvidence ? { hasProductEvidence: true } : {} ),
+		...( Number.isFinite( productEvidenceRecords )
+			? { productEvidenceRecords }
+			: noProductOnly
+			? { productEvidenceRecords: 0 }
+			: {} ),
+		preserveProductEvidence: true,
+	};
+}
+
 function isReusableStartupNoisePause( value ) {
 	return (
 		getStoredNoisePauseKind( value ) === 'startup-noise' &&
-		isCurrentOutputPause( value ) &&
-		isExplicitStartupNoisePauseReason( value?.reason )
+		isExplicitStartupNoisePauseReason( value?.reason ) &&
+		hasNoProductStartupPauseEvidence( value )
 	);
 }
 
@@ -3088,7 +3633,8 @@ function getUnexpiredNoisePause( value ) {
 	}
 	if (
 		getStoredNoisePauseKind( value ) === 'startup-noise' &&
-		! isCurrentOutputPause( value )
+		( ! hasNoProductStartupPauseEvidence( value ) ||
+			! isCurrentOutputStartupNoiseCooldown( value ) )
 	) {
 		return null;
 	}
@@ -3098,6 +3644,12 @@ function getUnexpiredNoisePause( value ) {
 	);
 	if ( expiresAtMs <= Date.now() ) {
 		return null;
+	}
+	if ( getStoredNoisePauseKind( value ) === 'startup-noise' ) {
+		return {
+			...normalizeCurrentStartupNoisePause( value ),
+			expiresAt: new Date( expiresAtMs ).toISOString(),
+		};
 	}
 	return {
 		...value,
@@ -3117,33 +3669,346 @@ function getUnexpiredNoisePausedGroups( pausedGroups ) {
 	return preserved;
 }
 
-function getActiveNoisePauseCooldown( group ) {
-	const paused = state.pausedGroups?.[ group ];
-	const pausedKind = getStoredNoisePauseKind( paused );
-	if ( pausedKind === 'startup-noise' && ! isCurrentOutputPause( paused ) ) {
-		return null;
-	}
-	const pausedExpiresAtMs = getPauseExpirationMs(
-		paused,
-		TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS
-	);
-	if (
-		paused &&
-		pausedKind &&
-		pausedExpiresAtMs > Date.now() &&
-		( pausedKind !== 'startup-noise' || isCurrentOutputPause( paused ) )
-	) {
+function getRecentNoisePauseCooldownFromHistory( group ) {
+	const changes = Array.isArray( state.changes ) ? state.changes : [];
+	const pauseActions = new Set( [
+		'pause-group',
+		'write-no-analysis-sentinel',
+		'allow-noise-pause-below-materialization-floor',
+	] );
+
+	for ( let index = changes.length - 1; index >= 0; index-- ) {
+		const change = changes[ index ];
+		if ( change?.group !== group || ! pauseActions.has( change.action ) ) {
+			continue;
+		}
+		const kind = getNoisePauseKind( change.reason, change.reasonKind );
+		if ( ! kind ) {
+			continue;
+		}
+		const candidate = {
+			at: change.at,
+			reason: change.reason,
+			reasonKind: kind,
+			outputDir: change.outputDir,
+			originOutputDir: change.originOutputDir ?? change.outputDir,
+			expiresAt: change.expiresAt,
+			family: change.family ?? getNoisePauseFamily( kind ),
+			source: change.source ?? 'recent-noise-pause-history',
+			noProductOnly: change.noProductOnly,
+			productEvidenceRecords: change.productEvidenceRecords,
+			hasProductEvidence: change.hasProductEvidence,
+			preserveProductEvidence: change.preserveProductEvidence,
+		};
+		const currentOutputPause = isCurrentOutputPause( candidate );
+		if (
+			( kind === 'startup-noise' &&
+				! isCurrentOutputStartupNoiseCooldown( candidate ) ) ||
+			( kind !== 'startup-noise' && ! currentOutputPause )
+		) {
+			continue;
+		}
+		const atMs = Date.parse( change.at ?? '' );
+		if ( ! Number.isFinite( atMs ) ) {
+			continue;
+		}
+		const explicitExpiresAtMs = Date.parse( change.expiresAt ?? '' );
+		const expiresAtMs = Number.isFinite( explicitExpiresAtMs )
+			? explicitExpiresAtMs
+			: atMs + TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS * 60 * 60 * 1000;
+		if ( expiresAtMs <= Date.now() ) {
+			continue;
+		}
 		return {
-			at: paused.at,
-			expiresAt: new Date( pausedExpiresAtMs ).toISOString(),
-			reason: paused.reason,
-			kind: pausedKind,
-			family: paused.family ?? getNoisePauseFamily( pausedKind ),
-			source: 'paused-groups',
+			at: change.at,
+			expiresAt: new Date( expiresAtMs ).toISOString(),
+			reason: change.reason,
+			kind,
+			family: change.family ?? getNoisePauseFamily( kind ),
+			source: change.source ?? 'recent-noise-pause-history',
+			originGroup: group,
+			historyPause: true,
+			currentOutputPause:
+				kind === 'startup-noise' ? true : currentOutputPause,
+			reusableStartupNoisePause: false,
+			...( change.noProductOnly !== undefined
+				? { noProductOnly: change.noProductOnly }
+				: {} ),
+			...( change.productEvidenceRecords !== undefined
+				? { productEvidenceRecords: change.productEvidenceRecords }
+				: {} ),
+			...( change.hasProductEvidence !== undefined
+				? { hasProductEvidence: change.hasProductEvidence }
+				: {} ),
 		};
 	}
-
 	return null;
+}
+
+function normalizeCurrentStartupNoisePause( value ) {
+	const originOutputDir = value?.originOutputDir ?? value?.outputDir;
+	const productEvidenceRecords = Number( value?.productEvidenceRecords );
+	const hasProductEvidence =
+		value?.hasProductEvidence === true ||
+		( Number.isFinite( productEvidenceRecords ) &&
+			productEvidenceRecords > 0 );
+	return {
+		...value,
+		reasonKind: 'startup-noise',
+		family: 'pre_action_bootstrap_stall',
+		outputDir: value?.outputDir ?? OUTPUT_DIR,
+		...( originOutputDir ? { originOutputDir } : {} ),
+		noProductOnly: ! hasProductEvidence,
+		...( hasProductEvidence ? { hasProductEvidence: true } : {} ),
+		...( Number.isFinite( productEvidenceRecords )
+			? { productEvidenceRecords }
+			: hasProductEvidence
+			? {}
+			: { productEvidenceRecords: 0 } ),
+		preserveProductEvidence: true,
+	};
+}
+
+function getActiveNoisePauseForEntry( group, value ) {
+	const kind = getStoredNoisePauseKind( value );
+	if ( ! value || ! kind ) {
+		return null;
+	}
+	const expiresAtMs = getPauseExpirationMs(
+		value,
+		TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS
+	);
+	if ( expiresAtMs <= Date.now() ) {
+		return null;
+	}
+
+	const currentOutputPause = isCurrentOutputPause( value );
+	if (
+		kind === 'startup-noise' &&
+		! isCurrentOutputStartupNoiseCooldown( value )
+	) {
+		return null;
+	}
+
+	const normalizedPaused =
+		kind === 'startup-noise'
+			? normalizeCurrentStartupNoisePause( value )
+			: value;
+
+	return {
+		at: normalizedPaused.at,
+		expiresAt: new Date( expiresAtMs ).toISOString(),
+		reason: normalizedPaused.reason,
+		kind,
+		family: normalizedPaused.family ?? getNoisePauseFamily( kind ),
+		source: normalizedPaused.source ?? 'paused-groups',
+		originGroup: group,
+		profile: PROFILE_BY_GROUP[ group ] ?? null,
+		currentOutputPause:
+			kind === 'startup-noise' ? true : currentOutputPause,
+		reusableStartupNoisePause: false,
+		...( normalizedPaused.originOutputDir
+			? { originOutputDir: normalizedPaused.originOutputDir }
+			: {} ),
+		...( normalizedPaused.noProductOnly !== undefined
+			? { noProductOnly: normalizedPaused.noProductOnly }
+			: {} ),
+		...( normalizedPaused.hasProductEvidence !== undefined
+			? { hasProductEvidence: normalizedPaused.hasProductEvidence }
+			: {} ),
+		...( normalizedPaused.productEvidenceRecords !== undefined
+			? {
+					productEvidenceRecords:
+						normalizedPaused.productEvidenceRecords,
+			  }
+			: {} ),
+	};
+}
+
+function getActiveNoisePauseCooldown( group ) {
+	const pausedEntry = state.pausedGroups?.[ group ];
+	const exactPause = getActiveNoisePauseForEntry(
+		group,
+		pausedEntry
+	);
+	if ( exactPause ) {
+		return exactPause;
+	}
+
+	const historicalExactPause = getRecentNoisePauseCooldownFromHistory( group );
+	if ( historicalExactPause ) {
+		return historicalExactPause;
+	}
+
+	if ( ! shouldInheritProfileStartupNoiseCooldown( group ) ) {
+		return null;
+	}
+
+	const profile = PROFILE_BY_GROUP[ group ];
+	if ( ! profile ) {
+		return null;
+	}
+
+	let profilePause = null;
+	for ( const [ pausedGroup, paused ] of Object.entries(
+		state.pausedGroups ?? {}
+	) ) {
+		if (
+			pausedGroup === group ||
+			PROFILE_BY_GROUP[ pausedGroup ] !== profile
+		) {
+			continue;
+		}
+		const candidate = getActiveNoisePauseForEntry( pausedGroup, paused );
+		if (
+			candidate?.kind !== 'startup-noise' ||
+			candidate.noProductOnly === false
+		) {
+			continue;
+		}
+		if (
+			! profilePause ||
+			Date.parse( candidate.expiresAt ?? '' ) >
+				Date.parse( profilePause.expiresAt ?? '' )
+		) {
+			profilePause = {
+				...candidate,
+				source: candidate.source ?? 'profile-startup-noise-cooldown',
+				scope: 'profile',
+				targetGroup: group,
+			};
+		}
+	}
+
+	return profilePause;
+}
+
+function isNoProductStartupNoiseCooldown( pause ) {
+	if (
+		pause?.kind !== 'startup-noise' ||
+		( pause.family && pause.family !== 'pre_action_bootstrap_stall' )
+	) {
+		return false;
+	}
+
+	const productEvidenceRecords = Number( pause.productEvidenceRecords );
+	return (
+		pause.noProductOnly !== false &&
+		pause.hasProductEvidence !== true &&
+		!(
+			Number.isFinite( productEvidenceRecords ) &&
+			productEvidenceRecords > 0
+		)
+	);
+}
+
+function getFleetNoProductStartupNoiseHold() {
+	const eligibleGroups = new Set( [
+		...MATERIALIZATION_FLOOR_GROUPS,
+		...PRODUCTIVE_FALLBACK_GROUPS,
+		...HIGH_VALUE_EXPANSION_GROUPS,
+	] );
+	const pausesByGroup = new Map();
+	const addPause = ( group, pause ) => {
+		if (
+			! eligibleGroups.has( group ) ||
+			! isNoProductStartupNoiseCooldown( pause ) ||
+			! isCurrentOutputStartupNoiseCooldown( pause )
+		) {
+			return;
+		}
+		const expiresAtMs = Date.parse( pause.expiresAt ?? '' );
+		if ( Number.isFinite( expiresAtMs ) && expiresAtMs <= Date.now() ) {
+			return;
+		}
+		pausesByGroup.set( group, {
+			group,
+			profile: PROFILE_BY_GROUP[ group ] ?? null,
+			at: pause.at,
+			expiresAt: pause.expiresAt,
+			reason: pause.reason,
+			source: pause.source ?? 'startup-noise-cooldown',
+			originGroup: pause.originGroup ?? group,
+		} );
+	};
+
+	for ( const [ group, paused ] of Object.entries(
+		state.pausedGroups ?? {}
+	) ) {
+		addPause( group, getActiveNoisePauseForEntry( group, paused ) );
+	}
+	for ( const group of eligibleGroups ) {
+		if ( pausesByGroup.has( group ) ) {
+			continue;
+		}
+		addPause( group, getRecentNoisePauseCooldownFromHistory( group ) );
+	}
+
+	const pauses = [ ...pausesByGroup.values() ];
+	const share =
+		pauses.length > 0 ? pauses.length / Math.max( 1, eligibleGroups.size ) : 0;
+	if (
+		pauses.length < FLEET_STARTUP_NOISE_HOLD_MIN_GROUPS ||
+		share < FLEET_STARTUP_NOISE_HOLD_MIN_SHARE
+	) {
+		return null;
+	}
+
+	let latestExpiresAt = null;
+	for ( const pause of pauses ) {
+		const expiresAtMs = Date.parse( pause.expiresAt ?? '' );
+		if (
+			Number.isFinite( expiresAtMs ) &&
+			( ! latestExpiresAt ||
+				expiresAtMs > Date.parse( latestExpiresAt ) )
+		) {
+			latestExpiresAt = pause.expiresAt;
+		}
+	}
+
+	return {
+		kind: 'startup-noise',
+		family: 'pre_action_bootstrap_stall',
+		count: pauses.length,
+		share: Number( share.toFixed( 4 ) ),
+		source: 'fleet-startup-noise-cooldown',
+		noProductOnly: true,
+		productEvidenceRecords: 0,
+		preserveProductEvidence: true,
+		fleetStartupNoiseHold: true,
+		groups: pauses.map( ( pause ) => pause.group ).sort(),
+		profiles: [
+			...new Set(
+				pauses.map( ( pause ) => pause.profile ).filter( Boolean )
+			),
+		].sort(),
+		...( latestExpiresAt ? { expiresAt: latestExpiresAt } : {} ),
+	};
+}
+
+function isStartupHoldBlockingProducerSelection( hold ) {
+	return (
+		isCurrentNoProductStartupHold( hold ) ||
+		hold?.fleetStartupNoiseHold === true
+	);
+}
+
+function startupHoldIncludesGroup( hold, group ) {
+	return Array.isArray( hold?.groups ) && hold.groups.includes( group );
+}
+
+function isStartupHoldBlockingProducerGroup( hold, group ) {
+	if ( ! isStartupHoldBlockingProducerSelection( hold ) ) {
+		return false;
+	}
+	if ( hold?.drainOnly === true || hold?.fleetStartupNoiseHold === true ) {
+		return startupHoldIncludesGroup( hold, group );
+	}
+	return true;
+}
+
+function shouldInheritProfileStartupNoiseCooldown() {
+	return true;
 }
 
 function isNoProductSupervisorStartupPause( groupState ) {
@@ -3152,13 +4017,21 @@ function isNoProductSupervisorStartupPause( groupState ) {
 	}
 
 	const pauseUntilMs = Date.parse( groupState.startupStallPausedUntil ?? '' );
-	if ( ! Number.isFinite( pauseUntilMs ) || pauseUntilMs <= Date.now() ) {
+	const drainRecordedUntilMs = Date.parse(
+		groupState.startupStallDrainRecordedUntil ?? ''
+	);
+	const cooldownUntilMs = Math.max(
+		Number.isFinite( pauseUntilMs ) ? pauseUntilMs : 0,
+		Number.isFinite( drainRecordedUntilMs ) ? drainRecordedUntilMs : 0
+	);
+	if ( cooldownUntilMs <= Date.now() ) {
 		return false;
 	}
 
 	if (
 		groupState.status !== 'paused-startup-stall' &&
-		! groupState.startupStallPausedUntil
+		! groupState.startupStallPausedUntil &&
+		! groupState.startupStallDrainRecordedUntil
 	) {
 		return false;
 	}
@@ -3176,30 +4049,72 @@ function isNoProductSupervisorStartupPause( groupState ) {
 	const productEvidenceRecords =
 		groupState.startupStallNoiseSummary?.productEvidenceRecords;
 	if ( Number.isFinite( productEvidenceRecords ) ) {
-		return productEvidenceRecords === 0;
+		return productEvidenceRecords === 0 || !! getSupervisorStartupNoiseHold( groupState );
 	}
 
-	return /0 product-evidence record/.test( reason );
+	return (
+		/0 product-evidence record/.test( reason ) ||
+		!! getSupervisorStartupNoiseHold( groupState )
+	);
 }
 
-function createSupervisorStartupPause( groupState, outputDir ) {
+function createSupervisorStartupPause(
+	groupState,
+	outputDir,
+	{ originOutputDir = outputDir } = {}
+) {
 	const reason = groupState.lastReason
 		? `supervisor paused-startup-stall: ${ groupState.lastReason }`
 		: 'supervisor paused-startup-stall: no-product startup/discovery noise';
+	const pauseUntilMs = Date.parse( groupState.startupStallPausedUntil ?? '' );
+	const drainRecordedUntilMs = Date.parse(
+		groupState.startupStallDrainRecordedUntil ?? ''
+	);
+	const cooldownUntilMs = Math.max(
+		Number.isFinite( pauseUntilMs ) ? pauseUntilMs : 0,
+		Number.isFinite( drainRecordedUntilMs ) ? drainRecordedUntilMs : 0
+	);
+	const productEvidenceRecords =
+		groupState.startupStallNoiseSummary?.productEvidenceRecords;
+	const hasProductEvidence =
+		Number.isFinite( productEvidenceRecords ) && productEvidenceRecords > 0;
 	return {
-		at: groupState.startupStallPausedAt ?? new Date().toISOString(),
+		at:
+			groupState.startupStallPausedAt ??
+			groupState.startupStallDrainRecordedAt ??
+			new Date().toISOString(),
 		reason,
 		reasonKind: 'startup-noise',
 		family: 'pre_action_bootstrap_stall',
-		source: 'supervisor-paused-startup-stall',
+		source: groupState.startupStallPausedUntil
+			? 'supervisor-paused-startup-stall'
+			: 'supervisor-startup-stall-drain',
 		outputDir,
-		expiresAt: new Date(
-			Date.parse( groupState.startupStallPausedUntil )
-		).toISOString(),
+		...( originOutputDir &&
+		path.resolve( originOutputDir ) !== path.resolve( outputDir )
+			? { originOutputDir }
+			: {} ),
+		expiresAt: new Date( cooldownUntilMs ).toISOString(),
+		noProductOnly: ! hasProductEvidence,
+		...( hasProductEvidence ? { hasProductEvidence: true } : {} ),
+		productEvidenceRecords: Number.isFinite( productEvidenceRecords )
+			? productEvidenceRecords
+			: 0,
+		preserveProductEvidence: true,
 	};
 }
 
-async function syncSupervisorStartupStallPauses( supervisorState ) {
+async function syncSupervisorStartupStallPauses(
+	supervisorState,
+	{
+		outputDir = OUTPUT_DIR,
+		originOutputDir = outputDir,
+		action = 'sync-supervisor-startup-stall-pause',
+		summaryAction = 'sync-supervisor-startup-stall-pauses',
+		summaryReason =
+			'imported current supervisor startup-stall pauses into novelty scheduling state while preserving product-evidence signatures',
+	} = {}
+) {
 	let synced = 0;
 	for ( const groupState of supervisorState?.groups ?? [] ) {
 		if ( ! isNoProductSupervisorStartupPause( groupState ) ) {
@@ -3207,7 +4122,8 @@ async function syncSupervisorStartupStallPauses( supervisorState ) {
 		}
 		const nextPause = createSupervisorStartupPause(
 			groupState,
-			OUTPUT_DIR
+			outputDir,
+			{ originOutputDir }
 		);
 		const existing = state.pausedGroups?.[ groupState.name ];
 		if (
@@ -3219,16 +4135,55 @@ async function syncSupervisorStartupStallPauses( supervisorState ) {
 		}
 		state.pausedGroups[ groupState.name ] = nextPause;
 		synced += 1;
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action,
+			group: groupState.name,
+			reason: nextPause.reason,
+			outputDir: nextPause.outputDir,
+			...( nextPause.originOutputDir
+				? { originOutputDir: nextPause.originOutputDir }
+				: {} ),
+			expiresAt: nextPause.expiresAt,
+			reasonKind: nextPause.reasonKind,
+			family: nextPause.family,
+			source: nextPause.source,
+			noProductOnly: nextPause.noProductOnly,
+			...( nextPause.hasProductEvidence
+				? { hasProductEvidence: true }
+				: {} ),
+			productEvidenceRecords: nextPause.productEvidenceRecords,
+			preserveProductEvidence: true,
+		} );
 	}
 	if ( synced > 0 ) {
 		state.changes.push( {
 			at: new Date().toISOString(),
-			action: 'sync-supervisor-startup-stall-pauses',
+			action: summaryAction,
 			count: synced,
-			reason: 'imported current supervisor no-product startup-stall pauses into novelty scheduling state',
+			reason: summaryReason,
 		} );
 	}
 	return synced;
+}
+
+async function importSupervisorStartupStallPausesFromOutputDir( outputDir ) {
+	if (
+		! outputDir ||
+		outputDir === 'unknown' ||
+		path.resolve( outputDir ) === path.resolve( OUTPUT_DIR )
+	) {
+		return 0;
+	}
+
+	const supervisorState = await readJsonFile(
+		path.join( outputDir, 'supervisor-state.json' )
+	);
+	if ( ! Array.isArray( supervisorState?.groups ) ) {
+		return 0;
+	}
+
+	return 0;
 }
 
 function supervisorGroupHasProductEvidence( groupState ) {
@@ -3242,7 +4197,14 @@ function getSupervisorPausedNoAnalysisRunDirs( groupState ) {
 	const pauseUntilMs = Date.parse(
 		groupState?.startupStallPausedUntil ?? ''
 	);
-	if ( ! Number.isFinite( pauseUntilMs ) || pauseUntilMs <= Date.now() ) {
+	const drainRecordedUntilMs = Date.parse(
+		groupState?.startupStallDrainRecordedUntil ?? ''
+	);
+	const hasActiveStartupNoiseRecord =
+		( Number.isFinite( pauseUntilMs ) && pauseUntilMs > Date.now() ) ||
+		( Number.isFinite( drainRecordedUntilMs ) &&
+			drainRecordedUntilMs > Date.now() );
+	if ( ! hasActiveStartupNoiseRecord ) {
 		return [];
 	}
 
@@ -3252,11 +4214,22 @@ function getSupervisorPausedNoAnalysisRunDirs( groupState ) {
 	].filter( Boolean );
 }
 
-function getSupervisorGroupRunDirs( groupState ) {
+function getSupervisorGroupActiveRunDirs( groupState ) {
+	if ( ! ACTIVE_GROUP_STATUSES.has( groupState?.status ) ) {
+		return [];
+	}
 	return [
 		...new Set( [
 			...( groupState?.activeRunDirs ?? [] ),
 			groupState?.currentRunDir,
+		] ),
+	].filter( Boolean );
+}
+
+function getSupervisorGroupRunDirs( groupState ) {
+	return [
+		...new Set( [
+			...getSupervisorGroupActiveRunDirs( groupState ),
 			...getSupervisorPausedNoAnalysisRunDirs( groupState ),
 		] ),
 	].filter( Boolean );
@@ -3321,11 +4294,13 @@ function getSupervisorStartupNoiseHold( groupState ) {
 }
 
 function hasTriageYieldProductEvidence( triageYield ) {
-	return (
-		Math.max(
-			triageYield?.productEvidenceSignatures ?? 0,
-			triageYield?.rawProductEvidenceSignatures ?? 0
-		) > 0
+	return getTriageYieldProductEvidenceRecordCount( triageYield ) > 0;
+}
+
+function getTriageYieldProductEvidenceRecordCount( triageYield ) {
+	return Math.max(
+		triageYield?.productEvidenceSignatures ?? 0,
+		triageYield?.rawProductEvidenceSignatures ?? 0
 	);
 }
 
@@ -3334,9 +4309,6 @@ function shouldPauseDuplicateNoiseProducer( producer ) {
 		return true;
 	}
 	if ( isProductEvidenceDuplicateFamilyHold( producer.hold ) ) {
-		return true;
-	}
-	if ( isCurrentNoProductStartupHold( producer.hold ) ) {
 		return true;
 	}
 	if ( ( producer.triageYield?.likelyRealVisible ?? 0 ) > 0 ) {
@@ -3348,38 +4320,17 @@ function shouldPauseDuplicateNoiseProducer( producer ) {
 	) {
 		return false;
 	}
-	const aggregateStartupHoldCount =
-		producer.rootHold?.kind === 'startup-noise' &&
-		producer.rootHold?.family === 'pre_action_bootstrap_stall'
-			? producer.rootHold.count ?? 0
-			: 0;
-	const strictStartupCount = Math.max(
-		producer.hold.count ?? 0,
-		aggregateStartupHoldCount
-	);
-	const productEvidenceCount = Math.max(
-		producer.triageYield?.productEvidenceSignatures ?? 0,
-		producer.triageYield?.rawProductEvidenceSignatures ?? 0
-	);
-	const fullRunSignatureCount = Math.max(
-		producer.triageYield?.signatureCount ?? 0,
-		producer.triageYield?.rawSignatureCount ?? 0,
-		strictStartupCount + productEvidenceCount,
-		strictStartupCount
-	);
-	const strictStartupFullRunShare =
-		strictStartupCount > 0 && fullRunSignatureCount > 0
-			? strictStartupCount / fullRunSignatureCount
-			: 0;
-	const supervisorStartupShare =
-		producer.hold.source ===
-		'supervisor-startup-summary-mixed-product-evidence'
-			? producer.hold.share ?? 0
-			: 0;
+	return true;
+}
+
+function shouldBlockRefillForDuplicateNoiseProducer( producer ) {
+	if ( ( producer?.triageYield?.likelyRealVisible ?? 0 ) > 0 ) {
+		return false;
+	}
 	return (
-		strictStartupCount >= NO_PRODUCT_KNOWN_NOISE_DOMINANCE_MIN_CANDIDATES &&
-		Math.max( strictStartupFullRunShare, supervisorStartupShare ) >=
-			TRIAGE_DUPLICATE_SHARE_HOLD
+		( producer?.hold?.kind === 'startup-noise' &&
+			producer.hold.family === 'pre_action_bootstrap_stall' ) ||
+		isProductEvidenceDuplicateFamilyHold( producer?.hold )
 	);
 }
 
@@ -3424,39 +4375,46 @@ async function getActiveDuplicateNoiseProducerGroups(
 		) {
 			continue;
 		}
-		const runDirs = [
-			...new Set( getSupervisorGroupRunDirs( groupState ) ),
-		];
+		const runDirs = getSupervisorGroupActiveRunDirs( groupState );
 		if ( runDirs.length === 0 ) {
 			continue;
 		}
 		const groupTriageYield = await summarizeTriageYield( runDirs );
-		const groupHold =
-			getCurrentRunDuplicateNoiseHold( groupTriageYield, {
+		const productEvidenceDuplicateHold =
+			getDominantRealUserFamilyHold( groupTriageYield );
+		const noProductHold = getCurrentRunDuplicateNoiseHold(
+			groupTriageYield,
+			{
 				allowGenericDuplicate: true,
 				requireNoProductEvidence: true,
-			} ) ??
-			getDominantRealUserFamilyHold( groupTriageYield ) ??
-			getSupervisorStartupNoiseHold( groupState );
+			}
+		);
+		const groupHold =
+			noProductHold ??
+			getSupervisorStartupNoiseHold( groupState ) ??
+			productEvidenceDuplicateHold;
 		if ( ! groupHold ) {
 			continue;
 		}
-		if (
-			rootHold &&
-			! noiseHoldsMatch( rootHold, groupHold ) &&
-			! isProductEvidenceDuplicateFamilyHold( groupHold )
-		) {
-			continue;
-		}
+		const hasProductEvidence =
+			hasTriageYieldProductEvidence( groupTriageYield ) ||
+			supervisorGroupHasProductEvidence( groupState );
 		groups.push( {
 			name: groupState.name,
 			runDirs,
 			hold: groupHold,
 			rootHold,
 			triageYield: groupTriageYield,
-			hasProductEvidence:
-				hasTriageYieldProductEvidence( groupTriageYield ) ||
-				supervisorGroupHasProductEvidence( groupState ),
+			hasProductEvidence,
+			productEvidenceRecords: hasProductEvidence
+				? Math.max(
+						getTriageYieldProductEvidenceRecordCount(
+							groupTriageYield
+						),
+						groupState?.startupStallNoiseSummary
+							?.productEvidenceRecords ?? 0
+				  )
+				: 0,
 		} );
 	}
 	return groups;
@@ -3475,10 +4433,16 @@ function getDominantRealUserFamilyHold( triageYield ) {
 	}
 
 	const representativeSignals = {
+		queuedOrRunningRepresentative:
+			triageYield.productEvidenceDuplicateRepresentatives ?? 0,
 		familyCapped: triageYield.familyCappedSignatures ?? 0,
 		likelyRealVisible: triageYield.likelyRealVisible ?? 0,
 		likelyRealMerged: triageYield.likelyRealMerged ?? 0,
 	};
+	const representativeFamilies =
+		triageYield.productEvidenceDuplicateRepresentativeFamilies ?? {};
+	const hasFamilySpecificRepresentatives =
+		Object.keys( representativeFamilies ).length > 0;
 	if ( Math.max( ...Object.values( representativeSignals ) ) === 0 ) {
 		return null;
 	}
@@ -3509,26 +4473,36 @@ function getDominantRealUserFamilyHold( triageYield ) {
 				candidate.total > 0
 					? Number( ( count / candidate.total ).toFixed( 4 ) )
 					: 0;
-			if (
-				! PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES.has(
-					family
-				) ||
-				count < PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_MIN_CANDIDATES ||
-				share < TRIAGE_DUPLICATE_SHARE_HOLD
-			) {
-				continue;
+				if (
+					! PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES.has(
+						family
+					) ||
+					count < PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_MIN_CANDIDATES ||
+					share < TRIAGE_DUPLICATE_SHARE_HOLD
+				) {
+					continue;
+				}
+				const representativeCount = representativeFamilies[ family ] ?? 0;
+				if (
+					hasFamilySpecificRepresentatives &&
+					representativeCount <= 0
+				) {
+					continue;
+				}
+				familyCandidates.push( {
+					kind: 'triage-duplicate-noise',
+					family,
+					count,
+					share,
+					source: `${ candidate.source }-product-evidence-family`,
+					total: candidate.total,
+					representativeSignal:
+						representativeCount > 0
+							? `familyRepresentatives=${ representativeCount }`
+							: representativeSignal,
+				} );
 			}
-			familyCandidates.push( {
-				kind: 'triage-duplicate-noise',
-				family,
-				count,
-				share,
-				source: `${ candidate.source }-product-evidence-family`,
-				total: candidate.total,
-				representativeSignal,
-			} );
 		}
-	}
 
 	if ( familyCandidates.length ) {
 		familyCandidates.sort(
@@ -3549,15 +4523,154 @@ async function applyActiveNoiseCooldownsToEnabledGroups( supervisorState ) {
 		] )
 	);
 	let paused = 0;
+	let restored = 0;
+
+	const getCurrentOutputActiveRunDirs = ( groupState ) => {
+		const currentOutputRoot = `${ path.resolve( OUTPUT_DIR ) }${
+			path.sep
+		}`;
+		return ( groupState?.activeRunDirs ?? [] ).filter( ( runDir ) =>
+			path.resolve( runDir ).startsWith( currentOutputRoot )
+		);
+	};
+
+	const activeCanaryGroup =
+		state.emptyMaterializationStartupNoiseCanary?.group;
+	const emptyMaterializationCanaryStartedAt = Date.parse(
+		state.emptyMaterializationStartupNoiseCanary?.at ?? ''
+	);
+	const emptyMaterializationCanaryStartupGraceActive =
+		Number.isFinite( emptyMaterializationCanaryStartedAt ) &&
+		Date.now() - emptyMaterializationCanaryStartedAt < 10 * 60 * 1000;
+	if ( activeCanaryGroup && ! enabled.has( activeCanaryGroup ) ) {
+		const activeNoisePause =
+			getActiveNoisePauseCooldown( activeCanaryGroup );
+		const supervisorGroupState =
+			supervisorGroupsByName.get( activeCanaryGroup );
+		const canaryActiveRunDirs =
+			getCurrentOutputActiveRunDirs( supervisorGroupState );
+		const canaryHasProductEvidence =
+			supervisorGroupHasProductEvidence( supervisorGroupState );
+		if (
+			isNoProductStartupNoiseCooldown( activeNoisePause ) &&
+			! canaryHasProductEvidence
+		) {
+			const marker = [
+				activeCanaryGroup,
+				activeNoisePause.at ?? '',
+				activeNoisePause.expiresAt ?? '',
+				canaryActiveRunDirs.join( ',' ),
+				'blocked-reconcile',
+			].join( '|' );
+			if (
+				state.emptyMaterializationStartupNoiseCanary
+					.reconcileBlockedMarker !== marker
+			) {
+				state.emptyMaterializationStartupNoiseCanary = {
+					...state.emptyMaterializationStartupNoiseCanary,
+					reconcileBlockedMarker: marker,
+					reconcileBlockedAt: new Date().toISOString(),
+				};
+				state.changes.push( {
+					at: state.emptyMaterializationStartupNoiseCanary
+						.reconcileBlockedAt,
+					action: 'block-reconcile-empty-materialization-startup-noise-canary',
+					group: activeCanaryGroup,
+					activeRunDirs: canaryActiveRunDirs,
+					reason: 'not re-adding an empty-materialization canary while its reusable no-product startup-noise cooldown is active; product-evidence signatures from prior runs remain visible, but the producer stays stopped',
+					expiresAt: activeNoisePause.expiresAt,
+				} );
+			}
+		} else if (
+			activeNoisePause &&
+			( emptyMaterializationCanaryStartupGraceActive ||
+				( ACTIVE_GROUP_STATUSES.has( supervisorGroupState?.status ) &&
+					canaryActiveRunDirs.length > 0 ) )
+		) {
+			enabled.add( activeCanaryGroup );
+			restored += 1;
+			state.emptyMaterializationStartupNoiseCanary = {
+				...state.emptyMaterializationStartupNoiseCanary,
+				reconciledAt: new Date().toISOString(),
+			};
+			state.changes.push( {
+				at: state.emptyMaterializationStartupNoiseCanary.reconciledAt,
+				action: 'reconcile-active-empty-materialization-startup-noise-canary',
+				group: activeCanaryGroup,
+				activeRunDirs: canaryActiveRunDirs,
+				reason: `empty-materialization startup-noise canary is ${
+					canaryActiveRunDirs.length > 0
+						? 'already active in the current coverage root'
+						: 'inside its startup grace window'
+				}; keeping it in supervisor-groups.json because it is not a no-product startup-noise cooldown`,
+				expiresAt: activeNoisePause.expiresAt,
+			} );
+		}
+	}
 
 	for ( const group of [ ...enabled ] ) {
 		const activeNoisePause = getActiveNoisePauseCooldown( group );
 		if ( ! activeNoisePause ) {
 			continue;
 		}
+		const supervisorGroupState = supervisorGroupsByName.get( group );
+		const canaryActiveRunDirs =
+			getCurrentOutputActiveRunDirs( supervisorGroupState );
+		const groupHasProductEvidence =
+			supervisorGroupHasProductEvidence( supervisorGroupState );
 		if (
-			activeNoisePause.kind !== 'startup-noise' &&
+			state.emptyMaterializationStartupNoiseCanary?.group === group &&
+			isNoProductStartupNoiseCooldown( activeNoisePause ) &&
+			! groupHasProductEvidence &&
+			( emptyMaterializationCanaryStartupGraceActive ||
+				canaryActiveRunDirs.length > 0 )
+		) {
+			const marker = [
+				group,
+				activeNoisePause.at ?? '',
+				activeNoisePause.expiresAt ?? '',
+				canaryActiveRunDirs.join( ',' ),
+				emptyMaterializationCanaryStartupGraceActive
+					? 'startup-grace'
+					: '',
+					'removed',
+				].join( '|' );
+				if (
+					state.emptyMaterializationStartupNoiseCanary
+						.activeCooldownMarker !== marker
+				) {
+					state.emptyMaterializationStartupNoiseCanary = {
+						...state.emptyMaterializationStartupNoiseCanary,
+						activeCooldownMarker: marker,
+						removedAt: new Date().toISOString(),
+					};
+					state.changes.push( {
+						at: state.emptyMaterializationStartupNoiseCanary
+							.removedAt,
+						action: 'remove-enabled-empty-materialization-startup-noise-canary',
+						group,
+						activeRunDirs: canaryActiveRunDirs,
+						reason: `empty-materialization startup-noise canary is ${
+							canaryActiveRunDirs.length > 0
+								? 'already active in the current coverage root'
+								: 'inside its startup grace window'
+						}, but its cooldown is no-product startup noise; removing the producer instead of counting startup-grace materialization as productive`,
+						expiresAt: activeNoisePause.expiresAt,
+					} );
+				}
+			}
+		if (
 			! isProductEvidenceDuplicateFamilyHold( activeNoisePause ) &&
+			!(
+				activeNoisePause.kind === 'startup-noise' &&
+				activeNoisePause.currentOutputPause === true &&
+				activeNoisePause.originGroup === group &&
+				!(
+					activeNoisePause.originOutputDir &&
+					path.resolve( activeNoisePause.originOutputDir ) !==
+						path.resolve( OUTPUT_DIR )
+				)
+			) &&
 			supervisorGroupHasProductEvidence(
 				supervisorGroupsByName.get( group )
 			)
@@ -3583,6 +4696,18 @@ async function applyActiveNoiseCooldownsToEnabledGroups( supervisorState ) {
 				: {} ),
 			source: activeNoisePause.source ?? 'active-noise-cooldown',
 			outputDir: state.pausedGroups?.[ group ]?.outputDir ?? OUTPUT_DIR,
+			...( activeNoisePause.originOutputDir
+				? { originOutputDir: activeNoisePause.originOutputDir }
+				: {} ),
+			...( activeNoisePause.noProductOnly !== undefined
+				? { noProductOnly: activeNoisePause.noProductOnly }
+				: {} ),
+			...( activeNoisePause.productEvidenceRecords !== undefined
+				? {
+						productEvidenceRecords:
+							activeNoisePause.productEvidenceRecords,
+				  }
+				: {} ),
 			preserveProductEvidence: true,
 		};
 		state.changes.push( {
@@ -3592,23 +4717,31 @@ async function applyActiveNoiseCooldownsToEnabledGroups( supervisorState ) {
 			reason: `removing enabled group during active ${ activeNoisePause.kind } cooldown: ${ activeNoisePause.reason }`,
 			expiresAt: activeNoisePause.expiresAt,
 		} );
-		await writeNoAnalysisSentinelsForGroup(
-			group,
-			activeNoisePause.reason,
-			{
-				reasonKind: activeNoisePause.kind,
-				family: activeNoisePause.family,
-				source: activeNoisePause.source,
-			}
-		);
+			await writeNoAnalysisSentinelsForGroup(
+				group,
+				activeNoisePause.reason,
+				{
+					reasonKind: activeNoisePause.kind,
+					family: activeNoisePause.family,
+					source: activeNoisePause.source,
+					pauseUntil:
+						activeNoisePause.pauseUntil ??
+						activeNoisePause.expiresAt,
+					expiresAt: activeNoisePause.expiresAt,
+					noProductOnly: activeNoisePause.noProductOnly,
+					productEvidenceRecords:
+						activeNoisePause.productEvidenceRecords,
+					hasProductEvidence: activeNoisePause.hasProductEvidence,
+				}
+			);
 		await terminateGroupLanes( group, activeNoisePause.reason );
 		paused += 1;
 	}
 
-	if ( paused > 0 ) {
+	if ( paused > 0 || restored > 0 ) {
 		state.enabledGroups = [ ...enabled ];
 	}
-	return paused;
+	return paused + restored;
 }
 
 function shouldHoldDominantRealUserFamily( triageYield ) {
@@ -5633,7 +6766,7 @@ function clearStaleStartupNoisePauses() {
 	) ) {
 		if (
 			getStoredNoisePauseKind( value ) !== 'startup-noise' ||
-			isCurrentOutputPause( value )
+			isCurrentOutputStartupNoiseCooldown( value )
 		) {
 			continue;
 		}
@@ -5649,7 +6782,11 @@ function restoreReusableStartupNoisePausesFromChanges() {
 
 	for ( const change of state.changes ?? [] ) {
 		if (
-			change?.action !== 'pause-group' ||
+			! [
+				'pause-group',
+				'sync-supervisor-startup-stall-pause',
+				'import-previous-supervisor-startup-stall-pause',
+			].includes( change?.action ) ||
 			typeof change.group !== 'string'
 		) {
 			continue;
@@ -5659,15 +6796,20 @@ function restoreReusableStartupNoisePausesFromChanges() {
 			at: change.at,
 			reason: change.reason,
 			outputDir: change.outputDir,
+			originOutputDir: change.originOutputDir ?? change.outputDir,
 			expiresAt: change.expiresAt,
 			reasonKind: 'startup-noise',
-			family: 'pre_action_bootstrap_stall',
-			source: 'restored-change-startup-noise-cooldown',
+			family: change.family ?? 'pre_action_bootstrap_stall',
+			source:
+				change.source ?? 'restored-change-startup-noise-cooldown',
+			noProductOnly: change.noProductOnly,
+			productEvidenceRecords: change.productEvidenceRecords,
+			preserveProductEvidence: change.preserveProductEvidence,
 		};
-		if ( ! isCurrentOutputPause( candidate ) ) {
+		if ( ! isReusableStartupNoisePause( candidate ) ) {
 			continue;
 		}
-		if ( ! isReusableStartupNoisePause( candidate ) ) {
+		if ( ! isCurrentOutputStartupNoiseCooldown( candidate ) ) {
 			continue;
 		}
 
@@ -5693,7 +6835,7 @@ function restoreReusableStartupNoisePausesFromChanges() {
 		}
 
 		state.pausedGroups[ change.group ] = {
-			...candidate,
+			...normalizeCurrentStartupNoisePause( candidate ),
 			expiresAt: new Date( expiresAtMs ).toISOString(),
 		};
 		restored += 1;
@@ -5727,14 +6869,21 @@ function clearStartupFailureDedupeAffectedPauses() {
 				paused.reason ?? ''
 			)
 		) {
-			delete state.pausedGroups[ group ];
-			cleared += 1;
-			state.changes.push( {
-				at: new Date().toISOString(),
-				action: 'clear-shared-profile-startup-pause',
-				group,
-				reason: 'real-user rich-text has an independent schedule and can produce product-evidence coverage even when the sibling real-user editing group hit startup-only stalls; retry it under group-aware startup gating',
-			} );
+			const preservedPause = getUnexpiredNoisePause( paused );
+			if ( preservedPause ) {
+				state.pausedGroups[ group ] = preservedPause;
+				preserved += 1;
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'preserve-shared-profile-startup-pause',
+					group,
+					reason: 'kept the unexpired no-product startup pause across real-user sibling groups so bootstrap rescue cannot rediscover the same startup-only family one profile at a time',
+					expiresAt: preservedPause.expiresAt,
+				} );
+			} else {
+				delete state.pausedGroups[ group ];
+				cleared += 1;
+			}
 			continue;
 		}
 		if ( group === 'novelty-ws-real-user-editing' ) {
@@ -5905,6 +7054,13 @@ async function writeNoAnalysisSentinelsForMatchingLocalNoiseHold(
 		reasonKind: getEffectiveDuplicateNoiseHoldKind( rootHold ),
 		family: rootHold.family,
 		source: 'local-current-run-noise-hold',
+		...( isCurrentNoProductStartupHold( rootHold )
+			? {
+					noProductOnly: true,
+					productEvidenceRecords: 0,
+					hasProductEvidence: false,
+			  }
+			: {} ),
 	} );
 	return matchingRunDirs.length;
 }
@@ -5950,6 +7106,14 @@ function buildGroup( profile ) {
 			: {} ),
 		env,
 	};
+}
+
+async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
+	const enabled = new Set( enabledGroups ?? [] );
+	const groups = PROFILE_GROUPS.filter( ( profile ) =>
+		enabled.has( profile.name )
+	).map( buildGroup );
+	await writeJsonFileAtomic( GROUPS_PATH, groups );
 }
 
 async function applyPolicy(
@@ -6054,17 +7218,52 @@ async function applyPolicy(
 			REAL_USER_EDITING_MIN_ACTION_RECORDS ||
 		( ( triageYield?.likelyRealVisible ?? 0 ) === 0 &&
 			realUserEditingRecords < REAL_USER_EDITING_NO_YIELD_MIN_RECORDS );
-	const duplicateNoiseTriageYield = state.triageYieldCurrent ?? triageYield;
-	const currentRunDuplicateNoiseHold = PAUSE_ON_TRIAGE_NOISE
-		? getCurrentRunDuplicateNoiseHold( duplicateNoiseTriageYield )
+	const activeDuplicateNoiseTriageYield =
+		state.triageYieldCurrent ?? triageYield;
+	const drainDuplicateNoiseTriageYield =
+		state.triageYieldCurrentIncludingPausedNoAnalysis ??
+		activeDuplicateNoiseTriageYield;
+	const activeCurrentRunDuplicateNoiseHold = PAUSE_ON_TRIAGE_NOISE
+		? getCurrentRunDuplicateNoiseHold( activeDuplicateNoiseTriageYield )
+		: null;
+	const drainCurrentRunDuplicateNoiseHold = PAUSE_ON_TRIAGE_NOISE
+		? getCurrentRunDuplicateNoiseHold( drainDuplicateNoiseTriageYield )
+		: null;
+	const currentRunDuplicateNoiseHold =
+		activeCurrentRunDuplicateNoiseHold ??
+		( drainCurrentRunDuplicateNoiseHold
+			? {
+					...drainCurrentRunDuplicateNoiseHold,
+					scope: 'active/drain current-run',
+					drainOnly: true,
+			  }
+			: null );
+	const drainOnlyCurrentRunStartupHold =
+		! isCurrentNoProductStartupHold( activeCurrentRunDuplicateNoiseHold ) &&
+		isCurrentNoProductStartupHold( drainCurrentRunDuplicateNoiseHold )
+			? {
+					...drainCurrentRunDuplicateNoiseHold,
+					scope: 'active/drain current-run',
+					drainOnly: true,
+			  }
+			: null;
+	const fleetNoProductStartupNoiseHold = PAUSE_ON_TRIAGE_NOISE
+		? getFleetNoProductStartupNoiseHold()
 		: null;
 	const holdNoisyBlockTopOff =
 		PAUSE_ON_TRIAGE_NOISE &&
-		shouldHoldNoisyBlockTopOff( duplicateNoiseTriageYield );
+		shouldHoldNoisyBlockTopOff( activeDuplicateNoiseTriageYield );
 	const dominantRealUserFamilyHold = PAUSE_ON_TRIAGE_NOISE
-		? getDominantRealUserFamilyHold( triageYield )
+		? getDominantRealUserFamilyHold( drainDuplicateNoiseTriageYield )
 		: null;
-	const holdDominantRealUserFamilyActive = !! dominantRealUserFamilyHold;
+	const recentProductEvidenceDuplicateFamilyCooldown = PAUSE_ON_TRIAGE_NOISE
+		? getRecentProductEvidenceDuplicateFamilyCooldown()
+		: null;
+	const effectiveProductEvidenceDuplicateFamilyHold =
+		dominantRealUserFamilyHold ??
+		recentProductEvidenceDuplicateFamilyCooldown;
+	const holdDominantRealUserFamilyActive =
+		!! effectiveProductEvidenceDuplicateFamilyHold;
 	const lateJoin3Records =
 		state.featureCounts?.[ 'lifecycle:late-join:users-3' ] ?? 0;
 	const sameUserRecords =
@@ -6076,91 +7275,182 @@ async function applyPolicy(
 		state.featureCounts?.[ 'media-cross-entity:media-upload' ] ?? 0;
 	const reusableBlockRecords =
 		state.featureCounts?.[ 'media-cross-entity:reusable-block' ] ?? 0;
-	const mediaCrossEntitySuccessRecords =
-		getSuccessfulProfileCount( 'media-cross-entity' );
-	const recommendedGroupsForPass = new Set(
-		guidance?.recommendedGroups ?? []
-	);
-
-	function groupHasCurrentProductEvidence( group ) {
-		return supervisorGroupHasProductEvidence(
-			supervisorGroupsByName.get( group )
+		const mediaCrossEntitySuccessRecords =
+			getSuccessfulProfileCount( 'media-cross-entity' );
+		const recommendedGroupsForPass = new Set(
+			guidance?.recommendedGroups ?? []
 		);
-	}
 
-	function isSingleSeedSupervisorStartupPause( pause ) {
-		return (
-			getStoredNoisePauseKind( pause ) === 'startup-noise' &&
-			/^supervisor paused-startup-stall: strict pre-action bootstrap noise guard: 1 startup failure seed\(s\),/.test(
-				pause?.reason ?? ''
-			)
-		);
-	}
+		function groupHasCurrentProductEvidence( group ) {
+			return supervisorGroupHasProductEvidence(
+				supervisorGroupsByName.get( group )
+			);
+		}
 
-	function isMaterializationFloorBackfillGroup( group ) {
-		return (
-			MATERIALIZATION_FLOOR_GROUPS.includes( group ) ||
-			PRODUCTIVE_FALLBACK_GROUPS.includes( group ) ||
-			HIGH_VALUE_EXPANSION_GROUPS.includes( group )
-		);
-	}
+		function canBypassStartupNoiseCooldown( group, activeNoisePause ) {
+			if (
+				holdDominantRealUserFamilyActive &&
+				PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS.includes( group )
+			) {
+				return false;
+			}
+			return (
+				activeNoisePause?.kind === 'startup-noise' &&
+				groupHasCurrentProductEvidence( group ) &&
+				( activeNoisePause.reusableStartupNoisePause === true ||
+					activeNoisePause.noProductOnly === false ||
+					activeNoisePause.hasProductEvidence === true )
+			);
+		}
 
-	function canBypassStartupNoiseCooldown( group, activeNoisePause ) {
-		return (
-			group === 'novelty-ws-real-user-save-reload' &&
-			recommendedGroupsForPass.has( group ) &&
-			isSingleSeedSupervisorStartupPause( activeNoisePause ) &&
-			groupHasCurrentProductEvidence( group ) &&
-			! isCurrentNoProductStartupHold( currentRunDuplicateNoiseHold )
-		);
-	}
+		function canBypassEmptyMaterializationNoiseCooldown(
+			group,
+			activeNoisePause
+		) {
+			return canBypassStartupNoiseCooldown( group, activeNoisePause );
+		}
 
-	function shouldBlockGroupEnableForCurrentStartupHold(
-		group,
-		{ allowMaterializationFloorBackfill = false } = {}
-	) {
+		function getEmptyMaterializationRescueNoiseBlock( group ) {
+			const activeNoisePause = getActiveNoisePauseCooldown( group );
+			if (
+				activeNoisePause &&
+				! canBypassEmptyMaterializationNoiseCooldown(
+					group,
+					activeNoisePause
+				)
+			) {
+				return activeNoisePause;
+			}
+			return null;
+		}
+
+	function getCurrentStartupHoldEnableBlock( group ) {
 		if (
 			canBypassStartupNoiseCooldown(
 				group,
 				state.pausedGroups?.[ group ]
 			)
 		) {
-			return false;
-		}
-		if ( ! isCurrentNoProductStartupHold( currentRunDuplicateNoiseHold ) ) {
-			return false;
+			return null;
 		}
 		const groupHold = getSupervisorStartupNoiseHold(
 			supervisorGroupsByName.get( group )
 		);
-		if ( noiseHoldsMatch( currentRunDuplicateNoiseHold, groupHold ) ) {
-			return true;
+		const hasCurrentProductEvidence =
+			groupHasCurrentProductEvidence( group );
+		if (
+			refillBlockingDuplicateNoiseProducer &&
+			! hasCurrentProductEvidence
+		) {
+			if (
+				isProductEvidenceDuplicateFamilyHold(
+					refillBlockingDuplicateNoiseProducer.hold
+				) &&
+				group !== refillBlockingDuplicateNoiseProducer.name &&
+				! PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS.includes(
+					group
+				)
+			) {
+				return null;
+			}
+			const matchedProducerHold =
+				refillBlockingDuplicateNoiseProducerGroups.has( group ) ||
+				noiseHoldsMatch(
+					refillBlockingDuplicateNoiseProducer.hold,
+					groupHold
+				);
+			return {
+				hold: refillBlockingDuplicateNoiseProducer.hold,
+				matchedProducerHold,
+				producerLocal: true,
+				producerName: refillBlockingDuplicateNoiseProducer.name,
+			};
+		}
+		if ( isCurrentNoProductStartupHold( currentRunDuplicateNoiseHold ) ) {
+			const matchedProducerHold = noiseHoldsMatch(
+				currentRunDuplicateNoiseHold,
+				groupHold
+			);
+			if ( ! hasCurrentProductEvidence ) {
+				return {
+					hold: currentRunDuplicateNoiseHold,
+					matchedProducerHold,
+					globalActiveHold: ! matchedProducerHold,
+				};
+			}
+		}
+		if ( isCurrentNoProductStartupHold( drainOnlyCurrentRunStartupHold ) ) {
+			const matchedProducerHold = noiseHoldsMatch(
+				drainOnlyCurrentRunStartupHold,
+				groupHold
+			);
+			if (
+				! hasCurrentProductEvidence &&
+				( matchedProducerHold ||
+					isStartupHoldBlockingProducerGroup(
+						drainOnlyCurrentRunStartupHold,
+						group
+					) )
+			) {
+				return {
+					hold: drainOnlyCurrentRunStartupHold,
+					matchedProducerHold,
+					drainOnly: true,
+					globalDrainHold: ! matchedProducerHold,
+				};
+			}
 		}
 		if (
-			allowMaterializationFloorBackfill &&
-			isMaterializationFloorBackfillGroup( group ) &&
-			PROFILE_BY_GROUP[ group ]
+			fleetNoProductStartupNoiseHold &&
+			! hasCurrentProductEvidence &&
+			isStartupHoldBlockingProducerGroup(
+				fleetNoProductStartupNoiseHold,
+				group
+			)
 		) {
-			return false;
+			return {
+				hold: fleetNoProductStartupNoiseHold,
+				matchedProducerHold: true,
+				fleetStartupNoiseHold: true,
+			};
 		}
-		return ! groupHasCurrentProductEvidence( group );
+		return null;
+	}
+
+	function shouldBlockGroupEnableForCurrentStartupHold( group ) {
+		return !! getCurrentStartupHoldEnableBlock( group );
 	}
 
 	function getCurrentStartupHoldEnableBlockReason( group ) {
-		const groupHold = getSupervisorStartupNoiseHold(
-			supervisorGroupsByName.get( group )
-		);
-		const scope = groupHold
+		const block = getCurrentStartupHoldEnableBlock( group );
+		const hold = block?.hold ?? currentRunDuplicateNoiseHold;
+		const scope = block?.matchedProducerHold
 			? 'matches this producer'
-			: 'is active in current active-run scope';
-		return `current no-product startup-noise hold ${ scope } for ${ currentRunDuplicateNoiseHold.family } (${ currentRunDuplicateNoiseHold.count } signatures, share=${ currentRunDuplicateNoiseHold.share }, source=${ currentRunDuplicateNoiseHold.source }); do not enable browser producers without current product evidence until the hold clears`;
+			: `is active in ${ hold?.scope ?? 'current active-run' } scope`;
+		if ( block?.drainOnly ) {
+			return `drain-only no-product startup-noise hold ${ scope } for ${ hold.family } (${ hold.count } signatures, share=${ hold.share }, source=${ hold.source }); do not refill browser capacity with no-product fallback/materialization groups until current product evidence exists or the hold clears`;
+		}
+		if ( block?.producerLocal ) {
+			if ( isProductEvidenceDuplicateFamilyHold( hold ) ) {
+				return `active producer ${ block.producerName } has a current product-evidence duplicate hold for ${ hold.family } (${ hold.count } signatures, share=${ hold.share }, source=${ hold.source }); do not enable replacement browser producers without current product evidence until the representative remains capped`;
+			}
+			return `active producer ${ block.producerName } has a current startup-noise hold for ${ hold.family } (${ hold.count } signatures, share=${ hold.share }, source=${ hold.source }); do not enable replacement browser producers without current product evidence until this leaking producer is drained`;
+		}
+		if ( block?.fleetStartupNoiseHold ) {
+			return `fleet no-product startup-noise hold is active for ${ hold.family } across ${ hold.count } producer groups (share=${ hold.share }, source=${ hold.source }); do not enable another browser producer without current product evidence until the hold clears`;
+		}
+		return `current no-product startup-noise hold ${ scope } for ${ hold.family } (${ hold.count } signatures, share=${ hold.share }, source=${ hold.source }); do not enable browser producers without current product evidence until the hold clears`;
 	}
 
 	function currentStartupHoldMatchesGroup( group ) {
-		return noiseHoldsMatch(
-			currentRunDuplicateNoiseHold,
-			getSupervisorStartupNoiseHold( supervisorGroupsByName.get( group ) )
-		);
+		return !! getCurrentStartupHoldEnableBlock( group )
+			?.matchedProducerHold;
+	}
+
+	function canBypassRecommendedStartupNoiseCooldown() {
+		// Product-evidence retries are handled by canBypassStartupNoiseCooldown.
+		// Coverage goals alone must not revive no-product startup-noise groups.
+		return false;
 	}
 
 	function shouldApplyProfileStartupFailurePause( group ) {
@@ -6168,12 +7458,84 @@ async function applyPolicy(
 	}
 
 	function shouldBypassDominantRealUserFamilyHold( group ) {
+		return false;
+	}
+
+		function shouldBlockGroupEnableForDuplicateNoiseHold( group ) {
+			return (
+				holdDominantRealUserFamilyActive &&
+				PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS.includes( group ) &&
+				! shouldBypassDominantRealUserFamilyHold( group )
+			);
+		}
+
+		function getDuplicateNoiseHoldEnableBlockReason() {
+			const hold = effectiveProductEvidenceDuplicateFamilyHold;
+			const scope = dominantRealUserFamilyHold
+				? 'current-run'
+				: 'recent cross-root';
+			return `${ scope } product-evidence duplicate family ${ hold.family } is already represented (${ hold.count }/${ hold.total ?? hold.count } ${ hold.source } signatures, share=${ hold.share }, representative=${ hold.representativeSignal }); do not enable another lifecycle/reload producer for this held family while preserving existing product-evidence signatures`;
+		}
+
+	const materializationRescueGroups = new Set( [
+		...MATERIALIZATION_FLOOR_GROUPS,
+		...PRODUCTIVE_FALLBACK_GROUPS,
+	] );
+	let noisyProducerGroups = [];
+	let refillBlockingDuplicateNoiseProducer = null;
+	const refillBlockingDuplicateNoiseProducerGroups = new Set();
+
+	function isActiveCurrentTriageClear() {
+		const current = activeDuplicateNoiseTriageYield ?? {};
+		const activeSignals = Math.max(
+			current.signatureCount ?? 0,
+			current.rawSignatureCount ?? 0,
+			current.noProductRawSignatureCount ?? 0,
+			current.productEvidenceSignatures ?? 0,
+			current.bootstrapStalls ?? 0,
+			current.suppressedStrictStartupRecords ?? 0
+		);
 		return (
-			group === 'novelty-ws-real-user-save-reload' &&
-			recommendedGroupsForPass.has( group ) &&
-			! groupHasCurrentProductEvidence( group )
+			activeSignals === 0 &&
+			( current.likelyRealVisible ?? 0 ) === 0 &&
+			( current.topDuplicateFamilyShare ?? 0 ) === 0
 		);
 	}
+
+		function currentRunDirsAfterPlannedRemoval( plannedRemoval = null ) {
+			if ( ! plannedRemoval ) {
+				return state.currentRunDirs ?? [];
+			}
+			return ( state.currentRunDirs ?? [] ).filter(
+				( runDir ) => getRunGroupNameFromPath( runDir ) !== plannedRemoval
+			);
+		}
+
+		function shouldUseEmptyMaterializationRescue(
+			group,
+			{ plannedRemoval = null } = {}
+			) {
+				const activeRunDirsAfterPlannedRemoval =
+					currentRunDirsAfterPlannedRemoval( plannedRemoval );
+				const startupHoldBlock = getCurrentStartupHoldEnableBlock(
+					group
+				);
+				const startupHoldBlocksRescue = !! startupHoldBlock;
+				if (
+					! START_SUPERVISOR ||
+					! materializationRescueGroups.has( group ) ||
+					activeRunDirsAfterPlannedRemoval.length !== 0 ||
+					( ! plannedRemoval && ! isActiveCurrentTriageClear() ) ||
+					getEnabledBrowserLaneCountWithPlannedRemoval( plannedRemoval ) >=
+						MIN_ENABLED_BROWSER_LANES ||
+					getEmptyMaterializationRescueNoiseBlock( group ) ||
+					startupHoldBlocksRescue ||
+					shouldBlockGroupEnableForDuplicateNoiseHold( group )
+				) {
+					return false;
+				}
+				return true;
+		}
 
 	function getConfiguredLaneCount( group ) {
 		return (
@@ -6229,32 +7591,30 @@ async function applyPolicy(
 		const paused = state.pausedGroups?.[ group ];
 		const activeNoisePause = getActiveNoisePauseCooldown( group );
 		if (
-			paused &&
-			! activeNoisePause &&
-			( getStoredNoisePauseKind( paused ) !== 'startup-noise' ||
-				isCurrentOutputPause( paused ) )
-		) {
-			return false;
-		}
-		if (
-			activeNoisePause &&
-			! (
-				isSingleSeedSupervisorStartupPause( activeNoisePause ) &&
-				isMaterializationFloorBackfillGroup( group )
-			)
-		) {
-			return false;
-		}
-		if (
-			shouldBlockGroupEnableForCurrentStartupHold( group, {
-				allowMaterializationFloorBackfill: true,
+			shouldUseEmptyMaterializationRescue( group, {
+				plannedRemoval,
 			} )
 		) {
-			return false;
+			return true;
 		}
 		if (
-			holdNoisyBlockTopOff &&
-			[
+			paused &&
+			( getStoredNoisePauseKind( paused ) || isCurrentOutputPause( paused ) )
+		) {
+			return false;
+		}
+		if ( activeNoisePause ) {
+			return false;
+		}
+		if ( shouldBlockGroupEnableForCurrentStartupHold( group ) ) {
+			return false;
+		}
+		if ( shouldBlockGroupEnableForDuplicateNoiseHold( group ) ) {
+			return false;
+		}
+			if (
+				holdNoisyBlockTopOff &&
+				[
 				'novelty-ws-common-blocks',
 				'novelty-ws-block-gauntlet',
 			].includes( group )
@@ -6262,12 +7622,12 @@ async function applyPolicy(
 			return false;
 		}
 		if (
-			holdDominantRealUserFamilyActive &&
-			REAL_USER_DUPLICATE_FAMILY_HOLD_GROUPS.includes( group ) &&
-			! shouldBypassDominantRealUserFamilyHold( group )
-		) {
-			return false;
-		}
+				holdDominantRealUserFamilyActive &&
+				REAL_USER_DUPLICATE_FAMILY_HOLD_GROUPS.includes( group ) &&
+				! shouldBypassDominantRealUserFamilyHold( group )
+			) {
+				return false;
+			}
 		const enabledSizeAfterPlannedRemoval =
 			enabled.size -
 			( plannedRemoval && enabled.has( plannedRemoval ) ? 1 : 0 );
@@ -6307,20 +7667,35 @@ async function applyPolicy(
 			}
 			const laneCountBeforeEnable =
 				getEnabledBrowserLaneCountWithPlannedRemoval( plannedRemoval );
-			const enabledForFloor = await enableGroup(
-				group,
-				`coverage-guided browser materialization had ${ laneCountBeforeEnable } configured lane(s), below floor=${ MIN_ENABLED_BROWSER_LANES }; enable a bounded product-evidence-capable group through normal enable gates`,
+				const materializationRescue = shouldUseEmptyMaterializationRescue(
+					group,
+					{ plannedRemoval }
+				);
+				const enabledForFloor = await enableGroup(
+					group,
+					materializationRescue
+						? `coverage-guided browser materialization had ${ laneCountBeforeEnable } configured lane(s), below floor=${ MIN_ENABLED_BROWSER_LANES }, and active current-run triage is clear with zero active dirs and no current-output startup-noise hold; enable one bounded rescue producer`
+						: `coverage-guided browser materialization had ${ laneCountBeforeEnable } configured lane(s), below floor=${ MIN_ENABLED_BROWSER_LANES }; enable a bounded product-evidence-capable group through normal enable gates`,
 				{
 					budgetReserved: true,
 					plannedRemovalForBudget: plannedRemoval,
+					materializationRescue,
 				}
 			);
-			if ( ! enabledForFloor ) {
-				continue;
-			}
-			state.changes.push( {
-				at: new Date().toISOString(),
-				action: 'materialization-floor-group-enabled',
+				if ( ! enabledForFloor ) {
+					continue;
+				}
+				if ( materializationRescue ) {
+					state.materializationRescueGroups = [
+						...new Set( [
+							...( state.materializationRescueGroups ?? [] ),
+							group,
+						] ),
+					];
+				}
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'materialization-floor-group-enabled',
 				group,
 				lanes: getConfiguredLaneCount( group ),
 				reason: `normal enable gates accepted ${ group } as a materialization-floor replacement`,
@@ -6339,7 +7714,7 @@ async function applyPolicy(
 		state.changes.push( {
 			at: new Date().toISOString(),
 			action: 'hold-materialization-floor-no-safe-group',
-			reason: `coverage-guided browser materialization is below floor=${ MIN_ENABLED_BROWSER_LANES }, but no bounded group was available without overriding max-group budget, disabled state, pause state, current startup/noise hold, or active noise cooldown`,
+			reason: `coverage-guided browser materialization is below floor=${ MIN_ENABLED_BROWSER_LANES }, but no bounded group was available without overriding max-group budget, disabled state, pause state, current/drain startup-noise hold, duplicate-family hold, or active noise cooldown`,
 			...( plannedRemoval
 				? { plannedRemovalForNoisePause: plannedRemoval }
 				: {} ),
@@ -6417,14 +7792,20 @@ async function applyPolicy(
 
 	async function enableGroup(
 		group,
-		reason,
-		{
-			allowRotation = false,
-			budgetReserved = false,
-			plannedRemovalForBudget = null,
-		} = {}
-	) {
-		let rotationReservedBudget = false;
+			reason,
+			{
+				allowRotation = false,
+				budgetReserved = false,
+				plannedRemovalForBudget = null,
+				materializationRescue = false,
+			} = {}
+		) {
+			let rotationReservedBudget = false;
+			const materializationRescueAllowed =
+				materializationRescue &&
+				shouldUseEmptyMaterializationRescue( group, {
+					plannedRemoval: plannedRemovalForBudget,
+				} );
 		if ( state.disabledGroups?.[ group ] ) {
 			state.changes.push( {
 				at: new Date().toISOString(),
@@ -6439,48 +7820,92 @@ async function applyPolicy(
 			return false;
 		}
 
-		if ( shouldBlockGroupEnableForCurrentStartupHold( group ) ) {
+			if (
+				! materializationRescueAllowed &&
+				shouldBlockGroupEnableForCurrentStartupHold( group )
+			) {
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'skip-enable-current-startup-noise-hold',
+					group,
+					reason: getCurrentStartupHoldEnableBlockReason( group ),
+					...( currentStartupHoldMatchesGroup( group )
+						? { matchedProducerHold: true }
+						: { matchedProducerHold: false } ),
+				} );
+				return false;
+			}
+
+			if (
+				! materializationRescueAllowed &&
+				shouldBlockGroupEnableForDuplicateNoiseHold( group )
+			) {
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'skip-enable-duplicate-family-hold',
+					group,
+					reason: getDuplicateNoiseHoldEnableBlockReason(),
+				} );
+				return false;
+			}
+
+			const activeNoisePause = getActiveNoisePauseCooldown(
+				group,
+				triageYield
+			);
+			if ( activeNoisePause ) {
+					if ( canBypassStartupNoiseCooldown( group, activeNoisePause ) ) {
+						delete state.pausedGroups[ group ];
+						state.changes.push( {
+							at: new Date().toISOString(),
+							action: 'bypass-startup-noise-cooldown-with-product-evidence',
+							group,
+							reason: `current supervisor state has product-evidence coverage for ${ group }; ignoring shared startup-noise cooldown from ${ activeNoisePause.at } while preserving coverage-guided scheduling`,
+						} );
+					} else {
+						state.changes.push( {
+							at: new Date().toISOString(),
+							action: materializationRescue
+							? 'skip-empty-materialization-rescue-noise-cooldown'
+							: 'keep-paused-noise-cooldown',
+						group,
+						reason: `recent ${ activeNoisePause.kind } pause at ${ activeNoisePause.at } is still inside the ${ TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS }h cooldown; empty-materialization rescue cannot revive startup/known-noise producers without current product evidence: ${ activeNoisePause.reason }`,
+						expiresAt: activeNoisePause.expiresAt,
+						...( activeNoisePause.originGroup
+							? { originGroup: activeNoisePause.originGroup }
+							: {} ),
+					} );
+					return false;
+				}
+			}
+
+		if (
+			state.pausedGroups?.[ group ] &&
+			getStoredNoisePauseKind( state.pausedGroups[ group ] ) &&
+			! materializationRescueAllowed
+		) {
 			state.changes.push( {
 				at: new Date().toISOString(),
-				action: 'skip-enable-current-startup-noise-hold',
+				action: 'keep-paused-noise-cooldown',
 				group,
-				reason: getCurrentStartupHoldEnableBlockReason( group ),
-				...( currentStartupHoldMatchesGroup( group )
-					? { matchedProducerHold: true }
-					: { matchedProducerHold: false } ),
+				reason: `stored ${ getStoredNoisePauseKind(
+					state.pausedGroups[ group ]
+				) } pause remains active for this group; do not revive it through materialization or fallback scheduling`,
 			} );
 			return false;
 		}
 
-		const activeNoisePause = getActiveNoisePauseCooldown(
-			group,
-			triageYield
-		);
-		if ( activeNoisePause ) {
-			if ( canBypassStartupNoiseCooldown( group, activeNoisePause ) ) {
-				state.changes.push( {
-					at: new Date().toISOString(),
-					action: 'bypass-startup-noise-cooldown-with-product-evidence',
-					group,
-					reason: `current supervisor state has product-evidence coverage for ${ group }; ignoring shared startup-noise cooldown from ${ activeNoisePause.at } while preserving coverage-guided scheduling`,
-				} );
-			} else {
-				state.changes.push( {
-					at: new Date().toISOString(),
-					action: 'keep-paused-noise-cooldown',
-					group,
-					reason: `recent ${ activeNoisePause.kind } pause at ${ activeNoisePause.at } is still inside the ${ TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS }h cooldown: ${ activeNoisePause.reason }`,
-				} );
-				return false;
-			}
-		}
-
-		if ( state.pausedGroups?.[ group ] && ! allowRotation ) {
+		if (
+			state.pausedGroups?.[ group ] &&
+			! allowRotation &&
+			! materializationRescueAllowed
+		) {
 			return false;
 		}
 
 		const profile = PROFILE_BY_GROUP[ group ];
 		if (
+			! materializationRescueAllowed &&
 			state.pausedGroups?.[ group ] &&
 			profile !== undefined &&
 			shouldApplyProfileStartupFailurePause( group ) &&
@@ -6586,6 +8011,19 @@ async function applyPolicy(
 		const noisePauseKind = getNoisePauseKind( reason, metadata.reasonKind );
 		const noisePauseFamily =
 			metadata.family ?? getNoisePauseFamily( noisePauseKind );
+		const inferredNoProductStartupPause =
+			noisePauseKind === 'startup-noise' &&
+			hasNoProductStartupPauseEvidence( {
+				reason,
+				noProductOnly: metadata.noProductOnly,
+				productEvidenceRecords: metadata.productEvidenceRecords,
+			} );
+		const noProductOnly =
+			metadata.noProductOnly ??
+			( inferredNoProductStartupPause ? true : undefined );
+		const productEvidenceRecords =
+			metadata.productEvidenceRecords ??
+			( inferredNoProductStartupPause ? 0 : undefined );
 		const materializationFloorBlockReason = noisePauseKind
 			? getMaterializationFloorPauseBlockReason( group )
 			: null;
@@ -6594,38 +8032,21 @@ async function applyPolicy(
 				plannedRemoval: group,
 			} );
 			if ( ! replacementEnabled ) {
-				if ( noisePauseKind ) {
-					state.changes.push( {
-						at: pausedAt,
-						action: 'allow-noise-pause-below-materialization-floor',
-						group,
-						reason: `${ materializationFloorBlockReason }; no clean replacement group is available, but this is a bounded ${ noisePauseKind } pause, so stop the leaking producer and keep product-evidence signatures visible through preserved no-analysis sentinels`,
-						originalPauseReason: reason,
-						reasonKind: noisePauseKind,
-						...( noisePauseFamily
-							? { family: noisePauseFamily }
-							: {} ),
-						...( metadata.source
-							? { source: metadata.source }
-							: {} ),
-					} );
-				} else {
-					state.changes.push( {
-						at: pausedAt,
-						action: 'skip-noise-pause-below-materialization-floor',
-						group,
-						reason: `${ materializationFloorBlockReason }; no clean replacement group is available, so keep the bounded browser producer running and rely on no-analysis sentinels for no-product startup signatures`,
-						originalPauseReason: reason,
-						reasonKind: noisePauseKind,
-						...( noisePauseFamily
-							? { family: noisePauseFamily }
-							: {} ),
-						...( metadata.source
-							? { source: metadata.source }
-							: {} ),
-					} );
-					return false;
-				}
+				state.changes.push( {
+					at: pausedAt,
+					action: 'skip-noise-pause-below-materialization-floor',
+					group,
+					reason: `${ materializationFloorBlockReason }; no clean replacement group is available, so keep the bounded browser producer running and rely on no-analysis sentinels until another materialized group is available`,
+					originalPauseReason: reason,
+					reasonKind: noisePauseKind,
+					...( noisePauseFamily ? { family: noisePauseFamily } : {} ),
+					...( metadata.source ? { source: metadata.source } : {} ),
+					...( noProductOnly !== undefined ? { noProductOnly } : {} ),
+					...( productEvidenceRecords !== undefined
+						? { productEvidenceRecords }
+						: {} ),
+				} );
+				return false;
 			}
 		}
 
@@ -6643,6 +8064,12 @@ async function applyPolicy(
 			...( noisePauseKind ? { reasonKind: noisePauseKind } : {} ),
 			...( noisePauseFamily ? { family: noisePauseFamily } : {} ),
 			...( metadata.source ? { source: metadata.source } : {} ),
+			...( noProductOnly !== undefined
+				? { noProductOnly }
+				: {} ),
+			...( productEvidenceRecords !== undefined
+				? { productEvidenceRecords }
+				: {} ),
 			...( noisePauseKind ? { preserveProductEvidence: true } : {} ),
 			...( expiresAt ? { expiresAt } : {} ),
 		};
@@ -6655,16 +8082,35 @@ async function applyPolicy(
 			...( noisePauseKind ? { reasonKind: noisePauseKind } : {} ),
 			...( noisePauseFamily ? { family: noisePauseFamily } : {} ),
 			...( metadata.source ? { source: metadata.source } : {} ),
+			...( noProductOnly !== undefined
+				? { noProductOnly }
+				: {} ),
+			...( productEvidenceRecords !== undefined
+				? { productEvidenceRecords }
+				: {} ),
 			...( expiresAt ? { expiresAt } : {} ),
 		} );
+		state.enabledGroups = [ ...enabled ];
+		await writeJsonFileAtomic( STATE_PATH, state );
+		await writeSupervisorGroupsForEnabledGroups( enabled );
 		await log( `Paused ${ group } group: ${ reason }` );
-		if ( noisePauseKind ) {
-			await writeNoAnalysisSentinelsForGroup( group, reason, {
-				reasonKind: noisePauseKind,
-				family: noisePauseFamily,
-				source: metadata.source,
-			} );
-		}
+			if ( noisePauseKind ) {
+				await writeNoAnalysisSentinelsForGroup( group, reason, {
+					reasonKind: noisePauseKind,
+					family: noisePauseFamily,
+					source: metadata.source,
+					expiresAt,
+					...( noProductOnly !== undefined
+						? { noProductOnly }
+						: {} ),
+					...( productEvidenceRecords !== undefined
+						? { productEvidenceRecords }
+						: {} ),
+					...( productEvidenceRecords !== undefined
+						? { hasProductEvidence: productEvidenceRecords > 0 }
+						: {} ),
+				} );
+			}
 		await terminateGroupLanes( group, reason );
 		return true;
 	}
@@ -6694,24 +8140,42 @@ async function applyPolicy(
 	}
 
 	async function ensureProductiveFallbackGroup() {
-		if ( enabled.size > 0 ) {
+		const hasUsableEnabledProducer =
+			! START_SUPERVISOR ||
+			! supervisorState ||
+			[ ...enabled ].some( ( group ) => {
+				const groupState = supervisorGroupsByName.get( group );
+				return (
+					! groupState ||
+					ACTIVE_GROUP_STATUSES.has( groupState.status )
+				);
+			} );
+		if ( hasUsableEnabledProducer ) {
 			return false;
 		}
 
 		const candidates = getProductiveFallbackGroupCandidates();
 		const reason =
-			'minimum productive coverage fallback: all scheduled browser groups are paused; enable an unrelated productive group without overriding active no-product noise cooldowns';
+			'minimum productive coverage fallback: all scheduled browser groups are paused or have no active producer; enable an unrelated productive group without overriding active no-product noise cooldowns';
 
 		for ( const group of candidates ) {
+			const materializationRescue =
+				shouldUseEmptyMaterializationRescue( group );
 			if (
 				state.disabledGroups?.[ group ] ||
-				state.pausedGroups?.[ group ] ||
-				getActiveNoisePauseCooldown( group )
+				( ! materializationRescue &&
+					( getActiveNoisePauseCooldown( group ) ||
+						shouldBlockGroupEnableForCurrentStartupHold( group ) ||
+						shouldBlockGroupEnableForDuplicateNoiseHold( group ) ) )
 			) {
 				continue;
 			}
 			if (
-				await enableGroup( group, reason, { budgetReserved: true } )
+				await enableGroup( group, reason, {
+					allowRotation: true,
+					budgetReserved: true,
+					materializationRescue,
+				} )
 			) {
 				return true;
 			}
@@ -6756,12 +8220,36 @@ async function applyPolicy(
 			Math.min( MAX_ENABLED_GROUPS, TARGET_ENABLED_GROUPS + 1 );
 
 	if ( PAUSE_ON_TRIAGE_NOISE ) {
+		noisyProducerGroups = await getActiveDuplicateNoiseProducerGroups(
+			supervisorState,
+			currentRunDuplicateNoiseHold
+		);
+		for ( const producer of noisyProducerGroups ) {
+			if ( ! shouldBlockRefillForDuplicateNoiseProducer( producer ) ) {
+				continue;
+			}
+			refillBlockingDuplicateNoiseProducer ??= producer;
+			refillBlockingDuplicateNoiseProducerGroups.add( producer.name );
+		}
+	}
+
+	if ( PAUSE_ON_TRIAGE_NOISE ) {
 		for ( const group of [ ...enabled ] ) {
 			const activeNoisePause = getActiveNoisePauseCooldown(
 				group,
 				triageYield
 			);
 			if ( ! activeNoisePause ) {
+				continue;
+			}
+			if ( canBypassStartupNoiseCooldown( group, activeNoisePause ) ) {
+				delete state.pausedGroups[ group ];
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'bypass-startup-noise-cooldown-with-product-evidence',
+					group,
+					reason: `current supervisor state has product-evidence coverage for ${ group }; not applying startup-noise cooldown from ${ activeNoisePause.at }`,
+				} );
 				continue;
 			}
 			await pauseGroup(
@@ -6772,10 +8260,6 @@ async function applyPolicy(
 	}
 
 	if ( PAUSE_ON_TRIAGE_NOISE ) {
-		const noisyProducerGroups = await getActiveDuplicateNoiseProducerGroups(
-			supervisorState,
-			currentRunDuplicateNoiseHold
-		);
 		if (
 			currentRunDuplicateNoiseHold &&
 			noisyProducerGroups.length === 0
@@ -6811,6 +8295,9 @@ async function applyPolicy(
 				reasonKind,
 				family: producer.hold.family,
 				source: producer.hold.source,
+				noProductOnly: ! producer.hasProductEvidence,
+				productEvidenceRecords: producer.productEvidenceRecords ?? 0,
+				hasProductEvidence: producer.hasProductEvidence,
 			} );
 			if ( ! enabled.has( producer.name ) ) {
 				if ( shouldPause ) {
@@ -6823,6 +8310,9 @@ async function applyPolicy(
 					reasonKind,
 					family: producer.hold.family,
 					source: producer.hold.source,
+					noProductOnly: ! producer.hasProductEvidence,
+					productEvidenceRecords: producer.productEvidenceRecords ?? 0,
+					hasProductEvidence: producer.hasProductEvidence,
 				} );
 				continue;
 			}
@@ -6830,7 +8320,11 @@ async function applyPolicy(
 	}
 
 	if ( holdDominantRealUserFamilyActive ) {
-		for ( const group of REAL_USER_DUPLICATE_FAMILY_HOLD_GROUPS ) {
+		const hold = effectiveProductEvidenceDuplicateFamilyHold;
+		const holdScope = dominantRealUserFamilyHold
+			? 'current-run'
+			: 'recent cross-root';
+		for ( const group of PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS ) {
 			if ( ! enabled.has( group ) ) {
 				continue;
 			}
@@ -6843,11 +8337,11 @@ async function applyPolicy(
 				} );
 				continue;
 			}
-			const reason = `triage yield is duplicate/noise dominated: current-run product-evidence duplicate family ${ dominantRealUserFamilyHold.family } dominates real-user output (${ dominantRealUserFamilyHold.count }/${ dominantRealUserFamilyHold.total } ${ dominantRealUserFamilyHold.source } signatures, share=${ dominantRealUserFamilyHold.share }, representative=${ dominantRealUserFamilyHold.representativeSignal }); pause until the family is analyzed or the lane config changes while preserving product-evidence signatures`;
+			const reason = `triage yield is duplicate/noise dominated: ${ holdScope } product-evidence duplicate family ${ hold.family } dominates lifecycle/reload output (${ hold.count }/${ hold.total ?? hold.count } ${ hold.source } signatures, share=${ hold.share }, representative=${ hold.representativeSignal }); pause until the family is analyzed or the lane config changes while preserving product-evidence signatures`;
 			await pauseGroup( group, reason, {
-				reasonKind: dominantRealUserFamilyHold.kind,
-				family: dominantRealUserFamilyHold.family,
-				source: dominantRealUserFamilyHold.source,
+				reasonKind: hold.kind,
+				family: hold.family,
+				source: hold.source,
 			} );
 		}
 	} else if (
@@ -7079,11 +8573,23 @@ async function applyPolicy(
 		);
 		if ( activeNoisePause ) {
 			if ( canBypassStartupNoiseCooldown( group, activeNoisePause ) ) {
+				delete state.pausedGroups[ group ];
 				state.changes.push( {
 					at: new Date().toISOString(),
 					action: 'bypass-startup-noise-cooldown-with-product-evidence',
 					group,
 					reason: `current supervisor state has product-evidence coverage for recommended group ${ group }; allowing coverage-guidance to re-enable it despite startup-noise cooldown from ${ activeNoisePause.at }`,
+				} );
+				} else if ( canBypassRecommendedStartupNoiseCooldown() ) {
+				delete state.pausedGroups[ group ];
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action:
+						'bypass-recommended-startup-noise-cooldown-for-gap',
+					group,
+					reason: `coverage guidance recommends ${ group } for unmet goals and has no quality issue; retry despite cross-run no-product startup-noise cooldown from ${ activeNoisePause.at } so it can produce live coverage for current gaps`,
+					originOutputDir: activeNoisePause.originOutputDir,
+					expiresAt: activeNoisePause.expiresAt,
 				} );
 			} else {
 				state.changes.push( {
@@ -7191,7 +8697,13 @@ async function applyPolicy(
 					group,
 					`group ${ group } produced ${ failures }/${ records } strict pre-action discovery/startup failures (rate=${ formatPercent(
 						rate
-					) })`
+					) })`,
+					{
+						reasonKind: 'startup-noise',
+						family: 'pre_action_bootstrap_stall',
+						noProductOnly: true,
+						productEvidenceRecords: 0,
+					}
 				);
 			}
 		}
@@ -7289,10 +8801,7 @@ async function applyPolicy(
 	await ensureProductiveFallbackGroup();
 	await ensureMaterializationFloorGroup();
 	state.enabledGroups = [ ...enabled ];
-	const groups = PROFILE_GROUPS.filter( ( profile ) =>
-		enabled.has( profile.name )
-	).map( buildGroup );
-	await writeJsonFileAtomic( GROUPS_PATH, groups );
+	await writeSupervisorGroupsForEnabledGroups( enabled );
 }
 
 async function terminateGroupLanes( groupName, reason ) {
@@ -7355,10 +8864,36 @@ async function writeNoAnalysisSentinelsForRunDirs(
 		reasonKind = null,
 		family = null,
 		source = null,
+		pauseUntil = null,
+		expiresAt = null,
+		noProductOnly = null,
+		productEvidenceRecords = null,
+		hasProductEvidence = null,
 	} = {}
 ) {
 	const kind = getNoisePauseKind( reason, reasonKind );
 	const sentinelFamily = family ?? getNoisePauseFamily( kind );
+	const effectiveExpiresAt =
+		expiresAt ??
+		pauseUntil ??
+		( kind
+			? new Date(
+					Date.now() +
+						TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS * 60 * 60 * 1000
+			  ).toISOString()
+			: null );
+	const effectiveProductEvidenceRecords = Number.isFinite(
+		productEvidenceRecords
+	)
+		? productEvidenceRecords
+		: null;
+	const effectiveHasProductEvidence =
+		hasProductEvidence ??
+		( effectiveProductEvidenceRecords !== null
+			? effectiveProductEvidenceRecords > 0
+			: null );
+	const effectiveNoProductOnly =
+		noProductOnly ?? ( effectiveHasProductEvidence === false ? true : null );
 	const written = [];
 
 	for ( const runDir of new Set( runDirs ) ) {
@@ -7378,6 +8913,17 @@ async function writeNoAnalysisSentinelsForRunDirs(
 			reasonKind: kind,
 			...( sentinelFamily ? { family: sentinelFamily } : {} ),
 			...( source ? { source } : {} ),
+			...( pauseUntil ? { pauseUntil } : {} ),
+			...( effectiveExpiresAt ? { expiresAt: effectiveExpiresAt } : {} ),
+			...( effectiveNoProductOnly !== null
+				? { noProductOnly: effectiveNoProductOnly }
+				: {} ),
+			...( effectiveProductEvidenceRecords !== null
+				? { productEvidenceRecords: effectiveProductEvidenceRecords }
+				: {} ),
+			...( effectiveHasProductEvidence !== null
+				? { hasProductEvidence: effectiveHasProductEvidence }
+				: {} ),
 			preserveProductEvidence: true,
 			note: 'Producer paused by novelty duplicate/noise policy. Consumers must not spend analysis on signatures without product evidence from this run.',
 		} );
@@ -7390,6 +8936,20 @@ async function writeNoAnalysisSentinelsForRunDirs(
 			action: 'write-no-analysis-sentinel',
 			group: groupName,
 			reason,
+			reasonKind: kind,
+			...( sentinelFamily ? { family: sentinelFamily } : {} ),
+			...( source ? { source } : {} ),
+			...( effectiveNoProductOnly !== null
+				? { noProductOnly: effectiveNoProductOnly }
+				: {} ),
+			...( effectiveProductEvidenceRecords !== null
+				? { productEvidenceRecords: effectiveProductEvidenceRecords }
+				: {} ),
+			...( effectiveHasProductEvidence !== null
+				? { hasProductEvidence: effectiveHasProductEvidence }
+				: {} ),
+			preserveProductEvidence: true,
+			...( effectiveExpiresAt ? { expiresAt: effectiveExpiresAt } : {} ),
 			count: written.length,
 		} );
 	}
@@ -7582,6 +9142,9 @@ async function ensureSupervisor( resources ) {
 		`export RTC_FUZZ_SUPERVISOR_DURATION_HOURS=${ shellQuote(
 			String( Math.max( 0.1, ( END_AT - Date.now() ) / 3600000 ) )
 		) }`,
+		`export RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_COOLDOWN_HOURS=${ shellQuote(
+			String( TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS )
+		) }`,
 		'export RTC_FUZZ_SUPERVISOR_POLL_MS=60000',
 		`${ shellQuote(
 			process.execPath
@@ -7632,14 +9195,31 @@ async function ensureSupervisor( resources ) {
 
 async function ensureBootstrapSupervisorGroups() {
 	const existingGroups = await readJsonFile( GROUPS_PATH );
+	const existingGroupNames = Array.isArray( existingGroups )
+		? existingGroups.map( ( group ) => group?.name ).filter( Boolean )
+		: [];
+	const existingGroupsAreValid =
+		Array.isArray( existingGroups ) &&
+		existingGroups.length > 0 &&
+		existingGroups.every( isValidSupervisorGroupConfig );
+	if ( existingGroupsAreValid ) {
+		state.enabledGroups = existingGroupNames.slice( 0, MAX_ENABLED_GROUPS );
+		if ( existingGroups.length > MAX_ENABLED_GROUPS ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'trim-bootstrap-supervisor-groups',
+				previousCount: existingGroups.length,
+				maxEnabledGroups: MAX_ENABLED_GROUPS,
+				groups: state.enabledGroups,
+				reason: 'existing supervisor-groups.json exceeded the effective coverage-guided producer budget before supervisor launch',
+			} );
+		}
+	}
 	if (
 		Array.isArray( existingGroups ) &&
 		existingGroups.length > 0 &&
-		existingGroups.every( isValidSupervisorGroupConfig )
+		! existingGroupsAreValid
 	) {
-		return;
-	}
-	if ( Array.isArray( existingGroups ) && existingGroups.length > 0 ) {
 		state.changes.push( {
 			at: new Date().toISOString(),
 			action: 'replace-invalid-bootstrap-supervisor-groups',
@@ -7652,41 +9232,597 @@ async function ensureBootstrapSupervisorGroups() {
 
 	const selected = [];
 	const seen = new Set();
+	const bootstrapActiveDuplicateNoiseHold = getCurrentRunDuplicateNoiseHold(
+		state.triageYieldCurrent
+	);
+	const bootstrapDrainDuplicateNoiseHold = getCurrentRunDuplicateNoiseHold(
+		state.triageYieldCurrentIncludingPausedNoAnalysis ??
+			state.triageYieldCurrent
+	);
+	let bootstrapDuplicateNoiseHold = bootstrapActiveDuplicateNoiseHold;
+	if (
+		! isCurrentNoProductStartupHold( bootstrapDuplicateNoiseHold ) &&
+		isCurrentNoProductStartupHold( bootstrapDrainDuplicateNoiseHold )
+	) {
+		bootstrapDuplicateNoiseHold = {
+			...bootstrapDrainDuplicateNoiseHold,
+			scope: 'active/drain current-run',
+			drainOnly: true,
+		};
+	}
+	const bootstrapFleetStartupNoiseHold = getFleetNoProductStartupNoiseHold();
+	const bootstrapProducerStartupHold = isStartupHoldBlockingProducerSelection(
+		bootstrapDuplicateNoiseHold
+	)
+		? bootstrapDuplicateNoiseHold
+		: bootstrapFleetStartupNoiseHold;
+	const bootstrapProductEvidenceDuplicateFamilyHold =
+		getDominantRealUserFamilyHold(
+			state.triageYieldCurrentIncludingPausedNoAnalysis ??
+				state.triageYieldCurrent
+		) ?? getRecentProductEvidenceDuplicateFamilyCooldown();
+	const getBootstrapDuplicateFamilyHoldBlock = ( group ) => {
+		if (
+			! isProductEvidenceDuplicateFamilyHold(
+				bootstrapProductEvidenceDuplicateFamilyHold
+			) ||
+			! PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS.includes( group )
+		) {
+			return null;
+		}
+		return bootstrapProductEvidenceDuplicateFamilyHold;
+	};
+	const getBootstrapDuplicateFamilyHoldBlockReason = ( hold ) =>
+		`bootstrap supervisor group selection held while product-evidence duplicate family ${ hold.family } is already represented (${ hold.count }/${ hold.total ?? hold.count } signatures, share=${ hold.share }, source=${ hold.source }); preserving product-evidence signatures without requeueing the held lifecycle/reload producer`;
 	const addGroup = ( group ) => {
+		const activeNoisePause = getActiveNoisePauseCooldown( group );
+		const duplicateFamilyHoldBlock =
+			getBootstrapDuplicateFamilyHoldBlock( group );
 		if (
 			! group ||
 			seen.has( group ) ||
 			! PROFILE_BY_GROUP[ group ] ||
 			state.disabledGroups?.[ group ] ||
-			state.pausedGroups?.[ group ]
+			state.pausedGroups?.[ group ] ||
+			activeNoisePause ||
+			duplicateFamilyHoldBlock ||
+			isStartupHoldBlockingProducerGroup(
+				bootstrapProducerStartupHold,
+				group
+			)
 		) {
+			if ( group && activeNoisePause ) {
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'skip-bootstrap-noise-cooldown',
+					group,
+					reason: `bootstrap supervisor group selection respected active ${ activeNoisePause.kind } cooldown from ${ activeNoisePause.at }: ${ activeNoisePause.reason }`,
+					expiresAt: activeNoisePause.expiresAt,
+						...( activeNoisePause.originGroup
+							? { originGroup: activeNoisePause.originGroup }
+							: {} ),
+					} );
+				} else if ( group && duplicateFamilyHoldBlock ) {
+					state.changes.push( {
+						at: new Date().toISOString(),
+						action: 'skip-bootstrap-duplicate-family-hold',
+						group,
+						family: duplicateFamilyHoldBlock.family,
+						source: duplicateFamilyHoldBlock.source,
+						expiresAt: duplicateFamilyHoldBlock.expiresAt,
+						reason:
+							getBootstrapDuplicateFamilyHoldBlockReason(
+								duplicateFamilyHoldBlock
+							),
+					} );
+				} else if (
+					group &&
+					isStartupHoldBlockingProducerGroup(
+						bootstrapProducerStartupHold,
+					group
+				)
+			) {
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'skip-bootstrap-current-startup-noise-hold',
+					group,
+					reason: `bootstrap supervisor group selection held while ${
+						bootstrapProducerStartupHold.drainOnly
+							? 'drain-only '
+							: ''
+					}${
+						bootstrapProducerStartupHold.fleetStartupNoiseHold
+							? 'fleet '
+							: 'current-run '
+					}startup-noise hold is active for ${ bootstrapProducerStartupHold.family } (${ bootstrapProducerStartupHold.count } groups/signatures, share=${ bootstrapProducerStartupHold.share })`,
+				} );
+			}
 			return;
 		}
 		seen.add( group );
 		selected.push( group );
 	};
 
+	const addFleetStartupNoiseCanary = () => {
+		const group = FLEET_STARTUP_NOISE_CANARY_GROUP;
+		if (
+			! bootstrapProducerStartupHold?.fleetStartupNoiseHold ||
+			! group
+		) {
+			return false;
+		}
+		if (
+			isNoProductStartupNoiseCooldown( bootstrapProducerStartupHold )
+		) {
+			const marker = [
+				OUTPUT_DIR,
+				bootstrapProducerStartupHold.family,
+				bootstrapProducerStartupHold.count,
+				bootstrapProducerStartupHold.share,
+				bootstrapProducerStartupHold.expiresAt ?? '',
+				'hard-block',
+			].join( '|' );
+			if ( state.fleetStartupNoiseCanaryBlocked?.marker !== marker ) {
+				state.fleetStartupNoiseCanaryBlocked = {
+					at: new Date().toISOString(),
+					outputDir: OUTPUT_DIR,
+					group,
+					holdFamily: bootstrapProducerStartupHold.family,
+					holdCount: bootstrapProducerStartupHold.count,
+					holdShare: bootstrapProducerStartupHold.share,
+					marker,
+					...( bootstrapProducerStartupHold.expiresAt
+						? { holdExpiresAt: bootstrapProducerStartupHold.expiresAt }
+						: {} ),
+				};
+				state.changes.push( {
+					at: state.fleetStartupNoiseCanaryBlocked.at,
+					action: 'block-bootstrap-fleet-startup-noise-canary',
+					group,
+					reason: `fleet startup-noise hold is active for no-product ${ bootstrapProducerStartupHold.family } across ${ bootstrapProducerStartupHold.count } producer groups (share=${ bootstrapProducerStartupHold.share }); refusing the canary even when RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY=1 because it requeues strict pre-action bootstrap noise without product evidence`,
+					...( bootstrapProducerStartupHold.expiresAt
+						? { expiresAt: bootstrapProducerStartupHold.expiresAt }
+						: {} ),
+				} );
+			}
+			return false;
+		}
+		if ( ! ALLOW_FLEET_STARTUP_NOISE_CANARY ) {
+			const marker = [
+				OUTPUT_DIR,
+				bootstrapProducerStartupHold.family,
+				bootstrapProducerStartupHold.count,
+				bootstrapProducerStartupHold.share,
+				bootstrapProducerStartupHold.expiresAt ?? '',
+			].join( '|' );
+			if ( state.fleetStartupNoiseCanaryDisabled?.marker !== marker ) {
+				state.fleetStartupNoiseCanaryDisabled = {
+					at: new Date().toISOString(),
+					outputDir: OUTPUT_DIR,
+					group,
+					holdFamily: bootstrapProducerStartupHold.family,
+					holdCount: bootstrapProducerStartupHold.count,
+					holdShare: bootstrapProducerStartupHold.share,
+					marker,
+					...( bootstrapProducerStartupHold.expiresAt
+						? { holdExpiresAt: bootstrapProducerStartupHold.expiresAt }
+						: {} ),
+				};
+				state.changes.push( {
+					at: state.fleetStartupNoiseCanaryDisabled.at,
+					action: 'skip-bootstrap-fleet-startup-noise-canary-disabled',
+					group,
+					reason: `fleet startup-noise hold is active for ${ bootstrapProducerStartupHold.family } across ${ bootstrapProducerStartupHold.count } producer groups (share=${ bootstrapProducerStartupHold.share }); not launching the configured canary unless RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY=1`,
+					...( bootstrapProducerStartupHold.expiresAt
+						? { expiresAt: bootstrapProducerStartupHold.expiresAt }
+						: {} ),
+				} );
+			}
+			return false;
+		}
+		const canaryCandidates = uniquePathList( [
+			group,
+			...MATERIALIZATION_FLOOR_GROUPS,
+			...PRODUCTIVE_FALLBACK_GROUPS,
+		] );
+		const skippedCandidates = [];
+		let selectedCanary = null;
+			for ( const candidate of canaryCandidates ) {
+				const activeNoisePause = getActiveNoisePauseCooldown( candidate );
+				const duplicateFamilyHoldBlock =
+					getBootstrapDuplicateFamilyHoldBlock( candidate );
+				let blockedReason = '';
+				let duplicateFamilyHoldBlocked = false;
+				if ( ! candidate ) {
+					blockedReason = 'empty group name';
+			} else if ( seen.has( candidate ) ) {
+				blockedReason = 'already selected';
+			} else if ( ! PROFILE_BY_GROUP[ candidate ] ) {
+				blockedReason = 'unknown group';
+			} else if ( state.disabledGroups?.[ candidate ] ) {
+				blockedReason = 'disabled group';
+			} else if ( state.pausedGroups?.[ candidate ] ) {
+				blockedReason = `stored pause: ${
+					state.pausedGroups?.[ candidate ]?.reason ?? 'unknown'
+					}`;
+				} else if ( activeNoisePause ) {
+					blockedReason = `${ activeNoisePause.kind } cooldown from ${ activeNoisePause.at }: ${ activeNoisePause.reason }`;
+				} else if ( duplicateFamilyHoldBlock ) {
+					blockedReason =
+						getBootstrapDuplicateFamilyHoldBlockReason(
+							duplicateFamilyHoldBlock
+						);
+					duplicateFamilyHoldBlocked = true;
+				}
+				if ( blockedReason ) {
+					skippedCandidates.push( {
+						group: candidate,
+					reason: blockedReason,
+					...( activeNoisePause?.expiresAt
+						? { expiresAt: activeNoisePause.expiresAt }
+						: {} ),
+						...( activeNoisePause?.originGroup
+							? { originGroup: activeNoisePause.originGroup }
+							: {} ),
+						...( duplicateFamilyHoldBlocked
+							? {
+									family: duplicateFamilyHoldBlock.family,
+									source: duplicateFamilyHoldBlock.source,
+									expiresAt: duplicateFamilyHoldBlock.expiresAt,
+							  }
+							: {} ),
+					} );
+					continue;
+				}
+			selectedCanary = candidate;
+			break;
+		}
+		if ( ! selectedCanary ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'skip-bootstrap-fleet-startup-noise-canary-no-eligible-fallback',
+				group,
+				skippedCandidates: skippedCandidates.slice( 0, 12 ),
+				reason: `fleet startup-noise hold is active, but no configured or fallback canary was eligible; tried configured group plus bounded materialization/productive fallback groups without overriding disabled, paused, or cooldown state`,
+			} );
+			return false;
+		}
+		if ( selectedCanary !== group ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'fallback-bootstrap-fleet-startup-noise-canary',
+				configuredGroup: group,
+				group: selectedCanary,
+				skippedCandidates: skippedCandidates.slice( 0, 12 ),
+				reason: `configured fleet startup-noise canary was unavailable; using the next eligible bounded fallback canary so coverage-guided browser materialization does not stay empty`,
+			} );
+		}
+		seen.add( selectedCanary );
+		selected.push( selectedCanary );
+		state.fleetStartupNoiseCanary = {
+			at: new Date().toISOString(),
+			outputDir: OUTPUT_DIR,
+			configuredGroup: group,
+			group: selectedCanary,
+			holdFamily: bootstrapProducerStartupHold.family,
+			holdCount: bootstrapProducerStartupHold.count,
+			holdShare: bootstrapProducerStartupHold.share,
+		};
+		state.changes.push( {
+			at: state.fleetStartupNoiseCanary.at,
+			action: 'bootstrap-fleet-startup-noise-canary',
+			configuredGroup: group,
+			group: selectedCanary,
+			reason: `fleet startup-noise hold is active for ${ bootstrapProducerStartupHold.family } across ${ bootstrapProducerStartupHold.count } producer groups (share=${ bootstrapProducerStartupHold.share }); allowing exactly one eligible canary group so the supervisor does not churn on an empty producer set`,
+		} );
+		return true;
+	};
+
+	const addEmptyMaterializationStartupNoiseCanary = () => {
+		if ( ! ALLOW_FLEET_STARTUP_NOISE_CANARY ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'skip-bootstrap-empty-materialization-startup-noise-canary-disabled',
+				reason: 'all bootstrap browser materialization candidates were blocked by startup/noise cooldowns; empty-materialization canary override is disabled, and no-product startup-noise cooldowns remain hard-blocked even when the override is enabled',
+			} );
+			return false;
+		}
+
+		const candidates = uniquePathList( [
+			FLEET_STARTUP_NOISE_CANARY_GROUP,
+			...MATERIALIZATION_FLOOR_GROUPS,
+			...PRODUCTIVE_FALLBACK_GROUPS,
+			state.emptyMaterializationStartupNoiseCanary?.group,
+		] );
+		const skippedCandidates = [];
+		let selectedCanary = null;
+		let selectedCooldown = null;
+			for ( const candidate of candidates ) {
+				const storedPause = state.pausedGroups?.[ candidate ];
+				const activeNoisePause = getActiveNoisePauseCooldown( candidate );
+				const duplicateFamilyHoldBlock =
+					getBootstrapDuplicateFamilyHoldBlock( candidate );
+				const storedActivePause = getActiveNoisePauseForEntry(
+					candidate,
+					storedPause
+			);
+			const hasCooldown = !! ( storedPause || activeNoisePause );
+			const hasCooldownProductEvidence =
+				hasPauseProductEvidence( storedPause ) ||
+				hasPauseProductEvidence( storedActivePause ) ||
+				hasPauseProductEvidence( activeNoisePause );
+				const noProductStartupCooldown =
+					( isNoProductStartupNoiseCooldown( storedActivePause ) ||
+						isNoProductStartupNoiseCooldown( activeNoisePause ) ) &&
+					! hasCooldownProductEvidence;
+				const bypassableProductEvidenceStartupCooldown =
+					hasCooldownProductEvidence &&
+					( storedActivePause?.kind === 'startup-noise' ||
+						activeNoisePause?.kind === 'startup-noise' );
+				let blockedReason = '';
+				let duplicateFamilyHoldBlocked = false;
+				if ( ! candidate ) {
+					blockedReason = 'empty group name';
+			} else if ( seen.has( candidate ) ) {
+				blockedReason = 'already selected';
+			} else if ( ! PROFILE_BY_GROUP[ candidate ] ) {
+				blockedReason = 'unknown group';
+			} else if ( state.disabledGroups?.[ candidate ] ) {
+				blockedReason = 'disabled group';
+			} else if ( noProductStartupCooldown ) {
+				blockedReason = `no-product startup-noise cooldown: ${
+					activeNoisePause?.reason ??
+					storedActivePause?.reason ??
+					storedPause?.reason ??
+					'unknown'
+				}`;
+			} else if (
+				hasCooldown &&
+				! bypassableProductEvidenceStartupCooldown
+			) {
+					blockedReason = `non-reusable pause/cooldown: ${
+						storedPause?.reason ?? activeNoisePause?.reason ?? 'unknown'
+					}`;
+				} else if ( duplicateFamilyHoldBlock ) {
+					blockedReason =
+						getBootstrapDuplicateFamilyHoldBlockReason(
+							duplicateFamilyHoldBlock
+						);
+					duplicateFamilyHoldBlocked = true;
+				}
+				if ( blockedReason ) {
+					skippedCandidates.push( {
+						group: candidate,
+						reason: blockedReason,
+					...( storedPause?.expiresAt || activeNoisePause?.expiresAt
+						? {
+								expiresAt:
+									storedPause?.expiresAt ??
+									activeNoisePause?.expiresAt,
+									  }
+									: {} ),
+						...( duplicateFamilyHoldBlocked
+							? {
+									family: duplicateFamilyHoldBlock.family,
+									source: duplicateFamilyHoldBlock.source,
+									expiresAt: duplicateFamilyHoldBlock.expiresAt,
+							  }
+							: {} ),
+					} );
+					continue;
+				}
+
+			selectedCanary = candidate;
+			selectedCooldown =
+				activeNoisePause ?? storedActivePause ?? storedPause ?? null;
+			break;
+		}
+
+		if ( ! selectedCanary ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'skip-bootstrap-empty-materialization-startup-noise-canary-no-eligible-fallback',
+				skippedCandidates: skippedCandidates.slice( 0, 12 ),
+				reason: 'all bootstrap browser materialization candidates were blocked, and no bounded canary candidate was eligible without overriding no-product startup-noise cooldowns',
+			} );
+			return false;
+		}
+
+		if ( state.pausedGroups?.[ selectedCanary ] ) {
+			delete state.pausedGroups[ selectedCanary ];
+		}
+		seen.add( selectedCanary );
+		selected.push( selectedCanary );
+		state.materializationRescueGroups = [ selectedCanary ];
+		state.emptyMaterializationStartupNoiseCanary = {
+			at: new Date().toISOString(),
+			outputDir: OUTPUT_DIR,
+			group: selectedCanary,
+			...( selectedCooldown?.at
+				? { cooldownAt: selectedCooldown.at }
+				: {} ),
+			...( selectedCooldown?.reason
+				? { cooldownReason: selectedCooldown.reason }
+				: {} ),
+			...( selectedCooldown?.expiresAt
+				? { expiresAt: selectedCooldown.expiresAt }
+				: {} ),
+			...( selectedCooldown?.originGroup
+				? { originGroup: selectedCooldown.originGroup }
+				: {} ),
+		};
+		state.changes.push( {
+			at: state.emptyMaterializationStartupNoiseCanary.at,
+			action: 'bootstrap-empty-materialization-startup-noise-canary',
+			group: selectedCanary,
+			skippedCandidates: skippedCandidates.slice( 0, 12 ),
+			reason: 'coverage-guided browser materialization would otherwise be empty; launching exactly one bounded canary only because it is not blocked by a no-product startup-noise cooldown',
+		} );
+		return true;
+	};
+
+	if (
+		ALLOW_FLEET_STARTUP_NOISE_CANARY &&
+		FLEET_STARTUP_NOISE_CANARY_GROUP
+	) {
+		const beforeExplicitCanary = selected.length;
+		addGroup( FLEET_STARTUP_NOISE_CANARY_GROUP );
+		if ( selected.length > beforeExplicitCanary ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'prefer-explicit-bootstrap-canary-group',
+				group: FLEET_STARTUP_NOISE_CANARY_GROUP,
+				reason: 'explicit bounded materialization canary was requested; trying it before stale enabled groups from the copied novelty state',
+			} );
+		}
+	}
 	for ( const group of state.enabledGroups ?? [] ) {
+		if ( selected.length >= TARGET_ENABLED_GROUPS ) {
+			break;
+		}
 		addGroup( group );
 	}
-	if ( selected.length === 0 ) {
+	const bootstrapTarget = Math.max(
+		1,
+		Math.min( TARGET_ENABLED_GROUPS, MAX_ENABLED_GROUPS )
+	);
+	if ( selected.length < bootstrapTarget ) {
 		for ( const group of PRODUCTIVE_FALLBACK_GROUPS ) {
 			addGroup( group );
-			if ( selected.length > 0 ) {
+			if ( selected.length >= bootstrapTarget ) {
 				break;
 			}
 		}
 	}
+	if (
+		selected.length === 0 &&
+		START_SUPERVISOR
+	) {
+		addFleetStartupNoiseCanary();
+	}
+		if (
+			selected.length === 0 &&
+			START_SUPERVISOR
+		) {
+			if (
+				isStartupHoldBlockingProducerSelection(
+					bootstrapProducerStartupHold
+				) &&
+				bootstrapProducerStartupHold?.drainOnly !== true &&
+				bootstrapProducerStartupHold?.fleetStartupNoiseHold !== true
+			) {
+				state.changes.push( {
+					at: new Date().toISOString(),
+				action: 'hold-bootstrap-empty-materialization-current-startup-noise',
+				reason: `current coverage root has zero active materialized run dirs, but ${
+					bootstrapProducerStartupHold.drainOnly
+						? 'drain-only '
+						: ''
+				}${
+					bootstrapProducerStartupHold.fleetStartupNoiseHold
+						? 'fleet '
+						: 'current-run '
+				}startup-noise hold is active for ${ bootstrapProducerStartupHold.family } (${ bootstrapProducerStartupHold.count } groups/signatures, share=${ bootstrapProducerStartupHold.share }); leaving browser producer set empty instead of rescuing through startup noise`,
+			} );
+		} else {
+			let rescueLaneCount = 0;
+				const rescueGroups = uniquePathList( [
+					...MATERIALIZATION_FLOOR_GROUPS,
+					...PRODUCTIVE_FALLBACK_GROUPS,
+				] );
+				for ( const group of rescueGroups ) {
+					const activeNoisePause = getActiveNoisePauseCooldown( group );
+					const duplicateFamilyHoldBlock =
+						getBootstrapDuplicateFamilyHoldBlock( group );
+					if (
+						seen.has( group ) ||
+						! PROFILE_BY_GROUP[ group ] ||
+					state.disabledGroups?.[ group ]
+				) {
+					continue;
+				}
+					if (
+						state.pausedGroups?.[ group ] ||
+						activeNoisePause
+					) {
+						const pausedReason = state.pausedGroups?.[ group ]?.reason;
+						state.changes.push( {
+							at: new Date().toISOString(),
+							action: 'skip-bootstrap-rescue-noise-cooldown',
+							group,
+						reason:
+							'current coverage root has zero active materialized run dirs, but bootstrap rescue cannot override stored startup/known-noise pause or active cooldown without current product evidence',
+						...( pausedReason
+							? { storedPauseReason: pausedReason }
+							: {} ),
+						...( activeNoisePause
+							? {
+									cooldownKind: activeNoisePause.kind,
+								cooldownAt: activeNoisePause.at,
+								cooldownReason: activeNoisePause.reason,
+								expiresAt: activeNoisePause.expiresAt,
+								...( activeNoisePause.originGroup
+									? {
+											originGroup:
+												activeNoisePause.originGroup,
+									  }
+									: {} ),
+							  }
+								: {} ),
+							} );
+							continue;
+						}
+					if ( duplicateFamilyHoldBlock ) {
+						state.changes.push( {
+							at: new Date().toISOString(),
+							action: 'skip-bootstrap-rescue-duplicate-family-hold',
+							group,
+							family: duplicateFamilyHoldBlock.family,
+							source: duplicateFamilyHoldBlock.source,
+							expiresAt: duplicateFamilyHoldBlock.expiresAt,
+							reason:
+								getBootstrapDuplicateFamilyHoldBlockReason(
+									duplicateFamilyHoldBlock
+								),
+						} );
+						continue;
+					}
+					seen.add( group );
+					selected.push( group );
+					rescueLaneCount +=
+					PROFILE_GROUPS.find( ( profile ) => profile.name === group )
+					?.lanes ?? 1;
+			if ( rescueLaneCount >= MIN_ENABLED_BROWSER_LANES ) {
+				break;
+			}
+		}
+		if ( selected.length > 0 ) {
+			state.materializationRescueGroups = selected.slice();
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'bootstrap-empty-materialization-rescue',
+				groups: selected.slice(),
+				reason: 'current-run triage has no active materialized producer; writing bounded unrelated browser supervisor groups so coverage materialization is not empty while preserving producer-specific startup/noise holds',
+			} );
+		}
+		}
+	}
+	if ( selected.length === 0 && START_SUPERVISOR ) {
+		addEmptyMaterializationStartupNoiseCanary();
+	}
 
 	const groups = selected.slice( 0, Math.max( 1, MAX_ENABLED_GROUPS ) );
-	if ( groups.length === 0 ) {
-		state.changes.push( {
-			at: new Date().toISOString(),
-			action: 'bootstrap-supervisor-groups-empty',
-			reason: 'no enabled or fallback browser group was available before the first coverage scan',
-		} );
-		return;
-	}
+		if ( groups.length === 0 ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'bootstrap-supervisor-groups-empty',
+				reason: 'no enabled or fallback browser group was available before the first coverage scan without overriding stored pause state or active duplicate/noise cooldowns',
+			} );
+			state.enabledGroups = [];
+			await writeJsonFileAtomic( GROUPS_PATH, [] );
+			await writeJsonFileAtomic( STATE_PATH, state );
+			return;
+		}
 
 	state.enabledGroups = groups;
 	const groupProfiles = groups
@@ -7750,6 +9886,9 @@ async function maybeLaunchCoverageCodex( guidance ) {
 	}
 
 	const currentPolicyTriageYield = state.triageYieldCurrent;
+	const currentDrainTriageYield =
+		state.triageYieldCurrentIncludingPausedNoAnalysis ??
+		currentPolicyTriageYield;
 	const currentRunHold = getCurrentRunDuplicateNoiseHold(
 		currentPolicyTriageYield,
 		{
@@ -7757,11 +9896,23 @@ async function maybeLaunchCoverageCodex( guidance ) {
 			requireNoProductEvidence: true,
 		}
 	);
+	const currentDrainHold = getCurrentRunDuplicateNoiseHold(
+		currentDrainTriageYield,
+		{
+			allowGenericDuplicate: true,
+			requireNoProductEvidence: true,
+		}
+	);
+	const currentStartupHold = isCurrentNoProductStartupHold( currentRunHold )
+		? { ...currentRunHold, scope: 'active current-run' }
+		: isCurrentNoProductStartupHold( currentDrainHold )
+		? { ...currentDrainHold, scope: 'active/drain current-run' }
+		: null;
 	if (
 		! COVERAGE_GUIDANCE_CODEX_FORCE &&
-		isCurrentNoProductStartupHold( currentRunHold )
+		currentStartupHold
 	) {
-		const reason = `current no-product startup-noise hold is active for ${ currentRunHold.family } in active current-run scope (${ currentRunHold.count } signatures, share=${ currentRunHold.share }, source=${ currentRunHold.source }); hold open-ended coverage Codex until strict startup noise leaves the current policy path`;
+		const reason = `current no-product startup-noise hold is active for ${ currentStartupHold.family } in ${ currentStartupHold.scope } scope (${ currentStartupHold.count } signatures, share=${ currentStartupHold.share }, source=${ currentStartupHold.source }); hold open-ended coverage Codex until strict startup noise leaves the current policy path`;
 		if ( state.coverageGuidanceCurrentStartupHoldReason !== reason ) {
 			state.coverageGuidanceCurrentStartupHoldReason = reason;
 			state.coverageGuidanceCurrentStartupHoldLastAt =
@@ -8175,6 +10326,17 @@ function evaluateHealth( groups, coverageFiles, triageYield, supervisorState ) {
 
 let fullStatusWritten =
 	loadedStateHadFullStatus && loadedStateOutputDirMatchesCurrentOutput;
+let lastFullStatusCompletedAt =
+	loadedStateHadFullStatus && loadedStateOutputDirMatchesCurrentOutput
+		? state.lastUpdatedAt ?? null
+		: null;
+let statusWriteQueue = Promise.resolve();
+
+async function enqueueStatusWrite( writeOperation ) {
+	const nextWrite = statusWriteQueue.then( writeOperation, writeOperation );
+	statusWriteQueue = nextWrite.catch( () => {} );
+	return nextWrite;
+}
 
 async function writeStatus(
 	novelty,
@@ -8187,6 +10349,7 @@ async function writeStatus(
 	combinedTriageYield,
 	guidance
 ) {
+	const statusUpdatedAt = new Date().toISOString();
 	const groups = await readJsonFile( GROUPS_PATH );
 	const healthWarnings = state.healthWarnings ?? [];
 	const undercoveredCommonBlocks = getUndercoveredBlockTypes(
@@ -8200,7 +10363,7 @@ async function writeStatus(
 	const lines = [
 		'# RTC Novelty Monitor',
 		'',
-		`Updated: ${ new Date().toISOString() }`,
+		`Updated: ${ statusUpdatedAt }`,
 		`Output dir: ${ OUTPUT_DIR }`,
 		`Supervisor session: ${ getCurrentSupervisorSession() }`,
 		`Groups path: ${ GROUPS_PATH }`,
@@ -8402,11 +10565,15 @@ async function writeStatus(
 			),
 		'',
 	];
-	fullStatusWritten = true;
+	const previousFullStatusWritten = fullStatusWritten;
 	try {
-		await fs.writeFile( STATUS_PATH, lines.join( '\n' ) );
+		await enqueueStatusWrite( () =>
+			writeTextFileAtomic( STATUS_PATH, lines.join( '\n' ) )
+		);
+		fullStatusWritten = true;
+		lastFullStatusCompletedAt = statusUpdatedAt;
 	} catch ( error ) {
-		fullStatusWritten = false;
+		fullStatusWritten = previousFullStatusWritten;
 		throw error;
 	}
 }
@@ -8417,9 +10584,24 @@ async function writeStartupStatus() {
 	}
 	const groups = await readJsonFile( GROUPS_PATH );
 	const supervisorState = await readSupervisorState();
-	const activeRunDirs = getCurrentRunDirs( supervisorState, {
+	const activeRunDirs = filterPolicyInactiveCurrentRunDirs(
+		getCurrentRunDirs( supervisorState ),
+		supervisorState
+	);
+	const activeRunDirsIncludingPausedNoAnalysis = getCurrentRunDirs( supervisorState, {
 		includePausedNoAnalysis: true,
 	} );
+	if (
+		activeRunDirs.length > 0 &&
+		getPathListKey( state.currentRunDirs ?? [] ) !==
+			getPathListKey( activeRunDirs )
+	) {
+		state.currentRunDirs = activeRunDirs;
+		state.currentRunDirsIncludingPausedNoAnalysis =
+			activeRunDirsIncludingPausedNoAnalysis;
+		state.currentRunDirSource = 'supervisor-active-run-dirs-startup';
+		await writeJsonFileAtomic( STATE_PATH, state );
+	}
 	const lines = [
 		'# RTC Novelty Monitor',
 		'',
@@ -8456,7 +10638,63 @@ async function writeStartupStatus() {
 	if ( fullStatusWritten ) {
 		return;
 	}
-	await fs.writeFile( STATUS_PATH, lines.join( '\n' ) );
+	await enqueueStatusWrite( async () => {
+		if ( fullStatusWritten ) {
+			return;
+		}
+		await writeTextFileAtomic( STATUS_PATH, lines.join( '\n' ) );
+	} );
+}
+
+async function writeStatusHeartbeat() {
+	if ( ! fullStatusWritten ) {
+		await writeStartupStatus();
+		return;
+	}
+	const heartbeatAt = new Date().toISOString();
+	await enqueueStatusWrite( async () => {
+		let text;
+		try {
+			text = await fs.readFile( STATUS_PATH, 'utf8' );
+		} catch ( error ) {
+			if ( error?.code === 'ENOENT' ) {
+				fullStatusWritten = false;
+				return;
+			}
+			throw error;
+		}
+		const fullPassSuffix = lastFullStatusCompletedAt
+			? ` (${ lastFullStatusCompletedAt })`
+			: '';
+		const heartbeatLine = `- warning: status heartbeat refreshed at ${ heartbeatAt }; metrics are from the most recent completed full pass${ fullPassSuffix }`;
+		let nextText = text.replace(
+			/\n- warning: status heartbeat refreshed at [^\n]*/g,
+			''
+		);
+		if ( /^Updated: /m.test( nextText ) ) {
+			nextText = nextText.replace(
+				/^Updated: .*$/m,
+				`Updated: ${ heartbeatAt }`
+			);
+		} else {
+			nextText = `Updated: ${ heartbeatAt }\n${ nextText }`;
+		}
+		if ( nextText.includes( '\n## Health\n' ) ) {
+			nextText = nextText.replace(
+				'\n## Health\n',
+				`\n## Health\n${ heartbeatLine }\n`
+			);
+		} else {
+			nextText = `${ nextText.trimEnd() }\n\n## Health\n${ heartbeatLine }\n`;
+		}
+		await writeTextFileAtomic(
+			STATUS_PATH,
+			nextText.endsWith( '\n' ) ? nextText : `${ nextText }\n`
+		);
+	} );
+	if ( ! fullStatusWritten ) {
+		await writeStartupStatus();
+	}
 }
 
 function formatTriageYieldStatusLines( triageYield ) {
@@ -8545,9 +10783,52 @@ function formatTriageYieldStatusLines( triageYield ) {
 	];
 }
 
+async function publishCurrentRunDirsEarly(
+	currentRunDirs,
+	currentRunDirsIncludingPausedNoAnalysis,
+	source
+) {
+	if ( currentRunDirs.length === 0 ) {
+		return;
+	}
+	if (
+		getPathListKey( state.currentRunDirs ?? [] ) ===
+			getPathListKey( currentRunDirs ) &&
+		state.currentRunDirSource === source
+	) {
+		return;
+	}
+	state.currentRunDirs = currentRunDirs;
+	state.currentRunDirsIncludingPausedNoAnalysis =
+		currentRunDirsIncludingPausedNoAnalysis;
+	state.currentRunDirSource = source;
+	await writeJsonFileAtomic( STATE_PATH, state );
+}
+
 async function runPass() {
 	let supervisorState = await readSupervisorState();
 	const resources = sampleResources();
+	if (
+		START_SUPERVISOR &&
+		isSupervisorStateForCurrentOutput( supervisorState ) &&
+		Array.isArray( supervisorState.groups ) &&
+		supervisorState.groups.length === 0
+	) {
+		const sessionName = getCurrentSupervisorSession();
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'restart-empty-supervisor-groups',
+			session: sessionName,
+			outputDir: OUTPUT_DIR,
+			reason: 'current supervisor state has zero groups, so exact tmux liveness is not proof of materialized browser fuzzing',
+		} );
+		try {
+			execFileSync( 'tmux', [ 'kill-session', '-t', sessionName ], {
+				stdio: 'ignore',
+			} );
+		} catch {}
+		supervisorState = null;
+	}
 	if (
 		START_SUPERVISOR &&
 		! hasSupervisorForCurrentOutput( supervisorState )
@@ -8559,9 +10840,21 @@ async function runPass() {
 		supervisorState = await readSupervisorStateAfterStartup();
 	}
 	await syncSupervisorStartupStallPauses( supervisorState );
-	await applyActiveNoiseCooldownsToEnabledGroups( supervisorState );
+	const restoredNoAnalysisNoisePauses =
+		await restoreNoisePausesFromNoAnalysisSentinels( OUTPUT_DIR );
+	if ( restoredNoAnalysisNoisePauses > 0 ) {
+		await writeJsonFileAtomic( STATE_PATH, state );
+		await writeSupervisorGroupsForEnabledGroups( state.enabledGroups );
+	}
+	const restoredActiveNoiseCooldowns =
+		await applyActiveNoiseCooldownsToEnabledGroups( supervisorState );
+	if ( restoredActiveNoiseCooldowns > 0 ) {
+		await writeJsonFileAtomic( STATE_PATH, state );
+		await writeSupervisorGroupsForEnabledGroups( state.enabledGroups );
+	}
 	let currentRunDirs = filterPolicyInactiveCurrentRunDirs(
-		getCurrentRunDirs( supervisorState )
+		getCurrentRunDirs( supervisorState ),
+		supervisorState
 	);
 	let currentRunDirsIncludingPausedNoAnalysis = getCurrentRunDirs(
 		supervisorState,
@@ -8574,22 +10867,22 @@ async function runPass() {
 		...preservedNoAnalysisRunDirs,
 	] );
 	currentRunCoverageRoots = currentRunDirs;
+	await publishCurrentRunDirsEarly(
+		currentRunDirs,
+		currentRunDirsIncludingPausedNoAnalysis,
+		'supervisor-active-run-dirs-prepass'
+	);
 	let observedTriageRunDirs = uniquePathList( [
 		...HISTORICAL_OBSERVED_RUN_DIRS,
 		...CURRENT_RUN_DIRS,
 		...currentRunDirsIncludingPausedNoAnalysis,
 	] );
-	let coverageFiles = await findCoverageFiles(
-		uniquePathList( [ ...OBSERVED_RUN_DIRS, ...currentRunDirs ] )
-	);
-	let currentCoverageFiles = coverageFiles.filter( ( filePath ) =>
-		isCoverageFileInRunDirs( filePath, currentRunDirs )
-	);
-	let currentSummaryFiles = await findSummaryFiles( currentRunDirs );
 	if ( START_SUPERVISOR && currentRunDirs.length === 0 ) {
-		const refreshedSupervisorState = await readSupervisorState();
+		const refreshedSupervisorState =
+			await readSupervisorStateWithMaterializedRunDirs();
 		const refreshedCurrentRunDirs = filterPolicyInactiveCurrentRunDirs(
-			getCurrentRunDirs( refreshedSupervisorState )
+			getCurrentRunDirs( refreshedSupervisorState ),
+			refreshedSupervisorState
 		);
 		if ( refreshedCurrentRunDirs.length > 0 ) {
 			supervisorState = refreshedSupervisorState;
@@ -8603,6 +10896,49 @@ async function runPass() {
 				...preservedNoAnalysisRunDirs,
 			] );
 			currentRunCoverageRoots = currentRunDirs;
+			await publishCurrentRunDirsEarly(
+				currentRunDirs,
+				currentRunDirsIncludingPausedNoAnalysis,
+				'supervisor-active-run-dirs-materialized-before-coverage-scan'
+			);
+			observedTriageRunDirs = uniquePathList( [
+				...HISTORICAL_OBSERVED_RUN_DIRS,
+				...CURRENT_RUN_DIRS,
+				...currentRunDirsIncludingPausedNoAnalysis,
+			] );
+		}
+	}
+	let coverageFiles = await findCoverageFiles(
+		uniquePathList( [ ...OBSERVED_RUN_DIRS, ...currentRunDirs ] )
+	);
+	let currentCoverageFiles = coverageFiles.filter( ( filePath ) =>
+		isCoverageFileInRunDirs( filePath, currentRunDirs )
+	);
+	let currentSummaryFiles = await findSummaryFiles( currentRunDirs );
+	if ( START_SUPERVISOR && currentRunDirs.length === 0 ) {
+		const refreshedSupervisorState =
+			await readSupervisorStateWithMaterializedRunDirs();
+		const refreshedCurrentRunDirs = filterPolicyInactiveCurrentRunDirs(
+			getCurrentRunDirs( refreshedSupervisorState ),
+			refreshedSupervisorState
+		);
+		if ( refreshedCurrentRunDirs.length > 0 ) {
+			supervisorState = refreshedSupervisorState;
+			currentRunDirs = refreshedCurrentRunDirs;
+			currentRunDirsIncludingPausedNoAnalysis = getCurrentRunDirs(
+				supervisorState,
+				{ includePausedNoAnalysis: true }
+			);
+			currentRunDirsIncludingPausedNoAnalysis = uniquePathList( [
+				...currentRunDirsIncludingPausedNoAnalysis,
+				...preservedNoAnalysisRunDirs,
+			] );
+			currentRunCoverageRoots = currentRunDirs;
+			await publishCurrentRunDirsEarly(
+				currentRunDirs,
+				currentRunDirsIncludingPausedNoAnalysis,
+				'supervisor-active-run-dirs-materialized-prepass'
+			);
 			observedTriageRunDirs = uniquePathList( [
 				...HISTORICAL_OBSERVED_RUN_DIRS,
 				...CURRENT_RUN_DIRS,
@@ -8695,9 +11031,13 @@ async function runPass() {
 		}
 	}
 	if ( START_SUPERVISOR ) {
-		const refreshedSupervisorState = await readSupervisorState();
+		const refreshedSupervisorState =
+			currentRunDirs.length === 0
+				? await readSupervisorStateWithMaterializedRunDirs()
+				: await readSupervisorState();
 		const refreshedCurrentRunDirs = filterPolicyInactiveCurrentRunDirs(
-			getCurrentRunDirs( refreshedSupervisorState )
+			getCurrentRunDirs( refreshedSupervisorState ),
+			refreshedSupervisorState
 		);
 		const refreshedPreservedNoAnalysisRunDirs =
 			await findPreservedNoAnalysisRunDirs( OUTPUT_DIR );
@@ -8779,6 +11119,39 @@ async function runPass() {
 				reason: `active current-run dirs changed after policy actions; refreshed status from ${ currentRunDirs.length } active dir(s) and ${ currentRunDirsIncludingPausedNoAnalysis.length } drain dir(s) before writing novelty status`,
 			} );
 		}
+	}
+	const finalCurrentCoverageFiles = await findCoverageFiles( currentRunDirs );
+	const finalCurrentSummaryFiles = await findSummaryFiles( currentRunDirs );
+	const currentCoverageInputsChanged =
+		getPathListKey( finalCurrentCoverageFiles ) !==
+			getPathListKey( currentCoverageFiles ) ||
+		getPathListKey( finalCurrentSummaryFiles ) !==
+			getPathListKey( currentSummaryFiles );
+	if ( currentCoverageInputsChanged ) {
+		coverageFiles = uniquePathList( [
+			...coverageFiles,
+			...finalCurrentCoverageFiles,
+		] ).sort();
+		currentCoverageFiles = coverageFiles.filter( ( filePath ) =>
+			isCoverageFileInRunDirs( filePath, currentRunDirs )
+		);
+		currentSummaryFiles = finalCurrentSummaryFiles;
+		await ensureCurrentRunCounters(
+			currentCoverageFiles,
+			currentSummaryFiles
+		);
+		evaluateHealth(
+			await readJsonFile( GROUPS_PATH ),
+			coverageFiles,
+			triageYieldCurrent,
+			supervisorState
+		);
+		updateCoverageQualityIssues( guidance, triageYieldCurrent );
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'refresh-current-coverage-after-policy',
+			reason: `current-run coverage files changed after policy actions; refreshed health from ${ currentCoverageFiles.length } behavioral file(s) and ${ currentSummaryFiles.length } summary file(s) before writing novelty status`,
+		} );
 	}
 	if ( ! shutdownRequested ) {
 		await maybeLaunchCoverageCodex( guidance );
@@ -8867,16 +11240,16 @@ async function main() {
 		) }`
 	);
 	await writeStartupStatus();
-	const startupStatusHeartbeat = setInterval( () => {
-		void writeStartupStatus().catch( ( error ) => {
+	const statusHeartbeat = setInterval( () => {
+		void writeStatusHeartbeat().catch( ( error ) => {
 			void log(
-				`startup status heartbeat failed: ${
+				`status heartbeat failed: ${
 					error.stack ?? error.message
 				}`
 			).catch( () => {} );
 		} );
 	}, STARTUP_STATUS_HEARTBEAT_MS );
-	startupStatusHeartbeat.unref?.();
+	statusHeartbeat.unref?.();
 	try {
 		while ( ! shutdownRequested && Date.now() < END_AT ) {
 			try {
@@ -8887,7 +11260,7 @@ async function main() {
 			await sleep( INTERVAL_MS );
 		}
 	} finally {
-		clearInterval( startupStatusHeartbeat );
+		clearInterval( statusHeartbeat );
 	}
 	if ( shutdownRequested ) {
 		await log( 'RTC novelty monitor exiting after signal shutdown.' );
