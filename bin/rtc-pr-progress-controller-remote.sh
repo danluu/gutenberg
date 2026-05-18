@@ -123,6 +123,74 @@ job_active() {
 	active_session_matching "^rtc-pr-progress-job-$slug-" >/dev/null
 }
 
+latest_file() {
+	local root=$1 pattern=$2
+	find "$root" -path "$pattern" -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+file_mtime() {
+	stat -c %Y "$1" 2>/dev/null || printf '0'
+}
+
+branch_published() {
+	local branch=$1 head=${2:-}
+	local manifest=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
+	[ -s "$manifest" ] || return 1
+	awk -F '\t' -v branch="$branch" -v head="$head" '
+		NR == 1 { next }
+		$6 == branch && (head == "" || $5 == head || index($5, head) == 1 || index(head, $5) == 1) {
+			found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$manifest"
+}
+
+latest_pr07c_controller_classification() {
+	latest_file "$BASE/jobs" '*/pr07c-owner-matrix-*/classification.tsv'
+}
+
+pr07c_owner_matrix_consumed() {
+	local classification latest_report owner_matrix class_mtime report_mtime matrix_mtime
+	classification=$(latest_pr07c_controller_classification || true)
+	[ -n "$classification" ] || return 1
+	if grep -q $'\tpromote_product_pr\t' "$classification" 2>/dev/null; then
+		return 1
+	fi
+	latest_report=$(latest_pr07c_owner_report || true)
+	owner_matrix=$(latest_owner_matrix || true)
+	class_mtime=$(file_mtime "$classification")
+	report_mtime=0
+	matrix_mtime=0
+	[ -n "${latest_report:-}" ] && report_mtime=$(file_mtime "$latest_report")
+	[ -n "${owner_matrix:-}" ] && matrix_mtime=$(file_mtime "$owner_matrix")
+	if [ "$class_mtime" -ge "$report_mtime" ] && [ "$class_mtime" -ge "$matrix_mtime" ]; then
+		return 0
+	fi
+	return 1
+}
+
+inferred_repair_base() {
+	local branch=$1
+	case "$branch" in
+		ready/rtc-pr02a-http-room-isolation-regression) printf '%s\n' 'ready/rtc-pr02-http-storage-read-window' ;;
+		ready/rtc-pr03b-browser-revision-restore-crdt-invalidation) printf '%s\n' 'ready/rtc-pr03-revision-restore-crdt-reset' ;;
+		ready/rtc-pr07b-save-response-manager-base-record) printf '%s\n' 'ready/rtc-pr07a-save-response-actions-guard' ;;
+		ready/rtc-pr09-store-lock-fairness) printf '%s\n' 'ready/rtc-pr06a-persisted-empty-content-guard' ;;
+		ready/rtc-pr10-crdt-block-rebase) printf '%s\n' 'ready/rtc-pr09-store-lock-fairness' ;;
+		ready/rtc-pr11a-stale-base-record-block-append) printf '%s\n' 'ready/rtc-pr10-crdt-block-rebase' ;;
+		ready/rtc-pr11b-stale-base-block-delete) printf '%s\n' 'ready/rtc-pr11a-stale-base-record-block-append' ;;
+		ready/rtc-pr14-table-body-array-green) printf '%s\n' 'ready/rtc-pr13b3-explicit-base-source-retirement-green' ;;
+		*) return 1 ;;
+	esac
+}
+
+branch_repair_active() {
+	active_session_matching '^rtc-pr-progress-job-branch-repair-' >/dev/null
+}
+
 decision_allows() {
 	local action=$1 target=${2:-}
 	[ -s "$DECISIONS" ] || return 0
@@ -236,7 +304,11 @@ write_progress_table() {
 				[ -n "${source:-}" ] || continue
 				case "$class:$allowed:$reason" in
 					product-candidate:1:*)
-						printf '%s\t%s\tready-product-pr\thigh\tpublishable\t%s\t%s\tpublish from local machine and keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
+						if branch_published "$branch" "$head"; then
+							printf '%s\t%s\tready-product-pr\thigh\tpublished\t%s\t%s\talready published by local machine; keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
+						else
+							printf '%s\t%s\tready-product-pr\thigh\tpublishable\t%s\t%s\tpublish from local machine and keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
+						fi
 						;;
 					product-candidate:0:*)
 						printf '%s\t%s\tready-product-pr\tmedium\tneeds-repair\t%s\t%s\trepair manifest/diff/base before publication reason=%s\t%s\n' "$now" "$source" "$branch" "$head" "$reason" "$report"
@@ -246,7 +318,11 @@ write_progress_table() {
 		fi
 		if pr07c_owner_matrix_needed; then
 			pr07c_report=$(latest_pr07c_owner_report || true)
-			printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\towner-evidence-needed\tPR07C/HOLD-07C\t\tconsume owner matrix; promote only with product ownership proof\t%s\n' "$now" "${pr07c_report:-missing}"
+			if pr07c_owner_matrix_consumed; then
+				printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\truntime-held-consumed\tPR07C/HOLD-07C\t\tdo not relaunch owner matrix until newer owner evidence appears; repair setup or run exact replay instead\t%s\n' "$now" "${pr07c_report:-missing}"
+			else
+				printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\towner-evidence-needed\tPR07C/HOLD-07C\t\tconsume owner matrix; promote only with product ownership proof\t%s\n' "$now" "${pr07c_report:-missing}"
+			fi
 		fi
 		if [ -s "$DEFERRED_BASE/current-deferred-status.md" ]; then
 			awk -v now="$now" '
@@ -287,6 +363,7 @@ write_controller_push_manifest() {
 			while IFS=$'\t' read -r source class branch base head allowed reason report; do
 				[ "$class" = "product-candidate" ] || continue
 				[ "$allowed" = "1" ] || continue
+				branch_published "$branch" "$head" && continue
 				case "$branch" in
 					ready/*|finalized/*|fresh-prset/*|cycle*|ready-pr03b/*) ;;
 					*) continue ;;
@@ -299,6 +376,14 @@ write_controller_push_manifest() {
 					"$branch" "$head" "$dest" "$base" "$files" "$insertions" "$deletions" "critical-path diff check passed; controller prioritized product PR publication" "$report"
 			done
 		fi
+		find "$BASE/jobs" -path '*/branch-repair-*/push-manifest.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+			sort -n |
+			tail -40 |
+			cut -f2- |
+			while IFS= read -r manifest; do
+				awk -F '\t' 'NR > 1 && NF >= 9 { print }' "$manifest"
+			done |
+			awk -F '\t' '!seen[$1 "\t" $2]++'
 	} > "$tmp"
 	mv "$tmp" "$PUSH_MANIFEST"
 }
@@ -467,6 +552,10 @@ EOF
 
 launch_pr07c_owner_matrix_job() {
 	local ts run_dir prompt report stderr classification runner latest_report owner_matrix active_jobs
+	if pr07c_owner_matrix_consumed; then
+		log "not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence"
+		return 0
+	fi
 	if job_active pr07c-owner-matrix; then
 		log "not launching PR07C owner matrix: job already active"
 		return 0
@@ -541,6 +630,160 @@ EOF
 	json_event launch "pr07c owner matrix $ts"
 }
 
+next_allowed_branch_repair() {
+	local target
+	[ -s "$DECISIONS" ] || return 1
+	awk -F '\t' 'NR > 1 && $1 == "launch-branch-repair" && tolower($4) ~ /^(yes|true|allow|allowed|1)$/ { print $2 }' "$DECISIONS" |
+	while IFS= read -r target; do
+		[ -n "$target" ] || continue
+		awk -F '\t' -v target="$target" '
+			NR > 1 && $5 == "needs-repair" && $6 == target {
+				print $6 "\t" $7 "\t" $9
+				found = 1
+				exit
+			}
+			END { exit found ? 0 : 1 }
+		' "$PROGRESS" && return 0
+	done
+	return 1
+}
+
+write_manifest_only_branch_repair() {
+	local branch=$1 head=$2 evidence=$3 run_dir=$4 base files insertions deletions dest report classification manifest
+	base=$(inferred_repair_base "$branch" || true)
+	[ -n "${base:-}" ] || return 1
+	git -C "$SRC" rev-parse --verify --quiet "$branch" >/dev/null || return 1
+	git -C "$SRC" rev-parse --verify --quiet "$base" >/dev/null || return 1
+	git -C "$SRC" merge-base --is-ancestor "$base" "$branch" || return 1
+	files=$(git -C "$SRC" diff --name-only "$base..$branch" | wc -l | tr -d ' ')
+	insertions=$(git -C "$SRC" diff --numstat "$base..$branch" | awk '{ s += $1 } END { print s + 0 }')
+	deletions=$(git -C "$SRC" diff --numstat "$base..$branch" | awk '{ s += $2 } END { print s + 0 }')
+	[ "$files" -gt 0 ] || return 1
+	[ "$files" -le 20 ] || return 1
+	[ $(( insertions + deletions )) -le 3000 ] || return 1
+	dest=$(safe_destination_for_branch "$branch")
+	report="$run_dir/report.md"
+	classification="$run_dir/classification.tsv"
+	manifest="$run_dir/push-manifest.tsv"
+	{
+		echo "# Branch Repair"
+		echo
+		echo "- generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+		echo "- branch: $branch"
+		echo "- head: $(git -C "$SRC" rev-parse --short=12 "$branch")"
+		echo "- repaired_base: $base"
+		echo "- files: $files"
+		echo "- insertions: $insertions"
+		echo "- deletions: $deletions"
+		echo "- mode: manifest-only base repair"
+		echo
+		echo "The earlier product-candidate diff check failed because the validation"
+		echo "used an over-broad base. The inferred dependency base is an ancestor and"
+		echo "the repaired diff is narrow, so this job emits a push manifest without"
+		echo "rewriting the branch."
+		echo
+		echo "## Evidence"
+		echo
+		echo "- original validation report: $evidence"
+		echo
+		echo "## Diffstat"
+		git -C "$SRC" diff --stat "$base..$branch" | sed -n '1,80p'
+	} > "$report"
+	{
+		printf 'item_id\tclassification\tevidence\tnext_action\tartifact_path\n'
+		printf '%s\tmanifest_repaired\t%s\tpublish from local machine and continue fuzz validation\t%s\n' "$branch" "$evidence" "$manifest"
+	} > "$classification"
+	{
+		printf 'source_branch\tsource_commit\tintended_danluu_branch\tbase_ref\tfiles_changed\tinsertions\tdeletions\tvalidation_summary\treason\n'
+		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+			"$branch" "$(git -C "$SRC" rev-parse --short=12 "$branch")" "$dest" "$base" "$files" "$insertions" "$deletions" \
+			"controller branch-repair base check passed" "$report"
+	} > "$manifest"
+	return 0
+}
+
+launch_branch_repair_job() {
+	local row branch head evidence ts slug run_dir prompt report stderr classification runner active_jobs
+	branch_repair_active && {
+		log "not launching branch repair: branch repair job already active"
+		return 0
+	}
+	row=$(next_allowed_branch_repair || true)
+	[ -n "$row" ] || return 0
+	branch=$(printf '%s' "$row" | cut -f1)
+	head=$(printf '%s' "$row" | cut -f2)
+	evidence=$(printf '%s' "$row" | cut -f3-)
+	[ -n "$branch" ] || return 0
+	active_jobs=$(active_pr_jobs)
+	if [ "$active_jobs" -ge "$MAX_ACTIVE_PR_JOBS" ]; then
+		log "not launching branch repair for $branch: active PR jobs $active_jobs >= max $MAX_ACTIVE_PR_JOBS"
+		return 0
+	fi
+	decision_allows launch-branch-repair "$branch" || {
+		log "not launching branch repair for $branch: persona decisions blocked it"
+		return 0
+	}
+	ts=$(date -u +%Y%m%dT%H%M%SZ)
+	slug=$(slugify "$branch")
+	run_dir="$BASE/jobs/branch-repair-$slug-$ts"
+	mkdir -p "$run_dir"
+	if write_manifest_only_branch_repair "$branch" "$head" "$evidence" "$run_dir"; then
+		log "wrote manifest-only branch repair for $branch at $run_dir"
+		json_event launch "branch repair manifest-only $branch $ts"
+		return 0
+	fi
+	prompt="$run_dir/prompt.md"
+	report="$run_dir/report.md"
+	classification="$run_dir/classification.tsv"
+	stderr="$run_dir/stderr.log"
+	runner="$run_dir/run.sh"
+	cat > "$prompt" <<PROMPT
+You are running inside Jetstream2 on the Gutenberg RTC PR progress controller.
+Do not use API subagents. Work in this one Codex process.
+
+Goal: repair a product PR branch that failed critical-path diff/base validation.
+
+Branch: $branch
+Head: $head
+Original validation report: $evidence
+Repo: $SRC
+
+Required outputs:
+- report: $report
+- classification TSV: $classification
+
+classification.tsv header:
+item_id	classification	evidence	next_action	artifact_path
+
+Allowed classifications:
+- manifest_repaired: if the branch is already correct but needs a narrower
+  dependency base in a push manifest.
+- branch_repaired: if you create a new non-destructive ready/* branch that is
+  smaller and cleaner.
+- still_blocked: if more work is required.
+
+If a branch should be published, write $run_dir/push-manifest.tsv with columns:
+source_branch	source_commit	intended_danluu_branch	base_ref	files_changed	insertions	deletions	validation_summary	reason
+
+Keep this bounded. Prefer git ancestry/range-diff/diffstat checks and small
+manifest/base repairs. Do not run broad fuzzing. Do not stop discovery fuzzers.
+PROMPT
+	cat > "$runner" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+cd "$SRC"
+timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" || true
+if [ ! -s "$classification" ]; then
+	printf 'item_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"
+	printf '%s\\tstill_blocked\\tmissing classification from branch repair job\\treview report/stderr\\t%s\\n' "$branch" "$report" >> "$classification"
+fi
+EOF
+	chmod +x "$runner"
+	tmux new-session -d -s "rtc-pr-progress-job-branch-repair-$slug-$ts" "bash '$runner'"
+	log "launched branch repair job for $branch at $ts"
+	json_event launch "branch repair $branch $ts"
+}
+
 write_status() {
 	local tmp=$STATUS.$$.tmp
 	{
@@ -583,9 +826,12 @@ run_once() {
 	if [ "$PERSONA_EVERY_CYCLES" -gt 0 ] && [ $(( cycle % PERSONA_EVERY_CYCLES )) -eq 0 ]; then
 		launch_persona_round
 	fi
+	launch_branch_repair_job
 	if pr07c_owner_matrix_needed; then
 		launch_pr07c_owner_matrix_job
 	fi
+	write_controller_push_manifest
+	collect_context
 	write_status
 }
 

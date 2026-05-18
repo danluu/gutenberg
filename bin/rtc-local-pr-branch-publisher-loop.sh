@@ -245,13 +245,18 @@ append_controller_allowed_plan() {
 			}
 			next
 		}
-		ok[$col["source_branch"]] && $col["intended_danluu_branch"] ~ /^danluu\/rtc-pr-progress-/ {
+		(ok[$col["source_branch"]] || $col["validation_summary"] ~ /controller branch-repair base check passed/) &&
+			$col["intended_danluu_branch"] ~ /^danluu\/rtc-pr-progress-/ {
+			reason = "PR progress controller publish-ready allowed=yes"
+			if (!ok[$col["source_branch"]]) {
+				reason = "PR progress controller branch-repair manifest passed"
+			}
 			printf "%s\t%s\t%s\t%s\t%s\n",
 				$col["source_branch"],
 				$col["intended_danluu_branch"],
 				$col["source_commit"],
 				evidence,
-				"PR progress controller publish-ready allowed=yes"
+				reason
 		}
 	' "$current" >> "$plan"
 }

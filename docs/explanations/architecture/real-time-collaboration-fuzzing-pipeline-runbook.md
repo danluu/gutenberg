@@ -1757,7 +1757,13 @@ lanes, but they must share state. In particular:
     reserve before starting heavy PR jobs; analysis/persona jobs may continue
     while heavy browser/e2e PR jobs wait. It queries the artifact index for the
     latest PR07C owner replay report and owner matrix before falling back to
-    bounded scans.
+    bounded scans. Repeated `keep_runtime_held` PR07C owner classifications are
+    treated as consumed until newer owner evidence appears, so the controller
+    does not relaunch equivalent owner-matrix jobs. Failed product-candidate
+    branches with an allowed `launch-branch-repair` decision get a bounded
+    repair lane; if the branch only failed because validation used an
+    over-broad base, the controller emits a manifest-only repaired push
+    manifest instead of spending a Codex job.
 -   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that
@@ -1774,9 +1780,11 @@ lanes, but they must share state. In particular:
     directory, so controller publication requests do not require GitHub access
     from Jetstream. For PR-progress controller output, it first reads
     `current-control-decisions.tsv` and deterministically pushes only
-    `publish-ready` rows with `allowed=yes`, before starting the slower snapshot
-    collection or Codex planning path. This keeps branch publication from being
-    blocked by stale snapshot hashes, large artifact scans, or planner latency.
+    `publish-ready` rows with `allowed=yes`, plus controller-generated
+    branch-repair manifests whose validation summary says the repaired base
+    check passed, before starting the slower snapshot collection or Codex
+    planning path. This keeps branch publication from being blocked by stale
+    snapshot hashes, large artifact scans, or planner latency.
     The status collector's branch audit must also fetch
     `danluu/rtc-pr-progress-*` refs and include verified progress-controller
     rows, otherwise pushed branches will still appear as missing links in the
