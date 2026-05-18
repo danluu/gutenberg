@@ -149,6 +149,19 @@ root_disk_below_replay_threshold() {
   [ "$free_mb" -lt "$ROOT_REPLAY_MIN_FREE_MB" ]
 }
 
+artifact_access_constraint() {
+  cat <<'TXT'
+Artifact access constraint:
+- Use the context file, current status files, latest report paths, and exact
+  artifact paths named in the prompt first.
+- Do not run unbounded `find` or `rg` over historical run trees such as
+  `$BASE/runs`, `$DEFERRED_BASE/cycles`, or `$FINALIZATION_BASE`.
+- If a search is unavoidable, bound it to the latest few run directories or an
+  exact job/output directory and wrap it in `timeout`. A broad historical scan
+  is loop overhead, not PR progress.
+TXT
+}
+
 feedback_action_reports_disk_block_without_recovery() {
   local out="$1"
   if ! rg -qi 'disk-preflight-blocked|replay-blocked-by-disk|root filesystem exhaustion|root disk|/[^[:space:]]*[[:space:]]+100%' "$out" 2>/dev/null; then
@@ -711,6 +724,8 @@ Return:
    cycles.
 
 Do not edit files.
+
+$(artifact_access_constraint)
 EOF
 
   (
@@ -769,6 +784,8 @@ Return:
 5. One-paragraph progress note suitable for another agent.
 
 Do not edit files.
+
+$(artifact_access_constraint)
 EOF
 
   run_codex_with_report "$FIX_REPO" "$prompt" "$out" "$stdout" "$last_message" "$err" "$rc_file" "synthesis"
@@ -881,6 +898,8 @@ If more Codex or fuzz work should be launched automatically, create a bounded
 tmux job under $run_dir/jobs/ and launch it with:
 /media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin/tmux
 
+$(artifact_access_constraint)
+
 Useful independent jobs include:
 - branch-link audit for every "No verified branch link yet" row;
 - push-manifest generation for local-only ready/review/deferred branches;
@@ -951,6 +970,8 @@ Monitoring this job, waiting for other active sessions, or reporting stderr/log
 growth is not progress. If no fresh artifact can be verified, create exactly one
 bounded branch audit, push manifest, deferred downscope/promotion artifact, or
 loop-repair patch with syntax check.
+
+$(artifact_access_constraint)
 
 Allowed writes:
 - $BASE
