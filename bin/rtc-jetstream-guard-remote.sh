@@ -9,6 +9,7 @@ COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 COVERAGE_START_LOCK=$COVERAGE_BASE/start.lock
 LEVEL_MIX_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20260516
 NATIVE_ASSERT_BASE=/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516
+STRUCTURAL_BASE=/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 LOG_DIR=$BASE/logs
 PID_FILE=$BASE/guard.pid
@@ -240,6 +241,7 @@ Inspect these logs and current tmux/process state:
 - Duplicate/noise persona loop: /media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516/
 - Level-mix controller: $LEVEL_MIX_BASE/
 - Native/protocol harness loops: $NATIVE_ASSERT_BASE/
+- Structural watchdog: $STRUCTURAL_BASE/
 - Fuzz-only assertion loop: /media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260515/
 - Repo root: $REPO
 
@@ -335,6 +337,9 @@ restart_pool() {
 			tmux kill-session -t rtc-resource-autoscaler 2>/dev/null || true
 			tmux new-session -d -s rtc-resource-autoscaler "bash -lc '/tmp/start_rtc_resource_autoscaler.sh >> \"$LOG_DIR/resource-autoscaler-start.log\" 2>&1'" ||
 				log "resource autoscaler start failed"
+			;;
+		structural)
+			/tmp/start_rtc_structural_watchdog.sh >> "$LOG_DIR/structural-watchdog-start.log" 2>&1 || log "structural watchdog start failed"
 			;;
 	esac
 }
@@ -443,6 +448,10 @@ run_loop() {
 
 		if ! has_session rtc-resource-autoscaler; then
 			restart_pool resource "missing resource autoscaler"
+		fi
+
+		if ! has_session rtc-structural-issue-watchdog; then
+			restart_pool structural "missing structural issue watchdog"
 		fi
 
 		sleep 120 &

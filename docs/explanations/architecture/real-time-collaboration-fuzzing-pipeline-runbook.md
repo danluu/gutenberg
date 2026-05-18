@@ -338,6 +338,7 @@ install -m 755 \"\$REMOTE_REPO/bin/rtc-native-assert-protocol-work-start-remote.
 install -m 755 \"\$REMOTE_REPO/bin/rtc-deferred-work-promotion-loop-remote.sh\" /tmp/start_rtc_deferred_work_promotion_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-pr-finalization-loop-remote.sh\" /tmp/start_rtc_pr_finalization_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-critical-path-pr-executor-loop-remote.sh\" /tmp/start_rtc_critical_path_pr_executor_loop.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-structural-issue-watchdog-remote.sh\" /tmp/start_rtc_structural_watchdog.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-jetstream-guard-remote.sh\" /tmp/start_rtc_jetstream_guard.sh
 "
 ```
@@ -431,6 +432,16 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-pr-split-review-loop-remote.sh` runs bounded persona, synthesis,
     feedback, and progress-unblock Codex jobs. A single hung review or action
     must not pin the PR split loop indefinitely.
+-   `rtc-structural-issue-watchdog-remote.sh` detects alive-but-wrong
+    control-plane failures that ordinary process watchdogs miss: stale status
+    with a live tmux session, recent reconcile/temp-file errors, prefix tmux
+    session masking, repeated guard restarts, and passive PR07C/runtime-readiness
+    classifications. It writes
+    `/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518/current-structural-watchdog-status.md`
+    and launches bounded `rtc-structural-repair-*` Codex jobs for high-severity
+    findings. Those jobs may patch Jetstream scripts and restart only the
+    affected loop, then leave file lists or patches for persistence to
+    `try/jetstream-fuzz`.
 -   `rtc-jetstream-guard-remote.sh` is the top-level guard. Run it in tmux and
     let it restart missing sessions instead of manually restarting individual
     fuzzers. The guard supervises coverage-guided, strict-expansion, focused
@@ -438,9 +449,10 @@ The remote launchers are intentionally split by ownership:
     the focused gap Codex loop, duplicate/noise remediation, level-mix,
     native/protocol harness loops, the fuzz-only assertion loop, the
     deferred-work promotion loop, the PR-finalization loop, the critical-path PR
-    executor, and the resource autoscaler. It uses exact tmux session-name
-    checks and treats a coverage-guided novelty run with an empty work queue and
-    clear current-run noise as a materialization stall to restart and escalate.
+    executor, the structural watchdog, and the resource autoscaler. It uses
+    exact tmux session-name checks and treats a coverage-guided novelty run with
+    an empty work queue and clear current-run noise as a materialization stall
+    to restart and escalate.
 
 Start or refresh the guard after installing the launchers. `stop` exits the
 guard process after killing its sleeping child, so a refresh should not leave an
