@@ -9138,9 +9138,12 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-18T09:45:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,8,8,3,8,5,1379531,FALSE
 2026-05-18T09:45:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,5,3,0,5,5,1177865,FALSE
 2026-05-18T09:45:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,4096,4096,4096,128,0,884000,FALSE
-2026-05-18T10:00:00Z,coverage-guided,novelty-ws-parser-transform,browser-e2e,ws,parser-transform,1,1,1,1,0,25182,FALSE
-2026-05-18T10:00:00Z,coverage-guided,novelty-ws-revision-persistence,browser-e2e,ws,revision-persistence,1,1,1,1,0,32254,FALSE
+2026-05-18T10:00:00Z,coverage-guided,novelty-ws-parser-transform,browser-e2e,ws,parser-transform,12,9,6,12,6,417569,FALSE
+2026-05-18T10:00:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,4,4,4,4,0,551194,FALSE
+2026-05-18T10:00:00Z,coverage-guided,novelty-ws-revision-persistence,browser-e2e,ws,revision-persistence,2,2,1,2,1,168387,FALSE
 2026-05-18T10:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,2,2,2,0,317582,FALSE
 2026-05-18T10:00:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,110689,FALSE
 2026-05-18T10:00:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,2,1,2,2,0,243274,FALSE
-2026-05-18T10:00:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2304,2304,2304,72,0,435000,FALSE
+2026-05-18T10:00:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,4640,4640,4640,145,0,893000,FALSE
+2026-05-18T10:15:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,1,1,1,1,0,34223,FALSE
+2026-05-18T10:15:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,192,192,192,6,0,39000,FALSE
