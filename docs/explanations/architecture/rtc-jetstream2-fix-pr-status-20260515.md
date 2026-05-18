@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-18T17:15:11Z`
+Snapshot time: `2026-05-18T17:31:54Z`
 
 Trigger event:
-`pr-split-2026-05-18T17-14-12Z-20260518T170339Z`
+`duplicate-noise-2026-05-18T17-30-42Z-204`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T17-14-12Z-20260518T170339Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T17-30-42Z-204/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -38,21 +38,18 @@ Cycle378/Cycle325-i40 parallel-lane shape:
 - treat `PR07` as a runtime-gated decision fork, not as a linear tail;
 - add `PR07B0A-155713` to the first `PR07` decision comparison.
 
-The latest applied proof in `current-pr-split.md` is now the Cycle 378 action:
+The latest applied proof in `current-pr-split.md` is now the Cycle 380 action:
 
 ```text
-runs/20260518T163556Z/jobs/outputs/rtc-cycle378-post-163628-current-finalization-audit/report.md
-status=PASS, hard failures=0, warnings=55
-verified: 78 push-manifest rows, 11 diagnostic-manifest rows,
-          5 current-cycle supplemental rows
+runs/20260518T170339Z/jobs/outputs/rtc-cycle380-post-165635-current-finalization-audit/report.md
+status=PASS
+audited latest nonzero finalization: 20260518T170639Z
 ```
 
-That audit verified the nonzero `20260518T163628Z` finalization report, live
-heads, generated bundle heads, manifest SHAs, base allowlist checks, raw
-deferred rejection, and PR02B/PR07 blocked-state gates. It is still local-host
-publication input only: Jetstream did not push the audited Cycle325/i40
-destinations to GitHub, and the diagnostic/harness/current-cycle rows are not
-product-promotion proof.
+That audit supersedes the older post-`163628` and unaudited `165635` status for
+freshness. It verifies local-host finalization/manifest evidence only:
+Jetstream did not push the audited Cycle325/i40 destinations to GitHub, and the
+diagnostic/harness/current-cycle rows are not product-promotion proof.
 
 Two Cycle 376 preflights also passed:
 
@@ -67,12 +64,11 @@ Two Cycle 376 preflights also passed:
 
 The newest split-persona synthesis, `pr-split-20260518T170339Z-synthesis.md`,
 still recommends the Cycle378/Cycle325-i40 replacement split, not the older
-linear PR07 tail. It keeps the `163628` audit as the latest applied local
-proof, but says the split is still blocked by unresolved PR07 owner replay,
-`PR02B` validation, and a current-finalization/deferred-freshness audit. A
-newer `20260518T165635Z/finalization.report.md` is now nonzero, but it still
-needs a matching post-`165635` audit before it counts as durable
-publish/manifest progress. `PR07B0A-155713` remains the key split candidate at
+linear PR07 tail. Cycle 380 completed the requested post-`165635` freshness
+audit by auditing the later nonzero `20260518T170639Z` finalization, but the
+split is still blocked by unresolved PR07 owner replay, `PR02B` validation,
+missing exact verified GitHub refs for many active rows, and final-stack
+validation. `PR07B0A-155713` remains the key split candidate at
 `finalized/cycle325-i40/runtime-gated/rtc-pr07b0a-saved-crdt-hydration-reconcile-155713`,
 on top of `PR07B0`, and remains blocked on seed `990001` replay plus PR07 owner
 adjudication. The raw `155713` full-stack output remains a hazard and must not
@@ -113,14 +109,13 @@ PR09 -> PR10 -> PR11A -> PR11B -> PR11C -> PR11D -> PR11E
 Do not file raw `PR07D`, raw `deferred/*`, raw diagnostic heads, raw `155713`,
 fallback-tail `PR05D`, `PR17`, `PR18`, or `PR18x`. Do not treat
 `PR02B`, `PR07B0A-155713`, reload-marker diagnostics, pre-save search,
-rich-text suffix, post-`163628` diagnostic/harness/current-cycle rows, the
-audited `163628` finalization, or the newer unaudited `165635` finalization as
-product PRs until their specific replay, owner, branch-link, and validation
-gates pass.
+rich-text suffix, post-`170639` diagnostic/harness/current-cycle rows, the
+audited `170639` finalization, or the in-progress PR07C replay as product PRs
+until their specific replay, owner, branch-link, and validation gates pass.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T17:15:06Z`.
+Remote status was collected at `2026-05-18T17:31:49Z`.
 
 The fix-planning repo is checked out at:
 
@@ -150,7 +145,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T17:15:11Z` from fetched
+The branch-link audit was generated at `2026-05-18T17:31:54Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact Cycle325/i40 publication shape, ancestry, owner evidence, or filing
@@ -261,49 +256,57 @@ Cycle325/i40 proposed PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T17:15:06Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T171335Z
+collected_at_utc: 2026-05-18T17:31:49Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T172455Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-18T17:14:45.679Z`. This is a startup-only snapshot for a new coverage
-root, not a completed novelty pass and not final-stack validation.
+`2026-05-18T17:31:04.054Z`; its metrics are from the most recent completed full
+pass at `2026-05-18T17:29:40.185Z`. This is current fuzz/control-plane health,
+not final-stack validation.
 
 Current-run health:
 
 ```text
-output dir: run-20260518T171335Z
-monitor status: monitor started; full coverage pass pending
-observed roots: 518
-previous records loaded: 88304
-supervisor groups file: 1
-active run dirs: 1
-coverage guidance: pending until first pass
-triage yield: pending until first pass
-health: startup status only; full novelty pass has not completed yet
+output dir: run-20260518T172455Z
+coverage files: 54358
+total records seen: 88412
+records processed this pass: 108
+unmet goals: 4
+recommended groups: novelty-ws-real-user-save-reload,
+  novelty-ws-real-user-editing, novelty-ws-real-user-rich-text
+headroom for adding groups: yes
+current-run active dirs: 0
+current-run signatures: 0
+current-run product-evidence signatures: 0
+current-run likely-real visible: 0
+current-run duplicate/noise signatures: 0
+supervisor groups file currently has no enabled producer groups
 ```
 
 Interpretation:
 
-- Do not reuse the previous `run-20260518T165740Z` startup snapshot or earlier
-  full-pass numbers as current status for this root. The latest raw status has
-  not yet produced unmet-goal,
-  harness-work, quality, signature, likely-real, or duplicate-share numbers.
-- The new startup snapshot is health/control-plane evidence only. It does not
-  clear PR filing, final-stack validation, PR02B validation, PR07 owner replay,
-  reload-marker replay, or seed `1020002`.
+- The latest current-run status has no visible likely-real failures and no
+  active product-evidence signatures, but it also has no active current-run
+  dirs. Treat this as health/control-plane evidence, not as proof that the PR
+  stack is validated or that browser product risk is exhausted.
+- The novelty monitor reports no current duplicate/noise signatures. Historical
+  duplicate/noise remains dominated by startup/no-product families and must not
+  be presented as a live product failure.
+- This status does not clear PR filing, final-stack validation, PR02B
+  validation, PR07 owner replay, reload-marker replay, or seed `1020002`.
 - Historical `pre_action_bootstrap_stall` and other startup/no-product noise
   must not be presented as current product failure.
 - The latest duplicate/noise remediation remains relevant. The newest
-  duplicate-noise synthesis file, `duplicate-noise-20260518T165312Z-synthesis.md`,
-  is nonzero and still frames the issue as control-plane producer selection:
-  historical startup-noise state must not become a current fleet-wide producer
-  hold, and live analysis must not run normal sessions for no-analysis
-  startup/noise drains without product evidence.
+  duplicate-noise feedback-action file, `duplicate-noise-20260518T170450Z-feedback-action.md`,
+  records a bounded producer-side patch: the fleet startup-noise canary is off
+  by default during a fleet `pre_action_bootstrap_stall` hold, no-product strict
+  startup seed-drain cooldowns pause instead of immediately recovering, and both
+  touched scripts passed `node --check`.
 
-The latest trend evidence packet was generated at `2026-05-18T17:07:57Z`:
+The latest trend evidence packet was generated at `2026-05-18T17:26:58Z`:
 
 ```text
 monitor passes: 2276
@@ -317,30 +320,30 @@ duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.3418
 summary startup failures last: 0
 quality issues last: 0
-memory free: 428.5 GB
-load averages: 28.89 / 35.57 / 54.59 on 64 cores
+memory free: 428.5 GB at the trend snapshot; 424.5 GB in the latest novelty status
+load averages: 58.17 / 69.90 / 64.63 on 64 cores
 latest fuzz level mix:
-  browser-e2e=28 lanes/25 groups
+  browser-e2e=27 lanes/24 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5817505
-browser-e2e likely-real findings: 766 over 2426.2 runner-hours
+total fuzz-level test executions: 5823536
+browser-e2e likely-real findings: 767 over 2429.9 runner-hours
 ```
 
 The largest unmet goals remain save/reload and real-user depth:
 
 ```text
-reload-post-action: 1134/2000
-title-save-reload: 587/1000
-real-user-editing success: 612/1000
-body-save-reload: 646/1000
+reload-post-action: 1143/2000
+title-save-reload: 596/1000
+real-user-editing success: 613/1000
+body-save-reload: 655/1000
 ```
 
 Browser E2E remains the only level with confirmed likely-real findings, but
 lower-level lanes are under-triaged and should not be declared useless from
-zero likely-real output. Recent load is lower than the previous snapshot, but
-new fuzz work should stay bounded and oracle-specific rather than adding broad
-browser concurrency.
+zero likely-real output. New fuzz work should stay bounded and oracle-specific:
+the current root has no active dirs, many paused startup-stall/noise groups, and
+enough resource headroom for targeted work but not for broad final-stack claims.
 
 ## Status-Persona Analysis
 
@@ -348,11 +351,11 @@ The newest split-persona synthesis,
 `pr-split-20260518T170339Z-synthesis.md`, says the report still needs the
 Cycle378/Cycle325-i40 replacement split, not the older linear PR07 tail. The
 split is not fileable and not ready for broad final-stack fuzzing because
-`PR07` owner replay, `PR02B` validation, and the current
-finalization/deferred-freshness audit remain unresolved. The synthesis says
-`20260518T165635Z/finalization.report.md` is now nonzero, but still unaudited;
-do not count it as durable publish/manifest progress until a post-`165635`
-audit passes.
+`PR07` owner replay, `PR02B` validation, exact branch publication/audit, and
+final stack validation remain unresolved. The follow-up feedback action says
+Cycle 380 completed the current finalization/deferred-freshness audit with
+`status=PASS`, auditing the later `20260518T170639Z` finalization rather than
+stopping at the earlier nonzero `165635` report.
 
 The active split shape remains:
 
@@ -370,31 +373,26 @@ The active split shape remains:
    reload-hydration publication, and fallback-tail `PR05D` out of the filing
    plan.
 
-The latest applied action in `current-pr-split.md` is still Cycle 378. Its
-bounded `20260518T163628Z` audit completed with `status=PASS`, `0` hard
-failures, and `55` warnings after fixing a local status-allowlist bug in the
-audit script. It verified the nonzero finalization report, live heads, bundle
-heads, manifest SHAs, base allowlist, raw deferred rejection, and split
-blocked-state gates. Treat it as the current local-host Parallel Progress Gate
+The latest applied action in `current-pr-split.md` is Cycle 380. Its bounded
+post-`165635` audit completed with `status=PASS` and audited the latest nonzero
+`20260518T170639Z` finalization. Treat it as local-host Parallel Progress Gate
 proof, not as GitHub publication, product-promotion proof, final-stack
-validation, or coverage for later deferred outputs. The newer `165635`
-finalization changes freshness status only after the requested post-`165635`
-audit passes.
+validation, or exact branch-link proof for rows that still say
+`No verified branch link yet`.
 
 The next useful work is bounded, not broad:
 
-- run `rtc-cycle380-post-165635-current-finalization-audit` against
-  `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/cycles/20260518T165635Z`,
-  with freshness checks for deferred `164740`, `164742`, `165245`, and the
-  completed `170248` reload-hydration report; do not count `170250` yet because
-  it has no final report;
-- replay `PR07C` from repaired runtime `http://localhost:12201` with same-user
-  seeds `5200011`, `5200017`, `5200010` and late-join seeds `7110004`,
-  `7110017`;
+- finish the active `rtc-cycle380-pr07c-owner-replay-after-browser-ready-rerun`
+  evidence. The rerun passed live-runtime preflight, completed the same-user
+  seed group `5200011`, `5200017`, `5200010` with rc `1` from marker-set
+  divergence rather than readiness failure, and was still running the late-join
+  group when the latest feedback-action file was collected;
 - run the `PR07B0A-155713` owner matrix on seed `990001`, plus
   `5200001`/`5200002`/`5200005`/`1130001` if no active job already owns them;
 - run `PR02B` seed `1030001`, HTTP persistence-probe, and targeted PHPUnit
   once runtime/bootstrap is available;
+- publish/fetch/audit exact GitHub refs for active rows that still have no
+  verified branch link;
 - keep broad final-stack fuzzing, filing, and stack validation blocked.
 
 Loop repair remains part of the status: feedback cycles with actionable
@@ -403,31 +401,27 @@ artifact. Active sessions, seed `1020002`, zero-byte reports, `report.tmp`,
 disk-preflight-only output, stale manifests, fallback-tail PR05D manifests, and
 ownerless strict-expansion reductions must not count as progress.
 
-The newest duplicate/noise synthesis file,
-`duplicate-noise-20260518T165312Z-synthesis.md`, is nonzero. It identifies the
-same producer-side scheduler problem: no-product strict startup noise is mostly
-filtered by triage/analysis consumers, but historical/fleet startup-noise state
-can still block normal producer selection, fall back to a startup-noise canary,
-and either repeat duplicate `reload_rejoin_awareness_stall` noise or starve
-with no current dirs. It also calls out `rtc-browser-fuzz-live-analysis-monitor.mjs`
-as a secondary place to guard no-analysis startup/noise drains.
+The newest duplicate/noise synthesis and feedback-action files,
+`duplicate-noise-20260518T170450Z-synthesis.md` and
+`duplicate-noise-20260518T170450Z-feedback-action.md`, converge on a
+producer/control-plane issue rather than a product failure. The action pass
+implemented the bounded fuzzer-side remediation:
 
-The matching feedback-action file records a completed bounded remediation in
-`rtc-browser-fuzz-novelty-monitor.mjs`: a fleet-wide no-product
-`pre_action_bootstrap_stall` hold, preserved product-evidence metadata on
-reused startup-noise pauses, a single canary escape hatch, and a clamped
-coverage-guided browser lane floor. `node --check` passed. Validation showed
-the product-evidence canary stayed visible to triage before being paused as an
-already-represented duplicate, the historical strict no-product startup run
-queued zero signatures with stale guard disabled, and analysis/deep/live
-monitors refused the stale strict-startup root under the current-output guard.
+- `rtc-browser-fuzz-novelty-monitor.mjs` disables the fleet startup-noise canary
+  by default during a fleet `pre_action_bootstrap_stall` hold; it now needs
+  `RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY=1` to launch that canary.
+- `rtc-browser-fuzz-supervisor.mjs` pauses no-product strict startup seed-drain
+  cooldowns as `paused-startup-stall` instead of immediately recovering them;
+  product-evidence startup stalls still use the existing recovery path.
+- `node --check` passed for both touched scripts.
+- The active coverage-guided root advanced to `run-20260518T172455Z`; at the
+  collected snapshot, `supervisor-groups.json` was empty and no active
+  `novelty-*` producer dirs existed.
 
-The duplicate/noise remediation restarted the coverage-guided novelty monitor,
-supervisor, watchdog, and live-analysis monitor on `run-20260518T164603Z`.
-Current raw status has since advanced to `run-20260518T171335Z`, but only a
-startup-only novelty snapshot exists for that root. Use the completed
-remediation as control-plane evidence and the latest startup snapshot as health
-evidence only, not product validation or final-stack readiness.
+Use that as duplicate/noise control-plane progress. It prevents repeated
+startup-noise canary churn, but it is not product validation and it can leave a
+coverage root empty while safe producer choices are under startup-noise
+cooldown.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -444,10 +438,10 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| i40 source family | `fresh-prset/iteration-40/*`, `finalized/cycle324-i40/*`, Cycle325/i40 manifests, audited nonzero `20260518T130525Z`, `133533Z`, Cycle 368 `135539Z`, audited `143551Z`, `145558Z`, `150601Z`, `152607Z`, `153610Z`, `160619Z`, and `163628Z`, later `164632`, completed deferred `164740` reload and `164742` pre-save reports, `165245`, nonzero but unaudited `165635`, completed harness-only `170248` reload-hydration report, no-report `170250`, `HARNESS-RELOAD-MARKERS-154206`, `HARNESS-RELOAD-REPLAY-163231`, `PR07B0A-155713`, `121507`, `134558`, `123016`, `123520`, current `PR07B0`, current `PR07B1A`, raw reload/stale-epoch candidates `111430`/`114448`/`123016`/`124525`/`130034`/`131542`/`133049`, deferred reload/search/rich-text diagnostics | active source family; `163628` is the latest applied audited local-host proof with `55` warnings, not GitHub publication or product-promotion proof; `165635` is nonzero but still needs a post-`165635` audit; `164742` stays merged into `DIAG-SEARCH-142622`, `165245` stays covered by `HARNESS-RICH-TEXT-152154`, and `164740`/`170248` are harness/diagnostic only until replay proves a product-owned first-loss boundary; `170250` is not review evidence without a report; filing remains blocked by PR07 owner evidence, missing verified GitHub links, seed `1020002`, PR02B validation, reload-marker replay/downscope, and final validation | Audit current finalization/deferred freshness, replay `PR07B0A-155713`, run PR02B validation and PR07 owner matrix, publish/fetch/audit exact GitHub links, repair or reclassify seed `1020002`, and run final-stack validation gates |
+| i40 source family | `fresh-prset/iteration-40/*`, `finalized/cycle324-i40/*`, Cycle325/i40 manifests, audited nonzero `20260518T130525Z`, `133533Z`, Cycle 368 `135539Z`, audited `143551Z`, `145558Z`, `150601Z`, `152607Z`, `153610Z`, `160619Z`, `163628Z`, and Cycle 380 `170639`, completed deferred `164740` reload and `164742` pre-save reports, `165245`, completed harness-only `170248` reload-hydration report, no-report `170250`, `HARNESS-RELOAD-MARKERS-154206`, `HARNESS-RELOAD-REPLAY-163231`, `PR07B0A-155713`, `121507`, `134558`, `123016`, `123520`, current `PR07B0`, current `PR07B1A`, raw reload/stale-epoch candidates `111430`/`114448`/`123016`/`124525`/`130034`/`131542`/`133049`, deferred reload/search/rich-text diagnostics | active source family; Cycle 380 audited the latest nonzero `170639` finalization with `status=PASS`, but this remains local-host proof, not GitHub publication, product-promotion proof, or final-stack validation; `164742` stays merged into `DIAG-SEARCH-142622`, `165245` stays covered by `HARNESS-RICH-TEXT-152154`, `164740`/`170248` are harness/diagnostic only until replay proves a product-owned first-loss boundary, and `170250` is not review evidence without a report; filing remains blocked by PR07 owner evidence, missing verified GitHub links, seed `1020002`, PR02B validation, reload-marker replay/downscope, and final validation | Finish PR07 owner replay, replay `PR07B0A-155713`, run PR02B validation, publish/fetch/audit exact GitHub links, repair or reclassify seed `1020002`, and run final-stack validation gates |
 | Missing verified product refs | PR02A, PR02B, PR05A-D, PR06A-D, PR06E, PR07A1-A3, PR07B0-current, PR07B0A-155713, PR07B0-alt/`121507`/`134558`, PR07B1, PR07B1A, possible PR07B1B including `124525`/`130034`/`131542`/`133049`, `HOLD-07B2`, `HOLD-07C`, PR11A-E, PR12A-C, PR13B0-B3, PR14B, PR15A-D | active rows correctly say `No verified branch link yet` | Publish/fetch/audit explicit GitHub refs before filing |
 | PR02B | HTTP polling awareness rejoin retry after PR2, seed `1030001` | recommended sidecar; Cycle 376 preflight passed branch/source checks, but runtime is uninitialized and validation has not run | Initialize runtime, run seed `1030001`, short HTTP persistence-probe, targeted PHPUnit after bootstrap is available, PR CI, and exact branch-link audit |
-| PR07 runtime / owner gate | PR07A1-A3, current PR07B0, `PR07B0A-155713`, `121507`/`134558`, chosen PR07B1, current PR07B1A, raw `111430/114448/123016/124525/130034/131542/133049`, `HOLD-07B2`, `HOLD-07C`, reload/provider rejoin evidence `5817434bb6cf` / seed `1100001` | runtime readiness has durable repaired-ready evidence and `163628` local audit proof, but product ownership is unresolved; PR07 now has two decision comparisons and no accepted file-ready owner shape | Replay `PR07B0A-155713` on seed `990001`, run owner matrix, and require clean materialized refs with `git diff --check`, owner snapshots, durable REST/meta, `_crdt_document`, edited-record, provider/awareness, UI collaborator, branch-head, and first-divergence evidence |
+| PR07 runtime / owner gate | PR07A1-A3, current PR07B0, `PR07B0A-155713`, `121507`/`134558`, chosen PR07B1, current PR07B1A, raw `111430/114448/123016/124525/130034/131542/133049`, `HOLD-07B2`, `HOLD-07C`, reload/provider rejoin evidence `5817434bb6cf` / seed `1100001` | runtime readiness has durable repaired-ready evidence and Cycle 380 local audit proof, but product ownership is unresolved; the active PR07C replay rerun passed live-runtime preflight, completed same-user seeds with marker-set divergence, and was still running late-join seeds; PR07 still has no accepted file-ready owner shape | Finish PR07C late-join replay, replay `PR07B0A-155713` on seed `990001`, run owner matrix, and require clean materialized refs with `git diff --check`, owner snapshots, durable REST/meta, `_crdt_document`, edited-record, provider/awareness, UI collaborator, branch-head, and first-divergence evidence |
 | PR07D | reload/post-save/rejoin residuals | raw PR07D is rejected | Add only if fresh PR07 replay proves red-at-HOLD-07C non-coverage with first-divergence evidence |
 | PR05D and rich-text/search reductions | clean PR05D `27c6e7924217`, search/live-collapse, rich-text suffix, parser/linebreak candidates, rich-text `142117` harness/setup hardening | diagnostic or held until owner comparison proves product ownership; strict owner comparison assigns no `PR18x` yet | Compare against PR05B, PR05C, clean PR05D, the chosen PR07B0/PR07B1 path, PR07B1A, and holds before assigning any new owner row |
 | PR06 ungrouping and PR06E | active PR06A-D plus PR06E | grouped PR06 and PR06A prior-art refs are verified; active PR06A-D and PR06E have no exact verified links | Publish/fetch/audit exact refs, then prove `PR06D -> PR06E`, `PR07 !-> PR06E`, and adjacent evidence for PR06A-D |
@@ -456,9 +450,9 @@ These must not be described as fixed or filing-ready.
 | PR13 finer split | repaired PR13A/PR13B/PR13C plus desired but unaudited PR13B0/B1/B2/B3 | PR13A/B/C use repaired verified audit refs and are the only current PR13 PR-content links | Publish/fetch/audit PR13B0/B1/B2/B3 before replacing the repaired PR13A/B/C maintainer-facing rows |
 | PR14B / PR15 placement | PR14B and active PR15A-D after PR14B | branch-link audit verifies PR15A-C component prior art, but no exact PR14B-based PR15A-D refs | Publish/fetch/audit explicit PR14B-based PR15A-D refs and confirm ancestry |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzzing, filing, and rebuilt validation only | Repair or explicitly reclassify before final-stack validation and filing |
-| Reload marker/lifecycle work | `HARNESS-RELOAD-MARKERS-154206`, `HARNESS-RELOAD-REPLAY-163231`, seeds `990001`/`990003`, same-user lifecycle seeds `5200001`/`5200002`/`5200005`/`1130001`, PR07C seeds `5200011`/`5200017`/`5200010` and `7110004`/`7110017`, completed `170248`, no-report `170250` | preflight passed for marker branch and replay JSON candidates; product ownership not established; `164740` and `170248` reload reports are harness/diagnostic only until replay proves product ownership; `170250` is not evidence | Run focused marker/reload replay and PR07 owner replay; require product-owned first-loss boundary before promotion |
-| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, empty materialization rescue, fallback enablement, current no-analysis drains, ordinary fallback rotation, bounded canary policy | completed consumer layers and novelty scheduler remediation exist; `node --check` passed for the applied `162155` remediation; `165312` synthesis is nonzero and reinforces the scheduler/canary/live-analysis guard problem; latest raw novelty status is only startup for `run-20260518T171335Z` | Wait for a full novelty pass or choose a fresh bounded canary only if it is outside startup-noise and duplicate-family cooldowns; confirm no ordinary no-product materialization rescue while startup holds are active and product-evidence signatures remain launchable |
-| Current fuzz validation | `run-20260518T171335Z`, raw novelty status at `2026-05-18T17:14:45.679Z`, trend generated at `2026-05-18T17:07:57Z` | startup-only novelty snapshot: `518` observed roots, `88304` previous records loaded, `1` supervisor groups file, `1` active run dir, coverage guidance and triage yield pending; trend shows `54016` coverage-file delta, `4` unmet goals, current duplicate share `0`, `0` quality issues, lower recent load, and browser-heavy confirmed findings | Use as current health/control-plane evidence only; wait for full novelty pass and still require accepted product evidence, owner replay, exact branch audit, PR02B validation, reload-marker replay/downscope, seed `1020002` repair/reclassification, and final PR-stack validation before filing claims |
+| Reload marker/lifecycle work | `HARNESS-RELOAD-MARKERS-154206`, `HARNESS-RELOAD-REPLAY-163231`, seeds `990001`/`990003`, same-user lifecycle seeds `5200001`/`5200002`/`5200005`/`1130001`, PR07C seeds `5200011`/`5200017`/`5200010` and `7110004`/`7110017`, completed `170248`, no-report `170250` | preflight passed for marker branch and replay JSON candidates; Cycle 380 PR07C replay is active evidence but not complete product ownership; `164740` and `170248` reload reports are harness/diagnostic only until replay proves product ownership; `170250` is not evidence | Finish focused PR07 owner replay and require product-owned first-loss boundary before promotion |
+| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, empty materialization rescue, fallback enablement, current no-analysis drains, ordinary fallback rotation, bounded canary policy | completed consumer layers and novelty scheduler remediation exist; `duplicate-noise-20260518T170450Z-feedback-action.md` records producer-side fixes with `node --check` passing for novelty monitor and supervisor; current root `run-20260518T172455Z` has no active producer dirs and empty `supervisor-groups.json`, so the remaining risk is empty-root churn while safe producers are under cooldown | Monitor the next full novelty pass and canary behavior; confirm product-evidence signatures remain launchable and no fleet startup-noise canary runs unless explicitly enabled |
+| Current fuzz validation | `run-20260518T172455Z`, raw novelty status at `2026-05-18T17:31:04.054Z`, trend generated at `2026-05-18T17:26:58Z` | latest completed novelty pass: `54358` coverage files, `88412` total records, `4` unmet goals, `0` current-run likely-real, `0` product-evidence signatures, `0` active current-run dirs, current duplicate share `0`, historical duplicate share about `0.3418`, and browser-heavy confirmed findings | Use as current health/control-plane evidence only; still require accepted product evidence, owner replay, exact branch audit, PR02B validation, reload-marker replay/downscope, seed `1020002` repair/reclassification, and final PR-stack validation before filing claims |
 
 ## Filing Gates And Current Recommendation
 
@@ -466,19 +460,18 @@ Do not file a single mega-PR and do not file grouped Cycle320/i40 PR06, PR11,
 PR12, or PR15 as active units. Do not file stale Cycle293/Cycle306 rows,
 stale/unpushed i40 rows, `ready/*`, validation-stack, dirty evidence,
 fallback-tail branches, raw deferred/candidate refs, raw `155713`, raw PR07D,
-PR17, PR18, PR18x, or stale/unaudited finalization artifacts as-is.
+PR17, PR18, PR18x, or local finalization artifacts as-is.
 
 Before filing any maintainer-facing PR:
 
 1. Use the replacement Cycle378/Cycle325-i40 parallel-lane shape above, including
    `PR02B` as a blocked-validation sidecar after PR02 and `PR07B0A-155713` as
    a blocked PR07 decision-fork candidate.
-2. Treat the Cycle 378 post-`163628` audit as current applied local-host proof,
-   but not complete filing proof, GitHub-publication proof, product-promotion
-   proof, final-stack validation, or evidence for the newer `164632`/`164740`/
-   `164742`/`165245`/`170248` deferred-freshness set. Treat nonzero `165635`
-   as unaudited until a post-`165635` audit passes, and treat `170250` as
-   non-evidence until it has a report.
+2. Treat the Cycle 380 post-`165635` audit of the later nonzero `170639`
+   finalization as current applied local-host proof, but not complete filing
+   proof, GitHub-publication proof, product-promotion proof, final-stack
+   validation, or exact branch-link proof. Treat `170250` as non-evidence until
+   it has a report.
 3. Do not file `PR02B` before seed `1030001`, HTTP persistence-probe, targeted
    PHPUnit, PR CI, and verified GitHub branch-link audit pass.
 4. Do not file PR07 until the `PR07B0` / `PR07B0A-155713` / `121507`-`134558` /
@@ -499,28 +492,26 @@ Before filing any maintainer-facing PR:
 9. Keep the untracked reload-hydration gate spec out of filing branches and
    push allow-lists unless it is deliberately copied into a clean evidence
    worktree.
-10. Treat duplicate/noise policy work, novelty scheduler changes, the
-   startup-only `run-20260518T171335Z` novelty status, and the latest trend
-   status as control-plane health, not product validation or final-stack
+10. Treat duplicate/noise policy work, novelty scheduler changes, the latest
+   completed `run-20260518T172455Z` novelty status, and the latest trend status
+   as control-plane/fuzz health, not product validation or final-stack
    readiness.
 11. After PR07 decision-fork owner evidence, exact branch-link audit for
-   missing rows, PR02B validation, post-`165635` finalization/deferred-freshness
-   audit, reload-marker replay/downscope, and seed `1020002` repair or
-   reclassification land, rebuild the combined validation stack from explicit
-   Cycle325/i40 heads plus accepted epoch work, then run focused checks,
-   touched-file lint, branch graph/containment evidence, adjacent
-   range-diffs/diffstats/numstats, `git diff --check`, feasible runtime checks,
-   and fresh stack-wide validation.
+   missing rows, PR02B validation, reload-marker replay/downscope, and seed
+   `1020002` repair or reclassification land, rebuild the combined validation
+   stack from explicit Cycle325/i40 heads plus accepted epoch work, then run
+   focused checks, touched-file lint, branch graph/containment evidence,
+   adjacent range-diffs/diffstats/numstats, `git diff --check`, feasible runtime
+   checks, and fresh stack-wide validation.
 
 Useful bounded work now:
 
-- run `rtc-cycle380-post-165635-current-finalization-audit` against
-  `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/cycles/20260518T165635Z`,
-  including freshness checks for deferred `164740`, `164742`, `165245`, and
-  completed `170248`; do not count `170250` without a final report;
-- run PR07C owner replay from repaired runtime `http://localhost:12201` with
-  same-user seeds `5200011`, `5200017`, `5200010` and late-join seeds
-  `7110004`, `7110017`;
+- consume the completed Cycle 380 `170639` finalization audit as local-host
+  proof only, and do not count `170250` without a final report;
+- finish the active PR07C owner replay from repaired runtime
+  `http://localhost:12201`; the same-user seeds reached marker-set divergence,
+  and the late-join seeds `7110004`, `7110017` were still running in the latest
+  feedback-action snapshot;
 - run the `PR07B0A-155713` owner-matrix replay on seed `990001`, plus
   `5200001`/`5200002`/`5200005`/`1130001` if no active job already owns them;
 - run `rtc-cycle378-pr02b-validation-1030001-http-persistence-probe` once
@@ -529,9 +520,8 @@ Useful bounded work now:
   verify a nonzero independent artifact;
 - publish/fetch/audit explicit GitHub refs for active i40 rows that still say
   `No verified branch link yet`;
-- wait for a full novelty pass on `run-20260518T171335Z`, then monitor
-  duplicate/noise saturation/canary behavior and only try a fresh bounded
-  canary if it avoids the startup-noise and duplicate-family cooldowns.
+- monitor the next novelty pass after `run-20260518T172455Z` for empty-root
+  churn, startup-noise canary behavior, and product-evidence launchability.
 
 Do not launch broad final-stack fuzz, GitHub filing, rebuilt stack-wide
 validation, duplicate broad seed `1020002` work outside focused diagnostic
