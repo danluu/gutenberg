@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-18T00:31:07Z`
+Snapshot time: `2026-05-18T00:35:54Z`
 
 Trigger event:
-`duplicate-noise-2026-05-18T00-24-13Z-158`
+`pr-split-2026-05-18T00-34-23Z-20260518T002449Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T00-24-13Z-158/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T00-34-23Z-20260518T002449Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,12 +28,13 @@ or the original split merely for continuity.
 ## Executive Status
 
 The newest completed split-persona synthesis is
-`pr-split-20260518T001344Z-synthesis.md`. It supersedes the Cycle 316/i36
-recommendation as the active filing target. Use `fresh-prset/iteration-38` as
-the current working target, using the same topology that i36 established, but
-do not file GitHub PRs or claim final-stack validation until a fresh i38
-audit/manifest exists and is newer than both `latest-fresh-pr-set.md` and the
-current deferred queue.
+`pr-split-20260518T002449Z-synthesis.md`. It keeps the Cycle 316/i36 topology,
+but says the active filing target has advanced again: use the latest
+`fresh-prset` alias, currently `fresh-prset/iteration-39/*`, not the older i36
+or i38 manifests. Do not file GitHub PRs or claim final-stack validation until
+the selected latest-fresh audit/manifest is newer than both
+`latest-fresh-pr-set.md` and the current deferred queue, with base allowlist and
+head/bundle/manifest checks passing. Zero-byte artifacts remain no evidence.
 
 Current replacement target:
 
@@ -57,9 +58,10 @@ PR09 -> PR10 -> grouped PR11 -> grouped PR12
 
 Active status changes since the prior report:
 
-- Replace i36 as the active filing target with the fresh iteration-38 target.
-  i36 remains useful provenance because its completed audit proved the topology
-  checks for the same shape, but it is no longer current enough to file from.
+- Replace i36 and i38 as active filing targets with the latest fresh
+  iteration-39 alias. i36 remains useful provenance because its completed audit
+  proved topology checks for the same shape, but it is no longer current enough
+  to file from.
 - Keep grouped PR06, PR11, PR12, and PR15 as the current maintainer-facing
   shape, with adjacent diffstat and patch-id evidence preserved so maintainers
   can require a smaller split without losing provenance.
@@ -78,9 +80,9 @@ Hard blockers remain:
 
 - Do not file GitHub PRs, launch broad final-stack fuzz, or claim rebuilt
   stack-wide validation yet.
-- i38 needs a fresh non-Docker audit/manifest newer than the current fresh
-  split and deferred queue. The completed Cycle 316 i36 audit is provenance
-  only for the current target.
+- The latest-fresh/i39 target needs a fresh non-Docker audit/manifest newer
+  than the current fresh split and deferred queue. The completed Cycle 316 i36
+  audit is provenance only for the current target.
 - Rows that still say `No verified branch link yet` need explicit product refs
   published, fetched, and audited before filing.
 - PR07 runtime ownership remains product-evidence blocked. Prior owner-matrix
@@ -96,7 +98,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T00:31:02Z`.
+Remote status was collected at `2026-05-18T00:35:49Z`.
 
 The fix-planning repo is checked out at:
 
@@ -126,12 +128,12 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T00:31:07Z` from fetched
+The branch-link audit was generated at `2026-05-18T00:35:54Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. A verified
 branch link confirms that the linked ref exists and has a non-empty audited
-diff; it does not prove i38 topology, ancestry, owner evidence, or filing
-readiness.
+diff; it does not prove latest-fresh/i39 topology, ancestry, owner evidence, or
+filing readiness.
 
 Use only these repaired audited PR13 review refs for current PR13 content or
 fallback evidence:
@@ -164,39 +166,39 @@ branch-link audit or explicitly says `No verified branch link yet`.
 | PR 2A | HTTP room-isolation regression sidecar after PR 2 | No verified branch link yet | TBD | TBD | evidence-only until pushed/fetched/audited |
 | PR 3 | Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/review/rtc-pr03-revision-restore-crdt-reset) | 2 | +58 / -5 | verified content; PR03B remains held |
 | PR 4 | Persisted CRDT save-meta idempotence | [`review/rtc-pr04-crdt-save-meta-idempotence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr04-crdt-save-meta-idempotence) | 2 | +160 / -1 | verified content |
-| PR 5A | Entity/reference normalization equivalence | No verified branch link yet | TBD | TBD | active i38 row |
-| PR 5B | Parser/rich-text HTML equivalence | No verified branch link yet | TBD | TBD | active i38 row |
-| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | TBD | TBD | active i38 row |
+| PR 5A | Entity/reference normalization equivalence | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row |
+| PR 5B | Parser/rich-text HTML equivalence | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row |
+| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row |
 | PR 5D | Clean semicolonless/entity-validation after PR 5C | No verified branch link yet | TBD | TBD | valid only for clean `27c6e7924217`; reject fallback/PR15-tail PR05D |
-| PR 6 | Grouped save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | 4 | +738 / -6 | verified aggregate content; active i38 grouped row still needs fresh i38 audit evidence |
+| PR 6 | Grouped save request payload guards | [`review/rtc-pr06-save-request-payload-guards`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06-save-request-payload-guards) | 4 | +738 / -6 | verified aggregate content; active latest-fresh/i39 grouped row still needs fresh audit evidence |
 | PR 6E | Malformed outgoing RTC save sidecar from PR06 | No verified branch link yet | TBD | TBD | sidecar must hang from PR06, not PR07 |
 
 ### Runtime-Gated Lane
 
 | PR | Scope | Audit branch link | Files | Diff | Current status |
 | --- | --- | --- | ---: | ---: | --- |
-| PR 7A1 | Save response entity-state guard microhead | No verified branch link yet | TBD | TBD | active i38 row; runtime owner evidence still missing |
-| PR 7A2 | Save response skipped/base guard microhead | No verified branch link yet | TBD | TBD | active i38 row; rerun only after readiness is true |
-| PR 7A3 | Save response stale block/content guard microhead | No verified branch link yet | TBD | TBD | active i38 row |
-| PR 7B0 | Save response manager/base-record entry microhead | No verified branch link yet | TBD | TBD | active i38 row |
-| PR 7B1 | Save response manager/base-record owner microhead | No verified branch link yet | TBD | TBD | active i38 row; held PR07B2 and PR07C branch from here |
+| PR 7A1 | Save response entity-state guard microhead | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row; runtime owner evidence still missing |
+| PR 7A2 | Save response skipped/base guard microhead | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row; rerun only after readiness is true |
+| PR 7A3 | Save response stale block/content guard microhead | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row |
+| PR 7B0 | Save response manager/base-record entry microhead | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row |
+| PR 7B1 | Save response manager/base-record owner microhead | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row; held PR07B2 and PR07C branch from here |
 
 ### Independent CRDT/Data-Loss Lane
 
 | PR | Scope | Audit branch link | Files | Diff | Current status |
 | --- | --- | --- | ---: | ---: | --- |
-| PR 9 | Core-data lock fairness from PR06 | [`review/rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/review/rtc-pr09-store-lock-fairness) | 2 | +185 / -2 | verified content; i38 must prove PR06 ancestry and PR07 non-ancestry |
+| PR 9 | Core-data lock fairness from PR06 | [`review/rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/review/rtc-pr09-store-lock-fairness) | 2 | +185 / -2 | verified content; latest-fresh/i39 must prove PR06 ancestry and PR07 non-ancestry |
 | PR 10 | CRDT block reconciliation foundation after PR9 | [`review/rtc-pr10-crdt-block-rebase-foundation`](https://github.com/danluu/gutenberg/tree/review/rtc-pr10-crdt-block-rebase-foundation) | 2 | +145 / -4 | verified content |
-| PR 11 | Grouped explicit-base top-level block operations | [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr11-explicit-base-top-level-ops) | 2 | +1145 / -4 | verified aggregate content; grouping still needs i38 adjacent diffstat/patch-id evidence |
-| PR 12 | Grouped previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr12-previous-local-cache-top-level-ops) | 2 | +1391 / -5 | verified aggregate content; grouping still needs i38 adjacent diffstat/patch-id evidence |
+| PR 11 | Grouped explicit-base top-level block operations | [`review/rtc-pr11-explicit-base-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr11-explicit-base-top-level-ops) | 2 | +1145 / -4 | verified aggregate content; grouping still needs latest-fresh/i39 adjacent diffstat/patch-id evidence |
+| PR 12 | Grouped previous-local-cache top-level block operations | [`review/rtc-pr12-previous-local-cache-top-level-ops`](https://github.com/danluu/gutenberg/tree/review/rtc-pr12-previous-local-cache-top-level-ops) | 2 | +1391 / -5 | verified aggregate content; grouping still needs latest-fresh/i39 adjacent diffstat/patch-id evidence |
 | PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 | +1151 / -25 | repaired verified content |
-| PR 13B0 | Identity/provenance guard microhead | No verified branch link yet | TBD | TBD | active i38 row; repaired PR13C is supporting fallback evidence |
-| PR 13B1 | Direct cross-parent source retirement microhead | No verified branch link yet | TBD | TBD | active i38 row; repaired PR13B is supporting fallback evidence |
-| PR 13B2 | Current-only cross-parent source retirement microhead | No verified branch link yet | TBD | TBD | active i38 row |
-| PR 13B3 | Explicit-base cross-parent source retirement microhead | No verified branch link yet | TBD | TBD | active i38 row |
+| PR 13B0 | Identity/provenance guard microhead | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row; repaired PR13C is supporting fallback evidence |
+| PR 13B1 | Direct cross-parent source retirement microhead | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row; repaired PR13B is supporting fallback evidence |
+| PR 13B2 | Current-only cross-parent source retirement microhead | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row |
+| PR 13B3 | Explicit-base cross-parent source retirement microhead | No verified branch link yet | TBD | TBD | active latest-fresh/i39 row |
 | PR 14 | Table body nested array merge | [`review/rtc-pr14-table-body-array-merge`](https://github.com/danluu/gutenberg/tree/review/rtc-pr14-table-body-array-merge) | 2 | +294 / -18 | verified content; seed `7110017` still shows PR14 alone is incomplete |
 | PR 14B | Stale-shorter query-array local suffix append after PR14 | No verified branch link yet | TBD | TBD | required before grouped PR15 |
-| PR 15 | Grouped fallback-group operations after PR14B | No verified branch link yet | TBD | TBD | active i38 grouped row; PR15A-C component links are only supporting prior art until grouped PR15 is audited |
+| PR 15 | Grouped fallback-group operations after PR14B | No verified branch link yet | TBD | TBD | active latest-fresh/i39 grouped row; PR15A-C component links are only supporting prior art until grouped PR15 is audited |
 
 ### Held Sidecars, Fallbacks, And Prior Art
 
@@ -206,7 +208,7 @@ branch-link audit or explicitly says `No verified branch link yet`.
 | PR 7B2 | Save response terminal manager/base-record microhead | No verified branch link yet | held until PR07B0/PR07B1/HOLD-07C replay proves a distinct product delta |
 | PR 7C | Save response/reload sibling evidence after PR07B1 | No verified branch link yet | held until owner replay proves coverage and distinctness; raw PR07D remains rejected |
 | PR 5 aggregate | Parser/entity normalization equivalence | [`review/rtc-pr05-parser-entity-normalization-equivalence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr05-parser-entity-normalization-equivalence) | verified prior art, not the active PR05A-D split |
-| PR 6A prior art | Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06a-persisted-empty-content-guard) | verified prior art; do not substitute for PR06E or active i38 PR06 evidence |
+| PR 6A prior art | Persisted empty-content CRDT body guard | [`review/rtc-pr06a-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr06a-persisted-empty-content-guard) | verified prior art; do not substitute for PR06E or active latest-fresh/i39 PR06 evidence |
 | PR 7A aggregate | Save response entity-state guards | [`review/rtc-pr07a-save-response-actions-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07a-save-response-actions-guard) | verified prior art, not the active PR07A1-A3 split |
 | PR 7B aggregate | Save response manager/base-record guards | [`review/rtc-pr07b-save-response-manager-base-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr07b-save-response-manager-base-record) | verified prior art, not the active PR07B0-B1 plus held PR07B2 split |
 | PR 8 | Reload title and persisted-record hydration | [`review/rtc-pr08-title-reload-persisted-record`](https://github.com/danluu/gutenberg/tree/review/rtc-pr08-title-reload-persisted-record) | verified prior art, not an active filing unit |
@@ -221,18 +223,20 @@ branch-link audit or explicitly says `No verified branch link yet`.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T00:31:02Z
+collected_at_utc: 2026-05-18T00:35:49Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T002507Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-The raw `novelty-status.md` collected for this update now has a full current
-pass for the new coverage root. It reports `48481` coverage files, `75134`
-total records seen, `4` new behavioral feature keys this pass, and no current
-active-run actionable, raw, no-product, or visible likely-real signatures. The
-current drain scope is also clean. That is fuzz/control-plane health only; it
-is not final-stack validation or filing readiness.
+The raw `novelty-status.md` collected for this update has a full current pass
+for the coverage root. It reports `48502` coverage files, `75174` total
+records seen, `4` new behavioral feature keys, and `4` new CDP coverage hashes
+this pass. Current active-run triage has `2` actionable/product-evidence
+signatures and `0` no-product actionable signatures; visible likely-real
+remains `0`. The current drain scope has the same `2` product-evidence
+signatures. This is fuzz/control-plane health only; it is not final-stack
+validation or filing readiness.
 
 The latest trend packet was generated at `2026-05-18T00:22:53Z` from monitor
 data through `2026-05-18T00:16:52Z`:
@@ -273,33 +277,46 @@ reload-post-action: 1082/2000
 title-save-reload: 538/1000
 body-save-reload: 597/1000
 real-user-editing success: 602/1000
-ui-format-paragraph: 1737/2000
+ui-format-paragraph: 1738/2000
 ```
 
-The novelty pass also reports no headroom for adding browser groups
-(`load1: 87.25` on `64` cores) and keeps the recent startup-noise pauses in
-cooldown for save/reload, real-user editing, and rich-text groups. Treat these
-as current producer-control signals, not as product validation.
+The novelty pass reports headroom for adding groups (`load1: 58.02` on `64`
+cores, `412.3G` free memory), but the scheduler still held browser
+materialization below the floor because no safe group was available without
+overriding max-group budget, disabled state, pause state, current
+startup/noise hold, or active noise cooldown. Enabled groups are
+`novelty-ws-lifecycle` and `novelty-ws-parser-serialization`; save/reload,
+HTTP persistence, real-user editing, parser-transform, and rich-text groups
+remain paused/cooldown-gated for startup-noise control. Treat these as current
+producer-control signals, not as product validation.
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis,
-`pr-split-20260518T001344Z-synthesis.md`, says:
+`pr-split-20260518T002449Z-synthesis.md`, says:
 
-- Use `fresh-prset/iteration-38` as the replacement target, not stale
-  Cycle293/Cycle306/local-publish rows, not raw i37, and no longer i36 as the
-  active filing target.
-- Keep the i36 topology: common mainline through grouped PR06, runtime-gated
+- Filing and final-stack fuzzing are still blocked. Use the latest fresh alias,
+  currently `fresh-prset/iteration-39/*`, not stale Cycle293/Cycle306/local
+  publish rows, not raw i37, not i38, and no longer i36 as the active filing
+  target.
+- Keep the Cycle 316/i36 topology: common mainline through grouped PR06, runtime-gated
   PR07A1/A2/A3/B0/B1 with PR07B2 and PR07C held, and the independent
   CRDT/data-loss lane from PR06 through grouped PR15.
-- Require a fresh i38 audit manifest newer than `latest-fresh-pr-set.md` and
-  the current deferred queue before filing or final-stack fuzzing.
+- Require the selected latest-fresh audit manifest to be newer than
+  `latest-fresh-pr-set.md` and the current deferred queue before filing or
+  final-stack fuzzing.
 - Keep PR07 owner evidence and seed `1020002` as blockers for final-stack fuzz
   and filing only; they must not block audit, manifest, replay, or loop-repair
   work.
 - Reject fallback-tail PR05D, `d06e3528cbd`, raw PR07D, PR17, PR18/PR18x,
   stale local publish manifests, old `ready/*`, raw `deferred/*`, and raw
   `candidate/*`.
+- Compare PR05B, PR05C, and clean PR05D before assigning any later
+  linebreak/parser/rich-text residual owner or naming PR18x.
+- The next bounded split job should be
+  `rtc-cycle318-latest-fresh-audit-manifest-and-stale-finalization-guard`;
+  launch exactly one PR07 owner-readiness matrix only if no durable equivalent
+  is active.
 
 The completed Cycle 316 i36 audit/manifest is now provenance for the same
 shape, not the active filing manifest. Its artifact directory is:
@@ -316,8 +333,8 @@ adjacent diffstat and patch-id artifacts, `deferred-output-audit.tsv`,
 checks passing, `0` hard check failures, and `0` head/bundle/manifest
 agreement failures. Its push manifest was refreshed at
 `2026-05-18T00:07:47Z`, newer than the fresh split and deferred reports it
-covered at the time, but the later i38 recommendation requires a replacement
-audit.
+covered at the time, but the later latest-fresh/i39 recommendation requires a
+replacement audit.
 
 The i36 artifact verifies selected base allowlist ancestry, grouped
 `PR06 -> PR06E`, grouped `PR06 -> PR09`, `PR07B1 -> HOLD-07B2`,
@@ -357,8 +374,9 @@ control-plane changes in `bin/rtc-browser-fuzz-novelty-monitor.mjs` and
 This is control-plane hygiene and triage-health evidence. It is not product
 validation, final-stack fuzzing, or filing readiness. The active coverage root
 has since rolled to `run-20260518T002507Z`; the latest full novelty pass for
-that root has no current visible likely-real or actionable signatures, and its
-paused-group/cooldown state should be treated as the current control-plane
+that root has no current visible likely-real signatures, but does have two
+actionable product-evidence signatures and no no-product actionable signatures.
+Its paused-group/cooldown state should be treated as the current control-plane
 status until the next root rollover.
 
 The completed status-analysis reports through
@@ -367,8 +385,8 @@ separate current fuzz health from historical noise, keep evidence-only
 families out of the split, and make filing gates explicit. Their older "keep
 existing split", old PR13 review-ref warnings, old enabled-group claims, and
 "do not add PR06B" recommendations are superseded by the repaired PR13 audit
-links, the i38 split recommendation, the PR07 hold decision, and later
-duplicate/noise evidence.
+links, the latest-fresh/i39 split recommendation, the PR07 hold decision, and
+later duplicate/noise evidence.
 
 ## Deferred Or Evidence-Only Work
 
@@ -376,16 +394,16 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| i38 split audit | `fresh-prset/iteration-38/*` from the i36 topology | required and not yet completed in the collected inputs | Run one fresh audit/manifest newer than the latest fresh split and deferred queue before filing or final-stack fuzz |
-| i36 split evidence | `fresh-prset/iteration-36/*` | completed Cycle 316 audit has nonzero artifacts and `0` hard failures, but is now provenance only | Do not use i36 as the active filing manifest unless i38 is explicitly rejected later |
-| Required i38 artifacts | `report.md`, `push-manifest.tsv`, manifest age, base allowlist, head/bundle/manifest agreement, branch graph, adjacent diffstat/numstat, patch-id/range-diff, deferred audit, finalization staleness audit, artifact verification | missing for i38 | Keep zero-byte, stale, wrong-base, setup-only, and preflight-only artifacts out of filing evidence |
-| Missing verified product refs | PR02A, PR05A-D, PR06E, PR07A1-A3, PR07B0-B1, held PR07B2, held PR07C, PR13B0-B3, PR14B, grouped PR15, and any exact i38 refs not covered by verified audit links | rows correctly say `No verified branch link yet` | Publish/fetch/audit explicit GitHub refs before filing |
+| Latest-fresh split audit | `fresh-prset/iteration-39/*` from the Cycle 316/i36 topology | required and not yet completed in the collected inputs | Run one fresh audit/manifest newer than the latest fresh split and deferred queue before filing or final-stack fuzz |
+| i36/i38 split evidence | prior `fresh-prset/iteration-36/*` and `fresh-prset/iteration-38/*` evidence | i36 completed audit has nonzero artifacts and `0` hard failures, but i36/i38 are now provenance only | Do not use old manifests as active filing evidence unless a newer synthesis explicitly rejects i39 |
+| Required latest-fresh artifacts | `report.md`, `push-manifest.tsv`, manifest age, base allowlist, head/bundle/manifest agreement, branch graph, adjacent diffstat/numstat, patch-id/range-diff, deferred audit, finalization staleness audit, artifact verification | missing for i39 in the collected inputs | Keep zero-byte, stale, wrong-base, setup-only, and preflight-only artifacts out of filing evidence |
+| Missing verified product refs | PR02A, PR05A-D, PR06E, PR07A1-A3, PR07B0-B1, held PR07B2, held PR07C, PR13B0-B3, PR14B, grouped PR15, and any exact latest-fresh/i39 refs not covered by verified audit links | rows correctly say `No verified branch link yet` | Publish/fetch/audit explicit GitHub refs before filing |
 | PR07 runtime / owner gate | PR07A1-A3, PR07B0-B1, held PR07B2, held PR07C; seeds `5200011`, `5200015`, `5200017`, `5200010`, `5200008`, `7110004`, `7110017`, `1100001`, and `1100002` | prior matrix was setup-only or readiness-blocked; PR07B2 and PR07C remain held | First prove `collaborationEnabled=true`, then rerun owner matrix with REST/meta/Y.Doc/provider/awareness/block-tree first-divergence snapshots |
 | PR07D | reload/post-save/rejoin residuals | raw PR07D is rejected | Add only after fresh PR07 replay proves red-at-held-PR07C non-coverage |
 | PR05D semicolonless entity validation | clean PR05C-adjacent branch `27c6e7924217` | real PR05-family work after PR05C; no verified product branch link yet | Publish/fetch/audit clean PR05D; keep fallback-tail PR05D rejected |
 | PR06 grouping and PR06E | grouped PR06 plus malformed-save sidecar | grouped PR06 has verified aggregate prior content; PR06E has no verified link | Prove `PR06 -> PR06E`, `PR07 !-> PR06E`, and preserve adjacent evidence for possible PR06 re-splitting |
-| PR09 placement | PR09 through grouped PR15 | i38 requires lane from PR06, not PR07 | Prove `PR06 -> PR09`, `PR07B1 !-> PR09`, held `PR07B2 !-> PR09/PR15`, and no PR07 serialization |
-| PR11 / PR12 grouping | grouped PR11 and grouped PR12 | verified aggregate content exists; i38 grouping still needs exact audit evidence | Preserve adjacent diffstat and patch-id evidence so maintainers can require microheads without losing provenance |
+| PR09 placement | PR09 through grouped PR15 | latest-fresh/i39 requires lane from PR06, not PR07 | Prove `PR06 -> PR09`, `PR07B1 !-> PR09`, held `PR07B2 !-> PR09/PR15`, and no PR07 serialization |
+| PR11 / PR12 grouping | grouped PR11 and grouped PR12 | verified aggregate content exists; latest-fresh/i39 grouping still needs exact audit evidence | Preserve adjacent diffstat and patch-id evidence so maintainers can require microheads without losing provenance |
 | PR13 finer split | PR13A plus desired PR13B0/B1/B2/B3 | PR13A has repaired verified link; PR13B/C repaired links are fallback/supporting evidence | Publish/fetch/audit PR13B0/B1/B2/B3 before replacing fallback refs |
 | PR14B / PR15 placement | table query-array suffix and grouped PR15 after PR14B | PR15A-C have verified component links, but active topology lacks verified grouped PR15 placement proof | Publish/fetch/audit explicit PR14B-based grouped PR15 refs and confirm ancestry |
 | PR03B browser restoreRevision invalidation | held PR03 sidecar | held until runtime replay distinguishes PR03 from PR03B ownership | Run PR03 vs PR03B after runtime readiness is healthy |
@@ -394,22 +412,22 @@ These must not be described as fixed or filing-ready.
 | Active deferred sessions | reload-hydration, pre-save search/live-collapse, rich-text suffix | active sessions are not progress by themselves | Count only nonempty durable reports/artifacts or a clear downscope/promotion decision |
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families | evidence-only unless a focused owner replay proves otherwise | Keep out of PR rows until branch, owner, and fuzz evidence are refreshed |
 | Duplicate/noise consumer cap | timeout/reload-rejoin current-run families | source-stable terminal family caps remain implemented and validated | Keep product-evidence representatives visible while avoiding duplicate analysis |
-| Duplicate/noise producer leak | novelty-monitor startup/noise producer scheduling | latest feedback action patched novelty-monitor/supervisor, restarted novelty/supervisor/watchdog, and restarted bounded live analysis; the current root now has a full clean current triage pass with startup-noise cooldowns still active | If leakage returns after cooldown expiry or the next root rollover, extend the family/profile cooldown narrowly |
+| Duplicate/noise producer leak | novelty-monitor startup/noise producer scheduling | latest feedback action patched novelty-monitor/supervisor, restarted novelty/supervisor/watchdog, and restarted bounded live analysis; the current root now has a full current triage pass with no no-product actionable signatures and startup-noise cooldowns still active | If leakage returns after cooldown expiry or the next root rollover, extend the family/profile cooldown narrowly |
 
 ## Filing Gates And Current Recommendation
 
 Do not file a single mega-PR and do not file i31, i32, i33, i34, i35, i36,
-Cycle293, Cycle306, Cycle312, Cycle314, Cycle316, `ready/*`,
+i37, stale i38, Cycle293, Cycle306, Cycle312, Cycle314, Cycle316, `ready/*`,
 validation-stack, dirty evidence, fallback-tail branches, raw
 deferred/candidate refs, PR17, PR18, PR18x, or zero-byte/stale finalization
 artifacts as-is.
 
 Before filing any maintainer-facing PR:
 
-1. Use the i38 topology as the current working target.
-2. Generate a fresh i38 audit/manifest newer than both the latest fresh split
-   and deferred queue, and refresh again if a newer fresh split or stale
-   finalization artifact supersedes it before filing.
+1. Use the latest fresh iteration-39 topology as the current working target.
+2. Generate a fresh latest-fresh/i39 audit/manifest newer than both the latest
+   fresh split and deferred queue, and refresh again if a newer fresh split or
+   stale finalization artifact supersedes it before filing.
 3. Publish/fetch/audit explicit product refs for every row that currently says
    `No verified branch link yet`.
 4. Prove grouped PR06/PR11/PR12/PR15 are reviewable, with adjacent
@@ -442,8 +460,10 @@ Before filing any maintainer-facing PR:
     health and triage evidence. They are not final-stack validation, a
     validated final-stack pass or failure, or filing readiness.
 
-The next useful work is the bounded i38 audit/manifest, plus exactly one PR07
-owner replay after root, ports, and `wp-env` are healthy. Continue deferred
-downscope/promotion and keep the duplicate/noise control-plane fix under the
-current root cooldown checks. Do not launch broad final-stack fuzz, a duplicate
-seed `1020002` job, raw PR07D, PR17, PR18, or PR18x.
+The next useful work is the bounded latest-fresh/i39 audit/manifest
+(`rtc-cycle318-latest-fresh-audit-manifest-and-stale-finalization-guard`),
+plus exactly one PR07 owner replay after root, ports, and `wp-env` are healthy
+if no durable equivalent is active. Continue deferred downscope/promotion and
+keep the duplicate/noise control-plane fix under the current root cooldown
+checks. Do not launch broad final-stack fuzz, a duplicate seed `1020002` job,
+raw PR07D, PR17, PR18, or PR18x.
