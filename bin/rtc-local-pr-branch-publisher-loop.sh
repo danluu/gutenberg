@@ -310,12 +310,22 @@ run_once() {
 	write_status idle "cycle complete"
 }
 
-main() {
+acquire_lock() {
 	if ! mkdir "$LOCK" 2>/dev/null; then
 		log "another publisher loop already holds $LOCK"
 		exit 0
 	fi
 	trap 'rmdir "$LOCK" 2>/dev/null || true' EXIT
+}
+
+run_once_locked() {
+	acquire_lock
+	log "local PR branch publisher once started pid=$$"
+	run_once
+}
+
+run_loop() {
+	acquire_lock
 	log "local PR branch publisher loop started pid=$$"
 	while true; do
 		run_once || log "cycle failed"
@@ -323,4 +333,15 @@ main() {
 	done
 }
 
-main "$@"
+case "${1:-loop}" in
+	once|run-once)
+		run_once_locked
+		;;
+	loop|run)
+		run_loop
+		;;
+	*)
+		echo "usage: $0 [once|loop]" >&2
+		exit 2
+		;;
+esac
