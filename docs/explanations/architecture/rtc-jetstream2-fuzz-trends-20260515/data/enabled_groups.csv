@@ -903,3 +903,5 @@ timestamp,group,group_family
 2026-05-18T22:29:30Z,novelty-ws-real-user-editing,real-user
 2026-05-18T22:29:43Z,novelty-ws-parser-serialization,parser
 2026-05-18T22:29:43Z,novelty-http-persistence-probe,persistence
+2026-05-18T22:53:44Z,novelty-ws-real-user-rich-text,real-user
+2026-05-18T22:53:45Z,novelty-ws-real-user-save-reload,real-user
