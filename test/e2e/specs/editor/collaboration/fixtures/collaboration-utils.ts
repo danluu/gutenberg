@@ -54,6 +54,24 @@ export const SECOND_USER: UserCredentials = {
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 const USE_TEST_WS_PROVIDER = process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1';
 
+function getTestWebSocketServerUrl( pathname: string ): string | null {
+	try {
+		const url = new URL(
+			process.env.GUTENBERG_RTC_TEST_WS_URL ||
+				`ws://127.0.0.1:${
+					process.env.GUTENBERG_RTC_TEST_WS_PORT || '18991'
+				}`
+		);
+		url.protocol = url.protocol === 'wss:' ? 'https:' : 'http:';
+		url.pathname = pathname;
+		url.search = '';
+		url.hash = '';
+		return url.toString();
+	} catch {
+		return null;
+	}
+}
+
 export default class CollaborationUtils {
 	private admin: Admin;
 	private cleanupUsersMode: CleanupUsersMode;
@@ -233,6 +251,7 @@ export default class CollaborationUtils {
 			await Promise.all(
 				pages.map( ( pg ) =>
 					this.waitForSyncCycle( pg, 3, {
+						expectedPeerCount: pages.length,
 						timeout: resolvedTimeout,
 						room: roomName,
 					} )
@@ -280,10 +299,23 @@ export default class CollaborationUtils {
 				{ timeout }
 			);
 		} catch ( error ) {
-			const snapshot = await this.getTestWebSocketDebugSnapshot(
-				page,
-				roomName
-			);
+			const [ snapshot, allPageSnapshots, serverSnapshot ] =
+				await Promise.all( [
+					this.getTestWebSocketDebugSnapshot( page, roomName ),
+					Promise.all(
+						this.allPages.map(
+							async ( candidatePage, pageIndex ) => ( {
+								pageIndex,
+								snapshot:
+									await this.getTestWebSocketDebugSnapshot(
+										candidatePage,
+										roomName
+									),
+							} )
+						)
+					),
+					this.getTestWebSocketServerSnapshot(),
+				] );
 			const errorMessage =
 				error instanceof Error ? error.message : String( error );
 
@@ -295,6 +327,12 @@ export default class CollaborationUtils {
 					`Provider snapshot: ${ this.stringifyDiagnosticValue(
 						snapshot
 					) }`,
+					`All page snapshots: ${ this.stringifyDiagnosticValue(
+						allPageSnapshots
+					) }`,
+					`Server snapshot: ${ this.stringifyDiagnosticValue(
+						serverSnapshot
+					) }`,
 				].join( '\n' )
 			);
 		}
@@ -302,7 +340,7 @@ export default class CollaborationUtils {
 
 	private async getTestWebSocketDebugSnapshot(
 		page: Page,
-		roomName: string
+		roomName?: string
 	): Promise< unknown > {
 		return page
 			.evaluate( ( room ) => {
@@ -321,7 +359,7 @@ export default class CollaborationUtils {
 					providerDiagnostics:
 						state?.providerDiagnostics?.slice( -10 ) ?? [],
 					requestedRoom: room,
-					requestedRoomState: rooms?.[ room ] ?? null,
+					requestedRoomState: room ? rooms?.[ room ] ?? null : null,
 					roomNames: Object.keys( rooms ),
 					rooms: boundedRooms,
 					tick: state?.tick ?? null,
@@ -334,6 +372,39 @@ export default class CollaborationUtils {
 						? snapshotError.message
 						: String( snapshotError ),
 			} ) );
+	}
+
+	private async getTestWebSocketServerSnapshot(): Promise< unknown > {
+		const snapshotUrl = getTestWebSocketServerUrl( '/snapshot' );
+		if ( ! snapshotUrl ) {
+			return {
+				error: 'Could not resolve test WebSocket server URL.',
+			};
+		}
+
+		try {
+			const signal = (
+				AbortSignal as typeof AbortSignal & {
+					timeout?: ( milliseconds: number ) => AbortSignal;
+				}
+			 ).timeout?.( 1500 );
+			const response = await fetch(
+				snapshotUrl,
+				signal ? { signal } : undefined
+			);
+			if ( ! response.ok ) {
+				return {
+					error: `HTTP ${ response.status }`,
+					url: snapshotUrl,
+				};
+			}
+			return await response.json();
+		} catch ( error ) {
+			return {
+				error: error instanceof Error ? error.message : String( error ),
+				url: snapshotUrl,
+			};
+		}
 	}
 
 	private stringifyDiagnosticValue( value: unknown ): string {
@@ -563,16 +634,28 @@ export default class CollaborationUtils {
 	 * (rest_route=%2Fwp-sync%2Fv1%2Fupdates), so we match the
 	 * encoded form.
 	 *
-	 * @param page              The Playwright page to wait on.
-	 * @param cycles            Number of sync responses to wait for (default 3).
-	 * @param [options]         Optional settings.
-	 * @param [options.timeout] Maximum wait time per cycle in ms (default 10000).
-	 * @param options.room
+	 * @param page                        The Playwright page to wait on.
+	 * @param cycles                      Number of sync responses to wait for (default 3).
+	 * @param [options]                   Optional settings.
+	 * @param [options.expectedPeerCount] Expected WebSocket awareness peer count.
+	 * @param [options.requireSynced]     Whether the WebSocket room must be synced.
+	 * @param [options.timeout]           Maximum wait time per cycle in ms.
+	 * @param [options.room]              WebSocket room name.
 	 */
 	async waitForSyncCycle(
 		page: Page,
 		cycles = 3,
-		{ timeout = 10000, room }: { timeout?: number; room?: string } = {}
+		{
+			expectedPeerCount,
+			requireSynced = true,
+			timeout = 10000,
+			room,
+		}: {
+			expectedPeerCount?: number;
+			requireSynced?: boolean;
+			timeout?: number;
+			room?: string;
+		} = {}
 	) {
 		if ( USE_TEST_WS_PROVIDER ) {
 			// y-websocket distinguishes 'connected' (socket up) from 'synced'
@@ -581,19 +664,69 @@ export default class CollaborationUtils {
 			// room, to rule out stale rooms from earlier navigations.
 			const targetRoom =
 				room ?? ( await this.getCurrentPostRoomName( page ) );
-			await page.waitForFunction(
-				( roomName: string ) => {
-					const state = ( window as any )
-						.__gutenbergTestWebSocketSync;
-					const matchingRoom = state?.rooms?.[ roomName ];
-					return (
-						matchingRoom?.status === 'connected' &&
-						matchingRoom?.synced === true
-					);
-				},
-				targetRoom,
-				{ timeout }
-			);
+			try {
+				await page.waitForFunction(
+					( {
+						expected,
+						roomName,
+						requireSynced: mustBeSynced,
+					}: {
+						expected?: number;
+						roomName: string;
+						requireSynced: boolean;
+					} ) => {
+						const state = ( window as any )
+							.__gutenbergTestWebSocketSync;
+						const matchingRoom = state?.rooms?.[ roomName ];
+						return (
+							matchingRoom?.status === 'connected' &&
+							( ! mustBeSynced ||
+								matchingRoom?.synced === true ) &&
+							( ! expected ||
+								matchingRoom?.awarenessCount >= expected )
+						);
+					},
+					{
+						expected: expectedPeerCount,
+						roomName: targetRoom,
+						requireSynced,
+					},
+					{ timeout }
+				);
+			} catch ( error ) {
+				const [ snapshot, allPageSnapshots, serverSnapshot ] =
+					await Promise.all( [
+						this.getTestWebSocketDebugSnapshot( page, targetRoom ),
+						Promise.all(
+							this.allPages.map(
+								async ( candidatePage, pageIndex ) => ( {
+									pageIndex,
+									snapshot:
+										await this.getTestWebSocketDebugSnapshot(
+											candidatePage,
+											targetRoom
+										),
+								} )
+							)
+						),
+						this.getTestWebSocketServerSnapshot(),
+					] );
+				const errorMessage =
+					error instanceof Error ? error.message : String( error );
+
+				throw new Error(
+					`RTC fuzz-only WebSocket sync cycle timeout after ${ timeout }ms: ${ this.stringifyDiagnosticValue(
+						{
+							allPageSnapshots,
+							expectedPeerCount,
+							requireSynced,
+							roomName: targetRoom,
+							serverSnapshot,
+							snapshot,
+						}
+					) }\n${ errorMessage }`
+				);
+			}
 			return;
 		}
 

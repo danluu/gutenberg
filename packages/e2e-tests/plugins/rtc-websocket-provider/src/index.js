@@ -13,6 +13,7 @@ import { WebsocketProvider } from 'y-websocket';
 const TEST_PROVIDER_NAMESPACE = 'gutenberg-test/rtc-websocket-provider';
 const DEFAULT_URL = 'ws://127.0.0.1:18991';
 const HAS_PROVIDER_SYNCED_REMOTE_STATE_META = 'hasProviderSyncedRemoteState';
+const INITIAL_SYNC_DIAGNOSTIC_TIMEOUT_MS = 20_000;
 
 const settings = window.gutenbergTestWebSocketSync || {};
 const globalState = ( window.__gutenbergTestWebSocketSync = {
@@ -137,6 +138,24 @@ function recordStalePositiveReadyEvent( room, providerToken, patch ) {
 	} );
 }
 
+function getProviderDiagnosticState( room, providerToken ) {
+	const roomState = ensureRoomDebugState( room );
+	const activeProvider = activeProviders.get( room );
+
+	return {
+		activeProviderToken: activeProvider?.providerToken ?? null,
+		clientId: roomState.clientId,
+		isActiveProvider: activeProvider?.providerToken === providerToken,
+		lastAwarenessTick: roomState.lastAwarenessTick,
+		lastStatusTick: roomState.lastStatusTick,
+		lastSyncTick: roomState.lastSyncTick,
+		providerToken,
+		status: roomState.status,
+		synced: roomState.synced === true,
+		url: globalState.url,
+	};
+}
+
 function updateCurrentProviderDebugState( room, providerToken, patch ) {
 	const roomState = ensureRoomDebugState( room );
 	if ( roomState.providerToken !== providerToken ) {
@@ -155,11 +174,36 @@ function areUint8ArraysEqual( a, b ) {
 	return a.every( ( value, index ) => value === b[ index ] );
 }
 
+function getUint8ArrayFingerprint( value ) {
+	let hash = 0;
+	for ( let index = 0; index < value.length; index++ ) {
+		hash = ( hash * 31 + value[ index ] ) % 4294967291;
+	}
+
+	return {
+		hash: Math.trunc( hash ).toString( 16 ),
+		length: value.length,
+	};
+}
+
+function areFingerprintsEqual( a, b ) {
+	return a.hash === b.hash && a.length === b.length;
+}
+
+function getDocumentFingerprint( ydoc ) {
+	return getUint8ArrayFingerprint(
+		window.wp.sync.Y.encodeStateAsUpdateV2( ydoc )
+	);
+}
+
 function createWebSocketProvider() {
 	return async ( { awareness, objectType, objectId, ydoc } ) => {
 		const room = objectId ? `${ objectType }:${ objectId }` : objectType;
 		const initialStateVector = window.wp.sync.Y.encodeStateVector( ydoc );
+		const initialDocumentFingerprint = getDocumentFingerprint( ydoc );
 		const providerToken = nextProviderToken++;
+		let hasResolvedInitialSync = false;
+		let initialSyncDiagnosticTimer = null;
 		let resolveInitialSync;
 		const initialSync = new Promise( ( resolve ) => {
 			resolveInitialSync = resolve;
@@ -214,22 +258,42 @@ function createWebSocketProvider() {
 		// landed and the doc reflects the server state. Tests that need real
 		// convergence should wait on `synced`, not just `status`.
 		const onSync = ( isSynced ) => {
-			if ( isSynced ) {
+			if ( isSynced && ! hasResolvedInitialSync ) {
 				const currentStateVector =
 					window.wp.sync.Y.encodeStateVector( ydoc );
+				const currentDocumentFingerprint =
+					getDocumentFingerprint( ydoc );
+				const stateVectorChanged = ! areUint8ArraysEqual(
+					currentStateVector,
+					initialStateVector
+				);
+				const documentChanged = ! areFingerprintsEqual(
+					currentDocumentFingerprint,
+					initialDocumentFingerprint
+				);
 
-				if (
-					! areUint8ArraysEqual(
-						currentStateVector,
-						initialStateVector
-					)
-				) {
+				if ( stateVectorChanged || documentChanged ) {
 					ydoc.meta.set(
 						HAS_PROVIDER_SYNCED_REMOTE_STATE_META,
 						true
 					);
 				}
 
+				if ( documentChanged && ! stateVectorChanged ) {
+					pushProviderDiagnostic( room, {
+						currentDocumentFingerprint,
+						initialDocumentFingerprint,
+						kind: 'initial-sync-document-changed-with-same-state-vector',
+						providerToken,
+						stateVectorLength: currentStateVector.length,
+					} );
+				}
+
+				hasResolvedInitialSync = true;
+				if ( initialSyncDiagnosticTimer ) {
+					window.clearTimeout( initialSyncDiagnosticTimer );
+					initialSyncDiagnosticTimer = null;
+				}
 				resolveInitialSync();
 			}
 			updateCurrentProviderDebugState( room, providerToken, {
@@ -252,10 +316,33 @@ function createWebSocketProvider() {
 
 		provider.connect();
 
+		if ( isFuzzOnlyAssertionsEnabled() ) {
+			initialSyncDiagnosticTimer = window.setTimeout( () => {
+				if ( hasResolvedInitialSync ) {
+					return;
+				}
+
+				pushProviderDiagnostic( room, {
+					...getProviderDiagnosticState( room, providerToken ),
+					kind: 'websocket-provider-initial-sync-stalled',
+				} );
+			}, INITIAL_SYNC_DIAGNOSTIC_TIMEOUT_MS );
+		}
+
 		await initialSync;
 
 		return {
 			destroy: () => {
+				if ( initialSyncDiagnosticTimer ) {
+					window.clearTimeout( initialSyncDiagnosticTimer );
+					initialSyncDiagnosticTimer = null;
+				}
+				if ( ! hasResolvedInitialSync ) {
+					pushProviderDiagnostic( room, {
+						...getProviderDiagnosticState( room, providerToken ),
+						kind: 'websocket-provider-destroyed-before-initial-sync',
+					} );
+				}
 				const activeProvider = activeProviders.get( room );
 				if ( activeProvider?.providerToken === providerToken ) {
 					activeProviders.delete( room );
