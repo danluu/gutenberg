@@ -795,3 +795,6 @@ timestamp,group,group_family
 2026-05-18T02:29:25Z,novelty-ws-same-user-lifecycle,lifecycle
 2026-05-18T02:29:26Z,novelty-ws-same-user-stale-tabs,lifecycle
 2026-05-18T02:29:27Z,novelty-ws-async-server-blocks,async/media
+2026-05-18T02:39:07Z,novelty-ws-parser-transform,parser
+2026-05-18T02:39:13Z,novelty-ws-same-user-lifecycle,lifecycle
+2026-05-18T02:39:19Z,novelty-ws-same-user-stale-tabs,lifecycle
