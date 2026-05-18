@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-18T00:54:43Z`
+Snapshot time: `2026-05-18T01:07:48Z`
 
 Trigger event:
-`pr-split-2026-05-18T00-53-46Z-20260518T004223Z`
+`pr-split-2026-05-18T01-06-32Z-20260518T005351Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T00-53-46Z-20260518T004223Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T01-06-32Z-20260518T005351Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,15 +28,16 @@ or the original split merely for continuity.
 ## Executive Status
 
 The newest completed split-persona synthesis is
-`pr-split-20260518T004223Z-synthesis.md`. It keeps the Cycle 316/i36 topology,
-but says the active filing target has advanced again: use the latest
-`fresh-prset` alias, currently `fresh-prset/iteration-40/*`, not the older i36,
-i38, or i39 manifests. Do not file GitHub PRs or claim final-stack validation
-until the selected latest-fresh audit/manifest is newer than
-`latest-fresh-pr-set.md`, the current deferred queue/status, and any deferred
-reports it claims to cover, with base allowlist, branch graph, adjacent
-diffstat/patch-id, and head/bundle/manifest checks passing. Zero-byte artifacts
-remain no evidence.
+`pr-split-20260518T005351Z-synthesis.md`. It keeps the Cycle 316/i36 topology,
+but says the active filing target is now `fresh-prset/iteration-40/*`, not the
+older i36, i38, or i39 manifests. The raw `current-pr-split.md` input still ends
+with the completed Cycle 318/i39 audit, so the required Cycle 320/i40 audit is
+not completed in the collected inputs. Do not file GitHub PRs or claim
+final-stack validation until the selected latest-fresh audit/manifest is newer
+than `latest-fresh-pr-set.md`, the current deferred queue/status, and any
+deferred reports it claims to cover, with base allowlist, branch graph,
+adjacent diffstat/patch-id, and head/bundle/manifest checks passing. Zero-byte
+artifacts remain no evidence.
 
 Current replacement target:
 
@@ -50,7 +51,7 @@ PR01 -> PR02 (+ PR02A)
 
 Runtime-gated lane from PR06:
 PR07A1 -> PR07A2 -> PR07A3 -> PR07B0 -> PR07B1
-(hold PR07B2 and PR07C until owner replay proves distinct product deltas)
+(hold PR07B2 and PR07C as siblings off PR07B1; no raw PR07D)
 
 Independent CRDT/data-loss lane from PR06:
 PR09 -> PR10 -> grouped PR11 -> grouped PR12
@@ -60,10 +61,12 @@ PR09 -> PR10 -> grouped PR11 -> grouped PR12
 
 Active status changes since the prior report:
 
-- Replace i39 as the active filing target with the latest fresh iteration-40
-  alias. The completed i39 audit is now provenance because
-  `latest-fresh-pr-set.md` advanced afterward; i36/i38 are older provenance
-  for the same accepted shape.
+- Keep iteration 40 as the active filing target. The latest synthesis says to
+  launch `rtc-cycle320-i40-latest-fresh-audit-manifest-and-stale-finalization-guard`;
+  no completed i40 audit artifact is present in the collected inputs.
+- Treat the completed Cycle 318/i39 audit as provenance only because
+  `latest-fresh-pr-set.md` advanced afterward; i36/i38 are older provenance for
+  the same accepted shape.
 - Keep grouped PR06, PR11, PR12, and PR15 as the current maintainer-facing
   shape, with adjacent diffstat and patch-id evidence preserved so maintainers
   can require a smaller split without losing provenance.
@@ -100,7 +103,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T00:54:38Z`.
+Remote status was collected at `2026-05-18T01:07:43Z`.
 
 The fix-planning repo is checked out at:
 
@@ -130,7 +133,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T00:54:43Z` from fetched
+The branch-link audit was generated at `2026-05-18T01:07:48Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. A verified
 branch link confirms that the linked ref exists and has a non-empty audited
@@ -225,43 +228,41 @@ branch-link audit or explicitly says `No verified branch link yet`.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T00:54:38Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T004948Z
+collected_at_utc: 2026-05-18T01:07:43Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T010505Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-The raw `novelty-status.md` collected for this update has a full current pass
-for the coverage root. It reports `48609` coverage files, `75398` total
-records seen, `122` records processed this pass, `2` new behavioral feature
-keys, and `2` new CDP coverage hashes this pass. Current active-run triage has
-`0` signatures, `0` actionable signatures, `0` product-evidence signatures,
-and `0` visible likely-real failures. The current drain scope also has `0`
-signatures. This is fuzz/control-plane health only; it is not final-stack
-validation or filing readiness.
+The raw `novelty-status.md` collected for this update is startup-only for the
+new coverage root. It reports that the monitor started, a full coverage pass is
+pending, `363` observed roots and `75482` previous records were loaded, the
+supervisor groups file is still pending, and there are `0` active run
+directories. The current-root novelty status therefore cannot be used as a full
+triage pass, a final-stack validation result, or a filing-readiness claim.
 
-The latest trend packet was generated at `2026-05-18T00:48:51Z` from monitor
-data through `2026-05-18T00:45:12Z`:
+The latest trend packet was generated at `2026-05-18T00:57:16Z` from monitor
+data through `2026-05-18T00:53:24Z`:
 
 ```text
-monitor passes: 2162
-coverage files: 272 -> 48551
-coverage files delta: 48279
+monitor passes: 2164
+coverage files: 272 -> 48609
+coverage files delta: 48337
 unmet goals: 5
 likely_real_max: 4
-duplicate_share_current_last: 0.5
+duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.3453
 summary startup failures last: 0
 quality issues: 0
-memory free: 424.9 GB
-load averages: 39.31 / 53.26 / 61.81 on 64 cores
-enabled groups current in trend snapshot: novelty-ws-lifecycle
+memory free: 420.3 GB
+load averages: 61.68 / 67.16 / 66.4 on 64 cores
+enabled groups current in trend snapshot: novelty-ws-block-gauntlet, novelty-ws-common-blocks
 latest fuzz level mix:
-  browser-e2e=26 lanes/26 groups
+  browser-e2e=27 lanes/27 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5440012
-browser-e2e likely-real findings: 643 over 1987.0 runner-hours
+total fuzz-level test executions: 5443376
+browser-e2e likely-real findings: 644 over 1989.5 runner-hours
 latest suggested PR net LOC total: 5411
 ```
 
@@ -269,8 +270,8 @@ This is fuzz/control-plane health, not final-stack validation and not a
 filing-readiness claim. Browser E2E remains the only level with confirmed
 likely-real findings, but lower-level lanes are under-triaged and should not be
 declared useless from zero likely-real output. The latest trend snapshot has
-`0` summary startup failures and `0` quality issues, while current duplicate
-share is still nonzero and historical duplicate/noise remains material.
+`0` summary startup failures, `0` quality issues, and `0` current duplicate
+share, while historical duplicate/noise remains material.
 
 Coverage guidance still has five unmet auto-ratchet goals:
 
@@ -282,24 +283,18 @@ real-user-editing success: 602/1000
 ui-format-paragraph: 1748/2000
 ```
 
-The latest novelty pass reports headroom for adding groups (`load1: 63.13` on
-`64` cores, `420.3G` free memory). After the coverage root rollover it reset
-run-local noise state to
-`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T004948Z`,
-preserved coverage counters and non-startup cooldowns, and enabled
-`novelty-ws-common-blocks` plus `novelty-ws-block-gauntlet`. Save/reload, HTTP
-persistence, real-user editing, parser-transform, parser-serialization,
-lifecycle, and rich-text groups remain paused/cooldown-gated for startup-noise
-control. The monitor still reports the browser materialization floor below
-target, with no additional safe group available without overriding budget,
-disabled state, pause state, current startup/noise holds, or active noise
-cooldowns. Treat these as current producer-control signals, not as product
-validation.
+The current root has just rolled to
+`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T010505Z`.
+Until its first full novelty pass completes, treat the trend packet as the
+latest graph-derived control-plane evidence and treat the startup-only novelty
+file as a health signal only. Load is near core count, so any top-off should be
+guarded by startup-stall and materialization checks instead of simply adding
+browser concurrency.
 
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis,
-`pr-split-20260518T004223Z-synthesis.md`, says:
+`pr-split-20260518T005351Z-synthesis.md`, says:
 
 - Filing and final-stack fuzzing are still blocked. Use the latest fresh alias,
   currently `fresh-prset/iteration-40/*`, not stale Cycle293/Cycle306/local
@@ -312,6 +307,9 @@ The newest completed split-persona synthesis,
 - Require fresh i40 publication evidence before filing or final-stack fuzzing:
   the audit/manifest must be newer than `latest-fresh-pr-set.md`, deferred
   queue/status, and any deferred reports it claims to cover.
+- Launch exactly one bounded non-Docker i40 audit job,
+  `rtc-cycle320-i40-latest-fresh-audit-manifest-and-stale-finalization-guard`,
+  because the current raw split report still has no completed i40 artifact.
 - Verify base allowlist, branch head/bundle/manifest agreement, branch graph,
   adjacent diffstat/patch-id, clean PR05D, `PR06 -> PR09`,
   `PR07B1 !-> PR09`, and held PR07B2/PR07C placement.
@@ -323,6 +321,10 @@ The newest completed split-persona synthesis,
   `candidate/*`.
 - Compare PR05B, PR05C, and clean PR05D before assigning any later
   linebreak/parser/rich-text residual owner or naming PR18x.
+- Repair/enforce the loop rules so active sessions, zero-byte reports,
+  `report.tmp`, `.last-message.tmp`, setup-only `collaborationEnabled=null`,
+  stale manifests, and disk-preflight-only rows do not count as durable
+  progress while actionable audit/deferred rows exist.
 
 The completed Cycle 318 i39 audit/manifest is now provenance for the same
 shape, not the active filing manifest. Its artifact directory is:
@@ -342,6 +344,10 @@ It produced nonzero `report.md`, local-only `push-manifest.tsv`, a bundle,
 `current-deferred-queue.tsv`, `current-deferred-status.md`, and the local
 publish manifest at that time. It did not push to GitHub, and it became stale
 when `latest-fresh-pr-set.md` advanced to iteration 40.
+
+The raw `current-pr-split.md` input collected for this update still ends with
+the Cycle 318 latest-fresh action. It does not contain a completed Cycle 320
+i40 audit result, so do not describe i40 as audited, pushed, or filing-ready.
 
 The completed Cycle 316 i36 audit remains older provenance for the same
 accepted topology. Loop repair from that action pass is still completed
@@ -368,10 +374,10 @@ and `bin/rtc-browser-fuzz-supervisor.mjs`, with `node --check` passing for
 both touched files, coverage-guided novelty/supervisor/watchdog restarted,
 bounded live analysis restarted, `runLocalNoisePolicyVersion: 22`, and no
 strict no-product startup signatures queued after the restart. The current
-coverage root has since rolled to `run-20260518T004948Z`, where the latest
-full novelty pass has `0` current signatures and startup-noise cooldowns still
-active. This is control-plane hygiene and triage-health evidence, not product
-validation, final-stack fuzzing, or filing readiness.
+coverage root has since rolled again to `run-20260518T010505Z`; the latest
+novelty file for that root is startup-only and a full pass is pending. This is
+control-plane hygiene and triage-health evidence, not product validation,
+final-stack fuzzing, or filing readiness.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -388,7 +394,7 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| Latest-fresh split audit | `fresh-prset/iteration-40/*` from the Cycle 316/i36 topology | required and not yet completed in the collected inputs | Run one fresh audit/manifest newer than the latest fresh split, deferred queue/status, and covered deferred reports before filing or final-stack fuzz |
+| Latest-fresh split audit | `fresh-prset/iteration-40/*` from the Cycle 316/i36 topology | required and not yet completed in the collected inputs; raw split status still ends at Cycle 318/i39 | Run one fresh audit/manifest newer than the latest fresh split, deferred queue/status, and covered deferred reports before filing or final-stack fuzz |
 | i36/i38/i39 split evidence | prior `fresh-prset/iteration-36/*`, `fresh-prset/iteration-38/*`, and audited `fresh-prset/iteration-39/*` evidence | i39 completed audit has nonzero artifacts and `0` hard/head-bundle failures, but i36/i38/i39 are now provenance only | Do not use old manifests as active filing evidence unless a newer synthesis explicitly rejects i40 |
 | Required latest-fresh artifacts | `report.md`, `push-manifest.tsv`, manifest age, base allowlist, head/bundle/manifest agreement, branch graph, adjacent diffstat/numstat, patch-id/range-diff, deferred audit, finalization staleness audit, artifact verification | missing for i40 in the collected inputs | Keep zero-byte, stale, wrong-base, setup-only, and preflight-only artifacts out of filing evidence |
 | Missing verified product refs | PR02A, PR05A-D, PR06E, PR07A1-A3, PR07B0-B1, held PR07B2, held PR07C, PR13B0-B3, PR14B, grouped PR15, and any exact latest-fresh/i40 refs not covered by verified audit links | rows correctly say `No verified branch link yet` | Publish/fetch/audit explicit GitHub refs before filing |
@@ -406,15 +412,15 @@ These must not be described as fixed or filing-ready.
 | Active deferred sessions | reload-hydration, pre-save search/live-collapse, rich-text suffix | active sessions are not progress by themselves | Count only nonempty durable reports/artifacts or a clear downscope/promotion decision |
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families | evidence-only unless a focused owner replay proves otherwise | Keep out of PR rows until branch, owner, and fuzz evidence are refreshed |
 | Duplicate/noise consumer cap | timeout/reload-rejoin current-run families | source-stable terminal family caps remain implemented and validated | Keep product-evidence representatives visible while avoiding duplicate analysis |
-| Duplicate/noise producer leak | novelty-monitor startup/noise producer scheduling | latest feedback action patched novelty-monitor/supervisor, restarted novelty/supervisor/watchdog, and restarted bounded live analysis; the current root now has a full current triage pass with no no-product actionable signatures and startup-noise cooldowns still active | If leakage returns after cooldown expiry or the next root rollover, extend the family/profile cooldown narrowly |
+| Duplicate/noise producer leak | novelty-monitor startup/noise producer scheduling | latest feedback action patched novelty-monitor/supervisor, restarted novelty/supervisor/watchdog, and restarted bounded live analysis; the new current root is startup-only, so a full current-root pass is still pending | If leakage returns after cooldown expiry or the next full root pass, extend the family/profile cooldown narrowly |
 
 ## Filing Gates And Current Recommendation
 
 Do not file a single mega-PR and do not file i31, i32, i33, i34, i35, i36,
-i37, stale i38, stale i39, Cycle293, Cycle306, Cycle312, Cycle314, Cycle316,
-Cycle318, `ready/*`, validation-stack, dirty evidence, fallback-tail branches, raw
-deferred/candidate refs, PR17, PR18, PR18x, or zero-byte/stale finalization
-artifacts as-is.
+i37, stale i38, stale i39, unaudited i40, Cycle293, Cycle306, Cycle312,
+Cycle314, Cycle316, Cycle318, `ready/*`, validation-stack, dirty evidence,
+fallback-tail branches, raw deferred/candidate refs, PR17, PR18, PR18x, or
+zero-byte/stale finalization artifacts as-is.
 
 Before filing any maintainer-facing PR:
 
@@ -460,5 +466,6 @@ The next useful work is the bounded latest-fresh/i40 audit/manifest
 plus exactly one PR07 owner replay after browser readiness proves
 `collaborationEnabled=true` and no durable equivalent is active. Continue
 deferred downscope/promotion and keep the duplicate/noise control-plane fix
-under the current root cooldown checks. Do not launch broad final-stack fuzz, a
-duplicate seed `1020002` job, raw PR07D, PR17, PR18, or PR18x.
+under the next full current-root cooldown checks. Do not launch broad
+final-stack fuzz, a duplicate seed `1020002` job, raw PR07D, PR17, PR18, or
+PR18x.
