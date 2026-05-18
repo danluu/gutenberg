@@ -1,6 +1,6 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
 three-user-late-join,10615,3921,0,0.36938294865756005,lifecycle
-session-lifecycle,9027,2674,1,0.2962224437797718,lifecycle
+session-lifecycle,9027,2674,0,0.2962224437797718,lifecycle
 async-server-blocks,8856,4395,0,0.4962737127371274,async/media
 real-user-editing,8310,609,0,0.07328519855595668,real-user
 permissions-auth-locks,7536,3761,0,0.49907112526539277,auth/locks
