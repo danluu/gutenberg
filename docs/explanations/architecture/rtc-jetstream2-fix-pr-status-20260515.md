@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-18T06:35:34Z`
+Snapshot time: `2026-05-18T06:46:27Z`
 
 Trigger event:
-`pr-split-2026-05-18T06-33-34Z-20260518T062127Z`
+`duplicate-noise-2026-05-18T06-33-39Z-174`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T06-33-34Z-20260518T062127Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T06-33-39Z-174/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -68,7 +68,7 @@ Important status changes since the prior report:
   `PR07B1A` after `PR07B1`. `HOLD-07B2` and `HOLD-07C` stay held as siblings
   off `PR07B1`. Do not file `PR07B1A` or any PR07 epoch alias until strict
   same-user reload witnesses and corrected PR07 owner replay pass.
-- The branch-link audit generated at `2026-05-18T06:35:34Z` verifies PR01,
+- The branch-link audit generated at `2026-05-18T06:46:27Z` verifies PR01,
   PR02, PR03, PR04, aggregate PR05, aggregate PR06, PR06A prior art, aggregate
   PR07A/PR07B, PR08 prior art, PR09, PR10, aggregate PR11, aggregate PR12,
   repaired PR13A/B/C, PR14, and PR15A-C component refs. It still does not
@@ -77,11 +77,13 @@ Important status changes since the prior report:
   PR13B0-B3, PR14B, or PR15D.
 - Current active-run fuzz status remains health/control-plane evidence only,
   not final-stack validation. The latest raw novelty monitor at
-  `2026-05-18T06:35:24.432Z` for `run-20260518T062837Z` shows `50599`
-  coverage files, `79685` total records, `5` unmet goals, `0` active
-  current-run triage roots/signatures, `2` drain-only raw no-product startup
-  signatures, `0` likely-real visible, `0` current duplicate share, and
-  `0.3436` historical duplicate share.
+  `2026-05-18T06:45:33.742Z` for `run-20260518T064422Z` is startup-only:
+  monitor started, full coverage pass pending, `419` observed roots, `79813`
+  previous records loaded, `1` supervisor groups file, and `1` active run dir.
+  It has no current coverage, triage, likely-real, duplicate-share, or
+  unmet-goal verdict yet. The previous `run-20260518T062837Z` pass remains the
+  most recent completed post-fix monitor pass, but it is no longer the latest
+  raw monitor status.
 - The newest duplicate/noise synthesis and feedback action are
   `duplicate-noise-20260518T060527Z-synthesis.md` and
   `duplicate-noise-20260518T060527Z-feedback-action.md`. They completed a
@@ -89,8 +91,10 @@ Important status changes since the prior report:
   `pre_action_bootstrap_stall` drains now require source product evidence to
   stay in downstream analysis, `node --check` passed for the changed scripts,
   current/prior live-analysis one-shot checks skipped no-product startup drains,
-  and the active coverage-guided novelty/analysis/supervisor sessions are
-  aligned on `run-20260518T062837Z`.
+  and the active coverage-guided novelty/analysis/supervisor sessions were
+  aligned on `run-20260518T062837Z` at action time. The latest collected raw
+  monitor has since advanced to startup-only `run-20260518T064422Z`, so
+  long-window duplicate/noise behavior is still unproven.
 
 Current replacement target:
 
@@ -167,7 +171,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T06:35:25Z`.
+Remote status was collected at `2026-05-18T06:46:21Z`.
 
 The fix-planning repo is checked out at:
 
@@ -197,7 +201,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T06:35:34Z` from fetched
+The branch-link audit was generated at `2026-05-18T06:46:27Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. A verified
 branch link confirms that the linked ref exists and has a non-empty audited
@@ -314,63 +318,58 @@ branch-link audit or explicitly says `No verified branch link yet`.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T06:35:25Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T062837Z
+collected_at_utc: 2026-05-18T06:46:21Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T064422Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The raw `novelty-status.md` for this update was written at
-`2026-05-18T06:35:24.432Z` for `run-20260518T062837Z`:
+`2026-05-18T06:45:33.742Z` for `run-20260518T064422Z`:
 
 ```text
-coverage files: 50599
-total records seen: 79685
-records processed this pass: 213
-current-run active dirs: 0
-active current triage roots/signatures: 0 / 0
-current drain triage roots/raw signatures: 2 / 2
-raw drain family: pre_action_bootstrap_stall
-suppressed strict startup records in drain: 4
-unmet goals: 5
-recommended groups:
-  novelty-ws-real-user-save-reload
-  novelty-ws-real-user-editing
-  novelty-ws-real-user-rich-text
-enabled groups:
-  novelty-ws-revision-recovery
+status: monitor started; full coverage pass pending
+observed roots: 419
+previous records loaded: 79813
+supervisor groups file: 1
+active run dirs: 1
+unmet goals: pending until first pass
+signatures: pending until first pass
+likely-real visible: pending until first pass
+top duplicate family share: pending until first pass
 ```
 
 Interpretation:
 
-- This is a completed novelty pass, but it is still current-run
-  health/control-plane evidence only. It is not final-stack validation and it
-  does not clear PR07, seed `1020002`, or branch-link gates.
+- This is not a completed novelty pass. It is startup/control-plane evidence
+  for the new current run only, so it cannot clear PR07, seed `1020002`,
+  branch-link gates, duplicate-ratio questions, or final-stack validation.
 - The completed `060527Z` duplicate/noise feedback action gives the latest
   control-plane check: strict no-product startup drains carry source
   product-evidence metadata, downstream preservation requires source product
   evidence, no-product startup drains were skipped in current and prior
   live-analysis one-shot checks, and the coverage-guided novelty, analysis,
-  and supervisor sessions are aligned on `run-20260518T062837Z`.
+  and supervisor sessions were aligned on `run-20260518T062837Z` at action
+  time.
 - The remaining duplicate/noise risk is long-window behavior after this
-  control-plane patch. The current root is young, so the latest evidence is a
-  gate/consumer-path validation, not a duplicate-ratio proof and not product
-  validation.
+  control-plane patch. The latest current root has only startup status, so the
+  latest evidence is still gate/consumer-path validation, not a duplicate-ratio
+  proof and not product validation.
 - Current active validation still runs on `try/rtc-fix-stack-validation`, not
   on a refreshed final PR stack. It cannot clear filing or final-stack gates.
 
-Current unmet coverage goals remain concentrated in save/reload and real-user
-depth:
+Trend-derived unmet coverage goals from the latest completed monitor pass
+remain concentrated in save/reload and real-user depth:
 
 ```text
 reload-post-action: 1094/2000
 title-save-reload: 550/1000
 real-user-editing success: 602/1000
 body-save-reload: 609/1000
-ui-format-paragraph: 1875/2000
+ui-format-paragraph: 1871/2000
 ```
 
-The latest trend packet was generated at `2026-05-18T06:23:51Z`:
+The latest trend packet was generated at `2026-05-18T06:36:49Z`:
 
 ```text
 monitor passes: 2210
@@ -385,19 +384,22 @@ duplicate_share_historical_last: 0.3437
 summary startup failures last: 0
 quality issues last: 0
 memory free: 409.1 GB
-load averages: 65.17 / 71.1 / 73.14 on 64 cores
+load averages: 73.29 / 74.09 / 73.86 on 64 cores
+enabled groups current:
+  novelty-ws-long-session-large-doc
+  novelty-ws-media-cross-entity
 latest fuzz level mix:
-  browser-e2e=27 lanes/27 groups
+  browser-e2e=26 lanes/26 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5570387
-browser-e2e likely-real findings: 704 over 2122.9 runner-hours
+total fuzz-level test executions: 5575637
+browser-e2e likely-real findings: 704 over 2130.0 runner-hours
 latest suggested PR net LOC total: 2152
 ```
 
 Browser E2E remains the only level with confirmed likely-real findings, but
 lower-level lanes are under-triaged and should not be declared useless from
-zero likely-real output. The trend packet predates the `06:35` monitor refresh,
+zero likely-real output. The trend packet predates the `06:45` monitor refresh,
 so prefer the raw novelty monitor for current enabled/paused group state. CPU
 is already high enough that top-offs should be guarded by
 startup-stall, supervisor-state, materialization, and product-evidence checks
@@ -487,16 +489,18 @@ bounded fuzzer-side fix was applied. No product code was touched:
   now preserve no-analysis drains only when source product evidence exists.
 - `node --check` passed for all six changed `.mjs` files.
 - Live-analysis one-shot checks on prior root `run-20260518T060222Z` and
-  current root `run-20260518T062837Z` skipped no-product startup drains as
+  then-current root `run-20260518T062837Z` skipped no-product startup drains as
   gate-only / no-actionable-signature work.
 - Stale orphan novelty monitor for `run-20260518T060222Z` was killed, and
   `rtc-coverage-guided-novelty`, `rtc-coverage-guided-analysis`, and
-  `rtc-coverage-guided-supervisor` are aligned on
-  `run-20260518T062837Z`.
+  `rtc-coverage-guided-supervisor` were aligned on
+  `run-20260518T062837Z` at action time.
 
 This completed feedback action supersedes the earlier "next duplicate/noise
 patch" recommendation. It does not supersede PR07 owner evidence, seed
-`1020002`, branch-link, final-stack validation, or product fuzz gates.
+`1020002`, branch-link, final-stack validation, or product fuzz gates. The
+latest collected raw novelty monitor has since started `run-20260518T064422Z`
+and is still waiting for its first full coverage pass.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -531,8 +535,8 @@ These must not be described as fixed or filing-ready.
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzz, filing, and rebuilt validation only | Repair or explicitly reclassify before final-stack validation and filing |
 | Active deferred sessions | reload-hydration, pre-save search/live-collapse, rich-text suffix, `DIAG-RELOAD-045607`, `DIAG-RICH-TEXT-051616`, `HARNESS-WS-URL`, `HARNESS-PLUGIN-STATUS`, `HARNESS-WS-BOOTSTRAP-051619` | active sessions are not progress by themselves; latest split synthesis keeps reload/search/rich-text diagnostic or held; harness rows are not product fixes | Count only nonempty durable reports/artifacts, audited harness refs, or a clear downscope/promotion decision |
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families, including plugin-status/bootstrap harness sidecars, `DIAG-RELOAD-045607`, and `DIAG-RICH-TEXT-051616` | evidence-only unless a focused owner replay proves otherwise; reload/plugin/bootstrap work remains harness or diagnostic material unless ownership evidence changes; malformed-save is `PR06E` and HTTP room isolation is `PR02A` | Queue/publish harness sidecars separately, rerun targeted reload/revision shards, and keep these out of product PR rows until ownership evidence is refreshed |
-| Duplicate/noise producer churn | strict no-product startup stalls, same-profile relaunch, novelty replacement/bootstrap cooldowns, paused/no-analysis drain scoping | bounded `060527Z` fuzzer-side control-plane fix implemented and validated with `node --check` plus prior/current live-analysis one-shot checks; current sessions align on `run-20260518T062837Z` | Monitor long-window behavior and preserve product-evidence visibility; do not treat control-plane fixes as product validation |
-| Current fuzz validation | `run-20260518T062837Z`, raw novelty pass through `2026-05-18T06:35:24.432Z`, trend through `2026-05-18T06:23:51Z`, and `060527Z` post-fix action evidence | raw novelty shows `50599` coverage files, `79685` records, `5` unmet goals, active current triage `0`, drain-only raw startup signatures `2`, current duplicate share `0`, historical duplicate share `0.3436`, and browser-e2e as the only confirmed likely-real level; this is fuzz/control-plane health, not final-stack validation | Use refreshed stack product evidence, not broad coverage health or drain-scope signatures, for filing or validation claims |
+| Duplicate/noise producer churn | strict no-product startup stalls, same-profile relaunch, novelty replacement/bootstrap cooldowns, paused/no-analysis drain scoping | bounded `060527Z` fuzzer-side control-plane fix implemented and validated with `node --check` plus prior/current live-analysis one-shot checks; sessions were aligned on `run-20260518T062837Z` at action time, and the latest raw monitor has since started startup-only `run-20260518T064422Z` | Monitor long-window behavior and preserve product-evidence visibility; do not treat control-plane fixes as product validation |
+| Current fuzz validation | `run-20260518T064422Z`, raw novelty startup status through `2026-05-18T06:45:33.742Z`, trend generated at `2026-05-18T06:36:49Z`, and `060527Z` post-fix action evidence | latest raw novelty is startup-only with `419` observed roots, `79813` previous records loaded, `1` supervisor groups file, and `1` active run dir; full pass, unmet goals, signatures, likely-real, and duplicate-share metrics are pending; browser-e2e remains the only level with confirmed likely-real findings in the trend packet; this is fuzz/control-plane health, not final-stack validation | Use refreshed stack product evidence, not broad coverage health or drain-scope signatures, for filing or validation claims |
 
 ## Filing Gates And Current Recommendation
 
