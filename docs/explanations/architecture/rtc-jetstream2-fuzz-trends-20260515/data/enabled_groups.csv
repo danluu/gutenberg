@@ -790,3 +790,5 @@ timestamp,group,group_family
 2026-05-18T01:39:38Z,novelty-ws-real-user-rich-text,real-user
 2026-05-18T01:50:39Z,novelty-ws-block-gauntlet,auth/locks
 2026-05-18T01:50:39Z,novelty-ws-common-blocks,auth/locks
+2026-05-18T02:19:12Z,novelty-ws-multi-reload-lifecycle,lifecycle
+2026-05-18T02:22:55Z,novelty-ws-multi-reload-lifecycle,lifecycle
