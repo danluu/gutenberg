@@ -250,6 +250,126 @@ Those logs are written as `<group>-docker-<container|image|builder|volume>-prune
 This is intentionally narrower than deleting run artifacts or active compose
 projects.
 
+## Known-Fixes Runtime Restart
+
+The May 2026 known-fixes campaign uses a separate clean integration worktree and
+an isolated health watchdog, not the dirty historical checkout.
+
+Current local target:
+
+-   worktree:
+    `/Users/danluu/dev/fuzz/gutenberg-rtc-77716-fixes-20260513`
+-   branch: `try/rtc-77716-fixes-20260513`
+-   run root:
+    `/Users/danluu/dev/fuzz/gutenberg-rtc-77716-fixes-20260513/artifacts/rtc-browser-fuzz/known-fixes-20260513-201544`
+-   included PRs:
+    `77723,77724,77775,77866,77874,77876,77887,77890,77924,78251`
+-   trunk-included PRs:
+    `75841,75975,77658,77662,77666,77669,77673,77675,77681,77865`
+-   skipped PRs: `77889`
+
+The restartable scripts live on `try/fuzz`:
+
+-   `bin/rtc-known-fixes-fuzz-matrix.sh`
+-   `bin/rtc-known-fixes-health-watchdog.sh`
+
+They are intentionally parameterized so a copy of `try/fuzz` can manage the
+known-fixes worktree without editing scripts:
+
+```bash
+export TRY_FUZZ_CHECKOUT=/Users/danluu/dev/fuzz/gutenberg-try-fuzz-update
+export RTC_KNOWN_FIXES_REPO_ROOT=/Users/danluu/dev/fuzz/gutenberg-rtc-77716-fixes-20260513
+export RTC_KNOWN_FIXES_RUN_ROOT=$RTC_KNOWN_FIXES_REPO_ROOT/artifacts/rtc-browser-fuzz/known-fixes-20260513-201544
+export RTC_KNOWN_FIXES_FUZZ_MATRIX_SCRIPT=$TRY_FUZZ_CHECKOUT/bin/rtc-known-fixes-fuzz-matrix.sh
+```
+
+Before restarting, verify the worktree and current head:
+
+```bash
+cd "$RTC_KNOWN_FIXES_REPO_ROOT"
+git status --short --branch
+git rev-parse --short=12 HEAD
+git merge-base --short HEAD origin/trunk
+npm run wp-env status
+```
+
+The known-fixes scripts create isolated `wp-env` configs under the run root, for
+example `wp-env-known-fixes-test-8931.json`, and map
+`packages/e2e-tests/plugins` into the test environment. Do not stop or clean an
+unrelated `wp-env` or Docker container just because it uses a nearby port.
+
+Start or restart the watchdog from a `try/fuzz` checkout:
+
+```bash
+tmux new-session -d -s rtc-known-fixes-health-watchdog-20260515 "bash -lc '
+export TRY_FUZZ_CHECKOUT=/Users/danluu/dev/fuzz/gutenberg-try-fuzz-update
+cd \$TRY_FUZZ_CHECKOUT
+export RTC_KNOWN_FIXES_REPO_ROOT=/Users/danluu/dev/fuzz/gutenberg-rtc-77716-fixes-20260513
+export RTC_KNOWN_FIXES_RUN_ROOT=\$RTC_KNOWN_FIXES_REPO_ROOT/artifacts/rtc-browser-fuzz/known-fixes-20260513-201544
+export RTC_KNOWN_FIXES_FUZZ_MATRIX_SCRIPT=\$TRY_FUZZ_CHECKOUT/bin/rtc-known-fixes-fuzz-matrix.sh
+exec bin/rtc-known-fixes-health-watchdog.sh
+'"
+```
+
+Useful live status:
+
+```bash
+cat "$RTC_KNOWN_FIXES_RUN_ROOT/health-watchdog/health-watchdog-status.json"
+cat "$RTC_KNOWN_FIXES_RUN_ROOT/active-health-runs.json"
+cat "$RTC_KNOWN_FIXES_RUN_ROOT/current-health-run.txt"
+tmux list-sessions | rg 'rtc-known-fixes-health'
+```
+
+The watchdog manages one primary run plus elastic extras. The default lane mix is
+HTTP real-user editing, rich text, parser transforms, revisions/autosave,
+common-length documents, block gauntlets, media async, dynamic blocks,
+cross-entity interactions, WebSocket late join, and WebSocket real-user editing.
+Override `RTC_KNOWN_FIXES_HEALTH_LANE_SEQUENCE` only when deliberately changing
+the exploration mix.
+
+Important controls:
+
+-   `RTC_KNOWN_FIXES_HEALTH_MAX_ELASTIC_EXTRAS=4`: maximum elastic fuzz
+    sessions.
+-   `RTC_KNOWN_FIXES_HEALTH_NORMAL_ELASTIC_EXTRAS=3`: normal target when the
+    machine has moderate headroom.
+-   `RTC_KNOWN_FIXES_HEALTH_IDLE_ELASTIC_EXTRAS=4`: target when the machine is
+    underutilized.
+-   `RTC_KNOWN_FIXES_HEALTH_IDLE_CPU_PERCENT=65`: idle threshold for adding
+    extra work.
+-   `RTC_KNOWN_FIXES_HEALTH_LOW_MEMORY_FREE_PERCENT=8`: threshold for reducing
+    only elastic extras.
+-   `RTC_KNOWN_FIXES_VIDEO_CLEANUP_INTERVAL_SECONDS=21600`: generated video
+    cleanup interval.
+
+Recovery behavior:
+
+-   partial isolated `wp-env` installs are removed only when their generated
+    project prefix matches this run
+-   stale Docker endpoint failures are repaired by disconnecting orphan endpoint
+    names before removing the isolated network
+-   repeated lane infra buckets are stopped by lane guards instead of burning the
+    entire run
+-   generated Playwright videos under the run root are pruned periodically
+-   durable state remains in `health-watchdog-status.json`,
+    `active-health-runs.json`, `current-health-run.txt`, lane `state.json`
+    files, and `.triage-watcher`; do not delete those for disk cleanup
+
+If a watchdog tmux session is alive but no lane state has changed for longer
+than the stale threshold, kill only the watchdog-managed sessions and restart the
+watchdog with the same environment:
+
+```bash
+tmux kill-session -t rtc-known-fixes-health-watchdog-20260515
+tmux kill-session -t rtc-known-fixes-health-current-20260515 || true
+tmux list-sessions | rg 'rtc-known-fixes-health-extra' |
+	awk -F: '{ print $1 }' |
+	while read -r session; do tmux kill-session -t "$session"; done
+```
+
+Do not remove `current-health-run.txt`, `active-health-runs.json`, or
+`.triage-watcher` while resuming. They are the restart and handoff state.
+
 ## Group Config
 
 The supervisor reads `RTC_FUZZ_SUPERVISOR_GROUPS_PATH` or
