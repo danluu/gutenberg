@@ -311,14 +311,10 @@ shed_optional_browser_pools_if_needed() {
 	for session in \
 		rtc-gap-booster \
 		rtc-gap-booster-watchdog \
-		rtc-gap-booster-analysis \
 		rtc-focused-shards \
 		rtc-focused-shards-watchdog \
-		rtc-focused-shards-analysis \
-		rtc-focused-shards-gap-codex-loop \
 		rtc-fuzz-strict-expansion \
-		rtc-fuzz-strict-expansion-watchdog \
-		rtc-fuzz-strict-expansion-analysis; do
+		rtc-fuzz-strict-expansion-watchdog; do
 		if "$TMUX" -L "$TMUX_SOCKET" has-session -t "$session" 2>/dev/null; then
 			echo "[$now] stopping optional browser session under severe pressure: $session" >> "$LOG"
 			"$TMUX" -L "$TMUX_SOCKET" kill-session -t "$session" 2>/dev/null || true
