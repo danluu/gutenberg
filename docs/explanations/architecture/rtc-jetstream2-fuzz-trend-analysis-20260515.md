@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-18T19:09:18Z`
+Snapshot generated: `2026-05-18T19:13:49Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -70,8 +70,12 @@ The graph-visible controller state is narrower than the PR-split loop. Its
 current table has `22` work items: `10` high-priority publishable product
 branches, `8` medium-priority ready-product branches needing repair, `1`
 runtime-gated PR07C owner-evidence item, and `3` deferred-family rows. The
-controller event CSV is empty in this snapshot, so this refresh does not support
-the older persona-control/deferral event-count read.
+controller decision queue has `14` allowed rows and `11` blocked rows. The
+critical-path queue currently has one queued browser/e2e owner-matrix job and
+one queued critical lane. Repeated validation failures are concentrated in
+deferred branches and one PR03B branch, while the no-progress ledger is `15`
+pre-oracle/preflight-only artifacts for `pr17-1020002` and
+`seed-1060015-reducer`.
 
 ## Coverage Intake
 
@@ -345,12 +349,20 @@ remaining high-priority runtime-gated row is `PR07C/HOLD-07C` owner evidence.
 Deferred-family rows are still tracked, including an active reload-hydration
 row.
 
+![PR loop current queue depth](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-queue-depth-current.png)
+
+The queue-depth graph combines the PR progress table, current controller
+decisions, critical blockers, critical job queue, critical lanes, and active
+PR-related sessions. The live shape is `10` publishable PR items, `8`
+needs-repair items, `1` PR07C owner-evidence item, `14` allowed controller
+decisions, `11` blocked controller decisions, `1` queued critical job, and `1`
+queued critical lane.
+
 ![PR-focused controller events](rtc-jetstream2-fuzz-trends-20260515/plots/pr-progress-controller-events.png)
 
-The refreshed `pr_progress_controller_events.csv` is empty, so this plot should
-not be interpreted as evidence for new controller rounds or heavy-job deferral
-counts in this snapshot. The current-state table and push manifest remain the
-stronger graph-visible controller signals.
+The event plot now comes from the controller's `events.ndjson` feed when the
+older log file is absent. This snapshot shows `5` persona-control rounds and no
+fresh heavy-job deferral events in that stream.
 
 ![Controller-publishable PR branch diff sizes](rtc-jetstream2-fuzz-trends-20260515/plots/pr-progress-publishable-diff-size.png)
 
@@ -376,6 +388,31 @@ The critical-path executor currently has `5` blockers: `1` active, `1` queued,
 and `3` terminal. The active row is `reload-hydration`; the queued row is
 `PR07C/HOLD-07C` owner evidence. Terminal rows reopen only with fresh
 product-owned evidence.
+
+![PR loop blocked control decisions](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-blocked-control-decisions.png)
+
+The blocked-decision graph shows the work the controller is deliberately
+holding. The blocked rows are mostly high-priority publication gates: duplicate
+PR06B sibling publication, PR07C owner/base gating, PR14 base repair, and PR15
+stack selection. Diagnostic relaunches are also blocked for repeated
+reload-hydration, pre-save-search-live-collapse, rich-text-suffix-corruption,
+and old PR17/seed-reducer continuation artifacts.
+
+![Repeated critical-path branch validation results](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-repeated-validation-results.png)
+
+The repeated-validation graph is the current way to see validation churn. The
+largest repeated failures are deferred `http-room-isolation`,
+`pre-save-search-live-collapse`, multiple `reload-hydration` heads, and
+`rich-text-suffix-corruption`, each with `28` failed diff-check attempts in the
+current audit. `ready/rtc-pr03b-browser-revision-restore-crdt-invalidation`
+has `24` failed attempts.
+
+![Repeated critical-path no-progress artifacts](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-no-progress-artifacts.png)
+
+The no-progress graph groups artifacts the critical-path loop rejected as not
+advancing a blocker. The current ledger has `15` rows: `11` for `pr17-1020002`
+and `4` for `seed-1060015-reducer`, all classified as
+`pre_oracle_or_preflight_only`.
 
 ![Local PR branch publisher activity](rtc-jetstream2-fuzz-trends-20260515/plots/pr-local-publisher-activity.png)
 
@@ -405,6 +442,14 @@ made progress by auditing finalization/local-publish state and rerunning PR07
 owner replay, but PR07 still did not produce promotable owner evidence and
 `PR02B` still needs validation. Old blocker-row waiting is not progress while
 those gates remain open.
+
+The PR-focused queue/blocker graphs make the current waits explicit. Publication
+has plenty of nominally ready rows, but the controller is blocking stack-shaped
+publication behind PR07C owner proof, PR07B/PR14 repair, duplicate-branch
+selection, and diagnostic relaunch cooldowns. The repeated-failure graphs show
+where validation work is cycling without new product evidence: deferred
+reload/http/pre-save/rich-text heads, PR03B, and pre-oracle PR17/seed-reducer
+continuations.
 
 The committed fuzzing graph is browser/e2e-heavy: `29` current browser/e2e
 lanes across `25` groups, `1` `unit-property` lane, and `1`
