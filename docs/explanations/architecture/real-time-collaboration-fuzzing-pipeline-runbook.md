@@ -1777,6 +1777,10 @@ lanes, but they must share state. In particular:
     `publish-ready` rows with `allowed=yes`, before starting the slower snapshot
     collection or Codex planning path. This keeps branch publication from being
     blocked by stale snapshot hashes, large artifact scans, or planner latency.
+    The status collector's branch audit must also fetch
+    `danluu/rtc-pr-progress-*` refs and include verified progress-controller
+    rows, otherwise pushed branches will still appear as missing links in the
+    PR status report.
     It queries the artifact index's manifest-path TSV before falling back to
     historical `find` walks over run directories.
 
