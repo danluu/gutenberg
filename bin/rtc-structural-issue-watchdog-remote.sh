@@ -82,6 +82,26 @@ recent_log_matches() {
 		rg -i "$pattern" >/dev/null 2>&1
 }
 
+log_matches_after_last_start() {
+	local file=$1 start_pattern=$2 error_pattern=$3
+	[ -s "$file" ] || return 1
+	awk -v start="$start_pattern" -v err="$error_pattern" '
+		BEGIN {
+			found = 0
+		}
+		tolower($0) ~ tolower(start) {
+			found = 0
+			next
+		}
+		tolower($0) ~ tolower(err) {
+			found = 1
+		}
+		END {
+			exit found ? 0 : 1
+		}
+	' "$file"
+}
+
 emit_finding() {
 	local out=$1 severity=$2 component=$3 key=$4 evidence=$5 next_action=$6
 	printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
@@ -134,10 +154,10 @@ latest_pr07c_classification() {
 check_critical_path_invariants() {
 	local out=$1 status=$CRITICAL_BASE/current-critical-path-status.md log_file=$CRITICAL_BASE/logs/critical-path-pr-executor.log classification
 	check_status_freshness "$out" critical-path "$status" 900 rtc-critical-path-pr-executor-loop
-	if recent_log_matches "$log_file" 1800 'reconcile failed|timed out|cannot stat .*\.tmp|No such file or directory'; then
+	if log_matches_after_last_start "$log_file" 'critical-path PR executor loop started' 'reconcile failed|timed out|cannot stat .*\.tmp|No such file or directory'; then
 		emit_finding "$out" high "critical-path" "recent-reconcile-or-temp-error" "$log_file" "debug recent critical-path executor failure and patch the controller"
 	fi
-	if [ -s "$status" ] && rg -qi 'browser-env-preflight|preflight only; replay stays gated|runtime-readiness-blocked.*(success|terminal|resolved)|resolved_by_active_artifact_runtime_readiness_not_product' "$status"; then
+	if [ -s "$status" ] && rg -qi 'browser-env-preflight|preflight only; replay stays gated|runtime-readiness-blocked.*(success|resolved|completed progress|terminal-ledger)|resolved_by_active_artifact_runtime_readiness_not_product' "$status"; then
 		emit_finding "$out" high "critical-path" "passive-pr07c-regression" "$status" "keep PR07C as repair lane and reject runtime-readiness-blocked as success"
 	fi
 	classification=$(latest_pr07c_classification || true)
