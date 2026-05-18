@@ -352,6 +352,14 @@ The remote launchers are intentionally split by ownership:
 
 -   `rtc-coverage-guided-start-remote.sh` starts the coverage-guided novelty
     monitor and its generated supervisor groups.
+    The novelty monitor must only trust `supervisor-state.json` when that file's
+    `outputDir` is exactly the current novelty output root. If a default tmux
+    supervisor session is alive but has not written matching current-root state,
+    the monitor switches to an output-scoped supervisor session or restarts the
+    stale supervisor after the startup grace period. Startup heartbeats must not
+    overwrite a completed full `novelty-status.md`; full-status preservation is
+    valid only when the loaded `novelty-state.json.outputDir` matches the
+    current output root.
 -   `rtc-coverage-guided-lower-level-start-remote.sh` starts the isolated
     rich-text/CRDT lower-level runner. It emits V8 coverage counters and
     semantic feature counters, and keeps corpus inputs for either kind of new
@@ -437,7 +445,10 @@ The remote launchers are intentionally split by ownership:
     with a live tmux session, recent reconcile/temp-file errors, prefix tmux
     session masking, repeated guard restarts, passive PR07C/runtime-readiness
     classifications, and current-run duplicate/noise dominance that is still
-    visible in `novelty-status.md`. It writes
+    visible in `novelty-status.md`. It also checks that the current
+    coverage-guided root, novelty status, `supervisor-state.json.outputDir`, and
+    live supervisor tmux session agree. Historical repeated-restart rows should
+    not keep firing after the corresponding pool is currently satisfied. It writes
     `/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518/current-structural-watchdog-status.md`
     and launches bounded `rtc-structural-repair-*` Codex jobs for high-severity
     findings. Those jobs may patch Jetstream scripts and restart only the
