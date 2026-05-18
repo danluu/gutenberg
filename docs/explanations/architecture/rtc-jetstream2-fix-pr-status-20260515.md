@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-18T02:16:51Z`
+Snapshot time: `2026-05-18T02:23:20Z`
 
 Trigger event:
-`duplicate-noise-2026-05-18T02-13-22Z-162`
+`pr-split-2026-05-18T02-19-26Z-20260518T020732Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T02-13-22Z-162/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T02-19-26Z-20260518T020732Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,11 +28,12 @@ or the original split merely for continuity.
 ## Executive Status
 
 The newest completed split-persona synthesis is
-`pr-split-20260518T015718Z-synthesis.md`. It changes the recommendation from
-the previous grouped Cycle320/i40 topology: keep the current i40/finalized ref
-family as the source family, but do not treat grouped PR06, PR11, PR12, or PR15
-as the final maintainer-facing split. Replace them with explicit smaller rows
-before the next review cycle.
+`pr-split-20260518T020732Z-synthesis.md`. It supersedes the Cycle322 grouped
+i40 working hypothesis: keep the current i40/finalized ref family as source
+material, but do not treat grouped PR06, PR11, PR12, or PR15 as the final
+maintainer-facing split. Five of six nonzero reports now recommend replacing
+those grouped rows with explicit smaller rows; the outlier emphasized PR07
+owner evidence and root-space health, not a stronger grouped split.
 
 Current replacement target:
 
@@ -71,16 +72,19 @@ Active status changes since the prior report:
   until explicit sub-PR branches are published, fetched, and audited.
 - Filing and broad final-stack fuzzing remain blocked by missing PR07 owner
   evidence, root disk space below the 2048 MB replay threshold, seed `1020002`,
-  and stale or zero-byte publication artifacts. The `20260518T020210Z`
-  finalization report is zero bytes and is not evidence.
+  and stale or zero-byte publication artifacts.
 - The Cycle322 PR07 replay has only setup/header/preflight-style output so far.
   Treat it as no PR07 owner evidence until it produces durable first-divergence
   artifacts for the current i40 refs.
+- The latest split synthesis calls for bounded follow-up jobs only: a
+  non-Docker ungrouped i40 PR06/PR11/PR12/PR15 manifest refresh, root-space and
+  PR07-status cleanup or verification of an equivalent job, loop progress-gate
+  hardening, and rich-text PR05 owner-comparison dependency repair.
 - The Cycle322 PR05B/PR05C/clean-PR05D owner comparison accepted the diagnostic
   cherry-pick on all three refs, but unit execution was blocked by the same
   missing `framer-motion` dependency. It assigns no PR18x owner.
-- The latest novelty status for `run-20260518T021503Z` is startup-only:
-  the monitor loaded `76105` previous records, saw `380` roots and `4` active
+- The latest novelty status for `run-20260518T021912Z` is startup-only:
+  the monitor loaded `76105` previous records, saw `382` roots and `4` active
   run dirs, and had not completed its first full coverage pass yet. It is not
   final-stack validation.
 - The latest duplicate/noise action implemented the bounded control-plane fix
@@ -110,7 +114,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T02:16:46Z`.
+Remote status was collected at `2026-05-18T02:23:14Z`.
 
 The fix-planning repo is checked out at:
 
@@ -140,7 +144,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T02:16:51Z` from fetched
+The branch-link audit was generated at `2026-05-18T02:23:20Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. A verified
 branch link confirms that the linked ref exists and has a non-empty audited
@@ -250,20 +254,20 @@ branch-link audit or explicitly says `No verified branch link yet`.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T02:16:46Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T021503Z
+collected_at_utc: 2026-05-18T02:23:14Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T021912Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The raw `novelty-status.md` collected for this update was written at
-`2026-05-18T02:16:13.803Z` for `run-20260518T021503Z`.
+`2026-05-18T02:22:23.426Z` for `run-20260518T021912Z`.
 
 Current novelty numbers:
 
 ```text
 status: monitor started; full coverage pass pending
-observed roots: 380
+observed roots: 382
 previous records loaded: 76105
 supervisor groups file: 4
 active run dirs: 4
@@ -331,33 +335,36 @@ product-evidence checks instead of simply adding browser concurrency.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis,
-`pr-split-20260518T015718Z-synthesis.md`, says:
+`pr-split-20260518T020732Z-synthesis.md`, says:
 
-- Filing and broad final-stack fuzzing remain blocked.
-- Use finalized/current i40 refs as the source family, but replace grouped
-  PR06, PR11, PR12, and PR15 before the next review cycle.
-- Treat stale Cycle293/Cycle306/local-publish rows, fallback-tail PR05D, raw
-  PR07D, PR17, PR18, PR18x, raw reload-hydration publication, and stale local
-  publish rows as rejected.
-- Treat the `20260518T020210Z` finalization report as no evidence because it is
-  zero bytes.
+- The current Cycle320/i40 source family remains the right base material, but
+  the grouped topology is no longer the best review shape.
+- Replace grouped PR06, PR11, PR12, and PR15 with PR06A-D, PR11A-E, PR12A-C,
+  and PR15A-D, plus the PR06E malformed-payload sidecar from PR06D.
+- Five of six nonzero split reports now recommend that ungrouped shape. The
+  outlier mainly emphasizes PR07 owner evidence and root-space health, not a
+  better grouped split.
+- Treat stale Cycle293/Cycle306/local-publish rows, stale `ready/*`,
+  fallback-tail PR05D, `d06e3528cbd`, raw PR07D, PR17, PR18, and PR18x as
+  rejected filing material.
 - Treat the Cycle322 PR07 replay as no owner evidence while it has only
   setup/header/preflight output.
 - Free `/` above 2048 MB and record before/after `df -m /`.
-- Continue or rerun exactly one corrected i40 PR07 owner replay after duplicate
-  session checks. It must compare `PR07B0`, `PR07B1`, `HOLD-07B2`, and
-  `HOLD-07C` with `collaborationEnabled=true`, REST/meta, `_crdt_document`,
-  edited-record, Y.Doc/provider/awareness, and block-tree first-divergence
-  snapshots.
-- Run a non-Docker ungrouped i40 split/audit/manifest refresh for PR06, PR11,
-  PR12, and PR15. Required outputs are branch graph, base allowlist, adjacent
-  range-diff/diffstat/numstat/patch-id, bundle, push manifest,
+- Run exactly one corrected i40 PR07 owner matrix over `PR07B0`, `PR07B1`,
+  `HOLD-07B2`, and `HOLD-07C`, with `collaborationEnabled=true` and REST/meta,
+  `_crdt_document`, edited-record, Y.Doc/provider/awareness, and block-tree
+  first-divergence snapshots.
+- Run the non-Docker ungrouped i40 split/audit/manifest refresh for PR06,
+  PR11, PR12, and PR15. Required outputs are branch graph, base allowlist,
+  adjacent range-diff/diffstat/numstat/patch-id, bundle, push manifest,
   head/bundle/manifest agreement, and deferred freshness audit.
-- Do not count active PR07/seed `1020002`, header-only TSVs, preflight-only
-  reports, stale manifests, setup-only output, wait-only output, or zero-byte
-  artifacts as progress.
-- Keep pre-save search/live-collapse and rich-text suffix diagnostic-only until
-  their infra blockers are fixed and owner promotion is proven.
+- Repair the rich-text owner-comparison environment before assigning any
+  PR18x owner.
+- Harden the loop gate so active sessions, setup-only PR07 output,
+  disk-preflight-only reports, zero-byte files, `report.tmp`, stale manifests,
+  and header-only TSVs do not score as durable progress.
+- Keep pre-save search/live-collapse diagnostic-only until focused replay
+  identifies the first product owner.
 
 The prior `pr-split-20260518T013352Z-feedback-action.md` remains useful as
 context for what was attempted:
@@ -390,7 +397,7 @@ feedback action implemented the bounded fix in the remote fuzz repo:
   the post-sentinel triage gate, analysis tier once-run, and live-analysis
   monitor once-run all exited `0`.
 - The novelty monitor was restarted. The latest collected root
-  `run-20260518T021503Z` is startup-only and still needs a full pass before
+  `run-20260518T021912Z` is startup-only and still needs a full pass before
   declaring the control-plane fix stable.
 
 Do not turn historical duplicate share into global signature suppression.
@@ -433,7 +440,7 @@ These must not be described as fixed or filing-ready.
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families | evidence-only unless a focused owner replay proves otherwise | Keep out of PR rows until branch, owner, and fuzz evidence are refreshed |
 | Duplicate/noise consumer cap | timeout/reload-rejoin current-run families | source-stable terminal family caps remain implemented and validated | Keep product-evidence representatives visible while avoiding duplicate analysis |
 | Duplicate/noise producer leak | cross-output-root startup-noise scheduling | bounded fix implemented in the remote novelty monitor; syntax checks and once-run consumer checks passed; latest root is startup-only so long-window stability is not proven yet | Confirm on the next full pass that no no-product `pre_action_bootstrap_stall` family reappears as productive current-run work and product-evidence failures stay eligible |
-| Current fuzz validation | `run-20260518T021503Z` | startup-only monitor state: `380` observed roots, `76105` previous records loaded, `4` active run dirs, first full coverage pass pending; no final-stack validation | Use only as fuzz/control-plane startup health until a full pass and refreshed stack product evidence exist |
+| Current fuzz validation | `run-20260518T021912Z` | startup-only monitor state: `382` observed roots, `76105` previous records loaded, `4` active run dirs, first full coverage pass pending; no final-stack validation | Use only as fuzz/control-plane startup health until a full pass and refreshed stack product evidence exist |
 
 ## Filing Gates And Current Recommendation
 
@@ -496,8 +503,10 @@ Before filing any maintainer-facing PR:
 
 The next useful bounded jobs are
 `rtc-cycle324-i40-ungroup-pr06-pr11-pr12-pr15-manifest-refresh`,
-`rtc-cycle323-root-free-space-and-pr07-status` or equivalent root cleanup plus
-PR07 status continuation, and `rtc-cycle323-loop-progress-gate-hardening`.
-After root cleanup, allow one focused PR07 owner replay, starting with seeds
-like `5200001` and `5200005`. Do not launch broad final-stack fuzz, a duplicate
-seed `1020002` job, raw PR07D, PR17, PR18, or PR18x.
+`rtc-cycle324-root-free-space-and-pr07-status` or verification/continuation of
+an existing equivalent root/PR07 unblock job,
+`rtc-cycle323-loop-progress-gate-hardening`, and
+`rtc-cycle324-rich-text-pr05-owner-comparison-dependency-repair`. After root
+cleanup, allow one focused PR07 owner replay, starting with seeds like
+`5200001` and `5200005`. Do not launch broad final-stack fuzz, a duplicate
+seed `1020002` job, raw PR07D, PR17, PR18, or PR18x promotion.
