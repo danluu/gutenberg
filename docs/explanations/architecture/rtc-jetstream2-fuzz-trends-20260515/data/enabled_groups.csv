@@ -888,3 +888,5 @@ timestamp,group,group_family
 2026-05-18T14:46:18Z,novelty-ws-permissions-auth-locks,auth/locks
 2026-05-18T14:51:44Z,novelty-ws-long-session-large-doc,lifecycle
 2026-05-18T15:00:18Z,novelty-ws-media-cross-entity,async/media
+2026-05-18T15:35:44Z,novelty-ws-revision-recovery,persistence
+2026-05-18T15:35:44Z,novelty-ws-async-server-blocks,async/media
