@@ -820,3 +820,5 @@ timestamp,group,group_family
 2026-05-18T04:39:03Z,novelty-ws-three-user-late-join,lifecycle
 2026-05-18T04:46:08Z,novelty-ws-revision-persistence,persistence
 2026-05-18T04:53:38Z,novelty-ws-revision-recovery,persistence
+2026-05-18T05:00:59Z,novelty-ws-async-server-blocks,async/media
+2026-05-18T05:01:06Z,novelty-ws-permissions-auth-locks,auth/locks
