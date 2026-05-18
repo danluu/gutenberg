@@ -1769,9 +1769,9 @@ lanes, but they must share state. In particular:
     branch-repair launcher does not regenerate the same repair every cycle, and
     the controller push manifest filters out already-published rows and
     branches with explicit `publish-ready=no` decisions. The controller accepts
-    both `launch-branch-repair` and `repair-branch` persona actions for repair
-    scheduling, and PR15 chain-level publication holds are applied to the
-    individual PR15 variant branches.
+    `launch-branch-repair`, `repair-branch`, and `repair-ready` persona actions
+    for repair scheduling, and PR15 chain-level publication holds are applied
+    to the individual PR15 variant branches.
 -   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that

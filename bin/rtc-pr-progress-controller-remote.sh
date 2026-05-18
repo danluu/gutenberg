@@ -250,6 +250,7 @@ branch_repair_blocked_by_controller() {
 	local branch=$1
 	decision_blocks launch-branch-repair "$branch" && return 0
 	decision_blocks repair-branch "$branch" && return 0
+	decision_blocks repair-ready "$branch" && return 0
 	return 1
 }
 
@@ -525,6 +526,8 @@ Valid actions include:
 - publish-ready
 - launch-owner-matrix
 - launch-branch-repair
+- repair-branch
+- repair-ready
 - cooldown-diagnostic
 - reserve-discovery
 - update-controller-rule
@@ -694,7 +697,7 @@ EOF
 next_allowed_branch_repair() {
 	local target
 	[ -s "$DECISIONS" ] || return 1
-	awk -F '\t' 'NR > 1 && ($1 == "launch-branch-repair" || $1 == "repair-branch") && tolower($4) ~ /^(yes|true|allow|allowed|1)$/ { print $2 }' "$DECISIONS" |
+	awk -F '\t' 'NR > 1 && ($1 == "launch-branch-repair" || $1 == "repair-branch" || $1 == "repair-ready") && tolower($4) ~ /^(yes|true|allow|allowed|1)$/ { print $2 }' "$DECISIONS" |
 	while IFS= read -r target; do
 		[ -n "$target" ] || continue
 		awk -F '\t' -v target="$target" '
