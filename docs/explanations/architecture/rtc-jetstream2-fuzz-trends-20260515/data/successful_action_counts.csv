@@ -64,9 +64,9 @@ append-paragraph,1500,persistence-no-title
 concurrent-paragraphs,1388,persistence-no-title
 edit-table-array-attributes,1387,persistence-no-title
 move-block,1341,persistence-no-title
-append-parser-stress-content,1176,parser-transform
+append-parser-stress-content,1178,parser-transform
 insert-media-cross-entity-block,1029,media-cross-entity
-reparse-edited-content,1005,parser-transform
+reparse-edited-content,1008,parser-transform
 reload-post-action,956,real-user-editing
 ui-type-paragraph,864,real-user-editing
 edit-nested-paragraph,838,block-gauntlet
@@ -85,8 +85,8 @@ delete-block,637,block-gauntlet
 move-block,592,common-blocks
 edit-common-block-attributes,548,common-blocks
 insert-block-gauntlet-block,529,common-blocks
-edit-paragraph,524,parser-transform
-insert-paragraph,523,parser-transform
+edit-paragraph,526,parser-transform
+insert-paragraph,524,parser-transform
 insert-common-block,518,common-blocks
 insert-paragraph,498,common-blocks
 delete-block,494,common-blocks
@@ -97,10 +97,10 @@ delete-block,434,parser-transform
 edit-block-gauntlet-attributes,428,common-blocks
 edit-nested-paragraph,399,common-blocks
 append-paragraph,354,common-blocks
-insert-paragraph,320,revision-persistence
+insert-paragraph,323,revision-persistence
 ui-composition-paragraph,314,real-user-editing
 ui-toolbar-format-paragraph,314,real-user-editing
-delete-block,310,revision-persistence
+delete-block,312,revision-persistence
 edit-paragraph,306,revision-persistence
 edit-block-gauntlet-attributes,301,media-cross-entity
 ui-paste-paragraph,299,real-user-editing
@@ -110,8 +110,8 @@ move-block,270,media-cross-entity
 edit-title,265,revision-persistence
 ui-table-cell-edit,262,real-user-editing
 ui-list-indent,259,real-user-editing
-insert-heading,256,revision-persistence
-concurrent-paragraphs,256,revision-persistence
+concurrent-paragraphs,259,revision-persistence
+insert-heading,258,revision-persistence
 move-block,252,revision-persistence
 ui-cut-copy-paragraph,229,real-user-editing
 edit-table-array-attributes,214,revision-persistence
