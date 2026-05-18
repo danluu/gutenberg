@@ -66,7 +66,7 @@ concurrent-paragraphs,1606,persistence-no-title
 move-block,1556,persistence-no-title
 append-parser-stress-content,1286,parser-transform
 reparse-edited-content,1115,parser-transform
-insert-media-cross-entity-block,1029,media-cross-entity
+insert-media-cross-entity-block,1040,media-cross-entity
 reload-post-action,968,real-user-editing
 edit-nested-paragraph,880,block-gauntlet
 ui-type-paragraph,878,real-user-editing
@@ -105,12 +105,12 @@ ui-composition-paragraph,318,real-user-editing
 ui-toolbar-format-paragraph,318,real-user-editing
 edit-title,317,revision-persistence
 concurrent-paragraphs,310,revision-persistence
+edit-block-gauntlet-attributes,308,media-cross-entity
 ui-paste-paragraph,303,real-user-editing
 ui-link-paragraph,303,real-user-editing
-edit-block-gauntlet-attributes,301,media-cross-entity
 insert-heading,298,revision-persistence
 move-block,294,revision-persistence
-move-block,270,media-cross-entity
+move-block,272,media-cross-entity
 ui-table-cell-edit,266,real-user-editing
 ui-list-indent,263,real-user-editing
 edit-table-array-attributes,248,revision-persistence
