@@ -34,10 +34,10 @@ auto-ratchet:action:ui-heading-shortcut:target-200,action ui-heading-shortcut ne
 auto-ratchet:real-user-template:body-save-reload:target-100,real-user body save/reload next coverage tier,606,100,TRUE,"novelty-ws-real-user-save-reload,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text",auto-expanded after the previous goal was met; UI typing coverage must include save/reload flow,400,ratchet,real-user-template:body-save-reload,goal,real-user-template:body-save-reload,6.06,lifecycle/scale
 success-profile:media-cross-entity,successful media-cross-entity records,160,25,TRUE,novelty-ws-media-cross-entity,media and cross-entity coverage needs successful end-to-end runs,100,NA,NA,NA,NA,6.4,successful profiles
 success-profile:real-user-editing,successful real-user-editing records,602,80,TRUE,"novelty-ws-real-user-save-reload,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text","real UI editing needs completed records, not just startup attempts",320,NA,NA,NA,NA,7.525,successful profiles
-autosave-count:4,remote and local autosave checkpoints,205,25,TRUE,novelty-ws-revision-recovery,autosave and post-recovery state need explicit save/reload/revision coverage,100,NA,NA,NA,NA,8.2,persistence/revision
+autosave-count:4,remote and local autosave checkpoints,206,25,TRUE,novelty-ws-revision-recovery,autosave and post-recovery state need explicit save/reload/revision coverage,100,NA,NA,NA,NA,8.24,persistence/revision
 auto-ratchet:real-user-template:title-save-reload:target-50,real-user title save/reload next coverage tier,547,50,TRUE,"novelty-ws-real-user-save-reload,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text",auto-expanded after the previous goal was met; title typing can diverge from block body sync,200,ratchet,real-user-template:title-save-reload,goal,real-user-template:title-save-reload,10.94,lifecycle/scale
-lifecycle:late-join:users-3,three-user late join,7558,300,TRUE,novelty-ws-three-user-late-join,late-join bugs need explicit multi-user coverage,1200,NA,NA,NA,NA,25.19333333333333,lifecycle/scale
-revision-eligible:true,revision restore eligible,13958,500,TRUE,"novelty-ws-revision-persistence,novelty-ws-revision-recovery",revision restore must remain in the fuzz envelope,2000,NA,NA,NA,NA,27.916,persistence/revision
+lifecycle:late-join:users-3,three-user late join,7560,300,TRUE,novelty-ws-three-user-late-join,late-join bugs need explicit multi-user coverage,1200,NA,NA,NA,NA,25.2,lifecycle/scale
+revision-eligible:true,revision restore eligible,13963,500,TRUE,"novelty-ws-revision-persistence,novelty-ws-revision-recovery",revision restore must remain in the fuzz envelope,2000,NA,NA,NA,NA,27.926,persistence/revision
 block:core/shortcode,gauntlet block core/shortcode,689,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,34.45,block coverage
 block:core/html,gauntlet block core/html,692,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,34.6,block coverage
 block:core/details,gauntlet block core/details,699,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,34.95,block coverage
@@ -47,7 +47,7 @@ block:core/gallery,gauntlet block core/gallery,838,20,TRUE,novelty-ws-block-gaun
 block:core/more,gauntlet block core/more,858,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,42.9,block coverage
 action:edit-formatted-paragraph-at-cursor,action edit-formatted-paragraph-at-cursor,448,10,TRUE,novelty-ws-parser-serialization,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,44.8,action coverage
 action:edit-rich-text-pair-block,action edit-rich-text-pair-block,461,10,TRUE,novelty-ws-parser-serialization,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,46.1,action coverage
-local-autosave:true,local post recovery autosave,1181,25,TRUE,novelty-ws-revision-recovery,local autosave recovery can diverge from remote save and revision state,100,NA,NA,NA,NA,47.24,persistence/revision
+local-autosave:true,local post recovery autosave,1183,25,TRUE,novelty-ws-revision-recovery,local autosave recovery can diverge from remote save and revision state,100,NA,NA,NA,NA,47.32,persistence/revision
 block:core/file,gauntlet block core/file,1001,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,50.05,block coverage
 media-cross-entity-block:core/gallery,uploaded/cross-entity block core/gallery,257,5,TRUE,novelty-ws-media-cross-entity,media and reusable-block coverage must include real REST-created entities,50,NA,NA,NA,NA,51.4,media/cross-entity
 collaborator-mode:same-user,same-user two-tab mode,8094,150,TRUE,"novelty-ws-same-user-lifecycle,novelty-ws-same-user-stale-tabs",same-user tabs have different identity semantics,600,NA,NA,NA,NA,53.96,lifecycle/scale
@@ -56,8 +56,8 @@ media-cross-entity-block:core/media-text,uploaded/cross-entity block core/media-
 media-cross-entity-block:core/block,uploaded/cross-entity block core/block,297,5,TRUE,novelty-ws-media-cross-entity,media and reusable-block coverage must include real REST-created entities,50,NA,NA,NA,NA,59.4,media/cross-entity
 block:core/media-text,gauntlet block core/media-text,1204,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,60.2,block coverage
 media-cross-entity:media-upload,real media upload,640,10,TRUE,novelty-ws-media-cross-entity,"media coverage should exercise attachment creation, not only synthetic URLs",40,NA,NA,NA,NA,64,media/cross-entity
-reload-count:2,multi reload,6546,100,TRUE,novelty-ws-multi-reload-lifecycle,multiple reloads exercise repeated teardown/rejoin,400,NA,NA,NA,NA,65.46,lifecycle/scale
-reload-count:3,same-user stale/reloaded tabs,3390,50,TRUE,novelty-ws-same-user-stale-tabs,stale tabs and repeated reloads exercise awareness and save authority,200,NA,NA,NA,NA,67.8,lifecycle/scale
+reload-count:2,multi reload,6547,100,TRUE,novelty-ws-multi-reload-lifecycle,multiple reloads exercise repeated teardown/rejoin,400,NA,NA,NA,NA,65.47,lifecycle/scale
+reload-count:3,same-user stale/reloaded tabs,3391,50,TRUE,novelty-ws-same-user-stale-tabs,stale tabs and repeated reloads exercise awareness and save authority,200,NA,NA,NA,NA,67.82,lifecycle/scale
 action:insert-media-cross-entity-block,action insert-media-cross-entity-block,689,10,TRUE,novelty-ws-media-cross-entity,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,68.9,action coverage
 large-document:blocks-50,large document,1841,25,TRUE,novelty-ws-long-session-large-doc,"large documents exercise Yjs growth, undo stacks, and block identity drift",100,NA,NA,NA,NA,73.64,lifecycle/scale
 media-cross-entity-block:core/image,uploaded/cross-entity block core/image,415,5,TRUE,novelty-ws-media-cross-entity,media and reusable-block coverage must include real REST-created entities,50,NA,NA,NA,NA,83,media/cross-entity
@@ -70,11 +70,11 @@ action:ui-heading-shortcut,action ui-heading-shortcut,1149,10,TRUE,"novelty-ws-r
 action:ui-composition-paragraph,action ui-composition-paragraph,1152,10,TRUE,novelty-ws-real-user-rich-text,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,115.2,action coverage
 action:ui-toolbar-format-paragraph,action ui-toolbar-format-paragraph,1205,10,TRUE,novelty-ws-real-user-rich-text,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,120.5,action coverage
 real-user-template:body-save-reload,real-user body save/reload,606,5,TRUE,"novelty-ws-real-user-save-reload,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text",UI typing coverage must include save/reload flow,20,NA,NA,NA,NA,121.2,real-user UI
-step-count:48,long session,3125,25,TRUE,novelty-ws-long-session-large-doc,long operation sequences catch stale snapshots and delayed persistence bugs,100,NA,NA,NA,NA,125,lifecycle/scale
+step-count:48,long session,3128,25,TRUE,novelty-ws-long-session-large-doc,long operation sequences catch stale snapshots and delayed persistence bugs,100,NA,NA,NA,NA,125.12,lifecycle/scale
 action:ui-list-indent,action ui-list-indent,1252,10,TRUE,novelty-ws-real-user-rich-text,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,125.2,action coverage
 media-cross-entity:reusable-block,real reusable block entity,640,5,TRUE,novelty-ws-media-cross-entity,reusable/synced block coverage should exercise a real cross-entity reference,20,NA,NA,NA,NA,128,media/cross-entity
-block:core/column,common block core/column,3277,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,131.08,block coverage
-block:core/columns,common block core/columns,3277,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,131.08,block coverage
+block:core/column,common block core/column,3279,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,131.16,block coverage
+block:core/columns,common block core/columns,3279,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,131.16,block coverage
 action:ui-link-paragraph,action ui-link-paragraph,1456,10,TRUE,novelty-ws-real-user-rich-text,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,145.6,action coverage
 action:ui-undo-redo-paragraph,action ui-undo-redo-paragraph,1675,10,TRUE,"novelty-ws-real-user-save-reload,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text",every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,167.5,action coverage
 action:ui-paste-paragraph,action ui-paste-paragraph,1757,10,TRUE,novelty-ws-real-user-rich-text,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,175.7,action coverage
@@ -87,46 +87,46 @@ real-user-template:rich-text-editing,real-user rich text editing,1252,5,TRUE,nov
 fault:fail:403,permission denied sync failure,2533,10,TRUE,novelty-ws-permissions-auth-locks,post locking and auth changes should not silently corrupt state,40,NA,NA,NA,NA,253.3,fault coverage
 cdp-coverage-records,CDP coverage records,6474,25,TRUE,"novelty-ws-common-blocks,novelty-ws-block-gauntlet,novelty-ws-parser-transform,novelty-ws-real-user-save-reload,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text,novelty-ws-async-server-blocks,novelty-ws-media-cross-entity,novelty-ws-long-session-large-doc",code coverage should confirm browser paths are changing,100,NA,NA,NA,NA,258.96,code coverage
 action:edit-common-block-attributes,action edit-common-block-attributes,2624,10,TRUE,novelty-ws-common-blocks,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,262.4,action coverage
-block:core/latest-posts,async/server block core/latest-posts,5396,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,269.8,block coverage
-block:core/query,async/server block core/query,5396,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,269.8,block coverage
+block:core/query,async/server block core/query,5397,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,269.85,block coverage
+block:core/latest-posts,async/server block core/latest-posts,5398,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,269.9,block coverage
 action:reparse-edited-content,action reparse-edited-content,2808,10,TRUE,novelty-ws-parser-transform,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,280.8,action coverage
 fault:fail:401,auth expired sync failure,2839,10,TRUE,novelty-ws-permissions-auth-locks,session expiry and nonce failures should be covered explicitly,40,NA,NA,NA,NA,283.9,fault coverage
 auth-session-expiry-probe:true,auth/session expiry probe,7131,25,TRUE,novelty-ws-permissions-auth-locks,auth changes and nonce expiry must stay in the fuzz envelope,100,NA,NA,NA,NA,285.24,auth/locks
-block:core/calendar,async/server block core/calendar,5706,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,285.3,block coverage
-block:core/categories,async/server block core/categories,5795,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,289.75,block coverage
-block:core/embed,async/server block core/embed,5996,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,299.8,block coverage
-block:core/block,async/server block core/block,6076,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,303.8,block coverage
-block:core/spacer,gauntlet block core/spacer,6912,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,345.6,block coverage
-block:core/button,common block core/button,8882,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,355.28,block coverage
-block:core/buttons,common block core/buttons,8918,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,356.72,block coverage
-reload-count:1,single reload,18239,50,TRUE,novelty-ws-lifecycle,reload coverage catches lifecycle rejoin regressions,200,NA,NA,NA,NA,364.78,lifecycle/scale
-save-count:1,save checkpoint,19742,50,TRUE,"novelty-ws-persistence-no-title,novelty-ws-revision-persistence",save checkpoint coverage catches persistence gaps,200,NA,NA,NA,NA,394.84,persistence/revision
+block:core/calendar,async/server block core/calendar,5708,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,285.4,block coverage
+block:core/categories,async/server block core/categories,5797,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,289.85,block coverage
+block:core/embed,async/server block core/embed,5997,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,299.85,block coverage
+block:core/block,async/server block core/block,6077,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,303.85,block coverage
+block:core/spacer,gauntlet block core/spacer,6914,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,345.7,block coverage
+block:core/button,common block core/button,8884,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,355.36,block coverage
+block:core/buttons,common block core/buttons,8920,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,356.8,block coverage
+reload-count:1,single reload,18242,50,TRUE,novelty-ws-lifecycle,reload coverage catches lifecycle rejoin regressions,200,NA,NA,NA,NA,364.84,lifecycle/scale
+save-count:1,save checkpoint,19744,50,TRUE,"novelty-ws-persistence-no-title,novelty-ws-revision-persistence",save checkpoint coverage catches persistence gaps,200,NA,NA,NA,NA,394.88,persistence/revision
 action:insert-block-gauntlet-block,action insert-block-gauntlet-block,4057,10,TRUE,novelty-ws-block-gauntlet,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,405.7,action coverage
-initial:deprecated-block-content,initial content deprecated-block-content,10643,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,425.72,parser seeds
-initial:equivalent-html-content,initial content equivalent-html-content,10664,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,426.56,parser seeds
-initial:freeform-parser-content,initial content freeform-parser-content,10951,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,438.04,parser seeds
-initial:validation-fix-content,initial content validation-fix-content,11295,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,451.8,parser seeds
-action:edit-title,action edit-title,4542,10,TRUE,novelty-ws-lifecycle,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,454.2,action coverage
-initial:html-entity-reference,initial content html-entity-reference,11491,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,459.64,parser seeds
-revision-restored:true,revision restored through browser UI,11924,25,TRUE,novelty-ws-revision-recovery,"revision restore has to actually execute, not just be eligible",100,NA,NA,NA,NA,476.96,persistence/revision
-fault:delay:delay,delayed sync fault,30874,50,TRUE,novelty-ws-structure,delay faults exercise retry and convergence paths,200,NA,NA,NA,NA,617.48,fault coverage
-block:core/separator,gauntlet block core/separator,13521,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,676.05,block coverage
-action:insert-common-block,action insert-common-block,6806,10,TRUE,novelty-ws-common-blocks,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,680.6,action coverage
-block:core/image,common block core/image,21010,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,840.4,block coverage
-action:edit-block-gauntlet-attributes,action edit-block-gauntlet-attributes,8584,10,TRUE,novelty-ws-block-gauntlet,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,858.4,action coverage
-block:core/quote,gauntlet block core/quote,20648,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,1032.4,block coverage
-action:delete-nested-block,action delete-nested-block,11159,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1115.9,action coverage
+initial:deprecated-block-content,initial content deprecated-block-content,10647,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,425.88,parser seeds
+initial:equivalent-html-content,initial content equivalent-html-content,10670,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,426.8,parser seeds
+initial:freeform-parser-content,initial content freeform-parser-content,10952,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,438.08,parser seeds
+initial:validation-fix-content,initial content validation-fix-content,11302,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,452.08,parser seeds
+action:edit-title,action edit-title,4544,10,TRUE,novelty-ws-lifecycle,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,454.4,action coverage
+initial:html-entity-reference,initial content html-entity-reference,11493,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,NA,NA,NA,459.72,parser seeds
+revision-restored:true,revision restored through browser UI,11927,25,TRUE,novelty-ws-revision-recovery,"revision restore has to actually execute, not just be eligible",100,NA,NA,NA,NA,477.08,persistence/revision
+fault:delay:delay,delayed sync fault,30880,50,TRUE,novelty-ws-structure,delay faults exercise retry and convergence paths,200,NA,NA,NA,NA,617.6,fault coverage
+block:core/separator,gauntlet block core/separator,13523,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,676.15,block coverage
+action:insert-common-block,action insert-common-block,6808,10,TRUE,novelty-ws-common-blocks,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,680.8,action coverage
+block:core/image,common block core/image,21014,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,NA,NA,NA,840.56,block coverage
+action:edit-block-gauntlet-attributes,action edit-block-gauntlet-attributes,8586,10,TRUE,novelty-ws-block-gauntlet,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,858.6,action coverage
+block:core/quote,gauntlet block core/quote,20653,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,NA,NA,NA,1032.65,block coverage
+action:delete-nested-block,action delete-nested-block,11161,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1116.1,action coverage
 action:move-block-into-group,action move-block-into-group,11693,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1169.3,action coverage
-fault:fail:429,HTTP 429 sync failure,13445,10,TRUE,novelty-ws-structure,retriable sync failures should stay covered,40,NA,NA,NA,NA,1344.5,fault coverage
-action:insert-nested-group,action insert-nested-group,13807,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1380.7,action coverage
-block:core/search,async/server block core/search,28069,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,1403.45,block coverage
-action:edit-nested-paragraph,action edit-nested-paragraph,14404,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1440.4,action coverage
-action:concurrent-paragraphs,action concurrent-paragraphs,14626,10,TRUE,novelty-ws-lifecycle,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1462.6,action coverage
-action:edit-table-array-attributes,action edit-table-array-attributes,15198,10,TRUE,novelty-ws-lifecycle,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1519.8,action coverage
-action:insert-async-server-block,action insert-async-server-block,15222,10,TRUE,novelty-ws-async-server-blocks,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1522.2,action coverage
-action:insert-heading,action insert-heading,15705,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1570.5,action coverage
-action:append-paragraph,action append-paragraph,16049,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1604.9,action coverage
-action:edit-paragraph,action edit-paragraph,16215,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1621.5,action coverage
-action:insert-paragraph,action insert-paragraph,16914,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1691.4,action coverage
-action:delete-block,action delete-block,17747,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1774.7,action coverage
-action:move-block,action move-block,22502,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,2250.2,action coverage
+fault:fail:429,HTTP 429 sync failure,13448,10,TRUE,novelty-ws-structure,retriable sync failures should stay covered,40,NA,NA,NA,NA,1344.8,fault coverage
+action:insert-nested-group,action insert-nested-group,13808,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1380.8,action coverage
+block:core/search,async/server block core/search,28074,20,TRUE,novelty-ws-async-server-blocks,async REST-backed and server-rendered blocks need dedicated coverage,80,NA,NA,NA,NA,1403.7,block coverage
+action:edit-nested-paragraph,action edit-nested-paragraph,14405,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1440.5,action coverage
+action:concurrent-paragraphs,action concurrent-paragraphs,14630,10,TRUE,novelty-ws-lifecycle,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1463,action coverage
+action:edit-table-array-attributes,action edit-table-array-attributes,15201,10,TRUE,novelty-ws-lifecycle,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1520.1,action coverage
+action:insert-async-server-block,action insert-async-server-block,15224,10,TRUE,novelty-ws-async-server-blocks,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1522.4,action coverage
+action:insert-heading,action insert-heading,15707,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1570.7,action coverage
+action:append-paragraph,action append-paragraph,16052,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1605.2,action coverage
+action:edit-paragraph,action edit-paragraph,16219,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1621.9,action coverage
+action:insert-paragraph,action insert-paragraph,16917,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1691.7,action coverage
+action:delete-block,action delete-block,17750,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,1775,action coverage
+action:move-block,action move-block,22506,10,TRUE,novelty-ws-structure,every fuzz action should be exercised by a live lane,50,NA,NA,NA,NA,2250.6,action coverage
