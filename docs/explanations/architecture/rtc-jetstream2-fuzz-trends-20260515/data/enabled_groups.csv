@@ -875,3 +875,5 @@ timestamp,group,group_family
 2026-05-18T12:52:10Z,novelty-ws-media-cross-entity,async/media
 2026-05-18T13:31:08Z,novelty-ws-parser-serialization,parser
 2026-05-18T13:31:08Z,novelty-http-persistence-probe,persistence
+2026-05-18T13:45:10Z,novelty-ws-real-user-save-reload,real-user
+2026-05-18T13:45:11Z,novelty-ws-lifecycle,lifecycle
