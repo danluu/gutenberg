@@ -816,3 +816,4 @@ timestamp,group,group_family
 2026-05-18T04:02:24Z,novelty-ws-revision-recovery,persistence
 2026-05-18T04:09:50Z,novelty-ws-same-user-lifecycle,lifecycle
 2026-05-18T04:09:56Z,novelty-ws-same-user-stale-tabs,lifecycle
+2026-05-18T04:26:53Z,novelty-ws-parser-transform,parser
