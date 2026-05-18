@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-18T10:41:15Z`
+Snapshot generated: `2026-05-18T10:47:59Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -47,14 +47,15 @@ is `0.3432` and is not the plotted live health signal.
 
 Persona-loop evidence is treated as evidence to evaluate, and it still rejects
 reading startup-failure suppression as durable recovery by itself. The newest
-non-empty duplicate/noise synthesis, `20260518T094242Z`, still names the
-novelty-monitor materialization rescue as the control-plane leak: drain-only
-no-product startup noise can refill browser capacity unless rescue, fallback,
-and materialization respect current startup holds and cooldowns. The latest
-non-empty feedback-action, `20260518T090427Z`, reports that the bounded
-supervisor/novelty control-plane fix was applied and validated. This report
-therefore treats the graph's clean latest current-output samples as live
-recovery evidence to keep watching, not as a durable closed issue yet.
+duplicate/noise synthesis, `20260518T094242Z`, names the novelty-monitor
+materialization rescue as the control-plane leak: drain-only no-product startup
+noise can refill browser capacity unless rescue, fallback, and materialization
+respect current startup holds and cooldowns. The matching feedback-action
+reports that the rescue/cooldown leak and live-analysis retry leak were patched,
+validated, and restarted into a fail-closed state with zero active browser run
+dirs while noisy candidates are held. This report therefore treats the graph's
+clean latest current-output samples as live recovery evidence to keep watching,
+not as a durable closed issue yet.
 
 The PR-split persona loop still rejects a filing-ready interpretation. The
 latest synthesis, `20260518T102142Z`, keeps the Cycle324/i40 ungrouped topology
@@ -105,10 +106,11 @@ most recently added `novelty-ws-lifecycle` and
 Current-output duplicate share is `0.0000` and current summary startup failures
 are `0`. The latest duplicate/noise synthesis rejects reading clean
 startup-failure suppression as full recovery by itself. The latest
-duplicate/noise feedback-action file is empty; the latest non-empty
-feedback-action still says the bounded producer/refill fix has been applied.
-The next check is sustained low current-output duplicate share while productive
-groups keep advancing, not whether historical aggregate duplicate share falls.
+duplicate/noise feedback-action says the rescue/cooldown bypass has been
+patched and the current state is intentionally fail-closed while startup-noise
+cooldowns hold browser candidates. The next check is sustained low
+current-output duplicate share while productive groups resume and advance, not
+whether historical aggregate duplicate share falls.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
@@ -186,8 +188,8 @@ useful second targets, but they should not block the first RTC-specific harness.
 The committed graph still has only one collector-visible coverage-guided
 lower-level lane and no current lower-level execution rate.
 
-The latest protocol-server synthesis file, `20260518T103335Z`, is empty. The
-latest non-empty synthesis, `20260518T101612Z`, recommends the HTTP polling REST
+The latest protocol-server synthesis file, `20260518T104057Z`, is empty. The
+latest non-empty synthesis, `20260518T103335Z`, recommends the HTTP polling REST
 endpoint harness first, through real REST dispatch,
 `WP_HTTP_Polling_Sync_Server`, and `WP_Sync_Post_Meta_Storage`, with durable
 state-machine oracles and collector-compatible event accounting. The matching
@@ -216,11 +218,11 @@ supervisor launches or lane counts, but it only covers fuzzers that emit lane
 events. Lower-level counts are approximate when reconstructed from batch
 metadata or legacy batch-count fields.
 
-The latest collected execution data has about `5,667,858` completed test
-executions: `184,965` browser/e2e, `3,006` transport/integration, `5,032,064`
+The latest collected execution data has about `5,670,407` completed test
+executions: `185,594` browser/e2e, `3,006` transport/integration, `5,033,984`
 unit-property, and `447,823` coverage-guided-lower-level. The latest partial
-15-minute bucket reports about `2,792` browser/e2e test executions/hour,
-`12,160` unit-property executions/hour, and `0` coverage-guided-lower-level
+15-minute bucket reports about `860` browser/e2e test executions/hour,
+`2,688` unit-property executions/hour, and `0` coverage-guided-lower-level
 executions/hour, with `0` current rate for transport/integration, backend/API,
 protocol-server, and standalone `fuzz-assertion`. `backend-api`,
 `protocol-server`, and standalone `fuzz-assertion` remain at `0` cumulative
@@ -238,7 +240,7 @@ first-seen time. They are not total bug-finding graphs, not per-core efficiency,
 and not a count of all bugs found by fuzzing.
 
 On that triage-output metric, browser/e2e currently dominates: `730` unique
-likely-real findings over about `2,241.6` runner-hours, or `32.57` per 100
+likely-real findings over about `2,243.2` runner-hours, or `32.54` per 100
 runner-hours. `transport-integration`, `unit-property`,
 `coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
 `fuzz-assertion` still have `0` triaged likely-real outputs in the collected
@@ -257,11 +259,11 @@ graphs are intentionally broader than confirmed bugs and narrower than raw
 failed attempts; untriaged candidates are not confirmed bugs.
 
 Current unique bug-output candidate rates are: browser/e2e `5,862` candidates
-over `2,241.6` runner-hours (`261.51` per 100 runner-hours),
+over `2,243.2` runner-hours (`261.33` per 100 runner-hours),
 transport/integration `106` over `59.5` runner-hours (`178.14` per 100
 runner-hours), coverage-guided lower-level `2` over `20.9` runner-hours
-(`9.55` per 100 runner-hours), and unit/property `5` over `37.4` runner-hours
-(`13.36` per 100 runner-hours). `backend-api`, `protocol-server`, standalone
+(`9.55` per 100 runner-hours), and unit/property `5` over `37.5` runner-hours
+(`13.32` per 100 runner-hours). `backend-api`, `protocol-server`, standalone
 `fuzz-assertion`, and `other` remain at `0` in this candidate-output metric.
 
 ![Unique bug-output candidates within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-profile-within-level.png)
@@ -269,10 +271,10 @@ runner-hours), coverage-guided lower-level `2` over `20.9` runner-hours
 ![Unique bug-output candidate rate within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-rate-by-profile-within-level.png)
 
 Within the latest per-profile rows, browser/e2e likely-real triage output is
-led by session lifecycle (`182`), three-user late join (`126`), real-user
-editing (`98`), permissions/auth/locks (`87`), and parser serialization (`45`).
+led by session lifecycle (`184`), three-user late join (`126`), real-user
+editing (`100`), permissions/auth/locks (`87`), and parser serialization (`45`).
 The broader unique-output candidate view is led by three-user late join (`809`),
-session lifecycle (`745`), real-user editing (`690`), revision persistence
+session lifecycle (`747`), real-user editing (`690`), revision persistence
 (`510`), and permissions/auth/locks (`459`), with
 lower-level lanes showing only small nonzero candidate totals so far.
 
@@ -282,8 +284,8 @@ The failure-candidate plot is a pre-triage lead indicator: failed seed or batch
 attempts per 100 runner-hours before duplicate/noise triage. It is useful for
 comparing where the system is still producing interesting work before
 duplicate/noise analysis, but it is not a confirmed bug count. Current rates
-are about `7158.6` for browser/e2e, `4537.5` for transport/integration,
-`759.3` for coverage-guided lower-level, and `1918.3` for unit/property.
+are about `7181.2` for browser/e2e, `4537.5` for transport/integration,
+`759.3` for coverage-guided lower-level, and `1912.7` for unit/property.
 
 ![Triaged likely-real output rate within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/bug-effectiveness-by-profile-within-level.png)
 
@@ -371,11 +373,11 @@ branch-audit, head/bundle/manifest, shape-policy, or deferred-freshness
 failures. The newer synthesis supersedes that as the current basis. Filing,
 broad final-stack fuzzing, and stack-wide validation remain blocked by seed
 `1020002`; the next split work is PR07B1A refresh/audit against `101357Z`, PR07
-owner replay after runtime readiness, and strict PR05B/PR05C/clean-PR05D owner
-comparison before any PR18x claim.
+owner replay now that runtime readiness is repaired-ready, and strict
+PR05B/PR05C/clean-PR05D owner comparison before any PR18x claim.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
-split history. The latest parsed snapshot, `2026-05-18T10:22:49Z`, has `10`
+split history. The latest parsed snapshot, `2026-05-18T10:35:24Z`, has `10`
 suggested rows totaling `4,114` net LOC. The largest current rows by net LOC are
 `PR 13B` (`1668`), `PR 13A` (`1126`), `PR 13C` (`294`), `PR 14` (`276`),
 `PR 9` (`183`), `PR 1` (`162`), `PR 4` (`159`), `PR 10` (`141`), `PR 3`
@@ -399,13 +401,14 @@ The duplicate/noise persona loop rejects converting startup-failure suppression
 into a durable recovery claim. The latest synthesis says the remaining primary
 risk is a producer/control-plane leak where drain-only no-product startup noise
 can starve or refill browser capacity unless novelty bootstrap/refill is
-drain-aware and bounded. The latest duplicate/noise feedback-action file is
-empty; the latest non-empty feedback-action reports that the bounded
-producer/refill fix was implemented and validated. The refreshed graph's clean
-latest current-output samples are still only live recovery evidence. Both graph
-and persona-loop evidence keep the next check focused on sustained low
-current-output duplicate share while useful fuzzing advances, not historical
-aggregate duplicate/noise.
+drain-aware and bounded. The latest duplicate/noise feedback-action reports
+that the bounded rescue/cooldown fix was implemented, live-analysis retry
+relaunch was tightened, and the current root is fail-closed with no active
+browser dirs while cooldown-held candidates are skipped. The refreshed graph's
+clean latest current-output samples are still only live recovery evidence. Both
+graph and persona-loop evidence keep the next check focused on sustained low
+current-output duplicate share while useful fuzzing resumes and advances, not
+historical aggregate duplicate/noise.
 
 The PR-split persona loop rejects filing or broad final-stack fuzzing. The
 latest `20260518T102142Z` synthesis keeps the Cycle324/i40 ungrouped topology
@@ -414,8 +417,9 @@ completed `101357Z` reload-hydration candidate, and `102438Z` is zero-byte. The
 `20260518T095036Z` feedback-action still proves the earlier `095429Z` artifact
 was nonzero and audit-clean, but the current basis now needs PR07B1A refresh and
 manifest audit against `101357Z`. Seed `1020002` still blocks filing, broad
-final-stack fuzzing, and stack-wide validation; PR07 owner replay after runtime
-readiness and strict PR05B/PR05C/clean-PR05D owner comparison should continue.
+final-stack fuzzing, and stack-wide validation; PR07 owner replay after the
+runtime-readiness repair and strict PR05B/PR05C/clean-PR05D owner comparison
+should continue.
 
 The committed fuzzing graph is still browser/e2e-heavy: `29` current browser/e2e
 lanes across `26` groups, `1` `unit-property` lane, and `1`
