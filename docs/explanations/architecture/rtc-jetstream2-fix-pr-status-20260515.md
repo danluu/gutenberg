@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-18T02:23:20Z`
+Snapshot time: `2026-05-18T02:42:20Z`
 
 Trigger event:
-`pr-split-2026-05-18T02-19-26Z-20260518T020732Z`
+`pr-split-2026-05-18T02-41-03Z-20260518T022917Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T02-19-26Z-20260518T020732Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T02-41-03Z-20260518T022917Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,12 +28,14 @@ or the original split merely for continuity.
 ## Executive Status
 
 The newest completed split-persona synthesis is
-`pr-split-20260518T020732Z-synthesis.md`. It supersedes the Cycle322 grouped
-i40 working hypothesis: keep the current i40/finalized ref family as source
-material, but do not treat grouped PR06, PR11, PR12, or PR15 as the final
-maintainer-facing split. Five of six nonzero reports now recommend replacing
-those grouped rows with explicit smaller rows; the outlier emphasized PR07
-owner evidence and root-space health, not a stronger grouped split.
+`pr-split-20260518T022917Z-synthesis.md`. It supersedes the prior Cycle322
+wording with the Cycle324 ungrouped i40 shape from
+`finalized/cycle324-i40/*`, backed by
+`/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/cycles/20260518T022216Z/finalization.report.md`.
+That report passed `43/43` ancestry ranges and `git diff --check`, but it is
+still source/finalization evidence, not filing readiness. Keep the Cycle324
+family as source material, but do not treat grouped PR06, PR11, PR12, or PR15
+as maintainer-facing filing units.
 
 Current replacement target:
 
@@ -71,27 +73,34 @@ Active status changes since the prior report:
   review units. Their audited aggregate refs remain useful prior art only
   until explicit sub-PR branches are published, fetched, and audited.
 - Filing and broad final-stack fuzzing remain blocked by missing PR07 owner
-  evidence, root disk space below the 2048 MB replay threshold, seed `1020002`,
-  and stale or zero-byte publication artifacts.
-- The Cycle322 PR07 replay has only setup/header/preflight-style output so far.
+  evidence, root disk space below the 2048 MB replay threshold (`712 MB` free
+  at the latest split synthesis), seed `1020002`, and stale or zero-byte
+  publication artifacts.
+- The latest named zero-byte artifact is
+  `20260518T023218Z/finalization.report.md`; it is not evidence.
+- The Cycle322/Cycle324 PR07 replay evidence is still setup/header/preflight
+  style only.
   Treat it as no PR07 owner evidence until it produces durable first-divergence
   artifacts for the current i40 refs.
 - The latest split synthesis calls for bounded follow-up jobs only: a
-  non-Docker ungrouped i40 PR06/PR11/PR12/PR15 manifest refresh, root-space and
-  PR07-status cleanup or verification of an equivalent job, loop progress-gate
+  fresh non-Docker manifest/publish audit for `finalized/cycle324-i40/*`,
+  root-space cleanup and one gated PR07 owner replay, loop progress-gate
   hardening, and rich-text PR05 owner-comparison dependency repair.
 - The Cycle322 PR05B/PR05C/clean-PR05D owner comparison accepted the diagnostic
   cherry-pick on all three refs, but unit execution was blocked by the same
   missing `framer-motion` dependency. It assigns no PR18x owner.
-- The latest novelty status for `run-20260518T021912Z` is startup-only:
-  the monitor loaded `76105` previous records, saw `382` roots and `4` active
-  run dirs, and had not completed its first full coverage pass yet. It is not
-  final-stack validation.
+- The latest novelty status for `run-20260518T022926Z` has completed a pass:
+  `49176` coverage files, `76497` records seen, `5` unmet goals, active
+  current-run likely-real visible `0`, and current-drain likely-real visible
+  `1` for `reload_rejoin_awareness_stall`. This is fuzz/control-plane health
+  evidence, not final-stack validation.
 - The latest duplicate/noise action implemented the bounded control-plane fix
   in `rtc-browser-fuzz-novelty-monitor.mjs`: explicit no-product
   `pre_action_bootstrap_stall` startup-noise cooldowns can now survive
   output-root rotation as producer scheduling cooldowns, while product-evidence
-  bypasses remain preserved. This does not change the product PR split.
+  bypasses remain preserved. The newest duplicate/noise synthesis still calls
+  for bounded producer/scheduler and product-evidence duplicate-family caps; it
+  does not change the product PR split.
 
 Hard blockers remain:
 
@@ -101,8 +110,8 @@ Hard blockers remain:
   `No verified branch link yet`.
 - Run a non-Docker ungrouped i40 split/audit/manifest refresh for PR06,
   PR11, PR12, and PR15 before treating the replacement split as publishable.
-- Recover root free space above 2048 MB and record before/after `df -m /`
-  before any Docker/wp-env/browser PR07 replay.
+- Recover root free space above 2048 MB from the latest reported `712 MB` and
+  record before/after `df -m /` before any Docker/wp-env/browser PR07 replay.
 - Run exactly one corrected i40 PR07 owner replay after readiness is true. It
   must compare `PR07B0`, `PR07B1`, `HOLD-07B2`, and `HOLD-07C` with
   `collaborationEnabled=true`, REST/meta, `_crdt_document`, edited record,
@@ -114,7 +123,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T02:23:14Z`.
+Remote status was collected at `2026-05-18T02:42:15Z`.
 
 The fix-planning repo is checked out at:
 
@@ -144,7 +153,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T02:23:20Z` from fetched
+The branch-link audit was generated at `2026-05-18T02:42:20Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. A verified
 branch link confirms that the linked ref exists and has a non-empty audited
@@ -254,76 +263,89 @@ branch-link audit or explicitly says `No verified branch link yet`.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T02:23:14Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T021912Z
+collected_at_utc: 2026-05-18T02:42:15Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T022926Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The raw `novelty-status.md` collected for this update was written at
-`2026-05-18T02:22:23.426Z` for `run-20260518T021912Z`.
+`2026-05-18T02:42:10.556Z` for `run-20260518T022926Z`.
 
 Current novelty numbers:
 
 ```text
-status: monitor started; full coverage pass pending
-observed roots: 382
-previous records loaded: 76105
-supervisor groups file: 4
-active run dirs: 4
-unmet goals: pending until first pass
-harness-work candidates: pending until first pass
-triage signatures: pending until first pass
-likely-real visible: pending until first pass
-likely-real merged duplicates: pending until first pass
-oracle/noise questions: pending until first pass
+coverage files: 49176
+total records seen: 76497
+records processed this pass: 50
+current-run records: 2, all in novelty-ws-multi-reload-lifecycle
+unmet goals: 5
+harness-work candidates: 0
+active-scope triage signatures: 0
+active-scope likely-real visible: 0
+current-drain triage signatures: 1
+current-drain product-evidence signatures: 1
+current-drain likely-real visible: 1
+current-drain top family: reload_rejoin_awareness_stall
+suppressed strict startup records in current drain: 3
+historical likely-real visible: 279
+historical raw top family: pre_action_bootstrap_stall, 21957
+combined likely-real visible: 280
+enabled groups: novelty-ws-same-user-lifecycle,
+  novelty-ws-same-user-stale-tabs,
+  novelty-ws-parser-transform,
+  novelty-ws-multi-reload-lifecycle
 ```
 
 Interpretation:
 
-- This is a startup-only control-plane snapshot after root rotation, not a
-  completed novelty pass, final-stack validation, or filing readiness.
-- The previous record count (`76105`) confirms the monitor loaded historical
-  state, but current-run triage and likely-real counts are intentionally
-  unknown until the first full pass completes.
-- Use the duplicate/noise implementation evidence below to track producer
-  scheduling health; do not infer product validation from this startup status.
+- The active current-run scope has no visible likely-real signatures and no
+  bootstrap-stall signatures. The current-drain scope contains one actionable
+  product-evidence representative, `reload_rejoin_awareness_stall`, plus
+  suppressed strict startup records.
+- Historical triage is still dominated by raw
+  `pre_action_bootstrap_stall`, but that is historical/control-plane context,
+  not a current product failure count.
+- This is a current novelty/control-plane health pass, not final-stack
+  validation, a validated PR stack, or filing readiness.
 
-The latest trend packet was generated at `2026-05-18T02:08:30Z` from monitor
-data through `2026-05-18T01:57:47Z`:
+The latest trend packet was generated at `2026-05-18T02:27:16Z` from monitor
+data through `2026-05-18T02:24:59Z`:
 
 ```text
-monitor passes: 2175
-coverage files: 272 -> 48927
-coverage files delta: 48655
+monitor passes: 2177
+coverage files: 272 -> 49088
+coverage files delta: 48816
 unmet goals: 5
 likely_real_max: 4
-duplicate_share_current_last: 0
+duplicate_share_current_last: 1
 duplicate_share_historical_last: 0.3449
 summary startup failures last: 0
-quality issues last: 1
-memory free: 420.2 GB
-load averages: 69.66 / 65.84 / 64.17 on 64 cores
+quality issues last: 0
+memory free: 416.1 GB
+load averages: 66.31 / 68.38 / 67.70 on 64 cores
 enabled groups in trend snapshot:
-  novelty-ws-real-user-save-reload
-  novelty-ws-real-user-rich-text
+  novelty-ws-three-user-late-join
+  novelty-ws-revision-persistence
+  novelty-ws-revision-recovery
+  novelty-ws-multi-reload-lifecycle
 latest fuzz level mix:
-  browser-e2e=25 lanes/25 groups
+  browser-e2e=29 lanes/29 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5470512
-browser-e2e likely-real findings: 657 over 2009.8 runner-hours
-latest suggested PR net LOC total: 5411
+total fuzz-level test executions: 5478367
+browser-e2e likely-real findings: 657 over 2017.1 runner-hours
+latest suggested PR net LOC total: 2152
 ```
 
 Largest unmet goals remain real-user/save-reload depth:
 
 ```text
-reload-post-action: 1085/2000
-title-save-reload: 541/1000
-body-save-reload: 600/1000
+reload-post-action: 1090/2000
+title-save-reload: 546/1000
+body-save-reload: 605/1000
 real-user-editing success: 602/1000
-ui-format-paragraph: 1793/2000
+ui-format-paragraph: 1808/2000
 ```
 
 Browser E2E remains the only level with confirmed likely-real findings, but
@@ -335,36 +357,39 @@ product-evidence checks instead of simply adding browser concurrency.
 ## Status-Persona Analysis
 
 The newest completed split-persona synthesis,
-`pr-split-20260518T020732Z-synthesis.md`, says:
+`pr-split-20260518T022917Z-synthesis.md`, says:
 
-- The current Cycle320/i40 source family remains the right base material, but
-  the grouped topology is no longer the best review shape.
+- The grouped i40 split should be replaced by the Cycle324 ungrouped i40
+  shape from `finalized/cycle324-i40/*`.
+- The supporting Cycle324 finalization report at
+  `20260518T022216Z/finalization.report.md` has `43/43` ancestry ranges
+  passing and `git diff --check` passing.
 - Replace grouped PR06, PR11, PR12, and PR15 with PR06A-D, PR11A-E, PR12A-C,
   and PR15A-D, plus the PR06E malformed-payload sidecar from PR06D.
-- Five of six nonzero split reports now recommend that ungrouped shape. The
-  outlier mainly emphasizes PR07 owner evidence and root-space health, not a
-  better grouped split.
 - Treat stale Cycle293/Cycle306/local-publish rows, stale `ready/*`,
   fallback-tail PR05D, `d06e3528cbd`, raw PR07D, PR17, PR18, and PR18x as
   rejected filing material.
-- Treat the Cycle322 PR07 replay as no owner evidence while it has only
-  setup/header/preflight output.
-- Free `/` above 2048 MB and record before/after `df -m /`.
+- Treat the Cycle322/Cycle324 PR07 replay evidence as no owner evidence while
+  it has only setup/header/preflight output.
+- Free `/` above 2048 MB from the latest reported `712 MB`, and record
+  before/after `df -m /`.
 - Run exactly one corrected i40 PR07 owner matrix over `PR07B0`, `PR07B1`,
   `HOLD-07B2`, and `HOLD-07C`, with `collaborationEnabled=true` and REST/meta,
   `_crdt_document`, edited-record, Y.Doc/provider/awareness, and block-tree
   first-divergence snapshots.
-- Run the non-Docker ungrouped i40 split/audit/manifest refresh for PR06,
-  PR11, PR12, and PR15. Required outputs are branch graph, base allowlist,
-  adjacent range-diff/diffstat/numstat/patch-id, bundle, push manifest,
-  head/bundle/manifest agreement, and deferred freshness audit.
+- Run a fresh non-Docker manifest/publish audit against
+  `finalized/cycle324-i40/*`, newer than the latest deferred queue/status,
+  latest deferred reports, and the Cycle324 finalization. Required outputs are
+  `push-manifest.tsv`, `manifest-age.tsv`, `base-allowlist.tsv`,
+  `head-bundle-manifest-check.tsv`, branch graph, adjacent range-diff/diffstat,
+  bundle agreement, artifact verification, and deferred freshness checks.
 - Repair the rich-text owner-comparison environment before assigning any
   PR18x owner.
 - Harden the loop gate so active sessions, setup-only PR07 output,
   disk-preflight-only reports, zero-byte files, `report.tmp`, stale manifests,
   and header-only TSVs do not score as durable progress.
-- Keep pre-save search/live-collapse diagnostic-only until focused replay
-  identifies the first product owner.
+- Treat seed `1020002` as blocking final-stack fuzz, filing, and stack-wide
+  validation only. It must not block independent branch/audit/deferred work.
 
 The prior `pr-split-20260518T013352Z-feedback-action.md` remains useful as
 context for what was attempted:
@@ -379,12 +404,12 @@ context for what was attempted:
   only, not PR07 owner evidence.
 
 The latest duplicate/noise synthesis,
-`duplicate-noise-20260518T012323Z-synthesis.md`, identified a
-producer/scheduler leak in `bin/rtc-browser-fuzz-novelty-monitor.mjs`:
-explicit no-product `startup-noise` pauses for `pre_action_bootstrap_stall`
-were scoped to the current output root, so output-root rotation could
-re-enable known no-product producers until they were rediscovered. The paired
-feedback action implemented the bounded fix in the remote fuzz repo:
+`duplicate-noise-20260518T022520Z-synthesis.md`, says strict no-product
+`pre_action_bootstrap_stall` is mostly blocked at analysis consumers, but
+producer/scheduler lag can still waste browser time before durable pause or
+representative-cap state is enforced. The prior paired feedback action
+implemented the first bounded cross-root startup-noise fix in the remote fuzz
+repo:
 
 - Reusable no-product `startup-noise` / `pre_action_bootstrap_stall` cooldowns
   now survive output-root rotation.
@@ -396,15 +421,16 @@ feedback action implemented the bounded fix in the remote fuzz repo:
 - `node --check` passed for the changed monitor and related consumer scripts;
   the post-sentinel triage gate, analysis tier once-run, and live-analysis
   monitor once-run all exited `0`.
-- The novelty monitor was restarted. The latest collected root
-  `run-20260518T021912Z` is startup-only and still needs a full pass before
-  declaring the control-plane fix stable.
+- The latest collected root `run-20260518T022926Z` now has a current pass with
+  no active-scope likely-real signatures and one current-drain
+  `reload_rejoin_awareness_stall` product-evidence representative.
 
 Do not turn historical duplicate share into global signature suppression.
-Secondary aggregate-hold, materialization backfill, stale live-analysis
-cleanup, and threshold changes remain follow-up work unless validation still
-shows `pre_action_bootstrap_stall` returning. This does not change the product
-PR split.
+The remaining safe duplicate/noise work is producer/scheduler hardening,
+durable `no-analysis` sentinels with `preserveProductEvidence: true`,
+signal-safe policy persistence, strict runner startup predicate alignment if
+needed, and early representative caps for product-evidence duplicate siblings.
+This does not change the product PR split.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -422,10 +448,10 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| i40 source family | `fresh-prset/iteration-40/*`, finalized local aliases under `finalized/cycle320-i40/*`, and Cycle322 local i40 refresh outputs | still the source family; not enough for filing because the active split now needs ungrouped PR06/PR11/PR12/PR15 audit and exact GitHub refs | Run the non-Docker ungrouped i40 manifest/audit refresh and publish/fetch/audit exact refs |
-| Zero-byte / stale publication artifacts | `20260518T020210Z/finalization.report.md`, local-publish rows, old Cycle293/Cycle306 rows | no evidence; do not use for filing or validation claims | Replace with nonzero report, manifest, bundle, branch graph, range-diff/diffstat/numstat/patch-id, and freshness evidence |
+| i40 source family | `fresh-prset/iteration-40/*`, finalized local aliases under `finalized/cycle324-i40/*`, and Cycle324 local finalization outputs | active source family; `20260518T022216Z/finalization.report.md` has `43/43` ancestry ranges and `git diff --check` passing, but exact GitHub refs are still missing for many rows | Run the non-Docker Cycle324 manifest/publish audit and publish/fetch/audit exact refs |
+| Zero-byte / stale publication artifacts | `20260518T023218Z/finalization.report.md`, local-publish rows, old Cycle293/Cycle306 rows | no evidence; do not use for filing or validation claims | Replace with nonzero report, manifest, bundle, branch graph, range-diff/diffstat/numstat/patch-id, and freshness evidence |
 | Missing verified product refs | PR02A, PR05A-D, PR06A-D, PR06E, PR07A1-A3, PR07B0-B1, held PR07B2, held PR07C, PR11A-E, PR12A-C, PR13B0-B3, PR14B, PR15A-D | active rows correctly say `No verified branch link yet` | Publish/fetch/audit explicit GitHub refs before filing |
-| PR07 runtime / owner gate | PR07A1-A3, PR07B0-B1, held PR07B2, held PR07C; seeds `5200011`, `5200015`, `5200017`, `5200010`, `5200008`, `7110004`, `7110017`, `1100001`, and `1100002` | latest available replay output is setup/header/preflight only; root disk is below the 2048 MB replay threshold; PR07B2 and PR07C remain held | Free root space, prove readiness, then run corrected i40 owner replay with first-divergence artifacts |
+| PR07 runtime / owner gate | PR07A1-A3, PR07B0-B1, held PR07B2, held PR07C; seeds `5200011`, `5200015`, `5200017`, `5200010`, `5200008`, `7110004`, `7110017`, `1100001`, and `1100002` | latest available replay output is setup/header/preflight only; `/` is `712 MB` free against the 2048 MB replay threshold; PR07B2 and PR07C remain held | Free root space, prove readiness, then run corrected i40 owner replay with first-divergence artifacts |
 | PR07D | reload/post-save/rejoin residuals | raw PR07D is rejected | Add only after fresh PR07 replay proves red-at-held-PR07C non-coverage |
 | PR05D semicolonless entity validation | clean PR05C-adjacent branch `27c6e7924217` | real PR05-family work after PR05C; no verified product branch link yet; PR05B/PR05C/PR05D comparison blocked by missing `framer-motion` during unit execution | Publish/fetch/audit clean PR05D and fix the unit dependency before assigning any PR18x owner |
 | PR06 ungrouping and PR06E | active PR06A-D plus PR06E | grouped PR06 has verified aggregate prior art only; active PR06A-D and PR06E have no exact verified links | Prove `PR06D -> PR06E`, `PR07 !-> PR06E`, and adjacent evidence for PR06A-D |
@@ -439,8 +465,8 @@ These must not be described as fixed or filing-ready.
 | Active deferred sessions | reload-hydration, pre-save search/live-collapse, rich-text suffix | active sessions are not progress by themselves | Count only nonempty durable reports/artifacts or a clear downscope/promotion decision |
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families | evidence-only unless a focused owner replay proves otherwise | Keep out of PR rows until branch, owner, and fuzz evidence are refreshed |
 | Duplicate/noise consumer cap | timeout/reload-rejoin current-run families | source-stable terminal family caps remain implemented and validated | Keep product-evidence representatives visible while avoiding duplicate analysis |
-| Duplicate/noise producer leak | cross-output-root startup-noise scheduling | bounded fix implemented in the remote novelty monitor; syntax checks and once-run consumer checks passed; latest root is startup-only so long-window stability is not proven yet | Confirm on the next full pass that no no-product `pre_action_bootstrap_stall` family reappears as productive current-run work and product-evidence failures stay eligible |
-| Current fuzz validation | `run-20260518T021912Z` | startup-only monitor state: `382` observed roots, `76105` previous records loaded, `4` active run dirs, first full coverage pass pending; no final-stack validation | Use only as fuzz/control-plane startup health until a full pass and refreshed stack product evidence exist |
+| Duplicate/noise producer leak | cross-output-root startup-noise scheduling and product-evidence duplicate-family capping | bounded cross-root startup-noise fix implemented; latest pass shows no active-scope bootstrap-stall signatures, while drain-scope product evidence remains visible and family-capped | Continue bounded producer/scheduler hardening and confirm product-evidence representatives stay eligible |
+| Current fuzz validation | `run-20260518T022926Z` | current novelty/control-plane pass: `49176` coverage files, `76497` records, `5` unmet goals, active-scope likely-real `0`, current-drain likely-real `1`; no final-stack validation | Use only as fuzz/control-plane health until refreshed stack product evidence and final-stack validation exist |
 
 ## Filing Gates And Current Recommendation
 
@@ -453,21 +479,23 @@ artifacts as-is.
 
 Before filing any maintainer-facing PR:
 
-1. Use the current i40/finalized source family, but replace grouped PR06,
-   PR11, PR12, and PR15 with the explicit active sub-PR rows in this report.
-2. Run the non-Docker ungrouped i40 split/audit/manifest refresh for PR06,
-   PR11, PR12, and PR15. Require branch graph, base allowlist, adjacent
-   range-diff/diffstat/numstat/patch-id, bundle, push manifest,
-   head/bundle/manifest agreement, and deferred freshness audit.
+1. Use the Cycle324 `finalized/cycle324-i40/*` source family, but replace
+   grouped PR06, PR11, PR12, and PR15 with the explicit active sub-PR rows in
+   this report.
+2. Run the non-Docker Cycle324 manifest/publish audit. Require
+   `push-manifest.tsv`, `manifest-age.tsv`, `base-allowlist.tsv`,
+   `head-bundle-manifest-check.tsv`, branch graph, adjacent
+   range-diff/diffstat/numstat/patch-id, bundle agreement, artifact
+   verification, and deferred freshness checks.
 3. Publish/fetch/audit explicit product refs for every row that currently says
    `No verified branch link yet`.
-4. Treat the completed local i40 manifest work as host-publication planning
-   context only. It is not a GitHub push, and it does not clear the new
-   ungrouped split, PR07 owner, seed-`1020002`, exact branch-link, or
-   final-stack validation gates.
-5. Treat `20260518T020210Z` and any other zero-byte report as no evidence.
-6. Recover root space above 2048 MB and record before/after `df -m /` before
-   any Docker/wp-env/browser PR07 replay.
+4. Treat the completed Cycle324 finalization report as source/finalization
+   context only. It is not a GitHub push, and it does not clear the PR07 owner,
+   seed-`1020002`, exact branch-link, or final-stack validation gates.
+5. Treat `20260518T023218Z/finalization.report.md` and any other zero-byte
+   report as no evidence.
+6. Recover root space above 2048 MB from the latest reported `712 MB` and
+   record before/after `df -m /` before any Docker/wp-env/browser PR07 replay.
 7. Replace setup/header/preflight PR07 output with a corrected i40 owner replay
    that includes `HOLD-07B2`, `HOLD-07C`, proves `collaborationEnabled=true`,
    and captures REST/meta, `_crdt_document`, edited record, Y.Doc, provider,
@@ -491,9 +519,10 @@ Before filing any maintainer-facing PR:
 12. Treat duplicate/noise fixes as control-plane hygiene only. They should keep
     product-evidence signatures visible while avoiding duplicate analysis or
     noisy producer launches; they are not product validation or final-stack
-    fuzzing. The bounded cross-root startup-noise cooldown fix is implemented;
-    keep watching full novelty passes for `pre_action_bootstrap_stall`
-    re-entry and keep product-evidence bypasses intact.
+    fuzzing. The bounded cross-root startup-noise cooldown fix is implemented,
+    and the latest pass shows no active-scope bootstrap-stall signatures, but
+    producer/scheduler hardening and duplicate-family caps remain bounded
+    follow-up work.
 13. Run focused checks, touched-file lint, branch graph/containment evidence,
     adjacent range-diffs/diffstats/numstats, `git diff --check`, and feasible
     runtime checks on refreshed audited refs.
@@ -502,11 +531,9 @@ Before filing any maintainer-facing PR:
     validated final-stack pass or failure, or filing readiness.
 
 The next useful bounded jobs are
-`rtc-cycle324-i40-ungroup-pr06-pr11-pr12-pr15-manifest-refresh`,
-`rtc-cycle324-root-free-space-and-pr07-status` or verification/continuation of
-an existing equivalent root/PR07 unblock job,
-`rtc-cycle323-loop-progress-gate-hardening`, and
-`rtc-cycle324-rich-text-pr05-owner-comparison-dependency-repair`. After root
-cleanup, allow one focused PR07 owner replay, starting with seeds like
-`5200001` and `5200005`. Do not launch broad final-stack fuzz, a duplicate
+`rtc-cycle326-cycle324-i40-finalization-manifest-refresh-after-deferred`,
+`rtc-cycle326-rootspace-and-cycle324-pr07-owner-replay-unblock`,
+`rtc-cycle326-rich-text-pr05-owner-comparison-env-repair`, and loop
+progress-gate hardening. Gate the PR07 replay on root free-space recovery and
+duplicate-session checks. Do not launch broad final-stack fuzz, a duplicate
 seed `1020002` job, raw PR07D, PR17, PR18, or PR18x promotion.
