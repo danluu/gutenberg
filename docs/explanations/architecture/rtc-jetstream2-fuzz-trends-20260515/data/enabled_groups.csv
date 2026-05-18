@@ -831,3 +831,7 @@ timestamp,group,group_family
 2026-05-18T05:46:02Z,novelty-ws-permissions-auth-locks,auth/locks
 2026-05-18T06:06:43Z,novelty-ws-parser-transform,parser
 2026-05-18T06:06:49Z,novelty-http-persistence-probe,persistence
+2026-05-18T06:13:52Z,novelty-ws-three-user-late-join,lifecycle
+2026-05-18T06:13:53Z,novelty-ws-revision-persistence,persistence
+2026-05-18T06:20:39Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-18T06:20:39Z,novelty-ws-media-cross-entity,async/media
