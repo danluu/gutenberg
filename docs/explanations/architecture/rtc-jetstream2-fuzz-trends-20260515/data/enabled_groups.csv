@@ -844,3 +844,4 @@ timestamp,group,group_family
 2026-05-18T07:19:18Z,novelty-ws-real-user-rich-text,real-user
 2026-05-18T07:19:32Z,novelty-ws-real-user-editing,real-user
 2026-05-18T07:29:33Z,novelty-ws-real-user-editing,real-user
+2026-05-18T07:37:46Z,novelty-ws-block-gauntlet,auth/locks
