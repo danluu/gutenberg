@@ -14,6 +14,9 @@ COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 DUP_NOISE_BASE=/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516
+CG_LOWER_LEVEL_B64_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516/holds/coverage-guided-lower-level-rich-text-crdt.hold
+CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP=coverage-guided-lower-level-rich-text-multiblock
+CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION=rtc-coverage-guided-lower-level-rich-text-multiblock
 
 SESSION=rtc-structural-issue-watchdog
 FINDINGS=$BASE/current-structural-findings.tsv
@@ -187,6 +190,46 @@ check_loop_statuses() {
 	fi
 }
 
+check_coverage_supervisor_root_agreement() {
+	local out=$1 coverage_root status status_output age state_output state_session scoped_session suffix
+	[ -n "$coverage_root" ] && [ -d "$coverage_root" ] || return
+	age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt" || printf 999999)
+	if [ "$age" -lt 420 ]; then
+		return
+	fi
+	status="$coverage_root/novelty-status.md"
+	if [ -s "$status" ]; then
+		status_output=$(sed -n 's/^Output dir: //p' "$status" | head -1)
+		if [ -n "$status_output" ] && [ "$status_output" != "$coverage_root" ]; then
+			emit_finding "$out" high "coverage-guided" "novelty-status-output-mismatch" "$status output=$status_output current=$coverage_root" "restart coverage-guided with one current output root and reject stale status"
+		fi
+	fi
+	if [ ! -s "$coverage_root/supervisor-state.json" ]; then
+		emit_finding "$out" high "coverage-guided" "missing-supervisor-state" "$coverage_root/supervisor-state.json" "ensure the coverage supervisor writes current-root state before treating the run as healthy"
+		return
+	fi
+	state_output=$(
+		node -e "const fs = require('fs'); try { const state = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); if (typeof state.outputDir === 'string') process.stdout.write(state.outputDir); } catch {}" \
+			"$coverage_root/supervisor-state.json"
+	)
+	if [ "$state_output" != "$coverage_root" ]; then
+		emit_finding "$out" high "coverage-guided" "supervisor-output-mismatch" "$coverage_root/supervisor-state.json output=${state_output:-missing} current=$coverage_root" "restart or rebind the coverage supervisor; do not treat stale supervisor state as current"
+	fi
+	state_session=$(
+		node -e "const fs = require('fs'); try { const state = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); if (typeof state.supervisorSession === 'string') process.stdout.write(state.supervisorSession); } catch {}" \
+			"$coverage_root/novelty-state.json" 2>/dev/null || true
+	)
+	suffix=$(basename "$coverage_root" | sed -E 's/[^A-Za-z0-9_.-]+/-/g; s/^-+//; s/-+$//')
+	scoped_session="rtc-coverage-guided-supervisor-$suffix"
+	if [ -n "$state_session" ]; then
+		if ! has_session "$state_session"; then
+			emit_finding "$out" high "coverage-guided" "supervisor-session-missing" "$coverage_root/novelty-state.json session=$state_session" "restart or rebind the coverage supervisor session recorded for the current root"
+		fi
+	elif ! has_session rtc-coverage-guided-supervisor && ! has_session "$scoped_session"; then
+		emit_finding "$out" high "coverage-guided" "supervisor-session-missing" "$coverage_root expected=rtc-coverage-guided-supervisor or $scoped_session" "restart the coverage supervisor for the current root"
+	fi
+}
+
 check_current_run_duplicate_noise() {
 	local out=$1 coverage_root status
 	[ -s "$COVERAGE_BASE/current-output-dir.txt" ] || return
@@ -240,14 +283,107 @@ check_current_run_duplicate_noise() {
 		done
 }
 
+coverage_guided_lower_level_satisfied() {
+	if has_session rtc-coverage-guided-lower-level-b64; then
+		return 0
+	fi
+	if [ -f "$CG_LOWER_LEVEL_B64_HOLD_FILE" ] &&
+		grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
+		has_session "$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION"
+		return
+	fi
+	return 1
+}
+
+guard_pool_currently_satisfied() {
+	local pool=$1 coverage_root suffix scoped_session state_session
+	case "$pool" in
+		coverage)
+			has_session rtc-coverage-guided-novelty || return 1
+			has_session rtc-coverage-guided-watchdog || return 1
+			[ -s "$COVERAGE_BASE/current-output-dir.txt" ] || return 1
+			coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
+			[ -n "$coverage_root" ] && [ -s "$coverage_root/supervisor-state.json" ] || return 1
+			suffix=$(basename "$coverage_root" | sed -E 's/[^A-Za-z0-9_.-]+/-/g; s/^-+//; s/-+$//')
+			scoped_session="rtc-coverage-guided-supervisor-$suffix"
+			state_session=$(
+				node -e "const fs = require('fs'); try { const state = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); if (typeof state.supervisorSession === 'string') process.stdout.write(state.supervisorSession); } catch {}" \
+					"$coverage_root/novelty-state.json" 2>/dev/null || true
+			)
+			if [ -n "$state_session" ]; then
+				has_session "$state_session"
+				return
+			fi
+			has_session rtc-coverage-guided-supervisor || has_session "$scoped_session"
+			;;
+		strict)
+			has_session rtc-fuzz-strict-expansion &&
+				has_session rtc-fuzz-strict-expansion-watchdog &&
+				has_session rtc-fuzz-strict-expansion-analysis
+			;;
+		focused)
+			has_session rtc-focused-shards &&
+				has_session rtc-focused-shards-watchdog &&
+				has_session rtc-focused-shards-analysis
+			;;
+		gap-booster)
+			has_session rtc-gap-booster &&
+				has_session rtc-gap-booster-watchdog &&
+				has_session rtc-gap-booster-analysis
+			;;
+		lower-level)
+			has_session rtc-lower-level-fuzz-loop
+			;;
+		cg-lower-level)
+			coverage_guided_lower_level_satisfied
+			;;
+		duplicate-noise)
+			has_session rtc-duplicate-noise-persona-loop
+			;;
+		level-mix)
+			has_session rtc-fuzz-level-mix-persona-loop &&
+				has_session rtc-fuzz-level-mix-persona-loop-watchdog
+			;;
+		native-protocol)
+			has_session rtc-native-harness-persona-loop &&
+				has_session rtc-protocol-server-persona-loop
+			;;
+		asserts)
+			has_session rtc-fuzz-only-asserts-loop
+			;;
+		deferred)
+			has_session rtc-deferred-work-promotion-loop
+			;;
+		finalization)
+			has_session rtc-pr-finalization-loop
+			;;
+		critical-pr)
+			has_session rtc-critical-path-pr-executor-loop
+			;;
+		resource)
+			has_session rtc-resource-autoscaler
+			;;
+		structural)
+			has_session rtc-structural-issue-watchdog
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
 detect_findings() {
-	local tmp=$FINDINGS.$$.tmp
+	local tmp=$FINDINGS.$$.tmp coverage_root
 	{
 		printf 'timestamp\tseverity\tcomponent\tkey\tevidence\tnext_action\n'
 	} > "$tmp"
 	check_exact_sessions "$tmp"
 	check_critical_path_invariants "$tmp"
 	check_loop_statuses "$tmp"
+	if [ -s "$COVERAGE_BASE/current-output-dir.txt" ]; then
+		coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
+		check_coverage_supervisor_root_agreement "$tmp" "$coverage_root"
+	fi
 	check_current_run_duplicate_noise "$tmp"
 	if recent_log_matches "$GUARD_BASE/logs/guard.log" 1800 'restart requested pool=.*reason='; then
 		awk -F '\t' -v cutoff=$(( $(date -u +%s) - 1800 )) '
@@ -262,6 +398,9 @@ detect_findings() {
 		' "$GUARD_BASE/logs/restart-events.tsv" 2>/dev/null |
 			while IFS=$'\t' read -r pool count; do
 				[ -n "$pool" ] || continue
+				if guard_pool_currently_satisfied "$pool"; then
+					continue
+				fi
 				emit_finding "$tmp" high "guard" "repeated-restarts-$pool" "$GUARD_BASE/logs/restart-events.tsv count=$count" "debug why $pool repeatedly restarts instead of only restarting it"
 			done
 	fi

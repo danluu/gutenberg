@@ -7,6 +7,10 @@ REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 COVERAGE_START_LOCK=$COVERAGE_BASE/start.lock
+CG_LOWER_LEVEL_B64_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516/holds/coverage-guided-lower-level-rich-text-crdt.hold
+CG_LOWER_LEVEL_B64_GROUP=coverage-guided-lower-level-rich-text-crdt
+CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP=coverage-guided-lower-level-rich-text-multiblock
+CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION=rtc-coverage-guided-lower-level-rich-text-multiblock
 LEVEL_MIX_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20260516
 NATIVE_ASSERT_BASE=/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516
 STRUCTURAL_BASE=/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518
@@ -30,6 +34,91 @@ log() {
 
 has_session() {
 	tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$1"
+}
+
+coverage_supervisor_state_matches_current_root() {
+	local root=$1
+	[ -n "$root" ] && [ -f "$root/supervisor-state.json" ] || return 1
+	node - "$root" <<'NODE'
+const fs = require( 'fs' );
+const path = require( 'path' );
+const root = process.argv[ 2 ];
+try {
+	const state = JSON.parse(
+		fs.readFileSync( path.join( root, 'supervisor-state.json' ), 'utf8' )
+	);
+	if (
+		typeof state.outputDir === 'string' &&
+		path.resolve( state.outputDir ) === path.resolve( root )
+	) {
+		process.exit( 0 );
+	}
+} catch {}
+process.exit( 1 );
+NODE
+}
+
+coverage_supervisor_session_exists() {
+	local root suffix scoped state_session
+
+	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
+	[ -n "$root" ] || return 1
+	coverage_supervisor_state_matches_current_root "$root" || return 1
+
+	if [ -n "$root" ]; then
+		suffix=$(
+			basename "$root" |
+				sed -E 's/[^A-Za-z0-9_.-]+/-/g; s/^-+//; s/-+$//'
+		)
+		if [ -n "$suffix" ]; then
+			scoped="rtc-coverage-guided-supervisor-$suffix"
+			if has_session "$scoped"; then
+				return 0
+			fi
+		fi
+		if [ -f "$root/novelty-state.json" ]; then
+			state_session=$(
+				node -e "const fs = require('fs'); try { const state = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); if (typeof state.supervisorSession === 'string') process.stdout.write(state.supervisorSession); } catch {}" \
+					"$root/novelty-state.json"
+			)
+			if [ -n "$state_session" ] && has_session "$state_session"; then
+				return 0
+			fi
+		fi
+	fi
+	if has_session rtc-coverage-guided-supervisor; then
+		return 0
+	fi
+
+	return 1
+}
+
+coverage_guided_lower_level_b64_satisfied() {
+	if has_session rtc-coverage-guided-lower-level-b64; then
+		return 0
+	fi
+	if [ -f "$CG_LOWER_LEVEL_B64_HOLD_FILE" ] &&
+		grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
+		has_session "$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION"
+		return
+	fi
+	return 1
+}
+
+start_coverage_guided_lower_level_b64_or_replacement() {
+	local session=rtc-coverage-guided-lower-level-b64
+	local group=$CG_LOWER_LEVEL_B64_GROUP
+
+	if [ -f "$CG_LOWER_LEVEL_B64_HOLD_FILE" ] &&
+		grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
+		session=$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION
+		group=$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP
+	fi
+
+	RTC_CG_LOWER_LEVEL_SESSION="$session" \
+		RTC_CG_LOWER_LEVEL_GROUP="$group" \
+		bash "$REPO/bin/rtc-coverage-guided-lower-level-start-remote.sh" start >> "$LOG_DIR/cg-lower-level-start.log" 2>&1 ||
+		log "coverage-guided lower-level start failed session=$session group=$group"
 }
 
 resource_pressure_blocks_optional_browser() {
@@ -72,7 +161,7 @@ coverage_supervisor_in_startup_grace() {
 
 	has_session rtc-coverage-guided-novelty || return 1
 	has_session rtc-coverage-guided-watchdog || return 1
-	has_session rtc-coverage-guided-supervisor && return 1
+	coverage_supervisor_session_exists && return 1
 	age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt") || return 1
 	if [ "$age" -ge 0 ] && [ "$age" -lt "$grace" ]; then
 		log "coverage supervisor missing within startup grace age=${age}s grace=${grace}s"
@@ -166,6 +255,29 @@ record_restart() {
 	printf '%s\t%s\t%s\n' "$(date -u +%s)" "$pool" "$reason" >> "$EVENTS"
 }
 
+restart_cooldown_active() {
+	local pool=$1
+	local reason=$2
+	local cooldown=${RTC_GUARD_RESTART_COOLDOWN_SECONDS:-900}
+	local now last age
+
+	[ "$cooldown" -gt 0 ] || return 1
+	now=$(date -u +%s)
+	last=$(
+		awk -F '\t' -v pool="$pool" '
+			$2 == pool && $1 > last { last = $1 }
+			END { if (last) print last }
+		' "$EVENTS" 2>/dev/null || true
+	)
+	[ -n "$last" ] || return 1
+	age=$(( now - last ))
+	if [ "$age" -ge 0 ] && [ "$age" -lt "$cooldown" ]; then
+		log "restart suppressed by cooldown pool=$pool reason=$reason age=${age}s cooldown=${cooldown}s"
+		return 0
+	fi
+	return 1
+}
+
 clear_stale_lock_holder() {
 	local pid comm ppid args
 
@@ -181,16 +293,9 @@ clear_stale_lock_holder() {
 		args=$(ps -o args= -p "$pid" 2>/dev/null || true)
 		case "$args" in
 			*"start_rtc_jetstream_guard.sh run"*|*"rtc-jetstream-guard-remote.sh run"*)
-				log "killing stale guard run lock holder pid=$pid"
-				for child in $(pgrep -P "$pid" 2>/dev/null || true); do
-					kill "$child" 2>/dev/null || true
-				done
-				kill "$pid" 2>/dev/null || true
-				sleep 1
-				if kill -0 "$pid" 2>/dev/null; then
-					kill -KILL "$pid" 2>/dev/null || true
-				fi
-				continue
+				log "recovering guard pid file for live run lock holder pid=$pid"
+				printf '%s\n' "$pid" > "$PID_FILE"
+				return
 				;;
 		esac
 		if [ "$comm" = sleep ] && [ "$ppid" = 1 ]; then
@@ -259,6 +364,9 @@ PROMPT
 restart_pool() {
 	local pool=$1
 	local reason=$2
+	if restart_cooldown_active "$pool" "$reason"; then
+		return
+	fi
 	log "restart requested pool=$pool reason=$reason"
 	record_restart "$pool" "$reason"
 	maybe_launch_codex "$pool" "$reason"
@@ -283,8 +391,10 @@ restart_pool() {
 			if ! has_session rtc-lower-level-fuzz-loop; then
 				bash "$REPO/bin/rtc-lower-level-fuzz-loop-remote.sh" start >> "$LOG_DIR/lower-level-start.log" 2>&1 || log "unit/property lower-level start failed"
 			fi
-			if ! has_session rtc-coverage-guided-lower-level-b64; then
-				RTC_CG_LOWER_LEVEL_SESSION=rtc-coverage-guided-lower-level-b64 bash "$REPO/bin/rtc-coverage-guided-lower-level-start-remote.sh" start >> "$LOG_DIR/cg-lower-level-start.log" 2>&1 || log "coverage-guided lower-level start failed"
+			;;
+		cg-lower-level)
+			if ! coverage_guided_lower_level_b64_satisfied; then
+				start_coverage_guided_lower_level_b64_or_replacement
 			fi
 			;;
 		duplicate-noise)
@@ -378,7 +488,7 @@ run_loop() {
 					log "coverage watchdog missing; restarting watchdog sidecar"
 					/tmp/start_rtc_coverage_guided_watchdog_remote.sh >> "$LOG_DIR/coverage-watchdog-start.log" 2>&1 || log "coverage watchdog start failed"
 				fi
-			elif ! has_session rtc-coverage-guided-supervisor; then
+			elif ! coverage_supervisor_session_exists; then
 				if coverage_start_in_progress || coverage_supervisor_in_startup_grace; then
 					:
 			else
@@ -411,9 +521,12 @@ run_loop() {
 			maybe_restart_optional_browser_pool gap-booster "missing gap-booster tmux session"
 		fi
 
-		if ! has_session rtc-lower-level-fuzz-loop ||
-			! has_session rtc-coverage-guided-lower-level-b64; then
-			restart_pool lower-level "missing lower-level fuzz tmux session"
+		if ! has_session rtc-lower-level-fuzz-loop; then
+			restart_pool lower-level "missing unit/property lower-level fuzz tmux session"
+		fi
+
+		if ! coverage_guided_lower_level_b64_satisfied; then
+			restart_pool cg-lower-level "missing coverage-guided lower-level b64/replacement tmux session"
 		fi
 
 		if ! has_session rtc-duplicate-noise-persona-loop; then

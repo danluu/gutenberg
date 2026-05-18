@@ -24,9 +24,18 @@ else
 	printf '[%s] keep tmux session=rtc-coverage-guided-watchdog\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$log"
 fi
 kill_tmux_session rtc-coverage-guided-novelty
+kill_tmux_session rtc-coverage-guided-analysis
+for sess in $(/usr/bin/tmux -L rtc-fuzz list-sessions -F '#S' 2>/dev/null |
+	grep -E '^(rtc-cov-analysis|rtc-cov-deep)(-|$)' || true); do
+	kill_tmux_session "$sess"
+done
 
 sleep 5
 kill_tmux_session rtc-coverage-guided-supervisor
+for sess in $(/usr/bin/tmux -L rtc-fuzz list-sessions -F '#S' 2>/dev/null |
+	grep -E '^rtc-coverage-guided-supervisor-' || true); do
+	kill_tmux_session "$sess"
+done
 
 patterns='bin/rtc-browser-fuzz-runner.mjs|collaboration-fuzz.spec.ts|wp-scripts test-playwright|@playwright/test/cli.js|packages/scripts/scripts/test-playwright.js'
 pids=$(pgrep -f "$patterns" || true)

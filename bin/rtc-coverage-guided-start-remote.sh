@@ -33,6 +33,27 @@ else
 fi
 printf '%s\n' "$OUT" > "$BASE/current-output-dir.txt"
 {
+	printf '# RTC Novelty Monitor\n\n'
+	printf 'Updated: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+	printf 'Output dir: %s\n' "$OUT"
+	printf 'Supervisor session: rtc-coverage-guided-supervisor\n'
+	printf 'Groups path: %s\n\n' "$OUT/supervisor-groups.json"
+	printf '## Startup\n'
+	printf -- '- status: launcher started; monitor process pending\n\n'
+	printf '## Coverage Guidance\n'
+	printf -- '- unmet goals: pending until first pass\n'
+	printf -- '- harness-work candidates: pending until first pass\n'
+	printf -- '- quality issues: pending until first pass\n\n'
+	printf '## Triage Yield\n'
+	printf -- '- signatures: pending until first pass\n'
+	printf -- '- likely-real visible: pending until first pass\n'
+	printf -- '- likely-real merged duplicates: pending until first pass\n'
+	printf -- '- likely-real oracle/noise questions: pending until first pass\n'
+	printf -- '- top duplicate family share: pending until first pass\n\n'
+	printf '## Health\n'
+	printf -- '- warning: launcher startup status only; novelty monitor has not started yet\n'
+} > "$OUT/novelty-status.md"
+{
 	for ROOT in "$STRICT" "$ISO_HTTP" "$ISO_WS" "$FOCUSED" "$GAP_BOOSTER" "$PREVIOUS_COVERAGE"; do
 		if [ -n "$ROOT" ]; then
 			printf '%s\n' "$ROOT"
@@ -83,8 +104,8 @@ export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='$NOVELTY_TARGET_ENABLED_GROUPS'
 export RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER='$NOVELTY_LOAD_HEADROOM_MULTIPLIER'
 export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='$NOVELTY_MAX_ENABLED_GROUPS'
 export RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS='$NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS'
-export RTC_FUZZ_NOVELTY_PAUSE_ON_STARTUP_FAILURE='0'
-export RTC_FUZZ_NOVELTY_PAUSE_ON_TRIAGE_NOISE='0'
+export RTC_FUZZ_NOVELTY_PAUSE_ON_STARTUP_FAILURE='1'
+export RTC_FUZZ_NOVELTY_PAUSE_ON_TRIAGE_NOISE='1'
 export RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION='1'
 export RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD='3'
 export RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_BATCH_SIZE='12'
@@ -102,6 +123,28 @@ printf '[%s] MONITOR_EXIT code=%s\n' "\$stamp" "\$code" >> '$OUT/novelty-monitor
 exit "\$code"
 RUN
 chmod +x "$RUN_SCRIPT"
+LIVE_ANALYSIS_SCRIPT="$OUT/run-live-analysis.sh"
+cat > "$LIVE_ANALYSIS_SCRIPT" <<RUN
+#!/usr/bin/env bash
+set -u
+cd '$REPO'
+export PATH='$CODEX_BIN_DIR':'$TMUX_WRAP':'$NODE_BIN':\$PATH
+export CI=1
+export RTC_FUZZ_LIVE_ANALYSIS_CURRENT_OUTPUT_POINTER='$BASE/current-output-dir.txt'
+export RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX='rtc-cov-analysis'
+export RTC_FUZZ_LIVE_DEEP_ANALYSIS_TMUX_PREFIX='rtc-cov-deep'
+export RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL='2'
+export RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS='4'
+node bin/rtc-browser-fuzz-live-analysis-monitor.mjs '$OUT' >> '$BASE/logs/live-analysis-monitor.log' 2>&1
+code=\$?
+stamp=\$(date -u +%Y-%m-%dT%H:%M:%SZ)
+printf '[%s] LIVE_ANALYSIS_EXIT code=%s output=%s\n' "\$stamp" "\$code" '$OUT' >> '$BASE/logs/live-analysis-monitor.log'
+printf '[%s] LIVE_ANALYSIS_EXIT code=%s\n' "\$stamp" "\$code" >> '$OUT/live-analysis-monitor.log'
+exit "\$code"
+RUN
+chmod +x "$LIVE_ANALYSIS_SCRIPT"
 tmux new-session -d -s rtc-coverage-guided-novelty "$RUN_SCRIPT"
+tmux kill-session -t rtc-coverage-guided-analysis 2>/dev/null || true
+tmux new-session -d -s rtc-coverage-guided-analysis "$LIVE_ANALYSIS_SCRIPT"
 echo "OUT=$OUT"
 tmux ls | grep -E 'rtc-coverage-guided|rtc-fuzz-strict|rtc-fuzz-iso' || true
