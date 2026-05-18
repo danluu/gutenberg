@@ -812,3 +812,5 @@ timestamp,group,group_family
 2026-05-18T03:35:55Z,novelty-ws-real-user-editing,real-user
 2026-05-18T03:47:34Z,novelty-ws-three-user-late-join,lifecycle
 2026-05-18T03:54:49Z,novelty-ws-real-user-save-reload,real-user
+2026-05-18T04:02:13Z,novelty-ws-revision-persistence,persistence
+2026-05-18T04:02:24Z,novelty-ws-revision-recovery,persistence
