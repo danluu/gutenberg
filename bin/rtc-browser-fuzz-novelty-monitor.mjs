@@ -1088,6 +1088,11 @@ state.pausedGroups ??= {};
 state.healthWarnings ??= [];
 state.autoCoverageGoals ??= [];
 state.autoCoverageGoalWaves ??= [];
+const loadedStateOutputDir = state.outputDir;
+const loadedStateHadFullStatus = Boolean( state.lastUpdatedAt );
+const loadedStateOutputDirMatchesCurrentOutput =
+	typeof loadedStateOutputDir === 'string' &&
+	path.resolve( loadedStateOutputDir ) === path.resolve( OUTPUT_DIR );
 if ( state.outputDir !== OUTPUT_DIR ) {
 	const previousOutputDir = state.outputDir ?? 'unknown';
 	const previousPausedGroupCount = Object.keys(
@@ -8168,7 +8173,8 @@ function evaluateHealth( groups, coverageFiles, triageYield, supervisorState ) {
 	return warnings;
 }
 
-let fullStatusWritten = Boolean( state.lastUpdatedAt );
+let fullStatusWritten =
+	loadedStateHadFullStatus && loadedStateOutputDirMatchesCurrentOutput;
 
 async function writeStatus(
 	novelty,
