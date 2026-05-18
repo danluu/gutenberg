@@ -46,10 +46,47 @@ function areUint8ArraysEqual( a, b ) {
 	return a.every( ( value, index ) => value === b[ index ] );
 }
 
+function hashUint8Array( bytes ) {
+	let hash = 5381;
+	for ( const value of bytes ) {
+		hash = ( hash * 33 + value ) % 0x100000000;
+	}
+	return hash.toString( 16 ).padStart( 8, '0' );
+}
+
+function bytesToBase64( bytes ) {
+	let binary = '';
+	const chunkSize = 0x8000;
+	for ( let offset = 0; offset < bytes.length; offset += chunkSize ) {
+		binary += String.fromCharCode(
+			...bytes.subarray( offset, offset + chunkSize )
+		);
+	}
+	return window.btoa( binary );
+}
+
+function getDocumentDebugState( ydoc, updateCount ) {
+	const stateVector = window.wp.sync.Y.encodeStateVector( ydoc );
+	return {
+		clientId: ydoc.clientID,
+		stateVector: bytesToBase64( stateVector ),
+		stateVectorHash: hashUint8Array( stateVector ),
+		stateVectorLength: stateVector.length,
+		updateCount,
+	};
+}
+
+function updateDocumentDebugState( room, ydoc, updateCount ) {
+	updateDebugState( room, {
+		document: getDocumentDebugState( ydoc, updateCount ),
+	} );
+}
+
 function createWebSocketProvider() {
 	return async ( { awareness, objectType, objectId, ydoc } ) => {
 		const room = objectId ? `${ objectType }:${ objectId }` : objectType;
 		const initialStateVector = window.wp.sync.Y.encodeStateVector( ydoc );
+		let documentUpdateCount = 0;
 		let resolveInitialSync;
 		const initialSync = new Promise( ( resolve ) => {
 			resolveInitialSync = resolve;
@@ -67,6 +104,7 @@ function createWebSocketProvider() {
 			// the WebSocket. Tests need to exercise the wire transport.
 			disableBc: true,
 		} );
+		updateDocumentDebugState( room, ydoc, documentUpdateCount );
 
 		const statusListeners = new Set();
 
@@ -108,9 +146,16 @@ function createWebSocketProvider() {
 
 				resolveInitialSync();
 			}
+			updateDocumentDebugState( room, ydoc, documentUpdateCount );
 			updateDebugState( room, { synced: !! isSynced } );
 		};
 		provider.on( 'sync', onSync );
+
+		const onDocumentUpdate = () => {
+			documentUpdateCount += 1;
+			updateDocumentDebugState( room, ydoc, documentUpdateCount );
+		};
+		ydoc.on( 'update', onDocumentUpdate );
 
 		const onAwarenessChange = () => {
 			updateDebugState( room, {
@@ -127,6 +172,7 @@ function createWebSocketProvider() {
 		return {
 			destroy: () => {
 				awarenessInstance.off( 'change', onAwarenessChange );
+				ydoc.off( 'update', onDocumentUpdate );
 				provider.off( 'status', onStatus );
 				provider.off( 'sync', onSync );
 				provider.destroy();

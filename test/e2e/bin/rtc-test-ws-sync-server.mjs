@@ -10,13 +10,17 @@
  */
 
 import http from 'node:http';
+import { createRequire } from 'node:module';
 import process from 'node:process';
 import {
 	docs,
 	setPersistence,
 	setupWSConnection,
 } from '@y/websocket-server/utils';
-import { WebSocketServer } from 'ws';
+
+const require = createRequire( import.meta.url );
+const ws = require( 'ws' );
+const TestWebSocketServer = ws.WebSocketServer || ws.Server;
 
 /**
  * @typedef {import('node:http').ServerResponse} ServerResponse
@@ -51,11 +55,42 @@ setPersistence( {
 	provider: null,
 } );
 
-const wss = new WebSocketServer( { noServer: true } );
+const wss = new TestWebSocketServer( { noServer: true } );
 
-wss.on( 'connection', ( ws, request ) => {
-	setupWSConnection( ws, request );
+wss.on( 'connection', ( connection, request ) => {
+	setupWSConnection( connection, request );
 } );
+
+function getSnapshot() {
+	const roomEntries = Array.from( docs.entries() )
+		.slice( 0, 50 )
+		.map( ( [ roomName, doc ] ) => {
+			const connectionControlledClientCounts = Array.from(
+				doc.conns?.values?.() ?? []
+			)
+				.slice( 0, 20 )
+				.map( ( clientIds ) => clientIds.size );
+			return [
+				roomName,
+				{
+					awarenessClientCount:
+						doc.awareness?.getStates?.().size ?? null,
+					connectionControlledClientCounts,
+					connectionCount: doc.conns?.size ?? null,
+				},
+			];
+		} );
+
+	return {
+		name: 'gutenberg-rtc-test-ws-sync-server',
+		ok: true,
+		port: PORT,
+		docs: docs.size,
+		liveSocketCount: wss.clients.size,
+		rooms: Object.fromEntries( roomEntries ),
+		truncatedRooms: docs.size > roomEntries.length,
+	};
+}
 
 /**
  * @param {ServerResponse} response HTTP response.
@@ -83,6 +118,12 @@ const server = http.createServer( ( request, response ) => {
 		return;
 	}
 
+	if ( request.url === '/snapshot' ) {
+		response.writeHead( 200, { 'content-type': 'application/json' } );
+		response.end( JSON.stringify( getSnapshot() ) );
+		return;
+	}
+
 	if ( request.method === 'POST' && request.url === '/reset' ) {
 		reset( response );
 		return;
@@ -93,8 +134,8 @@ const server = http.createServer( ( request, response ) => {
 } );
 
 server.on( 'upgrade', ( request, socket, head ) => {
-	wss.handleUpgrade( request, socket, head, ( ws ) => {
-		wss.emit( 'connection', ws, request );
+	wss.handleUpgrade( request, socket, head, ( connection ) => {
+		wss.emit( 'connection', connection, request );
 	} );
 } );
 
