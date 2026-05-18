@@ -854,3 +854,4 @@ timestamp,group,group_family
 2026-05-18T09:05:23Z,novelty-ws-revision-persistence,persistence
 2026-05-18T09:05:23Z,novelty-ws-revision-recovery,persistence
 2026-05-18T09:13:43Z,novelty-ws-parser-serialization,parser
+2026-05-18T09:22:19Z,novelty-ws-multi-reload-lifecycle,lifecycle
