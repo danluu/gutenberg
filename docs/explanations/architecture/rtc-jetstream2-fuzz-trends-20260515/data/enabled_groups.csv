@@ -817,3 +817,5 @@ timestamp,group,group_family
 2026-05-18T04:09:50Z,novelty-ws-same-user-lifecycle,lifecycle
 2026-05-18T04:09:56Z,novelty-ws-same-user-stale-tabs,lifecycle
 2026-05-18T04:26:53Z,novelty-ws-parser-transform,parser
+2026-05-18T04:39:03Z,novelty-ws-three-user-late-join,lifecycle
+2026-05-18T04:46:08Z,novelty-ws-revision-persistence,persistence
