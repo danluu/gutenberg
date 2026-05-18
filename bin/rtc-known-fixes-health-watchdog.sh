@@ -33,6 +33,7 @@ HIGH_CPU_IDLE_FLOOR_PERCENT="${RTC_KNOWN_FIXES_HEALTH_HIGH_CPU_IDLE_FLOOR_PERCEN
 LOW_MEMORY_FREE_PERCENT="${RTC_KNOWN_FIXES_HEALTH_LOW_MEMORY_FREE_PERCENT:-8}"
 IDLE_MEMORY_FREE_PERCENT="${RTC_KNOWN_FIXES_HEALTH_IDLE_MEMORY_FREE_PERCENT:-30}"
 HIGH_COMPRESSOR_MB="${RTC_KNOWN_FIXES_HEALTH_HIGH_COMPRESSOR_MB:-18000}"
+DOCKER_REPAIR_COOLDOWN_SECONDS="${RTC_KNOWN_FIXES_DOCKER_REPAIR_COOLDOWN_SECONDS:-600}"
 VIDEO_CLEANUP_INTERVAL_SECONDS="${RTC_KNOWN_FIXES_VIDEO_CLEANUP_INTERVAL_SECONDS:-21600}"
 VIDEO_CLEANUP_ROOT="${RTC_KNOWN_FIXES_VIDEO_CLEANUP_ROOT:-$RUN_ROOT}"
 ACTIVE_RUNS_PATH="$RUN_ROOT/active-health-runs.json"
@@ -43,6 +44,7 @@ LOG="$WATCHDOG_DIR/health-watchdog.log"
 STATUS="$WATCHDOG_DIR/health-watchdog-status.json"
 CURRENT_LANE_PATH="$RUN_ROOT/current-health-lane.txt"
 VIDEO_CLEANUP_LAST_PATH="$WATCHDOG_DIR/video-cleanup-last.txt"
+DOCKER_REPAIR_LAST_PATH="$WATCHDOG_DIR/docker-repair-last.txt"
 LAST_RESOURCE_JSON="null"
 LAST_MANAGED_JSON="[]"
 LAST_DESIRED_EXTRAS="null"
@@ -432,6 +434,46 @@ resource_mode() {
 	node -e 'const r = JSON.parse(process.argv[1]); process.stdout.write(r.mode || "normal");' "$1"
 }
 
+docker_available() {
+	docker version --format '{{.Server.Version}}' >/dev/null 2>&1
+}
+
+maybe_repair_docker() {
+	local now last elapsed attempt
+
+	if docker_available; then
+		return 0
+	fi
+
+	now="$( date +%s )"
+	last="$( cat "$DOCKER_REPAIR_LAST_PATH" 2>/dev/null || echo 0 )"
+	elapsed=$(( now - last ))
+	if [ "$elapsed" -lt "$DOCKER_REPAIR_COOLDOWN_SECONDS" ]; then
+		log "docker-unavailable-repair-on-cooldown elapsed=$elapsed cooldown=$DOCKER_REPAIR_COOLDOWN_SECONDS"
+		return 1
+	fi
+
+	printf '%s\n' "$now" > "$DOCKER_REPAIR_LAST_PATH"
+	log "docker-unavailable-attempting-orbstack-restart"
+	if command -v orbctl >/dev/null 2>&1; then
+		orbctl stop >> "$LOG" 2>&1 || true
+		orbctl start >> "$LOG" 2>&1 || true
+	elif command -v orb >/dev/null 2>&1; then
+		orb restart docker >> "$LOG" 2>&1 || true
+	fi
+
+	for attempt in $( seq 1 30 ); do
+		if docker_available; then
+			log "docker-repair-succeeded attempt=$attempt"
+			return 0
+		fi
+		sleep 2
+	done
+
+	log "docker-repair-failed"
+	return 1
+}
+
 desired_extras_for_resource() {
 	local resource_json="$1"
 	local mode desired
@@ -665,6 +707,12 @@ ensure_elastic_capacity() {
 
 check_once() {
 	local run_set lane_filter primary_lane state_path age stop_reason summary active stopped missing max_active_age
+	if ! maybe_repair_docker; then
+		update_active_runs_manifest
+		write_status "error" "docker-daemon-unavailable" "$( cat "$RUN_ROOT/current-health-run.txt" 2>/dev/null || true )" ""
+		return
+	fi
+
 	run_set="$( cat "$RUN_ROOT/current-health-run.txt" 2>/dev/null || true )"
 	lane_filter="$( current_lane_filter )"
 	primary_lane="$( primary_lane_from_filter "$lane_filter" )"

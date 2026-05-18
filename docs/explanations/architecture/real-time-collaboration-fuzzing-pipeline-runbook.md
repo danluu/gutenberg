@@ -339,6 +339,8 @@ Important controls:
     extra work.
 -   `RTC_KNOWN_FIXES_HEALTH_LOW_MEMORY_FREE_PERCENT=8`: threshold for reducing
     only elastic extras.
+-   `RTC_KNOWN_FIXES_DOCKER_REPAIR_COOLDOWN_SECONDS=600`: minimum delay between
+    automatic OrbStack stop/start repairs when the Docker daemon socket is down.
 -   `RTC_KNOWN_FIXES_VIDEO_CLEANUP_INTERVAL_SECONDS=21600`: generated video
     cleanup interval.
 
@@ -348,6 +350,10 @@ Recovery behavior:
     project prefix matches this run
 -   stale Docker endpoint failures are repaired by disconnecting orphan endpoint
     names before removing the isolated network
+-   if the Docker daemon socket is down, the watchdog records
+    `docker-daemon-unavailable`, performs a non-forced `orbctl stop` /
+    `orbctl start` repair subject to the cooldown above, then waits for
+    `docker version` to report a server before launching more work
 -   repeated lane infra buckets are stopped by lane guards instead of burning the
     entire run
 -   generated Playwright videos under the run root are pruned periodically
