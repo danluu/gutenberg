@@ -1779,7 +1779,10 @@ lanes, but they must share state. In particular:
     branch-repair manifests to publish. The exception is the explicit
     `recompute-held-children=PR15-after-PR14B` decision: after PR14B is
     published, the controller deterministically exposes only the next
-    unpublished `*-on-pr14b` PR15 child in stack order.
+    unpublished `*-on-pr14b` PR15 child in stack order. That chain selector
+    checks the current `danluu/rtc-pr-progress-*` destination for the exact
+    source branch, so old cycle branch publications cannot satisfy the parent
+    gate.
 -   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that

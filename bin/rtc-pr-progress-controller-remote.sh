@@ -246,23 +246,36 @@ decision_explicitly_allows() {
 	' "$DECISIONS"
 }
 
+progress_branch_published() {
+	local branch=$1 head=${2:-} dest manifest=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
+	[ -s "$manifest" ] || return 1
+	dest="refs/heads/$(safe_destination_for_branch "$branch")"
+	awk -F '\t' -v branch="$branch" -v head="$head" -v dest="$dest" '
+		NR == 1 { next }
+		$4 == dest && $6 == branch && (head == "" || $5 == head || index($5, head) == 1 || index(head, $5) == 1) {
+			found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$manifest"
+}
+
 pr15_next_child_allowed_by_controller() {
 	local branch=$1
 	decision_explicitly_allows recompute-held-children PR15-after-PR14B || return 1
-	branch_published ready/rtc-pr14b-table-query-array-local-suffix-append || return 1
+	progress_branch_published ready/rtc-pr14b-table-query-array-local-suffix-append || return 1
 	case "$branch" in
 		ready/rtc-pr15a-fallback-group-move-green-on-pr14b)
-			branch_published "$branch" && return 1
+			progress_branch_published "$branch" && return 1
 			return 0
 			;;
 		ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b)
-			branch_published ready/rtc-pr15a-fallback-group-move-green-on-pr14b || return 1
-			branch_published "$branch" && return 1
+			progress_branch_published ready/rtc-pr15a-fallback-group-move-green-on-pr14b || return 1
+			progress_branch_published "$branch" && return 1
 			return 0
 			;;
 		ready/rtc-pr15c-fallback-group-delete-green-on-pr14b)
-			branch_published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b || return 1
-			branch_published "$branch" && return 1
+			progress_branch_published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b || return 1
+			progress_branch_published "$branch" && return 1
 			return 0
 			;;
 	esac
