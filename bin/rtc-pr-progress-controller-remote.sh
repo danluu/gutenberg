@@ -148,6 +148,21 @@ branch_published() {
 	' "$manifest"
 }
 
+branch_repair_manifest_exists() {
+	local branch=$1 head=${2:-}
+	local manifest
+	while IFS= read -r manifest; do
+		awk -F '\t' -v branch="$branch" -v head="$head" '
+			NR == 1 { next }
+			$1 == branch && (head == "" || $2 == head || index($2, head) == 1 || index(head, $2) == 1) {
+				found = 1
+			}
+			END { exit found ? 0 : 1 }
+		' "$manifest" && return 0
+	done < <(find "$BASE/jobs" -path '*/branch-repair-*/push-manifest.tsv' -type f -size +0c -print 2>/dev/null)
+	return 1
+}
+
 latest_pr07c_controller_classification() {
 	latest_file "$BASE/jobs" '*/pr07c-owner-matrix-*/classification.tsv'
 }
@@ -205,6 +220,37 @@ decision_allows() {
 			exit 0
 		}
 	' "$DECISIONS"
+}
+
+decision_blocks() {
+	local action=$1 target=${2:-}
+	[ -s "$DECISIONS" ] || return 1
+	awk -F '\t' -v action="$action" -v target="$target" '
+		NR == 1 { next }
+		$1 == action && ( target == "" || $2 == target || $2 == "*" ) && tolower($4) ~ /^(no|false|block|blocked|0)$/ {
+			blocked = 1
+		}
+		END { exit blocked ? 0 : 1 }
+	' "$DECISIONS"
+}
+
+publish_blocked_by_controller() {
+	local branch=$1
+	decision_blocks publish-ready "$branch" && return 0
+	case "$branch" in
+		ready/rtc-pr15*)
+			decision_blocks publish-ready ready/rtc-pr15-fallback-group-chain && return 0
+			decision_blocks publish-ready ready/rtc-pr15-fallback-group-variants && return 0
+			;;
+	esac
+	return 1
+}
+
+branch_repair_blocked_by_controller() {
+	local branch=$1
+	decision_blocks launch-branch-repair "$branch" && return 0
+	decision_blocks repair-branch "$branch" && return 0
+	return 1
 }
 
 read_cycle_count() {
@@ -306,12 +352,20 @@ write_progress_table() {
 					product-candidate:1:*)
 						if branch_published "$branch" "$head"; then
 							printf '%s\t%s\tready-product-pr\thigh\tpublished\t%s\t%s\talready published by local machine; keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
+						elif publish_blocked_by_controller "$branch"; then
+							printf '%s\t%s\tready-product-pr\thigh\theld-by-controller\t%s\t%s\tcontroller decision currently blocks publication\t%s\n' "$now" "$source" "$branch" "$head" "$report"
 						else
 							printf '%s\t%s\tready-product-pr\thigh\tpublishable\t%s\t%s\tpublish from local machine and keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
 						fi
 						;;
 					product-candidate:0:*)
-						printf '%s\t%s\tready-product-pr\tmedium\tneeds-repair\t%s\t%s\trepair manifest/diff/base before publication reason=%s\t%s\n' "$now" "$source" "$branch" "$head" "$reason" "$report"
+						if branch_published "$branch" "$head"; then
+							printf '%s\t%s\tready-product-pr\thigh\tpublished\t%s\t%s\talready published by local machine after branch repair; keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
+						elif branch_repair_manifest_exists "$branch" "$head"; then
+							printf '%s\t%s\tready-product-pr\thigh\tmanifest-repaired\t%s\t%s\tbranch repair manifest exists; wait for local publication\t%s\n' "$now" "$source" "$branch" "$head" "$report"
+						else
+							printf '%s\t%s\tready-product-pr\tmedium\tneeds-repair\t%s\t%s\trepair manifest/diff/base before publication reason=%s\t%s\n' "$now" "$source" "$branch" "$head" "$reason" "$report"
+						fi
 						;;
 				esac
 			done
@@ -364,6 +418,7 @@ write_controller_push_manifest() {
 				[ "$class" = "product-candidate" ] || continue
 				[ "$allowed" = "1" ] || continue
 				branch_published "$branch" "$head" && continue
+				publish_blocked_by_controller "$branch" && continue
 				case "$branch" in
 					ready/*|finalized/*|fresh-prset/*|cycle*|ready-pr03b/*) ;;
 					*) continue ;;
@@ -383,7 +438,13 @@ write_controller_push_manifest() {
 			while IFS= read -r manifest; do
 				awk -F '\t' 'NR > 1 && NF >= 9 { print }' "$manifest"
 			done |
-			awk -F '\t' '!seen[$1 "\t" $2]++'
+			awk -F '\t' '!seen[$1 "\t" $2]++' |
+			while IFS= read -r row; do
+				branch=$(printf '%s' "$row" | cut -f1)
+				head=$(printf '%s' "$row" | cut -f2)
+				branch_published "$branch" "$head" && continue
+				printf '%s\n' "$row"
+			done
 	} > "$tmp"
 	mv "$tmp" "$PUSH_MANIFEST"
 }
@@ -633,7 +694,7 @@ EOF
 next_allowed_branch_repair() {
 	local target
 	[ -s "$DECISIONS" ] || return 1
-	awk -F '\t' 'NR > 1 && $1 == "launch-branch-repair" && tolower($4) ~ /^(yes|true|allow|allowed|1)$/ { print $2 }' "$DECISIONS" |
+	awk -F '\t' 'NR > 1 && ($1 == "launch-branch-repair" || $1 == "repair-branch") && tolower($4) ~ /^(yes|true|allow|allowed|1)$/ { print $2 }' "$DECISIONS" |
 	while IFS= read -r target; do
 		[ -n "$target" ] || continue
 		awk -F '\t' -v target="$target" '
@@ -714,15 +775,23 @@ launch_branch_repair_job() {
 	head=$(printf '%s' "$row" | cut -f2)
 	evidence=$(printf '%s' "$row" | cut -f3-)
 	[ -n "$branch" ] || return 0
+	if branch_published "$branch" "$head"; then
+		log "not launching branch repair for $branch: already published"
+		return 0
+	fi
+	if branch_repair_manifest_exists "$branch" "$head"; then
+		log "not launching branch repair for $branch: repair manifest already exists"
+		return 0
+	fi
 	active_jobs=$(active_pr_jobs)
 	if [ "$active_jobs" -ge "$MAX_ACTIVE_PR_JOBS" ]; then
 		log "not launching branch repair for $branch: active PR jobs $active_jobs >= max $MAX_ACTIVE_PR_JOBS"
 		return 0
 	fi
-	decision_allows launch-branch-repair "$branch" || {
+	if branch_repair_blocked_by_controller "$branch"; then
 		log "not launching branch repair for $branch: persona decisions blocked it"
 		return 0
-	}
+	fi
 	ts=$(date -u +%Y%m%dT%H%M%SZ)
 	slug=$(slugify "$branch")
 	run_dir="$BASE/jobs/branch-repair-$slug-$ts"
