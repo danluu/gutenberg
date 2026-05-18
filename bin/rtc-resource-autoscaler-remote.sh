@@ -159,17 +159,38 @@ cleanup_orphan_monitors() {
 
 cleanup_optional_browser_process_groups() {
 	local now=$1
-	local pgids pgid killed=0
-	pgids=$(
-		ps -eo pid,pgid,cmd |
+	local leaf_pids pid cur depth ppid pgid args pgids killed=0
+	leaf_pids=$(
+		ps -eo pid,args |
 			awk '
 				/rtc-gap-booster-20260515|rtc-fuzz-focused-shards-20260515|rtc-fuzz-strict-expansion-20260515/ &&
 				/playwright|chrome-headless|ffmpeg|rtc-browser-fuzz-runner|test-playwright|wp-scripts/ &&
 				!/codex/ {
-					print $2;
+					print $1;
 				}
-			' |
-			sort -u
+			'
+	)
+	if [ -z "$leaf_pids" ]; then
+		return 1
+	fi
+	pgids=$(
+		for pid in $leaf_pids; do
+			cur=$pid
+			depth=0
+			while [ -n "$cur" ] && [ "$cur" != "1" ] && [ "$depth" -lt 12 ]; do
+				if ! read -r ppid pgid args < <(ps -p "$cur" -o ppid=,pgid=,args= 2>/dev/null); then
+					break
+				fi
+				if [[ "$args" == *"tmux -L $TMUX_SOCKET"* || "$args" == *"tmux -L rtc-fuzz"* || "$args" == *"/usr/bin/tmux"* ]]; then
+					break
+				fi
+				if [ -n "$pgid" ] && [ "$pgid" != "0" ] && [ "$pgid" != "1" ]; then
+					printf '%s\n' "$pgid"
+				fi
+				cur=$ppid
+				depth=$((depth + 1))
+			done
+		done | sort -u
 	)
 	if [ -z "$pgids" ]; then
 		return 1
@@ -180,7 +201,7 @@ cleanup_optional_browser_process_groups() {
 				continue
 				;;
 		esac
-		echo "[$now] terminating optional browser process group under severe pressure: pgid=$pgid" >> "$LOG"
+		echo "[$now] terminating optional browser job process group under severe pressure: pgid=$pgid" >> "$LOG"
 		kill -TERM "-$pgid" 2>/dev/null || true
 		killed=1
 	done
@@ -217,10 +238,14 @@ shed_optional_browser_pools_if_needed() {
 	for session in \
 		rtc-gap-booster \
 		rtc-gap-booster-watchdog \
+		rtc-gap-booster-analysis \
 		rtc-focused-shards \
 		rtc-focused-shards-watchdog \
+		rtc-focused-shards-analysis \
+		rtc-focused-shards-gap-codex-loop \
 		rtc-fuzz-strict-expansion \
-		rtc-fuzz-strict-expansion-watchdog; do
+		rtc-fuzz-strict-expansion-watchdog \
+		rtc-fuzz-strict-expansion-analysis; do
 		if "$TMUX" -L "$TMUX_SOCKET" has-session -t "$session" 2>/dev/null; then
 			echo "[$now] stopping optional browser session under severe pressure: $session" >> "$LOG"
 			"$TMUX" -L "$TMUX_SOCKET" kill-session -t "$session" 2>/dev/null || true
