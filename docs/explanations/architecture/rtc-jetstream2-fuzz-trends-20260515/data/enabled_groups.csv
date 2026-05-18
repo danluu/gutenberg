@@ -805,3 +805,6 @@ timestamp,group,group_family
 2026-05-18T03:05:03Z,novelty-ws-same-user-stale-tabs,lifecycle
 2026-05-18T03:11:16Z,novelty-ws-async-server-blocks,async/media
 2026-05-18T03:18:09Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-18T03:27:27Z,novelty-ws-real-user-save-reload,real-user
+2026-05-18T03:27:27Z,novelty-ws-real-user-editing,real-user
+2026-05-18T03:28:59Z,novelty-ws-real-user-save-reload,real-user
