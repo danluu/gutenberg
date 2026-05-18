@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-18T18:46:09Z`
+Snapshot generated: `2026-05-18T18:57:34Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -15,6 +15,12 @@ Source inputs:
   current coverage output-dir state started at `2026-05-18T18:43:44Z`
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
+- PR-focused controller, critical-path executor, artifact index, and local
+  publisher snapshots:
+  `/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/`,
+  `/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/`,
+  `/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518/`, and
+  `/tmp/rtc-local-pr-branch-publisher-20260517/`
 - CPU and load-average history:
   `/var/log/sysstat/sa15` through `/var/log/sysstat/sa18`, latest sample
   `2026-05-18T18:40:00Z`
@@ -67,6 +73,16 @@ replay TSVs but no `report.md`, so it is only partial evidence. The
 review context, so it requires a fresh post-finalization audit before it can be
 used. Broad final-stack fuzzing, GitHub filing, and stack-wide validation
 remain blocked.
+
+The new PR-focused controller is visible in the graph data. Its current table
+has `22` distinct work items: `10` high-priority publishable product PR
+branches, `8` medium-priority ready-product branches needing repair, `1`
+runtime-gated PR07C owner-evidence item, and `3` deferred-family rows. The
+controller has launched `3` persona-control rounds and deferred the heavy PR07C
+owner-matrix job `8` times because the discovery/resource reserve is protected.
+That is the intended non-starvation behavior: publication planning and persona
+analysis continue, while heavy PR work waits rather than crowding out bug
+finding.
 
 ## Coverage Intake
 
@@ -355,6 +371,62 @@ suggested rows totaling `4,114` net LOC. The largest current rows by net LOC are
 (`53`), and `PR 2` (`52`). These charts remain size telemetry from parsed
 status snapshots, not filing authority for split shape.
 
+## PR-Focused Controller
+
+![PR-focused controller current work state](rtc-jetstream2-fuzz-trends-20260515/plots/pr-progress-current-state.png)
+
+The new controller's current progress table has `22` distinct work items. The
+product-PR side is split between `10` high-priority publishable branches and
+`8` medium-priority branches that still need repair before publication. The
+remaining high-priority runtime-gated row is `PR07C/HOLD-07C` owner evidence.
+Deferred-family rows are still tracked, but the controller now distinguishes
+product decisions, diagnostics, and cooldowns instead of letting raw deferred
+work dominate the PR path.
+
+![PR-focused controller events](rtc-jetstream2-fuzz-trends-20260515/plots/pr-progress-controller-events.png)
+
+The event plot shows `3` persona-control rounds and `8` PR07C heavy-job
+deferrals from the discovery reserve. That means the PR-focused loop is active,
+but it is not allowed to starve bug finding: heavy browser/evidence work waits
+under resource pressure while persona analysis and publication manifests keep
+moving.
+
+![Controller-publishable PR branch diff sizes](rtc-jetstream2-fuzz-trends-20260515/plots/pr-progress-publishable-diff-size.png)
+
+The current controller push manifest has `10` publishable branches totaling
+`1,387` net LOC. The largest net additions are `PR07C` reload record snapshots
+(`316` net LOC), the larger `PR06B` malformed-save-payload branch (`291`), and
+the minimal `PR06B` sibling (`268`). Two fallback-group branches are net
+negative because they remove more prior fallback code than they add.
+
+![PR artifact index scope by source tree](rtc-jetstream2-fuzz-trends-20260515/plots/pr-artifact-index-scope.png)
+
+![PR artifact index refresh size](rtc-jetstream2-fuzz-trends-20260515/plots/pr-artifact-index-growth.png)
+
+The shared artifact index is now graph-visible. This snapshot has `2,699`
+indexed artifacts across critical-path, deferred, finalization, PR-split, and
+PR-progress trees, plus `3,005` indexed local branches. The largest artifact
+classes are critical-path reports (`861`), deferred reports (`445`), deferred
+push manifests (`331`), PR-split reports (`269`), and finalization reports
+(`206`). The index is intended to replace repeated historical tree walks in PR
+controllers and the local branch publisher.
+
+![Critical PR blocker state](rtc-jetstream2-fuzz-trends-20260515/plots/pr-critical-blocker-state.png)
+
+The critical-path executor currently has `5` blockers: `2` queued and `3`
+terminal. The queued rows are `PR07C/HOLD-07C` owner evidence and
+`reload-hydration`; the terminal rows reopen only with fresh product-owned
+evidence. This is the view the PR-focused controller should use to avoid
+cycling on already-terminal or duplicate blocker work.
+
+![Local PR branch publisher activity](rtc-jetstream2-fuzz-trends-20260515/plots/pr-local-publisher-activity.png)
+
+The local publisher graph shows publication snapshots and branch pushes from
+the local machine. It now consumes the artifact-index manifest-path list before
+falling back to historical scans, which keeps GitHub publication decoupled from
+Jetstream's lack of GitHub access while reducing repeated manifest discovery
+work.
+
 ## Interpretation
 
 The graph remains positive on coverage intake and goal reduction, but the run
@@ -383,6 +455,16 @@ and a usable fresh finalization audit before filing. `PR07C/HOLD-07C` remains
 held as red owner evidence, and the old linear `PR07/PR17/PR18x` tail remains
 rejected as the product split. Old blocker-row waiting is not progress while
 the PR07 and `PR02B` gates remain open.
+
+The PR-focused controller adds a narrower execution layer on top of the broader
+PR split loop. It has enough ready branch evidence to keep local publication
+moving, but its heavy PR07C owner-matrix job is correctly backpressured while
+the system reports protected discovery capacity. The key future graph signals
+are: publishable branches actually disappearing after local publication,
+needs-repair branches moving to publishable or downscoped, PR07C owner evidence
+moving out of queued/runtime-gated state, and heavy PR deferrals dropping when
+resource pressure clears. If those do not move, the controller is observing
+work rather than reducing it.
 
 The committed fuzzing graph is browser/e2e-heavy: `29` current browser/e2e
 lanes across `25` groups, `1` `unit-property` lane, and `1`

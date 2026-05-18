@@ -1,0 +1,16 @@
+timestamp,message,event_type
+2026-05-18T18:32:50Z,PR progress controller started pid=1344234,controller start
+2026-05-18T18:34:22Z,PR progress controller started pid=1443799,controller start
+2026-05-18T18:34:24Z,launched persona controller round 20260518T183423Z,persona round launched
+2026-05-18T18:37:52Z,PR progress controller started pid=1658633,controller start
+2026-05-18T18:37:53Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:39:54Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:41:55Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:43:57Z,launched persona controller round 20260518T184356Z,persona round launched
+2026-05-18T18:43:57Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:45:58Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:46:08Z,PR progress controller started pid=2206567,controller start
+2026-05-18T18:46:08Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:48:09Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:50:11Z,launched persona controller round 20260518T185010Z,persona round launched
+2026-05-18T18:50:11Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve

@@ -26,6 +26,7 @@ dir.create( data_dir, recursive = TRUE, showWarnings = FALSE )
 dir.create( plot_dir, recursive = TRUE, showWarnings = FALSE )
 
 raw_dir <- Sys.getenv( "RTC_TREND_RAW_DIR", unset = file.path( artifact_dir, "raw" ) )
+pr_focus_raw_dir <- file.path( raw_dir, "pr-focused" )
 monitor_path <- file.path( raw_dir, "monitor.log" )
 loop_path <- file.path( raw_dir, "pr-split-loop.log" )
 state_path <- file.path( raw_dir, "novelty-state.json" )
@@ -38,6 +39,13 @@ bug_findings_path <- file.path( data_dir, "bug_findings.csv" )
 bug_outputs_path <- file.path( data_dir, "bug_outputs.csv" )
 status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
 status_report_path <- file.path( root, status_report_rel )
+pr_progress_current_path <- file.path( pr_focus_raw_dir, "pr-progress/current-pr-progress.tsv" )
+pr_progress_push_manifest_path <- file.path( pr_focus_raw_dir, "pr-progress/current-push-manifest.tsv" )
+pr_progress_controller_log_path <- file.path( pr_focus_raw_dir, "pr-progress/controller.log" )
+artifact_index_artifacts_path <- file.path( pr_focus_raw_dir, "artifact-index/current-artifacts.tsv" )
+artifact_index_log_path <- file.path( pr_focus_raw_dir, "artifact-index/artifact-index.log" )
+critical_blockers_path <- file.path( pr_focus_raw_dir, "critical-path/blockers.tsv" )
+local_publisher_state_path <- file.path( pr_focus_raw_dir, "local-publisher-state.tsv" )
 
 stopifnot( file.exists( monitor_path ) )
 stopifnot( file.exists( loop_path ) )
@@ -293,6 +301,23 @@ named_number_frame <- function( values, name_col, value_col ) {
 	tibble(
 		!!name_col := names( flat ),
 		!!value_col := as.numeric( flat )
+	)
+}
+
+read_tsv_optional <- function( path, col_names = TRUE ) {
+	if ( ! file.exists( path ) || file.size( path ) == 0 ) {
+		return( tibble() )
+	}
+
+	tryCatch(
+		read_tsv(
+			path,
+			col_names = col_names,
+			col_types = cols( .default = col_character() ),
+			show_col_types = FALSE,
+			progress = FALSE
+		),
+		error = function( e ) tibble()
 	)
 }
 
@@ -817,6 +842,140 @@ write_csv( feedback_durations, file.path( data_dir, "pr_feedback_durations.csv" 
 
 pr_suggested_loc <- status_report_history()
 write_csv( pr_suggested_loc, file.path( data_dir, "pr_suggested_net_loc.csv" ) )
+
+pr_progress_current <- read_tsv_optional( pr_progress_current_path )
+if ( nrow( pr_progress_current ) > 0 ) {
+	pr_progress_current <- pr_progress_current %>%
+		mutate(
+			timestamp = parse_utc_timestamp( generated_at ),
+			across( c( item_id, kind, priority, status, branch_or_target, next_action, evidence ), ~ replace_na( as.character( .x ), "" ) ),
+			priority = if_else( priority == "", "unknown", priority ),
+			status = if_else( status == "", "unknown", status ),
+			kind = if_else( kind == "", "unknown", kind )
+		) %>%
+		filter( ! is.na( timestamp ) )
+}
+
+pr_progress_state_counts <- if ( nrow( pr_progress_current ) > 0 ) {
+	pr_progress_current %>%
+		distinct( item_id, kind, priority, status ) %>%
+		count( kind, priority, status, name = "items" ) %>%
+		arrange( kind, priority, status )
+} else {
+	tibble( kind = character(), priority = character(), status = character(), items = numeric() )
+}
+write_csv( pr_progress_state_counts, file.path( data_dir, "pr_progress_state_counts.csv" ) )
+write_csv( pr_progress_current, file.path( data_dir, "pr_progress_current.csv" ) )
+
+pr_progress_push_manifest <- read_tsv_optional( pr_progress_push_manifest_path )
+if ( nrow( pr_progress_push_manifest ) > 0 ) {
+	for ( column in c( "files_changed", "insertions", "deletions" ) ) {
+		if ( ! column %in% names( pr_progress_push_manifest ) ) {
+			pr_progress_push_manifest[[ column ]] <- NA_character_
+		}
+	}
+	pr_progress_push_manifest <- pr_progress_push_manifest %>%
+		mutate(
+			across( c( source_branch, source_commit, intended_danluu_branch, base_ref, validation_summary, reason ), ~ replace_na( as.character( .x ), "" ) ),
+			across( c( files_changed, insertions, deletions ), ~ as.numeric( str_remove_all( as.character( .x ), "," ) ) ),
+			net_loc = replace_na( insertions, 0 ) - replace_na( deletions, 0 ),
+			branch_short = source_branch %>%
+				str_remove( "^ready/rtc-" ) %>%
+				str_remove( "^ready/" ) %>%
+				str_replace_all( "-", " " ) %>%
+				str_wrap( width = 34 )
+		)
+}
+write_csv( pr_progress_push_manifest, file.path( data_dir, "pr_progress_push_manifest.csv" ) )
+
+pr_controller_events <- tibble()
+if ( file.exists( pr_progress_controller_log_path ) ) {
+	controller_lines <- read_lines( pr_progress_controller_log_path, progress = FALSE )
+	pr_controller_events <- tibble(
+		timestamp = timestamp_from_brackets( controller_lines ),
+		message = str_trim( str_remove( controller_lines, "^\\[[^\\]]+\\]\\s*" ) )
+	) %>%
+		filter( ! is.na( timestamp ), message != "" ) %>%
+		mutate(
+			event_type = case_when(
+				str_detect( message, "^PR progress controller started" ) ~ "controller start",
+				str_detect( message, "^launched persona controller round" ) ~ "persona round launched",
+				str_detect( message, "^launched PR07C owner matrix job" ) ~ "PR07C owner job launched",
+				str_detect( message, "discovery reserve protected" ) ~ "heavy PR job deferred: discovery reserve",
+				str_detect( message, "persona decisions blocked" ) ~ "heavy PR job blocked by persona",
+				str_detect( message, "active PR jobs" ) ~ "heavy PR job deferred: PR concurrency",
+				str_detect( message, "job already active" ) ~ "heavy PR job already active",
+				TRUE ~ "other"
+			)
+		)
+}
+write_csv( pr_controller_events, file.path( data_dir, "pr_progress_controller_events.csv" ) )
+
+artifact_index_artifacts <- read_tsv_optional( artifact_index_artifacts_path )
+if ( nrow( artifact_index_artifacts ) > 0 ) {
+	artifact_index_artifacts <- artifact_index_artifacts %>%
+		mutate(
+			mtime_utc = parse_utc_timestamp( mtime_utc ),
+			across( c( root, kind, run_id, path, tags ), ~ replace_na( as.character( .x ), "" ) )
+		) %>%
+		filter( ! is.na( mtime_utc ) )
+}
+
+artifact_index_scope <- if ( nrow( artifact_index_artifacts ) > 0 ) {
+	artifact_index_artifacts %>%
+		count( root, kind, name = "artifacts" ) %>%
+		arrange( root, desc( artifacts ) )
+} else {
+	tibble( root = character(), kind = character(), artifacts = numeric() )
+}
+write_csv( artifact_index_scope, file.path( data_dir, "artifact_index_scope.csv" ) )
+
+artifact_index_events <- tibble()
+if ( file.exists( artifact_index_log_path ) ) {
+	index_log_lines <- read_lines( artifact_index_log_path, progress = FALSE )
+	artifact_index_events <- tibble(
+		timestamp = timestamp_from_brackets( index_log_lines ),
+		message = str_trim( str_remove( index_log_lines, "^\\[[^\\]]+\\]\\s*" ) ),
+		artifacts = extract_num( index_log_lines, "indexed artifacts=([0-9]+)" ),
+		branches = extract_num( index_log_lines, "branches=([0-9]+)" )
+	) %>%
+		filter( ! is.na( timestamp ) )
+}
+write_csv( artifact_index_events, file.path( data_dir, "artifact_index_events.csv" ) )
+
+critical_blockers <- read_tsv_optional( critical_blockers_path )
+if ( nrow( critical_blockers ) > 0 ) {
+	critical_blockers <- critical_blockers %>%
+		mutate(
+			updated_at = parse_utc_timestamp( updated_at ),
+			across( c( blocker_id, kind, priority, state, source_input, blocks, blocked_by, required_artifacts, active_session, next_action ), ~ replace_na( as.character( .x ), "" ) )
+		)
+}
+write_csv( critical_blockers, file.path( data_dir, "critical_path_blockers.csv" ) )
+
+local_publisher_events <- tibble()
+if ( file.exists( local_publisher_state_path ) ) {
+	publisher_state_lines <- read_lines( local_publisher_state_path, progress = FALSE )
+	local_publisher_events <- tibble( raw = publisher_state_lines ) %>%
+		filter( raw != "" ) %>%
+		separate( raw, into = c( "field1", "field2", "field3", "field4", "field5", "field6" ), sep = "\t", fill = "right", extra = "merge" ) %>%
+		mutate(
+			event_type = case_when(
+				field1 == "last_hash" ~ "manifest snapshot",
+				str_detect( field1, "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" ) & field6 == "pushed" ~ "branch pushed",
+				str_detect( field1, "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" ) & field6 == "push_failed" ~ "push failed",
+				TRUE ~ "other"
+			),
+			timestamp = case_when(
+				field1 == "last_hash" ~ ymd_hms( field3, tz = "UTC", quiet = TRUE ),
+				str_detect( field1, "^[0-9]{4}-[0-9]{2}-[0-9]{2}T" ) ~ ymd_hms( field1, tz = "UTC", quiet = TRUE ),
+				TRUE ~ as.POSIXct( NA_real_, origin = "1970-01-01", tz = "UTC" )
+			),
+			source = if_else( field1 == "last_hash", "snapshot", field2 )
+		) %>%
+		filter( ! is.na( timestamp ), event_type != "other" )
+}
+write_csv( local_publisher_events, file.path( data_dir, "local_publisher_events.csv" ) )
 
 coverage_long <- monitor %>%
 	select( timestamp, coverage_files, unmet_coverage ) %>%
@@ -1995,6 +2154,180 @@ if ( nrow( pr_suggested_loc ) > 0 ) {
 	)
 }
 
+if ( nrow( pr_progress_state_counts ) > 0 ) {
+	pr_state_plot <- pr_progress_state_counts %>%
+		mutate(
+			status_label = str_wrap( status, width = 24 ),
+			kind_label = str_wrap( kind, width = 22 ),
+			priority = factor( priority, levels = c( "high", "medium", "low", "unknown" ) )
+		)
+
+	write_plot(
+		"pr-progress-current-state.png",
+		ggplot( pr_state_plot, aes( x = items, y = status_label, color = priority, size = items ) ) +
+			geom_point( alpha = 0.82 ) +
+			facet_wrap( vars( kind_label ), scales = "free_y", ncol = 1 ) +
+			scale_x_continuous( labels = comma, breaks = pretty_breaks() ) +
+			scale_size_continuous( range = c( 2.2, 7 ), breaks = pretty_breaks() ) +
+			scale_color_brewer( palette = "Set1", na.translate = FALSE ) +
+			labs(
+				title = "PR-focused controller current work state",
+				x = "distinct work items",
+				y = NULL,
+				color = "priority",
+				size = "items",
+				caption = "Rows are distinct controller work items from current-pr-progress.tsv. Duplicate evidence rows for the same item/status are counted once."
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 6.5
+	)
+}
+
+if ( nrow( pr_controller_events ) > 0 ) {
+	write_plot(
+		"pr-progress-controller-events.png",
+		ggplot( pr_controller_events, aes( x = timestamp, y = event_type, color = event_type ) ) +
+			geom_point( alpha = 0.82, size = 2.6 ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			scale_time_axis( date_breaks = "5 mins", date_labels = "%H:%M" ) +
+			labs(
+				title = "PR-focused controller events",
+				x = "UTC time",
+				y = NULL,
+				color = NULL,
+				caption = "Controller events include persona control rounds and heavy PR-job deferrals caused by discovery/resource protection."
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 4.8
+	)
+}
+
+if ( nrow( pr_progress_push_manifest ) > 0 ) {
+	push_plot <- pr_progress_push_manifest %>%
+		mutate(
+			branch_short = factor( branch_short, levels = branch_short[ order( net_loc ) ] )
+		)
+
+	write_plot(
+		"pr-progress-publishable-diff-size.png",
+		ggplot( push_plot, aes( x = net_loc, y = branch_short, size = files_changed ) ) +
+			geom_point( alpha = 0.78, color = "grey25" ) +
+			scale_x_continuous( labels = comma ) +
+			scale_size_continuous( range = c( 2, 6 ), breaks = pretty_breaks() ) +
+			labs(
+				title = "Controller-publishable PR branch diff sizes",
+				x = "net LOC",
+				y = NULL,
+				size = "files",
+				caption = "Rows are branches the PR progress controller marked publishable for local GitHub publication."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 6.2
+	)
+}
+
+if ( nrow( artifact_index_scope ) > 0 ) {
+	artifact_scope_plot <- artifact_index_scope %>%
+		mutate(
+			root = factor( root, levels = unique( root[ order( root ) ] ) ),
+			kind = str_wrap( kind, width = 22 )
+		)
+
+	write_plot(
+		"pr-artifact-index-scope.png",
+		ggplot( artifact_scope_plot, aes( x = artifacts, y = kind, color = root, size = artifacts ) ) +
+			geom_point( alpha = 0.78 ) +
+			facet_wrap( vars( root ), scales = "free_x", ncol = 2 ) +
+			scale_x_continuous( labels = comma ) +
+			scale_size_continuous( range = c( 1.8, 6.5 ), labels = comma ) +
+			scale_color_brewer( palette = "Set2", guide = "none" ) +
+			labs(
+				title = "PR artifact index scope by source tree",
+				x = "indexed artifacts",
+				y = NULL,
+				size = "artifacts",
+				caption = "The shared artifact index replaces repeated historical scans for PR progress, publication, and blocker classification."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 7
+	)
+}
+
+if ( nrow( artifact_index_events ) > 0 && any( ! is.na( artifact_index_events$artifacts ) | ! is.na( artifact_index_events$branches ) ) ) {
+	artifact_index_growth <- artifact_index_events %>%
+		select( timestamp, artifacts, branches ) %>%
+		pivot_longer( -timestamp, names_to = "metric", values_to = "value" ) %>%
+		filter( ! is.na( value ) )
+
+	write_plot(
+		"pr-artifact-index-growth.png",
+		ggplot( artifact_index_growth, aes( x = timestamp, y = value, color = metric ) ) +
+			geom_point( alpha = 0.82, size = 2.4 ) +
+			scale_y_continuous( labels = comma ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			scale_time_axis( date_breaks = "5 mins", date_labels = "%H:%M" ) +
+			labs(
+				title = "PR artifact index refresh size",
+				x = "UTC time",
+				y = "indexed rows",
+				color = NULL
+			) +
+			theme_rtc(),
+		width = 8.5,
+		height = 4.6
+	)
+}
+
+if ( nrow( critical_blockers ) > 0 ) {
+	blocker_plot <- critical_blockers %>%
+		mutate(
+			blocker_label = str_wrap( blocker_id, width = 28 ),
+			state = factor( state, levels = c( "active", "queued", "terminal", "blocked", "" ) )
+		)
+
+	write_plot(
+		"pr-critical-blocker-state.png",
+		ggplot( blocker_plot, aes( x = state, y = blocker_label, color = kind, shape = priority ) ) +
+			geom_point( alpha = 0.85, size = 3.2 ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			labs(
+				title = "Critical PR blocker state",
+				x = "state",
+				y = NULL,
+				color = "kind",
+				shape = "priority",
+				caption = "Current blockers from the critical-path PR executor; terminal rows reopen only with fresh product-owned evidence."
+			) +
+			theme_rtc(),
+		width = 8.5,
+		height = 4.8
+	)
+}
+
+if ( nrow( local_publisher_events ) > 0 ) {
+	write_plot(
+		"pr-local-publisher-activity.png",
+		ggplot( local_publisher_events, aes( x = timestamp, y = event_type, color = event_type ) ) +
+			geom_point( alpha = 0.76, size = 2.1 ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			scale_time_axis( date_breaks = "30 mins", date_labels = "%H:%M" ) +
+			labs(
+				title = "Local PR branch publisher activity",
+				x = "UTC time",
+				y = NULL,
+				color = NULL,
+				caption = "The local publisher consumes Jetstream manifests and pushes safe branches to the danluu remote."
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 4.6
+	)
+}
+
 fuzz_level_latest <- if ( nrow( fuzz_level_mix ) > 0 ) {
 	fuzz_level_mix %>%
 		filter( is_latest ) %>%
@@ -2100,6 +2433,41 @@ bug_output_effectiveness_latest_text <- if ( nrow( bug_output_effectiveness_late
 	NA_character_
 }
 
+pr_progress_state_text <- if ( nrow( pr_progress_state_counts ) > 0 ) {
+	paste0(
+		pr_progress_state_counts$kind,
+		"/",
+		pr_progress_state_counts$status,
+		"/",
+		pr_progress_state_counts$priority,
+		"=",
+		pr_progress_state_counts$items,
+		collapse = "; "
+	)
+} else {
+	NA_character_
+}
+
+pr_controller_event_text <- if ( nrow( pr_controller_events ) > 0 ) {
+	pr_controller_events %>%
+		count( event_type ) %>%
+		mutate( text = paste0( event_type, "=", n ) ) %>%
+		pull( text ) %>%
+		paste( collapse = "; " )
+} else {
+	NA_character_
+}
+
+critical_blocker_state_text <- if ( nrow( critical_blockers ) > 0 ) {
+	critical_blockers %>%
+		count( state ) %>%
+		mutate( text = paste0( state, "=", n ) ) %>%
+		pull( text ) %>%
+		paste( collapse = "; " )
+} else {
+	NA_character_
+}
+
 summary_lines <- c(
 	paste0( "generated_at_utc: ", format( with_tz( now(), "UTC" ), "%Y-%m-%dT%H:%M:%SZ" ) ),
 	paste0( "monitor_passes: ", nrow( monitor ) ),
@@ -2141,7 +2509,17 @@ summary_lines <- c(
 	paste0( "goals_unmet: ", sum( ! coverage_goals$met ) ),
 	paste0( "pr_review_events: ", nrow( pr_events ) ),
 	paste0( "pr_suggested_net_loc_snapshots: ", n_distinct( pr_suggested_loc$timestamp ) ),
-	paste0( "pr_suggested_net_loc_latest_total: ", ifelse( nrow( pr_suggested_loc ) > 0, pr_suggested_loc %>% filter( timestamp == max( timestamp, na.rm = TRUE ) ) %>% summarise( total = sum( net_loc, na.rm = TRUE ) ) %>% pull( total ), NA ) )
+	paste0( "pr_suggested_net_loc_latest_total: ", ifelse( nrow( pr_suggested_loc ) > 0, pr_suggested_loc %>% filter( timestamp == max( timestamp, na.rm = TRUE ) ) %>% summarise( total = sum( net_loc, na.rm = TRUE ) ) %>% pull( total ), NA ) ),
+	paste0( "pr_progress_controller_items: ", ifelse( nrow( pr_progress_current ) > 0, n_distinct( pr_progress_current$item_id ), 0 ) ),
+	paste0( "pr_progress_state_counts: ", pr_progress_state_text ),
+	paste0( "pr_progress_publishable_branches: ", ifelse( nrow( pr_progress_push_manifest ) > 0, nrow( pr_progress_push_manifest ), 0 ) ),
+	paste0( "pr_progress_publishable_net_loc: ", ifelse( nrow( pr_progress_push_manifest ) > 0, sum( pr_progress_push_manifest$net_loc, na.rm = TRUE ), 0 ) ),
+	paste0( "pr_progress_controller_events: ", pr_controller_event_text ),
+	paste0( "artifact_index_rows: ", ifelse( nrow( artifact_index_artifacts ) > 0, nrow( artifact_index_artifacts ), 0 ) ),
+	paste0( "artifact_index_scope_rows: ", nrow( artifact_index_scope ) ),
+	paste0( "critical_blockers: ", ifelse( nrow( critical_blockers ) > 0, nrow( critical_blockers ), 0 ) ),
+	paste0( "critical_blocker_states: ", critical_blocker_state_text ),
+	paste0( "local_publisher_events: ", ifelse( nrow( local_publisher_events ) > 0, nrow( local_publisher_events ), 0 ) )
 )
 
 write_lines( summary_lines, file.path( data_dir, "summary.txt" ) )
