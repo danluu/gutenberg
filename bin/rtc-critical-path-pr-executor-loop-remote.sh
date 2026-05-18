@@ -130,6 +130,27 @@ latest_nonempty_file() {
 		cut -f2-
 }
 
+latest_pr07c_owner_replay_ready_report() {
+	find "$PR_SPLIT_BASE/runs" -mindepth 1 -maxdepth 1 -type d 2>/dev/null |
+		sort |
+		tail -20 |
+		while IFS= read -r run_dir; do
+			find "$run_dir/jobs/outputs" -maxdepth 3 -path '*pr07c*owner*replay*/report.md' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null || true
+		done |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+pr07c_readiness_resolved() {
+	local report
+	report=$(latest_pr07c_owner_replay_ready_report || true)
+	[ -n "$report" ] || return 1
+	rg -qi 'status:[[:space:]]*`?PASS`?' "$report" 2>/dev/null || return 1
+	rg -qi 'readiness_failure_matches:[[:space:]]*`?0`?' "$report" 2>/dev/null || return 1
+	return 0
+}
+
 resource_reason() {
 	local status=$RESOURCE_BASE/resource-autoscaler-status.md
 	local reason
@@ -574,7 +595,11 @@ write_lanes() {
 		if ! lane_terminal_suppressed pr17-1020002; then
 			printf 'pr17-1020002\tPR17\tproof-reclassification\tvalidation-only\t%s\t1020002\t%s\t%s\t\tcodex-analysis\tnone\tqueued\t%s/runs/pr17-1020002\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
-		printf 'pr07c-browser-env\tPR07C\tbrowser-env-repair\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tresource-and-env\tgated\t%s/runs/pr07c-browser-env\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		if pr07c_readiness_resolved; then
+			printf 'pr07c-owner-matrix\tPR07C\towner-evidence-matrix\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tpr-split-owner-matrix\tqueued\t%s/runs/pr07c-owner-matrix\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		else
+			printf 'pr07c-browser-env\tPR07C\tbrowser-env-repair\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tresource-and-env\tgated\t%s/runs/pr07c-browser-env\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		fi
 		if ! lane_terminal_suppressed seed-5200005-reducer; then
 			printf 'seed-5200005-reducer\tPR05?\treducer\tvalidation-only\t%s\t5200005\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/5200005-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
@@ -586,12 +611,14 @@ write_lanes() {
 }
 
 write_blockers_and_queue() {
-	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reason
+	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reason pr07c_active pr07c_report
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	pr17_active=$(active_session_matching '1020002|pr17' || true)
 	s5200005=$(active_session_matching '5200005' || true)
 	s1060015=$(active_session_matching '1060015' || true)
 	reload_active=$(active_session_matching 'reload|hydration' || true)
+	pr07c_active=$(active_session_matching 'pr07c|PR07C|owner-matrix' || true)
+	pr07c_report=$(latest_pr07c_owner_replay_ready_report || true)
 	reason=$(resource_reason)
 	{
 		printf 'blocker_id\tkind\tpriority\tstate\tsource_input\tblocks\tblocked_by\trequired_artifacts\tactive_session\tnext_action\tupdated_at\n'
@@ -603,9 +630,16 @@ write_blockers_and_queue() {
 				"$([ -n "$pr17_active" ] && printf active-job || printf none)" \
 				"${pr17_active:-}" "$now"
 		fi
-		printf 'pr07c-browser-env\tbrowser-environment\thigh\t%s\tpr_split/finalization\tPR07C replay,7510029\t%s\tvalidation.tsv,report.md,classification.tsv,repair-branch.txt\t\trepair collaboration readiness so PR07C replay reaches seeded action/reload/checkpoint phase; runtime-readiness-blocked is not terminal\t%s\n' \
-			"$(allow_critical_browser_preflight && printf runnable || printf gated)" \
-			"$(allow_critical_browser_preflight && printf none || printf "resource_or_env:$reason")" "$now"
+		if pr07c_readiness_resolved; then
+			printf 'pr07c-owner-matrix\towner-evidence\thigh\t%s\tpr_split/finalization\tPR07C/HOLD-07C promotion decision\t%s\towner-matrix.tsv,report.md,classification.tsv\t%s\treadiness is resolved by %s; run/consume PR07C owner matrix and promote only if product ownership is proven\t%s\n' \
+				"$([ -n "$pr07c_active" ] && printf active || printf queued)" \
+				"$([ -n "$pr07c_active" ] && printf active-job || printf pr-split-review)" \
+				"${pr07c_active:-}" "${pr07c_report:-unknown}" "$now"
+		else
+			printf 'pr07c-browser-env\tbrowser-environment\thigh\t%s\tpr_split/finalization\tPR07C replay,7510029\t%s\tvalidation.tsv,report.md,classification.tsv,repair-branch.txt\t\trepair collaboration readiness so PR07C replay reaches seeded action/reload/checkpoint phase; runtime-readiness-blocked is not terminal\t%s\n' \
+				"$(allow_critical_browser_preflight && printf runnable || printf gated)" \
+				"$(allow_critical_browser_preflight && printf none || printf "resource_or_env:$reason")" "$now"
+		fi
 		if lane_terminal_suppressed seed-5200005-reducer; then
 			printf 'seed-5200005-reducer	reducer	high	terminal	pr_split/progress-unblock	PR05 residual decision	terminal-ledger	classification.tsv		resolved by active artifacts; reopen only with fresh newer product-owned evidence	%s
 ' "$now"
@@ -637,8 +671,13 @@ write_blockers_and_queue() {
 			printf 'job-pr17-1020002\tpr17-1020002\tpr17-1020002\tproof-reclassify\tpr17-1020002-proof\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/pr17-1020002\t%s\t\t%s\t\t%s\n' \
 				"$([ -n "$pr17_active" ] && printf active || printf runnable)" "${pr17_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr17_active" ] && printf adopted || printf pending)"
 		fi
-		printf 'job-pr07c-browser-env\tpr07c-browser-env\tpr07c-browser-env\tbrowser-env-repair\tpr07c-browser-env\tbrowser-e2e\thigh\t%s\t0\t\t\t%s/runs/pr07c-browser-env\t%s\t\t%s\t\t%s\n' \
-			"$(allow_critical_browser_preflight && printf runnable || printf gated)" "$BASE" "$now" "$now" "$(allow_critical_browser_preflight && printf repair_pending || printf resource_or_env_gated)"
+		if pr07c_readiness_resolved; then
+			printf 'job-pr07c-owner-matrix\tpr07c-owner-matrix\tpr07c-owner-matrix\towner-matrix\tpr07c-owner-matrix\tbrowser-e2e\thigh\t%s\t0\t%s\t\t%s/runs/pr07c-owner-matrix\t%s\t\t%s\t\t%s\n' \
+				"$([ -n "$pr07c_active" ] && printf active || printf queued)" "${pr07c_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr07c_active" ] && printf adopted || printf owned_by_pr_split_review)"
+		else
+			printf 'job-pr07c-browser-env\tpr07c-browser-env\tpr07c-browser-env\tbrowser-env-repair\tpr07c-browser-env\tbrowser-e2e\thigh\t%s\t0\t\t\t%s/runs/pr07c-browser-env\t%s\t\t%s\t\t%s\n' \
+				"$(allow_critical_browser_preflight && printf runnable || printf gated)" "$BASE" "$now" "$now" "$(allow_critical_browser_preflight && printf repair_pending || printf resource_or_env_gated)"
+		fi
 		if ! lane_terminal_suppressed seed-5200005-reducer; then
 			printf 'job-5200005-reducer	seed-5200005-reducer	seed-5200005-reducer	reducer	5200005-reducer	codex-analysis	high	%s	0	%s		%s/runs/5200005-reducer	%s		%s		%s
 ' \
@@ -948,7 +987,7 @@ launch_continuation_jobs() {
 			"1060015|critical-continuation-seed-1060015" \
 			"bounded reducer/classification for seed 1060015 without launching broad fuzzing"
 	fi
-	if allow_critical_browser_preflight; then
+	if ! pr07c_readiness_resolved && allow_critical_browser_preflight; then
 		launch_continuation_job \
 			"pr07c-browser-env" \
 			"pr07c-browser-env-repair-v2" \

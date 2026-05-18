@@ -19,8 +19,10 @@ STATUS="$BASE/current-deferred-status.md"
 FAMILIES=${RTC_DEFERRED_WORK_FAMILIES:-"reload-hydration pre-save-search-live-collapse rich-text-suffix-corruption malformed-save-payload http-room-isolation"}
 ALLOW_DIAGNOSTIC_FAMILIES=${RTC_DEFERRED_WORK_ALLOW_DIAGNOSTIC_FAMILIES:-"pre-save-search-live-collapse rich-text-suffix-corruption"}
 MAX_ACTIVE_JOBS=${RTC_DEFERRED_WORK_MAX_ACTIVE_JOBS:-3}
+MAX_ACTIVE_DIAGNOSTIC_JOBS=${RTC_DEFERRED_WORK_MAX_ACTIVE_DIAGNOSTIC_JOBS:-1}
 CYCLE_SLEEP_SECONDS=${RTC_DEFERRED_WORK_CYCLE_SLEEP_SECONDS:-300}
 MIN_FAMILY_INTERVAL_SECONDS=${RTC_DEFERRED_WORK_MIN_FAMILY_INTERVAL_SECONDS:-900}
+DUPLICATE_HEAD_COOLDOWN_SECONDS=${RTC_DEFERRED_WORK_DUPLICATE_HEAD_COOLDOWN_SECONDS:-7200}
 CODEX_MODEL=${RTC_DEFERRED_WORK_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_DEFERRED_WORK_CODEX_REASONING_EFFORT:-xhigh}
 
@@ -49,6 +51,26 @@ active_deferred_sessions() {
 	tmux ls 2>/dev/null | awk -F: '/^rtc-deferred-job-/ { count++ } END { print count + 0 }'
 }
 
+family_is_diagnostic() {
+	case "$1" in
+		pre-save-search-live-collapse|rich-text-suffix-corruption)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+active_diagnostic_sessions() {
+	tmux ls 2>/dev/null |
+		awk -F: '
+			/^rtc-deferred-job-pre-save-search-live-collapse-/ { count++ }
+			/^rtc-deferred-job-rich-text-suffix-corruption-/ { count++ }
+			END { print count + 0 }
+		'
+}
+
 family_active() {
 	local family=$1
 	tmux ls 2>/dev/null | awk -F: -v prefix="rtc-deferred-job-$family-" 'index($1, prefix) == 1 { found = 1 } END { exit found ? 0 : 1 }'
@@ -62,6 +84,37 @@ recently_launched() {
 		$2 == family { last = $1 }
 		END { exit !(last != "" && now - last < interval) }
 	' "$STATE" 2>/dev/null
+}
+
+family_duplicate_head_cooldown() {
+	local family=$1 now
+	now=$(date -u +%s)
+	git -C "$SRC" for-each-ref --sort=-creatordate --format='%(creatordate:unix)%09%(objectname:short)' "refs/heads/deferred/rtc-$family-*" 2>/dev/null |
+		head -3 |
+		awk -F '\t' -v now="$now" -v cooldown="$DUPLICATE_HEAD_COOLDOWN_SECONDS" '
+			NR == 1 { latest = $1; sha = $2 }
+			{ n++; if ( $2 == sha ) { same++ } }
+			END {
+				exit !( n >= 3 && same == n && now - latest < cooldown )
+			}
+		'
+}
+
+family_duplicate_head_summary() {
+	local family=$1
+	git -C "$SRC" for-each-ref --sort=-creatordate --format='%(creatordate:iso8601)%09%(refname:short)%09%(objectname:short)' "refs/heads/deferred/rtc-$family-*" 2>/dev/null |
+		head -3 |
+		awk -F '\t' '
+			NR == 1 { latest = $1; sha = $3 }
+			{ n++; if ( $3 == sha ) { same++ } }
+			END {
+				if ( n >= 3 && same == n ) {
+					printf "cooldown duplicate latest_head=%s latest_time=%s repeats=%d", sha, latest, same
+				} else {
+					printf "ok"
+				}
+			}
+		'
 }
 
 rotated_families() {
@@ -485,9 +538,12 @@ write_status() {
 		echo
 		echo "- updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 		echo "- max active jobs: $MAX_ACTIVE_JOBS"
+		echo "- max active diagnostic jobs: $MAX_ACTIVE_DIAGNOSTIC_JOBS"
 		echo "- active deferred jobs: $(active_deferred_sessions)"
+		echo "- active diagnostic deferred jobs: $(active_diagnostic_sessions)"
 		echo "- cycle sleep seconds: $CYCLE_SLEEP_SECONDS"
 		echo "- min family interval seconds: $MIN_FAMILY_INTERVAL_SECONDS"
+		echo "- duplicate head cooldown seconds: $DUPLICATE_HEAD_COOLDOWN_SECONDS"
 		echo "- loop pid: $$"
 		echo "- loop script mtime: $(stat -c %y "$0" 2>/dev/null || true)"
 		echo "- next family cursor: $(cat "$CURSOR_STATE" 2>/dev/null || printf '0')"
@@ -514,6 +570,7 @@ write_status() {
 					}
 				}
 			' "$STATE" 2>/dev/null
+			printf '%s\tduplicate_head=%s\n' "$family" "$(family_duplicate_head_summary "$family")"
 		done
 		echo
 		echo "## Local Candidate Branches"
@@ -557,6 +614,14 @@ while true; do
 		fi
 		if recently_launched "$family"; then
 			log "family launched recently family=$family"
+			continue
+		fi
+		if family_duplicate_head_cooldown "$family"; then
+			log "family duplicate-head cooldown family=$family summary=$(family_duplicate_head_summary "$family")"
+			continue
+		fi
+		if family_is_diagnostic "$family" && [ "$(active_diagnostic_sessions)" -ge "$MAX_ACTIVE_DIAGNOSTIC_JOBS" ]; then
+			log "diagnostic family throttled family=$family active_diagnostic=$(active_diagnostic_sessions) max=$MAX_ACTIVE_DIAGNOSTIC_JOBS"
 			continue
 		fi
 		if launch_family_job "$family"; then
