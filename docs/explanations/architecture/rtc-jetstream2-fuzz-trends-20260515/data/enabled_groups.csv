@@ -836,3 +836,4 @@ timestamp,group,group_family
 2026-05-18T06:20:39Z,novelty-ws-long-session-large-doc,lifecycle
 2026-05-18T06:20:39Z,novelty-ws-media-cross-entity,async/media
 2026-05-18T06:32:41Z,novelty-ws-revision-recovery,persistence
+2026-05-18T06:53:10Z,novelty-ws-revision-persistence,persistence
