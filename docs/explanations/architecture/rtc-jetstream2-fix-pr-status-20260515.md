@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-18T09:30:10Z`
+Snapshot time: `2026-05-18T09:35:46Z`
 
 Trigger event:
-`pr-split-2026-05-18T09-29-24Z-20260518T091835Z`
+`duplicate-noise-2026-05-18T09-28-51Z-182`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T09-29-24Z-20260518T091835Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T09-28-51Z-182/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -67,6 +67,11 @@ Current blockers and status changes:
   rows, including all runtime-gated PR07 microheads and most ungrouped CRDT
   rows. Rows below either use verified audit links or explicitly say
   `No verified branch link yet`.
+- The duplicate/noise follow-up implemented the bounded producer-side startup
+  cooldown fix in the active fuzzer files and restarted the supervisor and
+  novelty monitor. This is control-plane hygiene only: it keeps no-product
+  `pre_action_bootstrap_stall` churn from consuming fresh browser capacity, but
+  it is not product evidence, PR07 owner evidence, or final-stack validation.
 
 The active replacement topology remains:
 
@@ -96,7 +101,7 @@ Clean `PR05D` remains only `27c6e7924217038ed9b4ff71585e8041c67765a4`.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T09:30:04Z`.
+Remote status was collected at `2026-05-18T09:35:41Z`.
 
 The fix-planning repo is checked out at:
 
@@ -126,7 +131,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T09:30:10Z` from fetched
+The branch-link audit was generated at `2026-05-18T09:35:46Z` from fetched
 `danluu` refs. It proves only that rows marked `verified-content` exist on
 `danluu` and have non-empty audited diffs against the listed bases. It does not
 prove exact i40 publication shape, ancestry, owner evidence, or filing
@@ -237,31 +242,33 @@ Cycle324/i40 proposed PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T09:30:04Z
+collected_at_utc: 2026-05-18T09:35:41Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T085240Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-The raw novelty monitor at `2026-05-18T09:16:29.911Z` is still
+The raw novelty monitor at `2026-05-18T09:31:55.623Z` is still
 control-plane/coverage health, not final-stack validation:
 
 ```text
-coverage files: 51544
-total records seen: 81942
-records processed this pass: 34
-new behavioral feature keys this pass: 4
-new CDP coverage hashes this pass: 4
+coverage files: 51591
+total records seen: 82065
+records processed this pass: 123
+new behavioral feature keys this pass: 2
+new CDP coverage hashes this pass: 2
 unmet goals: 5
 current-run active dirs: 0
-current-drain triage roots: 5
-current-drain raw signatures: 11
+current-drain triage roots: 6
+current-drain raw signatures: 14
 current-drain raw no-product signatures: 6
 current-drain actionable signatures: 2
 current-drain product-evidence signatures: 2
 current-drain likely-real visible: 1
-suppressed strict startup records: 9
-enabled groups: novelty-ws-parser-serialization
+suppressed strict startup records: 8
+recommended groups: novelty-ws-real-user-save-reload,
+  novelty-ws-real-user-editing, novelty-ws-real-user-rich-text
+enabled groups listed by raw novelty status: none
 ```
 
 Interpretation:
@@ -269,7 +276,7 @@ Interpretation:
 - The latest raw novelty status proves the monitor processed coverage and kept
   current active dirs at `0` after policy actions. It does not prove product
   correctness or PR-stack readiness.
-- The previous current/drain split remains evidence context only. Product
+- The current/drain split remains evidence context only. Product
   evidence must stay visible and family-capped, while no-product startup noise
   must not become a global producer veto again.
 - Current drain has `2` product-evidence signatures and `1` visible likely-real
@@ -277,8 +284,12 @@ Interpretation:
   Historical likely-real counts remain evidence context, not live current-run
   product failures.
 - Most browser novelty groups are paused by startup-noise or duplicate/noise
-  policy. The only enabled group in the raw novelty read is
-  `novelty-ws-parser-serialization`, chosen as a minimum productive fallback.
+  policy, and the raw novelty read lists no enabled groups after the latest
+  policy pass. The duplicate/noise feedback action separately reports a
+  post-restart supervisor/live-analysis check with `novelty-ws-multi-reload-lifecycle`
+  active, `strictStartupRecords=0`, and `productEvidenceRecords=2`; treat that
+  as a canary state to verify in the next raw novelty pass, not as product
+  validation.
 - The fuzz repo is still active validation infrastructure. It is not the final
   PR stack and cannot substitute for a rebuilt combined validation stack from
   explicit Cycle324/i40 heads.
@@ -313,11 +324,11 @@ Latest trend unmet goals remain concentrated in save/reload and real-user
 depth:
 
 ```text
-reload-post-action: 1103/2000 in the trend packet; 1103/2000 in raw novelty
-title-save-reload: 558/1000 in the trend packet; 558/1000 in raw novelty
+reload-post-action: 1103/2000 in the trend packet; 1104/2000 in raw novelty
+title-save-reload: 558/1000 in the trend packet; 559/1000 in raw novelty
 real-user-editing success: 605/1000 in the trend packet; 605/1000 in raw novelty
-body-save-reload: 617/1000 in the trend packet; 617/1000 in raw novelty
-ui-format-paragraph: 1944/2000 in the trend packet; 1944/2000 in raw novelty
+body-save-reload: 617/1000 in the trend packet; 618/1000 in raw novelty
+ui-format-paragraph: 1944/2000 in the trend packet; 1948/2000 in raw novelty
 ```
 
 Browser E2E remains the only level with confirmed likely-real findings, but
@@ -371,10 +382,29 @@ cooldown after the first no-product strict pre-action startup stall:
   current-drain no-product startup holds for groups without product evidence.
 - Preserve product-evidence analysis and avoid broad downstream suppression.
 
-This is still control-plane hygiene, not product validation. The latest raw
-novelty read shows `0` active current-run dirs, one enabled fallback group
-(`novelty-ws-parser-serialization`), and current-drain product-evidence still
-visible. The next useful fuzz evidence is continued producer materialization
+The matching feedback action,
+`duplicate-noise-20260518T090427Z-feedback-action.md`, records that this
+bounded control-plane fix has now been applied in the active fuzzer files:
+
+- `RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES` and
+  `RTC_FUZZ_NOVELTY_NO_PRODUCT_STRICT_STARTUP_MIN_CANDIDATES` now default to
+  `1`.
+- The supervisor seed-drain path now stays `paused-startup-stall` through its
+  drain cooldown, and re-enable checks honor `startupStallDrainRecordedUntil`.
+- Novelty drain-only current no-product startup holds now block no-product
+  fallback/materialization refills while product-evidence groups still bypass.
+- `node --check` passed for both changed `.mjs` files, the novelty and
+  supervisor sessions were restarted, one orphaned pre-patch novelty process
+  was killed, and a consumer path check found no queued/running/launching
+  `pre_action_bootstrap_stall` in triage watcher, analysis tier, or deep
+  analysis tier.
+- Product-evidence `reload_rejoin_awareness_stall` remained visible with
+  `launchScope=true`, `2` signatures, and `1` actionable signature.
+
+This remains control-plane hygiene, not product validation. The latest raw
+novelty read shows `0` active current-run dirs, no enabled groups listed, and
+current-drain product-evidence still visible. The next useful fuzz evidence is
+a post-restart novelty/supervisor pass that materializes productive work
 without reopening no-product startup analysis noise.
 
 The completed status-analysis reports through
@@ -410,8 +440,8 @@ These must not be described as fixed or filing-ready.
 | Block-library canonicalization side evidence | `SIDE-BLOCKLIB-COVER-965004` | likely `core/cover` or block-library canonicalization issue; not RTC-stack product work yet | Track separately as block-library diagnostic unless ownership evidence changes |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzz, filing, and rebuilt validation only | Repair or explicitly reclassify before final-stack validation and filing |
 | Active deferred sessions | reload-hydration, search/live-collapse, rich-text suffix, `DIAG-RELOAD-045607`, `DIAG-RELOAD-063159`, `DIAG-RELOAD-064709`, `DIAG-RELOAD-080250`, `DIAG-RELOAD-082300`, `DIAG-RELOAD-085318`, `DIAG-SEARCH-072229`, `DIAG-SEARCH-082303`, `DIAG-SEARCH-083811`, duplicate search evidence, `DIAG-RICH-TEXT-074239`, `DIAG-RICH-TEXT-084314`, duplicate rich-text evidence, `DIAG-RICH-TEXT-051616`, deferred freshness artifacts `090321`, `090824`, `091328`, any `091831` artifact, `HARNESS-WS-URL`, `HARNESS-PLUGIN-STATUS`, `HARNESS-WS-BOOTSTRAP-051619` | active sessions are not progress by themselves; reload/search/rich-text diagnostics are test evidence, not product slots; `083811`, `085318`, and `084314` are diagnostic-only rows that must be included in the post-`091416Z` freshness audit before they can affect the basis; harness rows are not product fixes | Count only nonempty durable reports/artifacts, audited harness refs, focused owner proof, or a clear downscope/promotion decision |
-| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, real-user duplicate-family holds, novelty recommendation/fallback enable paths, paused/no-analysis drain holds, and `.triage-watcher/no-analysis.json` sentinel lifetime | latest synthesis says the remaining leak is producer/scheduler-side: no-product strict startup stalls are mostly suppressed before analysis, but the scheduler still produces replacement startup-noise dirs; latest raw novelty processed `34` records this pass, has `0` active current dirs, `5` current-drain triage roots, `11` raw drain signatures, `2` product-evidence signatures, `1` visible likely-real family-capped signal, and only `novelty-ws-parser-serialization` enabled | Apply/validate the Jetstream2-scoped first-hit no-product startup cooldown thresholds and ensure supervisor/novelty materialization respects drain/cooldown holds for groups without product evidence while product-evidence paths remain visible and family-capped |
-| Current fuzz validation | `run-20260518T085240Z`, novelty read at `2026-05-18T09:16:29Z`, trend generated at `2026-05-18T09:23:17Z` | latest raw novelty processed coverage but still shows `0` active current dirs after policy actions, `5` unmet goals, and only `novelty-ws-parser-serialization` enabled; trend evidence has `5` unmet goals, `0` current duplicate share, `0.3433` historical duplicate share, browser-heavy mix, high load, and 723 browser-E2E likely-real findings over 2212.6 runner-hours | Wait for accepted current-run product evidence and final PR-stack validation before filing claims |
+| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, real-user duplicate-family holds, novelty recommendation/fallback enable paths, paused/no-analysis drain holds, and `.triage-watcher/no-analysis.json` sentinel lifetime | latest synthesis identified a producer/scheduler leak, and the matching feedback action has applied the bounded fix in the active fuzzer files: first-hit no-product strict startup thresholds default to `1`, supervisor seed-drain stays `paused-startup-stall` through cooldown, novelty blocks no-product fallback/materialization during current drain-only startup holds, `node --check` passed, supervisor/novelty were restarted, and product-evidence `reload_rejoin_awareness_stall` stayed visible; latest raw novelty processed `123` records, has `0` active current dirs, `6` current-drain triage roots, `14` raw drain signatures, `2` product-evidence signatures, `1` visible likely-real family-capped signal, and no enabled groups listed | Verify the next post-restart novelty/supervisor pass: no queued/running/launching no-product `pre_action_bootstrap_stall`, productive materialization resumes only for groups not under drain/cooldown, and product-evidence paths remain visible and family-capped |
+| Current fuzz validation | `run-20260518T085240Z`, novelty read at `2026-05-18T09:31:55Z`, trend generated at `2026-05-18T09:23:17Z` | latest raw novelty processed coverage but still shows `0` active current dirs after policy actions, `5` unmet goals, no enabled groups listed, and current-drain product evidence still visible; trend evidence has `5` unmet goals, `0` current duplicate share, `0.3433` historical duplicate share, browser-heavy mix, high load, and 723 browser-E2E likely-real findings over 2212.6 runner-hours | Wait for accepted current-run product evidence and final PR-stack validation before filing claims |
 
 ## Filing Gates And Current Recommendation
 
@@ -492,9 +522,10 @@ The current useful bounded jobs are:
 - rich-text setup-health repair and focused replay for `5100009`, current
   strict `5100002`, and focused rich-text seeds against the `074239Z`
   diagnostic branch
-- bounded duplicate/noise producer-cooldown patch/check: first-hit no-product
-  strict startup stalls should pause producers/materialization for groups
-  without product evidence while preserving product-evidence analysis
+- post-patch duplicate/noise producer-cooldown canary/check: verify the
+  first-hit no-product startup cooldown remains active, no no-product
+  `pre_action_bootstrap_stall` work is queued or launched, and product-evidence
+  analysis stays visible after the restarted supervisor/novelty pass
 - optional loop-progress gate repair if the loop still counts active/stopped
   sessions, zero-byte reports, `report.tmp`, setup-only PR07 output,
   disk-preflight-only output, or `collaborationEnabled:null` as progress
