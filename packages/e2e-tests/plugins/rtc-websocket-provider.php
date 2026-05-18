@@ -37,22 +37,64 @@ function gutenberg_test_rtc_websocket_provider_enqueue() {
 		$ws_url = 'ws://127.0.0.1:' . $ws_port;
 	}
 
+	$bootstrap_script = sprintf(
+		<<<'JS'
+( function() {
+	const settings = %s;
+	const state = window.__gutenbergTestWebSocketSync || {};
+
+	if ( ! state.providerReady ) {
+		state.providerReady = new Promise( ( resolve ) => {
+			state.resolveProviderReady = resolve;
+		} );
+	}
+
+	state.bootstrapFilterRegistered = true;
+	state.bootstrapProviderCreatorCalls =
+		state.bootstrapProviderCreatorCalls || 0;
+	state.providerBundleLoaded = state.providerBundleLoaded || false;
+	state.providerDiagnostics = state.providerDiagnostics || [];
+	state.providerReadyResolved = state.providerReadyResolved || false;
+	state.rooms = state.rooms || {};
+	state.tick = state.tick || 0;
+	state.url = settings.url || state.url;
+
+	window.gutenbergTestWebSocketSync = settings;
+	window.__gutenbergTestWebSocketSync = state;
+
+	window.wp.hooks.addFilter(
+		'sync.providers',
+		'gutenberg-test/rtc-websocket-provider-bootstrap',
+		() => [
+			async ( providerOptions ) => {
+				state.bootstrapProviderCreatorCalls += 1;
+				state.tick += 1;
+				const createProvider = await state.providerReady;
+				return createProvider( providerOptions );
+			},
+		]
+	);
+} )();
+JS,
+		wp_json_encode(
+			array(
+				'url' => $ws_url,
+			)
+		)
+	);
+
+	wp_add_inline_script(
+		'wp-hooks',
+		$bootstrap_script,
+		'after'
+	);
+
 	wp_enqueue_script(
 		'gutenberg-test-rtc-websocket-provider',
 		plugins_url( 'rtc-websocket-provider/build/index.js', __FILE__ ),
 		array( 'wp-hooks', 'wp-sync' ),
 		filemtime( $script_path ),
 		true
-	);
-
-	wp_add_inline_script(
-		'gutenberg-test-rtc-websocket-provider',
-		'window.gutenbergTestWebSocketSync = ' . wp_json_encode(
-			array(
-				'url' => $ws_url,
-			)
-		) . ';',
-		'before'
 	);
 }
 

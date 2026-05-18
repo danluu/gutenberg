@@ -356,8 +356,15 @@ export default class CollaborationUtils {
 				}
 
 				return {
+					bootstrapFilterRegistered:
+						state?.bootstrapFilterRegistered ?? false,
+					bootstrapProviderCreatorCalls:
+						state?.bootstrapProviderCreatorCalls ?? 0,
+					providerBundleLoaded: state?.providerBundleLoaded ?? false,
 					providerDiagnostics:
 						state?.providerDiagnostics?.slice( -10 ) ?? [],
+					providerReadyResolved:
+						state?.providerReadyResolved ?? false,
 					requestedRoom: room,
 					requestedRoomState: room ? rooms?.[ room ] ?? null : null,
 					roomNames: Object.keys( rooms ),

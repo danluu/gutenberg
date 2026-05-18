@@ -16,12 +16,12 @@ const HAS_PROVIDER_SYNCED_REMOTE_STATE_META = 'hasProviderSyncedRemoteState';
 const INITIAL_SYNC_DIAGNOSTIC_TIMEOUT_MS = 20_000;
 
 const settings = window.gutenbergTestWebSocketSync || {};
-const globalState = ( window.__gutenbergTestWebSocketSync = {
-	providerDiagnostics: [],
-	rooms: {},
-	tick: 0,
-	url: settings.url || DEFAULT_URL,
-} );
+const globalState = ( window.__gutenbergTestWebSocketSync =
+	window.__gutenbergTestWebSocketSync || {} );
+globalState.providerDiagnostics = globalState.providerDiagnostics || [];
+globalState.rooms = globalState.rooms || {};
+globalState.tick = globalState.tick || 0;
+globalState.url = settings.url || globalState.url || DEFAULT_URL;
 let nextProviderToken = 1;
 const activeProviders = new Map();
 
@@ -370,6 +370,16 @@ function createWebSocketProvider() {
 	};
 }
 
-window.wp.hooks.addFilter( 'sync.providers', TEST_PROVIDER_NAMESPACE, () => [
-	createWebSocketProvider(),
-] );
+const createProvider = createWebSocketProvider();
+globalState.providerBundleLoaded = true;
+globalState.providerReadyResolved = true;
+
+if ( typeof globalState.resolveProviderReady === 'function' ) {
+	globalState.resolveProviderReady( createProvider );
+} else {
+	window.wp.hooks.addFilter(
+		'sync.providers',
+		TEST_PROVIDER_NAMESPACE,
+		() => [ createProvider ]
+	);
+}
