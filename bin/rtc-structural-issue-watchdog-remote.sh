@@ -13,6 +13,7 @@ DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-2026051
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
+DUP_NOISE_BASE=/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516
 
 SESSION=rtc-structural-issue-watchdog
 FINDINGS=$BASE/current-structural-findings.tsv
@@ -186,6 +187,59 @@ check_loop_statuses() {
 	fi
 }
 
+check_current_run_duplicate_noise() {
+	local out=$1 coverage_root status
+	[ -s "$COVERAGE_BASE/current-output-dir.txt" ] || return
+	coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
+	[ -n "$coverage_root" ] || return
+	status="$coverage_root/novelty-status.md"
+	[ -s "$status" ] || return
+	awk -F ': ' '
+		/^## Triage Yield$/ {
+			in_section = 1
+			next
+		}
+		in_section && /^## / {
+			in_section = 0
+		}
+		in_section && /^- signatures:/ {
+			signatures = $2 + 0
+		}
+		in_section && /^- raw signatures:/ {
+			raw_signatures = $2 + 0
+		}
+		in_section && /^- likely-real visible:/ {
+			likely = $2 + 0
+		}
+		in_section && /^- top duplicate family share:/ {
+			top_share = $2 + 0
+		}
+		in_section && /^- raw top duplicate family share:/ {
+			raw_top_share = $2 + 0
+		}
+		in_section && /^- top semantic families:/ {
+			top_families = $2
+		}
+		in_section && /^- raw top semantic families:/ {
+			raw_top_families = $2
+		}
+		END {
+			if (signatures >= 3 && top_share >= 0.50) {
+				printf "current\t%d\t%.4f\t%d\t%s\n", signatures, top_share, likely, top_families
+			}
+			if (raw_signatures >= 3 && raw_top_share >= 0.50) {
+				printf "raw-current\t%d\t%.4f\t%d\t%s\n", raw_signatures, raw_top_share, likely, raw_top_families
+			}
+		}
+	' "$status" |
+		while IFS=$'\t' read -r scope signatures share likely families; do
+			[ -n "$scope" ] || continue
+			emit_finding "$out" high "duplicate-noise" "${scope}-duplicate-share-dominated" \
+				"$status scope=$scope signatures=$signatures share=$share likely_real_visible=$likely families=$families" \
+				"debug duplicate/noise control-plane leak; preserve product-evidence representatives but cap/rotate the leaking family and restart affected producer or analysis loop"
+		done
+}
+
 detect_findings() {
 	local tmp=$FINDINGS.$$.tmp
 	{
@@ -194,6 +248,7 @@ detect_findings() {
 	check_exact_sessions "$tmp"
 	check_critical_path_invariants "$tmp"
 	check_loop_statuses "$tmp"
+	check_current_run_duplicate_noise "$tmp"
 	if recent_log_matches "$GUARD_BASE/logs/guard.log" 1800 'restart requested pool=.*reason='; then
 		awk -F '\t' -v cutoff=$(( $(date -u +%s) - 1800 )) '
 			$1 >= cutoff { count[$2]++ }
@@ -242,6 +297,9 @@ Task:
    - $FINALIZATION_BASE/current-finalization-status.md
    - $DEFERRED_BASE/current-deferred-status.md
    - $RESOURCE_BASE/resource-autoscaler-status.md
+   - $COVERAGE_BASE/current-output-dir.txt and the active novelty-status.md
+   - $DUP_NOISE_BASE/latest-synthesis.md
+   - $DUP_NOISE_BASE/latest-feedback-action.md
    - $GUARD_BASE/logs/guard.log
    - $GUARD_BASE/logs/restart-events.tsv
    - tmux -L rtc-fuzz list-sessions -F '#S'

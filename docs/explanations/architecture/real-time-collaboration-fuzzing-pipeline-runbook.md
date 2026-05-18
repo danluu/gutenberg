@@ -435,8 +435,9 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-structural-issue-watchdog-remote.sh` detects alive-but-wrong
     control-plane failures that ordinary process watchdogs miss: stale status
     with a live tmux session, recent reconcile/temp-file errors, prefix tmux
-    session masking, repeated guard restarts, and passive PR07C/runtime-readiness
-    classifications. It writes
+    session masking, repeated guard restarts, passive PR07C/runtime-readiness
+    classifications, and current-run duplicate/noise dominance that is still
+    visible in `novelty-status.md`. It writes
     `/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518/current-structural-watchdog-status.md`
     and launches bounded `rtc-structural-repair-*` Codex jobs for high-severity
     findings. Those jobs may patch Jetstream scripts and restart only the
@@ -998,7 +999,10 @@ visible.
 
 The duplicate/noise persona loop treats current-run duplicate dominance as a
 hard action gate. If `novelty-status.md` reports top duplicate family share
-`>= 0.50` with zero visible likely-real failures, or if
+`>= 0.50` with at least three current-run signatures, that is action-needed even
+when likely-real or product-evidence representatives are visible. The loop must
+preserve at least one representative and then fix the producer/consumer leak with
+family caps, producer rotation, or live-analysis accounting. If
 `pre_action_bootstrap_stall` is still the current-run top family after strict
 startup suppression, the next feedback action must make or restart a bounded
 control-plane change instead of only writing analysis.

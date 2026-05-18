@@ -61,7 +61,7 @@ write_duplicate_noise_gate() {
   local coverage_root="$1"
   echo "## Current duplicate/noise action gate"
   echo
-  echo "This loop is failing if current-run triage remains duplicate/noise dominated. Treat top duplicate family share >= 0.50 with zero visible likely-real failures, or pre_action_bootstrap_stall as the current-run top family after strict startup suppression, as ACTION-NEEDED. In that state, a review-only response is insufficient: identify the exact producer/consumer leak and make or restart a bounded control-plane change in the feedback action."
+  echo "This loop is failing if current-run triage remains duplicate/noise dominated. Treat top duplicate family share >= 0.50 with at least three current-run signatures as ACTION-NEEDED even when likely-real/product-evidence representatives are visible. If likely-real/product-evidence signatures are present, do not suppress the family; preserve one representative and fix the producer/consumer leak with family caps, producer rotation, or live-analysis accounting. Also treat pre_action_bootstrap_stall as ACTION-NEEDED if it remains the current-run top family after strict startup suppression. In any ACTION-NEEDED state, a review-only response is insufficient: identify the exact producer/consumer leak and make or restart a bounded control-plane change in the feedback action."
   echo
   if [ -n "$coverage_root" ] && [ -f "$coverage_root/novelty-status.md" ]; then
     awk '
