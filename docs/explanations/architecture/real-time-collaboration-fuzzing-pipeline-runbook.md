@@ -1772,8 +1772,13 @@ lanes, but they must share state. In particular:
     and writes the resulting local publish manifest back to Jetstream. It also
     reads controller-generated push manifests under the PR progress controller
     directory, so controller publication requests do not require GitHub access
-    from Jetstream. It queries the artifact index's manifest-path TSV before
-    falling back to historical `find` walks over run directories.
+    from Jetstream. For PR-progress controller output, it first reads
+    `current-control-decisions.tsv` and deterministically pushes only
+    `publish-ready` rows with `allowed=yes`, before starting the slower snapshot
+    collection or Codex planning path. This keeps branch publication from being
+    blocked by stale snapshot hashes, large artifact scans, or planner latency.
+    It queries the artifact index's manifest-path TSV before falling back to
+    historical `find` walks over run directories.
 
 After changing one of these scripts on Jetstream, restart the matching tmux
 session on the `rtc-fuzz` socket and confirm that the status file shows the new

@@ -90,6 +90,7 @@ remote_manifest_paths() {
 		{
 			test -f '$REMOTE_CRITICAL_BASE/current-push-manifest.tsv' && printf '%s\n' '$REMOTE_CRITICAL_BASE/current-push-manifest.tsv'
 			test -f '$REMOTE_PROGRESS_BASE/current-push-manifest.tsv' && printf '%s\n' '$REMOTE_PROGRESS_BASE/current-push-manifest.tsv'
+			test -f '$REMOTE_PROGRESS_BASE/current-control-decisions.tsv' && printf '%s\n' '$REMOTE_PROGRESS_BASE/current-control-decisions.tsv'
 			find '$REMOTE_PROGRESS_BASE/jobs' -type f -name 'push-manifest.tsv' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -80 | sed 's/^[^ ]* //'
 			find '$REMOTE_DEFERRED_BASE/cycles' -type f -name 'push-manifest.tsv' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -80 | sed 's/^[^ ]* //'
 			find '$REMOTE_PRSPLIT_BASE/runs' -type f -name 'push-manifest.tsv' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -120 | sed 's/^[^ ]* //'
@@ -214,6 +215,51 @@ run_codex_plan() {
 	fi
 }
 
+append_controller_allowed_plan() {
+	local snapshot="$1"
+	local plan="$2"
+	local allowed="$snapshot/controller-allowed-publish-ready.tsv"
+	local current="$snapshot/controller-current-push-manifest.tsv"
+	local decisions="$snapshot/controller-current-control-decisions.tsv"
+	local remote_decisions="$REMOTE_PROGRESS_BASE/current-control-decisions.tsv"
+	local remote_manifest="$REMOTE_PROGRESS_BASE/current-push-manifest.tsv"
+
+	if ! ssh "$REMOTE" "test -s '$remote_decisions' && test -s '$remote_manifest'" 2>/dev/null; then
+		return
+	fi
+
+	ssh "$REMOTE" "cat '$remote_decisions'" > "$decisions"
+	ssh "$REMOTE" "cat '$remote_manifest'" > "$current"
+	awk -F '\t' 'NR > 1 && $1 == "publish-ready" && $4 == "yes" { print $2 }' "$decisions" > "$allowed"
+
+	awk -F '\t' -v allowed="$allowed" -v evidence="$remote_manifest" '
+		BEGIN {
+			while ((getline line < allowed) > 0) {
+				ok[line] = 1
+			}
+			close(allowed)
+		}
+		NR == 1 {
+			for (i = 1; i <= NF; i++) {
+				col[$i] = i
+			}
+			next
+		}
+		ok[$col["source_branch"]] && $col["intended_danluu_branch"] ~ /^danluu\/rtc-pr-progress-/ {
+			printf "%s\t%s\t%s\t%s\t%s\n",
+				$col["source_branch"],
+				$col["intended_danluu_branch"],
+				$col["source_commit"],
+				evidence,
+				"PR progress controller publish-ready allowed=yes"
+		}
+	' "$current" >> "$plan"
+}
+
+plan_has_rows() {
+	awk -F '\t' 'NR > 1 { found = 1 } END { exit found ? 0 : 1 }' "$1"
+}
+
 already_published() {
 	local github_ref="$1"
 	local sha="$2"
@@ -300,9 +346,17 @@ process_plan() {
 }
 
 run_once() {
-	local ts snapshot hash last_hash
+	local ts snapshot hash last_hash controller_plan
 	ts="$(date -u +%Y%m%dT%H%M%SZ)"
 	snapshot="$BASE/snapshots/$ts"
+	mkdir -p "$snapshot"
+	controller_plan="$snapshot/controller-push-plan.tsv"
+	printf 'source_branch\tintended_danluu_branch\texpected_sha\tevidence_path\treason\n' > "$controller_plan"
+	append_controller_allowed_plan "$snapshot" "$controller_plan"
+	if plan_has_rows "$controller_plan"; then
+		write_status pushing "processing PR progress controller allowed publish-ready rows"
+		process_plan "$controller_plan"
+	fi
 	write_status snapshot "collecting Jetstream manifests"
 	collect_snapshot "$snapshot"
 	hash="$(snapshot_hash "$snapshot")"
