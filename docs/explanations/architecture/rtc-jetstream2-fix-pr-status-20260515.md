@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-18T03:46:14Z`
+Snapshot time: `2026-05-18T03:54:30Z`
 
 Trigger event:
-`pr-split-2026-05-18T03-44-51Z-20260518T033143Z`
+`duplicate-noise-2026-05-18T03-46-24Z-166`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T03-44-51Z-20260518T033143Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T03-46-24Z-166/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -50,27 +50,35 @@ Important status changes since the prior report:
   PR06A-D, PR11A-E, PR12A-C, PR15A-D, plus PR06E as a sidecar from PR06D.
   Verified aggregate refs in the branch audit are prior art unless the active
   row below links that exact branch.
-- The branch-link audit generated at `2026-05-18T03:46:14Z` verifies PR01,
+- The branch-link audit generated at `2026-05-18T03:54:30Z` verifies PR01,
   PR02, PR03, PR04, aggregate PR05, aggregate PR06, PR06A prior art, aggregate
   PR07A/PR07B, PR08 prior art, PR09, PR10, aggregate PR11, aggregate PR12,
   repaired PR13A/B/C, PR14, and PR15A-C component refs. It does not verify the
   exact active sub-PR refs for PR02A, PR05A-D, PR06A-D, PR06E, PR07A1-A3,
   PR07B0-B1, PR11A-E, PR12A-C, PR13B0-B3, PR14B, or PR15D.
-- The latest raw novelty monitor is startup-only for
-  `run-20260518T034332Z`; a full coverage pass had not completed yet. Do not
-  claim it as a current full novelty pass or final-stack validation.
-- The latest trend packet, generated at `2026-05-18T03:32:21Z`, still shows
+- The latest raw novelty monitor for `run-20260518T034332Z` completed a pass at
+  `2026-05-18T03:50:04.946Z`. It reports `49442` coverage files, `77019`
+  records seen, `5` unmet goals, `0` current active triage signatures, `0`
+  current visible likely-real failures, and only drain-scope paused/no-analysis
+  triage roots. Treat it as coverage/control-plane health, not final-stack
+  validation.
+- The latest trend packet, generated at `2026-05-18T03:41:19Z`, still shows
   broad fuzz/control-plane health rather than final-stack validation:
-  `49329` coverage files, `5` unmet goals, `0` current duplicate share, and
-  `5501595` cumulative fuzz-level test executions.
+  `49366` coverage files, `5` unmet goals, current duplicate share `1` in the
+  graph snapshot, and `5504471` cumulative fuzz-level test executions.
 - The latest split synthesis adds
   `deferred/rtc-reload-hydration-20260518T032515Z` / `eb684ea47c3` only as a
   harness sidecar intended for `danluu/rtc-plugin-status-json-stall-retry`.
   Do not promote it as a product reload fix.
-- The latest duplicate/noise synthesis
-  `duplicate-noise-20260518T030811Z-synthesis.md` identifies remaining
-  producer/control-plane churn. Its paired feedback-action file is zero bytes,
-  so there is no completed latest action to count from that synthesis.
+- The latest duplicate/noise action
+  `duplicate-noise-20260518T030811Z-feedback-action.md` completed the bounded
+  producer/control-plane remediation: startup-stall guard defaults were
+  tightened, novelty producer caps were made effective, materialization-floor
+  bypasses were removed, the broad supervisor group list is trimmed before
+  launch, and coverage-guided novelty/supervisor/live-analysis sessions were
+  restarted. It passed `node --check`, gate-only triage, live-analysis refresh,
+  and queued/running strict-startup scans. This is control-plane hygiene, not
+  product PR validation.
 
 Current replacement target:
 
@@ -120,7 +128,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T03:46:08Z`.
+Remote status was collected at `2026-05-18T03:54:25Z`.
 
 The fix-planning repo is checked out at:
 
@@ -150,7 +158,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T03:46:14Z` from fetched
+The branch-link audit was generated at `2026-05-18T03:54:30Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. A verified
 branch link confirms that the linked ref exists and has a non-empty audited
@@ -260,57 +268,66 @@ branch-link audit or explicitly says `No verified branch link yet`.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T03:46:08Z
+collected_at_utc: 2026-05-18T03:54:25Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T034332Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The raw `novelty-status.md` for this update was written at
-`2026-05-18T03:45:44.886Z` for `run-20260518T034332Z`. It is startup-only:
+`2026-05-18T03:50:04.946Z` for `run-20260518T034332Z`. It completed a pass
+after the duplicate/noise remediation restart:
 
 ```text
-status: monitor started; full coverage pass pending
-observed roots: 400
-previous records loaded: 76855
-supervisor groups file: 2
-active run dirs: 2
-unmet goals: pending until first pass
-triage signatures: pending until first pass
-likely-real visible: pending until first pass
+coverage files: 49442
+total records seen: 77019
+records processed this pass: 164
+new behavioral feature keys this pass: 12
+new CDP coverage hashes this pass: 12
+unmet goals: 5
+active current-run dirs: 0
+current drain triage roots: 2
+current active triage signatures: 0
+current visible likely-real failures: 0
+combined visible likely-real failures: 288
+enabled groups: novelty-ws-three-user-late-join,
+  novelty-ws-async-server-blocks
+paused most recently: novelty-ws-parser-transform
 ```
 
 Interpretation:
 
-- Do not use the latest raw novelty file as a full pass, a current likely-real
-  count, final-stack validation, or filing readiness.
-- The latest usable trend evidence remains graph-derived input through the
-  preceding monitor pass. It supports fuzz/control-plane health only.
+- The latest raw novelty file shows a healthy current pass with no active
+  product-evidence failures, but it is still not final-stack validation or
+  filing readiness.
+- Current drain triage is clean. Historical/combined likely-real and duplicate
+  counters remain useful for trend context only; do not mix them into current
+  active-run status.
 
-The latest trend packet was generated at `2026-05-18T03:32:21Z`:
+The latest trend packet was generated at `2026-05-18T03:41:19Z`:
 
 ```text
-monitor passes: 2187
+monitor passes: 2188
 first pass: 2026-05-15T01:21:42Z
-last pass: 2026-05-18T03:30:45Z
-coverage files: 272 -> 49329
-coverage files delta: 49057
+last pass: 2026-05-18T03:38:31Z
+coverage files: 272 -> 49366
+coverage files delta: 49094
 unmet goals: 5
 likely_real_max: 4
-duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.3447
+duplicate_share_current_last: 1
+duplicate_share_historical_last: 0.3446
 summary startup failures last: 0
 quality issues last: 0
-memory free: 407.4 GB
+memory free: 424.3 GB
 load averages: 36.97 / 52.4 / 57.21 on 64 cores
 enabled groups: novelty-ws-async-server-blocks,
-  novelty-ws-real-user-save-reload
+  novelty-ws-parser-transform
 latest fuzz level mix:
-  browser-e2e=30 lanes/26 groups
+  browser-e2e=29 lanes/26 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5501595
-browser-e2e likely-real findings: 669 over 2033.8 runner-hours
+total fuzz-level test executions: 5504471
+browser-e2e likely-real findings: 669 over 2036.6 runner-hours
 latest suggested PR net LOC total: 2152
 ```
 
@@ -321,7 +338,7 @@ reload-post-action: 1091/2000
 title-save-reload: 547/1000
 real-user-editing success: 602/1000
 body-save-reload: 606/1000
-ui-format-paragraph: 1810/2000
+ui-format-paragraph: 1815/2000
 ```
 
 Browser E2E remains the only level with confirmed likely-real findings, but
@@ -382,23 +399,31 @@ The latest duplicate/noise synthesis,
 - Strict no-product `pre_action_bootstrap_stall` is mostly blocked from
   expensive Codex analysis; the remaining problem is producer/control-plane
   churn from supervisor and novelty scheduling.
-- The next bounded control-plane fix should tighten supervisor startup-stall
-  pause thresholds, prevent novelty materialization-floor backfill while
-  current no-product startup noise is hot, and preserve product-evidence
-  signatures.
 - A separate no-product global setup REST empty JSON family may need a narrow
   infra classifier if it is currently queued or running.
-- The paired `duplicate-noise-20260518T030811Z-feedback-action.md` is
-  zero bytes, so none of those latest producer-side changes should be counted
-  as completed yet.
 
-The prior duplicate/noise action
-`duplicate-noise-20260518T022520Z-feedback-action.md` is still useful bounded
-control-plane evidence: it implemented durable `no-analysis.json` for strict
-no-product startup seed drains, kept active supervisor drains visible to
-consumers, preserved product-evidence signatures, and passed `node --check`,
-gate-only triage, live-analysis one-shot, and direct queued/running
-strict-startup scans. That does not change the product PR split.
+The completed latest duplicate/noise action
+`duplicate-noise-20260518T030811Z-feedback-action.md` applied that bounded
+control-plane fix:
+
+- Lowered supervisor startup-stall guard defaults from `3/10/0.75` to
+  `2/2/0.5`.
+- Added effective coverage-guided producer caps in the novelty monitor,
+  defaulting requested target/max groups to `1/2` even when watchdog scripts
+  request broad `10/11`.
+- Removed materialization-floor/startup-noise bypasses and trimmed broad
+  `supervisor-groups.json` before supervisor launch.
+- Restarted coverage-guided novelty, supervisor, and live-analysis sessions;
+  stale intermediate coverage-guided roots/processes were killed.
+- Validated with `node --check`, `rg` checks proving the removed bypass helpers
+  are gone, gate-only triage with `candidates=0` / `signatures=0` /
+  `active=0`, live-analysis refresh where both active roots were
+  `skipped-analysis-no-actionable-signature`, and consumer-state scans with no
+  `pre_action_bootstrap_stall` output.
+
+That action did not add a global setup REST empty-JSON classifier because the
+family was not active in the current producer/consumer state. It does not
+change the product PR split and is not product validation.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -432,8 +457,8 @@ These must not be described as fixed or filing-ready.
 | Active deferred sessions | reload-hydration, pre-save search/live-collapse, rich-text suffix | active sessions are not progress by themselves; `032515Z` is a harness candidate, not a product fix | Count only nonempty durable reports/artifacts or a clear downscope/promotion decision |
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families, including `deferred/rtc-reload-hydration-20260518T032515Z` / `eb684ea47c3` | evidence-only unless a focused owner replay proves otherwise; `032515Z` is intended for `rtc-plugin-status-json-stall-retry` harness work | Queue/publish the harness sidecar separately, rerun focused reload shards, and keep these out of product PR rows until ownership evidence is refreshed |
 | Duplicate/noise consumer cap | timeout/reload-rejoin current-run families | source-stable terminal family caps remain implemented and previously validated | Keep product-evidence representatives visible while avoiding duplicate analysis |
-| Duplicate/noise producer leak | supervisor startup thresholds, novelty materialization-floor backfill, possible global setup REST empty JSON family | latest synthesis identifies remaining control-plane churn; latest feedback action is zero bytes, so no new producer-side fix is completed | Run bounded control-plane action only; validate with `node --check`, gate-only passes, restart checks, and product-evidence visibility |
-| Current fuzz validation | `run-20260518T034332Z` plus trend through `2026-05-18T03:30:45Z` | latest raw novelty file is startup-only; trend evidence shows fuzz/control-plane health, not final-stack validation | Wait for full novelty pass and use only refreshed stack product evidence for filing or validation claims |
+| Duplicate/noise producer leak | supervisor startup thresholds, novelty materialization-floor backfill, possible global setup REST empty JSON family | latest action completed the bounded producer cap/startup-threshold remediation and restarted coverage-guided control-plane sessions; no strict startup family is currently queued or analyzed; no global setup REST empty-JSON classifier was added because that family was inactive | Monitor current roots after watchdog rollovers; only add a narrow no-product infra classifier if the REST empty-JSON family becomes active |
+| Current fuzz validation | `run-20260518T034332Z` plus trend through `2026-05-18T03:38:31Z` and raw novelty through `2026-05-18T03:50:04.946Z` | latest raw novelty pass shows `0` active current signatures and `0` current visible likely-real failures; trend evidence shows fuzz/control-plane health, not final-stack validation | Use refreshed stack product evidence, not broad coverage health, for filing or validation claims |
 
 ## Filing Gates And Current Recommendation
 
@@ -503,8 +528,8 @@ The next useful bounded jobs are:
   against strict `5200002`, coverage `1100002` / `1110002`, and focused search
 - focused rich-text suffix replay/env repair and PR05B/PR05C/clean-PR05D
   owner comparison before any PR18x assignment
-- a bounded duplicate/noise producer-side control-plane action if the
-  supervisor/novelty churn and REST empty JSON scan confirm active leakage
+- duplicate/noise follow-up only if a later current-root scan shows renewed
+  producer leakage or an active no-product REST empty-JSON family
 
 Do not launch broad final-stack fuzz, a duplicate broad/final-stack seed
 `1020002` job outside focused diagnostic replay, raw PR07D, PR17, PR18, or
