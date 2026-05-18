@@ -837,3 +837,9 @@ timestamp,group,group_family
 2026-05-18T06:20:39Z,novelty-ws-media-cross-entity,async/media
 2026-05-18T06:32:41Z,novelty-ws-revision-recovery,persistence
 2026-05-18T06:53:10Z,novelty-ws-revision-persistence,persistence
+2026-05-18T07:05:37Z,novelty-ws-parser-serialization,parser
+2026-05-18T07:05:37Z,novelty-ws-revision-recovery,persistence
+2026-05-18T07:14:02Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-18T07:14:09Z,novelty-ws-common-blocks,auth/locks
+2026-05-18T07:19:18Z,novelty-ws-real-user-rich-text,real-user
+2026-05-18T07:19:32Z,novelty-ws-real-user-editing,real-user
