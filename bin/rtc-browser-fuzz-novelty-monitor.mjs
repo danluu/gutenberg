@@ -8168,7 +8168,7 @@ function evaluateHealth( groups, coverageFiles, triageYield, supervisorState ) {
 	return warnings;
 }
 
-let fullStatusWritten = false;
+let fullStatusWritten = Boolean( state.lastUpdatedAt );
 
 async function writeStatus(
 	novelty,
