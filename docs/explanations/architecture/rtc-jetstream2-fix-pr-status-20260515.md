@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-18T19:40:41Z`
+Snapshot time: `2026-05-18T19:48:33Z`
 
 Trigger event:
-`duplicate-noise-2026-05-18T19-39-41Z-210`
+`pr-split-2026-05-18T19-46-05Z-20260518T193545Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T19-39-41Z-210/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T19-46-05Z-20260518T193545Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -27,10 +27,11 @@ or the original split merely for continuity.
 
 ## Executive Status
 
-The split remains blocked and not fileable. The latest split-persona consensus
-at `20260518T191310Z`, then the Cycle 388 feedback action, keeps the
-Cycle378/Cycle386 parallel-lane replacement shape and rejects the older linear
-`PR07 -> PR17 -> PR18/PR18x` tail. The blocker is evidence, not split design.
+The split remains blocked and not fileable. The latest split-persona synthesis
+at `20260518T193545Z` agrees with the Cycle 388 feedback action: keep the
+Cycle378/Cycle386/Cycle388 parallel-lane replacement shape and reject the older
+linear `PR07 -> PR17 -> PR18/PR18x` tail. The blocker is evidence, not split
+design.
 The current maintainer-facing recommendation is still the parallel-lane shape
 over the Cycle325/i40 source material:
 
@@ -89,16 +90,24 @@ WebSocket provider test plugins before fanout, and reruns only the owner-matrix
 rows needed to reach the oracle. It also created the isolated `PR02B`
 validation job for seed `1030001`, a short HTTP persistence-probe shard, and
 targeted `phpunit/tests/collaboration/wpHttpPollingSyncServer.php` after
-bootstrap. Both jobs remain gates until their reports/classifications and PR CI
-exist.
+bootstrap.
+
+The `20260518T193545Z` split-persona synthesis checked those artifacts and
+keeps both gates blocked. The Cycle 388 PR07 job still has no `report.md` and
+only header-only `classification.tsv` / `replay-runs.tsv` output, so it
+provides no owner evidence. The Cycle 388 `PR02B` job has a nonzero report, but
+all three validation rows are setup/bootstrap failures from the `12301`
+`wp-env` port collision. The newer `20260518T193728Z` finalization report is
+nonzero, but it explicitly keeps both PR07 and `PR02B` blocked.
 
 Cycle 380 remains local-host proof for the older nonzero `20260518T170639Z`
 finalization. Cycle 382 remains completed PR07C/HOLD-07C red-owner evidence.
 Cycle 386 supersedes Cycle 384 for finalization freshness and PR07 replay setup,
 but it is not GitHub publication, product-promotion proof, final-stack
 validation, PR07 owner proof, or exact branch-link proof for rows that still say
-`No verified branch link yet`. Cycle 388 is job-launch evidence only until the
-PR07 and PR02B reports complete.
+`No verified branch link yet`. Cycle 388 now proves the next gates are still
+blocked: PR07 lacks a nonzero report, and the `PR02B` report is setup-only due
+to the `12301` port collision.
 
 Two Cycle 376 preflights also passed:
 
@@ -112,17 +121,19 @@ Two Cycle 376 preflights also passed:
   seeds `990001` and `990003`, and has a clean diff, but remains
   harness/diagnostic setup only.
 
-The newest split-persona synthesis, `pr-split-20260518T191310Z-synthesis.md`,
+The newest split-persona synthesis, `pr-split-20260518T193545Z-synthesis.md`,
 still recommends that replacement split, not the older linear PR07 tail. The
 split is still blocked by PR07 owner-matrix adjudication, `PR02B` validation,
 missing exact verified GitHub refs for many active rows, seed `1020002`
 handling or reclassification, and final-stack validation. Cycle 386 moved the
 finalization/local-publish audit from unaudited to `PASS`, but also proved PR07
 was setup-blocked at the missing e2e test plugin before any owner oracle could
-run. Cycle 388 launched the bounded setup repair and PR02B validation jobs, but
-does not clear either gate by launch alone. `PR07B0A-155713` remains the key
-split candidate after `PR07B0`; raw `155713` full-stack output remains a hazard
-and must not be pushed as a PR.
+run. Cycle 388 launched the bounded setup repair and PR02B validation jobs; the
+latest artifact check shows PR07 still lacks a nonzero report, `PR02B` failed
+only in setup/bootstrap on port `12301`, and the nonzero `20260518T193728Z`
+finalization still leaves both blocked. `PR07B0A-155713` remains the key split
+candidate after `PR07B0`; raw `155713` full-stack output remains a hazard and
+must not be pushed as a PR.
 
 Current split recommendation:
 
@@ -164,11 +175,11 @@ fallback-tail `PR05D`, `PR17`, `PR18`, or `PR18x`. Do not treat `PR02B`,
 `PR07B0A-155713`, reload-marker diagnostics, pre-save search, rich-text suffix,
 the audited `170639` finalization, the Cycle 386 audited `183710`
 finalization/local-publish manifest, Cycle 386 PR07 branch/replay artifacts,
-Cycle 388 PR07/PR02B job launches, PR07C red replay evidence, or the Cycle 382
-PR07C owner classification as product PRs until their specific replay, owner,
+Cycle 388 PR07/PR02B outputs, PR07C red replay evidence, or the Cycle 382 PR07C
+owner classification as product PRs until their specific replay, owner,
 branch-link, publication, and validation gates pass.
 
-The latest raw novelty status is root `run-20260518T194010Z`. It is a startup
+The latest raw novelty status is root `run-20260518T194745Z`. It is a startup
 status only: full coverage pass pending, groups file pending, active run dirs
 `0`, and historical records loaded from previous roots. The latest
 duplicate/noise feedback action completed the bounded scheduler/admission fix:
@@ -180,7 +191,7 @@ product validation, PR validation, or final-stack evidence.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T19:40:36Z`.
+Remote status was collected at `2026-05-18T19:48:28Z`.
 
 The fix-planning repo is checked out at:
 
@@ -210,7 +221,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T19:40:41Z` from fetched
+The branch-link audit was generated at `2026-05-18T19:48:33Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact Cycle325/i40 publication shape, ancestry, owner evidence, or filing
@@ -246,7 +257,7 @@ verified branch link are not file-ready.
 | PR 1 | HTTP polling generated update size guard | [`review/rtc-pr01-http-polling-generated-update-size`](https://github.com/danluu/gutenberg/tree/review/rtc-pr01-http-polling-generated-update-size) | 2 | +181 / -19 | verified content |
 | PR 2 | HTTP polling storage read window | [`review/rtc-pr02-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/tree/review/rtc-pr02-http-polling-storage-read-window) | 2 | +57 / -5 | verified content |
 | PR 2A | Ready sidecar after PR2 | No verified branch link yet | TBD | TBD | active sidecar; not file-ready until pushed, fetched, and audited |
-| PR 2B | HTTP polling awareness rejoin retry after PR2 | No verified branch link yet | TBD | TBD | preflight passed in Cycle 376; Cycle 388 launched isolated seed `1030001` / HTTP persistence-probe / targeted PHPUnit validation, but the row remains blocked until the report, PR CI, and verified GitHub branch link pass |
+| PR 2B | HTTP polling awareness rejoin retry after PR2 | No verified branch link yet | TBD | TBD | preflight passed in Cycle 376; Cycle 388 validation produced a nonzero report, but all three rows are setup/bootstrap failures from the `12301` `wp-env` port collision, so the row remains blocked until seed/probe/PHPUnit validation, PR CI, and verified GitHub branch link pass |
 | PR 3 | Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/review/rtc-pr03-revision-restore-crdt-reset) | 2 | +58 / -5 | verified content; PR03B remains held |
 | PR 4 | Persisted CRDT save-meta idempotence | [`review/rtc-pr04-crdt-save-meta-idempotence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr04-crdt-save-meta-idempotence) | 2 | +160 / -1 | verified content |
 | PR 5A | Entity/reference normalization equivalence | No verified branch link yet | TBD | TBD | active i40 row; aggregate PR05 is prior art only |
@@ -267,7 +278,7 @@ verified branch link are not file-ready.
 | PR 7A2 | Save response skipped/base guard microhead | No verified branch link yet | TBD | TBD | active i40 row; prior replay evidence is stale/pre-oracle |
 | PR 7A3 | Save response stale block/content guard microhead | No verified branch link yet | TBD | TBD | active i40 row |
 | PR 7B0-current | Current save-response manager/base-record entry candidate after PR07A3 | No verified branch link yet | TBD | TBD | first decision-fork arm; compare against `PR07B0A-155713`, distinct re-materialized `121507`/`134558` only if they exist, and `HOLD-07C` before accepting the PR07B1 base |
-| PR 7B0A-155713 | Saved-CRDT hydration candidate after PR07B0 | No verified branch link yet | TBD | TBD | key runtime-gated candidate; Cycle 386 used finalized head `d96bd2c719f9838a1e87ac9bbf500eaf31afdf74`, regenerated branch/replay artifacts from the audited `183710` finalization, then failed all 48 replay rows before the oracle because `gutenberg-test-plugin-disables-the-css-animations` is missing; Cycle 388 launched the bounded plugin-setup repair/owner replay, but owner adjudication, exact verified branch link, and seed `990001` replay are still missing until that report completes; raw `155713` full-stack ref must not be pushed |
+| PR 7B0A-155713 | Saved-CRDT hydration candidate after PR07B0 | No verified branch link yet | TBD | TBD | key runtime-gated candidate; Cycle 386 used finalized head `d96bd2c719f9838a1e87ac9bbf500eaf31afdf74`, regenerated branch/replay artifacts from the audited `183710` finalization, then failed all 48 replay rows before the oracle because `gutenberg-test-plugin-disables-the-css-animations` is missing; Cycle 388 launched the bounded plugin-setup repair/owner replay, but the latest artifact check still has no `report.md` and only header-only TSVs, so owner adjudication, exact verified branch link, and seed `990001` replay are still missing; raw `155713` full-stack ref must not be pushed |
 | PR 7B0-alt? | Restacked `121507`/`134558` saved-response/persisted-CRDT hydration candidate | No verified branch link yet | TBD | TBD | first decision-fork arm only if re-materialized as distinct; Cycle 386 downscopes them unless distinct current refs exist |
 | PR 7B1 | Save response manager/base-record owner microhead after the chosen PR07B0 arm | No verified branch link yet | TBD | TBD | not file-ready until the first PR07 decision comparison is decided; include as a comparison arm in the second owner matrix |
 | PR 7B1A | Current stale sync-manager entity epoch guard | No verified branch link yet | TBD | TBD | second decision-fork arm; compare against `PR07B1`, `PR07B1A-ALT-131542`, stale-epoch alternates, `PR03B`, `HOLD-07B2`, `HOLD-07C`, and lower-layer controls before claiming coverage |
@@ -321,23 +332,23 @@ Cycle325/i40 proposed PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T19:40:36Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T194010Z
+collected_at_utc: 2026-05-18T19:48:28Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T194745Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-18T19:40:19.617Z`. The current root is startup-only: the full coverage
+`2026-05-18T19:47:56.632Z`. The current root is startup-only: the full coverage
 pass, guidance, triage yield, and supervisor groups file are still pending. This
 is current fuzz/control-plane health, not final-stack validation.
 
 Current-run health:
 
 ```text
-output dir: run-20260518T194010Z
+output dir: run-20260518T194745Z
 status: monitor started; full coverage pass pending
-observed roots: 556
+observed roots: 559
 previous records loaded: 89008
 supervisor groups file: pending
 active run dirs: 0
@@ -362,7 +373,7 @@ Interpretation:
   The successor root still needs a full monitor pass or bounded canary evidence
   before claiming producer materialization is healthy.
 
-The latest trend evidence packet was generated at `2026-05-18T19:33:05Z`:
+The latest trend evidence packet was generated at `2026-05-18T19:39:08Z`:
 
 ```text
 monitor passes: 2287
@@ -378,13 +389,13 @@ summary startup failures last: 0
 quality issues last: 1
 memory free: 419.1 GB
 load averages: 45.62 / 44.78 / 50.05 on 64 cores
-enabled groups current: novelty-ws-parser-serialization
+enabled groups current: none
 latest fuzz level mix:
-  browser-e2e=28 lanes/25 groups
+  browser-e2e=27 lanes/24 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5869069
-browser-e2e likely-real findings: 769 over 2462.8 runner-hours
+total fuzz-level test executions: 5871152
+browser-e2e likely-real findings: 769 over 2464.2 runner-hours
 ```
 
 The largest unmet goals remain save/reload and real-user depth:
@@ -406,15 +417,17 @@ targeted owner/replay work rather than broad final-stack claims.
 ## Status-Persona Analysis
 
 The newest split-persona synthesis,
-`pr-split-20260518T191310Z-synthesis.md`, says the report needs the
-Cycle378/Cycle386 replacement split, not the older linear PR07 tail. The Cycle
-388 feedback action applied that guidance by launching one PR07
-missing-test-plugin setup repair/owner replay job and one isolated `PR02B`
-validation job. The split is still not fileable and not ready for broad
-final-stack fuzzing because those jobs have not yet supplied owner/validation
-proof, exact branch publication/audit is still missing for many active rows,
-seed `1020002` still needs handling or reclassification, and final-stack
-validation remains unresolved.
+`pr-split-20260518T193545Z-synthesis.md`, says the report needs the
+Cycle378/Cycle386/Cycle388 replacement split, not the older linear PR07 tail.
+It also checked the latest artifacts: Cycle 388 PR07 still has no `report.md`
+and only header-only `classification.tsv` / `replay-runs.tsv`; Cycle 388
+`PR02B` has a nonzero report, but all three rows failed during setup/bootstrap
+because port `12301` was already occupied; and the new `20260518T193728Z`
+finalization report is nonzero but still keeps PR07 and `PR02B` blocked. The
+split is still not fileable and not ready for broad final-stack fuzzing because
+owner/validation proof is missing, exact branch publication/audit is still
+missing for many active rows, seed `1020002` still needs handling or
+reclassification, and final-stack validation remains unresolved.
 
 Cycle 380 remains local-host proof for the older nonzero `20260518T170639Z`
 finalization, not filing proof. Cycle 382 added a completed `PASS`
@@ -456,8 +469,9 @@ ready product rows, `2` ready sidecar rows, `8` ready harness rows, `12`
 blocked rows, `0` ready/sidecar base allowlist violations, and `43`
 ready/sidecar/harness rows missing from `latest-local-publish-manifest.tsv`.
 Treat the Cycle 386 PR07 branch/replay files as setup evidence only, and treat
-the Cycle 388 PR07/PR02B job launches as pending gate work only until their
-reports and classifications complete. Cycle 382 remains completed Parallel
+the Cycle 388 PR07/PR02B outputs as blocked gate work: PR07 lacks a nonzero
+report, and `PR02B` is setup/bootstrap-only due to the `12301` port collision.
+Cycle 382 remains completed Parallel
 Progress Gate owner-classification proof only, and Cycle 380 remains local-host
 `170639` finalization freshness proof only. None clears GitHub publication,
 product-promotion, final-stack validation, PR07 owner proof, PR02B validation,
@@ -466,9 +480,10 @@ yet`.
 
 The next useful work is bounded, not broad:
 
-- consume the Cycle 388 PR07 setup-repair/owner-replay report when it exists;
-  do not promote an arm unless oracle-level owner evidence is produced;
-- consume the Cycle 388 `PR02B` validation report when it exists; keep `PR02B`
+- rerun or repair the Cycle 388 PR07 setup-repair/owner-replay path so it emits
+  a nonzero report; do not promote an arm unless oracle-level owner evidence is
+  produced;
+- rerun `PR02B` validation with free ports or webServer reuse; keep `PR02B`
   blocked until seed `1030001`, HTTP persistence-probe, targeted PHPUnit, PR CI,
   and branch-link audit pass;
 - use the Cycle386 job-local push manifest for ready/local publication audit
@@ -494,7 +509,7 @@ fix: no-product startup stall guard default `1`, novelty monitor policy version
 `31`, producer-state precedence for no-product startup holds, reusable
 duplicate-family cooldowns for producer gating, preserved product-evidence
 representatives, and restarted coverage-guided novelty/supervisor sessions.
-The successor root `run-20260518T194010Z` is still startup-only, so this is
+The successor root `run-20260518T194745Z` is still startup-only, so this is
 completed scheduler remediation plus pending observation, not product or
 final-stack validation.
 
@@ -513,10 +528,10 @@ These must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| i40 source family | `fresh-prset/iteration-40/*`, `finalized/cycle324-i40/*`, Cycle325/i40 manifests, audited nonzero `20260518T130525Z`, `133533Z`, Cycle 368 `135539Z`, audited `143551Z`, `145558Z`, `150601Z`, `152607Z`, `153610Z`, `160619Z`, `163628Z`, Cycle 380 `170639`, unaudited `175655`, zero-byte-report `180659`, unaudited nonzero `182705`, Cycle 386 audited latest nonzero `183710`, Cycle 382 PR07C owner snapshot classification, Cycle 386 PR07 owner-matrix branch/downscope/replay/report artifacts, Cycle 388 PR07 setup-repair and PR02B validation jobs, `PR07B0A-155713`, `121507`, `134558`, `123016`, `123520`, current `PR07B0`, current `PR07B1A`, raw reload/stale-epoch candidates `111430`/`114448`/`123016`/`124525`/`130034`/`131542`/`133049`, deferred reload/search/rich-text diagnostics | active source family; Cycle 386 local audit passed for `183710` with a job-local push manifest, `33` ready product rows, `2` ready sidecar rows, `8` ready harness rows, `12` blocked rows, `0` ready/sidecar base allowlist violations, and `43` ready/sidecar/harness rows still missing from `latest-local-publish-manifest.tsv`; Cycle 386 PR07 replay setup attempted 48 rows but all failed before the oracle on missing `gutenberg-test-plugin-disables-the-css-animations`; Cycle 388 launched the bounded plugin setup repair/owner replay and PR02B validation jobs, but those launches remain pending gate work, not GitHub publication, product-promotion proof, exact branch-link proof, owner-matrix proof, PR02B validation proof, or final-stack validation; `121507`/`134558` remain downscoped unless re-materialized as distinct current refs; filing remains blocked by PR07 owner evidence, missing verified GitHub links, seed `1020002`, PR02B validation, reload-marker replay/downscope, and final validation | Consume Cycle 388 PR07 and PR02B reports when they exist, publish/fetch/audit exact GitHub links, use the Cycle386 job-local push manifest for local publication audit work, repair or reclassify seed `1020002`, and run final-stack validation gates |
+| i40 source family | `fresh-prset/iteration-40/*`, `finalized/cycle324-i40/*`, Cycle325/i40 manifests, audited nonzero `20260518T130525Z`, `133533Z`, Cycle 368 `135539Z`, audited `143551Z`, `145558Z`, `150601Z`, `152607Z`, `153610Z`, `160619Z`, `163628Z`, Cycle 380 `170639`, unaudited `175655`, zero-byte-report `180659`, unaudited nonzero `182705`, Cycle 386 audited latest nonzero `183710`, Cycle 382 PR07C owner snapshot classification, Cycle 386 PR07 owner-matrix branch/downscope/replay/report artifacts, Cycle 388 PR07 setup-repair and PR02B validation outputs, nonzero `20260518T193728` finalization, `PR07B0A-155713`, `121507`, `134558`, `123016`, `123520`, current `PR07B0`, current `PR07B1A`, raw reload/stale-epoch candidates `111430`/`114448`/`123016`/`124525`/`130034`/`131542`/`133049`, deferred reload/search/rich-text diagnostics | active source family; Cycle 386 local audit passed for `183710` with a job-local push manifest, `33` ready product rows, `2` ready sidecar rows, `8` ready harness rows, `12` blocked rows, `0` ready/sidecar base allowlist violations, and `43` ready/sidecar/harness rows still missing from `latest-local-publish-manifest.tsv`; Cycle 386 PR07 replay setup attempted 48 rows but all failed before the oracle on missing `gutenberg-test-plugin-disables-the-css-animations`; Cycle 388 PR07 still has no `report.md` and only header-only TSVs, Cycle 388 PR02B has a nonzero setup/bootstrap-failure report from the `12301` port collision, and the nonzero `20260518T193728` finalization still keeps PR07 and PR02B blocked; none is GitHub publication, product-promotion proof, exact branch-link proof, owner-matrix proof, PR02B validation proof, or final-stack validation; `121507`/`134558` remain downscoped unless re-materialized as distinct current refs; filing remains blocked by PR07 owner evidence, missing verified GitHub links, seed `1020002`, PR02B validation, reload-marker replay/downscope, and final validation | Repair/rerun PR07 setup-repair and PR02B free-port validation, publish/fetch/audit exact GitHub links, use the Cycle386 job-local push manifest for local publication audit work, repair or reclassify seed `1020002`, and run final-stack validation gates |
 | Missing verified product refs | PR02A, PR02B, PR05A-D, PR06A-D, PR06E, PR07A1-A3, PR07B0-current, PR07B0A-155713, PR07B0-alt/`121507`/`134558`, PR07B1, PR07B1A, possible PR07B1B including `124525`/`130034`/`131542`/`133049`, `HOLD-07B2`, `HOLD-07C`, PR11A-E, PR12A-C, PR13B0-B3, PR14B, PR15A-D | active rows correctly say `No verified branch link yet` | Publish/fetch/audit explicit GitHub refs before filing |
-| PR02B | HTTP polling awareness rejoin retry after PR2, seed `1030001` | recommended sidecar; Cycle 376 preflight passed branch/source checks; Cycle 388 launched isolated validation, but no completed report/CI/branch-link proof is in the collected status yet | Consume the Cycle 388 validation report, require seed `1030001`, short HTTP persistence-probe, targeted PHPUnit after bootstrap, PR CI, and exact branch-link audit |
-| PR07 runtime / owner gate | PR07A1-A3, current PR07B0, `PR07B0A-155713`, `121507`/`134558`, chosen PR07B1, current PR07B1A, raw `111430/114448/123016/124525/130034/131542/133049`, `HOLD-07B2`, `HOLD-07C`, reload/provider rejoin evidence `5817434bb6cf` / seed `1100001` | runtime readiness has durable repaired-ready evidence and Cycle 386 local audit proof, but product ownership is unresolved; Cycle 386 regenerated PR07 branch links, used finalized `PR07B0A-155713` at `d96bd2c719f9838a1e87ac9bbf500eaf31afdf74`, started `wp-env` on isolated ports, and attempted 48 replay rows, but all failed before the oracle because `gutenberg-test-plugin-disables-the-css-animations` is missing; Cycle 388 launched the plugin-map/setup repair and owner replay; no first-divergence snapshots or promotion decision are collected yet | Consume the Cycle 388 PR07 setup-repair/owner-replay report; require plugin-map smoke success, oracle-level replay rows across seeds `5200011`, `5200017`, `5200010`, `7110004`, `7110017`, and `990001`, comparison of `PR07B0`, finalized `PR07B0A-155713`, materialized `121507`/`134558` only if distinct, `PR07B1`, `PR07B1A`, `PR07B1A-ALT-131542`, `PR03B`, `HOLD-07B2`, `HOLD-07C`, and lower-layer controls, plus clean materialized refs with `git diff --check`, owner snapshots, durable REST/meta, `_crdt_document`, edited-record, provider/awareness, UI collaborator, branch-head, and first-divergence evidence |
+| PR02B | HTTP polling awareness rejoin retry after PR2, seed `1030001` | recommended sidecar; Cycle 376 preflight passed branch/source checks; Cycle 388 validation has a nonzero report, but all three rows are setup/bootstrap failures from the `12301` `wp-env` port collision; no product validation, CI, or branch-link proof is in the collected status yet | Rerun with dynamic free ports or Playwright webServer reuse, then require seed `1030001`, short HTTP persistence-probe, targeted PHPUnit after bootstrap, PR CI, and exact branch-link audit |
+| PR07 runtime / owner gate | PR07A1-A3, current PR07B0, `PR07B0A-155713`, `121507`/`134558`, chosen PR07B1, current PR07B1A, raw `111430/114448/123016/124525/130034/131542/133049`, `HOLD-07B2`, `HOLD-07C`, reload/provider rejoin evidence `5817434bb6cf` / seed `1100001` | runtime readiness has durable repaired-ready evidence and Cycle 386 local audit proof, but product ownership is unresolved; Cycle 386 regenerated PR07 branch links, used finalized `PR07B0A-155713` at `d96bd2c719f9838a1e87ac9bbf500eaf31afdf74`, started `wp-env` on isolated ports, and attempted 48 replay rows, but all failed before the oracle because `gutenberg-test-plugin-disables-the-css-animations` is missing; Cycle 388 attempted the plugin-map/setup repair and owner replay, but the latest artifact check still has no `report.md` and only header-only TSVs; no first-divergence snapshots or promotion decision are collected yet | Repair the Cycle 388 PR07 setup path so it emits a nonzero report, then require plugin-map smoke success, oracle-level replay rows across seeds `5200011`, `5200017`, `5200010`, `7110004`, `7110017`, and `990001`, comparison of `PR07B0`, finalized `PR07B0A-155713`, materialized `121507`/`134558` only if distinct, `PR07B1`, `PR07B1A`, `PR07B1A-ALT-131542`, `PR03B`, `HOLD-07B2`, `HOLD-07C`, and lower-layer controls, plus clean materialized refs with `git diff --check`, owner snapshots, durable REST/meta, `_crdt_document`, edited-record, provider/awareness, UI collaborator, branch-head, and first-divergence evidence |
 | PR07D | reload/post-save/rejoin residuals | raw PR07D is rejected | Add only if fresh PR07 replay proves red-at-HOLD-07C non-coverage with first-divergence evidence |
 | PR05D and rich-text/search reductions | clean PR05D `27c6e7924217`, search/live-collapse, rich-text suffix, parser/linebreak candidates, rich-text `142117` harness/setup hardening | diagnostic or held until owner comparison proves product ownership; strict owner comparison assigns no `PR18x` yet | Compare against PR05B, PR05C, clean PR05D, the chosen PR07B0/PR07B1 path, PR07B1A, and holds before assigning any new owner row |
 | PR06 ungrouping and PR06E | active PR06A-D plus PR06E | grouped PR06 and PR06A prior-art refs are verified; active PR06A-D and PR06E have no exact verified links | Publish/fetch/audit exact refs, then prove `PR06D -> PR06E`, `PR07 !-> PR06E`, and adjacent evidence for PR06A-D |
@@ -526,8 +541,8 @@ These must not be described as fixed or filing-ready.
 | PR14B / PR15 placement | PR14B and active PR15A-D after PR14B | branch-link audit verifies PR15A-C component prior art, but no exact PR14B-based PR15A-D refs | Publish/fetch/audit explicit PR14B-based PR15A-D refs and confirm ancestry |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzzing, filing, and rebuilt validation only | Repair or explicitly reclassify before final-stack validation and filing |
 | Reload marker/lifecycle work | `HARNESS-RELOAD-MARKERS-154206`, `HARNESS-RELOAD-REPLAY-163231`, `HARNESS-RELOAD-WS-CONFIG-164740`, seeds `990001`/`990003`, same-user lifecycle seeds `5200001`/`5200002`/`5200005`/`1130001`/`1130002`, PR07C seeds `5200011`/`5200017`/`5200010` and `7110004`/`7110017`, completed `170248`, no-report `170250`, reload deferred output `173306` | preflight passed for marker branch and replay JSON candidates; Cycle 380 PR07C replay is durable red evidence, and Cycle 382 classified PR07C/HOLD-07C as red-held/not promotable, but Cycle 386 showed the full owner replay blocked before the oracle by missing test-plugin setup; Cycle 388 is the pending setup repair; `164740` and `170248` reload reports are harness/diagnostic only until replay proves product ownership; `170250` is not evidence and `173306` still needs deferred audit | Consume the Cycle 388 PR07 owner replay when present, run WS-config replay on seed `1130001` and then `1130002` only as diagnostic harness validation if still needed, then require product-owned first-loss boundary before promotion |
-| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, empty materialization rescue, fallback enablement, current no-analysis drains, ordinary fallback rotation, bounded canary policy | latest synthesis identified a producer/scheduler admission leak; Cycle 210 feedback action implemented the bounded fix, including no-product startup hold precedence, reusable duplicate-family cooldowns, product-evidence representative preservation, policy version `31`, syntax checks, novelty/supervisor restart, and stale monitor cleanup; the latest raw novelty root `run-20260518T194010Z` is startup-only with full pass pending and active run dirs `0` | Observe the successor root through a full pass or bounded canary; verify current producer materialization becomes nonempty without hiding product-evidence representatives; do not treat this as product validation |
-| Current fuzz validation | `run-20260518T194010Z`, raw novelty status at `2026-05-18T19:40:19.617Z`, trend generated at `2026-05-18T19:33:05Z` | current raw status is startup-only with full pass pending, observed roots `556`, previous records loaded `89008`, groups pending, and active run dirs `0`; latest trend shows `54640` graph coverage files, `4` unmet goals, current duplicate share `0`, historical duplicate share about `0.3415`, quality issues `1`, browser-e2e at `28` lanes / `25` groups, enabled group `novelty-ws-parser-serialization`, and `769` browser-e2e likely-real findings over `2462.8` runner-hours | Use as current health/control-plane evidence only; still require accepted product evidence, owner replay, exact branch audit, PR02B validation, reload-marker replay/downscope, seed `1020002` repair/reclassification, and final PR-stack validation before filing claims |
+| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, empty materialization rescue, fallback enablement, current no-analysis drains, ordinary fallback rotation, bounded canary policy | latest synthesis identified a producer/scheduler admission leak; Cycle 210 feedback action implemented the bounded fix, including no-product startup hold precedence, reusable duplicate-family cooldowns, product-evidence representative preservation, policy version `31`, syntax checks, novelty/supervisor restart, and stale monitor cleanup; the latest raw novelty root `run-20260518T194745Z` is startup-only with full pass pending and active run dirs `0` | Observe the successor root through a full pass or bounded canary; verify current producer materialization becomes nonempty without hiding product-evidence representatives; do not treat this as product validation |
+| Current fuzz validation | `run-20260518T194745Z`, raw novelty status at `2026-05-18T19:47:56.632Z`, trend generated at `2026-05-18T19:39:08Z` | current raw status is startup-only with full pass pending, observed roots `559`, previous records loaded `89008`, groups pending, and active run dirs `0`; latest trend shows `54640` graph coverage files, `4` unmet goals, current duplicate share `0`, historical duplicate share about `0.3415`, quality issues `1`, browser-e2e at `27` lanes / `24` groups, no enabled current groups, and `769` browser-e2e likely-real findings over `2464.2` runner-hours | Use as current health/control-plane evidence only; still require accepted product evidence, owner replay, exact branch audit, PR02B validation, reload-marker replay/downscope, seed `1020002` repair/reclassification, and final PR-stack validation before filing claims |
 
 ## Filing Gates And Current Recommendation
 
@@ -548,11 +563,14 @@ Before filing any maintainer-facing PR:
    the Cycle 386 `183710` finalization/local-publish audit as local-host
    freshness plus job-local push-manifest evidence only. Treat Cycle 386 PR07
    branch/replay files as setup evidence only because all 48 rows failed before
-   the oracle on the missing e2e test plugin. Treat the Cycle 388 PR07 and
-   PR02B job launches as pending gates, not validation proof. None is complete
-   filing proof, GitHub-publication proof, product-promotion proof, final-stack
-   validation, PR07 owner proof, PR02B validation proof, or exact branch-link
-   proof. Treat `170250` as non-evidence until it has a report.
+   the oracle on the missing e2e test plugin. Treat the Cycle 388 PR07 output
+   as still blocked because it has no report and only header-only TSVs; treat
+   the Cycle 388 PR02B output as setup-only because its nonzero report shows
+   the `12301` port collision; and treat the nonzero `20260518T193728`
+   finalization as blocked because it keeps PR07 and PR02B unresolved. None is
+   complete filing proof, GitHub-publication proof, product-promotion proof,
+   final-stack validation, PR07 owner proof, PR02B validation proof, or exact
+   branch-link proof. Treat `170250` as non-evidence until it has a report.
 3. Do not file `PR02B` before seed `1030001`, HTTP persistence-probe, targeted
    PHPUnit, PR CI, and verified GitHub branch-link audit pass.
 4. Do not file PR07 until the `PR07B0` / `PR07B0A-155713` /
@@ -575,7 +593,7 @@ Before filing any maintainer-facing PR:
    push allow-lists unless it is deliberately copied into a clean evidence
    worktree.
 10. Treat the completed duplicate/noise scheduler change, the startup-only
-   current-root `run-20260518T194010Z` novelty status, and the latest trend
+   current-root `run-20260518T194745Z` novelty status, and the latest trend
    status as control-plane/fuzz health, not product validation or final-stack
    readiness.
 11. After PR07 decision-fork owner evidence, exact branch-link audit for
@@ -592,18 +610,20 @@ Useful bounded work now:
   local-host proof only, consume the completed Cycle 382 PR07C owner-snapshot
   classification as red-held/not-promotable evidence only, treat Cycle 386 PR07
   branch/downscope/replay/report artifacts as pre-oracle setup evidence, and
-  consume the Cycle 388 PR07 setup-repair/owner-replay report when it exists;
+  repair or rerun the Cycle 388 PR07 setup-repair/owner-replay path so it emits
+  a nonzero report;
 - use the Cycle386 job-local push manifest for ready/local publication audit
   work because latest local-publish rows still miss Cycle325/i40 destinations;
-- consume the Cycle 388 `PR02B` validation report when it exists, and keep the
-  sidecar blocked until seed/probe/PHPUnit/CI/branch-link evidence pass;
+- rerun the Cycle 388 `PR02B` validation with free ports or webServer reuse,
+  and keep the sidecar blocked until seed/probe/PHPUnit/CI/branch-link evidence
+  pass;
 - run `HARNESS-RELOAD-WS-CONFIG-164740` on seed `1130001`, then `1130002` if
   needed, as diagnostic harness validation only;
 - enforce the loop-repair rule that actionable status cycles must create or
   verify a nonzero independent artifact;
 - publish/fetch/audit explicit GitHub refs for active i40 rows that still say
   `No verified branch link yet`;
-- monitor `run-20260518T194010Z` or its successor after the completed
+- monitor `run-20260518T194745Z` or its successor after the completed
   duplicate/noise scheduler/admission fix until current producer materialization
   becomes nonempty without hiding product-evidence signatures.
 
