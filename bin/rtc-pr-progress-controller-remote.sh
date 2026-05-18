@@ -246,10 +246,35 @@ decision_explicitly_allows() {
 	' "$DECISIONS"
 }
 
+pr15_next_child_allowed_by_controller() {
+	local branch=$1
+	decision_explicitly_allows recompute-held-children PR15-after-PR14B || return 1
+	branch_published ready/rtc-pr14b-table-query-array-local-suffix-append || return 1
+	case "$branch" in
+		ready/rtc-pr15a-fallback-group-move-green-on-pr14b)
+			branch_published "$branch" && return 1
+			return 0
+			;;
+		ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b)
+			branch_published ready/rtc-pr15a-fallback-group-move-green-on-pr14b || return 1
+			branch_published "$branch" && return 1
+			return 0
+			;;
+		ready/rtc-pr15c-fallback-group-delete-green-on-pr14b)
+			branch_published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b || return 1
+			branch_published "$branch" && return 1
+			return 0
+			;;
+	esac
+	return 1
+}
+
 publish_allowed_by_controller() {
 	local branch=$1
 	[ -s "$DECISIONS" ] || return 0
-	decision_explicitly_allows publish-ready "$branch"
+	decision_explicitly_allows publish-ready "$branch" && return 0
+	pr15_next_child_allowed_by_controller "$branch" && return 0
+	return 1
 }
 
 publish_blocked_by_controller() {

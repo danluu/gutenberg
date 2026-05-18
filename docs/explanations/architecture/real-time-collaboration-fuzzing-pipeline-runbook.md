@@ -1776,7 +1776,10 @@ lanes, but they must share state. In particular:
     publication requires an exact `publish-ready=yes` decision for that branch.
     This prevents broad stale manifests from re-opening downscoped duplicate
     branches or every variant in a stack while still allowing concrete
-    branch-repair manifests to publish.
+    branch-repair manifests to publish. The exception is the explicit
+    `recompute-held-children=PR15-after-PR14B` decision: after PR14B is
+    published, the controller deterministically exposes only the next
+    unpublished `*-on-pr14b` PR15 child in stack order.
 -   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that
