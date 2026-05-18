@@ -13,6 +13,8 @@ DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-2026051
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
+ARTIFACT_INDEX_BASE=/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518
+ARTIFACT_INDEX_ARTIFACTS=$ARTIFACT_INDEX_BASE/current-artifacts.tsv
 
 SESSION=rtc-critical-path-pr-executor-loop
 STATUS=$BASE/current-critical-path-status.md
@@ -108,6 +110,28 @@ file_mtime() {
 	stat -c %Y "$file" 2>/dev/null || printf '0'
 }
 
+artifact_index_fresh() {
+	local now mtime age
+	[ -s "$ARTIFACT_INDEX_ARTIFACTS" ] || return 1
+	now=$(date -u +%s)
+	mtime=$(stat -c %Y "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null || printf '0')
+	age=$(( now - mtime ))
+	[ "$age" -le 600 ]
+}
+
+latest_indexed_artifact() {
+	local kind=$1 pattern=$2
+	awk -F '\t' -v kind="$kind" -v pattern="$pattern" '
+		NR > 1 && $4 == kind {
+			path = tolower($6)
+			if (path ~ pattern) print $1 "\t" $6
+		}
+	' "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
 input_status() {
 	local file=$1 size
 	if [ ! -e "$file" ]; then
@@ -131,6 +155,14 @@ latest_nonempty_file() {
 }
 
 latest_pr07c_owner_replay_ready_report() {
+	local indexed
+	if artifact_index_fresh; then
+		indexed=$(latest_indexed_artifact report 'pr07c.*owner.*replay.*/report[.]md' || true)
+		if [ -n "$indexed" ]; then
+			printf '%s\n' "$indexed"
+			return 0
+		fi
+	fi
 	find "$PR_SPLIT_BASE/runs" -mindepth 1 -maxdepth 1 -type d 2>/dev/null |
 		sort |
 		tail -20 |
@@ -199,6 +231,14 @@ latest_local_publish_summary() {
 }
 
 latest_pr17_classification() {
+	local indexed
+	if artifact_index_fresh; then
+		indexed=$(latest_indexed_artifact classification 'continuations/pr17-1020002/classification[.]tsv$' || true)
+		if [ -n "$indexed" ]; then
+			printf '%s\n' "$indexed"
+			return 0
+		fi
+	fi
 	find "$BASE/runs" -path '*/continuations/pr17-1020002/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
 		sort -n |
 		tail -1 |
@@ -214,9 +254,30 @@ pr17_terminal_downscoped() {
 }
 
 fresh_pr17_product_evidence_after_terminal() {
-	local classification file
+	local classification file class_mtime
 	classification=$(latest_pr17_classification || true)
 	[ -n "$classification" ] || return 1
+	if artifact_index_fresh; then
+		class_mtime=$(file_mtime "$classification")
+		awk -F '\t' -v class_mtime="$class_mtime" '
+			NR > 1 && $1 > class_mtime && ($4 == "classification" || $4 == "report" || $4 == "validation") {
+				print $6
+			}
+		' "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null |
+		while IFS= read -r file; do
+			case "$file" in
+				*/continuations/pr17-1020002/classification.tsv|*/continuations/pr17-1020002/report.md)
+					continue
+					;;
+			esac
+			if rg -qi '1020002.*(fresh product evidence|product-owned|product owned|product branch|head_sha|owning head)|fresh.*1020002.*product' "$file" 2>/dev/null; then
+				printf '%s\n' "$file"
+				return 0
+			fi
+		done |
+		sed -n '1p'
+		return 0
+	fi
 	timeout --kill-after=5s "$FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS" \
 		find "$BASE/runs" "$PR_SPLIT_BASE/runs" -maxdepth 6 -type f \
 			\( -name 'classification.tsv' -o -name 'report.md' -o -name 'validation-head.tsv' -o -name 'validation-checks.tsv' \) \
@@ -241,7 +302,14 @@ pr17_suppressed_terminal() {
 }
 
 latest_lane_classification() {
-	local lane=$1
+	local lane=$1 indexed
+	if artifact_index_fresh; then
+		indexed=$(latest_indexed_artifact classification "continuations/${lane}/classification[.]tsv$" || true)
+		if [ -n "$indexed" ]; then
+			printf '%s\n' "$indexed"
+			return 0
+		fi
+	fi
 	find "$BASE/runs" -path "*/continuations/${lane}/classification.tsv" -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
 		sort -n |
 		tail -1 |

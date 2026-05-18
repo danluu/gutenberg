@@ -9,6 +9,7 @@ REMOTE_DEFERRED_BASE=${RTC_BRANCH_PUBLISH_REMOTE_DEFERRED_BASE:-/media/volume/da
 REMOTE_PRSPLIT_BASE=${RTC_BRANCH_PUBLISH_REMOTE_PRSPLIT_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515}
 REMOTE_FRESH_BASE=${RTC_BRANCH_PUBLISH_REMOTE_FRESH_BASE:-/media/volume/danluu-fuzz-data/rtc-fresh-pr-split-from-scratch-20260517}
 REMOTE_PROGRESS_BASE=${RTC_BRANCH_PUBLISH_REMOTE_PROGRESS_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518}
+REMOTE_ARTIFACT_INDEX_BASE=${RTC_BRANCH_PUBLISH_REMOTE_ARTIFACT_INDEX_BASE:-/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518}
 
 REPO=${RTC_BRANCH_PUBLISH_LOCAL_REPO:-/Users/danluu/dev/fuzz/gutenberg}
 DANLUU_REMOTE=${RTC_BRANCH_PUBLISH_DANLUU_REMOTE:-danluu}
@@ -77,6 +78,15 @@ write_status() {
 remote_manifest_paths() {
 	ssh "$REMOTE" "
 		set -e
+		index='$REMOTE_ARTIFACT_INDEX_BASE/current-manifest-paths.tsv'
+		if [ -s \"\$index\" ]; then
+			now=\$(date -u +%s)
+			mtime=\$(stat -c %Y \"\$index\" 2>/dev/null || printf 0)
+			if [ \$(( now - mtime )) -le 900 ]; then
+				awk -F '\t' 'NR > 1 { print \$4 }' \"\$index\" | awk 'NF' | sort -u
+				exit 0
+			fi
+		fi
 		{
 			test -f '$REMOTE_CRITICAL_BASE/current-push-manifest.tsv' && printf '%s\n' '$REMOTE_CRITICAL_BASE/current-push-manifest.tsv'
 			test -f '$REMOTE_PROGRESS_BASE/current-push-manifest.tsv' && printf '%s\n' '$REMOTE_PROGRESS_BASE/current-push-manifest.tsv'

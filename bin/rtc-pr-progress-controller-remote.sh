@@ -13,6 +13,8 @@ DEFERRED_BASE=${RTC_PR_PROGRESS_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rt
 FINALIZATION_BASE=${RTC_PR_PROGRESS_FINALIZATION_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516}
 COVERAGE_BASE=${RTC_PR_PROGRESS_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}
 RESOURCE_BASE=${RTC_PR_PROGRESS_RESOURCE_BASE:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516}
+ARTIFACT_INDEX_BASE=${RTC_PR_PROGRESS_ARTIFACT_INDEX_BASE:-/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518}
+ARTIFACT_INDEX_ARTIFACTS=$ARTIFACT_INDEX_BASE/current-artifacts.tsv
 
 SESSION=rtc-pr-progress-controller-loop
 STATUS=$BASE/current-pr-progress-controller-status.md
@@ -153,12 +155,57 @@ increment_cycle_count() {
 }
 
 latest_pr07c_owner_report() {
+	local indexed
+	if artifact_index_fresh; then
+		indexed=$(latest_indexed_artifact report 'pr07c.*owner.*replay.*/report[.]md' || true)
+		if [ -n "$indexed" ]; then
+			printf '%s\n' "$indexed"
+			return 0
+		fi
+	fi
 	find "$PR_SPLIT_BASE/runs" -mindepth 1 -maxdepth 1 -type d 2>/dev/null |
 		sort |
 		tail -30 |
 		while IFS= read -r run_dir; do
 			find "$run_dir/jobs/outputs" -maxdepth 3 -path '*pr07c*owner*replay*/report.md' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null || true
 		done |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+artifact_index_fresh() {
+	local now mtime age
+	[ -s "$ARTIFACT_INDEX_ARTIFACTS" ] || return 1
+	now=$(date -u +%s)
+	mtime=$(stat -c %Y "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null || printf '0')
+	age=$(( now - mtime ))
+	[ "$age" -le 600 ]
+}
+
+latest_indexed_artifact() {
+	local kind=$1 pattern=$2
+	awk -F '\t' -v kind="$kind" -v pattern="$pattern" '
+		NR > 1 && $4 == kind {
+			path = tolower($6)
+			if (path ~ pattern) print $1 "\t" $6
+		}
+	' "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+latest_owner_matrix() {
+	local indexed
+	if artifact_index_fresh; then
+		indexed=$(latest_indexed_artifact owner_matrix 'owner-matrix[.]tsv$' || true)
+		if [ -n "$indexed" ]; then
+			printf '%s\n' "$indexed"
+			return 0
+		fi
+	fi
+	find "$PR_SPLIT_BASE/runs" -path '*/owner-matrix.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
 		sort -n |
 		tail -1 |
 		cut -f2-
@@ -446,7 +493,7 @@ launch_pr07c_owner_matrix_job() {
 	stderr="$run_dir/stderr.log"
 	runner="$run_dir/run.sh"
 	latest_report=$(latest_pr07c_owner_report || true)
-	owner_matrix=$(find "$PR_SPLIT_BASE/runs" -path '*/owner-matrix.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null | sort -n | tail -1 | cut -f2- || true)
+	owner_matrix=$(latest_owner_matrix || true)
 	cat > "$prompt" <<PROMPT
 You are running inside Jetstream2 on the Gutenberg RTC PR progress controller.
 Do not use API subagents. Work in this one Codex process.

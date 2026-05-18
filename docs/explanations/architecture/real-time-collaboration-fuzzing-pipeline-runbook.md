@@ -1721,6 +1721,14 @@ NODE
 The Jetstream fix-progress loops are intentionally separate from the fuzzing
 lanes, but they must share state. In particular:
 
+-   `bin/rtc-artifact-index-loop-remote.sh` runs as
+    `rtc-artifact-index-loop` and writes status to
+    `/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518/current-artifact-index-status.md`.
+    It maintains small TSV indexes for artifacts, push-manifest rows,
+    classification rows, branches, runs, and manifest paths. Controller loops
+    should query these files first and fall back to bounded `find` scans only
+    when the index is missing or stale. This keeps PR progress, publication,
+    and blocker classification from repeatedly walking historical run trees.
 -   `bin/rtc-critical-path-pr-executor-loop-remote.sh` consumes the local
     publication manifest at
     `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/latest-local-publish-manifest.tsv`.
@@ -1728,7 +1736,9 @@ lanes, but they must share state. In particular:
     and only gates that reserved slot under severe or unknown resource pressure.
     The lane must produce `validation.tsv`, `classification.tsv`,
     `repair-branch.txt`, and `report.md`; it must not classify an existing
-    `runtime-readiness-blocked` replay as completed progress.
+    `runtime-readiness-blocked` replay as completed progress. It queries the
+    artifact index for latest PR07C owner reports, terminal classification
+    files, and fresh post-terminal evidence before using fallback scans.
 -   `bin/rtc-pr-finalization-loop-remote.sh` runs two finalization jobs at most,
     checks every five minutes, and includes the local publication manifest in
     its context so GitHub publishing from the local host clears stale
@@ -1745,7 +1755,9 @@ lanes, but they must share state. In particular:
     progress jobs only when they can change a branch, blocker, publication, or
     downscope state. It preserves fuzzing/discovery by enforcing a discovery
     reserve before starting heavy PR jobs; analysis/persona jobs may continue
-    while heavy browser/e2e PR jobs wait.
+    while heavy browser/e2e PR jobs wait. It queries the artifact index for the
+    latest PR07C owner replay report and owner matrix before falling back to
+    bounded scans.
 -   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that
@@ -1760,7 +1772,8 @@ lanes, but they must share state. In particular:
     and writes the resulting local publish manifest back to Jetstream. It also
     reads controller-generated push manifests under the PR progress controller
     directory, so controller publication requests do not require GitHub access
-    from Jetstream.
+    from Jetstream. It queries the artifact index's manifest-path TSV before
+    falling back to historical `find` walks over run directories.
 
 After changing one of these scripts on Jetstream, restart the matching tmux
 session on the `rtc-fuzz` socket and confirm that the status file shows the new
