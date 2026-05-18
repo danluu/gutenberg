@@ -1,0 +1,56 @@
+branch,fail,pass,total,branch_short
+deferred/rtc-http-room-isolation-20260517T023739Z,28,0,28,"http room isolation
+20260517T023739Z"
+deferred/rtc-pre-save-search-live-collapse-20260517T022131Z,28,0,28,"pre save search live collapse
+20260517T022131Z"
+deferred/rtc-reload-hydration-20260517T035704Z,28,0,28,reload hydration 20260517T035704Z
+deferred/rtc-reload-hydration-20260517T042707Z,28,0,28,reload hydration 20260517T042707Z
+deferred/rtc-reload-hydration-20260517T045710Z,28,0,28,reload hydration 20260517T045710Z
+deferred/rtc-reload-hydration-20260517T055716Z,28,0,28,reload hydration 20260517T055716Z
+deferred/rtc-reload-hydration-20260517T062719Z,28,0,28,reload hydration 20260517T062719Z
+deferred/rtc-rich-text-suffix-corruption-20260517T022133Z,28,0,28,"rich text suffix corruption
+20260517T022133Z"
+deferred/rtc-reload-hydration-20260517T065722Z,26,0,26,reload hydration 20260517T065722Z
+ready/rtc-pr03b-browser-revision-restore-crdt-invalidation,24,0,24,"pr03b browser revision restore
+crdt invalidation"
+deferred/rtc-reload-hydration-20260517T073541Z,23,0,23,reload hydration 20260517T073541Z
+deferred/rtc-reload-hydration-20260517T093634Z,15,0,15,reload hydration 20260517T093634Z
+deferred/rtc-reload-hydration-20260517T100637Z,14,0,14,reload hydration 20260517T100637Z
+deferred/rtc-malformed-save-payload-20260517T012122Z,13,0,13,"malformed save payload
+20260517T012122Z"
+cycle264/pr05d-clean-base/semicolonless-entity-validation,6,0,6,"cycle264/pr05d clean
+base/semicolonless entity
+validation"
+ready/rtc-pr02a-http-room-isolation-regression,6,0,6,"pr02a http room isolation
+regression"
+ready/rtc-pr14-table-body-array-green,6,0,6,pr14 table body array green
+deferred/rtc-rich-text-suffix-corruption-20260517T012120Z,5,0,5,"rich text suffix corruption
+20260517T012120Z"
+ready/rtc-pr07b-save-response-manager-base-record,5,0,5,"pr07b save response manager base
+record"
+ready/rtc-pr09-store-lock-fairness,5,0,5,pr09 store lock fairness
+ready/rtc-pr10-crdt-block-rebase,5,0,5,pr10 crdt block rebase
+ready/rtc-pr11a-stale-base-record-block-append,5,0,5,"pr11a stale base record block
+append"
+ready/rtc-pr11b-stale-base-block-delete,5,0,5,pr11b stale base block delete
+deferred/rtc-pre-save-search-live-collapse-20260517T010617Z,4,0,4,"pre save search live collapse
+20260517T010617Z"
+deferred/rtc-pre-save-search-live-collapse-20260517T002105Z,2,0,2,"pre save search live collapse
+20260517T002105Z"
+ready/rtc-pr07c-reload-record-snapshots,0,33,33,pr07c reload record snapshots
+ready/rtc-pr14b-table-query-array-local-suffix-append,0,33,33,"pr14b table query array local
+suffix append"
+ready/rtc-pr15a-fallback-group-move-green-on-pr14b,0,33,33,"pr15a fallback group move green on
+pr14b"
+ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,0,33,33,"pr15b fallback group insert anchor
+green on pr14b"
+ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,0,33,33,"pr15c fallback group delete green
+on pr14b"
+ready/rtc-pr06b-malformed-save-request-payload-minimal,0,20,20,"pr06b malformed save request
+payload minimal"
+ready/rtc-pr15a-fallback-group-move-green,0,6,6,pr15a fallback group move green
+ready/rtc-pr15b-fallback-group-insert-anchor-green,0,6,6,"pr15b fallback group insert anchor
+green"
+ready/rtc-pr06b-malformed-save-request-payload,0,5,5,"pr06b malformed save request
+payload"
+ready/rtc-pr15c-fallback-group-delete-green,0,5,5,pr15c fallback group delete green

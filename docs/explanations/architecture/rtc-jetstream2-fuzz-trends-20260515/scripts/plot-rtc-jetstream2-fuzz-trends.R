@@ -41,10 +41,19 @@ status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-statu
 status_report_path <- file.path( root, status_report_rel )
 pr_progress_current_path <- file.path( pr_focus_raw_dir, "pr-progress/current-pr-progress.tsv" )
 pr_progress_push_manifest_path <- file.path( pr_focus_raw_dir, "pr-progress/current-push-manifest.tsv" )
+pr_progress_control_decisions_path <- file.path( pr_focus_raw_dir, "pr-progress/current-control-decisions.tsv" )
 pr_progress_controller_log_path <- file.path( pr_focus_raw_dir, "pr-progress/controller.log" )
+pr_progress_events_path <- file.path( pr_focus_raw_dir, "pr-progress/events.ndjson" )
 artifact_index_artifacts_path <- file.path( pr_focus_raw_dir, "artifact-index/current-artifacts.tsv" )
 artifact_index_log_path <- file.path( pr_focus_raw_dir, "artifact-index/artifact-index.log" )
 critical_blockers_path <- file.path( pr_focus_raw_dir, "critical-path/blockers.tsv" )
+critical_queue_path <- file.path( pr_focus_raw_dir, "critical-path/queue.tsv" )
+critical_active_jobs_path <- file.path( pr_focus_raw_dir, "critical-path/active-jobs.tsv" )
+critical_lanes_path <- file.path( pr_focus_raw_dir, "critical-path/lanes.tsv" )
+critical_no_progress_path <- file.path( pr_focus_raw_dir, "critical-path/no-progress.tsv" )
+critical_terminal_ledger_path <- file.path( pr_focus_raw_dir, "critical-path/terminal-ledger.tsv" )
+critical_branch_audit_path <- file.path( pr_focus_raw_dir, "critical-path/current-branch-audit.tsv" )
+critical_events_path <- file.path( pr_focus_raw_dir, "critical-path/events.ndjson" )
 local_publisher_state_path <- file.path( pr_focus_raw_dir, "local-publisher-state.tsv" )
 
 stopifnot( file.exists( monitor_path ) )
@@ -319,6 +328,34 @@ read_tsv_optional <- function( path, col_names = TRUE ) {
 		),
 		error = function( e ) tibble()
 	)
+}
+
+read_ndjson_optional <- function( path ) {
+	if ( ! file.exists( path ) || file.size( path ) == 0 ) {
+		return( tibble() )
+	}
+
+	lines <- read_lines( path, progress = FALSE )
+	lines <- lines[ lines != "" ]
+	if ( length( lines ) == 0 ) {
+		return( tibble() )
+	}
+
+	tryCatch(
+		map_dfr( lines, function( line ) {
+			as_tibble( as.list( fromJSON( line, flatten = TRUE ) ) )
+		} ),
+		error = function( e ) tibble()
+	)
+}
+
+ensure_columns <- function( data, columns ) {
+	for ( column in columns ) {
+		if ( ! column %in% names( data ) ) {
+			data[[ column ]] <- NA_character_
+		}
+	}
+	data
 }
 
 timestamp_from_brackets <- function( lines ) {
@@ -888,6 +925,17 @@ if ( nrow( pr_progress_push_manifest ) > 0 ) {
 }
 write_csv( pr_progress_push_manifest, file.path( data_dir, "pr_progress_push_manifest.csv" ) )
 
+pr_progress_control_decisions <- read_tsv_optional( pr_progress_control_decisions_path )
+if ( nrow( pr_progress_control_decisions ) > 0 ) {
+	pr_progress_control_decisions <- pr_progress_control_decisions %>%
+		ensure_columns( c( "action", "target", "priority", "allowed", "reason" ) ) %>%
+		mutate(
+			across( c( action, target, priority, allowed, reason ), ~ replace_na( as.character( .x ), "" ) ),
+			allowed = str_to_lower( allowed )
+		)
+}
+write_csv( pr_progress_control_decisions, file.path( data_dir, "pr_progress_control_decisions.csv" ) )
+
 pr_controller_events <- tibble()
 if ( file.exists( pr_progress_controller_log_path ) ) {
 	controller_lines <- read_lines( pr_progress_controller_log_path, progress = FALSE )
@@ -908,6 +956,26 @@ if ( file.exists( pr_progress_controller_log_path ) ) {
 				TRUE ~ "other"
 			)
 		)
+}
+
+pr_progress_events <- read_ndjson_optional( pr_progress_events_path )
+if ( nrow( pr_progress_events ) > 0 ) {
+	pr_progress_events <- pr_progress_events %>%
+		ensure_columns( c( "ts", "type", "message" ) ) %>%
+		transmute(
+			timestamp = parse_utc_timestamp( ts ),
+			message = replace_na( as.character( message ), "" ),
+			event_type = case_when(
+				type == "persona" ~ "persona round launched",
+				type == "job" & str_detect( message, "owner" ) ~ "PR owner job event",
+				type == "decision" ~ "control decision",
+				TRUE ~ replace_na( as.character( type ), "other" )
+			)
+		) %>%
+		filter( ! is.na( timestamp ), message != "" )
+	pr_controller_events <- bind_rows( pr_controller_events, pr_progress_events ) %>%
+		distinct( timestamp, message, event_type, .keep_all = TRUE ) %>%
+		arrange( timestamp )
 }
 write_csv( pr_controller_events, file.path( data_dir, "pr_progress_controller_events.csv" ) )
 
@@ -946,12 +1014,209 @@ write_csv( artifact_index_events, file.path( data_dir, "artifact_index_events.cs
 critical_blockers <- read_tsv_optional( critical_blockers_path )
 if ( nrow( critical_blockers ) > 0 ) {
 	critical_blockers <- critical_blockers %>%
+		ensure_columns( c( "blocker_id", "kind", "priority", "state", "source_input", "blocks", "blocked_by", "required_artifacts", "active_session", "next_action", "updated_at" ) ) %>%
 		mutate(
 			updated_at = parse_utc_timestamp( updated_at ),
 			across( c( blocker_id, kind, priority, state, source_input, blocks, blocked_by, required_artifacts, active_session, next_action ), ~ replace_na( as.character( .x ), "" ) )
 		)
 }
 write_csv( critical_blockers, file.path( data_dir, "critical_path_blockers.csv" ) )
+
+critical_queue <- read_tsv_optional( critical_queue_path )
+if ( nrow( critical_queue ) > 0 ) {
+	critical_queue <- critical_queue %>%
+		ensure_columns( c( "job_id", "lane_id", "blocker_id", "action_kind", "dedupe_key", "resource_class", "priority", "state", "attempt", "session", "created_at", "started_at", "updated_at", "exit_code", "result" ) ) %>%
+		mutate(
+			across( c( job_id, lane_id, blocker_id, action_kind, dedupe_key, resource_class, priority, state, session, exit_code, result ), ~ replace_na( as.character( .x ), "" ) ),
+			attempt = as.numeric( attempt ),
+			created_at = parse_utc_timestamp( created_at ),
+			started_at = parse_utc_timestamp( started_at ),
+			updated_at = parse_utc_timestamp( updated_at )
+		)
+}
+write_csv( critical_queue, file.path( data_dir, "critical_path_queue.csv" ) )
+
+critical_active_jobs <- read_tsv_optional( critical_active_jobs_path )
+if ( nrow( critical_active_jobs ) > 0 ) {
+	critical_active_jobs <- critical_active_jobs %>%
+		ensure_columns( c( "session", "class", "started_hint" ) ) %>%
+		mutate( across( c( session, class, started_hint ), ~ replace_na( as.character( .x ), "" ) ) )
+}
+write_csv( critical_active_jobs, file.path( data_dir, "critical_path_active_jobs.csv" ) )
+
+critical_lanes <- read_tsv_optional( critical_lanes_path )
+if ( nrow( critical_lanes ) > 0 ) {
+	critical_lanes <- critical_lanes %>%
+		ensure_columns( c( "lane_id", "pr_id", "lane_kind", "publication_class", "resource_class", "dependencies", "state" ) ) %>%
+		mutate( across( c( lane_id, pr_id, lane_kind, publication_class, resource_class, dependencies, state ), ~ replace_na( as.character( .x ), "" ) ) )
+}
+write_csv( critical_lanes, file.path( data_dir, "critical_path_lanes.csv" ) )
+
+critical_no_progress <- read_tsv_optional( critical_no_progress_path )
+if ( nrow( critical_no_progress ) > 0 ) {
+	continuation_item <- str_match( critical_no_progress$artifact_path, "/continuations/([^/]+)/" )[ , 2 ]
+	validation_item <- str_match( critical_no_progress$artifact_path, "/validations/([^/]+)/" )[ , 2 ]
+	critical_no_progress <- critical_no_progress %>%
+		ensure_columns( c( "artifact_path", "reason", "size", "mtime", "associated_job", "rejected_at" ) ) %>%
+		mutate(
+			across( c( artifact_path, reason, associated_job ), ~ replace_na( as.character( .x ), "" ) ),
+			size = as.numeric( size ),
+			mtime = as.numeric( mtime ),
+			rejected_at = parse_utc_timestamp( rejected_at ),
+			item_id = coalesce( continuation_item, validation_item, na_if( associated_job, "" ), "unknown" )
+		)
+}
+write_csv( critical_no_progress, file.path( data_dir, "critical_path_no_progress.csv" ) )
+
+critical_no_progress_summary <- if ( nrow( critical_no_progress ) > 0 ) {
+	critical_no_progress %>%
+		count( item_id, reason, name = "rejections" ) %>%
+		arrange( desc( rejections ), item_id ) %>%
+		slice_head( n = 25 )
+} else {
+	tibble( item_id = character(), reason = character(), rejections = numeric() )
+}
+write_csv( critical_no_progress_summary, file.path( data_dir, "critical_path_no_progress_summary.csv" ) )
+
+critical_terminal_ledger <- read_tsv_optional( critical_terminal_ledger_path )
+if ( nrow( critical_terminal_ledger ) > 0 ) {
+	critical_terminal_ledger <- critical_terminal_ledger %>%
+		ensure_columns( c( "lane_id", "classification", "evidence_path", "evidence_mtime", "queue_state", "reopen_condition" ) ) %>%
+		mutate(
+			across( c( lane_id, classification, evidence_path, queue_state, reopen_condition ), ~ replace_na( as.character( .x ), "" ) ),
+			evidence_mtime = as.numeric( evidence_mtime )
+		)
+}
+write_csv( critical_terminal_ledger, file.path( data_dir, "critical_path_terminal_ledger.csv" ) )
+
+critical_branch_audit <- read_tsv_optional( critical_branch_audit_path )
+if ( nrow( critical_branch_audit ) > 0 ) {
+	critical_branch_audit <- critical_branch_audit %>%
+		ensure_columns( c( "lane_id", "branch", "base_ref", "base_sha", "head_sha", "file_count", "net_loc", "diff_check_rc", "state", "report_path" ) ) %>%
+		mutate(
+			across( c( lane_id, branch, base_ref, base_sha, head_sha, state, report_path ), ~ replace_na( as.character( .x ), "" ) ),
+			file_count = as.numeric( file_count ),
+			net_loc = as.numeric( net_loc ),
+			diff_check_rc = as.numeric( diff_check_rc ),
+			result = if_else( diff_check_rc == 0, "pass", "fail" )
+		)
+}
+write_csv( critical_branch_audit, file.path( data_dir, "critical_path_branch_audit.csv" ) )
+
+critical_branch_validation_summary <- if ( nrow( critical_branch_audit ) > 0 ) {
+	critical_branch_audit %>%
+		count( branch, result, name = "attempts" ) %>%
+		pivot_wider( names_from = result, values_from = attempts, values_fill = 0 ) %>%
+		mutate(
+			pass = if ( "pass" %in% names( . ) ) pass else 0,
+			fail = if ( "fail" %in% names( . ) ) fail else 0,
+			total = pass + fail,
+			branch_short = branch %>%
+				str_remove( "^ready/rtc-" ) %>%
+				str_remove( "^deferred/rtc-" ) %>%
+				str_replace_all( "-", " " ) %>%
+				str_wrap( width = 34 )
+		) %>%
+		arrange( desc( fail ), desc( total ), branch )
+} else {
+	tibble( branch = character(), pass = numeric(), fail = numeric(), total = numeric(), branch_short = character() )
+}
+write_csv( critical_branch_validation_summary, file.path( data_dir, "critical_branch_validation_summary.csv" ) )
+
+pr_loop_queue_depth <- bind_rows(
+	if ( nrow( pr_progress_state_counts ) > 0 ) {
+		pr_progress_state_counts %>%
+			transmute(
+				queue = "PR progress items",
+				state = status,
+				class = kind,
+				priority = priority,
+				depth = items
+			)
+	} else {
+		tibble()
+	},
+	if ( nrow( pr_progress_control_decisions ) > 0 ) {
+		pr_progress_control_decisions %>%
+			mutate( state = if_else( allowed == "yes", "allowed", "blocked" ) ) %>%
+			count( priority, state, name = "depth" ) %>%
+			transmute(
+				queue = "controller decisions",
+				state = state,
+				class = "control decision",
+				priority = priority,
+				depth = depth
+			)
+	} else {
+		tibble()
+	},
+	if ( nrow( critical_blockers ) > 0 ) {
+		critical_blockers %>%
+			count( kind, priority, state, name = "depth" ) %>%
+			transmute(
+				queue = "critical blockers",
+				state = state,
+				class = kind,
+				priority = priority,
+				depth = depth
+			)
+	} else {
+		tibble()
+	},
+	if ( nrow( critical_queue ) > 0 ) {
+		critical_queue %>%
+			count( resource_class, priority, state, name = "depth" ) %>%
+			transmute(
+				queue = "critical job queue",
+				state = state,
+				class = resource_class,
+				priority = priority,
+				depth = depth
+			)
+	} else {
+		tibble()
+	},
+	if ( nrow( critical_lanes ) > 0 ) {
+		critical_lanes %>%
+			count( resource_class, state, name = "depth" ) %>%
+			transmute(
+				queue = "critical lanes",
+				state = state,
+				class = resource_class,
+				priority = "lane",
+				depth = depth
+			)
+	} else {
+		tibble()
+	},
+	if ( nrow( critical_active_jobs ) > 0 ) {
+		critical_active_jobs %>%
+			count( class, name = "depth" ) %>%
+			transmute(
+				queue = "active sessions",
+				state = "active",
+				class = class,
+				priority = class,
+				depth = depth
+			)
+	} else {
+		tibble()
+	}
+) %>%
+	filter( ! is.na( depth ), depth > 0 )
+write_csv( pr_loop_queue_depth, file.path( data_dir, "pr_loop_queue_depth.csv" ) )
+
+pr_loop_blocked_decisions <- if ( nrow( pr_progress_control_decisions ) > 0 ) {
+	pr_progress_control_decisions %>%
+		filter( allowed != "yes" ) %>%
+		mutate(
+			target_label = str_wrap( target, width = 36 ),
+			reason_label = str_wrap( reason, width = 80 )
+		)
+} else {
+	tibble()
+}
+write_csv( pr_loop_blocked_decisions, file.path( data_dir, "pr_loop_blocked_decisions.csv" ) )
 
 local_publisher_events <- tibble()
 if ( file.exists( local_publisher_state_path ) ) {
@@ -2328,6 +2593,131 @@ if ( nrow( local_publisher_events ) > 0 ) {
 	)
 }
 
+if ( nrow( pr_loop_queue_depth ) > 0 ) {
+	queue_depth_plot <- pr_loop_queue_depth %>%
+		mutate(
+			queue = factor(
+				queue,
+				levels = c(
+					"PR progress items",
+					"controller decisions",
+					"critical blockers",
+					"critical job queue",
+					"critical lanes",
+					"active sessions"
+				)
+			),
+			state_label = str_wrap( state, width = 36 ),
+			priority = str_replace_na( priority, "unknown" )
+		)
+
+	write_plot(
+		"pr-loop-queue-depth-current.png",
+		ggplot( queue_depth_plot, aes( x = depth, y = state_label, color = priority, size = depth ) ) +
+			geom_point( alpha = 0.82 ) +
+			facet_wrap( vars( queue ), scales = "free_y", ncol = 1 ) +
+			scale_x_continuous( labels = comma, breaks = pretty_breaks() ) +
+			scale_size_continuous( range = c( 2, 7 ), labels = comma ) +
+			scale_color_brewer( palette = "Dark2", na.translate = FALSE ) +
+			labs(
+				title = "PR loop current queue depth",
+				x = "items waiting or active",
+				y = NULL,
+				color = "priority/class",
+				size = "items",
+				caption = "Combines PR progress items, controller decisions, critical blockers, queued critical jobs, critical lanes, and active PR-related sessions."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 9
+	)
+}
+
+if ( nrow( pr_loop_blocked_decisions ) > 0 ) {
+	blocked_decisions_plot <- pr_loop_blocked_decisions %>%
+		mutate(
+			action = str_wrap( action, width = 22 ),
+			target_label = factor( target_label, levels = rev( unique( target_label ) ) ),
+			priority = factor( priority, levels = c( "high", "medium", "low", "unknown", "" ) )
+		)
+
+	write_plot(
+		"pr-loop-blocked-control-decisions.png",
+		ggplot( blocked_decisions_plot, aes( x = action, y = target_label, color = priority ) ) +
+			geom_point( alpha = 0.84, size = 3 ) +
+			scale_color_brewer( palette = "Set1", na.translate = FALSE ) +
+			labs(
+				title = "PR loop blocked control decisions",
+				x = "blocked action",
+				y = NULL,
+				color = "priority",
+				caption = "Rows are current controller decisions with allowed=no; this is the live list of product, diagnostic, and sweep work the controller is intentionally blocking."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 6.8
+	)
+}
+
+if ( nrow( critical_branch_validation_summary ) > 0 && any( critical_branch_validation_summary$fail > 0, na.rm = TRUE ) ) {
+	validation_repeats <- critical_branch_validation_summary %>%
+		filter( fail > 0 ) %>%
+		slice_head( n = 20 ) %>%
+		mutate( branch_short = factor( branch_short, levels = branch_short[ order( fail, total ) ] ) ) %>%
+		select( branch_short, pass, fail, total ) %>%
+		pivot_longer( c( pass, fail ), names_to = "result", values_to = "attempts" ) %>%
+		filter( attempts > 0 )
+
+	write_plot(
+		"pr-loop-repeated-validation-results.png",
+		ggplot( validation_repeats, aes( x = attempts, y = branch_short, color = result, size = attempts ) ) +
+			geom_point( alpha = 0.82 ) +
+			scale_x_continuous( labels = comma, breaks = pretty_breaks() ) +
+			scale_size_continuous( range = c( 2, 7 ), labels = comma ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			labs(
+				title = "Repeated critical-path branch validation results",
+				x = "validation attempts",
+				y = NULL,
+				color = "result",
+				size = "attempts",
+				caption = "Top branches by repeated diff-check failures in current-branch-audit.tsv. Pass points on the same row show whether a branch also has successful validations."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 7.5
+	)
+}
+
+if ( nrow( critical_no_progress_summary ) > 0 ) {
+	no_progress_plot <- critical_no_progress_summary %>%
+		mutate(
+			item_label = str_wrap( item_id, width = 34 ),
+			reason = str_wrap( reason, width = 32 ),
+			item_label = factor( item_label, levels = item_label[ order( rejections ) ] )
+		)
+
+	write_plot(
+		"pr-loop-no-progress-artifacts.png",
+		ggplot( no_progress_plot, aes( x = rejections, y = item_label, color = reason, size = rejections ) ) +
+			geom_point( alpha = 0.82 ) +
+			scale_x_continuous( labels = comma, breaks = pretty_breaks() ) +
+			scale_size_continuous( range = c( 2, 7 ), labels = comma ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			labs(
+				title = "Repeated critical-path no-progress artifacts",
+				x = "rejected artifacts",
+				y = NULL,
+				color = "reason",
+				size = "artifacts",
+				caption = "Grouped no-progress ledger rows. These are artifacts the critical-path loop rejected as not advancing a blocker."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 6.5
+	)
+}
+
 fuzz_level_latest <- if ( nrow( fuzz_level_mix ) > 0 ) {
 	fuzz_level_mix %>%
 		filter( is_latest ) %>%
@@ -2468,6 +2858,46 @@ critical_blocker_state_text <- if ( nrow( critical_blockers ) > 0 ) {
 	NA_character_
 }
 
+pr_queue_depth_text <- if ( nrow( pr_loop_queue_depth ) > 0 ) {
+	pr_loop_queue_depth %>%
+		mutate( text = paste0( queue, "/", state, "=", depth ) ) %>%
+		pull( text ) %>%
+		paste( collapse = "; " )
+} else {
+	NA_character_
+}
+
+blocked_decision_text <- if ( nrow( pr_loop_blocked_decisions ) > 0 ) {
+	pr_loop_blocked_decisions %>%
+		count( action, priority, name = "items" ) %>%
+		mutate( text = paste0( action, "/", priority, "=", items ) ) %>%
+		pull( text ) %>%
+		paste( collapse = "; " )
+} else {
+	NA_character_
+}
+
+repeated_validation_text <- if ( nrow( critical_branch_validation_summary ) > 0 && any( critical_branch_validation_summary$fail > 0, na.rm = TRUE ) ) {
+	critical_branch_validation_summary %>%
+		filter( fail > 0 ) %>%
+		slice_head( n = 8 ) %>%
+		mutate( text = paste0( branch, " fail=", fail, " pass=", pass ) ) %>%
+		pull( text ) %>%
+		paste( collapse = "; " )
+} else {
+	NA_character_
+}
+
+no_progress_text <- if ( nrow( critical_no_progress_summary ) > 0 ) {
+	critical_no_progress_summary %>%
+		slice_head( n = 8 ) %>%
+		mutate( text = paste0( item_id, "/", reason, "=", rejections ) ) %>%
+		pull( text ) %>%
+		paste( collapse = "; " )
+} else {
+	NA_character_
+}
+
 summary_lines <- c(
 	paste0( "generated_at_utc: ", format( with_tz( now(), "UTC" ), "%Y-%m-%dT%H:%M:%SZ" ) ),
 	paste0( "monitor_passes: ", nrow( monitor ) ),
@@ -2519,6 +2949,13 @@ summary_lines <- c(
 	paste0( "artifact_index_scope_rows: ", nrow( artifact_index_scope ) ),
 	paste0( "critical_blockers: ", ifelse( nrow( critical_blockers ) > 0, nrow( critical_blockers ), 0 ) ),
 	paste0( "critical_blocker_states: ", critical_blocker_state_text ),
+	paste0( "pr_loop_queue_depth: ", pr_queue_depth_text ),
+	paste0( "pr_loop_blocked_decisions: ", ifelse( nrow( pr_loop_blocked_decisions ) > 0, nrow( pr_loop_blocked_decisions ), 0 ) ),
+	paste0( "pr_loop_blocked_decision_types: ", blocked_decision_text ),
+	paste0( "critical_repeated_validation_failures: ", repeated_validation_text ),
+	paste0( "critical_no_progress_artifacts: ", ifelse( nrow( critical_no_progress ) > 0, nrow( critical_no_progress ), 0 ) ),
+	paste0( "critical_no_progress_top: ", no_progress_text ),
+	paste0( "critical_terminal_ledger_rows: ", ifelse( nrow( critical_terminal_ledger ) > 0, nrow( critical_terminal_ledger ), 0 ) ),
 	paste0( "local_publisher_events: ", ifelse( nrow( local_publisher_events ) > 0, nrow( local_publisher_events ), 0 ) )
 )
 
