@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-18T19:26:16Z`
+Snapshot generated: `2026-05-18T19:33:05Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -12,7 +12,7 @@ Source inputs:
 - coverage monitor log:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest copied novelty state:
-  current coverage output-dir state started at `2026-05-18T19:24:15Z`
+  current coverage output-dir state started at `2026-05-18T19:30:35Z`
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
 - PR-focused controller, critical-path executor, artifact index, and local
@@ -23,7 +23,7 @@ Source inputs:
   `/tmp/rtc-local-pr-branch-publisher-20260517/`
 - CPU and load-average history:
   `/var/log/sysstat/sa15` through `/var/log/sysstat/sa18`, latest sample
-  `2026-05-18T19:20:01Z`
+  `2026-05-18T19:30:00Z`
 
 The plotting script and summarized CSV inputs are committed under
 [`rtc-jetstream2-fuzz-trends-20260515/`](rtc-jetstream2-fuzz-trends-20260515/).
@@ -110,13 +110,13 @@ duplicate/noise sample is clean.
 
 ![Load average over time](rtc-jetstream2-fuzz-trends-20260515/plots/load-average-over-time.png)
 
-Recent sysstat samples through `2026-05-18T19:20:01Z` show bursty CPU and load.
+Recent sysstat samples through `2026-05-18T19:30:00Z` show bursty CPU and load.
 The latest 25 CPU samples range from `45.39%` to `87.39%` utilization, with the
-latest sample at `61.20%`. Over those same 25 samples, one-minute load exceeded
-the `64` logical CPU count in `13` windows, five-minute load in `15`,
-15-minute load in `16`, and at least one load window exceeded it in `17`. The
-newest 1/5/15-minute load sample is `34.74`, `45.97`, and `56.43`; none of the
-three load windows is above the logical CPU count, with `2` blocked tasks in
+latest sample at `56.62%`. Over those same 25 samples, one-minute load exceeded
+the `64` logical CPU count in `12` windows, five-minute load in `14`,
+15-minute load in `15`, and at least one load window exceeded it in `16`. The
+newest 1/5/15-minute load sample is `45.62`, `44.78`, and `50.05`; none of the
+three load windows is above the logical CPU count, with `0` blocked tasks in
 the latest sample.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
@@ -158,14 +158,17 @@ Persona-loop evidence adds important caveats. The newest level-mix synthesis,
 browser/e2e floor while keeping non-browser lanes capped as sentinels. Its
 latest non-empty feedback-action restored a backend/API sentinel and tried
 browser-floor repair, but optional browser starts were blocked by severe
-pressure. The latest non-empty native synthesis, `20260518T190103Z`, keeps the
-rich-text CRDT merge harness as the first ready isolated coverage-guided
-lower-level target. The latest protocol synthesis, `20260518T191346Z`, keeps
-HTTP polling REST as the first protocol/server target; the `20260518T184953Z`
-action implemented and validated that harness for `POST /wp-sync/v1/updates`.
-Those backend/protocol/native persona actions are real evidence, but they have
-not moved the committed backend/API or protocol-server trend counters above
-zero.
+pressure. The latest non-empty native synthesis, `20260518T191705Z`, keeps the
+rich-text multiblock CRDT harness as the first ready isolated coverage-guided
+lower-level target; the latest native synthesis file, `20260518T192616Z`, is
+empty. The `20260518T190103Z` native action implemented and validated that
+lower-level harness while leaving the active table/query-array lane running.
+The latest protocol synthesis and action, `20260518T191346Z`, keep HTTP polling
+REST as the first protocol/server target and validate a
+`POST /wp-sync/v1/updates` harness. Those backend/protocol/native persona
+actions are real evidence, as is the latest non-empty fuzz-only assertion
+action, `20260518T170134Z`; they have not moved the committed backend/API,
+protocol-server, or standalone assertion trend counters above zero.
 
 ## Fuzzing Level Executions
 
@@ -181,10 +184,10 @@ supervisor launches or lane counts, but it only covers fuzzers that emit lane
 events. Lower-level counts are approximate when reconstructed from batch
 metadata or legacy batch-count fields.
 
-The latest collected execution data has about `5,866,531` completed test
-executions: `241,718` browser/e2e, `3,006` transport/integration, `5,173,984`
+The latest collected execution data has about `5,869,069` completed test
+executions: `242,304` browser/e2e, `3,006` transport/integration, `5,175,936`
 unit-property, and `447,823` coverage-guided-lower-level. The latest partial
-15-minute bucket reports about `748` browser/e2e executions/hour and `11,392`
+15-minute bucket reports about `848` browser/e2e executions/hour and `2,688`
 unit-property executions/hour, with `0` current rate for
 coverage-guided-lower-level, transport/integration, backend/API,
 protocol-server, and standalone `fuzz-assertion`. `backend-api`,
@@ -203,7 +206,7 @@ first-seen time. They are not total bug-finding graphs, not per-core
 efficiency, and not a count of all bugs found by fuzzing.
 
 On that triage-output metric, browser/e2e currently dominates: `769` unique
-likely-real findings over about `2,461.6` runner-hours, or `31.24` per 100
+likely-real findings over about `2,462.8` runner-hours, or `31.22` per 100
 runner-hours. `transport-integration`, `unit-property`,
 `coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
 `fuzz-assertion` still have `0` triaged likely-real outputs in the collected
@@ -221,12 +224,12 @@ failure signatures, and lower-level assertion failures by canonical output key.
 These graphs are intentionally broader than confirmed bugs and narrower than
 raw failed attempts; untriaged candidates are not confirmed bugs.
 
-Current unique bug-output candidate rates are: browser/e2e `6,102` candidates
-over `2,461.6` runner-hours (`247.89` per 100 runner-hours),
+Current unique bug-output candidate rates are: browser/e2e `6,103` candidates
+over `2,462.8` runner-hours (`247.80` per 100 runner-hours),
 transport/integration `106` over `59.5` runner-hours (`178.14` per 100
 runner-hours), coverage-guided lower-level `2` over `20.9` runner-hours
-(`9.55` per 100 runner-hours), and unit/property `5` over `46.1` runner-hours
-(`10.86` per 100 runner-hours). `backend-api`, `protocol-server`, standalone
+(`9.55` per 100 runner-hours), and unit/property `5` over `46.2` runner-hours
+(`10.83` per 100 runner-hours). `backend-api`, `protocol-server`, standalone
 `fuzz-assertion`, and `other` remain at `0` in this candidate-output metric.
 
 ![Unique bug-output candidates within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-profile-within-level.png)
@@ -244,8 +247,8 @@ The failure-candidate plot is a pre-triage lead indicator: failed seed or batch
 attempts per 100 runner-hours before duplicate/noise triage. It is useful for
 comparing where the system is still producing interesting work before
 duplicate/noise analysis, but it is not a confirmed bug count. Current rates
-are about `8796.3` for browser/e2e, `4537.5` for transport/integration,
-`759.3` for coverage-guided lower-level, and `1559.1` for unit/property.
+are about `8815.4` for browser/e2e, `4537.5` for transport/integration,
+`759.3` for coverage-guided lower-level, and `1555.1` for unit/property.
 
 ![Triaged likely-real output rate within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/bug-effectiveness-by-profile-within-level.png)
 
@@ -329,7 +332,7 @@ promote because setup failed before the oracle. Broad final-stack fuzzing, raw
 deferred promotion, and GitHub filing remain blocked.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
-split history. The latest parsed snapshot, `2026-05-18T19:14:35Z`, has `10`
+split history. The latest parsed snapshot, `2026-05-18T19:23:29Z`, has `10`
 suggested rows totaling `4,114` net LOC. The largest current rows by net LOC are
 `PR 13B` (`1668`), `PR 13A` (`1126`), `PR 13C` (`294`), `PR 14` (`276`),
 `PR 9` (`183`), `PR 1` (`162`), `PR 4` (`159`), `PR 10` (`141`), `PR 3`
