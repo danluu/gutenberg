@@ -154,7 +154,7 @@ latest_pr07c_classification() {
 check_critical_path_invariants() {
 	local out=$1 status=$CRITICAL_BASE/current-critical-path-status.md log_file=$CRITICAL_BASE/logs/critical-path-pr-executor.log classification
 	check_status_freshness "$out" critical-path "$status" 900 rtc-critical-path-pr-executor-loop
-	if log_matches_after_last_start "$log_file" 'critical-path PR executor loop started' 'reconcile failed|timed out|cannot stat .*\.tmp|No such file or directory'; then
+	if log_matches_after_last_start "$log_file" 'critical-path PR executor loop started' 'reconcile failed|timed out|cannot stat .*[.]tmp|No such file or directory'; then
 		emit_finding "$out" high "critical-path" "recent-reconcile-or-temp-error" "$log_file" "debug recent critical-path executor failure and patch the controller"
 	fi
 	if [ -s "$status" ] && rg -qi 'browser-env-preflight|preflight only; replay stays gated|runtime-readiness-blocked.*(success|resolved|completed progress|terminal-ledger)|resolved_by_active_artifact_runtime_readiness_not_product' "$status"; then
@@ -348,7 +348,10 @@ case "${1:-start}" in
 	stop)
 		tmux kill-session -t "$SESSION" 2>/dev/null || true
 		if [ -f "$PID_FILE" ]; then
-			kill "$(cat "$PID_FILE")" 2>/dev/null || true
+			pid=$(cat "$PID_FILE" 2>/dev/null || true)
+			if [ -n "$pid" ]; then
+				kill "$pid" 2>/dev/null || true
+			fi
 			rm -f "$PID_FILE"
 		fi
 		echo "$SESSION stopped"
