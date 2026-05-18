@@ -264,19 +264,84 @@ export default class CollaborationUtils {
 		timeout: number,
 		roomName: string
 	) {
-		await page.waitForFunction(
-			( { expected, room }: { expected: number; room: string } ) => {
-				const state = ( window as any ).__gutenbergTestWebSocketSync;
-				const matchingRoom = state?.rooms?.[ room ];
+		try {
+			await page.waitForFunction(
+				( { expected, room }: { expected: number; room: string } ) => {
+					const state = ( window as any )
+						.__gutenbergTestWebSocketSync;
+					const matchingRoom = state?.rooms?.[ room ];
 
-				return (
-					matchingRoom?.status === 'connected' &&
-					matchingRoom?.awarenessCount >= expected
-				);
-			},
-			{ expected: expectedPeerCount, room: roomName },
-			{ timeout }
-		);
+					return (
+						matchingRoom?.status === 'connected' &&
+						matchingRoom?.awarenessCount >= expected
+					);
+				},
+				{ expected: expectedPeerCount, room: roomName },
+				{ timeout }
+			);
+		} catch ( error ) {
+			const snapshot = await this.getTestWebSocketDebugSnapshot(
+				page,
+				roomName
+			);
+			const errorMessage =
+				error instanceof Error ? error.message : String( error );
+
+			throw new Error(
+				[
+					`Timed out waiting for test WebSocket awareness in room "${ roomName }".`,
+					`Expected peer count: ${ expectedPeerCount }.`,
+					`Original error: ${ errorMessage }`,
+					`Provider snapshot: ${ this.stringifyDiagnosticValue(
+						snapshot
+					) }`,
+				].join( '\n' )
+			);
+		}
+	}
+
+	private async getTestWebSocketDebugSnapshot(
+		page: Page,
+		roomName: string
+	): Promise< unknown > {
+		return page
+			.evaluate( ( room ) => {
+				const state = ( window as any ).__gutenbergTestWebSocketSync;
+				const rooms = state?.rooms ?? {};
+				const boundedRooms: Record< string, unknown > = {};
+
+				for ( const [ name, value ] of Object.entries( rooms ).slice(
+					0,
+					10
+				) ) {
+					boundedRooms[ name ] = value;
+				}
+
+				return {
+					providerDiagnostics:
+						state?.providerDiagnostics?.slice( -10 ) ?? [],
+					requestedRoom: room,
+					requestedRoomState: rooms?.[ room ] ?? null,
+					roomNames: Object.keys( rooms ),
+					rooms: boundedRooms,
+					tick: state?.tick ?? null,
+					url: state?.url ?? null,
+				};
+			}, roomName )
+			.catch( ( snapshotError ) => ( {
+				error:
+					snapshotError instanceof Error
+						? snapshotError.message
+						: String( snapshotError ),
+			} ) );
+	}
+
+	private stringifyDiagnosticValue( value: unknown ): string {
+		try {
+			return JSON.stringify( value, null, 2 );
+		} catch ( error ) {
+			return error instanceof Error ? error.message : String( error );
+		}
 	}
 
 	/**
