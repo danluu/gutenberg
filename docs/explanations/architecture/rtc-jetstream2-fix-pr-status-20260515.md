@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-18T23:46:37Z`
+Snapshot time: `2026-05-18T23:53:23Z`
 
 Trigger event:
-`duplicate-noise-2026-05-18T23-44-38Z-222`
+`pr-split-2026-05-18T23-51-22Z-20260518T234403Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T23-44-38Z-222/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T23-51-22Z-20260518T234403Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,8 +28,8 @@ or the original split merely for continuity.
 ## Executive Status
 
 Still blocked and not fileable as a final stack. The newest split-persona
-synthesis, `pr-split-20260518T232725Z-synthesis.md`, keeps the
-Cycle400/402/404 replacement split and rejects the old linear
+synthesis, `pr-split-20260518T234403Z-synthesis.md`, keeps the
+Cycle400/402/404/406 replacement split and rejects the old linear
 `PR07 -> PR17 -> PR18/PR18x` tail. The fileable maintainer-facing rows remain
 the ready/local lane and the CRDT/data-loss lane; `PR02B`, PR07 arms,
 `DIAG-*`, strict `117126135e5e`, `PR17`, `PR18`, and `PR18x` stay outside
@@ -44,32 +44,34 @@ feed `PR07B0D-215248` evidence; it is stack-based and must not be published.
 The latest PR07 readiness evidence is still setup-blocked before oracle:
 seed `966001` reaches the editor with `collaborationEnabled:null`. No PR07 arm
 is fileable, and the full owner matrix must wait until a PR07B0 sentinel proves
-`collaborationEnabled:true`.
+`collaborationEnabled:true`. The active Cycle406 shared readiness repair tmux
+session still has no nonzero `report.md`, so it is not durable progress yet.
 
 Strict `117126135e5e` remains owner-unassigned. The latest comparison produced
 no passing or restore-failure oracle rows, so `PR18x` stays unnamed until seed
 `5400020` reaches oracle-bearing rows across PR03/held PR03B, the PR07 queue,
 PR05B, PR05C, clean PR05D, PR14, and canonical PR15D.
 
-The `20260518T225829Z` and `20260518T232839Z` finalization reports are
-nonzero, but they add only evidence. Keep `DIAG-HTTP-REJOIN-220755` /
-`DIAG-RELOAD-220755`, `DIAG-RELOAD-225820`, `DIAG-SEARCH-225317`, and
-`DIAG-RICHTEXT-230324` as diagnostic/test side lanes until focused replay
-identifies a repeatable product-owned first-loss boundary.
+The `20260518T225829Z`, `20260518T232839Z`, and `20260518T233843Z`
+finalization reports are nonzero, but they add only evidence. Keep
+`DIAG-HTTP-REJOIN-220755` / `DIAG-RELOAD-220755`, `DIAG-RELOAD-225820`,
+`DIAG-SEARCH-225317`, and `DIAG-RICHTEXT-230324` / `DIAG-RICHTEXT-232836` as
+diagnostic/test side lanes until focused replay identifies a repeatable
+product-owned first-loss boundary.
 
 The latest novelty status for `run-20260518T225956Z` was updated at
-`2026-05-18T23:45:47.509Z` and has metrics from a completed pass at
-`2026-05-18T23:42:58.867Z`. It reports `55446` coverage files, `90740` total
-records seen, `17` current-run HTTP `persistence-no-title` records, `4` unmet
+`2026-05-18T23:52:47.528Z` and has metrics from a completed pass at
+`2026-05-18T23:49:51.040Z`. It reports `55451` coverage files, `90744` total
+records seen, `22` current-run HTTP `persistence-no-title` records, `4` unmet
 coverage goals, `0` current-run actionable signatures, `0` current-run
 likely-real visible signatures, current duplicate share `0`, and historical
-duplicate share `0.3409`. This is fuzz/control-plane health, not final-stack
+duplicate share `0.3408`. This is fuzz/control-plane health, not final-stack
 validation.
 
-The latest trend packet was generated at `2026-05-18T23:35:10Z`: `55399`
+The latest trend packet was generated at `2026-05-18T23:42:18Z`: `55417`
 coverage files at the latest snapshot, `4` unmet goals, duplicate share
 current `0`, historical duplicate share `0.3409`, browser-E2E `778`
-likely-real findings over `2537.7` runner-hours, and `41` browser-E2E lanes
+likely-real findings over `2540.8` runner-hours, and `41` browser-E2E lanes
 across `38` groups. CPU/load remain high, so new work should stay bounded and
 oracle-specific rather than adding broad browser concurrency.
 
@@ -104,7 +106,8 @@ PR07A1 -> PR07A2 -> PR07A3 -> PR07B0
 Fileable CRDT/data-loss lane from PR06D:
 PR09 -> PR10 -> PR11A -> PR11B -> PR11C -> PR11D -> PR11E
 -> PR12A -> PR12B -> PR12C
--> PR13A -> PR13B -> PR13C
+-> PR13A -> PR13B0 -> PR13B1 -> PR13B2 -> PR13B3 target
+  (current audited maintainer-facing links are repaired PR13A/B/C)
 -> PR14 -> PR14B -> PR15A -> PR15B -> PR15C -> PR15D
 ```
 
@@ -118,14 +121,15 @@ Current non-fileable queues and blockers:
 
 - `PR02B` is no longer part of the fileable ready/local lane. It remains a
   blocked validation/ownership item because seed `1030001` passed on both
-  PR02B and the PR02 base; it needs owner/repro explanation or downscope, then
-  PR CI and a verified branch-link audit.
+  PR02B and the PR02 base; the next bounded work is
+  `rtc-cycle408-pr02b-base-nonrepro-downscope`, then owner/repro explanation
+  or downscope, PR CI, and a verified branch-link audit.
 - `PR07B0A-155713`, `PR07B0B-195150`, `PR07B0C-201201`, `PR07B0D-215248`, and
   `HOLD-07C` are sibling owner candidates after `PR07B0`, not sequential PRs
   and not fileable PR rows. Cycle400 produced `36/36` `blocked-before-oracle`
   rows, later readiness evidence remains blocked on `collaborationEnabled:null`,
-  and raw `231829` is evidence-only despite matching `PR07B0D-215248` by
-  patch-id.
+  the Cycle406 readiness repair is still active without a report, and raw
+  `231829` is evidence-only despite matching `PR07B0D-215248` by patch-id.
 - Failed `PR07B0D-203210`, raw `210726`, raw PR07D, raw deferred reload heads,
   stale PR07C ready refs, raw `HOLD-07C`, `PR07B0D-205218`/`212232`/`213739`
   controls, PR17, PR18, and PR18x stay out of the active fileable split.
@@ -143,7 +147,7 @@ Current non-fileable queues and blockers:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T23:46:32Z`.
+Remote status was collected at `2026-05-18T23:53:18Z`.
 
 The fix-planning repo is checked out at:
 
@@ -173,7 +177,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T23:46:37Z` from fetched
+The branch-link audit was generated at `2026-05-18T23:53:23Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact Cycle325/i40 publication shape, ancestry, owner evidence, or filing
@@ -295,26 +299,26 @@ micro-split PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T23:46:32Z
+collected_at_utc: 2026-05-18T23:53:18Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T225956Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-18T23:45:47.509Z`. It has metrics from a completed full pass at
-`2026-05-18T23:42:58.867Z`. This is
+`2026-05-18T23:52:47.528Z`. It has metrics from a completed full pass at
+`2026-05-18T23:49:51.040Z`. This is
 fuzz/control-plane health, not final-stack validation.
 
 Current root health:
 
 ```text
 output dir: run-20260518T225956Z
-coverage files: 55446
-total records seen: 90740
-records processed this pass: 47
-current-run records: 17
-current-run successful records: 15
+coverage files: 55451
+total records seen: 90744
+records processed this pass: 4
+current-run records: 22
+current-run successful records: 20
 current-run profile: persistence-no-title
 current-run transport: http
 active run dirs: 1
@@ -333,34 +337,35 @@ Interpretation:
   product-evidence visibility.
 - Historical duplicate/noise remains dominated by old startup/no-product and
   high-volume families and must not be presented as live product failure.
-- Current duplicate share is `0`; historical duplicate share remains `0.3409`.
+- Current duplicate share is `0`; historical duplicate share is `0.3408` in
+  the novelty monitor and `0.3409` in the latest trend packet.
 - This status does not clear PR filing, PR07 owner replay, PR02B validation,
   PR15 final-PR14B materialization, reload-marker replay, seed `1020002`,
   exact branch-link gaps, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-18T23:35:10Z`:
+The latest trend evidence packet was generated at `2026-05-18T23:42:18Z`:
 
 ```text
-monitor passes: 2303
+monitor passes: 2304
 first pass: 2026-05-15T01:21:42Z
-last pass: 2026-05-18T23:26:22Z
-coverage files: 272 -> 55399
-coverage files delta: 55127
+last pass: 2026-05-18T23:34:31Z
+coverage files: 272 -> 55417
+coverage files delta: 55145
 unmet goals: 4
 likely_real_max: 4
 duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.3409
 summary startup failures last: 0
 quality issues last: 0
-memory free: 422.5 GB
-load averages: 82.16 / 84.36 / 81.13 on 64 cores
+memory free: 418.4 GB
+load averages: 73.22 / 71.43 / 75.67 on 64 cores
 enabled groups current: novelty-http-persistence-probe
 latest fuzz level mix:
   browser-e2e=41 lanes/38 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5963233
-browser-e2e likely-real findings: 778 over 2537.7 runner-hours
+total fuzz-level test executions: 5967226
+browser-e2e likely-real findings: 778 over 2540.8 runner-hours
 ```
 
 The largest unmet goals remain save/reload and real-user depth:
@@ -382,12 +387,12 @@ pass, but that does not validate the final stack or any PR branch.
 ## Status-Persona Analysis
 
 The newest split-persona synthesis,
-`pr-split-20260518T232725Z-synthesis.md`, keeps the Cycle400/402/404
-replacement split and confirms the blocker is evidence, not split design.
-Ready/local and CRDT remain the fileable lanes once their missing refs and
-validation gates are satisfied. PR07 remains a runtime-gated owner-comparison
-fork, not a fileable row. `PR02B`, `DIAG-*`, strict `117126135e5e`, `PR17`,
-`PR18`, and `PR18x` are also outside the fileable split.
+`pr-split-20260518T234403Z-synthesis.md`, says the split shape is mostly
+settled but still blocked for final-stack filing and fuzzing. Ready/local and
+CRDT remain the fileable lanes once their missing refs and validation gates are
+satisfied. PR07 remains a runtime-gated owner-comparison queue, not a fileable
+row. `PR02B`, `DIAG-*`, strict `117126135e5e`, `PR17`, `PR18`, and `PR18x`
+are also outside the fileable split.
 
 Latest split/persona statuses:
 
@@ -398,20 +403,25 @@ Latest split/persona statuses:
   patch-id, but its validation-stack base makes it evidence-only.
 - PR07 readiness is still setup-blocked: Cycle400 owner replay produced
   `36/36` `blocked-before-oracle` rows, Cycle402 readiness remained blocked on
-  `collaborationEnabled:null`, and later readiness is still blocked before
-  oracle. The next action is one setup repair that proves the PR07B0 seed
-  `966001` sentinel reaches `collaborationEnabled:true`, then a focused
-  `PR07B0D-215248` seed `6000007` replay.
+  `collaborationEnabled:null`, and the active Cycle406 readiness repair has no
+  nonzero `report.md` yet. Do not count that active session as progress until
+  it proves one active Gutenberg plugin, PHP `wp_is_collaboration_enabled()`
+  returns true, browser `window._wpCollaborationEnabled === true`, and sentinel rows
+  for PR07B0 seed `966001` plus strict seed `5400020`.
 - Strict `117126135e5e` remains unassigned. Do not name `PR18x` until seed
   `5400020` reaches oracle-bearing rows across PR03/PR03B, the PR07 queue,
   PR05B, PR05C, clean PR05D, PR14, and canonical PR15D.
 - `DIAG-HTTP-REJOIN-220755` / `DIAG-RELOAD-220755`, `DIAG-RELOAD-225820`,
-  `DIAG-SEARCH-225317`, and `DIAG-RICHTEXT-230324` stay diagnostic/test-only
-  until focused first-loss replay proves product ownership.
+  `DIAG-SEARCH-225317`, and `DIAG-RICHTEXT-230324` / `DIAG-RICHTEXT-232836`
+  stay diagnostic/test-only until focused first-loss replay proves product
+  ownership. The nonzero `20260518T233843Z` finalization report adds
+  `DIAG-RICHTEXT-232836` evidence only; it does not make PR07, PR02B, or strict
+  restore fileable.
 - `PR02B` is blocked on ownership/reproduction, not bootstrap. Seed `1030001`
   passed on PR02B and on the PR02 base, so the intended base/head failure
   boundary is missing until owner/repro evidence or a downscope decision
-  explains it.
+  explains it. The next independent bounded job should be
+  `rtc-cycle408-pr02b-base-nonrepro-downscope`.
 - Materialize and audit exact PR15 final-PR14B refs before treating
   `PR15A-on-PR14B -> PR15B-on-PR14B -> PR15C-on-PR14B -> PR15D` as final.
   Required evidence includes allowed base, branch/head/manifest agreement,
@@ -443,7 +453,16 @@ prove `wp_is_collaboration_enabled()` and browser
 `window._wpCollaborationEnabled === true`, then rerun only the PR07B0 seed
 `966001` and strict seed `5400020` sentinels before any full owner matrix. The
 separate `PR07B0D-215248` seed `6000007` replay remains the next evidence job
-after or alongside readiness repair.
+after readiness proves collaboration is enabled; prepare it now but gate actual
+replay on the readiness sentinel. If the active Cycle406 tmux session exits or
+passes the non-`1020002` stale threshold without a nonzero report, launch
+exactly one bounded replacement readiness repair.
+
+The latest split synthesis also calls for independent parallel work instead of
+waiting only on readiness or seed `1020002`: run
+`rtc-cycle408-pr02b-base-nonrepro-downscope` to replay seed `1030001`, the
+short HTTP persistence probe, and targeted PHPUnit after bootstrap, then decide
+whether PR02B is fileable, downscoped, or diagnostic-only.
 
 The newest duplicate/noise synthesis,
 `duplicate-noise-20260518T231214Z-synthesis.md`, found consensus on a
@@ -473,12 +492,12 @@ These must not be described as fixed or filing-ready.
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
 | Missing verified product refs | PR02A, PR05A-D, PR06A-D, PR06E, PR11A-E, PR12A-C, PR13B0-B3, PR14B, PR15A/B/C-on-PR14B, PR15D | active proposed rows correctly say `No verified branch link yet` | Publish/fetch/audit explicit GitHub refs before filing |
-| PR02B | HTTP polling awareness rejoin retry after PR2, seed `1030001` | moved out of the fileable split; fresh PR02B validation passed seed `1030001`, the short HTTP probe, and targeted PHPUnit on PR02B, but the PR02 base also passed seed `1030001`, so the owner/repro boundary is missing | Require owner/repro evidence or a downscope decision, then PR CI and exact branch-link audit before filing |
-| PR07 runtime / owner gate | PR07A1-A3, PR07B0, PR07B0A, PR07B0B, PR07B0C, PR07B0D-215248, HOLD-07C, reload/provider evidence | non-fileable owner-comparison fork; PR07B0D-215248 is the active clean arm, but Cycle400 produced `36/36` `blocked-before-oracle` rows, latest readiness is still blocked from `collaborationEnabled:null`, and raw `231829` is evidence-only | Repair setup, prove PR07B0 seed `966001` reaches `collaborationEnabled:true`, then replay clean `PR07B0D-215248` seed `6000007` before any full owner matrix |
+| PR02B | HTTP polling awareness rejoin retry after PR2, seed `1030001` | moved out of the fileable split; fresh PR02B validation passed seed `1030001`, the short HTTP probe, and targeted PHPUnit on PR02B, but the PR02 base also passed seed `1030001`, so the owner/repro boundary is missing | Run `rtc-cycle408-pr02b-base-nonrepro-downscope`, then require owner/repro evidence or a downscope decision, PR CI, and exact branch-link audit before filing |
+| PR07 runtime / owner gate | PR07A1-A3, PR07B0, PR07B0A, PR07B0B, PR07B0C, PR07B0D-215248, HOLD-07C, reload/provider evidence | non-fileable owner-comparison fork; PR07B0D-215248 is the active clean arm, but Cycle400 produced `36/36` `blocked-before-oracle` rows, latest readiness is still blocked from `collaborationEnabled:null`, the Cycle406 readiness session is active with no report, and raw `231829` is evidence-only | Repair setup, prove PR07B0 seed `966001` reaches `collaborationEnabled:true`, then replay clean `PR07B0D-215248` seed `6000007` before any full owner matrix |
 | Historical PR07B0D controls / failed raw reload refs | raw `deferred/rtc-reload-hydration-20260518T203210Z`, raw `deferred/rtc-reload-hydration-20260518T231829Z`, raw `210726`, `PR07B0D-205218`, `PR07B0D-212232`, `PR07B0D-213739`, and related manifests | out of the active fork; `PR07B0D-215248` supersedes those B0D variants, Cycle394 `203210` failed on both touched files, and `231829` has the matching patch-id but wrong validation-stack base | Reconsider only after bounded conflict-resolution/downscope produces a clean allowed-base artifact with bundle/head/manifest agreement and owner replay justifies promotion |
 | PR07D / PR17 / PR18 / PR18x | reload/post-save/rejoin residuals and old linear tail | rejected for the current split | Reconsider only after owner replay proves a product-owned boundary not covered by the accepted PR07 fork |
 | DIAG-HTTP-REJOIN-220755 | source `deferred/rtc-reload-hydration-20260518T220755Z`, head `f50864062e0f`, base `72854f05ed...`, seed `6000034` | diagnostic side lane only; latest nonzero report downscopes the ack theory and does not promote product code | Continue with server storage/cursor response or joined-peer apply diagnostics before assigning any product PR row |
-| DIAG reload/search/rich-text diagnostics | `DIAG-RELOAD-220755`, `DIAG-RELOAD-225820`, `DIAG-SEARCH-225317`, `DIAG-RICHTEXT-230324`, rich-text suffix diagnostics | diagnostic/test side lanes only; nonzero finalization reports add evidence but no product PR | Run focused first-loss replay before assigning reload, search, or rich-text product ownership |
+| DIAG reload/search/rich-text diagnostics | `DIAG-RELOAD-220755`, `DIAG-RELOAD-225820`, `DIAG-SEARCH-225317`, `DIAG-RICHTEXT-230324`, `DIAG-RICHTEXT-232836`, rich-text suffix diagnostics | diagnostic/test side lanes only; nonzero finalization reports add evidence but no product PR | Run focused first-loss replay before assigning reload, search, or rich-text product ownership |
 | PR05D and rich-text/search reductions | clean PR05D `27c6e7924217`, search/live-collapse, rich-text suffix, parser/linebreak candidates | diagnostic or held until owner comparison proves product ownership | Compare against PR05B, PR05C, clean PR05D, the PR07 owner queue, holds, PR14, and canonical PR15D before assigning any new owner row |
 | Revision-restore strict signal | `117126135e5e`, PR03, held PR03B, PR07 arms | owner-comparison target only; not a split row or product fix by itself; latest comparison produced no passing or restore-failure oracle rows | Repair runtime setup and rerun the bounded strict owner comparison for seed `5400020`, then compare against PR03, held PR03B, PR07 arms, and lower controls before claiming a new owner boundary |
 | PR06 ungrouping and PR06E | active PR06A-D plus PR06E | grouped PR06, PR06A prior-art, and PR06B progress refs are verified; active PR06A-D and PR06E still have no exact verified micro-split links | Publish/fetch/audit exact refs, then prove `PR06D -> PR06E`, `PR07 !-> PR06E`, and adjacent evidence for PR06A-D |
@@ -489,7 +508,7 @@ These must not be described as fixed or filing-ready.
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzzing, filing, and rebuilt validation only; do not wait on it before running independent PR07/PR02B/strict-owner work | Repair or explicitly reclassify before final-stack validation and filing |
 | Reload marker/lifecycle work | HARNESS reload markers, seeds `990001`/`990003`, same-user lifecycle seeds, PR07C seeds, deferred reload outputs | harness/diagnostic only until replay proves product ownership | Consume PR07 owner replay when present, then require product-owned first-loss boundary before promotion |
 | Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, empty materialization rescue, family-capped duplicate holds, current-run negative gates, live/analysis duplicate-family admission | cycle-222 control-plane remediation is complete: reusable no-product startup cooldowns survive output-root rollover, fallback/refill cannot revive known startup-noise producers, facts-missing known-noise paths fail closed, and live-analysis no longer keeps stale startup-noise sessions except protected product-evidence work | Monitor for recurrence; preserve product-evidence visibility and do not treat this as product validation |
-| Current fuzz validation | `run-20260518T225956Z`, novelty status at `2026-05-18T23:45:47.509Z`, trend generated at `2026-05-18T23:35:10Z` | latest novelty status has a completed pass: `55446` coverage files, `90740` records, `17` current-run HTTP persistence records, `4` unmet goals, current duplicate share `0`, current likely-real visible `0`, and browser-e2e `778` historical likely-real findings over `2537.7` runner-hours | Use as health/control-plane evidence only; still require owner replay, PR02B ownership/downscope, PR15 final-PR14B audit, exact branch audit, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
+| Current fuzz validation | `run-20260518T225956Z`, novelty status at `2026-05-18T23:52:47.528Z`, trend generated at `2026-05-18T23:42:18Z` | latest novelty status has a completed pass: `55451` coverage files, `90744` records, `22` current-run HTTP persistence records, `4` unmet goals, current duplicate share `0`, current likely-real visible `0`, and browser-e2e `778` historical likely-real findings over `2540.8` runner-hours | Use as health/control-plane evidence only; still require owner replay, PR02B ownership/downscope, PR15 final-PR14B audit, exact branch audit, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Filing Gates And Current Recommendation
@@ -554,16 +573,19 @@ Useful bounded work now:
 - continue the active `rtc-cycle406-shared-collaboration-readiness-single-plugin-repair`
   job: repair only disposable replay setup, prove one active Gutenberg plugin
   copy, then rerun only the PR07B0 seed `966001` and strict seed `5400020`
-  sentinels before any full owner matrix;
-- after readiness is fixed or alongside that bounded setup repair, run the
-  `PR07B0D-215248` seed `6000007` replay: treat raw
+  sentinels before any full owner matrix; if the active session exits or goes
+  stale without a nonzero report, launch exactly one bounded replacement
+  readiness repair;
+- run `rtc-cycle408-pr02b-base-nonrepro-downscope`: replay seed `1030001`, the
+  short HTTP persistence probe, and targeted PHPUnit after bootstrap, then
+  decide whether PR02B is fileable, downscoped, or diagnostic-only;
+- prepare the `PR07B0D-215248` seed `6000007` replay, but gate actual replay on
+  readiness proving collaboration enabled: treat raw
   `231829` only as evidence for clean `PR07B0D-215248`, then replay seed
   `6000007` with HTTP polling faults, save checkpoints, reload step 8, and
   final persistence oracle;
-- run `rtc-cycle406-pr02b-base-repro-downscope-1030001`: explain seed
-  `1030001` base nonreproduction or downscope PR02B before filing;
 - keep `DIAG-RELOAD-220755/225820`, `DIAG-SEARCH-225317`, and
-  `DIAG-RICHTEXT-230324` diagnostic-only until focused replay proves a
+  `DIAG-RICHTEXT-230324/232836` diagnostic-only until focused replay proves a
   repeatable product-owned first-loss boundary;
 - keep the completed `rtc-cycle406-progress-gate-no-wait-hardening` PASS in
   force so wait-only, active-session, zero-byte, setup-only,
@@ -586,6 +608,6 @@ audit,
 publication, raw `HOLD-07C`, PR17, PR18, PR18x promotion,
 `DIAG-HTTP-REJOIN-220755` promotion before product-owned replay,
 reload-marker product promotion before replay, `DIAG-RELOAD-220755/225820`,
-`DIAG-SEARCH-225317`, or `DIAG-RICHTEXT-230324` product promotion before
-focused first-loss replay, broad consumer duplicate/noise suppression, or
-extra browser lanes.
+`DIAG-SEARCH-225317`, or `DIAG-RICHTEXT-230324/232836` product promotion
+before focused first-loss replay, broad consumer duplicate/noise suppression,
+or extra browser lanes.
