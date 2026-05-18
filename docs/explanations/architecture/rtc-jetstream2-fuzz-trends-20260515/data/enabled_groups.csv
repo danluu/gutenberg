@@ -781,3 +781,6 @@ timestamp,group,group_family
 2026-05-18T00:16:52Z,novelty-ws-lifecycle,lifecycle
 2026-05-18T00:20:47Z,novelty-ws-persistence-no-title,persistence
 2026-05-18T00:53:23Z,novelty-ws-common-blocks,auth/locks
+2026-05-18T01:02:55Z,novelty-ws-real-user-rich-text,real-user
+2026-05-18T01:03:03Z,novelty-ws-lifecycle,lifecycle
+2026-05-18T01:03:03Z,novelty-ws-real-user-save-reload,real-user
