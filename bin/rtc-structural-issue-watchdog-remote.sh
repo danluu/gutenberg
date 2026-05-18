@@ -191,7 +191,7 @@ check_loop_statuses() {
 }
 
 check_coverage_supervisor_root_agreement() {
-	local out=$1 coverage_root status status_output age state_output state_session scoped_session suffix
+	local out=$1 coverage_root=$2 status status_output age state_output state_session scoped_session suffix
 	[ -n "$coverage_root" ] && [ -d "$coverage_root" ] || return
 	age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt" || printf 999999)
 	if [ "$age" -lt 420 ]; then
