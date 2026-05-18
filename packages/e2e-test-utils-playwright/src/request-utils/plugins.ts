@@ -8,6 +8,22 @@ import { paramCase as kebabCase } from 'change-case';
  */
 import type { RequestUtils } from './index';
 
+const PLUGIN_STATUS_UPDATE_RETRIES = 3;
+const PLUGIN_STATUS_UPDATE_RETRY_DELAY_MS = 250;
+
+function isJsonParseError( error: unknown ) {
+	return (
+		error instanceof SyntaxError &&
+		/JSON|Unexpected end of input/i.test( error.message )
+	);
+}
+
+async function waitForRetryDelay() {
+	await new Promise( ( resolve ) =>
+		setTimeout( resolve, PLUGIN_STATUS_UPDATE_RETRY_DELAY_MS )
+	);
+}
+
 /**
  * Fetch the plugins from API and cache them in memory,
  * since they are unlikely to change during testing.
@@ -66,6 +82,36 @@ function getPluginFromMap(
 	return plugin;
 }
 
+async function updatePluginStatus(
+	this: RequestUtils,
+	plugin: string,
+	status: 'active' | 'inactive'
+) {
+	for (
+		let attempt = 1;
+		attempt <= PLUGIN_STATUS_UPDATE_RETRIES;
+		attempt++
+	) {
+		try {
+			await this.rest( {
+				method: 'PUT',
+				path: `/wp/v2/plugins/${ plugin }`,
+				data: { status },
+			} );
+			return;
+		} catch ( error ) {
+			if (
+				attempt === PLUGIN_STATUS_UPDATE_RETRIES ||
+				! isJsonParseError( error )
+			) {
+				throw error;
+			}
+
+			await waitForRetryDelay();
+		}
+	}
+}
+
 /**
  * Activates an installed plugin.
  *
@@ -76,11 +122,7 @@ async function activatePlugin( this: RequestUtils, slug: string ) {
 	const pluginsMap = await this.getPluginsMap();
 	const plugin = getPluginFromMap( slug, pluginsMap );
 
-	await this.rest( {
-		method: 'PUT',
-		path: `/wp/v2/plugins/${ plugin }`,
-		data: { status: 'active' },
-	} );
+	await updatePluginStatus.call( this, plugin, 'active' );
 }
 
 /**
@@ -93,11 +135,7 @@ async function deactivatePlugin( this: RequestUtils, slug: string ) {
 	const pluginsMap = await this.getPluginsMap();
 	const plugin = getPluginFromMap( slug, pluginsMap );
 
-	await this.rest( {
-		method: 'PUT',
-		path: `/wp/v2/plugins/${ plugin }`,
-		data: { status: 'inactive' },
-	} );
+	await updatePluginStatus.call( this, plugin, 'inactive' );
 }
 
 export { getPluginsMap, activatePlugin, deactivatePlugin };
