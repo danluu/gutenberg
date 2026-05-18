@@ -1,9 +1,9 @@
 # RTC Jetstream2 fix and PR status report
 
-Snapshot time: `2026-05-18T00:25:39Z`
+Snapshot time: `2026-05-18T00:31:07Z`
 
 Trigger event:
-`pr-split-2026-05-18T00-24-44Z-20260518T001344Z`
+`duplicate-noise-2026-05-18T00-24-13Z-158`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T00-24-44Z-20260518T001344Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T00-24-13Z-158/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -96,7 +96,7 @@ Hard blockers remain:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T00:25:33Z`.
+Remote status was collected at `2026-05-18T00:31:02Z`.
 
 The fix-planning repo is checked out at:
 
@@ -126,7 +126,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T00:25:39Z` from fetched
+The branch-link audit was generated at `2026-05-18T00:31:07Z` from fetched
 `danluu` refs. Proposed PR rows below use only audit rows marked
 `verified-content`, or explicitly say `No verified branch link yet`. A verified
 branch link confirms that the linked ref exists and has a non-empty audited
@@ -221,49 +221,50 @@ branch-link audit or explicitly says `No verified branch link yet`.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T00:25:33Z
+collected_at_utc: 2026-05-18T00:31:02Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T002507Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
-The raw `novelty-status.md` collected for this update is nonempty but
-startup-only for the new coverage root: the monitor started, the full coverage
-pass is still pending, it observed `354` roots, loaded `75092` previous
-records, has no active run dirs yet, and has not produced fresh unmet-goal,
-triage-yield, or quality sections. Treat it as monitor liveness only, not as a
-current full novelty pass or final-stack validation.
+The raw `novelty-status.md` collected for this update now has a full current
+pass for the new coverage root. It reports `48481` coverage files, `75134`
+total records seen, `4` new behavioral feature keys this pass, and no current
+active-run actionable, raw, no-product, or visible likely-real signatures. The
+current drain scope is also clean. That is fuzz/control-plane health only; it
+is not final-stack validation or filing readiness.
 
-The latest usable trend packet was generated at `2026-05-18T00:15:56Z` from
-monitor data through `2026-05-18T00:11:56Z`:
+The latest trend packet was generated at `2026-05-18T00:22:53Z` from monitor
+data through `2026-05-18T00:16:52Z`:
 
 ```text
-monitor passes: 2155
-coverage files: 272 -> 48415
-coverage files delta: 48143
+monitor passes: 2156
+coverage files: 272 -> 48441
+coverage files delta: 48169
 unmet goals: 5
 likely_real_max: 4
-duplicate_share_current_last: 0.6667
-duplicate_share_historical_last: 0.3453
+duplicate_share_current_last: 0
+duplicate_share_historical_last: 0.3454
 summary startup failures last: 0
-quality issues: 2
-memory free: 415.3 GB
-load averages: 77.32 / 75.31 / 69.67 on 64 cores
-enabled groups current: novelty-ws-parser-serialization
+quality issues: 1
+memory free: 423.7 GB
+load averages: 41.74 / 51.10 / 60.98 on 64 cores
+enabled groups current: novelty-ws-parser-serialization, novelty-ws-lifecycle
 latest fuzz level mix:
-  browser-e2e=28 lanes/25 groups
+  browser-e2e=27 lanes/27 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5414501
-browser-e2e likely-real findings: 639 over 1980.7 runner-hours
+total fuzz-level test executions: 5420544
+browser-e2e likely-real findings: 640 over 1981.2 runner-hours
 latest suggested PR net LOC total: 5411
 ```
 
 This is fuzz/control-plane health, not final-stack validation and not a
 filing-readiness claim. Browser E2E remains the only level with confirmed
 likely-real findings, but lower-level lanes are under-triaged and should not be
-declared useless from zero likely-real output. Current duplicate share is no
-longer clean, while the startup-failure trend indicator is still clean.
+declared useless from zero likely-real output. Current duplicate share and
+current startup-failure indicators are clean in the latest trend snapshot, while
+historical duplicate/noise remains material.
 
 Coverage guidance still has five unmet auto-ratchet goals:
 
@@ -272,13 +273,13 @@ reload-post-action: 1082/2000
 title-save-reload: 538/1000
 body-save-reload: 597/1000
 real-user-editing success: 602/1000
-ui-format-paragraph: 1730/2000
+ui-format-paragraph: 1737/2000
 ```
 
-The trend packet remains evidence for load, coverage growth, and fuzz level
-effectiveness. Do not use the startup-only novelty snapshot to make current
-enabled/paused group claims beyond the trend packet's `enabled_groups_current`
-field.
+The novelty pass also reports no headroom for adding browser groups
+(`load1: 87.25` on `64` cores) and keeps the recent startup-noise pauses in
+cooldown for save/reload, real-user editing, and rich-text groups. Treat these
+as current producer-control signals, not as product validation.
 
 ## Status-Persona Analysis
 
@@ -354,9 +355,11 @@ control-plane changes in `bin/rtc-browser-fuzz-novelty-monitor.mjs` and
   product-evidence parser-serialization signature remained visible.
 
 This is control-plane hygiene and triage-health evidence. It is not product
-validation, final-stack fuzzing, or filing readiness. The latest startup-only
-`novelty-status.md` means the new root still needs a full pass before its
-triage-yield and quality sections can be used.
+validation, final-stack fuzzing, or filing readiness. The active coverage root
+has since rolled to `run-20260518T002507Z`; the latest full novelty pass for
+that root has no current visible likely-real or actionable signatures, and its
+paused-group/cooldown state should be treated as the current control-plane
+status until the next root rollover.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -391,7 +394,7 @@ These must not be described as fixed or filing-ready.
 | Active deferred sessions | reload-hydration, pre-save search/live-collapse, rich-text suffix | active sessions are not progress by themselves | Count only nonempty durable reports/artifacts or a clear downscope/promotion decision |
 | Reload hydration, rich-text suffix, malformed-save residuals, HTTP room isolation | diagnostic/deferred families | evidence-only unless a focused owner replay proves otherwise | Keep out of PR rows until branch, owner, and fuzz evidence are refreshed |
 | Duplicate/noise consumer cap | timeout/reload-rejoin current-run families | source-stable terminal family caps remain implemented and validated | Keep product-evidence representatives visible while avoiding duplicate analysis |
-| Duplicate/noise producer leak | novelty-monitor startup/noise producer scheduling | latest feedback action patched novelty-monitor/supervisor, restarted novelty/supervisor/watchdog, and restarted bounded live analysis | Let the new root complete a full novelty pass; if leakage returns after cooldown expiry, extend the family/profile cooldown narrowly |
+| Duplicate/noise producer leak | novelty-monitor startup/noise producer scheduling | latest feedback action patched novelty-monitor/supervisor, restarted novelty/supervisor/watchdog, and restarted bounded live analysis; the current root now has a full clean current triage pass with startup-noise cooldowns still active | If leakage returns after cooldown expiry or the next root rollover, extend the family/profile cooldown narrowly |
 
 ## Filing Gates And Current Recommendation
 
@@ -441,6 +444,6 @@ Before filing any maintainer-facing PR:
 
 The next useful work is the bounded i38 audit/manifest, plus exactly one PR07
 owner replay after root, ports, and `wp-env` are healthy. Continue deferred
-downscope/promotion and let the new novelty root complete a full pass after
-the duplicate/noise control-plane fix. Do not launch broad final-stack fuzz, a
-duplicate seed `1020002` job, raw PR07D, PR17, PR18, or PR18x.
+downscope/promotion and keep the duplicate/noise control-plane fix under the
+current root cooldown checks. Do not launch broad final-stack fuzz, a duplicate
+seed `1020002` job, raw PR07D, PR17, PR18, or PR18x.
