@@ -877,3 +877,5 @@ timestamp,group,group_family
 2026-05-18T13:31:08Z,novelty-http-persistence-probe,persistence
 2026-05-18T13:45:10Z,novelty-ws-real-user-save-reload,real-user
 2026-05-18T13:45:11Z,novelty-ws-lifecycle,lifecycle
+2026-05-18T13:49:53Z,novelty-http-persistence-probe,persistence
+2026-05-18T13:49:53Z,novelty-ws-multi-reload-lifecycle,lifecycle
