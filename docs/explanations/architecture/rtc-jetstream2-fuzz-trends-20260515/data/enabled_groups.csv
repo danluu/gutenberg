@@ -858,3 +858,5 @@ timestamp,group,group_family
 2026-05-18T09:42:47Z,novelty-ws-parser-transform,parser
 2026-05-18T09:42:47Z,novelty-ws-real-user-rich-text,real-user
 2026-05-18T09:49:16Z,novelty-ws-multi-reload-lifecycle,lifecycle
+2026-05-18T10:05:47Z,novelty-ws-parser-transform,parser
+2026-05-18T10:05:47Z,novelty-ws-revision-persistence,persistence
