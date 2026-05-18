@@ -1,12 +1,12 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-three-user-late-join,10180,3912,0,0.3842829076620825,lifecycle
+three-user-late-join,10198,3913,0,0.38370268680133357,lifecycle
 session-lifecycle,8840,2642,0,0.298868778280543,lifecycle
 async-server-blocks,8706,4376,0,0.5026418561911326,async/media
-real-user-editing,7936,603,0,0.07598286290322581,real-user
-permissions-auth-locks,7384,3748,0,0.5075839653304443,auth/locks
+real-user-editing,7942,603,0,0.07592545958196928,real-user
+permissions-auth-locks,7387,3748,0,0.507377825910383,auth/locks
 block-gauntlet,6700,1262,0,0.18835820895522387,block-structure
-revision-persistence,5585,235,0,0.04207699194270367,persistence
-parser-transform,4676,508,0,0.1086398631308811,parser
+revision-persistence,5589,235,0,0.04204687779567007,persistence
+parser-transform,4678,509,0,0.10880718255664815,parser
 common-blocks,4446,481,0,0.10818713450292397,block-structure
 parser-serialization,3732,231,0,0.06189710610932476,parser
 multi-reload-lifecycle,3722,154,0,0.04137560451370231,lifecycle
