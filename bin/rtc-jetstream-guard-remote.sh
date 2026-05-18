@@ -123,16 +123,21 @@ start_coverage_guided_lower_level_b64_or_replacement() {
 
 resource_pressure_blocks_optional_browser() {
 	local status=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md
-	local reason
+	local reason current desired
 	reason=$(sed -n 's/^- reason: //p' "$status" 2>/dev/null | tail -1)
 	case "$reason" in
-		severe_pressure|high_pressure)
+		pressure|severe_pressure|high_pressure)
 			return 0
 			;;
-		*)
-			return 1
-			;;
 	esac
+
+	current=$(sed -n 's/^- current_budget: target=\([0-9][0-9]*\).*/\1/p' "$status" 2>/dev/null | tail -1)
+	desired=$(sed -n 's/^- desired_budget: target=\([0-9][0-9]*\).*/\1/p' "$status" 2>/dev/null | tail -1)
+	if [[ "$current" =~ ^[0-9]+$ && "$desired" =~ ^[0-9]+$ ]] && [ "$desired" -lt "$current" ]; then
+		return 0
+	fi
+
+	return 1
 }
 
 maybe_restart_optional_browser_pool() {

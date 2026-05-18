@@ -17,6 +17,12 @@ HTTP_SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 WS_SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-ws-20260515/repo
 mkdir -p "$BASE" "$BASE/repos" "$BASE/runs" "$BASE/logs" "$BASE/wp-env"
 
+if [ -f "$HTTP_SRC/bin/rtc-optional-browser-admission-remote.sh" ]; then
+	# shellcheck source=/dev/null
+	source "$HTTP_SRC/bin/rtc-optional-browser-admission-remote.sh"
+	rtc_optional_browser_admission strict-expansion || exit 0
+fi
+
 tmux kill-session -t rtc-fuzz-strict-expansion 2>/dev/null || true
 tmux kill-session -t rtc-fuzz-strict-expansion-watchdog 2>/dev/null || true
 tmux kill-session -t rtc-fuzz-strict-expansion-analysis 2>/dev/null || true

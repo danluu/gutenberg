@@ -17,6 +17,12 @@ STRICT_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515
 HTTP_SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 mkdir -p "$BASE/runs" "$BASE/logs"
 
+if [ -f "$HTTP_SRC/bin/rtc-optional-browser-admission-remote.sh" ]; then
+	# shellcheck source=/dev/null
+	source "$HTTP_SRC/bin/rtc-optional-browser-admission-remote.sh"
+	rtc_optional_browser_admission gap-booster || exit 0
+fi
+
 tmux kill-session -t rtc-gap-booster 2>/dev/null || true
 tmux kill-session -t rtc-gap-booster-watchdog 2>/dev/null || true
 tmux kill-session -t rtc-gap-booster-analysis 2>/dev/null || true

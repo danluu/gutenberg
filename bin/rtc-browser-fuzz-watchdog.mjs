@@ -57,6 +57,10 @@ const CLEANUP_SCRIPT_PATH = path.join(
 	REPO_ROOT,
 	'bin/rtc-fuzz-cleanup-stale-wp-env.mjs'
 );
+const OPTIONAL_BROWSER_ADMISSION_SCRIPT_PATH = path.join(
+	REPO_ROOT,
+	'bin/rtc-optional-browser-admission-remote.sh'
+);
 let lastCleanupAt = 0;
 
 function getPositiveIntegerEnv( name, fallback ) {
@@ -140,6 +144,51 @@ async function hasSupervisorSession() {
 	return result.ok;
 }
 
+function optionalBrowserPoolForSession() {
+	if ( SESSION === 'rtc-fuzz-strict-expansion' ) {
+		return 'strict-expansion';
+	}
+	if ( SESSION === 'rtc-focused-shards' ) {
+		return 'focused-shards';
+	}
+	if ( SESSION === 'rtc-gap-booster' ) {
+		return 'gap-booster';
+	}
+	return null;
+}
+
+async function optionalBrowserAdmissionAllowsStart( reason ) {
+	const pool = optionalBrowserPoolForSession();
+	if ( ! pool ) {
+		return true;
+	}
+	try {
+		await fs.access( OPTIONAL_BROWSER_ADMISSION_SCRIPT_PATH );
+	} catch {
+		return true;
+	}
+	const result = await runCommand( 'bash', [
+		OPTIONAL_BROWSER_ADMISSION_SCRIPT_PATH,
+		pool,
+	] );
+	if ( result.ok ) {
+		return true;
+	}
+	const output = ( result.stderr || result.stdout || '' ).trim();
+	await log(
+		`optional browser admission blocked supervisor start (${ reason }) pool=${ pool }${
+			output ? `: ${ output }` : ''
+		}`
+	);
+	await event( {
+		kind: 'optional-browser-admission-blocked',
+		reason,
+		pool,
+		output,
+	} );
+	return false;
+}
+
 function buildSupervisorCommand() {
 	return [
 		`cd ${ shellQuote( REPO_ROOT ) }`,
@@ -156,6 +205,9 @@ function buildSupervisorCommand() {
 }
 
 async function startSupervisor( reason ) {
+	if ( ! ( await optionalBrowserAdmissionAllowsStart( reason ) ) ) {
+		return false;
+	}
 	const command = buildSupervisorCommand();
 	const result = await runCommand( 'tmux', [
 		'new-session',

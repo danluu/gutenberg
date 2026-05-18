@@ -16,6 +16,12 @@ BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
 SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 mkdir -p "$BASE" "$BASE/repos" "$BASE/runs" "$BASE/logs" "$BASE/wp-env"
 
+if [ -f "$SRC/bin/rtc-optional-browser-admission-remote.sh" ]; then
+	# shellcheck source=/dev/null
+	source "$SRC/bin/rtc-optional-browser-admission-remote.sh"
+	rtc_optional_browser_admission focused-shards || exit 0
+fi
+
 if [ -x /tmp/cleanup_rtc_focused_shards.sh ]; then
 	/tmp/cleanup_rtc_focused_shards.sh || true
 fi
