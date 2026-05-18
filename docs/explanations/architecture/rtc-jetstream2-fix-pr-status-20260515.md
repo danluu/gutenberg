@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-18T23:01:09Z`
+Snapshot time: `2026-05-18T23:08:03Z`
 
 Trigger event:
-`duplicate-noise-2026-05-18T23-00-12Z-220`
+`pr-split-2026-05-18T23-00-41Z-20260518T225231Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-18T23-00-12Z-220/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T23-00-41Z-20260518T225231Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -46,13 +46,13 @@ PR05D/PR15-derived manifests, old divergent PR15D refs, zero-byte output, or
 header-only push manifests as filing proof.
 
 The newest raw novelty status for `run-20260518T225956Z` was updated at
-`2026-05-18T23:00:07.406Z` and is startup-only: the monitor has loaded `90517`
-previous records, sees `605` observed roots, has no active run dirs yet, and
-the supervisor groups file is still pending, so its first full coverage pass is
-also pending. Use the trend packet generated at `2026-05-18T22:52:26Z` for the
+`2026-05-18T23:07:07.412Z` and is startup-only: the monitor has loaded `90517`
+previous records, sees `605` observed roots, sees one supervisor groups file,
+and sees one active run dir, but its first full coverage pass is still pending.
+Use the trend packet generated at `2026-05-18T22:59:42Z` for the
 latest completed-pass metrics: `55267` coverage files, `4` unmet goals,
 current duplicate share `1`, historical duplicate share `0.341`, and `777`
-browser-E2E likely-real findings over `2520.6` runner-hours. This is
+browser-E2E likely-real findings over `2522.9` runner-hours. This is
 fuzz/control-plane health, not final-stack validation.
 
 The latest duplicate/noise synthesis,
@@ -144,7 +144,7 @@ Current blocker/status changes:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T23:01:04Z`.
+Remote status was collected at `2026-05-18T23:07:58Z`.
 
 The fix-planning repo is checked out at:
 
@@ -174,7 +174,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T23:01:09Z` from fetched
+The branch-link audit was generated at `2026-05-18T23:08:03Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact Cycle325/i40 publication shape, ancestry, owner evidence, or filing
@@ -291,14 +291,14 @@ micro-split PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T23:01:04Z
+collected_at_utc: 2026-05-18T23:07:58Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T225956Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-18T23:00:07.406Z`. It is startup-only for the new coverage root, so
+`2026-05-18T23:07:07.412Z`. It is startup-only for the new coverage root, so
 coverage guidance, triage yield, likely-real counts, duplicate share, unmet
 goals, and quality issues are pending until the first full pass. This is
 fuzz/control-plane health, not final-stack validation.
@@ -309,8 +309,8 @@ Current startup health:
 output dir: run-20260518T225956Z
 observed roots: 605
 previous records loaded: 90517
-supervisor groups file: pending
-active run dirs: 0
+supervisor groups file: 1
+active run dirs: 1
 full coverage pass: pending
 ```
 
@@ -331,7 +331,7 @@ Interpretation:
   PR15 final-PR14B materialization, reload-marker replay, seed `1020002`,
   exact branch-link gaps, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-18T22:52:26Z` and
+The latest trend evidence packet was generated at `2026-05-18T22:59:42Z` and
 is the latest completed-pass evidence available in this input bundle:
 
 ```text
@@ -348,13 +348,13 @@ summary startup failures last: 0
 quality issues last: 0
 memory free: 420.1 GB
 load averages: 62.69 / 61.33 / 58.42 on 64 cores
-enabled groups current: novelty-ws-parser-serialization
+enabled groups current: novelty-ws-parser-transform
 latest fuzz level mix:
-  browser-e2e=34 lanes/25 groups
+  browser-e2e=41 lanes/38 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5943763
-browser-e2e likely-real findings: 777 over 2520.6 runner-hours
+total fuzz-level test executions: 5946760
+browser-e2e likely-real findings: 777 over 2522.9 runner-hours
 ```
 
 The largest unmet goals remain save/reload and real-user depth:
@@ -371,7 +371,7 @@ lower-level lanes are under-triaged and should not be declared useless from
 zero likely-real output. New fuzz work should stay bounded and oracle-specific:
 the trend packet still shows four unmet goals, current duplicate share of `1`,
 high historical duplicate share, and high browser E2E yield. Its enabled-group
-line predates the `23:00:07Z` startup-only novelty status for the new root; use
+line predates the `23:07:07Z` startup-only novelty status for the new root; use
 the startup status only for current root liveness until a full pass completes.
 
 ## Status-Persona Analysis
@@ -507,7 +507,7 @@ These must not be described as fixed or filing-ready.
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzzing, filing, and rebuilt validation only; do not wait on it before running independent PR07/PR02B/strict-owner work | Repair or explicitly reclassify before final-stack validation and filing |
 | Reload marker/lifecycle work | HARNESS reload markers, seeds `990001`/`990003`, same-user lifecycle seeds, PR07C seeds, deferred reload outputs | harness/diagnostic only until replay proves product ownership | Consume PR07 owner replay when present, then require product-owned first-loss boundary before promotion |
 | Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, empty materialization rescue, family-capped duplicate holds, live/analysis duplicate-family admission | cycle-220 remediation is complete on the remote control scripts; node syntax checks passed, the checked consumer path was clean for strict no-product startup leakage, and the new-root novelty status is startup-only, so group enablement, paused-family state, and graph duplicate/noise share must be reread after a full pass instead of inferred from the previous root | Continue watching the replacement run; do not treat this control-plane fix as product validation or final-stack readiness |
-| Current fuzz validation | `run-20260518T225956Z`, novelty status at `2026-05-18T23:00:07.406Z`, trend generated at `2026-05-18T22:52:26Z` | latest novelty status is startup-only with `90517` previous records loaded, `605` observed roots, supervisor groups pending, and `0` active run dirs; latest completed trend packet has `55267` coverage files, `4` unmet goals, current duplicate share `1`, and browser-e2e `777` historical likely-real findings over `2520.6` runner-hours | Use as health/control-plane evidence only; still require owner replay, PR02B validation/downscope, PR15 final-PR14B audit, exact branch audit, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
+| Current fuzz validation | `run-20260518T225956Z`, novelty status at `2026-05-18T23:07:07.412Z`, trend generated at `2026-05-18T22:59:42Z` | latest novelty status is startup-only with `90517` previous records loaded, `605` observed roots, one supervisor groups file, and one active run dir; latest completed trend packet has `55267` coverage files, `4` unmet goals, current duplicate share `1`, and browser-e2e `777` historical likely-real findings over `2522.9` runner-hours | Use as health/control-plane evidence only; still require owner replay, PR02B validation/downscope, PR15 final-PR14B audit, exact branch audit, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Filing Gates And Current Recommendation
