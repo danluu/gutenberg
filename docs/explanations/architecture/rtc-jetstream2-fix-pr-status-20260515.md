@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-18T19:14:35Z`
+Snapshot time: `2026-05-18T19:23:29Z`
 
 Trigger event:
-`pr-split-2026-05-18T19-13-05Z-20260518T190355Z`
+`pr-split-2026-05-18T19-22-17Z-20260518T191310Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T19-13-05Z-20260518T190355Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-18T19-22-17Z-20260518T191310Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,8 +28,9 @@ or the original split merely for continuity.
 ## Executive Status
 
 The split remains blocked and not fileable. The latest split-persona consensus
-at `20260518T190355Z` keeps the Cycle386 replacement shape and rejects the
-older linear `PR07 -> PR17 -> PR18/PR18x` tail. The current maintainer-facing
+at `20260518T191310Z` keeps the Cycle378/Cycle386 parallel-lane replacement
+shape and rejects the older linear `PR07 -> PR17 -> PR18/PR18x` tail. The
+blocker is evidence, not split design. The current maintainer-facing
 recommendation is still the parallel-lane shape over the Cycle325/i40 source
 material:
 
@@ -39,7 +40,9 @@ material:
 - treat `PR07` as a runtime-gated decision fork, not as a linear tail;
 - add `PR07B0A-155713` to the first `PR07` decision comparison;
 - include `PR07B1`, `PR07B1A`, `PR07B1A-ALT-131542`, `PR03B`,
-  `HOLD-07B2`, `HOLD-07C`, and lower-layer controls in the second comparison.
+  `HOLD-07B2`, `HOLD-07C`, and lower-layer controls in the second comparison;
+- keep final-stack fuzzing, stack-wide validation, and GitHub filing blocked
+  until PR07 owner evidence and PR02B validation are resolved.
 
 The latest applied action in `current-pr-split.md` is now Cycle 386. It
 completed the latest-finalization/local-publish audit and reran the PR07
@@ -92,15 +95,15 @@ Two Cycle 376 preflights also passed:
   seeds `990001` and `990003`, and has a clean diff, but remains
   harness/diagnostic setup only.
 
-The newest split-persona synthesis, `pr-split-20260518T190355Z-synthesis.md`,
+The newest split-persona synthesis, `pr-split-20260518T191310Z-synthesis.md`,
 still recommends that replacement split, not the older linear PR07 tail. The
 split is still blocked by PR07 owner-matrix adjudication, `PR02B` validation,
-missing exact verified GitHub refs for many active rows, and final-stack
-validation. Cycle 386 moves the finalization/local-publish audit from
-unaudited to `PASS`, but it also proves PR07 is setup-blocked at the missing
-e2e test plugin before any owner oracle can run. `PR07B0A-155713` remains the
-key split candidate after `PR07B0`; raw `155713` full-stack output remains a
-hazard and must not be pushed as a PR.
+missing exact verified GitHub refs for many active rows, seed `1020002`
+handling or reclassification, and final-stack validation. Cycle 386 moves the
+finalization/local-publish audit from unaudited to `PASS`, but it also proves
+PR07 is setup-blocked at the missing e2e test plugin before any owner oracle can
+run. `PR07B0A-155713` remains the key split candidate after `PR07B0`; raw
+`155713` full-stack output remains a hazard and must not be pushed as a PR.
 
 Current split recommendation:
 
@@ -146,8 +149,10 @@ PR07C red replay evidence, or the Cycle 382 PR07C owner classification as
 product PRs until their specific replay, owner, branch-link, publication, and
 validation gates pass.
 
-The latest raw novelty status is a fresh startup-only root,
-`run-20260518T191249Z`, with its first full pass still pending. The newest
+The latest raw novelty status is root `run-20260518T191249Z`. A monitor pass
+has completed, but the current output root still has no active run directories,
+no current-run behavioral coverage, no enabled groups, and one quality warning
+for empty behavioral coverage under the novelty output directory. The newest
 duplicate/noise synthesis says scheduler/admission still needs a bounded fix so
 known startup/noise families do not keep consuming producer capacity across
 output roots while product-evidence representatives remain visible. This is
@@ -155,7 +160,7 @@ control-plane/fuzz-health work, not product validation or final-stack evidence.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-18T19:14:29Z`.
+Remote status was collected at `2026-05-18T19:23:25Z`.
 
 The fix-planning repo is checked out at:
 
@@ -185,7 +190,7 @@ That repo has modified product/test files plus many untracked fuzz, analysis,
 and documentation artifacts. It is active validation infrastructure, not the
 final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-18T19:14:35Z` from fetched
+The branch-link audit was generated at `2026-05-18T19:23:29Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact Cycle325/i40 publication shape, ancestry, owner evidence, or filing
@@ -296,42 +301,46 @@ Cycle325/i40 proposed PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-18T19:14:29Z
+collected_at_utc: 2026-05-18T19:23:25Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260518T191249Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-18T19:13:58.618Z`. The current root is newly started and has only
-startup status so far; the first full novelty pass for this output directory is
-still pending. This is current fuzz/control-plane health, not final-stack
-validation.
+`2026-05-18T19:22:30.024Z`. The current root has now completed a monitor pass,
+but it still has no active current-run directories, no current-run behavioral
+coverage, and no enabled groups. This is current fuzz/control-plane health, not
+final-stack validation.
 
 Current-run health:
 
 ```text
 output dir: run-20260518T191249Z
-status: startup only; first full coverage pass pending
+status: full monitor pass completed; empty current-run materialization
 observed roots: 543
-previous records loaded: 88981
-supervisor groups file: 0
+total records seen: 88992
+coverage files: 54640
+current-run behavioral records: 0
+enabled groups: 0
 active run dirs: 0
-coverage guidance: pending until first pass
-triage yield: pending until first pass
+coverage guidance: 4 unmet goals; recommended groups held by noise/cooldown
+quality issues: 1 no-behavioral-coverage-files warning
+triage yield: 0 current active roots; 0 current signatures
 ```
 
 Interpretation:
 
-- The latest current-run status has not completed its first full pass yet, but
-  it is a newer startup root than the previous `run-20260518T184334Z`
-  materialization evidence. The raw status currently shows no supervisor group
-  file and no active run directories, so do not claim current product coverage
+- The latest current-run status has completed a monitor pass, but empty
+  materialization remains the live control-plane condition: no current-run
+  behavioral coverage files were found, no active run directories exist, and
+  no producer group is currently enabled. Do not claim current product coverage
   or final-stack validation from this root.
 - Historical duplicate/noise remains dominated by startup/no-product families
   and must not be presented as a live product failure. Historical raw top
   families are led by `pre_action_bootstrap_stall`; the new current root has
-  not produced enough triage data yet to support product validation claims.
+  produced no current active triage signatures to support product validation
+  claims.
 - This status does not clear PR filing, final-stack validation, PR02B
   validation, PR07 owner replay, reload-marker replay, or seed `1020002`.
 - The latest duplicate/noise synthesis says the next safe fix is still bounded
@@ -341,7 +350,7 @@ Interpretation:
   roots, and preserve one analyzable representative for product-evidence
   families instead of hiding them.
 
-The latest trend evidence packet was generated at `2026-05-18T19:12:46Z`:
+The latest trend evidence packet was generated at `2026-05-18T19:17:31Z`:
 
 ```text
 monitor passes: 2286
@@ -356,13 +365,13 @@ duplicate_share_historical_last: 0.3415
 summary startup failures last: 0
 quality issues last: 0
 memory free: 409.6 GB
-load averages: 63.18 / 66.64 / 69.48 on 64 cores
+load averages: 57.04 / 61.83 / 65.59 on 64 cores
 latest fuzz level mix:
-  browser-e2e=29 lanes/25 groups
+  browser-e2e=27 lanes/24 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5860616
-browser-e2e likely-real findings: 769 over 2459.1 runner-hours
+total fuzz-level test executions: 5863861
+browser-e2e likely-real findings: 769 over 2460.8 runner-hours
 ```
 
 The largest unmet goals remain save/reload and real-user depth:
@@ -377,19 +386,20 @@ body-save-reload: 655/1000
 Browser E2E remains the only level with confirmed likely-real findings, but
 lower-level lanes are under-triaged and should not be declared useless from
 zero likely-real output. New fuzz work should stay bounded and oracle-specific:
-the current root is freshly restarted and pending its first full pass,
-historical startup-stall/noise must remain separated from current product
-evidence, and the evidence still supports targeted owner/replay work rather
-than broad final-stack claims.
+the current root is empty after its latest monitor pass, historical
+startup-stall/noise must remain separated from current product evidence, and
+the evidence still supports targeted owner/replay work rather than broad
+final-stack claims.
 
 ## Status-Persona Analysis
 
 The newest split-persona synthesis,
-`pr-split-20260518T190355Z-synthesis.md`, says the report needs the Cycle386
-replacement split, not the older linear PR07 tail. The split is not fileable
-and not ready for broad final-stack fuzzing because PR07 owner adjudication,
-`PR02B` validation, exact branch publication/audit for many active rows, and
-final-stack validation remain unresolved.
+`pr-split-20260518T191310Z-synthesis.md`, says the report needs the
+Cycle378/Cycle386 replacement split, not the older linear PR07 tail. The split
+is not fileable and not ready for broad final-stack fuzzing because PR07 owner
+adjudication, `PR02B` validation, exact branch publication/audit for many active
+rows, seed `1020002` handling or reclassification, and final-stack validation
+remain unresolved.
 
 Cycle 380 remains local-host proof for the older nonzero `20260518T170639Z`
 finalization, not filing proof. Cycle 382 added a completed `PASS`
@@ -436,13 +446,15 @@ branch-link gates for rows that still say `No verified branch link yet`.
 
 The next useful work is bounded, not broad:
 
-- run exactly one bounded PR07 runtime setup repair/downscope for missing
-  `gutenberg-test-plugin-disables-the-css-animations`, with a plugin-map smoke
-  gate, then rerun only the Cycle386 owner-matrix rows needed to reach the
-  oracle;
-- run `rtc-cycle388-pr02b-validation`, or the equivalent isolated PR02B
-  validation job, covering seed `1030001`, a short HTTP persistence-probe
-  shard, targeted PHPUnit after bootstrap, and PR CI;
+- run exactly one bounded PR07 runtime setup repair/downscope, for example
+  `rtc-cycle388-pr07-owner-matrix-runtime-setup-repair`, that verifies
+  `gutenberg-test-plugin-disables-the-css-animations` and
+  `gutenberg-test-plugin-rtc-websocket-provider`, consumes the Cycle386
+  `branch-links.tsv` and `replay-plan.tsv`, then reruns only the owner-matrix
+  rows needed to reach the oracle;
+- run `rtc-cycle388-pr02b-validation-1030001`, or the equivalent isolated PR02B
+  validation job, covering seed `1030001`, a short HTTP persistence-probe shard,
+  targeted PHPUnit after bootstrap, and PR CI;
 - use the Cycle386 job-local push manifest for ready/local publication audit
   work; do not rely on stale `latest-local-publish-manifest.tsv`;
 - publish/fetch/audit exact GitHub refs for active rows that still have no
@@ -495,8 +507,8 @@ These must not be described as fixed or filing-ready.
 | PR14B / PR15 placement | PR14B and active PR15A-D after PR14B | branch-link audit verifies PR15A-C component prior art, but no exact PR14B-based PR15A-D refs | Publish/fetch/audit explicit PR14B-based PR15A-D refs and confirm ancestry |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzzing, filing, and rebuilt validation only | Repair or explicitly reclassify before final-stack validation and filing |
 | Reload marker/lifecycle work | `HARNESS-RELOAD-MARKERS-154206`, `HARNESS-RELOAD-REPLAY-163231`, `HARNESS-RELOAD-WS-CONFIG-164740`, seeds `990001`/`990003`, same-user lifecycle seeds `5200001`/`5200002`/`5200005`/`1130001`/`1130002`, PR07C seeds `5200011`/`5200017`/`5200010` and `7110004`/`7110017`, completed `170248`, no-report `170250`, reload deferred output `173306` | preflight passed for marker branch and replay JSON candidates; Cycle 380 PR07C replay is durable red evidence, and Cycle 382 classified PR07C/HOLD-07C as red-held/not promotable, but Cycle 386 shows the full owner replay is still blocked before the oracle by missing test-plugin setup; `164740` and `170248` reload reports are harness/diagnostic only until replay proves product ownership; `170250` is not evidence and `173306` still needs deferred audit | Repair the PR07 test-plugin setup, rerun the owner matrix to the oracle, run WS-config replay on seed `1130001` and then `1130002` only as diagnostic harness validation if still needed, then require product-owned first-loss boundary before promotion |
-| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, empty materialization rescue, fallback enablement, current no-analysis drains, ordinary fallback rotation, bounded canary policy | latest synthesis says producer/scheduler admission still leaks: novelty/materialization/refill can keep spending capacity on known startup or duplicate/noise families across output roots, while mixed runs can mask current no-product startup holds behind product-evidence duplicate families; the latest raw novelty root `run-20260518T191249Z` is startup-only with no full pass yet | Patch scheduler/admission so current no-product startup holds win producer-state precedence, materialization/refill/bootstrap honor reusable family cooldowns, and product-evidence duplicate families keep one analyzable representative without broad suppression; validate with `node --check`, a gate-only pass, monitor restart, and a bounded canary |
-| Current fuzz validation | `run-20260518T191249Z`, raw novelty status at `2026-05-18T19:13:58.618Z`, trend generated at `2026-05-18T19:12:46Z` | current raw status is startup-only with first full pass pending, `543` observed roots, `88981` previous records loaded, no supervisor groups file, and no active run dirs; latest trend shows `54623` coverage files, `4` unmet goals, current duplicate share `0`, historical duplicate share about `0.3415`, quality issues `0`, browser-e2e at `29` lanes / `25` groups, and `769` browser-e2e likely-real findings over `2459.1` runner-hours | Use as current health/control-plane evidence only; still require accepted product evidence, owner replay, exact branch audit, PR02B validation, reload-marker replay/downscope, seed `1020002` repair/reclassification, and final PR-stack validation before filing claims |
+| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, empty materialization rescue, fallback enablement, current no-analysis drains, ordinary fallback rotation, bounded canary policy | latest synthesis says producer/scheduler admission still leaks: novelty/materialization/refill can keep spending capacity on known startup or duplicate/noise families across output roots, while mixed runs can mask current no-product startup holds behind product-evidence duplicate families; the latest raw novelty root `run-20260518T191249Z` has completed a monitor pass but remains empty, with no active run dirs, no enabled groups, and no current-run behavioral coverage | Patch scheduler/admission so current no-product startup holds win producer-state precedence, materialization/refill/bootstrap honor reusable family cooldowns, and product-evidence duplicate families keep one analyzable representative without broad suppression; validate with `node --check`, a gate-only pass, monitor restart, and a bounded canary |
+| Current fuzz validation | `run-20260518T191249Z`, raw novelty status at `2026-05-18T19:22:30.024Z`, trend generated at `2026-05-18T19:17:31Z` | current raw status has completed a monitor pass but has `0` active run dirs, `0` enabled groups, `0` current active triage signatures, `54640` coverage files, `88992` total records seen, and `1` no-behavioral-coverage quality issue; latest trend shows `54623` graph coverage files, `4` unmet goals, current duplicate share `0`, historical duplicate share about `0.3415`, quality issues `0`, browser-e2e at `27` lanes / `24` groups, and `769` browser-e2e likely-real findings over `2460.8` runner-hours | Use as current health/control-plane evidence only; still require accepted product evidence, owner replay, exact branch audit, PR02B validation, reload-marker replay/downscope, seed `1020002` repair/reclassification, and final PR-stack validation before filing claims |
 
 ## Filing Gates And Current Recommendation
 
@@ -542,10 +554,10 @@ Before filing any maintainer-facing PR:
 9. Keep the untracked reload-hydration gate spec out of filing branches and
    push allow-lists unless it is deliberately copied into a clean evidence
    worktree.
-10. Treat duplicate/noise policy work, novelty scheduler changes, the
-   startup-only current-root `run-20260518T191249Z` novelty status, and the
-   latest trend status as control-plane/fuzz health, not product validation or
-   final-stack readiness.
+10. Treat duplicate/noise policy work, novelty scheduler changes, the empty
+   current-root `run-20260518T191249Z` novelty status, and the latest trend
+   status as control-plane/fuzz health, not product validation or final-stack
+   readiness.
 11. After PR07 decision-fork owner evidence, exact branch-link audit for
    missing rows, PR02B validation, reload-marker replay/downscope, and seed
    `1020002` repair or reclassification land, rebuild the combined validation
@@ -576,9 +588,8 @@ Useful bounded work now:
 - publish/fetch/audit explicit GitHub refs for active i40 rows that still say
   `No verified branch link yet`;
 - patch the duplicate/noise scheduler/admission leak, then monitor
-  `run-20260518T191249Z` or its successor through the first full pass, confirming
-  current producer materialization becomes nonempty without hiding
-  product-evidence signatures.
+  `run-20260518T191249Z` or its successor until current producer materialization
+  becomes nonempty without hiding product-evidence signatures.
 
 Do not launch broad final-stack fuzz, GitHub filing, rebuilt stack-wide
 validation, duplicate broad seed `1020002` work outside focused diagnostic
