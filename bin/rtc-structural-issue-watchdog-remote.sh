@@ -109,9 +109,16 @@ emit_finding() {
 }
 
 check_status_freshness() {
-	local out=$1 component=$2 file=$3 max_age=$4 session=$5 age
+	local out=$1 component=$2 file=$3 max_age=$4 session=$5 age parent_age parent_dir
 	if [ ! -s "$file" ]; then
 		if [ -z "$session" ] || has_session "$session"; then
+			parent_dir=$(dirname "$file")
+			if [ -d "$parent_dir" ]; then
+				parent_age=$(file_age_seconds "$parent_dir" || printf 999999)
+				if [ "$parent_age" -le "$max_age" ]; then
+					return
+				fi
+			fi
 			emit_finding "$out" high "$component" "missing-status" "$file" "restore status generation for $component"
 		fi
 		return
