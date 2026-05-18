@@ -5,6 +5,7 @@ BASE="${RTC_DUP_NOISE_BASE:-/media/volume/danluu-fuzz-data/rtc-duplicate-noise-p
 FUZZ_REPO="${RTC_FUZZ_REPO:-/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo}"
 COVERAGE_BASE="${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}"
 CODEX_BIN="${CODEX_BIN:-/home/exouser/.npm-global/bin/codex}"
+SESSION="${RTC_DUP_NOISE_SESSION:-rtc-duplicate-noise-persona-loop}"
 MODEL="${RTC_DUP_NOISE_MODEL:-gpt-5.5}"
 REASONING="${RTC_DUP_NOISE_REASONING:-xhigh}"
 INTERVAL_SECONDS="${RTC_DUP_NOISE_INTERVAL_SECONDS:-0}"
@@ -479,4 +480,63 @@ main() {
   done
 }
 
-main "$@"
+start_loop_session() {
+  if has_exact_session "$SESSION"; then
+    echo "$SESSION already running"
+    return
+  fi
+  tmux new-session -d -s "$SESSION" "cd '$FUZZ_REPO'; export RTC_DUP_NOISE_SESSION='$SESSION'; bash bin/rtc-duplicate-noise-persona-loop-remote.sh run >> '$BASE/logs/tmux.log' 2>&1"
+  echo "$SESSION started"
+}
+
+stop_loop_session() {
+  tmux kill-session -t "$SESSION" 2>/dev/null || true
+  if [ -f "$BASE/process.pid" ]; then
+    local pid
+    pid="$(sed -n '1p' "$BASE/process.pid" 2>/dev/null || true)"
+    if [ -n "$pid" ]; then
+      kill "$pid" 2>/dev/null || true
+    fi
+  fi
+  echo "$SESSION stopped"
+}
+
+status_loop_session() {
+  if has_exact_session "$SESSION"; then
+    echo "$SESSION running"
+  else
+    echo "$SESSION not running"
+  fi
+  if [ -f "$BASE/process.pid" ]; then
+    echo "process pid: $(sed -n '1p' "$BASE/process.pid" 2>/dev/null || true)"
+  fi
+  if [ -d "$BASE/loop.lock" ]; then
+    echo "cycle lock pid: $(sed -n '1p' "$BASE/loop.lock/pid" 2>/dev/null || true)"
+    echo "cycle lock created: $(sed -n '1p' "$BASE/loop.lock/created-at-epoch" 2>/dev/null || true)"
+  else
+    echo "cycle lock: absent"
+  fi
+  if [ -f "$BASE/cycle-count.txt" ]; then
+    echo "cycle count: $(sed -n '1p' "$BASE/cycle-count.txt" 2>/dev/null || true)"
+  fi
+  sed -n '1,80p' "$BASE/latest-synthesis.md" 2>/dev/null || true
+}
+
+case "${1:-run}" in
+  run)
+    main
+    ;;
+  start)
+    start_loop_session
+    ;;
+  stop)
+    stop_loop_session
+    ;;
+  status)
+    status_loop_session
+    ;;
+  *)
+    echo "usage: $0 [run|start|stop|status]" >&2
+    exit 2
+    ;;
+esac
