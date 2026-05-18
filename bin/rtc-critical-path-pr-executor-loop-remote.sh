@@ -466,7 +466,7 @@ publication_class_for_branch() {
 }
 
 write_inputs() {
-	local tmp=$INPUTS.tmp
+	local tmp=$INPUTS.$$.tmp
 	local latest_finalization latest_progress_unblock latest_deferred_report latest_coverage
 	latest_finalization=$(latest_nonempty_file "$FINALIZATION_BASE/cycles" 'finalization.report.md' || true)
 	latest_progress_unblock=$(find "$PR_SPLIT_BASE/runs" -type f -path '*/jobs/*progress-unblock*/*' -size +0c -printf '%T@\t%p\n' 2>/dev/null | sort -n | tail -1 | cut -f2- || true)
@@ -499,7 +499,7 @@ EOF
 }
 
 write_no_progress() {
-	local tmp=$NO_PROGRESS.tmp
+	local tmp=$NO_PROGRESS.$$.tmp
 	local rejected_at file
 	rejected_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	{
@@ -530,7 +530,7 @@ write_no_progress() {
 }
 
 write_terminal_ledger() {
-	local tmp=$TERMINAL_LEDGER.tmp lane classification class
+	local tmp=$TERMINAL_LEDGER.$$.tmp lane classification class
 	{
 		printf 'lane_id\tclassification\tevidence_path\tevidence_mtime\tqueue_state\treopen_condition\n'
 		for lane in pr17-1020002 seed-5200005-reducer seed-1060015-reducer; do
@@ -554,7 +554,7 @@ write_terminal_ledger() {
 }
 
 write_lanes() {
-	local tmp=$LANES.tmp branch base_ref base_sha head_sha lane_id pr_id publication_class state output_dir
+	local tmp=$LANES.$$.tmp branch base_ref base_sha head_sha lane_id pr_id publication_class state output_dir
 	{
 		printf 'lane_id\tpr_id\tlane_kind\tpublication_class\tsource_repo\tsource_ref\tbase_ref\tbase_sha\thead_sha\tresource_class\tdependencies\tstate\toutput_dir\n'
 		for branch in $(candidate_branches); do
@@ -586,7 +586,7 @@ write_lanes() {
 }
 
 write_blockers_and_queue() {
-	local blockers_tmp=$BLOCKERS.tmp queue_tmp=$QUEUE.tmp now pr17_active s5200005 s1060015 reload_active reason
+	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reason
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	pr17_active=$(active_session_matching '1020002|pr17' || true)
 	s5200005=$(active_session_matching '5200005' || true)
@@ -660,7 +660,7 @@ write_blockers_and_queue() {
 }
 
 write_active_jobs() {
-	local tmp=$ACTIVE_JOBS.tmp
+	local tmp=$ACTIVE_JOBS.$$.tmp
 	{
 		printf 'session\tclass\tstarted_hint\n'
 		tmux_sessions |
@@ -975,7 +975,7 @@ launch_validation_jobs() {
 }
 
 write_status() {
-	local tmp=$STATUS.tmp
+	local tmp=$STATUS.$$.tmp
 	{
 		echo "# Critical-Path PR Executor Status"
 		echo
