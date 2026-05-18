@@ -234,9 +234,34 @@ decision_blocks() {
 	' "$DECISIONS"
 }
 
+decision_explicitly_allows() {
+	local action=$1 target=${2:-}
+	[ -s "$DECISIONS" ] || return 1
+	awk -F '\t' -v action="$action" -v target="$target" '
+		NR == 1 { next }
+		$1 == action && $2 == target && tolower($4) ~ /^(yes|true|allow|allowed|1)$/ {
+			allowed = 1
+		}
+		END { exit allowed ? 0 : 1 }
+	' "$DECISIONS"
+}
+
+publish_allowed_by_controller() {
+	local branch=$1
+	[ -s "$DECISIONS" ] || return 0
+	decision_explicitly_allows publish-ready "$branch"
+}
+
 publish_blocked_by_controller() {
 	local branch=$1
 	decision_blocks publish-ready "$branch" && return 0
+	decision_blocks hold-publication "$branch" && return 0
+	case "$branch" in
+		ready/rtc-pr06b-malformed-save-request-payload)
+			decision_explicitly_allows maintain-downscope malformed-save-payload && return 0
+			decision_explicitly_allows downscope-family malformed-save-payload && return 0
+			;;
+	esac
 	case "$branch" in
 		ready/rtc-pr15*)
 			decision_blocks publish-ready ready/rtc-pr15-fallback-group-chain && return 0
@@ -353,7 +378,7 @@ write_progress_table() {
 					product-candidate:1:*)
 						if branch_published "$branch" "$head"; then
 							printf '%s\t%s\tready-product-pr\thigh\tpublished\t%s\t%s\talready published by local machine; keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
-						elif publish_blocked_by_controller "$branch"; then
+						elif publish_blocked_by_controller "$branch" || ! publish_allowed_by_controller "$branch"; then
 							printf '%s\t%s\tready-product-pr\thigh\theld-by-controller\t%s\t%s\tcontroller decision currently blocks publication\t%s\n' "$now" "$source" "$branch" "$head" "$report"
 						else
 							printf '%s\t%s\tready-product-pr\thigh\tpublishable\t%s\t%s\tpublish from local machine and keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
@@ -420,6 +445,7 @@ write_controller_push_manifest() {
 				[ "$allowed" = "1" ] || continue
 				branch_published "$branch" "$head" && continue
 				publish_blocked_by_controller "$branch" && continue
+				publish_allowed_by_controller "$branch" || continue
 				case "$branch" in
 					ready/*|finalized/*|fresh-prset/*|cycle*|ready-pr03b/*) ;;
 					*) continue ;;

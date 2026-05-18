@@ -1771,7 +1771,12 @@ lanes, but they must share state. In particular:
     branches with explicit `publish-ready=no` decisions. The controller accepts
     `launch-branch-repair`, `repair-branch`, and `repair-ready` persona actions
     for repair scheduling, and PR15 chain-level publication holds are applied
-    to the individual PR15 variant branches.
+    to the individual PR15 variant branches. When a decision table exists,
+    green product-candidate rows are not enough by themselves: ordinary
+    publication requires an exact `publish-ready=yes` decision for that branch.
+    This prevents broad stale manifests from re-opening downscoped duplicate
+    branches or every variant in a stack while still allowing concrete
+    branch-repair manifests to publish.
 -   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that
