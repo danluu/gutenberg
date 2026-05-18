@@ -1,10 +1,10 @@
-generated_at_utc: 2026-05-18T05:40:55Z
-monitor_passes: 2204
+generated_at_utc: 2026-05-18T05:50:15Z
+monitor_passes: 2205
 first_pass_utc: 2026-05-15T01:21:42Z
-last_pass_utc: 2026-05-18T05:38:43Z
+last_pass_utc: 2026-05-18T05:48:35Z
 coverage_files_first: 272
-coverage_files_last: 50197
-coverage_files_delta: 49925
+coverage_files_last: 50269
+coverage_files_delta: 49997
 unmet_coverage_first: 24
 unmet_coverage_last: 5
 likely_real_max: 4
@@ -12,30 +12,30 @@ duplicate_share_current_last: 0
 duplicate_share_historical_last: 0.3437
 summary_startup_failures_last: 0
 quality_issues_last: 0
-memory_free_gb_last: 409.3
-load_1_last: 62.95
-load_5_last: 67.39
-load_15_last: 68.28
+memory_free_gb_last: 412.7
+load_1_last: 64
+load_5_last: 68.64
+load_15_last: 69.58
 core_count: 64
-enabled_group_events: 828
-enabled_groups_current: novelty-http-persistence-probe,novelty-ws-three-user-late-join
+enabled_group_events: 830
+enabled_groups_current: novelty-ws-async-server-blocks,novelty-ws-permissions-auth-locks
 fuzz_level_mix_snapshots: 433
 fuzz_level_mix_campaigns: coverage-guided,coverage-guided-lower-level,focused-shards,gap-booster,strict-expansion,unit-property
 fuzz_level_mix_latest: browser-e2e=27 lanes/27 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups
-fuzz_level_test_executions: 5553118
+fuzz_level_test_executions: 5557067
 fuzz_level_test_executions_has_approximate_rows: TRUE
-fuzz_level_execution_latest: browser-e2e=155889 cumulative/3948 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=4946400 cumulative/11008 per-hour; coverage-guided-lower-level=447823 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
-bug_findings_rows: 2227
-bug_findings_unique_likely_real: 694
-bug_findings_unique_candidate_signals: 878
-bug_outputs_rows: 6622
-bug_outputs_unique_candidates: 5805
-bug_effectiveness_latest: backend-api=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=694 likely-real/2 102.3 runner-hours/33.01 per-100-runner-hours; coverage-guided-lower-level=0 likely-real/20.9 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; other=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; transport-integration=0 likely-real/59.5 runner-hours/0.00 per-100-runner-hours; unit-property=0 likely-real/32.5 runner-hours/0.00 per-100-runner-hours
-failure_candidate_effectiveness_latest: backend-api=0 failed-attempts/0.0 per-100-runner-hours; browser-e2e=131 883 failed-attempts/6 273.2 per-100-runner-hours; coverage-guided-lower-level=159 failed-attempts/759.3 per-100-runner-hours; fuzz-assertion=0 failed-attempts/0.0 per-100-runner-hours; other=0 failed-attempts/0.0 per-100-runner-hours; protocol-server=0 failed-attempts/0.0 per-100-runner-hours; transport-integration=2 700 failed-attempts/4 537.5 per-100-runner-hours; unit-property=718 failed-attempts/2 210.5 per-100-runner-hours
-bug_output_effectiveness_latest: backend-api=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=5 692 unique-candidates/2 102.3 runner-hours/270.75 per-100-runner-hours; coverage-guided-lower-level=2 unique-candidates/20.9 runner-hours/9.55 per-100-runner-hours; fuzz-assertion=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; other=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; transport-integration=106 unique-candidates/59.5 runner-hours/178.14 per-100-runner-hours; unit-property=5 unique-candidates/32.5 runner-hours/15.39 per-100-runner-hours
+fuzz_level_execution_latest: browser-e2e=156990 cumulative/1904 per-hour; transport-integration=3006 cumulative/0 per-hour; unit-property=4949248 cumulative/4992 per-hour; coverage-guided-lower-level=447823 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=0 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+bug_findings_rows: 2232
+bug_findings_unique_likely_real: 696
+bug_findings_unique_candidate_signals: 881
+bug_outputs_rows: 6634
+bug_outputs_unique_candidates: 5816
+bug_effectiveness_latest: backend-api=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=696 likely-real/2 107.4 runner-hours/33.03 per-100-runner-hours; coverage-guided-lower-level=0 likely-real/20.9 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; other=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; transport-integration=0 likely-real/59.5 runner-hours/0.00 per-100-runner-hours; unit-property=0 likely-real/32.6 runner-hours/0.00 per-100-runner-hours
+failure_candidate_effectiveness_latest: backend-api=0 failed-attempts/0.0 per-100-runner-hours; browser-e2e=132 965 failed-attempts/6 309.5 per-100-runner-hours; coverage-guided-lower-level=159 failed-attempts/759.3 per-100-runner-hours; fuzz-assertion=0 failed-attempts/0.0 per-100-runner-hours; other=0 failed-attempts/0.0 per-100-runner-hours; protocol-server=0 failed-attempts/0.0 per-100-runner-hours; transport-integration=2 700 failed-attempts/4 537.5 per-100-runner-hours; unit-property=718 failed-attempts/2 199.5 per-100-runner-hours
+bug_output_effectiveness_latest: backend-api=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=5 703 unique-candidates/2 107.4 runner-hours/270.62 per-100-runner-hours; coverage-guided-lower-level=2 unique-candidates/20.9 runner-hours/9.55 per-100-runner-hours; fuzz-assertion=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; other=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; transport-integration=106 unique-candidates/59.5 runner-hours/178.14 per-100-runner-hours; unit-property=5 unique-candidates/32.6 runner-hours/15.32 per-100-runner-hours
 profiles_seen: 16
 goals_total: 131
 goals_unmet: 5
-pr_review_events: 10604
-pr_suggested_net_loc_snapshots: 342
+pr_review_events: 10606
+pr_suggested_net_loc_snapshots: 344
 pr_suggested_net_loc_latest_total: 2152
