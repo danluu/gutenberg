@@ -21,6 +21,7 @@ MIN_SCALE_UP_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_SCALE_UP_SECONDS:-1200}
 MIN_SCALE_DOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_SCALE_DOWN_SECONDS:-300}
 MIN_MATERIALIZATION_REMEDIATION_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_MATERIALIZATION_REMEDIATION_SECONDS:-900}
 OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS:-900}
+ALLOW_OPTIONAL_BROWSER_SHED=${RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHED:-1}
 MATERIALIZATION_STALE_SECONDS=${RTC_RESOURCE_AUTOSCALER_MATERIALIZATION_STALE_SECONDS:-600}
 WP_ENV_RESET_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_WP_ENV_RESET_COOLDOWN_SECONDS:-1800}
 RESET_WP_ENV_ON_INFRA_FAILURE=${RTC_RESOURCE_AUTOSCALER_RESET_WP_ENV_ON_INFRA_FAILURE:-1}
@@ -131,6 +132,75 @@ enabled_groups() {
 	node -e "const fs=require('fs'); const p=process.argv[1]; const j=JSON.parse(fs.readFileSync(p,'utf8')); const groups=Array.isArray(j)?j:Object.values(j); console.log(groups.filter(g=>g.enabled!==false && !g.paused).length);" "$latest/supervisor-groups.json" 2>/dev/null || echo 0
 }
 
+current_browser_roots() {
+	cat "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true
+	cat /media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515/current-run-root.txt 2>/dev/null || true
+	cat /media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/current-run-root.txt 2>/dev/null || true
+	cat /media/volume/danluu-fuzz-data/rtc-gap-booster-20260515/current-run-root.txt 2>/dev/null || true
+}
+
+live_browser_lane_pids_all_roots() {
+	local roots=()
+	local root
+	while IFS= read -r root; do
+		[ -n "$root" ] && [ -d "$root" ] && roots+=( "$root" )
+	done < <(current_browser_roots | awk 'NF && !seen[$0]++')
+	python3 - "${roots[@]}" <<'PY'
+import json
+import os
+import subprocess
+import sys
+
+roots = [root for root in sys.argv[1:] if os.path.isdir(root)]
+seen = set()
+
+def pid_alive(pid):
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except PermissionError:
+        return True
+    except Exception:
+        return False
+
+def pid_is_browser_runner(pid):
+    if not pid_alive(pid):
+        return False
+    try:
+        args = subprocess.check_output(
+            ["ps", "-p", str(int(pid)), "-o", "args="],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return False
+    return "rtc-browser-fuzz-runner.mjs" in args
+
+for root in roots:
+    root_depth = root.rstrip(os.sep).count(os.sep)
+    for dirpath, dirnames, filenames in os.walk(root):
+        if dirpath.rstrip(os.sep).count(os.sep) - root_depth >= 3:
+            dirnames[:] = []
+        if "lanes.json" not in filenames:
+            continue
+        try:
+            with open(os.path.join(dirpath, "lanes.json"), errors="ignore") as handle:
+                manifest = json.load(handle)
+        except Exception:
+            continue
+        lanes = manifest.get("lanes") if isinstance(manifest, dict) else manifest
+        if not isinstance(lanes, list):
+            continue
+        for lane in lanes:
+            if not isinstance(lane, dict):
+                continue
+            pid = lane.get("pid")
+            if pid and pid_is_browser_runner(pid):
+                seen.add(int(pid))
+print(len(seen))
+PY
+}
+
 current_repo_roots() {
 	local latest
 	latest=$(latest_run)
@@ -159,7 +229,7 @@ cleanup_orphan_monitors() {
 
 cleanup_optional_browser_process_groups() {
 	local now=$1
-	local leaf_pids pid cur depth ppid pgid args pgids killed=0
+	local leaf_pids pid cur depth ppid pgid args pgids pgid killed=0
 	leaf_pids=$(
 		ps -eo pid,args |
 			awk '
@@ -227,13 +297,16 @@ shed_optional_browser_pools_if_needed() {
 	if [ "$reason" != "severe_pressure" ]; then
 		return 1
 	fi
+	if [ "$ALLOW_OPTIONAL_BROWSER_SHED" != "1" ]; then
+		echo "[$now] optional browser shedding skipped under severe pressure; set RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHED=1 to enable it" >> "$LOG"
+		return 1
+	fi
 	if cleanup_optional_browser_process_groups "$now"; then
 		killed=1
 	fi
 	last_shed=$(cat "$OPTIONAL_BROWSER_SHED_LAST" 2>/dev/null || echo 0)
-	if [ $(( $(epoch) - last_shed )) -lt "$OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS" ]; then
-		[ "$killed" = 1 ]
-		return
+	if [ "$killed" != 1 ] && [ $(( $(epoch) - last_shed )) -lt "$OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS" ]; then
+		return 1
 	fi
 	for session in \
 		rtc-gap-booster \
@@ -392,12 +465,21 @@ NODE
 materialization_needs_remediation() {
 	local enabled=$1 desired_target=$2 active=$3 paused=$4 running=$5 stale_seconds=$6
 	local status_counts=${7:-}
+	if [ "${desired_target:-0}" -gt 0 ] && [ "${enabled:-0}" -le 0 ] && [ "${active:-0}" -eq 0 ]; then
+		return 0
+	fi
 	if printf '%s' "$status_counts" | grep -Eq '(^|\|)(starting|launching|recovering):[1-9]' &&
 		[ "${stale_seconds:-0}" -lt "$MATERIALIZATION_STALE_SECONDS" ]; then
 		return 1
 	fi
 	if [ "${enabled:-0}" -le 0 ]; then
 		return 1
+	fi
+	if [ "${desired_target:-0}" -gt 0 ] &&
+		[ "${active:-0}" -eq 0 ] &&
+		[ "${running:-0}" -eq 0 ] &&
+		printf '%s' "$status_counts" | grep -Eq '(^|\|)paused-startup-stall:[1-9]'; then
+		return 0
 	fi
 	if [ "${active:-0}" -eq 0 ] && [ "${paused:-0}" -gt 0 ]; then
 		return 0
@@ -412,6 +494,93 @@ materialization_needs_remediation() {
 		return 0
 	fi
 	return 1
+}
+
+latest_policy_holds_empty_materialization() {
+	local latest
+	latest=$(latest_run)
+	[ -n "$latest" ] || return 1
+	node - "$latest/novelty-state.json" "$latest/novelty-status.md" <<'NODE'
+const fs = require( 'fs' );
+const [ statePath, statusPath ] = process.argv.slice( 2 );
+const holdActions = new Set( [
+	'hold-empty-coverage-no-safe-fallback',
+	'hold-materialization-floor-no-safe-group',
+	'bootstrap-supervisor-groups-empty',
+	'skip-bootstrap-empty-materialization-startup-noise-canary-no-eligible-fallback',
+] );
+const maxAgeMs = Number(
+	process.env.RTC_RESOURCE_AUTOSCALER_POLICY_HOLD_MAX_AGE_MS ||
+		30 * 60 * 1000
+);
+const now = Date.now();
+const readText = ( file ) => {
+	try {
+		return fs.readFileSync( file, 'utf8' );
+	} catch {
+		return '';
+	}
+};
+const readJson = ( file ) => {
+	try {
+		return JSON.parse( readText( file ) );
+	} catch {
+		return null;
+	}
+};
+const isFresh = ( iso ) => {
+	const timestamp = Date.parse( iso || '' );
+	return Number.isFinite( timestamp ) && now - timestamp <= maxAgeMs;
+};
+const status = readText( statusPath );
+const sectionText = ( heading ) => {
+	const marker = `## ${ heading }`;
+	const start = status.indexOf( marker );
+	if ( start === -1 ) {
+		return '';
+	}
+	const next = status.indexOf( '\n## ', start + marker.length );
+	return status.slice( start, next === -1 ? undefined : next );
+};
+const parseMetric = ( text, label ) => {
+	const escaped = label.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+	const match = text.match( new RegExp( `- ${ escaped }:\\s*([0-9.]+)` ) );
+	return match ? Number( match[ 1 ] ) : null;
+};
+const activeTriage = sectionText( 'Triage Yield' ) || status;
+const activeSignatures = parseMetric( activeTriage, 'signatures' );
+const activeDuplicateShare = parseMetric(
+	activeTriage,
+	'top duplicate family share'
+);
+const activeLikelyReal = parseMetric( activeTriage, 'likely-real visible' );
+const state = readJson( statePath );
+const recentStateHold =
+	( Array.isArray( state?.changes ) ? state.changes : [] )
+		.slice( -50 )
+		.some(
+			( change ) =>
+				holdActions.has( change?.action ) &&
+				( ! change?.at || isFresh( change.at ) )
+		);
+const freshState = ! state?.lastUpdatedAt || isFresh( state.lastUpdatedAt );
+const statusHold =
+	/hold-empty-coverage-no-safe-fallback|hold-materialization-floor-no-safe-group|bootstrap-supervisor-groups-empty|skip-bootstrap-empty-materialization-startup-noise-canary-no-eligible-fallback/.test(
+		status
+	);
+const activeMetricsPending =
+	activeSignatures === null &&
+	activeDuplicateShare === null &&
+	activeLikelyReal === null;
+const activeCurrentNoiseClear =
+	! activeMetricsPending &&
+	( activeSignatures === 0 || activeDuplicateShare === 0 ) &&
+	activeLikelyReal === 0;
+if ( activeCurrentNoiseClear && ! recentStateHold && ! statusHold ) {
+	process.exit( 1 );
+}
+process.exit( freshState && ( recentStateHold || statusHold ) ? 0 : 1 );
+NODE
 }
 
 materialization_logs_show_wp_env_infra_failure() {
@@ -571,11 +740,17 @@ write_budget_env() {
 	local target=$1
 	local max=$2
 	local multiplier=${3:-1.02}
+	local allow_fleet_startup_noise_canary
+	local fleet_startup_noise_canary_group
+	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
+	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
 	cat > "$BUDGET_ENV" <<EOF_BUDGET
 export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='$target'
 export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='$max'
 export RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS='$max'
 export RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER='$multiplier'
+export RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY='$allow_fleet_startup_noise_canary'
+export RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP='$fleet_startup_noise_canary_group'
 EOF_BUDGET
 }
 
@@ -629,6 +804,10 @@ restart_coverage() {
 	local desired_target=$1
 	local desired_max=$2
 	local reason=$3
+	local allow_fleet_startup_noise_canary
+	local fleet_startup_noise_canary_group
+	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
+	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
 	echo "[$(stamp)] restarting coverage-guided loop target=$desired_target max=$desired_max reason=$reason" >> "$LOG"
 	write_budget_env "$desired_target" "$desired_max" 1.02
 	RTC_COVERAGE_CLEANUP_KEEP_WATCHDOG=1 \
@@ -636,6 +815,8 @@ restart_coverage() {
 	RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS="$desired_max" \
 	RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS="$desired_max" \
 	RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER=1.02 \
+	RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY="$allow_fleet_startup_noise_canary" \
+	RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP="$fleet_startup_noise_canary_group" \
 		"$START" >> "$LOG" 2>&1 || true
 }
 
@@ -657,6 +838,31 @@ while true; do
 	target=$(current_target)
 	max=$(current_max)
 	read -r desired_target desired_max reason <<<"$(choose_budget "$cpu" "$load" "$load_five" "$load_fifteen" "$avail" "$ncpu")"
+	browser_live_lanes=$(live_browser_lane_pids_all_roots)
+	e2e_floor=${RTC_RESOURCE_AUTOSCALER_E2E_MIN_LIVE_LANES:-24}
+	e2e_repair_target=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_TARGET_GROUPS:-4}
+	e2e_repair_max=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_MAX_GROUPS:-5}
+	if [ "${browser_live_lanes:-0}" -lt "$e2e_floor" ] &&
+			[ "$reason" != "pressure" ] &&
+			[ "$reason" != "high_pressure" ] &&
+			[ "$reason" != "severe_pressure" ] &&
+			[ "$desired_target" -lt "$e2e_repair_target" ]; then
+		desired_target="$e2e_repair_target"
+		desired_max="$e2e_repair_max"
+		reason=e2e_floor_repair
+	fi
+	if [ "$reason" != "pressure" ] &&
+			[ "$reason" != "high_pressure" ] &&
+			[ "$reason" != "severe_pressure" ] &&
+			[ "${desired_target:-0}" -lt "${target:-0}" ] &&
+			[ "${enabled:-0}" -gt "${desired_target:-0}" ]; then
+		projected_browser_lanes=$(( ${browser_live_lanes:-0} - ( ${enabled:-0} - ${desired_target:-0} ) ))
+		if [ "$projected_browser_lanes" -lt "$e2e_floor" ]; then
+			desired_target="$target"
+			desired_max="$max"
+			reason=e2e_floor_repair
+		fi
+	fi
 	action=observe
 	IFS=$'\t' read -r supervisor_state_path materialized_group_count materialized_active_run_dirs paused_infra_startup_groups materialized_running_groups supervisor_status_counts supervisor_state_age_seconds materialization_detail <<<"$(materialization_snapshot)"
 	if [ "${target:-0}" -gt 0 ] && [ "${max:-0}" -gt 0 ]; then
@@ -667,6 +873,12 @@ while true; do
 		action=restart_missing_monitor
 		restart_coverage "$desired_target" "$desired_max" missing_monitor
 		last_restart_epoch=$(epoch)
+		up_streak=0
+		down_streak=0
+	elif [ "${materialized_active_run_dirs:-0}" -eq 0 ] &&
+		[ "${materialized_running_groups:-0}" -eq 0 ] &&
+		latest_policy_holds_empty_materialization; then
+		action=materialization_policy_hold
 		up_streak=0
 		down_streak=0
 	elif materialization_needs_remediation "$enabled" "$desired_target" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_state_age_seconds" "$supervisor_status_counts"; then
@@ -703,8 +915,9 @@ while true; do
 		up_streak=0
 		if [ "$down_streak" -ge 1 ] && {
 			[ $(( $(epoch) - last_restart_epoch )) -ge "$MIN_SCALE_DOWN_SECONDS" ] ||
-				[ "$reason" = "high_pressure" ] ||
-				[ "$reason" = "severe_pressure" ]
+				[ "$reason" = "pressure" ] ||
+					[ "$reason" = "high_pressure" ] ||
+					[ "$reason" = "severe_pressure" ]
 		}; then
 			action=scale_down
 			restart_coverage "$desired_target" "$desired_max" "$reason"
