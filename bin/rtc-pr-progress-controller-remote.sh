@@ -285,6 +285,12 @@ pr15_next_child_allowed_by_controller() {
 publish_allowed_by_controller() {
 	local branch=$1
 	[ -s "$DECISIONS" ] || return 0
+	case "$branch" in
+		ready/rtc-pr15*)
+			pr15_next_child_allowed_by_controller "$branch" && return 0
+			return 1
+			;;
+	esac
 	decision_explicitly_allows publish-ready "$branch" && return 0
 	pr15_next_child_allowed_by_controller "$branch" && return 0
 	return 1

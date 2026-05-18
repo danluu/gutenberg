@@ -1782,7 +1782,9 @@ lanes, but they must share state. In particular:
     unpublished `*-on-pr14b` PR15 child in stack order. That chain selector
     checks the current `danluu/rtc-pr-progress-*` destination for the exact
     source branch, so old cycle branch publications cannot satisfy the parent
-    gate.
+    gate. PR15 stack order overrides exact `publish-ready=yes` rows for later
+    children; future children stay held until their progress-controller parent
+    branch is actually published.
 -   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that
