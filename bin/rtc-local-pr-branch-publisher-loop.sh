@@ -8,6 +8,7 @@ REMOTE_CRITICAL_BASE=${RTC_BRANCH_PUBLISH_REMOTE_CRITICAL_BASE:-/media/volume/da
 REMOTE_DEFERRED_BASE=${RTC_BRANCH_PUBLISH_REMOTE_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516}
 REMOTE_PRSPLIT_BASE=${RTC_BRANCH_PUBLISH_REMOTE_PRSPLIT_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515}
 REMOTE_FRESH_BASE=${RTC_BRANCH_PUBLISH_REMOTE_FRESH_BASE:-/media/volume/danluu-fuzz-data/rtc-fresh-pr-split-from-scratch-20260517}
+REMOTE_PROGRESS_BASE=${RTC_BRANCH_PUBLISH_REMOTE_PROGRESS_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518}
 
 REPO=${RTC_BRANCH_PUBLISH_LOCAL_REPO:-/Users/danluu/dev/fuzz/gutenberg}
 DANLUU_REMOTE=${RTC_BRANCH_PUBLISH_DANLUU_REMOTE:-danluu}
@@ -78,6 +79,8 @@ remote_manifest_paths() {
 		set -e
 		{
 			test -f '$REMOTE_CRITICAL_BASE/current-push-manifest.tsv' && printf '%s\n' '$REMOTE_CRITICAL_BASE/current-push-manifest.tsv'
+			test -f '$REMOTE_PROGRESS_BASE/current-push-manifest.tsv' && printf '%s\n' '$REMOTE_PROGRESS_BASE/current-push-manifest.tsv'
+			find '$REMOTE_PROGRESS_BASE/jobs' -type f -name 'push-manifest.tsv' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -80 | sed 's/^[^ ]* //'
 			find '$REMOTE_DEFERRED_BASE/cycles' -type f -name 'push-manifest.tsv' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -80 | sed 's/^[^ ]* //'
 			find '$REMOTE_PRSPLIT_BASE/runs' -type f -name 'push-manifest.tsv' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -120 | sed 's/^[^ ]* //'
 			find '$REMOTE_FRESH_BASE/runs' -type f -name 'push-manifest.tsv' -printf '%T@ %p\n' 2>/dev/null | sort -n | tail -120 | sed 's/^[^ ]* //'

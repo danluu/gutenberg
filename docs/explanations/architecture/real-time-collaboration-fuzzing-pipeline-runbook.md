@@ -1736,6 +1736,16 @@ lanes, but they must share state. In particular:
 -   `bin/rtc-deferred-work-promotion-loop-remote.sh` runs up to three deferred
     promotion jobs, rotates families every five minutes, and records loop pid
     and script mtime in status so a patched-but-not-restarted loop is visible.
+-   `bin/rtc-pr-progress-controller-remote.sh` runs as
+    `rtc-pr-progress-controller-loop` and writes status to
+    `/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/current-pr-progress-controller-status.md`.
+    It is the product-PR progress scheduler. It builds a PR progress table,
+    writes controller push manifests for the local publisher, runs the standard
+    persona control loop every two controller cycles, and launches bounded PR
+    progress jobs only when they can change a branch, blocker, publication, or
+    downscope state. It preserves fuzzing/discovery by enforcing a discovery
+    reserve before starting heavy PR jobs; analysis/persona jobs may continue
+    while heavy browser/e2e PR jobs wait.
 -   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that
@@ -1747,7 +1757,10 @@ lanes, but they must share state. In particular:
     after a status refresh rather than running it as a separate polling daemon.
     It reads Jetstream push manifests, asks Codex for a conservative push plan,
     validates refs and SHAs deterministically, pushes safe branches to `danluu`,
-    and writes the resulting local publish manifest back to Jetstream.
+    and writes the resulting local publish manifest back to Jetstream. It also
+    reads controller-generated push manifests under the PR progress controller
+    directory, so controller publication requests do not require GitHub access
+    from Jetstream.
 
 After changing one of these scripts on Jetstream, restart the matching tmux
 session on the `rtc-fuzz` socket and confirm that the status file shows the new
