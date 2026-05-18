@@ -2,7 +2,10 @@
  * Internal dependencies
  */
 import { test, expect } from './fixtures';
-import { SECOND_USER } from './fixtures/collaboration-utils';
+import {
+	getRtcWebSocketContextOptions,
+	SECOND_USER,
+} from './fixtures/collaboration-utils';
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 
@@ -54,6 +57,7 @@ test.describe( 'Collaboration with meta boxes', () => {
 			// Set up second browser context for User 2.
 			const secondContext = await admin.browser.newContext( {
 				baseURL: BASE_URL,
+				...getRtcWebSocketContextOptions(),
 			} );
 			const page2 = await secondContext.newPage();
 
@@ -160,7 +164,7 @@ test.describe( 'Collaboration with meta boxes', () => {
 			const modal = page2.getByRole( 'dialog', {
 				name: 'This post is already being edited',
 			} );
-			await expect( modal ).not.toBeVisible();
+			await expect( modal ).toBeHidden();
 		} );
 	} );
 } );

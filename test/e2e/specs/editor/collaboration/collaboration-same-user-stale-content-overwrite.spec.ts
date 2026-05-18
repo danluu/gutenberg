@@ -16,6 +16,7 @@ import type {
  * Internal dependencies
  */
 import { test, expect } from './fixtures';
+import { getRtcWebSocketContextOptions } from './fixtures/collaboration-utils';
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 const ADMIN_USER = process.env.WP_USERNAME || 'admin';
@@ -257,6 +258,7 @@ async function openPrimaryEditor(
 async function openSameAdminEditor( admin: Admin, postId: number ) {
 	const context = await admin.browser.newContext( {
 		baseURL: BASE_URL,
+		...getRtcWebSocketContextOptions(),
 	} );
 	const page = await context.newPage();
 

@@ -54,6 +54,26 @@ export const SECOND_USER: UserCredentials = {
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 const USE_TEST_WS_PROVIDER = process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1';
 
+export function getRtcWebSocketExtraHTTPHeaders() {
+	if ( ! USE_TEST_WS_PROVIDER ) {
+		return undefined;
+	}
+
+	return {
+		'X-Gutenberg-RTC-Test-WS-URL':
+			process.env.GUTENBERG_RTC_TEST_WS_URL ||
+			`ws://127.0.0.1:${
+				process.env.GUTENBERG_RTC_TEST_WS_PORT || '18991'
+			}`,
+	};
+}
+
+export function getRtcWebSocketContextOptions() {
+	const extraHTTPHeaders = getRtcWebSocketExtraHTTPHeaders();
+
+	return extraHTTPHeaders ? { extraHTTPHeaders } : {};
+}
+
 export default class CollaborationUtils {
 	private admin: Admin;
 	private cleanupUsersMode: CleanupUsersMode;
@@ -110,6 +130,7 @@ export default class CollaborationUtils {
 	): Promise< { page: Page; editor: Editor } > {
 		const context = await this.admin.browser.newContext( {
 			baseURL: BASE_URL,
+			...getRtcWebSocketContextOptions(),
 			...( USE_TEST_WS_PROVIDER
 				? { storageState: { cookies: [], origins: [] } }
 				: {} ),
@@ -165,6 +186,7 @@ export default class CollaborationUtils {
 	): Promise< { page: Page; editor: Editor } > {
 		const context = await this.admin.browser.newContext( {
 			baseURL: BASE_URL,
+			...getRtcWebSocketContextOptions(),
 			storageState: await this.primaryPage.context().storageState(),
 		} );
 		const newPage = await context.newPage();

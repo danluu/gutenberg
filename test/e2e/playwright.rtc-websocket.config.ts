@@ -20,10 +20,15 @@ process.env.GUTENBERG_RTC_TEST_WS_PROVIDER = '1';
 process.env.GUTENBERG_RTC_TEST_WS_URL =
 	process.env.GUTENBERG_RTC_TEST_WS_URL || `ws://127.0.0.1:${ wsPort }`;
 
+const rtcWebSocketHeaders = {
+	'X-Gutenberg-RTC-Test-WS-URL': process.env.GUTENBERG_RTC_TEST_WS_URL,
+};
+
 type ArrayElement< T > = T extends Array< infer Item > ? Item : T;
 type WebServerConfig = ArrayElement<
 	Exclude< PlaywrightTestConfig[ 'webServer' ], undefined >
 >;
+type UseConfig = Exclude< PlaywrightTestConfig[ 'use' ], undefined >;
 
 const baseWebServer: WebServerConfig[] = [];
 if ( Array.isArray( baseConfig.webServer ) ) {
@@ -48,6 +53,14 @@ const rtcTestIgnore = baseTestIgnore.filter(
 
 const config = defineConfig( {
 	...baseConfig,
+	use: {
+		...( ( baseConfig.use || {} ) as UseConfig ),
+		extraHTTPHeaders: {
+			...( ( baseConfig.use as UseConfig | undefined )
+				?.extraHTTPHeaders || {} ),
+			...rtcWebSocketHeaders,
+		},
+	},
 	// Run the shared RTC specs plus anything WebSocket-specific under
 	// `websocket-only/`, with the test WebSocket provider activated by
 	// globalSetup. Specs that exercise HTTP-polling-specific semantics
