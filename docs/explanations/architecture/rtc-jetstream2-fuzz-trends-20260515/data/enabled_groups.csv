@@ -898,3 +898,5 @@ timestamp,group,group_family
 2026-05-18T18:50:46Z,novelty-ws-real-user-rich-text,real-user
 2026-05-18T19:00:49Z,novelty-ws-real-user-editing,real-user
 2026-05-18T20:20:35Z,novelty-http-persistence-probe,persistence
+2026-05-18T22:20:48Z,novelty-ws-real-user-rich-text,real-user
+2026-05-18T22:20:55Z,novelty-ws-real-user-save-reload,real-user
