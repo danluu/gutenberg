@@ -9914,4 +9914,5 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-18T17:15:00Z,strict-expansion,ws-real-user-editing,browser-e2e,ws,real-user-editing,2,1,2,2,0,381977,FALSE
 2026-05-18T17:15:00Z,strict-expansion,ws-revision-persistence,browser-e2e,ws,revision-persistence,2,2,2,2,0,253858,FALSE
 2026-05-18T17:15:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,1,1,1,1,0,140235,FALSE
-2026-05-18T17:15:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2784,2784,2784,87,0,630000,FALSE
+2026-05-18T17:15:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,4000,4000,4000,125,0,890000,FALSE
+2026-05-18T17:30:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,832,832,832,26,0,172000,FALSE
