@@ -870,3 +870,6 @@ timestamp,group,group_family
 2026-05-18T12:11:05Z,novelty-ws-async-server-blocks,async/media
 2026-05-18T12:24:22Z,novelty-http-persistence-probe,persistence
 2026-05-18T12:24:22Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-18T12:46:08Z,novelty-ws-async-server-blocks,async/media
+2026-05-18T12:52:03Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-18T12:52:10Z,novelty-ws-media-cross-entity,async/media
