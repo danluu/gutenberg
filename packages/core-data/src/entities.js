@@ -15,7 +15,7 @@ import { addQueryArgs } from '@wordpress/url';
  * Internal dependencies
  */
 import { PostEditorAwareness } from './awareness/post-editor-awareness';
-import { getSyncManager } from './sync';
+import { getSyncManager, LOCAL_UNDO_IGNORED_ORIGIN } from './sync';
 import {
 	applyPostChangesToCRDTDoc,
 	defaultCollectionSyncConfig,
@@ -53,6 +53,42 @@ function getCRDTRawPostValue( crdtRecord, key ) {
 	}
 
 	return getRawPostValue( crdtRecord?.[ key ] );
+}
+
+function getCRDTSnapshotChangesFromPostEdits( edits ) {
+	const changes = {};
+
+	for ( const key of POST_RAW_ATTRIBUTES ) {
+		if ( ! ( key in edits ) ) {
+			continue;
+		}
+
+		const rawValue = getRawPostValue( edits[ key ] );
+		if ( rawValue === undefined ) {
+			continue;
+		}
+
+		changes[ key ] = rawValue;
+
+		if ( key === 'content' ) {
+			changes.blocks = parse( rawValue );
+		}
+	}
+
+	return changes;
+}
+
+function getCRDTSnapshotBaseRecord( record ) {
+	const content = getRawPostValue( record?.content );
+
+	if ( typeof content !== 'string' ) {
+		return record;
+	}
+
+	return {
+		...record,
+		blocks: parse( content ),
+	};
 }
 
 function areSerializedBlocksEqualAt( blocksA, blocksB, index ) {
@@ -434,7 +470,7 @@ export const prePersistPostType = async (
 	const objectId = persistedRecord?.id;
 	let syncManager;
 	let serializedDoc;
-	let hasSerializedDoc = false;
+	let latestRecordForCRDTSnapshot;
 	const editedSavedFields = POST_RAW_ATTRIBUTES.filter(
 		( key ) => key in edits
 	);
@@ -471,22 +507,12 @@ export const prePersistPostType = async (
 	) {
 		try {
 			syncManager = getSyncManager();
-			serializedDoc = await syncManager?.createPersistedCRDTDoc(
-				objectType,
-				objectId,
-				{
-					basePersistedCRDTDoc:
-						persistedRecord?.meta?.[
-							POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-						] || null,
-				}
-			);
-			hasSerializedDoc = !! serializedDoc;
 			const latestRecord = await apiFetch( {
 				path: addQueryArgs( `${ baseURL }/${ objectId }`, {
 					context: 'edit',
 				} ),
 			} );
+			latestRecordForCRDTSnapshot = latestRecord;
 			const serverChangedSavedFields = editedSavedFields.filter(
 				( key ) =>
 					getRawPostValue( latestRecord?.[ key ] ) !==
@@ -521,18 +547,6 @@ export const prePersistPostType = async (
 				didApplyLatestCRDTDoc ||
 				( hasLatestPersistedCRDTDoc && serverChangedSavedFields.length )
 			) {
-				serializedDoc = await syncManager?.createPersistedCRDTDoc(
-					objectType,
-					objectId,
-					{
-						basePersistedCRDTDoc:
-							latestRecord?.meta?.[
-								POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-							] || null,
-					}
-				);
-				hasSerializedDoc = !! serializedDoc;
-
 				if (
 					hasLatestPersistedCRDTDoc &&
 					locallyChangedSavedFields.length
@@ -666,16 +680,33 @@ export const prePersistPostType = async (
 
 	// Add meta for persisted CRDT document.
 	if ( persistedRecord ) {
-		if ( ! hasSerializedDoc ) {
-			serializedDoc = await (
-				syncManager ?? getSyncManager()
-			)?.createPersistedCRDTDoc( objectType, objectId, {
-				basePersistedCRDTDoc:
-					persistedRecord?.meta?.[
-						POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-					] || null,
-			} );
+		const crdtSnapshotChanges = getCRDTSnapshotChangesFromPostEdits( {
+			...edits,
+			...newEdits,
+		} );
+		if ( Object.keys( crdtSnapshotChanges ).length ) {
+			( syncManager ?? getSyncManager() )?.update?.(
+				objectType,
+				objectId,
+				crdtSnapshotChanges,
+				LOCAL_UNDO_IGNORED_ORIGIN,
+				{
+					isSave: true,
+					baseRecord: getCRDTSnapshotBaseRecord(
+						latestRecordForCRDTSnapshot ?? persistedRecord
+					),
+				}
+			);
 		}
+
+		serializedDoc = await (
+			syncManager ?? getSyncManager()
+		)?.createPersistedCRDTDoc( objectType, objectId, {
+			basePersistedCRDTDoc:
+				persistedRecord?.meta?.[
+					POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+				] || null,
+		} );
 
 		if ( serializedDoc ) {
 			newEdits.meta = {
