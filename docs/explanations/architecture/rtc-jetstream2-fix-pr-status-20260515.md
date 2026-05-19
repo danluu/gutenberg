@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T09:27:35Z`
+Snapshot time: `2026-05-19T09:32:58Z`
 
 Trigger event:
-`pr-split-2026-05-19T08-28-36Z-20260519T081549Z`
+`pr-split-2026-05-19T08-38-41Z-20260519T082842Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T08-28-36Z-20260519T081549Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T08-38-41Z-20260519T082842Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -113,8 +113,8 @@ no-analysis restoration, and product-evidence escape paths can still recycle
 startup/noise producers. The latest completed feedback action remains
 `duplicate-noise-20260519T083141Z-feedback-action.md`; the newer
 `duplicate-noise-20260519T090846Z-feedback-action.md` is zero bytes, so it did
-not apply another fix. The newest raw novelty monitor, `run-20260519T092714Z`,
-has only startup status so far: the monitor started, loaded `99642` previous
+not apply another fix. The newest raw novelty monitor, `run-20260519T093242Z`,
+has only startup status so far: the monitor started, loaded `99734` previous
 records, observed `21` roots, and has not completed its first full pass. The
 latest completed graph/trend evidence still has
 `novelty-ws-permissions-auth-locks` as the enabled group, `4` unmet goals, and
@@ -132,7 +132,7 @@ repair.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T09:27:31Z`.
+Remote status was collected at `2026-05-19T09:32:53Z`.
 
 The fix-planning repo is checked out at:
 
@@ -162,7 +162,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T09:27:35Z` from fetched
+The branch-link audit was generated at `2026-05-19T09:32:58Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -270,7 +270,7 @@ These rows must not be described as fixed or filing-ready.
 | PR05E and rich-text/parser reductions | PR05E text, rich-text suffix around `868cd...`, parser/linebreak candidates, `PR18x` | rich-text suffix remains diagnostic and still needs fresh row-bearing hardening or replay output; latest guidance still says do not name `PR18x` until PR05B/PR05C/clean PR05D and other plausible owners are compared | Harden the diagnostic manifest first, then compare against lower controls and clean split heads before promotion |
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Raw deferred manifests | raw `003407`, raw `020456`, raw `024016`, fallback/PR15-tail bases, raw `PR07D` | invalid PR progress; wrong/stale base or missing same-cycle allowlisted base/head/bundle/manifest agreement | Keep as no-progress unless a new audit proves clean allowlisted base, head/bundle/manifest agreement, and ownership/non-coverage |
-| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, endpoint-mismatch port bleed, `fuzz_helper_rest_endpoint_construction`, supervisor seed-drain recovery, novelty bootstrap/admission | latest `090846Z` synthesis says the remaining bug is control-plane recycling of startup/noise producers and product-evidence harness-noise siblings; paired `083141Z` feedback is still the latest completed fix, while `090846Z` feedback is zero bytes; the newest `092714Z` raw monitor is startup-only with full coverage pass pending, and the latest completed trend pass still shows one enabled group plus `4` unmet goals | Keep product-evidence signatures visible, preserve one representative per semantic family, cap or hold later siblings in producer scheduling, and treat the constrained one-group/startup state as health evidence rather than broad coverage recovery |
+| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, endpoint-mismatch port bleed, `fuzz_helper_rest_endpoint_construction`, supervisor seed-drain recovery, novelty bootstrap/admission | latest `090846Z` synthesis says the remaining bug is control-plane recycling of startup/noise producers and product-evidence harness-noise siblings; paired `083141Z` feedback is still the latest completed fix, while `090846Z` feedback is zero bytes; the newest `093242Z` raw monitor is startup-only with full coverage pass pending, and the latest completed trend pass still shows one enabled group plus `4` unmet goals | Keep product-evidence signatures visible, preserve one representative per semantic family, cap or hold later siblings in producer scheduling, and treat the constrained one-group/startup state as health evidence rather than broad coverage recovery |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -278,20 +278,20 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T09:27:31Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T092714Z
+collected_at_utc: 2026-05-19T09:32:53Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T093242Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty monitor status was written at
-`2026-05-19T09:27:25.081Z` for `run-20260519T092714Z`. It is a startup-only
+`2026-05-19T09:32:51.803Z` for `run-20260519T093242Z`. It is a startup-only
 status, not a completed full coverage pass:
 
 ```text
 status: monitor started; full coverage pass pending
 observed roots: 21
-previous records loaded: 99642
+previous records loaded: 99734
 supervisor groups file: pending
 active run dirs: 0
 unmet goals: pending until first pass
@@ -306,7 +306,7 @@ Interpretation:
   monitor startup for a constrained coverage-guided run, not validation of the
   accepted final PR stack and not a clean current-run triage result.
 - The prior completed pass had no active current-run signatures or visible
-  likely-real failures, but the `092714Z` raw monitor has not yet produced
+  likely-real failures, but the `093242Z` raw monitor has not yet produced
   equivalent full-pass triage. Historical/combined triage still contains
   likely-real signatures from prior roots; do not present those as current live
   product failures.
@@ -318,29 +318,29 @@ Interpretation:
   replay, strict owner replay, reload-hydration downscope, seed `1020002`, or
   final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T09:17:37Z`:
+The latest trend evidence packet was generated at `2026-05-19T09:26:27Z`:
 
 ```text
-monitor passes: 2344
+monitor passes: 2346
 first pass: 2026-05-15T01:21:42Z
-last pass: 2026-05-19T09:16:11Z
-coverage files: 272 -> 1610
-coverage files delta: 1338
+last pass: 2026-05-19T09:23:37Z
+coverage files: 272 -> 1648
+coverage files delta: 1376
 unmet goals: 4
 likely_real_max: 4
-duplicate_share_current_last: 1
-duplicate_share_historical_last: 0.3333
+duplicate_share_current_last: 0
+duplicate_share_historical_last: 0.4286
 summary startup failures last: 0
 quality issues last: 0
 enabled group: novelty-ws-permissions-auth-locks
-memory free: 417.0 GB
-load averages: 54.2 / 44.29 / 47.37 on 64 cores
+memory free: 417.2 GB
+load averages: 43.59 / 41.56 / 45.3 on 64 cores
 latest fuzz level mix:
   browser-e2e=28 lanes/25 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6206654
-browser-e2e likely-real findings: 793 over 2748.6 runner-hours
+total fuzz-level test executions: 6208822
+browser-e2e likely-real findings: 793 over 2750.4 runner-hours
 ```
 
 Largest unmet goals remain save/reload and real-user depth:
@@ -357,7 +357,7 @@ lower-level lanes are under-triaged and should not be declared useless from
 zero likely-real output. Load is high enough that new fuzz work should stay
 bounded and oracle-specific rather than increasing broad browser concurrency.
 The graph-derived trend packet is the latest completed-pass evidence; the newer
-`09:27:25Z` raw novelty status only proves the next monitor run has started and
+`09:32:51Z` raw novelty status only proves the next monitor run has started and
 that full current-run triage is still pending.
 
 ## Status-Persona Analysis
@@ -450,11 +450,11 @@ bounded control-plane fix:
   consumer paths, `no-analysis.json` sentinels preserved product evidence, and
   the patched policy paused the then-active noisy producers. The latest
   completed trend pass still has `novelty-ws-permissions-auth-locks` as the
-  enabled group, while the newer `092714Z` raw monitor has only startup status.
+  enabled group, while the newer `093242Z` raw monitor has only startup status.
 - Remaining risk: coverage-guided browser progress is constrained to one active
   group while several groups are paused on startup-stall history and real-user
   recommendations remain inside cooldown. The previous full pass reported no
-  active visible likely-real failures, but the current `run-20260519T092714Z`
+  active visible likely-real failures, but the current `run-20260519T093242Z`
   monitor has not yet completed a full pass, so treat this as constrained health
   evidence rather than broad coverage recovery or final-stack validation.
 
