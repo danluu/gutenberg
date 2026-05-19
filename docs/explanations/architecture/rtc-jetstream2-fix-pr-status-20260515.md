@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T04:16:04Z`
+Snapshot time: `2026-05-19T04:32:55Z`
 
 Trigger event:
-`pr-split-2026-05-19T04-14-49Z-20260519T040320Z`
+`pr-split-2026-05-19T04-31-36Z-20260519T042241Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T04-14-49Z-20260519T040320Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T04-31-36Z-20260519T042241Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -31,13 +31,15 @@ GitHub filing, rebuilt full-stack validation, broad final-stack fuzzing, and
 publication of the current ready-set remain blocked.
 
 The latest split-persona synthesis,
-`pr-split-20260519T040320Z-synthesis.md`, supersedes the previous
-`035309Z` PR05B/PR05E recommendation. Cycle424 has rows showing seed `1000009`
-fails already at `PR03`, `PR04`, and `PR05A`, and seed `6000007` also fails at
-`PR03`, `PR04`, and `PR05A`. Because the existing Cycle424 report prose still
-points at a PR05B/PR05E follow-up while its TSV rows show the owner boundary is
-earlier and unresolved, treat the prose as stale. Do not file PR03 or any
-downstream ready/local row until the lower boundary is durable.
+`pr-split-20260519T042241Z-synthesis.md`, supersedes the previous `040320Z`
+wording. Six nonzero reports agree the old `023939Z`/`031951Z` ready/local lane
+is not filing-clean. The replacement remains a lower-boundary held shape, but
+the active Cycle426 evidence jobs have not yet produced durable closure:
+`1000009` now has live rows failing at `BASE` and `PR01`, while
+`6000007` should be treated as non-fileable base/pre-stack or harness-owned
+unless a refreshed durable report contradicts the Cycle424 `BASE` failure. Do
+not revive PR05E or a PR05B/PR05D correction unless lower rows later prove the
+first durable failure really moves back to that boundary.
 
 Current maintainer-facing split hypothesis:
 
@@ -70,8 +72,11 @@ deferred search/rich-text/malformed-save/HTTP-room-isolation evidence
 Treat `BASE`, `PR01`, and `PR02` rows as the next blocking evidence. If `PR02`
 passes and `PR03` fails, split or repair `PR03` or insert a `PR03B` before
 PR03. If `BASE`, `PR01`, or `PR02` fail, move ownership earlier or classify the
-signal as base, harness, or pre-stack. Do not create or preserve a PR05E/PR05B
-correction based only on the current Cycle424 output.
+signal as base, harness, pre-stack, `PR01`, or `PR02`. The current live rows
+already point below PR03 for `1000009` and at base/pre-stack/harness for
+`6000007`, but the durable report/classification output has not caught up.
+Do not create or preserve a PR05E/PR05B correction based only on stale Cycle424
+prose.
 
 Seed `1020002` still blocks only final-stack fuzzing, rebuilt stack-wide
 validation, GitHub filing, and its own repair/reclassification. It must not
@@ -87,7 +92,7 @@ claims.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T04:16:04Z`.
+Remote status was collected at `2026-05-19T04:32:55Z`.
 
 The fix-planning repo is checked out at:
 
@@ -117,7 +122,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T04:16:09Z` from fetched
+The branch-link audit was generated at `2026-05-19T04:33:00Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -152,11 +157,11 @@ no verified branch link are not file-ready.
 | PR 1 | HTTP polling generated update size guard | [`review/rtc-pr01-http-polling-generated-update-size`](https://github.com/danluu/gutenberg/tree/review/rtc-pr01-http-polling-generated-update-size) | 2 files, +181 / -19 | verified content |
 | PR 2 | HTTP polling storage read window | [`review/rtc-pr02-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/tree/review/rtc-pr02-http-polling-storage-read-window) | 2 files, +57 / -5 | verified content |
 | PR 2A | Ready sidecar after PR2 | No verified branch link yet | TBD | keep in split; needs exact pushed/audited ref |
-| Owner gate | `1000009` / `6000007` lower-boundary owner decision before PR03 | No verified branch link yet | Evidence gate | current blocker; require `BASE`, `PR01`, and `PR02` rows before PR03+ can be fileable |
+| Owner gate | `1000009` / `6000007` lower-boundary owner decision before PR03 | No verified branch link yet | Evidence gate | current blocker; live rows point below PR03, but durable report/classification output is still missing |
 | PR 3 | Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/review/rtc-pr03-revision-restore-crdt-reset) | 2 files, +58 / -5 | verified content, but non-fileable until lower-boundary gate proves ownership |
 | PR 4 | Persisted CRDT save-meta idempotence | [`review/rtc-pr04-crdt-save-meta-idempotence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr04-crdt-save-meta-idempotence) | 2 files, +160 / -1 | verified content, but non-fileable until lower-boundary gate proves ownership |
 | PR 5A | Entity/reference normalization equivalence | No verified branch link yet | TBD | held candidate; Cycle424 rows already fail before or at this boundary |
-| PR 5B | Parser/rich-text HTML equivalence | No verified branch link yet | TBD | held candidate; do not add PR05B correction based only on current Cycle424 prose |
+| PR 5B | Parser/rich-text HTML equivalence | No verified branch link yet | TBD | held candidate; drop PR05B correction unless lower rows move first durable failure back here |
 | PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | TBD | held candidate; restack only after lower-boundary decision |
 | PR 5D | Clean semicolonless/entity-validation after PR5C | No verified branch link yet | TBD | held candidate; reject fallback-tail PR05D manifests |
 | PR 6A | Save-request payload guard subhead `705d84c` | No verified branch link yet | TBD | held active split row; downstream of unresolved lower gate |
@@ -187,7 +192,7 @@ no verified branch link are not file-ready.
 | PR 14B | Stale-shorter query-array local suffix append after PR14 | No verified branch link yet | TBD | required before active PR15A-C; needs final-PR14B materialization/audit |
 | PR 15A | Fallback-group move green on PR14B | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 files, +123 / -4 | verified component content; filing still waits on publication audit and owner gates |
 | PR 15B | Fallback-group insert-anchor green on PR14B | [`review/rtc-pr15b-fallback-group-insert-anchor`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15b-fallback-group-insert-anchor) | 2 files, +197 / -4 | verified component content; filing still waits on publication audit and owner gates |
-| PR 15C | Fallback-group delete green on PR14B | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 files, +161 / -4 | canonical endpoint, but seeds `1000009` and `6000007` still block filing |
+| PR 15C | Fallback-group delete green on PR14B | [`review/rtc-pr15c-fallback-group-delete`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15c-fallback-group-delete) | 2 files, +161 / -4 | canonical endpoint, but lower-boundary and `6000007` classification still block filing |
 
 ### Verified Prior Art, Not Active Proposed Rows
 
@@ -213,15 +218,15 @@ These rows must not be described as fixed or filing-ready.
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
 | Missing verified active refs | PR02A, lower-boundary owner gate, PR05A-D, PR06A-D, PR06E, PR11A-E, PR12A-C, PR14B, exact refreshed stack refs, `HARNESS-WS-CONFIG-022004` | active rows with no audit entry correctly say `No verified branch link yet`; old ready manifests are planning evidence only | Publish/fetch/audit explicit GitHub refs before filing or promoting any row, after the lower-boundary decision is known |
-| ENTITY-SERIALIZATION-1000009 | seed `1000009`, `BASE`/PR01/PR02 lower-boundary, PR03/PR04/PR05A, PR05B/C/D/current PR15C | Cycle420 proved PR05B/C/clean PR05D/current PR15C fail; Cycle424 now shows PR03/PR04/PR05A failures but still needs lower-boundary rows | Run the bounded lower-boundary continuation for `BASE`, `PR01`, and `PR02`; only then decide whether the owner is base/harness/pre-stack, PR03-adjacent, or later |
-| PERSISTENCE-PARITY-6000007 / reload hydration | seed `6000007`, lower-boundary rows, PR03/PR04/PR05A, PR05B/C/D, current PR15C, clean reload-hydration heads, PR07 controls | non-fileable owner queue; current controls still show marker/root-block divergence | Replay `BASE`, `PR01`, and `PR02`, and reuse Cycle424 PR03/PR04/PR05A rows only if SHAs match; keep reload hydration non-fileable |
+| ENTITY-SERIALIZATION-1000009 | seed `1000009`, `BASE`/PR01/PR02 lower-boundary, PR03/PR04/PR05A, PR05B/C/D/current PR15C | live Cycle426 rows now fail at `BASE` and `PR01`, but durable report/classification output has not caught up; not PR05-owned on current evidence | Finish durable lower-boundary classification before publishing PR03+; only move ownership back to PR05B/PR05D if lower rows later pass |
+| PERSISTENCE-PARITY-6000007 / reload hydration | seed `6000007`, lower-boundary rows, PR03/PR04/PR05A, PR05B/C/D, current PR15C, clean reload-hydration heads, PR07 controls | treat as base/pre-stack or harness-owned unless a refreshed durable report contradicts the Cycle424 `BASE` failure; keep reload hydration non-fileable | Finish durable `BASE`, `PR01`, and `PR02` classification and require current endpoint controls before any reload/persistence promotion |
 | Seed `1020002` WebSocket marker divergence | final-stack repair/reclassification lane | blocks final-stack fuzzing, filing, rebuilt validation, and its own repair/reclassification only | Repair or explicitly reclassify before final-stack validation and filing |
 | PR07 runtime / owner gate | PR07A/B arms and raw PR07D variants | non-fileable owner-comparison fork | Require row-bearing owner matrices with first-divergence evidence, current endpoint controls, clean refs, and branch audit before promotion |
 | Strict revision-restore signal | `117126135e5e`, seed `5400020`, PR03, held PR03B, PR07 arms | owner-comparison target only; current rows still do not assign ownership | Require row-bearing strict owner comparison against lower controls, PR07 arms, PR05B/C/D, PR14, and current PR15C before naming PR18x |
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Raw deferred manifests | raw `003407`, raw `020456`, raw `024016`, fallback/PR15-tail bases, raw `PR07D` | invalid PR progress; wrong/stale base or missing same-cycle allowlisted base/head/bundle/manifest agreement | Keep as no-progress unless a new audit proves clean allowlisted base, head/bundle/manifest agreement, and ownership/non-coverage |
 | PR05D and rich-text/search reductions | clean PR05D `27c6e7924217`, search/live-collapse, rich-text suffix, parser/linebreak candidates | diagnostic or held until owner comparison proves product ownership | Compare against lower controls, PR04, PR05A, PR05B, PR05C, clean PR05D, the PR07 owner queue, PR14, and current PR15C |
-| Duplicate/noise producer control-plane | family-aware producer holds, startup-noise refill/materialization fallback, deep/live semantic family precedence | latest nonzero duplicate/noise synthesis finds scheduler/classification drift; product-evidence signatures must remain visible | Patch only scheduler/classification follow-up if authorized: family-aware holds, no-product startup hold fail-closed refill, `novelty-ws-block-gauntlet` duplicate-family handling, and explicit source-family precedence |
+| Duplicate/noise producer control-plane | family-aware producer holds, live process/source alignment, stale drain promotion, deep/live semantic family precedence | latest duplicate/noise synthesis finds producer/control-plane backpressure: represented product-evidence `reload_rejoin_awareness_stall` duplicates are still refilling, while `persisted_content_mismatch` must stay visible | Patch only scheduler/classification follow-up if authorized: verify current source is live, complete family-specific likely-real/product-evidence hold propagation, pause represented duplicate-family producers, and keep product-evidence cases visible |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -229,22 +234,22 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T04:16:04Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T041516Z
+collected_at_utc: 2026-05-19T04:32:55Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T043040Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty monitor status was written at
-`2026-05-19T04:15:26.897Z` for
-`run-20260519T041516Z`. It is startup-only:
+`2026-05-19T04:32:51.030Z` for
+`run-20260519T043040Z`. It is startup-only:
 
 ```text
 status: monitor started; full coverage pass pending
-observed roots: 622
+observed roots: 625
 previous records loaded: 91607
-supervisor groups file: pending
-active run dirs: 0
+supervisor groups file: 1
+active run dirs: 1
 health: startup status only; full novelty pass has not completed yet
 ```
 
@@ -255,13 +260,13 @@ Interpretation:
   PR stack.
 - Because the raw novelty pass is pending, use the trend packet only as the
   latest completed aggregate evidence, not as a fresh current-run pass for the
-  new `041516Z` root.
+  new `043040Z` root.
 - Current fuzz health does not clear PR filing, exact branch-link gaps, the
   lower-boundary owner replay, PR07 owner replay, strict owner replay, PR15C
   owner reductions, PR15D control-only endpoint repair,
   `PERSISTENCE-PARITY-6000007`, seed `1020002`, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T04:06:49Z`:
+The latest trend evidence packet was generated at `2026-05-19T04:22:09Z`:
 
 ```text
 monitor passes: 2321
@@ -276,14 +281,14 @@ duplicate_share_historical_last: 0.3406
 summary startup failures last: 0
 quality issues last: 0
 memory free: 418.7 GB
-load averages: 65.48 / 68.5 / 64.56 on 64 cores
-enabled group current: novelty-ws-block-gauntlet
+load averages: 70.36 / 70.97 / 68.78 on 64 cores
+enabled group current: novelty-ws-permissions-auth-locks
 latest fuzz level mix:
   browser-e2e=28 lanes/25 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6081386
-browser-e2e likely-real findings: 785 over 2630.9 runner-hours
+total fuzz-level test executions: 6087855
+browser-e2e likely-real findings: 785 over 2635.9 runner-hours
 ```
 
 Largest unmet goals remain save/reload and real-user depth:
@@ -302,52 +307,52 @@ bounded and oracle-specific rather than increasing broad browser concurrency.
 
 ## Status-Persona Analysis
 
-The current split-persona synthesis, `pr-split-20260519T040320Z-synthesis.md`,
-supersedes the older `035309Z`, `033443Z`, `032351Z`, and `030649Z` wording
-where they differ:
+The current split-persona synthesis, `pr-split-20260519T042241Z-synthesis.md`,
+supersedes the older `040320Z`, `035309Z`, `033443Z`, `032351Z`, and `030649Z`
+wording where they differ:
 
-- The current split needs a lower-boundary change, not a PR05E/PR05B
-  correction. Cycle424 rows show `1000009` fails at `PR03`, `PR04`, and
-  `PR05A`; they also show `6000007` fails at `PR03`, `PR04`, and `PR05A`.
-- Replace the ready lane with `PR01 -> PR02 -> [1000009 / 6000007
-  lower-boundary owner gate] -> PR03 -> PR04 -> PR05A -> PR05B -> PR05C ->
-  clean PR05D -> PR06A-D`.
-- Until `BASE`, `PR01`, and `PR02` rows exist, treat `PR03+` as non-fileable.
-  If `PR02` passes and `PR03` fails, split or repair PR03 or insert PR03B. If
-  `BASE`, `PR01`, or `PR02` fail, move ownership earlier or classify as
-  base/harness/pre-stack.
-- No PR05E/PR05B correction should be created from the current Cycle424 output.
-  The completed Cycle424 report is internally inconsistent: TSV evidence says
-  owner boundary is unresolved, while prose still says to create a PR05B/PR05E
-  follow-up.
-- Keep final-stack fuzzing, rebuilt stack validation, GitHub filing, and
-  ready-set publication blocked. Seed `1020002` can continue to block final
-  stack validation, but must not serialize lower-boundary, branch-audit, or
-  loop-repair work.
-- Launch or continue only one bounded lower-boundary job for seeds `1000009`
-  and `6000007`, namespace `finalized/rtc-pr-stack-20260519T031951Z`, rows
-  `BASE`, `PR01`, and `PR02`, reusing Cycle424 PR03/PR04/PR05A rows only if
-  SHAs match. Required outputs remain nonempty `report.md` plus row-bearing
-  `owner-matrix.tsv`, `classification.tsv`, `first-divergence.tsv`,
-  `replay-runs.tsv`, `branch-inputs.tsv`, and `manifest-audit.tsv`.
-- Keep PR07, raw reload hydration, `PERSISTENCE-PARITY-6000007`, strict
-  `117126135e5e`, PR15D, PR17, PR18, PR18x, fallback/PR15-tailed PR05D
-  manifests, and raw deferred heads non-fileable.
+- The old `023939Z`/`031951Z` ready/local lane is not filing-clean. The current
+  replacement is a lower-boundary held shape: `PR01 -> PR02 -> [1000009 /
+  6000007 lower-boundary owner gate] -> PR03 -> PR04 -> PR05A -> PR05B ->
+  PR05C -> clean PR05D -> PR06A-D`, plus PR02A and PR06E sidecars.
+- Do not publish `PR03+`, `PR05B-D`, `PR06A-D`, `PR07`, `PR17`, `PR18`,
+  `PR18x`, raw reload hydration, or the old `023939Z`/`031951Z` manifests as
+  filing-ready.
+- `PERSISTENCE-PARITY-6000007` should be treated as non-fileable base/pre-stack
+  or harness-owned unless a refreshed durable report contradicts the Cycle424
+  `BASE` failure.
+- `ENTITY-SERIALIZATION-1000009` is also not PR05-owned on current evidence.
+  Live Cycle426 rows now show it failing on `BASE` and `PR01`, but the durable
+  classification/report output has not caught up.
+- Drop PR05E unless lower rows later prove the first durable failure really
+  moves back to PR05B or clean PR05D.
+- Keep the active Cycle426 lower-boundary and strict-owner jobs moving, but do
+  not count launched jobs, header-only TSVs, stale reports, zero-byte outputs,
+  missing reports, or `report.tmp` as progress. A launched job counts for one
+  cycle only unless it produces row-bearing artifacts.
+- Seed `1020002` still blocks final-stack filing/fuzzing, rebuilt validation,
+  and its own repair/reclassification, but it must not serialize independent
+  owner/audit work.
+- Keep PR07, raw reload hydration, strict `117126135e5e`, PR15D, PR17, PR18,
+  PR18x, fallback/PR15-tailed PR05D manifests, and raw deferred heads
+  non-fileable.
 
 The latest duplicate/noise persona file,
-`duplicate-noise-20260519T040043Z-synthesis.md`, is zero bytes and is not a
-durable update. The latest nonzero duplicate/noise synthesis,
-`duplicate-noise-20260519T034456Z-synthesis.md`, remains the current completed
+`duplicate-noise-20260519T040043Z-synthesis.md`, is the current completed
 control-plane signal:
 
-- Strict no-product `pre_action_bootstrap_stall` is mostly no longer leaking
-  into expensive analysis.
-- The remaining issue is scheduler/classification drift: duplicate/noise
-  producer holds should be family-aware, no-product startup holds should block
-  refill/materialization fallback and fail closed if gate-only triage refresh
-  fails, `novelty-ws-block-gauntlet` should participate in product-evidence
-  duplicate-family holds, and deep/live semantic family selection should prefer
-  explicit source family or `distinctBugType` over lifecycle regex inference.
+- Strict `pre_action_bootstrap_stall` is no longer the main expensive-consumer
+  leak; it is already suppressed or rejected by triage, analysis,
+  deep-analysis, and live-analysis.
+- The remaining issue is producer/control-plane backpressure:
+  `novelty-ws-block-gauntlet` can keep generating represented product-evidence
+  duplicate `reload_rejoin_awareness_stall` siblings while a separate
+  likely-real `persisted_content_mismatch` must stay visible.
+- The next control-plane pass should verify current process/source alignment,
+  complete family-specific likely-real/product-evidence hold propagation, pause
+  already-represented duplicate-family producers, fix no-producer-match
+  sentinels, and gate live-analysis drain promotion to actionable,
+  unrepresented product-evidence work.
 - Product-evidence likely-real cases, especially `persisted_content_mismatch`,
   must remain visible. This is harness/control-plane health context, not
   product validation.
@@ -374,11 +379,11 @@ header-only push manifests, or local finalization artifacts as-is.
 Before filing any maintainer-facing PR:
 
 1. Use the replacement shape above, but hold PR03+ until the lower-boundary
-   owner job adds durable `BASE`, `PR01`, and `PR02` rows for seeds `1000009`
-   and `6000007`.
+   owner job adds durable `BASE`, `PR01`, and `PR02` classification for seeds
+   `1000009` and `6000007`.
 2. If `PR02` passes and `PR03` fails, split or repair PR03 or insert PR03B
    before PR03. If `BASE`, `PR01`, or `PR02` fail, move ownership earlier or
-   classify as base/harness/pre-stack.
+   classify as base, harness, pre-stack, `PR01`, or `PR02`.
 3. Publish/fetch/audit explicit product refs for every row that currently says
    `No verified branch link yet`, including `HARNESS-WS-CONFIG-022004` if it
    is to be filed as a harness-only sidecar.
@@ -403,13 +408,19 @@ Before filing any maintainer-facing PR:
 
 Useful bounded work now:
 
-- run exactly one lower-boundary owner continuation for seeds `1000009` and
-  `6000007` on `BASE`, `PR01`, and `PR02`, reusing Cycle424 PR03/PR04/PR05A
-  rows only if SHAs match;
+- continue the active `rtc-cycle426-pr02-entity-persistence-lower-boundary` job
+  for seeds `1000009` and `6000007` on `BASE`, `PR01`, and `PR02`; if it exits
+  stale, launch exactly one bounded continuation that finishes durable
+  classification and consumes `6000007` BASE/PR01/PR02 evidence;
+- continue the active `rtc-cycle426-strict-117126-owner-comparison` job for
+  strict seed `5400020`; if it exits stale, launch exactly one bounded
+  continuation that completes PR05C, clean PR05D, PR14, current PR15C, and
+  PR07B/PR07C comparisons before any PR18x naming;
 - patch the controller/progress gate so lower failing rows force
   lower-boundary classification, not PR05E text; zero-byte reports,
   header-only TSVs, active seed `1020002`, duplicate PR07C jobs, stale
-  manifests, and wait-only feedback count as no durable progress;
+  manifests, wait-only feedback, and launched jobs without row-bearing output
+  count as no durable progress;
 - rerun or create a fresh manifest/ref audit only after the lower-boundary
   decision and repaired branch exist;
 - keep duplicate/noise follow-up narrow: family-aware producer holds,
