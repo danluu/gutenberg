@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T15:12:32Z`
+Snapshot time: `2026-05-19T15:53:50Z`
 
 Trigger event:
-`duplicate-noise-2026-05-19T15-11-21Z-264`
+`duplicate-noise-2026-05-19T15-53-03Z-266`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T15-11-21Z-264/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T15-53-03Z-266/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -105,37 +105,40 @@ the deferred reload fix, but did not reproduce strict head through the final
 persistence oracle. The new candidate is therefore blocked evidence, not a PR.
 
 The latest duplicate/noise synthesis,
-`duplicate-noise-20260519T143930Z-synthesis.md`, still keeps the remaining
-problem in the fuzz control plane, not in RTC product code. The consensus root
-cause moved from strict no-product `pre_action_bootstrap_stall` to
-product-preserving no-analysis drain admission: preserved product evidence was
-being treated as broad launch authority instead of visibility.
+`duplicate-noise-20260519T152550Z-synthesis.md`, keeps the remaining issue in
+the fuzz control plane, not in RTC product code. The consensus root cause is
+inconsistent current-output product-evidence semantic-family capping: real
+reload/save/collaboration failures should remain visible, but sibling
+signatures from the same current semantic family should not keep launching
+first-level, deep, or live analysis work.
 
-The paired `duplicate-noise-20260519T143930Z-feedback-action.md` is now the
-latest completed control-plane action. It added a bounded product-evidence
-duplicate cap in `rtc-browser-fuzz-triage-watcher.mjs`,
+The paired `duplicate-noise-20260519T152550Z-feedback-action.md` is now the
+latest completed control-plane action. It made current-output family caps apply
+to all product-evidence semantic families in first-level analysis, live
+analysis, deep analysis, novelty scheduling, and direct triage launch paths:
 `rtc-browser-fuzz-analysis-tier.mjs`,
-`rtc-browser-fuzz-deep-analysis-tier.mjs`, and
-`rtc-browser-fuzz-live-analysis-monitor.mjs`. Product-evidence failures remain
-visible, but only one representative per source semantic family from a
-product-preserving `no-analysis.json` sentinel is admitted into
-triage/analysis/deep/live startup; duplicate siblings are marked
-`family-capped` instead of being queued or counted as productive analysis.
+`rtc-browser-fuzz-live-analysis-monitor.mjs`,
+`rtc-browser-fuzz-deep-analysis-tier.mjs`,
+`rtc-browser-fuzz-novelty-monitor.mjs`, and
+`rtc-browser-fuzz-triage-watcher.mjs`. Product-evidence representatives remain
+visible; duplicate siblings are family-capped rather than globally suppressed.
 
-Validation for that action passed `node --check` on all four touched fuzz
-scripts. The old leaking product-preserving drain under `run-20260519T142538Z`
-was rechecked: triage saw 5 signatures and capped 2 duplicate-family siblings,
-analysis-tier reported `completed:3` and `family-capped:2`, and live analysis
-stopped promoting that no-analysis drain as broad launch authority. Only
-`rtc-coverage-guided-analysis` was restarted. The latest collected novelty
-status is for
+Validation for that action passed `node --check` on all five touched fuzz
+scripts. Gate-only triage refreshes and a live-analysis one-shot capped
+product-evidence duplicate siblings such as `collaboration_non_convergence`
+and `persisted_content_mismatch` while preserving representatives. Strict
+startup queued/running signatures are `0`. `rtc-coverage-guided-novelty` and
+`rtc-coverage-guided-analysis` were restarted; the supervisor was not changed.
+The latest collected novelty status is for
 `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T145026Z`;
-it has two enabled real-user save/reload producers, 56 current-run WebSocket
-records, 55 successful current-run real-user-editing records, 0 current
-actionable signatures, 3 raw signatures, 2 known-infra signatures,
-1 family-capped signature, 0 visible likely-real failures, and current
-actionable duplicate share `0`. Treat that as constrained control-plane health
-evidence, not final-stack validation or product-fix evidence.
+it has two active current-run dirs, enabled `parser-transform` and
+`real-user-rich-text` producers, 35 current-run WebSocket records, 23
+successful current-run records, 0 current actionable signatures, 12 raw
+product-evidence signatures, 1 known-infra signature, 8 family-capped
+signatures, 3 analysis-gated non-actionable signatures, 1 visible likely-real
+representative, and current actionable duplicate share `0`. Treat that as
+constrained control-plane health evidence, not final-stack validation or
+product-fix evidence.
 
 Seed `1020002` still blocks final-stack fuzzing, rebuilt stack-wide validation,
 GitHub filing, and its own repair/reclassification. It must not serialize
@@ -144,7 +147,7 @@ repair.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T15:12:26Z`.
+Remote status was collected at `2026-05-19T15:53:45Z`.
 
 The fix-planning repo is checked out at:
 
@@ -174,7 +177,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T15:12:32Z` from fetched
+The branch-link audit was generated at `2026-05-19T15:53:50Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -282,7 +285,7 @@ These rows must not be described as fixed or filing-ready.
 | PR05E and rich-text/parser reductions | PR05E text, rich-text suffix around `868cd...`, parser/linebreak candidates, `PR18x` | rich-text suffix remains diagnostic and still needs fresh row-bearing hardening or replay output; latest guidance still says do not name `PR18x` until PR05B/PR05C/clean PR05D and other plausible owners are compared | Harden the diagnostic manifest first, then compare against lower controls and clean split heads before promotion |
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Raw deferred manifests | raw `003407`, raw `020456`, raw `024016`, fallback/PR15-tail bases, raw `PR07D` | invalid PR progress; wrong/stale base or missing same-cycle allowlisted base/head/bundle/manifest agreement | Keep as no-progress unless a new audit proves clean allowlisted base, head/bundle/manifest agreement, and ownership/non-coverage |
-| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, endpoint-mismatch port bleed, `fuzz_helper_rest_endpoint_construction`, supervisor seed-drain recovery, novelty bootstrap/admission, stale historical/cross-root duplicate holds, product-preserving no-analysis drain promotion | `143930Z` is now the latest completed feedback action: triage, first-level analysis, deep analysis, and live analysis now apply a sentinel-scoped product-evidence representative cap; syntax checks passed for all four touched scripts; the old leaking `142538Z` drain capped 2 duplicate siblings and stopped promoting the whole drain; latest collected state is `enabledGroups=novelty-ws-real-user-title-body-save-reload,novelty-ws-real-user-save-reload`, current-run `real-user-editing=56`, successful `55`, raw signatures `3`, actionable signatures `0`, known-infra `2`, family-capped `1`, product-evidence signatures `0`, likely-real visible `0`, and current actionable duplicate share `0` | Keep product-evidence signatures visible, preserve one representative per semantic family, monitor that the raw non-actionable signatures stay capped/known-infra, and treat the active real-user save/reload root as constrained control-plane health evidence rather than final-stack validation |
+| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, endpoint-mismatch port bleed, `fuzz_helper_rest_endpoint_construction`, supervisor seed-drain recovery, novelty bootstrap/admission, stale historical/cross-root duplicate holds, product-preserving no-analysis drain promotion, product-evidence semantic-family sibling launches | `152550Z` is now the latest completed feedback action: first-level analysis, live analysis, deep analysis, novelty scheduling, and direct triage launch paths now apply current-output product-evidence semantic-family representative caps; syntax checks passed for all five touched scripts; novelty and analysis monitors were restarted; latest active-current state is `enabledGroups=novelty-ws-parser-transform,novelty-ws-real-user-rich-text`, current-run `parser-transform=31`, `real-user-editing=4`, successful `parser-transform=20`, successful `real-user-editing=3`, raw signatures `12`, actionable signatures `0`, known-infra `1`, family-capped `8`, analysis-gated non-actionable `3`, product-evidence signatures `0`, likely-real visible `1`, strict startup queued/running `0`, and current actionable duplicate share `0` | Keep product-evidence signatures visible, preserve one representative per semantic family, monitor drain-visible representatives separately from active current output, and treat the active parser-transform / real-user-rich-text root as constrained control-plane health evidence rather than final-stack validation |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -290,48 +293,67 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T15:12:26Z
+collected_at_utc: 2026-05-19T15:53:45Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T145026Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty monitor status was written at
-`2026-05-19T15:12:18.048Z` for `run-20260519T145026Z`. It has completed a full
-pass for the current root and is running two real-user save/reload producers:
+`2026-05-19T15:53:03.395Z` for `run-20260519T145026Z`. Its heartbeat is fresh;
+metrics are from the most recent completed full pass at
+`2026-05-19T15:51:53.386Z`. It has completed a full pass for the current root
+and is running parser-transform plus real-user rich-text producers:
 
 ```text
-coverage files: 2639
-total records seen: 104781
+coverage files: 3120
+total records seen: 105467
 current-run active dirs: 2
 enabled groups:
-  novelty-ws-real-user-title-body-save-reload
-  novelty-ws-real-user-save-reload
+  novelty-ws-parser-transform
+  novelty-ws-real-user-rich-text
 current-run records:
-  real-user-editing=56
+  parser-transform=31
+  real-user-editing=4
 current-run successful records:
-  real-user-editing=55
+  parser-transform=20
+  real-user-editing=3
 current-run transport:
-  ws=56
-unmet goals: 4
+  ws=35
+unmet goals: 15
 recommended groups:
   novelty-ws-real-user-title-body-save-reload
   novelty-ws-real-user-save-reload
   novelty-ws-real-user-editing
   novelty-ws-real-user-rich-text
-headroom for adding groups: yes
-active current-run likely-real visible: 0
-active current-run raw signatures: 3
+  novelty-ws-common-blocks
+  novelty-ws-block-gauntlet
+  novelty-ws-parser-transform
+  novelty-ws-async-server-blocks
+  novelty-ws-media-cross-entity
+  novelty-ws-long-session-large-doc
+headroom for adding groups: no
+active current-run likely-real visible: 1
+active current-run raw signatures: 12
 active current-run actionable signatures: 0
 active current-run product-evidence signatures: 0
-active current-run known-infra signatures: 2
-active current-run family-capped signatures: 1
+active current-run raw product-evidence signatures: 12
+active current-run known-infra signatures: 1
+active current-run family-capped signatures: 8
+active current-run analysis-gated non-actionable signatures: 3
 active current-run top duplicate family share: 0
-active current-run raw top duplicate family share: 0.6667
-historical likely-real visible: 44
-historical likely-real merged duplicates: 74
+active current-run raw top duplicate family share: 0.4167
+current drain visible signatures: 2
+current drain raw signatures: 29
+current drain product-evidence signatures: 2
+current drain likely-real visible: 3
+current drain family-capped signatures: 18
+current drain top duplicate family share: 0.5
+historical likely-real visible: 49
+historical likely-real merged duplicates: 92
 historical oracle/noise questions: 3
-historical raw top duplicate family share: 0.2905
+historical top duplicate family share: 0.1111
+historical raw top duplicate family share: 0.2952
 ```
 
 Interpretation:
@@ -339,14 +361,18 @@ Interpretation:
 - Do not claim final-stack cleanliness. The newest novelty output is current
   monitor health for a constrained coverage-guided run, not validation of the
   accepted final PR stack.
-- The completed `143930Z` control-plane action fixed a product-preserving
-  drain leak by keeping product-evidence signatures visible while admitting
-  only one representative per semantic family into analysis. The latest full
-  novelty pass confirms no actionable current-root signature pressure; the
-  remaining raw signatures are known-infra or family-capped.
-- The current materialization has moved from parser-serialization to real-user
-  save/reload depth. The active root is producing successful WebSocket
-  real-user-editing records and still has four auto-ratchet goals open.
+- The completed `152550Z` control-plane action made product-evidence
+  current-output semantic-family capping authoritative across novelty
+  scheduling, triage launch, first-level analysis, deep analysis, and live
+  analysis. The latest full novelty pass confirms no active current-root
+  actionable signature pressure; raw signatures are known-infra, family-capped,
+  or analysis-gated non-actionable while one likely-real representative remains
+  visible.
+- The current materialization has moved from real-user save/reload to
+  parser-transform plus real-user rich-text depth. Save/reload and common-block
+  producers are paused under duplicate/noise cooldowns rather than deleted; the
+  active root still has fifteen auto-ratchet goals open and no resource
+  headroom for broad new groups.
 - Historical/combined reporting still carries prior product-evidence signatures,
   startup-noise history, and historical likely-real counts. Keep those as
   context rather than live current failures unless the new root reproduces them
@@ -355,59 +381,65 @@ Interpretation:
   replay, strict owner replay, reload-hydration downscope, seed `1020002`, or
   final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T14:55:04Z`:
+The latest trend evidence packet was generated at `2026-05-19T15:40:18Z`:
 
 ```text
-monitor passes: 2482
+monitor passes: 2505
 first pass: 2026-05-15T01:21:42Z
-last pass: 2026-05-19T14:53:17Z
-coverage files: 272 -> 2349
-coverage files delta: 2077
-unmet goals: 4
+last pass: 2026-05-19T15:37:11Z
+coverage files: 272 -> 2945
+coverage files delta: 2673
+unmet goals: 15
 likely_real_max: 4
-duplicate_share_current_last: 0
+duplicate_share_current_last: 0.25
 duplicate_share_historical_last: 0.2
 summary startup failures last: 0
 quality issues last: 0
-memory free: 398 GB
-load averages: 89.4 / 70.97 / 67.07 on 64 cores
+memory free: 413.1 GB
+load averages: 84.75 / 75.52 / 73.03 on 64 cores
 latest fuzz level mix:
-  browser-e2e=38 lanes/25 groups
+  browser-e2e=38 lanes/26 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6249362
-browser-e2e likely-real findings: 846 over 2831.5 runner-hours
+total fuzz-level test executions: 6254201
+browser-e2e likely-real findings: 858 over 2845.9 runner-hours
 ```
 
-Largest unmet goals in the trend packet remained save/reload and real-user
-depth:
+Largest unmet goals in the trend packet now include CDP coverage and real-user
+action depth:
 
 ```text
-reload-post-action: 1423/2000
-real-user-editing success: 875/1000
-title-save-reload: 876/1000
-body-save-reload: 935/1000
+cdp-coverage-records: 7576/20000
+ui-heading-shortcut: 1617/5000
+ui-undo-redo-paragraph: 2168/5000
+ui-format-paragraph: 2540/5000
+real-user-editing success: 938/2000
 ```
 
 The newer novelty status shows those goals continuing to advance:
 
 ```text
-reload-post-action: 1474/2000
-real-user-editing success: 925/1000
-title-save-reload: 927/1000
-body-save-reload: 986/1000
+cdp-coverage-records: 7602/20000
+ui-heading-shortcut: 1621/5000
+ui-undo-redo-paragraph: 2172/5000
+ui-format-paragraph: 2544/5000
+real-user-editing success: 941/2000
+title-save-reload: 945/2000
+body-save-reload: 1004/2000
+reload-post-action: 1492/2000
 ```
 
 Browser E2E remains the only level with confirmed likely-real findings, but
 lower-level lanes are under-triaged and should not be declared useless from
 zero likely-real output. Load is high enough that new fuzz work should stay
 bounded and oracle-specific rather than increasing broad browser concurrency.
-The graph-derived trend packet reports current duplicate share `0`, historical
-duplicate share `0.2`, no latest summary startup failures, and no latest
-quality issues. The raw novelty status is newer and more specific for the
-active root; it confirms no current actionable or product-evidence pressure
-while two real-user save/reload groups are running. Treat both as constrained
-health evidence, not publication readiness.
+The graph-derived trend packet reports current duplicate share `0.25`,
+historical duplicate share `0.2`, no latest summary startup failures, and no
+latest quality issues. The raw novelty status is newer and more specific for
+the active root; it reports current actionable duplicate share `0`, no current
+actionable product-evidence signatures, and one preserved likely-real
+representative. Treat both as constrained health evidence, not publication
+readiness.
 
 ## Status-Persona Analysis
 
@@ -456,47 +488,51 @@ and earlier wording where they differ:
   zero-byte reports, setup smoke, and stale PR07C/HOLD state are not progress.
 
 The latest duplicate/noise synthesis,
-`duplicate-noise-20260519T143930Z-synthesis.md`, classifies the remaining issue
-as product-preserving no-analysis drain admission, not an RTC product failure.
-Its paired `duplicate-noise-20260519T143930Z-feedback-action.md` is now the
-latest applied control-plane fix:
+`duplicate-noise-20260519T152550Z-synthesis.md`, classifies the remaining issue
+as current-output product-evidence semantic-family admission/accounting, not an
+RTC product failure. Its paired
+`duplicate-noise-20260519T152550Z-feedback-action.md` is now the latest applied
+control-plane fix:
 
-- Product-evidence failures remain visible, but a product-preserving
-  `no-analysis.json` sentinel now admits only one representative per source
-  semantic family into triage, first-level analysis, deep analysis, and live
-  startup.
-- Duplicate siblings are marked `family-capped` instead of being queued or
-  counted as productive analysis work.
-- `node --check` passed for `rtc-browser-fuzz-triage-watcher.mjs`,
-  `rtc-browser-fuzz-analysis-tier.mjs`,
-  `rtc-browser-fuzz-deep-analysis-tier.mjs`, and
-  `rtc-browser-fuzz-live-analysis-monitor.mjs`.
-- The old leaking `run-20260519T142538Z` product-preserving drain was validated
-  directly: triage saw 5 signatures and capped 2 duplicate-family siblings,
-  analysis-tier reported `completed:3` and `family-capped:2`, and live monitor
-  no longer promoted that drain as broad launch authority.
-- Only `rtc-coverage-guided-analysis` was restarted; the supervisor and novelty
-  monitor were not changed by this action.
+- Product-evidence failures remain visible, but current-output semantic-family
+  caps now preserve one representative and cap duplicate siblings across
+  first-level analysis, live analysis, deep analysis, novelty scheduling, and
+  direct triage launch paths.
+- `node --check` passed for `rtc-browser-fuzz-analysis-tier.mjs`,
+  `rtc-browser-fuzz-live-analysis-monitor.mjs`,
+  `rtc-browser-fuzz-deep-analysis-tier.mjs`,
+  `rtc-browser-fuzz-novelty-monitor.mjs`, and
+  `rtc-browser-fuzz-triage-watcher.mjs`.
+- Gate-only triage refreshes and a live-analysis one-shot capped
+  product-evidence duplicate siblings, including
+  `collaboration_non_convergence` and `persisted_content_mismatch`, while
+  keeping representatives visible.
+- Strict startup queued/running signatures are `0`.
+- `rtc-coverage-guided-novelty` and `rtc-coverage-guided-analysis` were
+  restarted with new processes at `2026-05-19 15:49:02 UTC`; the supervisor
+  remains the earlier active process because supervisor code was not changed.
 - Current measurable status from the collector is
-  `enabledGroups=novelty-ws-real-user-title-body-save-reload,novelty-ws-real-user-save-reload`,
-  current-run `real-user-editing=56`, successful `55`, raw signatures `3`,
-  actionable signatures `0`, known-infra `2`, family-capped `1`,
-  product-evidence signatures `0`, likely-real visible `0`, and current
+  `enabledGroups=novelty-ws-parser-transform,novelty-ws-real-user-rich-text`,
+  current-run `parser-transform=31`, current-run `real-user-editing=4`,
+  successful `parser-transform=20`, successful `real-user-editing=3`, raw
+  signatures `12`, actionable signatures `0`, known-infra `1`,
+  family-capped `8`, analysis-gated non-actionable `3`,
+  product-evidence signatures `0`, likely-real visible `1`, and current
   actionable duplicate share `0`.
-- Remaining risk: the cap is deliberately narrow. A genuinely distinct issue
-  in the same semantic family from a paused/noisy producer may wait behind the
-  preserved representative, but product-evidence visibility and existing
-  likely-real jobs are not suppressed.
+- Remaining risk: paused/no-analysis drain dirs still expose two
+  product-evidence representatives for reporting/cleanup. That is intentional
+  visibility, not authority to launch duplicate sibling analysis.
 
 The earlier `083141Z`, `090846Z`, `100615Z`, `104720Z`, `113555Z`,
-`122914Z`, `131020Z`, and `135628Z` actions remain valid background for mixed
-strict-startup thresholds, supervisor guardrails, consumer-side duplicate
-family capping, representative accounting, first recovery from empty
+`122914Z`, `131020Z`, `135628Z`, and `143930Z` actions remain valid background
+for mixed strict-startup thresholds, supervisor guardrails, consumer-side
+duplicate family capping, representative accounting, first recovery from empty
 materialization, product-evidence duplicate holds, fleet startup holds,
-product-evidence fallback parsing, no-product minimums, and producer/admission
-recovery. The `143930Z` action supersedes the active duplicate/noise
-control-plane status. Do not broaden the fix into blanket product-evidence,
-WebSocket, startup, awareness, or `waitForSyncCycle` suppression.
+product-evidence fallback parsing, no-product minimums, producer/admission
+recovery, and product-preserving no-analysis drain admission. The `152550Z`
+action supersedes the active duplicate/noise control-plane status. Do not
+broaden the fix into blanket product-evidence, WebSocket, startup, awareness,
+or `waitForSyncCycle` suppression.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -567,11 +603,11 @@ Useful bounded work now:
   any product promotion;
 - continue seed `1020002` repair or proof-based reclassification without
   converting it into a wait-only progress loop;
-- treat the `143930Z` duplicate/noise product-preserving drain cap as applied;
-  the new root's full novelty pass shows no active current-run actionable
-  signature pressure while two real-user save/reload groups are running, so do
-  not launch another duplicate producer-policy patch unless a fresh current-run
-  leak appears;
+- treat the `152550Z` duplicate/noise semantic-family representative cap as
+  applied; the new root's full novelty pass shows no active current-run
+  actionable signature pressure while parser-transform and real-user rich-text
+  producers are running, so do not launch another duplicate producer-policy
+  patch unless a fresh current-run leak appears;
 - repair the loop-gate accounting if another cycle accepts wait-only,
   wrong-family, stale-manifest, zero-byte, or active-session feedback while
   actionable gate rows remain.
