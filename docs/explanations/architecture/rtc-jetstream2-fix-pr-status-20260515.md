@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T02:21:21Z`
+Snapshot time: `2026-05-19T02:28:28Z`
 
 Trigger event:
-`pr-split-2026-05-19T02-19-52Z-20260519T020551Z`
+`duplicate-noise-2026-05-19T02-20-53Z-230`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T02-19-52Z-20260519T020551Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T02-20-53Z-230/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -126,9 +126,10 @@ fix and not final-stack validation. It patched the novelty scheduler to count
 `summary.ndjson` product evidence before declaring no-product startup noise,
 scope startup holds to matching producer groups/run dirs, clear stale startup
 bypasses with policy `36`, and preserve product-evidence metadata in
-no-analysis sentinels. The current novelty monitor has completed a full pass
-after restart: `0` active likely-real signatures, `4` unmet goals, enabled
-groups `novelty-ws-lifecycle` and `novelty-ws-real-user-save-reload`.
+no-analysis sentinels. The current novelty monitor heartbeat is fresh at
+`2026-05-19T02:27:23.322Z`, with metrics from the latest completed full pass:
+`0` active likely-real signatures, `4` unmet goals, enabled groups
+`novelty-ws-lifecycle` and `novelty-ws-real-user-save-reload`.
 
 Do not file `PR02B`, any PR07 arm, `RELOAD-HYDRATION-014448`, `PR15D`, raw
 `PR07D`, stale `PR07C`, raw deferred reload/search/rich-text heads, `PR17`,
@@ -136,7 +137,7 @@ Do not file `PR02B`, any PR07 arm, `RELOAD-HYDRATION-014448`, `PR15D`, raw
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T02:21:15Z`.
+Remote status was collected at `2026-05-19T02:28:23Z`.
 
 The fix-planning repo is checked out at:
 
@@ -166,7 +167,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T02:21:21Z` from fetched
+The branch-link audit was generated at `2026-05-19T02:28:28Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact Cycle325/i40 publication shape, ancestry, owner evidence, or filing
@@ -284,14 +285,14 @@ micro-split PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T02:21:15Z
+collected_at_utc: 2026-05-19T02:28:23Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T015651Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-19T02:20:23.321Z` for
+`2026-05-19T02:27:23.322Z` for
 `run-20260519T015651Z`:
 
 ```text
@@ -321,6 +322,8 @@ paused groups:
 load1: 56.97 / 64 cores
 memory: 425.2G free / 492.0G total
 headroom for adding groups: yes
+health note: heartbeat refreshed at 02:27:23Z; metrics are from the
+  completed 02:09:18Z full pass
 ```
 
 Interpretation:
@@ -341,7 +344,7 @@ Interpretation:
   repair, the `RELOAD-HYDRATION-014448` seed `6000007` gate, seed `1020002`,
   exact branch-link gaps, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T02:13:24Z`:
+The latest trend evidence packet was generated at `2026-05-19T02:22:27Z`:
 
 ```text
 monitor passes: 2318
@@ -356,7 +359,7 @@ duplicate_share_historical_last: 0.3407
 summary startup failures last: 0
 quality issues last: 0
 memory free: 425.2 GB
-load averages: 60.34 / 70.19 / 66.27 on 64 cores
+load averages: 59.11 / 60.22 / 63.33 on 64 cores
 enabled groups current:
   novelty-ws-lifecycle
   novelty-ws-real-user-save-reload
@@ -364,8 +367,8 @@ latest fuzz level mix:
   browser-e2e=30 lanes/26 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6036261
-browser-e2e likely-real findings: 780 over 2595.2 runner-hours
+total fuzz-level test executions: 6039884
+browser-e2e likely-real findings: 780 over 2598.0 runner-hours
 ```
 
 Largest unmet goals remain save/reload and real-user depth:
@@ -485,7 +488,7 @@ These must not be described as fixed or filing-ready.
 | `VALIDATION-LOCAL-DELETE-012938` / seed `1000009` | deferred local-delete validation/test lane | deferred validation/test only; not product PR evidence and not part of filing rows | Replay seed `1000009` on current PR15C-on-PR14B before product promotion |
 | Reload marker/lifecycle work | HARNESS reload markers, seeds `990001`/`990003`, same-user lifecycle seeds, PR07C seeds, deferred reload outputs | harness/diagnostic only until replay proves product ownership | Consume PR07 owner replay when present, then require product-owned first-loss boundary before promotion |
 | Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, family-capped duplicate holds, current-run negative gates, represented product-evidence duplicates, stale/no-analysis drain admission | `015303Z` feedback action completed: novelty scheduler now counts run-local product evidence, scopes startup holds, clears stale bypasses with policy `36`, and preserves product-evidence sentinels; validation checks passed and the active novelty session restarted | Keep monitoring the active full-pass status; do not treat control-plane remediation as product validation |
-| Current fuzz validation | `run-20260519T015651Z`, novelty status at `2026-05-19T02:20:23.321Z`, trend generated at `2026-05-19T02:13:24Z` | full pass completed with `55605` coverage files, `90905` records, `4` unmet goals, `0` active likely-real visible, `2` drain product-evidence signatures, enabled lifecycle/save-reload groups, and no active current-run dirs | Use as health/control-plane evidence only; still require owner replay, PR15C-on-PR14B branch audit, PR15D control-only proof, RELOAD-HYDRATION-014448 seed `6000007`, seed `1020002` handling, and final PR-stack validation |
+| Current fuzz validation | `run-20260519T015651Z`, novelty status at `2026-05-19T02:27:23.322Z`, trend generated at `2026-05-19T02:22:27Z` | full pass completed with `55605` coverage files, `90905` records, `4` unmet goals, `0` active likely-real visible, `2` drain product-evidence signatures, enabled lifecycle/save-reload groups, and no active current-run dirs | Use as health/control-plane evidence only; still require owner replay, PR15C-on-PR14B branch audit, PR15D control-only proof, RELOAD-HYDRATION-014448 seed `6000007`, seed `1020002` handling, and final PR-stack validation |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Filing Gates And Current Recommendation
