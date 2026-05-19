@@ -741,6 +741,19 @@ describe( 'crdt', () => {
 			expect( changes ).toHaveProperty( 'blocks' );
 		} );
 
+		it( 'does not hydrate persisted blocks without a content witness', () => {
+			addBlockToDoc( map, 'block-1', 'Persisted block content' );
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{} as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).not.toHaveProperty( 'blocks' );
+		} );
+
 		it( 'returns rich-text block attributes as RichTextData, not strings', () => {
 			// Simulate User A writing a paragraph block into the CRDT doc.
 			addBlockToDoc( map, 'block-1', 'Hello world' );

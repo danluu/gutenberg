@@ -494,6 +494,10 @@ export function getPostChangesFromCRDTDoc(
 						);
 					}
 
+					if ( ydoc.meta?.get( CRDT_DOC_META_PERSISTENCE_KEY ) ) {
+						return false;
+					}
+
 					return true;
 				}
 
