@@ -8,6 +8,9 @@ REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518
 
 CRITICAL_BASE=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517
+CRITICAL_REPO_SCRIPT=$REPO/bin/rtc-critical-path-pr-executor-loop-remote.sh
+CRITICAL_DEPLOYED_SCRIPT=$CRITICAL_BASE/rtc-critical-path-pr-executor-loop.sh
+CRITICAL_TMP_SCRIPT=/tmp/start_rtc_critical_path_pr_executor_loop.sh
 FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
@@ -20,6 +23,9 @@ CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION=rtc-coverage-guided-lower-level-rich-text
 CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-rich-text-multiblock-20260518/holds/coverage-guided-lower-level-rich-text-multiblock.hold
 CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP=coverage-guided-lower-level-table-query-array-crdt
 CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION=rtc-coverage-guided-lower-level-table-query-array-crdt
+CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-query-array-20260517/holds/coverage-guided-lower-level-table-query-array-crdt.hold
+CG_LOWER_LEVEL_BLOCK_PARSER_GROUP=coverage-guided-lower-level-block-parser-serialization
+CG_LOWER_LEVEL_BLOCK_PARSER_SESSION=rtc-coverage-guided-lower-level-block-parser-serialization
 
 SESSION=rtc-structural-issue-watchdog
 FINDINGS=$BASE/current-structural-findings.tsv
@@ -191,8 +197,72 @@ latest_pr07c_classification() {
 		cut -f2-
 }
 
+pr07c_classification_value() {
+	local classification=$1
+	[ -n "$classification" ] && [ -s "$classification" ] || return 1
+	awk -F '\t' 'NR > 1 && $1 == "pr07c-browser-env" { print $2; exit }' "$classification" 2>/dev/null
+}
+
+critical_script_has_pr07c_terminal_support() {
+	local script=$1
+	[ -s "$script" ] || return 1
+	rg -q 'pr07c_readiness_resolved' "$script" || return 1
+	rg -q 'pr07c-browser-env:repaired_ready' "$script" || return 1
+	rg -q 'owner-matrix|pr07c-owner|HOLD-07C' "$script" || return 1
+	rg -q 'direct_path=.*pr07c-browser-env/classification[.]tsv' "$script" || return 1
+}
+
+critical_script_sha() {
+	local script=$1
+	if [ -s "$script" ]; then
+		sha256sum "$script" 2>/dev/null | awk '{ print $1 }'
+	else
+		printf 'missing'
+	fi
+}
+
+sync_critical_executor_copies_if_safe() {
+	local changed=0 target
+	critical_script_has_pr07c_terminal_support "$CRITICAL_REPO_SCRIPT" || return 1
+	bash -n "$CRITICAL_REPO_SCRIPT" >/dev/null 2>&1 || return 1
+	for target in "$CRITICAL_DEPLOYED_SCRIPT" "$CRITICAL_TMP_SCRIPT"; do
+		if [ ! -s "$target" ] || ! cmp -s "$CRITICAL_REPO_SCRIPT" "$target"; then
+			cp "$CRITICAL_REPO_SCRIPT" "$target"
+			chmod +x "$target"
+			changed=1
+			log "synced critical executor copy target=$target from=$CRITICAL_REPO_SCRIPT"
+		fi
+	done
+	if [ "$changed" = 1 ] && has_session rtc-critical-path-pr-executor-loop; then
+		"$CRITICAL_DEPLOYED_SCRIPT" stop >> "$LOG" 2>&1 || true
+		"$CRITICAL_DEPLOYED_SCRIPT" start >> "$LOG" 2>&1 || true
+		log "restarted critical-path executor after script-copy sync"
+	fi
+	return 0
+}
+
+check_critical_path_script_copies() {
+	local out=$1 repo_sha deployed_sha tmp_sha missing_support=0
+	repo_sha=$(critical_script_sha "$CRITICAL_REPO_SCRIPT")
+	deployed_sha=$(critical_script_sha "$CRITICAL_DEPLOYED_SCRIPT")
+	tmp_sha=$(critical_script_sha "$CRITICAL_TMP_SCRIPT")
+	critical_script_has_pr07c_terminal_support "$CRITICAL_REPO_SCRIPT" || missing_support=1
+	critical_script_has_pr07c_terminal_support "$CRITICAL_DEPLOYED_SCRIPT" || missing_support=1
+	critical_script_has_pr07c_terminal_support "$CRITICAL_TMP_SCRIPT" || missing_support=1
+	if [ "$missing_support" = 1 ]; then
+		emit_finding "$out" high "critical-path" "critical-executor-pr07c-terminal-support-missing" \
+			"repo=$CRITICAL_REPO_SCRIPT sha=$repo_sha deployed=$CRITICAL_DEPLOYED_SCRIPT sha=$deployed_sha tmp=$CRITICAL_TMP_SCRIPT sha=$tmp_sha" \
+			"patch all critical-path executor copies so repaired_ready closes pr07c-browser-env, then restart rtc-critical-path-pr-executor-loop"
+	fi
+	if [ "$repo_sha" != "missing" ] && { [ "$repo_sha" != "$deployed_sha" ] || [ "$repo_sha" != "$tmp_sha" ]; }; then
+		emit_finding "$out" high "critical-path" "critical-executor-script-copy-drift" \
+			"repo=$CRITICAL_REPO_SCRIPT sha=$repo_sha deployed=$CRITICAL_DEPLOYED_SCRIPT sha=$deployed_sha tmp=$CRITICAL_TMP_SCRIPT sha=$tmp_sha" \
+			"sync canonical repo, deployed, and /tmp restart critical-path executor scripts; restart the executor after sync"
+	fi
+}
+
 check_critical_path_invariants() {
-	local out=$1 status=$CRITICAL_BASE/current-critical-path-status.md log_file=$CRITICAL_BASE/logs/critical-path-pr-executor.log classification
+	local out=$1 status=$CRITICAL_BASE/current-critical-path-status.md log_file=$CRITICAL_BASE/logs/critical-path-pr-executor.log classification class class_mtime browser_queue browser_status launches_after_terminal terminal_ledger
 	check_status_freshness "$out" critical-path "$status" 900 rtc-critical-path-pr-executor-loop
 	if log_matches_after_last_start "$log_file" 'critical-path PR executor loop started' 'reconcile failed|timed out|cannot stat .*[.]tmp|No such file or directory'; then
 		emit_finding "$out" high "critical-path" "recent-reconcile-or-temp-error" "$log_file" "debug recent critical-path executor failure and patch the controller"
@@ -200,9 +270,23 @@ check_critical_path_invariants() {
 	if [ -s "$status" ] && rg -qi 'browser-env-preflight|preflight only; replay stays gated|runtime-readiness-blocked.*(success|resolved|completed progress|terminal-ledger)|resolved_by_active_artifact_runtime_readiness_not_product' "$status"; then
 		emit_finding "$out" high "critical-path" "passive-pr07c-regression" "$status" "keep PR07C as repair lane and reject runtime-readiness-blocked as success"
 	fi
+	check_critical_path_script_copies "$out"
 	classification=$(latest_pr07c_classification || true)
 	if [ -n "$classification" ] && rg -qi 'resolved_by_active_artifact_runtime_readiness_not_product|runtime-readiness-blocked.*success' "$classification"; then
 		emit_finding "$out" high "critical-path" "bad-pr07c-classification" "$classification" "reopen PR07C repair lane and invalidate passive classification"
+	fi
+	class=$(pr07c_classification_value "$classification" || true)
+	if [ "$class" = "repaired_ready" ]; then
+		class_mtime=$(stat -c %Y "$classification" 2>/dev/null || printf 0)
+		browser_queue=$(awk -F '\t' '$2 == "pr07c-browser-env" || $1 == "job-pr07c-browser-env" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/queue.tsv" 2>/dev/null || true)
+		browser_status=$(awk -F '\t' '$1 == "pr07c-browser-env" && $4 !~ /^(terminal|resolved)$/ { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null || true)
+		launches_after_terminal=$(awk -F '\t' -v cutoff="$class_mtime" '$1 > cutoff && ($4 ~ /pr07c-browser-env/ || $3 ~ /pr07c-browser-env/) { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/logs/launches.tsv" 2>/dev/null || true)
+		terminal_ledger=$(awk -F '\t' '$1 == "pr07c-browser-env" && $2 == "repaired_ready" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/terminal-ledger.tsv" 2>/dev/null || true)
+		if [ -n "$browser_queue" ] || [ -n "$browser_status" ] || [ -n "$launches_after_terminal" ] || [ -z "$terminal_ledger" ]; then
+			emit_finding "$out" high "critical-path" "terminal-pr07c-readiness-not-honored" \
+				"classification=$classification queue=${browser_queue:-none} blockers=${browser_status:-none} launches_after_terminal=${launches_after_terminal:-none} terminal_ledger=${terminal_ledger:-missing}" \
+				"make repaired_ready terminal for pr07c-browser-env in repo/deployed/tmp executor copies, reconcile once, and verify only pr07c-owner-matrix remains queued"
+		fi
 	fi
 }
 
@@ -387,6 +471,11 @@ coverage_guided_lower_level_satisfied() {
 		grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
 		if [ -f "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE" ] &&
 			grep -Eq "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP|rtc-table-query-array-crdt|table-query-array" "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE"; then
+			if [ -f "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE" ] &&
+				grep -Eq "$CG_LOWER_LEVEL_BLOCK_PARSER_GROUP|rtc-block-parser-serialization|block-parser|parser-serialization" "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE"; then
+				has_session "$CG_LOWER_LEVEL_BLOCK_PARSER_SESSION"
+				return
+			fi
 			has_session "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION"
 			return
 		fi
@@ -531,12 +620,16 @@ $finding_line
 Task:
 1. Treat this as a controller/automation structural bug unless evidence proves otherwise. This is not a request for another passive report.
 2. Read current state and logs:
-   - $FINDINGS
-   - $EVENTS
-   - $CRITICAL_BASE/current-critical-path-status.md
-   - $CRITICAL_BASE/logs/critical-path-pr-executor.log
-   - $FINALIZATION_BASE/current-finalization-status.md
-   - $DEFERRED_BASE/current-deferred-status.md
+	   - $FINDINGS
+	   - $EVENTS
+	   - $CRITICAL_BASE/current-critical-path-status.md
+	   - $CRITICAL_BASE/blockers.tsv, $CRITICAL_BASE/queue.tsv, $CRITICAL_BASE/terminal-ledger.tsv, $CRITICAL_BASE/logs/launches.tsv
+	   - $CRITICAL_BASE/logs/critical-path-pr-executor.log
+	   - $CRITICAL_REPO_SCRIPT
+	   - $CRITICAL_DEPLOYED_SCRIPT
+	   - $CRITICAL_TMP_SCRIPT
+	   - $FINALIZATION_BASE/current-finalization-status.md
+	   - $DEFERRED_BASE/current-deferred-status.md
    - $RESOURCE_BASE/resource-autoscaler-status.md
    - $COVERAGE_BASE/current-output-dir.txt and the active novelty-status.md
    - $COVERAGE_BASE/logs/monitor.log
@@ -546,10 +639,11 @@ Task:
    - $GUARD_BASE/logs/guard.log
    - $GUARD_BASE/logs/restart-events.tsv
    - tmux -L rtc-fuzz list-sessions -F '#S'
-3. If a minimal safe fix is clear, apply it to scripts under $REPO/bin or the relevant deployed /tmp launcher, run focused syntax checks, and restart only the affected loop. Do not stop broad fuzzing or unrelated loops.
-4. If the fix belongs in the script branch, leave a patch or exact file list in the report so the local publisher can persist it to danluu/try/jetstream-fuzz.
-5. Do not classify the issue as fixed unless the invariant that fired this finding is no longer true.
-6. Write a concise durable report to: $report
+3. If a minimal safe fix is clear, apply it to scripts under $REPO/bin and the relevant deployed /tmp launcher, run focused syntax checks, and restart only the affected loop. Do not stop broad fuzzing or unrelated loops.
+4. For critical-path executor issues, keep the repo script, deployed script, and /tmp guard restart script synchronized unless evidence proves one copy is intentionally different.
+5. If the fix belongs in the script branch, leave a patch or exact file list in the report so the local publisher can persist it to danluu/try/jetstream-fuzz.
+6. Do not classify the issue as fixed unless the invariant that fired this finding is no longer true.
+7. Write a concise durable report to: $report
 
 Guardrails:
 - Do not use behavior-disabling flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
@@ -618,6 +712,7 @@ write_status() {
 }
 
 run_once() {
+	sync_critical_executor_copies_if_safe || true
 	detect_findings
 	launch_repair_jobs
 	write_status
