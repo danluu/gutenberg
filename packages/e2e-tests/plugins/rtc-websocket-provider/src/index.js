@@ -69,6 +69,8 @@ function getDocumentDebugState( ydoc, updateCount ) {
 	const stateVector = window.wp.sync.Y.encodeStateVector( ydoc );
 	return {
 		clientId: ydoc.clientID,
+		liveRecord: ydoc.getMap( 'document' ).toJSON(),
+		liveState: ydoc.getMap( 'state' ).toJSON(),
 		stateVector: bytesToBase64( stateVector ),
 		stateVectorHash: hashUint8Array( stateVector ),
 		stateVectorLength: stateVector.length,
@@ -177,6 +179,7 @@ function createWebSocketProvider() {
 				provider.off( 'sync', onSync );
 				provider.destroy();
 				updateDebugState( room, {
+					document: null,
 					status: 'disconnected',
 					synced: false,
 				} );
