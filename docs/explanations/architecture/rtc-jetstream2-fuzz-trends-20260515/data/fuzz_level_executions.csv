@@ -11966,8 +11966,12 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-19T16:00:00Z,gap-booster,boost-revision-autosave-recovery,browser-e2e,ws,revision-persistence,1,1,0,1,1,113291,FALSE
 2026-05-19T16:00:00Z,gap-booster,boost-three-user-late-join,browser-e2e,ws,three-user-late-join,1,1,0,1,1,113749,FALSE
 2026-05-19T16:00:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,1408,1408,64,44,42,692000,FALSE
-2026-05-19T16:15:00Z,coverage-guided,novelty-ws-async-server-blocks,browser-e2e,ws,async-server-blocks,1,1,1,1,0,37478,FALSE
-2026-05-19T16:15:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,4,3,2,4,2,191303,FALSE
-2026-05-19T16:15:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,191489,FALSE
-2026-05-19T16:15:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,4,3,3,4,1,217067,FALSE
-2026-05-19T16:15:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,96,96,0,3,3,54000,FALSE
+2026-05-19T16:15:00Z,coverage-guided,novelty-ws-async-server-blocks,browser-e2e,ws,async-server-blocks,18,15,12,18,6,641197,FALSE
+2026-05-19T16:15:00Z,focused-shards,focused-rich-text-b,browser-e2e,ws,real-user-editing,56,28,0,56,56,199374,FALSE
+2026-05-19T16:15:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,61,47,38,61,23,2741024,FALSE
+2026-05-19T16:15:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,25,17,14,25,11,3020735,FALSE
+2026-05-19T16:15:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,67,54,49,67,18,2976511,FALSE
+2026-05-19T16:15:00Z,gap-booster,boost-real-user-title-rich-text,browser-e2e,ws,real-user-editing,2,2,0,2,2,227429,FALSE
+2026-05-19T16:15:00Z,gap-booster,boost-revision-autosave-recovery,browser-e2e,ws,revision-persistence,2,2,0,2,2,224663,FALSE
+2026-05-19T16:15:00Z,gap-booster,boost-three-user-late-join,browser-e2e,ws,three-user-late-join,2,2,0,2,2,231581,FALSE
+2026-05-19T16:15:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,1152,1152,0,36,36,562000,FALSE
