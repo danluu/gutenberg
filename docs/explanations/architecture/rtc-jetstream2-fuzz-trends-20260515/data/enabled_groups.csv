@@ -953,3 +953,4 @@ timestamp,group,group_family
 2026-05-19T15:16:01Z,novelty-ws-real-user-editing,real-user
 2026-05-19T15:20:30Z,novelty-ws-parser-transform,parser
 2026-05-19T15:20:44Z,novelty-ws-common-blocks,auth/locks
+2026-05-19T15:46:19Z,novelty-ws-real-user-rich-text,real-user
