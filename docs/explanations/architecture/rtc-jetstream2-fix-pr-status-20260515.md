@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T05:32:30Z`
+Snapshot time: `2026-05-19T05:48:01Z`
 
 Trigger event:
-`pr-split-2026-05-19T05-31-01Z-20260519T052241Z`
+`pr-split-2026-05-19T05-47-08Z-20260519T053603Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T05-31-01Z-20260519T052241Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T05-47-08Z-20260519T053603Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -27,11 +27,13 @@ or the original split merely for continuity.
 
 ## Executive Status
 
-GitHub filing, rebuilt full-stack validation, and broad final-stack fuzzing
-remain blocked by seed `1020002`. The current split-persona synthesis,
-`pr-split-20260519T052241Z-synthesis.md`, says all six nonzero review reports
-agree that the Cycle428/Cycle430 replacement split is still the right current
-shape. It records the same ready local branch set: `35` fresh non-base
+The split shape is settled for now, but GitHub filing, rebuilt full-stack
+validation, and broad final-stack fuzzing remain blocked by seed `1020002`,
+unresolved `RLH-A` ownership, and the unfinished Parallel Progress Gate
+controller patch. The current split-persona synthesis,
+`pr-split-20260519T053603Z-synthesis.md`, says all six nonzero review reports
+agree that the Cycle428/Cycle430/Cycle432 replacement split is still the right
+current shape. It records the same ready local branch set: `35` fresh non-base
 `044015Z` rows in `latest-local-publish-manifest.tsv`, backed by the Cycle428
 audit with `36` ready rows including `BASE`, `0` blocked rows, and `0`
 already-published rows. Treat that as local publication and audit evidence
@@ -92,16 +94,16 @@ block the completed post-boundary manifest audit and must not block strict
 owner comparisons, reload-hydration clean-head replay, branch-link audits,
 deferred downscope, or control-plane repair.
 
-Two bounded follow-ups changed status after the previous report. `RLH-A`
-reload-hydration owner proof is now `runtime-setup-blocked`: the Cycle430 replay
-did not produce row-bearing product-owner evidence because the runtime setup
-blocked before the oracle. The loop-progress repair produced a spec/prompt
-repair only; the live Parallel Progress Gate controller still needs the hard
-progress invariant patch.
+The latest Cycle432 status check found both active follow-ups incomplete.
+`RLH-A` reload-hydration owner proof is still blocked: the runtime setup/replay
+job has no `report.md`, `owner-matrix.tsv`, or `classification.tsv` yet. The
+controller progress-gate patch has `test-results.tsv`, but still has no
+`report.md`, and `T002` fails because it expected `progress_bounded_job` and got
+`progress_loop_repair`.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T05:32:25Z`.
+Remote status was collected at `2026-05-19T05:47:55Z`.
 
 The fix-planning repo is checked out at:
 
@@ -131,7 +133,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T05:32:30Z` from fetched
+The branch-link audit was generated at `2026-05-19T05:48:01Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -236,7 +238,7 @@ These rows must not be described as fixed or filing-ready.
 | --- | --- | --- | --- |
 | Missing verified active refs | PR02A, PR05A-D, PR06A-D, PR06E, PR11A-E, PR12A-C, PR14B, exact refreshed stack refs, `HARNESS-WS-CONFIG-022004` | active rows with no branch-link audit entry correctly say `No verified branch link yet`; Cycle428 `044015Z` local manifest audit has `36` ready rows including `BASE`, and the latest synthesis records `35` fresh non-base `044015Z` rows in `latest-local-publish-manifest.tsv`, but neither fact is a verified GitHub branch-link audit for these micro rows | Publish/fetch/audit explicit GitHub refs for every active row that still lacks a verified branch link |
 | ENTITY-SERIALIZATION-1000009 | seed `1000009`, lower-boundary rows | latest persona consensus says completed lower-boundary evidence classifies this as `base-or-harness-pre-stack`, not a PR02/PR05/PR07/PR18x product owner | Keep out of product PR split unless a newer row-bearing report contradicts the classification |
-| PERSISTENCE-PARITY-6000007 / reload hydration | seed `6000007`, clean reload-hydration heads `5edcd4acdf6` / `079387bd18b2`, PR07 controls | latest persona consensus classifies the main signal as `base-or-harness-pre-stack`; raw reload branches remain non-fileable | Replay the clean reload-hydration head for seeds `6000007` and `966001` as evidence only; do not publish raw old-base branches |
+| PERSISTENCE-PARITY-6000007 / reload hydration | seed `6000007`, clean reload-hydration heads `5edcd4acdf6` / `079387bd18b2`, PR07 controls | latest persona consensus classifies the main signal as `base-or-harness-pre-stack`; raw reload branches remain non-fileable; the Cycle432 runtime setup/replay still lacks `report.md`, `owner-matrix.tsv`, and `classification.tsv` | Finish or rerun exactly one bounded clean-head replay for seeds `6000007` and `966001`; do not publish raw old-base branches |
 | Seed `1020002` WebSocket marker divergence | final-stack repair/reclassification lane | blocks final-stack fuzzing, filing, rebuilt validation, and its own repair/reclassification only | Repair or explicitly reclassify before final-stack validation and filing |
 | PR07 runtime / owner gate | PR07A/B arms and raw PR07D variants | non-fileable owner-comparison fork | Require row-bearing owner matrices with first-divergence evidence, current endpoint controls, clean refs, and branch audit before promotion |
 | Strict revision-restore signal | `117126135e5e`, seed `5400020`, PR03, PR05B/C/D, PR14, current PR15C, PR07B/PR07C arms | held in parser/rich-text/entity territory after PR05B/PR05C/clean PR05D comparison; does not justify PR18x | Do not name PR18x unless a newer row-bearing owner matrix moves first durable failure out of this held lane |
@@ -244,7 +246,7 @@ These rows must not be described as fixed or filing-ready.
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Raw deferred manifests | raw `003407`, raw `020456`, raw `024016`, fallback/PR15-tail bases, raw `PR07D` | invalid PR progress; wrong/stale base or missing same-cycle allowlisted base/head/bundle/manifest agreement | Keep as no-progress unless a new audit proves clean allowlisted base, head/bundle/manifest agreement, and ownership/non-coverage |
 | PR05E and rich-text/search reductions | PR05E text, search/live-collapse, rich-text suffix, parser/linebreak candidates | dropped or held; latest lower-boundary classification does not justify PR05E | Compare against lower controls and clean split heads before promotion |
-| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, supervisor seed-drain recovery, novelty bootstrap/admission | supervisor-side recovery leak patched in `duplicate-noise-20260519T045255Z-feedback-action.md`; latest `duplicate-noise-20260519T051029Z-synthesis.md` says the remaining consensus leak is producer/control-plane policy ordering in `rtc-browser-fuzz-novelty-monitor.mjs`, where current-run policy waits behind historical coverage/triage work | Implement a current-first novelty policy pass that preserves product-evidence representatives, writes no-analysis sentinels for no-product strict startup/known-noise, and pauses/rotates matching producers before historical reporting |
+| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, supervisor seed-drain recovery, novelty bootstrap/admission | latest `duplicate-noise-20260519T052256Z-synthesis.md` keeps the leak producer-side: below-threshold zero-product startup seed drains can still turn into group-level `paused-startup-stall`; the earlier `045255Z` supervisor patch passed syntax/gate checks but does not close this consensus follow-up by itself | Patch the narrow supervisor seed-drain path first, then add a current-first novelty policy pass only if active duplicate/noise producers still refill |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -252,21 +254,21 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T05:32:25Z
+collected_at_utc: 2026-05-19T05:47:55Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T052537Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty monitor status was written at
-`2026-05-19T05:31:48.373Z` for
+`2026-05-19T05:47:49.032Z` for
 `run-20260519T052537Z`. It is startup-only:
 
 ```text
 status: monitor started; full coverage pass pending
 observed roots: 632
-previous records loaded: 92357
-supervisor groups file: 1
+previous records loaded: 92800
+supervisor groups file: 0
 active run dirs: 0
 health: startup status only; full novelty pass has not completed yet
 ```
@@ -283,7 +285,7 @@ Interpretation:
   PR07 owner replay, strict owner replay, `PERSISTENCE-PARITY-6000007`
   clean-head replay, seed `1020002`, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T05:18:37Z`:
+The latest trend evidence packet was generated at `2026-05-19T05:40:40Z`:
 
 ```text
 monitor passes: 2322
@@ -298,14 +300,14 @@ duplicate_share_historical_last: 0.3404
 summary startup failures last: 0
 quality issues last: 0
 memory free: 413.8 GB
-load averages: 64.16 / 66.01 / 67.82 on 64 cores
+load averages: 81.51 / 75.89 / 74.14 on 64 cores
 enabled group current: novelty-ws-permissions-auth-locks
 latest fuzz level mix:
   browser-e2e=28 lanes/25 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6111429
-browser-e2e likely-real findings: 788 over 2655.8 runner-hours
+total fuzz-level test executions: 6120441
+browser-e2e likely-real findings: 789 over 2664.1 runner-hours
 ```
 
 Largest unmet goals remain save/reload and real-user depth:
@@ -324,10 +326,10 @@ bounded and oracle-specific rather than increasing broad browser concurrency.
 
 ## Status-Persona Analysis
 
-The current split-persona synthesis, `pr-split-20260519T052241Z-synthesis.md`,
-supersedes the older `051407Z`, `045950Z`, `045031Z`, `043141Z`, `042241Z`,
-`040320Z`, `035309Z`, `033443Z`, `032351Z`, and `030649Z` wording where they
-differ:
+The current split-persona synthesis, `pr-split-20260519T053603Z-synthesis.md`,
+supersedes the older `052241Z`, `051407Z`, `045950Z`, `045031Z`, `043141Z`,
+`042241Z`, `040320Z`, `035309Z`, `033443Z`, `032351Z`, and `030649Z` wording
+where they differ:
 
 - The completed lower-boundary artifact now classifies `ENTITY-SERIALIZATION-1000009`
   and `PERSISTENCE-PARITY-6000007` as `base-or-harness-pre-stack`.
@@ -352,56 +354,50 @@ differ:
 - Strict `117126135e5e` is held in parser/rich-text/entity territory after the
   PR05B/PR05C/clean PR05D comparison and still does not justify PR18x.
 - Final filing and final-stack fuzzing are still blocked by seed `1020002`,
+  unresolved `RLH-A` ownership, the unfinished controller progress-gate patch,
   missing verified GitHub branch links for some active micro rows, and rebuilt
   final-stack validation.
-- `RLH-A` reload hydration remains evidence-only and is now
-  `runtime-setup-blocked`; Cycle430 produced logs/setup failure context, not
-  durable product-owner evidence. It still needs an isolated runtime setup
-  repair/replay before any owner or filing claim.
-- The loop-progress repair job produced a spec and prompt patch plan, but the
-  live controller still needs the hard invariant: when Parallel Progress Gate
-  rows exist, wait-only cycles, zero-byte reports, stale/wrong-base manifests,
-  and excluded raw/runtime rows must not count as progress.
-- Useful next work is the isolated reload-hydration setup replay from
-  `runs/20260519T045950Z/jobs/outputs/rtc-cycle430-reload-hydration-041059-owner-replay/next-runtime-setup-repair.prompt.md`,
-  the live controller progress-gate patch from
-  `runs/20260519T045950Z/jobs/outputs/rtc-cycle430-loop-progress-gate-repair/feedback-action-prompt-patch.md`,
-  optional owner comparison for strict `c5c009f618b2` / seed `6000034`, and
-  finalization/report prompt fixes so excluded runtime/validation rows are not
-  emitted in push commands. Do not serialize these behind seed `1020002`.
+- `RLH-A` reload hydration remains evidence-only and
+  `runtime-setup-blocked`. The Cycle432 runtime setup/replay job still lacks
+  nonempty `report.md`, `owner-matrix.tsv`, and `classification.tsv`, so it has
+  not produced durable product-owner evidence.
+- The live controller patch still needs completion. The Cycle432 controller job
+  has `test-results.tsv`, but no `report.md`, and `T002` fails with
+  `progress_loop_repair` where the expected result is `progress_bounded_job`.
+- Useful next work is to finish those two Cycle432 jobs or, if either exits
+  without the required artifacts, rerun exactly one bounded replacement for the
+  same scope. The optional owner comparison for strict `c5c009f618b2` / seed
+  `6000034` remains behind row-bearing progress or clear spare capacity, and
+  finalization/report prompt fixes should keep excluded runtime/validation rows
+  out of push commands. Do not serialize these behind seed `1020002`.
 
 The latest duplicate/noise persona files,
-`duplicate-noise-20260519T051029Z-synthesis.md` and
-`duplicate-noise-20260519T045255Z-feedback-action.md`, are the current
+`duplicate-noise-20260519T052256Z-synthesis.md` and
+`duplicate-noise-20260519T045255Z-feedback-action.md`, plus the zero-byte
+`duplicate-noise-20260519T052256Z-feedback-action.md`, are the current
 control-plane signal:
 
-- The latest synthesis read all six duplicate/noise reports and found consensus
-  that expensive analysis consumers are mostly not the main leak. The remaining
-  issue is producer/control-plane scheduling: current-run policy in
-  `rtc-browser-fuzz-novelty-monitor.mjs` is delayed behind historical
-  coverage/triage work, so active noisy producers can keep running while status
-  remains "full coverage pass pending".
-- The feedback action patched
-  `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo/bin/rtc-browser-fuzz-supervisor.mjs`
-  so no-product strict startup seed-drain cooldowns are honored before
-  `startupStallRecoveryMode === 'recover'`. The path still writes no-analysis
-  sentinels, advances past the seed, and stops lanes, but now sets
-  `paused-startup-stall` through the cooldown instead of immediately
-  relaunching the producer.
-- Validation for that control-plane patch ran `node --check` on the supervisor,
-  triage watcher, analysis tier, deep-analysis tier, live-analysis monitor, and
-  novelty monitor. The gate-only check reported `candidates=4`,
-  `suppressedStartup=7`, `signatures=4`, and `active=0`; queued/running
-  `pre_action_bootstrap_stall` was `0` in triage, analysis-tier, and
-  deep-analysis-tier, while product-evidence visible signatures remained `4`.
-- The feedback action restarted `rtc-coverage-guided-supervisor` for the then
-  active `run-20260519T050204Z` root; the current raw novelty heartbeat is now
-  `run-20260519T052537Z`. The next smallest safe fix is a current-first novelty
-  policy pass immediately after current triage refresh/summarization, before
-  historical coverage scans. It should write no-analysis sentinels for
-  no-product strict startup/known-noise, cap product-evidence duplicate families
-  only after preserving a representative, and pause/rotate matching active
-  producers.
+- The latest synthesis still treats this as a producer/scheduler control-plane
+  leak, not an expensive-analysis consumer leak. It narrows the first follow-up
+  to `maybePauseGroupForStartupStallNoise()` in
+  `rtc-browser-fuzz-supervisor.mjs`: below-threshold zero-product startup seed
+  drains should write `no-analysis`, advance/skip the bad seed, stop current
+  lanes, and recover/relaunch the producer group without setting
+  `paused-startup-stall` or startup-stall cooldowns. The existing full pause
+  behavior should remain once the configured repeated-failure threshold is met.
+- The earlier feedback action patched the supervisor path and passed `node
+  --check` on the supervisor, triage watcher, analysis tier, deep-analysis tier,
+  live-analysis monitor, and novelty monitor. Its gate-only check reported
+  `candidates=4`, `suppressedStartup=7`, `signatures=4`, and `active=0`;
+  queued/running `pre_action_bootstrap_stall` was `0` in triage,
+  analysis-tier, and deep-analysis-tier, while product-evidence visible
+  signatures remained `4`.
+- The latest synthesis keeps broader live-analysis or downstream suppression
+  blocked until reproduced. If duplicate/noise producers still refill after the
+  narrow supervisor fix, the next follow-up is a current-first novelty policy
+  pass that preserves product-evidence representatives, writes no-analysis for
+  no-product strict startup/known-noise, and pauses/rotates matching producers
+  before historical reporting.
 - Product-evidence signatures, visible likely-real failures, and representative
   analysis for product-evidence duplicate families such as
   `late_session_awareness_stall` and `reload_rejoin_awareness_stall` must remain
@@ -460,21 +456,21 @@ Useful bounded work now:
 
 - continue seed `1020002` repair or proof-based reclassification without
   converting it into a wait-only progress loop;
-- launch the isolated reload-hydration runtime setup repair/replay from
-  `runs/20260519T045950Z/jobs/outputs/rtc-cycle430-reload-hydration-041059-owner-replay/next-runtime-setup-repair.prompt.md`;
-  it should replay seeds `6000007` and `966001` against current `044015Z`
-  `PR15C`, the clean reload head, and PR07B/PR07C controls before any
+- finish `rtc-cycle432-reload-hydration-runtime-setup-replay`; it must write
+  nonempty `report.md`, `branch-inputs.tsv`, `replay-runs.tsv`,
+  `owner-matrix.tsv`, `first-divergence.tsv`, `classification.tsv`, and
+  `manifest-audit.tsv` for seeds `6000007` and `966001` against current
+  `PR15C`, the clean reload head, `PR07B0`, and `PR07C` before any
   reload-hydration owner or filing claim;
+- finish `rtc-cycle432-controller-progress-gate-patch` by fixing the failing
+  `T002` fixture, writing nonempty `report.md`, and keeping row-bearing
+  `test-results.tsv`;
 - optionally run owner comparison for strict `c5c009f618b2` / seed `6000034`;
-- launch the controller progress-gate patch from
-  `runs/20260519T045950Z/jobs/outputs/rtc-cycle430-loop-progress-gate-repair/feedback-action-prompt-patch.md`
-  so wait-only cycles, zero-byte reports, header-only manifests,
-  stale/wrong-base manifests, and excluded runtime/validation rows cannot count
-  as publishable progress;
-- treat the duplicate/noise supervisor-side seed-drain recovery leak as
-  patched, but implement the current-first novelty-monitor policy pass if
-  active producer capacity keeps feeding no-product startup/known-noise
-  families; preserve representative product-evidence signatures;
+- treat the duplicate/noise follow-up as producer-side and narrow: fix the
+  below-threshold startup seed-drain supervisor path first, then implement the
+  current-first novelty-monitor policy pass only if active producer capacity
+  still feeds no-product startup/known-noise families; preserve representative
+  product-evidence signatures;
 - for rich-text suffix and pre-save search/live-collapse, require owner
   matrices or deterministic first-loss evidence instead of relaunching
   duplicate diagnostics;
@@ -484,10 +480,10 @@ Useful bounded work now:
   families start refilling again.
 
 Do not launch broad final-stack fuzz, GitHub filing, rebuilt stack-wide
-validation, a wait-only seed `1020002` loop, duplicate lower-boundary work, raw
-deferred publication, raw PR07D, raw `HOLD-07C`, raw `003407`, raw
-`020456`, raw `024016`, reload-hydration filing before clean-head replay,
-PR17, PR18, PR18x promotion, PR15D promotion from stale endpoint evidence,
-diagnostic product promotion before focused first-loss replay, broad consumer
-duplicate/noise suppression, duplicate reload-hydration owner replays, or extra
-browser lanes.
+validation, a wait-only seed `1020002` loop, duplicate lower-boundary work,
+duplicate Cycle432 jobs while their sessions are active, raw deferred
+publication, raw PR07D, raw `HOLD-07C`, raw `003407`, raw `020456`, raw
+`024016`, reload-hydration filing before clean-head replay, PR17, PR18, PR18x
+promotion, PR15D promotion from stale endpoint evidence, diagnostic product
+promotion before focused first-loss replay, broad consumer duplicate/noise
+suppression, duplicate reload-hydration owner replays, or extra browser lanes.
