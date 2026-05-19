@@ -1492,7 +1492,10 @@ state lives in `novelty-state.json`; the root window is intentionally bounded so
 the monitor does not rescan days of coverage files on every restart. The
 `coverage files` line in `novelty-status.md` and `files=` field in monitor pass
 logs are current-scan file counts, not cumulative coverage. Use
-`recordsSeen`/`total records seen` for trend graphs and long-run health.
+`recordsSeen`/`total records seen` for live monitor state. For trend graphs that
+span logs from before `recordsSeen=` was emitted in pass lines, use monotonic
+cumulative processed-record observations and keep the live state counter
+separate in the CSV.
 
 ## Fuzz-Only Assertion Loop
 
