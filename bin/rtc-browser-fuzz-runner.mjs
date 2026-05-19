@@ -29,6 +29,7 @@ const SHARED_PATH = [
 const OUTPUT_DIR =
 	process.env.RTC_FUZZ_OUTPUT_DIR ??
 	path.join( REPO_ROOT, 'artifacts/rtc-browser-fuzz', createTimestamp() );
+const RUNTIME_TMP_DIR = path.join( OUTPUT_DIR, '.tmp' );
 const DURATION_HOURS = getPositiveNumberEnv( 'RTC_FUZZ_DURATION_HOURS', 12 );
 const START_SEED = getPositiveIntegerEnv( 'RTC_FUZZ_START_SEED', 1004 );
 const SEED_STRIDE = getPositiveIntegerEnv( 'RTC_FUZZ_SEED_STRIDE', 1 );
@@ -216,6 +217,9 @@ function getSharedEnv( overrides = {} ) {
 	return {
 		...process.env,
 		PATH: SHARED_PATH,
+		TMPDIR: process.env.TMPDIR ?? RUNTIME_TMP_DIR,
+		TMP: process.env.TMP ?? RUNTIME_TMP_DIR,
+		TEMP: process.env.TEMP ?? RUNTIME_TMP_DIR,
 		...overrides,
 	};
 }
@@ -229,6 +233,9 @@ function getBrowserFuzzEnv( overrides = {} ) {
 		GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS:
 			process.env.GUTENBERG_RTC_BROWSER_BOOT_TIMEOUT_MS ??
 			String( BOOT_TIMEOUT_MS ),
+		GUTENBERG_RTC_BROWSER_CONVERGENCE_TIMEOUT_MS:
+			process.env.GUTENBERG_RTC_BROWSER_CONVERGENCE_TIMEOUT_MS ??
+			String( CONVERGENCE_TIMEOUT_MS ),
 		GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING: ASSUME_WP_ENV_RUNNING
 			? '1'
 			: '0',
@@ -968,6 +975,7 @@ function pickReplayEnv( env ) {
 		'GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP',
 		'GUTENBERG_RTC_BROWSER_FORCE_AUTH_SYNC_FAILURE_STEPS',
 		'GUTENBERG_RTC_BROWSER_FORCE_AUTH_SYNC_FAILURE_STATUSES',
+		'GUTENBERG_RTC_BROWSER_FORCE_RANDOM_RELOAD_STEP',
 		'GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS',
 		'GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS',
 		'GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS',
@@ -1413,6 +1421,7 @@ async function runCodexFailureAnalysis( {
 
 async function main() {
 	await fs.mkdir( OUTPUT_DIR, { recursive: true } );
+	await fs.mkdir( RUNTIME_TMP_DIR, { recursive: true } );
 	runnerLogPath = path.join( OUTPUT_DIR, 'runner.log' );
 	summaryLogPath = path.join( OUTPUT_DIR, 'summary.ndjson' );
 	statePath = path.join( OUTPUT_DIR, 'state.json' );

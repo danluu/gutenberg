@@ -28,14 +28,11 @@ SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 STATE="$BASE/logs/gap-codex-loop-state.tsv"
-LOWER_LEVEL_STATE="$BASE/logs/gap-codex-loop-lower-level-state.tsv"
 LOG="$BASE/logs/gap-codex-loop.log"
-LOWER_LEVEL_CODEX_COOLDOWN_SECONDS=${RTC_LOWER_LEVEL_GAP_CODEX_COOLDOWN_SECONDS:-7200}
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
 mkdir -p "$BASE/logs"
 touch "$STATE"
-touch "$LOWER_LEVEL_STATE"
 
 while true; do
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
@@ -66,139 +63,25 @@ while true; do
 
 	launch=0
 	reason=""
-	lower_level_trigger=0
-	novelty=$(cat "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
-	level_summary=$(
-		python3 - "$run" "$novelty" <<'PY'
-import json
-import os
-import sys
-from collections import Counter
-
-focused_run = sys.argv[1]
-coverage_run = sys.argv[2] if len(sys.argv) > 2 else ""
-current_roots = [
-	focused_run,
-	coverage_run,
-]
-for marker in (
-	"/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/current-run-root.txt",
-	"/media/volume/danluu-fuzz-data/rtc-gap-booster-20260515/current-run-root.txt",
-):
-	try:
-		with open(marker) as marker_file:
-			current_roots.append(marker_file.read().strip())
-	except OSError:
-		pass
-
-def infer_level(group):
-	name = str(group.get("name") or "").lower()
-	transport = str(group.get("transport") or "").lower()
-	env = group.get("env") if isinstance(group.get("env"), dict) else {}
-	profile = str(
-		env.get("GUTENBERG_RTC_BROWSER_ACTION_PROFILE")
-		or env.get("RTC_FUZZ_ACTION_PROFILE")
-		or group.get("profile")
-		or ""
-	).lower()
-	text = " ".join([name, transport, profile])
-	if "fuzz-only" in text or "assert" in text:
-		return "fuzz-assertion"
-	if "libfuzzer" in text or "lib-fuzzer" in text or "afl" in text or "coverage-guided-lower" in text:
-		return "coverage-guided-lower-level"
-	if "unit" in text or "property" in text or "jest" in text:
-		return "unit-property"
-	if "php" in text or "rest" in text or "backend" in text:
-		return "backend-api"
-	if "protocol" in text or "sync-server" in text or "provider" in text:
-		return "protocol-server"
-	if transport == "http" or "http" in name:
-		return "transport-integration"
-	return "browser-e2e"
-
-lower_levels = {
-	"unit-property",
-	"coverage-guided-lower-level",
-	"backend-api",
-	"protocol-server",
-	"fuzz-assertion",
-}
-counts = Counter()
-files = []
-for root in current_roots:
-	if not root:
-		continue
-	path = os.path.join(root, "supervisor-groups.json")
-	if path in files or not os.path.exists(path):
-		continue
-	files.append(path)
-	try:
-		with open(path) as groups_file:
-			groups = json.load(groups_file)
-	except (OSError, json.JSONDecodeError):
-		continue
-	if not isinstance(groups, list):
-		continue
-	for group in groups:
-		if not isinstance(group, dict):
-			continue
-		try:
-			lanes = int(group.get("lanes", 1) or 1)
-		except (TypeError, ValueError):
-			lanes = 1
-		level = group.get("fuzzLevel") or group.get("fuzz_level") or infer_level(group)
-		counts[level] += lanes
-
-lower_level_lanes = sum(counts[level] for level in lower_levels)
-print(f"lower_level_lanes={lower_level_lanes}")
-print(f"transport_integration_lanes={counts['transport-integration']}")
-print(f"browser_e2e_lanes={counts['browser-e2e']}")
-print("levels=" + ",".join(f"{level}:{counts[level]}" for level in sorted(counts)))
-print("group_files=" + ",".join(files))
-PY
-	)
-	lower_level_lanes=$(printf '%s\n' "$level_summary" | awk -F= '$1=="lower_level_lanes"{print $2+0}')
-	last_lower_level_time=$(awk -F '\t' 'END{print $1+0}' "$LOWER_LEVEL_STATE")
-	now_seconds=$(date -u +%s)
-	if [ "${lower_level_lanes:-0}" -eq 0 ]; then
-		lower_level_age=$(( now_seconds - last_lower_level_time ))
-		if [ "$lower_level_age" -ge "$LOWER_LEVEL_CODEX_COOLDOWN_SECONDS" ]; then
-			launch=1
-			lower_level_trigger=1
-			reason="no active unit/property, coverage-guided lower-level, backend-api, protocol-server, or fuzz-assertion lanes; $level_summary"
-		else
-			printf '[%s] lower-level lane gap still present but on cooldown age=%s summary=%s\n' "$now" "$lower_level_age" "$level_summary" >> "$LOG"
-		fi
-	fi
 	if [ "$prev_run" = "$run" ] && [ "$records" -le "$prev_records" ] && [ -n "$prev_time" ]; then
 		age=$(( $(date -u +%s) - prev_time ))
 		if [ "$age" -ge 1200 ]; then
 			launch=1
-			if [ -n "$reason" ]; then
-				reason="$reason; focused coverage records stalled for ${age}s at ${records} records"
-			else
-				reason="focused coverage records stalled for ${age}s at ${records} records"
-			fi
+			reason="focused coverage records stalled for ${age}s at ${records} records"
 		fi
 	fi
 
+	novelty=$(cat "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
 	if [ -f "$novelty/novelty-status.md" ] &&
 		grep -q 'harness-work candidates: [1-9]' "$novelty/novelty-status.md"; then
 		launch=1
-		if [ -n "$reason" ]; then
-			reason="$reason; coverage-guided monitor reports harness-work candidates"
-		else
-			reason="coverage-guided monitor reports harness-work candidates"
-		fi
+		reason="coverage-guided monitor reports harness-work candidates"
 	fi
 
 	if [ "$launch" != 1 ]; then
-		printf '[%s] no codex need records=%s files=%s prev=%s level_summary=%s\n' "$now" "$records" "$files" "$prev_records" "$level_summary" >> "$LOG"
+		printf '[%s] no codex need records=%s files=%s prev=%s\n' "$now" "$records" "$files" "$prev_records" >> "$LOG"
 		sleep 600
 		continue
-	fi
-	if [ "$lower_level_trigger" = 1 ]; then
-		printf '%s\t%s\t%s\n' "$now_seconds" "$now" "$level_summary" >> "$LOWER_LEVEL_STATE"
 	fi
 
 	ts=$(date -u +%Y%m%dT%H%M%SZ)
@@ -217,15 +100,13 @@ Focused launcher: /tmp/start_rtc_focused_shards.sh
 Focused group config: $run/supervisor-groups.json
 Focused status files: $run/supervisor-state.json, $run/live-analysis-monitor-state.json
 Coverage-guided status: $novelty/novelty-status.md
-Current fuzz-level summary:
-$level_summary
 Repo root: $SRC
 
 Task:
 1. Inspect focused shard yield and current coverage-guided gaps.
 2. Explicitly evaluate the mix of fuzzing levels, not only the mix of browser action profiles. Consider browser/e2e Playwright RTC, transport/integration HTTP or WS probes, fuzz-only assertions/oracles, seeded unit or property fuzzing for CRDT/parser/rich-text logic, libFuzzer/AFL-style coverage-guided lower-level targets, PHP/backend API checks, and protocol/server-only fuzzing. If the useful work is too concentrated at one level, propose the smallest concrete rebalancing step.
 3. If the focused shards are not producing useful coverage, make the smallest useful adjustment to shard env/group policy or harness code.
-4. If the reason says there are no active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes, treat that as an actionable control-loop gap, not background context. Add or launch the smallest bounded lower-level target with a clear oracle when practical; otherwise write the specific blocker and the next concrete implementation step. For coverage-guided lower-level fuzzing, consider libFuzzer-style in-process harnesses for code that can be isolated, or an equivalent JS/PHP coverage-guided loop when native libFuzzer is not practical. Do not stop active browser fuzzing just to experiment with lower-level fuzzing.
+4. If a lower-level target should be added, prefer a bounded target with a clear oracle and a handoff note over a broad new campaign. For coverage-guided lower-level fuzzing, consider libFuzzer-style in-process harnesses for code that can be isolated, or an equivalent JS/PHP coverage-guided loop when native libFuzzer is not practical. Do not stop active browser fuzzing just to experiment with lower-level fuzzing.
 5. Do not add behavior-disable flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
 6. Run focused syntax/lint checks for any changed files.
 7. If a change must affect active fuzzing, restart only focused shards with /tmp/start_rtc_focused_shards.sh; do not stop strict-expansion or coverage-guided sessions unless there is clear evidence they are blocking the focused run.

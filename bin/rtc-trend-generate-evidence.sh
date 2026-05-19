@@ -19,8 +19,6 @@ profile_path = artifact / "data" / "profile_counts.csv"
 cpu_path = artifact / "data" / "cpu_utilization.csv"
 load_path = artifact / "data" / "load_average.csv"
 fuzz_level_path = artifact / "data" / "fuzz_level_mix.csv"
-bug_effectiveness_path = artifact / "data" / "bug_effectiveness_by_level.csv"
-bug_output_effectiveness_path = artifact / "data" / "bug_output_effectiveness_by_level.csv"
 
 summary = {}
 if summary_path.exists():
@@ -88,46 +86,6 @@ if fuzz_level_path.exists():
 			counts[0] += lanes
 			counts[1] += 1
 
-bug_effectiveness_latest = []
-if bug_effectiveness_path.exists():
-	with bug_effectiveness_path.open(newline="") as f:
-		rows = list(csv.DictReader(f))
-	if rows:
-		latest_bucket = max(row.get("bucket", "") for row in rows)
-		for row in rows:
-			if row.get("bucket", "") != latest_bucket:
-				continue
-			bug_effectiveness_latest.append(
-				(
-					row.get("fuzz_level", ""),
-					row.get("cumulative_likely_real_findings", ""),
-					row.get("cumulative_runner_hours", ""),
-					row.get("likely_real_findings_per_100_runner_hours", ""),
-					row.get("cumulative_failed_attempts", ""),
-					row.get("failed_attempts_per_100_runner_hours", ""),
-				)
-			)
-
-bug_output_effectiveness_latest = []
-if bug_output_effectiveness_path.exists():
-	with bug_output_effectiveness_path.open(newline="") as f:
-		rows = list(csv.DictReader(f))
-	if rows:
-		latest_bucket = max(row.get("bucket", "") for row in rows)
-		for row in rows:
-			if row.get("bucket", "") != latest_bucket:
-				continue
-			bug_output_effectiveness_latest.append(
-				(
-					row.get("fuzz_level", ""),
-					row.get("cumulative_unique_bug_outputs", ""),
-					row.get("cumulative_runner_hours", ""),
-					row.get("unique_bug_outputs_per_100_runner_hours", ""),
-					row.get("cumulative_confirmed_likely_real_outputs", ""),
-					row.get("confirmed_likely_real_outputs_per_100_runner_hours", ""),
-				)
-			)
-
 lines = [
 	"# RTC Trend Evidence Packet",
 	"",
@@ -169,14 +127,6 @@ for key in [
 	"fuzz_level_test_executions_has_approximate_rows",
 	"fuzz_level_execution_events",
 	"fuzz_level_execution_latest",
-	"bug_findings_rows",
-	"bug_findings_unique_likely_real",
-	"bug_findings_unique_candidate_signals",
-	"bug_outputs_rows",
-	"bug_outputs_unique_candidates",
-	"bug_effectiveness_latest",
-	"failure_candidate_effectiveness_latest",
-	"bug_output_effectiveness_latest",
 ]:
 	if key in summary:
 		lines.append(f"- {key}: {summary[key]}")
@@ -216,31 +166,12 @@ else:
 if fuzz_level_campaigns:
 	lines.append(f"- campaigns: {', '.join(sorted(x for x in fuzz_level_campaigns if x))}")
 
-lines += ["", "## Latest Fuzzing Effectiveness"]
-if bug_effectiveness_latest:
-	for level, likely_real, runner_hours, likely_rate, failed_attempts, failed_rate in sorted(bug_effectiveness_latest):
-		lines.append(
-			f"- {level}: likely_real={likely_real}, runner_hours={runner_hours}, likely_real_per_100_runner_hours={likely_rate}, failed_attempts={failed_attempts}, failed_attempts_per_100_runner_hours={failed_rate}"
-		)
-else:
-	lines.append("- no bug effectiveness CSV rows available")
-
-lines += ["", "## Latest Unique Bug-Output Candidate Effectiveness"]
-if bug_output_effectiveness_latest:
-	for level, unique_outputs, runner_hours, output_rate, confirmed_outputs, confirmed_rate in sorted(bug_output_effectiveness_latest):
-		lines.append(
-			f"- {level}: unique_bug_output_candidates={unique_outputs}, runner_hours={runner_hours}, unique_candidates_per_100_runner_hours={output_rate}, confirmed_likely_real_outputs={confirmed_outputs}, confirmed_likely_real_outputs_per_100_runner_hours={confirmed_rate}"
-		)
-else:
-	lines.append("- no bug-output candidate effectiveness CSV rows available")
-
 lines += [
 	"",
 	"## Interpretation To Challenge",
 	"- Treat current-run duplicate/noise and current summary startup failures separately from historical aggregate duplicate/noise.",
 	"- Prioritize completion-depth fixes for profiles with many records but low success rate before adding another broad class of actions.",
 	"- Challenge whether the current fuzzing level mix is too browser/e2e-heavy. If it is, propose a bounded lower-level target with a clear oracle instead of merely adding more browser lanes; explicitly consider libFuzzer/AFL-style coverage-guided lower-level fuzzing where code can be isolated enough to make it useful.",
-	"- Challenge whether the latest triaged likely-real outputs, unique bug-output candidates, and failed-attempts per runner-hour imply a mix shift. Do not treat failed attempts or untriaged unique candidates as confirmed bugs, and do not treat zero likely-real findings from an untriaged lower-level lane as proof the lane is useless.",
 	"- If CPU is already high, prefer guarded top-offs and startup-stall reduction over simply increasing browser concurrency.",
 	"- Reject or qualify any of the above if the latest persona reports or current logs contradict it.",
 ]

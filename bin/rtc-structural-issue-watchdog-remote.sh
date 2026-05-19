@@ -17,6 +17,9 @@ DUP_NOISE_BASE=/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-2
 CG_LOWER_LEVEL_B64_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516/holds/coverage-guided-lower-level-rich-text-crdt.hold
 CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP=coverage-guided-lower-level-rich-text-multiblock
 CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION=rtc-coverage-guided-lower-level-rich-text-multiblock
+CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-rich-text-multiblock-20260518/holds/coverage-guided-lower-level-rich-text-multiblock.hold
+CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP=coverage-guided-lower-level-table-query-array-crdt
+CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION=rtc-coverage-guided-lower-level-table-query-array-crdt
 
 SESSION=rtc-structural-issue-watchdog
 FINDINGS=$BASE/current-structural-findings.tsv
@@ -52,6 +55,29 @@ tmux_sessions() {
 
 has_session() {
 	tmux_sessions | grep -Fxq "$1"
+}
+
+coverage_supervisor_session_live_for_root() {
+	local coverage_root=$1 state_session suffix scoped_session
+
+	state_session=$(
+		node -e "const fs = require('fs'); try { const state = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); if (typeof state.supervisorSession === 'string') process.stdout.write(state.supervisorSession); } catch {}" \
+			"$coverage_root/novelty-state.json" 2>/dev/null || true
+	)
+	suffix=$(basename "$coverage_root" | sed -E 's/[^A-Za-z0-9_.-]+/-/g; s/^-+//; s/-+$//')
+	scoped_session="rtc-coverage-guided-supervisor-$suffix"
+	if [ -n "$state_session" ]; then
+		has_session "$state_session"
+	else
+		has_session rtc-coverage-guided-supervisor || has_session "$scoped_session"
+	fi
+}
+
+coverage_supervisor_session_live_after_grace() {
+	local coverage_root=$1
+
+	sleep 12
+	coverage_supervisor_session_live_for_root "$coverage_root"
 }
 
 active_repair_count() {
@@ -223,10 +249,14 @@ check_coverage_supervisor_root_agreement() {
 	scoped_session="rtc-coverage-guided-supervisor-$suffix"
 	if [ -n "$state_session" ]; then
 		if ! has_session "$state_session"; then
-			emit_finding "$out" high "coverage-guided" "supervisor-session-missing" "$coverage_root/novelty-state.json session=$state_session" "restart or rebind the coverage supervisor session recorded for the current root"
+			if ! coverage_supervisor_session_live_after_grace "$coverage_root"; then
+				emit_finding "$out" high "coverage-guided" "supervisor-session-missing" "$coverage_root/novelty-state.json session=$state_session" "restart or rebind the coverage supervisor session recorded for the current root"
+			fi
 		fi
 	elif ! has_session rtc-coverage-guided-supervisor && ! has_session "$scoped_session"; then
-		emit_finding "$out" high "coverage-guided" "supervisor-session-missing" "$coverage_root expected=rtc-coverage-guided-supervisor or $scoped_session" "restart the coverage supervisor for the current root"
+		if ! coverage_supervisor_session_live_after_grace "$coverage_root"; then
+			emit_finding "$out" high "coverage-guided" "supervisor-session-missing" "$coverage_root expected=rtc-coverage-guided-supervisor or $scoped_session" "restart the coverage supervisor for the current root"
+		fi
 	fi
 }
 
@@ -289,6 +319,11 @@ coverage_guided_lower_level_satisfied() {
 	fi
 	if [ -f "$CG_LOWER_LEVEL_B64_HOLD_FILE" ] &&
 		grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
+		if [ -f "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE" ] &&
+			grep -Eq "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP|rtc-table-query-array-crdt|table-query-array" "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE"; then
+			has_session "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION"
+			return
+		fi
 		has_session "$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION"
 		return
 	fi

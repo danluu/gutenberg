@@ -182,18 +182,27 @@ async function runWpEnvStatusCheck() {
 		}
 	);
 	const chunks = [];
+	const timeout = setTimeout( () => {
+		result.kill( 'SIGTERM' );
+		setTimeout( () => result.kill( 'SIGKILL' ), 5000 ).unref();
+	}, 120000 );
 
 	result.stdout.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
 	result.stderr.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
 
 	const { code } = await new Promise( ( resolve, reject ) => {
 		result.on( 'error', reject );
-		result.on( 'close', ( exitCode ) => resolve( { code: exitCode } ) );
+		result.on( 'close', ( exitCode ) => {
+			clearTimeout( timeout );
+			resolve( { code: exitCode } );
+		} );
 	} );
 
 	if ( code !== 0 || ! chunks.join( '' ).includes( 'status: running' ) ) {
 		throw new Error(
-			'wp-env-test is not running. Start it before launching parallel fuzz lanes.'
+			`wp-env-test is not running. Start it before launching parallel fuzz lanes.\n${ chunks.join(
+				''
+			) }`
 		);
 	}
 }
@@ -288,6 +297,10 @@ function truncateOutput( output ) {
 	return `${ trimmed.slice( 0, 4000 ) }\n...<truncated>`;
 }
 
+async function wait( milliseconds ) {
+	await new Promise( ( resolve ) => setTimeout( resolve, milliseconds ) );
+}
+
 async function refreshWpEnvAfterFailedHealthCheck( error ) {
 	process.stderr.write(
 		`wp-env-test install health check failed; restarting wp-env-test once before launching lanes.\n${ truncateOutput(
@@ -304,10 +317,28 @@ async function refreshWpEnvAfterFailedHealthCheck( error ) {
 		);
 	}
 
-	const startResult = await runWpEnvLifecycleCommand(
-		'start',
-		10 * 60 * 1000
-	);
+	let startResult = await runWpEnvLifecycleCommand( 'start', 10 * 60 * 1000 );
+	if ( startResult.code !== 0 ) {
+		process.stderr.write(
+			`wp-env-test start exited with code=${ startResult.code } during health recovery; retrying once after cleanup.\n${ truncateOutput(
+				startResult.output
+			) }\n`
+		);
+		await wait( 10000 );
+		const retryStopResult = await runWpEnvLifecycleCommand( 'stop', 120000 );
+		if ( retryStopResult.code !== 0 ) {
+			process.stderr.write(
+				`wp-env-test retry stop exited with code=${ retryStopResult.code } during health recovery.\n${ truncateOutput(
+					retryStopResult.output
+				) }\n`
+			);
+		}
+		await wait( 10000 );
+		startResult = await runWpEnvLifecycleCommand(
+			'start',
+			10 * 60 * 1000
+		);
+	}
 	if ( startResult.code !== 0 ) {
 		throw new Error(
 			`wp-env-test restart failed during health recovery.\n${ startResult.output }`

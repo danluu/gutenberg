@@ -290,6 +290,7 @@ campaign_roots = [
 	("gap-booster", "/media/volume/danluu-fuzz-data/rtc-gap-booster-20260515"),
 	("unit-property", "/media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516"),
 	("coverage-guided-lower-level", "/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516"),
+	("protocol-server", "/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516/protocol"),
 ]
 group_paths = []
 run_roots = defaultdict(set)

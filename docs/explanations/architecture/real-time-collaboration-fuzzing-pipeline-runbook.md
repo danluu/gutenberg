@@ -352,14 +352,6 @@ The remote launchers are intentionally split by ownership:
 
 -   `rtc-coverage-guided-start-remote.sh` starts the coverage-guided novelty
     monitor and its generated supervisor groups.
-    The novelty monitor must only trust `supervisor-state.json` when that file's
-    `outputDir` is exactly the current novelty output root. If a default tmux
-    supervisor session is alive but has not written matching current-root state,
-    the monitor switches to an output-scoped supervisor session or restarts the
-    stale supervisor after the startup grace period. Startup heartbeats must not
-    overwrite a completed full `novelty-status.md`; full-status preservation is
-    valid only when the loaded `novelty-state.json.outputDir` matches the
-    current output root.
 -   `rtc-coverage-guided-lower-level-start-remote.sh` starts the isolated
     rich-text/CRDT lower-level runner. It emits V8 coverage counters and
     semantic feature counters, and keeps corpus inputs for either kind of new
@@ -445,10 +437,7 @@ The remote launchers are intentionally split by ownership:
     with a live tmux session, recent reconcile/temp-file errors, prefix tmux
     session masking, repeated guard restarts, passive PR07C/runtime-readiness
     classifications, and current-run duplicate/noise dominance that is still
-    visible in `novelty-status.md`. It also checks that the current
-    coverage-guided root, novelty status, `supervisor-state.json.outputDir`, and
-    live supervisor tmux session agree. Historical repeated-restart rows should
-    not keep firing after the corresponding pool is currently satisfied. It writes
+    visible in `novelty-status.md`. It writes
     `/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518/current-structural-watchdog-status.md`
     and launches bounded `rtc-structural-repair-*` Codex jobs for high-severity
     findings. Those jobs may patch Jetstream scripts and restart only the
@@ -1721,14 +1710,6 @@ NODE
 The Jetstream fix-progress loops are intentionally separate from the fuzzing
 lanes, but they must share state. In particular:
 
--   `bin/rtc-artifact-index-loop-remote.sh` runs as
-    `rtc-artifact-index-loop` and writes status to
-    `/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518/current-artifact-index-status.md`.
-    It maintains small TSV indexes for artifacts, push-manifest rows,
-    classification rows, branches, runs, and manifest paths. Controller loops
-    should query these files first and fall back to bounded `find` scans only
-    when the index is missing or stale. This keeps PR progress, publication,
-    and blocker classification from repeatedly walking historical run trees.
 -   `bin/rtc-critical-path-pr-executor-loop-remote.sh` consumes the local
     publication manifest at
     `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/latest-local-publish-manifest.tsv`.
@@ -1736,9 +1717,7 @@ lanes, but they must share state. In particular:
     and only gates that reserved slot under severe or unknown resource pressure.
     The lane must produce `validation.tsv`, `classification.tsv`,
     `repair-branch.txt`, and `report.md`; it must not classify an existing
-    `runtime-readiness-blocked` replay as completed progress. It queries the
-    artifact index for latest PR07C owner reports, terminal classification
-    files, and fresh post-terminal evidence before using fallback scans.
+    `runtime-readiness-blocked` replay as completed progress.
 -   `bin/rtc-pr-finalization-loop-remote.sh` runs two finalization jobs at most,
     checks every five minutes, and includes the local publication manifest in
     its context so GitHub publishing from the local host clears stale
@@ -1746,45 +1725,6 @@ lanes, but they must share state. In particular:
 -   `bin/rtc-deferred-work-promotion-loop-remote.sh` runs up to three deferred
     promotion jobs, rotates families every five minutes, and records loop pid
     and script mtime in status so a patched-but-not-restarted loop is visible.
--   `bin/rtc-pr-progress-controller-remote.sh` runs as
-    `rtc-pr-progress-controller-loop` and writes status to
-    `/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/current-pr-progress-controller-status.md`.
-    It is the product-PR progress scheduler. It builds a PR progress table,
-    writes controller push manifests for the local publisher, runs the standard
-    persona control loop every two controller cycles, and launches bounded PR
-    progress jobs only when they can change a branch, blocker, publication, or
-    downscope state. It preserves fuzzing/discovery by enforcing a discovery
-    reserve before starting heavy PR jobs; analysis/persona jobs may continue
-    while heavy browser/e2e PR jobs wait. It queries the artifact index for the
-    latest PR07C owner replay report and owner matrix before falling back to
-    bounded scans. Repeated `keep_runtime_held` PR07C owner classifications are
-    treated as consumed until newer owner evidence appears, so the controller
-    does not relaunch equivalent owner-matrix jobs. Failed product-candidate
-    branches with an allowed `launch-branch-repair` decision get a bounded
-    repair lane; if the branch only failed because validation used an
-    over-broad base, the controller emits a manifest-only repaired push
-    manifest instead of spending a Codex job. Existing branch-repair manifests
-    and local publication records are terminal controller state: the progress
-    table marks those branches as `manifest-repaired` or `published`, the
-    branch-repair launcher does not regenerate the same repair every cycle, and
-    the controller push manifest filters out already-published rows and
-    branches with explicit `publish-ready=no` decisions. The controller accepts
-    `launch-branch-repair`, `repair-branch`, and `repair-ready` persona actions
-    for repair scheduling, and PR15 chain-level publication holds are applied
-    to the individual PR15 variant branches. When a decision table exists,
-    green product-candidate rows are not enough by themselves: ordinary
-    publication requires an exact `publish-ready=yes` decision for that branch.
-    This prevents broad stale manifests from re-opening downscoped duplicate
-    branches or every variant in a stack while still allowing concrete
-    branch-repair manifests to publish. The exception is the explicit
-    `recompute-held-children=PR15-after-PR14B` decision: after PR14B is
-    published, the controller deterministically exposes only the next
-    unpublished `*-on-pr14b` PR15 child in stack order. That chain selector
-    checks the current `danluu/rtc-pr-progress-*` destination for the exact
-    source branch, so old cycle branch publications cannot satisfy the parent
-    gate. PR15 stack order overrides exact `publish-ready=yes` rows for later
-    children; future children stay held until their progress-controller parent
-    branch is actually published.
 -   `bin/rtc-pr-split-review-loop-remote.sh` includes the local publication
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that
@@ -1796,22 +1736,7 @@ lanes, but they must share state. In particular:
     after a status refresh rather than running it as a separate polling daemon.
     It reads Jetstream push manifests, asks Codex for a conservative push plan,
     validates refs and SHAs deterministically, pushes safe branches to `danluu`,
-    and writes the resulting local publish manifest back to Jetstream. It also
-    reads controller-generated push manifests under the PR progress controller
-    directory, so controller publication requests do not require GitHub access
-    from Jetstream. For PR-progress controller output, it first reads
-    `current-control-decisions.tsv` and deterministically pushes only
-    `publish-ready` rows with `allowed=yes`, plus controller-generated
-    branch-repair manifests whose validation summary says the repaired base
-    check passed, before starting the slower snapshot collection or Codex
-    planning path. This keeps branch publication from being blocked by stale
-    snapshot hashes, large artifact scans, or planner latency.
-    The status collector's branch audit must also fetch
-    `danluu/rtc-pr-progress-*` refs and include verified progress-controller
-    rows, otherwise pushed branches will still appear as missing links in the
-    PR status report.
-    It queries the artifact index's manifest-path TSV before falling back to
-    historical `find` walks over run directories.
+    and writes the resulting local publish manifest back to Jetstream.
 
 After changing one of these scripts on Jetstream, restart the matching tmux
 session on the `rtc-fuzz` socket and confirm that the status file shows the new

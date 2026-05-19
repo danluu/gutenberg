@@ -293,12 +293,20 @@ cleanup_optional_browser_process_groups() {
 shed_optional_browser_pools_if_needed() {
 	local reason=$1
 	local now=$2
+	local browser_live_lanes=${3:-0}
+	local e2e_floor=${4:-24}
 	local last_shed session killed=0
 	if [ "$reason" != "severe_pressure" ]; then
 		return 1
 	fi
 	if [ "$ALLOW_OPTIONAL_BROWSER_SHED" != "1" ]; then
 		echo "[$now] optional browser shedding skipped under severe pressure; set RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHED=1 to enable it" >> "$LOG"
+		return 1
+	fi
+	if [[ "$browser_live_lanes" =~ ^[0-9]+$ ]] &&
+		[[ "$e2e_floor" =~ ^[0-9]+$ ]] &&
+		[ "$browser_live_lanes" -le "$e2e_floor" ]; then
+		echo "[$now] optional browser shedding skipped under severe pressure; live_browser_lanes=$browser_live_lanes floor=$e2e_floor" >> "$LOG"
 		return 1
 	fi
 	if cleanup_optional_browser_process_groups "$now"; then
@@ -384,6 +392,22 @@ scale_up_backlog_clear() {
 			exit !(loadv <= ncpu * 0.86 && load5v <= ncpu * 0.88 && load15v <= ncpu * 0.92);
 		}
 	'
+}
+
+e2e_floor_repair_allowed() {
+	local reason=$1 cpu=$2 load_value=$3 load5_value=$4 ncpu=$5
+	if [ "$reason" = "severe_pressure" ]; then
+		return 1
+	fi
+	if [ "$reason" = "pressure" ] || [ "$reason" = "high_pressure" ]; then
+		awk -v cpu="$cpu" -v loadv="$load_value" -v load5v="$load5_value" -v ncpu="$ncpu" '
+			BEGIN {
+				exit !(cpu < 85 && loadv < ncpu * 0.90 && load5v < ncpu * 0.95);
+			}
+		'
+		return
+	fi
+	return 0
 }
 
 materialization_snapshot() {
@@ -839,17 +863,13 @@ while true; do
 	e2e_repair_target=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_TARGET_GROUPS:-4}
 	e2e_repair_max=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_MAX_GROUPS:-5}
 	if [ "${browser_live_lanes:-0}" -lt "$e2e_floor" ] &&
-			[ "$reason" != "pressure" ] &&
-			[ "$reason" != "high_pressure" ] &&
-			[ "$reason" != "severe_pressure" ] &&
+			e2e_floor_repair_allowed "$reason" "$cpu" "$load" "$load_five" "$ncpu" &&
 			[ "$desired_target" -lt "$e2e_repair_target" ]; then
 		desired_target="$e2e_repair_target"
 		desired_max="$e2e_repair_max"
 		reason=e2e_floor_repair
 	fi
-	if [ "$reason" != "pressure" ] &&
-			[ "$reason" != "high_pressure" ] &&
-			[ "$reason" != "severe_pressure" ] &&
+	if e2e_floor_repair_allowed "$reason" "$cpu" "$load" "$load_five" "$ncpu" &&
 			[ "${desired_target:-0}" -lt "${target:-0}" ] &&
 			[ "${enabled:-0}" -gt "${desired_target:-0}" ]; then
 		projected_browser_lanes=$(( ${browser_live_lanes:-0} - ( ${enabled:-0} - ${desired_target:-0} ) ))
@@ -924,7 +944,7 @@ while true; do
 		up_streak=0
 		down_streak=0
 	fi
-	if shed_optional_browser_pools_if_needed "$reason" "$now"; then
+	if shed_optional_browser_pools_if_needed "$reason" "$now" "$browser_live_lanes" "$e2e_floor"; then
 		if [ "$action" = "scale_down" ]; then
 			action=scale_down_and_shed_optional_browser
 		else

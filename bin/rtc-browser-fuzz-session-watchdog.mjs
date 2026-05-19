@@ -22,21 +22,41 @@ const STATUS_RELATIVE_PATH =
 	'novelty-status.md';
 const CLEANUP_COMMAND =
 	process.env.RTC_FUZZ_SESSION_WATCHDOG_CLEANUP_COMMAND ?? '';
+const IS_COVERAGE_GUIDED_NOVELTY_WATCHDOG =
+	SESSION === 'rtc-coverage-guided-novelty';
 const POLL_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_SESSION_WATCHDOG_POLL_MS',
 	60000
 );
-const STALE_MS = getPositiveIntegerEnv(
+const REQUESTED_STALE_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_SESSION_WATCHDOG_STALE_MS',
 	Math.max( POLL_MS * 5, 5 * 60 * 1000 )
+);
+const COVERAGE_GUIDED_MIN_STALE_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_SESSION_WATCHDOG_COVERAGE_GUIDED_MIN_STALE_MS',
+	15 * 60 * 1000
+);
+const STALE_MS = Math.max(
+	REQUESTED_STALE_MS,
+	IS_COVERAGE_GUIDED_NOVELTY_WATCHDOG ? COVERAGE_GUIDED_MIN_STALE_MS : 0
 );
 const MIN_RESTART_INTERVAL_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_SESSION_WATCHDOG_MIN_RESTART_INTERVAL_MS',
 	5 * 60 * 1000
 );
-const START_GRACE_MS = getPositiveIntegerEnv(
+const REQUESTED_START_GRACE_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_SESSION_WATCHDOG_START_GRACE_MS',
 	2 * 60 * 1000
+);
+const COVERAGE_GUIDED_MIN_START_GRACE_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_SESSION_WATCHDOG_COVERAGE_GUIDED_MIN_START_GRACE_MS',
+	10 * 60 * 1000
+);
+const START_GRACE_MS = Math.max(
+	REQUESTED_START_GRACE_MS,
+	IS_COVERAGE_GUIDED_NOVELTY_WATCHDOG
+		? COVERAGE_GUIDED_MIN_START_GRACE_MS
+		: 0
 );
 const RUN_ONCE = process.env.RTC_FUZZ_SESSION_WATCHDOG_RUN_ONCE === '1';
 const LOG_PATH =
@@ -151,6 +171,62 @@ async function hasSession() {
 	return result.ok;
 }
 
+async function sessionBinding( outputDir ) {
+	if ( ! outputDir || ! IS_COVERAGE_GUIDED_NOVELTY_WATCHDOG ) {
+		return {
+			ok: true,
+			checked: false,
+			reason: 'not-required',
+		};
+	}
+
+	const result = await runCommand(
+		'tmux',
+		[
+			'list-panes',
+			'-t',
+			SESSION,
+			'-F',
+			'#{pane_pid}\t#{pane_start_command}',
+		],
+		{
+			timeout: 10000,
+			maxBuffer: 1024 * 1024,
+		}
+	);
+	if ( ! result.ok ) {
+		return {
+			ok: false,
+			checked: true,
+			reason: 'list-panes-failed',
+			stdout: truncateOutput( result.stdout ),
+			stderr: truncateOutput( result.stderr ),
+		};
+	}
+
+	const panes = result.stdout
+		.split( /\r?\n/ )
+		.map( ( line ) => line.trim() )
+		.filter( Boolean );
+	const matchingPane = panes.find( ( line ) => line.includes( outputDir ) );
+	if ( matchingPane ) {
+		return {
+			ok: true,
+			checked: true,
+			reason: 'matched-current-output-dir',
+			panes: panes.map( truncateOutput ),
+		};
+	}
+
+	return {
+		ok: false,
+		checked: true,
+		reason: 'session-bound-to-different-output-dir',
+		expectedOutputDir: outputDir,
+		panes: panes.map( truncateOutput ),
+	};
+}
+
 async function stateFreshness( outputDir ) {
 	if ( ! outputDir ) {
 		return {
@@ -209,12 +285,15 @@ async function writeWatchdogState( fields ) {
 				session: SESSION,
 				baseDir: BASE_DIR,
 				currentOutputFile: CURRENT_OUTPUT_FILE,
-				stateRelativePath: STATE_RELATIVE_PATH,
-				statusRelativePath: STATUS_RELATIVE_PATH,
-				staleMs: STALE_MS,
-				...fields,
-			},
-			null,
+					stateRelativePath: STATE_RELATIVE_PATH,
+					statusRelativePath: STATUS_RELATIVE_PATH,
+					staleMs: STALE_MS,
+					requestedStaleMs: REQUESTED_STALE_MS,
+					startGraceMs: START_GRACE_MS,
+					requestedStartGraceMs: REQUESTED_START_GRACE_MS,
+					...fields,
+				},
+				null,
 			2
 		) + '\n'
 	);
@@ -305,6 +384,15 @@ async function monitorOnce() {
 		return;
 	}
 
+	const binding = await sessionBinding( outputDir );
+	if ( ! binding.ok ) {
+		await restart( 'stale-session-binding', {
+			...freshness,
+			binding,
+		} );
+		return;
+	}
+
 	if ( ageMs > STALE_MS ) {
 		const outputAgeMs = outputDir
 			? Date.now() - ( ( await fileMtimeMs( outputDir ) ) ?? Date.now() )
@@ -326,6 +414,7 @@ async function monitorOnce() {
 		status: 'healthy',
 		sessionExists,
 		freshness,
+		binding,
 	} );
 }
 
@@ -344,6 +433,9 @@ await event( {
 	baseDir: BASE_DIR,
 	currentOutputFile: CURRENT_OUTPUT_FILE,
 	staleMs: STALE_MS,
+	requestedStaleMs: REQUESTED_STALE_MS,
+	startGraceMs: START_GRACE_MS,
+	requestedStartGraceMs: REQUESTED_START_GRACE_MS,
 	pollMs: POLL_MS,
 	minRestartIntervalMs: MIN_RESTART_INTERVAL_MS,
 } );

@@ -9,16 +9,18 @@ const repo = process.env.RTC_CG_LOWER_LEVEL_REPO || process.cwd();
 const runRoot = process.env.RTC_CG_LOWER_LEVEL_RUN_ROOT;
 const groupName =
 	process.env.RTC_CG_LOWER_LEVEL_GROUP ||
-	'coverage-guided-lower-level-rich-text-crdt';
+	'coverage-guided-lower-level-rich-text-multiblock';
 const testPath =
 	process.env.RTC_CG_LOWER_LEVEL_TEST_PATH ||
 	'packages/core-data/src/utils/test/rtc-rich-text-crdt-merge.coverage-fuzz.test.js';
 const fuzzLevel = 'coverage-guided-lower-level';
 const profile =
-	process.env.RTC_CG_LOWER_LEVEL_PROFILE || 'rtc-rich-text-crdt-merge';
+	process.env.RTC_CG_LOWER_LEVEL_PROFILE || 'rtc-rich-text-crdt-multiblock';
 const transport = 'in-process';
 const coverageEngine = 'v8-node-coverage';
 const engine = 'v8-node-coverage-guided-mutator';
+const nativeIntegration =
+	'closest-isolated-coverage-guided-alternative; JS/TS target uses V8 coverage feedback instead of C/C++ AFL/libFuzzer';
 const runStarted = process.env.RTC_CG_LOWER_LEVEL_RUN_STARTED || 'manual';
 const batchSize = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_BATCH_SIZE', 'RTC_CG_LOWER_LEVEL_RUNS' ],
@@ -28,7 +30,7 @@ const batchSize = readIntegerEnv(
 );
 const maxInputBytes = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_MAX_INPUT_BYTES' ],
-	64,
+	160,
 	1,
 	4096
 );
@@ -67,10 +69,24 @@ const maxMinimizeInputs = readIntegerEnv(
 	1,
 	1000
 );
+const maxFailureIsolationsPerRun = readIntegerEnv(
+	[ 'RTC_CG_LOWER_LEVEL_MAX_FAILURE_ISOLATIONS_PER_RUN' ],
+	Number.MAX_SAFE_INTEGER,
+	0,
+	Number.MAX_SAFE_INTEGER
+);
+const repeatFailureIsolationEvery = readIntegerEnv(
+	[ 'RTC_CG_LOWER_LEVEL_REPEAT_FAILURE_ISOLATION_EVERY' ],
+	0,
+	0,
+	Number.MAX_SAFE_INTEGER
+);
 const coverageTargets = coverageTargetsForProfile( profile, testPath );
 const executionStrategy = 'direct-node-jest-per-batch';
 const mutationEngine = isParserTarget()
 	? 'parser-dictionary-byte-mutator'
+	: isRichTextCrdtTarget()
+	? 'rich-text-crdt-dictionary-byte-mutator'
 	: 'byte-mutator';
 
 if ( ! runRoot ) {
@@ -92,7 +108,7 @@ const jestConfigPath =
 	process.env.RTC_CG_LOWER_LEVEL_JEST_CONFIG || 'test/unit/jest.config.js';
 const jestRunnerPath =
 	process.env.RTC_CG_LOWER_LEVEL_JEST_RUNNER ||
-	'node_modules/@wordpress/scripts/scripts/test-unit-jest.js';
+	'packages/scripts/scripts/test-unit-jest.js';
 const runnerArgs = [
 	jestRunnerPath,
 	'--config',
@@ -164,10 +180,13 @@ appendEvent( {
 	semanticFeatureFeedback: true,
 	failureIsolation: minimizeFailures,
 	maxMinimizeInputs,
+	maxFailureIsolationsPerRun,
+	repeatFailureIsolationEvery,
 	mutationEngine,
 } );
 
 let coverageState = readCoverageState();
+const failureIsolationHistory = readFailureIsolationHistory();
 let attempt = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_ATTEMPT_START', 'RTC_CG_LOWER_LEVEL_SEED_START' ],
 	0,
@@ -175,6 +194,7 @@ let attempt = readIntegerEnv(
 	Number.MAX_SAFE_INTEGER
 );
 let attemptsRun = 0;
+let cumulativeTestExecutionCount = 0;
 
 while ( true ) {
 	const started = Date.now();
@@ -279,14 +299,29 @@ while ( true ) {
 		result.stdout || '',
 		result.stderr || ''
 	);
+	const failureCanonicalKey = canonicalFailureKey( failure );
+	const newFailureKey =
+		failure?.kind === 'oracle-failure' &&
+		failureCanonicalKey &&
+		! coverageState.failureKeys.includes( failureCanonicalKey );
 
-	if ( newCoverageKeys.length > 0 || newFeatureKeys.length > 0 ) {
+	if (
+		newCoverageKeys.length > 0 ||
+		newFeatureKeys.length > 0 ||
+		newFailureKey
+	) {
 		coverageState = {
 			keys: [
 				...new Set( [ ...coverageState.keys, ...coverageKeys ] ),
 			].sort(),
 			featureKeys: [
 				...new Set( [ ...coverageState.featureKeys, ...featureKeys ] ),
+			].sort(),
+			failureKeys: [
+				...new Set( [
+					...coverageState.failureKeys,
+					...( newFailureKey ? [ failureCanonicalKey ] : [] ),
+				] ),
 			].sort(),
 			updatedAt: new Date().toISOString(),
 		};
@@ -295,10 +330,14 @@ while ( true ) {
 			batch,
 			newCoverageKeys.length > 0
 				? `cov-${ attempt }`
-				: `feature-${ attempt }`
+				: newFeatureKeys.length > 0
+				? `feature-${ attempt }`
+				: `failure-key-${ attempt }`
 		);
 	}
 
+	const minimization =
+		exitCode !== 0 ? isolateFailureInputs( batch, attempt, failure ) : null;
 	const failureDetails =
 		exitCode !== 0
 			? saveFailureInputs(
@@ -306,7 +345,7 @@ while ( true ) {
 					attempt,
 					logPath,
 					failure,
-					isolateFailureInputs( batch, attempt, failure )
+					minimization
 			  )
 			: null;
 	const failureArtifactDir = failureDetails?.dir ?? null;
@@ -317,6 +356,7 @@ while ( true ) {
 		keepSuccessCoverage ||
 		! removeCoverageDir( coverageDir );
 	const durationMs = Date.now() - started;
+	cumulativeTestExecutionCount += batch.length;
 
 	const event = {
 		kind: 'seed-attempt-complete',
@@ -326,6 +366,7 @@ while ( true ) {
 		attempt,
 		inputCount: batch.length,
 		testExecutionCount: batch.length,
+		cumulativeTestExecutionCount,
 		runnerCommand,
 		executionStrategy,
 		startupAmortizationInputs: batch.length,
@@ -339,7 +380,8 @@ while ( true ) {
 		failureArtifactDir,
 		failureKind: failure?.kind ?? null,
 		failureSummary: failure?.summary ?? null,
-		failureCanonicalKey: canonicalFailureKey( failure ),
+		failureCanonicalKey,
+		newFailureKey: Boolean( newFailureKey ),
 		minimizeFailures,
 		maxMinimizeInputs,
 		minimizedFailureInputCount:
@@ -347,6 +389,7 @@ while ( true ) {
 		minimizedFailureIndexes: failureDetails?.minimizedFailureIndexes ?? [],
 		failureIsolationCheckedInputCount:
 			failureDetails?.failureIsolationCheckedInputCount ?? null,
+		failureIsolationReason: minimization?.reason ?? null,
 		failureIsolationTruncated:
 			failureDetails?.failureIsolationTruncated ?? false,
 		failureIsolationAttempted:
@@ -461,9 +504,10 @@ function writeSupervisorGroups() {
 			coverageTargets,
 			failureIsolation: minimizeFailures,
 			maxMinimizeInputs,
+			maxFailureIsolationsPerRun,
+			repeatFailureIsolationEvery,
 			mutationEngine,
-			nativeIntegration:
-				'closest-isolated-coverage-guided-alternative; JS/TS target uses V8 coverage feedback instead of C/C++ AFL/libFuzzer',
+			nativeIntegration,
 		},
 	];
 
@@ -483,6 +527,7 @@ function appendEvent( event ) {
 		transport,
 		engine,
 		coverageEngine,
+		nativeIntegration,
 		target: testPath,
 		actionProfile: profile,
 		...event,
@@ -540,6 +585,10 @@ function initialCorpusSeeds() {
 			Buffer.from( 'table-query-array-append-row' ),
 			Buffer.from( 'table-query-array-prepend-row' ),
 			Buffer.from( 'table-query-array-delete-row' ),
+			Buffer.from( 'table-query-array-insert-cell' ),
+			Buffer.from( 'table-query-array-delete-cell' ),
+			Buffer.from( 'table-query-array-reorder-row' ),
+			Buffer.from( 'table-query-array-reorder-cell' ),
 			Buffer.from( 'stale-local-table-snapshot' ),
 			Buffer.from( [ 0, 1, 2, 3, 5, 8, 13, 21 ] ),
 			Buffer.from( [ 255, 128, 64, 32, 16, 8, 4, 2 ] ),
@@ -551,6 +600,10 @@ function initialCorpusSeeds() {
 		Buffer.from( 'formatted-cursor-path' ),
 		Buffer.from( 'old-html-update-new-html' ),
 		Buffer.from( 'entity-&-cursor-delta' ),
+		Buffer.from( '<strong>a</strong>&nbsp;b' ),
+		Buffer.from( '<a href=x>a&amp;b</a>' ),
+		Buffer.from( '<code>&copy</code><em>z</em>' ),
+		Buffer.from( 'cursor<em>&notin;</em>end' ),
 		Buffer.from( [ 0, 1, 2, 3, 5, 8, 13, 21 ] ),
 		Buffer.from( [ 255, 128, 64, 32, 16, 8, 4, 2 ] ),
 	];
@@ -593,11 +646,54 @@ function readCoverageState() {
 			featureKeys: Array.isArray( parsed.featureKeys )
 				? parsed.featureKeys
 				: [],
+			failureKeys: Array.isArray( parsed.failureKeys )
+				? parsed.failureKeys
+				: [],
 			updatedAt: parsed.updatedAt || null,
 		};
 	} catch {
-		return { keys: [], featureKeys: [], updatedAt: null };
+		return { keys: [], featureKeys: [], failureKeys: [], updatedAt: null };
 	}
+}
+
+function readFailureIsolationHistory() {
+	const history = new Map();
+
+	try {
+		const lines = fs
+			.readFileSync( rootEventsPath, 'utf8' )
+			.split( /\r?\n/ );
+
+		for ( const line of lines ) {
+			if ( ! line.trim() ) {
+				continue;
+			}
+
+			let event;
+			try {
+				event = JSON.parse( line );
+			} catch {
+				continue;
+			}
+
+			if (
+				event.kind !== 'seed-attempt-complete' ||
+				! event.failureCanonicalKey
+			) {
+				continue;
+			}
+
+			const key = String( event.failureCanonicalKey );
+			const record = history.get( key ) || { seen: 0, isolated: 0 };
+			record.seen++;
+			if ( event.failureIsolationAttempted ) {
+				record.isolated++;
+			}
+			history.set( key, record );
+		}
+	} catch {}
+
+	return history;
 }
 
 function writeCoverageState( state ) {
@@ -632,6 +728,9 @@ function makeBatch( attemptIndex ) {
 function mutateInput( input, attemptIndex, caseIndex ) {
 	if ( isParserTarget() ) {
 		return mutateParserInput( input, attemptIndex, caseIndex );
+	}
+	if ( isRichTextCrdtTarget() ) {
+		return mutateRichTextCrdtInput( input, attemptIndex, caseIndex );
 	}
 
 	const random = createRandom(
@@ -680,6 +779,77 @@ function isParserTarget() {
 		testPath.includes( 'parser' ) ||
 		testPath.includes( 'serialization' )
 	);
+}
+
+function isRichTextCrdtTarget() {
+	return (
+		profile.includes( 'rich-text-crdt' ) ||
+		testPath.includes( 'rich-text-crdt' )
+	);
+}
+
+function mutateRichTextCrdtInput( input, attemptIndex, caseIndex ) {
+	const random = createRandom(
+		attemptIndex * 1000003 + caseIndex * 9176 + 53
+	);
+	const fragments = [
+		'&copy',
+		'&copy;',
+		'&nbsp',
+		'&nbsp;',
+		'<em>a</em>',
+		'<strong>b</strong>',
+		'<code>x</code>',
+		'<a href="https://example.com">y</a>',
+		'abc xyz',
+	];
+	let text = input.toString( 'utf8' ).replace( /\0/g, '' );
+
+	if ( ! text.trim() ) {
+		text = fragments[ Math.floor( random() * fragments.length ) ];
+	}
+
+	const op = Math.floor( random() * 8 );
+	const fragment = fragments[ Math.floor( random() * fragments.length ) ];
+	const offset = Math.floor( random() * ( text.length + 1 ) );
+
+	if ( op === 0 ) {
+		text = `${ text.slice( 0, offset ) }${ fragment }${ text.slice(
+			offset
+		) }`;
+	} else if ( op === 1 && text.length > 1 ) {
+		const length = 1 + Math.floor( random() * Math.min( 16, text.length ) );
+		text = `${ text.slice( 0, offset ) }${ text.slice( offset + length ) }`;
+	} else if ( op === 2 ) {
+		text = `<strong>${ text }</strong>`;
+	} else if ( op === 3 ) {
+		text = `<em>${ text }</em>`;
+	} else if ( op === 4 ) {
+		text = text.replace( /&amp;|&copy;?|&nbsp;?/g, fragment );
+	} else if ( op === 5 && text.length > 0 ) {
+		const bytes = Buffer.from( text );
+		const byteOffset = Math.floor( random() * bytes.length );
+		bytes[ byteOffset ] = Math.floor( random() * 256 );
+		text = bytes.toString( 'latin1' );
+	} else if ( op === 6 ) {
+		text = `${ text }${ text.slice( 0, Math.min( 24, text.length ) ) }`;
+	} else {
+		text = `${ text.slice( 0, offset ) }${ String.fromCharCode(
+			32 + Math.floor( random() * 95 )
+		) }${ text.slice( offset ) }`;
+	}
+
+	if ( ! text.length ) {
+		text = fragment;
+	}
+	if ( text.length > maxInputBytes ) {
+		const start = Math.floor(
+			random() * ( text.length - maxInputBytes + 1 )
+		);
+		text = text.slice( start, start + maxInputBytes );
+	}
+
+	return Buffer.from( text );
 }
 
 function mutateParserInput( input, attemptIndex, caseIndex ) {
@@ -930,7 +1100,9 @@ function canonicalFailureKey( failure ) {
 	const summary = failure.summary || failure.kind || 'unknown-failure';
 	const explicit = summary.match( /\bRTC_[A-Z0-9_]+(?::[A-Za-z0-9_.-]+)*/u );
 	if ( explicit ) {
-		return explicit[ 0 ].replace( /:+$/, '' );
+		return canonicalizeExplicitFailureKey(
+			explicit[ 0 ].replace( /:+$/, '' )
+		);
 	}
 
 	const normalized = summary
@@ -941,6 +1113,18 @@ function canonicalFailureKey( failure ) {
 	return `${ failure.kind || 'failure' }:${
 		normalized || stableHash( summary )
 	}`;
+}
+
+function canonicalizeExplicitFailureKey( key ) {
+	return key
+		.split( ':' )
+		.filter(
+			( part ) =>
+				! /^(?:shape|markers|hash|direct-hash|adapter-hash|mismatch-hash)-/u.test(
+					part
+				)
+		)
+		.join( ':' );
 }
 
 function stableHash( value ) {
@@ -966,12 +1150,17 @@ function summarizeFailure( output ) {
 }
 
 function isolateFailureInputs( inputs, attemptIndex, failure ) {
-	if ( ! minimizeFailures || failure?.kind !== 'oracle-failure' ) {
+	const failureKey = canonicalFailureKey( failure );
+	const isolationSkipReason = reserveFailureIsolation( failure, failureKey );
+
+	if ( isolationSkipReason ) {
 		return {
 			attempted: false,
-			reason: minimizeFailures
-				? `skipped-${ failure?.kind ?? 'unknown' }`
-				: 'disabled',
+			reason: isolationSkipReason,
+			failureCanonicalKey: failureKey,
+			inputCount: inputs.length,
+			checkedInputCount: 0,
+			truncated: inputs.length > 0,
 			runs: [],
 			reproducers: [],
 		};
@@ -1002,6 +1191,51 @@ function isolateFailureInputs( inputs, attemptIndex, failure ) {
 		runs,
 		reproducers,
 	};
+}
+
+function reserveFailureIsolation( failure, failureKey ) {
+	if ( ! minimizeFailures ) {
+		return 'disabled';
+	}
+
+	if ( failure?.kind !== 'oracle-failure' ) {
+		return `skipped-${ failure?.kind ?? 'unknown' }`;
+	}
+
+	if ( ! failureKey ) {
+		return null;
+	}
+
+	const record = failureIsolationHistory.get( failureKey ) || {
+		seen: 0,
+		isolated: 0,
+	};
+	record.seen++;
+
+	const repeatDue =
+		repeatFailureIsolationEvery > 0 &&
+		record.seen % repeatFailureIsolationEvery === 0;
+	if ( record.isolated > 0 && ! repeatDue ) {
+		failureIsolationHistory.set( failureKey, record );
+		return `duplicate-canonical-failure:${ failureKey }`;
+	}
+
+	if ( totalFailureIsolations() >= maxFailureIsolationsPerRun ) {
+		failureIsolationHistory.set( failureKey, record );
+		return `run-isolation-cap:${ maxFailureIsolationsPerRun }`;
+	}
+
+	record.isolated++;
+	failureIsolationHistory.set( failureKey, record );
+	return null;
+}
+
+function totalFailureIsolations() {
+	let total = 0;
+	for ( const record of failureIsolationHistory.values() ) {
+		total += record.isolated || 0;
+	}
+	return total;
 }
 
 function runSingleInputForFailureIsolation( input, attemptIndex, inputIndex ) {

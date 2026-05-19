@@ -37,6 +37,7 @@ LOWER_LEVEL_BASE="${RTC_LOWER_LEVEL_BASE:-/media/volume/danluu-fuzz-data/rtc-low
 CG_LOWER_LEVEL_BASE="${RTC_CG_LOWER_LEVEL_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516}"
 NATIVE_ASSERT_BASE="${RTC_NATIVE_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516}"
 FUZZ_ASSERT_BASE="${RTC_FUZZ_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260515}"
+BACKEND_API_BASE="${RTC_BACKEND_API_BASE:-/media/volume/danluu-fuzz-data/rtc-backend-api-fuzz-20260518}"
 CODEX_BIN="${CODEX_BIN:-/home/exouser/.npm-global/bin/codex}"
 MODEL="${RTC_FUZZ_LEVEL_MIX_MODEL:-gpt-5.5}"
 REASONING="${RTC_FUZZ_LEVEL_MIX_REASONING:-xhigh}"
@@ -83,6 +84,72 @@ latest_coverage_root() {
   fi
 }
 
+protocol_current_root() {
+  local marker="$NATIVE_ASSERT_BASE/protocol/current-run-root.txt"
+  if [ -f "$marker" ]; then
+    sed -n '1p' "$marker"
+  else
+    ls -td "$NATIVE_ASSERT_BASE"/protocol/runs/* 2>/dev/null | head -1 || true
+  fi
+}
+
+backend_api_current_root() {
+  local marker="$BACKEND_API_BASE/current-run-root.txt"
+  if [ -f "$marker" ]; then
+    sed -n '1p' "$marker"
+  else
+    ls -td "$BACKEND_API_BASE"/runs/* 2>/dev/null | head -1 || true
+  fi
+}
+
+write_current_root_snapshot() {
+  local snapshot_file="$1"
+  {
+    printf 'browser-coverage-current\t%s\n' "$(latest_coverage_root)"
+    printf 'focused-current\t%s\n' "$(current_root "$FOCUSED_BASE")"
+    printf 'strict-current\t%s\n' "$(current_root "$STRICT_BASE")"
+    printf 'gap-current\t%s\n' "$(current_root "$GAP_BASE")"
+    printf 'unit-property-current\t%s\n' "$(current_root "$LOWER_LEVEL_BASE")"
+    printf 'protocol-current\t%s\n' "$(protocol_current_root)"
+    printf 'backend-api-current\t%s\n' "$(backend_api_current_root)"
+  } > "$snapshot_file"
+}
+
+root_from_snapshot() {
+  local snapshot_file="$1"
+  local wanted_label="$2"
+  local label root
+  while IFS=$'\t' read -r label root || [ -n "$label" ]; do
+    if [ "$label" = "$wanted_label" ]; then
+      printf '%s\n' "$root"
+      return
+    fi
+  done < "$snapshot_file"
+}
+
+root_snapshot_invariant_failures() {
+  local start_file="$1"
+  local end_file="$2"
+  awk -F '\t' '
+    FNR == NR {
+      start[$1] = $2
+      labels[$1] = 1
+      next
+    }
+    {
+      end[$1] = $2
+      labels[$1] = 1
+    }
+    END {
+      for (label in labels) {
+        if (start[label] != end[label]) {
+          printf "- TELEMETRY-INVARIANT-FAIL: current-run-root changed during context generation for %s: %s -> %s\n", label, start[label], end[label]
+        }
+      }
+    }
+  ' "$start_file" "$end_file" | sort
+}
+
 add_root() {
   local roots_file="$1"
   local label="$2"
@@ -117,7 +184,13 @@ add_process_roots() {
     root="$(tr '\0' '\n' 2>/dev/null < "$env_file" | sed -n "s/^${env_name}=//p" | sed -n '1p')"
     if [ "$label" = "coverage-guided-lower-process" ]; then
       case "$root" in
+        /tmp/rtc-cg-review*) continue ;;
+        /tmp/rtc-cg-lower-level-smoke-*) continue ;;
+        /tmp/rtc-cg-ll-smoke-*) continue ;;
+        /tmp/rtc-cg-lower-validate*) continue ;;
         /tmp/rtc-cg-lower-level-review*) continue ;;
+        */coverage-guided-lower-level-action-smoke/*) continue ;;
+        */coverage-guided-lower-level-smoke-*) continue ;;
       esac
     fi
     add_root "$roots_file" "$label" "$root"
@@ -134,6 +207,16 @@ add_protocol_process_roots() {
     if [ -n "$output_dir" ] && [ -n "$run_id" ]; then
       add_root "$roots_file" "protocol-process" "$output_dir/runs/$run_id"
     fi
+  done
+}
+
+add_backend_api_process_roots() {
+  local roots_file="$1"
+  local env_file root
+  for env_file in /proc/[0-9]*/environ; do
+    [ -r "$env_file" ] || continue
+    root="$(tr '\0' '\n' 2>/dev/null < "$env_file" | sed -n 's/^RTC_BACKEND_API_FUZZ_RUN_ROOT=//p' | sed -n '1p')"
+    add_root "$roots_file" "backend-api-process" "$root"
   done
 }
 
@@ -165,33 +248,50 @@ write_root_inventory() {
   lower_root="$(current_root "$LOWER_LEVEL_BASE")"
 
   add_root "$roots_file" "browser-coverage-current" "$coverage_root"
-  add_root_if_session_live "$roots_file" "focused-current" "$focused_root" "rtc-focused-shards"
-  add_root_if_session_live "$roots_file" "strict-current" "$strict_root" "rtc-fuzz-strict-expansion"
-  add_root_if_session_live "$roots_file" "gap-current" "$gap_root" "rtc-gap-booster"
+  add_root "$roots_file" "focused-current" "$focused_root"
+  add_root "$roots_file" "strict-current" "$strict_root"
+  add_root "$roots_file" "gap-current" "$gap_root"
   add_root "$roots_file" "unit-property-current" "$lower_root"
   add_coverage_supervisor_process_roots "$roots_file"
   add_process_roots "$roots_file" "unit-property-process" "RTC_LOWER_LEVEL_RUN_ROOT"
   add_process_roots "$roots_file" "coverage-guided-lower-process" "RTC_CG_LOWER_LEVEL_RUN_ROOT"
   add_protocol_process_roots "$roots_file"
+  add_backend_api_process_roots "$roots_file"
+  add_root_if_session_live "$roots_file" "protocol-current" "$(protocol_current_root)" "rtc-protocol-server-fuzz"
+  add_root_if_session_live "$roots_file" "backend-api-current" "$(backend_api_current_root)" "rtc-backend-api-fuzz"
 
   if [ -d "$FUZZ_ASSERT_BASE" ]; then
-    add_root "$roots_file" "fuzz-assert-base" "$FUZZ_ASSERT_BASE"
-    add_root "$roots_file" "fuzz-assert-latest-cycle" "$(ls -td "$FUZZ_ASSERT_BASE"/cycles/* 2>/dev/null | head -1 || true)"
+    local fuzz_assert_current fuzz_assert_latest
+    fuzz_assert_current="$(current_root "$FUZZ_ASSERT_BASE")"
+    fuzz_assert_latest="$(ls -td "$FUZZ_ASSERT_BASE"/cycles/* 2>/dev/null | head -1 || true)"
+    if [ -n "$fuzz_assert_current" ] && [ -f "$fuzz_assert_current/supervisor-groups.json" ]; then
+      add_root "$roots_file" "fuzz-assert-current" "$fuzz_assert_current"
+    elif [ -n "$fuzz_assert_latest" ] && [ -f "$fuzz_assert_latest/supervisor-groups.json" ]; then
+      add_root "$roots_file" "fuzz-assert-latest-cycle" "$fuzz_assert_latest"
+    else
+      add_root "$roots_file" "fuzz-assert-base" "$FUZZ_ASSERT_BASE"
+      add_root "$roots_file" "fuzz-assert-latest-cycle" "$fuzz_assert_latest"
+    fi
   fi
 
   awk -F '\t' 'NF == 2 && ! seen[$2]++ { print }' "$roots_file" > "$roots_file.tmp"
   mv "$roots_file.tmp" "$roots_file"
 }
 
-write_context() {
+write_context_once() {
   local run_dir="$1"
-  local coverage_root focused_root strict_root gap_root roots_file
-  coverage_root="$(latest_coverage_root)"
-  focused_root="$(current_root "$FOCUSED_BASE")"
-  strict_root="$(current_root "$STRICT_BASE")"
-  gap_root="$(current_root "$GAP_BASE")"
+  local coverage_root focused_root strict_root gap_root roots_file root_snapshot_start root_snapshot_end root_invariant_messages
+  root_snapshot_start="$run_dir/root-snapshot-start.tsv"
+  root_snapshot_end="$run_dir/root-snapshot-end.tsv"
+  write_current_root_snapshot "$root_snapshot_start"
+  coverage_root="$(root_from_snapshot "$root_snapshot_start" "browser-coverage-current")"
+  focused_root="$(root_from_snapshot "$root_snapshot_start" "focused-current")"
+  strict_root="$(root_from_snapshot "$root_snapshot_start" "strict-current")"
+  gap_root="$(root_from_snapshot "$root_snapshot_start" "gap-current")"
   roots_file="$run_dir/observed-roots.tsv"
   write_root_inventory "$roots_file"
+  write_current_root_snapshot "$root_snapshot_end"
+  root_invariant_messages="$(root_snapshot_invariant_failures "$root_snapshot_start" "$root_snapshot_end")"
   {
     echo "# RTC fuzz-level mix control context"
     echo
@@ -211,6 +311,12 @@ write_context() {
     echo "- Strict root: ${strict_root:-none}"
     echo "- Gap booster root: ${gap_root:-none}"
     echo
+    if [ -n "$root_invariant_messages" ]; then
+      echo "## Context Root Snapshot Invariant"
+      echo
+      printf '%s\n' "$root_invariant_messages"
+      echo
+    fi
     echo "## Observed Root Inventory"
     if [ -s "$roots_file" ]; then
       sed 's/^/- /; s/\t/: /' "$roots_file"
@@ -223,6 +329,7 @@ write_context() {
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from collections import Counter
@@ -300,6 +407,124 @@ def state_run_dirs(group_state):
             dirs.append(candidate)
     return dirs
 
+def pid_is_live(pid):
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except PermissionError:
+        return True
+    except Exception:
+        return False
+
+def pid_is_browser_runner(pid):
+    if not pid_is_live(pid):
+        return False
+    try:
+        args = subprocess.check_output(
+            ["ps", "-p", str(int(pid)), "-o", "args="],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return False
+    return "rtc-browser-fuzz-runner.mjs" in args
+
+def latest_event_age(run_dir):
+    latest = None
+    try:
+        entries = list(os.scandir(run_dir))
+    except OSError:
+        entries = []
+    for entry in entries:
+        if not entry.is_dir() or not entry.name.startswith("lane-"):
+            continue
+        events_path = os.path.join(entry.path, "events.ndjson")
+        try:
+            mtime = os.path.getmtime(events_path)
+        except OSError:
+            continue
+        latest = max(latest or mtime, mtime)
+    if latest is None:
+        return None
+    return int(max(0, time.time() - latest))
+
+def live_lane_evidence(run_dirs):
+    live_pids = []
+    event_ages = []
+    for run_dir in run_dirs:
+        event_age = latest_event_age(run_dir)
+        if event_age is not None:
+            event_ages.append(event_age)
+        lanes_path = os.path.join(run_dir, "lanes.json")
+        parsed, _ = load_json(lanes_path)
+        lanes = parsed.get("lanes") if isinstance(parsed, dict) else parsed
+        if not isinstance(lanes, list):
+            continue
+        for lane in lanes:
+            if not isinstance(lane, dict):
+                continue
+            pid = lane.get("pid")
+            if pid and pid_is_browser_runner(pid):
+                live_pids.append(int(pid))
+    return len(set(live_pids)), sorted(set(live_pids)), min(event_ages) if event_ages else None
+
+def tmux_sessions():
+    try:
+        proc = subprocess.run(
+            ["/usr/bin/tmux", "-L", "rtc-fuzz", "list-sessions", "-F", "#S"],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except Exception:
+        return set()
+    return {line.strip() for line in proc.stdout.splitlines() if line.strip()}
+
+tmux_session_set = tmux_sessions()
+
+def fresh_file(path, max_age=1800):
+    try:
+        return time.time() - os.path.getmtime(path) <= max_age
+    except OSError:
+        return False
+
+def fuzz_assert_activity(root):
+    status_path = os.path.join(root, "status.tsv")
+    events_path = os.path.join(root, "events.ndjson")
+    fresh_status = fresh_file(status_path)
+    fresh_events = fresh_file(events_path)
+    active_sessions = 0
+    status_state = "stale"
+    if fresh_status:
+        try:
+            lines = [line.strip() for line in open(status_path, errors="replace") if line.strip()]
+        except OSError:
+            lines = []
+        if lines:
+            latest = lines[-1]
+            status_match = re.search(r"\bstatus=([^\t ]+)", latest)
+            status_state = status_match.group(1) if status_match else "fresh-status"
+            active_match = re.search(r"\bactiveSessions=([0-9]+)", latest)
+            if active_match:
+                active_sessions = int(active_match.group(1))
+    session_live = any(
+        session.startswith("rtc-fuzz-only-asserts-loop")
+        or session.startswith("rtc-fuzz-assertion-runner")
+        or session.startswith("rtc-fuzz-only-assertion-runner")
+        or session.startswith("rtc-fuzz-asserts-")
+        for session in tmux_session_set
+    )
+    if fresh_status and active_sessions > 0:
+        return True, f"active-audited-status activeSessions={active_sessions}"
+    if fresh_events:
+        return True, "active-fresh-completed-output"
+    if fresh_status and session_live:
+        return True, f"active-fresh-status session-live status={status_state}"
+    if session_live:
+        return False, "stale-audited-output session-live"
+    return False, "stale-audited-output"
+
 counts = Counter()
 active_rows = []
 held_browser_rows = []
@@ -363,29 +588,55 @@ for label, root in roots:
             state_row = state_by_name.get(name)
             status = str((state_row or {}).get("status") or "missing-state-row")
             dirs = state_run_dirs(state_row)
+            live_lane_count, live_pids, recent_event_age = live_lane_evidence(dirs)
             reason = str((state_row or {}).get("lastReason") or "")
             if state_groups is None:
-                status = "missing-supervisor-state"
-                reason = str(state_exc or "no supervisor-state.json")
-                invariant_failures.append(f"{label}:{name} is configured but {root}/supervisor-state.json is missing or unreadable")
+                if live_lane_count:
+                    status = "running-live-pid-missing-state"
+                    reason = f"live_lanes={live_lane_count}; no supervisor-state.json"
+                else:
+                    status = "missing-supervisor-state"
+                    reason = str(state_exc or "no supervisor-state.json")
+                    invariant_failures.append(f"{label}:{name} is configured but {root}/supervisor-state.json is missing or unreadable")
+            if status == "running" and dirs and live_lane_count:
+                row_status = status if state_fresh else "running-live-pid-stale-state"
+                if not state_fresh:
+                    reason = f"state_age={state_age if state_age is not None else 'unknown'}s live_pids={len(live_pids)}"
+                counts[level] += live_lane_count
+                active_browser += live_lane_count
+                active_browser_dirs.update(dirs)
+                active_rows.append((level, name, live_lane_count, transport, profile, row_status, dirs[0], label, root))
+                continue
+            elif status == "running-live-pid-missing-state":
+                counts[level] += live_lane_count
+                active_browser += live_lane_count
+                active_browser_dirs.update(dirs)
+                active_rows.append((level, name, live_lane_count, transport, profile, status, dirs[0] if dirs else "", label, root))
+                continue
             elif not state_fresh:
                 status = "stale-supervisor-state"
-                reason = f"age={state_age if state_age is not None else 'unknown'}s"
-                invariant_failures.append(f"{label}:{name} has stale or undated supervisor-state.json")
-            elif status == "running" and dirs:
-                counts[level] += lanes
-                active_browser += lanes
-                active_browser_dirs.update(dirs)
-                active_rows.append((level, name, lanes, transport, profile, status, dirs[0], label, root))
-                continue
+                reason = f"age={state_age if state_age is not None else 'unknown'}s live_pids=0"
+                if recent_event_age is not None:
+                    reason += f" recent_event_age={recent_event_age}s"
             elif status == "running" and not dirs:
                 reason = reason or "running state has no live currentRunDir/activeRunDirs"
                 invariant_failures.append(f"{label}:{name} is running but has no live currentRunDir/activeRunDirs")
+            elif status == "running" and dirs and not live_lane_count:
+                reason = reason or "running state has run dirs but no live lanes.json pids"
+                status = "running-no-live-pid"
             if status.startswith("paused"):
                 paused_browser += lanes
             elif status.startswith("disabled"):
                 disabled_browser += lanes
             held_browser_rows.append((label, name, lanes, status, reason[:180], root))
+            continue
+        if level == "fuzz-assertion":
+            active, activity_state = fuzz_assert_activity(root)
+            if active:
+                counts[level] += lanes
+                active_rows.append((level, name, lanes, transport, profile, activity_state, "", label, root))
+            else:
+                active_rows.append((level, name, 0, transport, profile, activity_state, "", label, root))
             continue
         counts[level] += lanes
         active_rows.append((level, name, lanes, transport, profile, "configured", "", label, root))
@@ -849,6 +1100,10 @@ for line in proc.stdout.splitlines():
 
 event_levels = Counter()
 latest = {}
+latest_mtime = {}
+activity_levels = Counter()
+latest_activity = {}
+latest_activity_mtime = {}
 now = time.time()
 seen_event_lines = set()
 for label, root in roots:
@@ -859,7 +1114,14 @@ for label, root in roots:
         try:
             with open(path, errors="ignore") as events:
                 for line in events:
-                    if '"kind":"seed-attempt-complete"' not in line:
+                    if not any(
+                        marker in line
+                        for marker in (
+                            '"kind":"run-start"',
+                            '"kind":"seed-attempt-start"',
+                            '"kind":"seed-attempt-complete"',
+                        )
+                    ):
                         continue
                     event_key = line.strip()
                     if event_key in seen_event_lines:
@@ -870,28 +1132,59 @@ for label, root in roots:
                     except Exception:
                         event = {}
                     level = event_level(root, dirpath, event)
+                    kind = str(event.get("kind") or "")
+                    if kind:
+                        activity_levels[level] += 1
+                        at = event.get("at") or ""
+                        previous_activity = latest_activity.get(level)
+                        if previous_activity is None or at > previous_activity[0]:
+                            latest_activity[level] = (at, label, root, kind)
+                        try:
+                            latest_activity_mtime[level] = max(latest_activity_mtime.get(level, 0), os.path.getmtime(path))
+                        except OSError:
+                            pass
+                    if kind != "seed-attempt-complete":
+                        continue
                     value = event_value(level, event)
                     event_levels[level] += value
                     at = event.get("at") or ""
                     previous = latest.get(level)
                     if previous is None or at > previous[0]:
                         latest[level] = (at, label, root, value)
+                    try:
+                        latest_mtime[level] = max(latest_mtime.get(level, 0), os.path.getmtime(path))
+                    except OSError:
+                        pass
         except OSError:
             continue
 
 print("| level | tmux sessions | observed executions | latest event | latest root | status |")
 print("| --- | ---: | ---: | --- | --- | --- |")
-all_levels = sorted(set(tmux_levels) | set(event_levels) | {"unit-property", "coverage-guided-lower-level", "backend-api", "protocol-server", "fuzz-assertion"})
+all_levels = sorted(set(tmux_levels) | set(event_levels) | set(activity_levels) | {"unit-property", "coverage-guided-lower-level", "backend-api", "protocol-server", "fuzz-assertion"})
 for level in all_levels:
     at, label, root, value = latest.get(level, ("", "", "", ""))
+    if not at and level in latest_activity:
+        at, label, root, activity_kind = latest_activity[level]
+        at = f"{at} ({activity_kind})" if at else f"({activity_kind})"
     status = "ok"
-    if level in {"backend-api", "fuzz-assertion"} and not tmux_levels[level] and not event_levels[level]:
+    if level in {"backend-api", "protocol-server", "fuzz-assertion"} and not tmux_levels[level] and not event_levels[level]:
         status = "blocked: no active audited lane; held pending run-root/events harness wiring"
     elif tmux_levels[level] and not event_levels[level]:
-        if level == "fuzz-assertion":
+        activity_age = now - latest_activity_mtime.get(level, 0) if latest_activity_mtime.get(level, 0) else None
+        if activity_age is not None and activity_age <= 1800:
+            activity_kind = latest_activity.get(level, ("", "", "", "activity"))[3]
+            status = f"ok: live tmux has fresh {activity_kind} activity but no completed batch yet"
+        elif level == "fuzz-assertion":
             status = "unaudited-present: tmux session exists but no audited current-run-root/status.tsv/events.ndjson wiring"
         else:
             status = "TELEMETRY-INVARIANT-FAIL: tmux session exists but no observed events in root inventory"
+    elif level in {"backend-api", "protocol-server"} and tmux_levels[level] and now - latest_mtime.get(level, 0) > 600:
+        activity_age = now - latest_activity_mtime.get(level, 0) if latest_activity_mtime.get(level, 0) else None
+        if activity_age is not None and activity_age <= 600:
+            activity_kind = latest_activity.get(level, ("", "", "", "activity"))[3]
+            status = f"ok: latest completed batch is stale but fresh {activity_kind} activity is present"
+        else:
+            status = "TELEMETRY-INVARIANT-FAIL: tmux session exists but latest audited events are stale"
     elif event_levels[level] and not tmux_levels[level]:
         if level == "browser-e2e":
             status = "ok: browser groups are supervised; not one tmux session per group"
@@ -952,9 +1245,44 @@ except Exception:
     sessions = []
 session_set = set(sessions)
 
+autoscaler_status_path = "/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md"
+autoscaler_status_text = ""
+try:
+    autoscaler_status_text = open(autoscaler_status_path, errors="ignore").read()
+except OSError:
+    pass
+
+def autoscaler_field(name):
+    match = re.search(rf"^- {re.escape(name)}:\s*(.+)$", autoscaler_status_text, flags=re.M)
+    return match.group(1).strip() if match else ""
+
+autoscaler_action = autoscaler_field("last_action")
+autoscaler_reason = autoscaler_field("reason")
+optional_browser_pressure_gated = autoscaler_reason in {"pressure", "high_pressure", "severe_pressure"}
+optional_browser_sessions = {
+    "rtc-focused-shards",
+    "rtc-focused-shards-watchdog",
+    "rtc-fuzz-strict-expansion",
+    "rtc-fuzz-strict-expansion-watchdog",
+    "rtc-gap-booster",
+    "rtc-gap-booster-watchdog",
+}
+
+novelty_state_path = os.path.join(coverage_root, "novelty-state.json") if coverage_root else ""
+novelty_state = None
+try:
+    novelty_state = json.load(open(novelty_state_path))
+except Exception:
+    novelty_state = None
+coverage_supervisor_session = "rtc-coverage-guided-supervisor"
+if isinstance(novelty_state, dict):
+    configured_supervisor_session = novelty_state.get("supervisorSession")
+    if isinstance(configured_supervisor_session, str) and configured_supervisor_session:
+        coverage_supervisor_session = configured_supervisor_session
+
 expected = [
     "rtc-coverage-guided-novelty",
-    "rtc-coverage-guided-supervisor",
+    coverage_supervisor_session,
     "rtc-coverage-guided-watchdog",
     "rtc-focused-shards",
     "rtc-focused-shards-watchdog",
@@ -968,6 +1296,8 @@ expected = [
     "rtc-resource-autoscaler",
     "rtc-native-harness-persona-loop",
     "rtc-protocol-server-persona-loop",
+    "rtc-backend-api-fuzz",
+    "rtc-protocol-server-fuzz",
 ]
 
 print("| check | status | detail |")
@@ -977,6 +1307,12 @@ for name in expected:
         print(f"| exact-session:{name} | ok | exact tmux session present |")
         continue
     prefix_matches = [session for session in sessions if session.startswith(name)]
+    if name in optional_browser_sessions and optional_browser_pressure_gated:
+        prefix_detail = f"; prefix matches ignored: {', '.join(prefix_matches[:5])}" if prefix_matches else ""
+        print(
+            f"| exact-session:{name} | check | exact tmux session missing while resource autoscaler reports action={autoscaler_action} reason={autoscaler_reason}; restart is pressure-gated, not proof from a prefix/watchdog session{prefix_detail} |"
+        )
+        continue
     if prefix_matches:
         print(
             f"| exact-session:{name} | ACTION-NEEDED | missing exact session but prefix matches exist: {', '.join(prefix_matches[:5])}; do not use prefix tmux has-session checks |"
@@ -1005,6 +1341,23 @@ if coverage_root:
     if pane_commands and all(coverage_root not in command for command in pane_commands):
         print(
             f"| novelty-marker-pane-root | ACTION-NEEDED | current-output-dir root {coverage_root} does not match rtc-coverage-guided-novelty pane command(s): {'; '.join(pane_commands[:2])} |"
+        )
+    supervisor_commands = []
+    for supervisor_session in dict.fromkeys([coverage_supervisor_session, "rtc-coverage-guided-supervisor"]):
+        try:
+            supervisor_proc = subprocess.run(
+                tmux_command("list-panes", "-t", supervisor_session, "-F", "#{pane_start_command}"),
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+            supervisor_commands.extend([line.strip() for line in supervisor_proc.stdout.splitlines() if line.strip()])
+        except Exception:
+            pass
+    if supervisor_commands and all(coverage_root not in command for command in supervisor_commands):
+        print(
+            f"| supervisor-marker-pane-root | ACTION-NEEDED | current-output-dir root {coverage_root} does not match coverage supervisor pane command(s): {'; '.join(supervisor_commands[:2])} |"
         )
 
 def pid_alive(pid):
@@ -1095,6 +1448,16 @@ def parse_status_number(text, label):
     except ValueError:
         return None
 
+def active_current_yield_from_status(text, label):
+    match = re.search(
+        rf"^## Triage Yield\n(?P<section>.*?)(?:\n## |\Z)",
+        text,
+        flags=re.M | re.S,
+    )
+    if not match:
+        return None
+    return parse_status_number(match.group("section"), label)
+
 def file_age(path):
     try:
         return max(0, int(time.time() - os.path.getmtime(path)))
@@ -1117,13 +1480,7 @@ try:
     status_text = open(status_path, errors="replace").read()
 except OSError:
     pass
-
-novelty_state_path = os.path.join(coverage_root, "novelty-state.json") if coverage_root else ""
-novelty_state = None
-try:
-    novelty_state = json.load(open(novelty_state_path))
-except Exception:
-    novelty_state = None
+status_heartbeat_stale = "status heartbeat refreshed" in status_text
 
 groups = None
 if groups_path:
@@ -1135,6 +1492,7 @@ if groups_path:
 
 state_groups = None
 active_run_dirs = 0
+active_run_dir_paths = []
 state_age = None
 try:
     state = json.load(open(state_path))
@@ -1147,7 +1505,10 @@ try:
     state_groups = parsed_groups if isinstance(parsed_groups, list) else []
     for group in state_groups:
         if isinstance(group, dict):
-            active_run_dirs += len([d for d in group.get("activeRunDirs") or [] if d])
+            for run_dir in group.get("activeRunDirs") or []:
+                if run_dir:
+                    active_run_dir_paths.append(str(run_dir))
+    active_run_dirs = len(active_run_dir_paths)
     updated = (state.get("lastUpdatedAt") or state.get("startedAt")) if isinstance(state, dict) else None
     if updated:
         state_age = int(max(0, time.time() - datetime.fromisoformat(str(updated).replace("Z", "+00:00")).timestamp()))
@@ -1156,13 +1517,66 @@ try:
 except Exception:
     pass
 
-current_signatures = parse_status_number(status_text, "signatures")
-current_duplicate_share = parse_status_number(status_text, "top duplicate family share")
-likely_real = parse_status_number(status_text, "likely-real visible")
-current_noise_clear = (
-    (current_signatures in (None, 0) or (current_duplicate_share is not None and current_duplicate_share == 0))
-    and (likely_real in (None, 0))
+novelty_current_run_dirs = None
+novelty_current_run_dir_paths = []
+if isinstance(novelty_state, dict):
+    current_dirs = novelty_state.get("currentRunDirs")
+    if isinstance(current_dirs, list):
+        novelty_current_run_dir_paths = [str(d) for d in current_dirs if d]
+        novelty_current_run_dirs = len(novelty_current_run_dir_paths)
+if novelty_current_run_dirs is None and status_text and not status_heartbeat_stale:
+    novelty_current_run_dirs = active_current_yield_from_status(
+        status_text,
+        "current-run active dirs",
+    )
+
+def current_yield_metric(key, status_label):
+    if isinstance(novelty_state, dict):
+        current_yield = novelty_state.get("triageYieldCurrent")
+        if isinstance(current_yield, dict):
+            value = current_yield.get(key)
+            if value is not None:
+                try:
+                    return float(value) if isinstance(value, float) else int(value)
+                except (TypeError, ValueError):
+                    return value
+    if status_text and not status_heartbeat_stale:
+        return parse_status_number(status_text, status_label)
+    return None
+
+current_signatures = current_yield_metric("signatureCount", "signatures")
+current_duplicate_share = current_yield_metric("topDuplicateFamilyShare", "top duplicate family share")
+likely_real = current_yield_metric("likelyRealVisible", "likely-real visible")
+materialization_blocker_actions = {
+    "bootstrap-supervisor-groups-empty",
+    "skip-bootstrap-empty-materialization-startup-noise-canary-no-eligible-fallback",
+}
+recent_materialization_blocker = None
+if isinstance(novelty_state, dict):
+    now_ts = time.time()
+    for change in (novelty_state.get("changes") or [])[-100:]:
+        if not isinstance(change, dict):
+            continue
+        if change.get("action") not in materialization_blocker_actions:
+            continue
+        changed_at = parse_iso_ts(change.get("at"))
+        if changed_at is not None and now_ts - changed_at > 30 * 60:
+            continue
+        recent_materialization_blocker = change
+active_metrics_pending = (
+    current_signatures is None
+    and current_duplicate_share is None
+    and likely_real is None
 )
+current_noise_clear = (
+    not active_metrics_pending
+    and not recent_materialization_blocker
+    and (current_signatures == 0 or (current_duplicate_share is not None and current_duplicate_share == 0))
+    and likely_real == 0
+)
+materialization_blocker_detail = ""
+if recent_materialization_blocker:
+    materialization_blocker_detail = f" policy_blocker={recent_materialization_blocker.get('action')} at={recent_materialization_blocker.get('at')}"
 
 historical_hold_present = False
 if isinstance(novelty_state, dict):
@@ -1199,20 +1613,42 @@ if groups is None:
     print(f"| coverage-supervisor-groups | ACTION-NEEDED | missing/unreadable supervisor-groups.json in current coverage root {coverage_root}; age={age}s |")
 elif not groups:
     age = file_age(groups_path)
-    status = "ACTION-NEEDED" if current_noise_clear else "check"
-    print(f"| coverage-supervisor-groups | {status} | supervisor-groups.json is empty; age={age}s current_noise_clear={current_noise_clear} |")
+    status = "ACTION-NEEDED" if (current_noise_clear or recent_materialization_blocker) else "check"
+    print(f"| coverage-supervisor-groups | {status} | supervisor-groups.json is empty; age={age}s current_noise_clear={current_noise_clear}{materialization_blocker_detail} |")
 else:
     print(f"| coverage-supervisor-groups | ok | {len(groups)} group(s) configured |")
 
+if status_heartbeat_stale:
+    if isinstance(novelty_state, dict) and isinstance(novelty_state.get("triageYieldCurrent"), dict):
+        print("| coverage-novelty-status-heartbeat | check | novelty-status.md is heartbeat-refreshed; current yield/noise gates use novelty-state.json instead of stale markdown metrics |")
+    else:
+        print("| coverage-novelty-status-heartbeat | unknown/stale | novelty-status.md is heartbeat-refreshed and current novelty-state triage yield is unavailable; current duplicate/noise gates are unknown |")
+
 if state_groups is not None and len(state_groups) == 0:
     age = state_age if state_age is not None else "unknown"
-    status = "ACTION-NEEDED" if current_noise_clear else "check"
-    print(f"| coverage-materialization | {status} | supervisor-state has zero groups; age={age}s current_noise_clear={current_noise_clear} |")
+    status = "ACTION-NEEDED" if (current_noise_clear or recent_materialization_blocker) else "check"
+    print(f"| coverage-materialization | {status} | supervisor-state has zero groups; age={age}s current_noise_clear={current_noise_clear}{materialization_blocker_detail} |")
 elif state_groups is not None:
     status = "ok" if active_run_dirs > 0 else "ACTION-NEEDED"
     print(f"| coverage-materialization | {status} | supervisor groups={len(state_groups)} active_run_dirs={active_run_dirs} age={state_age} |")
 else:
-    print("| coverage-materialization | check | supervisor-state.json missing or unreadable |")
+    status = "ACTION-NEEDED" if groups else "check"
+    print(f"| coverage-materialization | {status} | supervisor-state.json missing or unreadable; configured_groups={len(groups) if groups else 0} current_noise_clear={current_noise_clear}{materialization_blocker_detail} |")
+
+if active_run_dirs > 0 and novelty_current_run_dirs == 0:
+    existing_active_run_dirs = [d for d in active_run_dir_paths if os.path.isdir(d)]
+    supervisor_session_live = coverage_supervisor_session in session_set
+    if supervisor_session_live and existing_active_run_dirs:
+        print(f"| coverage-novelty-supervisor-active-dirs | unknown/stale | supervisor activeRunDirs={active_run_dirs} ({len(existing_active_run_dirs)} existing) and exact session {coverage_supervisor_session} is live, but novelty active currentRunDirs=0; fail closed until novelty-state/status catches up |")
+    else:
+        print(f"| coverage-novelty-supervisor-active-dirs | TELEMETRY-INVARIANT-FAIL | supervisor activeRunDirs={active_run_dirs} but novelty active currentRunDirs=0; active-current coverage/yield scope is stale or filtered incorrectly |")
+elif active_run_dirs > 0 and novelty_current_run_dirs is not None:
+    supervisor_dir_set = {d for d in active_run_dir_paths if os.path.isdir(d)}
+    novelty_dir_set = {d for d in novelty_current_run_dir_paths if os.path.isdir(d)}
+    if supervisor_dir_set and novelty_dir_set and supervisor_dir_set != novelty_dir_set:
+        print(f"| coverage-novelty-supervisor-active-dirs | unknown/stale | supervisor activeRunDirs={len(supervisor_dir_set)} and novelty active currentRunDirs={len(novelty_dir_set)} disagree; fail closed on active-current coverage/yield scope |")
+    else:
+        print(f"| coverage-novelty-supervisor-active-dirs | ok | supervisor activeRunDirs={active_run_dirs}; novelty active currentRunDirs={novelty_current_run_dirs} |")
 
 if historical_hold_present and current_noise_clear:
     print("| historical-noise-hold | ACTION-NEEDED | historical known-noise hold is present while current-run duplicate/noise is clear; do not let historical noise starve current work |")
@@ -1271,6 +1707,11 @@ if not events:
 else:
     coverage_new = sum(int(event.get("newCoverageKeys") or 0) for _, _, _, event in events)
     feature_new = sum(int(event.get("newFeatureKeys") or 0) for _, _, _, event in events)
+    failure_key_new = len({
+        str(event.get("failureCanonicalKey"))
+        for _, _, _, event in events
+        if event.get("newFailureKey") and event.get("failureCanonicalKey")
+    })
     inputs = sum(int(event.get("inputCount") or 0) for _, _, _, event in events)
     crashes = sum(1 for _, _, _, event in events if event.get("exitCode") not in (0, "0", None))
     latest_at, latest_label, latest_root, latest_event = events[-1]
@@ -1278,10 +1719,13 @@ else:
     print(f"- recent inputs: {inputs}")
     print(f"- recent new coverage keys: {coverage_new}")
     print(f"- recent new semantic feature keys: {feature_new}")
+    print(f"- recent new failure keys: {failure_key_new}")
     print(f"- recent nonzero exits: {crashes}")
     print(f"- latest: {latest_at} label={latest_label} inputCount={latest_event.get('inputCount')} newCoverageKeys={latest_event.get('newCoverageKeys')} newFeatureKeys={latest_event.get('newFeatureKeys')} corpusSize={latest_event.get('corpusSize')}")
-    if coverage_new == 0 and feature_new == 0:
+    if coverage_new == 0 and feature_new == 0 and failure_key_new == 0:
         print("- action-needed: coverage-guided lower-level novelty is stalled; improve target shape, semantic features, mutation, corpus selection, or split targets.")
+    elif coverage_new == 0 and feature_new == 0:
+        print("- check: coverage/semantic novelty is stalled, but new failure-key novelty is feeding corpus selection; keep this capped until product-bug families remain diverse.")
     elif coverage_new == 0:
         print("- check: V8 coverage novelty is stalled but semantic novelty remains; keep improving branch-like semantic features, target split, or mutation changes rather than only adding corpus.")
     elif feature_new == 0:
@@ -1293,12 +1737,19 @@ else:
         samples = list(group_events[group])
         group_coverage_new = sum(int(event.get("newCoverageKeys") or 0) for _, _, _, event in samples)
         group_feature_new = sum(int(event.get("newFeatureKeys") or 0) for _, _, _, event in samples)
+        group_failure_key_new = len({
+            str(event.get("failureCanonicalKey"))
+            for _, _, _, event in samples
+            if event.get("newFailureKey") and event.get("failureCanonicalKey")
+        })
         group_inputs = sum(int(event.get("inputCount") or 0) for _, _, _, event in samples)
         group_crashes = sum(1 for _, _, _, event in samples if event.get("exitCode") not in (0, "0", None))
         latest_group_event = samples[-1][3]
         status = "ok"
-        if group_coverage_new == 0 and group_feature_new == 0:
+        if group_coverage_new == 0 and group_feature_new == 0 and group_failure_key_new == 0:
             status = "ACTION-NEEDED: no recent coverage or semantic novelty; hold, retarget, or change mutation/corpus policy"
+        elif group_coverage_new == 0 and group_feature_new == 0:
+            status = "check: failure-key novelty only; keep capped and watch bug-family diversity"
         elif group_coverage_new == 0:
             status = "check: semantic novelty only; inspect target split/oracle depth before adding capacity"
         elif group_feature_new == 0:
@@ -1539,6 +1990,7 @@ PY
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from collections import Counter
@@ -1590,6 +2042,8 @@ def group_level(group):
         return "coverage-guided-lower-level"
     if "unit" in text or "property" in text or "jest" in text:
         return "unit-property"
+    if "backend" in text or "rest-api" in text or "phpunit-rest" in text:
+        return "backend-api"
     if "protocol" in text:
         return "protocol-server"
     if "assert" in text or "fuzz-only" in text:
@@ -1602,6 +2056,8 @@ def event_level(label, root):
         return "coverage-guided-lower-level"
     if "unit-property" in lower or "lower-level-fuzz" in lower:
         return "unit-property"
+    if "backend-api" in lower or "rest-api" in lower:
+        return "backend-api"
     if "protocol" in lower or "native-assert" in lower:
         return "protocol-server"
     if "fuzz-only" in lower or "fuzz-assert" in lower:
@@ -1616,6 +2072,43 @@ def live_dirs(group_state):
         if candidate and candidate not in dirs and os.path.isdir(candidate):
             dirs.append(candidate)
     return dirs
+
+def pid_is_live(pid):
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except PermissionError:
+        return True
+    except Exception:
+        return False
+
+def pid_is_browser_runner(pid):
+    if not pid_is_live(pid):
+        return False
+    try:
+        args = subprocess.check_output(
+            ["ps", "-p", str(int(pid)), "-o", "args="],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        )
+    except Exception:
+        return False
+    return "rtc-browser-fuzz-runner.mjs" in args
+
+def live_lane_pids(group_state):
+    pids = set()
+    for run_dir in live_dirs(group_state):
+        lanes = load_json(os.path.join(run_dir, "lanes.json"))
+        lanes = lanes.get("lanes") if isinstance(lanes, dict) else lanes
+        if not isinstance(lanes, list):
+            continue
+        for lane in lanes:
+            if not isinstance(lane, dict):
+                continue
+            pid = lane.get("pid")
+            if pid and pid_is_browser_runner(pid):
+                pids.add(int(pid))
+    return pids
 
 def normalize(value):
     key = re.sub(r"\s+", "_", str(value or "").strip())
@@ -1676,15 +2169,16 @@ for label, root in roots:
         if level == "browser-e2e":
             state_row = state_by_name.get(str(group.get("name") or ""))
             status = str((state_row or {}).get("status") or "")
-            if state_fresh and status == "running" and live_dirs(state_row):
-                active_lanes[level] += lanes
+            live_pids = live_lane_pids(state_row)
+            if status == "running" and live_pids:
+                active_lanes[level] += len(live_pids)
             elif status.startswith("paused"):
                 paused_browser += lanes
         else:
             active_lanes[level] += lanes
 
 execution_counts = Counter()
-bug_outputs = {level: Counter() for level in ("unit-property", "coverage-guided-lower-level", "protocol-server", "fuzz-assertion")}
+bug_outputs = {level: Counter() for level in ("unit-property", "coverage-guided-lower-level", "backend-api", "protocol-server", "fuzz-assertion")}
 failed_rows = Counter()
 for label, root in roots:
     level = event_level(label, root)
@@ -1737,32 +2231,60 @@ for label, root in roots:
         except OSError:
             pass
 
-likely_real = 0
+likely_real = None
+likely_real_display = "unknown"
 if coverage_root:
-    status_path = os.path.join(coverage_root, "novelty-status.md")
+    status_text = ""
     try:
-        text = open(status_path, errors="ignore").read()
-        matches = re.findall(r"^- likely-real visible:\s*([0-9]+)", text, flags=re.M)
-        if matches:
-            likely_real = int(matches[-1])
+        status_path = os.path.join(coverage_root, "novelty-status.md")
+        status_text = open(status_path, errors="ignore").read()
     except OSError:
         pass
+    status_pending = "pending until first pass" in status_text or "startup status only" in status_text
+    if status_pending:
+        likely_real_display = "unknown (pending novelty pass)"
+    else:
+        state_path = os.path.join(coverage_root, "novelty-state.json")
+        state = load_json(state_path)
+        if isinstance(state, dict):
+            current_yield = state.get("triageYieldCurrent")
+            if isinstance(current_yield, dict):
+                try:
+                    likely_real = int(current_yield.get("likelyRealVisible") or 0)
+                except (TypeError, ValueError):
+                    likely_real = None
+        if likely_real is None and status_text:
+            match = re.search(
+                r"^## Triage Yield\n(?P<section>.*?)(?:\n## |\Z)",
+                status_text,
+                flags=re.M | re.S,
+            )
+            if match:
+                current_match = re.search(
+                    r"^- likely-real visible:\s*([0-9]+)",
+                    match.group("section"),
+                    flags=re.M,
+                )
+                if current_match:
+                    likely_real = int(current_match.group(1))
+        if likely_real is not None:
+            likely_real_display = str(likely_real)
 
 print("- policy: optimize for unique product-bug or assertion output per resource, not raw execution count or semantic feature novelty.")
 print("- infra/harness failures are excluded from bug/assertion output; they are blockers, not yield.")
 print(f"- e2e minimum active lane floor: {e2e_floor}")
 print(f"- unit/property exploration cap when bug output is zero: {unit_explore_cap} lane(s)")
-print(f"- browser/e2e likely-real visible from current coverage status: {likely_real}")
+print(f"- browser/e2e likely-real visible from current coverage status: {likely_real_display}")
 print()
 print("| level | active lanes | executions | failed rows | unique bug/assertion outputs | status |")
 print("| --- | ---: | ---: | ---: | ---: | --- |")
 
 e2e_status = "ok"
-if active_lanes["browser-e2e"] < e2e_floor and likely_real > 0:
-    e2e_status = "ACTION-NEEDED: browser/e2e is the visible bug-yield source but active lanes are below floor; backfill e2e or write the exact load/noise blocker"
-print(f"| browser-e2e | {active_lanes['browser-e2e']} | {execution_counts['browser-e2e']} | n/a | {likely_real} likely-real visible | {e2e_status} |")
+if active_lanes["browser-e2e"] < e2e_floor:
+    e2e_status = "ACTION-NEEDED: browser/e2e active lanes are below floor; backfill e2e or write the exact load/noise blocker"
+print(f"| browser-e2e | {active_lanes['browser-e2e']} | {execution_counts['browser-e2e']} | n/a | {likely_real_display} likely-real visible | {e2e_status} |")
 
-for level in ("unit-property", "coverage-guided-lower-level", "protocol-server", "fuzz-assertion"):
+for level in ("unit-property", "coverage-guided-lower-level", "backend-api", "protocol-server", "fuzz-assertion"):
     unique = len(bug_outputs[level])
     status = "ok"
     if level == "unit-property" and execution_counts[level] >= 20000 and unique == 0:
@@ -1881,7 +2403,9 @@ PY
         awk '/^## tmux/ { exit } { print }' "$materialization_diag"
       else
         echo "### Latest materialization diagnostic"
-        sed -n '1,120p' "$materialization_diag"
+        echo
+        echo "- diagnostic_age_seconds: $materialization_diag_age"
+        awk '/^## tmux/ { exit } { print }' "$materialization_diag" | sed -n '1,120p'
       fi
     fi
     echo
@@ -1896,9 +2420,25 @@ PY
     find "$BASE/runs" -mindepth 2 -maxdepth 2 -name synthesis.md -o -name feedback-action.md 2>/dev/null | sort | tail -8 | while read -r file; do
       echo
       echo "### $file"
-      sed -n '1,160p' "$file"
+      sed -n '1,160p' "$file" |
+        sed \
+          -e 's/TELEMETRY-INVARIANT-FAIL/HISTORICAL_TELEMETRY_INVARIANT_FAIL/g' \
+          -e 's/ACTION-NEEDED/HISTORICAL_ACTION_NEEDED/g'
     done
   } > "$run_dir/context.md"
+}
+
+write_context() {
+  local run_dir="$1"
+  local attempt
+  for attempt in 1 2 3; do
+    write_context_once "$run_dir"
+    if ! grep -q 'current-run-root changed during context generation' "$run_dir/context.md" 2>/dev/null; then
+      return
+    fi
+    cp "$run_dir/context.md" "$run_dir/context.root-race-attempt-${attempt}.md"
+    sleep 5
+  done
 }
 
 run_persona_review() {
@@ -2012,6 +2552,10 @@ run_feedback_action() {
   local rc_file="$run_dir/logs/feedback-action.rc"
   local recent
   recent="$(find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -2)"
+  if [ -f "$run_dir/context.md" ]; then
+    cp "$run_dir/context.md" "$run_dir/context.pre-feedback-action.md"
+  fi
+  write_context "$run_dir"
 
   cat > "$prompt" <<EOF
 Task: make the fuzz-level mix control decision after two continuous persona review iterations.

@@ -66,6 +66,7 @@ const STATE_DIR =
 	process.env.RTC_FUZZ_TRIAGE_STATE_DIR ??
 	path.join( RUN_DIR, '.triage-watcher' );
 const STATE_PATH = path.join( STATE_DIR, 'state.json' );
+const NO_ANALYSIS_SENTINEL_PATH = path.join( STATE_DIR, 'no-analysis.json' );
 const ANALYSIS_STATE_DIR =
 	process.env.RTC_FUZZ_ANALYSIS_STATE_DIR ??
 	path.join( STATE_DIR, 'analysis-tier' );
@@ -82,6 +83,83 @@ const CODEX_TIMEOUT_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_TRIAGE_CODEX_TIMEOUT_MS',
 	Math.ceil( REPRO_HOURS * 60 * 60 * 1000 + 20 * 60 * 1000 )
 );
+const NO_ANALYSIS_SENTINEL_COMPATIBILITY_HOURS = getPositiveNumberEnv(
+	'RTC_FUZZ_NO_ANALYSIS_SENTINEL_COMPATIBILITY_HOURS',
+	6
+);
+const STALE_ROOT_GUARD_ENABLED =
+	process.env.RTC_FUZZ_TRIAGE_STALE_ROOT_GUARD !== '0';
+const CURRENT_OUTPUT_POINTER_PATH =
+	process.env.RTC_FUZZ_TRIAGE_CURRENT_OUTPUT_POINTER ?? null;
+const SUPERVISOR_STATE_PATH =
+	process.env.RTC_FUZZ_TRIAGE_SUPERVISOR_STATE_PATH ?? null;
+const ALLOW_STANDALONE_TRIAGE_LAUNCH =
+	process.env.RTC_FUZZ_TRIAGE_ALLOW_STANDALONE_LAUNCH === '1' ||
+	process.env.RTC_FUZZ_TRIAGE_ALLOW_OFFLINE === '1' ||
+	! STALE_ROOT_GUARD_ENABLED;
+const NON_LAUNCHABLE_SIGNATURE_STATUSES = new Set( [
+	'completed',
+	'not-real',
+	'infra',
+	'bootstrap-stall',
+	'family-capped',
+	'known-infra',
+	'no-realistic-repro',
+	'analysis-gated',
+	'source-suppressed',
+	'stale-source',
+] );
+const EXIT_PRESERVED_SIGNATURE_STATUSES = new Set(
+	NON_LAUNCHABLE_SIGNATURE_STATUSES
+);
+const ACTIVE_GROUP_STATUSES = new Set( [
+	'starting',
+	'launching',
+	'recovering',
+	'running',
+] );
+const NON_ACTIONABLE_ANALYSIS_JOB_STATUSES = new Set( [
+	'family-capped',
+	'source-suppressed',
+	'stale-source',
+] );
+const VISIBLE_DECISION_PRESERVED_STATUSES = new Set( [
+	'bootstrap-stall',
+	'family-capped',
+	'known-infra',
+	'source-suppressed',
+	'stale-source',
+] );
+const SOURCE_RECONCILE_STATUSES = new Set( [ 'queued', 'retry' ] );
+const ABSENT_NO_PRODUCT_STALE_STATUSES = new Set( [
+	'analysis-gated',
+	'completed',
+	'queued',
+	'retry',
+	'running',
+] );
+const NO_PRODUCT_INFRA_NOISE_PATTERN =
+	/ENOSPC|no space left|wp-env|docker compose|docker.*(?:exited|failed)|mysql.*(?:exited|failed)|dependency failed|Cannot find module|ERR_MODULE_NOT_FOUND|Host system is missing dependencies|playwright install-deps|browser dependencies|request failed: TypeError: fetch failed|GET .*\/wp-json\/|The plugin "[^"]+" isn'?t installed|plugin .*not installed|missing plugin\b|missing theme\b|RequestUtils\.deactivatePlugin|request-utils\/plugins\.ts/i;
+const NO_PRODUCT_KNOWN_NOISE_FAMILIES = new Set( [
+	'awareness_loss_after_save_reload',
+	'cover_overlay_attribute_canonicalization',
+	'http_awareness_wait_false_timeout_after_reload',
+	'late_session_awareness_stall',
+	'linebreak_representation_drift',
+	'pre_action_awareness_stall',
+	'pre_action_bootstrap_stall',
+	'reload_rejoin_awareness_stall',
+	'rest_meta_database_error',
+	'rtc_ws_test_provider_bootstrap_missing_after_reload',
+] );
+const PRODUCT_EVIDENCE_DUPLICATE_PROPAGATION_FAMILIES = new Set( [
+	'reload_rejoin_awareness_stall',
+] );
+const PRODUCER_NO_ANALYSIS_FAMILY_CAP_REASON_KINDS = new Set( [
+	'known-noise',
+	'startup-noise',
+	'triage-duplicate-noise',
+] );
 
 const activeJobs = new Map();
 let shuttingDown = false;
@@ -156,6 +234,192 @@ function getPositiveNumberEnv( name, fallback ) {
 	return parsedValue;
 }
 
+function isPathInsideRoot( filePath, root ) {
+	const relative = path.relative(
+		path.resolve( root ),
+		path.resolve( filePath )
+	);
+	return (
+		relative === '' ||
+		( relative &&
+			! relative.startsWith( '..' ) &&
+			! path.isAbsolute( relative ) )
+		);
+}
+
+function getNoAnalysisSentinelExpirationMs( sentinel ) {
+	const explicitExpirationMs = Date.parse(
+		sentinel?.expiresAt ?? sentinel?.pauseUntil ?? ''
+	);
+	if ( Number.isFinite( explicitExpirationMs ) ) {
+		return explicitExpirationMs;
+	}
+
+	const createdAtMs = Date.parse( sentinel?.createdAt ?? '' );
+	if ( ! Number.isFinite( createdAtMs ) ) {
+		return 0;
+	}
+	return (
+		createdAtMs +
+		NO_ANALYSIS_SENTINEL_COMPATIBILITY_HOURS * 60 * 60 * 1000
+	);
+}
+
+function isActiveNoAnalysisSentinel( sentinel, currentOutput ) {
+	if ( sentinel?.preserveProductEvidence !== true || ! sentinel.outputDir ) {
+		return false;
+	}
+	const outputRoot =
+		currentOutput?.root ??
+		( isPathInsideRoot( RUN_DIR, sentinel.outputDir )
+			? sentinel.outputDir
+			: null );
+	if ( ! outputRoot ) {
+		return false;
+	}
+	if ( path.resolve( sentinel.outputDir ) !== path.resolve( outputRoot ) ) {
+		return false;
+	}
+	return getNoAnalysisSentinelExpirationMs( sentinel ) > Date.now();
+}
+
+function getCurrentOutputPointerCandidates() {
+	const candidates = [];
+	if ( CURRENT_OUTPUT_POINTER_PATH ) {
+		candidates.push( CURRENT_OUTPUT_POINTER_PATH );
+	} else {
+		let dir = RUN_DIR;
+		for ( let depth = 0; depth < 8; depth++ ) {
+			candidates.push(
+				path.join( dir, 'current-output-dir.txt' ),
+				path.join( dir, 'current-run-root.txt' )
+			);
+			const parent = path.dirname( dir );
+			if ( parent === dir ) {
+				break;
+			}
+			dir = parent;
+		}
+	}
+	return [
+		...new Set(
+			candidates.map( ( candidate ) => path.resolve( candidate ) )
+		),
+	];
+}
+
+async function readCurrentOutputRoot() {
+	if ( ! STALE_ROOT_GUARD_ENABLED ) {
+		return null;
+	}
+
+	for ( const pointerPath of getCurrentOutputPointerCandidates() ) {
+		try {
+			const value = ( await fs.readFile( pointerPath, 'utf8' ) )
+				.trim()
+				.split( /\r?\n/ )[ 0 ]
+				?.trim();
+			if ( value ) {
+				return {
+					root: path.resolve( value ),
+					pointerPath,
+				};
+			}
+		} catch {}
+	}
+	if ( CURRENT_OUTPUT_POINTER_PATH ) {
+		return {
+			missing: true,
+			pointerPath: path.resolve( CURRENT_OUTPUT_POINTER_PATH ),
+		};
+	}
+	return null;
+}
+
+async function readJsonFile( filePath ) {
+	try {
+		return JSON.parse( await fs.readFile( filePath, 'utf8' ) );
+	} catch {
+		return null;
+	}
+}
+
+async function readActiveSupervisorRunDirSet() {
+	if ( ! SUPERVISOR_STATE_PATH ) {
+		return null;
+	}
+
+	const supervisorState = await readJsonFile( SUPERVISOR_STATE_PATH );
+	if ( ! supervisorState ) {
+		return {
+			missing: true,
+			path: path.resolve( SUPERVISOR_STATE_PATH ),
+		};
+	}
+
+	const activeRunDirSet = new Set();
+	for ( const group of supervisorState.groups ?? [] ) {
+		if ( ! ACTIVE_GROUP_STATUSES.has( group.status ) ) {
+			continue;
+		}
+		const groupDirs =
+			group.activeRunDirs?.length > 0
+				? group.activeRunDirs
+				: group.status === 'recovering'
+				? []
+				: [ group.currentRunDir ];
+		for ( const dir of groupDirs ) {
+			if ( dir ) {
+				activeRunDirSet.add( path.resolve( dir ) );
+			}
+		}
+	}
+
+	return {
+		path: path.resolve( SUPERVISOR_STATE_PATH ),
+		activeRunDirSet,
+	};
+}
+
+async function getInactiveSupervisorRunDirReason() {
+	const activeSupervisor = await readActiveSupervisorRunDirSet();
+	if ( ! activeSupervisor ) {
+		return null;
+	}
+	if ( activeSupervisor.missing ) {
+		return `configured supervisor state ${ activeSupervisor.path } is missing or invalid`;
+	}
+	if ( activeSupervisor.activeRunDirSet.has( path.resolve( RUN_DIR ) ) ) {
+		return null;
+	}
+	return `run dir is not active in supervisor state ${ activeSupervisor.path }`;
+}
+
+async function getStaleRunDirReason() {
+	const currentOutput = await readCurrentOutputRoot();
+	if ( currentOutput ) {
+		if ( currentOutput.missing ) {
+			return `configured current output pointer ${ currentOutput.pointerPath } is missing or empty`;
+		}
+		if ( ! isPathInsideRoot( RUN_DIR, currentOutput.root ) ) {
+			return `run dir is outside current output root ${ currentOutput.root } from ${ currentOutput.pointerPath }`;
+		}
+	}
+	if (
+		! GATE_ONLY &&
+		! currentOutput &&
+		! SUPERVISOR_STATE_PATH &&
+		! ALLOW_STANDALONE_TRIAGE_LAUNCH
+	) {
+		return 'missing current-output pointer or supervisor state; refusing direct triage Codex launch without RTC_FUZZ_TRIAGE_ALLOW_STANDALONE_LAUNCH=1';
+	}
+	const noAnalysis = await readNoAnalysisSentinel();
+	if ( noAnalysis?.preserveProductEvidence === true ) {
+		return null;
+	}
+	return getInactiveSupervisorRunDirReason();
+}
+
 function createInitialState() {
 	return {
 		version: 1,
@@ -168,11 +432,123 @@ function createInitialState() {
 }
 
 async function readState() {
+	let state;
 	try {
-		return JSON.parse( await fs.readFile( STATE_PATH, 'utf8' ) );
+		state = JSON.parse( await fs.readFile( STATE_PATH, 'utf8' ) );
 	} catch {
-		return createInitialState();
+		state = createInitialState();
 	}
+	repairMalformedSignatureRecords( state );
+	return state;
+}
+
+function repairMalformedSignatureRecords( state ) {
+	if ( ! state || typeof state !== 'object' ) {
+		return;
+	}
+	if ( ! state.signatures || typeof state.signatures !== 'object' ) {
+		state.signatures = {};
+		return;
+	}
+
+	let repaired = 0;
+	for ( const [ key, signature ] of Object.entries( state.signatures ) ) {
+		if ( ! signature || typeof signature !== 'object' ) {
+			const hash = safeSignatureHashForPath( key );
+			const jobDir = path.join( STATE_DIR, 'signatures', hash );
+			state.signatures[ key ] = {
+				hash,
+				status: 'source-suppressed',
+				attempts: 0,
+				count: 0,
+				jobDir,
+				examples: [],
+				resultPath: path.join( jobDir, 'result.json' ),
+				suppressedByWatcher:
+					'malformed signature record lacked an object payload',
+				suppressedByWatcherAt: new Date().toISOString(),
+			};
+			repaired += 1;
+			continue;
+		}
+
+		let changed = false;
+		if ( ! signature.hash || typeof signature.hash !== 'string' ) {
+			signature.hash = safeSignatureHashForPath( key );
+			changed = true;
+		}
+		if ( ! signature.jobDir || typeof signature.jobDir !== 'string' ) {
+			signature.jobDir = path.join(
+				STATE_DIR,
+				'signatures',
+				safeSignatureHashForPath( signature.hash )
+			);
+			changed = true;
+		}
+		if (
+			! signature.resultPath ||
+			typeof signature.resultPath !== 'string'
+		) {
+			signature.resultPath = path.join( signature.jobDir, 'result.json' );
+			changed = true;
+		}
+		if ( ! Array.isArray( signature.examples ) ) {
+			signature.examples = [];
+			changed = true;
+		}
+		if ( ! Number.isFinite( signature.attempts ) ) {
+			signature.attempts = 0;
+			changed = true;
+		}
+		if ( ! signature.status || typeof signature.status !== 'string' ) {
+			signature.status = hasProductEvidence( signature )
+				? 'queued'
+				: 'source-suppressed';
+			if ( signature.status === 'source-suppressed' ) {
+				signature.suppressedByWatcher =
+					'malformed signature record lacked a launchable status and had no product evidence';
+				signature.suppressedByWatcherAt =
+					new Date().toISOString();
+			}
+			changed = true;
+		}
+		if ( changed ) {
+			repaired += 1;
+		}
+	}
+
+	if ( repaired > 0 ) {
+		state.lastMalformedSignatureRepair = {
+			at: new Date().toISOString(),
+			count: repaired,
+			reason:
+				'normalized malformed or legacy signature records so gate-only triage can continue failing closed',
+		};
+	}
+}
+
+function safeSignatureHashForPath( value ) {
+	const normalized = String( value ?? 'unknown' )
+		.replace( /[^A-Za-z0-9_-]+/g, '-' )
+		.replace( /^-+|-+$/g, '' )
+		.slice( 0, 128 );
+	return normalized || 'unknown';
+}
+
+async function readNoAnalysisSentinel() {
+	let sentinel;
+	try {
+		sentinel = JSON.parse(
+			await fs.readFile( NO_ANALYSIS_SENTINEL_PATH, 'utf8' )
+		);
+	} catch {
+		return null;
+	}
+	const currentOutput = await readCurrentOutputRoot();
+	if ( ! isActiveNoAnalysisSentinel( sentinel, currentOutput ) ) {
+		return null;
+	}
+	return sentinel;
 }
 
 async function writeState( state ) {
@@ -478,7 +854,7 @@ async function readFailureCandidates() {
 				signature: getFailureSignature( record ),
 			};
 
-			if ( isStrictPreActionStartupSignature( candidate.signature ) ) {
+			if ( shouldSuppressStrictPreActionStartupCandidate( candidate ) ) {
 				recordSuppressedStrictStartupNoise(
 					strictPreActionStartup,
 					candidate
@@ -491,7 +867,7 @@ async function readFailureCandidates() {
 	}
 
 	return {
-		candidates,
+		candidates: coalesceSameSourceCandidates( candidates ),
 		suppressedKnownNoise: {
 			strictPreActionStartup:
 				finalizeStrictStartupNoiseSummary(
@@ -499,6 +875,88 @@ async function readFailureCandidates() {
 				),
 		},
 	};
+}
+
+function coalesceSameSourceCandidates( candidates ) {
+	const bySource = new Map();
+
+	for ( const candidate of candidates ) {
+		const sourceKey = getCandidateSourceKey( candidate );
+		const existing = bySource.get( sourceKey );
+		if (
+			! existing ||
+			getCandidateSourcePriority( candidate ) >
+				getCandidateSourcePriority( existing )
+		) {
+			bySource.set( sourceKey, candidate );
+		}
+	}
+
+	return [ ...bySource.values() ].sort( ( left, right ) => {
+		if ( left.summaryPath !== right.summaryPath ) {
+			return left.summaryPath.localeCompare( right.summaryPath );
+		}
+		return left.lineIndex - right.lineIndex;
+	} );
+}
+
+function getCandidateSourceKey( candidate ) {
+	const { record, summaryPath } = candidate;
+	const seed = record.seed ?? 'unknown-seed';
+	const source =
+		record.replayPath ??
+		record.logPath ??
+		record.artifactsDir ??
+		record.attempts?.[ 0 ]?.replayPath ??
+		record.attempts?.[ 0 ]?.logPath ??
+		record.attempts?.[ 0 ]?.artifactsDir ??
+		summaryPath;
+	const hasSpecificSource = seed !== 'unknown-seed' || source !== summaryPath;
+
+	return [ seed, source, hasSpecificSource ? '' : candidate.lineIndex ].join(
+		'\0'
+	);
+}
+
+function getCandidateSourcePriority( candidate ) {
+	const { record, signature } = candidate;
+	let priority = 0;
+
+	if (
+		hasProductEvidence( signature ) ||
+		recordHasProductEvidenceCoverage( record )
+	) {
+		priority += 1000;
+	}
+	if ( ! isDisabledInlineAnalysisCandidate( candidate ) ) {
+		priority += 100;
+	}
+	if ( record.kind !== 'attempt' ) {
+		priority += 50;
+	}
+	if ( record.kind === 'real-bug' ) {
+		priority += 25;
+	}
+	if ( record.failureSnippet || record.output ) {
+		priority += 20;
+	}
+	if (
+		record.replayPath ||
+		record.logPath ||
+		record.artifactsDir ||
+		record.attempts?.[ 0 ]?.replayPath ||
+		record.attempts?.[ 0 ]?.logPath ||
+		record.attempts?.[ 0 ]?.artifactsDir
+	) {
+		priority += 10;
+	}
+
+	return priority;
+}
+
+function isDisabledInlineAnalysisCandidate( candidate ) {
+	const summary = candidate.record?.codex?.result?.summary ?? '';
+	return /Inline Codex analysis is disabled/i.test( summary );
 }
 
 function createStrictStartupNoiseSummary() {
@@ -510,13 +968,14 @@ function createStrictStartupNoiseSummary() {
 		knownNoiseByProfile: {},
 		knownStartupNoiseByProfile: {},
 		samples: [],
+		suppressedHashes: new Set(),
 		identityKeys: new Set(),
 	};
 }
 
 function recordSuppressedStrictStartupNoise( summary, candidate ) {
 	const { record, signature, summaryPath, lineIndex } = candidate;
-	const family = getStrictStartupKnownNoiseFamily( signature );
+	const family = getStrictStartupKnownNoiseFamily( signature, record );
 	const profile = getSignatureMetricProfile( signature );
 	const seed = record.seed ?? 'unknown-seed';
 	const source =
@@ -531,6 +990,7 @@ function recordSuppressedStrictStartupNoise( summary, candidate ) {
 			: [ family, profile, seed ].join( '\0' );
 
 	summary.recordCount += 1;
+	summary.suppressedHashes.add( signature.hash );
 	incrementCounter( summary.recordsByProfile, profile );
 
 	if ( ! summary.identityKeys.has( identityKey ) ) {
@@ -563,11 +1023,21 @@ function recordSuppressedStrictStartupNoise( summary, candidate ) {
 }
 
 function finalizeStrictStartupNoiseSummary( summary ) {
-	const { identityKeys, ...serializableSummary } = summary;
-	return serializableSummary;
+	const { identityKeys, suppressedHashes, ...serializableSummary } = summary;
+	return {
+		...serializableSummary,
+		suppressedHashes: [ ...suppressedHashes ],
+	};
 }
 
-function getStrictStartupKnownNoiseFamily( signature ) {
+function getStrictStartupKnownNoiseFamily( signature, record = null ) {
+	if ( isNoProductPreActionStartupGate( record?.preAnalysisGate ) ) {
+		return 'pre_action_bootstrap_stall';
+	}
+	if ( isStrictPreActionStartupSignature( signature ) ) {
+		return 'pre_action_bootstrap_stall';
+	}
+
 	const family = getPreDecisionFamilyLabel( signature );
 	return family === 'pre_action_awareness_stall'
 		? 'pre_action_bootstrap_stall'
@@ -653,23 +1123,68 @@ function getSignatureHashFacts( facts, family ) {
 }
 
 function getPrimaryCoverageRecord( record ) {
-	const direct = record.behavioralCoverage?.find(
-		( candidate ) => ! candidate.parseError
+	const records = getBehavioralCoverageRecords( record );
+	return (
+		records.find( coverageRecordHasProductEvidence ) ??
+		records[ 0 ] ??
+		null
 	);
-	if ( direct ) {
-		return direct;
-	}
+}
 
-	for ( const attempt of record.attempts ?? [] ) {
-		const coverage = attempt.behavioralCoverage?.find(
-			( candidate ) => ! candidate.parseError
-		);
-		if ( coverage ) {
-			return coverage;
+function getBehavioralCoverageRecords( record ) {
+	const records = [];
+	for ( const coverage of record.behavioralCoverage ?? [] ) {
+		if ( ! coverage?.parseError ) {
+			records.push( coverage );
 		}
 	}
+	for ( const attempt of record.attempts ?? [] ) {
+		for ( const coverage of attempt.behavioralCoverage ?? [] ) {
+			if ( ! coverage?.parseError ) {
+				records.push( coverage );
+			}
+		}
+	}
+	return records;
+}
 
-	return null;
+function coverageRecordHasProductEvidence( coverage ) {
+	return (
+		( coverage?.userCount ?? 0 ) > 0 ||
+		( coverage?.actions?.length ?? 0 ) > 0 ||
+		( coverage?.reloads?.length ?? 0 ) > 0 ||
+		( coverage?.saveCheckpointSteps?.length ?? 0 ) > 0 ||
+		( coverage?.autosaveSteps?.length ?? 0 ) > 0 ||
+		coverage?.revisionRestore?.eligible === true ||
+		( coverage?.operationEvents?.length ?? 0 ) > 0
+	);
+}
+
+function recordHasProductEvidenceCoverage( record ) {
+	if (
+		( record.behavioralCoverageSummary?.actionCount ?? 0 ) > 0 ||
+		( record.behavioralCoverageSummary?.reloadCount ?? 0 ) > 0 ||
+		( record.behavioralCoverageSummary?.saveCheckpointCount ?? 0 ) > 0 ||
+		( record.behavioralCoverageSummary?.autosaveCount ?? 0 ) > 0 ||
+		( record.behavioralCoverageSummary?.revisionEligibleCount ?? 0 ) > 0
+	) {
+		return true;
+	}
+
+	if (
+		Object.entries(
+			record.behavioralCoverageSummary?.userCounts ?? {}
+		).some(
+			( [ userCount, count ] ) =>
+				Number( userCount ) > 0 && Number( count ) > 0
+		)
+	) {
+		return true;
+	}
+
+	return getBehavioralCoverageRecords( record ).some(
+		coverageRecordHasProductEvidence
+	);
 }
 
 function classifyFailureText( text ) {
@@ -794,6 +1309,7 @@ function getFailureFacts( record, text ) {
 		lastHistoryStatus: lastHistoryEvent?.status ?? null,
 		reloadCount: coverage?.reloads?.length ?? 0,
 		saveCheckpointCount: coverage?.saveCheckpointSteps?.length ?? 0,
+		autosaveCount: coverage?.autosaveSteps?.length ?? 0,
 		faultTypes: [
 			...new Set(
 				( coverage?.faults ?? [] ).map(
@@ -971,6 +1487,173 @@ function getFailureFamily( facts, normalized ) {
 	};
 }
 
+function getSemanticFamilyKey( signature ) {
+	if (
+		isStrictPreActionStartupSignature( signature ) ||
+		isSourceGatedStrictPreActionStartupSignature( signature )
+	) {
+		return 'pre_action_bootstrap_stall';
+	}
+
+	if ( isFuzzHelperRestEndpointConstructionSignature( signature ) ) {
+		return 'fuzz_helper_rest_endpoint_construction';
+	}
+
+	const raw =
+		signature?.analysisGate?.distinctBugType ??
+		signature?.result?.distinctBugType ??
+		signature?.semanticFamilyKey ??
+		signature?.equivalenceClass ??
+		signature?.familyKey ??
+		signature?.hash ??
+		'unknown';
+	const family = canonicalizeSemanticFamilyKey( raw );
+	if ( family === 'unknown' ) {
+		const inferredFamily =
+			getProductEvidenceLifecycleSemanticFamily( signature );
+		if ( inferredFamily ) {
+			return inferredFamily;
+		}
+	}
+	if ( family !== 'pre_action_bootstrap_stall' || ! hasProductEvidence( signature ) ) {
+		return family;
+	}
+	const sourceFamily = canonicalizeSemanticFamilyKey(
+		signature?.semanticFamilyKey ??
+			signature?.equivalenceClass ??
+			signature?.familyKey ??
+			signature?.hash ??
+			'unknown'
+	);
+	return sourceFamily === 'pre_action_bootstrap_stall'
+		? signature?.familyKey ?? signature?.hash ?? sourceFamily
+		: sourceFamily;
+}
+
+function getProductEvidenceLifecycleSemanticFamily( signature ) {
+	if ( ! hasSourceProductEvidence( signature ) ) {
+		return null;
+	}
+
+	const facts = signature?.facts ?? {};
+	if ( ( facts.userCount ?? 0 ) <= 0 ) {
+		return null;
+	}
+	if ( facts.failureClass === 'operation-witness-missing' ) {
+		return null;
+	}
+
+	const lifecycleContext = String( facts.lifecycleContext ?? '' ).toLowerCase();
+	const hasReloadOrSaveContext =
+		( facts.reloadCount ?? 0 ) > 0 ||
+		( facts.saveCheckpointCount ?? 0 ) > 0 ||
+		/reload|save/.test( lifecycleContext );
+	if ( ! hasReloadOrSaveContext ) {
+		return null;
+	}
+
+	const normalized = String( signature?.normalized ?? '' );
+	if (
+		/waitForSyncCycle|sync cycle timeout|collaboration-utils\.ts:79[0-9]\b|collaboration-utils\.ts:80[0-5]\b|save, refresh, and sync faults|refresh.*sync/i.test(
+			normalized
+		)
+	) {
+		return 'reload_rejoin_awareness_stall';
+	}
+
+	return null;
+}
+
+function isFuzzHelperRestEndpointConstructionSignature( signature ) {
+	const decisionFamily = canonicalizeSemanticFamilyKey(
+		signature?.analysisGate?.distinctBugType ??
+			signature?.result?.distinctBugType ??
+			''
+	);
+	if ( decisionFamily === 'fuzz_helper_rest_endpoint_construction' ) {
+		return true;
+	}
+
+	const facts = signature?.facts ?? {};
+	const normalized = String( signature?.normalized ?? '' );
+	return (
+		facts.lastAction === 'insert-media-cross-entity-block' &&
+		/collaboration-fuzz\.spec\.ts:(?:4864|4882|4883|4890)\b/.test(
+			normalized
+		)
+	);
+}
+
+function canonicalizeSemanticFamilyKey( value ) {
+	const normalized = String( value ?? 'unknown' )
+		.toLowerCase()
+		.replaceAll( '`', '' )
+		.replaceAll( "'", '' )
+		.replaceAll( '"', '' )
+		.replace( /[^a-z0-9]+/g, '_' )
+		.replace( /_+/g, '_' )
+		.replace( /^_|_$/g, '' );
+
+	if (
+		/rest_meta_database_error|rest.*meta.*database|wp_persisted_preferences/.test(
+			normalized
+		)
+	) {
+		return 'rest_meta_database_error';
+	}
+	if (
+		/linebreak|newline|br.*serialization|codeblock|preformatted|verse/.test(
+			normalized
+		)
+	) {
+		return 'linebreak_representation_drift';
+	}
+	if ( /cover.*overlay|isuseroverlaycolor/.test( normalized ) ) {
+		return 'cover_overlay_attribute_canonicalization';
+	}
+	if (
+		/harness.*false.*timeout.*http.*awareness|http.*awareness.*(?:helper|gate|wait).*false.*timeout|waitforawarenesspeercount.*(?:subscribed|subscribe|already|future|satisfied)/.test(
+			normalized
+		)
+	) {
+		return 'http_awareness_wait_false_timeout_after_reload';
+	}
+	if (
+		/rtc_ws_test_provider_bootstrap_missing|post_reload_test_ws_provider_missing|test_ws_provider.*missing|websocket.*provider.*(?:global.*absent|missing|bootstrap)|__gutenbergtestwebsocketsync|roomcount_0|tick_null/.test(
+			normalized
+		)
+	) {
+		return 'rtc_ws_test_provider_bootstrap_missing_after_reload';
+	}
+	if ( /bootstrap|pre_action.*startup|startup.*discovery/.test( normalized ) ) {
+		return 'pre_action_bootstrap_stall';
+	}
+	if ( /pre_action.*awareness/.test( normalized ) ) {
+		return 'pre_action_bootstrap_stall';
+	}
+	if (
+		/awareness.*save.*reload|save.*reload.*awareness|http_awareness_loss_after_save_reload/.test(
+			normalized
+		)
+	) {
+		return 'awareness_loss_after_save_reload';
+	}
+	if (
+		/awareness.*reload|reload.*awareness|reload_rejoin|reload.*rejoin|rejoin.*reload|rediscovering?_peers?|peer_rediscovery|sync_cycle/.test(
+			normalized
+		)
+	) {
+		return 'reload_rejoin_awareness_stall';
+	}
+	if ( /late.*session.*awareness|late_session_awareness/.test( normalized ) ) {
+		return 'late_session_awareness_stall';
+	}
+	if ( /operation.*witness.*missing|witness.*loss/.test( normalized ) ) {
+		return 'operation_witness_missing';
+	}
+	return normalized || 'unknown';
+}
+
 function groupCandidatesBySignature( candidates ) {
 	const groups = new Map();
 
@@ -980,6 +1663,7 @@ function groupCandidatesBySignature( candidates ) {
 			familyKey: candidate.signature.familyKey,
 			hash: candidate.signature.hash,
 			normalized: candidate.signature.normalized,
+			semanticFamilyKey: getSemanticFamilyKey( candidate.signature ),
 			candidates: [],
 		};
 		existing.candidates.push( candidate );
@@ -991,6 +1675,7 @@ function groupCandidatesBySignature( candidates ) {
 
 async function updateDiscoveredSignatures( state, groups ) {
 	pruneStrictPreActionStartupSignatures( state );
+	markStaleSourceSignatures( state, groups );
 
 	for ( const group of groups ) {
 		const existing = state.signatures[ group.hash ];
@@ -1026,20 +1711,35 @@ async function updateDiscoveredSignatures( state, groups ) {
 				group.familyKey ??
 				group.candidates[ 0 ]?.signature.familyKey ??
 				null;
-			existing.equivalenceClass =
-				existing.equivalenceClass ??
-				group.equivalenceClass ??
-				group.candidates[ 0 ]?.signature.equivalenceClass ??
-				null;
-			if (
-				suppressedStatus &&
-				[ 'queued', 'retry', 'analysis-gated' ].includes(
-					existing.status
-				)
-			) {
-				existing.status = suppressedStatus;
-				existing.suppressedByWatcher =
-					getSuppressionReason( suppressedStatus );
+				existing.equivalenceClass =
+					existing.equivalenceClass ??
+					group.equivalenceClass ??
+					group.candidates[ 0 ]?.signature.equivalenceClass ??
+					null;
+				const refreshedSemanticFamilyKey =
+					group.semanticFamilyKey ?? getSemanticFamilyKey( existing );
+				if (
+					! existing.semanticFamilyKey ||
+					existing.semanticFamilyKey === 'unknown' ||
+					existing.semanticFamilyKey === existing.familyKey ||
+					refreshedSemanticFamilyKey ===
+						'fuzz_helper_rest_endpoint_construction'
+				) {
+					existing.semanticFamilyKey =
+						refreshedSemanticFamilyKey ?? null;
+				}
+				if ( existing.status === 'stale-source' && ! suppressedStatus ) {
+				existing.status = 'queued';
+				existing.reactivatedFromStaleSourceAt =
+					new Date().toISOString();
+				delete existing.staleSourceAt;
+				delete existing.staleSourceReason;
+			}
+			if ( suppressedStatus ) {
+				markSignatureSuppressedByWatcher(
+					existing,
+					suppressedStatus
+				);
 			}
 			existing.examples = mergeExamples( existing.examples, examples );
 			continue;
@@ -1048,9 +1748,12 @@ async function updateDiscoveredSignatures( state, groups ) {
 		const jobDir = path.join( STATE_DIR, 'signatures', group.hash );
 		state.signatures[ group.hash ] = {
 			equivalenceClass: group.equivalenceClass,
-			familyKey: group.familyKey,
-			hash: group.hash,
-			status: suppressedStatus ?? 'queued',
+				familyKey: group.familyKey,
+				hash: group.hash,
+				semanticFamilyKey:
+					group.semanticFamilyKey ??
+					getSemanticFamilyKey( group.candidates[ 0 ]?.signature ),
+				status: suppressedStatus ?? 'queued',
 			facts: group.candidates[ 0 ]?.signature.facts ?? null,
 			normalized: group.normalized,
 			count: group.candidates.length,
@@ -1063,7 +1766,10 @@ async function updateDiscoveredSignatures( state, groups ) {
 		};
 		if ( suppressedStatus ) {
 			state.signatures[ group.hash ].suppressedByWatcher =
-				getSuppressionReason( suppressedStatus );
+				getSuppressionReason(
+					suppressedStatus,
+					state.signatures[ group.hash ]
+				);
 		}
 		await fs.mkdir( jobDir, { recursive: true } );
 		await fs.writeFile(
@@ -1071,6 +1777,364 @@ async function updateDiscoveredSignatures( state, groups ) {
 			JSON.stringify( state.signatures[ group.hash ], null, 2 ) + '\n'
 		);
 	}
+}
+
+function markStaleSourceSignatures( state, groups ) {
+	const currentHashes = new Set( groups.map( ( group ) => group.hash ) );
+	let staleCount = 0;
+
+	for ( const signature of Object.values( state.signatures ?? {} ) ) {
+		if ( currentHashes.has( signature.hash ) ) {
+			continue;
+		}
+
+		if (
+			shouldMarkAbsentSignatureStale( signature )
+		) {
+			if ( signature.status === 'running' ) {
+				terminateSignatureProcess( signature );
+			}
+			signature.status = 'stale-source';
+		} else {
+			continue;
+		}
+
+		signature.pid = null;
+		signature.staleSourceAt = new Date().toISOString();
+		signature.staleSourceReason =
+			'signature was absent from the current non-suppressed failure scan';
+		staleCount += 1;
+	}
+
+	if ( staleCount > 0 ) {
+			state.lastStaleSourceReconcile = {
+				at: new Date().toISOString(),
+				count: staleCount,
+				reason:
+					'absent queued/retry/no-product terminal source signatures are not launchable triage work',
+			};
+		}
+	}
+
+function shouldMarkAbsentSignatureStale( signature ) {
+	if ( SOURCE_RECONCILE_STATUSES.has( signature.status ) ) {
+		return true;
+	}
+
+	if ( ! ABSENT_NO_PRODUCT_STALE_STATUSES.has( signature.status ) ) {
+		return false;
+	}
+
+	if ( hasProductEvidence( signature ) ) {
+		return false;
+	}
+
+	return ! hasVisibleLikelyRealDecision( signature );
+}
+
+function hasVisibleLikelyRealDecision( signature ) {
+	const decision = signature?.analysisGate ?? signature?.result ?? null;
+	if ( decision?.classification !== 'likely_real' ) {
+		return false;
+	}
+
+	return (
+		decision.recommendedTriageAction !== 'merge_with_duplicate' &&
+		! decision.isDuplicateOf &&
+		! decision.duplicateOf
+	);
+}
+
+function markSignatureSuppressedByWatcher( signature, suppressedStatus ) {
+	if ( NON_LAUNCHABLE_SIGNATURE_STATUSES.has( signature.status ) ) {
+		if ( signature.status === suppressedStatus ) {
+			signature.suppressedByWatcher = getSuppressionReason(
+				suppressedStatus,
+				signature
+			);
+			signature.suppressedByWatcherAt =
+				signature.suppressedByWatcherAt ?? new Date().toISOString();
+		}
+		return;
+	}
+
+	if ( signature.status === 'running' ) {
+		terminateSignatureProcess( signature );
+	}
+
+	signature.pid = null;
+	signature.status = suppressedStatus;
+	signature.suppressedByWatcher = getSuppressionReason(
+		suppressedStatus,
+		signature
+	);
+	signature.suppressedByWatcherAt = new Date().toISOString();
+}
+
+function suppressSourceGatedStrictStartupSignatures( state, suppressedKnownNoise ) {
+	const hashes =
+		suppressedKnownNoise?.strictPreActionStartup?.suppressedHashes ?? [];
+	let suppressed = 0;
+
+	for ( const hash of hashes ) {
+		const signature = state.signatures?.[ hash ];
+		if ( ! signature ) {
+			continue;
+		}
+		const sourceGatedStrictStartup =
+			isSourceGatedStrictPreActionStartupSignature( signature );
+		if (
+			( ! sourceGatedStrictStartup &&
+				hasSourceProductEvidence( signature ) ) ||
+			( ! isStrictPreActionStartupSignature( signature ) &&
+				! sourceGatedStrictStartup )
+		) {
+			continue;
+		}
+		if ( signature.status === 'running' ) {
+			terminateSignatureProcess( signature );
+		}
+		signature.pid = null;
+		signature.status = 'bootstrap-stall';
+		signature.suppressedByWatcher =
+			'source pre-analysis gate classified this record as no-product pre-action startup/discovery failure';
+		signature.suppressedByWatcherAt = new Date().toISOString();
+		signature.sourcePreAnalysisGate = {
+			bucket: 'pre-action-bootstrap-stall',
+			source: 'suppressed-known-noise-summary',
+		};
+		suppressed += 1;
+	}
+
+	return suppressed;
+}
+
+function suppressProducerInactiveSignatures( state, noAnalysis ) {
+	if ( ! noAnalysis ) {
+		delete state.producerNoAnalysis;
+		return 0;
+	}
+
+	let suppressed = 0;
+	let restoredProductEvidence = 0;
+	for ( const signature of Object.values( state.signatures ?? {} ) ) {
+		if (
+			shouldRestoreProducerFamilyCappedProductEvidenceSignature(
+				signature,
+				noAnalysis
+			)
+		) {
+			restoreProducerFamilyCappedProductEvidenceSignature(
+				signature,
+				noAnalysis
+			);
+			restoredProductEvidence += 1;
+		}
+		if ( NON_LAUNCHABLE_SIGNATURE_STATUSES.has( signature.status ) ) {
+			continue;
+		}
+		const familyCapKey = getProducerNoAnalysisFamilyCapKey(
+			signature,
+			noAnalysis
+		);
+		if ( familyCapKey ) {
+			if ( signature.status === 'running' ) {
+				terminateSignatureProcess( signature );
+			}
+			signature.pid = null;
+			signature.status = 'family-capped';
+			signature.suppressedByWatcher =
+				`producer paused by duplicate/noise policy for represented family ${ familyCapKey }`;
+			signature.suppressedByWatcherAt = new Date().toISOString();
+			signature.producerNoAnalysis = {
+				group: noAnalysis.group ?? null,
+				reasonKind: noAnalysis.reasonKind ?? null,
+				family: noAnalysis.family ?? null,
+				reason: noAnalysis.reason ?? null,
+				createdAt: noAnalysis.createdAt ?? null,
+			};
+			signature.analysisGate = {
+				gatedAt: signature.suppressedByWatcherAt,
+				sourceTier: 'producer-no-analysis-sentinel',
+				classification: null,
+				confidence: null,
+				userHitLikelihoodScore: 0,
+				userHitLikelihoodRationale: '',
+				distinctBugType: familyCapKey,
+				semanticFamilyKey: familyCapKey,
+				isDuplicateOf: null,
+				candidateStatus: 'family-capped',
+				recommendedTriageAction: 'merge_with_duplicate',
+				summary:
+					`producer no-analysis sentinel capped represented duplicate/noise family ${ familyCapKey }`,
+				resultPath: null,
+			};
+			suppressed += 1;
+			continue;
+		}
+		if ( hasSourceProductEvidence( signature ) ) {
+			continue;
+		}
+		if ( signature.status === 'running' ) {
+			terminateSignatureProcess( signature );
+		}
+		signature.pid = null;
+		signature.status = 'source-suppressed';
+		signature.suppressedByWatcher =
+			'producer paused by duplicate/noise policy; no product evidence on this signature';
+		signature.suppressedByWatcherAt = new Date().toISOString();
+		signature.producerNoAnalysis = {
+			group: noAnalysis.group ?? null,
+			reasonKind: noAnalysis.reasonKind ?? null,
+			reason: noAnalysis.reason ?? null,
+			createdAt: noAnalysis.createdAt ?? null,
+		};
+		suppressed += 1;
+	}
+
+	state.producerNoAnalysis = {
+		...noAnalysis,
+		appliedAt: new Date().toISOString(),
+		suppressedNoProductEvidenceSignatures: suppressed,
+		restoredProductEvidenceSignatures: restoredProductEvidence,
+	};
+	return suppressed;
+}
+
+function getProducerNoAnalysisFamilyCapKey( signature, noAnalysis ) {
+	if (
+		! signature?.hash ||
+		! PRODUCER_NO_ANALYSIS_FAMILY_CAP_REASON_KINDS.has(
+			noAnalysis?.reasonKind ?? ''
+		) ||
+		! noAnalysis?.family ||
+		hasVisibleLikelyRealDecision( signature )
+	) {
+		return null;
+	}
+
+	if (
+		noAnalysis.preserveProductEvidence === true &&
+		hasSourceProductEvidence( signature )
+	) {
+		return null;
+	}
+
+	const noAnalysisFamily = canonicalizeSemanticFamilyKey( noAnalysis.family );
+	const signatureFamilies = new Set(
+		[
+			getSemanticFamilyKey( signature ),
+			signature?.semanticFamilyKey,
+			signature?.equivalenceClass,
+			signature?.familyKey,
+			signature?.analysisGate?.semanticFamilyKey,
+			signature?.analysisGate?.distinctBugType,
+			signature?.result?.distinctBugType,
+		]
+			.map( canonicalizeSemanticFamilyKey )
+			.filter( Boolean )
+	);
+	return signatureFamilies.has( noAnalysisFamily ) ? noAnalysisFamily : null;
+}
+
+function shouldRestoreProducerFamilyCappedProductEvidenceSignature(
+	signature,
+	noAnalysis
+) {
+	if (
+		signature?.status !== 'family-capped' ||
+		noAnalysis?.preserveProductEvidence !== true ||
+		! hasSourceProductEvidence( signature )
+	) {
+		return false;
+	}
+	return (
+		signature.producerNoAnalysis ||
+		signature.analysisGate?.sourceTier === 'producer-no-analysis-sentinel'
+	);
+}
+
+function restoreProducerFamilyCappedProductEvidenceSignature(
+	signature,
+	noAnalysis
+) {
+	signature.pid = null;
+	signature.status = 'queued';
+	signature.restoredByWatcher =
+		'producer no-analysis sentinel preserves source product-evidence signatures until a real representative analysis exists';
+	signature.restoredByWatcherAt = new Date().toISOString();
+	signature.restoredProducerNoAnalysis = {
+		group: noAnalysis.group ?? null,
+		reasonKind: noAnalysis.reasonKind ?? null,
+		family: noAnalysis.family ?? null,
+		reason: noAnalysis.reason ?? null,
+		createdAt: noAnalysis.createdAt ?? null,
+	};
+	if ( signature.analysisGate?.sourceTier === 'producer-no-analysis-sentinel' ) {
+		delete signature.analysisGate;
+	}
+	delete signature.producerNoAnalysis;
+	delete signature.suppressedByWatcher;
+	delete signature.suppressedByWatcherAt;
+}
+
+async function markRunDirStaleSource( state, reason, noAnalysis = null ) {
+	let changed = 0;
+	for ( const signature of Object.values( state.signatures ?? {} ) ) {
+			if (
+				[
+					'completed',
+				'family-capped',
+				'infra',
+				'known-infra',
+				'no-realistic-repro',
+				'not-real',
+				'source-suppressed',
+				'stale-source',
+				'bootstrap-stall',
+			].includes( signature.status )
+		) {
+				continue;
+			}
+			if (
+				noAnalysis?.preserveProductEvidence !== true &&
+				hasVisibleLikelyRealDecision( signature )
+			) {
+				continue;
+			}
+			if (
+				noAnalysis?.preserveProductEvidence === true &&
+				hasSourceProductEvidence( signature )
+			) {
+				continue;
+			}
+			if ( signature.status === 'running' ) {
+				terminateSignatureProcess( signature );
+			}
+		signature.previousStatus = signature.status ?? null;
+		signature.status = 'stale-source';
+		signature.pid = null;
+		signature.staleSourceAt = new Date().toISOString();
+		signature.staleSourceReason = reason;
+		changed += 1;
+	}
+	state.staleRunDir = {
+		at: new Date().toISOString(),
+		runDir: RUN_DIR,
+		reason,
+		changed,
+	};
+	return changed;
+}
+
+function terminateSignatureProcess( signature ) {
+	if ( ! signature?.pid || ! isProcessAlive( signature.pid ) ) {
+		return;
+	}
+
+	try {
+		process.kill( signature.pid, 'SIGTERM' );
+	} catch {}
 }
 
 function pruneStrictPreActionStartupSignatures( state ) {
@@ -1083,11 +2147,7 @@ function pruneStrictPreActionStartupSignatures( state ) {
 			continue;
 		}
 
-		if ( signature.pid && isProcessAlive( signature.pid ) ) {
-			try {
-				process.kill( signature.pid, 'SIGTERM' );
-			} catch {}
-		}
+		terminateSignatureProcess( signature );
 		delete state.signatures[ hash ];
 		pruned += 1;
 	}
@@ -1115,11 +2175,175 @@ function getSuppressedSignatureStatus( signature ) {
 		return 'known-infra';
 	}
 
+	if ( isFuzzHelperRestEndpointConstructionSignature( signature ) ) {
+		return 'family-capped';
+	}
+
 	if ( isStrictPreActionStartupSignature( signature ) ) {
 		return 'bootstrap-stall';
 	}
 
+	if ( isSourceGatedStrictPreActionStartupSignature( signature ) ) {
+		return 'bootstrap-stall';
+	}
+
+	if ( isNoProductInfraNoiseSignature( signature ) ) {
+		return 'known-infra';
+	}
+
+	if ( isNoProductKnownNoiseSignature( signature ) ) {
+		return 'family-capped';
+	}
+
 	return null;
+}
+
+function shouldSuppressStrictPreActionStartupCandidate( candidate ) {
+	if (
+		isPrimaryNoProductPreActionStartupGate(
+			candidate.record?.preAnalysisGate
+		)
+	) {
+		return true;
+	}
+
+	if ( recordHasProductEvidenceCoverage( candidate.record ) ) {
+		return false;
+	}
+
+	if (
+		isNoProductPreActionStartupGate(
+			candidate.record?.preAnalysisGate
+		)
+	) {
+		return true;
+	}
+
+	if ( isStrictPreActionStartupSignature( candidate.signature ) ) {
+		return true;
+	}
+
+	return (
+		candidate.record?.preAnalysisGate?.bucket ===
+			'pre-action-bootstrap-stall' &&
+		! hasProductEvidence( candidate.signature )
+	);
+}
+
+function preAnalysisGateAttemptHasProductEvidence( attempt ) {
+	return (
+		( attempt?.userCount ?? 0 ) > 0 ||
+		!! attempt?.lastAction ||
+		( attempt?.reloadCount ?? 0 ) > 0 ||
+		( attempt?.saveCheckpointCount ?? 0 ) > 0 ||
+		( attempt?.autosaveCount ?? 0 ) > 0 ||
+		attempt?.revisionEligible === true ||
+		( attempt?.operationWitnessActions?.length ?? 0 ) > 0 ||
+		( attempt?.operationWitnessScopes?.length ?? 0 ) > 0 ||
+		!! attempt?.operationWitnessPhase
+	);
+}
+
+function isNoProductPreActionStartupGate( gate ) {
+	if ( gate?.bucket !== 'pre-action-bootstrap-stall' ) {
+		return false;
+	}
+	if ( ( gate.passedRechecks ?? 0 ) > 0 ) {
+		return false;
+	}
+	const attempts = Array.isArray( gate.attempts ) ? gate.attempts : [];
+	return (
+		! preAnalysisGateAttemptHasProductEvidence( gate ) &&
+		! attempts.some( preAnalysisGateAttemptHasProductEvidence )
+	);
+}
+
+function isPrimaryNoProductPreActionStartupGate( gate ) {
+	if ( gate?.bucket !== 'pre-action-bootstrap-stall' ) {
+		return false;
+	}
+	const attempts = Array.isArray( gate.attempts ) ? gate.attempts : [];
+	const primaryAttempts = attempts.length > 0 ? attempts : [ gate ];
+	return (
+		! preAnalysisGateAttemptHasProductEvidence( gate ) &&
+		primaryAttempts.length > 0 &&
+		primaryAttempts.every(
+			( attempt ) =>
+				( attempt?.bucket ?? gate.bucket ) ===
+					'pre-action-bootstrap-stall' &&
+				! preAnalysisGateAttemptHasProductEvidence( attempt )
+		)
+	);
+}
+
+function isSourceGatedStrictPreActionStartupSignature( signature ) {
+	return (
+		isPrimaryNoProductPreActionStartupGate(
+			signature?.sourcePreAnalysisGate
+		)
+	);
+}
+
+function hasStrictStartupPhase( facts ) {
+	const lastHistoryPhase = String( facts?.lastHistoryPhase ?? '' );
+	return (
+		lastHistoryPhase !== '' &&
+		/seed|bootstrap|open|join|startup|setup|discovery|ready/i.test(
+			lastHistoryPhase
+		)
+	);
+}
+
+function hasStrictPreActionStartupNoProductFacts( facts ) {
+	if ( ! facts ) {
+		return false;
+	}
+
+	return (
+		facts.userCount === 0 &&
+		! facts.lastAction &&
+		( ! facts.lastHistoryStatus || facts.lastHistoryStatus === 'fail' ) &&
+		( facts.reloadCount ?? 0 ) === 0 &&
+		( facts.saveCheckpointCount ?? 0 ) === 0 &&
+		( facts.autosaveCount ?? 0 ) === 0 &&
+		facts.revisionEligible !== true &&
+		( facts.operationWitnessActions?.length ?? 0 ) === 0 &&
+		( facts.operationWitnessScopes?.length ?? 0 ) === 0 &&
+		! facts.operationWitnessPhase &&
+		[
+			'timeout',
+			'browser-closed',
+			'unknown',
+			'collaboration-non-convergence',
+			'save-stuck-or-failed',
+			'assertion',
+		].includes( facts.failureClass )
+	);
+}
+
+function isNoProductInfraNoiseSignature( signature ) {
+	if ( ! signature || hasSourceProductEvidence( signature ) ) {
+		return false;
+	}
+
+	return NO_PRODUCT_INFRA_NOISE_PATTERN.test( signature.normalized ?? '' );
+}
+
+function isNoProductKnownNoiseSignature( signature ) {
+	if ( ! signature || hasProductEvidence( signature ) ) {
+		return false;
+	}
+
+	return NO_PRODUCT_KNOWN_NOISE_FAMILIES.has(
+		getSemanticFamilyKey( signature )
+	);
+}
+
+function hasStrictPreActionStartupFacts( facts ) {
+	return (
+		hasStrictStartupPhase( facts ) &&
+		hasStrictPreActionStartupNoProductFacts( facts )
+	);
 }
 
 function isStrictPreActionStartupSignature( signature ) {
@@ -1135,49 +2359,27 @@ function isStrictPreActionStartupSignature( signature ) {
 		'pre-action-awareness-stall',
 	].includes( equivalenceClass );
 	const hasStartupText =
-		/waitForCollaborationReady|collaboration to become ready|setPreferences|_wpCollaborationEnabled|page\.waitForFunction|waitForMutualDiscovery|mutual discovery|awareness/i.test(
+		/waitForCollaborationReady|collaboration (?:session )?to become ready|setPreferences|_wpCollaborationEnabled|page\.waitForFunction|waitForMutualDiscovery|mutual discovery|waitForTestWebSocketAwarenessPeerCount|awareness peer|waitForSyncCycle|Target page, context or browser has been closed|Test timeout|awareness/i.test(
 			normalized
 		);
+	const hasStartupPhase = hasStrictStartupPhase( facts );
 
-	if ( ! isStartupFamily && ! hasStartupText ) {
+	if ( ! isStartupFamily && ! hasStartupText && ! hasStartupPhase ) {
 		return false;
 	}
 
-	const lastHistoryPhase = String( facts.lastHistoryPhase ?? '' );
-	const hasStartupPhase =
-		lastHistoryPhase === '' ||
-		/seed|bootstrap|open|join|startup|setup|discovery|ready/i.test(
-			lastHistoryPhase
-		);
-
-	if (
-		facts.userCount === 0 &&
-		! facts.lastAction &&
-		hasStartupPhase &&
-		( ! facts.lastHistoryStatus || facts.lastHistoryStatus === 'fail' ) &&
-		( facts.reloadCount ?? 0 ) === 0 &&
-		( facts.saveCheckpointCount ?? 0 ) === 0 &&
-		facts.revisionEligible !== true &&
-		( facts.faultTypes?.length ?? 0 ) === 0 &&
-		( facts.operationWitnessActions?.length ?? 0 ) === 0 &&
-		( facts.operationWitnessScopes?.length ?? 0 ) === 0 &&
-		! facts.operationWitnessPhase &&
-		[
-			'timeout',
-			'browser-closed',
-			'unknown',
-			'collaboration-non-convergence',
-		].includes( facts.failureClass )
-	) {
-		return true;
-	}
-
-	return false;
+	return hasStrictPreActionStartupNoProductFacts( facts );
 }
 
-function getSuppressionReason( status ) {
+function getSuppressionReason( status, signature = null ) {
 	if ( status === 'known-infra' ) {
-		return 'known wp_persisted_preferences REST meta infra failure';
+		return 'known no-product infra/setup failure';
+	}
+	if ( status === 'family-capped' ) {
+		if ( isFuzzHelperRestEndpointConstructionSignature( signature ) ) {
+			return 'known product-evidence harness noise family fuzz_helper_rest_endpoint_construction';
+		}
+		return 'known duplicate/noise family';
 	}
 	return 'pre-action startup/discovery failure';
 }
@@ -1193,10 +2395,18 @@ function mergeExamples( currentExamples = [], newExamples = [] ) {
 }
 
 async function launchQueuedJobs( state ) {
+	const propagatedAnalysisStatusCount =
+		await propagateNonActionableAnalysisJobStatuses( state );
+	const knownNoiseSuppressedCount = suppressKnownNoiseSignatures( state );
 	const analysisDecisions = await readAnalysisDecisions();
 	const deepAnalysisDecisions = await readDeepAnalysisDecisions();
 	const sortedSignatures = sortSignaturesForLaunch(
 		Object.values( state.signatures ),
+		analysisDecisions,
+		deepAnalysisDecisions
+	);
+	const visibleAnalysisDecisions = await applyVisibleAnalysisDecisions(
+		sortedSignatures,
 		analysisDecisions,
 		deepAnalysisDecisions
 	);
@@ -1206,7 +2416,11 @@ async function launchQueuedJobs( state ) {
 		deepAnalysisDecisions
 	);
 	if ( GATE_ONLY ) {
+		state.lastVisibleAnalysisDecisionCount = visibleAnalysisDecisions;
 		state.lastAnalysisGatedCount = analysisGated;
+		state.lastPropagatedAnalysisStatusCount =
+			propagatedAnalysisStatusCount;
+		state.lastKnownNoiseSuppressedCount = knownNoiseSuppressedCount;
 		return;
 	}
 
@@ -1214,6 +2428,9 @@ async function launchQueuedJobs( state ) {
 	for ( const signature of sortedSignatures ) {
 		if ( activeHashes.size >= MAX_PARALLEL ) {
 			state.lastAnalysisGatedCount = analysisGated;
+			state.lastPropagatedAnalysisStatusCount =
+				propagatedAnalysisStatusCount;
+			state.lastKnownNoiseSuppressedCount = knownNoiseSuppressedCount;
 			return;
 		}
 
@@ -1230,6 +2447,257 @@ async function launchQueuedJobs( state ) {
 	}
 
 	state.lastAnalysisGatedCount = analysisGated;
+	state.lastVisibleAnalysisDecisionCount = visibleAnalysisDecisions;
+	state.lastPropagatedAnalysisStatusCount = propagatedAnalysisStatusCount;
+	state.lastKnownNoiseSuppressedCount = knownNoiseSuppressedCount;
+}
+
+function suppressKnownNoiseSignatures( state ) {
+	let suppressed = 0;
+	for ( const signature of Object.values( state.signatures ?? {} ) ) {
+		const suppressedStatus = getSuppressedSignatureStatus( signature );
+		if ( ! suppressedStatus ) {
+			continue;
+		}
+		if ( NON_LAUNCHABLE_SIGNATURE_STATUSES.has( signature.status ) ) {
+			continue;
+		}
+		markSignatureSuppressedByWatcher( signature, suppressedStatus );
+		suppressed += 1;
+	}
+	return suppressed;
+}
+
+async function propagateNonActionableAnalysisJobStatuses( state ) {
+	const analysisJobs = await readNonActionableAnalysisJobStatuses(
+		ANALYSIS_STATE_DIR,
+		'analysis-tier'
+	);
+	const deepAnalysisJobs = await readNonActionableAnalysisJobStatuses(
+		DEEP_ANALYSIS_STATE_DIR,
+		'deep-analysis-tier'
+	);
+	const jobsByHash = new Map( [ ...analysisJobs, ...deepAnalysisJobs ] );
+	let propagated = 0;
+
+		for ( const [ hash, job ] of jobsByHash ) {
+			const signature = state.signatures?.[ hash ];
+			if ( ! signature ) {
+				continue;
+			}
+			if (
+				shouldPreserveProductEvidenceProducerCappedAnalysisJob(
+					signature,
+					job
+				)
+			) {
+				continue;
+			}
+			if (
+				! [ 'queued', 'retry', 'running' ].includes( signature.status )
+			) {
+			continue;
+		}
+
+		if ( signature.status === 'running' ) {
+			terminateSignatureProcess( signature );
+		}
+
+		signature.pid = null;
+		signature.status = job.status;
+		signature.analysisJobGate = {
+			gatedAt: new Date().toISOString(),
+			sourceTier: job.sourceTier,
+			jobStatus: job.status,
+			reason: job.reason ?? getAnalysisJobStatusReason( job.status ),
+			resultPath: job.resultPath ?? null,
+			propagationReason:
+				'analysis/deep-analysis terminal non-actionable job status',
+		};
+		signature.analysisGate ??= {
+			gatedAt: signature.analysisJobGate.gatedAt,
+			sourceTier: job.sourceTier,
+			classification: null,
+			confidence: null,
+			userHitLikelihoodScore: 0,
+			userHitLikelihoodRationale: '',
+			distinctBugType: signature.equivalenceClass ?? 'unknown',
+			isDuplicateOf: null,
+			candidateStatus: job.status,
+			recommendedTriageAction:
+				getRecommendedActionForAnalysisJobStatus( job.status ),
+			summary: signature.analysisJobGate.reason,
+			resultPath: job.resultPath ?? null,
+		};
+		await writeStatusMarkdown(
+			path.join( signature.jobDir, 'STATUS.md' ),
+			signature
+		);
+		propagated += 1;
+	}
+
+	if ( propagated > 0 ) {
+		state.lastAnalysisStatusPropagation = {
+			at: new Date().toISOString(),
+			count: propagated,
+			sourceTiers: [ 'analysis-tier', 'deep-analysis-tier' ],
+			statuses: [ ...NON_ACTIONABLE_ANALYSIS_JOB_STATUSES ],
+		};
+	}
+
+	return propagated;
+}
+
+function shouldPreserveProductEvidenceProducerCappedAnalysisJob(
+	signature,
+	job
+) {
+	return (
+		job?.status === 'family-capped' &&
+		hasSourceProductEvidence( signature ) &&
+		/producer no-analysis sentinel/i.test(
+			job.sourceSuppressionReason ?? job.reason ?? ''
+		)
+	);
+}
+
+async function readNonActionableAnalysisJobStatuses( stateDir, sourceTier ) {
+	const analysisStatePath = path.join( stateDir, 'state.json' );
+	let analysisState = null;
+
+	try {
+		analysisState = JSON.parse(
+			await fs.readFile( analysisStatePath, 'utf8' )
+		);
+	} catch {
+		return new Map();
+	}
+
+	const jobs = new Map();
+	for ( const job of Object.values( analysisState.jobs ?? {} ) ) {
+		if (
+			! job.hash ||
+			! NON_ACTIONABLE_ANALYSIS_JOB_STATUSES.has( job.status )
+		) {
+			continue;
+		}
+		jobs.set( job.hash, {
+			...job,
+			sourceTier,
+		} );
+	}
+
+	return jobs;
+}
+
+function getAnalysisJobStatusReason( status ) {
+	if ( status === 'family-capped' ) {
+		return 'semantic family already has an active or completed representative analysis';
+	}
+	if ( status === 'source-suppressed' ) {
+		return 'analysis job was suppressed because the source signature is no longer actionable';
+	}
+	return 'analysis job source signature is stale';
+}
+
+function getRecommendedActionForAnalysisJobStatus( status ) {
+	if ( status === 'family-capped' ) {
+		return 'merge_with_duplicate';
+	}
+	if ( status === 'source-suppressed' ) {
+		return 'suppress_as_infra';
+	}
+	return 'keep_collecting';
+}
+
+async function applyVisibleAnalysisDecisions(
+	signatures,
+	analysisDecisions,
+	deepAnalysisDecisions
+) {
+	let applied = 0;
+
+	for ( const signature of signatures ) {
+		const visibleDecision = getVisibleAnalysisDecision(
+			analysisDecisions.get( signature.hash ),
+			deepAnalysisDecisions.get( signature.hash )
+		);
+		if ( ! visibleDecision ) {
+			continue;
+		}
+
+		if (
+			VISIBLE_DECISION_PRESERVED_STATUSES.has( signature.status ) &&
+			! hasSourceProductEvidence( signature )
+		) {
+			signature.result = visibleDecision;
+			signature.visibleAnalysisDecisionAt = new Date().toISOString();
+			signature.visibleAnalysisPreservedStatus = signature.status;
+			delete signature.analysisGate;
+			delete signature.analysisJobGate;
+			await writeStatusMarkdown(
+				path.join( signature.jobDir, 'STATUS.md' ),
+				signature
+			);
+			applied += 1;
+			continue;
+		}
+
+		if ( signature.status === 'running' ) {
+			terminateSignatureProcess( signature );
+		}
+
+		signature.pid = null;
+		signature.status = [ 'queued', 'retry', 'running' ].includes(
+			signature.status
+		)
+			? signature.status === 'running'
+				? 'queued'
+				: signature.status
+			: 'queued';
+		signature.result = visibleDecision;
+		signature.visibleAnalysisDecisionAt = new Date().toISOString();
+		delete signature.analysisGate;
+		delete signature.analysisJobGate;
+		await writeStatusMarkdown(
+			path.join( signature.jobDir, 'STATUS.md' ),
+			signature
+		);
+		applied += 1;
+	}
+
+	return applied;
+}
+
+function getVisibleAnalysisDecision( analysisDecision, deepAnalysisDecision ) {
+	if (
+		deepAnalysisDecision?.candidateStatus === 'confirmed_likely_real'
+	) {
+		return {
+			...deepAnalysisDecision,
+			classification: deepAnalysisDecision.classification ?? 'likely_real',
+			recommendedTriageAction:
+				deepAnalysisDecision.recommendedTriageAction ??
+				deepAnalysisDecision.candidateStatus,
+			resultPath: deepAnalysisDecision.resultPath,
+			sourceTier: 'deep-analysis-tier',
+		};
+	}
+
+	if (
+		analysisDecision?.classification === 'likely_real' &&
+		analysisDecision.recommendedTriageAction !== 'merge_with_duplicate' &&
+		! analysisDecision.isDuplicateOf &&
+		! analysisDecision.duplicateOf
+	) {
+		return {
+			...analysisDecision,
+			resultPath: analysisDecision.resultPath,
+			sourceTier: 'analysis-tier',
+		};
+	}
+
+	return null;
 }
 
 async function applyAnalysisGates(
@@ -1238,6 +2706,7 @@ async function applyAnalysisGates(
 	deepAnalysisDecisions
 ) {
 	let analysisGated = 0;
+	const familyGates = new Map();
 
 	for ( const signature of signatures ) {
 		const gate = getAnalysisGate(
@@ -1246,6 +2715,10 @@ async function applyAnalysisGates(
 		);
 		if ( ! gate ) {
 			continue;
+		}
+		const familyGate = getPropagatableFamilyGate( signature, gate );
+		if ( familyGate && ! familyGates.has( familyGate.semanticFamilyKey ) ) {
+			familyGates.set( familyGate.semanticFamilyKey, familyGate );
 		}
 
 		if (
@@ -1262,6 +2735,7 @@ async function applyAnalysisGates(
 				userHitLikelihoodScore: gate.userHitLikelihoodScore,
 				userHitLikelihoodRationale: gate.userHitLikelihoodRationale,
 				distinctBugType: gate.distinctBugType,
+				semanticFamilyKey: getSemanticFamilyKey( signature ),
 				isDuplicateOf: gate.isDuplicateOf,
 				candidateStatus: gate.candidateStatus,
 				recommendedTriageAction: gate.recommendedTriageAction,
@@ -1277,7 +2751,160 @@ async function applyAnalysisGates(
 		analysisGated += 1;
 	}
 
+	for ( const signature of signatures ) {
+		const semanticFamilyKey = getSemanticFamilyKey( signature );
+		const familyGate = familyGates.get( semanticFamilyKey );
+		if (
+			! familyGate ||
+			familyGate.sourceHash === signature.hash ||
+			! shouldApplyFamilyGateToSignature( signature, familyGate )
+		) {
+			continue;
+		}
+
+		signature.status = 'analysis-gated';
+		signature.analysisGate = {
+			gatedAt: new Date().toISOString(),
+			sourceTier: familyGate.sourceTier,
+			classification: familyGate.classification,
+			confidence: familyGate.confidence,
+			userHitLikelihoodScore: familyGate.userHitLikelihoodScore,
+			userHitLikelihoodRationale:
+				familyGate.userHitLikelihoodRationale,
+			distinctBugType: familyGate.distinctBugType,
+			isDuplicateOf:
+				familyGate.isDuplicateOf ?? familyGate.sourceHash,
+			candidateStatus: familyGate.candidateStatus,
+			recommendedTriageAction:
+				familyGate.recommendedTriageAction,
+			summary: familyGate.summary,
+			resultPath: familyGate.resultPath,
+			propagatedFromHash: familyGate.sourceHash,
+			propagationReason: 'same-family non-actionable analysis gate',
+		};
+		await writeStatusMarkdown(
+			path.join( signature.jobDir, 'STATUS.md' ),
+			signature
+		);
+		analysisGated += 1;
+	}
+
 	return analysisGated;
+}
+
+	function getPropagatableFamilyGate( signature, gate ) {
+		const semanticFamilyKey = getFamilyGateSemanticFamilyKey(
+			signature,
+			gate
+		);
+		if (
+			! semanticFamilyKey ||
+			! isHighConfidenceNonActionableGate( gate )
+		) {
+			return null;
+		}
+
+		return {
+			...gate,
+			familyKey: signature.familyKey,
+			semanticFamilyKey,
+			sourceHash: signature.hash,
+			sourceHasProductEvidence: hasProductEvidence( signature ),
+		};
+	}
+
+function getFamilyGateSemanticFamilyKey( signature, gate ) {
+	const decisionFamily = canonicalizeSemanticFamilyKey(
+		gate?.distinctBugType ?? ''
+	);
+	if ( isSafeProductEvidenceHarnessNoiseFamily( decisionFamily ) ) {
+		return decisionFamily;
+	}
+	if (
+		PRODUCT_EVIDENCE_DUPLICATE_PROPAGATION_FAMILIES.has(
+			decisionFamily
+		)
+	) {
+		return decisionFamily;
+	}
+	return getSemanticFamilyKey( signature );
+}
+
+function isHighConfidenceNonActionableGate( gate ) {
+	if ( ! gate ) {
+		return false;
+	}
+
+	if ( gate.sourceTier === 'deep-analysis-tier' ) {
+		return [ 'likely_duplicate', 'likely_false_positive' ].includes(
+			gate.candidateStatus
+		);
+	}
+
+	return (
+		[
+			'merge_with_duplicate',
+			'suppress_as_infra',
+			'keep_collecting',
+		].includes( gate.recommendedTriageAction ) || gate.isDuplicateOf
+	);
+}
+
+function shouldApplyFamilyGateToSignature( signature, familyGate ) {
+	if (
+		! [ 'queued', 'retry' ].includes( signature.status )
+	) {
+		return false;
+	}
+
+	if ( hasVisibleLikelyRealDecision( signature ) ) {
+		return false;
+	}
+
+	if ( hasProductEvidence( signature ) ) {
+		return (
+			isSafeProductEvidenceHarnessNoiseFamily(
+				familyGate.semanticFamilyKey
+			) ||
+			( PRODUCT_EVIDENCE_DUPLICATE_PROPAGATION_FAMILIES.has(
+				familyGate.semanticFamilyKey
+			) &&
+				familyGate.recommendedTriageAction ===
+					'merge_with_duplicate' )
+		);
+	}
+
+	return true;
+}
+
+function isSafeProductEvidenceHarnessNoiseFamily( semanticFamilyKey ) {
+	return [
+		'fuzz_helper_rest_endpoint_construction',
+		'http_awareness_wait_false_timeout_after_reload',
+		'rtc_ws_test_provider_bootstrap_missing_after_reload',
+	].includes( semanticFamilyKey );
+}
+
+function hasProductEvidence( signature ) {
+	return (
+		hasSourceProductEvidence( signature ) ||
+		hasVisibleLikelyRealDecision( signature )
+	);
+}
+
+function hasSourceProductEvidence( signature ) {
+	const facts = signature?.facts ?? {};
+	return (
+		( facts.userCount ?? 0 ) > 0 ||
+		!! facts.lastAction ||
+		( facts.reloadCount ?? 0 ) > 0 ||
+		( facts.saveCheckpointCount ?? 0 ) > 0 ||
+		( facts.autosaveCount ?? 0 ) > 0 ||
+		facts.revisionEligible === true ||
+		( facts.operationWitnessActions?.length ?? 0 ) > 0 ||
+		( facts.operationWitnessScopes?.length ?? 0 ) > 0 ||
+		!! facts.operationWitnessPhase
+	);
 }
 
 function getAnalysisGate( analysisDecision, deepAnalysisDecision ) {
@@ -1558,17 +3185,13 @@ async function reconcileExternallyCompletedJobs( state ) {
 }
 
 function shouldLaunch( signature ) {
-	if (
-		[
-			'completed',
-			'not-real',
-			'infra',
-			'bootstrap-stall',
-			'known-infra',
-			'no-realistic-repro',
-			'analysis-gated',
-		].includes( signature.status )
-	) {
+	const suppressedStatus = getSuppressedSignatureStatus( signature );
+	if ( suppressedStatus ) {
+		markSignatureSuppressedByWatcher( signature, suppressedStatus );
+		return false;
+	}
+
+	if ( NON_LAUNCHABLE_SIGNATURE_STATUSES.has( signature.status ) ) {
 		return false;
 	}
 
@@ -1664,13 +3287,24 @@ async function launchCodexJob( state, signature ) {
 
 		const nextState = await readState();
 		const nextSignature = nextState.signatures[ signature.hash ];
-		if ( ! nextSignature ) {
-			return;
-		}
+			if ( ! nextSignature ) {
+				return;
+			}
 
-		nextSignature.status = 'retry';
-		nextSignature.lastError = error.message;
-		nextSignature.lastCompletedAt = new Date().toISOString();
+			if (
+				EXIT_PRESERVED_SIGNATURE_STATUSES.has( nextSignature.status )
+			) {
+				nextSignature.pid = null;
+				nextSignature.lastError = error.message;
+				nextSignature.lastCompletedAt = new Date().toISOString();
+				await writeStatusMarkdown( statusPath, nextSignature );
+				await writeState( nextState );
+				return;
+			}
+
+			nextSignature.status = 'retry';
+			nextSignature.lastError = error.message;
+			nextSignature.lastCompletedAt = new Date().toISOString();
 		await writeStatusMarkdown( statusPath, nextSignature );
 		await writeState( nextState );
 	} );
@@ -1686,12 +3320,20 @@ async function launchCodexJob( state, signature ) {
 
 		nextSignature.lastCompletedAt = new Date().toISOString();
 		nextSignature.durationMs = Date.now() - startedAt;
-		nextSignature.exitCode = code;
-		nextSignature.signal = signal;
-		nextSignature.pid = null;
+			nextSignature.exitCode = code;
+			nextSignature.signal = signal;
+			nextSignature.pid = null;
 
-		let result = null;
-		try {
+			if (
+				EXIT_PRESERVED_SIGNATURE_STATUSES.has( nextSignature.status )
+			) {
+				await writeStatusMarkdown( statusPath, nextSignature );
+				await writeState( nextState );
+				return;
+			}
+
+			let result = null;
+			try {
 			result = JSON.parse(
 				await fs.readFile( nextSignature.resultPath, 'utf8' )
 			);
@@ -1852,6 +3494,7 @@ async function writeStatusMarkdown( statusPath, signature ) {
 	];
 
 	if ( result ) {
+		const repro = result.realisticPlaywrightRepro ?? {};
 		lines.push(
 			`Classification: ${ result.classification }`,
 			`Confidence: ${ result.confidence }`,
@@ -1862,23 +3505,23 @@ async function writeStatusMarkdown( statusPath, signature ) {
 				result.userHitLikelihoodRationale ?? ''
 			}`,
 			`Distinct bug type: ${ result.distinctBugType }`,
-			`Recommended action: ${ result.recommendedAction }`,
+			`Recommended action: ${
+				result.recommendedAction ??
+				result.recommendedTriageAction ??
+				'none'
+			}`,
 			'',
 			'## Summary',
 			'',
-			result.summary,
+			result.summary ?? '',
 			'',
 			'## Repro',
 			'',
-			`Playwright status: ${ result.realisticPlaywrightRepro.status }`,
-			`Playwright path: ${
-				result.realisticPlaywrightRepro.path ?? 'none'
-			}`,
-			`Playwright command: ${
-				result.realisticPlaywrightRepro.command ?? 'none'
-			}`,
+			`Playwright status: ${ repro.status ?? 'not_requested' }`,
+			`Playwright path: ${ repro.path ?? 'none' }`,
+			`Playwright command: ${ repro.command ?? 'none' }`,
 			'',
-			result.realisticPlaywrightRepro.notes
+			repro.notes ?? ''
 		);
 	} else if ( signature.analysisGate ) {
 		lines.push(
@@ -1911,17 +3554,45 @@ async function writeStatusMarkdown( statusPath, signature ) {
 		);
 	}
 
+	await fs.mkdir( path.dirname( statusPath ), { recursive: true } );
 	await fs.writeFile( statusPath, lines.join( '\n' ) + '\n' );
 }
 
 async function runScanCycle() {
+	const staleRunDirReason = await getStaleRunDirReason();
+	if ( staleRunDirReason ) {
+		const state = await readState();
+		const noAnalysis = await readNoAnalysisSentinel();
+		const staleSourceCount = await markRunDirStaleSource(
+			state,
+			staleRunDirReason,
+			noAnalysis
+		);
+		await writeState( state );
+		shuttingDown = true;
+		process.stdout.write(
+			`[${ new Date().toISOString() }] stale run dir: ${ staleRunDirReason }; staleSource=${ staleSourceCount }; exiting without queueing or launching triage\n`
+		);
+		return;
+	}
+
 	const state = await readState();
+	const noAnalysis = await readNoAnalysisSentinel();
 	const { candidates, suppressedKnownNoise } =
 		await readFailureCandidates();
-	state.suppressedKnownNoise = suppressedKnownNoise;
-	const groups = groupCandidatesBySignature( candidates );
-	await updateDiscoveredSignatures( state, groups );
-	await reconcileExternallyCompletedJobs( state );
+		state.suppressedKnownNoise = suppressedKnownNoise;
+		const groups = groupCandidatesBySignature( candidates );
+		await updateDiscoveredSignatures( state, groups );
+		const sourceGatedStartupSuppressed =
+			suppressSourceGatedStrictStartupSignatures(
+				state,
+				suppressedKnownNoise
+			);
+		await reconcileExternallyCompletedJobs( state );
+		const producerSuppressed = suppressProducerInactiveSignatures(
+			state,
+		noAnalysis
+	);
 	await launchQueuedJobs( state );
 	await writeState( state );
 	process.stdout.write(
@@ -1931,9 +3602,13 @@ async function runScanCycle() {
 			suppressedKnownNoise.strictPreActionStartup.recordCount
 		} signatures=${ groups.length } active=${
 			getActiveJobHashes( state ).size
-		} analysisGated=${ state.lastAnalysisGatedCount ?? 0 }\n`
-	);
-}
+		} analysisGated=${
+			state.lastAnalysisGatedCount ?? 0
+			} knownNoiseSuppressed=${
+				state.lastKnownNoiseSuppressedCount ?? 0
+			} sourceGatedStartupSuppressed=${ sourceGatedStartupSuppressed } producerSuppressed=${ producerSuppressed }\n`
+		);
+	}
 
 async function main() {
 	await fs.mkdir( STATE_DIR, { recursive: true } );

@@ -3,9 +3,9 @@ set -euo pipefail
 
 NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
 CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
-TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517
+TMUX_WRAP=$BASE/tmux-wrapper/bin
 PR_SPLIT_BASE=/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515
 FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 LOCAL_PUBLISH_MANIFEST=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
@@ -13,8 +13,6 @@ DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-2026051
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
-ARTIFACT_INDEX_BASE=/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518
-ARTIFACT_INDEX_ARTIFACTS=$ARTIFACT_INDEX_BASE/current-artifacts.tsv
 
 SESSION=rtc-critical-path-pr-executor-loop
 STATUS=$BASE/current-critical-path-status.md
@@ -47,13 +45,28 @@ CODEX_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_CODEX_TIMEOUT_SECONDS:-5400}
 ENABLE_BROWSER_PREFLIGHT=${RTC_CRITICAL_PR_EXECUTOR_ENABLE_BROWSER_PREFLIGHT:-1}
 RECONCILE_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_RECONCILE_TIMEOUT_SECONDS:-300}
 FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS:-12}
+NO_PROGRESS_REPORT_SCAN_LIMIT=${RTC_CRITICAL_PR_EXECUTOR_NO_PROGRESS_REPORT_SCAN_LIMIT:-200}
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$BASE/worktrees" "$TMUX_WRAP"
-cat > "$TMUX_WRAP/tmux" <<'SH'
+install_tmux_wrapper() {
+	local wrapper=$TMUX_WRAP/tmux tmp
+	if [ -f "$wrapper" ] && cmp -s "$wrapper" - <<'SH'
 #!/usr/bin/env bash
 exec /usr/bin/tmux -L rtc-fuzz "$@"
 SH
-chmod +x "$TMUX_WRAP/tmux"
+	then
+		chmod +x "$wrapper"
+		return 0
+	fi
+	tmp=$(mktemp "$TMUX_WRAP/tmux.XXXXXX.tmp")
+	cat > "$tmp" <<'SH'
+#!/usr/bin/env bash
+exec /usr/bin/tmux -L rtc-fuzz "$@"
+SH
+	chmod +x "$tmp"
+	mv -f "$tmp" "$wrapper"
+}
+install_tmux_wrapper
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 touch "$EVENTS" "$LAUNCHES"
 
@@ -83,7 +96,11 @@ json_event() {
 
 atomic_move() {
 	local tmp=$1 dest=$2
-	mv "$tmp" "$dest"
+	if [ ! -e "$tmp" ]; then
+		log "atomic move source missing tmp=$tmp dest=$dest"
+		return 1
+	fi
+	mv -f "$tmp" "$dest"
 }
 
 file_hash() {
@@ -110,28 +127,6 @@ file_mtime() {
 	stat -c %Y "$file" 2>/dev/null || printf '0'
 }
 
-artifact_index_fresh() {
-	local now mtime age
-	[ -s "$ARTIFACT_INDEX_ARTIFACTS" ] || return 1
-	now=$(date -u +%s)
-	mtime=$(stat -c %Y "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null || printf '0')
-	age=$(( now - mtime ))
-	[ "$age" -le 600 ]
-}
-
-latest_indexed_artifact() {
-	local kind=$1 pattern=$2
-	awk -F '\t' -v kind="$kind" -v pattern="$pattern" '
-		NR > 1 && $4 == kind {
-			path = tolower($6)
-			if (path ~ pattern) print $1 "\t" $6
-		}
-	' "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null |
-		sort -n |
-		tail -1 |
-		cut -f2-
-}
-
 input_status() {
 	local file=$1 size
 	if [ ! -e "$file" ]; then
@@ -152,35 +147,6 @@ latest_nonempty_file() {
 		sort -n |
 		tail -1 |
 		cut -f2-
-}
-
-latest_pr07c_owner_replay_ready_report() {
-	local indexed
-	if artifact_index_fresh; then
-		indexed=$(latest_indexed_artifact report 'pr07c.*owner.*replay.*/report[.]md' || true)
-		if [ -n "$indexed" ]; then
-			printf '%s\n' "$indexed"
-			return 0
-		fi
-	fi
-	find "$PR_SPLIT_BASE/runs" -mindepth 1 -maxdepth 1 -type d 2>/dev/null |
-		sort |
-		tail -20 |
-		while IFS= read -r run_dir; do
-			find "$run_dir/jobs/outputs" -maxdepth 3 -path '*pr07c*owner*replay*/report.md' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null || true
-		done |
-		sort -n |
-		tail -1 |
-		cut -f2-
-}
-
-pr07c_readiness_resolved() {
-	local report
-	report=$(latest_pr07c_owner_replay_ready_report || true)
-	[ -n "$report" ] || return 1
-	rg -qi 'status:[[:space:]]*`?PASS`?' "$report" 2>/dev/null || return 1
-	rg -qi 'readiness_failure_matches:[[:space:]]*`?0`?' "$report" 2>/dev/null || return 1
-	return 0
 }
 
 resource_reason() {
@@ -231,14 +197,6 @@ latest_local_publish_summary() {
 }
 
 latest_pr17_classification() {
-	local indexed
-	if artifact_index_fresh; then
-		indexed=$(latest_indexed_artifact classification 'continuations/pr17-1020002/classification[.]tsv$' || true)
-		if [ -n "$indexed" ]; then
-			printf '%s\n' "$indexed"
-			return 0
-		fi
-	fi
 	find "$BASE/runs" -path '*/continuations/pr17-1020002/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
 		sort -n |
 		tail -1 |
@@ -254,30 +212,9 @@ pr17_terminal_downscoped() {
 }
 
 fresh_pr17_product_evidence_after_terminal() {
-	local classification file class_mtime
+	local classification file
 	classification=$(latest_pr17_classification || true)
 	[ -n "$classification" ] || return 1
-	if artifact_index_fresh; then
-		class_mtime=$(file_mtime "$classification")
-		awk -F '\t' -v class_mtime="$class_mtime" '
-			NR > 1 && $1 > class_mtime && ($4 == "classification" || $4 == "report" || $4 == "validation") {
-				print $6
-			}
-		' "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null |
-		while IFS= read -r file; do
-			case "$file" in
-				*/continuations/pr17-1020002/classification.tsv|*/continuations/pr17-1020002/report.md)
-					continue
-					;;
-			esac
-			if rg -qi '1020002.*(fresh product evidence|product-owned|product owned|product branch|head_sha|owning head)|fresh.*1020002.*product' "$file" 2>/dev/null; then
-				printf '%s\n' "$file"
-				return 0
-			fi
-		done |
-		sed -n '1p'
-		return 0
-	fi
 	timeout --kill-after=5s "$FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS" \
 		find "$BASE/runs" "$PR_SPLIT_BASE/runs" -maxdepth 6 -type f \
 			\( -name 'classification.tsv' -o -name 'report.md' -o -name 'validation-head.tsv' -o -name 'validation-checks.tsv' \) \
@@ -302,14 +239,7 @@ pr17_suppressed_terminal() {
 }
 
 latest_lane_classification() {
-	local lane=$1 indexed
-	if artifact_index_fresh; then
-		indexed=$(latest_indexed_artifact classification "continuations/${lane}/classification[.]tsv$" || true)
-		if [ -n "$indexed" ]; then
-			printf '%s\n' "$indexed"
-			return 0
-		fi
-	fi
+	local lane=$1
 	find "$BASE/runs" -path "*/continuations/${lane}/classification.tsv" -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
 		sort -n |
 		tail -1 |
@@ -588,32 +518,42 @@ EOF
 }
 
 write_no_progress() {
-	local tmp=$NO_PROGRESS.$$.tmp
+	local tmp
 	local rejected_at file
+	tmp=$(mktemp "${NO_PROGRESS}.XXXXXX.tmp")
 	rejected_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	{
 		printf 'artifact_path\treason\tsize\tmtime\tassociated_job\trejected_at\n'
-		awk -F '\t' 'NR > 1 && $8 == "zero" { print $3 "\tzero_current_input\t" $5 "\t" $6 "\t" $1 }' "$INPUTS" 2>/dev/null |
+		( awk -F '\t' 'NR > 1 && $8 == "zero" { print $3 "\tzero_current_input\t" $5 "\t" $6 "\t" $1 }' "$INPUTS" 2>/dev/null || true ) |
 			while IFS=$'\t' read -r file reason size mtime job; do
 				printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$file" "$reason" "$size" "$mtime" "$job" "$rejected_at"
 			done
-		find "$BASE/runs" -maxdepth 7 \
-			-type f \( -name '*.md' -o -name '*.tsv' -o -name '*.tmp' \) -size 0c -print 2>/dev/null |
-			head -100 |
+		( find "$BASE/runs" -maxdepth 7 \
+			-type f \( -name '*.md' -o -name '*.tsv' -o -name '*.tmp' \) -size 0c -print 2>/dev/null || true ) |
+			awk 'NR <= 100' |
 			while IFS= read -r file; do
 				printf '%s\tzero_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
 			done
-			find "$BASE/runs" -maxdepth 7 -type f -name '*.tmp' -print 2>/dev/null |
-				head -100 |
+			( find "$BASE/runs" -maxdepth 7 -type f -name '*.tmp' -print 2>/dev/null || true ) |
+				awk 'NR <= 100' |
 				while IFS= read -r file; do
 					printf '%s\ttmp_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
 				done
-			find "$BASE/runs" -maxdepth 7 -type f -name 'report.md' -size +0c -print 2>/dev/null |
-				while IFS= read -r file; do
-					if rg -qi 'disk[- ]preflight[- ]only|pre[- ]oracle|before oracle|runtime.*failed before|report\.tmp|header[- ]only' "$file" 2>/dev/null; then
-						printf '%s\tpre_oracle_or_preflight_only\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
-					fi
-				done
+			timeout --kill-after=5s "$FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS" bash -c '
+base=$1
+rejected_at=$2
+limit=$3
+find "$base/runs" -maxdepth 7 -type f -name "report.md" -size +0c -printf "%T@\t%p\n" 2>/dev/null |
+	sort -rn |
+	awk -v limit="$limit" "NR <= limit { sub(/^[^\t]*\t/, \"\"); print }" |
+	while IFS= read -r file; do
+		if rg -qi "disk[- ]preflight[- ]only|pre[- ]oracle|before oracle|runtime.*failed before|report[.]tmp|header[- ]only" "$file" 2>/dev/null; then
+			size=$(stat -c %s "$file" 2>/dev/null || printf 0)
+			mtime=$(stat -c %Y "$file" 2>/dev/null || printf 0)
+			printf "%s\tpre_oracle_or_preflight_only\t%s\t%s\tunknown\t%s\n" "$file" "$size" "$mtime" "$rejected_at"
+		fi
+	done
+' bash "$BASE" "$rejected_at" "$NO_PROGRESS_REPORT_SCAN_LIMIT" || true
 	} > "$tmp"
 	atomic_move "$tmp" "$NO_PROGRESS"
 }
@@ -663,11 +603,7 @@ write_lanes() {
 		if ! lane_terminal_suppressed pr17-1020002; then
 			printf 'pr17-1020002\tPR17\tproof-reclassification\tvalidation-only\t%s\t1020002\t%s\t%s\t\tcodex-analysis\tnone\tqueued\t%s/runs/pr17-1020002\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
-		if pr07c_readiness_resolved; then
-			printf 'pr07c-owner-matrix\tPR07C\towner-evidence-matrix\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tpr-split-owner-matrix\tqueued\t%s/runs/pr07c-owner-matrix\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
-		else
-			printf 'pr07c-browser-env\tPR07C\tbrowser-env-repair\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tresource-and-env\tgated\t%s/runs/pr07c-browser-env\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
-		fi
+		printf 'pr07c-browser-env\tPR07C\tbrowser-env-repair\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tresource-and-env\tgated\t%s/runs/pr07c-browser-env\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		if ! lane_terminal_suppressed seed-5200005-reducer; then
 			printf 'seed-5200005-reducer\tPR05?\treducer\tvalidation-only\t%s\t5200005\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/5200005-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
@@ -679,14 +615,12 @@ write_lanes() {
 }
 
 write_blockers_and_queue() {
-	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reason pr07c_active pr07c_report
+	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reason
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	pr17_active=$(active_session_matching '1020002|pr17' || true)
 	s5200005=$(active_session_matching '5200005' || true)
 	s1060015=$(active_session_matching '1060015' || true)
 	reload_active=$(active_session_matching 'reload|hydration' || true)
-	pr07c_active=$(active_session_matching 'pr07c|PR07C|owner-matrix' || true)
-	pr07c_report=$(latest_pr07c_owner_replay_ready_report || true)
 	reason=$(resource_reason)
 	{
 		printf 'blocker_id\tkind\tpriority\tstate\tsource_input\tblocks\tblocked_by\trequired_artifacts\tactive_session\tnext_action\tupdated_at\n'
@@ -698,16 +632,9 @@ write_blockers_and_queue() {
 				"$([ -n "$pr17_active" ] && printf active-job || printf none)" \
 				"${pr17_active:-}" "$now"
 		fi
-		if pr07c_readiness_resolved; then
-			printf 'pr07c-owner-matrix\towner-evidence\thigh\t%s\tpr_split/finalization\tPR07C/HOLD-07C promotion decision\t%s\towner-matrix.tsv,report.md,classification.tsv\t%s\treadiness is resolved by %s; run/consume PR07C owner matrix and promote only if product ownership is proven\t%s\n' \
-				"$([ -n "$pr07c_active" ] && printf active || printf queued)" \
-				"$([ -n "$pr07c_active" ] && printf active-job || printf pr-split-review)" \
-				"${pr07c_active:-}" "${pr07c_report:-unknown}" "$now"
-		else
-			printf 'pr07c-browser-env\tbrowser-environment\thigh\t%s\tpr_split/finalization\tPR07C replay,7510029\t%s\tvalidation.tsv,report.md,classification.tsv,repair-branch.txt\t\trepair collaboration readiness so PR07C replay reaches seeded action/reload/checkpoint phase; runtime-readiness-blocked is not terminal\t%s\n' \
-				"$(allow_critical_browser_preflight && printf runnable || printf gated)" \
-				"$(allow_critical_browser_preflight && printf none || printf "resource_or_env:$reason")" "$now"
-		fi
+		printf 'pr07c-browser-env\tbrowser-environment\thigh\t%s\tpr_split/finalization\tPR07C replay,7510029\t%s\tvalidation.tsv,report.md,classification.tsv,repair-branch.txt\t\trepair collaboration readiness so PR07C replay reaches seeded action/reload/checkpoint phase; runtime-readiness-blocked is not terminal\t%s\n' \
+			"$(allow_critical_browser_preflight && printf runnable || printf gated)" \
+			"$(allow_critical_browser_preflight && printf none || printf "resource_or_env:$reason")" "$now"
 		if lane_terminal_suppressed seed-5200005-reducer; then
 			printf 'seed-5200005-reducer	reducer	high	terminal	pr_split/progress-unblock	PR05 residual decision	terminal-ledger	classification.tsv		resolved by active artifacts; reopen only with fresh newer product-owned evidence	%s
 ' "$now"
@@ -739,13 +666,8 @@ write_blockers_and_queue() {
 			printf 'job-pr17-1020002\tpr17-1020002\tpr17-1020002\tproof-reclassify\tpr17-1020002-proof\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/pr17-1020002\t%s\t\t%s\t\t%s\n' \
 				"$([ -n "$pr17_active" ] && printf active || printf runnable)" "${pr17_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr17_active" ] && printf adopted || printf pending)"
 		fi
-		if pr07c_readiness_resolved; then
-			printf 'job-pr07c-owner-matrix\tpr07c-owner-matrix\tpr07c-owner-matrix\towner-matrix\tpr07c-owner-matrix\tbrowser-e2e\thigh\t%s\t0\t%s\t\t%s/runs/pr07c-owner-matrix\t%s\t\t%s\t\t%s\n' \
-				"$([ -n "$pr07c_active" ] && printf active || printf queued)" "${pr07c_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr07c_active" ] && printf adopted || printf owned_by_pr_split_review)"
-		else
-			printf 'job-pr07c-browser-env\tpr07c-browser-env\tpr07c-browser-env\tbrowser-env-repair\tpr07c-browser-env\tbrowser-e2e\thigh\t%s\t0\t\t\t%s/runs/pr07c-browser-env\t%s\t\t%s\t\t%s\n' \
-				"$(allow_critical_browser_preflight && printf runnable || printf gated)" "$BASE" "$now" "$now" "$(allow_critical_browser_preflight && printf repair_pending || printf resource_or_env_gated)"
-		fi
+		printf 'job-pr07c-browser-env\tpr07c-browser-env\tpr07c-browser-env\tbrowser-env-repair\tpr07c-browser-env\tbrowser-e2e\thigh\t%s\t0\t\t\t%s/runs/pr07c-browser-env\t%s\t\t%s\t\t%s\n' \
+			"$(allow_critical_browser_preflight && printf runnable || printf gated)" "$BASE" "$now" "$now" "$(allow_critical_browser_preflight && printf repair_pending || printf resource_or_env_gated)"
 		if ! lane_terminal_suppressed seed-5200005-reducer; then
 			printf 'job-5200005-reducer	seed-5200005-reducer	seed-5200005-reducer	reducer	5200005-reducer	codex-analysis	high	%s	0	%s		%s/runs/5200005-reducer	%s		%s		%s
 ' \
@@ -1055,7 +977,7 @@ launch_continuation_jobs() {
 			"1060015|critical-continuation-seed-1060015" \
 			"bounded reducer/classification for seed 1060015 without launching broad fuzzing"
 	fi
-	if ! pr07c_readiness_resolved && allow_critical_browser_preflight; then
+	if allow_critical_browser_preflight; then
 		launch_continuation_job \
 			"pr07c-browser-env" \
 			"pr07c-browser-env-repair-v2" \
@@ -1096,6 +1018,7 @@ write_status() {
 		echo "- cycle sleep seconds: $CYCLE_SLEEP_SECONDS"
 		echo "- reconcile timeout seconds: $RECONCILE_TIMEOUT_SECONDS"
 		echo "- fresh evidence scan timeout seconds: $FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS"
+		echo "- no-progress report scan limit: $NO_PROGRESS_REPORT_SCAN_LIMIT"
 		echo
 		echo "## Active Critical Jobs"
 		tmux_sessions | rg '^rtc-critical-(validate|continuation)-' || true
@@ -1175,7 +1098,10 @@ case "${1:-start}" in
 	stop)
 		tmux kill-session -t "$SESSION" 2>/dev/null || true
 		if [ -f "$PID_FILE" ]; then
-			kill "$(cat "$PID_FILE")" 2>/dev/null || true
+			pid=$(cat "$PID_FILE" 2>/dev/null || true)
+			if [ -n "$pid" ]; then
+				kill "$pid" 2>/dev/null || true
+			fi
 			rm -f "$PID_FILE"
 		fi
 		echo "$SESSION stopped"

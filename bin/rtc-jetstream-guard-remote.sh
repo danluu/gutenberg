@@ -7,13 +7,18 @@ REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 COVERAGE_START_LOCK=$COVERAGE_BASE/start.lock
+FOCUSED_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
 CG_LOWER_LEVEL_B64_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516/holds/coverage-guided-lower-level-rich-text-crdt.hold
 CG_LOWER_LEVEL_B64_GROUP=coverage-guided-lower-level-rich-text-crdt
 CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP=coverage-guided-lower-level-rich-text-multiblock
 CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION=rtc-coverage-guided-lower-level-rich-text-multiblock
+CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-rich-text-multiblock-20260518/holds/coverage-guided-lower-level-rich-text-multiblock.hold
+CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP=coverage-guided-lower-level-table-query-array-crdt
+CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION=rtc-coverage-guided-lower-level-table-query-array-crdt
 LEVEL_MIX_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20260516
 NATIVE_ASSERT_BASE=/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516
 STRUCTURAL_BASE=/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518
+RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 LOG_DIR=$BASE/logs
 PID_FILE=$BASE/guard.pid
@@ -99,6 +104,11 @@ coverage_guided_lower_level_b64_satisfied() {
 	fi
 	if [ -f "$CG_LOWER_LEVEL_B64_HOLD_FILE" ] &&
 		grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
+		if [ -f "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE" ] &&
+			grep -Eq "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP|rtc-table-query-array-crdt|table-query-array" "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE"; then
+			has_session "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION"
+			return
+		fi
 		has_session "$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION"
 		return
 	fi
@@ -113,6 +123,11 @@ start_coverage_guided_lower_level_b64_or_replacement() {
 		grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
 		session=$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION
 		group=$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP
+		if [ -f "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE" ] &&
+			grep -Eq "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP|rtc-table-query-array-crdt|table-query-array" "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE"; then
+			session=$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION
+			group=$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP
+		fi
 	fi
 
 	RTC_CG_LOWER_LEVEL_SESSION="$session" \
@@ -121,12 +136,15 @@ start_coverage_guided_lower_level_b64_or_replacement() {
 		log "coverage-guided lower-level start failed session=$session group=$group"
 }
 
-resource_pressure_blocks_optional_browser() {
-	local status=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md
-	local reason current desired
+optional_browser_restart_block_reason() {
+	local status=$RESOURCE_BASE/resource-autoscaler-status.md
+	local shed_last=$RESOURCE_BASE/optional-browser-shed-last-epoch
+	local reason last now age grace load cores current desired
+
 	reason=$(sed -n 's/^- reason: //p' "$status" 2>/dev/null | tail -1)
 	case "$reason" in
 		pressure|severe_pressure|high_pressure)
+			printf 'autoscaler reason=%s\n' "$reason"
 			return 0
 			;;
 	esac
@@ -134,20 +152,184 @@ resource_pressure_blocks_optional_browser() {
 	current=$(sed -n 's/^- current_budget: target=\([0-9][0-9]*\).*/\1/p' "$status" 2>/dev/null | tail -1)
 	desired=$(sed -n 's/^- desired_budget: target=\([0-9][0-9]*\).*/\1/p' "$status" 2>/dev/null | tail -1)
 	if [[ "$current" =~ ^[0-9]+$ && "$desired" =~ ^[0-9]+$ ]] && [ "$desired" -lt "$current" ]; then
+		printf 'desired_budget=%s current_budget=%s reason=%s\n' "$desired" "$current" "${reason:-unknown}"
 		return 0
+	fi
+
+	load=$(sed -n 's/^- load1: \([0-9.]*\) \/.*/\1/p' "$status" 2>/dev/null | tail -1)
+	cores=$(sed -n 's/^- load1: [0-9.]* \/ \([0-9][0-9]*\) cores.*/\1/p' "$status" 2>/dev/null | tail -1)
+	if [[ "$load" =~ ^[0-9.]+$ && "$cores" =~ ^[0-9]+$ ]] &&
+		awk -v loadv="$load" -v cores="$cores" 'BEGIN { exit !(loadv >= cores * 0.90) }'; then
+		printf 'load1=%s cores=%s reason=%s\n' "$load" "$cores" "${reason:-unknown}"
+		return 0
+	fi
+
+	grace=${RTC_GUARD_OPTIONAL_BROWSER_SHED_RESTART_GRACE_SECONDS:-${RTC_RESOURCE_AUTOSCALER_OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS:-900}}
+	last=$(sed -n '1p' "$shed_last" 2>/dev/null || true)
+	if [[ "$last" =~ ^[0-9]+$ ]]; then
+		now=$(date -u +%s)
+		age=$(( now - last ))
+		if [ "$age" -ge 0 ] && [ "$age" -lt "$grace" ]; then
+			printf 'recent optional-browser shed age=%ss grace=%ss\n' "$age" "$grace"
+			return 0
+		fi
 	fi
 
 	return 1
 }
 
+resource_pressure_blocks_optional_browser() {
+	optional_browser_restart_block_reason >/dev/null
+}
+
+browser_pool_current_root() {
+	case "$1" in
+		focused)
+			sed -n '1p' "$FOCUSED_BASE/current-run-root.txt" 2>/dev/null || true
+			;;
+		strict)
+			sed -n '1p' /media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/current-run-root.txt 2>/dev/null || true
+			;;
+		gap-booster)
+			sed -n '1p' /media/volume/danluu-fuzz-data/rtc-gap-booster-20260515/current-run-root.txt 2>/dev/null || true
+			;;
+	esac
+}
+
+browser_pool_base() {
+	case "$1" in
+		focused)
+			printf '%s\n' "$FOCUSED_BASE"
+			;;
+		strict)
+			printf '%s\n' /media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515
+			;;
+		gap-booster)
+			printf '%s\n' /media/volume/danluu-fuzz-data/rtc-gap-booster-20260515
+			;;
+	esac
+}
+
+browser_pool_sessions() {
+	case "$1" in
+		focused)
+			printf '%s\t%s\t%s\t%s\n' rtc-focused-shards rtc-focused-shards-watchdog rtc-focused-shards-analysis rtc-focused-analysis
+			;;
+		strict)
+			printf '%s\t%s\t%s\t%s\n' rtc-fuzz-strict-expansion rtc-fuzz-strict-expansion-watchdog rtc-fuzz-strict-expansion-analysis rtc-strict-analysis
+			;;
+		gap-booster)
+			printf '%s\t%s\t%s\t%s\n' rtc-gap-booster rtc-gap-booster-watchdog rtc-gap-booster-analysis rtc-gap-analysis
+			;;
+	esac
+}
+
+browser_root_live_lane_count() {
+	local root=$1
+	[ -n "$root" ] && [ -f "$root/supervisor-state.json" ] || {
+		printf '0\n'
+		return
+	}
+	node - "$root" <<'NODE'
+const fs = require( 'fs' );
+const path = require( 'path' );
+const root = process.argv[ 2 ];
+let live = 0;
+const readJson = ( file ) => {
+	try {
+		return JSON.parse( fs.readFileSync( file, 'utf8' ) );
+	} catch {
+		return null;
+	}
+};
+const state = readJson( path.join( root, 'supervisor-state.json' ) );
+for ( const group of state?.groups ?? [] ) {
+	for ( const runDir of group.activeRunDirs ?? [] ) {
+		const manifest = readJson( path.join( runDir, 'lanes.json' ) );
+		for ( const lane of manifest?.lanes ?? [] ) {
+			const pid = Number( lane.pid );
+			if ( ! Number.isInteger( pid ) || pid <= 0 ) {
+				continue;
+			}
+			const laneState = lane.outputDir
+				? readJson( path.join( lane.outputDir, 'state.json' ) )
+				: null;
+			try {
+				process.kill( pid, 0 );
+				if ( ! laneState?.stopReason ) {
+					live += 1;
+				}
+			} catch {}
+		}
+	}
+}
+process.stdout.write( `${ live }\n` );
+NODE
+}
+
+reattach_browser_pool_if_live() {
+	local pool=$1
+	local reason=$2
+	local run base live_count supervisor_session watchdog_session analysis_session analysis_prefix
+
+	run=$(browser_pool_current_root "$pool")
+	base=$(browser_pool_base "$pool")
+	[ -n "$run" ] && [ -f "$run/supervisor-groups.json" ] && [ -n "$base" ] || return 1
+	live_count=$(browser_root_live_lane_count "$run")
+	[[ "$live_count" =~ ^[0-9]+$ ]] || live_count=0
+	[ "$live_count" -gt 0 ] || return 1
+
+	IFS=$'\t' read -r supervisor_session watchdog_session analysis_session analysis_prefix <<<"$(browser_pool_sessions "$pool")"
+	[ -n "$supervisor_session" ] && [ -n "$watchdog_session" ] && [ -n "$analysis_session" ] || return 1
+
+	log "reattaching browser pool pool=$pool live_lanes=$live_count reason=$reason root=$run"
+	if ! has_session "$supervisor_session"; then
+		tmux new-session -d -s "$supervisor_session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1 RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=\"$run\" RTC_FUZZ_SUPERVISOR_GROUPS_PATH=\"$run/supervisor-groups.json\" RTC_FUZZ_SUPERVISOR_DURATION_HOURS=12 RTC_FUZZ_SUPERVISOR_POLL_MS=60000 RTC_FUZZ_INLINE_CODEX=0 RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP=1 RTC_FUZZ_LOW_DISK_MODE=1 RTC_FUZZ_PLAYWRIGHT_VIDEO=; node bin/rtc-browser-fuzz-supervisor.mjs >> \"$base/logs/supervisor.log\" 2>&1'" ||
+			return 1
+	fi
+	if ! has_session "$watchdog_session"; then
+		tmux new-session -d -s "$watchdog_session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_WATCHDOG_REPO_ROOT=\"$REPO\" RTC_FUZZ_WATCHDOG_OUTPUT_DIR=\"$run\" RTC_FUZZ_WATCHDOG_GROUPS_PATH=\"$run/supervisor-groups.json\" RTC_FUZZ_WATCHDOG_SESSION=\"$supervisor_session\" RTC_FUZZ_WATCHDOG_DURATION_HOURS=12 RTC_FUZZ_WATCHDOG_POLL_MS=60000 RTC_FUZZ_WATCHDOG_STALE_MS=360000 node bin/rtc-browser-fuzz-watchdog.mjs >> \"$base/logs/watchdog.log\" 2>&1; code=\$?; printf \"WATCHDOG_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$base/logs/watchdog.log\"; sleep 30; done'" ||
+			return 1
+	fi
+	if ! has_session "$analysis_session"; then
+		tmux new-session -d -s "$analysis_session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_LIVE_ANALYSIS_REPO_ROOT=\"$REPO\" RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=4 RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=\"$analysis_prefix\" node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$run\" >> \"$base/logs/analysis.log\" 2>&1; code=\$?; printf \"ANALYSIS_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$base/logs/analysis.log\"; sleep 30; done'" ||
+			return 1
+	fi
+	return 0
+}
+
 maybe_restart_optional_browser_pool() {
 	local pool=$1
 	local reason=$2
-	if resource_pressure_blocks_optional_browser; then
-		log "skipping optional browser pool restart under resource pressure pool=$pool reason=$reason"
+	local block_reason
+	if reattach_browser_pool_if_live "$pool" "$reason"; then
+		return
+	fi
+	if block_reason=$(optional_browser_restart_block_reason); then
+		log "skipping optional browser pool restart under resource pressure pool=$pool reason=$reason block=$block_reason"
 		return
 	fi
 	restart_pool "$pool" "$reason"
+}
+
+restart_focused_sidecars() {
+	local run
+
+	run=$(sed -n '1p' "$FOCUSED_BASE/current-run-root.txt" 2>/dev/null || true)
+	if [ -z "$run" ] || [ ! -f "$run/supervisor-groups.json" ]; then
+		log "focused sidecar restart skipped; missing current run root"
+		return 1
+	fi
+
+	if ! has_session rtc-focused-shards-watchdog; then
+		tmux new-session -d -s rtc-focused-shards-watchdog "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_WATCHDOG_REPO_ROOT=\"$REPO\" RTC_FUZZ_WATCHDOG_OUTPUT_DIR=\"$run\" RTC_FUZZ_WATCHDOG_GROUPS_PATH=\"$run/supervisor-groups.json\" RTC_FUZZ_WATCHDOG_SESSION=rtc-focused-shards RTC_FUZZ_WATCHDOG_DURATION_HOURS=12 RTC_FUZZ_WATCHDOG_POLL_MS=60000 RTC_FUZZ_WATCHDOG_STALE_MS=360000 node bin/rtc-browser-fuzz-watchdog.mjs >> \"$FOCUSED_BASE/logs/watchdog.log\" 2>&1; code=\$?; printf \"WATCHDOG_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$FOCUSED_BASE/logs/watchdog.log\"; sleep 30; done'" ||
+			log "focused watchdog sidecar start failed"
+	fi
+
+	if ! has_session rtc-focused-shards-analysis; then
+		tmux new-session -d -s rtc-focused-shards-analysis "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_LIVE_ANALYSIS_REPO_ROOT=\"$REPO\" RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=4 RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=rtc-focused-analysis RTC_FUZZ_LIVE_ANALYSIS_ENABLE_DEEP=1 RTC_FUZZ_LIVE_DEEP_ANALYSIS_MAX_PARALLEL=2 node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$run\" >> \"$FOCUSED_BASE/logs/analysis.log\" 2>&1; code=\$?; printf \"ANALYSIS_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$FOCUSED_BASE/logs/analysis.log\"; sleep 30; done'" ||
+			log "focused analysis sidecar start failed"
+	fi
 }
 
 file_age_seconds() {
@@ -226,19 +408,46 @@ const readText = ( file ) => {
 const groups = readJson( path.join( root, 'supervisor-groups.json' ) );
 const state = readJson( path.join( root, 'supervisor-state.json' ) );
 const status = readText( path.join( root, 'novelty-status.md' ) );
-const parseMetric = ( label ) => {
-	const match = status.match( new RegExp( `- ${ label.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }:\\s*([0-9.]+)` ) );
+const sectionText = ( heading ) => {
+	const marker = `## ${ heading }`;
+	const start = status.indexOf( marker );
+	if ( start === -1 ) {
+		return '';
+	}
+	const next = status.indexOf( '\n## ', start + marker.length );
+	return status.slice( start, next === -1 ? undefined : next );
+};
+const parseMetric = ( text, label ) => {
+	const match = text.match( new RegExp( `- ${ label.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' ) }:\\s*([0-9.]+)` ) );
 	if ( ! match ) {
 		return null;
 	}
 	return Number( match[ 1 ] );
 };
-const signatures = parseMetric( 'signatures' );
-const duplicateShare = parseMetric( 'top duplicate family share' );
-const likelyReal = parseMetric( 'likely-real visible' );
-const currentNoiseClear =
+const activeTriage = sectionText( 'Triage Yield' ) || status;
+const drainTriage = sectionText( 'Current Drain Triage Yield' );
+const signatures = parseMetric( activeTriage, 'signatures' );
+const duplicateShare = parseMetric( activeTriage, 'top duplicate family share' );
+const likelyReal = parseMetric( activeTriage, 'likely-real visible' );
+const activeNoiseClear =
 	( signatures === null || signatures === 0 || duplicateShare === 0 ) &&
 	( likelyReal === null || likelyReal === 0 );
+const drainMetrics = [
+	parseMetric( drainTriage, 'raw signatures' ),
+	parseMetric( drainTriage, 'no-product raw signatures' ),
+	parseMetric( drainTriage, 'suppressed strict startup records' ),
+	parseMetric( drainTriage, 'suppressed strict startup virtual signatures' ),
+	parseMetric( drainTriage, 'raw top duplicate family share' ),
+	parseMetric( drainTriage, 'no-product raw top duplicate family share' ),
+];
+const drainNoiseClear =
+	! drainTriage ||
+	drainMetrics.every( ( value ) => value === null || value === 0 );
+const policyHoldingEmptyCoverage =
+	/hold-empty-coverage-no-safe-fallback|hold-materialization-floor-no-safe-group/.test(
+		status
+	);
+const currentNoiseClear = activeNoiseClear;
 const groupCount = Array.isArray( groups ) ? groups.length : null;
 const stateGroups = Array.isArray( state?.groups ) ? state.groups : null;
 const activeRunDirs = ( stateGroups || [] ).reduce(
@@ -512,12 +721,18 @@ run_loop() {
 			maybe_restart_optional_browser_pool strict "missing strict-expansion tmux session"
 		fi
 
-		if ! has_session rtc-focused-shards ||
-			! has_session rtc-focused-shards-watchdog ||
-			! has_session rtc-focused-shards-analysis; then
-			maybe_restart_optional_browser_pool focused "missing focused-shards tmux session"
-		elif ! has_session rtc-focused-shards-gap-codex-loop; then
-			restart_pool focused-gap "missing focused Codex gap loop"
+		if ! has_session rtc-focused-shards; then
+			maybe_restart_optional_browser_pool focused "missing focused-shards supervisor tmux session"
+		else
+			if ! has_session rtc-focused-shards-watchdog ||
+				! has_session rtc-focused-shards-analysis; then
+				log "focused sidecar missing; restarting focused sidecars"
+				restart_focused_sidecars >> "$LOG_DIR/focused-sidecars-start.log" 2>&1 ||
+					log "focused sidecar restart failed"
+			fi
+			if ! has_session rtc-focused-shards-gap-codex-loop; then
+				restart_pool focused-gap "missing focused Codex gap loop"
+			fi
 		fi
 
 		if ! has_session rtc-gap-booster ||

@@ -15,6 +15,7 @@ export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 BASE=/media/volume/danluu-fuzz-data/rtc-gap-booster-20260515
 STRICT_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515
 HTTP_SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
+WS_SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-ws-20260515/repo
 mkdir -p "$BASE/runs" "$BASE/logs"
 
 if [ -f "$HTTP_SRC/bin/rtc-optional-browser-admission-remote.sh" ]; then
@@ -23,19 +24,99 @@ if [ -f "$HTTP_SRC/bin/rtc-optional-browser-admission-remote.sh" ]; then
 	rtc_optional_browser_admission gap-booster || exit 0
 fi
 
+
 tmux kill-session -t rtc-gap-booster 2>/dev/null || true
 tmux kill-session -t rtc-gap-booster-watchdog 2>/dev/null || true
 tmux kill-session -t rtc-gap-booster-analysis 2>/dev/null || true
 
+required_manifests=(
+	build/scripts/block-library/blocks-manifest.php
+	build/scripts/edit-widgets/blocks/blocks-manifest.php
+	build/scripts/widgets/blocks/blocks-manifest.php
+)
+
+has_required_manifests() {
+	local repo=$1
+	local manifest
+	for manifest in "${required_manifests[@]}"; do
+		[ -f "$repo/$manifest" ] || return 1
+	done
+}
+
+copy_repo_tree() (
+	local src=$1
+	local dest=$2
+	local item name
+
+	shopt -s dotglob nullglob
+	for item in "$src"/*; do
+		name=${item##*/}
+		case "$name" in
+			artifacts)
+				continue
+				;;
+		esac
+		cp -al "$item" "$dest/"
+	done
+)
+
+copy_repo_with_retry() {
+	local src=$1
+	local dest=$2
+	local label=$3
+	local attempt
+
+	for attempt in 1 2 3; do
+		rm -rf "$dest"
+		mkdir -p "$dest"
+		if copy_repo_tree "$src" "$dest"; then
+			return 0
+		fi
+		printf '[%s] gap booster repo copy failed profile=%s attempt=%s; retrying\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$label" "$attempt" >&2
+		sleep $(( attempt * 2 ))
+	done
+
+	printf 'gap booster repo copy failed after retries profile=%s source=%s dest=%s\n' "$label" "$src" "$dest" >&2
+	return 1
+}
+
 RUN="$BASE/runs/gap-booster-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$RUN"
 printf '%s\n' "$RUN" > "$BASE/current-run-root.txt"
+REPOS_BASE="$BASE/repos-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+WP_ENV_BASE="$RUN/wp-env"
+mkdir -p "$REPOS_BASE" "$WP_ENV_BASE"
 
-node - "$RUN/supervisor-groups.json" "$STRICT_BASE" "$HTTP_SRC" <<'NODE'
+strict_sources=(
+	ws-real-user-editing
+	ws-three-user-late-join
+	ws-revision-persistence
+)
+
+for source in "${strict_sources[@]}"; do
+	dest="$REPOS_BASE/$source"
+	copy_repo_with_retry "$WS_SRC" "$dest" "$source"
+	if [[ ! -d "$dest/build/scripts/block-editor" ]]; then
+		rm -rf "$dest/build"
+		cp -al "$HTTP_SRC/build" "$dest/build"
+	fi
+	if ! has_required_manifests "$dest"; then
+		rm -rf "$dest/build"
+		cp -al "$HTTP_SRC/build" "$dest/build"
+	fi
+	if ! has_required_manifests "$dest"; then
+		printf 'gap booster repo is missing generated block manifests after copy: %s\n' "$dest" >&2
+		exit 2
+	fi
+done
+
+node - "$RUN/supervisor-groups.json" "$STRICT_BASE" "$HTTP_SRC" "$REPOS_BASE" "$WP_ENV_BASE" <<'NODE'
 const fs = require('fs');
 const out = process.argv[2];
 const strictBase = process.argv[3];
 const httpSrc = process.argv[4];
+const reposBase = process.argv[5] || `${ strictBase }/repos`;
+const wpEnvBase = process.argv[6] || `${ strictBase }/wp-env`;
 
 function strictGroup({
 	name,
@@ -50,7 +131,7 @@ function strictGroup({
 }) {
 	return {
 		name,
-		repoRoot: `${ strictBase }/repos/${ source }`,
+		repoRoot: `${ reposBase }/${ source }`,
 		transport: 'ws',
 		fuzzLevel: 'browser-e2e',
 		lanes,
@@ -58,7 +139,7 @@ function strictGroup({
 		stepCount,
 		wsPort,
 		env: {
-			WP_ENV_HOME: `${ strictBase }/wp-env/${ source }`,
+			WP_ENV_HOME: `${ wpEnvBase }/${ source }`,
 			WP_ENV_PORT: String(port),
 			WP_ENV_TESTS_PORT: String(port + 1),
 			RTC_FUZZ_BASE_URL: `http://localhost:${ port }`,
@@ -103,6 +184,7 @@ function baseEnv(profile) {
 		RTC_FUZZ_ANALYSIS_RECHECKS: '1',
 		RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '0',
 		GUTENBERG_RTC_BROWSER_ACTION_PROFILE: profile,
+		GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
 		GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '900000',
 		RTC_FUZZ_RUN_TIMEOUT_MS: '900000',
 		RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '60000',
@@ -335,7 +417,7 @@ fi
 } > "$RUN/gap-booster.md"
 
 tmux new-session -d -s rtc-gap-booster "bash -lc 'cd \"$HTTP_SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1 RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=\"$RUN\" RTC_FUZZ_SUPERVISOR_GROUPS_PATH=\"$RUN/supervisor-groups.json\" RTC_FUZZ_SUPERVISOR_DURATION_HOURS=10 RTC_FUZZ_SUPERVISOR_POLL_MS=60000 RTC_FUZZ_INLINE_CODEX=0 RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP=1 RTC_FUZZ_LOW_DISK_MODE=1 RTC_FUZZ_PLAYWRIGHT_VIDEO=; node bin/rtc-browser-fuzz-supervisor.mjs >> \"$BASE/logs/supervisor.log\" 2>&1'"
-tmux new-session -d -s rtc-gap-booster-watchdog "bash -lc 'cd \"$HTTP_SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; RTC_FUZZ_WATCHDOG_REPO_ROOT=\"$HTTP_SRC\" RTC_FUZZ_WATCHDOG_OUTPUT_DIR=\"$RUN\" RTC_FUZZ_WATCHDOG_GROUPS_PATH=\"$RUN/supervisor-groups.json\" RTC_FUZZ_WATCHDOG_SESSION=rtc-gap-booster RTC_FUZZ_WATCHDOG_DURATION_HOURS=10 RTC_FUZZ_WATCHDOG_POLL_MS=60000 RTC_FUZZ_WATCHDOG_STALE_MS=360000 node bin/rtc-browser-fuzz-watchdog.mjs >> \"$BASE/logs/watchdog.log\" 2>&1'"
+tmux new-session -d -s rtc-gap-booster-watchdog "bash -lc 'cd \"$HTTP_SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_WATCHDOG_REPO_ROOT=\"$HTTP_SRC\" RTC_FUZZ_WATCHDOG_OUTPUT_DIR=\"$RUN\" RTC_FUZZ_WATCHDOG_GROUPS_PATH=\"$RUN/supervisor-groups.json\" RTC_FUZZ_WATCHDOG_SESSION=rtc-gap-booster RTC_FUZZ_WATCHDOG_DURATION_HOURS=10 RTC_FUZZ_WATCHDOG_POLL_MS=60000 RTC_FUZZ_WATCHDOG_STALE_MS=360000 node bin/rtc-browser-fuzz-watchdog.mjs >> \"$BASE/logs/watchdog.log\" 2>&1; code=\$?; printf \"WATCHDOG_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$BASE/logs/watchdog.log\"; sleep 30; done'"
 tmux new-session -d -s rtc-gap-booster-analysis "bash -lc 'cd \"$HTTP_SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; RTC_FUZZ_LIVE_ANALYSIS_REPO_ROOT=\"$HTTP_SRC\" RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=4 RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$RUN\" >> \"$BASE/logs/analysis.log\" 2>&1'"
 
 echo "RUN=$RUN"

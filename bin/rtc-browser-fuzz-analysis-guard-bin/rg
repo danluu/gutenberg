@@ -5,6 +5,10 @@ repo_root="${RTC_FUZZ_ANALYSIS_REPO_ROOT:-}"
 
 for arg in "$@"; do
 	case "$arg" in
+		.|"$repo_root"|/media|/media/volume|/media/volume/danluu-fuzz-data)
+			echo "rtc analysis guard: refusing broad rg rooted at '$arg'" >&2
+			exit 64
+			;;
 		artifacts|./artifacts|artifacts/rtc-browser-fuzz|./artifacts/rtc-browser-fuzz|test/e2e/artifacts|./test/e2e/artifacts)
 			echo "rtc analysis guard: refusing broad rg rooted at '$arg'" >&2
 			exit 64
@@ -24,6 +28,7 @@ done
 real_rg="${RTC_FUZZ_ANALYSIS_REAL_RG:-}"
 if [ -z "$real_rg" ]; then
 	for candidate in \
+		/usr/bin/rg \
 		/opt/homebrew/bin/rg \
 		/usr/local/bin/rg \
 		"$HOME/.nvm/versions/node/v20.19.0/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/path/rg"

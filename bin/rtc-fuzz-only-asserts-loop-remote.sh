@@ -31,6 +31,7 @@ FOCUSED_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
 STRICT_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515
 LOG="$BASE/logs/fuzz-only-asserts-loop.log"
 STATE="$BASE/logs/fuzz-only-asserts-loop-state.tsv"
+HOLD_FILE=${RTC_FUZZ_ASSERT_HOLD_FILE:-$BASE/hold-fuzz-only-asserts}
 PERSONAS=(
 	"linus torvalds"
 	"kyle kingsbury"
@@ -41,7 +42,8 @@ PERSONAS=(
 )
 CYCLE_SLEEP_SECONDS=${RTC_FUZZ_ASSERT_CYCLE_SLEEP_SECONDS:-900}
 ROUND_TIMEOUT_SECONDS=${RTC_FUZZ_ASSERT_ROUND_TIMEOUT_SECONDS:-14400}
-ROUND2_EXACT=${RTC_FUZZ_ASSERT_ROUND2_EXACT:-1}
+MAX_PARALLEL=${RTC_FUZZ_ASSERT_MAX_PARALLEL:-6}
+ROUND2_EXACT=${RTC_FUZZ_ASSERT_ROUND2_EXACT:-0}
 CODEX_MODEL=${RTC_FUZZ_ASSERT_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_FUZZ_ASSERT_CODEX_REASONING_EFFORT:-xhigh}
 
@@ -61,6 +63,191 @@ slugify() {
 
 active_assert_sessions() {
 	tmux ls 2>/dev/null | awk -F: '/^rtc-fuzz-asserts-/ { count++ } END { print count + 0 }'
+}
+
+audit_current_cycle() {
+	local latest_cycle active_count
+	latest_cycle=$(ls -td "$BASE"/cycles/* 2>/dev/null | head -1 || true)
+	[ -n "$latest_cycle" ] && [ -d "$latest_cycle" ] || return 0
+	active_count=$(active_assert_sessions)
+	if ! "$NODE_BIN/node" - "$BASE" "$latest_cycle" "$active_count" <<'NODE'
+const fs = require( 'fs' );
+const path = require( 'path' );
+
+const [ base, cycleDir, activeCountRaw ] = process.argv.slice( 2 );
+const activeSessionCount = Number.parseInt( activeCountRaw || '0', 10 ) || 0;
+const groupName = 'fuzz-assertion-persona-review';
+const now = new Date().toISOString();
+
+function listFiles( root ) {
+	const files = [];
+	for ( const entry of fs.readdirSync( root, { withFileTypes: true } ) ) {
+		const fullPath = path.join( root, entry.name );
+		if ( entry.isDirectory() ) {
+			files.push( ...listFiles( fullPath ) );
+		} else {
+			files.push( fullPath );
+		}
+	}
+	return files;
+}
+
+function writeAtomic( target, content ) {
+	const tmp = `${ target }.tmp-${ process.pid }`;
+	fs.writeFileSync( tmp, content );
+	fs.renameSync( tmp, target );
+}
+
+function writeJsonAtomic( target, value ) {
+	writeAtomic( target, `${ JSON.stringify( value, null, 2 ) }\n` );
+}
+
+let files = [];
+try {
+	files = listFiles( cycleDir );
+} catch ( error ) {
+	files = [];
+}
+
+const reportCount = files.filter(
+	( file ) => file.endsWith( '.report.md' ) && fs.statSync( file ).size > 0
+).length;
+const promptCount = files.filter( ( file ) => file.endsWith( '.prompt.md' ) ).length;
+const applyDone = fs.existsSync( path.join( cycleDir, 'apply.report.md' ) );
+const cycleStatus = activeSessionCount > 0 ? 'running' : applyDone ? 'complete' : 'idle';
+const group = {
+	name: groupName,
+	fuzzLevel: 'fuzz-assertion',
+	lanes: 1,
+	transport: 'codex-persona-review',
+	profile: 'fuzz-only-assertion-generation',
+};
+const state = {
+	lastUpdatedAt: now,
+	cycleDir,
+	groups: [
+		{
+			...group,
+			status: cycleStatus,
+			currentRunDir: cycleDir,
+			activeRunDirs: [ cycleDir ],
+			activeSessionCount,
+			reportCount,
+			promptCount,
+			applyDone,
+		},
+	],
+};
+
+writeJsonAtomic( path.join( cycleDir, 'supervisor-groups.json' ), [ group ] );
+writeJsonAtomic( path.join( cycleDir, 'supervisor-state.json' ), state );
+writeAtomic( path.join( base, 'current-run-root.txt' ), `${ cycleDir }\n` );
+writeAtomic(
+	path.join( cycleDir, 'status.tsv' ),
+	[
+		`at=${ now }`,
+		`group=${ groupName }`,
+		`status=${ cycleStatus }`,
+		'exit=0',
+		`reports=${ reportCount }`,
+		`prompts=${ promptCount }`,
+		`activeSessions=${ activeSessionCount }`,
+		`applyDone=${ applyDone ? 1 : 0 }`,
+	].join( '\t' ) + '\n'
+);
+
+const auditStatePath = path.join( cycleDir, '.audit-state.json' );
+let previous = {};
+try {
+	previous = JSON.parse( fs.readFileSync( auditStatePath, 'utf8' ) );
+} catch ( error ) {
+	previous = {};
+}
+const auditKey = [
+	cycleStatus,
+	reportCount,
+	promptCount,
+	activeSessionCount,
+	applyDone ? 1 : 0,
+].join( ':' );
+const previousAt = Date.parse( previous.at || '' );
+const shouldAppendEvent =
+	previous.key !== auditKey ||
+	! Number.isFinite( previousAt ) ||
+	Date.now() - previousAt > 5 * 60 * 1000;
+
+if ( shouldAppendEvent ) {
+	const event = {
+		at: now,
+		kind: 'seed-attempt-complete',
+		fuzzLevel: 'fuzz-assertion',
+		groupName,
+		ok: true,
+		exitCode: 0,
+		executionUnitCount: Math.max( 1, reportCount ),
+		reportCount,
+		promptCount,
+		activeSessionCount,
+		applyDone,
+		cycleDir,
+	};
+	fs.appendFileSync(
+		path.join( cycleDir, 'events.ndjson' ),
+		`${ JSON.stringify( event ) }\n`
+	);
+	writeJsonAtomic( auditStatePath, { key: auditKey, at: now } );
+}
+NODE
+	then
+		log "failed to audit current fuzz-only assertion cycle $latest_cycle"
+	fi
+}
+
+cleanup_orphan_assert_process_groups() {
+	local pgids pgid
+	pgids=$(
+		for proc_dir in /proc/[0-9]*; do
+			[ -r "$proc_dir/cmdline" ] || continue
+			local pid cmd fd target
+			pid=${proc_dir#/proc/}
+			cmd=$(tr '\0' ' ' < "$proc_dir/cmdline" 2>/dev/null || true)
+			case "$cmd" in
+				*codex*|*timeout*)
+					;;
+				*)
+					continue
+					;;
+			esac
+			for fd in "$proc_dir"/fd/[012]; do
+				target=$(readlink "$fd" 2>/dev/null || true)
+				case "$target" in
+					"$BASE"/cycles/*)
+						ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' '
+						break
+						;;
+				esac
+			done
+		done | sort -u
+	)
+	[ -n "$pgids" ] || return 0
+	for pgid in $pgids; do
+		case "$pgid" in
+			''|0|1)
+				continue
+				;;
+		esac
+		log "terminating orphan assertion process group pgid=$pgid"
+		kill -TERM "-$pgid" 2>/dev/null || true
+	done
+	sleep 5
+	for pgid in $pgids; do
+		case "$pgid" in
+			''|0|1)
+				continue
+				;;
+		esac
+		kill -KILL "-$pgid" 2>/dev/null || true
+	done
 }
 
 wait_for_prefix() {
@@ -87,13 +274,40 @@ wait_for_prefix() {
 	done
 }
 
+wait_for_prefix_below_limit() {
+	local prefix=$1
+	local limit=${2:-0}
+	local active
+	if [ "$limit" -le 0 ]; then
+		return 0
+	fi
+	while true; do
+		active=$(tmux ls 2>/dev/null | awk -F: -v prefix="$prefix" 'index($1, prefix) == 1 { count++ } END { print count + 0 }')
+		if [ "$active" -lt "$limit" ]; then
+			return 0
+		fi
+		log "$prefix throttled active=$active limit=$limit"
+		sleep 30
+	done
+}
+
 launch_codex() {
 	local session=$1
 	local prompt=$2
 	local report=$3
 	local codex_log=$4
 	tmux new-session -d -s "$session" \
-		"bash -lc 'cd \"$SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; timeout --kill-after=60s \"$ROUND_TIMEOUT_SECONDS\" \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m \"$CODEX_MODEL\" -c model_reasoning_effort=\"$CODEX_REASONING_EFFORT\" -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
+		"bash -lc 'child=\"\"; cleanup() { if [ -n \"\$child\" ]; then kill -TERM \"\$child\" 2>/dev/null || true; wait \"\$child\" 2>/dev/null || true; fi; }; trap cleanup HUP INT TERM EXIT; cd \"$SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; timeout --kill-after=60s \"$ROUND_TIMEOUT_SECONDS\" \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m \"$CODEX_MODEL\" -c model_reasoning_effort=\"$CODEX_REASONING_EFFORT\" -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\" & child=\$!; wait \"\$child\"; rc=\$?; child=\"\"; trap - HUP INT TERM EXIT; exit \"\$rc\"'"
+}
+
+launch_codex_for_prefix() {
+	local prefix=$1
+	local session=$2
+	local prompt=$3
+	local report=$4
+	local codex_log=$5
+	wait_for_prefix_below_limit "$prefix" "$MAX_PARALLEL"
+	launch_codex "$session" "$prompt" "$report" "$codex_log"
 }
 
 collect_context() {
@@ -235,6 +449,7 @@ run_cycle() {
 
 	mkdir -p "$cycle_dir"/round0 "$cycle_dir"/round1 "$cycle_dir"/round2
 	collect_context "$cycle_dir"
+	audit_current_cycle
 	log "cycle $ts collected context at $context"
 
 	for persona in "${PERSONAS[@]}"; do
@@ -244,10 +459,12 @@ run_cycle() {
 		report="$cycle_dir/round0/$slug.report.md"
 		codex_log="$cycle_dir/round0/$slug.stderr.log"
 		write_analysis_prompt "$prompt" "$persona" "$context" "$report"
-		launch_codex "$session" "$prompt" "$report" "$codex_log"
+		launch_codex_for_prefix "$prefix-r0-" "$session" "$prompt" "$report" "$codex_log"
 	done
-	log "cycle $ts launched round0 ${#PERSONAS[@]} jobs"
+	audit_current_cycle
+	log "cycle $ts launched round0 ${#PERSONAS[@]} jobs max_parallel=$MAX_PARALLEL"
 	wait_for_prefix "$prefix-r0-"
+	audit_current_cycle
 
 	idx=0
 	for input_report in "$cycle_dir"/round0/*.report.md; do
@@ -260,14 +477,16 @@ run_cycle() {
 			report="$cycle_dir/round1/$idx-$slug.report.md"
 			codex_log="$cycle_dir/round1/$idx-$slug.stderr.log"
 			write_critique_prompt "$prompt" "$persona" "$context" "$input_report" "$report" 1
-			launch_codex "$session" "$prompt" "$report" "$codex_log"
+			launch_codex_for_prefix "$prefix-r1-" "$session" "$prompt" "$report" "$codex_log"
 		done
 	done
-	log "cycle $ts launched round1 $idx jobs"
+	audit_current_cycle
+	log "cycle $ts launched round1 $idx jobs max_parallel=$MAX_PARALLEL"
 	wait_for_prefix "$prefix-r1-"
+	audit_current_cycle
 
 	idx=0
-	if [ "$ROUND2_EXACT" = 1 ]; then
+	if [ "$ROUND2_EXACT" = "1" ]; then
 		for input_report in "$cycle_dir"/round1/*.report.md; do
 			[ -s "$input_report" ] || continue
 			for persona in "${PERSONAS[@]}"; do
@@ -278,7 +497,7 @@ run_cycle() {
 				report="$cycle_dir/round2/$idx-$slug.report.md"
 				codex_log="$cycle_dir/round2/$idx-$slug.stderr.log"
 				write_critique_prompt "$prompt" "$persona" "$context" "$input_report" "$report" 2
-				launch_codex "$session" "$prompt" "$report" "$codex_log"
+				launch_codex_for_prefix "$prefix-r2-" "$session" "$prompt" "$report" "$codex_log"
 			done
 		done
 	else
@@ -301,27 +520,38 @@ Task:
 4. Do not edit files in this critique job.
 5. Write your report to $report.
 PROMPT
-			launch_codex "$session" "$prompt" "$report" "$codex_log"
+			launch_codex_for_prefix "$prefix-r2-" "$session" "$prompt" "$report" "$codex_log"
 		done
 	fi
-	log "cycle $ts launched round2 $idx jobs"
+	audit_current_cycle
+	log "cycle $ts launched round2 $idx jobs max_parallel=$MAX_PARALLEL round2_exact=$ROUND2_EXACT"
 	wait_for_prefix "$prefix-r2-"
+	audit_current_cycle
 
 	session="$prefix-apply"
 	prompt="$cycle_dir/apply.prompt.md"
 	report="$cycle_dir/apply.report.md"
 	codex_log="$cycle_dir/apply.stderr.log"
 	write_apply_prompt "$prompt" "$context" "$cycle_dir" "$report"
-	launch_codex "$session" "$prompt" "$report" "$codex_log"
+	launch_codex_for_prefix "$prefix-apply" "$session" "$prompt" "$report" "$codex_log"
+	audit_current_cycle
 	log "cycle $ts launched applier"
 	wait_for_prefix "$prefix-apply"
+	audit_current_cycle
 	printf '%s\t%s\t%s\n' "$ts" "$(date -u +%s)" "$cycle_dir" >> "$STATE"
 	log "cycle $ts complete"
 }
 
-log "fuzz-only assertion loop started pid=$$"
+cleanup_orphan_assert_process_groups
+log "fuzz-only assertion loop started pid=$$ max_parallel=$MAX_PARALLEL round2_exact=$ROUND2_EXACT"
 
 while true; do
+	audit_current_cycle
+	if [ -f "$HOLD_FILE" ]; then
+		log "fuzz-only assertion lane held by $HOLD_FILE"
+		sleep 300
+		continue
+	fi
 	if [ "$(active_assert_sessions)" -gt 0 ]; then
 		log "assertion Codex sessions already active; waiting"
 		sleep 300

@@ -22,9 +22,112 @@ if [ -f "$SRC/bin/rtc-optional-browser-admission-remote.sh" ]; then
 	rtc_optional_browser_admission focused-shards || exit 0
 fi
 
-if [ -x /tmp/cleanup_rtc_focused_shards.sh ]; then
-	/tmp/cleanup_rtc_focused_shards.sh || true
+
+required_manifests=(
+	build/scripts/block-library/blocks-manifest.php
+	build/scripts/edit-widgets/blocks/blocks-manifest.php
+	build/scripts/widgets/blocks/blocks-manifest.php
+)
+
+has_required_manifests() {
+	local repo=$1
+	local manifest
+	for manifest in "${required_manifests[@]}"; do
+		[ -f "$repo/$manifest" ] || return 1
+	done
+}
+
+wait_for_required_manifests() {
+	local repo=$1
+	local label=$2
+	local waited=0
+	local interval=5
+	local max_wait=180
+
+	while ! has_required_manifests "$repo"; do
+		if (( waited >= max_wait )); then
+			return 1
+		fi
+		printf '[%s] waiting for generated block manifests label=%s repo=%s waited=%ss\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$label" "$repo" "$waited" >&2
+		sleep "$interval"
+		waited=$(( waited + interval ))
+	done
+}
+
+if ! wait_for_required_manifests "$SRC" source; then
+	printf 'source repo is missing generated block manifests; run npm run build first: %s\n' "$SRC" >&2
+	exit 2
 fi
+
+exec 7>"$BASE/start.lock"
+if ! flock -n 7; then
+	printf '[%s] focused start skipped; focused start/cleanup lock is held\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$BASE/logs/cleanup.log"
+	exit 0
+fi
+export RTC_FOCUSED_START_LOCK_HELD=1
+
+if [ -x /tmp/cleanup_rtc_focused_shards.sh ]; then
+	RTC_FOCUSED_START_LOCK_HELD=1 /tmp/cleanup_rtc_focused_shards.sh || true
+fi
+
+REPOS_BASE="$BASE/repos-$(date -u +%Y%m%dT%H%M%SZ)-$$"
+mkdir -p "$REPOS_BASE"
+
+copy_repo_tree() (
+	local src=$1
+	local dest=$2
+	local item name
+
+	shopt -s dotglob nullglob
+	for item in "$src"/*; do
+		name=${item##*/}
+		case "$name" in
+			artifacts)
+				continue
+				;;
+		esac
+		cp -al "$item" "$dest/"
+	done
+)
+
+copy_repo_with_retry() {
+	local src=$1
+	local dest=$2
+	local label=$3
+	local attempt
+
+	for attempt in 1 2 3; do
+		rm -rf "$dest"
+		mkdir -p "$dest"
+		if copy_repo_tree "$src" "$dest"; then
+			return 0
+		fi
+		printf '[%s] focused shard repo copy failed profile=%s attempt=%s; retrying\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$label" "$attempt" >&2
+		sleep $(( attempt * 2 ))
+	done
+
+	printf 'focused shard repo copy failed after retries profile=%s source=%s dest=%s\n' "$label" "$src" "$dest" >&2
+	return 1
+}
+
+copy_path_with_retry() {
+	local src=$1
+	local dest=$2
+	local label=$3
+	local attempt
+
+	for attempt in 1 2 3; do
+		rm -rf "$dest"
+		if cp -al "$src" "$dest"; then
+			return 0
+		fi
+		printf '[%s] focused shard path copy failed label=%s attempt=%s; retrying\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$label" "$attempt" >&2
+		sleep $(( attempt * 2 ))
+	done
+
+	printf 'focused shard path copy failed after retries label=%s source=%s dest=%s\n' "$label" "$src" "$dest" >&2
+	return 1
+}
 
 profiles=(
 	late-join-a
@@ -39,20 +142,25 @@ profiles=(
 )
 
 for p in "${profiles[@]}"; do
-	d="$BASE/repos/$p"
-	rm -rf "$d"
-	mkdir -p "$d"
-	cp -al "$SRC/." "$d/"
+	d="$REPOS_BASE/$p"
+	copy_repo_with_retry "$SRC" "$d" "$p"
+	if ! has_required_manifests "$d"; then
+		copy_path_with_retry "$SRC/build" "$d/build" "$p/build"
+	fi
+	if ! has_required_manifests "$d"; then
+		printf 'focused shard repo is missing generated block manifests after copy: %s\n' "$d" >&2
+		exit 2
+	fi
 done
 
 RUN="$BASE/runs/focused-shards-$(date -u +%Y%m%dT%H%M%SZ)"
 mkdir -p "$RUN"
-printf '%s\n' "$RUN" > "$BASE/current-run-root.txt"
 
-node - "$RUN/supervisor-groups.json" "$BASE" <<'NODE'
+node - "$RUN/supervisor-groups.json" "$BASE" "$REPOS_BASE" <<'NODE'
 const fs = require('fs');
 const out = process.argv[2];
 const base = process.argv[3];
+const reposBase = process.argv[4] || `${ base }/repos`;
 const richSequence = [
 	'ui-paste-paragraph',
 	'ui-link-paragraph',
@@ -253,7 +361,6 @@ const specs = [
 	],
 ];
 const enabledNames = new Set( [
-	'late-join-a',
 	'late-join-b',
 	'rich-text-b',
 	'async-server-a',
@@ -263,18 +370,26 @@ const enabledNames = new Set( [
 	'long-doc-b',
 	'same-user-stale-tabs',
 ] );
-const groups = specs.filter(
-	( [ name ] ) => enabledNames.has( name )
+const portBase = Number.parseInt(
+	process.env.RTC_FOCUSED_SHARDS_PORT_BASE || '9700',
+	10
+);
+const wsPortBase = Number.parseInt(
+	process.env.RTC_FOCUSED_SHARDS_WS_PORT_BASE || '19400',
+	10
+);
+const groups = specs.map( ( spec, index ) => ( { spec, index } ) ).filter(
+	( { spec: [ name ] } ) => enabledNames.has( name )
 ).map(
-	( [ name, actionProfile, startSeed, stepCount, extraEnv ], i ) => {
-		const port = 9700 + i * 4;
-		const wsPort = 19400 + i;
+	( { spec: [ name, actionProfile, startSeed, stepCount, extraEnv ], index: i } ) => {
+		const port = portBase + i * 4;
+		const wsPort = wsPortBase + i;
 		return {
 			name: `focused-${ name }`,
-			repoRoot: `${ base }/repos/${ name }`,
+			repoRoot: `${ reposBase }/${ name }`,
 			transport: 'ws',
 			fuzzLevel: 'browser-e2e',
-			lanes: 1,
+			lanes: name === 'rich-text-b' ? 4 : 1,
 			startSeed,
 			stepCount,
 			wsPort,
@@ -329,8 +444,9 @@ fi
 } > "$RUN/focused-shards.md"
 
 tmux new-session -d -s rtc-focused-shards "bash -lc 'cd \"$SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1 RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=\"$RUN\" RTC_FUZZ_SUPERVISOR_GROUPS_PATH=\"$RUN/supervisor-groups.json\" RTC_FUZZ_SUPERVISOR_DURATION_HOURS=12 RTC_FUZZ_SUPERVISOR_POLL_MS=60000 RTC_FUZZ_INLINE_CODEX=0 RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP=1 RTC_FUZZ_LOW_DISK_MODE=1 RTC_FUZZ_PLAYWRIGHT_VIDEO=; node bin/rtc-browser-fuzz-supervisor.mjs >> \"$BASE/logs/supervisor.log\" 2>&1'"
-tmux new-session -d -s rtc-focused-shards-watchdog "bash -lc 'cd \"$SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; RTC_FUZZ_WATCHDOG_REPO_ROOT=\"$SRC\" RTC_FUZZ_WATCHDOG_OUTPUT_DIR=\"$RUN\" RTC_FUZZ_WATCHDOG_GROUPS_PATH=\"$RUN/supervisor-groups.json\" RTC_FUZZ_WATCHDOG_SESSION=rtc-focused-shards RTC_FUZZ_WATCHDOG_DURATION_HOURS=12 RTC_FUZZ_WATCHDOG_POLL_MS=60000 RTC_FUZZ_WATCHDOG_STALE_MS=360000 node bin/rtc-browser-fuzz-watchdog.mjs >> \"$BASE/logs/watchdog.log\" 2>&1'"
+tmux new-session -d -s rtc-focused-shards-watchdog "bash -lc 'cd \"$SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_WATCHDOG_REPO_ROOT=\"$SRC\" RTC_FUZZ_WATCHDOG_OUTPUT_DIR=\"$RUN\" RTC_FUZZ_WATCHDOG_GROUPS_PATH=\"$RUN/supervisor-groups.json\" RTC_FUZZ_WATCHDOG_SESSION=rtc-focused-shards RTC_FUZZ_WATCHDOG_DURATION_HOURS=12 RTC_FUZZ_WATCHDOG_POLL_MS=60000 RTC_FUZZ_WATCHDOG_STALE_MS=360000 node bin/rtc-browser-fuzz-watchdog.mjs >> \"$BASE/logs/watchdog.log\" 2>&1; code=\$?; printf \"WATCHDOG_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$BASE/logs/watchdog.log\"; sleep 30; done'"
 tmux new-session -d -s rtc-focused-shards-analysis "bash -lc 'cd \"$SRC\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; RTC_FUZZ_LIVE_ANALYSIS_REPO_ROOT=\"$SRC\" RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=4 RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=rtc-focused-analysis RTC_FUZZ_LIVE_ANALYSIS_ENABLE_DEEP=1 RTC_FUZZ_LIVE_DEEP_ANALYSIS_MAX_PARALLEL=2 node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$RUN\" >> \"$BASE/logs/analysis.log\" 2>&1'"
+printf '%s\n' "$RUN" > "$BASE/current-run-root.txt"
 
 /tmp/start_rtc_focused_gap_codex_loop.sh 2>/dev/null || true
 

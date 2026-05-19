@@ -22,6 +22,10 @@ const DURATION_HOURS = getPositiveNumberEnv(
 	getPositiveNumberEnv( 'RTC_FUZZ_DURATION_HOURS', 14 )
 );
 const POLL_MS = getPositiveIntegerEnv( 'RTC_FUZZ_SUPERVISOR_POLL_MS', 60000 );
+const REPLACEMENT_SEED_SEARCH_LIMIT = getPositiveIntegerEnv(
+	'RTC_FUZZ_SUPERVISOR_REPLACEMENT_SEED_SEARCH_LIMIT',
+	10000
+);
 const STATE_HEARTBEAT_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_SUPERVISOR_STATE_HEARTBEAT_MS',
 	60000
@@ -30,6 +34,10 @@ const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 const STATE_PATH = path.join( OUTPUT_DIR, 'supervisor-state.json' );
 const LOG_PATH = path.join( OUTPUT_DIR, 'supervisor.log' );
 const EVENTS_PATH = path.join( OUTPUT_DIR, 'events.ndjson' );
+const NO_ANALYSIS_SENTINEL_RELATIVE_PATH = path.join(
+	'.triage-watcher',
+	'no-analysis.json'
+);
 const AUTO_REPAIR_WP_ENV =
 	process.env.RTC_FUZZ_SUPERVISOR_AUTO_REPAIR_WP_ENV !== '0';
 const AUTO_REPAIR_ORBSTACK_DOCKER =
@@ -54,7 +62,75 @@ const COMPOSE_MARIADB_HEALTHCHECK_TARGET = [
 	"        - '--no-defaults'",
 	"        - '--connect'",
 ].join( '\n' );
+const REQUIRED_GUTENBERG_BLOCK_MANIFESTS = [
+	{
+		input: 'build/scripts/block-library',
+		output: 'build/scripts/block-library/blocks-manifest.php',
+	},
+	{
+		input: 'build/scripts/edit-widgets/blocks',
+		output: 'build/scripts/edit-widgets/blocks/blocks-manifest.php',
+	},
+	{
+		input: 'build/scripts/widgets/blocks',
+		output: 'build/scripts/widgets/blocks/blocks-manifest.php',
+	},
+];
+const REQUIRED_GUTENBERG_VENDOR_SCRIPTS = [
+	'build/scripts/vendors/react.min.js',
+	'build/scripts/vendors/react-dom.min.js',
+	'build/scripts/vendors/react-jsx-runtime.min.js',
+];
 const WP_ENV_DATABASE_FAILURE_RETRY_DELAYS_MS = [ 30000, 60000, 90000 ];
+const WP_ENV_REPAIR_REPROBE_TIMEOUT_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_SUPERVISOR_WP_ENV_REPAIR_REPROBE_TIMEOUT_MS',
+	30000
+);
+const STARTUP_DISCOVERY_PHASES = new Set( [
+	'seed',
+	'bootstrap',
+	'open',
+	'join',
+	'startup',
+	'setup',
+	'discovery',
+	'ready',
+] );
+const STARTUP_DISCOVERY_FAILURE_PATTERN =
+	/waitForMutualDiscovery|waitForTestWebSocketAwarenessPeerCount|waitForCollaborationReady|setPreferences|_wpCollaborationEnabled|collaboration (?:session )?to become ready|page\.waitForFunction|waitForSyncCycle|Target page, context or browser has been closed|Test timeout/i;
+const STARTUP_STALL_GUARD_ENABLED =
+	process.env.RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD !== '0';
+const STARTUP_STALL_GUARD_MIN_FAILURES = getPositiveIntegerEnv(
+	'RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES',
+	2
+);
+const STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES = getPositiveIntegerEnv(
+	'RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES',
+	2
+);
+const STARTUP_STALL_GUARD_DOMINANCE_MIN_FAILURES = getPositiveIntegerEnv(
+	'RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_DOMINANCE_MIN_FAILURES',
+	2
+);
+const STARTUP_STALL_GUARD_DOMINANCE_MIN_RATE = getRateEnv(
+	'RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_DOMINANCE_MIN_RATE',
+	0.5
+);
+const STARTUP_STALL_GUARD_COOLDOWN_MS =
+	getPositiveNumberEnv(
+		'RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_COOLDOWN_HOURS',
+		0.25
+	) *
+	60 *
+	60 *
+	1000;
+const INFRA_STARTUP_FAILURE_BACKOFF_MS =
+	getPositiveNumberEnv(
+		'RTC_FUZZ_SUPERVISOR_INFRA_STARTUP_FAILURE_BACKOFF_MINUTES',
+		10
+	) *
+	60 *
+	1000;
 const DEFAULT_GROUPS = [
 	{
 		name: 'default-http',
@@ -98,6 +174,14 @@ function getPositiveNumberEnv( name, fallback ) {
 		throw new Error( `Expected ${ name } to be a positive number.` );
 	}
 	return parsedValue;
+}
+
+function getRateEnv( name, fallback ) {
+	const value = getPositiveNumberEnv( name, fallback );
+	if ( value > 1 ) {
+		throw new Error( `Expected ${ name } to be at most 1.` );
+	}
+	return value;
 }
 
 function createTimestamp() {
@@ -160,7 +244,7 @@ async function loadInitialState() {
 					...groupState,
 					status: 'disabled',
 					lastReason: 'removed-from-groups-policy',
-					activeRunDirs: [],
+					activeRunDirs: getActiveRunDirs( groupState ),
 				};
 			}
 			return {
@@ -255,6 +339,13 @@ async function writeState() {
 	return stateWritePromise;
 }
 
+async function writeJsonFileAtomic( filePath, value ) {
+	await fs.mkdir( path.dirname( filePath ), { recursive: true } );
+	const tmpPath = `${ filePath }.tmp-${ process.pid }-${ Date.now() }`;
+	await fs.writeFile( tmpPath, JSON.stringify( value, null, 2 ) + '\n' );
+	await fs.rename( tmpPath, filePath );
+}
+
 function startStateHeartbeat() {
 	const heartbeat = setInterval( () => {
 		void writeState().catch( async ( error ) => {
@@ -301,14 +392,29 @@ async function syncGroupConfigs() {
 		}
 
 		if ( existingGroupState.status === 'disabled' ) {
-			await event( {
-				group: group.name,
-				kind: 'policy',
-				action: 're-enable-group',
-				reason: 'present-in-groups-policy',
-			} );
-			existingGroupState.status = 'recovering';
-			existingGroupState.lastReason = 're-added-to-groups-policy';
+			const startupStallHoldUntilMs =
+				getStartupStallHoldUntilMs( existingGroupState );
+			if ( startupStallHoldUntilMs > Date.now() ) {
+				await event( {
+					group: group.name,
+					kind: 'policy',
+					action: 'keep-disabled-startup-stall-cooldown',
+					reason: existingGroupState.lastReason,
+					pauseUntil:
+						existingGroupState.startupStallPausedUntil,
+					drainRecordedUntil:
+						existingGroupState.startupStallDrainRecordedUntil,
+				} );
+			} else {
+				await event( {
+					group: group.name,
+					kind: 'policy',
+					action: 're-enable-group',
+					reason: 'present-in-groups-policy',
+				} );
+				existingGroupState.status = 'recovering';
+				existingGroupState.lastReason = 're-added-to-groups-policy';
+			}
 		}
 
 		for ( const key of [ 'repoRoot', 'transport', 'lanes', 'stepCount' ] ) {
@@ -328,14 +434,64 @@ async function syncGroupConfigs() {
 
 	for ( const groupState of state.groups ) {
 		if ( ! nextGroupNames.has( groupState.name ) ) {
-			groupState.status = 'disabled';
-			groupState.lastReason = 'removed-from-groups-policy';
-			groupState.activeRunDirs = [];
+			await disableRemovedGroupState( groupState );
 		}
 	}
 
 	state.groups = orderGroupStatesByConfig( state.groups );
 	await writeState();
+}
+
+async function disableRemovedGroupState( groupState ) {
+	const reason = 'removed-from-groups-policy';
+	const preserveStartupStallPause =
+		getStartupStallPauseUntilMs( groupState ) > Date.now();
+	const preserveStartupStallDrain =
+		getStartupStallDrainRecordedUntilMs( groupState ) > Date.now();
+	const preserveStartupStallState =
+		preserveStartupStallPause || preserveStartupStallDrain;
+	const preservedLastReason = groupState.lastReason;
+	const activeRunDirs = getActiveRunDirs( groupState );
+	if ( activeRunDirs.length ) {
+		const snapshots = await Promise.all(
+			activeRunDirs.map( async ( runDir ) => ( {
+				runDir,
+				...( await readRunSnapshot( runDir ) ),
+			} ) )
+		);
+		await stopSnapshotLanes(
+			snapshots,
+			reason,
+			'terminate-removed-group-lane'
+		);
+	}
+	if (
+		groupState.status !== 'disabled' ||
+		groupState.lastReason !== reason
+	) {
+		await event( {
+			group: groupState.name,
+			kind: 'policy',
+			action: 'disable-group',
+			reason,
+			activeRunDirs,
+		} );
+	}
+	groupState.status = 'disabled';
+	groupState.lastReason = preserveStartupStallState
+		? preservedLastReason
+		: reason;
+	groupState.activeRunDirs = [];
+	groupState.currentRunDir = null;
+	if ( ! preserveStartupStallState ) {
+		groupState.noAnalysisRunDirs = [];
+		groupState.startupStallRunDirs = [];
+		delete groupState.noAnalysisReasonKind;
+		delete groupState.noAnalysisFamily;
+		delete groupState.noAnalysisSource;
+		delete groupState.startupStallPausedAt;
+		delete groupState.startupStallPausedUntil;
+	}
 }
 
 function buildEnv( group, overrides = {} ) {
@@ -432,6 +588,133 @@ async function fileExists( filePath ) {
 	}
 }
 
+async function ensureGutenbergVendorScripts( group ) {
+	const missingVendorScripts = [];
+
+	for ( const vendorScript of REQUIRED_GUTENBERG_VENDOR_SCRIPTS ) {
+		const vendorScriptPath = path.join( group.repoRoot, vendorScript );
+
+		if ( ! ( await fileExists( vendorScriptPath ) ) ) {
+			missingVendorScripts.push( vendorScript );
+		}
+	}
+
+	if ( ! missingVendorScripts.length ) {
+		return;
+	}
+
+	const missingVendorScriptList = missingVendorScripts.join( ', ' );
+	await log(
+		`${ group.name }: generating missing Gutenberg vendor script(s): ${ missingVendorScriptList }.`
+	);
+	await event( {
+		group: group.name,
+		kind: 'repair',
+		action: 'gutenberg-vendor-scripts-generate',
+		vendorScripts: missingVendorScripts,
+	} );
+
+	const result = await runCommand( {
+		command: 'node',
+		args: [ 'bin/packages/build-vendors.mjs' ],
+		cwd: group.repoRoot,
+		env: buildEnv( group ),
+		timeoutMs: 120000,
+		logPath: path.join(
+			OUTPUT_DIR,
+			`${ group.name }-gutenberg-vendor-scripts.log`
+		),
+	} );
+	const stillMissingVendorScripts = [];
+
+	for ( const vendorScript of REQUIRED_GUTENBERG_VENDOR_SCRIPTS ) {
+		const vendorScriptPath = path.join( group.repoRoot, vendorScript );
+
+		if ( ! ( await fileExists( vendorScriptPath ) ) ) {
+			stillMissingVendorScripts.push( vendorScript );
+		}
+	}
+
+	if ( ! result.ok || stillMissingVendorScripts.length ) {
+		const outputSnippet = getOutputSnippet( result.output );
+		const missingList =
+			stillMissingVendorScripts.join( ', ' ) || 'command exited non-zero';
+		throw new Error(
+			`${ group.name }: failed to generate Gutenberg vendor scripts: ${ missingList }; ${ outputSnippet }`
+		);
+	}
+}
+
+async function ensureGutenbergBlockManifests( group ) {
+	const missingManifests = [];
+	const missingInputs = [];
+
+	for ( const manifest of REQUIRED_GUTENBERG_BLOCK_MANIFESTS ) {
+		const inputPath = path.join( group.repoRoot, manifest.input );
+		const outputPath = path.join( group.repoRoot, manifest.output );
+
+		if ( await fileExists( outputPath ) ) {
+			continue;
+		}
+		if ( ! ( await fileExists( inputPath ) ) ) {
+			missingInputs.push( manifest.input );
+			continue;
+		}
+		missingManifests.push( manifest );
+	}
+
+	if ( missingInputs.length ) {
+		const missingInputsList = missingInputs.join( ', ' );
+		throw new Error(
+			`${ group.name }: Gutenberg build artifacts are missing: ${ missingInputsList }. Run npm run build -- --skip-types before browser fuzzing.`
+		);
+	}
+
+	if ( ! missingManifests.length ) {
+		return;
+	}
+
+	const missingManifestList = missingManifests
+		.map( ( manifest ) => manifest.output )
+		.join( ', ' );
+	await log(
+		`${ group.name }: generating missing Gutenberg block manifest(s): ${ missingManifestList }.`
+	);
+	await event( {
+		group: group.name,
+		kind: 'repair',
+		action: 'gutenberg-block-manifest-generate',
+		manifests: missingManifests.map( ( manifest ) => manifest.output ),
+	} );
+
+	for ( const manifest of missingManifests ) {
+		const manifestLogName = manifest.output.replace( /[^\w.-]+/g, '-' );
+		const result = await runCommand( {
+			command: 'npx',
+			args: [
+				'--no-install',
+				'wp-scripts',
+				'build-blocks-manifest',
+				`--input=${ manifest.input }`,
+				`--output=${ manifest.output }`,
+			],
+			cwd: group.repoRoot,
+			env: buildEnv( group ),
+			timeoutMs: 120000,
+			logPath: path.join(
+				OUTPUT_DIR,
+				`${ group.name }-${ manifestLogName }.log`
+			),
+		} );
+		if ( ! result.ok ) {
+			const outputSnippet = getOutputSnippet( result.output );
+			throw new Error(
+				`${ group.name }: failed to generate ${ manifest.output }; ${ outputSnippet }`
+			);
+		}
+	}
+}
+
 function parseHttpPort( statusOutput ) {
 	const match = statusOutput.match( /http port:\s+(\d+)/i );
 	return match ? Number.parseInt( match[ 1 ], 10 ) : null;
@@ -519,7 +802,7 @@ function looksLikeStaleDockerEndpoint( output ) {
 }
 
 function looksLikeDockerDiskPressure( output ) {
-	return /No space left on device|Disk got full|failed to register layer|layerdb\/tmp\/write-set.*file exists/i.test(
+	return /no space left on device|disk got full|failed to (?:extract|register) layer|layerdb\/tmp\/write-set.*file exists/i.test(
 		String( output ?? '' )
 	);
 }
@@ -801,7 +1084,7 @@ async function maybeRunSafeDockerPrune( group, reason, diagnosticOutput ) {
 		! looksLikeDockerDiskPressure( diagnosticOutput ) &&
 		! looksLikeWordPressDbFailure( diagnosticOutput )
 	) {
-		return;
+		return false;
 	}
 
 	const commands = [
@@ -832,6 +1115,8 @@ async function maybeRunSafeDockerPrune( group, reason, diagnosticOutput ) {
 			output: getOutputSnippet( result.output ),
 		} );
 	}
+
+	return true;
 }
 
 async function restartOrbStackDockerIfNeeded( group, reason, output ) {
@@ -899,6 +1184,40 @@ async function waitForHealthyRestEndpoint( candidates, timeoutMs = 45000 ) {
 	return lastProbe;
 }
 
+async function findHealthyWpEnvAfterFailedStart( group ) {
+	const statusResult = await runWpEnv( group, [ 'status' ], {
+		timeoutMs: 120000,
+		logPath: path.join(
+			OUTPUT_DIR,
+			`${ group.name }-wp-env-status-after-failed-start.log`
+		),
+	} );
+	if ( ! isWpEnvRunningStatus( statusResult ) ) {
+		return null;
+	}
+
+	const siteUrl = await getWpSiteUrl( group );
+	const candidates = makeBaseUrlCandidates(
+		group,
+		statusResult.output,
+		siteUrl
+	);
+	const probe = await waitForHealthyRestEndpoint(
+		candidates,
+		WP_ENV_REPAIR_REPROBE_TIMEOUT_MS
+	);
+	if ( ! probe?.ok ) {
+		return null;
+	}
+
+	return {
+		candidates,
+		probe,
+		siteUrl,
+		statusResult,
+	};
+}
+
 async function repairWpEnvWithGeneratedCompose( {
 	group,
 	reason,
@@ -911,6 +1230,11 @@ async function repairWpEnvWithGeneratedCompose( {
 		return false;
 	}
 
+	const prunedDockerResources = await maybeRunSafeDockerPrune(
+		group,
+		reason,
+		diagnosticOutput
+	);
 	let installPath = parseWpEnvInstallPath( statusOutput );
 	if ( ! installPath ) {
 		installPath = await findGeneratedWpEnvInstallPath( group );
@@ -930,9 +1254,11 @@ async function repairWpEnvWithGeneratedCompose( {
 			kind: 'repair',
 			action: 'wp-env-generated-compose-skipped',
 			reason,
-			why: 'missing-install-path',
+			why: prunedDockerResources
+				? 'missing-install-path-after-docker-prune'
+				: 'missing-install-path',
 		} );
-		return false;
+		return prunedDockerResources;
 	}
 
 	const composePath = getComposePath( installPath );
@@ -949,7 +1275,6 @@ async function repairWpEnvWithGeneratedCompose( {
 	}
 
 	await patchGeneratedComposeMariaDbHealthcheck( group, composePath );
-	await maybeRunSafeDockerPrune( group, reason, diagnosticOutput );
 
 	const services = await getWpEnvComposeServices( group, installPath );
 	const steps = restRepair
@@ -1112,6 +1437,8 @@ async function setWpBaseUrl( group, baseUrl ) {
 
 async function ensureWpEnv( groupState ) {
 	const group = getGroupConfig( groupState.name );
+	await ensureGutenbergVendorScripts( group );
+	await ensureGutenbergBlockManifests( group );
 	await patchWpEnvMariaDbHealthcheck( group );
 	let statusResult = await runWpEnv( group, [ 'status' ], {
 		timeoutMs: 120000,
@@ -1144,47 +1471,61 @@ async function ensureWpEnv( groupState ) {
 			}
 		);
 		if ( ! startResult.ok ) {
-			const repaired = await repairWpEnvWithGeneratedCompose( {
-				group,
-				reason: 'wp-env-start-failed',
-				statusOutput: statusResult.output,
-				diagnosticOutput: startResult.output,
-			} );
-			if ( ! repaired ) {
-				throw new Error(
-					`${ group.name }: wp-env start failed; see ${ group.name }-wp-env-start.log`
+			const recovered = await findHealthyWpEnvAfterFailedStart( group );
+			if ( recovered ) {
+				statusResult = recovered.statusResult;
+				await log(
+					`${ group.name }: wp-env reported healthy after failed start; skipping generated-compose repair.`
 				);
-			}
-			await log(
-				`${ group.name }: retrying wp-env start after generated-compose repair.`
-			);
-			await event( {
-				group: group.name,
-				kind: 'repair',
-				action: 'wp-env-start-after-compose-repair',
-			} );
-			startResult = await runWpEnv( group, [ 'start' ], {
-				timeoutMs: 10 * 60 * 1000,
-				logPath: path.join(
-					OUTPUT_DIR,
-					`${ group.name }-wp-env-start-after-compose-repair.log`
-				),
-			} );
-			startResult = await retryWpEnvStartAfterDatabaseFailure(
-				group,
-				startResult,
-				{
-					action: 'wp-env-start-after-compose-repair-db-retry',
+				await event( {
+					group: group.name,
+					kind: 'repair',
+					action: 'wp-env-start-failed-but-rest-healthy',
+					baseUrl: recovered.probe.baseUrl,
+				} );
+			} else {
+				const repaired = await repairWpEnvWithGeneratedCompose( {
+					group,
+					reason: 'wp-env-start-failed',
+					statusOutput: statusResult.output,
+					diagnosticOutput: startResult.output,
+				} );
+				if ( ! repaired ) {
+					throw new Error(
+						`${ group.name }: wp-env start failed; see ${ group.name }-wp-env-start.log`
+					);
+				}
+				await log(
+					`${ group.name }: retrying wp-env start after generated-compose repair.`
+				);
+				await event( {
+					group: group.name,
+					kind: 'repair',
+					action: 'wp-env-start-after-compose-repair',
+				} );
+				startResult = await runWpEnv( group, [ 'start' ], {
+					timeoutMs: 10 * 60 * 1000,
 					logPath: path.join(
 						OUTPUT_DIR,
-						`${ group.name }-wp-env-start-after-compose-repair-db-retry.log`
+						`${ group.name }-wp-env-start-after-compose-repair.log`
 					),
-				}
-			);
-			if ( ! startResult.ok ) {
-				throw new Error(
-					`${ group.name }: wp-env start failed after generated-compose repair; see ${ group.name }-wp-env-start-after-compose-repair.log`
+				} );
+				startResult = await retryWpEnvStartAfterDatabaseFailure(
+					group,
+					startResult,
+					{
+						action: 'wp-env-start-after-compose-repair-db-retry',
+						logPath: path.join(
+							OUTPUT_DIR,
+							`${ group.name }-wp-env-start-after-compose-repair-db-retry.log`
+						),
+					}
 				);
+				if ( ! startResult.ok ) {
+					throw new Error(
+						`${ group.name }: wp-env start failed after generated-compose repair; see ${ group.name }-wp-env-start-after-compose-repair.log`
+					);
+				}
 			}
 		}
 		statusResult = await runWpEnv( group, [ 'status' ], {
@@ -1235,6 +1576,15 @@ async function ensureWpEnv( groupState ) {
 	);
 
 	let probe = await findHealthyRestEndpoint( candidates );
+	if ( ! probe ) {
+		const delayedProbe = await waitForHealthyRestEndpoint(
+			candidates,
+			WP_ENV_REPAIR_REPROBE_TIMEOUT_MS
+		);
+		if ( delayedProbe?.ok ) {
+			probe = delayedProbe;
+		}
+	}
 	if ( ! probe ) {
 		const diagnosticOutput = candidates.length
 			? (
@@ -1546,6 +1896,699 @@ async function readJsonFile( filePath ) {
 	}
 }
 
+async function findSummaryFiles( runDir ) {
+	const files = [];
+
+	async function walk( dir, depth ) {
+		if ( depth > 6 ) {
+			return;
+		}
+
+		let entries;
+		try {
+			entries = await fs.readdir( dir, { withFileTypes: true } );
+		} catch {
+			return;
+		}
+
+		for ( const entry of entries ) {
+			const entryPath = path.join( dir, entry.name );
+			if ( entry.isDirectory() ) {
+				if (
+					[
+						'.git',
+						'.triage-watcher',
+						'blob-report',
+						'codex-analysis',
+						'node_modules',
+						'playwright-report',
+						'test-results',
+						'vendor',
+					].includes( entry.name )
+				) {
+					continue;
+				}
+				await walk( entryPath, depth + 1 );
+			} else if ( entry.name === 'summary.ndjson' ) {
+				files.push( entryPath );
+			}
+		}
+	}
+
+	await walk( runDir, 0 );
+	return files.sort();
+}
+
+function hasActionableBehavioralCoverageSummary( summary ) {
+	if ( ! summary || typeof summary !== 'object' ) {
+		return false;
+	}
+	if (
+		( summary.actionCount ?? 0 ) > 0 ||
+		( summary.reloadCount ?? 0 ) > 0 ||
+		( summary.saveCheckpointCount ?? 0 ) > 0 ||
+		( summary.autosaveCount ?? 0 ) > 0 ||
+		( summary.revisionEligibleCount ?? 0 ) > 0
+	) {
+		return true;
+	}
+	return Object.entries( summary.userCounts ?? {} ).some(
+		( [ userCount, count ] ) => userCount !== '0' && count > 0
+	);
+}
+
+function hasActionableCoverageRecord( record ) {
+	if ( ! record || typeof record !== 'object' ) {
+		return false;
+	}
+	return (
+		( record.userCount ?? 0 ) > 0 ||
+		( record.actions?.length ?? 0 ) > 0 ||
+		( record.reloads?.length ?? 0 ) > 0 ||
+		( record.saveCheckpointSteps?.length ?? 0 ) > 0 ||
+		( record.autosaveSteps?.length ?? 0 ) > 0 ||
+		record.revisionRestore?.eligible === true ||
+		( record.operationEvents?.length ?? 0 ) > 0
+	);
+}
+
+function getCoverageFailureText( record ) {
+	return [
+		record?.error,
+		...( record?.historyEvents ?? [] ).map(
+			( historyEvent ) => historyEvent.error
+		),
+	]
+		.filter( Boolean )
+		.join( '\n' );
+}
+
+function isStrictPreActionStartupCoverageRecord( record ) {
+	if ( record?.status !== 'failed' ) {
+		return false;
+	}
+	if ( hasActionableCoverageRecord( record ) ) {
+		return false;
+	}
+
+	const failedHistoryPhases = ( record.historyEvents ?? [] )
+		.filter( ( historyEvent ) => historyEvent.status === 'fail' )
+		.map( ( historyEvent ) => historyEvent.phase )
+		.filter( Boolean );
+	if (
+		failedHistoryPhases.length > 0 &&
+		! failedHistoryPhases.some( ( phase ) =>
+			STARTUP_DISCOVERY_PHASES.has( phase )
+		)
+	) {
+		return false;
+	}
+
+	return STARTUP_DISCOVERY_FAILURE_PATTERN.test(
+		getCoverageFailureText( record )
+	);
+}
+
+function hasSummaryProductEvidence( record ) {
+	if ( record?.ok === true ) {
+		return true;
+	}
+	if (
+		hasActionableBehavioralCoverageSummary(
+			record?.behavioralCoverageSummary
+		)
+	) {
+		return true;
+	}
+	if (
+		( Array.isArray( record?.behavioralCoverage )
+			? record.behavioralCoverage
+			: []
+		).some( hasActionableCoverageRecord )
+	) {
+		return true;
+	}
+	return ( Array.isArray( record?.attempts ) ? record.attempts : [] ).some(
+		hasSummaryProductEvidence
+	);
+}
+
+function isStrictPreActionStartupGateAttempt( attempt ) {
+	if ( attempt?.bucket !== 'pre-action-bootstrap-stall' ) {
+		return false;
+	}
+	if ( ( attempt.userCount ?? 0 ) > 0 || attempt.lastAction ) {
+		return false;
+	}
+	return (
+		! attempt.lastHistoryPhase ||
+		STARTUP_DISCOVERY_PHASES.has( attempt.lastHistoryPhase )
+	);
+}
+
+function isStrictPreActionStartupAttemptSummaryRecord( record ) {
+	if ( record?.kind !== 'attempt' || record.ok === true ) {
+		return false;
+	}
+	if ( hasSummaryProductEvidence( record ) ) {
+		return false;
+	}
+
+	const coverageRecords = Array.isArray( record.behavioralCoverage )
+		? record.behavioralCoverage
+		: [];
+	return (
+		coverageRecords.length > 0 &&
+		coverageRecords.every( isStrictPreActionStartupCoverageRecord )
+	);
+}
+
+function isStrictPreActionStartupSummaryRecord( record ) {
+	if ( isStrictPreActionStartupAttemptSummaryRecord( record ) ) {
+		return true;
+	}
+	if ( record?.preAnalysisGate?.bucket !== 'pre-action-bootstrap-stall' ) {
+		return false;
+	}
+	if ( hasSummaryProductEvidence( record ) ) {
+		return false;
+	}
+
+	const gateAttempts = Array.isArray( record.preAnalysisGate.attempts )
+		? record.preAnalysisGate.attempts
+		: [];
+	return (
+		gateAttempts.length > 0 &&
+		gateAttempts.every( isStrictPreActionStartupGateAttempt )
+	);
+}
+
+async function summarizeStartupStallNoise( runDirs ) {
+	const summary = {
+		runDirs: runDirs.length,
+		files: 0,
+		lines: 0,
+		parseErrors: 0,
+		strictStartupRecords: 0,
+		strictStartupFailures: 0,
+		productEvidenceRecords: 0,
+		otherRecords: 0,
+		strictStartupRecordShare: 0,
+	};
+	const strictFailureKeys = new Set();
+
+	for ( const runDir of runDirs ) {
+		const files = await findSummaryFiles( runDir );
+		summary.files += files.length;
+		for ( const filePath of files ) {
+			const text = await fs
+				.readFile( filePath, 'utf8' )
+				.catch( () => '' );
+			for ( const line of text.split( '\n' ) ) {
+				if ( ! line.trim() ) {
+					continue;
+				}
+				summary.lines += 1;
+				let record;
+				try {
+					record = JSON.parse( line );
+				} catch {
+					summary.parseErrors += 1;
+					continue;
+				}
+				if ( hasSummaryProductEvidence( record ) ) {
+					summary.productEvidenceRecords += 1;
+					continue;
+				}
+				if ( isStrictPreActionStartupSummaryRecord( record ) ) {
+					summary.strictStartupRecords += 1;
+					strictFailureKeys.add(
+						`${ record.seed ?? 'unknown' }:${ filePath }`
+					);
+				} else {
+					summary.otherRecords += 1;
+				}
+			}
+		}
+	}
+
+	summary.strictStartupFailures = strictFailureKeys.size;
+	const classifiedRecords =
+		summary.strictStartupRecords +
+		summary.productEvidenceRecords +
+		summary.otherRecords;
+	summary.strictStartupRecordShare =
+		classifiedRecords > 0
+			? Number(
+					(
+						summary.strictStartupRecords / classifiedRecords
+					).toFixed( 4 )
+			  )
+			: 0;
+	return summary;
+}
+
+function getStartupStallPauseUntilMs( groupState ) {
+	const timestamp = Date.parse( groupState.startupStallPausedUntil ?? '' );
+	return Number.isFinite( timestamp ) ? timestamp : 0;
+}
+
+function getStartupStallDrainRecordedUntilMs( groupState ) {
+	const timestamp = Date.parse(
+		groupState.startupStallDrainRecordedUntil ?? ''
+	);
+	return Number.isFinite( timestamp ) ? timestamp : 0;
+}
+
+function getStartupStallHoldUntilMs( groupState ) {
+	return Math.max(
+		getStartupStallPauseUntilMs( groupState ),
+		getStartupStallDrainRecordedUntilMs( groupState )
+	);
+}
+
+function getStartupStallProductEvidenceCount( groupState ) {
+	const summaryCount = Number(
+		groupState.startupStallNoiseSummary?.productEvidenceRecords
+	);
+	if ( Number.isFinite( summaryCount ) && summaryCount > 0 ) {
+		return summaryCount;
+	}
+
+	const reason = groupState.lastReason ?? '';
+	const productEvidenceMatch = reason.match(
+		/(\d+)\s+product-evidence record\(s\)/i
+	);
+	if ( productEvidenceMatch ) {
+		const parsed = Number.parseInt( productEvidenceMatch[ 1 ], 10 );
+		return Number.isFinite( parsed ) ? parsed : 0;
+	}
+	return 0;
+}
+
+function hasNoProductStartupStallDrainCooldown( groupState ) {
+	const drainRecordedUntilMs =
+		getStartupStallDrainRecordedUntilMs( groupState );
+	if ( drainRecordedUntilMs <= Date.now() ) {
+		return false;
+	}
+	if ( getStartupStallProductEvidenceCount( groupState ) > 0 ) {
+		return false;
+	}
+
+	const reason = groupState.lastReason ?? '';
+	return (
+		groupState.noAnalysisFamily === 'pre_action_bootstrap_stall' ||
+		groupState.noAnalysisReasonKind === 'startup-noise' ||
+		/startup-stall|startup noise|bootstrap noise|seed drain/i.test( reason )
+	);
+}
+
+function shouldRecoverStartupStallInsteadOfPause( groupState ) {
+	const reason = groupState.lastReason ?? '';
+	if ( hasNoProductStartupStallDrainCooldown( groupState ) ) {
+		return false;
+	}
+	if ( groupState.startupStallRecoveryMode === 'recover' ) {
+		return true;
+	}
+	if ( /seed drain|startup-stall-noise-seed-drain/i.test( reason ) ) {
+		return true;
+	}
+
+	const startupFailureMatch = reason.match(
+		/(\d+)\s+startup failure seed\(s\)/i
+	);
+	const productEvidenceMatch = reason.match(
+		/(\d+)\s+product-evidence record\(s\)/i
+	);
+	const hasProductEvidence = productEvidenceMatch
+		? Number.parseInt( productEvidenceMatch[ 1 ], 10 ) > 0
+		: false;
+	const summaryHasProductEvidence =
+		( groupState.startupStallNoiseSummary?.productEvidenceRecords ?? 0 ) >
+		0;
+	const startupFailures = startupFailureMatch
+		? Number.parseInt( startupFailureMatch[ 1 ], 10 )
+		: 0;
+	if (
+		! hasProductEvidence &&
+		! summaryHasProductEvidence &&
+		startupFailures > 0 &&
+		startupFailures < STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES
+	) {
+		return true;
+	}
+
+	if ( ! hasProductEvidence && ! summaryHasProductEvidence ) {
+		return false;
+	}
+	return false;
+}
+
+async function releaseStartupStallHoldForRecovery(
+	groupState,
+	action,
+	holdUntil
+) {
+	let changed = false;
+	const wasPaused = groupState.status === 'paused-startup-stall';
+
+	if ( groupState.startupStallPausedAt ) {
+		delete groupState.startupStallPausedAt;
+		changed = true;
+	}
+	if ( groupState.startupStallPausedUntil ) {
+		delete groupState.startupStallPausedUntil;
+		changed = true;
+	}
+	if ( groupState.startupStallRecoveryMode !== 'recover' ) {
+		groupState.startupStallRecoveryMode = 'recover';
+		changed = true;
+	}
+	if ( wasPaused ) {
+		groupState.status = getActiveRunDirs( groupState ).length
+			? 'running'
+			: 'recovering';
+		changed = true;
+	}
+
+	if ( ! changed ) {
+		return;
+	}
+
+	await event( {
+		group: groupState.name,
+		kind: 'policy',
+		action,
+		reason: groupState.lastReason,
+		holdUntil,
+		nextStatus: groupState.status,
+		noAnalysisRunDirs: groupState.noAnalysisRunDirs ?? [],
+	} );
+	await writeState();
+}
+
+function resolveUniqueRunDirs( runDirs ) {
+	return [
+		...new Set(
+			runDirs
+				.filter( Boolean )
+				.map( ( runDir ) => path.resolve( runDir ) )
+		),
+	];
+}
+
+function signalLaneProcess( pid, signal ) {
+	try {
+		process.kill( -pid, signal );
+		return 'process-group';
+	} catch {}
+
+	try {
+		process.kill( pid, signal );
+		return 'pid';
+	} catch {}
+
+	return null;
+}
+
+async function stopSnapshotLanes(
+	snapshots,
+	reason,
+	action = 'terminate-startup-stall-lane'
+) {
+	for ( const snapshot of snapshots ) {
+		for ( const lane of snapshot.laneStates ) {
+			if ( ! lane.pidAlive || lane.state?.stopReason ) {
+				continue;
+			}
+			const target = signalLaneProcess( lane.pid, 'SIGTERM' );
+			if ( target ) {
+				setTimeout(
+					() => signalLaneProcess( lane.pid, 'SIGKILL' ),
+					5000
+				).unref();
+				await event( {
+					group: lane.group ?? null,
+					kind: 'policy',
+					action,
+					pid: lane.pid,
+					target,
+					laneLabel: lane.laneLabel,
+					runDir: snapshot.runDir,
+					reason,
+				} );
+			}
+		}
+	}
+}
+
+async function writeStartupStallNoAnalysisSentinels(
+	groupState,
+	runDirs,
+	reason,
+	noise,
+	pauseUntil
+) {
+	const written = [];
+	const uniqueRunDirs = [ ...new Set( runDirs.filter( Boolean ) ) ];
+	const productEvidenceRecords = noise.productEvidenceRecords ?? 0;
+	const hasProductEvidence = productEvidenceRecords > 0;
+
+	for ( const runDir of uniqueRunDirs ) {
+		const sentinelPath = path.join(
+			runDir,
+			NO_ANALYSIS_SENTINEL_RELATIVE_PATH
+		);
+		await writeJsonFileAtomic( sentinelPath, {
+			version: 1,
+			createdAt: new Date().toISOString(),
+				outputDir: OUTPUT_DIR,
+				group: groupState.name,
+				reason,
+				reasonKind: 'startup-noise',
+				family: 'pre_action_bootstrap_stall',
+				source: 'supervisor-startup-stall-guard',
+				pauseUntil,
+				expiresAt: pauseUntil,
+				noProductOnly: ! hasProductEvidence,
+				productEvidenceRecords,
+				hasProductEvidence,
+				noise,
+				preserveProductEvidence: true,
+			note: 'Producer marked by supervisor strict startup-stall noise guard. Consumers must not spend analysis on signatures without product evidence from this run.',
+		} );
+		written.push( runDir );
+	}
+
+	if ( written.length ) {
+		await event( {
+			group: groupState.name,
+				kind: 'policy',
+				action: 'write-no-analysis-sentinel',
+				reason,
+				reasonKind: 'startup-noise',
+				family: 'pre_action_bootstrap_stall',
+				source: 'supervisor-startup-stall-guard',
+				pauseUntil,
+				count: written.length,
+				runDirs: written,
+		} );
+	}
+
+	return written;
+}
+
+async function maybePauseGroupForStartupStallNoise( groupState, snapshots ) {
+	if ( ! STARTUP_STALL_GUARD_ENABLED ) {
+		return false;
+	}
+
+	const activeRunDirs = snapshots.map( ( snapshot ) => snapshot.runDir );
+	const noise = await summarizeStartupStallNoise( activeRunDirs );
+	groupState.startupStallNoiseSummary = noise;
+
+	const hasZeroProductEvidence = ( noise.productEvidenceRecords ?? 0 ) === 0;
+	const strictStartupDominatesMixedRun =
+		noise.strictStartupFailures >=
+			STARTUP_STALL_GUARD_DOMINANCE_MIN_FAILURES &&
+		noise.strictStartupRecordShare >=
+			STARTUP_STALL_GUARD_DOMINANCE_MIN_RATE;
+	// A single transient editor boot miss should not pause a whole coverage
+	// group. Pause decisions use unique failed seeds; repeated summary
+	// records for one seed are drained while still getting durable no-analysis
+	// state for downstream consumers.
+	const strictStartupEvidenceCount = noise.strictStartupFailures;
+	const minStrictStartupFailures = hasZeroProductEvidence
+		? STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES
+		: STARTUP_STALL_GUARD_MIN_FAILURES;
+
+	if ( strictStartupEvidenceCount < minStrictStartupFailures ) {
+		if ( hasZeroProductEvidence && strictStartupEvidenceCount > 0 ) {
+			const reason = `strict pre-action bootstrap noise seed drain: ${
+				noise.strictStartupFailures
+			} startup failure seed(s), ${
+				noise.strictStartupRecords
+			} startup record(s), below pause threshold ${ minStrictStartupFailures }`;
+			const skippedStartupSeeds = advanceNextStartSeedPastStartupNoise(
+				groupState,
+				snapshots
+			);
+			const drainRecordedUntil = new Date(
+				Date.now() + STARTUP_STALL_GUARD_COOLDOWN_MS
+			).toISOString();
+			const noAnalysisRunDirs =
+				await writeStartupStallNoAnalysisSentinels(
+					groupState,
+					activeRunDirs,
+					reason,
+					noise,
+					drainRecordedUntil
+				);
+			const drainedNoAnalysisRunDirs = resolveUniqueRunDirs( [
+				...( groupState.noAnalysisRunDirs ?? [] ),
+				...( groupState.startupStallRunDirs ?? [] ),
+				...( noAnalysisRunDirs.length
+					? noAnalysisRunDirs
+					: activeRunDirs ),
+			] );
+			await stopSnapshotLanes(
+				snapshots,
+				reason,
+				'terminate-startup-stall-seed-drain'
+			);
+			groupState.status = 'recovering';
+			groupState.lastReason = reason;
+			delete groupState.startupStallPausedAt;
+			delete groupState.startupStallPausedUntil;
+			groupState.startupStallDrainRecordedAt =
+				new Date().toISOString();
+			groupState.startupStallDrainRecordedUntil =
+				drainRecordedUntil;
+			groupState.startupStallRecoveryMode = 'recover';
+			groupState.startupStallRunDirs = drainedNoAnalysisRunDirs;
+			groupState.noAnalysisRunDirs = drainedNoAnalysisRunDirs;
+			groupState.noAnalysisReasonKind = 'startup-noise';
+			groupState.noAnalysisFamily = 'pre_action_bootstrap_stall';
+			groupState.noAnalysisSource =
+				'supervisor-startup-stall-guard';
+			groupState.activeRunDirs = [];
+			groupState.currentRunDir = null;
+			await event( {
+				group: groupState.name,
+				kind: 'policy',
+				action: 'recover-startup-stall-noise-seed-drain',
+				reason,
+				noise,
+				skippedStartupSeeds,
+				noAnalysisRunDirs: drainedNoAnalysisRunDirs,
+				drainRecordedUntil,
+				nextStatus: groupState.status,
+			} );
+			await writeState();
+			return true;
+		}
+		return false;
+	}
+
+	if ( ! hasZeroProductEvidence && ! strictStartupDominatesMixedRun ) {
+		return false;
+	}
+
+	const reason = `strict pre-action bootstrap noise guard: ${
+		noise.strictStartupFailures
+	} startup failure seed(s), ${
+		noise.strictStartupRecords
+	} startup record(s), ${
+		noise.productEvidenceRecords
+	} product-evidence record(s), ${
+		noise.otherRecords
+	} other record(s), startup share ${ (
+		noise.strictStartupRecordShare * 100
+	).toFixed( 1 ) }%, ${ noise.files } summary file(s)`;
+	const pauseUntil = new Date(
+		Date.now() + STARTUP_STALL_GUARD_COOLDOWN_MS
+	).toISOString();
+	const noAnalysisRunDirs = await writeStartupStallNoAnalysisSentinels(
+		groupState,
+		activeRunDirs,
+		reason,
+		noise,
+		pauseUntil
+	);
+	const pausedNoAnalysisRunDirs = resolveUniqueRunDirs(
+		noAnalysisRunDirs.length ? noAnalysisRunDirs : activeRunDirs
+	);
+	const skippedStartupSeeds = advanceNextStartSeedPastStartupNoise(
+		groupState,
+		snapshots
+	);
+	await stopSnapshotLanes( snapshots, reason );
+	if ( ! hasZeroProductEvidence ) {
+		groupState.status = 'recovering';
+		groupState.lastReason = reason;
+		delete groupState.startupStallPausedAt;
+		delete groupState.startupStallPausedUntil;
+		groupState.startupStallDrainRecordedAt = new Date().toISOString();
+		groupState.startupStallDrainRecordedUntil = pauseUntil;
+		groupState.startupStallRecoveryMode = 'recover';
+		groupState.startupStallRunDirs = pausedNoAnalysisRunDirs;
+		groupState.noAnalysisRunDirs = pausedNoAnalysisRunDirs;
+		groupState.noAnalysisReasonKind = 'startup-noise';
+		groupState.noAnalysisFamily = 'pre_action_bootstrap_stall';
+		groupState.noAnalysisSource = 'supervisor-startup-stall-guard';
+		groupState.activeRunDirs = [];
+		groupState.currentRunDir = null;
+		await log(
+			`${ groupState.name }: recovering after ${ reason }; product-evidence run dirs preserved for triage.`
+		);
+		await event( {
+			group: groupState.name,
+			kind: 'policy',
+			action: 'recover-startup-stall-noise-mixed-product-evidence',
+			reason,
+			drainRecordedUntil: pauseUntil,
+			noise,
+			skippedStartupSeeds,
+			noAnalysisRunDirs: pausedNoAnalysisRunDirs,
+		} );
+		await writeState();
+		return true;
+	}
+	groupState.status = 'paused-startup-stall';
+	groupState.lastReason = reason;
+	groupState.startupStallPausedAt = new Date().toISOString();
+	groupState.startupStallPausedUntil = pauseUntil;
+	groupState.startupStallDrainRecordedAt = groupState.startupStallPausedAt;
+	groupState.startupStallDrainRecordedUntil = pauseUntil;
+	delete groupState.startupStallRecoveryMode;
+	groupState.startupStallRunDirs = pausedNoAnalysisRunDirs;
+	groupState.noAnalysisRunDirs = pausedNoAnalysisRunDirs;
+	groupState.noAnalysisReasonKind = 'startup-noise';
+	groupState.noAnalysisFamily = 'pre_action_bootstrap_stall';
+	groupState.noAnalysisSource = 'supervisor-startup-stall-guard';
+	groupState.activeRunDirs = [];
+	groupState.currentRunDir = null;
+	await log(
+		`${ groupState.name }: paused after ${ reason }; no-product startup-noise run dirs preserved for triage.`
+	);
+	await event( {
+		group: groupState.name,
+		kind: 'policy',
+		action: 'pause-startup-stall-noise',
+		reason,
+		pauseUntil,
+		drainRecordedUntil: pauseUntil,
+		noise,
+		skippedStartupSeeds,
+		noAnalysisRunDirs: pausedNoAnalysisRunDirs,
+		nextStatus: groupState.status,
+	} );
+	await writeState();
+	return true;
+}
+
 function isPidAlive( pid ) {
 	if ( ! pid ) {
 		return false;
@@ -1579,6 +2622,29 @@ function getResumeSeeds( laneStates ) {
 				.filter( ( value ) => Number.isInteger( value ) )
 		),
 	].sort( ( a, b ) => a - b );
+}
+
+function advanceNextStartSeedPastStartupNoise( groupState, snapshots ) {
+	const attemptedSeeds = getResumeSeeds(
+		snapshots.flatMap( ( snapshot ) => snapshot.laneStates )
+	);
+	if ( attemptedSeeds.length === 0 ) {
+		return [];
+	}
+
+	const maxAttemptedSeed = Math.max( ...attemptedSeeds );
+	const seedStride =
+		Number.isInteger( groupState.lanes ) && groupState.lanes > 0
+			? groupState.lanes
+			: 1;
+	groupState.nextStartSeed = Math.max(
+		Number.isInteger( groupState.nextStartSeed )
+			? groupState.nextStartSeed
+			: 0,
+		maxAttemptedSeed + seedStride
+	);
+	groupState.startupStallSkippedSeeds = attemptedSeeds;
+	return attemptedSeeds;
 }
 
 function getLaneResumeSeed( lane ) {
@@ -1642,8 +2708,13 @@ function getReplacementStartSeeds(
 	let nextSeed = Number.isInteger( fallbackSeed ) ? fallbackSeed : 1007;
 
 	while ( seeds.length < laneCount ) {
-		while ( seedAlreadyCovered( nextSeed ) ) {
+		let searchAttempts = 0;
+		while (
+			seedAlreadyCovered( nextSeed ) &&
+			searchAttempts < REPLACEMENT_SEED_SEARCH_LIMIT
+		) {
 			nextSeed += 1;
+			searchAttempts += 1;
 		}
 		seeds.push( nextSeed );
 		nextSeed += 1;
@@ -1775,6 +2846,116 @@ async function readRunSnapshot( runDir ) {
 }
 
 async function monitorGroup( groupState ) {
+	const infraBackoffUntilMs = Date.parse(
+		groupState.infraStartupBackoffUntil ?? ''
+	);
+	if (
+		Number.isFinite( infraBackoffUntilMs ) &&
+		infraBackoffUntilMs > Date.now()
+	) {
+		groupState.status = 'paused-infra-startup';
+		await writeState();
+		return;
+	}
+	if (
+		groupState.status === 'paused-infra-startup' &&
+		Number.isFinite( infraBackoffUntilMs )
+	) {
+		delete groupState.infraStartupBackoffUntil;
+		groupState.status = 'recovering';
+		groupState.activeRunDirs = [];
+		groupState.currentRunDir = null;
+		await event( {
+			group: groupState.name,
+			kind: 'policy',
+			action: 'infra-startup-backoff-expired',
+		} );
+		await writeState();
+	}
+
+	const pauseUntilMs = getStartupStallPauseUntilMs( groupState );
+	if ( pauseUntilMs > Date.now() ) {
+		if ( shouldRecoverStartupStallInsteadOfPause( groupState ) ) {
+			await releaseStartupStallHoldForRecovery(
+				groupState,
+				'release-startup-stall-pause-for-recovery',
+				groupState.startupStallPausedUntil
+			);
+		} else {
+			groupState.status = 'paused-startup-stall';
+			await writeState();
+			return;
+		}
+	}
+	if ( groupState.status === 'paused-startup-stall' && pauseUntilMs > 0 ) {
+		delete groupState.startupStallPausedUntil;
+		delete groupState.startupStallPausedAt;
+		groupState.noAnalysisRunDirs = [];
+		groupState.startupStallRunDirs = [];
+		delete groupState.startupStallDrainRecordedAt;
+		delete groupState.startupStallDrainRecordedUntil;
+		delete groupState.noAnalysisReasonKind;
+		delete groupState.noAnalysisFamily;
+		delete groupState.noAnalysisSource;
+		delete groupState.startupStallRecoveryMode;
+		groupState.status = 'recovering';
+		groupState.activeRunDirs = [];
+		groupState.currentRunDir = null;
+		await event( {
+			group: groupState.name,
+			kind: 'policy',
+			action: 'startup-stall-pause-expired',
+		} );
+		await writeState();
+	}
+
+	const drainRecordedUntilMs = getStartupStallDrainRecordedUntilMs( groupState );
+	if ( drainRecordedUntilMs > Date.now() ) {
+		if ( shouldRecoverStartupStallInsteadOfPause( groupState ) ) {
+			await releaseStartupStallHoldForRecovery(
+				groupState,
+				'release-startup-stall-drain-for-recovery',
+				groupState.startupStallDrainRecordedUntil
+			);
+		} else {
+			groupState.status = 'paused-startup-stall';
+			groupState.startupStallPausedAt ??= new Date().toISOString();
+			groupState.startupStallPausedUntil ??=
+				groupState.startupStallDrainRecordedUntil;
+			groupState.activeRunDirs = [];
+			groupState.currentRunDir = null;
+			await event( {
+				group: groupState.name,
+				kind: 'policy',
+				action: 'hold-startup-stall-drain-cooldown',
+				reason: groupState.lastReason,
+				drainRecordedUntil: groupState.startupStallDrainRecordedUntil,
+			} );
+			await writeState();
+			return;
+		}
+	}
+	if (
+		groupState.status !== 'paused-startup-stall' &&
+		drainRecordedUntilMs > 0 &&
+		drainRecordedUntilMs <= Date.now()
+	) {
+		groupState.noAnalysisRunDirs = [];
+		groupState.startupStallRunDirs = [];
+		delete groupState.startupStallDrainRecordedAt;
+		delete groupState.startupStallDrainRecordedUntil;
+		delete groupState.noAnalysisReasonKind;
+		delete groupState.noAnalysisFamily;
+		delete groupState.noAnalysisSource;
+		delete groupState.startupStallRecoveryMode;
+		await event( {
+			group: groupState.name,
+			kind: 'policy',
+			action: 'startup-stall-drain-record-expired',
+		} );
+		await writeState();
+	}
+
 	const activeRunDirs = getActiveRunDirs( groupState );
 	if ( ! activeRunDirs.length ) {
 		await launchGroup( groupState, 'initial-start' );
@@ -1787,6 +2968,9 @@ async function monitorGroup( groupState ) {
 			...( await readRunSnapshot( runDir ) ),
 		} ) )
 	);
+	if ( await maybePauseGroupForStartupStallNoise( groupState, snapshots ) ) {
+		return;
+	}
 	const liveLaneCount = snapshots.reduce(
 		( count, snapshot ) => count + snapshot.liveLaneCount,
 		0
@@ -1946,6 +3130,34 @@ async function monitorGroup( groupState ) {
 	} );
 }
 
+function isInfraStartupFailureError( error ) {
+	return /wp-env start failed|Environment not initialized|dependency failed|mysql.*(?:exited|failed)|docker compose.*failed|missing-install-path|Gutenberg build artifacts are missing|failed to generate build\/scripts\/.*blocks-manifest\.php|failed to generate Gutenberg vendor scripts/i.test(
+		error?.stack ?? error?.message ?? String( error ?? '' )
+	);
+}
+
+async function pauseGroupForInfraStartupFailure( groupState, error ) {
+	const pauseUntil = new Date(
+		Date.now() + INFRA_STARTUP_FAILURE_BACKOFF_MS
+	).toISOString();
+	groupState.status = 'paused-infra-startup';
+	groupState.activeRunDirs = [];
+	groupState.currentRunDir = null;
+	groupState.infraStartupBackoffUntil = pauseUntil;
+	groupState.lastInfraStartupError = error.stack ?? error.message;
+	groupState.lastReason = `infra startup backoff until ${ pauseUntil }: ${
+		error.message ?? error
+	}`;
+	await event( {
+		group: groupState.name,
+		kind: 'policy',
+		action: 'infra-startup-backoff',
+		pauseUntil,
+		backoffMs: INFRA_STARTUP_FAILURE_BACKOFF_MS,
+		reason: error.message ?? String( error ),
+	} );
+}
+
 function sleep( ms ) {
 	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
 }
@@ -1975,8 +3187,12 @@ async function main() {
 			try {
 				await monitorGroup( groupState );
 			} catch ( error ) {
-				groupState.status = 'error';
-				groupState.lastReason = error.stack ?? error.message;
+				if ( isInfraStartupFailureError( error ) ) {
+					await pauseGroupForInfraStartupFailure( groupState, error );
+				} else {
+					groupState.status = 'error';
+					groupState.lastReason = error.stack ?? error.message;
+				}
 				await log(
 					`${ groupState.name }: ${ error.stack ?? error.message }`
 				);

@@ -37,7 +37,7 @@ for sess in $(/usr/bin/tmux -L rtc-fuzz list-sessions -F '#S' 2>/dev/null |
 	kill_tmux_session "$sess"
 done
 
-patterns='bin/rtc-browser-fuzz-runner.mjs|collaboration-fuzz.spec.ts|wp-scripts test-playwright|@playwright/test/cli.js|packages/scripts/scripts/test-playwright.js'
+patterns='bin/rtc-browser-fuzz-novelty-monitor.mjs|bin/rtc-browser-fuzz-runner.mjs|collaboration-fuzz.spec.ts|wp-scripts test-playwright|@playwright/test/cli.js|packages/scripts/scripts/test-playwright.js'
 pids=$(pgrep -f "$patterns" || true)
 coverage_owned_pid() {
 	local pid="$1"
