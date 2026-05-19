@@ -934,3 +934,5 @@ timestamp,group,group_family
 2026-05-19T11:22:02Z,novelty-ws-lifecycle,lifecycle
 2026-05-19T11:22:02Z,novelty-ws-real-user-editing,real-user
 2026-05-19T11:40:55Z,novelty-http-persistence-probe,persistence
+2026-05-19T11:58:48Z,novelty-ws-lifecycle,lifecycle
+2026-05-19T11:58:48Z,novelty-ws-real-user-editing,real-user
