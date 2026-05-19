@@ -4,7 +4,7 @@ async-server-blocks,9639,4532,0,0.47017325448698,async/media
 session-lifecycle,9635,2750,0,0.28541774779449924,lifecycle
 real-user-editing,9135,652,0,0.07137383689107828,real-user
 permissions-auth-locks,8206,3830,0,0.4667316597611504,auth/locks
-block-gauntlet,7288,1350,5,0.18523600439077936,block-structure
+block-gauntlet,7288,1350,0,0.18523600439077936,block-structure
 revision-persistence,6933,289,0,0.04168469637963364,persistence
 parser-transform,5462,610,0,0.11168070303917979,parser
 common-blocks,4924,507,0,0.10296506904955322,block-structure
