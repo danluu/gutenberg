@@ -915,3 +915,4 @@ timestamp,group,group_family
 2026-05-19T02:32:13Z,novelty-ws-parser-serialization,parser
 2026-05-19T03:10:59Z,novelty-ws-parser-transform,parser
 2026-05-19T03:11:02Z,novelty-ws-common-blocks,auth/locks
+2026-05-19T05:20:46Z,novelty-ws-long-session-large-doc,lifecycle
