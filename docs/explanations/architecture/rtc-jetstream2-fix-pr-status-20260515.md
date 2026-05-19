@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T00:23:10Z`
+Snapshot time: `2026-05-19T00:30:40Z`
 
 Trigger event:
-`pr-split-2026-05-19T00-21-55Z-20260519T001200Z`
+`duplicate-noise-2026-05-19T00-26-13Z-224`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T00-21-55Z-20260519T001200Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T00-26-13Z-224/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -92,12 +92,16 @@ trend packet remains the graph-backed health snapshot: high browser-E2E yield,
 four unmet coverage goals, high CPU/load, and no basis for broad new browser
 concurrency. New work should stay bounded and oracle-specific.
 
-The newest duplicate/noise synthesis,
-`duplicate-noise-20260518T235517Z-synthesis.md`, says strict no-product startup
-noise is mostly handled. The remaining active leak is scheduler capacity spent
-on current-run represented product-evidence duplicate families such as
-`timeout`/`unknown`. That is a fuzz/control-plane issue, not product validation
-or PR readiness.
+The newest duplicate/noise feedback action,
+`duplicate-noise-20260518T235517Z-feedback-action.md`, implemented the bounded
+fuzzer-side remediation for that leak in
+`bin/rtc-browser-fuzz-novelty-monitor.mjs`: group-scoped product-evidence
+duplicate holds now include `unknown`, representatives are counted by semantic
+family, visible likely-real failures veto the hold, and a current-run
+product-evidence duplicate hold blocks coverage-guidance Codex launch while a
+represented/family-capped duplicate family is active. This preserves product
+evidence visibility and remains fuzz/control-plane health work, not product
+validation or PR readiness.
 
 Current non-fileable queues and blockers:
 
@@ -116,7 +120,7 @@ Current non-fileable queues and blockers:
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T00:23:05Z`.
+Remote status was collected at `2026-05-19T00:30:35Z`.
 
 The fix-planning repo is checked out at:
 
@@ -146,7 +150,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T00:23:10Z` from fetched
+The branch-link audit was generated at `2026-05-19T00:30:40Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact Cycle325/i40 publication shape, ancestry, owner evidence, or filing
@@ -262,14 +266,14 @@ micro-split PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T00:23:05Z
+collected_at_utc: 2026-05-19T00:30:35Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T002227Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-19T00:22:36.324Z`. It is startup-only for the new root, not a full
+`2026-05-19T00:29:36.329Z`. It is startup-only for the new root, not a full
 coverage pass:
 
 ```text
@@ -277,8 +281,8 @@ output dir: run-20260519T002227Z
 status: monitor started; full coverage pass pending
 observed roots: 608
 previous records loaded: 90771
-supervisor groups file: pending
-active run dirs: 0
+supervisor groups file: 1
+active run dirs: 1
 unmet goals: pending until first pass
 likely-real visible: pending until first pass
 quality issues: pending until first pass
@@ -294,29 +298,29 @@ Interpretation:
   validation/downscope, PR15 final-PR14B materialization, reload-marker replay,
   seed `1020002`, exact branch-link gaps, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T00:07:54Z`:
+The latest trend evidence packet was generated at `2026-05-19T00:17:46Z`:
 
 ```text
-monitor passes: 2308
+monitor passes: 2309
 first pass: 2026-05-15T01:21:42Z
-last pass: 2026-05-19T00:04:13Z
-coverage files: 272 -> 55460
-coverage files delta: 55188
+last pass: 2026-05-19T00:15:08Z
+coverage files: 272 -> 55472
+coverage files delta: 55200
 unmet goals: 4
 likely_real_max: 4
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.3409
+duplicate_share_historical_last: 0.3408
 summary startup failures last: 0
 quality issues last: 0
-memory free: 421.8 GB
-load averages: 87.35 / 80.73 / 77.43 on 64 cores
-enabled groups current: novelty-http-persistence-probe
+memory free: 422.1 GB
+load averages: 79.14 / 76.33 / 75.99 on 64 cores
+enabled groups current: novelty-ws-parser-transform
 latest fuzz level mix:
   browser-e2e=41 lanes/38 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5979101
-browser-e2e likely-real findings: 778 over 2550.3 runner-hours
+total fuzz-level test executions: 5983835
+browser-e2e likely-real findings: 778 over 2554.0 runner-hours
 ```
 
 The largest unmet goals remain save/reload and real-user depth:
@@ -373,15 +377,17 @@ Do not launch broad fuzzing. Do not count active sessions, zero-byte reports,
 setup-only output, or all-`not-run` matrices as progress while independent
 actionable rows remain.
 
-The newest duplicate/noise synthesis,
-`duplicate-noise-20260518T235517Z-synthesis.md`, says the next control-plane
-fix should be scheduler-only in `bin/rtc-browser-fuzz-novelty-monitor.mjs`:
-add a current-run duplicate/noise capacity hold for dominant capped families
-such as `timeout` and `unknown`, preserve one representative and all credible
-product evidence, pause/rotate/refuse refill even below materialization floor,
-and block coverage Codex expansion while the hold is active. Do not globally
-suppress product-evidence signatures and do not treat this as product
-validation.
+The newest duplicate/noise feedback action,
+`duplicate-noise-20260518T235517Z-feedback-action.md`, completed that narrow
+scheduler-side change in `bin/rtc-browser-fuzz-novelty-monitor.mjs`.
+Validation passed `node --check`; stale old-root HTTP duplicate input was
+rejected by the triage watcher; the current active-root gate-only triage had
+`candidates=0`, `signatures=0`, `active=0`, and no startup/duplicate leakage;
+the current live-analysis once result was
+`novelty-ws-parser-transform:skipped-analysis-no-actionable-signature`. The
+novelty, supervisor, analysis, and watchdog sessions were restarted. This is a
+bounded capacity-control fix only; it does not globally suppress
+product-evidence `timeout` or `unknown`, and it is not product validation.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -414,8 +420,8 @@ These must not be described as fixed or filing-ready.
 | PR14B / PR15 placement | PR14B, PR15A/B/C-on-PR14B, and PR15D | branch-link audit verifies PR15A-C component prior art, but no exact final-PR14B materialized refs or PR15D endpoint link | Publish/fetch/audit exact PR14B-based refs, resolve PR15D, confirm ancestry, and require nonzero materializer/audit evidence |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzzing, filing, and rebuilt validation only; do not wait on it before running independent PR07/PR02B/strict-owner work | Repair or explicitly reclassify before final-stack validation and filing |
 | Reload marker/lifecycle work | HARNESS reload markers, seeds `990001`/`990003`, same-user lifecycle seeds, PR07C seeds, deferred reload outputs | harness/diagnostic only until replay proves product ownership | Consume PR07 owner replay when present, then require product-owned first-loss boundary before promotion |
-| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, family-capped duplicate holds, current-run negative gates, represented product-evidence duplicates | startup-no-product handling is mostly fixed; active leak is represented product-evidence `timeout`/`unknown` duplicate families consuming capacity | Add a narrow scheduler-side current-run duplicate/noise capacity hold with a current-representative guard; preserve product evidence and do not treat this as product validation |
-| Current fuzz validation | `run-20260519T002227Z`, novelty status at `2026-05-19T00:22:36.324Z`, trend generated at `2026-05-19T00:07:54Z` | novelty monitor is startup-only with full coverage pass pending; latest graph trend has `55460` coverage files, `4` unmet goals, historical duplicate share `0.3409`, and browser-E2E `778` historical likely-real findings over `2550.3` runner-hours | Use as health/control-plane evidence only; still require owner replay, PR02B ownership/downscope, PR15 final-PR14B audit, exact branch audit, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
+| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, family-capped duplicate holds, current-run negative gates, represented product-evidence duplicates | narrow scheduler-side remediation is implemented and restarted; current gate-only/live-analysis checks show no active duplicate/startup leakage, while product-evidence visibility is preserved | Watch the current root after full novelty passes; add only explicit group-scoped entries if another producer shows the same represented duplicate behavior; do not treat this as product validation |
+| Current fuzz validation | `run-20260519T002227Z`, novelty status at `2026-05-19T00:29:36.329Z`, trend generated at `2026-05-19T00:17:46Z` | novelty monitor is startup-only with full coverage pass pending; latest graph trend has `55472` coverage files, `4` unmet goals, historical duplicate share `0.3408`, and browser-E2E `778` historical likely-real findings over `2554.0` runner-hours | Use as health/control-plane evidence only; still require owner replay, PR02B ownership/downscope, PR15 final-PR14B audit, exact branch audit, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Filing Gates And Current Recommendation
@@ -478,10 +484,9 @@ Useful bounded work now:
 - finish or replace the reportless PR02B downscope job with
   `rtc-cycle410-pr02b-base-nonrepro-downscope-report-finalizer`;
 - run `rtc-cycle410-progress-gate-fresh-report-reaper`;
-- add the represented product-evidence duplicate-family hold for
-  `novelty-http-persistence-probe` only after confirming a current
-  representative exists; do not broaden suppression or hide product-evidence
-  failures;
+- monitor the implemented represented product-evidence duplicate-family hold on
+  the current root and add only explicit group-scoped entries if another
+  producer shows the same represented duplicate behavior;
 - publish/fetch/audit explicit GitHub refs for active i40 rows that still say
   `No verified branch link yet`.
 
