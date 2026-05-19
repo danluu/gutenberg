@@ -7,3 +7,4 @@ Local,unit-suite,Targeted unit suite,http-polling-manager,HTTP polling manager u
 Local,e2e,E2E smoke/perf,collaboration-code-editor-performance-ws,Code editor WS e2e,0,2,9.77,10.13,1.037,yes
 Local,e2e,E2E smoke/perf,collaboration-sync-body-size-http,Sync body size HTTP e2e,0,2,15.99,15.74,0.985,yes
 Local,multi-user,Multi-user synthetic,many-users-sync,Many-user sync microbench,0,2,7.90,8.01,1.015,yes
+Local,realistic-e2e,Realistic e2e,table-stale-snapshot-http,Table stale snapshot HTTP e2e,0,2,25.33,26.38,1.041,yes

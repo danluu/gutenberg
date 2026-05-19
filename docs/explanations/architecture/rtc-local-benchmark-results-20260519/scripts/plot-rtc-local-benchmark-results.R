@@ -54,6 +54,12 @@ many_user_p50 <- read.csv(
 	file.path( data_dir, "many-user-sync-p50.csv" ),
 	stringsAsFactors = FALSE
 )
+realistic_e2e <- read.csv(
+	file.path( data_dir, "realistic-e2e-results.csv" ),
+	stringsAsFactors = FALSE
+)
+
+command_ratios <- subset( command_ratios, usable == "yes" )
 
 command_ratios$kind_label <- factor(
 	command_ratios$kind_label,
@@ -61,7 +67,8 @@ command_ratios$kind_label <- factor(
 		"Lower microbench",
 		"Targeted unit suite",
 		"E2E smoke/perf",
-		"Multi-user synthetic"
+		"Multi-user synthetic",
+		"Realistic e2e"
 	)
 )
 command_ratios$case_label <- factor(
@@ -80,6 +87,15 @@ many_user_p50$scenario_label <- factor(
 	levels = rev( unique( many_user_p50$scenario_label ) )
 )
 many_user_p50$host <- factor( many_user_p50$host, levels = c( "Local" ) )
+
+realistic_e2e$case_label <- factor(
+	realistic_e2e$case_label,
+	levels = rev( unique( realistic_e2e$case_label ) )
+)
+realistic_e2e$outcome <- factor(
+	realistic_e2e$outcome,
+	levels = c( "Passed", "Merged failed" )
+)
 
 command_ratios_plot <- ggplot(
 	command_ratios,
@@ -110,14 +126,14 @@ command_ratios_plot <- ggplot(
 	coord_cartesian( clip = "off" ) +
 	labs(
 		title = "Local merged/base elapsed-time ratios",
-		subtitle = "Values right of 1x are slower in the merged snapshot; all local timed rows passed",
+		subtitle = "Values right of 1x are slower in the merged snapshot; rows with merged e2e failures are excluded",
 		x = "Merged / base median elapsed time",
 		y = NULL,
 		color = NULL,
-		caption = "Source: local-abba-20260519T193459Z and local-many-users-20260519T200914Z. Setup and wp-env startup are excluded."
+		caption = "Source: local-abba-20260519T193459Z, local-many-users-20260519T200914Z, and local-realistic-e2e-20260519T203043Z."
 	) +
 	theme_rtc()
-write_plot( "local-command-ratios.png", command_ratios_plot, width = 9.5, height = 5.8 )
+write_plot( "local-command-ratios.png", command_ratios_plot, width = 9.5, height = 6.1 )
 
 crdt_ratio_plot <- ggplot(
 	crdt_p50,
@@ -196,3 +212,52 @@ many_user_ratio_plot <- ggplot(
 	) +
 	theme_rtc()
 write_plot( "many-user-sync-p50-ratios.png", many_user_ratio_plot, width = 9.5, height = 5.2 )
+
+realistic_e2e_plot <- ggplot(
+	realistic_e2e,
+	aes(
+		x = merged_base_elapsed_ratio,
+		y = case_label,
+		color = outcome,
+		shape = outcome
+	)
+) +
+	geom_vline( xintercept = 1, linetype = "dashed", color = "grey55" ) +
+	geom_segment(
+		aes( x = 1, xend = merged_base_elapsed_ratio, yend = case_label ),
+		linewidth = 0.6,
+		alpha = 0.72
+	) +
+	geom_point( size = 3 ) +
+	geom_text(
+		aes(
+			label = ifelse(
+				outcome == "Passed",
+				ratio_label( merged_base_elapsed_ratio ),
+				sprintf( "%s; %d/%d failed", ratio_label( merged_base_elapsed_ratio ), merged_failures, reps )
+			)
+		),
+		hjust = -0.12,
+		size = 2.7,
+		show.legend = FALSE
+	) +
+	scale_x_continuous(
+		trans = "log2",
+		breaks = c( 1, 2, 4 ),
+		labels = c( "1x", "2x", "4x" ),
+		limits = c( 0.9, 4 )
+	) +
+	scale_color_brewer( palette = "Dark2" ) +
+	scale_shape_manual( values = c( 16, 4 ) ) +
+	coord_cartesian( clip = "off" ) +
+	labs(
+		title = "Realistic e2e merged/base status",
+		subtitle = "Failed merged rows include Playwright retry time and are correctness failures, not clean timing ratios",
+		x = "Merged / base median elapsed time",
+		y = NULL,
+		color = NULL,
+		shape = NULL,
+		caption = "Source: local-realistic-e2e-20260519T203043Z. HTTP polling provider; isolated wp-env startup excluded."
+	) +
+	theme_rtc()
+write_plot( "realistic-e2e-status-ratios.png", realistic_e2e_plot, width = 9.5, height = 4.7 )

@@ -1,6 +1,6 @@
 # RTC Local Benchmark Results, 2026-05-19
 
-This follows `rtc-less-busy-benchmark-handoff-20260519.md`, but the local run uses a cleaner runner structure instead of preserving the earlier remote-run ordering. The local runner used balanced ABBA ordering for lower-level, e2e, and many-user rows and fixed host-specific wp-env behavior on macOS.
+This follows `rtc-less-busy-benchmark-handoff-20260519.md`, but the local run uses a cleaner runner structure instead of preserving the earlier remote-run ordering. The local runner used balanced ABBA ordering for lower-level, e2e, many-user, and realistic e2e rows and fixed host-specific wp-env behavior on macOS.
 
 ## Inputs
 
@@ -15,7 +15,7 @@ Local setup excluded from timed rows: bundle fetch/clone, `npm install`, `compos
 
 ## Benchmark Meanings
 
-The timed rows use four levels:
+The timed rows use five levels:
 
 | row | what it measures |
 | --- | --- |
@@ -27,6 +27,9 @@ The timed rows use four levels:
 | `e2e / collaboration-code-editor-performance-ws` | Playwright e2e coverage for the collaboration code-editor performance path using the WebSocket sync server. This includes browser, editor, WordPress, and test harness work. |
 | `e2e / collaboration-sync-body-size-http` | Playwright e2e coverage for collaboration sync request body size using the HTTP polling path. This catches payload growth and sync-body behavior in the browser/editor stack. |
 | `multi-user / many-users-sync` | A Jest-hosted synthetic many-user sync benchmark for 100-user payloads, 100-user update queues, and a 1000-room polling window. This isolates client-side sync fan-out work and excludes browser, wp-env, and e2e setup. |
+| `realistic-e2e / large-post-three-user-http` | Playwright e2e coverage for the existing large-post collaboration stress flow over HTTP polling: three browser users edit a roughly 5000-word mixed-block post, save, refresh, move blocks, type concurrently, and publish. |
+| `realistic-e2e / list-item-move-refresh-http` | Playwright e2e coverage for the existing two-user list-item movement flow over HTTP polling, including concurrent moves, save, and both users refreshing into the moved order. |
+| `realistic-e2e / table-stale-snapshot-http` | Playwright e2e coverage for existing stale table snapshot flows over HTTP polling: stale HTML edit versus remote row insert, and stale row append versus another user's cell edit. |
 
 The raw microbenchmark scenarios mean:
 
@@ -55,12 +58,14 @@ Run ids:
 
 - Main lower/unit/e2e run: `local-abba-20260519T193459Z`
 - Many-user sync run: `local-many-users-20260519T200914Z`
+- Realistic e2e run: `local-realistic-e2e-20260519T203043Z`
 
 Local artifact root:
 
 ```text
 /Users/danluu/dev/fuzz/rtc-benchmark-20260519-local.noindex/results/local-abba-20260519T193459Z
 /Users/danluu/dev/fuzz/rtc-benchmark-20260519-local.noindex/results/local-many-users-20260519T200914Z
+/Users/danluu/dev/fuzz/rtc-benchmark-20260519-local.noindex/results/local-realistic-e2e-20260519T203043Z
 ```
 
 Host and runner notes:
@@ -70,11 +75,13 @@ Host and runner notes:
 - Lower-level order: base rep 1, merged rep 1, merged rep 2, base rep 2.
 - E2E order: base rep 1, merged rep 1, merged rep 2, base rep 2, after prestarting both isolated wp-env instances.
 - Many-user order: base rep 1, merged rep 1, merged rep 2, base rep 2.
+- Realistic e2e order: base rep 1, merged rep 1, merged rep 2, base rep 2, after prestarting both isolated wp-env instances.
 - Local wp-env needed `WP_BASE_URL=http://localhost:<port>`; `127.0.0.1` caused login/REST auth churn on this machine. The WebSocket server stayed on `127.0.0.1`.
 - `RTC_BENCH_LOAD_GATE=off`; macOS load average did not settle because of unrelated background indexing/media work. Per-row load samples were still recorded. Local 1-minute load samples ranged from 16.82 to 31.59, mean 23.39.
 - The many-user run's 1-minute load samples ranged from 8.59 to 19.29, mean 16.24.
+- The realistic e2e run's 1-minute load samples ranged from 21.08 to 36.45, mean 27.55.
 
-All 32 local timed rows exited zero.
+The original lower/unit/e2e run and the many-user run exited zero for all 32 timed rows. The realistic e2e run added 12 timed rows: 8 exited zero and 4 failed, all in the merged snapshot's stress flows.
 
 | kind | case | base failures/reps | merged failures/reps | base median s | merged median s | merged/base |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
@@ -86,6 +93,9 @@ All 32 local timed rows exited zero.
 | e2e | collaboration-code-editor-performance-ws | 0/2 | 0/2 | 9.77 | 10.13 | 1.037 |
 | e2e | collaboration-sync-body-size-http | 0/2 | 0/2 | 15.99 | 15.74 | 0.985 |
 | multi-user | many-users-sync | 0/2 | 0/2 | 7.90 | 8.01 | 1.015 |
+| realistic-e2e | large-post-three-user-http | 0/2 | 2/2 | 31.59 | 108.19 | n/a, merged failed |
+| realistic-e2e | list-item-move-refresh-http | 0/2 | 2/2 | 23.52 | 82.05 | n/a, merged failed |
+| realistic-e2e | table-stale-snapshot-http | 0/2 | 0/2 | 25.33 | 26.38 | 1.041 |
 
 Local CRDT microbench p50 ratios:
 
@@ -107,6 +117,14 @@ Local many-user sync microbench p50 ratios:
 | queue_take_restore_100_users_100_updates_each | 0.040041 | 0.037042 | 0.925 | 0.075438 | 0.065458 | 0.868 |
 | rotate_window_1000_rooms_10_slots | 0.002042 | 0.002042 | 1.000 | 0.003604 | 0.003771 | 1.046 |
 
+Realistic e2e failure signatures:
+
+| row | base result | merged result | observed merged failure |
+| --- | ---: | ---: | --- |
+| large-post-three-user-http | 0/2 failures | 2/2 failures | Both merged reps timed out waiting for every participant to observe the final concurrent paragraphs from the other users in `collaboration-stress.spec.ts`. |
+| list-item-move-refresh-http | 0/2 failures | 2/2 failures | Both merged reps timed out waiting for the moved list order; the assertion expected `Item Beta` after `Item Gamma`, but saw the old order. |
+| table-stale-snapshot-http | 0/2 failures | 0/2 failures | No failure; this is the only all-pass realistic e2e ratio row. |
+
 ## Graphs
 
 The plotted data and generator are checked in under `docs/explanations/architecture/rtc-local-benchmark-results-20260519/`. The graphs use `ggplot2` with ColorBrewer scales and the minimal RTC report style used by the existing benchmark trend plots.
@@ -117,8 +135,12 @@ The plotted data and generator are checked in under `docs/explanations/architect
 
 ![Many-user sync microbench p50 ratios](rtc-local-benchmark-results-20260519/plots/many-user-sync-p50-ratios.png)
 
+![Realistic e2e status ratios](rtc-local-benchmark-results-20260519/plots/realistic-e2e-status-ratios.png)
+
 ## Readout
 
-The local run is the cleanest run for end-to-end correctness and timing because it used balanced ABBA order and all rows passed. It shows no meaningful e2e regression: WS e2e was +3.7% and HTTP e2e was -1.5% for merged versus base. The synthetic CRDT stale/suffix scenarios are consistently slower in the merged snapshot, around 1.8x to 3.4x by p50 depending on scenario.
+The local lower/unit/e2e and many-user runs are clean timing runs because they used balanced ABBA order and all rows passed. They show no meaningful smoke e2e regression: WS e2e was +3.7% and HTTP e2e was -1.5% for merged versus base. The synthetic CRDT stale/suffix scenarios are consistently slower in the merged snapshot, around 1.8x to 3.4x by p50 depending on scenario.
 
 HTML-equivalence and HTTP-polling microbenches were effectively neutral. The many-user sync benchmark was also near neutral overall: the aggregate elapsed-time ratio was 1.015x, p50 ratios ranged from 0.925x to 1.079x, awareness apply was 0.999x, and 1000-room window rotation was 1.000x.
+
+The realistic e2e addition changes the correctness picture: base passed all six stress-flow commands, but merged failed both reps of the 3-user large-post flow and both reps of the list-item move/refresh flow. The failed rows' elapsed medians include Playwright retries, so they should be read as repeated e2e failures rather than clean performance ratios. The realistic table stale-snapshot row passed on both branches, with merged/base at 1.041x.
