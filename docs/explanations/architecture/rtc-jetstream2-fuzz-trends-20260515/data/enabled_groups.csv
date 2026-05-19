@@ -955,3 +955,7 @@ timestamp,group,group_family
 2026-05-19T15:20:44Z,novelty-ws-common-blocks,auth/locks
 2026-05-19T15:46:19Z,novelty-ws-real-user-rich-text,real-user
 2026-05-19T15:59:48Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-19T16:03:56Z,novelty-ws-media-cross-entity,async/media
+2026-05-19T16:11:08Z,novelty-ws-parser-serialization,parser
+2026-05-19T16:11:14Z,novelty-ws-async-server-blocks,async/media
+2026-05-19T16:13:25Z,novelty-ws-long-session-large-doc,lifecycle
