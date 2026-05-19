@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T05:12:33Z`
+Snapshot time: `2026-05-19T05:18:43Z`
 
 Trigger event:
-`pr-split-2026-05-19T05-08-24Z-20260519T045950Z`
+`duplicate-noise-2026-05-19T05-10-29Z-238`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T05-08-24Z-20260519T045950Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T05-10-29Z-238/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -93,7 +93,7 @@ deferred downscope, or control-plane repair.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T05:12:27Z`.
+Remote status was collected at `2026-05-19T05:18:37Z`.
 
 The fix-planning repo is checked out at:
 
@@ -123,7 +123,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T05:12:33Z` from fetched
+The branch-link audit was generated at `2026-05-19T05:18:43Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -244,14 +244,14 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T05:12:27Z
+collected_at_utc: 2026-05-19T05:18:37Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T050204Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty monitor status was written at
-`2026-05-19T05:12:14.750Z` for
+`2026-05-19T05:18:14.753Z` for
 `run-20260519T050204Z`. It is startup-only:
 
 ```text
@@ -275,7 +275,7 @@ Interpretation:
   PR07 owner replay, strict owner replay, `PERSISTENCE-PARITY-6000007`
   clean-head replay, seed `1020002`, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T04:59:51Z`:
+The latest trend evidence packet was generated at `2026-05-19T05:09:08Z`:
 
 ```text
 monitor passes: 2322
@@ -290,14 +290,14 @@ duplicate_share_historical_last: 0.3404
 summary startup failures last: 0
 quality issues last: 0
 memory free: 413.8 GB
-load averages: 63.22 / 70.09 / 70.59 on 64 cores
+load averages: 39.96 / 62.33 / 69.1 on 64 cores
 enabled group current: novelty-ws-permissions-auth-locks
 latest fuzz level mix:
   browser-e2e=28 lanes/25 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6103797
-browser-e2e likely-real findings: 788 over 2649.6 runner-hours
+total fuzz-level test executions: 6107315
+browser-e2e likely-real findings: 788 over 2652.0 runner-hours
 ```
 
 Largest unmet goals remain save/reload and real-user depth:
