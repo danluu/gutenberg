@@ -1189,9 +1189,7 @@ describe( 'saveEntityRecord', () => {
 	} );
 
 	it( 'does not persist malformed evaluated content when local blocks serialize cleanly', async () => {
-		const cleanBlocks = parse(
-			`${ blockContent( 'Alpha' ) }\n\n${ blockContent( 'Beta' ) }`
-		);
+		const cleanBlocks = parse( pageContent( [ 'Alpha', 'Beta' ] ) );
 		const cleanContent = __unstableSerializeAndClean( cleanBlocks ).trim();
 		const malformedContent = cleanContent.replace(
 			`wp:${ TEST_BLOCK_NAME }`,
@@ -1263,9 +1261,9 @@ describe( 'saveEntityRecord', () => {
 	} );
 
 	it( 'preserves valid evaluated content that differs from local blocks', async () => {
-		const cleanBlocks = parse( blockContent( 'Alpha' ) );
+		const cleanBlocks = parse( blockMarkup( 'Alpha' ) );
 		const alternateContent = __unstableSerializeAndClean(
-			parse( blockContent( 'Alternate' ) )
+			parse( blockMarkup( 'Alternate' ) )
 		).trim();
 		const post = {
 			id: 10,
