@@ -9,9 +9,9 @@ revision-persistence,6985,289,0,0.04137437365783823,persistence
 parser-transform,5488,610,0,0.11115160349854228,parser
 common-blocks,4949,507,0,0.10244493837138816,block-structure
 persistence-no-title,4296,1672,0,0.3891992551210428,persistence
-long-session-large-doc,4240,596,0,0.14056603773584905,lifecycle
+long-session-large-doc,4243,596,0,0.14046665095451333,lifecycle
 parser-serialization,4209,268,0,0.06367308149204086,parser
 multi-reload-lifecycle,4135,163,0,0.039419588875453444,lifecycle
 full,840,18,0,0.02142857142857143,block-structure
 structure,541,96,0,0.17744916820702403,block-structure
-media-cross-entity,531,164,0,0.3088512241054614,async/media
+media-cross-entity,536,164,0,0.30597014925373134,async/media
