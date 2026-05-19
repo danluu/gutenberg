@@ -13,6 +13,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { build as esbuildBuild } from 'esbuild';
+import type { FileHandle } from 'node:fs/promises';
 
 /**
  * WordPress dependencies
@@ -20,6 +21,14 @@ import { build as esbuildBuild } from 'esbuild';
 import type { RequestUtils } from '@wordpress/e2e-test-utils-playwright';
 
 const PROVIDER_PLUGIN = 'gutenberg-test-plugin-rtc-websocket-provider';
+const RUNTIME_CONFIG_LOCK_TIMEOUT_MS = 10000;
+const RUNTIME_CONFIG_LOCK_STALE_MS = 30000;
+const RUNTIME_CONFIG_LOCK_POLL_MS = 50;
+
+type RuntimeConfig = {
+	url?: string;
+	urlsByHost?: Record< string, string >;
+};
 
 function getProviderPluginDir() {
 	return path.resolve(
@@ -35,6 +44,35 @@ function getResolvedWsUrl() {
 	);
 }
 
+function getBaseUrlHostAliases() {
+	const aliases = new Set< string >();
+	const baseUrlCandidates = [
+		process.env.WP_BASE_URL,
+		process.env.RTC_FUZZ_BASE_URL,
+		process.env.PLAYWRIGHT_BASE_URL,
+	];
+
+	for ( const rawUrl of baseUrlCandidates ) {
+		if ( ! rawUrl ) {
+			continue;
+		}
+
+		try {
+			aliases.add( new URL( rawUrl ).host.toLowerCase() );
+		} catch {
+			// Ignore non-URL values; the port fallback below still covers wp-env.
+		}
+	}
+
+	const wpEnvPort = process.env.WP_ENV_PORT;
+	if ( wpEnvPort ) {
+		aliases.add( `localhost:${ wpEnvPort }` );
+		aliases.add( `127.0.0.1:${ wpEnvPort }` );
+	}
+
+	return aliases;
+}
+
 async function buildProviderBundle() {
 	const pluginDir = getProviderPluginDir();
 	await esbuildBuild( {
@@ -48,20 +86,111 @@ async function buildProviderBundle() {
 	} );
 }
 
+function sleep( ms: number ) {
+	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
+}
+
+async function withRuntimeConfigLock(
+	configPath: string,
+	callback: () => Promise< void >
+) {
+	const lockPath = `${ configPath }.lock`;
+	const startedAt = Date.now();
+	let lockHandle: FileHandle | null = null;
+
+	while ( ! lockHandle ) {
+		try {
+			lockHandle = await fs.open( lockPath, 'wx' );
+		} catch ( error ) {
+			if (
+				! (
+					error instanceof Error &&
+					'code' in error &&
+					error.code === 'EEXIST'
+				)
+			) {
+				throw error;
+			}
+
+			const stat = await fs.stat( lockPath ).catch( () => null );
+			if (
+				stat &&
+				Date.now() - stat.mtimeMs > RUNTIME_CONFIG_LOCK_STALE_MS
+			) {
+				await fs.rm( lockPath, { force: true } );
+				continue;
+			}
+
+			if ( Date.now() - startedAt > RUNTIME_CONFIG_LOCK_TIMEOUT_MS ) {
+				throw new Error(
+					`Timed out waiting for RTC WebSocket runtime config lock: ${ lockPath }`
+				);
+			}
+
+			await sleep( RUNTIME_CONFIG_LOCK_POLL_MS );
+		}
+	}
+
+	try {
+		await callback();
+	} finally {
+		await lockHandle.close();
+		await fs.rm( lockPath, { force: true } );
+	}
+}
+
+async function readRuntimeConfig(
+	configPath: string
+): Promise< RuntimeConfig > {
+	try {
+		const config = JSON.parse( await fs.readFile( configPath, 'utf8' ) );
+		return config && typeof config === 'object' ? config : {};
+	} catch ( error ) {
+		if (
+			error instanceof Error &&
+			'code' in error &&
+			error.code === 'ENOENT'
+		) {
+			return {};
+		}
+		throw error;
+	}
+}
+
 // Write the resolved WS URL where the PHP test plugin can read it. wp-env
 // does not forward host env vars into the WordPress container, so
 // getenv( 'GUTENBERG_RTC_TEST_WS_URL' ) inside PHP would always return false
 // and the browser would fall back to ws://127.0.0.1:18991, ignoring any port
 // override. The plugin directory is bind-mounted into the container, so a
 // file written here on the host is visible to PHP at the same relative path.
+//
+// Multiple RTC fuzz wp-env instances can share one checkout while running on
+// different HTTP and WebSocket ports. Keep a host-keyed map so one globalSetup
+// run does not clobber the URL needed by another active editor page.
 async function writeRuntimeConfig() {
 	const pluginDir = getProviderPluginDir();
 	const configPath = path.join( pluginDir, 'build/runtime-config.json' );
 	await fs.mkdir( path.dirname( configPath ), { recursive: true } );
-	await fs.writeFile(
-		configPath,
-		JSON.stringify( { url: getResolvedWsUrl() } ) + '\n'
-	);
+	await withRuntimeConfigLock( configPath, async () => {
+		const existingConfig = await readRuntimeConfig( configPath );
+		const url = getResolvedWsUrl();
+		const urlsByHost = {
+			...( existingConfig.urlsByHost ?? {} ),
+		};
+
+		for ( const host of getBaseUrlHostAliases() ) {
+			urlsByHost[ host ] = url;
+		}
+
+		const nextConfig: RuntimeConfig = {
+			...existingConfig,
+			url,
+			urlsByHost,
+		};
+		const tempPath = `${ configPath }.${ process.pid }.tmp`;
+		await fs.writeFile( tempPath, JSON.stringify( nextConfig ) + '\n' );
+		await fs.rename( tempPath, configPath );
+	} );
 }
 
 async function resetSyncServer() {
