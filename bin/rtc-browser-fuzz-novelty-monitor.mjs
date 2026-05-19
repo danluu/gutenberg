@@ -5193,7 +5193,10 @@ async function readCoverageRecords( files ) {
 		};
 	}
 
-	state.fileOffsets = nextOffsets;
+	state.fileOffsets = {
+		...( state.fileOffsets ?? {} ),
+		...nextOffsets,
+	};
 	return { records, stats };
 }
 
@@ -5506,7 +5509,10 @@ async function readSummaryStartupFailures( files ) {
 		};
 	}
 
-	state.summaryFileOffsets = nextOffsets;
+	state.summaryFileOffsets = {
+		...( state.summaryFileOffsets ?? {} ),
+		...nextOffsets,
+	};
 	return stats;
 }
 
@@ -12017,7 +12023,9 @@ async function runPass() {
 	await log(
 		`pass: processed=${ novelty.processed } files=${
 			coverageFiles.length
-		} newFeatures=${ novelty.newFeatureKeys } newCdp=${
+		} recordsSeen=${ state.recordsSeen ?? 0 } newFeatures=${
+			novelty.newFeatureKeys
+		} newCdp=${
 			novelty.newCoverageHashes
 		} unmetCoverage=${ guidance.unmetGoals.length } noProgress=${
 			guidance.noProgressPasses

@@ -1486,9 +1486,13 @@ Automatic coverage-goal expansion is persisted in
 restart unless the goal wave itself was bad; clearing them makes trend graphs
 look artificially complete again until the threshold is crossed on a later pass.
 The coverage-guided remote starter copies the previous `novelty-state.json` into
-the new output directory and preserves cumulative `observed-roots.txt` entries
-across restarts. That keeps quality and auto-goal decisions based on the full
-run history instead of only the immediately previous monitor output.
+the new output directory and carries a capped recent `observed-roots.txt` window
+across restarts. The cumulative feature, hash, auto-goal, and `recordsSeen`
+state lives in `novelty-state.json`; the root window is intentionally bounded so
+the monitor does not rescan days of coverage files on every restart. The
+`coverage files` line in `novelty-status.md` and `files=` field in monitor pass
+logs are current-scan file counts, not cumulative coverage. Use
+`recordsSeen`/`total records seen` for trend graphs and long-run health.
 
 ## Fuzz-Only Assertion Loop
 

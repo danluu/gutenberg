@@ -8,6 +8,7 @@ REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 CUMULATIVE_ROOTS_FILE="$BASE/cumulative-observed-roots.txt"
 START_LOCK="$BASE/start.lock"
+MAX_OBSERVED_ROOTS=${RTC_FUZZ_NOVELTY_MAX_OBSERVED_ROOTS:-20}
 mkdir -p "$TMUX_WRAP" "$BASE/logs"
 exec 8>"$START_LOCK"
 flock 8
@@ -65,7 +66,7 @@ printf '%s\n' "$OUT" > "$BASE/current-output-dir.txt"
 	if [ -f "$CUMULATIVE_ROOTS_FILE" ]; then
 		cat "$CUMULATIVE_ROOTS_FILE"
 	fi
-} | awk 'NF && !seen[$0]++' > "$OUT/observed-roots.txt"
+} | awk 'NF && !seen[$0]++' | sed -n "1,${MAX_OBSERVED_ROOTS}p" > "$OUT/observed-roots.txt"
 cp "$OUT/observed-roots.txt" "$CUMULATIVE_ROOTS_FILE"
 OBSERVED=$(paste -sd: "$OUT/observed-roots.txt")
 if [ -n "$PREVIOUS_COVERAGE" ] && [ -f "$PREVIOUS_COVERAGE/novelty-state.json" ]; then
@@ -143,6 +144,7 @@ export RTC_FUZZ_CODEX_BIN='$CODEX_BIN_DIR/codex'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_INTERVAL_MINUTES='$NOVELTY_CODEX_INTERVAL_MINUTES'
 export RTC_FUZZ_NOVELTY_COVERAGE_GUIDANCE_STALL_PASSES='2'
 export RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_ISSUE_PASSES='2'
+export NODE_OPTIONS="\${NODE_OPTIONS:---max-old-space-size=24576}"
 node bin/rtc-browser-fuzz-novelty-monitor.mjs >> '$BASE/logs/monitor.log' 2>&1
 code=\$?
 stamp=\$(date -u +%Y-%m-%dT%H:%M:%SZ)
