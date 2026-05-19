@@ -910,3 +910,5 @@ timestamp,group,group_family
 2026-05-19T00:22:25Z,novelty-ws-parser-transform,parser
 2026-05-19T00:30:13Z,novelty-ws-async-server-blocks,async/media
 2026-05-19T01:15:26Z,novelty-ws-real-user-save-reload,real-user
+2026-05-19T02:04:07Z,novelty-ws-lifecycle,lifecycle
+2026-05-19T02:04:07Z,novelty-ws-real-user-save-reload,real-user
