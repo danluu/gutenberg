@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-18T23:51:05Z`
+Snapshot generated: `2026-05-18T23:59:12Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -12,7 +12,7 @@ Source inputs:
 - coverage monitor log:
   `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/logs/monitor.log`
 - latest copied novelty state:
-  current coverage novelty state updated at `2026-05-18T23:49:50Z`
+  current coverage novelty state updated at `2026-05-18T23:56:51Z`
 - PR split review loop log:
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/logs/loop.log`
 - PR-focused controller, critical-path executor, artifact index, and local
@@ -30,9 +30,9 @@ The plotting script and summarized CSV inputs are committed under
 
 ## High-level readout
 
-Coverage intake is still moving. Across `2306` monitor passes from
-`2026-05-15T01:21:42Z` through `2026-05-18T23:49:51Z`, coverage files grew from
-`272` to `55451`, a delta of `55179`. The monitor's visible likely-real maximum
+Coverage intake is still moving. Across `2307` monitor passes from
+`2026-05-15T01:21:42Z` through `2026-05-18T23:56:51Z`, coverage files grew from
+`272` to `55455`, a delta of `55183`. The monitor's visible likely-real maximum
 remains `4`.
 
 Coverage-goal pressure is down but not finished. The latest copied
@@ -42,43 +42,42 @@ save/reload depth, real-user editing completion, and reload-post action depth.
 The latest live duplicate/noise sample is clean on the current-output-dir
 metric: current summary startup failures are `0` and
 `duplicateShareCurrent=0`. The latest pass has `0` quality issues,
-`0` warnings, `425.6G` free memory,
-`no_progress=3`, and `headroom=false`. This
+`0` warnings, `422.0G` free memory,
+`no_progress=4`, and `headroom=false`. This
 report uses current-output duplicate/noise and summary startup failures for
 live health. Historical aggregate duplicate/noise is context only; its latest
-duplicate share is `0.3408` and is not the plotted live health signal.
+duplicate share is `0.3409` and is not the plotted live health signal.
 
 Persona-loop evidence still rejects a durable recovery read. The newest
-duplicate/noise synthesis, `20260518T231214Z`, says the remaining bug is
-control-plane admission and ordering: strict no-product startup stalls are
-mostly filtered once they reach triage/analysis, but those holds are not
-consistently carried back into producer refill, bootstrap, fallback selection,
-output-root rollover, drain state, or live-analysis admission. The latest
-duplicate/noise feedback action file, `20260518T231214Z`, applied the bounded
-control-plane fix and restarted the novelty and live-analysis monitors. The
-post-action novelty state still leaves the recovery claim narrow: it has
-run-local noise policy version `35`, one active current run dir from
-`supervisor-active-run-dirs`, enabled `novelty-http-persistence-probe`, no
-current summary startup failures, no current startup evidence keys, and two raw
-product-evidence timeout signatures that are family-capped and not visible as
-likely-real. The refreshed graph health point has `duplicateShareCurrent=0`,
-but the latest synthesis and action both preserve the caveat that no-product
-startup/noise holds must remain authoritative across producer scheduling and
-live-analysis admission. A single clean point is not a durable browser
-materialization recovery signal.
+duplicate/noise synthesis, `20260518T234438Z`, says the old strict no-product
+`pre_action_bootstrap_stall` leak is mostly fixed in the normal pipeline, but
+the active leak is product-evidence duplicate handling:
+`novelty-http-persistence-probe` is still consuming producer/browser capacity on
+current-run `timeout` signatures that are already non-actionable and
+family-capped with zero visible likely-real failures. It recommends a narrow
+represented product-evidence family hold that preserves one analyzable
+representative and does not globally suppress `timeout` or product-evidence
+signatures. The latest duplicate/noise feedback action file remains
+`20260518T231214Z`; it applied the previous bounded control-plane fix and
+restarted the novelty and live-analysis monitors. The refreshed graph health
+point has `duplicateShareCurrent=0` and no current summary startup failures, but
+the latest synthesis rejects treating that as sustained useful browser
+materialization while represented product-evidence duplicate families can still
+consume capacity.
 
 The PR-split persona loop still rejects filing. The latest synthesis,
-`20260518T232725Z`, keeps the Cycle400/402/404 replacement split and says the
-final stack is blocked, not fileable. Ready/local remains through `PR06D` plus
-`PR02A`/`PR06E`, and CRDT remains through `PR15D`; `PR02B`, PR07 arms, strict
-`117126135e5e`, raw deferred heads, `PR17`, `PR18`, and `PR18x` stay outside
-the fileable split. Raw reload-hydration `231829` can feed `PR07B0D-215248`
-evidence only, PR07 remains blocked by `collaborationEnabled:null`, strict
-`117126135e5e` has no oracle-bearing owner rows, and seed `1020002` still blocks
-final-stack fuzzing and filing. The latest feedback action is
-`20260518T232725Z`; it launched shared collaboration readiness repair and
-progress-gate hardening, but kept filing, broad final-stack fuzzing, PR07 arms,
-`PR02B`, diagnostics, raw deferred heads, `PR17`, `PR18`, and `PR18x` blocked.
+`20260518T234403Z`, keeps the replacement split mostly settled but says the
+final stack remains blocked, not fileable. Ready/local remains through `PR06D`
+plus `PR02A`/`PR06E`, and CRDT remains through `PR15D`; `PR02B`, PR07 owner
+arms, strict `117126135e5e`, raw deferred heads, `PR17`, `PR18`, and `PR18x`
+stay outside the fileable split. Raw reload-hydration `231829` can feed
+`PR07B0D-215248` evidence only, PR07 remains blocked by
+`collaborationEnabled:null`, strict `117126135e5e` has no oracle-bearing owner
+rows, and seed `1020002` still blocks final-stack fuzzing and filing. The
+latest feedback action remains `20260518T232725Z`; it launched shared
+collaboration readiness repair and progress-gate hardening, but kept filing,
+broad final-stack fuzzing, PR07 arms, `PR02B`, diagnostics, raw deferred heads,
+`PR17`, `PR18`, and `PR18x` blocked.
 
 The graph-visible controller state is narrower than the PR-split loop. Its
 current table has `24` rows covering `22` distinct work items: `10`
@@ -98,7 +97,7 @@ pre-oracle/preflight-only artifacts for `pr17-1020002` and
 ![Coverage-guided fuzz intake over time](rtc-jetstream2-fuzz-trends-20260515/plots/monitor-coverage-intake.png)
 
 The bottom facet is the operational queue: unmet goals fell from `24` to `4`.
-The top facet shows continued coverage-file growth to `55451` files. Dense
+The top facet shows continued coverage-file growth to `55455` files. Dense
 monitor-pass points are intentionally small and partially transparent so
 repeated samples do not visually turn into a misleading line.
 
@@ -115,7 +114,7 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 The latest plotted live sample uses current-output-dir duplicate/noise metrics
 and summary startup failures: `duplicateShareCurrent=0`, current summary
 startup failures `0`, quality issue count `0`, warning count `0`, free memory
-`425.6G`, `no_progress=3`, and `headroom=false`. The health graph does not use
+`422.0G`, `no_progress=4`, and `headroom=false`. The health graph does not use
 historical aggregate duplicate/noise as the plotted live signal.
 
 The copied current novelty state has run-local noise policy version `35`, one
@@ -123,14 +122,13 @@ active current-run dir from `supervisor-active-run-dirs`, enabled
 `novelty-http-persistence-probe`, no current summary startup failures, no
 current startup evidence keys, and two raw product-evidence timeout signatures
 that are family-capped and not visible as likely-real. The latest
-duplicate/noise synthesis says the remaining risk is
-producer scheduling and live-analysis admission: no-product startup/noise holds
-must be authoritative before refill, bootstrap, fallback selection, drain/rollover
-state, and live-analysis sessions, while product-evidence failures stay visible.
-The latest feedback action applied that bounded control-plane fix and restarted
-the affected novelty/live-analysis monitors. The graph point is startup-clean
-and duplicate-clean on the current-output metric, but the feedback still
-rejects treating one clean point as sustained useful browser materialization.
+duplicate/noise synthesis says strict no-product startup noise is mostly fixed
+in the normal path, but represented product-evidence duplicate families still
+need to become producer holds once a current representative exists. The latest
+feedback action applied the previous bounded control-plane fix and restarted the
+affected novelty/live-analysis monitors. The graph point is startup-clean and
+duplicate-clean on the current-output metric, but the feedback still rejects
+treating one clean point as sustained useful browser materialization.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
@@ -182,7 +180,8 @@ execution/output data but no current counted rate. `backend-api`,
 `protocol-server`, and standalone `fuzz-assertion` remain at `0` in the
 committed graph counters.
 
-Persona-loop evidence adds important caveats. The newest level-mix synthesis,
+Persona-loop evidence adds important caveats. The newest level-mix synthesis
+file, `20260518T234745Z`, is empty; the latest substantive level-mix synthesis,
 `20260518T232500Z`, says not to reallocate capacity or add lower-level lanes. It
 supports the browser-heavy graph but says the action is browser startup-stall
 recovery and stale telemetry/accounting repair, with `unit-property`,
@@ -195,25 +194,27 @@ reconciliation reported clean after regeneration. This supports the graph's
 browser/e2e concentration while rejecting configured lane count as proof of
 useful capacity or as a reason to add lower-level lanes.
 
-The newest native-harness synthesis, `20260518T233855Z`, still selects the
+The newest native-harness synthesis, `20260518T234847Z`, still selects the
 rich-text CRDT multiblock target as the first ready isolated V8/Node
 coverage-guided lower-level harness and explicitly rejects describing it as a
-C/C++ AFL/libFuzzer harness. The latest native-harness action file,
+C/C++ AFL/libFuzzer harness. The latest substantive native-harness action file,
 `20260518T232433Z`, reports a passing action-local smoke and root/lane
 `coverage-guided-lower-level` events, but it did not start a duplicate
 continuous rich-text lane because that hold is active. The newest
-protocol-server synthesis, `20260518T234140Z`, keeps the HTTP polling REST
-server harness around `POST /wp-sync/v1/updates`; the latest action,
-`20260518T232919Z`, reports a passing bounded validation seed and
-collector-style root/lane `fuzzLevel: "protocol-server"` events. The committed
-trend counters still show `0` protocol-server executions, so collector-visible
-protocol trend data has not caught up. The latest fuzz-only assertion apply report,
-`20260518T212727Z`, added marker-preservation assertions and restarted browser
-loops, but this is not a standalone `fuzz-assertion` lane in the committed
-counters. These persona-loop outputs are evidence for active or narrowly
-validated lower-level, backend/API, protocol-server, and assertion work, but
-they have not moved the committed backend/API, protocol-server, or standalone
-assertion trend counters above zero.
+protocol-server synthesis file, `20260518T234942Z`, is empty; the latest
+substantive protocol-server synthesis, `20260518T234140Z`, keeps the HTTP
+polling REST server harness around `POST /wp-sync/v1/updates`. The latest
+protocol action, `20260518T232919Z`, reports a passing bounded validation seed
+and collector-style root/lane `fuzzLevel: "protocol-server"` events. The
+committed trend counters still show `0` protocol-server executions, so
+collector-visible protocol trend data has not caught up. The latest fuzz-only
+assertion apply file, `20260518T225934Z`, is empty; the latest substantive apply
+report, `20260518T212727Z`, added marker-preservation assertions and restarted
+browser loops, but this is not a standalone `fuzz-assertion` lane in the
+committed counters. These persona-loop outputs are evidence for active or
+narrowly validated lower-level, backend/API, protocol-server, and assertion
+work, but they have not moved the committed backend/API, protocol-server, or
+standalone assertion trend counters above zero.
 
 ## Fuzzing Level Executions
 
@@ -229,11 +230,11 @@ supervisor launches or lane counts, but it only covers fuzzers that emit lane
 events. Lower-level counts are approximate when reconstructed from batch
 metadata or legacy batch-count fields.
 
-The latest collected execution data has about `5,971,378` completed test
-executions: `276,421` browser/e2e, `3,006` transport/integration, `5,244,128`
+The latest collected execution data has about `5,975,201` completed test
+executions: `278,292` browser/e2e, `3,006` transport/integration, `5,246,080`
 unit-property, and `447,823` coverage-guided-lower-level. The latest partial
-15-minute bucket reports about `4,484` browser/e2e executions/hour and `5,120`
-unit-property executions/hour, with `0` current rate for
+15-minute bucket reports about `11,968` browser/e2e executions/hour and
+`12,928` unit-property executions/hour, with `0` current rate for
 coverage-guided-lower-level, transport/integration, backend/API,
 protocol-server, and standalone `fuzz-assertion`. `backend-api`,
 `protocol-server`, and standalone `fuzz-assertion` remain at `0` cumulative
@@ -252,7 +253,7 @@ first-seen time. They are not total bug-finding graphs, not per-core
 efficiency, and not a count of all bugs found by fuzzing.
 
 On that triage-output metric, browser/e2e currently dominates: `778` unique
-likely-real findings over about `2,544.1` runner-hours, or `30.58` per 100
+likely-real findings over about `2,547.2` runner-hours, or `30.54` per 100
 runner-hours. `transport-integration`, `unit-property`,
 `coverage-guided-lower-level`, `backend-api`, `protocol-server`, and standalone
 `fuzz-assertion` still have `0` triaged likely-real outputs in the collected
@@ -270,12 +271,12 @@ failure signatures, and lower-level assertion failures by canonical output key.
 These graphs are intentionally broader than confirmed bugs and narrower than
 raw failed attempts; untriaged candidates are not confirmed bugs.
 
-Current unique bug-output candidate rates are: browser/e2e `6,142` candidates
-over `2,544.1` runner-hours (`241.42` per 100 runner-hours),
+Current unique bug-output candidate rates are: browser/e2e `6,143` candidates
+over `2,547.2` runner-hours (`241.17` per 100 runner-hours),
 transport/integration `106` over `59.5` runner-hours (`178.14` per 100
 runner-hours), coverage-guided lower-level `2` over `20.9` runner-hours
-(`9.55` per 100 runner-hours), and unit/property `5` over `50.4` runner-hours
-(`9.92` per 100 runner-hours). `backend-api`, `protocol-server`, standalone
+(`9.55` per 100 runner-hours), and unit/property `5` over `50.5` runner-hours
+(`9.89` per 100 runner-hours). `backend-api`, `protocol-server`, standalone
 `fuzz-assertion`, and `other` remain at `0` in this candidate-output metric.
 
 ![Unique bug-output candidates within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-profile-within-level.png)
@@ -293,8 +294,8 @@ The failure-candidate plot is a pre-triage lead indicator: failed seed or batch
 attempts per 100 runner-hours before duplicate/noise triage. It is useful for
 comparing where the system is still producing interesting work before
 duplicate/noise analysis, but it is not a confirmed bug count. Current rates
-are about `9867.3` for browser/e2e, `4537.5` for transport/integration,
-`759.3` for coverage-guided lower-level, and `1424.2` for unit/property.
+are about `9928.6` for browser/e2e, `4537.5` for transport/integration,
+`759.3` for coverage-guided lower-level, and `1420.5` for unit/property.
 
 ![Triaged likely-real output rate within fuzzing levels](rtc-jetstream2-fuzz-trends-20260515/plots/bug-effectiveness-by-profile-within-level.png)
 
@@ -321,7 +322,7 @@ Low-completion profiles are still the next depth targets:
 | `session-lifecycle` | 9587 | 2743 | 0 | 28.6% |
 | `media-cross-entity` | 529 | 164 | 0 | 31.0% |
 | `three-user-late-join` | 11699 | 3933 | 0 | 33.6% |
-| `persistence-no-title` | 4160 | 1562 | 0 | 37.5% |
+| `persistence-no-title` | 4164 | 1565 | 0 | 37.6% |
 
 ## Coverage Goals
 
@@ -366,22 +367,22 @@ the profiles that still need more completed full records.
 ![Suggested PR net LOC by PR over time](rtc-jetstream2-fuzz-trends-20260515/plots/pr-suggested-net-loc-by-pr-over-time.png)
 
 With the live loop at `max_parallel=6`, the newest completed review cycle in
-the collected graph data is `20260518T232725Z`; it took `8.72` minutes. The
-loop then completed the Cycle406 feedback action at `2026-05-18T23:43:58Z` and
-started review cycle `20260518T234403Z` at `2026-05-18T23:44:03Z`.
+the collected graph data is `20260518T234403Z`; it took `7.32` minutes. The
+loop then started review cycle `20260518T235127Z` at
+`2026-05-18T23:51:27Z`.
 
-The latest persona synthesis, `20260518T232725Z`, rejects a filing-ready
-interpretation. It keeps the Cycle400/402/404 replacement split, but says the
+The latest persona synthesis, `20260518T234403Z`, rejects a filing-ready
+interpretation. It keeps the replacement split mostly settled, but says the
 final stack is blocked: ready/local stays through `PR06D` plus
-`PR02A`/`PR06E`, CRDT stays through `PR15D`, and PR07 arms, `PR02B`, strict
-`117126135e5e`, raw deferred heads, `PR17`, `PR18`, and `PR18x` remain out of
-the fileable split. The latest feedback action, `20260518T232725Z`, applied
-progress-gate hardening and launched shared collaboration readiness repair, but
-it keeps filing, broad final-stack fuzzing, PR07 arms, `PR02B`, diagnostics, raw
-deferred heads, `PR17`, `PR18`, and `PR18x` blocked.
+`PR02A`/`PR06E`, CRDT stays through `PR15D`, and PR07 owner arms, `PR02B`,
+strict `117126135e5e`, raw deferred heads, `PR17`, `PR18`, and `PR18x` remain
+out of the fileable split. The latest feedback action, `20260518T232725Z`,
+applied progress-gate hardening and launched shared collaboration readiness
+repair, but it keeps filing, broad final-stack fuzzing, PR07 arms, `PR02B`,
+diagnostics, raw deferred heads, `PR17`, `PR18`, and `PR18x` blocked.
 
 The suggested-PR size charts are parsed from the status report's proposed PR
-split history. The latest parsed snapshot, `2026-05-18T23:38:49Z`, has `10`
+split history. The latest parsed snapshot, `2026-05-18T23:46:37Z`, has `10`
 suggested rows totaling `4,114` net LOC. The largest current rows by net LOC are
 `PR 13B` (`1668`), `PR 13A` (`1126`), `PR 13C` (`294`), `PR 14` (`276`),
 `PR 9` (`183`), `PR 1` (`162`), `PR 4` (`159`), `PR 10` (`141`), `PR 3`
@@ -479,35 +480,36 @@ access while reducing repeated manifest discovery work.
 The graph remains positive on coverage intake and goal reduction, but the
 latest live health point should be read narrowly: startup failures are `0` and
 current-output duplicate share is `0`, while `headroom=false`. The latest full
-health sample has quality issues `0`, warnings `0`, `no_progress=3`, and
-`425.6G` free memory. Historical aggregate duplicate/noise is not the live
+health sample has quality issues `0`, warnings `0`, `no_progress=4`, and
+`422.0G` free memory. Historical aggregate duplicate/noise is not the live
 health signal. The newest load sample has the one-, five-, and 15-minute
 windows above the `64` logical CPU count, with `9` blocked tasks.
 
-The duplicate/noise persona loop rejects converting the startup-clean live
-point into a durable recovery claim. The newest duplicate/noise synthesis names
-producer scheduling and live-analysis admission as the current risk: no-product
-startup/noise holds must be durable across refill, bootstrap, fallback, drain,
-previous-output, and rollover state, while product-evidence failures remain
-visible. The latest copied novelty state has run-local noise policy version
+The duplicate/noise persona loop rejects converting the startup-clean live point
+into a durable recovery claim. The newest duplicate/noise synthesis says the
+strict no-product startup-stall leak is mostly fixed in the normal pipeline, but
+the current active leak is represented product-evidence duplicate handling:
+`novelty-http-persistence-probe` still consumes capacity on current-run
+`timeout` signatures that are non-actionable, family-capped, and not visible as
+likely-real. The latest copied novelty state has run-local noise policy version
 `35`, enabled `novelty-http-persistence-probe`, one active current run dir from
 `supervisor-active-run-dirs`, no current summary startup failures, no current
 startup evidence keys, current duplicate share `0`, and two raw
-product-evidence timeout signatures that are family-capped and not visible as
-likely-real. The latest feedback action applied the bounded control-plane fix
-and restarted the affected novelty/live-analysis monitors, but the synthesis
-still calls for authoritative startup/noise holds and stricter admission.
-Useful current browser capacity is not yet proved durable.
+product-evidence timeout signatures. The latest feedback action applied the
+previous bounded control-plane fix and restarted the affected
+novelty/live-analysis monitors, but the newest synthesis still calls for a
+narrow represented-product-evidence family hold. Useful current browser capacity
+is not yet proved durable.
 
 The PR-split persona loop rejects filing or broad final-stack fuzzing. The
-latest synthesis, `20260518T232725Z`, keeps the Cycle400/402/404 replacement
-split but says the final stack is blocked: ready/local stays through `PR06D`
-plus `PR02A`/`PR06E`, CRDT stays through `PR15D`, and PR07 arms, `PR02B`, raw
-deferred heads, strict `117126135e5e`, `PR17`, `PR18`, and `PR18x` stay out of
-the fileable split. Raw reload-hydration `231829` is evidence for
+latest synthesis, `20260518T234403Z`, keeps the replacement split mostly
+settled but says the final stack is blocked: ready/local stays through `PR06D`
+plus `PR02A`/`PR06E`, CRDT stays through `PR15D`, and PR07 owner arms, `PR02B`,
+raw deferred heads, strict `117126135e5e`, `PR17`, `PR18`, and `PR18x` stay out
+of the fileable split. Raw reload-hydration `231829` is evidence for
 `PR07B0D-215248` only. PR07 is still blocked by `collaborationEnabled:null`,
 strict has no oracle-bearing owner rows, and `PR02B` still needs base
-repro/downscope evidence. The latest feedback action hardened progress-gate
+nonrepro/downscope evidence. The latest feedback action hardened progress-gate
 handling and launched shared collaboration readiness repair, but it did not
 clear filing or broad final-stack fuzzing.
 
@@ -525,23 +527,23 @@ lanes across `38` groups, `1` `unit-property` lane, and `1`
 browser/e2e concentration, but it says the action is browser recovery, not
 lower-level expansion: keep lower-level, backend/API, protocol-server, and
 standalone assertion lanes capped while startup-stall recovery and telemetry
-invariants are fixed. The latest level-mix synthesis, `20260518T232500Z`,
-confirms no broad lane-mix change, and the matching feedback action fixed
-startup-stall recovery/autoscaler floor behavior and reported clean telemetry
-reconciliation before trusting mix decisions.
+invariants are fixed. The latest substantive level-mix synthesis,
+`20260518T232500Z`, confirms no broad lane-mix change, and the matching
+feedback action fixed startup-stall recovery/autoscaler floor behavior and
+reported clean telemetry reconciliation before trusting mix decisions.
 Lower-level work is real but narrow in the committed graph: unit-property and
 coverage-guided lower-level are active counters; transport has historical output
 but no current counted rate; backend/API, protocol-server, and standalone
 `fuzz-assertion` execution counters remain zero. Persona-loop evidence says
 protocol/server, native lower-level, backend/API, and assertion work exists. The
-latest protocol synthesis keeps the HTTP polling REST harness plan, the latest
-protocol action says that harness was implemented and validated with root/lane
-`protocol-server` events, the native synthesis keeps the rich-text CRDT
-multiblock V8/Node target as the first ready isolated lower-level harness, the
-native action reports a passing coverage-guided lower-level smoke, and the
-fuzz-only assertion action restarted affected browser loops. Those outputs have
-not yet moved the committed backend/API, protocol-server, or standalone
-assertion counters above zero. The next narrow checks are sustained
+latest substantive protocol synthesis keeps the HTTP polling REST harness plan,
+the latest protocol action says that harness was implemented and validated with
+root/lane `protocol-server` events, the native synthesis keeps the rich-text
+CRDT multiblock V8/Node target as the first ready isolated lower-level harness,
+the native action reports a passing coverage-guided lower-level smoke, and the
+latest substantive fuzz-only assertion action restarted affected browser loops.
+Those outputs have not yet moved the committed backend/API, protocol-server, or
+standalone assertion counters above zero. The next narrow checks are sustained
 current-output duplicate/noise health with useful browser materialization,
 collector-visible backend/protocol/assertion execution counts, continued
 lower-level output accounting, and PR07/`PR02B` closure before any filing or
