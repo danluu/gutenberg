@@ -15,6 +15,9 @@ CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION=rtc-coverage-guided-lower-level-rich-text
 CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-rich-text-multiblock-20260518/holds/coverage-guided-lower-level-rich-text-multiblock.hold
 CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP=coverage-guided-lower-level-table-query-array-crdt
 CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION=rtc-coverage-guided-lower-level-table-query-array-crdt
+CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-query-array-20260517/holds/coverage-guided-lower-level-table-query-array-crdt.hold
+CG_LOWER_LEVEL_BLOCK_PARSER_GROUP=coverage-guided-lower-level-block-parser-serialization
+CG_LOWER_LEVEL_BLOCK_PARSER_SESSION=rtc-coverage-guided-lower-level-block-parser-serialization
 LEVEL_MIX_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20260516
 NATIVE_ASSERT_BASE=/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516
 STRUCTURAL_BASE=/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518
@@ -22,7 +25,7 @@ RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 LOG_DIR=$BASE/logs
 PID_FILE=$BASE/guard.pid
-LOCK_FILE=$BASE/guard.lock
+LOCK_FILE=${RTC_JETSTREAM_GUARD_LOCK_FILE:-$BASE/guard-v2.lock}
 EVENTS=$LOG_DIR/restart-events.tsv
 
 mkdir -p "$LOG_DIR" "$TMUX_WRAP"
@@ -106,6 +109,11 @@ coverage_guided_lower_level_b64_satisfied() {
 		grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
 		if [ -f "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE" ] &&
 			grep -Eq "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP|rtc-table-query-array-crdt|table-query-array" "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE"; then
+			if [ -f "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE" ] &&
+				grep -Eq "$CG_LOWER_LEVEL_BLOCK_PARSER_GROUP|rtc-block-parser-serialization|block-parser|parser-serialization" "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE"; then
+				has_session "$CG_LOWER_LEVEL_BLOCK_PARSER_SESSION"
+				return
+			fi
 			has_session "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION"
 			return
 		fi
@@ -127,6 +135,11 @@ start_coverage_guided_lower_level_b64_or_replacement() {
 			grep -Eq "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP|rtc-table-query-array-crdt|table-query-array" "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE"; then
 			session=$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION
 			group=$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP
+			if [ -f "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE" ] &&
+				grep -Eq "$CG_LOWER_LEVEL_BLOCK_PARSER_GROUP|rtc-block-parser-serialization|block-parser|parser-serialization" "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE"; then
+				session=$CG_LOWER_LEVEL_BLOCK_PARSER_SESSION
+				group=$CG_LOWER_LEVEL_BLOCK_PARSER_GROUP
+			fi
 		fi
 	fi
 
@@ -136,12 +149,32 @@ start_coverage_guided_lower_level_b64_or_replacement() {
 		log "coverage-guided lower-level start failed session=$session group=$group"
 }
 
+coverage_breadth_restart_block_reason() {
+	local status=$RESOURCE_BASE/resource-autoscaler-status.md
+	local min=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-10}
+	local enabled current
+	enabled=$(sed -n 's/^- enabled_groups: \([0-9][0-9]*\).*/\1/p' "$status" 2>/dev/null | tail -1)
+	current=$(sed -n 's/^- current_budget: target=\([0-9][0-9]*\).*/\1/p' "$status" 2>/dev/null | tail -1)
+	if [[ "$enabled" =~ ^[0-9]+$ ]] && [ "$enabled" -lt "$min" ]; then
+		printf 'coverage_breadth_enabled=%s min=%s\n' "$enabled" "$min"
+		return 0
+	fi
+	if [[ "$current" =~ ^[0-9]+$ ]] && [ "$current" -lt "$min" ]; then
+		printf 'coverage_budget_target=%s min=%s\n' "$current" "$min"
+		return 0
+	fi
+	return 1
+}
+
 optional_browser_restart_block_reason() {
 	local status=$RESOURCE_BASE/resource-autoscaler-status.md
 	local shed_last=$RESOURCE_BASE/optional-browser-shed-last-epoch
 	local reason last now age grace load cores current desired
 
 	reason=$(sed -n 's/^- reason: //p' "$status" 2>/dev/null | tail -1)
+	if coverage_breadth_restart_block_reason; then
+		return 0
+	fi
 	case "$reason" in
 		pressure|severe_pressure|high_pressure)
 			printf 'autoscaler reason=%s\n' "$reason"
@@ -302,11 +335,11 @@ maybe_restart_optional_browser_pool() {
 	local pool=$1
 	local reason=$2
 	local block_reason
-	if reattach_browser_pool_if_live "$pool" "$reason"; then
+	if block_reason=$(optional_browser_restart_block_reason); then
+		log "skipping optional browser pool restart/reattach under resource pressure pool=$pool reason=$reason block=$block_reason"
 		return
 	fi
-	if block_reason=$(optional_browser_restart_block_reason); then
-		log "skipping optional browser pool restart under resource pressure pool=$pool reason=$reason block=$block_reason"
+	if reattach_browser_pool_if_live "$pool" "$reason"; then
 		return
 	fi
 	restart_pool "$pool" "$reason"
@@ -447,7 +480,8 @@ const policyHoldingEmptyCoverage =
 	/hold-empty-coverage-no-safe-fallback|hold-materialization-floor-no-safe-group/.test(
 		status
 	);
-const currentNoiseClear = activeNoiseClear;
+const currentNoiseClear =
+	activeNoiseClear && drainNoiseClear && ! policyHoldingEmptyCoverage;
 const groupCount = Array.isArray( groups ) ? groups.length : null;
 const stateGroups = Array.isArray( state?.groups ) ? state.groups : null;
 const activeRunDirs = ( stateGroups || [] ).reduce(
@@ -669,11 +703,13 @@ restart_pool() {
 }
 
 run_loop() {
-	exec 9>"$LOCK_FILE"
-	if ! flock -n 9; then
+	if ! flock -n --close "$LOCK_FILE" "$0" run-locked; then
 		log "another guard loop already holds $LOCK_FILE"
 		exit 0
 	fi
+}
+
+run_loop_locked() {
 	printf '%s\n' "$$" > "$PID_FILE"
 	child_pid=""
 	cleanup() {
@@ -812,6 +848,9 @@ case "${1:-start}" in
 		;;
 	run)
 		run_loop
+		;;
+	run-locked)
+		run_loop_locked
 		;;
 	stop)
 		if [ -f "$PID_FILE" ]; then

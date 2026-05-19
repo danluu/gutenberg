@@ -25,6 +25,7 @@ ALLOW_OPTIONAL_BROWSER_SHED=${RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHE
 MATERIALIZATION_STALE_SECONDS=${RTC_RESOURCE_AUTOSCALER_MATERIALIZATION_STALE_SECONDS:-600}
 WP_ENV_RESET_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_WP_ENV_RESET_COOLDOWN_SECONDS:-1800}
 RESET_WP_ENV_ON_INFRA_FAILURE=${RTC_RESOURCE_AUTOSCALER_RESET_WP_ENV_ON_INFRA_FAILURE:-1}
+MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-10}
 
 mkdir -p "$BASE" "$MATERIALIZATION_DIR"
 exec 9>"$LOCK"
@@ -290,6 +291,27 @@ cleanup_optional_browser_process_groups() {
 	return 1
 }
 
+coverage_breadth_deficit() {
+	local enabled
+	enabled=$(enabled_groups)
+	[[ "$enabled" =~ ^[0-9]+$ ]] || enabled=0
+	[ "$enabled" -lt "$MIN_COVERAGE_BREADTH_GROUPS" ]
+}
+
+apply_coverage_breadth_floor() {
+	local target=$1
+	local max=$2
+	[[ "$target" =~ ^[0-9]+$ ]] || target=0
+	[[ "$max" =~ ^[0-9]+$ ]] || max=0
+	if [ "$target" -lt "$MIN_COVERAGE_BREADTH_GROUPS" ]; then
+		target=$MIN_COVERAGE_BREADTH_GROUPS
+	fi
+	if [ "$max" -le "$target" ]; then
+		max=$(( target + 1 ))
+	fi
+	printf '%s %s\n' "$target" "$max"
+}
+
 shed_optional_browser_pools_if_needed() {
 	local reason=$1
 	local now=$2
@@ -305,8 +327,9 @@ shed_optional_browser_pools_if_needed() {
 	fi
 	if [[ "$browser_live_lanes" =~ ^[0-9]+$ ]] &&
 		[[ "$e2e_floor" =~ ^[0-9]+$ ]] &&
-		[ "$browser_live_lanes" -le "$e2e_floor" ]; then
-		echo "[$now] optional browser shedding skipped under severe pressure; live_browser_lanes=$browser_live_lanes floor=$e2e_floor" >> "$LOG"
+		[ "$browser_live_lanes" -le "$e2e_floor" ] &&
+		! coverage_breadth_deficit; then
+		echo "[$now] optional browser shedding skipped under severe pressure; live_browser_lanes=$browser_live_lanes floor=$e2e_floor coverage_breadth=ok" >> "$LOG"
 		return 1
 	fi
 	if cleanup_optional_browser_process_groups "$now"; then
@@ -329,6 +352,12 @@ shed_optional_browser_pools_if_needed() {
 			killed=1
 		fi
 	done
+	while IFS= read -r session; do
+		[ -n "$session" ] || continue
+		echo "[$now] stopping append focused session under severe pressure: $session" >> "$LOG"
+		"$TMUX" -L "$TMUX_SOCKET" kill-session -t "$session" 2>/dev/null || true
+		killed=1
+	done < <("$TMUX" -L "$TMUX_SOCKET" list-sessions -F '#S' 2>/dev/null | grep -E '^rtc-focused-shards(-watchdog|-analysis)?-append-' || true)
 	if [ "$killed" = 1 ]; then
 		echo "$(epoch)" > "$OPTIONAL_BROWSER_SHED_LAST"
 		return 0
@@ -596,7 +625,7 @@ const activeCurrentNoiseClear =
 	! activeMetricsPending &&
 	( activeSignatures === 0 || activeDuplicateShare === 0 ) &&
 	activeLikelyReal === 0;
-if ( activeCurrentNoiseClear && ! recentStateHold && ! statusHold ) {
+if ( activeCurrentNoiseClear ) {
 	process.exit( 1 );
 }
 process.exit( freshState && ( recentStateHold || statusHold ) ? 0 : 1 );
@@ -762,6 +791,7 @@ write_budget_env() {
 	local multiplier=${3:-1.02}
 	local allow_fleet_startup_noise_canary
 	local fleet_startup_noise_canary_group
+	read -r target max <<<"$(apply_coverage_breadth_floor "$target" "$max")"
 	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
 	cat > "$BUDGET_ENV" <<EOF_BUDGET
@@ -826,6 +856,7 @@ restart_coverage() {
 	local reason=$3
 	local allow_fleet_startup_noise_canary
 	local fleet_startup_noise_canary_group
+	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max")"
 	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
 	echo "[$(stamp)] restarting coverage-guided loop target=$desired_target max=$desired_max reason=$reason" >> "$LOG"
@@ -858,6 +889,7 @@ while true; do
 	target=$(current_target)
 	max=$(current_max)
 	read -r desired_target desired_max reason <<<"$(choose_budget "$cpu" "$load" "$load_five" "$load_fifteen" "$avail" "$ncpu")"
+	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max")"
 	browser_live_lanes=$(live_browser_lane_pids_all_roots)
 	e2e_floor=${RTC_RESOURCE_AUTOSCALER_E2E_MIN_LIVE_LANES:-24}
 	e2e_repair_target=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_TARGET_GROUPS:-4}
@@ -914,7 +946,13 @@ while true; do
 		down_streak=0
 	elif [ "$desired_target" -gt "${target:-0}" ]; then
 		down_streak=0
-		if ! scale_up_backlog_clear "$load" "$load_five" "$load_fifteen" "$ncpu"; then
+		if [ "${target:-0}" -lt "$MIN_COVERAGE_BREADTH_GROUPS" ]; then
+			action=restore_coverage_breadth_floor
+			shed_optional_browser_pools_if_needed severe_pressure "$now" "$browser_live_lanes" "$e2e_floor" || true
+			restart_coverage "$desired_target" "$desired_max" coverage_breadth_floor
+			last_restart_epoch=$(epoch)
+			up_streak=0
+		elif ! scale_up_backlog_clear "$load" "$load_five" "$load_fifteen" "$ncpu"; then
 			action=scale_up_blocked_backlog
 			up_streak=0
 		else

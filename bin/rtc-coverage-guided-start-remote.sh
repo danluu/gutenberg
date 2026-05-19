@@ -18,6 +18,12 @@ exec /usr/bin/tmux -L rtc-fuzz "$@"
 SH
 chmod +x "$TMUX_WRAP/tmux"
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
+SHARED_GUTENBERG_BUILD=${RTC_SHARED_GUTENBERG_BUILD:-/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/gutenberg/build}
+if [ ! -e "$REPO/build/scripts/block-library" ] && [ -e "$SHARED_GUTENBERG_BUILD/scripts/block-library" ]; then
+	mkdir -p "$REPO/build"
+	ln -sfn "$SHARED_GUTENBERG_BUILD/scripts" "$REPO/build/scripts"
+	printf '[%s] linked shared Gutenberg build scripts from %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$SHARED_GUTENBERG_BUILD/scripts" >> "$BASE/logs/start.log"
+fi
 STRICT=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/current-run-root.txt 2>/dev/null || true)
 ISO_HTTP=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-validation-isolated-20260515/current-http-run-root.txt 2>/dev/null || true)
 ISO_WS=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-validation-isolated-20260515/current-ws-run-root.txt 2>/dev/null || true)

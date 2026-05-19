@@ -378,12 +378,20 @@ The remote launchers are intentionally split by ownership:
     steady-state budget. Scale-up is blocked while the 1-, 5-, or 15-minute load
     averages still show a backlog, so the controller cannot increase browser
     work merely because a severe spike decayed into a still-overloaded high
-    pressure state.
+    pressure state. The browser/e2e floor is also a breadth floor, not only a
+    lane-count floor: `RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS`
+    defaults to 10, and the autoscaler clamps coverage-guided target/max budgets
+    to keep at least that many primary coverage groups enabled. If the current
+    supervisor has fallen below the floor, it restarts the coverage-guided path
+    immediately instead of waiting for ordinary load-driven scale-up.
     During severe pressure it can also stop optional browser/e2e supervisors
     (`gap-booster`, `focused-shards`, and `strict-expansion`) without stopping
     analysis-only loops. The Jetstream guard consults the autoscaler status and
-    does not restart those optional browser pools while the autoscaler reports
-    high or severe pressure.
+    does not restart or reattach those optional browser pools while the
+    autoscaler reports high/severe pressure or while primary coverage breadth is
+    below the configured floor. This prevents optional browser pools from
+    consuming the browser lane budget while the active coverage-guided run is
+    too narrow.
     Coverage-guided historical duplicate/noise is advisory unless the
     current-run duplicate/noise gate is also active; otherwise the loop must keep
     at least one bounded browser/e2e lane materialized.
@@ -1513,6 +1521,14 @@ logs are current-scan file counts, not cumulative coverage. Use
 span logs from before `recordsSeen=` was emitted in pass lines, use monotonic
 cumulative processed-record observations and keep the live state counter
 separate in the CSV.
+
+The Jetstream coverage-guided starter also repairs a common browser-fuzz checkout
+failure before launching: if the fuzz repo is missing `build/scripts` artifacts,
+it links them from
+`/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/gutenberg/build/scripts`.
+Without that repair, a source-only fuzz checkout can fail before collaboration is
+ready even though the shared built Gutenberg checkout has the artifacts needed by
+the browser tests.
 
 ## Fuzz-Only Assertion Loop
 
