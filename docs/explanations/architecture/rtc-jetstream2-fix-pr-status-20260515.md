@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T03:44:56Z`
+Snapshot time: `2026-05-19T03:51:59Z`
 
 Trigger event:
-`pr-split-2026-05-19T03-43-39Z-20260519T033443Z`
+`duplicate-noise-2026-05-19T03-44-56Z-234`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T03-43-39Z-20260519T033443Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T03-44-56Z-234/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -46,6 +46,13 @@ Seed `1020002` still blocks final-stack fuzzing, rebuilt stack-wide
 validation, GitHub filing, and its own repair/reclassification only. It must
 not block independent owner-boundary work, branch-link audits, manifest
 audits, deferred downscope, or loop/control-plane repair.
+
+The duplicate/noise trigger did not change the product PR split. It completed
+the bounded control-plane fix for startup-stall duplicate/noise scheduling:
+no-product strict startup signatures now remain suppressed, product-evidence
+signatures remain visible/capped, and novelty/supervisor/watchdog freshness was
+validated after restart. This is harness/control-plane progress, not product
+validation or final-stack cleanliness.
 
 Current maintainer-facing split hypothesis:
 
@@ -88,7 +95,7 @@ claims.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T03:44:48Z`.
+Remote status was collected at `2026-05-19T03:51:59Z`.
 
 The fix-planning repo is checked out at:
 
@@ -118,7 +125,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T03:44:56Z` from fetched
+The branch-link audit was generated at `2026-05-19T03:52:05Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -223,7 +230,7 @@ These rows must not be described as fixed or filing-ready.
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Raw deferred manifests | raw `003407`, raw `020456`, raw `024016`, fallback/PR15-tail bases, raw `PR07D` | invalid PR progress; wrong/stale base or missing same-cycle allowlisted base/head/bundle/manifest agreement | Keep as no-progress unless a new audit proves clean allowlisted base, head/bundle/manifest agreement, and ownership/non-coverage |
 | PR05D and rich-text/search reductions | clean PR05D `27c6e7924217`, search/live-collapse, rich-text suffix, parser/linebreak candidates | diagnostic or held until owner comparison proves product ownership | Compare against PR04, PR05A, PR05B, PR05C, clean PR05D, the PR07 owner queue, PR14, and current PR15C |
-| Duplicate/noise producer control-plane | mixed startup-stall recovery, novelty materialization/fallback/canary scope, product-evidence duplicate-family drain visibility | latest duplicate-noise synthesis converges on producer/control-plane leakage, not broad triage suppression | Pause mixed startup-stall producers, make novelty cooldown/policy scope authoritative, refresh materialized run dirs before empty scope publication, and keep product-evidence signatures visible/capped |
+| Duplicate/noise producer control-plane | mixed startup-stall recovery, novelty materialization/fallback/canary scope, product-evidence duplicate-family drain visibility | bounded fix applied in `20260519T031512Z`: changed supervisor/novelty/session-watchdog/triage-watcher control scripts, passed `node --check`, gate-only triage, active-output scan, live-analysis `--once`, and restarted novelty/supervisor/live-analysis/watchdog sessions | Monitor post-restart current-run triage freshness and active scope; do not add broad suppression while product-evidence signatures remain visible/capped |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -231,14 +238,14 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T03:44:48Z
+collected_at_utc: 2026-05-19T03:51:59Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T032703Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-19T03:44:18.235Z` for
+`2026-05-19T03:51:18.303Z` for
 `run-20260519T032703Z`:
 
 ```text
@@ -251,6 +258,19 @@ coverage guidance: pending until first pass
 triage yield: pending until first pass
 health warning: startup status only; full novelty pass has not completed yet
 latest completed full pass: 2026-05-19T03:22:09.629Z
+```
+
+Post-fix duplicate/noise feedback recorded the restarted control-plane state as:
+
+```text
+lastCurrentRunTriageCompletedAt: 2026-05-19T03:43:20.848Z
+currentRunDirs: 1
+suppressedStrictStartupRecords: 0
+productEvidenceSignatures: 1
+active-output strictStartupQueuedOrRunning: 0
+active-output productEvidenceVisible: 5
+gate-only triage candidates: 2
+gate-only triage product evidence visible: 2
 ```
 
 Interpretation:
@@ -343,12 +363,19 @@ producer/control-plane scheduling leak, not a missing broad suppression rule.
 Strict no-product `pre_action_bootstrap_stall` consumer paths are mostly
 gated, but supervisor/novelty can still recover, refill, or publish stale
 scope for startup-noisy producers, especially mixed runs with product
-evidence. The next bounded fix should pause mixed startup-stall producers
-instead of entering recovery, make novelty cooldown/policy scope authoritative
-for fallback/canary/materialization selection, refresh materialized run dirs
-before writing empty `currentRunDirs`, and preserve product-evidence
-signatures under existing family caps. This is harness/control-plane health
-context, not product validation.
+evidence. The matching feedback action,
+`duplicate-noise-20260519T031512Z-feedback-action.md`, implemented the bounded
+control-plane fix without product-code changes: mixed startup-stall/product
+evidence runs now pause instead of recovering, novelty selection no longer uses
+product evidence as a scheduling bypass, current-run triage freshness is
+published before slow scans, the watchdog keys off triage/full-pass timestamps,
+and legacy no-`facts` strict startup signatures are source-gated. Validation
+passed `node --check` for the four touched scripts, gate-only triage,
+active-output scan, and live-analysis `--once`; novelty, supervisor,
+live-analysis, and watchdog sessions were restarted. Remaining risk is limited
+to small-scope product-evidence family share, which was deliberately not
+suppressed. This is harness/control-plane health context, not product
+validation.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -411,9 +438,9 @@ Useful bounded work now:
   non-fileable;
 - create a fresh `031951Z` manifest/ref audit only after the PR05 parser/entity
   gap is fixed and the intended slot allowlist is current;
-- apply the duplicate/noise producer fix only as control-plane work: pause
-  mixed startup-stall producers, make novelty cooldown/policy scope
-  authoritative, and keep product-evidence signatures visible/capped.
+- monitor the duplicate/noise control-plane fix after restart; do not relaunch
+  the same fix or add broad suppression unless current-run triage shows strict
+  startup signatures queued/running or product-evidence visibility regresses.
 
 Do not launch broad final-stack fuzz, GitHub filing, rebuilt stack-wide
 validation, duplicate owner-reduction jobs, seed `1020002` outside focused
