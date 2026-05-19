@@ -13,6 +13,36 @@ Pinned refs from `danluu/gutenberg`:
 
 Local setup excluded from timed rows: bundle fetch/clone, `npm install`, `composer install`, `npm run build -- --skip-types`, and wp-env startup. Both local worktrees built successfully before timings started.
 
+## Benchmark Meanings
+
+The timed rows use three levels:
+
+| row | what it measures |
+| --- | --- |
+| `lower / micro-crdt` | A Jest-hosted microbenchmark for `mergeCrdtBlocks` on synthetic RTC-shaped stale snapshot conflicts. This isolates block reconciliation cost and excludes browser, wp-env, and e2e setup. |
+| `lower / micro-html` | A Jest-hosted microbenchmark for `isEquivalentHTML` normalization over entity, rich text, attribute, boolean-attribute, and SVG-ish HTML pairs. |
+| `lower / micro-sync` | A Jest-hosted microbenchmark for HTTP polling sync helpers: update encoding, queue take/restore, compaction filtering, payload serialization, and room-window rotation. |
+| `unit-suite / crdt-stale-top-level` | Targeted CRDT unit tests for stale top-level block behavior. This is both correctness signal and CI-cost signal; it includes Jest startup and transform overhead. |
+| `unit-suite / http-polling-manager` | Targeted HTTP polling manager unit tests. This is correctness plus CI-cost signal, not a pure kernel benchmark. |
+| `e2e / collaboration-code-editor-performance-ws` | Playwright e2e coverage for the collaboration code-editor performance path using the WebSocket sync server. This includes browser, editor, WordPress, and test harness work. |
+| `e2e / collaboration-sync-body-size-http` | Playwright e2e coverage for collaboration sync request body size using the HTTP polling path. This catches payload growth and sync-body behavior in the browser/editor stack. |
+
+The raw microbenchmark scenarios mean:
+
+| scenario | meaning |
+| --- | --- |
+| `small_stale_suffix_append_50` | Start from 50 paragraphs. The remote document has appended one paragraph; the incoming local snapshot is based on the stale base and appends a different paragraph. |
+| `large_stale_suffix_append_250` | Same stale suffix append shape as above, scaled to 250 base paragraphs. |
+| `stale_top_level_delete_100` | Start from 100 paragraphs. The remote document has appended a paragraph; the incoming stale local snapshot deletes one existing top-level paragraph. |
+| `nested_group_move_with_remote_append` | Move a paragraph from one group into another while the remote side appends a different child to the destination group. |
+| `table_body_suffix_append_40_rows` | Start with a 40-row table body. Remote and local stale snapshots each append a different row. |
+| `entity_and_rich_text_equivalence` | Compare HTML pairs that differ by entity decoding, rich text spacing, attribute ordering, boolean attributes, and equivalent open/closed SVG-ish tags. |
+| `base64_encode_1kb_update` | Encode 1 KiB binary sync updates to base64. |
+| `queue_take_restore_1000_updates` | Build a 1000-update sync queue, take a batch of 250, restore that exact batch, then drain and validate the queue. |
+| `queue_restore_filters_compactions` | Restore 1000 mixed updates where every tenth item is a compaction update, validating that compactions are filtered out. |
+| `payload_json_20_rooms_200_updates` | Serialize an HTTP polling payload for 20 rooms with 10 updates per room, 200 updates total. |
+| `rotate_window_75_rooms` | Repeatedly rotate a 10-room polling window across 75 rooms. |
+
 ## Local Run
 
 Run id: `local-abba-20260519T193459Z`
@@ -53,6 +83,16 @@ Local CRDT microbench p50 ratios:
 | stale_top_level_delete_100 | 8.0966 | 27.8004 | 3.434 |
 | nested_group_move_with_remote_append | 0.4133 | 0.4042 | 0.978 |
 | table_body_suffix_append_40_rows | 0.3054 | 0.5535 | 1.813 |
+
+## Graphs
+
+The plotted data and generator are checked in under `docs/explanations/architecture/rtc-local-benchmark-results-20260519/`. The graphs use `ggplot2` with ColorBrewer scales and the same minimal RTC report style used by the Jetstream2 trend plots.
+
+![Local RTC benchmark command medians](rtc-local-benchmark-results-20260519/plots/local-command-medians.png)
+
+![Merged/base elapsed-time ratios](rtc-local-benchmark-results-20260519/plots/merged-base-ratios.png)
+
+![CRDT microbench p50 ratios](rtc-local-benchmark-results-20260519/plots/crdt-microbench-p50-ratios.png)
 
 ## Jetstream2 Run
 

@@ -1,0 +1,12 @@
+host,kind,kind_label,case,case_label,failures,reps,base_median_s,merged_median_s,merged_base_ratio,usable
+Local,lower,Lower microbench,micro-crdt,CRDT merge microbench,0,2,8.82,13.57,1.539,yes
+Local,lower,Lower microbench,micro-html,HTML equivalence microbench,0,2,1.86,1.87,1.005,yes
+Local,lower,Lower microbench,micro-sync,HTTP polling sync microbench,0,2,5.10,5.11,1.001,yes
+Local,unit-suite,Targeted unit suite,crdt-stale-top-level,CRDT stale top-level unit suite,0,2,13.22,4.05,0.306,yes
+Local,unit-suite,Targeted unit suite,http-polling-manager,HTTP polling manager unit suite,0,2,1.96,1.93,0.987,yes
+Local,e2e,E2E smoke/perf,collaboration-code-editor-performance-ws,Code editor WS e2e,0,2,9.77,10.13,1.037,yes
+Local,e2e,E2E smoke/perf,collaboration-sync-body-size-http,Sync body size HTTP e2e,0,2,15.99,15.74,0.985,yes
+Jetstream2,lower,Lower microbench,micro-crdt,CRDT merge microbench,0,3,20.87,29.55,1.416,yes
+Jetstream2,lower,Lower microbench,micro-html,HTML equivalence microbench,0,3,5.08,4.85,0.955,yes
+Jetstream2,lower,Lower microbench,micro-sync,HTTP polling sync microbench,0,3,13.10,12.47,0.952,yes
+Jetstream2,unit-suite,Targeted unit suite,http-polling-manager,HTTP polling manager unit suite,0,2,4.81,4.18,0.869,yes

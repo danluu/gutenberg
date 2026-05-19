@@ -1,0 +1,11 @@
+host,scenario,scenario_label,base_p50_ms,merged_p50_ms,merged_base_ratio
+Local,small_stale_suffix_append_50,50 paragraphs stale suffix append,0.2783,0.7811,2.806
+Local,large_stale_suffix_append_250,250 paragraphs stale suffix append,1.5910,4.6671,2.934
+Local,stale_top_level_delete_100,100 paragraphs stale top-level delete,8.0966,27.8004,3.434
+Local,nested_group_move_with_remote_append,Nested group move plus remote append,0.4133,0.4042,0.978
+Local,table_body_suffix_append_40_rows,40-row table body suffix append,0.3054,0.5535,1.813
+Jetstream2,small_stale_suffix_append_50,50 paragraphs stale suffix append,0.7444,1.8710,2.513
+Jetstream2,large_stale_suffix_append_250,250 paragraphs stale suffix append,4.0869,10.9234,2.673
+Jetstream2,stale_top_level_delete_100,100 paragraphs stale top-level delete,16.1081,48.5926,3.017
+Jetstream2,nested_group_move_with_remote_append,Nested group move plus remote append,1.1875,1.1107,0.935
+Jetstream2,table_body_suffix_append_40_rows,40-row table body suffix append,0.7936,1.4154,1.784
