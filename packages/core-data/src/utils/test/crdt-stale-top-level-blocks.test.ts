@@ -40,6 +40,10 @@ jest.mock( '@wordpress/blocks', () => {
 	};
 } );
 
+jest.mock( '@wordpress/block-editor', () => ( {
+	store: { name: 'core/block-editor' },
+} ) );
+
 /**
  * Internal dependencies
  */
@@ -133,7 +137,7 @@ describe( 'stale top-level block snapshots', () => {
 		doc.destroy();
 	} );
 
-	it( 'applies a local suffix append when the explicit base differs from current blocks', () => {
+	it( 'keeps local suffix append idempotent when the explicit base differs from current blocks', () => {
 		const baseBlocks = [
 			paragraph( 'canonicalized', 'Alpha' ),
 			paragraph( 'unchanged', 'Beta' ),
@@ -311,6 +315,44 @@ describe( 'stale top-level block snapshots', () => {
 			'Alpha local edit',
 			'Beta',
 			'Gamma',
+		] );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'applies a local top-level delete while preserving a remote append', () => {
+		const initialBlocks = [
+			paragraph( 'kept', 'Alpha' ),
+			paragraph( 'locally-deleted', 'Marker-bearing stale block' ),
+		];
+		mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+		const remoteDoc = new Y.Doc();
+		const remoteBlocks = remoteDoc.getArray< YBlock >();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		mergeCrdtBlocks(
+			remoteBlocks,
+			[
+				...initialBlocks,
+				paragraph( 'remote-appended', 'Remote append' ),
+			],
+			null
+		);
+
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Marker-bearing stale block',
+			'Remote append',
+		] );
+
+		const staleLocalBlocks = [ paragraph( 'kept', 'Alpha local edit' ) ];
+		mergeCrdtBlocks( yblocks, staleLocalBlocks, null, initialBlocks );
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha local edit',
+			'Remote append',
 		] );
 
 		remoteDoc.destroy();

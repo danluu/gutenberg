@@ -1101,6 +1101,36 @@ function mergeYBlocksLocalSuffixAppend(
 	}
 }
 
+function removeLocallyDeletedBaseBlocks(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[]
+): void {
+	const incomingClientIds = new Set(
+		blocksToSync
+			.map( getBlockClientId )
+			.filter( ( clientId ): clientId is string => !! clientId )
+	);
+
+	for ( const baseBlock of baseBlocks ) {
+		const baseClientId = getBlockClientId( baseBlock );
+
+		if ( ! baseClientId || incomingClientIds.has( baseClientId ) ) {
+			continue;
+		}
+
+		const currentIndex = yblocks
+			.toArray()
+			.findIndex(
+				( yblock ) => getYBlockClientId( yblock ) === baseClientId
+			);
+
+		if ( currentIndex !== -1 ) {
+			yblocks.delete( currentIndex, 1 );
+		}
+	}
+}
+
 function mergeYBlocksLocalChanges(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
@@ -1123,6 +1153,7 @@ function mergeYBlocksLocalChanges(
 	}
 
 	mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks );
+	removeLocallyDeletedBaseBlocks( yblocks, blocksToSync, baseBlocks );
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
 
