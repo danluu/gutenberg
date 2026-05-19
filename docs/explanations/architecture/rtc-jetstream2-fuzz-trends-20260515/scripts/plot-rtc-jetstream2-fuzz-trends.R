@@ -369,6 +369,7 @@ monitor <- tibble(
 	timestamp = timestamp_from_brackets( pass_lines ),
 	processed = extract_num( pass_lines, "processed=([0-9]+)" ),
 	coverage_files = extract_num( pass_lines, "files=([0-9]+)" ),
+	records_seen_logged = extract_num( pass_lines, "recordsSeen=([0-9]+)" ),
 	new_features = extract_num( pass_lines, "newFeatures=([0-9]+)" ),
 	new_cdp = extract_num( pass_lines, "newCdp=([0-9]+)" ),
 	unmet_coverage = extract_num( pass_lines, "unmetCoverage=([0-9]+)" ),
@@ -393,6 +394,10 @@ monitor <- tibble(
 	filter( ! is.na( timestamp ) ) %>%
 	arrange( timestamp ) %>%
 	mutate(
+		records_seen = coalesce(
+			records_seen_logged,
+			cumsum( coalesce( processed, 0 ) )
+		),
 		pass_index = row_number(),
 		minutes_since_first = as.numeric( difftime( timestamp, min( timestamp ), units = "mins" ) )
 	)
@@ -1243,12 +1248,12 @@ if ( file.exists( local_publisher_state_path ) ) {
 write_csv( local_publisher_events, file.path( data_dir, "local_publisher_events.csv" ) )
 
 coverage_long <- monitor %>%
-	select( timestamp, coverage_files, unmet_coverage ) %>%
+	select( timestamp, records_seen, unmet_coverage ) %>%
 	pivot_longer( -timestamp, names_to = "metric", values_to = "value" ) %>%
 	mutate(
 		metric = recode(
 			metric,
-			coverage_files = "coverage files",
+			records_seen = "coverage records seen",
 			unmet_coverage = "unmet coverage goals"
 		)
 	)
@@ -2903,6 +2908,9 @@ summary_lines <- c(
 	paste0( "monitor_passes: ", nrow( monitor ) ),
 	paste0( "first_pass_utc: ", format( min( monitor$timestamp ), "%Y-%m-%dT%H:%M:%SZ" ) ),
 	paste0( "last_pass_utc: ", format( max( monitor$timestamp ), "%Y-%m-%dT%H:%M:%SZ" ) ),
+	paste0( "coverage_records_seen_first: ", first( monitor$records_seen ) ),
+	paste0( "coverage_records_seen_last: ", last( monitor$records_seen ) ),
+	paste0( "coverage_records_seen_delta: ", last( monitor$records_seen ) - first( monitor$records_seen ) ),
 	paste0( "coverage_files_first: ", first( monitor$coverage_files ) ),
 	paste0( "coverage_files_last: ", last( monitor$coverage_files ) ),
 	paste0( "coverage_files_delta: ", last( monitor$coverage_files ) - first( monitor$coverage_files ) ),
