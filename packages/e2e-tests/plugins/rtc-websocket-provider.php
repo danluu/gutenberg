@@ -8,6 +8,51 @@
  */
 
 /**
+ * Returns the current request host for selecting host-specific runtime config.
+ *
+ * @return string Current HTTP host, if available.
+ */
+function gutenberg_test_rtc_websocket_provider_get_request_host() {
+	if ( ! empty( $_SERVER['HTTP_HOST'] ) ) {
+		return strtolower( sanitize_text_field( wp_unslash( $_SERVER['HTTP_HOST'] ) ) );
+	}
+
+	if ( ! empty( $_SERVER['SERVER_NAME'] ) && ! empty( $_SERVER['SERVER_PORT'] ) ) {
+		return strtolower(
+			sanitize_text_field( wp_unslash( $_SERVER['SERVER_NAME'] ) ) . ':' .
+			sanitize_text_field( wp_unslash( $_SERVER['SERVER_PORT'] ) )
+		);
+	}
+
+	return '';
+}
+
+/**
+ * Returns the configured WebSocket URL for the current request.
+ *
+ * @param array $config Runtime config decoded from JSON.
+ * @return string WebSocket URL, if configured.
+ */
+function gutenberg_test_rtc_websocket_provider_get_configured_url( $config ) {
+	$request_host = gutenberg_test_rtc_websocket_provider_get_request_host();
+
+	if (
+		$request_host &&
+		! empty( $config['urlsByHost'] ) &&
+		is_array( $config['urlsByHost'] ) &&
+		! empty( $config['urlsByHost'][ $request_host ] )
+	) {
+		return $config['urlsByHost'][ $request_host ];
+	}
+
+	if ( ! empty( $config['url'] ) ) {
+		return $config['url'];
+	}
+
+	return '';
+}
+
+/**
  * Enqueues a test-only WebSocket sync provider for RTC e2e tests.
  */
 function gutenberg_test_rtc_websocket_provider_enqueue() {
@@ -20,8 +65,8 @@ function gutenberg_test_rtc_websocket_provider_enqueue() {
 	$config_path = plugin_dir_path( __FILE__ ) . 'rtc-websocket-provider/build/runtime-config.json';
 	if ( file_exists( $config_path ) ) {
 		$config = json_decode( file_get_contents( $config_path ), true );
-		if ( is_array( $config ) && ! empty( $config['url'] ) ) {
-			$ws_url = $config['url'];
+		if ( is_array( $config ) ) {
+			$ws_url = gutenberg_test_rtc_websocket_provider_get_configured_url( $config );
 		}
 	}
 
