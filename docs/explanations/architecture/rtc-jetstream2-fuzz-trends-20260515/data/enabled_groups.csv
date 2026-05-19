@@ -967,3 +967,5 @@ timestamp,group,group_family
 2026-05-19T16:53:41Z,novelty-ws-real-user-coverage-bridge,real-user
 2026-05-19T16:58:12Z,novelty-ws-real-user-coverage-bridge,real-user
 2026-05-19T17:08:30Z,novelty-ws-common-blocks,auth/locks
+2026-05-19T17:12:24Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-19T17:16:12Z,novelty-ws-media-cross-entity,async/media
