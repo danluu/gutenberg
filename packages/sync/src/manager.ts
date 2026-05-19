@@ -927,6 +927,14 @@ export function createSyncManager( debug = false ): SyncManager {
 		// before we serialize the document.
 		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
+		if ( entityState.syncConfig.preparePersistedCRDTDoc ) {
+			entityState.ydoc.transact( () => {
+				entityState.syncConfig.preparePersistedCRDTDoc?.(
+					entityState.ydoc
+				);
+			}, LOCAL_SYNC_MANAGER_ORIGIN );
+		}
+
 		if (
 			! hasPersistableCrdtDocStateChanged(
 				entityState.ydoc,

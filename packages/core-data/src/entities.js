@@ -21,6 +21,7 @@ import {
 	defaultCollectionSyncConfig,
 	defaultSyncConfig,
 	getPostChangesFromCRDTDoc,
+	preparePostCRDTDocForPersistence,
 	POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE,
 } from './utils/crdt';
 
@@ -840,6 +841,7 @@ async function loadPostTypeEntities() {
 					null
 				);
 			},
+			preparePersistedCRDTDoc: preparePostCRDTDocForPersistence,
 		};
 
 		return entity;

@@ -82,6 +82,7 @@ import {
 	applyPostChangesToCRDTDoc,
 	defaultCollectionSyncConfig,
 	getPostChangesFromCRDTDoc,
+	preparePostCRDTDocForPersistence,
 	POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE,
 	type PostChanges,
 	type YPostRecord,
@@ -607,6 +608,33 @@ describe( 'crdt', () => {
 			expect( map.get( 'categories' ) ).toEqual( [ 1, 2, 3 ] );
 			expect( map.get( 'genre' ) ).toEqual( [ 10, 20 ] );
 			expect( map.get( 'tags' ) ).toEqual( [ 4, 5 ] );
+		} );
+	} );
+
+	describe( 'preparePostCRDTDocForPersistence', () => {
+		let map: YMapWrap< YPostRecord >;
+
+		beforeEach( () => {
+			map = getRootMap< YPostRecord >( doc, CRDT_RECORD_MAP_KEY );
+		} );
+
+		it( 'normalizes stale content from the CRDT block tree', () => {
+			const blocks = parse(
+				'<!-- wp:paragraph --><p>Fresh marker</p><!-- /wp:paragraph -->'
+			);
+			const serializedBlocks =
+				__unstableSerializeAndClean( blocks ).trim();
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks } as PostChanges,
+				defaultSyncedProperties
+			);
+			map.set( 'content', new Y.Text( 'stale marker' ) );
+
+			preparePostCRDTDocForPersistence( doc );
+
+			expect( map.get( 'content' )?.toString() ).toBe( serializedBlocks );
 		} );
 	} );
 

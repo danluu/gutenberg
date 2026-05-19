@@ -298,6 +298,31 @@ export function applyPostChangesToCRDTDoc(
 }
 
 /**
+ * @ignore
+ */
+export function preparePostCRDTDocForPersistence( ydoc: CRDTDoc ): void {
+	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
+	const currentBlocks = ymap.get( 'blocks' );
+
+	if ( ! ( currentBlocks instanceof Y.Array ) ) {
+		return;
+	}
+
+	const rawValue = __unstableSerializeAndClean(
+		currentBlocks.toJSON()
+	).trim();
+	const currentValue = ymap.get( 'content' );
+
+	if ( currentValue instanceof Y.Text ) {
+		if ( currentValue.toString() !== rawValue ) {
+			mergeRichTextUpdate( currentValue, rawValue );
+		}
+	} else {
+		ymap.set( 'content', new Y.Text( rawValue ) );
+	}
+}
+
+/**
  * Only returns a selection object if it describes a selection within a block, with
  * a cursor inside a RichText field associated with one of that block’s attributes.
  *

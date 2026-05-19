@@ -33,7 +33,11 @@ import type {
 	RecordHandlers,
 	SyncConfig,
 } from '../types';
-import { getPersistedCrdtDocVersion, serializeCrdtDoc } from '../utils';
+import {
+	deserializeCrdtDoc,
+	getPersistedCrdtDocVersion,
+	serializeCrdtDoc,
+} from '../utils';
 
 // Mock dependencies.
 jest.mock( '../providers', () => ( {
@@ -574,6 +578,42 @@ describe( 'SyncManager', () => {
 				expect( JSON.parse( nextPersistedDoc! ).baseVersion ).toBe(
 					getPersistedCrdtDocVersion( basePersistedDoc )
 				);
+			} );
+
+			it( 'prepares the CRDT doc before checking persisted document changes', async () => {
+				mockSyncConfig.preparePersistedCRDTDoc = jest.fn(
+					( ydoc: CRDTDoc ) => {
+						const ymap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+						ymap.set( 'content', 'Normalized content' );
+					}
+				);
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				const persistedDoc = await manager.createPersistedCRDTDoc(
+					'post',
+					'123'
+				);
+				expect( persistedDoc ).toBeTruthy();
+
+				const deserializedDoc = deserializeCrdtDoc( persistedDoc! );
+				const persistedRecord = deserializedDoc
+					?.getMap( CRDT_RECORD_MAP_KEY )
+					.toJSON();
+
+				expect(
+					mockSyncConfig.preparePersistedCRDTDoc
+				).toHaveBeenCalledWith( expect.any( Y.Doc ) );
+				expect( persistedRecord?.content ).toBe( 'Normalized content' );
+
+				deserializedDoc?.destroy();
 			} );
 		} );
 	} );
