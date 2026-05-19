@@ -964,3 +964,5 @@ timestamp,group,group_family
 2026-05-19T16:37:56Z,novelty-ws-revision-persistence,persistence
 2026-05-19T16:42:20Z,novelty-ws-revision-recovery,persistence
 2026-05-19T16:44:40Z,novelty-ws-multi-reload-lifecycle,lifecycle
+2026-05-19T16:53:41Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-19T16:58:12Z,novelty-ws-real-user-coverage-bridge,real-user
