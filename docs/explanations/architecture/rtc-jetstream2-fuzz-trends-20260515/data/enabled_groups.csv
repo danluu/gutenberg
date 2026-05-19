@@ -975,3 +975,7 @@ timestamp,group,group_family
 2026-05-19T17:46:20Z,novelty-http-persistence-probe,persistence
 2026-05-19T17:50:37Z,novelty-ws-parser-serialization,parser
 2026-05-19T17:50:44Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-19T17:53:12Z,novelty-ws-media-cross-entity,async/media
+2026-05-19T17:55:37Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-19T18:05:48Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-19T18:18:31Z,novelty-ws-parser-transform,parser
