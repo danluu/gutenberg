@@ -2,7 +2,7 @@ profile,records_seen,successful_records,startup_failures,success_rate,profile_fa
 three-user-late-join,11717,3947,0,0.3368609712383716,lifecycle
 session-lifecycle,9590,2743,0,0.28602711157455685,lifecycle
 async-server-blocks,9545,4516,0,0.4731272917757989,async/media
-real-user-editing,9045,623,0,0.06887783305693754,real-user
+real-user-editing,9070,644,0,0.07100330760749725,real-user
 permissions-auth-locks,8100,3813,0,0.47074074074074074,auth/locks
 block-gauntlet,7261,1348,0,0.18564935959234266,block-structure
 revision-persistence,6854,289,0,0.04216515903122264,persistence
