@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T03:11:00Z`
+Snapshot time: `2026-05-19T03:17:26Z`
 
 Trigger event:
-`pr-split-2026-05-19T03-06-44Z-20260519T025821Z`
+`pr-split-2026-05-19T03-16-03Z-20260519T030649Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T03-06-44Z-20260519T025821Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T03-16-03Z-20260519T030649Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,7 +28,7 @@ or the original split merely for continuity.
 ## Executive Status
 
 Still blocked for GitHub filing and final-stack validation. The current
-split-persona synthesis, `pr-split-20260519T025821Z-synthesis.md`, keeps the
+split-persona synthesis, `pr-split-20260519T030649Z-synthesis.md`, keeps the
 Cycle420 durable `022936Z` / `023939Z` replacement split shape: product lanes
 through `PR15C`, with `HARNESS-WS-CONFIG-022004` as harness-only. The split is
 not final-stack-ready.
@@ -45,11 +45,13 @@ Treat it as a namespace refresh only, not as evidence to promote `012938` or
 
 Treat those as owner-reduction problems, not promotable deferred PRs.
 
-The active Cycle420 owner-reduction job has started producing partial TSVs, but
-there is still no durable `report.md`, and `classification.tsv` /
-`manifest-audit.tsv` are header-only. Treat that as work in progress, not
-review evidence or a reason to promote `012938`, `020456`, PR07, PR15D, PR17,
-PR18, or PR18x.
+The active Cycle420 owner-reduction job has row-bearing `owner-matrix.tsv`
+progress, but there is still no durable `report.md`, and `classification.tsv`
+/ `manifest-audit.tsv` are header-only. Fresh Cycle420 rows now show seed
+`1000009` fails on `PR05B`, `PR05C`, clean `PR05D`, and current `PR15C` with
+the same `entity-serialization-mismatch`. Treat this as work in progress and
+owner-localization evidence, not review evidence or a reason to promote
+`012938`, `020456`, PR07, PR15D, PR17, PR18, or PR18x.
 
 Current maintainer-facing split hypothesis:
 
@@ -89,9 +91,11 @@ Current blocker/status changes:
   not block PR07 owner comparison, strict owner comparison, branch audits, push
   manifests, PR02A/PR5/PR11 shaping, deferred downscope/promotion, owner
   reductions for seeds `1000009` and `6000007`, or loop repair.
-- `ENTITY-SERIALIZATION-1000009` is now a non-fileable owner queue. Compare at
-  least `PR05B`, `PR05C`, clean `PR05D`, and current `PR15C`; include cheaper
-  earlier controls when available. Do not promote raw
+- `ENTITY-SERIALIZATION-1000009` is now a non-fileable owner queue. The newest
+  rows reproduce the same `entity-serialization-mismatch` on `PR05B`, `PR05C`,
+  clean `PR05D`, and current `PR15C`; compare lower owners next, especially
+  `PR04` and `PR05A`. If `PR05A` passes and `PR05B` fails, treat this as a
+  PR05B correction/split or follow-up, not a tail PR. Do not promote raw
   `VALIDATION-LOCAL-DELETE-012938`.
 - `PERSISTENCE-PARITY-6000007` is now a non-fileable owner queue. The seed
   `6000007` replay shows current `PR15C` already fails the same marker-set
@@ -106,9 +110,10 @@ Current blocker/status changes:
   non-fileable. No `PR18x` naming until strict rows compare plausible earlier
   owners, including PR05B/PR05C/clean PR05D and the current endpoint.
 - Treat the active Cycle420 owner-reduction job as incomplete until it writes a
-  nonzero `report.md` plus row-bearing `owner-matrix.tsv`,
-  `classification.tsv`, `replay-runs.tsv`, `first-divergence.tsv`,
-  `branch-inputs.tsv`, and `manifest-audit.tsv`.
+  nonzero `report.md` plus row-bearing `classification.tsv`,
+  `replay-runs.tsv`, `first-divergence.tsv`, `branch-inputs.tsv`, and
+  `manifest-audit.tsv`. A row-bearing `owner-matrix.tsv` alone is partial
+  progress, not completion.
 
 Do not file `PR02B`, any PR07 arm, `RELOAD-HYDRATION-020456` / `014448`,
 `PR15D`, raw `PR07D`, stale `PR07C`, raw deferred reload/search/rich-text
@@ -117,7 +122,7 @@ zero-byte/header-only/stale-manifest output.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T03:10:55Z`.
+Remote status was collected at `2026-05-19T03:17:20Z`.
 
 The fix-planning repo is checked out at:
 
@@ -147,7 +152,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T03:11:00Z` from fetched
+The branch-link audit was generated at `2026-05-19T03:17:26Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact publication shape, ancestry, owner evidence, or filing readiness.
@@ -210,10 +215,10 @@ verified branch link are not file-ready.
 | PR 12B | Previous-local-cache operation subhead `80d6a4` | No verified branch link yet | TBD | active split row |
 | PR 12C | Previous-local-cache operation subhead `95d3a0` | No verified branch link yet | TBD | active split row |
 | PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 files, +1151 / -25 | repaired verified content; active PR13 prefix |
-| PR 13B0 | Source-family split part 0 after PR13A | No verified branch link yet | TBD | active `025821Z` split row; not file-ready until exact pushed/audited ref exists |
-| PR 13B1 | Source-family split part 1 after PR13B0 | No verified branch link yet | TBD | active `025821Z` split row; not file-ready until exact pushed/audited ref exists |
-| PR 13B2 | Source-family split part 2 after PR13B1 | No verified branch link yet | TBD | active `025821Z` split row; not file-ready until exact pushed/audited ref exists |
-| PR 13B3 | Source-family split part 3 before PR14 | No verified branch link yet | TBD | active `025821Z` split row; not file-ready until exact pushed/audited ref exists |
+| PR 13B0 | Source-family split part 0 after PR13A | No verified branch link yet | TBD | active `030649Z` split row; not file-ready until exact pushed/audited ref exists |
+| PR 13B1 | Source-family split part 1 after PR13B0 | No verified branch link yet | TBD | active `030649Z` split row; not file-ready until exact pushed/audited ref exists |
+| PR 13B2 | Source-family split part 2 after PR13B1 | No verified branch link yet | TBD | active `030649Z` split row; not file-ready until exact pushed/audited ref exists |
+| PR 13B3 | Source-family split part 3 before PR14 | No verified branch link yet | TBD | active `030649Z` split row; not file-ready until exact pushed/audited ref exists |
 | PR 14 | Table body nested array merge | [`review/rtc-pr14-table-body-array-merge`](https://github.com/danluu/gutenberg/tree/review/rtc-pr14-table-body-array-merge) | 2 files, +294 / -18 | verified content; seed `7110017` still shows PR14 alone is incomplete |
 | PR 14B | Stale-shorter query-array local suffix append after PR14 | No verified branch link yet | TBD | required before active PR15A-C; needs final-PR14B materialization/audit |
 | PR 15A | Fallback-group move green on PR14B | [`review/rtc-pr15a-fallback-group-move-stale-reorder`](https://github.com/danluu/gutenberg/tree/review/rtc-pr15a-fallback-group-move-stale-reorder) | 2 files, +123 / -4 | verified component content; filing still waits on `022936` stack audit and PR15C owner reductions |
@@ -258,8 +263,8 @@ These rows must not be described as fixed or filing-ready.
 | PR05D and rich-text/search reductions | clean PR05D `27c6e7924217`, search/live-collapse, rich-text suffix, parser/linebreak candidates | diagnostic or held until owner comparison proves product ownership | Compare against PR05B, PR05C, clean PR05D, the PR07 owner queue, PR14, and current PR15C |
 | PR06 ungrouping and PR06E | active PR06A-D plus PR06E | grouped PR06, PR06A prior-art, and PR06B progress refs are verified; active PR06A-D and PR06E still have no exact verified links | Publish/fetch/audit exact refs, then prove `PR06D -> PR06E`, `PR07 !-> PR06E`, and adjacent evidence for PR06A-D |
 | PR11 / PR12 ungrouping | PR11A-E and PR12A-C | grouped PR11/PR12 have verified aggregate prior-art links only; active sub-PR refs are missing | Publish/fetch/audit explicit sub-PR refs and preserve adjacent diffstat/patch-id evidence |
-| PR13 finer split | repaired PR13A plus active but unaudited PR13B0/B1/B2/B3; repaired PR13B/PR13C aggregate refs remain available | PR13B0-B3 are the active `025821Z` split rows but have no verified branch links yet; repaired PR13B/C are verified aggregate/prior-art refs only | Publish/fetch/audit PR13B0/B1/B2/B3 before filing the finer split or replacing repaired PR13B/C aggregate evidence |
-| Duplicate/noise producer control-plane | startup-noise holds, product-evidence duplicate-family holds, stale/no-analysis drain admission | latest duplicate-noise feedback action (`20260519T023513Z`) implemented the bounded control-plane fix and validation; this is harness health, not product validation | Keep product-evidence signatures visible, verify the next novelty pass enforces the parser-serialization hold, and do not treat remediation as final-stack evidence |
+| PR13 finer split | repaired PR13A plus active but unaudited PR13B0/B1/B2/B3; repaired PR13B/PR13C aggregate refs remain available | PR13B0-B3 are the active `030649Z` split rows but have no verified branch links yet; repaired PR13B/C are verified aggregate/prior-art refs only | Publish/fetch/audit PR13B0/B1/B2/B3 before filing the finer split or replacing repaired PR13B/C aggregate evidence |
+| Duplicate/noise producer control-plane | startup-noise holds, product-evidence duplicate-family holds, stale/no-analysis drain admission | `20260519T023513Z` implemented a bounded partial fix, but the latest `20260519T030248Z` synthesis still identifies novelty/control-plane freshness and policy ordering as the next fix | Keep product-evidence signatures visible, run fresh current-run gate-only triage before producer policy, and do not treat control-plane remediation as final-stack evidence |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -267,14 +272,14 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T03:10:55Z
+collected_at_utc: 2026-05-19T03:17:20Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T015651Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-19T03:10:48.806Z` for
+`2026-05-19T03:16:48.807Z` for
 `run-20260519T015651Z`:
 
 ```text
@@ -299,16 +304,12 @@ historical likely-real visible: 377
 historical top duplicate family share: 0.3407
 enabled groups:
   novelty-ws-parser-serialization
-paused groups:
-  novelty-http-persistence-probe
-  novelty-ws-block-gauntlet
-  novelty-ws-parser-transform
-  novelty-ws-lifecycle
-  novelty-ws-real-user-save-reload
+other groups:
+  not listed as enabled by the latest trend evidence
 load1: 66.31 / 64 cores
 memory: 420.3G free / 492.0G total
 headroom for adding groups: no
-health note: heartbeat refreshed at 03:10:48Z; metrics are from the
+health note: heartbeat refreshed at 03:16:48Z; metrics are from the
   completed 02:44:04Z full pass
 ```
 
@@ -328,7 +329,7 @@ Interpretation:
   control-only endpoint repair, the `PERSISTENCE-PARITY-6000007` /
   `RELOAD-HYDRATION-020456` gate, seed `1020002`, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T02:59:56Z`:
+The latest trend evidence packet was generated at `2026-05-19T03:09:01Z`:
 
 ```text
 monitor passes: 2319
@@ -343,15 +344,15 @@ duplicate_share_historical_last: 0.3407
 summary startup failures last: 0
 quality issues last: 0
 memory free: 420.3 GB
-load averages: 79.61 / 71.01 / 68.06 on 64 cores
+load averages: 100.66 / 78.07 / 70.3 on 64 cores
 enabled group current:
   novelty-ws-parser-serialization
 latest fuzz level mix:
   browser-e2e=28 lanes/25 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6054168
-browser-e2e likely-real findings: 781 over 2609.5 runner-hours
+total fuzz-level test executions: 6057127
+browser-e2e likely-real findings: 782 over 2611.7 runner-hours
 ```
 
 Largest unmet goals remain save/reload and real-user depth:
@@ -370,7 +371,7 @@ bounded and oracle-specific rather than increasing broad browser concurrency.
 
 ## Status-Persona Analysis
 
-The current split-persona synthesis, `pr-split-20260519T025821Z-synthesis.md`,
+The current split-persona synthesis, `pr-split-20260519T030649Z-synthesis.md`,
 supersedes the older Cycle418 / `022946` wording and the earlier
 `024021Z` wording where they differ:
 
@@ -384,8 +385,10 @@ supersedes the older Cycle418 / `022946` wording and the earlier
   split shape. Because the audit has no verified PR13B0-B3 branch links yet,
   repaired PR13B/PR13C remain verified aggregate/prior-art refs rather than
   active filed rows.
-- Treat seed `1000009` as the new `ENTITY-SERIALIZATION-1000009` owner queue.
-  Current clean `PR15C` fails with entity serialization mismatch, so raw
+- Treat seed `1000009` as the `ENTITY-SERIALIZATION-1000009` owner queue. The
+  newest Cycle420 rows show `PR05B`, `PR05C`, clean `PR05D`, and current
+  `PR15C` all fail with the same entity serialization mismatch. The next
+  comparison is against lower owners, especially `PR04` / `PR05A`; raw
   `VALIDATION-LOCAL-DELETE-012938` stays validation/test-only.
 - Keep `PERSISTENCE-PARITY-6000007` / `RELOAD-HYDRATION-020456`
   blocked/runtime-gated. Seed `6000007` now shows current `PR15C` fails the
@@ -399,29 +402,39 @@ supersedes the older Cycle418 / `022946` wording and the earlier
 - Patch the progress loop rule: missing/zero-byte reports, header-only TSVs,
   active sessions, stderr-only evidence, and stale manifests are no progress.
 - The active `rtc-cycle420-pr15c-persistence-entity-owner-reduction` job is
-  only partial progress: no `report.md` yet, and `classification.tsv` /
-  `manifest-audit.tsv` are header-only. If it exits without the required
-  row-bearing outputs, run exactly one bounded replacement with the same scope.
+  only partial progress: `owner-matrix.tsv` has rows, but no `report.md` exists
+  yet, and `classification.tsv` / `manifest-audit.tsv` are header-only. If it
+  exits without the required row-bearing outputs, run exactly one bounded
+  continuation from
+  `runs/20260519T024021Z/jobs/run-rtc-cycle420-pr15c-persistence-entity-owner-reduction.sh`.
+- The fresh `20260519T030948Z` finalization report is zero bytes and stderr
+  shows broad `/media/volume/danluu-fuzz-data` scans. Treat that as an active
+  loop/finalization controller bug, not progress.
 
-The latest duplicate/noise feedback action,
-`duplicate-noise-20260519T023513Z-feedback-action.md`, implemented the bounded
-control-plane remediation described by
-`duplicate-noise-20260519T023513Z-synthesis.md`: novelty cooldown bypass now
-fails closed without current product evidence, stale bypass state is cleared on
-output-root changes, `novelty-ws-parser-serialization` is held with the
-duplicate-family groups, stale/no-analysis product-evidence bypasses require
-explicit product evidence, and triage propagation preserves family keys instead
-of collapsing non-actionable gates to `unknown`.
+The duplicate/noise feedback action
+`duplicate-noise-20260519T023513Z-feedback-action.md` implemented a bounded
+partial control-plane remediation: novelty cooldown bypass now fails closed
+without current product evidence, stale bypass state is cleared on output-root
+changes, `novelty-ws-parser-serialization` is held with duplicate-family
+groups, stale/no-analysis product-evidence bypasses require explicit product
+evidence, and triage propagation preserves family keys instead of collapsing
+non-actionable gates to `unknown`. Validation for that pass included
+`node --check` on five changed `.mjs` files, empty `launchableStrictStartup`,
+and visible product-evidence signatures in the active parser-serialization run
+dir.
 
-Validation for that control-plane fix passed `node --check` on the five changed
-`.mjs` files. After restart, `launchableStrictStartup` was empty, product
-evidence remained visible in the active parser-serialization run dir (`10`
-signatures), and active triage/analysis showed family-capped and analysis-gated
-records instead of queued no-product startup work. The newest novelty status
-shows `novelty-ws-parser-serialization` enabled, the real-user duplicate-family
-holds still preserving raw product-evidence signatures, and zero visible active
-likely-real signatures. This is control-plane health context, not product
-validation.
+The latest duplicate/noise synthesis,
+`duplicate-noise-20260519T030248Z-synthesis.md`, does not treat that as done.
+It identifies stale/late current-run control-plane state in
+`rtc-browser-fuzz-novelty-monitor.mjs` as the remaining leak: producer policy
+can use stale or null `triageYieldCurrent` while the heartbeat is fresh. The
+next bounded fix should refresh gate-only current-run triage before producer
+policy, compute and persist `triageYieldCurrent` before historical aggregation,
+apply current duplicate/noise holds immediately, track completed-pass freshness
+separately from heartbeat freshness, preserve product-evidence signatures while
+capping duplicate families per family, and prefer product-specific
+`distinctBugType` / family labels over lifecycle fallback in deep bucketing.
+This is harness/control-plane health context, not product validation.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -451,11 +464,13 @@ Before filing any maintainer-facing PR:
    `No verified branch link yet`, including `HARNESS-WS-CONFIG-022004` if it
    is to be filed as a harness-only sidecar.
 3. Complete the active Cycle420 owner-reduction job with a nonzero
-   `report.md` plus row-bearing `owner-matrix.tsv`, `classification.tsv`,
-   `replay-runs.tsv`, `first-divergence.tsv`, `branch-inputs.tsv`, and
-   `manifest-audit.tsv`. It must cover seed `1000009` across PR05B, PR05C,
-   clean PR05D, and current PR15C, then cover `PERSISTENCE-PARITY-6000007`
-   lower controls / PR07B0F/G before promoting reload-hydration work.
+   `report.md` plus row-bearing `classification.tsv`, `replay-runs.tsv`,
+   `first-divergence.tsv`, `branch-inputs.tsv`, and `manifest-audit.tsv`.
+   `owner-matrix.tsv` already has partial rows showing seed `1000009` fails on
+   PR05B, PR05C, clean PR05D, and current PR15C; it still needs lower-owner
+   comparison against PR04 / PR05A and completed classification. It must also
+   cover `PERSISTENCE-PARITY-6000007` lower controls / PR07B0F/G before
+   promoting reload-hydration work.
 4. Repair or explicitly reclassify seed `1020002` before rebuilt stack-wide
    validation, broad final-stack fuzzing, or GitHub filing.
 5. Prove `PR06D -> PR06E`, `PR07 !-> PR06E`, `PR06D -> PR09`, accepted PR07
@@ -481,16 +496,19 @@ Useful bounded work now:
   `runs/20260519T024021Z/jobs/run-rtc-cycle420-pr15c-persistence-entity-owner-reduction.sh`
   over seeds `1000009` and `6000007` using
   `finalized/rtc-pr-stack-20260519T022936Z`;
-- produce nonzero `report.md`, `owner-matrix.tsv`, `classification.tsv`,
-  `replay-runs.tsv`, `first-divergence.tsv`, `branch-inputs.tsv`, and
-  `manifest-audit.tsv` for that owner-reduction job; if it dies reportless,
-  run exactly one bounded replacement with the same scope;
+- produce nonzero `report.md` and complete row-bearing `owner-matrix.tsv`,
+  `classification.tsv`, `replay-runs.tsv`, `first-divergence.tsv`,
+  `branch-inputs.tsv`, and `manifest-audit.tsv` for that owner-reduction job;
+  if it dies reportless, run exactly one bounded replacement with the same
+  scope;
 - run a bounded `023939` ready-set manifest audit if it is not already active,
   allowlisting only ready product branches and `HARNESS-WS-CONFIG-022004`;
-- consume the completed duplicate/noise control-plane remediation, wait for or
-  run a bounded post-restart novelty pass, and verify parser-serialization
-  duplicate-family hold enforcement while product-evidence signatures remain
-  visible. Do not treat that remediation as product evidence.
+- consume the partial duplicate/noise control-plane remediation, wait for or
+  run a bounded post-restart novelty pass, then apply the remaining
+  `030248Z` freshness/order fix if the monitor still writes a fresh heartbeat
+  while producer policy uses stale current-run triage. Product-evidence
+  signatures must remain visible. Do not treat that remediation as product
+  evidence.
 
 Do not launch broad final-stack fuzz, GitHub filing, rebuilt stack-wide
 validation, duplicate broad seed `1020002` work outside focused diagnostic
