@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T01:41:42Z`
+Snapshot time: `2026-05-19T01:49:41Z`
 
 Trigger event:
-`pr-split-2026-05-19T01-40-35Z-20260519T013218Z`
+`duplicate-noise-2026-05-19T01-43-07Z-228`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T01-40-35Z-20260519T013218Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T01-43-07Z-228/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -97,12 +97,19 @@ block PR07 owner comparison, strict `117126135e5e` owner comparison, branch
 audits, push manifests, PR02A/PR5/PR11 shaping, deferred downscope/promotion,
 or loop repair.
 
+The latest duplicate/noise action is completed control-plane hardening, not a
+product fix and not final-stack validation. It makes live analysis, novelty, and
+analysis tiers fail closed for stale/no-product/no-analysis sources while
+preserving concrete product-evidence signatures. The current root check has
+zero triage signatures and live analysis reports no actionable signature, but
+the root is still startup-only for novelty coverage.
+
 Do not file `PR02B`, any PR07 arm, `PR15D`, raw `PR07D`, stale `PR07C`, raw
 deferred reload/search/rich-text heads, `PR17`, `PR18`, or `PR18x`.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T01:41:36Z`.
+Remote status was collected at `2026-05-19T01:49:36Z`.
 
 The fix-planning repo is checked out at:
 
@@ -132,7 +139,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T01:41:42Z` from fetched
+The branch-link audit was generated at `2026-05-19T01:49:41Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact Cycle325/i40 publication shape, ancestry, owner evidence, or filing
@@ -249,23 +256,23 @@ micro-split PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T01:41:36Z
+collected_at_utc: 2026-05-19T01:49:36Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T013836Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-19T01:40:46.333Z`. This is a startup snapshot for the new
+`2026-05-19T01:48:46.338Z`. This is a startup snapshot for the new
 `run-20260519T013836Z` root; the first full coverage pass is still pending:
 
 ```text
 output dir: run-20260519T013836Z
 status: monitor started; full coverage pass pending
 observed roots: 611
-previous records loaded: 90870
-supervisor groups file: 1
-active run dirs: 1
+previous records loaded: 90895
+supervisor groups file: 0
+active run dirs: 0
 unmet goals: pending until first pass
 harness-work candidates: pending until first pass
 quality issues: pending until first pass
@@ -282,6 +289,9 @@ Interpretation:
   likely-real classification yet.
 - Use the trend packet below as the latest completed graph-derived context, not
   as completed triage for the new `run-20260519T013836Z` root.
+- The completed duplicate/noise gate-only checks report `candidates=0`,
+  `suppressedStartup=0`, `signatures=0`, and live analysis skipped with no
+  actionable signature. That is control-plane health evidence only.
 - The fuzz repo remains active validation infrastructure, not the final PR
   stack.
 - Current fuzz health does not clear PR filing, PR07 owner replay, strict
@@ -374,18 +384,33 @@ tiers should fail closed for stale, source-suppressed, family-capped,
 no-product startup/noise, and no-analysis drain sources while preserving
 concrete product-evidence signatures.
 
-The `duplicate-noise-20260519T011600Z-feedback-action.md` file is zero-byte, so
-it is not a completed action. The latest completed duplicate/noise feedback
-action remains `duplicate-noise-20260519T003819Z-feedback-action.md`: it
-implemented the supervisor recovery-vs-drain fix, passed `node --check` for the
-supervisor, triage watcher, live-analysis monitor, analysis tier, and
-deep-analysis tier, and confirmed no queued/running `pre_action_bootstrap_stall`
-in the live/analysis/deep paths. Product-evidence was preserved:
-`f32bcb5537e2` remained visible and advanced as `persisted-content-mismatch`.
-That completed fix is compatible with, but does not replace, the newer
-`011600Z` live-analysis/admission hardening recommendation. The older
-novelty-monitor scheduler-side fix remains completed compatible hardening, not
-product validation.
+The `duplicate-noise-20260519T011600Z-feedback-action.md` file is now nonzero
+and completed. It implemented the bounded control-plane remediation from cycle
+228:
+
+- `rtc-browser-fuzz-novelty-monitor.mjs` prunes expired stored noise pauses and
+  includes paused/no-analysis drain dirs when writing fallback no-analysis
+  sentinels.
+- `rtc-browser-fuzz-live-analysis-monitor.mjs` adds a gate-only triage timeout
+  and normalizes strict/source-gated startup signatures before stale family
+  fields.
+- `rtc-browser-fuzz-triage-watcher.mjs`, `rtc-browser-fuzz-analysis-tier.mjs`,
+  and `rtc-browser-fuzz-deep-analysis-tier.mjs` fail closed without
+  current-output/supervisor context unless explicitly overridden for offline
+  inspection.
+
+Validation for that action passed `node --check` on all five changed `.mjs`
+files. Old-root gate-only refresh covered five triage dirs with strict startup
+queued/running count `0`; old-root live analysis launched only
+product-evidence work. On the current root, gate-only refresh reported
+`candidates=0`, `suppressedStartup=0`, `signatures=0`; live-analysis `--once`
+returned `skipped-analysis-no-actionable-signature`; analysis-tier and
+deep-analysis-tier `--once` saw zero source signatures and launched nothing.
+The active coverage-guided watchdog restarted the campaign at
+`run-20260519T013836Z`, with novelty, analysis, supervisor, and watchdog
+sessions present. The remaining risk is recurrence while the new root is still
+early; previous-root product-evidence duplicate/awareness signatures remain
+visible by design and were not suppressed as startup noise.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -422,8 +447,8 @@ These must not be described as fixed or filing-ready.
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and the repaired `20260519T010912Z` endpoint manifest | blocked/control-only; the nonzero `010912Z` finalization removed PR15D from ready/push rows and restored Cycle396 PR15C-on-PR14B as the endpoint | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzzing, filing, and rebuilt validation only; do not wait on it before running independent PR07/strict/branch-audit work | Repair or explicitly reclassify before final-stack validation and filing |
 | Reload marker/lifecycle work | HARNESS reload markers, seeds `990001`/`990003`, same-user lifecycle seeds, PR07C seeds, deferred reload outputs | harness/diagnostic only until replay proves product ownership | Consume PR07 owner replay when present, then require product-owned first-loss boundary before promotion |
-| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, family-capped duplicate holds, current-run negative gates, represented product-evidence duplicates, stale/no-analysis drain admission | novelty-monitor remediation and the supervisor no-product startup-drain cooldown/recovery fix are implemented and restarted; latest `011600Z` synthesis still recommends live-analysis/analysis-tier admission fail-closed for stale/no-product/no-analysis sources while preserving product evidence; latest `011600Z` feedback action is zero-byte | Apply bounded live-analysis/analysis-tier hardening if the same stale/no-analysis leak recurs; do not treat this as product validation |
-| Current fuzz validation | `run-20260519T013836Z`, novelty status at `2026-05-19T01:40:46.333Z`, trend generated at `2026-05-19T01:34:30Z` | newest novelty root is startup-only: 611 observed roots, 90870 previous records loaded, 1 active run dir, and coverage/triage/likely-real metrics pending first pass; latest completed trend context has `55556` coverage files and `4` unmet goals | Use as health/control-plane evidence only; still require owner replay, PR15C-on-PR14B branch audit, PR15D control-only proof, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
+| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, family-capped duplicate holds, current-run negative gates, represented product-evidence duplicates, stale/no-analysis drain admission | novelty-monitor remediation, supervisor no-product startup-drain cooldown/recovery, and the latest `011600Z` live-analysis/analysis-tier fail-closed hardening are implemented and restarted; `node --check`, gate-only refresh, live-analysis, analysis-tier, and deep-analysis-tier checks passed; current root has `signatures=0` and no actionable live-analysis signature | Monitor the early current root for recurrence; apply only bounded admission hardening if stale/no-analysis or no-product startup sources again consume analysis capacity, and do not treat this as product validation |
+| Current fuzz validation | `run-20260519T013836Z`, novelty status at `2026-05-19T01:48:46.338Z`, trend generated at `2026-05-19T01:34:30Z` | newest novelty root is startup-only: 611 observed roots, 90895 previous records loaded, 0 active run dirs in the raw novelty snapshot, and coverage/triage/likely-real metrics pending first pass; latest completed trend context has `55556` coverage files and `4` unmet goals | Use as health/control-plane evidence only; still require owner replay, PR15C-on-PR14B branch audit, PR15D control-only proof, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Filing Gates And Current Recommendation
@@ -492,9 +517,9 @@ Useful bounded work now:
   TSVs against the current endpoint;
 - publish/fetch/audit explicit GitHub refs for active i40 rows that still say
   `No verified branch link yet`;
-- monitor the completed duplicate/noise supervisor cooldown fix, and apply
-  bounded live-analysis/analysis-tier admission hardening if stale/no-analysis
-  or no-product startup sources again consume analysis capacity.
+- monitor the completed duplicate/noise admission hardening, and apply further
+  bounded control-plane fixes only if stale/no-analysis or no-product startup
+  sources again consume analysis capacity.
 
 Do not launch broad final-stack fuzz, GitHub filing, rebuilt stack-wide
 validation, duplicate broad seed `1020002` work outside focused diagnostic
