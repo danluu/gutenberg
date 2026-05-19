@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T06:48:57Z`
+Snapshot time: `2026-05-19T06:56:01Z`
 
 Trigger event:
-`pr-split-2026-05-19T06-47-34Z-20260519T063936Z`
+`duplicate-noise-2026-05-19T06-51-24Z-242`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T06-47-34Z-20260519T063936Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T06-51-24Z-242/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -31,9 +31,12 @@ The latest split-persona synthesis, `pr-split-20260519T063936Z-synthesis.md`,
 keeps the Cycle436 / `044015Z` replacement split as the consensus fileable
 shape. The stack is blocked, but not idle: strict `8fb598778357` / seed
 `6000007` still lacks durable owner evidence, seed `1020002` still blocks
-final-stack validation and filing, and the row-bearing
-`progress-unblock-20260519T063031Z` diagnostic audit/manifest output still
-needs hardening before it counts as durable publication progress.
+final-stack validation and filing, and only one row of the
+`progress-unblock-20260519T063031Z` diagnostic publication work has been
+hardened. The Cycle438 pass verified the pre-save-search/live-collapse
+diagnostic manifest, but it remains diagnostic-only and still needs focused
+replay/validation before any product promotion; the rich-text suffix diagnostic
+branch still needs the same hardening.
 
 - `RLH-A`, raw reload-hydration heads, raw `PR07D`, stale `PR07C`, stale
   `PR15D`, `PR17`, `PR18`, and `PR18x` stay non-fileable.
@@ -102,6 +105,20 @@ Gate rows, and a failed deep triage with `process-missing` must relaunch once
 or create a bounded repro job instead of being treated as progress because a
 queue is merely active.
 
+The duplicate/noise pass also moved forward. The latest
+`duplicate-noise-20260519T061546Z-feedback-action.md` implemented a bounded
+fuzzer-side remediation, not product-code or PR-branch changes: seed-drain
+startup stalls now stay paused with durable no-analysis cooldown, novelty
+monitor startup restores seed-drain sentinels before supervisor launch and can
+rescue empty current-run materialization, and exact
+`rtc_test_ws_runtime_config_port_bleed` signatures are family-capped across
+triage, analysis, deep-analysis, and live-analysis. `node --check` passed on
+all six touched `.mjs` files and the synthetic endpoint-mismatch fixture stayed
+out of analysis/deep/live startup. The remaining risk is deliberately narrow:
+`rtc-browser-fuzz-runner.mjs` was outside that action's allowed edit list, so
+some browser work may still start before supervisor/consumer gates observe a
+leaking family.
+
 Seed `1020002` still blocks final-stack fuzzing, rebuilt stack-wide validation,
 GitHub filing, and its own repair/reclassification. It must not serialize
 independent branch audits, deferred closeout, strict owner comparison, or loop
@@ -109,7 +126,7 @@ repair.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T06:48:52Z`.
+Remote status was collected at `2026-05-19T06:55:55Z`.
 
 The fix-planning repo is checked out at:
 
@@ -139,7 +156,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T06:48:57Z` from fetched
+The branch-link audit was generated at `2026-05-19T06:56:01Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -242,11 +259,11 @@ These rows must not be described as fixed or filing-ready.
 | Seed `1020002` WebSocket marker divergence | final-stack repair/reclassification lane | blocks final-stack fuzzing, filing, rebuilt validation, and its own repair/reclassification only | Repair or explicitly reclassify before final-stack validation and filing; do not serialize independent work behind it |
 | PR07 runtime / owner gate | PR07A/B arms and raw PR07D variants | non-fileable owner-comparison fork; raw `PR07D` remains excluded | Require row-bearing owner matrices with first-divergence evidence, current endpoint controls, clean refs, and branch audit before promotion |
 | Deferred closeout | PR02A HTTP room isolation, PR06E malformed-save, RLH-A downscope | latest synthesis asks for a fresh deferred-gate closeout newer than `2026-05-19T05:52:46Z` | Verify PR02A covers HTTP room isolation, PR06E covers malformed-save, and RLH-A is recorded as downscope/evidence-only |
-| Pre-save search/live-collapse | search/live-collapse candidates, diagnostic branch around `5cc25e...` | latest progress-unblock output produced row-bearing diagnostic audit/manifest evidence, but no product promotion; it still needs base allowlist, head/manifest agreement, bundle agreement or explicit diagnostic exemption, and freshness checks | Harden the diagnostic manifest first, then run focused replay/validation before adding any PR row |
+| Pre-save search/live-collapse | search/live-collapse candidates, diagnostic branch around `5cc25e...` | Cycle438 pre-save diagnostic hardening verified base/head/manifest agreement and `diff_check=pass`; this is local-machine diagnostic publication evidence only, not product promotion | Run focused replay/validation before adding any PR row |
 | PR05E and rich-text/parser reductions | PR05E text, rich-text suffix around `868cd...`, parser/linebreak candidates, `PR18x` | rich-text suffix also has row-bearing diagnostic audit/manifest evidence, but remains diagnostic and needs the same hardening; latest guidance still says do not name `PR18x` until PR05B/PR05C/clean PR05D and other plausible owners are compared | Harden the diagnostic manifest first, then compare against lower controls and clean split heads before promotion |
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Raw deferred manifests | raw `003407`, raw `020456`, raw `024016`, fallback/PR15-tail bases, raw `PR07D` | invalid PR progress; wrong/stale base or missing same-cycle allowlisted base/head/bundle/manifest agreement | Keep as no-progress unless a new audit proves clean allowlisted base, head/bundle/manifest agreement, and ownership/non-coverage |
-| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, endpoint-mismatch port bleed, supervisor seed-drain recovery, novelty bootstrap/admission | prior remediation is still the last nonempty action; latest synthesis asks for current-run producer gating before historical scans and exact endpoint-mismatch classification, while the newest raw novelty status is startup-only | Consume the first full pass for `run-20260519T064455Z`; add only bounded current-first producer/refill and exact endpoint-mismatch fixes if startup/no-product producers still refill |
+| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, endpoint-mismatch port bleed, supervisor seed-drain recovery, novelty bootstrap/admission | latest `061546Z` action implemented bounded fuzzer-side remediation: durable seed-drain cooldown, novelty sentinel restore/rescue before supervisor launch, and exact endpoint-mismatch family-capping; newest raw novelty status is still startup-only | Consume the first full pass for `run-20260519T064455Z`; only add bounded current-first producer/refill or per-run WS runtime-config fixes if startup/no-product or endpoint-mismatch producers still refill |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -254,14 +271,14 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T06:48:52Z
+collected_at_utc: 2026-05-19T06:55:55Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T064455Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty monitor status was written at
-`2026-05-19T06:48:06.279Z` for `run-20260519T064455Z`. It is startup status
+`2026-05-19T06:55:06.291Z` for `run-20260519T064455Z`. It is startup status
 only; the full coverage pass has not completed:
 
 ```text
@@ -286,7 +303,7 @@ Interpretation:
   owner replay, strict owner replay, reload-hydration downscope, seed
   `1020002`, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T06:31:16Z`:
+The latest trend evidence packet was generated at `2026-05-19T06:42:40Z`:
 
 ```text
 monitor passes: 2333
@@ -302,13 +319,13 @@ summary startup failures last: 0
 quality issues last: 0
 enabled group: novelty-ws-long-session-large-doc
 memory free: 413.5 GB
-load averages: 55.39 / 71.63 / 78.16 on 64 cores
+load averages: 68.9 / 74.01 / 78.16 on 64 cores
 latest fuzz level mix:
   browser-e2e=28 lanes/25 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6141999
-browser-e2e likely-real findings: 789 over 2685.4 runner-hours
+total fuzz-level test executions: 6146828
+browser-e2e likely-real findings: 789 over 2690.2 runner-hours
 ```
 
 Largest unmet goals remain save/reload and real-user depth:
@@ -324,6 +341,10 @@ Browser E2E remains the only level with confirmed likely-real findings, but
 lower-level lanes are under-triaged and should not be declared useless from
 zero likely-real output. Load is high enough that new fuzz work should stay
 bounded and oracle-specific rather than increasing broad browser concurrency.
+The graph-derived enabled-group row is from the `06:42:40Z` trend packet; the
+later duplicate/noise action observed `novelty-ws-parser-transform` active and
+`novelty-ws-long-session-large-doc` paused as reusable startup noise, so use
+the action state for current duplicate/noise steering.
 
 ## Status-Persona Analysis
 
@@ -346,9 +367,10 @@ differ:
   unnamed.
 - Treat the `progress-unblock-20260519T063031Z` pre-save-search branch around
   `5cc25e...` and rich-text suffix branch around `868cd...` as diagnostic
-  publication evidence only. They still need base allowlist, head/manifest
-  agreement, bundle agreement or explicit diagnostic exemption, freshness
-  checks, and focused replay/validation before product promotion.
+  publication evidence only. The pre-save branch now has Cycle438
+  base/head/manifest and `diff_check=pass` hardening; the rich-text suffix
+  branch still needs equivalent hardening. Both need focused replay/validation
+  before product promotion.
 - Keep `PR05D` as the clean semicolonless/entity branch; reject manifests
   based on `fix/rtc-fallback-group-delete-stale-local`, `d06e3528cbd`, or
   fallback/PR15 tails.
@@ -365,25 +387,36 @@ differ:
 The latest duplicate/noise synthesis,
 `duplicate-noise-20260519T061546Z-synthesis.md`, still classifies the live
 problem as harness/control-plane noise rather than confirmed RTC product
-failure. The latest nonempty completed action remains
-`duplicate-noise-20260519T052256Z-feedback-action.md`; the `061546Z` feedback
-action file is empty, so the implemented remediation is still:
+failure. Its paired feedback action is now nonempty and records a completed
+bounded fuzzer-side remediation:
 
-- The producer-side remediation was implemented in the previous cycle.
-  Below-threshold no-product `pre_action_bootstrap_stall` seed-drain runs now
-  recover and get marked no-analysis instead of becoming long scheduler pauses.
-- `rtc-browser-fuzz-novelty-monitor.mjs` now blocks
-  `novelty-ws-permissions-auth-locks` for product-evidence duplicate-family
-  holds and treats seed-drain-only startup sentinels as analysis suppression
-  rather than reusable producer pauses.
-- `node --check` passed on both changed fuzzer scripts. `npm run wp-env status`
-  failed because the environment was not initialized, and `wp-env` was not
-  started because the change was limited to fuzzer control-plane scripts with
-  active sessions already running.
-- The next step is validation plus, if the first full pass still shows producer
-  refill, one bounded current-first producer gate and exact endpoint-mismatch
-  classification pass. Do not broaden suppression to generic WebSocket,
-  startup, awareness, or `waitForSyncCycle` failures.
+- Supervisor seed-drain startup stalls now remain paused with durable
+  no-analysis cooldown instead of recovering and relaunching the same family.
+- The novelty monitor restores seed-drain no-analysis sentinels before
+  supervisor start and rescues empty current-run materialization before
+  historical fallback.
+- Triage, analysis, deep-analysis, and live-analysis now family-cap exact
+  `rtc_test_ws_runtime_config_port_bleed` endpoint-mismatch signatures. The
+  matcher is intentionally narrow: explicit endpoint-mismatch text or the
+  trimmed exact throw-site plus fuzz-only test title.
+- `node --check` passed on all six changed `.mjs` files. A synthetic endpoint
+  mismatch fixture produced signature `2f9461a181b9`, was classified as
+  `family-capped`, and launched `0` analysis/deep jobs; live analysis returned
+  `skipped-analysis-no-actionable-signature`.
+- Active coverage-guided novelty/supervisor/live-analysis processes had
+  already restarted at `2026-05-19T06:45:05Z`, after the patched file mtimes,
+  so the action did not kill additional active sessions. At action time the
+  active output was `run-20260519T064455Z`, the active group was
+  `novelty-ws-parser-transform`, two endpoint-bleed signatures were
+  family-capped with analysis/deep counts `{}`, and
+  `novelty-ws-long-session-large-doc` stayed paused as reusable
+  `pre_action_bootstrap_stall` noise until `2026-05-19T11:22:54.717Z`.
+
+The next duplicate/noise step is validation, not broader suppression. Consume
+the first full novelty pass for `run-20260519T064455Z`; if no-product startup
+or endpoint-mismatch producers still refill, use a bounded current-first
+producer/refill or per-run WS runtime-config fix. Do not broaden suppression to
+generic WebSocket, startup, awareness, or `waitForSyncCycle` failures.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -443,16 +476,16 @@ Useful bounded work now:
 - run a fresh deferred-gate closeout newer than `2026-05-19T05:52:46Z` to
   verify PR02A covers HTTP room isolation, PR06E covers malformed-save, and
   `RLH-A` is downscope/evidence-only;
-- harden the `progress-unblock-20260519T063031Z` diagnostic manifest for base
-  allowlist, head/manifest agreement, bundle agreement or explicit diagnostic
-  exemption, and freshness, then run focused replay/validation before product
-  promotion;
+- harden the remaining rich-text suffix diagnostic manifest from
+  `progress-unblock-20260519T063031Z`, and run focused replay/validation for
+  the already-hardened pre-save diagnostic branch before product promotion;
 - continue seed `1020002` repair or proof-based reclassification without
   converting it into a wait-only progress loop;
 - consume the first full novelty pass for `run-20260519T064455Z` after the
-  duplicate/noise remediation; require no active queued startup/no-product
-  analysis and no duplicate-family producer refill before treating the
-  producer-side fix as stable;
+  `061546Z` duplicate/noise remediation; require no active queued
+  startup/no-product analysis, no uncapped endpoint-mismatch analysis, and no
+  duplicate-family producer refill before treating the producer-side fix as
+  stable;
 - repair the loop/gate accounting if another cycle accepts wait-only feedback
   while actionable gate rows remain.
 
