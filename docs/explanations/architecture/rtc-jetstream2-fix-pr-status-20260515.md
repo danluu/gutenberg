@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T04:32:55Z`
+Snapshot time: `2026-05-19T04:39:45Z`
 
 Trigger event:
-`pr-split-2026-05-19T04-31-36Z-20260519T042241Z`
+`duplicate-noise-2026-05-19T04-37-43Z-236`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T04-31-36Z-20260519T042241Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T04-37-43Z-236/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -92,7 +92,7 @@ claims.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T04:32:55Z`.
+Remote status was collected at `2026-05-19T04:39:39Z`.
 
 The fix-planning repo is checked out at:
 
@@ -122,7 +122,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T04:33:00Z` from fetched
+The branch-link audit was generated at `2026-05-19T04:39:45Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -226,7 +226,7 @@ These rows must not be described as fixed or filing-ready.
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Raw deferred manifests | raw `003407`, raw `020456`, raw `024016`, fallback/PR15-tail bases, raw `PR07D` | invalid PR progress; wrong/stale base or missing same-cycle allowlisted base/head/bundle/manifest agreement | Keep as no-progress unless a new audit proves clean allowlisted base, head/bundle/manifest agreement, and ownership/non-coverage |
 | PR05D and rich-text/search reductions | clean PR05D `27c6e7924217`, search/live-collapse, rich-text suffix, parser/linebreak candidates | diagnostic or held until owner comparison proves product ownership | Compare against lower controls, PR04, PR05A, PR05B, PR05C, clean PR05D, the PR07 owner queue, PR14, and current PR15C |
-| Duplicate/noise producer control-plane | family-aware producer holds, live process/source alignment, stale drain promotion, deep/live semantic family precedence | latest duplicate/noise synthesis finds producer/control-plane backpressure: represented product-evidence `reload_rejoin_awareness_stall` duplicates are still refilling, while `persisted_content_mismatch` must stay visible | Patch only scheduler/classification follow-up if authorized: verify current source is live, complete family-specific likely-real/product-evidence hold propagation, pause represented duplicate-family producers, and keep product-evidence cases visible |
+| Duplicate/noise producer control-plane | family-aware producer holds, live process/source alignment, stale drain promotion, deep/live semantic family precedence | latest duplicate/noise action implemented the bounded control-plane fix: triage emits `likelyRealVisibleFamilies`, novelty merges family-specific likely-real counts, deep/live analysis prefer source/first-level product family before lifecycle regex inference, `node --check` passed, gate-only triage stayed clear, and the control plane was restarted; the new root is still startup-only | Watch the fresh root under load and keep product-evidence `persisted_content_mismatch` visible while represented `reload_rejoin_awareness_stall` duplicates remain capped; do not broaden suppression |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -234,19 +234,19 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T04:32:55Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T043040Z
+collected_at_utc: 2026-05-19T04:39:39Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T043726Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty monitor status was written at
-`2026-05-19T04:32:51.030Z` for
-`run-20260519T043040Z`. It is startup-only:
+`2026-05-19T04:39:37.952Z` for
+`run-20260519T043726Z`. It is startup-only:
 
 ```text
 status: monitor started; full coverage pass pending
-observed roots: 625
+observed roots: 626
 previous records loaded: 91607
 supervisor groups file: 1
 active run dirs: 1
@@ -260,13 +260,13 @@ Interpretation:
   PR stack.
 - Because the raw novelty pass is pending, use the trend packet only as the
   latest completed aggregate evidence, not as a fresh current-run pass for the
-  new `043040Z` root.
+  new `043726Z` root.
 - Current fuzz health does not clear PR filing, exact branch-link gaps, the
   lower-boundary owner replay, PR07 owner replay, strict owner replay, PR15C
   owner reductions, PR15D control-only endpoint repair,
   `PERSISTENCE-PARITY-6000007`, seed `1020002`, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T04:22:09Z`:
+The latest trend evidence packet was generated at `2026-05-19T04:31:46Z`:
 
 ```text
 monitor passes: 2321
@@ -287,8 +287,8 @@ latest fuzz level mix:
   browser-e2e=28 lanes/25 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6087855
-browser-e2e likely-real findings: 785 over 2635.9 runner-hours
+total fuzz-level test executions: 6091846
+browser-e2e likely-real findings: 785 over 2638.6 runner-hours
 ```
 
 Largest unmet goals remain save/reload and real-user depth:
@@ -337,8 +337,9 @@ wording where they differ:
   PR18x, fallback/PR15-tailed PR05D manifests, and raw deferred heads
   non-fileable.
 
-The latest duplicate/noise persona file,
-`duplicate-noise-20260519T040043Z-synthesis.md`, is the current completed
+The latest duplicate/noise persona files,
+`duplicate-noise-20260519T040043Z-synthesis.md` and
+`duplicate-noise-20260519T040043Z-feedback-action.md`, are the current completed
 control-plane signal:
 
 - Strict `pre_action_bootstrap_stall` is no longer the main expensive-consumer
@@ -353,6 +354,17 @@ control-plane signal:
   already-represented duplicate-family producers, fix no-producer-match
   sentinels, and gate live-analysis drain promotion to actionable,
   unrepresented product-evidence work.
+- The bounded action has now patched triage, novelty, deep-analysis, and
+  live-analysis family attribution, with `node --check` passing for all four
+  changed remote scripts. Gate-only triage on the previous root kept strict
+  startup failures suppressed while leaving product-evidence
+  `reload_rejoin_awareness_stall` visible; gate-only triage on the restarted
+  root reported `candidates=0`, `suppressedStartup=0`, `signatures=0`, and
+  `active=0`.
+- The watchdog restarted the active control plane, and the latest collected
+  root is now `run-20260519T043726Z`. Full novelty coverage for that young root
+  is still pending, so the remaining risk is whether producer rotation stays
+  effective under load.
 - Product-evidence likely-real cases, especially `persisted_content_mismatch`,
   must remain visible. This is harness/control-plane health context, not
   product validation.
@@ -423,10 +435,11 @@ Useful bounded work now:
   count as no durable progress;
 - rerun or create a fresh manifest/ref audit only after the lower-boundary
   decision and repaired branch exist;
-- keep duplicate/noise follow-up narrow: family-aware producer holds,
-  startup-noise refill fail-closed behavior, block-gauntlet duplicate-family
-  handling, and explicit source-family precedence only; do not add broad
-  suppression while product-evidence signatures remain visible/capped.
+- keep duplicate/noise follow-up narrow: verify the restarted/fresh root under
+  load, preserve family-specific likely-real visibility, and adjust only
+  family-aware producer holds or stale-drain promotion if represented
+  duplicate families start refilling again; do not add broad suppression while
+  product-evidence signatures remain visible/capped.
 
 Do not launch broad final-stack fuzz, GitHub filing, rebuilt stack-wide
 validation, seed `1020002` outside focused diagnostic replay, duplicate
