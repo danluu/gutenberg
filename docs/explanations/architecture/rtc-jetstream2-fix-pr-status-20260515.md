@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T00:59:21Z`
+Snapshot time: `2026-05-19T01:07:12Z`
 
 Trigger event:
-`pr-split-2026-05-19T00-58-14Z-20260519T004812Z`
+`duplicate-noise-2026-05-19T01-05-06Z-226`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T00-58-14Z-20260519T004812Z/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T01-05-06Z-226/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -53,7 +53,8 @@ signature 117126135e5e / seed 5400020
 CRDT/data-loss lane:
 PR09 -> PR10 -> PR11A -> PR11B -> PR11C -> PR11D -> PR11E
 -> PR12A -> PR12B -> PR12C
--> repaired PR13A -> repaired PR13B -> repaired PR13C
+-> repaired PR13A -> PR13B0/B1/B2/B3 target once exact refs are audited
+   (use repaired PR13B/PR13C audit links until then)
 -> PR14 -> PR14B -> PR15A -> PR15B -> PR15C -> PR15D / canonical endpoint
 ```
 
@@ -70,6 +71,10 @@ changes:
   evidence supports PR15A/B/C-on-PR14B, but older PR15D evidence must not be
   reused unless a current-base manifest/report proves manifest, bundle, head,
   and base agreement for the canonical endpoint.
+- The raw split now names a finer PR13B0/B1/B2/B3 target after PR13A, but the
+  branch-link audit still has no verified links for those heads. Until exact
+  B0-B3 refs are published and audited, the repaired PR13A/B/C audit refs are
+  the only current PR13 PR-content links.
 
 Seed `1020002` still blocks final-stack fuzzing, rebuilt stack-wide validation,
 GitHub filing, and its own final repair/reclassification only. It must not
@@ -82,7 +87,7 @@ reload/search/rich-text heads, `PR17`, `PR18`, or `PR18x`.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T00:59:15Z`.
+Remote status was collected at `2026-05-19T01:07:06Z`.
 
 The fix-planning repo is checked out at:
 
@@ -112,7 +117,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T00:59:21Z` from fetched
+The branch-link audit was generated at `2026-05-19T01:07:12Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove exact Cycle325/i40 publication shape, ancestry, owner evidence, or filing
@@ -227,14 +232,14 @@ micro-split PR rows unless the status says so.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T00:59:15Z
+collected_at_utc: 2026-05-19T01:07:06Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T002227Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 Latest raw novelty monitor status was written at
-`2026-05-19T00:59:08.942Z`. Metrics are from the most recent completed full
+`2026-05-19T01:06:55.516Z`. Metrics are from the most recent completed full
 pass at `2026-05-19T00:50:39.895Z`:
 
 ```text
@@ -244,16 +249,18 @@ total records seen: 90827
 records processed this pass: 15
 unmet goals: 4
 quality issues: 0
-current-run active dirs: 1
-active current-run triage roots: 1
-active current-run product-evidence signatures: 1
+current-run active dirs: 0
+active current-run triage roots: 0
+active current-run product-evidence signatures: 0
 active current-run likely-real visible: 0
 current-drain product-evidence signatures: 1
 current-drain likely-real visible: 0
 historical likely-real visible: 374
 historical likely-real merged duplicates: 1448
 historical duplicate share: 0.3407
-enabled group: novelty-ws-async-server-blocks
+enabled group listing: novelty-ws-async-server-blocks
+active producer note: async-server-blocks paused at 2026-05-19T01:00:54.846Z
+  for represented product-evidence duplicate family; evidence remains in drain
 headroom for adding groups: no
 load1: 69.33 / 64 cores
 memory free: 423.1 GB
@@ -261,8 +268,10 @@ memory free: 423.1 GB
 
 Interpretation:
 
-- Do not claim final-stack cleanliness. The active current-run scope has one
-  product-evidence signature but zero visible likely-real failures.
+- Do not claim final-stack cleanliness. The active current-run scope currently
+  has no active directories and no active product-evidence signatures; current
+  drain still has one product-evidence signature and zero visible likely-real
+  failures.
 - Historical likely-real and duplicate/noise numbers are reporting context, not
   live product failure evidence for the active root.
 - The fuzz repo remains active validation infrastructure, not the final PR
@@ -271,29 +280,29 @@ Interpretation:
   owner replay, PR15D/canonical endpoint audit, reload-marker replay, seed
   `1020002`, exact branch-link gaps, or final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T00:46:58Z`:
+The latest trend evidence packet was generated at `2026-05-19T00:56:07Z`:
 
 ```text
-monitor passes: 2312
+monitor passes: 2313
 first pass: 2026-05-15T01:21:42Z
-last pass: 2026-05-19T00:42:46Z
-coverage files: 272 -> 55515
-coverage files delta: 55243
+last pass: 2026-05-19T00:50:40Z
+coverage files: 272 -> 55530
+coverage files delta: 55258
 unmet goals: 4
 likely_real_max: 4
 duplicate_share_current_last: 1
-duplicate_share_historical_last: 0.3409
+duplicate_share_historical_last: 0.3407
 summary startup failures last: 0
 quality issues last: 0
-memory free: 419.9 GB
-load averages: 69.32 / 75 / 76.36 on 64 cores
+memory free: 423.1 GB
+load averages: 73.14 / 73.69 / 75.23 on 64 cores
 enabled group current in trend snapshot: novelty-ws-async-server-blocks
 latest fuzz level mix:
   browser-e2e=41 lanes/38 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 5997756
-browser-e2e likely-real findings: 778 over 2565.2 runner-hours
+total fuzz-level test executions: 6002309
+browser-e2e likely-real findings: 778 over 2568.9 runner-hours
 ```
 
 Largest unmet goals remain save/reload and real-user depth:
@@ -310,7 +319,7 @@ lower-level lanes are under-triaged and should not be declared useless from
 zero likely-real output. CPU/load are still high, so new fuzz work should stay
 bounded and oracle-specific rather than increasing broad browser concurrency.
 The current duplicate-share trend value is from one represented active
-current-run family, not a visible likely-real product failure.
+current/drain family, not a visible likely-real product failure.
 
 ## Status-Persona Analysis
 
@@ -334,22 +343,21 @@ where it differs:
   filing, and its own repair/reclassification.
 
 The latest duplicate/noise synthesis file,
-`duplicate-noise-20260519T003819Z-synthesis.md`, is now nonzero and edited no
+`duplicate-noise-20260519T003819Z-synthesis.md`, is nonzero and edited no
 files. It says the expensive downstream consumers are mostly guarded, and the
-next smallest safe control-plane fix is to make supervisor no-product startup
+smallest safe control-plane fix was to make supervisor no-product startup
 drain cooldown beat recovery/relaunch in
 `bin/rtc-browser-fuzz-supervisor.mjs`, preserving the product-evidence veto.
-The prior `duplicate-noise-20260519T002613Z-synthesis.md` novelty-monitor
-hardening proposal remains compatible secondary work, not a blocker for that
-supervisor cooldown fix.
 
-The latest completed duplicate/noise feedback action remains
-`duplicate-noise-20260518T235517Z-feedback-action.md`. It implemented a narrow
-scheduler-side change in `bin/rtc-browser-fuzz-novelty-monitor.mjs`; validation
-passed `node --check`, stale old-root HTTP duplicate input was rejected by the
-triage watcher, and active-root gate-only/live-analysis checks showed no active
-startup/duplicate leakage. Treat this as fuzz/control-plane health evidence,
-not product validation.
+The latest completed duplicate/noise feedback action is
+`duplicate-noise-20260519T003819Z-feedback-action.md`. It implemented that
+supervisor recovery-vs-drain fix, passed `node --check` for the supervisor,
+triage watcher, live-analysis monitor, analysis tier, and deep-analysis tier,
+and confirmed no queued/running `pre_action_bootstrap_stall` in the
+live/analysis/deep paths. Product-evidence was preserved: `f32bcb5537e2`
+remained visible and advanced as `persisted-content-mismatch`. The older
+novelty-monitor scheduler-side fix remains completed compatible hardening, not
+product validation.
 
 The completed status-analysis reports through
 `final-20260516T040744Z-final-analysis.md` remain useful for report hygiene:
@@ -383,8 +391,8 @@ These must not be described as fixed or filing-ready.
 | PR14B / PR15 placement | PR14B, PR15A/B/C-on-PR14B, PR15D / canonical endpoint | branch-link audit verifies PR15A-C component prior art, but no exact final-PR14B materialized refs or PR15D/canonical endpoint link | Publish/fetch/audit exact PR14B-based refs, resolve PR15D/canonical endpoint, confirm ancestry, and require nonzero materializer/audit evidence |
 | Seed `1020002` WebSocket marker divergence | terminal/downscope classifications | blocks final-stack fuzzing, filing, and rebuilt validation only; do not wait on it before running independent PR07/strict/branch-audit work | Repair or explicitly reclassify before final-stack validation and filing |
 | Reload marker/lifecycle work | HARNESS reload markers, seeds `990001`/`990003`, same-user lifecycle seeds, PR07C seeds, deferred reload outputs | harness/diagnostic only until replay proves product ownership | Consume PR07 owner replay when present, then require product-owned first-loss boundary before promotion |
-| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, family-capped duplicate holds, current-run negative gates, represented product-evidence duplicates | narrow novelty-monitor remediation is implemented and restarted; latest nonzero duplicate/noise synthesis now points to supervisor no-product startup-drain cooldown/recovery ordering as the next bounded fix, with novelty hardening as compatible secondary work | Add only bounded control-plane hardening; do not treat this as product validation |
-| Current fuzz validation | `run-20260519T002227Z`, novelty status at `2026-05-19T00:59:08.942Z`, trend generated at `2026-05-19T00:46:58Z` | active current run has `55530` coverage files, `90827` records, `4` unmet goals, `1` active current-run product-evidence signature, `0` likely-real visible, and no headroom for new groups | Use as health/control-plane evidence only; still require owner replay, PR15D/canonical audit, exact branch audit, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
+| Duplicate/noise producer/control-plane churn | strict no-product startup stalls, startup-noise cooldowns, family-capped duplicate holds, current-run negative gates, represented product-evidence duplicates | novelty-monitor remediation and the supervisor no-product startup-drain cooldown/recovery fix are implemented and restarted; strict startup records are suppressed rather than queued, and product-evidence remains visible in drain | Add only bounded runner/novelty follow-up hardening if the same leak recurs; do not treat this as product validation |
+| Current fuzz validation | `run-20260519T002227Z`, novelty status at `2026-05-19T01:06:55.516Z`, trend generated at `2026-05-19T00:56:07Z` | active current run has `55530` coverage files, `90827` records, `4` unmet goals, `0` active current-run product-evidence signatures, `1` current-drain product-evidence signature, `0` likely-real visible, and no headroom for new groups | Use as health/control-plane evidence only; still require owner replay, PR15D/canonical audit, exact branch audit, reload-marker downscope, seed `1020002` handling, and final PR-stack validation |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Filing Gates And Current Recommendation
@@ -442,8 +450,9 @@ Useful bounded work now:
 - publish/fetch/audit explicit GitHub refs for active i40 rows that still say
   `No verified branch link yet`;
 - audit PR15C against the canonical current-base PR15D endpoint before filing;
-- apply only bounded novelty-monitor hardening for current-scope/stale-triage
-  scheduling issues, with no product-validation claims.
+- monitor the completed duplicate/noise supervisor cooldown fix, and apply
+  only bounded runner/novelty follow-up hardening if current-scope startup or
+  stale-triage leakage recurs.
 
 Do not launch broad final-stack fuzz, GitHub filing, rebuilt stack-wide
 validation, duplicate broad seed `1020002` work outside focused diagnostic
