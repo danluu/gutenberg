@@ -213,6 +213,20 @@ export function applyPostChangesToCRDTDoc(
 					ymap.set( key, newYText );
 				}
 
+				if ( key === 'content' && syncedProperties.has( 'blocks' ) ) {
+					const currentBlocks = ymap.get( 'blocks' );
+
+					if (
+						currentBlocks instanceof Y.Array &&
+						hasPersistedBlockContentChanged(
+							currentBlocks.toJSON(),
+							rawValue ?? ''
+						)
+					) {
+						ymap.set( 'blocks', undefined );
+					}
+				}
+
 				break;
 			}
 

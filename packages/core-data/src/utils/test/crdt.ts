@@ -458,6 +458,39 @@ describe( 'crdt', () => {
 			expect( content?.toString() ).toBe( 'Hello, world!' );
 		} );
 
+		it( 'invalidates cached blocks when raw content changes without block data', () => {
+			registerEntityReferenceBlocks();
+			const staleContent =
+				'<!-- wp:paragraph --><p>stale marker</p><!-- /wp:paragraph -->';
+			const latestContent =
+				'<!-- wp:paragraph --><p>latest marker</p><!-- /wp:paragraph -->';
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{
+					blocks: parse( staleContent ),
+					content: staleContent,
+				} as PostChanges,
+				defaultSyncedProperties
+			);
+
+			expect( map.get( 'blocks' ) ).toBeInstanceOf( Y.Array );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{
+					content: latestContent,
+				} as PostChanges,
+				defaultSyncedProperties
+			);
+
+			const content = map.get( 'content' );
+			expect( content ).toBeInstanceOf( Y.Text );
+			expect( content?.toString() ).toBe( latestContent );
+			expect( map.has( 'blocks' ) ).toBe( true );
+			expect( map.get( 'blocks' ) ).toBeUndefined();
+		} );
+
 		it( 'syncs content with RenderedText format', () => {
 			const changes = {
 				content: {
