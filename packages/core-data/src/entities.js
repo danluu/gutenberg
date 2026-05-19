@@ -63,6 +63,69 @@ function areSerializedBlocksEqualAt( blocksA, blocksB, index ) {
 	);
 }
 
+function getSerializedBlockTreeValues( blocks ) {
+	return blocks.flatMap( ( block ) => {
+		const shallowBlock = {
+			...block,
+			innerBlocks: [],
+		};
+
+		return [
+			getSerializedBlockValue( shallowBlock ),
+			...getSerializedBlockTreeValues( block.innerBlocks ?? [] ),
+		];
+	} );
+}
+
+function haveSameSerializedBlockTreeValues( blocksA, blocksB ) {
+	const counts = new Map();
+
+	for ( const value of getSerializedBlockTreeValues( blocksA ) ) {
+		counts.set( value, ( counts.get( value ) ?? 0 ) + 1 );
+	}
+
+	for ( const value of getSerializedBlockTreeValues( blocksB ) ) {
+		const count = counts.get( value );
+
+		if ( ! count ) {
+			return false;
+		}
+
+		if ( count === 1 ) {
+			counts.delete( value );
+		} else {
+			counts.set( value, count - 1 );
+		}
+	}
+
+	return counts.size === 0;
+}
+
+function isSerializedBlockOrderOnlyChange( baseContent, localContent ) {
+	if (
+		typeof baseContent !== 'string' ||
+		typeof localContent !== 'string'
+	) {
+		return false;
+	}
+
+	const baseBlocks = parse( baseContent );
+	const localBlocks = parse( localContent );
+
+	if ( ! baseBlocks.length || ! localBlocks.length ) {
+		return false;
+	}
+
+	const didOrderChange =
+		__unstableSerializeAndClean( baseBlocks ).trim() !==
+		__unstableSerializeAndClean( localBlocks ).trim();
+
+	return (
+		didOrderChange &&
+		haveSameSerializedBlockTreeValues( baseBlocks, localBlocks )
+	);
+}
+
 function mergeStaleSerializedBlockContent(
 	baseContent,
 	latestContent,
@@ -624,6 +687,17 @@ export const prePersistPostType = async (
 						key === 'content' &&
 						crdtValue === '' &&
 						editValue !== ''
+					) {
+						continue;
+					}
+
+					if (
+						key === 'content' &&
+						crdtValue === latestValue &&
+						isSerializedBlockOrderOnlyChange(
+							latestValue,
+							editValue
+						)
 					) {
 						continue;
 					}

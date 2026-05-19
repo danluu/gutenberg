@@ -45,6 +45,18 @@ function pageContent( contents ) {
 	return contents.map( paragraphMarkup ).join( '\n\n' );
 }
 
+function listContent( contents ) {
+	return `<!-- wp:list -->
+<ul>${ contents
+		.map(
+			( content ) => `<!-- wp:list-item -->
+<li>${ content }</li>
+<!-- /wp:list-item -->`
+		)
+		.join( '\n' ) }</ul>
+<!-- /wp:list -->`;
+}
+
 describe( 'getMethodName', () => {
 	it( 'should return the right method name for an entity with the root kind', () => {
 		const methodName = getMethodName( 'root', 'postType' );
@@ -1008,6 +1020,50 @@ describe( 'prePersistPostType', () => {
 			latestRecord
 		);
 		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
+			},
+		} );
+	} );
+
+	it( 'does not replace moved content order with stale CRDT blocks when the latest saved post has not changed', async () => {
+		const baseContent = listContent( [ 'Alpha', 'Beta', 'Gamma' ] );
+		const movedContent = listContent( [ 'Beta', 'Alpha', 'Gamma' ] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: baseContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'local-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				blocks: parse( baseContent ),
+				content: baseContent,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: baseContent },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			{ content: movedContent },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
 		expect( result ).toEqual( {
 			meta: {
 				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
