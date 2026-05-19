@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-19T08:45:04Z`
+Snapshot generated: `2026-05-19T08:54:32Z`
 
 This report summarizes the Jetstream2 coverage-guided fuzzing and PR-review
 loop logs using R, ggplot2, tidyverse data manipulation packages, and
@@ -23,40 +23,39 @@ Source inputs:
   `/tmp/rtc-local-pr-branch-publisher-20260517/`
 - CPU and load-average history:
   `/var/log/sysstat/sa15` through `/var/log/sysstat/sa19`, latest sysstat
-  sample `2026-05-19T08:40:00Z`
+  sample `2026-05-19T08:50:02Z`
 
 The plotting script and summarized CSV inputs are committed under
 [`rtc-jetstream2-fuzz-trends-20260515/`](rtc-jetstream2-fuzz-trends-20260515/).
 
 ## High-level readout
 
-Coverage intake is still moving, but the active coverage-output root rolled
-over after the `2026-05-19T04:53:01Z` sample. Across `2333` monitor passes from
-`2026-05-15T01:21:42Z` through `2026-05-19T06:04:39Z`, coverage records seen
-rose from `782` to `242655`. The historical coverage-file maximum was `56184`;
-the new current-output root first appeared at `20` files and is now at `36`.
-The monitor's visible likely-real maximum remains `4`.
+Coverage intake is moving again after the coverage-guided monitor restart. The
+active coverage-output root rolled over after the `2026-05-19T04:53:01Z`
+sample, and the first repaired passes arrived at `2026-05-19T08:44:53Z`,
+`2026-05-19T08:46:56Z`, and `2026-05-19T08:50:27Z`. Across `2336` monitor
+passes from `2026-05-15T01:21:42Z` through `2026-05-19T08:50:27Z`, cumulative
+coverage record observations rose from `782` to `249421`. Coverage-file counts
+are current-scan counts, not cumulative coverage; after the restart the latest
+current scan is `1489` files. The monitor's visible likely-real maximum remains
+`4`.
 
 Coverage-goal pressure is down but not finished. The latest copied
 coverage-guidance state has `131` total goals and `4` unmet goals: real-user
 save/reload depth, real-user editing completion, and reload-post action depth.
 
-The latest plotted duplicate/noise sample is clean on the monitor's
-current-output-dir metric: monitor-pass current summary startup failures are
-`0` and `duplicateShareCurrent=0`. The immediately preceding sample briefly showed
-`duplicateShareCurrent=1`, so the clean point should be read as current status,
-not durable recovery. The latest monitor pass has `0` quality issues, `0`
-warnings, `413.5G` free memory, `no_progress=1`, and `headroom=false`. The
-latest copied current novelty state is sourced from supervisor active run dirs,
-has enabled group `novelty-ws-media-cross-entity`, and reports `1` root, `1`
-file, `0` raw signatures, `0` actionable signatures, `0` product-evidence
-signatures, `0` family-capped signatures, `1` summary product-evidence record,
-`0` current summary strict startup failures, and `0` suppressed strict startup
-records.
+The latest plotted duplicate/noise sample is no longer clean, but it is small on
+the monitor's current-output-dir metric: monitor-pass current summary startup
+failures are `0` and `duplicateShareCurrent=0.3333`. The latest monitor pass
+has `0` quality issues, `0` warnings, `416.5G` free memory, `no_progress=0`,
+and `headroom=true`. The latest copied current novelty state is sourced from
+supervisor active run dirs, has enabled group `novelty-ws-media-cross-entity`,
+and reports current-run activity from that root rather than the previous stale
+root.
 
 This report uses current-output duplicate/noise and summary startup failures for
 live health. Historical aggregate duplicate/noise is context only; its latest
-duplicate share is `0` and is not the plotted live health signal.
+duplicate share is `0.25` and is not the plotted live health signal.
 
 Persona-loop evidence is no longer just a caveat: the latest duplicate/noise
 synthesis, `20260519T081722Z`, still rejects treating strict no-product
@@ -103,10 +102,10 @@ pre-oracle/preflight-only artifacts for `pr17-1020002` and
 ![Coverage-guided fuzz intake over time](rtc-jetstream2-fuzz-trends-20260515/plots/monitor-coverage-intake.png)
 
 The bottom facet is the operational queue: unmet goals fell from `24` to `4`.
-The top facet shows coverage records seen increasing to `242655`; coverage-file
-counts are tracked separately and reset when the active output root rolls. The
-prior coverage-output root reached `56184` files before the active output root
-reset; the latest current-output sample is `36` files.
+The top facet shows cumulative coverage record observations increasing to
+`249421`; coverage-file counts are tracked separately and reset when the active
+output root rolls. The prior coverage-output root reached `56184` files before
+the active output root reset; the latest current-output sample is `1489` files.
 Dense monitor-pass points are intentionally small and partially transparent so
 repeated samples do not visually turn into a misleading line.
 
@@ -121,10 +120,11 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 ![Fuzz yield and resource health over time](rtc-jetstream2-fuzz-trends-20260515/plots/monitor-health-yield.png)
 
 The latest plotted live sample uses current-output-dir duplicate/noise metrics
-and monitor-pass summary startup failures: `duplicateShareCurrent=0`, current
-summary startup failures `0`, quality issue count `0`, warning count `0`, free
-memory `413.5G`, `no_progress=1`, and `headroom=false`. The health graph does
-not use historical aggregate duplicate/noise as the plotted live signal.
+and monitor-pass summary startup failures: `duplicateShareCurrent=0.3333`,
+current summary startup failures `0`, quality issue count `0`, warning count
+`0`, free memory `416.5G`, `no_progress=0`, and `headroom=true`. The health
+graph does not use historical aggregate duplicate/noise as the plotted live
+signal.
 
 The copied current novelty state has no health warnings, uses supervisor startup
 active run dirs, has enabled group `novelty-ws-media-cross-entity`, and reports
@@ -142,13 +142,13 @@ monitor current-output-dir sample remains the plotted live health signal.
 
 ![Load average over time](rtc-jetstream2-fuzz-trends-20260515/plots/load-average-over-time.png)
 
-Recent sysstat samples through `2026-05-19T08:40:00Z` show bursty CPU and load.
+Recent sysstat samples through `2026-05-19T08:50:02Z` show bursty CPU and load.
 The latest 25 CPU samples range from `69.57%` to `86.99%` utilization, with the
-latest sample at `69.57%`. Over those same 25 samples, one-minute load exceeded
+latest sample at `70.55%`. Over those same 25 samples, one-minute load exceeded
 the `64` logical CPU count in `19` windows, five-minute load in `20`,
 15-minute load in `24`, and at least one load window exceeded it in `24`. The
-newest 1/5/15-minute load sample is `52.54`, `56.35`, and `62.63`; all three
-windows are below the `64` logical CPU count. The newest sample has `0`
+newest 1/5/15-minute load sample is `60.64`, `59.14`, and `60.79`; all three
+windows are below the `64` logical CPU count. The newest sample has `11`
 blocked tasks.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)

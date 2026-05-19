@@ -394,9 +394,10 @@ monitor <- tibble(
 	filter( ! is.na( timestamp ) ) %>%
 	arrange( timestamp ) %>%
 	mutate(
-		records_seen = coalesce(
-			records_seen_logged,
-			cumsum( coalesce( processed, 0 ) )
+		records_seen_fallback = cumsum( coalesce( processed, 0 ) ),
+		records_seen = pmax(
+			records_seen_fallback,
+			coalesce( records_seen_logged, 0 )
 		),
 		pass_index = row_number(),
 		minutes_since_first = as.numeric( difftime( timestamp, min( timestamp ), units = "mins" ) )
@@ -1253,7 +1254,7 @@ coverage_long <- monitor %>%
 	mutate(
 		metric = recode(
 			metric,
-			records_seen = "coverage records seen",
+			records_seen = "coverage record observations",
 			unmet_coverage = "unmet coverage goals"
 		)
 	)
