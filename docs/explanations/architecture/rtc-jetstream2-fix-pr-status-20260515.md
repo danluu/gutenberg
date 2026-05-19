@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T17:23:41Z`
+Snapshot time: `2026-05-19T18:06:51Z`
 
 Trigger event:
-`duplicate-noise-2026-05-19T17-22-55Z-270`
+`duplicate-noise-2026-05-19T18-05-59Z-272`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T17-22-55Z-270/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T18-05-59Z-272/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -110,39 +110,37 @@ the deferred reload fix, but did not reproduce strict head through the final
 persistence oracle. The new candidate is therefore blocked evidence, not a PR.
 
 The latest duplicate/noise synthesis,
-`duplicate-noise-20260519T165236Z-synthesis.md`, keeps the remaining issue in
-the fuzz control plane, not in RTC product code. The consensus root cause is
-control-plane work leakage: strict no-product startup and known-noise families
-are mostly recognized, but scheduler/root transitions, producer recovery,
-replacement-group selection, stale consumers, and broad product-evidence
-admission can still recreate or consume work after a family should be gate-only.
+`duplicate-noise-20260519T173654Z-synthesis.md`, still keeps the remaining issue
+in the fuzz control plane, not in RTC product code. The consensus root cause is
+startup-noise control-plane leakage around current-output no-product
+`pre_action_bootstrap_stall` holds, historical/reusable startup cooldowns,
+producer recovery, and consumer admission of stale no-analysis drains.
 
-The paired `duplicate-noise-20260519T165236Z-feedback-action.md` is now the
-latest completed control-plane action. It updated only
-`rtc-browser-fuzz-novelty-monitor.mjs`: summary-only strict startup evidence
-now contributes to current-run startup holds, local no-analysis sentinels use
-each run dir's own product-evidence count, no-product known-noise/duplicate
-holds block refill, group enablement, bootstrap materialization, recommended
-groups, and coverage-guidance Codex, and gate-only triage refresh excludes
-no-product no-analysis drains while preserving product-evidence drains.
+The paired `duplicate-noise-20260519T173654Z-feedback-action.md` is now the
+latest completed control-plane action. It updated live-analysis admission and
+novelty scheduling: active supervisor dirs with fresh `no-analysis.json` are
+demoted to drain scope unless live product-evidence admission selects them;
+live/analysis/deep/triage consumers refuse startup-noise
+`pre_action_bootstrap_stall` as the live-admitted product-evidence family
+unless already likely-real or non-duplicate; no-product fleet startup-noise
+holds block producer selection globally; and startup cooldown bypasses apply
+only when matched to the source pause and product evidence exists.
 
-Validation for that action passed `node --check` on novelty, supervisor,
-triage-watcher, first-level analysis, deep-analysis, and live-analysis monitor
-scripts. It restarted `rtc-coverage-guided-novelty`; the watchdog then
-re-scoped the active run to `run-20260519T171854Z`. Supervisor code was not
-changed or manually restarted for this action.
+Validation for that action passed `node --check` on live-analysis, novelty,
+first-level analysis, deep-analysis, and triage-watcher scripts. It restarted
+`rtc-coverage-guided-novelty` and `rtc-coverage-guided-analysis`, while leaving
+the active supervisor lane running because supervisor code was unchanged.
 
 The latest collected novelty status is for
-`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T171854Z`.
+`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T175823Z`.
 It has one active current-run dir, two enabled groups
-(`novelty-ws-block-gauntlet` and `novelty-ws-parser-transform`), and three
-paused groups. Current-run triage has `2` actionable product-evidence
-signatures, `3` raw signatures, `1` known-infra/no-product raw signature,
+(`novelty-ws-block-gauntlet` and `novelty-ws-long-session-large-doc`), and four
+paused groups. Current-run triage now has `0` signatures, `0` raw signatures,
 `0` no-product actionable signatures, and `0` visible likely-real failures.
-The product-evidence families now visible are `persisted_content_mismatch` and
-`reload_rejoin_awareness_stall`; the no-product raw family is
-`rest_meta_database_error`. Treat this as constrained current-root control-plane
-health evidence, not final-stack validation or product-fix evidence.
+Treat this as constrained current-root control-plane health evidence, not
+final-stack validation or product-fix evidence. The remaining risk noted by the
+action is that the active-dir demotion path was syntax/restart/scan validated,
+but not yet observed with a fresh live no-analysis drain after the patch.
 
 Seed `1020002` still blocks final-stack fuzzing, rebuilt stack-wide validation,
 GitHub filing, and its own repair/reclassification. It must not serialize
@@ -151,7 +149,7 @@ repair.
 
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T17:23:36Z`.
+Remote status was collected at `2026-05-19T18:06:46Z`.
 
 The fix-planning repo is checked out at:
 
@@ -181,7 +179,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T17:23:41Z` from fetched
+The branch-link audit was generated at `2026-05-19T18:06:51Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -289,7 +287,7 @@ These rows must not be described as fixed or filing-ready.
 | PR05E and rich-text/parser reductions | PR05E text, rich-text suffix around `868cd...`, parser/linebreak candidates, `PR18x` | rich-text suffix remains diagnostic and still needs fresh row-bearing hardening or replay output; latest guidance still says do not name `PR18x` until PR05B/PR05C/clean PR05D and other plausible owners are compared | Harden the diagnostic manifest first, then compare against lower controls and clean split heads before promotion |
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Raw deferred manifests | raw `003407`, raw `020456`, raw `024016`, fallback/PR15-tail bases, raw `PR07D` | invalid PR progress; wrong/stale base or missing same-cycle allowlisted base/head/bundle/manifest agreement | Keep as no-progress unless a new audit proves clean allowlisted base, head/bundle/manifest agreement, and ownership/non-coverage |
-| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, endpoint-mismatch port bleed, `fuzz_helper_rest_endpoint_construction`, supervisor seed-drain recovery, novelty bootstrap/admission, stale historical/cross-root duplicate holds, product-preserving no-analysis drain promotion, product-evidence semantic-family sibling launches | `165236Z` is now the latest completed feedback action: novelty monitor startup/no-product holds now include summary-only strict startup evidence, use per-run product-evidence counts, block refill/group enablement/bootstrap/recommended groups/coverage-guidance Codex, and keep gate-only triage refresh from consuming no-product no-analysis drains; syntax checks passed for novelty, supervisor, triage-watcher, analysis, deep-analysis, and live-analysis scripts; novelty monitor was restarted and re-scoped to `run-20260519T171854Z`; latest collected status has one active current-run dir, `enabledGroups=novelty-ws-block-gauntlet,novelty-ws-parser-transform`, three paused groups, active current-run signatures `2`, active raw signatures `3`, active current-run likely-real `0`, product-evidence signatures `2`, no-product actionable `0`, known-infra raw `1`, and no startup/bootstrap analysis job pressure reported by the action | Keep product-evidence signatures visible, preserve one representative per semantic family, block no-product startup/known-noise producers at the scheduler boundary, and treat the active-root status as constrained control-plane health evidence rather than final-stack validation |
+| Duplicate/noise producer/consumer control-plane | no-product `pre_action_bootstrap_stall`, endpoint-mismatch port bleed, `fuzz_helper_rest_endpoint_construction`, supervisor seed-drain recovery, novelty bootstrap/admission, stale historical/cross-root duplicate holds, product-preserving no-analysis drain promotion, product-evidence semantic-family sibling launches | `173654Z` is now the latest completed feedback action: live-analysis demotes fresh no-analysis dirs to drain scope unless selected by product-evidence admission; live/analysis/deep/triage consumers refuse startup-noise `pre_action_bootstrap_stall` as the live-admitted product-evidence family unless already likely-real or non-duplicate; novelty scheduling makes no-product fleet startup-noise holds block producer selection globally and limits cooldown bypasses to matched source pauses with product evidence; syntax checks passed for live-analysis, novelty, analysis, deep-analysis, and triage-watcher; novelty and analysis were restarted; latest collected status has one active current-run dir, `enabledGroups=novelty-ws-block-gauntlet,novelty-ws-long-session-large-doc`, four paused groups, active current-run signatures `0`, active raw signatures `0`, active current-run likely-real `0`, product-evidence signatures `0`, no-product actionable `0`, and known-infra raw `0` | Keep product-evidence representatives visible when they appear, preserve one representative per semantic family, block no-product startup/known-noise producers at the scheduler and consumer boundaries, and treat the active-root status as constrained control-plane health evidence rather than final-stack validation |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -297,35 +295,36 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T17:23:36Z
-coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T171854Z
+collected_at_utc: 2026-05-19T18:06:46Z
+coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T175823Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty monitor status was written at
-`2026-05-19T17:23:05.194Z` for `run-20260519T171854Z`. Its heartbeat is fresh;
+`2026-05-19T18:06:05.303Z` for `run-20260519T175823Z`. Its heartbeat is fresh;
 metrics are from the most recent completed full pass at
-`2026-05-19T17:22:24.881Z`. It has one active current-run dir at that pass, two
-enabled producers, and three paused groups:
+`2026-05-19T18:05:48.540Z`. It has one active current-run dir at that pass, two
+enabled producers, and four paused groups:
 
 ```text
-coverage files: 4006
-total records seen: 106855
+coverage files: 3918
+total records seen: 107477
 current-run active dirs: 1
 enabled groups:
   novelty-ws-block-gauntlet
-  novelty-ws-parser-transform
+  novelty-ws-long-session-large-doc
 paused groups:
   novelty-http-persistence-probe
+  novelty-ws-parser-serialization
   novelty-ws-lifecycle
   novelty-ws-real-user-title-body-save-reload
 current-run records:
-  block-gauntlet: 3
+  long-session-large-doc: 4
 current-run successful records:
-  block-gauntlet: 1
+  long-session-large-doc: 4
 current-run transport:
-  ws: 3
+  ws: 4
 unmet goals: 15
 recommended groups:
   novelty-ws-real-user-coverage-bridge
@@ -341,30 +340,25 @@ recommended groups:
   novelty-ws-long-session-large-doc
 headroom for adding groups: yes
 active current-run likely-real visible: 0
-active current-run raw signatures: 3
-active current-run actionable signatures: 2
-active current-run product-evidence signatures: 2
-active current-run raw product-evidence signatures: 2
-active current-run no-product raw signatures: 1
+active current-run raw signatures: 0
+active current-run actionable signatures: 0
+active current-run product-evidence signatures: 0
+active current-run raw product-evidence signatures: 0
+active current-run no-product raw signatures: 0
 active current-run no-product actionable signatures: 0
-active current-run known-infra signatures: 1
+active current-run known-infra signatures: 0
 active current-run family-capped signatures: 0
 active current-run analysis-gated non-actionable signatures: 0
-active current-run semantic families:
-  persisted_content_mismatch: 1
-  reload_rejoin_awareness_stall: 1
-raw semantic families:
-  persisted_content_mismatch: 1
-  reload_rejoin_awareness_stall: 1
-  rest_meta_database_error: 1
-historical likely-real visible: 50
-historical likely-real merged duplicates: 96
+active current-run semantic families: []
+raw semantic families: []
+historical likely-real visible: 46
+historical likely-real merged duplicates: 92
 historical oracle/noise questions: 3
-historical top duplicate family share: 0.1429
-historical raw top duplicate family share: 0.2847
-combined actionable signatures: 9
+historical top duplicate family share: 0.25
+historical raw top duplicate family share: 0.2986
+combined actionable signatures: 8
 combined raw signatures: 700
-combined likely-real visible: 50
+combined likely-real visible: 46
 ```
 
 Interpretation:
@@ -372,15 +366,16 @@ Interpretation:
 - Do not claim final-stack cleanliness. The newest novelty output is current
   monitor health for a constrained coverage-guided run, not validation of the
   accepted final PR stack.
-- The completed `165236Z` control-plane action moves the main guard to novelty
-  scheduling: no-product startup/known-noise holds block refill, group
-  enablement, bootstrap materialization, recommended groups, and
-  coverage-guidance Codex. The latest full novelty pass still allows current
-  product-evidence representatives to remain visible.
-- The current materialization is active again, but narrowly: `block-gauntlet`
-  has three current-run records and one success, and `parser-transform` is
-  enabled for CDP coverage gaps. Recent startup/noise cooldowns still prevent
-  broad real-user and common-block re-enablement without fresh product evidence.
+- The completed `173654Z` control-plane action extends the guard to both
+  scheduling and consumers: no-product startup holds block producer selection,
+  and fresh no-analysis dirs are drained unless selected by product-evidence
+  admission. The latest full novelty pass has no current product-evidence
+  signatures, but the policy still allows representatives when they appear.
+- The current materialization is active again, but narrowly:
+  `long-session-large-doc` produced four current-run records and four successes,
+  `block-gauntlet` remains enabled for CDP/block coverage, and startup/noise
+  cooldowns still prevent broad real-user, common-block, parser-serialization,
+  and persistence-probe re-enablement without fresh product evidence.
 - Historical/combined reporting still carries prior product-evidence signatures,
   startup-noise history, and historical likely-real counts. Keep those as
   context rather than live current failures unless the new root reproduces them
@@ -389,35 +384,35 @@ Interpretation:
   replay, strict owner replay, reload-hydration downscope, seed `1020002`, or
   final-stack validation.
 
-The latest trend evidence packet was generated at `2026-05-19T17:12:42Z`:
+The latest trend evidence packet was generated at `2026-05-19T17:54:49Z`:
 
 ```text
-monitor passes: 2550
+monitor passes: 2568
 first pass: 2026-05-15T01:21:42Z
-last pass: 2026-05-19T17:08:50Z
-coverage files: 272 -> 3888
-coverage files delta: 3616
+last pass: 2026-05-19T17:51:25Z
+coverage files: 272 -> 3782
+coverage files delta: 3510
 unmet goals: 15
 likely_real_max: 4
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.125
+duplicate_share_historical_last: 0.1429
 summary startup failures last: 0
 quality issues last: 0
-memory free: 413.4 GB
-load averages: 50.47 / 55.44 / 58.13 on 64 cores
+memory free: 411.4 GB
+load averages: 63.57 / 61.09 / 60.93 on 64 cores
 latest fuzz level mix:
-  browser-e2e=27 lanes/18 groups
+  browser-e2e=28 lanes/19 groups
   unit-property=1 lane/1 group
   coverage-guided-lower-level=1 lane/1 group
-total fuzz-level test executions: 6264395
-browser-e2e likely-real findings: 859 over 2870.7 runner-hours
+total fuzz-level test executions: 6269132
+browser-e2e likely-real findings: 859 over 2882.4 runner-hours
 ```
 
 Largest unmet goals in the trend packet now include CDP coverage and real-user
 action depth:
 
 ```text
-cdp-coverage-records: 7683/20000
+cdp-coverage-records: 7731/20000
 ui-heading-shortcut: 1650/5000
 ui-undo-redo-paragraph: 2201/5000
 ui-format-paragraph: 2573/5000
@@ -427,7 +422,7 @@ real-user-editing success: 970/2000
 The newer novelty status shows those goals continuing to advance:
 
 ```text
-cdp-coverage-records: 7696/20000
+cdp-coverage-records: 7742/20000
 ui-heading-shortcut: 1650/5000
 ui-undo-redo-paragraph: 2201/5000
 ui-format-paragraph: 2573/5000
@@ -442,11 +437,11 @@ lower-level lanes are under-triaged and should not be declared useless from
 zero likely-real output. Load is high enough that new fuzz work should stay
 bounded and oracle-specific rather than increasing broad browser concurrency.
 The graph-derived trend packet reports current duplicate share `0`,
-historical duplicate share `0.125`, no latest summary startup failures, and
+historical duplicate share `0.1429`, no latest summary startup failures, and
 no latest quality issues. The raw novelty status is newer and more specific for
-the active root; it reports two active current-root product-evidence
-signatures, one known-infra no-product raw signature, and no visible likely-real
-failures. Treat both as constrained health evidence, not publication readiness.
+the active root; it reports no active current-root signatures and no visible
+likely-real failures. Treat both as constrained health evidence, not publication
+readiness.
 
 ## Status-Persona Analysis
 
@@ -495,46 +490,46 @@ and earlier wording where they differ:
   zero-byte reports, setup smoke, and stale PR07C/HOLD state are not progress.
 
 The latest duplicate/noise synthesis,
-`duplicate-noise-20260519T165236Z-synthesis.md`, classifies the remaining issue
+`duplicate-noise-20260519T173654Z-synthesis.md`, classifies the remaining issue
 as control-plane work leakage, not an RTC product failure. Its paired
-`duplicate-noise-20260519T165236Z-feedback-action.md` is now the latest applied
+`duplicate-noise-20260519T173654Z-feedback-action.md` is now the latest applied
 control-plane fix:
 
-- Summary-only strict startup evidence contributes to current-run startup
-  holds.
-- Local no-analysis sentinels use each run dir's own product-evidence count,
-  avoiding aggregate product-evidence leakage into no-product drains.
-- No-product known-noise/duplicate holds block refill, group enablement,
-  bootstrap materialization, recommended groups, and coverage-guidance Codex.
-- Gate-only triage refresh excludes no-product no-analysis drains while
-  preserving product-evidence drains.
-- `node --check` passed for `rtc-browser-fuzz-novelty-monitor.mjs`,
-  `rtc-browser-fuzz-supervisor.mjs`, `rtc-browser-fuzz-triage-watcher.mjs`,
+- Active supervisor dirs with fresh `no-analysis.json` are demoted to drain
+  scope unless selected by live product-evidence admission.
+- Live/analysis/deep/triage consumers refuse startup-noise
+  `pre_action_bootstrap_stall` as the live-admitted product-evidence family
+  unless already likely-real or non-duplicate.
+- No-product fleet startup-noise holds block producer selection globally, and
+  startup cooldown bypasses only apply when matched to the source pause and
+  product evidence exists.
+- `node --check` passed for `rtc-browser-fuzz-live-analysis-monitor.mjs`,
+  `rtc-browser-fuzz-novelty-monitor.mjs`,
   `rtc-browser-fuzz-analysis-tier.mjs`,
   `rtc-browser-fuzz-deep-analysis-tier.mjs`, and
-  `rtc-browser-fuzz-live-analysis-monitor.mjs`.
-- `rtc-coverage-guided-novelty` was restarted after the patch; the watchdog
-  re-scoped the active run to `run-20260519T171854Z`. Supervisor code was not
-  changed for this action, so it was not manually restarted.
+  `rtc-browser-fuzz-triage-watcher.mjs`.
+- `rtc-coverage-guided-novelty` and `rtc-coverage-guided-analysis` were
+  restarted after the patch. Supervisor code was not changed and the active
+  supervisor lane was left running.
 - Current measurable status from the collector is
-  `enabledGroups=novelty-ws-block-gauntlet,novelty-ws-parser-transform`,
-  active current-run signatures `2`, raw signatures `3`, product-evidence
-  signatures `2`, no-product actionable signatures `0`, known-infra raw
-  signatures `1`, active current-run likely-real `0`, and active product
-  evidence for `persisted_content_mismatch` and `reload_rejoin_awareness_stall`.
-- Remaining risk is conservative: strict no-product startup/known-noise should
-  stay producer-gated, but product-evidence representatives must remain visible
-  and should not be suppressed just because neighboring no-product drains are
-  held.
+  `enabledGroups=novelty-ws-block-gauntlet,novelty-ws-long-session-large-doc`,
+  active current-run signatures `0`, raw signatures `0`, product-evidence
+  signatures `0`, no-product actionable signatures `0`, known-infra raw
+  signatures `0`, and active current-run likely-real `0`.
+- Remaining risk is conservative: the demotion path did not see a fresh live
+  no-analysis drain after the patch, so the next pause/drain event should
+  confirm strict startup sentinels stay out of triage, analysis-tier,
+  deep-analysis-tier, and live-analysis launch state.
 
 The earlier `083141Z`, `090846Z`, `100615Z`, `104720Z`, `113555Z`,
-`122914Z`, `131020Z`, `135628Z`, `143930Z`, `152550Z`, and `160532Z` actions
-remain valid background for mixed strict-startup thresholds, supervisor
+`122914Z`, `131020Z`, `135628Z`, `143930Z`, `152550Z`, `160532Z`, and
+`165236Z` actions remain valid background for mixed strict-startup thresholds,
+supervisor
 guardrails, consumer-side duplicate family capping, representative accounting,
 first recovery from empty materialization, product-evidence duplicate holds,
 fleet startup holds, product-evidence fallback parsing, no-product minimums,
 producer/admission recovery, product-preserving no-analysis drain admission,
-current-output semantic-family caps, and live-analysis admission. The `165236Z`
+current-output semantic-family caps, and live-analysis admission. The `173654Z`
 action supersedes the active duplicate/noise control-plane status. Do not
 broaden the fix into
 blanket product-evidence, WebSocket, startup, awareness, or
@@ -609,11 +604,11 @@ Useful bounded work now:
   any product promotion;
 - continue seed `1020002` repair or proof-based reclassification without
   converting it into a wait-only progress loop;
-- treat the `165236Z` duplicate/noise producer hold and gate-only triage refresh
-  as applied; the new root's full novelty pass shows two product-evidence
-  signatures, no no-product actionable signatures, and no visible likely-real
-  failures, so do not launch another duplicate/noise policy patch unless a
-  fresh current-run leak appears after producer materialization;
+- treat the `173654Z` duplicate/noise producer/consumer hold and drain-scope
+  refresh as applied; the new root's full novelty pass shows zero current-run
+  signatures and no visible likely-real failures, so do not launch another
+  duplicate/noise policy patch unless a fresh current-run leak or fresh live
+  no-analysis drain contradicts the new gates after producer materialization;
 - repair the loop-gate accounting if another cycle accepts wait-only,
   wrong-family, stale-manifest, zero-byte, or active-session feedback while
   actionable gate rows remain.
