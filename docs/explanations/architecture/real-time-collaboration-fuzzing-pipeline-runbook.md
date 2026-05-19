@@ -398,6 +398,51 @@ tmux list-sessions | rg 'rtc-known-fixes-health-extra' |
 Do not remove `current-health-run.txt`, `active-health-runs.json`, or
 `.triage-watcher` while resuming. They are the restart and handoff state.
 
+To intentionally stop the known-fixes fuzz campaign without deleting artifacts,
+stop the watchdog, active lanes, current-run triage, and known-fixes maintenance
+wrappers. This leaves run directories and Docker volumes intact so the run can
+be inspected or restarted later:
+
+```bash
+for session in \
+	rtc-known-fixes-health-watchdog-20260515 \
+	rtc-known-fixes-health-current-20260515 \
+	rtc-known-fixes-health-extra-20260515-1 \
+	rtc-known-fixes-health-extra-20260515-2 \
+	rtc-known-fixes-health-extra-20260515-3 \
+	rtc-known-fixes-health-extra-20260515-4 \
+	rtc-known-fixes-health-triage-20260516 \
+	rtc-known-fixes-current-triage-follow-20260516; do
+	tmux kill-session -t "$session" 2>/dev/null || true
+done
+
+tmux list-sessions 2>/dev/null |
+	awk -F: '/^rtc-known-fixes-current-triage-health-/ { print $1 }' |
+	while read -r session; do tmux kill-session -t "$session" 2>/dev/null || true; done
+
+tmux list-sessions 2>/dev/null |
+	awk -F: '/^rtc-known-fixes-/ { print $1 }' |
+	while read -r session; do tmux kill-session -t "$session" 2>/dev/null || true; done
+```
+
+After stopping the tmux sessions, it is safe to stop this campaign's isolated
+`wp-env` containers if the goal is to return CPU and memory to the machine.
+Do not remove volumes unless explicitly doing disk cleanup:
+
+```bash
+docker ps --format '{{.Names}}' |
+	rg '^wp-env-known-fixes-20260513-201544-' |
+	while read -r container; do docker stop "$container"; done
+```
+
+Record the manual stop in
+`$RTC_KNOWN_FIXES_RUN_ROOT/health-watchdog/health-watchdog-status.json` with
+`status: "stopped"` and `reason: "manual-stop-requested"` so later status checks
+do not report the last watchdog sample as still running. On resume, the matrix
+will restart any stopped isolated `wp-env` containers, verify the Gutenberg build
+and collaboration preflight, and continue in a new health run directory under
+the same run root.
+
 ## Group Config
 
 The supervisor reads `RTC_FUZZ_SUPERVISOR_GROUPS_PATH` or
