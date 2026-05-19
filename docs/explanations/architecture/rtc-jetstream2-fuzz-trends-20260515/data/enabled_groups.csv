@@ -979,3 +979,4 @@ timestamp,group,group_family
 2026-05-19T17:55:37Z,novelty-ws-long-session-large-doc,lifecycle
 2026-05-19T18:05:48Z,novelty-ws-block-gauntlet,auth/locks
 2026-05-19T18:18:31Z,novelty-ws-parser-transform,parser
+2026-05-19T18:48:05Z,novelty-ws-real-user-coverage-bridge,real-user
