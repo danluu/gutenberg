@@ -1,9 +1,9 @@
 # RTC Jetstream2 Fix And PR Status Report
 
-Snapshot time: `2026-05-19T05:18:43Z`
+Snapshot time: `2026-05-19T05:23:25Z`
 
 Trigger event:
-`duplicate-noise-2026-05-19T05-10-29Z-238`
+`pr-split-2026-05-19T05-22-36Z-20260519T051407Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -15,7 +15,7 @@ Remote fuzz workspace:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
 Inputs for this update were collected under:
-`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/duplicate-noise-2026-05-19T05-10-29Z-238/inputs/remote`
+`/private/tmp/rtc-jetstream2-fix-pr-status-autoupdate/runs/pr-split-2026-05-19T05-22-36Z-20260519T051407Z/inputs/remote`
 
 ## PR Split Refinement Policy
 
@@ -28,14 +28,15 @@ or the original split merely for continuity.
 ## Executive Status
 
 GitHub filing, rebuilt full-stack validation, and broad final-stack fuzzing
-remain blocked. The current split-persona synthesis,
-`pr-split-20260519T045950Z-synthesis.md`, keeps the Cycle428 replacement split
-as the working recommendation. It records that the newer local publication
-state has `35` non-base `044015Z` rows pushed after `2026-05-19T04:55Z`; the
-Cycle428 audit still had `36` ready rows including `BASE`, `0` blocked rows,
-and `0` already-published rows. Treat that as local publication and audit
-evidence only; it is not GitHub filing, CI, upstream rebase, final-stack
-validation, or a reason to ignore missing verified branch-link audit rows.
+remain blocked by seed `1020002`. The current split-persona synthesis,
+`pr-split-20260519T051407Z-synthesis.md`, says all six review reports are
+non-zero and converge on the Cycle428/Cycle430 replacement split. It records
+that the ready local branch set has `35` fresh non-base `044015Z` rows in
+`latest-local-publish-manifest.tsv`, backed by the Cycle428 audit with `36`
+ready rows including `BASE`, `0` blocked rows, and `0` already-published rows.
+Treat that as local publication and audit evidence only; it is not GitHub
+filing, CI, upstream rebase, final-stack validation, or a reason to ignore
+missing verified branch-link audit rows.
 
 The same synthesis keeps the lower-boundary classification from
 `2026-05-19T04:35:30Z`: `ENTITY-SERIALIZATION-1000009` and
@@ -91,9 +92,14 @@ block the completed post-boundary manifest audit and must not block strict
 owner comparisons, reload-hydration clean-head replay, branch-link audits,
 deferred downscope, or control-plane repair.
 
+Two bounded follow-ups changed status after the previous report. The active
+`rtc-cycle430-reload-hydration-041059-owner-replay` has logs only and no durable
+row-bearing evidence yet. The loop-progress repair produced a spec/prompt
+repair, but the live controller still needs the hard progress invariant patch.
+
 ## Branch And Ref Status
 
-Remote status was collected at `2026-05-19T05:18:37Z`.
+Remote status was collected at `2026-05-19T05:23:20Z`.
 
 The fix-planning repo is checked out at:
 
@@ -123,7 +129,7 @@ That checkout is dirty with modified product/test files and many untracked
 fuzz, analysis, and documentation artifacts. It is active validation
 infrastructure, not the final PR stack and not a filing source.
 
-The branch-link audit was generated at `2026-05-19T05:18:43Z` from fetched
+The branch-link audit was generated at `2026-05-19T05:23:25Z` from fetched
 `danluu` refs. A row marked `verified-content` means the branch exists on
 `danluu` and has a non-empty audited diff against the listed base. It does not
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
@@ -226,7 +232,7 @@ These rows must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| Missing verified active refs | PR02A, PR05A-D, PR06A-D, PR06E, PR11A-E, PR12A-C, PR14B, exact refreshed stack refs, `HARNESS-WS-CONFIG-022004` | active rows with no branch-link audit entry correctly say `No verified branch link yet`; Cycle428 `044015Z` local manifest audit has `36` ready rows including `BASE`, and the latest synthesis records `35` non-base rows pushed after `2026-05-19T04:55Z`, but neither fact is a verified GitHub branch-link audit for these micro rows | Publish/fetch/audit explicit GitHub refs for every active row that still lacks a verified branch link |
+| Missing verified active refs | PR02A, PR05A-D, PR06A-D, PR06E, PR11A-E, PR12A-C, PR14B, exact refreshed stack refs, `HARNESS-WS-CONFIG-022004` | active rows with no branch-link audit entry correctly say `No verified branch link yet`; Cycle428 `044015Z` local manifest audit has `36` ready rows including `BASE`, and the latest synthesis records `35` fresh non-base `044015Z` rows in `latest-local-publish-manifest.tsv`, but neither fact is a verified GitHub branch-link audit for these micro rows | Publish/fetch/audit explicit GitHub refs for every active row that still lacks a verified branch link |
 | ENTITY-SERIALIZATION-1000009 | seed `1000009`, lower-boundary rows | latest persona consensus says completed lower-boundary evidence classifies this as `base-or-harness-pre-stack`, not a PR02/PR05/PR07/PR18x product owner | Keep out of product PR split unless a newer row-bearing report contradicts the classification |
 | PERSISTENCE-PARITY-6000007 / reload hydration | seed `6000007`, clean reload-hydration heads `5edcd4acdf6` / `079387bd18b2`, PR07 controls | latest persona consensus classifies the main signal as `base-or-harness-pre-stack`; raw reload branches remain non-fileable | Replay the clean reload-hydration head for seeds `6000007` and `966001` as evidence only; do not publish raw old-base branches |
 | Seed `1020002` WebSocket marker divergence | final-stack repair/reclassification lane | blocks final-stack fuzzing, filing, rebuilt validation, and its own repair/reclassification only | Repair or explicitly reclassify before final-stack validation and filing |
@@ -236,7 +242,7 @@ These rows must not be described as fixed or filing-ready.
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
 | Raw deferred manifests | raw `003407`, raw `020456`, raw `024016`, fallback/PR15-tail bases, raw `PR07D` | invalid PR progress; wrong/stale base or missing same-cycle allowlisted base/head/bundle/manifest agreement | Keep as no-progress unless a new audit proves clean allowlisted base, head/bundle/manifest agreement, and ownership/non-coverage |
 | PR05E and rich-text/search reductions | PR05E text, search/live-collapse, rich-text suffix, parser/linebreak candidates | dropped or held; latest lower-boundary classification does not justify PR05E | Compare against lower controls and clean split heads before promotion |
-| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, supervisor seed-drain recovery, novelty bootstrap/admission | supervisor-side recovery leak patched in `duplicate-noise-20260519T045255Z-feedback-action.md`: no-product strict startup drains now hold through cooldown instead of immediately relaunching; gate-only checks show `pre_action_bootstrap_stall` queued/running in triage, analysis, and deep-analysis is `0` while product-evidence signatures remain visible | Watch the restarted supervisor under the active `050204Z` root; if historical startup-noise groups rematerialize across output roots, harden novelty bootstrap/materialization admission without hiding product-evidence failures |
+| Duplicate/noise producer control-plane | no-product `pre_action_bootstrap_stall`, supervisor seed-drain recovery, novelty bootstrap/admission | supervisor-side recovery leak patched in `duplicate-noise-20260519T045255Z-feedback-action.md`; latest `duplicate-noise-20260519T051029Z-synthesis.md` says the remaining consensus leak is producer/control-plane policy ordering in `rtc-browser-fuzz-novelty-monitor.mjs`, where current-run policy waits behind historical coverage/triage work | Implement a current-first novelty policy pass that preserves product-evidence representatives, writes no-analysis sentinels for no-product strict startup/known-noise, and pauses/rotates matching producers before historical reporting |
 | Evidence-only residual families | reload-hydration, pre-save collapse, rich-text suffix, malformed-save residuals, HTTP room isolation | not accepted product PR rows | Promote only with focused product-owned evidence, exact clean refs, branch audit, and owner comparison against lower-layer controls |
 
 ## Validation And Fuzz Status
@@ -244,22 +250,22 @@ These rows must not be described as fixed or filing-ready.
 Latest collected status input:
 
 ```text
-collected_at_utc: 2026-05-19T05:18:37Z
+collected_at_utc: 2026-05-19T05:23:20Z
 coverage_root: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260519T050204Z
 fuzz repo branch: try/rtc-fix-stack-validation
 fuzz repo head: 72854f05ed2 Hydrate saved CRDT responses without invalidation
 ```
 
 The latest raw novelty monitor status was written at
-`2026-05-19T05:18:14.753Z` for
+`2026-05-19T05:23:15.504Z` for
 `run-20260519T050204Z`. It is startup-only:
 
 ```text
 status: monitor started; full coverage pass pending
 observed roots: 631
-previous records loaded: 91995
+previous records loaded: 92357
 supervisor groups file: 1
-active run dirs: 1
+active run dirs: 0
 health: startup status only; full novelty pass has not completed yet
 ```
 
@@ -316,9 +322,9 @@ bounded and oracle-specific rather than increasing broad browser concurrency.
 
 ## Status-Persona Analysis
 
-The current split-persona synthesis, `pr-split-20260519T045950Z-synthesis.md`,
-supersedes the older `045031Z`, `043141Z`, `042241Z`, `040320Z`, `035309Z`,
-`033443Z`, `032351Z`, and `030649Z` wording where they differ:
+The current split-persona synthesis, `pr-split-20260519T051407Z-synthesis.md`,
+supersedes the older `045950Z`, `045031Z`, `043141Z`, `042241Z`, `040320Z`,
+`035309Z`, `033443Z`, `032351Z`, and `030649Z` wording where they differ:
 
 - The completed lower-boundary artifact now classifies `ENTITY-SERIALIZATION-1000009`
   and `PERSISTENCE-PARITY-6000007` as `base-or-harness-pre-stack`.
@@ -327,9 +333,9 @@ supersedes the older `045031Z`, `043141Z`, `042241Z`, `040320Z`, `035309Z`,
   PR06A-D`, plus PR02A and PR06E sidecars.
 - The `044015Z` Cycle428 post-boundary push-manifest audit is complete and
   authoritative for local publication planning: `36` ready rows including
-  `BASE`, `0` blocked rows, and `0` already-published rows. The newest
-  synthesis additionally records `35` non-base `044015Z` rows pushed after
-  `2026-05-19T04:55Z`. Use
+  `BASE`, `0` blocked rows, and `0` already-published rows. The current
+  synthesis additionally records `35` fresh non-base `044015Z` rows in
+  `latest-local-publish-manifest.tsv`. Use
   `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260519T043141Z/jobs/outputs/rtc-cycle428-post-boundary-push-manifest-audit/push-manifest.tsv`
   as the manifest provenance, not stale/header-only manifests or raw deferred
   manifests.
@@ -345,22 +351,31 @@ supersedes the older `045031Z`, `043141Z`, `042241Z`, `040320Z`, `035309Z`,
 - Final filing and final-stack fuzzing are still blocked by seed `1020002`,
   missing verified GitHub branch links for some active micro rows, and rebuilt
   final-stack validation.
-- Useful next work is the bounded `041059Z` reload-hydration owner replay for
-  seeds `6000007` and `966001`, optional owner comparison for strict
-  `c5c009f618b2` / seed `6000034`, loop-rule hardening so wait-only, stale,
-  and zero-byte cycles do not count as progress, and finalization/report prompt
-  fixes so excluded runtime/validation rows are not emitted in push commands.
-  Do not serialize these behind seed `1020002`.
+- The active `rtc-cycle430-reload-hydration-041059-owner-replay` has logs only;
+  it is not evidence until it writes durable `report.md`, `branch-inputs.tsv`,
+  `replay-runs.tsv`, `owner-matrix.tsv`, `first-divergence.tsv`,
+  `classification.tsv`, and `manifest-audit.tsv` rows.
+- The loop-progress repair job produced a spec and prompt patch plan, but the
+  live controller still needs the hard invariant: when Parallel Progress Gate
+  rows exist, wait-only cycles, zero-byte reports, stale/wrong-base manifests,
+  and excluded raw/runtime rows must not count as progress.
+- Useful next work is the controller progress-gate patch, optional owner
+  comparison for strict `c5c009f618b2` / seed `6000034`, completion of the
+  active reload-hydration replay, and finalization/report prompt fixes so
+  excluded runtime/validation rows are not emitted in push commands. Do not
+  serialize these behind seed `1020002`.
 
 The latest duplicate/noise persona files,
-`duplicate-noise-20260519T045255Z-synthesis.md` and
+`duplicate-noise-20260519T051029Z-synthesis.md` and
 `duplicate-noise-20260519T045255Z-feedback-action.md`, are the current
-completed control-plane signal:
+control-plane signal:
 
-- The synthesis classified the remaining duplicate/noise issue as producer
-  scheduling, not expensive analysis consumption: strict no-product
-  `pre_action_bootstrap_stall` was mostly gated from analysis, but the producer
-  could be relaunched across seed drains and output-root changes.
+- The latest synthesis read all six duplicate/noise reports and found consensus
+  that expensive analysis consumers are mostly not the main leak. The remaining
+  issue is producer/control-plane scheduling: current-run policy in
+  `rtc-browser-fuzz-novelty-monitor.mjs` is delayed behind historical
+  coverage/triage work, so active noisy producers can keep running while status
+  remains "full coverage pass pending".
 - The feedback action patched
   `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo/bin/rtc-browser-fuzz-supervisor.mjs`
   so no-product strict startup seed-drain cooldowns are honored before
@@ -375,9 +390,12 @@ completed control-plane signal:
   `pre_action_bootstrap_stall` was `0` in triage, analysis-tier, and
   deep-analysis-tier, while product-evidence visible signatures remained `4`.
 - The `rtc-coverage-guided-supervisor` session was restarted for the active
-  `run-20260519T050204Z` root. If historical startup-noise groups keep being
-  rematerialized across output roots, the next safe follow-up is novelty
-  bootstrap/materialization admission control, not broader suppression.
+  `run-20260519T050204Z` root. The next smallest safe fix is a current-first
+  novelty policy pass immediately after current triage refresh/summarization,
+  before historical coverage scans. It should write no-analysis sentinels for
+  no-product strict startup/known-noise, cap product-evidence duplicate
+  families only after preserving a representative, and pause/rotate matching
+  active producers.
 - Product-evidence signatures, visible likely-real failures, and representative
   analysis for product-evidence duplicate families such as
   `late_session_awareness_stall` and `reload_rejoin_awareness_stall` must remain
@@ -409,8 +427,8 @@ Before filing any maintainer-facing PR:
    `/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260519T043141Z/jobs/outputs/rtc-cycle428-post-boundary-push-manifest-audit/push-manifest.tsv`.
    It is newer than the `2026-05-19T04:35:30Z` lower-boundary classification
    and records `36` ready local-publish rows with `0` blocked rows; the latest
-   synthesis also records `35` non-base `044015Z` rows pushed after
-   `2026-05-19T04:55Z`.
+   synthesis also records `35` fresh non-base `044015Z` rows in
+   `latest-local-publish-manifest.tsv`.
 2. Preserve that audit's exclusions for raw deferred heads, raw `PR07D`, stale
    `PR15D`, `PR17`, `PR18`, `PR18x`, fallback tails, runtime-gated
    reload-hydration refs, validation-local-delete refs, and seed `1020002`.
@@ -436,20 +454,22 @@ Useful bounded work now:
 
 - continue seed `1020002` repair or proof-based reclassification without
   converting it into a wait-only progress loop;
-- run one bounded reload-hydration owner replay for
+- let the active bounded reload-hydration owner replay finish for
   `deferred/rtc-reload-hydration-20260519T041059Z` at
   `079387bd18b2d288967ab1f042ff3185f182ece7`, with seeds `6000007` and
   `966001`, current `044015Z` `PR15C`, clean `PR05D` / `PR14`, and PR07B/PR07C
-  controls; the current suggested job name is
-  `rtc-cycle430-reload-hydration-041059-owner-replay`;
+  controls; do not duplicate `rtc-cycle430-reload-hydration-041059-owner-replay`
+  while it has logs but no durable row-bearing report yet;
 - optionally run owner comparison for strict `c5c009f618b2` / seed `6000034`;
-- patch progress-loop/finalization prompts so wait-only cycles, zero-byte
-  reports, header-only manifests, stale/wrong-base manifests, and excluded
-  runtime/validation rows cannot count as publishable progress;
-- treat the duplicate/noise supervisor-side producer recovery leak as patched
-  and watch the restarted root; if strict no-product startup-noise producers
-  rematerialize across output roots, harden novelty bootstrap/materialization
-  admission while preserving product-evidence signatures;
+- launch the controller progress-gate patch from
+  `runs/20260519T045950Z/jobs/outputs/rtc-cycle430-loop-progress-gate-repair/feedback-action-prompt-patch.md`
+  so wait-only cycles, zero-byte reports, header-only manifests,
+  stale/wrong-base manifests, and excluded runtime/validation rows cannot count
+  as publishable progress;
+- treat the duplicate/noise supervisor-side seed-drain recovery leak as
+  patched, but implement the current-first novelty-monitor policy pass if
+  active producer capacity keeps feeding no-product startup/known-noise
+  families; preserve representative product-evidence signatures;
 - for rich-text suffix and pre-save search/live-collapse, require owner
   matrices or deterministic first-loss evidence instead of relaunching
   duplicate diagnostics;
@@ -464,4 +484,5 @@ deferred publication/replay, raw PR07D, raw `HOLD-07C`, raw `003407`, raw
 `020456`, raw `024016`, reload-hydration filing before clean-head replay,
 PR17, PR18, PR18x promotion, PR15D promotion from stale endpoint evidence,
 diagnostic product promotion before focused first-loss replay, broad consumer
-duplicate/noise suppression, or extra browser lanes.
+duplicate/noise suppression, duplicate reload-hydration owner replays, or extra
+browser lanes.
