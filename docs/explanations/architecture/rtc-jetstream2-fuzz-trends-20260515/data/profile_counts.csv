@@ -6,9 +6,9 @@ real-user-editing,9032,613,0,0.06786979627989372,real-user
 permissions-auth-locks,8100,3813,0,0.47074074074074074,auth/locks
 block-gauntlet,7261,1348,0,0.18564935959234266,block-structure
 revision-persistence,6852,289,0,0.0421774664331582,persistence
-parser-transform,5384,580,0,0.10772659732540862,parser
+parser-transform,5394,588,0,0.10901001112347053,parser
 common-blocks,4890,502,0,0.10265848670756646,block-structure
-persistence-no-title,4174,1573,0,0.3768567321514135,persistence
+persistence-no-title,4175,1573,0,0.37676646706586825,persistence
 long-session-large-doc,4141,596,0,0.14392658778072928,lifecycle
 parser-serialization,4129,255,0,0.061758294986679584,parser
 multi-reload-lifecycle,4092,163,0,0.03983382209188661,lifecycle
