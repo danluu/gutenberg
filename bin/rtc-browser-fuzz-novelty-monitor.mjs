@@ -482,6 +482,9 @@ const PROFILE_BY_GROUP = {
 	'novelty-http-persistence-probe': 'persistence-no-title',
 	'novelty-ws-persistence-no-title': 'persistence-no-title',
 	'novelty-ws-permissions-auth-locks': 'permissions-auth-locks',
+	'novelty-ws-real-user-coverage-bridge': 'real-user-editing',
+	'novelty-ws-real-user-action-ratchet': 'real-user-editing',
+	'novelty-ws-real-user-title-body-save-reload': 'real-user-editing',
 	'novelty-ws-real-user-save-reload': 'real-user-editing',
 	'novelty-ws-real-user-editing': 'real-user-editing',
 	'novelty-ws-real-user-rich-text': 'real-user-editing',
@@ -494,6 +497,7 @@ const PROFILE_BY_GROUP = {
 	'novelty-ws-long-session-large-doc': 'long-session-large-doc',
 	'novelty-ws-structure': 'structure',
 	'novelty-ws-three-user-late-join': 'three-user-late-join',
+	'novelty-ws-block-gauntlet-details-topoff': 'block-gauntlet',
 };
 
 const HIGH_VALUE_EXPANSION_GROUPS = [
@@ -535,6 +539,36 @@ const PRODUCTIVE_FALLBACK_GROUPS = [
 	'novelty-ws-real-user-editing',
 	'novelty-ws-real-user-rich-text',
 ];
+
+const DEFAULT_REQUIRED_COVERAGE_BREADTH_GROUPS = [
+	'novelty-ws-real-user-coverage-bridge',
+	'novelty-ws-real-user-save-reload',
+	'novelty-ws-real-user-rich-text',
+	'novelty-ws-parser-transform',
+	'novelty-ws-block-gauntlet',
+	'novelty-ws-revision-recovery',
+	'novelty-ws-three-user-late-join',
+	'novelty-ws-multi-reload-lifecycle',
+	'novelty-ws-async-server-blocks',
+	'novelty-ws-media-cross-entity',
+	'novelty-ws-long-session-large-doc',
+];
+const configuredRequiredCoverageBreadthGroups = parsePathList(
+	process.env.RTC_FUZZ_NOVELTY_REQUIRED_COVERAGE_BREADTH_GROUPS
+);
+const REQUIRED_COVERAGE_BREADTH_GROUPS = uniqueStringList(
+	( configuredRequiredCoverageBreadthGroups.length
+		? configuredRequiredCoverageBreadthGroups
+		: DEFAULT_REQUIRED_COVERAGE_BREADTH_GROUPS
+	 ).filter( ( group ) => PROFILE_BY_GROUP[ group ] )
+);
+const REQUIRED_COVERAGE_BREADTH_GROUP_SET = new Set(
+	REQUIRED_COVERAGE_BREADTH_GROUPS
+);
+
+function isRequiredCoverageBreadthGroup( group ) {
+	return REQUIRED_COVERAGE_BREADTH_GROUP_SET.has( group );
+}
 
 const MATERIALIZATION_FLOOR_GROUPS = [
 	'novelty-ws-real-user-rich-text',
@@ -1337,6 +1371,19 @@ function uniquePathList( paths ) {
 			continue;
 		}
 		seen.add( resolved );
+		unique.push( item );
+	}
+	return unique;
+}
+
+function uniqueStringList( values ) {
+	const seen = new Set();
+	const unique = [];
+	for ( const item of values ?? [] ) {
+		if ( ! item || seen.has( item ) ) {
+			continue;
+		}
+		seen.add( item );
 		unique.push( item );
 	}
 	return unique;
@@ -8433,6 +8480,9 @@ async function applyPolicy(
 	}
 
 	function canRotateAwayFromGroup( group ) {
+		if ( isRequiredCoverageBreadthGroup( group ) ) {
+			return false;
+		}
 		switch ( group ) {
 			case 'novelty-ws-block-gauntlet':
 				return blockGauntletComplete;
@@ -8485,6 +8535,7 @@ async function applyPolicy(
 			if (
 				candidate === group ||
 				! enabled.has( candidate ) ||
+				isRequiredCoverageBreadthGroup( candidate ) ||
 				recommendedGroupsForPass.has( candidate )
 			) {
 				continue;
@@ -8945,6 +8996,22 @@ async function applyPolicy(
 		return false;
 	}
 
+	async function ensureRequiredCoverageBreadthGroups() {
+		let changed = false;
+		for ( const group of REQUIRED_COVERAGE_BREADTH_GROUPS ) {
+			if ( enabled.has( group ) ) {
+				continue;
+			}
+			changed =
+				( await enableGroup(
+					group,
+					'required coverage breadth surface: keep active coverage-guided browser fuzzing on representative user-hit RTC surfaces, not only on the current highest gap groups',
+					{ allowRotation: true }
+				) ) || changed;
+		}
+		return changed;
+	}
+
 	async function reserveBudgetForParserTransform( reason ) {
 		if ( resources.hasHeadroom || enabled.size < TARGET_ENABLED_GROUPS ) {
 			return true;
@@ -8956,7 +9023,10 @@ async function applyPolicy(
 			'novelty-ws-revision-persistence',
 			'novelty-ws-common-blocks',
 		] ) {
-			if ( ! enabled.has( candidate ) ) {
+			if (
+				! enabled.has( candidate ) ||
+				isRequiredCoverageBreadthGroup( candidate )
+			) {
 				continue;
 			}
 
@@ -9524,6 +9594,7 @@ async function applyPolicy(
 			if (
 				enabled.size <= COVERAGE_QUALITY_MAX_ENABLED_GROUPS ||
 				! enabled.has( group ) ||
+				isRequiredCoverageBreadthGroup( group ) ||
 				recommendedGroupsForPass.has( group )
 			) {
 				continue;
@@ -9562,6 +9633,7 @@ async function applyPolicy(
 			}
 			if (
 				! enabled.has( group ) ||
+				isRequiredCoverageBreadthGroup( group ) ||
 				recommendedGroupsForPass.has( group )
 			) {
 				continue;
@@ -9576,6 +9648,7 @@ async function applyPolicy(
 	for ( const disabledGroup of Object.keys( state.disabledGroups ?? {} ) ) {
 		enabled.delete( disabledGroup );
 	}
+	await ensureRequiredCoverageBreadthGroups();
 	await ensureProductiveFallbackGroup();
 	await ensureMaterializationFloorGroup();
 	state.enabledGroups = [ ...enabled ];
@@ -10466,6 +10539,12 @@ async function ensureBootstrapSupervisorGroups() {
 			} );
 		}
 	}
+	for ( const group of REQUIRED_COVERAGE_BREADTH_GROUPS ) {
+		if ( selected.length >= MAX_ENABLED_GROUPS ) {
+			break;
+		}
+		addGroup( group );
+	}
 	for ( const group of state.enabledGroups ?? [] ) {
 		if ( selected.length >= TARGET_ENABLED_GROUPS ) {
 			break;
@@ -11330,6 +11409,11 @@ async function writeStatus(
 		`- recommended groups: ${
 			guidance.recommendedGroups.length
 				? guidance.recommendedGroups.join( ', ' )
+				: 'none'
+		}`,
+		`- required breadth groups: ${
+			REQUIRED_COVERAGE_BREADTH_GROUPS.length
+				? REQUIRED_COVERAGE_BREADTH_GROUPS.join( ', ' )
 				: 'none'
 		}`,
 		`- harness-work candidates: ${ guidance.harnessWork.length }`,

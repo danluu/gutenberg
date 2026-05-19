@@ -392,6 +392,13 @@ The remote launchers are intentionally split by ownership:
     below the configured floor. This prevents optional browser pools from
     consuming the browser lane budget while the active coverage-guided run is
     too narrow.
+    The novelty monitor also has a required surface floor. By default it keeps
+    representative active groups for real-user editing/save/reload/rich text,
+    parser transform, block gauntlet, revision recovery, three-user late join,
+    multi-reload lifecycle, async/server-backed blocks, media/cross-entity, and
+    long-session/large-document coverage. Current coverage gaps can add or
+    rotate other groups, but they should not silently evict these required
+    surfaces under normal budget rotation.
     Coverage-guided historical duplicate/noise is advisory unless the
     current-run duplicate/noise gate is also active; otherwise the loop must keep
     at least one bounded browser/e2e lane materialized.
