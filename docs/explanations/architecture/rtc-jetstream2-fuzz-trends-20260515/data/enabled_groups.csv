@@ -962,3 +962,5 @@ timestamp,group,group_family
 2026-05-19T16:26:14Z,novelty-ws-parser-serialization,parser
 2026-05-19T16:35:35Z,novelty-ws-three-user-late-join,lifecycle
 2026-05-19T16:37:56Z,novelty-ws-revision-persistence,persistence
+2026-05-19T16:42:20Z,novelty-ws-revision-recovery,persistence
+2026-05-19T16:44:40Z,novelty-ws-multi-reload-lifecycle,lifecycle
