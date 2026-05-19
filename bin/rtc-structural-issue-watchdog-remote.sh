@@ -35,6 +35,9 @@ MAX_ACTIVE_REPAIRS=${RTC_STRUCTURAL_WATCHDOG_MAX_ACTIVE_REPAIRS:-3}
 CODEX_TIMEOUT_SECONDS=${RTC_STRUCTURAL_WATCHDOG_CODEX_TIMEOUT_SECONDS:-5400}
 CODEX_MODEL=${RTC_STRUCTURAL_WATCHDOG_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_STRUCTURAL_WATCHDOG_CODEX_REASONING_EFFORT:-xhigh}
+COVERAGE_FULL_PASS_MAX_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_FULL_PASS_MAX_AGE_SECONDS:-1800}
+COVERAGE_FULL_PASS_START_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_FULL_PASS_START_GRACE_SECONDS:-900}
+COVERAGE_HEAP_FAILURE_WINDOW_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_HEAP_FAILURE_WINDOW_SECONDS:-1800}
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$TMUX_WRAP"
 touch "$EVENTS" "$REPAIR_LEDGER"
@@ -260,6 +263,69 @@ check_coverage_supervisor_root_agreement() {
 	fi
 }
 
+check_coverage_novelty_full_pass_health() {
+	local out=$1 coverage_root=$2 state_path output_age now pass_info last_full last_updated last_triage pass_epoch pass_age
+	[ -n "$coverage_root" ] && [ -d "$coverage_root" ] || return
+	state_path="$coverage_root/novelty-state.json"
+	output_age=$(file_age_seconds "$coverage_root" || printf 999999)
+	if [ ! -s "$state_path" ]; then
+		if [ "$output_age" -gt "$COVERAGE_FULL_PASS_START_GRACE_SECONDS" ]; then
+			emit_finding "$out" high "coverage-guided" "missing-novelty-state-for-full-pass" \
+				"$state_path output=$coverage_root" \
+				"restore novelty-state generation and make the session watchdog require completed full novelty passes"
+		fi
+		return
+	fi
+	pass_info=$(
+		node - "$state_path" <<'NODE'
+const fs = require( 'fs' );
+const statePath = process.argv[ 2 ];
+let state = {};
+try {
+	state = JSON.parse( fs.readFileSync( statePath, 'utf8' ) );
+} catch {}
+const stats = state.lastCompletedFullPassStats || {};
+console.log(
+	[
+		state.lastCompletedFullPassAt || '',
+		state.lastUpdatedAt || '',
+		state.lastCurrentRunTriageCompletedAt || '',
+		stats.coverageFiles ?? '',
+		stats.currentRunCoverageFiles ?? '',
+	].join( '\t' )
+);
+NODE
+	)
+	IFS=$'\t' read -r last_full last_updated last_triage _coverage_files _current_coverage_files <<< "$pass_info"
+	if [ -z "$last_full" ]; then
+		if [ "$output_age" -gt "$COVERAGE_FULL_PASS_START_GRACE_SECONDS" ]; then
+			emit_finding "$out" high "coverage-guided" "novelty-full-pass-never-completed" \
+				"$state_path output=$coverage_root lastUpdatedAt=${last_updated:-missing} lastCurrentRunTriageCompletedAt=${last_triage:-missing}" \
+				"debug why coverage-guided novelty is only heartbeating or triaging; require a completed full pass before treating it as healthy"
+		fi
+	else
+		now=$(date -u +%s)
+		pass_epoch=$(date -u -d "$last_full" +%s 2>/dev/null || printf 0)
+		if [ "$pass_epoch" -le 0 ]; then
+			emit_finding "$out" high "coverage-guided" "novelty-full-pass-timestamp-invalid" \
+				"$state_path lastCompletedFullPassAt=$last_full" \
+				"fix novelty-state full-pass timestamp writing and restart the session watchdog"
+		else
+			pass_age=$(( now - pass_epoch ))
+			if [ "$pass_age" -gt "$COVERAGE_FULL_PASS_MAX_AGE_SECONDS" ]; then
+				emit_finding "$out" high "coverage-guided" "novelty-full-pass-stale" \
+					"$state_path lastCompletedFullPassAt=$last_full threshold=${COVERAGE_FULL_PASS_MAX_AGE_SECONDS}s" \
+					"debug stalled coverage-guided full-pass completion; reduce observed-history scope or fix the scan before trusting the monitor"
+			fi
+		fi
+	fi
+	if recent_log_matches "$COVERAGE_BASE/logs/monitor.log" "$COVERAGE_HEAP_FAILURE_WINDOW_SECONDS" 'JavaScript heap out of memory|Reached heap limit|Allocation failed|heap limit|FATAL ERROR'; then
+		emit_finding "$out" high "coverage-guided" "novelty-monitor-heap-limit" \
+			"$COVERAGE_BASE/logs/monitor.log window=${COVERAGE_HEAP_FAILURE_WINDOW_SECONDS}s" \
+			"reduce coverage-guided observed-history scope or streaming memory use; do not let status heartbeats mask heap-limited passes"
+	fi
+}
+
 check_current_run_duplicate_noise() {
 	local out=$1 coverage_root status
 	[ -s "$COVERAGE_BASE/current-output-dir.txt" ] || return
@@ -418,6 +484,7 @@ detect_findings() {
 	if [ -s "$COVERAGE_BASE/current-output-dir.txt" ]; then
 		coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
 		check_coverage_supervisor_root_agreement "$tmp" "$coverage_root"
+		check_coverage_novelty_full_pass_health "$tmp" "$coverage_root"
 	fi
 	check_current_run_duplicate_noise "$tmp"
 	if recent_log_matches "$GUARD_BASE/logs/guard.log" 1800 'restart requested pool=.*reason='; then
@@ -472,6 +539,8 @@ Task:
    - $DEFERRED_BASE/current-deferred-status.md
    - $RESOURCE_BASE/resource-autoscaler-status.md
    - $COVERAGE_BASE/current-output-dir.txt and the active novelty-status.md
+   - $COVERAGE_BASE/logs/monitor.log
+   - $COVERAGE_BASE/logs/session-watchdog-state.json
    - $DUP_NOISE_BASE/latest-synthesis.md
    - $DUP_NOISE_BASE/latest-feedback-action.md
    - $GUARD_BASE/logs/guard.log

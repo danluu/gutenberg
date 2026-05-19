@@ -11173,7 +11173,7 @@ let fullStatusWritten =
 	loadedStateHadFullStatus && loadedStateOutputDirMatchesCurrentOutput;
 let lastFullStatusCompletedAt =
 	loadedStateHadFullStatus && loadedStateOutputDirMatchesCurrentOutput
-		? state.lastUpdatedAt ?? null
+		? state.lastCompletedFullPassAt ?? state.lastUpdatedAt ?? null
 		: null;
 let statusWriteQueue = Promise.resolve();
 
@@ -12007,8 +12007,6 @@ async function runPass() {
 			reason: 'shutdown requested after policy actions; skipped supervisor/codex launches and wrote refreshed novelty state before exit',
 		} );
 	}
-	state.lastUpdatedAt = new Date().toISOString();
-	await writeJsonFileAtomic( STATE_PATH, state );
 	await writeStatus(
 		novelty,
 		resources,
@@ -12020,6 +12018,28 @@ async function runPass() {
 		triageYieldCombined,
 		guidance
 	);
+	if ( lastFullStatusCompletedAt ) {
+		state.lastCompletedFullPassAt = lastFullStatusCompletedAt;
+		state.lastCompletedFullPassStats = {
+			at: lastFullStatusCompletedAt,
+			outputDir: OUTPUT_DIR,
+			coverageFiles: coverageFiles.length,
+			currentRunCoverageFiles: currentCoverageFiles.length,
+			recordsProcessed: novelty.processed,
+			totalRecordsSeen: state.recordsSeen ?? 0,
+			filesRead: stats.filesRead,
+			coverageLinesSeen: stats.linesSeen,
+			summaryFilesRead: summaryStats.filesRead,
+			summaryLinesSeen: summaryStats.linesSeen,
+			summaryStartupFailures: summaryStats.startupFailures,
+			unmetCoverageGoals: guidance.unmetGoals.length,
+			healthWarnings: state.healthWarnings.length,
+		};
+		state.lastUpdatedAt = lastFullStatusCompletedAt;
+	} else {
+		state.lastUpdatedAt = new Date().toISOString();
+	}
+	await writeJsonFileAtomic( STATE_PATH, state );
 	await log(
 		`pass: processed=${ novelty.processed } files=${
 			coverageFiles.length

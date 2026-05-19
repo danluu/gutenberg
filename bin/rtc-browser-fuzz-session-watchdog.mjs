@@ -242,6 +242,37 @@ async function stateFreshness( outputDir ) {
 	const statePath = path.join( outputDir, STATE_RELATIVE_PATH );
 	const statusPath = path.join( outputDir, STATUS_RELATIVE_PATH );
 	const state = await readJsonFile( statePath );
+	if ( IS_COVERAGE_GUIDED_NOVELTY_WATCHDOG ) {
+		const fullPassTimestamp = Date.parse(
+			state?.lastCompletedFullPassAt ?? ''
+		);
+		if ( Number.isFinite( fullPassTimestamp ) ) {
+			return {
+				outputDir,
+				statePath,
+				statusPath,
+				lastUpdatedAt: new Date( fullPassTimestamp ).toISOString(),
+				ageMs: Date.now() - fullPassTimestamp,
+				source: 'state-lastCompletedFullPassAt',
+				lastUpdatedHeartbeatAt: state?.lastUpdatedAt ?? null,
+				lastCurrentRunTriageCompletedAt:
+					state?.lastCurrentRunTriageCompletedAt ?? null,
+			};
+		}
+
+		return {
+			outputDir,
+			statePath,
+			statusPath,
+			lastUpdatedAt: null,
+			ageMs: Infinity,
+			source: 'missing-novelty-full-pass-timestamp',
+			lastUpdatedHeartbeatAt: state?.lastUpdatedAt ?? null,
+			lastCurrentRunTriageCompletedAt:
+				state?.lastCurrentRunTriageCompletedAt ?? null,
+		};
+	}
+
 	const stateTimestamp = Date.parse( state?.lastUpdatedAt ?? '' );
 	if ( Number.isFinite( stateTimestamp ) ) {
 		return {

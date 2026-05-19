@@ -436,8 +436,10 @@ The remote launchers are intentionally split by ownership:
     control-plane failures that ordinary process watchdogs miss: stale status
     with a live tmux session, recent reconcile/temp-file errors, prefix tmux
     session masking, repeated guard restarts, passive PR07C/runtime-readiness
-    classifications, and current-run duplicate/noise dominance that is still
-    visible in `novelty-status.md`. It writes
+    classifications, coverage-guided novelty runs whose full-pass timestamp is
+    missing or stale, recent novelty-monitor heap-limit failures, and
+    current-run duplicate/noise dominance that is still visible in
+    `novelty-status.md`. It writes
     `/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518/current-structural-watchdog-status.md`
     and launches bounded `rtc-structural-repair-*` Codex jobs for high-severity
     findings. Those jobs may patch Jetstream scripts and restart only the
@@ -1485,6 +1487,15 @@ That supervisor session then writes its own `supervisor-state.json` under the
 novelty output directory. Attach a separate live-analysis monitor to that
 novelty output directory if novelty groups are expected to produce triage
 backlog.
+
+For coverage-guided Jetstream2 runs, freshness means a completed novelty pass,
+not just a live process, status heartbeat, or current-run triage refresh. The
+monitor persists `novelty-state.json.lastCompletedFullPassAt` only after a full
+pass has read coverage, applied policy, written status, and updated state. The
+session watchdog treats that timestamp as the health heartbeat for
+`rtc-coverage-guided-novelty`; the structural watchdog separately escalates
+missing/stale full-pass timestamps and recent `JavaScript heap out of memory` /
+`Reached heap limit` log signatures.
 
 Automatic coverage-goal expansion is persisted in
 `novelty-state.json.autoCoverageGoals` and
