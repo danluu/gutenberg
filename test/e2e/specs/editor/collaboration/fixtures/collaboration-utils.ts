@@ -40,6 +40,19 @@ interface NormalizedCollaborativeState {
 	title: string;
 }
 
+interface CollaborationDebugSnapshot {
+	currentPostId: number | null;
+	entityRecordHasCrdtDocument: boolean;
+	entityResolutionFinished: boolean;
+	isAutosavingPost: boolean;
+	isSavingPost: boolean;
+	room: string;
+	testWebSocketRoom: Record< string, unknown > | null;
+	testWebSocketRooms: Record< string, unknown >;
+	testWebSocketTick: number | null;
+	url: string;
+}
+
 type CleanupUsersMode = 'all' | 'tracked' | 'none';
 
 export const SECOND_USER: UserCredentials = {
@@ -264,19 +277,29 @@ export default class CollaborationUtils {
 		timeout: number,
 		roomName: string
 	) {
-		await page.waitForFunction(
-			( { expected, room }: { expected: number; room: string } ) => {
-				const state = ( window as any ).__gutenbergTestWebSocketSync;
-				const matchingRoom = state?.rooms?.[ room ];
+		try {
+			await page.waitForFunction(
+				( { expected, room }: { expected: number; room: string } ) => {
+					const state = ( window as any )
+						.__gutenbergTestWebSocketSync;
+					const matchingRoom = state?.rooms?.[ room ];
 
-				return (
-					matchingRoom?.status === 'connected' &&
-					matchingRoom?.awarenessCount >= expected
-				);
-			},
-			{ expected: expectedPeerCount, room: roomName },
-			{ timeout }
-		);
+					return (
+						matchingRoom?.status === 'connected' &&
+						matchingRoom?.awarenessCount >= expected
+					);
+				},
+				{ expected: expectedPeerCount, room: roomName },
+				{ timeout }
+			);
+		} catch ( error ) {
+			throw new Error(
+				`Timed out waiting for test WebSocket awareness peers. Expected ${ expectedPeerCount } peer(s) in ${ roomName }. ${ await this.formatCollaborationDebugSnapshot(
+					page,
+					roomName
+				) }\n${ String( error ) }`
+			);
+		}
 	}
 
 	/**
@@ -516,19 +539,28 @@ export default class CollaborationUtils {
 			// room, to rule out stale rooms from earlier navigations.
 			const targetRoom =
 				room ?? ( await this.getCurrentPostRoomName( page ) );
-			await page.waitForFunction(
-				( roomName: string ) => {
-					const state = ( window as any )
-						.__gutenbergTestWebSocketSync;
-					const matchingRoom = state?.rooms?.[ roomName ];
-					return (
-						matchingRoom?.status === 'connected' &&
-						matchingRoom?.synced === true
-					);
-				},
-				targetRoom,
-				{ timeout }
-			);
+			try {
+				await page.waitForFunction(
+					( roomName: string ) => {
+						const state = ( window as any )
+							.__gutenbergTestWebSocketSync;
+						const matchingRoom = state?.rooms?.[ roomName ];
+						return (
+							matchingRoom?.status === 'connected' &&
+							matchingRoom?.synced === true
+						);
+					},
+					targetRoom,
+					{ timeout }
+				);
+			} catch ( error ) {
+				throw new Error(
+					`Timed out waiting for test WebSocket sync in ${ targetRoom }. ${ await this.formatCollaborationDebugSnapshot(
+						page,
+						targetRoom
+					) }\n${ String( error ) }`
+				);
+			}
 			return;
 		}
 
@@ -652,6 +684,57 @@ export default class CollaborationUtils {
 				lastStates
 			) }`
 		);
+	}
+
+	private async formatCollaborationDebugSnapshot(
+		page: Page,
+		roomName: string
+	): Promise< string > {
+		try {
+			return `Snapshot: ${ JSON.stringify(
+				await this.getCollaborationDebugSnapshot( page, roomName )
+			) }`;
+		} catch ( snapshotError ) {
+			return `Snapshot unavailable: ${ String( snapshotError ) }`;
+		}
+	}
+
+	private async getCollaborationDebugSnapshot(
+		page: Page,
+		roomName: string
+	): Promise< CollaborationDebugSnapshot > {
+		return page.evaluate( ( room: string ) => {
+			const wpData = ( window as any ).wp?.data;
+			const core = wpData?.select?.( 'core' );
+			const editor = wpData?.select?.( 'core/editor' );
+			const postId = editor?.getCurrentPostId?.() ?? null;
+			const entityRecord = postId
+				? core?.getEntityRecord?.( 'postType', 'post', postId )
+				: null;
+			const testWebSocketState = ( window as any )
+				.__gutenbergTestWebSocketSync;
+			const rooms = testWebSocketState?.rooms ?? {};
+
+			return {
+				currentPostId: postId,
+				entityRecordHasCrdtDocument:
+					!! entityRecord?.meta?._crdt_document,
+				entityResolutionFinished: postId
+					? !! core?.hasFinishedResolution?.( 'getEntityRecord', [
+							'postType',
+							'post',
+							postId,
+					  ] )
+					: false,
+				isAutosavingPost: !! editor?.isAutosavingPost?.(),
+				isSavingPost: !! editor?.isSavingPost?.(),
+				room,
+				testWebSocketRoom: rooms[ room ] ?? null,
+				testWebSocketRooms: rooms,
+				testWebSocketTick: testWebSocketState?.tick ?? null,
+				url: window.location.href,
+			};
+		}, roomName );
 	}
 
 	/**
