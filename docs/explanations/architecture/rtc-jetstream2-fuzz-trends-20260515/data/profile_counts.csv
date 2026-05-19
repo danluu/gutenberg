@@ -9,7 +9,7 @@ revision-persistence,6892,289,0,0.041932675565873476,persistence
 parser-transform,5434,602,0,0.11078395288921605,parser
 common-blocks,4905,502,0,0.10234454638124363,block-structure
 persistence-no-title,4215,1605,0,0.3807829181494662,persistence
-parser-serialization,4163,264,1,0.0634158059092001,parser
+parser-serialization,4163,264,0,0.0634158059092001,parser
 long-session-large-doc,4162,596,0,0.14320038443056224,lifecycle
 multi-reload-lifecycle,4103,163,0,0.039727029003168414,lifecycle
 full,840,18,0,0.02142857142857143,block-structure
