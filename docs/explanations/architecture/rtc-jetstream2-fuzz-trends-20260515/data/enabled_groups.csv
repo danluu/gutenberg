@@ -912,3 +912,4 @@ timestamp,group,group_family
 2026-05-19T01:15:26Z,novelty-ws-real-user-save-reload,real-user
 2026-05-19T02:04:07Z,novelty-ws-lifecycle,lifecycle
 2026-05-19T02:04:07Z,novelty-ws-real-user-save-reload,real-user
+2026-05-19T02:32:13Z,novelty-ws-parser-serialization,parser
