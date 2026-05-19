@@ -38,13 +38,10 @@ write_plot <- function( name, plot, width = 9, height = 6 ) {
 	)
 }
 
-ratio_breaks <- c( 0.25, 0.5, 1, 2, 4 )
-ratio_labels <- c( "0.25x", "0.5x", "1x", "2x", "4x" )
+ratio_label <- function( x ) {
+	sprintf( "%.3fx", x )
+}
 
-local_commands <- read.csv(
-	file.path( data_dir, "local-command-medians.csv" ),
-	stringsAsFactors = FALSE
-)
 command_ratios <- read.csv(
 	file.path( data_dir, "command-ratios.csv" ),
 	stringsAsFactors = FALSE
@@ -53,94 +50,74 @@ crdt_p50 <- read.csv(
 	file.path( data_dir, "crdt-microbench-p50.csv" ),
 	stringsAsFactors = FALSE
 )
-
-local_commands$kind_label <- factor(
-	local_commands$kind_label,
-	levels = c( "Lower microbench", "Targeted unit suite", "E2E smoke/perf" )
-)
-local_commands$branch_label <- factor(
-	local_commands$branch_label,
-	levels = c( "Base", "Merged" )
-)
-local_commands$case_label <- factor(
-	local_commands$case_label,
-	levels = rev( unique( local_commands$case_label ) )
+many_user_p50 <- read.csv(
+	file.path( data_dir, "many-user-sync-p50.csv" ),
+	stringsAsFactors = FALSE
 )
 
 command_ratios$kind_label <- factor(
 	command_ratios$kind_label,
-	levels = c( "Lower microbench", "Targeted unit suite", "E2E smoke/perf" )
+	levels = c(
+		"Lower microbench",
+		"Targeted unit suite",
+		"E2E smoke/perf",
+		"Multi-user synthetic"
+	)
 )
 command_ratios$case_label <- factor(
 	command_ratios$case_label,
 	levels = rev( unique( command_ratios$case_label ) )
-)
-command_ratios$host <- factor(
-	command_ratios$host,
-	levels = c( "Local", "Jetstream2" )
 )
 
 crdt_p50$scenario_label <- factor(
 	crdt_p50$scenario_label,
 	levels = rev( unique( crdt_p50$scenario_label ) )
 )
-crdt_p50$host <- factor( crdt_p50$host, levels = c( "Local", "Jetstream2" ) )
+crdt_p50$host <- factor( crdt_p50$host, levels = c( "Local" ) )
 
-command_medians_plot <- ggplot(
-	local_commands,
-	aes( x = median_s, y = case_label, fill = branch_label )
-) +
-	geom_col( position = position_dodge2( width = 0.76, preserve = "single" ), width = 0.64 ) +
-	geom_text(
-		aes( label = sprintf( "%.2fs", median_s ) ),
-		position = position_dodge2( width = 0.76, preserve = "single" ),
-		hjust = -0.08,
-		size = 2.7
-	) +
-	facet_grid( kind_label ~ ., scales = "free_y", space = "free_y" ) +
-	coord_cartesian( xlim = c( 0, max( local_commands$median_s ) * 1.20 ), clip = "off" ) +
-	scale_fill_brewer( palette = "Set2" ) +
-	labs(
-		title = "Local RTC benchmark medians",
-		subtitle = "Balanced ABBA run; all timed rows passed; setup and wp-env startup excluded",
-		x = "Median elapsed time, seconds",
-		y = NULL,
-		fill = NULL,
-		caption = "Source: local-abba-20260519T193459Z. Host load average stayed high, so use ratios more than absolute seconds."
-	) +
-	theme_rtc()
-write_plot( "local-command-medians.png", command_medians_plot, width = 9.5, height = 6.4 )
+many_user_p50$scenario_label <- factor(
+	many_user_p50$scenario_label,
+	levels = rev( unique( many_user_p50$scenario_label ) )
+)
+many_user_p50$host <- factor( many_user_p50$host, levels = c( "Local" ) )
 
 command_ratios_plot <- ggplot(
 	command_ratios,
-	aes( x = merged_base_ratio, y = case_label, color = host, shape = host )
+	aes( x = merged_base_ratio, y = case_label, color = kind_label )
 ) +
 	geom_vline( xintercept = 1, linetype = "dashed", color = "grey55" ) +
 	geom_segment(
-		aes( x = 1, xend = merged_base_ratio, yend = case_label, color = host ),
+		aes( x = 1, xend = merged_base_ratio, yend = case_label ),
 		linewidth = 0.6,
 		alpha = 0.72
 	) +
 	geom_point( size = 2.7 ) +
-	facet_grid( kind_label ~ ., scales = "free_y", space = "free_y" ) +
+	geom_text(
+		aes(
+			label = ratio_label( merged_base_ratio ),
+			hjust = ifelse( merged_base_ratio >= 1, -0.12, 1.12 )
+		),
+		size = 2.7,
+		show.legend = FALSE
+	) +
 	scale_x_continuous(
 		trans = "log2",
-		breaks = ratio_breaks,
-		labels = ratio_labels,
+		breaks = c( 0.25, 0.5, 1, 2 ),
+		labels = c( "0.25x", "0.5x", "1x", "2x" ),
 		limits = c( 0.25, 2 )
 	) +
 	scale_color_brewer( palette = "Dark2" ) +
+	coord_cartesian( clip = "off" ) +
 	labs(
-		title = "Merged/base elapsed-time ratios",
-		subtitle = "Values right of 1x are slower in the merged snapshot; Jetstream2 e2e rows are excluded as infra failures",
+		title = "Local merged/base elapsed-time ratios",
+		subtitle = "Values right of 1x are slower in the merged snapshot; all local timed rows passed",
 		x = "Merged / base median elapsed time",
 		y = NULL,
 		color = NULL,
-		shape = NULL,
-		caption = "Local uses ABBA order. Jetstream2 lower-level rows used the older base-then-merged order under active fuzzing load."
+		caption = "Source: local-abba-20260519T193459Z and local-many-users-20260519T200914Z. Setup and wp-env startup are excluded."
 	) +
 	theme_rtc()
-write_plot( "merged-base-ratios.png", command_ratios_plot, width = 9.5, height = 6.4 )
+write_plot( "local-command-ratios.png", command_ratios_plot, width = 9.5, height = 5.8 )
 
 crdt_ratio_plot <- ggplot(
 	crdt_p50,
@@ -153,13 +130,22 @@ crdt_ratio_plot <- ggplot(
 		alpha = 0.72
 	) +
 	geom_point( size = 2.8 ) +
+	geom_text(
+		aes(
+			label = ratio_label( merged_base_ratio ),
+			hjust = ifelse( merged_base_ratio >= 1, -0.12, 1.12 )
+		),
+		size = 2.7,
+		show.legend = FALSE
+	) +
 	scale_x_continuous(
 		trans = "log2",
-		breaks = ratio_breaks,
-		labels = ratio_labels,
+		breaks = c( 0.75, 1, 2, 4 ),
+		labels = c( "0.75x", "1x", "2x", "4x" ),
 		limits = c( 0.75, 4 )
 	) +
 	scale_color_brewer( palette = "Dark2" ) +
+	coord_cartesian( clip = "off" ) +
 	labs(
 		title = "CRDT microbench p50 ratios",
 		subtitle = "Stale suffix and top-level delete scenarios are the consistent merged-snapshot slowdown",
@@ -171,3 +157,42 @@ crdt_ratio_plot <- ggplot(
 	) +
 	theme_rtc()
 write_plot( "crdt-microbench-p50-ratios.png", crdt_ratio_plot, width = 9.5, height = 5.2 )
+
+many_user_ratio_plot <- ggplot(
+	many_user_p50,
+	aes( x = merged_base_ratio, y = scenario_label, color = host, shape = host )
+) +
+	geom_vline( xintercept = 1, linetype = "dashed", color = "grey55" ) +
+	geom_segment(
+		aes( x = 1, xend = merged_base_ratio, yend = scenario_label, color = host ),
+		linewidth = 0.6,
+		alpha = 0.72
+	) +
+	geom_point( size = 2.8 ) +
+	geom_text(
+		aes(
+			label = ratio_label( merged_base_ratio ),
+			hjust = ifelse( merged_base_ratio >= 1, -0.12, 1.12 )
+		),
+		size = 2.7,
+		show.legend = FALSE
+	) +
+	scale_x_continuous(
+		trans = "log2",
+		breaks = c( 0.9, 1, 1.1 ),
+		labels = c( "0.9x", "1x", "1.1x" ),
+		limits = c( 0.85, 1.15 )
+	) +
+	scale_color_brewer( palette = "Dark2" ) +
+	coord_cartesian( clip = "off" ) +
+	labs(
+		title = "Many-user sync microbench p50 ratios",
+		subtitle = "Synthetic 100-user and 1000-room cases were neutral to modestly favorable locally",
+		x = "Merged / base p50 operation time",
+		y = NULL,
+		color = NULL,
+		shape = NULL,
+		caption = "Source: local-many-users-20260519T200914Z. The benchmark isolates sync serialization, awareness, queues, and room rotation."
+	) +
+	theme_rtc()
+write_plot( "many-user-sync-p50-ratios.png", many_user_ratio_plot, width = 9.5, height = 5.2 )

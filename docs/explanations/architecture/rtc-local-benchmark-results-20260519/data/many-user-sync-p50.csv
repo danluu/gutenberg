@@ -1,0 +1,6 @@
+host,scenario,scenario_label,base_p50_ms,merged_p50_ms,merged_base_ratio,base_p95_ms,merged_p95_ms,p95_merged_base_ratio,base_mean_ms,merged_mean_ms
+Local,server_response_json_100_users_single_room,100 users server response JSON,0.153229,0.154146,1.006,0.165625,0.170729,1.031,0.159056,0.162062
+Local,batched_disconnect_json_100_users_10_room_batches,100 user disconnect JSON batches,0.021229,0.022916,1.079,0.024000,0.025396,1.058,0.022239,0.023171
+Local,awareness_apply_100_users_10_changed,100 users awareness apply,0.162396,0.162270,0.999,0.187730,0.185750,0.989,0.167250,0.167906
+Local,queue_take_restore_100_users_100_updates_each,100 users queue take/restore,0.040041,0.037042,0.925,0.075438,0.065458,0.868,0.047789,0.044216
+Local,rotate_window_1000_rooms_10_slots,1000 rooms rotate 10-slot window,0.002042,0.002042,1.000,0.003604,0.003771,1.046,0.002688,0.002685
