@@ -16,9 +16,43 @@ LANE_GUARD_MAX_INFRA_NO_SUCCESS="${RTC_KNOWN_FIXES_LANE_GUARD_MAX_INFRA_NO_SUCCE
 LANE_GUARD_MAX_BAD_NO_SUCCESS="${RTC_KNOWN_FIXES_LANE_GUARD_MAX_BAD_NO_SUCCESS:-16}"
 LANE_GUARD_MAX_UNCERTAIN_LOW_SUCCESS="${RTC_KNOWN_FIXES_LANE_GUARD_MAX_UNCERTAIN_LOW_SUCCESS:-10}"
 LANE_GUARD_MAX_LOW_SIGNAL_OUTCOMES="${RTC_KNOWN_FIXES_LANE_GUARD_MAX_LOW_SIGNAL_OUTCOMES:-80}"
+AUTO_BUILD="${RTC_KNOWN_FIXES_AUTO_BUILD:-1}"
+BUILD_MARKER="${RTC_KNOWN_FIXES_BUILD_MARKER:-$REPO_ROOT/build/scripts/blocks}"
 
 cd "$REPO_ROOT"
 mkdir -p "$FUZZ_ROOT"
+
+ensure_gutenberg_build_available() {
+	local log="$FUZZ_ROOT/build-preflight.log"
+
+	if [ -d "$BUILD_MARKER" ] && [ -f "$REPO_ROOT/build/build.php" ]; then
+		echo "build preflight ok marker=$BUILD_MARKER at=$( date -u +%Y-%m-%dT%H:%M:%SZ )" >> "$log"
+		return
+	fi
+
+	{
+		echo "build preflight missing marker=$BUILD_MARKER buildPhp=$REPO_ROOT/build/build.php at=$( date -u +%Y-%m-%dT%H:%M:%SZ )"
+		echo "autoBuild=$AUTO_BUILD"
+	} >> "$log"
+
+	if [ "$AUTO_BUILD" != "1" ]; then
+		echo "Gutenberg build artifacts are missing. Run npm run build -- --skip-types or set RTC_KNOWN_FIXES_AUTO_BUILD=1." >&2
+		exit 6
+	fi
+
+	echo "running npm run build -- --skip-types at=$( date -u +%Y-%m-%dT%H:%M:%SZ )" >> "$log"
+	if ! npm run build -- --skip-types >> "$log" 2>&1; then
+		echo "Gutenberg build failed; see $log" >&2
+		exit 6
+	fi
+
+	if [ ! -d "$BUILD_MARKER" ] || [ ! -f "$REPO_ROOT/build/build.php" ]; then
+		echo "Gutenberg build completed but required artifacts are still missing; see $log" >&2
+		exit 6
+	fi
+
+	echo "build preflight repaired marker=$BUILD_MARKER at=$( date -u +%Y-%m-%dT%H:%M:%SZ )" >> "$log"
+}
 
 current_branch="$( git branch --show-current )"
 current_head="$( git rev-parse HEAD )"
@@ -34,6 +68,8 @@ if [ -n "$EXPECTED_HEAD_PREFIX" ] && [[ "$current_head" != "$EXPECTED_HEAD_PREFI
 	echo "wrong head" >&2
 	exit 2
 fi
+
+ensure_gutenberg_build_available
 
 {
 	echo "startedAt=$( date -u +%Y-%m-%dT%H:%M:%SZ )"
@@ -61,6 +97,8 @@ fi
 	echo "realUserActionSequence=${RTC_KNOWN_FIXES_REAL_USER_ACTION_SEQUENCE:-ui-type-paragraph,ui-heading-shortcut,ui-type-title}"
 	echo "richTextActionSequence=${RTC_KNOWN_FIXES_RICH_TEXT_ACTION_SEQUENCE:-ui-type-paragraph,ui-paste-rich-text,ui-link-paragraph,ui-list-indent,ui-unicode-composition-text,ui-undo-redo-paragraph,ui-heading-shortcut,ui-type-title}"
 	echo "operationLedgerMode=${RTC_KNOWN_FIXES_OPERATION_LEDGER_MODE:-shadow}"
+	echo "autoBuild=$AUTO_BUILD"
+	echo "buildMarker=$BUILD_MARKER"
 	echo "laneGuard=$LANE_GUARD"
 	echo "laneGuardIntervalSeconds=$LANE_GUARD_INTERVAL_SECONDS"
 	echo "laneGuardMinOutcomes=$LANE_GUARD_MIN_OUTCOMES"
@@ -212,7 +250,7 @@ wait_for_wp_env_ready() {
 	local config="$2"
 	local log="$3"
 	local php
-	php='$plugin = WP_PLUGIN_DIR . "/gutenberg-test-plugins/disable-animations.php"; if ( ! file_exists( $plugin ) ) { fwrite( STDERR, "missing plugin gutenberg-test-plugins/disable-animations.php\n" ); exit( 2 ); } global $wpdb; $wpdb->get_var( "SELECT 1" ); if ( $wpdb->last_error ) { fwrite( STDERR, "db error: $wpdb->last_error\n" ); exit( 3 ); } echo "rtc-known-fixes-env-ok\n";'
+	php='$plugin = WP_PLUGIN_DIR . "/gutenberg-test-plugins/disable-animations.php"; if ( ! file_exists( $plugin ) ) { fwrite( STDERR, "missing plugin gutenberg-test-plugins/disable-animations.php\n" ); exit( 2 ); } global $wpdb; $wpdb->get_var( "SELECT 1" ); if ( $wpdb->last_error ) { fwrite( STDERR, "db error: $wpdb->last_error\n" ); exit( 3 ); } $active_plugins = (array) get_option( "active_plugins", array() ); if ( ! defined( "GUTENBERG_VERSION" ) ) { fwrite( STDERR, "gutenberg plugin not loaded; active_plugins=" . wp_json_encode( $active_plugins ) . "\n" ); exit( 4 ); } if ( ! function_exists( "wp_is_collaboration_enabled" ) ) { fwrite( STDERR, "collaboration functions not loaded; gutenberg=" . GUTENBERG_VERSION . "\n" ); exit( 5 ); } if ( ! wp_is_collaboration_enabled() ) { fwrite( STDERR, "collaboration disabled; option=" . var_export( get_option( "wp_collaboration_enabled" ), true ) . "\n" ); exit( 6 ); } echo "rtc-known-fixes-env-ok gutenberg=" . GUTENBERG_VERSION . " collaboration=1\n";'
 
 	for attempt in $( seq 1 60 ); do
 		{

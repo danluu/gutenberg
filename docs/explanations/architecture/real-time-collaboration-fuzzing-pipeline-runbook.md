@@ -293,6 +293,28 @@ git merge-base --short HEAD origin/trunk
 npm run wp-env status
 ```
 
+The known-fixes worktree must have built Gutenberg plugin artifacts. Without
+`build/scripts/blocks` and `build/build.php`, WordPress still shows the editor,
+but the Gutenberg plugin exits early and collaboration code never loads. The
+matrix script now runs this preflight automatically and, by default, repairs a
+missing build with:
+
+```bash
+npm run build -- --skip-types
+```
+
+Set `RTC_KNOWN_FIXES_AUTO_BUILD=0` only when you want a missing build to fail
+fast. Each isolated `wp-env` readiness check also verifies that:
+
+-   `packages/e2e-tests/plugins` is mounted.
+-   the database responds.
+-   the active Gutenberg plugin loaded and defines `GUTENBERG_VERSION`.
+-   `wp_is_collaboration_enabled()` exists and returns true.
+
+If a lane reports repeated `pre-action-bootstrap-stall` failures, check
+`$RTC_KNOWN_FIXES_RUN_ROOT/<run-set>/build-preflight.log` and the lane's
+`wp-env-<port>-status.log` before treating the failures as product bugs.
+
 The known-fixes scripts create isolated `wp-env` configs under the run root, for
 example `wp-env-known-fixes-test-8931.json`, and map
 `packages/e2e-tests/plugins` into the test environment. Do not stop or clean an
