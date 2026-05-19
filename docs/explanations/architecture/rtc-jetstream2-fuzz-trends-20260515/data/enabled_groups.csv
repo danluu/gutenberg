@@ -943,3 +943,6 @@ timestamp,group,group_family
 2026-05-19T13:28:49Z,novelty-ws-real-user-title-body-save-reload,real-user
 2026-05-19T13:34:01Z,novelty-ws-lifecycle,lifecycle
 2026-05-19T13:35:34Z,novelty-ws-lifecycle,lifecycle
+2026-05-19T14:15:36Z,novelty-ws-parser-transform,parser
+2026-05-19T14:17:54Z,novelty-ws-parser-transform,parser
+2026-05-19T14:19:45Z,novelty-ws-parser-transform,parser
