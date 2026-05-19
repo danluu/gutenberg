@@ -23,6 +23,12 @@ jest.mock( '@wordpress/blocks', () => {
 					content: { type: 'rich-text' },
 				},
 			},
+			{
+				name: 'core/button',
+				attributes: {
+					text: { type: 'rich-text' },
+				},
+			},
 		],
 	};
 } );
@@ -47,6 +53,14 @@ const SYNCED_PROPERTIES = new Set( [ 'blocks' ] );
 const OLD_HTML = '<em>italic</em><em>italic</em>';
 const NEW_HTML = '<em>italic</em>beta';
 const TEXT_OFFSET = 10;
+const HISTORICAL_SUFFIX_OLD_HTML = '<em>italic</em>beta 931972 >';
+const HISTORICAL_SUFFIX_NEW_HTML = '<em>italic</em>beta 931972 0';
+const HISTORICAL_SUFFIX_TEXT_OFFSET = 'italicbeta 931972 0'.length;
+const UNDO_REDO_BUTTON_OLD_TEXT =
+	'rtcw-5100002-0-u0-ui-undo-redo-paragraph-vbe undo redo ';
+const UNDO_REDO_BUTTON_NEW_TEXT =
+	'rtcw-5100002-0-u0-ui-undo-redo-paragraph-vbe undo redo paragraph';
+const UNDO_REDO_BUTTON_TEXT_OFFSET = UNDO_REDO_BUTTON_NEW_TEXT.length;
 const OLD_AMBIGUOUS_HTML = '<em>a</em>';
 const NEW_AMBIGUOUS_HTML = '<em>aa</em>';
 const AMBIGUOUS_TEXT_OFFSET = 1;
@@ -71,6 +85,15 @@ function makeParagraphBlock( content ) {
 	};
 }
 
+function makeButtonBlock( text ) {
+	return {
+		clientId: 'button-1',
+		name: 'core/button',
+		attributes: { text },
+		innerBlocks: [],
+	};
+}
+
 function getSelection() {
 	return {
 		selectionStart: {
@@ -89,6 +112,11 @@ function getSelection() {
 function getFirstBlockContentYText( yblocks ) {
 	const attrs = yblocks.get( 0 ).get( 'attributes' );
 	return attrs.get( 'content' );
+}
+
+function readFirstBlockTextFromYBlocks( yblocks ) {
+	const attrs = yblocks.get( 0 ).get( 'attributes' );
+	return attrs.get( 'text' ).toString();
 }
 
 function readFirstBlockContentFromYBlocks( yblocks ) {
@@ -165,6 +193,14 @@ function makeCursor( offset ) {
 	};
 }
 
+function makeButtonCursor( offset ) {
+	return {
+		attributeKey: 'text',
+		clientId: 'button-1',
+		offset,
+	};
+}
+
 function deltaForUpdate( oldHtml, newHtml, cursorPosition ) {
 	return new Delta( [ { insert: oldHtml } ] ).diffWithCursor(
 		new Delta( [ { insert: newHtml } ] ),
@@ -221,6 +257,46 @@ describe( 'RTC rich-text offset-space bug', () => {
 		);
 
 		expect( readFirstBlockContentFromYBlocks( yblocks ) ).toBe( NEW_HTML );
+	} );
+
+	it( 'preserves formatted paragraph suffix edits near the cursor', () => {
+		const doc = new Y.Doc();
+		const yblocks = doc.getArray( 'blocks' );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[ makeParagraphBlock( HISTORICAL_SUFFIX_OLD_HTML ) ],
+			null
+		);
+		mergeCrdtBlocks(
+			yblocks,
+			[ makeParagraphBlock( HISTORICAL_SUFFIX_NEW_HTML ) ],
+			makeCursor( HISTORICAL_SUFFIX_TEXT_OFFSET )
+		);
+
+		expect( readFirstBlockContentFromYBlocks( yblocks ) ).toBe(
+			HISTORICAL_SUFFIX_NEW_HTML
+		);
+	} );
+
+	it( 'preserves button text suffix edits near the cursor', () => {
+		const doc = new Y.Doc();
+		const yblocks = doc.getArray( 'blocks' );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[ makeButtonBlock( UNDO_REDO_BUTTON_OLD_TEXT ) ],
+			null
+		);
+		mergeCrdtBlocks(
+			yblocks,
+			[ makeButtonBlock( UNDO_REDO_BUTTON_NEW_TEXT ) ],
+			makeButtonCursor( UNDO_REDO_BUTTON_TEXT_OFFSET )
+		);
+
+		expect( readFirstBlockTextFromYBlocks( yblocks ) ).toBe(
+			UNDO_REDO_BUTTON_NEW_TEXT
+		);
 	} );
 
 	it( 'uses the updated rich-text HTML to place cursor-guided inserts', () => {
