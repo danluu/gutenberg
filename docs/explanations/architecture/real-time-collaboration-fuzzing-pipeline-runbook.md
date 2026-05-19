@@ -663,6 +663,12 @@ canonical repro or report candidate, rerun the selected seed with
 `RTC_FUZZ_PLAYWRIGHT_TRACE=retain-on-failure` or `--trace retain-on-failure` so
 the report still has a trace when that trace is useful.
 
+The long-running Jetstream2 strict-expansion, focused-shards, gap-booster, and
+coverage-guided browser loops should all run broad discovery in low-disk mode.
+If artifact growth accelerates, first verify the tmux pane environment for
+`RTC_FUZZ_LOW_DISK_MODE=1` and `RTC_FUZZ_PLAYWRIGHT_VIDEO=off` before deleting
+run outputs.
+
 ## Active wp-env And Docker Repair
 
 The supervisor owns active shared `wp-env` repair. Humans and Codex analysis

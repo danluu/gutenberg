@@ -7,7 +7,7 @@ TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 CUMULATIVE_ROOTS_FILE="$BASE/cumulative-observed-roots.txt"
-START_LOCK="$BASE/start.lock"
+START_LOCK="$BASE/start-v2.lock"
 MAX_OBSERVED_ROOTS=${RTC_FUZZ_NOVELTY_MAX_OBSERVED_ROOTS:-20}
 mkdir -p "$TMUX_WRAP" "$BASE/logs"
 exec 8>"$START_LOCK"
@@ -144,6 +144,8 @@ export RTC_FUZZ_CODEX_BIN='$CODEX_BIN_DIR/codex'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_INTERVAL_MINUTES='$NOVELTY_CODEX_INTERVAL_MINUTES'
 export RTC_FUZZ_NOVELTY_COVERAGE_GUIDANCE_STALL_PASSES='2'
 export RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_ISSUE_PASSES='2'
+export RTC_FUZZ_LOW_DISK_MODE='1'
+export RTC_FUZZ_PLAYWRIGHT_VIDEO='off'
 export NODE_OPTIONS="\${NODE_OPTIONS:---max-old-space-size=24576}"
 node bin/rtc-browser-fuzz-novelty-monitor.mjs >> '$BASE/logs/monitor.log' 2>&1
 code=\$?
@@ -173,6 +175,12 @@ printf '[%s] LIVE_ANALYSIS_EXIT code=%s\n' "\$stamp" "\$code" >> '$OUT/live-anal
 exit "\$code"
 RUN
 chmod +x "$LIVE_ANALYSIS_SCRIPT"
+
+# Do not let the long-lived tmux server inherit the start-lock fd. If it does,
+# later restarts block forever even though this launcher already finished setup.
+flock -u 8
+exec 8>&-
+
 tmux new-session -d -s rtc-coverage-guided-novelty "$RUN_SCRIPT"
 tmux kill-session -t rtc-coverage-guided-analysis 2>/dev/null || true
 tmux new-session -d -s rtc-coverage-guided-analysis "$LIVE_ANALYSIS_SCRIPT"
