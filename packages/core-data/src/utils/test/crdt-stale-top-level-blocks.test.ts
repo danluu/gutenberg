@@ -23,18 +23,38 @@ jest.mock( '@wordpress/blocks', () => {
 		string,
 		unknown
 	>;
+	const serializeMockBlock = ( block: {
+		attributes: Record< string, unknown >;
+		name: string;
+	} ): string => {
+		if ( block.name === 'core/search' ) {
+			return `<!-- wp:search ${ JSON.stringify(
+				block.attributes
+			) } /-->`;
+		}
+
+		return `<p>${ block.attributes.content }</p>`;
+	};
+
 	return {
 		...actual,
 		__unstableSerializeAndClean: (
-			blocks: { attributes: { content?: string } }[]
-		) =>
-			blocks
-				.map( ( block ) => `<p>${ block.attributes.content }</p>` )
-				.join( '\n\n' ),
+			blocks: { attributes: Record< string, unknown >; name: string }[]
+		) => blocks.map( serializeMockBlock ).join( '\n\n' ),
 		getBlockTypes: () => [
 			{
 				name: 'core/paragraph',
 				attributes: { content: { type: 'rich-text' } },
+			},
+			{
+				name: 'core/search',
+				attributes: {
+					label: { type: 'string', role: 'content' },
+					placeholder: { type: 'string', role: 'content' },
+					buttonText: { type: 'string', role: 'content' },
+					buttonPosition: { type: 'string' },
+					query: { type: 'object' },
+				},
 			},
 		],
 	};
@@ -61,6 +81,21 @@ function paragraph( clientId: string, content: string ): Block {
 		name: 'core/paragraph',
 		clientId,
 		attributes: { content },
+		innerBlocks: [],
+	};
+}
+
+function searchBlock( clientId: string, marker: string ): Block {
+	return {
+		name: 'core/search',
+		clientId,
+		attributes: {
+			buttonPosition: 'button-inside',
+			buttonText: `Find ${ marker }`,
+			label: `Search label ${ marker }`,
+			placeholder: `Search placeholder ${ marker }`,
+			query: { post_type: 'post' },
+		},
 		innerBlocks: [],
 	};
 }
@@ -114,10 +149,20 @@ function postContent( doc: Y.Doc ): string {
 	);
 }
 
+function serializeBlock( block: Block ): string {
+	if ( block.name === 'core/search' ) {
+		return `<!-- wp:search ${ JSON.stringify( block.attributes ) } /-->`;
+	}
+
+	return `<p>${ block.attributes.content }</p>`;
+}
+
 function serializeBlocks( blocks: Block[] ): string {
-	return blocks
-		.map( ( block ) => `<p>${ block.attributes.content }</p>` )
-		.join( '\n\n' );
+	return blocks.map( serializeBlock ).join( '\n\n' );
+}
+
+function occurrencesOf( value: string, needle: string ): number {
+	return value.split( needle ).length - 1;
 }
 
 describe( 'stale top-level block snapshots', () => {
@@ -133,7 +178,7 @@ describe( 'stale top-level block snapshots', () => {
 		doc.destroy();
 	} );
 
-	it( 'applies a local suffix append when the explicit base differs from current blocks', () => {
+	it( 'keeps a repeated local suffix append idempotent when the explicit base differs', () => {
 		const baseBlocks = [
 			paragraph( 'canonicalized', 'Alpha' ),
 			paragraph( 'unchanged', 'Beta' ),
@@ -572,6 +617,75 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 		expect( postContent( doc ) ).toContain( 'Alpha stale edit' );
 		expect( postContent( doc ) ).toContain( 'Beta remote edit' );
+
+		remoteDoc.destroy();
+	} );
+
+	it( 'derives checkpoint search content from merged blocks before save', () => {
+		const searchMarker = 'rtc-save-search-option-marker-unit';
+		const initialBlocks = [
+			paragraph( 'local-edited', 'Alpha' ),
+			paragraph( 'unchanged', 'Beta' ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: initialBlocks,
+				content: serializeBlocks( initialBlocks ),
+			},
+			SYNCED_POST_PROPERTIES
+		);
+
+		const remoteDoc = new Y.Doc();
+		Y.applyUpdate( remoteDoc, Y.encodeStateAsUpdate( doc ) );
+
+		const remoteBlocks = [
+			...initialBlocks,
+			paragraph( 'remote-appended', 'Gamma remote' ),
+		];
+		applyPostChangesToCRDTDoc(
+			remoteDoc,
+			{
+				blocks: remoteBlocks,
+				content: serializeBlocks( remoteBlocks ),
+			},
+			SYNCED_POST_PROPERTIES
+		);
+		Y.applyUpdate( doc, Y.encodeStateAsUpdate( remoteDoc ) );
+
+		const staleLocalBlocks = [
+			paragraph( 'local-edited', 'Alpha local edit' ),
+			paragraph( 'unchanged', 'Beta' ),
+			paragraph( 'checkpoint-paragraph', 'Checkpoint paragraph' ),
+			searchBlock( 'checkpoint-search', searchMarker ),
+		];
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: staleLocalBlocks,
+				content: serializeBlocks( staleLocalBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: initialBlocks } }
+		);
+
+		const mergedBlocks = postBlocks( doc ).toJSON() as Block[];
+		const mergedClientIds = mergedBlocks.map( ( block ) => block.clientId );
+		const content = postContent( doc );
+
+		expect( mergedClientIds ).toEqual(
+			expect.arrayContaining( [
+				'local-edited',
+				'unchanged',
+				'checkpoint-paragraph',
+				'checkpoint-search',
+				'remote-appended',
+			] )
+		);
+		expect( content ).toContain( 'Alpha local edit' );
+		expect( content ).toContain( 'Checkpoint paragraph' );
+		expect( content ).toContain( 'Gamma remote' );
+		expect( occurrencesOf( content, searchMarker ) ).toBe( 3 );
 
 		remoteDoc.destroy();
 	} );
