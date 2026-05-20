@@ -258,7 +258,7 @@ describe( 'prePersistPostType', () => {
 		expect( syncManager.createPersistedCRDTDoc ).toHaveBeenLastCalledWith(
 			'postType/page',
 			123,
-			{ basePersistedCRDTDoc: 'base-doc' }
+			{ basePersistedCRDTDoc: 'latest-doc' }
 		);
 		expect( result ).toEqual( {
 			meta: {

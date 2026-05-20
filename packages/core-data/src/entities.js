@@ -644,6 +644,8 @@ export const prePersistPostType = async (
 
 	// Add meta for persisted CRDT document.
 	if ( persistedRecord ) {
+		const crdtSnapshotBaseRecord =
+			latestRecordForCRDTSnapshot ?? persistedRecord;
 		const crdtSnapshotChanges = getCRDTSnapshotChangesFromPostEdits( {
 			...edits,
 			...newEdits,
@@ -657,7 +659,7 @@ export const prePersistPostType = async (
 				{
 					isSave: true,
 					baseRecord: getCRDTSnapshotBaseRecord(
-						latestRecordForCRDTSnapshot ?? persistedRecord
+						crdtSnapshotBaseRecord
 					),
 				}
 			);
@@ -669,7 +671,7 @@ export const prePersistPostType = async (
 				syncManager ?? getSyncManager()
 			)?.createPersistedCRDTDoc( objectType, objectId, {
 				basePersistedCRDTDoc:
-					persistedRecord?.meta?.[
+					crdtSnapshotBaseRecord?.meta?.[
 						POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
 					] || null,
 			} );
