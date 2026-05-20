@@ -15,11 +15,7 @@ import { addQueryArgs } from '@wordpress/url';
  * Internal dependencies
  */
 import { PostEditorAwareness } from './awareness/post-editor-awareness';
-import {
-	CRDT_RECORD_MAP_KEY,
-	getSyncManager,
-	LOCAL_UNDO_IGNORED_ORIGIN,
-} from './sync';
+import { getSyncManager, LOCAL_UNDO_IGNORED_ORIGIN } from './sync';
 import {
 	applyPostChangesToCRDTDoc,
 	defaultCollectionSyncConfig,

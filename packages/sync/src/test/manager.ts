@@ -33,11 +33,7 @@ import type {
 	RecordHandlers,
 	SyncConfig,
 } from '../types';
-import {
-	deserializeCrdtDoc,
-	getPersistedCrdtDocVersion,
-	serializeCrdtDoc,
-} from '../utils';
+import { getPersistedCrdtDocVersion, serializeCrdtDoc } from '../utils';
 
 // Mock dependencies.
 jest.mock( '../providers', () => ( {
