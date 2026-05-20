@@ -178,7 +178,7 @@ describe( 'stale top-level block snapshots', () => {
 		doc.destroy();
 	} );
 
-	it( 'keeps a repeated local suffix append idempotent when the explicit base differs', () => {
+	it( 'reapplies a local suffix append when the explicit base differs from current blocks', () => {
 		const baseBlocks = [
 			paragraph( 'canonicalized', 'Alpha' ),
 			paragraph( 'unchanged', 'Beta' ),
@@ -574,33 +574,6 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 
 		remoteDoc.destroy();
-	} );
-
-	it( 'applies a local suffix append when the explicit base differs from current blocks', () => {
-		const baseBlocks = [
-			paragraph( 'canonicalized', 'Alpha' ),
-			paragraph( 'unchanged', 'Beta' ),
-		];
-		const currentBlocks = [
-			paragraph( 'canonicalized', 'Alpha canonicalized' ),
-			paragraph( 'unchanged', 'Beta' ),
-		];
-		const blocksWithLocalAppend = [
-			...baseBlocks,
-			paragraph( 'checkpoint-paragraph', 'Checkpoint paragraph' ),
-			paragraph( 'checkpoint-search', 'Checkpoint search' ),
-		];
-
-		mergeCrdtBlocks( yblocks, currentBlocks, null );
-		mergeCrdtBlocks( yblocks, blocksWithLocalAppend, null, baseBlocks );
-		mergeCrdtBlocks( yblocks, blocksWithLocalAppend, null, baseBlocks );
-
-		expect( contentsOf( yblocks ) ).toEqual( [
-			'Alpha canonicalized',
-			'Beta',
-			'Checkpoint paragraph',
-			'Checkpoint search',
-		] );
 	} );
 
 	it( 'derives post content from merged blocks instead of stale serialized content', () => {
