@@ -18,7 +18,7 @@ readiness are different:
   results, and artifacts.
 
 The live state in this report was last sampled from Jetstream2 around
-`2026-05-20T16:13Z`. The closure work is mutable; before filing PRs, re-check the
+`2026-05-20T17:55Z`. The closure work is mutable; before filing PRs, re-check the
 exact worker branch, SHA, test command, result, and artifact path.
 
 ## Current Bottom Line
@@ -53,7 +53,7 @@ list/nested browser spec as fully proven until their gates run and pass.
 
 | Area | Status | Evidence | Important caveat |
 | --- | --- | --- | --- |
-| Browser RTC fuzzing | Existing coverage evidence | `test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts`, `test/e2e/specs/editor/collaboration/websocket/collaboration-fuzz.spec.ts`, Jetstream lane summaries, replay manifests, behavioral coverage artifacts | Chromium and test-provider focused. Broad profiles often use `wp.data` reachability, not every toolbar, inserter, drag, keyboard, selection, touch, or browser path. |
+| Browser RTC fuzzing | Existing coverage evidence | `test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts`, `test/e2e/specs/editor/collaboration/websocket/collaboration-fuzz.spec.ts`, Jetstream lane summaries, replay manifests, behavioral coverage artifacts | Chromium and test-provider focused. Broad profiles often use `wp.data` reachability, not every toolbar, inserter, drag, keyboard, selection, touch, or browser path. Current pass-sensitive concurrency evidence includes successful two-user and three-user records; twelve-user success remains below target, and the new thirty-user target has no completed successful record yet. |
 | HTTP polling and test WebSocket transport | Existing coverage evidence | Browser fuzz profiles, WebSocket wrapper, HTTP polling lanes, targeted PHP/server tests | Test WebSocket provider coverage is not production proxy/load-balancer/WebSocket deployment coverage. |
 | CRDT/rich-text/table/parser lower-level behavior | Existing and newly expanded coverage | CRDT block tests, stale snapshot tests, rich-text offset tests, table/query-array tests, parser semantic-equivalence worker output | File paths vary by exact branch. Reports must cite the branch/SHA carrying the actual test file. |
 | PHP/server storage | Existing and newly expanded coverage | `phpunit/tests/collaboration/wpHttpPollingSyncServer.php`, `phpunit/tests/collaboration/wpSyncPostMetaStorage.php`, transport-compaction worker output | Some new PHP coverage has only syntax/diff validation so far because the closure worktree lacked PHP test dependencies and `wp-env`. |
@@ -66,50 +66,64 @@ list/nested browser spec as fully proven until their gates run and pass.
 
 ## 2026-05-20 Concrete Coverage Snapshot
 
-Latest checked Jetstream2 monitor state: `2026-05-20T16:13:26Z`.
+Latest checked Jetstream2 monitor state: `2026-05-20T17:55:08Z`.
 
 Current monitor output directory:
-`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260520T154238Z`.
+`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260520T174857Z`.
 
-The novelty monitor reported `3811` coverage files, `119522` all-time novelty
-records, `113933` WebSocket records, `5589` HTTP records, `10514` same-user
-records, `19` many-user lifecycle records, `21` collaboration UI signal records,
-and `215` large-post three-user HTTP lifecycle records. The active supervisor at
-the checked instant was narrower than the corpus: one browser-e2e lane for
-`novelty-ws-parser-serialization`.
+The novelty monitor reported `4290` coverage files, `120689` all-time novelty
+records, `114294` WebSocket records, `6395` HTTP records, `10795` same-user
+records, `21` many-user lifecycle records, `30` collaboration UI signal records,
+and `249` large-post three-user HTTP lifecycle records. The active run had
+browser lanes for parser transforms, real-user save/reload, real-user rich text,
+async/server-backed blocks, long-session/large-document coverage, and
+collaboration UI signals.
 
-A direct scan of the monitor's current/observed behavioral artifact roots
-counted `4743` `rtc-behavioral-coverage.ndjson` files from `21` roots and
-`8794` raw JSON records: `2269` passed records and `6525` records that failed
-or stopped early. The raw-record count is intentionally different from the
-novelty monitor count: novelty records are derived feature keys, while this scan
-counts one behavioral JSON record per seed artifact line.
+The new thirty-user target is configured in the novelty supervisor as
+`novelty-ws-thirty-user-lifecycle`. It uses the many-user lifecycle profile with
+`GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS=28`, which means the primary user,
+the default collaborator, and `28` extra collaborators are all intended to join
+one document. At this sample it had launched seed `1210001`, but the current
+coverage counters still showed `0` thirty-user lifecycle records and `0`
+successful thirty-user records. The supervisor had also marked that lane
+inactive under the strict pre-action startup-noise cooldown after no product
+evidence was produced. Treat thirty-user coverage as an active goal, not as
+covered behavior.
+
+A detailed direct scan of the monitor's current/observed behavioral artifact
+roots earlier on May 20 counted `4743` `rtc-behavioral-coverage.ndjson` files
+from `21` roots and `8794` raw JSON records: `2269` passed records and `6525`
+records that failed or stopped early. The raw-record count is intentionally
+different from the novelty monitor count: novelty records are derived feature
+keys, while this scan counts one behavioral JSON record per seed artifact line.
+The direct scan is retained below for action-shape detail; the pass-sensitive
+goal state above is the current source for which concurrency goals are closed.
 
 ### Users And Server Concurrency
 
 Server-wide browser load and users in one document are separate axes:
 
-- At the checked instant, Jetstream2 itself had one active supervised browser
-  lane. That live lane is a normal two-user parser/serialization run once it
-  gets past startup. Completed current-run directories and local imports make
-  the current run's coverage broader than the single live lane.
+- At the checked instant, Jetstream2 had multiple supervised browser groups
+  active, but thirty-user lifecycle had not produced product evidence and was
+  paused by the startup-noise policy.
 - The largest observed single document has `12` users: the base users plus `10`
   extra collaborators in the many-user lifecycle profile.
-- In the observed behavioral roots, documents with nonzero user counts are
-  `5093` two-user records, `446` three-user records, and `9` twelve-user
-  records. Passing records are `2260` two-user, `5` three-user, and `4`
-  twelve-user records.
-- Same-account multi-tab coverage is present but still weak in the direct scan:
-  `555` same-user records, `2` passing. The all-time novelty counter is higher,
-  but the current pass-sensitive evidence should still be treated as an active
-  coverage target.
+- Current novelty counters show records with `2`, `3`, and `12` users in one
+  document. Successful current-window counters show `2057` two-user records and
+  `44` three-user records; successful twelve-user and thirty-user goals are
+  still unmet in the pass-sensitive novelty state.
+- Same-account multi-tab coverage is present. The novelty monitor reports
+  `10795` same-user records and `44` same-user successful records.
+- A thirty-user-in-one-document goal is now explicit. It is configured and
+  scheduled, but it has `0` completed records and `0` successful records in the
+  checked snapshot.
 - Local complementary coverage is synced back into Jetstream2 artifacts for the
   controller to see. Those imported records add `permissions-auth-locks`,
   `revision-persistence`, and `session-lifecycle` coverage, including 2-user
   and 3-user records, but they do not add browser load to the Jetstream2
   `wp-env` server.
 
-Per-profile user-count evidence from the direct artifact scan:
+Per-profile user-count evidence from the earlier direct artifact scan:
 
 | Profile | Observed user-count shape |
 | --- | --- |
@@ -122,7 +136,8 @@ Per-profile user-count evidence from the direct artifact scan:
 
 ### Simultaneous Editing
 
-The corpus includes same-logical-step and multi-actor pressure:
+The current novelty counters do not expose every action histogram. The latest
+detailed action scan still shows same-logical-step and multi-actor pressure:
 
 - `concurrent-paragraphs`: `4882` action records, including `2758` in passing
   records.
@@ -151,7 +166,7 @@ The corpus includes same-logical-step and multi-actor pressure:
 
 ### Lifecycle, Persistence, And Document Shape
 
-The observed behavioral roots include:
+The latest detailed action scan included:
 
 - save checkpoints: `16771` phase events, `10222` in passing records;
 - reloads: `15509` phase events, `10348` in passing records;
@@ -176,11 +191,11 @@ direct artifact scan. `1499` records used fail-mode operation ledgers and `7295`
 used shadow mode.
 
 Coverage goals still below target at the checked instant include successful
-large-post three-user HTTP lifecycle, successful table stale snapshot,
-successful collaboration UI signals, many-user lifecycle completion, remote
-selection/cursor evidence, final publish persistence, final UI witness sweep,
-and several real-user editing action ratchets. Those should remain active
-fuzzing goals.
+twelve-user lifecycle completion, all thirty-user goals, successful large-post
+three-user HTTP lifecycle, successful table stale snapshot, successful
+collaboration UI signals, remote selection/cursor evidence, final publish
+persistence, final UI witness sweep, and several real-user editing action
+ratchets. Those should remain active fuzzing goals.
 
 ## Browser Fuzzing
 
@@ -192,7 +207,8 @@ Covered classes include:
 
 - HTTP polling transport and the test WebSocket provider.
 - Distinct-user and same-user sessions.
-- Two-user default sessions, three-user sessions, and late joins.
+- Two-user default sessions, three-user sessions, same-user sessions, and late
+  joins.
 - Reload/reconnect lifecycle profiles.
 - Save checkpoints, autosave checkpoints, final persistence checks, and
   revision restore probes.
@@ -211,6 +227,11 @@ Important browser gaps remain:
 - Mobile/touch editing is queued, not proven.
 - Production WebSocket/proxy/load-balancer behavior requires an actual endpoint
   and was not executed by the closure worker.
+- Twelve-user concurrency is observed, but successful twelve-user goals remain
+  below target in the current novelty state.
+- Thirty-user concurrency is now a first-class coverage goal and has an
+  executable lane, but it has not yet produced a completed or successful
+  coverage record.
 - Many broad actions use direct editor state mutation through `wp.data`. That
   is useful for reachability, but it is not equivalent to covering every
   toolbar, inserter, drag-and-drop, keyboard, selection, or touch path.
