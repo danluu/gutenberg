@@ -1,24 +1,27 @@
 # RTC Jetstream2 Maintainer PR Snapshot
 
-Snapshot time: `2026-05-20T00:06:00Z`
+Snapshot time: `2026-05-20T15:19:26Z`
 
 This is a one-time maintainer review snapshot of the current best RTC fix
 split. No GitHub pull requests have been opened from this document.
 
-The current validated merged branch is under
-`rtc-pr-stack-20260519T214027Z-*`. The older `rtc-pr-stack-20260519T161502Z-*`
-snapshot remains below for historical context, but it is superseded by the
-validated branch and fixed PR06B/PR06C/PR06D/PR06E refs listed here.
+The current validated merged branch is
+`rtc-pr-stack-20260520T141903Z-all-merged-revision-restore-canary`. It
+supersedes the `rtc-pr-stack-20260519T214027Z-*` snapshot, including the
+known-bad `rtc-pr-stack-20260519T214027Z-validated-no-harness` branch that
+failed the large-post three-user HTTP benchmark row. The older
+`rtc-pr-stack-20260519T161502Z-*` snapshot remains below for historical
+split-review context.
 
 The branch links were verified with:
 
 ```text
-git ls-remote --heads danluu 'rtc-pr-stack-20260519T161502Z-*'
+git ls-remote --heads danluu 'rtc-pr-stack-20260520T*-all-merged*' 'rtc-pr-stack-20260519T214027Z-*'
 ```
 
-The original command returned `61` heads for the older snapshot. The validated
-update additionally pushed the fixed PR06 refs, a validated no-harness merged
-branch, and the matching base branch.
+The command confirmed that no newer `20260520` all-merged branch existed after
+the benchmark canary completed, and that the linked branch still resolved to
+`8eda4fa2db455c44d043e3b462c7c1a1d788e187`.
 
 Source status report:
 [`rtc-jetstream2-fix-pr-status-20260515.md`](https://github.com/danluu/gutenberg/blob/explain/rtc-jetstream2-fuzz-progress-20260515/docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md)
@@ -29,30 +32,31 @@ Maintainers who want to test the current reviewable product/test code together
 should use:
 
 - Branch:
-  [`rtc-pr-stack-20260519T214027Z-validated-no-harness`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T214027Z-validated-no-harness)
+  [`rtc-pr-stack-20260520T141903Z-all-merged-revision-restore-canary`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260520T141903Z-all-merged-revision-restore-canary)
+- Commit:
+  `8eda4fa2db455c44d043e3b462c7c1a1d788e187`
 - Compare against the validated base:
-  [`base...validated-no-harness`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T214027Z-tested-base...rtc-pr-stack-20260519T214027Z-validated-no-harness)
-- Diff size against base: `18 files, +3466 / -89`
+  [`tested-base...revision-restore-canary`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T214027Z-tested-base...rtc-pr-stack-20260520T141903Z-all-merged-revision-restore-canary)
+- Diff size against base: `27 files, +4315 / -119`
 
-This merged branch starts from the fixed PR06E stack and includes `PR02A`. It
-intentionally excludes the WebSocket harness branch from the product/test merge
-branch because the exact merged branch with that harness commit
-(`rtc-pr-stack-20260519T214027Z-validated-merged`, `f60639b3c32`) failed the
-focused reload gate with a collaboration-readiness/network-change failure. The
-harness branch remains test infrastructure, not maintainer product code.
+This branch carries the earlier fixed RTC stack plus the finalized saved-CRDT
+hydration, local autosave, saved-content hydration, and browser revision-restore
+CRDT invalidation fixes. It does not reuse the known-bad
+`rtc-pr-stack-20260519T214027Z-validated-no-harness` branch as a passing
+candidate.
 
-Validation run on Jetstream2:
+Benchmark canary result:
 
-| Ref | Focused list-item reload gate |
-| --- | --- |
-| `PR05D` | pass |
-| `PR06A` | pass |
-| original `PR06B` | fail, persisted old list order after reload |
-| fixed `PR06B` | pass |
-| fixed `PR06C` | pass |
-| fixed `PR06D` | pass |
-| fixed `PR06E` | pass |
-| `validated-no-harness` | pass |
+| Run | Branch rows | Result |
+| --- | ---: | --- |
+| `revision-restore-canary-isolated-20260520T150007Z` | base `22/22`, fixed `22/22` | pass |
+| `focused-expanded-valid-20260520T150007Z` | fixed `2/2` | pass |
+
+The benchmark canary is green because the fuzzer and promotion loops are
+expected to cover these product behaviors before a maintainer snapshot is
+published. The canary is a backstop for that process, not the trust model
+itself. Any future canary miss should feed back into the Jetstream coverage and
+PR-refinement loops before this document is advanced again.
 
 The fixed PR06 refs are:
 
@@ -168,10 +172,11 @@ candidate, or investigation support rather than a fileable product PR.
 ## Verification Notes
 
 - The current validated branch is
-  `rtc-pr-stack-20260519T214027Z-validated-no-harness` at `e922771984f`.
-  It passed `git diff --check`, targeted unit tests in the gate runner, and
-  the focused `two users concurrently move list items` reload E2E gate on
-  Jetstream2.
+  `rtc-pr-stack-20260520T141903Z-all-merged-revision-restore-canary` at
+  `8eda4fa2db455c44d043e3b462c7c1a1d788e187`. The maintainer snapshot was
+  advanced only after the local benchmark canary run
+  `revision-restore-canary-isolated-20260520T150007Z` recorded 44 rows and 0
+  failures, including fixed `large-post-three-user-http` passing `2/2`.
 - The original `PR06B` branch failed that focused reload gate by persisting the
   old list order. The fixed `PR06B` branch and the fixed `PR06C`/`PR06D`/`PR06E`
   cumulative refs passed the same gate.
@@ -180,8 +185,9 @@ candidate, or investigation support rather than a fileable product PR.
   failed with a reload/collaboration-readiness infrastructure failure and needs
   separate harness validation.
 - The all-ready merged branch was produced locally by merging the side/support
-  refs into `PR15C`; `git diff --check` against the snapshot base returned no
-  output.
+  refs into `PR15C`. The current all-merged revision-restore canary supersedes
+  that older branch; `git diff --check` against the snapshot base returned no
+  output during the canary construction cycle.
 - The older all-ready merged branch remains historical context only. This
   snapshot still does not claim upstream rebase or full CI.
 - Branches in the artifact table are deliberately linked for inspectability,

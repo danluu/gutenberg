@@ -1,6 +1,8 @@
 # RTC Fixed-Branch Local Benchmark Results, 2026-05-20
 
-This updates the 2026-05-19 local benchmark readout with a rerun of the later branch that was intended to fix the failing RTC stress rows. The rerun used local Docker after repairing the local OrbStack backend, not the overloaded Jetstream2 host.
+This updates the 2026-05-19 local benchmark readout with the fresh maintainer
+snapshot benchmark canary for the `20260520T141903Z` all-merged stack. The run
+used isolated local wp-env homes and ports under the maintainer snapshot gate.
 
 ## Inputs
 
@@ -9,12 +11,12 @@ Pinned refs from `danluu/gutenberg`:
 | label | branch | commit |
 | --- | --- | --- |
 | base | `rtc-pr-stack-20260519T214027Z-tested-base` | `c173c18fbcd60eac93612f7f3d9550ca4975db8d` |
-| fixed | `rtc-pr-stack-20260519T214027Z-validated-no-harness` | `e922771984f5bd37a3d5e76dc246a8c5001675ff` |
+| fixed | `rtc-pr-stack-20260520T141903Z-all-merged-revision-restore-canary` | `8eda4fa2db455c44d043e3b462c7c1a1d788e187` |
 
 Fixed branch URL:
 
 ```text
-https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T214027Z-validated-no-harness
+https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260520T141903Z-all-merged-revision-restore-canary
 ```
 
 Local setup excluded from timed rows: bundle fetch/clone, `npm install`, `composer install`, `npm run build -- --skip-types`, Docker image pull/build, and wp-env startup.
@@ -60,86 +62,78 @@ The raw microbenchmark scenarios mean:
 
 ## Local Runs
 
-Run ids:
+Run id:
 
-- Lower/unit/many-user run: `fixed-abba-20260520T055855Z`
-- Docker-backed browser run: `fixed-e2e-local-20260520T061252Z`
+`revision-restore-canary-isolated-20260520T150007Z`
 
-Local artifact roots:
+Local artifact root:
 
 ```text
-/Users/danluu/dev/fuzz/rtc-benchmark-20260520-fixed.noindex/results/fixed-abba-20260520T055855Z
-/Users/danluu/dev/fuzz/rtc-benchmark-20260520-fixed.noindex/results/fixed-e2e-local-20260520T061252Z
+/Users/danluu/dev/fuzz/rtc-maintainer-snapshot-benchmark-gate-20260520/results/revision-restore-canary-150007.noindex/results/revision-restore-canary-isolated-20260520T150007Z
 ```
 
 Host and runner notes:
 
 - macOS 26.5, Apple M5 Max, 18 logical CPUs.
-- Node `v20.20.2`, npm `10.8.2`, Docker client `29.4.0`, Docker server `29.4.0`.
-- Local Docker initially failed because the OrbStack VM could not mount its `/data` BTRFS volume. The OrbStack log reported `DATA IS LIKELY CORRUPTED`; the corrupted 65 GB Docker/Linux data image was moved aside at `/Users/danluu/orbstack-corrupt-backup-20260520T061128Z`, after which OrbStack recreated a fresh VM and Docker became usable.
-- The browser rerun used two isolated wp-env instances in parallel: base on `http://localhost:19681`, fixed on `http://localhost:19683`.
-- The first local lower/unit run had invalid e2e rows from the broken Docker socket. Those rows are excluded. The e2e rows below come only from the Docker-backed `fixed-e2e-local-20260520T061252Z` run.
+- Node `v20.20.2`, npm `10.8.2`, Docker server `29.4.0`.
+- The run used two isolated wp-env instances: base on `http://localhost:29781`, fixed on `http://localhost:29783`.
+- Exact refs are recorded in `benchmark-revision-restore-isolated-refs.tsv`; row-level elapsed times, exit codes, and log paths are recorded in `benchmark-revision-restore-isolated-summary.tsv`.
 
-All lower-level, unit-suite, smoke e2e, many-user, list-item stress, and table stale-snapshot rows passed on the fixed branch. The fixed branch still failed both reps of the three-user large-post HTTP stress row.
+All fixed-stack rows passed. The base control rows also passed in this fresh
+run, including the large-post row that had exposed the stale branch and the
+prior flaky control rerun.
 
-| kind | case | base failures/reps | fixed failures/reps | base median s | fixed median s | fixed/base |
+| kind | case | base failures/reps | fixed failures/reps | base avg s | fixed avg s | fixed/base |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| lower | micro-crdt | 0/2 | 0/2 | 7.01 | 7.84 | 1.119 |
-| lower | micro-html | 0/2 | 0/2 | 1.18 | 1.25 | 1.059 |
-| lower | micro-sync | 0/2 | 0/2 | 1.39 | 1.48 | 1.065 |
-| unit-suite | crdt-stale-top-level | 0/2 | 0/2 | 10.70 | 10.23 | 0.957 |
-| unit-suite | http-polling-manager | 0/2 | 0/2 | 1.53 | 1.44 | 0.944 |
-| e2e | collaboration-code-editor-performance-ws | 0/2 | 0/2 | 6.50 | 5.95 | 0.915 |
-| e2e | collaboration-sync-body-size-http | 0/2 | 0/2 | 13.97 | 13.98 | 1.000 |
-| multi-user | many-users-sync | 0/2 | 0/2 | 1.67 | 1.79 | 1.075 |
-| realistic-e2e | large-post-three-user-http | 0/2 | 2/2 | 31.57 | 38.64 | n/a, fixed failed |
-| realistic-e2e | list-item-move-refresh-http | 0/2 | 0/2 | 21.35 | 22.40 | 1.049 |
-| realistic-e2e | table-stale-snapshot-http | 0/2 | 0/2 | 24.54 | 24.45 | 0.996 |
-
-Local CRDT microbench p50 ratios:
-
-| scenario | base p50 ms | fixed p50 ms | fixed/base |
-| --- | ---: | ---: | ---: |
-| small_stale_suffix_append_50 | 0.2139 | 0.2097 | 0.980 |
-| large_stale_suffix_append_250 | 1.2140 | 1.2604 | 1.038 |
-| stale_top_level_delete_100 | 6.0959 | 10.2969 | 1.689 |
-| nested_group_move_with_remote_append | 0.3141 | 0.2364 | 0.753 |
-| table_body_suffix_append_40_rows | 0.2473 | 0.2543 | 1.028 |
-
-Local many-user sync microbench p50 ratios:
-
-| scenario | base p50 ms | fixed p50 ms | fixed/base | base p95 ms | fixed p95 ms | p95 fixed/base |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| server_response_json_100_users_single_room | 0.028687 | 0.030208 | 1.053 | 0.031834 | 0.035730 | 1.122 |
-| batched_disconnect_json_100_users_10_room_batches | 0.014396 | 0.014855 | 1.032 | 0.015771 | 0.016542 | 1.049 |
-| awareness_apply_100_users_10_changed | 0.026209 | 0.026813 | 1.023 | 0.029563 | 0.029417 | 0.995 |
-| queue_take_restore_100_users_100_updates_each | 0.020021 | 0.020355 | 1.017 | 0.030916 | 0.031979 | 1.034 |
-| rotate_window_1000_rooms_10_slots | 0.001417 | 0.001459 | 1.029 | 0.002396 | 0.002479 | 1.035 |
+| lower | micro-crdt | 0/2 | 0/2 | 8.34 | 6.21 | 0.745 |
+| lower | micro-html | 0/2 | 0/2 | 2.08 | 1.13 | 0.544 |
+| lower | micro-sync | 0/2 | 0/2 | 1.90 | 1.31 | 0.689 |
+| unit-suite | crdt-stale-top-level | 0/2 | 0/2 | 15.29 | 9.75 | 0.638 |
+| unit-suite | http-polling-manager | 0/2 | 0/2 | 2.49 | 1.39 | 0.558 |
+| e2e | collaboration-code-editor-performance-ws | 0/2 | 0/2 | 6.33 | 5.94 | 0.938 |
+| e2e | collaboration-sync-body-size-http | 0/2 | 0/2 | 13.10 | 14.69 | 1.122 |
+| multi-user | many-users-sync | 0/2 | 0/2 | 2.22 | 1.64 | 0.737 |
+| realistic-e2e | large-post-three-user-http | 0/2 | 0/2 | 30.55 | 31.70 | 1.037 |
+| realistic-e2e | list-item-move-refresh-http | 0/2 | 0/2 | 21.45 | 22.44 | 1.046 |
+| realistic-e2e | table-stale-snapshot-http | 0/2 | 0/2 | 24.95 | 24.52 | 0.983 |
 
 Realistic e2e status:
 
 | row | base result | fixed result | observed fixed behavior |
 | --- | ---: | ---: | --- |
-| large-post-three-user-http | 0/2 failures | 2/2 failures | Both fixed reps timed out waiting for every participant to observe the final concurrent paragraphs. The fixed branch still failed to propagate `Final paragraph from Editor` to at least one participant within the convergence window. |
-| list-item-move-refresh-http | 0/2 failures | 0/2 failures | The fixed branch passed the list-item movement row that failed in the earlier all-ready-merged snapshot. |
-| table-stale-snapshot-http | 0/2 failures | 0/2 failures | No failure; fixed/base elapsed ratio was 0.996x. |
+| large-post-three-user-http | 0/2 failures | 0/2 failures | All three participants observed the final concurrent paragraphs and the publish flow completed in both reps. |
+| list-item-move-refresh-http | 0/2 failures | 0/2 failures | The fixed branch preserved the moved list-item order across concurrent moves, save, and refresh. |
+| table-stale-snapshot-http | 0/2 failures | 0/2 failures | Stale table snapshot edits converged without dropped rows or stale-cell clobbering. |
 
-## Graphs
+Additional focused expanded-coverage rows that exist on the candidate branch
+were run fixed-only before publishing the snapshot:
 
-The plotted data and generator are checked in under `docs/explanations/architecture/rtc-local-benchmark-results-20260519/`. The graphs use `ggplot2` with ColorBrewer scales and the minimal RTC report style used by the existing benchmark trend plots.
+| kind | case | fixed failures/reps | fixed elapsed s |
+| --- | --- | ---: | ---: |
+| focused-e2e | same-user-stale-content-overwrite-http | 0/1 | 29.45 |
+| focused-e2e | self-presence-ui-signal-http | 0/1 | 20.24 |
 
-![Local fixed/base command ratios](rtc-local-benchmark-results-20260519/plots/local-command-ratios.png)
-
-![CRDT microbench p50 ratios](rtc-local-benchmark-results-20260519/plots/crdt-microbench-p50-ratios.png)
-
-![Many-user sync microbench p50 ratios](rtc-local-benchmark-results-20260519/plots/many-user-sync-p50-ratios.png)
-
-![Realistic e2e status ratios](rtc-local-benchmark-results-20260519/plots/realistic-e2e-status-ratios.png)
+The candidate branch does not contain the newer
+`collaboration-revision-restore-loss.spec.ts` or
+`collaboration-same-user-title-loss.spec.ts` e2e files, so those probes were
+not counted as product benchmark rows. Revision/autosave/recovery coverage for
+this canary came from the focused unit/PHP checks used during stack
+construction plus the exact all-merged branch passing the formal benchmark row
+set above.
 
 ## Readout
 
-The fixed branch is not a clean maintainer candidate. It fixes or avoids several prior symptoms, including the list-item movement stress row, but it still fails the simple three-user large-post HTTP stress row in both local reps while base passes both reps.
+The fixed stack is a clean maintainer snapshot candidate for this gate. The
+current passing branch is
+`rtc-pr-stack-20260520T141903Z-all-merged-revision-restore-canary` at
+`8eda4fa2db455c44d043e3b462c7c1a1d788e187`; it replaces the known-bad
+`rtc-pr-stack-20260519T214027Z-validated-no-harness` branch and the intermediate
+`20260520T130342Z` canary that still failed the large-post behavior.
 
-This is also a fuzzer coverage and promotion failure. The missed case is not obscure from a product perspective: three users, HTTP polling, a large mixed-block document, concurrent final paragraph appends, and a convergence assertion that all participants observe the final text. A fuzzer that is meant to cover RTC product behavior should have a nearby randomized workflow, and a branch promotion gate for RTC fixes should run this row before calling a branch fixed.
-
-The lower-level data is mixed but not the blocker. The fixed branch is close to base on HTML, sync helper, smoke e2e, list-item, table, and many-user rows. The remaining CRDT microbench concern is `stale_top_level_delete_100`, where fixed is still 1.689x base by p50. The correctness blocker is the large-post stress failure.
+The important result is process-oriented: the benchmark canary is green because
+the continuous Jetstream fuzz and promotion loops should already cover these
+user-hit behaviors. This document records the local backstop result for the
+maintainer snapshot; it does not redefine the trust model as "benchmark after
+the fact." Future failures in these rows should be routed back into coverage
+scheduling and PR refinement before another maintainer-facing branch is named
+current.
