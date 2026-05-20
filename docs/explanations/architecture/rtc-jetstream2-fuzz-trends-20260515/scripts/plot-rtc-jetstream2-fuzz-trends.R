@@ -496,6 +496,10 @@ current_run_accounting_snapshot <- tibble(
 	active_run_dirs = first_status_number( novelty_status_lines, "^- active run dirs: ([0-9]+)" ),
 	supervisor_groups_file = first_status_number( novelty_status_lines, "^- supervisor groups file: ([0-9]+)" ),
 	observed_roots = first_status_number( novelty_status_lines, "^- observed roots: ([0-9]+)" ),
+	current_run_signatures = first_status_number( novelty_status_lines, "^- signatures: ([0-9]+)" ),
+	current_run_actionable_signatures = first_status_number( novelty_status_lines, "^- actionable signatures: ([0-9]+)" ),
+	current_run_product_evidence_signatures = first_status_number( novelty_status_lines, "^- product-evidence signatures: ([0-9]+)" ),
+	current_run_top_duplicate_share = first_status_number( novelty_status_lines, "^- top duplicate family share: ([0-9.]+)" ),
 	last_completed_full_pass_at = last_completed_full_pass_at,
 	last_state_update_at = last_state_update_at,
 	last_current_run_triage_completed_at = last_current_run_triage_completed_at,
@@ -1499,7 +1503,11 @@ if ( nrow( current_run_accounting ) > 0 ) {
 			pending_value,
 			minutes_since_completed_full_pass,
 			active_run_dirs,
-			supervisor_groups_file
+			supervisor_groups_file,
+			current_run_signatures,
+			current_run_actionable_signatures,
+			current_run_product_evidence_signatures,
+			current_run_top_duplicate_share
 		) %>%
 		pivot_longer(
 			cols = -c( timestamp, run_id ),
@@ -1513,7 +1521,11 @@ if ( nrow( current_run_accounting ) > 0 ) {
 				pending_value = "full-pass accounting pending",
 				minutes_since_completed_full_pass = "minutes since completed full pass",
 				active_run_dirs = "active run directories",
-				supervisor_groups_file = "supervisor groups published"
+				supervisor_groups_file = "supervisor groups published",
+				current_run_signatures = "current-run signatures",
+				current_run_actionable_signatures = "current-run actionable signatures",
+				current_run_product_evidence_signatures = "current-run product-evidence signatures",
+				current_run_top_duplicate_share = "current-run top duplicate share"
 			)
 		)
 
@@ -3106,6 +3118,9 @@ summary_lines <- c(
 	paste0( "current_run_metrics_trusted_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_metrics_trusted ), NA ) ),
 	paste0( "current_run_full_pass_pending_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$full_pass_pending | current_run_accounting$pending_until_first_pass ), NA ) ),
 	paste0( "current_run_minutes_since_completed_full_pass_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$minutes_since_completed_full_pass ), NA ) ),
+	paste0( "current_run_signatures_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_signatures ), NA ) ),
+	paste0( "current_run_actionable_signatures_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_actionable_signatures ), NA ) ),
+	paste0( "current_run_top_duplicate_share_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_top_duplicate_share ), NA ) ),
 	paste0( "quality_issues_last: ", last( monitor$quality_issues ) ),
 	paste0( "memory_free_gb_last: ", last( monitor$memory_free_gb ) ),
 	paste0( "load_1_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_1 ), NA ) ),
