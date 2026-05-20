@@ -137,11 +137,13 @@ profiles=(
 	async-server-b
 	auth-locks-a
 	auth-locks-b
-	long-doc-b
-	same-user-stale-tabs
-	same-user-stale-tabs-http
-	large-http-lifecycle
-)
+		long-doc-b
+		same-user-stale-tabs
+		same-user-stale-tabs-http
+		many-user-scale
+		ui-signals
+		large-http-lifecycle
+	)
 
 for p in "${profiles[@]}"; do
 	d="$REPOS_BASE/$p"
@@ -378,10 +380,52 @@ const specs = [
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
 		},
 	],
-	[
-		'large-http-lifecycle',
-		'large-post-three-user-http-lifecycle',
-		7800001,
+		[
+			'many-user-scale',
+			'many-user-lifecycle',
+			7740001,
+			14,
+			{
+				GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+				GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+				GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+				GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+				GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4,9,13',
+				GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+				GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+				GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '24',
+				GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+				GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+				GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+				GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '512',
+				GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+				RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+				RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+				RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			},
+		],
+		[
+			'ui-signals',
+			'collaboration-ui-signals',
+			7760001,
+			10,
+			{
+				GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+				GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+				GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+				GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+				GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
+				GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '6',
+				GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'shadow',
+				GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'shadow',
+				RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '180000',
+				RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '45000',
+			},
+		],
+		[
+			'large-http-lifecycle',
+			'large-post-three-user-http-lifecycle',
+			7800001,
 		36,
 		{
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
@@ -403,7 +447,7 @@ const specs = [
 		},
 	],
 ];
-const enabledNames = new Set( [
+const defaultEnabledNames = [
 	'late-join-b',
 	'rich-text-b',
 	'async-server-a',
@@ -413,8 +457,16 @@ const enabledNames = new Set( [
 	'long-doc-b',
 	'same-user-stale-tabs',
 	'same-user-stale-tabs-http',
+	'many-user-scale',
+	'ui-signals',
 	'large-http-lifecycle',
-] );
+];
+const enabledNames = new Set(
+	( process.env.RTC_FOCUSED_SHARDS_ENABLED_NAMES
+		? process.env.RTC_FOCUSED_SHARDS_ENABLED_NAMES.split( ',' )
+		: defaultEnabledNames
+	).map( ( name ) => name.trim() ).filter( Boolean )
+);
 const portBase = Number.parseInt(
 	process.env.RTC_FOCUSED_SHARDS_PORT_BASE || '9700',
 	10

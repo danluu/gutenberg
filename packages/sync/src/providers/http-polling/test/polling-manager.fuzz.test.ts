@@ -69,6 +69,7 @@ interface PollingManager {
 }
 
 type MockDoc = ReturnType< typeof createMockDoc >;
+type MockAwareness = ReturnType< typeof createMockAwareness >;
 
 function createMockDoc( clientID = 1 ) {
 	return { clientID, on: jest.fn(), off: jest.fn() };
@@ -85,10 +86,12 @@ function getOnDocUpdate( doc: MockDoc ) {
 }
 
 function createMockAwareness( clientID = 1 ) {
+	const states = new Map< number, unknown >( [ [ clientID, {} ] ] );
+
 	return {
 		clientID,
 		getLocalState: jest.fn( () => ( {} ) ),
-		getStates: jest.fn( () => new Map() ),
+		getStates: jest.fn( () => states ),
 		on: jest.fn(),
 		off: jest.fn(),
 		emit: jest.fn(),
@@ -116,19 +119,28 @@ function snapshotPayload( payload: SyncPayload ) {
 
 describe( 'polling-manager seeded state-machine fuzz', () => {
 	let pollingManager: PollingManager;
+	let mockApplyFilters: jest.Mock<
+		typeof import('@wordpress/hooks').applyFilters
+	>;
 	let mockPostSyncUpdate: jest.Mock<
 		typeof import('../utils').postSyncUpdate
 	>;
 	const docs = new Map< string, MockDoc >();
+	const awarenesses = new Map< string, MockAwareness >();
 
 	beforeEach( () => {
 		jest.useFakeTimers();
 		docs.clear();
+		awarenesses.clear();
 
 		jest.isolateModules( () => {
 			pollingManager = require( '../polling-manager' ).pollingManager;
+			mockApplyFilters = require( '@wordpress/hooks' ).applyFilters;
 			mockPostSyncUpdate = require( '../utils' ).postSyncUpdate;
 		} );
+		mockApplyFilters.mockImplementation(
+			( _hook: string, defaultValue: unknown ) => defaultValue
+		);
 	} );
 
 	afterEach( () => {
@@ -142,11 +154,13 @@ describe( 'polling-manager seeded state-machine fuzz', () => {
 
 	function registerRoom( room: string, clientID: number ) {
 		const doc = createMockDoc( clientID );
+		const awareness = createMockAwareness( clientID );
 		docs.set( room, doc );
+		awarenesses.set( room, awareness );
 		pollingManager.registerRoom( {
 			room,
 			doc,
-			awareness: createMockAwareness( clientID ),
+			awareness,
 			log: jest.fn(),
 			onStatusChange: jest.fn(),
 			onSync: jest.fn(),
@@ -299,4 +313,64 @@ describe( 'polling-manager seeded state-machine fuzz', () => {
 		);
 		expect( overflowRoomsSeen.size ).toBeGreaterThanOrEqual( 12 );
 	} );
-} );
+
+	it( 'processes hundreds of allowed peers in one room without dropping awareness or disconnecting', async () => {
+		const peerCount = 128;
+		const payloads: Array< ReturnType< typeof snapshotPayload > > = [];
+		const awarenessState = Object.fromEntries(
+			Array.from( { length: peerCount }, ( _value, index ) => {
+				const clientId = index + 1;
+				return [
+					String( clientId ),
+					{
+						cursor: {
+							clientId,
+							offset: index % 17,
+						},
+						user: {
+							id: clientId,
+							name: `User ${ clientId }`,
+						},
+					},
+				];
+			} )
+		);
+
+		mockApplyFilters.mockImplementation(
+			( hook: string, defaultValue: unknown ) =>
+				hook === 'sync.pollingProvider.maxClientsPerRoom'
+					? peerCount
+					: defaultValue
+		);
+		mockPostSyncUpdate.mockImplementation(
+			async ( payload: SyncPayload ) => {
+				payloads.push( snapshotPayload( payload ) );
+				return {
+					rooms: payload.rooms.map( ( room ) => ( {
+						room: room.room,
+						end_cursor: payloads.length,
+						awareness: awarenessState,
+						updates: [],
+					} ) ),
+				};
+			}
+		);
+
+		registerRoom( 'primary', 1 );
+		await jest.advanceTimersByTimeAsync( 0 );
+		await jest.advanceTimersByTimeAsync( 4000 );
+
+		const awareness = awarenesses.get( 'primary' );
+		expect( awareness ).toBeDefined();
+		expect( awareness!.getStates().size ).toBe( peerCount );
+		expect( awareness!.emit ).toHaveBeenCalledWith( 'change', [
+			expect.objectContaining( {
+				added: expect.arrayContaining( [ 2, 64, 128 ] ),
+			} ),
+		] );
+		expect( payloads.length ).toBeGreaterThanOrEqual( 1 );
+		expect(
+			payloads.every( ( payload ) => payload.rooms.length <= 10 )
+		).toBe( true );
+	} );
+	} );

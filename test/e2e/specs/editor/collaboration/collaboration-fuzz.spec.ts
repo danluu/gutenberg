@@ -434,12 +434,17 @@ const ENABLE_REVISION_RESTORE_PROBE =
 		'1' ) === '1';
 const ACTION_PROFILE =
 	process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ?? 'full';
+const IS_MANY_USER_LIFECYCLE_PROFILE =
+	ACTION_PROFILE === 'many-user-lifecycle';
+const IS_COLLABORATION_UI_SIGNALS_PROFILE =
+	ACTION_PROFILE === 'collaboration-ui-signals';
 const OPERATION_LEDGER_MODE =
 	process.env.GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE ?? 'auto';
 const FINAL_PERSISTENCE_ORACLE_MODE = getFinalPersistenceOracleMode();
 const ENABLE_FINAL_UI_WITNESS_SWEEP =
 	process.env.GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP === '1' ||
-	ACTION_PROFILE === 'large-post-three-user-http-lifecycle';
+	ACTION_PROFILE === 'large-post-three-user-http-lifecycle' ||
+	IS_MANY_USER_LIFECYCLE_PROFILE;
 const ENABLE_FINAL_PUBLISH_ORACLE =
 	process.env.GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH === '1' ||
 	ACTION_PROFILE === 'large-post-three-user-http-lifecycle';
@@ -450,11 +455,15 @@ const SOFT_DISCOVERY_BOOTSTRAP =
 const EXTRA_COLLABORATOR_COUNT = getEnvNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS',
 	[
+		'collaboration-ui-signals',
 		'large-post-three-user-http-lifecycle',
+		'many-user-lifecycle',
 		'session-lifecycle',
 		'three-user-late-join',
 	].includes( ACTION_PROFILE )
-		? 1
+		? IS_MANY_USER_LIFECYCLE_PROFILE
+			? 10
+			: 1
 		: 0
 );
 const ENABLE_LIFECYCLE_EVENTS =
@@ -464,6 +473,8 @@ const ENABLE_LIFECYCLE_EVENTS =
 		'three-user-late-join',
 		'multi-reload-lifecycle',
 		'large-post-three-user-http-lifecycle',
+		'many-user-lifecycle',
+		'collaboration-ui-signals',
 	].includes( ACTION_PROFILE );
 const LIFECYCLE_RELOAD_COUNT = getEnvNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT',
@@ -498,6 +509,9 @@ const FORCE_RELOAD_STEPS = getEnvIntList(
 function getDefaultLargeDocumentBlocks() {
 	if ( ACTION_PROFILE === 'large-post-three-user-http-lifecycle' ) {
 		return 160;
+	}
+	if ( IS_MANY_USER_LIFECYCLE_PROFILE ) {
+		return 24;
 	}
 	if ( ACTION_PROFILE === 'long-session-large-doc' ) {
 		return 80;
@@ -3371,7 +3385,150 @@ async function editFormattedParagraphAtCursor(
 					: selectedVariant,
 			cursorOffset: Math.min( 10, selectedVariant.length ),
 		}
+		);
+}
+
+async function assertPresenceListVisible(
+	page: Page,
+	_seed: number,
+	step: number,
+	userIndex: number,
+	_rng: Random,
+	pages: PageRef[]
+): Promise< PageActionResult > {
+	const presenceButton = page.getByRole( 'button', {
+		name: /Collaborators list/,
+	} );
+	await expect( presenceButton ).toBeVisible( { timeout: 15000 } );
+	await presenceButton.click();
+
+	const listItems = page.locator(
+		'.editor-collaborators-presence__list-item'
 	);
+	const visibleCount = await listItems.count();
+
+	expect( visibleCount ).toBeGreaterThanOrEqual(
+		pages.length > 1 ? 1 : 0
+	);
+
+	await page.keyboard.press( 'Escape' ).catch( () => {} );
+
+	return {
+		historyEvents: [
+			{
+				details: {
+					presenceListItems: visibleCount,
+					userCount: pages.length,
+				},
+				phase: 'presence-list',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+		],
+	};
+}
+
+async function assertRemoteSelectionAndCursorVisible(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	_rng: Random,
+	pages: PageRef[]
+): Promise< PageActionResult > {
+	const viewer =
+		pages.find( ( candidate ) => candidate.userIndex !== userIndex ) ??
+		pages[ 0 ];
+	const selectionLength = await page.evaluate(
+		( { fuzzSeed, fuzzStep, fuzzUserIndex } ) => {
+			const blockEditor = ( window as any ).wp.data.dispatch(
+				'core/block-editor'
+			);
+			const blocks = ( window as any ).wp.data
+				.select( 'core/block-editor' )
+				.getBlocks();
+			const paragraph = blocks.find(
+				( block: { attributes?: { content?: string }; name?: string } ) =>
+					block.name === 'core/paragraph' &&
+					typeof block.attributes?.content === 'string' &&
+					block.attributes.content.length >= 8
+			);
+
+			if ( ! paragraph ) {
+				return 0;
+			}
+
+			const textLength =
+				paragraph.attributes.content.replace( /<[^>]+>/g, '' ).length;
+			const start = Math.min(
+				Math.max( 0, ( fuzzSeed + fuzzStep + fuzzUserIndex ) % 4 ),
+				Math.max( 0, textLength - 2 )
+			);
+			const end = Math.min( textLength, start + 5 );
+			blockEditor.selectionChange(
+				paragraph.clientId,
+				'content',
+				start,
+				end
+			);
+
+			return Math.max( 0, end - start );
+		},
+		{ fuzzSeed: seed, fuzzStep: step, fuzzUserIndex: userIndex }
+	);
+
+	expect( selectionLength ).toBeGreaterThan( 0 );
+
+	const viewerFrame = viewer.page.frameLocator(
+		'iframe[name="editor-canvas"]'
+	);
+	const selectionRects = viewerFrame.locator(
+		'.collaborators-overlay-selection-rect'
+	);
+	await expect
+		.poll( () => selectionRects.count(), { timeout: 15000 } )
+		.toBeGreaterThan( 0 );
+
+	await page.evaluate( () => {
+		const blockEditor = ( window as any ).wp.data.dispatch(
+			'core/block-editor'
+		);
+		const selectionStart = ( window as any ).wp.data
+			.select( 'core/block-editor' )
+			.getSelectionStart();
+
+		if ( selectionStart?.clientId ) {
+			blockEditor.selectionChange(
+				selectionStart.clientId,
+				selectionStart.attributeKey ?? 'content',
+				selectionStart.offset ?? 0,
+				selectionStart.offset ?? 0
+			);
+		}
+	} );
+
+	const cursorLine = viewerFrame.locator(
+		'.collaborators-overlay-user-cursor, .collaborators-overlay-user'
+	);
+	await expect
+		.poll( () => cursorLine.count(), { timeout: 15000 } )
+		.toBeGreaterThan( 0 );
+
+	return {
+		historyEvents: [
+			{
+				details: {
+					selectionLength,
+					viewerUserIndex: viewer.userIndex,
+				},
+				phase: 'remote-selection-cursor',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+		],
+	};
 }
 
 async function focusRealUserTypingSurface( page: Page ) {
@@ -5787,6 +5944,30 @@ const ACTIONS: PageAction[] = [
 			editFormattedParagraphAtCursor( page, seed, step, userIndex ),
 	},
 	{
+		label: 'assert-presence-list',
+		run: async ( page, seed, step, userIndex, rng, pages ) =>
+			assertPresenceListVisible(
+				page,
+				seed,
+				step,
+				userIndex,
+				rng,
+				pages
+			),
+	},
+	{
+		label: 'assert-selection-cursor',
+		run: async ( page, seed, step, userIndex, rng, pages ) =>
+			assertRemoteSelectionAndCursorVisible(
+				page,
+				seed,
+				step,
+				userIndex,
+				rng,
+				pages
+			),
+	},
+	{
 		label: 'edit-rich-text-pair-block',
 		run: async ( page, seed, step, userIndex ) =>
 			editRichTextPairBlock( page, seed, step, userIndex ),
@@ -6005,6 +6186,35 @@ function getActiveActions(): PageAction[] {
 		return getActionsByWeightedLabels(
 			REAL_USER_EDITING_SEQUENCE ?? REAL_USER_EDITING_ACTION_LABELS
 		);
+	}
+
+	if ( IS_COLLABORATION_UI_SIGNALS_PROFILE ) {
+		return getActionsByWeightedLabels( [
+			'assert-presence-list',
+			'assert-selection-cursor',
+			'assert-selection-cursor',
+			'ui-type-paragraph',
+			'ui-format-paragraph',
+			'ui-undo-redo-paragraph',
+			'concurrent-paragraphs',
+			'append-paragraph',
+		] );
+	}
+
+	if ( IS_MANY_USER_LIFECYCLE_PROFILE ) {
+		return getActionsByWeightedLabels( [
+			'assert-presence-list',
+			'assert-selection-cursor',
+			'concurrent-paragraphs',
+			'concurrent-paragraphs',
+			'append-paragraph',
+			'edit-paragraph',
+			'insert-heading',
+			'move-block',
+			'edit-table-array-attributes',
+			'ui-type-paragraph',
+			'ui-type-title',
+		] );
 	}
 
 	if ( ACTION_PROFILE === 'async-server-blocks' ) {

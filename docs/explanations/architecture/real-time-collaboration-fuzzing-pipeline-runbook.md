@@ -935,6 +935,15 @@ Current focused action profiles:
     runs should set `GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION=1` so the late
     joiner also performs a witnessed mutation.
 -   `multi-reload-lifecycle`: two browser reload checkpoints in one seed.
+-   `many-user-lifecycle`: twelve-browser WS coverage by default, with a forced
+    late join, save/reload milestones, final UI witnesses from every participant,
+    and hard persistence witnesses.
+-   `collaboration-ui-signals`: presence list, remote selection, and cursor
+    overlay coverage, mixed with real typing and save/reload actions.
+-   `RTC_FOCUSED_SHARDS_ENABLED_NAMES=name-a,name-b` can narrow a focused-shard
+    restart to a small set, for example `ui-signals,many-user-scale`, when the
+    goal is to validate a new coverage surface without replacing the whole
+    focused fleet.
 -   `common-blocks`: common block-library surfaces such as image, buttons,
     columns, code, and preformatted blocks.
 -   `block-gauntlet`: broader block-library surfaces such as details, cover,
@@ -1593,6 +1602,11 @@ The implemented novelty profiles are:
     disabled first so parser/RTC correctness bugs are not confused with
     injected transport failures.
 -   `multi-reload-lifecycle`: more than one real browser reload during a seed.
+-   `many-user-lifecycle`: many-participant WS browser coverage. The Jetstream
+    lane uses 12 browsers as the expensive end-to-end scale canary; hundreds of
+    peers are covered in cheaper HTTP polling state-machine fuzzing.
+-   `collaboration-ui-signals`: user-visible presence, remote selection, and
+    cursor-overlay coverage that content convergence alone cannot prove.
 -   `novelty-http-persistence-probe`: optional HTTP probe. Enable it with
     `RTC_FUZZ_NOVELTY_ENABLE_HTTP_PROBE=1`, preferably in a separate HTTP-only
     supervisor/env so switching provider plugins does not disrupt active WS

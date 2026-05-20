@@ -79,11 +79,13 @@ cleanup_strict_wp_env() {
 		ws-parser-transform
 		ws-parser-serialization
 		ws-block-gauntlet
-		ws-common-blocks
-		ws-multi-reload-lifecycle
-		http-persistence-probe
-		http-same-user-stale-draft
-		http-large-lifecycle
+			ws-common-blocks
+			ws-multi-reload-lifecycle
+			ws-many-user-lifecycle
+			ws-collaboration-ui-signals
+			http-persistence-probe
+			http-same-user-stale-draft
+			http-large-lifecycle
 	)
 
 	pids=$(
@@ -226,11 +228,13 @@ profiles=(
 	ws-parser-transform
 	ws-parser-serialization
 	ws-block-gauntlet
-	ws-common-blocks
-	ws-multi-reload-lifecycle
-	http-persistence-probe
-	http-same-user-stale-draft
-	http-large-lifecycle
+		ws-common-blocks
+		ws-multi-reload-lifecycle
+		ws-many-user-lifecycle
+		ws-collaboration-ui-signals
+		http-persistence-probe
+		http-same-user-stale-draft
+		http-large-lifecycle
 )
 for idx in "${!profiles[@]}"; do
 	p=${profiles[$idx]}
@@ -357,10 +361,54 @@ const specs = [
 			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
 		},
 	],
-	[
-		'http-persistence-probe',
-		'http',
-		'persistence-no-title',
+		[
+			'ws-many-user-lifecycle',
+			'ws',
+			'many-user-lifecycle',
+			5960001,
+			14,
+			{
+				GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+				GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+				GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+				GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+				GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4,9,13',
+				GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+				GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+				GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '24',
+				GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+				GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+				GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+				GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '512',
+				GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+				RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+				RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+				RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			},
+		],
+		[
+			'ws-collaboration-ui-signals',
+			'ws',
+			'collaboration-ui-signals',
+			5980001,
+			10,
+			{
+				GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+				GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+				GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+				GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+				GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
+				GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '6',
+				GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'shadow',
+				GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'shadow',
+				RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '180000',
+				RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '45000',
+			},
+		],
+		[
+			'http-persistence-probe',
+			'http',
+			'persistence-no-title',
 		6000001,
 		10,
 		{ GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail' },

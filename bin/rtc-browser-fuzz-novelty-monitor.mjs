@@ -406,6 +406,14 @@ const ACTION_COVERAGE_GROUPS = {
 	'insert-heading': [ 'novelty-ws-structure' ],
 	'move-block': [ 'novelty-ws-structure' ],
 	'concurrent-paragraphs': [ 'novelty-ws-lifecycle' ],
+	'assert-presence-list': [
+		'novelty-ws-collaboration-ui-signals',
+		'novelty-ws-many-user-lifecycle',
+	],
+	'assert-selection-cursor': [
+		'novelty-ws-collaboration-ui-signals',
+		'novelty-ws-many-user-lifecycle',
+	],
 	'edit-formatted-paragraph-at-cursor': [ 'novelty-ws-parser-serialization' ],
 	'edit-rich-text-pair-block': [ 'novelty-ws-parser-serialization' ],
 	'edit-table-array-attributes': [ 'novelty-ws-lifecycle' ],
@@ -497,6 +505,8 @@ const PROFILE_BY_GROUP = {
 	'novelty-ws-media-cross-entity': 'media-cross-entity',
 	'novelty-ws-long-session-large-doc': 'long-session-large-doc',
 	'novelty-http-large-post-lifecycle': 'large-post-three-user-http-lifecycle',
+	'novelty-ws-many-user-lifecycle': 'many-user-lifecycle',
+	'novelty-ws-collaboration-ui-signals': 'collaboration-ui-signals',
 	'novelty-ws-structure': 'structure',
 	'novelty-ws-three-user-late-join': 'three-user-late-join',
 	'novelty-ws-block-gauntlet-details-topoff': 'block-gauntlet',
@@ -522,6 +532,8 @@ const HIGH_VALUE_EXPANSION_GROUPS = [
 	'novelty-ws-permissions-auth-locks',
 	'novelty-ws-long-session-large-doc',
 	'novelty-http-large-post-lifecycle',
+	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-collaboration-ui-signals',
 ];
 
 const PRODUCTIVE_FALLBACK_GROUPS = [
@@ -541,6 +553,8 @@ const PRODUCTIVE_FALLBACK_GROUPS = [
 	'novelty-ws-permissions-auth-locks',
 	'novelty-ws-long-session-large-doc',
 	'novelty-http-large-post-lifecycle',
+	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-collaboration-ui-signals',
 	'novelty-ws-real-user-save-reload',
 	'novelty-ws-real-user-editing',
 	'novelty-ws-real-user-rich-text',
@@ -560,6 +574,8 @@ const DEFAULT_REQUIRED_COVERAGE_BREADTH_GROUPS = [
 	'novelty-ws-media-cross-entity',
 	'novelty-ws-long-session-large-doc',
 	'novelty-http-large-post-lifecycle',
+	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-collaboration-ui-signals',
 ];
 const configuredRequiredCoverageBreadthGroups = parsePathList(
 	process.env.RTC_FUZZ_NOVELTY_REQUIRED_COVERAGE_BREADTH_GROUPS
@@ -589,6 +605,7 @@ const MATERIALIZATION_FLOOR_GROUPS = [
 	'novelty-http-persistence-probe',
 	'novelty-http-same-user-stale-draft',
 	'novelty-http-large-post-lifecycle',
+	'novelty-ws-collaboration-ui-signals',
 ];
 
 const AUTO_EXPANSION_GOAL_CANDIDATES = [
@@ -1139,6 +1156,51 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '900000',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
 			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+		},
+	},
+	{
+		name: 'novelty-ws-many-user-lifecycle',
+		actionProfile: 'many-user-lifecycle',
+		startSeed: 1160001,
+		stepCount: 14,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4,9,13',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '24',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '512',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+		},
+	},
+	{
+		name: 'novelty-ws-collaboration-ui-signals',
+		actionProfile: 'collaboration-ui-signals',
+		startSeed: 1170001,
+		stepCount: 10,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'shadow',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'shadow',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '45000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '180000',
 		},
 	},
 	{
@@ -6734,6 +6796,44 @@ function createCoverageGuidance( novelty ) {
 			rationale: 'late-join bugs need explicit multi-user coverage',
 		},
 		{
+			id: 'users:12',
+			label: 'many-user browser session',
+			target: 10,
+			groups: [ 'novelty-ws-many-user-lifecycle' ],
+			rationale:
+				'three users is not enough to cover high-participant awareness and save/reload behavior',
+		},
+		{
+			id: 'lifecycle:late-join:users-12',
+			label: 'many-user late join',
+			target: 10,
+			groups: [ 'novelty-ws-many-user-lifecycle' ],
+			rationale:
+				'many-user RTC sessions need a real late join after editing has started',
+		},
+		{
+			id: 'history:presence-list:ok',
+			label: 'presence list visible',
+			target: 25,
+			groups: [
+				'novelty-ws-collaboration-ui-signals',
+				'novelty-ws-many-user-lifecycle',
+			],
+			rationale:
+				'presence UI is user-visible RTC correctness, not just transport convergence',
+		},
+		{
+			id: 'history:remote-selection-cursor:ok',
+			label: 'remote selection and cursor visible',
+			target: 25,
+			groups: [
+				'novelty-ws-collaboration-ui-signals',
+				'novelty-ws-many-user-lifecycle',
+			],
+			rationale:
+				'selection and cursor state can fail while content convergence still passes',
+		},
+		{
 			id: 'collaborator-mode:same-user',
 			label: 'same-user two-tab mode',
 			target: 150,
@@ -6911,6 +7011,20 @@ function createCoverageGuidance( novelty ) {
 			groups: [ 'novelty-http-large-post-lifecycle' ],
 			rationale:
 				'the combined large-post HTTP lifecycle gate needs completed records',
+		},
+		{
+			profile: 'many-user-lifecycle',
+			target: 10,
+			groups: [ 'novelty-ws-many-user-lifecycle' ],
+			rationale:
+				'many-user RTC coverage needs completed seeds, not only startup or discovery failures',
+		},
+		{
+			profile: 'collaboration-ui-signals',
+			target: 25,
+			groups: [ 'novelty-ws-collaboration-ui-signals' ],
+			rationale:
+				'presence, cursor, and selection coverage needs completed browser records',
 		},
 	] ) {
 		addGoal( {
@@ -11521,6 +11635,13 @@ async function writeStatus(
 		`- same-user records: ${
 			state.featureCounts?.[ 'collaborator-mode:same-user' ] ?? 0
 		}`,
+		`- many-user lifecycle records: ${
+			state.featureCounts?.[ 'users:12' ] ?? 0
+		}`,
+		`- collaboration UI signal records: ${ Math.max(
+			state.featureCounts?.[ 'history:presence-list:ok' ] ?? 0,
+			state.featureCounts?.[ 'history:remote-selection-cursor:ok' ] ?? 0
+		) }`,
 		`- real-user editing successful records: ${
 			state.successfulRecordCountsByProfile?.[ 'real-user-editing' ] ?? 0
 		} / ${ REAL_USER_EDITING_MIN_RECORDS }`,
