@@ -202,7 +202,10 @@ async function addAfterSelectedAndTypeParagraph(
 
 async function deleteSelectedBlock( page: Page, editor: Editor ) {
 	await openBlockOptions( page, editor );
-	await page.getByRole( 'menuitem', { name: 'Delete' } ).click();
+	await page
+		.locator( '.components-popover' )
+		.getByRole( 'menuitem', { name: /^Delete\b/ } )
+		.click();
 }
 
 async function normalizeState(

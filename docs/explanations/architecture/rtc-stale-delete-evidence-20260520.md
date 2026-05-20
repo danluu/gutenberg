@@ -1,135 +1,175 @@
 # RTC stale-delete evidence, 2026-05-20
 
-This is the evidence packet I would use for PR #78320 without relying on
-anyone else's video. It is intentionally short and explicit about what is
-proven, what is only a control, and what still needs a better rerun.
+This is the evidence packet for the stale-delete RTC bug. It uses a clean
+checkout, an executable browser repro, and a video recorded from that same
+setup.
 
-## Status
+## What it shows
 
-I do not currently have a reliable failing hand-recorded video for this bug.
-The best self-contained evidence is an automated browser repro that uses
-normal editor actions with two users and the WebSocket RTC provider. I also
-have a lower-level trunk probe for the same stale full-snapshot ambiguity.
+Two editors open the same post through the WebSocket RTC provider. Editor B
+adds a paragraph at the end. Both editors see the paragraph. Editor A then
+deletes that paragraph through the block options menu.
 
-The branch containing this file also contains the browser repro test at:
+Expected result: both editors go back to the original three paragraphs.
+
+Actual result in the clean repro: editor A has the original three paragraphs,
+while editor B still has the paragraph that editor A deleted.
+
+## Clean repro setup
+
+The clean worktree used for the repro is:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520
+```
+
+It was checked out at:
+
+```text
+2f59cd94b1ba41b004f4707ff25674506c81d796
+```
+
+I built it with:
+
+```bash
+npm ci
+npm run build -- --skip-types
+```
+
+The test environment was:
+
+```text
+wp-env: http://localhost:8973
+WP_ENV_PORT: 8973
+RTC websocket: ws://127.0.0.1:18991
+```
+
+The branch containing this file also contains the repro test:
 
 ```text
 test/e2e/specs/editor/collaboration/websocket/collaboration-triage-3ac375556552-realistic.spec.ts
 ```
 
-## Bug
+## Executable repro
 
-One collaborator appends a paragraph. Both editors see it. Another
-collaborator deletes that paragraph through the normal block UI. The expected
-state is the original paragraphs, with the inserted paragraph gone.
-
-The failing behavior is that the inserted paragraph can survive on one peer,
-or after a longer wait both peers can converge to the wrong state with the
-deleted paragraph present.
-
-## Executable Repro
-
-The repro test creates a draft with three ordinary paragraph blocks, opens it
-as two users, appends a paragraph in the second editor, waits until both
-editors agree, deletes that paragraph in the first editor, and then checks the
-post state in both editors.
-
-Command used for the saved run:
+Command used for the saved clean run:
 
 ```bash
-GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP=1 \
+rm -rf /Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-repro-20260520-delete-fixed &&
+mkdir -p /Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-repro-20260520-delete-fixed/results \
+         /Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-repro-20260520-delete-fixed/playwright &&
 GUTENBERG_RTC_BROWSER_ASSUME_WP_ENV_RUNNING=1 \
-GUTENBERG_RTC_TEST_WS_PORT=19152 \
-WP_ENV_PORT=8963 \
-WP_BASE_URL=http://localhost:8963 \
-WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-browser-fuzz/mixed-http-ws-supervised-20260502-0007/ws-gen-14-20260502T225744Z/.triage-watcher/signatures/3ac375556552/playwright-artifacts \
-RTC_3AC3_OUTPUT_DIR=/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-browser-fuzz/mixed-http-ws-supervised-20260502-0007/ws-gen-14-20260502T225744Z/.triage-watcher/signatures/3ac375556552/realistic-results \
+GUTENBERG_RTC_TEST_WS_PORT=18991 \
+WP_ENV_PORT=8973 \
+WP_BASE_URL=http://localhost:8973 \
+WP_ARTIFACTS_PATH=/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-repro-20260520-delete-fixed/playwright \
+RTC_3AC3_OUTPUT_DIR=/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-repro-20260520-delete-fixed/results \
 npm exec --workspace @wordpress/e2e-tests-playwright -- wp-scripts test-playwright \
-  --config /Users/danluu/dev/fuzz/gutenberg/test/e2e/playwright.rtc-websocket.config.ts \
-  test/e2e/specs/editor/collaboration/websocket/collaboration-triage-3ac375556552-realistic.spec.ts \
-  --project=chromium
+  --config /Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/test/e2e/playwright.rtc-websocket.config.ts \
+  /Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/test/e2e/specs/editor/collaboration/websocket/collaboration-triage-3ac375556552-realistic.spec.ts \
+  --project=chromium \
+  --grep "append-from-tail-enter"
 ```
 
-Saved failing result:
+That run reproduced the bug in all three attempts. The Playwright test fails
+on purpose when it sees the stale-delete bug:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-browser-fuzz/mixed-http-ws-supervised-20260502-0007/ws-gen-14-20260502T225744Z/.triage-watcher/signatures/3ac375556552/realistic-results/append-from-tail-enter-attempt-0.json
+3 failed
+expect(reproduced).toBe(false)
+Received: true
 ```
 
-That result has `statesEqualAfterInsert: true`,
-`statesEqualAfterDelete: false`, `exactDeleteBug: true`, and
-`reproduced: true`. In plain terms: both editors agreed after the insert, then
-after the delete one editor had the original three paragraphs and the other
-still had the deleted paragraph.
-
-Longer-wait result:
+Saved result files:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-browser-fuzz/mixed-http-ws-supervised-20260502-0007/ws-gen-14-20260502T225744Z/.triage-watcher/signatures/3ac375556552/realistic-results-long-wait-60000-current/append-from-tail-enter-attempt-0.json
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-repro-20260520-delete-fixed/results/append-from-tail-enter-attempt-0.json
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-repro-20260520-delete-fixed/results/append-from-tail-enter-attempt-1.json
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-repro-20260520-delete-fixed/results/append-from-tail-enter-attempt-2.json
 ```
 
-That run waited 60 seconds after the delete. It has
-`statesEqualAfterDelete: true`, `semanticDeleteBug: true`, and
-`insertedPresentAfterDelete: true`. In that run, the editors eventually agreed,
-but they agreed on the wrong state: the deleted paragraph was still present.
-
-## Manual Shape
-
-The automated repro is doing these human actions:
-
-1. Start `wp-env` and the RTC WebSocket test server.
-2. Enable collaboration and the RTC WebSocket provider plugin.
-3. Create a draft post with three paragraph blocks.
-4. Open the post as user A and user B.
-5. User B appends a paragraph at the end using normal keyboard input.
-6. Wait until user A and user B both show the inserted paragraph.
-7. User A selects that paragraph and deletes it from the block options menu.
-8. Wait for collaboration to settle.
-9. Expected: both editors show the original three paragraphs.
-10. Failing result: the deleted paragraph remains on one editor, or comes back
-    on both editors after a longer wait.
-
-I would not present those as a reliable manual repro yet. The test has the
-timing and state checks needed to make the sequence repeatable; a person
-clicking through the same steps has not been reliable enough in my local
-runs.
-
-## Current Video State
-
-I tried to make a local human-viewable video for the normal WebSocket flow.
-The useful recordings are controls, not failing proof:
+All three have:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-stale-delete-video/rtc-stale-delete-websocket-realistic-repro.mp4
+statesEqualAfterInsert: true
+statesEqualAfterDelete: false
+exactDeleteBug: true
+semanticDeleteBug: true
+insertedPresentAfterDelete: true
+primaryContainsInsertedAfterDelete: false
+secondaryContainsInsertedAfterDelete: true
+reproduced: true
 ```
 
-This is the normal no-delay visible flow. It did not reproduce locally.
+In attempt 0, editor A ends with the original three paragraph blocks. Editor B
+ends with those same three paragraph blocks plus:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-stale-delete-long-wait-video/rtc-stale-delete-long-wait-wrong-convergence.mp4
+Seed 954092 realistic append-from-tail-enter 0 paragraph
 ```
 
-This was recorded on 2026-05-20 with two editor panes and a step log. It also
-did not reproduce: after 60 seconds both editors were back to three
-paragraphs. The final frame is:
+That paragraph is the one editor A deleted.
+
+Playwright traces and screenshots for the clean run are under:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-stale-delete-long-wait-video/verification-frame.png
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-repro-20260520-delete-fixed/playwright
 ```
 
-There was also one invalid setup recording before I fixed the WebSocket port
-mismatch. It showed the collaboration connection-lost screen, so I discarded
-it rather than listing it as evidence.
+## Video
 
-## Lower-level Check
+The human-viewable video recorded from the clean repro setup is:
 
-The current-trunk family probe I have saved is:
+```text
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/rtc-stale-delete-websocket-realistic-repro.mp4
+```
+
+The final verification frame is:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/verification-frame.png
+```
+
+The frame shows editor A with three paragraphs and editor B with four
+paragraphs. The extra paragraph on editor B is the deleted paragraph.
+
+The raw browser recordings are:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/raw/25ad617b39321f39f511e138d10ff895.webm
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/raw/972bb3d293e081e1d21d9db9c71af313.webm
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/raw/2184e9e88affac988b2023a33532899d.webm
+```
+
+## Why the earlier visible run did not reproduce
+
+The earlier visible run was useful as a control, but it was not the same as
+this clean repro. It was recorded from the dirty main worktree, which was at
+the same commit hash but also had uncommitted RTC changes in the checkout. It
+also used the normal no-delay path.
+
+The clean repro above removes those variables: fresh worktree, local
+dependencies installed in that worktree, production build, wp-env on a known
+port, and the WebSocket port that the test plugin actually uses.
+
+There was also one invalid run during setup where the Playwright process used
+port `19273`, while the PHP-side test plugin still pointed the editor at the
+default `18991`. That produced a connection-lost screen, so it is not counted
+as evidence.
+
+The repro test also needed one selector fix. The delete action now scopes the
+menu item lookup to `.components-popover`, because the admin bar can also
+match text containing "Delete" and make the locator ambiguous.
+
+## Lower-level check
+
+The lower-level current-trunk probe is still useful background:
 
 ```text
 /Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-browser-fuzz/mixed-http-ws-supervised-20260502-0007/ws-gen-14-20260502T225744Z/.triage-watcher/signatures/3ac375556552/unit-current-origin-trunk-2b5a7a99304/stale-top-level-family-probe-result.json
 ```
 
-It reproduced both sides of the same stale-snapshot problem on
+It reproduced both sides of the same stale full-snapshot ambiguity on
 `origin/trunk` at `2b5a7a9930490b13933a89c69f4455252072c14d`:
 
 ```text
@@ -137,22 +177,18 @@ remoteAppend.lostRemoteAppend: true
 remoteDelete.resurrectedRemoteDelete: true
 ```
 
-This is not a substitute for the browser repro. It is useful because it shows
-the underlying ambiguity directly: when the sync layer receives a full block
-snapshot that omits a block, it cannot always tell whether the editor deleted
-that block or never saw it.
+This does not replace the browser repro. It explains why the browser failure
+is plausible: when a peer receives a full block snapshot that omits a block,
+the sync layer can mistake "I deleted this block" for "I never saw this
+block."
 
-## What Is Missing
+## Remaining checks
 
-Before I would call this a complete reviewer packet, I would still want:
+The remaining useful checks are:
 
-1. A fresh run of the browser repro on latest `trunk`.
-2. The same run on the PR branch.
-3. A failing video generated from the same executable repro, if the browser
-   repro still fails.
-4. Pass/fail counts if the repro is flaky.
+1. Run the same browser repro on latest `trunk`.
+2. Run the same browser repro on the PR branch.
+3. Save pass/fail counts for each branch.
 
-Until then, the honest claim is narrower: there is an executable browser repro
-and saved failing result for the stale-delete behavior, plus a lower-level
-trunk probe for the same merge ambiguity. I do not have a reliable failing
-manual video from my own local runs.
+The clean repro and video above are enough to show the bug locally without
+depending on any external recording.
