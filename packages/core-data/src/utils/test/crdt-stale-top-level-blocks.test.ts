@@ -133,7 +133,7 @@ describe( 'stale top-level block snapshots', () => {
 		doc.destroy();
 	} );
 
-	it( 'applies a local suffix append when the explicit base differs from current blocks', () => {
+	it( 'reapplies a local suffix append when the explicit base differs from current blocks', () => {
 		const baseBlocks = [
 			paragraph( 'canonicalized', 'Alpha' ),
 			paragraph( 'unchanged', 'Beta' ),
@@ -189,6 +189,44 @@ describe( 'stale top-level block snapshots', () => {
 			'unchanged',
 			'checkpoint-paragraph',
 			'checkpoint-search',
+		] );
+	} );
+
+	it( 'updates an already-present local suffix append with the latest content', () => {
+		const partialContent =
+			'rtcw-7310672-7-u1-ui-undo-redo-paragraph-9gmc undo redo pa';
+		const fullContent =
+			'rtcw-7310672-7-u1-ui-undo-redo-paragraph-9gmc undo redo paragraph';
+		const baseBlocks = [
+			paragraph( 'intro', 'Alpha' ),
+			paragraph( 'unchanged', 'Beta' ),
+		];
+		const currentBlocks = [
+			...baseBlocks,
+			paragraph( 'local-appended', partialContent ),
+		];
+		const blocksWithUpdatedLocalAppend = [
+			...baseBlocks,
+			paragraph( 'local-appended', fullContent ),
+		];
+
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		mergeCrdtBlocks(
+			yblocks,
+			blocksWithUpdatedLocalAppend,
+			null,
+			baseBlocks
+		);
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			fullContent,
+		] );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'intro',
+			'unchanged',
+			'local-appended',
 		] );
 	} );
 
