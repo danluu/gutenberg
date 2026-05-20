@@ -106,6 +106,8 @@ const MAX_HIGH_VALUE_PER_SEMANTIC_FAMILY = getPositiveIntegerEnv(
 );
 const STALE_ROOT_GUARD_ENABLED =
 	process.env.RTC_FUZZ_DEEP_ANALYSIS_STALE_ROOT_GUARD !== '0';
+const INCLUDE_EXTERNAL_IMPORTS =
+	process.env.RTC_FUZZ_DEEP_ANALYSIS_INCLUDE_EXTERNAL_IMPORTS === '1';
 const CURRENT_OUTPUT_POINTER_PATH =
 	process.env.RTC_FUZZ_DEEP_ANALYSIS_CURRENT_OUTPUT_POINTER ?? null;
 const SUPERVISOR_STATE_PATH =
@@ -133,6 +135,7 @@ const NON_ACTIONABLE_SOURCE_STATUSES = new Set( [
 	'known-infra',
 	'no-realistic-repro',
 	'not-real',
+	'pre-action-http-polling-sync-timeout',
 	'source-suppressed',
 	'stale-source',
 ] );
@@ -142,6 +145,13 @@ const TERMINAL_JOB_STATUSES = new Set( [
 	'source-suppressed',
 	'stale-source',
 ] );
+const FAMILY_OCCUPANCY_JOB_STATUSES = new Set( [
+	'queued',
+	'retry',
+	'running',
+	'completed',
+	'family-capped',
+] );
 const ACTIVE_GROUP_STATUSES = new Set( [
 	'starting',
 	'launching',
@@ -149,7 +159,7 @@ const ACTIVE_GROUP_STATUSES = new Set( [
 	'running',
 ] );
 const NO_PRODUCT_INFRA_NOISE_PATTERN =
-	/ENOSPC|no space left|wp-env|docker compose|docker.*(?:exited|failed)|mysql.*(?:exited|failed)|dependency failed|Cannot find module|ERR_MODULE_NOT_FOUND|Host system is missing dependencies|playwright install-deps|browser dependencies|request failed: TypeError: fetch failed|GET .*\/wp-json\/|The plugin "[^"]+" isn'?t installed|plugin .*not installed|missing plugin\b|missing theme\b|RequestUtils\.deactivatePlugin|request-utils\/plugins\.ts/i;
+	/ENOSPC|no space left|wp-env|docker compose|docker.*(?:exited|failed)|mysql.*(?:exited|failed)|dependency failed|Cannot find module|ERR_MODULE_NOT_FOUND|Host system is missing dependencies|playwright install-deps|browser dependencies|request failed: TypeError: fetch failed|GET .*\/wp-json\/|Failed to discover REST API endpoint|RequestUtils\.setupRest|request-utils\/rest\.ts|Link header:\s*undefined|globalSetup|api\.w\.org|ERR_CONNECTION_RESET|ERR_SOCKET_NOT_CONNECTED|endpoint mismatch|runtime[- ]config port bleed|The plugin "[^"]+" isn'?t installed|plugin .*not installed|missing plugin\b|missing theme\b|RequestUtils\.deactivatePlugin|request-utils\/plugins\.ts/i;
 const NO_PRODUCT_KNOWN_NOISE_FAMILIES = new Set( [
 	'awareness_loss_after_save_reload',
 	'cover_overlay_attribute_canonicalization',
@@ -160,6 +170,7 @@ const NO_PRODUCT_KNOWN_NOISE_FAMILIES = new Set( [
 	'pre_action_bootstrap_stall',
 	'reload_rejoin_awareness_stall',
 	'rest_meta_database_error',
+	'rtc_test_ws_runtime_config_port_bleed',
 	'rtc_ws_test_provider_bootstrap_missing_after_reload',
 ] );
 const PRODUCER_NO_ANALYSIS_FAMILY_CAP_REASON_KINDS = new Set( [
@@ -299,7 +310,31 @@ function isPathInsideRoot( filePath, root ) {
 		( relative &&
 			! relative.startsWith( '..' ) &&
 			! path.isAbsolute( relative ) )
-		);
+			);
+}
+
+function isExternalImportPath( filePath ) {
+	if ( INCLUDE_EXTERNAL_IMPORTS || ! filePath ) {
+		return false;
+	}
+	return path
+		.resolve( filePath )
+		.split( path.sep )
+		.includes( 'external-imports' );
+}
+
+function signatureHasOnlyExternalImportExamples( signature ) {
+	const examplePaths = ( signature?.examples ?? [] )
+		.flatMap( ( example ) => [
+			example?.summaryPath,
+			example?.logPath,
+			example?.artifactsDir,
+		] )
+		.filter( Boolean );
+	return (
+		examplePaths.length > 0 &&
+		examplePaths.every( ( examplePath ) => isExternalImportPath( examplePath ) )
+	);
 }
 
 function getNoAnalysisSentinelExpirationMs( sentinel ) {
@@ -317,6 +352,38 @@ function getNoAnalysisSentinelExpirationMs( sentinel ) {
 	return (
 		createdAtMs +
 		NO_ANALYSIS_SENTINEL_COMPATIBILITY_HOURS * 60 * 60 * 1000
+	);
+}
+
+function noAnalysisSentinelHasProductEvidence( sentinel ) {
+	if ( sentinel?.noProductOnly === true ) {
+		return false;
+	}
+	const productEvidenceRecords = Number( sentinel?.productEvidenceRecords );
+	const reasonProductEvidenceRecords = String(
+		sentinel?.reason ?? ''
+	).match( /(?:^|[^\d])([1-9]\d*)\s+product-evidence records?\b/i );
+	return (
+		sentinel?.hasProductEvidence === true ||
+		sentinel?.noProductOnly === false ||
+		( Number.isFinite( productEvidenceRecords ) &&
+			productEvidenceRecords > 0 ) ||
+		( reasonProductEvidenceRecords
+			? Number( reasonProductEvidenceRecords[ 1 ] ) > 0
+			: false )
+	);
+}
+
+function noAnalysisSentinelHasExplicitProductEvidenceMetadata( sentinel ) {
+	if ( sentinel?.noProductOnly === true ) {
+		return false;
+	}
+	const productEvidenceRecords = Number( sentinel?.productEvidenceRecords );
+	return (
+		sentinel?.hasProductEvidence === true ||
+		sentinel?.noProductOnly === false ||
+		( Number.isFinite( productEvidenceRecords ) &&
+			productEvidenceRecords > 0 )
 	);
 }
 
@@ -556,10 +623,20 @@ async function getStaleRunDirReason() {
 		return 'missing current-output pointer or supervisor state; refusing standalone deep-analysis launch without RTC_FUZZ_DEEP_ANALYSIS_ALLOW_STANDALONE=1';
 	}
 	const noAnalysis = await readNoAnalysisSentinel();
-	if ( noAnalysis?.preserveProductEvidence === true ) {
+	const inactiveReason = await getInactiveSupervisorRunDirReason();
+	if ( ! inactiveReason ) {
 		return null;
 	}
-	return getInactiveSupervisorRunDirReason();
+	if ( isNoAnalysisLiveAdmissionActive( noAnalysis ) ) {
+		return null;
+	}
+	if (
+		noAnalysis?.preserveProductEvidence === true &&
+		noAnalysisSentinelHasProductEvidence( noAnalysis )
+	) {
+		return `${ inactiveReason }; product-evidence no-analysis drain lacks live-analysis representative admission`;
+	}
+	return inactiveReason;
 }
 
 async function readJsonIfPresent( filePath ) {
@@ -778,6 +855,10 @@ function isActionableSourceSignature( signature, noAnalysis = null ) {
 		return false;
 	}
 
+	if ( signatureHasOnlyExternalImportExamples( signature ) ) {
+		return false;
+	}
+
 	if (
 		NON_ACTIONABLE_SOURCE_STATUSES.has( signature.status ?? 'unknown' )
 	) {
@@ -785,6 +866,15 @@ function isActionableSourceSignature( signature, noAnalysis = null ) {
 	}
 
 	if ( noAnalysis && ! hasSourceProductEvidence( signature ) ) {
+		return false;
+	}
+
+	if (
+		noAnalysis?.preserveProductEvidence === true &&
+		hasSourceProductEvidence( signature ) &&
+		! hasVisibleLikelyRealDecision( signature ) &&
+		! isNoAnalysisSignatureLiveAdmitted( signature, noAnalysis )
+	) {
 		return false;
 	}
 
@@ -808,6 +898,10 @@ function isActionableSourceSignature( signature, noAnalysis = null ) {
 		return false;
 	}
 
+	if ( isRtcWsRuntimeConfigPortBleedSignature( signature ) ) {
+		return false;
+	}
+
 	return ! isStrictPreActionStartupSignature( signature );
 }
 
@@ -816,8 +910,16 @@ function getSourceSuppressionReason( signature, noAnalysis = null ) {
 		return 'missing-current-source-signature';
 	}
 
+	if ( signatureHasOnlyExternalImportExamples( signature ) ) {
+		return 'external-import-source';
+	}
+
 	if ( isFuzzHelperRestEndpointConstructionSignature( signature ) ) {
 		return 'known-product-evidence-harness-noise-family-fuzz_helper_rest_endpoint_construction';
+	}
+
+	if ( isRtcWsRuntimeConfigPortBleedSignature( signature ) ) {
+		return 'known-product-evidence-harness-noise-family-rtc_test_ws_runtime_config_port_bleed';
 	}
 
 	const status = signature.status ?? 'unknown';
@@ -845,6 +947,15 @@ function getSourceSuppressionReason( signature, noAnalysis = null ) {
 
 	if ( noAnalysis && ! hasSourceProductEvidence( signature ) ) {
 		return `producer-inactive-${ noAnalysis.reasonKind ?? 'noise' }`;
+	}
+
+	if (
+		noAnalysis?.preserveProductEvidence === true &&
+		hasSourceProductEvidence( signature ) &&
+		! hasVisibleLikelyRealDecision( signature ) &&
+		! isNoAnalysisSignatureLiveAdmitted( signature, noAnalysis )
+	) {
+		return 'producer-inactive-product-evidence-drain-not-live-admitted';
 	}
 
 	const producerFamilyCapKey = getProducerNoAnalysisFamilyCapKey(
@@ -950,6 +1061,7 @@ function isStrictPreActionStartupSignature( signature ) {
 	const equivalenceClass = signature.equivalenceClass ?? '';
 	const isStartupFamily = [
 		'pre-action-bootstrap-stall',
+		'pre-action-http-polling-sync-cycle-timeout',
 		'pre-action-awareness-stall',
 	].includes( equivalenceClass );
 	const hasStartupText =
@@ -969,8 +1081,7 @@ function isStrictPreActionStartupSignature( signature ) {
 	}
 
 	return (
-		facts.userCount === 0 &&
-		! facts.lastAction &&
+			! facts.lastAction &&
 		( ! facts.lastHistoryStatus || facts.lastHistoryStatus === 'fail' ) &&
 		( facts.reloadCount ?? 0 ) === 0 &&
 		( facts.saveCheckpointCount ?? 0 ) === 0 &&
@@ -984,6 +1095,7 @@ function isStrictPreActionStartupSignature( signature ) {
 			'browser-closed',
 			'unknown',
 			'collaboration-non-convergence',
+			'http-polling-sync-cycle-timeout',
 			'save-stuck-or-failed',
 			'assertion',
 		].includes( facts.failureClass )
@@ -1157,12 +1269,12 @@ function shouldRestoreProducerFamilyCappedProductEvidenceJob(
 	noAnalysis
 ) {
 	return (
-		job?.status === 'family-capped' &&
-		noAnalysis?.preserveProductEvidence === true &&
-		hasSourceProductEvidence( sourceSignature ) &&
-		/producer no-analysis sentinel/i.test(
-			job.sourceSuppressionReason ?? job.reason ?? ''
-		)
+				[ 'family-capped', 'source-suppressed' ].includes(
+					job?.status
+				) &&
+			noAnalysis?.preserveProductEvidence === true &&
+			hasSourceProductEvidence( sourceSignature ) &&
+			isNoAnalysisSignatureLiveAdmitted( sourceSignature, noAnalysis )
 	);
 }
 
@@ -1177,7 +1289,7 @@ function restoreProducerFamilyCappedProductEvidenceJob(
 	job.sourceSuppressionReason = null;
 	job.restoredAt = new Date().toISOString();
 	job.restoreReason =
-		'producer no-analysis sentinel preserves source product-evidence signatures until a real representative analysis exists';
+		'live-admitted product-evidence representative had no durable deep-analysis result';
 	job.sourceStatus = sourceSignature?.status ?? null;
 	job.sourceCount = sourceSignature?.count ?? 0;
 	job.producerNoAnalysis = {
@@ -1214,6 +1326,8 @@ async function launchQueuedDeepAnalysisJobs(
 ) {
 	const activeHashes = getActiveJobHashes( state );
 	let activeFamilyCounts = null;
+	let noAnalysisProductEvidenceFamilyCounts = null;
+	state.lastNoAnalysisProductEvidenceFamilyCapSkips = [];
 
 	for ( const candidate of candidates ) {
 		if ( activeHashes.size >= MAX_PARALLEL ) {
@@ -1234,12 +1348,44 @@ async function launchQueuedDeepAnalysisJobs(
 			continue;
 		}
 
+		const noAnalysisProductEvidenceFamilyKey =
+			getNoAnalysisProductEvidenceRepresentativeFamilyKey(
+				candidate.signature,
+				noAnalysis
+			);
+		if ( noAnalysisProductEvidenceFamilyKey ) {
+			noAnalysisProductEvidenceFamilyCounts ??=
+				await getNoAnalysisProductEvidenceDeepFamilyCounts(
+					sourceState,
+					state,
+					noAnalysis
+				);
+			if (
+				( noAnalysisProductEvidenceFamilyCounts.get(
+					noAnalysisProductEvidenceFamilyKey
+				) ?? 0 ) >= 1
+			) {
+				recordNoAnalysisProductEvidenceFamilyCappedJob(
+					state,
+					candidate,
+					noAnalysisProductEvidenceFamilyKey,
+					noAnalysis
+				);
+				continue;
+			}
+		}
+
 		activeFamilyCounts ??= await getActiveAndCompletedFamilyCounts(
 			sourceState,
 			state
 		);
 		const semanticFamily = getSemanticFamilyKey( candidate );
-		const familyCount = activeFamilyCounts.get( semanticFamily ) ?? 0;
+		const familyCount = getAdjustedDeepFamilyCountForCandidate(
+			activeFamilyCounts,
+			state,
+			candidate,
+			semanticFamily
+		);
 		if ( familyCount >= getSemanticFamilyCap( candidate ) ) {
 			recordFamilyCappedJob( state, candidate, semanticFamily );
 			continue;
@@ -1250,10 +1396,339 @@ async function launchQueuedDeepAnalysisJobs(
 			state,
 			candidate,
 			relatedSummaries
-		);
-		activeHashes.add( candidate.hash );
-		activeFamilyCounts.set( semanticFamily, familyCount + 1 );
+			);
+			activeHashes.add( candidate.hash );
+			if ( noAnalysisProductEvidenceFamilyKey ) {
+				markNoAnalysisProductEvidenceRepresentativeJob(
+					state.jobs[ candidate.hash ],
+					noAnalysisProductEvidenceFamilyKey,
+					noAnalysis
+				);
+				noAnalysisProductEvidenceFamilyCounts.set(
+					noAnalysisProductEvidenceFamilyKey,
+					( noAnalysisProductEvidenceFamilyCounts.get(
+						noAnalysisProductEvidenceFamilyKey
+					) ?? 0 ) + 1
+				);
+			}
+			activeFamilyCounts.set( semanticFamily, familyCount + 1 );
+		}
 	}
+
+async function getNoAnalysisProductEvidenceDeepFamilyCounts(
+	sourceState,
+	state,
+	noAnalysis
+) {
+	const counts = new Map();
+	if ( ! isNoAnalysisProductEvidenceRepresentativeCapActive( noAnalysis ) ) {
+		return counts;
+	}
+	const signatureByHash = new Map(
+		Object.values( sourceState.signatures ?? {} ).map( ( signature ) => [
+			signature.hash,
+			signature,
+		] )
+	);
+	addNoAnalysisProductEvidenceDeepFamilyCountsFromJobs(
+		counts,
+		state.jobs,
+		signatureByHash,
+		noAnalysis
+	);
+	await addCurrentOutputPeerNoAnalysisProductEvidenceDeepFamilyCounts( counts );
+	return counts;
+}
+
+async function addCurrentOutputPeerNoAnalysisProductEvidenceDeepFamilyCounts(
+	counts
+) {
+	const currentOutput = await readCurrentOutputRoot();
+	const currentOutputRoot = currentOutput?.root ?? null;
+	for ( const peerRunDir of await getCurrentOutputPeerRunDirs() ) {
+		const peerNoAnalysis = await readJson(
+			path.join( peerRunDir, '.triage-watcher/no-analysis.json' ),
+			null
+		);
+		if (
+			! isActiveNoAnalysisSentinelForRunDir(
+				peerNoAnalysis,
+				peerRunDir,
+				currentOutputRoot
+			) ||
+			! isNoAnalysisProductEvidenceRepresentativeCapActive( peerNoAnalysis )
+		) {
+			continue;
+		}
+		const [ peerSourceState, peerDeepState ] = await Promise.all( [
+			readJson( path.join( peerRunDir, '.triage-watcher/state.json' ), null ),
+			readJson(
+				path.join(
+					peerRunDir,
+					'.triage-watcher/deep-analysis-tier/state.json'
+				),
+				null
+			),
+		] );
+		const peerSignatureByHash = new Map(
+			Object.values( peerSourceState?.signatures ?? {} ).map(
+				( signature ) => [ signature.hash, signature ]
+			)
+		);
+		addNoAnalysisProductEvidenceDeepFamilyCountsFromJobs(
+			counts,
+			peerDeepState?.jobs,
+			peerSignatureByHash,
+			peerNoAnalysis
+		);
+	}
+}
+
+function addNoAnalysisProductEvidenceDeepFamilyCountsFromJobs(
+	counts,
+	jobs,
+	signatureByHash,
+	noAnalysis
+) {
+	for ( const job of Object.values( jobs ?? {} ) ) {
+		if ( ! FAMILY_OCCUPANCY_JOB_STATUSES.has( job.status ) ) {
+			continue;
+		}
+		if (
+			! [ 'running', 'completed', 'family-capped' ].includes( job.status )
+		) {
+			continue;
+		}
+		if ( job.status === 'running' && ! isProcessAlive( job.pid ) ) {
+			continue;
+		}
+		const signature = signatureByHash.get( job.hash );
+		const familyKey =
+			job.noAnalysisProductEvidenceRepresentativeFamilyKey ??
+			getNoAnalysisProductEvidenceRepresentativeFamilyKey(
+				signature,
+				noAnalysis
+			);
+		if ( ! familyKey ) {
+			continue;
+		}
+		if (
+			job.status === 'family-capped' &&
+			job.noAnalysisProductEvidenceRepresentative !== true
+		) {
+			continue;
+		}
+		counts.set( familyKey, ( counts.get( familyKey ) ?? 0 ) + 1 );
+	}
+}
+
+function isActiveNoAnalysisSentinelForRunDir(
+	sentinel,
+	runDir,
+	currentOutputRoot
+) {
+	if (
+		sentinel?.preserveProductEvidence !== true ||
+		! sentinel.outputDir ||
+		! noAnalysisSentinelHasProductEvidence( sentinel )
+	) {
+		return false;
+	}
+	const outputRoot =
+		currentOutputRoot ??
+		( isPathInsideRoot( runDir, sentinel.outputDir )
+			? sentinel.outputDir
+			: null );
+	if ( ! outputRoot ) {
+		return false;
+	}
+	if ( path.resolve( sentinel.outputDir ) !== path.resolve( outputRoot ) ) {
+		return false;
+	}
+	return getNoAnalysisSentinelExpirationMs( sentinel ) > Date.now();
+}
+
+function getNoAnalysisProductEvidenceRepresentativeFamilyKey(
+	signature,
+	noAnalysis
+) {
+	if (
+		! signature?.hash ||
+		signatureHasOnlyExternalImportExamples( signature ) ||
+		! isNoAnalysisProductEvidenceRepresentativeCapActive( noAnalysis ) ||
+		! hasSourceProductEvidence( signature ) ||
+		isStrictPreActionStartupSignature( signature ) ||
+		isSourceGatedStrictPreActionStartupSignature( signature )
+	) {
+		return null;
+	}
+	const familyKey = getSourceSignatureSemanticFamilyKey( signature );
+	if (
+		familyKey === 'pre_action_bootstrap_stall' &&
+		isStartupNoiseNoAnalysisSentinel( noAnalysis ) &&
+		! hasVisibleLikelyRealDecision( signature )
+	) {
+		return null;
+	}
+	if (
+		isNoAnalysisPausedFamilyKey( familyKey, noAnalysis ) &&
+		! hasVisibleLikelyRealDecision( signature )
+	) {
+		return null;
+	}
+	return familyKey;
+}
+
+function isNoAnalysisPausedFamilyKey( familyKey, noAnalysis ) {
+	const pausedFamily = canonicalizeSemanticFamilyKey(
+		noAnalysis?.family ?? ''
+	);
+	return (
+		!! familyKey &&
+		!! pausedFamily &&
+		familyKey === pausedFamily &&
+		PRODUCER_NO_ANALYSIS_FAMILY_CAP_REASON_KINDS.has(
+			noAnalysis?.reasonKind ?? ''
+		)
+	);
+}
+
+function isStartupNoiseNoAnalysisSentinel( noAnalysis ) {
+	const family = normalizeSemanticLabel( noAnalysis?.family ?? '' );
+	return (
+		noAnalysis?.reasonKind === 'startup-noise' ||
+		family === 'pre_action_bootstrap_stall' ||
+		noAnalysis?.source === 'supervisor-startup-stall-guard'
+	);
+}
+
+function isNoAnalysisProductEvidenceRepresentativeCapActive( noAnalysis ) {
+	return (
+		noAnalysis?.preserveProductEvidence === true &&
+		noAnalysisSentinelHasExplicitProductEvidenceMetadata( noAnalysis ) &&
+		!! canonicalizeSemanticFamilyKey( noAnalysis.family ?? '' ) &&
+		( ! noAnalysis.reasonKind ||
+			PRODUCER_NO_ANALYSIS_FAMILY_CAP_REASON_KINDS.has(
+				noAnalysis.reasonKind
+			) )
+	);
+}
+
+function getNoAnalysisLiveAdmissionFamilyKeys( noAnalysis ) {
+	if (
+		noAnalysis?.preserveProductEvidence !== true ||
+		! noAnalysisSentinelHasExplicitProductEvidenceMetadata( noAnalysis ) ||
+		! canonicalizeSemanticFamilyKey( noAnalysis.family ?? '' )
+	) {
+		return new Set();
+	}
+	const admission = noAnalysis?.liveAnalysisAdmission;
+	if ( ! admission ) {
+		return new Set();
+	}
+	const expiresAtMs = Date.parse( admission.expiresAt ?? '' );
+	if ( ! Number.isFinite( expiresAtMs ) || expiresAtMs <= Date.now() ) {
+		return new Set();
+	}
+	if (
+		admission.outputDir &&
+		noAnalysis?.outputDir &&
+		path.resolve( admission.outputDir ) !== path.resolve( noAnalysis.outputDir )
+	) {
+		return new Set();
+	}
+	return new Set(
+		( admission.familyKeys ?? [] )
+			.map( ( familyKey ) => normalizeSemanticLabel( familyKey ) )
+			.filter(
+				( familyKey ) =>
+					familyKey &&
+					! isNoAnalysisPausedFamilyKey(
+						familyKey,
+						noAnalysis
+					) &&
+					!(
+						familyKey === 'pre_action_bootstrap_stall' &&
+						isStartupNoiseNoAnalysisSentinel( noAnalysis )
+					)
+			)
+	);
+}
+
+function isNoAnalysisLiveAdmissionActive( noAnalysis ) {
+	return (
+		noAnalysis?.preserveProductEvidence === true &&
+		noAnalysisSentinelHasProductEvidence( noAnalysis ) &&
+		getNoAnalysisLiveAdmissionFamilyKeys( noAnalysis ).size > 0
+	);
+}
+
+function isNoAnalysisSignatureLiveAdmitted( signature, noAnalysis ) {
+	const familyKeys = getNoAnalysisLiveAdmissionFamilyKeys( noAnalysis );
+	if ( familyKeys.size === 0 ) {
+		return false;
+	}
+	const familyKey = getNoAnalysisProductEvidenceRepresentativeFamilyKey(
+		signature,
+		noAnalysis
+	);
+	return !! familyKey && familyKeys.has( familyKey );
+}
+
+function markNoAnalysisProductEvidenceRepresentativeJob(
+	job,
+	familyKey,
+	noAnalysis
+) {
+	if ( ! job ) {
+		return;
+	}
+	job.noAnalysisProductEvidenceRepresentative = true;
+	job.noAnalysisProductEvidenceRepresentativeFamilyKey = familyKey;
+	job.producerNoAnalysis = {
+		group: noAnalysis.group ?? null,
+		reasonKind: noAnalysis.reasonKind ?? null,
+		family: noAnalysis.family ?? null,
+		reason: noAnalysis.reason ?? null,
+		createdAt: noAnalysis.createdAt ?? null,
+	};
+}
+
+function recordNoAnalysisProductEvidenceFamilyCappedJob(
+	state,
+	candidate,
+	familyKey,
+	noAnalysis
+) {
+	const existing = state.jobs[ candidate.hash ];
+	if ( TERMINAL_JOB_STATUSES.has( existing?.status ) ) {
+		return;
+	}
+	recordFamilyCappedJob( state, candidate, familyKey );
+	const job = state.jobs[ candidate.hash ];
+	job.reason =
+		'product-preserving no-analysis sentinel already has a deep-analysis representative for this semantic family';
+	job.sourceSuppressionReason = job.reason;
+	job.noAnalysisProductEvidenceFamilyCap = true;
+	job.producerNoAnalysis = {
+		group: noAnalysis.group ?? null,
+		reasonKind: noAnalysis.reasonKind ?? null,
+		family: noAnalysis.family ?? null,
+		reason: noAnalysis.reason ?? null,
+		createdAt: noAnalysis.createdAt ?? null,
+	};
+	state.lastNoAnalysisProductEvidenceFamilyCapSkips.push( {
+		at: new Date().toISOString(),
+		hash: candidate.hash,
+		familyKey,
+		sourceSemanticFamilyKey: getSourceSignatureSemanticFamilyKey(
+			candidate.signature
+		),
+		firstLevelAction: candidate.firstResult.recommendedTriageAction,
+		reason: job.reason,
+	} );
+	state.lastNoAnalysisProductEvidenceFamilyCapSkips =
+		state.lastNoAnalysisProductEvidenceFamilyCapSkips.slice( -50 );
 }
 
 async function getActiveAndCompletedFamilyCounts( sourceState, state ) {
@@ -1269,6 +1744,27 @@ async function getActiveAndCompletedFamilyCounts( sourceState, state ) {
 	await addCurrentOutputPeerDeepFamilyCounts( counts );
 
 	return counts;
+}
+
+function getAdjustedDeepFamilyCountForCandidate(
+	counts,
+	state,
+	candidate,
+	family
+) {
+	let count = counts.get( family ) ?? 0;
+	const existing = state.jobs?.[ candidate.hash ];
+	if (
+		existing &&
+		! TERMINAL_JOB_STATUSES.has( existing.status ) &&
+		isDeepFamilyOccupancyJob( existing ) &&
+		shouldCountJobForFamilyCap( existing, candidate.signature ) &&
+		( existing.semanticFamilyKey ?? getSemanticFamilyKey( candidate ) ) ===
+			family
+	) {
+		count -= 1;
+	}
+	return Math.max( 0, count );
 }
 
 function addDeepFamilyCountsFromJobs(
@@ -1303,7 +1799,7 @@ function addDeepFamilyCountsFromJobs(
 }
 
 function isDeepFamilyOccupancyJob( job ) {
-	if ( [ 'completed', 'family-capped', 'running' ].includes( job.status ) ) {
+	if ( FAMILY_OCCUPANCY_JOB_STATUSES.has( job.status ) ) {
 		return true;
 	}
 	return job.status === 'failed' && job.attempts >= MAX_ATTEMPTS;
@@ -1343,6 +1839,9 @@ function shouldApplyCurrentOutputDeepFamilyCap( family, signature ) {
 	if ( signature && ! hasProductEvidence( signature ) ) {
 		return false;
 	}
+	if ( signature && hasProductEvidence( signature ) ) {
+		return true;
+	}
 	return NO_PRODUCT_KNOWN_NOISE_FAMILIES.has(
 		normalizeSemanticLabel( family )
 	);
@@ -1360,8 +1859,22 @@ function shouldCountJobForFamilyCap( job, signature ) {
 	if ( hasVisibleLikelyRealJobResult( job ) ) {
 		return true;
 	}
+	if (
+		job.status === 'completed' &&
+		signature &&
+		hasProductEvidence( signature ) &&
+		! isCompletedJobSafeProductEvidenceFamilyCapRepresentative( job )
+	) {
+		return false;
+	}
 
 	const family = job.semanticFamilyKey ?? null;
+	if (
+		job.noAnalysisProductEvidenceFamilyCap === true &&
+		job.noAnalysisProductEvidenceRepresentative !== true
+	) {
+		return false;
+	}
 	if (
 		job.status === 'family-capped' &&
 		shouldApplyCurrentOutputDeepFamilyCap( family, signature )
@@ -1379,7 +1892,8 @@ function shouldCountJobForFamilyCap( job, signature ) {
 	return (
 		!! signature &&
 		! getSourceSuppressionReason( signature ) &&
-		hasProductEvidence( signature )
+		hasProductEvidence( signature ) &&
+		! isCompletedJobUnsafeProductEvidenceFamilyCapRepresentative( job )
 	);
 }
 
@@ -1395,6 +1909,46 @@ function hasVisibleLikelyRealJobResult( job ) {
 		! result.isDuplicateOf &&
 		! result.duplicateOf
 	);
+}
+
+function isCompletedJobUnsafeProductEvidenceFamilyCapRepresentative( job ) {
+	return (
+		job?.status === 'completed' &&
+		! isCompletedJobSafeProductEvidenceFamilyCapRepresentative( job )
+	);
+}
+
+function isCompletedJobSafeProductEvidenceFamilyCapRepresentative( job ) {
+	const result = readJobResultSync( job );
+	if ( ! result ) {
+		return false;
+	}
+	if ( hasVisibleLikelyRealJobResult( job ) ) {
+		return true;
+	}
+	if (
+		result.recommendedTriageAction === 'merge_with_duplicate' &&
+		( result.isDuplicateOf || result.duplicateOf )
+	) {
+		return true;
+	}
+	return (
+		result.recommendedTriageAction === 'suppress_as_infra' &&
+		isSafeProductEvidenceHarnessNoiseFamily(
+			result.distinctBugType ??
+				result.semanticFamilyKey ??
+				result.equivalenceClass
+		)
+	);
+}
+
+function isSafeProductEvidenceHarnessNoiseFamily( rawFamilyKey ) {
+	return [
+		'fuzz_helper_rest_endpoint_construction',
+		'http_awareness_wait_false_timeout_after_reload',
+		'rtc_test_ws_runtime_config_port_bleed',
+		'rtc_ws_test_provider_bootstrap_missing_after_reload',
+	].includes( normalizeSemanticLabel( rawFamilyKey ?? '' ) );
 }
 
 function readJobResultSync( job ) {
@@ -1432,6 +1986,9 @@ function recordFamilyCappedJob( state, candidate, semanticFamily ) {
 }
 
 function getSemanticFamilyCap( candidate ) {
+	if ( hasProductEvidence( candidate?.signature ) ) {
+		return 1;
+	}
 	const key = getSemanticFamilyKey( candidate );
 	if (
 		/linebreak|newline|br_normalization|isuseroverlaycolor|cover.*overlay/.test(
@@ -1464,14 +2021,32 @@ function getSemanticFamilyKey( candidate ) {
 	if ( isFuzzHelperRestEndpointConstructionSignature( signature ) ) {
 		return 'fuzz_helper_rest_endpoint_construction';
 	}
+	if ( isRtcWsRuntimeConfigPortBleedSignature( signature ) ) {
+		return 'rtc_test_ws_runtime_config_port_bleed';
+	}
+	const sourceNormalized = normalizeSemanticLabel(
+		signature.semanticFamilyKey ?? signature.equivalenceClass ?? signature.familyKey
+	);
+	const sourceFamily = getExplicitSemanticFamilyKey(
+		signature.semanticFamilyKey,
+		signature.equivalenceClass
+	);
+	if ( sourceFamily ) {
+		return sourceFamily;
+	}
+	const firstLevelFamily = getExplicitSemanticFamilyKey(
+		result.distinctBugType,
+		result.semanticFamilyKey,
+		result.equivalenceClass
+	);
+	if ( firstLevelFamily ) {
+		return firstLevelFamily;
+	}
 	const inferredFamily =
 		getProductEvidenceLifecycleSemanticFamily( signature );
 	if ( inferredFamily ) {
 		return inferredFamily;
 	}
-	const sourceNormalized = normalizeSemanticLabel(
-		signature.semanticFamilyKey ?? signature.equivalenceClass ?? signature.familyKey
-	);
 	if (
 		/awareness.*save.*reload|save.*reload.*awareness|http_awareness_loss_after_save_reload/.test(
 			sourceNormalized
@@ -1526,13 +2101,6 @@ function getSemanticFamilyKey( candidate ) {
 		return 'rtc_ws_test_provider_bootstrap_missing_after_reload';
 	}
 	if ( /bootstrap|pre_action.*startup|startup.*discovery|pre_action.*awareness/.test( normalized ) ) {
-		if ( hasProductEvidence( signature ) ) {
-			return /bootstrap|pre_action.*startup|startup.*discovery|pre_action.*awareness/.test(
-				sourceNormalized
-			)
-				? signature.familyKey ?? candidate.hash ?? sourceNormalized
-				: sourceNormalized;
-		}
 		return 'pre_action_bootstrap_stall';
 	}
 	if (
@@ -1591,6 +2159,16 @@ function getSourceSignatureSemanticFamilyKey( signature ) {
 	if ( isFuzzHelperRestEndpointConstructionSignature( signature ) ) {
 		return 'fuzz_helper_rest_endpoint_construction';
 	}
+	if ( isRtcWsRuntimeConfigPortBleedSignature( signature ) ) {
+		return 'rtc_test_ws_runtime_config_port_bleed';
+	}
+	const sourceFamily = getExplicitSemanticFamilyKey(
+		signature?.semanticFamilyKey,
+		signature?.equivalenceClass
+	);
+	if ( sourceFamily ) {
+		return sourceFamily;
+	}
 	const inferredFamily =
 		getProductEvidenceLifecycleSemanticFamily( signature );
 	if ( inferredFamily ) {
@@ -1602,6 +2180,69 @@ function getSourceSignatureSemanticFamilyKey( signature ) {
 			signature?.familyKey ??
 			signature?.hash ??
 			'unknown'
+	);
+}
+
+function getExplicitSemanticFamilyKey( ...rawValues ) {
+	for ( const raw of rawValues ) {
+		const family = canonicalizeExplicitSemanticFamily(
+			normalizeSemanticLabel( raw )
+		);
+		if ( isConcreteExplicitSemanticFamily( family ) ) {
+			return family;
+		}
+	}
+	return null;
+}
+
+function canonicalizeExplicitSemanticFamily( family ) {
+	if ( /^persisted_content_/.test( family ) ) {
+		return family;
+	}
+	if (
+		/crdt.*snapshot|save_response.*hydration|saved_post_content|rest_saved_raw.*content/.test(
+			family
+		)
+	) {
+		return 'persisted_content_mismatch';
+	}
+	if (
+		/collaboration.*non.*convergence|non_convergence.*html_entity|html_entity.*canonicalization/.test(
+			family
+		)
+	) {
+		return 'collaboration_non_convergence';
+	}
+	if (
+		/awareness.*save.*reload|save.*reload.*awareness|http_awareness_loss_after_save_reload/.test(
+			family
+		)
+	) {
+		return 'awareness_loss_after_save_reload';
+	}
+	if (
+		/awareness.*reload|reload.*awareness|reload_rejoin|reload.*rejoin|rejoin.*reload|rediscovering?_peers?|peer_rediscovery|sync_cycle/.test(
+			family
+		)
+	) {
+		return 'reload_rejoin_awareness_stall';
+	}
+	if ( /late.*session.*awareness|late_session_awareness/.test( family ) ) {
+		return 'late_session_awareness_stall';
+	}
+	if ( /operation.*witness.*missing|witness.*loss/.test( family ) ) {
+		return 'operation_witness_missing';
+	}
+	return family;
+}
+
+function isConcreteExplicitSemanticFamily( family ) {
+	return (
+		!! family &&
+		! [ 'unknown', 'timeout', 'none', 'null', 'undefined' ].includes(
+			family
+		) &&
+		! /^[a-f0-9]{12,40}$/.test( family )
 	);
 }
 
@@ -1622,6 +2263,27 @@ function isFuzzHelperRestEndpointConstructionSignature( signature ) {
 		/collaboration-fuzz\.spec\.ts:(?:4864|4882|4883|4890)\b/.test(
 			normalized
 		)
+	);
+}
+
+function isRtcWsRuntimeConfigPortBleedSignature( signature ) {
+	const decisionFamily = normalizeSemanticLabel(
+		signature?.analysisGate?.distinctBugType ??
+			signature?.result?.distinctBugType ??
+			''
+	);
+	if ( decisionFamily === 'rtc_test_ws_runtime_config_port_bleed' ) {
+		return true;
+	}
+
+	const normalized = String( signature?.normalized ?? '' );
+	const hasTrimmedEndpointMismatchThrowSite =
+		/collaboration-utils\.ts:900\b/i.test( normalized ) &&
+		/save, refresh, and sync faults/i.test( normalized );
+	return (
+		/RTC fuzz-only WebSocket provider endpoint mismatch|syncWaitValue\?\.kind === 'endpoint-mismatch'|kind[=:]"?endpoint-mismatch/i.test(
+			normalized
+		) || hasTrimmedEndpointMismatchThrowSite
 	);
 }
 
@@ -1670,9 +2332,12 @@ function normalizeSemanticLabel( value ) {
 		.replace( /^_|_$/g, '' );
 }
 
+function canonicalizeSemanticFamilyKey( value ) {
+	return normalizeSemanticLabel( value );
+}
+
 function preAnalysisGateAttemptHasProductEvidence( attempt ) {
 	return (
-		( attempt?.userCount ?? 0 ) > 0 ||
 		!! attempt?.lastAction ||
 		( attempt?.reloadCount ?? 0 ) > 0 ||
 		( attempt?.saveCheckpointCount ?? 0 ) > 0 ||
@@ -1684,8 +2349,15 @@ function preAnalysisGateAttemptHasProductEvidence( attempt ) {
 	);
 }
 
+function isPreActionNoProductGateBucket( gate ) {
+	return [
+		'pre-action-bootstrap-stall',
+		'pre-action-http-polling-sync-cycle-timeout',
+	].includes( gate?.bucket );
+}
+
 function isNoProductPreActionStartupGate( gate ) {
-	if ( gate?.bucket !== 'pre-action-bootstrap-stall' ) {
+	if ( ! isPreActionNoProductGateBucket( gate ) ) {
 		return false;
 	}
 	if ( ( gate.passedRechecks ?? 0 ) > 0 ) {
@@ -1699,7 +2371,7 @@ function isNoProductPreActionStartupGate( gate ) {
 }
 
 function isPrimaryNoProductPreActionStartupGate( gate ) {
-	if ( gate?.bucket !== 'pre-action-bootstrap-stall' ) {
+	if ( ! isPreActionNoProductGateBucket( gate ) ) {
 		return false;
 	}
 	const attempts = Array.isArray( gate.attempts ) ? gate.attempts : [];
@@ -1709,8 +2381,9 @@ function isPrimaryNoProductPreActionStartupGate( gate ) {
 		primaryAttempts.length > 0 &&
 		primaryAttempts.every(
 			( attempt ) =>
-				( attempt?.bucket ?? gate.bucket ) ===
-					'pre-action-bootstrap-stall' &&
+				isPreActionNoProductGateBucket( {
+					bucket: attempt?.bucket ?? gate.bucket,
+				} ) &&
 				! preAnalysisGateAttemptHasProductEvidence( attempt )
 		)
 	);
@@ -1964,6 +2637,9 @@ function buildCodexPrompt( sourceState, candidate, relatedSummaries, paths ) {
 		`Triage watcher state: ${ TRIAGE_STATE_PATH }`,
 		`First-level analysis state: ${ ANALYSIS_STATE_PATH }`,
 		`Deep analysis job directory: ${ paths.jobDir }`,
+		`Operator correctness alert: /media/volume/danluu-fuzz-data/rtc-operator-alerts/rtc-correctness-regression-alert-20260519.md`,
+		'Priority classification rule: challenge any timeout/noise label when the shape matches fixed-stack-only multi-user convergence, saved-content union, or list/block ordering regression after refresh.',
+
 		`Failure signature: ${ candidate.hash }`,
 		`Current watcher status counts: ${ JSON.stringify( statusCounts ) }`,
 		'',
@@ -2025,9 +2701,8 @@ async function markJobsStaleForRunDir(
 		}
 		const sourceSignature = sourceState?.signatures?.[ job.hash ] ?? null;
 		if (
-			noAnalysis?.preserveProductEvidence === true &&
 			sourceSignature &&
-			hasSourceProductEvidence( sourceSignature )
+			isNoAnalysisSignatureLiveAdmitted( sourceSignature, noAnalysis )
 		) {
 			continue;
 		}
@@ -2093,6 +2768,25 @@ async function runScanCycle() {
 	state.lastGateOnlyTriageRefresh = gateOnlyRefresh;
 	await reconcileJobs( state );
 	await suppressJobsWithInactiveSource( state, sourceState, noAnalysis );
+	if ( noAnalysis && ! isNoAnalysisLiveAdmissionActive( noAnalysis ) ) {
+		state.lastLaunchSkippedForNoAnalysis = {
+			at: new Date().toISOString(),
+			reason:
+				'active producer no-analysis sentinel has no live-analysis admission; suppressed stale/noise jobs and exiting instead of keeping a warm deep-analysis loop',
+			reasonKind: noAnalysis.reasonKind ?? null,
+			family: noAnalysis.family ?? null,
+			group: noAnalysis.group ?? null,
+			hasProductEvidence: noAnalysisSentinelHasProductEvidence( noAnalysis ),
+		};
+		await writeState( state );
+		shuttingDown = true;
+		process.stdout.write(
+			`[${ new Date().toISOString() }] producer no-analysis without live admission: ${
+				noAnalysis.reasonKind ?? 'noise'
+			}; exiting without launching deep analysis\n`
+		);
+		return;
+	}
 	let candidateCount = 0;
 	if ( gateOnlyRefresh.status === 'failed' ) {
 		state.lastLaunchSkippedForGateOnlyFailure = {

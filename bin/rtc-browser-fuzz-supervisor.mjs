@@ -17,6 +17,8 @@ const OUTPUT_DIR =
 		'artifacts/rtc-browser-fuzz',
 		`supervised-${ createTimestamp() }`
 	);
+const CURRENT_OUTPUT_POINTER_PATH =
+	process.env.RTC_FUZZ_SUPERVISOR_CURRENT_OUTPUT_POINTER ?? null;
 const DURATION_HOURS = getPositiveNumberEnv(
 	'RTC_FUZZ_SUPERVISOR_DURATION_HOURS',
 	getPositiveNumberEnv( 'RTC_FUZZ_DURATION_HOURS', 14 )
@@ -34,6 +36,24 @@ const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 const STATE_PATH = path.join( OUTPUT_DIR, 'supervisor-state.json' );
 const LOG_PATH = path.join( OUTPUT_DIR, 'supervisor.log' );
 const EVENTS_PATH = path.join( OUTPUT_DIR, 'events.ndjson' );
+const ACTIVE_GROUP_STATUSES = new Set( [
+	'starting',
+	'launching',
+	'recovering',
+	'running',
+] );
+const INCLUDE_EXTERNAL_IMPORTS =
+	process.env.RTC_FUZZ_SUPERVISOR_INCLUDE_EXTERNAL_IMPORTS === '1';
+const SUMMARY_SCAN_IGNORED_DIRS = new Set( [
+	'.git',
+	'.triage-watcher',
+	'blob-report',
+	'codex-analysis',
+	'node_modules',
+	'playwright-report',
+	'test-results',
+	'vendor',
+] );
 const NO_ANALYSIS_SENTINEL_RELATIVE_PATH = path.join(
 	'.triage-watcher',
 	'no-analysis.json'
@@ -97,7 +117,7 @@ const STARTUP_DISCOVERY_PHASES = new Set( [
 	'ready',
 ] );
 const STARTUP_DISCOVERY_FAILURE_PATTERN =
-	/waitForMutualDiscovery|waitForTestWebSocketAwarenessPeerCount|waitForCollaborationReady|setPreferences|_wpCollaborationEnabled|collaboration (?:session )?to become ready|page\.waitForFunction|waitForSyncCycle|Target page, context or browser has been closed|Test timeout/i;
+	/waitForMutualDiscovery|waitForTestWebSocketAwarenessPeerCount|waitForCollaborationReady|setPreferences|_wpCollaborationEnabled|collaboration (?:session )?to become ready|page\.waitForFunction|waitForSyncCycle|Target page, context or browser has been closed|Test timeout|Failed to discover REST API endpoint|RequestUtils\.setupRest|request-utils\/rest\.ts|Link header:\s*undefined|globalSetup|api\.w\.org|GET .*\/wp-json\/|ERR_CONNECTION_RESET|ERR_SOCKET_NOT_CONNECTED|endpoint mismatch|runtime[- ]config port bleed/i;
 const STARTUP_STALL_GUARD_ENABLED =
 	process.env.RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD !== '0';
 const STARTUP_STALL_GUARD_MIN_FAILURES = getPositiveIntegerEnv(
@@ -106,7 +126,7 @@ const STARTUP_STALL_GUARD_MIN_FAILURES = getPositiveIntegerEnv(
 );
 const STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES = getPositiveIntegerEnv(
 	'RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES',
-	2
+	1
 );
 const STARTUP_STALL_GUARD_DOMINANCE_MIN_FAILURES = getPositiveIntegerEnv(
 	'RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_DOMINANCE_MIN_FAILURES',
@@ -131,6 +151,14 @@ const INFRA_STARTUP_FAILURE_BACKOFF_MS =
 	) *
 	60 *
 	1000;
+const SYSTEM_PATH_ENTRIES = [
+	'/usr/local/sbin',
+	'/usr/local/bin',
+	'/usr/sbin',
+	'/usr/bin',
+	'/sbin',
+	'/bin',
+];
 const DEFAULT_GROUPS = [
 	{
 		name: 'default-http',
@@ -158,6 +186,17 @@ function getPositiveIntegerEnv( name, fallback ) {
 		return fallback;
 	}
 	const parsedValue = Number.parseInt( rawValue, 10 );
+	if ( Number.isNaN( parsedValue ) || parsedValue <= 0 ) {
+		throw new Error( `Expected ${ name } to be a positive integer.` );
+	}
+	return parsedValue;
+}
+
+function getPositiveIntegerConfigValue( value, name, fallback ) {
+	if ( ! value ) {
+		return fallback;
+	}
+	const parsedValue = Number.parseInt( value, 10 );
 	if ( Number.isNaN( parsedValue ) || parsedValue <= 0 ) {
 		throw new Error( `Expected ${ name } to be a positive integer.` );
 	}
@@ -391,17 +430,48 @@ async function syncGroupConfigs() {
 			continue;
 		}
 
-		if ( existingGroupState.status === 'disabled' ) {
-			const startupStallHoldUntilMs =
-				getStartupStallHoldUntilMs( existingGroupState );
-			if ( startupStallHoldUntilMs > Date.now() ) {
+			if ( existingGroupState.status === 'disabled' ) {
+				const startupStallHoldUntilMs =
+					getStartupStallHoldUntilMs( existingGroupState );
+				if (
+					startupStallHoldUntilMs > Date.now() &&
+					shouldBypassStartupStallCooldown(
+						group,
+						existingGroupState
+					)
+				) {
+					await event( {
+						group: group.name,
+					kind: 'policy',
+					action: 'bypass-disabled-startup-stall-cooldown',
+					reason: 'group policy requires continued coverage despite no-product startup-stall seed drain',
+					previousReason: existingGroupState.lastReason,
+					pauseUntil: existingGroupState.startupStallPausedUntil,
+					drainRecordedUntil:
+						existingGroupState.startupStallDrainRecordedUntil,
+				} );
+				existingGroupState.status = 'recovering';
+				existingGroupState.lastReason =
+					'startup-stall cooldown bypassed by group policy';
+				existingGroupState.startupStallRecoveryMode = 'recover';
+				existingGroupState.activeRunDirs = [];
+				existingGroupState.currentRunDir = null;
+				existingGroupState.startupStallRunDirs = [];
+				existingGroupState.noAnalysisRunDirs = [];
+				delete existingGroupState.noAnalysisReasonKind;
+				delete existingGroupState.noAnalysisFamily;
+				delete existingGroupState.noAnalysisSource;
+				delete existingGroupState.startupStallPausedAt;
+				delete existingGroupState.startupStallPausedUntil;
+				delete existingGroupState.startupStallDrainRecordedAt;
+				delete existingGroupState.startupStallDrainRecordedUntil;
+			} else if ( startupStallHoldUntilMs > Date.now() ) {
 				await event( {
 					group: group.name,
 					kind: 'policy',
 					action: 'keep-disabled-startup-stall-cooldown',
 					reason: existingGroupState.lastReason,
-					pauseUntil:
-						existingGroupState.startupStallPausedUntil,
+					pauseUntil: existingGroupState.startupStallPausedUntil,
 					drainRecordedUntil:
 						existingGroupState.startupStallDrainRecordedUntil,
 				} );
@@ -440,6 +510,22 @@ async function syncGroupConfigs() {
 
 	state.groups = orderGroupStatesByConfig( state.groups );
 	await writeState();
+}
+
+function shouldBypassStartupStallCooldown( group, groupState = null ) {
+	if (
+		group?.env?.RTC_FUZZ_SUPERVISOR_BYPASS_STARTUP_STALL_COOLDOWN !== '1'
+	) {
+		return false;
+	}
+	if (
+		groupState &&
+		( hasNoProductStartupStallDrainCooldown( groupState ) ||
+			isNoProductStartupStallNoiseState( groupState ) )
+	) {
+		return false;
+	}
+	return true;
 }
 
 async function disableRemovedGroupState( groupState ) {
@@ -494,12 +580,25 @@ async function disableRemovedGroupState( groupState ) {
 	}
 }
 
+function withSystemPath( value ) {
+	const entries = String( value ?? '' )
+		.split( path.delimiter )
+		.filter( Boolean );
+	for ( const entry of SYSTEM_PATH_ENTRIES ) {
+		if ( ! entries.includes( entry ) ) {
+			entries.push( entry );
+		}
+	}
+	return entries.join( path.delimiter );
+}
+
 function buildEnv( group, overrides = {} ) {
 	const env = {
 		...process.env,
 		...( group.env ?? {} ),
 		...overrides,
 	};
+	env.PATH = withSystemPath( env.PATH );
 
 	if ( env.WP_ENV_PORT && ! env.WP_ENV_TESTS_PORT ) {
 		const port = Number.parseInt( env.WP_ENV_PORT, 10 );
@@ -579,6 +678,50 @@ async function runWpEnv( group, args, options = {} ) {
 	} );
 }
 
+function summarizeWpEnvStartFailure( group, result, logFileName ) {
+	const output = String( result?.output ?? '' );
+	const reasons = [];
+	const bindMatch = output.match(
+		/Bind for [^\n\r]+ failed: port is already allocated/i
+	);
+	const addressMatch = output.match(
+		/(?:EADDRINUSE|address already in use)[^\n\r]*/i
+	);
+	if ( bindMatch || addressMatch ) {
+		reasons.push(
+			`port-collision: ${ ( bindMatch?.[ 0 ] ?? addressMatch?.[ 0 ] ).trim() }`
+		);
+	}
+	if ( result?.timedOut ) {
+		reasons.push( 'timed-out' );
+	}
+	if ( result?.signal ) {
+		reasons.push( `signal=${ result.signal }` );
+	}
+	if ( Number.isInteger( result?.code ) ) {
+		reasons.push( `exit=${ result.code }` );
+	}
+	const ports = [
+		group.env?.WP_ENV_PORT
+			? `WP_ENV_PORT=${ group.env.WP_ENV_PORT }`
+			: null,
+		group.env?.WP_ENV_TESTS_PORT
+			? `WP_ENV_TESTS_PORT=${ group.env.WP_ENV_TESTS_PORT }`
+			: null,
+		group.env?.WP_ENV_PHPMYADMIN_PORT
+			? `WP_ENV_PHPMYADMIN_PORT=${ group.env.WP_ENV_PHPMYADMIN_PORT }`
+			: null,
+		group.env?.GUTENBERG_RTC_TEST_WS_PORT
+			? `GUTENBERG_RTC_TEST_WS_PORT=${ group.env.GUTENBERG_RTC_TEST_WS_PORT }`
+			: null,
+	].filter( Boolean );
+	if ( ports.length ) {
+		reasons.push( ports.join( ',' ) );
+	}
+	const reasonText = reasons.length ? ` (${ reasons.join( '; ' ) })` : '';
+	return `${ group.name }: wp-env start failed${ reasonText }; see ${ logFileName }`;
+}
+
 async function fileExists( filePath ) {
 	try {
 		await fs.access( filePath );
@@ -586,6 +729,72 @@ async function fileExists( filePath ) {
 	} catch {
 		return false;
 	}
+}
+
+function isGutenbergBuildArtifactsMissingBackoff( groupState ) {
+	const errorText = [
+		groupState.lastInfraStartupError,
+		groupState.lastReason,
+	]
+		.filter( Boolean )
+		.join( '\n' );
+	return /Gutenberg build artifacts are missing/i.test( errorText );
+}
+
+async function getMissingGutenbergBuildArtifactInputs( group ) {
+	const missingInputs = [];
+	for ( const manifest of REQUIRED_GUTENBERG_BLOCK_MANIFESTS ) {
+		const inputPath = path.join( group.repoRoot, manifest.input );
+		if ( ! ( await fileExists( inputPath ) ) ) {
+			missingInputs.push( manifest.input );
+		}
+	}
+	return missingInputs;
+}
+
+async function maybeClearGutenbergBuildArtifactsBackoff( groupState ) {
+	if ( ! isGutenbergBuildArtifactsMissingBackoff( groupState ) ) {
+		return false;
+	}
+
+	const group = getGroupConfig( groupState.name );
+	const missingInputs = await getMissingGutenbergBuildArtifactInputs( group );
+	if ( missingInputs.length ) {
+		const previousMissing = (
+			groupState.infraStartupMissingBuildArtifacts ?? []
+		).join( ',' );
+		const nextMissing = missingInputs.join( ',' );
+		groupState.infraStartupMissingBuildArtifacts = missingInputs;
+		groupState.lastReason = `infra startup backoff waiting for Gutenberg build artifacts: ${ missingInputs.join(
+			', '
+		) }`;
+		if ( previousMissing !== nextMissing ) {
+			await event( {
+				group: groupState.name,
+				kind: 'policy',
+				action: 'keep-infra-startup-backoff-missing-gutenberg-artifacts',
+				missingInputs,
+				pauseUntil: groupState.infraStartupBackoffUntil ?? null,
+			} );
+		}
+		return false;
+	}
+
+	delete groupState.infraStartupBackoffUntil;
+	delete groupState.infraStartupMissingBuildArtifacts;
+	delete groupState.lastInfraStartupError;
+	groupState.status = 'recovering';
+	groupState.activeRunDirs = [];
+	groupState.currentRunDir = null;
+	groupState.lastReason =
+		'infra startup backoff cleared: Gutenberg build artifacts are now present';
+	await event( {
+		group: groupState.name,
+		kind: 'policy',
+		action: 'clear-infra-startup-backoff-gutenberg-artifacts-present',
+	} );
+	await writeState();
+	return true;
 }
 
 async function ensureGutenbergVendorScripts( group ) {
@@ -866,7 +1075,19 @@ function normalizeBaseUrl( value ) {
 	}
 }
 
+function getUrlOrigin( value ) {
+	if ( ! value ) {
+		return null;
+	}
+	try {
+		return new URL( value ).origin;
+	} catch {
+		return null;
+	}
+}
+
 async function probeRestEndpoint( baseUrl ) {
+	const expectedOrigin = getUrlOrigin( baseUrl );
 	const endpoints = [
 		new URL( '/wp-json/', baseUrl ).toString(),
 		new URL( '/index.php?rest_route=/', baseUrl ).toString(),
@@ -886,7 +1107,37 @@ async function probeRestEndpoint( baseUrl ) {
 				signal: controller.signal,
 			} );
 			const body = await response.text();
-			const ok = response.ok && body.includes( '"namespaces"' );
+			const responseOrigin = getUrlOrigin( response.url );
+			if (
+				expectedOrigin &&
+				responseOrigin &&
+				responseOrigin !== expectedOrigin
+			) {
+				failures.push(
+					`${ endpoint } redirected to wrong origin ${ responseOrigin }; expected ${ expectedOrigin }`
+				);
+				continue;
+			}
+
+			let parsed = null;
+			try {
+				parsed = JSON.parse( body );
+			} catch {}
+			const restOrigins = [
+				getUrlOrigin( parsed?.url ),
+				getUrlOrigin( parsed?.home ),
+				getUrlOrigin(
+					parsed?.routes?.[ '/' ]?._links?.self?.[ 0 ]?.href
+				),
+			].filter( Boolean );
+			const wrongOrigins = expectedOrigin
+				? restOrigins.filter( ( origin ) => origin !== expectedOrigin )
+				: [];
+			const ok =
+				response.ok &&
+				parsed &&
+				Array.isArray( parsed.namespaces ) &&
+				wrongOrigins.length === 0;
 			if ( ok ) {
 				return {
 					ok: true,
@@ -894,6 +1145,14 @@ async function probeRestEndpoint( baseUrl ) {
 					endpoint,
 					status: response.status,
 				};
+			}
+			if ( wrongOrigins.length ) {
+				failures.push(
+					`${ endpoint } REST discovery reported wrong origin(s) ${ [
+						...new Set( wrongOrigins ),
+					].join( ', ' ) }; expected ${ expectedOrigin }`
+				);
+				continue;
 			}
 			failures.push(
 				`${ endpoint } status=${
@@ -1425,12 +1684,103 @@ async function getWpSiteUrl( group ) {
 	);
 }
 
+function getBaseUrlHost( baseUrl ) {
+	try {
+		return new URL( baseUrl ).host;
+	} catch {
+		return null;
+	}
+}
+
 async function setWpBaseUrl( group, baseUrl ) {
+	const configUpdates = [
+		[ 'WP_SITEURL', baseUrl ],
+		[ 'WP_HOME', baseUrl ],
+		[ 'WP_TESTS_DOMAIN', getBaseUrlHost( baseUrl ) ],
+	].filter( ( [ , value ] ) => Boolean( value ) );
+
+	for ( const [ constantName, value ] of configUpdates ) {
+		const result = await runWpEnv(
+			group,
+			[
+				'run',
+				'cli',
+				'wp',
+				'config',
+				'set',
+				constantName,
+				value,
+				'--type=constant',
+			],
+			{ timeoutMs: 60000 }
+		);
+		if ( ! result.ok ) {
+			throw new Error(
+				`${ group.name }: failed to update wp-config constant ${ constantName } to ${ value }.\n${ result.output }`
+			);
+		}
+	}
+
 	for ( const optionName of [ 'siteurl', 'home' ] ) {
-		await runWpEnv(
+		const result = await runWpEnv(
 			group,
 			[ 'run', 'cli', 'wp', 'option', 'update', optionName, baseUrl ],
 			{ timeoutMs: 60000 }
+		);
+		if ( ! result.ok ) {
+			throw new Error(
+				`${ group.name }: failed to update WordPress option ${ optionName } to ${ baseUrl }.\n${ result.output }`
+			);
+		}
+	}
+}
+
+async function ensureWordPressInstalledAfterRepair( group, baseUrl ) {
+	const isInstalled = await runWpEnv(
+		group,
+		[ 'run', 'cli', 'wp', 'core', 'is-installed' ],
+		{
+			timeoutMs: 60000,
+		}
+	);
+	if ( isInstalled.ok ) {
+		return;
+	}
+
+	const installResult = await runWpEnv(
+		group,
+		[
+			'run',
+			'cli',
+			'wp',
+			'core',
+			'install',
+			`--url=${ baseUrl }`,
+			'--title=RTC',
+			'--admin_user=admin',
+			'--admin_password=password',
+			'--admin_email=admin@example.com',
+			'--skip-email',
+		],
+		{
+			timeoutMs: 120000,
+			logPath: path.join(
+				OUTPUT_DIR,
+				`${ group.name }-wp-core-install-after-rest-repair.log`
+			),
+		}
+	);
+	await event( {
+		group: group.name,
+		kind: 'repair',
+		action: 'wp-core-install-after-rest-repair',
+		ok: installResult.ok,
+		code: installResult.code,
+		output: getOutputSnippet( installResult.output ),
+	} );
+	if ( ! installResult.ok ) {
+		throw new Error(
+			`${ group.name }: wp core install failed after REST repair; see ${ group.name }-wp-core-install-after-rest-repair.log`
 		);
 	}
 }
@@ -1452,12 +1802,10 @@ async function ensureWpEnv( groupState ) {
 			kind: 'repair',
 			action: 'wp-env-start',
 		} );
+		const wpEnvStartLog = `${ group.name }-wp-env-start.log`;
 		let startResult = await runWpEnv( group, [ 'start' ], {
 			timeoutMs: 10 * 60 * 1000,
-			logPath: path.join(
-				OUTPUT_DIR,
-				`${ group.name }-wp-env-start.log`
-			),
+			logPath: path.join( OUTPUT_DIR, wpEnvStartLog ),
 		} );
 		startResult = await retryWpEnvStartAfterDatabaseFailure(
 			group,
@@ -1492,7 +1840,11 @@ async function ensureWpEnv( groupState ) {
 				} );
 				if ( ! repaired ) {
 					throw new Error(
-						`${ group.name }: wp-env start failed; see ${ group.name }-wp-env-start.log`
+						summarizeWpEnvStartFailure(
+							group,
+							startResult,
+							wpEnvStartLog
+						)
 					);
 				}
 				await log(
@@ -1503,11 +1855,12 @@ async function ensureWpEnv( groupState ) {
 					kind: 'repair',
 					action: 'wp-env-start-after-compose-repair',
 				} );
+				const wpEnvStartAfterComposeRepairLog = `${ group.name }-wp-env-start-after-compose-repair.log`;
 				startResult = await runWpEnv( group, [ 'start' ], {
 					timeoutMs: 10 * 60 * 1000,
 					logPath: path.join(
 						OUTPUT_DIR,
-						`${ group.name }-wp-env-start-after-compose-repair.log`
+						wpEnvStartAfterComposeRepairLog
 					),
 				} );
 				startResult = await retryWpEnvStartAfterDatabaseFailure(
@@ -1523,7 +1876,11 @@ async function ensureWpEnv( groupState ) {
 				);
 				if ( ! startResult.ok ) {
 					throw new Error(
-						`${ group.name }: wp-env start failed after generated-compose repair; see ${ group.name }-wp-env-start-after-compose-repair.log`
+						summarizeWpEnvStartFailure(
+							group,
+							startResult,
+							wpEnvStartAfterComposeRepairLog
+						)
 					);
 				}
 			}
@@ -1569,6 +1926,23 @@ async function ensureWpEnv( groupState ) {
 	}
 
 	let siteUrl = await getWpSiteUrl( group );
+	const explicitBaseUrl =
+		normalizeBaseUrl( group.env?.RTC_FUZZ_BASE_URL ) ??
+		normalizeBaseUrl( group.env?.WP_BASE_URL );
+	if ( explicitBaseUrl && siteUrl && siteUrl !== explicitBaseUrl ) {
+		await log(
+			`${ group.name }: repairing WordPress base URL ${ siteUrl } -> ${ explicitBaseUrl } before REST probe.`
+		);
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'wp-option-explicit-base-url',
+			from: siteUrl,
+			to: explicitBaseUrl,
+		} );
+		await setWpBaseUrl( group, explicitBaseUrl );
+		siteUrl = explicitBaseUrl;
+	}
 	const candidates = makeBaseUrlCandidates(
 		group,
 		statusResult.output,
@@ -1605,6 +1979,44 @@ async function ensureWpEnv( groupState ) {
 			candidates,
 			restRepair: true,
 		} );
+		let repairStartResult = await runWpEnv( group, [ 'start' ], {
+			timeoutMs: 10 * 60 * 1000,
+			logPath: path.join(
+				OUTPUT_DIR,
+				`${ group.name }-wp-env-start-after-rest-repair.log`
+			),
+		} );
+		repairStartResult = await retryWpEnvStartAfterDatabaseFailure(
+			group,
+			repairStartResult,
+			{
+				action: 'wp-env-start-after-rest-repair-db-retry',
+				logPath: path.join(
+					OUTPUT_DIR,
+					`${ group.name }-wp-env-start-after-rest-repair-db-retry.log`
+				),
+			}
+		);
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'wp-env-start-after-rest-repair',
+			ok: repairStartResult.ok,
+			code: repairStartResult.code,
+			output: getOutputSnippet( repairStartResult.output ),
+		} );
+		if ( ! repairStartResult.ok ) {
+			throw new Error(
+				`${ group.name }: wp-env start failed after REST repair; see ${ group.name }-wp-env-start-after-rest-repair.log`
+			);
+		}
+		const installBaseUrl =
+			normalizeBaseUrl( group.env?.RTC_FUZZ_BASE_URL ) ??
+			normalizeBaseUrl( group.env?.WP_BASE_URL ) ??
+			candidates[ 0 ];
+		if ( installBaseUrl ) {
+			await ensureWordPressInstalledAfterRepair( group, installBaseUrl );
+		}
 		statusResult = await runWpEnv( group, [ 'status' ], {
 			timeoutMs: 120000,
 			logPath: path.join(
@@ -1915,16 +2327,9 @@ async function findSummaryFiles( runDir ) {
 			const entryPath = path.join( dir, entry.name );
 			if ( entry.isDirectory() ) {
 				if (
-					[
-						'.git',
-						'.triage-watcher',
-						'blob-report',
-						'codex-analysis',
-						'node_modules',
-						'playwright-report',
-						'test-results',
-						'vendor',
-					].includes( entry.name )
+					SUMMARY_SCAN_IGNORED_DIRS.has( entry.name ) ||
+					( entry.name === 'external-imports' &&
+						! INCLUDE_EXTERNAL_IMPORTS )
 				) {
 					continue;
 				}
@@ -1952,9 +2357,7 @@ function hasActionableBehavioralCoverageSummary( summary ) {
 	) {
 		return true;
 	}
-	return Object.entries( summary.userCounts ?? {} ).some(
-		( [ userCount, count ] ) => userCount !== '0' && count > 0
-	);
+	return false;
 }
 
 function hasActionableCoverageRecord( record ) {
@@ -1962,7 +2365,6 @@ function hasActionableCoverageRecord( record ) {
 		return false;
 	}
 	return (
-		( record.userCount ?? 0 ) > 0 ||
 		( record.actions?.length ?? 0 ) > 0 ||
 		( record.reloads?.length ?? 0 ) > 0 ||
 		( record.saveCheckpointSteps?.length ?? 0 ) > 0 ||
@@ -1977,6 +2379,20 @@ function getCoverageFailureText( record ) {
 		record?.error,
 		...( record?.historyEvents ?? [] ).map(
 			( historyEvent ) => historyEvent.error
+		),
+	]
+		.filter( Boolean )
+		.join( '\n' );
+}
+
+function getSummaryFailureText( record ) {
+	return [
+		record?.error,
+		record?.message,
+		record?.failureSnippet,
+		record?.output,
+		...( Array.isArray( record?.attempts ) ? record.attempts : [] ).map(
+			getSummaryFailureText
 		),
 	]
 		.filter( Boolean )
@@ -2009,10 +2425,19 @@ function isStrictPreActionStartupCoverageRecord( record ) {
 	);
 }
 
-function hasSummaryProductEvidence( record ) {
-	if ( record?.ok === true ) {
-		return true;
+function isNoProductStartupSetupSummaryRecord( record ) {
+	if ( ! record || typeof record !== 'object' ) {
+		return false;
 	}
+	if ( hasSummaryProductEvidence( record ) ) {
+		return false;
+	}
+	return STARTUP_DISCOVERY_FAILURE_PATTERN.test(
+		getSummaryFailureText( record )
+	);
+}
+
+function hasSummaryProductEvidence( record ) {
 	if (
 		hasActionableBehavioralCoverageSummary(
 			record?.behavioralCoverageSummary
@@ -2033,11 +2458,27 @@ function hasSummaryProductEvidence( record ) {
 	);
 }
 
+function isStrictPreActionStartupGateBucket( bucket ) {
+	return [
+		'pre-action-bootstrap-stall',
+		'pre-action-http-polling-sync-cycle-timeout',
+	].includes( bucket );
+}
+
 function isStrictPreActionStartupGateAttempt( attempt ) {
-	if ( attempt?.bucket !== 'pre-action-bootstrap-stall' ) {
+	if ( ! isStrictPreActionStartupGateBucket( attempt?.bucket ) ) {
 		return false;
 	}
-	if ( ( attempt.userCount ?? 0 ) > 0 || attempt.lastAction ) {
+	if (
+		attempt.lastAction ||
+		( attempt.reloadCount ?? 0 ) > 0 ||
+		( attempt.saveCheckpointCount ?? 0 ) > 0 ||
+		( attempt.autosaveCount ?? 0 ) > 0 ||
+		attempt.revisionEligible === true ||
+		( attempt.operationWitnessActions?.length ?? 0 ) > 0 ||
+		( attempt.operationWitnessScopes?.length ?? 0 ) > 0 ||
+		!! attempt.operationWitnessPhase
+	) {
 		return false;
 	}
 	return (
@@ -2058,8 +2499,9 @@ function isStrictPreActionStartupAttemptSummaryRecord( record ) {
 		? record.behavioralCoverage
 		: [];
 	return (
-		coverageRecords.length > 0 &&
-		coverageRecords.every( isStrictPreActionStartupCoverageRecord )
+		( coverageRecords.length > 0 &&
+			coverageRecords.every( isStrictPreActionStartupCoverageRecord ) ) ||
+		isNoProductStartupSetupSummaryRecord( record )
 	);
 }
 
@@ -2067,7 +2509,14 @@ function isStrictPreActionStartupSummaryRecord( record ) {
 	if ( isStrictPreActionStartupAttemptSummaryRecord( record ) ) {
 		return true;
 	}
-	if ( record?.preAnalysisGate?.bucket !== 'pre-action-bootstrap-stall' ) {
+	if ( isNoProductStartupSetupSummaryRecord( record ) ) {
+		return true;
+	}
+	if (
+		! isStrictPreActionStartupGateBucket(
+			record?.preAnalysisGate?.bucket
+		)
+	) {
 		return false;
 	}
 	if ( hasSummaryProductEvidence( record ) ) {
@@ -2186,6 +2635,38 @@ function getStartupStallProductEvidenceCount( groupState ) {
 	return 0;
 }
 
+function getStartupStallRecordShare( groupState ) {
+	const summaryShare = Number(
+		groupState.startupStallNoiseSummary?.strictStartupRecordShare
+	);
+	if ( Number.isFinite( summaryShare ) && summaryShare >= 0 ) {
+		return summaryShare;
+	}
+
+	const reason = groupState.lastReason ?? '';
+	const shareMatch = reason.match( /startup share\s+([0-9.]+)%/i );
+	if ( shareMatch ) {
+		const parsed = Number.parseFloat( shareMatch[ 1 ] );
+		return Number.isFinite( parsed ) ? parsed / 100 : null;
+	}
+	return null;
+}
+
+function shouldRecoverProductEvidenceStartupStall( groupState ) {
+	if ( getStartupStallProductEvidenceCount( groupState ) <= 0 ) {
+		return false;
+	}
+	const reason = groupState.lastReason ?? '';
+	if ( ! /strict pre-action bootstrap noise guard/i.test( reason ) ) {
+		return false;
+	}
+	const startupShare = getStartupStallRecordShare( groupState );
+	return (
+		startupShare !== null &&
+		startupShare < STARTUP_STALL_GUARD_DOMINANCE_MIN_RATE
+	);
+}
+
 function hasNoProductStartupStallDrainCooldown( groupState ) {
 	const drainRecordedUntilMs =
 		getStartupStallDrainRecordedUntilMs( groupState );
@@ -2204,9 +2685,38 @@ function hasNoProductStartupStallDrainCooldown( groupState ) {
 	);
 }
 
+function isNoProductStartupStallNoiseState( groupState ) {
+	if ( getStartupStallProductEvidenceCount( groupState ) > 0 ) {
+		return false;
+	}
+
+	const reason = groupState.lastReason ?? '';
+	const summary = groupState.startupStallNoiseSummary ?? {};
+	const hasStrictStartupEvidence =
+		( summary.strictStartupFailures ?? 0 ) > 0 ||
+		/startup failure seed|strict pre-action bootstrap noise|pre_action_bootstrap_stall|startup-stall|seed drain/i.test(
+			reason
+		);
+	if ( ! hasStrictStartupEvidence ) {
+		return false;
+	}
+
+	return (
+		groupState.noAnalysisFamily === 'pre_action_bootstrap_stall' ||
+		groupState.noAnalysisReasonKind === 'startup-noise' ||
+		/startup-stall|startup noise|bootstrap noise|seed drain/i.test( reason )
+	);
+}
+
 function shouldRecoverStartupStallInsteadOfPause( groupState ) {
 	const reason = groupState.lastReason ?? '';
+	if ( getStartupStallProductEvidenceCount( groupState ) > 0 ) {
+		return shouldRecoverProductEvidenceStartupStall( groupState );
+	}
 	if ( hasNoProductStartupStallDrainCooldown( groupState ) ) {
+		return false;
+	}
+	if ( isNoProductStartupStallNoiseState( groupState ) ) {
 		return false;
 	}
 	if ( groupState.startupStallRecoveryMode === 'recover' ) {
@@ -2234,16 +2744,82 @@ function shouldRecoverStartupStallInsteadOfPause( groupState ) {
 	if (
 		! hasProductEvidence &&
 		! summaryHasProductEvidence &&
-		startupFailures > 0 &&
-		startupFailures < STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES
+		startupFailures > 0
 	) {
-		return true;
+		return false;
 	}
 
 	if ( ! hasProductEvidence && ! summaryHasProductEvidence ) {
 		return false;
 	}
 	return false;
+}
+
+function hasStartupStallNoAnalysisRoutingState( groupState ) {
+	return (
+		groupState?.noAnalysisReasonKind === 'startup-noise' ||
+		groupState?.noAnalysisFamily === 'pre_action_bootstrap_stall' ||
+		( groupState?.noAnalysisRunDirs?.length ?? 0 ) > 0 ||
+		( groupState?.startupStallRunDirs?.length ?? 0 ) > 0
+	);
+}
+
+async function clearStaleStartupStallNoAnalysisRoutingState( groupState ) {
+	if (
+		! hasStartupStallNoAnalysisRoutingState( groupState ) ||
+		getStartupStallHoldUntilMs( groupState ) > Date.now() ||
+		! [ 'running', 'recovering' ].includes( groupState.status )
+	) {
+		return false;
+	}
+
+	if ( isNoProductStartupStallNoiseState( groupState ) ) {
+		const pauseAt = new Date().toISOString();
+		const pauseUntil = new Date(
+			Date.now() + STARTUP_STALL_GUARD_COOLDOWN_MS
+		).toISOString();
+		groupState.status = 'paused-startup-stall';
+		groupState.startupStallPausedAt ??= pauseAt;
+		groupState.startupStallPausedUntil = pauseUntil;
+		groupState.startupStallDrainRecordedAt ??= pauseAt;
+		groupState.startupStallDrainRecordedUntil = pauseUntil;
+		groupState.noAnalysisReasonKind = 'startup-noise';
+		groupState.noAnalysisFamily = 'pre_action_bootstrap_stall';
+		groupState.noAnalysisSource ??= 'supervisor-startup-stall-guard';
+		delete groupState.startupStallRecoveryMode;
+		await event( {
+			group: groupState.name,
+			kind: 'policy',
+			action: 'restore-stale-startup-stall-no-analysis-cooldown',
+			reason: 'legacy no-product startup-stall routing state had no active TTL; restoring cooldown instead of relaunching the same producer',
+			drainRecordedUntil: pauseUntil,
+			noAnalysisRunDirs: groupState.noAnalysisRunDirs ?? [],
+			startupStallRunDirs: groupState.startupStallRunDirs ?? [],
+			nextStatus: groupState.status,
+		} );
+		await writeState();
+		return true;
+	}
+
+	const staleNoAnalysisRunDirs = groupState.noAnalysisRunDirs ?? [];
+	const staleStartupStallRunDirs = groupState.startupStallRunDirs ?? [];
+	groupState.noAnalysisRunDirs = [];
+	groupState.startupStallRunDirs = [];
+	delete groupState.noAnalysisReasonKind;
+	delete groupState.noAnalysisFamily;
+	delete groupState.noAnalysisSource;
+	delete groupState.startupStallRecoveryMode;
+	await event( {
+		group: groupState.name,
+		kind: 'policy',
+		action: 'clear-stale-startup-stall-no-analysis-routing',
+		reason: 'running/recovering group had startup-stall no-analysis routing state without an active pause or drain TTL; per-run sentinels remain authoritative',
+		noAnalysisRunDirs: staleNoAnalysisRunDirs,
+		startupStallRunDirs: staleStartupStallRunDirs,
+		nextStatus: groupState.status,
+	} );
+	await writeState();
+	return true;
 }
 
 async function releaseStartupStallHoldForRecovery(
@@ -2260,6 +2836,14 @@ async function releaseStartupStallHoldForRecovery(
 	}
 	if ( groupState.startupStallPausedUntil ) {
 		delete groupState.startupStallPausedUntil;
+		changed = true;
+	}
+	if ( groupState.startupStallDrainRecordedAt ) {
+		delete groupState.startupStallDrainRecordedAt;
+		changed = true;
+	}
+	if ( groupState.startupStallDrainRecordedUntil ) {
+		delete groupState.startupStallDrainRecordedUntil;
 		changed = true;
 	}
 	if ( groupState.startupStallRecoveryMode !== 'recover' ) {
@@ -2349,7 +2933,12 @@ async function writeStartupStallNoAnalysisSentinels(
 	runDirs,
 	reason,
 	noise,
-	pauseUntil
+	pauseUntil,
+	{
+		producerPauseRestorable = true,
+		startupFailureThreshold = null,
+		startupSeedDrainCount = null,
+	} = {}
 ) {
 	const written = [];
 	const uniqueRunDirs = [ ...new Set( runDirs.filter( Boolean ) ) ];
@@ -2364,19 +2953,26 @@ async function writeStartupStallNoAnalysisSentinels(
 		await writeJsonFileAtomic( sentinelPath, {
 			version: 1,
 			createdAt: new Date().toISOString(),
-				outputDir: OUTPUT_DIR,
-				group: groupState.name,
-				reason,
-				reasonKind: 'startup-noise',
-				family: 'pre_action_bootstrap_stall',
-				source: 'supervisor-startup-stall-guard',
-				pauseUntil,
-				expiresAt: pauseUntil,
-				noProductOnly: ! hasProductEvidence,
-				productEvidenceRecords,
-				hasProductEvidence,
-				noise,
-				preserveProductEvidence: true,
+			outputDir: OUTPUT_DIR,
+			group: groupState.name,
+			reason,
+			reasonKind: 'startup-noise',
+			family: 'pre_action_bootstrap_stall',
+			source: 'supervisor-startup-stall-guard',
+			pauseUntil,
+			expiresAt: pauseUntil,
+			noProductOnly: ! hasProductEvidence,
+			productEvidenceRecords,
+			hasProductEvidence,
+			producerPauseRestorable,
+			...( startupFailureThreshold !== null
+				? { startupFailureThreshold }
+				: {} ),
+			...( startupSeedDrainCount !== null
+				? { startupSeedDrainCount }
+				: {} ),
+			noise,
+			preserveProductEvidence: true,
 			note: 'Producer marked by supervisor strict startup-stall noise guard. Consumers must not spend analysis on signatures without product evidence from this run.',
 		} );
 		written.push( runDir );
@@ -2385,15 +2981,22 @@ async function writeStartupStallNoAnalysisSentinels(
 	if ( written.length ) {
 		await event( {
 			group: groupState.name,
-				kind: 'policy',
-				action: 'write-no-analysis-sentinel',
-				reason,
-				reasonKind: 'startup-noise',
-				family: 'pre_action_bootstrap_stall',
-				source: 'supervisor-startup-stall-guard',
-				pauseUntil,
-				count: written.length,
-				runDirs: written,
+			kind: 'policy',
+			action: 'write-no-analysis-sentinel',
+			reason,
+			reasonKind: 'startup-noise',
+			family: 'pre_action_bootstrap_stall',
+			source: 'supervisor-startup-stall-guard',
+			pauseUntil,
+			producerPauseRestorable,
+			...( startupFailureThreshold !== null
+				? { startupFailureThreshold }
+				: {} ),
+			...( startupSeedDrainCount !== null
+				? { startupSeedDrainCount }
+				: {} ),
+			count: written.length,
+			runDirs: written,
 		} );
 	}
 
@@ -2420,21 +3023,51 @@ async function maybePauseGroupForStartupStallNoise( groupState, snapshots ) {
 	// records for one seed are drained while still getting durable no-analysis
 	// state for downstream consumers.
 	const strictStartupEvidenceCount = noise.strictStartupFailures;
+	const groupEnv = getGroupConfig( groupState.name ).env ?? {};
 	const minStrictStartupFailures = hasZeroProductEvidence
-		? STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES
-		: STARTUP_STALL_GUARD_MIN_FAILURES;
+		? getPositiveIntegerConfigValue(
+				groupEnv.RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES,
+				'RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES',
+				STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES
+		  )
+		: getPositiveIntegerConfigValue(
+				groupEnv.RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES,
+				'RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES',
+				STARTUP_STALL_GUARD_MIN_FAILURES
+		  );
 
-	if ( strictStartupEvidenceCount < minStrictStartupFailures ) {
+	if ( ! hasZeroProductEvidence ) {
+		delete groupState.startupStallSeedDrainCount;
+		delete groupState.startupStallLastSeedDrainAt;
+	} else if ( strictStartupEvidenceCount === 0 ) {
+		const lastSeedDrainAtMs = Date.parse(
+			groupState.startupStallLastSeedDrainAt ?? ''
+		);
+		if (
+			! Number.isFinite( lastSeedDrainAtMs ) ||
+			Date.now() - lastSeedDrainAtMs > STARTUP_STALL_GUARD_COOLDOWN_MS
+		) {
+			delete groupState.startupStallSeedDrainCount;
+			delete groupState.startupStallLastSeedDrainAt;
+		}
+	}
+
+	const priorStartupSeedDrainCount =
+		groupState.startupStallSeedDrainCount ?? 0;
+	const cumulativeStrictStartupEvidenceCount = hasZeroProductEvidence
+		? priorStartupSeedDrainCount + strictStartupEvidenceCount
+		: strictStartupEvidenceCount;
+
+	if ( cumulativeStrictStartupEvidenceCount < minStrictStartupFailures ) {
 		if ( hasZeroProductEvidence && strictStartupEvidenceCount > 0 ) {
-			const reason = `strict pre-action bootstrap noise seed drain: ${
-				noise.strictStartupFailures
-			} startup failure seed(s), ${
-				noise.strictStartupRecords
-			} startup record(s), below pause threshold ${ minStrictStartupFailures }`;
+			const seedDrainCount = cumulativeStrictStartupEvidenceCount;
+			const reason = `strict pre-action bootstrap noise seed drain: ${ noise.strictStartupFailures } current startup failure seed(s), ${ noise.strictStartupRecords } startup record(s), cumulative startup-noise seed(s) ${ seedDrainCount }/${ minStrictStartupFailures }`;
 			const skippedStartupSeeds = advanceNextStartSeedPastStartupNoise(
 				groupState,
 				snapshots
 			);
+			groupState.startupStallSeedDrainCount = seedDrainCount;
+			groupState.startupStallLastSeedDrainAt = new Date().toISOString();
 			const drainRecordedUntil = new Date(
 				Date.now() + STARTUP_STALL_GUARD_COOLDOWN_MS
 			).toISOString();
@@ -2444,45 +3077,46 @@ async function maybePauseGroupForStartupStallNoise( groupState, snapshots ) {
 					activeRunDirs,
 					reason,
 					noise,
-					drainRecordedUntil
+					drainRecordedUntil,
+					{
+						producerPauseRestorable: true,
+						startupFailureThreshold: minStrictStartupFailures,
+						startupSeedDrainCount: seedDrainCount,
+					}
 				);
-			const drainedNoAnalysisRunDirs = resolveUniqueRunDirs( [
-				...( groupState.noAnalysisRunDirs ?? [] ),
-				...( groupState.startupStallRunDirs ?? [] ),
-				...( noAnalysisRunDirs.length
-					? noAnalysisRunDirs
-					: activeRunDirs ),
-			] );
 			await stopSnapshotLanes(
 				snapshots,
 				reason,
 				'terminate-startup-stall-seed-drain'
 			);
-			groupState.status = 'recovering';
+			const pausedNoAnalysisRunDirs = resolveUniqueRunDirs(
+				noAnalysisRunDirs.length ? noAnalysisRunDirs : activeRunDirs
+			);
+			const recordedAt = new Date().toISOString();
+			groupState.status = 'paused-startup-stall';
 			groupState.lastReason = reason;
-			delete groupState.startupStallPausedAt;
-			delete groupState.startupStallPausedUntil;
-			groupState.startupStallDrainRecordedAt =
-				new Date().toISOString();
-			groupState.startupStallDrainRecordedUntil =
-				drainRecordedUntil;
-			groupState.startupStallRecoveryMode = 'recover';
-			groupState.startupStallRunDirs = drainedNoAnalysisRunDirs;
-			groupState.noAnalysisRunDirs = drainedNoAnalysisRunDirs;
+			groupState.startupStallPausedAt = recordedAt;
+			groupState.startupStallPausedUntil = drainRecordedUntil;
+			groupState.startupStallDrainRecordedAt = recordedAt;
+			groupState.startupStallDrainRecordedUntil = drainRecordedUntil;
+			delete groupState.startupStallRecoveryMode;
+			groupState.startupStallRunDirs = pausedNoAnalysisRunDirs;
+			groupState.noAnalysisRunDirs = pausedNoAnalysisRunDirs;
 			groupState.noAnalysisReasonKind = 'startup-noise';
 			groupState.noAnalysisFamily = 'pre_action_bootstrap_stall';
-			groupState.noAnalysisSource =
-				'supervisor-startup-stall-guard';
+			groupState.noAnalysisSource = 'supervisor-startup-stall-guard';
 			groupState.activeRunDirs = [];
 			groupState.currentRunDir = null;
 			await event( {
 				group: groupState.name,
 				kind: 'policy',
-				action: 'recover-startup-stall-noise-seed-drain',
+				action: 'drain-startup-stall-seed-cooldown',
 				reason,
 				noise,
 				skippedStartupSeeds,
-				noAnalysisRunDirs: drainedNoAnalysisRunDirs,
+				seedDrainCount,
+				noAnalysisRunDirs: pausedNoAnalysisRunDirs,
+				noAnalysisExpiresAt: drainRecordedUntil,
 				drainRecordedUntil,
 				nextStatus: groupState.status,
 			} );
@@ -2515,7 +3149,11 @@ async function maybePauseGroupForStartupStallNoise( groupState, snapshots ) {
 		activeRunDirs,
 		reason,
 		noise,
-		pauseUntil
+		pauseUntil,
+		{
+			producerPauseRestorable: true,
+			startupFailureThreshold: minStrictStartupFailures,
+		}
 	);
 	const pausedNoAnalysisRunDirs = resolveUniqueRunDirs(
 		noAnalysisRunDirs.length ? noAnalysisRunDirs : activeRunDirs
@@ -2526,13 +3164,14 @@ async function maybePauseGroupForStartupStallNoise( groupState, snapshots ) {
 	);
 	await stopSnapshotLanes( snapshots, reason );
 	if ( ! hasZeroProductEvidence ) {
-		groupState.status = 'recovering';
+		groupState.status = 'paused-startup-stall';
 		groupState.lastReason = reason;
-		delete groupState.startupStallPausedAt;
-		delete groupState.startupStallPausedUntil;
-		groupState.startupStallDrainRecordedAt = new Date().toISOString();
+		groupState.startupStallPausedAt = new Date().toISOString();
+		groupState.startupStallPausedUntil = pauseUntil;
+		groupState.startupStallDrainRecordedAt =
+			groupState.startupStallPausedAt;
 		groupState.startupStallDrainRecordedUntil = pauseUntil;
-		groupState.startupStallRecoveryMode = 'recover';
+		delete groupState.startupStallRecoveryMode;
 		groupState.startupStallRunDirs = pausedNoAnalysisRunDirs;
 		groupState.noAnalysisRunDirs = pausedNoAnalysisRunDirs;
 		groupState.noAnalysisReasonKind = 'startup-noise';
@@ -2541,17 +3180,19 @@ async function maybePauseGroupForStartupStallNoise( groupState, snapshots ) {
 		groupState.activeRunDirs = [];
 		groupState.currentRunDir = null;
 		await log(
-			`${ groupState.name }: recovering after ${ reason }; product-evidence run dirs preserved for triage.`
+			`${ groupState.name }: paused after ${ reason }; product-evidence run dirs preserved for triage.`
 		);
 		await event( {
 			group: groupState.name,
 			kind: 'policy',
-			action: 'recover-startup-stall-noise-mixed-product-evidence',
+			action: 'pause-startup-stall-noise-mixed-product-evidence',
 			reason,
+			pauseUntil,
 			drainRecordedUntil: pauseUntil,
 			noise,
 			skippedStartupSeeds,
 			noAnalysisRunDirs: pausedNoAnalysisRunDirs,
+			nextStatus: groupState.status,
 		} );
 		await writeState();
 		return true;
@@ -2853,9 +3494,13 @@ async function monitorGroup( groupState ) {
 		Number.isFinite( infraBackoffUntilMs ) &&
 		infraBackoffUntilMs > Date.now()
 	) {
-		groupState.status = 'paused-infra-startup';
-		await writeState();
-		return;
+		const backoffCleared =
+			await maybeClearGutenbergBuildArtifactsBackoff( groupState );
+		if ( ! backoffCleared ) {
+			groupState.status = 'paused-infra-startup';
+			await writeState();
+			return;
+		}
 	}
 	if (
 		groupState.status === 'paused-infra-startup' &&
@@ -2909,7 +3554,8 @@ async function monitorGroup( groupState ) {
 		await writeState();
 	}
 
-	const drainRecordedUntilMs = getStartupStallDrainRecordedUntilMs( groupState );
+	const drainRecordedUntilMs =
+		getStartupStallDrainRecordedUntilMs( groupState );
 	if ( drainRecordedUntilMs > Date.now() ) {
 		if ( shouldRecoverStartupStallInsteadOfPause( groupState ) ) {
 			await releaseStartupStallHoldForRecovery(
@@ -2955,6 +3601,8 @@ async function monitorGroup( groupState ) {
 		} );
 		await writeState();
 	}
+
+	await clearStaleStartupStallNoAnalysisRoutingState( groupState );
 
 	const activeRunDirs = getActiveRunDirs( groupState );
 	if ( ! activeRunDirs.length ) {
@@ -3162,6 +3810,57 @@ function sleep( ms ) {
 	return new Promise( ( resolve ) => setTimeout( resolve, ms ) );
 }
 
+async function getStaleCurrentOutputReason() {
+	if ( ! CURRENT_OUTPUT_POINTER_PATH ) {
+		return null;
+	}
+
+	let pointerValue = '';
+	try {
+		pointerValue = (
+			await fs.readFile( CURRENT_OUTPUT_POINTER_PATH, 'utf8' )
+		).trim();
+	} catch {
+		return null;
+	}
+
+	if ( ! pointerValue ) {
+		return null;
+	}
+
+	if ( path.resolve( pointerValue ) === path.resolve( OUTPUT_DIR ) ) {
+		return null;
+	}
+
+	return `supervisor output dir ${ OUTPUT_DIR } is stale; current-output pointer ${ CURRENT_OUTPUT_POINTER_PATH } now points to ${ pointerValue }`;
+}
+
+async function stopAllActiveLanesForStaleOutput( reason ) {
+	for ( const groupState of state.groups ) {
+		const activeRunDirs = getActiveRunDirs( groupState );
+		if ( activeRunDirs.length ) {
+			const snapshots = await Promise.all(
+				activeRunDirs.map( async ( runDir ) => ( {
+					runDir,
+					...( await readRunSnapshot( runDir ) ),
+				} ) )
+			);
+			await stopSnapshotLanes(
+				snapshots,
+				reason,
+				'terminate-stale-output-lane'
+			);
+		}
+		if ( ACTIVE_GROUP_STATUSES.has( groupState.status ) ) {
+			groupState.status = 'stale-output';
+		}
+		groupState.activeRunDirs = [];
+		groupState.currentRunDir = null;
+		groupState.lastReason = reason;
+	}
+	await writeState();
+}
+
 async function main() {
 	await log(
 		`RTC browser fuzz supervisor started with ${ groupConfigs.length } group(s), outputDir=${ OUTPUT_DIR }, durationHours=${ DURATION_HOURS }.`
@@ -3179,6 +3878,17 @@ async function main() {
 	} );
 
 	while ( Date.now() < END_AT ) {
+		const staleOutputReason = await getStaleCurrentOutputReason();
+		if ( staleOutputReason ) {
+			await log( staleOutputReason );
+			await event( {
+				kind: 'supervisor-stop',
+				reason: 'stale-current-output',
+				detail: staleOutputReason,
+			} );
+			await stopAllActiveLanesForStaleOutput( staleOutputReason );
+			return;
+		}
 		await syncGroupConfigs();
 		for ( const groupState of state.groups ) {
 			if ( groupState.status === 'disabled' ) {

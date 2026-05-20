@@ -408,7 +408,7 @@ const NON_ACTIONABLE_ANALYSIS_JOB_STATUSES = new Set( [
 	'source-suppressed',
 	'stale-source',
 ] );
-const RUN_LOCAL_NOISE_POLICY_VERSION = 39;
+const RUN_LOCAL_NOISE_POLICY_VERSION = 40;
 const STARTUP_FAILURE_DEDUPE_POLICY_VERSION = 3;
 const STARTUP_DISCOVERY_PHASES = new Set( [
 	'seed',
@@ -1781,7 +1781,7 @@ if ( state.runLocalNoisePolicyVersion !== RUN_LOCAL_NOISE_POLICY_VERSION ) {
 	state.changes.push( {
 		at: new Date().toISOString(),
 		action: 'reset-run-local-noise-policy',
-		reason: 'previous-root no-product startup-noise pauses are reusable producer cooldowns; stale startup-noise bypasses were cleared, summary product-evidence records now participate in current-run holds, and product-evidence signatures remain visible and eligible',
+		reason: 'no-product startup-noise cooldowns are hard producer blocks for benchmark-canary publication; stale/seed-drain bypasses were cleared, while product-evidence startup records remain visible and eligible',
 	} );
 }
 if (
@@ -2101,10 +2101,7 @@ function shouldBypassBenchmarkCanaryNoisePause( group, pause ) {
 		return false;
 	}
 	if ( isNoProductStartupNoiseCooldown( pause ) ) {
-		return (
-			isStaleBenchmarkCanaryStartupNoiseCooldown( pause ) ||
-			isBenchmarkCanarySeedDrainStartupNoiseCooldown( pause )
-		);
+		return false;
 	}
 	return (
 		getStoredNoisePauseKind( pause ) === 'startup-noise' &&
@@ -10366,8 +10363,7 @@ async function applyPolicy(
 		if (
 			! isBenchmarkCanaryForcedGroup( group ) ||
 			zeroCoveragePriorityGroupsForPass.length === 0 ||
-			benchmarkCanaryForcedGroups.size < MAX_ENABLED_GROUPS ||
-			! groupHasCurrentRunBehavioralCoverage( group )
+			benchmarkCanaryForcedGroups.size < MAX_ENABLED_GROUPS
 		) {
 			return false;
 		}
@@ -11452,14 +11448,20 @@ async function applyPolicy(
 		const productEvidenceRecords =
 			metadata.productEvidenceRecords ??
 			( inferredNoProductStartupPause ? 0 : undefined );
-		const hasProductEvidence =
-			metadata.hasProductEvidence ??
-			( productEvidenceRecords !== undefined
-				? productEvidenceRecords > 0
-				: undefined );
-		const materializationFloorBlockReason = noisePauseKind
-			? getMaterializationFloorPauseBlockReason( group )
-			: null;
+			const hasProductEvidence =
+				metadata.hasProductEvidence ??
+				( productEvidenceRecords !== undefined
+					? productEvidenceRecords > 0
+					: undefined );
+			const expiresAt = noisePauseKind
+				? new Date(
+						Date.now() +
+							TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS * 60 * 60 * 1000
+				  ).toISOString()
+				: null;
+			const materializationFloorBlockReason = noisePauseKind
+				? getMaterializationFloorPauseBlockReason( group )
+				: null;
 		const noiseReplacement = noisePauseKind
 			? {
 					originGroup: group,
@@ -11473,13 +11475,26 @@ async function applyPolicy(
 				plannedRemoval: group,
 				noiseReplacement,
 			} );
-			if (
-				! replacementEnabled &&
-				! canPauseNoiseBelowMaterializationFloor( noiseReplacement )
-			) {
-				state.changes.push( {
-					at: pausedAt,
-					action: 'skip-noise-pause-below-materialization-floor',
+				if (
+					! replacementEnabled &&
+					! canPauseNoiseBelowMaterializationFloor( noiseReplacement )
+				) {
+					await writeNoAnalysisSentinelsForGroup( group, reason, {
+						reasonKind: noisePauseKind,
+						family: noisePauseFamily,
+						source: metadata.source,
+						expiresAt,
+						...( noProductOnly !== undefined ? { noProductOnly } : {} ),
+						...( productEvidenceRecords !== undefined
+							? { productEvidenceRecords }
+							: {} ),
+						...( hasProductEvidence !== undefined
+							? { hasProductEvidence }
+							: {} ),
+					} );
+					state.changes.push( {
+						at: pausedAt,
+						action: 'skip-noise-pause-below-materialization-floor',
 					group,
 					reason: `${ materializationFloorBlockReason }; no clean replacement group is available, so keep the bounded browser producer running and rely on no-analysis sentinels until another materialized group is available`,
 					originalPauseReason: reason,
@@ -11490,12 +11505,13 @@ async function applyPolicy(
 					...( productEvidenceRecords !== undefined
 						? { productEvidenceRecords }
 						: {} ),
-					...( hasProductEvidence !== undefined
-						? { hasProductEvidence }
-						: {} ),
-				} );
-				return false;
-			}
+						...( hasProductEvidence !== undefined
+							? { hasProductEvidence }
+							: {} ),
+						...( expiresAt ? { expiresAt } : {} ),
+					} );
+					return false;
+				}
 			if ( ! replacementEnabled ) {
 				state.changes.push( {
 					at: pausedAt,
@@ -11518,14 +11534,8 @@ async function applyPolicy(
 			}
 		}
 
-		enabled.delete( group );
-		const expiresAt = noisePauseKind
-			? new Date(
-					Date.now() +
-						TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS * 60 * 60 * 1000
-			  ).toISOString()
-			: null;
-		state.pausedGroups[ group ] = {
+			enabled.delete( group );
+			state.pausedGroups[ group ] = {
 			at: pausedAt,
 			reason,
 			outputDir: OUTPUT_DIR,
@@ -12179,7 +12189,7 @@ async function applyPolicy(
 				at: new Date().toISOString(),
 				action: 'defer-benchmark-canary-for-zero-coverage-gap',
 				group,
-				reason: `benchmark canary ${ group } already produced current-run behavioral coverage; preserving a scarce browser slot for zero-coverage RTC gaps: ${ zeroCoveragePriorityGroupsForPass
+				reason: `benchmark canary ${ group } is waiting behind active zero-coverage RTC gaps: ${ zeroCoveragePriorityGroupsForPass
 					.slice( 0, 3 )
 					.join( ', ' ) }`,
 			} );
@@ -12188,27 +12198,27 @@ async function applyPolicy(
 		if ( enabled.has( group ) ) {
 			continue;
 		}
-			while ( enabled.size >= MAX_ENABLED_GROUPS ) {
-				const eviction = uniqueStringList( [
-					'novelty-http-persistence-probe',
-					...ZERO_COVERAGE_EVICTION_ORDER,
-					...PRODUCTIVE_FALLBACK_GROUPS,
-					...enabled,
-				] ).find(
-					( candidate ) =>
-						enabled.has( candidate ) &&
-						candidate !== group &&
-						! isBenchmarkCanaryForcedGroup( candidate ) &&
-						!(
-							ZERO_COVERAGE_PRIORITY_GROUPS.includes(
-								candidate
-							) &&
-							getZeroCoverageGapsForGroup( candidate ).length > 0
-						)
-				);
-				if ( ! eviction ) {
-					break;
-				}
+		while ( enabled.size >= MAX_ENABLED_GROUPS ) {
+			const eviction = uniqueStringList( [
+				'novelty-http-persistence-probe',
+				...ZERO_COVERAGE_EVICTION_ORDER,
+				...PRODUCTIVE_FALLBACK_GROUPS,
+				...enabled,
+			] ).find(
+				( candidate ) =>
+					enabled.has( candidate ) &&
+					candidate !== group &&
+					! isBenchmarkCanaryForcedGroup( candidate ) &&
+					!(
+						ZERO_COVERAGE_PRIORITY_GROUPS.includes(
+							candidate
+						) &&
+						getZeroCoverageGapsForGroup( candidate ).length > 0
+					)
+			);
+			if ( ! eviction ) {
+				break;
+			}
 			await pauseGroup(
 				eviction,
 				`benchmark canary feedback preempts generic coverage slot for ${ group } before publication confidence can move`
