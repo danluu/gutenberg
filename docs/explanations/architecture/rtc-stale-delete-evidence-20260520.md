@@ -252,8 +252,8 @@ Final state manifest:
 /Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520-latest/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520-latest/final-state.json
 ```
 
-Extra validation frame, taken after Editor B's delete and before the delayed
-store update:
+Extra validation frame, taken after Editor B's delete, after Editor A's local
+edit, and before the delayed store update:
 
 ```text
 /Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520-latest/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520-latest/validation-frames/after-delete-before-update.png
@@ -282,6 +282,7 @@ Hashes:
 2fbe59b07325869fc66823b86e10dd5273ff1c3ceb8245a5bef0a63b4689690d  rtc-stale-delete-current-trunk-delayed-update-repro.mp4
 703921fad23b8c9af196f35a74b1ff263258695496d2526fe1968629a882764c  verification-frame.png
 f65d7e3e61a2b0701beca6406e47920e3621fb88709b9cd7835b7bec09d9812e  final-state.json
+326509ef7842c89ff00be452122c16d7bdc0ec813b2af4e0d86e2096587d7058  validation-frames/after-delete-before-update.png
 ```
 
 I had also recorded the same delayed-update shape earlier on
