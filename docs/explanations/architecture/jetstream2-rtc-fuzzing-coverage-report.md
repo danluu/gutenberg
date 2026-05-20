@@ -17,8 +17,8 @@ readiness are different:
 - **Merge readiness** still requires exact branch/SHA validation with commands,
   results, and artifacts.
 
-The live state in this report was sampled from Jetstream2 around
-`2026-05-20T03:24Z`. The closure work is mutable; before filing PRs, re-check the
+The live state in this report was last sampled from Jetstream2 around
+`2026-05-20T16:13Z`. The closure work is mutable; before filing PRs, re-check the
 exact worker branch, SHA, test command, result, and artifact path.
 
 ## Current Bottom Line
@@ -63,6 +63,124 @@ list/nested browser spec as fully proven until their gates run and pass.
 | List and nested structure | Newly authored and partly validated coverage | CRDT model/unit additions plus `collaboration-list-nested-structure.spec.ts` in `rtc-coverage-gap-list-nested-structure-20260520`; CRDT unit test passed 81 tests | Focused browser validation is still blocked by local install/build/wp-env issues in the worker. |
 | Wider product coverage | Executable queue and partial targeted coverage | `rtc-wider-product-coverage-smoke.mjs`, `playwright.rtc-product-coverage.config.ts`, `wider-product-coverage-queue.json`, targeted core-data/CRDT/PHP changes | Queue/config is not proof. Firefox/WebKit/mobile, production WebSocket, object cache, multisite, site editor, CPT, metabox/classic, and third-party block paths need their gates run. |
 | Jetstream2 campaign infrastructure | Existing operational evidence | supervisors, replay manifests, summary/events NDJSON, novelty monitor, triage watcher, analysis tiers, watchdogs, disk/resource controls | Infrastructure health is not product correctness by itself. |
+
+## 2026-05-20 Concrete Coverage Snapshot
+
+Latest checked Jetstream2 monitor state: `2026-05-20T16:13:26Z`.
+
+Current monitor output directory:
+`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260520T154238Z`.
+
+The novelty monitor reported `3811` coverage files, `119522` all-time novelty
+records, `113933` WebSocket records, `5589` HTTP records, `10514` same-user
+records, `19` many-user lifecycle records, `21` collaboration UI signal records,
+and `215` large-post three-user HTTP lifecycle records. The active supervisor at
+the checked instant was narrower than the corpus: one browser-e2e lane for
+`novelty-ws-parser-serialization`.
+
+A direct scan of the monitor's current/observed behavioral artifact roots
+counted `4743` `rtc-behavioral-coverage.ndjson` files from `21` roots and
+`8794` raw JSON records: `2269` passed records and `6525` records that failed
+or stopped early. The raw-record count is intentionally different from the
+novelty monitor count: novelty records are derived feature keys, while this scan
+counts one behavioral JSON record per seed artifact line.
+
+### Users And Server Concurrency
+
+Server-wide browser load and users in one document are separate axes:
+
+- At the checked instant, Jetstream2 itself had one active supervised browser
+  lane. That live lane is a normal two-user parser/serialization run once it
+  gets past startup. Completed current-run directories and local imports make
+  the current run's coverage broader than the single live lane.
+- The largest observed single document has `12` users: the base users plus `10`
+  extra collaborators in the many-user lifecycle profile.
+- In the observed behavioral roots, documents with nonzero user counts are
+  `5093` two-user records, `446` three-user records, and `9` twelve-user
+  records. Passing records are `2260` two-user, `5` three-user, and `4`
+  twelve-user records.
+- Same-account multi-tab coverage is present but still weak in the direct scan:
+  `555` same-user records, `2` passing. The all-time novelty counter is higher,
+  but the current pass-sensitive evidence should still be treated as an active
+  coverage target.
+- Local complementary coverage is synced back into Jetstream2 artifacts for the
+  controller to see. Those imported records add `permissions-auth-locks`,
+  `revision-persistence`, and `session-lifecycle` coverage, including 2-user
+  and 3-user records, but they do not add browser load to the Jetstream2
+  `wp-env` server.
+
+Per-profile user-count evidence from the direct artifact scan:
+
+| Profile | Observed user-count shape |
+| --- | --- |
+| `large-post-three-user-http-lifecycle` | `491` records; `432` reached three users; successful large-post HTTP lifecycle coverage is still below target |
+| `three-user-late-join` | `1109` records; `4` reached three users; `3` passed |
+| `many-user-lifecycle` | `11` records; `9` reached twelve users; `4` passed |
+| `session-lifecycle` | `558` records; includes `9` three-user records; `2` passed |
+| `permissions-auth-locks` | `1707` records; contributor-role and auth/lock coverage, mostly two-user |
+| `revision-persistence` | `168` records; local complementary runs are still feeding new revision/autosave/recovery cases |
+
+### Simultaneous Editing
+
+The corpus includes same-logical-step and multi-actor pressure:
+
+- `concurrent-paragraphs`: `4882` action records, including `2758` in passing
+  records.
+- Late join overlapping with live edits/moves: same-step combinations include
+  `late-join-post-action + move-block` (`66`),
+  `edit-table-array-attributes + late-join-post-action` (`41`),
+  `append-paragraph + late-join-post-action` (`38`),
+  `insert-heading + late-join-post-action` (`36`),
+  `concurrent-paragraphs + late-join-post-action` (`34`), and
+  `insert-nested-group + late-join-post-action` (`34`).
+- Late join also overlaps with real UI actions: list indent (`30`), paragraph
+  typing (`25`), link editing (`24`), undo/redo (`24`), toolbar formatting
+  (`23`), paste (`18`), and table-cell editing (`12`).
+- Common structural edits are heavily represented: `move-block` (`9402`),
+  `insert-heading` (`4860`), `append-paragraph` (`4765`), `delete-block`
+  (`4699`), `insert-common-block` (`4668`), nested group insert/move (`4532`
+  each), `insert-paragraph` (`4418`), `delete-nested-block` (`4348`), and
+  `edit-nested-paragraph` (`4293`).
+- Table/rich-text/UI coverage includes `edit-table-array-attributes` (`4880`),
+  `ui-list-indent` (`214`), `ui-table-cell-edit` (`189`),
+  `ui-undo-redo-paragraph` (`188`), `ui-toolbar-format-paragraph` (`147`),
+  `ui-paste-paragraph` (`145`), and `ui-link-paragraph` (`139`).
+- Async/server-backed and cross-entity edits include
+  `insert-async-server-block` (`17851`) and
+  `insert-media-cross-entity-block` (`139`).
+
+### Lifecycle, Persistence, And Document Shape
+
+The observed behavioral roots include:
+
+- save checkpoints: `16771` phase events, `10222` in passing records;
+- reloads: `15509` phase events, `10348` in passing records;
+- revision restore: `4792` phase events, `4538` in passing records;
+- final persistence oracle: `2796` phase events, `2450` in passing records;
+- final persistence after reload: `2503` phase events, `2254` in passing
+  records;
+- final UI witness sweep: `16` events, `8` in passing records;
+- publish persistence witness: `6` phase events in this scan, which is still too
+  thin to close the publish/save-payload gap.
+
+The largest observed document shape is `160` configured large-document blocks
+and `298` total blocks after fuzz operations. Covered core block types include
+paragraph, heading, group, list/list-item, quote, image, table, embed, latest
+posts, categories, query, calendar, reusable block, buttons/button, separator,
+freeform, media-text, gallery, file, cover, details, preformatted, code,
+columns/column, spacer, verse, HTML, shortcode, and social links.
+
+Operation-witness tracking is present in the fuzz records: `75733` created
+operation markers, `75258` witnessed markers, and `475` missing markers in the
+direct artifact scan. `1499` records used fail-mode operation ledgers and `7295`
+used shadow mode.
+
+Coverage goals still below target at the checked instant include successful
+large-post three-user HTTP lifecycle, successful table stale snapshot,
+successful collaboration UI signals, many-user lifecycle completion, remote
+selection/cursor evidence, final publish persistence, final UI witness sweep,
+and several real-user editing action ratchets. Those should remain active
+fuzzing goals.
 
 ## Browser Fuzzing
 
