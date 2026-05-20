@@ -8,6 +8,7 @@ JETSTREAM=${RTC_MAINTAINER_GATE_JETSTREAM:-exouser@danluu-fuzzer.cis251402.proje
 JETSTREAM_FINALIZATION_BASE=${RTC_MAINTAINER_GATE_JETSTREAM_FINALIZATION_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516}
 JETSTREAM_PROGRESS_BASE=${RTC_MAINTAINER_GATE_JETSTREAM_PROGRESS_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518}
 JETSTREAM_COVERAGE_BASE=${RTC_MAINTAINER_GATE_JETSTREAM_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}
+JETSTREAM_FEEDBACK_BASE=${RTC_MAINTAINER_GATE_JETSTREAM_FEEDBACK_BASE:-/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520}
 EXPLAIN_BRANCH=${RTC_MAINTAINER_GATE_EXPLAIN_BRANCH:-explain/rtc-jetstream2-fuzz-progress-20260515}
 SNAPSHOT_DOC=${RTC_MAINTAINER_GATE_SNAPSHOT_DOC:-docs/explanations/architecture/rtc-jetstream2-maintainer-pr-snapshot-20260519.md}
 BENCHMARK_DOC=${RTC_MAINTAINER_GATE_BENCHMARK_DOC:-docs/explanations/architecture/rtc-local-benchmark-results-20260519.md}
@@ -35,7 +36,7 @@ write_status() {
 	local phase=$1
 	local detail=$2
 	{
-		echo "# RTC Maintainer Snapshot Benchmark Gate"
+		echo "# RTC Maintainer Snapshot Benchmark Canary"
 		echo
 		echo "- updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 		echo "- phase: $phase"
@@ -46,6 +47,7 @@ write_status() {
 		echo "- explanation branch: $EXPLAIN_BRANCH"
 		echo "- snapshot doc: $SNAPSHOT_DOC"
 		echo "- benchmark doc: $BENCHMARK_DOC"
+		echo "- Jetstream feedback base: $JETSTREAM_FEEDBACK_BASE"
 		echo "- poll seconds: $POLL_SECONDS"
 		echo
 		echo "## Last State"
@@ -82,7 +84,9 @@ copy_jetstream_context() {
 			'$JETSTREAM_PROGRESS_BASE/current-status.md' \
 			'$JETSTREAM_PROGRESS_BASE/current-push-manifest.tsv' \
 			'$JETSTREAM_PROGRESS_BASE/current-control-decisions.tsv' \
-			'$JETSTREAM_COVERAGE_BASE/current-output-dir.txt'; do
+			'$JETSTREAM_COVERAGE_BASE/current-output-dir.txt' \
+			'$JETSTREAM_FEEDBACK_BASE/current-feedback.md' \
+			'$JETSTREAM_FEEDBACK_BASE/current-feedback.tsv'; do
 			if [ -f \"\$f\" ]; then
 				printf '==== %s\n' \"\$f\"
 				sed -n '1,360p' \"\$f\"
@@ -98,6 +102,25 @@ copy_jetstream_context() {
 				printf '\n'
 			done
 	" > "$out/jetstream/context.txt" 2> "$out/jetstream/context.stderr.log" || true
+}
+
+publish_feedback() {
+	local cycle=$1
+	local ts
+	ts=$(basename "$cycle")
+	if [ ! -s "$cycle/fuzzer-feedback.md" ] && [ ! -s "$cycle/fuzzer-feedback.tsv" ]; then
+		return 0
+	fi
+	ssh "$JETSTREAM" "mkdir -p '$JETSTREAM_FEEDBACK_BASE/cycles/$ts'" || return 0
+	if [ -s "$cycle/fuzzer-feedback.md" ]; then
+		scp -q "$cycle/fuzzer-feedback.md" "$JETSTREAM:$JETSTREAM_FEEDBACK_BASE/cycles/$ts/fuzzer-feedback.md" || true
+		scp -q "$cycle/fuzzer-feedback.md" "$JETSTREAM:$JETSTREAM_FEEDBACK_BASE/current-feedback.md" || true
+	fi
+	if [ -s "$cycle/fuzzer-feedback.tsv" ]; then
+		scp -q "$cycle/fuzzer-feedback.tsv" "$JETSTREAM:$JETSTREAM_FEEDBACK_BASE/cycles/$ts/fuzzer-feedback.tsv" || true
+		scp -q "$cycle/fuzzer-feedback.tsv" "$JETSTREAM:$JETSTREAM_FEEDBACK_BASE/current-feedback.tsv" || true
+	fi
+	log "published benchmark-canary feedback for $ts to $JETSTREAM_FEEDBACK_BASE"
 }
 
 write_context() {
@@ -157,7 +180,7 @@ write_prompt() {
 	local prompt=$cycle/prompt.md
 	local report=$cycle/codex-report.md
 	cat > "$prompt" <<PROMPT
-You are the local maintainer-snapshot benchmark gate for the Gutenberg RTC fuzz/fix project.
+You are the local maintainer-snapshot benchmark canary for the Gutenberg RTC fuzz/fix project.
 
 Do not use API subagents. You may launch local tmux/Codex helper sessions if useful, but keep this gate's state in:
 $cycle
@@ -168,17 +191,26 @@ $cycle/context.md
 Write your final cycle report to:
 $report
 
+Correct model:
+- A random maintainer benchmark should not be what makes RTC branches good. If the fuzzing and promotion loops are reasonable, this benchmark should be boring.
+- A benchmark failure is therefore a fuzzer/promotion failure first: missing coverage, stale coverage scheduling, bad promotion criteria, or a fix branch that was not fuzzed against the right product behavior.
+- The benchmark canary exists to detect that process failure before maintainers see a broken snapshot. It must feed failures back into Jetstream coverage and PR-refinement loops, not merely reject the branch locally.
+
 Task:
 1. Poll the published PR/finalization branches and decide whether there is a newer candidate PR stack that plausibly fixes issues now covered by the expanded fuzzer coverage.
 2. If there is no new candidate stack, write a concise no-op report and do not edit maintainer docs.
 3. If there are ready PR branches but no all-merged branch, build a local all-merged branch from the smallest reviewable ready set. Push that stack branch to the danluu remote only after it cleanly merges and passes basic local checks. Do not reuse the known-bad branch as a passing candidate.
-4. Run the benchmark gate against the exact stack branch before changing maintainer-facing docs.
+4. Before changing maintainer-facing docs, run the benchmark canary against the exact stack branch. Treat any failure as a bug in the fuzzing/promotion process, not as a normal downstream quality gate.
 
 Hard gates:
 - The current known-bad branch is rtc-pr-stack-20260519T214027Z-validated-no-harness at e922771984f5bd37a3d5e76dc246a8c5001675ff. It failed large-post-three-user-http 2/2. Do not publish it as passing.
 - The benchmark result doc must not be updated to a successful result unless every fixed-stack benchmark row you ran has exit_code 0.
 - The maintainer snapshot must not name a current validated merged branch unless the exact linked branch has a fresh successful benchmark result from this gate.
-- If a benchmark row fails, leave the current maintainer snapshot alone, record the failing branch and row, and point the PR/fix loops at the blocker.
+- If a benchmark row fails, leave the current maintainer snapshot alone, record the failing branch and row, and write both:
+  - $cycle/fuzzer-feedback.md
+  - $cycle/fuzzer-feedback.tsv
+- The feedback must say what the fuzzer should have been covering, whether the existing expanded coverage already has an equivalent lane, how that lane should be prioritized or repaired, and which PR/fix loop should consume the failure.
+- Do not present "fuzz evidence -> fix branch -> benchmark gate -> publish" as the trust model. The trust model is that fuzzing continuously exercises the user-hit behavior and benchmark failure proves that trust model was violated.
 
 Benchmark minimum:
 - Lower/unit rows: CRDT merge microbench, HTML equivalence microbench, sync helper microbench, many-user sync microbench, targeted crdt stale top-level unit tests, targeted HTTP polling manager tests.
@@ -187,7 +219,7 @@ Benchmark minimum:
 - Record refs, commits, commands, exit codes, elapsed time, and log paths.
 
 Documentation updates on success:
-- Update $SNAPSHOT_DOC on $EXPLAIN_BRANCH with the passing stack branch, compare URL, branch links, and a clear note that this snapshot is gated by the fresh successful benchmark.
+- Update $SNAPSHOT_DOC on $EXPLAIN_BRANCH with the passing stack branch, compare URL, branch links, and a clear note that the benchmark canary was green because the fuzzer/promotion loop should already have covered these behaviors.
 - Update $BENCHMARK_DOC on $EXPLAIN_BRANCH with the fresh successful benchmark result. It must not contain failing benchmark rows presented as acceptable.
 - Push $EXPLAIN_BRANCH to the $REMOTE remote from this local machine.
 
@@ -228,9 +260,11 @@ run_once() {
 	write_status context "collecting $cycle"
 	write_context "$cycle"
 	write_status codex "running benchmark-gate Codex cycle $ts"
-	if run_codex_cycle "$cycle"; then
+if run_codex_cycle "$cycle"; then
+		publish_feedback "$cycle"
 		write_status idle "cycle $ts completed"
 	else
+		publish_feedback "$cycle"
 		write_status failed "cycle $ts failed or timed out"
 	fi
 }

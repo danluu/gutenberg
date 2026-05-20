@@ -1798,8 +1798,8 @@ lanes, but they must share state. In particular:
     It reads Jetstream push manifests, asks Codex for a conservative push plan,
     validates refs and SHAs deterministically, pushes safe branches to `danluu`,
     and writes the resulting local publish manifest back to Jetstream.
--   The maintainer snapshot and benchmark docs are guarded by the local
-    benchmark gate helper
+-   The maintainer snapshot and benchmark docs are protected by the local
+    benchmark canary helper
     `bin/rtc-maintainer-snapshot-benchmark-gate-loop.sh`. Run it on a local
     host with GitHub write access, Docker, and enough disk for isolated
     worktrees:
@@ -1811,11 +1811,17 @@ lanes, but they must share state. In particular:
     The loop writes durable state under
     `/Users/danluu/dev/fuzz/rtc-maintainer-snapshot-benchmark-gate-20260520`.
     Each cycle polls published PR/finalization refs, gives Codex the current
-    Jetstream finalization and coverage context, and only updates
-    `rtc-jetstream2-maintainer-pr-snapshot-20260519.md` plus
-    `rtc-local-benchmark-results-20260519.md` after the exact merged stack
-    branch has a fresh benchmark run with all fixed-stack rows passing. The
-    known failing branch
+    Jetstream finalization and coverage context, and runs the benchmark as a
+    canary for the fuzzing and promotion process. If an ordinary benchmark row
+    fails, the primary result is a fuzzer/promotion failure report under
+    `/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520`;
+    the coverage and PR-refinement loops should consume that feedback and add
+    or prioritize the missing behavior. The benchmark is not the trust model for
+    mergeability; the fuzzer must already be exercising user-hit RTC behavior.
+    The helper only updates `rtc-jetstream2-maintainer-pr-snapshot-20260519.md`
+    plus `rtc-local-benchmark-results-20260519.md` after the exact merged stack
+    branch has a fresh canary run with all fixed-stack rows passing. The known
+    failing branch
     `rtc-pr-stack-20260519T214027Z-validated-no-harness` must not be republished
     as a passing candidate.
 
