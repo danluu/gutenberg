@@ -15,6 +15,11 @@ Expected result: both editors go back to the original three paragraphs.
 Actual result in the clean repro: editor A has the original three paragraphs,
 while editor B still has the paragraph that editor A deleted.
 
+There is also a current-trunk delayed-update video later in this file. That
+one uses a test-only 10-second delay between receiving a remote Yjs update and
+calling `updateEntityRecord`. It is a valid timing-window repro, not a
+stock-trunk repro.
+
 ## Clean repro setup
 
 The clean worktree used for the repro is:
@@ -208,6 +213,77 @@ the original three paragraphs after the 25-second post-delete wait. That means
 the primary video above should be described as a valid affected-branch repro,
 not as a current-PR-head failure video.
 
+## Current trunk delayed-update video
+
+I also recorded the delayed-update reproduction shape on current `origin/trunk`
+at:
+
+```text
+9cd9fa50ee042622cccaff60866c2b9d9ba6b818
+```
+
+For this video only, I applied a test-only 10-second delay in
+`packages/sync/src/manager.ts` after the remote Yjs update is observed and
+before `internal.updateEntityRecord( objectType, objectId )` runs. The video
+shows:
+
+1. Editor A creates `P3 (delete this)`.
+2. Editor B sees it and deletes it.
+3. Editor A receives the remote Yjs update, then edits `P1` before the delayed
+   local store refresh runs.
+4. After the delayed refresh, the final state contains the local edit and the
+   deleted paragraph.
+
+Video:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520/rtc-stale-delete-current-trunk-delayed-update-repro.mp4
+```
+
+Final verification frame:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520/verification-frame.png
+```
+
+Final state manifest:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520/final-state.json
+```
+
+Extra validation frame, taken after Editor B's delete and before the delayed
+store update:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520/validation-frames/after-delete-before-update.png
+```
+
+That validation frame matters because it shows the delete really happened:
+Editor B no longer shows `P3`, while Editor A still has stale local state and
+has already changed `P1`.
+
+The final state manifest records:
+
+```text
+reproduced: true
+delayedUpdatePatch: true
+remoteAppliedAt: 2026-05-20T22:32:05.315Z
+localEditAt: 2026-05-20T22:32:06.262Z
+applyingUpdateAt: 2026-05-20T22:32:15.309Z
+finalReadAt: 2026-05-20T22:32:23.513Z
+paragraphsA: ["P1 - User A makes local changes", "P2", "P3 (delete this)"]
+paragraphsB: ["P1 - User A makes local changes", "P2", "P3 (delete this)"]
+```
+
+Hashes:
+
+```text
+f9d9d97cdf7a49027181b53071e7a7e047447d8af0f414cddb0a32e67bcb6751  rtc-stale-delete-current-trunk-delayed-update-repro.mp4
+733290dd609ee25631c220c3948136674c6bcce129462d6ce987e132980715ef  verification-frame.png
+4e3594dcca11cc2561af7a5171ba9bbd26d45d36f9a7b3fdcb6f326011e43a62  final-state.json
+```
+
 ## Why the earlier visible run did not reproduce
 
 The earlier visible run was useful as a control, but it was not the same as
@@ -253,10 +329,8 @@ block."
 
 The remaining useful checks are:
 
-1. Run the same browser repro on latest `trunk`.
-2. Run the delayed-update reproduction shape against latest `trunk` and the PR
-   branch.
-3. Save pass/fail counts for each branch.
+1. Run the delayed-update reproduction shape against the PR branch.
+2. Save pass/fail counts for each branch.
 
 The clean repro and video above are enough to show the bug locally without
 depending on any external recording.
