@@ -1,11 +1,14 @@
 # RTC Jetstream2 Maintainer PR Snapshot
 
-Snapshot time: `2026-05-19T17:01:21Z`
+Snapshot time: `2026-05-20T00:06:00Z`
 
 This is a one-time maintainer review snapshot of the current best RTC fix
-split. No GitHub pull requests have been opened from this document. The linked
-branches are pushed to `danluu/gutenberg` under the snapshot prefix
-`rtc-pr-stack-20260519T161502Z-*`.
+split. No GitHub pull requests have been opened from this document.
+
+The current validated merged branch is under
+`rtc-pr-stack-20260519T214027Z-*`. The older `rtc-pr-stack-20260519T161502Z-*`
+snapshot remains below for historical context, but it is superseded by the
+validated branch and fixed PR06B/PR06C/PR06D/PR06E refs listed here.
 
 The branch links were verified with:
 
@@ -13,39 +16,70 @@ The branch links were verified with:
 git ls-remote --heads danluu 'rtc-pr-stack-20260519T161502Z-*'
 ```
 
-That command returned `61` heads: the finalized branch set plus one merged test
-branch.
+The original command returned `61` heads for the older snapshot. The validated
+update additionally pushed the fixed PR06 refs, a validated no-harness merged
+branch, and the matching base branch.
 
 Source status report:
 [`rtc-jetstream2-fix-pr-status-20260515.md`](https://github.com/danluu/gutenberg/blob/explain/rtc-jetstream2-fuzz-progress-20260515/docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md)
 
-## Merged Test Branch
+## Current Validated Merged Branch
 
-Maintainers who want to test the current reviewable code together should use:
+Maintainers who want to test the current reviewable product/test code together
+should use:
 
 - Branch:
-  [`rtc-pr-stack-20260519T161502Z-all-ready-merged`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-all-ready-merged)
-- Compare against the snapshot base:
-  [`base...all-ready-merged`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T161502Z-base...rtc-pr-stack-20260519T161502Z-all-ready-merged)
-- Diff size against base: `24 files, +10022 / -314`
+  [`rtc-pr-stack-20260519T214027Z-validated-no-harness`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T214027Z-validated-no-harness)
+- Compare against the validated base:
+  [`base...validated-no-harness`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T214027Z-tested-base...rtc-pr-stack-20260519T214027Z-validated-no-harness)
+- Diff size against base: `18 files, +3466 / -89`
 
-This merged branch starts from `PR15C` and merges the reviewable/support side
-branches `PR02A`, `PR06E`, `HARNESS-WS-CONFIG-022004`, and the current
-validation regression branch. It intentionally excludes blocked, candidate, and
-diagnostic artifact refs.
+This merged branch starts from the fixed PR06E stack and includes `PR02A`. It
+intentionally excludes the WebSocket harness branch from the product/test merge
+branch because the exact merged branch with that harness commit
+(`rtc-pr-stack-20260519T214027Z-validated-merged`, `f60639b3c32`) failed the
+focused reload gate with a collaboration-readiness/network-change failure. The
+harness branch remains test infrastructure, not maintainer product code.
+
+Validation run on Jetstream2:
+
+| Ref | Focused list-item reload gate |
+| --- | --- |
+| `PR05D` | pass |
+| `PR06A` | pass |
+| original `PR06B` | fail, persisted old list order after reload |
+| fixed `PR06B` | pass |
+| fixed `PR06C` | pass |
+| fixed `PR06D` | pass |
+| fixed `PR06E` | pass |
+| `validated-no-harness` | pass |
+
+The fixed PR06 refs are:
+
+| Review unit | Scope | Compare | Head branch | Files / diff |
+| --- | --- | --- | --- | --- |
+| PR06B fixed | Repair stale raw save payloads without clobbering reordered block content | [`old PR06B...fixed PR06B`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T161502Z-pr06b-stale-raw-save-payload-repair...rtc-pr-stack-20260519T214027Z-tested-pr06b-fix-list-order-regression) | [`rtc-pr-stack-20260519T214027Z-tested-pr06b-fix-list-order-regression`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T214027Z-tested-pr06b-fix-list-order-regression) | 2 files, +130 / -0 |
+| PR06C fixed | Guard save projection content, rebased on fixed PR06B | [`fixed PR06B...fixed PR06C`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T214027Z-tested-pr06b-fix-list-order-regression...rtc-pr-stack-20260519T214027Z-tested-pr06c-fix-list-order-regression) | [`rtc-pr-stack-20260519T214027Z-tested-pr06c-fix-list-order-regression`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T214027Z-tested-pr06c-fix-list-order-regression) | 2 files, +278 / -5 |
+| PR06D fixed | Guard persisted empty content, rebased on fixed PR06B/C | [`fixed PR06C...fixed PR06D`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T214027Z-tested-pr06c-fix-list-order-regression...rtc-pr-stack-20260519T214027Z-tested-pr06d-fix-list-order-regression) | [`rtc-pr-stack-20260519T214027Z-tested-pr06d-fix-list-order-regression`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T214027Z-tested-pr06d-fix-list-order-regression) | 2 files, +63 / -0 |
+| PR06E fixed | Malformed save payload sidecar, rebased on fixed PR06B/C/D | [`fixed PR06D...fixed PR06E`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T214027Z-tested-pr06d-fix-list-order-regression...rtc-pr-stack-20260519T214027Z-tested-sidecar-pr06e-fix-list-order-regression) | [`rtc-pr-stack-20260519T214027Z-tested-sidecar-pr06e-fix-list-order-regression`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T214027Z-tested-sidecar-pr06e-fix-list-order-regression) | 2 files, +270 / -4 |
 
 ## Suggested Review Order
 
 Main lane:
-`PR01 -> PR02 -> PR03 -> PR04 -> PR05A -> PR05B -> PR05C -> PR05D -> PR06A -> PR06B -> PR06C -> PR06D`
+`PR01 -> PR02 -> PR03 -> PR04 -> PR05A -> PR05B -> PR05C -> PR05D -> PR06A -> fixed PR06B -> fixed PR06C -> fixed PR06D`
 
 Side/support lane:
-`PR02A`, `PR06E`, `HARNESS-WS-CONFIG-022004`, validation regression
+`PR02A`, fixed `PR06E`. `HARNESS-WS-CONFIG-022004` is retained as separate
+test infrastructure and is not part of the validated product/test merged branch.
 
 CRDT/data-loss lane:
 `PR09 -> PR10 -> PR11A -> PR11B -> PR11C -> PR11D -> PR11E -> PR12A -> PR12B -> PR12C -> PR13A -> PR13B0 -> PR13B1 -> PR13B2 -> PR13B3 -> PR14 -> PR14B -> PR15A -> PR15B -> PR15C`
 
 ## Main Lane
+
+Rows through `PR06A` remain useful historical split links. For `PR06B` and
+later, use the fixed refs in the current validated section above; the older
+`PR06B` row below is the branch that failed the focused list-item reload gate.
 
 Files/diff is the adjacent diff for the linked compare.
 
@@ -133,11 +167,23 @@ candidate, or investigation support rather than a fileable product PR.
 
 ## Verification Notes
 
+- The current validated branch is
+  `rtc-pr-stack-20260519T214027Z-validated-no-harness` at `e922771984f`.
+  It passed `git diff --check`, targeted unit tests in the gate runner, and
+  the focused `two users concurrently move list items` reload E2E gate on
+  Jetstream2.
+- The original `PR06B` branch failed that focused reload gate by persisting the
+  old list order. The fixed `PR06B` branch and the fixed `PR06C`/`PR06D`/`PR06E`
+  cumulative refs passed the same gate.
+- The WebSocket harness branch is intentionally not merged into the current
+  validated product/test branch. The exact merged branch that included it
+  failed with a reload/collaboration-readiness infrastructure failure and needs
+  separate harness validation.
 - The all-ready merged branch was produced locally by merging the side/support
   refs into `PR15C`; `git diff --check` against the snapshot base returned no
   output.
-- This snapshot does not claim upstream rebase, full CI, PHP tests, or browser
-  E2E validation.
+- The older all-ready merged branch remains historical context only. This
+  snapshot still does not claim upstream rebase or full CI.
 - Branches in the artifact table are deliberately linked for inspectability,
   but should not be treated as maintainer-ready PRs without the evidence gates
   described in the status report.
