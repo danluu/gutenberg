@@ -50,6 +50,9 @@ Coverage breadth is also controlled by pressure. The coverage breadth floor can
 widen fuzzing when the machine has headroom, but it must not override
 `pressure`, `high_pressure`, or `severe_pressure`. Under pressure, the controller
 keeps the smaller budget and waits for backlog to drain before restoring breadth.
+Likewise, severe pressure is allowed to shed optional browser sessions even when
+the live browser lane count is below the normal E2E breadth floor; otherwise the
+floor preserves the overload that the controller is trying to drain.
 
 ## Guard Interaction
 
@@ -63,6 +66,11 @@ browser pools:
 This prevents the guard from undoing autoscaler shedding during overload. The
 coverage-guided supervisor, watchdog, analysis sidecars, lower-level lanes, and
 resource autoscaler are still kept alive.
+
+The guard restarts the autoscaler from
+`/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-resource-autoscaler.sh`.
+Do not rely on an old `/tmp/start_rtc_resource_autoscaler.sh` copy; stale temp
+copies were a previous source of incorrect scaling behavior.
 
 The autoscaler control path must stay nonblocking. It counts live browser runner
 processes with `pgrep` instead of walking historical run directories, because

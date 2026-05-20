@@ -314,17 +314,13 @@ shed_optional_browser_pools_if_needed() {
 		echo "[$now] optional browser shedding skipped under severe pressure; set RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHED=1 to enable it" >> "$LOG"
 		return 1
 	fi
-	if [[ "$browser_live_lanes" =~ ^[0-9]+$ ]] &&
-		[[ "$e2e_floor" =~ ^[0-9]+$ ]] &&
-		[ "$browser_live_lanes" -le "$e2e_floor" ]; then
-		echo "[$now] optional browser shedding skipped under severe pressure; live_browser_lanes=$browser_live_lanes floor=$e2e_floor" >> "$LOG"
-		return 1
-	fi
 	# Keep the scaler control path nonblocking. Historical artifact trees can
 	# leave stale lane metadata and process-group cleanup can block long enough
 	# for pressure to worsen. The guard now respects this pressure state, so
 	# session-level shedding is the fast control action; orphan cleanup belongs
-	# in a separate bounded janitor.
+	# in a separate bounded janitor. Severe pressure wins over the E2E lane floor:
+	# preserving optional browser sessions while overloaded keeps the controller
+	# in a load oscillation.
 	last_shed=$(cat "$OPTIONAL_BROWSER_SHED_LAST" 2>/dev/null || echo 0)
 	if [ "$killed" != 1 ] && [ $(( $(epoch) - last_shed )) -lt "$OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS" ]; then
 		return 1

@@ -764,7 +764,7 @@ restart_pool() {
 		resource)
 			tmux kill-session -t rtc-resource-autoscaler 2>/dev/null || true
 			stop_unsupervised_resource_autoscaler
-			tmux new-session -d -s rtc-resource-autoscaler "bash -lc '/tmp/start_rtc_resource_autoscaler.sh >> \"$LOG_DIR/resource-autoscaler-start.log\" 2>&1'" ||
+			tmux new-session -d -s rtc-resource-autoscaler "bash -lc '$RESOURCE_BASE/rtc-resource-autoscaler.sh >> \"$LOG_DIR/resource-autoscaler-start.log\" 2>&1'" ||
 				log "resource autoscaler start failed"
 			;;
 		structural)
