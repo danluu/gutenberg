@@ -1,652 +1,335 @@
 # Jetstream2 RTC Fuzzing Coverage Report
 
-This report summarizes what the Jetstream2 RTC fuzzing project is exercising,
-what new coverage was added by the May 20 coverage-gap closure loop, and what
-still should not be treated as covered or merge-ready.
+This report describes what the Jetstream2 RTC fuzzing and validation campaign
+currently covers, what is only partially covered, and what should still be
+treated as uncovered or unproven. It is written for a maintainer who has not
+followed the earlier coverage-gap reports.
 
-This document is written for maintainers reviewing the RTC PR set. It is not a
-claim that the exact proposed merge branch is ready. Coverage evidence and merge
-readiness are different:
+Coverage evidence is not the same as merge readiness. A branch or stack that
+touches RTC reconciliation, save projection, parser equivalence, persisted CRDT
+state, or transport storage still needs exact-ref validation on the branch or
+merge candidate that maintainers would review.
 
-- **Existing coverage evidence** means a fuzzer, model test, PHP test, or gate
-  exercises the same class of behavior.
-- **New closure coverage** means the May 20 closure loop added a concrete test,
-  harness, or executable queue in an isolated Jetstream2 worktree.
-- **Validated closure coverage** means that worker also ran the relevant focused
-  tests, lint, or syntax checks successfully.
-- **Merge readiness** still requires exact branch/SHA validation with commands,
-  results, and artifacts.
+The live snapshot below was sampled from Jetstream2 at
+`2026-05-20T18:04:19Z`.
 
-The live state in this report was last sampled from Jetstream2 around
-`2026-05-20T17:55Z`. The closure work is mutable; before filing PRs, re-check the
-exact worker branch, SHA, test command, result, and artifact path.
+## Status Key
 
-## Current Bottom Line
+| Status | Meaning |
+| --- | --- |
+| Covered and validated | There is a concrete test/fuzzer path and the relevant focused gate has passed. |
+| Covered by active fuzzing | The live fuzzing campaign has run or is running this surface and emits replayable artifacts. Failures may still be under triage. |
+| Partially covered | Some important behavior is exercised, but browser, PHPUnit, non-Chromium, production, or scale gates are missing. |
+| Targeted but not proven | The queue or coverage goal exists, but successful evidence is not present yet. |
+| Not covered | No meaningful evidence was found in the current campaign artifacts. |
 
-Jetstream2 has strong class-level evidence for Gutenberg post-editor RTC
-behavior: Chromium browser fuzzing, HTTP polling, the test WebSocket provider,
-save/reload/autosave/revision paths, selected real-user editing, parser/block
-profiles, lower-level CRDT/rich-text/table tests, PHP sync/storage tests, replay
-artifacts, and triage/analysis infrastructure.
+## Bottom Line
 
-The May 20 closure loop materially improved the missing-test backlog. All six
-coverage-gap families now have concrete worker output or an executable queue:
+The strongest coverage is for post-editor RTC behavior in Chromium using HTTP
+polling and the test WebSocket provider. That includes two-user and three-user
+sessions, same-account multi-tab sessions, save/reload/autosave/revision paths,
+common block operations, parser-sensitive block transforms, selected real UI
+rich-text actions, large documents, permissions/auth/lock profiles, and
+lower-level CRDT/parser/table/storage tests.
 
-- `polling-state-machine`: validated unit/lint coverage.
-- `save-payload-correctness`: validated unit/lint coverage plus a small repair
-  path.
-- `parser-semantic-equivalence`: validated unit/lint coverage plus parser/list
-  handling changes.
-- `list-nested-structure`: model/unit coverage passed and a focused browser spec
-  was authored; browser validation is still pending.
-- `transport-compaction`: PHP tests were authored and syntax/diff checks passed;
-  focused PHPUnit is still pending.
-- `wider-product-coverage`: an executable smoke queue/config and targeted checks
-  were authored; most meaningful product gates are still pending or require
-  external environments.
+The weakest or still unproven areas are high-concurrency documents, production
+WebSocket/proxy deployments, non-Chromium and mobile/touch browser runs, broader
+site-editor and custom-product surfaces, object-cache/multisite gates, exact
+browser validation for the list/nested-structure work, and focused PHPUnit for
+transport/compaction storage coverage.
 
-Do not describe the wider product queue, production WebSocket/proxy path,
-non-Chromium/mobile coverage, multisite/object-cache coverage, or the new
-list/nested browser spec as fully proven until their gates run and pass.
+The current campaign has explicit goals for 12-user and 30-user documents. The
+latest snapshot has successful two-user and three-user records, but no
+successful 12-user or 30-user records in the pass-sensitive novelty state.
+Thirty-user coverage is configured and scheduled, but it is not covered yet.
 
-## Evidence Status
-
-| Area | Status | Evidence | Important caveat |
-| --- | --- | --- | --- |
-| Browser RTC fuzzing | Existing coverage evidence | `test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts`, `test/e2e/specs/editor/collaboration/websocket/collaboration-fuzz.spec.ts`, Jetstream lane summaries, replay manifests, behavioral coverage artifacts | Chromium and test-provider focused. Broad profiles often use `wp.data` reachability, not every toolbar, inserter, drag, keyboard, selection, touch, or browser path. Current pass-sensitive concurrency evidence includes successful two-user and three-user records; twelve-user success remains below target, and the new thirty-user target has no completed successful record yet. |
-| HTTP polling and test WebSocket transport | Existing coverage evidence | Browser fuzz profiles, WebSocket wrapper, HTTP polling lanes, targeted PHP/server tests | Test WebSocket provider coverage is not production proxy/load-balancer/WebSocket deployment coverage. |
-| CRDT/rich-text/table/parser lower-level behavior | Existing and newly expanded coverage | CRDT block tests, stale snapshot tests, rich-text offset tests, table/query-array tests, parser semantic-equivalence worker output | File paths vary by exact branch. Reports must cite the branch/SHA carrying the actual test file. |
-| PHP/server storage | Existing and newly expanded coverage | `phpunit/tests/collaboration/wpHttpPollingSyncServer.php`, `phpunit/tests/collaboration/wpSyncPostMetaStorage.php`, transport-compaction worker output | Some new PHP coverage has only syntax/diff validation so far because the closure worktree lacked PHP test dependencies and `wp-env`. |
-| Polling manager state machine | Newly validated unit coverage | `packages/sync/src/providers/http-polling/test/polling-manager.test.ts` in `rtc-coverage-gap-polling-state-machine-20260520`; unit tests and JS lint passed | This is deterministic unit coverage, not a randomized source-level state-machine fuzzer. |
-| Save-payload correctness | Newly validated unit coverage | `packages/core-data/src/entities.js` and `packages/core-data/src/test/entities.js` in `rtc-coverage-gap-save-payload-correctness-20260520`; 29 unit tests, prettier, lint, and diff check passed | Browser persistence follow-up was not run in that worker. The branch changes product code and needs normal PR review. |
-| Parser and semantic equivalence | Newly validated unit coverage | `packages/blocks/src/api/validation/index.ts`, validation tests, list reducer tests, and `packages/core-data/src/utils/test/rtc-parser-semantic-equivalence.test.js`; 3 suites / 85 tests plus lint passed | Full browser RTC parser gate was not run. |
-| List and nested structure | Newly authored and partly validated coverage | CRDT model/unit additions plus `collaboration-list-nested-structure.spec.ts` in `rtc-coverage-gap-list-nested-structure-20260520`; CRDT unit test passed 81 tests | Focused browser validation is still blocked by local install/build/wp-env issues in the worker. |
-| Wider product coverage | Executable queue and partial targeted coverage | `rtc-wider-product-coverage-smoke.mjs`, `playwright.rtc-product-coverage.config.ts`, `wider-product-coverage-queue.json`, targeted core-data/CRDT/PHP changes | Queue/config is not proof. Firefox/WebKit/mobile, production WebSocket, object cache, multisite, site editor, CPT, metabox/classic, and third-party block paths need their gates run. |
-| Jetstream2 campaign infrastructure | Existing operational evidence | supervisors, replay manifests, summary/events NDJSON, novelty monitor, triage watcher, analysis tiers, watchdogs, disk/resource controls | Infrastructure health is not product correctness by itself. |
-
-## Evidence Detail
-
-The evidence names above are shorthand for these actual behaviors:
-
-- `collaboration-fuzz.spec.ts` is the main seeded browser fuzzer. It opens the
-  real post editor, starts primary/collaborator sessions, applies a seeded
-  sequence of editor actions, and records convergence, persistence, reload,
-  revision, title, operation-witness, and behavioral-coverage oracles. Depending
-  on profile, actions include text/title edits, block insertion/deletion/move,
-  nested groups, tables, parser stress, real UI rich-text actions, media-like
-  async blocks, permission/lock flows, reloads, late joins, and large documents.
-- `websocket/collaboration-fuzz.spec.ts` runs the same fuzz grammar against the
-  test WebSocket sync provider. This checks provider behavior and WebSocket
-  synchronization shape, but not a production proxy/load-balancer deployment.
-- Jetstream lane summaries, `summary.ndjson`, `events.ndjson`, `replay.json`,
-  and behavioral coverage files are the per-seed evidence. They record the seed,
-  action profile, user/collaborator shape, replayable action sequence, pass/fail
-  classification, and coverage keys produced by that seed.
-- HTTP polling coverage exercises the REST polling sync path: room registration,
-  room-specific permission failures, update retrieval by cursor, awareness
-  records, compaction, mixed-room batches, retry/unload behavior, and oversized
-  payload handling.
-- Lower-level CRDT/rich-text/table/parser tests bypass the browser and create
-  CRDT documents, block trees, rich-text values, table/query-array structures,
-  and parser inputs directly. They are used to isolate reconciliation and
-  semantic-equivalence bugs faster than a full Playwright run.
-- PHP/server storage tests exercise the WordPress REST/storage side: room
-  permission validation, post-room isolation, update and awareness persistence,
-  cursor monotonicity, malformed update handling, duplicate awareness cleanup,
-  storage-window reads, and compaction races.
-- Polling-manager tests are deterministic state-machine tests for the
-  JavaScript HTTP polling manager. They check registration lifecycle,
-  duplicate-room registration, auxiliary-room behavior, hidden-tab intervals,
-  unload retry suppression, room-specific `403` recovery, chunking, and room
-  churn.
-- Save-payload correctness tests check which content is sent to WordPress on
-  save. They cover stale CRDT order, empty evaluated content with non-empty CRDT
-  state, malformed evaluated content repaired from live CRDT blocks, and valid
-  edited content that must not be overwritten by CRDT serialization.
-- Parser/semantic-equivalence tests check that load/save/parser transitions do
-  not invent collaboration changes for semantically equivalent HTML. They cover
-  semicolonless entities, preserve-whitespace rich text, equivalent HTML no-op
-  cases, ambiguous list-item `&nbsp;`, deprecated block migration, and validation
-  fix transforms.
-- List/nested-structure tests check list identity and nested block movement:
-  nested list concurrent reorders, duplicate or near-duplicate list items,
-  rich-text/entity variants inside list items, sibling edits during moves, and a
-  browser save/reload spec for moving blocks into and out of groups/columns.
-- Wider-product coverage is a queue plus targeted tests for product surfaces
-  outside the normal post-content fuzzer. It covers site-editor entities,
-  custom post type REST schema/capabilities, metabox/classic interop, publishing
-  paths, document-size gates, third-party block supports, media/attachment and
-  reusable/synced-pattern data, persistent object-cache/multisite storage
-  boundaries, non-Chromium/mobile projects, and a production WebSocket/proxy
-  smoke path that requires an external endpoint.
-- Jetstream campaign infrastructure is the machinery that schedules, restarts,
-  de-duplicates, replays, triages, and summarizes the runs. It can prove that a
-  seed ran and how it was classified; it is not itself a product oracle.
-
-## 2026-05-20 Concrete Coverage Snapshot
-
-Latest checked Jetstream2 monitor state: `2026-05-20T17:55:08Z`.
+## Current Snapshot
 
 Current monitor output directory:
 `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260520T174857Z`.
 
-The novelty monitor reported `4290` coverage files, `120689` all-time novelty
-records, `114294` WebSocket records, `6395` HTTP records, `10795` same-user
-records, `21` many-user lifecycle records, `30` collaboration UI signal records,
-and `249` large-post three-user HTTP lifecycle records. The active run had
-browser lanes for parser transforms, real-user save/reload, real-user rich text,
-async/server-backed blocks, long-session/large-document coverage, and
-collaboration UI signals.
+At the sampled time the novelty monitor reported:
 
-The new thirty-user target is configured in the novelty supervisor as
-`novelty-ws-thirty-user-lifecycle`. It uses the many-user lifecycle profile with
-`GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS=28`, which means the primary user,
-the default collaborator, and `28` extra collaborators are all intended to join
-one document. At this sample it had launched seed `1210001`, but the current
-coverage counters still showed `0` thirty-user lifecycle records and `0`
-successful thirty-user records. The supervisor had also marked that lane
-inactive under the strict pre-action startup-noise cooldown after no product
-evidence was produced. Treat thirty-user coverage as an active goal, not as
-covered behavior.
-
-A detailed direct scan of the monitor's current/observed behavioral artifact
-roots earlier on May 20 counted `4743` `rtc-behavioral-coverage.ndjson` files
-from `21` roots and `8794` raw JSON records: `2269` passed records and `6525`
-records that failed or stopped early. The raw-record count is intentionally
-different from the novelty monitor count: novelty records are derived feature
-keys, while this scan counts one behavioral JSON record per seed artifact line.
-The direct scan is retained below for action-shape detail; the pass-sensitive
-goal state above is the current source for which concurrency goals are closed.
-
-### Users And Server Concurrency
-
-Server-wide browser load and users in one document are separate axes:
-
-- At the checked instant, Jetstream2 had multiple supervised browser groups
-  active, but thirty-user lifecycle had not produced product evidence and was
-  paused by the startup-noise policy.
-- The largest observed single document has `12` users: the base users plus `10`
-  extra collaborators in the many-user lifecycle profile.
-- Current novelty counters show records with `2`, `3`, and `12` users in one
-  document. Successful current-window counters show `2057` two-user records and
-  `44` three-user records; successful twelve-user and thirty-user goals are
-  still unmet in the pass-sensitive novelty state.
-- Same-account multi-tab coverage is present. The novelty monitor reports
-  `10795` same-user records and `44` same-user successful records.
-- A thirty-user-in-one-document goal is now explicit. It is configured and
-  scheduled, but it has `0` completed records and `0` successful records in the
-  checked snapshot.
-- Local complementary coverage is synced back into Jetstream2 artifacts for the
-  controller to see. Those imported records add `permissions-auth-locks`,
-  `revision-persistence`, and `session-lifecycle` coverage, including 2-user
-  and 3-user records, but they do not add browser load to the Jetstream2
-  `wp-env` server.
-
-Per-profile user-count evidence from the earlier direct artifact scan:
-
-| Profile | Observed user-count shape |
+| Metric | Value |
 | --- | --- |
-| `large-post-three-user-http-lifecycle` | `491` records; `432` reached three users; successful large-post HTTP lifecycle coverage is still below target |
-| `three-user-late-join` | `1109` records; `4` reached three users; `3` passed |
-| `many-user-lifecycle` | `11` records; `9` reached twelve users; `4` passed |
-| `session-lifecycle` | `558` records; includes `9` three-user records; `2` passed |
-| `permissions-auth-locks` | `1707` records; contributor-role and auth/lock coverage, mostly two-user |
-| `revision-persistence` | `168` records; local complementary runs are still feeding new revision/autosave/recovery cases |
-
-### Simultaneous Editing
-
-The current novelty counters do not expose every action histogram. The latest
-detailed action scan still shows same-logical-step and multi-actor pressure:
-
-- `concurrent-paragraphs`: `4882` action records, including `2758` in passing
-  records.
-- Late join overlapping with live edits/moves: same-step combinations include
-  `late-join-post-action + move-block` (`66`),
-  `edit-table-array-attributes + late-join-post-action` (`41`),
-  `append-paragraph + late-join-post-action` (`38`),
-  `insert-heading + late-join-post-action` (`36`),
-  `concurrent-paragraphs + late-join-post-action` (`34`), and
-  `insert-nested-group + late-join-post-action` (`34`).
-- Late join also overlaps with real UI actions: list indent (`30`), paragraph
-  typing (`25`), link editing (`24`), undo/redo (`24`), toolbar formatting
-  (`23`), paste (`18`), and table-cell editing (`12`).
-- Common structural edits are heavily represented: `move-block` (`9402`),
-  `insert-heading` (`4860`), `append-paragraph` (`4765`), `delete-block`
-  (`4699`), `insert-common-block` (`4668`), nested group insert/move (`4532`
-  each), `insert-paragraph` (`4418`), `delete-nested-block` (`4348`), and
-  `edit-nested-paragraph` (`4293`).
-- Table/rich-text/UI coverage includes `edit-table-array-attributes` (`4880`),
-  `ui-list-indent` (`214`), `ui-table-cell-edit` (`189`),
-  `ui-undo-redo-paragraph` (`188`), `ui-toolbar-format-paragraph` (`147`),
-  `ui-paste-paragraph` (`145`), and `ui-link-paragraph` (`139`).
-- Async/server-backed and cross-entity edits include
-  `insert-async-server-block` (`17851`) and
-  `insert-media-cross-entity-block` (`139`).
-
-### Lifecycle, Persistence, And Document Shape
-
-The latest detailed action scan included:
-
-- save checkpoints: `16771` phase events, `10222` in passing records;
-- reloads: `15509` phase events, `10348` in passing records;
-- revision restore: `4792` phase events, `4538` in passing records;
-- final persistence oracle: `2796` phase events, `2450` in passing records;
-- final persistence after reload: `2503` phase events, `2254` in passing
-  records;
-- final UI witness sweep: `16` events, `8` in passing records;
-- publish persistence witness: `6` phase events in this scan, which is still too
-  thin to close the publish/save-payload gap.
-
-The largest observed document shape is `160` configured large-document blocks
-and `298` total blocks after fuzz operations. Covered core block types include
-paragraph, heading, group, list/list-item, quote, image, table, embed, latest
-posts, categories, query, calendar, reusable block, buttons/button, separator,
-freeform, media-text, gallery, file, cover, details, preformatted, code,
-columns/column, spacer, verse, HTML, shortcode, and social links.
-
-Operation-witness tracking is present in the fuzz records: `75733` created
-operation markers, `75258` witnessed markers, and `475` missing markers in the
-direct artifact scan. `1499` records used fail-mode operation ledgers and `7295`
-used shadow mode.
-
-Coverage goals still below target at the checked instant include successful
-twelve-user lifecycle completion, all thirty-user goals, successful large-post
-three-user HTTP lifecycle, successful table stale snapshot, successful
-collaboration UI signals, remote selection/cursor evidence, final publish
-persistence, final UI witness sweep, and several real-user editing action
-ratchets. Those should remain active fuzzing goals.
-
-## Browser Fuzzing
-
-The browser fuzzer drives the real editor in Chromium against `wp-env`. The
-WebSocket spec wraps the same core fuzz spec so the same action grammar can run
-against HTTP polling or the test WebSocket provider.
-
-Covered classes include:
-
-- HTTP polling transport and the test WebSocket provider.
-- Distinct-user and same-user sessions.
-- Two-user default sessions, three-user sessions, same-user sessions, and late
-  joins.
-- Reload/reconnect lifecycle profiles.
-- Save checkpoints, autosave checkpoints, final persistence checks, and
-  revision restore probes.
-- Paragraph/title/heading edits, top-level moves, table body updates, nested
-  groups, common blocks, block-gauntlet blocks, parser stress, selected UI
-  typing/formatting/paste/link/list/table actions, media/server-backed blocks,
-  permissions/auth profiles, and long-session/large-document profiles.
-- Oracles for convergence, title state, persisted `_crdt_document`, save/reload
-  behavior, revision behavior, operation witnesses, invariant snapshots, and
-  behavioral coverage records.
-
-Important browser gaps remain:
-
-- Real browser diversity beyond Chromium is only queued by the wider-product
-  worker; Firefox/WebKit gates have not been shown passing.
-- Mobile/touch editing is queued, not proven.
-- Production WebSocket/proxy/load-balancer behavior requires an actual endpoint
-  and was not executed by the closure worker.
-- Twelve-user concurrency is observed, but successful twelve-user goals remain
-  below target in the current novelty state.
-- Thirty-user concurrency is now a first-class coverage goal and has an
-  executable lane, but it has not yet produced a completed or successful
-  coverage record.
-- Many broad actions use direct editor state mutation through `wp.data`. That
-  is useful for reachability, but it is not equivalent to covering every
-  toolbar, inserter, drag-and-drop, keyboard, selection, or touch path.
-- Server restarts, database failover, object-cache inconsistency, long offline
-  edits, and independent network partitions remain environment-level campaigns,
-  not standard browser lane coverage.
-
-## Lower-Level Coverage
-
-Lower-level tests give faster feedback and better fault isolation than browser
-fuzzing. Existing evidence includes selected CRDT block, stale snapshot,
-rich-text, table/query-array, parser, polling-manager, and PHP/server storage
-coverage.
-
-The May 20 closure loop added or expanded these areas:
-
-### Polling Manager
-
-Branch/worktree: `rtc-coverage-gap-polling-state-machine-20260520`
-
-Added deterministic unit coverage for:
-
-- registration/unregistration listener lifecycle;
-- duplicate room registration;
-- auxiliary-only collaborator gating;
-- hidden-tab polling interval;
-- unload-pending retry behavior;
-- allowed-room update restoration after room-specific `403`;
-- primary/auxiliary room churn.
-
-Validation:
-
-- `npm install`: passed.
-- `npm run test:unit packages/sync/src/providers/http-polling/test/polling-manager.test.ts`: passed, 41 tests.
-- `npm run lint:js packages/sync/src/providers/http-polling/test/polling-manager.test.ts`: passed.
-
-Remaining gap: this is deterministic state-machine coverage. A seeded
-source-level fuzzer for delayed, duplicated, stale, and reordered responses
-would still be useful.
-
-### Save-Payload Correctness
-
-Branch/worktree: `rtc-coverage-gap-save-payload-correctness-20260520`
-
-Added unit coverage and a small repair path for:
-
-- correct editor payload with stale CRDT block order;
-- empty evaluated content with non-empty CRDT content;
-- malformed evaluated content repaired from non-empty live CRDT blocks;
-- changed valid content not overwritten by CRDT serialization.
-
-Validation:
-
-- `npm run test:unit packages/core-data/src/test/entities.js -- --runInBand`: passed, 29 tests.
-- Prettier check/write/check: passed.
-- `npx wp-scripts lint-js packages/core-data/src/entities.js packages/core-data/src/test/entities.js`: passed after generating theme lint prerequisites.
-- `git diff --check`: passed.
-
-Remaining gap: browser persistence/reload confirmation was not run in the
-worker. The worker suggested `collaboration-persistence.spec.ts` as the follow-up
-browser oracle.
-
-### Parser and Semantic Equivalence
-
-Branch/worktree: `rtc-coverage-gap-parser-semantic-equivalence-20260520`
-
-Added or expanded coverage for:
-
-- semicolonless entity normalization and non-normalization;
-- preserve-whitespace parsed rich text through CRDT merge;
-- equivalent HTML no-op cases;
-- ambiguous list item content containing `&nbsp;`;
-- deprecated block migration and validation-fix transforms in collaboration
-  merge.
-
-Validation:
-
-- `npm run test:unit packages/blocks/src/api/test/validation.js packages/blocks/src/api/raw-handling/test/list-reducer.js packages/core-data/src/utils/test/rtc-parser-semantic-equivalence.test.js -- --runInBand`: passed, 3 suites / 85 tests.
-- `npm run lint:js -- ...`: passed after Prettier formatting.
-- `git diff --check`: passed.
-
-Remaining gap: full browser RTC parser/serialization gates were not run by this
-worker.
-
-### List and Nested Structure
-
-Branch/worktree: `rtc-coverage-gap-list-nested-structure-20260520`
-
-Added:
-
-- CRDT model/unit coverage for nested list reorder, duplicate/near-duplicate
-  list items, rich-text/entity list variants, and sibling-edit/move cases.
-- A focused browser spec,
-  `test/e2e/specs/editor/collaboration/collaboration-list-nested-structure.spec.ts`,
-  for moving blocks into and out of groups/columns across save/reload.
-- A targeted CRDT repair that applies client-ID-based deletions before
-  positional diffing.
-
-Validation:
-
-- `npm run test:unit -- packages/core-data/src/utils/test/crdt-blocks.ts`: passed, 81 tests.
-- `git diff --check`: passed.
-
-Remaining gap: focused browser validation did not run successfully in the worker.
-The worktree lacked a complete install/build/wp-env setup, and WebSocket/browser
-attempts failed before the browser oracle ran. This branch should not be called
-browser-validated yet.
-
-### Transport and Compaction
-
-Branch/worktree: `rtc-coverage-gap-transport-compaction-20260520`
-
-Added PHP/API tests for:
-
-- more than the bounded read window of updates after a cursor;
-- stale compaction where a newer compaction exists beyond the first read window;
-- high-backlog mixed-room isolation;
-- compaction plus concurrent writes across clients.
-
-Validation:
-
-- `php -l` on the changed PHP files: passed.
-- `git diff --check`: passed.
-
-Remaining gap: focused PHPUnit did not run because the worktree lacked
-`vendor/bin/phpunit`, `composer`, `wp-env`, and a usable PHP test setup. This is
-authored coverage with syntax/diff validation, not a passed PHP gate.
-
-### Wider Product Queue
-
-Branch/worktree: `rtc-coverage-gap-wider-product-coverage-20260520`
-
-Added executable scheduling artifacts:
-
-- `test/e2e/bin/rtc-wider-product-coverage-smoke.mjs` is a validator for the
-  wider-product queue. It does not prove editor behavior by itself. It checks
-  that every queued coverage item has a name, files, commands, and an oracle so
-  the controller has an executable checklist instead of prose-only goals.
-- `test/e2e/playwright.rtc-product-coverage.config.ts` defines focused
-  Playwright projects for the product smoke set: Chromium, Firefox, WebKit, and
-  Pixel 5/mobile-touch. It is how the queued browser work is split by browser
-  and device class.
-- `test/e2e/specs/editor/collaboration/data/wider-product-coverage-queue.json`
-  is the manifest of wider-product coverage items. Each item maps a user-facing
-  surface to the files, command, oracle, and known environment blocker for that
-  surface.
-
-Added targeted code/test coverage:
-
-- Core-data entity tests cover sync configuration for site-editor records
-  (`wp_template`, `wp_template_part`, `wp_navigation`), custom post type REST
-  bases and revision URLs, taxonomy REST bases, synced properties, media
-  attachment synced properties, reusable block references, synced patterns, and
-  a site-template pre-persist CRDT meta path.
-- CRDT block tests cover a mocked third-party block with block-support style and
-  color attributes, verify that supported attributes survive merge, strip
-  local-only preview data, preserve image attachment IDs, strip transient image
-  blobs, and preserve reusable `core/block` references.
-- PHP sync-server tests cover a `show_in_rest` custom post type with a custom
-  `rest_base`, single-room and collection-room sync, and capability rejection.
-- PHP storage tests cover persistent object-cache/multisite risk by scoping the
-  storage-post cache by blog ID and checking that storage for the same room name
-  does not leak across `switch_to_blog()`.
-
-The queue makes these areas explicit and executable:
-
-- Site editor templates, template parts, and navigation: the entity tests verify
-  sync configuration, and the browser queue/config provide smoke commands for
-  site-editor template/template-part/navigation editing.
-- Custom post types and REST schemas: the tests verify custom REST base URLs,
-  revision URL construction, taxonomy REST bases, synced-property behavior, and
-  server capability rejection for an RTC room backed by a CPT.
-- Meta boxes and classic editor interop: the queue binds existing metabox lock,
-  meta-box, and classic-editor compatibility specs into the RTC coverage plan.
-- Publish/update workflows: the queue links persistence/title reload and publish
-  smoke commands, while the entity test covers pre-persist CRDT metadata for
-  template records that should not use the normal post freshness path.
-- Document-size and collaboration-gating boundaries: the queue records
-  document-size lock, metabox lock, and sync-error-filter specs as explicit
-  gates.
-- Third-party block/block-support strategy: the CRDT test checks that merge
-  behavior preserves supported block attributes while dropping local-only
-  preview state.
-- Media, attachments, reusable blocks, and synced patterns: the CRDT and
-  core-data tests cover attachment IDs vs. transient blobs, reusable block
-  references, synced-pattern post type configuration, and media synced
-  properties.
-- Persistent object cache and multisite: the PHP storage change/test target
-  cache scoping so storage-post lookup cannot bleed across blogs on multisite.
-- Firefox, WebKit, and mobile/touch: the Playwright config defines focused
-  projects for those browser/device classes, but their gates still need to run.
-- Production WebSocket/proxy behavior: the queue records the websocket-only
-  reload-loss smoke path and the required `GUTENBERG_RTC_PRODUCTION_WS_URL`
-  environment variable. This remains environment-blocked until a real endpoint
-  is supplied.
-
-Validation:
-
-- PHP syntax checks on changed PHP files: passed.
-- `node --check test/e2e/bin/rtc-wider-product-coverage-smoke.mjs`: passed.
-- `node test/e2e/bin/rtc-wider-product-coverage-smoke.mjs`: passed and reported an 11-item valid queue.
-- `git diff --check`: passed.
-
-Remaining gaps:
-
-- Jest, PHPUnit, and Playwright gates did not run because dependencies and
-  `wp-env` were unavailable in the worker.
-- Production WebSocket/proxy behavior requires a real endpoint via
-  `GUTENBERG_RTC_PRODUCTION_WS_URL`.
-- Queue/config coverage is useful scheduling infrastructure, not proof that
-  each wider product surface is robust.
-
-## PHP and REST Storage Coverage
-
-Existing PHP tests cover:
-
-- room format and permission validation;
-- per-room permission failures;
-- multiple rooms in a single request;
-- isolation between post rooms;
-- awareness storage, update, and ownership;
-- cursor monotonicity and update retrieval;
-- malformed update JSON handling;
-- duplicate awareness row coalescing;
-- cursor reads that should not skip updates inserted during a fetch window;
-- compaction that should not delete an update inserted during the delete.
-
-The May 20 transport/compaction worker adds authored test coverage for
-high-backlog read windows, stale compaction beyond the first read window, mixed
-room batches under high backlog, and compaction with concurrent writes. Those
-tests still need focused PHPUnit execution before maintainers should treat them
-as passed.
-
-## Jetstream2 Campaign and Triage Coverage
-
-Jetstream2 is doing two jobs:
-
-1. Wide exploration through long-running fuzz lanes.
-2. Exact-ref validation and regression isolation for the RTC PR set.
-
-Campaign tooling covers:
-
-- supervised HTTP, HTTP persistence, WebSocket, focused, strict-expansion,
-  backend/API, lower-level, and coverage-guided lanes;
-- parallel lanes with disjoint seed ranges;
-- per-seed replay manifests and summary records;
-- retry/recheck logic before classifying failures;
-- first-level and second-level analysis tiers;
-- browser-heavy triage watcher for likely-real candidates;
-- novelty monitor that enables focused groups when coverage is missing;
-- watchdog repair and disk cleanup for stale `wp-env`/Docker resources;
-- the May 20 coverage-gap closure controller:
-  `bin/rtc-coverage-gap-closure-start-remote.sh`;
-- the runbook:
-  `docs/explanations/architecture/rtc-coverage-gap-closure-runbook-20260520.md`.
-
-The useful artifacts are files, not a single authoritative database:
-
-- lane `summary.ndjson`;
-- lane `events.ndjson`;
-- `replay.json`;
-- behavioral coverage NDJSON;
-- triage watcher state and signature directories;
-- analysis-tier result JSON and Markdown handoffs;
-- supervisor and watchdog state JSON;
-- coverage closure reports under
-  `/media/volume/danluu-fuzz-data/rtc-coverage-gap-closure-20260520/reports`;
-- coverage closure worktrees under
+| Coverage files | `4240` |
+| Total novelty records seen | `120817` |
+| WebSocket records | `114307` |
+| HTTP records | `6510` |
+| Same-user records | `10823` |
+| Same-user successful records | `44` |
+| Successful two-user records | `2060` |
+| Successful three-user records | `44` |
+| Max users observed in one document | `12` |
+| Max users who edited one document | `11` |
+| Max extra collaborators configured in one document | `28` |
+| Thirty-user lifecycle records | `0` |
+| Successful thirty-user records | `0` |
+| Max total blocks observed in one document | `297` |
+| Max configured large-document blocks | `160` |
+| Real-user editing successful records | `1083 / 80` target |
+
+Active or recently active supervisor groups included parser transforms,
+real-user save/reload, async/server-backed blocks, long-session/large-document
+coverage, collaboration UI signals, and several paused or disabled breadth
+groups. The recommended coverage groups still include 30-user lifecycle,
+collaboration UI signals, many-user lifecycle completion, table stale snapshot,
+large-post HTTP lifecycle, three-user late join, real-user editing, parser
+transforms, async/server-backed blocks, and media/cross-entity coverage.
+
+## Coverage Matrix
+
+| Surface | Current status | What is covered | What is not yet proven |
+| --- | --- | --- | --- |
+| Browser post-editor RTC fuzzing | Covered by active fuzzing | Seeded Playwright runs open the real editor, create primary/collaborator sessions, apply random but replayable action sequences, and check convergence, persistence, reload, title, revision, operation-witness, and behavioral coverage oracles. | Mostly Chromium. Many broad actions use `wp.data` to reach states quickly, which is not the same as covering every toolbar, inserter, keyboard, selection, drag, touch, or browser path. |
+| HTTP polling transport | Covered by active fuzzing and lower-level tests | Browser lanes and PHP/JS tests cover room registration, update retrieval by cursor, awareness records, permission failures, mixed-room batches, retry/unload behavior, payload chunking, and compaction basics. | Some high-backlog and compaction cases have syntax/diff validation but still need focused PHPUnit execution in a complete PHP/wp-env setup. |
+| Test WebSocket transport | Covered by active fuzzing | The same browser fuzz grammar runs through the test WebSocket provider, so editor actions and convergence are checked under WebSocket sync. | This is not proof for production WebSocket proxies, load balancers, TLS termination, idle timeout behavior, or real deployment configuration. |
+| Production WebSocket/proxy | Targeted but not proven | A queue item records the websocket-only reload-loss smoke command and required `GUTENBERG_RTC_PRODUCTION_WS_URL`. | No successful production/proxy endpoint run is recorded in this report. |
+| User/session concurrency | Partially covered | Two-user, three-user, same-user/multi-tab, late-join, reload/reconnect, and 12-user attempt records exist. Successful records exist for two-user and three-user cases. | Successful 12-user and 30-user goals are still unmet. Thirty-user has zero completed or successful coverage records in the current snapshot. |
+| Real UI rich-text actions | Covered by active fuzzing | Successful action counters include paste, link editing, list indent, composition, toolbar formatting, cut/copy, table-cell editing, undo/redo, heading shortcuts, title typing, paragraph typing, and paragraph formatting. | Counts do not prove every selection range, IME path, browser editing implementation, or toolbar/keyboard route. |
+| Save, reload, autosave, revision, recovery | Covered by active fuzzing | Fuzz records include save checkpoints, reloads, revision restore, final persistence, final persistence after reload, and save/reload profiles. | Publish persistence and final UI witness sweep remain thin. Exact merge candidates still need realistic save/reload/revision gates. |
+| Parser, serialization, validation transforms | Covered by active fuzzing and validated unit tests | Parser profiles plus unit tests cover equivalent HTML, semicolonless entities, preserve-whitespace rich text, deprecated block migration, validation fixes, and ambiguous list item content. | Full browser parser/serialization gates should continue running because unit equivalence tests do not cover every editor/server/reload path. |
+| Common blocks and block gauntlet | Covered by active fuzzing | The campaign exercises paragraph, heading, group, list/list-item, quote, image, table, embed, latest posts, categories, query, calendar, reusable block, buttons/button, separator, freeform, media-text, gallery, file, cover, details, preformatted, code, columns/column, spacer, verse, HTML, shortcode, and social links. | Some block coverage is generated through state APIs rather than complete user UI workflows. Third-party blocks are represented by targeted mocks, not a broad plugin ecosystem run. |
+| Async/server-backed and cross-entity blocks | Partially covered | Async/server-backed block insertion and media/cross-entity block paths have fuzz records. Targeted tests cover attachment IDs, transient blobs, reusable block references, synced-pattern configuration, and media synced properties. | Server-rendered blocks, media upload flows, gallery/file/image workflows, embeds, query loop, reusable/synced pattern UI workflows, and cross-entity persistence need more successful browser evidence. |
+| Permissions, locks, auth, sessions | Covered by active fuzzing | Permission/auth/lock profiles cover contributor-style permission failures, post locks, collaborator auth changes, same-user sessions, and lock/error behavior. | Nonce expiry, long-lived session changes, metabox lock fallback, and uncommon role/capability combinations still need more direct evidence. |
+| Large documents and long sessions | Covered by active fuzzing | Long-session and large-document profiles reach up to 160 configured large-document blocks and 297 total observed blocks after fuzz operations. | Undo-stack growth, Yjs document growth, block identity drift, delayed persistence, and very long real sessions remain active fuzz targets rather than closed coverage. |
+| Lower-level CRDT, table, rich-text, list behavior | Covered and validated for focused cases | Unit/model tests cover CRDT block reconciliation, stale snapshots, table/query-array identity, rich-text offsets/cursor scope, nested list reorders, duplicate or near-duplicate list items, entity/rich-text list variants, and sibling edits during moves. | These tests are not a replacement for browser save/reload validation on exact PR heads. Native/libFuzzer-style coverage-guided harnesses are still not mature coverage here. |
+| Polling manager state machine | Covered and validated | Deterministic Jest coverage checks registration/unregistration, duplicate room registration, auxiliary-only collaborator gating, hidden-tab polling interval, unload-pending retry suppression, allowed-room restoration after room-specific `403`, payload chunking, and primary/auxiliary room churn. | There is not yet a randomized lower-level state-machine fuzzer for delayed, duplicated, stale, forbidden, and reordered responses. |
+| Save-payload correctness | Covered and validated at unit level | Unit tests check stale CRDT order, empty evaluated content with non-empty CRDT content, malformed evaluated content repaired from live CRDT blocks, and valid changed content not overwritten by CRDT serialization. | The full browser persistence/reload/revision path still needs to run on exact PR heads that change save projection. |
+| PHP/REST storage | Partially covered | PHP tests cover room format and permission validation, room isolation, awareness ownership, cursor monotonicity, malformed update JSON, duplicate awareness cleanup, basic compaction races, high-backlog read windows, stale compaction beyond first fetch window, mixed-room isolation, and concurrent write survival during compaction. | The high-backlog and compaction PHP tests need focused PHPUnit in a complete environment before they should be treated as passed. |
+| Site editor, templates, navigation | Targeted but not proven | Entity-level tests cover sync configuration for `wp_template`, `wp_template_part`, and `wp_navigation`; the queue has site-editor smoke commands. | Browser site-editor template/template-part/navigation collaboration gates have not been shown passing. |
+| Custom post types and REST schemas | Partially covered | Entity/PHP tests cover custom REST base URLs, revision URL construction, taxonomy REST bases, synced-property behavior, and capability rejection for RTC rooms backed by a CPT. | Broader CPT editor UI workflows and unusual real-world REST schemas need browser evidence. |
+| Metabox and classic editor interop | Targeted but not proven | The queue references existing metabox lock, meta-box, and classic-editor compatibility specs. | The queue is not proof that those gates passed in this campaign. |
+| Persistent object cache and multisite | Targeted but not proven | PHP storage tests target blog-ID scoping so storage-post lookup cannot bleed across blogs under `switch_to_blog()`. | Multisite and persistent-object-cache gates still need focused execution in the right environment. |
+| Non-Chromium and mobile/touch | Targeted but not proven | Playwright config defines Firefox, WebKit, and Pixel 5/mobile-touch product smoke projects. | Passing Firefox/WebKit/mobile/touch RTC runs are not recorded in this report. |
+| Campaign infrastructure | Operationally covered | Supervisors, novelty monitor, replay manifests, triage watcher, analysis tiers, watchdogs, disk/resource controls, and report generation are present. | Infrastructure health is not product correctness; it only supports scheduling, replay, triage, and auditability. |
+
+## Browser Fuzzing Details
+
+The main browser fuzzer is `collaboration-fuzz.spec.ts`. It drives the real post
+editor and records enough data to replay a seed. The WebSocket wrapper runs the
+same action grammar through the test WebSocket provider.
+
+Covered action families include:
+
+- Text and title editing: typing titles, typing paragraphs, formatting
+  paragraphs, heading shortcuts, paste, cut/copy, undo/redo, link editing,
+  toolbar formatting, composition, and list indentation.
+- Structural editing: inserting, deleting, and moving top-level blocks; nested
+  groups; nested block edits; list/list-item work; columns; and table body
+  updates.
+- Block breadth: common blocks, block-gauntlet blocks, async/server-rendered
+  style blocks, media/cross-entity blocks, reusable block references, and
+  synced-pattern-like data paths.
+- Session lifecycle: same-user stale tabs, distinct users, late join,
+  reload/reconnect, multi-reload, save checkpoints, autosave/revision probes,
+  final persistence checks, and long-session/large-document profiles.
+- Permission and lock behavior: contributor-style failures, lock/session
+  changes, auth/permission profiles, and sync-error handling.
+
+Current successful real-user editing action counters include:
+
+| Action | Successful count |
+| --- | ---: |
+| `ui-type-paragraph` | `1403` |
+| `ui-type-title` | `1379` |
+| `reload-post-action` | `1713` |
+| `ui-undo-redo-paragraph` | `1320` |
+| `ui-format-paragraph` | `1322` |
+| `ui-heading-shortcut` | `1298` |
+| `ui-paste-paragraph` | `371` |
+| `ui-link-paragraph` | `371` |
+| `ui-composition-paragraph` | `372` |
+| `ui-toolbar-format-paragraph` | `372` |
+| `ui-list-indent` | `317` |
+| `ui-cut-copy-paragraph` | `287` |
+| `ui-table-cell-edit` | `320` |
+
+The fuzzer oracles include convergence, visible title state, serialized block
+content, persisted `_crdt_document`, save/reload behavior, revision behavior,
+operation witnesses, invariant snapshots, and behavioral coverage records.
+
+## Lower-Level And Storage Coverage
+
+Lower-level tests provide faster and more local evidence than Playwright. They
+are useful because many RTC bugs are reconciliation bugs that can be reduced to
+CRDT, parser, table, rich-text, or transport state transitions.
+
+Covered lower-level areas:
+
+- CRDT block reconciliation: block order, identity, nested structures, stale
+  snapshots, duplicate table/list structures, sibling edits during moves, and
+  deletion/reinsert behavior.
+- Rich text and selection: rich-text offsets, cursor scope, entity handling, and
+  user-selection state.
+- Parser/semantic equivalence: no-op equivalent HTML, deprecated block forms,
+  validation transforms, ambiguous `&nbsp;` list items, and preserve-whitespace
+  behavior.
+- HTTP polling manager: registration, room churn, retries, unload suppression,
+  hidden-tab behavior, room-specific `403`, chunking, and auxiliary rooms.
+- Save projection: deciding which content gets sent to WordPress when local
+  evaluated content and live CRDT content disagree.
+- PHP storage and REST sync: room permission validation, post-room isolation,
+  awareness storage, cursor reads, malformed update handling, duplicate
+  awareness row handling, compaction, high backlog, mixed rooms, and concurrent
+  writes.
+
+Validation that has passed:
+
+- Polling manager focused unit suite: `41` tests.
+- Save-payload focused unit suite: `29` tests.
+- Parser/semantic-equivalence focused unit suites: `85` tests.
+- List/nested CRDT unit suite: `81` tests.
+- PHP syntax checks for transport/compaction and wider-product PHP changes.
+- Wider-product queue validator: `11` queue items.
+- `git diff --check` on the coverage worktrees.
+
+Validation that is still needed:
+
+- Focused PHPUnit for the high-backlog transport/compaction tests.
+- Browser validation for the list/nested save/reload spec.
+- Browser persistence/reload confirmation for branches that change save-payload
+  correctness.
+- Exact branch or exact merge-candidate browser gates for any PR stack that
+  changes CRDT reconciliation, save projection, parser equivalence, persisted
+  CRDT state, or transport storage.
+
+## Wider Product Coverage
+
+The wider-product queue is a checklist and execution manifest for RTC surfaces
+outside the normal post-content fuzzer. It is useful because it names the
+surface, file(s), command, and oracle for each gate. It is not itself evidence
+that the gate passed.
+
+The wider-product coverage plan includes:
+
+- Site editor templates, template parts, and navigation: entity sync-config
+  tests plus queued browser smoke commands.
+- Custom post types and REST schemas: custom REST bases, revision URLs, taxonomy
+  REST bases, synced properties, and server-side capability rejection.
+- Metabox/classic editor interop: queued metabox lock, meta-box, and classic
+  editor compatibility commands.
+- Publish/update workflows: queued persistence/title reload and publish smoke
+  commands, plus entity coverage for template records that should avoid the
+  normal post freshness path.
+- Document-size and collaboration-gating boundaries: queued document-size lock,
+  metabox lock, and sync-error-filter specs.
+- Third-party block/block-support behavior: a mocked third-party block with
+  block-support style/color attributes, supported-attribute preservation, and
+  local-only preview stripping.
+- Media, attachments, reusable blocks, and synced patterns: attachment IDs,
+  transient blobs, reusable `core/block` references, synced-pattern config, and
+  media synced properties.
+- Persistent object cache and multisite: blog-ID scoping for storage-post cache
+  lookup under `switch_to_blog()`.
+- Firefox, WebKit, and mobile/touch: focused Playwright projects exist for these
+  browser/device classes.
+- Production WebSocket/proxy behavior: a websocket-only reload-loss smoke path
+  exists, but it requires `GUTENBERG_RTC_PRODUCTION_WS_URL`.
+
+Unproven wider-product surfaces remain important. Do not treat the site editor,
+metabox/classic interop, non-Chromium/mobile, multisite/object-cache, or
+production WebSocket paths as covered until their queued gates run successfully
+and produce artifacts.
+
+## Current Unmet Coverage Goals
+
+The novelty monitor still reports these high-value gaps:
+
+- `users:30`, `success-users:30`, and 30-user late-join lifecycle goals:
+  `0 / 3`.
+- `success-users:12` and 12-user late-join lifecycle goals: `0 / 10`.
+- Successful large-post three-user HTTP lifecycle: `0 / 10`.
+- Successful table stale snapshot over HTTP: `0 / 10`.
+- Successful collaboration UI signals: `0 / 25`.
+- Remote selection/cursor evidence: `0 / 25`.
+- Publish UI readiness: `0 / 10`.
+- Final publish persistence: `1 / 10`.
+- Successful three-user late-join profile target: `0 / 25`.
+- Successful three-user, 50-block profile target: `0 / 5`.
+- Many-user lifecycle success target: `3 / 10`.
+
+These numbers mean the fuzzer knows how to ask for the surface, but the current
+pass-sensitive coverage state has not yet produced enough successful records to
+close the goal.
+
+## Not Covered Or Not Proven Enough
+
+These are the most important areas a reader should not infer are solved from
+the current report:
+
+- Thirty users in one document: configured and scheduled, but no completed or
+  successful coverage records yet.
+- Successful 12-user documents: observed attempts exist, but the current
+  successful goal is still unmet.
+- Production WebSocket/proxy/load-balancer behavior: queued, not executed
+  successfully here.
+- Firefox, WebKit, and mobile/touch RTC editing: projects are defined, but
+  passing artifacts are not recorded in this snapshot.
+- Site editor RTC collaboration across templates, template parts, and
+  navigation: entity-level checks and queues exist, but browser proof is still
+  pending.
+- Metabox/classic editor interop: queued, not proven.
+- Persistent object cache and multisite: targeted by PHP tests, but focused
+  environment execution is still needed.
+- Long offline edits, real network partitions, server restarts, database
+  failover, and proxy timeout behavior: these are environment-level campaigns,
+  not closed by standard browser lanes.
+- Native or source-level coverage-guided lower-level fuzzing: still immature
+  compared with the browser and deterministic unit/PHP coverage.
+- Third-party block ecosystem coverage: represented by targeted mocks and
+  block-support tests, not broad plugin compatibility testing.
+
+## Evidence Sources
+
+Primary evidence artifacts are file-based:
+
+- Lane `summary.ndjson` and `events.ndjson`.
+- Per-seed `replay.json`.
+- Behavioral coverage NDJSON files.
+- Playwright artifacts for browser failures.
+- Triage watcher state and signature directories.
+- Analysis-tier JSON and Markdown reports.
+- Supervisor, novelty monitor, watchdog, and resource-control state JSON.
+- Worker reports and exact commands under
+  `/media/volume/danluu-fuzz-data/rtc-coverage-gap-closure-20260520/reports`.
+- Coverage worktrees under
   `/media/volume/danluu-fuzz-data/rtc-coverage-gap-closure-20260520/worktrees`.
 
-The closure controller status table lagged some done sentinels during this
-sample, and the integrator report was still running. Grade closure work by the
-worker report, changed files, commands, results, blockers, and eventual
-integrator output, not by the status table alone.
+Representative source files and tests:
 
-## PR-Set Review Guidance
+- `test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts`
+- `test/e2e/specs/editor/collaboration/websocket/collaboration-fuzz.spec.ts`
+- `packages/sync/src/providers/http-polling/test/polling-manager.test.ts`
+- `packages/core-data/src/test/entities.js`
+- `packages/core-data/src/utils/test/crdt-blocks.ts`
+- `packages/core-data/src/utils/test/rtc-parser-semantic-equivalence.test.js`
+- `packages/blocks/src/api/test/validation.js`
+- `packages/blocks/src/api/raw-handling/test/list-reducer.js`
+- `phpunit/tests/collaboration/wpHttpPollingSyncServer.php`
+- `phpunit/tests/collaboration/wpSyncPostMetaStorage.php`
+- `test/e2e/specs/editor/collaboration/data/wider-product-coverage-queue.json`
+- `test/e2e/bin/rtc-wider-product-coverage-smoke.mjs`
+- `test/e2e/playwright.rtc-product-coverage.config.ts`
 
-The high-signal process rule remains:
+## PR And Maintainer Review Guidance
 
-> Any branch touching CRDT block reconciliation, save projection, persisted CRDT
-> content, parser semantic equivalence, or transport storage must pass its owned
-> unit/PHP tests and the realistic collaboration gate on the exact branch head or
-> exact merge-candidate SHA before it is presented as ready.
+For a PR or stack, ask for:
 
-Branches that require the strongest gates include changes to:
+- Exact branch name and commit SHA.
+- Whether the branch is standalone or cumulative.
+- The focused unit/PHP/browser command and result for that exact SHA.
+- Whether HTTP, WebSocket, or both were covered.
+- Whether the run used Chromium only or also Firefox/WebKit/mobile.
+- Whether save/reload, revision, parser, list/nested, transport, and
+  persistence gates ran when the branch touches those areas.
+- Where the replay, summary, event, worker report, and Playwright artifacts live.
 
-- `packages/core-data/src/utils/crdt-blocks.ts`;
-- rich-text equivalence, semantic identity, block rebasing, or list reducers;
-- `packages/core-data/src/entities.js` save projection or persistence repair;
-- persisted `_crdt_document` load/save/recovery;
-- HTTP storage read windows or compaction semantics;
-- site editor or wider product entity synchronization.
+The exact branch carrying a test or fix is the reviewable object. Coverage
+architecture, queue entries, and previous reports are useful context, but they
+do not replace exact-head validation.
 
-For each PR or stack report, maintainers should ask for:
-
-- exact branch name and SHA;
-- whether the branch is standalone or cumulative;
-- targeted unit/PHP/browser command and result;
-- whether focused list-item, save/reload, parser, revision, or transport gates
-  ran on the exact branch head;
-- whether HTTP, WebSocket, or both were covered;
-- whether the run used Chromium only or also Firefox/WebKit/mobile;
-- where `summary.ndjson`, `events.ndjson`, `replay.json`, worker reports, and
-  Playwright artifacts live.
-
-The previously failed realistic list-item gate on
-`rtc-pr-stack-20260519T214027Z-tested-merge-candidate-v3` remains negative
-evidence until the exact recomposed candidate passes the relevant gate. Fixed
-PR06 refs and new list/nested unit coverage are useful, but they are not a
-substitute for exact-head browser validation of the merge candidate.
-
-## Remaining Gaps
-
-The highest-value remaining gaps are now narrower than the previous report, but
-they are not zero.
-
-### Needs Validation, Not Just Authored Tests
-
-- Transport/compaction PHP tests need focused PHPUnit.
-- List/nested browser save/reload spec needs a complete install/build/wp-env and
-  then focused browser validation.
-- Wider product queue needs the queued Jest/PHP/Playwright/browser/project gates.
-- Production WebSocket/proxy behavior needs a real endpoint and environment.
-- Any product-code change made by closure workers needs normal PR review and
-  exact branch validation.
-
-### Needs Better Fuzzing, Not Only Deterministic Tests
-
-- Polling manager now has better deterministic coverage, but a seeded
-  state-machine fuzzer below Playwright would explore more duplicate, delayed,
-  stale, forbidden, and reordered response schedules.
-- Save-payload correctness now has focused unit coverage, but browser
-  persistence/reload/revision fuzz should verify the full editor/server/reload
-  loop.
-- Parser semantic-equivalence now has deterministic tests, but browser
-  parser-serialization fuzz should keep exercising equivalent HTML,
-  deprecated forms, validation fixes, and ambiguous list identities.
-
-### Wider Product and Environment
-
-These are queued or partially represented, not fully proven:
-
-- site editor entities, templates, template parts, and navigation menus;
-- custom post types and unusual REST schemas;
-- meta boxes and classic editor interop;
-- publish/update workflows distinct from draft save and autosave;
-- persistent object cache;
-- multisite;
-- non-Chromium browsers;
-- mobile/touch editing;
-- third-party blocks and block supports;
-- real production WebSocket/proxy/load-balancer behavior.
-
-## Existing Documentation to Keep in Sync
-
-Related docs:
+## Related Documentation
 
 - `docs/explanations/architecture/real-time-collaboration-fuzzing.md`
 - `docs/explanations/architecture/real-time-collaboration-fuzzing-strategies.md`
@@ -654,7 +337,3 @@ Related docs:
 - `docs/explanations/architecture/real-time-collaboration-fuzz-issues-handoff.md`
 - `docs/explanations/architecture/real-time-collaboration-agent-handoff-protocol.md`
 - `docs/explanations/architecture/rtc-coverage-gap-closure-runbook-20260520.md`
-
-When using this report for maintainer review, prefer actual file lists, branch
-names, SHAs, worker reports, commands, and artifacts over planned architecture
-notes. The exact branch carrying a test is the thing maintainers can review.
