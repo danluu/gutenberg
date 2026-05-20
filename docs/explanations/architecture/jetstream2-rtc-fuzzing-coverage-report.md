@@ -64,6 +64,65 @@ list/nested browser spec as fully proven until their gates run and pass.
 | Wider product coverage | Executable queue and partial targeted coverage | `rtc-wider-product-coverage-smoke.mjs`, `playwright.rtc-product-coverage.config.ts`, `wider-product-coverage-queue.json`, targeted core-data/CRDT/PHP changes | Queue/config is not proof. Firefox/WebKit/mobile, production WebSocket, object cache, multisite, site editor, CPT, metabox/classic, and third-party block paths need their gates run. |
 | Jetstream2 campaign infrastructure | Existing operational evidence | supervisors, replay manifests, summary/events NDJSON, novelty monitor, triage watcher, analysis tiers, watchdogs, disk/resource controls | Infrastructure health is not product correctness by itself. |
 
+## Evidence Detail
+
+The evidence names above are shorthand for these actual behaviors:
+
+- `collaboration-fuzz.spec.ts` is the main seeded browser fuzzer. It opens the
+  real post editor, starts primary/collaborator sessions, applies a seeded
+  sequence of editor actions, and records convergence, persistence, reload,
+  revision, title, operation-witness, and behavioral-coverage oracles. Depending
+  on profile, actions include text/title edits, block insertion/deletion/move,
+  nested groups, tables, parser stress, real UI rich-text actions, media-like
+  async blocks, permission/lock flows, reloads, late joins, and large documents.
+- `websocket/collaboration-fuzz.spec.ts` runs the same fuzz grammar against the
+  test WebSocket sync provider. This checks provider behavior and WebSocket
+  synchronization shape, but not a production proxy/load-balancer deployment.
+- Jetstream lane summaries, `summary.ndjson`, `events.ndjson`, `replay.json`,
+  and behavioral coverage files are the per-seed evidence. They record the seed,
+  action profile, user/collaborator shape, replayable action sequence, pass/fail
+  classification, and coverage keys produced by that seed.
+- HTTP polling coverage exercises the REST polling sync path: room registration,
+  room-specific permission failures, update retrieval by cursor, awareness
+  records, compaction, mixed-room batches, retry/unload behavior, and oversized
+  payload handling.
+- Lower-level CRDT/rich-text/table/parser tests bypass the browser and create
+  CRDT documents, block trees, rich-text values, table/query-array structures,
+  and parser inputs directly. They are used to isolate reconciliation and
+  semantic-equivalence bugs faster than a full Playwright run.
+- PHP/server storage tests exercise the WordPress REST/storage side: room
+  permission validation, post-room isolation, update and awareness persistence,
+  cursor monotonicity, malformed update handling, duplicate awareness cleanup,
+  storage-window reads, and compaction races.
+- Polling-manager tests are deterministic state-machine tests for the
+  JavaScript HTTP polling manager. They check registration lifecycle,
+  duplicate-room registration, auxiliary-room behavior, hidden-tab intervals,
+  unload retry suppression, room-specific `403` recovery, chunking, and room
+  churn.
+- Save-payload correctness tests check which content is sent to WordPress on
+  save. They cover stale CRDT order, empty evaluated content with non-empty CRDT
+  state, malformed evaluated content repaired from live CRDT blocks, and valid
+  edited content that must not be overwritten by CRDT serialization.
+- Parser/semantic-equivalence tests check that load/save/parser transitions do
+  not invent collaboration changes for semantically equivalent HTML. They cover
+  semicolonless entities, preserve-whitespace rich text, equivalent HTML no-op
+  cases, ambiguous list-item `&nbsp;`, deprecated block migration, and validation
+  fix transforms.
+- List/nested-structure tests check list identity and nested block movement:
+  nested list concurrent reorders, duplicate or near-duplicate list items,
+  rich-text/entity variants inside list items, sibling edits during moves, and a
+  browser save/reload spec for moving blocks into and out of groups/columns.
+- Wider-product coverage is a queue plus targeted tests for product surfaces
+  outside the normal post-content fuzzer. It covers site-editor entities,
+  custom post type REST schema/capabilities, metabox/classic interop, publishing
+  paths, document-size gates, third-party block supports, media/attachment and
+  reusable/synced-pattern data, persistent object-cache/multisite storage
+  boundaries, non-Chromium/mobile projects, and a production WebSocket/proxy
+  smoke path that requires an external endpoint.
+- Jetstream campaign infrastructure is the machinery that schedules, restarts,
+  de-duplicates, replays, triages, and summarizes the runs. It can prove that a
+  seed ran and how it was classified; it is not itself a product oracle.
+
 ## 2026-05-20 Concrete Coverage Snapshot
 
 Latest checked Jetstream2 monitor state: `2026-05-20T17:55:08Z`.
@@ -364,26 +423,69 @@ authored coverage with syntax/diff validation, not a passed PHP gate.
 
 Branch/worktree: `rtc-coverage-gap-wider-product-coverage-20260520`
 
-Added:
+Added executable scheduling artifacts:
 
-- `test/e2e/bin/rtc-wider-product-coverage-smoke.mjs`;
-- `test/e2e/playwright.rtc-product-coverage.config.ts`;
-- `test/e2e/specs/editor/collaboration/data/wider-product-coverage-queue.json`;
-- targeted sync-config, CRDT, PHP, and multisite/object-cache-adjacent checks.
+- `test/e2e/bin/rtc-wider-product-coverage-smoke.mjs` is a validator for the
+  wider-product queue. It does not prove editor behavior by itself. It checks
+  that every queued coverage item has a name, files, commands, and an oracle so
+  the controller has an executable checklist instead of prose-only goals.
+- `test/e2e/playwright.rtc-product-coverage.config.ts` defines focused
+  Playwright projects for the product smoke set: Chromium, Firefox, WebKit, and
+  Pixel 5/mobile-touch. It is how the queued browser work is split by browser
+  and device class.
+- `test/e2e/specs/editor/collaboration/data/wider-product-coverage-queue.json`
+  is the manifest of wider-product coverage items. Each item maps a user-facing
+  surface to the files, command, oracle, and known environment blocker for that
+  surface.
+
+Added targeted code/test coverage:
+
+- Core-data entity tests cover sync configuration for site-editor records
+  (`wp_template`, `wp_template_part`, `wp_navigation`), custom post type REST
+  bases and revision URLs, taxonomy REST bases, synced properties, media
+  attachment synced properties, reusable block references, synced patterns, and
+  a site-template pre-persist CRDT meta path.
+- CRDT block tests cover a mocked third-party block with block-support style and
+  color attributes, verify that supported attributes survive merge, strip
+  local-only preview data, preserve image attachment IDs, strip transient image
+  blobs, and preserve reusable `core/block` references.
+- PHP sync-server tests cover a `show_in_rest` custom post type with a custom
+  `rest_base`, single-room and collection-room sync, and capability rejection.
+- PHP storage tests cover persistent object-cache/multisite risk by scoping the
+  storage-post cache by blog ID and checking that storage for the same room name
+  does not leak across `switch_to_blog()`.
 
 The queue makes these areas explicit and executable:
 
-- site editor templates, template parts, and navigation;
-- custom post types and REST schemas;
-- meta boxes and classic editor interop;
-- publish/update workflows;
-- document-size and collaboration-gating boundaries;
-- third-party block/block-support strategy;
-- media, attachments, reusable blocks, and synced patterns;
-- persistent object cache;
-- multisite;
-- Firefox, WebKit, and mobile/touch;
-- production WebSocket/proxy behavior.
+- Site editor templates, template parts, and navigation: the entity tests verify
+  sync configuration, and the browser queue/config provide smoke commands for
+  site-editor template/template-part/navigation editing.
+- Custom post types and REST schemas: the tests verify custom REST base URLs,
+  revision URL construction, taxonomy REST bases, synced-property behavior, and
+  server capability rejection for an RTC room backed by a CPT.
+- Meta boxes and classic editor interop: the queue binds existing metabox lock,
+  meta-box, and classic-editor compatibility specs into the RTC coverage plan.
+- Publish/update workflows: the queue links persistence/title reload and publish
+  smoke commands, while the entity test covers pre-persist CRDT metadata for
+  template records that should not use the normal post freshness path.
+- Document-size and collaboration-gating boundaries: the queue records
+  document-size lock, metabox lock, and sync-error-filter specs as explicit
+  gates.
+- Third-party block/block-support strategy: the CRDT test checks that merge
+  behavior preserves supported block attributes while dropping local-only
+  preview state.
+- Media, attachments, reusable blocks, and synced patterns: the CRDT and
+  core-data tests cover attachment IDs vs. transient blobs, reusable block
+  references, synced-pattern post type configuration, and media synced
+  properties.
+- Persistent object cache and multisite: the PHP storage change/test target
+  cache scoping so storage-post lookup cannot bleed across blogs on multisite.
+- Firefox, WebKit, and mobile/touch: the Playwright config defines focused
+  projects for those browser/device classes, but their gates still need to run.
+- Production WebSocket/proxy behavior: the queue records the websocket-only
+  reload-loss smoke path and the required `GUTENBERG_RTC_PRODUCTION_WS_URL`
+  environment variable. This remains environment-blocked until a real endpoint
+  is supplied.
 
 Validation:
 
