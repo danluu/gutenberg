@@ -105,6 +105,22 @@ Realistic e2e status:
 | list-item-move-refresh-http | 0/2 failures | 0/2 failures | The fixed branch preserved the moved list-item order across concurrent moves, save, and refresh. |
 | table-stale-snapshot-http | 0/2 failures | 0/2 failures | Stale table snapshot edits converged without dropped rows or stale-cell clobbering. |
 
+## Ratio Graphs
+
+The plotted data and generator are checked in under
+`docs/explanations/architecture/rtc-local-benchmark-results-20260519/`. The
+main graph uses the fixed/base average elapsed-time ratios from the table
+above. The detailed microbench graphs use the average of the per-rep p50 values
+from the raw JSONL output.
+
+![Local fixed/base command ratios](rtc-local-benchmark-results-20260519/plots/local-command-ratios.png)
+
+![CRDT microbench p50 ratios](rtc-local-benchmark-results-20260519/plots/crdt-microbench-p50-ratios.png)
+
+![Many-user sync microbench p50 ratios](rtc-local-benchmark-results-20260519/plots/many-user-sync-p50-ratios.png)
+
+![Realistic e2e status ratios](rtc-local-benchmark-results-20260519/plots/realistic-e2e-status-ratios.png)
+
 Additional focused expanded-coverage rows that exist on the candidate branch
 were run fixed-only before publishing the snapshot:
 

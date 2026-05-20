@@ -118,19 +118,19 @@ command_ratios_plot <- ggplot(
 	) +
 	scale_x_continuous(
 		trans = "log2",
-		breaks = c( 0.25, 0.5, 1, 2 ),
-		labels = c( "0.25x", "0.5x", "1x", "2x" ),
-		limits = c( 0.25, 2 )
+		breaks = c( 0.5, 0.75, 1, 1.25 ),
+		labels = c( "0.5x", "0.75x", "1x", "1.25x" ),
+		limits = c( 0.5, 1.25 )
 	) +
 	scale_color_brewer( palette = "Dark2" ) +
 	coord_cartesian( clip = "off" ) +
 	labs(
 		title = "Local fixed/base elapsed-time ratios",
-		subtitle = "Values right of 1x are slower in the fixed branch; rows with fixed e2e failures are excluded",
-		x = "Fixed / base median elapsed time",
+		subtitle = "Values right of 1x are slower in the fixed stack; setup, build, and wp-env startup are excluded",
+		x = "Fixed / base average elapsed time",
 		y = NULL,
 		color = NULL,
-		caption = "Source: fixed-abba-20260520T055855Z and fixed-e2e-local-20260520T061252Z."
+		caption = "Source: revision-restore-canary-isolated-20260520T150007Z."
 	) +
 	theme_rtc()
 write_plot( "local-command-ratios.png", command_ratios_plot, width = 9.5, height = 6.1 )
@@ -156,15 +156,15 @@ crdt_ratio_plot <- ggplot(
 	) +
 	scale_x_continuous(
 		trans = "log2",
-		breaks = c( 0.75, 1, 2, 4 ),
-		labels = c( "0.75x", "1x", "2x", "4x" ),
-		limits = c( 0.75, 4 )
+		breaks = c( 0.25, 0.5, 1, 2 ),
+		labels = c( "0.25x", "0.5x", "1x", "2x" ),
+		limits = c( 0.2, 2 )
 	) +
 	scale_color_brewer( palette = "Dark2" ) +
 	coord_cartesian( clip = "off" ) +
 	labs(
 		title = "CRDT microbench p50 ratios",
-		subtitle = "The fixed branch still leaves stale top-level delete slower than base",
+		subtitle = "Averaged across the two local raw JSONL reps for each branch",
 		x = "Fixed / base p50 operation time",
 		y = NULL,
 		color = NULL,
@@ -195,20 +195,20 @@ many_user_ratio_plot <- ggplot(
 	) +
 	scale_x_continuous(
 		trans = "log2",
-		breaks = c( 0.9, 1, 1.1 ),
-		labels = c( "0.9x", "1x", "1.1x" ),
-		limits = c( 0.85, 1.15 )
+		breaks = c( 0.75, 0.9, 1, 1.1 ),
+		labels = c( "0.75x", "0.9x", "1x", "1.1x" ),
+		limits = c( 0.75, 1.15 )
 	) +
 	scale_color_brewer( palette = "Dark2" ) +
 	coord_cartesian( clip = "off" ) +
 	labs(
 		title = "Many-user sync microbench p50 ratios",
-		subtitle = "Synthetic 100-user and 1000-room cases were close to base locally",
+		subtitle = "Averaged across the two local raw JSONL reps for each branch",
 		x = "Fixed / base p50 operation time",
 		y = NULL,
 		color = NULL,
 		shape = NULL,
-		caption = "Source: fixed-abba-20260520T055855Z. The benchmark isolates sync serialization, awareness, queues, and room rotation."
+		caption = "Source: revision-restore-canary-isolated-20260520T150007Z. The benchmark isolates sync serialization, awareness, queues, and room rotation."
 	) +
 	theme_rtc()
 write_plot( "many-user-sync-p50-ratios.png", many_user_ratio_plot, width = 9.5, height = 5.2 )
@@ -243,21 +243,21 @@ realistic_e2e_plot <- ggplot(
 	) +
 	scale_x_continuous(
 		trans = "log2",
-		breaks = c( 1, 2, 4 ),
-		labels = c( "1x", "2x", "4x" ),
-		limits = c( 0.9, 4 )
+		breaks = c( 0.9, 1, 1.1 ),
+		labels = c( "0.9x", "1x", "1.1x" ),
+		limits = c( 0.9, 1.15 )
 	) +
 	scale_color_brewer( palette = "Dark2" ) +
 	scale_shape_manual( values = c( 16, 4 ) ) +
 	coord_cartesian( clip = "off" ) +
 	labs(
 		title = "Realistic e2e fixed/base status",
-		subtitle = "Failed fixed rows are correctness failures, not clean timing ratios",
-		x = "Fixed / base median elapsed time",
+		subtitle = "All realistic e2e rows passed in both base and fixed local reps",
+		x = "Fixed / base average elapsed time",
 		y = NULL,
 		color = NULL,
 		shape = NULL,
-		caption = "Source: fixed-e2e-local-20260520T061252Z. HTTP polling provider; isolated wp-env startup excluded."
+		caption = "Source: revision-restore-canary-isolated-20260520T150007Z. HTTP polling provider for realistic rows; isolated wp-env startup excluded."
 	) +
 	theme_rtc()
 write_plot( "realistic-e2e-status-ratios.png", realistic_e2e_plot, width = 9.5, height = 4.7 )

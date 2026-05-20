@@ -1,12 +1,12 @@
-host,kind,kind_label,case,case_label,failures,reps,base_median_s,fixed_median_s,fixed_base_ratio,usable
-Local,lower,Lower microbench,micro-crdt,CRDT merge microbench,0,2,7.01,7.84,1.119,yes
-Local,lower,Lower microbench,micro-html,HTML equivalence microbench,0,2,1.18,1.25,1.059,yes
-Local,lower,Lower microbench,micro-sync,HTTP polling sync microbench,0,2,1.39,1.48,1.065,yes
-Local,unit-suite,Targeted unit suite,crdt-stale-top-level,CRDT stale top-level unit suite,0,2,10.70,10.23,0.957,yes
-Local,unit-suite,Targeted unit suite,http-polling-manager,HTTP polling manager unit suite,0,2,1.53,1.44,0.944,yes
-Local,e2e,E2E smoke/perf,collaboration-code-editor-performance-ws,Code editor WS e2e,0,2,6.50,5.95,0.915,yes
-Local,e2e,E2E smoke/perf,collaboration-sync-body-size-http,Sync body size HTTP e2e,0,2,13.97,13.98,1.000,yes
-Local,multi-user,Multi-user synthetic,many-users-sync,Many-user sync microbench,0,2,1.67,1.79,1.075,yes
-Local,realistic-e2e,Realistic e2e,large-post-three-user-http,3-user large post HTTP e2e,2,2,31.57,38.64,1.224,no
-Local,realistic-e2e,Realistic e2e,list-item-move-refresh-http,List item move and refresh HTTP e2e,0,2,21.35,22.40,1.049,yes
-Local,realistic-e2e,Realistic e2e,table-stale-snapshot-http,Table stale snapshot HTTP e2e,0,2,24.54,24.45,0.996,yes
+host,kind,kind_label,case,case_label,failures,reps,base_avg_s,fixed_avg_s,fixed_base_ratio,usable
+Local,lower,Lower microbench,micro-crdt,CRDT merge microbench,0,2,8.34,6.21,0.745,yes
+Local,lower,Lower microbench,micro-html,HTML equivalence microbench,0,2,2.08,1.13,0.544,yes
+Local,lower,Lower microbench,micro-sync,HTTP polling sync microbench,0,2,1.90,1.31,0.689,yes
+Local,unit-suite,Targeted unit suite,crdt-stale-top-level,CRDT stale top-level unit suite,0,2,15.29,9.75,0.638,yes
+Local,unit-suite,Targeted unit suite,http-polling-manager,HTTP polling manager unit suite,0,2,2.49,1.39,0.558,yes
+Local,e2e,E2E smoke/perf,collaboration-code-editor-performance-ws,Code editor WS e2e,0,2,6.33,5.94,0.938,yes
+Local,e2e,E2E smoke/perf,collaboration-sync-body-size-http,Sync body size HTTP e2e,0,2,13.10,14.69,1.122,yes
+Local,multi-user,Multi-user synthetic,many-users-sync,Many-user sync microbench,0,2,2.22,1.64,0.737,yes
+Local,realistic-e2e,Realistic e2e,large-post-three-user-http,3-user large post HTTP e2e,0,2,30.55,31.70,1.037,yes
+Local,realistic-e2e,Realistic e2e,list-item-move-refresh-http,List item move and refresh HTTP e2e,0,2,21.45,22.44,1.046,yes
+Local,realistic-e2e,Realistic e2e,table-stale-snapshot-http,Table stale snapshot HTTP e2e,0,2,24.95,24.52,0.983,yes
