@@ -9,17 +9,23 @@ fuzzing project.
 - `bin/rtc-resource-autoscaler-remote.sh`: samples CPU, load average, memory,
   and coverage materialization state, then adjusts the coverage-guided browser
   budget.
+- `bin/rtc-global-cpu-admission-remote.sh`: shared admission check for
+  CPU-heavy work outside the coverage-guided supervisor, including lower-level
+  fuzzing, backend/API fuzzing, protocol/server fuzzing, optional browser pools,
+  and PR validation jobs.
 
 Deploy from the script branch to Jetstream2:
 
 ```bash
 cd /media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 git fetch danluu try/jetstream-fuzz
-git checkout try/jetstream-fuzz -- bin/rtc-jetstream-guard-remote.sh bin/rtc-resource-autoscaler-remote.sh
+git checkout try/jetstream-fuzz -- bin/rtc-jetstream-guard-remote.sh bin/rtc-resource-autoscaler-remote.sh bin/rtc-global-cpu-admission-remote.sh
 cp bin/rtc-jetstream-guard-remote.sh /tmp/start_rtc_jetstream_guard.sh
 cp bin/rtc-resource-autoscaler-remote.sh /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-resource-autoscaler.sh
+cp bin/rtc-global-cpu-admission-remote.sh /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-global-cpu-admission.sh
 bash -n /tmp/start_rtc_jetstream_guard.sh
 bash -n /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-resource-autoscaler.sh
+bash -n /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-global-cpu-admission.sh
 /tmp/start_rtc_jetstream_guard.sh restart
 ```
 
@@ -56,16 +62,28 @@ floor preserves the overload that the controller is trying to drain.
 
 ## Guard Interaction
 
-The guard checks resource pressure before it restarts or reattaches optional
-browser pools:
+The guard checks the shared CPU admission policy before it restarts work. Pure
+control and persona-analysis loops are allowed to stay alive; CPU-heavy work is
+budgeted through `rtc-global-cpu-admission.sh`. The guarded pools include:
 
 - strict expansion;
 - focused shards;
 - gap booster.
+- lower-level unit/property fuzzing;
+- coverage-guided lower-level fuzzing;
+- fuzz-only assertion work;
+- PR validation jobs launched by the critical-path executor.
 
 This prevents the guard from undoing autoscaler shedding during overload. The
-coverage-guided supervisor, watchdog, analysis sidecars, lower-level lanes, and
-resource autoscaler are still kept alive.
+coverage-guided supervisor, watchdog, analysis sidecars, persona loops, and
+resource autoscaler are still kept alive. Backend/API and protocol/server start
+scripts also consult the same admission helper before they run preflight or
+start long fuzzing sessions.
+
+Under pressure the autoscaler also enforces the same budget against already-live
+long-running fuzz sessions. This is deliberately conservative: it sheds
+continuous fuzzers and surplus validation/benchmark sessions, but it does not
+kill the main control loops or Codex persona-analysis sessions.
 
 The guard restarts the autoscaler from
 `/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-resource-autoscaler.sh`.

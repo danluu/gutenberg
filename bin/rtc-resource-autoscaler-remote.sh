@@ -12,6 +12,7 @@ CSV="$BASE/resource-samples.csv"
 STATUS="$BASE/resource-autoscaler-status.md"
 LOCK="$BASE/resource-autoscaler.lock"
 BUDGET_ENV="$BASE/current-budget.env"
+GLOBAL_ADMISSION="$BASE/rtc-global-cpu-admission.sh"
 MATERIALIZATION_DIR="$BASE/materialization"
 MATERIALIZATION_LAST_REMEDIATION="$BASE/materialization-last-remediation-epoch"
 OPTIONAL_BROWSER_SHED_LAST="$BASE/optional-browser-shed-last-epoch"
@@ -349,6 +350,73 @@ shed_optional_browser_pools_if_needed() {
 		return 0
 	fi
 	return 1
+}
+
+cpu_heavy_session_regex_for_class() {
+	case "$1" in
+		optional-browser)
+			printf '^(rtc-focused-shards|rtc-focused-shards-watchdog|rtc-focused-shards-analysis|rtc-fuzz-strict-expansion|rtc-fuzz-strict-expansion-watchdog|rtc-fuzz-strict-expansion-analysis|rtc-gap-booster|rtc-gap-booster-watchdog|rtc-gap-booster-analysis|rtc-cov-deep-novelty-)'
+			;;
+		lower-level)
+			printf '^(rtc-lower-level-fuzz-loop|rtc-coverage-guided-lower-level|rtc-cg-parser-action-|rtc-native-action-)'
+			;;
+		backend-api)
+			printf '^rtc-backend-api-fuzz'
+			;;
+		protocol-server)
+			printf '^rtc-protocol-server-fuzz'
+			;;
+		operator-correctness)
+			printf '^rtc-operator-correctness-(fuzz|watchdog)'
+			;;
+		pr-validation)
+			printf '^(rtc-critical-validate-|rtc-benchmark-|rtc-pr-finalize-job-)'
+			;;
+		fuzz-assertion)
+			printf '^$'
+			;;
+		*)
+			printf '^$'
+			;;
+	esac
+}
+
+global_cpu_quota() {
+	local class=$1
+	if [ -x "$GLOBAL_ADMISSION" ]; then
+		"$GLOBAL_ADMISSION" quota "$class" 2>/dev/null || printf '0\n'
+	else
+		printf '0\n'
+	fi
+}
+
+enforce_global_cpu_budget() {
+	local reason=$1 now=$2 class regex quota sessions active kill_count session
+	case "$reason" in
+		pressure|high_pressure|severe_pressure|unknown)
+			;;
+		*)
+			return 1
+			;;
+	esac
+	if [ ! -x "$GLOBAL_ADMISSION" ]; then
+		return 1
+	fi
+	for class in optional-browser lower-level backend-api protocol-server operator-correctness pr-validation fuzz-assertion; do
+		quota=$(global_cpu_quota "$class")
+		[[ "$quota" =~ ^[0-9]+$ ]] || quota=0
+		regex=$(cpu_heavy_session_regex_for_class "$class")
+		sessions=$("$TMUX" -L "$TMUX_SOCKET" list-sessions -F '#S' 2>/dev/null | awk -v regex="$regex" '$0 ~ regex { print }' || true)
+		[ -n "$sessions" ] || continue
+		active=$(printf '%s\n' "$sessions" | awk 'NF { count++ } END { print count + 0 }')
+		[ "$active" -gt "$quota" ] || continue
+		kill_count=$(( active - quota ))
+		printf '%s\n' "$sessions" | head -n "$kill_count" | while IFS= read -r session; do
+			[ -n "$session" ] || continue
+			echo "[$now] stopping CPU-heavy session over global budget class=$class quota=$quota active=$active reason=$reason session=$session" >> "$LOG"
+			"$TMUX" -L "$TMUX_SOCKET" kill-session -t "$session" 2>/dev/null || true
+		done
+	done
 }
 
 choose_budget() {
@@ -997,6 +1065,7 @@ while true; do
 			action=shed_optional_browser
 		fi
 	fi
+	enforce_global_cpu_budget "$reason" "$now" || true
 
 	append_csv "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds"
 	write_status "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail" "$load_five" "$load_fifteen"

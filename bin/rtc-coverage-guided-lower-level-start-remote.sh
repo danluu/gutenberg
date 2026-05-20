@@ -40,6 +40,7 @@ case "$GROUP_NAME" in
 		;;
 esac
 BASE="${RTC_CG_LOWER_LEVEL_OUTPUT_BASE:-$DEFAULT_BASE}"
+GLOBAL_ADMISSION="${RTC_GLOBAL_CPU_ADMISSION:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-global-cpu-admission.sh}"
 SESSION="${RTC_CG_LOWER_LEVEL_SESSION:-rtc-$GROUP_NAME}"
 PROFILE="${RTC_CG_LOWER_LEVEL_PROFILE:-$DEFAULT_PROFILE}"
 TEST_PATH="${RTC_CG_LOWER_LEVEL_TEST_PATH:-$DEFAULT_TEST_PATH}"
@@ -64,6 +65,17 @@ has_exact_session() {
 
 group_held() {
 	[ "${RTC_CG_LOWER_LEVEL_IGNORE_HOLD:-0}" != "1" ] && [ -e "$HOLD_FILE" ]
+}
+
+wait_for_global_cpu_budget() {
+	if [ -x "$GLOBAL_ADMISSION" ]; then
+		"$GLOBAL_ADMISSION" wait lower-level "$SESSION"
+	fi
+}
+
+global_cpu_start_allowed() {
+	[ -x "$GLOBAL_ADMISSION" ] || return 0
+	"$GLOBAL_ADMISSION" allow lower-level "$SESSION"
 }
 
 latest_non_smoke_run_root() {
@@ -220,6 +232,10 @@ start_loop() {
 		printf '%s\n' "$SESSION already running"
 		return 0
 	fi
+	if ! global_cpu_start_allowed; then
+		printf 'global CPU budget is not admitting %s now; leaving it stopped\n' "$SESSION"
+		return 0
+	fi
 	validate_harness
 
 	local run_started
@@ -266,6 +282,10 @@ run_once() {
 	mkdir -p "$BASE/logs" "$BASE/runs"
 	if group_held; then
 		printf 'held %s file=%s\n' "$GROUP_NAME" "$HOLD_FILE"
+		return 0
+	fi
+	if ! global_cpu_start_allowed; then
+		printf 'global CPU budget is not admitting %s now; skipping smoke run\n' "$SESSION"
 		return 0
 	fi
 	validate_harness

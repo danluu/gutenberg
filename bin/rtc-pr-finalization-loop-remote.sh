@@ -230,11 +230,6 @@ write_status() {
 log "PR finalization loop started pid=$$"
 while true; do
 	write_status
-	if load_too_high; then
-		log "load guard active; skipping finalization launch"
-		sleep "$CYCLE_SLEEP_SECONDS"
-		continue
-	fi
 	if [ "$(active_finalization_sessions)" -lt "$MAX_ACTIVE_JOBS" ] && ! recently_launched; then
 		launch_finalization_job || true
 	else

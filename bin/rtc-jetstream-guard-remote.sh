@@ -22,6 +22,7 @@ LEVEL_MIX_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20
 NATIVE_ASSERT_BASE=/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516
 STRUCTURAL_BASE=/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
+GLOBAL_ADMISSION=$RESOURCE_BASE/rtc-global-cpu-admission.sh
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 LOG_DIR=$BASE/logs
 PID_FILE=$BASE/guard.pid
@@ -283,6 +284,34 @@ optional_browser_restart_block_reason() {
 
 resource_pressure_blocks_optional_browser() {
 	optional_browser_restart_block_reason >/dev/null
+}
+
+cpu_class_for_pool() {
+	case "$1" in
+		coverage)
+			printf 'coverage-core\n'
+			;;
+		strict|focused|gap-booster)
+			printf 'optional-browser\n'
+			;;
+		lower-level|cg-lower-level)
+			printf 'lower-level\n'
+			;;
+		*)
+			printf 'analysis\n'
+			;;
+	esac
+}
+
+global_cpu_admission_allows() {
+	local pool=$1 class
+	class=$(cpu_class_for_pool "$pool")
+	[ -x "$GLOBAL_ADMISSION" ] || return 0
+	if "$GLOBAL_ADMISSION" allow "$class" "guard:$pool" >/dev/null 2>&1; then
+		return 0
+	fi
+	log "skipping restart under global CPU budget pool=$pool class=$class status=$("$GLOBAL_ADMISSION" status "$class" 2>/dev/null || true)"
+	return 1
 }
 
 browser_pool_current_root() {
@@ -683,6 +712,9 @@ restart_pool() {
 	local pool=$1
 	local reason=$2
 	if restart_cooldown_active "$pool" "$reason"; then
+		return
+	fi
+	if ! global_cpu_admission_allows "$pool"; then
 		return
 	fi
 	log "restart requested pool=$pool reason=$reason"

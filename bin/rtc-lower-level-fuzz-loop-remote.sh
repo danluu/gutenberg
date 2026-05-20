@@ -5,6 +5,7 @@ NODE_BIN="${NODE_BIN:-/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.loc
 TMUX_WRAP="${TMUX_WRAP:-/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin}"
 REPO="${RTC_LOWER_LEVEL_FUZZ_REPO:-/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo}"
 BASE="${RTC_LOWER_LEVEL_FUZZ_BASE:-/media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516}"
+GLOBAL_ADMISSION="${RTC_GLOBAL_CPU_ADMISSION:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-global-cpu-admission.sh}"
 SESSION="${RTC_LOWER_LEVEL_FUZZ_SESSION:-rtc-lower-level-fuzz-loop}"
 GROUP_NAME="${RTC_LOWER_LEVEL_GROUP_NAME:-unit-property-rich-text-crdt-merge}"
 PROFILE="${RTC_LOWER_LEVEL_PROFILE:-rtc-rich-text-crdt-merge}"
@@ -85,6 +86,17 @@ function summarizeFailure( text ) {
 		lines[ 0 ] ||
 		null
 	);
+}
+
+wait_for_global_cpu_budget() {
+	if [ -x "$GLOBAL_ADMISSION" ]; then
+		"$GLOBAL_ADMISSION" wait lower-level "$SESSION"
+	fi
+}
+
+global_cpu_start_allowed() {
+	[ -x "$GLOBAL_ADMISSION" ] || return 0
+	"$GLOBAL_ADMISSION" allow lower-level "$SESSION"
 }
 
 function canonicalFailureKey( summary, kind ) {
@@ -271,6 +283,7 @@ run_loop() {
 		feature_path="$lane_dir/semantic-features-${ts}-seed-${seed_start}.json"
 		input_path="$lane_dir/inputs-${ts}-seed-${seed_start}.json"
 		rm -f "$feature_path"
+		wait_for_global_cpu_budget
 		write_input_file "$input_path" "$seed_start" "$seed_count" "$case_count"
 		runner_command="nice -n $nice_level timeout ${timeout_seconds}s node $JEST_RUNNER --config $JEST_CONFIG $TEST_PATH --runInBand --ci --cacheDirectory $JEST_CACHE_DIR"
 		started_s="$(date -u +%s)"
@@ -317,6 +330,10 @@ start_loop() {
 	mkdir -p "$BASE/logs" "$BASE/runs"
 	if has_exact_session "$SESSION"; then
 		printf '%s\n' "$SESSION already running"
+		return 0
+	fi
+	if ! global_cpu_start_allowed; then
+		printf 'global CPU budget is not admitting %s now; leaving it stopped\n' "$SESSION"
 		return 0
 	fi
 

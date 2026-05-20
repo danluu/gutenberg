@@ -10,6 +10,7 @@ seed_count="${RTC_BACKEND_API_FUZZ_SEED_COUNT:-1000000}"
 seed_start="${RTC_BACKEND_API_FUZZ_START_SEED:-$(date -u +%s)}"
 run_id="${RTC_BACKEND_API_FUZZ_RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}"
 output_dir="${RTC_BACKEND_API_FUZZ_OUTPUT_DIR:-/media/volume/danluu-fuzz-data/rtc-backend-api-fuzz-20260518}"
+global_admission="${RTC_GLOBAL_CPU_ADMISSION:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-global-cpu-admission.sh}"
 wp_env_port="${RTC_BACKEND_API_FUZZ_WP_ENV_PORT:-${WP_ENV_PORT:-9540}}"
 wp_env_home="${RTC_BACKEND_API_FUZZ_WP_ENV_HOME:-${WP_ENV_HOME:-}}"
 wp_env_bin="${RTC_BACKEND_API_FUZZ_WP_ENV_BIN:-./node_modules/.bin/wp-env}"
@@ -40,6 +41,12 @@ if tmux has-session -t "=${session}" 2>/dev/null; then
 	echo "tmux session '$session' already exists; leaving it untouched." >&2
 	echo "Use RTC_BACKEND_API_FUZZ_SESSION=<new-name> to start another run." >&2
 	exit 1
+fi
+
+if [ -x "$global_admission" ] &&
+	! "$global_admission" allow backend-api "$session"; then
+	echo "Global CPU budget is not admitting backend/API fuzzing now; leaving session stopped." >&2
+	exit 0
 fi
 
 if [ "$require_build" = "1" ]; then

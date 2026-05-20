@@ -13,6 +13,7 @@ DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-2026051
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 BENCHMARK_FEEDBACK_BASE=${RTC_CRITICAL_PR_EXECUTOR_BENCHMARK_FEEDBACK_BASE:-/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520}
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
+GLOBAL_ADMISSION=$RESOURCE_BASE/rtc-global-cpu-admission.sh
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 ARTIFACT_INDEX_BASE=/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518
 ARTIFACT_INDEX_ARTIFACTS=$ARTIFACT_INDEX_BASE/current-artifacts.tsv
@@ -217,26 +218,22 @@ resource_reason() {
 }
 
 allow_heavy_work() {
-	case "$(resource_reason)" in
-		severe_pressure|high_pressure|pressure|unknown)
-			return 1
-			;;
-		*)
-			return 0
-			;;
-	esac
+	[ -x "$GLOBAL_ADMISSION" ] || {
+		case "$(resource_reason)" in
+			severe_pressure|high_pressure|pressure|unknown)
+				return 1
+				;;
+			*)
+				return 0
+				;;
+		esac
+	}
+	"$GLOBAL_ADMISSION" allow pr-validation critical-path-pr-executor >/dev/null 2>&1
 }
 
 allow_critical_browser_preflight() {
 	[ "$ENABLE_BROWSER_PREFLIGHT" = 1 ] || return 1
-	case "$(resource_reason)" in
-		severe_pressure|unknown)
-			return 1
-			;;
-		*)
-			return 0
-			;;
-	esac
+	allow_heavy_work
 }
 
 latest_local_publish_summary() {
@@ -845,6 +842,7 @@ write_branch_export_headers() {
 launch_validation_job() {
 	local lane_id=$1 branch=$2 base_ref=$3 publication_class=$4 head_sha=$5
 	local dedupe session run_dir worktree runner report rc log_file
+	allow_heavy_work || return 0
 	dedupe="validate-$lane_id-$head_sha-$(slugify "$base_ref" | cut -c1-32)"
 	if task_recently_launched "$dedupe" "$MIN_TASK_INTERVAL_SECONDS"; then
 		return 0
