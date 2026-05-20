@@ -178,6 +178,13 @@ session_running() {
 
 cleanup_orphan_monitors() {
 	local pids
+	# A live tmux pane can briefly leave the monitor with PPID 1 while startup
+	# wrappers are rotating. Killing that process resets the active output root
+	# before the first novelty pass can finish, which makes current-run
+	# duplicate/noise accounting look permanently "pending".
+	if session_running; then
+		return
+	fi
 	pids=$(ps -eo pid,ppid,cmd | awk '/node bin\/rtc-browser-fuzz-novelty-monitor\.mjs/ && $2 == 1 { print $1 }')
 	if [ -z "$pids" ]; then
 		return
