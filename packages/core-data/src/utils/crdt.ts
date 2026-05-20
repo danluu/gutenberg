@@ -213,6 +213,23 @@ export function applyPostChangesToCRDTDoc(
 					ymap.set( key, newYText );
 				}
 
+				if (
+					key === 'content' &&
+					rawValue !== undefined &&
+					! shouldDeriveContentFromBlocks
+				) {
+					const currentBlocks = ymap.get( 'blocks' );
+					if (
+						currentBlocks instanceof Y.Array &&
+						hasPersistedBlockContentChanged(
+							currentBlocks.toJSON(),
+							rawValue
+						)
+					) {
+						ymap.set( 'blocks', undefined );
+					}
+				}
+
 				break;
 			}
 

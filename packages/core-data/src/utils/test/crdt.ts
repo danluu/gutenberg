@@ -475,6 +475,55 @@ describe( 'crdt', () => {
 			);
 		} );
 
+		it( 'invalidates stale blocks when syncing changed content without blocks', () => {
+			const originalContent =
+				'<!-- wp:paragraph -->\n<p>Original content</p>\n<!-- /wp:paragraph -->';
+			const changedContent =
+				'<!-- wp:paragraph -->\n<p>Changed content</p>\n<!-- /wp:paragraph -->';
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: parse( originalContent ) } as PostChanges,
+				defaultSyncedProperties
+			);
+
+			expect( map.get( 'blocks' ) ).toBeInstanceOf( Y.Array );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ content: changedContent } as PostChanges,
+				defaultSyncedProperties
+			);
+
+			expect( map.get( 'content' )?.toString() ).toBe( changedContent );
+			expect( map.has( 'blocks' ) ).toBe( true );
+			expect( map.get( 'blocks' ) ).toBeUndefined();
+		} );
+
+		it( 'keeps blocks when syncing equivalent content without blocks', () => {
+			const content =
+				'<!-- wp:paragraph -->\n<p>Stable content</p>\n<!-- /wp:paragraph -->';
+			const parsedBlocks = parse( content );
+			const serializedContent =
+				__unstableSerializeAndClean( parsedBlocks ).trim();
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: parsedBlocks } as PostChanges,
+				defaultSyncedProperties
+			);
+
+			const blocks = map.get( 'blocks' );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ content: serializedContent } as PostChanges,
+				defaultSyncedProperties
+			);
+
+			expect( map.get( 'blocks' ) ).toBe( blocks );
+		} );
+
 		it( 'updates existing Y.Text title in place via mergeRichTextUpdate', () => {
 			// First apply to create the Y.Text.
 			applyPostChangesToCRDTDoc(
