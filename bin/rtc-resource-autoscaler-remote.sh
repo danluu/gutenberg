@@ -25,7 +25,14 @@ ALLOW_OPTIONAL_BROWSER_SHED=${RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHE
 MATERIALIZATION_STALE_SECONDS=${RTC_RESOURCE_AUTOSCALER_MATERIALIZATION_STALE_SECONDS:-600}
 WP_ENV_RESET_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_WP_ENV_RESET_COOLDOWN_SECONDS:-1800}
 RESET_WP_ENV_ON_INFRA_FAILURE=${RTC_RESOURCE_AUTOSCALER_RESET_WP_ENV_ON_INFRA_FAILURE:-1}
-MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-10}
+ONE_CANARY_MATERIALIZATION_RESCUE=0
+if [ "${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-0}" = "1" ] &&
+	[ -n "${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-}" ]; then
+	ONE_CANARY_MATERIALIZATION_RESCUE=1
+	MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-1}
+else
+	MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-10}
+fi
 
 mkdir -p "$BASE" "$MATERIALIZATION_DIR"
 exec 9>"$LOCK"
@@ -141,65 +148,13 @@ current_browser_roots() {
 }
 
 live_browser_lane_pids_all_roots() {
-	local roots=()
-	local root
-	while IFS= read -r root; do
-		[ -n "$root" ] && [ -d "$root" ] && roots+=( "$root" )
-	done < <(current_browser_roots | awk 'NF && !seen[$0]++')
-	python3 - "${roots[@]}" <<'PY'
-import json
-import os
-import subprocess
-import sys
-
-roots = [root for root in sys.argv[1:] if os.path.isdir(root)]
-seen = set()
-
-def pid_alive(pid):
-    try:
-        os.kill(int(pid), 0)
-        return True
-    except PermissionError:
-        return True
-    except Exception:
-        return False
-
-def pid_is_browser_runner(pid):
-    if not pid_alive(pid):
-        return False
-    try:
-        args = subprocess.check_output(
-            ["ps", "-p", str(int(pid)), "-o", "args="],
-            text=True,
-            stderr=subprocess.DEVNULL,
-        )
-    except Exception:
-        return False
-    return "rtc-browser-fuzz-runner.mjs" in args
-
-for root in roots:
-    root_depth = root.rstrip(os.sep).count(os.sep)
-    for dirpath, dirnames, filenames in os.walk(root):
-        if dirpath.rstrip(os.sep).count(os.sep) - root_depth >= 3:
-            dirnames[:] = []
-        if "lanes.json" not in filenames:
-            continue
-        try:
-            with open(os.path.join(dirpath, "lanes.json"), errors="ignore") as handle:
-                manifest = json.load(handle)
-        except Exception:
-            continue
-        lanes = manifest.get("lanes") if isinstance(manifest, dict) else manifest
-        if not isinstance(lanes, list):
-            continue
-        for lane in lanes:
-            if not isinstance(lane, dict):
-                continue
-            pid = lane.get("pid")
-            if pid and pid_is_browser_runner(pid):
-                seen.add(int(pid))
-print(len(seen))
-PY
+	# This runs every scaler cycle. Walking historical run trees and probing each
+	# lane PID can block behind large artifact directories, which prevents the
+	# scaler from reacting during overload. Count live browser runner processes
+	# directly instead; optional shedding still uses process groups to terminate
+	# the relevant workers.
+	pgrep -af 'bin/rtc-browser-fuzz-runner\.mjs' 2>/dev/null |
+		awk '!/codex/ { count++ } END { print count + 0 }'
 }
 
 current_repo_roots() {
@@ -234,6 +189,7 @@ cleanup_optional_browser_process_groups() {
 	leaf_pids=$(
 		ps -eo pid,args |
 			awk '
+				/rtc-resource-autoscaler|awk |ps -eo|grep / { next }
 				/rtc-gap-booster-20260515|rtc-fuzz-focused-shards-20260515|rtc-fuzz-strict-expansion-20260515/ &&
 				/playwright|chrome-headless|ffmpeg|rtc-browser-fuzz-runner|test-playwright|wp-scripts/ &&
 				!/codex/ {
@@ -301,8 +257,32 @@ coverage_breadth_deficit() {
 apply_coverage_breadth_floor() {
 	local target=$1
 	local max=$2
+	local reason=${3:-}
 	[[ "$target" =~ ^[0-9]+$ ]] || target=0
 	[[ "$max" =~ ^[0-9]+$ ]] || max=0
+	case "$reason" in
+		pressure|high_pressure|severe_pressure)
+			if [ "$max" -lt "$target" ]; then
+				max=$target
+			fi
+			printf '%s %s\n' "$target" "$max"
+			return
+			;;
+	esac
+	if [ "$ONE_CANARY_MATERIALIZATION_RESCUE" = 1 ]; then
+		target=${RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS:-1}
+		max=${RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS:-$target}
+		[[ "$target" =~ ^[0-9]+$ ]] || target=1
+		[[ "$max" =~ ^[0-9]+$ ]] || max=$target
+		if [ "$target" -lt 1 ]; then
+			target=1
+		fi
+		if [ "$max" -lt "$target" ]; then
+			max=$target
+		fi
+		printf '%s %s\n' "$target" "$max"
+		return
+	fi
 	if [ "$target" -lt "$MIN_COVERAGE_BREADTH_GROUPS" ]; then
 		target=$MIN_COVERAGE_BREADTH_GROUPS
 	fi
@@ -310,6 +290,15 @@ apply_coverage_breadth_floor() {
 		max=$(( target + 1 ))
 	fi
 	printf '%s %s\n' "$target" "$max"
+}
+
+coverage_breadth_floor_allowed() {
+	case "$1" in
+		pressure|high_pressure|severe_pressure)
+			return 1
+			;;
+	esac
+	return 0
 }
 
 shed_optional_browser_pools_if_needed() {
@@ -327,14 +316,15 @@ shed_optional_browser_pools_if_needed() {
 	fi
 	if [[ "$browser_live_lanes" =~ ^[0-9]+$ ]] &&
 		[[ "$e2e_floor" =~ ^[0-9]+$ ]] &&
-		[ "$browser_live_lanes" -le "$e2e_floor" ] &&
-		! coverage_breadth_deficit; then
-		echo "[$now] optional browser shedding skipped under severe pressure; live_browser_lanes=$browser_live_lanes floor=$e2e_floor coverage_breadth=ok" >> "$LOG"
+		[ "$browser_live_lanes" -le "$e2e_floor" ]; then
+		echo "[$now] optional browser shedding skipped under severe pressure; live_browser_lanes=$browser_live_lanes floor=$e2e_floor" >> "$LOG"
 		return 1
 	fi
-	if cleanup_optional_browser_process_groups "$now"; then
-		killed=1
-	fi
+	# Keep the scaler control path nonblocking. Historical artifact trees can
+	# leave stale lane metadata and process-group cleanup can block long enough
+	# for pressure to worsen. The guard now respects this pressure state, so
+	# session-level shedding is the fast control action; orphan cleanup belongs
+	# in a separate bounded janitor.
 	last_shed=$(cat "$OPTIONAL_BROWSER_SHED_LAST" 2>/dev/null || echo 0)
 	if [ "$killed" != 1 ] && [ $(( $(epoch) - last_shed )) -lt "$OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS" ]; then
 		return 1
@@ -374,6 +364,13 @@ choose_budget() {
 	local ncpu=$6
 	awk -v cpu="$cpu" -v loadv="$load_value" -v load5v="$load5_value" -v load15v="$load15_value" -v avail="$avail" -v ncpu="$ncpu" '
 		BEGIN {
+			short_trend = loadv - load5v;
+			mid_trend = load5v - load15v;
+			predicted_load = loadv;
+			if (load5v > predicted_load) predicted_load = load5v;
+			if (load15v > predicted_load) predicted_load = load15v;
+			if (short_trend > 0) predicted_load += short_trend * 0.75;
+			if (mid_trend > 0) predicted_load += mid_trend * 0.50;
 			severe_load = ncpu * 1.35;
 			severe_load5 = ncpu * 1.20;
 			severe_load15 = ncpu * 1.12;
@@ -392,17 +389,17 @@ choose_budget() {
 			low_load = ncpu * 0.66;
 			low_load5 = ncpu * 0.70;
 			low_load15 = ncpu * 0.85;
-			if (cpu >= 96 || loadv >= severe_load || load5v >= severe_load5 || load15v >= severe_load15) {
+			if (cpu >= 96 || predicted_load >= severe_load || load5v >= severe_load5 || load15v >= severe_load15) {
 				print "1 2 severe_pressure";
-			} else if (cpu >= 92 || loadv >= high_pressure_load || load5v >= high_pressure_load5 || load15v >= high_pressure_load15) {
+			} else if (cpu >= 92 || predicted_load >= high_pressure_load || load5v >= high_pressure_load5 || load15v >= high_pressure_load15) {
 				print "2 3 high_pressure";
-			} else if (cpu >= 88 || loadv >= pressure_load || load5v >= pressure_load5 || load15v >= pressure_load15 || avail < 120) {
+			} else if (cpu >= 88 || predicted_load >= pressure_load || load5v >= pressure_load5 || load15v >= pressure_load15 || avail < 120) {
 				print "4 5 pressure";
-			} else if (cpu <= 62 && loadv <= low_load && load5v <= low_load5 && load15v <= low_load15 && avail >= 300) {
+			} else if (cpu <= 62 && predicted_load <= low_load && load5v <= low_load5 && load15v <= low_load15 && avail >= 300) {
 				print "11 12 large_headroom";
-			} else if (cpu <= 72 && loadv <= mid_load && load5v <= mid_load5 && load15v <= mid_load15 && avail >= 250) {
+			} else if (cpu <= 72 && predicted_load <= mid_load && load5v <= mid_load5 && load15v <= mid_load15 && avail >= 250) {
 				print "10 11 headroom";
-			} else if (cpu <= 80 && loadv <= high_load && load5v <= high_load5 && load15v <= high_load15 && avail >= 180) {
+			} else if (cpu <= 80 && predicted_load <= high_load && load5v <= high_load5 && load15v <= high_load15 && avail >= 180) {
 				print "9 10 modest_headroom";
 			} else {
 				print "8 9 steady";
@@ -791,16 +788,23 @@ write_budget_env() {
 	local multiplier=${3:-1.02}
 	local allow_fleet_startup_noise_canary
 	local fleet_startup_noise_canary_group
-	read -r target max <<<"$(apply_coverage_breadth_floor "$target" "$max")"
+	local allow_empty_materialization_no_product_startup_canary
+	local min_enabled_browser_lanes
 	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
+	allow_empty_materialization_no_product_startup_canary=${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY 0)}
+	min_enabled_browser_lanes=${RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES:-$(run_script_value RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES '')}
 	cat > "$BUDGET_ENV" <<EOF_BUDGET
 export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='$target'
 export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='$max'
+export RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS='$target'
+export RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS='$max'
 export RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS='$max'
+export RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES='$min_enabled_browser_lanes'
 export RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER='$multiplier'
 export RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY='$allow_fleet_startup_noise_canary'
 export RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP='$fleet_startup_noise_canary_group'
+export RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY='$allow_empty_materialization_no_product_startup_canary'
 EOF_BUDGET
 }
 
@@ -856,18 +860,26 @@ restart_coverage() {
 	local reason=$3
 	local allow_fleet_startup_noise_canary
 	local fleet_startup_noise_canary_group
-	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max")"
+	local allow_empty_materialization_no_product_startup_canary
+	local min_enabled_browser_lanes
+	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max" "$reason")"
 	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
+	allow_empty_materialization_no_product_startup_canary=${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY 0)}
+	min_enabled_browser_lanes=${RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES:-$(run_script_value RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES '')}
 	echo "[$(stamp)] restarting coverage-guided loop target=$desired_target max=$desired_max reason=$reason" >> "$LOG"
 	write_budget_env "$desired_target" "$desired_max" 1.02
 	RTC_COVERAGE_CLEANUP_KEEP_WATCHDOG=1 \
 	RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS="$desired_target" \
 	RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS="$desired_max" \
+	RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS="$desired_target" \
+	RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS="$desired_max" \
 	RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS="$desired_max" \
+	RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES="$min_enabled_browser_lanes" \
 	RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER=1.02 \
 	RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY="$allow_fleet_startup_noise_canary" \
 	RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP="$fleet_startup_noise_canary_group" \
+	RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY="$allow_empty_materialization_no_product_startup_canary" \
 		"$START" >> "$LOG" 2>&1 || true
 }
 
@@ -889,7 +901,7 @@ while true; do
 	target=$(current_target)
 	max=$(current_max)
 	read -r desired_target desired_max reason <<<"$(choose_budget "$cpu" "$load" "$load_five" "$load_fifteen" "$avail" "$ncpu")"
-	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max")"
+	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max" "$reason")"
 	browser_live_lanes=$(live_browser_lane_pids_all_roots)
 	e2e_floor=${RTC_RESOURCE_AUTOSCALER_E2E_MIN_LIVE_LANES:-24}
 	e2e_repair_target=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_TARGET_GROUPS:-4}
@@ -946,7 +958,7 @@ while true; do
 		down_streak=0
 	elif [ "$desired_target" -gt "${target:-0}" ]; then
 		down_streak=0
-		if [ "${target:-0}" -lt "$MIN_COVERAGE_BREADTH_GROUPS" ]; then
+		if coverage_breadth_floor_allowed "$reason" && [ "${target:-0}" -lt "$MIN_COVERAGE_BREADTH_GROUPS" ]; then
 			action=restore_coverage_breadth_floor
 			shed_optional_browser_pools_if_needed severe_pressure "$now" "$browser_live_lanes" "$e2e_floor" || true
 			restart_coverage "$desired_target" "$desired_max" coverage_breadth_floor

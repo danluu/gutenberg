@@ -28,12 +28,26 @@ PID_FILE=$BASE/guard.pid
 LOCK_FILE=${RTC_JETSTREAM_GUARD_LOCK_FILE:-$BASE/guard-v2.lock}
 EVENTS=$LOG_DIR/restart-events.tsv
 
-mkdir -p "$LOG_DIR" "$TMUX_WRAP"
-cat > "$TMUX_WRAP/tmux" <<'SH'
+mkdir -p "$LOG_DIR"
+
+ensure_tmux_wrapper() {
+	local wrapper="$TMUX_WRAP/tmux"
+	local tmp
+	mkdir -p "$TMUX_WRAP"
+	tmp="$(mktemp "$TMUX_WRAP/tmux.XXXXXX")"
+	cat > "$tmp" <<'SH'
 #!/usr/bin/env bash
 exec /usr/bin/tmux -L rtc-fuzz "$@"
 SH
-chmod +x "$TMUX_WRAP/tmux"
+	chmod +x "$tmp"
+	if [ -f "$wrapper" ] && cmp -s "$tmp" "$wrapper"; then
+		rm -f "$tmp"
+	else
+		mv "$tmp" "$wrapper"
+	fi
+}
+
+ensure_tmux_wrapper
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
 log() {
@@ -42,6 +56,52 @@ log() {
 
 has_session() {
 	tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$1"
+}
+
+coverage_guided_lower_level_group_session_exists() {
+	local session=$1
+	local group=$2
+	local legacy_session=rtc-coverage-guided-lower-level
+
+	if has_session "$session"; then
+		return 0
+	fi
+	if ! has_session "$legacy_session"; then
+		return 1
+	fi
+
+	tmux list-panes -t "$legacy_session" -F '#{pane_start_command}' 2>/dev/null |
+		awk -v group="$group" \
+			'index($0, "RTC_CG_LOWER_LEVEL_GROUP") && index($0, group) { found = 1 } END { exit ! found }'
+}
+
+resource_autoscaler_script_pids() {
+	pgrep -f '/tmp/start_rtc_[r]esource_autoscaler.sh' || true
+}
+
+stop_unsupervised_resource_autoscaler() {
+	local pids pid waited
+
+	pids="$(resource_autoscaler_script_pids)"
+	[ -n "$pids" ] || return 0
+
+	for pid in $pids; do
+		log "stopping unsupervised resource autoscaler pid=$pid"
+		kill "$pid" 2>/dev/null || true
+	done
+
+	waited=0
+	while [ "$waited" -lt 10 ]; do
+		pids="$(resource_autoscaler_script_pids)"
+		[ -z "$pids" ] && return 0
+		sleep 1
+		waited=$(( waited + 1 ))
+	done
+
+	for pid in $pids; do
+		log "force-stopping unsupervised resource autoscaler pid=$pid"
+		kill -9 "$pid" 2>/dev/null || true
+	done
 }
 
 coverage_supervisor_state_matches_current_root() {
@@ -111,13 +171,19 @@ coverage_guided_lower_level_b64_satisfied() {
 			grep -Eq "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP|rtc-table-query-array-crdt|table-query-array" "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE"; then
 			if [ -f "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE" ] &&
 				grep -Eq "$CG_LOWER_LEVEL_BLOCK_PARSER_GROUP|rtc-block-parser-serialization|block-parser|parser-serialization" "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE"; then
-				has_session "$CG_LOWER_LEVEL_BLOCK_PARSER_SESSION"
+				coverage_guided_lower_level_group_session_exists \
+					"$CG_LOWER_LEVEL_BLOCK_PARSER_SESSION" \
+					"$CG_LOWER_LEVEL_BLOCK_PARSER_GROUP"
 				return
 			fi
-			has_session "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION"
+			coverage_guided_lower_level_group_session_exists \
+				"$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION" \
+				"$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP"
 			return
 		fi
-		has_session "$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION"
+		coverage_guided_lower_level_group_session_exists \
+			"$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION" \
+			"$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP"
 		return
 	fi
 	return 1
@@ -141,6 +207,10 @@ start_coverage_guided_lower_level_b64_or_replacement() {
 				group=$CG_LOWER_LEVEL_BLOCK_PARSER_GROUP
 			fi
 		fi
+	fi
+
+	if coverage_guided_lower_level_group_session_exists "$session" "$group"; then
+		return 0
 	fi
 
 	RTC_CG_LOWER_LEVEL_SESSION="$session" \
@@ -693,6 +763,7 @@ restart_pool() {
 			;;
 		resource)
 			tmux kill-session -t rtc-resource-autoscaler 2>/dev/null || true
+			stop_unsupervised_resource_autoscaler
 			tmux new-session -d -s rtc-resource-autoscaler "bash -lc '/tmp/start_rtc_resource_autoscaler.sh >> \"$LOG_DIR/resource-autoscaler-start.log\" 2>&1'" ||
 				log "resource autoscaler start failed"
 			;;
