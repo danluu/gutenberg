@@ -30,11 +30,13 @@ pr_focus_raw_dir <- file.path( raw_dir, "pr-focused" )
 monitor_path <- file.path( raw_dir, "monitor.log" )
 loop_path <- file.path( raw_dir, "pr-split-loop.log" )
 state_path <- file.path( raw_dir, "novelty-state.json" )
+novelty_status_path <- file.path( raw_dir, "novelty-status.md" )
 cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
 load_path <- file.path( data_dir, "load_average.csv" )
 activity_path <- file.path( data_dir, "project_activity.csv" )
 fuzz_level_mix_path <- file.path( data_dir, "fuzz_level_mix.csv" )
 fuzz_level_executions_path <- file.path( data_dir, "fuzz_level_executions.csv" )
+current_run_accounting_path <- file.path( data_dir, "current_run_accounting.csv" )
 bug_findings_path <- file.path( data_dir, "bug_findings.csv" )
 bug_outputs_path <- file.path( data_dir, "bug_outputs.csv" )
 status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
@@ -131,6 +133,31 @@ parse_utc_timestamp <- function( timestamp ) {
 		return( with_tz( timestamp, "UTC" ) )
 	}
 	ymd_hms( timestamp, tz = "UTC" )
+}
+
+first_status_match <- function( lines, pattern ) {
+	matches <- str_match( lines, pattern )[ , 2 ]
+	matches <- matches[ ! is.na( matches ) ]
+	if ( length( matches ) == 0 ) {
+		return( NA_character_ )
+	}
+	matches[ 1 ]
+}
+
+first_status_number <- function( lines, pattern ) {
+	value <- first_status_match( lines, pattern )
+	if ( is.na( value ) ) {
+		return( NA_real_ )
+	}
+	as.numeric( value )
+}
+
+state_timestamp <- function( state, name ) {
+	value <- state[[ name ]]
+	if ( is.null( value ) || length( value ) == 0 || is.na( value ) ) {
+		return( as.POSIXct( NA_real_, origin = "1970-01-01", tz = "UTC" ) )
+	}
+	ymd_hms( as.character( value ), tz = "UTC", quiet = TRUE )
 }
 
 parse_status_snapshot_time <- function( lines, fallback ) {
@@ -429,6 +456,102 @@ enabled_groups <- tibble(
 write_csv( enabled_groups, file.path( data_dir, "enabled_groups.csv" ) )
 
 state <- fromJSON( state_path, flatten = TRUE )
+
+novelty_status_lines <- if ( file.exists( novelty_status_path ) ) {
+	read_lines( novelty_status_path, progress = FALSE )
+} else {
+	character()
+}
+status_updated <- ymd_hms(
+	first_status_match( novelty_status_lines, "^Updated: ([^ ]+)" ),
+	tz = "UTC",
+	quiet = TRUE
+)
+if ( is.na( status_updated ) ) {
+	status_updated <- if ( nrow( monitor ) > 0 ) max( monitor$timestamp ) else with_tz( now(), "UTC" )
+}
+current_output_dir <- first_status_match( novelty_status_lines, "^Output dir: (.+)$" )
+startup_status <- first_status_match( novelty_status_lines, "^- status: (.+)$" )
+status_available <- length( novelty_status_lines ) > 0
+full_pass_pending <- any( str_detect( novelty_status_lines, "full coverage pass pending" ) )
+pending_until_first_pass <- any( str_detect( novelty_status_lines, "pending until first pass" ) )
+last_completed_full_pass_at <- state_timestamp( state, "lastCompletedFullPassAt" )
+last_state_update_at <- state_timestamp( state, "lastUpdatedAt" )
+last_current_run_triage_completed_at <- state_timestamp( state, "lastCurrentRunTriageCompletedAt" )
+latest_completed_monitor_pass_at <- if ( nrow( monitor ) > 0 ) max( monitor$timestamp ) else as.POSIXct( NA_real_, origin = "1970-01-01", tz = "UTC" )
+current_run_metrics_trusted <- status_available &&
+	! full_pass_pending &&
+	! pending_until_first_pass &&
+	! is.na( last_completed_full_pass_at )
+
+current_run_accounting_snapshot <- tibble(
+	timestamp = floor_date( status_updated, "second" ),
+	output_dir = current_output_dir,
+	run_id = basename( current_output_dir ),
+	status_available = status_available,
+	startup_status = startup_status,
+	full_pass_pending = full_pass_pending,
+	pending_until_first_pass = pending_until_first_pass,
+	current_run_metrics_trusted = current_run_metrics_trusted,
+	active_run_dirs = first_status_number( novelty_status_lines, "^- active run dirs: ([0-9]+)" ),
+	supervisor_groups_file = first_status_number( novelty_status_lines, "^- supervisor groups file: ([0-9]+)" ),
+	observed_roots = first_status_number( novelty_status_lines, "^- observed roots: ([0-9]+)" ),
+	last_completed_full_pass_at = last_completed_full_pass_at,
+	last_state_update_at = last_state_update_at,
+	last_current_run_triage_completed_at = last_current_run_triage_completed_at,
+	latest_completed_monitor_pass_at = latest_completed_monitor_pass_at,
+	minutes_since_completed_full_pass = as.numeric(
+		difftime( status_updated, last_completed_full_pass_at, units = "mins" )
+	),
+	minutes_since_state_update = as.numeric(
+		difftime( status_updated, last_state_update_at, units = "mins" )
+	),
+	latest_completed_duplicate_share_current = if ( nrow( monitor ) > 0 ) last( monitor$duplicate_share_current ) else NA_real_,
+	latest_completed_summary_startup_failures = if ( nrow( monitor ) > 0 ) last( monitor$summary_startup_failures ) else NA_real_
+)
+
+current_run_accounting_existing <- if ( file.exists( current_run_accounting_path ) ) {
+	read_csv( current_run_accounting_path, show_col_types = FALSE ) %>%
+		mutate(
+			timestamp = floor_date( parse_utc_timestamp( timestamp ), "second" ),
+			status_available = case_when(
+				is.logical( status_available ) ~ status_available,
+				str_to_lower( as.character( status_available ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
+			full_pass_pending = case_when(
+				is.logical( full_pass_pending ) ~ full_pass_pending,
+				str_to_lower( as.character( full_pass_pending ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
+			pending_until_first_pass = case_when(
+				is.logical( pending_until_first_pass ) ~ pending_until_first_pass,
+				str_to_lower( as.character( pending_until_first_pass ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
+			current_run_metrics_trusted = case_when(
+				is.logical( current_run_metrics_trusted ) ~ current_run_metrics_trusted,
+				str_to_lower( as.character( current_run_metrics_trusted ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
+			last_completed_full_pass_at = parse_utc_timestamp( last_completed_full_pass_at ),
+			last_state_update_at = parse_utc_timestamp( last_state_update_at ),
+			last_current_run_triage_completed_at = parse_utc_timestamp( last_current_run_triage_completed_at ),
+			latest_completed_monitor_pass_at = parse_utc_timestamp( latest_completed_monitor_pass_at )
+		)
+} else {
+	tibble()
+}
+
+current_run_accounting <- bind_rows(
+	current_run_accounting_existing,
+	current_run_accounting_snapshot
+) %>%
+	filter( ! is.na( timestamp ) ) %>%
+	arrange( timestamp ) %>%
+	distinct( timestamp, output_dir, .keep_all = TRUE )
+
+write_csv( current_run_accounting, current_run_accounting_path )
 
 fuzz_level_mix <- tibble()
 if ( file.exists( fuzz_level_mix_path ) ) {
@@ -1209,6 +1332,8 @@ pr_loop_queue_depth <- bind_rows(
 		tibble()
 	}
 ) %>%
+	ensure_columns( c( "queue", "state", "class", "priority", "depth" ) ) %>%
+	mutate( depth = as.numeric( depth ) ) %>%
 	filter( ! is.na( depth ), depth > 0 )
 write_csv( pr_loop_queue_depth, file.path( data_dir, "pr_loop_queue_depth.csv" ) )
 
@@ -1355,6 +1480,62 @@ write_plot(
 	width = 9,
 	height = 9
 )
+
+if ( nrow( current_run_accounting ) > 0 ) {
+	accounting_plot <- current_run_accounting %>%
+		mutate(
+			metric_trusted_value = if_else( current_run_metrics_trusted, 1, 0 ),
+			pending_value = if_else( full_pass_pending | pending_until_first_pass, 1, 0 ),
+			minutes_since_completed_full_pass = if_else(
+				is.na( minutes_since_completed_full_pass ),
+				NA_real_,
+				pmax( minutes_since_completed_full_pass, 0 )
+			)
+		) %>%
+		select(
+			timestamp,
+			run_id,
+			metric_trusted_value,
+			pending_value,
+			minutes_since_completed_full_pass,
+			active_run_dirs,
+			supervisor_groups_file
+		) %>%
+		pivot_longer(
+			cols = -c( timestamp, run_id ),
+			names_to = "metric",
+			values_to = "value"
+		) %>%
+		mutate(
+			metric = recode(
+				metric,
+				metric_trusted_value = "current-run dup/noise metric trusted",
+				pending_value = "full-pass accounting pending",
+				minutes_since_completed_full_pass = "minutes since completed full pass",
+				active_run_dirs = "active run directories",
+				supervisor_groups_file = "supervisor groups published"
+			)
+		)
+
+	write_plot(
+		"current-run-accounting-completeness.png",
+		ggplot( accounting_plot, aes( x = timestamp, y = value, color = metric ) ) +
+			geom_point( alpha = 0.65, size = 0.9 ) +
+			facet_wrap( vars( metric ), scales = "free_y", ncol = 1 ) +
+			scale_color_brewer( palette = "Dark2" ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
+			labs(
+				title = "Current-run accounting completeness over time",
+				x = "UTC time",
+				y = NULL,
+				color = NULL,
+				caption = "The duplicate/noise metric is trusted only after the active novelty run has completed a full pass. Pending states are control-plane health signals, not product bug-rate measurements."
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 9
+	)
+}
 
 if ( file.exists( cpu_path ) ) {
 	cpu_utilization <- read_csv( cpu_path, show_col_types = FALSE ) %>%
@@ -2921,6 +3102,10 @@ summary_lines <- c(
 	paste0( "duplicate_share_current_last: ", last( monitor$duplicate_share_current ) ),
 	paste0( "duplicate_share_historical_last: ", last( monitor$duplicate_share_historical ) ),
 	paste0( "summary_startup_failures_last: ", last( monitor$summary_startup_failures ) ),
+	paste0( "current_run_accounting_snapshots: ", nrow( current_run_accounting ) ),
+	paste0( "current_run_metrics_trusted_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_metrics_trusted ), NA ) ),
+	paste0( "current_run_full_pass_pending_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$full_pass_pending | current_run_accounting$pending_until_first_pass ), NA ) ),
+	paste0( "current_run_minutes_since_completed_full_pass_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$minutes_since_completed_full_pass ), NA ) ),
 	paste0( "quality_issues_last: ", last( monitor$quality_issues ) ),
 	paste0( "memory_free_gb_last: ", last( monitor$memory_free_gb ) ),
 	paste0( "load_1_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_1 ), NA ) ),

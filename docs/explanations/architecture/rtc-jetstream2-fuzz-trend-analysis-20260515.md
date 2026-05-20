@@ -146,16 +146,25 @@ coverage-file deltas are reset/restart artifacts and are marked separately.
 The health graph uses current-output-dir duplicate/noise and monitor-pass
 summary startup failures for live status. The latest plotted sample has
 `duplicateShareCurrent=0`, current summary startup failures `0`, quality
-issues `0`, warnings `0`, `no_progress=0`, `406.9G` free memory, and
+issues `0`, warnings `0`, `no_progress=0`, `396.9G` free memory, and
 `headroom=false`.
 Historical aggregate duplicate/noise is not the plotted live health signal.
 
-The copied current novelty state has enabled `novelty-ws-long-session-large-doc`
-and `novelty-ws-real-user-coverage-bridge`, and current summary startup-failure
-maps are empty. Current-output summary startup failures and duplicate/noise are
-quiet in the plotted live metric. The persona loop still treats this as a
-post-fix status that needs live-load admission/drain validation, not as durable
-producer-selection proof.
+The copied current novelty state has enabled `novelty-ws-real-user-save-reload`
+and `novelty-ws-many-user-lifecycle-completion`. Current-output summary startup
+failures and duplicate/noise are quiet in the plotted live metric. The persona
+loop still treats this as a post-fix status that needs live-load admission/drain
+validation, not as durable producer-selection proof.
+
+![Current-run accounting completeness over time](rtc-jetstream2-fuzz-trends-20260515/plots/current-run-accounting-completeness.png)
+
+The current-run accounting graph tracks whether the active output root has
+completed enough novelty accounting for the duplicate/noise share to be a real
+live metric. The latest snapshot is trusted: `current_run_metrics_trusted=TRUE`,
+`current_run_full_pass_pending=FALSE`, and the active run completed a full pass
+at the snapshot time. When this graph shows pending accounting, the duplicate
+share should be read as a control-plane health problem, not as a measured
+product duplicate/noise rate.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
