@@ -251,6 +251,45 @@ class Tests_Collaboration_WpSyncPostMetaStorage extends WP_UnitTestCase {
 		);
 	}
 
+	public function test_clear_room_removes_updates_and_awareness_state(): void {
+		$storage = new WP_Sync_Post_Meta_Storage();
+		$room    = $this->get_room();
+
+		$storage->add_update(
+			$room,
+			array(
+				'type' => 'update',
+				'data' => 'first',
+			)
+		);
+		$storage->add_update(
+			$room,
+			array(
+				'type' => 'update',
+				'data' => 'second',
+			)
+		);
+		$storage->set_awareness_state( $room, array( 1 => array( 'name' => 'Editor' ) ) );
+
+		$this->assertNotEmpty( $storage->get_updates_after_cursor( $room, 0 ) );
+		$this->assertSame( array( array( 'name' => 'Editor' ) ), $storage->get_awareness_state( $room ) );
+
+		$this->assertTrue( $storage->clear_room( $room ) );
+
+		$this->assertSame( array(), $storage->get_updates_after_cursor( $room, 0 ) );
+		$this->assertSame( 0, $storage->get_update_count( $room ) );
+		$this->assertSame( array(), $storage->get_awareness_state( $room ) );
+	}
+
+	public function test_clear_room_does_not_create_storage_post_for_missing_room(): void {
+		$storage = new WP_Sync_Post_Meta_Storage();
+		$room    = 'postType/post:missing-room';
+
+		$this->assertSame( array(), $this->get_storage_post_lineages( $room ) );
+		$this->assertTrue( $storage->clear_room( $room ) );
+		$this->assertSame( array(), $this->get_storage_post_lineages( $room ) );
+	}
+
 	/**
 	 * Adding a sync update must not update the posts last_changed value.
 	 *

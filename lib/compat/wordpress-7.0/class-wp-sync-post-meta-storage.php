@@ -100,6 +100,43 @@ if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 		}
 
 		/**
+		 * Clears all persisted sync state for a given room.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @global wpdb $wpdb WordPress database abstraction object.
+		 *
+		 * @param string $room Room identifier.
+		 * @return bool True on success, false on failure.
+		 */
+		public function clear_room( string $room ): bool {
+			global $wpdb;
+
+			$room_hash = md5( $room );
+			$post_id   = $this->find_canonical_storage_post_id( $room_hash );
+			if ( null === $post_id ) {
+				unset( $this->room_cursors[ $room ], $this->room_update_counts[ $room ] );
+				return true;
+			}
+
+			$deleted_rows = $wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM {$wpdb->postmeta} WHERE post_id = %d AND meta_key IN ( %s, %s )",
+					$post_id,
+					self::SYNC_UPDATE_META_KEY,
+					self::AWARENESS_META_KEY
+				)
+			);
+
+			if ( false === $deleted_rows ) {
+				return false;
+			}
+
+			unset( $this->room_cursors[ $room ], $this->room_update_counts[ $room ] );
+			return true;
+		}
+
+		/**
 		 * Gets awareness state for a given room.
 		 *
 		 * @since 7.0.0
