@@ -1547,6 +1547,13 @@ feature keys such as `users:12` are only attempts; the controller has separate
 goals such as `success-users:12`, `success-action-users:3`, and
 `success-user-blocks:3:50` so many-user, same-user, and large-document coverage
 must complete successfully in one document before the gap is considered closed.
+Thirty-user stress coverage uses the dedicated
+`novelty-ws-thirty-user-lifecycle` group with one lane, longer
+discovery/convergence/run timeouts, a larger Node heap, and a raised WebSocket
+relay listener limit. The relevant goals are `users:30`,
+`lifecycle:late-join:users-30`, `success-users:30`,
+`success-lifecycle:late-join:users-30`, and
+`success-profile-users:many-user-lifecycle:30`.
 
 The Jetstream coverage-guided starter also repairs a common browser-fuzz checkout
 failure before launching: if the fuzz repo is missing `build/scripts` artifacts,

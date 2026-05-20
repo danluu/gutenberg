@@ -93,6 +93,7 @@ const COLLABORATION_READINESS_STARTUP_FIX_GROUPS = [
 	'novelty-ws-collaboration-ui-signals',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
+	'novelty-ws-thirty-user-lifecycle',
 ];
 let benchmarkCanaryFeedbackRows = [];
 let benchmarkCanaryForcedGroups = new Set();
@@ -425,6 +426,7 @@ const PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS = [
 	'novelty-ws-async-server-blocks',
 	'novelty-ws-collaboration-ui-signals',
 	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-thirty-user-lifecycle',
 ];
 const PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES = new Set( [
 	'late_session_awareness_stall',
@@ -457,6 +459,7 @@ const GROUP_SCOPED_PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES = new Map( [
 	[ 'novelty-ws-collaboration-ui-signals', new Set( [ 'assertion' ] ) ],
 	[ 'novelty-ws-many-user-lifecycle', new Set( [ 'assertion' ] ) ],
 	[ 'novelty-ws-many-user-lifecycle-completion', new Set( [ 'assertion' ] ) ],
+	[ 'novelty-ws-thirty-user-lifecycle', new Set( [ 'assertion' ] ) ],
 ] );
 const ACTION_COVERAGE_GROUPS = {
 	'insert-paragraph': [ 'novelty-ws-structure' ],
@@ -531,7 +534,7 @@ const ACTION_COVERAGE_GROUPS = {
 	'insert-media-cross-entity-block': [ 'novelty-ws-media-cross-entity' ],
 };
 const REQUIRED_ACTION_LABELS = Object.keys( ACTION_COVERAGE_GROUPS );
-const EXPANSION_POLICY_VERSION = 17;
+const EXPANSION_POLICY_VERSION = 18;
 
 const WS_ENV_DEFAULTS = {
 	GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
@@ -574,6 +577,7 @@ const PROFILE_BY_GROUP = {
 	'novelty-http-table-stale-snapshot': 'table-stale-snapshot-http',
 	'novelty-ws-many-user-lifecycle': 'many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion': 'many-user-lifecycle',
+	'novelty-ws-thirty-user-lifecycle': 'many-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals': 'collaboration-ui-signals',
 	'novelty-ws-structure': 'structure',
 	'novelty-ws-three-user-late-join': 'three-user-late-join',
@@ -608,6 +612,7 @@ const HIGH_VALUE_EXPANSION_GROUPS = [
 	'novelty-http-table-stale-snapshot',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
+	'novelty-ws-thirty-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
 ];
 
@@ -632,6 +637,7 @@ const PRODUCTIVE_FALLBACK_GROUPS = [
 	'novelty-http-table-stale-snapshot',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
+	'novelty-ws-thirty-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
 	'novelty-ws-real-user-save-reload',
 	'novelty-ws-real-user-editing',
@@ -655,6 +661,7 @@ const DEFAULT_REQUIRED_COVERAGE_BREADTH_GROUPS = [
 	'novelty-http-large-post-lifecycle-completion',
 	'novelty-http-table-stale-snapshot',
 	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-thirty-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
 ];
 const configuredRequiredCoverageBreadthGroups = parsePathList(
@@ -693,6 +700,7 @@ const ZERO_COVERAGE_PRIORITY_GROUPS = [
 	'novelty-http-table-stale-snapshot',
 	'novelty-ws-collaboration-ui-signals',
 	'novelty-ws-many-user-lifecycle-completion',
+	'novelty-ws-thirty-user-lifecycle',
 	'novelty-ws-many-user-lifecycle',
 ];
 const ZERO_COVERAGE_EVICTION_ORDER = [
@@ -1333,6 +1341,38 @@ const PROFILE_GROUPS = [
 			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
 			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
 				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-thirty-user-lifecycle',
+		actionProfile: 'many-user-lifecycle',
+		startSeed: 1210001,
+		stepCount: 6,
+		lanes: 1,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '28',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '0',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '1024',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '2400000',
+			GUTENBERG_RTC_TEST_WS_MAX_LISTENERS: '100',
+			NODE_OPTIONS: '--max-old-space-size=24576',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '120000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '600000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '2400000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '2',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'2',
 		},
 	},
 	{
@@ -6524,7 +6564,7 @@ function addUserDocumentConcurrencyRecord( summary, record ) {
 		actionUserCount
 	);
 
-	for ( const threshold of [ 2, 3, 10, 12 ] ) {
+	for ( const threshold of [ 2, 3, 10, 12, 30 ] ) {
 		if ( Number( userCount ) >= threshold ) {
 			incrementCounter(
 				summary.recordsWithUserCountAtLeast,
@@ -6578,7 +6618,7 @@ function addUserDocumentConcurrencyRecord( summary, record ) {
 		actionUserCount
 	);
 
-	for ( const threshold of [ 2, 3, 10, 12 ] ) {
+	for ( const threshold of [ 2, 3, 10, 12, 30 ] ) {
 		if ( Number( userCount ) >= threshold ) {
 			incrementCounter(
 				summary.successfulRecordsWithUserCountAtLeast,
@@ -6606,7 +6646,7 @@ function addUserDocumentConcurrencyRecord( summary, record ) {
 		);
 	}
 
-	for ( const userThreshold of [ 2, 3, 10, 12 ] ) {
+	for ( const userThreshold of [ 2, 3, 10, 12, 30 ] ) {
 		for ( const blockThreshold of [ 10, 50, 100 ] ) {
 			if (
 				Number( userCount ) >= userThreshold &&
@@ -8050,6 +8090,22 @@ function createCoverageGuidance( novelty ) {
 				'many-user RTC sessions need a real late join after editing has started',
 		},
 		{
+			id: 'users:30',
+			label: 'thirty-user browser session',
+			target: 3,
+			groups: [ 'novelty-ws-thirty-user-lifecycle' ],
+			rationale:
+				'RTC can support much larger rooms than three or twelve users, so the fuzzer needs explicit thirty-user document coverage',
+		},
+		{
+			id: 'lifecycle:late-join:users-30',
+			label: 'thirty-user late join',
+			target: 3,
+			groups: [ 'novelty-ws-thirty-user-lifecycle' ],
+			rationale:
+				'large RTC rooms need a real late join after editing has started, not only all users present at startup',
+		},
+		{
 			id: 'history:presence-list:ok',
 			label: 'presence list visible',
 			target: 25,
@@ -8299,6 +8355,15 @@ function createCoverageGuidance( novelty ) {
 				'many-user coverage must reach a completed document with all users, not just launch many browsers',
 		},
 		{
+			id: 'success-users:30',
+			label: 'successful thirty-user documents',
+			count: getUserDocumentConcurrencyCount( 'successfulByUserCount', 30 ),
+			target: 3,
+			groups: [ 'novelty-ws-thirty-user-lifecycle' ],
+			rationale:
+				'thirty-user RTC coverage must reach a completed document with all users, not just launch many browsers',
+		},
+		{
 			id: 'success-action-users:2',
 			label: 'successful documents edited by two users',
 			count: getUserDocumentConcurrencyCount(
@@ -8362,6 +8427,18 @@ function createCoverageGuidance( novelty ) {
 				'many-user RTC needs successful late joins after editing has started',
 		},
 		{
+			id: 'success-lifecycle:late-join:users-30',
+			label: 'successful thirty-user late join documents',
+			count: getUserDocumentConcurrencyCount(
+				'successfulLifecycleByTypeUserCount',
+				'late-join:30'
+			),
+			target: 3,
+			groups: [ 'novelty-ws-thirty-user-lifecycle' ],
+			rationale:
+				'thirty-user RTC needs successful late joins after editing has started',
+		},
+		{
 			id: 'success-profile-users:large-post-three-user-http-lifecycle:3',
 			label: 'successful large-post HTTP records with three users',
 			count: getUserDocumentConcurrencyNestedCount(
@@ -8392,6 +8469,19 @@ function createCoverageGuidance( novelty ) {
 			],
 			rationale:
 				'the many-user target should count successful twelve-user records, not generic users:12 attempts',
+		},
+		{
+			id: 'success-profile-users:many-user-lifecycle:30',
+			label: 'successful many-user lifecycle records with thirty users',
+			count: getUserDocumentConcurrencyNestedCount(
+				'successfulByProfileUserCount',
+				'many-user-lifecycle',
+				30
+			),
+			target: 3,
+			groups: [ 'novelty-ws-thirty-user-lifecycle' ],
+			rationale:
+				'the thirty-user target should count successful thirty-user records, not generic many-user attempts',
 		},
 		{
 			id: 'success-profile-users:three-user-late-join:3',
@@ -13712,6 +13802,12 @@ async function writeStatus(
 		}`,
 		`- many-user lifecycle records: ${
 			state.featureCounts?.[ 'users:12' ] ?? 0
+		}`,
+		`- thirty-user lifecycle records: ${
+			state.featureCounts?.[ 'users:30' ] ?? 0
+		}`,
+		`- successful thirty-user records: ${
+			state.userDocumentConcurrency?.successfulByUserCount?.[ '30' ] ?? 0
 		}`,
 		`- collaboration UI signal records: ${ Math.max(
 			state.featureCounts?.[ 'history:presence-list:ok' ] ?? 0,
