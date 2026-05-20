@@ -22,6 +22,7 @@ import {
 	defaultSyncConfig,
 	getPostChangesFromCRDTDoc,
 	POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE,
+	preparePostCRDTDocForPersistence,
 } from './utils/crdt';
 
 export const DEFAULT_ENTITY_KEY = 'id';
@@ -838,6 +839,7 @@ async function loadPostTypeEntities() {
 					null
 				);
 			},
+			preparePersistedCRDTDoc: preparePostCRDTDocForPersistence,
 		};
 
 		return entity;

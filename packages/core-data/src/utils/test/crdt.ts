@@ -83,6 +83,7 @@ import {
 	defaultCollectionSyncConfig,
 	getPostChangesFromCRDTDoc,
 	POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE,
+	preparePostCRDTDocForPersistence,
 	type PostChanges,
 	type YPostRecord,
 } from '../crdt';
@@ -513,6 +514,32 @@ describe( 'crdt', () => {
 
 			expect( map.get( 'content' ) ).toBe( contentRef );
 			expect( map.get( 'content' )?.toString() ).toBe( 'New content' );
+		} );
+
+		it( 'prepares persisted content from CRDT blocks', () => {
+			registerEntityReferenceBlocks();
+			const liveContent =
+				'<!-- wp:paragraph --><p>live marker</p><!-- /wp:paragraph -->';
+			const staleContent =
+				'<!-- wp:paragraph --><p>stale marker</p><!-- /wp:paragraph -->';
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: parse( liveContent ) } as PostChanges,
+				defaultSyncedProperties
+			);
+			const content = map.get( 'content' );
+			expect( content ).toBeInstanceOf( Y.Text );
+			const contentText = content as Y.Text;
+			contentText.delete( 0, contentText.length );
+			contentText.insert( 0, staleContent );
+
+			preparePostCRDTDocForPersistence( doc );
+
+			expect( map.get( 'content' ) ).toBe( contentText );
+			expect( map.get( 'content' )?.toString() ).toBe(
+				__unstableSerializeAndClean( parse( liveContent ) ).trim()
+			);
 		} );
 
 		it( 'updates existing Y.Text excerpt in place via mergeRichTextUpdate', () => {

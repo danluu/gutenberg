@@ -632,6 +632,35 @@ describe( 'SyncManager', () => {
 					getPersistedCrdtDocVersion( basePersistedDoc )
 				);
 			} );
+
+			it( 'prepares the CRDT doc before serializing a persisted CRDT doc', async () => {
+				mockSyncConfig.preparePersistedCRDTDoc = jest.fn(
+					( ydoc: CRDTDoc ) => {
+						ydoc.getMap( CRDT_RECORD_MAP_KEY ).set(
+							'prepared',
+							true
+						);
+					}
+				);
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				await manager.createPersistedCRDTDoc( 'post', '123' );
+
+				expect(
+					mockSyncConfig.preparePersistedCRDTDoc
+				).toHaveBeenCalledTimes( 1 );
+				expect( manager.getCRDTRecordData( 'post', '123' ) ).toEqual(
+					expect.objectContaining( { prepared: true } )
+				);
+			} );
 		} );
 	} );
 
