@@ -84,6 +84,12 @@ spike and force another restart. The current ramp caps upward moves to a small
 number of groups per restart and adds a separate startup-ramp cooldown before
 the next breadth increase.
 
+Coverage watchdog freshness must use the current run's heartbeat, not only the
+copied `lastCompletedFullPassAt` in `novelty-state.json`. A fresh coverage run
+can spend several minutes in `full coverage pass pending`; restarting it during
+that window repeats early seeds, inflates duplicate/noise share, and prevents
+current-run triage policy from seeing a stable active set.
+
 Materialization remediation must distinguish failed materialization from normal
 startup. A fresh supervisor can have zero active run dirs while it is creating
 isolated wp-env instances. The autoscaler should not restart that run until the

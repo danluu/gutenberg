@@ -1040,7 +1040,11 @@ restart_coverage() {
 	local fleet_startup_noise_canary_group
 	local allow_empty_materialization_no_product_startup_canary
 	local min_enabled_browser_lanes
-	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max" "$reason")"
+	[[ "$desired_target" =~ ^[0-9]+$ ]] || desired_target=1
+	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=$desired_target
+	if [ "$desired_max" -lt "$desired_target" ]; then
+		desired_max=$desired_target
+	fi
 	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
 	allow_empty_materialization_no_product_startup_canary=${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY 0)}

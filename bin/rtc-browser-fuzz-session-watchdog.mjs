@@ -159,6 +159,28 @@ async function fileMtimeMs( filePath ) {
 	}
 }
 
+async function statusUpdatedTimestampMs( statusPath ) {
+	const text = await readTextFile( statusPath );
+	const match = text?.match( /^Updated:\s*(.+)$/m );
+	if ( match ) {
+		const timestamp = Date.parse( match[ 1 ] );
+		if ( Number.isFinite( timestamp ) ) {
+			return {
+				timestamp,
+				source: 'status-updated',
+			};
+		}
+	}
+	const mtimeMs = await fileMtimeMs( statusPath );
+	if ( mtimeMs !== null ) {
+		return {
+			timestamp: mtimeMs,
+			source: 'status-mtime',
+		};
+	}
+	return null;
+}
+
 async function currentOutputDir() {
 	const text = await readTextFile( CURRENT_OUTPUT_FILE );
 	return text?.trim() || null;
@@ -243,17 +265,45 @@ async function stateFreshness( outputDir ) {
 	const statusPath = path.join( outputDir, STATUS_RELATIVE_PATH );
 	const state = await readJsonFile( statePath );
 	if ( IS_COVERAGE_GUIDED_NOVELTY_WATCHDOG ) {
+		const candidates = [];
 		const fullPassTimestamp = Date.parse(
 			state?.lastCompletedFullPassAt ?? ''
 		);
 		if ( Number.isFinite( fullPassTimestamp ) ) {
+			candidates.push( {
+				timestamp: fullPassTimestamp,
+				source: 'state-lastCompletedFullPassAt',
+			} );
+		}
+		const stateHeartbeatTimestamp = Date.parse( state?.lastUpdatedAt ?? '' );
+		if ( Number.isFinite( stateHeartbeatTimestamp ) ) {
+			candidates.push( {
+				timestamp: stateHeartbeatTimestamp,
+				source: 'state-lastUpdatedAt',
+			} );
+		}
+		const stateMtimeMs = await fileMtimeMs( statePath );
+		if ( stateMtimeMs !== null ) {
+			candidates.push( {
+				timestamp: stateMtimeMs,
+				source: 'state-mtime',
+			} );
+		}
+		const statusTimestamp = await statusUpdatedTimestampMs( statusPath );
+		if ( statusTimestamp ) {
+			candidates.push( statusTimestamp );
+		}
+		candidates.sort( ( a, b ) => b.timestamp - a.timestamp );
+		const newest = candidates[ 0 ];
+		if ( newest ) {
 			return {
 				outputDir,
 				statePath,
 				statusPath,
-				lastUpdatedAt: new Date( fullPassTimestamp ).toISOString(),
-				ageMs: Date.now() - fullPassTimestamp,
-				source: 'state-lastCompletedFullPassAt',
+				lastUpdatedAt: new Date( newest.timestamp ).toISOString(),
+				ageMs: Date.now() - newest.timestamp,
+				source: newest.source,
+				lastCompletedFullPassAt: state?.lastCompletedFullPassAt ?? null,
 				lastUpdatedHeartbeatAt: state?.lastUpdatedAt ?? null,
 				lastCurrentRunTriageCompletedAt:
 					state?.lastCurrentRunTriageCompletedAt ?? null,
