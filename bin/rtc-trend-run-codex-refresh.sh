@@ -30,7 +30,7 @@ Hard constraints:
 - Keep the graph report's activity plots unlabeled. Do not add text to committed files that reveals what those two unlabeled activity plots measure.
 - Treat persona-loop outputs as evidence to evaluate. They are allowed to contradict the graph interpretation.
 - Keep the load-average graph immediately below the CPU utilization graph.
-- In the health graph and interpretation, use current-output-dir duplicate/noise metrics, especially duplicateShareCurrent and summary startup failures, for live status. Do not use historical aggregate duplicate/noise as the plotted live health signal.
+- In the health graph and interpretation, use current-output-dir duplicate/noise metrics, especially duplicateShareCurrent and summary startup failures, for live status. Do not use historical aggregate duplicate/noise as the plotted live health signal. If current_run_metrics_trusted_last is false, treat the duplicate/noise share as incomplete current-run accounting and interpret it as a control-plane health issue until the active run completes a full pass.
 
 Required work:
 1. In $CHECKOUT, make sure branch $BRANCH is based on $REMOTE/$BRANCH unless there are uncommitted changes that you must preserve.
@@ -43,6 +43,7 @@ Required work:
 5. Update docs/explanations/architecture/rtc-jetstream2-fuzz-trend-analysis-20260515.md so the status and interpretation reflect the refreshed graph data and the standard persona-loop feedback. Keep it concise and concrete. If the feedback rejects a graph interpretation, say that in the report.
    Preserve the suggested-PR net LOC graph section when data/pr_suggested_net_loc.csv, plots/pr-suggested-total-net-loc-over-time.png, and plots/pr-suggested-net-loc-by-pr-over-time.png are present; update its latest total and largest rows from the refreshed CSV.
    Preserve the load-average graph section when data/load_average.csv and plots/load-average-over-time.png are present.
+   Preserve the current-run accounting completeness section when data/current_run_accounting.csv and plots/current-run-accounting-completeness.png are present. Explain that pending/incomplete accounting is tracked as its own health signal and should not be read as a measured product duplicate/noise rate.
    Preserve the fuzzing-level mix section when data/fuzz_level_mix.csv and plots/fuzz-level-mix-over-time.png are present. Explicitly note whether live fuzzing is concentrated in browser/e2e lanes or whether lower-level targets such as transport-integration, unit-property, coverage-guided-lower-level, backend-api, protocol-server, or fuzz-only assertion work are active.
    Preserve the fuzz execution count/rate section when data/fuzz_level_execution_counts.csv, plots/fuzz-level-executions-cumulative.png, and plots/fuzz-level-execution-rate.png are present. Make clear that the current execution metric is estimated individual test/case executions derived from lane events.ndjson: browser seed attempts, unit/property fixed tests plus generated cases, coverage-guided inputs, or protocol/backend cases. Explicitly say the lower-level counts are approximate when reconstructed from batch metadata or legacy batch-count fields.
 6. Run:

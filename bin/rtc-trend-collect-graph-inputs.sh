@@ -56,6 +56,19 @@ else
 	printf '{}\n' > "$OUT/raw/novelty-state.json"
 fi
 
+status_path=""
+if [ -n "$coverage_root" ] && [ -f "$coverage_root/novelty-status.md" ]; then
+	status_path="$coverage_root/novelty-status.md"
+else
+	status_path="$(find "$COVERAGE_BASE" -path '*/novelty-status.md' -printf '%T@ %p\n' 2>/dev/null | sort -nr | head -1 | cut -d' ' -f2- || true)"
+fi
+if [ -n "$status_path" ] && [ -f "$status_path" ]; then
+	cp "$status_path" "$OUT/raw/novelty-status.md"
+else
+	: > "$OUT/raw/novelty-status.md"
+fi
+printf '%s\n' "$coverage_root" > "$OUT/raw/current-coverage-root.txt"
+
 if [ -f "$PR_LOOP_BASE/logs/loop.log" ]; then
 	cp "$PR_LOOP_BASE/logs/loop.log" "$OUT/raw/pr-split-loop.log"
 else
@@ -1032,6 +1045,7 @@ PY
 {
 	printf 'coverage_root=%s\n' "$coverage_root"
 	printf 'state_path=%s\n' "$state_path"
+	printf 'status_path=%s\n' "$status_path"
 	printf 'collected_at_utc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 } > "$OUT/summary/source-paths.env"
 
@@ -1049,6 +1063,8 @@ tar -xzf "$INPUT_DIR/remote.tar.gz" -C "$INPUT_DIR/remote"
 mkdir -p "$ARTIFACT_DIR/raw" "$ARTIFACT_DIR/data"
 cp "$INPUT_DIR/remote/raw/monitor.log" "$ARTIFACT_DIR/raw/monitor.log"
 cp "$INPUT_DIR/remote/raw/novelty-state.json" "$ARTIFACT_DIR/raw/novelty-state.json"
+cp "$INPUT_DIR/remote/raw/novelty-status.md" "$ARTIFACT_DIR/raw/novelty-status.md"
+cp "$INPUT_DIR/remote/raw/current-coverage-root.txt" "$ARTIFACT_DIR/raw/current-coverage-root.txt"
 cp "$INPUT_DIR/remote/raw/pr-split-loop.log" "$ARTIFACT_DIR/raw/pr-split-loop.log"
 cp "$INPUT_DIR/remote/data/cpu_utilization.csv" "$ARTIFACT_DIR/data/cpu_utilization.csv"
 cp "$INPUT_DIR/remote/data/load_average.csv" "$ARTIFACT_DIR/data/load_average.csv"
