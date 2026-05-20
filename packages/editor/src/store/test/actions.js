@@ -37,7 +37,7 @@ const postTypeEntity = {
 	},
 };
 
-function createRegistryWithStores() {
+function createRegistryWithStores( postTypeConfigOverrides = {} ) {
 	// Create a registry.
 	const registry = createRegistry();
 
@@ -49,7 +49,9 @@ function createRegistryWithStores() {
 	registry.register( preferencesStore );
 
 	// Register post type entity.
-	registry.dispatch( coreStore ).addEntities( [ postTypeConfig ] );
+	registry
+		.dispatch( coreStore )
+		.addEntities( [ { ...postTypeConfig, ...postTypeConfigOverrides } ] );
 
 	// Store post type entity.
 	registry
@@ -230,6 +232,45 @@ describe( 'Post actions', () => {
 			// Check that no notice has been shown on autosave.
 			const notices = registry.select( noticesStore ).getNotices();
 			expect( notices ).toMatchObject( [] );
+		} );
+
+		it( 'does not create a local autosave for collaborative posts', async () => {
+			const post = {
+				id: postId,
+				type: 'post',
+				title: 'bar',
+				content: 'bar',
+				excerpt: 'crackers',
+				status: 'draft',
+			};
+			const localAutosaveKey = `wp-autosave-block-editor-post-${ postId }`;
+			const previousCollaborationEnabled = window._wpCollaborationEnabled;
+
+			window.sessionStorage.clear();
+			window._wpCollaborationEnabled = true;
+
+			try {
+				const registry = createRegistryWithStores( {
+					syncConfig: {},
+				} );
+				registry
+					.dispatch( coreStore )
+					.receiveEntityRecords( 'postType', 'post', post );
+				registry.dispatch( editorStore ).setupEditor( post, {
+					content: 'new bar',
+				} );
+
+				await registry.dispatch( editorStore ).autosave( {
+					local: true,
+				} );
+
+				expect(
+					window.sessionStorage.getItem( localAutosaveKey )
+				).toBeNull();
+			} finally {
+				window.sessionStorage.clear();
+				window._wpCollaborationEnabled = previousCollaborationEnabled;
+			}
 		} );
 	} );
 

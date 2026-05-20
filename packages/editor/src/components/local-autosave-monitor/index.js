@@ -53,12 +53,19 @@ const hasSessionStorageSupport = () => {
  * restore a local autosave, if one exists.
  */
 function useAutosaveNotice() {
-	const { postId, isEditedPostNew, hasRemoteAutosave } = useSelect(
+	const {
+		postId,
+		isEditedPostNew,
+		hasRemoteAutosave,
+		isCollaborationEnabled,
+	} = useSelect(
 		( select ) => ( {
 			postId: select( editorStore ).getCurrentPostId(),
 			isEditedPostNew: select( editorStore ).isEditedPostNew(),
 			hasRemoteAutosave:
 				!! select( editorStore ).getEditorSettings().autosave,
+			isCollaborationEnabled:
+				select( editorStore ).isCollaborationEnabledForCurrentPost(),
 		} ),
 		[]
 	);
@@ -68,6 +75,11 @@ function useAutosaveNotice() {
 	const { editPost, resetEditorBlocks } = useDispatch( editorStore );
 
 	useEffect( () => {
+		if ( isCollaborationEnabled ) {
+			localAutosaveClear( postId, isEditedPostNew );
+			return;
+		}
+
 		let localAutosave = localAutosaveGet( postId, isEditedPostNew );
 		if ( ! localAutosave ) {
 			return;
@@ -125,7 +137,7 @@ function useAutosaveNotice() {
 				],
 			}
 		);
-	}, [ isEditedPostNew, postId ] );
+	}, [ isCollaborationEnabled, isEditedPostNew, postId ] );
 }
 
 /**
@@ -175,6 +187,11 @@ function LocalAutosaveMonitor() {
 	const deferredAutosave = useCallback( () => {
 		requestIdleCallback( () => autosave( { local: true } ) );
 	}, [] );
+	const isCollaborationEnabled = useSelect(
+		( select ) =>
+			select( editorStore ).isCollaborationEnabledForCurrentPost(),
+		[]
+	);
 	useAutosaveNotice();
 	useAutosavePurge();
 
@@ -183,6 +200,10 @@ function LocalAutosaveMonitor() {
 			select( editorStore ).getEditorSettings().localAutosaveInterval,
 		[]
 	);
+
+	if ( isCollaborationEnabled ) {
+		return null;
+	}
 
 	return (
 		<AutosaveMonitor

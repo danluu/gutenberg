@@ -457,9 +457,11 @@ export const trashPost =
 export const autosave =
 	( { local = false, ...options } = {} ) =>
 	async ( { select, dispatch } ) => {
-		const post = select.getCurrentPost();
-
 		if ( local ) {
+			if ( select.isCollaborationEnabledForCurrentPost() ) {
+				return;
+			}
+			const post = select.getCurrentPost();
 			const isPostNew = select.isEditedPostNew();
 			const title = select.getEditedPostAttribute( 'title' );
 			const content = select.getEditedPostAttribute( 'content' );
