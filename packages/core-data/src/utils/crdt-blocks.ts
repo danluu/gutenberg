@@ -514,6 +514,17 @@ function getYBlockSemanticKey( yblock: YBlock ): string {
 	return getBlockSemanticKey( yblock.toJSON() as unknown as Block );
 }
 
+function canUseBaseBlockForMerge(
+	yblock: YBlock,
+	baseBlock: Block | undefined
+): baseBlock is Block {
+	if ( ! baseBlock ) {
+		return false;
+	}
+
+	return yblock.get( 'name' ) === baseBlock.name;
+}
+
 function findEquivalentYBlockIndex( yblocks: YBlocks, block: Block ): number {
 	const clientId = getBlockClientId( block );
 
@@ -817,7 +828,10 @@ function mergeBlockIntoYBlock(
 	attributeCursor: MergeCursorPosition,
 	baseBlock?: Block
 ): void {
-	const baseAttributes = baseBlock?.attributes ?? {};
+	const mergeBaseBlock = canUseBaseBlockForMerge( yblock, baseBlock )
+		? baseBlock
+		: undefined;
+	const baseAttributes = mergeBaseBlock?.attributes ?? {};
 
 	Object.entries( block ).forEach( ( [ key, value ] ) => {
 		switch ( key ) {
@@ -845,7 +859,7 @@ function mergeBlockIntoYBlock(
 						);
 
 						if (
-							baseBlock &&
+							mergeBaseBlock &&
 							isExpectedType &&
 							fastDeepEqual(
 								baseAttributes[ attributeName ],
@@ -885,7 +899,7 @@ function mergeBlockIntoYBlock(
 					( _attrValue: unknown, attrName: string ) => {
 						if ( ! value.hasOwnProperty( attrName ) ) {
 							if (
-								baseBlock &&
+								mergeBaseBlock &&
 								! Object.prototype.hasOwnProperty.call(
 									baseAttributes,
 									attrName
@@ -903,8 +917,8 @@ function mergeBlockIntoYBlock(
 
 			case 'innerBlocks': {
 				if (
-					baseBlock &&
-					fastDeepEqual( baseBlock.innerBlocks, value ?? [] )
+					mergeBaseBlock &&
+					fastDeepEqual( mergeBaseBlock.innerBlocks, value ?? [] )
 				) {
 					break;
 				}
@@ -921,7 +935,7 @@ function mergeBlockIntoYBlock(
 					yInnerBlocks,
 					value ?? [],
 					attributeCursor,
-					baseBlock?.innerBlocks
+					mergeBaseBlock?.innerBlocks
 				);
 				break;
 			}
@@ -930,8 +944,8 @@ function mergeBlockIntoYBlock(
 				const blockKey = key as keyof Block;
 
 				if (
-					baseBlock &&
-					fastDeepEqual( baseBlock[ blockKey ], value )
+					mergeBaseBlock &&
+					fastDeepEqual( mergeBaseBlock[ blockKey ], value )
 				) {
 					break;
 				}
@@ -945,8 +959,8 @@ function mergeBlockIntoYBlock(
 	yblock.forEach( ( _v, k ) => {
 		if ( ! Object.hasOwn( block, k ) ) {
 			if (
-				baseBlock &&
-				! Object.prototype.hasOwnProperty.call( baseBlock, k )
+				mergeBaseBlock &&
+				! Object.prototype.hasOwnProperty.call( mergeBaseBlock, k )
 			) {
 				return;
 			}

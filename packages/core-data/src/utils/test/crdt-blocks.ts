@@ -39,6 +39,15 @@ jest.mock( '@wordpress/blocks', () => ( {
 			},
 		},
 		{
+			name: 'core/search',
+			attributes: {
+				buttonPosition: { type: 'string' },
+				buttonText: { type: 'string' },
+				label: { type: 'string' },
+				placeholder: { type: 'string' },
+			},
+		},
+		{
 			name: 'core/test-object-query',
 			attributes: {
 				metadata: {
@@ -2245,6 +2254,60 @@ describe( 'crdt-blocks', () => {
 
 			expect( body[ 0 ].cells[ 0 ].content ).toBe( 'edited-remotely' );
 			expect( body[ 0 ].cells[ 0 ].tag ).toBe( 'th' );
+		} );
+
+		it( 'does not collapse a stale base paragraph into a current search block', () => {
+			const baseBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content: 'rtc-save-paragraph-marker',
+					},
+					innerBlocks: [],
+				},
+			];
+			const currentSearchBlocks: Block[] = [
+				{
+					name: 'core/search',
+					attributes: {
+						buttonPosition: 'button-inside',
+						buttonText: 'Find rtc-save-search-option-marker',
+						label: 'Search label rtc-save-search-option-marker',
+						placeholder:
+							'Search placeholder rtc-save-search-option-marker',
+					},
+					innerBlocks: [],
+				},
+			];
+			const updatedParagraphBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: {
+						content: 'rtc-save-paragraph-marker-updated',
+					},
+					innerBlocks: [],
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, currentSearchBlocks, null );
+			mergeCrdtBlocks(
+				yblocks,
+				updatedParagraphBlocks,
+				null,
+				baseBlocks
+			);
+
+			const block = yblocks.get( 0 );
+			const attrs = block.get( 'attributes' ) as YBlockAttributes;
+
+			expect( block.get( 'name' ) ).toBe( 'core/paragraph' );
+			expect( ( attrs.get( 'content' ) as Y.Text ).toString() ).toBe(
+				'rtc-save-paragraph-marker-updated'
+			);
+			expect( attrs.get( 'label' ) ).toBeUndefined();
+			expect( attrs.get( 'buttonText' ) ).toBeUndefined();
+			expect( attrs.get( 'placeholder' ) ).toBeUndefined();
+			expect( attrs.get( 'buttonPosition' ) ).toBeUndefined();
 		} );
 
 		it( 'preserves Y.Map identity for untouched rows when a row is appended', () => {
