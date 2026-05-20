@@ -94,24 +94,24 @@ realistic_e2e$case_label <- factor(
 )
 realistic_e2e$outcome <- factor(
 	realistic_e2e$outcome,
-	levels = c( "Passed", "Merged failed" )
+	levels = c( "Passed", "Fixed failed" )
 )
 
 command_ratios_plot <- ggplot(
 	command_ratios,
-	aes( x = merged_base_ratio, y = case_label, color = kind_label )
+	aes( x = fixed_base_ratio, y = case_label, color = kind_label )
 ) +
 	geom_vline( xintercept = 1, linetype = "dashed", color = "grey55" ) +
 	geom_segment(
-		aes( x = 1, xend = merged_base_ratio, yend = case_label ),
+		aes( x = 1, xend = fixed_base_ratio, yend = case_label ),
 		linewidth = 0.6,
 		alpha = 0.72
 	) +
 	geom_point( size = 2.7 ) +
 	geom_text(
 		aes(
-			label = ratio_label( merged_base_ratio ),
-			hjust = ifelse( merged_base_ratio >= 1, -0.12, 1.12 )
+			label = ratio_label( fixed_base_ratio ),
+			hjust = ifelse( fixed_base_ratio >= 1, -0.12, 1.12 )
 		),
 		size = 2.7,
 		show.legend = FALSE
@@ -125,31 +125,31 @@ command_ratios_plot <- ggplot(
 	scale_color_brewer( palette = "Dark2" ) +
 	coord_cartesian( clip = "off" ) +
 	labs(
-		title = "Local merged/base elapsed-time ratios",
-		subtitle = "Values right of 1x are slower in the merged snapshot; rows with merged e2e failures are excluded",
-		x = "Merged / base median elapsed time",
+		title = "Local fixed/base elapsed-time ratios",
+		subtitle = "Values right of 1x are slower in the fixed branch; rows with fixed e2e failures are excluded",
+		x = "Fixed / base median elapsed time",
 		y = NULL,
 		color = NULL,
-		caption = "Source: local-abba-20260519T193459Z, local-many-users-20260519T200914Z, and local-realistic-e2e-20260519T203043Z."
+		caption = "Source: fixed-abba-20260520T055855Z and fixed-e2e-local-20260520T061252Z."
 	) +
 	theme_rtc()
 write_plot( "local-command-ratios.png", command_ratios_plot, width = 9.5, height = 6.1 )
 
 crdt_ratio_plot <- ggplot(
 	crdt_p50,
-	aes( x = merged_base_ratio, y = scenario_label, color = host, shape = host )
+	aes( x = fixed_base_ratio, y = scenario_label, color = host, shape = host )
 ) +
 	geom_vline( xintercept = 1, linetype = "dashed", color = "grey55" ) +
 	geom_segment(
-		aes( x = 1, xend = merged_base_ratio, yend = scenario_label, color = host ),
+		aes( x = 1, xend = fixed_base_ratio, yend = scenario_label, color = host ),
 		linewidth = 0.6,
 		alpha = 0.72
 	) +
 	geom_point( size = 2.8 ) +
 	geom_text(
 		aes(
-			label = ratio_label( merged_base_ratio ),
-			hjust = ifelse( merged_base_ratio >= 1, -0.12, 1.12 )
+			label = ratio_label( fixed_base_ratio ),
+			hjust = ifelse( fixed_base_ratio >= 1, -0.12, 1.12 )
 		),
 		size = 2.7,
 		show.legend = FALSE
@@ -164,8 +164,8 @@ crdt_ratio_plot <- ggplot(
 	coord_cartesian( clip = "off" ) +
 	labs(
 		title = "CRDT microbench p50 ratios",
-		subtitle = "Stale suffix and top-level delete scenarios are the consistent merged-snapshot slowdown",
-		x = "Merged / base p50 operation time",
+		subtitle = "The fixed branch still leaves stale top-level delete slower than base",
+		x = "Fixed / base p50 operation time",
 		y = NULL,
 		color = NULL,
 		shape = NULL,
@@ -176,19 +176,19 @@ write_plot( "crdt-microbench-p50-ratios.png", crdt_ratio_plot, width = 9.5, heig
 
 many_user_ratio_plot <- ggplot(
 	many_user_p50,
-	aes( x = merged_base_ratio, y = scenario_label, color = host, shape = host )
+	aes( x = fixed_base_ratio, y = scenario_label, color = host, shape = host )
 ) +
 	geom_vline( xintercept = 1, linetype = "dashed", color = "grey55" ) +
 	geom_segment(
-		aes( x = 1, xend = merged_base_ratio, yend = scenario_label, color = host ),
+		aes( x = 1, xend = fixed_base_ratio, yend = scenario_label, color = host ),
 		linewidth = 0.6,
 		alpha = 0.72
 	) +
 	geom_point( size = 2.8 ) +
 	geom_text(
 		aes(
-			label = ratio_label( merged_base_ratio ),
-			hjust = ifelse( merged_base_ratio >= 1, -0.12, 1.12 )
+			label = ratio_label( fixed_base_ratio ),
+			hjust = ifelse( fixed_base_ratio >= 1, -0.12, 1.12 )
 		),
 		size = 2.7,
 		show.legend = FALSE
@@ -203,12 +203,12 @@ many_user_ratio_plot <- ggplot(
 	coord_cartesian( clip = "off" ) +
 	labs(
 		title = "Many-user sync microbench p50 ratios",
-		subtitle = "Synthetic 100-user and 1000-room cases were neutral to modestly favorable locally",
-		x = "Merged / base p50 operation time",
+		subtitle = "Synthetic 100-user and 1000-room cases were close to base locally",
+		x = "Fixed / base p50 operation time",
 		y = NULL,
 		color = NULL,
 		shape = NULL,
-		caption = "Source: local-many-users-20260519T200914Z. The benchmark isolates sync serialization, awareness, queues, and room rotation."
+		caption = "Source: fixed-abba-20260520T055855Z. The benchmark isolates sync serialization, awareness, queues, and room rotation."
 	) +
 	theme_rtc()
 write_plot( "many-user-sync-p50-ratios.png", many_user_ratio_plot, width = 9.5, height = 5.2 )
@@ -216,7 +216,7 @@ write_plot( "many-user-sync-p50-ratios.png", many_user_ratio_plot, width = 9.5, 
 realistic_e2e_plot <- ggplot(
 	realistic_e2e,
 	aes(
-		x = merged_base_elapsed_ratio,
+		x = fixed_base_elapsed_ratio,
 		y = case_label,
 		color = outcome,
 		shape = outcome
@@ -224,7 +224,7 @@ realistic_e2e_plot <- ggplot(
 ) +
 	geom_vline( xintercept = 1, linetype = "dashed", color = "grey55" ) +
 	geom_segment(
-		aes( x = 1, xend = merged_base_elapsed_ratio, yend = case_label ),
+		aes( x = 1, xend = fixed_base_elapsed_ratio, yend = case_label ),
 		linewidth = 0.6,
 		alpha = 0.72
 	) +
@@ -233,8 +233,8 @@ realistic_e2e_plot <- ggplot(
 		aes(
 			label = ifelse(
 				outcome == "Passed",
-				ratio_label( merged_base_elapsed_ratio ),
-				sprintf( "%s; %d/%d failed", ratio_label( merged_base_elapsed_ratio ), merged_failures, reps )
+				ratio_label( fixed_base_elapsed_ratio ),
+				sprintf( "%s; %d/%d failed", ratio_label( fixed_base_elapsed_ratio ), fixed_failures, reps )
 			)
 		),
 		hjust = -0.12,
@@ -251,13 +251,13 @@ realistic_e2e_plot <- ggplot(
 	scale_shape_manual( values = c( 16, 4 ) ) +
 	coord_cartesian( clip = "off" ) +
 	labs(
-		title = "Realistic e2e merged/base status",
-		subtitle = "Failed merged rows include Playwright retry time and are correctness failures, not clean timing ratios",
-		x = "Merged / base median elapsed time",
+		title = "Realistic e2e fixed/base status",
+		subtitle = "Failed fixed rows are correctness failures, not clean timing ratios",
+		x = "Fixed / base median elapsed time",
 		y = NULL,
 		color = NULL,
 		shape = NULL,
-		caption = "Source: local-realistic-e2e-20260519T203043Z. HTTP polling provider; isolated wp-env startup excluded."
+		caption = "Source: fixed-e2e-local-20260520T061252Z. HTTP polling provider; isolated wp-env startup excluded."
 	) +
 	theme_rtc()
 write_plot( "realistic-e2e-status-ratios.png", realistic_e2e_plot, width = 9.5, height = 4.7 )

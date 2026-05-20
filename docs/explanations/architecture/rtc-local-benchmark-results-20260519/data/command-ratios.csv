@@ -1,10 +1,12 @@
-host,kind,kind_label,case,case_label,failures,reps,base_median_s,merged_median_s,merged_base_ratio,usable
-Local,lower,Lower microbench,micro-crdt,CRDT merge microbench,0,2,8.82,13.57,1.539,yes
-Local,lower,Lower microbench,micro-html,HTML equivalence microbench,0,2,1.86,1.87,1.005,yes
-Local,lower,Lower microbench,micro-sync,HTTP polling sync microbench,0,2,5.10,5.11,1.001,yes
-Local,unit-suite,Targeted unit suite,crdt-stale-top-level,CRDT stale top-level unit suite,0,2,13.22,4.05,0.306,yes
-Local,unit-suite,Targeted unit suite,http-polling-manager,HTTP polling manager unit suite,0,2,1.96,1.93,0.987,yes
-Local,e2e,E2E smoke/perf,collaboration-code-editor-performance-ws,Code editor WS e2e,0,2,9.77,10.13,1.037,yes
-Local,e2e,E2E smoke/perf,collaboration-sync-body-size-http,Sync body size HTTP e2e,0,2,15.99,15.74,0.985,yes
-Local,multi-user,Multi-user synthetic,many-users-sync,Many-user sync microbench,0,2,7.90,8.01,1.015,yes
-Local,realistic-e2e,Realistic e2e,table-stale-snapshot-http,Table stale snapshot HTTP e2e,0,2,25.33,26.38,1.041,yes
+host,kind,kind_label,case,case_label,failures,reps,base_median_s,fixed_median_s,fixed_base_ratio,usable
+Local,lower,Lower microbench,micro-crdt,CRDT merge microbench,0,2,7.01,7.84,1.119,yes
+Local,lower,Lower microbench,micro-html,HTML equivalence microbench,0,2,1.18,1.25,1.059,yes
+Local,lower,Lower microbench,micro-sync,HTTP polling sync microbench,0,2,1.39,1.48,1.065,yes
+Local,unit-suite,Targeted unit suite,crdt-stale-top-level,CRDT stale top-level unit suite,0,2,10.70,10.23,0.957,yes
+Local,unit-suite,Targeted unit suite,http-polling-manager,HTTP polling manager unit suite,0,2,1.53,1.44,0.944,yes
+Local,e2e,E2E smoke/perf,collaboration-code-editor-performance-ws,Code editor WS e2e,0,2,6.50,5.95,0.915,yes
+Local,e2e,E2E smoke/perf,collaboration-sync-body-size-http,Sync body size HTTP e2e,0,2,13.97,13.98,1.000,yes
+Local,multi-user,Multi-user synthetic,many-users-sync,Many-user sync microbench,0,2,1.67,1.79,1.075,yes
+Local,realistic-e2e,Realistic e2e,large-post-three-user-http,3-user large post HTTP e2e,2,2,31.57,38.64,1.224,no
+Local,realistic-e2e,Realistic e2e,list-item-move-refresh-http,List item move and refresh HTTP e2e,0,2,21.35,22.40,1.049,yes
+Local,realistic-e2e,Realistic e2e,table-stale-snapshot-http,Table stale snapshot HTTP e2e,0,2,24.54,24.45,0.996,yes

@@ -1,6 +1,6 @@
-host,scenario,scenario_label,base_p50_ms,merged_p50_ms,merged_base_ratio,base_p95_ms,merged_p95_ms,p95_merged_base_ratio,base_mean_ms,merged_mean_ms
-Local,server_response_json_100_users_single_room,100 users server response JSON,0.153229,0.154146,1.006,0.165625,0.170729,1.031,0.159056,0.162062
-Local,batched_disconnect_json_100_users_10_room_batches,100 user disconnect JSON batches,0.021229,0.022916,1.079,0.024000,0.025396,1.058,0.022239,0.023171
-Local,awareness_apply_100_users_10_changed,100 users awareness apply,0.162396,0.162270,0.999,0.187730,0.185750,0.989,0.167250,0.167906
-Local,queue_take_restore_100_users_100_updates_each,100 users queue take/restore,0.040041,0.037042,0.925,0.075438,0.065458,0.868,0.047789,0.044216
-Local,rotate_window_1000_rooms_10_slots,1000 rooms rotate 10-slot window,0.002042,0.002042,1.000,0.003604,0.003771,1.046,0.002688,0.002685
+host,scenario,scenario_label,base_p50_ms,fixed_p50_ms,fixed_base_ratio,base_p95_ms,fixed_p95_ms,p95_fixed_base_ratio,base_mean_ms,fixed_mean_ms
+Local,server_response_json_100_users_single_room,100 users server response JSON,0.028687,0.030208,1.053,0.031834,0.035730,1.122,0.029768,0.031648
+Local,batched_disconnect_json_100_users_10_room_batches,100 user disconnect JSON batches,0.014396,0.014855,1.032,0.015771,0.016542,1.049,0.014796,0.015379
+Local,awareness_apply_100_users_10_changed,100 users awareness apply,0.026209,0.026813,1.023,0.029563,0.029417,0.995,0.027215,0.027902
+Local,queue_take_restore_100_users_100_updates_each,100 users queue take/restore,0.020021,0.020355,1.017,0.030916,0.031979,1.034,0.023460,0.026900
+Local,rotate_window_1000_rooms_10_slots,1000 rooms rotate 10-slot window,0.001417,0.001459,1.029,0.002396,0.002479,1.035,0.001738,0.001773

@@ -1,4 +1,4 @@
-case,case_label,base_failures,merged_failures,reps,base_median_s,merged_median_s,merged_base_elapsed_ratio,usable,outcome
-large-post-three-user-http,3-user large post HTTP e2e,0,2,2,31.59,108.19,3.426,no,Merged failed
-list-item-move-refresh-http,List item move and refresh HTTP e2e,0,2,2,23.52,82.05,3.488,no,Merged failed
-table-stale-snapshot-http,Table stale snapshot HTTP e2e,0,0,2,25.33,26.38,1.041,yes,Passed
+case,case_label,base_failures,fixed_failures,reps,base_median_s,fixed_median_s,fixed_base_elapsed_ratio,usable,outcome
+large-post-three-user-http,3-user large post HTTP e2e,0,2,2,31.57,38.64,1.224,no,Fixed failed
+list-item-move-refresh-http,List item move and refresh HTTP e2e,0,0,2,21.35,22.40,1.049,yes,Passed
+table-stale-snapshot-http,Table stale snapshot HTTP e2e,0,0,2,24.54,24.45,0.996,yes,Passed

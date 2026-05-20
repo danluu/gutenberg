@@ -1,17 +1,23 @@
-# RTC Local Benchmark Results, 2026-05-19
+# RTC Fixed-Branch Local Benchmark Results, 2026-05-20
 
-This follows `rtc-less-busy-benchmark-handoff-20260519.md`, but the local run uses a cleaner runner structure instead of preserving the earlier remote-run ordering. The local runner used balanced ABBA ordering for lower-level, e2e, many-user, and realistic e2e rows and fixed host-specific wp-env behavior on macOS.
+This updates the 2026-05-19 local benchmark readout with a rerun of the later branch that was intended to fix the failing RTC stress rows. The rerun used local Docker after repairing the local OrbStack backend, not the overloaded Jetstream2 host.
 
 ## Inputs
 
 Pinned refs from `danluu/gutenberg`:
 
-| label | commit |
-| --- | --- |
-| base | `c173c18fbcd60eac93612f7f3d9550ca4975db8d` |
-| all-ready-merged | `eae83fa6f594083c07bce4599a2a725704700e9b` |
+| label | branch | commit |
+| --- | --- | --- |
+| base | `rtc-pr-stack-20260519T214027Z-tested-base` | `c173c18fbcd60eac93612f7f3d9550ca4975db8d` |
+| fixed | `rtc-pr-stack-20260519T214027Z-validated-no-harness` | `e922771984f5bd37a3d5e76dc246a8c5001675ff` |
 
-Local setup excluded from timed rows: bundle fetch/clone, `npm install`, `composer install`, `npm run build -- --skip-types`, and wp-env startup. Both local worktrees built successfully before timings started.
+Fixed branch URL:
+
+```text
+https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T214027Z-validated-no-harness
+```
+
+Local setup excluded from timed rows: bundle fetch/clone, `npm install`, `composer install`, `npm run build -- --skip-types`, Docker image pull/build, and wp-env startup.
 
 ## Benchmark Meanings
 
@@ -52,84 +58,77 @@ The raw microbenchmark scenarios mean:
 | `queue_take_restore_100_users_100_updates_each` | Exercise 100 per-user update queues, each with 100 updates, by taking a batch, restoring it, then draining the queues. |
 | `rotate_window_1000_rooms_10_slots` | Rotate a 10-slot polling window through 1000 rooms, stressing room-selection bookkeeping for high-room-count clients. |
 
-## Local Run
+## Local Runs
 
 Run ids:
 
-- Main lower/unit/e2e run: `local-abba-20260519T193459Z`
-- Many-user sync run: `local-many-users-20260519T200914Z`
-- Realistic e2e run: `local-realistic-e2e-20260519T203043Z`
+- Lower/unit/many-user run: `fixed-abba-20260520T055855Z`
+- Docker-backed browser run: `fixed-e2e-local-20260520T061252Z`
 
-Local artifact root:
+Local artifact roots:
 
 ```text
-/Users/danluu/dev/fuzz/rtc-benchmark-20260519-local.noindex/results/local-abba-20260519T193459Z
-/Users/danluu/dev/fuzz/rtc-benchmark-20260519-local.noindex/results/local-many-users-20260519T200914Z
-/Users/danluu/dev/fuzz/rtc-benchmark-20260519-local.noindex/results/local-realistic-e2e-20260519T203043Z
+/Users/danluu/dev/fuzz/rtc-benchmark-20260520-fixed.noindex/results/fixed-abba-20260520T055855Z
+/Users/danluu/dev/fuzz/rtc-benchmark-20260520-fixed.noindex/results/fixed-e2e-local-20260520T061252Z
 ```
 
 Host and runner notes:
 
-- macOS 26.5, Apple M3 Max, 14 logical CPUs, 38.65 GB RAM.
-- Node `v20.20.2`, npm `10.8.2`, Docker server `29.4.0`.
-- Lower-level order: base rep 1, merged rep 1, merged rep 2, base rep 2.
-- E2E order: base rep 1, merged rep 1, merged rep 2, base rep 2, after prestarting both isolated wp-env instances.
-- Many-user order: base rep 1, merged rep 1, merged rep 2, base rep 2.
-- Realistic e2e order: base rep 1, merged rep 1, merged rep 2, base rep 2, after prestarting both isolated wp-env instances.
-- Local wp-env needed `WP_BASE_URL=http://localhost:<port>`; `127.0.0.1` caused login/REST auth churn on this machine. The WebSocket server stayed on `127.0.0.1`.
-- `RTC_BENCH_LOAD_GATE=off`; macOS load average did not settle because of unrelated background indexing/media work. Per-row load samples were still recorded. Local 1-minute load samples ranged from 16.82 to 31.59, mean 23.39.
-- The many-user run's 1-minute load samples ranged from 8.59 to 19.29, mean 16.24.
-- The realistic e2e run's 1-minute load samples ranged from 21.08 to 36.45, mean 27.55.
+- macOS 26.5, Apple M5 Max, 18 logical CPUs.
+- Node `v20.20.2`, npm `10.8.2`, Docker client `29.4.0`, Docker server `29.4.0`.
+- Local Docker initially failed because the OrbStack VM could not mount its `/data` BTRFS volume. The OrbStack log reported `DATA IS LIKELY CORRUPTED`; the corrupted 65 GB Docker/Linux data image was moved aside at `/Users/danluu/orbstack-corrupt-backup-20260520T061128Z`, after which OrbStack recreated a fresh VM and Docker became usable.
+- The browser rerun used two isolated wp-env instances in parallel: base on `http://localhost:19681`, fixed on `http://localhost:19683`.
+- The first local lower/unit run had invalid e2e rows from the broken Docker socket. Those rows are excluded. The e2e rows below come only from the Docker-backed `fixed-e2e-local-20260520T061252Z` run.
 
-The original lower/unit/e2e run and the many-user run exited zero for all 32 timed rows. The realistic e2e run added 12 timed rows: 8 exited zero and 4 failed, all in the merged snapshot's stress flows.
+All lower-level, unit-suite, smoke e2e, many-user, list-item stress, and table stale-snapshot rows passed on the fixed branch. The fixed branch still failed both reps of the three-user large-post HTTP stress row.
 
-| kind | case | base failures/reps | merged failures/reps | base median s | merged median s | merged/base |
+| kind | case | base failures/reps | fixed failures/reps | base median s | fixed median s | fixed/base |
 | --- | --- | ---: | ---: | ---: | ---: | ---: |
-| lower | micro-crdt | 0/2 | 0/2 | 8.82 | 13.57 | 1.539 |
-| lower | micro-html | 0/2 | 0/2 | 1.86 | 1.87 | 1.005 |
-| lower | micro-sync | 0/2 | 0/2 | 5.10 | 5.11 | 1.001 |
-| unit-suite | crdt-stale-top-level | 0/2 | 0/2 | 13.22 | 4.05 | 0.306 |
-| unit-suite | http-polling-manager | 0/2 | 0/2 | 1.96 | 1.93 | 0.987 |
-| e2e | collaboration-code-editor-performance-ws | 0/2 | 0/2 | 9.77 | 10.13 | 1.037 |
-| e2e | collaboration-sync-body-size-http | 0/2 | 0/2 | 15.99 | 15.74 | 0.985 |
-| multi-user | many-users-sync | 0/2 | 0/2 | 7.90 | 8.01 | 1.015 |
-| realistic-e2e | large-post-three-user-http | 0/2 | 2/2 | 31.59 | 108.19 | n/a, merged failed |
-| realistic-e2e | list-item-move-refresh-http | 0/2 | 2/2 | 23.52 | 82.05 | n/a, merged failed |
-| realistic-e2e | table-stale-snapshot-http | 0/2 | 0/2 | 25.33 | 26.38 | 1.041 |
+| lower | micro-crdt | 0/2 | 0/2 | 7.01 | 7.84 | 1.119 |
+| lower | micro-html | 0/2 | 0/2 | 1.18 | 1.25 | 1.059 |
+| lower | micro-sync | 0/2 | 0/2 | 1.39 | 1.48 | 1.065 |
+| unit-suite | crdt-stale-top-level | 0/2 | 0/2 | 10.70 | 10.23 | 0.957 |
+| unit-suite | http-polling-manager | 0/2 | 0/2 | 1.53 | 1.44 | 0.944 |
+| e2e | collaboration-code-editor-performance-ws | 0/2 | 0/2 | 6.50 | 5.95 | 0.915 |
+| e2e | collaboration-sync-body-size-http | 0/2 | 0/2 | 13.97 | 13.98 | 1.000 |
+| multi-user | many-users-sync | 0/2 | 0/2 | 1.67 | 1.79 | 1.075 |
+| realistic-e2e | large-post-three-user-http | 0/2 | 2/2 | 31.57 | 38.64 | n/a, fixed failed |
+| realistic-e2e | list-item-move-refresh-http | 0/2 | 0/2 | 21.35 | 22.40 | 1.049 |
+| realistic-e2e | table-stale-snapshot-http | 0/2 | 0/2 | 24.54 | 24.45 | 0.996 |
 
 Local CRDT microbench p50 ratios:
 
-| scenario | base p50 ms | merged p50 ms | merged/base |
+| scenario | base p50 ms | fixed p50 ms | fixed/base |
 | --- | ---: | ---: | ---: |
-| small_stale_suffix_append_50 | 0.2783 | 0.7811 | 2.806 |
-| large_stale_suffix_append_250 | 1.5910 | 4.6671 | 2.934 |
-| stale_top_level_delete_100 | 8.0966 | 27.8004 | 3.434 |
-| nested_group_move_with_remote_append | 0.4133 | 0.4042 | 0.978 |
-| table_body_suffix_append_40_rows | 0.3054 | 0.5535 | 1.813 |
+| small_stale_suffix_append_50 | 0.2139 | 0.2097 | 0.980 |
+| large_stale_suffix_append_250 | 1.2140 | 1.2604 | 1.038 |
+| stale_top_level_delete_100 | 6.0959 | 10.2969 | 1.689 |
+| nested_group_move_with_remote_append | 0.3141 | 0.2364 | 0.753 |
+| table_body_suffix_append_40_rows | 0.2473 | 0.2543 | 1.028 |
 
 Local many-user sync microbench p50 ratios:
 
-| scenario | base p50 ms | merged p50 ms | merged/base | base p95 ms | merged p95 ms | p95 merged/base |
+| scenario | base p50 ms | fixed p50 ms | fixed/base | base p95 ms | fixed p95 ms | p95 fixed/base |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| server_response_json_100_users_single_room | 0.153229 | 0.154146 | 1.006 | 0.165625 | 0.170729 | 1.031 |
-| batched_disconnect_json_100_users_10_room_batches | 0.021229 | 0.022916 | 1.079 | 0.024000 | 0.025396 | 1.058 |
-| awareness_apply_100_users_10_changed | 0.162396 | 0.162270 | 0.999 | 0.187730 | 0.185750 | 0.989 |
-| queue_take_restore_100_users_100_updates_each | 0.040041 | 0.037042 | 0.925 | 0.075438 | 0.065458 | 0.868 |
-| rotate_window_1000_rooms_10_slots | 0.002042 | 0.002042 | 1.000 | 0.003604 | 0.003771 | 1.046 |
+| server_response_json_100_users_single_room | 0.028687 | 0.030208 | 1.053 | 0.031834 | 0.035730 | 1.122 |
+| batched_disconnect_json_100_users_10_room_batches | 0.014396 | 0.014855 | 1.032 | 0.015771 | 0.016542 | 1.049 |
+| awareness_apply_100_users_10_changed | 0.026209 | 0.026813 | 1.023 | 0.029563 | 0.029417 | 0.995 |
+| queue_take_restore_100_users_100_updates_each | 0.020021 | 0.020355 | 1.017 | 0.030916 | 0.031979 | 1.034 |
+| rotate_window_1000_rooms_10_slots | 0.001417 | 0.001459 | 1.029 | 0.002396 | 0.002479 | 1.035 |
 
-Realistic e2e failure signatures:
+Realistic e2e status:
 
-| row | base result | merged result | observed merged failure |
+| row | base result | fixed result | observed fixed behavior |
 | --- | ---: | ---: | --- |
-| large-post-three-user-http | 0/2 failures | 2/2 failures | Both merged reps timed out waiting for every participant to observe the final concurrent paragraphs from the other users in `collaboration-stress.spec.ts`. |
-| list-item-move-refresh-http | 0/2 failures | 2/2 failures | Both merged reps timed out waiting for the moved list order; the assertion expected `Item Beta` after `Item Gamma`, but saw the old order. |
-| table-stale-snapshot-http | 0/2 failures | 0/2 failures | No failure; this is the only all-pass realistic e2e ratio row. |
+| large-post-three-user-http | 0/2 failures | 2/2 failures | Both fixed reps timed out waiting for every participant to observe the final concurrent paragraphs. The fixed branch still failed to propagate `Final paragraph from Editor` to at least one participant within the convergence window. |
+| list-item-move-refresh-http | 0/2 failures | 0/2 failures | The fixed branch passed the list-item movement row that failed in the earlier all-ready-merged snapshot. |
+| table-stale-snapshot-http | 0/2 failures | 0/2 failures | No failure; fixed/base elapsed ratio was 0.996x. |
 
 ## Graphs
 
 The plotted data and generator are checked in under `docs/explanations/architecture/rtc-local-benchmark-results-20260519/`. The graphs use `ggplot2` with ColorBrewer scales and the minimal RTC report style used by the existing benchmark trend plots.
 
-![Local merged/base command ratios](rtc-local-benchmark-results-20260519/plots/local-command-ratios.png)
+![Local fixed/base command ratios](rtc-local-benchmark-results-20260519/plots/local-command-ratios.png)
 
 ![CRDT microbench p50 ratios](rtc-local-benchmark-results-20260519/plots/crdt-microbench-p50-ratios.png)
 
@@ -139,8 +138,8 @@ The plotted data and generator are checked in under `docs/explanations/architect
 
 ## Readout
 
-The local lower/unit/e2e and many-user runs are clean timing runs because they used balanced ABBA order and all rows passed. They show no meaningful smoke e2e regression: WS e2e was +3.7% and HTTP e2e was -1.5% for merged versus base. The synthetic CRDT stale/suffix scenarios are consistently slower in the merged snapshot, around 1.8x to 3.4x by p50 depending on scenario.
+The fixed branch is not a clean maintainer candidate. It fixes or avoids several prior symptoms, including the list-item movement stress row, but it still fails the simple three-user large-post HTTP stress row in both local reps while base passes both reps.
 
-HTML-equivalence and HTTP-polling microbenches were effectively neutral. The many-user sync benchmark was also near neutral overall: the aggregate elapsed-time ratio was 1.015x, p50 ratios ranged from 0.925x to 1.079x, awareness apply was 0.999x, and 1000-room window rotation was 1.000x.
+This is also a fuzzer coverage and promotion failure. The missed case is not obscure from a product perspective: three users, HTTP polling, a large mixed-block document, concurrent final paragraph appends, and a convergence assertion that all participants observe the final text. A fuzzer that is meant to cover RTC product behavior should have a nearby randomized workflow, and a branch promotion gate for RTC fixes should run this row before calling a branch fixed.
 
-The realistic e2e addition changes the correctness picture: base passed all six stress-flow commands, but merged failed both reps of the 3-user large-post flow and both reps of the list-item move/refresh flow. The failed rows' elapsed medians include Playwright retries, so they should be read as repeated e2e failures rather than clean performance ratios. The realistic table stale-snapshot row passed on both branches, with merged/base at 1.041x.
+The lower-level data is mixed but not the blocker. The fixed branch is close to base on HTML, sync helper, smoke e2e, list-item, table, and many-user rows. The remaining CRDT microbench concern is `stale_top_level_delete_100`, where fixed is still 1.689x base by p50. The correctness blocker is the large-post stress failure.
