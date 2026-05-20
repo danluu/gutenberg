@@ -14,7 +14,139 @@ user-facing bug family after related findings have been clustered or reduced.
 These identifiers are useful for matching this explanation to local fuzzing
 metadata and videos, but they are not expected to resolve in GitHub.
 
-Local realistic video evidence:
+## Reviewer Repro Packet For PR #78320
+
+This section is the reviewer-facing packet for
+[PR #78320](https://github.com/WordPress/gutenberg/pull/78320). It follows
+[Alec's request](https://github.com/WordPress/gutenberg/issues/77716#issuecomment-4464309206)
+for repros that are easier to audit: video evidence must be tied to the exact
+manual or executable steps, and any non-human setup must be disclosed.
+
+The simple video in the original PR description is not enough by itself. Alec
+could not reproduce those visible steps on trunk with WebSockets, without
+WebSockets, or with a CLI-created post. The actionable reproduction is the
+later delayed-update reproduction from
+[Alec's PR comment](https://github.com/WordPress/gutenberg/pull/78320#issuecomment-4463280005).
+
+Required setup and disclosure:
+
+- This is not a pure ordinary-user repro. It requires the RTC WebSocket test
+  setup from PR #78363, plus a temporary debug delay in
+  `packages/sync/src/manager.ts`.
+- The delay is inserted between the remote Yjs update being observed and
+  `internal.updateEntityRecord( objectType, objectId )` being called.
+- After adding the delay, rebuild the JS assets that the editor will actually
+  load. For a plugin build, verify the marker appears in
+  `build/scripts/sync/index.js` or `build/scripts/sync/index.min.js`, not only
+  in `packages/sync/build`.
+- If using the WebSocket provider test plugin outside the normal Playwright
+  global setup, write
+  `packages/e2e-tests/plugins/rtc-websocket-provider/build/runtime-config.json`
+  with the WebSocket URL being used. Otherwise the browser can connect to a
+  stale or default port and the repro is invalid.
+
+Temporary delay patch:
+
+```ts
+const onRecordUpdate = async (
+	_events: Y.YEvent< any >[],
+	transaction: Y.Transaction
+): Promise< void > => {
+	if (
+		transaction.local &&
+		! ( transaction.origin instanceof Y.UndoManager )
+	) {
+		return;
+	}
+
+	console.log( '[remote update applied]' );
+	await new Promise( ( resolve ) => setTimeout( resolve, 10000 ) );
+	console.log( '[applying updateEntityRecord]' );
+	void internal.updateEntityRecord( objectType, objectId );
+};
+```
+
+Manual repro steps:
+
+1. Start the RTC WebSocket setup from PR #78363, for example `npm run rtc:ws`
+   or the equivalent local WebSocket test server plus provider plugin.
+2. Apply the temporary 10-second delay patch above and rebuild.
+3. Create a draft post with two ordinary paragraph blocks: `P1` and `P2`.
+4. Open the same post as two different users.
+5. As user A, add a new paragraph block: `P3 (delete this)`.
+6. Wait until user B sees `P3 (delete this)`.
+7. As user B, delete `P3 (delete this)`.
+8. As user A, wait for `[remote update applied]` in the browser console, then
+   edit `P1` to `P1 - User A makes local changes` before
+   `[applying updateEntityRecord]`.
+9. Wait until `[applying updateEntityRecord]` appears.
+10. Expected final state: `P1 - User A makes local changes`, `P2`.
+11. Failing final state: `P1 - User A makes local changes`, `P2`,
+   `P3 (delete this)`. The deleted block was reintroduced.
+
+Video inventory as of 2026-05-20:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-stale-delete-video/alec-trunk-delay-update-repro.mov
+```
+
+Downloaded local copy of Alec's failing trunk-delay video from
+`https://github.com/user-attachments/assets/936c4b9c-423c-4a17-97f9-2f0ba7a630dd`.
+This is the strongest current human-reviewable failing video because it shows
+the delayed-update repro above failing on trunk.
+
+```text
+/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-stale-delete-video/alec-pr-delay-fix.mov
+/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-stale-delete-video/alec-pr-delay-fix2-notfixed.mov
+```
+
+Downloaded local copies of Alec's two PR-branch delay attempts. The first
+appeared fixed; the second still showed the stale-delete behavior. Treat this
+as evidence that PR #78320 needed more verification instead of a clean
+"passes on branch" proof.
+
+```text
+/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-stale-delete-video/rtc-stale-delete-websocket-realistic-repro.mp4
+```
+
+Local no-delay WebSocket video generated from the visible UI steps. This run
+did not reproduce the bug and should be treated as a control, not as failing
+evidence.
+
+```text
+/Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-stale-delete-video/rtc-stale-delete-delay-repro.mp4
+```
+
+Local delayed-update video generated on the current dirty local branch. This
+run converged to the expected `P1`/`P2` state and should be treated as a
+branch/pass or control video, not as trunk-failing evidence.
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-r03-86a2-trunk-heal-20260514-171343/artifacts/rtc-stale-delete-video/rtc-stale-delete-delay-repro.mp4
+```
+
+Initial base-worktree delay attempt. It stopped before a valid RTC session
+because the old worktree had Gutenberg inactive and a stale WebSocket provider
+runtime config. This is a failed setup artifact, not evidence.
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-r03-86a2-trunk-heal-20260514-171343/artifacts/rtc-stale-delete-video/rtc-stale-delete-delay-trunk-5ac24ff-repro.mp4
+```
+
+Repaired base-worktree delay attempt at `5ac24ffba2e` with Gutenberg active,
+the binary y-websocket test server, and a matching provider runtime config.
+This run also converged to the expected `P1`/`P2` state, so it is not a
+captured local trunk failure. The useful conclusion is that the doc should cite
+Alec's attached failing trunk-delay video as the current failing video and
+should not claim that these local reruns prove the failure.
+
+## Historical Local Evidence
+
+The original note listed the following local path as realistic video evidence.
+The May 20 rerun now stored at that path did not reproduce, so use the
+reviewer packet above for current video status. The historical saved JSON
+results below are still useful as fuzz/reduction evidence, but they are not a
+substitute for the delayed-update reviewer repro.
 
 ```text
 /Users/danluu/dev/fuzz/gutenberg/artifacts/rtc-stale-delete-video/rtc-stale-delete-websocket-realistic-repro.mp4
