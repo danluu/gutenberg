@@ -12,6 +12,7 @@ PR_SPLIT_BASE=${RTC_PR_PROGRESS_PR_SPLIT_BASE:-/media/volume/danluu-fuzz-data/rt
 DEFERRED_BASE=${RTC_PR_PROGRESS_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516}
 FINALIZATION_BASE=${RTC_PR_PROGRESS_FINALIZATION_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516}
 COVERAGE_BASE=${RTC_PR_PROGRESS_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}
+BENCHMARK_FEEDBACK_BASE=${RTC_PR_PROGRESS_BENCHMARK_FEEDBACK_BASE:-/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520}
 RESOURCE_BASE=${RTC_PR_PROGRESS_RESOURCE_BASE:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516}
 ARTIFACT_INDEX_BASE=${RTC_PR_PROGRESS_ARTIFACT_INDEX_BASE:-/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518}
 ARTIFACT_INDEX_ARTIFACTS=$ARTIFACT_INDEX_BASE/current-artifacts.tsv
@@ -553,6 +554,18 @@ collect_context() {
 			sed -n '1,160p' "$coverage/novelty-status.md"
 		else
 			echo "missing current novelty status"
+		fi
+		echo
+		echo "## Benchmark Canary Feedback"
+		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ]; then
+			sed -n '1,220p' "$BENCHMARK_FEEDBACK_BASE/current-feedback.md"
+		else
+			echo "missing current benchmark canary feedback"
+		fi
+		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
+			echo
+			echo "### Feedback TSV"
+			sed -n '1,80p' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
 		fi
 		echo
 		echo "## Tmux Sessions"

@@ -1815,9 +1815,14 @@ lanes, but they must share state. In particular:
     canary for the fuzzing and promotion process. If an ordinary benchmark row
     fails, the primary result is a fuzzer/promotion failure report under
     `/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520`;
-    the coverage and PR-refinement loops should consume that feedback and add
-    or prioritize the missing behavior. The benchmark is not the trust model for
-    mergeability; the fuzzer must already be exercising user-hit RTC behavior.
+    the coverage and PR-refinement loops consume that feedback and add or
+    prioritize the missing behavior. In particular,
+    `bin/rtc-pr-progress-controller-remote.sh` includes
+    `current-feedback.md`/`.tsv` in its persona context, and
+    `bin/rtc-critical-path-pr-executor-loop-remote.sh` turns non-empty feedback
+    into a high-priority `benchmark-canary-fuzzer-gap` blocker and bounded
+    continuation job. The benchmark is not the trust model for mergeability;
+    the fuzzer must already be exercising user-hit RTC behavior.
     Existing canary failures, including the
     `large-post-three-user-http` failure on
     `rtc-pr-stack-20260519T214027Z-validated-no-harness`, remain active

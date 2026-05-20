@@ -11,6 +11,7 @@ FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 LOCAL_PUBLISH_MANIFEST=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
+BENCHMARK_FEEDBACK_BASE=${RTC_CRITICAL_PR_EXECUTOR_BENCHMARK_FEEDBACK_BASE:-/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520}
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 ARTIFACT_INDEX_BASE=/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518
@@ -601,6 +602,8 @@ finalization_status	status	$FINALIZATION_BASE/current-finalization-status.md
 deferred_status	status	$DEFERRED_BASE/current-deferred-status.md
 deferred_queue	queue	$DEFERRED_BASE/current-deferred-queue.tsv
 coverage_pointer	status	$COVERAGE_BASE/current-output-dir.txt
+benchmark_canary_feedback	feedback	$BENCHMARK_FEEDBACK_BASE/current-feedback.md
+benchmark_canary_feedback_tsv	feedback	$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv
 resource_status	status	$RESOURCE_BASE/resource-autoscaler-status.md
 guard_log	log	$GUARD_BASE/logs/guard.log
 latest_finalization	report	${latest_finalization:-missing}
@@ -703,6 +706,9 @@ write_lanes() {
 		if ! lane_terminal_suppressed seed-1060015-reducer; then
 			printf 'seed-1060015-reducer\tPR05?\treducer\tvalidation-only\t%s\t1060015\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/1060015-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
+		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
+			printf 'benchmark-canary-fuzzer-gap\tPROCESS\tcoverage-gap-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		fi
 	} > "$tmp"
 	atomic_move "$tmp" "$LANES"
 }
@@ -722,6 +728,9 @@ write_blockers_and_queue() {
 	reason=$(resource_reason)
 	{
 		printf 'blocker_id\tkind\tpriority\tstate\tsource_input\tblocks\tblocked_by\trequired_artifacts\tactive_session\tnext_action\tupdated_at\n'
+		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
+			printf 'benchmark-canary-fuzzer-gap\tcoverage-promotion\thigh\trunnable\tbenchmark-canary\tcoverage-confidence,snapshot-publication\tfuzzer-feedback\tfuzzer-feedback.md,fuzzer-feedback.tsv\t\tconsume benchmark canary feedback; add or repair equivalent fuzz coverage and validate the fixed stack under that coverage before maintainer snapshot publication\t%s\n' "$now"
+		fi
 		if pr17_suppressed_terminal; then
 			printf 'pr17-1020002\tfinal-stack-join\thigh\tterminal\tpr_split/finalization\tfinal-stack-validation,filing\tterminal-ledger\tclassification.tsv\t\tterminal downscope; reopen only with fresh product evidence newer than classification.tsv\t%s\n' "$now"
 		else
@@ -787,6 +796,9 @@ write_blockers_and_queue() {
 			printf 'job-1060015-reducer	seed-1060015-reducer	seed-1060015-reducer	reducer	1060015-reducer	codex-analysis	high	%s	0	%s		%s/runs/1060015-reducer	%s		%s		%s
 ' \
 				"$([ -n "$s1060015" ] && printf active || printf queued)" "${s1060015:-}" "$BASE" "$now" "$now" "$([ -n "$s1060015" ] && printf adopted || printf queued_for_later)"
+		fi
+		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
+			printf 'job-benchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\tcoverage-gap-repair\tbenchmark-canary-fuzzer-gap\tcodex-analysis\thigh\trunnable\t0\t\t\t%s/runs/benchmark-canary-fuzzer-gap\t%s\t\t%s\t\tpending\n' "$BASE" "$now" "$now"
 		fi
 		while IFS=$'\t' read -r lane_id _pr_id lane_kind _publication_class _source_repo _source_ref _base_ref _base_sha _head_sha _resource_class _deps _state output_dir; do
 			[ "$lane_kind" = "branch-validation" ] || continue
@@ -939,6 +951,52 @@ EOF
 
 write_continuation_prompt() {
 	local prompt=$1 report=$2 classification=$3 lane=$4 goal=$5
+	if [ "$lane" = "benchmark-canary-fuzzer-gap" ]; then
+		cat > "$prompt" <<EOF
+You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+Lane: $lane
+Goal: treat benchmark canary failures as evidence that fuzzing/promotion missed user-hit behavior, then repair the fuzzing and PR-refinement process.
+Report path: $report
+Required classification TSV: $classification
+Required coverage-change TSV: ${report%/*}/coverage-change.tsv
+Required repair branch file: ${report%/*}/repair-branch.txt
+
+Task:
+1. Read the critical-path executor state files:
+   - $STATUS
+   - $BLOCKERS
+   - $QUEUE
+   - $LANES
+   - $INPUTS
+2. Read benchmark canary feedback:
+   - $BENCHMARK_FEEDBACK_BASE/current-feedback.md
+   - $BENCHMARK_FEEDBACK_BASE/current-feedback.tsv
+3. Read current coverage/fuzzer state:
+   - $COVERAGE_BASE/current-output-dir.txt
+   - the pointed novelty-status.md
+   - relevant scheduler/coverage scripts in $SRC/bin
+4. Do not frame the benchmark as a downstream quality gate. A failure here means the fuzzer or promotion loop failed to exercise equivalent behavior early enough.
+5. Make a concrete repair when possible:
+   - add or prioritize an equivalent fuzz lane/coverage goal;
+   - fix stale accounting or scheduling that prevents the equivalent lane from running;
+   - or create/advance a local product-fix branch if the product bug is already isolated.
+6. Do not stop shared fuzzing loops. If you start focused checks, use bounded runs and unique ports. Do not push to GitHub from Jetstream.
+7. Produce durable artifacts:
+   - Write a concise report to $report.
+   - Write ${report%/*}/coverage-change.tsv with header: change_id,kind,result,detail,artifact_path.
+   - Write $classification with header: lane_id,classification,evidence,next_action,artifact_path.
+   - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
+8. Classification rules:
+   - Use coverage_repaired only if equivalent fuzz coverage is now scheduled or running and artifact paths prove it.
+   - Use fix_branch_created only if a local branch exists and focused evidence points to it.
+   - Use blocked_specific only with an exact next command or exact missing artifact.
+   - Use no_active_feedback only if both feedback files are absent or empty.
+
+Passive prose without coverage-change.tsv and classification.tsv is a failure.
+EOF
+		return
+	fi
 	if [ "$lane" = "pr07c-browser-env" ]; then
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
@@ -1093,6 +1151,13 @@ launch_continuation_jobs() {
 			"pr07c-browser-env-repair-v2" \
 			"pr07c-browser-env|pr07c|browser-env" \
 			"PR07C browser-environment repair: debug and fix collaboration readiness null so owner-proof replay can reach seeded action/reload/checkpoint phase. Reserve unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT if running browser checks; write validation.tsv/report.md/classification.tsv and repair-branch.txt."
+	fi
+	if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
+		launch_continuation_job \
+			"benchmark-canary-fuzzer-gap" \
+			"benchmark-canary-fuzzer-gap-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" | cut -c1-12)" \
+			"benchmark-canary-fuzzer-gap|benchmark-canary" \
+			"consume benchmark canary feedback as a fuzzer/promotion-process gap; add or repair equivalent fuzz coverage or create a local fix branch, with durable coverage-change and classification artifacts"
 	fi
 }
 
