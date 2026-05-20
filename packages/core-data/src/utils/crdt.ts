@@ -436,6 +436,29 @@ function hasPersistedBlockContentChanged(
 	}
 }
 
+function getSerializedBlockContent( blocks: Block[] ): string | undefined {
+	try {
+		return __unstableSerializeAndClean( blocks ).trim();
+	} catch {
+		return undefined;
+	}
+}
+
+function deriveContentChangeFromBlocks(
+	changes: PostChanges,
+	editedRecord: Post,
+	serializedBlocks: string | undefined
+): void {
+	if (
+		serializedBlocks === undefined ||
+		getRawValue( editedRecord.content ) === serializedBlocks
+	) {
+		return;
+	}
+
+	changes.content = serializedBlocks;
+}
+
 /**
  * Given a local Y.Doc that *may* contain changes from remote peers, compare
  * against the local record and determine if there are changes (edits) we want
@@ -572,8 +595,18 @@ export function getPostChangesFromCRDTDoc(
 	// plain strings (from Y.Text.toJSON()). Convert them back to RichTextData
 	// so block edit components receive the same types as locally-created blocks.
 	if ( changes.blocks ) {
+		const serializedBlocks =
+			! syncedProperties.has( 'content' )
+				? undefined
+				: getSerializedBlockContent( changes.blocks as Block[] );
+
 		changes.blocks = deserializeBlockAttributes(
 			changes.blocks as Block[]
+		);
+		deriveContentChangeFromBlocks(
+			changes,
+			editedRecord,
+			serializedBlocks
 		);
 	}
 
