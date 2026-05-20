@@ -121,4 +121,46 @@ class Tests_Collaboration_PersistedCrdtDocumentMeta extends WP_UnitTestCase {
 
 		wp_delete_post( $post_id, true );
 	}
+
+	public function test_restore_revision_clears_post_sync_room_state(): void {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_content' => '<!-- wp:paragraph --><p>Original content</p><!-- /wp:paragraph -->',
+				'post_title'   => 'Original title',
+			)
+		);
+		$room    = 'postType/post:' . $post_id;
+		$storage = new WP_Sync_Post_Meta_Storage();
+
+		$this->assertTrue(
+			$storage->add_update(
+				$room,
+				array(
+					'type' => 'update',
+					'data' => 'newer-document-update',
+				)
+			)
+		);
+		$this->assertTrue( $storage->set_awareness_state( $room, array( 1 => array( 'name' => 'Editor' ) ) ) );
+		$this->assertNotEmpty( $storage->get_updates_after_cursor( $room, 0 ) );
+		$this->assertSame( array( array( 'name' => 'Editor' ) ), $storage->get_awareness_state( $room ) );
+
+		$revision_id = wp_save_post_revision( $post_id );
+		$this->assertIsInt( $revision_id );
+
+		wp_update_post(
+			array(
+				'ID'           => $post_id,
+				'post_content' => '<!-- wp:paragraph --><p>New content</p><!-- /wp:paragraph -->',
+				'post_title'   => 'New title',
+			)
+		);
+
+		$this->assertIsInt( wp_restore_post_revision( $revision_id ) );
+
+		$this->assertSame( array(), $storage->get_updates_after_cursor( $room, 0 ) );
+		$this->assertSame( array(), $storage->get_awareness_state( $room ) );
+
+		wp_delete_post( $post_id, true );
+	}
 }
