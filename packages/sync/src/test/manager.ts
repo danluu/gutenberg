@@ -637,13 +637,13 @@ describe( 'SyncManager', () => {
 				);
 			} );
 
-			it( 'normalizes the CRDT doc before serializing it for persistence', async () => {
+			it( 'prepares the CRDT doc before serializing it for persistence', async () => {
 				let capturedDoc: Y.Doc | null = null;
 				mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
 					capturedDoc = ydoc;
 					return mockProviderResult;
 				} );
-				mockSyncConfig.normalizeCRDTDocForPersistence = jest.fn(
+				mockSyncConfig.preparePersistedCRDTDoc = jest.fn(
 					( ydoc: CRDTDoc ) => {
 						const ymap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
 						const blocks = ymap.get( 'blocks' );
@@ -656,7 +656,6 @@ describe( 'SyncManager', () => {
 						}
 					}
 				);
-
 				const manager = createSyncManager();
 
 				await manager.load(
@@ -679,7 +678,7 @@ describe( 'SyncManager', () => {
 				const persistedDoc = deserializeCrdtDoc( serialized ?? '' );
 
 				expect(
-					mockSyncConfig.normalizeCRDTDocForPersistence
+					mockSyncConfig.preparePersistedCRDTDoc
 				).toHaveBeenCalledWith( ydoc );
 				expect(
 					persistedDoc?.getMap( CRDT_RECORD_MAP_KEY ).get( 'content' )

@@ -15,17 +15,14 @@ import { addQueryArgs } from '@wordpress/url';
  * Internal dependencies
  */
 import { PostEditorAwareness } from './awareness/post-editor-awareness';
-import {
-	CRDT_RECORD_MAP_KEY,
-	getSyncManager,
-	LOCAL_UNDO_IGNORED_ORIGIN,
-} from './sync';
+import { getSyncManager, LOCAL_UNDO_IGNORED_ORIGIN } from './sync';
 import {
 	applyPostChangesToCRDTDoc,
 	defaultCollectionSyncConfig,
 	defaultSyncConfig,
 	getPostChangesFromCRDTDoc,
 	POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE,
+	preparePostCRDTDocForPersistence,
 } from './utils/crdt';
 
 export const DEFAULT_ENTITY_KEY = 'id';
@@ -861,29 +858,7 @@ async function loadPostTypeEntities() {
 					null
 				);
 			},
-
-			/**
-			 * Normalize derived post content immediately before serializing the
-			 * persisted CRDT document. Reload/rejoin can leave an older `content`
-			 * Y.Text next to newer block data; persisting the block-derived content
-			 * keeps future hydration from replaying that stale raw value.
-			 *
-			 * @param {import('@wordpress/sync').CRDTDoc} crdtDoc
-			 * @return {void}
-			 */
-			normalizeCRDTDocForPersistence: ( crdtDoc ) => {
-				const recordMap = crdtDoc.getMap( CRDT_RECORD_MAP_KEY );
-				const blocks = recordMap.get( 'blocks' );
-				const blockData = blocks?.toJSON?.();
-
-				if ( Array.isArray( blockData ) ) {
-					applyPostChangesToCRDTDoc(
-						crdtDoc,
-						{ blocks: blockData },
-						syncedProperties
-					);
-				}
-			},
+			preparePersistedCRDTDoc: preparePostCRDTDocForPersistence,
 		};
 
 		return entity;
