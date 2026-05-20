@@ -14,6 +14,83 @@ failure is a real fuzzer coverage failure, not just a missing benchmark row.
 The fuzzer can touch many of the ingredients separately, but the validation
 process did not require the product-shaped combination that failed.
 
+## 2026-05-20 Jetstream2 Update
+
+Latest checked live state: `2026-05-20T08:33:58Z`.
+
+The missing scenario families below have now been wired into the Jetstream2
+coverage-guided fuzzer and PR feedback loops, but the high-value gaps should
+still be considered open until the success targets are met and the fixed stack
+passes equivalent fuzz coverage.
+
+Current coverage monitor:
+
+- output dir:
+  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260520T080846Z`;
+- coverage files: `5046`;
+- all-time records: `117686`;
+- all-time records by transport: `112359` WebSocket, `5327` HTTP;
+- same-user records: `10183`;
+- many-user lifecycle records: `5`;
+- collaboration UI signal records: `5`;
+- large-post three-user HTTP lifecycle records: `25`;
+- current active run records: `1`, from
+  `novelty-ws-many-user-lifecycle-completion`;
+- current active supervisor group:
+  `novelty-ws-many-user-lifecycle-completion`, with WebSocket transport,
+  `GUTENBERG_RTC_BROWSER_ACTION_PROFILE=many-user-lifecycle`,
+  `GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS=10`, forced save/reload/late-join
+  milestones, and one browser-e2e lane.
+
+Current unmet high-signal goals:
+
+- `large-post-three-user-http-lifecycle`: `0 / 10` successful records;
+- `final-ui-witness-sweep`: `0 / 10`;
+- `final-persistence-publish`: `0 / 10`;
+- `many-user-lifecycle`: `0 / 10` successful records;
+- `collaboration-ui-signals`: `0 / 25` successful records;
+- `remote-selection-cursor`: `0 / 25`;
+- `presence-list`: `5 / 25`;
+- `users:12`: `5 / 10`;
+- `lifecycle:late-join:users-12`: `5 / 10`.
+
+Current required breadth groups reported by the monitor:
+
+- `novelty-ws-real-user-coverage-bridge`;
+- `novelty-ws-real-user-save-reload`;
+- `novelty-ws-real-user-rich-text`;
+- `novelty-ws-parser-transform`;
+- `novelty-ws-block-gauntlet`;
+- `novelty-ws-revision-recovery`;
+- `novelty-ws-three-user-late-join`;
+- `novelty-ws-multi-reload-lifecycle`;
+- `novelty-http-same-user-stale-draft`;
+- `novelty-ws-async-server-blocks`;
+- `novelty-ws-media-cross-entity`;
+- `novelty-ws-long-session-large-doc`;
+- `novelty-http-large-post-lifecycle`;
+- `novelty-ws-many-user-lifecycle`;
+- `novelty-ws-collaboration-ui-signals`.
+
+The benchmark canary failure has also been fed back into Jetstream as a
+first-class fuzzer/promotion-process miss:
+
+- feedback base:
+  `/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520`;
+- active feedback id: `large-post-three-user-http-20260519`;
+- affected branch:
+  `rtc-pr-stack-20260519T214027Z-validated-no-harness`;
+- affected commit: `e922771984f5bd37a3d5e76dc246a8c5001675ff`;
+- critical-path blocker: `benchmark-canary-fuzzer-gap`;
+- active continuation:
+  `rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260520T082628Z`.
+
+This is an improvement over the earlier state because a canary failure now
+creates fuzzer feedback and PR-refinement work automatically. It is not yet a
+pass: the large-post HTTP lifecycle, persistence witness, many-user, and
+collaboration-signal goals are still below target, and the active supervisor is
+currently narrowed by resource pressure to the many-user completion group.
+
 ## Hard Evidence
 
 The local benchmark rerun recorded:
