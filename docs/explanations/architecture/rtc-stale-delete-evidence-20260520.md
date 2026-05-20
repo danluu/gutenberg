@@ -215,11 +215,11 @@ not as a current-PR-head failure video.
 
 ## Current trunk delayed-update video
 
-I also recorded the delayed-update reproduction shape on current `origin/trunk`
-at:
+I also recorded the delayed-update reproduction shape on latest `origin/trunk`
+as of this run:
 
 ```text
-9cd9fa50ee042622cccaff60866c2b9d9ba6b818
+502be98431f7beac683e85895195f3fd1be77f7b
 ```
 
 For this video only, I applied a test-only 10-second delay in
@@ -237,26 +237,26 @@ shows:
 Video:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520/rtc-stale-delete-current-trunk-delayed-update-repro.mp4
+/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520-latest/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520-latest/rtc-stale-delete-current-trunk-delayed-update-repro.mp4
 ```
 
 Final verification frame:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520/verification-frame.png
+/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520-latest/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520-latest/verification-frame.png
 ```
 
 Final state manifest:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520/final-state.json
+/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520-latest/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520-latest/final-state.json
 ```
 
 Extra validation frame, taken after Editor B's delete and before the delayed
 store update:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520/validation-frames/after-delete-before-update.png
+/Users/danluu/dev/fuzz/gutenberg-current-trunk-delayed-delete-video-20260520-latest/artifacts/rtc-stale-delete-current-trunk-delayed-update-video-20260520-latest/validation-frames/after-delete-before-update.png
 ```
 
 That validation frame matters because it shows the delete really happened:
@@ -268,10 +268,10 @@ The final state manifest records:
 ```text
 reproduced: true
 delayedUpdatePatch: true
-remoteAppliedAt: 2026-05-20T22:32:05.315Z
-localEditAt: 2026-05-20T22:32:06.262Z
-applyingUpdateAt: 2026-05-20T22:32:15.309Z
-finalReadAt: 2026-05-20T22:32:23.513Z
+remoteAppliedAt: 2026-05-20T22:44:31.807Z
+localEditAt: 2026-05-20T22:44:33.919Z
+applyingUpdateAt: 2026-05-20T22:44:41.806Z
+finalReadAt: 2026-05-20T22:44:50.117Z
 paragraphsA: ["P1 - User A makes local changes", "P2", "P3 (delete this)"]
 paragraphsB: ["P1 - User A makes local changes", "P2", "P3 (delete this)"]
 ```
@@ -279,10 +279,15 @@ paragraphsB: ["P1 - User A makes local changes", "P2", "P3 (delete this)"]
 Hashes:
 
 ```text
-f9d9d97cdf7a49027181b53071e7a7e047447d8af0f414cddb0a32e67bcb6751  rtc-stale-delete-current-trunk-delayed-update-repro.mp4
-733290dd609ee25631c220c3948136674c6bcce129462d6ce987e132980715ef  verification-frame.png
-4e3594dcca11cc2561af7a5171ba9bbd26d45d36f9a7b3fdcb6f326011e43a62  final-state.json
+2fbe59b07325869fc66823b86e10dd5273ff1c3ceb8245a5bef0a63b4689690d  rtc-stale-delete-current-trunk-delayed-update-repro.mp4
+703921fad23b8c9af196f35a74b1ff263258695496d2526fe1968629a882764c  verification-frame.png
+f65d7e3e61a2b0701beca6406e47920e3621fb88709b9cd7835b7bec09d9812e  final-state.json
 ```
+
+I had also recorded the same delayed-update shape earlier on
+`9cd9fa50ee042622cccaff60866c2b9d9ba6b818`. That video reproduced too, but
+`origin/trunk` moved after that recording, so the `502be98431f7` run above is
+the one to use for latest-trunk wording.
 
 ## Why the earlier visible run did not reproduce
 
