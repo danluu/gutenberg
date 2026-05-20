@@ -1069,9 +1069,8 @@ function mergeYBlocksLocalSuffixAppend(
 	}
 
 	if (
-		! fastDeepEqual(
-			blocksToSync.slice( 0, baseBlocks.length ),
-			baseBlocks
+		! baseBlocks.every( ( baseBlock, index ) =>
+			isSameBlockIdentity( baseBlock, blocksToSync[ index ] )
 		)
 	) {
 		return;
