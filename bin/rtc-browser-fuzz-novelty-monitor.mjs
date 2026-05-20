@@ -616,6 +616,7 @@ const ZERO_COVERAGE_EVICTION_ORDER = [
 	'novelty-ws-common-blocks',
 	'novelty-ws-parser-transform',
 	'novelty-ws-parser-serialization',
+	'novelty-ws-real-user-coverage-bridge',
 	'novelty-ws-long-session-large-doc',
 	'novelty-ws-real-user-editing',
 	'novelty-ws-real-user-save-reload',
