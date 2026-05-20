@@ -49,6 +49,9 @@ CODEX_REASONING_EFFORT=${CODEX_REASONING_EFFORT:-xhigh}
 DEADLINE_EPOCH=${DEADLINE_EPOCH:-$(( $(date -u +%s) + 24 * 3600 ))}
 RELAUNCH_AFTER_SECONDS=${RELAUNCH_AFTER_SECONDS:-7200}
 INTEGRATOR_INTERVAL_SECONDS=${INTEGRATOR_INTERVAL_SECONDS:-7200}
+URGENT_WINDOW_SECONDS=${URGENT_WINDOW_SECONDS:-14400}
+URGENT_RELAUNCH_AFTER_SECONDS=${URGENT_RELAUNCH_AFTER_SECONDS:-1800}
+URGENT_INTEGRATOR_INTERVAL_SECONDS=${URGENT_INTEGRATOR_INTERVAL_SECONDS:-1800}
 
 export PATH="$TMUX_WRAP:$NODE_BIN:$PATH"
 
@@ -76,6 +79,26 @@ tmux_has_session() {
 item_last_launch() {
 	local id=$1
 	awk -F '\t' -v id="$id" '$2 == id && $3 == "launch" { value = $1 } END { print value + 0 }' "$STATE"
+}
+
+seconds_remaining() {
+	printf '%s' "$(( DEADLINE_EPOCH - $(date -u +%s) ))"
+}
+
+active_relaunch_after_seconds() {
+	if [ "$(seconds_remaining)" -le "$URGENT_WINDOW_SECONDS" ]; then
+		printf '%s' "$URGENT_RELAUNCH_AFTER_SECONDS"
+	else
+		printf '%s' "$RELAUNCH_AFTER_SECONDS"
+	fi
+}
+
+active_integrator_interval_seconds() {
+	if [ "$(seconds_remaining)" -le "$URGENT_WINDOW_SECONDS" ]; then
+		printf '%s' "$URGENT_INTEGRATOR_INTERVAL_SECONDS"
+	else
+		printf '%s' "$INTEGRATOR_INTERVAL_SECONDS"
+	fi
 }
 
 item_done() {
@@ -154,7 +177,9 @@ launch_worker() {
 	fi
 	local last
 	last=$(item_last_launch "$id")
-	if [ "$last" -gt 0 ] && [ $(( now - last )) -lt "$RELAUNCH_AFTER_SECONDS" ]; then
+	local relaunch_after
+	relaunch_after=$(active_relaunch_after_seconds)
+	if [ "$last" -gt 0 ] && [ $(( now - last )) -lt "$relaunch_after" ]; then
 		return 0
 	fi
 	wt=$(prepare_worktree "$id" "$branch")
@@ -202,7 +227,9 @@ maybe_launch_integrator() {
 		return 0
 	fi
 	last=$(awk -F '\t' '$2 == "integrator" && $3 == "launch" { value = $1 } END { print value + 0 }' "$STATE")
-	if [ "$last" -gt 0 ] && [ $(( now - last )) -lt "$INTEGRATOR_INTERVAL_SECONDS" ]; then
+	local integrator_interval
+	integrator_interval=$(active_integrator_interval_seconds)
+	if [ "$last" -gt 0 ] && [ $(( now - last )) -lt "$integrator_interval" ]; then
 		return 0
 	fi
 	prompt="$BASE/prompts/integrator-$now.prompt.md"
@@ -225,6 +252,15 @@ write_summary() {
 		echo "- updated_utc: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 		echo "- deadline_utc: $(date -u -d "@$DEADLINE_EPOCH" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -r "$DEADLINE_EPOCH" +%Y-%m-%dT%H:%M:%SZ)"
 		echo "- seconds_remaining: $remaining"
+		if [ "$remaining" -le "$URGENT_WINDOW_SECONDS" ]; then
+			echo "- deadline_mode: urgent"
+			echo "- relaunch_after_seconds: $URGENT_RELAUNCH_AFTER_SECONDS"
+			echo "- integrator_interval_seconds: $URGENT_INTEGRATOR_INTERVAL_SECONDS"
+		else
+			echo "- deadline_mode: normal"
+			echo "- relaunch_after_seconds: $RELAUNCH_AFTER_SECONDS"
+			echo "- integrator_interval_seconds: $INTEGRATOR_INTERVAL_SECONDS"
+		fi
 		echo
 		echo "| id | branch | status | active_session | report |"
 		echo "| --- | --- | --- | --- | --- |"

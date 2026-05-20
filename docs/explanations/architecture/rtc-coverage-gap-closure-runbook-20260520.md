@@ -38,6 +38,9 @@ Workers may mark an item done only when every checklist entry is covered by a
 concrete test or harness change, or when a precise blocker is written with a
 minimal continuation step. An integrator Codex session runs periodically to
 audit reports, remove weak `done` markings, and write continuation notes.
+During the last four hours before the deadline, the controller switches to a
+shorter relaunch and integrator cadence so weak or missing coverage is surfaced
+before the one-day window expires.
 
 The process is intentionally not a broad browser-fuzz launcher. Browser-heavy
 gates should be queued or run through the existing fuzz controllers. This loop
