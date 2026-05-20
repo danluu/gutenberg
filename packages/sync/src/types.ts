@@ -156,6 +156,7 @@ export interface SyncConfig {
 		editedRecord: ObjectData
 	) => ObjectData;
 	getPersistedCRDTDoc?: ( record: ObjectData ) => string | null;
+	normalizeCRDTDocForPersistence?: ( ydoc: Y.Doc ) => void;
 	shouldSync?: (
 		objectType: ObjectType,
 		objectId: ObjectID | null

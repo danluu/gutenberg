@@ -33,7 +33,11 @@ import type {
 	RecordHandlers,
 	SyncConfig,
 } from '../types';
-import { getPersistedCrdtDocVersion, serializeCrdtDoc } from '../utils';
+import {
+	deserializeCrdtDoc,
+	getPersistedCrdtDocVersion,
+	serializeCrdtDoc,
+} from '../utils';
 
 // Mock dependencies.
 jest.mock( '../providers', () => ( {
@@ -631,6 +635,57 @@ describe( 'SyncManager', () => {
 				expect( JSON.parse( nextPersistedDoc! ).baseVersion ).toBe(
 					getPersistedCrdtDocVersion( basePersistedDoc )
 				);
+			} );
+
+			it( 'normalizes the CRDT doc before serializing it for persistence', async () => {
+				let capturedDoc: Y.Doc | null = null;
+				mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
+					capturedDoc = ydoc;
+					return mockProviderResult;
+				} );
+				mockSyncConfig.normalizeCRDTDocForPersistence = jest.fn(
+					( ydoc: CRDTDoc ) => {
+						const ymap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+						const blocks = ymap.get( 'blocks' );
+
+						if ( Array.isArray( blocks ) ) {
+							ymap.set(
+								'content',
+								`serialized:${ blocks.join( '|' ) }`
+							);
+						}
+					}
+				);
+
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				const ydoc = capturedDoc as unknown as Y.Doc;
+				const ymap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+				ymap.set( 'blocks', [ 'current', 'blocks' ] );
+				ymap.set( 'content', 'stale content' );
+
+				const serialized = await manager.createPersistedCRDTDoc(
+					'post',
+					'123'
+				);
+				const persistedDoc = deserializeCrdtDoc( serialized ?? '' );
+
+				expect(
+					mockSyncConfig.normalizeCRDTDocForPersistence
+				).toHaveBeenCalledWith( ydoc );
+				expect(
+					persistedDoc?.getMap( CRDT_RECORD_MAP_KEY ).get( 'content' )
+				).toBe( 'serialized:current|blocks' );
+
+				persistedDoc?.destroy();
 			} );
 		} );
 	} );
