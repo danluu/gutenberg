@@ -9694,7 +9694,7 @@ async function applyPolicy(
 				.slice( 0, 3 )
 				.map( ( goal ) => `${ goal.id }=${ goal.count }/${ goal.target }` )
 				.join( ', ' ) }`,
-			{ allowRotation: true }
+			{ allowRotation: true, budgetReserved: true }
 		);
 	}
 
