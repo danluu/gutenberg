@@ -9,6 +9,18 @@ fuzzing project.
 - `bin/rtc-resource-autoscaler-remote.sh`: samples CPU, load average, memory,
   and coverage materialization state, then adjusts the coverage-guided browser
   budget.
+- `bin/rtc-coverage-guided-start-remote.sh`: starts the coverage-guided browser
+  monitor. Each scheduled browser group must get its own hardlinked repo copy,
+  `WP_ENV_HOME`, `WP_ENV_PORT`, tests port, phpMyAdmin port, and websocket port.
+  Sharing a single port or wp-env project causes false startup failures such as
+  `Bind for 0.0.0.0:<port> failed: port is already allocated` and fast
+  `502 Bad Gateway` errors from `wp-env start`.
+- `bin/rtc-coverage-guided-cleanup-remote.sh`: stops old coverage-guided
+  browser monitors and removes coverage-owned `wp-env-novelty-*` Docker
+  containers, networks, and volumes before the next coverage-guided start.
+  This cleanup must recognize both the shared validation repo and per-group
+  repos under the coverage output tree; otherwise a restarted run can inherit a
+  stale wp-env stack that already owns the next run's isolated port.
 - `bin/rtc-global-cpu-admission-remote.sh`: shared admission check for
   CPU-heavy work outside the coverage-guided supervisor, including lower-level
   fuzzing, backend/API fuzzing, protocol/server fuzzing, optional browser pools,
@@ -19,13 +31,17 @@ Deploy from the script branch to Jetstream2:
 ```bash
 cd /media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 git fetch danluu try/jetstream-fuzz
-git checkout try/jetstream-fuzz -- bin/rtc-jetstream-guard-remote.sh bin/rtc-resource-autoscaler-remote.sh bin/rtc-global-cpu-admission-remote.sh
+git checkout try/jetstream-fuzz -- bin/rtc-jetstream-guard-remote.sh bin/rtc-resource-autoscaler-remote.sh bin/rtc-global-cpu-admission-remote.sh bin/rtc-coverage-guided-start-remote.sh bin/rtc-coverage-guided-cleanup-remote.sh
 cp bin/rtc-jetstream-guard-remote.sh /tmp/start_rtc_jetstream_guard.sh
 cp bin/rtc-resource-autoscaler-remote.sh /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-resource-autoscaler.sh
 cp bin/rtc-global-cpu-admission-remote.sh /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-global-cpu-admission.sh
+cp bin/rtc-coverage-guided-start-remote.sh /tmp/start_rtc_coverage_guided_remote.sh
+cp bin/rtc-coverage-guided-cleanup-remote.sh /tmp/cleanup_rtc_coverage_guided_remote.sh
 bash -n /tmp/start_rtc_jetstream_guard.sh
 bash -n /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-resource-autoscaler.sh
 bash -n /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-global-cpu-admission.sh
+bash -n /tmp/start_rtc_coverage_guided_remote.sh
+bash -n /tmp/cleanup_rtc_coverage_guided_remote.sh
 /tmp/start_rtc_jetstream_guard.sh restart
 ```
 
@@ -60,6 +76,18 @@ restoring breadth. Likewise, severe pressure is allowed to shed optional browser
 sessions even when the live browser lane count is below the normal E2E breadth
 floor; otherwise the floor preserves the overload that the controller is trying
 to drain.
+
+Materialization remediation must distinguish failed materialization from normal
+startup. A fresh supervisor can have zero active run dirs while it is creating
+isolated wp-env instances. The autoscaler should not restart that run until the
+supervisor is stale or groups are actually paused on infrastructure startup
+failure.
+
+Coverage-guided browser restarts are only healthy when cleanup is idempotent.
+The cleanup script must remove stale `wp-env-novelty-*` Docker stacks before a
+new run reuses the deterministic per-group ports. A bind failure on one of the
+isolated ports usually means cleanup missed an old wp-env project, not that the
+new fuzz action found an RTC product bug.
 
 ## Guard Interaction
 

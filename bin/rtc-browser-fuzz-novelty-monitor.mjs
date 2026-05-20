@@ -34,6 +34,10 @@ const BENCHMARK_CANARY_FEEDBACK_TSV_PATH = path.join(
 	BENCHMARK_CANARY_FEEDBACK_BASE,
 	'current-feedback.tsv'
 );
+const BENCHMARK_CANARY_FEEDBACK_MD_PATH = path.join(
+	BENCHMARK_CANARY_FEEDBACK_BASE,
+	'current-feedback.md'
+);
 const NO_ANALYSIS_SENTINEL_RELATIVE_PATH = path.join(
 	'.triage-watcher',
 	'no-analysis.json'
@@ -41,8 +45,10 @@ const NO_ANALYSIS_SENTINEL_RELATIVE_PATH = path.join(
 const SUPERVISOR_SESSION =
 	process.env.RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION ??
 	'rtc-fuzz-novelty-supervisor-20260502';
+const ALLOW_DISABLED_POLICY_GUARDS =
+	process.env.RTC_FUZZ_NOVELTY_ALLOW_DISABLED_POLICY_GUARDS === '1';
 const FORCE_COVERAGE_GUIDED_POLICY_GUARDS =
-	process.env.RTC_FUZZ_NOVELTY_ALLOW_DISABLED_POLICY_GUARDS !== '1' &&
+	! ALLOW_DISABLED_POLICY_GUARDS &&
 	SUPERVISOR_SESSION === 'rtc-coverage-guided-supervisor';
 const INTERVAL_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_INTERVAL_MS',
@@ -62,9 +68,24 @@ const BASE_URL =
 	'http://localhost:8889';
 const WP_ENV_PORT = process.env.RTC_FUZZ_NOVELTY_WP_ENV_PORT ?? '8889';
 const WS_PORT = process.env.RTC_FUZZ_NOVELTY_WS_PORT ?? '18991';
+const REPOS_BASE = process.env.RTC_FUZZ_NOVELTY_REPOS_BASE ?? '';
+const WP_ENV_HOME_BASE =
+	process.env.RTC_FUZZ_NOVELTY_WP_ENV_HOME_BASE ?? '';
 const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 const CURRENT_RUN_DIRS = [ OUTPUT_DIR ];
 let currentRunCoverageRoots = CURRENT_RUN_DIRS;
+const INCLUDE_EXTERNAL_IMPORTS =
+	process.env.RTC_FUZZ_NOVELTY_INCLUDE_EXTERNAL_IMPORTS === '1';
+const ARTIFACT_SCAN_IGNORED_DIRS = new Set( [
+	'.git',
+	'.triage-watcher',
+	'blob-report',
+	'codex-analysis',
+	'node_modules',
+	'playwright-report',
+	'test-results',
+	'vendor',
+] );
 const ACTIVE_GROUP_STATUSES = new Set( [
 	'starting',
 	'launching',
@@ -73,7 +94,11 @@ const ACTIVE_GROUP_STATUSES = new Set( [
 ] );
 const BENCHMARK_CANARY_GROUP_BY_CASE = {
 	'large-post-three-user-http': 'novelty-http-large-post-lifecycle',
+	'persistence-reload-http': 'novelty-http-existing-post-crdt-metadata',
+	'same-user-stale-content-overwrite-http':
+		'novelty-http-same-user-stale-draft',
 	'table-stale-snapshot-http': 'novelty-http-table-stale-snapshot',
+	'title-reload-http': 'novelty-http-title-reload-convergence',
 };
 const BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE = {
 	'large-post-three-user-http': [
@@ -87,6 +112,9 @@ const HTTP_PROVIDER_GATING_STARTUP_FIX_GROUPS = [
 	'novelty-http-large-post-lifecycle',
 	'novelty-http-large-post-lifecycle-completion',
 	'novelty-http-table-stale-snapshot',
+	'novelty-http-title-reload-convergence',
+	'novelty-http-existing-post-crdt-metadata',
+	'novelty-http-same-user-stale-draft',
 ];
 const COLLABORATION_READINESS_STARTUP_FIX_VERSION = 1;
 const COLLABORATION_READINESS_STARTUP_FIX_GROUPS = [
@@ -95,7 +123,14 @@ const COLLABORATION_READINESS_STARTUP_FIX_GROUPS = [
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-thirty-user-lifecycle',
 ];
+const MANY_USER_JOIN_BATCH_STARTUP_FIX_VERSION = 1;
+const MANY_USER_JOIN_BATCH_STARTUP_FIX_GROUPS = [
+	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-many-user-lifecycle-completion',
+	'novelty-ws-thirty-user-lifecycle',
+];
 let benchmarkCanaryFeedbackRows = [];
+let benchmarkCanaryFeedbackText = '';
 let benchmarkCanaryForcedGroups = new Set();
 const HISTORICAL_OBSERVED_RUN_DIRS = uniquePathList(
 	parsePathList( process.env.RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS ).filter(
@@ -280,6 +315,10 @@ const COVERAGE_QUALITY_MAX_ENABLED_GROUPS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS',
 	8
 );
+const CURRENT_RUN_COVERAGE_WARMUP_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_CURRENT_RUN_COVERAGE_WARMUP_MS',
+	10 * 60 * 1000
+);
 const AUTO_GOAL_EXPANSION_ENABLED =
 	process.env.RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION !== '0';
 const AUTO_GOAL_EXPANSION_THRESHOLD = getNonNegativeIntegerEnv(
@@ -369,7 +408,7 @@ const NON_ACTIONABLE_ANALYSIS_JOB_STATUSES = new Set( [
 	'source-suppressed',
 	'stale-source',
 ] );
-const RUN_LOCAL_NOISE_POLICY_VERSION = 38;
+const RUN_LOCAL_NOISE_POLICY_VERSION = 39;
 const STARTUP_FAILURE_DEDUPE_POLICY_VERSION = 3;
 const STARTUP_DISCOVERY_PHASES = new Set( [
 	'seed',
@@ -575,6 +614,8 @@ const PROFILE_BY_GROUP = {
 	'novelty-http-large-post-lifecycle-completion':
 		'large-post-three-user-http-lifecycle',
 	'novelty-http-table-stale-snapshot': 'table-stale-snapshot-http',
+	'novelty-http-title-reload-convergence': 'session-lifecycle',
+	'novelty-http-existing-post-crdt-metadata': 'persistence-no-title',
 	'novelty-ws-many-user-lifecycle': 'many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion': 'many-user-lifecycle',
 	'novelty-ws-thirty-user-lifecycle': 'many-user-lifecycle',
@@ -610,6 +651,8 @@ const HIGH_VALUE_EXPANSION_GROUPS = [
 	'novelty-http-large-post-lifecycle',
 	'novelty-http-large-post-lifecycle-completion',
 	'novelty-http-table-stale-snapshot',
+	'novelty-http-title-reload-convergence',
+	'novelty-http-existing-post-crdt-metadata',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-thirty-user-lifecycle',
@@ -635,6 +678,8 @@ const PRODUCTIVE_FALLBACK_GROUPS = [
 	'novelty-http-large-post-lifecycle',
 	'novelty-http-large-post-lifecycle-completion',
 	'novelty-http-table-stale-snapshot',
+	'novelty-http-title-reload-convergence',
+	'novelty-http-existing-post-crdt-metadata',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-thirty-user-lifecycle',
@@ -660,6 +705,8 @@ const DEFAULT_REQUIRED_COVERAGE_BREADTH_GROUPS = [
 	'novelty-http-large-post-lifecycle',
 	'novelty-http-large-post-lifecycle-completion',
 	'novelty-http-table-stale-snapshot',
+	'novelty-http-title-reload-convergence',
+	'novelty-http-existing-post-crdt-metadata',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-thirty-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
@@ -694,14 +741,20 @@ const MATERIALIZATION_FLOOR_GROUPS = [
 	'novelty-http-large-post-lifecycle',
 	'novelty-http-large-post-lifecycle-completion',
 	'novelty-http-table-stale-snapshot',
+	'novelty-http-title-reload-convergence',
+	'novelty-http-existing-post-crdt-metadata',
 	'novelty-ws-collaboration-ui-signals',
 ];
 const ZERO_COVERAGE_PRIORITY_GROUPS = [
-	'novelty-http-table-stale-snapshot',
+	'novelty-ws-thirty-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
 	'novelty-ws-many-user-lifecycle-completion',
-	'novelty-ws-thirty-user-lifecycle',
 	'novelty-ws-many-user-lifecycle',
+	'novelty-http-table-stale-snapshot',
+	'novelty-http-large-post-lifecycle-completion',
+	'novelty-http-large-post-lifecycle',
+	'novelty-http-title-reload-convergence',
+	'novelty-http-existing-post-crdt-metadata',
 ];
 const ZERO_COVERAGE_EVICTION_ORDER = [
 	'novelty-ws-block-gauntlet',
@@ -714,6 +767,20 @@ const ZERO_COVERAGE_EVICTION_ORDER = [
 	'novelty-ws-real-user-save-reload',
 	'novelty-ws-real-user-rich-text',
 ];
+const BENCHMARK_CANARY_ZERO_COVERAGE_EVICTION_ORDER = [
+	'novelty-http-persistence-probe',
+	'novelty-http-existing-post-crdt-metadata',
+	'novelty-http-title-reload-convergence',
+	'novelty-http-large-post-lifecycle-completion',
+	'novelty-http-large-post-lifecycle',
+	'novelty-http-same-user-stale-draft',
+	'novelty-http-table-stale-snapshot',
+];
+const ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS =
+	getPositiveIntegerEnv(
+		'RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS',
+		1
+	);
 
 const AUTO_EXPANSION_GOAL_CANDIDATES = [
 	{
@@ -1295,6 +1362,7 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
@@ -1324,6 +1392,7 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5',
@@ -1352,6 +1421,7 @@ const PROFILE_GROUPS = [
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '4',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '28',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4',
@@ -1489,6 +1559,62 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '900000',
 			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '900000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'2',
+		},
+	},
+	{
+		name: 'novelty-http-title-reload-convergence',
+		actionProfile: 'session-lifecycle',
+		transport: 'http',
+		startSeed: 1210001,
+		stepCount: 10,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_ACTION_SEQUENCE:
+				'edit-title,append-paragraph,edit-title,concurrent-paragraphs',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '3,6',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '2,5,7',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '900000',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '180000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '900000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'2',
+		},
+	},
+	{
+		name: 'novelty-http-existing-post-crdt-metadata',
+		actionProfile: 'persistence-no-title',
+		transport: 'http',
+		startSeed: 1220001,
+		stepCount: 10,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_ACTION_SEQUENCE:
+				'append-paragraph,insert-heading,concurrent-paragraphs,edit-paragraph',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '3,6',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '2,5,7',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '900000',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '180000',
 			RTC_FUZZ_RUN_TIMEOUT_MS: '900000',
 			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
 				'2',
@@ -1703,6 +1829,7 @@ await refreshBenchmarkCanaryFeedbackState( { recordLoad: true } );
 applyHttpProviderGatingStartupFixStateRepair();
 applyLargeHttpLifecycleStartupFixStateRepair();
 applyCollaborationReadinessStartupFixStateRepair();
+applyManyUserJoinBatchStartupFixStateRepair();
 const normalizedAutoCoverageGoals = normalizeStoredAutoCoverageGoals(
 	state.autoCoverageGoals
 );
@@ -1854,20 +1981,70 @@ async function readBenchmarkCanaryFeedbackRows() {
 	} );
 }
 
-function getBenchmarkCanaryForcedGroups( rows ) {
+async function readBenchmarkCanaryFeedbackText() {
+	try {
+		return await fs.readFile( BENCHMARK_CANARY_FEEDBACK_MD_PATH, 'utf8' );
+	} catch {
+		return '';
+	}
+}
+
+function getBenchmarkCanaryCasesFromText( text ) {
+	const cases = new Set();
+	const normalized = String( text ?? '' ).toLowerCase();
+	for ( const benchmarkCase of Object.keys(
+		BENCHMARK_CANARY_GROUP_BY_CASE
+	) ) {
+		if ( normalized.includes( benchmarkCase.toLowerCase() ) ) {
+			cases.add( benchmarkCase );
+		}
+	}
+	if (
+		/title[^.\n]*reload[^.\n]*http|http[^.\n]*title[^.\n]*reload/.test(
+			normalized
+		)
+	) {
+		cases.add( 'title-reload-http' );
+	}
+	if (
+		/persistence[^.\n]*reload[^.\n]*http|existing-post[^.\n]*crdt|http[^.\n]*persistence[^.\n]*reload/.test(
+			normalized
+		)
+	) {
+		cases.add( 'persistence-reload-http' );
+	}
+	return cases;
+}
+
+function addBenchmarkCanaryGroupsForCase( groups, benchmarkCase ) {
+	const primaryGroup = BENCHMARK_CANARY_GROUP_BY_CASE[ benchmarkCase ];
+	if ( primaryGroup ) {
+		groups.add( primaryGroup );
+	}
+	for ( const group of
+		BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE[ benchmarkCase ] ?? [] ) {
+		groups.add( group );
+	}
+}
+
+function getBenchmarkCanaryForcedGroups( rows, feedbackText = '' ) {
 	const groups = new Set();
 	for ( const row of rows ) {
 		const benchmarkCase = getBenchmarkCanaryCase( row );
-		const primaryGroup = BENCHMARK_CANARY_GROUP_BY_CASE[ benchmarkCase ];
-		if ( primaryGroup ) {
-			groups.add( primaryGroup );
+		addBenchmarkCanaryGroupsForCase( groups, benchmarkCase );
+		for ( const inferredCase of getBenchmarkCanaryCasesFromText(
+			Object.values( row ).join( '\n' )
+		) ) {
+			addBenchmarkCanaryGroupsForCase( groups, inferredCase );
 		}
-		for ( const group of
-			BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE[
-				benchmarkCase
-			] ?? [] ) {
-			groups.add( group );
-		}
+	}
+	for ( const benchmarkCase of getBenchmarkCanaryCasesFromText(
+		feedbackText
+	) ) {
+		addBenchmarkCanaryGroupsForCase( groups, benchmarkCase );
+	}
+	if ( groups.has( 'novelty-http-existing-post-crdt-metadata' ) ) {
+		groups.add( 'novelty-http-persistence-probe' );
 	}
 	return groups;
 }
@@ -1916,25 +2093,29 @@ function getBenchmarkCanaryFeedbackReason( group ) {
 	const cases = uniqueStringList(
 		matchingRows.map( ( row ) => getBenchmarkCanaryCase( row ) )
 	).join( ',' );
-	return `benchmark canary feedback requires equivalent fuzz coverage for ${ cases }; this forced lane drains startup-noise seeds instead of letting a no-product cooldown block publication confidence`;
+	return `benchmark canary feedback requires equivalent fuzz coverage for ${ cases }; this forced lane remains subject to current duplicate/noise admission before supervisor publication`;
 }
 
 function shouldBypassBenchmarkCanaryNoisePause( group, pause ) {
 	if ( ! isBenchmarkCanaryForcedGroup( group ) ) {
 		return false;
 	}
-	if ( isBenchmarkCanarySeedDrainStartupNoiseCooldown( pause ) ) {
-		return true;
-	}
-	if ( isStaleBenchmarkCanaryStartupNoiseCooldown( pause ) ) {
-		return true;
-	}
 	if ( isNoProductStartupNoiseCooldown( pause ) ) {
-		return true;
+		return (
+			isStaleBenchmarkCanaryStartupNoiseCooldown( pause ) ||
+			isBenchmarkCanarySeedDrainStartupNoiseCooldown( pause )
+		);
 	}
 	return (
 		getStoredNoisePauseKind( pause ) === 'startup-noise' &&
 		hasPauseProductEvidence( pause )
+	);
+}
+
+function isBenchmarkCanaryProductEvidenceDuplicatePause( pause ) {
+	return (
+		getStoredNoisePauseKind( pause ) === 'triage-duplicate-noise' &&
+		hasProductEvidenceDuplicatePauseEvidence( pause )
 	);
 }
 
@@ -2036,6 +2217,174 @@ function recordBenchmarkCanaryNoProductStartupNoiseBlock(
 	} );
 }
 
+function getSupervisorGroupPublicationNoiseBlock( group ) {
+	const activeNoisePause = getActiveNoisePauseCooldown( group );
+	if ( ! activeNoisePause ) {
+		const currentRunDuplicateHold =
+			getCurrentRunProductEvidencePublicationHold( group );
+		if ( ! currentRunDuplicateHold ) {
+			return null;
+		}
+		const productEvidenceRecords = Number(
+			currentRunDuplicateHold.productEvidenceRecords
+		);
+		return {
+			action: isBenchmarkCanaryForcedGroup( group )
+				? 'block-benchmark-canary-supervisor-group-duplicate-noise'
+				: 'block-supervisor-group-duplicate-noise',
+			pause: currentRunDuplicateHold,
+			reason: `final supervisor group publication cannot include ${ group } while current-run product-evidence duplicate family ${
+				currentRunDuplicateHold.family ?? 'unknown'
+			} is already represented; preserve one triage representative without requeueing the held producer`,
+			metadata: {
+				reasonKind:
+					currentRunDuplicateHold.kind ?? 'triage-duplicate-noise',
+				family: currentRunDuplicateHold.family,
+				source:
+					currentRunDuplicateHold.source ??
+					'current-run-product-evidence-duplicate',
+				noProductOnly: false,
+				productEvidenceRecords:
+					Number.isFinite( productEvidenceRecords ) &&
+					productEvidenceRecords > 0
+						? productEvidenceRecords
+						: currentRunDuplicateHold.count ?? 1,
+				hasProductEvidence: true,
+				...( currentRunDuplicateHold.expiresAt
+					? { expiresAt: currentRunDuplicateHold.expiresAt }
+					: {} ),
+			},
+		};
+	}
+	if ( isNoProductStartupNoiseCooldown( activeNoisePause ) ) {
+		return {
+			action: isBenchmarkCanaryForcedGroup( group )
+				? 'block-benchmark-canary-supervisor-group-startup-noise'
+				: 'block-supervisor-group-startup-noise',
+			pause: activeNoisePause,
+			reason: `final supervisor group publication cannot include ${ group } while a no-product startup-noise cooldown from ${
+				activeNoisePause.at ?? 'unknown'
+			} is active: ${
+				activeNoisePause.reason ?? 'unknown startup-noise pause'
+			}`,
+			metadata: {
+				reasonKind: 'startup-noise',
+				family: 'pre_action_bootstrap_stall',
+				source: activeNoisePause.source ?? 'active-noise-cooldown',
+				noProductOnly: true,
+				productEvidenceRecords: 0,
+				hasProductEvidence: false,
+				...( activeNoisePause.expiresAt
+					? { expiresAt: activeNoisePause.expiresAt }
+					: {} ),
+			},
+		};
+	}
+	if ( isProductEvidenceDuplicateProducerHold( activeNoisePause, group ) ) {
+		const productEvidenceRecords = Number(
+			activeNoisePause.productEvidenceRecords
+		);
+		return {
+			action: isBenchmarkCanaryForcedGroup( group )
+				? 'block-benchmark-canary-supervisor-group-duplicate-noise'
+				: 'block-supervisor-group-duplicate-noise',
+			pause: activeNoisePause,
+			reason: `final supervisor group publication cannot include ${ group } while product-evidence duplicate family ${
+				activeNoisePause.family ?? 'unknown'
+			} is already represented; preserve one triage representative without requeueing the held producer`,
+			metadata: {
+				reasonKind: activeNoisePause.kind ?? 'triage-duplicate-noise',
+				family: activeNoisePause.family,
+				source: activeNoisePause.source ?? 'active-noise-cooldown',
+				noProductOnly: false,
+				productEvidenceRecords:
+					Number.isFinite( productEvidenceRecords ) &&
+					productEvidenceRecords > 0
+						? productEvidenceRecords
+						: 1,
+				hasProductEvidence: true,
+				...( activeNoisePause.expiresAt
+					? { expiresAt: activeNoisePause.expiresAt }
+					: {} ),
+			},
+		};
+	}
+	return null;
+}
+
+function getCurrentRunProductEvidencePublicationHold( group ) {
+	const triageYield = state.triageYieldCurrent;
+	if ( ! triageYield ) {
+		return null;
+	}
+
+	const actionGateHold = getProductEvidenceActionGateHoldForScheduling(
+		withRunDirProducerGroups(
+			getCurrentRunActionGateDuplicateHold( triageYield ),
+			state.currentRunDirs ?? []
+		),
+		triageYield
+	);
+	const familyHold = getCurrentRunProductEvidenceDuplicateHold(
+		triageYield,
+		state.currentRunDirs ?? []
+	);
+	for ( const hold of [ actionGateHold, familyHold ] ) {
+		if (
+			isProductEvidenceDuplicateProducerHold( hold ) &&
+			shouldProductEvidenceDuplicateHoldBlockGroup( hold, group )
+		) {
+			return hold;
+		}
+	}
+	return null;
+}
+
+function recordSupervisorGroupPublicationNoiseBlock( group, block ) {
+	state.supervisorGroupPublicationNoiseBlockMarkers ??= {};
+	const pause = block?.pause;
+	const marker = [
+		OUTPUT_DIR,
+		block?.action ?? '',
+		group,
+		pause?.at ?? '',
+		pause?.expiresAt ?? '',
+		pause?.reason ?? block?.reason ?? '',
+		pause?.family ?? block?.metadata?.family ?? '',
+	].join( '|' );
+	const markerKey = `${ block?.action ?? 'block-supervisor-group' }:${ group }`;
+	if (
+		state.supervisorGroupPublicationNoiseBlockMarkers[ markerKey ] === marker
+	) {
+		return;
+	}
+	state.supervisorGroupPublicationNoiseBlockMarkers[ markerKey ] = marker;
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: block?.action ?? 'block-supervisor-group-noise',
+		group,
+		reason: block?.reason,
+		...( block?.metadata?.reasonKind
+			? { reasonKind: block.metadata.reasonKind }
+			: {} ),
+		...( block?.metadata?.family ? { family: block.metadata.family } : {} ),
+		...( block?.metadata?.source ? { source: block.metadata.source } : {} ),
+		...( block?.metadata?.noProductOnly !== undefined
+			? { noProductOnly: block.metadata.noProductOnly }
+			: {} ),
+		...( block?.metadata?.productEvidenceRecords !== undefined
+			? { productEvidenceRecords: block.metadata.productEvidenceRecords }
+			: {} ),
+		...( block?.metadata?.hasProductEvidence !== undefined
+			? { hasProductEvidence: block.metadata.hasProductEvidence }
+			: {} ),
+		...( block?.metadata?.expiresAt
+			? { expiresAt: block.metadata.expiresAt }
+			: {} ),
+		preserveProductEvidence: true,
+	} );
+}
+
 function applyBenchmarkCanaryFeedbackStateRepair() {
 	let repaired = 0;
 	for ( const group of benchmarkCanaryForcedGroups ) {
@@ -2052,12 +2401,15 @@ function applyBenchmarkCanaryFeedbackStateRepair() {
 		if ( profile ) {
 			delete state.startupFailureCountsByProfile?.[ profile ];
 		}
-		state.changes.push( {
-			at: new Date().toISOString(),
-			action: 'bypass-benchmark-canary-startup-noise-cooldown',
-			group,
-			reason:
-				getBenchmarkCanaryFeedbackReason( group ) ??
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action:
+					getStoredNoisePauseKind( bypassPause ) === 'startup-noise'
+						? 'bypass-benchmark-canary-startup-noise-cooldown'
+						: 'bypass-benchmark-canary-product-evidence-duplicate-pause',
+				group,
+				reason:
+					getBenchmarkCanaryFeedbackReason( group ) ??
 				'benchmark canary feedback requires this equivalent fuzz lane',
 			sourcePauseAt: bypassPause.at,
 			sourcePauseReason: bypassPause.reason,
@@ -2225,6 +2577,50 @@ function applyCollaborationReadinessStartupFixStateRepair() {
 	return repaired;
 }
 
+function applyManyUserJoinBatchStartupFixStateRepair() {
+	if (
+		state.manyUserJoinBatchStartupFixVersion ===
+		MANY_USER_JOIN_BATCH_STARTUP_FIX_VERSION
+	) {
+		return 0;
+	}
+
+	state.manyUserJoinBatchStartupFixVersion =
+		MANY_USER_JOIN_BATCH_STARTUP_FIX_VERSION;
+	let repaired = 0;
+
+	for ( const group of MANY_USER_JOIN_BATCH_STARTUP_FIX_GROUPS ) {
+		const pausedEntry = state.pausedGroups?.[ group ];
+		const activePause =
+			getActiveNoisePauseForEntry( group, pausedEntry ) ??
+			getRecentNoisePauseCooldownFromHistory( group );
+		if ( ! isNoProductStartupNoiseCooldown( activePause ) ) {
+			continue;
+		}
+
+		const reason =
+			'many-user RTC profiles now join late collaborators in bounded batches, so stale no-product bootstrap cooldowns from the serial join path must not suppress many-user gap coverage';
+		recordStartupNoiseCooldownBypass( group, activePause, reason );
+		delete state.pausedGroups[ group ];
+		delete state.startupFailureCountsByGroup?.[ group ];
+		delete state.startupFailureCountsByProfile?.[
+			PROFILE_BY_GROUP[ group ]
+		];
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'clear-many-user-join-batch-startup-pause-after-harness-fix',
+			group,
+			reason,
+			sourcePauseAt: activePause.at,
+			sourcePauseReason: activePause.reason,
+			expiresAt: activePause.expiresAt,
+		} );
+		repaired += 1;
+	}
+
+	return repaired;
+}
+
 async function refreshBenchmarkCanaryFeedbackState( {
 	recordLoad = false,
 } = {} ) {
@@ -2232,8 +2628,10 @@ async function refreshBenchmarkCanaryFeedbackState( {
 		.sort()
 		.join( ',' );
 	benchmarkCanaryFeedbackRows = await readBenchmarkCanaryFeedbackRows();
+	benchmarkCanaryFeedbackText = await readBenchmarkCanaryFeedbackText();
 	benchmarkCanaryForcedGroups = getBenchmarkCanaryForcedGroups(
-		benchmarkCanaryFeedbackRows
+		benchmarkCanaryFeedbackRows,
+		benchmarkCanaryFeedbackText
 	);
 
 	if ( benchmarkCanaryForcedGroups.size === 0 ) {
@@ -2590,16 +2988,25 @@ function filterPolicyInactiveCurrentRunDirs( runDirs, supervisorState = null ) {
 		getSupervisorActiveRunDirSet( supervisorState );
 	return uniquePathList( runDirs ).filter( ( runDir ) => {
 		const group = getRunGroupNameFromPath( runDir );
+		const supervisorActive = supervisorActiveRunDirs.has(
+			path.resolve( runDir )
+		);
 		if ( ! group ) {
-			return supervisorActiveRunDirs.has( path.resolve( runDir ) );
+			return supervisorActive;
+		}
+		if ( ! supervisorActive ) {
+			return false;
 		}
 		if ( state.pausedGroups?.[ group ] ) {
 			return false;
 		}
-		return (
-			enabled.has( group ) &&
-			supervisorActiveRunDirs.has( path.resolve( runDir ) )
-		);
+		if ( getSupervisorGroupPublicationNoiseBlock( group ) ) {
+			return false;
+		}
+		if ( isBenchmarkCanaryForcedGroup( group ) ) {
+			return true;
+		}
+		return enabled.has( group );
 	} );
 }
 
@@ -2640,6 +3047,13 @@ function isCurrentRunCoverageRecord( record ) {
 	);
 }
 
+function shouldSkipArtifactScanDir( dirName ) {
+	return (
+		ARTIFACT_SCAN_IGNORED_DIRS.has( dirName ) ||
+		( dirName === 'external-imports' && ! INCLUDE_EXTERNAL_IMPORTS )
+	);
+}
+
 function getRunGroupNameFromPath( filePath ) {
 	if ( ! filePath ) {
 		return null;
@@ -2657,7 +3071,15 @@ function getRunGroupNameFromPath( filePath ) {
 		return null;
 	}
 
-	const [ runDirName ] = relative.split( path.sep );
+	const relativeParts = relative.split( path.sep );
+	if (
+		! INCLUDE_EXTERNAL_IMPORTS &&
+		relativeParts.includes( 'external-imports' )
+	) {
+		return null;
+	}
+
+	const [ runDirName ] = relativeParts;
 	for ( const group of PROFILE_GROUP_NAMES_BY_SPECIFICITY ) {
 		if (
 			runDirName === group ||
@@ -2703,23 +3125,12 @@ async function findCoverageFiles( roots ) {
 			return;
 		}
 
-		for ( const entry of entries ) {
-			const entryPath = path.join( dir, entry.name );
-			if ( entry.isDirectory() ) {
-				if (
-					[
-						'.triage-watcher',
-						'node_modules',
-						'.git',
-						'vendor',
-						'test-results',
-						'playwright-report',
-						'blob-report',
-						'codex-analysis',
-					].includes( entry.name )
-				) {
-					continue;
-				}
+			for ( const entry of entries ) {
+				const entryPath = path.join( dir, entry.name );
+				if ( entry.isDirectory() ) {
+					if ( shouldSkipArtifactScanDir( entry.name ) ) {
+						continue;
+					}
 				if (
 					! INCLUDE_RECHECK_COVERAGE &&
 					( entry.name.startsWith( 'analysis-' ) ||
@@ -2758,23 +3169,12 @@ async function findSummaryFiles( roots ) {
 			return;
 		}
 
-		for ( const entry of entries ) {
-			const entryPath = path.join( dir, entry.name );
-			if ( entry.isDirectory() ) {
-				if (
-					[
-						'.triage-watcher',
-						'node_modules',
-						'.git',
-						'vendor',
-						'test-results',
-						'playwright-report',
-						'blob-report',
-						'codex-analysis',
-					].includes( entry.name )
-				) {
-					continue;
-				}
+			for ( const entry of entries ) {
+				const entryPath = path.join( dir, entry.name );
+				if ( entry.isDirectory() ) {
+					if ( shouldSkipArtifactScanDir( entry.name ) ) {
+						continue;
+					}
 				await walk( entryPath, depth + 1 );
 			} else if ( entry.name === 'summary.ndjson' ) {
 				files.push( entryPath );
@@ -2808,24 +3208,14 @@ async function findTriageStateFiles( roots ) {
 
 		for ( const entry of entries ) {
 			const entryPath = path.join( dir, entry.name );
-			if ( entry.isDirectory() ) {
-				if ( entry.name === '.triage-watcher' ) {
-					files.push( path.join( entryPath, 'state.json' ) );
-					continue;
-				}
-				if (
-					[
-						'node_modules',
-						'.git',
-						'vendor',
-						'test-results',
-						'playwright-report',
-						'blob-report',
-						'codex-analysis',
-					].includes( entry.name )
-				) {
-					continue;
-				}
+				if ( entry.isDirectory() ) {
+					if ( entry.name === '.triage-watcher' ) {
+						files.push( path.join( entryPath, 'state.json' ) );
+						continue;
+					}
+					if ( shouldSkipArtifactScanDir( entry.name ) ) {
+						continue;
+					}
 				await walk( entryPath, depth + 1 );
 			}
 		}
@@ -2876,19 +3266,9 @@ async function findPreservedNoAnalysisRunDirs( rootDir = OUTPUT_DIR ) {
 				}
 				continue;
 			}
-			if (
-				[
-					'node_modules',
-					'.git',
-					'vendor',
-					'test-results',
-					'playwright-report',
-					'blob-report',
-					'codex-analysis',
-				].includes( entry.name )
-			) {
-				continue;
-			}
+				if ( shouldSkipArtifactScanDir( entry.name ) ) {
+					continue;
+				}
 			await walk( entryPath, depth + 1 );
 		}
 	}
@@ -3031,19 +3411,9 @@ async function restoreNoisePausesFromNoAnalysisSentinels(
 				restored += 1;
 				continue;
 			}
-			if (
-				[
-					'node_modules',
-					'.git',
-					'vendor',
-					'test-results',
-					'playwright-report',
-					'blob-report',
-					'codex-analysis',
-				].includes( entry.name )
-			) {
-				continue;
-			}
+				if ( shouldSkipArtifactScanDir( entry.name ) ) {
+					continue;
+				}
 			await walk( entryPath, depth + 1 );
 		}
 	}
@@ -4276,6 +4646,13 @@ function getProductEvidenceActionGateHoldForScheduling( hold, triageYield ) {
 	if ( productEvidenceRecords <= 0 ) {
 		return null;
 	}
+	const representativeSignal = getActionGateRepresentativeSignal(
+		triageYield,
+		hold.family
+	);
+	if ( ! representativeSignal ) {
+		return null;
+	}
 	return {
 		...hold,
 		source: hold.source?.endsWith( '-producer-action-gate' )
@@ -4284,9 +4661,7 @@ function getProductEvidenceActionGateHoldForScheduling( hold, triageYield ) {
 		productEvidenceRecords,
 		hasProductEvidence: true,
 		preserveProductEvidence: true,
-		representativeSignal:
-			getActionGateRepresentativeSignal( triageYield, hold.family ) ??
-			'pending',
+		representativeSignal,
 	};
 }
 
@@ -4326,6 +4701,9 @@ function getCurrentRunActionGateProducerHold(
 		triageYield,
 		hold.family
 	);
+	if ( ! representativeSignal ) {
+		return null;
+	}
 
 	return {
 		...hold,
@@ -4334,7 +4712,7 @@ function getCurrentRunActionGateProducerHold(
 		productEvidenceRecords,
 		hasProductEvidence: true,
 		preserveProductEvidence: true,
-		representativeSignal: representativeSignal ?? 'pending',
+		representativeSignal,
 	};
 }
 
@@ -5023,9 +5401,19 @@ function getRecentNoisePauseCooldownFromHistory( group ) {
 		'sync-supervisor-startup-stall-pause',
 		'import-previous-supervisor-startup-stall-pause',
 	] );
+	const clearActions = new Set( [
+		'clear-benchmark-canary-startup-pause-after-optional-plugin-setup-fix',
+		'clear-collaboration-readiness-startup-pause-after-harness-fix',
+		'clear-http-provider-gating-startup-pause-after-harness-fix',
+		'clear-large-http-lifecycle-startup-pause-after-harness-fix',
+		'clear-many-user-join-batch-startup-pause-after-harness-fix',
+	] );
 
 	for ( let index = changes.length - 1; index >= 0; index-- ) {
 		const change = changes[ index ];
+		if ( change?.group === group && clearActions.has( change.action ) ) {
+			return null;
+		}
 		if ( change?.group !== group || ! pauseActions.has( change.action ) ) {
 			continue;
 		}
@@ -6708,9 +7096,7 @@ function hasActionableBehavioralCoverageSummary( summary ) {
 		return true;
 	}
 
-	return Object.entries( summary.userCounts ?? {} ).some(
-		( [ userCount, count ] ) => userCount !== '0' && count > 0
-	);
+	return false;
 }
 
 function hasActionableCoverageRecord( record ) {
@@ -6718,7 +7104,6 @@ function hasActionableCoverageRecord( record ) {
 		return false;
 	}
 	return (
-		( record.userCount ?? 0 ) > 0 ||
 		( record.actions?.length ?? 0 ) > 0 ||
 		( record.reloads?.length ?? 0 ) > 0 ||
 		( record.saveCheckpointSteps?.length ?? 0 ) > 0 ||
@@ -6759,10 +7144,16 @@ function isStrictPreActionStartupGateAttempt( attempt ) {
 	if ( attempt?.bucket !== 'pre-action-bootstrap-stall' ) {
 		return false;
 	}
-	if ( ( attempt.userCount ?? 0 ) > 0 ) {
-		return false;
-	}
-	if ( attempt.lastAction ) {
+	if (
+		attempt.lastAction ||
+		( attempt.reloadCount ?? 0 ) > 0 ||
+		( attempt.saveCheckpointCount ?? 0 ) > 0 ||
+		( attempt.autosaveCount ?? 0 ) > 0 ||
+		attempt.revisionEligible === true ||
+		( attempt.operationWitnessActions?.length ?? 0 ) > 0 ||
+		( attempt.operationWitnessScopes?.length ?? 0 ) > 0 ||
+		!! attempt.operationWitnessPhase
+	) {
 		return false;
 	}
 	if (
@@ -7418,9 +7809,6 @@ function isStartupDiscoveryFailure( record ) {
 	if ( ( record.actions?.length ?? 0 ) > 0 ) {
 		return false;
 	}
-	if ( ( record.userCount ?? 0 ) > 0 ) {
-		return false;
-	}
 	if ( ( record.reloads?.length ?? 0 ) > 0 ) {
 		return false;
 	}
@@ -7573,6 +7961,62 @@ function getCdpCoverageRecordCount() {
 	return Object.values( state.coverageHashes ?? {} ).reduce(
 		( total, count ) => total + count,
 		0
+	);
+}
+
+function getBootstrapZeroCoveragePriorityGroups() {
+	const groups = [];
+	const add = ( condition, ...candidateGroups ) => {
+		if ( condition ) {
+			groups.push( ...candidateGroups );
+		}
+	};
+
+	add(
+		getFeatureCount( 'users:30' ) === 0 ||
+			getFeatureCount( 'lifecycle:late-join:users-30' ) === 0 ||
+			getUserDocumentConcurrencyCount( 'successfulByUserCount', 30 ) ===
+				0,
+		'novelty-ws-thirty-user-lifecycle'
+	);
+	add(
+		getFeatureCount( 'history:remote-selection-cursor:ok' ) === 0 ||
+			getSuccessfulProfileCount( 'collaboration-ui-signals' ) === 0,
+		'novelty-ws-collaboration-ui-signals'
+	);
+	add(
+		getUserDocumentConcurrencyCount( 'successfulByUserCount', 12 ) === 0 ||
+			getSuccessfulProfileCount( 'many-user-lifecycle' ) === 0 ||
+			getUserDocumentConcurrencyNestedCount(
+				'successfulByProfileUserCount',
+				'many-user-lifecycle',
+				12
+			) === 0,
+		'novelty-ws-many-user-lifecycle-completion',
+		'novelty-ws-many-user-lifecycle'
+	);
+	add(
+		getFeatureCount( 'history:table-stale-snapshot:ok' ) === 0 ||
+			getSuccessfulProfileCount( 'table-stale-snapshot-http' ) === 0,
+		'novelty-http-table-stale-snapshot'
+	);
+	add(
+		getFeatureCount( 'history:publish-ui-readiness:ok' ) === 0 ||
+			getFeatureCount( 'history:final-persistence-publish:ok' ) < 10 ||
+			getSuccessfulProfileCount(
+				'large-post-three-user-http-lifecycle'
+			) === 0 ||
+			getUserDocumentConcurrencyNestedCount(
+				'successfulByProfileUserCount',
+				'large-post-three-user-http-lifecycle',
+				3
+			) === 0,
+		'novelty-http-large-post-lifecycle-completion',
+		'novelty-http-large-post-lifecycle'
+	);
+
+	return uniqueStringList( groups ).filter( ( group ) =>
+		ZERO_COVERAGE_PRIORITY_GROUPS.includes( group )
 	);
 }
 
@@ -8263,6 +8707,49 @@ function createCoverageGuidance( novelty ) {
 			groups: [ 'novelty-http-table-stale-snapshot' ],
 			rationale:
 				'the fuzz lane must prove both the stale local cell edit and remote inserted row converge',
+		},
+		{
+			id: 'transport-profile:http:session-lifecycle',
+			label: 'HTTP title reload lifecycle',
+			target: 10,
+			groups: [ 'novelty-http-title-reload-convergence' ],
+			rationale:
+				'title reload convergence over HTTP polling is not covered by equivalent WebSocket title reload rows',
+		},
+		{
+			id: 'action:edit-title',
+			label: 'HTTP title edits before reload',
+			target: 10,
+			groups: [ 'novelty-http-title-reload-convergence' ],
+			rationale:
+				'the canary timed out after a synced title edit and reload, so the fuzz lane must force title edits before lifecycle reloads',
+		},
+		{
+			id: 'history:reload:ok',
+			label: 'HTTP reload convergence',
+			target: 10,
+			groups: [
+				'novelty-http-title-reload-convergence',
+				'novelty-http-existing-post-crdt-metadata',
+			],
+			rationale:
+				'reload checks must prove collaboration state converges with a non-empty CRDT document, not just matching rendered text',
+		},
+		{
+			id: 'transport-profile:http:persistence-no-title',
+			label: 'HTTP existing-post CRDT metadata',
+			target: 10,
+			groups: [ 'novelty-http-existing-post-crdt-metadata' ],
+			rationale:
+				'loading an existing post without CRDT metadata must create and persist a non-empty CRDT document before reload checks are trusted',
+		},
+		{
+			id: 'invariant:final-persistence-crdt-document-present:ok',
+			label: 'persisted CRDT document present',
+			target: 10,
+			groups: [ 'novelty-http-existing-post-crdt-metadata' ],
+			rationale:
+				'the canary failed because persistedCrdtDoc was empty on an existing-post reload path',
 		},
 		{
 			id: 'history:final-ui-witness-sweep:ok',
@@ -9419,90 +9906,158 @@ async function writeNoAnalysisSentinelsForMatchingLocalNoiseHold(
 
 function buildGroup( profile ) {
 	const transport = profile.transport ?? 'ws';
+	const profileIndex = Math.max(
+		0,
+		PROFILE_GROUPS.findIndex( ( candidate ) => candidate.name === profile.name )
+	);
+	const wpEnvPortBase = Number.parseInt( WP_ENV_PORT, 10 );
+	const wpEnvPort = Number.isNaN( wpEnvPortBase )
+		? WP_ENV_PORT
+		: String( wpEnvPortBase + profileIndex * 4 );
+	const baseUrl = Number.isNaN( wpEnvPortBase )
+		? BASE_URL
+		: `http://localhost:${ wpEnvPort }`;
+	const wsPortBase = Number.parseInt( WS_PORT, 10 );
+	const wsPort = Number.isNaN( wsPortBase )
+		? WS_PORT
+		: String( wsPortBase + profileIndex );
+	const repoRoot = REPOS_BASE
+		? path.join( REPOS_BASE, profile.name )
+		: REPO_ROOT;
 	const transportEnv =
 		transport === 'ws'
 			? {
 					GUTENBERG_RTC_TEST_WS_PROVIDER: '1',
-					GUTENBERG_RTC_TEST_WS_PORT: WS_PORT,
-					GUTENBERG_RTC_TEST_WS_URL: `ws://127.0.0.1:${ WS_PORT }`,
+					GUTENBERG_RTC_TEST_WS_PORT: wsPort,
+					GUTENBERG_RTC_TEST_WS_URL: `ws://127.0.0.1:${ wsPort }`,
 			  }
 			: {
 					GUTENBERG_RTC_TEST_WS_PROVIDER: '0',
 			  };
 	const env = {
-		WP_ENV_PORT,
-		WP_BASE_URL: BASE_URL,
-		RTC_FUZZ_BASE_URL: BASE_URL,
 		...( transport === 'ws' ? WS_ENV_DEFAULTS : {} ),
 		RTC_FUZZ_ANALYSIS_RECHECKS: '1',
 		RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '0',
-		...transportEnv,
 		GUTENBERG_RTC_BROWSER_ACTION_PROFILE: profile.actionProfile,
 		GUTENBERG_RTC_BROWSER_COLLECT_CDP_COVERAGE: profile.collectCdpCoverage
 			? '1'
 			: '0',
 		...profile.env,
+		...transportEnv,
+		...( WP_ENV_HOME_BASE
+			? { WP_ENV_HOME: path.join( WP_ENV_HOME_BASE, profile.name ) }
+			: {} ),
+		WP_ENV_PORT: wpEnvPort,
+		WP_ENV_TESTS_PORT: Number.isNaN( wpEnvPortBase )
+			? profile.env?.WP_ENV_TESTS_PORT
+			: String( Number.parseInt( wpEnvPort, 10 ) + 1 ),
+		WP_ENV_PHPMYADMIN_PORT: Number.isNaN( wpEnvPortBase )
+			? profile.env?.WP_ENV_PHPMYADMIN_PORT
+			: String( Number.parseInt( wpEnvPort, 10 ) + 2 ),
+		WP_BASE_URL: baseUrl,
+		RTC_FUZZ_BASE_URL: baseUrl,
 	};
 	assertNoBehaviorDisableEnv( env, profile.name );
 
 	return {
 		name: profile.name,
-		repoRoot: REPO_ROOT,
+		repoRoot,
 		transport,
 		fuzzLevel: profile.fuzzLevel ?? 'browser-e2e',
 		lanes: profile.lanes ?? 1,
 		startSeed: profile.startSeed,
 		stepCount: profile.stepCount,
 		...( transport === 'ws'
-			? { wsPort: Number.parseInt( WS_PORT, 10 ) }
+			? { wsPort: Number.parseInt( wsPort, 10 ) }
 			: {} ),
 		env,
 	};
 }
 
+async function ensureNoveltyGroupRepo( group ) {
+	if ( ! REPOS_BASE || group.repoRoot === REPO_ROOT ) {
+		return;
+	}
+	try {
+		await fs.access( path.join( group.repoRoot, 'package.json' ) );
+		return;
+	} catch {}
+
+	await fs.mkdir( path.dirname( group.repoRoot ), { recursive: true } );
+	const tmpRepoRoot = `${ group.repoRoot }.tmp-${ process.pid }`;
+	await fs.rm( tmpRepoRoot, { recursive: true, force: true } );
+	await fs.rm( group.repoRoot, { recursive: true, force: true } );
+	await fs.mkdir( tmpRepoRoot, { recursive: true } );
+	await log(
+		`preparing isolated novelty repo for ${ group.name }: ${ group.repoRoot }`
+	);
+	execFileSync(
+		'bash',
+		[
+			'-lc',
+			[
+				'set -euo pipefail',
+				'shopt -s dotglob nullglob',
+				'src=$1',
+				'dest=$2',
+				'for item in "$src"/*; do',
+				'  name=${item##*/}',
+				'  case "$name" in artifacts) continue ;; esac',
+				'  cp -al "$item" "$dest/"',
+				'done',
+			].join( '\n' ),
+			'bash',
+			REPO_ROOT,
+			tmpRepoRoot,
+		],
+		{ stdio: 'inherit' }
+	);
+	await fs.rename( tmpRepoRoot, group.repoRoot );
+}
+
 async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 	const enabled = new Set( enabledGroups ?? [] );
-	for ( const group of [ ...enabled ] ) {
-		const activeNoisePause = getActiveNoisePauseCooldown( group );
-		if ( ! isNoProductStartupNoiseCooldown( activeNoisePause ) ) {
-			continue;
-		}
+	const deferredBenchmarkCanaryGroups = new Set(
+		state.deferredBenchmarkCanaryGroupsForZeroCoverage ?? []
+	);
+	for ( const group of benchmarkCanaryForcedGroups ) {
 		if (
-			isBenchmarkCanaryForcedGroup( group ) &&
-			shouldBypassBenchmarkCanaryNoisePause( group, activeNoisePause )
+			PROFILE_BY_GROUP[ group ] &&
+			! deferredBenchmarkCanaryGroups.has( group )
 		) {
-			recordStartupNoiseCooldownBypass(
-				group,
-				activeNoisePause,
-				getBenchmarkCanaryFeedbackReason( group ) ??
-					'benchmark canary feedback requires this equivalent fuzz lane'
-			);
+			enabled.add( group );
+		}
+	}
+	for ( const group of [ ...enabled ] ) {
+		const publicationBlock =
+			getSupervisorGroupPublicationNoiseBlock( group );
+		if ( ! publicationBlock ) {
 			continue;
 		}
 		enabled.delete( group );
-		recordBenchmarkCanaryNoProductStartupNoiseBlock(
-			'block-supervisor-group-startup-noise',
-			group,
-			activeNoisePause
-		);
-	}
-	for ( const group of benchmarkCanaryForcedGroups ) {
-		const startupNoiseBlock =
-			getBenchmarkCanaryNoProductStartupNoiseBlock( group );
-		if ( startupNoiseBlock ) {
-			enabled.delete( group );
+		if ( isNoProductStartupNoiseCooldown( publicationBlock.pause ) ) {
 			recordBenchmarkCanaryNoProductStartupNoiseBlock(
-				'block-benchmark-canary-supervisor-group-startup-noise',
+				publicationBlock.action,
 				group,
-				startupNoiseBlock
+				publicationBlock.pause
 			);
-			continue;
 		}
-		enabled.add( group );
+		recordSupervisorGroupPublicationNoiseBlock(
+			group,
+			publicationBlock
+		);
+		await writeNoAnalysisSentinelsForGroup(
+			group,
+			publicationBlock.reason,
+			publicationBlock.metadata
+		);
 	}
 	const groups = PROFILE_GROUPS.filter( ( profile ) =>
 		enabled.has( profile.name )
 	).map( buildGroup );
+	for ( const group of groups ) {
+		await ensureNoveltyGroupRepo( group );
+	}
 	await writeJsonFileAtomic( GROUPS_PATH, groups );
 }
 
@@ -9740,10 +10295,115 @@ async function applyPolicy(
 	const recommendedGroupsForPass = new Set(
 		guidance?.recommendedGroups ?? []
 	);
+	const zeroCoveragePriorityGroupsForPass =
+		ZERO_COVERAGE_PRIORITY_GROUPS.filter(
+			( group ) => getZeroCoverageGapsForGroup( group ).length > 0
+		);
+	const zeroCoverageBenchmarkCanaryYieldLimit = Math.max(
+		0,
+		Math.min( MAX_ENABLED_GROUPS, benchmarkCanaryForcedGroups.size ) -
+			Math.min(
+				ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS,
+				MAX_ENABLED_GROUPS,
+				benchmarkCanaryForcedGroups.size
+			)
+	);
+	let benchmarkCanaryZeroCoverageEvictions = 0;
+	const deferredBenchmarkCanariesForZeroCoverage = new Set();
+
+	function syncDeferredBenchmarkCanariesForZeroCoverage() {
+		if ( deferredBenchmarkCanariesForZeroCoverage.size > 0 ) {
+			state.deferredBenchmarkCanaryGroupsForZeroCoverage = [
+				...deferredBenchmarkCanariesForZeroCoverage,
+			];
+		} else {
+			delete state.deferredBenchmarkCanaryGroupsForZeroCoverage;
+		}
+	}
+
+	function getZeroCoverageGapsForGroup( group ) {
+		return ( guidance?.unmetGoals ?? [] ).filter(
+			( goal ) => goal.count === 0 && goal.groups.includes( group )
+		);
+	}
 
 	function groupHasCurrentProductEvidence( group ) {
 		return supervisorGroupHasProductEvidence(
 			supervisorGroupsByName.get( group )
+		);
+	}
+
+	function groupHasCurrentRunBehavioralCoverage( group ) {
+		return (
+			( state.currentRunRecordCountsByGroup?.[ group ] ?? 0 ) > 0 ||
+			groupHasCurrentProductEvidence( group )
+		);
+	}
+
+	function getEnabledBenchmarkCanaryCount() {
+		return [ ...enabled ].filter( ( group ) =>
+			isBenchmarkCanaryForcedGroup( group )
+		).length;
+	}
+
+	function getMinimumActiveBenchmarkCanaryCount() {
+		return Math.min(
+			ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS,
+			MAX_ENABLED_GROUPS,
+			benchmarkCanaryForcedGroups.size
+		);
+	}
+
+	function hasEnabledZeroCoveragePriorityGroup() {
+		return [ ...enabled ].some(
+			( group ) =>
+				ZERO_COVERAGE_PRIORITY_GROUPS.includes( group ) &&
+				getZeroCoverageGapsForGroup( group ).length > 0
+		);
+	}
+
+	function shouldDeferBenchmarkCanaryForZeroCoverage( group ) {
+		if (
+			! isBenchmarkCanaryForcedGroup( group ) ||
+			zeroCoveragePriorityGroupsForPass.length === 0 ||
+			benchmarkCanaryForcedGroups.size < MAX_ENABLED_GROUPS ||
+			! groupHasCurrentRunBehavioralCoverage( group )
+		) {
+			return false;
+		}
+
+		if (
+			getEnabledBenchmarkCanaryCount() <
+			getMinimumActiveBenchmarkCanaryCount()
+		) {
+			return false;
+		}
+
+		return (
+			enabled.size >= MAX_ENABLED_GROUPS ||
+			hasEnabledZeroCoveragePriorityGroup()
+		);
+	}
+
+	function getYieldableBenchmarkCanaryEvictionsForZeroCoverage() {
+		if (
+			benchmarkCanaryZeroCoverageEvictions >=
+			zeroCoverageBenchmarkCanaryYieldLimit
+		) {
+			return [];
+		}
+
+		const activeCanaries = [ ...enabled ].filter( ( group ) =>
+			isBenchmarkCanaryForcedGroup( group )
+		);
+		if ( activeCanaries.length <= getMinimumActiveBenchmarkCanaryCount() ) {
+			return [];
+		}
+
+		return BENCHMARK_CANARY_ZERO_COVERAGE_EVICTION_ORDER.filter(
+			( group ) =>
+				enabled.has( group ) &&
+				groupHasCurrentRunBehavioralCoverage( group )
 		);
 	}
 
@@ -9753,7 +10413,8 @@ async function applyPolicy(
 			shouldProductEvidenceDuplicateHoldBlockGroup(
 				effectiveProductEvidenceDuplicateFamilyHold,
 				group
-			)
+			) &&
+			! isBenchmarkCanaryForcedGroup( group )
 		) {
 			return false;
 		}
@@ -10769,18 +11430,18 @@ async function applyPolicy(
 		return true;
 	}
 
-	async function pauseGroup( group, reason, metadata = {} ) {
-		if ( ! enabled.has( group ) ) {
-			return false;
-		}
+		async function pauseGroup( group, reason, metadata = {} ) {
+			if ( ! enabled.has( group ) ) {
+				return false;
+			}
 
-		const pausedAt = new Date().toISOString();
-		const noisePauseKind = getNoisePauseKind( reason, metadata.reasonKind );
-		const noisePauseFamily =
-			metadata.family ?? getNoisePauseFamily( noisePauseKind );
-		const inferredNoProductStartupPause =
-			noisePauseKind === 'startup-noise' &&
-			hasNoProductStartupPauseEvidence( {
+			const pausedAt = new Date().toISOString();
+			const noisePauseKind = getNoisePauseKind( reason, metadata.reasonKind );
+			const noisePauseFamily =
+				metadata.family ?? getNoisePauseFamily( noisePauseKind );
+			const inferredNoProductStartupPause =
+				noisePauseKind === 'startup-noise' &&
+				hasNoProductStartupPauseEvidence( {
 				reason,
 				noProductOnly: metadata.noProductOnly,
 				productEvidenceRecords: metadata.productEvidenceRecords,
@@ -11508,24 +12169,46 @@ async function applyPolicy(
 			);
 			continue;
 		}
+		if (
+			! enabled.has( group ) &&
+			shouldDeferBenchmarkCanaryForZeroCoverage( group )
+		) {
+			deferredBenchmarkCanariesForZeroCoverage.add( group );
+			syncDeferredBenchmarkCanariesForZeroCoverage();
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'defer-benchmark-canary-for-zero-coverage-gap',
+				group,
+				reason: `benchmark canary ${ group } already produced current-run behavioral coverage; preserving a scarce browser slot for zero-coverage RTC gaps: ${ zeroCoveragePriorityGroupsForPass
+					.slice( 0, 3 )
+					.join( ', ' ) }`,
+			} );
+			continue;
+		}
 		if ( enabled.has( group ) ) {
 			continue;
 		}
-		while ( enabled.size >= MAX_ENABLED_GROUPS ) {
-			const eviction = uniqueStringList( [
-				'novelty-http-persistence-probe',
-				...ZERO_COVERAGE_EVICTION_ORDER,
-				...PRODUCTIVE_FALLBACK_GROUPS,
-				...enabled,
-			] ).find(
-				( candidate ) =>
-					enabled.has( candidate ) &&
-					candidate !== group &&
-					! isBenchmarkCanaryForcedGroup( candidate )
-			);
-			if ( ! eviction ) {
-				break;
-			}
+			while ( enabled.size >= MAX_ENABLED_GROUPS ) {
+				const eviction = uniqueStringList( [
+					'novelty-http-persistence-probe',
+					...ZERO_COVERAGE_EVICTION_ORDER,
+					...PRODUCTIVE_FALLBACK_GROUPS,
+					...enabled,
+				] ).find(
+					( candidate ) =>
+						enabled.has( candidate ) &&
+						candidate !== group &&
+						! isBenchmarkCanaryForcedGroup( candidate ) &&
+						!(
+							ZERO_COVERAGE_PRIORITY_GROUPS.includes(
+								candidate
+							) &&
+							getZeroCoverageGapsForGroup( candidate ).length > 0
+						)
+				);
+				if ( ! eviction ) {
+					break;
+				}
 			await pauseGroup(
 				eviction,
 				`benchmark canary feedback preempts generic coverage slot for ${ group } before publication confidence can move`
@@ -11580,10 +12263,32 @@ async function applyPolicy(
 		if ( enabled.has( group ) ) {
 			continue;
 		}
-		const gapsForGroup = ( guidance?.unmetGoals ?? [] ).filter(
-			( goal ) => goal.count === 0 && goal.groups.includes( group )
-		);
+		const gapsForGroup = getZeroCoverageGapsForGroup( group );
 		if ( gapsForGroup.length === 0 ) {
+			continue;
+		}
+		const activeNoisePause = getActiveNoisePauseCooldown(
+			group,
+			triageYield
+		);
+		if (
+			activeNoisePause &&
+			! canBypassStartupNoiseCooldown( group, activeNoisePause ) &&
+			! shouldBypassBenchmarkCanaryNoisePause(
+				group,
+				activeNoisePause
+			)
+		) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'skip-zero-coverage-priority-noise-cooldown',
+				group,
+				reason: `zero-coverage group ${ group } is still inside ${ activeNoisePause.kind } cooldown from ${ activeNoisePause.at }; keep the existing browser slot until the producer has product evidence or the cooldown expires`,
+				expiresAt: activeNoisePause.expiresAt,
+				...( activeNoisePause.originGroup
+					? { originGroup: activeNoisePause.originGroup }
+					: {} ),
+			} );
 			continue;
 		}
 		const zeroCoverageRotationHold = getZeroCoverageRotationHold();
@@ -11601,7 +12306,10 @@ async function applyPolicy(
 			continue;
 		}
 		while ( enabled.size >= MAX_ENABLED_GROUPS ) {
-			const eviction = ZERO_COVERAGE_EVICTION_ORDER.find(
+			const eviction = [
+				...ZERO_COVERAGE_EVICTION_ORDER,
+				...getYieldableBenchmarkCanaryEvictionsForZeroCoverage(),
+			].find(
 				( candidate ) =>
 					enabled.has( candidate ) &&
 					! ZERO_COVERAGE_PRIORITY_GROUPS.includes( candidate )
@@ -11609,7 +12317,13 @@ async function applyPolicy(
 			if ( ! eviction ) {
 				break;
 			}
-			await pauseGroup(
+			const evictionIsBenchmarkCanary =
+				isBenchmarkCanaryForcedGroup( eviction );
+			if ( evictionIsBenchmarkCanary ) {
+				deferredBenchmarkCanariesForZeroCoverage.add( eviction );
+				syncDeferredBenchmarkCanariesForZeroCoverage();
+			}
+			const paused = await pauseGroup(
 				eviction,
 				`zero-coverage high-priority RTC surface ${ group } needs a browser slot before lower-priority coverage top-offs; gaps=${ gapsForGroup
 					.slice( 0, 3 )
@@ -11619,6 +12333,16 @@ async function applyPolicy(
 					)
 					.join( ', ' ) }`
 			);
+			if ( evictionIsBenchmarkCanary ) {
+				if ( paused ) {
+					benchmarkCanaryZeroCoverageEvictions += 1;
+				} else {
+					deferredBenchmarkCanariesForZeroCoverage.delete(
+						eviction
+					);
+					syncDeferredBenchmarkCanariesForZeroCoverage();
+				}
+			}
 		}
 		await enableGroup(
 			group,
@@ -11892,6 +12616,7 @@ async function applyPolicy(
 	await ensureProductiveFallbackGroup();
 	await ensureMaterializationFloorGroup();
 	await sweepEnabledGroupsBlockedByActiveHolds();
+	syncDeferredBenchmarkCanariesForZeroCoverage();
 	state.enabledGroups = [ ...enabled ];
 	await writeSupervisorGroupsForEnabledGroups( enabled );
 }
@@ -12377,14 +13102,14 @@ async function ensureBootstrapSupervisorGroups() {
 					bootstrapProductEvidenceDuplicateFamilyHold
 				) ||
 				! shouldProductEvidenceDuplicateHoldBlockGroup(
-				bootstrapProductEvidenceDuplicateFamilyHold,
-				group
-			)
-		) {
-			return null;
-		}
-		return bootstrapProductEvidenceDuplicateFamilyHold;
-	};
+					bootstrapProductEvidenceDuplicateFamilyHold,
+					group
+				)
+			) {
+				return null;
+			}
+			return bootstrapProductEvidenceDuplicateFamilyHold;
+		};
 	const getBootstrapDuplicateFamilyHoldBlockReason = ( hold ) =>
 		`bootstrap supervisor group selection held while product-evidence duplicate family ${
 			hold.family
@@ -12397,6 +13122,9 @@ async function ensureBootstrapSupervisorGroups() {
 		const activeNoisePause = getActiveNoisePauseCooldown( group );
 		const duplicateFamilyHoldBlock =
 			getBootstrapDuplicateFamilyHoldBlock( group );
+		const canBypassNonStartupPolicyGuards =
+			ALLOW_DISABLED_POLICY_GUARDS &&
+			SUPERVISOR_SESSION === 'rtc-coverage-guided-supervisor';
 		const benchmarkCanaryBypassesStartupNoise =
 			shouldBypassBenchmarkCanaryNoisePause(
 				group,
@@ -12404,12 +13132,21 @@ async function ensureBootstrapSupervisorGroups() {
 			);
 		const storedPauseBlocksGroup =
 			state.pausedGroups?.[ group ] &&
+			!(
+				canBypassNonStartupPolicyGuards &&
+				getStoredNoisePauseKind( state.pausedGroups?.[ group ] ) !==
+					'startup-noise'
+			) &&
 			! shouldBypassBenchmarkCanaryNoisePause(
 				group,
 				state.pausedGroups?.[ group ]
 			);
 		const activeNoisePauseBlocksGroup =
 			activeNoisePause &&
+			!(
+				canBypassNonStartupPolicyGuards &&
+				activeNoisePause.kind !== 'startup-noise'
+			) &&
 			! shouldBypassBenchmarkCanaryNoisePause( group, activeNoisePause );
 		const startupHoldBlocksGroup =
 			! benchmarkCanaryBypassesStartupNoise &&
@@ -12444,10 +13181,12 @@ async function ensureBootstrapSupervisorGroups() {
 			! group ||
 			seen.has( group ) ||
 			! PROFILE_BY_GROUP[ group ] ||
-			state.disabledGroups?.[ group ] ||
+			( state.disabledGroups?.[ group ] &&
+				! canBypassNonStartupPolicyGuards ) ||
 			storedPauseBlocksGroup ||
 			activeNoisePauseBlocksGroup ||
-			duplicateFamilyHoldBlock ||
+			( duplicateFamilyHoldBlock &&
+				! canBypassNonStartupPolicyGuards ) ||
 			startupHoldBlocksGroup
 		) {
 			if ( group && activeNoisePauseBlocksGroup ) {
@@ -12836,6 +13575,36 @@ async function ensureBootstrapSupervisorGroups() {
 			} );
 		}
 	}
+	const zeroCoverageBootstrapStart = selected.length;
+	const benchmarkCanaryBootstrapReserve =
+		benchmarkCanaryForcedGroups.size > 0
+			? Math.min(
+					benchmarkCanaryForcedGroups.size,
+					Math.max( 1, MAX_ENABLED_GROUPS - 1 )
+			  )
+			: 0;
+	const zeroCoverageBootstrapLimit =
+		MAX_ENABLED_GROUPS - benchmarkCanaryBootstrapReserve;
+	for ( const group of getBootstrapZeroCoveragePriorityGroups() ) {
+		if ( selected.length >= zeroCoverageBootstrapLimit ) {
+			break;
+		}
+		addGroup( group );
+	}
+	const zeroCoverageBootstrapGroups = selected
+		.slice( zeroCoverageBootstrapStart )
+		.filter( ( group ) =>
+			ZERO_COVERAGE_PRIORITY_GROUPS.includes( group )
+		);
+	if ( zeroCoverageBootstrapGroups.length > 0 ) {
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'bootstrap-zero-coverage-supervisor-groups',
+			groups: zeroCoverageBootstrapGroups,
+			reservedBenchmarkCanarySlots: benchmarkCanaryBootstrapReserve,
+			reason: 'fresh coverage-guided supervisor reserved initial browser slots for still-zero RTC gap groups before benchmark canaries could consume the full producer budget',
+		} );
+	}
 	const benchmarkCanaryBootstrapStart = selected.length;
 	for ( const group of benchmarkCanaryForcedGroups ) {
 		if ( selected.length >= MAX_ENABLED_GROUPS ) {
@@ -13022,7 +13791,11 @@ async function ensureBootstrapSupervisorGroups() {
 			PROFILE_GROUPS.find( ( profile ) => profile.name === group )
 		)
 		.filter( Boolean );
-	await writeJsonFileAtomic( GROUPS_PATH, groupProfiles.map( buildGroup ) );
+	const bootstrapGroups = groupProfiles.map( buildGroup );
+	for ( const group of bootstrapGroups ) {
+		await ensureNoveltyGroupRepo( group );
+	}
+	await writeJsonFileAtomic( GROUPS_PATH, bootstrapGroups );
 	state.changes.push( {
 		at: new Date().toISOString(),
 		action: 'bootstrap-supervisor-groups',
@@ -13526,6 +14299,82 @@ function formatMacSwapUsage( macSwapUsage ) {
 	) }G used / ${ macSwapUsage.freeGb.toFixed( 1 ) }G free`;
 }
 
+function getPositiveMillisecondValue( value ) {
+	const parsed = Number.parseInt( value, 10 );
+	return Number.isFinite( parsed ) && parsed > 0 ? parsed : null;
+}
+
+function getSupervisorGroupCoverageWarmupMs( group ) {
+	const env = group?.env ?? {};
+	const configuredTimeouts = [
+		env.RTC_FUZZ_RUN_TIMEOUT_MS,
+		env.GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS,
+	]
+		.map( getPositiveMillisecondValue )
+		.filter( Number.isFinite );
+
+	return Math.max(
+		CURRENT_RUN_COVERAGE_WARMUP_MS,
+		...( configuredTimeouts.length ? configuredTimeouts : [ 0 ] )
+	);
+}
+
+function getSupervisorGroupLaunchAgeMs( group ) {
+	const launchAt =
+		group?.lastLaunchAt ??
+		group?.launches?.[ group.launches.length - 1 ]?.at ??
+		group?.lastRecoveryAt ??
+		null;
+	const parsed = launchAt ? Date.parse( launchAt ) : NaN;
+	return Number.isFinite( parsed ) ? Date.now() - parsed : null;
+}
+
+function formatNoCurrentOutputCoverageWarmupGroup( group ) {
+	const warmupSeconds = Math.round( group.warmupMs / 1000 );
+	if ( group.ageMs === null ) {
+		return `${ group.name } age=unknown warmup=${ warmupSeconds }s`;
+	}
+	return `${ group.name } age=${ Math.round(
+		group.ageMs / 1000
+	) }s warmup=${ warmupSeconds }s`;
+}
+
+function getNoCurrentOutputCoverageWarning( supervisorState ) {
+	const groups = supervisorState?.groups ?? [];
+	const activeGroups = groups.filter(
+		( group ) =>
+			ACTIVE_GROUP_STATUSES.has( group.status ) &&
+			( group.currentRunDir || ( group.activeRunDirs ?? [] ).length > 0 )
+	);
+
+	if ( activeGroups.length === 0 ) {
+		return `no behavioral coverage files found under novelty output dir ${ OUTPUT_DIR }`;
+	}
+
+	const staleGroups = [];
+	for ( const group of activeGroups ) {
+		const ageMs = getSupervisorGroupLaunchAgeMs( group );
+		const warmupMs = getSupervisorGroupCoverageWarmupMs( group );
+		if ( ageMs === null || ageMs > warmupMs ) {
+			staleGroups.push( {
+				name: group.name,
+				ageMs,
+				warmupMs,
+			} );
+		}
+	}
+
+	if ( staleGroups.length === 0 ) {
+		return null;
+	}
+
+	const staleGroupSummary = staleGroups
+		.slice( 0, 4 )
+		.map( formatNoCurrentOutputCoverageWarmupGroup )
+		.join( ', ' );
+	return `no behavioral coverage files found under novelty output dir ${ OUTPUT_DIR } after coverage warmup for active group(s): ${ staleGroupSummary }`;
+}
+
 function evaluateHealth( groups, coverageFiles, triageYield, supervisorState ) {
 	const warnings = [];
 	const enabledProfiles = new Set(
@@ -13556,9 +14405,11 @@ function evaluateHealth( groups, coverageFiles, triageYield, supervisorState ) {
 	);
 
 	if ( outputDirCoverageFiles.length === 0 ) {
-		warnings.push(
-			`no behavioral coverage files found under novelty output dir ${ OUTPUT_DIR }`
-		);
+		const noCurrentCoverageWarning =
+			getNoCurrentOutputCoverageWarning( supervisorState );
+		if ( noCurrentCoverageWarning ) {
+			warnings.push( noCurrentCoverageWarning );
+		}
 	}
 
 	for ( const profile of enabledProfiles ) {
@@ -14181,6 +15032,7 @@ async function runPass() {
 	applyHttpProviderGatingStartupFixStateRepair();
 	applyLargeHttpLifecycleStartupFixStateRepair();
 	applyCollaborationReadinessStartupFixStateRepair();
+	applyManyUserJoinBatchStartupFixStateRepair();
 	let supervisorState = await readSupervisorState();
 	const resources = sampleResources();
 	if (

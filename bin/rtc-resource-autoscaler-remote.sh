@@ -657,6 +657,9 @@ materialization_needs_remediation() {
 	local enabled=$1 desired_target=$2 active=$3 paused=$4 running=$5 stale_seconds=$6
 	local status_counts=${7:-}
 	if [ "${desired_target:-0}" -gt 0 ] && [ "${enabled:-0}" -le 0 ] && [ "${active:-0}" -eq 0 ]; then
+		if [ "$status_counts" = "unknown" ] && [ "${stale_seconds:-0}" -lt "$MATERIALIZATION_STALE_SECONDS" ]; then
+			return 1
+		fi
 		return 0
 	fi
 	if printf '%s' "$status_counts" | grep -Eq '(^|\|)(starting|launching|recovering):[1-9]' &&
