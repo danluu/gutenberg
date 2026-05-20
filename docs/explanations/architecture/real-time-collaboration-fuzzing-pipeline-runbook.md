@@ -1538,6 +1538,16 @@ span logs from before `recordsSeen=` was emitted in pass lines, use monotonic
 cumulative processed-record observations and keep the live state counter
 separate in the CSV.
 
+The novelty status also exposes document/user concurrency as first-class
+coverage state. Use the `all-time records by user count`, `successful records by
+user count`, `successful records by profile/user count`, `successful records by
+action-user count`, current-run counterparts, and max-user/max-block lines when
+checking whether coverage actually reached the intended RTC shape. Generic
+feature keys such as `users:12` are only attempts; the controller has separate
+goals such as `success-users:12`, `success-action-users:3`, and
+`success-user-blocks:3:50` so many-user, same-user, and large-document coverage
+must complete successfully in one document before the gap is considered closed.
+
 The Jetstream coverage-guided starter also repairs a common browser-fuzz checkout
 failure before launching: if the fuzz repo is missing `build/scripts` artifacts,
 it links them from

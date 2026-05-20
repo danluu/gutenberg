@@ -26,6 +26,14 @@ const LOG_PATH = path.join( OUTPUT_DIR, 'novelty-monitor.log' );
 const CURRENT_OUTPUT_POINTER_PATH =
 	process.env.RTC_FUZZ_NOVELTY_CURRENT_OUTPUT_POINTER ??
 	path.join( path.dirname( OUTPUT_DIR ), 'current-output-dir.txt' );
+const BENCHMARK_CANARY_FEEDBACK_BASE =
+	process.env.RTC_FUZZ_BENCHMARK_CANARY_FEEDBACK_BASE ??
+	process.env.RTC_BENCHMARK_CANARY_FEEDBACK_BASE ??
+	'/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520';
+const BENCHMARK_CANARY_FEEDBACK_TSV_PATH = path.join(
+	BENCHMARK_CANARY_FEEDBACK_BASE,
+	'current-feedback.tsv'
+);
 const NO_ANALYSIS_SENTINEL_RELATIVE_PATH = path.join(
 	'.triage-watcher',
 	'no-analysis.json'
@@ -63,6 +71,31 @@ const ACTIVE_GROUP_STATUSES = new Set( [
 	'recovering',
 	'running',
 ] );
+const BENCHMARK_CANARY_GROUP_BY_CASE = {
+	'large-post-three-user-http': 'novelty-http-large-post-lifecycle',
+	'table-stale-snapshot-http': 'novelty-http-table-stale-snapshot',
+};
+const BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE = {
+	'large-post-three-user-http': [
+		'novelty-http-large-post-lifecycle-completion',
+	],
+};
+const RTC_OPTIONAL_SETUP_PLUGIN_FIX_VERSION = 1;
+const LARGE_HTTP_LIFECYCLE_STARTUP_FIX_VERSION = 3;
+const HTTP_PROVIDER_GATING_STARTUP_FIX_VERSION = 2;
+const HTTP_PROVIDER_GATING_STARTUP_FIX_GROUPS = [
+	'novelty-http-large-post-lifecycle',
+	'novelty-http-large-post-lifecycle-completion',
+	'novelty-http-table-stale-snapshot',
+];
+const COLLABORATION_READINESS_STARTUP_FIX_VERSION = 1;
+const COLLABORATION_READINESS_STARTUP_FIX_GROUPS = [
+	'novelty-ws-collaboration-ui-signals',
+	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-many-user-lifecycle-completion',
+];
+let benchmarkCanaryFeedbackRows = [];
+let benchmarkCanaryForcedGroups = new Set();
 const HISTORICAL_OBSERVED_RUN_DIRS = uniquePathList(
 	parsePathList( process.env.RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS ).filter(
 		( root ) => path.resolve( root ) !== path.resolve( OUTPUT_DIR )
@@ -294,18 +327,22 @@ const TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES',
 	10
 );
+const CURRENT_RUN_DUPLICATE_ACTION_GATE_MIN_CANDIDATES = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_CURRENT_RUN_DUPLICATE_ACTION_GATE_MIN_CANDIDATES',
+	3
+);
 const NO_PRODUCT_KNOWN_NOISE_DOMINANCE_MIN_CANDIDATES = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_NO_PRODUCT_KNOWN_NOISE_DOMINANCE_MIN_CANDIDATES',
 	2
 );
 const NO_PRODUCT_STRICT_STARTUP_MIN_CANDIDATES = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_NO_PRODUCT_STRICT_STARTUP_MIN_CANDIDATES',
-	2
+	1
 );
 const PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_MIN_CANDIDATES =
 	getPositiveIntegerEnv(
 		'RTC_FUZZ_NOVELTY_PRODUCT_EVIDENCE_DUPLICATE_MIN_CANDIDATES',
-		1
+		CURRENT_RUN_DUPLICATE_ACTION_GATE_MIN_CANDIDATES
 	);
 const TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS = getPositiveNumberEnv(
 	'RTC_FUZZ_NOVELTY_TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS',
@@ -331,7 +368,7 @@ const NON_ACTIONABLE_ANALYSIS_JOB_STATUSES = new Set( [
 	'source-suppressed',
 	'stale-source',
 ] );
-const RUN_LOCAL_NOISE_POLICY_VERSION = 36;
+const RUN_LOCAL_NOISE_POLICY_VERSION = 38;
 const STARTUP_FAILURE_DEDUPE_POLICY_VERSION = 3;
 const STARTUP_DISCOVERY_PHASES = new Set( [
 	'seed',
@@ -386,6 +423,8 @@ const PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS = [
 	'novelty-ws-revision-persistence',
 	'novelty-ws-revision-recovery',
 	'novelty-ws-async-server-blocks',
+	'novelty-ws-collaboration-ui-signals',
+	'novelty-ws-many-user-lifecycle',
 ];
 const PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES = new Set( [
 	'late_session_awareness_stall',
@@ -393,9 +432,31 @@ const PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES = new Set( [
 	'reload_rejoin_awareness_stall',
 	'rest_meta_database_error',
 ] );
+const PRODUCT_EVIDENCE_TIMEOUT_UNKNOWN_FAMILY_HOLDS = new Set( [
+	'timeout',
+	'unknown',
+] );
 const GROUP_SCOPED_PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES = new Map( [
-	[ 'novelty-http-persistence-probe', new Set( [ 'timeout', 'unknown' ] ) ],
+	[
+		'novelty-http-persistence-probe',
+		PRODUCT_EVIDENCE_TIMEOUT_UNKNOWN_FAMILY_HOLDS,
+	],
+	[
+		'novelty-ws-real-user-save-reload',
+		PRODUCT_EVIDENCE_TIMEOUT_UNKNOWN_FAMILY_HOLDS,
+	],
+	[
+		'novelty-ws-real-user-editing',
+		PRODUCT_EVIDENCE_TIMEOUT_UNKNOWN_FAMILY_HOLDS,
+	],
+	[
+		'novelty-ws-real-user-rich-text',
+		PRODUCT_EVIDENCE_TIMEOUT_UNKNOWN_FAMILY_HOLDS,
+	],
 	[ 'novelty-ws-async-server-blocks', new Set( [ 'unknown' ] ) ],
+	[ 'novelty-ws-collaboration-ui-signals', new Set( [ 'assertion' ] ) ],
+	[ 'novelty-ws-many-user-lifecycle', new Set( [ 'assertion' ] ) ],
+	[ 'novelty-ws-many-user-lifecycle-completion', new Set( [ 'assertion' ] ) ],
 ] );
 const ACTION_COVERAGE_GROUPS = {
 	'insert-paragraph': [ 'novelty-ws-structure' ],
@@ -409,14 +470,17 @@ const ACTION_COVERAGE_GROUPS = {
 	'assert-presence-list': [
 		'novelty-ws-collaboration-ui-signals',
 		'novelty-ws-many-user-lifecycle',
+		'novelty-ws-many-user-lifecycle-completion',
 	],
 	'assert-selection-cursor': [
 		'novelty-ws-collaboration-ui-signals',
 		'novelty-ws-many-user-lifecycle',
+		'novelty-ws-many-user-lifecycle-completion',
 	],
 	'edit-formatted-paragraph-at-cursor': [ 'novelty-ws-parser-serialization' ],
 	'edit-rich-text-pair-block': [ 'novelty-ws-parser-serialization' ],
 	'edit-table-array-attributes': [ 'novelty-ws-lifecycle' ],
+	'table-stale-snapshot-html': [ 'novelty-http-table-stale-snapshot' ],
 	'insert-common-block': [ 'novelty-ws-common-blocks' ],
 	'edit-common-block-attributes': [ 'novelty-ws-common-blocks' ],
 	'insert-block-gauntlet-block': [ 'novelty-ws-block-gauntlet' ],
@@ -467,7 +531,7 @@ const ACTION_COVERAGE_GROUPS = {
 	'insert-media-cross-entity-block': [ 'novelty-ws-media-cross-entity' ],
 };
 const REQUIRED_ACTION_LABELS = Object.keys( ACTION_COVERAGE_GROUPS );
-const EXPANSION_POLICY_VERSION = 15;
+const EXPANSION_POLICY_VERSION = 17;
 
 const WS_ENV_DEFAULTS = {
 	GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
@@ -505,12 +569,20 @@ const PROFILE_BY_GROUP = {
 	'novelty-ws-media-cross-entity': 'media-cross-entity',
 	'novelty-ws-long-session-large-doc': 'long-session-large-doc',
 	'novelty-http-large-post-lifecycle': 'large-post-three-user-http-lifecycle',
+	'novelty-http-large-post-lifecycle-completion':
+		'large-post-three-user-http-lifecycle',
+	'novelty-http-table-stale-snapshot': 'table-stale-snapshot-http',
 	'novelty-ws-many-user-lifecycle': 'many-user-lifecycle',
+	'novelty-ws-many-user-lifecycle-completion': 'many-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals': 'collaboration-ui-signals',
 	'novelty-ws-structure': 'structure',
 	'novelty-ws-three-user-late-join': 'three-user-late-join',
 	'novelty-ws-block-gauntlet-details-topoff': 'block-gauntlet',
 };
+
+const PROFILE_GROUP_NAMES_BY_SPECIFICITY = Object.keys( PROFILE_BY_GROUP ).sort(
+	( left, right ) => right.length - left.length || left.localeCompare( right )
+);
 
 const HIGH_VALUE_EXPANSION_GROUPS = [
 	'novelty-ws-real-user-save-reload',
@@ -532,7 +604,10 @@ const HIGH_VALUE_EXPANSION_GROUPS = [
 	'novelty-ws-permissions-auth-locks',
 	'novelty-ws-long-session-large-doc',
 	'novelty-http-large-post-lifecycle',
+	'novelty-http-large-post-lifecycle-completion',
+	'novelty-http-table-stale-snapshot',
 	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-collaboration-ui-signals',
 ];
 
@@ -553,7 +628,10 @@ const PRODUCTIVE_FALLBACK_GROUPS = [
 	'novelty-ws-permissions-auth-locks',
 	'novelty-ws-long-session-large-doc',
 	'novelty-http-large-post-lifecycle',
+	'novelty-http-large-post-lifecycle-completion',
+	'novelty-http-table-stale-snapshot',
 	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-collaboration-ui-signals',
 	'novelty-ws-real-user-save-reload',
 	'novelty-ws-real-user-editing',
@@ -574,6 +652,8 @@ const DEFAULT_REQUIRED_COVERAGE_BREADTH_GROUPS = [
 	'novelty-ws-media-cross-entity',
 	'novelty-ws-long-session-large-doc',
 	'novelty-http-large-post-lifecycle',
+	'novelty-http-large-post-lifecycle-completion',
+	'novelty-http-table-stale-snapshot',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
 ];
@@ -605,10 +685,14 @@ const MATERIALIZATION_FLOOR_GROUPS = [
 	'novelty-http-persistence-probe',
 	'novelty-http-same-user-stale-draft',
 	'novelty-http-large-post-lifecycle',
+	'novelty-http-large-post-lifecycle-completion',
+	'novelty-http-table-stale-snapshot',
 	'novelty-ws-collaboration-ui-signals',
 ];
 const ZERO_COVERAGE_PRIORITY_GROUPS = [
+	'novelty-http-table-stale-snapshot',
 	'novelty-ws-collaboration-ui-signals',
+	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-many-user-lifecycle',
 ];
 const ZERO_COVERAGE_EVICTION_ORDER = [
@@ -758,6 +842,7 @@ const AUTO_EXPANSION_GOAL_CANDIDATES = [
 			'novelty-ws-real-user-rich-text',
 			'novelty-ws-long-session-large-doc',
 			'novelty-http-large-post-lifecycle',
+			'novelty-http-large-post-lifecycle-completion',
 		],
 		rationale:
 			'operation witness coverage is needed for stale or dropped user operations',
@@ -782,9 +867,27 @@ const AUTO_EXPANSION_GOAL_CANDIDATES = [
 			key: 'history:final-persistence-publish:ok',
 		},
 		target: 10,
-		groups: [ 'novelty-http-large-post-lifecycle' ],
+		groups: [
+			'novelty-http-large-post-lifecycle',
+			'novelty-http-large-post-lifecycle-completion',
+		],
 		rationale:
 			'the combined HTTP, three-user, large-post, publish oracle must complete successfully',
+	},
+	{
+		id: 'auto-combo:http-large-post-publish-ui-readiness',
+		label: 'large post publish UI readiness witnesses',
+		countSource: {
+			kind: 'feature',
+			key: 'history:publish-ui-readiness:ok',
+		},
+		target: 10,
+		groups: [
+			'novelty-http-large-post-lifecycle',
+			'novelty-http-large-post-lifecycle-completion',
+		],
+		rationale:
+			'the benchmark canary exposed publish-panel readiness as part of the large-post HTTP user-hit behavior',
 	},
 	{
 		id: 'auto-combo:http-large-post-final-ui-witnesses',
@@ -794,7 +897,10 @@ const AUTO_EXPANSION_GOAL_CANDIDATES = [
 			key: 'history:final-ui-witness-sweep:ok',
 		},
 		target: 10,
-		groups: [ 'novelty-http-large-post-lifecycle' ],
+		groups: [
+			'novelty-http-large-post-lifecycle',
+			'novelty-http-large-post-lifecycle-completion',
+		],
 		rationale:
 			'each participant needs a final UI-entered operation witness before publish',
 	},
@@ -1193,9 +1299,40 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '512',
 			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
 			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
 			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
 			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-many-user-lifecycle-completion',
+		actionProfile: 'many-user-lifecycle',
+		startSeed: 1180001,
+		stepCount: 8,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '0',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '900000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '900000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
 		},
 	},
 	{
@@ -1211,11 +1348,16 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '6',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
 			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
 			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'shadow',
 			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
 			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '45000',
 			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '180000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
 		},
 	},
 	{
@@ -1226,6 +1368,8 @@ const PROFILE_GROUPS = [
 		stepCount: 36,
 		collectCdpCoverage: true,
 		env: {
+			GUTENBERG_RTC_BROWSER_ACTION_SEQUENCE:
+				'ui-type-paragraph,ui-type-title,append-paragraph,insert-heading,concurrent-paragraphs',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
@@ -1239,9 +1383,75 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '3',
 			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '512',
 			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
 			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1800000',
-			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+			RTC_FUZZ_SUPERVISOR_BYPASS_STARTUP_STALL_COOLDOWN: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '180000',
 			RTC_FUZZ_RUN_TIMEOUT_MS: '1800000',
+		},
+	},
+	{
+		name: 'novelty-http-large-post-lifecycle-completion',
+		actionProfile: 'large-post-three-user-http-lifecycle',
+		transport: 'http',
+		startSeed: 1190001,
+		stepCount: 12,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_ACTION_SEQUENCE:
+				'ui-type-paragraph,ui-type-title,append-paragraph,insert-heading,concurrent-paragraphs',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '8',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4,10',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '64',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '256',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '900000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '180000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '900000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+			RTC_FUZZ_SUPERVISOR_BYPASS_STARTUP_STALL_COOLDOWN: '1',
+		},
+	},
+	{
+		name: 'novelty-http-table-stale-snapshot',
+		actionProfile: 'table-stale-snapshot-http',
+		transport: 'http',
+		startSeed: 1180001,
+		stepCount: 6,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '3',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '2,5',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '900000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '900000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'2',
 		},
 	},
 	{
@@ -1268,6 +1478,8 @@ const state = ( await readJsonFile( STATE_PATH ) ) ?? {
 	recordCountsByTransport: {},
 	successfulActionCountsByProfile: {},
 	successfulRecordCountsByProfile: {},
+	userDocumentConcurrency: {},
+	currentRunUserDocumentConcurrency: {},
 	currentRunRecordCountsByProfile: {},
 	currentRunRecordCountsByGroup: {},
 	currentRunRecordCountsByTransport: {},
@@ -1293,7 +1505,6 @@ const state = ( await readJsonFile( STATE_PATH ) ) ?? {
 state.fileOffsets ??= {};
 state.changes ??= [];
 state.expansionPolicyVersion ??= 0;
-
 if ( state.expansionPolicyVersion !== EXPANSION_POLICY_VERSION ) {
 	state.pausedGroups ??= {};
 	state.disabledGroups ??= {};
@@ -1448,6 +1659,10 @@ if ( restoredReusableStartupNoisePauses > 0 ) {
 		reason: `restored ${ restoredReusableStartupNoisePauses } unexpired explicit no-product startup-noise producer cooldown(s) from recent pause history after output-root reset`,
 	} );
 }
+await refreshBenchmarkCanaryFeedbackState( { recordLoad: true } );
+applyHttpProviderGatingStartupFixStateRepair();
+applyLargeHttpLifecycleStartupFixStateRepair();
+applyCollaborationReadinessStartupFixStateRepair();
 const normalizedAutoCoverageGoals = normalizeStoredAutoCoverageGoals(
 	state.autoCoverageGoals
 );
@@ -1544,6 +1759,485 @@ function uniqueStringList( values ) {
 		unique.push( item );
 	}
 	return unique;
+}
+
+function getBenchmarkCanaryCase( row ) {
+	const rawCase =
+		row.benchmark_case ??
+		row.failure_row ??
+		row.case ??
+		row.benchmark_row ??
+		row.row ??
+		'';
+	const normalized = String( rawCase )
+		.trim()
+		.replace( /\s*\/\s*/g, '/' )
+		.replace( /\s*:\s*/g, ':' );
+	for ( const benchmarkCase of Object.keys(
+		BENCHMARK_CANARY_GROUP_BY_CASE
+	) ) {
+		if (
+			normalized === benchmarkCase ||
+			normalized.endsWith( `/${ benchmarkCase }` ) ||
+			normalized.endsWith( `:${ benchmarkCase }` )
+		) {
+			return benchmarkCase;
+		}
+	}
+	return normalized.split( /[/:]/ ).filter( Boolean ).at( -1 ) ?? '';
+}
+
+async function readBenchmarkCanaryFeedbackRows() {
+	let raw;
+	try {
+		raw = await fs.readFile( BENCHMARK_CANARY_FEEDBACK_TSV_PATH, 'utf8' );
+	} catch {
+		return [];
+	}
+
+	const lines = raw
+		.split( /\r?\n/ )
+		.map( ( line ) => line.trim() )
+		.filter( Boolean );
+	if ( lines.length < 2 ) {
+		return [];
+	}
+
+	const headers = lines[ 0 ].split( '\t' );
+	return lines.slice( 1 ).map( ( line ) => {
+		const columns = line.split( '\t' );
+		const row = {};
+		headers.forEach( ( header, index ) => {
+			row[ header ] = columns[ index ] ?? '';
+		} );
+		return row;
+	} );
+}
+
+function getBenchmarkCanaryForcedGroups( rows ) {
+	const groups = new Set();
+	for ( const row of rows ) {
+		const benchmarkCase = getBenchmarkCanaryCase( row );
+		const primaryGroup = BENCHMARK_CANARY_GROUP_BY_CASE[ benchmarkCase ];
+		if ( primaryGroup ) {
+			groups.add( primaryGroup );
+		}
+		for ( const group of
+			BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE[
+				benchmarkCase
+			] ?? [] ) {
+			groups.add( group );
+		}
+	}
+	return groups;
+}
+
+function getBenchmarkCanaryForcedGroupsForStatus() {
+	const groups = new Set( benchmarkCanaryForcedGroups );
+	const markerGroups = String( state.benchmarkCanaryFeedbackMarker ?? '' )
+		.split( '|' )
+		.at( -1 )
+		?.split( ',' );
+	for ( const group of markerGroups ?? [] ) {
+		if ( PROFILE_BY_GROUP[ group ] ) {
+			groups.add( group );
+		}
+	}
+	for ( const change of state.changes ?? [] ) {
+		for ( const group of change.forcedGroups ?? [] ) {
+			if ( PROFILE_BY_GROUP[ group ] ) {
+				groups.add( group );
+			}
+		}
+	}
+	return [ ...groups ].sort();
+}
+
+function isBenchmarkCanaryForcedGroup( group ) {
+	return benchmarkCanaryForcedGroups.has( group );
+}
+
+function getBenchmarkCanaryFeedbackReason( group ) {
+	const matchingRows = benchmarkCanaryFeedbackRows.filter(
+		( row ) => {
+			const benchmarkCase = getBenchmarkCanaryCase( row );
+			return [
+				BENCHMARK_CANARY_GROUP_BY_CASE[ benchmarkCase ],
+				...( BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE[
+					benchmarkCase
+				] ?? [] ),
+			].includes( group );
+		}
+	);
+	if ( matchingRows.length === 0 ) {
+		return null;
+	}
+
+	const cases = uniqueStringList(
+		matchingRows.map( ( row ) => getBenchmarkCanaryCase( row ) )
+	).join( ',' );
+	return `benchmark canary feedback requires equivalent fuzz coverage for ${ cases }; this forced lane drains startup-noise seeds instead of letting a no-product cooldown block publication confidence`;
+}
+
+function shouldBypassBenchmarkCanaryNoisePause( group, pause ) {
+	if ( ! isBenchmarkCanaryForcedGroup( group ) ) {
+		return false;
+	}
+	if ( isBenchmarkCanarySeedDrainStartupNoiseCooldown( pause ) ) {
+		return true;
+	}
+	if ( isStaleBenchmarkCanaryStartupNoiseCooldown( pause ) ) {
+		return true;
+	}
+	if ( isNoProductStartupNoiseCooldown( pause ) ) {
+		return true;
+	}
+	return (
+		getStoredNoisePauseKind( pause ) === 'startup-noise' &&
+		hasPauseProductEvidence( pause )
+	);
+}
+
+function isBenchmarkCanarySeedDrainStartupNoiseCooldown( pause ) {
+	return (
+		isNoProductStartupNoiseCooldown( pause ) &&
+		/seed drain|below pause threshold|cumulative startup-noise seed/i.test(
+			pause?.reason ?? ''
+		)
+	);
+}
+
+function isStaleBenchmarkCanaryStartupNoiseCooldown( pause ) {
+	if ( ! isNoProductStartupNoiseCooldown( pause ) ) {
+		return false;
+	}
+	if ( isCurrentOutputStartupNoiseCooldown( pause ) ) {
+		return false;
+	}
+	return (
+		pause?.reusableStartupNoisePause === true ||
+		pause?.currentOutputPause === false ||
+		( typeof pause?.originOutputDir === 'string' &&
+			path.resolve( pause.originOutputDir ) !==
+				path.resolve( OUTPUT_DIR ) )
+	);
+}
+
+function getBenchmarkCanaryNoProductStartupNoiseBlock( group ) {
+	const activePause = getActiveNoisePauseCooldown( group );
+	if ( shouldBypassBenchmarkCanaryNoisePause( group, activePause ) ) {
+		return null;
+	}
+	if ( isNoProductStartupNoiseCooldown( activePause ) ) {
+		return activePause;
+	}
+
+	const storedPause = getActiveNoisePauseForEntry(
+		group,
+		state.pausedGroups?.[ group ]
+	);
+	if ( shouldBypassBenchmarkCanaryNoisePause( group, storedPause ) ) {
+		return null;
+	}
+	if ( isNoProductStartupNoiseCooldown( storedPause ) ) {
+		return storedPause;
+	}
+
+	// Fleet-wide startup-noise holds throttle generic admission; a
+	// benchmark-canary user-hit equivalent still gets one lane unless this
+	// exact group has a current no-product cooldown.
+	return null;
+}
+
+function recordBenchmarkCanaryNoProductStartupNoiseBlock(
+	action,
+	group,
+	pause
+) {
+	state.benchmarkCanaryStartupNoiseBlockMarkers ??= {};
+	const marker = [
+		OUTPUT_DIR,
+		action,
+		group,
+		pause?.at ?? '',
+		pause?.expiresAt ?? '',
+		pause?.reason ?? '',
+	].join( '|' );
+	const markerKey = `${ action }:${ group }`;
+	if (
+		state.benchmarkCanaryStartupNoiseBlockMarkers[ markerKey ] === marker
+	) {
+		return;
+	}
+	state.benchmarkCanaryStartupNoiseBlockMarkers[ markerKey ] = marker;
+	const blockReason =
+		action === 'block-supervisor-group-startup-noise'
+			? `supervisor group writing cannot include ${ group } while a no-product startup-noise cooldown from ${
+					pause?.at ?? 'unknown'
+			  } is active: ${ pause?.reason ?? 'unknown startup-noise pause' }`
+			: `benchmark canary feedback cannot override no-product startup-noise cooldown from ${
+					pause?.at ?? 'unknown'
+			  }: ${ pause?.reason ?? 'unknown startup-noise pause' }`;
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action,
+		group,
+		reason: blockReason,
+		...( pause?.expiresAt ? { expiresAt: pause.expiresAt } : {} ),
+		...( pause?.originGroup ? { originGroup: pause.originGroup } : {} ),
+		...( pause?.originOutputDir
+			? { originOutputDir: pause.originOutputDir }
+			: {} ),
+		reasonKind: 'startup-noise',
+		family: 'pre_action_bootstrap_stall',
+		noProductOnly: true,
+		productEvidenceRecords: 0,
+		preserveProductEvidence: true,
+	} );
+}
+
+function applyBenchmarkCanaryFeedbackStateRepair() {
+	let repaired = 0;
+	for ( const group of benchmarkCanaryForcedGroups ) {
+		const pausedEntry = state.pausedGroups?.[ group ];
+		const activePause = getActiveNoisePauseForEntry( group, pausedEntry );
+		const bypassPause = activePause ?? pausedEntry;
+		if ( ! shouldBypassBenchmarkCanaryNoisePause( group, bypassPause ) ) {
+			continue;
+		}
+
+		delete state.pausedGroups[ group ];
+		delete state.startupFailureCountsByGroup?.[ group ];
+		const profile = PROFILE_BY_GROUP[ group ];
+		if ( profile ) {
+			delete state.startupFailureCountsByProfile?.[ profile ];
+		}
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'bypass-benchmark-canary-startup-noise-cooldown',
+			group,
+			reason:
+				getBenchmarkCanaryFeedbackReason( group ) ??
+				'benchmark canary feedback requires this equivalent fuzz lane',
+			sourcePauseAt: bypassPause.at,
+			sourcePauseReason: bypassPause.reason,
+			expiresAt: bypassPause.expiresAt,
+			originOutputDir: bypassPause.originOutputDir,
+		} );
+		repaired += 1;
+	}
+	return repaired;
+}
+
+function applyRtcOptionalSetupPluginFixStateRepair() {
+	if (
+		state.rtcOptionalSetupPluginFixVersion ===
+		RTC_OPTIONAL_SETUP_PLUGIN_FIX_VERSION
+	) {
+		return 0;
+	}
+
+	state.rtcOptionalSetupPluginFixVersion =
+		RTC_OPTIONAL_SETUP_PLUGIN_FIX_VERSION;
+
+	let repaired = 0;
+	for ( const group of benchmarkCanaryForcedGroups ) {
+		const pausedEntry = state.pausedGroups?.[ group ];
+		const activePause = getActiveNoisePauseForEntry( group, pausedEntry );
+		if ( ! isNoProductStartupNoiseCooldown( activePause ) ) {
+			continue;
+		}
+
+		const reason =
+			'RTC fuzz setup now tolerates the optional CSS-animation test plugin being absent, so stale no-product bootstrap cooldowns must not suppress benchmark-canary equivalent coverage';
+		recordStartupNoiseCooldownBypass( group, activePause, reason );
+		delete state.pausedGroups[ group ];
+		delete state.startupFailureCountsByGroup?.[ group ];
+		delete state.startupFailureCountsByProfile?.[
+			PROFILE_BY_GROUP[ group ]
+		];
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'clear-benchmark-canary-startup-pause-after-optional-plugin-setup-fix',
+			group,
+			reason,
+			sourcePauseAt: activePause.at,
+			sourcePauseReason: activePause.reason,
+			expiresAt: activePause.expiresAt,
+			originOutputDir: activePause.originOutputDir,
+		} );
+		repaired += 1;
+	}
+
+	return repaired;
+}
+
+function applyLargeHttpLifecycleStartupFixStateRepair() {
+	const group = 'novelty-http-large-post-lifecycle';
+	const pausedEntry = state.pausedGroups?.[ group ];
+	const activePause = getActiveNoisePauseForEntry( group, pausedEntry );
+	if (
+		! isNoProductStartupNoiseCooldown( activePause ) ||
+		state.largeHttpLifecycleStartupFixVersion ===
+			LARGE_HTTP_LIFECYCLE_STARTUP_FIX_VERSION
+	) {
+		return 0;
+	}
+
+	state.largeHttpLifecycleStartupFixVersion =
+		LARGE_HTTP_LIFECYCLE_STARTUP_FIX_VERSION;
+	delete state.pausedGroups[ group ];
+	delete state.startupFailureCountsByGroup?.[ group ];
+	delete state.startupFailureCountsByProfile?.[ PROFILE_BY_GROUP[ group ] ];
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'clear-large-http-lifecycle-startup-pause-after-harness-fix',
+		group,
+		reason: 'large HTTP lifecycle now drains transient startup misses before pausing, so stale no-product bootstrap cooldowns must not suppress the benchmark-canary equivalent lane',
+		sourcePauseAt: activePause.at,
+		sourcePauseReason: activePause.reason,
+		expiresAt: activePause.expiresAt,
+	} );
+	return 1;
+}
+
+function applyHttpProviderGatingStartupFixStateRepair() {
+	if (
+		state.httpProviderGatingStartupFixVersion ===
+		HTTP_PROVIDER_GATING_STARTUP_FIX_VERSION
+	) {
+		return 0;
+	}
+
+	state.httpProviderGatingStartupFixVersion =
+		HTTP_PROVIDER_GATING_STARTUP_FIX_VERSION;
+	let repaired = 0;
+
+	for ( const group of HTTP_PROVIDER_GATING_STARTUP_FIX_GROUPS ) {
+		const pausedEntry = state.pausedGroups?.[ group ];
+		const activePause = getActiveNoisePauseForEntry( group, pausedEntry );
+		if ( ! isNoProductStartupNoiseCooldown( activePause ) ) {
+			continue;
+		}
+
+		const reason =
+			'HTTP sync-cycle wait observes in-flight polling completion, so stale no-product bootstrap cooldowns from older HTTP startup paths must not suppress HTTP gap coverage';
+		recordStartupNoiseCooldownBypass( group, activePause, reason );
+		delete state.pausedGroups[ group ];
+		delete state.startupFailureCountsByGroup?.[ group ];
+		delete state.startupFailureCountsByProfile?.[
+			PROFILE_BY_GROUP[ group ]
+		];
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'clear-http-provider-gating-startup-pause-after-harness-fix',
+			group,
+			reason,
+			sourcePauseAt: activePause.at,
+			sourcePauseReason: activePause.reason,
+			expiresAt: activePause.expiresAt,
+		} );
+		repaired += 1;
+	}
+
+	return repaired;
+}
+
+function applyCollaborationReadinessStartupFixStateRepair() {
+	if (
+		state.collaborationReadinessStartupFixVersion ===
+		COLLABORATION_READINESS_STARTUP_FIX_VERSION
+	) {
+		return 0;
+	}
+
+	state.collaborationReadinessStartupFixVersion =
+		COLLABORATION_READINESS_STARTUP_FIX_VERSION;
+	let repaired = 0;
+
+	for ( const group of COLLABORATION_READINESS_STARTUP_FIX_GROUPS ) {
+		const pausedEntry = state.pausedGroups?.[ group ];
+		const activePause = getActiveNoisePauseForEntry( group, pausedEntry );
+		if ( ! isNoProductStartupNoiseCooldown( activePause ) ) {
+			continue;
+		}
+
+		const reason =
+			'RTC fuzz global setup now verifies the collaboration writing option after updating it, so stale no-product collaboration-readiness cooldowns must not suppress UI signal and many-user gap coverage';
+		recordStartupNoiseCooldownBypass( group, activePause, reason );
+		delete state.pausedGroups[ group ];
+		delete state.startupFailureCountsByGroup?.[ group ];
+		delete state.startupFailureCountsByProfile?.[
+			PROFILE_BY_GROUP[ group ]
+		];
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'clear-collaboration-readiness-startup-pause-after-harness-fix',
+			group,
+			reason,
+			sourcePauseAt: activePause.at,
+			sourcePauseReason: activePause.reason,
+			expiresAt: activePause.expiresAt,
+		} );
+		repaired += 1;
+	}
+
+	return repaired;
+}
+
+async function refreshBenchmarkCanaryFeedbackState( {
+	recordLoad = false,
+} = {} ) {
+	const previousForcedGroupsKey = [ ...benchmarkCanaryForcedGroups ]
+		.sort()
+		.join( ',' );
+	benchmarkCanaryFeedbackRows = await readBenchmarkCanaryFeedbackRows();
+	benchmarkCanaryForcedGroups = getBenchmarkCanaryForcedGroups(
+		benchmarkCanaryFeedbackRows
+	);
+
+	if ( benchmarkCanaryForcedGroups.size === 0 ) {
+		return 0;
+	}
+
+	const repairedBenchmarkCanaryPauses =
+		applyBenchmarkCanaryFeedbackStateRepair();
+	const repairedOptionalSetupPauses =
+		applyRtcOptionalSetupPluginFixStateRepair();
+	const forcedGroups = [ ...benchmarkCanaryForcedGroups ].sort();
+	const forcedGroupsKey = forcedGroups.join( ',' );
+	const feedbackIds = uniqueStringList(
+		benchmarkCanaryFeedbackRows.map( ( row ) => row.feedback_id )
+	).sort();
+	const marker = [
+		BENCHMARK_CANARY_FEEDBACK_TSV_PATH,
+		feedbackIds.join( ',' ),
+		forcedGroupsKey,
+	].join( '|' );
+
+	if (
+		recordLoad ||
+		repairedBenchmarkCanaryPauses > 0 ||
+		repairedOptionalSetupPauses > 0 ||
+		previousForcedGroupsKey !== forcedGroupsKey ||
+		state.benchmarkCanaryFeedbackMarker !== marker
+	) {
+		state.benchmarkCanaryFeedbackMarker = marker;
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: recordLoad
+				? 'load-benchmark-canary-feedback'
+				: 'refresh-benchmark-canary-feedback',
+			feedbackPath: BENCHMARK_CANARY_FEEDBACK_TSV_PATH,
+			feedbackIds,
+			forcedGroups,
+			repairedStartupNoisePauses:
+				repairedBenchmarkCanaryPauses + repairedOptionalSetupPauses,
+			reason: 'non-empty benchmark canary feedback is active; equivalent fuzz coverage must be scheduled before publication confidence can move',
+		} );
+	}
+
+	return repairedBenchmarkCanaryPauses + repairedOptionalSetupPauses;
 }
 
 async function log( message ) {
@@ -1697,6 +2391,11 @@ function incrementCounter( target, key, amount = 1 ) {
 	target[ key ] = ( target[ key ] ?? 0 ) + amount;
 }
 
+function incrementNestedCounter( target, firstKey, secondKey, amount = 1 ) {
+	target[ firstKey ] ??= {};
+	incrementCounter( target[ firstKey ], secondKey, amount );
+}
+
 function resetCurrentRunCounters() {
 	state.currentRunRecordCountsByProfile = {};
 	state.currentRunRecordCountsByGroup = {};
@@ -1793,13 +2492,7 @@ function getCurrentRunDirs(
 
 	if ( supervisorState ) {
 		for ( const group of supervisorState.groups ?? [] ) {
-			let groupDirs = [];
-			if ( ACTIVE_GROUP_STATUSES.has( group.status ) ) {
-				groupDirs =
-					group.activeRunDirs?.length > 0
-						? group.activeRunDirs
-						: [ group.currentRunDir ];
-			}
+			let groupDirs = getSupervisorPolicyActiveRunDirs( group );
 			if ( includePausedNoAnalysis ) {
 				groupDirs = [
 					...groupDirs,
@@ -1825,17 +2518,24 @@ function getCurrentRunDirs(
 	return dirs;
 }
 
+function getSupervisorPolicyActiveRunDirs( group ) {
+	if ( ! ACTIVE_GROUP_STATUSES.has( group?.status ) ) {
+		return [];
+	}
+	const activeRunDirs = ( group.activeRunDirs ?? [] ).filter( Boolean );
+	if ( activeRunDirs.length > 0 ) {
+		return activeRunDirs;
+	}
+	if ( group.status === 'recovering' ) {
+		return [];
+	}
+	return [ group.currentRunDir ].filter( Boolean );
+}
+
 function getSupervisorActiveRunDirSet( supervisorState ) {
 	const activeRunDirs = new Set();
 	for ( const group of supervisorState?.groups ?? [] ) {
-		if ( ! ACTIVE_GROUP_STATUSES.has( group.status ) ) {
-			continue;
-		}
-		const groupDirs =
-			group.activeRunDirs?.length > 0
-				? group.activeRunDirs
-				: [ group.currentRunDir ];
-		for ( const dir of groupDirs ?? [] ) {
+		for ( const dir of getSupervisorPolicyActiveRunDirs( group ) ) {
 			if ( dir ) {
 				activeRunDirs.add( path.resolve( dir ) );
 			}
@@ -1875,14 +2575,8 @@ function getCurrentRunDirSource( supervisorState ) {
 	}
 
 	for ( const group of supervisorState.groups ?? [] ) {
-		if ( ACTIVE_GROUP_STATUSES.has( group.status ) ) {
-			const groupDirs =
-				group.activeRunDirs?.length > 0
-					? group.activeRunDirs
-					: [ group.currentRunDir ];
-			if ( groupDirs.some( Boolean ) ) {
-				return 'supervisor-active-run-dirs';
-			}
+		if ( getSupervisorPolicyActiveRunDirs( group ).length > 0 ) {
+			return 'supervisor-active-run-dirs';
 		}
 		if ( getSupervisorPausedNoAnalysisRunDirs( group ).length > 0 ) {
 			return 'supervisor-paused-no-analysis-run-dirs';
@@ -1924,7 +2618,7 @@ function getRunGroupNameFromPath( filePath ) {
 	}
 
 	const [ runDirName ] = relative.split( path.sep );
-	for ( const group of Object.keys( PROFILE_BY_GROUP ) ) {
+	for ( const group of PROFILE_GROUP_NAMES_BY_SPECIFICITY ) {
 		if (
 			runDirName === group ||
 			runDirName.startsWith( `${ group }-gen-` )
@@ -2216,6 +2910,28 @@ async function restoreNoisePausesFromNoAnalysisSentinels(
 				}
 				const family =
 					sentinel.family ?? getNoisePauseFamily( reasonKind );
+				if (
+					shouldBypassBenchmarkCanaryNoisePause( group, {
+						...sentinel,
+						kind: reasonKind,
+						reasonKind,
+						reason,
+						family,
+					} )
+				) {
+					delete state.pausedGroups?.[ group ];
+					state.changes.push( {
+						at: new Date().toISOString(),
+						action: 'ignore-benchmark-canary-no-analysis-sentinel',
+						group,
+						reason:
+							getBenchmarkCanaryFeedbackReason( group ) ??
+							'benchmark canary feedback requires this equivalent fuzz lane',
+						sourceSentinelReason: reason,
+						expiresAt: sentinel.expiresAt ?? sentinel.pauseUntil,
+					} );
+					continue;
+				}
 				if (
 					! isRestorableNoAnalysisNoisePauseSentinel( sentinel, {
 						reasonKind,
@@ -3400,6 +4116,188 @@ function getDominantTriageFamily(
 	return null;
 }
 
+function getCurrentRunActionGateDuplicateHold( triageYield ) {
+	if ( ! triageYield ) {
+		return null;
+	}
+	const minimumDominantFamilyCount = Math.max(
+		2,
+		Math.ceil(
+			CURRENT_RUN_DUPLICATE_ACTION_GATE_MIN_CANDIDATES *
+				TRIAGE_DUPLICATE_SHARE_HOLD
+		)
+	);
+	const candidates = [
+		{
+			source: 'raw-action-gate',
+			topFamily: triageYield.rawTopSemanticFamilies?.[ 0 ],
+			total: triageYield.rawSignatureCount ?? 0,
+			share: triageYield.rawTopDuplicateFamilyShare ?? 0,
+		},
+		{
+			source: 'actionable-action-gate',
+			topFamily: triageYield.topSemanticFamilies?.[ 0 ],
+			total: triageYield.signatureCount ?? 0,
+			share: triageYield.topDuplicateFamilyShare ?? 0,
+		},
+	]
+		.map( ( candidate ) => ( {
+			...candidate,
+			family: candidate.topFamily?.family ?? '',
+			count: candidate.topFamily?.count ?? 0,
+		} ) )
+		.filter(
+			( candidate ) =>
+				candidate.family &&
+				candidate.total >=
+					CURRENT_RUN_DUPLICATE_ACTION_GATE_MIN_CANDIDATES &&
+				candidate.count >= minimumDominantFamilyCount &&
+				candidate.share >= TRIAGE_DUPLICATE_SHARE_HOLD
+		)
+		.sort(
+			( left, right ) =>
+				right.share - left.share || right.count - left.count
+		);
+
+	if ( candidates.length === 0 ) {
+		return null;
+	}
+
+	const best = candidates[ 0 ];
+	return {
+		kind: 'triage-duplicate-noise',
+		family: best.family,
+		count: best.count,
+		share: best.share,
+		source: best.source,
+		total: best.total,
+		actionGate: true,
+		productEvidenceSignatures: triageYield.productEvidenceSignatures ?? 0,
+		rawProductEvidenceSignatures:
+			triageYield.rawProductEvidenceSignatures ?? 0,
+		likelyRealVisible: triageYield.likelyRealVisible ?? 0,
+	};
+}
+
+function getActionGateProductEvidenceCount( hold, triageYield ) {
+	return Math.max(
+		hold?.productEvidenceSignatures ?? 0,
+		hold?.rawProductEvidenceSignatures ?? 0,
+		getTriageYieldProductEvidenceRecordCount( triageYield )
+	);
+}
+
+function getActionGateRepresentativeSignal( triageYield, family ) {
+	const representativeFamilies =
+		triageYield?.productEvidenceDuplicateRepresentativeFamilies ?? {};
+	const familyRepresentatives = representativeFamilies[ family ] ?? 0;
+	if ( familyRepresentatives > 0 ) {
+		return `familyRepresentatives=${ familyRepresentatives }`;
+	}
+
+	const signals = [
+		[
+			'productEvidenceRepresentatives',
+			triageYield?.productEvidenceDuplicateRepresentatives ?? 0,
+		],
+		[ 'likelyRealVisible', triageYield?.likelyRealVisible ?? 0 ],
+		[ 'familyCapped', triageYield?.familyCappedSignatures ?? 0 ],
+		[ 'likelyRealMerged', triageYield?.likelyRealMerged ?? 0 ],
+	]
+		.filter( ( [ , value ] ) => value > 0 )
+		.map( ( [ key, value ] ) => `${ key }=${ value }` );
+
+	return signals.length ? signals.join( ',' ) : null;
+}
+
+function isActionGateProductEvidenceDuplicateHold( hold ) {
+	if ( hold?.kind !== 'triage-duplicate-noise' || hold.actionGate !== true ) {
+		return false;
+	}
+	const productEvidenceRecords = Number( hold.productEvidenceRecords );
+	return (
+		hold.preserveProductEvidence === true ||
+		( hold.productEvidenceSignatures ?? 0 ) > 0 ||
+		( hold.rawProductEvidenceSignatures ?? 0 ) > 0 ||
+		( hold.likelyRealVisible ?? 0 ) > 0 ||
+		( Number.isFinite( productEvidenceRecords ) &&
+			productEvidenceRecords > 0 )
+	);
+}
+
+function getProductEvidenceActionGateHoldForScheduling( hold, triageYield ) {
+	if ( ! isActionGateProductEvidenceDuplicateHold( hold ) ) {
+		return null;
+	}
+	const productEvidenceRecords = getActionGateProductEvidenceCount(
+		hold,
+		triageYield
+	);
+	if ( productEvidenceRecords <= 0 ) {
+		return null;
+	}
+	return {
+		...hold,
+		source: hold.source?.endsWith( '-producer-action-gate' )
+			? hold.source
+			: `${ hold.source }-producer-action-gate`,
+		productEvidenceRecords,
+		hasProductEvidence: true,
+		preserveProductEvidence: true,
+		representativeSignal:
+			getActionGateRepresentativeSignal( triageYield, hold.family ) ??
+			'pending',
+	};
+}
+
+function getCurrentRunActionGateProducerHold(
+	triageYield,
+	{ rootHold = null, groupName = null } = {}
+) {
+	if ( ! rootHold?.actionGate ) {
+		return null;
+	}
+	if (
+		groupName &&
+		Array.isArray( rootHold.groups ) &&
+		rootHold.groups.length > 0 &&
+		! rootHold.groups.includes( groupName )
+	) {
+		return null;
+	}
+
+	const hold = getCurrentRunActionGateDuplicateHold( triageYield );
+	if ( ! hold ) {
+		return null;
+	}
+	if ( rootHold.family && hold.family !== rootHold.family ) {
+		return null;
+	}
+
+	const productEvidenceRecords = getActionGateProductEvidenceCount(
+		hold,
+		triageYield
+	);
+	if ( productEvidenceRecords <= 0 ) {
+		return null;
+	}
+
+	const representativeSignal = getActionGateRepresentativeSignal(
+		triageYield,
+		hold.family
+	);
+
+	return {
+		...hold,
+		source: `${ hold.source }-producer-action-gate`,
+		...( groupName ? { groupName, groups: [ groupName ] } : {} ),
+		productEvidenceRecords,
+		hasProductEvidence: true,
+		preserveProductEvidence: true,
+		representativeSignal: representativeSignal ?? 'pending',
+	};
+}
+
 function getCurrentRunDuplicateNoiseHold(
 	triageYield,
 	{ allowGenericDuplicate = false, requireNoProductEvidence = true } = {}
@@ -3559,7 +4457,8 @@ function getCurrentRunDuplicateNoiseHold(
 		allowGenericDuplicate &&
 		requireNoProductEvidence &&
 		duplicateDominated &&
-		dominantSignatureCount >= TRIAGE_NOISE_DOMINANCE_MIN_CANDIDATES;
+		dominantSignatureCount >=
+			CURRENT_RUN_DUPLICATE_ACTION_GATE_MIN_CANDIDATES;
 
 	if ( bootstrapNoiseDominates ) {
 		let source = dominantFamily?.source ?? 'suppressed-startup';
@@ -3688,15 +4587,33 @@ function getNoisePauseFamily( kind ) {
 	return null;
 }
 
+function getProductEvidenceDuplicateFamilyAliases( family ) {
+	const normalized = String( family ?? '' );
+	const aliases = [ normalized ];
+	const activeProductEvidenceAlias =
+		/^active_product_evidence_(?:ws|http)_(timeout|unknown)$/.exec(
+			normalized
+		);
+	if ( activeProductEvidenceAlias ) {
+		aliases.push( activeProductEvidenceAlias[ 1 ] );
+	}
+	return aliases;
+}
+
 function isGroupScopedProductEvidenceDuplicateFamilyHoldFamily(
 	family,
 	groupName = null
 ) {
+	const groupScopedFamilies =
+		GROUP_SCOPED_PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES.get(
+			groupName
+		);
 	return Boolean(
 		groupName &&
-			GROUP_SCOPED_PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES.get(
-				groupName
-			)?.has( family )
+			groupScopedFamilies &&
+			getProductEvidenceDuplicateFamilyAliases( family ).some(
+				( alias ) => groupScopedFamilies.has( alias )
+			)
 	);
 }
 
@@ -3724,7 +4641,27 @@ function isProductEvidenceDuplicateFamilyHold( hold, groupName = null ) {
 	);
 }
 
+function isProductEvidenceDuplicateProducerHold( hold, groupName = null ) {
+	return (
+		isProductEvidenceDuplicateFamilyHold( hold, groupName ) ||
+		isActionGateProductEvidenceDuplicateHold( hold )
+	);
+}
+
 function shouldProductEvidenceDuplicateHoldBlockGroup( hold, group ) {
+	if ( isActionGateProductEvidenceDuplicateHold( hold ) ) {
+		const holdGroups = new Set(
+			[
+				...( Array.isArray( hold.groups ) ? hold.groups : [] ),
+				hold.groupName,
+				hold.group,
+			].filter( Boolean )
+		);
+		return (
+			holdGroups.has( group ) ||
+			PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS.includes( group )
+		);
+	}
 	if ( ! isProductEvidenceDuplicateFamilyHold( hold, group ) ) {
 		return false;
 	}
@@ -4228,6 +5165,41 @@ function getActiveStartupNoiseCooldownBypass( group ) {
 		return null;
 	}
 
+	const exactPause = getActiveNoisePauseForEntry(
+		group,
+		state.pausedGroups?.[ group ]
+	);
+	const historicalExactPause =
+		getRecentNoisePauseCooldownFromHistory( group );
+	const bypassLooksNoProductStartup =
+		/no-product|bootstrap cooldown|startup cooldown/i.test(
+			bypass.reason ?? ''
+		);
+	if (
+		isNoProductStartupNoiseCooldown( exactPause ) ||
+		isNoProductStartupNoiseCooldown( historicalExactPause ) ||
+		( bypassLooksNoProductStartup &&
+			! shouldBypassBenchmarkCanaryNoisePause(
+				group,
+				exactPause ?? historicalExactPause
+			) )
+	) {
+		delete state.startupNoiseCooldownBypassGroups[ group ];
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'clear-startup-noise-cooldown-bypass',
+			group,
+			reason: exactPause ?? historicalExactPause
+				? 'active no-product pre_action_bootstrap_stall cooldown takes precedence over startup-noise bypass state'
+				: 'stale no-product startup-noise bypass has no product-evidence cooldown to bypass',
+			sourcePauseAt: exactPause?.at ?? historicalExactPause?.at,
+			sourcePauseReason:
+				exactPause?.reason ?? historicalExactPause?.reason,
+			expiresAt: exactPause?.expiresAt ?? historicalExactPause?.expiresAt,
+		} );
+		return null;
+	}
+
 	return bypass;
 }
 
@@ -4272,12 +5244,20 @@ function getActiveNoisePauseCooldown( group ) {
 	const pausedEntry = state.pausedGroups?.[ group ];
 	const exactPause = getActiveNoisePauseForEntry( group, pausedEntry );
 	if ( exactPause ) {
+		if ( shouldBypassBenchmarkCanaryNoisePause( group, exactPause ) ) {
+			return null;
+		}
 		return exactPause;
 	}
 
 	const historicalExactPause =
 		getRecentNoisePauseCooldownFromHistory( group );
 	if ( historicalExactPause ) {
+		if (
+			shouldBypassBenchmarkCanaryNoisePause( group, historicalExactPause )
+		) {
+			return null;
+		}
 		return historicalExactPause;
 	}
 
@@ -4329,8 +5309,9 @@ function getActiveNoisePauseCooldown( group ) {
 }
 
 function isNoProductStartupNoiseCooldown( pause ) {
+	const kind = pause?.kind ?? pause?.reasonKind;
 	if (
-		pause?.kind !== 'startup-noise' ||
+		kind !== 'startup-noise' ||
 		( pause.family && pause.family !== 'pre_action_bootstrap_stall' )
 	) {
 		return false;
@@ -4358,10 +5339,7 @@ function getFleetNoProductStartupNoiseHold() {
 		if (
 			! eligibleGroups.has( group ) ||
 			! isNoProductStartupNoiseCooldown( pause ) ||
-			! (
-				isCurrentOutputStartupNoiseCooldown( pause ) ||
-				pause?.reusableStartupNoisePause === true
-			)
+			! isCurrentOutputStartupNoiseCooldown( pause )
 		) {
 			return;
 		}
@@ -4384,12 +5362,6 @@ function getFleetNoProductStartupNoiseHold() {
 		state.pausedGroups ?? {}
 	) ) {
 		addPause( group, getActiveNoisePauseForEntry( group, paused ) );
-	}
-	for ( const group of eligibleGroups ) {
-		if ( pausesByGroup.has( group ) ) {
-			continue;
-		}
-		addPause( group, getRecentNoisePauseCooldownFromHistory( group ) );
 	}
 
 	const pauses = [ ...pausesByGroup.values() ];
@@ -4450,10 +5422,10 @@ function isStartupHoldBlockingProducerGroup( hold, group ) {
 	if ( ! isStartupHoldBlockingProducerSelection( hold ) ) {
 		return false;
 	}
-	if ( Array.isArray( hold?.groups ) && hold.groups.length > 0 ) {
+	if ( hold?.fleetStartupNoiseHold === true ) {
 		return startupHoldIncludesGroup( hold, group );
 	}
-	if ( hold?.fleetStartupNoiseHold === true ) {
+	if ( Array.isArray( hold?.groups ) && hold.groups.length > 0 ) {
 		return startupHoldIncludesGroup( hold, group );
 	}
 	if ( hold?.targetGroup && hold.targetGroup === group ) {
@@ -4593,6 +5565,23 @@ async function syncSupervisorStartupStallPauses(
 		const nextPause = createSupervisorStartupPause( groupState, outputDir, {
 			originOutputDir,
 		} );
+		if (
+			shouldBypassBenchmarkCanaryNoisePause( groupState.name, nextPause )
+		) {
+			delete state.pausedGroups?.[ groupState.name ];
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'skip-benchmark-canary-supervisor-startup-pause',
+				group: groupState.name,
+				reason:
+					getBenchmarkCanaryFeedbackReason( groupState.name ) ??
+					'benchmark canary feedback requires this equivalent fuzz lane',
+				sourcePauseReason: nextPause.reason,
+				expiresAt: nextPause.expiresAt,
+				originOutputDir: nextPause.originOutputDir,
+			} );
+			continue;
+		}
 		const existing = state.pausedGroups?.[ groupState.name ];
 		if (
 			existing?.source === nextPause.source &&
@@ -4746,15 +5735,7 @@ function getSupervisorPausedNoAnalysisRunDirs( groupState ) {
 }
 
 function getSupervisorGroupActiveRunDirs( groupState ) {
-	if ( ! ACTIVE_GROUP_STATUSES.has( groupState?.status ) ) {
-		return [];
-	}
-	return [
-		...new Set( [
-			...( groupState?.activeRunDirs ?? [] ),
-			groupState?.currentRunDir,
-		] ),
-	].filter( Boolean );
+	return uniquePathList( getSupervisorPolicyActiveRunDirs( groupState ) );
 }
 
 function getSupervisorGroupRunDirs( groupState ) {
@@ -4866,7 +5847,13 @@ function shouldPauseDuplicateNoiseProducer( producer ) {
 	if ( ! producer?.hasProductEvidence ) {
 		return true;
 	}
-	if ( isProductEvidenceDuplicateFamilyHold( producer.hold ) ) {
+	if ( isProductEvidenceDuplicateProducerHold( producer.hold ) ) {
+		return true;
+	}
+	if (
+		isCurrentNoProductStartupHold( producer.hold ) &&
+		producer.hold?.family === 'pre_action_bootstrap_stall'
+	) {
 		return true;
 	}
 	if ( ( producer.triageYield?.likelyRealVisible ?? 0 ) > 0 ) {
@@ -4882,13 +5869,21 @@ function shouldPauseDuplicateNoiseProducer( producer ) {
 }
 
 function shouldBlockRefillForDuplicateNoiseProducer( producer ) {
+	if ( isProductEvidenceDuplicateProducerHold( producer?.hold ) ) {
+		return true;
+	}
+	if (
+		isCurrentNoProductStartupHold( producer?.hold ) &&
+		producer.hold?.family === 'pre_action_bootstrap_stall'
+	) {
+		return true;
+	}
 	if ( ( producer?.triageYield?.likelyRealVisible ?? 0 ) > 0 ) {
 		return false;
 	}
 	return (
-		( producer?.hold?.kind === 'startup-noise' &&
-			producer.hold.family === 'pre_action_bootstrap_stall' ) ||
-		isProductEvidenceDuplicateFamilyHold( producer?.hold )
+		producer?.hold?.kind === 'startup-noise' &&
+		producer.hold.family === 'pre_action_bootstrap_stall'
 	);
 }
 
@@ -4906,7 +5901,7 @@ function getDuplicateNoiseProducerReason( producer, { pause } = {} ) {
 				: pause
 				? 'no product-evidence signatures are present in the contributing run dir, so pause lanes and mark no-analysis for no-product signatures only'
 				: productEvidenceNote;
-	} else if ( isProductEvidenceDuplicateFamilyHold( producer.hold ) ) {
+	} else if ( isProductEvidenceDuplicateProducerHold( producer.hold ) ) {
 		scope = 'current-run product-evidence duplicate';
 		productEvidenceNote = pause
 			? 'a product-evidence representative is already visible or family-capping siblings, so pause lanes while preserving product-evidence signatures'
@@ -4942,6 +5937,14 @@ async function getActiveDuplicateNoiseProducerGroups(
 			groupTriageYield,
 			{ groupName: groupState.name }
 		);
+		const actionGateProducerHold =
+			getProductEvidenceActionGateHoldForScheduling(
+				getCurrentRunActionGateProducerHold( groupTriageYield, {
+					groupName: groupState.name,
+					rootHold,
+				} ),
+				groupTriageYield
+			);
 		const noProductHold = getCurrentRunDuplicateNoiseHold(
 			groupTriageYield,
 			{
@@ -4949,10 +5952,13 @@ async function getActiveDuplicateNoiseProducerGroups(
 				requireNoProductEvidence: true,
 			}
 		);
+		const supervisorStartupHold =
+			getSupervisorStartupNoiseHold( groupState );
 		const groupHold =
+			actionGateProducerHold ??
+			productEvidenceDuplicateHold ??
 			noProductHold ??
-			getSupervisorStartupNoiseHold( groupState ) ??
-			productEvidenceDuplicateHold;
+			supervisorStartupHold;
 		if ( ! groupHold ) {
 			continue;
 		}
@@ -4992,9 +5998,6 @@ function getDominantRealUserFamilyHold(
 		) === 0 ||
 		! hasTriageYieldProductEvidence( triageYield )
 	) {
-		return null;
-	}
-	if ( ( triageYield.likelyRealVisible ?? 0 ) > 0 ) {
 		return null;
 	}
 
@@ -5422,6 +6425,208 @@ async function readAllCoverageRecords( files ) {
 		}
 	}
 	return records;
+}
+
+function createUserDocumentConcurrencySummary() {
+	return {
+		records: 0,
+		successfulRecords: 0,
+		byUserCount: {},
+		successfulByUserCount: {},
+		byProfileUserCount: {},
+		successfulByProfileUserCount: {},
+		byTransportUserCount: {},
+		successfulByTransportUserCount: {},
+		byCollaboratorMode: {},
+		successfulByCollaboratorMode: {},
+		byActionUserCount: {},
+		successfulByActionUserCount: {},
+		byProfileActionUserCount: {},
+		successfulByProfileActionUserCount: {},
+		successfulLifecycleByTypeUserCount: {},
+		recordsWithUserCountAtLeast: {},
+		successfulRecordsWithUserCountAtLeast: {},
+		recordsWithActionUserCountAtLeast: {},
+		successfulRecordsWithActionUserCountAtLeast: {},
+		successfulRecordsByUserBlockBucket: {},
+		maxUserCount: 0,
+		maxActionUserCount: 0,
+		maxExtraCollaborators: 0,
+		maxLargeDocumentBlocks: 0,
+		maxTotalBlocks: 0,
+	};
+}
+
+function normalizeNumericRecordValue( value ) {
+	const number = Number( value );
+	return Number.isFinite( number ) && number > 0 ? number : 0;
+}
+
+function getRecordTotalBlockCount( record ) {
+	let totalBlocks = normalizeNumericRecordValue(
+		record.blockStats?.totalBlocks ??
+			record.blockStats?.totalBlockCount ??
+			record.largeDocumentBlocks
+	);
+	for ( const snapshot of record.invariantSnapshots ?? [] ) {
+		totalBlocks = Math.max(
+			totalBlocks,
+			normalizeNumericRecordValue(
+				snapshot.totalBlockCount ?? snapshot.rootBlockCount
+			)
+		);
+	}
+	for ( const event of record.historyEvents ?? [] ) {
+		totalBlocks = Math.max(
+			totalBlocks,
+			normalizeNumericRecordValue( event.details?.blockCount )
+		);
+	}
+	return totalBlocks;
+}
+
+function getRecordActionUserCount( record ) {
+	const userIndexes = new Set();
+	for ( const action of record.actions ?? [] ) {
+		if ( action.userIndex !== undefined && action.userIndex !== null ) {
+			userIndexes.add( String( action.userIndex ) );
+		}
+	}
+	for ( const event of record.operationEvents ?? [] ) {
+		if ( event.userIndex !== undefined && event.userIndex !== null ) {
+			userIndexes.add( String( event.userIndex ) );
+		}
+	}
+	return userIndexes.size;
+}
+
+function addUserDocumentConcurrencyRecord( summary, record ) {
+	const profile = record.actionProfile ?? 'unknown';
+	const transport = record.transport ?? 'unknown';
+	const collaboratorMode = record.collaboratorMode ?? 'unknown';
+	const userCount = String( normalizeNumericRecordValue( record.userCount ) );
+	const actionUserCount = String( getRecordActionUserCount( record ) );
+	const successful = record.status === 'passed';
+	const totalBlocks = getRecordTotalBlockCount( record );
+	const largeDocumentBlocks = normalizeNumericRecordValue(
+		record.largeDocumentBlocks
+	);
+
+	summary.records += 1;
+	incrementCounter( summary.byUserCount, userCount );
+	incrementNestedCounter( summary.byProfileUserCount, profile, userCount );
+	incrementNestedCounter( summary.byTransportUserCount, transport, userCount );
+	incrementCounter( summary.byCollaboratorMode, collaboratorMode );
+	incrementCounter( summary.byActionUserCount, actionUserCount );
+	incrementNestedCounter(
+		summary.byProfileActionUserCount,
+		profile,
+		actionUserCount
+	);
+
+	for ( const threshold of [ 2, 3, 10, 12 ] ) {
+		if ( Number( userCount ) >= threshold ) {
+			incrementCounter(
+				summary.recordsWithUserCountAtLeast,
+				String( threshold )
+			);
+		}
+		if ( Number( actionUserCount ) >= threshold ) {
+			incrementCounter(
+				summary.recordsWithActionUserCountAtLeast,
+				String( threshold )
+			);
+		}
+	}
+
+	summary.maxUserCount = Math.max( summary.maxUserCount, Number( userCount ) );
+	summary.maxActionUserCount = Math.max(
+		summary.maxActionUserCount,
+		Number( actionUserCount )
+	);
+	summary.maxExtraCollaborators = Math.max(
+		summary.maxExtraCollaborators,
+		normalizeNumericRecordValue( record.extraCollaborators )
+	);
+	summary.maxLargeDocumentBlocks = Math.max(
+		summary.maxLargeDocumentBlocks,
+		largeDocumentBlocks
+	);
+	summary.maxTotalBlocks = Math.max( summary.maxTotalBlocks, totalBlocks );
+
+	if ( ! successful ) {
+		return;
+	}
+
+	summary.successfulRecords += 1;
+	incrementCounter( summary.successfulByUserCount, userCount );
+	incrementNestedCounter(
+		summary.successfulByProfileUserCount,
+		profile,
+		userCount
+	);
+	incrementNestedCounter(
+		summary.successfulByTransportUserCount,
+		transport,
+		userCount
+	);
+	incrementCounter( summary.successfulByCollaboratorMode, collaboratorMode );
+	incrementCounter( summary.successfulByActionUserCount, actionUserCount );
+	incrementNestedCounter(
+		summary.successfulByProfileActionUserCount,
+		profile,
+		actionUserCount
+	);
+
+	for ( const threshold of [ 2, 3, 10, 12 ] ) {
+		if ( Number( userCount ) >= threshold ) {
+			incrementCounter(
+				summary.successfulRecordsWithUserCountAtLeast,
+				String( threshold )
+			);
+		}
+		if ( Number( actionUserCount ) >= threshold ) {
+			incrementCounter(
+				summary.successfulRecordsWithActionUserCountAtLeast,
+				String( threshold )
+			);
+		}
+	}
+
+	for ( const event of record.lifecycleEvents ?? [] ) {
+		if ( ! event.type ) {
+			continue;
+		}
+		const eventUserCount = normalizeNumericRecordValue(
+			event.userCount ?? record.userCount
+		);
+		incrementCounter(
+			summary.successfulLifecycleByTypeUserCount,
+			`${ event.type }:${ eventUserCount }`
+		);
+	}
+
+	for ( const userThreshold of [ 2, 3, 10, 12 ] ) {
+		for ( const blockThreshold of [ 10, 50, 100 ] ) {
+			if (
+				Number( userCount ) >= userThreshold &&
+				totalBlocks >= blockThreshold
+			) {
+				incrementCounter(
+					summary.successfulRecordsByUserBlockBucket,
+					`users-${ userThreshold }:blocks-${ blockThreshold }`
+				);
+			}
+		}
+	}
+}
+
+async function summarizeUserDocumentConcurrency( files ) {
+	const summary = createUserDocumentConcurrencySummary();
+	for ( const record of await readAllCoverageRecords( files ) ) {
+		addUserDocumentConcurrencyRecord( summary, record );
+	}
+	return summary;
 }
 
 function createSummaryStartupStats() {
@@ -6312,6 +7517,18 @@ function getSuccessfulProfileCount( profile ) {
 	return state.successfulRecordCountsByProfile?.[ profile ] ?? 0;
 }
 
+function getUserDocumentConcurrencyCount( section, key ) {
+	return state.userDocumentConcurrency?.[ section ]?.[ String( key ) ] ?? 0;
+}
+
+function getUserDocumentConcurrencyNestedCount( section, firstKey, secondKey ) {
+	return (
+		state.userDocumentConcurrency?.[ section ]?.[ firstKey ]?.[
+			String( secondKey )
+		] ?? 0
+	);
+}
+
 function getCdpCoverageRecordCount() {
 	return Object.values( state.coverageHashes ?? {} ).reduce(
 		( total, count ) => total + count,
@@ -6814,7 +8031,10 @@ function createCoverageGuidance( novelty ) {
 			id: 'users:12',
 			label: 'many-user browser session',
 			target: 10,
-			groups: [ 'novelty-ws-many-user-lifecycle' ],
+			groups: [
+				'novelty-ws-many-user-lifecycle-completion',
+				'novelty-ws-many-user-lifecycle',
+			],
 			rationale:
 				'three users is not enough to cover high-participant awareness and save/reload behavior',
 		},
@@ -6822,7 +8042,10 @@ function createCoverageGuidance( novelty ) {
 			id: 'lifecycle:late-join:users-12',
 			label: 'many-user late join',
 			target: 10,
-			groups: [ 'novelty-ws-many-user-lifecycle' ],
+			groups: [
+				'novelty-ws-many-user-lifecycle-completion',
+				'novelty-ws-many-user-lifecycle',
+			],
 			rationale:
 				'many-user RTC sessions need a real late join after editing has started',
 		},
@@ -6832,6 +8055,7 @@ function createCoverageGuidance( novelty ) {
 			target: 25,
 			groups: [
 				'novelty-ws-collaboration-ui-signals',
+				'novelty-ws-many-user-lifecycle-completion',
 				'novelty-ws-many-user-lifecycle',
 			],
 			rationale:
@@ -6843,6 +8067,7 @@ function createCoverageGuidance( novelty ) {
 			target: 25,
 			groups: [
 				'novelty-ws-collaboration-ui-signals',
+				'novelty-ws-many-user-lifecycle-completion',
 				'novelty-ws-many-user-lifecycle',
 			],
 			rationale:
@@ -6879,6 +8104,7 @@ function createCoverageGuidance( novelty ) {
 				'novelty-ws-real-user-editing',
 				'novelty-ws-real-user-rich-text',
 				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
 			],
 			rationale: 'UI typing coverage must include save/reload flow',
 		},
@@ -6891,6 +8117,7 @@ function createCoverageGuidance( novelty ) {
 				'novelty-ws-real-user-editing',
 				'novelty-ws-real-user-rich-text',
 				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
 			],
 			rationale: 'title typing can diverge from block body sync',
 		},
@@ -6941,6 +8168,7 @@ function createCoverageGuidance( novelty ) {
 			groups: [
 				'novelty-ws-long-session-large-doc',
 				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
 			],
 			rationale:
 				'large documents exercise Yjs growth, undo stacks, and block identity drift',
@@ -6949,15 +8177,45 @@ function createCoverageGuidance( novelty ) {
 			id: 'transport-profile:http:large-post-three-user-http-lifecycle',
 			label: 'large post three-user HTTP lifecycle',
 			target: 10,
-			groups: [ 'novelty-http-large-post-lifecycle' ],
+			groups: [
+				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
+			],
 			rationale:
 				'the large-post miss requires HTTP, three users, large content, lifecycle, and persistence in one gate',
+		},
+		{
+			id: 'transport-profile:http:table-stale-snapshot-http',
+			label: 'table stale snapshot over HTTP',
+			target: 10,
+			groups: [ 'novelty-http-table-stale-snapshot' ],
+			rationale:
+				'table stale-snapshot misses require stale serialized HTML, a remote row insert, HTTP transport, and convergence in one gate',
+		},
+		{
+			id: 'action:table-stale-snapshot-html',
+			label: 'table stale HTML snapshot action',
+			target: 10,
+			groups: [ 'novelty-http-table-stale-snapshot' ],
+			rationale:
+				'the benchmark row lost a local stale HTML cell edit while preserving the remote inserted row',
+		},
+		{
+			id: 'history:table-stale-snapshot:ok',
+			label: 'table stale snapshot oracle',
+			target: 10,
+			groups: [ 'novelty-http-table-stale-snapshot' ],
+			rationale:
+				'the fuzz lane must prove both the stale local cell edit and remote inserted row converge',
 		},
 		{
 			id: 'history:final-ui-witness-sweep:ok',
 			label: 'final UI witness sweep',
 			target: 10,
-			groups: [ 'novelty-http-large-post-lifecycle' ],
+			groups: [
+				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
+			],
 			rationale:
 				'every participant needs a marker-producing UI operation immediately before final persistence',
 		},
@@ -6965,9 +8223,23 @@ function createCoverageGuidance( novelty ) {
 			id: 'history:final-persistence-publish:ok',
 			label: 'publish persistence oracle',
 			target: 10,
-			groups: [ 'novelty-http-large-post-lifecycle' ],
+			groups: [
+				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
+			],
 			rationale:
 				'publish coverage must include REST status/content and fresh reload witnesses',
+		},
+		{
+			id: 'history:publish-ui-readiness:ok',
+			label: 'publish UI readiness oracle',
+			target: 10,
+			groups: [
+				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
+			],
+			rationale:
+				'the large-post HTTP lane must observe the publish control becoming available instead of only checking persisted REST state',
 		},
 		{
 			id: 'step-count:48',
@@ -6984,6 +8256,177 @@ function createCoverageGuidance( novelty ) {
 			...goal,
 			count: getFeatureCount( goal.id ),
 			harnessAfter: goal.target * 4,
+		} );
+	}
+
+	for ( const goal of [
+		{
+			id: 'success-users:2',
+			label: 'successful two-user documents',
+			count: getUserDocumentConcurrencyCount( 'successfulByUserCount', 2 ),
+			target: 100,
+			groups: [
+				'novelty-ws-structure',
+				'novelty-ws-real-user-editing',
+				'novelty-ws-same-user-lifecycle',
+			],
+			rationale:
+				'two-user coverage must be successful completed documents, not only attempted sessions',
+		},
+		{
+			id: 'success-users:3',
+			label: 'successful three-user documents',
+			count: getUserDocumentConcurrencyCount( 'successfulByUserCount', 3 ),
+			target: 25,
+			groups: [
+				'novelty-ws-three-user-late-join',
+				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
+			],
+			rationale:
+				'three-user RTC coverage needs completed same-document records because identity and awareness bugs hide behind startup attempts',
+		},
+		{
+			id: 'success-users:12',
+			label: 'successful twelve-user documents',
+			count: getUserDocumentConcurrencyCount( 'successfulByUserCount', 12 ),
+			target: 10,
+			groups: [
+				'novelty-ws-many-user-lifecycle-completion',
+				'novelty-ws-many-user-lifecycle',
+			],
+			rationale:
+				'many-user coverage must reach a completed document with all users, not just launch many browsers',
+		},
+		{
+			id: 'success-action-users:2',
+			label: 'successful documents edited by two users',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsWithActionUserCountAtLeast',
+				2
+			),
+			target: 50,
+			groups: [
+				'novelty-ws-structure',
+				'novelty-ws-real-user-editing',
+				'novelty-ws-real-user-rich-text',
+			],
+			rationale:
+				'multi-user documents should include edits by multiple users, not a passive observer',
+		},
+		{
+			id: 'success-action-users:3',
+			label: 'successful documents edited by three users',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsWithActionUserCountAtLeast',
+				3
+			),
+			target: 10,
+			groups: [
+				'novelty-ws-three-user-late-join',
+				'novelty-ws-many-user-lifecycle-completion',
+				'novelty-ws-many-user-lifecycle',
+			],
+			rationale:
+				'three-user coverage should prove edits from at least three participants converge',
+		},
+		{
+			id: 'success-collaborator-mode:same-user',
+			label: 'successful same-user tab documents',
+			count: getUserDocumentConcurrencyCount(
+				'successfulByCollaboratorMode',
+				'same-user'
+			),
+			target: 25,
+			groups: [
+				'novelty-ws-same-user-lifecycle',
+				'novelty-ws-same-user-stale-tabs',
+				'novelty-http-same-user-stale-draft',
+			],
+			rationale:
+				'same-user tabs need successful completion because storage, locks, awareness, and save authority can diverge',
+		},
+		{
+			id: 'success-lifecycle:late-join:users-12',
+			label: 'successful twelve-user late join documents',
+			count: getUserDocumentConcurrencyCount(
+				'successfulLifecycleByTypeUserCount',
+				'late-join:12'
+			),
+			target: 10,
+			groups: [
+				'novelty-ws-many-user-lifecycle-completion',
+				'novelty-ws-many-user-lifecycle',
+			],
+			rationale:
+				'many-user RTC needs successful late joins after editing has started',
+		},
+		{
+			id: 'success-profile-users:large-post-three-user-http-lifecycle:3',
+			label: 'successful large-post HTTP records with three users',
+			count: getUserDocumentConcurrencyNestedCount(
+				'successfulByProfileUserCount',
+				'large-post-three-user-http-lifecycle',
+				3
+			),
+			target: 10,
+			groups: [
+				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
+			],
+			rationale:
+				'the large-post HTTP target needs HTTP, three users, lifecycle, persistence, and successful completion in the same record',
+		},
+		{
+			id: 'success-profile-users:many-user-lifecycle:12',
+			label: 'successful many-user lifecycle records with twelve users',
+			count: getUserDocumentConcurrencyNestedCount(
+				'successfulByProfileUserCount',
+				'many-user-lifecycle',
+				12
+			),
+			target: 10,
+			groups: [
+				'novelty-ws-many-user-lifecycle-completion',
+				'novelty-ws-many-user-lifecycle',
+			],
+			rationale:
+				'the many-user target should count successful twelve-user records, not generic users:12 attempts',
+		},
+		{
+			id: 'success-profile-users:three-user-late-join:3',
+			label: 'successful three-user late-join records',
+			count: getUserDocumentConcurrencyNestedCount(
+				'successfulByProfileUserCount',
+				'three-user-late-join',
+				3
+			),
+			target: 25,
+			groups: [ 'novelty-ws-three-user-late-join' ],
+			rationale:
+				'late-join should reach and complete a real three-user document',
+		},
+		{
+			id: 'success-user-blocks:3:50',
+			label: 'successful three-user large documents',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsByUserBlockBucket',
+				'users-3:blocks-50'
+			),
+			target: 5,
+			groups: [
+				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
+				'novelty-ws-long-session-large-doc',
+			],
+			rationale:
+				'large documents and multi-user sessions need to be combined in the same successful document',
+		},
+	] ) {
+		addGoal( {
+			...goal,
+			harnessAfter: goal.target * 4,
+			countSource: 'user-document-concurrency',
 		} );
 	}
 
@@ -7023,14 +8466,27 @@ function createCoverageGuidance( novelty ) {
 		{
 			profile: 'large-post-three-user-http-lifecycle',
 			target: 10,
-			groups: [ 'novelty-http-large-post-lifecycle' ],
+			groups: [
+				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
+			],
 			rationale:
 				'the combined large-post HTTP lifecycle gate needs completed records',
 		},
 		{
+			profile: 'table-stale-snapshot-http',
+			target: 10,
+			groups: [ 'novelty-http-table-stale-snapshot' ],
+			rationale:
+				'table stale-snapshot coverage needs completed HTTP seeds, not only parser/table attribute mutations',
+		},
+		{
 			profile: 'many-user-lifecycle',
 			target: 10,
-			groups: [ 'novelty-ws-many-user-lifecycle' ],
+			groups: [
+				'novelty-ws-many-user-lifecycle-completion',
+				'novelty-ws-many-user-lifecycle',
+			],
 			rationale:
 				'many-user RTC coverage needs completed seeds, not only startup or discovery failures',
 		},
@@ -7070,6 +8526,7 @@ function createCoverageGuidance( novelty ) {
 			'novelty-ws-media-cross-entity',
 			'novelty-ws-long-session-large-doc',
 			'novelty-http-large-post-lifecycle',
+			'novelty-http-large-post-lifecycle-completion',
 		],
 		rationale: 'code coverage should confirm browser paths are changing',
 		harnessAfter: 100,
@@ -7823,10 +9280,14 @@ async function writeNoAnalysisSentinelsForMatchingLocalNoiseHold(
 	const matches = [];
 	for ( const runDir of uniquePathList( runDirs ?? [] ) ) {
 		const localYield = await summarizeTriageYield( [ runDir ] );
-		const localHold = getCurrentRunDuplicateNoiseHold( localYield, {
-			allowGenericDuplicate: true,
-			requireNoProductEvidence: true,
-		} );
+		const localHold = rootHold?.actionGate
+			? getCurrentRunActionGateProducerHold( localYield, {
+					rootHold,
+			  } ) ?? getCurrentRunActionGateDuplicateHold( localYield )
+			: getCurrentRunDuplicateNoiseHold( localYield, {
+					allowGenericDuplicate: true,
+					requireNoProductEvidence: true,
+			  } );
 		if ( noiseHoldsMatch( rootHold, localHold ) ) {
 			matches.push( { runDir, localYield } );
 		}
@@ -7840,10 +9301,12 @@ async function writeNoAnalysisSentinelsForMatchingLocalNoiseHold(
 		( total, match ) =>
 			total +
 			getTriageYieldProductEvidenceRecordCount( match.localYield ),
-		0
+		getActionGateProductEvidenceCount( rootHold, null )
 	);
-	const hasProductEvidence = productEvidenceRecords > 0;
-	const reason = `current-run duplicate/noise hold is active for ${ rootHold.family } (${ rootHold.count } signatures, share=${ rootHold.share }, source=${ rootHold.source }) but no active producer group matched it; writing no-analysis sentinels only for local run dirs that reproduce the same no-product hold`;
+	const hasProductEvidence =
+		productEvidenceRecords > 0 ||
+		isActionGateProductEvidenceDuplicateHold( rootHold );
+	const reason = `current-run duplicate/noise hold is active for ${ rootHold.family } (${ rootHold.count } signatures, share=${ rootHold.share }, source=${ rootHold.source }) but no active producer group matched it; writing no-analysis sentinels only for local run dirs that reproduce the same family hold`;
 	await writeNoAnalysisSentinelsForRunDirs(
 		matches.map( ( match ) => match.runDir ),
 		{
@@ -7851,7 +9314,8 @@ async function writeNoAnalysisSentinelsForMatchingLocalNoiseHold(
 			reasonKind: getEffectiveDuplicateNoiseHoldKind( rootHold ),
 			family: rootHold.family,
 			source: 'local-current-run-noise-hold',
-			...( isCurrentNoProductStartupHold( rootHold )
+			...( isCurrentNoProductStartupHold( rootHold ) ||
+			rootHold?.actionGate
 				? {
 						noProductOnly: ! hasProductEvidence,
 						productEvidenceRecords,
@@ -7908,6 +9372,44 @@ function buildGroup( profile ) {
 
 async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 	const enabled = new Set( enabledGroups ?? [] );
+	for ( const group of [ ...enabled ] ) {
+		const activeNoisePause = getActiveNoisePauseCooldown( group );
+		if ( ! isNoProductStartupNoiseCooldown( activeNoisePause ) ) {
+			continue;
+		}
+		if (
+			isBenchmarkCanaryForcedGroup( group ) &&
+			shouldBypassBenchmarkCanaryNoisePause( group, activeNoisePause )
+		) {
+			recordStartupNoiseCooldownBypass(
+				group,
+				activeNoisePause,
+				getBenchmarkCanaryFeedbackReason( group ) ??
+					'benchmark canary feedback requires this equivalent fuzz lane'
+			);
+			continue;
+		}
+		enabled.delete( group );
+		recordBenchmarkCanaryNoProductStartupNoiseBlock(
+			'block-supervisor-group-startup-noise',
+			group,
+			activeNoisePause
+		);
+	}
+	for ( const group of benchmarkCanaryForcedGroups ) {
+		const startupNoiseBlock =
+			getBenchmarkCanaryNoProductStartupNoiseBlock( group );
+		if ( startupNoiseBlock ) {
+			enabled.delete( group );
+			recordBenchmarkCanaryNoProductStartupNoiseBlock(
+				'block-benchmark-canary-supervisor-group-startup-noise',
+				group,
+				startupNoiseBlock
+			);
+			continue;
+		}
+		enabled.add( group );
+	}
 	const groups = PROFILE_GROUPS.filter( ( profile ) =>
 		enabled.has( profile.name )
 	).map( buildGroup );
@@ -8021,6 +9523,33 @@ async function applyPolicy(
 	const drainDuplicateNoiseTriageYield =
 		state.triageYieldCurrentIncludingPausedNoAnalysis ??
 		activeDuplicateNoiseTriageYield;
+	const activeCurrentRunActionGateDuplicateHold = PAUSE_ON_TRIAGE_NOISE
+		? withRunDirProducerGroups(
+				getCurrentRunActionGateDuplicateHold(
+					activeDuplicateNoiseTriageYield
+				),
+				state.currentRunDirs ?? []
+		  )
+		: null;
+	const drainCurrentRunActionGateDuplicateHold = PAUSE_ON_TRIAGE_NOISE
+		? withRunDirProducerGroups(
+				getCurrentRunActionGateDuplicateHold(
+					drainDuplicateNoiseTriageYield
+				),
+				state.currentRunDirsIncludingPausedNoAnalysis ??
+					state.currentRunDirs ??
+					[]
+		  )
+		: null;
+	const currentRunActionGateDuplicateHold =
+		activeCurrentRunActionGateDuplicateHold ??
+		( drainCurrentRunActionGateDuplicateHold
+			? {
+					...drainCurrentRunActionGateDuplicateHold,
+					scope: 'active/drain current-run',
+					drainOnly: true,
+			  }
+			: null );
 	const activeCurrentRunDuplicateNoiseHold = PAUSE_ON_TRIAGE_NOISE
 		? withRunDirProducerGroups(
 				getCurrentRunDuplicateNoiseHold(
@@ -8057,13 +9586,31 @@ async function applyPolicy(
 					drainOnly: true,
 			  }
 			: null;
-	const fleetNoProductStartupNoiseHold = PAUSE_ON_TRIAGE_NOISE
-		? getFleetNoProductStartupNoiseHold()
-		: null;
+		const currentRunProducerDuplicateHold =
+			currentRunActionGateDuplicateHold ?? currentRunDuplicateNoiseHold;
+		const currentRunProductEvidenceActionGateHold =
+			PAUSE_ON_TRIAGE_NOISE
+				? getProductEvidenceActionGateHoldForScheduling(
+						currentRunActionGateDuplicateHold,
+						currentRunActionGateDuplicateHold?.drainOnly
+							? drainDuplicateNoiseTriageYield
+							: activeDuplicateNoiseTriageYield
+				  )
+				: null;
+		const fleetNoProductStartupNoiseHold = PAUSE_ON_TRIAGE_NOISE
+			? getFleetNoProductStartupNoiseHold()
+			: null;
 	const holdNoisyBlockTopOff =
 		PAUSE_ON_TRIAGE_NOISE &&
-		shouldHoldNoisyBlockTopOff( activeDuplicateNoiseTriageYield );
-	const dominantRealUserFamilyHold = PAUSE_ON_TRIAGE_NOISE
+		( shouldHoldNoisyBlockTopOff( activeDuplicateNoiseTriageYield ) ||
+			!! currentRunActionGateDuplicateHold );
+	const activeDominantRealUserFamilyHold = PAUSE_ON_TRIAGE_NOISE
+		? getCurrentRunProductEvidenceDuplicateHold(
+				activeDuplicateNoiseTriageYield,
+				state.currentRunDirs ?? []
+		  )
+		: null;
+	const drainDominantRealUserFamilyHold = PAUSE_ON_TRIAGE_NOISE
 		? getCurrentRunProductEvidenceDuplicateHold(
 				drainDuplicateNoiseTriageYield,
 				state.currentRunDirsIncludingPausedNoAnalysis ??
@@ -8071,12 +9618,20 @@ async function applyPolicy(
 					[]
 		  )
 		: null;
-	const recentProductEvidenceDuplicateFamilyCooldown = PAUSE_ON_TRIAGE_NOISE
-		? getRecentProductEvidenceDuplicateFamilyCooldown()
-		: null;
-	const effectiveProductEvidenceDuplicateFamilyHold =
-		dominantRealUserFamilyHold ??
-		recentProductEvidenceDuplicateFamilyCooldown;
+	const dominantRealUserFamilyHold =
+		activeDominantRealUserFamilyHold ??
+		( drainDominantRealUserFamilyHold
+			? {
+					...drainDominantRealUserFamilyHold,
+					scope: 'active/drain current-run',
+					drainOnly: true,
+			  }
+			: null );
+		const recentProductEvidenceDuplicateFamilyCooldown = PAUSE_ON_TRIAGE_NOISE
+			? getRecentProductEvidenceDuplicateFamilyCooldown()
+			: null;
+		const effectiveProductEvidenceDuplicateFamilyHold =
+			currentRunProductEvidenceActionGateHold ?? dominantRealUserFamilyHold;
 	const holdDominantRealUserFamilyActive =
 		!! effectiveProductEvidenceDuplicateFamilyHold;
 	const lateJoin3Records =
@@ -8146,6 +9701,8 @@ async function applyPolicy(
 		group,
 		{ allowUnrelatedStartupReplacement = false } = {}
 	) {
+		const canBenchmarkCanaryBypassStartupHold = ( hold ) =>
+			shouldBypassBenchmarkCanaryNoisePause( group, hold );
 		if (
 			canBypassStartupNoiseCooldown(
 				group,
@@ -8164,7 +9721,16 @@ async function applyPolicy(
 			! hasCurrentProductEvidence
 		) {
 			if (
-				isProductEvidenceDuplicateFamilyHold(
+				canBenchmarkCanaryBypassStartupHold(
+					refillBlockingDuplicateNoiseProducer.hold
+				) &&
+				refillBlockingDuplicateNoiseProducer.hold?.kind ===
+					'startup-noise'
+			) {
+				return null;
+			}
+			if (
+				isProductEvidenceDuplicateProducerHold(
 					refillBlockingDuplicateNoiseProducer.hold
 				) &&
 				group !== refillBlockingDuplicateNoiseProducer.name &&
@@ -8212,6 +9778,9 @@ async function applyPolicy(
 			);
 			if (
 				! hasCurrentProductEvidence &&
+				! canBenchmarkCanaryBypassStartupHold(
+					currentRunDuplicateNoiseHold
+				) &&
 				( matchedProducerHold ||
 					isStartupHoldBlockingProducerGroup(
 						currentRunDuplicateNoiseHold,
@@ -8232,6 +9801,9 @@ async function applyPolicy(
 			);
 			if (
 				! hasCurrentProductEvidence &&
+				! canBenchmarkCanaryBypassStartupHold(
+					drainOnlyCurrentRunStartupHold
+				) &&
 				( matchedProducerHold ||
 					isStartupHoldBlockingProducerGroup(
 						drainOnlyCurrentRunStartupHold,
@@ -8249,6 +9821,10 @@ async function applyPolicy(
 		if (
 			fleetNoProductStartupNoiseHold &&
 			! hasCurrentProductEvidence &&
+			! getActiveStartupNoiseCooldownBypass( group ) &&
+			! canBenchmarkCanaryBypassStartupHold(
+				fleetNoProductStartupNoiseHold
+			) &&
 			isStartupHoldBlockingProducerGroup(
 				fleetNoProductStartupNoiseHold,
 				group
@@ -8280,7 +9856,7 @@ async function applyPolicy(
 			return `drain-only no-product startup-noise hold ${ scope } for ${ hold.family } (${ hold.count } signatures, share=${ hold.share }, source=${ hold.source }); do not refill browser capacity with no-product fallback/materialization groups until current product evidence exists or the hold clears`;
 		}
 		if ( block?.producerLocal ) {
-			if ( isProductEvidenceDuplicateFamilyHold( hold ) ) {
+			if ( isProductEvidenceDuplicateProducerHold( hold ) ) {
 				return `active producer ${ block.producerName } has a current product-evidence duplicate hold for ${ hold.family } (${ hold.count } signatures, share=${ hold.share }, source=${ hold.source }); do not enable replacement browser producers without current product evidence until the representative remains capped`;
 			}
 			return `active producer ${ block.producerName } has a current startup-noise hold for ${ hold.family } (${ hold.count } signatures, share=${ hold.share }, source=${ hold.source }); do not enable replacement browser producers without current product evidence until this leaking producer is drained`;
@@ -8379,11 +9955,21 @@ async function applyPolicy(
 		group,
 		activeNoisePause
 	) {
+		const productEvidenceRecords = Number(
+			activeNoisePause?.productEvidenceRecords
+		);
+		const pauseHasProductEvidence =
+			activeNoisePause?.noProductOnly === false ||
+			activeNoisePause?.hasProductEvidence === true ||
+			( Number.isFinite( productEvidenceRecords ) &&
+				productEvidenceRecords > 0 );
 		return (
 			! recommendedStartupCooldownRetryUsed &&
 			group === recommendedStartupCooldownRetryGroup &&
 			activeNoisePause?.kind === 'startup-noise' &&
-			activeNoisePause.scope === 'profile'
+			activeNoisePause.scope === 'profile' &&
+			groupHasCurrentProductEvidence( group ) &&
+			pauseHasProductEvidence
 		);
 	}
 
@@ -8439,11 +10025,13 @@ async function applyPolicy(
 		);
 	}
 
-	function getDuplicateNoiseHoldEnableBlockReason() {
-		const hold = effectiveProductEvidenceDuplicateFamilyHold;
-		const scope = dominantRealUserFamilyHold
-			? 'current-run'
-			: 'recent cross-root';
+		function getDuplicateNoiseHoldEnableBlockReason() {
+			const hold = effectiveProductEvidenceDuplicateFamilyHold;
+			const scope = currentRunProductEvidenceActionGateHold
+				? 'current-run action-gate'
+				: dominantRealUserFamilyHold
+				? 'current-run'
+				: 'recent cross-root';
 		const producerScope = hold.groupName ? ` from ${ hold.groupName }` : '';
 		return `${ scope } product-evidence duplicate family ${
 			hold.family
@@ -8499,7 +10087,13 @@ async function applyPolicy(
 		const startupHoldBlock = getCurrentStartupHoldEnableBlock( group, {
 			allowUnrelatedStartupReplacement: true,
 		} );
-		const startupHoldBlocksRescue = !! startupHoldBlock;
+		const startupHoldBlocksRescue =
+			!! startupHoldBlock &&
+			! (
+				startupHoldBlock.fleetStartupNoiseHold === true &&
+				activeRunDirsAfterPlannedRemoval.length === 0 &&
+				isActiveCurrentTriageClear()
+			);
 		if (
 			! START_SUPERVISOR ||
 			! materializationRescueGroups.has( group ) ||
@@ -8873,7 +10467,33 @@ async function applyPolicy(
 			triageYield
 		);
 		if ( activeNoisePause ) {
-			if ( canBypassStartupNoiseCooldown( group, activeNoisePause ) ) {
+			if (
+				shouldBypassBenchmarkCanaryNoisePause( group, activeNoisePause )
+			) {
+				const bypassReason =
+					getBenchmarkCanaryFeedbackReason( group ) ??
+					'benchmark canary feedback requires this equivalent fuzz lane';
+				recordStartupNoiseCooldownBypass(
+					group,
+					activeNoisePause,
+					bypassReason
+				);
+				delete state.pausedGroups[ group ];
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'bypass-benchmark-canary-active-noise-pause',
+					group,
+					reason: bypassReason,
+					sourcePauseAt: activeNoisePause.at,
+					sourcePauseReason: activeNoisePause.reason,
+					expiresAt: activeNoisePause.expiresAt,
+					...( activeNoisePause.originGroup
+						? { originGroup: activeNoisePause.originGroup }
+						: {} ),
+				} );
+			} else if (
+				canBypassStartupNoiseCooldown( group, activeNoisePause )
+			) {
 				delete state.pausedGroups[ group ];
 				state.changes.push( {
 					at: new Date().toISOString(),
@@ -8909,25 +10529,47 @@ async function applyPolicy(
 				storedNoisePause
 			);
 			if ( activeStoredNoisePause ) {
-				state.changes.push( {
-					at: new Date().toISOString(),
-					action: 'keep-paused-noise-cooldown',
-					group,
-					reason: `stored ${ activeStoredNoisePause.kind } pause remains active for this group; do not revive it through materialization or fallback scheduling`,
-					expiresAt: activeStoredNoisePause.expiresAt,
-				} );
-				return false;
+				if (
+					shouldBypassBenchmarkCanaryNoisePause(
+						group,
+						activeStoredNoisePause
+					)
+				) {
+					delete state.pausedGroups[ group ];
+					state.changes.push( {
+						at: new Date().toISOString(),
+						action: 'bypass-benchmark-canary-stored-noise-pause',
+						group,
+						reason:
+							getBenchmarkCanaryFeedbackReason( group ) ??
+							'benchmark canary feedback requires this equivalent fuzz lane',
+						sourcePauseAt: activeStoredNoisePause.at,
+						sourcePauseReason: activeStoredNoisePause.reason,
+						expiresAt: activeStoredNoisePause.expiresAt,
+					} );
+				} else {
+					state.changes.push( {
+						at: new Date().toISOString(),
+						action: 'keep-paused-noise-cooldown',
+						group,
+						reason: `stored ${ activeStoredNoisePause.kind } pause remains active for this group; do not revive it through materialization or fallback scheduling`,
+						expiresAt: activeStoredNoisePause.expiresAt,
+					} );
+					return false;
+				}
 			}
 
-			delete state.pausedGroups[ group ];
-			state.changes.push( {
-				at: new Date().toISOString(),
-				action: 'prune-expired-noise-pause',
-				group,
-				reason: `stored ${ getStoredNoisePauseKind(
-					storedNoisePause
-				) } pause expired and no longer blocks enablement`,
-			} );
+			if ( state.pausedGroups?.[ group ] ) {
+				delete state.pausedGroups[ group ];
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'prune-expired-noise-pause',
+					group,
+					reason: `stored ${ getStoredNoisePauseKind(
+						storedNoisePause
+					) } pause expired and no longer blocks enablement`,
+				} );
+			}
 		}
 
 		if (
@@ -9059,6 +10701,11 @@ async function applyPolicy(
 		const productEvidenceRecords =
 			metadata.productEvidenceRecords ??
 			( inferredNoProductStartupPause ? 0 : undefined );
+		const hasProductEvidence =
+			metadata.hasProductEvidence ??
+			( productEvidenceRecords !== undefined
+				? productEvidenceRecords > 0
+				: undefined );
 		const materializationFloorBlockReason = noisePauseKind
 			? getMaterializationFloorPauseBlockReason( group )
 			: null;
@@ -9092,6 +10739,9 @@ async function applyPolicy(
 					...( productEvidenceRecords !== undefined
 						? { productEvidenceRecords }
 						: {} ),
+					...( hasProductEvidence !== undefined
+						? { hasProductEvidence }
+						: {} ),
 				} );
 				return false;
 			}
@@ -9108,6 +10758,9 @@ async function applyPolicy(
 					...( noProductOnly !== undefined ? { noProductOnly } : {} ),
 					...( productEvidenceRecords !== undefined
 						? { productEvidenceRecords }
+						: {} ),
+					...( hasProductEvidence !== undefined
+						? { hasProductEvidence }
 						: {} ),
 					preserveProductEvidence: true,
 				} );
@@ -9132,6 +10785,9 @@ async function applyPolicy(
 			...( productEvidenceRecords !== undefined
 				? { productEvidenceRecords }
 				: {} ),
+			...( hasProductEvidence !== undefined
+				? { hasProductEvidence }
+				: {} ),
 			...( noisePauseKind ? { preserveProductEvidence: true } : {} ),
 			...( expiresAt ? { expiresAt } : {} ),
 		};
@@ -9147,6 +10803,9 @@ async function applyPolicy(
 			...( noProductOnly !== undefined ? { noProductOnly } : {} ),
 			...( productEvidenceRecords !== undefined
 				? { productEvidenceRecords }
+				: {} ),
+			...( hasProductEvidence !== undefined
+				? { hasProductEvidence }
 				: {} ),
 			...( expiresAt ? { expiresAt } : {} ),
 		} );
@@ -9164,8 +10823,8 @@ async function applyPolicy(
 				...( productEvidenceRecords !== undefined
 					? { productEvidenceRecords }
 					: {} ),
-				...( productEvidenceRecords !== undefined
-					? { hasProductEvidence: productEvidenceRecords > 0 }
+				...( hasProductEvidence !== undefined
+					? { hasProductEvidence }
 					: {} ),
 			} );
 		}
@@ -9247,11 +10906,11 @@ async function applyPolicy(
 		return false;
 	}
 
-	async function ensureRequiredCoverageBreadthGroups() {
-		let changed = false;
-		for ( const group of REQUIRED_COVERAGE_BREADTH_GROUPS ) {
-			if ( enabled.has( group ) ) {
-				continue;
+		async function ensureRequiredCoverageBreadthGroups() {
+			let changed = false;
+			for ( const group of REQUIRED_COVERAGE_BREADTH_GROUPS ) {
+				if ( enabled.has( group ) ) {
+					continue;
 			}
 			changed =
 				( await enableGroup(
@@ -9260,12 +10919,94 @@ async function applyPolicy(
 					{ allowRotation: true }
 				) ) || changed;
 		}
-		return changed;
-	}
+			return changed;
+		}
 
-	async function reserveBudgetForParserTransform( reason ) {
-		if ( resources.hasHeadroom || enabled.size < TARGET_ENABLED_GROUPS ) {
-			return true;
+		async function sweepEnabledGroupsBlockedByActiveHolds() {
+			let changed = false;
+			for ( const group of [ ...enabled ] ) {
+				const activeNoisePause = getActiveNoisePauseCooldown( group );
+				if ( isNoProductStartupNoiseCooldown( activeNoisePause ) ) {
+					changed =
+						( await pauseGroup(
+							group,
+							`final scheduling sweep: active no-product startup-noise cooldown from ${ activeNoisePause.at } still blocks ${ group }; do not publish it to supervisor groups while strict pre-action bootstrap noise has no product evidence: ${ activeNoisePause.reason }`,
+							{
+								reasonKind: 'startup-noise',
+								family: 'pre_action_bootstrap_stall',
+								source:
+									activeNoisePause.source ??
+									'active-noise-cooldown',
+								noProductOnly: true,
+								productEvidenceRecords: 0,
+								hasProductEvidence: false,
+							}
+						) ) || changed;
+					continue;
+				}
+
+				const startupBlock = getCurrentStartupHoldEnableBlock( group );
+				if (
+					startupBlock &&
+					( startupBlock.matchedProducerHold ||
+						startupBlock.fleetStartupNoiseHold ||
+						startupBlock.producerName === group )
+				) {
+					const hold = startupBlock.hold;
+					const isProductEvidenceHold =
+						isProductEvidenceDuplicateProducerHold( hold );
+					changed =
+						( await pauseGroup(
+							group,
+							`final scheduling sweep: ${ getCurrentStartupHoldEnableBlockReason(
+								group
+							) }`,
+							{
+								reasonKind:
+									getEffectiveDuplicateNoiseHoldKind( hold ) ??
+									hold?.kind,
+								family: hold?.family,
+								source: hold?.source,
+								noProductOnly: isProductEvidenceHold
+									? false
+									: hold?.noProductOnly ?? true,
+								productEvidenceRecords: isProductEvidenceHold
+									? hold?.productEvidenceRecords ??
+									  hold?.count ??
+									  1
+									: hold?.productEvidenceRecords ?? 0,
+								hasProductEvidence: isProductEvidenceHold,
+							}
+						) ) || changed;
+					continue;
+				}
+
+				if ( shouldBlockGroupEnableForDuplicateNoiseHold( group ) ) {
+					const hold = effectiveProductEvidenceDuplicateFamilyHold;
+					changed =
+						( await pauseGroup(
+							group,
+							`final scheduling sweep: ${ getDuplicateNoiseHoldEnableBlockReason() }`,
+							{
+								reasonKind: hold?.kind,
+								family: hold?.family,
+								source: hold?.source,
+								noProductOnly: false,
+								productEvidenceRecords:
+									hold?.productEvidenceRecords ??
+									hold?.count ??
+									1,
+								hasProductEvidence: true,
+							}
+						) ) || changed;
+				}
+			}
+			return changed;
+		}
+
+		async function reserveBudgetForParserTransform( reason ) {
+			if ( resources.hasHeadroom || enabled.size < TARGET_ENABLED_GROUPS ) {
+				return true;
 		}
 
 		for ( const candidate of [
@@ -9299,7 +11040,7 @@ async function applyPolicy(
 	if ( PAUSE_ON_TRIAGE_NOISE ) {
 		noisyProducerGroups = await getActiveDuplicateNoiseProducerGroups(
 			supervisorState,
-			currentRunDuplicateNoiseHold
+			currentRunProducerDuplicateHold
 		);
 		for ( const producer of noisyProducerGroups ) {
 			if ( ! shouldBlockRefillForDuplicateNoiseProducer( producer ) ) {
@@ -9337,16 +11078,18 @@ async function applyPolicy(
 	}
 
 	if ( PAUSE_ON_TRIAGE_NOISE ) {
+		const noProducerFallbackDuplicateHold =
+			currentRunProducerDuplicateHold?.drainOnly === true
+				? null
+				: currentRunProducerDuplicateHold;
 		if (
-			currentRunDuplicateNoiseHold &&
+			noProducerFallbackDuplicateHold &&
 			noisyProducerGroups.length === 0
 		) {
 			const sentinelCount =
 				await writeNoAnalysisSentinelsForMatchingLocalNoiseHold(
-					currentRunDuplicateNoiseHold,
-					state.currentRunDirsIncludingPausedNoAnalysis ??
-						state.currentRunDirs ??
-						[]
+					noProducerFallbackDuplicateHold,
+					state.currentRunDirs ?? []
 				);
 			state.changes.push( {
 				at: new Date().toISOString(),
@@ -9356,8 +11099,8 @@ async function applyPolicy(
 						: 'current-run-noise-hold-no-producer-match-sentinel-skipped',
 				reason:
 					sentinelCount > 0
-						? `current-run duplicate/noise hold is active for ${ currentRunDuplicateNoiseHold.family } (${ currentRunDuplicateNoiseHold.count } signatures, share=${ currentRunDuplicateNoiseHold.share }) and ${ sentinelCount } local run dir(s) reproduced it; wrote product-preserving no-analysis sentinels`
-						: `current-run duplicate/noise hold is active for ${ currentRunDuplicateNoiseHold.family } (${ currentRunDuplicateNoiseHold.count } signatures, share=${ currentRunDuplicateNoiseHold.share }) but no active no-product producer run dir matched it; leaving active run dirs visible instead of writing a broad no-analysis sentinel`,
+						? `current-run duplicate/noise hold is active for ${ noProducerFallbackDuplicateHold.family } (${ noProducerFallbackDuplicateHold.count } signatures, share=${ noProducerFallbackDuplicateHold.share }) and ${ sentinelCount } local run dir(s) reproduced it; wrote product-preserving no-analysis sentinels`
+						: `current-run duplicate/noise hold is active for ${ noProducerFallbackDuplicateHold.family } (${ noProducerFallbackDuplicateHold.count } signatures, share=${ noProducerFallbackDuplicateHold.share }) but no active producer run dir matched it; leaving active run dirs visible instead of writing a broad no-analysis sentinel`,
 			} );
 		}
 		for ( const producer of noisyProducerGroups ) {
@@ -9399,15 +11142,23 @@ async function applyPolicy(
 		}
 	}
 
-	if ( holdDominantRealUserFamilyActive ) {
-		const hold = effectiveProductEvidenceDuplicateFamilyHold;
-		const holdScope = dominantRealUserFamilyHold
-			? 'current-run'
-			: 'recent cross-root';
-		for ( const group of PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS ) {
-			if ( ! enabled.has( group ) ) {
-				continue;
-			}
+		if ( holdDominantRealUserFamilyActive ) {
+			const hold = effectiveProductEvidenceDuplicateFamilyHold;
+			const holdScope = currentRunProductEvidenceActionGateHold
+				? 'current-run action-gate'
+				: dominantRealUserFamilyHold
+				? 'current-run'
+				: 'recent cross-root';
+			const heldGroups = uniqueStringList( [
+				...PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS,
+				...( Array.isArray( hold.groups ) ? hold.groups : [] ),
+				hold.groupName,
+				hold.group,
+			].filter( Boolean ) );
+			for ( const group of heldGroups ) {
+				if ( ! enabled.has( group ) ) {
+					continue;
+				}
 			if (
 				! shouldProductEvidenceDuplicateHoldBlockGroup( hold, group )
 			) {
@@ -9439,6 +11190,10 @@ async function applyPolicy(
 				family: hold.family,
 				source: hold.source,
 				...( hold.groupName ? { groupName: hold.groupName } : {} ),
+				noProductOnly: false,
+				productEvidenceRecords:
+					hold.productEvidenceRecords ?? hold.count ?? 1,
+				hasProductEvidence: true,
 			} );
 		}
 	} else if (
@@ -9648,9 +11403,56 @@ async function applyPolicy(
 		);
 	}
 
+	for ( const group of benchmarkCanaryForcedGroups ) {
+		if ( ! PROFILE_BY_GROUP[ group ] ) {
+			continue;
+		}
+		const startupNoiseBlock =
+			getBenchmarkCanaryNoProductStartupNoiseBlock( group );
+		if ( startupNoiseBlock ) {
+			enabled.delete( group );
+			recordBenchmarkCanaryNoProductStartupNoiseBlock(
+				'skip-enable-benchmark-canary-startup-noise',
+				group,
+				startupNoiseBlock
+			);
+			continue;
+		}
+		if ( enabled.has( group ) ) {
+			continue;
+		}
+		while ( enabled.size >= MAX_ENABLED_GROUPS ) {
+			const eviction = uniqueStringList( [
+				'novelty-http-persistence-probe',
+				...ZERO_COVERAGE_EVICTION_ORDER,
+				...PRODUCTIVE_FALLBACK_GROUPS,
+				...enabled,
+			] ).find(
+				( candidate ) =>
+					enabled.has( candidate ) &&
+					candidate !== group &&
+					! isBenchmarkCanaryForcedGroup( candidate )
+			);
+			if ( ! eviction ) {
+				break;
+			}
+			await pauseGroup(
+				eviction,
+				`benchmark canary feedback preempts generic coverage slot for ${ group } before publication confidence can move`
+			);
+		}
+		await enableGroup(
+			group,
+			getBenchmarkCanaryFeedbackReason( group ) ??
+				'benchmark canary feedback requires equivalent fuzz coverage',
+			{ allowRotation: true, budgetReserved: true }
+		);
+	}
+
 	if (
 		! httpProbeEnabled &&
 		ENABLE_HTTP_PROBE &&
+		benchmarkCanaryForcedGroups.size === 0 &&
 		( resources.hasHeadroom || parserTransformSaturated ) &&
 		enabled.size < Math.min( MAX_ENABLED_GROUPS, TARGET_ENABLED_GROUPS + 1 )
 	) {
@@ -9658,6 +11460,30 @@ async function applyPolicy(
 			'novelty-http-persistence-probe',
 			'HTTP persistence canary is absent; run a low-fault persistence lane to keep transport coverage mixed'
 		);
+	}
+
+	function getZeroCoverageRotationHold() {
+		return (
+			activeCurrentRunActionGateDuplicateHold ??
+			activeCurrentRunDuplicateNoiseHold ??
+			dominantRealUserFamilyHold
+		);
+	}
+
+	function getZeroCoverageRotationHoldReason( hold ) {
+		const producerScope = hold?.groupName
+			? ` from ${ hold.groupName }`
+			: '';
+		const representative = hold?.representativeSignal
+			? `, representative=${ hold.representativeSignal }`
+			: '';
+		return `active current-run duplicate/noise hold is active for ${
+			hold?.family ?? 'unknown'
+		}${ producerScope } (${ hold?.count ?? 0 }/${
+			hold?.total ?? hold?.count ?? 0
+		} signatures, share=${ hold?.share ?? 0 }, source=${
+			hold?.source ?? 'current-run'
+		}${ representative }); do not evict another browser group for zero-coverage rotation until the held producer is paused/rotated while product-evidence representatives stay visible`;
 	}
 
 	for ( const group of ZERO_COVERAGE_PRIORITY_GROUPS ) {
@@ -9668,6 +11494,20 @@ async function applyPolicy(
 			( goal ) => goal.count === 0 && goal.groups.includes( group )
 		);
 		if ( gapsForGroup.length === 0 ) {
+			continue;
+		}
+		const zeroCoverageRotationHold = getZeroCoverageRotationHold();
+		if ( zeroCoverageRotationHold ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'hold-zero-coverage-rotation-duplicate-noise',
+				group,
+				family: zeroCoverageRotationHold.family,
+				source: zeroCoverageRotationHold.source,
+				reason: getZeroCoverageRotationHoldReason(
+					zeroCoverageRotationHold
+				),
+			} );
 			continue;
 		}
 		while ( enabled.size >= MAX_ENABLED_GROUPS ) {
@@ -9684,7 +11524,8 @@ async function applyPolicy(
 				`zero-coverage high-priority RTC surface ${ group } needs a browser slot before lower-priority coverage top-offs; gaps=${ gapsForGroup
 					.slice( 0, 3 )
 					.map(
-						( goal ) => `${ goal.id }=${ goal.count }/${ goal.target }`
+						( goal ) =>
+							`${ goal.id }=${ goal.count }/${ goal.target }`
 					)
 					.join( ', ' ) }`
 			);
@@ -9693,7 +11534,9 @@ async function applyPolicy(
 			group,
 			`zero-coverage high-priority RTC surface: ${ gapsForGroup
 				.slice( 0, 3 )
-				.map( ( goal ) => `${ goal.id }=${ goal.count }/${ goal.target }` )
+				.map(
+					( goal ) => `${ goal.id }=${ goal.count }/${ goal.target }`
+				)
 				.join( ', ' ) }`,
 			{ allowRotation: true, budgetReserved: true }
 		);
@@ -9834,6 +11677,9 @@ async function applyPolicy(
 		];
 
 		for ( const [ group, profile ] of pauseOrder ) {
+			if ( isBenchmarkCanaryForcedGroup( group ) ) {
+				continue;
+			}
 			if (
 				shouldApplyProfileStartupFailurePause( group ) &&
 				( hasExcessiveStartupFailures( group, profile ) ||
@@ -9923,6 +11769,8 @@ async function applyPolicy(
 			'novelty-ws-async-server-blocks',
 			'novelty-ws-media-cross-entity',
 			'novelty-ws-long-session-large-doc',
+			'novelty-ws-many-user-lifecycle-completion',
+			'novelty-ws-many-user-lifecycle',
 			'novelty-ws-real-user-save-reload',
 			'novelty-ws-real-user-rich-text',
 			'novelty-ws-real-user-editing',
@@ -9953,6 +11801,7 @@ async function applyPolicy(
 	await ensureRequiredCoverageBreadthGroups();
 	await ensureProductiveFallbackGroup();
 	await ensureMaterializationFloorGroup();
+	await sweepEnabledGroupsBlockedByActiveHolds();
 	state.enabledGroups = [ ...enabled ];
 	await writeSupervisorGroupsForEnabledGroups( enabled );
 }
@@ -10410,26 +12259,34 @@ async function ensureBootstrapSupervisorGroups() {
 			drainOnly: true,
 		};
 	}
-	const bootstrapFleetStartupNoiseHold = getFleetNoProductStartupNoiseHold();
-	const bootstrapProducerStartupHold = isStartupHoldBlockingProducerSelection(
-		bootstrapDuplicateNoiseHold
-	)
-		? bootstrapDuplicateNoiseHold
-		: bootstrapFleetStartupNoiseHold;
-	const bootstrapProductEvidenceDuplicateFamilyHold =
-		getCurrentRunProductEvidenceDuplicateHold(
-			state.triageYieldCurrentIncludingPausedNoAnalysis ??
+		const bootstrapFleetStartupNoiseHold = getFleetNoProductStartupNoiseHold();
+		const bootstrapProducerStartupHold = isStartupHoldBlockingProducerSelection(
+			bootstrapDuplicateNoiseHold
+		)
+			? bootstrapDuplicateNoiseHold
+			: bootstrapFleetStartupNoiseHold;
+		const bootstrapProductEvidenceActionGateHold =
+			getProductEvidenceActionGateHoldForScheduling(
+				withRunDirProducerGroups(
+					getCurrentRunActionGateDuplicateHold(
+						state.triageYieldCurrent
+					),
+					state.currentRunDirs ?? []
+				),
+				state.triageYieldCurrent
+			);
+		const bootstrapProductEvidenceDuplicateFamilyHold =
+			bootstrapProductEvidenceActionGateHold ??
+			getCurrentRunProductEvidenceDuplicateHold(
 				state.triageYieldCurrent,
-			state.currentRunDirsIncludingPausedNoAnalysis ??
-				state.currentRunDirs ??
-				[]
-		) ?? getRecentProductEvidenceDuplicateFamilyCooldown();
-	const getBootstrapDuplicateFamilyHoldBlock = ( group ) => {
-		if (
-			! isProductEvidenceDuplicateFamilyHold(
-				bootstrapProductEvidenceDuplicateFamilyHold
-			) ||
-			! shouldProductEvidenceDuplicateHoldBlockGroup(
+				state.currentRunDirs ?? []
+			);
+		const getBootstrapDuplicateFamilyHoldBlock = ( group ) => {
+			if (
+				! isProductEvidenceDuplicateProducerHold(
+					bootstrapProductEvidenceDuplicateFamilyHold
+				) ||
+				! shouldProductEvidenceDuplicateHoldBlockGroup(
 				bootstrapProductEvidenceDuplicateFamilyHold,
 				group
 			)
@@ -10450,20 +12307,60 @@ async function ensureBootstrapSupervisorGroups() {
 		const activeNoisePause = getActiveNoisePauseCooldown( group );
 		const duplicateFamilyHoldBlock =
 			getBootstrapDuplicateFamilyHoldBlock( group );
+		const benchmarkCanaryBypassesStartupNoise =
+			shouldBypassBenchmarkCanaryNoisePause(
+				group,
+				bootstrapProducerStartupHold
+			);
+		const storedPauseBlocksGroup =
+			state.pausedGroups?.[ group ] &&
+			! shouldBypassBenchmarkCanaryNoisePause(
+				group,
+				state.pausedGroups?.[ group ]
+			);
+		const activeNoisePauseBlocksGroup =
+			activeNoisePause &&
+			! shouldBypassBenchmarkCanaryNoisePause( group, activeNoisePause );
+		const startupHoldBlocksGroup =
+			! benchmarkCanaryBypassesStartupNoise &&
+			isStartupHoldBlockingProducerGroup(
+				bootstrapProducerStartupHold,
+				group
+			);
+		if (
+			benchmarkCanaryBypassesStartupNoise &&
+			( state.pausedGroups?.[ group ] || activeNoisePause )
+		) {
+			delete state.pausedGroups?.[ group ];
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'bootstrap-benchmark-canary-bypass-startup-noise',
+				group,
+				reason:
+					getBenchmarkCanaryFeedbackReason( group ) ??
+					'benchmark canary feedback requires this equivalent fuzz lane',
+				...( activeNoisePause?.at
+					? { sourcePauseAt: activeNoisePause.at }
+					: {} ),
+				...( activeNoisePause?.reason
+					? { sourcePauseReason: activeNoisePause.reason }
+					: {} ),
+				...( activeNoisePause?.expiresAt
+					? { expiresAt: activeNoisePause.expiresAt }
+					: {} ),
+			} );
+		}
 		if (
 			! group ||
 			seen.has( group ) ||
 			! PROFILE_BY_GROUP[ group ] ||
 			state.disabledGroups?.[ group ] ||
-			state.pausedGroups?.[ group ] ||
-			activeNoisePause ||
+			storedPauseBlocksGroup ||
+			activeNoisePauseBlocksGroup ||
 			duplicateFamilyHoldBlock ||
-			isStartupHoldBlockingProducerGroup(
-				bootstrapProducerStartupHold,
-				group
-			)
+			startupHoldBlocksGroup
 		) {
-			if ( group && activeNoisePause ) {
+			if ( group && activeNoisePauseBlocksGroup ) {
 				state.changes.push( {
 					at: new Date().toISOString(),
 					action: 'skip-bootstrap-noise-cooldown',
@@ -10486,13 +12383,7 @@ async function ensureBootstrapSupervisorGroups() {
 						duplicateFamilyHoldBlock
 					),
 				} );
-			} else if (
-				group &&
-				isStartupHoldBlockingProducerGroup(
-					bootstrapProducerStartupHold,
-					group
-				)
-			) {
+			} else if ( group && startupHoldBlocksGroup ) {
 				state.changes.push( {
 					at: new Date().toISOString(),
 					action: 'skip-bootstrap-current-startup-noise-hold',
@@ -10855,6 +12746,24 @@ async function ensureBootstrapSupervisorGroups() {
 			} );
 		}
 	}
+	const benchmarkCanaryBootstrapStart = selected.length;
+	for ( const group of benchmarkCanaryForcedGroups ) {
+		if ( selected.length >= MAX_ENABLED_GROUPS ) {
+			break;
+		}
+		addGroup( group );
+	}
+	const benchmarkCanaryBootstrapGroups = selected
+		.slice( benchmarkCanaryBootstrapStart )
+		.filter( ( group ) => isBenchmarkCanaryForcedGroup( group ) );
+	if ( benchmarkCanaryBootstrapGroups.length > 0 ) {
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'bootstrap-benchmark-canary-supervisor-groups',
+			groups: benchmarkCanaryBootstrapGroups,
+			reason: 'active benchmark canary feedback must materialize equivalent fuzz lanes before generic breadth groups on a fresh coverage-guided supervisor',
+		} );
+	}
 	for ( const group of REQUIRED_COVERAGE_BREADTH_GROUPS ) {
 		if ( selected.length >= MAX_ENABLED_GROUPS ) {
 			break;
@@ -10915,6 +12824,11 @@ async function ensureBootstrapSupervisorGroups() {
 			] );
 			for ( const group of rescueGroups ) {
 				const activeNoisePause = getActiveNoisePauseCooldown( group );
+				const storedPause = state.pausedGroups?.[ group ];
+				const storedPauseBlocksRescue =
+					storedPause &&
+					( getStoredNoisePauseKind( storedPause ) ||
+						isCurrentOutputPause( storedPause ) );
 				const duplicateFamilyHoldBlock =
 					getBootstrapDuplicateFamilyHoldBlock( group );
 				if (
@@ -10924,8 +12838,8 @@ async function ensureBootstrapSupervisorGroups() {
 				) {
 					continue;
 				}
-				if ( state.pausedGroups?.[ group ] || activeNoisePause ) {
-					const pausedReason = state.pausedGroups?.[ group ]?.reason;
+				if ( storedPauseBlocksRescue || activeNoisePause ) {
+					const pausedReason = storedPause?.reason;
 					state.changes.push( {
 						at: new Date().toISOString(),
 						action: 'skip-bootstrap-rescue-noise-cooldown',
@@ -10964,6 +12878,16 @@ async function ensureBootstrapSupervisorGroups() {
 						),
 					} );
 					continue;
+				}
+				if ( storedPause ) {
+					delete state.pausedGroups[ group ];
+					state.changes.push( {
+						at: new Date().toISOString(),
+						action: 'clear-bootstrap-rescue-non-noise-pause',
+						group,
+						reason: 'empty materialization rescue may reuse a non-noise stored pause from a previous coverage root while preserving startup/noise cooldowns',
+						storedPauseReason: storedPause.reason,
+					} );
 				}
 				seen.add( group );
 				selected.push( group );
@@ -11067,6 +12991,48 @@ async function maybeLaunchCoverageCodex( guidance ) {
 	const currentDrainTriageYield =
 		state.triageYieldCurrentIncludingPausedNoAnalysis ??
 		currentPolicyTriageYield;
+	const currentActionGateHold = getCurrentRunActionGateDuplicateHold(
+		currentPolicyTriageYield
+	);
+	const currentDrainActionGateHold = getCurrentRunActionGateDuplicateHold(
+		currentDrainTriageYield
+	);
+	const currentDuplicateActionGateHold = currentActionGateHold
+		? { ...currentActionGateHold, scope: 'active current-run' }
+		: currentDrainActionGateHold
+		? { ...currentDrainActionGateHold, scope: 'active/drain current-run' }
+		: null;
+	if ( ! COVERAGE_GUIDANCE_CODEX_FORCE && currentDuplicateActionGateHold ) {
+		const productEvidenceNote =
+			( currentDuplicateActionGateHold.rawProductEvidenceSignatures ??
+				0 ) > 0 ||
+			( currentDuplicateActionGateHold.productEvidenceSignatures ?? 0 ) >
+				0 ||
+			( currentDuplicateActionGateHold.likelyRealVisible ?? 0 ) > 0
+				? '; preserve the visible product-evidence representative and rotate/cap siblings before more coverage Codex work'
+				: '; no product-evidence representative is visible for this duplicate/noise family';
+		const reason = `current duplicate/noise action gate is active for ${ currentDuplicateActionGateHold.family } in ${ currentDuplicateActionGateHold.scope } scope (${ currentDuplicateActionGateHold.count }/${ currentDuplicateActionGateHold.total } ${ currentDuplicateActionGateHold.source } signatures, share=${ currentDuplicateActionGateHold.share }${ productEvidenceNote })`;
+		if ( state.coverageGuidanceCurrentDuplicateHoldReason !== reason ) {
+			state.coverageGuidanceCurrentDuplicateHoldReason = reason;
+			state.coverageGuidanceCurrentDuplicateHoldLastAt =
+				new Date().toISOString();
+			state.changes.push( {
+				at: state.coverageGuidanceCurrentDuplicateHoldLastAt,
+				action: 'hold-coverage-guidance-codex-current-duplicate-action-gate',
+				reason,
+			} );
+		}
+		return;
+	}
+	if ( state.coverageGuidanceCurrentDuplicateHoldReason ) {
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'clear-coverage-guidance-current-duplicate-action-gate',
+			reason: 'current duplicate/noise action-gate hold cleared; coverage Codex may launch if other gates permit it',
+		} );
+		delete state.coverageGuidanceCurrentDuplicateHoldReason;
+		delete state.coverageGuidanceCurrentDuplicateHoldLastAt;
+	}
 	const currentRunHold = getCurrentRunDuplicateNoiseHold(
 		currentPolicyTriageYield,
 		{
@@ -11074,17 +13040,8 @@ async function maybeLaunchCoverageCodex( guidance ) {
 			requireNoProductEvidence: true,
 		}
 	);
-	const currentDrainHold = getCurrentRunDuplicateNoiseHold(
-		currentDrainTriageYield,
-		{
-			allowGenericDuplicate: true,
-			requireNoProductEvidence: true,
-		}
-	);
 	const currentStartupHold = isCurrentNoProductStartupHold( currentRunHold )
 		? { ...currentRunHold, scope: 'active current-run' }
-		: isCurrentNoProductStartupHold( currentDrainHold )
-		? { ...currentDrainHold, scope: 'active/drain current-run' }
 		: null;
 	if ( ! COVERAGE_GUIDANCE_CODEX_FORCE && currentStartupHold ) {
 		const reason = `current no-product startup-noise hold is active for ${ currentStartupHold.family } in ${ currentStartupHold.scope } scope (${ currentStartupHold.count } signatures, share=${ currentStartupHold.share }, source=${ currentStartupHold.source }); hold open-ended coverage Codex until strict startup noise leaves the current policy path`;
@@ -11642,24 +13599,88 @@ async function writeStatus(
 		`- successful records by profile: ${ JSON.stringify(
 			state.successfulRecordCountsByProfile ?? {}
 		) }`,
-		`- all-time records by transport: ${ JSON.stringify(
-			state.recordCountsByTransport ?? {}
-		) }`,
-		`- current-run records by profile: ${ JSON.stringify(
-			state.currentRunRecordCountsByProfile ?? {}
-		) }`,
+			`- all-time records by transport: ${ JSON.stringify(
+				state.recordCountsByTransport ?? {}
+			) }`,
+			`- all-time records by user count: ${ JSON.stringify(
+				state.userDocumentConcurrency?.byUserCount ?? {}
+			) }`,
+			`- successful records by user count: ${ JSON.stringify(
+				state.userDocumentConcurrency?.successfulByUserCount ?? {}
+			) }`,
+			`- successful records by profile/user count: ${ JSON.stringify(
+				state.userDocumentConcurrency?.successfulByProfileUserCount ?? {}
+			) }`,
+			`- successful records by transport/user count: ${ JSON.stringify(
+				state.userDocumentConcurrency?.successfulByTransportUserCount ?? {}
+			) }`,
+			`- successful records by collaborator mode: ${ JSON.stringify(
+				state.userDocumentConcurrency?.successfulByCollaboratorMode ?? {}
+			) }`,
+			`- successful records by action-user count: ${ JSON.stringify(
+				state.userDocumentConcurrency?.successfulByActionUserCount ?? {}
+			) }`,
+			`- successful lifecycle events by type/user count: ${ JSON.stringify(
+				state.userDocumentConcurrency?.successfulLifecycleByTypeUserCount ??
+					{}
+			) }`,
+			`- successful records by user/block bucket: ${ JSON.stringify(
+				state.userDocumentConcurrency?.successfulRecordsByUserBlockBucket ??
+					{}
+			) }`,
+			`- max users in one document: ${
+				state.userDocumentConcurrency?.maxUserCount ?? 0
+			}`,
+			`- max users who edited one document: ${
+				state.userDocumentConcurrency?.maxActionUserCount ?? 0
+			}`,
+			`- max extra collaborators in one document: ${
+				state.userDocumentConcurrency?.maxExtraCollaborators ?? 0
+			}`,
+			`- max total blocks in one document: ${
+				state.userDocumentConcurrency?.maxTotalBlocks ?? 0
+			}`,
+			`- max large-document blocks in one document: ${
+				state.userDocumentConcurrency?.maxLargeDocumentBlocks ?? 0
+			}`,
+			`- current-run records by profile: ${ JSON.stringify(
+				state.currentRunRecordCountsByProfile ?? {}
+			) }`,
 		`- current-run records by group: ${ JSON.stringify(
 			state.currentRunRecordCountsByGroup ?? {}
 		) }`,
 		`- current-run successful records by profile: ${ JSON.stringify(
 			state.currentRunSuccessfulRecordCountsByProfile ?? {}
 		) }`,
-		`- current-run records by transport: ${ JSON.stringify(
-			state.currentRunRecordCountsByTransport ?? {}
-		) }`,
-		`- current-run pre-action startup failures by profile: ${ JSON.stringify(
-			state.startupFailureCountsByProfile ?? {}
-		) }`,
+			`- current-run records by transport: ${ JSON.stringify(
+				state.currentRunRecordCountsByTransport ?? {}
+			) }`,
+			`- current-run records by user count: ${ JSON.stringify(
+				state.currentRunUserDocumentConcurrency?.byUserCount ?? {}
+			) }`,
+			`- current-run successful records by user count: ${ JSON.stringify(
+				state.currentRunUserDocumentConcurrency?.successfulByUserCount ?? {}
+			) }`,
+			`- current-run successful records by profile/user count: ${ JSON.stringify(
+				state.currentRunUserDocumentConcurrency
+					?.successfulByProfileUserCount ?? {}
+			) }`,
+			`- current-run successful records by action-user count: ${ JSON.stringify(
+				state.currentRunUserDocumentConcurrency
+					?.successfulByActionUserCount ?? {}
+			) }`,
+			`- current-run max users in one document: ${
+				state.currentRunUserDocumentConcurrency?.maxUserCount ?? 0
+			}`,
+			`- current-run max users who edited one document: ${
+				state.currentRunUserDocumentConcurrency?.maxActionUserCount ?? 0
+			}`,
+			`- current-run max total blocks in one document: ${
+				state.currentRunUserDocumentConcurrency?.maxTotalBlocks ?? 0
+			}`,
+			`- current-run pre-action startup failures by profile: ${ JSON.stringify(
+				state.startupFailureCountsByProfile ?? {}
+			) }`,
 		`- current-run pre-action startup failures by group: ${ JSON.stringify(
 			state.startupFailureCountsByGroup ?? {}
 		) }`,
@@ -11726,6 +13747,11 @@ async function writeStatus(
 			FORCE_COVERAGE_GUIDED_POLICY_GUARDS
 				? ' (coverage-guided forced)'
 				: ''
+		}`,
+		`- benchmark canary forced groups: ${
+			getBenchmarkCanaryForcedGroupsForStatus().length
+				? getBenchmarkCanaryForcedGroupsForStatus().join( ', ' )
+				: 'none'
 		}`,
 		`- recommended groups: ${
 			guidance.recommendedGroups.length
@@ -12055,6 +14081,10 @@ async function publishCurrentRunDirsEarly(
 }
 
 async function runPass() {
+	await refreshBenchmarkCanaryFeedbackState();
+	applyHttpProviderGatingStartupFixStateRepair();
+	applyLargeHttpLifecycleStartupFixStateRepair();
+	applyCollaborationReadinessStartupFixStateRepair();
 	let supervisorState = await readSupervisorState();
 	const resources = sampleResources();
 	if (
@@ -12098,6 +14128,12 @@ async function runPass() {
 	const restoredActiveNoiseCooldowns =
 		await applyActiveNoiseCooldownsToEnabledGroups( supervisorState );
 	if ( restoredActiveNoiseCooldowns > 0 ) {
+		await writeJsonFileAtomic( STATE_PATH, state );
+		await writeSupervisorGroupsForEnabledGroups( state.enabledGroups );
+	}
+	const repairedBenchmarkCanaryPausesAfterCooldowns =
+		applyBenchmarkCanaryFeedbackStateRepair();
+	if ( repairedBenchmarkCanaryPausesAfterCooldowns > 0 ) {
 		await writeJsonFileAtomic( STATE_PATH, state );
 		await writeSupervisorGroupsForEnabledGroups( state.enabledGroups );
 	}
@@ -12248,7 +14284,11 @@ async function runPass() {
 	await ensureCurrentRunCounters( currentCoverageFiles, currentSummaryFiles );
 	const summaryStats =
 		await readSummaryStartupFailures( currentSummaryFiles );
-	const guidance = createCoverageGuidance( novelty );
+	state.userDocumentConcurrency =
+		await summarizeUserDocumentConcurrency( coverageFiles );
+	state.currentRunUserDocumentConcurrency =
+		await summarizeUserDocumentConcurrency( currentCoverageFiles );
+	let guidance = createCoverageGuidance( novelty );
 	state.coverageGuidance = guidance;
 	evaluateHealth(
 		await readJsonFile( GROUPS_PATH ),
@@ -12355,6 +14395,12 @@ async function runPass() {
 				currentCoverageFiles,
 				currentSummaryFiles
 			);
+			state.userDocumentConcurrency =
+				await summarizeUserDocumentConcurrency( coverageFiles );
+			state.currentRunUserDocumentConcurrency =
+				await summarizeUserDocumentConcurrency( currentCoverageFiles );
+			guidance = createCoverageGuidance( novelty );
+			state.coverageGuidance = guidance;
 			evaluateHealth(
 				await readJsonFile( GROUPS_PATH ),
 				coverageFiles,
@@ -12389,6 +14435,12 @@ async function runPass() {
 			currentCoverageFiles,
 			currentSummaryFiles
 		);
+		state.userDocumentConcurrency =
+			await summarizeUserDocumentConcurrency( coverageFiles );
+		state.currentRunUserDocumentConcurrency =
+			await summarizeUserDocumentConcurrency( currentCoverageFiles );
+		guidance = createCoverageGuidance( novelty );
+		state.coverageGuidance = guidance;
 		evaluateHealth(
 			await readJsonFile( GROUPS_PATH ),
 			coverageFiles,
