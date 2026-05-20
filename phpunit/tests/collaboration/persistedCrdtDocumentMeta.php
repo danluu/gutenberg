@@ -22,6 +22,7 @@ class Tests_Collaboration_PersistedCrdtDocumentMeta extends WP_UnitTestCase {
 	public function set_up() {
 		parent::set_up();
 		delete_post_meta( self::$post_id, '_crdt_document' );
+		$this->reset_storage_post_id_cache();
 	}
 
 	/**
@@ -42,6 +43,48 @@ class Tests_Collaboration_PersistedCrdtDocumentMeta extends WP_UnitTestCase {
 		}
 
 		return wp_json_encode( $value );
+	}
+
+	/**
+	 * Resets the static room-to-storage-post cache.
+	 */
+	private function reset_storage_post_id_cache(): void {
+		if (
+			! class_exists( 'WP_Sync_Post_Meta_Storage' ) ||
+			! property_exists( 'WP_Sync_Post_Meta_Storage', 'storage_post_ids' )
+		) {
+			return;
+		}
+
+		$reflection = new ReflectionProperty( 'WP_Sync_Post_Meta_Storage', 'storage_post_ids' );
+		if ( PHP_VERSION_ID < 80100 ) {
+			$reflection->setAccessible( true );
+		}
+		$reflection->setValue( null, array() );
+	}
+
+	/**
+	 * Gets active storage posts that could be used as room storage lineages.
+	 *
+	 * @param string $room Room identifier.
+	 * @return array<int, object> Matching storage posts.
+	 */
+	private function get_storage_post_lineages( string $room ): array {
+		global $wpdb;
+
+		$room_hash = md5( $room );
+		return $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ID, post_name FROM {$wpdb->posts}
+				WHERE post_type = %s
+					AND post_status = 'publish'
+					AND ( post_name = %s OR post_name LIKE %s )
+				ORDER BY ID ASC",
+				WP_Sync_Post_Meta_Storage::POST_TYPE,
+				$room_hash,
+				$wpdb->esc_like( $room_hash . '-' ) . '%'
+			)
+		);
 	}
 
 	public function test_allows_update_when_base_version_matches_current_document(): void {
@@ -99,6 +142,20 @@ class Tests_Collaboration_PersistedCrdtDocumentMeta extends WP_UnitTestCase {
 		$original_value = $this->create_crdt_document_meta_value( 'original-document' );
 		$this->assertNotFalse( update_post_meta( $post_id, '_crdt_document', $original_value ) );
 
+		$sync_storage = new WP_Sync_Post_Meta_Storage();
+		$sync_room    = 'postType/post:' . $post_id;
+		$this->assertTrue(
+			$sync_storage->add_update(
+				$sync_room,
+				array(
+					'type' => 'update',
+					'data' => 'newer-room-update',
+				)
+			)
+		);
+		$this->assertTrue( $sync_storage->set_awareness_state( $sync_room, array( 1 => array( 'name' => 'Stale User' ) ) ) );
+		$this->assertCount( 1, $this->get_storage_post_lineages( $sync_room ) );
+
 		$revision_id = wp_save_post_revision( $post_id );
 		$this->assertIsInt( $revision_id );
 		$this->assertGreaterThan( 0, $revision_id );
@@ -118,6 +175,9 @@ class Tests_Collaboration_PersistedCrdtDocumentMeta extends WP_UnitTestCase {
 		$this->assertIsInt( wp_restore_post_revision( $revision_id ) );
 
 		$this->assertSame( '', get_post_meta( $post_id, '_crdt_document', true ) );
+		if ( method_exists( $sync_storage, 'delete_room' ) ) {
+			$this->assertCount( 0, $this->get_storage_post_lineages( $sync_room ) );
+		}
 
 		wp_delete_post( $post_id, true );
 	}

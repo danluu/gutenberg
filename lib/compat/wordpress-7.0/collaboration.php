@@ -100,12 +100,16 @@ if ( ! function_exists( 'wp_collaboration_register_meta' ) ) {
 
 if ( ! function_exists( 'gutenberg_delete_crdt_document_meta_on_revision_restore' ) ) {
 	/**
-	 * Deletes persisted CRDT document meta after restoring an older post revision.
+	 * Deletes collaborative persistence after restoring an older post revision.
 	 *
 	 * The persisted CRDT document is a snapshot of collaborative state for the
 	 * current post content. If an older revision is restored while a newer CRDT
 	 * snapshot remains in post meta, the next collaborative load can apply that
 	 * newer snapshot and resurrect content that the restore just removed.
+	 *
+	 * The HTTP sync room stores incremental updates and awareness separately from
+	 * the persisted CRDT snapshot, so reset that room too. Otherwise a reload can
+	 * rebuild from the restored post fields and then rehydrate newer room updates.
 	 *
 	 * @param int $post_id      Post ID.
 	 * @param int $_revision_id Revision ID.
@@ -113,6 +117,16 @@ if ( ! function_exists( 'gutenberg_delete_crdt_document_meta_on_revision_restore
 	function gutenberg_delete_crdt_document_meta_on_revision_restore( int $post_id, int $_revision_id ): void {
 		unset( $_revision_id );
 		delete_post_meta( $post_id, '_crdt_document' );
+
+		$post_type = get_post_type( $post_id );
+		if ( ! is_string( $post_type ) || '' === $post_type ) {
+			return;
+		}
+
+		$sync_storage = new WP_Sync_Post_Meta_Storage();
+		if ( method_exists( $sync_storage, 'delete_room' ) ) {
+			$sync_storage->delete_room( 'postType/' . $post_type . ':' . $post_id );
+		}
 	}
 	add_action( 'wp_restore_post_revision', 'gutenberg_delete_crdt_document_meta_on_revision_restore', 10, 2 );
 }
