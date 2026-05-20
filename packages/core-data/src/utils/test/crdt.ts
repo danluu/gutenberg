@@ -1037,6 +1037,43 @@ describe( 'crdt', () => {
 			expect( changes ).not.toHaveProperty( 'blocks' );
 		} );
 
+		it( 'ignores stale persisted content text when persisted blocks match the record content', () => {
+			registerEntityReferenceBlocks();
+
+			const persistedContent = [
+				'<!-- wp:paragraph -->',
+				'<p>rtc-save-paragraph-marker-1020001-1-0-end</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+			const staleContent = [
+				'<!-- wp:paragraph -->',
+				'<p>stale content before save</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: parse( persistedContent ) } as PostChanges,
+				defaultSyncedProperties
+			);
+			map.set( 'content', new Y.Text( staleContent ) );
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					content: {
+						raw: persistedContent,
+						rendered: persistedContent,
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).not.toHaveProperty( 'blocks' );
+			expect( changes ).not.toHaveProperty( 'content' );
+		} );
+
 		it( 'invalidates persisted entity blocks when the generated content really changed', () => {
 			registerEntityReferenceBlocks();
 

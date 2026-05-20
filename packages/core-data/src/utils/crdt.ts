@@ -553,6 +553,16 @@ export function getPostChangesFromCRDTDoc(
 				case 'content':
 				case 'excerpt':
 				case 'title': {
+					if (
+						key === 'content' &&
+						ydoc.meta?.get( CRDT_DOC_META_PERSISTENCE_KEY ) &&
+						ymap.get( 'blocks' ) instanceof Y.Array
+					) {
+						// Persisted block content is validated in the `blocks`
+						// case above; a stale content field must not overwrite it.
+						return false;
+					}
+
 					return haveValuesChanged(
 						getRawValue( currentValue ),
 						newValue
