@@ -130,6 +130,48 @@ class Tests_Collaboration_WpSyncPostMetaStorage extends WP_UnitTestCase {
 		return $storage_post_id;
 	}
 
+	public function test_delete_room_removes_storage_lineages_and_resets_cached_room_state(): void {
+		$this->skip_if_sync_storage_class_is_provided_by_wordpress_core();
+
+		$storage         = new WP_Sync_Post_Meta_Storage();
+		$room            = $this->get_room() . ':delete-room';
+		$storage_post_id = $this->create_storage_post( $storage, $room );
+		$suffixed_id     = wp_insert_post(
+			array(
+				'post_type'   => WP_Sync_Post_Meta_Storage::POST_TYPE,
+				'post_status' => 'publish',
+				'post_title'  => 'Duplicate Sync Storage',
+				'post_name'   => md5( $room ) . '-2',
+			)
+		);
+
+		$this->assertIsInt( $suffixed_id );
+		$this->assertTrue( $storage->set_awareness_state( $room, array( 1 => array( 'name' => 'Stale' ) ) ) );
+		$storage->get_updates_after_cursor( $room, 0 );
+		$this->assertGreaterThan( 0, $storage->get_cursor( $room ) );
+		$this->assertGreaterThan( 0, $storage->get_update_count( $room ) );
+		$this->assertNotEmpty( $storage->get_awareness_state( $room ) );
+		$this->assertCount( 2, $this->get_storage_post_lineages( $room ) );
+
+		$this->assertTrue( $storage->delete_room( $room ) );
+
+		$this->assertSame( 0, $storage->get_cursor( $room ) );
+		$this->assertSame( 0, $storage->get_update_count( $room ) );
+		$this->assertCount( 0, $this->get_storage_post_lineages( $room ) );
+
+		$next_update = array(
+			'type' => 'update',
+			'data' => 'after-delete',
+		);
+		$this->assertTrue( $storage->add_update( $room, $next_update ) );
+
+		$new_lineages = $this->get_storage_post_lineages( $room );
+		$this->assertCount( 1, $new_lineages );
+		$this->assertNotSame( $storage_post_id, (int) $new_lineages[0]->ID );
+		$this->assertSame( array( $next_update ), $storage->get_updates_after_cursor( $room, 0 ) );
+		$this->assertSame( array(), $storage->get_awareness_state( $room ) );
+	}
+
 	/**
 	 * Primes the post meta object cache for a given post and returns the cached value.
 	 *

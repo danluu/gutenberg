@@ -1186,6 +1186,11 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 				return true;
 			}
 
+			public function delete_room( string $room ): bool {
+				unset( $this->rooms[ $room ], $this->cursors[ $room ], $this->update_counts[ $room ] );
+				return true;
+			}
+
 			public function get_awareness_state( string $room ): array {
 				unset( $room );
 				return array();

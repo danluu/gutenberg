@@ -20,6 +20,16 @@ if ( ! interface_exists( 'WP_Sync_Storage' ) ) {
 		public function add_update( string $room, $update ): bool;
 
 		/**
+		 * Deletes all sync storage for a given room.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param string $room Room identifier.
+		 * @return bool True on success, false on failure.
+		 */
+		public function delete_room( string $room ): bool;
+
+		/**
 		 * Gets awareness state for a given room.
 		 *
 		 * @since 7.0.0
