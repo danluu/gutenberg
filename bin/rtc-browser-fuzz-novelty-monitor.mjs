@@ -607,6 +607,20 @@ const MATERIALIZATION_FLOOR_GROUPS = [
 	'novelty-http-large-post-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
 ];
+const ZERO_COVERAGE_PRIORITY_GROUPS = [
+	'novelty-ws-collaboration-ui-signals',
+	'novelty-ws-many-user-lifecycle',
+];
+const ZERO_COVERAGE_EVICTION_ORDER = [
+	'novelty-ws-block-gauntlet',
+	'novelty-ws-common-blocks',
+	'novelty-ws-parser-transform',
+	'novelty-ws-parser-serialization',
+	'novelty-ws-long-session-large-doc',
+	'novelty-ws-real-user-editing',
+	'novelty-ws-real-user-save-reload',
+	'novelty-ws-real-user-rich-text',
+];
 
 const AUTO_EXPANSION_GOAL_CANDIDATES = [
 	{
@@ -9642,6 +9656,45 @@ async function applyPolicy(
 		await enableGroup(
 			'novelty-http-persistence-probe',
 			'HTTP persistence canary is absent; run a low-fault persistence lane to keep transport coverage mixed'
+		);
+	}
+
+	for ( const group of ZERO_COVERAGE_PRIORITY_GROUPS ) {
+		if ( enabled.has( group ) ) {
+			continue;
+		}
+		const gapsForGroup = ( guidance?.unmetGoals ?? [] ).filter(
+			( goal ) => goal.count === 0 && goal.groups.includes( group )
+		);
+		if ( gapsForGroup.length === 0 ) {
+			continue;
+		}
+		while ( enabled.size >= MAX_ENABLED_GROUPS ) {
+			const eviction = ZERO_COVERAGE_EVICTION_ORDER.find(
+				( candidate ) =>
+					enabled.has( candidate ) &&
+					! ZERO_COVERAGE_PRIORITY_GROUPS.includes( candidate )
+			);
+			if ( ! eviction ) {
+				break;
+			}
+			await pauseGroup(
+				eviction,
+				`zero-coverage high-priority RTC surface ${ group } needs a browser slot before lower-priority coverage top-offs; gaps=${ gapsForGroup
+					.slice( 0, 3 )
+					.map(
+						( goal ) => `${ goal.id }=${ goal.count }/${ goal.target }`
+					)
+					.join( ', ' ) }`
+			);
+		}
+		await enableGroup(
+			group,
+			`zero-coverage high-priority RTC surface: ${ gapsForGroup
+				.slice( 0, 3 )
+				.map( ( goal ) => `${ goal.id }=${ goal.count }/${ goal.target }` )
+				.join( ', ' ) }`,
+			{ allowRotation: true }
 		);
 	}
 
