@@ -141,6 +141,7 @@ type RestPost = {
 	meta?: {
 		_crdt_document?: string | null;
 	};
+	status?: string;
 	title?: RestRenderedField | string;
 };
 
@@ -436,13 +437,23 @@ const ACTION_PROFILE =
 const OPERATION_LEDGER_MODE =
 	process.env.GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE ?? 'auto';
 const FINAL_PERSISTENCE_ORACLE_MODE = getFinalPersistenceOracleMode();
+const ENABLE_FINAL_UI_WITNESS_SWEEP =
+	process.env.GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP === '1' ||
+	ACTION_PROFILE === 'large-post-three-user-http-lifecycle';
+const ENABLE_FINAL_PUBLISH_ORACLE =
+	process.env.GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH === '1' ||
+	ACTION_PROFILE === 'large-post-three-user-http-lifecycle';
 const DISABLE_PARSER_STRESS =
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_PARSER_STRESS === '1';
 const SOFT_DISCOVERY_BOOTSTRAP =
 	process.env.GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP === '1';
 const EXTRA_COLLABORATOR_COUNT = getEnvNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS',
-	[ 'session-lifecycle', 'three-user-late-join' ].includes( ACTION_PROFILE )
+	[
+		'large-post-three-user-http-lifecycle',
+		'session-lifecycle',
+		'three-user-late-join',
+	].includes( ACTION_PROFILE )
 		? 1
 		: 0
 );
@@ -452,6 +463,7 @@ const ENABLE_LIFECYCLE_EVENTS =
 		'session-lifecycle',
 		'three-user-late-join',
 		'multi-reload-lifecycle',
+		'large-post-three-user-http-lifecycle',
 	].includes( ACTION_PROFILE );
 const LIFECYCLE_RELOAD_COUNT = getEnvNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT',
@@ -483,9 +495,18 @@ const RELOAD_POST_ACTION_KIND =
 const FORCE_RELOAD_STEPS = getEnvIntList(
 	'GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS'
 );
+function getDefaultLargeDocumentBlocks() {
+	if ( ACTION_PROFILE === 'large-post-three-user-http-lifecycle' ) {
+		return 160;
+	}
+	if ( ACTION_PROFILE === 'long-session-large-doc' ) {
+		return 80;
+	}
+	return 0;
+}
 const LARGE_DOCUMENT_BLOCKS = getEnvNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS',
-	ACTION_PROFILE === 'long-session-large-doc' ? 80 : 0
+	getDefaultLargeDocumentBlocks()
 );
 const INCLUDE_AUTH_SYNC_FAILURES =
 	process.env.GUTENBERG_RTC_BROWSER_INCLUDE_AUTH_SYNC_FAILURES === '1' ||
@@ -701,6 +722,7 @@ function isLowNoiseOperationLedgerProfile() {
 		'async-server-blocks',
 		'permissions-auth-locks',
 		'long-session-large-doc',
+		'large-post-three-user-http-lifecycle',
 	].includes( ACTION_PROFILE );
 }
 
@@ -722,7 +744,8 @@ function getOperationLedgerMode(): OperationLedgerMode {
 	return isLowNoiseOperationLedgerProfile() &&
 		( DISABLE_PARSER_STRESS ||
 			ACTION_PROFILE === 'persistence' ||
-			ACTION_PROFILE === 'persistence-no-title' )
+			ACTION_PROFILE === 'persistence-no-title' ||
+			ACTION_PROFILE === 'large-post-three-user-http-lifecycle' )
 		? 'fail'
 		: 'shadow';
 }
@@ -2526,7 +2549,7 @@ async function getPersistedPost(
 		path: `/wp/v2/posts/${ postId }`,
 		params: {
 			context: 'edit',
-			_fields: 'id,title.raw,content.raw,meta',
+			_fields: 'id,status,title.raw,content.raw,meta',
 		},
 	} );
 }
@@ -2622,6 +2645,32 @@ async function waitForPersistedPostTitleMarker(
 
 	throw new Error(
 		`Persisted post title did not include marker "${ marker }". Last title: ${ lastTitle }`
+	);
+}
+
+async function waitForPersistedPostStatus(
+	requestUtils: RestRequestUtils,
+	postId: number,
+	status: string
+): Promise< RestPost > {
+	const deadline = Date.now() + CONVERGENCE_TIMEOUT_MS;
+	let lastStatus = '';
+
+	while ( Date.now() < deadline ) {
+		const post = await getPersistedPost( requestUtils, postId );
+		lastStatus = post.status ?? '';
+
+		if ( lastStatus === status ) {
+			return post;
+		}
+
+		await new Promise( ( resolve ) =>
+			setTimeout( resolve, PERSISTED_POST_MARKER_POLL_INTERVAL_MS )
+		);
+	}
+
+	throw new Error(
+		`Persisted post status did not become "${ status }". Last status: ${ lastStatus }`
 	);
 }
 
@@ -4955,6 +5004,89 @@ async function autosaveCheckpointAndVerify( {
 	await waitForLocalAutosaveMarker( saver.page, postId, marker );
 }
 
+async function maybeRunFinalUiWitnessSweep( {
+	collaborationUtils,
+	coverage,
+	ledger,
+	pages,
+	rng,
+	seed,
+}: {
+	collaborationUtils: CollaborationUtils;
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	pages: PageRef[];
+	rng: Random;
+	seed: number;
+} ) {
+	if ( ! ENABLE_FINAL_UI_WITNESS_SWEEP || pages.length === 0 ) {
+		return;
+	}
+
+	const phase = 'final-ui-witness-sweep';
+	const step = STEP_COUNT;
+	recordHistory( coverage, {
+		phase,
+		status: 'invoke',
+		step,
+	} );
+
+	try {
+		const witnessSets = await Promise.all(
+			pages.map( ( { page, userIndex } ) =>
+				typeRealUserParagraph( page, seed, step, userIndex, rng, {
+					kind: 'final-ui-witness',
+				} )
+			)
+		);
+		const state = await collaborationUtils.waitForConvergence( {
+			includeCrdtDocument: true,
+			timeout: CONVERGENCE_TIMEOUT_MS,
+		} );
+
+		for ( const [ index, pageRef ] of pages.entries() ) {
+			acknowledgeOperationWitnesses( {
+				actionLabel: 'final-ui-witness-sweep',
+				coverage,
+				ledger,
+				phase,
+				state,
+				step,
+				userIndex: pageRef.userIndex,
+				witnesses: witnessSets[ index ] ?? [],
+			} );
+		}
+
+		assertOperationLedgerPreserved( {
+			coverage,
+			ledger,
+			phase: 'final-ui-witness-sweep-convergence',
+			state,
+			step,
+		} );
+		await assertEditorInvariants( {
+			coverage,
+			pages,
+			phase: 'final-ui-witness-sweep-convergence',
+			step,
+		} );
+		recordHistory( coverage, {
+			details: { userCount: pages.length },
+			phase,
+			status: 'ok',
+			step,
+		} );
+	} catch ( error ) {
+		recordHistory( coverage, {
+			details: { error: String( error ) },
+			phase,
+			status: 'fail',
+			step,
+		} );
+		throw error;
+	}
+}
+
 async function maybeRunFinalPersistenceOracle( {
 	collaborationUtils,
 	coverage,
@@ -5117,10 +5249,64 @@ async function maybeRunFinalPersistenceOracle( {
 		} );
 	}
 
+	let publishedStatus: string | undefined;
+	if ( ENABLE_FINAL_PUBLISH_ORACLE ) {
+		recordHistory( coverage, {
+			phase: 'final-persistence-publish',
+			status: 'invoke',
+			userIndex: saver.userIndex,
+		} );
+		await saver.editor.publishPost();
+		const publishedPost = await waitForPersistedPostStatus(
+			requestUtils,
+			postId,
+			'publish'
+		);
+		publishedStatus = publishedPost.status;
+
+		if ( FINAL_PERSISTENCE_ORACLE_MODE === 'fail' ) {
+			await assertOperationLedgerPersisted( {
+				coverage,
+				ledger,
+				phase: 'final-persistence-published-rest',
+				postId,
+				requestUtils,
+			} );
+		}
+
+		for ( const { page } of pages ) {
+			await reloadAndWait( page, collaborationUtils );
+		}
+
+		const postPublishReloadState =
+			await collaborationUtils.waitForConvergence( {
+				includeCrdtDocument: true,
+				timeout: CONVERGENCE_TIMEOUT_MS,
+			} );
+		assertOperationLedgerPreserved( {
+			coverage,
+			ledger,
+			phase: 'final-persistence-post-publish-reload',
+			state: postPublishReloadState,
+		} );
+		await assertEditorInvariants( {
+			coverage,
+			pages,
+			phase: 'final-persistence-post-publish-reload',
+		} );
+		recordHistory( coverage, {
+			details: { status: publishedStatus },
+			phase: 'final-persistence-publish',
+			status: 'ok',
+			userIndex: saver.userIndex,
+		} );
+	}
+
 	recordHistory( coverage, {
 		details: {
 			mode: FINAL_PERSISTENCE_ORACLE_MODE,
 			persistedContentHash: hashString( canonicalPersistedContent ),
+			publishedStatus,
 		},
 		phase,
 		status: failures.length > 0 ? 'fail' : 'ok',
@@ -5907,6 +6093,29 @@ function getActiveActions(): PageAction[] {
 				( ACTION_PROFILE !== 'persistence-no-title' ||
 					action.label !== 'edit-title' )
 		);
+	}
+
+	if ( ACTION_PROFILE === 'large-post-three-user-http-lifecycle' ) {
+		return getActionsByWeightedLabels( [
+			'ui-type-paragraph',
+			'ui-type-paragraph',
+			'ui-type-title',
+			'ui-undo-redo-paragraph',
+			'ui-paste-paragraph',
+			'ui-link-paragraph',
+			'ui-list-indent',
+			'ui-toolbar-format-paragraph',
+			'ui-table-cell-edit',
+			'concurrent-paragraphs',
+			'move-block',
+			'move-block',
+			'edit-table-array-attributes',
+			'insert-nested-group',
+			'move-block-into-group',
+			'append-paragraph',
+			'insert-heading',
+			'insert-async-server-block',
+		] );
 	}
 
 	if (
@@ -6871,6 +7080,15 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 							: 1
 					).toBeGreaterThan( 0 );
 				}
+
+				await maybeRunFinalUiWitnessSweep( {
+					collaborationUtils,
+					coverage: behavior,
+					ledger: operationLedger,
+					pages,
+					rng,
+					seed,
+				} );
 
 				let finalState;
 				try {

@@ -82,6 +82,8 @@ cleanup_strict_wp_env() {
 		ws-common-blocks
 		ws-multi-reload-lifecycle
 		http-persistence-probe
+		http-same-user-stale-draft
+		http-large-lifecycle
 	)
 
 	pids=$(
@@ -227,6 +229,8 @@ profiles=(
 	ws-common-blocks
 	ws-multi-reload-lifecycle
 	http-persistence-probe
+	http-same-user-stale-draft
+	http-large-lifecycle
 )
 for idx in "${!profiles[@]}"; do
 	p=${profiles[$idx]}
@@ -360,6 +364,49 @@ const specs = [
 		6000001,
 		10,
 		{ GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail' },
+	],
+	[
+		'http-same-user-stale-draft',
+		'http',
+		'session-lifecycle',
+		6050001,
+		24,
+		{
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE: 'same-user',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4,9,14,20',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
+		},
+	],
+	[
+		'http-large-lifecycle',
+		'http',
+		'large-post-three-user-http-lifecycle',
+		6100001,
+		36,
+		{
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '6,14,24',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '8,18,28',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '160',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH: '1',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '512',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1800000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1800000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
+		},
 	],
 ];
 const groups = specs.map((spec, i) => {

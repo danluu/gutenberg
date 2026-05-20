@@ -139,6 +139,8 @@ profiles=(
 	auth-locks-b
 	long-doc-b
 	same-user-stale-tabs
+	same-user-stale-tabs-http
+	large-http-lifecycle
 )
 
 for p in "${profiles[@]}"; do
@@ -359,6 +361,47 @@ const specs = [
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 		},
 	],
+	[
+		'same-user-stale-tabs-http',
+		'session-lifecycle',
+		7720001,
+		24,
+		{
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE: 'same-user',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4,9,14,20',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
+		},
+	],
+	[
+		'large-http-lifecycle',
+		'large-post-three-user-http-lifecycle',
+		7800001,
+		36,
+		{
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '6,14,24',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '8,18,28',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '160',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH: '1',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '512',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1800000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1800000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '120000',
+		},
+	],
 ];
 const enabledNames = new Set( [
 	'late-join-b',
@@ -369,6 +412,8 @@ const enabledNames = new Set( [
 	'auth-locks-b',
 	'long-doc-b',
 	'same-user-stale-tabs',
+	'same-user-stale-tabs-http',
+	'large-http-lifecycle',
 ] );
 const portBase = Number.parseInt(
 	process.env.RTC_FOCUSED_SHARDS_PORT_BASE || '9700',
@@ -384,15 +429,20 @@ const groups = specs.map( ( spec, index ) => ( { spec, index } ) ).filter(
 	( { spec: [ name, actionProfile, startSeed, stepCount, extraEnv ], index: i } ) => {
 		const port = portBase + i * 4;
 		const wsPort = wsPortBase + i;
+		const transport =
+			name === 'large-http-lifecycle' ||
+			name === 'same-user-stale-tabs-http'
+				? 'http'
+				: 'ws';
 		return {
 			name: `focused-${ name }`,
 			repoRoot: `${ reposBase }/${ name }`,
-			transport: 'ws',
+			transport,
 			fuzzLevel: 'browser-e2e',
 			lanes: name === 'rich-text-b' ? 4 : 1,
 			startSeed,
 			stepCount,
-			wsPort,
+			...( transport === 'ws' ? { wsPort } : {} ),
 			env: {
 				WP_ENV_HOME: `${ base }/wp-env/${ name }`,
 				WP_ENV_PORT: String( port ),

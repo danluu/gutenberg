@@ -14,6 +14,28 @@ import type { Editor } from '@wordpress/e2e-test-utils-playwright';
 import { test, expect } from './fixtures';
 import type { UserCredentials } from './fixtures/collaboration-utils';
 
+type RestRequestUtils = {
+	rest: < T = unknown >( options: {
+		params?: Record< string, string >;
+		path: string;
+	} ) => Promise< T >;
+};
+
+type RestRenderedField = {
+	raw?: string;
+	rendered?: string;
+};
+
+type RestPost = {
+	content?: RestRenderedField | string;
+	id: number;
+	meta?: {
+		_crdt_document?: string | null;
+	};
+	status?: string;
+	title?: RestRenderedField | string;
+};
+
 /*
  * All non-admin users need at minimum the 'editor' role so they can
  * edit a post created by the admin.  WordPress author / contributor
@@ -317,6 +339,59 @@ async function typeNewParagraphAfterHeading(
 	await pg.keyboard.insertText( paragraphText );
 }
 
+function getRawFieldValue( field: RestRenderedField | string | undefined ) {
+	if ( typeof field === 'string' ) {
+		return field;
+	}
+
+	return field?.raw ?? field?.rendered ?? '';
+}
+
+async function getPersistedPost(
+	requestUtils: RestRequestUtils,
+	postId: number
+): Promise< RestPost > {
+	return requestUtils.rest< RestPost >( {
+		path: `/wp/v2/posts/${ postId }`,
+		params: {
+			context: 'edit',
+			_fields: 'id,status,title.raw,content.raw,meta',
+		},
+	} );
+}
+
+async function assertEditorContainsMarkers( ed: Editor, markers: string[] ) {
+	await expect( async () => {
+		const blocks = await ed.getBlocks();
+		const allContent = JSON.stringify( blocks );
+
+		for ( const marker of markers ) {
+			expect( allContent ).toContain( marker );
+		}
+	} ).toPass( { timeout: 15_000 } );
+}
+
+async function assertPublishedRestWitnesses(
+	requestUtils: RestRequestUtils,
+	postId: number,
+	markers: string[]
+) {
+	await expect( async () => {
+		const persistedPost = await getPersistedPost( requestUtils, postId );
+		const persistedContent = getRawFieldValue( persistedPost.content );
+		const persistedTitle = getRawFieldValue( persistedPost.title );
+
+		expect( persistedPost.status ).toBe( 'publish' );
+		expect( persistedTitle ).toContain(
+			'RTC Stress Test — Edited by Editor'
+		);
+		for ( const marker of markers ) {
+			expect( persistedContent ).toContain( marker );
+		}
+		expect( persistedPost.meta?._crdt_document ).toBeTruthy();
+	} ).toPass( { timeout: 15_000 } );
+}
+
 // ── Tests ───────────────────────────────────────────────────────────
 
 test.describe( 'Collaboration - Stress Test', () => {
@@ -526,6 +601,38 @@ test.describe( 'Collaboration - Stress Test', () => {
 		// ── Phase 7 — Final save and publish ────────────────────
 		await editor.saveDraft();
 		await editor.publishPost();
+
+		const finalMarkers = [
+			'Admin typed this paragraph in Phase 2',
+			'Admin was here',
+			'Editor was here',
+			'Final paragraph from Admin',
+			'Final paragraph from Editor',
+			'Final paragraph from Author',
+		];
+		await assertPublishedRestWitnesses(
+			requestUtils,
+			post.id,
+			finalMarkers
+		);
+
+		await Promise.all(
+			collaborationUtils.allPages.map( async ( pg ) => {
+				await pg.reload( { waitUntil: 'load' } );
+				await collaborationUtils.waitForCollaborationReady( pg );
+			} )
+		);
+		await collaborationUtils.waitForMutualDiscovery();
+
+		for ( const ed of collaborationUtils.allEditors ) {
+			await assertEditorContainsMarkers( ed, finalMarkers );
+		}
+
+		const finalState = await collaborationUtils.waitForConvergence( {
+			includeCrdtDocument: true,
+			timeout: 15_000,
+		} );
+		expect( finalState.crdtDocument ).not.toBeNull();
 	} );
 
 	test( 'two users concurrently move list items', async ( {
