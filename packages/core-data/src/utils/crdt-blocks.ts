@@ -1062,7 +1062,8 @@ function findStrictYBlockIndex( yblocks: YBlocks, block: Block ): number {
 function mergeYBlocksLocalSuffixAppend(
 	yblocks: YBlocks,
 	blocksToSync: Block[],
-	baseBlocks: Block[]
+	baseBlocks: Block[],
+	attributeCursor: MergeCursorPosition
 ): void {
 	if ( blocksToSync.length <= baseBlocks.length || baseBlocks.length === 0 ) {
 		return;
@@ -1091,6 +1092,11 @@ function mergeYBlocksLocalSuffixAppend(
 		const existingIndex = findEquivalentYBlockIndex( yblocks, block );
 
 		if ( existingIndex !== -1 ) {
+			mergeBlockIntoYBlock(
+				yblocks.get( existingIndex ),
+				block,
+				attributeCursor
+			);
 			insertIndex = Math.max( insertIndex, existingIndex + 1 );
 			continue;
 		}
@@ -1121,7 +1127,12 @@ function mergeYBlocksLocalChanges(
 		return false;
 	}
 
-	mergeYBlocksLocalSuffixAppend( yblocks, blocksToSync, baseBlocks );
+	mergeYBlocksLocalSuffixAppend(
+		yblocks,
+		blocksToSync,
+		baseBlocks,
+		attributeCursor
+	);
 
 	const sharedLength = Math.min( baseBlocks.length, blocksToSync.length );
 

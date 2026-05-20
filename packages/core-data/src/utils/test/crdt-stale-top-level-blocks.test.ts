@@ -237,6 +237,44 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 	} );
 
+	it( 'updates an already-present local suffix append with the latest content', () => {
+		const partialContent =
+			'rtcw-7310672-7-u1-ui-undo-redo-paragraph-9gmc undo redo pa';
+		const fullContent =
+			'rtcw-7310672-7-u1-ui-undo-redo-paragraph-9gmc undo redo paragraph';
+		const baseBlocks = [
+			paragraph( 'intro', 'Alpha' ),
+			paragraph( 'unchanged', 'Beta' ),
+		];
+		const currentBlocks = [
+			...baseBlocks,
+			paragraph( 'local-appended', partialContent ),
+		];
+		const blocksWithUpdatedLocalAppend = [
+			...baseBlocks,
+			paragraph( 'local-appended', fullContent ),
+		];
+
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		mergeCrdtBlocks(
+			yblocks,
+			blocksWithUpdatedLocalAppend,
+			null,
+			baseBlocks
+		);
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha',
+			'Beta',
+			fullContent,
+		] );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'intro',
+			'unchanged',
+			'local-appended',
+		] );
+	} );
+
 	it( 'does not collapse distinct appended blocks with matching content', () => {
 		const baseBlocks = [ paragraph( 'base', 'Alpha' ) ];
 		const currentBlocks = [
