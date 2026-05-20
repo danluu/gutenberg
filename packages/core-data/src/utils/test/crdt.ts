@@ -1092,6 +1092,65 @@ describe( 'crdt', () => {
 			expect( changes ).toHaveProperty( 'blocks' );
 		} );
 
+		it( 'derives content from blocks when persisted CRDT blocks and content diverge', () => {
+			registerEntityReferenceBlocks();
+
+			const blocks = [
+				{
+					name: 'core/paragraph',
+					clientId: 'paragraph-1',
+					attributes: {
+						content: 'Fresh marker content',
+					},
+					innerBlocks: [],
+				},
+			];
+			const serializedBlocks =
+				__unstableSerializeAndClean( blocks ).trim();
+			const oldPersistedContent = [
+				'<!-- wp:paragraph -->',
+				'<p>Old persisted content.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+			const editedRecord = {
+				content: {
+					raw: oldPersistedContent,
+				},
+			} as unknown as Post;
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks } as PostChanges,
+				defaultSyncedProperties
+			);
+			map.set( 'content', new Y.Text( 'Stale CRDT content' ) );
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				editedRecord,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).toHaveProperty( 'blocks' );
+			expect( changes.content ).toBe( serializedBlocks );
+
+			map.set( 'content', new Y.Text( oldPersistedContent ) );
+
+			const changesFromUnchangedCrdtContent = getPostChangesFromCRDTDoc(
+				doc,
+				editedRecord,
+				defaultSyncedProperties
+			);
+
+			expect( changesFromUnchangedCrdtContent ).toHaveProperty(
+				'blocks'
+			);
+			expect( changesFromUnchangedCrdtContent.content ).toBe(
+				serializedBlocks
+			);
+		} );
+
 		it( 'detects content changes from string value', () => {
 			map.set( 'content', new Y.Text( 'New content' ) );
 
