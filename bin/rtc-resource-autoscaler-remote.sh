@@ -585,6 +585,10 @@ ramp_startup_target() {
 	if [ "$desired_target" -gt "$cap" ]; then
 		desired_target=$cap
 	fi
+	cap=$(( desired_target + 1 ))
+	if [ "$desired_max" -gt "$cap" ]; then
+		desired_max=$cap
+	fi
 	if [ "$desired_max" -le "$desired_target" ]; then
 		desired_max=$(( desired_target + 1 ))
 	fi
@@ -1102,11 +1106,24 @@ while true; do
 	fi
 	action=observe
 	IFS=$'\t' read -r supervisor_state_path materialized_group_count materialized_active_run_dirs paused_infra_startup_groups materialized_running_groups supervisor_status_counts supervisor_state_age_seconds materialization_detail <<<"$(materialization_snapshot)"
-	if [ "$desired_target" -gt "${target:-0}" ]; then
-		read -r desired_target desired_max <<<"$(ramp_startup_target "$target" "$desired_target" "$desired_max")"
+	ramp_base_target=${target:-0}
+	if [ "${materialized_active_run_dirs:-0}" -eq 0 ] &&
+			[ "${materialized_running_groups:-0}" -eq 0 ] &&
+			printf '%s' "$supervisor_status_counts" | grep -Eq '^(unknown|starting:[1-9])'; then
+		ramp_base_target=0
 	fi
-	if [ "${target:-0}" -gt 0 ] && [ "${max:-0}" -gt 0 ]; then
-		write_budget_env "$target" "$max" "$(run_script_value RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER 1.02)"
+	if [ "$desired_target" -gt "${ramp_base_target:-0}" ]; then
+		read -r desired_target desired_max <<<"$(ramp_startup_target "$ramp_base_target" "$desired_target" "$desired_max")"
+	fi
+	cold_starting_overbudget=0
+	if [ "${materialized_active_run_dirs:-0}" -eq 0 ] &&
+			[ "${materialized_running_groups:-0}" -eq 0 ] &&
+			[ "$desired_target" -lt "${target:-0}" ] &&
+			printf '%s' "$supervisor_status_counts" | grep -Eq '^(unknown|starting:[1-9])'; then
+		cold_starting_overbudget=1
+	fi
+	if [ "${desired_target:-0}" -gt 0 ] && [ "${desired_max:-0}" -gt 0 ]; then
+		write_budget_env "$desired_target" "$desired_max" "$(run_script_value RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER 1.02)"
 	fi
 
 	if ! session_running; then
@@ -1168,12 +1185,17 @@ while true; do
 		down_streak=$(( down_streak + 1 ))
 		up_streak=0
 		if [ "$down_streak" -ge 1 ] && {
+			[ "$cold_starting_overbudget" = "1" ] ||
 			[ $(( $(epoch) - last_restart_epoch )) -ge "$MIN_SCALE_DOWN_SECONDS" ] ||
 				[ "$reason" = "pressure" ] ||
 					[ "$reason" = "high_pressure" ] ||
 					[ "$reason" = "severe_pressure" ]
 		}; then
-			action=scale_down
+			if [ "$cold_starting_overbudget" = "1" ]; then
+				action=scale_down_cold_start_overbudget
+			else
+				action=scale_down
+			fi
 			restart_coverage "$desired_target" "$desired_max" "$reason"
 			last_restart_epoch=$(epoch)
 			down_streak=0
