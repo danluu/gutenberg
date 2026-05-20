@@ -60,7 +60,11 @@ pids=$(pgrep -f "$patterns" || true)
 coverage_owned_pid() {
 	local pid="$1"
 	local env_text
-	env_text=$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null || true)
+	local env_path="/proc/$pid/environ"
+	if [ ! -r "$env_path" ]; then
+		return 1
+	fi
+	env_text=$(tr '\0' '\n' < "$env_path" 2>/dev/null || true)
 	case "$env_text" in
 		*"RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=$BASE/"*|*"RTC_FUZZ_OUTPUT_DIR=$BASE/"*|*"RTC_FUZZ_NOVELTY_OUTPUT_DIR=$BASE/"*|*"RTC_FUZZ_NOVELTY_REPOS_BASE=$BASE/"*|*"RTC_FUZZ_NOVELTY_WP_ENV_HOME_BASE=$BASE/"*|*"RTC_FUZZ_LIVE_ANALYSIS_CURRENT_OUTPUT_POINTER=$BASE/current-output-dir.txt"*|*"RTC_FUZZ_ANALYSIS_CURRENT_OUTPUT_POINTER=$BASE/current-output-dir.txt"*|*"RTC_FUZZ_DEEP_ANALYSIS_CURRENT_OUTPUT_POINTER=$BASE/current-output-dir.txt"*)
 			return 0

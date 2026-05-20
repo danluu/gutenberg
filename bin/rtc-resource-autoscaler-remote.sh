@@ -20,6 +20,9 @@ WP_ENV_RESET_LAST="$BASE/wp-env-reset-last-epoch"
 POLL_SECONDS=${RTC_RESOURCE_AUTOSCALER_POLL_SECONDS:-120}
 MIN_SCALE_UP_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_SCALE_UP_SECONDS:-1200}
 MIN_SCALE_DOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_SCALE_DOWN_SECONDS:-300}
+STARTUP_RAMP_SECONDS=${RTC_RESOURCE_AUTOSCALER_STARTUP_RAMP_SECONDS:-240}
+STARTUP_RAMP_STEP_GROUPS=${RTC_RESOURCE_AUTOSCALER_STARTUP_RAMP_STEP_GROUPS:-2}
+STARTUP_RAMP_INITIAL_GROUPS=${RTC_RESOURCE_AUTOSCALER_STARTUP_RAMP_INITIAL_GROUPS:-3}
 MIN_MATERIALIZATION_REMEDIATION_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_MATERIALIZATION_REMEDIATION_SECONDS:-900}
 OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS:-900}
 ALLOW_OPTIONAL_BROWSER_SHED=${RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHED:-1}
@@ -565,6 +568,29 @@ scale_up_backlog_clear() {
 	'
 }
 
+ramp_startup_target() {
+	local current_target=$1
+	local desired_target=$2
+	local desired_max=$3
+	[[ "$current_target" =~ ^[0-9]+$ ]] || current_target=0
+	[[ "$desired_target" =~ ^[0-9]+$ ]] || desired_target=0
+	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=0
+	[[ "$STARTUP_RAMP_STEP_GROUPS" =~ ^[0-9]+$ ]] || STARTUP_RAMP_STEP_GROUPS=2
+	[[ "$STARTUP_RAMP_INITIAL_GROUPS" =~ ^[0-9]+$ ]] || STARTUP_RAMP_INITIAL_GROUPS=3
+
+	local cap=$(( current_target + STARTUP_RAMP_STEP_GROUPS ))
+	if [ "$current_target" -le 0 ] && [ "$cap" -lt "$STARTUP_RAMP_INITIAL_GROUPS" ]; then
+		cap=$STARTUP_RAMP_INITIAL_GROUPS
+	fi
+	if [ "$desired_target" -gt "$cap" ]; then
+		desired_target=$cap
+	fi
+	if [ "$desired_max" -le "$desired_target" ]; then
+		desired_max=$(( desired_target + 1 ))
+	fi
+	printf '%s %s\n' "$desired_target" "$desired_max"
+}
+
 e2e_floor_repair_allowed() {
 	local reason=$1 cpu=$2 load_value=$3 load5_value=$4 ncpu=$5
 	if [ "$reason" = "severe_pressure" ]; then
@@ -1073,6 +1099,9 @@ while true; do
 	fi
 	action=observe
 	IFS=$'\t' read -r supervisor_state_path materialized_group_count materialized_active_run_dirs paused_infra_startup_groups materialized_running_groups supervisor_status_counts supervisor_state_age_seconds materialization_detail <<<"$(materialization_snapshot)"
+	if [ "$desired_target" -gt "${target:-0}" ]; then
+		read -r desired_target desired_max <<<"$(ramp_startup_target "$target" "$desired_target" "$desired_max")"
+	fi
 	if [ "${target:-0}" -gt 0 ] && [ "${max:-0}" -gt 0 ]; then
 		write_budget_env "$target" "$max" "$(run_script_value RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER 1.02)"
 	fi
@@ -1107,11 +1136,19 @@ while true; do
 	elif [ "$desired_target" -gt "${target:-0}" ]; then
 		down_streak=0
 		if coverage_breadth_floor_allowed "$reason" && [ "${target:-0}" -lt "$MIN_COVERAGE_BREADTH_GROUPS" ]; then
-			action=restore_coverage_breadth_floor
-			shed_optional_browser_pools_if_needed severe_pressure "$now" "$browser_live_lanes" "$e2e_floor" || true
-			restart_coverage "$desired_target" "$desired_max" coverage_breadth_floor
-			last_restart_epoch=$(epoch)
-			up_streak=0
+			if ! scale_up_backlog_clear "$load" "$load_five" "$load_fifteen" "$ncpu"; then
+				action=coverage_breadth_floor_blocked_backlog
+				up_streak=0
+			elif [ $(( $(epoch) - last_restart_epoch )) -lt "$STARTUP_RAMP_SECONDS" ]; then
+				action=coverage_breadth_floor_ramp_cooldown
+				up_streak=0
+			else
+				action=restore_coverage_breadth_floor
+				shed_optional_browser_pools_if_needed severe_pressure "$now" "$browser_live_lanes" "$e2e_floor" || true
+				restart_coverage "$desired_target" "$desired_max" coverage_breadth_floor
+				last_restart_epoch=$(epoch)
+				up_streak=0
+			fi
 		elif ! scale_up_backlog_clear "$load" "$load_five" "$load_fifteen" "$ncpu"; then
 			action=scale_up_blocked_backlog
 			up_streak=0

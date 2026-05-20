@@ -77,6 +77,13 @@ sessions even when the live browser lane count is below the normal E2E breadth
 floor; otherwise the floor preserves the overload that the controller is trying
 to drain.
 
+Scale-up is ramped. The controller must not jump from a cold or recently
+downscaled coverage-guided browser run directly to the full coverage breadth
+floor, because a burst of simultaneous `wp-env start` work can create a load
+spike and force another restart. The current ramp caps upward moves to a small
+number of groups per restart and adds a separate startup-ramp cooldown before
+the next breadth increase.
+
 Materialization remediation must distinguish failed materialization from normal
 startup. A fresh supervisor can have zero active run dirs while it is creating
 isolated wp-env instances. The autoscaler should not restart that run until the
