@@ -1818,6 +1818,11 @@ lanes, but they must share state. In particular:
     the coverage and PR-refinement loops should consume that feedback and add
     or prioritize the missing behavior. The benchmark is not the trust model for
     mergeability; the fuzzer must already be exercising user-hit RTC behavior.
+    Existing canary failures, including the
+    `large-post-three-user-http` failure on
+    `rtc-pr-stack-20260519T214027Z-validated-no-harness`, remain active
+    fuzzer-feedback items until equivalent fuzz coverage is running and a fixed
+    stack passes.
     The helper only updates `rtc-jetstream2-maintainer-pr-snapshot-20260519.md`
     plus `rtc-local-benchmark-results-20260519.md` after the exact merged stack
     branch has a fresh canary run with all fixed-stack rows passing. The known

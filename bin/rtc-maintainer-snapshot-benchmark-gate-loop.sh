@@ -198,7 +198,7 @@ Correct model:
 
 Task:
 1. Poll the published PR/finalization branches and decide whether there is a newer candidate PR stack that plausibly fixes issues now covered by the expanded fuzzer coverage.
-2. If there is no new candidate stack, write a concise no-op report and do not edit maintainer docs.
+2. If there is no new candidate stack, write a concise no-op report and do not edit maintainer docs. Exception: if the existing benchmark doc still records a real failure, such as the known large-post-three-user-http failure, write fuzzer-feedback artifacts even without a new candidate.
 3. If there are ready PR branches but no all-merged branch, build a local all-merged branch from the smallest reviewable ready set. Push that stack branch to the danluu remote only after it cleanly merges and passes basic local checks. Do not reuse the known-bad branch as a passing candidate.
 4. Before changing maintainer-facing docs, run the benchmark canary against the exact stack branch. Treat any failure as a bug in the fuzzing/promotion process, not as a normal downstream quality gate.
 
@@ -209,6 +209,7 @@ Hard gates:
 - If a benchmark row fails, leave the current maintainer snapshot alone, record the failing branch and row, and write both:
   - $cycle/fuzzer-feedback.md
   - $cycle/fuzzer-feedback.tsv
+- The known failure from $BENCHMARK_DOC, large-post-three-user-http failing 2/2 on rtc-pr-stack-20260519T214027Z-validated-no-harness, is an active benchmark-canary failure until Jetstream has an equivalent fuzz lane producing/validating the same behavior and a fixed stack passes it.
 - The feedback must say what the fuzzer should have been covering, whether the existing expanded coverage already has an equivalent lane, how that lane should be prioritized or repaired, and which PR/fix loop should consume the failure.
 - Do not present "fuzz evidence -> fix branch -> benchmark gate -> publish" as the trust model. The trust model is that fuzzing continuously exercises the user-hit behavior and benchmark failure proves that trust model was violated.
 
