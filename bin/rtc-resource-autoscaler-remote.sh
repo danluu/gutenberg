@@ -27,6 +27,7 @@ MIN_MATERIALIZATION_REMEDIATION_SECONDS=${RTC_RESOURCE_AUTOSCALER_MIN_MATERIALIZ
 OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_OPTIONAL_BROWSER_SHED_COOLDOWN_SECONDS:-900}
 ALLOW_OPTIONAL_BROWSER_SHED=${RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHED:-1}
 MATERIALIZATION_STALE_SECONDS=${RTC_RESOURCE_AUTOSCALER_MATERIALIZATION_STALE_SECONDS:-600}
+FIRST_PASS_BUDGET_RESTART_DEFER_SECONDS=${RTC_RESOURCE_AUTOSCALER_FIRST_PASS_BUDGET_RESTART_DEFER_SECONDS:-900}
 WP_ENV_RESET_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_WP_ENV_RESET_COOLDOWN_SECONDS:-1800}
 RESET_WP_ENV_ON_INFRA_FAILURE=${RTC_RESOURCE_AUTOSCALER_RESET_WP_ENV_ON_INFRA_FAILURE:-1}
 ONE_CANARY_MATERIALIZATION_RESCUE=0
@@ -807,6 +808,45 @@ process.exit( freshState && ( recentStateHold || statusHold ) ? 0 : 1 );
 NODE
 }
 
+coverage_first_pass_pending() {
+	local latest
+	latest=$(latest_run)
+	[ -n "$latest" ] || return 1
+	[ -f "$latest/novelty-status.md" ] || return 1
+	node - "$latest/novelty-status.md" "$FIRST_PASS_BUDGET_RESTART_DEFER_SECONDS" <<'NODE'
+const fs = require( 'fs' );
+const [ statusPath, deferSecondsRaw ] = process.argv.slice( 2 );
+const deferMs = Math.max( 0, Number( deferSecondsRaw || 0 ) * 1000 );
+let status = '';
+try {
+	status = fs.readFileSync( statusPath, 'utf8' );
+} catch {
+	process.exit( 1 );
+}
+const updatedMatch = status.match( /^Updated:\s+(\S+)/m );
+const updatedAt = Date.parse( updatedMatch?.[ 1 ] || '' );
+if ( ! Number.isFinite( updatedAt ) || Date.now() - updatedAt > deferMs ) {
+	process.exit( 1 );
+}
+if (
+	/full coverage pass pending/.test( status ) ||
+	/pending until first pass/.test( status )
+) {
+	process.exit( 0 );
+}
+process.exit( 1 );
+NODE
+}
+
+should_defer_budget_restart_for_first_pass() {
+	case "$1" in
+		missing_monitor|materialization_invariant_failed|severe_pressure)
+			return 1
+			;;
+	esac
+	coverage_first_pass_pending
+}
+
 materialization_logs_show_wp_env_infra_failure() {
 	local latest file
 	latest=$(latest_run)
@@ -1044,6 +1084,12 @@ restart_coverage() {
 	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=$desired_target
 	if [ "$desired_max" -lt "$desired_target" ]; then
 		desired_max=$desired_target
+	fi
+	if should_defer_budget_restart_for_first_pass "$reason"; then
+		echo "[$(stamp)] deferring coverage-guided restart target=$desired_target max=$desired_max reason=$reason: active root full pass pending" >> "$LOG"
+		write_budget_env "$desired_target" "$desired_max" 1.02
+		action="${action}_deferred_first_pass"
+		return 0
 	fi
 	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
