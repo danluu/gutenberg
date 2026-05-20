@@ -1798,6 +1798,26 @@ lanes, but they must share state. In particular:
     It reads Jetstream push manifests, asks Codex for a conservative push plan,
     validates refs and SHAs deterministically, pushes safe branches to `danluu`,
     and writes the resulting local publish manifest back to Jetstream.
+-   The maintainer snapshot and benchmark docs are guarded by the local
+    benchmark gate helper
+    `bin/rtc-maintainer-snapshot-benchmark-gate-loop.sh`. Run it on a local
+    host with GitHub write access, Docker, and enough disk for isolated
+    worktrees:
+
+    ```bash
+    bin/rtc-maintainer-snapshot-benchmark-gate-loop.sh start
+    ```
+
+    The loop writes durable state under
+    `/Users/danluu/dev/fuzz/rtc-maintainer-snapshot-benchmark-gate-20260520`.
+    Each cycle polls published PR/finalization refs, gives Codex the current
+    Jetstream finalization and coverage context, and only updates
+    `rtc-jetstream2-maintainer-pr-snapshot-20260519.md` plus
+    `rtc-local-benchmark-results-20260519.md` after the exact merged stack
+    branch has a fresh benchmark run with all fixed-stack rows passing. The
+    known failing branch
+    `rtc-pr-stack-20260519T214027Z-validated-no-harness` must not be republished
+    as a passing candidate.
 
 After changing one of these scripts on Jetstream, restart the matching tmux
 session on the `rtc-fuzz` socket and confirm that the status file shows the new
