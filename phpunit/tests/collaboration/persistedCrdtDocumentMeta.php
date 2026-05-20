@@ -79,6 +79,15 @@ class Tests_Collaboration_PersistedCrdtDocumentMeta extends WP_UnitTestCase {
 		$this->assertSame( $current_value, get_post_meta( self::$post_id, $meta_key, true ) );
 	}
 
+	public function test_allows_clearing_persisted_crdt_document_meta(): void {
+		$meta_key      = '_crdt_document';
+		$current_value = $this->create_crdt_document_meta_value( 'current-document' );
+		$this->assertNotFalse( update_post_meta( self::$post_id, $meta_key, $current_value ) );
+
+		$this->assertNotFalse( update_post_meta( self::$post_id, $meta_key, '' ) );
+		$this->assertSame( '', get_post_meta( self::$post_id, $meta_key, true ) );
+	}
+
 	public function test_restore_revision_removes_persisted_crdt_document_meta(): void {
 		$post_id = self::factory()->post->create(
 			array(

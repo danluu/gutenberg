@@ -59,6 +59,21 @@ function getCRDTRawPostValue( crdtRecord, key ) {
 	return getRawPostValue( crdtRecord?.[ key ] );
 }
 
+function isPersistedCRDTDocumentInvalidation( edits ) {
+	if (
+		! Object.prototype.hasOwnProperty.call(
+			edits?.meta ?? {},
+			POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+		)
+	) {
+		return false;
+	}
+
+	const persistedCRDTDocument =
+		edits.meta[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ];
+	return persistedCRDTDocument === '' || persistedCRDTDocument === null;
+}
+
 function getCRDTSnapshotChangesFromPostEdits( edits ) {
 	const changes = {};
 
@@ -501,6 +516,10 @@ export const prePersistPostType = async (
 		) {
 			newEdits.title = '';
 		}
+	}
+
+	if ( isPersistedCRDTDocumentInvalidation( edits ) ) {
+		return newEdits;
 	}
 
 	if (
