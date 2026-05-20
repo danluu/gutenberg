@@ -121,46 +121,62 @@ Playwright traces and screenshots for the clean run are under:
 The primary human-viewable video recorded from the clean repro setup is:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/rtc-stale-delete-websocket-realistic-repro-long-wait.mp4
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-no-editor-overlays/rtc-stale-delete-websocket-no-editor-overlays-long-wait.mp4
 ```
 
 This version waits 25 seconds after editor A deletes the paragraph before it
 reads editor state and marks the run as reproduced. The recorder exits with an
 error if editor A still has the deleted paragraph, if editor B no longer has
-it, or if both editors have the same final block state.
+it, or if both editors have the same final block state. It does not inject
+labels or banners into either editor page and does not activate the
+disable-animations test plugin.
 
 The final verification frame is:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/verification-frame.png
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-no-editor-overlays/verification-frame.png
 ```
 
 The frame shows editor A with three paragraphs and editor B with four
 paragraphs. The extra paragraph on editor B is the deleted paragraph.
 
+The saved final state manifest is:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-no-editor-overlays/final-state.json
+```
+
+It records `reproduced: true`, `postDeleteWaitMs: 25000`, a connected
+`postType/post:46` WebSocket room on both editors, editor A's three final
+paragraphs, and editor B's same three paragraphs plus `A short collaborator
+update.`.
+
 Video hashes:
 
 ```text
-2327688c1850a402cf993c74459d4e1fabb57bc5a4682cc35e90844ce5b48adc  rtc-stale-delete-websocket-realistic-repro-long-wait.mp4
-c4c1264b078565fec36ad07ab2697b625938863e77533aca8e691f26c23b4936  verification-frame.png
+c80250baad8e8ecd1f298d3d6602bf02ce4ebd5cb144e0f58f3e6d293d251941  rtc-stale-delete-websocket-no-editor-overlays-long-wait.mp4
+89828c4fca26e51d4e8a8667729dbe1f0a7fa3c019b033df7d8612b76bbdbd4b  verification-frame.png
+6697a93f95092d9034a10bff0c83dae40c6a3332b5b3ceeac6d89bd7bdb78839  final-state.json
 ```
 
 The raw browser recordings are:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/raw/0647e51726282d4cf601653a1f821922.webm
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/raw/7d91554c4bd51a4e22308f1664c8a25a.webm
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/raw/205989f4b198cecfac796d29539bb50f.webm
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-no-editor-overlays/raw/ca1f5c73c468159b963c7b9717b68c47.webm
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-no-editor-overlays/raw/34a6d4b631ebfef42a3cc4a38530bd7d.webm
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-no-editor-overlays/raw/8b986b7a7dfcd2d725c4a2f328eb4dd1.webm
 ```
 
-I also have an earlier 30-second recording from the same clean setup:
+I also have earlier recordings from the same clean setup:
 
 ```text
 /Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/rtc-stale-delete-websocket-realistic-repro.mp4
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/rtc-stale-delete-websocket-realistic-repro-long-wait.mp4
 ```
 
-That earlier video reproduced the bug too, but it only waited 6.5 seconds
-after the delete. Use the long-wait video above as the stronger artifact.
+Those videos reproduced the bug too, but the first one only waited 6.5 seconds
+after the delete, and the second one used editor-page labels for readability.
+Use the no-editor-overlays long-wait video above as the strongest artifact.
 
 ## Why the earlier visible run did not reproduce
 
