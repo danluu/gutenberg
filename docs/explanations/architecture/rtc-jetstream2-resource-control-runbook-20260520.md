@@ -53,12 +53,13 @@ headroom observations and respects `RTC_RESOURCE_AUTOSCALER_MIN_SCALE_UP_SECONDS
 so the budget does not bounce after one low sample.
 
 Coverage breadth is also controlled by pressure. The coverage breadth floor can
-widen fuzzing when the machine has headroom, but it must not override
-`pressure`, `high_pressure`, or `severe_pressure`. Under pressure, the controller
-keeps the smaller budget and waits for backlog to drain before restoring breadth.
-Likewise, severe pressure is allowed to shed optional browser sessions even when
-the live browser lane count is below the normal E2E breadth floor; otherwise the
-floor preserves the overload that the controller is trying to drain.
+widen fuzzing when the machine has sustained headroom, but it must not override
+`steady`, `pressure`, `high_pressure`, or `severe_pressure`. Under pressure, the
+controller keeps the smaller budget and waits for backlog to drain before
+restoring breadth. Likewise, severe pressure is allowed to shed optional browser
+sessions even when the live browser lane count is below the normal E2E breadth
+floor; otherwise the floor preserves the overload that the controller is trying
+to drain.
 
 ## Guard Interaction
 
@@ -84,6 +85,9 @@ Under pressure the autoscaler also enforces the same budget against already-live
 long-running fuzz sessions. This is deliberately conservative: it sheds
 continuous fuzzers and surplus validation/benchmark sessions, but it does not
 kill the main control loops or Codex persona-analysis sessions.
+It also terminates orphan process groups for known long-running fuzz classes
+when their quota is zero, so Chrome/Playwright/Jest/PHPUnit children do not keep
+running after their tmux session has been shed.
 
 The guard restarts the autoscaler from
 `/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-resource-autoscaler.sh`.

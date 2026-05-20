@@ -284,6 +284,17 @@ apply_coverage_breadth_floor() {
 		printf '%s %s\n' "$target" "$max"
 		return
 	fi
+	case "$reason" in
+		headroom|large_headroom|coverage_breadth_floor)
+			;;
+		*)
+			if [ "$max" -lt "$target" ]; then
+				max=$target
+			fi
+			printf '%s %s\n' "$target" "$max"
+			return
+			;;
+	esac
 	if [ "$target" -lt "$MIN_COVERAGE_BREADTH_GROUPS" ]; then
 		target=$MIN_COVERAGE_BREADTH_GROUPS
 	fi
@@ -295,11 +306,11 @@ apply_coverage_breadth_floor() {
 
 coverage_breadth_floor_allowed() {
 	case "$1" in
-		pressure|high_pressure|severe_pressure)
-			return 1
+		headroom|large_headroom|coverage_breadth_floor)
+			return 0
 			;;
 	esac
-	return 0
+	return 1
 }
 
 shed_optional_browser_pools_if_needed() {
@@ -390,6 +401,63 @@ global_cpu_quota() {
 	fi
 }
 
+cleanup_known_cpu_heavy_process_groups_for_class() {
+	local class=$1 now=$2
+	local awk_match pgids pgid
+	case "$class" in
+		optional-browser)
+			awk_match='rtc-gap-booster-20260515|rtc-fuzz-focused-shards-20260515|rtc-fuzz-strict-expansion-20260515'
+			;;
+		lower-level)
+			awk_match='rtc-lower-level-fuzz-20260516|rtc-coverage-guided-lower-level|coverage-guided-lower-level'
+			;;
+		backend-api)
+			awk_match='rtc-backend-api-fuzz-20260518|rtc-backend-api-fuzz'
+			;;
+		protocol-server)
+			awk_match='rtc-native-assert-protocol-20260516/protocol|rtc-protocol-server-fuzz'
+			;;
+		operator-correctness)
+			awk_match='rtc-operator-alerts/correctness-fuzz|operator-correctness'
+			;;
+		*)
+			return 1
+			;;
+	esac
+	pgids=$(
+		ps -eo pid=,pgid=,args= |
+			awk -v needle="$awk_match" '
+				/rtc-resource-autoscaler|awk |ps -eo|grep / { next }
+				$0 ~ needle &&
+				$0 ~ /playwright|chrome-headless|rtc-browser-fuzz-runner|test-playwright|wp-scripts|npm exec|jest|phpunit|rtc-(backend-api|protocol-server|coverage-guided-lower-level)/ {
+					print $2;
+				}
+			' |
+			awk '$1 > 1 { print }' |
+			sort -u
+	)
+	[ -n "$pgids" ] || return 1
+	for pgid in $pgids; do
+		case "$pgid" in
+			''|0|1)
+				continue
+				;;
+		esac
+		echo "[$now] terminating orphan CPU-heavy process group class=$class pgid=$pgid" >> "$LOG"
+		kill -TERM "-$pgid" 2>/dev/null || true
+	done
+	sleep 2
+	for pgid in $pgids; do
+		case "$pgid" in
+			''|0|1)
+				continue
+				;;
+		esac
+		kill -KILL "-$pgid" 2>/dev/null || true
+	done
+	return 0
+}
+
 enforce_global_cpu_budget() {
 	local reason=$1 now=$2 class regex quota sessions active kill_count session
 	case "$reason" in
@@ -407,15 +475,28 @@ enforce_global_cpu_budget() {
 		[[ "$quota" =~ ^[0-9]+$ ]] || quota=0
 		regex=$(cpu_heavy_session_regex_for_class "$class")
 		sessions=$("$TMUX" -L "$TMUX_SOCKET" list-sessions -F '#S' 2>/dev/null | awk -v regex="$regex" '$0 ~ regex { print }' || true)
-		[ -n "$sessions" ] || continue
+		if [ -z "$sessions" ]; then
+			if [ "$quota" -eq 0 ]; then
+				cleanup_known_cpu_heavy_process_groups_for_class "$class" "$now" || true
+			fi
+			continue
+		fi
 		active=$(printf '%s\n' "$sessions" | awk 'NF { count++ } END { print count + 0 }')
-		[ "$active" -gt "$quota" ] || continue
+		if [ "$active" -le "$quota" ]; then
+			if [ "$quota" -eq 0 ]; then
+				cleanup_known_cpu_heavy_process_groups_for_class "$class" "$now" || true
+			fi
+			continue
+		fi
 		kill_count=$(( active - quota ))
 		printf '%s\n' "$sessions" | head -n "$kill_count" | while IFS= read -r session; do
 			[ -n "$session" ] || continue
 			echo "[$now] stopping CPU-heavy session over global budget class=$class quota=$quota active=$active reason=$reason session=$session" >> "$LOG"
 			"$TMUX" -L "$TMUX_SOCKET" kill-session -t "$session" 2>/dev/null || true
 		done
+		if [ "$quota" -eq 0 ]; then
+			cleanup_known_cpu_heavy_process_groups_for_class "$class" "$now" || true
+		fi
 	done
 }
 
@@ -458,15 +539,15 @@ choose_budget() {
 			} else if (cpu >= 92 || predicted_load >= high_pressure_load || load5v >= high_pressure_load5 || load15v >= high_pressure_load15) {
 				print "2 3 high_pressure";
 			} else if (cpu >= 88 || predicted_load >= pressure_load || load5v >= pressure_load5 || load15v >= pressure_load15 || avail < 120) {
-				print "4 5 pressure";
+				print "3 4 pressure";
 			} else if (cpu <= 62 && predicted_load <= low_load && load5v <= low_load5 && load15v <= low_load15 && avail >= 300) {
-				print "11 12 large_headroom";
+				print "10 11 large_headroom";
 			} else if (cpu <= 72 && predicted_load <= mid_load && load5v <= mid_load5 && load15v <= mid_load15 && avail >= 250) {
-				print "10 11 headroom";
+				print "8 9 headroom";
 			} else if (cpu <= 80 && predicted_load <= high_load && load5v <= high_load5 && load15v <= high_load15 && avail >= 180) {
-				print "9 10 modest_headroom";
+				print "6 7 modest_headroom";
 			} else {
-				print "8 9 steady";
+				print "4 5 steady";
 			}
 		}
 	'
