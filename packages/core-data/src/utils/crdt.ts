@@ -314,6 +314,26 @@ export function applyPostChangesToCRDTDoc(
 	}
 }
 
+export function preparePostCRDTDocForPersistence( ydoc: CRDTDoc ): void {
+	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
+	const blocks = ymap.get( 'blocks' );
+
+	if ( ! ( blocks instanceof Y.Array ) ) {
+		return;
+	}
+
+	const serializedContent = __unstableSerializeAndClean(
+		blocks.toJSON()
+	).trim();
+	const content = ymap.get( 'content' );
+
+	if ( content instanceof Y.Text ) {
+		mergeRichTextUpdate( content, serializedContent );
+	} else {
+		ymap.set( 'content', new Y.Text( serializedContent ) );
+	}
+}
+
 /**
  * Only returns a selection object if it describes a selection within a block, with
  * a cursor inside a RichText field associated with one of that block’s attributes.
