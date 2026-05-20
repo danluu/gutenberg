@@ -118,28 +118,49 @@ Playwright traces and screenshots for the clean run are under:
 
 ## Video
 
-The human-viewable video recorded from the clean repro setup is:
+The primary human-viewable video recorded from the clean repro setup is:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/rtc-stale-delete-websocket-realistic-repro.mp4
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/rtc-stale-delete-websocket-realistic-repro-long-wait.mp4
 ```
+
+This version waits 25 seconds after editor A deletes the paragraph before it
+reads editor state and marks the run as reproduced. The recorder exits with an
+error if editor A still has the deleted paragraph, if editor B no longer has
+it, or if both editors have the same final block state.
 
 The final verification frame is:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/verification-frame.png
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/verification-frame.png
 ```
 
 The frame shows editor A with three paragraphs and editor B with four
 paragraphs. The extra paragraph on editor B is the deleted paragraph.
 
+Video hashes:
+
+```text
+2327688c1850a402cf993c74459d4e1fabb57bc5a4682cc35e90844ce5b48adc  rtc-stale-delete-websocket-realistic-repro-long-wait.mp4
+c4c1264b078565fec36ad07ab2697b625938863e77533aca8e691f26c23b4936  verification-frame.png
+```
+
 The raw browser recordings are:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/raw/25ad617b39321f39f511e138d10ff895.webm
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/raw/972bb3d293e081e1d21d9db9c71af313.webm
-/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/raw/2184e9e88affac988b2023a33532899d.webm
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/raw/0647e51726282d4cf601653a1f821922.webm
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/raw/7d91554c4bd51a4e22308f1664c8a25a.webm
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520-long-wait/raw/205989f4b198cecfac796d29539bb50f.webm
 ```
+
+I also have an earlier 30-second recording from the same clean setup:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-stale-delete-clean-run-20260520/artifacts/rtc-stale-delete-valid-video-20260520/rtc-stale-delete-websocket-realistic-repro.mp4
+```
+
+That earlier video reproduced the bug too, but it only waited 6.5 seconds
+after the delete. Use the long-wait video above as the stronger artifact.
 
 ## Why the earlier visible run did not reproduce
 
