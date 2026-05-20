@@ -1058,7 +1058,10 @@ restart_coverage() {
 }
 
 echo "[$(stamp)] resource autoscaler started base=$BASE" >> "$LOG"
-last_restart_epoch=0
+# Treat autoscaler process startup as a recent restart for scale-up purposes.
+# Otherwise restarting the controller itself can bypass the startup-ramp
+# cooldown and fan out a cold coverage-guided browser run.
+last_restart_epoch=$(epoch)
 up_streak=0
 down_streak=0
 
