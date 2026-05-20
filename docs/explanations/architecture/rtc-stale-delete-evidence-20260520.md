@@ -29,6 +29,13 @@ It was checked out at:
 2f59cd94b1ba41b004f4707ff25674506c81d796
 ```
 
+This is the affected local branch state named in the PR evidence. It is not
+the current PR head. Current PR head is:
+
+```text
+b67abf18ab00c4324f110897a7fbce1642130e50
+```
+
 I built it with:
 
 ```bash
@@ -178,6 +185,29 @@ Those videos reproduced the bug too, but the first one only waited 6.5 seconds
 after the delete, and the second one used editor-page labels for readability.
 Use the no-editor-overlays long-wait video above as the strongest artifact.
 
+## PR head control
+
+I also ran the same no-editor-overlays, 25-second-wait video recorder on the
+current PR head:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-stale-delete-fix-20260514
+b67abf18ab00c4324f110897a7fbce1642130e50
+```
+
+That control did not reproduce the simple append-then-delete failure. It is
+useful as a control video, not as bug evidence:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-rtc-stale-delete-fix-20260514/artifacts/rtc-stale-delete-pr-head-no-editor-overlays-20260520/rtc-stale-delete-pr-head-no-editor-overlays-long-wait.mp4
+/Users/danluu/dev/fuzz/gutenberg-rtc-stale-delete-fix-20260514/artifacts/rtc-stale-delete-pr-head-no-editor-overlays-20260520/final-state.json
+```
+
+The final state manifest records `reproduced: false`; both editors ended with
+the original three paragraphs after the 25-second post-delete wait. That means
+the primary video above should be described as a valid affected-branch repro,
+not as a current-PR-head failure video.
+
 ## Why the earlier visible run did not reproduce
 
 The earlier visible run was useful as a control, but it was not the same as
@@ -224,7 +254,8 @@ block."
 The remaining useful checks are:
 
 1. Run the same browser repro on latest `trunk`.
-2. Run the same browser repro on the PR branch.
+2. Run the delayed-update reproduction shape against latest `trunk` and the PR
+   branch.
 3. Save pass/fail counts for each branch.
 
 The clean repro and video above are enough to show the bug locally without
