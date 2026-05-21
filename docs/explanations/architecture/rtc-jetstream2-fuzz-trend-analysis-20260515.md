@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-21T19:40:41Z`
+Snapshot generated: `2026-05-21T19:47:36Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance, resource,
 and PR-progress logs. The plotting data is generated with R, ggplot2, tidyverse
@@ -48,9 +48,9 @@ fix for no-product bootstrap stalls and restarted the active coverage-guided
 sessions; older inactive sessions may still need their own restart cycle.
 
 Resource state still needs watching. The latest sample has `372.5G` free memory,
-`22.4GiB` free on `/`, and `605.9GiB` free on
+`22.4GiB` free on `/`, and `605.7GiB` free on
 `/media/volume/danluu-fuzz-data`. The latest CPU utilization sample is
-`51.77%`. The latest load averages are `39.00`, `41.04`, and `39.26` on `64`
+`41.71%`. The latest load averages are `28.86`, `36.94`, and `39.76` on `64`
 logical CPUs.
 
 The latest graph-counted fuzzing mix has `24` browser/e2e lanes across `21`
@@ -231,15 +231,15 @@ CSV is not yet counting that lane.
 The likely-real graph is a triage-output metric only. It counts non-duplicate
 `.triage-watcher/**/result.json` rows classified `likely_real`, deduped by
 canonical bug key and attributed to first-seen time. The latest collected
-triaged likely-real output is still all browser/e2e: `176` likely-real findings
-over about `776.7` runner-hours, or `22.66` per 100 runner-hours.
+triaged likely-real output is still all browser/e2e: `177` likely-real findings
+over about `776.7` runner-hours, or `22.79` per 100 runner-hours.
 
 ![Unique bug-output candidates by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-level.png)
 
 ![Unique bug-output candidate rate by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-rate-by-level.png)
 
 The broader unique-output graphs include untriaged raw signatures and
-lower-level assertion failures. Current unique candidate output is `1,643`
+lower-level assertion failures. Current unique candidate output is `1,644`
 browser/e2e candidates, `6` unit-property candidates, and `2`
 coverage-guided-lower-level candidates. Transport-integration, backend-api,
 protocol-server, standalone fuzz-assertion, and other buckets have no unique
