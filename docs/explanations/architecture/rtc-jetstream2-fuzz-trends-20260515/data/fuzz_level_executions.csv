@@ -4008,7 +4008,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T19:00:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,17,17,17,17,0,899321,FALSE
 2026-05-21T19:00:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,4,3,2,4,2,1138901,FALSE
 2026-05-21T19:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,22,22,22,1,0,6377,FALSE
-2026-05-21T19:15:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,7,7,7,7,0,376483,FALSE
-2026-05-21T19:15:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,7,6,5,7,2,394439,FALSE
-2026-05-21T19:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,7,7,7,7,0,367700,FALSE
-2026-05-21T19:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,0,1,1,268863,FALSE
+2026-05-21T19:15:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,13,13,13,13,0,684172,FALSE
+2026-05-21T19:15:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,12,10,8,12,4,671229,FALSE
+2026-05-21T19:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,13,13,13,13,0,684506,FALSE
+2026-05-21T19:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,1,0,2,2,573228,FALSE
