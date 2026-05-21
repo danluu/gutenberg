@@ -33,7 +33,7 @@ Hard constraints:
 - In the health graph and interpretation, use current-output-dir duplicate/noise metrics, especially duplicateShareCurrent and summary startup failures, for live status. Do not use historical aggregate duplicate/noise as the plotted live health signal. If current_run_metrics_trusted_last is false, treat the duplicate/noise share as incomplete current-run accounting and interpret it as a control-plane health issue until the active run completes a full pass.
 
 Required work:
-1. In $CHECKOUT, make sure branch $BRANCH is based on $REMOTE/$BRANCH unless there are uncommitted changes that you must preserve.
+1. In $CHECKOUT, make sure the worktree is based on $REMOTE/$BRANCH unless there are uncommitted changes that you must preserve. This checkout may intentionally be detached because another Git worktree can own the local branch name. Do not run \`git switch $BRANCH\` or \`git checkout $BRANCH\` if Git reports that the branch is already used by another worktree; use \`git checkout --detach $REMOTE/$BRANCH\` for a clean worktree instead.
 2. Run:
    $OPS_DIR/collect-graph-inputs.sh $RUN_DIR
 3. Run:
