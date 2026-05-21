@@ -33,9 +33,9 @@ or fuzzing coverage:
 ```text
 # Productive Analysis Loop Status
 
-- updated: 2026-05-21T22:33:08Z
+- updated: 2026-05-21T22:43:08Z
 - session: rtc-productive-analysis-loop
-- active lane jobs: 0
+- active lane jobs: 4
 - actions: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/current-actions.tsv
 - critical feedback: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/critical-path-feedback.md
 
@@ -44,9 +44,9 @@ or fuzzing coverage:
 - high-priority controller rows: 7
 # RTC Productive Analysis Loop
 
-- updated: 2026-05-21T22:33:08Z
+- updated: 2026-05-21T22:43:08Z
 - base: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521
-- active lane jobs: 0
+- active lane jobs: 4
 - cycle interval seconds: 600
 - max active lanes: 4
 
@@ -149,7 +149,7 @@ generated_at	action_id	target_loop	priority	action_kind	family_or_pr	evidence_pa
 2026-05-21T22:25:34Z	reload-hydration-exact-stack-gate	deferred	P0	exact-stack-promotion-gate	reload-hydration	/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/current-deferred-benchmark-minimum-block.tsv	Stop generic reload-hydration interval relaunches while launch_budget is exceeded; only promote or keep active a candidate that runs title-reload-http and existing-post-crdt-http green on the exact all-merged stack and keeps large-http-lifecycle in the benchmark minimum, otherwise downscope the family and leave benchmark-canary-fuzzer-gap blocking finalization.	/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/current-deferred-queue.tsv
 # Productive Analysis Feedback For Control Loops
 
-- generated: 2026-05-21T22:33:08Z
+- generated: 2026-05-21T22:43:08Z
 - action source: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/current-actions.tsv
 - contract: these rows are meant to be consumed by the critical-path, PR-progress, deferred, coverage, and level-mix controllers.
 
