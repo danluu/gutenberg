@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-21T17:28:10Z`
+Snapshot generated: `2026-05-21T17:35:25Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance, resource,
 and PR-progress logs. The plotting data is generated with R, ggplot2, tidyverse
@@ -18,8 +18,8 @@ old local state.
 
 ## High-Level Readout
 
-The graph data is current through `2026-05-21T17:26:09Z`. The monitor has
-`3,779` passes from `2026-05-15T01:21:42Z` onward. Cumulative coverage record
+The graph data is current through `2026-05-21T17:34:02Z`. The monitor has
+`3,785` passes from `2026-05-15T01:21:42Z` onward. Cumulative coverage record
 observations are `273,459`; current-scan coverage files are `293`. The monitor
 reports `40` unmet live coverage items, while the parsed coverage-goal table has
 `91` unmet target rows out of `137`.
@@ -36,28 +36,28 @@ leak, so the clean graph metric should not be read as proof that browser
 producers are stable under startup noise.
 
 Resource state is improved but still needs watching. The latest sample has
-`389.6G` free memory, `31.7GiB` free on `/`, and `450.8GiB` free on
-`/media/volume/danluu-fuzz-data`. The latest load averages are `29.05`,
-`26.34`, and `25.99` on `64` logical CPUs.
+`388.8G` free memory, `31.7GiB` free on `/`, and `483.0GiB` free on
+`/media/volume/danluu-fuzz-data`. The latest load averages are `25.85`,
+`25.31`, and `25.34` on `64` logical CPUs.
 
-The latest graph-counted fuzzing mix has `27` browser/e2e lanes across `26`
+The latest graph-counted fuzzing mix has `18` browser/e2e lanes across `18`
 groups, plus one `unit-property` lane, one `coverage-guided-lower-level` lane,
 and one `protocol-server` lane. The execution counter has about `16.9M`
 estimated individual executions. Lower-level execution counts are approximate
 when they are reconstructed from batch metadata or legacy batch-count fields.
 The level-mix persona feedback rejects treating these graph counts as fully
 trusted live useful capacity until current root, exact tmux sessions, live PIDs,
-fresh events, and fresh summaries agree; it recommends recovering operator HTTP
-correctness/browser capacity first and counting backend/protocol capacity as
-zero when exact sessions are missing.
+fresh events, and fresh summaries agree. It says browser/e2e is below the
+24-lane floor, recommends recovering operator HTTP correctness first, and says
+backend/protocol capacity should count as zero when exact sessions are missing.
 
 The PR-focused data is live again. The controller table has `21` distinct work
 items: `13` high-priority ready-product PR rows marked published, `5`
 high-priority ready-product rows held by the controller, `1` runtime-gated row
 consumed/held, and `2` deferred-family rows. The current push manifest is empty,
 so the controller is not advertising any fresh branch-publish rows in this
-snapshot. The critical-path executor has `6` blockers: `1` runnable, `2`
-queued, and `3` terminal.
+snapshot. The critical-path executor has `6` blockers: `1` active, `1` queued,
+`1` runnable, and `3` terminal.
 
 ## Coverage Intake
 
@@ -102,14 +102,13 @@ budgeting still matter.
 
 ![Coverage-guided groups by first enable time](rtc-jetstream2-fuzz-trends-20260515/plots/enabled-groups-over-time.png)
 
-The current enabled group set includes HTTP table stale snapshot, many-user and
-thirty-user lifecycle, HTTP large-post lifecycle completion,
-permissions/auth/locks, three-user late join, parser serialization, and
-multi-reload lifecycle. Historical enabled events cover additional real-user
-editing, parser transform, long-session large docs, same-user lifecycle, HTTP
-title reload convergence, existing-post CRDT metadata, HTTP persistence probes,
-block-gauntlet, rich-text UI, revision/autosave/recovery, async/server-backed,
-and same-user surfaces.
+Recent enabled events include three-user late join, permissions/auth/locks,
+long-session large docs, parser transform, revision persistence, parser
+serialization, and multi-reload lifecycle. Historical enabled events cover
+additional real-user editing, same-user lifecycle, HTTP table stale snapshots,
+HTTP title reload convergence, existing-post CRDT metadata, HTTP persistence
+probes, block-gauntlet, rich-text UI, revision/autosave/recovery,
+async/server-backed, and same-user surfaces.
 
 ## Fuzzing Level Mix
 
@@ -117,21 +116,24 @@ and same-user surfaces.
 
 The collector now reads recent and current `supervisor-groups.json` files
 instead of scanning unbounded history. The latest mix is still concentrated in
-browser/e2e lanes, but lower-level work is visible: `unit-property`,
-`coverage-guided-lower-level`, and `protocol-server` each have one current lane.
+browser/e2e lanes, but at a reduced `18` lanes. Lower-level work is visible:
+`unit-property`, `coverage-guided-lower-level`, and `protocol-server` each have
+one current lane. The current graph-counted lower-level targets are
+table-query-array CRDT, rich-text CRDT, and HTTP polling protocol/server.
 `transport-integration`, `backend-api`, and standalone `fuzz-assertion` have no
 current graph-counted lane in this snapshot.
 
 Persona-loop evidence rejects the simple interpretation that these graph-counted
 rows equal trusted useful live capacity. Level-mix feedback requires fail-closed
 checks for exact sessions, PIDs, fresh event files, and fresh non-empty
-summaries; native-harness feedback favors parser serialization as the first
-ready isolated lower-level harness, while the current graph-counted
-coverage-guided lower-level row is a rich-text CRDT smoke lane. Protocol-server
-evidence describes the HTTP polling REST harness, and the graph has a one-lane
-protocol-server row, but the stricter capacity read still prioritizes operator
-HTTP correctness recovery and treats missing exact sessions as zero useful
-capacity.
+summaries. Native-harness feedback implemented and validated the
+parser-serialization harness, but did not launch it as an unbounded production
+lane; the current graph-counted coverage-guided lower-level row is still
+rich-text CRDT. Protocol-server evidence validated a one-seed HTTP polling
+server smoke with `protocol-server` event accounting, and the graph has a
+one-lane protocol-server row. The stricter capacity read still prioritizes
+operator HTTP correctness recovery and treats missing exact sessions as zero
+useful capacity.
 
 ## Fuzzing Level Executions
 
@@ -143,12 +145,12 @@ The execution metric estimates individual test/case executions from lane
 `events.ndjson`: browser seed attempts, unit/property fixed tests plus generated
 cases, coverage-guided inputs, and protocol/backend cases. Lower-level rows are
 approximate when reconstructed from batch metadata or legacy batch-count fields.
-The latest totals are approximately `390,443` browser/e2e, `161`
+The latest totals are approximately `390,424` browser/e2e, `161`
 transport/integration, `5,617,920` unit-property, `458,097` coverage-guided
 lower-level, and `10,431,910` protocol-server executions. The current 15-minute
-rate bucket has browser/e2e at about `36` executions/hour and protocol-server at
-about `88` executions/hour; lower-level current-rate buckets are `0` in this
-sample even though their cumulative reconstructed counts are large.
+rate bucket has browser/e2e at about `8` executions/hour; all lower-level,
+backend, protocol-server, fuzz-assertion, and other current-rate buckets are `0`
+in this sample even though their cumulative reconstructed counts are large.
 
 ## Fuzz Output Effectiveness
 
@@ -157,15 +159,15 @@ sample even though their cumulative reconstructed counts are large.
 The likely-real graph is a triage-output metric only. It counts non-duplicate
 `.triage-watcher/**/result.json` rows classified `likely_real`, deduped by
 canonical bug key and attributed to first-seen time. The latest collected
-triaged likely-real output is still all browser/e2e: `526` likely-real findings
-over about `2,882.6` runner-hours, or `18.25` per 100 runner-hours.
+triaged likely-real output is still all browser/e2e: `527` likely-real findings
+over about `2,882.3` runner-hours, or `18.28` per 100 runner-hours.
 
 ![Unique bug-output candidates by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-level.png)
 
 ![Unique bug-output candidate rate by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-rate-by-level.png)
 
 The broader unique-output graphs include untriaged raw signatures and
-lower-level assertion failures. Current unique candidate output is `4,283`
+lower-level assertion failures. Current unique candidate output is `4,319`
 browser/e2e candidates, `46` transport/integration candidates, `6`
 unit-property candidates, and `2` coverage-guided lower-level candidates.
 Backend-api, protocol-server, standalone fuzz-assertion, and other buckets have
@@ -286,9 +288,10 @@ buckets.
 
 ![Repeated critical-path no-progress artifacts](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-no-progress-artifacts.png)
 
-The critical-path executor has `6` blockers: one runnable benchmark-canary
-coverage-promotion blocker, two queued blockers including PR07C owner-matrix
-work, and three terminal blockers. Repeated no-progress artifacts are
+The critical-path executor has `6` blockers: one active reload-hydration job,
+one runnable benchmark-canary coverage-promotion blocker, one queued PR07C
+owner-matrix blocker, and three terminal blockers. Repeated no-progress
+artifacts are
 dominated by `benchmark-canary-fuzzer-gap/zero_executor_artifact` with `65`
 rows, followed by PR17 and seed-reducer pre-oracle/preflight rows.
 
@@ -309,15 +312,20 @@ contradicts any stronger interpretation: strict no-product startup noise is
 still considered a producer hard-hold/control-plane issue until novelty and
 supervisor refill paths stop relaunching it.
 
-The current fuzzing mix remains browser/e2e-heavy even though lower-level and
-protocol rows are now visible. Browser/e2e is still the only level producing
-triaged likely-real findings in the committed triage-output metric, while
-transport and lower-level lanes produce broader candidate output but little
-confirmed output. The level-mix persona feedback rejects trusting the
-graph-counted live mix as capacity accounting until fail-closed checks confirm
-current roots, exact sessions, PIDs, and fresh summaries.
+The current fuzzing mix remains browser/e2e-heavy but below the persona
+feedback's 24-lane browser floor, even though lower-level and protocol rows are
+visible. Browser/e2e is still the only level producing triaged likely-real
+findings in the committed triage-output metric, while transport and lower-level
+lanes produce broader candidate output but little confirmed output. The
+level-mix persona feedback rejects trusting the graph-counted live mix as
+capacity accounting until fail-closed checks confirm current roots, exact
+sessions, PIDs, and fresh summaries, and recommends restoring operator HTTP
+correctness before adding generic lower-level capacity.
 
 PR progress is visible again, but the controller is not currently advertising a
-non-empty push manifest. The PR loop still needs to turn held ready-product rows
-and the benchmark-canary/PR07C blockers into validated publishable branches
-rather than just accumulating blocked or no-progress artifacts.
+non-empty push manifest. The PR-split persona feedback keeps the fileable prefix
+through `PR15C` and rejects `PR16-RLH` as fileable until strict seed `6000007`
+reaches the final persistence oracle and owner rows prove it. The PR loop still
+needs to turn held ready-product rows, the benchmark-canary blocker, the active
+reload-hydration job, and the queued PR07C blocker into validated publishable
+branches rather than just accumulating blocked or no-progress artifacts.
