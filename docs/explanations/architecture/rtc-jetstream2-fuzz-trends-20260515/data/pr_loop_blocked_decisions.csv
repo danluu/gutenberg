@@ -1,13 +1,12 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until the PR07C owner matrix proves product ownership and exact promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until the PR07C owner matrix proves product ownership and exact
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until PR07C product ownership is proven by owner evidence and promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until PR07C product ownership is proven by owner evidence and
 promotion gates are green."
-publish-ready,reload-hydration/current-candidate,P0,no,"No push manifest or exact-stack green evidence exists, so reload-hydration is not publishable yet.",reload-hydration/current-candidate,"No push manifest or exact-stack green evidence exists, so reload-hydration is
-not publishable yet."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already published; the full branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already
-published; the full branch needs fresh product advantage."
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,The PR14B-based PR15A variant is already published; this original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"The PR14B-based PR15A variant is already published; this original-base branch is
+publish-ready,reload-hydration/current-candidate,P0,no,Push manifest is empty and exact-stack green evidence is missing.,reload-hydration/current-candidate,Push manifest is empty and exact-stack green evidence is missing.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already published; full branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already
+published; full branch needs fresh product advantage."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A variant is already published; original-base branch is
 duplicate under current evidence."
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,The PR14B-based PR15B variant is already published; this original-base branch is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"The PR14B-based PR15B variant is already published; this original-base branch is
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B variant is already published; original-base branch is
 duplicate under current evidence."
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,The PR14B-based PR15C variant is already published; this original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"The PR14B-based PR15C variant is already published; this original-base branch is
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C variant is already published; original-base branch is
 duplicate under current evidence."
