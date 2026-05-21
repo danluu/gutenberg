@@ -9,7 +9,7 @@ controller decisions,blocked,control decision,P0,3
 controller decisions,allowed,control decision,P1,5
 controller decisions,blocked,control decision,P1,4
 critical blockers,runnable,coverage-promotion,high,1
-critical blockers,queued,deferred-family,high,1
+critical blockers,active,deferred-family,high,1
 critical blockers,terminal,final-stack-join,high,1
 critical blockers,queued,owner-evidence,high,1
 critical blockers,terminal,reducer,high,2
@@ -19,4 +19,4 @@ critical lanes,queued,browser-e2e,lane,1
 critical lanes,queued,codex-analysis,lane,1
 active sessions,active,analysis,analysis,4
 active sessions,active,critical-continuation,critical-continuation,1
-active sessions,active,deferred,deferred,1
+active sessions,active,deferred,deferred,2
