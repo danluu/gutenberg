@@ -1661,6 +1661,38 @@ async function repairWpEnvWithGeneratedCompose( {
 	return false;
 }
 
+async function cleanPartialWpEnvCheckoutBeforeStartRetry( group, reason ) {
+	const installPath = await findGeneratedWpEnvInstallPath( group );
+	if ( ! installPath ) {
+		return false;
+	}
+	const wordpressPath = path.join( installPath, 'WordPress' );
+	if ( ! ( await fileExists( wordpressPath ) ) ) {
+		return false;
+	}
+
+	await runWpEnvCompose(
+		group,
+		installPath,
+		[ 'down', '--remove-orphans' ],
+		'wp-env-compose-down-before-start-retry',
+		3 * 60 * 1000
+	);
+	await fs.rm( wordpressPath, { recursive: true, force: true } );
+	await log(
+		`${ group.name }: removed partial generated-compose WordPress checkout before wp-env start retry (${ reason }).`
+	);
+	await event( {
+		group: group.name,
+		kind: 'repair',
+		action: 'wp-env-remove-partial-wordpress-checkout',
+		reason,
+		installPath,
+		wordpressPath,
+	} );
+	return true;
+}
+
 async function getWpSiteUrl( group ) {
 	const result = await runWpEnv(
 		group,
@@ -1856,6 +1888,10 @@ async function ensureWpEnv( groupState ) {
 					action: 'wp-env-start-after-compose-repair',
 				} );
 				const wpEnvStartAfterComposeRepairLog = `${ group.name }-wp-env-start-after-compose-repair.log`;
+				await cleanPartialWpEnvCheckoutBeforeStartRetry(
+					group,
+					'wp-env-start-after-compose-repair'
+				);
 				startResult = await runWpEnv( group, [ 'start' ], {
 					timeoutMs: 10 * 60 * 1000,
 					logPath: path.join(
@@ -1979,6 +2015,10 @@ async function ensureWpEnv( groupState ) {
 			candidates,
 			restRepair: true,
 		} );
+		await cleanPartialWpEnvCheckoutBeforeStartRetry(
+			group,
+			'wp-env-start-after-rest-repair'
+		);
 		let repairStartResult = await runWpEnv( group, [ 'start' ], {
 			timeoutMs: 10 * 60 * 1000,
 			logPath: path.join(
