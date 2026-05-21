@@ -813,6 +813,10 @@ const ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS =
 		'RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS',
 		1
 	);
+const BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS',
+	1
+);
 
 const AUTO_EXPANSION_GOAL_CANDIDATES = [
 	{
@@ -13669,7 +13673,13 @@ async function ensureBootstrapSupervisorGroups() {
 		benchmarkCanaryForcedGroups.size > 0
 			? Math.min(
 					benchmarkCanaryForcedGroups.size,
-					Math.max( 1, MAX_ENABLED_GROUPS - 1 )
+					Math.max(
+						1,
+						Math.min(
+							BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS,
+							MAX_ENABLED_GROUPS - 1
+						)
+					)
 			  )
 			: 0;
 	const successDeficitBootstrapStart = selected.length;
