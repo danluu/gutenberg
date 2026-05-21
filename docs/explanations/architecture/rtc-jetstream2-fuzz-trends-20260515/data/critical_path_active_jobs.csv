@@ -1,5 +1,6 @@
 session,class,started_hint
 rtc-critical-path-pr-executor-loop,analysis,
+rtc-deferred-job-reload-hydration-20260521T191755Z,deferred,
 rtc-deferred-job-rich-text-suffix-corruption-20260521T191249Z,deferred,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
