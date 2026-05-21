@@ -96,7 +96,10 @@ remove_path() {
 	local path=$1
 	[ -e "$path" ] || return 0
 	log "remove path=$path"
-	chmod -R u+rwX "$path" >> "$LOG" 2>&1 || true
+	if ionice -c3 nice -n 19 rm -rf -- "$path" >> "$LOG" 2>&1; then
+		return 0
+	fi
+	chmod -R u+rwX "$path" >/dev/null 2>> "$LOG" || true
 	ionice -c3 nice -n 19 rm -rf -- "$path" >> "$LOG" 2>&1 ||
 		sudo ionice -c3 nice -n 19 rm -rf -- "$path" >> "$LOG" 2>&1 ||
 		log "remove failed path=$path"
