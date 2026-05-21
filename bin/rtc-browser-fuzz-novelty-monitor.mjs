@@ -145,6 +145,9 @@ const FORCE_START = process.env.RTC_FUZZ_NOVELTY_FORCE_START === '1';
 const START_SUPERVISOR = process.env.RTC_FUZZ_NOVELTY_START_SUPERVISOR !== '0';
 const ALLOW_FLEET_STARTUP_NOISE_CANARY =
 	process.env.RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY === '1';
+const ALLOW_SUCCESS_DEFICIT_STARTUP_NOISE_CANARY =
+	process.env
+		.RTC_FUZZ_NOVELTY_ALLOW_SUCCESS_DEFICIT_STARTUP_NOISE_CANARY !== '0';
 const INCLUDE_RECHECK_COVERAGE =
 	process.env.RTC_FUZZ_NOVELTY_INCLUDE_RECHECK_COVERAGE === '1';
 const ENABLE_HTTP_PROBE =
@@ -756,6 +759,35 @@ const ZERO_COVERAGE_PRIORITY_GROUPS = [
 	'novelty-http-title-reload-convergence',
 	'novelty-http-existing-post-crdt-metadata',
 ];
+const DEFAULT_SUCCESS_DEFICIT_BOOTSTRAP_GROUPS = [
+	'novelty-ws-real-user-editing',
+	'novelty-ws-real-user-rich-text',
+	'novelty-ws-parser-serialization',
+	'novelty-ws-parser-transform',
+	'novelty-ws-multi-reload-lifecycle',
+	'novelty-ws-collaboration-ui-signals',
+	'novelty-ws-media-cross-entity',
+	'novelty-ws-three-user-late-join',
+	'novelty-ws-same-user-lifecycle',
+	'novelty-ws-revision-persistence',
+	'novelty-ws-revision-recovery',
+];
+const configuredSuccessDeficitBootstrapGroups = parsePathList(
+	process.env.RTC_FUZZ_NOVELTY_SUCCESS_DEFICIT_BOOTSTRAP_GROUPS
+);
+const SUCCESS_DEFICIT_BOOTSTRAP_GROUPS = uniqueStringList(
+	( configuredSuccessDeficitBootstrapGroups.length
+		? configuredSuccessDeficitBootstrapGroups
+		: DEFAULT_SUCCESS_DEFICIT_BOOTSTRAP_GROUPS
+	).filter( ( group ) => PROFILE_BY_GROUP[ group ] )
+);
+const SUCCESS_DEFICIT_BOOTSTRAP_GROUP_SET = new Set(
+	SUCCESS_DEFICIT_BOOTSTRAP_GROUPS
+);
+const SUCCESS_DEFICIT_BOOTSTRAP_SLOTS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_SUCCESS_DEFICIT_BOOTSTRAP_SLOTS',
+	2
+);
 const ZERO_COVERAGE_EVICTION_ORDER = [
 	'novelty-ws-block-gauntlet',
 	'novelty-ws-common-blocks',
@@ -8017,6 +8049,20 @@ function getBootstrapZeroCoveragePriorityGroups() {
 	);
 }
 
+function getBootstrapSuccessDeficitGroups() {
+	const guidanceGroups = uniqueStringList(
+		( state.coverageGuidance?.unmetGoals ?? [] )
+			.flatMap( ( goal ) => goal.groups ?? [] )
+			.filter( ( group ) =>
+				SUCCESS_DEFICIT_BOOTSTRAP_GROUP_SET.has( group )
+			)
+	);
+	return uniqueStringList( [
+		...guidanceGroups,
+		...SUCCESS_DEFICIT_BOOTSTRAP_GROUPS,
+	] ).filter( ( group ) => PROFILE_BY_GROUP[ group ] );
+}
+
 function getUnmetCoverageGoals( goals ) {
 	return goals
 		.filter( ( goal ) => ! goal.met )
@@ -13128,13 +13174,17 @@ async function ensureBootstrapSupervisorGroups() {
 		} signatures, share=${ hold.share }, source=${
 			hold.source
 		}); preserving product-evidence signatures without requeueing the held lifecycle/reload producer`;
-	const addGroup = ( group ) => {
+	const addGroup = ( group, options = {} ) => {
 		const activeNoisePause = getActiveNoisePauseCooldown( group );
 		const duplicateFamilyHoldBlock =
 			getBootstrapDuplicateFamilyHoldBlock( group );
 		const canBypassNonStartupPolicyGuards =
 			ALLOW_DISABLED_POLICY_GUARDS &&
 			SUPERVISOR_SESSION === 'rtc-coverage-guided-supervisor';
+		const successDeficitBypassesStartupNoise =
+			options.successDeficitBootstrap === true &&
+			ALLOW_SUCCESS_DEFICIT_STARTUP_NOISE_CANARY &&
+			SUCCESS_DEFICIT_BOOTSTRAP_GROUP_SET.has( group );
 		const benchmarkCanaryBypassesStartupNoise =
 			shouldBypassBenchmarkCanaryNoisePause(
 				group,
@@ -13150,6 +13200,11 @@ async function ensureBootstrapSupervisorGroups() {
 			! shouldBypassBenchmarkCanaryNoisePause(
 				group,
 				state.pausedGroups?.[ group ]
+			) &&
+			!(
+				successDeficitBypassesStartupNoise &&
+				getStoredNoisePauseKind( state.pausedGroups?.[ group ] ) ===
+					'startup-noise'
 			);
 		const activeNoisePauseBlocksGroup =
 			activeNoisePause &&
@@ -13157,9 +13212,14 @@ async function ensureBootstrapSupervisorGroups() {
 				canBypassNonStartupPolicyGuards &&
 				activeNoisePause.kind !== 'startup-noise'
 			) &&
-			! shouldBypassBenchmarkCanaryNoisePause( group, activeNoisePause );
+			! shouldBypassBenchmarkCanaryNoisePause( group, activeNoisePause ) &&
+			!(
+				successDeficitBypassesStartupNoise &&
+				activeNoisePause.kind === 'startup-noise'
+			);
 		const startupHoldBlocksGroup =
 			! benchmarkCanaryBypassesStartupNoise &&
+			! successDeficitBypassesStartupNoise &&
 			isStartupHoldBlockingProducerGroup(
 				bootstrapProducerStartupHold,
 				group
@@ -13176,6 +13236,26 @@ async function ensureBootstrapSupervisorGroups() {
 				reason:
 					getBenchmarkCanaryFeedbackReason( group ) ??
 					'benchmark canary feedback requires this equivalent fuzz lane',
+				...( activeNoisePause?.at
+					? { sourcePauseAt: activeNoisePause.at }
+					: {} ),
+				...( activeNoisePause?.reason
+					? { sourcePauseReason: activeNoisePause.reason }
+					: {} ),
+				...( activeNoisePause?.expiresAt
+					? { expiresAt: activeNoisePause.expiresAt }
+					: {} ),
+			} );
+		} else if (
+			successDeficitBypassesStartupNoise &&
+			( state.pausedGroups?.[ group ] || activeNoisePause )
+		) {
+			delete state.pausedGroups?.[ group ];
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'bootstrap-success-deficit-bypass-startup-noise',
+				group,
+				reason: 'bounded success-deficit bootstrap canary is allowed to retest a startup-noise-paused surface because unmet successful-completion goals are otherwise stuck behind stale no-product cooldowns',
 				...( activeNoisePause?.at
 					? { sourcePauseAt: activeNoisePause.at }
 					: {} ),
@@ -13585,7 +13665,6 @@ async function ensureBootstrapSupervisorGroups() {
 			} );
 		}
 	}
-	const zeroCoverageBootstrapStart = selected.length;
 	const benchmarkCanaryBootstrapReserve =
 		benchmarkCanaryForcedGroups.size > 0
 			? Math.min(
@@ -13593,6 +13672,37 @@ async function ensureBootstrapSupervisorGroups() {
 					Math.max( 1, MAX_ENABLED_GROUPS - 1 )
 			  )
 			: 0;
+	const successDeficitBootstrapStart = selected.length;
+	const successDeficitBootstrapLimit =
+		selected.length +
+		Math.min(
+			SUCCESS_DEFICIT_BOOTSTRAP_SLOTS,
+			Math.max(
+				0,
+				MAX_ENABLED_GROUPS -
+					selected.length -
+					benchmarkCanaryBootstrapReserve
+			)
+		);
+	for ( const group of getBootstrapSuccessDeficitGroups() ) {
+		if ( selected.length >= successDeficitBootstrapLimit ) {
+			break;
+		}
+		addGroup( group, { successDeficitBootstrap: true } );
+	}
+	const successDeficitBootstrapGroups = selected.slice(
+		successDeficitBootstrapStart
+	);
+	if ( successDeficitBootstrapGroups.length > 0 ) {
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'bootstrap-success-deficit-supervisor-groups',
+			groups: successDeficitBootstrapGroups,
+			reservedBenchmarkCanarySlots: benchmarkCanaryBootstrapReserve,
+			reason: 'fresh coverage-guided supervisor reserved initial browser slots for groups that map to still-unmet successful-completion goals before generic breadth rotation could spend the full producer budget elsewhere',
+		} );
+	}
+	const zeroCoverageBootstrapStart = selected.length;
 	const zeroCoverageBootstrapLimit =
 		MAX_ENABLED_GROUPS - benchmarkCanaryBootstrapReserve;
 	for ( const group of getBootstrapZeroCoveragePriorityGroups() ) {
