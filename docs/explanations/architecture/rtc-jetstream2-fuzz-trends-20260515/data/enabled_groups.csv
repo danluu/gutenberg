@@ -1552,3 +1552,5 @@ timestamp,group,group_family
 2026-05-21T18:16:32Z,novelty-ws-revision-recovery-coverage-bridge,persistence
 2026-05-21T18:26:17Z,novelty-ws-revision-persistence,persistence
 2026-05-21T18:26:17Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-21T18:31:14Z,novelty-ws-revision-persistence,persistence
+2026-05-21T18:31:14Z,novelty-ws-permissions-auth-locks,auth/locks
