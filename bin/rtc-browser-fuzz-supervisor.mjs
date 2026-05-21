@@ -1010,6 +1010,12 @@ function looksLikeStaleDockerEndpoint( output ) {
 	);
 }
 
+function looksLikePortCollision( output ) {
+	return /Bind for [^\n\r]+ failed: port is already allocated|EADDRINUSE|address already in use/i.test(
+		String( output ?? '' )
+	);
+}
+
 function looksLikeDockerDiskPressure( output ) {
 	return /no space left on device|disk got full|failed to (?:extract|register) layer|layerdb\/tmp\/write-set.*file exists/i.test(
 		String( output ?? '' )
@@ -1058,6 +1064,101 @@ async function retryWpEnvStartAfterDatabaseFailure(
 	}
 
 	return result;
+}
+
+function getGroupAllocatedPorts( group ) {
+	return [
+		group.env?.WP_ENV_PORT,
+		group.env?.WP_ENV_TESTS_PORT,
+		group.env?.WP_ENV_PHPMYADMIN_PORT,
+		group.env?.GUTENBERG_RTC_TEST_WS_PORT,
+	]
+		.map( ( value ) => String( value ?? '' ).trim() )
+		.filter( ( value ) => /^\d+$/.test( value ) );
+}
+
+async function cleanupDockerPortCollisions( group, reason ) {
+	const ports = getGroupAllocatedPorts( group );
+	if ( ports.length === 0 ) {
+		return false;
+	}
+	const result = await runCommand( {
+		command: 'docker',
+		args: [ 'ps', '--format', '{{.ID}} {{.Names}} {{.Ports}}' ],
+		timeoutMs: 60000,
+	} );
+	if ( ! result.ok ) {
+		await event( {
+			group: group.name,
+			kind: 'repair',
+			action: 'wp-env-port-collision-docker-scan-failed',
+			reason,
+			output: getOutputSnippet( result.output ),
+		} );
+		return false;
+	}
+	const staleContainerIds = [];
+	for ( const line of result.output.split( '\n' ) ) {
+		if (
+			ports.some(
+				( port ) =>
+					line.includes( `0.0.0.0:${ port }->` ) ||
+					line.includes( `[::]:${ port }->` )
+			)
+		) {
+			const id = line.trim().split( /\s+/ )[ 0 ];
+			if ( id ) {
+				staleContainerIds.push( id );
+			}
+		}
+	}
+	if ( staleContainerIds.length === 0 ) {
+		return false;
+	}
+
+	const removeResult = await runCommand( {
+		command: 'docker',
+		args: [ 'rm', '-f', ...staleContainerIds ],
+		timeoutMs: 120000,
+	} );
+	await event( {
+		group: group.name,
+		kind: 'repair',
+		action: 'wp-env-port-collision-cleanup',
+		reason,
+		ports,
+		staleContainerIds,
+		ok: removeResult.ok,
+		code: removeResult.code,
+		output: getOutputSnippet( removeResult.output ),
+	} );
+	return removeResult.ok;
+}
+
+async function retryWpEnvStartAfterPortCollision(
+	group,
+	startResult,
+	{ action, logPath }
+) {
+	if ( startResult.ok || ! looksLikePortCollision( startResult.output ) ) {
+		return startResult;
+	}
+	await log(
+		`${ group.name }: wp-env start hit a port collision; removing stale containers for allocated ports before retry.`
+	);
+	await cleanupDockerPortCollisions( group, action );
+	await cleanPartialWpEnvCheckoutBeforeStartRetry( group, action );
+	await event( {
+		group: group.name,
+		kind: 'repair',
+		action,
+		reason: 'port-collision',
+		ports: getGroupAllocatedPorts( group ),
+	} );
+	return runWpEnv( group, [ 'start' ], {
+		timeoutMs: 10 * 60 * 1000,
+		logPath: getAttemptLogPath( logPath, 'port-retry' ),
+	} );
 }
 
 function normalizeBaseUrl( value ) {
@@ -1850,6 +1951,28 @@ async function ensureWpEnv( groupState ) {
 				),
 			}
 		);
+		startResult = await retryWpEnvStartAfterPortCollision(
+			group,
+			startResult,
+			{
+				action: 'wp-env-start-port-collision-retry',
+				logPath: path.join(
+					OUTPUT_DIR,
+					`${ group.name }-wp-env-start-port-collision-retry.log`
+				),
+			}
+		);
+		startResult = await retryWpEnvStartAfterDatabaseFailure(
+			group,
+			startResult,
+			{
+				action: 'wp-env-start-after-port-collision-db-retry',
+				logPath: path.join(
+					OUTPUT_DIR,
+					`${ group.name }-wp-env-start-after-port-collision-db-retry.log`
+				),
+			}
+		);
 		if ( ! startResult.ok ) {
 			const recovered = await findHealthyWpEnvAfterFailedStart( group );
 			if ( recovered ) {
@@ -1907,6 +2030,28 @@ async function ensureWpEnv( groupState ) {
 						logPath: path.join(
 							OUTPUT_DIR,
 							`${ group.name }-wp-env-start-after-compose-repair-db-retry.log`
+						),
+					}
+				);
+				startResult = await retryWpEnvStartAfterPortCollision(
+					group,
+					startResult,
+					{
+						action: 'wp-env-start-after-compose-repair-port-retry',
+						logPath: path.join(
+							OUTPUT_DIR,
+							`${ group.name }-wp-env-start-after-compose-repair-port-retry.log`
+						),
+					}
+				);
+				startResult = await retryWpEnvStartAfterDatabaseFailure(
+					group,
+					startResult,
+					{
+						action: 'wp-env-start-after-compose-repair-port-db-retry',
+						logPath: path.join(
+							OUTPUT_DIR,
+							`${ group.name }-wp-env-start-after-compose-repair-port-db-retry.log`
 						),
 					}
 				);
@@ -2034,6 +2179,28 @@ async function ensureWpEnv( groupState ) {
 				logPath: path.join(
 					OUTPUT_DIR,
 					`${ group.name }-wp-env-start-after-rest-repair-db-retry.log`
+				),
+			}
+		);
+		repairStartResult = await retryWpEnvStartAfterPortCollision(
+			group,
+			repairStartResult,
+			{
+				action: 'wp-env-start-after-rest-repair-port-retry',
+				logPath: path.join(
+					OUTPUT_DIR,
+					`${ group.name }-wp-env-start-after-rest-repair-port-retry.log`
+				),
+			}
+		);
+		repairStartResult = await retryWpEnvStartAfterDatabaseFailure(
+			group,
+			repairStartResult,
+			{
+				action: 'wp-env-start-after-rest-repair-port-db-retry',
+				logPath: path.join(
+					OUTPUT_DIR,
+					`${ group.name }-wp-env-start-after-rest-repair-port-db-retry.log`
 				),
 			}
 		);
