@@ -4008,7 +4008,11 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T19:00:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,17,17,17,17,0,899321,FALSE
 2026-05-21T19:00:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,4,3,2,4,2,1138901,FALSE
 2026-05-21T19:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,22,22,22,1,0,6377,FALSE
-2026-05-21T19:15:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,13,13,13,13,0,684172,FALSE
-2026-05-21T19:15:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,12,10,8,12,4,671229,FALSE
-2026-05-21T19:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,13,13,13,13,0,684506,FALSE
-2026-05-21T19:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,1,0,2,2,573228,FALSE
+2026-05-21T19:15:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,17,17,17,17,0,909773,FALSE
+2026-05-21T19:15:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,16,13,10,16,6,898670,FALSE
+2026-05-21T19:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,17,17,17,17,0,909250,FALSE
+2026-05-21T19:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,891199,FALSE
+2026-05-21T19:30:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,3,3,3,3,0,162730,FALSE
+2026-05-21T19:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,3,3,3,3,0,170215,FALSE
+2026-05-21T19:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,3,3,3,3,0,159336,FALSE
+2026-05-21T19:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,22,22,22,1,0,5436,FALSE
