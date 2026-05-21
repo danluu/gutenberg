@@ -340,7 +340,7 @@ critical_script_has_pr07c_terminal_support() {
 	rg -q 'pr07c_readiness_resolved' "$script" || return 1
 	rg -q 'pr07c-browser-env:repaired_ready' "$script" || return 1
 	rg -q 'owner-matrix|pr07c-owner|HOLD-07C' "$script" || return 1
-	rg -q 'direct_path=.*pr07c-browser-env/classification[.]tsv' "$script" || return 1
+	rg -q 'direct_path=.*(pr07c-browser-env/classification[.]tsv|latest_continuation_classification pr07c-browser-env)' "$script" || return 1
 }
 
 critical_script_sha() {
