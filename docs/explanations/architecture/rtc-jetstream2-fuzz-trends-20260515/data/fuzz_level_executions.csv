@@ -4074,9 +4074,10 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T20:30:00Z,strict-expansion,http-large-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,5,3,0,5,5,733085,FALSE
 2026-05-21T20:30:00Z,strict-expansion,http-persistence-probe,browser-e2e,http,persistence-no-title,1,1,0,1,1,42903,FALSE
 2026-05-21T20:45:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,1,0,0,1,1,16950,FALSE
-2026-05-21T20:45:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,4,2,2,4,2,299730,FALSE
-2026-05-21T20:45:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,0,2,2,299539,FALSE
-2026-05-21T20:45:00Z,focused-shards,focused-long-doc-b,browser-e2e,ws,long-session-large-doc,3,3,3,3,0,217568,FALSE
-2026-05-21T20:45:00Z,focused-shards,focused-many-user-scale,browser-e2e,ws,many-user-lifecycle,2,1,0,2,2,164719,FALSE
-2026-05-21T20:45:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,6,6,6,6,0,277474,FALSE
-2026-05-21T20:45:00Z,strict-expansion,http-large-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,1,0,2,2,266706,FALSE
+2026-05-21T20:45:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,2,1,0,2,2,118947,FALSE
+2026-05-21T20:45:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,15,10,7,15,8,843537,FALSE
+2026-05-21T20:45:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,11,7,3,11,8,1585350,FALSE
+2026-05-21T20:45:00Z,focused-shards,focused-long-doc-b,browser-e2e,ws,long-session-large-doc,9,8,7,9,2,678098,FALSE
+2026-05-21T20:45:00Z,focused-shards,focused-many-user-scale,browser-e2e,ws,many-user-lifecycle,8,4,0,8,8,672940,FALSE
+2026-05-21T20:45:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,15,13,13,15,2,827660,FALSE
+2026-05-21T20:45:00Z,strict-expansion,http-large-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,9,5,0,9,9,715054,FALSE
