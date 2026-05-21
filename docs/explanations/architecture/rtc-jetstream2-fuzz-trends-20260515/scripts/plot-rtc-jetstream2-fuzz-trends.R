@@ -33,6 +33,7 @@ state_path <- file.path( raw_dir, "novelty-state.json" )
 novelty_status_path <- file.path( raw_dir, "novelty-status.md" )
 cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
 load_path <- file.path( data_dir, "load_average.csv" )
+disk_path <- file.path( data_dir, "disk_free_space.csv" )
 activity_path <- file.path( data_dir, "project_activity.csv" )
 fuzz_level_mix_path <- file.path( data_dir, "fuzz_level_mix.csv" )
 fuzz_level_executions_path <- file.path( data_dir, "fuzz_level_executions.csv" )
@@ -1619,6 +1620,61 @@ if ( file.exists( load_path ) ) {
 	)
 }
 
+if ( file.exists( disk_path ) ) {
+	disk_free_space <- read_csv( disk_path, show_col_types = FALSE ) %>%
+		mutate(
+			timestamp = parse_utc_timestamp( timestamp ),
+			root_free_gib = as.numeric( root_free_gib ),
+			root_used_percent = as.numeric( root_used_percent ),
+			data_free_gib = as.numeric( data_free_gib ),
+			data_used_percent = as.numeric( data_used_percent )
+		) %>%
+		filter( ! is.na( timestamp ) ) %>%
+		filter( timestamp >= floor_date( min( monitor$timestamp ), "day" ) )
+
+	disk_free_long <- disk_free_space %>%
+		select( timestamp, root_free_gib, data_free_gib ) %>%
+		pivot_longer( ends_with( "_free_gib" ), names_to = "volume", values_to = "free_gib" ) %>%
+		filter( ! is.na( free_gib ) ) %>%
+		mutate(
+			volume = recode(
+				volume,
+				root_free_gib = "root (/)",
+				data_free_gib = "data (/media/volume/danluu-fuzz-data)"
+			)
+		)
+
+	disk_thresholds <- tibble(
+		volume = c( "root (/)", "data (/media/volume/danluu-fuzz-data)" ),
+		pressure_free_gib = c( 25, 160 )
+	)
+
+	write_plot(
+		"disk-free-space-over-time.png",
+		ggplot( disk_free_long, aes( x = timestamp, y = free_gib ) ) +
+			geom_point( color = "#2c7fb8", alpha = 0.76, size = 1.7 ) +
+			geom_hline(
+				data = disk_thresholds,
+				aes( yintercept = pressure_free_gib ),
+				linetype = "dashed",
+				color = "grey35",
+				inherit.aes = FALSE
+			) +
+			facet_wrap( vars( volume ), ncol = 1, scales = "free_y" ) +
+			scale_y_continuous( labels = comma ) +
+			scale_time_axis( date_breaks = "4 hours" ) +
+			labs(
+				title = "Free disk space over time",
+				x = "UTC time",
+				y = "free GiB",
+				caption = "Each point is an autoscaler or graph-refresh sample. Dashed lines show the default pressure thresholds used by the disk-aware controller."
+			) +
+			theme_rtc(),
+		width = 9,
+		height = 7.2
+	)
+}
+
 if ( file.exists( activity_path ) ) {
 	activity <- read_csv( activity_path, show_col_types = FALSE ) %>%
 		mutate( timestamp = parse_utc_timestamp( timestamp ) )
@@ -3123,6 +3179,10 @@ summary_lines <- c(
 	paste0( "current_run_top_duplicate_share_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_top_duplicate_share ), NA ) ),
 	paste0( "quality_issues_last: ", last( monitor$quality_issues ) ),
 	paste0( "memory_free_gb_last: ", last( monitor$memory_free_gb ) ),
+	paste0( "root_disk_free_gib_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$root_free_gib ), NA ) ),
+	paste0( "root_disk_used_percent_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$root_used_percent ), NA ) ),
+	paste0( "data_disk_free_gib_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$data_free_gib ), NA ) ),
+	paste0( "data_disk_used_percent_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$data_used_percent ), NA ) ),
 	paste0( "load_1_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_1 ), NA ) ),
 	paste0( "load_5_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_5 ), NA ) ),
 	paste0( "load_15_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_15 ), NA ) ),

@@ -170,6 +170,14 @@ product duplicate/noise rate.
 
 ![Load average over time](rtc-jetstream2-fuzz-trends-20260515/plots/load-average-over-time.png)
 
+![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
+
+The disk graph tracks both the root filesystem and the mounted data volume used
+by the fuzzing runs. The dashed lines are the default disk-pressure thresholds
+used by the controller; when either filesystem crosses its threshold, the
+coverage-guided browser budget is reduced instead of waiting for a write
+failure.
+
 Recent sysstat samples through `2026-05-19T19:00:00Z` show bursty CPU and load.
 The latest 25 CPU samples range from `69.11%` to `81.64%` utilization, with the
 latest sample at `81.22%`. Over those same 25 samples, one-minute load exceeded
