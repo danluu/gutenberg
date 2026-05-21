@@ -1,21 +1,18 @@
 action,target,priority,allowed,reason
-launch-owner-matrix,PR07C/HOLD-07C-bounded-exact-owner-replay,P0,yes,Readiness is resolved; exact owner replay is the shortest product path for held ready/rtc-pr07c-reload-record-snapshots.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until owner evidence is conclusive and the large-post three-user HTTP publish UI gate is clean.
-repair-branch,benchmark-canary-fuzzer-gap/large-post-three-user-http-publish-ui,P0,yes,Allow one artifact-complete repair lane; the fixed stack passed locally but benchmark control and publish UI stability still block promotion.
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-zero-byte-repair,P0,no,Active or recent repair work plus zero-byte artifacts make duplicate heavy launches diagnostic churn.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Minimal PR06B is already published; the full branch needs newer product evidence beyond the canonical minimal fix.
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based variant is already published; original-base publication is duplicate under current evidence.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based variant is already published; original-base publication is duplicate under current evidence.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based variant is already published; original-base publication is duplicate under current evidence.
-cooldown-diagnostic,PR07C/browser-env-setup-loop,P0,yes,Runtime readiness is already consumed; more setup-loop launches do not add owner evidence.
-cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"Family has 308 launches, duplicate heads, and active work; accept only product fix, owner evidence, or explicit downscope."
-cooldown-diagnostic,pre-save-search-live-collapse/duplicate-diagnostics,P1,yes,Family has 233 launches and duplicate heads; promotion requires fresh focused owner evidence.
-cooldown-diagnostic,rich-text-suffix-corruption/duplicate-diagnostics,P1,yes,Family has 219 launches and duplicate heads; require focused owner evidence or explicit downscope.
-downscope-family,malformed-save-payload/raw-deferred-heads,P1,yes,"Canonical PR06B minimal is already published, so raw deferred malformed-save heads are superseded."
-downscope-family,http-room-isolation/additional-branches,P1,yes,PR02A is already published and no fresh healthy-user HTTP room-isolation evidence supports another branch.
-reserve-discovery,discovery-reserve,P0,yes,Discovery is protected and healthy at 16 active sessions over min 3; keep fuzzing reserve while allowing bounded P0 work.
-block-heavy-pr-fanout,broad-product-pr-validation,P0,no,Preserve discovery reserve and PR slot accounting; do not launch broad heavy PR jobs beyond PR07C owner replay and one benchmark repair.
-generate-publication-manifest,ready-product-prs,P1,yes,Cheap analysis-only manifest generation is allowed under the reserve and should reflect already published and held branches.
-update-controller-rule,effective-pr-slot-accounting,P0,yes,"Count queued and runnable owner matrices, repairs, deferred diagnostics, continuations, finalizers, and persona loops against PR capacity."
-update-controller-rule,artifact-complete-single-flight,P0,yes,"Allow one active lane per blocker or family and reject zero-byte, setup-only, pre-oracle, and duplicate-head artifacts as progress."
-update-controller-rule,large-post-http-promotion-gate,P0,yes,Require clean exact-stack large-post three-user HTTP plus publish UI readiness before PR07C publication or maintainer snapshot claims.
+launch-owner-matrix,PR07C/HOLD-07C-bounded-exact-owner-replay,P0,yes,Readiness is resolved; this is the shortest product path to owner evidence for ready/rtc-pr07c-reload-record-snapshots.
+repair-branch,PR07C/pr07c-browser-env,P0,no,Do not relaunch setup-only repair now; reopen only if the owner matrix cannot reach seeded action/reload/checkpoint.
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until PR07C owner evidence is conclusive and exact-stack focused HTTP gates are green.
+adopt-repair,benchmark-canary-fuzzer-gap/exact-stack-focused-rows,P0,yes,"Allow one artifact-complete lane for title-reload-http, existing-post-crdt-http, and large-http-lifecycle promotion blockers."
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-zero-byte-repair,P0,no,"Repeated zero-byte, pre-oracle, or setup-only artifacts are churn; keep single-flight artifact-complete repair only."
+cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"Active work exists and budget is exceeded with 401 launches and 35 recent against max 8; accept only product fix, owner evidence, or downscope."
+cooldown-diagnostic,pre-save-search-live-collapse/duplicate-diagnostics,P1,yes,Diagnostic family is over budget with 311 launches and 28 recent against max 8; promotion needs focused owner evidence.
+cooldown-diagnostic,rich-text-suffix-corruption/duplicate-diagnostics,P1,yes,Diagnostic family is over budget with 266 launches and 17 recent against max 8; require focused owner evidence or downscope.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical PR06B minimal is already published; full branch needs fresh product evidence before publication.
+publish-ready,ready/rtc-pr15a-pr15b-pr15c-original-base,P1,no,PR14B-based PR15A/B/C variants are already published; original-base branches are duplicate under current evidence.
+publish-manifest,published-ready-product-branches,P0,yes,Cheap manifest reconciliation is allowed to track already-published real-fix branches without spending heavy PR capacity.
+reserve-discovery,discovery-reserve,P0,yes,Discovery is healthy at 13 active sessions over min 3; preserve fuzzing reserve while allowing bounded P0 product work.
+limit-pr-fanout,broad-heavy-pr-jobs,P0,yes,Discovery is not protected and PR-adjacent work is active or runnable; avoid broad heavy PR fanout and duplicate launches.
+update-controller-rule,effective-pr-slot-accounting,P0,yes,"Count active, runnable, and queued repairs, owner matrices, benchmark jobs, deferred jobs, continuations, finalizers, and persona loops against PR capacity."
+update-controller-rule,artifact-complete-single-flight,P0,yes,"Allow one lane per blocker or family; reject zero-byte, setup-only, pre-oracle, and duplicate-head artifacts as progress."
+update-controller-rule,family-budget-hard-gate,P0,yes,"Block generic family relaunches over budget unless there is a new fix head, owner evidence, or explicit downscope."
+update-controller-rule,exact-stack-promotion-gates,P0,yes,"Block reload, title, persistence, rich-text, CRDT, and snapshot promotion until exact-stack focused HTTP and large HTTP rows pass."
