@@ -98,8 +98,9 @@ have prevented productive-analysis output from affecting critical-path work.
 Two changes were made:
 
 - the critical-path executor now uses indexed or bounded recent-run lookup for
-  the latest PR-split progress-unblock artifact instead of an unbounded deep
-  scan of all PR-split history;
+  the latest PR-split progress-unblock artifact and continuation
+  `classification.tsv` files instead of unbounded deep scans of all historical
+  run output;
 - the structural watchdog now emits a high-severity finding when the critical
   executor lock is held without the `rtc-critical-path-pr-executor-loop` tmux
   session.
