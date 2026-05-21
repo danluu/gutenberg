@@ -1,7 +1,10 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until PR07C product ownership is proven by owner evidence and promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until PR07C product ownership is proven by owner evidence and
-promotion gates are green."
-publish-ready,reload-hydration/current-candidate,P0,no,Push manifest is empty and exact-stack green evidence is missing.,reload-hydration/current-candidate,Push manifest is empty and exact-stack green evidence is missing.
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner replay has already been consumed as current evidence; do not launch another heavy browser owner matrix until newer owner evidence appears.,PR07C/HOLD-07C,"Cycle380 owner replay has already been consumed as current evidence; do not
+launch another heavy browser owner matrix until newer owner evidence appears."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Keep held until newer conclusive product-owned evidence or exact replay changes the PR07C ownership blocker.,ready/rtc-pr07c-reload-record-snapshots,"Keep held until newer conclusive product-owned evidence or exact replay changes
+the PR07C ownership blocker."
+publish-ready,reload-hydration/current-candidate,P0,no,Current candidate lacks exact-stack green title-reload-http and existing-post-crdt-http evidence and must retain large-http-lifecycle coverage.,reload-hydration/current-candidate,"Current candidate lacks exact-stack green title-reload-http and
+existing-post-crdt-http evidence and must retain large-http-lifecycle coverage."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already published; full branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already
 published; full branch needs fresh product advantage."
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A variant is already published; original-base branch is

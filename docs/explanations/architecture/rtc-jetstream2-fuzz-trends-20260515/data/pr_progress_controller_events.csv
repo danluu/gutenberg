@@ -833,3 +833,9 @@ timestamp,message,event_type
 2026-05-21T23:17:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-05-21T23:19:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-05-21T23:21:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-21T23:23:50Z,launched persona controller round 20260521T232350Z,persona round launched
+2026-05-21T23:23:52Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-21T23:25:52Z,PR progress controller started pid=1522290,controller start
+2026-05-21T23:25:56Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-21T23:27:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-21T23:30:03Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
