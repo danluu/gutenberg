@@ -1,4 +1,6 @@
 session,class,started_hint
+rtc-analysis-live-2c76b4c0-http-same-user-stale-draft-gen-2-20260521T234340Z,analysis,
+rtc-analysis-live-2c76b4c0-ws-many-user-lifecycle-gen-15-20260521T234842Z,analysis,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
