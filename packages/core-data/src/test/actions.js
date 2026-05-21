@@ -1778,6 +1778,89 @@ describe( 'saveEntityRecord', () => {
 		expect( result ).toBe( staleSaveResponse );
 	} );
 
+	it( 'does not write hydrated CRDT save response raw fields back to sync', async () => {
+		const savedCRDTDocument = JSON.stringify( {
+			document: 'saved-document',
+			version: 'document:saved',
+		} );
+		const persistedRecord = {
+			id: 10,
+			content: { raw: 'checkpoint content 8' },
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			content: 'checkpoint content 9',
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const saveResponse = {
+			id: 10,
+			content: {
+				raw: 'checkpoint content 9',
+				rendered: 'checkpoint content 9',
+			},
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const syncSaveResponse = {
+			id: 10,
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			hydrateRecordFromPersistedCRDTDoc: jest
+				.fn()
+				.mockResolvedValue( true ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: 'checkpoint content 9',
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => saveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( {
+			select,
+			dispatch,
+			resolveSelect,
+		} );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			saveResponse,
+			undefined,
+			true,
+			post
+		);
+		expect(
+			syncManager.hydrateRecordFromPersistedCRDTDoc
+		).toHaveBeenCalledWith( 'postType/post', 10, saveResponse );
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			syncSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+	} );
+
 	it( 'does not write a stale normal save response title to sync after the live title advances', async () => {
 		const persistedRecord = {
 			id: 10,

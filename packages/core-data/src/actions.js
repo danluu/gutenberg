@@ -159,6 +159,14 @@ function getRecordWithoutKey( record, key ) {
 	return nextRecord;
 }
 
+function getRecordWithoutGuardedRawAttributes( entityConfig, record ) {
+	return getGuardedSaveResponseRawAttributes( entityConfig ).reduce(
+		( acc, key ) =>
+			hasOwnProperty( acc, key ) ? getRecordWithoutKey( acc, key ) : acc,
+		record
+	);
+}
+
 function getCanonicalSerializedBlockContent( value ) {
 	if ( typeof value !== 'string' ) {
 		return;
@@ -1276,12 +1284,19 @@ export const saveEntityRecord =
 						entityConfig.syncConfig &&
 						! __unstableSkipSyncUpdate
 					) {
+						const syncUpdateRecord =
+							shouldHydrateFromSavedCRDTDocument
+								? getRecordWithoutGuardedRawAttributes(
+										entityConfig,
+										syncRecord
+								  )
+								: syncRecord;
 						// Use an untracked origin so that the save
 						// response does not create undo levels.
 						syncManager?.update(
 							objectType,
 							recordId,
-							syncRecord,
+							syncUpdateRecord,
 							LOCAL_UNDO_IGNORED_ORIGIN,
 							{ isSave: true }
 						);
