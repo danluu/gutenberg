@@ -1,10 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-zero-byte-or-setup-only-repair,P0,no,Repeated zero-byte and setup-only artifacts are non-progress; allow only artifact-complete single-flight exact-stack closure.,benchmark-canary-fuzzer-gap/duplicate-zero-byte-or-setup-only-repair,"Repeated zero-byte and setup-only artifacts are non-progress; allow only
-artifact-complete single-flight exact-stack closure."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner replay is already consumed current evidence; relaunch only after newer product-owned owner evidence appears.,PR07C/HOLD-07C,"Cycle380 owner replay is already consumed current evidence; relaunch only after
-newer product-owned owner evidence appears."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Keep held until newer conclusive owner evidence exists and exact-stack focused HTTP promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Keep held until newer conclusive owner evidence exists and exact-stack focused
-HTTP promotion gates are green."
+repair-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,Current exact-stack benchmark evidence has focused title reload and persistence reload failures.,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"Current exact-stack benchmark evidence has focused title reload and persistence
+reload failures."
+publish-ready,maintainer-snapshot/all-merged-192647-latest-crdt-rich-text,P0,no,"Do not publish a snapshot until focused title reload, existing-post CRDT persistence, and large HTTP lifecycle gates are green on the exact stack.",maintainer-snapshot/all-merged-192647-latest-crdt-rich-text,"Do not publish a snapshot until focused title reload, existing-post CRDT
+persistence, and large HTTP lifecycle gates are green on the exact stack."
+repair-ready,reload-hydration/exact-stack-candidate,P0,no,"Candidate activity exists, but exact-stack title reload and existing-post CRDT persistence are still blocking publication.",reload-hydration/exact-stack-candidate,"Candidate activity exists, but exact-stack title reload and existing-post CRDT
+persistence are still blocking publication."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner replay is already current consumed evidence; a new heavy browser matrix needs newer product-owned owner evidence.,PR07C/HOLD-07C,"Cycle380 owner replay is already current consumed evidence; a new heavy browser
+matrix needs newer product-owned owner evidence."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Held until newer conclusive owner evidence exists and exact-stack focused HTTP promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Held until newer conclusive owner evidence exists and exact-stack focused HTTP
+promotion gates are green."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already published; full branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already
 published; full branch needs fresh product advantage."
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A variant is already published; original-base branch is
@@ -13,3 +17,5 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-bas
 duplicate under current evidence."
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C variant is already published; original-base branch is
 duplicate under current evidence."
+launch-heavy-pr-fanout,broad-pr-analysis,P0,no,Preserve discovery reserve and avoid broad PR fanout while coverage novelty first pass is pending.,broad-pr-analysis,"Preserve discovery reserve and avoid broad PR fanout while coverage novelty
+first pass is pending."
