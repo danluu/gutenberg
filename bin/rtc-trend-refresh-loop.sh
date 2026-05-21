@@ -35,7 +35,7 @@ ensure_checkout() {
 			log "checkout has local changes; refresh job will preserve them"
 			return
 		fi
-		git checkout -B "$BRANCH" "$REMOTE/$BRANCH"
+		git checkout --detach "$REMOTE/$BRANCH"
 	)
 }
 
