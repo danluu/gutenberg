@@ -31,6 +31,7 @@ PR_SPLIT_BASE=/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515
 FOCUSED_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
 STRICT_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515
 ASSERT_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260515
+PRODUCTIVE_ANALYSIS_BASE=/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521
 LOG="$BASE/logs/deferred-work-promotion-loop.log"
 STATE="$BASE/logs/family-launches.tsv"
 CURSOR_STATE="$BASE/logs/family-cursor.txt"
@@ -257,6 +258,19 @@ collect_context() {
 		echo "## Deferred Queue"
 		sed -n '1,220p' "$QUEUE" 2>/dev/null || true
 		echo
+		echo "## Productive Analysis Control Feed"
+		echo "Rows here are controller inputs. If a row targets deferred work or this family, act on it or explicitly reject it with evidence."
+		if [ -s "$PRODUCTIVE_ANALYSIS_BASE/current-report.md" ]; then
+			sed -n '1,220p' "$PRODUCTIVE_ANALYSIS_BASE/current-report.md"
+		else
+			echo "missing current productive analysis report"
+		fi
+		if [ -s "$PRODUCTIVE_ANALYSIS_BASE/current-actions.tsv" ]; then
+			echo
+			echo "### Productive Action TSV"
+			sed -n '1,120p' "$PRODUCTIVE_ANALYSIS_BASE/current-actions.tsv"
+		fi
+		echo
 		echo "## Machine"
 		date -u
 		hostname || true
@@ -364,6 +378,7 @@ Final report path: $report
 Task:
 1. Read the context and any relevant live fuzz artifacts it references.
 2. Work on this deferred family only. The goal is to turn deferred work into either a small candidate branch, a targeted fuzzer/instrumentation branch, or a documented downscope decision with evidence.
+2a. Treat Productive Analysis Control Feed rows in the context as controller input. If a row targets this family or deferred work generally, either implement the smallest safe action or explicitly reject it with evidence in the report.
 3. Use the candidate worktree for code changes. Do not edit the live fuzzer repo at $SRC unless you are making an explicit fuzzer-loop adjustment; if you do that, document exactly why and restart only the affected loop with the stable /tmp launcher.
 4. If the evidence supports a product fix, make the smallest maintainable change, commit it on $branch, run focused checks, and record the exact diffstat and validation.
 5. If a product fix is not ready, prefer adding narrow diagnostics or a focused replay/fuzzer improvement that will make the next run conclusive. Commit that change if it is useful and safe.

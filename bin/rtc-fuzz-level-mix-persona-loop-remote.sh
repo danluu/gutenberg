@@ -38,6 +38,7 @@ CG_LOWER_LEVEL_BASE="${RTC_CG_LOWER_LEVEL_BASE:-/media/volume/danluu-fuzz-data/r
 NATIVE_ASSERT_BASE="${RTC_NATIVE_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516}"
 FUZZ_ASSERT_BASE="${RTC_FUZZ_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-only-asserts-20260515}"
 BACKEND_API_BASE="${RTC_BACKEND_API_BASE:-/media/volume/danluu-fuzz-data/rtc-backend-api-fuzz-20260518}"
+PRODUCTIVE_ANALYSIS_BASE="${RTC_PRODUCTIVE_ANALYSIS_BASE:-/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521}"
 CODEX_BIN="${CODEX_BIN:-/home/exouser/.npm-global/bin/codex}"
 MODEL="${RTC_FUZZ_LEVEL_MIX_MODEL:-gpt-5.5}"
 REASONING="${RTC_FUZZ_LEVEL_MIX_REASONING:-xhigh}"
@@ -322,6 +323,20 @@ write_context_once() {
       sed 's/^/- /; s/\t/: /' "$roots_file"
     else
       echo "- none"
+    fi
+    echo
+    echo "## Productive Analysis Control Feed"
+    echo
+    echo "Rows here are controller inputs. If a row targets level-mix, coverage, lower-level, or deferred fuzzing, either make the smallest safe mix/control change or reject it with evidence."
+    if [ -s "$PRODUCTIVE_ANALYSIS_BASE/current-report.md" ]; then
+      sed -n '1,220p' "$PRODUCTIVE_ANALYSIS_BASE/current-report.md"
+    else
+      echo "missing current productive analysis report"
+    fi
+    if [ -s "$PRODUCTIVE_ANALYSIS_BASE/current-actions.tsv" ]; then
+      echo
+      echo "### Productive Action TSV"
+      sed -n '1,120p' "$PRODUCTIVE_ANALYSIS_BASE/current-actions.tsv"
     fi
     echo
     echo "## Active Fuzz-Level Mix"
@@ -2464,6 +2479,8 @@ Read:
 
 This controller must run continuously. Do not wait for stalls or error conditions. Treat zero active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes as a control decision that needs justification or correction.
 
+Treat Productive Analysis Control Feed rows in context.md as controller input. If a row targets level-mix, coverage, lower-level, or deferred fuzzing, make the smallest safe mix/control change or explicitly reject it with evidence in the report.
+
 Before recommending work, audit the context itself. Treat any TELEMETRY-INVARIANT-FAIL line as the highest-priority bug: the loop must not ask personas to reason from a view that disagrees with tmux, current-run roots, status.tsv, or events.ndjson. A lane merely existing is not enough; evaluate whether its executions, novelty counters, crash/noise counters, and corpus growth are visible and useful.
 
 Also audit the control plane itself. Treat any ACTION-NEEDED row in "Control-Plane Self-Audit" as a controller bug to fix before making mix recommendations. Missing exact tmux sessions, prefix-only session matches, empty coverage supervisor groups, zero materialized coverage groups, or a historical-noise hold while current-run noise is clear are not acceptable steady states.
@@ -2569,6 +2586,8 @@ Read:
 $recent
 
 The controller should not wait for error conditions. If the current mix still has zero active unit/property, coverage-guided lower-level, backend/API, protocol/server, or fuzz-assertion lanes, either add or launch the smallest bounded lower-level target with a clear oracle, or write the exact blocker and the next command/code change needed. Do not stop productive browser fuzzing to do this.
+
+Treat Productive Analysis Control Feed rows in context.md as controller input. High-priority rows need either an implemented bounded action or an explicit rejection with evidence.
 
 If context.md contains TELEMETRY-INVARIANT-FAIL, fix the accounting/context-builder blind spot first, validate by regenerating a context that no longer contradicts live tmux/events, and only then make fuzzing mix changes. If coverage-guided lower-level quality says action-needed, make a concrete guidance-quality improvement or write the exact blocker; do not treat "the lane is running" as success by itself.
 

@@ -803,6 +803,14 @@ restart_pool() {
 		critical-pr)
 			/tmp/start_rtc_critical_path_pr_executor_loop.sh >> "$LOG_DIR/critical-pr-executor-start.log" 2>&1 || log "critical-path PR executor start failed"
 			;;
+		productive-analysis)
+			if [ -x /tmp/start_rtc_productive_analysis_loop.sh ]; then
+				/tmp/start_rtc_productive_analysis_loop.sh start >> "$LOG_DIR/productive-analysis-start.log" 2>&1 || log "productive analysis loop start failed"
+			else
+				cd "$REPO"
+				bin/rtc-productive-analysis-loop-remote.sh start >> "$LOG_DIR/productive-analysis-start.log" 2>&1 || log "productive analysis loop start failed"
+			fi
+			;;
 		resource)
 			tmux kill-session -t rtc-resource-autoscaler 2>/dev/null || true
 			stop_unsupervised_resource_autoscaler
@@ -939,6 +947,10 @@ run_loop_locked() {
 
 		if ! has_session rtc-critical-path-pr-executor-loop; then
 			restart_pool critical-pr "missing critical-path PR executor loop"
+		fi
+
+		if ! has_session rtc-productive-analysis-loop; then
+			restart_pool productive-analysis "missing productive analysis loop"
 		fi
 
 		if ! has_session rtc-resource-autoscaler; then

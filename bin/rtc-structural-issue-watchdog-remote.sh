@@ -14,6 +14,7 @@ CRITICAL_TMP_SCRIPT=/tmp/start_rtc_critical_path_pr_executor_loop.sh
 FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
+PRODUCTIVE_ANALYSIS_BASE=/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
@@ -392,8 +393,16 @@ check_critical_path_script_copies() {
 }
 
 check_critical_path_invariants() {
-	local out=$1 status=$CRITICAL_BASE/current-critical-path-status.md log_file=$CRITICAL_BASE/logs/critical-path-pr-executor.log classification class class_mtime browser_queue browser_status launches_after_terminal terminal_ledger
+	local out=$1 status=$CRITICAL_BASE/current-critical-path-status.md log_file=$CRITICAL_BASE/logs/critical-path-pr-executor.log classification class class_mtime browser_queue browser_status launches_after_terminal terminal_ledger lock_holders
 	check_status_freshness "$out" critical-path "$status" 900 rtc-critical-path-pr-executor-loop
+	if ! has_session rtc-critical-path-pr-executor-loop; then
+		lock_holders=$(fuser "$CRITICAL_BASE/critical-path-pr-executor.lock" 2>/dev/null | tr -s ' ' ' ' | sed 's/^ //; s/ $//' || true)
+		if [ -n "$lock_holders" ]; then
+			emit_finding "$out" high "critical-path" "critical-executor-lock-held-without-session" \
+				"lock=$CRITICAL_BASE/critical-path-pr-executor.lock holders=$lock_holders status=$status" \
+				"terminate stale critical-path controller descendants that inherited the singleton lock, patch any broad scan that kept the lock, and restart rtc-critical-path-pr-executor-loop"
+		fi
+	fi
 	if log_matches_after_last_start "$log_file" 'critical-path PR executor loop started' 'reconcile failed|timed out|cannot stat .*[.]tmp|No such file or directory'; then
 		emit_finding "$out" high "critical-path" "recent-reconcile-or-temp-error" "$log_file" "debug recent critical-path executor failure and patch the controller"
 	fi
@@ -425,6 +434,7 @@ check_loop_statuses() {
 	check_status_freshness "$out" finalization "$FINALIZATION_BASE/current-finalization-status.md" 1800 rtc-pr-finalization-loop
 	check_status_freshness "$out" deferred-work "$DEFERRED_BASE/current-deferred-status.md" 1800 rtc-deferred-work-promotion-loop
 	check_status_freshness "$out" pr-progress "$PR_PROGRESS_BASE/current-pr-progress-controller-status.md" 900 rtc-pr-progress-controller-loop
+	check_status_freshness "$out" productive-analysis "$PRODUCTIVE_ANALYSIS_BASE/current-status.md" 1800 rtc-productive-analysis-loop
 	check_status_freshness "$out" resource-autoscaler "$RESOURCE_BASE/resource-autoscaler-status.md" 600 rtc-resource-autoscaler
 	if [ -s "$COVERAGE_BASE/current-output-dir.txt" ]; then
 		coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")

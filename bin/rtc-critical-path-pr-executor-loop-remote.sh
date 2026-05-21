@@ -12,6 +12,7 @@ LOCAL_PUBLISH_MANIFEST=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 BENCHMARK_FEEDBACK_BASE=${RTC_CRITICAL_PR_EXECUTOR_BENCHMARK_FEEDBACK_BASE:-/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520}
+PRODUCTIVE_ANALYSIS_BASE=${RTC_CRITICAL_PR_EXECUTOR_PRODUCTIVE_ANALYSIS_BASE:-/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521}
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GLOBAL_ADMISSION=$RESOURCE_BASE/rtc-global-cpu-admission.sh
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
@@ -108,6 +109,10 @@ file_hash() {
 	sha256sum "$file" 2>/dev/null | awk '{ print $1 }'
 }
 
+productive_analysis_feedback_present() {
+	awk -F '\t' 'NR > 1 && NF >= 9 && $2 != "" { found = 1 } END { exit found ? 0 : 1 }' "$PRODUCTIVE_ANALYSIS_BASE/critical-path-feedback.tsv" 2>/dev/null
+}
+
 file_size() {
 	local file=$1
 	[ -e "$file" ] || {
@@ -165,6 +170,27 @@ input_status() {
 latest_nonempty_file() {
 	local root=$1 pattern=$2
 	find "$root" -type f -name "$pattern" -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+latest_progress_unblock_artifact() {
+	local indexed
+	if artifact_index_fresh; then
+		indexed=$(latest_indexed_artifact report 'progress-unblock.*/report[.]md|progress-unblock.*/classification[.]tsv' || true)
+		if [ -n "$indexed" ]; then
+			printf '%s\n' "$indexed"
+			return 0
+		fi
+	fi
+	find "$PR_SPLIT_BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%T@\t%p\n' 2>/dev/null |
+		sort -n |
+		tail -80 |
+		cut -f2- |
+		while IFS= read -r run_dir; do
+			find "$run_dir/jobs" -maxdepth 4 -type f -path '*/progress-unblock*/*' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+		done |
 		sort -n |
 		tail -1 |
 		cut -f2-
@@ -582,7 +608,7 @@ write_inputs() {
 	local tmp=$INPUTS.$$.tmp
 	local latest_finalization latest_progress_unblock latest_deferred_report latest_coverage
 	latest_finalization=$(latest_nonempty_file "$FINALIZATION_BASE/cycles" 'finalization.report.md' || true)
-	latest_progress_unblock=$(find "$PR_SPLIT_BASE/runs" -type f -path '*/jobs/*progress-unblock*/*' -size +0c -printf '%T@\t%p\n' 2>/dev/null | sort -n | tail -1 | cut -f2- || true)
+	latest_progress_unblock=$(latest_progress_unblock_artifact || true)
 	latest_deferred_report=$(latest_nonempty_file "$DEFERRED_BASE/cycles" 'report.md' || true)
 	latest_coverage=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
 	{
@@ -601,6 +627,9 @@ deferred_queue	queue	$DEFERRED_BASE/current-deferred-queue.tsv
 coverage_pointer	status	$COVERAGE_BASE/current-output-dir.txt
 benchmark_canary_feedback	feedback	$BENCHMARK_FEEDBACK_BASE/current-feedback.md
 benchmark_canary_feedback_tsv	feedback	$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv
+productive_analysis_feedback	feedback	$PRODUCTIVE_ANALYSIS_BASE/critical-path-feedback.md
+productive_analysis_actions	feedback	$PRODUCTIVE_ANALYSIS_BASE/current-actions.tsv
+productive_analysis_report	report	$PRODUCTIVE_ANALYSIS_BASE/current-report.md
 resource_status	status	$RESOURCE_BASE/resource-autoscaler-status.md
 guard_log	log	$GUARD_BASE/logs/guard.log
 latest_finalization	report	${latest_finalization:-missing}
@@ -706,6 +735,9 @@ write_lanes() {
 		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
 			printf 'benchmark-canary-fuzzer-gap\tPROCESS\tcoverage-gap-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
+		if productive_analysis_feedback_present; then
+			printf 'productive-analysis-action\tPROCESS\tcontrol-feedback\tvalidation-only\t%s\tproductive-analysis-feedback\t%s\t%s\t\tcodex-analysis\tfeedback\tqueued\t%s/runs/productive-analysis-action\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		fi
 	} > "$tmp"
 	atomic_move "$tmp" "$LANES"
 }
@@ -727,6 +759,9 @@ write_blockers_and_queue() {
 		printf 'blocker_id\tkind\tpriority\tstate\tsource_input\tblocks\tblocked_by\trequired_artifacts\tactive_session\tnext_action\tupdated_at\n'
 		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
 			printf 'benchmark-canary-fuzzer-gap\tcoverage-promotion\thigh\trunnable\tbenchmark-canary\tcoverage-confidence,snapshot-publication\tfuzzer-feedback\tfuzzer-feedback.md,fuzzer-feedback.tsv\t\tconsume benchmark canary feedback; add or repair equivalent fuzz coverage and validate the fixed stack under that coverage before maintainer snapshot publication\t%s\n' "$now"
+		fi
+		if productive_analysis_feedback_present; then
+			printf 'productive-analysis-action\tcontrol-feedback\thigh\trunnable\tproductive-analysis\tcritical-path,pr-progress,deferred,coverage,level-mix\tproductive-analysis\tcritical-path-feedback.md,critical-path-feedback.tsv\t\tconsume productive-analysis action rows; convert them into a controller rule, continuation, coverage adjustment, branch repair, or explicit downscope with evidence\t%s\n' "$now"
 		fi
 		if pr17_suppressed_terminal; then
 			printf 'pr17-1020002\tfinal-stack-join\thigh\tterminal\tpr_split/finalization\tfinal-stack-validation,filing\tterminal-ledger\tclassification.tsv\t\tterminal downscope; reopen only with fresh product evidence newer than classification.tsv\t%s\n' "$now"
@@ -796,6 +831,9 @@ write_blockers_and_queue() {
 		fi
 		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
 			printf 'job-benchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\tcoverage-gap-repair\tbenchmark-canary-fuzzer-gap\tcodex-analysis\thigh\trunnable\t0\t\t\t%s/runs/benchmark-canary-fuzzer-gap\t%s\t\t%s\t\tpending\n' "$BASE" "$now" "$now"
+		fi
+		if productive_analysis_feedback_present; then
+			printf 'job-productive-analysis-action\tproductive-analysis-action\tproductive-analysis-action\tcontrol-feedback\tproductive-analysis-action\tcodex-analysis\thigh\trunnable\t0\t\t\t%s/runs/productive-analysis-action\t%s\t\t%s\t\tpending\n' "$BASE" "$now" "$now"
 		fi
 		while IFS=$'\t' read -r lane_id _pr_id lane_kind _publication_class _source_repo _source_ref _base_ref _base_sha _head_sha _resource_class _deps _state output_dir; do
 			[ "$lane_kind" = "branch-validation" ] || continue
@@ -1156,6 +1194,13 @@ launch_continuation_jobs() {
 			"benchmark-canary-fuzzer-gap-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" | cut -c1-12)" \
 			"benchmark-canary-fuzzer-gap|benchmark-canary" \
 			"consume benchmark canary feedback as a fuzzer/promotion-process gap; add or repair equivalent fuzz coverage or create a local fix branch, with durable coverage-change and classification artifacts"
+	fi
+	if productive_analysis_feedback_present; then
+		launch_continuation_job \
+			"productive-analysis-action" \
+			"productive-analysis-action-$(file_hash "$PRODUCTIVE_ANALYSIS_BASE/critical-path-feedback.md" | cut -c1-12)" \
+			"productive-analysis-action|productive-analysis" \
+			"consume productive-analysis feedback rows from $PRODUCTIVE_ANALYSIS_BASE; implement the smallest safe controller, coverage, branch-repair, or downscope action that moves the RTC fix project forward, and write durable classification/evidence artifacts"
 	fi
 }
 

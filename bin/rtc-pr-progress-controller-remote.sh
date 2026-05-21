@@ -13,6 +13,7 @@ DEFERRED_BASE=${RTC_PR_PROGRESS_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rt
 FINALIZATION_BASE=${RTC_PR_PROGRESS_FINALIZATION_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516}
 COVERAGE_BASE=${RTC_PR_PROGRESS_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}
 BENCHMARK_FEEDBACK_BASE=${RTC_PR_PROGRESS_BENCHMARK_FEEDBACK_BASE:-/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520}
+PRODUCTIVE_ANALYSIS_BASE=${RTC_PR_PROGRESS_PRODUCTIVE_ANALYSIS_BASE:-/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521}
 RESOURCE_BASE=${RTC_PR_PROGRESS_RESOURCE_BASE:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516}
 ARTIFACT_INDEX_BASE=${RTC_PR_PROGRESS_ARTIFACT_INDEX_BASE:-/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518}
 ARTIFACT_INDEX_ARTIFACTS=$ARTIFACT_INDEX_BASE/current-artifacts.tsv
@@ -568,6 +569,19 @@ collect_context() {
 			sed -n '1,80p' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
 		fi
 		echo
+		echo "## Productive Analysis Control Feed"
+		echo "Rows here are controller inputs, not passive notes. If a row targets pr-progress, critical-path, coverage, level-mix, or deferred work, either act on it in the next decision set or explain the rejection."
+		if [ -s "$PRODUCTIVE_ANALYSIS_BASE/current-report.md" ]; then
+			sed -n '1,220p' "$PRODUCTIVE_ANALYSIS_BASE/current-report.md"
+		else
+			echo "missing current productive analysis report"
+		fi
+		if [ -s "$PRODUCTIVE_ANALYSIS_BASE/current-actions.tsv" ]; then
+			echo
+			echo "### Productive Action TSV"
+			sed -n '1,120p' "$PRODUCTIVE_ANALYSIS_BASE/current-actions.tsv"
+		fi
+		echo
 		echo "## Tmux Sessions"
 		tmux_sessions | sed -n '1,220p'
 	} > "$CONTEXT.tmp"
@@ -586,6 +600,10 @@ Read:
 - $PROGRESS
 - $PUSH_MANIFEST
 - $DECISIONS if present
+
+Treat the Productive Analysis Control Feed in $CONTEXT as binding controller
+input: act on rows that target PR progress or explain why the action is rejected
+in the returned TSV. Do not let a high-priority action row disappear as prose.
 
 The controller goal is faster progress on productive PRs that fix real bugs.
 Productive progress means one of: a real-fix branch head changes, a blocker is
