@@ -1,11 +1,13 @@
 action,target,priority,allowed,reason,target_label,reason_label
-repair-branch,PR07C/pr07c-browser-env,P0,no,Do not relaunch setup-only repair now; reopen only if the owner matrix cannot reach seeded action/reload/checkpoint.,PR07C/pr07c-browser-env,"Do not relaunch setup-only repair now; reopen only if the owner matrix cannot
-reach seeded action/reload/checkpoint."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until PR07C owner evidence is conclusive and exact-stack focused HTTP gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Hold until PR07C owner evidence is conclusive and exact-stack focused HTTP gates
-are green."
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-zero-byte-repair,P0,no,"Repeated zero-byte, pre-oracle, or setup-only artifacts are churn; keep single-flight artifact-complete repair only.",benchmark-canary-fuzzer-gap/duplicate-zero-byte-repair,"Repeated zero-byte, pre-oracle, or setup-only artifacts are churn; keep
-single-flight artifact-complete repair only."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical PR06B minimal is already published; full branch needs fresh product evidence before publication.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical PR06B minimal is already published; full branch needs fresh product
-evidence before publication."
-publish-ready,ready/rtc-pr15a-pr15b-pr15c-original-base,P1,no,PR14B-based PR15A/B/C variants are already published; original-base branches are duplicate under current evidence.,ready/rtc-pr15a-pr15b-pr15c-original-base,"PR14B-based PR15A/B/C variants are already published; original-base branches are
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until PR07C owner matrix is conclusive and exact-stack focused HTTP promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Hold until PR07C owner matrix is conclusive and exact-stack focused HTTP
+promotion gates are green."
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-zero-byte-or-setup-only-repair,P0,no,Repeated zero-byte setup-only and pre-oracle artifacts are non-progress; keep only artifact-complete single-flight repair work.,benchmark-canary-fuzzer-gap/duplicate-zero-byte-or-setup-only-repair,"Repeated zero-byte setup-only and pre-oracle artifacts are non-progress; keep
+only artifact-complete single-flight repair work."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already published; full branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already
+published; full branch needs fresh product advantage."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A variant is already published; original-base branch is
+duplicate under current evidence."
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B variant is already published; original-base branch is
+duplicate under current evidence."
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C variant is already published; original-base branch is
 duplicate under current evidence."
