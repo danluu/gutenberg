@@ -18,4 +18,5 @@ critical job queue,runnable,codex-analysis,high,1
 critical lanes,queued,browser-e2e,lane,1
 critical lanes,queued,codex-analysis,lane,1
 active sessions,active,analysis,analysis,4
-active sessions,active,deferred,deferred,1
+active sessions,active,critical-continuation,critical-continuation,1
+active sessions,active,deferred,deferred,2

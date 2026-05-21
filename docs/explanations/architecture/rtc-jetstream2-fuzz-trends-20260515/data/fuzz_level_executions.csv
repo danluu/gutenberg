@@ -4110,4 +4110,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T21:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,500,500,500,25,0,251330,FALSE
 2026-05-21T21:15:00Z,strict-expansion,http-large-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,1,0,2,2,265180,FALSE
 2026-05-21T21:15:00Z,strict-expansion,http-persistence-probe,browser-e2e,http,persistence-no-title,5,4,3,5,2,246010,FALSE
+2026-05-21T21:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,5,3,0,5,5,338614,FALSE
+2026-05-21T21:30:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,2,1,0,2,2,71649,FALSE
+2026-05-21T21:30:00Z,coverage-guided,novelty-ws-thirty-user-lifecycle,browser-e2e,ws,many-user-lifecycle,2,2,2,2,0,191341,FALSE
 2026-05-21T21:30:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,2,2,0,549594,FALSE

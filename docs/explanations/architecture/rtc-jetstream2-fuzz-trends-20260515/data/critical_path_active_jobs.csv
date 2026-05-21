@@ -1,6 +1,8 @@
 session,class,started_hint
-rtc-analysis-live-22b12051-deep-http-persistence-probe-gen-5-20260521T211802Z,analysis,
+rtc-coverage-guidance-codex-20260521T213822Z,analysis,
+rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260521T213136Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
+rtc-deferred-job-pre-save-search-live-collapse-20260521T213212Z,deferred,
 rtc-deferred-job-reload-hydration-20260521T212458Z,deferred,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
