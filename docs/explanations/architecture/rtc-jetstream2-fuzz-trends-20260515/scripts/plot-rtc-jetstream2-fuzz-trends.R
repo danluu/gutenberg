@@ -63,6 +63,33 @@ stopifnot( file.exists( monitor_path ) )
 stopifnot( file.exists( loop_path ) )
 stopifnot( file.exists( state_path ) )
 
+sync_pr_status_links_script <- file.path(
+	artifact_dir,
+	"scripts/sync-pr-status-links.mjs"
+)
+if (
+	Sys.getenv( "RTC_SYNC_PR_STATUS_LINKS", unset = "1" ) != "0" &&
+	file.exists( sync_pr_status_links_script )
+) {
+	sync_status <- system2(
+		"node",
+		c(
+			sync_pr_status_links_script,
+			"--root",
+			root,
+			"--status-report",
+			status_report_rel,
+			"--progress-csv",
+			pr_progress_current_path
+		),
+		stdout = TRUE,
+		stderr = TRUE
+	)
+	if ( ! is.null( attr( sync_status, "status" ) ) && attr( sync_status, "status" ) != 0 ) {
+		warning( paste( sync_status, collapse = "\n" ) )
+	}
+}
+
 theme_rtc <- function() {
 	theme_minimal( base_size = 11 ) +
 		theme(
