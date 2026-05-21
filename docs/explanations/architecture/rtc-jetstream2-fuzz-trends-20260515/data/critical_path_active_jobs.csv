@@ -1,6 +1,10 @@
 session,class,started_hint
-rtc-analysis-live-2c76b4c0-ws-collaboration-ui-signals-gen-2-20260521T231245Z,analysis,
-rtc-analysis-live-2c76b4c0-ws-many-user-lifecycle-gen-2-20260521T231232Z,analysis,
+rtc-analysis-live-2c76b4c0-deep-http-large-lifecycle-gen-1-20260521T231404Z,analysis,
+rtc-analysis-live-2c76b4c0-http-large-lifecycle-gen-1-20260521T231404Z,analysis,
+rtc-analysis-live-2c76b4c0-http-persistence-probe-gen-2-20260521T231259Z,analysis,
+rtc-analysis-live-2c76b4c0-http-same-user-stale-draft-gen-1-20260521T231310Z,analysis,
+rtc-analysis-live-2c76b4c0-ws-collaboration-ui-signals-gen-7-20260521T232049Z,analysis,
+rtc-critical-continuation-seed-5200005-reducer-20260521T232206Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,

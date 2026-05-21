@@ -1,5 +1,5 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,"Healthy now at 16 active discovery sessions versus min 3; if it falls below min, allow only cheap manifest generation, reconciliation, and analysis-only updates."
+reserve-discovery,discovery-reserve,P0,yes,"Healthy at 17 active discovery sessions versus min 3; if it falls below min, allow only cheap manifest generation, reconciliation, and analysis-only updates."
 generate-publication-manifest,ready-product-prs/published-real-fix-set,P0,yes,Cheap publication manifest work is allowed and keeps already published real-fix branches visible without consuming heavy PR capacity.
 repair-branch,benchmark-canary-focused-http/exact-stack-replay,P0,yes,Next product-progress slot; run or adopt focused title-reload-http and existing-post-crdt-http/persistence-reload-http on 14767c60a7ef5295366fd8a1f31a64d610acdf80.
 repair-ready,benchmark-canary-fuzzer-gap/coverage-repair,P0,yes,"Consume the 20260521T222259Z coverage-repair classification and coverage-change artifacts, but do not clear promotion blockers until exact-stack HTTP rows are green."
@@ -11,7 +11,7 @@ publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication unt
 cooldown-diagnostic,PR07C/HOLD-07C/duplicate-owner-matrix-relaunch,P0,yes,"After one owner-evidence pass is adopted, block duplicate heavy browser-e2e relaunches until newer product-owned evidence appears."
 cooldown-diagnostic,seed-5200005-reducer,P0,yes,Consume already_resolved_by_active_artifacts classification and clear reducer work unless fresh newer non-coverage evidence appears.
 update-controller-rule,reload-hydration/exact-stack-promotion-gate,P0,yes,"Require candidate head plus exact-stack title-reload-http, existing-post-crdt-http, and retained large-http-lifecycle evidence before promotion."
-repair-branch,reload-hydration/exact-stack-candidate,P1,yes,Allow only adopt-or-exact validation tied to a product head; no generic interval relaunch.
+repair-branch,reload-hydration/exact-stack-candidate,P1,yes,Allow only adopt-or-exact validation tied to a product head after P0 PR slots are not saturated; no generic interval relaunch.
 publish-ready,reload-hydration/current-candidate,P0,no,Push manifest is empty and exact-stack green evidence is missing.
 cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"Launch count is over budget; relaunch only with new product head, owner evidence, exact green evidence, or downscope."
 cooldown-diagnostic,pre-save-search-live-collapse/generic-interval-relaunch,P0,yes,Over-budget diagnostic family; promote only with owner/product evidence or explicit downscope.
