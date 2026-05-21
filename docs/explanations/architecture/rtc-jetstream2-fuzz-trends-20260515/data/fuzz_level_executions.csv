@@ -4135,5 +4135,13 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T22:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,3,3,3,3,0,944313,FALSE
 2026-05-21T22:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1080,1080,180,6,5,482024,FALSE
 2026-05-21T22:15:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,384,384,0,12,12,181000,FALSE
-2026-05-21T22:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,1,1,0,1,1,63800,FALSE
-2026-05-21T22:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,360,360,180,2,1,89729,FALSE
+2026-05-21T22:30:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,2,1,0,2,2,170700,FALSE
+2026-05-21T22:30:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,1,1,0,242283,FALSE
+2026-05-21T22:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,1,2,1,222101,FALSE
+2026-05-21T22:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,3,2,0,3,3,166299,FALSE
+2026-05-21T22:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,4,2,0,4,4,317176,FALSE
+2026-05-21T22:30:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,1,1,0,1,1,41291,FALSE
+2026-05-21T22:30:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,2,2,0,448316,FALSE
+2026-05-21T22:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1285,1285,565,8,4,531003,FALSE
+2026-05-21T22:30:00Z,strict-expansion,ws-real-user-editing,browser-e2e,ws,real-user-editing,21,11,0,21,21,78030,FALSE
+2026-05-21T22:30:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,320,320,32,10,9,149000,FALSE

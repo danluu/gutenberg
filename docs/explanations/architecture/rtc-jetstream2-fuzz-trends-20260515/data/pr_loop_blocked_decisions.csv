@@ -1,8 +1,10 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until PR07C owner matrix is conclusive and exact-stack focused HTTP promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Hold until PR07C owner matrix is conclusive and exact-stack focused HTTP
-promotion gates are green."
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-zero-byte-or-setup-only-repair,P0,no,Repeated zero-byte setup-only and pre-oracle artifacts are non-progress; keep only artifact-complete single-flight repair work.,benchmark-canary-fuzzer-gap/duplicate-zero-byte-or-setup-only-repair,"Repeated zero-byte setup-only and pre-oracle artifacts are non-progress; keep
-only artifact-complete single-flight repair work."
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-zero-byte-or-setup-only-repair,P0,no,Repeated zero-byte and setup-only artifacts are non-progress; allow only artifact-complete single-flight exact-stack closure.,benchmark-canary-fuzzer-gap/duplicate-zero-byte-or-setup-only-repair,"Repeated zero-byte and setup-only artifacts are non-progress; allow only
+artifact-complete single-flight exact-stack closure."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner replay is already consumed current evidence; relaunch only after newer product-owned owner evidence appears.,PR07C/HOLD-07C,"Cycle380 owner replay is already consumed current evidence; relaunch only after
+newer product-owned owner evidence appears."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Keep held until newer conclusive owner evidence exists and exact-stack focused HTTP promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Keep held until newer conclusive owner evidence exists and exact-stack focused
+HTTP promotion gates are green."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already published; full branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already
 published; full branch needs fresh product advantage."
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A variant is already published; original-base branch is
