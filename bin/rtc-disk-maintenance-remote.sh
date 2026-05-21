@@ -14,6 +14,7 @@ RUN_ROOT_KEEP_PRESSURE=${RTC_DISK_MAINTENANCE_RUN_ROOT_KEEP_PRESSURE:-40}
 TRACE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TRACE_RETENTION_MINUTES:-720}
 VIDEO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_VIDEO_RETENTION_MINUTES:-360}
 TMP_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TMP_RETENTION_MINUTES:-360}
+FIND_TIMEOUT_SECONDS=${RTC_DISK_MAINTENANCE_FIND_TIMEOUT_SECONDS:-240}
 ONCE=0
 
 if [ "${1:-}" = "--once" ]; then
@@ -138,14 +139,32 @@ trim_run_roots() {
 
 prune_old_artifacts() {
 	local root=$1
+	local rc=0
 	[ -d "$root" ] || return 0
-	find "$root" -type f \( -name 'trace.zip' -o -name '*.trace.zip' \) -mmin +"$TRACE_RETENTION_MINUTES" -print -delete >> "$LOG" 2>&1 || true
-	find "$root" -type f -name '*.webm' -mmin +"$VIDEO_RETENTION_MINUTES" -print -delete >> "$LOG" 2>&1 || true
-	find "$root" -type d \( -name '.playwright-artifacts-*' -o -name 'playwright-artifacts-*' \) -mmin +"$TMP_RETENTION_MINUTES" -print0 2>/dev/null |
+	timeout "$FIND_TIMEOUT_SECONDS" ionice -c3 nice -n 19 find "$root" -xdev \
+		\( -path "$root/repos-*" -o -path '*/node_modules' -o -path '*/node_modules/*' -o -path '*/.git' -o -path '*/.git/*' \) -prune -o \
+		-type f \( -name 'trace.zip' -o -name '*.trace.zip' \) -mmin +"$TRACE_RETENTION_MINUTES" -print -delete >> "$LOG" 2>&1 || rc=$?
+	if [ "$rc" -eq 124 ]; then
+		log "trace cleanup timed out root=$root timeout=${FIND_TIMEOUT_SECONDS}s"
+	elif [ "$rc" -ne 0 ]; then
+		log "trace cleanup exited rc=$rc root=$root"
+	fi
+	rc=0
+	timeout "$FIND_TIMEOUT_SECONDS" ionice -c3 nice -n 19 find "$root" -xdev \
+		\( -path "$root/repos-*" -o -path '*/node_modules' -o -path '*/node_modules/*' -o -path '*/.git' -o -path '*/.git/*' \) -prune -o \
+		-type f -name '*.webm' -mmin +"$VIDEO_RETENTION_MINUTES" -print -delete >> "$LOG" 2>&1 || rc=$?
+	if [ "$rc" -eq 124 ]; then
+		log "video cleanup timed out root=$root timeout=${FIND_TIMEOUT_SECONDS}s"
+	elif [ "$rc" -ne 0 ]; then
+		log "video cleanup exited rc=$rc root=$root"
+	fi
+	timeout "$FIND_TIMEOUT_SECONDS" ionice -c3 nice -n 19 find "$root" -xdev \
+		\( -path "$root/repos-*" -o -path '*/node_modules' -o -path '*/node_modules/*' -o -path '*/.git' -o -path '*/.git/*' \) -prune -o \
+		-type d \( -name '.playwright-artifacts-*' -o -name 'playwright-artifacts-*' \) -mmin +"$TMP_RETENTION_MINUTES" -print0 2>/dev/null |
 		while IFS= read -r -d '' dir; do
 			path_is_live "$dir" && continue
 			remove_path "$dir"
-		done
+		done || log "tmp artifact cleanup timed out or exited nonzero root=$root"
 }
 
 run_once() {
