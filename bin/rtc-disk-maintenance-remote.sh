@@ -143,7 +143,7 @@ prune_old_artifacts() {
 	[ -d "$root" ] || return 0
 	timeout "$FIND_TIMEOUT_SECONDS" ionice -c3 nice -n 19 find "$root" -xdev \
 		\( -path "$root/repos-*" -o -path '*/node_modules' -o -path '*/node_modules/*' -o -path '*/.git' -o -path '*/.git/*' \) -prune -o \
-		-type f \( -name 'trace.zip' -o -name '*.trace.zip' \) -mmin +"$TRACE_RETENTION_MINUTES" -print -delete >> "$LOG" 2>&1 || rc=$?
+		-type f \( -name 'trace.zip' -o -name '*.trace.zip' \) -mmin +"$TRACE_RETENTION_MINUTES" -print -exec rm -f -- {} + >> "$LOG" 2>&1 || rc=$?
 	if [ "$rc" -eq 124 ]; then
 		log "trace cleanup timed out root=$root timeout=${FIND_TIMEOUT_SECONDS}s"
 	elif [ "$rc" -ne 0 ]; then
@@ -152,7 +152,7 @@ prune_old_artifacts() {
 	rc=0
 	timeout "$FIND_TIMEOUT_SECONDS" ionice -c3 nice -n 19 find "$root" -xdev \
 		\( -path "$root/repos-*" -o -path '*/node_modules' -o -path '*/node_modules/*' -o -path '*/.git' -o -path '*/.git/*' \) -prune -o \
-		-type f -name '*.webm' -mmin +"$VIDEO_RETENTION_MINUTES" -print -delete >> "$LOG" 2>&1 || rc=$?
+		-type f -name '*.webm' -mmin +"$VIDEO_RETENTION_MINUTES" -print -exec rm -f -- {} + >> "$LOG" 2>&1 || rc=$?
 	if [ "$rc" -eq 124 ]; then
 		log "video cleanup timed out root=$root timeout=${FIND_TIMEOUT_SECONDS}s"
 	elif [ "$rc" -ne 0 ]; then
