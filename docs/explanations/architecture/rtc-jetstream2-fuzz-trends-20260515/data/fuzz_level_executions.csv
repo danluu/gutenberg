@@ -11432,9 +11432,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T09:30:00Z,focused-shards,focused-same-user-stale-tabs,browser-e2e,ws,session-lifecycle,2,2,2,2,0,123026,FALSE
 2026-05-21T09:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6120,6120,6120,34,0,448986,FALSE
 2026-05-21T09:30:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,480,480,0,15,15,232000,FALSE
-2026-05-21T09:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,1,1,0,97872,FALSE
-2026-05-21T09:45:00Z,coverage-guided,novelty-ws-collaboration-ui-signals,browser-e2e,ws,collaboration-ui-signals,5,3,0,5,5,213693,FALSE
-2026-05-21T09:45:00Z,coverage-guided,novelty-ws-thirty-user-lifecycle,browser-e2e,ws,many-user-lifecycle,1,1,0,1,1,103048,FALSE
 2026-05-21T09:45:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,3,3,3,3,0,168946,FALSE
 2026-05-21T09:45:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,2,1,0,2,2,398728,FALSE
 2026-05-21T09:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,22,22,22,1,0,5110,FALSE
@@ -11659,3 +11656,5 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T17:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,5,3,1,5,4,454136,FALSE
 2026-05-21T17:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,22,22,22,1,0,4511,FALSE
 2026-05-21T17:30:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,2,1,0,2,2,392337,FALSE
+2026-05-21T17:30:00Z,coverage-guided,novelty-ws-many-user-lifecycle,browser-e2e,ws,many-user-lifecycle,1,1,0,1,1,366820,FALSE
+2026-05-21T17:45:00Z,coverage-guided,novelty-ws-many-user-lifecycle,browser-e2e,ws,many-user-lifecycle,1,0,0,1,1,24394,FALSE
