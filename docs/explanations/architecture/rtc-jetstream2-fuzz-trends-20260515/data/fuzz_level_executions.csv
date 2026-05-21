@@ -11375,8 +11375,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T08:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,8662,8662,8662,49,0,552222,FALSE
 2026-05-21T08:00:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,416,416,32,13,12,201000,FALSE
 2026-05-21T08:15:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,2,1,0,2,2,79922,FALSE
-2026-05-21T08:15:00Z,coverage-guided,novelty-ws-collaboration-ui-signals,browser-e2e,ws,collaboration-ui-signals,6,4,0,6,6,241641,FALSE
-2026-05-21T08:15:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,5,5,0,5,5,347951,FALSE
+2026-05-21T08:15:00Z,coverage-guided,novelty-ws-collaboration-ui-signals,browser-e2e,ws,collaboration-ui-signals,3,2,0,3,3,120123,FALSE
 2026-05-21T08:15:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,4,4,4,4,0,226898,FALSE
 2026-05-21T08:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,0,1,1,146086,FALSE
 2026-05-21T08:15:00Z,focused-shards,focused-same-user-stale-tabs-http,browser-e2e,http,session-lifecycle,7,5,3,7,4,885402,FALSE
