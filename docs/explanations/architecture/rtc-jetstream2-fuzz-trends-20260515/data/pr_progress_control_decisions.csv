@@ -1,31 +1,32 @@
 action,target,priority,allowed,reason
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-stack-focused-http-replay,P0,yes,Discovery reserve is healthy and this is the concrete product blocker; run or adopt one artifact-complete exact-stack lane for title-reload-http and existing-post-crdt-http on commit 14767c60a7ef5295366fd8a1f31a64d610acdf80.
-update-controller-rule,benchmark-canary-fuzzer-gap/exact-stack-closure,P0,yes,Require fresh passing exact-stack title-reload-http and existing-post-crdt-http before coverage-confidence or snapshot-publication unblocks.
-update-controller-rule,benchmark-canary-fuzzer-gap/canary-equivalent-success-accounting,P0,yes,"Do not clear the blocker from semantic-feature churn or forced group presence; require successful title-reload-http, existing-post-crdt-http, and large-http-lifecycle evidence."
-update-controller-rule,large-http-lifecycle/benchmark-minimum,P0,yes,Keep large-post-three-user-http or equivalent large-document HTTP convergence current before any maintainer snapshot promotion.
-publish-ready,maintainer-snapshot/all-merged-192647-latest-crdt-rich-text,P0,no,Current exact-stack benchmark evidence still fails focused title reload and persistence reload rows.
-repair-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,The stack is repair-targeted but not ready for publication until the exact-stack focused HTTP rows are green.
-cooldown-diagnostic,benchmark-canary-fuzzer-gap/zero-byte-or-setup-only-artifacts,P0,yes,Repeated zero-byte and setup-only continuations are non-progress; keep one artifact-complete exact-stack closure lane.
-launch-owner-matrix,PR07C/HOLD-07C,P0,yes,"Readiness is resolved; allow one single-flight owner matrix or owner evidence consume pass now, then publish only if product ownership is proven."
-update-controller-rule,PR07C/HOLD-07C-owner-evidence-consumption,P0,yes,Consume current Cycle380 owner replay evidence and block duplicate owner-matrix relaunches after the single-flight pass unless newer product-owned evidence appears.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until owner evidence proves product ownership and exact-stack focused HTTP promotion gates are green.
+launch-owner-matrix,PR07C/HOLD-07C,P0,yes,"Discovery reserve is healthy and browser readiness is resolved; run the queued single-flight owner matrix now, then require product-owned evidence before publishing PR07C."
+cooldown-diagnostic,PR07C/HOLD-07C/duplicate-owner-matrix-after-current,P0,yes,"After the one queued readiness-resolved matrix, block duplicate heavy relaunches until newer conclusive product-owned evidence appears."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until the PR07C owner matrix proves product ownership and exact promotion gates are green.
+repair-branch,benchmark-canary-fuzzer-gap/exact-stack-focused-http-replay,P0,yes,Run or adopt one artifact-complete exact-stack replay for title-reload-http and existing-post-crdt-http on 14767c60a7ef5295366fd8a1f31a64d610acdf80.
+repair-ready,benchmark-canary-fuzzer-gap/coverage-repair,P0,yes,"Consume the 20260521T222259Z coverage-repair classification, but keep coverage-confidence and snapshot publication blocked until exact-stack HTTP rows are green."
+update-controller-rule,benchmark-canary-fuzzer-gap/exact-stack-closure,P0,yes,Require fresh passing exact-stack title-reload-http and existing-post-crdt-http evidence before coverage-confidence or snapshot-publication unblocks.
+update-controller-rule,benchmark-canary-equivalent-http/forced-promotion-lanes,P0,yes,"Keep title-reload-http, existing-post-crdt-http, and large-http-lifecycle as P0 promotion-blocking coverage until exact green evidence exists."
+update-controller-rule,benchmark-canary-fuzzer-gap/success-accounting,P0,yes,"Do not count semantic-feature churn, forced-group presence, zero-byte artifacts, or setup-only artifacts as progress; require successful canary-equivalent rows."
+repair-branch,reload-hydration/exact-stack-candidate,P1,yes,"Allow exact validation of the current product candidate only as the next available heavy slot; promotion still requires title-reload-http, existing-post-crdt-http, and large-http-lifecycle green evidence."
+publish-ready,reload-hydration/current-candidate,P0,no,"No push manifest or exact-stack green evidence exists, so reload-hydration is not publishable yet."
+update-controller-rule,reload-hydration/exact-stack-promotion-gate,P0,yes,"Convert reload-hydration from generic deferred activity to an exact blocker requiring candidate head plus exact-stack title reload, existing-post CRDT, and retained large HTTP lifecycle evidence."
+cooldown-diagnostic,reload-hydration;pre-save-search-live-collapse;rich-text-suffix-corruption/generic-interval-relaunch,P0,yes,"These families are over budget; relaunch only with a new product head, owner evidence, exact-stack green evidence, or explicit downscope."
+update-controller-rule,deferred-family-budget-hard-gate,P0,yes,Keep at most one artifact-complete active job per over-budget family and reject interval-only relaunches as progress.
+update-controller-rule,operator-correctness-regression/exact-coverage-gates,P0,yes,Replace broad re-analysis with exact gates for large-post final saved-content union and list-item move-refresh ordering.
+update-controller-rule,lower-http-polling/title-reload-existing-post-crdt,P0,yes,Retarget one lower-level HTTP lane to canary-derived title/body reload and persisted-CRDT reload oracles while preserving discovery lanes.
+update-controller-rule,lower-php-sync-storage-restore-state,P0,yes,"Add one PHP protocol/storage profile for restore-room-state persistence across sync update data, awareness state, revision restore, and HTTP sync."
+cooldown-diagnostic,seed-5200005-reducer,P0,yes,Consume the already_resolved_by_active_artifacts classification and clear queued reducer work unless newer non-coverage evidence appears.
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already published; the full branch needs fresh product advantage.
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A variant is already published; the original-base branch is duplicate under current evidence.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B variant is already published; the original-base branch is duplicate under current evidence.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C variant is already published; the original-base branch is duplicate under current evidence.
-generate-publication-manifest,ready-product-prs,P0,yes,Cheap publication manifest generation is allowed and preserves discovery reserve while keeping published ready branches auditable.
-cooldown-diagnostic,reload-hydration;pre-save-search-live-collapse;rich-text-suffix-corruption/generic-interval-relaunch,P0,yes,"Over-budget deferred families need a new product fix head, owner evidence, exact-stack green evidence, or explicit downscope before more generic launches."
-update-controller-rule,deferred-family-budget-hard-gate,P0,yes,"Block over-budget generic relaunches unless they provide new product fix heads, owner evidence, exact-stack promotion evidence, or explicit downscope."
-update-controller-rule,reload-hydration/exact-stack-promotion-gate,P0,yes,Only keep or promote reload candidates with exact-stack title-reload-http and existing-post-crdt-http green plus retained large-http-lifecycle coverage.
-repair-ready,reload-hydration/exact-stack-candidate,P0,no,"Candidate activity exists, but exact-stack title reload and existing-post CRDT persistence gates are not green."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,The PR14B-based PR15A variant is already published; this original-base branch is duplicate under current evidence.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,The PR14B-based PR15B variant is already published; this original-base branch is duplicate under current evidence.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,The PR14B-based PR15C variant is already published; this original-base branch is duplicate under current evidence.
+generate-publication-manifest,already-published-ready-product-branches,P1,yes,Cheap bookkeeping is allowed to reconcile published ready branches without consuming heavy PR capacity or discovery reserve.
 cooldown-diagnostic,malformed-save-payload/raw-deferred-heads,P1,yes,Raw deferred heads are superseded by canonical PR06B minimal unless fresh product evidence appears.
 cooldown-diagnostic,http-room-isolation/raw-deferred-heads,P1,yes,Raw deferred heads are superseded by published PR02A unless fresh healthy-user HTTP room-isolation evidence appears.
-cooldown-diagnostic,pr17-1020002/pre-oracle-only-replays,P1,yes,Terminal downscope remains; reopen only with fresh product evidence newer than classification.tsv and report.md.
-update-controller-rule,lower-http-polling/canary-oracle-retarget,P0,yes,Retarget one lower-level HTTP lane to canary-derived title/body reload and persisted-CRDT reload oracles while preserving lower-level discovery.
-update-controller-rule,operator-correctness-regression/exact-coverage-gates,P0,yes,Replace broad re-analysis with exact promotion gates for large-post final saved-content union and list-item move-refresh ordering.
-reserve-discovery,discovery-reserve,P0,yes,"Discovery is healthy now, but if active discovery drops below reserve, allow only cheap publication manifest work and analysis-only decisions until health recovers."
-cooldown-diagnostic,broad-pr-analysis,P0,yes,"Avoid heavy broad PR fanout while exact-stack closure, PR07C owner evidence, deferred jobs, and discovery lanes are active."
-update-controller-rule,productive-analysis-feed-binding,P0,yes,Every P0 Productive Analysis row targeting controller loops must become a TSV action or explicit rejection.
+cooldown-diagnostic,pr17-1020002/pre-oracle-only-replays,P1,yes,Terminal downscope remains; reopen only with fresh product evidence newer than the terminal classification.
+cooldown-diagnostic,broad-pr-analysis,P0,yes,"Avoid broad heavy PR fanout while the PR07C matrix, exact-stack closure, deferred jobs, and discovery lanes are active."
+reserve-discovery,discovery-reserve,P0,yes,"Reserve is healthy now; if active discovery falls below 3, allow only cheap publication manifest generation, reconciliation, and analysis-only decisions."
+update-controller-rule,productive-analysis-feed-binding,P0,yes,Every P0 Productive Analysis row targeting controller loops must become an explicit TSV action or explicit rejection.
 update-controller-rule,effective-pr-slot-accounting,P0,yes,"Count queued and runnable owner matrices, repairs, benchmark jobs, deferred jobs, continuations, finalizers, and persona loops against PR capacity."
-update-controller-rule,fresh-classification-reconcile,P0,yes,Consume newer classification.tsv and report.md artifacts before slot assignment so resolved blockers stop occupying capacity.
-update-controller-rule,artifact-complete-single-flight,P0,yes,"Permit one lane per blocker or family and reject zero-byte, setup-only, pre-oracle, and duplicate-head artifacts as progress."
+update-controller-rule,fresh-classification-reconcile,P0,yes,Consume newer classification.tsv and report.md artifacts before assigning slots so resolved blockers stop occupying capacity.
+update-controller-rule,artifact-complete-single-flight,P0,yes,"Permit one lane per blocker or family and reject duplicate-head, zero-byte, setup-only, and pre-oracle artifacts as progress."
