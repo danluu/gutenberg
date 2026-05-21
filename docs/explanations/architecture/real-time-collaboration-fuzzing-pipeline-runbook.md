@@ -158,6 +158,13 @@ backend/protocol lanes count emitted cases. Rechecks count as executions.
 preserve and interpret the level-mix and execution-rate plots, and
 `bin/rtc-trend-generate-evidence.sh` includes the latest level-mix and
 execution summaries in the persona-loop evidence packet.
+Run the durable local publisher with `bin/rtc-trend-refresh-loop.sh start` on a
+host that has GitHub access. That script installs the required `$OPS_DIR`
+helpers, keeps a local checkout on
+`explain/rtc-jetstream2-fuzz-progress-20260515`, invokes the graph refresh job
+in a tmux session, and repeats after each completed refresh. The collector is
+bounded to recent/current run roots by `RTC_TREND_MAX_RUN_ROOTS_PER_CAMPAIGN`
+so a graph refresh does not stall on stale retained fuzz roots.
 The collector also copies recent PR-split, duplicate/noise, level-mix,
 native-harness, protocol-server, and fuzz-only-assertion synthesis/action
 reports into the graph refresh persona-input directory. Graph interpretation

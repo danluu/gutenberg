@@ -49,7 +49,11 @@ REMOTE_STAGE_ROOT="${RTC_REMOTE_STAGE_ROOT:-/media/volume/danluu-fuzz-data/rtc-g
 OUT="$REMOTE_STAGE_ROOT/rtc-graphs-refresh-latest"
 TAR="$REMOTE_STAGE_ROOT/rtc-graphs-refresh-latest.tar.gz"
 COVERAGE_BASE="${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}"
+MAX_RUN_ROOTS_PER_CAMPAIGN="${RTC_TREND_MAX_RUN_ROOTS_PER_CAMPAIGN:-80}"
 PR_LOOP_BASE="${RTC_PR_LOOP_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515}"
+PR_PROGRESS_BASE="${RTC_PR_PROGRESS_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518}"
+CRITICAL_PATH_BASE="${RTC_CRITICAL_PATH_BASE:-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517}"
+ARTIFACT_INDEX_BASE="${RTC_ARTIFACT_INDEX_BASE:-/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518}"
 DUP_LOOP_BASE="${RTC_DUP_LOOP_BASE:-/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516}"
 LEVEL_MIX_LOOP_BASE="${RTC_LEVEL_MIX_LOOP_BASE:-/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20260516}"
 NATIVE_ASSERT_BASE="${RTC_NATIVE_ASSERT_BASE:-/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516}"
@@ -135,6 +139,33 @@ else
 	: > "$OUT/raw/fuzz-only-asserts-loop.log"
 fi
 
+mkdir -p "$OUT/raw/pr-focused/pr-progress" "$OUT/raw/pr-focused/critical-path" "$OUT/raw/pr-focused/artifact-index"
+copy_if_present() {
+	local src="$1"
+	local dest="$2"
+	if [ -f "$src" ]; then
+		cp "$src" "$dest"
+	fi
+}
+
+copy_if_present "$PR_PROGRESS_BASE/current-pr-progress.tsv" "$OUT/raw/pr-focused/pr-progress/current-pr-progress.tsv"
+copy_if_present "$PR_PROGRESS_BASE/current-push-manifest.tsv" "$OUT/raw/pr-focused/pr-progress/current-push-manifest.tsv"
+copy_if_present "$PR_PROGRESS_BASE/current-control-decisions.tsv" "$OUT/raw/pr-focused/pr-progress/current-control-decisions.tsv"
+copy_if_present "$PR_PROGRESS_BASE/events.ndjson" "$OUT/raw/pr-focused/pr-progress/events.ndjson"
+copy_if_present "$PR_PROGRESS_BASE/logs/controller.log" "$OUT/raw/pr-focused/pr-progress/controller.log"
+
+copy_if_present "$CRITICAL_PATH_BASE/blockers.tsv" "$OUT/raw/pr-focused/critical-path/blockers.tsv"
+copy_if_present "$CRITICAL_PATH_BASE/queue.tsv" "$OUT/raw/pr-focused/critical-path/queue.tsv"
+copy_if_present "$CRITICAL_PATH_BASE/active-jobs.tsv" "$OUT/raw/pr-focused/critical-path/active-jobs.tsv"
+copy_if_present "$CRITICAL_PATH_BASE/lanes.tsv" "$OUT/raw/pr-focused/critical-path/lanes.tsv"
+copy_if_present "$CRITICAL_PATH_BASE/no-progress.tsv" "$OUT/raw/pr-focused/critical-path/no-progress.tsv"
+copy_if_present "$CRITICAL_PATH_BASE/terminal-ledger.tsv" "$OUT/raw/pr-focused/critical-path/terminal-ledger.tsv"
+copy_if_present "$CRITICAL_PATH_BASE/current-branch-audit.tsv" "$OUT/raw/pr-focused/critical-path/current-branch-audit.tsv"
+copy_if_present "$CRITICAL_PATH_BASE/events.ndjson" "$OUT/raw/pr-focused/critical-path/events.ndjson"
+
+copy_if_present "$ARTIFACT_INDEX_BASE/current-artifacts.tsv" "$OUT/raw/pr-focused/artifact-index/current-artifacts.tsv"
+copy_if_present "$ARTIFACT_INDEX_BASE/logs/artifact-index.log" "$OUT/raw/pr-focused/artifact-index/artifact-index.log"
+
 copy_latest_persona_files() {
 	local base="$1"
 	local label="$2"
@@ -189,7 +220,7 @@ copy_latest_nested_files "$NATIVE_ASSERT_BASE/protocol/runs" "protocol-server" "
 copy_latest_nested_files "$NATIVE_ASSERT_BASE/protocol/runs" "protocol-server" "action" "action.md"
 copy_latest_nested_files "$FUZZ_ASSERT_BASE/cycles" "fuzz-asserts" "apply" "apply.report.md"
 
-RTC_REMOTE_COLLECT_OUT="$OUT" python3 - <<'PY'
+RTC_REMOTE_COLLECT_OUT="$OUT" RTC_TREND_MAX_RUN_ROOTS_PER_CAMPAIGN="$MAX_RUN_ROOTS_PER_CAMPAIGN" python3 - <<'PY'
 import csv
 import glob
 import json
@@ -397,6 +428,7 @@ campaign_roots = [
 ]
 group_paths = []
 run_roots = defaultdict(set)
+current_run_roots = defaultdict(set)
 for campaign, base in campaign_roots:
 	if not os.path.isdir(base):
 		continue
@@ -415,6 +447,7 @@ for campaign, base in campaign_roots:
 		if os.path.exists(path):
 			group_paths.append((campaign, path))
 			run_roots[campaign].add(os.path.dirname(path))
+			current_run_roots[campaign].add(os.path.realpath(os.path.dirname(path)))
 	for pattern in (
 		os.path.join(base, "run-*", "supervisor-groups.json"),
 		os.path.join(base, "runs", "*", "supervisor-groups.json"),
@@ -431,6 +464,34 @@ for campaign, path in group_paths:
 		continue
 	seen_paths.add(key)
 	deduped_paths.append((campaign, path))
+
+try:
+	max_run_roots_per_campaign = int(os.environ.get("RTC_TREND_MAX_RUN_ROOTS_PER_CAMPAIGN", "80"))
+except ValueError:
+	max_run_roots_per_campaign = 80
+max_run_roots_per_campaign = max(1, max_run_roots_per_campaign)
+
+filtered_paths = []
+paths_by_campaign = defaultdict(list)
+for campaign, path in deduped_paths:
+	try:
+		mtime = os.path.getmtime(path)
+	except OSError:
+		mtime = 0
+	paths_by_campaign[campaign].append((mtime, path))
+
+for campaign, entries in paths_by_campaign.items():
+	kept = 0
+	for _mtime, path in sorted(entries, reverse=True):
+		run_root = os.path.realpath(os.path.dirname(path))
+		if run_root in current_run_roots.get(campaign, set()) or kept < max_run_roots_per_campaign:
+			filtered_paths.append((campaign, path))
+			kept += 1
+
+deduped_paths = sorted(filtered_paths)
+run_roots = defaultdict(set)
+for campaign, path in deduped_paths:
+	run_roots[campaign].add(os.path.dirname(path))
 
 latest_by_campaign = {}
 for campaign, path in deduped_paths:
@@ -1156,6 +1217,10 @@ cp "$INPUT_DIR/remote/raw/novelty-state.json" "$ARTIFACT_DIR/raw/novelty-state.j
 cp "$INPUT_DIR/remote/raw/novelty-status.md" "$ARTIFACT_DIR/raw/novelty-status.md"
 cp "$INPUT_DIR/remote/raw/current-coverage-root.txt" "$ARTIFACT_DIR/raw/current-coverage-root.txt"
 cp "$INPUT_DIR/remote/raw/pr-split-loop.log" "$ARTIFACT_DIR/raw/pr-split-loop.log"
+rm -rf "$ARTIFACT_DIR/raw/pr-focused"
+if [ -d "$INPUT_DIR/remote/raw/pr-focused" ]; then
+	cp -R "$INPUT_DIR/remote/raw/pr-focused" "$ARTIFACT_DIR/raw/pr-focused"
+fi
 cp "$INPUT_DIR/remote/data/cpu_utilization.csv" "$ARTIFACT_DIR/data/cpu_utilization.csv"
 cp "$INPUT_DIR/remote/data/load_average.csv" "$ARTIFACT_DIR/data/load_average.csv"
 cp "$INPUT_DIR/remote/data/disk_free_space.csv" "$ARTIFACT_DIR/data/disk_free_space.csv"
