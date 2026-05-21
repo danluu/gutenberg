@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-21T17:54:36Z`
+Snapshot generated: `2026-05-21T18:00:31Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance, resource,
 and PR-progress logs. The plotting data is generated with R, ggplot2, tidyverse
@@ -18,18 +18,19 @@ old local state.
 
 ## High-Level Readout
 
-The graph data is current through `2026-05-21T17:52:26Z`. The monitor has
-`3,799` passes from `2026-05-15T01:21:42Z` onward. Cumulative coverage record
+The graph data is current through `2026-05-21T17:58:53Z`. The monitor has
+`3,803` passes from `2026-05-15T01:21:42Z` onward. Cumulative coverage record
 observations are `273,460`; current-scan coverage files are `294`. The monitor
 reports `40` unmet live coverage items, while the parsed coverage-goal table has
 `91` unmet target rows out of `137`.
 
-Current-run health is quiet in the measured live metric: `duplicateShareCurrent`
-is `0`, current summary startup failures are `0`, quality issues are `0`, and
-the current-run accounting sample is trusted. Historical duplicate share is `0`
-for context, but it is not the live health signal. The active output root has
-`0` current signatures and `0` actionable current signatures, so this is not
-hiding a one-signature duplicate spike.
+Current-run duplicate/noise is quiet in the measured live metric:
+`duplicateShareCurrent` is `0`, current summary startup failures are `0`, and
+the current-run accounting sample is trusted. The latest monitor sample also
+has `1` quality issue. Historical duplicate share is `0` for context, but it is
+not the live health signal. The active output root has `0` current signatures
+and `0` actionable current signatures, so this is not hiding a one-signature
+duplicate spike.
 Persona-loop duplicate/noise feedback treated strict no-product
 `pre_action_bootstrap_stall` recycling as a producer/scheduler control-plane
 leak. The latest action says the novelty/supervisor hold was patched and
@@ -38,25 +39,25 @@ the clean graph metric is current status rather than proof of long-term browser
 producer stability.
 
 Resource state is improved but still needs watching. The latest sample has
-`388.2G` free memory, `31.2GiB` free on `/`, and `594.0GiB` free on
+`388.1G` free memory, `31.2GiB` free on `/`, and `595.5GiB` free on
 `/media/volume/danluu-fuzz-data`. The latest load averages are `15.97`,
 `18.89`, and `21.85` on `64` logical CPUs.
 
-The latest graph-counted fuzzing mix has `18` browser/e2e lanes across `18`
+The latest graph-counted fuzzing mix has `26` browser/e2e lanes across `26`
 groups, plus one `unit-property` lane, one `coverage-guided-lower-level` lane,
 and one `protocol-server` lane. The execution counter has about `16.9M`
 estimated individual executions. Lower-level execution counts are approximate
 when they are reconstructed from batch metadata or legacy batch-count fields.
 The level-mix persona feedback rejects treating these graph counts as fully
 trusted live useful capacity until current root, exact tmux sessions, live PIDs,
-fresh events, and fresh summaries agree. The refreshed graph still has
-browser/e2e below the `24` lane floor, so the feedback's main direction still
+fresh events, and fresh summaries agree. The refreshed graph now has browser/e2e
+above the `24` lane floor, which contradicts the older persona-loop observation
+that browser/e2e was below floor, but the feedback's fail-closed direction still
 applies: recover operator HTTP correctness first, use one focused HTTP fallback
 if operator artifacts stay stale, and count backend/protocol capacity as zero
-when exact sessions are missing. Protocol-server evidence now says the isolated
-HTTP polling harness passed validation and event-contract checks, so the graph
-can show protocol execution without overriding that fail-closed live-capacity
-rule.
+when exact sessions are missing. Protocol-server evidence says the isolated HTTP
+polling harness passed validation and event-contract checks, so the graph can
+show protocol execution without overriding that fail-closed live-capacity rule.
 
 The PR-focused data is live again. The controller table has `21` distinct work
 items: `13` high-priority ready-product PR rows marked published, `5`
@@ -98,7 +99,7 @@ has `0` current signatures and `0` actionable current signatures.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. The data volume is
-around `84%` used and root is around `80%` used, so cleanup and output-size
+around `83%` used and root is around `80%` used, so cleanup and output-size
 budgeting still matter.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
@@ -122,8 +123,8 @@ transform, multi-reload lifecycle, and same-user surfaces.
 ![Fuzzing level mix over time](rtc-jetstream2-fuzz-trends-20260515/plots/fuzz-level-mix-over-time.png)
 
 The collector now reads recent and current `supervisor-groups.json` files
-instead of scanning unbounded history. The latest mix is concentrated in
-browser/e2e at `18` of `21` graph-counted lanes. Lower-level work is visible:
+instead of scanning unbounded history. The latest graph-counted mix is
+concentrated in browser/e2e at `26` of `29` lanes. Lower-level work is visible:
 `unit-property`, `coverage-guided-lower-level`, and `protocol-server` each have
 one current lane. The current graph-counted lower-level targets are
 table-query-array CRDT, rich-text CRDT, and HTTP polling protocol/server.
@@ -133,14 +134,16 @@ current graph-counted lane in this snapshot.
 Persona-loop evidence rejects the simple interpretation that these graph-counted
 rows equal trusted useful live capacity. Level-mix synthesis requires fail-closed
 checks for exact sessions, PIDs, fresh event files, and fresh non-empty
-summaries. Native-harness synthesis recommends parser serialization as the
-first ready isolated harness and rich-text CRDT as the immediate second lane,
-but the current graph-counted coverage-guided lower-level row is still
-rich-text CRDT. Protocol-server action now reports the HTTP polling harness is
-ready and passed a one-lane validation seed with `22` cases and event-contract
-checks, but the level-mix feedback still says protocol/server capacity should
-count as zero when exact tmux sessions are missing. The stricter capacity read
-still prioritizes operator HTTP correctness recovery.
+summaries. It also says to recover operator HTTP correctness first, then append
+one focused `large-http-lifecycle` shard only if operator artifacts stay stale.
+Native-harness action reports the parser-serialization lower-level harness
+passed direct and tmux smoke validation with `2` inputs, `92` coverage keys, and
+`21` semantic feature keys, but the current graph-counted coverage-guided
+lower-level row is still rich-text CRDT. Protocol-server action reports the HTTP
+polling harness is ready and passed a one-lane validation seed with `22` cases
+and event-contract checks, but the level-mix feedback still says
+protocol/server capacity should count as zero when exact tmux sessions are
+missing.
 
 ## Fuzzing Level Executions
 
@@ -152,7 +155,7 @@ The execution metric estimates individual test/case executions from lane
 `events.ndjson`: browser seed attempts, unit/property fixed tests plus generated
 cases, coverage-guided inputs, and protocol/backend cases. Lower-level rows are
 approximate when reconstructed from batch metadata or legacy batch-count fields.
-The latest totals are approximately `389,944` browser/e2e, `161`
+The latest totals are approximately `389,921` browser/e2e, `161`
 transport/integration, `5,617,920` unit-property, `458,097` coverage-guided
 lower-level, and `10,431,932` protocol-server executions. The current
 15-minute rate bucket has `1` browser/e2e execution, or about `4`
@@ -169,7 +172,7 @@ The likely-real graph is a triage-output metric only. It counts non-duplicate
 `.triage-watcher/**/result.json` rows classified `likely_real`, deduped by
 canonical bug key and attributed to first-seen time. The latest collected
 triaged likely-real output is still all browser/e2e: `526` likely-real findings
-over about `2,869.7` runner-hours, or `18.33` per 100 runner-hours.
+over about `2,869.3` runner-hours, or `18.33` per 100 runner-hours.
 
 ![Unique bug-output candidates by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-level.png)
 
@@ -321,7 +324,7 @@ noise as a producer hard-hold/control-plane issue, then reported a
 novelty/supervisor patch and restart. The latest active root is clean but fresh,
 so the remaining risk is a repeat of the leaking family after root churn.
 
-The current fuzzing mix is browser/e2e-heavy and now graph-counted at `18`
+The current fuzzing mix is browser/e2e-heavy and now graph-counted at `26`
 browser/e2e lanes, plus one lane each for unit-property,
 coverage-guided-lower-level, and protocol-server. Browser/e2e is still the only
 level producing triaged likely-real findings in the committed triage-output
@@ -331,8 +334,9 @@ protocol-server case executions from the validated HTTP polling harness, but
 that is harness readiness evidence, not proof of useful live capacity. The
 level-mix persona feedback rejects trusting the graph-counted live mix as
 capacity accounting until fail-closed checks confirm current roots, exact
-sessions, PIDs, and fresh summaries, and recommends restoring operator HTTP
-correctness before adding generic lower-level capacity.
+sessions, PIDs, and fresh summaries. It also rejects adding generic lower-level
+capacity before operator HTTP correctness is recovered or one focused HTTP
+fallback is needed.
 
 PR progress is visible again, but the controller is not currently advertising a
 non-empty push manifest. The PR-split persona feedback keeps the fileable prefix

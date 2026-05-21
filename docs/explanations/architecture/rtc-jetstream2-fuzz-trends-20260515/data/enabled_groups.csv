@@ -1511,3 +1511,15 @@ timestamp,group,group_family
 2026-05-21T17:44:31Z,novelty-ws-real-user-coverage-bridge,real-user
 2026-05-21T17:44:31Z,novelty-ws-media-cross-entity-coverage-bridge,async/media
 2026-05-21T17:44:31Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-21T17:55:22Z,novelty-ws-revision-persistence,persistence
+2026-05-21T17:55:22Z,novelty-ws-three-user-late-join,lifecycle
+2026-05-21T17:55:22Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-21T17:56:30Z,novelty-ws-revision-persistence,persistence
+2026-05-21T17:56:30Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-21T17:56:30Z,novelty-ws-parser-serialization,parser
+2026-05-21T17:57:44Z,novelty-ws-revision-persistence,persistence
+2026-05-21T17:57:44Z,novelty-ws-three-user-late-join,lifecycle
+2026-05-21T17:57:44Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-21T17:58:53Z,novelty-ws-revision-persistence,persistence
+2026-05-21T17:58:53Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-21T17:58:53Z,novelty-ws-parser-serialization,parser

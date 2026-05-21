@@ -1,4 +1,5 @@
 session,class,started_hint
+rtc-coverage-guidance-codex-20260521T175636Z,analysis,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-deferred-job-pre-save-search-live-collapse-20260521T175153Z,deferred,
 rtc-deferred-job-reload-hydration-20260521T174146Z,deferred,

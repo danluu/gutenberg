@@ -11413,14 +11413,9 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T09:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,8842,8842,8842,50,0,542434,FALSE
 2026-05-21T09:00:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,512,512,96,16,13,240000,FALSE
 2026-05-21T09:15:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,2,1,0,2,2,75168,FALSE
-2026-05-21T09:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,1,1,0,1,1,82936,FALSE
-2026-05-21T09:15:00Z,coverage-guided,novelty-ws-collaboration-ui-signals,browser-e2e,ws,collaboration-ui-signals,9,6,0,9,9,339231,FALSE
+2026-05-21T09:15:00Z,coverage-guided,novelty-ws-collaboration-ui-signals,browser-e2e,ws,collaboration-ui-signals,5,3,0,5,5,184005,FALSE
 2026-05-21T09:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,22,22,22,1,0,8480,FALSE
 2026-05-21T09:15:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,640,640,0,20,20,294000,FALSE
-2026-05-21T09:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,1,2,1,161603,FALSE
-2026-05-21T09:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,4,3,2,4,2,230578,FALSE
-2026-05-21T09:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,2,2,0,2,2,89477,FALSE
-2026-05-21T09:30:00Z,coverage-guided,novelty-ws-collaboration-ui-signals,browser-e2e,ws,collaboration-ui-signals,10,5,0,10,10,453681,FALSE
 2026-05-21T09:30:00Z,focused-shards,focused-async-server-b,browser-e2e,ws,async-server-blocks,6,6,6,6,0,404816,FALSE
 2026-05-21T09:30:00Z,focused-shards,focused-auth-locks-b,browser-e2e,ws,permissions-auth-locks,6,5,4,6,2,301704,FALSE
 2026-05-21T09:30:00Z,focused-shards,focused-late-join-b,browser-e2e,ws,three-user-late-join,6,4,2,6,4,585785,FALSE
