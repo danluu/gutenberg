@@ -1523,3 +1523,9 @@ timestamp,group,group_family
 2026-05-21T17:58:53Z,novelty-ws-revision-persistence,persistence
 2026-05-21T17:58:53Z,novelty-ws-long-session-large-doc,lifecycle
 2026-05-21T17:58:53Z,novelty-ws-parser-serialization,parser
+2026-05-21T18:00:01Z,novelty-ws-revision-persistence,persistence
+2026-05-21T18:00:01Z,novelty-ws-three-user-late-join,lifecycle
+2026-05-21T18:00:01Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-21T18:01:10Z,novelty-ws-revision-persistence,persistence
+2026-05-21T18:01:10Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-21T18:01:10Z,novelty-ws-parser-serialization,parser
