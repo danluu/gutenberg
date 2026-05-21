@@ -4116,5 +4116,13 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T21:30:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,2,2,0,549594,FALSE
 2026-05-21T21:45:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,1,2,1,397515,FALSE
 2026-05-21T21:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,1,2,1,201460,FALSE
+2026-05-21T21:45:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,1,1,0,1,1,88002,FALSE
 2026-05-21T21:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,5,3,0,5,5,337307,FALSE
 2026-05-21T21:45:00Z,coverage-guided,novelty-ws-parser-transform,browser-e2e,ws,parser-transform,6,5,4,6,2,168419,FALSE
+2026-05-21T22:00:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,0,1,1,196446,FALSE
+2026-05-21T22:00:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,2,1,0,2,2,303589,FALSE
+2026-05-21T22:00:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,4,2,1,4,3,237120,FALSE
+2026-05-21T22:00:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,4,2,0,4,4,279389,FALSE
+2026-05-21T22:00:00Z,coverage-guided,novelty-ws-many-user-lifecycle-completion,browser-e2e,ws,many-user-lifecycle,2,2,1,2,1,151170,FALSE
+2026-05-21T22:00:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,1,1,0,1,1,41644,FALSE
+2026-05-21T22:00:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,96,96,0,3,3,53000,FALSE
