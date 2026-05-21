@@ -7,8 +7,8 @@ fuzzing project.
 
 - `bin/rtc-jetstream-guard-remote.sh`: keeps required tmux sessions alive.
 - `bin/rtc-resource-autoscaler-remote.sh`: samples CPU, load average, memory,
-  and coverage materialization state, then adjusts the coverage-guided browser
-  budget.
+  disk, Docker's daemon data root, and coverage materialization state, then
+  adjusts the coverage-guided browser budget.
 - `bin/rtc-coverage-guided-start-remote.sh`: starts the coverage-guided browser
   monitor. Each scheduled browser group must get its own hardlinked repo copy,
   `WP_ENV_HOME`, `WP_ENV_PORT`, tests port, phpMyAdmin port, and websocket port.
@@ -141,12 +141,22 @@ large artifact trees can otherwise block the control loop. Optional browser pool
 cleanup is session-level in the autoscaler; deeper orphan cleanup should run as
 a separate bounded janitor, not in the pressure-control path.
 
+Docker's daemon data root is part of the health contract. On Jetstream2 it must
+be `/media/volume/danluu-fuzz-data/docker-data-root`; if Docker falls back to
+`/var/lib/docker`, `wp-env` MySQL volumes and image churn will fill `/` even
+when all fuzzer output directories are on the large mounted disk. The
+autoscaler status reports `docker_root_dir`, `expected_docker_root_dir`, and
+`docker_root_ok`. A non-empty mismatched Docker root makes the autoscaler stop
+known Docker-backed fuzzing sessions and report `docker_root_misconfigured`.
+
 ## Health Checks
 
 Current status:
 
 ```bash
 sed -n '1,140p' /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md
+docker info --format '{{.DockerRootDir}}'
+df -h / /media/volume/danluu-fuzz-data
 tail -40 /media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515/logs/guard.log
 /media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin/tmux ls | grep -E 'rtc-(coverage-guided|resource-autoscaler|focused-shards|gap-booster|fuzz-strict)'
 ```

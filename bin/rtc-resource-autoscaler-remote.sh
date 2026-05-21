@@ -5,7 +5,9 @@ BASE=${RTC_RESOURCE_AUTOSCALER_BASE:-/media/volume/danluu-fuzz-data/rtc-resource
 COVERAGE_BASE=${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}
 DISK_VOLUME=${RTC_DATA_VOLUME:-/media/volume/danluu-fuzz-data}
 ROOT_DISK_VOLUME=${RTC_ROOT_DISK_VOLUME:-/}
+EXPECTED_DOCKER_ROOT=${RTC_EXPECTED_DOCKER_ROOT:-$DISK_VOLUME/docker-data-root}
 START=${RTC_COVERAGE_START_SCRIPT:-/tmp/start_rtc_coverage_guided_remote.sh}
+WATCHDOG_START=${RTC_COVERAGE_WATCHDOG_START_SCRIPT:-/tmp/start_rtc_coverage_guided_watchdog_remote.sh}
 NODE_BIN=${RTC_NODE_BIN:-/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin}
 TMUX=${RTC_TMUX:-/usr/bin/tmux}
 TMUX_SOCKET=${RTC_TMUX_SOCKET:-rtc-fuzz}
@@ -118,6 +120,15 @@ disk_used_percent() {
 	local volume=${1:-$DISK_VOLUME}
 	df -Pk "$volume" 2>/dev/null |
 		awk 'NR == 2 && $2 > 0 { printf "%.1f\n", ($3 * 100) / $2 }'
+}
+
+docker_root_dir() {
+	docker info --format '{{.DockerRootDir}}' 2>/dev/null || true
+}
+
+docker_root_is_misconfigured() {
+	local actual=${1:-}
+	[ -n "$actual" ] && [ "$actual" != "$EXPECTED_DOCKER_ROOT" ]
 }
 
 load1() {
@@ -1085,6 +1096,7 @@ write_status() {
 	local now=$1 cpu=$2 load=$3 avail=$4 ncpu=$5 enabled=$6 target=$7 max=$8 desired_target=$9 desired_max=${10} action=${11} reason=${12}
 	local materialized_active=${13} paused_infra=${14} running_groups=${15} status_counts=${16} stale_seconds=${17} materialization_detail=${18} load5_value=${19} load15_value=${20}
 	local data_disk_avail=${21:-unknown} root_disk_avail=${22:-unknown}
+	local docker_root_actual=${23:-unknown} docker_root_expected=${24:-$EXPECTED_DOCKER_ROOT} docker_root_ok=${25:-unknown}
 	cat > "$STATUS" <<EOF_STATUS
 # RTC Jetstream2 Resource Autoscaler
 
@@ -1096,6 +1108,9 @@ write_status() {
 - mem_available_gib: $avail
 - root_disk_available_gib: $root_disk_avail
 - data_disk_available_gib: $data_disk_avail
+- docker_root_dir: $docker_root_actual
+- expected_docker_root_dir: $docker_root_expected
+- docker_root_ok: $docker_root_ok
 - enabled_groups: $enabled
 - current_budget: target=$target max=$max
 - desired_budget: target=$desired_target max=$desired_max
@@ -1218,6 +1233,7 @@ restart_coverage() {
 	local fleet_startup_noise_canary_group
 	local allow_empty_materialization_no_product_startup_canary
 	local min_enabled_browser_lanes
+	local start_rc=0
 	[[ "$desired_target" =~ ^[0-9]+$ ]] || desired_target=1
 	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=$desired_target
 	if [ "$desired_max" -lt "$desired_target" ]; then
@@ -1246,7 +1262,45 @@ restart_coverage() {
 	RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY="$allow_fleet_startup_noise_canary" \
 	RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP="$fleet_startup_noise_canary_group" \
 	RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY="$allow_empty_materialization_no_product_startup_canary" \
-		"$START" >> "$LOG" 2>&1 || true
+		"$START" >> "$LOG" 2>&1 || start_rc=$?
+	if [ "$start_rc" -ne 0 ]; then
+		echo "[$(stamp)] coverage-guided start script exited rc=$start_rc reason=$reason" >> "$LOG"
+	fi
+	if [ -x "$WATCHDOG_START" ]; then
+		echo "[$(stamp)] ensuring coverage-guided watchdog after restart reason=$reason" >> "$LOG"
+		"$WATCHDOG_START" >> "$LOG" 2>&1 || echo "[$(stamp)] coverage-guided watchdog start failed reason=$reason" >> "$LOG"
+	else
+		echo "[$(stamp)] coverage-guided watchdog launcher missing or not executable: $WATCHDOG_START" >> "$LOG"
+	fi
+}
+
+stop_browser_sessions_for_docker_root_mismatch() {
+	local now=$1
+	local actual=${2:-unknown}
+	local session
+	echo "[$now] Docker data-root mismatch: actual=$actual expected=$EXPECTED_DOCKER_ROOT; stopping Docker-backed fuzzing to protect root disk" >> "$LOG"
+	for session in \
+		rtc-coverage-guided-novelty \
+		rtc-coverage-guided-supervisor \
+		rtc-coverage-guided-watchdog \
+		rtc-fuzz-strict-expansion \
+		rtc-fuzz-strict-expansion-watchdog \
+		rtc-focused-shards \
+		rtc-focused-shards-watchdog \
+		rtc-gap-booster \
+		rtc-gap-booster-watchdog \
+		rtc-operator-correctness-fuzz \
+		rtc-operator-correctness-watchdog; do
+		if "$TMUX" -L "$TMUX_SOCKET" has-session -t "$session" 2>/dev/null; then
+			echo "[$now] stopping $session due to Docker data-root mismatch" >> "$LOG"
+			"$TMUX" -L "$TMUX_SOCKET" kill-session -t "$session" 2>/dev/null || true
+		fi
+	done
+	while IFS= read -r session; do
+		[ -n "$session" ] || continue
+		echo "[$now] stopping $session due to Docker data-root mismatch" >> "$LOG"
+		"$TMUX" -L "$TMUX_SOCKET" kill-session -t "$session" 2>/dev/null || true
+	done < <("$TMUX" -L "$TMUX_SOCKET" list-sessions -F '#S' 2>/dev/null | grep -E '^(rtc-focused-shards(-watchdog|-analysis)?-append-|rtc-cov-deep-novelty-)' || true)
 }
 
 echo "[$(stamp)] resource autoscaler started base=$BASE" >> "$LOG"
@@ -1269,10 +1323,31 @@ while true; do
 	root_disk_avail=$(disk_available_gib "$ROOT_DISK_VOLUME")
 	disk_used=$(disk_used_percent "$DISK_VOLUME")
 	root_disk_used=$(disk_used_percent "$ROOT_DISK_VOLUME")
+	docker_root_actual=$(docker_root_dir)
+	docker_root_ok=unknown
+	if [ -n "$docker_root_actual" ]; then
+		if docker_root_is_misconfigured "$docker_root_actual"; then
+			docker_root_ok=0
+		else
+			docker_root_ok=1
+		fi
+	fi
 	ncpu=$(cores)
 	enabled=$(enabled_groups)
 	target=$(current_target)
 	max=$(current_max)
+	if [ "$docker_root_ok" = 0 ]; then
+		action=docker_root_misconfigured_stop
+		reason=docker_root_misconfigured
+		desired_target=0
+		desired_max=0
+		stop_browser_sessions_for_docker_root_mismatch "$now" "$docker_root_actual"
+		append_csv "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" 0 0 0 "docker-root-misconfigured" 0
+		append_disk_csv "$now" "$root_disk_avail" "$root_disk_used" "$disk_avail" "$disk_used"
+		write_status "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" 0 0 0 "docker-root-misconfigured" 0 "docker-root-misconfigured" "$load_five" "$load_fifteen" "$disk_avail" "$root_disk_avail" "$docker_root_actual" "$EXPECTED_DOCKER_ROOT" "$docker_root_ok"
+		sleep "$POLL_SECONDS"
+		continue
+	fi
 	read -r desired_target desired_max reason <<<"$(choose_budget "$cpu" "$load" "$load_five" "$load_fifteen" "$avail" "$ncpu")"
 	read -r desired_target desired_max reason <<<"$(apply_disk_budget "$desired_target" "$desired_max" "$reason" "$disk_avail" "$root_disk_avail")"
 	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max" "$reason")"
@@ -1411,7 +1486,7 @@ while true; do
 
 	append_csv "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds"
 	append_disk_csv "$now" "$root_disk_avail" "$root_disk_used" "$disk_avail" "$disk_used"
-	write_status "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail" "$load_five" "$load_fifteen" "$disk_avail" "$root_disk_avail"
+	write_status "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail" "$load_five" "$load_fifteen" "$disk_avail" "$root_disk_avail" "$docker_root_actual" "$EXPECTED_DOCKER_ROOT" "$docker_root_ok"
 	echo "[$now] cpu=$cpu load1=$load/$ncpu load5=$load_five/$ncpu load15=$load_fifteen/$ncpu mem_avail=${avail}GiB root_disk_avail=${root_disk_avail:-unknown}GiB disk_avail=${disk_avail:-unknown}GiB enabled=$enabled current=$target/$max desired=$desired_target/$desired_max materialized=$materialized_active_run_dirs running=$materialized_running_groups paused_infra=$paused_infra_startup_groups stale=${supervisor_state_age_seconds}s action=$action reason=$reason" >> "$LOG"
 	sleep "$POLL_SECONDS"
 done

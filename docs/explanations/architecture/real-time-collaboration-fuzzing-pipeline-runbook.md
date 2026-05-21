@@ -400,6 +400,12 @@ The remote launchers are intentionally split by ownership:
     below the configured floor. This prevents optional browser pools from
     consuming the browser lane budget while the active coverage-guided run is
     too narrow.
+    The autoscaler also checks Docker's daemon data root every cycle. The
+    expected Jetstream2 value is
+    `/media/volume/danluu-fuzz-data/docker-data-root`; if Docker reports a
+    different non-empty path, the autoscaler stops known Docker-backed fuzzing
+    sessions and reports `docker_root_misconfigured` instead of continuing to
+    create `wp-env` volumes on `/`.
     The novelty monitor also has a required surface floor. By default it keeps
     representative active groups for real-user editing/save/reload/rich text,
     parser transform, block gauntlet, revision recovery, three-user late join,
@@ -648,6 +654,36 @@ directories:
 ```bash
 node bin/rtc-fuzz-cleanup-stale-wp-env.mjs --apply --prune-directories --json --min-age-hours=24
 ```
+
+### Docker data root on Jetstream2
+
+`wp-env` stores MySQL volumes, images, and container state under Docker's daemon
+data root. Moving `~/.wp-env`, npm caches, repo checkouts, and fuzzer output is
+not sufficient if Docker still reports `/var/lib/docker`; large `wp-env` volume
+churn will keep filling `/`.
+
+On Jetstream2, Docker must report the mounted data volume:
+
+```bash
+docker info --format '{{.DockerRootDir}}'
+# /media/volume/danluu-fuzz-data/docker-data-root
+```
+
+If it does not, stop Docker-backed fuzzing before starting new browser lanes and
+repair `/etc/docker/daemon.json` so it contains:
+
+```json
+{
+	"data-root": "/media/volume/danluu-fuzz-data/docker-data-root"
+}
+```
+
+Preserve the existing runtime and address-pool settings when editing
+`daemon.json`. After restarting Docker, verify both `docker info` and `df -h /`
+before resuming fuzzing. The Jetstream2 resource autoscaler status includes
+`docker_root_dir`, `expected_docker_root_dir`, and `docker_root_ok`; if Docker's
+data root is misconfigured, the autoscaler stops known Docker-backed fuzzing
+sessions rather than allowing `wp-env` volumes to grow on root.
 
 Watchdog controls:
 
