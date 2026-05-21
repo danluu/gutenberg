@@ -468,7 +468,11 @@ The remote launchers are intentionally split by ownership:
     classifications, coverage-guided novelty runs whose full-pass timestamp is
     missing or stale, recent novelty-monitor heap-limit failures, and
     current-run duplicate/noise dominance that is still visible in
-    `novelty-status.md`. It writes
+    `novelty-status.md`. It also snapshots runaway broad scan processes over
+    `/media/volume/danluu-fuzz-data` or the Codex state directory, terminates
+    stale read-only `rg`/`grep` scans by default, and records analysis-productivity
+    signals such as high structural findings with no active repair worker or PR
+    queues with low Codex fanout under low load. It writes
     `/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518/current-structural-watchdog-status.md`
     and launches bounded `rtc-structural-repair-*` Codex jobs for high-severity
     findings. Those jobs may patch Jetstream scripts and restart only the

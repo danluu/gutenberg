@@ -34,6 +34,9 @@ REPAIR_LEDGER=$BASE/repair-launches.tsv
 LOG=$BASE/logs/structural-watchdog.log
 PID_FILE=$BASE/structural-watchdog.pid
 LOCK_FILE=$BASE/structural-watchdog.lock
+RUNAWAY_SCAN_REPORT=$BASE/current-runaway-scans.tsv
+RUNAWAY_SCAN_KILL_LEDGER=$BASE/runaway-scan-kills.tsv
+ANALYSIS_PRODUCTIVITY_REPORT=$BASE/current-analysis-productivity.tsv
 
 CYCLE_SLEEP_SECONDS=${RTC_STRUCTURAL_WATCHDOG_CYCLE_SLEEP_SECONDS:-300}
 REPAIR_COOLDOWN_SECONDS=${RTC_STRUCTURAL_WATCHDOG_REPAIR_COOLDOWN_SECONDS:-1800}
@@ -44,9 +47,14 @@ CODEX_REASONING_EFFORT=${RTC_STRUCTURAL_WATCHDOG_CODEX_REASONING_EFFORT:-xhigh}
 COVERAGE_FULL_PASS_MAX_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_FULL_PASS_MAX_AGE_SECONDS:-1800}
 COVERAGE_FULL_PASS_START_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_FULL_PASS_START_GRACE_SECONDS:-900}
 COVERAGE_HEAP_FAILURE_WINDOW_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_HEAP_FAILURE_WINDOW_SECONDS:-1800}
+RUNAWAY_SCAN_MIN_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_MIN_AGE_SECONDS:-1800}
+RUNAWAY_SCAN_TARGET_ROOTS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_ROOTS:-/media/volume/danluu-fuzz-data:/home/exouser/.codex}
+TERMINATE_RUNAWAY_RG=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_RG:-1}
+TERMINATE_RUNAWAY_TEXT_SEARCH=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_TEXT_SEARCH:-$TERMINATE_RUNAWAY_RG}
+ANALYSIS_LOW_WORKER_MAX_LOAD_PER_CORE=${RTC_STRUCTURAL_WATCHDOG_ANALYSIS_LOW_WORKER_MAX_LOAD_PER_CORE:-1.0}
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$TMUX_WRAP"
-touch "$EVENTS" "$REPAIR_LEDGER"
+touch "$EVENTS" "$REPAIR_LEDGER" "$RUNAWAY_SCAN_KILL_LEDGER"
 cat > "$TMUX_WRAP/tmux" <<'SH'
 #!/usr/bin/env bash
 exec /usr/bin/tmux -L rtc-fuzz "$@"
@@ -119,6 +127,126 @@ recent_log_matches() {
 	cutoff=$(date -u -d "@$(( $(date -u +%s) - seconds ))" +%Y-%m-%dT%H:%M:%SZ)
 	awk -v cutoff="$cutoff" 'substr($0, 1, 1) == "[" && substr($0, 2, 20) >= cutoff { print }' "$file" |
 		rg -i "$pattern" >/dev/null 2>&1
+}
+
+check_runaway_scans() {
+	local out=$1 tmp=$RUNAWAY_SCAN_REPORT.$$.tmp ps_tmp=$BASE/ps-snapshot.$$.txt pid severity command age pcpu pmem evidence
+	ps -ww -eo pid=,ppid=,etimes=,pcpu=,pmem=,comm=,args= > "$ps_tmp" 2>/dev/null || : > "$ps_tmp"
+	python3 - "$RUNAWAY_SCAN_MIN_AGE_SECONDS" "$RUNAWAY_SCAN_TARGET_ROOTS" "$ps_tmp" > "$tmp" <<'PY'
+import os
+import re
+import sys
+
+min_age = int(sys.argv[1])
+roots = [root for root in sys.argv[2].split(":") if root]
+ps_path = sys.argv[3]
+scan_names = {"rg", "grep", "egrep", "fgrep", "find", "du"}
+now = os.popen("date -u +%Y-%m-%dT%H:%M:%SZ").read().strip()
+
+print("timestamp\tseverity\tpid\tppid\tage_seconds\tcpu_percent\tmem_percent\tcommand\targs")
+for raw in open(ps_path, encoding="utf-8", errors="replace"):
+    line = raw.strip()
+    if not line:
+        continue
+    parts = line.split(None, 6)
+    if len(parts) < 7:
+        continue
+    pid, ppid, age_s, cpu_s, mem_s, comm, args = parts
+    try:
+        age = int(float(age_s))
+        cpu = float(cpu_s)
+        mem = float(mem_s)
+    except ValueError:
+        continue
+    if age < min_age:
+        continue
+    base = os.path.basename(comm)
+    args_base_match = re.search(r"(^|[ /])(rg|grep|egrep|fgrep|find|du)(\s|$)", args)
+    if base not in scan_names and not args_base_match:
+        continue
+    if not any(root in args for root in roots):
+        continue
+    bounded = "-maxdepth" in args or "timeout " in args or "/usr/bin/timeout " in args
+    severity = "medium"
+    if base in {"rg", "grep", "egrep", "fgrep"}:
+        severity = "high"
+    elif age >= max(min_age * 2, 3600) and not bounded:
+        severity = "high"
+    safe_args = args.replace("\t", " ")[:700]
+    print(f"{now}\t{severity}\t{pid}\t{ppid}\t{age}\t{cpu:.1f}\t{mem:.1f}\t{base}\t{safe_args}")
+PY
+	rm -f "$ps_tmp"
+	mv "$tmp" "$RUNAWAY_SCAN_REPORT"
+	awk -F '\t' 'NR > 1 && $2 == "high" { print }' "$RUNAWAY_SCAN_REPORT" |
+		while IFS=$'\t' read -r _ts severity pid _ppid age pcpu pmem command evidence; do
+			[ -n "$pid" ] || continue
+			if [ "$TERMINATE_RUNAWAY_TEXT_SEARCH" = 1 ] &&
+				{ [ "$command" = "rg" ] || [ "$command" = "grep" ] || [ "$command" = "egrep" ] || [ "$command" = "fgrep" ] || { [ "$command" = "bash" ] && printf '%s\n' "$evidence" | grep -Eq '(^|[ /])(rg|grep|egrep|fgrep)([[:space:]]|$)'; }; } &&
+				kill -0 "$pid" 2>/dev/null; then
+				kill "$pid" 2>/dev/null || true
+				printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$pid" "$age" "$pcpu" "$evidence" >> "$RUNAWAY_SCAN_KILL_LEDGER"
+				emit_finding "$out" high "structural-scan" "runaway-text-search-terminated" \
+					"pid=$pid age=${age}s cpu=${pcpu}% mem=${pmem}% args=$evidence" \
+					"replace the broad text-search source with artifact-index or bounded current-run scans; do not let historical rg/grep scans run indefinitely"
+			else
+				emit_finding "$out" high "structural-scan" "runaway-scan-detected" \
+					"pid=$pid command=$command age=${age}s cpu=${pcpu}% mem=${pmem}% args=$evidence" \
+					"debug the caller and replace broad historical scans with indexed or bounded current-run probes"
+			fi
+		done
+}
+
+count_lines_after_header() {
+	local file=$1
+	if [ -s "$file" ]; then
+		awk 'NR > 1 { count++ } END { print count + 0 }' "$file" 2>/dev/null
+	else
+		printf '0\n'
+	fi
+}
+
+eligible_structural_repair_count() {
+	local findings=$1 count=0 _ts severity component key evidence next_action issue_key
+	while IFS=$'\t' read -r _ts severity component key evidence next_action; do
+		[ "$severity" = "high" ] || continue
+		[ -n "$key" ] || continue
+		issue_key=$(hash_key "$component:$key:$evidence")
+		if ! recent_repair_for_key "$issue_key"; then
+			count=$(( count + 1 ))
+		fi
+	done < <(awk -F '\t' 'NR > 1 { print }' "$findings" 2>/dev/null)
+	printf '%s\n' "$count"
+}
+
+check_analysis_productivity() {
+	local out=$1 report_tmp=$ANALYSIS_PRODUCTIVITY_REPORT.$$.tmp high_findings eligible_repairs active_repairs codex_workers controller_sessions critical_queue deferred_queue pr_progress_jobs load1 cores load_ok
+	high_findings=$(awk -F '\t' 'NR > 1 && $2 == "high" { count++ } END { print count + 0 }' "$out" 2>/dev/null || printf 0)
+	eligible_repairs=$(eligible_structural_repair_count "$out")
+	active_repairs=$(active_repair_count)
+	codex_workers=$({ pgrep -af 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true; } | awk 'END { print NR + 0 }')
+	controller_sessions=$(tmux_sessions | rg -c '(analysis|persona|codex-loop|structural-repair|pr-progress|critical-path|deferred|finalization)' 2>/dev/null || printf 0)
+	critical_queue=$(count_lines_after_header "$CRITICAL_BASE/queue.tsv")
+	deferred_queue=$(count_lines_after_header "$DEFERRED_BASE/current-deferred-queue.tsv")
+	pr_progress_jobs=$({ find "$CRITICAL_BASE/runs" "$DEFERRED_BASE/cycles" "$FINALIZATION_BASE/cycles" -maxdepth 4 -type f \( -name '*.report.md' -o -name 'classification.tsv' \) -mtime -1 2>/dev/null || true; } | wc -l | tr -d ' ')
+	load1=$(awk '{ print $1 }' /proc/loadavg 2>/dev/null || printf 999)
+	cores=$(nproc 2>/dev/null || printf 1)
+	load_ok=$(awk -v loadv="$load1" -v cores="$cores" -v limit="$ANALYSIS_LOW_WORKER_MAX_LOAD_PER_CORE" 'BEGIN { print (loadv <= cores * limit) ? 1 : 0 }')
+	{
+		printf 'timestamp\thigh_findings\teligible_repairs\tactive_repairs\tcodex_workers\tcontroller_sessions\tcritical_queue\tdeferred_queue\trecent_pr_reports\tload1\tcores\tload_ok\n'
+		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+			"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$high_findings" "$eligible_repairs" "$active_repairs" "$codex_workers" "$controller_sessions" "$critical_queue" "$deferred_queue" "$pr_progress_jobs" "$load1" "$cores" "$load_ok"
+	} > "$report_tmp"
+	mv "$report_tmp" "$ANALYSIS_PRODUCTIVITY_REPORT"
+	if [ "$load_ok" = 1 ] && [ "$high_findings" -gt 0 ] && [ "$eligible_repairs" -eq 0 ] && [ "$active_repairs" -eq 0 ] && [ "$codex_workers" -lt 1 ]; then
+		emit_finding "$out" high "analysis-productivity" "high-findings-no-active-repair" \
+			"$ANALYSIS_PRODUCTIVITY_REPORT high_findings=$high_findings eligible_repairs=$eligible_repairs codex_workers=$codex_workers load1=$load1 cores=$cores" \
+			"debug why structural high findings are not launching repair Codex jobs; fix cooldown/admission/session accounting instead of waiting for manual intervention"
+	fi
+	if [ "$load_ok" = 1 ] && [ "$codex_workers" -lt 2 ] && [ "$(( critical_queue + deferred_queue ))" -gt 0 ] && [ "$controller_sessions" -ge 5 ]; then
+		emit_finding "$out" high "analysis-productivity" "queued-pr-work-low-codex-fanout" \
+			"$ANALYSIS_PRODUCTIVITY_REPORT critical_queue=$critical_queue deferred_queue=$deferred_queue controller_sessions=$controller_sessions codex_workers=$codex_workers load1=$load1 cores=$cores" \
+			"inspect PR/deferred controller admission and launch targeted unblock/finalization analysis for queued work rather than leaving only passive controllers alive"
+	fi
 }
 
 log_matches_after_last_start() {
@@ -567,6 +695,7 @@ detect_findings() {
 	{
 		printf 'timestamp\tseverity\tcomponent\tkey\tevidence\tnext_action\n'
 	} > "$tmp"
+	check_runaway_scans "$tmp"
 	check_exact_sessions "$tmp"
 	check_critical_path_invariants "$tmp"
 	check_loop_statuses "$tmp"
@@ -595,6 +724,7 @@ detect_findings() {
 				emit_finding "$tmp" high "guard" "repeated-restarts-$pool" "$GUARD_BASE/logs/restart-events.tsv count=$count" "debug why $pool repeatedly restarts instead of only restarting it"
 			done
 	fi
+	check_analysis_productivity "$tmp"
 	mv "$tmp" "$FINDINGS"
 	awk -F '\t' 'NR > 1 { print }' "$FINDINGS" >> "$EVENTS"
 }
@@ -633,17 +763,22 @@ Task:
    - $RESOURCE_BASE/resource-autoscaler-status.md
    - $COVERAGE_BASE/current-output-dir.txt and the active novelty-status.md
    - $COVERAGE_BASE/logs/monitor.log
-   - $COVERAGE_BASE/logs/session-watchdog-state.json
-   - $DUP_NOISE_BASE/latest-synthesis.md
-   - $DUP_NOISE_BASE/latest-feedback-action.md
-   - $GUARD_BASE/logs/guard.log
-   - $GUARD_BASE/logs/restart-events.tsv
-   - tmux -L rtc-fuzz list-sessions -F '#S'
+	   - $COVERAGE_BASE/logs/session-watchdog-state.json
+	   - $DUP_NOISE_BASE/latest-synthesis.md
+	   - $DUP_NOISE_BASE/latest-feedback-action.md
+	   - $GUARD_BASE/logs/guard.log
+	   - $GUARD_BASE/logs/restart-events.tsv
+	   - $RUNAWAY_SCAN_REPORT
+	   - $RUNAWAY_SCAN_KILL_LEDGER
+	   - $ANALYSIS_PRODUCTIVITY_REPORT
+	   - tmux -L rtc-fuzz list-sessions -F '#S'
 3. If a minimal safe fix is clear, apply it to scripts under $REPO/bin and the relevant deployed /tmp launcher, run focused syntax checks, and restart only the affected loop. Do not stop broad fuzzing or unrelated loops.
 4. For critical-path executor issues, keep the repo script, deployed script, and /tmp guard restart script synchronized unless evidence proves one copy is intentionally different.
 5. If the fix belongs in the script branch, leave a patch or exact file list in the report so the local publisher can persist it to danluu/try/jetstream-fuzz.
 6. Do not classify the issue as fixed unless the invariant that fired this finding is no longer true.
-7. Write a concise durable report to: $report
+7. For runaway scan findings, identify the controller or graph path that launched the scan and replace it with the artifact index, a current-run-only scan, or a bounded command. Do not just terminate the process.
+8. For analysis-productivity findings, decide whether more Codex analysis would actually advance PR/fuzzer work. If yes, fix the admission/cooldown/session-accounting problem and launch targeted unblock analysis. If no, write the exact reason and the invariant that should prevent future false alarms.
+9. Write a concise durable report to: $report
 
 Guardrails:
 - Do not use behavior-disabling flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
@@ -705,8 +840,17 @@ write_status() {
 		echo "## Findings"
 		column -t -s $'\t' "$FINDINGS" 2>/dev/null | sed -n '1,80p' || sed -n '1,80p' "$FINDINGS" 2>/dev/null || true
 		echo
+		echo "## Runaway Scan Snapshot"
+		column -t -s $'\t' "$RUNAWAY_SCAN_REPORT" 2>/dev/null | sed -n '1,40p' || sed -n '1,40p' "$RUNAWAY_SCAN_REPORT" 2>/dev/null || true
+		echo
+		echo "## Analysis Productivity Snapshot"
+		column -t -s $'\t' "$ANALYSIS_PRODUCTIVITY_REPORT" 2>/dev/null | sed -n '1,20p' || sed -n '1,20p' "$ANALYSIS_PRODUCTIVITY_REPORT" 2>/dev/null || true
+		echo
 		echo "## Repair Launch Tail"
 		tail -40 "$REPAIR_LEDGER" 2>/dev/null || true
+		echo
+		echo "## Runaway Scan Kill Tail"
+		tail -20 "$RUNAWAY_SCAN_KILL_LEDGER" 2>/dev/null || true
 	} > "$status.$$.tmp"
 	mv "$status.$$.tmp" "$status"
 }
