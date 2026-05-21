@@ -27,15 +27,15 @@ edit-block-gauntlet-attributes,109,async-server-blocks
 delete-nested-block,109,long-session-large-doc
 edit-table-array-attributes,108,persistence-no-title
 move-block,103,persistence-no-title
-ui-type-paragraph,52,large-post-three-user-http-lifecycle
-ui-type-title,50,large-post-three-user-http-lifecycle
+ui-type-paragraph,58,large-post-three-user-http-lifecycle
+ui-type-title,55,large-post-three-user-http-lifecycle
 insert-heading,48,permissions-auth-locks
-ui-toolbar-format-paragraph,45,real-user-editing
+ui-toolbar-format-paragraph,46,real-user-editing
 move-block,45,permissions-auth-locks
+append-paragraph,43,large-post-three-user-http-lifecycle
+insert-heading,43,large-post-three-user-http-lifecycle
+concurrent-paragraphs,43,large-post-three-user-http-lifecycle
 delete-nested-block,39,permissions-auth-locks
-append-paragraph,38,large-post-three-user-http-lifecycle
-insert-heading,38,large-post-three-user-http-lifecycle
-concurrent-paragraphs,38,large-post-three-user-http-lifecycle
 insert-async-server-block,38,permissions-auth-locks
 edit-paragraph,37,session-lifecycle
 append-paragraph,37,permissions-auth-locks
@@ -58,8 +58,8 @@ insert-paragraph,18,full
 edit-paragraph,17,three-user-late-join
 insert-heading,16,three-user-late-join
 insert-nested-group,16,three-user-late-join
+late-join-post-action,15,large-post-three-user-http-lifecycle
 delete-block,15,three-user-late-join
-late-join-post-action,14,large-post-three-user-http-lifecycle
 edit-nested-paragraph,14,three-user-late-join
 edit-rich-text-pair-block,13,full
 delete-block,12,full
@@ -71,6 +71,7 @@ edit-nested-paragraph,12,multi-reload-lifecycle
 move-block-into-group,11,full
 insert-async-server-block,11,three-user-late-join
 move-block-into-group,11,three-user-late-join
+move-block,10,large-post-three-user-http-lifecycle
 insert-common-block,10,full
 edit-paragraph,10,full
 edit-table-array-attributes,10,three-user-late-join
@@ -86,6 +87,7 @@ insert-heading,9,revision-persistence
 late-join-post-action,9,three-user-late-join
 move-block,9,three-user-late-join
 insert-paragraph,9,three-user-late-join
+append-parser-stress-content,9,parser-transform
 edit-nested-paragraph,8,full
 edit-formatted-paragraph-at-cursor,8,full
 concurrent-paragraphs,8,revision-persistence
@@ -96,7 +98,6 @@ insert-heading,7,full
 append-paragraph,7,full
 edit-block-gauntlet-attributes,7,full
 insert-nested-group,7,multi-reload-lifecycle
-append-parser-stress-content,7,parser-transform
 edit-common-block-attributes,6,full
 delete-nested-block,6,full
 move-block,6,revision-persistence
@@ -104,6 +105,8 @@ edit-table-array-attributes,6,revision-persistence
 insert-paragraph,6,revision-persistence
 move-block-into-group,6,multi-reload-lifecycle
 append-paragraph,6,multi-reload-lifecycle
+insert-paragraph,6,parser-transform
+reparse-edited-content,6,parser-transform
 move-block,5,full
 insert-block-gauntlet-block,5,full
 edit-title,5,revision-persistence
@@ -111,12 +114,11 @@ edit-paragraph,5,revision-persistence
 insert-paragraph,5,multi-reload-lifecycle
 edit-table-array-attributes,5,multi-reload-lifecycle
 edit-paragraph,5,multi-reload-lifecycle
-reparse-edited-content,5,parser-transform
 reparse-edited-content,4,full
 concurrent-paragraphs,4,full
 delete-block,4,revision-persistence
 insert-async-server-block,4,multi-reload-lifecycle
-insert-paragraph,4,parser-transform
+edit-paragraph,4,parser-transform
 ui-type-paragraph,3,real-user-editing
 ui-format-paragraph,3,real-user-editing
 ui-type-title,3,real-user-editing
@@ -130,6 +132,6 @@ insert-heading,3,many-user-lifecycle
 move-block,3,many-user-lifecycle
 edit-table-array-attributes,3,many-user-lifecycle
 ui-type-paragraph,3,many-user-lifecycle
-edit-paragraph,3,parser-transform
 insert-heading,3,parser-transform
 delete-block,2,parser-transform
+move-block,2,parser-transform

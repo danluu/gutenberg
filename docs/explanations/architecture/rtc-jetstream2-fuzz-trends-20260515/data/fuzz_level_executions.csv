@@ -4114,5 +4114,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T21:30:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,2,1,0,2,2,71649,FALSE
 2026-05-21T21:30:00Z,coverage-guided,novelty-ws-thirty-user-lifecycle,browser-e2e,ws,many-user-lifecycle,3,3,3,3,0,284766,FALSE
 2026-05-21T21:30:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,2,2,0,549594,FALSE
-2026-05-21T21:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,1,1,0,1,1,70999,FALSE
+2026-05-21T21:45:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,1,2,1,397515,FALSE
+2026-05-21T21:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,1,2,1,201460,FALSE
+2026-05-21T21:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,5,3,0,5,5,337307,FALSE
 2026-05-21T21:45:00Z,coverage-guided,novelty-ws-parser-transform,browser-e2e,ws,parser-transform,6,5,4,6,2,168419,FALSE
