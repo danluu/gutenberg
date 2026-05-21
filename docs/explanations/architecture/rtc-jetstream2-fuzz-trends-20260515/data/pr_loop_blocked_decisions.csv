@@ -1,19 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,maintainer-snapshot/all-merged-192647-latest-crdt-rich-text,P0,no,Snapshot remains blocked until focused title reload existing-post CRDT persistence and large HTTP lifecycle gates are green on the exact stack.,maintainer-snapshot/all-merged-192647-latest-crdt-rich-text,"Snapshot remains blocked until focused title reload existing-post CRDT
-persistence and large HTTP lifecycle gates are green on the exact stack."
-repair-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,Current exact-stack benchmark evidence still has focused title reload and persistence reload failures.,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"Current exact-stack benchmark evidence still has focused title reload and
-persistence reload failures."
-repair-ready,reload-hydration/exact-stack-candidate,P0,no,Candidate activity exists but exact-stack title reload and existing-post CRDT persistence gates are not green.,reload-hydration/exact-stack-candidate,"Candidate activity exists but exact-stack title reload and existing-post CRDT
+publish-ready,maintainer-snapshot/all-merged-192647-latest-crdt-rich-text,P0,no,Current exact-stack benchmark evidence still fails focused title reload and persistence reload rows.,maintainer-snapshot/all-merged-192647-latest-crdt-rich-text,"Current exact-stack benchmark evidence still fails focused title reload and
+persistence reload rows."
+repair-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,The stack is repair-targeted but not ready for publication until the exact-stack focused HTTP rows are green.,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"The stack is repair-targeted but not ready for publication until the exact-stack
+focused HTTP rows are green."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until owner evidence proves product ownership and exact-stack focused HTTP promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Hold until owner evidence proves product ownership and exact-stack focused HTTP
+promotion gates are green."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already published; the full branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already
+published; the full branch needs fresh product advantage."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A variant is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A variant is already published; the original-base branch is
+duplicate under current evidence."
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B variant is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B variant is already published; the original-base branch is
+duplicate under current evidence."
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C variant is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C variant is already published; the original-base branch is
+duplicate under current evidence."
+repair-ready,reload-hydration/exact-stack-candidate,P0,no,"Candidate activity exists, but exact-stack title reload and existing-post CRDT persistence gates are not green.",reload-hydration/exact-stack-candidate,"Candidate activity exists, but exact-stack title reload and existing-post CRDT
 persistence gates are not green."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner replay is already consumed current evidence; relaunch only with newer product-owned owner evidence.,PR07C/HOLD-07C,"Cycle380 owner replay is already consumed current evidence; relaunch only with
-newer product-owned owner evidence."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Held until newer conclusive product-owned evidence exists and exact-stack focused HTTP promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Held until newer conclusive product-owned evidence exists and exact-stack
-focused HTTP promotion gates are green."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already published; full branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical ready/rtc-pr06b-malformed-save-request-payload-minimal is already
-published; full branch needs fresh product advantage."
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A variant is already published; original-base branch is
-duplicate under current evidence."
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B variant is already published; original-base branch is
-duplicate under current evidence."
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C variant is already published; original-base branch is
-duplicate under current evidence."
