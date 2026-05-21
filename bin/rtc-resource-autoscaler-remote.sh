@@ -3,6 +3,7 @@ set -euo pipefail
 
 BASE=${RTC_RESOURCE_AUTOSCALER_BASE:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516}
 COVERAGE_BASE=${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}
+DISK_VOLUME=${RTC_DATA_VOLUME:-/media/volume/danluu-fuzz-data}
 START=${RTC_COVERAGE_START_SCRIPT:-/tmp/start_rtc_coverage_guided_remote.sh}
 NODE_BIN=${RTC_NODE_BIN:-/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin}
 TMUX=${RTC_TMUX:-/usr/bin/tmux}
@@ -30,6 +31,9 @@ MATERIALIZATION_STALE_SECONDS=${RTC_RESOURCE_AUTOSCALER_MATERIALIZATION_STALE_SE
 FIRST_PASS_BUDGET_RESTART_DEFER_SECONDS=${RTC_RESOURCE_AUTOSCALER_FIRST_PASS_BUDGET_RESTART_DEFER_SECONDS:-900}
 WP_ENV_RESET_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_WP_ENV_RESET_COOLDOWN_SECONDS:-1800}
 RESET_WP_ENV_ON_INFRA_FAILURE=${RTC_RESOURCE_AUTOSCALER_RESET_WP_ENV_ON_INFRA_FAILURE:-1}
+DISK_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_PRESSURE_FREE_GIB:-160}
+DISK_HIGH_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_HIGH_PRESSURE_FREE_GIB:-80}
+DISK_SEVERE_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_SEVERE_PRESSURE_FREE_GIB:-40}
 ONE_CANARY_MATERIALIZATION_RESCUE=0
 if [ "${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-0}" = "1" ] &&
 	[ -n "${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-}" ]; then
@@ -99,6 +103,11 @@ mem_available_gib() {
 	awk '/MemAvailable:/ { printf "%.1f\n", $2 / 1024 / 1024 }' /proc/meminfo
 }
 
+disk_available_gib() {
+	df -Pk "$DISK_VOLUME" 2>/dev/null |
+		awk 'NR == 2 { printf "%.1f\n", $4 / 1024 / 1024 }'
+}
+
 load1() {
 	awk '{ print $1 }' /proc/loadavg
 }
@@ -128,11 +137,15 @@ run_script_value() {
 }
 
 current_target() {
-	run_script_value RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS 0
+	local fallback
+	fallback=$(run_script_value RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS 0)
+	run_script_value RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS "$fallback"
 }
 
 current_max() {
-	run_script_value RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS 0
+	local fallback
+	fallback=$(run_script_value RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS 0)
+	run_script_value RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS "$fallback"
 }
 
 enabled_groups() {
@@ -158,7 +171,7 @@ live_browser_lane_pids_all_roots() {
 	# scaler from reacting during overload. Count live browser runner processes
 	# directly instead; optional shedding still uses process groups to terminate
 	# the relevant workers.
-	pgrep -af 'bin/rtc-browser-fuzz-runner\.mjs' 2>/dev/null |
+	{ pgrep -af 'bin/rtc-browser-fuzz-runner\.mjs' 2>/dev/null || true; } |
 		awk '!/codex/ { count++ } END { print count + 0 }'
 }
 
@@ -324,17 +337,59 @@ coverage_breadth_floor_allowed() {
 	return 1
 }
 
+apply_disk_budget() {
+	local target=$1
+	local max=$2
+	local reason=$3
+	local disk_avail=$4
+	awk -v target="$target" -v max="$max" -v reason="$reason" \
+		-v disk_avail="$disk_avail" \
+		-v pressure="$DISK_PRESSURE_FREE_GIB" \
+		-v high="$DISK_HIGH_PRESSURE_FREE_GIB" \
+		-v severe="$DISK_SEVERE_PRESSURE_FREE_GIB" '
+		function valid_number(x) { return x ~ /^[0-9]+([.][0-9]+)?$/ }
+		BEGIN {
+			if (! valid_number(disk_avail)) {
+				print target " " max " " reason;
+				exit;
+			}
+			if (disk_avail < severe) {
+				print "1 1 disk_severe_pressure";
+			} else if (disk_avail < high) {
+				print "1 2 disk_high_pressure";
+			} else if (disk_avail < pressure) {
+				if (target > 2) {
+					target = 2;
+				}
+				if (max > target + 1) {
+					max = target + 1;
+				}
+				if (max < target) {
+					max = target;
+				}
+				print target " " max " disk_pressure";
+			} else {
+				print target " " max " " reason;
+			}
+		}
+	'
+}
+
 shed_optional_browser_pools_if_needed() {
 	local reason=$1
 	local now=$2
 	local browser_live_lanes=${3:-0}
 	local e2e_floor=${4:-24}
 	local last_shed session killed=0
-	if [ "$reason" != "severe_pressure" ]; then
-		return 1
-	fi
+	case "$reason" in
+		severe_pressure|disk_high_pressure|disk_severe_pressure)
+			;;
+		*)
+			return 1
+			;;
+	esac
 	if [ "$ALLOW_OPTIONAL_BROWSER_SHED" != "1" ]; then
-		echo "[$now] optional browser shedding skipped under severe pressure; set RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHED=1 to enable it" >> "$LOG"
+		echo "[$now] optional browser shedding skipped under $reason; set RTC_RESOURCE_AUTOSCALER_ALLOW_OPTIONAL_BROWSER_SHED=1 to enable it" >> "$LOG"
 		return 1
 	fi
 	# Keep the scaler control path nonblocking. Historical artifact trees can
@@ -377,7 +432,7 @@ shed_optional_browser_pools_if_needed() {
 cpu_heavy_session_regex_for_class() {
 	case "$1" in
 		optional-browser)
-			printf '^(rtc-focused-shards|rtc-focused-shards-watchdog|rtc-focused-shards-analysis|rtc-fuzz-strict-expansion|rtc-fuzz-strict-expansion-watchdog|rtc-fuzz-strict-expansion-analysis|rtc-gap-booster|rtc-gap-booster-watchdog|rtc-gap-booster-analysis|rtc-cov-deep-novelty-)'
+			printf '^(rtc-focused-shards($|-append)|rtc-fuzz-strict-expansion$|rtc-gap-booster$|rtc-cov-deep-novelty-)'
 			;;
 		lower-level)
 			printf '^(rtc-lower-level-fuzz-loop|rtc-coverage-guided-lower-level|rtc-cg-parser-action-|rtc-native-action-)'
@@ -412,6 +467,22 @@ global_cpu_quota() {
 	fi
 }
 
+cpu_heavy_session_is_self_throttling() {
+	local class=$1
+	local session=$2
+	case "$class:$session" in
+		lower-level:rtc-lower-level-fuzz-loop|lower-level:rtc-coverage-guided-lower-level*)
+			return 0
+			;;
+	esac
+	return 1
+}
+
+self_throttling_lower_level_session_is_live() {
+	"$TMUX" -L "$TMUX_SOCKET" list-sessions -F '#S' 2>/dev/null |
+		awk '$0 == "rtc-lower-level-fuzz-loop" || $0 ~ /^rtc-coverage-guided-lower-level/ { found=1 } END { exit !found }'
+}
+
 cleanup_known_cpu_heavy_process_groups_for_class() {
 	local class=$1 now=$2
 	local awk_match pgids pgid
@@ -420,7 +491,11 @@ cleanup_known_cpu_heavy_process_groups_for_class() {
 			awk_match='rtc-gap-booster-20260515|rtc-fuzz-focused-shards-20260515|rtc-fuzz-strict-expansion-20260515'
 			;;
 		lower-level)
-			awk_match='rtc-lower-level-fuzz-20260516|rtc-coverage-guided-lower-level|coverage-guided-lower-level'
+			if self_throttling_lower_level_session_is_live; then
+				awk_match='rtc-cg-parser-action-|rtc-native-action-'
+			else
+				awk_match='rtc-lower-level-fuzz-20260516|rtc-coverage-guided-lower-level|coverage-guided-lower-level'
+			fi
 			;;
 		backend-api)
 			awk_match='rtc-backend-api-fuzz-20260518|rtc-backend-api-fuzz'
@@ -470,7 +545,7 @@ cleanup_known_cpu_heavy_process_groups_for_class() {
 }
 
 enforce_global_cpu_budget() {
-	local reason=$1 now=$2 class regex quota sessions active kill_count session
+	local reason=$1 now=$2 class regex quota sessions active kill_count session kill_candidates
 	case "$reason" in
 		pressure|high_pressure|severe_pressure|unknown)
 			;;
@@ -500,7 +575,17 @@ enforce_global_cpu_budget() {
 			continue
 		fi
 		kill_count=$(( active - quota ))
-		printf '%s\n' "$sessions" | head -n "$kill_count" | while IFS= read -r session; do
+		kill_candidates=$(
+			printf '%s\n' "$sessions" | while IFS= read -r session; do
+				[ -n "$session" ] || continue
+				if cpu_heavy_session_is_self_throttling "$class" "$session"; then
+					echo "[$now] preserving self-throttling CPU-heavy session over global budget class=$class quota=$quota active=$active reason=$reason session=$session" >> "$LOG"
+					continue
+				fi
+				printf '%s\n' "$session"
+			done
+		)
+		printf '%s\n' "$kill_candidates" | head -n "$kill_count" | while IFS= read -r session; do
 			[ -n "$session" ] || continue
 			echo "[$now] stopping CPU-heavy session over global budget class=$class quota=$quota active=$active reason=$reason session=$session" >> "$LOG"
 			"$TMUX" -L "$TMUX_SOCKET" kill-session -t "$session" 2>/dev/null || true
@@ -605,9 +690,11 @@ ramp_startup_target() {
 
 e2e_floor_repair_allowed() {
 	local reason=$1 cpu=$2 load_value=$3 load5_value=$4 ncpu=$5
-	if [ "$reason" = "severe_pressure" ]; then
-		return 1
-	fi
+	case "$reason" in
+		severe_pressure|disk_pressure|disk_high_pressure|disk_severe_pressure)
+			return 1
+			;;
+	esac
 	if [ "$reason" = "pressure" ] || [ "$reason" = "high_pressure" ]; then
 		awk -v cpu="$cpu" -v loadv="$load_value" -v load5v="$load5_value" -v ncpu="$ncpu" '
 			BEGIN {
@@ -1134,11 +1221,13 @@ while true; do
 	load_five=$(load5)
 	load_fifteen=$(load15)
 	avail=$(mem_available_gib)
+	disk_avail=$(disk_available_gib)
 	ncpu=$(cores)
 	enabled=$(enabled_groups)
 	target=$(current_target)
 	max=$(current_max)
 	read -r desired_target desired_max reason <<<"$(choose_budget "$cpu" "$load" "$load_five" "$load_fifteen" "$avail" "$ncpu")"
+	read -r desired_target desired_max reason <<<"$(apply_disk_budget "$desired_target" "$desired_max" "$reason" "$disk_avail")"
 	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max" "$reason")"
 	browser_live_lanes=$(live_browser_lane_pids_all_roots)
 	e2e_floor=${RTC_RESOURCE_AUTOSCALER_E2E_MIN_LIVE_LANES:-24}
@@ -1221,7 +1310,7 @@ while true; do
 				up_streak=0
 			else
 				action=restore_coverage_breadth_floor
-				shed_optional_browser_pools_if_needed severe_pressure "$now" "$browser_live_lanes" "$e2e_floor" || true
+				shed_optional_browser_pools_if_needed "$reason" "$now" "$browser_live_lanes" "$e2e_floor" || true
 				restart_coverage "$desired_target" "$desired_max" coverage_breadth_floor
 				last_restart_epoch=$(epoch)
 				up_streak=0
@@ -1246,7 +1335,10 @@ while true; do
 			[ $(( $(epoch) - last_restart_epoch )) -ge "$MIN_SCALE_DOWN_SECONDS" ] ||
 				[ "$reason" = "pressure" ] ||
 					[ "$reason" = "high_pressure" ] ||
-					[ "$reason" = "severe_pressure" ]
+					[ "$reason" = "severe_pressure" ] ||
+					[ "$reason" = "disk_pressure" ] ||
+					[ "$reason" = "disk_high_pressure" ] ||
+					[ "$reason" = "disk_severe_pressure" ]
 		}; then
 			if [ "$cold_starting_overbudget" = "1" ]; then
 				action=scale_down_cold_start_overbudget
@@ -1272,6 +1364,6 @@ while true; do
 
 	append_csv "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds"
 	write_status "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail" "$load_five" "$load_fifteen"
-	echo "[$now] cpu=$cpu load1=$load/$ncpu load5=$load_five/$ncpu load15=$load_fifteen/$ncpu mem_avail=${avail}GiB enabled=$enabled current=$target/$max desired=$desired_target/$desired_max materialized=$materialized_active_run_dirs running=$materialized_running_groups paused_infra=$paused_infra_startup_groups stale=${supervisor_state_age_seconds}s action=$action reason=$reason" >> "$LOG"
+	echo "[$now] cpu=$cpu load1=$load/$ncpu load5=$load_five/$ncpu load15=$load_fifteen/$ncpu mem_avail=${avail}GiB disk_avail=${disk_avail:-unknown}GiB enabled=$enabled current=$target/$max desired=$desired_target/$desired_max materialized=$materialized_active_run_dirs running=$materialized_running_groups paused_infra=$paused_infra_startup_groups stale=${supervisor_state_age_seconds}s action=$action reason=$reason" >> "$LOG"
 	sleep "$POLL_SECONDS"
 done
