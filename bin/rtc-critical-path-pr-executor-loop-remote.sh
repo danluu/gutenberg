@@ -196,6 +196,27 @@ latest_progress_unblock_artifact() {
 		cut -f2-
 }
 
+latest_continuation_classification() {
+	local lane=$1 indexed
+	if artifact_index_fresh; then
+		indexed=$(latest_indexed_artifact classification "continuations/${lane}/classification[.]tsv$" || true)
+		if [ -n "$indexed" ]; then
+			printf '%s\n' "$indexed"
+			return 0
+		fi
+	fi
+	find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%T@\t%p\n' 2>/dev/null |
+		sort -n |
+		tail -120 |
+		cut -f2- |
+		while IFS= read -r run_dir; do
+			find "$run_dir/continuations/$lane" -maxdepth 1 -type f -name 'classification.tsv' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+		done |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
 latest_pr07c_owner_replay_ready_report() {
 	local indexed
 	if artifact_index_fresh; then
@@ -218,7 +239,7 @@ latest_pr07c_owner_replay_ready_report() {
 
 pr07c_readiness_resolved() {
 	local class direct_path report
-	direct_path=$(find "$BASE/runs" -path '*/continuations/pr07c-browser-env/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null | sort -n | tail -1 | cut -f2- || true)
+	direct_path=$(latest_continuation_classification pr07c-browser-env || true)
 	if [ -n "$direct_path" ]; then
 		class=$(awk -F '\t' 'NR > 1 && $1 == "pr07c-browser-env" { print $2; exit }' "$direct_path" 2>/dev/null || true)
 		if [ "$class" = "repaired_ready" ]; then
@@ -280,18 +301,7 @@ latest_local_publish_summary() {
 }
 
 latest_pr17_classification() {
-	local indexed
-	if artifact_index_fresh; then
-		indexed=$(latest_indexed_artifact classification 'continuations/pr17-1020002/classification[.]tsv$' || true)
-		if [ -n "$indexed" ]; then
-			printf '%s\n' "$indexed"
-			return 0
-		fi
-	fi
-	find "$BASE/runs" -path '*/continuations/pr17-1020002/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
-		sort -n |
-		tail -1 |
-		cut -f2-
+	latest_continuation_classification pr17-1020002
 }
 
 pr17_terminal_downscoped() {
@@ -351,18 +361,8 @@ pr17_suppressed_terminal() {
 }
 
 latest_lane_classification() {
-	local lane=$1 indexed
-	if artifact_index_fresh; then
-		indexed=$(latest_indexed_artifact classification "continuations/${lane}/classification[.]tsv$" || true)
-		if [ -n "$indexed" ]; then
-			printf '%s\n' "$indexed"
-			return 0
-		fi
-	fi
-	find "$BASE/runs" -path "*/continuations/${lane}/classification.tsv" -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
-		sort -n |
-		tail -1 |
-		cut -f2-
+	local lane=$1
+	latest_continuation_classification "$lane"
 }
 
 lane_classification_value() {
