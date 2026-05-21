@@ -13,6 +13,7 @@ CRITICAL_DEPLOYED_SCRIPT=$CRITICAL_BASE/rtc-critical-path-pr-executor-loop.sh
 CRITICAL_TMP_SCRIPT=/tmp/start_rtc_critical_path_pr_executor_loop.sh
 FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
+PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
@@ -305,6 +306,7 @@ check_exact_sessions() {
 		rtc-fuzz-level-mix-persona-loop-watchdog \
 		rtc-duplicate-noise-persona-loop \
 		rtc-deferred-work-promotion-loop \
+		rtc-pr-progress-controller-loop \
 		rtc-pr-finalization-loop \
 		rtc-critical-path-pr-executor-loop \
 		rtc-resource-autoscaler; do
@@ -422,6 +424,7 @@ check_loop_statuses() {
 	local out=$1 coverage_root
 	check_status_freshness "$out" finalization "$FINALIZATION_BASE/current-finalization-status.md" 1800 rtc-pr-finalization-loop
 	check_status_freshness "$out" deferred-work "$DEFERRED_BASE/current-deferred-status.md" 1800 rtc-deferred-work-promotion-loop
+	check_status_freshness "$out" pr-progress "$PR_PROGRESS_BASE/current-pr-progress-controller-status.md" 900 rtc-pr-progress-controller-loop
 	check_status_freshness "$out" resource-autoscaler "$RESOURCE_BASE/resource-autoscaler-status.md" 600 rtc-resource-autoscaler
 	if [ -s "$COVERAGE_BASE/current-output-dir.txt" ]; then
 		coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
@@ -672,6 +675,9 @@ guard_pool_currently_satisfied() {
 		deferred)
 			has_session rtc-deferred-work-promotion-loop
 			;;
+		pr-progress)
+			has_session rtc-pr-progress-controller-loop
+			;;
 		finalization)
 			has_session rtc-pr-finalization-loop
 			;;
@@ -760,7 +766,9 @@ Task:
 	   - $CRITICAL_TMP_SCRIPT
 	   - $FINALIZATION_BASE/current-finalization-status.md
 	   - $DEFERRED_BASE/current-deferred-status.md
-   - $RESOURCE_BASE/resource-autoscaler-status.md
+	   - $PR_PROGRESS_BASE/current-pr-progress-controller-status.md
+	   - $PR_PROGRESS_BASE/logs/controller.log
+	   - $RESOURCE_BASE/resource-autoscaler-status.md
    - $COVERAGE_BASE/current-output-dir.txt and the active novelty-status.md
    - $COVERAGE_BASE/logs/monitor.log
 	   - $COVERAGE_BASE/logs/session-watchdog-state.json

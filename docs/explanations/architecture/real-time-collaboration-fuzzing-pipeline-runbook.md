@@ -344,6 +344,7 @@ install -m 755 \"\$REMOTE_REPO/bin/rtc-duplicate-noise-persona-loop-remote.sh\" 
 install -m 755 \"\$REMOTE_REPO/bin/rtc-fuzz-level-mix-persona-loop-remote.sh\" /tmp/start_rtc_fuzz_level_mix_persona_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-native-assert-protocol-work-start-remote.sh\" /tmp/start_rtc_native_assert_protocol_work.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-deferred-work-promotion-loop-remote.sh\" /tmp/start_rtc_deferred_work_promotion_loop.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-pr-progress-controller-remote.sh\" /tmp/start_rtc_pr_progress_controller.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-pr-finalization-loop-remote.sh\" /tmp/start_rtc_pr_finalization_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-critical-path-pr-executor-loop-remote.sh\" /tmp/start_rtc_critical_path_pr_executor_loop.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-structural-issue-watchdog-remote.sh\" /tmp/start_rtc_structural_watchdog.sh
@@ -484,8 +485,9 @@ The remote launchers are intentionally split by ownership:
     shards, gap booster, lower-level unit/property and coverage-guided lanes,
     the focused gap Codex loop, duplicate/noise remediation, level-mix,
     native/protocol harness loops, the fuzz-only assertion loop, the
-    deferred-work promotion loop, the PR-finalization loop, the critical-path PR
-    executor, the structural watchdog, and the resource autoscaler. It uses
+    deferred-work promotion loop, the PR progress controller, the
+    PR-finalization loop, the critical-path PR executor, the structural
+    watchdog, and the resource autoscaler. It uses
     exact tmux session-name checks and treats a coverage-guided novelty run with
     an empty work queue and clear current-run noise as a materialization stall
     to restart and escalate.

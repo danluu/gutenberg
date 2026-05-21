@@ -22,6 +22,7 @@ LEVEL_MIX_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-level-mix-persona-loop-20
 NATIVE_ASSERT_BASE=/media/volume/danluu-fuzz-data/rtc-native-assert-protocol-20260516
 STRUCTURAL_BASE=/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
+PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
 GLOBAL_ADMISSION=$RESOURCE_BASE/rtc-global-cpu-admission.sh
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 LOG_DIR=$BASE/logs
@@ -787,6 +788,15 @@ restart_pool() {
 		deferred)
 			/tmp/start_rtc_deferred_work_promotion_loop.sh >> "$LOG_DIR/deferred-work-start.log" 2>&1 || log "deferred work promotion loop start failed"
 			;;
+		pr-progress)
+			if [ -x /tmp/start_rtc_pr_progress_controller.sh ]; then
+				/tmp/start_rtc_pr_progress_controller.sh >> "$LOG_DIR/pr-progress-controller-start.log" 2>&1 || log "PR progress controller start failed"
+			else
+				mkdir -p "$PR_PROGRESS_BASE"
+				install -m 755 "$REPO/bin/rtc-pr-progress-controller-remote.sh" "$PR_PROGRESS_BASE/rtc-pr-progress-controller.sh"
+				"$PR_PROGRESS_BASE/rtc-pr-progress-controller.sh" start >> "$LOG_DIR/pr-progress-controller-start.log" 2>&1 || log "PR progress controller start failed"
+			fi
+			;;
 		finalization)
 			/tmp/start_rtc_pr_finalization_loop.sh >> "$LOG_DIR/pr-finalization-start.log" 2>&1 || log "PR finalization loop start failed"
 			;;
@@ -917,6 +927,10 @@ run_loop_locked() {
 
 		if ! has_session rtc-deferred-work-promotion-loop; then
 			restart_pool deferred "missing deferred work promotion loop"
+		fi
+
+		if ! has_session rtc-pr-progress-controller-loop; then
+			restart_pool pr-progress "missing PR progress controller loop"
 		fi
 
 		if ! has_session rtc-pr-finalization-loop; then
