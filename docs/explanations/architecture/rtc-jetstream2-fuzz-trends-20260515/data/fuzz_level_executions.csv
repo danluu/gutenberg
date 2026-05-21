@@ -4021,3 +4021,9 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T19:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,2,2,1,2,1,94616,FALSE
 2026-05-21T19:45:00Z,coverage-guided,novelty-ws-async-server-blocks,browser-e2e,ws,async-server-blocks,5,4,4,5,1,130182,FALSE
 2026-05-21T19:45:00Z,coverage-guided,novelty-ws-async-server-blocks-coverage-bridge,browser-e2e,ws,async-server-blocks,5,5,4,5,1,181253,FALSE
+2026-05-21T19:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,22,22,22,1,0,5799,FALSE
+2026-05-21T20:00:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,3,2,2,3,1,145310,FALSE
+2026-05-21T20:00:00Z,coverage-guided,novelty-ws-revision-recovery,browser-e2e,ws,revision-persistence,1,1,1,1,0,44035,FALSE
+2026-05-21T20:00:00Z,focused-shards,focused-async-server-a,browser-e2e,ws,async-server-blocks,1,1,1,1,0,108019,FALSE
+2026-05-21T20:00:00Z,focused-shards,focused-async-server-b,browser-e2e,ws,async-server-blocks,1,1,1,1,0,45436,FALSE
+2026-05-21T20:00:00Z,focused-shards,focused-rich-text-b,browser-e2e,ws,real-user-editing,2,2,0,2,2,286688,FALSE
