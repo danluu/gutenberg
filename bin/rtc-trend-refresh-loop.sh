@@ -9,7 +9,7 @@ SOURCE_REPO="${RTC_TREND_SOURCE_REPO:-$(cd "$(dirname "$0")/.." && pwd)}"
 SESSION="${RTC_TREND_TMUX_SESSION:-rtc-trend-autoupdate}"
 IDLE_SECONDS="${RTC_TREND_REFRESH_IDLE_SECONDS:-0}"
 LOG_DIR="$OPS_DIR/logs"
-LOCK="$OPS_DIR/refresh-loop.lock"
+LOCK_DIR="$OPS_DIR/refresh-loop.lockdir"
 
 mkdir -p "$OPS_DIR" "$OPS_DIR/runs" "$LOG_DIR"
 
@@ -54,11 +54,11 @@ run_once() {
 }
 
 run_loop() {
-	exec 9>"$LOCK"
-	if ! flock -n 9; then
-		log "another trend refresh loop already holds $LOCK"
+	if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+		log "another trend refresh loop already holds $LOCK_DIR"
 		exit 0
 	fi
+	trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
 	while true; do
 		run_once "loop-$(date -u +%Y%m%dT%H%M%SZ)" || true
 		if [ "$IDLE_SECONDS" -gt 0 ]; then
