@@ -1485,3 +1485,17 @@ timestamp,group,group_family
 2026-05-21T17:30:41Z,novelty-ws-three-user-late-join,lifecycle
 2026-05-21T17:30:41Z,novelty-ws-permissions-auth-locks,auth/locks
 2026-05-21T17:30:41Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-21T17:38:41Z,novelty-ws-parser-transform,parser
+2026-05-21T17:38:41Z,novelty-ws-revision-persistence,persistence
+2026-05-21T17:38:41Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-21T17:38:41Z,novelty-ws-media-cross-entity-coverage-bridge,async/media
+2026-05-21T17:38:41Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-21T17:38:41Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-21T17:39:49Z,novelty-ws-three-user-late-join,lifecycle
+2026-05-21T17:39:49Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-21T17:39:49Z,novelty-ws-media-cross-entity-coverage-bridge,async/media
+2026-05-21T17:39:49Z,novelty-ws-parser-serialization,parser
+2026-05-21T17:41:02Z,novelty-ws-revision-persistence,persistence
+2026-05-21T17:41:02Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-21T17:41:02Z,novelty-ws-media-cross-entity-coverage-bridge,async/media
+2026-05-21T17:41:02Z,novelty-ws-permissions-auth-locks,auth/locks
