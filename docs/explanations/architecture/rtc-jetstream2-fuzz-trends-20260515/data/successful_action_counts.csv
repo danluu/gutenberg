@@ -5,9 +5,9 @@ append-paragraph,97,persistence-no-title
 insert-paragraph,88,persistence-no-title
 concurrent-paragraphs,77,persistence-no-title
 delete-block,73,persistence-no-title
+insert-async-server-block,68,async-server-blocks
 move-block,61,persistence-no-title
 edit-table-array-attributes,60,persistence-no-title
-insert-async-server-block,48,async-server-blocks
 ui-type-paragraph,35,large-post-three-user-http-lifecycle
 ui-type-title,34,large-post-three-user-http-lifecycle
 append-paragraph,25,large-post-three-user-http-lifecycle
@@ -25,6 +25,7 @@ edit-paragraph,10,full
 edit-title,9,full
 insert-async-server-block,9,full
 insert-nested-group,9,full
+move-block,9,async-server-blocks
 edit-nested-paragraph,8,full
 edit-formatted-paragraph-at-cursor,8,full
 insert-media-cross-entity-block,8,media-cross-entity
@@ -51,9 +52,11 @@ delete-block,4,session-lifecycle
 insert-heading,4,session-lifecycle
 reparse-edited-content,4,full
 concurrent-paragraphs,4,full
+edit-block-gauntlet-attributes,4,async-server-blocks
 delete-block,4,revision-persistence
 edit-title,4,revision-persistence
 insert-paragraph,4,revision-persistence
 insert-paragraph,3,session-lifecycle
+insert-common-block,3,async-server-blocks
 edit-table-array-attributes,2,session-lifecycle
 edit-paragraph,2,revision-persistence
