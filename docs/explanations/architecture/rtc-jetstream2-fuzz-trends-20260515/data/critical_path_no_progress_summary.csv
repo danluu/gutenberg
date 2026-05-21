@@ -1,5 +1,5 @@
 item_id,reason,rejections
-benchmark-canary-fuzzer-gap,zero_executor_artifact,65
+benchmark-canary-fuzzer-gap,zero_executor_artifact,66
 pr17-1020002,pre_oracle_or_preflight_only,11
 seed-1060015-reducer,pre_oracle_or_preflight_only,4
 latest_coverage_status,zero_current_input,1

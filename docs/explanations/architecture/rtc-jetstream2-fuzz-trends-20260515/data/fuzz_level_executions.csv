@@ -4017,3 +4017,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-21T19:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,5,4,3,5,2,374079,FALSE
 2026-05-21T19:30:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,1,0,0,1,1,204851,FALSE
 2026-05-21T19:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,22,22,22,1,0,5436,FALSE
+2026-05-21T19:45:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,1,1,0,1,1,12309,FALSE
+2026-05-21T19:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,2,2,1,2,1,94616,FALSE
+2026-05-21T19:45:00Z,coverage-guided,novelty-ws-async-server-blocks,browser-e2e,ws,async-server-blocks,5,4,4,5,1,130182,FALSE
+2026-05-21T19:45:00Z,coverage-guided,novelty-ws-async-server-blocks-coverage-bridge,browser-e2e,ws,async-server-blocks,5,5,4,5,1,181253,FALSE
