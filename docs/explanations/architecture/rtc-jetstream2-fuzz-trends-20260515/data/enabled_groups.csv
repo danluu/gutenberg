@@ -1606,3 +1606,4 @@ timestamp,group,group_family
 2026-05-21T20:05:04Z,novelty-ws-media-cross-entity-coverage-bridge,async/media
 2026-05-21T20:06:21Z,novelty-ws-parser-transform,parser
 2026-05-21T20:06:22Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-21T20:40:44Z,novelty-ws-thirty-user-lifecycle,lifecycle
