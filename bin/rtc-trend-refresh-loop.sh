@@ -25,7 +25,7 @@ install_ops() {
 }
 
 ensure_checkout() {
-	if [ ! -d "$CHECKOUT/.git" ]; then
+	if [ ! -e "$CHECKOUT/.git" ]; then
 		git clone "$SOURCE_REPO" "$CHECKOUT"
 	fi
 	(
