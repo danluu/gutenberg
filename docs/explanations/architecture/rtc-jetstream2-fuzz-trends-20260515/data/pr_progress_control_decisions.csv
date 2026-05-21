@@ -1,26 +1,21 @@
 action,target,priority,allowed,reason
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload-minimal,high,yes,"Canonical minimal PR06B passed diff check, is independent of PR07/PR14 blockers, and is the next product PR slot."
-generate-publication-manifest,ready/rtc-pr06b-malformed-save-request-payload-minimal,high,yes,Cheap publication manifest work directly enables product PR filing and remains safe under pressure.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Larger sibling duplicates the canonical minimal PR06B branch; hold unless the minimal branch is rejected.
-continue-owner-matrix,PR07C/HOLD-07C,high,yes,Readiness is resolved and owner evidence is the active blocker; consume the current owner-matrix result.
-launch-owner-matrix,PR07C/HOLD-07C,high,no,Owner-matrix work is already active; duplicate browser/e2e jobs would waste PR and discovery capacity.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold until PR07C owner evidence proves product ownership and PR07B base repair is clean.
-launch-branch-repair,ready/rtc-pr14-table-body-array-green,high,yes,Concrete failed base blocks PR14B and the PR15 stack; bounded high-leverage repair is allowed while discovery reserve is healthy.
-publish-ready,ready/rtc-pr14b-table-query-array-local-suffix-append,high,no,Base PR14 failed validation; repair and revalidate PR14 before publishing PR14B.
-publish-ready,ready/rtc-pr15*-fallback-group-*,high,no,PR15 stack depends on repaired PR14/PR14B and canonical stack variant selection.
-launch-branch-repair,ready/rtc-pr07b-save-response-manager-base-record,medium,yes,Concrete failed base gates PR07C after owner evidence; run as bounded repair within the PR job cap.
-launch-branch-repair,failed-ready-pr-sweep,medium,no,Broad repair sweeps are heavy; repair only PR14 and PR07B while preserving discovery reserve.
-relaunch-diagnostic,pre-save-search-live-collapse,medium,no,127 launches and still diagnostic-only; relaunch only with fresh owner or product-owned evidence.
-cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,Cool down duplicate diagnostics and consume existing active evidence.
-relaunch-diagnostic,rich-text-suffix-corruption,low,no,Duplicate head e63d049bb48 is already repeated and in cooldown; require fresh product-owned evidence.
-cooldown-diagnostic,rich-text-suffix-corruption,low,yes,Maintain cooldown for the repeated duplicate head.
-relaunch-diagnostic,reload-hydration,high,no,159 launches and an active reload-hydration job exist; consume PR07C/reload evidence before more interval launches.
-consume-active-evidence,reload-hydration,high,yes,Use active reload-hydration and PR07C owner outputs to decide promote versus downscope.
-downscope-family,malformed-save-payload,medium,yes,Deferred malformed-save heads are superseded by canonical PR06B minimal.
-downscope-family,http-room-isolation,medium,yes,Keep downscoped until fresh healthy-user evidence appears; PR02A failed diff/base and is lower leverage than PR14/PR07B.
-reopen-continuation,pr17-1020002-and-seed-reducers,low,no,Recent artifacts are pre-oracle/preflight-only; reopen only with newer product-owned evidence.
-reserve-discovery,discovery-sessions,high,yes,Discovery is protected and 11 active sessions exceed minimum 3; keep fuzzing lanes reserved and cap PR work.
-launch-heavy-pr-sweep,all-ready-product-prs,medium,no,Resource pressure is high/severe; heavy sweeps are disallowed unless discovery reserve remains healthy and capacity is explicit.
-update-controller-rule,blocker-overrides-publishable,high,yes,"Suppress raw publishable when base, owner, duplicate, or stack-selection blockers exist."
-update-controller-rule,diagnostic-relaunch-gate,medium,yes,"Require fresh head evidence, owner evidence, product-owned evidence, or explicit downscope before diagnostic relaunch."
-update-controller-rule,canonical-minimal-first,high,yes,"When duplicates fix the same bug, publish the smallest validated independent branch first."
+launch-owner-matrix,PR07C/HOLD-07C-bounded-exact-owner-replay,P0,yes,Readiness is resolved; exact owner replay is the shortest product path for held ready/rtc-pr07c-reload-record-snapshots.
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until owner evidence is conclusive and the large-post three-user HTTP publish UI gate is clean.
+repair-branch,benchmark-canary-fuzzer-gap/large-post-three-user-http-publish-ui,P0,yes,Allow one artifact-complete repair lane; the fixed stack passed locally but benchmark control and publish UI stability still block promotion.
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-zero-byte-repair,P0,no,Active or recent repair work plus zero-byte artifacts make duplicate heavy launches diagnostic churn.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Minimal PR06B is already published; the full branch needs newer product evidence beyond the canonical minimal fix.
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based variant is already published; original-base publication is duplicate under current evidence.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based variant is already published; original-base publication is duplicate under current evidence.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based variant is already published; original-base publication is duplicate under current evidence.
+cooldown-diagnostic,PR07C/browser-env-setup-loop,P0,yes,Runtime readiness is already consumed; more setup-loop launches do not add owner evidence.
+cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"Family has 308 launches, duplicate heads, and active work; accept only product fix, owner evidence, or explicit downscope."
+cooldown-diagnostic,pre-save-search-live-collapse/duplicate-diagnostics,P1,yes,Family has 233 launches and duplicate heads; promotion requires fresh focused owner evidence.
+cooldown-diagnostic,rich-text-suffix-corruption/duplicate-diagnostics,P1,yes,Family has 219 launches and duplicate heads; require focused owner evidence or explicit downscope.
+downscope-family,malformed-save-payload/raw-deferred-heads,P1,yes,"Canonical PR06B minimal is already published, so raw deferred malformed-save heads are superseded."
+downscope-family,http-room-isolation/additional-branches,P1,yes,PR02A is already published and no fresh healthy-user HTTP room-isolation evidence supports another branch.
+reserve-discovery,discovery-reserve,P0,yes,Discovery is protected and healthy at 16 active sessions over min 3; keep fuzzing reserve while allowing bounded P0 work.
+block-heavy-pr-fanout,broad-product-pr-validation,P0,no,Preserve discovery reserve and PR slot accounting; do not launch broad heavy PR jobs beyond PR07C owner replay and one benchmark repair.
+generate-publication-manifest,ready-product-prs,P1,yes,Cheap analysis-only manifest generation is allowed under the reserve and should reflect already published and held branches.
+update-controller-rule,effective-pr-slot-accounting,P0,yes,"Count queued and runnable owner matrices, repairs, deferred diagnostics, continuations, finalizers, and persona loops against PR capacity."
+update-controller-rule,artifact-complete-single-flight,P0,yes,"Allow one active lane per blocker or family and reject zero-byte, setup-only, pre-oracle, and duplicate-head artifacts as progress."
+update-controller-rule,large-post-http-promotion-gate,P0,yes,Require clean exact-stack large-post three-user HTTP plus publish UI readiness before PR07C publication or maintainer snapshot claims.

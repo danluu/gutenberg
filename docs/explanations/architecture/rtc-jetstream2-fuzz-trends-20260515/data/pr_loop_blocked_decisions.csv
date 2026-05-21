@@ -1,21 +1,15 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Larger sibling duplicates the canonical minimal PR06B branch; hold unless the minimal branch is rejected.,ready/rtc-pr06b-malformed-save-request-payload,"Larger sibling duplicates the canonical minimal PR06B branch; hold unless the
-minimal branch is rejected."
-launch-owner-matrix,PR07C/HOLD-07C,high,no,Owner-matrix work is already active; duplicate browser/e2e jobs would waste PR and discovery capacity.,PR07C/HOLD-07C,"Owner-matrix work is already active; duplicate browser/e2e jobs would waste PR
-and discovery capacity."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold until PR07C owner evidence proves product ownership and PR07B base repair is clean.,ready/rtc-pr07c-reload-record-snapshots,"Hold until PR07C owner evidence proves product ownership and PR07B base repair
-is clean."
-publish-ready,ready/rtc-pr14b-table-query-array-local-suffix-append,high,no,Base PR14 failed validation; repair and revalidate PR14 before publishing PR14B.,ready/rtc-pr14b-table-query-array-local-suffix-append,Base PR14 failed validation; repair and revalidate PR14 before publishing PR14B.
-publish-ready,ready/rtc-pr15*-fallback-group-*,high,no,PR15 stack depends on repaired PR14/PR14B and canonical stack variant selection.,ready/rtc-pr15*-fallback-group-*,PR15 stack depends on repaired PR14/PR14B and canonical stack variant selection.
-launch-branch-repair,failed-ready-pr-sweep,medium,no,Broad repair sweeps are heavy; repair only PR14 and PR07B while preserving discovery reserve.,failed-ready-pr-sweep,"Broad repair sweeps are heavy; repair only PR14 and PR07B while preserving
-discovery reserve."
-relaunch-diagnostic,pre-save-search-live-collapse,medium,no,127 launches and still diagnostic-only; relaunch only with fresh owner or product-owned evidence.,pre-save-search-live-collapse,"127 launches and still diagnostic-only; relaunch only with fresh owner or
-product-owned evidence."
-relaunch-diagnostic,rich-text-suffix-corruption,low,no,Duplicate head e63d049bb48 is already repeated and in cooldown; require fresh product-owned evidence.,rich-text-suffix-corruption,"Duplicate head e63d049bb48 is already repeated and in cooldown; require fresh
-product-owned evidence."
-relaunch-diagnostic,reload-hydration,high,no,159 launches and an active reload-hydration job exist; consume PR07C/reload evidence before more interval launches.,reload-hydration,"159 launches and an active reload-hydration job exist; consume PR07C/reload
-evidence before more interval launches."
-reopen-continuation,pr17-1020002-and-seed-reducers,low,no,Recent artifacts are pre-oracle/preflight-only; reopen only with newer product-owned evidence.,pr17-1020002-and-seed-reducers,"Recent artifacts are pre-oracle/preflight-only; reopen only with newer
-product-owned evidence."
-launch-heavy-pr-sweep,all-ready-product-prs,medium,no,Resource pressure is high/severe; heavy sweeps are disallowed unless discovery reserve remains healthy and capacity is explicit.,all-ready-product-prs,"Resource pressure is high/severe; heavy sweeps are disallowed unless discovery
-reserve remains healthy and capacity is explicit."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until owner evidence is conclusive and the large-post three-user HTTP publish UI gate is clean.,ready/rtc-pr07c-reload-record-snapshots,"Hold until owner evidence is conclusive and the large-post three-user HTTP
+publish UI gate is clean."
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-zero-byte-repair,P0,no,Active or recent repair work plus zero-byte artifacts make duplicate heavy launches diagnostic churn.,benchmark-canary-fuzzer-gap/duplicate-zero-byte-repair,"Active or recent repair work plus zero-byte artifacts make duplicate heavy
+launches diagnostic churn."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Minimal PR06B is already published; the full branch needs newer product evidence beyond the canonical minimal fix.,ready/rtc-pr06b-malformed-save-request-payload,"Minimal PR06B is already published; the full branch needs newer product evidence
+beyond the canonical minimal fix."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based variant is already published; original-base publication is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based variant is already published; original-base publication is duplicate
+under current evidence."
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based variant is already published; original-base publication is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based variant is already published; original-base publication is duplicate
+under current evidence."
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based variant is already published; original-base publication is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based variant is already published; original-base publication is duplicate
+under current evidence."
+block-heavy-pr-fanout,broad-product-pr-validation,P0,no,Preserve discovery reserve and PR slot accounting; do not launch broad heavy PR jobs beyond PR07C owner replay and one benchmark repair.,broad-product-pr-validation,"Preserve discovery reserve and PR slot accounting; do not launch broad heavy PR
+jobs beyond PR07C owner replay and one benchmark repair."

@@ -569,11 +569,7 @@ if ( file.exists( fuzz_level_mix_path ) ) {
 			timestamp = parse_utc_timestamp( timestamp ),
 			lanes = replace_na( as.numeric( lanes ), 1 ),
 			step_count = replace_na( as.numeric( step_count ), 0 ),
-			is_latest = case_when(
-				is.logical( is_latest ) ~ is_latest,
-				str_to_lower( as.character( is_latest ) ) == "true" ~ TRUE,
-				TRUE ~ FALSE
-			),
+			is_latest = str_to_lower( as.character( is_latest ) ) == "true",
 			fuzz_level = replace_na( fuzz_level, "other" ),
 			fuzz_level = factor(
 				fuzz_level,
@@ -599,16 +595,8 @@ if ( file.exists( fuzz_level_executions_path ) ) {
 	if ( ! "executions" %in% names( fuzz_level_executions ) ) {
 		fuzz_level_executions <- fuzz_level_executions %>%
 			mutate(
-				is_primary = case_when(
-					is.logical( is_primary ) ~ is_primary,
-					str_to_lower( as.character( is_primary ) ) == "true" ~ TRUE,
-					TRUE ~ FALSE
-				),
-				ok = case_when(
-					is.logical( ok ) ~ ok,
-					str_to_lower( as.character( ok ) ) == "true" ~ TRUE,
-					TRUE ~ FALSE
-				),
+				is_primary = str_to_lower( as.character( is_primary ) ) == "true",
+				ok = str_to_lower( as.character( ok ) ) == "true",
 				executions = 1,
 				primary_executions = if_else( is_primary, 1, 0 ),
 				successful_executions = if_else( ok, 1, 0 )
@@ -634,11 +622,7 @@ if ( file.exists( fuzz_level_executions_path ) ) {
 		mutate(
 			timestamp = parse_utc_timestamp( timestamp ),
 			across( c( executions, primary_executions, successful_executions, attempts, failed_attempts, duration_ms ), ~ replace_na( as.numeric( .x ), 0 ) ),
-			approximate = case_when(
-				is.logical( approximate ) ~ approximate,
-				str_to_lower( as.character( approximate ) ) == "true" ~ TRUE,
-				TRUE ~ FALSE
-			),
+			approximate = str_to_lower( as.character( approximate ) ) == "true",
 			fuzz_level = replace_na( fuzz_level, "other" ),
 			fuzz_level = factor(
 				fuzz_level,

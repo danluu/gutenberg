@@ -1,6 +1,783 @@
 timestamp,message,event_type
+2026-05-18T18:32:50Z,PR progress controller started pid=1344234,controller start
+2026-05-18T18:34:22Z,PR progress controller started pid=1443799,controller start
 2026-05-18T18:34:24Z,launched persona controller round 20260518T183423Z,persona round launched
+2026-05-18T18:37:52Z,PR progress controller started pid=1658633,controller start
+2026-05-18T18:37:53Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:39:54Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:41:55Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
 2026-05-18T18:43:57Z,launched persona controller round 20260518T184356Z,persona round launched
+2026-05-18T18:43:57Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:45:58Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:46:08Z,PR progress controller started pid=2206567,controller start
+2026-05-18T18:46:08Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:48:09Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
 2026-05-18T18:50:11Z,launched persona controller round 20260518T185010Z,persona round launched
+2026-05-18T18:50:11Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:52:12Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:54:13Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T18:56:14Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
 2026-05-18T18:58:15Z,launched persona controller round 20260518T185815Z,persona round launched
+2026-05-18T18:58:15Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T19:00:16Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T19:02:17Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T19:04:18Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
 2026-05-18T19:06:19Z,launched persona controller round 20260518T190619Z,persona round launched
+2026-05-18T19:06:19Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T19:08:20Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T19:10:21Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T19:12:22Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T19:14:23Z,launched persona controller round 20260518T191423Z,persona round launched
+2026-05-18T19:14:24Z,launched PR07C owner matrix job 20260518T191424Z,PR07C owner job launched
+2026-05-18T19:14:24Z,pr07c owner matrix 20260518T191424Z,launch
+2026-05-18T19:16:25Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:18:25Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:20:26Z,launched PR07C owner matrix job 20260518T192026Z,PR07C owner job launched
+2026-05-18T19:20:26Z,pr07c owner matrix 20260518T192026Z,launch
+2026-05-18T19:22:27Z,launched persona controller round 20260518T192227Z,persona round launched
+2026-05-18T19:22:27Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:24:28Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:26:28Z,launched PR07C owner matrix job 20260518T192628Z,PR07C owner job launched
+2026-05-18T19:26:28Z,pr07c owner matrix 20260518T192628Z,launch
+2026-05-18T19:28:29Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:30:30Z,launched persona controller round 20260518T193030Z,persona round launched
+2026-05-18T19:30:30Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:32:31Z,launched PR07C owner matrix job 20260518T193231Z,PR07C owner job launched
+2026-05-18T19:32:31Z,pr07c owner matrix 20260518T193231Z,launch
+2026-05-18T19:34:32Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:36:33Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:38:34Z,launched persona controller round 20260518T193833Z,persona round launched
+2026-05-18T19:38:34Z,launched PR07C owner matrix job 20260518T193834Z,PR07C owner job launched
+2026-05-18T19:38:34Z,pr07c owner matrix 20260518T193834Z,launch
+2026-05-18T19:40:35Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:42:35Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:44:36Z,launched PR07C owner matrix job 20260518T194436Z,PR07C owner job launched
+2026-05-18T19:44:36Z,pr07c owner matrix 20260518T194436Z,launch
+2026-05-18T19:46:38Z,launched persona controller round 20260518T194637Z,persona round launched
+2026-05-18T19:46:38Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:48:39Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:50:40Z,launched PR07C owner matrix job 20260518T195040Z,PR07C owner job launched
+2026-05-18T19:50:40Z,pr07c owner matrix 20260518T195040Z,launch
+2026-05-18T19:52:41Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T19:54:42Z,launched persona controller round 20260518T195441Z,persona round launched
+2026-05-18T19:54:42Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T19:56:44Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T19:58:45Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:00:46Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:02:47Z,launched persona controller round 20260518T200247Z,persona round launched
+2026-05-18T20:02:47Z,launched PR07C owner matrix job 20260518T200247Z,PR07C owner job launched
+2026-05-18T20:02:47Z,pr07c owner matrix 20260518T200247Z,launch
+2026-05-18T20:04:48Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T20:06:49Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T20:08:50Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:10:51Z,launched persona controller round 20260518T201051Z,persona round launched
+2026-05-18T20:10:51Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:12:53Z,launched PR07C owner matrix job 20260518T201253Z,PR07C owner job launched
+2026-05-18T20:12:53Z,pr07c owner matrix 20260518T201253Z,launch
+2026-05-18T20:14:54Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T20:16:55Z,launched PR07C owner matrix job 20260518T201655Z,PR07C owner job launched
+2026-05-18T20:16:55Z,pr07c owner matrix 20260518T201655Z,launch
+2026-05-18T20:18:57Z,launched persona controller round 20260518T201856Z,persona round launched
+2026-05-18T20:18:57Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T20:20:58Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T20:22:58Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:24:59Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:27:00Z,launched persona controller round 20260518T202700Z,persona round launched
+2026-05-18T20:27:01Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:27:01Z,launched persona controller round 20260518T202700Z,persona round launched
+2026-05-18T20:29:02Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:31:02Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:33:03Z,launched PR07C owner matrix job 20260518T203303Z,PR07C owner job launched
+2026-05-18T20:33:03Z,pr07c owner matrix 20260518T203303Z,launch
+2026-05-18T20:35:04Z,launched persona controller round 20260518T203504Z,persona round launched
+2026-05-18T20:35:04Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T20:37:05Z,launched PR07C owner matrix job 20260518T203705Z,PR07C owner job launched
+2026-05-18T20:37:05Z,pr07c owner matrix 20260518T203705Z,launch
+2026-05-18T20:39:07Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T20:41:08Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:43:09Z,launched persona controller round 20260518T204308Z,persona round launched
+2026-05-18T20:43:09Z,launched PR07C owner matrix job 20260518T204309Z,PR07C owner job launched
+2026-05-18T20:43:09Z,pr07c owner matrix 20260518T204309Z,launch
+2026-05-18T20:45:10Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T20:47:11Z,launched PR07C owner matrix job 20260518T204711Z,PR07C owner job launched
+2026-05-18T20:47:11Z,pr07c owner matrix 20260518T204711Z,launch
+2026-05-18T20:49:12Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T20:51:12Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:53:13Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T20:54:32Z,PR progress controller started pid=2027557,controller start
+2026-05-18T20:54:33Z,launched persona controller round 20260518T205433Z,persona round launched
+2026-05-18T20:54:33Z,wrote manifest-only branch repair for ready/rtc-pr14-table-body-array-green at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr14-table-body-array-green-20260518T205433Z,other
+2026-05-18T20:54:33Z,branch repair manifest-only ready/rtc-pr14-table-body-array-green 20260518T205433Z,launch
+2026-05-18T20:54:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T20:56:35Z,wrote manifest-only branch repair for ready/rtc-pr14-table-body-array-green at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr14-table-body-array-green-20260518T205635Z,other
+2026-05-18T20:56:35Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T20:56:35Z,branch repair manifest-only ready/rtc-pr14-table-body-array-green 20260518T205635Z,launch
+2026-05-18T20:58:37Z,wrote manifest-only branch repair for ready/rtc-pr14-table-body-array-green at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr14-table-body-array-green-20260518T205837Z,other
+2026-05-18T20:58:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T20:58:37Z,branch repair manifest-only ready/rtc-pr14-table-body-array-green 20260518T205837Z,launch
+2026-05-18T21:00:37Z,PR progress controller started pid=2469481,controller start
+2026-05-18T21:00:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:01:42Z,PR progress controller started pid=2544636,controller start
+2026-05-18T21:01:43Z,launched persona controller round 20260518T210142Z,persona round launched
+2026-05-18T21:01:43Z,wrote manifest-only branch repair for ready/rtc-pr07b-save-response-manager-base-record at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr07b-save-response-manager-base-record-20260518T210143Z,other
+2026-05-18T21:01:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:01:43Z,branch repair manifest-only ready/rtc-pr07b-save-response-manager-base-record 20260518T210143Z,launch
+2026-05-18T21:03:45Z,wrote manifest-only branch repair for ready/rtc-pr02a-http-room-isolation-regression at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr02a-http-room-isolation-regression-20260518T210345Z,other
+2026-05-18T21:03:45Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:03:45Z,branch repair manifest-only ready/rtc-pr02a-http-room-isolation-regression 20260518T210345Z,launch
+2026-05-18T21:05:46Z,wrote manifest-only branch repair for ready/rtc-pr03b-browser-revision-restore-crdt-invalidation at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr03b-browser-revision-restore-crdt-invalidation-20260518T210546Z,other
+2026-05-18T21:05:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:05:46Z,branch repair manifest-only ready/rtc-pr03b-browser-revision-restore-crdt-invalidation 20260518T210546Z,launch
+2026-05-18T21:07:47Z,wrote manifest-only branch repair for ready/rtc-pr09-store-lock-fairness at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr09-store-lock-fairness-20260518T210747Z,other
+2026-05-18T21:07:47Z,branch repair manifest-only ready/rtc-pr09-store-lock-fairness 20260518T210747Z,launch
+2026-05-18T21:07:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:09:49Z,launched persona controller round 20260518T210949Z,persona round launched
+2026-05-18T21:09:49Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:11:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:13:52Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:14:38Z,PR progress controller started pid=3353774,controller start
+2026-05-18T21:14:39Z,wrote manifest-only branch repair for ready/rtc-pr10-crdt-block-rebase at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr10-crdt-block-rebase-20260518T211439Z,other
+2026-05-18T21:14:39Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:14:39Z,branch repair manifest-only ready/rtc-pr10-crdt-block-rebase 20260518T211439Z,launch
+2026-05-18T21:16:41Z,launched persona controller round 20260518T211641Z,persona round launched
+2026-05-18T21:16:41Z,wrote manifest-only branch repair for ready/rtc-pr11a-stale-base-record-block-append at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr11a-stale-base-record-block-append-20260518T211641Z,other
+2026-05-18T21:16:41Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:16:41Z,branch repair manifest-only ready/rtc-pr11a-stale-base-record-block-append 20260518T211641Z,launch
+2026-05-18T21:18:43Z,wrote manifest-only branch repair for ready/rtc-pr11b-stale-base-block-delete at /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/branch-repair-ready-rtc-pr11b-stale-base-block-delete-20260518T211843Z,other
+2026-05-18T21:18:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:18:43Z,branch repair manifest-only ready/rtc-pr11b-stale-base-block-delete 20260518T211843Z,launch
+2026-05-18T21:19:50Z,PR progress controller started pid=3675877,controller start
+2026-05-18T21:19:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:21:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:23:55Z,launched persona controller round 20260518T212354Z,persona round launched
+2026-05-18T21:23:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:24:45Z,PR progress controller started pid=3960384,controller start
+2026-05-18T21:24:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:26:44Z,PR progress controller started pid=4057813,controller start
+2026-05-18T21:26:45Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:28:05Z,PR progress controller started pid=4123104,controller start
+2026-05-18T21:28:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:30:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:32:08Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:34:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:36:11Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:38:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:40:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:42:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:44:16Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:46:18Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:48:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:50:21Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:52:22Z,launched PR07C owner matrix job 20260518T215222Z,PR07C owner job launched
+2026-05-18T21:52:22Z,pr07c owner matrix 20260518T215222Z,launch
+2026-05-18T21:54:23Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T21:56:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T21:58:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:00:28Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:02:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:04:30Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:06:32Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:08:33Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:10:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:12:35Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:14:37Z,launched PR07C owner matrix job 20260518T221437Z,PR07C owner job launched
+2026-05-18T22:14:37Z,pr07c owner matrix 20260518T221437Z,launch
+2026-05-18T22:16:38Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T22:18:40Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:20:41Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:22:43Z,launched PR07C owner matrix job 20260518T222242Z,PR07C owner job launched
+2026-05-18T22:22:43Z,pr07c owner matrix 20260518T222242Z,launch
+2026-05-18T22:24:44Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T22:26:45Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:28:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:30:48Z,launched persona controller round 20260518T223048Z,persona round launched
+2026-05-18T22:30:49Z,launched PR07C owner matrix job 20260518T223048Z,PR07C owner job launched
+2026-05-18T22:30:49Z,pr07c owner matrix 20260518T223048Z,launch
+2026-05-18T22:32:50Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T22:34:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:36:52Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:38:54Z,launched persona controller round 20260518T223854Z,persona round launched
+2026-05-18T22:38:54Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:40:56Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:42:57Z,launched PR07C owner matrix job 20260518T224257Z,PR07C owner job launched
+2026-05-18T22:42:57Z,pr07c owner matrix 20260518T224257Z,launch
+2026-05-18T22:44:58Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T22:47:00Z,launched persona controller round 20260518T224700Z,persona round launched
+2026-05-18T22:47:01Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:49:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:51:04Z,launched PR07C owner matrix job 20260518T225104Z,PR07C owner job launched
+2026-05-18T22:51:04Z,pr07c owner matrix 20260518T225104Z,launch
+2026-05-18T22:53:05Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-18T22:55:06Z,launched persona controller round 20260518T225506Z,persona round launched
+2026-05-18T22:55:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:57:08Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-18T22:59:10Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:01:11Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:03:13Z,launched persona controller round 20260518T230313Z,persona round launched
+2026-05-18T23:03:14Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:05:16Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:07:17Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:09:19Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:11:22Z,launched persona controller round 20260518T231121Z,persona round launched
+2026-05-18T23:11:22Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:13:24Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:15:26Z,launched persona controller round 20260518T231526Z,persona round launched
+2026-05-18T23:15:26Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:17:28Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:19:31Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:21:32Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:23:34Z,launched persona controller round 20260518T232334Z,persona round launched
+2026-05-18T23:23:34Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:25:36Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:27:38Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:29:40Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:31:42Z,launched persona controller round 20260518T233141Z,persona round launched
+2026-05-18T23:31:42Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:33:44Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:35:45Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:37:47Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:39:49Z,launched persona controller round 20260518T233949Z,persona round launched
+2026-05-18T23:39:49Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:41:51Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:43:52Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:45:54Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:47:56Z,launched persona controller round 20260518T234756Z,persona round launched
+2026-05-18T23:47:57Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:49:59Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:52:01Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:54:03Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:56:05Z,launched persona controller round 20260518T235605Z,persona round launched
+2026-05-18T23:56:05Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-18T23:58:07Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:00:09Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:02:11Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:04:13Z,launched persona controller round 20260519T000413Z,persona round launched
+2026-05-19T00:04:13Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:06:15Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:08:17Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:10:19Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:12:21Z,launched persona controller round 20260519T001221Z,persona round launched
+2026-05-19T00:12:21Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:14:24Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:16:26Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:18:27Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:20:30Z,launched persona controller round 20260519T002030Z,persona round launched
+2026-05-19T00:20:30Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:22:32Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:24:34Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:26:35Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:28:37Z,launched persona controller round 20260519T002837Z,persona round launched
+2026-05-19T00:28:38Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:30:40Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:32:42Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:34:44Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:36:46Z,launched persona controller round 20260519T003645Z,persona round launched
+2026-05-19T00:36:46Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:38:48Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:40:50Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:42:52Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:44:54Z,launched persona controller round 20260519T004453Z,persona round launched
+2026-05-19T00:44:54Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:46:56Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:48:57Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:50:59Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:53:01Z,launched persona controller round 20260519T005301Z,persona round launched
+2026-05-19T00:53:01Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:55:03Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:57:05Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T00:59:07Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:01:09Z,launched persona controller round 20260519T010108Z,persona round launched
+2026-05-19T01:01:09Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:03:11Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:05:14Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:07:16Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:09:18Z,launched persona controller round 20260519T010917Z,persona round launched
+2026-05-19T01:09:18Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:11:20Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:13:21Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:15:23Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:17:25Z,launched persona controller round 20260519T011724Z,persona round launched
+2026-05-19T01:17:25Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:19:27Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:21:28Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:23:30Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:25:32Z,launched persona controller round 20260519T012532Z,persona round launched
+2026-05-19T01:25:32Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:27:34Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:29:36Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:31:37Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:33:39Z,launched persona controller round 20260519T013339Z,persona round launched
+2026-05-19T01:33:39Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:35:41Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:37:43Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:39:45Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:41:46Z,launched persona controller round 20260519T014146Z,persona round launched
+2026-05-19T01:41:46Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:43:47Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:45:49Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:47:50Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T01:49:51Z,launched persona controller round 20260519T014951Z,persona round launched
+2026-05-19T01:49:51Z,launched PR07C owner matrix job 20260519T014951Z,PR07C owner job launched
+2026-05-19T01:49:51Z,pr07c owner matrix 20260519T014951Z,launch
+2026-05-19T01:51:53Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T01:53:54Z,launched PR07C owner matrix job 20260519T015354Z,PR07C owner job launched
+2026-05-19T01:53:54Z,pr07c owner matrix 20260519T015354Z,launch
+2026-05-19T01:55:56Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T01:57:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T01:59:58Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:02:00Z,launched persona controller round 20260519T020200Z,persona round launched
+2026-05-19T02:02:00Z,launched PR07C owner matrix job 20260519T020200Z,PR07C owner job launched
+2026-05-19T02:02:00Z,pr07c owner matrix 20260519T020200Z,launch
+2026-05-19T02:04:02Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T02:06:04Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T02:08:05Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T02:10:07Z,launched persona controller round 20260519T021006Z,persona round launched
+2026-05-19T02:10:07Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:12:09Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:14:10Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:16:12Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:18:14Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:20:15Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:22:18Z,launched persona controller round 20260519T022217Z,persona round launched
+2026-05-19T02:22:18Z,launched PR07C owner matrix job 20260519T022218Z,PR07C owner job launched
+2026-05-19T02:22:18Z,pr07c owner matrix 20260519T022218Z,launch
+2026-05-19T02:24:20Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T02:26:23Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:28:25Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:30:27Z,launched persona controller round 20260519T023026Z,persona round launched
+2026-05-19T02:30:27Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:32:29Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:34:30Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:36:32Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:38:34Z,launched persona controller round 20260519T023833Z,persona round launched
+2026-05-19T02:38:34Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:40:35Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:42:37Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:44:38Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:46:40Z,launched persona controller round 20260519T024640Z,persona round launched
+2026-05-19T02:46:40Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:48:42Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:50:43Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:52:45Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:54:46Z,launched persona controller round 20260519T025446Z,persona round launched
+2026-05-19T02:54:47Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:56:48Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T02:58:49Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:00:51Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:02:53Z,launched persona controller round 20260519T030253Z,persona round launched
+2026-05-19T03:02:53Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:04:55Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:06:56Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:08:58Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:10:59Z,launched persona controller round 20260519T031059Z,persona round launched
+2026-05-19T03:11:00Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:13:01Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:15:02Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:17:04Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:19:05Z,launched persona controller round 20260519T031905Z,persona round launched
+2026-05-19T03:19:05Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:21:07Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:23:08Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T03:25:10Z,launched PR07C owner matrix job 20260519T032510Z,PR07C owner job launched
+2026-05-19T03:25:10Z,pr07c owner matrix 20260519T032510Z,launch
+2026-05-19T03:27:11Z,launched persona controller round 20260519T032711Z,persona round launched
+2026-05-19T03:27:11Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T03:29:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:31:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:33:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:35:17Z,launched persona controller round 20260519T033516Z,persona round launched
+2026-05-19T03:35:17Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:37:18Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:39:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:41:21Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:43:22Z,launched persona controller round 20260519T034322Z,persona round launched
+2026-05-19T03:43:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:43:23Z,launched persona controller round 20260519T034322Z,persona round launched
+2026-05-19T03:45:24Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:47:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:49:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:51:29Z,launched persona controller round 20260519T035128Z,persona round launched
+2026-05-19T03:51:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:53:30Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:55:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:57:33Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T03:59:35Z,launched persona controller round 20260519T035935Z,persona round launched
+2026-05-19T03:59:35Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:01:37Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:03:38Z,launched PR07C owner matrix job 20260519T040338Z,PR07C owner job launched
+2026-05-19T04:03:38Z,pr07c owner matrix 20260519T040338Z,launch
+2026-05-19T04:05:40Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T04:07:42Z,launched persona controller round 20260519T040741Z,persona round launched
+2026-05-19T04:07:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T04:09:43Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:11:45Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:13:46Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:15:48Z,launched persona controller round 20260519T041548Z,persona round launched
+2026-05-19T04:15:48Z,launched PR07C owner matrix job 20260519T041548Z,PR07C owner job launched
+2026-05-19T04:15:48Z,pr07c owner matrix 20260519T041548Z,launch
+2026-05-19T04:17:50Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T04:19:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T04:21:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T04:23:55Z,launched persona controller round 20260519T042354Z,persona round launched
+2026-05-19T04:23:55Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:25:56Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:27:58Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:29:59Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:32:01Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:34:02Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:36:04Z,launched persona controller round 20260519T043604Z,persona round launched
+2026-05-19T04:36:05Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:38:06Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:40:08Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:42:09Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:44:11Z,launched persona controller round 20260519T044411Z,persona round launched
+2026-05-19T04:44:11Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:46:13Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:48:14Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:50:16Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:52:18Z,launched persona controller round 20260519T045217Z,persona round launched
+2026-05-19T04:52:18Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:54:20Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:56:21Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T04:58:22Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:00:24Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:02:26Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:04:27Z,launched persona controller round 20260519T050427Z,persona round launched
+2026-05-19T05:04:28Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:06:29Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:08:31Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:10:32Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:12:34Z,launched persona controller round 20260519T051233Z,persona round launched
+2026-05-19T05:12:34Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:14:36Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:16:37Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:18:39Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:20:41Z,launched persona controller round 20260519T052040Z,persona round launched
+2026-05-19T05:20:41Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:22:43Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:24:45Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:26:47Z,launched PR07C owner matrix job 20260519T052647Z,PR07C owner job launched
+2026-05-19T05:26:47Z,pr07c owner matrix 20260519T052647Z,launch
+2026-05-19T05:28:49Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T05:30:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T05:32:53Z,launched persona controller round 20260519T053253Z,persona round launched
+2026-05-19T05:32:54Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T05:34:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T05:36:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T05:38:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T05:41:02Z,launched persona controller round 20260519T054101Z,persona round launched
+2026-05-19T05:41:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T05:43:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T05:45:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T05:47:08Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:49:10Z,launched persona controller round 20260519T054909Z,persona round launched
+2026-05-19T05:49:10Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:51:12Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:53:14Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:55:16Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:57:18Z,launched persona controller round 20260519T055718Z,persona round launched
+2026-05-19T05:57:18Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T05:59:20Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:01:22Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:03:24Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:05:25Z,launched persona controller round 20260519T060525Z,persona round launched
+2026-05-19T06:05:26Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:07:27Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:09:29Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:11:30Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:13:32Z,launched persona controller round 20260519T061332Z,persona round launched
+2026-05-19T06:13:33Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:15:34Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:17:36Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:19:37Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:21:39Z,launched persona controller round 20260519T062139Z,persona round launched
+2026-05-19T06:21:39Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:23:41Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:25:43Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:27:44Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:29:46Z,launched persona controller round 20260519T062946Z,persona round launched
+2026-05-19T06:29:47Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:31:49Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:33:50Z,launched persona controller round 20260519T063350Z,persona round launched
+2026-05-19T06:33:51Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:35:52Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:37:54Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:39:56Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:41:58Z,launched persona controller round 20260519T064157Z,persona round launched
+2026-05-19T06:41:58Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:44:00Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:46:01Z,launched PR07C owner matrix job 20260519T064601Z,PR07C owner job launched
+2026-05-19T06:46:01Z,pr07c owner matrix 20260519T064601Z,launch
+2026-05-19T06:48:03Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T06:50:05Z,launched persona controller round 20260519T065005Z,persona round launched
+2026-05-19T06:50:05Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T06:52:07Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T06:54:09Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:56:12Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T06:58:14Z,launched persona controller round 20260519T065813Z,persona round launched
+2026-05-19T06:58:15Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:00:17Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:02:19Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:04:21Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:06:23Z,launched persona controller round 20260519T070623Z,persona round launched
+2026-05-19T07:06:23Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:08:25Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:10:27Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:12:29Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:14:31Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:16:32Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:18:34Z,launched persona controller round 20260519T071834Z,persona round launched
+2026-05-19T07:18:34Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:20:36Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:22:38Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:24:39Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:26:41Z,launched persona controller round 20260519T072641Z,persona round launched
+2026-05-19T07:26:41Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T07:28:43Z,launched PR07C owner matrix job 20260519T072843Z,PR07C owner job launched
+2026-05-19T07:28:43Z,pr07c owner matrix 20260519T072843Z,launch
+2026-05-19T07:30:46Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T07:32:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:34:49Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:36:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:38:53Z,launched persona controller round 20260519T073852Z,persona round launched
+2026-05-19T07:38:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:40:54Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:42:56Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:44:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:46:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:49:01Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:51:03Z,launched persona controller round 20260519T075102Z,persona round launched
+2026-05-19T07:51:03Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:53:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:55:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:57:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T07:59:11Z,launched persona controller round 20260519T075911Z,persona round launched
+2026-05-19T07:59:11Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T08:01:13Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:03:14Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:05:16Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:07:18Z,launched persona controller round 20260519T080718Z,persona round launched
+2026-05-19T08:07:18Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:09:20Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:11:22Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:13:23Z,launched PR07C owner matrix job 20260519T081323Z,PR07C owner job launched
+2026-05-19T08:13:23Z,pr07c owner matrix 20260519T081323Z,launch
+2026-05-19T08:15:25Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T08:17:27Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T08:19:29Z,launched persona controller round 20260519T081929Z,persona round launched
+2026-05-19T08:19:29Z,launched PR07C owner matrix job 20260519T081929Z,PR07C owner job launched
+2026-05-19T08:19:29Z,pr07c owner matrix 20260519T081929Z,launch
+2026-05-19T08:21:31Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T08:23:32Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T08:25:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T08:27:35Z,launched persona controller round 20260519T082735Z,persona round launched
+2026-05-19T08:27:35Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:29:37Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:31:39Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:33:40Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:35:42Z,launched persona controller round 20260519T083542Z,persona round launched
+2026-05-19T08:35:42Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:37:44Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-19T08:39:45Z,launched PR07C owner matrix job 20260519T083945Z,PR07C owner job launched
+2026-05-19T08:39:45Z,pr07c owner matrix 20260519T083945Z,launch
+2026-05-19T08:41:46Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-19T08:43:48Z,launched persona controller round 20260519T084348Z,persona round launched
+2026-05-19T08:43:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T08:45:50Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T08:47:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T08:49:52Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-19T08:51:54Z,launched persona controller round 20260519T085154Z,persona round launched
+2026-05-19T08:51:54Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T08:26:50Z,PR progress controller started pid=1537894,controller start
+2026-05-20T08:27:52Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T08:30:29Z,launched persona controller round 20260520T083028Z,persona round launched
+2026-05-20T08:31:00Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T08:34:04Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T08:37:20Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T08:40:29Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T08:43:05Z,launched persona controller round 20260520T084305Z,persona round launched
+2026-05-20T08:43:37Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T08:46:41Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T08:49:15Z,launched persona controller round 20260520T084914Z,persona round launched
+2026-05-20T08:49:47Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T08:52:50Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T08:55:23Z,launched persona controller round 20260520T085523Z,persona round launched
+2026-05-20T08:55:39Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T08:58:46Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:01:52Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:04:56Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:07:28Z,launched persona controller round 20260520T090728Z,persona round launched
+2026-05-20T09:08:00Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:11:03Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:13:36Z,launched persona controller round 20260520T091335Z,persona round launched
+2026-05-20T09:14:06Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:17:09Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:19:41Z,launched persona controller round 20260520T091941Z,persona round launched
+2026-05-20T09:20:13Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:23:17Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:25:50Z,launched persona controller round 20260520T092550Z,persona round launched
+2026-05-20T09:26:22Z,not launching PR07C owner matrix: discovery reserve protected,heavy PR job deferred: discovery reserve
+2026-05-20T09:29:58Z,launched PR07C owner matrix job 20260520T092926Z,PR07C owner job launched
+2026-05-20T09:29:58Z,pr07c owner matrix 20260520T092926Z,launch
+2026-05-20T09:32:35Z,launched persona controller round 20260520T093234Z,persona round launched
+2026-05-20T09:33:07Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-20T09:36:13Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T09:38:47Z,launched persona controller round 20260520T093847Z,persona round launched
+2026-05-20T09:39:18Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T09:42:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T09:44:56Z,launched persona controller round 20260520T094455Z,persona round launched
+2026-05-20T09:45:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T09:48:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T09:51:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T09:54:44Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T09:57:17Z,launched persona controller round 20260520T095717Z,persona round launched
+2026-05-20T09:57:50Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:00:58Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:03:33Z,launched persona controller round 20260520T100333Z,persona round launched
+2026-05-20T10:04:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:07:11Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:09:46Z,launched persona controller round 20260520T100946Z,persona round launched
+2026-05-20T10:10:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:13:24Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:15:57Z,launched persona controller round 20260520T101556Z,persona round launched
+2026-05-20T10:16:28Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:19:33Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:22:08Z,launched persona controller round 20260520T102207Z,persona round launched
+2026-05-20T10:22:40Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:25:45Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:28:19Z,launched persona controller round 20260520T102818Z,persona round launched
+2026-05-20T10:28:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:31:58Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:34:31Z,launched persona controller round 20260520T103431Z,persona round launched
+2026-05-20T10:35:03Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:38:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:40:40Z,launched persona controller round 20260520T104039Z,persona round launched
+2026-05-20T10:41:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:44:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:46:49Z,launched persona controller round 20260520T104649Z,persona round launched
+2026-05-20T10:47:22Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:50:28Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:55:44Z,launched persona controller round 20260520T105543Z,persona round launched
+2026-05-20T10:56:17Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T10:59:21Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:01:54Z,launched persona controller round 20260520T110154Z,persona round launched
+2026-05-20T11:02:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:05:28Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:08:01Z,launched persona controller round 20260520T110801Z,persona round launched
+2026-05-20T11:08:33Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:11:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:14:10Z,launched persona controller round 20260520T111410Z,persona round launched
+2026-05-20T11:14:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:17:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:20:19Z,launched persona controller round 20260520T112019Z,persona round launched
+2026-05-20T11:20:50Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:23:54Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:26:27Z,launched persona controller round 20260520T112626Z,persona round launched
+2026-05-20T11:26:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:30:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:32:35Z,launched persona controller round 20260520T113234Z,persona round launched
+2026-05-20T11:33:05Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:36:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:38:38Z,launched persona controller round 20260520T113837Z,persona round launched
+2026-05-20T11:39:08Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:42:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:44:46Z,launched persona controller round 20260520T114445Z,persona round launched
+2026-05-20T11:45:17Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:48:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:50:52Z,launched persona controller round 20260520T115051Z,persona round launched
+2026-05-20T11:51:22Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:54:24Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T11:56:56Z,launched persona controller round 20260520T115656Z,persona round launched
+2026-05-20T11:57:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:00:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:03:01Z,launched persona controller round 20260520T120301Z,persona round launched
+2026-05-20T12:03:33Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:06:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:09:10Z,launched persona controller round 20260520T120909Z,persona round launched
+2026-05-20T12:09:41Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:12:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:15:14Z,launched persona controller round 20260520T121514Z,persona round launched
+2026-05-20T12:15:45Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:18:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:21:20Z,launched persona controller round 20260520T122120Z,persona round launched
+2026-05-20T12:21:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:24:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:27:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:30:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:33:32Z,launched persona controller round 20260520T123332Z,persona round launched
+2026-05-20T12:34:03Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:37:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:39:37Z,launched persona controller round 20260520T123937Z,persona round launched
+2026-05-20T12:40:08Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:43:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:45:44Z,launched persona controller round 20260520T124544Z,persona round launched
+2026-05-20T12:46:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:49:16Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:51:49Z,launched persona controller round 20260520T125148Z,persona round launched
+2026-05-20T12:52:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:55:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T12:57:56Z,launched persona controller round 20260520T125755Z,persona round launched
+2026-05-20T12:58:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:01:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:12:30Z,launched persona controller round 20260520T131230Z,persona round launched
+2026-05-20T13:13:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:16:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:18:41Z,launched persona controller round 20260520T131841Z,persona round launched
+2026-05-20T13:19:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:22:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:24:47Z,launched persona controller round 20260520T132447Z,persona round launched
+2026-05-20T13:25:18Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:28:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:30:52Z,launched persona controller round 20260520T133051Z,persona round launched
+2026-05-20T13:31:22Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:34:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:38:15Z,launched persona controller round 20260520T133815Z,persona round launched
+2026-05-20T13:39:03Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:44:30Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:47:02Z,launched persona controller round 20260520T134702Z,persona round launched
+2026-05-20T13:47:32Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:50:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:53:15Z,launched persona controller round 20260520T135314Z,persona round launched
+2026-05-20T13:53:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:56:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T13:59:50Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:02:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:05:27Z,launched persona controller round 20260520T140526Z,persona round launched
+2026-05-20T14:05:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:09:00Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:11:32Z,launched persona controller round 20260520T141132Z,persona round launched
+2026-05-20T14:12:03Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:15:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:17:39Z,launched persona controller round 20260520T141738Z,persona round launched
+2026-05-20T14:18:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:21:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:23:46Z,launched persona controller round 20260520T142345Z,persona round launched
+2026-05-20T14:24:17Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:27:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:29:53Z,launched persona controller round 20260520T142953Z,persona round launched
+2026-05-20T14:30:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:33:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:35:59Z,launched persona controller round 20260520T143559Z,persona round launched
+2026-05-20T14:36:00Z,launched persona controller round 20260520T143559Z,persona round launched
+2026-05-20T14:36:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:39:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:42:06Z,launched persona controller round 20260520T144205Z,persona round launched
+2026-05-20T14:42:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:45:40Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:48:13Z,launched persona controller round 20260520T144813Z,persona round launched
+2026-05-20T14:48:44Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:51:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:54:18Z,launched persona controller round 20260520T145418Z,persona round launched
+2026-05-20T14:54:50Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T14:57:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T15:00:28Z,launched persona controller round 20260520T150027Z,persona round launched
+2026-05-20T15:00:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T15:04:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T15:06:34Z,launched persona controller round 20260520T150634Z,persona round launched
+2026-05-20T15:07:05Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T15:10:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T15:12:39Z,launched persona controller round 20260520T151239Z,persona round launched
+2026-05-20T15:13:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T15:16:13Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-20T15:18:45Z,launched persona controller round 20260520T151845Z,persona round launched
+2026-05-20T15:19:16Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
