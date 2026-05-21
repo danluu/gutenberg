@@ -4,12 +4,14 @@ set -euo pipefail
 BASE=${RTC_RESOURCE_AUTOSCALER_BASE:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516}
 COVERAGE_BASE=${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}
 DISK_VOLUME=${RTC_DATA_VOLUME:-/media/volume/danluu-fuzz-data}
+ROOT_DISK_VOLUME=${RTC_ROOT_DISK_VOLUME:-/}
 START=${RTC_COVERAGE_START_SCRIPT:-/tmp/start_rtc_coverage_guided_remote.sh}
 NODE_BIN=${RTC_NODE_BIN:-/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin}
 TMUX=${RTC_TMUX:-/usr/bin/tmux}
 TMUX_SOCKET=${RTC_TMUX_SOCKET:-rtc-fuzz}
 LOG="$BASE/resource-autoscaler.log"
 CSV="$BASE/resource-samples.csv"
+DISK_CSV="$BASE/disk-samples.csv"
 STATUS="$BASE/resource-autoscaler-status.md"
 LOCK="$BASE/resource-autoscaler.lock"
 BUDGET_ENV="$BASE/current-budget.env"
@@ -34,6 +36,9 @@ RESET_WP_ENV_ON_INFRA_FAILURE=${RTC_RESOURCE_AUTOSCALER_RESET_WP_ENV_ON_INFRA_FA
 DISK_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_PRESSURE_FREE_GIB:-160}
 DISK_HIGH_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_HIGH_PRESSURE_FREE_GIB:-80}
 DISK_SEVERE_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_SEVERE_PRESSURE_FREE_GIB:-40}
+ROOT_DISK_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_ROOT_DISK_PRESSURE_FREE_GIB:-25}
+ROOT_DISK_HIGH_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_ROOT_DISK_HIGH_PRESSURE_FREE_GIB:-12}
+ROOT_DISK_SEVERE_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_ROOT_DISK_SEVERE_PRESSURE_FREE_GIB:-6}
 ONE_CANARY_MATERIALIZATION_RESCUE=0
 if [ "${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-0}" = "1" ] &&
 	[ -n "${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-}" ]; then
@@ -104,8 +109,15 @@ mem_available_gib() {
 }
 
 disk_available_gib() {
-	df -Pk "$DISK_VOLUME" 2>/dev/null |
+	local volume=${1:-$DISK_VOLUME}
+	df -Pk "$volume" 2>/dev/null |
 		awk 'NR == 2 { printf "%.1f\n", $4 / 1024 / 1024 }'
+}
+
+disk_used_percent() {
+	local volume=${1:-$DISK_VOLUME}
+	df -Pk "$volume" 2>/dev/null |
+		awk 'NR == 2 && $2 > 0 { printf "%.1f\n", ($3 * 100) / $2 }'
 }
 
 load1() {
@@ -341,23 +353,46 @@ apply_disk_budget() {
 	local target=$1
 	local max=$2
 	local reason=$3
-	local disk_avail=$4
+	local data_disk_avail=$4
+	local root_disk_avail=$5
 	awk -v target="$target" -v max="$max" -v reason="$reason" \
-		-v disk_avail="$disk_avail" \
-		-v pressure="$DISK_PRESSURE_FREE_GIB" \
-		-v high="$DISK_HIGH_PRESSURE_FREE_GIB" \
-		-v severe="$DISK_SEVERE_PRESSURE_FREE_GIB" '
+		-v data_disk_avail="$data_disk_avail" \
+		-v root_disk_avail="$root_disk_avail" \
+		-v data_pressure="$DISK_PRESSURE_FREE_GIB" \
+		-v data_high="$DISK_HIGH_PRESSURE_FREE_GIB" \
+		-v data_severe="$DISK_SEVERE_PRESSURE_FREE_GIB" \
+		-v root_pressure="$ROOT_DISK_PRESSURE_FREE_GIB" \
+		-v root_high="$ROOT_DISK_HIGH_PRESSURE_FREE_GIB" \
+		-v root_severe="$ROOT_DISK_SEVERE_PRESSURE_FREE_GIB" '
 		function valid_number(x) { return x ~ /^[0-9]+([.][0-9]+)?$/ }
+		function pressure_level(avail, pressure, high, severe) {
+			if (! valid_number(avail)) {
+				return 0;
+			}
+			if (avail < severe) {
+				return 3;
+			}
+			if (avail < high) {
+				return 2;
+			}
+			if (avail < pressure) {
+				return 1;
+			}
+			return 0;
+		}
 		BEGIN {
-			if (! valid_number(disk_avail)) {
+			data_level = pressure_level(data_disk_avail, data_pressure, data_high, data_severe);
+			root_level = pressure_level(root_disk_avail, root_pressure, root_high, root_severe);
+			level = data_level > root_level ? data_level : root_level;
+			if (level <= 0) {
 				print target " " max " " reason;
 				exit;
 			}
-			if (disk_avail < severe) {
+			if (level >= 3) {
 				print "1 1 disk_severe_pressure";
-			} else if (disk_avail < high) {
+			} else if (level == 2) {
 				print "1 2 disk_high_pressure";
-			} else if (disk_avail < pressure) {
+			} else if (level == 1) {
 				if (target > 2) {
 					target = 2;
 				}
@@ -368,8 +403,6 @@ apply_disk_budget() {
 					max = target;
 				}
 				print target " " max " disk_pressure";
-			} else {
-				print target " " max " " reason;
 			}
 		}
 	'
@@ -1051,6 +1084,7 @@ csv_field() {
 write_status() {
 	local now=$1 cpu=$2 load=$3 avail=$4 ncpu=$5 enabled=$6 target=$7 max=$8 desired_target=$9 desired_max=${10} action=${11} reason=${12}
 	local materialized_active=${13} paused_infra=${14} running_groups=${15} status_counts=${16} stale_seconds=${17} materialization_detail=${18} load5_value=${19} load15_value=${20}
+	local data_disk_avail=${21:-unknown} root_disk_avail=${22:-unknown}
 	cat > "$STATUS" <<EOF_STATUS
 # RTC Jetstream2 Resource Autoscaler
 
@@ -1060,6 +1094,8 @@ write_status() {
 - load5: $load5_value / $ncpu cores
 - load15: $load15_value / $ncpu cores
 - mem_available_gib: $avail
+- root_disk_available_gib: $root_disk_avail
+- data_disk_available_gib: $data_disk_avail
 - enabled_groups: $enabled
 - current_budget: target=$target max=$max
 - desired_budget: target=$desired_target max=$desired_max
@@ -1092,6 +1128,14 @@ append_csv() {
 	printf ',%s,%s,%s,' "$materialized_active" "$paused_infra" "$running_groups" >> "$CSV"
 	csv_field "$status_counts" >> "$CSV"
 	printf ',%s\n' "$stale_seconds" >> "$CSV"
+}
+
+append_disk_csv() {
+	local now=$1 root_free=$2 root_used=$3 data_free=$4 data_used=$5
+	if [ ! -f "$DISK_CSV" ]; then
+		printf 'timestamp,root_free_gib,root_used_percent,data_free_gib,data_used_percent\n' > "$DISK_CSV"
+	fi
+	printf '%s,%s,%s,%s,%s\n' "$now" "${root_free:-}" "${root_used:-}" "${data_free:-}" "${data_used:-}" >> "$DISK_CSV"
 }
 
 write_budget_env() {
@@ -1221,13 +1265,16 @@ while true; do
 	load_five=$(load5)
 	load_fifteen=$(load15)
 	avail=$(mem_available_gib)
-	disk_avail=$(disk_available_gib)
+	disk_avail=$(disk_available_gib "$DISK_VOLUME")
+	root_disk_avail=$(disk_available_gib "$ROOT_DISK_VOLUME")
+	disk_used=$(disk_used_percent "$DISK_VOLUME")
+	root_disk_used=$(disk_used_percent "$ROOT_DISK_VOLUME")
 	ncpu=$(cores)
 	enabled=$(enabled_groups)
 	target=$(current_target)
 	max=$(current_max)
 	read -r desired_target desired_max reason <<<"$(choose_budget "$cpu" "$load" "$load_five" "$load_fifteen" "$avail" "$ncpu")"
-	read -r desired_target desired_max reason <<<"$(apply_disk_budget "$desired_target" "$desired_max" "$reason" "$disk_avail")"
+	read -r desired_target desired_max reason <<<"$(apply_disk_budget "$desired_target" "$desired_max" "$reason" "$disk_avail" "$root_disk_avail")"
 	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max" "$reason")"
 	browser_live_lanes=$(live_browser_lane_pids_all_roots)
 	e2e_floor=${RTC_RESOURCE_AUTOSCALER_E2E_MIN_LIVE_LANES:-24}
@@ -1363,7 +1410,8 @@ while true; do
 	enforce_global_cpu_budget "$reason" "$now" || true
 
 	append_csv "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds"
-	write_status "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail" "$load_five" "$load_fifteen"
-	echo "[$now] cpu=$cpu load1=$load/$ncpu load5=$load_five/$ncpu load15=$load_fifteen/$ncpu mem_avail=${avail}GiB disk_avail=${disk_avail:-unknown}GiB enabled=$enabled current=$target/$max desired=$desired_target/$desired_max materialized=$materialized_active_run_dirs running=$materialized_running_groups paused_infra=$paused_infra_startup_groups stale=${supervisor_state_age_seconds}s action=$action reason=$reason" >> "$LOG"
+	append_disk_csv "$now" "$root_disk_avail" "$root_disk_used" "$disk_avail" "$disk_used"
+	write_status "$now" "$cpu" "$load" "$avail" "$ncpu" "$enabled" "$target" "$max" "$desired_target" "$desired_max" "$action" "$reason" "$materialized_active_run_dirs" "$paused_infra_startup_groups" "$materialized_running_groups" "$supervisor_status_counts" "$supervisor_state_age_seconds" "$materialization_detail" "$load_five" "$load_fifteen" "$disk_avail" "$root_disk_avail"
+	echo "[$now] cpu=$cpu load1=$load/$ncpu load5=$load_five/$ncpu load15=$load_fifteen/$ncpu mem_avail=${avail}GiB root_disk_avail=${root_disk_avail:-unknown}GiB disk_avail=${disk_avail:-unknown}GiB enabled=$enabled current=$target/$max desired=$desired_target/$desired_max materialized=$materialized_active_run_dirs running=$materialized_running_groups paused_infra=$paused_infra_startup_groups stale=${supervisor_state_age_seconds}s action=$action reason=$reason" >> "$LOG"
 	sleep "$POLL_SECONDS"
 done

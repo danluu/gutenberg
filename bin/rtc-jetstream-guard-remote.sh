@@ -416,7 +416,7 @@ reattach_browser_pool_if_live() {
 
 	log "reattaching browser pool pool=$pool live_lanes=$live_count reason=$reason root=$run"
 	if ! has_session "$supervisor_session"; then
-		tmux new-session -d -s "$supervisor_session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1 RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=\"$run\" RTC_FUZZ_SUPERVISOR_GROUPS_PATH=\"$run/supervisor-groups.json\" RTC_FUZZ_SUPERVISOR_DURATION_HOURS=12 RTC_FUZZ_SUPERVISOR_POLL_MS=60000 RTC_FUZZ_INLINE_CODEX=0 RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP=1 RTC_FUZZ_LOW_DISK_MODE=1 RTC_FUZZ_PLAYWRIGHT_VIDEO=; node bin/rtc-browser-fuzz-supervisor.mjs >> \"$base/logs/supervisor.log\" 2>&1'" ||
+		tmux new-session -d -s "$supervisor_session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1 RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=\"$run\" RTC_FUZZ_SUPERVISOR_GROUPS_PATH=\"$run/supervisor-groups.json\" RTC_FUZZ_SUPERVISOR_DURATION_HOURS=12 RTC_FUZZ_SUPERVISOR_POLL_MS=60000 RTC_FUZZ_INLINE_CODEX=0 RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP=1 RTC_FUZZ_LOW_DISK_MODE=1 RTC_FUZZ_PLAYWRIGHT_VIDEO=off; node bin/rtc-browser-fuzz-supervisor.mjs >> \"$base/logs/supervisor.log\" 2>&1'" ||
 			return 1
 	fi
 	if ! has_session "$watchdog_session"; then
@@ -799,6 +799,15 @@ restart_pool() {
 			tmux new-session -d -s rtc-resource-autoscaler "bash -lc '$RESOURCE_BASE/rtc-resource-autoscaler.sh >> \"$LOG_DIR/resource-autoscaler-start.log\" 2>&1'" ||
 				log "resource autoscaler start failed"
 			;;
+		disk-maintenance)
+			if [ -x /tmp/start_rtc_disk_maintenance.sh ]; then
+				tmux new-session -d -s rtc-disk-maintenance "bash -lc '/tmp/start_rtc_disk_maintenance.sh >> \"$LOG_DIR/disk-maintenance-start.log\" 2>&1'" ||
+					log "disk maintenance start failed"
+			else
+				tmux new-session -d -s rtc-disk-maintenance "bash -lc 'cd \"$REPO\"; bin/rtc-disk-maintenance-remote.sh >> \"$LOG_DIR/disk-maintenance-start.log\" 2>&1'" ||
+					log "disk maintenance start failed"
+			fi
+			;;
 		structural)
 			/tmp/start_rtc_structural_watchdog.sh >> "$LOG_DIR/structural-watchdog-start.log" 2>&1 || log "structural watchdog start failed"
 			;;
@@ -920,6 +929,10 @@ run_loop_locked() {
 
 		if ! has_session rtc-resource-autoscaler; then
 			restart_pool resource "missing resource autoscaler"
+		fi
+
+		if ! has_session rtc-disk-maintenance; then
+			restart_pool disk-maintenance "missing disk maintenance loop"
 		fi
 
 		if ! has_session rtc-structural-issue-watchdog; then

@@ -241,6 +241,66 @@ with open(os.path.join(out, "data", "load_average.csv"), "w", newline="") as f:
 	for ts in sorted(load_rows):
 		writer.writerow([ts.strftime("%Y-%m-%dT%H:%M:%SZ"), *load_rows[ts]])
 
+disk_rows = []
+disk_samples_path = "/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/disk-samples.csv"
+if os.path.exists(disk_samples_path):
+	with open(disk_samples_path, newline="") as f:
+		for row in csv.DictReader(f):
+			if not row.get("timestamp"):
+				continue
+			disk_rows.append({
+				"timestamp": row.get("timestamp", ""),
+				"root_free_gib": row.get("root_free_gib", ""),
+				"root_used_percent": row.get("root_used_percent", ""),
+				"data_free_gib": row.get("data_free_gib", ""),
+				"data_used_percent": row.get("data_used_percent", ""),
+			})
+
+try:
+	proc = subprocess.run(
+		["df", "-Pk", "/", "/media/volume/danluu-fuzz-data"],
+		text=True,
+		stdout=subprocess.PIPE,
+		stderr=subprocess.DEVNULL,
+		check=False,
+	)
+	rows = {}
+	for line in proc.stdout.splitlines()[1:]:
+		parts = line.split()
+		if len(parts) < 6:
+			continue
+		mount = parts[5]
+		try:
+			size = float(parts[1])
+			used = float(parts[2])
+			free = float(parts[3]) / 1024.0 / 1024.0
+			used_pct = 100.0 * used / size if size > 0 else 0.0
+		except ValueError:
+			continue
+		rows[mount] = (free, used_pct)
+	if "/" in rows and "/media/volume/danluu-fuzz-data" in rows:
+		now_ts = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+		disk_rows.append({
+			"timestamp": now_ts,
+			"root_free_gib": f"{rows['/'][0]:.1f}",
+			"root_used_percent": f"{rows['/'][1]:.1f}",
+			"data_free_gib": f"{rows['/media/volume/danluu-fuzz-data'][0]:.1f}",
+			"data_used_percent": f"{rows['/media/volume/danluu-fuzz-data'][1]:.1f}",
+		})
+except Exception:
+	pass
+
+deduped_disk_rows = {}
+for row in disk_rows:
+	deduped_disk_rows[row["timestamp"]] = row
+
+with open(os.path.join(out, "data", "disk_free_space.csv"), "w", newline="") as f:
+	writer = csv.writer(f)
+	writer.writerow(["timestamp", "root_free_gib", "root_used_percent", "data_free_gib", "data_used_percent"])
+	for ts in sorted(deduped_disk_rows):
+		row = deduped_disk_rows[ts]
+		writer.writerow([ts, row["root_free_gib"], row["root_used_percent"], row["data_free_gib"], row["data_used_percent"]])
+
 activity_by_hour = defaultdict(lambda: [0, 0])
 db_path = "/home/exouser/.codex/state_5.sqlite"
 if os.path.exists(db_path):
@@ -1068,6 +1128,7 @@ cp "$INPUT_DIR/remote/raw/current-coverage-root.txt" "$ARTIFACT_DIR/raw/current-
 cp "$INPUT_DIR/remote/raw/pr-split-loop.log" "$ARTIFACT_DIR/raw/pr-split-loop.log"
 cp "$INPUT_DIR/remote/data/cpu_utilization.csv" "$ARTIFACT_DIR/data/cpu_utilization.csv"
 cp "$INPUT_DIR/remote/data/load_average.csv" "$ARTIFACT_DIR/data/load_average.csv"
+cp "$INPUT_DIR/remote/data/disk_free_space.csv" "$ARTIFACT_DIR/data/disk_free_space.csv"
 cp "$INPUT_DIR/remote/data/project_activity.csv" "$ARTIFACT_DIR/data/project_activity.csv"
 cp "$INPUT_DIR/remote/data/fuzz_level_mix.csv" "$ARTIFACT_DIR/data/fuzz_level_mix.csv"
 cp "$INPUT_DIR/remote/data/fuzz_level_executions.csv" "$ARTIFACT_DIR/data/fuzz_level_executions.csv"

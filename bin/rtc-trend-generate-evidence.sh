@@ -18,6 +18,7 @@ goals_path = artifact / "data" / "coverage_goals.csv"
 profile_path = artifact / "data" / "profile_counts.csv"
 cpu_path = artifact / "data" / "cpu_utilization.csv"
 load_path = artifact / "data" / "load_average.csv"
+disk_path = artifact / "data" / "disk_free_space.csv"
 fuzz_level_path = artifact / "data" / "fuzz_level_mix.csv"
 
 summary = {}
@@ -69,6 +70,15 @@ if load_path.exists():
 			f"{row.get('timestamp')}: load1={row.get('load_1')} load5={row.get('load_5')} load15={row.get('load_15')} cores={row.get('core_count')}"
 		)
 
+disk_tail = []
+if disk_path.exists():
+	with disk_path.open(newline="") as f:
+		rows = list(csv.DictReader(f))
+	for row in rows[-6:]:
+		disk_tail.append(
+			f"{row.get('timestamp')}: root_free_gib={row.get('root_free_gib')} data_free_gib={row.get('data_free_gib')}"
+		)
+
 fuzz_level_latest = {}
 fuzz_level_campaigns = set()
 if fuzz_level_path.exists():
@@ -118,6 +128,10 @@ for key in [
 	"current_run_top_duplicate_share_last",
 	"quality_issues_last",
 	"memory_free_gb_last",
+	"root_disk_free_gib_last",
+	"root_disk_used_percent_last",
+	"data_disk_free_gib_last",
+	"data_disk_used_percent_last",
 	"load_1_last",
 	"load_5_last",
 	"load_15_last",
@@ -163,6 +177,12 @@ if load_tail:
 	lines.extend(f"- {item}" for item in load_tail)
 else:
 	lines.append("- no load-average CSV available")
+
+lines += ["", "## Recent Disk Samples"]
+if disk_tail:
+	lines.extend(f"- {item}" for item in disk_tail)
+else:
+	lines.append("- no disk CSV available")
 
 lines += ["", "## Latest Fuzzing Level Mix"]
 if fuzz_level_latest:

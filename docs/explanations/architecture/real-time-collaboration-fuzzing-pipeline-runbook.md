@@ -326,6 +326,7 @@ install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-lower-level-start-remote.
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-cleanup-remote.sh\" /tmp/cleanup_rtc_coverage_guided_remote.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-watchdog-start-remote.sh\" /tmp/start_rtc_coverage_guided_watchdog_remote.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-resource-autoscaler-remote.sh\" /tmp/start_rtc_resource_autoscaler.sh
+install -m 755 \"\$REMOTE_REPO/bin/rtc-disk-maintenance-remote.sh\" /tmp/start_rtc_disk_maintenance.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-strict-expansion-start-remote.sh\" /tmp/start_rtc_strict_expansion.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-start-remote.sh\" /tmp/start_rtc_focused_shards.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-focused-shards-cleanup-remote.sh\" /tmp/cleanup_rtc_focused_shards.sh
@@ -685,6 +686,22 @@ coverage-guided browser loops should all run broad discovery in low-disk mode.
 If artifact growth accelerates, first verify the tmux pane environment for
 `RTC_FUZZ_LOW_DISK_MODE=1` and `RTC_FUZZ_PLAYWRIGHT_VIDEO=off` before deleting
 run outputs.
+
+The remote script branch also includes `bin/rtc-disk-maintenance-remote.sh` for
+continuous low-priority pruning of stale fuzz roots and old Playwright
+trace/video artifacts. Run it in the shared tmux socket:
+
+```bash
+tmux -L rtc-fuzz new-session -d -s rtc-disk-maintenance \
+  'bash -lc "cd /media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo && bin/rtc-disk-maintenance-remote.sh"'
+```
+
+It keeps the current run root, skips paths still present in live process
+command lines, and trims older coverage, strict-expansion, focused-shard, and
+gap-booster roots. Under disk pressure it keeps fewer old roots; otherwise it
+retains a wider recent history. The resource autoscaler budgets against both
+`/` and `/media/volume/danluu-fuzz-data`, and writes
+`rtc-resource-autoscaler-20260516/disk-samples.csv` for the trend graphs.
 
 ## Active wp-env And Docker Repair
 
