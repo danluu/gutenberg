@@ -2960,7 +2960,7 @@ if ( nrow( critical_no_progress_summary ) > 0 ) {
 		mutate(
 			item_label = str_wrap( item_id, width = 34 ),
 			reason = str_wrap( reason, width = 32 ),
-			item_label = factor( item_label, levels = item_label[ order( rejections ) ] )
+			item_label = factor( item_label, levels = unique( item_label[ order( rejections ) ] ) )
 		)
 
 	write_plot(
