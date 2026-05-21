@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-21T17:22:48Z`
+Snapshot generated: `2026-05-21T17:28:10Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance, resource,
 and PR-progress logs. The plotting data is generated with R, ggplot2, tidyverse
@@ -18,28 +18,29 @@ old local state.
 
 ## High-Level Readout
 
-The graph data is current through `2026-05-21T17:20:51Z`. The monitor has
-`3,775` passes from `2026-05-15T01:21:42Z` onward. Cumulative coverage record
-observations are `273,459`; current-scan coverage files are `307`. The monitor
+The graph data is current through `2026-05-21T17:26:09Z`. The monitor has
+`3,779` passes from `2026-05-15T01:21:42Z` onward. Cumulative coverage record
+observations are `273,459`; current-scan coverage files are `293`. The monitor
 reports `40` unmet live coverage items, while the parsed coverage-goal table has
-`90` unmet target rows out of `137`.
+`91` unmet target rows out of `137`.
 
 Current-run health is quiet in the measured live metric: `duplicateShareCurrent`
-is `0`, historical duplicate share is `0`, current summary startup failures are
-`0`, quality issues are `0`, and the current-run accounting sample is trusted.
-The active output root has `0` current signatures and `0` actionable current
-signatures, so this is not hiding a one-signature duplicate spike.
+is `0`, current summary startup failures are `0`, quality issues are `0`, and
+the current-run accounting sample is trusted. Historical duplicate share is `0`
+for context, but it is not the live health signal. The active output root has
+`0` current signatures and `0` actionable current signatures, so this is not
+hiding a one-signature duplicate spike.
 Persona-loop duplicate/noise feedback still treats strict no-product
 `pre_action_bootstrap_stall` recycling as a producer/scheduler control-plane
 leak, so the clean graph metric should not be read as proof that browser
 producers are stable under startup noise.
 
 Resource state is improved but still needs watching. The latest sample has
-`386.9G` free memory, `31.9GiB` free on `/`, and `420.5GiB` free on
+`389.6G` free memory, `31.7GiB` free on `/`, and `450.8GiB` free on
 `/media/volume/danluu-fuzz-data`. The latest load averages are `29.05`,
 `26.34`, and `25.99` on `64` logical CPUs.
 
-The latest graph-counted fuzzing mix has `28` browser/e2e lanes across `27`
+The latest graph-counted fuzzing mix has `27` browser/e2e lanes across `26`
 groups, plus one `unit-property` lane, one `coverage-guided-lower-level` lane,
 and one `protocol-server` lane. The execution counter has about `16.9M`
 estimated individual executions. Lower-level execution counts are approximate
@@ -55,8 +56,8 @@ items: `13` high-priority ready-product PR rows marked published, `5`
 high-priority ready-product rows held by the controller, `1` runtime-gated row
 consumed/held, and `2` deferred-family rows. The current push manifest is empty,
 so the controller is not advertising any fresh branch-publish rows in this
-snapshot. The critical-path executor has `6` blockers: `1` runnable, `1`
-active, `1` queued, and `3` terminal.
+snapshot. The critical-path executor has `6` blockers: `1` runnable, `2`
+queued, and `3` terminal.
 
 ## Coverage Intake
 
@@ -90,7 +91,7 @@ has `0` current signatures and `0` actionable current signatures.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. The data volume is
-around `88%` used and root is around `79%` used, so cleanup and output-size
+around `87%` used and root is around `79%` used, so cleanup and output-size
 budgeting still matter.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
@@ -101,32 +102,36 @@ budgeting still matter.
 
 ![Coverage-guided groups by first enable time](rtc-jetstream2-fuzz-trends-20260515/plots/enabled-groups-over-time.png)
 
-The current enabled group set includes HTTP large-post lifecycle,
-permissions/auth/locks, three-user late join, parser transform, long-session
-large docs, same-user lifecycle, HTTP title reload convergence, existing-post
-CRDT metadata, and HTTP persistence probes. Historical enabled events cover
-additional real-user editing, table stale snapshot, many-user lifecycle, parser
-serialization, multi-reload lifecycle, block-gauntlet, rich-text UI,
-revision/autosave/recovery, async/server-backed, and same-user surfaces.
+The current enabled group set includes HTTP table stale snapshot, many-user and
+thirty-user lifecycle, HTTP large-post lifecycle completion,
+permissions/auth/locks, three-user late join, parser serialization, and
+multi-reload lifecycle. Historical enabled events cover additional real-user
+editing, parser transform, long-session large docs, same-user lifecycle, HTTP
+title reload convergence, existing-post CRDT metadata, HTTP persistence probes,
+block-gauntlet, rich-text UI, revision/autosave/recovery, async/server-backed,
+and same-user surfaces.
 
 ## Fuzzing Level Mix
 
 ![Fuzzing level mix over time](rtc-jetstream2-fuzz-trends-20260515/plots/fuzz-level-mix-over-time.png)
 
 The collector now reads recent and current `supervisor-groups.json` files
-instead of scanning unbounded history. The latest mix is still browser/e2e
-heavy, but lower-level work is visible: `unit-property`,
+instead of scanning unbounded history. The latest mix is still concentrated in
+browser/e2e lanes, but lower-level work is visible: `unit-property`,
 `coverage-guided-lower-level`, and `protocol-server` each have one current lane.
-`backend-api` and standalone `fuzz-assertion` have no current graph-counted
-lane in this snapshot.
+`transport-integration`, `backend-api`, and standalone `fuzz-assertion` have no
+current graph-counted lane in this snapshot.
 
-Persona-loop evidence adds two caveats. First, the parser
-coverage-guided-lower-level harness and the HTTP polling protocol-server harness
-were validated, so those rows are real harness work. Second, level-mix feedback
-rejects using the graph-counted rows as live-capacity proof until fail-closed
-checks confirm exact sessions, PIDs, fresh event files, and fresh non-empty
-summaries. On that stricter read, live fuzzing is still concentrated in
-browser/e2e lanes and operator HTTP correctness recovery is the priority.
+Persona-loop evidence rejects the simple interpretation that these graph-counted
+rows equal trusted useful live capacity. Level-mix feedback requires fail-closed
+checks for exact sessions, PIDs, fresh event files, and fresh non-empty
+summaries; native-harness feedback favors parser serialization as the first
+ready isolated lower-level harness, while the current graph-counted
+coverage-guided lower-level row is a rich-text CRDT smoke lane. Protocol-server
+evidence describes the HTTP polling REST harness, and the graph has a one-lane
+protocol-server row, but the stricter capacity read still prioritizes operator
+HTTP correctness recovery and treats missing exact sessions as zero useful
+capacity.
 
 ## Fuzzing Level Executions
 
@@ -138,12 +143,12 @@ The execution metric estimates individual test/case executions from lane
 `events.ndjson`: browser seed attempts, unit/property fixed tests plus generated
 cases, coverage-guided inputs, and protocol/backend cases. Lower-level rows are
 approximate when reconstructed from batch metadata or legacy batch-count fields.
-The latest totals are approximately `390,525` browser/e2e, `161`
+The latest totals are approximately `390,443` browser/e2e, `161`
 transport/integration, `5,617,920` unit-property, `458,097` coverage-guided
-lower-level, and `10,431,888` protocol-server executions. The current 15-minute
-rate bucket has browser/e2e at about `28` executions/hour; lower-level/protocol
-current-rate buckets are `0` in this sample even though their cumulative
-reconstructed counts are large.
+lower-level, and `10,431,910` protocol-server executions. The current 15-minute
+rate bucket has browser/e2e at about `36` executions/hour and protocol-server at
+about `88` executions/hour; lower-level current-rate buckets are `0` in this
+sample even though their cumulative reconstructed counts are large.
 
 ## Fuzz Output Effectiveness
 
@@ -153,7 +158,7 @@ The likely-real graph is a triage-output metric only. It counts non-duplicate
 `.triage-watcher/**/result.json` rows classified `likely_real`, deduped by
 canonical bug key and attributed to first-seen time. The latest collected
 triaged likely-real output is still all browser/e2e: `526` likely-real findings
-over about `2,884.3` runner-hours, or `18.24` per 100 runner-hours.
+over about `2,882.6` runner-hours, or `18.25` per 100 runner-hours.
 
 ![Unique bug-output candidates by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-level.png)
 
@@ -188,9 +193,10 @@ The latest weak-completion profiles are dominated by profiles with successful
 record counts at zero in the current sample: async/server blocks,
 block-gauntlet, collaboration UI signals, common blocks, long-session large
 docs, many-user lifecycle, multi-reload lifecycle, parser serialization,
-parser transform, permissions/auth/locks, real-user editing, and revision
-persistence. This argues for completion-depth repair in existing covered
-surfaces before adding another broad surface class.
+parser transform, permissions/auth/locks, real-user editing,
+revision persistence, table stale snapshot HTTP, and three-user late join. This
+argues for completion-depth repair in existing covered surfaces before adding
+another broad surface class.
 
 ## Coverage Goals
 
@@ -205,10 +211,13 @@ Largest current unmet goal gaps:
 | same-user two-tab mode | 27 | 150 |
 | multi reload | 8 | 100 |
 | successful real-user-editing records | 0 | 80 |
-| successful two-user documents | 48 | 100 |
+| successful two-user documents | 46 | 100 |
 | successful parser-serialization records | 0 | 50 |
 | successful multi-reload-lifecycle records | 0 | 50 |
 | same-user stale/reloaded tabs | 22 | 50 |
+| remote and local autosave checkpoints | 0 | 25 |
+| local post recovery autosave | 0 | 25 |
+| remote selection and cursor visible | 0 | 25 |
 | successful media-cross-entity records | 0 | 25 |
 | successful collaboration-ui-signals records | 0 | 25 |
 | successful three-user late-join records | 0 | 25 |
@@ -278,8 +287,8 @@ buckets.
 ![Repeated critical-path no-progress artifacts](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-no-progress-artifacts.png)
 
 The critical-path executor has `6` blockers: one runnable benchmark-canary
-coverage-promotion blocker, one active blocker, one queued PR07C owner-matrix
-blocker, and three terminal blockers. Repeated no-progress artifacts are
+coverage-promotion blocker, two queued blockers including PR07C owner-matrix
+work, and three terminal blockers. Repeated no-progress artifacts are
 dominated by `benchmark-canary-fuzzer-gap/zero_executor_artifact` with `65`
 rows, followed by PR17 and seed-reducer pre-oracle/preflight rows.
 
@@ -300,13 +309,13 @@ contradicts any stronger interpretation: strict no-product startup noise is
 still considered a producer hard-hold/control-plane issue until novelty and
 supervisor refill paths stop relaunching it.
 
-The current fuzzing mix remains browser/e2e-heavy even though lower-level lanes
-are now visible. Browser/e2e is still the only level producing triaged
-likely-real findings in the committed triage-output metric, while transport and
-lower-level lanes produce broader candidate output but little confirmed output.
-The level-mix persona feedback rejects trusting the graph-counted live mix as
-capacity accounting until fail-closed checks confirm current roots, exact
-sessions, PIDs, and fresh summaries.
+The current fuzzing mix remains browser/e2e-heavy even though lower-level and
+protocol rows are now visible. Browser/e2e is still the only level producing
+triaged likely-real findings in the committed triage-output metric, while
+transport and lower-level lanes produce broader candidate output but little
+confirmed output. The level-mix persona feedback rejects trusting the
+graph-counted live mix as capacity accounting until fail-closed checks confirm
+current roots, exact sessions, PIDs, and fresh summaries.
 
 PR progress is visible again, but the controller is not currently advertising a
 non-empty push manifest. The PR loop still needs to turn held ready-product rows
