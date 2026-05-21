@@ -7,7 +7,7 @@ BRANCH="${RTC_TREND_BRANCH:-explain/rtc-jetstream2-fuzz-progress-20260515}"
 REMOTE="${RTC_TREND_REMOTE:-danluu}"
 SOURCE_REPO="${RTC_TREND_SOURCE_REPO:-$(cd "$(dirname "$0")/.." && pwd)}"
 SESSION="${RTC_TREND_TMUX_SESSION:-rtc-trend-autoupdate}"
-IDLE_SECONDS="${RTC_TREND_REFRESH_IDLE_SECONDS:-60}"
+IDLE_SECONDS="${RTC_TREND_REFRESH_IDLE_SECONDS:-0}"
 LOG_DIR="$OPS_DIR/logs"
 LOCK="$OPS_DIR/refresh-loop.lock"
 
@@ -61,7 +61,9 @@ run_loop() {
 	fi
 	while true; do
 		run_once "loop-$(date -u +%Y%m%dT%H%M%SZ)" || true
-		sleep "$IDLE_SECONDS"
+		if [ "$IDLE_SECONDS" -gt 0 ]; then
+			sleep "$IDLE_SECONDS"
+		fi
 	done
 }
 
