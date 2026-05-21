@@ -7,8 +7,38 @@ ARTIFACT_DIR="$CHECKOUT/docs/explanations/architecture/rtc-jetstream2-fuzz-trend
 RUN_DIR="${1:-$OPS_DIR/runs/manual-$(date -u +%Y%m%dT%H%M%SZ)}"
 INPUT_DIR="$RUN_DIR/inputs"
 REMOTE_STAGE_ROOT="${RTC_REMOTE_STAGE_ROOT:-/media/volume/danluu-fuzz-data/rtc-graph-refresh-tmp}"
+JETSTREAM_HOST="${RTC_JETSTREAM_HOST:-exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org}"
 
 mkdir -p "$INPUT_DIR"
+
+jetstream_scp() {
+	local direction=$1
+	shift
+	if [ -x "$OPS_DIR/jetstream-scp.sh" ]; then
+		"$OPS_DIR/jetstream-scp.sh" "$direction" "$@"
+		return
+	fi
+	case "$direction" in
+		to)
+			scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$1" "$JETSTREAM_HOST:$2"
+			;;
+		from)
+			scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$JETSTREAM_HOST:$1" "$2"
+			;;
+		*)
+			printf 'unknown scp direction: %s\n' "$direction" >&2
+			return 2
+			;;
+	esac
+}
+
+jetstream_ssh() {
+	if [ -x "$OPS_DIR/jetstream-ssh.sh" ]; then
+		"$OPS_DIR/jetstream-ssh.sh" "$@"
+		return
+	fi
+	ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "$JETSTREAM_HOST" "$@"
+}
 
 remote_script="$INPUT_DIR/remote-collect.sh"
 cat > "$remote_script" <<'REMOTE'
@@ -1112,9 +1142,9 @@ PY
 tar -C "$OUT" -czf "$TAR" .
 REMOTE
 
-"$OPS_DIR/jetstream-scp.sh" to "$remote_script" /tmp/rtc-graphs-refresh-collect.sh
-"$OPS_DIR/jetstream-ssh.sh" "chmod +x /tmp/rtc-graphs-refresh-collect.sh && /tmp/rtc-graphs-refresh-collect.sh"
-"$OPS_DIR/jetstream-scp.sh" from "$REMOTE_STAGE_ROOT/rtc-graphs-refresh-latest.tar.gz" "$INPUT_DIR/remote.tar.gz"
+jetstream_scp to "$remote_script" /tmp/rtc-graphs-refresh-collect.sh
+jetstream_ssh "chmod +x /tmp/rtc-graphs-refresh-collect.sh && /tmp/rtc-graphs-refresh-collect.sh"
+jetstream_scp from "$REMOTE_STAGE_ROOT/rtc-graphs-refresh-latest.tar.gz" "$INPUT_DIR/remote.tar.gz"
 
 rm -rf "$INPUT_DIR/remote"
 mkdir -p "$INPUT_DIR/remote"
