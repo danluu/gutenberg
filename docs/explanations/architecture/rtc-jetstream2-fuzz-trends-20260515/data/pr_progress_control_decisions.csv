@@ -1,41 +1,42 @@
 action,target,priority,allowed,reason
-update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,"deny heavy PR jobs when discovery sessions fall below reserve; allow only cheap manifest generation, publication bookkeeping, or analysis-only controller work until healthy"
-reserve-discovery,discovery-reserve,P0,yes,current reserve is healthy with 16 active discovery sessions over min 3 and PR jobs 0 of 2; preserve fuzz lanes and allow only one bounded heavy product-progress job
-update-controller-rule,pr-progress-concurrency-under-pressure,P0,yes,"under resource pressure and active benchmark-canary repair, run at most one additional heavy product-progress job"
-repair-branch,benchmark-canary-fuzzer-gap/e2e-collaboration-code-editor-performance-ws,P0,yes,continue active exact-ref repair by fetching or mirroring 431635f36ecf and enforcing workspace-local ws@8 plus WebSocketServer health evidence
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,duplicate rerun while the active WebSocket exact-ref repair already owns the benchmark-canary blocker
-update-controller-rule,benchmark-canary-fuzzer-gap/freshest-feedback-wins,P0,yes,newer 2026-05-22T13:07 promotion_blocked feedback supersedes older exact_stack_green terminal rows
-update-controller-rule,benchmark-canary-fuzzer-gap/ws-code-editor-parity,P0,yes,keep novelty-ws-code-editor-smoke promotion-blocking and require ws@8 server startup and version artifacts before credit
-update-controller-rule,exact-stack-equivalent-lanes,P0,yes,"keep title reload, existing-post CRDT, persistence reload, large HTTP lifecycle, and code-editor WS lanes promotion-blocking"
-repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,P0,yes,convert generic deferred-family hold into a head-specific exact-stack blocker; manifest is candidate evidence only
-launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,next product-progress slot while reserve is healthy; run bounded all-merged title reload plus existing-post or persistence reload plus large HTTP lifecycle
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,fresh green exact-stack browser evidence is missing
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale reload-hydration head is superseded by latest manifest head b01a3a21e2c
-cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,"403-launch family already has a manifest; progress must be exact replay, owner evidence, green-stack adoption, or downscope"
-repair-ready,PR07C/HOLD-07C-owner-evidence,P0,yes,"readiness is resolved; consume the completed Cycle380 owner matrix or run the queued matrix only if that evidence is unavailable, then route result to exact reload/persistence validation"
-launch-owner-matrix,PR07C/HOLD-07C-duplicate,P0,no,do not relaunch a second owner matrix while existing Cycle380 owner evidence is available or already consumed
-repair-ready,PR07C/HOLD-07C/exact-stack-validation,P0,yes,route remaining PR07C work to exact reload and persistence validation before publication
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until exact replay or newer owner evidence proves product ownership
-repair-ready,PR07C/HOLD-07C+seed-5200005-reducer/stale-critical-blockers,P0,yes,terminalize stale PR07C owner-matrix and seed reducer blockers using consumed owner evidence and already_resolved_by_active_artifacts seed classification
-cooldown-diagnostic,seed-5200005-reducer,P0,yes,latest classification is already_resolved_by_active_artifacts; further reducer launches are duplicate churn
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates terminal reducer evidence
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic families are single-flight held; no generic relaunch without focused replay, owner evidence, green-stack adoption, or downscope"
-publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress and lacks owner evidence
-reserve-discovery,pre-save-search-live-collapse@de2b5502da0/focused-replay,P1,yes,allow bounded focused first-loss replay or owner-evidence work only while discovery reserve remains healthy
-reserve-discovery,rich-text-suffix-corruption@a2d47a072e1/focused-replay,P1,yes,allow bounded deterministic suffix-divergence replay or owner-evidence work only while discovery reserve remains healthy
-cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscoped because canonical PR06B minimal already covers the product evidence
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch
-cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscoped because PR02A exists and no fresh healthy-user HTTP room-isolation evidence appears
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path
-cooldown-diagnostic,rtc-http-polling-manager/generic-batches,P0,yes,"generic batches show zero product yield and no new coverage; resume only with materialization, canary diagnostics, or new failure evidence"
-cooldown-diagnostic,rtc-block-parser-serialization/broad-drift-admission,P0,yes,"hold repeated drift and SPEC divergence admission until canonical classifier, product yield, or oracle classification changes"
-reserve-discovery,rtc-block-parser-serialization/bounded-classifier,P1,yes,"allow one representative parser classifier or reducer as discovery work, not open-ended PR analysis"
-cooldown-diagnostic,rtc-rich-text-crdt-merge/green-only,P1,yes,"cap continuous all-green assertion batching; keep only smoke or targets tied to failures, semantic deltas, or unmet coverage"
-update-controller-rule,rtc-rich-text-crdt-merge/parser-accounting,P1,yes,fix stale metadata so rich-text CRDT work is not credited to parser-serialization gaps
-reserve-discovery,unit-property-rich-text-crdt-merge-to-broad-parser-window,P1,no,broad parser replacement conflicts with parser oracle saturation; use bounded parser classifier or table-query target instead
-reserve-discovery,table-stale-snapshot/table-query-array-lower-level,P1,yes,add bounded table-query-array lower-level target and feed evidence back into table-stale-snapshot before another product relaunch
-reserve-discovery,published-ready-product-prs/fuzz-validation,P1,yes,continue fuzz validation for already published product branches without duplicate publication
-update-controller-rule,productive-analysis-feed-dedupe-retarget,P0,yes,"dedupe repeated feed rows, let newest concrete evidence win, and retarget stale reload-hydration actions to b01a3a21e2c"
-publish-ready,current-push-manifest,P1,no,current controller push manifest is header-only and not a publication source
+update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,Deny heavy PR jobs when discovery is at or below reserve; allow only cheap publication manifest generation or analysis-only work then.
+launch-branch-repair,heavy-pr-jobs-while-discovery-unhealthy,P0,no,Discovery reserve must be preserved; heavy PR work is disallowed unless reserve is healthy.
+reserve-discovery,discovery-reserve,P0,yes,Reserve is currently healthy with 20 active discovery sessions over min 3 and 0 active PR jobs of max 2.
+update-controller-rule,pr-progress-concurrency-under-pressure,P0,yes,Under high_pressure run at most the active benchmark repair plus one additional bounded product-progress job.
+repair-branch,benchmark-canary-fuzzer-gap/current-exact-stack,P0,yes,Fresh feedback still has large-post-three-user-http promotion_blocked; continue the concrete exact-stack repair.
+repair-branch,benchmark-canary-fuzzer-gap/e2e-collaboration-code-editor-performance-ws,P0,yes,Continue the active exact-ref ws@8/WebSocketServer repair and refresh the code-editor row before closure.
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,Duplicate while the active benchmark-canary exact-stack repair owns the blocker.
+update-controller-rule,benchmark-canary-fuzzer-gap/freshest-feedback-wins,P0,yes,Newer promotion_blocked feedback supersedes older exact_stack_green rows.
+update-controller-rule,benchmark-canary-fuzzer-gap/exact-stack-equivalent-lanes,P0,yes,"Keep title reload, existing-post or persistence reload, large HTTP lifecycle, and code-editor WS lanes promotion-blocking."
+repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,P0,yes,Convert the generic deferred hold into a head-specific blocker; manifest is candidate evidence only.
+launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,"Next product-progress slot; run bounded all-merged title reload, existing-post or persistence reload, and large HTTP lifecycle."
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,Fresh green exact-stack browser evidence is missing.
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,Stale head is superseded by latest reload-hydration manifest head b01a3a21e2c.
+cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,"403-launch family already has a manifest; progress must be exact replay, owner evidence, green-stack adoption, or downscope."
+repair-ready,PR07C/HOLD-07C-owner-evidence,P0,yes,Consume existing Cycle380 owner evidence; do not relaunch owner matrix without newer evidence.
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Existing owner evidence is already available or consumed; duplicate owner matrix is churn.
+repair-ready,PR07C/HOLD-07C/exact-stack-validation,P0,yes,Route remaining PR07C work to exact reload and persistence validation.
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Held until exact replay or newer owner evidence proves product ownership.
+repair-ready,PR07C/HOLD-07C+seed-5200005-reducer/stale-critical-blockers,P0,yes,Terminalize stale PR07C and seed reducer blockers using consumed owner evidence and current resolved seed classification.
+cooldown-diagnostic,seed-5200005-reducer,P0,yes,Latest classification is already_resolved_by_active_artifacts; further reducer launches are duplicate churn.
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,Relaunch duplicates terminal reducer evidence.
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"Keep diagnostic families single-flight held; no generic relaunch without focused replay, owner evidence, green-stack adoption, or downscope."
+publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,Diagnostic branch lacks owner evidence and is not product PR progress.
+reserve-discovery,pre-save-search-live-collapse@de2b5502da0/focused-replay,P1,yes,Allow one bounded first-loss replay or owner-evidence pass while discovery reserve remains healthy.
+reserve-discovery,rich-text-suffix-corruption@a2d47a072e1/focused-replay,P1,yes,Allow one bounded suffix-divergence replay or owner-evidence pass while discovery reserve remains healthy.
+cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,Downscoped because canonical PR06B minimal already covers product evidence.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Superseded by already published PR06B minimal branch.
+cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,Downscoped because PR02A exists and no fresh healthy-user HTTP room-isolation evidence appears.
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,Duplicates already published PR14B-based PR15A path.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,Duplicates already published PR14B-based PR15B path.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,Duplicates already published PR14B-based PR15C path.
+reserve-discovery,published-ready-product-prs/fuzz-validation,P1,yes,Continue fuzz validation for already published product branches without duplicate publication.
+cooldown-diagnostic,rtc-http-polling-manager/generic-batches,P0,yes,"Generic batches show zero product yield and no new coverage; resume only with materialization, canary diagnostics, or new failure evidence."
+cooldown-diagnostic,rtc-block-parser-serialization/broad-drift-admission,P0,yes,"Hold repeated drift and spec divergence admission until classifier, product yield, or oracle classification changes."
+reserve-discovery,rtc-block-parser-serialization/bounded-classifier,P1,yes,"Allow one representative parser classifier or reducer as discovery work, not open-ended PR analysis."
+cooldown-diagnostic,rtc-rich-text-crdt-merge/green-only,P1,yes,"Cap continuous all-green assertion batching; keep smoke or targets tied to failures, semantic deltas, or unmet coverage."
+update-controller-rule,rtc-rich-text-crdt-merge/parser-accounting,P1,yes,Fix stale metadata so rich-text CRDT work is not credited to parser-serialization gaps.
+reserve-discovery,unit-property-rich-text-crdt-merge-open-ended-parser-window,P1,no,Broad parser replacement conflicts with parser oracle saturation; use bounded classifier or table-query target instead.
+reserve-discovery,table-stale-snapshot/table-query-array-lower-level,P1,yes,Add bounded table-query-array lower-level target and feed evidence before another product relaunch.
+update-controller-rule,productive-analysis-feed-dedupe-retarget,P0,yes,"Dedupe repeated feed rows, let newest concrete evidence win, and retarget stale reload-hydration actions to b01a3a21e2c."
+publish-ready,current-push-manifest,P1,no,Current controller push manifest is header-only and not a publication source.
