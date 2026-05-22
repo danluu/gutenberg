@@ -1,0 +1,45 @@
+id,label,count,target,met,progress,goal_family,remaining,progress_capped,count_target
+cross-product:active-editors-large-doc:users-6,cross product active editors large doc users 6,0,25,FALSE,0,cross-product,25,0,0 / 25
+cross-product:active-editors-lifecycle:users-6,cross product active editors lifecycle users 6,0,25,FALSE,0,cross-product,25,0,0 / 25
+cross-product:active-editors-rich-list-lifecycle:users-6,"cross product active editors rich list
+lifecycle users 6",0,25,FALSE,0,cross-product,25,0,0 / 25
+cross-product:active-editors-ui-signals:users-6,"cross product active editors ui signals users
+6",0,25,FALSE,0,cross-product,25,0,0 / 25
+success-action-users:6,success action users 6,0,25,FALSE,0,user-document-concurrency,25,0,0 / 25
+success-profile:many-user-active-editing,success profile many user active editing,0,25,FALSE,0,user-document-concurrency,25,0,0 / 25
+success-profile-users:many-user-active-editing:6,"success profile users many user active editing
+6",0,25,FALSE,0,user-document-concurrency,25,0,0 / 25
+success-user-blocks:6:50,success user blocks 6 50,0,25,FALSE,0,lifecycle/scale,25,0,0 / 25
+cross-product:active-editors-large-doc:users-10,"cross product active editors large doc users
+10",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-large-doc:users-12,"cross product active editors large doc users
+12",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-lifecycle:users-10,"cross product active editors lifecycle users
+10",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-lifecycle:users-12,"cross product active editors lifecycle users
+12",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-rich-list-lifecycle:users-10,"cross product active editors rich list
+lifecycle users 10",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-rich-list-lifecycle:users-12,"cross product active editors rich list
+lifecycle users 12",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-ui-signals:users-10,"cross product active editors ui signals users
+10",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-ui-signals:users-12,"cross product active editors ui signals users
+12",0,10,FALSE,0,cross-product,10,0,0 / 10
+success-action-users:10,success action users 10,0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
+success-action-users:12,success action users 12,0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
+success-profile-users:many-user-active-editing:12,"success profile users many user active editing
+12",0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
+success-user-blocks:12:50,success user blocks 12 50,0,10,FALSE,0,lifecycle/scale,10,0,0 / 10
+cross-product:active-editors-large-doc:users-30,"cross product active editors large doc users
+30",0,3,FALSE,0,cross-product,3,0,0 / 3
+cross-product:active-editors-lifecycle:users-30,"cross product active editors lifecycle users
+30",0,3,FALSE,0,cross-product,3,0,0 / 3
+cross-product:active-editors-rich-list-lifecycle:users-30,"cross product active editors rich list
+lifecycle users 30",0,3,FALSE,0,cross-product,3,0,0 / 3
+cross-product:active-editors-ui-signals:users-30,"cross product active editors ui signals users
+30",0,3,FALSE,0,cross-product,3,0,0 / 3
+success-action-users:30,success action users 30,0,3,FALSE,0,user-document-concurrency,3,0,0 / 3
+success-profile-users:many-user-active-editing:30,"success profile users many user active editing
+30",0,3,FALSE,0,user-document-concurrency,3,0,0 / 3
+success-user-blocks:30:50,success user blocks 30 50,0,3,FALSE,0,lifecycle/scale,3,0,0 / 3

@@ -1,0 +1,10 @@
+ingredient,record_check,requirement_family,required_for_cross_product_count
+passed run,status == passed,completion,TRUE
+at least N browser users,userCount >= N,scale,TRUE
+at least N active editors,distinct action/operation userIndex count >= N,active editing,TRUE
+late join,late-join lifecycle event is present,lifecycle,TRUE
+save and reload,save count >= 1 and reload count >= 1,persistence,TRUE
+autosave checkpoint,autosave count >= 1 for rich/list lifecycle,persistence,TRUE
+rich text and list actions,paste + link + list indent in one record,real-user UI,TRUE
+presence and cursor signals,presence-list ok + remote-selection-cursor ok,collaboration UI,TRUE
+large document edge,block count or initial large-document profile >= 50,scale,TRUE

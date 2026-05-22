@@ -44,6 +44,9 @@ bug_outputs_path <- file.path( data_dir, "bug_outputs.csv" )
 combined_ingredient_progress_path <- file.path( data_dir, "combined_ingredient_fuzzing_progress.csv" )
 combined_ingredient_goal_progress_path <- file.path( data_dir, "combined_ingredient_fuzzing_goal_progress.csv" )
 combined_ingredient_requirements_path <- file.path( data_dir, "combined_ingredient_fuzzing_requirements.csv" )
+many_user_active_editing_progress_path <- file.path( data_dir, "many_user_active_editing_progress.csv" )
+many_user_active_editing_goal_progress_path <- file.path( data_dir, "many_user_active_editing_goal_progress.csv" )
+many_user_active_editing_requirements_path <- file.path( data_dir, "many_user_active_editing_requirements.csv" )
 combined_ingredient_profile <- "large-post-three-user-http-lifecycle"
 combined_ingredient_group <- "novelty-http-large-post-lifecycle"
 combined_ingredient_feature <- "cross-product:large-post-three-user-http-lifecycle"
@@ -55,6 +58,25 @@ combined_ingredient_related_goal_ids <- c(
 	"transport-profile:http:large-post-three-user-http-lifecycle"
 )
 combined_ingredient_target_default <- 25
+many_user_active_editing_profile <- "many-user-active-editing"
+many_user_active_editing_groups <- c(
+	"novelty-ws-many-user-active-editing",
+	"novelty-ws-twelve-user-active-rich-text",
+	"novelty-ws-thirty-user-active-editing"
+)
+many_user_active_editing_thresholds <- c( 6, 10, 12, 30 )
+many_user_active_editing_goal_ids <- c(
+	paste0( "success-action-users:", many_user_active_editing_thresholds ),
+	paste0( "success-profile-users:many-user-active-editing:", c( 6, 12, 30 ) ),
+	paste0( "cross-product:active-editors-lifecycle:users-", many_user_active_editing_thresholds ),
+	paste0( "cross-product:active-editors-rich-list-lifecycle:users-", many_user_active_editing_thresholds ),
+	paste0( "cross-product:active-editors-ui-signals:users-", many_user_active_editing_thresholds ),
+	paste0( "cross-product:active-editors-large-doc:users-", many_user_active_editing_thresholds ),
+	"success-user-blocks:6:50",
+	"success-user-blocks:12:50",
+	"success-user-blocks:30:50",
+	"success-profile:many-user-active-editing"
+)
 status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
 status_report_path <- file.path( root, status_report_rel )
 pr_progress_current_path <- file.path( pr_focus_raw_dir, "pr-progress/current-pr-progress.tsv" )
@@ -1078,6 +1100,138 @@ combined_ingredient_requirements <- tibble(
 write_csv( combined_ingredient_progress, combined_ingredient_progress_path )
 write_csv( combined_ingredient_goal_progress, combined_ingredient_goal_progress_path )
 write_csv( combined_ingredient_requirements, combined_ingredient_requirements_path )
+
+get_goal_numeric <- function( goal_id, field, default = 0 ) {
+	row <- coverage_goals %>%
+		filter( id == goal_id ) %>%
+		slice_head( n = 1 )
+	if ( nrow( row ) == 0 || ! field %in% names( row ) ) {
+		return( default )
+	}
+	value <- suppressWarnings( as.numeric( row[[ field ]][[ 1 ]] ) )
+	ifelse( is.na( value ), default, value )
+}
+
+get_feature_numeric <- function( feature_id, default = 0 ) {
+	row <- feature_counts %>%
+		filter( feature == feature_id ) %>%
+		slice_head( n = 1 )
+	if ( nrow( row ) == 0 ) {
+		return( default )
+	}
+	value <- suppressWarnings( as.numeric( row$count[[ 1 ]] ) )
+	ifelse( is.na( value ), default, value )
+}
+
+many_user_active_editing_profile_count <- profile_counts %>%
+	filter( profile == many_user_active_editing_profile ) %>%
+	slice_head( n = 1 )
+
+many_user_active_editing_progress <- tibble(
+	generated_at = with_tz( now(), "UTC" ),
+	threshold = many_user_active_editing_thresholds
+) %>%
+	rowwise() %>%
+	mutate(
+		success_action_goal = paste0( "success-action-users:", threshold ),
+		lifecycle_feature = paste0( "cross-product:active-editors-lifecycle:users-", threshold ),
+		rich_list_feature = paste0( "cross-product:active-editors-rich-list-lifecycle:users-", threshold ),
+		ui_signal_feature = paste0( "cross-product:active-editors-ui-signals:users-", threshold ),
+		large_doc_feature = paste0( "cross-product:active-editors-large-doc:users-", threshold ),
+		successful_active_editor_records = get_goal_numeric( success_action_goal, "count", 0 ),
+		successful_active_editor_target = get_goal_numeric( success_action_goal, "target", if_else( threshold >= 30, 3, if_else( threshold >= 10, 10, 25 ) ) ),
+		lifecycle_records = get_feature_numeric( lifecycle_feature, get_goal_numeric( lifecycle_feature, "count", 0 ) ),
+		rich_list_lifecycle_records = get_feature_numeric( rich_list_feature, get_goal_numeric( rich_list_feature, "count", 0 ) ),
+		ui_signal_records = get_feature_numeric( ui_signal_feature, get_goal_numeric( ui_signal_feature, "count", 0 ) ),
+		large_doc_records = get_feature_numeric( large_doc_feature, get_goal_numeric( large_doc_feature, "count", 0 ) ),
+		progress = if_else( successful_active_editor_target > 0, successful_active_editor_records / successful_active_editor_target, NA_real_ ),
+		remaining_records = pmax( successful_active_editor_target - successful_active_editor_records, 0 )
+	) %>%
+	ungroup() %>%
+	mutate(
+		group_enabled = map_lgl( threshold, ~ any( many_user_active_editing_groups %in% state$enabledGroups ) ),
+		profile_records_seen = if ( nrow( many_user_active_editing_profile_count ) > 0 ) many_user_active_editing_profile_count$records_seen[[ 1 ]] else 0,
+		profile_successful_records = if ( nrow( many_user_active_editing_profile_count ) > 0 ) many_user_active_editing_profile_count$successful_records[[ 1 ]] else 0,
+		profile_success_rate = if ( nrow( many_user_active_editing_profile_count ) > 0 ) many_user_active_editing_profile_count$success_rate[[ 1 ]] else NA_real_
+	)
+
+many_user_active_existing_goals <- coverage_goals %>%
+	filter( id %in% many_user_active_editing_goal_ids ) %>%
+	select( id, label, count, target, met, progress, goal_family )
+
+many_user_active_missing_goals <- tibble( id = many_user_active_editing_goal_ids ) %>%
+	anti_join( many_user_active_existing_goals, by = "id" ) %>%
+	mutate(
+		label = str_replace_all( id, "[-:]", " " ),
+		count = map_dbl( id, get_feature_numeric ),
+		target = case_when(
+			str_detect( id, "30" ) ~ 3,
+			str_detect( id, "10|12" ) ~ 10,
+			TRUE ~ 25
+		),
+		met = count >= target,
+		progress = if_else( target > 0, count / target, NA_real_ ),
+		goal_family = case_when(
+			str_starts( id, "cross-product:" ) ~ "cross-product",
+			str_detect( id, "blocks" ) ~ "lifecycle/scale",
+			TRUE ~ "user-document-concurrency"
+		)
+	)
+
+many_user_active_editing_goal_progress <- bind_rows(
+	many_user_active_existing_goals,
+	many_user_active_missing_goals
+) %>%
+	mutate(
+		count = as.numeric( count ),
+		target = as.numeric( target ),
+		remaining = pmax( target - count, 0 ),
+		progress_capped = pmin( progress, 1 ),
+		count_target = paste0( comma( count ), " / ", comma( target ) ),
+		label = str_wrap( label, width = 46 )
+	) %>%
+	arrange( progress_capped, desc( remaining ), label )
+
+many_user_active_editing_requirements <- tibble(
+	ingredient = c(
+		"passed run",
+		"at least N browser users",
+		"at least N active editors",
+		"late join",
+		"save and reload",
+		"autosave checkpoint",
+		"rich text and list actions",
+		"presence and cursor signals",
+		"large document edge"
+	),
+	record_check = c(
+		"status == passed",
+		"userCount >= N",
+		"distinct action/operation userIndex count >= N",
+		"late-join lifecycle event is present",
+		"save count >= 1 and reload count >= 1",
+		"autosave count >= 1 for rich/list lifecycle",
+		"paste + link + list indent in one record",
+		"presence-list ok + remote-selection-cursor ok",
+		"block count or initial large-document profile >= 50"
+	),
+	requirement_family = c(
+		"completion",
+		"scale",
+		"active editing",
+		"lifecycle",
+		"persistence",
+		"persistence",
+		"real-user UI",
+		"collaboration UI",
+		"scale"
+	),
+	required_for_cross_product_count = TRUE
+)
+
+write_csv( many_user_active_editing_progress, many_user_active_editing_progress_path )
+write_csv( many_user_active_editing_goal_progress, many_user_active_editing_goal_progress_path )
+write_csv( many_user_active_editing_requirements, many_user_active_editing_requirements_path )
 
 action_counts <- imap_dfr(
 	state$successfulActionCountsByProfile,
@@ -2926,6 +3080,133 @@ write_plot(
 	height = 5.7
 )
 
+many_user_active_progress_long <- many_user_active_editing_progress %>%
+	select(
+		threshold,
+		successful_active_editor_records,
+		lifecycle_records,
+		rich_list_lifecycle_records,
+		ui_signal_records,
+		large_doc_records,
+		successful_active_editor_target
+	) %>%
+	pivot_longer(
+		cols = c(
+			successful_active_editor_records,
+			lifecycle_records,
+			rich_list_lifecycle_records,
+			ui_signal_records,
+			large_doc_records
+		),
+		names_to = "metric",
+		values_to = "records"
+	) %>%
+	mutate(
+		metric = recode(
+			metric,
+			successful_active_editor_records = "successful active-editor records",
+			lifecycle_records = "active editors + lifecycle",
+			rich_list_lifecycle_records = "rich/list lifecycle",
+			ui_signal_records = "presence/cursor signals",
+			large_doc_records = "large-document edge"
+		),
+		threshold_label = paste0( threshold, "+ active editors" ),
+		progress = if_else( successful_active_editor_target > 0, records / successful_active_editor_target, NA_real_ ),
+		progress_capped = pmin( progress, 1 ),
+		count_target = paste0( comma( records ), " / ", comma( successful_active_editor_target ) )
+	)
+
+write_plot(
+	"many-user-active-editing-progress.png",
+	ggplot( many_user_active_progress_long, aes( x = progress_capped, y = reorder( metric, progress_capped ), color = threshold_label ) ) +
+		geom_segment( aes( x = 0, xend = progress_capped, yend = reorder( metric, progress_capped ) ), linewidth = 1.1, alpha = 0.66 ) +
+		geom_point( size = 3, alpha = 0.86 ) +
+		geom_text(
+			aes( label = count_target ),
+			hjust = -0.1,
+			vjust = 0.5,
+			size = 2.8,
+			show.legend = FALSE
+		) +
+		facet_wrap( vars( threshold_label ), ncol = 2 ) +
+		scale_x_continuous( labels = percent_format( accuracy = 1 ), limits = c( 0, 1 ), expand = expansion( mult = c( 0.01, 0.28 ) ) ) +
+		scale_color_brewer( palette = "Dark2" ) +
+		labs(
+			title = "Many-user active-editing progress",
+			subtitle = "Counts require distinct editing users, not only users present in the room.",
+			x = "progress toward active-editor target",
+			y = NULL,
+			color = "threshold",
+			caption = "The rich/list, UI-signal, and large-document rows are strict cross-products; separate rich-text or many-user lane hits do not increment them."
+		) +
+		theme_rtc() +
+		theme( legend.position = "none" ),
+	width = 12,
+	height = 7
+)
+
+many_user_active_cross_product_plot <- many_user_active_editing_goal_progress %>%
+	filter( str_starts( id, "cross-product:active-editors" ) ) %>%
+	mutate( label = str_wrap( label, width = 44 ) )
+
+write_plot(
+	"many-user-active-editing-cross-products.png",
+	ggplot( many_user_active_cross_product_plot, aes( x = progress_capped, y = reorder( label, progress_capped ), color = goal_family ) ) +
+		geom_segment( aes( x = 0, xend = progress_capped, yend = reorder( label, progress_capped ) ), linewidth = 1.1, alpha = 0.7 ) +
+		geom_point( aes( shape = met, size = target ), alpha = 0.86 ) +
+		geom_text(
+			aes( label = count_target ),
+			hjust = -0.1,
+			vjust = 0.5,
+			size = 2.75,
+			show.legend = FALSE
+		) +
+		scale_x_continuous( labels = percent_format( accuracy = 1 ), limits = c( 0, 1 ), expand = expansion( mult = c( 0.01, 0.24 ) ) ) +
+		scale_color_brewer( palette = "Dark2" ) +
+		scale_shape_manual( values = c( "FALSE" = 17, "TRUE" = 16 ) ) +
+		scale_size_continuous( labels = comma, range = c( 2.3, 5.4 ) ) +
+		labs(
+			title = "Many-user active-editing cross-product goals",
+			x = "progress toward target",
+			y = NULL,
+			color = "goal family",
+			shape = "met",
+			size = "target",
+			caption = "These goals track users who actually edited plus lifecycle, rich/list, collaboration UI, and large-document requirements in the same successful record."
+		) +
+		theme_rtc(),
+	width = 12,
+	height = 7.2
+)
+
+many_user_active_requirement_plot <- many_user_active_editing_requirements %>%
+	mutate(
+		ingredient = factor( ingredient, levels = rev( ingredient ) ),
+		record_check = str_wrap( record_check, width = 40 )
+	)
+
+write_plot(
+	"many-user-active-editing-requirements.png",
+	ggplot( many_user_active_requirement_plot, aes( x = "required for one count", y = ingredient, fill = requirement_family ) ) +
+		geom_tile( color = "white", linewidth = 0.7, width = 0.9, height = 0.78 ) +
+		geom_text( aes( label = record_check ), size = 3, color = "gray15" ) +
+		scale_fill_brewer( palette = "Set3" ) +
+		labs(
+			title = "Many-user active-editing count criteria",
+			x = NULL,
+			y = NULL,
+			fill = "ingredient family",
+			caption = "N is the threshold shown in the progress graphs: 6, 10, 12, or 30 active editors."
+		) +
+		theme_rtc() +
+		theme(
+			axis.text.x = element_blank(),
+			panel.grid.major = element_blank()
+		),
+	width = 10.5,
+	height = 6
+)
+
 feature_category_plot <- feature_categories %>%
 	mutate(
 		category_family = case_when(
@@ -3696,6 +3977,12 @@ summary_lines <- c(
 	paste0( "combined_ingredient_remaining: ", combined_ingredient_progress$remaining_records[[ 1 ]] ),
 	paste0( "combined_ingredient_group_enabled: ", combined_ingredient_progress$group_enabled[[ 1 ]] ),
 	paste0( "combined_ingredient_profile_successful_records: ", combined_ingredient_progress$profile_successful_records[[ 1 ]] ),
+	paste0( "many_user_active_editing_profile_successful_records: ", many_user_active_editing_progress$profile_successful_records[[ 1 ]] ),
+	paste0( "many_user_active_editing_success_action_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( successful_active_editor_records ) ),
+	paste0( "many_user_active_editing_success_action_users_12: ", many_user_active_editing_progress %>% filter( threshold == 12 ) %>% pull( successful_active_editor_records ) ),
+	paste0( "many_user_active_editing_success_action_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( successful_active_editor_records ) ),
+	paste0( "many_user_active_editing_rich_list_users_12: ", many_user_active_editing_progress %>% filter( threshold == 12 ) %>% pull( rich_list_lifecycle_records ) ),
+	paste0( "many_user_active_editing_large_doc_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( large_doc_records ) ),
 	paste0( "pr_review_events: ", nrow( pr_events ) ),
 	paste0( "pr_suggested_net_loc_snapshots: ", n_distinct( pr_suggested_loc$timestamp ) ),
 	paste0( "pr_suggested_net_loc_latest_total: ", ifelse( nrow( pr_suggested_loc ) > 0, pr_suggested_loc %>% filter( timestamp == max( timestamp, na.rm = TRUE ) ) %>% summarise( total = sum( net_loc, na.rm = TRUE ) ) %>% pull( total ), NA ) ),
