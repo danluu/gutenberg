@@ -1,15 +1,11 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380,high,no,Cycle380 owner evidence is runtime-held-consumed and superseded by the fresh local PR07C owner replay.,PR07C/HOLD-07C/stale-cycle380,"Cycle380 owner evidence is runtime-held-consumed and superseded by the fresh
-local PR07C owner replay."
-launch-owner-matrix,PR07C/HOLD-07C/readiness-resolved,high,no,Do not spend a second heavy job while the fresh local owner replay can be consumed; rerun only if that artifact is missing.,PR07C/HOLD-07C/readiness-resolved,"Do not spend a second heavy job while the fresh local owner replay can be
-consumed; rerun only if that artifact is missing."
-publish-ready,reload-hydration@b01a3a21e2c/product,high,no,Missing fresh all-merged exact-stack green or replay-backed downscope for reload and large HTTP rows.,reload-hydration@b01a3a21e2c/product,"Missing fresh all-merged exact-stack green or replay-backed downscope for reload
-and large HTTP rows."
-repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates current exact green feedback; reopen only if newer current-feedback reintroduces promotion_blocked.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates current exact green feedback; reopen only if newer
-current-feedback reintroduces promotion_blocked."
-publish-ready,benchmark-canary-fuzzer-gap/large-post-three-user-http,high,no,"Benchmark and coverage evidence are gates, not product PR publication targets.",benchmark-canary-fuzzer-gap/large-post-three-user-http,"Benchmark and coverage evidence are gates, not product PR publication targets."
+launch-owner-matrix,PR07C/HOLD-07C/stale-consumed,high,no,Do not spend capacity relaunching old consumed owner evidence or stale queued jobs.,PR07C/HOLD-07C/stale-consumed,"Do not spend capacity relaunching old consumed owner evidence or stale queued
+jobs."
+publish-ready,reload-hydration@b01a3a21e2c/product,high,no,Manifest validation is candidate evidence only; promotion needs fresh exact-stack green or replay-backed downscope.,reload-hydration@b01a3a21e2c/product,"Manifest validation is candidate evidence only; promotion needs fresh
+exact-stack green or replay-backed downscope."
 publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,No owner evidence or product-owned first-loss replay is present.,pre-save-search-live-collapse@de2b5502da0,No owner evidence or product-owned first-loss replay is present.
 publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,No exact suffix-divergence replay or owner evidence is present.,rich-text-suffix-corruption@a2d47a072e1,No exact suffix-divergence replay or owner evidence is present.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
+repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates exact green feedback; reopen only if newer current-feedback reintroduces promotion_blocked.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates exact green feedback; reopen only if newer
+current-feedback reintroduces promotion_blocked."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by the already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by the already published PR06B minimal branch.
 publish-ready,ready/rtc-pr15a-pr15b-pr15c-originals,high,no,"Superseded by already published PR14B-based PR15A, PR15B, and PR15C branches.",ready/rtc-pr15a-pr15b-pr15c-originals,"Superseded by already published PR14B-based PR15A, PR15B, and PR15C branches."
-publish-ready,current-push-manifest,high,no,Current push manifest contains only the header and no publishable rows.,current-push-manifest,Current push manifest contains only the header and no publishable rows.
