@@ -1,14 +1,15 @@
 # RTC Jetstream2 Maintainer PR Snapshot
 
-Snapshot time: `2026-05-22T15:22:56Z`
+Snapshot time: `2026-05-22T18:11:08Z`
 
 This is a one-time maintainer review snapshot of the current best RTC fix
 split. No GitHub pull requests have been opened from this document.
 
 The current validated merged branch is
-`rtc-pr-stack-20260522T150233Z-all-merged-144538-large-canary-stabilization`.
-It supersedes the `rtc-pr-stack-20260522T074557Z-*` snapshot, the
-`rtc-pr-stack-20260520T141903Z-*` snapshot, and the known-bad
+`rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots`.
+It supersedes the `rtc-pr-stack-20260522T150233Z-*` snapshot, the
+`rtc-pr-stack-20260522T074557Z-*` snapshot, the `rtc-pr-stack-20260520T141903Z-*`
+snapshot, and the known-bad
 `rtc-pr-stack-20260519T214027Z-validated-no-harness` branch that failed the
 large-post three-user HTTP benchmark row. The older
 `rtc-pr-stack-20260519T161502Z-*` snapshot remains below for historical
@@ -21,7 +22,7 @@ git ls-remote --heads danluu 'rtc-pr-stack-20260522T*-all-merged*' 'rtc-pr-stack
 ```
 
 The command confirmed that the linked branch resolved to
-`80cae0b38df6c983b4562abd9efb575d6f336bcb` after the benchmark canary
+`b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638` after the benchmark canary
 completed.
 
 Source status report:
@@ -33,18 +34,22 @@ Maintainers who want to test the current reviewable product/test code together
 should use:
 
 - Branch:
-  [`rtc-pr-stack-20260522T150233Z-all-merged-144538-large-canary-stabilization`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260522T150233Z-all-merged-144538-large-canary-stabilization)
+  [`rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots)
 - Commit:
-  `80cae0b38df6c983b4562abd9efb575d6f336bcb`
+  `b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638`
 - Compare against the validated base:
-  [`tested-base...large-canary-stabilization`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T214027Z-tested-base...rtc-pr-stack-20260522T150233Z-all-merged-144538-large-canary-stabilization)
-- Diff size against base: `27 files, +3920 / -120`
+  [`tested-base...pr07c-reload-record-snapshots`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260519T214027Z-tested-base...rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots)
+- Compare against the prior green stack:
+  [`large-canary-stabilization...pr07c-reload-record-snapshots`](https://github.com/danluu/gutenberg/compare/rtc-pr-stack-20260522T150233Z-all-merged-144538-large-canary-stabilization...rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots)
+- Diff size against base: `28 files, +4275 / -154`
+- Diff size against prior green stack: `6 files, +355 / -34`
 
 This branch carries the earlier fixed RTC stack plus the saved-CRDT hydration,
 stale save-response, reload/persistence, large-document convergence, and
 benchmark canary unsoundness fixes, then adds the narrow large HTTP
 collaboration canary stabilization from the `20260522T144538Z` finalization
-stack. It does not reuse the known-bad
+stack and the `PR07C` reload record snapshot preservation delta. It does not
+reuse the known-bad
 `rtc-pr-stack-20260519T214027Z-validated-no-harness` branch as a passing
 candidate.
 
@@ -52,7 +57,7 @@ Benchmark canary result:
 
 | Run | Branch rows | Result |
 | --- | ---: | --- |
-| `all-merged-144538-large-canary-stabilization-localdeps-harness-20260522T150233Z` | fixed `30/30` | pass |
+| `all-merged-pr07c-reload-record-snapshots-localdeps-harness-20260522T175152Z` | fixed `30/30` | pass |
 
 The benchmark canary is green because the fuzzer and promotion loops are
 expected to cover these product behaviors before a maintainer snapshot is
@@ -174,10 +179,10 @@ candidate, or investigation support rather than a fileable product PR.
 ## Verification Notes
 
 - The current validated branch is
-  `rtc-pr-stack-20260522T150233Z-all-merged-144538-large-canary-stabilization`
-  at `80cae0b38df6c983b4562abd9efb575d6f336bcb`. The maintainer snapshot was
+  `rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots`
+  at `b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638`. The maintainer snapshot was
   advanced only after the local benchmark canary run
-  `all-merged-144538-large-canary-stabilization-localdeps-harness-20260522T150233Z`
+  `all-merged-pr07c-reload-record-snapshots-localdeps-harness-20260522T175152Z`
   recorded 30 fixed-stack rows and 0 failures, including
   `large-post-three-user-http` passing `2/2`.
 - The original `PR06B` branch failed that focused reload gate by persisting the
@@ -186,11 +191,11 @@ candidate, or investigation support rather than a fileable product PR.
 - The WebSocket benchmark row is part of the fresh exact-stack canary and
   passed `2/2` after the isolated benchmark environment resolved the
   `test/e2e` workspace dependency layout correctly.
-- The all-ready merged branch was produced locally from the ready finalization
-  stack and the narrow large HTTP collaboration canary stabilization ref. The
-  current all-merged large-canary-stabilization canary supersedes the older
-  unsoundness-base-fix branch; `git diff --check` against the snapshot base
-  returned no output during the canary construction cycle.
+- The current all-merged branch was produced locally from the prior green
+  stack plus the narrow `PR07C` reload record snapshot delta. The conflict
+  resolution preserved the current CRDT content snapshot path and added the
+  title/excerpt record snapshot preservation. `git diff --check` against the
+  prior green stack returned no output during the canary construction cycle.
 - The older all-ready merged branch remains historical context only. This
   snapshot still does not claim upstream rebase or full CI.
 - Branches in the artifact table are deliberately linked for inspectability,
