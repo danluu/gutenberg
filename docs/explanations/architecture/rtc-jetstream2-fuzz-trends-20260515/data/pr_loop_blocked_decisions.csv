@@ -1,17 +1,18 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Queued browser matrix is duplicate heavy work under current evidence; relaunch only if newer product-owned owner evidence appears.,PR07C/HOLD-07C,"Queued browser matrix is duplicate heavy work under current evidence; relaunch
-only if newer product-owned owner evidence appears."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Keep held until newer conclusive product-owned owner evidence or exact product-failure replay changes ownership.,ready/rtc-pr07c-reload-record-snapshots,"Keep held until newer conclusive product-owned owner evidence or exact
-product-failure replay changes ownership."
-publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,No fresh exact-stack green title-reload-http and existing-post-crdt-http evidence with large HTTP coverage retained.,deferred/rtc-reload-hydration-20260521T223947Z,"No fresh exact-stack green title-reload-http and existing-post-crdt-http
-evidence with large HTTP coverage retained."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical minimal PR06B branch is already published; broader branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical minimal PR06B branch is already published; broader branch needs fresh
-product advantage."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Keep held until the PR07C owner matrix or exact product-failure replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Keep held until the PR07C owner matrix or exact product-failure replay proves
+product ownership."
+launch-exact-stack,deferred/rtc-reload-hydration-20260521T223947Z,P1,no,Defer heavy exact-stack execution until a PR slot frees; publication remains blocked without title-reload-http existing-post-crdt-http and large-http-lifecycle evidence.,deferred/rtc-reload-hydration-20260521T223947Z,"Defer heavy exact-stack execution until a PR slot frees; publication
+remains blocked without title-reload-http existing-post-crdt-http and
+large-http-lifecycle evidence."
+publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,No fresh exact-stack green title-reload-http and existing-post-crdt-http evidence exists for the adopted candidate.,deferred/rtc-reload-hydration-20260521T223947Z,"No fresh exact-stack green title-reload-http and existing-post-crdt-http
+evidence exists for the adopted candidate."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical minimal PR06B branch is already published; the broader branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical minimal PR06B branch is already published; the broader branch needs
+fresh product advantage."
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A variant is already published; original-base branch is
 duplicate under current evidence."
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B variant is already published; original-base branch is
 duplicate under current evidence."
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C variant is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C variant is already published; original-base branch is
 duplicate under current evidence."
-launch-heavy-pr-fanout,broad-pr-analysis-fanout,P0,no,Only one bounded product slot is justified and discovery protection is not yet hard; avoid broad heavy PR fanout.,broad-pr-analysis-fanout,"Only one bounded product slot is justified and discovery protection is not yet
-hard; avoid broad heavy PR fanout."
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,Reject broad heavy PR fanout; current headroom supports only bounded product slots plus cheap analysis or manifests.,broad-pr-analysis-fanout,"Reject broad heavy PR fanout; current headroom supports only bounded product
+slots plus cheap analysis or manifests."
