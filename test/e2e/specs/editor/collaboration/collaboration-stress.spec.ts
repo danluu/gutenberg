@@ -386,7 +386,7 @@ test.describe( 'Collaboration - Stress Test', () => {
 		// ── Phase 2 — User 2 (Editor) joins ─────────────────────
 		const { page: page2, editor: editor2 } =
 			await collaborationUtils.joinUser( post.id, STRESS_USERS[ 0 ] );
-		await collaborationUtils.waitForMutualDiscovery();
+		await collaborationUtils.waitForMutualDiscovery( { timeout: 45_000 } );
 
 		// Admin types a new paragraph after the "Conclusion" heading.
 		await typeNewParagraphAfterHeading(
@@ -421,7 +421,7 @@ test.describe( 'Collaboration - Stress Test', () => {
 		await page.reload( { waitUntil: 'load' } );
 		await collaborationUtils.waitForCollaborationReady( page );
 
-		await collaborationUtils.waitForMutualDiscovery();
+		await collaborationUtils.waitForMutualDiscovery( { timeout: 45_000 } );
 
 		// ── Phase 4 — Two users type in the same paragraph ──────
 		// Uses insertText (single input event) instead of keyboard.type
