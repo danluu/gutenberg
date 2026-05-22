@@ -14,5 +14,7 @@ advantage"
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A branch is already published; original-base branch is duplicate,ready/rtc-pr15a-fallback-group-move-green,PR14B-based PR15A branch is already published; original-base branch is duplicate
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B branch is already published; original-base branch is duplicate,ready/rtc-pr15b-fallback-group-insert-anchor-green,PR14B-based PR15B branch is already published; original-base branch is duplicate
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C branch is already published; original-base branch is duplicate,ready/rtc-pr15c-fallback-group-delete-green,PR14B-based PR15C branch is already published; original-base branch is duplicate
+publish-ready,current-push-manifest,P1,no,controller push manifest contains only the header; there is no ready publication row to consume,current-push-manifest,"controller push manifest contains only the header; there is no ready publication
+row to consume"
 launch-branch-repair,broad-pr-analysis-fanout,P0,no,specific blocker-removal actions exist; broad fanout burns PR capacity without direct product progress,broad-pr-analysis-fanout,"specific blocker-removal actions exist; broad fanout burns PR capacity without
 direct product progress"
