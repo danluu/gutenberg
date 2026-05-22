@@ -1,15 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,current-push-manifest,P0,no,Current manifest has no new publishable rows; do not spend PR capacity on an empty publication.,current-push-manifest,"Current manifest has no new publishable rows; do not spend PR capacity on an
-empty publication."
+publish-ready,current-push-manifest,P0,no,Current controller push manifest has only the header and no publishable rows.,current-push-manifest,Current controller push manifest has only the header and no publishable rows.
 publish-ready,reload-hydration@b01a3a21e2c,P0,no,No fresh exact-stack green replay or replay-backed downscope exists.,reload-hydration@b01a3a21e2c,No fresh exact-stack green replay or replay-backed downscope exists.
+launch-owner-matrix,PR07C/HOLD-07C/duplicate-relaunch,P0,no,Deny duplicate owner-matrix relaunches after the queued pass is consumed unless newer owner evidence appears.,PR07C/HOLD-07C/duplicate-relaunch,"Deny duplicate owner-matrix relaunches after the queued pass is consumed unless
+newer owner evidence appears."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until PR07C owner matrix or exact PR07C replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until PR07C owner matrix or exact PR07C replay proves product
+ownership."
 publish-ready,benchmark-canary-fuzzer-gap/current-stack,P0,no,Publication remains blocked until live current-feedback.tsv records exact branch and commit green rows for large-post and reload checks.,benchmark-canary-fuzzer-gap/current-stack,"Publication remains blocked until live current-feedback.tsv records exact branch
 and commit green rows for large-post and reload checks."
-launch-branch-repair,benchmark-canary-fuzzer-gap/generic-exact-rerun,P0,no,Concrete replacement repair evidence exists; another generic exact-stack rerun is churn.,benchmark-canary-fuzzer-gap/generic-exact-rerun,"Concrete replacement repair evidence exists; another generic exact-stack rerun
-is churn."
-launch-owner-matrix,PR07C/HOLD-07C/duplicate-relaunch,P0,no,"After the single readiness-resolved pass is consumed, reject duplicate owner-matrix relaunches until newer owner evidence appears.",PR07C/HOLD-07C/duplicate-relaunch,"After the single readiness-resolved pass is consumed, reject duplicate
-owner-matrix relaunches until newer owner evidence appears."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until the owner matrix or exact PR07C replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until the owner matrix or exact PR07C replay proves product
-ownership."
+launch-branch-repair,benchmark-canary-fuzzer-gap/generic-exact-rerun,P0,no,Concrete replacement repair evidence exists; another generic exact-stack rerun is diagnostic churn.,benchmark-canary-fuzzer-gap/generic-exact-rerun,"Concrete replacement repair evidence exists; another generic exact-stack rerun
+is diagnostic churn."
 publish-ready,pre-save-search-live-collapse@de2b5502da0,P0,no,No owner evidence or product-owned first-loss replay exists.,pre-save-search-live-collapse@de2b5502da0,No owner evidence or product-owned first-loss replay exists.
 publish-ready,rich-text-suffix-corruption@a2d47a072e1,P0,no,No product-owned suffix-divergence or owner evidence exists.,rich-text-suffix-corruption@a2d47a072e1,No product-owned suffix-divergence or owner evidence exists.
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal.
