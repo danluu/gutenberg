@@ -7,12 +7,12 @@ PR progress items,diagnostic-ready,deferred-manifest,medium,2
 PR progress items,held-by-controller,ready-product-pr,high,5
 PR progress items,published,ready-product-pr,high,13
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
-controller decisions,allowed,control decision,P0,16
+controller decisions,allowed,control decision,P0,14
 controller decisions,blocked,control decision,P0,4
-controller decisions,allowed,control decision,P1,2
-controller decisions,allowed,control decision,high,10
-controller decisions,blocked,control decision,high,5
-controller decisions,allowed,control decision,medium,4
+controller decisions,allowed,control decision,P1,1
+controller decisions,allowed,control decision,high,12
+controller decisions,blocked,control decision,high,4
+controller decisions,allowed,control decision,medium,2
 controller decisions,blocked,control decision,medium,2
 critical blockers,active,control-feedback,high,1
 critical blockers,held,deferred-family,high,1
@@ -25,5 +25,6 @@ critical job queue,active,codex-analysis,high,2
 critical job queue,gated,codex-analysis,high,1
 critical lanes,queued,browser-e2e,lane,1
 critical lanes,queued,codex-analysis,lane,2
-active sessions,active,analysis,analysis,5
+active sessions,active,analysis,analysis,4
 active sessions,active,critical-continuation,critical-continuation,2
+active sessions,active,finalization,finalization,1

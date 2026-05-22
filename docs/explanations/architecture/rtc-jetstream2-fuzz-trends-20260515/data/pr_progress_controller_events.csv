@@ -1603,3 +1603,10 @@ timestamp,message,event_type
 2026-05-22T20:25:00Z,launched persona controller round 20260522T202459Z,persona round launched
 2026-05-22T20:25:00Z,not launching controller action for PR17/stale-crdt-cas-background-delivery@c49e8cd8d176: active PR jobs 2 >= max 2,heavy PR job deferred: PR concurrency
 2026-05-22T20:25:01Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:27:05Z,launched controller action job for repair-branch PR17/stale-crdt-cas-background-delivery@c49e8cd8d176 at 20260522T202705Z,other
+2026-05-22T20:27:05Z,controller action repair-branch PR17/stale-crdt-cas-background-delivery@c49e8cd8d176 20260522T202705Z,launch
+2026-05-22T20:27:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:29:09Z,launched controller action job for launch-branch-repair rtc-table-query-array-crdt at 20260522T202909Z,other
+2026-05-22T20:29:09Z,controller action launch-branch-repair rtc-table-query-array-crdt 20260522T202909Z,launch
+2026-05-22T20:29:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:31:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
