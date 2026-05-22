@@ -418,5 +418,5 @@ bucket,source,blocker_class,events,targets
 2026-05-22T20:30:00Z,PR controller,single-flight/concurrency,3,PR07C/HOLD-07C
 2026-05-22T20:30:00Z,critical-path launches,benchmark canary/exact-stack,1,benchmark-canary-fuzzer-gap
 2026-05-22T20:30:00Z,critical-path launches,critical-path launch,5,unknown; productive-analysis-action
-2026-05-22T21:00:00Z,PR controller,single-flight/concurrency,4,PR07C/HOLD-07C
-2026-05-22T21:00:00Z,critical-path launches,critical-path launch,2,productive-analysis-action
+2026-05-22T21:00:00Z,PR controller,single-flight/concurrency,7,PR07C/HOLD-07C
+2026-05-22T21:00:00Z,critical-path launches,critical-path launch,3,productive-analysis-action

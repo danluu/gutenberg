@@ -101,7 +101,7 @@ edit-nested-paragraph,63,multi-reload-lifecycle
 reparse-edited-content,59,block-gauntlet
 insert-paragraph,56,common-blocks
 insert-heading,54,parser-transform
-append-paragraph,50,many-user-lifecycle
+append-paragraph,53,many-user-lifecycle
 edit-common-block-attributes,49,common-blocks
 move-block-into-group,46,common-blocks
 insert-common-block,46,common-blocks
@@ -110,13 +110,13 @@ delete-block,44,parser-transform
 concurrent-paragraphs,43,multi-reload-lifecycle
 delete-nested-block,43,multi-reload-lifecycle
 insert-block-gauntlet-block,43,common-blocks
-late-join-post-action,41,many-user-lifecycle
-insert-heading,40,many-user-lifecycle
+late-join-post-action,42,many-user-lifecycle
+insert-heading,41,many-user-lifecycle
 edit-table-array-attributes,40,many-user-lifecycle
 edit-block-gauntlet-attributes,40,common-blocks
+edit-paragraph,39,many-user-lifecycle
+ui-type-title,39,many-user-lifecycle
 delete-block,38,multi-reload-lifecycle
-edit-paragraph,38,many-user-lifecycle
-ui-type-title,38,many-user-lifecycle
 insert-heading,34,multi-reload-lifecycle
 move-block,34,parser-transform
 edit-table-array-attributes,33,multi-reload-lifecycle
@@ -127,7 +127,7 @@ insert-nested-group,28,multi-reload-lifecycle
 move-block-into-group,28,multi-reload-lifecycle
 delete-block,28,common-blocks
 insert-paragraph,26,multi-reload-lifecycle
-assert-presence-list,23,many-user-lifecycle
+assert-presence-list,25,many-user-lifecycle
 concurrent-paragraphs,23,many-user-lifecycle
 edit-nested-paragraph,22,common-blocks
 insert-paragraph,18,full

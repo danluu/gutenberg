@@ -1,22 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale progress head is superseded by current branch head 2f8247258316 and fresh green owner evidence.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale progress head is superseded by current branch head 2f8247258316 and fresh
-green owner evidence."
-repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Older product-owned repair hold is superseded by the repaired head and green owner replay.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Older product-owned repair hold is superseded by the repaired head and green
-owner replay."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner evidence is already consumed and conclusive; relaunch only if newer red evidence appears.,PR07C/HOLD-07C,"Owner evidence is already consumed and conclusive; relaunch only if newer red
-evidence appears."
-publish-ready,PR17/stale-crdt-cas-background-delivery@c49e8cd8d176,P0,no,"Current benchmark-canary exact-stack rows are red, so promotion and snapshot publication remain blocked.",PR17/stale-crdt-cas-background-delivery@c49e8cd8d176,"Current benchmark-canary exact-stack rows are red, so promotion and snapshot
-publication remain blocked."
-clear-blocker,benchmark-canary-fuzzer-gap/exact-green-ledger,P0,no,Older green ledger rows are stale relative to newer exact-stack-red PR17 feedback.,benchmark-canary-fuzzer-gap/exact-green-ledger,"Older green ledger rows are stale relative to newer exact-stack-red PR17
-feedback."
-launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,no,"Valid heavy replay target, but do not duplicate or consume another heavy PR slot while PR17 repair is active; revisit after the current product slot frees.",reload-hydration@b01a3a21e2c/exact-stack,"Valid heavy replay target, but do not duplicate or consume another heavy PR slot
-while PR17 repair is active; revisit after the current product slot frees."
-publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,Product publication needs fresh all-merged title-reload plus existing-post or persistence reload plus large HTTP lifecycle green replay or replay-backed downscope.,reload-hydration@b01a3a21e2c/product,"Product publication needs fresh all-merged title-reload plus existing-post
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale progress head is superseded by actual branch head 2f8247258316bde60869c06c383090904e9426bd and newer green owner evidence.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale progress head is superseded by actual branch head
+2f8247258316bde60869c06c383090904e9426bd and newer green owner evidence."
+repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Older product-owned repair rows are superseded by the repaired current head and green owner replay.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Older product-owned repair rows are superseded by the repaired current head and
+green owner replay."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Do not launch duplicate owner-matrix work because the fresh replay is already conclusive.,PR07C/HOLD-07C,"Do not launch duplicate owner-matrix work because the fresh replay is already
+conclusive."
+publish-ready,PR17/stale-crdt-cas-background-delivery@c49e8cd8d17682130736cd885565b900a8d954b2,P0,no,Latest benchmark-canary exact-stack rows are red; publication requires fresh exact green or a narrower replay-backed replacement.,PR17/stale-crdt-cas-background-delivery@c49e8cd8d17682130736cd885565b900a8d954b2,"Latest benchmark-canary exact-stack rows are red; publication requires fresh
+exact green or a narrower replay-backed replacement."
+repair-ready,benchmark-canary-fuzzer-gap/exact-green-ledger,P0,no,Older green ledger rows are stale relative to newer exact-stack red PR17 evidence.,benchmark-canary-fuzzer-gap/exact-green-ledger,"Older green ledger rows are stale relative to newer exact-stack red PR17
+evidence."
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,"Valid later, but do not launch duplicate heavy replay while PR17 repair and reload single-flight work are active.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,"Valid later, but do not launch duplicate heavy replay while PR17 repair and
+reload single-flight work are active."
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,P0,no,Product publication needs fresh all-merged title reload plus existing-post or persistence reload plus large HTTP lifecycle green replay or replay-backed downscope.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,"Product publication needs fresh all-merged title reload plus existing-post
 or persistence reload plus large HTTP lifecycle green replay or replay-backed
 downscope."
 publish-ready,pre-save-search-live-collapse@de2b5502da0/product,medium,no,Missing owner or product first-loss evidence.,pre-save-search-live-collapse@de2b5502da0/product,Missing owner or product first-loss evidence.
 publish-ready,rich-text-suffix-corruption@a2d47a072e1/product,medium,no,Missing focused exact replay or owner evidence.,rich-text-suffix-corruption@a2d47a072e1/product,Missing focused exact replay or owner evidence.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by the already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by the already published PR06B minimal branch.
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by the already published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by the already published PR15A-on-PR14B branch.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by the already published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by the already published PR15B-on-PR14B branch.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by the already published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by the already published PR15C-on-PR14B branch.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by already published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by already published PR15A-on-PR14B branch.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by already published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by already published PR15B-on-PR14B branch.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by already published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by already published PR15C-on-PR14B branch.
