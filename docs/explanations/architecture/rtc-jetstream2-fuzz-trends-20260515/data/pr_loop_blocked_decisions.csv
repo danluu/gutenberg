@@ -1,10 +1,10 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"no fresh all-green exact stack exists for title reload, existing-post or persistence reload, and large HTTP",reload-hydration@fa801a6aa13/promotion,"no fresh all-green exact stack exists for title reload, existing-post or
-persistence reload, and large HTTP"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,duplicate heavy browser owner matrix is blocked until owner evidence newer than Cycle380 or exact product-failure replay exists,PR07C/HOLD-07C,"duplicate heavy browser owner matrix is blocked until owner evidence newer than
-Cycle380 or exact product-failure replay exists"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until newer owner evidence or exact product-failure replay proves product ownership,ready/rtc-pr07c-reload-record-snapshots,"keep held until newer owner evidence or exact product-failure replay proves
-product ownership"
+launch-owner-matrix,PR07C/HOLD-07C/duplicate-relaunch,P0,no,persona reports and current progress warn that duplicate owner-matrix work would churn consumed Cycle380 evidence,PR07C/HOLD-07C/duplicate-relaunch,"persona reports and current progress warn that duplicate owner-matrix work would
+churn consumed Cycle380 evidence"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until the owner matrix or exact product-failure replay proves product ownership and ordering,ready/rtc-pr07c-reload-record-snapshots,"hold publication until the owner matrix or exact product-failure replay proves
+product ownership and ordering"
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"no fresh all-green exact stack exists for title reload, existing-post or persistence reload, and large HTTP lifecycle",reload-hydration@fa801a6aa13/promotion,"no fresh all-green exact stack exists for title reload, existing-post or
+persistence reload, and large HTTP lifecycle"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
 repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by fresher exact_stack_green feedback; reopen only on new current-feedback promotion_blocked rows,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,"superseded by fresher exact_stack_green feedback; reopen only on new
 current-feedback promotion_blocked rows"
