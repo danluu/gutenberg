@@ -1,36 +1,37 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-current,high,yes,20 active discovery sessions exceed min 3 and active PR jobs are 0 of 2; allow bounded PR progress while preserving discovery lanes.
-update-controller-rule,discovery-health-heavy-pr-gate,high,yes,"If discovery becomes unhealthy, block heavy PR jobs except cheap publication manifest generation, blocker or ledger repair, and analysis-only work."
-launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,high,yes,"Top product-progress slot; run one all-merged exact replay for title reload, existing-post or persistence reload, and large HTTP lifecycle."
-repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,high,yes,Replace the generic reload-hydration family hold with a head-specific exact-stack blocker; manifest evidence is candidate evidence only.
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260522T105924Z@b01a3a21e2c/candidate,high,yes,Allowed only as cheap candidate adoption or manifest handling for exact-stack replay; it must not clear product promotion.
-publish-ready,reload-hydration@b01a3a21e2c/product,high,no,"Missing fresh all-merged exact-stack green or replay-backed downscope for title reload, persistence or existing-post reload, and large HTTP lifecycle."
-cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,high,yes,"403 launches plus manifest hold make another generic relaunch churn; progress must be head-specific replay, owner evidence, green stack adoption, or downscope."
-repair-ready,PR07C-HOLD-07C+seed-5200005-reducer-stale-critical-blockers,high,yes,Clear stale critical-path blocker and queue rows so consumed owner and reducer work does not relaunch.
-launch-owner-matrix,PR07C/HOLD-07C/readiness-resolved,high,yes,Readiness is resolved; run exactly one fresh owner matrix or exact PR07C replay before any PR07C publication.
-launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380-relaunch,high,no,Runtime-held-consumed cycle380 evidence is stale and must not be relaunched.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold publication until fresh PR07C owner matrix or exact replay proves product ownership.
-feedback-ledger-adoption,benchmark-canary-fuzzer-gap/exact-feedback-ledger,high,yes,Adopt current exact-stack green feedback for repair/benchmark-canary-large-http-exact-20260522T135617@80cae0b38df6c983b4562abd9efb575d6f336bcb.
-repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic repair duplicates current exact green feedback; reopen only if newer current-feedback reintroduces promotion_blocked.
-repair-branch,benchmark-canary-fuzzer-gap/e2e-collaboration-code-editor-performance-ws,high,no,Stale WS-refresh row is superseded by current exact-stack green benchmark feedback.
-publish-ready,benchmark-canary-fuzzer-gap/large-post-three-user-http,high,no,"This is benchmark and coverage evidence, not a product PR publication target."
-reserve-discovery,large-http-lifecycle,high,yes,Keep large HTTP lifecycle coverage forced until three-user success closes and failures are classified.
-reserve-discovery,large-post-three-user-http:awareness-readiness,high,yes,"Retain hard readiness coverage with peer-count, auth, session, and timeout classification."
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,high,yes,Diagnostic manifests lack product-owned first-loss or owner evidence; reject generic relaunch and publication.
+reserve-discovery,discovery-reserve-current,high,yes,20 active discovery sessions exceed min 3 and PR jobs are 0 of 2; allow bounded PR work while retaining discovery lanes.
+update-controller-rule,discovery-health-heavy-pr-gate,high,yes,"If discovery becomes unhealthy, block heavy PR jobs except cheap publication manifest handling, blocker or ledger repair, and analysis-only work."
+repair-ready,PR07C/HOLD-07C/local-mac-20260522T172727Z,high,yes,Consume fresh exact-head owner replay classified product_owned_repro with 2 product-owned rows and runtime_rows 0.
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,yes,Fresh 2026-05-22T17:35:53Z owner replay proves product_owned_repro on head 025c7638361f; publish this ready real-fix branch.
+repair-ready,PR07C-HOLD-07C+seed-5200005-stale-blockers,high,yes,Terminalize stale PR07C and seed reducer blockers so PR capacity does not rerun consumed evidence.
+launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380,high,no,Cycle380 owner evidence is runtime-held-consumed and superseded by the fresh local PR07C owner replay.
+launch-owner-matrix,PR07C/HOLD-07C/readiness-resolved,high,no,Do not spend a second heavy job while the fresh local owner replay can be consumed; rerun only if that artifact is missing.
+launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,high,yes,"Next branch-repair slot after PR07C; run one all-merged exact replay for title reload, existing-post or persistence reload, and large HTTP lifecycle."
+repair-ready,reload-hydration@b01a3a21e2c-exact-stack-blocker,high,yes,Replace generic deferred hold with a head-specific exact-stack blocker; manifest is candidate evidence only.
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260522T105924Z@b01a3a21e2c/candidate,high,yes,"Allowed only as cheap candidate adoption or manifest handling, not product promotion."
+publish-ready,reload-hydration@b01a3a21e2c/product,high,no,Missing fresh all-merged exact-stack green or replay-backed downscope for reload and large HTTP rows.
+cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,high,yes,"403 launches plus manifest hold make generic relaunch churn; progress must be exact replay, owner evidence, green stack adoption, or downscope."
+repair-ready,benchmark-canary-fuzzer-gap/exact-feedback-ledger,high,yes,Adopt current exact-stack green feedback for repair/benchmark-canary-large-http-exact-20260522T135617 at commit 80cae0b38df6.
+repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates current exact green feedback; reopen only if newer current-feedback reintroduces promotion_blocked.
+update-controller-rule,benchmark-canary-fuzzer-gap/exact-branch-commit-gate,high,yes,Gate benchmark state on newest current-feedback by exact branch and commit; stale green or stale blocked rows must not decide.
+publish-ready,benchmark-canary-fuzzer-gap/large-post-three-user-http,high,no,"Benchmark and coverage evidence are gates, not product PR publication targets."
+reserve-discovery,benchmark-canary-fuzzer-gap/large-post-three-user-http-readiness,high,yes,"Retain hard readiness coverage with peer-count, auth, session, wp-sync response, and timeout classification."
+reserve-discovery,large-http-lifecycle,high,yes,Keep forced large HTTP lifecycle coverage until the three-user success gap closes and failures are classified.
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,high,yes,Diagnostic manifests lack product-owned first-loss or owner evidence; reject generic relaunch and product publication.
 publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,No owner evidence or product-owned first-loss replay is present.
 publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,No exact suffix-divergence replay or owner evidence is present.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal.
-cooldown-diagnostic,malformed-save-payload/raw-deferred,medium,yes,Downscope raw variants because canonical PR06B minimal is published.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.
+cooldown-diagnostic,malformed-save-payload/raw-deferred,medium,yes,Downscope raw variants because canonical PR06B minimal is already published.
 cooldown-diagnostic,http-room-isolation/raw-deferred,medium,yes,Downscope raw variants because PR02A is published and no fresher healthy-user evidence is present.
 publish-ready,ready/rtc-pr15a-pr15b-pr15c-originals,high,no,"Superseded by already published PR14B-based PR15A, PR15B, and PR15C branches."
+update-controller-rule,rtc-http-polling-manager/semantic-feature-corpus,high,yes,Repair or admit semantic-feature corpus progress before more blind HTTP polling-manager batches.
+reserve-discovery,rtc-http-polling-manager/large-http-readiness,high,yes,"Use lower-level reserve for collaborator readiness, awareness peer count, auth, session, and timeout evidence."
 update-controller-rule,table-stale-snapshot/table-query-array-lower-level,high,yes,Repair isolated-key accounting before treating repeated query-array failures as product yield.
 reserve-discovery,table-stale-snapshot/table-query-array-lower-level,high,yes,Run one bounded table query-array confirmation after accounting repair; stop on green or one reduced product failure.
 cooldown-diagnostic,table-stale-snapshot/broad-relaunch,medium,yes,Broad relaunches recycle duplicate no-yield failures until accounting repair finishes.
-update-controller-rule,rtc-http-polling-manager/semantic-feature-corpus,high,yes,Repair or admit semantic-feature corpus progress before more blind HTTP polling-manager batches.
-reserve-discovery,rtc-http-polling-manager/large-http-readiness,high,yes,"Retarget one lower-level reserve to collaborator discovery, awareness peer count, auth, session, and timeout evidence."
 reserve-discovery,save-response-crdt-hydration/backend-api,medium,yes,"Use bounded backend API coverage for stale save responses, CRDT snapshots, skipped-sync saves, and save-reload preservation."
+update-controller-rule,rtc-rich-text-crdt-merge/seed-checkpoint,high,yes,Advance startSeed from completed status before relaunching rich-text CRDT merge.
 cooldown-diagnostic,rtc-rich-text-crdt-merge/broad-grinding,medium,yes,"Saturated all-green target; keep smoke only until a new oracle, corpus, or exact seed appears."
-publish-ready,current-push-manifest,high,no,Current push manifest has only the header and no publishable rows.
-update-controller-rule,productive-analysis-feed-normalization,high,yes,Dedupe repeated Productive Analysis rows by normalized action and target while preserving explicit allow and reject decisions.
+publish-ready,current-push-manifest,high,no,Current push manifest contains only the header and no publishable rows.
+update-controller-rule,productive-analysis-feed-normalization,high,yes,Dedupe repeated Productive Analysis rows by normalized action and target while preserving explicit allow and reject outcomes.
 update-controller-rule,deferred-head-specific-blockers,high,yes,Deferred manifests create head-specific exact-stack blockers; they are not generic relaunch fuel or product proof.
-update-controller-rule,benchmark-canary-fuzzer-gap/exact-branch-commit-gate,high,yes,Gate benchmark state on latest current-feedback matching exact branch and commit; stale green or stale blocked rows must not decide.
