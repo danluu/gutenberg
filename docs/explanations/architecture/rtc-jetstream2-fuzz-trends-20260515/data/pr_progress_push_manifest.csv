@@ -1,2 +1,1 @@
-source_branch,source_commit,intended_danluu_branch,base_ref,files_changed,insertions,deletions,validation_summary,reason,net_loc,branch_short
-ready/rtc-pr07c-reload-record-snapshots,025c7638361f,danluu/rtc-pr-progress-rtc-pr07c-reload-record-snapshots,ready/rtc-pr07b-save-response-manager-base-record,6,348,32,critical-path diff check passed; controller prioritized product PR publication,/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150048Z/validations/branch-ready-rtc-pr07c-reload-record-snapshots/report.md,316,pr07c reload record snapshots
+source_branch,source_commit,intended_danluu_branch,base_ref,files_changed,insertions,deletions,validation_summary,reason
