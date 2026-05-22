@@ -1629,3 +1629,7 @@ timestamp,group,group_family
 2026-05-22T01:13:55Z,novelty-ws-parser-serialization,parser
 2026-05-22T01:26:27Z,novelty-ws-block-gauntlet,auth/locks
 2026-05-22T01:42:58Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-22T01:56:27Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-22T02:11:24Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-22T02:11:24Z,novelty-ws-real-user-save-reload,real-user
+2026-05-22T02:11:24Z,novelty-ws-parser-transform,parser
