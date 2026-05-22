@@ -1,18 +1,16 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,Manifest evidence alone is insufficient; publication waits on fresh exact-stack title reload and existing-post CRDT green evidence.,deferred/rtc-reload-hydration-20260521T223947Z,"Manifest evidence alone is insufficient; publication waits on fresh exact-stack
-title reload and existing-post CRDT green evidence."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is already consumed; do not relaunch a heavy browser owner matrix without newer product-owned evidence.,PR07C/HOLD-07C,"Cycle380 owner evidence is already consumed; do not relaunch a heavy browser
-owner matrix without newer product-owned evidence."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until product ownership or exact product-failure replay is conclusive.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until product ownership or exact product-failure replay is
-conclusive."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until the owner matrix or exact product-failure replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until the owner matrix or exact product-failure replay proves
+product ownership."
+publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,Manifest evidence alone is insufficient; publication waits on fresh exact-stack green evidence.,deferred/rtc-reload-hydration-20260521T223947Z,"Manifest evidence alone is insufficient; publication waits on fresh exact-stack
+green evidence."
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,No fresh product-owned non-coverage evidence justifies another reducer launch.,seed-5200005-reducer/relaunch,No fresh product-owned non-coverage evidence justifies another reducer launch.
-launch-branch-repair,broad-pr-analysis-fanout,P0,no,Reject broad heavy PR fanout even while discovery is healthy; use bounded product repair or exact-stack slots.,broad-pr-analysis-fanout,"Reject broad heavy PR fanout even while discovery is healthy; use bounded
-product repair or exact-stack slots."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical PR06B minimal is already published; the broader branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical PR06B minimal is already published; the broader branch needs fresh
-product advantage."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical PR06B minimal is already published; broader branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical PR06B minimal is already published; broader branch needs fresh product
+advantage."
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A is already published; the original-base branch is duplicate
 under current evidence."
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B is already published; the original-base branch is duplicate
 under current evidence."
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C is already published; the original-base branch is duplicate
 under current evidence."
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,"Reject broad heavy PR fanout under high pressure; use bounded product repair, one PR07C owner matrix, exact-stack replay, or explicit downscope.",broad-pr-analysis-fanout,"Reject broad heavy PR fanout under high pressure; use bounded product repair,
+one PR07C owner matrix, exact-stack replay, or explicit downscope."

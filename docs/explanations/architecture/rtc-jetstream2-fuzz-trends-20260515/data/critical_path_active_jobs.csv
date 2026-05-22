@@ -1,7 +1,9 @@
 session,class,started_hint
-rtc-analysis-live-2c76b4c0-deep-http-persistence-probe-gen-6-20260522T003430Z,analysis,
-rtc-analysis-live-2c76b4c0-http-same-user-stale-draft-gen-4-20260522T003441Z,analysis,
-rtc-analysis-live-2c76b4c0-ws-many-user-lifecycle-gen-31-20260522T004908Z,analysis,
+rtc-analysis-live-2c76b4c0-http-persistence-probe-gen-7-20260522T005636Z,analysis,
+rtc-analysis-live-2c76b4c0-ws-collaboration-ui-signals-gen-31-20260522T005624Z,analysis,
+rtc-analysis-live-2c76b4c0-ws-many-user-lifecycle-gen-33-20260522T005614Z,analysis,
+rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T005819Z,critical-continuation,
+rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T005820Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
