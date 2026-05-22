@@ -794,8 +794,23 @@ tmux -L rtc-fuzz new-session -d -s rtc-disk-maintenance \
 It keeps the current run root, skips paths still present in live process
 command lines, and trims older coverage, strict-expansion, focused-shard, and
 gap-booster roots. Under disk pressure it keeps fewer old roots; otherwise it
-retains a wider recent history. The resource autoscaler budgets against both
-`/` and `/media/volume/danluu-fuzz-data`, and writes
+retains a wider recent history. The default pressure threshold is deliberately
+above the last few hundred GiB of free space so the loop starts freeing space
+before the project is close to running out. It also prunes large generated
+`wp-env`, per-run repo, Playwright report, and blob report directories from
+older retained roots while preserving summaries, logs, coverage metadata, and
+the newest roots. Some `wp-env` trees contain root-owned files from containers;
+the cleanup script uses passwordless `sudo -n` when available, after live-path
+checks, so those stale trees do not remain as undeletable disk pressure.
+
+The maintenance loop writes
+`/media/volume/danluu-fuzz-data/rtc-disk-maintenance-20260520/current-status.md`
+with current free space, running/done state, effective retention, run-root
+counts, current roots, and recent log lines. Treat a missing or stale status
+file as a monitoring problem: without it, the graphs and control loops can see
+disk free space but not whether retention is actually being applied. The
+resource autoscaler budgets against both `/` and
+`/media/volume/danluu-fuzz-data`, and writes
 `rtc-resource-autoscaler-20260516/disk-samples.csv` for the trend graphs.
 
 ## Active wp-env And Docker Repair
