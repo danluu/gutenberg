@@ -1,21 +1,21 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale publish-ready rows are superseded by product-owned red exact-head evidence; require repaired exact-head green replay or explicit downscope.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale publish-ready rows are superseded by product-owned red exact-head
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale publish-ready rows are superseded by newer product-owned red exact-head evidence; require repaired exact-head green replay or explicit downscope.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale publish-ready rows are superseded by newer product-owned red exact-head
 evidence; require repaired exact-head green replay or explicit downscope."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner matrix already completed and produced conclusive product-owned evidence; relaunching would be duplicate diagnostic work.,PR07C/HOLD-07C,"Owner matrix already completed and produced conclusive product-owned evidence;
-relaunching would be duplicate diagnostic work."
-launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,no,Defer heavy replay behind PR07C repair and table query-array repair; do not schedule generic reload work in the next product slot.,reload-hydration@b01a3a21e2c/exact-stack,"Defer heavy replay behind PR07C repair and table query-array repair; do not
-schedule generic reload work in the next product slot."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner matrix already produced conclusive product-owned evidence; relaunch would be duplicate diagnostic work.,PR07C/HOLD-07C,"Owner matrix already produced conclusive product-owned evidence; relaunch would
+be duplicate diagnostic work."
+repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic benchmark reruns duplicate exact feedback handling; reopen only on newer promotion_blocked evidence or branch/commit mismatch.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic benchmark reruns duplicate exact feedback handling; reopen only on newer
+promotion_blocked evidence or branch/commit mismatch."
+launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,no,"Defer heavy exact-stack replay behind PR07C repair, table query-array repair, stale-CRDT stack repair, and active critical-executor capacity.",reload-hydration@b01a3a21e2c/exact-stack,"Defer heavy exact-stack replay behind PR07C repair, table query-array repair,
+stale-CRDT stack repair, and active critical-executor capacity."
 publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,Product publication requires fresh all-merged exact-stack green evidence or replay-backed downscope.,reload-hydration@b01a3a21e2c/product,"Product publication requires fresh all-merged exact-stack green evidence or
 replay-backed downscope."
 publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,Diagnostic candidate only; missing owner evidence or product-owned first-loss replay.,pre-save-search-live-collapse@de2b5502da0,"Diagnostic candidate only; missing owner evidence or product-owned first-loss
 replay."
 publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,Diagnostic candidate only; missing exact suffix-divergence replay or owner evidence.,rich-text-suffix-corruption@a2d47a072e1,"Diagnostic candidate only; missing exact suffix-divergence replay or owner
 evidence."
-repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates current exact-green feedback; reopen only on newer promotion_blocked evidence or branch/commit mismatch.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates current exact-green feedback; reopen only on newer
-promotion_blocked evidence or branch/commit mismatch."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by already published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by already published PR15A-on-PR14B branch.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by already published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by already published PR15B-on-PR14B branch.
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by already published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by already published PR15C-on-PR14B branch.
-publish-ready,published-ready-product-branches,high,no,"Already published ready branches need validation only, not duplicate publication work.",published-ready-product-branches,"Already published ready branches need validation only, not duplicate publication
-work."
+publish-ready,published-ready-product-branches,high,no,"Already published ready branches need validation only, not duplicate publication.",published-ready-product-branches,"Already published ready branches need validation only, not duplicate
+publication."
