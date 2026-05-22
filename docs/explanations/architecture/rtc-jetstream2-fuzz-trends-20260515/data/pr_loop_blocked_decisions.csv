@@ -1,17 +1,16 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until PR07C owner evidence or exact product-failure replay proves product ownership and promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until PR07C owner evidence or exact product-failure replay
-proves product ownership and promotion gates are green."
-publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,Block publication until exact-stack title-reload-http and existing-post-crdt-http are green with large-http-lifecycle retained.,deferred/rtc-reload-hydration-20260521T223947Z,"Block publication until exact-stack title-reload-http and
-existing-post-crdt-http are green with large-http-lifecycle retained."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical minimal PR06B is already published; the broader branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical minimal PR06B is already published; the broader branch needs fresh
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until PR07C owner evidence or exact product-failure replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until PR07C owner evidence or exact product-failure replay
+proves product ownership."
+publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,Manifest evidence alone is insufficient; exact-stack title reload and existing-post CRDT evidence must be green first.,deferred/rtc-reload-hydration-20260521T223947Z,"Manifest evidence alone is insufficient; exact-stack title reload and
+existing-post CRDT evidence must be green first."
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,No fresh product-owned non-coverage evidence justifies another reducer launch.,seed-5200005-reducer/relaunch,No fresh product-owned non-coverage evidence justifies another reducer launch.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical PR06B minimal is already published; the broader branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical PR06B minimal is already published; the broader branch needs fresh
 product advantage."
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,The PR14B-based PR15A variant is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"The PR14B-based PR15A variant is already published; the original-base branch is
-duplicate under current evidence."
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,The PR14B-based PR15B variant is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"The PR14B-based PR15B variant is already published; the original-base branch is
-duplicate under current evidence."
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,The PR14B-based PR15C variant is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"The PR14B-based PR15C variant is already published; the original-base branch is
-duplicate under current evidence."
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,Do not relaunch stale reducer work while the current classification says already resolved by active artifacts.,seed-5200005-reducer/relaunch,"Do not relaunch stale reducer work while the current classification says already
-resolved by active artifacts."
-launch-branch-repair,broad-pr-analysis-fanout,P0,no,Reject broad heavy PR fanout; use bounded product slots plus cheap analysis or manifest work.,broad-pr-analysis-fanout,"Reject broad heavy PR fanout; use bounded product slots plus cheap analysis or
-manifest work."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A is already published; original-base branch is duplicate under
+current evidence."
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B is already published; original-base branch is duplicate under
+current evidence."
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C is already published; original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C is already published; original-base branch is duplicate under
+current evidence."
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,"Reject broad heavy PR fanout; use bounded product slots plus cheap manifest, reconciliation, or analysis-only work.",broad-pr-analysis-fanout,"Reject broad heavy PR fanout; use bounded product slots plus cheap manifest,
+reconciliation, or analysis-only work."
