@@ -1738,3 +1738,8 @@ timestamp,message,event_type
 2026-05-22T22:16:44Z,launched controller action job for repair-ready reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca at 20260522T221644Z,other
 2026-05-22T22:16:44Z,not launching PR07C owner matrix: job already active,heavy PR job already active
 2026-05-22T22:16:44Z,controller action repair-ready reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca 20260522T221644Z,launch
+2026-05-22T22:18:48Z,launched persona controller round 20260522T221847Z,persona round launched
+2026-05-22T22:18:49Z,launched PR07C owner matrix job 20260522T221848Z,PR07C owner job launched
+2026-05-22T22:18:49Z,pr07c owner matrix 20260522T221848Z,launch
+2026-05-22T22:20:52Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-22T22:22:56Z,not launching PR07C owner matrix: job already active,heavy PR job already active
