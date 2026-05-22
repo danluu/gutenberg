@@ -472,6 +472,7 @@ export const prePersistPostType = async (
 	let serializedDoc;
 	let hasSerializedDoc = false;
 	let latestRecordForCRDTSnapshot;
+	let latestPersistedCRDTDoc;
 	const editedSavedFields = POST_RAW_ATTRIBUTES.filter(
 		( key ) => key in edits
 	);
@@ -542,6 +543,10 @@ export const prePersistPostType = async (
 			const hasLatestPersistedCRDTDoc = Boolean(
 				latestRecord?.meta?.[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]
 			);
+			latestPersistedCRDTDoc =
+				latestRecord?.meta?.[
+					POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+				] || null;
 			const shouldApplyLatestCRDTDoc =
 				hasLatestPersistedCRDTDoc || locallyChangedSavedFields.length;
 			const didApplyLatestCRDTDoc = shouldApplyLatestCRDTDoc
@@ -669,6 +674,7 @@ export const prePersistPostType = async (
 				syncManager ?? getSyncManager()
 			)?.createPersistedCRDTDoc( objectType, objectId, {
 				basePersistedCRDTDoc:
+					latestPersistedCRDTDoc ||
 					persistedRecord?.meta?.[
 						POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
 					] || null,
