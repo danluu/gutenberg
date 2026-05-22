@@ -1770,3 +1770,8 @@ timestamp,group,group_family
 2026-05-22T17:40:17Z,novelty-ws-thirty-user-lifecycle,lifecycle
 2026-05-22T17:59:09Z,novelty-http-large-post-lifecycle,lifecycle
 2026-05-22T17:59:27Z,novelty-http-large-post-lifecycle-completion,lifecycle
+2026-05-22T18:05:12Z,novelty-ws-parser-transform,parser
+2026-05-22T18:05:49Z,novelty-ws-parser-serialization,parser
+2026-05-22T18:05:56Z,novelty-http-same-user-stale-draft,lifecycle
+2026-05-22T18:06:03Z,novelty-http-title-reload-convergence,lifecycle
+2026-05-22T18:06:11Z,novelty-ws-thirty-user-lifecycle,lifecycle
