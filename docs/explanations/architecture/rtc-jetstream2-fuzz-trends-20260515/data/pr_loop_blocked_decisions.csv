@@ -1,21 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,no fresh all-green exact-stack browser evidence exists for this head,reload-hydration@b01a3a21e2c,no fresh all-green exact-stack browser evidence exists for this head
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,no fresh all-green exact-stack evidence exists for this latest head,reload-hydration@b01a3a21e2c,no fresh all-green exact-stack evidence exists for this latest head
 repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,no,stale same-family head is superseded by latest manifest head b01a3a21e2c,reload-hydration@fa801a6aa13/exact-stack-blocker,stale same-family head is superseded by latest manifest head b01a3a21e2c
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,retarget stale exact-stack rows to b01a3a21e2c,reload-hydration@fa801a6aa13/exact-stack,retarget stale exact-stack rows to b01a3a21e2c
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,latest progress marks owner evidence runtime-held-consumed; run only for newer owner evidence or exact product-failure replay,PR07C/HOLD-07C,"latest progress marks owner evidence runtime-held-consumed; run only for newer
-owner evidence or exact product-failure replay"
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,existing Cycle380 owner replay is already runtime-held-consumed; relaunch only for newer owner evidence,PR07C/HOLD-07C,"existing Cycle380 owner replay is already runtime-held-consumed; relaunch only
+for newer owner evidence"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until exact-stack validation or newer owner evidence proves product ownership,ready/rtc-pr07c-reload-record-snapshots,"keep held until exact-stack validation or newer owner evidence proves product
 ownership"
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates active or terminal reducer evidence without newer product-owned signal,seed-5200005-reducer/relaunch,"relaunch duplicates active or terminal reducer evidence without newer
-product-owned signal"
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates terminal reducer evidence without newer product-owned signal,seed-5200005-reducer/relaunch,relaunch duplicates terminal reducer evidence without newer product-owned signal
 repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by newer exact_stack_green benchmark feedback,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,superseded by newer exact_stack_green benchmark feedback
 launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,no current promotion_blocked row justifies another benchmark rerun,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,no current promotion_blocked row justifies another benchmark rerun
-update-controller-rule,unit-property-rich-text-crdt-merge/full-retarget-to-parser,high,no,rich-text CRDT still has semantic feature coverage; cap churn instead of stopping it,unit-property-rich-text-crdt-merge/full-retarget-to-parser,"rich-text CRDT still has semantic feature coverage; cap churn instead of
-stopping it"
-reserve-discovery,rtc-block-parser-serialization/current-repeat-isolation,P0,no,"current run is oracle-saturated with zero product yield, zero new coverage, and capped isolation",rtc-block-parser-serialization/current-repeat-isolation,"current run is oracle-saturated with zero product yield, zero new coverage, and
-capped isolation"
+publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress; require focused first-loss or owner evidence before promotion,pre-save-search-live-collapse@de2b5502da0,"diagnostic branch is not product PR progress; require focused first-loss or
+owner evidence before promotion"
+update-controller-rule,unit-property-rich-text-crdt-merge/full-retarget-to-parser,P1,no,preserve lower-level rich-text smoke and semantic coverage; cap churn rather than fully starving it,unit-property-rich-text-crdt-merge/full-retarget-to-parser,"preserve lower-level rich-text smoke and semantic coverage; cap churn rather
+than fully starving it"
+reserve-discovery,rtc-block-parser-serialization/current-repeat-isolation,P0,no,current repeat isolation is oracle-saturated with zero product yield and capped isolation,rtc-block-parser-serialization/current-repeat-isolation,"current repeat isolation is oracle-saturated with zero product yield and capped
+isolation"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path
-publish-ready,current-push-manifest,P1,no,controller push manifest is header-only and is not a publication source,current-push-manifest,controller push manifest is header-only and is not a publication source
+publish-ready,current-push-manifest,P1,no,controller push manifest is header-only and not a publication source,current-push-manifest,controller push manifest is header-only and not a publication source

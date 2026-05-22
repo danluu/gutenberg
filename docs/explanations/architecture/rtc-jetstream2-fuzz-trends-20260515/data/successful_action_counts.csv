@@ -156,6 +156,10 @@ append-parser-stress-content,5,parser-serialization
 reparse-edited-content,4,full
 concurrent-paragraphs,4,full
 delete-block,4,revision-persistence
+reparse-edited-content,4,parser-serialization
+edit-formatted-paragraph-at-cursor,4,parser-serialization
+delete-nested-block,4,parser-serialization
+insert-async-server-block,4,parser-serialization
 edit-rich-text-pair-block,4,parser-serialization
 ui-type-paragraph,3,real-user-editing
 ui-format-paragraph,3,real-user-editing
@@ -164,10 +168,9 @@ ui-heading-shortcut,3,real-user-editing
 reload-post-action,3,real-user-editing
 ui-undo-redo-paragraph,3,real-user-editing
 concurrent-paragraphs,3,parser-serialization
-reparse-edited-content,3,parser-serialization
-edit-formatted-paragraph-at-cursor,3,parser-serialization
 edit-nested-paragraph,3,parser-serialization
-delete-nested-block,3,parser-serialization
-insert-async-server-block,3,parser-serialization
-insert-heading,2,parser-serialization
+insert-heading,3,parser-serialization
 edit-title,2,parser-serialization
+edit-common-block-attributes,2,parser-serialization
+insert-media-cross-entity-block,1,parser-serialization
+insert-common-block,1,parser-serialization
