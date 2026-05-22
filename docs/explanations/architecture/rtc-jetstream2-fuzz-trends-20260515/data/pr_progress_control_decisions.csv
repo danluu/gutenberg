@@ -1,18 +1,21 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery 14 is above min 3 with headroom; bounded PR work may proceed while discovery reserve remains protected
-update-controller-rule,discovery-reserve-gate,P0,yes,"if discovery becomes unhealthy, block heavy PR jobs except cheap candidate publication, manifest generation/adoption, stale-state reconciliation, or analysis-only work"
-repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,yes,"current product blocker; consume concrete WS smoke repair branch, rebuild or cherry-pick onto exact all-merged benchmark stack, and rerun"
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,yes,fresh exact-stack rerun is required after the WS dependency/bootstrap repair before any publication gate can clear
-publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,"current exact-stack feedback has promotion-blocking rows; coverage repaired, candidate state, or stale green summaries are not publication clearance"
-launch-owner-matrix,PR07C/HOLD-07C,P0,yes,queue says readiness is resolved; run or consume exactly one owner matrix now and promote only if product ownership is proven
-launch-owner-matrix,PR07C/HOLD-07C/duplicate-relaunch,P0,no,do not relaunch after the queued matrix without owner evidence newer than Cycle380 or an exact product-failure replay
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until the owner matrix or exact replay proves product ownership
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,"cheap candidate publication or adoption from the concrete deferred manifest is allowed, but candidate status only"
-repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,yes,"replace generic deferred-family handling with a head-specific exact-stack blocker for title reload, existing-post or persistence reload, and large HTTP lifecycle"
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,allowed as a bounded product slot while discovery is healthy; promotion still requires a fresh all-green exact stack
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,unit/lint success and candidate manifest adoption do not clear promotion without fresh exact-stack green evidence
-cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"manifest-held with 402 launches; progress only by manifest adoption, exact replay, owner evidence, green stack adoption, or explicit downscope"
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"manifest-held diagnostic families should not relaunch generically without focused replay, owner evidence, green exact stack, or explicit downscope"
+reserve-discovery,discovery-reserve,P0,yes,active discovery is 14 vs min 3 and active PR jobs are 0 of 2; bounded PR work may proceed while reserve remains protected
+update-controller-rule,discovery-reserve-gate,P0,yes,"if discovery falls below reserve or headroom disappears, block heavy PR jobs except cheap manifest adoption, stale-state reconciliation, and analysis-only work"
+repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,yes,next product-progress slot; concrete fix_branch_created repair exists and current feedback still has promotion-blocking rows
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,yes,rebuild or cherry-pick the WS smoke repair onto rtc-pr-stack-20260522T074557Z-all-merged-unsoundness-base-fix@431635f36ecf and rerun exact benchmark canary
+publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,current-feedback.tsv still has promotion_blocked rows; no maintainer snapshot until fresh exact stack is all green or explicitly downscoped
+update-controller-rule,current-feedback-authoritative,P0,yes,current-feedback.tsv supersedes stale embedded exact_stack_green or no-action summaries for benchmark canary publication
+update-controller-rule,exact-stack-promotion-gate,P0,yes,"candidate status, unit green, lint green, coverage presence, or stale green summaries cannot clear promotion without fresh all-green exact-stack evidence"
+reserve-discovery,benchmark-canary-forced-coverage-groups,P0,yes,"keep WS smoke, large HTTP lifecycle, existing-post CRDT, persistence, and title reload coverage pinned as promotion witnesses"
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,concrete deferred manifest exists; adopt or publish as candidate only and keep promotion blocked
+repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,yes,"replace generic deferred-family blocker with a head-specific exact-stack blocker for title reload, existing-post CRDT, persistence, and large HTTP lifecycle"
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,allowed only as the second bounded PR slot while reserve stays healthy; promotion still requires fresh all-green exact-stack evidence
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"unit, lint, and candidate manifest evidence do not prove promotion safety without fresh exact-stack green rows"
+cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"manifest-held with 402 launches; progress only by manifest adoption, exact replay, owner evidence, green stack adoption, or downscope"
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic manifest-held families; suppress generic relaunch until focused replay, owner evidence, green exact stack, or explicit downscope"
+repair-ready,PR07C/HOLD-07C/stale-owner-matrix,P0,yes,terminalize stale queued owner-matrix state because current PR progress marks existing owner evidence runtime-held-consumed
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,relaunch requires owner evidence newer than Cycle380 or an exact product-failure replay
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until fresh owner evidence or exact replay proves product ownership
 repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts classification and clear stale blocker or queue state
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer run
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch
@@ -21,16 +24,15 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,duplica
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,duplicates already published PR14B-based PR15C path
 cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscoped because canonical published PR06B minimal covers this family
 cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscoped because PR02A exists and no fresh healthy-user HTTP product evidence is present
-publish-ready,current-push-manifest,P1,no,controller push manifest is header-only; use the concrete reload-hydration deferred manifest instead
-cooldown-diagnostic,rtc-http-polling-manager/saturated-corpus,P0,yes,"8000-entry corpus has zero new coverage, admitted feature, failure, or product yield; park generic corpus after current batch"
-update-controller-rule,lower-http-polling/reload-materialization-retarget,P0,yes,"credit lower HTTP polling only for canary-equivalent reload/materialization oracle yield, nonzero coverage, product yield, or failure"
-cooldown-diagnostic,unit-property-rich-text-crdt-merge/zero-signal-green-batches,high,yes,"cap green-only batches unless placement, multi-block, semantic coverage, or failure signal appears"
-update-controller-rule,coverage-guided-lower-level/parser-richtext-accounting-split,high,yes,split parser serialization accounting from rich-text CRDT target before crediting either lane
+publish-ready,current-push-manifest,P1,no,controller push manifest is header-only; use the concrete reload-hydration deferred manifest for candidate-only adoption
+cooldown-diagnostic,rtc-http-polling-manager/saturated-corpus,P0,yes,"8000-entry corpus has zero new coverage, admitted features, failures, or product yield"
+update-controller-rule,lower-http-polling/reload-materialization-retarget,P0,yes,"credit lower HTTP polling only for title reload or existing-post CRDT materialization yield, nonzero coverage, product yield, or oracle failure"
+cooldown-diagnostic,unit-property-rich-text-crdt-merge/zero-signal-green-batches,high,yes,"cap green-only batches while placement_case_count remains 0 and no semantic, coverage, or failure signal appears"
+update-controller-rule,unit-rich-text-crdt-placement-retarget,high,yes,"require nonzero placement or multi-block coverage before continuing this lane, otherwise reallocate to another unmet lower-level gap"
+update-controller-rule,coverage-guided-lower-level/parser-richtext-accounting-split,high,yes,split parser serialization accounting from the rich-text CRDT target before crediting either lane
 reserve-discovery,rtc-block-parser-serialization,high,yes,spend freed lower-level capacity on parser serialization or another discovery lane while preserving reserve
-repair-branch,ready/rtc-pr14b-table-query-array-local-suffix-append/remote-marker,high,yes,route one minimized remote-marker representative to PR14B repair or explicit oracle downscope after P0 blockers
+repair-branch,ready/rtc-pr14b-table-query-array-local-suffix-append/remote-marker,high,yes,"after P0 blockers, route one minimized remote-marker representative to PR14B repair or explicit oracle downscope"
 cooldown-diagnostic,unit-property-table-query-array-crdt/adjacent-seeds,high,yes,adjacent remote-marker failures are duplicate signal until one representative is classified
-update-controller-rule,current-feedback-authoritative,P0,yes,current-feedback.tsv at decision time supersedes stale embedded exact_stack_green or no-action summaries
-update-controller-rule,exact-stack-promotion-gate,P0,yes,"candidate publication, coverage presence, unit green, or lint green cannot clear promotion without fresh all-green exact-stack evidence or explicit downscope"
-update-controller-rule,candidate-only-publish-is-not-promotion,P0,yes,candidate publication/adoption may proceed but cannot clear promotion without exact-stack green evidence
+update-controller-rule,candidate-only-publish-is-not-promotion,P0,yes,candidate publication or adoption may proceed but cannot clear promotion
 update-controller-rule,deferred-family-single-flight,P0,yes,held or over-budget deferred families must not interval-relaunch while concrete manifests exist
 update-controller-rule,productive-analysis-feed-binding,P0,yes,"every P0 or high Productive Analysis row must be acted, rejected, or explicitly coalesced in controller TSV"
