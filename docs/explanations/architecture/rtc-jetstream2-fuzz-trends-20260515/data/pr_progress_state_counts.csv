@@ -1,7 +1,7 @@
 kind,priority,status,items
 deferred-family,high,needs-product-decision,1
 deferred-family,medium,diagnostic,1
-ready-product-pr,high,held-by-controller,5
-ready-product-pr,high,publish-manifest-ready,1
-ready-product-pr,high,published,13
+ready-product-pr,high,held-by-controller,4
+ready-product-pr,high,published,27
+ready-product-pr,low,superseded,1
 runtime-gated-pr,high,runtime-held-consumed,1
