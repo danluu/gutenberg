@@ -14,6 +14,7 @@ TMUX_SOCKET=${RTC_TMUX_SOCKET:-rtc-fuzz}
 LOG="$BASE/resource-autoscaler.log"
 CSV="$BASE/resource-samples.csv"
 DISK_CSV="$BASE/disk-samples.csv"
+LOSS_CSV="$BASE/coverage-root-loss-events.csv"
 STATUS="$BASE/resource-autoscaler-status.md"
 LOCK="$BASE/resource-autoscaler.lock"
 BUDGET_ENV="$BASE/current-budget.env"
@@ -159,16 +160,32 @@ run_script_value() {
 	fi
 }
 
+budget_env_value() {
+	local key=$1
+	local fallback=$2
+	local value
+	if [ -f "$BUDGET_ENV" ]; then
+		value=$(sed -n "s/^export ${key}='\([^']*\)'.*/\1/p" "$BUDGET_ENV" 2>/dev/null | tail -1)
+		if [ -n "$value" ]; then
+			printf '%s\n' "$value"
+			return
+		fi
+	fi
+	printf '%s\n' "$fallback"
+}
+
 current_target() {
 	local fallback
 	fallback=$(run_script_value RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS 0)
-	run_script_value RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS "$fallback"
+	budget_env_value RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS \
+		"$(budget_env_value RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS "$(run_script_value RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS "$fallback")")"
 }
 
 current_max() {
 	local fallback
 	fallback=$(run_script_value RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS 0)
-	run_script_value RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS "$fallback"
+	budget_env_value RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS \
+		"$(budget_env_value RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS "$(run_script_value RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS "$fallback")")"
 }
 
 enabled_groups() {
@@ -1153,6 +1170,121 @@ append_disk_csv() {
 	printf '%s,%s,%s,%s,%s\n' "$now" "${root_free:-}" "${root_used:-}" "${data_free:-}" "${data_used:-}" >> "$DISK_CSV"
 }
 
+append_loss_event() {
+	local now=$1 event_type=$2 reason=$3 desired_target=$4 desired_max=$5
+	local latest=${6:-} materialized_active=${7:-} running_groups=${8:-} status_counts=${9:-}
+	if [ ! -f "$LOSS_CSV" ]; then
+		printf 'timestamp,event_type,reason,coverage_root,root_age_seconds,full_pass_completed,seconds_since_completed_full_pass,records_seen,current_run_records,coverage_files,materialized_active_run_dirs,materialized_running_groups,supervisor_status_counts,desired_target,desired_max,estimated_lost_seconds,estimated_lost_records\n' > "$LOSS_CSV"
+	fi
+	node - "$LOSS_CSV" "$now" "$event_type" "$reason" "$desired_target" "$desired_max" "${latest:-}" "${materialized_active:-}" "${running_groups:-}" "${status_counts:-}" <<'NODE'
+const fs = require( 'fs' );
+const path = require( 'path' );
+const [
+	csvPath,
+	now,
+	eventType,
+	reason,
+	desiredTarget,
+	desiredMax,
+	root,
+	materializedActive,
+	runningGroups,
+	statusCounts,
+] = process.argv.slice( 2 );
+const csvField = ( value ) => {
+	const text = String( value ?? '' );
+	return /[",\n]/.test( text ) ? `"${ text.replaceAll( '"', '""' ) }"` : text;
+};
+const readJson = ( file ) => {
+	try {
+		return JSON.parse( fs.readFileSync( file, 'utf8' ) );
+	} catch {
+		return null;
+	}
+};
+const parseRootEpoch = ( rootPath ) => {
+	const base = path.basename( rootPath || '' );
+	const match = base.match( /^run-(\d{8})T(\d{6})Z$/ );
+	if ( ! match ) {
+		return NaN;
+	}
+	const [ , day, time ] = match;
+	return Date.parse(
+		`${ day.slice( 0, 4 ) }-${ day.slice( 4, 6 ) }-${ day.slice( 6, 8 ) }T${ time.slice( 0, 2 ) }:${ time.slice( 2, 4 ) }:${ time.slice( 4, 6 ) }Z`
+	);
+};
+const nowMs = Date.parse( now );
+const rootMs = parseRootEpoch( root );
+const rootAgeSeconds =
+	Number.isFinite( nowMs ) && Number.isFinite( rootMs )
+		? Math.max( 0, Math.round( ( nowMs - rootMs ) / 1000 ) )
+		: '';
+const state = root ? readJson( path.join( root, 'novelty-state.json' ) ) : null;
+const lastFull = Date.parse(
+	state?.lastCompletedFullPassAt || state?.lastFullStatusCompletedAt || ''
+);
+const fullPassCompleted = Number.isFinite( lastFull ) ? 1 : 0;
+const secondsSinceCompletedFullPass =
+	fullPassCompleted && Number.isFinite( nowMs )
+		? Math.max( 0, Math.round( ( nowMs - lastFull ) / 1000 ) )
+		: '';
+const recordsSeen = Number( state?.recordsSeen ?? 0 ) || 0;
+const currentRunRecords = Object.values(
+	state?.currentRunRecordCountsByProfile ?? {}
+).reduce( ( total, value ) => total + ( Number( value ) || 0 ), 0 );
+let coverageFiles = '';
+try {
+	const groups = JSON.parse(
+		fs.readFileSync( path.join( root, 'supervisor-state.json' ), 'utf8' )
+	).groups;
+	coverageFiles = Array.isArray( groups )
+		? groups.reduce(
+				( count, group ) =>
+					count +
+					( Array.isArray( group.activeRunDirs )
+						? group.activeRunDirs.length
+						: group.currentRunDir
+						? 1
+						: 0 ),
+				0
+		  )
+		: '';
+} catch {}
+const estimatedLostSeconds =
+	eventType === 'restart'
+		? fullPassCompleted
+			? secondsSinceCompletedFullPass || 0
+			: rootAgeSeconds || 0
+		: 0;
+const estimatedLostRecords =
+	eventType === 'restart' ? currentRunRecords || recordsSeen || 0 : 0;
+fs.appendFileSync(
+	csvPath,
+	[
+		now,
+		eventType,
+		reason,
+		root,
+		rootAgeSeconds,
+		fullPassCompleted,
+		secondsSinceCompletedFullPass,
+		recordsSeen,
+		currentRunRecords,
+		coverageFiles,
+		materializedActive,
+		runningGroups,
+		statusCounts,
+		desiredTarget,
+		desiredMax,
+		estimatedLostSeconds,
+		estimatedLostRecords,
+	]
+		.map( csvField )
+		.join( ',' ) + '\n'
+);
+NODE
+}
+
 write_budget_env() {
 	local target=$1
 	local max=$2
@@ -1177,6 +1309,103 @@ export RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY='$allow_fleet_startup_n
 export RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP='$fleet_startup_noise_canary_group'
 export RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY='$allow_empty_materialization_no_product_startup_canary'
 EOF_BUDGET
+}
+
+rewrite_current_run_budget_exports() {
+	local target=$1 max=$2 latest
+	latest=$(latest_run)
+	[ -n "$latest" ] && [ -f "$latest/run-monitor.sh" ] || return 0
+	node - "$latest/run-monitor.sh" "$target" "$max" <<'NODE'
+const fs = require( 'fs' );
+const [ file, target, max ] = process.argv.slice( 2 );
+let text = fs.readFileSync( file, 'utf8' );
+const replaceExport = ( name, value ) => {
+	const re = new RegExp( `^export ${ name }='[^']*'$`, 'm' );
+	const next = `export ${ name }='${ value }'`;
+	if ( re.test( text ) ) {
+		text = text.replace( re, next );
+	} else {
+		text += `\n${ next }\n`;
+	}
+};
+replaceExport( 'RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS', target );
+replaceExport( 'RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS', max );
+replaceExport( 'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS', target );
+replaceExport( 'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS', max );
+replaceExport( 'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS', max );
+fs.writeFileSync( file, text );
+NODE
+}
+
+coverage_root_live_for_in_place_budget() {
+	local latest state_path groups_path
+	latest=$(latest_run)
+	[ -n "$latest" ] || return 1
+	state_path="$latest/supervisor-state.json"
+	groups_path="$latest/supervisor-groups.json"
+	[ -s "$state_path" ] && [ -s "$groups_path" ] || return 1
+	"$TMUX" -L "$TMUX_SOCKET" has-session -t rtc-coverage-guided-supervisor 2>/dev/null || return 1
+	node - "$state_path" "$latest" <<'NODE'
+const fs = require( 'fs' );
+const [ statePath, expectedRoot ] = process.argv.slice( 2 );
+try {
+	const state = JSON.parse( fs.readFileSync( statePath, 'utf8' ) );
+	process.exit( state.outputDir === expectedRoot ? 0 : 1 );
+} catch {
+	process.exit( 1 );
+}
+NODE
+}
+
+apply_in_place_coverage_budget() {
+	local desired_target=$1 desired_max=$2 reason=$3 mode=${4:-ordinary}
+	local latest groups_path before after
+	[[ "$desired_target" =~ ^[0-9]+$ ]] || desired_target=1
+	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=$desired_target
+	if [ "$desired_max" -lt "$desired_target" ]; then
+		desired_max=$desired_target
+	fi
+	coverage_root_live_for_in_place_budget || return 1
+	latest=$(latest_run)
+	groups_path="$latest/supervisor-groups.json"
+	before=$(node -e "const fs=require('fs'); const groups=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); console.log(Array.isArray(groups)?groups.length:0)" "$groups_path" 2>/dev/null || echo 0)
+	write_budget_env "$desired_target" "$desired_max" 1.02
+	rewrite_current_run_budget_exports "$desired_target" "$desired_max"
+	node - "$groups_path" "$latest/novelty-state.json" "$desired_max" "$mode" <<'NODE'
+const fs = require( 'fs' );
+const [ groupsPath, statePath, desiredMaxRaw, mode ] = process.argv.slice( 2 );
+const desiredMax = Math.max( 1, Number.parseInt( desiredMaxRaw, 10 ) || 1 );
+let groups = JSON.parse( fs.readFileSync( groupsPath, 'utf8' ) );
+if ( ! Array.isArray( groups ) ) {
+	process.exit( 1 );
+}
+if ( mode === 'down' && groups.length > desiredMax ) {
+	groups = groups.slice( 0, desiredMax );
+	fs.writeFileSync(
+		groupsPath,
+		`${ JSON.stringify( groups, null, '\t' ) }\n`
+	);
+	try {
+		const state = JSON.parse( fs.readFileSync( statePath, 'utf8' ) );
+		if ( Array.isArray( state.enabledGroups ) ) {
+			const kept = new Set(
+				groups.map( ( group ) => group?.name ).filter( Boolean )
+			);
+			state.enabledGroups = state.enabledGroups.filter( ( name ) =>
+				kept.has( name )
+			);
+			fs.writeFileSync(
+				statePath,
+				`${ JSON.stringify( state, null, '\t' ) }\n`
+			);
+		}
+	} catch {}
+}
+NODE
+	after=$(node -e "const fs=require('fs'); const groups=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); console.log(Array.isArray(groups)?groups.length:0)" "$groups_path" 2>/dev/null || echo 0)
+	append_loss_event "$(stamp)" "in_place_budget" "$reason" "$desired_target" "$desired_max" "$latest" "" "" "groups:${before}->${after}"
+	echo "[$(stamp)] adjusted coverage-guided budget in-place target=$desired_target max=$desired_max reason=$reason mode=$mode groups=${before}->${after} root=$latest" >> "$LOG"
+	return 0
 }
 
 write_materialization_diagnostic() {
@@ -1229,6 +1458,7 @@ restart_coverage() {
 	local desired_target=$1
 	local desired_max=$2
 	local reason=$3
+	local latest_before
 	local allow_fleet_startup_noise_canary
 	local fleet_startup_noise_canary_group
 	local allow_empty_materialization_no_product_startup_canary
@@ -1241,7 +1471,6 @@ restart_coverage() {
 	fi
 	if should_defer_budget_restart_for_first_pass "$reason"; then
 		echo "[$(stamp)] deferring coverage-guided restart target=$desired_target max=$desired_max reason=$reason: active root full pass pending" >> "$LOG"
-		write_budget_env "$desired_target" "$desired_max" 1.02
 		action="${action}_deferred_first_pass"
 		return 0
 	fi
@@ -1249,7 +1478,9 @@ restart_coverage() {
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
 	allow_empty_materialization_no_product_startup_canary=${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY 0)}
 	min_enabled_browser_lanes=${RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES:-$(run_script_value RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES '')}
-	echo "[$(stamp)] restarting coverage-guided loop target=$desired_target max=$desired_max reason=$reason" >> "$LOG"
+	latest_before=$(latest_run)
+	append_loss_event "$(stamp)" "restart" "$reason" "$desired_target" "$desired_max" "$latest_before" "${materialized_active_run_dirs:-}" "${materialized_running_groups:-}" "${supervisor_status_counts:-}"
+	echo "[$(stamp)] restarting coverage-guided loop target=$desired_target max=$desired_max reason=$reason previous_root=${latest_before:-none}" >> "$LOG"
 	write_budget_env "$desired_target" "$desired_max" 1.02
 	RTC_COVERAGE_CLEANUP_KEEP_WATCHDOG=1 \
 	RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS="$desired_target" \
@@ -1390,10 +1621,6 @@ while true; do
 			printf '%s' "$supervisor_status_counts" | grep -Eq '^(unknown|starting:[1-9])'; then
 		cold_starting_overbudget=1
 	fi
-	if [ "${desired_target:-0}" -gt 0 ] && [ "${desired_max:-0}" -gt 0 ]; then
-		write_budget_env "$desired_target" "$desired_max" "$(run_script_value RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER 1.02)"
-	fi
-
 	if ! session_running; then
 		action=restart_missing_monitor
 		restart_coverage "$desired_target" "$desired_max" missing_monitor
@@ -1427,8 +1654,17 @@ while true; do
 			if ! scale_up_backlog_clear "$load" "$load_five" "$load_fifteen" "$ncpu"; then
 				action=coverage_breadth_floor_blocked_backlog
 				up_streak=0
+			elif [ "${materialized_running_groups:-0}" -ge "$desired_target" ] ||
+				[ "${materialized_active_run_dirs:-0}" -ge "$desired_target" ] ||
+				[ "${enabled:-0}" -ge "$desired_target" ]; then
+				action=restore_coverage_breadth_floor_in_place
+				apply_in_place_coverage_budget "$desired_target" "$desired_max" coverage_breadth_floor up || true
+				up_streak=0
 			elif [ $(( $(epoch) - last_restart_epoch )) -lt "$STARTUP_RAMP_SECONDS" ]; then
 				action=coverage_breadth_floor_ramp_cooldown
+				up_streak=0
+			elif [ $(( $(epoch) - last_restart_epoch )) -lt "$MIN_SCALE_UP_SECONDS" ]; then
+				action=coverage_breadth_floor_scale_cooldown
 				up_streak=0
 			else
 				action=restore_coverage_breadth_floor
@@ -1444,9 +1680,16 @@ while true; do
 			up_streak=$(( up_streak + 1 ))
 		fi
 		if [ "$up_streak" -ge 2 ] && [ $(( $(epoch) - last_restart_epoch )) -ge "$MIN_SCALE_UP_SECONDS" ]; then
-			action=scale_up
-			restart_coverage "$desired_target" "$desired_max" "$reason"
-			last_restart_epoch=$(epoch)
+			if [ "${materialized_running_groups:-0}" -ge "$desired_target" ] ||
+				[ "${materialized_active_run_dirs:-0}" -ge "$desired_target" ] ||
+				[ "${enabled:-0}" -ge "$desired_target" ]; then
+				action=scale_up_in_place
+				apply_in_place_coverage_budget "$desired_target" "$desired_max" "$reason" up || true
+			else
+				action=scale_up
+				restart_coverage "$desired_target" "$desired_max" "$reason"
+				last_restart_epoch=$(epoch)
+			fi
 			up_streak=0
 		fi
 	elif [ "$desired_target" -lt "${target:-0}" ]; then
@@ -1467,8 +1710,12 @@ while true; do
 			else
 				action=scale_down
 			fi
-			restart_coverage "$desired_target" "$desired_max" "$reason"
-			last_restart_epoch=$(epoch)
+			if apply_in_place_coverage_budget "$desired_target" "$desired_max" "$reason" down; then
+				action="${action}_in_place"
+			else
+				restart_coverage "$desired_target" "$desired_max" "$reason"
+				last_restart_epoch=$(epoch)
+			fi
 			down_streak=0
 		fi
 	else

@@ -19,6 +19,7 @@ profile_path = artifact / "data" / "profile_counts.csv"
 cpu_path = artifact / "data" / "cpu_utilization.csv"
 load_path = artifact / "data" / "load_average.csv"
 disk_path = artifact / "data" / "disk_free_space.csv"
+coverage_root_loss_path = artifact / "data" / "coverage_root_loss_events.csv"
 fuzz_level_path = artifact / "data" / "fuzz_level_mix.csv"
 
 summary = {}
@@ -77,6 +78,31 @@ if disk_path.exists():
 	for row in rows[-6:]:
 		disk_tail.append(
 			f"{row.get('timestamp')}: root_free_gib={row.get('root_free_gib')} data_free_gib={row.get('data_free_gib')}"
+		)
+
+coverage_root_loss_tail = []
+coverage_root_loss_summary = {
+	"restart_events": 0,
+	"in_place_events": 0,
+	"estimated_lost_seconds": 0.0,
+	"estimated_lost_records": 0.0,
+}
+if coverage_root_loss_path.exists():
+	with coverage_root_loss_path.open(newline="") as f:
+		rows = list(csv.DictReader(f))
+	for row in rows:
+		if row.get("event_type") == "restart":
+			coverage_root_loss_summary["restart_events"] += 1
+		elif row.get("event_type") == "in_place_budget":
+			coverage_root_loss_summary["in_place_events"] += 1
+		try:
+			coverage_root_loss_summary["estimated_lost_seconds"] += float(row.get("estimated_lost_seconds") or 0)
+			coverage_root_loss_summary["estimated_lost_records"] += float(row.get("estimated_lost_records") or 0)
+		except ValueError:
+			pass
+	for row in rows[-8:]:
+		coverage_root_loss_tail.append(
+			f"{row.get('timestamp')}: type={row.get('event_type')} reason={row.get('reason')} root_age_seconds={row.get('root_age_seconds')} lost_seconds={row.get('estimated_lost_seconds')} lost_records={row.get('estimated_lost_records')} root={row.get('coverage_root')}"
 		)
 
 fuzz_level_latest = {}
@@ -184,6 +210,15 @@ if disk_tail:
 else:
 	lines.append("- no disk CSV available")
 
+lines += ["", "## Coverage Root Continuity Loss"]
+lines.append(
+	f"- restart_events={coverage_root_loss_summary['restart_events']}; in_place_budget_events={coverage_root_loss_summary['in_place_events']}; estimated_lost_seconds={coverage_root_loss_summary['estimated_lost_seconds']:.0f}; estimated_lost_records={coverage_root_loss_summary['estimated_lost_records']:.0f}"
+)
+if coverage_root_loss_tail:
+	lines.extend(f"- {item}" for item in coverage_root_loss_tail)
+else:
+	lines.append("- no coverage root loss events recorded yet")
+
 lines += ["", "## Latest Fuzzing Level Mix"]
 if fuzz_level_latest:
 	for level, (lanes, groups) in sorted(fuzz_level_latest.items()):
@@ -201,6 +236,7 @@ lines += [
 	"- Prioritize completion-depth fixes for profiles with many records but low success rate before adding another broad class of actions.",
 	"- Challenge whether the current fuzzing level mix is too browser/e2e-heavy. If it is, propose a bounded lower-level target with a clear oracle instead of merely adding more browser lanes; explicitly consider libFuzzer/AFL-style coverage-guided lower-level fuzzing where code can be isolated enough to make it useful.",
 	"- If CPU is already high, prefer guarded top-offs and startup-stall reduction over simply increasing browser concurrency.",
+	"- Treat coverage-root restarts as progress loss when they reset the active root before a full pass completes. Prefer in-place coverage-guided budget changes or stronger hysteresis unless the live root is unhealthy.",
 	"- Reject or qualify any of the above if the latest persona reports or current logs contradict it.",
 ]
 

@@ -90,6 +90,28 @@ can spend several minutes in `full coverage pass pending`; restarting it during
 that window repeats early seeds, inflates duplicate/noise share, and prevents
 current-run triage policy from seeing a stable active set.
 
+Budget accounting must describe applied capacity, not aspirational desired
+capacity. The autoscaler writes `current-budget.env` only when it actually
+starts a new coverage root or applies an in-place budget change to the live
+root. Deferred scale-up decisions must not advance this file; otherwise later
+cycles believe capacity changed when the supervisor is still running the old
+root.
+
+Coverage-guided budget changes should be in-place when the live supervisor
+already has enough materialized or running groups for the requested budget.
+Scale-down trims the live `supervisor-groups.json` and the corresponding
+`novelty-state.json` enabled group list so the supervisor can converge without
+throwing away the active root. Root-reset restarts are still allowed for missing
+monitor, failed materialization invariants, severe pressure, or real expansion
+that cannot be represented in the current root after first-pass deferral and
+hysteresis.
+
+Root-reset cost is logged in
+`/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/coverage-root-loss-events.csv`.
+Each restart row records the previous root, whether a full pass had completed,
+estimated lost seconds, and estimated lost current-run records. In-place budget
+rows are recorded separately with zero lost continuity.
+
 Materialization remediation must distinguish failed materialization from normal
 startup. A fresh supervisor can have zero active run dirs while it is creating
 isolated wp-env instances. The autoscaler should not restart that run until the
@@ -155,6 +177,7 @@ Current status:
 
 ```bash
 sed -n '1,140p' /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/resource-autoscaler-status.md
+tail -20 /media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/coverage-root-loss-events.csv
 docker info --format '{{.DockerRootDir}}'
 df -h / /media/volume/danluu-fuzz-data
 tail -40 /media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515/logs/guard.log

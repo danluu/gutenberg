@@ -362,6 +362,39 @@ with open(os.path.join(out, "data", "disk_free_space.csv"), "w", newline="") as 
 		row = deduped_disk_rows[ts]
 		writer.writerow([ts, row["root_free_gib"], row["root_used_percent"], row["data_free_gib"], row["data_used_percent"]])
 
+coverage_root_loss_rows = []
+coverage_root_loss_path = "/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/coverage-root-loss-events.csv"
+coverage_root_loss_fields = [
+	"timestamp",
+	"event_type",
+	"reason",
+	"coverage_root",
+	"root_age_seconds",
+	"full_pass_completed",
+	"seconds_since_completed_full_pass",
+	"records_seen",
+	"current_run_records",
+	"coverage_files",
+	"materialized_active_run_dirs",
+	"materialized_running_groups",
+	"supervisor_status_counts",
+	"desired_target",
+	"desired_max",
+	"estimated_lost_seconds",
+	"estimated_lost_records",
+]
+if os.path.exists(coverage_root_loss_path):
+	with open(coverage_root_loss_path, newline="") as f:
+		for row in csv.DictReader(f):
+			if not row.get("timestamp"):
+				continue
+			coverage_root_loss_rows.append({field: row.get(field, "") for field in coverage_root_loss_fields})
+
+with open(os.path.join(out, "data", "coverage_root_loss_events.csv"), "w", newline="") as f:
+	writer = csv.DictWriter(f, fieldnames=coverage_root_loss_fields)
+	writer.writeheader()
+	writer.writerows(coverage_root_loss_rows)
+
 activity_by_hour = defaultdict(lambda: [0, 0])
 db_path = "/home/exouser/.codex/state_5.sqlite"
 if os.path.exists(db_path):
@@ -1224,6 +1257,7 @@ fi
 cp "$INPUT_DIR/remote/data/cpu_utilization.csv" "$ARTIFACT_DIR/data/cpu_utilization.csv"
 cp "$INPUT_DIR/remote/data/load_average.csv" "$ARTIFACT_DIR/data/load_average.csv"
 cp "$INPUT_DIR/remote/data/disk_free_space.csv" "$ARTIFACT_DIR/data/disk_free_space.csv"
+cp "$INPUT_DIR/remote/data/coverage_root_loss_events.csv" "$ARTIFACT_DIR/data/coverage_root_loss_events.csv"
 cp "$INPUT_DIR/remote/data/project_activity.csv" "$ARTIFACT_DIR/data/project_activity.csv"
 cp "$INPUT_DIR/remote/data/fuzz_level_mix.csv" "$ARTIFACT_DIR/data/fuzz_level_mix.csv"
 cp "$INPUT_DIR/remote/data/fuzz_level_executions.csv" "$ARTIFACT_DIR/data/fuzz_level_executions.csv"
