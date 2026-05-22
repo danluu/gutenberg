@@ -1,35 +1,35 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery 14 exceeds min 3 and PR jobs are 0 of 2; allow one bounded heavy PR slot while keeping discovery lanes alive
+reserve-discovery,discovery-reserve,P0,yes,active discovery 13 exceeds min 3 and PR jobs are 0 of 2; allow one bounded PR-progress slot while preserving discovery lanes
 update-controller-rule,heavy-pr-discovery-reserve,P0,yes,block heavy PR jobs when discovery is unhealthy except cheap publication manifest generation and analysis-only work
 publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,adopt or publish the manifest head only as candidate evidence; unit and lint evidence do not clear promotion
-repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,yes,replace the generic deferred-family hold with a head-specific exact-stack blocker
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,"next product-progress slot; run bounded title reload, existing-post or persistence reload, and large HTTP lifecycle evidence"
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,no fresh all-green exact stack exists for title reload plus existing-post or persistence reload plus large HTTP lifecycle
-cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,a concrete manifest exists; generic deferred relaunch is churn compared with candidate adoption and exact-stack work
+repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,yes,replace generic deferred-family hold with a head-specific exact-stack blocker
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,"next product-progress slot; run bounded title reload, existing-post or persistence reload, and large HTTP lifecycle exact stack"
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,no fresh all-green exact stack exists for title reload plus reload persistence plus large HTTP lifecycle
+cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,concrete manifest exists; another generic deferred-family relaunch is churn
 update-controller-rule,deferred-family-single-flight,P0,yes,"manifest-held families progress only by adoption, focused replay, owner evidence, green stack adoption, or explicit downscope"
-repair-ready,PR07C/HOLD-07C,P0,yes,terminalize the stale owner-matrix blocker and queue row because current progress marks Cycle380 evidence runtime-held-consumed
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"manifest-held diagnostic candidates lack owner evidence, focused replay, or green exact-stack adoption"
+repair-ready,PR07C/HOLD-07C,P0,yes,terminalize stale owner-matrix blocker because current PR progress marks Cycle380 owner evidence runtime-held-consumed
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,suppress duplicate owner matrix; reopen only for owner evidence newer than Cycle380 or exact product-failure replay
-launch-branch-repair,PR07C/HOLD-07C/exact-product-failure-replay,P0,yes,allowed non-duplicate path if PR07C needs fresh product ownership evidence
+launch-branch-repair,PR07C/HOLD-07C/exact-product-failure-replay,P1,yes,allowed bounded alternative if PR07C ownership remains unresolved after stale blocker cleanup; do not run while reload exact-stack occupies the single PR slot
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until newer owner evidence or exact product-failure replay proves ownership
-repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts classification as terminal evidence
+repair-ready,seed-5200005-reducer,P0,yes,consume latest already_resolved_by_active_artifacts classification as terminal evidence
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch
-repair-ready,benchmark-canary-fuzzer-gap,P0,yes,consume current 20260522T091644Z exact_stack_green feedback and keep blocker terminal for this cycle
-repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by newer current-feedback exact_stack_green rows
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,rerun only if current-feedback.tsv gains newer promotion_blocked rows
-update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,treat current-feedback.tsv as authoritative and reopen the gate on future promotion_blocked rows
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"manifest-held diagnostic candidates lack owner, focused replay, or green exact-stack evidence"
-cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscope raw family because canonical PR06B minimal already covers the product evidence
-cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscope raw family because PR02A exists and no fresh healthy-user HTTP product evidence appears
+update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,current-feedback.tsv cycle 20260522T091644Z is authoritative; reopen only on newer promotion_blocked rows
+repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by newer exact_stack_green current-feedback rows
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,rerun only if current-feedback.tsv changes or gains promotion_blocked rows
+update-controller-rule,existing-post-crdt-http+large-http-lifecycle,P0,yes,keep exact-stack coverage lanes promotion-blocking for reload persistence and successor stacks
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path
+cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscope raw family because canonical PR06B minimal already covers product evidence
+cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscope raw family because PR02A exists and no fresh healthy-user HTTP evidence appears
 publish-ready,current-push-manifest,P1,no,controller push manifest is header-only and is not a publication source
 update-controller-rule,productive-analysis-authoritative,P0,yes,consume Productive Analysis rows as controller inputs and explicitly reject stale contradictory decisions
 update-controller-rule,rtc-http-polling-manager/reload-materialization-retarget,P0,yes,"credit lower-level HTTP only for product yield, new coverage, oracle failure, title reload, or existing-post materialization"
-cooldown-diagnostic,rtc-http-polling-manager/saturated-bare-corpus,high,yes,"cool generic 8000-corpus polling churn with no durable coverage, product, or oracle yield"
-reserve-discovery,rtc-http-polling-manager/canary-diagnostic-bounded,high,yes,allow a bounded canary diagnostic phase with corpus cap and stop after repeated no-new-coverage or no-failure passes
-cooldown-diagnostic,unit-property-rich-text-crdt-merge/placement-oracle,high,yes,cap green-only rich-text CRDT batches while placement_case_count is zero and no semantic or failure signal appears
+cooldown-diagnostic,rtc-http-polling-manager/saturated-bare-corpus,high,yes,"cool generic polling churn when batches show no durable coverage, product, or oracle yield"
+reserve-discovery,rtc-http-polling-manager/canary-diagnostic-bounded,high,yes,allow bounded canary-equivalent HTTP diagnostic with corpus cap and stop after repeated no-yield passes
+cooldown-diagnostic,unit-property-rich-text-crdt-merge/placement-oracle,high,yes,"cap green-only rich-text CRDT batches unless placement, semantic, or failure signal appears"
 update-controller-rule,rtc-rich-text-crdt-merge/parser-accounting,high,yes,do not count placement-zero rich-text CRDT churn as parser-serialization progress
-reserve-discovery,rtc-block-parser-serialization,high,yes,use freed lower-level capacity on parser serialization or another unmet discovery lane
-reserve-discovery,focused/title-reload-http,P0,yes,keep title-reload coverage alive because reload-hydration exact-stack promotion depends on it
+reserve-discovery,rtc-block-parser-serialization/failure-isolation,P0,yes,use freed lower-level capacity for bounded parser drift and spec divergence isolation
+reserve-discovery,focused/title-reload-http,P0,yes,keep title-reload coverage alive because reload-hydration promotion depends on it
