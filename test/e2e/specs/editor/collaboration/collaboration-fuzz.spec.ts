@@ -443,6 +443,8 @@ const OPERATION_LEDGER_MODE =
 const FINAL_PERSISTENCE_ORACLE_MODE = getFinalPersistenceOracleMode();
 const FINAL_UI_WITNESS_SWEEP_SETTING =
 	process.env.GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP;
+const SUCCESS_COVERAGE_SMOKE =
+	process.env.GUTENBERG_RTC_BROWSER_SUCCESS_COVERAGE_SMOKE === '1';
 const ENABLE_FINAL_UI_WITNESS_SWEEP =
 	FINAL_UI_WITNESS_SWEEP_SETTING === '0'
 		? false
@@ -6536,7 +6538,9 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 						  )
 						: -1;
 				const forcedLifecycleReloadSteps =
-					ENABLE_LIFECYCLE_EVENTS && ! DISABLE_RELOAD
+					ENABLE_LIFECYCLE_EVENTS &&
+					! DISABLE_RELOAD &&
+					! SUCCESS_COVERAGE_SMOKE
 						? reserveMilestoneSteps(
 								FORCE_RELOAD_STEPS,
 								STEP_COUNT,
@@ -6572,7 +6576,9 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 						  )
 						: new Set< number >();
 				const reloadStep =
-					DISABLE_RELOAD || DISABLE_RANDOM_RELOAD
+					SUCCESS_COVERAGE_SMOKE ||
+					DISABLE_RELOAD ||
+					DISABLE_RANDOM_RELOAD
 						? -1
 						: chooseMilestoneStep(
 								rng,
@@ -6587,7 +6593,9 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					additionalCollaborators.length > 0
 				);
 				const lifecycleReloadSteps =
-					ENABLE_LIFECYCLE_EVENTS && ! DISABLE_RELOAD
+					ENABLE_LIFECYCLE_EVENTS &&
+					! DISABLE_RELOAD &&
+					! SUCCESS_COVERAGE_SMOKE
 						? forcedLifecycleReloadSteps ??
 						  chooseMilestoneSteps(
 								rng,
