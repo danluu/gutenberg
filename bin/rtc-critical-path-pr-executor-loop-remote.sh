@@ -38,6 +38,7 @@ LOG=$BASE/logs/critical-path-pr-executor.log
 LOCK_FILE=$BASE/critical-path-pr-executor.lock
 RECONCILE_LOCK_FILE=$BASE/critical-path-pr-executor-reconcile.lock
 PID_FILE=$BASE/critical-path-pr-executor.pid
+RUNTIME_SCRIPT=$BASE/rtc-critical-path-pr-executor-loop.sh
 
 CYCLE_SLEEP_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_CYCLE_SLEEP_SECONDS:-60}
 MAX_ACTIVE_CONTINUATIONS=${RTC_CRITICAL_PR_EXECUTOR_MAX_ACTIVE_CONTINUATIONS:-2}
@@ -77,6 +78,51 @@ touch "$EVENTS" "$LAUNCHES"
 
 log() {
 	printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"
+}
+
+script_realpath() {
+	readlink -f "$1" 2>/dev/null || printf '%s\n' "$1"
+}
+
+self_script_path() {
+	script_realpath "${BASH_SOURCE[0]}"
+}
+
+runtime_script_path() {
+	script_realpath "$RUNTIME_SCRIPT"
+}
+
+ensure_runtime_script() {
+	local self runtime tmp
+	self=$(self_script_path)
+	runtime=$(runtime_script_path)
+	if [ "$self" = "$runtime" ]; then
+		return 0
+	fi
+
+	tmp=$(mktemp "$RUNTIME_SCRIPT.XXXXXX.tmp")
+	cp "$self" "$tmp"
+	chmod +x "$tmp"
+	if ! bash -n "$tmp"; then
+		rm -f "$tmp"
+		return 1
+	fi
+	mv -f "$tmp" "$RUNTIME_SCRIPT"
+}
+
+snapshot_executor_script() {
+	local self tmp snapshot
+	self=$(self_script_path)
+	snapshot=$BASE/runs/executor-runtime-$$.sh
+	tmp=$(mktemp "$BASE/runs/executor-runtime-$$.XXXXXX.tmp")
+	cp "$self" "$tmp"
+	chmod +x "$tmp"
+	if ! bash -n "$tmp"; then
+		rm -f "$tmp"
+		return 1
+	fi
+	mv -f "$tmp" "$snapshot"
+	printf '%s\n' "$snapshot"
 }
 
 slugify() {
@@ -154,6 +200,25 @@ latest_indexed_artifact() {
 		cut -f2-
 }
 
+latest_launched_continuation_classification() {
+	local lane=$1 suffix
+	[ -s "$LAUNCHES" ] || return 1
+	suffix="/continuations/$lane"
+	awk -F '\t' -v suffix="$suffix" '
+		$2 == "continuation" && length($5) >= length(suffix) &&
+			substr($5, length($5) - length(suffix) + 1) == suffix {
+			print $5 "/classification.tsv"
+		}
+	' "$LAUNCHES" 2>/dev/null |
+		while IFS= read -r classification; do
+			[ -s "$classification" ] || continue
+			printf '%s\t%s\n' "$(file_mtime "$classification")" "$classification"
+		done |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
 input_status() {
 	local file=$1 size
 	if [ ! -e "$file" ]; then
@@ -170,6 +235,31 @@ input_status() {
 
 latest_nonempty_file() {
 	local root=$1 pattern=$2
+	local status_candidate index_candidate
+	if [ "$root" = "$FINALIZATION_BASE/cycles" ] && [ "$pattern" = "finalization.report.md" ]; then
+		status_candidate=$(latest_status_report_path "$FINALIZATION_BASE/current-finalization-status.md" "$root" 'finalization[.]report[.]md$' || true)
+		if [ -n "$status_candidate" ]; then
+			printf '%s\n' "$status_candidate"
+			return 0
+		fi
+		index_candidate=$(latest_indexed_artifact_for_root "$root" finalization_report 'finalization[.]report[.]md$' || true)
+		if [ -n "$index_candidate" ]; then
+			printf '%s\n' "$index_candidate"
+			return 0
+		fi
+	fi
+	if [ "$root" = "$DEFERRED_BASE/cycles" ] && [ "$pattern" = "report.md" ]; then
+		status_candidate=$(latest_status_report_path "$DEFERRED_BASE/current-deferred-status.md" "$root" '([.]report[.]md|/report[.]md|/push-manifest[.]tsv)$' || true)
+		if [ -n "$status_candidate" ]; then
+			printf '%s\n' "$status_candidate"
+			return 0
+		fi
+		index_candidate=$(latest_indexed_artifact_for_root "$root" report '([.]report[.]md|/report[.]md)$' || true)
+		if [ -n "$index_candidate" ]; then
+			printf '%s\n' "$index_candidate"
+			return 0
+		fi
+	fi
 	[ -d "$root" ] || return 0
 	find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%f\t%p\n' 2>/dev/null |
 		awk -F '\t' '$1 ~ /^[0-9]{8}T[0-9]{6}Z$/ { print }' |
@@ -182,6 +272,57 @@ latest_nonempty_file() {
 		sort -n |
 		tail -1 |
 		cut -f2-
+}
+
+latest_status_report_path() {
+	local status_file=$1 root=$2 suffix_re=$3
+	[ -s "$status_file" ] || return 1
+	awk -v root="$root" -v suffix_re="$suffix_re" '
+		function maybe_emit(value) {
+			sub(/^path=/, "", value)
+			gsub(/[),;]+$/, "", value)
+			if (index(value, root "/") == 1 && value ~ suffix_re) print value
+		}
+		/^###[[:space:]]+/ {
+			path = $0
+			sub(/^###[[:space:]]+/, "", path)
+			sub(/[[:space:]].*/, "", path)
+			maybe_emit(path)
+		}
+		{
+			for (i = 1; i <= NF; i++) maybe_emit($i)
+		}
+	' "$status_file" 2>/dev/null |
+		awk '!seen[$0]++' |
+		while IFS= read -r file; do
+			if [[ "$file" == */push-manifest.tsv ]]; then
+				find "${file%/*}" -maxdepth 1 -type f -name '*.report.md' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+				continue
+			fi
+			[ -s "$file" ] || continue
+			printf '%s\t%s\n' "$(file_mtime "$file")" "$file"
+		done |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+latest_indexed_artifact_for_root() {
+	local root=$1 kind=$2 suffix_re=$3
+	local candidate
+	artifact_index_fresh || return 1
+	candidate=$(
+		awk -F '\t' -v root="$root" -v kind="$kind" -v suffix_re="$suffix_re" '
+			NR > 1 && $4 == kind && index($6, root "/") == 1 && $6 ~ suffix_re {
+				print $1 "\t" $6
+			}
+		' "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null |
+			sort -n |
+			tail -1 |
+			cut -f2-
+	)
+	[ -s "$candidate" ] || return 1
+	printf '%s\n' "$candidate"
 }
 
 recent_executor_run_dirs() {
@@ -214,11 +355,15 @@ latest_progress_unblock_artifact() {
 }
 
 latest_continuation_classification() {
-	local lane=$1 indexed
+	local lane=$1 indexed launched
 	{
 		indexed=$(latest_indexed_artifact classification "continuations/${lane}/classification[.]tsv$" || true)
 		if [ -n "$indexed" ] && [ -s "$indexed" ]; then
 			printf '%s\t%s\n' "$(file_mtime "$indexed")" "$indexed"
+		fi
+		launched=$(latest_launched_continuation_classification "$lane" || true)
+		if [ -n "$launched" ] && [ -s "$launched" ]; then
+			printf '%s\t%s\n' "$(file_mtime "$launched")" "$launched"
 		fi
 		find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\t%p\n' 2>/dev/null |
 			awk -F '\t' '$1 ~ /^[0-9]{8}T[0-9]{6}Z$/ { print }' |
@@ -514,6 +659,23 @@ append_launch() {
 	printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$kind" "$session" "$dedupe" "$run_dir" >> "$LAUNCHES"
 }
 
+active_continuation_artifact_pending() {
+	local file=$1 session run_dir
+	[ -s "$LAUNCHES" ] || return 1
+	while IFS=$'\t' read -r session run_dir; do
+		[ -n "$session" ] && [ -n "$run_dir" ] || continue
+		has_session "$session" || continue
+		case "$file" in
+			"$run_dir"/*)
+				return 0
+				;;
+		esac
+	done < <(
+		awk -F '\t' '$2 == "continuation" { print $3 "\t" $5 }' "$LAUNCHES" 2>/dev/null
+	)
+	return 1
+}
+
 benchmark_feedback_present() {
 	[ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]
 }
@@ -776,6 +938,7 @@ pr_split_status	status	$PR_SPLIT_BASE/current-pr-split.md
 finalization_status	status	$FINALIZATION_BASE/current-finalization-status.md
 deferred_status	status	$DEFERRED_BASE/current-deferred-status.md
 deferred_queue	queue	$DEFERRED_BASE/current-deferred-queue.tsv
+deferred_control	control	$DEFERRED_BASE/current-deferred-control.tsv
 coverage_pointer	status	$COVERAGE_BASE/current-output-dir.txt
 benchmark_canary_feedback	feedback	$BENCHMARK_FEEDBACK_BASE/current-feedback.md
 benchmark_canary_feedback_tsv	feedback	$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv
@@ -811,6 +974,9 @@ write_no_progress() {
 			done |
 			head -100 |
 			while IFS= read -r file; do
+				if active_continuation_artifact_pending "$file"; then
+					continue
+				fi
 				printf '%s\tzero_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
 			done
 		if benchmark_promotion_blocked; then
@@ -919,13 +1085,55 @@ write_lanes() {
 	atomic_move "$tmp" "$LANES"
 }
 
+deferred_family_control_field() {
+	local family=$1 field=$2
+	[ -s "$DEFERRED_BASE/current-deferred-control.tsv" ] || return 1
+	awk -F '\t' -v family="$family" -v field="$field" '
+		NR == 1 {
+			for (i = 1; i <= NF; i++) {
+				if ($i == field) {
+					column = i
+				}
+			}
+			next
+		}
+		$2 == family && column > 0 {
+			print $column
+			exit
+		}
+	' "$DEFERRED_BASE/current-deferred-control.tsv" 2>/dev/null
+}
+
 write_blockers_and_queue() {
-	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reason pr07c_active pr07c_report benchmark_active benchmark_state benchmark_kind benchmark_action benchmark_result benchmark_artifacts benchmark_next
+	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reason pr07c_active pr07c_report benchmark_active benchmark_state benchmark_kind benchmark_action benchmark_result benchmark_artifacts benchmark_next reload_control_state reload_hold_reason reload_blocker_state reload_blocked_by reload_next reload_queue_state reload_queue_result
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	pr17_active=$(active_session_matching '1020002|pr17' || true)
 	s5200005=$(active_session_matching '5200005' || true)
 	s1060015=$(active_session_matching '1060015' || true)
 	reload_active=$(active_session_matching 'reload|hydration' || true)
+	reload_control_state=$(deferred_family_control_field reload-hydration state || true)
+	reload_hold_reason=$(deferred_family_control_field reload-hydration hold_reason || true)
+	reload_blocker_state=$([ -n "$reload_active" ] && printf active || printf queued)
+	reload_blocked_by=$([ -n "$reload_active" ] && printf active-job || printf deferred-loop)
+	reload_next='adopt deferred promotion; do not relaunch by interval alone'
+	reload_queue_state=$([ -n "$reload_active" ] && printf active || printf queued)
+	reload_queue_result=$([ -n "$reload_active" ] && printf adopted || printf queued_for_deferred_loop)
+	case "$reload_control_state" in
+		single-flight-held|cooldown-held)
+			reload_blocker_state=held
+			reload_blocked_by=deferred-single-flight
+			reload_next="deferred family is $reload_control_state ($reload_hold_reason); progress only by manifest adoption, exact-stack replay, owner evidence, green stack adoption, or explicit downscope"
+			reload_queue_state=gated
+			reload_queue_result=deferred_single_flight_hold
+			;;
+		downscoped)
+			reload_blocker_state=terminal
+			reload_blocked_by=deferred-downscope
+			reload_next="deferred family is downscoped ($reload_hold_reason); reopen only with fresh product evidence"
+			reload_queue_state=terminal
+			reload_queue_result=deferred_downscoped
+			;;
+	esac
 	pr07c_active=$(active_session_matching 'owner-matrix|pr07c-owner|HOLD-07C' || true)
 	benchmark_active=$(benchmark_exact_stack_active || true)
 	benchmark_state=$([ -n "$benchmark_active" ] && printf active || printf runnable)
@@ -993,10 +1201,8 @@ write_blockers_and_queue() {
 				"$([ -n "$s1060015" ] && printf active-job || printf none)" \
 				"${s1060015:-}" "$now"
 		fi
-		printf 'reload-hydration\tdeferred-family\thigh\t%s\tdeferred_status\tdeferred PR candidate\t%s\tclassification.tsv,report.md\t%s\tadopt deferred promotion; do not relaunch by interval alone\t%s\n' \
-			"$([ -n "$reload_active" ] && printf active || printf queued)" \
-			"$([ -n "$reload_active" ] && printf active-job || printf deferred-loop)" \
-			"${reload_active:-}" "$now"
+		printf 'reload-hydration\tdeferred-family\thigh\t%s\tdeferred_status\tdeferred PR candidate\t%s\tclassification.tsv,report.md\t%s\t%s\t%s\n' \
+			"$reload_blocker_state" "$reload_blocked_by" "${reload_active:-}" "$reload_next" "$now"
 	} > "$blockers_tmp"
 	{
 		printf 'job_id\tlane_id\tblocker_id\taction_kind\tdedupe_key\tresource_class\tpriority\tstate\tattempt\tsession\tworktree\toutput_dir\tcreated_at\tstarted_at\tupdated_at\texit_code\tresult\n'
@@ -1028,6 +1234,8 @@ write_blockers_and_queue() {
 		if productive_analysis_feedback_present; then
 			printf 'job-productive-analysis-action\tproductive-analysis-action\tproductive-analysis-action\tcontrol-feedback\tproductive-analysis-action\tcodex-analysis\thigh\trunnable\t0\t\t\t%s/runs/productive-analysis-action\t%s\t\t%s\t\tpending\n' "$BASE" "$now" "$now"
 		fi
+		printf 'job-reload-hydration\treload-hydration\treload-hydration\tdeferred-single-flight\treload-hydration\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/reload-hydration\t%s\t\t%s\t\t%s\n' \
+			"$reload_queue_state" "${reload_active:-}" "$BASE" "$now" "$now" "$reload_queue_result"
 		while IFS=$'\t' read -r lane_id _pr_id lane_kind _publication_class _source_repo _source_ref _base_ref _base_sha _head_sha _resource_class _deps _state output_dir; do
 			[ "$lane_kind" = "branch-validation" ] || continue
 			printf 'validate-%s\t%s\tbranch-export-%s\tvalidate-export\tvalidate-%s\tgit-export\tmedium\tqueued\t0\t\t\t%s\t%s\t\t%s\t\tpending\n' \
@@ -1317,7 +1525,7 @@ EOF
 launch_continuation_job() {
 	local lane=$1 dedupe=$2 active_pattern=$3 goal=$4
 	local force=${5:-0}
-	local active active_continuations session ts run_dir worktree prompt report classification stderr rc runner slug
+	local active active_continuations session ts run_dir worktree prompt report classification stderr rc runner slug codex_output
 	active=$(active_session_matching "$active_pattern" || true)
 	if [ "$lane" = "benchmark-canary-fuzzer-gap" ] && [ -z "$active" ]; then
 		active=$(benchmark_exact_stack_active || true)
@@ -1345,6 +1553,7 @@ launch_continuation_job() {
 	fi
 	prompt="$run_dir/prompt.md"
 	report="$run_dir/report.md"
+	codex_output="$run_dir/codex-output.log"
 	classification="$run_dir/classification.tsv"
 	stderr="$run_dir/stderr.log"
 	rc="$run_dir/rc"
@@ -1355,12 +1564,28 @@ launch_continuation_job() {
 set -euo pipefail
 cd "$worktree"
 set +e
-timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr"
+timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$codex_output" 2> "$stderr"
 code=\$?
 set -e
+if [ -s "$codex_output" ]; then
+	mv "$codex_output" "$report"
+else
+	cat > "$report" <<REPORT
+# Critical Continuation No Progress
+
+- lane: $lane
+- exit_code: \$code
+- reason: Codex produced no report output before exit or timeout.
+- stderr: $stderr
+- prompt: $prompt
+
+This artifact is intentionally non-empty so the executor can treat the run as a
+stale execution failure instead of an in-progress zero-byte report.
+REPORT
+fi
 if [ ! -s "$classification" ]; then
 	printf 'lane_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"
-	printf '%s\\tno_progress\\tmissing classification artifact\\treview stderr/report and rerun bounded continuation\\t%s\\n' "$lane" "$report" >> "$classification"
+	printf '%s\\tno_progress\\tmissing classification artifact or empty Codex output; review stderr/report and rerun bounded continuation only if no newer evidence exists\\t%s\\n' "$lane" "$report" >> "$classification"
 fi
 printf '%s\\n' "\$code" > "$rc"
 exit 0
@@ -1502,37 +1727,49 @@ reconcile_once() {
 }
 
 run_loop() {
-	local rc
+	local rc executor_script
+	executor_script=$(snapshot_executor_script)
 	exec 9>"$LOCK_FILE"
 	if ! flock -n 9; then
 		log "another critical-path PR executor already holds $LOCK_FILE"
 		exit 0
 	fi
 	printf '%s\n' "$$" > "$PID_FILE"
-	trap 'rm -f "$PID_FILE"' EXIT
-	log "critical-path PR executor loop started pid=$$"
+	trap 'exit_rc=$?; log "critical-path PR executor loop exiting rc=$exit_rc pid=$$"; rm -f "$PID_FILE" "$executor_script"' EXIT
+	log "critical-path PR executor loop started pid=$$ executor_script=$executor_script"
 	while true; do
 		set +e
-		timeout --kill-after=15s "$RECONCILE_TIMEOUT_SECONDS" "$0" reconcile-once 9>&- >> "$LOG" 2>&1
+		timeout --kill-after=15s "$RECONCILE_TIMEOUT_SECONDS" "$executor_script" reconcile-once 9>&- >> "$LOG" 2>&1
 		rc=$?
 		set -e
 		if [ "$rc" -ne 0 ]; then
 			log "reconcile failed or timed out rc=$rc timeout=${RECONCILE_TIMEOUT_SECONDS}s"
 		fi
-		sleep "$CYCLE_SLEEP_SECONDS" 9>&-
+		set +e
+		sleep "$CYCLE_SLEEP_SECONDS"
+		rc=$?
+		set -e
+		if [ "$rc" -ne 0 ]; then
+			log "cycle sleep interrupted rc=$rc"
+		fi
 	done
 }
 
 case "${1:-start}" in
 	start)
+		ensure_runtime_script
 		if has_session "$SESSION"; then
 			echo "$SESSION already running"
 		else
-			tmux new-session -d -s "$SESSION" "$0 run"
+			tmux new-session -d -s "$SESSION" "$RUNTIME_SCRIPT run"
 			echo "$SESSION started"
 		fi
 		;;
 	run)
+		if [ "$(self_script_path)" != "$(runtime_script_path)" ]; then
+			ensure_runtime_script
+			exec "$RUNTIME_SCRIPT" run
+		fi
 		run_loop
 		;;
 	reconcile-once)

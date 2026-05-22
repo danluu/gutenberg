@@ -250,6 +250,16 @@ write_root_inventory() {
 
   add_root "$roots_file" "browser-coverage-current" "$coverage_root"
   add_root "$roots_file" "focused-current" "$focused_root"
+  if [ -f "$FOCUSED_BASE/current-run-roots.txt" ]; then
+    local focused_list_root focused_list_index
+    focused_list_index=0
+    while IFS= read -r focused_list_root || [ -n "$focused_list_root" ]; do
+      if [ -n "$focused_list_root" ]; then
+        add_root "$roots_file" "focused-current-list-$focused_list_index" "$focused_list_root"
+        focused_list_index=$(( focused_list_index + 1 ))
+      fi
+    done < "$FOCUSED_BASE/current-run-roots.txt"
+  fi
   add_root "$roots_file" "strict-current" "$strict_root"
   add_root "$roots_file" "gap-current" "$gap_root"
   add_root "$roots_file" "unit-property-current" "$lower_root"
@@ -1282,6 +1292,96 @@ optional_browser_sessions = {
     "rtc-gap-booster",
     "rtc-gap-booster-watchdog",
 }
+pressure_gated_exact_sessions = {"rtc-protocol-server-fuzz"}
+
+def read_first_line(path):
+    try:
+        with open(path, errors="ignore") as handle:
+            return handle.readline().strip()
+    except OSError:
+        return ""
+
+def optional_browser_roots_for_session(name):
+    roots = []
+    if name.startswith("rtc-focused-shards"):
+        list_path = "/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515/current-run-roots.txt"
+        try:
+            with open(list_path, errors="ignore") as handle:
+                roots.extend(line.strip() for line in handle if line.strip())
+        except OSError:
+            pass
+        single = read_first_line("/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515/current-run-root.txt")
+        if single:
+            roots.append(single)
+    elif name.startswith("rtc-gap-booster"):
+        single = read_first_line("/media/volume/danluu-fuzz-data/rtc-gap-booster-20260515/current-run-root.txt")
+        if single:
+            roots.append(single)
+    elif name.startswith("rtc-fuzz-strict-expansion"):
+        single = read_first_line("/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515/current-run-root.txt")
+        if single:
+            roots.append(single)
+    return list(dict.fromkeys(root for root in roots if root and os.path.isdir(root)))
+
+def pid_alive(pid):
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+def active_dir_has_live_lane(active_dir):
+    lanes_path = os.path.join(active_dir, "lanes.json")
+    try:
+        lanes_data = json.load(open(lanes_path))
+    except Exception:
+        return False
+    lanes = lanes_data.get("lanes") if isinstance(lanes_data, dict) else None
+    if not isinstance(lanes, list):
+        return False
+    for lane in lanes:
+        if not isinstance(lane, dict):
+            continue
+        try:
+            pid = int(lane.get("pid"))
+        except Exception:
+            continue
+        if pid_alive(pid):
+            return True
+    return False
+
+def active_dir_has_fresh_artifact(active_dir, max_age_seconds=900):
+    now = time.time()
+    for relative in ("events.ndjson", "summary.ndjson"):
+        path = os.path.join(active_dir, "lane-0", relative)
+        try:
+            if os.path.getsize(path) > 0 and now - os.path.getmtime(path) <= max_age_seconds:
+                return True
+        except OSError:
+            pass
+    return False
+
+def optional_browser_materialization(name):
+    live = []
+    roots = optional_browser_roots_for_session(name)
+    for root in roots:
+        state_path = os.path.join(root, "supervisor-state.json")
+        try:
+            state = json.load(open(state_path))
+        except Exception:
+            continue
+        groups = state.get("groups") if isinstance(state, dict) else state
+        if not isinstance(groups, list):
+            continue
+        for group in groups:
+            if not isinstance(group, dict):
+                continue
+            for active_dir in group.get("activeRunDirs") or []:
+                if not isinstance(active_dir, str) or not os.path.isdir(active_dir):
+                    continue
+                if active_dir_has_live_lane(active_dir) and active_dir_has_fresh_artifact(active_dir):
+                    live.append(f"{group.get('name') or 'unknown'}@{os.path.basename(root)}")
+    return len(live), ", ".join(live[:5])
 
 novelty_state_path = os.path.join(coverage_root, "novelty-state.json") if coverage_root else ""
 novelty_state = None
@@ -1328,6 +1428,19 @@ for name in expected:
             f"| exact-session:{name} | check | exact tmux session missing while resource autoscaler reports action={autoscaler_action} reason={autoscaler_reason}; restart is pressure-gated, not proof from a prefix/watchdog session{prefix_detail} |"
         )
         continue
+    if name in pressure_gated_exact_sessions and optional_browser_pressure_gated:
+        print(
+            f"| exact-session:{name} | check | exact tmux session missing while resource autoscaler reports action={autoscaler_action} reason={autoscaler_reason}; this is zero useful capacity until the documented protocol/server start command is admitted |"
+        )
+        continue
+    if name in optional_browser_sessions:
+        live_count, live_detail = optional_browser_materialization(name)
+        if live_count > 0:
+            prefix_detail = f"; prefix matches ignored: {', '.join(prefix_matches[:5])}" if prefix_matches else ""
+            print(
+                f"| exact-session:{name} | ok | exact base session absent, but optional browser work is PID-backed with {live_count} fresh active run dir(s): {live_detail}{prefix_detail} |"
+            )
+            continue
     if prefix_matches:
         print(
             f"| exact-session:{name} | ACTION-NEEDED | missing exact session but prefix matches exist: {', '.join(prefix_matches[:5])}; do not use prefix tmux has-session checks |"

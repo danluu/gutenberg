@@ -28,6 +28,17 @@ has_exact_session() {
 	tmux list-sessions -F '#S' 2>/dev/null | grep -Fxq "$1"
 }
 
+wait_for_global_cpu_budget() {
+	if [ -x "$GLOBAL_ADMISSION" ]; then
+		"$GLOBAL_ADMISSION" wait lower-level "$SESSION"
+	fi
+}
+
+global_cpu_start_allowed() {
+	[ -x "$GLOBAL_ADMISSION" ] || return 0
+	"$GLOBAL_ADMISSION" allow lower-level "$SESSION"
+}
+
 write_event() {
 	local events_path="$1"
 	local root_events_path="$2"
@@ -88,17 +99,6 @@ function summarizeFailure( text ) {
 	);
 }
 
-wait_for_global_cpu_budget() {
-	if [ -x "$GLOBAL_ADMISSION" ]; then
-		"$GLOBAL_ADMISSION" wait lower-level "$SESSION"
-	fi
-}
-
-global_cpu_start_allowed() {
-	[ -x "$GLOBAL_ADMISSION" ] || return 0
-	"$GLOBAL_ADMISSION" allow lower-level "$SESSION"
-}
-
 function canonicalFailureKey( summary, kind ) {
 	if ( ! summary ) {
 		return code === 0 ? null : `${ kind || 'failure' }:unknown`;
@@ -106,7 +106,14 @@ function canonicalFailureKey( summary, kind ) {
 
 	const explicit = summary.match( /\bRTC_[A-Z0-9_]+(?::[A-Za-z0-9_.-]+)*/u );
 	if ( explicit ) {
-		return explicit[ 0 ].replace( /:+$/, '' );
+		const key = explicit[ 0 ].replace( /:+$/, '' );
+		if (
+			key.startsWith( 'RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE:' ) &&
+			/remote|marker|reorder|suffix/.test( key )
+		) {
+			return 'RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE:remote-marker-family';
+		}
+		return key;
 	}
 
 	const normalized = summary
@@ -285,11 +292,13 @@ run_loop() {
 		rm -f "$feature_path"
 		wait_for_global_cpu_budget
 		write_input_file "$input_path" "$seed_start" "$seed_count" "$case_count"
-		runner_command="nice -n $nice_level timeout ${timeout_seconds}s node $JEST_RUNNER --config $JEST_CONFIG $TEST_PATH --runInBand --ci --cacheDirectory $JEST_CACHE_DIR"
+		runner_command="RTC_FUZZ_ONLY_ASSERTIONS=1 RTC_FUZZ_ASSERTIONS=1 nice -n $nice_level timeout ${timeout_seconds}s node $JEST_RUNNER --config $JEST_CONFIG $TEST_PATH --runInBand --ci --cacheDirectory $JEST_CACHE_DIR"
 		started_s="$(date -u +%s)"
 		set +e
 		env \
 			CI=1 \
+			RTC_FUZZ_ONLY_ASSERTIONS=1 \
+			RTC_FUZZ_ASSERTIONS=1 \
 			TMPDIR="$TMP_DIR" \
 			npm_config_cache="$NPM_CACHE_DIR" \
 			GUTENBERG_RTC_CG_RICH_TEXT_INPUT_FILE="$input_path" \
@@ -388,7 +397,7 @@ const groups = [
 		placementCaseCount: Number.parseInt( placementCaseCount, 10 ),
 		repoRoot,
 		testPath,
-		runnerCommand: `nice -n ${ niceLevel } timeout ${ timeoutSeconds }s node ${ jestRunner } --config ${ jestConfig } ${ testPath } --runInBand --ci --cacheDirectory ${ jestCacheDir }`,
+		runnerCommand: `RTC_FUZZ_ONLY_ASSERTIONS=1 RTC_FUZZ_ASSERTIONS=1 nice -n ${ niceLevel } timeout ${ timeoutSeconds }s node ${ jestRunner } --config ${ jestConfig } ${ testPath } --runInBand --ci --cacheDirectory ${ jestCacheDir }`,
 		executionStrategy: 'direct-node-jest-per-batch',
 	},
 ];
@@ -397,7 +406,7 @@ NODE
 	cp "$run_root/supervisor-groups.json" "$BASE/supervisor-groups.json"
 
 	tmux new-session -d -s "$SESSION" \
-		"bash -lc 'cd \"$REPO\"; export PATH=\"$TMUX_WRAP:$NODE_BIN:\$PATH\"; TMPDIR=\"$TMP_DIR\" npm_config_cache=\"$NPM_CACHE_DIR\" RTC_LOWER_LEVEL_JEST_CONFIG=\"$JEST_CONFIG\" RTC_LOWER_LEVEL_JEST_RUNNER=\"$JEST_RUNNER\" RTC_LOWER_LEVEL_JEST_CACHE_DIR=\"$JEST_CACHE_DIR\" RTC_LOWER_LEVEL_RUN_ROOT=\"$run_root\" RTC_LOWER_LEVEL_RUN_STARTED=\"$run_started\" RTC_LOWER_LEVEL_SEED_START=\"$seed_start\" RTC_LOWER_LEVEL_SEED_COUNT=\"$seed_count\" RTC_LOWER_LEVEL_CASE_COUNT=\"$case_count\" RTC_LOWER_LEVEL_PLACEMENT_CASE_COUNT=\"$placement_case_count\" \"$REPO/bin/rtc-lower-level-fuzz-loop-remote.sh\" run >> \"$BASE/logs/lower-level-fuzz-loop.log\" 2>&1'"
+		"bash -lc 'cd \"$REPO\"; export PATH=\"$TMUX_WRAP:$NODE_BIN:\$PATH\"; TMPDIR=\"$TMP_DIR\" npm_config_cache=\"$NPM_CACHE_DIR\" RTC_LOWER_LEVEL_GROUP_NAME=\"$GROUP_NAME\" RTC_LOWER_LEVEL_PROFILE=\"$PROFILE\" RTC_LOWER_LEVEL_TEST_PATH=\"$TEST_PATH\" RTC_LOWER_LEVEL_JEST_CONFIG=\"$JEST_CONFIG\" RTC_LOWER_LEVEL_JEST_RUNNER=\"$JEST_RUNNER\" RTC_LOWER_LEVEL_JEST_CACHE_DIR=\"$JEST_CACHE_DIR\" RTC_LOWER_LEVEL_RUN_ROOT=\"$run_root\" RTC_LOWER_LEVEL_RUN_STARTED=\"$run_started\" RTC_LOWER_LEVEL_SEED_START=\"$seed_start\" RTC_LOWER_LEVEL_SEED_COUNT=\"$seed_count\" RTC_LOWER_LEVEL_CASE_COUNT=\"$case_count\" RTC_LOWER_LEVEL_PLACEMENT_CASE_COUNT=\"$placement_case_count\" \"$REPO/bin/rtc-lower-level-fuzz-loop-remote.sh\" run >> \"$BASE/logs/lower-level-fuzz-loop.log\" 2>&1'"
 	printf 'started %s root=%s\n' "$SESSION" "$run_root"
 }
 

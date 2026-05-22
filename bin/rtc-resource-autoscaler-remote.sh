@@ -995,8 +995,13 @@ NODE
 
 should_defer_budget_restart_for_first_pass() {
 	case "$1" in
-		missing_monitor|materialization_invariant_failed|severe_pressure)
+		missing_monitor|severe_pressure)
 			return 1
+			;;
+		materialization_invariant_failed)
+			if materialization_logs_show_wp_env_infra_failure; then
+				return 1
+			fi
 			;;
 	esac
 	coverage_first_pass_pending

@@ -47,6 +47,35 @@ printf '%s\n' "$OUT" > "$BASE/current-output-dir.txt"
 	printf 'Groups path: %s\n\n' "$OUT/supervisor-groups.json"
 	printf '## Startup\n'
 	printf -- '- status: launcher started; monitor process pending\n\n'
+	if [ -n "$PREVIOUS_COVERAGE" ] && [ -f "$PREVIOUS_COVERAGE/novelty-state.json" ]; then
+		printf '## Warmup Carryover\n'
+		printf -- '- previous output dir: %s\n' "$PREVIOUS_COVERAGE"
+		node - "$PREVIOUS_COVERAGE/novelty-state.json" <<'NODE' || true
+const fs = require( 'fs' );
+const statePath = process.argv[ 2 ];
+try {
+	const state = JSON.parse( fs.readFileSync( statePath, 'utf8' ) );
+	const lastCompletedAt =
+		state.lastCompletedFullPassAt ||
+		state.lastFullPassAt ||
+		state.lastUpdatedAt ||
+		'unknown';
+	const yieldCurrent = state.triageYieldCurrent || {};
+	console.log(
+		`- previous completed pass: ${ lastCompletedAt }`
+	);
+	console.log(
+		`- previous current-run likely-real: ${ yieldCurrent.likelyRealVisible ?? 'unknown' }`
+	);
+	console.log(
+		`- previous current-run top duplicate share: ${ yieldCurrent.topDuplicateFamilyShare ?? 'unknown' }`
+	);
+} catch ( error ) {
+	console.log( `- previous state read failed: ${ error.name || 'unknown' }` );
+}
+NODE
+		printf -- '- current root still requires its own full pass before promotion decisions use current-run metrics\n\n'
+	fi
 	printf '## Coverage Guidance\n'
 	printf -- '- unmet goals: pending until first pass\n'
 	printf -- '- harness-work candidates: pending until first pass\n'

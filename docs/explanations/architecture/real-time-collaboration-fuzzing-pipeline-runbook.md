@@ -190,11 +190,17 @@ feature feedback from profile-specific unit/property harnesses such as
 and
 `packages/core-data/src/utils/test/rtc-table-query-array-crdt.coverage-fuzz.test.js`.
 The runner writes `GUTENBERG_RTC_CG_FEATURE_FILE` for each batch and retains
-corpus inputs when they discover either new V8 ranges or new domain features
-such as cursor position classes, entity/formatting shapes, text-growth classes,
-query-array table shapes, and oracle paths. Its `events.ndjson` and
-`status.tsv` rows include `featureKeys` and `newFeatureKeys` next to the
-coverage counters.
+corpus inputs when they discover new V8 ranges, admitted domain features, or
+new assertion families. For the HTTP polling manager target, raw feature-only
+growth is admitted only when it is canary-relevant: title reload, existing-post
+CRDT, restore-state storage, or large HTTP lifecycle. Its `events.ndjson` and
+`status.tsv` rows include raw `featureKeys`/`newFeatureKeys`,
+`admittedNewFeatureKeys`, coverage counters, and product-yield flags. The
+unit/property default target is the rich-text CRDT merge harness; table
+query-array CRDT runs remain available by explicit environment override, and
+repeated remote-marker table failures are canonicalized into one family for
+routing to PR14B repair/downscope instead of being counted as adjacent new
+bugs.
 
 `bin/rtc-fuzz-level-mix-persona-loop-remote.sh` starts the continuous
 fuzz-level mix controller on Jetstream2. This loop must not wait for stalls,
@@ -388,7 +394,13 @@ The remote launchers are intentionally split by ownership:
     steady-state budget. Scale-up is blocked while the 1-, 5-, or 15-minute load
     averages still show a backlog, so the controller cannot increase browser
     work merely because a severe spike decayed into a still-overloaded high
-    pressure state. The browser/e2e floor is also a breadth floor, not only a
+    pressure state. Budget and materialization restarts are deferred while the
+    active coverage root is still waiting for its first full novelty pass, unless
+    the monitor is missing, severe pressure requires action, or logs show a real
+    `wp-env` infrastructure failure. This preserves current-root continuity and
+    avoids losing the first-pass accumulation needed by the coverage, duplicate
+    noise, and PR feedback loops. The browser/e2e floor is also a breadth floor,
+    not only a
     lane-count floor: `RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS`
     defaults to 10, and the autoscaler clamps coverage-guided target/max budgets
     to keep at least that many primary coverage groups enabled. If the current
@@ -445,10 +457,17 @@ The remote launchers are intentionally split by ownership:
     protocol Codex jobs are also timeout-bounded.
 -   `rtc-deferred-work-promotion-loop-remote.sh` turns deferred bug families
     into local candidate branches, targeted diagnostics, or explicit downscope
-    reports. It reads current fuzz output and PR-split reports, creates one
-    worktree per job, and keeps default Codex concurrency conservative. It does
-    not apply an independent load-average launch gate; resource pressure is
-    observed in status/context and handled by the shared scaling policy.
+    reports. It installs
+    `rtc-deferred-work-promotion-runtime-remote.sh` into the deferred-work base,
+    reads current fuzz output and PR-split reports, creates one worktree per job,
+    and keeps default Codex concurrency conservative. It writes
+    `current-deferred-control.tsv` with per-family `eligible`,
+    `single-flight-held`, `cooldown-held`, or `downscoped` state. Manifest-held
+    or over-budget families must progress through manifest adoption,
+    exact-stack replay, owner evidence, green stack adoption, or explicit
+    downscope; interval relaunches are treated as churn. It does not apply an
+    independent load-average launch gate; resource pressure is observed in
+    status/context and handled by the shared scaling policy.
 -   `rtc-pr-finalization-loop-remote.sh` audits candidate branches and produces
     branch-split corrections, diffstats, validation notes, and push commands for
     the local host. It does not push from Jetstream and does not independently
@@ -458,8 +477,14 @@ The remote launchers are intentionally split by ownership:
     into typed blocker/lane/queue state. It keeps branch audit and push-manifest
     export lanes parallel, adopts active blocker jobs before launching new ones,
     and can launch bounded continuation jobs for critical blockers such as
-    PR17/seed `1020002`. It writes local-host handoff artifacts only and never
-    pushes from Jetstream.
+    PR17/seed `1020002`. It consumes `current-deferred-control.tsv` so a
+    manifest-held deferred family stays held rather than reentering generic
+    queued work. Continuation jobs write Codex output to a sidecar log first and
+    publish a non-empty `report.md` only on completion, so zero-byte reports are
+    stale execution failures rather than ambiguous in-progress artifacts. The
+    no-progress scan also suppresses active continuation artifacts until the
+    owning tmux session exits. It writes local-host handoff artifacts only and
+    never pushes from Jetstream.
 -   `rtc-productive-analysis-loop-remote.sh` runs targeted analysis lanes for
     PR blocker routing, benchmark-to-fuzzer closure, deferred-family reduction,
     and lower-level fuzzing yield retargeting. Its output is not just prose:

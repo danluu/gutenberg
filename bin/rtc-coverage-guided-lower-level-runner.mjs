@@ -9,19 +9,98 @@ const repo = process.env.RTC_CG_LOWER_LEVEL_REPO || process.cwd();
 const runRoot = process.env.RTC_CG_LOWER_LEVEL_RUN_ROOT;
 const groupName =
 	process.env.RTC_CG_LOWER_LEVEL_GROUP ||
-	'coverage-guided-lower-level-rich-text-multiblock';
+	'coverage-guided-lower-level-block-parser-serialization';
+const builtinTargets = new Map( [
+	[
+		'coverage-guided-lower-level-block-parser-serialization',
+		{
+			profile: 'rtc-block-parser-serialization',
+			testPath:
+				'packages/blocks/src/api/parser/test/rtc-block-parser-serialization.coverage-fuzz.test.js',
+			maxInputBytes: 192,
+			maxCorpusFiles: 5000,
+			maxMinimizeInputs: 32,
+			maxFailureIsolationsPerRun: 4,
+			repeatFailureIsolationEvery: 0,
+		},
+	],
+	[
+		'coverage-guided-lower-level-rich-text-crdt',
+		{
+			profile: 'rtc-rich-text-crdt',
+			testPath:
+				'packages/core-data/src/utils/test/rtc-rich-text-crdt-merge.coverage-fuzz.test.js',
+			maxInputBytes: 64,
+			maxCorpusFiles: 5000,
+			maxMinimizeInputs: 16,
+			maxFailureIsolationsPerRun: Number.MAX_SAFE_INTEGER,
+			repeatFailureIsolationEvery: 0,
+		},
+	],
+	[
+		'coverage-guided-lower-level-rich-text-multiblock',
+		{
+			profile: 'rtc-rich-text-crdt-multiblock',
+			testPath:
+				'packages/core-data/src/utils/test/rtc-rich-text-crdt-merge.coverage-fuzz.test.js',
+			maxInputBytes: 160,
+			maxCorpusFiles: 5000,
+			maxMinimizeInputs: 16,
+			maxFailureIsolationsPerRun: Number.MAX_SAFE_INTEGER,
+			repeatFailureIsolationEvery: 0,
+		},
+	],
+	[
+		'coverage-guided-lower-level-table-query-array-crdt',
+		{
+			profile: 'rtc-table-query-array-crdt',
+			testPath:
+				'packages/core-data/src/utils/test/rtc-table-query-array-crdt.coverage-fuzz.test.js',
+			maxInputBytes: 64,
+			maxCorpusFiles: 10000,
+			maxMinimizeInputs: 4,
+			maxFailureIsolationsPerRun: 1,
+			repeatFailureIsolationEvery: 128,
+		},
+	],
+	[
+		'coverage-guided-lower-level-http-polling-manager',
+		{
+			profile: 'rtc-http-polling-manager',
+			testPath:
+				'packages/sync/src/providers/http-polling/test/polling-manager.coverage-fuzz.test.ts',
+			maxInputBytes: 320,
+			maxCorpusFiles: 8000,
+			maxMinimizeInputs: 24,
+			maxFailureIsolationsPerRun: 4,
+			repeatFailureIsolationEvery: 32,
+		},
+	],
+] );
+const builtinTarget = builtinTargets.get( groupName );
 const testPath =
 	process.env.RTC_CG_LOWER_LEVEL_TEST_PATH ||
-	'packages/core-data/src/utils/test/rtc-rich-text-crdt-merge.coverage-fuzz.test.js';
+	builtinTarget?.testPath ||
+	'packages/blocks/src/api/parser/test/rtc-block-parser-serialization.coverage-fuzz.test.js';
 const fuzzLevel = 'coverage-guided-lower-level';
 const profile =
-	process.env.RTC_CG_LOWER_LEVEL_PROFILE || 'rtc-rich-text-crdt-multiblock';
+	process.env.RTC_CG_LOWER_LEVEL_PROFILE ||
+	builtinTarget?.profile ||
+	'rtc-block-parser-serialization';
 const transport = 'in-process';
 const coverageEngine = 'v8-node-coverage';
 const engine = 'v8-node-coverage-guided-mutator';
 const nativeIntegration =
 	'closest-isolated-coverage-guided-alternative; JS/TS target uses V8 coverage feedback instead of C/C++ AFL/libFuzzer';
 const runStarted = process.env.RTC_CG_LOWER_LEVEL_RUN_STARTED || 'manual';
+const runId =
+	process.env.RTC_CG_LOWER_LEVEL_RUN_ID ||
+	path.basename( runRoot || 'manual' );
+const sessionName =
+	process.env.RTC_CG_LOWER_LEVEL_SESSION || `rtc-${ groupName }`;
+const globalCpuAdmissionPath =
+	process.env.RTC_GLOBAL_CPU_ADMISSION ||
+	'/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/rtc-global-cpu-admission.sh';
 const batchSize = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_BATCH_SIZE', 'RTC_CG_LOWER_LEVEL_RUNS' ],
 	32,
@@ -30,13 +109,13 @@ const batchSize = readIntegerEnv(
 );
 const maxInputBytes = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_MAX_INPUT_BYTES' ],
-	160,
+	builtinTarget?.maxInputBytes ?? 192,
 	1,
 	4096
 );
 const maxCorpusFiles = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_MAX_CORPUS_FILES' ],
-	5000,
+	builtinTarget?.maxCorpusFiles ?? 5000,
 	1,
 	1000000
 );
@@ -65,34 +144,31 @@ const minimizeFailures =
 	process.env.RTC_CG_LOWER_LEVEL_MINIMIZE_FAILURES !== '0';
 const maxMinimizeInputs = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_MAX_MINIMIZE_INPUTS' ],
-	16,
+	builtinTarget?.maxMinimizeInputs ?? batchSize,
 	1,
 	1000
 );
 const maxFailureIsolationsPerRun = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_MAX_FAILURE_ISOLATIONS_PER_RUN' ],
-	Number.MAX_SAFE_INTEGER,
+	builtinTarget?.maxFailureIsolationsPerRun ?? Number.MAX_SAFE_INTEGER,
 	0,
 	Number.MAX_SAFE_INTEGER
 );
 const repeatFailureIsolationEvery = readIntegerEnv(
 	[ 'RTC_CG_LOWER_LEVEL_REPEAT_FAILURE_ISOLATION_EVERY' ],
-	0,
+	builtinTarget?.repeatFailureIsolationEvery ?? 0,
 	0,
 	Number.MAX_SAFE_INTEGER
 );
 const coverageTargets = coverageTargetsForProfile( profile, testPath );
 const executionStrategy = 'direct-node-jest-per-batch';
-const mutationEngine = isParserTarget()
-	? 'parser-dictionary-byte-mutator'
-	: isRichTextCrdtTarget()
-	? 'rich-text-crdt-dictionary-byte-mutator'
-	: 'byte-mutator';
+const mutationEngine = getMutationEngine();
 
 if ( ! runRoot ) {
 	console.error( 'RTC_CG_LOWER_LEVEL_RUN_ROOT is required' );
 	process.exit( 2 );
 }
+enforceBuiltinGroupTarget();
 
 const tmpDir =
 	process.env.RTC_CG_LOWER_LEVEL_TMPDIR ||
@@ -116,12 +192,12 @@ const runnerArgs = [
 	testPath,
 	'--runInBand',
 	'--ci',
-	'--cacheDirectory',
-	jestCacheDir,
+	`--cacheDirectory=${ jestCacheDir }`,
 ];
 const runnerCommand = `nice -n ${ niceLevel } timeout ${ timeoutSeconds }s node ${ runnerArgs.join(
 	' '
 ) }`;
+const targetPreflight = verifyTargetPreflight();
 
 const dirs = {
 	corpus: path.join( runRoot, 'corpus' ),
@@ -170,12 +246,16 @@ appendEvent( {
 	timeoutSeconds,
 	sleepSeconds,
 	nice: niceLevel,
+	globalCpuAdmissionClass: 'lower-level',
+	globalCpuAdmissionLabel: sessionName,
+	globalCpuAdmissionPath,
 	tmpDir,
 	npmCacheDir,
 	jestCacheDir,
 	jestConfigPath,
 	runnerCommand,
 	executionStrategy,
+	targetPreflight,
 	startupAmortizationInputs: batchSize,
 	semanticFeatureFeedback: true,
 	failureIsolation: minimizeFailures,
@@ -195,8 +275,12 @@ let attempt = readIntegerEnv(
 );
 let attemptsRun = 0;
 let cumulativeTestExecutionCount = 0;
+let priorityCorpusSignature = '';
+let priorityCorpusFiles = null;
 
 while ( true ) {
+	waitForGlobalCpuBudget();
+
 	const started = Date.now();
 	const stamp = new Date().toISOString().replace( /[-:.]/g, '' );
 	const batch = makeBatch( attempt );
@@ -294,11 +378,26 @@ while ( true ) {
 	const newFeatureKeys = featureKeys.filter(
 		( key ) => ! coverageState.featureKeys.includes( key )
 	);
-	const failure = classifyFailure(
-		exitCode,
-		result.stdout || '',
-		result.stderr || ''
-	);
+	const canaryRelevantNewFeatureKeys = isHttpPollingTarget()
+		? newFeatureKeys.filter( isHttpPollingCanaryRelevantFeature )
+		: newFeatureKeys;
+	const admittedNewFeatureKeys = isHttpPollingTarget()
+		? canaryRelevantNewFeatureKeys
+		: newFeatureKeys;
+	const featureCorpusAdmission =
+		admittedNewFeatureKeys.length > 0;
+	const coverageCanaryFailure =
+		exitCode === 0 && coverageKeys.length === 0
+			? {
+					kind: 'harness-bootstrap',
+					summary:
+						'RTC_CG_LOWER_LEVEL_ZERO_COVERAGE_CANARY: no target V8 coverage keys collected',
+			  }
+			: null;
+	const effectiveExitCode = coverageCanaryFailure ? 66 : exitCode;
+	const failure =
+		coverageCanaryFailure ||
+		classifyFailure( exitCode, result.stdout || '', result.stderr || '' );
 	const failureCanonicalKey = canonicalFailureKey( failure );
 	const newFailureKey =
 		failure?.kind === 'oracle-failure' &&
@@ -307,7 +406,7 @@ while ( true ) {
 
 	if (
 		newCoverageKeys.length > 0 ||
-		newFeatureKeys.length > 0 ||
+		admittedNewFeatureKeys.length > 0 ||
 		newFailureKey
 	) {
 		coverageState = {
@@ -315,7 +414,10 @@ while ( true ) {
 				...new Set( [ ...coverageState.keys, ...coverageKeys ] ),
 			].sort(),
 			featureKeys: [
-				...new Set( [ ...coverageState.featureKeys, ...featureKeys ] ),
+				...new Set( [
+					...coverageState.featureKeys,
+					...admittedNewFeatureKeys,
+				] ),
 			].sort(),
 			failureKeys: [
 				...new Set( [
@@ -326,20 +428,30 @@ while ( true ) {
 			updatedAt: new Date().toISOString(),
 		};
 		writeCoverageState( coverageState );
-		saveCorpusInputs(
-			batch,
-			newCoverageKeys.length > 0
-				? `cov-${ attempt }`
-				: newFeatureKeys.length > 0
-				? `feature-${ attempt }`
-				: `failure-key-${ attempt }`
-		);
+		if (
+			newCoverageKeys.length > 0 ||
+			featureCorpusAdmission ||
+			newFailureKey
+		) {
+			saveCorpusInputs(
+				batch,
+				getCorpusSavePrefix(
+					attempt,
+					newCoverageKeys.length,
+					featureCorpusAdmission
+						? canaryRelevantNewFeatureKeys.length
+						: 0
+				)
+			);
+		}
 	}
 
 	const minimization =
-		exitCode !== 0 ? isolateFailureInputs( batch, attempt, failure ) : null;
+		effectiveExitCode !== 0
+			? isolateFailureInputs( batch, attempt, failure )
+			: null;
 	const failureDetails =
-		exitCode !== 0
+		effectiveExitCode !== 0
 			? saveFailureInputs(
 					batch,
 					attempt,
@@ -352,7 +464,7 @@ while ( true ) {
 	const crashDir = dirs.crashes;
 	const harnessFailureDir = dirs.harnessFailures;
 	const coverageRetained =
-		exitCode !== 0 ||
+		effectiveExitCode !== 0 ||
 		keepSuccessCoverage ||
 		! removeCoverageDir( coverageDir );
 	const durationMs = Date.now() - started;
@@ -361,8 +473,9 @@ while ( true ) {
 	const event = {
 		kind: 'seed-attempt-complete',
 		label: 'primary',
-		ok: exitCode === 0,
-		exitCode,
+		ok: effectiveExitCode === 0,
+		exitCode: effectiveExitCode,
+		rawExitCode: exitCode,
 		attempt,
 		inputCount: batch.length,
 		testExecutionCount: batch.length,
@@ -395,9 +508,17 @@ while ( true ) {
 		failureIsolationAttempted:
 			failureDetails?.failureIsolationAttempted ?? false,
 		coverageKeys: coverageKeys.length,
+		coverageCanaryOk: coverageKeys.length > 0,
 		newCoverageKeys: newCoverageKeys.length,
 		featureKeys: featureKeys.length,
 		newFeatureKeys: newFeatureKeys.length,
+		admittedNewFeatureKeys: admittedNewFeatureKeys.length,
+		canaryRelevantNewFeatureKeys: canaryRelevantNewFeatureKeys.length,
+		featureCorpusAdmission,
+		productYield:
+			newCoverageKeys.length > 0 ||
+			admittedNewFeatureKeys.length > 0 ||
+			Boolean( newFailureKey ),
 		corpusSize: corpusFiles().length,
 		executionDurationMs,
 		durationMs,
@@ -414,8 +535,10 @@ while ( true ) {
 			`new_coverage_keys=${ newCoverageKeys.length }`,
 			`feature_keys=${ featureKeys.length }`,
 			`new_feature_keys=${ newFeatureKeys.length }`,
+			`admitted_new_feature_keys=${ admittedNewFeatureKeys.length }`,
 			`corpus=${ event.corpusSize }`,
-			`exit=${ exitCode }`,
+			`exit=${ effectiveExitCode }`,
+			`raw_exit=${ exitCode }`,
 			`log=${ logPath }`,
 		].join( '\t' ) + '\n'
 	);
@@ -431,6 +554,22 @@ while ( true ) {
 		spawnSync( 'sleep', [ String( sleepSeconds ) ] );
 	}
 }
+
+appendEvent( {
+	kind: 'runner-stop',
+	label: 'primary',
+	stopReason:
+		maxAttempts > 0 && attemptsRun >= maxAttempts
+			? 'max-attempts'
+			: 'loop-exit',
+	maxAttempts,
+	attemptsRun,
+	nextAttempt: attempt,
+	cumulativeTestExecutionCount,
+	corpusSize: corpusFiles().length,
+	statusPath,
+	coverageStatePath: statePath,
+} );
 
 function readIntegerEnv( names, defaultValue, minimum, maximum ) {
 	for ( const name of names ) {
@@ -454,6 +593,199 @@ function touch( filePath ) {
 	fs.closeSync( fs.openSync( filePath, 'a' ) );
 }
 
+function waitForGlobalCpuBudget() {
+	if ( process.env.RTC_CG_LOWER_LEVEL_SKIP_GLOBAL_CPU_ADMISSION === '1' ) {
+		return;
+	}
+	if (
+		! globalCpuAdmissionPath ||
+		! fs.existsSync( globalCpuAdmissionPath )
+	) {
+		return;
+	}
+
+	const result = spawnSync(
+		globalCpuAdmissionPath,
+		[ 'wait', 'lower-level', sessionName ],
+		{
+			cwd: repo,
+			env: process.env,
+			stdio: 'inherit',
+		}
+	);
+
+	if ( result.error || result.status !== 0 ) {
+		appendEvent( {
+			kind: 'global-cpu-admission-error',
+			label: 'primary',
+			admissionPath: globalCpuAdmissionPath,
+			admissionClass: 'lower-level',
+			admissionLabel: sessionName,
+			error: result.error?.message ?? null,
+			status: result.status ?? null,
+			signal: result.signal ?? null,
+		} );
+	}
+}
+
+function enforceBuiltinGroupTarget() {
+	const customTargetAllowed =
+		process.env.RTC_CG_LOWER_LEVEL_ALLOW_CUSTOM_TARGET === '1';
+
+	if ( ! builtinTarget ) {
+		if (
+			! customTargetAllowed &&
+			groupName.startsWith( 'coverage-guided-lower-level-' )
+		) {
+			console.error(
+				`unsupported built-in coverage-guided lower-level group: ${ groupName }; promoted built-ins: ${ [
+					...builtinTargets.keys(),
+				].join(
+					', '
+				) }; set RTC_CG_LOWER_LEVEL_ALLOW_CUSTOM_TARGET=1 with explicit profile/test path to override`
+			);
+			process.exit( 2 );
+		}
+
+		return;
+	}
+
+	if ( customTargetAllowed ) {
+		return;
+	}
+
+	if ( profile !== builtinTarget.profile ) {
+		console.error(
+			`refusing mismatched profile for ${ groupName }: got ${ profile }, expected ${ builtinTarget.profile }; set RTC_CG_LOWER_LEVEL_ALLOW_CUSTOM_TARGET=1 to override`
+		);
+		process.exit( 2 );
+	}
+
+	if ( testPath !== builtinTarget.testPath ) {
+		console.error(
+			`refusing mismatched test path for ${ groupName }: got ${ testPath }, expected ${ builtinTarget.testPath }; set RTC_CG_LOWER_LEVEL_ALLOW_CUSTOM_TARGET=1 to override`
+		);
+		process.exit( 2 );
+	}
+}
+
+function verifyTargetPreflight() {
+	const checks = [];
+	const requiredPaths = [ testPath, jestConfigPath, jestRunnerPath ];
+
+	if ( isParserTarget() ) {
+		requiredPaths.push(
+			'packages/block-serialization-default-parser/src/index.ts',
+			'packages/block-serialization-spec-parser/parser.js'
+		);
+	}
+
+	for ( const relativePath of requiredPaths ) {
+		const absolutePath = path.resolve( repo, relativePath );
+
+		if ( ! isInsideRepo( absolutePath ) ) {
+			failPreflight(
+				`target preflight path escapes repo: ${ relativePath } -> ${ absolutePath }`
+			);
+		}
+
+		if ( ! fs.existsSync( absolutePath ) ) {
+			if (
+				relativePath ===
+				'packages/block-serialization-spec-parser/parser.js'
+			) {
+				failPreflight(
+					`target preflight file is missing: ${ relativePath }; generate it with npm run --workspace @wordpress/block-serialization-spec-parser build:js`
+				);
+			}
+
+			failPreflight(
+				`target preflight file is missing: ${ relativePath }`
+			);
+		}
+
+		checks.push( {
+			path: relativePath,
+			absolutePath,
+			exists: true,
+		} );
+	}
+
+	if ( isParserTarget() ) {
+		const testSource = fs.readFileSync(
+			path.resolve( repo, testPath ),
+			'utf8'
+		);
+
+		if (
+			testSource.includes( '@wordpress/block-serialization-spec-parser' )
+		) {
+			failPreflight(
+				`${ testPath } must import packages/block-serialization-spec-parser/parser.js directly; @wordpress/block-serialization-spec-parser resolves through shared node_modules in this checkout`
+			);
+		}
+
+		checks.push( {
+			check: 'parser-spec-import',
+			source: testPath,
+			localPath: 'packages/block-serialization-spec-parser/parser.js',
+			ok: true,
+		} );
+	}
+
+	return {
+		ok: true,
+		repo,
+		checks,
+	};
+}
+
+function isInsideRepo( absolutePath ) {
+	const repoPath = path.resolve( repo );
+	const relativePath = path.relative( repoPath, absolutePath );
+
+	return relativePath === '' || ! relativePath.startsWith( '..' );
+}
+
+function failPreflight( message ) {
+	console.error(
+		`coverage-guided lower-level preflight failed: ${ message }`
+	);
+	process.exit( 2 );
+}
+
+function getMutationEngine() {
+	if ( isParserTarget() ) {
+		return 'parser-dictionary-byte-mutator';
+	}
+
+	if ( isRichTextCrdtTarget() ) {
+		return 'rich-text-crdt-dictionary-byte-mutator';
+	}
+
+	if ( isHttpPollingTarget() ) {
+		return 'http-polling-state-machine-byte-mutator';
+	}
+
+	return 'byte-mutator';
+}
+
+function getCorpusSavePrefix(
+	attemptIndex,
+	newCoverageKeyCount,
+	newFeatureKeyCount
+) {
+	if ( newCoverageKeyCount > 0 ) {
+		return `cov-${ attemptIndex }`;
+	}
+
+	if ( newFeatureKeyCount > 0 ) {
+		return `feature-${ attemptIndex }`;
+	}
+
+	return `failure-key-${ attemptIndex }`;
+}
+
 function getSpawnExitCode( result ) {
 	if ( typeof result.status === 'number' ) {
 		return result.status;
@@ -469,7 +801,10 @@ function getSpawnExitCode( result ) {
 function writeSupervisorGroups() {
 	const groups = [
 		{
+			schemaVersion: 1,
+			version: 1,
 			name: groupName,
+			runId,
 			fuzzLevel,
 			transport,
 			engine,
@@ -485,12 +820,16 @@ function writeSupervisorGroups() {
 			timeoutSeconds,
 			sleepSeconds,
 			nice: niceLevel,
+			globalCpuAdmissionClass: 'lower-level',
+			globalCpuAdmissionLabel: sessionName,
+			globalCpuAdmissionPath,
 			tmpDir,
 			npmCacheDir,
 			jestCacheDir,
 			jestConfigPath,
 			runnerCommand,
 			executionStrategy,
+			targetPreflight,
 			corpusFeedback: true,
 			semanticFeatureFeedback: true,
 			repoRoot: repo,
@@ -519,37 +858,58 @@ function writeSupervisorGroups() {
 
 function appendEvent( event ) {
 	const serializedEvent = `${ JSON.stringify( {
+		schemaVersion: 1,
+		version: 1,
 		kind: event.kind,
 		at: event.at || new Date().toISOString(),
 		group: groupName,
 		groupName,
+		runId,
 		fuzzLevel,
 		transport,
 		engine,
 		coverageEngine,
 		nativeIntegration,
 		target: testPath,
+		profile,
 		actionProfile: profile,
 		...event,
 	} ) }\n`;
 
+	fs.mkdirSync( path.dirname( eventsPath ), { recursive: true } );
+	fs.mkdirSync( path.dirname( rootEventsPath ), { recursive: true } );
 	fs.appendFileSync( eventsPath, serializedEvent );
 	fs.appendFileSync( rootEventsPath, serializedEvent );
 }
 
 function seedCorpus() {
-	if ( corpusFiles().length > 0 ) {
-		return;
-	}
+	const existingInputHashes = new Set(
+		corpusFiles().map( ( filePath ) =>
+			hashInput( fs.readFileSync( filePath ) )
+		)
+	);
 
 	for ( const [ index, seed ] of initialCorpusSeeds().entries() ) {
+		const hash = hashInput( seed );
+
+		if ( existingInputHashes.has( hash ) ) {
+			continue;
+		}
+		if ( corpusFiles().length >= maxCorpusFiles ) {
+			return;
+		}
+
 		fs.writeFileSync(
 			path.join(
 				dirs.queue,
-				`seed-${ String( index ).padStart( 3, '0' ) }.bin`
+				`seed-${ String( index ).padStart( 3, '0' ) }-${ hash.slice(
+					0,
+					16
+				) }.bin`
 			),
 			seed
 		);
+		existingInputHashes.add( hash );
 	}
 }
 
@@ -564,6 +924,12 @@ function initialCorpusSeeds() {
 				'<!-- wp:paragraph --><p>A</p><!-- /wp:paragraph -->'
 			),
 			Buffer.from( '<!-- wp:html -->&copy;&nbsp;<br><!-- /wp:html -->' ),
+			Buffer.from(
+				'<!-- wp:paragraph {"content":"copy &copy reg &reg nbsp &nbsp done"} --><p>&copy &#xA9 &#169 &notin &nbsp</p><!-- /wp:paragraph -->'
+			),
+			Buffer.from(
+				'<!-- wp:test-block {"href":"https://example.test/entity?copy=&copy&semi=&copy;&hex=&#xA9&dec=&#169","title":"copy &copy reg &reg nbsp &nbsp done"} /-->'
+			),
 			Buffer.from(
 				'<!-- wp:group --><!-- wp:paragraph /--><!-- /wp:group -->'
 			),
@@ -595,6 +961,49 @@ function initialCorpusSeeds() {
 		];
 	}
 
+	if ( isHttpPollingTarget() ) {
+		return [
+			Buffer.from( 'http-polling-normal-overflow-rotation' ),
+			Buffer.from( 'http-polling-transient-preserve-updates' ),
+			Buffer.from( 'http-polling-forbidden-specific-room' ),
+			Buffer.from( 'http-polling-body-too-large-retry' ),
+			Buffer.from( 'http-polling-cursor-regression-diagnostic' ),
+			Buffer.from( 'http-polling-nonadvancing-cursor-diagnostic' ),
+			Buffer.from( 'http-polling-missing-update-room-diagnostic' ),
+			Buffer.from( 'http-polling-duplicate-response-room-diagnostic' ),
+			Buffer.from( 'http-polling-duplicate-update-delivery-diagnostic' ),
+			Buffer.from( 'http-polling-incoming-apply-failure-diagnostic' ),
+			Buffer.from( 'http-polling-duplicate-active-room-diagnostic' ),
+			Buffer.from( 'http-polling-invalid-compaction-update-diagnostic' ),
+			Buffer.from( 'http-polling-pagehide-disconnect-diagnostic' ),
+			Buffer.from( 'http-polling-stale-since-token-replay-diagnostic' ),
+			Buffer.from( 'http-polling-server-update-union-diagnostic' ),
+			Buffer.from(
+				'http-polling-pagehide-disconnect-rooms-18-updates-6-peers-16-steps-14-retry-now-visibility-disconnect-reconnect'
+			),
+			Buffer.from(
+				'http-polling-server-update-union-rooms-10-updates-6-peers-12-steps-14-visibility-retry-now'
+			),
+			Buffer.from(
+				'http-polling-canary-title-reload-http-server-update-union-rooms-6-updates-4-peers-6-steps-12-retry-now-visibility-disconnect-reconnect'
+			),
+			Buffer.from(
+				'http-polling-canary-existing-post-crdt-http-server-update-union-rooms-8-updates-5-peers-8-steps-12-retry-now-visibility-disconnect-reconnect'
+			),
+			Buffer.from(
+				'http-polling-canary-restore-state-storage-http-stale-since-token-replay-rooms-8-updates-5-peers-8-steps-12-retry-now-visibility-disconnect-reconnect'
+			),
+			Buffer.from(
+				'http-polling-canary-large-http-lifecycle-server-update-union-rooms-12-updates-6-peers-16-steps-14-retry-now-visibility-disconnect-reconnect'
+			),
+			Buffer.from(
+				'http-polling-stale-since-token-replay-rooms-12-updates-6-peers-16-steps-14-disconnect-reconnect'
+			),
+			Buffer.from( [ 0, 1, 2, 3, 5, 8, 13, 21 ] ),
+			Buffer.from( [ 255, 128, 64, 32, 16, 8, 4, 2 ] ),
+		];
+	}
+
 	return [
 		Buffer.from( 'rich-text-crdt-merge' ),
 		Buffer.from( 'formatted-cursor-path' ),
@@ -611,6 +1020,19 @@ function initialCorpusSeeds() {
 
 function coverageTargetsForProfile( actionProfile, targetPath ) {
 	if (
+		actionProfile.includes( 'http-polling' ) ||
+		targetPath.includes( 'http-polling' ) ||
+		targetPath.includes( 'polling-manager' )
+	) {
+		return [
+			'packages/sync/src/providers/http-polling/polling-manager.ts',
+			'packages/sync/src/providers/http-polling/config.ts',
+			'packages/sync/src/providers/http-polling/types.ts',
+			'packages/sync/src/providers/http-polling/utils.ts',
+		];
+	}
+
+	if (
 		actionProfile.includes( 'parser' ) ||
 		targetPath.includes( 'parser' ) ||
 		targetPath.includes( 'serialization' )
@@ -619,8 +1041,10 @@ function coverageTargetsForProfile( actionProfile, targetPath ) {
 			'packages/blocks/src/api/parser/index.ts',
 			'packages/blocks/src/api/parser/serialize-raw-block.ts',
 			'packages/blocks/src/api/serializer.tsx',
+			'packages/blocks/src/api/validation/index.ts',
 			'packages/block-serialization-default-parser/src/index.ts',
 			'packages/block-serialization-spec-parser/parser.js',
+			'packages/html-entities/src/index.ts',
 		];
 	}
 
@@ -712,8 +1136,50 @@ function corpusFiles() {
 	}
 }
 
+function prioritizedCorpusFiles( files ) {
+	if ( ! isHttpPollingTarget() || files.length === 0 ) {
+		return files;
+	}
+
+	const signature = `${ files.length }:${ files[ 0 ] }:${
+		files[ files.length - 1 ]
+	}`;
+	if ( priorityCorpusFiles && priorityCorpusSignature === signature ) {
+		return priorityCorpusFiles;
+	}
+
+	const priority = [];
+	const rest = [];
+	for ( const filePath of files ) {
+		let isCanaryBridgeSeed = false;
+		try {
+			const text = fs.readFileSync( filePath, 'utf8' ).toLowerCase();
+			isCanaryBridgeSeed =
+				text.includes( 'canary-title-reload-http' ) ||
+				text.includes( 'canary-existing-post-crdt-http' ) ||
+				text.includes( 'canary-restore-state-storage-http' ) ||
+				text.includes( 'canary-large-http-lifecycle' );
+		} catch {}
+
+		if ( isCanaryBridgeSeed ) {
+			priority.push( filePath );
+		} else {
+			rest.push( filePath );
+		}
+	}
+
+	priorityCorpusSignature = signature;
+	priorityCorpusFiles = [ ...priority, ...rest ];
+	return priorityCorpusFiles;
+}
+
 function makeBatch( attemptIndex ) {
-	const files = corpusFiles();
+	const files = prioritizedCorpusFiles( corpusFiles() );
+
+	if ( isHttpPollingTarget() ) {
+		return makeHttpPollingBatch( files, attemptIndex );
+	}
+
 	const batch = [];
 
 	for ( let index = 0; index < batchSize; index++ ) {
@@ -725,12 +1191,51 @@ function makeBatch( attemptIndex ) {
 	return batch;
 }
 
+function makeHttpPollingBatch( files, attemptIndex ) {
+	const canaryFiles = files.filter( isHttpPollingCanarySeedFile );
+	const batch = [];
+	const usedFiles = new Set();
+
+	for (
+		let index = 0;
+		index < canaryFiles.length && batch.length < batchSize;
+		index++
+	) {
+		const filePath = canaryFiles[ index ];
+		usedFiles.add( filePath );
+		batch.push(
+			mutateInput( fs.readFileSync( filePath ), attemptIndex, index )
+		);
+	}
+
+	for ( let index = 0; batch.length < batchSize; index++ ) {
+		const filePath = files[ ( attemptIndex + index ) % files.length ];
+
+		if ( usedFiles.has( filePath ) && files.length > batch.length ) {
+			continue;
+		}
+
+		batch.push(
+			mutateInput(
+				fs.readFileSync( filePath ),
+				attemptIndex,
+				batch.length
+			)
+		);
+	}
+
+	return batch;
+}
+
 function mutateInput( input, attemptIndex, caseIndex ) {
 	if ( isParserTarget() ) {
 		return mutateParserInput( input, attemptIndex, caseIndex );
 	}
 	if ( isRichTextCrdtTarget() ) {
 		return mutateRichTextCrdtInput( input, attemptIndex, caseIndex );
+	}
+	if ( isHttpPollingTarget() ) {
+		return mutateHttpPollingInput( input, attemptIndex, caseIndex );
 	}
 
 	const random = createRandom(
@@ -786,6 +1291,120 @@ function isRichTextCrdtTarget() {
 		profile.includes( 'rich-text-crdt' ) ||
 		testPath.includes( 'rich-text-crdt' )
 	);
+}
+
+function isHttpPollingTarget() {
+	return (
+		profile.includes( 'http-polling' ) ||
+		testPath.includes( 'http-polling' ) ||
+		testPath.includes( 'polling-manager' )
+	);
+}
+
+function isHttpPollingCanaryRelevantFeature( feature ) {
+	return (
+		feature.includes( 'canary-bridge' ) ||
+		feature.includes( 'restore-state-storage-canary' ) ||
+		feature.includes( 'target-title-reload-http' ) ||
+		feature.includes( 'target-existing-post-crdt-http' ) ||
+		feature.includes( 'target-restore-state-storage-http' ) ||
+		feature.includes( 'target-large-http-lifecycle' )
+	);
+}
+
+function isHttpPollingCanarySeedFile( filePath ) {
+	try {
+		const text = fs.readFileSync( filePath, 'utf8' ).toLowerCase();
+		return (
+			text.includes( 'canary-title-reload-http' ) ||
+			text.includes( 'canary-existing-post-crdt-http' ) ||
+			text.includes( 'canary-restore-state-storage-http' ) ||
+			text.includes( 'canary-large-http-lifecycle' )
+		);
+	} catch {
+		return false;
+	}
+}
+
+function mutateHttpPollingInput( input, attemptIndex, caseIndex ) {
+	const random = createRandom(
+		attemptIndex * 1000003 + caseIndex * 9176 + 211
+	);
+	const fragments = [
+		'http-polling-normal-overflow-rotation',
+		'http-polling-transient-preserve-updates',
+		'http-polling-forbidden-specific-room',
+		'http-polling-body-too-large-retry',
+		'http-polling-cursor-regression-diagnostic',
+		'http-polling-nonadvancing-cursor-diagnostic',
+		'http-polling-missing-update-room-diagnostic',
+		'http-polling-duplicate-response-room-diagnostic',
+		'http-polling-duplicate-update-delivery-diagnostic',
+		'http-polling-incoming-apply-failure-diagnostic',
+		'http-polling-duplicate-active-room-diagnostic',
+		'http-polling-invalid-compaction-update-diagnostic',
+		'http-polling-pagehide-disconnect-diagnostic',
+		'http-polling-stale-since-token-replay-diagnostic',
+		'http-polling-server-update-union-diagnostic',
+		'http-polling-unregister-rejoin-churn',
+		'http-polling-pagehide-disconnect-rooms-18-updates-6-peers-16-steps-14-retry-now-visibility-disconnect-reconnect',
+		'http-polling-server-update-union-rooms-10-updates-6-peers-12-steps-14-visibility-retry-now',
+		'http-polling-canary-title-reload-http-server-update-union-rooms-6-updates-4-peers-6-steps-12-retry-now-visibility-disconnect-reconnect',
+		'http-polling-canary-existing-post-crdt-http-server-update-union-rooms-8-updates-5-peers-8-steps-12-retry-now-visibility-disconnect-reconnect',
+		'http-polling-canary-restore-state-storage-http-stale-since-token-replay-rooms-8-updates-5-peers-8-steps-12-retry-now-visibility-disconnect-reconnect',
+		'http-polling-canary-large-http-lifecycle-server-update-union-rooms-12-updates-6-peers-16-steps-14-retry-now-visibility-disconnect-reconnect',
+		'http-polling-stale-since-token-replay-rooms-12-updates-6-peers-16-steps-14-disconnect-reconnect',
+		'visibility-retry-churn',
+		'rooms-16-updates-5-peers-8',
+		'rooms-18-updates-6-peers-16-steps-14',
+		'disconnect-reconnect-retry-now-visibility',
+	];
+	let text = input.toString( 'utf8' ).replace( /\0/g, '' );
+
+	if ( ! text.trim() ) {
+		text = fragments[ Math.floor( random() * fragments.length ) ];
+	}
+
+	const op = Math.floor( random() * 7 );
+	const fragment = fragments[ Math.floor( random() * fragments.length ) ];
+	const offset = Math.floor( random() * ( text.length + 1 ) );
+
+	if ( op === 0 ) {
+		text = `${ text.slice( 0, offset ) }-${ fragment }${ text.slice(
+			offset
+		) }`;
+	} else if ( op === 1 && text.length > 1 ) {
+		const length = 1 + Math.floor( random() * Math.min( 20, text.length ) );
+		text = `${ text.slice( 0, offset ) }${ text.slice( offset + length ) }`;
+	} else if ( op === 2 ) {
+		text = text.replace(
+			/(normal|transient|forbidden|cursor|missing|duplicate|incoming|stale|server-update)/g,
+			fragment
+		);
+	} else if ( op === 3 ) {
+		text = `${ text } rooms-${ 3 + Math.floor( random() * 18 ) }`;
+	} else if ( op === 4 ) {
+		text = `${ text } updates-${ 1 + Math.floor( random() * 6 ) }`;
+	} else if ( op === 5 ) {
+		text = `${ text } peers-${ 1 + Math.floor( random() * 16 ) }`;
+	} else if ( text.length > 0 ) {
+		const bytes = Buffer.from( text );
+		const byteOffset = Math.floor( random() * bytes.length );
+		bytes[ byteOffset ] = Math.floor( random() * 256 );
+		text = bytes.toString( 'latin1' );
+	}
+
+	if ( ! text.length ) {
+		text = fragment;
+	}
+	if ( text.length > maxInputBytes ) {
+		const start = Math.floor(
+			random() * ( text.length - maxInputBytes + 1 )
+		);
+		text = text.slice( start, start + maxInputBytes );
+	}
+
+	return Buffer.from( text );
 }
 
 function mutateRichTextCrdtInput( input, attemptIndex, caseIndex ) {
@@ -859,6 +1478,8 @@ function mutateParserInput( input, attemptIndex, caseIndex ) {
 	const fragments = [
 		'<!-- wp:paragraph --><p>Alpha</p><!-- /wp:paragraph -->',
 		'<!-- wp:html -->&copy;&nbsp;<br><!-- /wp:html -->',
+		'<!-- wp:paragraph {"content":"copy &copy reg &reg nbsp &nbsp done"} --><p>&copy &#xA9 &#169 &notin &nbsp</p><!-- /wp:paragraph -->',
+		'<!-- wp:test-block {"href":"https://example.test/entity?copy=&copy&semi=&copy;&hex=&#xA9&dec=&#169","title":"copy &copy reg &reg nbsp &nbsp done"} /-->',
 		'<!-- wp:group --><!-- wp:paragraph --><p>Nested</p><!-- /wp:paragraph --><!-- /wp:group -->',
 		'<!-- wp:test-block {"fruit":"Banana"} /-->',
 		'<!-- wp:test-block {"bad": --><p>bad attrs</p><!-- /wp:test-block -->',
@@ -1047,7 +1668,7 @@ function classifyFailure( exitCode, stdout, stderr ) {
 	const output = `${ stderr }\n${ stdout }`;
 
 	if (
-		/Unexpected coverage-guided rich-text CRDT|RTC fuzz-only rich text merge postcondition failed|RTC fuzz-only query-array identity postcondition failed|Local-only block attribute leaked|Object stringification leaked/.test(
+		/Unexpected coverage-guided rich-text CRDT|RTC fuzz-only rich text merge postcondition failed|RTC fuzz-only query-array identity postcondition failed|RTC_HTTP_POLLING_|Local-only block attribute leaked|Object stringification leaked/.test(
 			output
 		)
 	) {
