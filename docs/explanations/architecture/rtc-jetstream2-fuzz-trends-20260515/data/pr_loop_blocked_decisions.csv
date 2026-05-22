@@ -1,9 +1,9 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,No fresh green exact-stack browser evidence exists yet.,reload-hydration@b01a3a21e2c,No fresh green exact-stack browser evidence exists yet.
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,No fresh green exact-stack browser evidence exists.,reload-hydration@b01a3a21e2c,No fresh green exact-stack browser evidence exists.
 repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,no,Stale head is superseded by latest manifest head b01a3a21e2c.,reload-hydration@fa801a6aa13/exact-stack-blocker,Stale head is superseded by latest manifest head b01a3a21e2c.
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,Stale head is superseded by latest manifest head b01a3a21e2c.,reload-hydration@fa801a6aa13/exact-stack,Stale head is superseded by latest manifest head b01a3a21e2c.
 launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,P0,no,Duplicate heavy rerun while active exact-stack repair owns the current blocker.,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,Duplicate heavy rerun while active exact-stack repair owns the current blocker.
-publish-ready,benchmark-canary-fuzzer-gap/finalization,P0,no,Fresh benchmark feedback still blocks promotion on large-post-three-user-http.,benchmark-canary-fuzzer-gap/finalization,Fresh benchmark feedback still blocks promotion on large-post-three-user-http.
+publish-ready,benchmark-canary-fuzzer-gap/finalization,P0,no,Current feedback still blocks promotion on large-post-three-user-http.,benchmark-canary-fuzzer-gap/finalization,Current feedback still blocks promotion on large-post-three-user-http.
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner evidence is already runtime-held-consumed; relaunch only after newer owner evidence.,PR07C/HOLD-07C,"Owner evidence is already runtime-held-consumed; relaunch only after newer owner
 evidence."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Held until exact replay or newer owner evidence proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,Held until exact replay or newer owner evidence proves product ownership.
@@ -13,6 +13,6 @@ publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Superseded by
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,Duplicates already published PR14B-based PR15A path.,ready/rtc-pr15a-fallback-group-move-green,Duplicates already published PR14B-based PR15A path.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,Duplicates already published PR14B-based PR15B path.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Duplicates already published PR14B-based PR15B path.
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,Duplicates already published PR14B-based PR15C path.,ready/rtc-pr15c-fallback-group-delete-green,Duplicates already published PR14B-based PR15C path.
-publish-ready,current-push-manifest,P1,no,Current controller push manifest is header-only and not a publication source.,current-push-manifest,Current controller push manifest is header-only and not a publication source.
-reserve-discovery,unit-property-rich-text-crdt-merge-to-parser-window,P1,no,Broad replacement conflicts with parser oracle saturation; use bounded parser classifier and table-query target.,unit-property-rich-text-crdt-merge-to-parser-window,"Broad replacement conflicts with parser oracle saturation; use bounded parser
-classifier and table-query target."
+publish-ready,current-push-manifest,P1,no,Current push manifest is header-only and is not a publication source.,current-push-manifest,Current push manifest is header-only and is not a publication source.
+reserve-discovery,unit-property-rich-text-crdt-merge-to-parser-window,P1,no,Broad replacement conflicts with parser oracle saturation; use bounded parser classifier plus table-query target instead.,unit-property-rich-text-crdt-merge-to-parser-window,"Broad replacement conflicts with parser oracle saturation; use bounded parser
+classifier plus table-query target instead."
