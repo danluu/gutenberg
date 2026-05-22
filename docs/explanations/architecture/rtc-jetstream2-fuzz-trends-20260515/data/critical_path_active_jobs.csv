@@ -1,4 +1,7 @@
 session,class,started_hint
+rtc-coverage-guidance-codex-20260522T233557Z,analysis,
+rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T233126Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
+rtc-deferred-job-pre-save-search-live-collapse-20260522T233453Z,deferred,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,

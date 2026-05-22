@@ -1,8 +1,8 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-persistence-no-title,1776,1060,0,0.5968468468468469,persistence
+persistence-no-title,1778,1060,0,0.5961754780652418,persistence
 real-user-editing,1503,585,0,0.38922155688622756,real-user
-session-lifecycle,1222,728,0,0.5957446808510638,lifecycle
-large-post-three-user-http-lifecycle,884,70,0,0.07918552036199095,lifecycle
+session-lifecycle,1224,728,0,0.5947712418300654,lifecycle
+large-post-three-user-http-lifecycle,885,70,0,0.07909604519774012,lifecycle
 permissions-auth-locks,777,268,0,0.34491634491634493,auth/locks
 async-server-blocks,652,143,0,0.21932515337423314,async/media
 long-session-large-doc,524,39,0,0.07442748091603053,lifecycle
@@ -13,10 +13,10 @@ block-gauntlet,200,142,0,0.71,block-structure
 parser-serialization,164,45,0,0.27439024390243905,parser
 many-user-lifecycle,152,52,0,0.34210526315789475,lifecycle
 multi-reload-lifecycle,139,67,0,0.48201438848920863,lifecycle
-collaboration-ui-signals,128,0,0,0,other
+collaboration-ui-signals,129,0,1,0,other
 parser-transform,120,68,0,0.5666666666666667,parser
 common-blocks,88,43,0,0.48863636363636365,block-structure
 code-editor-smoke,80,64,0,0.8,other
 revision-persistence,40,8,0,0.2,persistence
-table-stale-snapshot-http,22,2,0,0.09090909090909091,other
+table-stale-snapshot-http,23,2,0,0.08695652173913043,other
 list-move-refresh-http,8,0,0,0,other
