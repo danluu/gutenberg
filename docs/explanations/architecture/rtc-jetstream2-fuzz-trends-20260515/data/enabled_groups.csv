@@ -1791,3 +1791,11 @@ timestamp,group,group_family
 2026-05-22T19:20:55Z,novelty-http-large-post-lifecycle-completion,lifecycle
 2026-05-22T19:46:08Z,novelty-ws-real-user-editing,real-user
 2026-05-22T20:05:51Z,novelty-ws-async-server-blocks,async/media
+2026-05-22T20:13:49Z,novelty-ws-parser-transform,parser
+2026-05-22T20:14:08Z,novelty-ws-parser-serialization,parser
+2026-05-22T20:14:29Z,novelty-http-same-user-stale-draft,lifecycle
+2026-05-22T20:14:47Z,novelty-http-title-reload-convergence,lifecycle
+2026-05-22T20:15:05Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-22T20:15:22Z,novelty-ws-long-session-large-doc,lifecycle
+2026-05-22T20:15:40Z,novelty-ws-media-cross-entity,async/media
+2026-05-22T20:15:50Z,novelty-ws-block-gauntlet,auth/locks
