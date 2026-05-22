@@ -4,7 +4,7 @@ PR progress items,diagnostic,deferred-family,medium,1
 PR progress items,held-by-controller,ready-product-pr,high,5
 PR progress items,published,ready-product-pr,high,13
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
-controller decisions,allowed,control decision,high,21
+controller decisions,allowed,control decision,high,18
 controller decisions,blocked,control decision,high,6
 controller decisions,allowed,control decision,medium,5
 controller decisions,blocked,control decision,medium,4
@@ -23,4 +23,4 @@ critical job queue,terminal,codex-analysis,high,1
 critical lanes,queued,browser-e2e,lane,1
 critical lanes,adopt-or-queue,codex-analysis,lane,1
 critical lanes,queued,codex-analysis,lane,2
-active sessions,active,analysis,analysis,6
+active sessions,active,analysis,analysis,5

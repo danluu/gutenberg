@@ -1,9 +1,9 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-persistence-no-title,1578,940,0,0.5956907477820025,persistence
-real-user-editing,1116,415,0,0.3718637992831541,real-user
-session-lifecycle,1007,573,0,0.5690168818272096,lifecycle
+persistence-no-title,1594,952,0,0.5972396486825596,persistence
+real-user-editing,1154,434,0,0.37608318890814557,real-user
+session-lifecycle,1015,580,0,0.5714285714285714,lifecycle
 permissions-auth-locks,752,265,0,0.3523936170212766,auth/locks
-large-post-three-user-http-lifecycle,658,57,0,0.08662613981762918,lifecycle
+large-post-three-user-http-lifecycle,670,61,0,0.09104477611940298,lifecycle
 async-server-blocks,622,136,0,0.21864951768488747,async/media
 long-session-large-doc,497,39,0,0.07847082494969819,lifecycle
 media-cross-entity,225,111,0,0.49333333333333335,async/media
@@ -16,6 +16,6 @@ multi-reload-lifecycle,89,37,0,0.4157303370786517,lifecycle
 common-blocks,88,43,0,0.48863636363636365,block-structure
 collaboration-ui-signals,80,0,0,0,other
 code-editor-smoke,80,64,0,0.8,other
-many-user-lifecycle,75,17,0,0.22666666666666666,lifecycle
+many-user-lifecycle,76,17,0,0.2236842105263158,lifecycle
 revision-persistence,29,4,0,0.13793103448275862,persistence
 table-stale-snapshot-http,4,0,0,0,other

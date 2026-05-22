@@ -1,16 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,current-push-manifest,high,no,Current controller push manifest has only the header and no publishable rows.,current-push-manifest,Current controller push manifest has only the header and no publishable rows.
-publish-ready,reload-hydration@b01a3a21e2c/product,high,no,No fresh all-merged exact-stack browser green or replay-backed downscope exists for this head.,reload-hydration@b01a3a21e2c/product,"No fresh all-merged exact-stack browser green or replay-backed downscope exists
-for this head."
-launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380-relaunch,high,no,Do not relaunch stale runtime-held-consumed evidence; only the current readiness-resolved pass should run.,PR07C/HOLD-07C/stale-cycle380-relaunch,"Do not relaunch stale runtime-held-consumed evidence; only the current
-readiness-resolved pass should run."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold until the current PR07C owner matrix or exact replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold until the current PR07C owner matrix or exact replay proves product
+publish-ready,reload-hydration@b01a3a21e2c/product,high,no,No fresh all-merged exact-stack browser green or replay-backed downscope exists.,reload-hydration@b01a3a21e2c/product,No fresh all-merged exact-stack browser green or replay-backed downscope exists.
+launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380-relaunch,high,no,Stale runtime-held-consumed evidence must not be relaunched; use a fresh readiness-resolved pass only.,PR07C/HOLD-07C/stale-cycle380-relaunch,"Stale runtime-held-consumed evidence must not be relaunched; use a fresh
+readiness-resolved pass only."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold publication until fresh PR07C owner matrix or exact replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until fresh PR07C owner matrix or exact replay proves product
 ownership."
-launch-branch-repair,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic benchmark reruns duplicate existing exact feedback and do not resolve the live branch+commit gate.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic benchmark reruns duplicate existing exact feedback and do not resolve
-the live branch+commit gate."
-publish-ready,benchmark-canary-fuzzer-gap/large-post-three-user-http,high,no,Keep publication blocked until live current feedback has matching exact branch+commit green rows.,benchmark-canary-fuzzer-gap/large-post-three-user-http,"Keep publication blocked until live current feedback has matching exact
-branch+commit green rows."
+repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic repair or rerun duplicates current exact green feedback; reopen only if newer current-feedback is blocked.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic repair or rerun duplicates current exact green feedback; reopen only if
+newer current-feedback is blocked."
+publish-ready,benchmark-canary-fuzzer-gap/large-post-three-user-http,high,no,"This is a benchmark and coverage gate, not a product PR publication target.",benchmark-canary-fuzzer-gap/large-post-three-user-http,"This is a benchmark and coverage gate, not a product PR publication target."
 publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,No owner evidence or product-owned first-loss replay is present.,pre-save-search-live-collapse@de2b5502da0,No owner evidence or product-owned first-loss replay is present.
 publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,No exact suffix-divergence replay or owner evidence is present.,rich-text-suffix-corruption@a2d47a072e1,No exact suffix-divergence replay or owner evidence is present.
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,medium,no,Superseded by already published PR06B minimal.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal.
 publish-ready,ready/rtc-pr15a-pr15b-pr15c-originals,medium,no,"Superseded by already published PR14B-based PR15A, PR15B, and PR15C branches.",ready/rtc-pr15a-pr15b-pr15c-originals,"Superseded by already published PR14B-based PR15A, PR15B, and PR15C branches."
+publish-ready,current-push-manifest,high,no,Manifest has only the header and no publishable rows.,current-push-manifest,Manifest has only the header and no publishable rows.
