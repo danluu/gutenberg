@@ -1,14 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,No fresh exact-stack green replay or replay-backed downscope evidence exists.,reload-hydration@b01a3a21e2c,No fresh exact-stack green replay or replay-backed downscope evidence exists.
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,No fresh exact-stack green replay or replay-backed downscope exists yet.,reload-hydration@b01a3a21e2c,No fresh exact-stack green replay or replay-backed downscope exists yet.
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,Stale reload-hydration head is superseded by b01a3a21e2c.,reload-hydration@fa801a6aa13/exact-stack,Stale reload-hydration head is superseded by b01a3a21e2c.
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,P0,no,Active exact-stack repair already owns the blocker; duplicate heavy rerun would waste the product slot.,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,"Active exact-stack repair already owns the blocker; duplicate heavy rerun would
-waste the product slot."
-publish-ready,rtc-pr-stack-20260522T130531Z,P0,no,Block snapshot publication until large-post-three-user-http is exact-stack green on the current or successor stack.,rtc-pr-stack-20260522T130531Z,"Block snapshot publication until large-post-three-user-http is exact-stack green
-on the current or successor stack."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Existing owner evidence is runtime-held-consumed; relaunch only if newer owner evidence appears.,PR07C/HOLD-07C,"Existing owner evidence is runtime-held-consumed; relaunch only if newer owner
-evidence appears."
+publish-ready,rtc-pr-stack-current,P0,no,Publication remains blocked until live current-feedback records exact branch and commit large-post rows as exit_code 0 exact_stack_green.,rtc-pr-stack-current,"Publication remains blocked until live current-feedback records exact branch and
+commit large-post rows as exit_code 0 exact_stack_green."
+repair-branch,benchmark-canary-fuzzer-gap/duplicate-generic-rerun,P0,no,Fresh repair-green evidence should be consumed first; another generic rerun is churn.,benchmark-canary-fuzzer-gap/duplicate-generic-rerun,"Fresh repair-green evidence should be consumed first; another generic rerun is
+churn."
+launch-owner-matrix,PR07C/HOLD-07C-duplicate-cycle380,P0,no,Cycle380 owner evidence is already runtime-held-consumed; relaunch only with newer owner evidence.,PR07C/HOLD-07C-duplicate-cycle380,"Cycle380 owner evidence is already runtime-held-consumed; relaunch only with
+newer owner evidence."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold until exact replay or newer owner evidence proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,Hold until exact replay or newer owner evidence proves product ownership.
-publish-ready,pre-save-search-live-collapse@de2b5502da0,P0,no,No owner or first-loss replay evidence exists.,pre-save-search-live-collapse@de2b5502da0,No owner or first-loss replay evidence exists.
+publish-ready,pre-save-search-live-collapse@de2b5502da0,P0,no,No owner or product-owned first-loss replay evidence exists.,pre-save-search-live-collapse@de2b5502da0,No owner or product-owned first-loss replay evidence exists.
 publish-ready,rich-text-suffix-corruption@a2d47a072e1,P0,no,No product-owned suffix-divergence or owner evidence exists.,rich-text-suffix-corruption@a2d47a072e1,No product-owned suffix-divergence or owner evidence exists.
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Superseded by ready/rtc-pr06b-malformed-save-request-payload-minimal.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by ready/rtc-pr06b-malformed-save-request-payload-minimal.
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,Duplicates already published PR14B-based PR15A path.,ready/rtc-pr15a-fallback-group-move-green,Duplicates already published PR14B-based PR15A path.
