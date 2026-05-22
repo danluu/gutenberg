@@ -1,11 +1,11 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-persistence-no-title,1217,718,0,0.589975349219392,persistence
+persistence-no-title,1236,730,0,0.5906148867313916,persistence
 real-user-editing,1116,415,0,0.3718637992831541,real-user
-session-lifecycle,759,406,0,0.5349143610013175,lifecycle
+session-lifecycle,771,414,0,0.5369649805447471,lifecycle
 permissions-auth-locks,714,265,0,0.3711484593837535,auth/locks
 async-server-blocks,575,136,0,0.23652173913043478,async/media
-large-post-three-user-http-lifecycle,479,42,0,0.08768267223382047,lifecycle
-long-session-large-doc,455,39,0,0.08571428571428572,lifecycle
+large-post-three-user-http-lifecycle,483,42,0,0.08695652173913043,lifecycle
+long-session-large-doc,456,39,0,0.08552631578947369,lifecycle
 media-cross-entity,208,101,0,0.4855769230769231,async/media
 full,207,16,0,0.07729468599033816,block-structure
 three-user-late-join,195,96,0,0.49230769230769234,lifecycle
@@ -16,6 +16,6 @@ parser-serialization,87,18,0,0.20689655172413793,parser
 common-blocks,86,41,0,0.47674418604651164,block-structure
 collaboration-ui-signals,80,0,0,0,other
 many-user-lifecycle,74,17,0,0.22972972972972974,lifecycle
-code-editor-smoke,34,25,0,0.7352941176470589,other
+code-editor-smoke,38,27,2,0.7105263157894737,other
 revision-persistence,29,4,0,0.13793103448275862,persistence
 table-stale-snapshot-http,4,0,0,0,other

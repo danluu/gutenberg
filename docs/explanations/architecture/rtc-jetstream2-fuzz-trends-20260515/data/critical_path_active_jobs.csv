@@ -1,5 +1,9 @@
 session,class,started_hint
-rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T132430Z,critical-continuation,
+rtc-analysis-live-488b7907-http-large-lifecycle-gen-1-20260522T134729Z,analysis,
+rtc-analysis-live-488b7907-http-persistence-probe-gen-1-20260522T134506Z,analysis,
+rtc-coverage-guidance-codex-20260522T135137Z,analysis,
+rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T135617Z,critical-continuation,
+rtc-critical-continuation-seed-5200005-reducer-20260522T135622Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
