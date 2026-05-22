@@ -8,7 +8,7 @@ async-server-blocks,134,74,0,0.5522388059701493,async/media
 permissions-auth-locks,131,74,0,0.5648854961832062,auth/locks
 media-cross-entity,88,51,0,0.5795454545454546,async/media
 long-session-large-doc,86,39,0,0.45348837209302323,lifecycle
-block-gauntlet,74,50,0,0.6756756756756757,block-structure
+block-gauntlet,74,50,1,0.6756756756756757,block-structure
 three-user-late-join,64,25,0,0.390625,lifecycle
 collaboration-ui-signals,51,0,0,0,other
 many-user-lifecycle,50,17,0,0.34,lifecycle

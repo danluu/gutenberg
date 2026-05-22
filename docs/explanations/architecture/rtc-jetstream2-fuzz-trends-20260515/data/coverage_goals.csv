@@ -46,8 +46,8 @@ block:core/column,common block core/column,66,25,TRUE,novelty-ws-common-blocks,c
 block:core/columns,common block core/columns,66,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,2.64,block coverage
 action:edit-formatted-paragraph-at-cursor,action edit-formatted-paragraph-at-cursor,27,10,TRUE,novelty-ws-parser-serialization,every fuzz action should be exercised by a live lane,50,NA,2.7,action coverage
 fault:fail:403,permission denied sync failure,28,10,TRUE,novelty-ws-permissions-auth-locks,post locking and auth changes should not silently corrupt state,40,NA,2.8,fault coverage
-success-users:2,successful two-user documents,309,100,TRUE,"novelty-ws-structure,novelty-ws-real-user-editing,novelty-ws-same-user-lifecycle","two-user coverage must be successful completed documents, not only attempted sessions",400,user-document-concurrency,3.09,other
 block:core/gallery,gauntlet block core/gallery,62,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,3.1,block coverage
+success-users:2,successful two-user documents,321,100,TRUE,"novelty-ws-structure,novelty-ws-real-user-editing,novelty-ws-same-user-lifecycle","two-user coverage must be successful completed documents, not only attempted sessions",400,user-document-concurrency,3.21,other
 step-count:48,long session,86,25,TRUE,novelty-ws-long-session-large-doc,long operation sequences catch stale snapshots and delayed persistence bugs,100,NA,3.44,lifecycle/scale
 history:final-persistence-publish:ok,publish persistence oracle,36,10,TRUE,"novelty-http-large-post-lifecycle,novelty-http-large-post-lifecycle-completion",publish coverage must include REST status/content and fresh reload witnesses,40,NA,3.6,other
 success-profile:large-post-three-user-http-lifecycle,successful large-post-three-user-http-lifecycle records,36,10,TRUE,"novelty-http-large-post-lifecycle,novelty-http-large-post-lifecycle-completion",the combined large-post HTTP lifecycle gate needs completed records,40,NA,3.6,successful profiles
@@ -72,10 +72,10 @@ initial:deprecated-block-content,initial content deprecated-block-content,175,25
 block:core/button,common block core/button,180,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,7.2,block coverage
 block:core/buttons,common block core/buttons,180,25,TRUE,novelty-ws-common-blocks,common block coverage should not depend on chance,100,NA,7.2,block coverage
 block:core/spacer,gauntlet block core/spacer,144,20,TRUE,novelty-ws-block-gauntlet,less common block types need dedicated coverage,80,NA,7.2,block coverage
-success-action-users:2,successful documents edited by two users,363,50,TRUE,"novelty-ws-structure,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text","multi-user documents should include edits by multiple users, not a passive observer",200,user-document-concurrency,7.26,other
 initial:equivalent-html-content,initial content equivalent-html-content,182,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,7.28,parser seeds
 action:reparse-edited-content,action reparse-edited-content,73,10,TRUE,novelty-ws-parser-transform,every fuzz action should be exercised by a live lane,50,NA,7.3,action coverage
 action:ui-table-cell-edit,action ui-table-cell-edit,73,10,TRUE,novelty-ws-real-user-rich-text,every fuzz action should be exercised by a live lane,50,NA,7.3,action coverage
+success-action-users:2,successful documents edited by two users,375,50,TRUE,"novelty-ws-structure,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text","multi-user documents should include edits by multiple users, not a passive observer",200,user-document-concurrency,7.5,other
 initial:html-entity-reference,initial content html-entity-reference,200,25,TRUE,novelty-ws-parser-transform,parser transform seeds need all parser-stress initial shapes,100,NA,8,parser seeds
 action:edit-common-block-attributes,action edit-common-block-attributes,81,10,TRUE,novelty-ws-common-blocks,every fuzz action should be exercised by a live lane,50,NA,8.1,action coverage
 action:insert-media-cross-entity-block,action insert-media-cross-entity-block,81,10,TRUE,novelty-ws-media-cross-entity,every fuzz action should be exercised by a live lane,50,NA,8.1,action coverage

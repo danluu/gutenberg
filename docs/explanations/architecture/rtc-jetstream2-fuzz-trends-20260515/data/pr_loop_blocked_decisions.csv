@@ -1,26 +1,23 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,duplicate heavy exact-stack replay would spend PR capacity while discovery is unprotected,benchmark-canary-fuzzer-gap/duplicate-exact-stack,"duplicate heavy exact-stack replay would spend PR capacity while discovery is
-unprotected"
-exact-replay-schedule,large-http-lifecycle/separate-heavy-replay,P0,no,do not add a separate heavy focused replay beyond discovery top-off while the active benchmark repair is running and discovery is unprotected,large-http-lifecycle/separate-heavy-replay,"do not add a separate heavy focused replay beyond discovery top-off while the
-active benchmark repair is running and discovery is unprotected"
-launch-branch-repair,deferred/rtc-reload-hydration-20260521T223947Z/exact-stack,P0,no,heavy exact-stack launch waits behind active benchmark-canary repair and unprotected discovery reserve,deferred/rtc-reload-hydration-20260521T223947Z/exact-stack,"heavy exact-stack launch waits behind active benchmark-canary repair and
-unprotected discovery reserve"
-publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,lacks fresh exact-stack green evidence for title-reload-http and existing-post-crdt-http,deferred/rtc-reload-hydration-20260521T223947Z,"lacks fresh exact-stack green evidence for title-reload-http and
-existing-post-crdt-http"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,current progress marks owner evidence runtime-held-consumed and discovery is unprotected; launch only with newer owner evidence,PR07C/HOLD-07C,"current progress marks owner evidence runtime-held-consumed and discovery is
-unprotected; launch only with newer owner evidence"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until newer product-owner evidence or exact product-failure replay overrides consumed hold artifact,ready/rtc-pr07c-reload-record-snapshots,"hold until newer product-owner evidence or exact product-failure replay
-overrides consumed hold artifact"
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
-update-controller-rule,lower-http-polling-runner-crash-retarget,P0,no,current run has valid preflight and live status; do not launch separate runner-crash repair,lower-http-polling-runner-crash-retarget,"current run has valid preflight and live status; do not launch separate
-runner-crash repair"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published; broader branch needs fresh product
 advantage"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until PR07C owner matrix or newer exact product-failure evidence proves product ownership,ready/rtc-pr07c-reload-record-snapshots,"hold publication until PR07C owner matrix or newer exact product-failure
+evidence proves product ownership"
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A branch is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A branch is already published; original-base branch is duplicate
 under current evidence"
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B branch is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B branch is already published; original-base branch is duplicate
 under current evidence"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C branch is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C branch is already published; original-base branch is duplicate
 under current evidence"
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active benchmark exact-stack continuation already owns this path,benchmark-canary-fuzzer-gap/duplicate-exact-stack,active benchmark exact-stack continuation already owns this path
+launch-branch-repair,large-http-lifecycle/separate-heavy-replay,P0,no,do not add a separate heavy replay while benchmark repair and PR07C owner evidence are the bounded product slots,large-http-lifecycle/separate-heavy-replay,"do not add a separate heavy replay while benchmark repair and PR07C owner
+evidence are the bounded product slots"
+launch-branch-repair,deferred/rtc-reload-hydration-20260521T223947Z/exact-stack,P0,no,wait for active benchmark repair or PR07C owner matrix slot to clear; then require title-reload-http and existing-post-crdt-http green,deferred/rtc-reload-hydration-20260521T223947Z/exact-stack,"wait for active benchmark repair or PR07C owner matrix slot to clear; then
+require title-reload-http and existing-post-crdt-http green"
+publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,lacks fresh exact-stack green evidence for title reload and existing-post CRDT HTTP,deferred/rtc-reload-hydration-20260521T223947Z,"lacks fresh exact-stack green evidence for title reload and existing-post CRDT
+HTTP"
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
+update-controller-rule,lower-http-polling-runner-crash-retarget,P0,no,current run has valid preflight and live status; use oracle retargeting rather than a separate runner-crash repair,lower-http-polling-runner-crash-retarget,"current run has valid preflight and live status; use oracle retargeting rather
+than a separate runner-crash repair"
 launch-branch-repair,broad-pr-analysis-fanout,P0,no,reject broad heavy PR fanout; spend capacity only on bounded repair owner evidence exact replay or cheap accounting,broad-pr-analysis-fanout,"reject broad heavy PR fanout; spend capacity only on bounded repair owner
 evidence exact replay or cheap accounting"
