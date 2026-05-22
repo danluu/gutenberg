@@ -1665,3 +1665,6 @@ timestamp,group,group_family
 2026-05-22T05:32:46Z,novelty-ws-permissions-auth-locks,auth/locks
 2026-05-22T05:38:43Z,novelty-ws-real-user-save-reload,real-user
 2026-05-22T05:51:10Z,novelty-ws-parser-transform,parser
+2026-05-22T06:08:38Z,novelty-ws-real-user-editing,real-user
+2026-05-22T06:08:48Z,novelty-http-title-reload-convergence,lifecycle
+2026-05-22T06:08:48Z,novelty-ws-real-user-coverage-bridge,real-user
