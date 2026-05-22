@@ -620,33 +620,36 @@ export const prePersistPostType = async (
 					newEdits.content = mergedContent;
 				}
 			}
-
-			if (
-				! options.__unstableSkipSyncUpdate &&
-				editedSavedFields.includes( 'content' ) &&
-				! locallyChangedSavedFieldSet.has( 'content' ) &&
-				! ( 'content' in newEdits )
-			) {
-				const crdtRecord = syncManager?.getCRDTRecordData?.(
-					objectType,
-					objectId
-				);
-				const crdtContent = getCRDTRawPostValue(
-					crdtRecord,
-					'content'
-				);
-
-				if (
-					typeof crdtContent === 'string' &&
-					crdtContent !== '' &&
-					crdtContent !== getRawPostValue( edits.content )
-				) {
-					newEdits.content = crdtContent;
-				}
-			}
 		} catch {
 			// A failed freshness check should not block saving. The request itself
 			// will still surface any real save errors to the editor.
+		}
+	}
+
+	if (
+		window._wpCollaborationEnabled &&
+		POST_TYPES_WITH_STALE_SAVE_PROTECTION.has( name ) &&
+		objectId &&
+		! locallyChangedSavedFieldSet.has( 'content' ) &&
+		! ( 'content' in newEdits )
+	) {
+		const crdtRecord = (
+			syncManager ?? getSyncManager()
+		)?.getCRDTRecordData?.( objectType, objectId );
+		const crdtContent = getCRDTRawPostValue( crdtRecord, 'content' );
+		const contentReferenceRecord =
+			options.__unstableSkipSyncUpdate || ! latestRecordForCRDTSnapshot
+				? persistedRecord
+				: latestRecordForCRDTSnapshot;
+		const latestPersistedContent = getRawPostValue(
+			contentReferenceRecord?.content
+		);
+
+		if (
+			typeof crdtContent === 'string' &&
+			crdtContent !== latestPersistedContent
+		) {
+			newEdits.content = crdtContent;
 		}
 	}
 
