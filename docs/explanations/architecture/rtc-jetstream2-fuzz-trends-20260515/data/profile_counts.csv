@@ -15,7 +15,7 @@ multi-reload-lifecycle,89,37,0,0.4157303370786517,lifecycle
 common-blocks,86,41,0,0.47674418604651164,block-structure
 collaboration-ui-signals,80,0,0,0,other
 many-user-lifecycle,74,17,0,0.22972972972972974,lifecycle
-parser-serialization,68,11,0,0.16176470588235295,parser
+parser-serialization,69,11,0,0.15942028985507245,parser
 revision-persistence,29,4,0,0.13793103448275862,persistence
-code-editor-smoke,11,5,0,0.45454545454545453,other
+code-editor-smoke,15,8,0,0.5333333333333333,other
 table-stale-snapshot-http,4,0,0,0,other

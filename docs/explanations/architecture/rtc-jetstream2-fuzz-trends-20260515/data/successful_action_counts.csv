@@ -106,13 +106,13 @@ insert-heading,34,multi-reload-lifecycle
 move-block,34,parser-transform
 edit-table-array-attributes,33,multi-reload-lifecycle
 append-paragraph,32,multi-reload-lifecycle
+replace-code-editor-content,32,code-editor-smoke
 append-paragraph,31,many-user-lifecycle
 insert-nested-group,28,multi-reload-lifecycle
 move-block-into-group,28,multi-reload-lifecycle
 delete-block,27,common-blocks
 insert-paragraph,26,multi-reload-lifecycle
 edit-nested-paragraph,22,common-blocks
-replace-code-editor-content,20,code-editor-smoke
 insert-paragraph,18,full
 ui-type-paragraph,18,real-user-editing
 ui-format-paragraph,18,real-user-editing
@@ -127,6 +127,8 @@ insert-heading,17,many-user-lifecycle
 move-block,17,many-user-lifecycle
 edit-table-array-attributes,17,many-user-lifecycle
 ui-type-paragraph,17,many-user-lifecycle
+ui-type-title,16,code-editor-smoke
+ui-type-paragraph,16,code-editor-smoke
 insert-async-server-block,14,multi-reload-lifecycle
 ui-type-title,14,many-user-lifecycle
 edit-rich-text-pair-block,13,full
@@ -137,8 +139,6 @@ append-paragraph,12,common-blocks
 move-block-into-group,11,full
 insert-common-block,10,full
 edit-paragraph,10,full
-ui-type-title,10,code-editor-smoke
-ui-type-paragraph,10,code-editor-smoke
 edit-title,9,full
 insert-async-server-block,9,full
 insert-nested-group,9,full

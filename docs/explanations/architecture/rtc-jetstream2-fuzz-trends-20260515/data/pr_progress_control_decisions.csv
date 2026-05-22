@@ -1,26 +1,28 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery 11 exceeds min 3 with PR jobs 0/2; allow one bounded heavy product-progress job while preserving discovery lanes
-update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,"discovery protected is no; block additional heavy PR jobs if discovery drops near reserve, while cheap manifest and analysis-only work may continue"
-update-controller-rule,pr-progress-concurrency,P0,yes,run at most one additional heavy product-progress job while benchmark-canary repair is active
-update-controller-rule,productive-analysis-feed-dedupe-retarget,P0,yes,dedupe repeated action rows and retarget stale reload-hydration fa801a6aa13 requests to latest head b01a3a21e2c
+reserve-discovery,discovery-reserve,P0,yes,active discovery 13 exceeds min 3 with large headroom and PR jobs 0/2; allow one bounded heavy product-progress job while preserving discovery lanes
+update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,make discovery health a hard gate; deny heavy PR jobs when discovery is unhealthy except cheap publication manifest generation or analysis-only work
+launch-heavy-pr,discovery-unhealthy-heavy-pr,P0,no,preserve discovery reserve; heavy PR jobs are not allowed when discovery sessions are unhealthy unless the work is cheap manifest generation or analysis-only
+update-controller-rule,pr-progress-concurrency,P0,yes,run at most one additional heavy product-progress job while benchmark-canary ws8 repair is active
+update-controller-rule,productive-analysis-feed-dedupe-retarget,P0,yes,dedupe repeated feed rows and retarget stale reload-hydration fa801a6aa13 requests to latest head b01a3a21e2c
+repair-branch,benchmark-canary-fuzzer-gap/ws8-bootstrap,P0,yes,latest 20260522T124654Z feedback is promotion_blocked on isolated ws@7 versus workspace ws@8; continue concrete bootstrap repair
+update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,newest benchmark feedback must supersede older exact_stack_green rows and keep finalization blocked until code-editor WS is green
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,do not duplicate-launch while the ws8 bootstrap repair is already active
+update-controller-rule,exact-stack-equivalent-lanes,P0,yes,"keep title reload, existing-post CRDT, persistence reload, large HTTP lifecycle, and code-editor WS lanes promotion-blocking"
 repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,P0,yes,replace generic deferred-family hold with a head-specific exact-stack blocker; manifest is candidate evidence only
-launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,next product-progress slot; run bounded title reload plus existing-post or persistence reload plus large HTTP lifecycle exact-stack evidence
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,fresh exact-stack browser evidence is missing; publication stays blocked until green or explicitly downscoped
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale same-family head is superseded by b01a3a21e2c
+launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,next product-progress slot; run bounded title reload plus existing-post or persistence reload plus large HTTP lifecycle
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,fresh green exact-stack browser evidence is missing; publication remains blocked until green or explicit downscope
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale same-family head is superseded by latest manifest head b01a3a21e2c
 cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,"current manifest exists; progress must be exact-stack replay, owner evidence, green-stack adoption, or explicit downscope"
-repair-branch,benchmark-canary-fuzzer-gap/ws8-bootstrap,P0,yes,newer 20260522T124654Z feedback is promotion_blocked on isolated WebSocket ws@7 vs workspace ws@8; keep active repair and finalization block until green
-update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,newer promotion_blocked feedback supersedes older exact_stack_green rows; latest feedback must drive finalization gating
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,do not duplicate-launch while benchmark-canary ws8 repair or feedback refresh is already active
-update-controller-rule,existing-post-crdt-http+large-http-lifecycle+code-editor-ws,P0,yes,"keep exact-stack lanes promotion-blocking for reload, persistence, saved-response, CRDT, successor stacks, and code-editor WebSocket dependency layout"
-repair-ready,PR07C/HOLD-07C/exact-stack-validation,P0,yes,consume existing owner evidence and route remaining PR07C work to exact reload/persistence validation
+repair-ready,PR07C/HOLD-07C/exact-stack-validation,P0,yes,consume existing owner evidence and route remaining PR07C work to exact reload and persistence validation
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,current owner evidence is runtime-held-consumed; relaunch only with newer owner evidence or exact product-failure replay
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until exact replay or newer owner evidence proves product ownership
-repair-ready,PR07C/HOLD-07C+seed-5200005-reducer/stale-critical-blockers,P0,yes,terminalize stale PR07C owner-matrix and seed reducer blockers using Cycle380 owner evidence and current seed classification
+clear-stale-blocker,PR07C/HOLD-07C+seed-5200005-reducer,P0,yes,terminalize stale PR07C owner-matrix and seed reducer blockers using current consumed evidence
 cooldown-diagnostic,seed-5200005-reducer,P0,yes,latest classification is already_resolved_by_active_artifacts; more reducer launches are duplicate churn
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates terminal reducer evidence
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic manifests are single-flight held; no generic deferred relaunch without focused replay, owner evidence, green stack, or downscope"
-publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress and must not consume a product slot
-reserve-discovery,pre-save-search-live-collapse@de2b5502da0/focused-replay,P1,yes,allow one bounded focused replay only from discovery reserve while reserve remains healthy
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic manifests are single-flight held; no generic relaunch without focused replay, owner evidence, green stack, or downscope"
+publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress and lacks owner evidence
+reserve-discovery,pre-save-search-live-collapse@de2b5502da0/focused-replay,P1,yes,allow one bounded focused replay only while discovery reserve remains healthy
+reserve-discovery,rich-text-suffix-corruption/focused-replay,P1,yes,allow bounded replay or owner-evidence work only from discovery reserve
 cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscope because canonical PR06B minimal already covers product evidence
 cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscope because PR02A exists and no fresh healthy-user HTTP room-isolation evidence appears
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch
@@ -33,5 +35,7 @@ reserve-discovery,rtc-http-polling-manager/canary-or-materialization-slice,P1,ye
 cooldown-diagnostic,rtc-block-parser-serialization/broad-drift-admission,P0,yes,"hold repeated ROUNDTRIP_DRIFT and SPEC_DIVERGENCE admission until classifier, canonical key, product yield, or oracle classification changes"
 reserve-discovery,rtc-block-parser-serialization/canonicalize-one-drift-one-divergence,P1,yes,allow one bounded classifier or reducer for representative parser artifacts as discovery work
 cooldown-diagnostic,rtc-rich-text-crdt-merge/green-only,P1,yes,"cap continuous all-green batching; keep smoke or targets tied to failures, semantic deltas, placement, multi-block cases, or unmet coverage"
+reserve-discovery,table-stale-snapshot/table-query-array-lower-level,P1,yes,add bounded table-query-array lower-level gap target and feed results back into table-stale-snapshot
 update-controller-rule,rtc-rich-text-crdt-merge/parser-accounting,P1,yes,fix stale metadata so rich-text CRDT work is not credited to parser-serialization gaps
+reserve-discovery,unit-property-rich-text-crdt-merge-to-broad-parser-window,P1,no,broad parser replacement conflicts with active parser hold; use bounded parser classifier or table gap target instead
 publish-ready,current-push-manifest,P1,no,current controller push manifest is header-only and not a publication source

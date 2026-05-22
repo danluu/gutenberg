@@ -1,5 +1,7 @@
 session,class,started_hint
 rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T125359Z,critical-continuation,
+rtc-critical-continuation-seed-5200005-reducer-20260522T130749Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
+rtc-pr-finalize-job-20260522T130531Z,finalization,
