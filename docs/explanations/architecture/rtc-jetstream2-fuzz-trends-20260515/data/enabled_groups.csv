@@ -1803,3 +1803,4 @@ timestamp,group,group_family
 2026-05-22T20:30:32Z,novelty-ws-three-user-late-join,lifecycle
 2026-05-22T20:46:34Z,novelty-ws-parser-serialization,parser
 2026-05-22T21:19:19Z,novelty-ws-real-user-editing,real-user
+2026-05-22T21:25:22Z,novelty-ws-multi-reload-lifecycle,lifecycle
