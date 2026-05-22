@@ -4,6 +4,6 @@ lifecycle records",0,25,FALSE,0,cross-product,25,0,0 / 25
 success-profile-users:large-post-three-user-http-lifecycle:3,"successful large-post HTTP records with
 three users",5,10,FALSE,0.5,lifecycle/scale,5,0.5,5 / 10
 success-user-blocks:3:50,successful three-user large documents,3,5,FALSE,0.6,other,2,0.6,3 / 5
-transport-profile:http:large-post-three-user-http-lifecycle,large post three-user HTTP lifecycle,570,10,TRUE,57,lifecycle/scale,0,1,570 / 10
+transport-profile:http:large-post-three-user-http-lifecycle,large post three-user HTTP lifecycle,574,10,TRUE,57.4,lifecycle/scale,0,1,574 / 10
 success-profile:large-post-three-user-http-lifecycle,"successful
 large-post-three-user-http-lifecycle records",47,10,TRUE,4.7,successful profiles,0,1,47 / 10
