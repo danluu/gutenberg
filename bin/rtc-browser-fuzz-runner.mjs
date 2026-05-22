@@ -217,6 +217,7 @@ function getSharedEnv( overrides = {} ) {
 	return {
 		...process.env,
 		PATH: SHARED_PATH,
+		BABEL_DISABLE_CACHE: process.env.BABEL_DISABLE_CACHE ?? '1',
 		TMPDIR: process.env.TMPDIR ?? RUNTIME_TMP_DIR,
 		TMP: process.env.TMP ?? RUNTIME_TMP_DIR,
 		TEMP: process.env.TEMP ?? RUNTIME_TMP_DIR,
