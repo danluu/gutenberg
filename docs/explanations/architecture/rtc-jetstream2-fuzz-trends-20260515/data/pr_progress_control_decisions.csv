@@ -1,7 +1,7 @@
 action,target,priority,allowed,reason
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Fresh current-head owner replay is green with zero product-owned or runtime rows; publish this repaired head next.
-publish-manifest,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Cheap publication manifest generation is allowed and moves the ready real-fix branch even under tight reserve.
-consume-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Readiness is resolved; adopt the current-head owner evidence to clear the runtime gate.
+publish-manifest,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Cheap publication manifest generation is allowed and moves the ready real-fix branch.
+consume-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Readiness is resolved; consume current-head owner evidence and clear the runtime gate.
 run-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Allowed only if the current-head owner evidence has not been terminalized; skip if the existing green replay is already consumed.
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale progress head is superseded by actual branch head 2f8247258316bde60869c06c383090904e9426bd.
 repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Older PR07C repair rows are superseded by the repaired current head and fresh owner replay.
@@ -19,6 +19,7 @@ update-controller-rule,benchmark-canary-fuzzer-gap/exact-stack-promotion-gate,P0
 reserve-discovery,benchmark-canary-fuzzer-gap/http-equivalent-exact-stack,P0,yes,"Keep benchmark-equivalent large-post, list-move, same-user stale, table revision, parser, and HTTP coverage scheduled."
 reserve-discovery,large-http-lifecycle,P0,yes,"Keep save, reload, publish, peer-count, timeout, and final-convergence coverage alive for benchmark-derived HTTP behavior."
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,Replace generic family hold with a head-specific exact-stack blocker and candidate-evidence state.
+publish-manifest,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,Adopt the deferred push manifest as candidate evidence only; this is cheap and does not product-publish the branch.
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,Do not launch duplicate heavy replay while reload or PR17 single-flight work is already active.
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,P0,no,"Product publication needs fresh all-merged title reload plus existing-post or persistence reload and large HTTP lifecycle green evidence, or replay-backed downscope."
 cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,high,yes,403 launches plus a concrete candidate head make generic relaunch churn.
@@ -35,7 +36,7 @@ update-controller-rule,lower-level-bootstrap-cwd-quarantine,high,yes,Pin runner 
 update-controller-rule,lower-level-table-list-polling-retarget,high,yes,"Rotate one lower-level shard toward parser serialization, table query-array CRDT, and HTTP polling targets seeded from benchmark failures."
 update-controller-rule,rtc-http-polling-manager/readiness-canary,high,yes,"Keep low-rate readiness/materialization canary; reopen broad batches only on canary failure, benchmark blocker evidence, or admission regression."
 cooldown-diagnostic,rtc-http-polling-manager/broad-generic-batches,high,yes,Generic HTTP polling batches are lower value than exact-stack and benchmark-equivalent coverage work.
-reserve-discovery,discovery-reserve-policy,P0,yes,"Discovery is healthy now at 13 active sessions over min 3; keep coverage-guided, focused, strict, protocol, lower-level, browser, and existing-PR fuzzing protected."
+reserve-discovery,discovery-reserve-policy,P0,yes,"Discovery is healthy now at 12 active sessions over min 3; keep coverage-guided, focused, strict, protocol, lower-level, browser, and existing-PR fuzzing protected."
 launch-heavy-pr,new-heavy-pr-jobs/discovery-unhealthy,P0,no,"Preserve discovery reserve; when discovery is unhealthy allow only cheap publication manifests, evidence adoption, cleanup, or analysis-only work."
 update-controller-rule,discovery-heavy-pr-gate,P0,yes,"If discovery becomes unhealthy, block new heavy PR jobs while allowing cheap publication, evidence adoption, cleanup, and reserve-preserving actions."
 update-controller-rule,product-progress-latest-evidence-head-precedence,P0,yes,"Latest exact owner, product, and benchmark evidence plus actual local branch head override stale progress rows."
