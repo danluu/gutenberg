@@ -825,6 +825,20 @@ function getYBlockClientId( yblock: YBlock ): string | null {
 	return typeof clientId === 'string' && clientId ? clientId : null;
 }
 
+function findYBlockIndexByClientId(
+	yblocks: YBlocks,
+	clientId: string,
+	startIndex = 0
+): number {
+	for ( let index = startIndex; index < yblocks.length; index++ ) {
+		if ( getYBlockClientId( yblocks.get( index ) ) === clientId ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
 function normalizeBlockAttributeForComparison(
 	value: unknown,
 	schema: BlockAttributeSchema | undefined
@@ -1602,7 +1616,78 @@ function mergeYBlocksLocalChanges(
 		);
 	}
 
+	deleteRemovedLocalBlocks( yblocks, blocksToSync, baseBlocks );
+	insertMissingLocalBlocks( yblocks, blocksToSync, baseBlocks );
+
 	return true;
+}
+
+function deleteRemovedLocalBlocks(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[]
+): void {
+	const incomingClientIds = new Set(
+		blocksToSync
+			.map( getBlockClientId )
+			.filter( ( clientId ): clientId is string => !! clientId )
+	);
+
+	for ( const baseBlock of baseBlocks ) {
+		const clientId = getBlockClientId( baseBlock );
+
+		if ( ! clientId || incomingClientIds.has( clientId ) ) {
+			continue;
+		}
+
+		const currentIndex = findYBlockIndexByClientId( yblocks, clientId );
+
+		if ( currentIndex !== -1 ) {
+			yblocks.delete( currentIndex, 1 );
+		}
+	}
+}
+
+function insertMissingLocalBlocks(
+	yblocks: YBlocks,
+	blocksToSync: Block[],
+	baseBlocks: Block[]
+): void {
+	const baseClientIds = new Set(
+		baseBlocks
+			.map( getBlockClientId )
+			.filter( ( clientId ): clientId is string => !! clientId )
+	);
+	let insertIndex = 0;
+
+	for ( const block of blocksToSync ) {
+		const clientId = getBlockClientId( block );
+
+		if ( ! clientId ) {
+			continue;
+		}
+
+		const matchingIndex = findYBlockIndexByClientId(
+			yblocks,
+			clientId,
+			insertIndex
+		);
+
+		if ( matchingIndex !== -1 ) {
+			insertIndex = matchingIndex + 1;
+			continue;
+		}
+
+		if (
+			baseClientIds.has( clientId ) ||
+			findYBlockIndexByClientId( yblocks, clientId ) !== -1
+		) {
+			continue;
+		}
+
+		yblocks.insert( insertIndex, [ createNewYBlock( block ) ] );
+		insertIndex++;
+	}
 }
 
 /**

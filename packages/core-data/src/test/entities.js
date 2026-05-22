@@ -189,7 +189,7 @@ describe( 'prePersistPostType', () => {
 		getSyncManager.mockReset();
 	} );
 
-	it( 'passes title and excerpt snapshots when serializing a persisted CRDT document', async () => {
+	it( 'passes title, excerpt, and content snapshots when serializing a persisted CRDT document', async () => {
 		const syncManager = {
 			createPersistedCRDTDoc: jest
 				.fn()
@@ -220,7 +220,7 @@ describe( 'prePersistPostType', () => {
 				recordSnapshot: {
 					title: 'Live title',
 					excerpt: { raw: 'Live excerpt' },
-					content: pageContent( [ 'Ignored content' ] ),
+					content: pageContent( [ 'Live content' ] ),
 				},
 			}
 		);
@@ -231,10 +231,12 @@ describe( 'prePersistPostType', () => {
 			{
 				basePersistedCRDTDoc: 'base-doc',
 				baseRecordSnapshot: {
+					content: pageContent( [ 'Base content' ] ),
 					excerpt: 'Base excerpt',
 					title: 'Base title',
 				},
 				recordSnapshot: {
+					content: pageContent( [ 'Live content' ] ),
 					excerpt: 'Live excerpt',
 					title: 'Live title',
 				},
@@ -907,6 +909,55 @@ describe( 'prePersistPostType', () => {
 		expect( result.content ).toContain( 'current content' );
 		expect( result.meta ).toEqual( {
 			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+		} );
+	} );
+
+	it( 'preserves revision restore content without merging latest saved blocks back in', async () => {
+		const restoredContent = pageContent( [ 'Alpha', 'older revision' ] );
+		const latestContent = pageContent( [
+			'Alpha',
+			'older revision',
+			'newer checkpoint',
+		] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: latestContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'local-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				blocks: parse( restoredContent ),
+				content: restoredContent,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: latestContent },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			{ content: restoredContent },
+			'page',
+			false,
+			'/wp/v2/pages',
+			{ __unstableIsRevisionRestore: true }
+		);
+
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
+			},
 		} );
 	} );
 

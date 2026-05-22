@@ -1606,6 +1606,94 @@ describe( 'saveEntityRecord', () => {
 		expect( result ).toBe( staleSaveResponse );
 	} );
 
+	it( 'guards stale base-version save response content using the response record snapshot', async () => {
+		const baseContent = blockContent( 'base' );
+		const savedContent = blockContent( 'checkpoint content 9' );
+		const savedCRDTDocument = JSON.stringify( {
+			document: 'saved-document',
+			version: 'document:saved',
+			baseVersion: 'document:base',
+			recordSnapshot: {
+				content: savedContent,
+			},
+		} );
+		const persistedRecord = {
+			id: 10,
+			content: {
+				raw: baseContent,
+			},
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			content: baseContent,
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const persistedEdits = {
+			...post,
+			content: savedContent,
+		};
+		const staleSaveResponse = {
+			id: 10,
+			content: {
+				raw: baseContent,
+				rendered: '<p>base</p>',
+			},
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const guardedSaveResponse = {
+			...staleSaveResponse,
+			content: {
+				raw: savedContent,
+				rendered: savedContent,
+			},
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => undefined ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			guardedSaveResponse,
+			undefined,
+			true,
+			persistedEdits
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			guardedSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
 	it( 'strips stale raw fields absent from a CRDT base-version save response', async () => {
 		const savedCRDTDocument = JSON.stringify( {
 			document: 'saved-document',
@@ -1684,6 +1772,104 @@ describe( 'saveEntityRecord', () => {
 			undefined,
 			true,
 			post
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			guardedSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
+	it( 'does not mark stripped stale raw fields as persisted edits', async () => {
+		const savedCRDTDocument = JSON.stringify( {
+			document: 'saved-document',
+			version: 'document:saved',
+		} );
+		const staleResponseCRDTDocument = JSON.stringify( {
+			document: 'stale-document',
+			version: 'document:stale',
+			baseVersion: 'document:saved',
+		} );
+		const baseContent = blockContent( 'base' );
+		const savedContent = blockContent( 'checkpoint content 9' );
+		const unrelatedContent = blockContent( 'unrelated live content' );
+		const persistedRecord = {
+			id: 10,
+			title: 'checkpoint title 8',
+			content: { raw: baseContent },
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			title: 'checkpoint title 9',
+			content: savedContent,
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const persistedEdits = {
+			id: 10,
+			title: 'checkpoint title 9',
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 9',
+				rendered: 'checkpoint title 9',
+			},
+			content: {
+				raw: baseContent,
+				rendered: '<p>base</p>',
+			},
+			meta: { _crdt_document: staleResponseCRDTDocument },
+		};
+		const guardedSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 9',
+				rendered: 'checkpoint title 9',
+			},
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'checkpoint title 9',
+				blocks: parse( unrelatedContent ),
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			guardedSaveResponse,
+			undefined,
+			true,
+			persistedEdits
 		);
 		expect( syncManager.update ).toHaveBeenCalledWith(
 			'postType/post',

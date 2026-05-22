@@ -367,6 +367,118 @@ describe( 'crdt', () => {
 			);
 		} );
 
+		it( 'rebases local block insertions when the CRDT has remote changes since the last local snapshot', () => {
+			const initialBlocks = [
+				{
+					name: 'core/paragraph',
+					clientId: 'existing-client-id',
+					attributes: { content: 'Initial content' },
+					innerBlocks: [],
+				},
+			];
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: initialBlocks },
+				defaultSyncedProperties
+			);
+
+			const yblocks = map.get( 'blocks' ) as YBlocks;
+			const attributes = yblocks
+				.get( 0 )
+				.get( 'attributes' ) as Y.Map< unknown >;
+			const content = attributes.get( 'content' ) as Y.Text;
+			content.delete( 0, content.length );
+			content.insert( 0, 'Remote content' );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{
+					blocks: [
+						{
+							...initialBlocks[ 0 ],
+							attributes: { content: 'Remote content' },
+						},
+						{
+							name: 'core/paragraph',
+							clientId: 'inserted-client-id',
+							attributes: {
+								content: 'rtc-save-paragraph-marker',
+							},
+							innerBlocks: [],
+						},
+					],
+				},
+				defaultSyncedProperties
+			);
+
+			expect( yblocks.toJSON() ).toEqual( [
+				{
+					...initialBlocks[ 0 ],
+					attributes: { content: 'Remote content' },
+				},
+				{
+					name: 'core/paragraph',
+					clientId: 'inserted-client-id',
+					attributes: {
+						content: 'rtc-save-paragraph-marker',
+					},
+					innerBlocks: [],
+				},
+			] );
+		} );
+
+		it( 'rebases local block deletions when the CRDT has remote changes since the last local snapshot', () => {
+			const initialBlocks = [
+				{
+					name: 'core/paragraph',
+					clientId: 'existing-client-id',
+					attributes: { content: 'Initial content' },
+					innerBlocks: [],
+				},
+				{
+					name: 'core/paragraph',
+					clientId: 'deleted-client-id',
+					attributes: {
+						content: 'rtc-save-paragraph-marker',
+					},
+					innerBlocks: [],
+				},
+			];
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: initialBlocks },
+				defaultSyncedProperties
+			);
+
+			const yblocks = map.get( 'blocks' ) as YBlocks;
+			const attributes = yblocks
+				.get( 0 )
+				.get( 'attributes' ) as Y.Map< unknown >;
+			const content = attributes.get( 'content' ) as Y.Text;
+			content.delete( 0, content.length );
+			content.insert( 0, 'Remote content' );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{
+					blocks: [
+						{
+							...initialBlocks[ 0 ],
+							attributes: { content: 'Remote content' },
+						},
+					],
+				},
+				defaultSyncedProperties
+			);
+
+			expect( yblocks.toJSON() ).toEqual( [
+				{
+					...initialBlocks[ 0 ],
+					attributes: { content: 'Remote content' },
+				},
+			] );
+		} );
+
 		it( 'converges duplicate table row edit/delete through the post changes wrapper', () => {
 			const docB = new Y.Doc();
 
@@ -957,6 +1069,70 @@ describe( 'crdt', () => {
 			);
 
 			expect( changes ).toHaveProperty( 'blocks' );
+		} );
+
+		it( 'hydrates stale transient blocks when persisted content already matches the CRDT blocks', () => {
+			registerBlockType( 'core/paragraph', {
+				apiVersion: 3,
+				category: 'text',
+				title: 'Paragraph',
+				attributes: {
+					content: {
+						type: 'rich-text',
+						source: 'rich-text',
+						selector: 'p',
+					},
+				},
+				save: ( {
+					attributes,
+				}: {
+					attributes: { content?: string | RichTextData };
+				} ) =>
+					createElement(
+						'p',
+						null,
+						createElement(
+							RawHTML,
+							null,
+							renderRichTextValue( attributes.content )
+						)
+					),
+			} );
+
+			const staleContent = [
+				'<!-- wp:paragraph -->',
+				'<p>Old editor blocks.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+			const persistedContent = [
+				'<!-- wp:paragraph -->',
+				'<p>Saved marker from persisted CRDT.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: parse( persistedContent ) } as PostChanges,
+				defaultSyncedProperties
+			);
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					blocks: parse( staleContent ),
+					content: {
+						raw: persistedContent,
+						rendered: persistedContent,
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).toHaveProperty( 'blocks' );
+			expect(
+				__unstableSerializeAndClean( changes.blocks as Block[] ).trim()
+			).toBe( persistedContent );
 		} );
 
 		it( 'does not invalidate persisted blocks for equivalent entity references and link attribute order', () => {

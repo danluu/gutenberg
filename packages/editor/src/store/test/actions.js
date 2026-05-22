@@ -3,6 +3,7 @@
  */
 import apiFetch from '@wordpress/api-fetch';
 import { store as blockEditorStore } from '@wordpress/block-editor';
+import { parse } from '@wordpress/blocks';
 import { store as coreStore } from '@wordpress/core-data';
 import { createRegistry } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
@@ -13,6 +14,7 @@ import { store as preferencesStore } from '@wordpress/preferences';
  */
 
 import * as actions from '../actions';
+import { restoreRevision } from '../private-actions';
 import { store as editorStore } from '..';
 
 const postId = 44;
@@ -63,6 +65,73 @@ const getMethod = ( options ) =>
 	options.headers?.[ 'X-HTTP-Method-Override' ] || options.method || 'GET';
 
 describe( 'Post actions', () => {
+	describe( 'restoreRevision()', () => {
+		it( 'restores parsed blocks with the revision content before saving', async () => {
+			const revisionContent = [
+				'<!-- wp:paragraph -->',
+				'<p>Restored old revision.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+			const revision = {
+				id: 77,
+				date: '2026-05-22T20:15:00',
+				title: { raw: 'Restored title' },
+				excerpt: { raw: 'Restored excerpt' },
+				content: { raw: revisionContent },
+				meta: { key: 'value' },
+			};
+			const getRevision = jest.fn().mockResolvedValue( revision );
+			const createSuccessNotice = jest.fn();
+			const dispatch = {
+				editPost: jest.fn(),
+				savePost: jest.fn(),
+				setCurrentRevisionId: jest.fn(),
+			};
+			const registry = {
+				select: ( store ) => {
+					if ( store === coreStore ) {
+						return {
+							getEntityConfig: () => ( { revisionKey: 'id' } ),
+						};
+					}
+				},
+				resolveSelect: ( store ) => {
+					if ( store === coreStore ) {
+						return { getRevision };
+					}
+				},
+				dispatch: ( store ) => {
+					if ( store === noticesStore ) {
+						return { createSuccessNotice };
+					}
+				},
+			};
+			const select = {
+				getCurrentPostId: () => postId,
+				getCurrentPostType: () => 'post',
+			};
+
+			await restoreRevision( revision.id )( {
+				select,
+				dispatch,
+				registry,
+			} );
+
+			const edits = dispatch.editPost.mock.calls[ 0 ][ 0 ];
+			expect( edits ).toMatchObject( {
+				content: revisionContent,
+				excerpt: 'Restored excerpt',
+				meta: revision.meta,
+				title: 'Restored title',
+			} );
+			expect( Array.isArray( edits.blocks ) ).toBe( true );
+			expect( edits.blocks ).toEqual( parse( revisionContent ) );
+			expect( dispatch.savePost ).toHaveBeenCalledWith( {
+				__unstableIsRevisionRestore: true,
+			} );
+		} );
+	} );
+
 	describe( 'savePost()', () => {
 		it( 'saves a modified post', async () => {
 			const post = {

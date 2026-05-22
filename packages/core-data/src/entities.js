@@ -26,7 +26,7 @@ import {
 
 export const DEFAULT_ENTITY_KEY = 'id';
 const POST_RAW_ATTRIBUTES = [ 'title', 'excerpt', 'content' ];
-const POST_SNAPSHOT_RAW_ATTRIBUTES = [ 'title', 'excerpt' ];
+const POST_SNAPSHOT_RAW_ATTRIBUTES = [ 'title', 'excerpt', 'content' ];
 const POST_TYPES_WITH_STALE_SAVE_PROTECTION = new Set( [ 'post', 'page' ] );
 
 function getRawPostValue( value ) {
@@ -428,14 +428,15 @@ export const additionalEntityConfigLoaders = [
 /**
  * Apply extra edits before persisting a post type.
  *
- * @param {Object}  persistedRecord        Already persisted Post
- * @param {Object}  edits                  Edits.
- * @param {string}  name                   Post type name.
- * @param {boolean} isTemplate             Whether the post type is a template.
- * @param {string}  baseURL                REST base URL for the post type.
- * @param {Object}  options                Pre-persist options.
- * @param {Object}  options.recordSnapshot Current record snapshot to store
- *                                         with the CRDT document.
+ * @param {Object}  persistedRecord                     Already persisted Post
+ * @param {Object}  edits                               Edits.
+ * @param {string}  name                                Post type name.
+ * @param {boolean} isTemplate                          Whether the post type is a template.
+ * @param {string}  baseURL                             REST base URL for the post type.
+ * @param {Object}  options                             Pre-persist options.
+ * @param {Object}  options.recordSnapshot              Current record snapshot to store
+ *                                                      with the CRDT document.
+ * @param {boolean} options.__unstableIsRevisionRestore Revision restore save.
  * @return {Promise< Object >} Updated edits.
  */
 export const prePersistPostType = async (
@@ -480,6 +481,9 @@ export const prePersistPostType = async (
 			getRawPostValue( persistedRecord?.[ key ] )
 	);
 	const locallyChangedSavedFieldSet = new Set( locallyChangedSavedFields );
+	const shouldPreserveRevisionRestoreContent =
+		options.__unstableIsRevisionRestore &&
+		locallyChangedSavedFieldSet.has( 'content' );
 
 	if ( ! isTemplate && persistedRecord?.status === 'auto-draft' ) {
 		// Saving an auto-draft should create a draft by default.
@@ -578,6 +582,13 @@ export const prePersistPostType = async (
 					);
 
 					for ( const key of locallyChangedSavedFields ) {
+						if (
+							shouldPreserveRevisionRestoreContent &&
+							key === 'content'
+						) {
+							continue;
+						}
+
 						const hasCRDTValue =
 							key === 'content'
 								? key in ( crdtRecord ?? {} ) ||
@@ -609,6 +620,7 @@ export const prePersistPostType = async (
 
 			if (
 				locallyChangedSavedFieldSet.has( 'content' ) &&
+				! shouldPreserveRevisionRestoreContent &&
 				! ( 'content' in newEdits )
 			) {
 				const mergedContent = mergeStaleSerializedBlockContent(
@@ -639,6 +651,13 @@ export const prePersistPostType = async (
 				);
 
 				for ( const key of repairableSavedFields ) {
+					if (
+						shouldPreserveRevisionRestoreContent &&
+						key === 'content'
+					) {
+						continue;
+					}
+
 					const hasCRDTValue =
 						key === 'content'
 							? key in ( crdtRecord ?? {} ) ||
@@ -686,6 +705,7 @@ export const prePersistPostType = async (
 		POST_TYPES_WITH_STALE_SAVE_PROTECTION.has( name ) &&
 		objectId &&
 		locallyChangedSavedFieldSet.has( 'content' ) &&
+		! shouldPreserveRevisionRestoreContent &&
 		getRawPostValue( edits.content ) === '' &&
 		! ( 'content' in newEdits )
 	) {

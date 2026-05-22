@@ -510,10 +510,17 @@ export function getPostChangesFromCRDTDoc(
 						editedRecord.content
 					) {
 						const blocksJson = ymap.get( 'blocks' )?.toJSON() ?? [];
+						const persistedContent = Array.isArray(
+							editedRecord.blocks
+						)
+							? __unstableSerializeAndClean(
+									editedRecord.blocks
+							  ).trim()
+							: getRawValue( editedRecord.content );
 
 						return hasPersistedBlockContentChanged(
 							blocksJson,
-							getRawValue( editedRecord.content )
+							persistedContent
 						);
 					}
 
