@@ -1,18 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,newer current-feedback has no promotion_blocked rows; rerun only if red benchmark feedback reappears,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,"newer current-feedback has no promotion_blocked rows; rerun only if red
-benchmark feedback reappears"
-repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,WS repair branch is retained as contingency but current feedback supersedes it as an active blocker,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,"WS repair branch is retained as contingency but current feedback supersedes it
-as an active blocker"
-publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,do not publish from stale summaries; finalization must reread current-feedback and any successor-stack gate first,benchmark-canary-fuzzer-gap/maintainer-snapshot,"do not publish from stale summaries; finalization must reread current-feedback
-and any successor-stack gate first"
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"unit, lint, and manifest evidence are insufficient without fresh exact-stack green rows",reload-hydration@fa801a6aa13/promotion,"unit, lint, and manifest evidence are insufficient without fresh exact-stack
-green rows"
-launch-owner-matrix,PR07C/HOLD-07C/duplicate-relaunch,P0,no,do not spawn duplicate owner-matrix work beyond the queued readiness-resolved job,PR07C/HOLD-07C/duplicate-relaunch,"do not spawn duplicate owner-matrix work beyond the queued readiness-resolved
-job"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until the owner matrix or exact replay proves product ownership,ready/rtc-pr07c-reload-record-snapshots,keep held until the owner matrix or exact replay proves product ownership
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"no fresh all-green exact stack exists for title reload, existing-post or persistence reload, and large HTTP",reload-hydration@fa801a6aa13/promotion,"no fresh all-green exact stack exists for title reload, existing-post or
+persistence reload, and large HTTP"
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,reject duplicate owner-matrix launch; reopen only with owner evidence newer than Cycle380 or exact product-failure replay,PR07C/HOLD-07C,"reject duplicate owner-matrix launch; reopen only with owner evidence newer than
+Cycle380 or exact product-failure replay"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until newer owner evidence or exact product-failure replay proves product ownership,ready/rtc-pr07c-reload-record-snapshots,"keep held until newer owner evidence or exact product-failure replay proves
+product ownership"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer run,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer run
+repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by fresher exact-stack green benchmark feedback; reopen only on new red current-feedback rows,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,"superseded by fresher exact-stack green benchmark feedback; reopen only on new
+red current-feedback rows"
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,current benchmark state is terminal green; rerun only if current-feedback.tsv gains promotion_blocked rows,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,"current benchmark state is terminal green; rerun only if current-feedback.tsv
+gains promotion_blocked rows"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,duplicates already published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,duplicates already published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path
-publish-ready,current-push-manifest,P1,no,header-only controller manifest is not a concrete product publication source,current-push-manifest,header-only controller manifest is not a concrete product publication source
+publish-ready,current-push-manifest,P1,no,header-only or stale push manifest is not a product publication source,current-push-manifest,header-only or stale push manifest is not a product publication source
