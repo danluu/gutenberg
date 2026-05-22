@@ -62,7 +62,11 @@ many_user_active_editing_profile <- "many-user-active-editing"
 many_user_active_editing_groups <- c(
 	"novelty-ws-many-user-active-editing",
 	"novelty-ws-twelve-user-active-rich-text",
-	"novelty-ws-thirty-user-active-editing"
+	"novelty-ws-thirty-user-active-editing",
+	"novelty-http-many-user-active-editing",
+	"novelty-ws-same-user-active-editing",
+	"novelty-ws-revision-active-editing",
+	"novelty-ws-publish-active-editing"
 )
 many_user_active_editing_thresholds <- c( 6, 10, 12, 30 )
 many_user_active_editing_note_thresholds <- c( 6, 12 )
@@ -75,6 +79,7 @@ many_user_active_editing_goal_ids <- c(
 	paste0( "cross-product:active-editors-large-doc:users-", many_user_active_editing_thresholds ),
 	paste0( "cross-product:active-editors-notes-lifecycle:users-", many_user_active_editing_note_thresholds ),
 	"cross-product:active-editors-http-lifecycle:users-6",
+	"http-max-clients-override:true",
 	"cross-product:active-editors-same-user-lifecycle:users-6",
 	"cross-product:active-editors-revision-restore:users-6",
 	"cross-product:active-editors-publish-lifecycle:users-6",
@@ -1204,6 +1209,7 @@ many_user_active_missing_goals <- tibble( id = many_user_active_editing_goal_ids
 			str_detect( id, "active-editors-notes-lifecycle:users-12" ) ~ 5,
 			str_detect( id, "active-editors-notes-lifecycle:users-6" ) ~ 10,
 			str_detect( id, "active-editors-http-lifecycle:users-6" ) ~ 10,
+			str_detect( id, "http-max-clients-override:true" ) ~ 10,
 			str_detect( id, "active-editors-same-user-lifecycle:users-6" ) ~ 10,
 			str_detect( id, "active-editors-revision-restore:users-6" ) ~ 10,
 			str_detect( id, "active-editors-publish-lifecycle:users-6" ) ~ 10,
@@ -1247,6 +1253,7 @@ many_user_active_editing_requirements <- tibble(
 		"presence and cursor signals",
 		"large document edge",
 		"HTTP polling transport",
+		"HTTP client-limit override",
 		"same-user tabs",
 		"revision restore",
 		"publish transition"
@@ -1254,7 +1261,7 @@ many_user_active_editing_requirements <- tibble(
 	record_check = c(
 		"status == passed",
 		"userCount >= N",
-		"distinct action/operation userIndex count >= N",
+		"distinct editing action/operation userIndex count >= N, excluding final UI witness-sweep-only edits",
 		"late-join lifecycle event is present",
 		"save count >= 1 and reload count >= 1",
 		"autosave count >= 1 for rich/list lifecycle",
@@ -1263,6 +1270,7 @@ many_user_active_editing_requirements <- tibble(
 		"presence-list ok + remote-selection-cursor ok",
 		"block count or initial large-document profile >= 50",
 		"transport == http for the HTTP active-editor cross-product",
+		"http-max-clients-override:true feature reaches target",
 		"collaboratorMode == same-user for the same-user active-editor cross-product",
 		"eligible revision restore completes with status ok",
 		"final-persistence-publish completes with status ok"
@@ -1278,6 +1286,7 @@ many_user_active_editing_requirements <- tibble(
 		"collaboration UI",
 		"collaboration UI",
 		"scale",
+		"transport",
 		"transport",
 		"identity",
 		"persistence",
@@ -4058,6 +4067,7 @@ summary_lines <- c(
 	paste0( "many_user_active_editing_notes_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( notes_lifecycle_records ) ),
 	paste0( "many_user_active_editing_notes_lifecycle_users_12: ", many_user_active_editing_progress %>% filter( threshold == 12 ) %>% pull( notes_lifecycle_records ) ),
 	paste0( "many_user_active_editing_http_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( http_lifecycle_records ) ),
+	paste0( "many_user_active_editing_http_max_clients_override: ", get_feature_numeric( "http-max-clients-override:true", get_goal_numeric( "http-max-clients-override:true", "count", 0 ) ) ),
 	paste0( "many_user_active_editing_same_user_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( same_user_lifecycle_records ) ),
 	paste0( "many_user_active_editing_revision_restore_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( revision_restore_records ) ),
 	paste0( "many_user_active_editing_publish_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( publish_lifecycle_records ) ),

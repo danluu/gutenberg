@@ -36,6 +36,7 @@ cross-product:active-editors-ui-signals:users-10,"cross product active editors u
 10",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-ui-signals:users-12,"cross product active editors ui signals users
 12",0,10,FALSE,0,cross-product,10,0,0 / 10
+http-max-clients-override:true,http max clients override true,0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
 success-action-users:10,success action users 10,0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
 success-action-users:12,success action users 12,0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
 success-profile-users:many-user-active-editing:12,"success profile users many user active editing

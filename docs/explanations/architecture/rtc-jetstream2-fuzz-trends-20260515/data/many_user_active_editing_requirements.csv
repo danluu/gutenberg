@@ -1,7 +1,7 @@
 ingredient,record_check,requirement_family,required_for_cross_product_count
 passed run,status == passed,completion,TRUE
 at least N browser users,userCount >= N,scale,TRUE
-at least N active editors,distinct action/operation userIndex count >= N,active editing,TRUE
+at least N active editors,"distinct editing action/operation userIndex count >= N, excluding final UI witness-sweep-only edits",active editing,TRUE
 late join,late-join lifecycle event is present,lifecycle,TRUE
 save and reload,save count >= 1 and reload count >= 1,persistence,TRUE
 autosave checkpoint,autosave count >= 1 for rich/list lifecycle,persistence,TRUE
@@ -10,6 +10,7 @@ synced collaboration note,ui-add-note action + remote note visibility,collaborat
 presence and cursor signals,presence-list ok + remote-selection-cursor ok,collaboration UI,TRUE
 large document edge,block count or initial large-document profile >= 50,scale,TRUE
 HTTP polling transport,transport == http for the HTTP active-editor cross-product,transport,TRUE
+HTTP client-limit override,http-max-clients-override:true feature reaches target,transport,TRUE
 same-user tabs,collaboratorMode == same-user for the same-user active-editor cross-product,identity,TRUE
 revision restore,eligible revision restore completes with status ok,persistence,TRUE
 publish transition,final-persistence-publish completes with status ok,persistence,TRUE
