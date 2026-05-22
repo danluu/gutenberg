@@ -33,18 +33,18 @@ or fuzzing coverage:
 ```text
 # Productive Analysis Loop Status
 
-- updated: 2026-05-22T08:38:12Z
+- updated: 2026-05-22T08:58:13Z
 - session: rtc-productive-analysis-loop
 - active lane jobs: 0
 - actions: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/current-actions.tsv
 - critical feedback: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/critical-path-feedback.md
 
 ## Controller Feed
-- current action rows: 56
-- high-priority controller rows: 38
+- current action rows: 57
+- high-priority controller rows: 39
 # RTC Productive Analysis Loop
 
-- updated: 2026-05-22T08:38:12Z
+- updated: 2026-05-22T08:58:13Z
 - base: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521
 - active lane jobs: 0
 - cycle interval seconds: 600
@@ -62,12 +62,6 @@ The loop is wired into controllers through:
 
 ## Current Actions
 generated_at          action_id                                                               target_loop      priority  action_kind                        family_or_pr                                                                           evidence_path                                                                                                                                                                                                                                            next_action                                                                                                                                                                                                                                                                                                                                                                                                                                                                   control_path
-2026-05-22T05:46:24Z  deferred-reload-hydration-exact-blocker                                 critical-path    P0        exact-stack-blocker                reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13            /media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/cycles/20260521T223947Z/reload-hydration/push-manifest.tsv                                                                                                                           Replace the generic reload-hydration deferred-family blocker with a candidate-specific exact-stack blocker on fa801a6aa13; adopt or publish that manifest head only as the candidate, and require fresh exact-stack title-reload-http, existing-post-crdt-http, and large-http-lifecycle green evidence before promotion.                                                                                                                                                     /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/rtc-critical-path-pr-executor-loop.sh
-2026-05-22T05:46:24Z  deferred-family-single-flight-manifest-held                             deferred         P0        update-controller-rule             deferred-family-single-flight                                                          /media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/current-deferred-status.md                                                                                                                                                           Suppress interval relaunch for manifest-held or over-budget deferred families; allow progress only by manifest adoption, product-head exact replay, owner evidence, green stack adoption, or explicit downscope. Apply immediately to reload-hydration, pre-save-search-live-collapse, and rich-text-suffix-corruption.                                                                                                                                                       /media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/deferred-work-promotion-loop.sh
-2026-05-22T05:47:26Z  lower-http-polling-canary-oracle-retarget                               lower-level      P0        update-controller-rule             lower-http-polling                                                                     /media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-http-polling-manager-20260520/runs/coverage-guided-lower-level-20260522T021312018163439Z/status.tsv                                                                                       Stop admitting feature-only corpus entries as progress unless new_coverage_keys is positive or a canary-equivalent oracle fires; retarget lower HTTP polling toward title-reload, existing-post-crdt, persistence-probe, and large-post lifecycle oracles.                                                                                                                                                                                                                    /media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-http-polling-manager-20260520/supervisor-groups.json
-2026-05-22T05:47:26Z  unit-property-table-query-array-remote-marker-cap                       lower-level      P0        update-controller-rule             unit-property-table-query-array-crdt/remote-marker                                     /media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516/runs/unit-property-20260521T220305Z/status.tsv                                                                                                                                              Cap RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE oracle-remote-marker to one minimized representative and route it to PR14B repair or explicit oracle downscope; do not count adjacent failing seeds as new lower-level yield.                                                                                                                                                                                                                                                       /media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516/supervisor-groups.json
-2026-05-22T05:46:30Z  pr07c-clear-consumed-owner-matrix                                       critical-path    P0        clear-stale-blocker                PR07C/HOLD-07C                                                                         /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/current-pr-progress.tsv                                                                                                                                                               Remove job-pr07c-owner-matrix and mark pr07c-owner-matrix held-consumed or terminal; do not launch another owner matrix until newer owner evidence or exact replay appears; keep ready/rtc-pr07c-reload-record-snapshots held.                                                                                                                                                                                                                                                /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv
-2026-05-22T05:46:30Z  seed-5200005-clear-resolved-reducer                                     critical-path    P0        consume-terminal-classification    seed-5200005-reducer                                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T051235Z/continuations/seed-5200005-reducer/classification.tsv                                                                                                        Consume already_resolved_by_active_artifacts and clear seed-5200005-reducer from blocker or queue state after the adopted run exits; do not schedule a new reducer without fresher product-owned non-coverage evidence newer than 2026-05-22T05:12Z.                                                                                                                                                                                                                          /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv
 2026-05-22T06:06:15Z  benchmark-to-fuzz-closure-existing-post-crdt-coverage-20260522T060615Z  coverage         P0        restore-forced-coverage            existing-post-crdt-http                                                                /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260522T055342Z/supervisor-state.json                                                                                                                                                   Re-add novelty-http-existing-post-crdt-metadata and novelty-http-persistence-probe to the active supervisor groups while benchmark canary feedback 20260522T053842Z is active; do not treat removed-from-groups-policy as a valid pause for focused/persistence-reload-http coverage.                                                                                                                                                                                         /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260522T055342Z/supervisor-groups.json
 2026-05-22T06:05:37Z  dfr-20260522-reload-hydration-exact-blocker                             pr-progress      P0        convert-deferred-to-exact-blocker  reload-hydration@fa801a6aa13                                                           /media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/cycles/20260521T223947Z/reload-hydration/reload-hydration.report.md                                                                                                                  Adopt push-manifest head fa801a6aa13 as the sole reload-hydration candidate, publish/stack it only as a candidate, and block promotion until fresh exact-stack title-reload-http, existing-post-crdt-http, and large-http-lifecycle rows are green.                                                                                                                                                                                                                           /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/persona-runs/20260522T054953Z
 2026-05-22T06:05:37Z  dfr-20260522-deferred-single-flight-held                                deferred         P0        update-controller-rule             deferred-family-single-flight                                                          /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/runs/20260522T060338Z/context.md                                                                                                                                                         Keep reload-hydration, pre-save-search-live-collapse, and rich-text-suffix-corruption on single-flight hold while manifests exist; suppress interval relaunches for held or over-budget families and allow progress only by manifest adoption, focused exact replay, owner evidence, green stack adoption, or explicit downscope.                                                                                                                                             /media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/deferred-work-promotion-loop.sh
@@ -118,8 +112,75 @@ generated_at          action_id                                                 
 2026-05-22T08:31:46Z  llyr-20260522T083146Z-richtext-placement-oracle-cap                     lower-level      high      cooldown-diagnostic                unit-property-rich-text-crdt-merge                                                     /media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516/runs/unit-property-20260522T055731Z/status.tsv                                                                                                                                              Pause or cap the green-only rich-text CRDT merge lane unless placement or multi-block cases are enabled; do not let repeated exit=0 batches with placement_case_count=0 consume continuous lower-level budget or satisfy parser-serialization accounting.                                                                                                                                                                                                                     /media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516/supervisor-groups.json
 2026-05-22T08:31:56Z  prbr-20260522T083156-pr07c-clear-consumed-owner-matrix                  critical-path    P0        clear-stale-blocker                PR07C/HOLD-07C                                                                         /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/current-pr-progress.tsv;/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260518T170339Z/jobs/outputs/rtc-cycle380-pr07c-owner-replay-after-browser-ready/report.md  Terminalize or remove pr07c-owner-matrix and job-pr07c-owner-matrix from critical-path state; current PR progress marks the existing owner evidence runtime-held-consumed, so keep ready/rtc-pr07c-reload-record-snapshots held and relaunch only for owner evidence newer than Cycle380 or an exact product-failure replay.                                                                                                                                                  /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv;/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/queue.tsv
 2026-05-22T08:31:56Z  prbr-20260522T083156-seed-5200005-clear-terminal-reducer                critical-path    P0        consume-terminal-classification    seed-5200005-reducer                                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T082144Z/continuations/seed-5200005-reducer/classification.tsv                                                                                                        Consume the already_resolved_by_active_artifacts classification as terminal reducer evidence; remove seed-5200005-reducer from blockers.tsv and remove job-5200005-reducer from queue.tsv unless fresh product-owned non-coverage evidence newer than this classification appears.                                                                                                                                                                                            /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv;/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/queue.tsv
+2026-05-22T08:51:48Z  bench-fuzz-closure-001                                                  critical-path    P0        exact-stack-benchmark-rerun        benchmark-canary-fuzzer-gap                                                            /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T081119Z/continuations/benchmark-canary-fuzzer-gap/exact-stack-status.tsv                                                                                             Rerun the exact all-merged benchmark/canary for rtc-pr-stack-20260522T074557Z-all-merged-unsoundness-base-fix at 431635f36ecfa528d139c19cf2c7a195d34d6c0a after the WS dependency/bootstrap repair; keep benchmark-canary-fuzzer-gap active and block publication until the refreshed exact-stack feedback has no promotion_blocked rows.                                                                                                                                     /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv
+2026-05-22T08:50:16Z  dfr-20260522T085016Z-reload-hydration-exact-stack                       critical-path    P0        convert-to-exact-stack-blocker     reload-hydration@fa801a6aa13                                                           /media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/cycles/20260521T223947Z/reload-hydration/push-manifest.tsv                                                                                                                           Replace the generic reload-hydration deferred-family blocker with a head-specific exact-stack blocker for deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13; publish or adopt the manifest branch, then run bounded exact replay for title-reload-http, existing-post-crdt-http, and large-http-lifecycle; keep publication blocked until a fresh all-green exact stack exists.                                                                                      /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv
+2026-05-22T08:50:16Z  dfr-20260522T085016Z-diagnostic-family-cooldown                         deferred         P0        cooldown-diagnostic                pre-save-search-live-collapse+rich-text-suffix-corruption                              /media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/current-deferred-control.tsv                                                                                                                                                         Keep both diagnostic families on single-flight hold and suppress generic interval relaunch; resume only by publishing and running their focused diagnostic manifests, by fresh owner/product evidence, by green exact-stack adoption, or by explicit downscope after focused replay.                                                                                                                                                                                          /media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/current-deferred-control.tsv
+2026-05-22T08:51:23Z  lower-http-polling/reload-materialization-retarget                      lower-level      P0        update-controller-rule             rtc-http-polling-manager                                                               /media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-http-polling-manager-20260520/runs/coverage-guided-lower-level-20260522T063940354030385Z/status.tsv                                                                                       Park the saturated generic polling corpus after the current batch unless new coverage, admitted semantic features, or product yield appears; relaunch a smaller seed set aimed at title-reload and existing-post CRDT materialization oracles before allowing expansion back toward the 8000-case corpus.                                                                                                                                                                     /media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-http-polling-manager-20260520/supervisor-groups.json
+2026-05-22T08:51:23Z  unit-rich-text-crdt-placement-retarget                                  lower-level      high      update-controller-rule             rtc-rich-text-crdt-merge                                                               /media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516/runs/unit-property-20260522T055731Z/status.tsv                                                                                                                                              Stop unbounded green-only rich-text CRDT batches while placement_case_count remains 0; set placementCaseCount to a nonzero slice and continue only if placement, multi-block, semantic-feature, or failure signal appears, otherwise reallocate this lane to parser serialization.                                                                                                                                                                                            /media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516/supervisor-groups.json
+2026-05-22T08:53:05Z  prbr-20260522T085305-benchmark-ws-smoke-exact-rerun                     critical-path    P0        exact-stack-replay                 benchmark-canary-fuzzer-gap                                                            /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T083852Z/continuations/benchmark-canary-fuzzer-gap/classification.tsv                                                                                                 Consume fix_branch_created for repair/benchmark-canary-ws-smoke-20260522T083852Z; rebuild or cherry-pick it onto the exact all-merged benchmark stack, rerun the benchmark canary, refresh current-feedback.tsv, and keep snapshot publication blocked until all promotion-blocking rows are green or explicitly downscoped.                                                                                                                                                  /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv;/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/queue.tsv
+2026-05-22T08:53:05Z  prbr-20260522T085305-critical-stale-blocker-reconcile                   critical-path    P0        reconcile-stale-blockers           PR07C/HOLD-07C+seed-5200005-reducer                                                    /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/current-pr-progress.tsv;/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T080556Z/continuations/seed-5200005-reducer/classification.tsv             Terminalize or remove job-pr07c-owner-matrix because current PR progress marks owner evidence runtime-held-consumed and relaunch needs evidence newer than Cycle380; also consume seed-5200005-reducer already_resolved_by_active_artifacts and remove job-5200005-reducer unless fresh product-owned non-coverage evidence newer than the 20260522T080556Z classification appears.                                                                                           /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv;/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/queue.tsv
 
 ## Recent Lane Reports
+
+### /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/runs/20260522T084812Z/lanes/pr-blocker-router/report.md
+# pr-blocker-router report
+
+Generated: 2026-05-22T08:53:05Z
+
+Emitted two P0 critical-path actions.
+
+1. `benchmark-canary-fuzzer-gap` has moved past generic product-repair exploration: the active continuation created `repair/benchmark-canary-ws-smoke-20260522T083852Z` and classified it as `fix_branch_created`, but the blocker is still promotion-red until that repair is applied to the exact all-merged benchmark stack and `current-feedback.tsv` is refreshed green or explicitly downscoped.
+
+2. The critical-path queue still carries stale blocker jobs for PR07C owner evidence and seed 5200005. PR progress marks PR07C owner evidence `runtime-held-consumed`, while seed 5200005 has a current `already_resolved_by_active_artifacts` classification. The smallest useful action is a blocker/queue reconciliation, not another browser owner-matrix run or reducer relaunch.
+
+No broader filesystem scan, browser/e2e run, repository edit, push, or branch mutation was performed by this lane.
+
+### /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/runs/20260522T084812Z/lanes/benchmark-to-fuzz-closure/report.md
+# Benchmark-To-Fuzz Closure
+
+Generated: 2026-05-22T08:51:48Z
+
+## Action
+
+Emit one P0 critical-path action: rerun the exact all-merged benchmark/canary for `rtc-pr-stack-20260522T074557Z-all-merged-unsoundness-base-fix` at `431635f36ecfa528d139c19cf2c7a195d34d6c0a` after the WS dependency/bootstrap repair.
+
+Evidence: `/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T081119Z/continuations/benchmark-canary-fuzzer-gap/exact-stack-status.tsv` classifies the lane as `exact_stack_red`: the WS smoke row only passed a bounded dependency smoke after repair, not a fresh exact benchmark rerun. The same continuation already applied the coverage and harness closure work in `coverage-change.tsv`: `novelty-ws-code-editor-smoke` was added/scheduled, isolated `test/e2e/node_modules` dependency prep was repaired, and `rtc-test-ws-sync-server.mjs` was made compatible with `ws@7` and `ws@8`.
+
+## Non-Actions
+
+No separate coverage action is emitted. The coverage scheduler already has `novelty-ws-code-editor-smoke` forced in `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260522T082502Z/novelty-status.md`, and the 08:11 continuation records that benchmark feedback was mapped to that P0 WS group.
+
+No local-publisher row is emitted. Publication is already blocked by the active `benchmark-canary-fuzzer-gap` critical-path blocker; duplicating the gate would not change scheduling. The useful remaining controller move is the exact-stack rerun and blocker refresh.
+
+### /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/runs/20260522T084812Z/lanes/lower-level-yield-retarget/report.md
+# Lower-Level Yield Retarget
+
+Generated: 2026-05-22T08:51:23Z
+
+Emitted two controller actions.
+
+## Actions
+
+1. `lower-http-polling/reload-materialization-retarget`: current HTTP polling manager attempts are saturated. The active status tail shows attempts 394-413 at corpus `8000` with `new_coverage_keys=0`, `new_feature_keys=0`, `admitted_new_feature_keys=0`, and `product_yield=0`. Retargeting should stop generic corpus growth and spend the next lower-level slice on title reload plus existing-post CRDT materialization oracles.
+
+2. `unit-rich-text-crdt-placement-retarget`: current rich-text CRDT unit-property batches are green-only and every recent row has `placement_case_count=0`. The configured controller also has `placementCaseCount: 0`, so continuing the same generator mainly proves the current narrow oracle. Either add placement/multi-block coverage to this lane or reallocate it to parser serialization.
+
+## Non-Actions
+
+No benchmark, deferred-family, or branch-publication rows were emitted from this lane. Those are already routed by the critical-path and PR-progress controllers; the lower-level scheduling defect here is yield/accounting, not a missing PR action.
+
+### /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/runs/20260522T084812Z/lanes/deferred-family-reducer/report.md
+# Deferred Family Reducer Report
+
+Generated: 2026-05-22T08:50:16Z
+
+Emitted two controller actions.
+
+1. `reload-hydration` should stop being treated as an open-ended deferred family. It has a concrete manifest at `deferred/rtc-reload-hydration-20260521T223947Z` with head `fa801a6aa13`, unit/lint validation, and no claimed browser exact-stack clearance. The next useful state change is a critical-path exact-stack blocker for that head, followed by bounded replay of `title-reload-http`, `existing-post-crdt-http`, and `large-http-lifecycle`.
+
+2. `pre-save-search-live-collapse` and `rich-text-suffix-corruption` are diagnostic candidates, not product fixes. Their current manifests add focused instrumentation or replay coverage and should not trigger more generic deferred-family relaunches. They should remain single-flight held until focused diagnostics are published/run, fresh owner evidence appears, exact-stack evidence turns green, or the families are explicitly downscoped.
+
+No action rows were emitted for `malformed-save-payload` or `http-room-isolation` because the current deferred control state already downscopes them to canonical PR06B minimal and PR02A respectively, with no fresh product evidence in this context.
 
 ### /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/runs/20260522T082810Z/lanes/pr-blocker-router/report.md
 # PR Blocker Router Report
@@ -230,67 +291,6 @@ No action rows were emitted for `pre-save-search-live-collapse` or `rich-text-su
 # PR Blocker Router Report
 
 Generated: 2026-05-22T08:10:08Z
-
-## Routed Actions
-
-1. `PR07C/HOLD-07C` is still queued in critical-path as `pr07c-owner-matrix`, including `job-pr07c-owner-matrix`, even though PR-progress marks the current owner evidence as `runtime-held-consumed`. Route this to critical-path state repair: terminalize/remove the stale browser-e2e owner-matrix job, keep `ready/rtc-pr07c-reload-record-snapshots` held, and relaunch only for owner evidence newer than Cycle380 or an exact product-failure replay.
-
-2. `seed-5200005-reducer` is still active in critical-path, but the fresh continuation classification is `already_resolved_by_active_artifacts`. Route this to critical-path state repair: consume the terminal classification and remove both the blocker and `job-5200005-reducer` unless fresher product-owned non-coverage evidence appears.
-
-## Non-Actions
-
-No benchmark-canary action row is emitted here: current critical-path status already has `benchmark-canary-fuzzer-gap` terminal on fresh exact-stack green feedback.
-
-No reload-hydration row is emitted from this lane: the current controller state already treats it as deferred single-flight held, and the exact blocker/candidate adoption belongs to deferred/pr-progress routing rather than PR blocker cleanup.
-
-### /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/runs/20260522T074807Z/lanes/benchmark-to-fuzz-closure/report.md
-# Benchmark To Fuzz Closure
-
-Generated: 2026-05-22T07:52:42Z
-
-No action rows emitted.
-
-The current benchmark canary feedback is already closed by exact-stack evidence, not by coverage bookkeeping. `/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520/current-feedback.tsv` has three rows, all `exact_stack_green`, and no `promotion_blocked` rows. The newer continuation classification at `/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T073853Z/continuations/benchmark-canary-fuzzer-gap/classification.tsv` confirms all active rows are green on `try/rtc-benchmark-canary-stale-crdt-base-20260522T061407Z@a886fd3d8688b6e4e2022fa3e389700f7d122c67`.
-
-The critical-path controller has already terminalized `benchmark-canary-fuzzer-gap` with next action "reopen only when current-feedback.tsv changes or new promotion_blocked rows appear" in `/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv`. Coverage is also already pinned for the benchmark surfaces in `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260522T064303Z/novelty-status.md`; there is no fresh benchmark failure to convert into a new fuzz target, repair branch, or promotion gate.
-
-Controller-safe conclusion: do nothing until `current-feedback.tsv` changes or a new `promotion_blocked` row appears. Re-emitting the stale all-merged successor or title-materialization actions would add churn without changing the current blocker state.
-
-### /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/runs/20260522T074807Z/lanes/lower-level-yield-retarget/report.md
-# Lower-Level Yield Retarget Report
-
-Generated: 2026-05-22T07:52:14Z
-
-Actions emitted: 2
-
-The high-confidence low-yield signal is the dedicated lower-level HTTP polling manager. Its current run at `/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-http-polling-manager-20260520/runs/coverage-guided-lower-level-20260522T063940354030385Z/status.tsv` spans attempts 0-256 from 2026-05-22T06:40:08Z through 2026-05-22T07:50:57Z. Across those rows, the max observed `new_coverage_keys`, `new_feature_keys`, `admitted_new_feature_keys`, and `product_yield` are all zero, while the corpus is already at 8000 files. Continuing that lane as-is is mostly accounting churn.
-
-The smallest scheduling change is to hold that target until a real target, oracle, or seed-corpus change exists, then retarget the freed lower-level capacity to the already-defined block parser serialization lower-level controller. Current coverage novelty still has `success-profile:parser-serialization` at 5 / 50, and the matching lower-level controller exists at `/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-block-parser-serialization-20260519/supervisor-groups.json`, but no parser lower-level session is active in the current tmux session set.
-
-No browser or E2E tests were run. No repository files were edited.
-
-### /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/runs/20260522T074807Z/lanes/deferred-family-reducer/report.md
-# Deferred Family Reducer Report
-
-Generated: 2026-05-22T07:49:41Z
-
-## Actions
-
-Emitted two actions.
-
-1. `dfr-20260522T074941Z-001` routes the current `reload-hydration` manifest head to candidate publication/adoption. The manifest records `deferred/rtc-reload-hydration-20260521T223947Z` at `fa801a6aa13` with unit and lint validation, but not browser exact-stack promotion clearance.
-
-2. `dfr-20260522T074941Z-002` converts `reload-hydration` from a repeatedly analyzed deferred family into a head-specific exact-stack blocker. The candidate report says the next meaningful browser gate is a fresh all-merged stack including `fa801a6aa13`; promotion should require green `title-reload-http`, `existing-post-crdt-http` or `persistence-reload-http`, and `large-http-lifecycle` evidence.
-
-## Evidence
-
-- `/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/cycles/20260521T223947Z/reload-hydration/push-manifest.tsv` identifies the candidate branch and head and reports unit/lint validation only.
-- `/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/cycles/20260521T223947Z/reload-hydration/reload-hydration.report.md` explicitly says exact-stack browser validation was not claimed and that generic reload-hydration relaunch should not be scheduled.
-- The current deferred control state marks `reload-hydration` as `single-flight-held` with `recent_43200s=8 max=8`, so another interval family pass would consume budget without changing blocker state.
-
-## No Broader Action
-
-No rows were emitted for `malformed-save-payload` or `http-room-isolation`; the current context already downscopes them to PR06B minimal and PR02A respectively. No rows were emitted for the diagnostic held families because the current high-leverage move is the reload-hydration candidate/exact-blocker conversion.
 ```
 
 ## Notes
