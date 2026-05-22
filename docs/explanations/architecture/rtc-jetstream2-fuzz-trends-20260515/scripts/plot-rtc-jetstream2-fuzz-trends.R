@@ -34,6 +34,7 @@ novelty_status_path <- file.path( raw_dir, "novelty-status.md" )
 cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
 load_path <- file.path( data_dir, "load_average.csv" )
 disk_path <- file.path( data_dir, "disk_free_space.csv" )
+coverage_root_loss_path <- file.path( data_dir, "coverage_root_loss_events.csv" )
 activity_path <- file.path( data_dir, "project_activity.csv" )
 fuzz_level_mix_path <- file.path( data_dir, "fuzz_level_mix.csv" )
 fuzz_level_executions_path <- file.path( data_dir, "fuzz_level_executions.csv" )
@@ -1779,6 +1780,114 @@ if ( file.exists( disk_path ) ) {
 	)
 }
 
+coverage_root_loss <- if ( file.exists( coverage_root_loss_path ) ) {
+	read_csv( coverage_root_loss_path, show_col_types = FALSE ) %>%
+		mutate(
+			timestamp = parse_utc_timestamp( timestamp ),
+			root_age_seconds = as.numeric( root_age_seconds ),
+			records_seen = as.numeric( records_seen ),
+			current_run_records = as.numeric( current_run_records ),
+			estimated_lost_seconds = as.numeric( estimated_lost_seconds ),
+			estimated_lost_records = as.numeric( estimated_lost_records ),
+			desired_target = as.numeric( desired_target ),
+			desired_max = as.numeric( desired_max ),
+			event_type = replace_na( event_type, "unknown" ),
+			reason = replace_na( reason, "unknown" )
+		) %>%
+		filter( ! is.na( timestamp ) ) %>%
+		arrange( timestamp )
+} else {
+	tibble(
+		timestamp = as.POSIXct( character(), tz = "UTC" ),
+		event_type = character(),
+		reason = character(),
+		coverage_root = character(),
+		root_age_seconds = numeric(),
+		full_pass_completed = numeric(),
+		seconds_since_completed_full_pass = numeric(),
+		records_seen = numeric(),
+		current_run_records = numeric(),
+		coverage_files = numeric(),
+		materialized_active_run_dirs = numeric(),
+		materialized_running_groups = numeric(),
+		supervisor_status_counts = character(),
+		desired_target = numeric(),
+		desired_max = numeric(),
+		estimated_lost_seconds = numeric(),
+		estimated_lost_records = numeric()
+	)
+}
+
+if ( nrow( coverage_root_loss ) > 0 ) {
+	coverage_root_loss <- coverage_root_loss %>%
+		mutate(
+			cumulative_lost_hours = cumsum( coalesce( estimated_lost_seconds, 0 ) ) / 3600,
+			cumulative_lost_records = cumsum( coalesce( estimated_lost_records, 0 ) ),
+			lost_minutes = coalesce( estimated_lost_seconds, 0 ) / 60,
+			loss_event_label = case_when(
+				event_type == "restart" ~ "root reset restart",
+				event_type == "in_place_budget" ~ "in-place budget change",
+				TRUE ~ event_type
+			),
+			reason = str_replace_all( reason, "_", " " )
+		)
+} else {
+	coverage_root_loss <- coverage_root_loss %>%
+		mutate(
+			cumulative_lost_hours = numeric(),
+			cumulative_lost_records = numeric(),
+			lost_minutes = numeric(),
+			loss_event_label = character()
+		)
+}
+
+coverage_loss_plot_base <- ggplot( coverage_root_loss, aes( x = timestamp ) ) +
+	scale_time_axis( date_breaks = "4 hours" ) +
+	theme_rtc()
+
+write_plot(
+	"coverage-root-lost-time-over-time.png",
+	coverage_loss_plot_base +
+		geom_point(
+			aes( y = cumulative_lost_hours, color = loss_event_label, size = lost_minutes ),
+			alpha = 0.74
+		) +
+		scale_color_brewer( palette = "Dark2", na.translate = FALSE ) +
+		scale_size_continuous( range = c( 1.2, 4.5 ), labels = comma ) +
+		labs(
+			title = "Coverage-root restart lost time over time",
+			x = "UTC time",
+			y = "cumulative estimated lost hours",
+			color = NULL,
+			size = "lost minutes",
+			caption = "Root-reset restarts count the active-root age before the first full pass, or time since the last completed full pass. In-place budget changes are recorded but add zero lost continuity."
+		),
+	width = 9,
+	height = 5.4
+)
+
+write_plot(
+	"coverage-root-lost-records-over-time.png",
+	coverage_loss_plot_base +
+		geom_point(
+			aes( y = cumulative_lost_records, color = loss_event_label, size = pmax( estimated_lost_records, 1 ) ),
+			alpha = 0.74
+		) +
+		scale_color_brewer( palette = "Dark2", na.translate = FALSE ) +
+		scale_size_continuous( range = c( 1.2, 4.5 ), labels = comma ) +
+		scale_y_continuous( labels = comma ) +
+		labs(
+			title = "Coverage-root restart lost progress over time",
+			x = "UTC time",
+			y = "cumulative estimated lost current-run records",
+			color = NULL,
+			size = "records lost",
+			caption = "This tracks current-root continuity loss from controller-driven root resets. It is an estimate from novelty-state counters, not a count of discarded files."
+		),
+	width = 9,
+	height = 5.4
+)
+
 if ( file.exists( activity_path ) ) {
 	activity <- read_csv( activity_path, show_col_types = FALSE ) %>%
 		mutate( timestamp = parse_utc_timestamp( timestamp ) )
@@ -3325,6 +3434,11 @@ summary_lines <- c(
 	paste0( "root_disk_used_percent_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$root_used_percent ), NA ) ),
 	paste0( "data_disk_free_gib_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$data_free_gib ), NA ) ),
 	paste0( "data_disk_used_percent_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$data_used_percent ), NA ) ),
+	paste0( "coverage_root_loss_events: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, nrow( coverage_root_loss ), 0 ) ),
+	paste0( "coverage_root_loss_restarts: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, sum( coverage_root_loss$event_type == "restart", na.rm = TRUE ), 0 ) ),
+	paste0( "coverage_root_budget_in_place_events: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, sum( coverage_root_loss$event_type == "in_place_budget", na.rm = TRUE ), 0 ) ),
+	paste0( "coverage_root_estimated_lost_hours: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, round( sum( coverage_root_loss$estimated_lost_seconds, na.rm = TRUE ) / 3600, 3 ), 0 ) ),
+	paste0( "coverage_root_estimated_lost_records: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, sum( coverage_root_loss$estimated_lost_records, na.rm = TRUE ), 0 ) ),
 	paste0( "load_1_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_1 ), NA ) ),
 	paste0( "load_5_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_5 ), NA ) ),
 	paste0( "load_15_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_15 ), NA ) ),
