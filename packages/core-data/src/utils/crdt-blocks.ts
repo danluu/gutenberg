@@ -196,6 +196,10 @@ function makeBlocksSerializable( blocks: Block[] ): Block[] {
 	} );
 }
 
+function makeSerializableBlocksFromYBlocks( yblocks: YBlocks ): Block[] {
+	return makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] );
+}
+
 /**
  * Recursively walk an attribute value and convert any strings that correspond
  * to rich-text schema nodes into RichTextData instances. This is the inverse
@@ -3742,7 +3746,9 @@ export function mergeCrdtBlocks(
 			: null;
 	let hasFilteredStalePostDeleteBlocks = false;
 
-	const finishMerge = ( previousLocalBlocks = blocksToSync ) => {
+	const finishMerge = (
+		previousLocalBlocks = makeSerializableBlocksFromYBlocks( yblocks )
+	) => {
 		removeDuplicateClientIds( yblocks );
 		if (
 			explicitBaseBlocksToSync &&
@@ -3795,7 +3801,7 @@ export function mergeCrdtBlocks(
 		removeDuplicateClientIds( yblocks );
 		previousLocalBlocksCache.set(
 			yblocks,
-			makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] )
+			makeSerializableBlocksFromYBlocks( yblocks )
 		);
 		return;
 	}
@@ -3803,7 +3809,7 @@ export function mergeCrdtBlocks(
 	if ( explicitBaseCrossParentMoveResult === 'guarded-skip' ) {
 		previousLocalBlocksCache.set(
 			yblocks,
-			makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] )
+			makeSerializableBlocksFromYBlocks( yblocks )
 		);
 		return;
 	}
@@ -3900,9 +3906,7 @@ export function mergeCrdtBlocks(
 			attributeCursor
 		)
 	) {
-		finishMerge(
-			makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] )
-		);
+		finishMerge( makeSerializableBlocksFromYBlocks( yblocks ) );
 		return;
 	}
 
@@ -3916,9 +3920,7 @@ export function mergeCrdtBlocks(
 			attributeCursor
 		)
 	) {
-		finishMerge(
-			makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] )
-		);
+		finishMerge( makeSerializableBlocksFromYBlocks( yblocks ) );
 		return;
 	}
 
@@ -3934,13 +3936,7 @@ export function mergeCrdtBlocks(
 		: { handled: false, guardedSkip: false };
 
 	if ( localChangesResult.handled ) {
-		finishMerge(
-			localChangesResult.guardedSkip
-				? makeBlocksSerializable(
-						yblocks.toJSON() as unknown as Block[]
-				  )
-				: blocksToSync
-		);
+		finishMerge();
 		return;
 	}
 
@@ -4039,11 +4035,7 @@ export function mergeCrdtBlocks(
 		yblocks.insert( left, newBlock );
 	}
 
-	finishMerge(
-		hasGuardedSkips
-			? makeBlocksSerializable( yblocks.toJSON() as unknown as Block[] )
-			: blocksToSync
-	);
+	finishMerge();
 }
 
 function removeDuplicateClientIds( yblocks: YBlocks ): void {
@@ -4297,7 +4289,10 @@ function mergeYArrayLocalChanges(
 		return false;
 	}
 
-	if ( yArray.length === previousValue.length ) {
+	if (
+		yArray.length === previousValue.length &&
+		! previousValue.some( getArrayElementId )
+	) {
 		return false;
 	}
 
@@ -4474,6 +4469,160 @@ function mergeYArrayByElementIds(
 	return true;
 }
 
+function getBaseIndexesByNewValue(
+	baseValue: unknown[],
+	newValue: unknown[]
+): number[] | null {
+	if (
+		baseValue.length !== newValue.length ||
+		! baseValue.every( getArrayElementId )
+	) {
+		return null;
+	}
+
+	const baseIndexesByNewIndex = new Array< number >( newValue.length ).fill(
+		-1
+	);
+	const usedBaseIndexes = new Set< number >();
+
+	for ( let newIndex = 0; newIndex < newValue.length; newIndex++ ) {
+		const matchingBaseIndex = baseValue.findIndex(
+			( baseElement, baseIndex ) =>
+				! usedBaseIndexes.has( baseIndex ) &&
+				arePlainValuesEqual( baseElement, newValue[ newIndex ] )
+		);
+
+		if ( matchingBaseIndex === -1 ) {
+			continue;
+		}
+
+		baseIndexesByNewIndex[ newIndex ] = matchingBaseIndex;
+		usedBaseIndexes.add( matchingBaseIndex );
+	}
+
+	const unmatchedNewIndexes = baseIndexesByNewIndex
+		.map( ( baseIndex, newIndex ) =>
+			baseIndex === -1 ? newIndex : undefined
+		)
+		.filter( ( index ): index is number => index !== undefined );
+	const unmatchedBaseIndexes = baseValue
+		.map( ( _baseElement, baseIndex ) =>
+			usedBaseIndexes.has( baseIndex ) ? undefined : baseIndex
+		)
+		.filter( ( index ): index is number => index !== undefined );
+
+	if ( unmatchedNewIndexes.length !== unmatchedBaseIndexes.length ) {
+		return null;
+	}
+
+	if ( unmatchedNewIndexes.length > 1 ) {
+		return null;
+	}
+
+	if ( unmatchedNewIndexes.length === 1 ) {
+		baseIndexesByNewIndex[ unmatchedNewIndexes[ 0 ] ] =
+			unmatchedBaseIndexes[ 0 ];
+	}
+
+	return baseIndexesByNewIndex;
+}
+
+function findYArrayElementIndexById(
+	yArray: Y.Array< unknown >,
+	id: string
+): number {
+	for ( let index = 0; index < yArray.length; index++ ) {
+		if ( getArrayElementId( yArray.get( index ) ) === id ) {
+			return index;
+		}
+	}
+
+	return -1;
+}
+
+function cloneYMapElementFromQuery(
+	query: Record< string, BlockAttributeSchema >,
+	element: Y.Map< unknown >
+): Y.Map< unknown > {
+	return createYMapFromQuery(
+		query,
+		element.toJSON(),
+		getArrayElementId( element ) ?? true
+	);
+}
+
+function mergeYArrayWithBaseElementIds(
+	yArray: Y.Array< unknown >,
+	newValue: unknown[],
+	query: Record< string, BlockAttributeSchema >,
+	cursorPosition: MergeCursorPosition,
+	cursorScope: RichTextCursorScope,
+	baseValue: unknown[]
+): boolean {
+	const baseIndexesByNewIndex = getBaseIndexesByNewValue(
+		baseValue,
+		newValue
+	);
+
+	if ( ! baseIndexesByNewIndex ) {
+		return false;
+	}
+
+	for ( let targetIndex = 0; targetIndex < newValue.length; targetIndex++ ) {
+		const baseIndex = baseIndexesByNewIndex[ targetIndex ];
+		const baseElement = baseValue[ baseIndex ];
+		const baseElementId = getArrayElementId( baseElement );
+
+		if ( ! baseElementId ) {
+			return false;
+		}
+
+		const currentIndex = findYArrayElementIndexById(
+			yArray,
+			baseElementId
+		);
+
+		if ( currentIndex === -1 ) {
+			return false;
+		}
+
+		if ( currentIndex !== targetIndex ) {
+			const currentElement = yArray.get( currentIndex );
+
+			if ( ! ( currentElement instanceof Y.Map ) ) {
+				return false;
+			}
+
+			const reorderedElement = cloneYMapElementFromQuery(
+				query,
+				currentElement
+			);
+
+			yArray.delete( currentIndex, 1 );
+			yArray.insert( targetIndex, [ reorderedElement ] );
+		}
+
+		const currentElement = yArray.get( targetIndex );
+		const newElement = newValue[ targetIndex ];
+
+		if ( currentElement instanceof Y.Map && isRecord( newElement ) ) {
+			mergeYMapValues(
+				currentElement,
+				newElement,
+				query,
+				cursorPosition,
+				appendCursorScopeKey( cursorScope, targetIndex.toString() ),
+				isRecord( baseElement ) ? baseElement : undefined
+			);
+			continue;
+		}
+
+		return false;
+	}
+
+	return true;
+}
+
 /**
  * Merge an incoming plain array into an existing Y.Array in-place.
  *
@@ -4520,6 +4669,20 @@ function mergeYArray(
 
 	if (
 		Array.isArray( baseValue ) &&
+		mergeYArrayWithBaseElementIds(
+			yArray,
+			newValue,
+			query,
+			cursorPosition,
+			cursorScope,
+			baseValue
+		)
+	) {
+		return;
+	}
+
+	if (
+		Array.isArray( baseValue ) &&
 		mergeYArrayWithBase(
 			yArray,
 			newValue,
@@ -4527,6 +4690,20 @@ function mergeYArray(
 			cursorPosition,
 			cursorScope,
 			baseValue
+		)
+	) {
+		return;
+	}
+
+	if (
+		! Array.isArray( baseValue ) &&
+		mergeYArrayWithBaseElementIds(
+			yArray,
+			newValue,
+			query,
+			cursorPosition,
+			cursorScope,
+			yArray.toJSON() as unknown[]
 		)
 	) {
 		return;
@@ -4820,7 +4997,12 @@ function mergeYValue(
 		mergeRichTextUpdate(
 			currentVal,
 			newVal,
-			resolveRichTextCursorPosition( cursorPosition, cursorScope, newVal )
+			resolveRichTextCursorPosition(
+				cursorPosition,
+				cursorScope,
+				newVal
+			),
+			typeof baseVal === 'string' ? baseVal : undefined
 		);
 	} else if (
 		schema?.type === 'array' &&
@@ -5135,7 +5317,8 @@ let localDoc: Y.Doc;
 export function mergeRichTextUpdate(
 	blockYText: Y.Text,
 	updatedValue: string,
-	htmlCursorIndex: HtmlStringIndex | null = null
+	htmlCursorIndex: HtmlStringIndex | null = null,
+	baseValue?: string
 ): void {
 	// Gutenberg does not use Yjs shared types natively, so we can only subscribe
 	// to changes from store and apply them to Yjs types that we create and
@@ -5145,6 +5328,15 @@ export function mergeRichTextUpdate(
 	//
 	// The code below allows us to compute a delta between the current and new
 	// value, then apply it to the Y.Text.
+
+	if (
+		baseValue !== undefined &&
+		blockYText.toString() !== baseValue &&
+		updatedValue !== baseValue
+	) {
+		mergeRebasedRichTextUpdate( blockYText, updatedValue, baseValue );
+		return;
+	}
 
 	const currentValueAsDelta = new Delta( blockYText.toDelta() );
 	const updatedValueAsDelta = new Delta( [ { insert: updatedValue } ] );
@@ -5170,6 +5362,102 @@ export function mergeRichTextUpdate(
 			: currentValueAsDelta.diff( updatedValueAsDelta );
 
 	blockYText.applyDelta( safeDiff.ops );
+}
+
+function getCommonPrefixLength( a: string, b: string ): number {
+	let length = 0;
+
+	while (
+		length < a.length &&
+		length < b.length &&
+		a[ length ] === b[ length ]
+	) {
+		length++;
+	}
+
+	return length;
+}
+
+function getCommonSuffixLength(
+	a: string,
+	b: string,
+	prefixLength: number
+): number {
+	let length = 0;
+
+	while (
+		length + prefixLength < a.length &&
+		length + prefixLength < b.length &&
+		a[ a.length - length - 1 ] === b[ b.length - length - 1 ]
+	) {
+		length++;
+	}
+
+	return length;
+}
+
+function getCurrentIndexForBaseOffset(
+	currentValue: string,
+	baseValue: string,
+	baseOffset: number
+): number {
+	const basePrefix = baseValue.slice( 0, baseOffset );
+
+	if ( currentValue.startsWith( basePrefix ) ) {
+		return basePrefix.length;
+	}
+
+	const baseSuffix = baseValue.slice( baseOffset );
+
+	if ( baseSuffix && currentValue.endsWith( baseSuffix ) ) {
+		return currentValue.length - baseSuffix.length;
+	}
+
+	return Math.min( baseOffset, currentValue.length );
+}
+
+function mergeRebasedRichTextUpdate(
+	blockYText: Y.Text,
+	updatedValue: string,
+	baseValue: string
+): void {
+	// The incoming value was edited from an older base. Apply only its changed
+	// slice so a current remote replacement of the same base text is retained.
+	const currentValue = blockYText.toString();
+	const prefixLength = getCommonPrefixLength( baseValue, updatedValue );
+	const suffixLength = getCommonSuffixLength(
+		baseValue,
+		updatedValue,
+		prefixLength
+	);
+	const deleteLength = baseValue.length - prefixLength - suffixLength;
+	const insertedValue = updatedValue.slice(
+		prefixLength,
+		updatedValue.length - suffixLength
+	);
+	const currentIndex = getCurrentIndexForBaseOffset(
+		currentValue,
+		baseValue,
+		prefixLength
+	);
+
+	if (
+		deleteLength > 0 &&
+		currentValue.slice( currentIndex, currentIndex + deleteLength ) ===
+			baseValue.slice( prefixLength, prefixLength + deleteLength )
+	) {
+		blockYText.delete( currentIndex, deleteLength );
+	}
+
+	if (
+		insertedValue &&
+		blockYText
+			.toString()
+			.slice( currentIndex, currentIndex + insertedValue.length ) !==
+			insertedValue
+	) {
+		blockYText.insert( currentIndex, insertedValue );
+	}
 }
 
 /**
