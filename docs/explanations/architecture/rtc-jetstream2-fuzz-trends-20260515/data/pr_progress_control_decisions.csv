@@ -1,32 +1,33 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery is 13 vs floor 3 but discovery protected=no and coverage headroom is no; allow cheap cleanup and one bounded product slot only
-repair-branch,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,P0,yes,next branch-changing product slot; existing-post CRDT is replacement-green and title-reload marker divergence remains red
-repair-ready,benchmark-canary-fuzzer-gap/existing-post-crdt-http/seed-7735005,P0,yes,consume newer replacement-stack green evidence and clear stale existing-post repair rows unless a fresher regression appears
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T030200Z already owns the exact-stack repair
+reserve-discovery,discovery-reserve,P0,yes,active discovery is 16 vs floor 3 but discovery protected=no and coverage is startup-only; allow one bounded product slot plus cheap cleanup
+repair-branch,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,P0,yes,next branch-changing product slot; existing-post-crdt is replacement-green while title-reload marker divergence remains red
+repair-ready,benchmark-canary-fuzzer-gap/existing-post-crdt-http/seed-7735005,P0,yes,consume replacement-stack green evidence and clear stale existing-post repair rows unless fresher regression appears
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z already owns exact-stack repair
 publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http existing-post-crdt-http and large-http-lifecycle gates are not green on current exact-stack evidence
-update-controller-rule,benchmark-canary-exact-stack-gate,P0,yes,block snapshot publication and all-merged finalization until title-reload-http existing-post-crdt-http and large-http-lifecycle are green
 reserve-discovery,benchmark-canary-forced-http-groups,P0,yes,materialize title-reload existing-post-crdt persistence-probe and large-http-lifecycle HTTP groups before optional WS expansion
-reserve-discovery,large-http-lifecycle,P0,yes,retain large HTTP lifecycle as a P0 benchmark floor until equivalent current exact-stack coverage is continuously green
+reserve-discovery,large-http-lifecycle,P0,yes,retain large HTTP lifecycle as P0 benchmark floor until equivalent current exact-stack coverage is continuously green
+publish-deferred-candidate,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,P0,yes,cheap manifest adoption moves a real candidate forward but does not make it promotion-ready
 repair-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,P0,yes,adopt as sole reload-hydration candidate and convert generic family churn into exact-stack blocker state
-publish-ready,deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,P0,no,candidate adoption is allowed but promotion publication still lacks fresh title-reload existing-post CRDT and large-http exact-stack green evidence
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,P0,no,candidate publication is allowed but promotion waits for fresh title-reload existing-post CRDT and large-http exact-stack green evidence
 launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind the active title-reload product slot; do not spend a second heavy replay while discovery is unprotected
 cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,over launch budget and manifest-held; interval relaunches do not change product state
 cooldown-diagnostic,pre-save-search-live-collapse,P1,yes,diagnostic-only over budget and manifest-held; allow only owner evidence dependency-complete exact replay or explicit downscope
 cooldown-diagnostic,rich-text-suffix-corruption,P1,yes,diagnostic-only over budget and manifest-held; allow only owner evidence dependency-complete exact replay or explicit downscope
 cooldown-diagnostic,malformed-save-payload,P1,yes,superseded by published PR06B minimal unless fresh product evidence beats the canonical branch
 cooldown-diagnostic,http-room-isolation,P1,yes,superseded by published PR02A unless fresh product evidence beats the canonical branch
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is already consumed and discovery is unprotected; require newer product-owner evidence or exact product-failure replay first
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,current Cycle380 owner evidence is already consumed; require newer product-owner evidence or exact product-failure replay first
 cooldown-diagnostic,PR07C/HOLD-07C,P0,yes,terminalize duplicate owner-matrix work and keep PR07C held pending newer owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked by consumed hold evidence and lacks newer product-owner proof
 repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts classification and clear stale reducer blocker and queue state
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch
 repair-branch,ready/rtc-pr14b-table-query-array-local-suffix-append/remote-marker-seed-1592595164,P0,yes,route one minimized remote-marker reproducer into PR14B repair or explicit oracle downscope after the title-reload slot
-cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker,P0,yes,collapse repeated remote-marker rediscovery until PR14B has a repair head oracle downscope or distinct signature
+cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker,P0,yes,collapse repeated remote-marker rediscovery until PR14B has repair head oracle downscope or distinct signature
 update-controller-rule,lower-http-polling-canary-oracle-retarget,P0,yes,retarget lower HTTP polling to title-reload and existing-post CRDT canary oracles and count only new coverage or actionable failures
 cooldown-diagnostic,lower-http-polling/feature-only-corpus,P1,yes,stop counting semantic corpus-only growth with zero new coverage keys as productive progress
 update-controller-rule,lower-http-polling-runner-crash-retarget,P0,no,current lower HTTP lane has valid live status; use oracle retargeting instead of separate runner repair
 reserve-discovery,lower-level-restore-state-storage-coverage,P1,yes,use freed lower-level capacity for restore-state storage and protocol coverage after remote-marker cooldown
 launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout is lower value than bounded product and evidence work
+update-controller-rule,benchmark-canary-exact-stack-gate,P0,yes,block snapshot publication and all-merged finalization until title-reload-http existing-post-crdt-http and large-http-lifecycle are green
 update-controller-rule,deferred-family-single-flight,P0,yes,while manifest holds and launch budgets are exceeded accept only product-head exact replay owner evidence green exact-stack evidence or explicit downscope
 update-controller-rule,discovery-protection-heavy-pr-gate,P0,yes,when discovery is unhealthy or unprotected allow cheap manifests analysis-only work and one bounded repair but block heavy duplicate PR jobs
 update-controller-rule,effective-pr-slot-accounting,P0,yes,count queued owner matrices reducers deferred jobs exact replays continuations finalizers and persona loops against PR capacity
