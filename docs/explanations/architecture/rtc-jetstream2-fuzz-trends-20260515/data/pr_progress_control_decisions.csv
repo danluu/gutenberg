@@ -1,18 +1,18 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery 12 exceeds min 3 and PR jobs are 0/2; allow one bounded heavy PR-progress job while preserving discovery lanes
-update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,discovery protected is no; deny heavy PR jobs when discovery is unhealthy except cheap publication manifest generation or analysis-only work
+reserve-discovery,discovery-reserve,P0,yes,"active discovery 11 exceeds min 3, discovery is protected, and PR jobs are 0/2; allow one bounded PR-progress job while preserving discovery lanes"
+update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,"gate heavy PR jobs on discovery health; if discovery becomes unhealthy, allow only cheap publication manifest generation or analysis-only work"
 update-controller-rule,pr-progress-concurrency,P0,yes,run at most one heavy PR-progress job now and leave remaining capacity for discovery and cleanup
 update-controller-rule,productive-analysis-feed-dedupe-retarget,P0,yes,dedupe repeated feed rows and retarget stale reload-hydration fa801a6aa13 actions to latest head b01a3a21e2c
 repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,P0,yes,latest manifest-backed candidate needs a head-specific exact-stack blocker before promotion
 launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,next product-progress slot; run bounded all-merged title reload plus existing-post or persistence reload plus large HTTP lifecycle
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,no fresh green exact-stack evidence exists for the latest head; manifest is candidate evidence only
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,manifest and report are candidate evidence only; fresh green exact-stack evidence is missing
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale same-family head is superseded by b01a3a21e2c
 cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,"current manifest exists; progress must be exact-stack replay, owner evidence, green stack adoption, or explicit downscope"
 repair-ready,PR07C/HOLD-07C/exact-stack-validation,P0,yes,replace stale owner-matrix routing with exact-stack reload and persistence validation
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,existing owner evidence is runtime-held-consumed; relaunch only with newer owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until exact replay or newer owner evidence proves product ownership
-clear-stale-blocker,PR07C/HOLD-07C+seed-5200005-reducer,P0,yes,retire stale queued owner-matrix and reducer work unless newer product-owned evidence appears
-cooldown-diagnostic,seed-5200005-reducer,P0,yes,already_resolved_by_active_artifacts classification makes further reducer launches duplicate churn
+repair-ready,PR07C/HOLD-07C+seed-5200005-reducer/stale-critical-blockers,P0,yes,consume PR07C owner evidence and seed already_resolved_by_active_artifacts classification; retire stale queued work
+cooldown-diagnostic,seed-5200005-reducer,P0,yes,terminal classification makes further reducer launches duplicate churn
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates terminal reducer evidence
 update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,current benchmark feedback is exact_stack_green; reopen only on newer promotion_blocked or changed equivalent-lane evidence
 launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,no current promotion_blocked row justifies another benchmark rerun
@@ -28,9 +28,9 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicate
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path
 reserve-discovery,published-ready-product-prs/fuzz-validation,P1,yes,keep already published product branches under fuzz validation without duplicate publication
 cooldown-diagnostic,rtc-http-polling-manager/generic-batches,P0,yes,"generic batches show zero product yield and no new coverage; resume only with materialization, canary diagnostics, or new failure evidence"
-reserve-discovery,rtc-http-polling-manager/canary-diagnostic-bounded,P1,yes,allow capped canary-equivalent diagnostics with corpus caps and no-yield stop conditions while reserve is healthy
-cooldown-diagnostic,rtc-block-parser-serialization/broad-drift-admission,P0,yes,stop repeated non-new ROUNDTRIP_DRIFT and SPEC_DIVERGENCE admission until classifier or canonical keys change
+reserve-discovery,rtc-http-polling-manager/canary-diagnostic-bounded,P1,yes,allow capped canary-equivalent diagnostics with stop conditions while discovery reserve remains healthy
+cooldown-diagnostic,rtc-block-parser-serialization/broad-drift-admission,P0,yes,"hold repeated ROUNDTRIP_DRIFT and SPEC_DIVERGENCE admission until classifier, canonical key, product yield, or oracle classification changes"
 reserve-discovery,rtc-block-parser-serialization/canonicalize-one-drift-one-divergence,P1,yes,allow one bounded classifier or reducer for representative parser artifacts as discovery work
-cooldown-diagnostic,rtc-rich-text-crdt-merge/green-only,P1,yes,"cap continuous all-green batching; keep smoke or targets tied to failures, semantic deltas, placement, or unmet coverage"
+cooldown-diagnostic,rtc-rich-text-crdt-merge/green-only,P1,yes,"cap continuous all-green batching; keep smoke or targets tied to failures, semantic deltas, placement, multi-block cases, or unmet coverage"
 update-controller-rule,rtc-rich-text-crdt-merge/parser-accounting,P1,yes,fix stale metadata so rich-text CRDT work is not credited to parser-serialization gaps
 publish-ready,current-push-manifest,P1,no,current push manifest is header-only and not a publication source

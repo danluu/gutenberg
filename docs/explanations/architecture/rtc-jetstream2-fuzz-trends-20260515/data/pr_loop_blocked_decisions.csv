@@ -1,6 +1,6 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,no fresh green exact-stack evidence exists for the latest head; manifest is candidate evidence only,reload-hydration@b01a3a21e2c,"no fresh green exact-stack evidence exists for the latest head; manifest is
-candidate evidence only"
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,manifest and report are candidate evidence only; fresh green exact-stack evidence is missing,reload-hydration@b01a3a21e2c,"manifest and report are candidate evidence only; fresh green exact-stack
+evidence is missing"
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale same-family head is superseded by b01a3a21e2c,reload-hydration@fa801a6aa13/exact-stack,stale same-family head is superseded by b01a3a21e2c
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,existing owner evidence is runtime-held-consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,"existing owner evidence is runtime-held-consumed; relaunch only with newer owner
 evidence"
