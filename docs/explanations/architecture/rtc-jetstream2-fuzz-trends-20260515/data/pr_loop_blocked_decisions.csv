@@ -1,13 +1,15 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@b01a3a21e2c,high,no,No fresh exact-stack green rows or replay-backed downscope evidence exists.,reload-hydration@b01a3a21e2c,No fresh exact-stack green rows or replay-backed downscope evidence exists.
-publish-ready,benchmark-canary-fuzzer-gap/current-stack,high,no,Publication remains blocked until live exact branch+commit feedback has green large-post-three-user-http and paired reload evidence.,benchmark-canary-fuzzer-gap/current-stack,"Publication remains blocked until live exact branch+commit feedback has green
-large-post-three-user-http and paired reload evidence."
-launch-branch-repair,benchmark-canary-fuzzer-gap/generic-exact-rerun,high,no,Concrete exact repair evidence exists; another generic rerun would duplicate churn.,benchmark-canary-fuzzer-gap/generic-exact-rerun,"Concrete exact repair evidence exists; another generic rerun would duplicate
-churn."
-launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380-relaunch,high,no,Stale owner evidence is runtime-held-consumed; only a new readiness-resolved pass or exact PR07C replay should proceed.,PR07C/HOLD-07C/stale-cycle380-relaunch,"Stale owner evidence is runtime-held-consumed; only a new readiness-resolved
-pass or exact PR07C replay should proceed."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold until fresh PR07C owner evidence or exact replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,Hold until fresh PR07C owner evidence or exact replay proves product ownership.
-publish-ready,current-push-manifest,high,no,Current push manifest contains only the header and has no publishable rows.,current-push-manifest,Current push manifest contains only the header and has no publishable rows.
+publish-ready,reload-hydration@b01a3a21e2c,high,no,No fresh exact-stack green replay or replay-backed downscope exists.,reload-hydration@b01a3a21e2c,No fresh exact-stack green replay or replay-backed downscope exists.
+launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380-relaunch,high,no,Cycle380 owner evidence is already runtime-held-consumed and cannot be relaunched as current evidence.,PR07C/HOLD-07C/stale-cycle380-relaunch,"Cycle380 owner evidence is already runtime-held-consumed and cannot be
+relaunched as current evidence."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold until fresh PR07C owner evidence or exact PR07C replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold until fresh PR07C owner evidence or exact PR07C replay proves product
+ownership."
+publish-ready,benchmark-canary-fuzzer-gap/current-stack,high,no,Current feedback still records promotion_blocked for large-post-three-user-http on the exact stack.,benchmark-canary-fuzzer-gap/current-stack,"Current feedback still records promotion_blocked for large-post-three-user-http
+on the exact stack."
+launch-branch-repair,benchmark-canary-fuzzer-gap/generic-exact-rerun,high,no,Rejected as duplicate churn while the exact repair branch and ledger adoption own the blocker.,benchmark-canary-fuzzer-gap/generic-exact-rerun,"Rejected as duplicate churn while the exact repair branch and ledger adoption
+own the blocker."
+publish-ready,current-push-manifest,high,no,Current controller push manifest contains only the header and has no publishable rows.,current-push-manifest,"Current controller push manifest contains only the header and has no publishable
+rows."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,medium,no,Superseded by already published ready/rtc-pr06b-malformed-save-request-payload-minimal.,ready/rtc-pr06b-malformed-save-request-payload,"Superseded by already published
 ready/rtc-pr06b-malformed-save-request-payload-minimal."
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,medium,no,Duplicates the already published PR14B-based PR15A path.,ready/rtc-pr15a-fallback-group-move-green,Duplicates the already published PR14B-based PR15A path.
