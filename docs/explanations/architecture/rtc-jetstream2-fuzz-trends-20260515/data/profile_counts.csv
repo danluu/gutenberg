@@ -14,7 +14,7 @@ common-blocks,69,34,0,0.4927536231884058,block-structure
 three-user-late-join,64,25,0,0.390625,lifecycle
 collaboration-ui-signals,51,0,0,0,other
 many-user-lifecycle,50,17,0,0.34,lifecycle
-parser-serialization,47,3,1,0.06382978723404255,parser
+parser-serialization,47,3,0,0.06382978723404255,parser
 multi-reload-lifecycle,34,8,0,0.23529411764705882,lifecycle
 revision-persistence,22,4,0,0.18181818181818182,persistence
 table-stale-snapshot-http,4,0,0,0,other
