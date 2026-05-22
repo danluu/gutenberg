@@ -189,7 +189,7 @@ describe( 'prePersistPostType', () => {
 		getSyncManager.mockReset();
 	} );
 
-	it( 'snapshots saved content into the CRDT before serializing the persisted document', async () => {
+	it( 'snapshots saved content into the CRDT before serializing from the latest persisted document', async () => {
 		const baseContent = pageContent( [ 'Alpha' ] );
 		const savedContent = pageContent( [ 'Alpha', 'checkpoint paragraph' ] );
 		const latestRecord = {
@@ -258,7 +258,7 @@ describe( 'prePersistPostType', () => {
 		expect( syncManager.createPersistedCRDTDoc ).toHaveBeenLastCalledWith(
 			'postType/page',
 			123,
-			{ basePersistedCRDTDoc: 'base-doc' }
+			{ basePersistedCRDTDoc: 'latest-doc' }
 		);
 		expect( result ).toEqual( {
 			meta: {
