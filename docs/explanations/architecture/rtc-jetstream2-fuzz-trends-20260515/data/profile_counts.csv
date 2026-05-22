@@ -1,5 +1,5 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-persistence-no-title,1174,690,0,0.5877342419080068,persistence
+persistence-no-title,1175,691,0,0.5880851063829787,persistence
 real-user-editing,1059,415,0,0.3918791312559018,real-user
 session-lifecycle,709,370,0,0.5218617771509168,lifecycle
 permissions-auth-locks,636,224,0,0.3522012578616352,auth/locks
@@ -17,5 +17,5 @@ collaboration-ui-signals,80,0,0,0,other
 many-user-lifecycle,74,17,0,0.22972972972972974,lifecycle
 parser-serialization,69,11,0,0.15942028985507245,parser
 revision-persistence,29,4,0,0.13793103448275862,persistence
-code-editor-smoke,25,17,0,0.68,other
+code-editor-smoke,26,17,0,0.6538461538461539,other
 table-stale-snapshot-http,4,0,0,0,other

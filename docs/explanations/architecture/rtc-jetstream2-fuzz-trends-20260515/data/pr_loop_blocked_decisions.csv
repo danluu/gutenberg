@@ -1,10 +1,6 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-heavy-pr,discovery-unhealthy-heavy-pr,P0,no,preserve discovery reserve; heavy PR jobs are not allowed when discovery sessions are unhealthy unless the work is cheap manifest generation or analysis-only,discovery-unhealthy-heavy-pr,"preserve discovery reserve; heavy PR jobs are not allowed when discovery
-sessions are unhealthy unless the work is cheap manifest generation or
-analysis-only"
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,do not duplicate-launch while the ws8 bootstrap repair is already active,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,do not duplicate-launch while the ws8 bootstrap repair is already active
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,fresh green exact-stack browser evidence is missing; publication remains blocked until green or explicit downscope,reload-hydration@b01a3a21e2c,"fresh green exact-stack browser evidence is missing; publication remains blocked
-until green or explicit downscope"
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,do not duplicate-launch while ws8 bootstrap repair is already active,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,do not duplicate-launch while ws8 bootstrap repair is already active
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,fresh green exact-stack browser evidence is missing,reload-hydration@b01a3a21e2c,fresh green exact-stack browser evidence is missing
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale same-family head is superseded by latest manifest head b01a3a21e2c,reload-hydration@fa801a6aa13/exact-stack,stale same-family head is superseded by latest manifest head b01a3a21e2c
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,current owner evidence is runtime-held-consumed; relaunch only with newer owner evidence or exact product-failure replay,PR07C/HOLD-07C,"current owner evidence is runtime-held-consumed; relaunch only with newer owner
 evidence or exact product-failure replay"
