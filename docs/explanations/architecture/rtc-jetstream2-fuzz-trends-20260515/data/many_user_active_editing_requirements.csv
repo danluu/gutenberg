@@ -6,5 +6,6 @@ late join,late-join lifecycle event is present,lifecycle,TRUE
 save and reload,save count >= 1 and reload count >= 1,persistence,TRUE
 autosave checkpoint,autosave count >= 1 for rich/list lifecycle,persistence,TRUE
 rich text and list actions,paste + link + list indent in one record,real-user UI,TRUE
+synced collaboration note,ui-add-note action + remote note visibility,collaboration UI,TRUE
 presence and cursor signals,presence-list ok + remote-selection-cursor ok,collaboration UI,TRUE
 large document edge,block count or initial large-document profile >= 50,scale,TRUE

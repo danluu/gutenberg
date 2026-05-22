@@ -18,6 +18,8 @@ cross-product:active-editors-lifecycle:users-10,"cross product active editors li
 10",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-lifecycle:users-12,"cross product active editors lifecycle users
 12",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-notes-lifecycle:users-6,"cross product active editors notes lifecycle
+users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-rich-list-lifecycle:users-10,"cross product active editors rich list
 lifecycle users 10",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-rich-list-lifecycle:users-12,"cross product active editors rich list
@@ -31,6 +33,8 @@ success-action-users:12,success action users 12,0,10,FALSE,0,user-document-concu
 success-profile-users:many-user-active-editing:12,"success profile users many user active editing
 12",0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
 success-user-blocks:12:50,success user blocks 12 50,0,10,FALSE,0,lifecycle/scale,10,0,0 / 10
+cross-product:active-editors-notes-lifecycle:users-12,"cross product active editors notes lifecycle
+users 12",0,5,FALSE,0,cross-product,5,0,0 / 5
 cross-product:active-editors-large-doc:users-30,"cross product active editors large doc users
 30",0,3,FALSE,0,cross-product,3,0,0 / 3
 cross-product:active-editors-lifecycle:users-30,"cross product active editors lifecycle users

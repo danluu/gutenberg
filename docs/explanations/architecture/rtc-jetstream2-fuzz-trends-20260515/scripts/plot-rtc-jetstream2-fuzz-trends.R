@@ -65,6 +65,7 @@ many_user_active_editing_groups <- c(
 	"novelty-ws-thirty-user-active-editing"
 )
 many_user_active_editing_thresholds <- c( 6, 10, 12, 30 )
+many_user_active_editing_note_thresholds <- c( 6, 12 )
 many_user_active_editing_goal_ids <- c(
 	paste0( "success-action-users:", many_user_active_editing_thresholds ),
 	paste0( "success-profile-users:many-user-active-editing:", c( 6, 12, 30 ) ),
@@ -72,6 +73,7 @@ many_user_active_editing_goal_ids <- c(
 	paste0( "cross-product:active-editors-rich-list-lifecycle:users-", many_user_active_editing_thresholds ),
 	paste0( "cross-product:active-editors-ui-signals:users-", many_user_active_editing_thresholds ),
 	paste0( "cross-product:active-editors-large-doc:users-", many_user_active_editing_thresholds ),
+	paste0( "cross-product:active-editors-notes-lifecycle:users-", many_user_active_editing_note_thresholds ),
 	"success-user-blocks:6:50",
 	"success-user-blocks:12:50",
 	"success-user-blocks:30:50",
@@ -1138,12 +1140,18 @@ many_user_active_editing_progress <- tibble(
 		rich_list_feature = paste0( "cross-product:active-editors-rich-list-lifecycle:users-", threshold ),
 		ui_signal_feature = paste0( "cross-product:active-editors-ui-signals:users-", threshold ),
 		large_doc_feature = paste0( "cross-product:active-editors-large-doc:users-", threshold ),
+		notes_lifecycle_feature = paste0( "cross-product:active-editors-notes-lifecycle:users-", threshold ),
 		successful_active_editor_records = get_goal_numeric( success_action_goal, "count", 0 ),
 		successful_active_editor_target = get_goal_numeric( success_action_goal, "target", if_else( threshold >= 30, 3, if_else( threshold >= 10, 10, 25 ) ) ),
 		lifecycle_records = get_feature_numeric( lifecycle_feature, get_goal_numeric( lifecycle_feature, "count", 0 ) ),
 		rich_list_lifecycle_records = get_feature_numeric( rich_list_feature, get_goal_numeric( rich_list_feature, "count", 0 ) ),
 		ui_signal_records = get_feature_numeric( ui_signal_feature, get_goal_numeric( ui_signal_feature, "count", 0 ) ),
 		large_doc_records = get_feature_numeric( large_doc_feature, get_goal_numeric( large_doc_feature, "count", 0 ) ),
+		notes_lifecycle_records = if_else(
+			threshold %in% many_user_active_editing_note_thresholds,
+			get_feature_numeric( notes_lifecycle_feature, get_goal_numeric( notes_lifecycle_feature, "count", 0 ) ),
+			NA_real_
+		),
 		progress = if_else( successful_active_editor_target > 0, successful_active_editor_records / successful_active_editor_target, NA_real_ ),
 		remaining_records = pmax( successful_active_editor_target - successful_active_editor_records, 0 )
 	) %>%
@@ -1165,6 +1173,8 @@ many_user_active_missing_goals <- tibble( id = many_user_active_editing_goal_ids
 		label = str_replace_all( id, "[-:]", " " ),
 		count = map_dbl( id, get_feature_numeric ),
 		target = case_when(
+			str_detect( id, "active-editors-notes-lifecycle:users-12" ) ~ 5,
+			str_detect( id, "active-editors-notes-lifecycle:users-6" ) ~ 10,
 			str_detect( id, "30" ) ~ 3,
 			str_detect( id, "10|12" ) ~ 10,
 			TRUE ~ 25
@@ -1201,6 +1211,7 @@ many_user_active_editing_requirements <- tibble(
 		"save and reload",
 		"autosave checkpoint",
 		"rich text and list actions",
+		"synced collaboration note",
 		"presence and cursor signals",
 		"large document edge"
 	),
@@ -1212,6 +1223,7 @@ many_user_active_editing_requirements <- tibble(
 		"save count >= 1 and reload count >= 1",
 		"autosave count >= 1 for rich/list lifecycle",
 		"paste + link + list indent in one record",
+		"ui-add-note action + remote note visibility",
 		"presence-list ok + remote-selection-cursor ok",
 		"block count or initial large-document profile >= 50"
 	),
@@ -1223,6 +1235,7 @@ many_user_active_editing_requirements <- tibble(
 		"persistence",
 		"persistence",
 		"real-user UI",
+		"collaboration UI",
 		"collaboration UI",
 		"scale"
 	),
@@ -3086,6 +3099,7 @@ many_user_active_progress_long <- many_user_active_editing_progress %>%
 		successful_active_editor_records,
 		lifecycle_records,
 		rich_list_lifecycle_records,
+		notes_lifecycle_records,
 		ui_signal_records,
 		large_doc_records,
 		successful_active_editor_target
@@ -3095,18 +3109,21 @@ many_user_active_progress_long <- many_user_active_editing_progress %>%
 			successful_active_editor_records,
 			lifecycle_records,
 			rich_list_lifecycle_records,
+			notes_lifecycle_records,
 			ui_signal_records,
 			large_doc_records
 		),
 		names_to = "metric",
 		values_to = "records"
 	) %>%
+	filter( ! is.na( records ) ) %>%
 	mutate(
 		metric = recode(
 			metric,
 			successful_active_editor_records = "successful active-editor records",
 			lifecycle_records = "active editors + lifecycle",
 			rich_list_lifecycle_records = "rich/list lifecycle",
+			notes_lifecycle_records = "notes lifecycle",
 			ui_signal_records = "presence/cursor signals",
 			large_doc_records = "large-document edge"
 		),
@@ -3982,6 +3999,8 @@ summary_lines <- c(
 	paste0( "many_user_active_editing_success_action_users_12: ", many_user_active_editing_progress %>% filter( threshold == 12 ) %>% pull( successful_active_editor_records ) ),
 	paste0( "many_user_active_editing_success_action_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( successful_active_editor_records ) ),
 	paste0( "many_user_active_editing_rich_list_users_12: ", many_user_active_editing_progress %>% filter( threshold == 12 ) %>% pull( rich_list_lifecycle_records ) ),
+	paste0( "many_user_active_editing_notes_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( notes_lifecycle_records ) ),
+	paste0( "many_user_active_editing_notes_lifecycle_users_12: ", many_user_active_editing_progress %>% filter( threshold == 12 ) %>% pull( notes_lifecycle_records ) ),
 	paste0( "many_user_active_editing_large_doc_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( large_doc_records ) ),
 	paste0( "pr_review_events: ", nrow( pr_events ) ),
 	paste0( "pr_suggested_net_loc_snapshots: ", n_distinct( pr_suggested_loc$timestamp ) ),
