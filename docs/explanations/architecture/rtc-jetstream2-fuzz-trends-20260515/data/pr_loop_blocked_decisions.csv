@@ -1,22 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z already owns the heavy exact-stack repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,"active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z
-already owns the heavy exact-stack repair"
-publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http persistence-reload-http and large-http-lifecycle gates are not green on current exact-stack evidence,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"title-reload-http persistence-reload-http and large-http-lifecycle gates are not
-green on current exact-stack evidence"
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99/promotion,P0,no,not promotion-ready until fresh exact-stack title-reload existing-post CRDT and large-http evidence is green,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99/promotion,"not promotion-ready until fresh exact-stack title-reload existing-post CRDT and
-large-http evidence is green"
-launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind active title-reload product slot; do not spend a second heavy replay while discovery is unprotected,reload-hydration/exact-stack,"wait behind active title-reload product slot; do not spend a second heavy replay
-while discovery is unprotected"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,readiness alone is insufficient; Cycle380 owner evidence is consumed and discovery is unprotected so a heavy owner matrix waits for newer owner evidence or exact product-failure replay,PR07C/HOLD-07C,"readiness alone is insufficient; Cycle380 owner evidence is consumed and
-discovery is unprotected so a heavy owner matrix waits for newer owner evidence
-or exact product-failure replay"
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z already owns this heavy repair path,benchmark-canary-fuzzer-gap/duplicate-exact-stack,"active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z
+already owns this heavy repair path"
+publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http and persistence-reload-http exact-stack gates are still promotion-blocking,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"title-reload-http and persistence-reload-http exact-stack gates are still
+promotion-blocking"
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,not promotion-ready until a fresh exact stack including this head passes title-reload-http and existing-post-crdt-http and retains large-http-lifecycle,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"not promotion-ready until a fresh exact stack including this head passes
+title-reload-http and existing-post-crdt-http and retains large-http-lifecycle"
+launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind active title-reload product repair; do not start a second heavy exact-stack PR job while discovery is unprotected,reload-hydration/exact-stack,"wait behind active title-reload product repair; do not start a second heavy
+exact-stack PR job while discovery is unprotected"
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is consumed and discovery is unprotected; require newer owner evidence or exact product-failure replay before spending browser-e2e capacity,PR07C/HOLD-07C,"Cycle380 owner evidence is consumed and discovery is unprotected; require newer
+owner evidence or exact product-failure replay before spending browser-e2e
+capacity"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked by consumed hold evidence and lacks newer product-owner proof,ready/rtc-pr07c-reload-record-snapshots,"publication remains blocked by consumed hold evidence and lacks newer
 product-owner proof"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
 update-controller-rule,lower-http-polling-runner-crash-retarget,P0,no,current lower HTTP lane has valid live status; use oracle retargeting instead of separate runner repair,lower-http-polling-runner-crash-retarget,"current lower HTTP lane has valid live status; use oracle retargeting instead of
 separate runner repair"
-launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout is lower value than bounded product and evidence work,broad-pr-analysis-fanout,"discovery is unprotected and broad heavy PR fanout is lower value than bounded
-product and evidence work"
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout is lower value than bounded product/evidence work,broad-pr-analysis-fanout,"discovery is unprotected and broad heavy PR fanout is lower value than bounded
+product/evidence work"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published; broader branch needs fresh product
 advantage"
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A is already published; original-base branch is duplicate under
