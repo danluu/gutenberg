@@ -1,16 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,do not duplicate-launch while ws8 bootstrap repair is already active,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,do not duplicate-launch while ws8 bootstrap repair is already active
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,duplicate rerun while the active WebSocket exact-ref repair already owns the benchmark-canary blocker,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,"duplicate rerun while the active WebSocket exact-ref repair already owns the
+benchmark-canary blocker"
 publish-ready,reload-hydration@b01a3a21e2c,P0,no,fresh green exact-stack browser evidence is missing,reload-hydration@b01a3a21e2c,fresh green exact-stack browser evidence is missing
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale same-family head is superseded by latest manifest head b01a3a21e2c,reload-hydration@fa801a6aa13/exact-stack,stale same-family head is superseded by latest manifest head b01a3a21e2c
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,current owner evidence is runtime-held-consumed; relaunch only with newer owner evidence or exact product-failure replay,PR07C/HOLD-07C,"current owner evidence is runtime-held-consumed; relaunch only with newer owner
-evidence or exact product-failure replay"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until exact replay or newer owner evidence proves product ownership,ready/rtc-pr07c-reload-record-snapshots,keep held until exact replay or newer owner evidence proves product ownership
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale reload-hydration head is superseded by latest manifest head b01a3a21e2c,reload-hydration@fa801a6aa13/exact-stack,stale reload-hydration head is superseded by latest manifest head b01a3a21e2c
+launch-owner-matrix,PR07C/HOLD-07C-duplicate,P0,no,do not relaunch a second owner matrix while existing Cycle380 owner evidence is available or already consumed,PR07C/HOLD-07C-duplicate,"do not relaunch a second owner matrix while existing Cycle380 owner evidence is
+available or already consumed"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until exact replay or newer owner evidence proves product ownership,ready/rtc-pr07c-reload-record-snapshots,held until exact replay or newer owner evidence proves product ownership
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates terminal reducer evidence,seed-5200005-reducer/relaunch,relaunch duplicates terminal reducer evidence
 publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress and lacks owner evidence,pre-save-search-live-collapse@de2b5502da0,diagnostic branch is not product PR progress and lacks owner evidence
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path
-reserve-discovery,unit-property-rich-text-crdt-merge-to-broad-parser-window,P1,no,broad parser replacement conflicts with active parser hold; use bounded parser classifier or table gap target instead,unit-property-rich-text-crdt-merge-to-broad-parser-window,"broad parser replacement conflicts with active parser hold; use bounded parser
-classifier or table gap target instead"
+reserve-discovery,unit-property-rich-text-crdt-merge-to-broad-parser-window,P1,no,broad parser replacement conflicts with parser oracle saturation; use bounded parser classifier or table-query target instead,unit-property-rich-text-crdt-merge-to-broad-parser-window,"broad parser replacement conflicts with parser oracle saturation; use bounded
+parser classifier or table-query target instead"
 publish-ready,current-push-manifest,P1,no,current controller push manifest is header-only and not a publication source,current-push-manifest,current controller push manifest is header-only and not a publication source
