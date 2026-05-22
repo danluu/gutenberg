@@ -1752,3 +1752,12 @@ timestamp,message,event_type
 2026-05-22T22:27:03Z,launched PR07C owner matrix job 20260522T222703Z,PR07C owner job launched
 2026-05-22T22:27:03Z,pr07c owner matrix 20260522T222703Z,launch
 2026-05-22T22:29:07Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-22T22:31:11Z,launched controller action job for repair-branch PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z at 20260522T223111Z,other
+2026-05-22T22:31:11Z,controller action repair-branch PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z 20260522T223111Z,launch
+2026-05-22T22:31:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:33:16Z,launched controller action job for repair-ready reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca at 20260522T223316Z,other
+2026-05-22T22:33:16Z,controller action repair-ready reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca 20260522T223316Z,launch
+2026-05-22T22:33:17Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:35:20Z,launched persona controller round 20260522T223520Z,persona round launched
+2026-05-22T22:35:22Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:37:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
