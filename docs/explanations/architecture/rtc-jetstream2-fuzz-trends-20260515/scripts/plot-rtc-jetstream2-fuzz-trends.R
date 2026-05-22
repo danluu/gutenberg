@@ -41,6 +41,20 @@ fuzz_level_executions_path <- file.path( data_dir, "fuzz_level_executions.csv" )
 current_run_accounting_path <- file.path( data_dir, "current_run_accounting.csv" )
 bug_findings_path <- file.path( data_dir, "bug_findings.csv" )
 bug_outputs_path <- file.path( data_dir, "bug_outputs.csv" )
+combined_ingredient_progress_path <- file.path( data_dir, "combined_ingredient_fuzzing_progress.csv" )
+combined_ingredient_goal_progress_path <- file.path( data_dir, "combined_ingredient_fuzzing_goal_progress.csv" )
+combined_ingredient_requirements_path <- file.path( data_dir, "combined_ingredient_fuzzing_requirements.csv" )
+combined_ingredient_profile <- "large-post-three-user-http-lifecycle"
+combined_ingredient_group <- "novelty-http-large-post-lifecycle"
+combined_ingredient_feature <- "cross-product:large-post-three-user-http-lifecycle"
+combined_ingredient_related_goal_ids <- c(
+	combined_ingredient_feature,
+	"success-profile-users:large-post-three-user-http-lifecycle:3",
+	"success-user-blocks:3:50",
+	"success-profile:large-post-three-user-http-lifecycle",
+	"transport-profile:http:large-post-three-user-http-lifecycle"
+)
+combined_ingredient_target_default <- 25
 status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
 status_report_path <- file.path( root, status_report_rel )
 pr_progress_current_path <- file.path( pr_focus_raw_dir, "pr-progress/current-pr-progress.tsv" )
@@ -913,6 +927,7 @@ feature_counts <- named_number_frame( state$featureCounts, "feature", "count" ) 
 			str_starts( feature, "auth-session-expiry-probe" ) ~ "auth",
 			str_starts( feature, "local-autosave" ) ~ "autosave",
 			str_starts( feature, "media-cross-entity" ) ~ "media/cross-entity",
+			str_starts( feature, "cross-product:" ) ~ "cross-product",
 			str_starts( feature, "cdp" ) ~ "code coverage",
 			TRUE ~ "other"
 		)
@@ -945,6 +960,7 @@ coverage_goals <- as_tibble( state$coverageGuidance$goals ) %>%
 			str_starts( id, "block:" ) ~ "block coverage",
 			str_starts( id, "action:" ) ~ "action coverage",
 			str_starts( id, "fault:" ) ~ "fault coverage",
+			str_starts( id, "cross-product:" ) ~ "cross-product",
 			str_detect( id, "reload|lifecycle|same-user|late-join|step-count|large-document" ) ~ "lifecycle/scale",
 			str_detect( id, "revision|autosave|save-count|local-autosave" ) ~ "persistence/revision",
 			str_detect( id, "auth|collaborator-role" ) ~ "auth/locks",
@@ -955,6 +971,113 @@ coverage_goals <- as_tibble( state$coverageGuidance$goals ) %>%
 	arrange( met, progress )
 
 write_csv( coverage_goals, file.path( data_dir, "coverage_goals.csv" ) )
+
+combined_ingredient_goal <- coverage_goals %>%
+	filter( id == combined_ingredient_feature ) %>%
+	slice_head( n = 1 )
+
+combined_ingredient_feature_count <- feature_counts %>%
+	filter( feature == combined_ingredient_feature ) %>%
+	pull( count )
+
+combined_ingredient_profile_count <- profile_counts %>%
+	filter( profile == combined_ingredient_profile ) %>%
+	slice_head( n = 1 )
+
+combined_ingredient_completed <- if ( nrow( combined_ingredient_goal ) > 0 ) {
+	combined_ingredient_goal$count[[ 1 ]]
+} else if ( length( combined_ingredient_feature_count ) > 0 ) {
+	combined_ingredient_feature_count[[ 1 ]]
+} else {
+	0
+}
+
+combined_ingredient_target <- if ( nrow( combined_ingredient_goal ) > 0 ) {
+	combined_ingredient_goal$target[[ 1 ]]
+} else {
+	combined_ingredient_target_default
+}
+
+combined_ingredient_progress <- tibble(
+	generated_at = with_tz( now(), "UTC" ),
+	profile = combined_ingredient_profile,
+	group = combined_ingredient_group,
+	feature = combined_ingredient_feature,
+	completed_cross_product_records = combined_ingredient_completed,
+	target_records = combined_ingredient_target,
+	remaining_records = pmax( combined_ingredient_target - combined_ingredient_completed, 0 ),
+	progress = if_else( combined_ingredient_target > 0, combined_ingredient_completed / combined_ingredient_target, NA_real_ ),
+	group_enabled = combined_ingredient_group %in% state$enabledGroups,
+	profile_records_seen = if ( nrow( combined_ingredient_profile_count ) > 0 ) combined_ingredient_profile_count$records_seen[[ 1 ]] else 0,
+	profile_successful_records = if ( nrow( combined_ingredient_profile_count ) > 0 ) combined_ingredient_profile_count$successful_records[[ 1 ]] else 0,
+	profile_success_rate = if ( nrow( combined_ingredient_profile_count ) > 0 ) combined_ingredient_profile_count$success_rate[[ 1 ]] else NA_real_
+)
+
+combined_ingredient_goal_progress <- bind_rows(
+	coverage_goals %>%
+		filter( id %in% combined_ingredient_related_goal_ids ) %>%
+		select( id, label, count, target, met, progress, goal_family ),
+	if ( ! ( combined_ingredient_feature %in% coverage_goals$id ) ) {
+		tibble(
+			id = combined_ingredient_feature,
+			label = "strict combined HTTP large-post three-user lifecycle records",
+			count = combined_ingredient_completed,
+			target = combined_ingredient_target,
+			met = combined_ingredient_completed >= combined_ingredient_target,
+			progress = if_else( combined_ingredient_target > 0, combined_ingredient_completed / combined_ingredient_target, NA_real_ ),
+			goal_family = "cross-product"
+		)
+	} else {
+		tibble()
+	}
+) %>%
+	mutate(
+		count = as.numeric( count ),
+		target = as.numeric( target ),
+		remaining = pmax( target - count, 0 ),
+		progress_capped = pmin( progress, 1 ),
+		count_target = paste0( comma( count ), " / ", comma( target ) ),
+		label = str_wrap( label, width = 44 )
+	) %>%
+	arrange( progress_capped, desc( remaining ), label )
+
+combined_ingredient_requirements <- tibble(
+	ingredient = c(
+		"HTTP polling",
+		"large initial post",
+		"at least three browser users",
+		"at least two lifecycle reloads",
+		"save checkpoints",
+		"autosave checkpoint",
+		"strict persistence oracles",
+		"passed run"
+	),
+	record_check = c(
+		"transport == http",
+		"initialContentProfile starts with large-document-",
+		"userCount >= 3",
+		"reload count >= 2",
+		"save count >= 2",
+		"autosave count >= 1",
+		"operation ledger and final persistence are strict",
+		"status == passed"
+	),
+	requirement_family = c(
+		"transport",
+		"scale",
+		"collaboration",
+		"lifecycle",
+		"persistence",
+		"persistence",
+		"oracle",
+		"completion"
+	),
+	required_for_cross_product_count = TRUE
+)
+
+write_csv( combined_ingredient_progress, combined_ingredient_progress_path )
+write_csv( combined_ingredient_goal_progress, combined_ingredient_goal_progress_path )
+write_csv( combined_ingredient_requirements, combined_ingredient_requirements_path )
 
 action_counts <- imap_dfr(
 	state$successfulActionCountsByProfile,
@@ -2699,6 +2822,110 @@ write_plot(
 	height = 6.2
 )
 
+combined_progress_segments <- tibble(
+	segment = factor( c( "completed", "remaining" ), levels = c( "completed", "remaining" ) ),
+	records = c(
+		combined_ingredient_progress$completed_cross_product_records[[ 1 ]],
+		combined_ingredient_progress$remaining_records[[ 1 ]]
+	)
+) %>%
+	mutate(
+		label = paste0( comma( records ), " ", segment ),
+		records = pmax( records, 0 )
+	)
+
+write_plot(
+	"combined-ingredient-fuzz-progress.png",
+	ggplot( combined_progress_segments, aes( x = "combined cross-product target", y = records, fill = segment ) ) +
+		geom_col( width = 0.42 ) +
+		geom_text(
+			aes( label = label ),
+			position = position_stack( vjust = 0.5 ),
+			size = 3.4,
+			color = "white"
+		) +
+		coord_flip() +
+		scale_y_continuous(
+			labels = comma,
+			limits = c( 0, max( combined_ingredient_progress$target_records[[ 1 ]], 1 ) ),
+			expand = expansion( mult = c( 0, 0.04 ) )
+		) +
+		scale_fill_brewer( palette = "Set2" ) +
+		labs(
+			title = "Combined-ingredient fuzzing progress",
+			subtitle = paste0(
+				combined_ingredient_feature,
+				"; group enabled=",
+				combined_ingredient_progress$group_enabled[[ 1 ]]
+			),
+			x = NULL,
+			y = "completed records toward coverage floor",
+			fill = NULL,
+			caption = "A completed count requires HTTP polling, a large initial post, at least three browser users, reloads, save/autosave checkpoints, strict oracles, and a passed run."
+		) +
+		theme_rtc(),
+	width = 10,
+	height = 4.2
+)
+
+write_plot(
+	"combined-ingredient-fuzz-goal-progress.png",
+	ggplot( combined_ingredient_goal_progress, aes( x = progress_capped, y = reorder( label, progress_capped ), color = goal_family ) ) +
+		geom_segment( aes( x = 0, xend = progress_capped, yend = reorder( label, progress_capped ) ), linewidth = 1.2, alpha = 0.72 ) +
+		geom_point( aes( shape = met, size = target ), alpha = 0.85 ) +
+		geom_text(
+			aes( label = count_target ),
+			hjust = -0.1,
+			vjust = 0.5,
+			size = 2.9,
+			show.legend = FALSE
+		) +
+		scale_x_continuous( labels = percent_format( accuracy = 1 ), limits = c( 0, 1 ), expand = expansion( mult = c( 0.01, 0.22 ) ) ) +
+		scale_color_brewer( palette = "Dark2" ) +
+		scale_shape_manual( values = c( "FALSE" = 17, "TRUE" = 16 ) ) +
+		scale_size_continuous( labels = comma, range = c( 2.4, 5.8 ) ) +
+		labs(
+			title = "Combined-ingredient fuzzing goal progress",
+			x = "progress toward target",
+			y = NULL,
+			color = "goal family",
+			shape = "met",
+			size = "target",
+			caption = "Includes the strict cross-product key plus adjacent large-post/three-user/HTTP goals so separate ingredient progress remains visible."
+		) +
+		theme_rtc(),
+	width = 12,
+	height = 5.8
+)
+
+combined_requirement_plot <- combined_ingredient_requirements %>%
+	mutate(
+		ingredient = factor( ingredient, levels = rev( ingredient ) ),
+		record_check = str_wrap( record_check, width = 38 )
+	)
+
+write_plot(
+	"combined-ingredient-fuzz-requirements.png",
+	ggplot( combined_requirement_plot, aes( x = "required for one count", y = ingredient, fill = requirement_family ) ) +
+		geom_tile( color = "white", linewidth = 0.7, width = 0.9, height = 0.78 ) +
+		geom_text( aes( label = record_check ), size = 3.1, color = "gray15" ) +
+		scale_fill_brewer( palette = "Set3" ) +
+		labs(
+			title = "Combined-ingredient fuzzing count criteria",
+			x = NULL,
+			y = NULL,
+			fill = "ingredient family",
+			caption = "These checks are conjunctive: separate ingredient-lane hits do not increment the combined cross-product key."
+		) +
+		theme_rtc() +
+		theme(
+			axis.text.x = element_blank(),
+			panel.grid.major = element_blank()
+		),
+	width = 10,
+	height = 5.7
+)
+
 feature_category_plot <- feature_categories %>%
 	mutate(
 		category_family = case_when(
@@ -2707,6 +2934,7 @@ feature_category_plot <- feature_categories %>%
 			feature_category %in% c( "history", "operation-ledger", "invariant" ) ~ "state/invariants",
 			feature_category %in% c( "real-user", "collaborator", "revision", "save", "reload", "autosave", "lifecycle", "users", "auth" ) ~ "user/lifecycle",
 			feature_category %in% c( "large-document", "step-count", "payload-size", "serialized-size" ) ~ "scale",
+			feature_category == "cross-product" ~ "cross-product",
 			feature_category %in% c( "fault", "transport", "profile", "code coverage" ) ~ "harness",
 			TRUE ~ "other"
 		),
@@ -3462,6 +3690,12 @@ summary_lines <- c(
 	paste0( "profiles_seen: ", nrow( profile_counts ) ),
 	paste0( "goals_total: ", nrow( coverage_goals ) ),
 	paste0( "goals_unmet: ", sum( ! coverage_goals$met ) ),
+	paste0( "combined_ingredient_feature: ", combined_ingredient_feature ),
+	paste0( "combined_ingredient_completed: ", combined_ingredient_progress$completed_cross_product_records[[ 1 ]] ),
+	paste0( "combined_ingredient_target: ", combined_ingredient_progress$target_records[[ 1 ]] ),
+	paste0( "combined_ingredient_remaining: ", combined_ingredient_progress$remaining_records[[ 1 ]] ),
+	paste0( "combined_ingredient_group_enabled: ", combined_ingredient_progress$group_enabled[[ 1 ]] ),
+	paste0( "combined_ingredient_profile_successful_records: ", combined_ingredient_progress$profile_successful_records[[ 1 ]] ),
 	paste0( "pr_review_events: ", nrow( pr_events ) ),
 	paste0( "pr_suggested_net_loc_snapshots: ", n_distinct( pr_suggested_loc$timestamp ) ),
 	paste0( "pr_suggested_net_loc_latest_total: ", ifelse( nrow( pr_suggested_loc ) > 0, pr_suggested_loc %>% filter( timestamp == max( timestamp, na.rm = TRUE ) ) %>% summarise( total = sum( net_loc, na.rm = TRUE ) ) %>% pull( total ), NA ) ),

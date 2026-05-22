@@ -1,0 +1,9 @@
+ingredient,record_check,requirement_family
+HTTP polling,transport == http,transport
+large initial post,initialContentProfile starts with large-document-,scale
+at least three browser users,userCount >= 3,collaboration
+at least two lifecycle reloads,reload count >= 2,lifecycle
+save checkpoints,save count >= 2,persistence
+autosave checkpoint,autosave count >= 1,persistence
+strict persistence oracles,operation ledger and final persistence are strict,oracle
+passed run,status == passed,completion
