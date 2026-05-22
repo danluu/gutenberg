@@ -8,7 +8,7 @@ edit-paragraph,973,persistence-no-title
 concurrent-paragraphs,930,persistence-no-title
 concurrent-paragraphs,764,session-lifecycle
 insert-paragraph,589,persistence-no-title
-insert-media-cross-entity-block,581,media-cross-entity
+insert-media-cross-entity-block,585,media-cross-entity
 edit-table-array-attributes,515,persistence-no-title
 delete-block,490,persistence-no-title
 move-block,444,persistence-no-title
@@ -40,10 +40,10 @@ edit-nested-paragraph,200,long-session-large-doc
 insert-heading,198,long-session-large-doc
 move-block-into-group,193,permissions-auth-locks
 insert-nested-group,191,long-session-large-doc
+edit-block-gauntlet-attributes,187,media-cross-entity
 delete-block,187,permissions-auth-locks
 move-block,185,long-session-large-doc
 append-paragraph,183,long-session-large-doc
-edit-block-gauntlet-attributes,182,media-cross-entity
 edit-paragraph,182,permissions-auth-locks
 edit-table-array-attributes,181,long-session-large-doc
 delete-block,181,long-session-large-doc
@@ -52,7 +52,7 @@ move-block-into-group,179,long-session-large-doc
 edit-paragraph,176,long-session-large-doc
 insert-paragraph,174,long-session-large-doc
 concurrent-paragraphs,169,long-session-large-doc
-move-block,155,media-cross-entity
+move-block,156,media-cross-entity
 delete-nested-block,155,long-session-large-doc
 move-block,147,large-post-three-user-http-lifecycle
 ui-type-paragraph,144,large-post-three-user-http-lifecycle
