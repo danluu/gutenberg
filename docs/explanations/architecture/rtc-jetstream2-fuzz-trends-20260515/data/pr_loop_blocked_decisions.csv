@@ -1,20 +1,20 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,P0,no,"publish only after refreshed exact feedback is green for title reload, existing-post CRDT persistence, and large-post-three-user HTTP",rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,"publish only after refreshed exact feedback is green for title reload,
-existing-post CRDT persistence, and large-post-three-user HTTP"
+publish-ready,rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,P0,no,not publishable until exact feedback is green for title reload existing-post CRDT persistence and large three-user HTTP,rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,"not publishable until exact feedback is green for title reload existing-post
+CRDT persistence and large three-user HTTP"
 publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,P0,no,stale stack failed title reload and persistence reload and is superseded by the replacement path,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,"stale stack failed title reload and persistence reload and is superseded by the
 replacement path"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until the PR07C owner matrix proves product ownership or an exact product-failure replay resolves the hold,ready/rtc-pr07c-reload-record-snapshots,"hold publication until the PR07C owner matrix proves product ownership or an
-exact product-failure replay resolves the hold"
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"promotion requires green exact-stack title reload, existing-post CRDT persistence, and large HTTP lifecycle evidence",reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires green exact-stack title reload, existing-post CRDT
-persistence, and large HTTP lifecycle evidence"
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,zero-byte artifacts and no fresh product-owned non-coverage evidence do not justify another reducer launch,seed-5200005-reducer/relaunch,"zero-byte artifacts and no fresh product-owned non-coverage evidence do not
-justify another reducer launch"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until the reconciled owner matrix proves product ownership or newer exact product-failure replay appears,ready/rtc-pr07c-reload-record-snapshots,"hold until the reconciled owner matrix proves product ownership or newer exact
+product-failure replay appears"
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,promotion requires green exact-stack title-reload-http existing-post-crdt-http and large-http-lifecycle evidence,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires green exact-stack title-reload-http existing-post-crdt-http
+and large-http-lifecycle evidence"
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,zero-byte or stale reducer artifacts do not justify another launch without fresh product-owned evidence,seed-5200005-reducer/relaunch,"zero-byte or stale reducer artifacts do not justify another launch without fresh
+product-owned evidence"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published; broader branch needs fresh product
 advantage"
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A branch is already published; original-base branch is duplicate,ready/rtc-pr15a-fallback-group-move-green,PR14B-based PR15A branch is already published; original-base branch is duplicate
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B branch is already published; original-base branch is duplicate,ready/rtc-pr15b-fallback-group-insert-anchor-green,PR14B-based PR15B branch is already published; original-base branch is duplicate
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C branch is already published; original-base branch is duplicate,ready/rtc-pr15c-fallback-group-delete-green,PR14B-based PR15C branch is already published; original-base branch is duplicate
-publish-ready,current-push-manifest,P1,no,controller push manifest contains only the header; there is no ready publication row to consume,current-push-manifest,"controller push manifest contains only the header; there is no ready publication
-row to consume"
+publish-ready,current-push-manifest,P1,no,current push manifest contains only the header; no ready publication row to consume,current-push-manifest,"current push manifest contains only the header; no ready publication row to
+consume"
 launch-branch-repair,broad-pr-analysis-fanout,P0,no,specific blocker-removal actions exist; broad fanout burns PR capacity without direct product progress,broad-pr-analysis-fanout,"specific blocker-removal actions exist; broad fanout burns PR capacity without
 direct product progress"
