@@ -1,11 +1,11 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-persistence-no-title,1750,1042,0,0.5954285714285714,persistence
-real-user-editing,1479,573,0,0.38742393509127787,real-user
-session-lifecycle,1188,698,0,0.5875420875420876,lifecycle
-large-post-three-user-http-lifecycle,858,67,0,0.0780885780885781,lifecycle
-permissions-auth-locks,762,268,0,0.35170603674540685,auth/locks
-async-server-blocks,637,143,0,0.22448979591836735,async/media
-long-session-large-doc,507,39,0,0.07692307692307693,lifecycle
+persistence-no-title,1758,1049,0,0.5967007963594995,persistence
+real-user-editing,1491,579,0,0.38832997987927564,real-user
+session-lifecycle,1199,709,0,0.591326105087573,lifecycle
+large-post-three-user-http-lifecycle,866,68,0,0.07852193995381063,lifecycle
+permissions-auth-locks,768,268,0,0.3489583333333333,auth/locks
+async-server-blocks,643,143,0,0.2223950233281493,async/media
+long-session-large-doc,513,39,0,0.07602339181286549,lifecycle
 media-cross-entity,243,121,0,0.49794238683127573,async/media
 three-user-late-join,217,113,0,0.5207373271889401,lifecycle
 full,207,16,0,0.07729468599033816,block-structure
@@ -19,4 +19,4 @@ common-blocks,88,43,0,0.48863636363636365,block-structure
 code-editor-smoke,80,64,0,0.8,other
 revision-persistence,40,8,0,0.2,persistence
 table-stale-snapshot-http,16,1,0,0.0625,other
-list-move-refresh-http,3,0,0,0,other
+list-move-refresh-http,5,0,0,0,other
