@@ -4,14 +4,14 @@ PR progress items,diagnostic,deferred-family,medium,1
 PR progress items,held-by-controller,ready-product-pr,high,5
 PR progress items,published,ready-product-pr,high,13
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
-controller decisions,allowed,control decision,P0,21
-controller decisions,blocked,control decision,P0,5
+controller decisions,allowed,control decision,P0,22
+controller decisions,blocked,control decision,P0,6
 controller decisions,allowed,control decision,P1,3
 controller decisions,blocked,control decision,P1,6
-controller decisions,allowed,control decision,high,1
+controller decisions,allowed,control decision,high,4
 critical blockers,runnable,control-feedback,high,1
+critical blockers,active,coverage-promotion,high,1
 critical blockers,held,deferred-family,high,1
-critical blockers,active,exact-stack-promotion,high,1
 critical blockers,terminal,final-stack-join,high,1
 critical blockers,queued,owner-evidence,high,1
 critical blockers,runnable,reducer,high,1
@@ -26,4 +26,4 @@ critical lanes,adopt-or-queue,codex-analysis,lane,1
 critical lanes,queued,codex-analysis,lane,2
 active sessions,active,analysis,analysis,4
 active sessions,active,critical-continuation,critical-continuation,1
-active sessions,active,feedback-refresh,feedback-refresh,1
+active sessions,active,finalization,finalization,1
