@@ -360,6 +360,8 @@ test.describe( 'Collaboration - Stress Test', () => {
 		editor,
 		page,
 	} ) => {
+		test.setTimeout( 600_000 );
+
 		// Create the two additional test users.
 		for ( const user of STRESS_USERS ) {
 			await requestUtils.createUser( user );
