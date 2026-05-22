@@ -1758,3 +1758,6 @@ timestamp,group,group_family
 2026-05-22T16:54:33Z,novelty-http-persistence-probe,persistence
 2026-05-22T16:57:23Z,novelty-http-persistence-probe,persistence
 2026-05-22T17:00:21Z,novelty-http-persistence-probe,persistence
+2026-05-22T17:05:03Z,novelty-ws-real-user-save-reload,real-user
+2026-05-22T17:06:42Z,novelty-ws-parser-transform,parser
+2026-05-22T17:08:57Z,novelty-ws-parser-transform,parser
