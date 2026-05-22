@@ -1,15 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Stale owner-matrix hold is superseded by fresh exact-head PR07C owner evidence; consume the hold instead of relaunching.,PR07C/HOLD-07C,"Stale owner-matrix hold is superseded by fresh exact-head PR07C owner evidence;
-consume the hold instead of relaunching."
-publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,Product publication requires fresh exact-stack green evidence or replay-backed downscope first.,reload-hydration@b01a3a21e2c/product,"Product publication requires fresh exact-stack green evidence or replay-backed
-downscope first."
-publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,Diagnostic candidate only; no owner evidence or product-owned first-loss replay is present.,pre-save-search-live-collapse@de2b5502da0,"Diagnostic candidate only; no owner evidence or product-owned first-loss replay
-is present."
-publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,Diagnostic candidate only; no exact suffix-divergence replay or owner evidence is present.,rich-text-suffix-corruption@a2d47a072e1,"Diagnostic candidate only; no exact suffix-divergence replay or owner evidence
-is present."
+launch-owner-matrix,PR07C/HOLD-07C/stale-relaunch,P0,no,The queued owner-matrix hold is stale after fresh exact-head owner evidence; relaunch only if newer product-owned evidence is required.,PR07C/HOLD-07C/stale-relaunch,"The queued owner-matrix hold is stale after fresh exact-head owner evidence;
+relaunch only if newer product-owned evidence is required."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by already published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by already published PR15A-on-PR14B branch.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by already published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by already published PR15B-on-PR14B branch.
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by already published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by already published PR15C-on-PR14B branch.
-repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates exact-green feedback; reopen only on newer promotion_blocked evidence or exact branch/commit mismatch.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates exact-green feedback; reopen only on newer
-promotion_blocked evidence or exact branch/commit mismatch."
+publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,Product publication requires fresh exact-stack green evidence or replay-backed downscope.,reload-hydration@b01a3a21e2c/product,"Product publication requires fresh exact-stack green evidence or replay-backed
+downscope."
+publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,Diagnostic candidate only; no owner evidence or product-owned first-loss replay is present.,pre-save-search-live-collapse@de2b5502da0,"Diagnostic candidate only; no owner evidence or product-owned first-loss replay
+is present."
+publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,Diagnostic candidate only; no exact suffix-divergence replay or owner evidence is present.,rich-text-suffix-corruption@a2d47a072e1,"Diagnostic candidate only; no exact suffix-divergence replay or owner evidence
+is present."
+repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates exact-green feedback; reopen only on newer promotion_blocked evidence or exact branch and commit mismatch.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates exact-green feedback; reopen only on newer
+promotion_blocked evidence or exact branch and commit mismatch."
+launch-branch-repair,generic-heavy-pr-jobs-while-reserve-unhealthy,high,no,"If discovery reserve becomes unhealthy, block heavy PR jobs except cheap publication, manifest generation, or analysis-only work.",generic-heavy-pr-jobs-while-reserve-unhealthy,"If discovery reserve becomes unhealthy, block heavy PR jobs except cheap
+publication, manifest generation, or analysis-only work."
