@@ -1,3 +1,2 @@
 item_id,reason,rejections
-benchmark-canary-fuzzer-gap,zero_executor_artifact,3
-benchmark-canary-fuzzer-gap,coverage_repaired_without_exact_stack_green,1
+benchmark-canary-fuzzer-gap,zero_executor_artifact,2
