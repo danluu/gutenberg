@@ -1,44 +1,41 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery 12 >= min 3; allow bounded PR work while preserving coverage/focused/strict/protocol/lower/browser reserve
-update-controller-rule,discovery-protection-heavy-pr-gate,P0,yes,"if discovery falls below reserve, block heavy PR jobs except cheap publication-manifest consumption and analysis-only decisions"
-update-controller-rule,effective-pr-slot-accounting,P0,yes,"count owner matrices, exact replays, reducers, continuations, finalizers, persona loops, and Productive Analysis actions against PR capacity"
-repair-branch,benchmark-canary-fuzzer-gap/large-post-three-user-http,P0,yes,next product blocker; exact refresh has title and persistence green but large-post-three-user-http still fails
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-refresh,P0,no,active large HTTP exact repair is already running; duplicate refresh is churn until it returns
-repair-branch,benchmark-canary-fuzzer-gap/all-merged-successor,P0,no,rebuild successor only after the large HTTP fix has fresh exact green evidence
-publish-ready,try/rtc-benchmark-canary-replacement-harness-20260522T045016Z@c66e202f823b,P0,no,large-post-three-user-http remains promotion-blocked; green title and persistence are insufficient
-publish-ready,benchmark-canary-fuzzer-gap/all-merged-publication,P0,no,publication requires fresh large-post-three-user-http 2/2 green or equivalent large-http-lifecycle evidence
-update-controller-rule,large-http-lifecycle/exact-promotion-gate,P0,yes,require fresh large-post-three-user-http 2/2 green or equivalent large-http-lifecycle evidence before all-merged publication
-update-controller-rule,benchmark-canary-http-closure,P0,yes,"keep title-reload-http, existing-post-crdt-http, persistence, and large-http-lifecycle as exact promotion gates"
-reserve-discovery,benchmark-canary-http-coverage-groups,P0,yes,keep large-post lifecycle and existing-post CRDT HTTP coverage scheduled; coverage supports but cannot replace exact-stack proof
-launch-owner-matrix,PR07C/HOLD-07C,P0,yes,current critical status says readiness is resolved; run or consume one owner matrix and promote only if product ownership is proven
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until the PR07C owner matrix proves product ownership or fresh exact product-failure replay exists
-cooldown-diagnostic,PR07C/HOLD-07C/duplicate-owner-browser,P0,yes,allow one owner matrix only; duplicate browser or owner reruns remain diagnostic churn
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload-minimal,P0,yes,canonical malformed-save product fix is already published; keep validating
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,broader branch is superseded by canonical PR06B minimal unless it proves fresh product advantage
+reserve-discovery,discovery-reserve,P0,yes,active discovery 15 >= min 3 with large headroom; allow bounded PR work while preserving coverage focused strict protocol lower and browser discovery lanes
+repair-branch,benchmark-canary-fuzzer-gap/large-post-three-user-http,P0,yes,next product slot; latest replacement stack cleared title and persistence but large-post HTTP still fails with 409 join or convergence symptoms
+publish-ready,benchmark-canary-fuzzer-gap/all-merged-publication,P0,no,publication requires fresh exact-stack green evidence for large-post-three-user-http or equivalent large-http-lifecycle
+update-controller-rule,large-http-lifecycle/exact-promotion-gate,P0,yes,make novelty-http-large-post-lifecycle and completion equivalent to the large-post-three-user-http exact promotion blocker
+reserve-discovery,benchmark-canary-http-coverage-groups,P0,yes,keep title reload existing-post CRDT persistence and large HTTP coverage pinned as support; coverage cannot replace exact proof
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-refresh,P0,no,active benchmark-canary repair exists; duplicate refresh would consume PR capacity without new product evidence
+repair-branch,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,P0,no,superseded by fresh exact feedback where title-reload-http is green; current blocker is large HTTP
+repair-branch,benchmark-canary-fuzzer-gap/all-merged-successor,P0,no,successor rebuild waits on the large HTTP repair and fresh green exact feedback; do not loop stale successor work
+launch-owner-matrix,PR07C/HOLD-07C,P0,yes,current blockers say readiness is resolved and one owner-matrix job is queued; consume exactly one matrix and promote only if product ownership is proven
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until the PR07C owner matrix proves product ownership or newer exact product-failure replay reopens the branch
+cooldown-diagnostic,PR07C/HOLD-07C/duplicate-owner-browser,P0,yes,"after the single reconciled matrix, duplicate owner or browser reruns are churn unless they carry newer product evidence"
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,adopt the manifest head as the sole reload-hydration candidate only; this is cheap manifest consumption
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,promotion needs fresh exact-stack title-reload-http existing-post-crdt-http and large-http-lifecycle green evidence
+update-controller-rule,reload-hydration@fa801a6aa13-exact-blocker,P0,yes,replace generic reload-hydration relaunching with a candidate-specific exact-stack blocker
+cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,402 launches plus over-budget recent window and manifest hold make interval relaunches churn
+update-controller-rule,deferred-family-single-flight,P0,yes,manifest-held or over-budget families progress only by manifest adoption exact replay owner evidence green stack adoption or explicit downscope
+cooldown-diagnostic,pre-save-search-live-collapse,P0,yes,manifest-held diagnostic family; suppress interval relaunch without owner evidence exact replay green adoption or downscope
+cooldown-diagnostic,rich-text-suffix-corruption,P0,yes,manifest-held diagnostic family; suppress interval relaunch without owner evidence exact replay green adoption or downscope
+repair-ready,seed-5200005-reducer,P0,yes,consume terminal already_resolved_by_active_artifacts classification and clear stale blocker and queue state
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,stale reducer state does not justify relaunch without fresher product-owned non-coverage evidence
+repair-branch,ready/rtc-pr14b-table-query-array-local-suffix-append/remote-marker,P0,yes,route one minimized remote-marker reproducer to PR14B repair or explicit oracle downscope
+cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker,high,yes,collapse repeated remote-marker variants to representative-only scheduling until repair downscope or distinct signature
+update-controller-rule,unit-property-table-query-array-crdt/family-cap-route,high,yes,treat RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE as one reducer or fix blocker rather than adjacent-seed yield
+update-controller-rule,lower-http-polling-canary-oracle-retarget,P0,yes,retarget lower HTTP polling toward title-reload and existing-post CRDT canary-equivalent oracles
+cooldown-diagnostic,lower-http-polling/feature-only-corpus,P1,yes,feature-only admissions with no new coverage and no failure are not product progress
+reserve-discovery,restore-state-storage-protocol-coverage,P1,yes,use freed low-yield lower-level capacity for restore-state storage or protocol coverage while reserve remains healthy
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload-minimal,P0,yes,canonical malformed-save product fix is already published; keep it canonical and validating
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,broader branch is superseded by published PR06B minimal unless it proves fresh product advantage
 publish-ready,ready/rtc-pr15a-fallback-group-move-green-on-pr14b,P0,yes,canonical PR14B-based PR15A path is already published; keep validating
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,P0,yes,canonical PR14B-based PR15B path is already published; keep validating
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,P0,yes,canonical PR14B-based PR15C path is already published; keep validating
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,original-base branch duplicates the published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,original-base branch duplicates the published PR14B-based PR15B path
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,original-base branch duplicates the published PR14B-based PR15C path
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,"adopt or publish manifest head as candidate only; this is cheap manifest consumption, not promotion clearance"
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"promotion requires fresh exact green title-reload-http, existing-post-crdt-http, and large-http-lifecycle evidence"
-update-controller-rule,reload-hydration@fa801a6aa13-exact-blocker,P0,yes,convert generic reload-hydration family into a candidate-specific exact blocker
-cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"402 launches, over-budget recent window, and manifest hold make interval relaunches churn"
-update-controller-rule,deferred-family-single-flight,P0,yes,"manifest-held or over-budget families progress only by manifest adoption, exact replay, owner evidence, green stack adoption, or downscope"
-cooldown-diagnostic,pre-save-search-live-collapse,P0,yes,"manifest-held diagnostic family; no interval relaunch without owner evidence, exact replay, green stack adoption, or downscope"
-cooldown-diagnostic,rich-text-suffix-corruption,P0,yes,"manifest-held diagnostic family; no interval relaunch without owner evidence, exact replay, green stack adoption, or downscope"
-cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscope raw deferred family because canonical PR06B minimal is published
-cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscope raw deferred family because PR02A is published absent fresh healthy-user HTTP evidence
-repair-ready,seed-5200005-reducer,P0,yes,consume terminal already_resolved_by_active_artifacts classification and clear stale blocker or queued reducer
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,stale reducer state and zero-artifact loops do not justify relaunch without fresher product-owned evidence
-repair-branch,ready/rtc-pr14b-table-query-array-local-suffix-append/remote-marker,P0,yes,route one minimized remote-marker reproducer to PR14B repair or explicit oracle downscope
-cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker,high,yes,"collapse repeated remote-marker variants; keep representative-only until repair, downscope, or distinct signature"
-update-controller-rule,unit-property-table-query-array-crdt/family-cap-route,high,yes,"treat RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE as one reducer or fix blocker, not adjacent-seed yield"
-update-controller-rule,lower-http-polling-canary-oracle-retarget,P0,yes,retarget lower HTTP polling toward title-reload and existing-post CRDT canary-equivalent oracles
-cooldown-diagnostic,lower-http-polling/feature-only-corpus,P1,yes,feature-only corpus admissions with zero new coverage and no failure are not product progress
-reserve-discovery,restore-state-storage-protocol-coverage,P1,yes,use freed lower-level capacity for restore-state storage or protocol coverage while reserve remains healthy
+cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,raw deferred family is downscoped by the canonical PR06B minimal branch
+cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,raw deferred family is downscoped by PR02A absent fresh healthy-user HTTP evidence
 publish-ready,current-push-manifest,P1,no,controller push manifest is header-only; nothing to consume
-update-controller-rule,productive-analysis-feed-binding,P0,yes,"every P0 or high Productive Analysis row must be allowed, rejected, or explicitly coalesced in controller output"
+update-controller-rule,productive-analysis-feed-binding,P0,yes,every P0 or high Productive Analysis row must be allowed rejected or explicitly coalesced in controller output
 update-controller-rule,zero-artifact-no-progress,P0,yes,zero-byte or missing executor artifacts cannot clear blockers or justify relaunch loops
 launch-branch-repair,broad-pr-analysis-fanout,P0,no,specific blocker-removal actions exist; broad fanout burns PR capacity without product progress
