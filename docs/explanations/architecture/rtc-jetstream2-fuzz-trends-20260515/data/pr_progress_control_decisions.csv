@@ -1,22 +1,22 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery is 16 vs floor 3 but discovery protected=no and coverage is startup-only; allow one bounded product slot plus cheap cleanup only
-repair-branch,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,P0,yes,next branch-changing product repair; existing-post-crdt is replacement-green while title-reload marker divergence remains red
-repair-ready,benchmark-canary-fuzzer-gap/existing-post-crdt-http/seed-7735005,P0,yes,consume replacement-stack green evidence and clear stale existing-post repair rows unless fresher regression appears
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z already owns exact-stack repair
-publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http existing-post-crdt-http and large-http-lifecycle gates are not green on current exact-stack evidence
-reserve-discovery,benchmark-canary-forced-http-groups,P0,yes,materialize title-reload existing-post-crdt persistence-probe and large-http-lifecycle HTTP groups before optional WS expansion
+reserve-discovery,discovery-reserve,P0,yes,active discovery is 19 vs floor 3 but discovery_protected=no and coverage is startup-only; allow one bounded product repair plus cheap manifest/adoption/analysis work only
+repair-branch,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,P0,yes,next concrete branch-changing blocker; active exact-stack continuation owns it and existing-post CRDT replacement evidence is green
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z already owns the heavy exact-stack repair
+repair-ready,benchmark-canary-fuzzer-gap/existing-post-crdt-http/seed-7735005,P0,yes,consume replacement-stack green evidence and clear stale existing-post repair rows unless fresher regression evidence appears
+publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http persistence-reload-http and large-http-lifecycle gates are not green on current exact-stack evidence
+coverage-schedule-repair,benchmark-canary-http-closure,P0,yes,force title-reload existing-post-crdt persistence-probe and large-http-lifecycle HTTP groups before optional WS expansion
 reserve-discovery,focused-shards-benchmark-minimum,P0,yes,keep title-reload-http existing-post-crdt-http and large-http-lifecycle focused lanes P0 and promotion-blocking
-reserve-discovery,large-http-lifecycle,P0,yes,retain large HTTP lifecycle as P0 benchmark floor until equivalent current exact-stack coverage is continuously green
+reserve-discovery,large-http-lifecycle,P0,yes,retain large HTTP lifecycle as benchmark floor until equivalent current exact-stack coverage is continuously green
 repair-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,P0,yes,adopt as sole reload-hydration candidate and convert generic family churn into exact-stack blocker state
 publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99/candidate,P0,yes,cheap candidate publication or adoption consumes the manifest and lets a future exact stack include the head
 publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99/promotion,P0,no,not promotion-ready until fresh exact-stack title-reload existing-post CRDT and large-http evidence is green
-launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind the active title-reload product slot; do not spend a second heavy replay while discovery is unprotected
+launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind active title-reload product slot; do not spend a second heavy replay while discovery is unprotected
 cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,over launch budget and manifest-held; interval relaunches do not change product state
 cooldown-diagnostic,pre-save-search-live-collapse,P1,yes,diagnostic-only over budget and manifest-held; allow only owner evidence dependency-complete exact replay or explicit downscope
 cooldown-diagnostic,rich-text-suffix-corruption,P1,yes,diagnostic-only over budget and manifest-held; allow only owner evidence dependency-complete exact replay or explicit downscope
-cooldown-diagnostic,malformed-save-payload,P1,yes,superseded by published PR06B minimal unless fresh product evidence beats the canonical branch
-cooldown-diagnostic,http-room-isolation,P1,yes,superseded by published PR02A unless fresh product evidence beats the canonical branch
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is already consumed and discovery is unprotected; require newer product-owner evidence or exact product-failure replay first
+cooldown-diagnostic,malformed-save-payload,P1,yes,raw deferred family is superseded by published PR06B minimal unless fresh product evidence beats the canonical branch
+cooldown-diagnostic,http-room-isolation,P1,yes,raw deferred family is superseded by published PR02A unless fresh product evidence beats the canonical branch
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,readiness alone is insufficient; Cycle380 owner evidence is consumed and discovery is unprotected so a heavy owner matrix waits for newer owner evidence or exact product-failure replay
 cooldown-diagnostic,PR07C/HOLD-07C,P0,yes,terminalize duplicate owner-matrix queue work and keep PR07C held pending newer owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked by consumed hold evidence and lacks newer product-owner proof
 repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts classification and clear stale reducer blocker and queue state
@@ -30,7 +30,7 @@ reserve-discovery,lower-level-restore-state-storage-coverage,P1,yes,use freed lo
 launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout is lower value than bounded product and evidence work
 update-controller-rule,benchmark-canary-exact-stack-gate,P0,yes,block snapshot publication and all-merged finalization until title-reload-http existing-post-crdt-http and large-http-lifecycle are green
 update-controller-rule,deferred-family-single-flight,P0,yes,while manifest holds and launch budgets are exceeded accept only product-head exact replay owner evidence green exact-stack evidence or explicit downscope
-update-controller-rule,discovery-protection-heavy-pr-gate,P0,yes,when discovery is unhealthy or unprotected allow cheap manifests analysis-only work and one bounded repair but block heavy duplicate PR jobs
+update-controller-rule,discovery-protection-heavy-pr-gate,P0,yes,when discovery is unhealthy or unprotected allow cheap manifest analysis-only work and one bounded repair but block heavy duplicate PR jobs
 update-controller-rule,effective-pr-slot-accounting,P0,yes,count queued owner matrices reducers deferred jobs exact replays continuations finalizers and persona loops against PR capacity
 update-controller-rule,productive-analysis-feed-binding,P0,yes,map every Productive Analysis control row to explicit allow reject or coalesced duplicate decision
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage
