@@ -1,5 +1,6 @@
 session,class,started_hint
-rtc-analysis-live-1facc3ff-http-same-user-stale-draft-gen-7-20260522T165009Z,analysis,
+rtc-analysis-live-1facc3ff-http-large-lifecycle-gen-8-20260522T172348Z,analysis,
+rtc-analysis-live-1facc3ff-http-same-user-stale-draft-gen-8-20260522T172337Z,analysis,
 rtc-coverage-guidance-codex-20260522T170713Z,analysis,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
