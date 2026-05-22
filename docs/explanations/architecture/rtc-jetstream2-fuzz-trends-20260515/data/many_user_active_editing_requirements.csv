@@ -9,3 +9,6 @@ rich text and list actions,paste + link + list indent in one record,real-user UI
 synced collaboration note,ui-add-note action + remote note visibility,collaboration UI,TRUE
 presence and cursor signals,presence-list ok + remote-selection-cursor ok,collaboration UI,TRUE
 large document edge,block count or initial large-document profile >= 50,scale,TRUE
+HTTP polling transport,transport == http for the HTTP active-editor cross-product,transport,TRUE
+same-user tabs,collaboratorMode == same-user for the same-user active-editor cross-product,identity,TRUE
+revision restore,eligible revision restore completes with status ok,persistence,TRUE

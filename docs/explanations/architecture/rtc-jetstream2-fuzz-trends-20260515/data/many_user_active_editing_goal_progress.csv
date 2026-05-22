@@ -10,6 +10,8 @@ success-profile:many-user-active-editing,success profile many user active editin
 success-profile-users:many-user-active-editing:6,"success profile users many user active editing
 6",0,25,FALSE,0,user-document-concurrency,25,0,0 / 25
 success-user-blocks:6:50,success user blocks 6 50,0,25,FALSE,0,lifecycle/scale,25,0,0 / 25
+cross-product:active-editors-http-lifecycle:users-6,"cross product active editors http lifecycle
+users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-large-doc:users-10,"cross product active editors large doc users
 10",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-large-doc:users-12,"cross product active editors large doc users
@@ -20,10 +22,14 @@ cross-product:active-editors-lifecycle:users-12,"cross product active editors li
 12",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-notes-lifecycle:users-6,"cross product active editors notes lifecycle
 users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-revision-restore:users-6,"cross product active editors revision restore
+users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-rich-list-lifecycle:users-10,"cross product active editors rich list
 lifecycle users 10",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-rich-list-lifecycle:users-12,"cross product active editors rich list
 lifecycle users 12",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-same-user-lifecycle:users-6,"cross product active editors same user
+lifecycle users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-ui-signals:users-10,"cross product active editors ui signals users
 10",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-ui-signals:users-12,"cross product active editors ui signals users
