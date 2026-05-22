@@ -1,40 +1,40 @@
 action,target,priority,allowed,reason
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,current repaired head has green owner replay and a non-header publication manifest
-repair-ready,pr07c-owner-matrix@2f8247258316bde60869c06c383090904e9426bd,high,yes,consume existing green owner replay and terminalize stale PR07C owner blocker
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,no,duplicate heavy browser work unless newer red owner evidence appears
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale progress head is superseded by current green head 2f8247258316bde60869c06c383090904e9426bd
+repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,P0,yes,next product-progress slot; active repair branch has TypeScript build failures and exact benchmark rows must rerun green on the same commit
+publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,exact-stack benchmark evidence is red or build-blocked; coverage-present is not publication evidence
+launch-branch-repair,PR17/stale-crdt-cas-background-delivery,P0,no,active bounded PR17 repair branch already owns this path
+repair-ready,PR17/table-stale-snapshot/query-array,P0,yes,attach lower-level RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE reproducer as repair evidence for the revision-table blocker
+reserve-discovery,benchmark-canary-fuzzer-gap/http-equivalent-exact-stack,P0,yes,keep benchmark-equivalent HTTP lanes active until PR17 exact stack is green or replay-downscoped
+reserve-discovery,novelty-http-table-stale-snapshot,P0,yes,rematerialize forced revision/table HTTP coverage; table-stale success gaps remain and revision-table row is red
+reserve-discovery,benchmark-canary-fuzzer-gap/list-item-move-refresh-http,P0,yes,repair or retarget ingestion before counting list-move benchmark coverage as covered
+reserve-discovery,lower-level-parser-table-list-http-corpus,high,yes,retarget reserve to parser table/list HTTP corpus and persisted-save-response oracles tied to PR17 failures
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,current repaired head has green owner replay and should have a non-header publication manifest
+launch-owner-matrix,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,P0,yes,one bounded current-head owner matrix is allowed now that readiness is resolved and discovery reserve is healthy
+consume-owner-matrix,pr07c-owner-matrix@local-mac-20260522T172727Z,high,yes,consume green local owner replay and terminalize stale owner blocker state
+launch-owner-matrix,PR07C/HOLD-07C@025c7638361f,P0,no,stale head is superseded by current published head 2f8247258316bde60869c06c383090904e9426bd
 repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale repair request is superseded by current-head green owner evidence
-repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,P0,yes,continue active bounded repair branch; fix build failures then rerun exact benchmark rows
-launch-branch-repair,PR17/stale-crdt-cas-background-delivery,P0,no,bounded PR17 repair branch is already active
-publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,exact-stack benchmark evidence remains red or build-blocked
-repair-ready,PR17/table-stale-snapshot/query-array,P0,yes,attach lower-level table-query-array reproducer as repair evidence for revision-table blocker
-reserve-discovery,benchmark-canary-fuzzer-gap/http-equivalent-exact-stack,P0,yes,keep exact HTTP equivalent lanes active while PR17 exact stack remains red
-reserve-discovery,novelty-http-table-stale-snapshot,P0,yes,rematerialize forced table revision coverage for the red revision-table row
-reserve-discovery,benchmark-canary-fuzzer-gap/list-item-move-refresh-http,P0,yes,repair or retarget ingestion before counting list-move coverage as present
-reserve-discovery,lower-level-parser-table-list-http-corpus,high,yes,retarget lower-level reserve to parser table/list and persisted-save-response oracle seeds
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt manifest as candidate evidence only and convert generic hold to head-specific exact-stack blocker
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt manifest as candidate evidence only and convert generic family hold to a head-specific exact-stack blocker
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,P0,no,missing fresh title-reload plus existing-post or persistence-reload plus large HTTP lifecycle green proof
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,reject duplicate heavy replay while head-specific blocker owns this path
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,do not spend a heavy replay slot while PR17 owns the product-progress repair slot
 cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,high,yes,403 launches plus a concrete candidate head make generic relaunch diagnostic churn
 cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2+rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335,high,yes,diagnostic-only heads lack owner or product first-loss evidence
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2/product,medium,no,missing owner evidence or product first-loss evidence
 publish-ready,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335/product,medium,no,missing focused exact replay or owner evidence
-cooldown-diagnostic,table-query-array-crdt/remote-marker-family,high,yes,repeated canonical key after repair adoption is duplicate scheduling churn
-cooldown-diagnostic,unit-property-table-query-array-crdt/bootstrap-no-yield,P0,yes,mark repeated harness bootstrap infra rows non-yield until dependency preflight is clean
-repair-branch,rtc-table-query-array-crdt@unblock/table-query-array-crdt-20260522T200809Z,P0,yes,continue bounded repair confirmation for canonical table query-array divergence
-cooldown-diagnostic,lower-level-rich-text-crdt-merge/broad,high,yes,long green or bootstrap-noise batches should drain to low-rate canary
-cooldown-diagnostic,rtc-http-polling-manager/broad-zero-yield,high,yes,stop broad zero-yield batches and keep only capped readiness canary with semantic admission
+cooldown-diagnostic,table-query-array-crdt/remote-marker-family,P0,yes,cap repeated known family after first canonical failure per head
+cooldown-diagnostic,unit-property-table-query-array-crdt/bootstrap-no-yield,P0,yes,mark repeated harness-bootstrap infra rows non-yield until dependency preflight is clean
+repair-branch,rtc-table-query-array-crdt@bounded-confirmation,P0,yes,"continue bounded repair confirmation only, not open-ended duplicate generation"
+cooldown-diagnostic,lower-level-rich-text-crdt-merge/broad,high,yes,long green or bootstrap-noise batches should drain to a low-rate canary
+cooldown-diagnostic,rtc-http-polling-manager/broad-zero-yield,high,yes,stop broad zero-yield batches; keep only capped readiness canary with semantic admission
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already published PR15A-on-PR14B branch
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already published PR15B-on-PR14B branch
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already published PR15C-on-PR14B branch
-cooldown-diagnostic,malformed-save-payload/raw-deferred,medium,yes,raw deferred heads are superseded by canonical published PR06B minimal
-cooldown-diagnostic,http-room-isolation/raw-deferred,medium,yes,raw deferred heads are superseded by PR02A absent fresh healthy-user HTTP evidence
-reserve-discovery,discovery-reserve-policy,P0,yes,discovery is healthy at 11 active sessions over min 3 and focused discovery lanes stay protected
-launch-branch-repair,discovery-unhealthy-mode,P0,no,if discovery falls below reserve only cheap manifests evidence adoption cleanup and analysis-only work may run
+downscope-family,malformed-save-payload/raw-deferred,medium,yes,raw deferred heads are superseded by canonical published PR06B minimal
+downscope-family,http-room-isolation/raw-deferred,medium,yes,raw deferred heads are superseded by PR02A absent fresh healthy-user HTTP evidence
+reserve-discovery,discovery-reserve-policy,P0,yes,"discovery is healthy at 12 active sessions over min 3; keep coverage, focused, strict, protocol, lower-level, and browser reserves protected"
+launch-branch-repair,discovery-unhealthy-mode,P0,no,"if discovery falls below reserve, heavy PR jobs wait except cheap publication manifest generation and analysis-only cleanup"
 update-controller-rule,discovery-unhealthy-heavy-pr-gate,P0,yes,block new heavy PR jobs below reserve while allowing cheap publication manifest generation and analysis-only cleanup
+update-controller-rule,benchmark-canary-exact-stack-and-build-gate,P0,yes,block PR17 publication until repair branch builds and exact benchmark rows are green on the same commit
 update-controller-rule,product-progress-latest-evidence-head-precedence,P0,yes,latest exact owner product and benchmark evidence plus actual branch head override stale progress rows
 update-controller-rule,product-progress-non-header-manifest-gate,P0,yes,header-only manifests do not count as publication readiness
 update-controller-rule,product-progress-single-flight-dedupe,P0,yes,collapse repeated feed aliases by concrete target while preserving explicit allow and reject decisions
-update-controller-rule,benchmark-canary-exact-stack-and-build-gate,P0,yes,block PR17 publication until repair branch builds and exact benchmark rows are green
 update-controller-rule,diagnostic-family-caps,high,yes,cap duplicate diagnostic and lower-level families after first canonical failure per head
