@@ -115,33 +115,47 @@ export default class CollaborationUtils {
 				: {} ),
 		} );
 
-		// Authenticate through the context request API so browser cookies are
-		// ready before the editor page opens.
-		const loginPageResponse = await context.request.get( '/wp-login.php', {
-			failOnStatusCode: true,
-		} );
-		await loginPageResponse.dispose();
+		let newPage: Page | undefined;
 
-		const loginResponse = await context.request.post( '/wp-login.php', {
-			failOnStatusCode: true,
-			form: {
-				log: user.username,
-				pwd: user.password,
-				'wp-submit': 'Log In',
-				redirect_to: `${ BASE_URL }/wp-admin/`,
-				testcookie: '1',
-			},
-		} );
-		const loginUrl = loginResponse.url();
-		await loginResponse.dispose();
-
-		if ( loginUrl.includes( '/wp-login.php' ) ) {
-			throw new Error(
-				`Failed to authenticate collaborator user ${ user.username }.`
+		try {
+			// Authenticate through the context request API so browser cookies are
+			// ready before the editor page opens.
+			const loginPageResponse = await context.request.get(
+				'/wp-login.php',
+				{
+					failOnStatusCode: true,
+				}
 			);
+			await loginPageResponse.dispose();
+
+			const loginResponse = await context.request.post( '/wp-login.php', {
+				failOnStatusCode: true,
+				form: {
+					log: user.username,
+					pwd: user.password,
+					'wp-submit': 'Log In',
+					redirect_to: `${ BASE_URL }/wp-admin/`,
+					testcookie: '1',
+				},
+			} );
+			const loginUrl = loginResponse.url();
+			await loginResponse.dispose();
+
+			if ( loginUrl.includes( '/wp-login.php' ) ) {
+				throw new Error(
+					`Failed to authenticate collaborator user ${ user.username }.`
+				);
+			}
+		} catch {
+			newPage = await context.newPage();
+			await newPage.goto( '/wp-login.php' );
+			await newPage.locator( '#user_login' ).fill( user.username );
+			await newPage.locator( '#user_pass' ).fill( user.password );
+			await newPage.getByRole( 'button', { name: 'Log In' } ).click();
+			await newPage.waitForURL( '**/wp-admin/**' );
 		}
 
-		const newPage = await context.newPage();
+		newPage ??= await context.newPage();
 
 		// Navigate to the post editor.
 		await newPage.goto( `/wp-admin/post.php?post=${ postId }&action=edit` );
