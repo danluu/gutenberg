@@ -4010,15 +4010,12 @@ export function mergeCrdtBlocks(
 	);
 
 	// updates
-	let hasGuardedSkips = false;
-
 	for ( let i = 0; i < numOfUpdatesNeeded; i++, left++ ) {
 		const block = blocksToSync[ left ];
 		const yblock = yblocks.get( left );
 		const baseBlock = baseBlocksToSync?.[ left ];
 
 		if ( hasDifferentIdentifiedBlockName( yblock, baseBlock, block ) ) {
-			hasGuardedSkips = true;
 			continue;
 		}
 
@@ -5313,6 +5310,7 @@ let localDoc: Y.Doc;
  * @param blockYText      The Y.Text to update.
  * @param updatedValue    The updated value.
  * @param htmlCursorIndex The cursor index in the updated HTML string.
+ * @param baseValue       Optional pre-change text value used for rebasing.
  */
 export function mergeRichTextUpdate(
 	blockYText: Y.Text,

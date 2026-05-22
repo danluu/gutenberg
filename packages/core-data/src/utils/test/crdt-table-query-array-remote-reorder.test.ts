@@ -98,15 +98,11 @@ describe( 'table query-array remote reorder preservation', () => {
 		syncDocs( docA, docB );
 		mergeCrdtBlocks( yblocksB, [ tableBlock( remoteRows ) ], null );
 		syncDocs( docB, docA );
-		mergeCrdtBlocks(
-			yblocksA,
-			[ tableBlock( staleLocalRows ) ],
-			{
-				attributeKey: 'body.0.cells.0.content',
-				clientId: 'table-1',
-				offset: 'local-row-marker'.length,
-			}
-		);
+		mergeCrdtBlocks( yblocksA, [ tableBlock( staleLocalRows ) ], {
+			attributeKey: 'body.0.cells.0.content',
+			clientId: 'table-1',
+			offset: 'local-row-marker'.length,
+		} );
 
 		expect( bodyContents( yblocksA ) ).toEqual( [
 			[ 'remote-row-marker', 'b1' ],
@@ -136,15 +132,11 @@ describe( 'table query-array remote reorder preservation', () => {
 		syncDocs( docA, docB );
 		mergeCrdtBlocks( yblocksB, [ tableBlock( remoteRows ) ], null );
 		syncDocs( docB, docA );
-		mergeCrdtBlocks(
-			yblocksA,
-			[ tableBlock( staleLocalRows ) ],
-			{
-				attributeKey: 'body.0.cells.0.content',
-				clientId: 'table-1',
-				offset: 'local-cell-marker'.length,
-			}
-		);
+		mergeCrdtBlocks( yblocksA, [ tableBlock( staleLocalRows ) ], {
+			attributeKey: 'body.0.cells.0.content',
+			clientId: 'table-1',
+			offset: 'local-cell-marker'.length,
+		} );
 
 		expect( bodyContents( yblocksA ) ).toEqual( [
 			[ 'remote-cell-marker', 'local-cell-marker', 'a1' ],
@@ -172,15 +164,11 @@ describe( 'table query-array remote reorder preservation', () => {
 		syncDocs( docA, docB );
 		mergeCrdtBlocks( yblocksB, [ tableBlock( remoteRows ) ], null );
 		syncDocs( docB, docA );
-		mergeCrdtBlocks(
-			yblocksA,
-			[ tableBlock( staleLocalRows ) ],
-			{
-				attributeKey: 'body.0.cells.0.content',
-				clientId: 'table-1',
-				offset: 'local-cell-marker'.length,
-			}
-		);
+		mergeCrdtBlocks( yblocksA, [ tableBlock( staleLocalRows ) ], {
+			attributeKey: 'body.0.cells.0.content',
+			clientId: 'table-1',
+			offset: 'local-cell-marker'.length,
+		} );
 
 		const mergedCell = bodyContents( yblocksA )[ 0 ][ 0 ];
 		expect( mergedCell ).toContain( 'local-cell-marker' );
