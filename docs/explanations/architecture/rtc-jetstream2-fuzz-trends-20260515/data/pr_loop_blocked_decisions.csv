@@ -1,16 +1,16 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,no,rerun would be duplicate heavy browser work unless newer red owner evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"rerun would be duplicate heavy browser work unless newer red owner evidence
-appears"
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,no,duplicate heavy browser work unless newer red owner evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,duplicate heavy browser work unless newer red owner evidence appears
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale progress head is superseded by current green head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"stale progress head is superseded by current green head
 2f8247258316bde60869c06c383090904e9426bd"
-repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale repair rows are superseded by current-head owner evidence,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,stale repair rows are superseded by current-head owner evidence
-publish-ready,PR17/stale-crdt-cas-background-delivery@c49e8cd8d17682130736cd885565b900a8d954b2,P0,no,exact-stack evidence remains red; coverage-present or stale green evidence cannot clear publication,PR17/stale-crdt-cas-background-delivery@c49e8cd8d17682130736cd885565b900a8d954b2,"exact-stack evidence remains red; coverage-present or stale green evidence
-cannot clear publication"
-launch-branch-repair,rtc-table-query-array-crdt,P0,no,do not launch duplicate table repair while adopted repair branch exists,rtc-table-query-array-crdt,do not launch duplicate table repair while adopted repair branch exists
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,P0,no,missing exact-stack proof for title reload plus existing-post or persistence reload plus large HTTP lifecycle,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,"missing exact-stack proof for title reload plus existing-post or persistence
-reload plus large HTTP lifecycle"
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,reject duplicate heavy replay while single-flight/focused blocker work owns this path,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,"reject duplicate heavy replay while single-flight/focused blocker work owns this
-path"
+repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale repair request is superseded by current-head green owner evidence,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,stale repair request is superseded by current-head green owner evidence
+launch-branch-repair,PR17/stale-crdt-cas-background-delivery,P0,no,adopted bounded repair branch is already active,PR17/stale-crdt-cas-background-delivery,adopted bounded repair branch is already active
+publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,exact-stack benchmark evidence remains red; coverage_present cannot clear publication,PR17/stale-crdt-cas-background-delivery,"exact-stack benchmark evidence remains red; coverage_present cannot clear
+publication"
+launch-branch-repair,rtc-table-query-array-crdt,P0,no,adopted repair branch already exists; broad duplicate launch would burn lower-level capacity,rtc-table-query-array-crdt,"adopted repair branch already exists; broad duplicate launch would burn
+lower-level capacity"
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,P0,no,missing fresh exact-stack title-reload plus existing-post or persistence-reload plus large HTTP lifecycle proof,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,"missing fresh exact-stack title-reload plus existing-post or persistence-reload
+plus large HTTP lifecycle proof"
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,reject duplicate heavy replay while single-flight blocker owns this path,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,reject duplicate heavy replay while single-flight blocker owns this path
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2/product,medium,no,missing owner evidence or product first-loss evidence,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2/product,missing owner evidence or product first-loss evidence
 publish-ready,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335/product,medium,no,missing focused exact replay or owner evidence,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335/product,missing focused exact replay or owner evidence
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
