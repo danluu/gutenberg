@@ -1,27 +1,28 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-current,P0,yes,Discovery reserve is healthy now: 17 active sessions over min 3 and PR jobs 0/2.
-update-controller-rule,one-bounded-product-progress-slot,P0,yes,Allow one bounded product-progress job only; no heavy fan-out while preserving discovery reserve.
-update-controller-rule,productive-analysis-feed-dedupe-retarget,P0,yes,"Dedupe repeated feed rows, map unsupported action kinds, let freshest concrete evidence win, and retarget stale reload heads to b01a3a21e2c."
-repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,P0,yes,Adopt latest manifest as candidate evidence only and replace the generic reload hold with a head-specific blocker.
+reserve-discovery,discovery-reserve-current,P0,yes,"Reserve is healthy: 17 active discovery sessions exceed min 3 and memory headroom exists; keep coverage-guided, focused, strict, protocol, lower-level, and browser fuzzing alive."
+update-controller-rule,one-bounded-product-progress-slot,P0,yes,"Allow one bounded branch-changing product-progress job this cycle, with no broad fan-out."
+update-controller-rule,pr-progress-capacity-on-active-critical-jobs,P0,yes,"If critical continuations remain full, terminalize the duplicate seed reducer or wait for a free slot before launching reload exact-stack work."
+update-controller-rule,productive-analysis-feed-dedupe-retarget,P0,yes,"Dedupe repeated feed rows, map unsupported action kinds to valid controller actions, and let freshest concrete evidence win."
+repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,P0,yes,Latest manifest is product-shaped candidate evidence only; replace the generic deferred hold with a head-specific exact-stack blocker.
 launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,"Use the single product-progress slot for bounded all-merged title reload, existing-post or persistence reload, and large-http-lifecycle replay."
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,Publication lacks fresh green exact-stack browser evidence.
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,Stale head superseded by latest manifest head b01a3a21e2c.
-cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,"403 launches and current manifest hold; progress must be exact replay, owner evidence, green stack adoption, or downscope."
-repair-branch,benchmark-canary-fuzzer-gap/large-post-three-user-http,P0,yes,Retarget active repair to freshest 20260522T132420 promotion_blocked large HTTP exact-stack row.
-repair-branch,benchmark-canary-fuzzer-gap/active-ws-continuation,P0,yes,Continue or consume active WS exact-ref repair only; it must not clear the gate or displace the large-post blocker.
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,P0,no,Duplicate heavy rerun while active repair owns the current large-post HTTP blocker.
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,No fresh green exact-stack browser evidence exists yet.
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,Stale head is superseded by latest manifest head b01a3a21e2c.
+cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,"403 launches and an active manifest hold mean progress must be exact replay, owner evidence, green stack adoption, or explicit downscope."
+repair-branch,benchmark-canary-fuzzer-gap/large-post-three-user-http,P0,yes,Freshest feedback is promotion_blocked on large-post-three-user-http; active repair should own this exact-stack blocker.
+repair-branch,benchmark-canary-fuzzer-gap/active-ws-continuation,P0,yes,"Consume or supersede the active WS/code-editor watch-row repair, but do not let it clear the large-post HTTP gate by itself."
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,P0,no,Duplicate heavy rerun while active repair owns the current exact-stack blocker.
 update-controller-rule,benchmark-canary-fuzzer-gap/freshest-feedback-wins,P0,yes,Newer promotion_blocked feedback supersedes older exact_stack_green or local rerun green rows.
-update-controller-rule,large-http-lifecycle/exact-stack-promotion-blocking,P0,yes,"Keep lane P0, exact-stack, and promotion-blocking; feed awareness timeout and login socket-hangup signatures into coverage."
-repair-ready,PR07C/HOLD-07C+seed-5200005-reducer/stale-critical-blockers,P0,yes,Consume existing owner evidence and already_resolved_by_active_artifacts seed classification; terminalize stale blockers and suppress queued duplicates.
+update-controller-rule,large-http-lifecycle/exact-stack-promotion-blocking,P0,yes,Keep large-http-lifecycle P0 and promotion-blocking; feed awareness-timeout and socket-hangup signatures into coverage.
+repair-ready,PR07C/HOLD-07C+seed-5200005-reducer/stale-critical-blockers,P0,yes,Consume existing PR07C owner evidence and seed already_resolved_by_active_artifacts classification; terminalize stale blockers and suppress queued duplicates.
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner evidence is already runtime-held-consumed; relaunch only after newer owner evidence.
-repair-ready,PR07C/HOLD-07C/exact-stack-validation,P0,yes,Route remaining PR07C work to exact reload or persistence validation or newer product-owner evidence.
+repair-ready,PR07C/HOLD-07C/exact-stack-validation,P0,yes,"Route remaining PR07C work to exact reload or persistence validation, or to newer product-owner evidence."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Held until exact replay or newer owner evidence proves product ownership.
-cooldown-diagnostic,seed-5200005-reducer,P0,yes,Current classification says already_resolved_by_active_artifacts.
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,Relaunch duplicates terminal reducer evidence.
+cooldown-diagnostic,seed-5200005-reducer,P0,yes,"Current classification says already_resolved_by_active_artifacts, so duplicate reducer work should drain and terminalize."
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,Relaunch duplicates terminal reducer evidence without fresh product-owned input.
 cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"Keep diagnostic manifest families single-flight held pending focused replay, owner evidence, green adoption, or downscope."
-publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,Diagnostic branch lacks product-owner evidence.
-reserve-discovery,pre-save-search-live-collapse/focused-replay,P1,yes,Allow one bounded first-loss replay or owner-evidence pass while reserve remains healthy.
-reserve-discovery,rich-text-suffix-corruption/focused-replay,P1,yes,Allow one bounded suffix-divergence replay or owner-evidence pass while reserve remains healthy.
+publish-ready,pre-save-search-live-collapse@de2b5502da0,P0,no,Diagnostic branch lacks product-owner evidence and must not be treated as product progress.
+reserve-discovery,pre-save-search-live-collapse/focused-replay,P1,yes,Allow one bounded first-loss replay or owner-evidence pass while discovery reserve remains healthy.
+reserve-discovery,rich-text-suffix-corruption/focused-replay,P1,yes,Allow one bounded suffix-divergence replay or owner-evidence pass while discovery reserve remains healthy.
 cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,Downscoped because canonical PR06B minimal already covers product evidence.
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Superseded by already published PR06B minimal branch.
 cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,Downscoped because PR02A exists and no fresh healthy-user HTTP room-isolation evidence appears.
@@ -30,10 +31,10 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,Duplicate
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,Duplicates already published PR14B-based PR15C path.
 publish-ready,current-push-manifest,P1,no,Current controller push manifest is header-only and not a publication source.
 reserve-discovery,published-ready-product-prs/fuzz-validation,P1,yes,Continue fuzz validation for already published real-fix branches without duplicate publication.
-cooldown-diagnostic,rtc-http-polling-manager/generic-batches,P0,yes,"Generic batches show zero product yield; next lower-level work must be bounded materialization, canary seed, or new failure evidence."
+cooldown-diagnostic,rtc-http-polling-manager/generic-batches,P0,yes,"Generic batches show zero product yield; next lower-level work must be bounded materialization, canary seeds, or new failure evidence."
 reserve-discovery,rtc-http-polling-manager/materialization-or-canary-seeds,P1,yes,Bounded materialization or canary-diagnostic seeds are discovery work and do not consume the product-progress slot.
 cooldown-diagnostic,rtc-block-parser-serialization/broad-drift-admission,P0,yes,"Hold repeated ROUNDTRIP_DRIFT and SPEC_DIVERGENCE admission until classifier, oracle, canonical, or product-yield evidence changes."
 reserve-discovery,rtc-block-parser-serialization/bounded-classifier,P0,yes,Run one bounded classifier or reducer over representative parser drift artifacts.
 cooldown-diagnostic,rtc-rich-text-crdt-merge/continuous-green-batches,P1,yes,Cap all-green assertion batching; keep smoke or bounded semantic slices tied to failures or unmet coverage.
-reserve-discovery,unit-property-rich-text-crdt-merge-to-parser-window,P1,no,Broad replacement conflicts with parser oracle saturation; use bounded parser classifier plus table-query target instead.
+reserve-discovery,unit-property-rich-text-crdt-merge-to-parser-window,P1,no,Broad replacement conflicts with parser oracle saturation; use bounded parser classifier and table-query target instead.
 reserve-discovery,table-stale-snapshot/table-query-array-lower-level,P1,yes,Add bounded table-query-array lower-level target before another product-level table relaunch.
