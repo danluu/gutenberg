@@ -1,10 +1,10 @@
 action,target,priority,allowed,reason,target_label,reason_label
 launch-branch-repair,deferred/rtc-reload-hydration-20260521T223947Z/exact-stack,P0,no,new heavy exact-stack work waits behind the active benchmark repair and unprotected discovery reserve,deferred/rtc-reload-hydration-20260521T223947Z/exact-stack,"new heavy exact-stack work waits behind the active benchmark repair and
 unprotected discovery reserve"
-publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,manifest evidence is insufficient without fresh title-reload-http and existing-post-crdt-http exact-stack green with large HTTP retained,deferred/rtc-reload-hydration-20260521T223947Z,"manifest evidence is insufficient without fresh title-reload-http and
-existing-post-crdt-http exact-stack green with large HTTP retained"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,current owner evidence is already consumed and no newer evidence justifies a duplicate heavy browser matrix while discovery is unprotected,PR07C/HOLD-07C,"current owner evidence is already consumed and no newer evidence justifies a
-duplicate heavy browser matrix while discovery is unprotected"
+publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,manifest evidence is insufficient without fresh exact-stack title-reload-http and existing-post-crdt-http green with large HTTP retained,deferred/rtc-reload-hydration-20260521T223947Z,"manifest evidence is insufficient without fresh exact-stack title-reload-http
+and existing-post-crdt-http green with large HTTP retained"
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,readiness is resolved but current owner evidence is already consumed; duplicate heavy browser matrix waits for fresh evidence or protected discovery,PR07C/HOLD-07C,"readiness is resolved but current owner evidence is already consumed; duplicate
+heavy browser matrix waits for fresh evidence or protected discovery"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until newer owner evidence or exact product-failure replay proves product ownership,ready/rtc-pr07c-reload-record-snapshots,"hold until newer owner evidence or exact product-failure replay proves product
 ownership"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
