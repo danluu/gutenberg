@@ -477,12 +477,15 @@ The remote launchers are intentionally split by ownership:
     control-plane failures that ordinary process watchdogs miss: stale status
     with a live tmux session, recent reconcile/temp-file errors, prefix tmux
     session masking, repeated guard restarts, passive PR07C/runtime-readiness
-    classifications, coverage-guided novelty runs whose full-pass timestamp is
-    missing or stale, recent novelty-monitor heap-limit failures, and
-    current-run duplicate/noise dominance that is still visible in
-    `novelty-status.md`. It also snapshots runaway broad scan processes over
-    `/media/volume/danluu-fuzz-data` or the Codex state directory, terminates
-    stale read-only `rg`/`grep` scans by default, and records analysis-productivity
+    classifications, benchmark canary blockers that are modeled as coverage-only
+    or lack an active exact-stack repair/feedback-refresh job,
+    coverage-guided novelty runs whose full-pass timestamp is missing or stale,
+    recent novelty-monitor heap-limit failures, and current-run duplicate/noise
+    dominance that is still visible in `novelty-status.md`. It also snapshots
+    runaway broad scan processes over `/media/volume/danluu-fuzz-data` or the
+    Codex state directory, terminates stale read-only `rg`/`grep` scans by
+    default, verifies the deployed critical-path script copies still contain the
+    PR07C terminal and benchmark-refresh support paths, and records analysis-productivity
     signals such as high structural findings with no active repair worker or PR
     queues with low Codex fanout under low load. It writes
     `/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518/current-structural-watchdog-status.md`
@@ -599,17 +602,35 @@ them. The continuation output must include `exact-stack-status.tsv` and either
 `exact_stack_green`, `fix_branch_created`, `coverage_present_exact_stack_red`,
 or `exact_stack_blocked` in `classification.tsv`.
 
+The feedback TSV parser must locate the `status` column by header and also
+accept older files where status was in a fixed position. Benchmark feedback has
+grown extra fields over time, so fixed-column status parsing can silently turn
+`promotion_blocked` rows into coverage-only work. If a continuation writes a
+bounded `refresh-current-feedback-command.sh`, the executor owns running that
+handoff in a `rtc-benchmark-canary-feedback-refresh-*` tmux session and records
+`feedback-refresh` in `logs/launches.tsv`. A failed refresh remains an
+exact-stack blocker and should feed a new product-fix continuation; a successful
+refresh is the only path that updates `current-feedback.tsv` to green.
+
 The executor exists to turn blocker reports into continuation work and local-host
 handoff artifacts. It must not become another passive report loop:
 
 -   It adopts equivalent active jobs before launching anything.
 -   It dedupes by blocker/action/ref/SHA/input fingerprint.
+-   It serializes reconcile passes with a separate reconcile lock. Manual
+    `reconcile-once` runs must not race the live loop and double-launch the same
+    continuation.
 -   It keeps branch audit/export moving even while PR17/seed `1020002` blocks
     final-stack validation, final fuzzing, or filing.
 -   It runs each reconcile pass under a hard timeout, and the PR17 fresh
     evidence check uses a bounded scan over historical artifacts. A stale
     historical artifact walk must not prevent PR07C repair or branch validation
     scheduling.
+-   It discovers recent run artifacts from timestamped run directory names, not
+    mutable directory mtimes, and uses the artifact index to keep older terminal
+    classifications visible. Broad historical `find` over `cycles/` or `runs/`
+    is a structural bug because it can hold the controller lock and stop PR
+    progress.
 -   It gates browser/e2e work behind the resource autoscaler, but the PR07C
     browser lane is a repair lane, not a passive preflight. A
     `runtime-readiness-blocked` artifact, including `_wpCollaborationEnabled`

@@ -36,6 +36,7 @@ ACTIVE_SPLIT_FILE=$PR_SPLIT_BASE/current-pr-split.md
 LAUNCHES=$BASE/logs/launches.tsv
 LOG=$BASE/logs/critical-path-pr-executor.log
 LOCK_FILE=$BASE/critical-path-pr-executor.lock
+RECONCILE_LOCK_FILE=$BASE/critical-path-pr-executor-reconcile.lock
 PID_FILE=$BASE/critical-path-pr-executor.pid
 
 CYCLE_SLEEP_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_CYCLE_SLEEP_SECONDS:-60}
@@ -169,16 +170,25 @@ input_status() {
 
 latest_nonempty_file() {
 	local root=$1 pattern=$2
-	find "$root" -type f -name "$pattern" -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+	[ -d "$root" ] || return 0
+	find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%f\t%p\n' 2>/dev/null |
+		awk -F '\t' '$1 ~ /^[0-9]{8}T[0-9]{6}Z$/ { print }' |
+		sort |
+		tail -120 |
+		cut -f2- |
+		while IFS= read -r run_dir; do
+			find "$run_dir" -maxdepth 5 -type f -name "$pattern" -size +0c -printf '%T@\t%p\n' 2>/dev/null
+		done |
 		sort -n |
 		tail -1 |
 		cut -f2-
 }
 
 recent_executor_run_dirs() {
-	find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%T@\t%p\n' 2>/dev/null |
-		sort -n |
-		tail -120 |
+	find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\t%p\n' 2>/dev/null |
+		awk -F '\t' '$1 ~ /^[0-9]{8}T[0-9]{6}Z$/ { print }' |
+		sort |
+		tail -160 |
 		cut -f2-
 }
 
@@ -205,23 +215,24 @@ latest_progress_unblock_artifact() {
 
 latest_continuation_classification() {
 	local lane=$1 indexed
-	if artifact_index_fresh; then
+	{
 		indexed=$(latest_indexed_artifact classification "continuations/${lane}/classification[.]tsv$" || true)
-		if [ -n "$indexed" ]; then
-			printf '%s\n' "$indexed"
-			return 0
+		if [ -n "$indexed" ] && [ -s "$indexed" ]; then
+			printf '%s\t%s\n' "$(file_mtime "$indexed")" "$indexed"
 		fi
-	fi
-	find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%T@\t%p\n' 2>/dev/null |
-		sort -n |
-		tail -120 |
-		cut -f2- |
-		while IFS= read -r run_dir; do
-			find "$run_dir/continuations/$lane" -maxdepth 1 -type f -name 'classification.tsv' -size +0c -printf '%T@\t%p\n' 2>/dev/null
-		done |
+		find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\t%p\n' 2>/dev/null |
+			awk -F '\t' '$1 ~ /^[0-9]{8}T[0-9]{6}Z$/ { print }' |
+			sort |
+			tail -160 |
+			cut -f2- |
+			while IFS= read -r run_dir; do
+				find "$run_dir/continuations/$lane" -maxdepth 1 -type f -name 'classification.tsv' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+			done
+	} |
 		sort -n |
 		tail -1 |
-		cut -f2-
+		cut -f2- |
+		sed -n '1p'
 }
 
 latest_pr07c_owner_replay_ready_report() {
@@ -510,15 +521,40 @@ benchmark_feedback_present() {
 benchmark_promotion_blocked() {
 	[ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ] || return 1
 	awk -F '\t' '
-		NR > 1 && tolower($7) ~ /promotion_blocked|known_bad_canary/ {
-			found = 1
+		NR == 1 {
+			for (i = 1; i <= NF; i++) {
+				if (tolower($i) == "status") status_col = i
+			}
+			next
+		}
+		NR > 1 {
+			status = status_col ? tolower($status_col) : ""
+			line = tolower($0)
+			if (status ~ /promotion_blocked|known_bad_canary/ || line ~ /(^|\t)(promotion_blocked|known_bad_canary)(\t|$)/) {
+				found = 1
+			}
 		}
 		END { exit found ? 0 : 1 }
 	' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
 }
 
+benchmark_feedback_refresh_active() {
+	local hit
+	hit=$(active_session_matching '^rtc-benchmark-canary-feedback-refresh-' || true)
+	if [ -n "$hit" ]; then
+		printf '%s\n' "$hit"
+		return 0
+	fi
+	pgrep -af '[r]efresh-current-feedback-command[.]sh|rtc-benchmark-canary-feedback-20260520/cycles/refresh-' 2>/dev/null | sed -n '1p'
+}
+
 benchmark_exact_stack_active() {
 	local hit
+	hit=$(benchmark_feedback_refresh_active || true)
+	if [ -n "$hit" ]; then
+		printf '%s\n' "$hit"
+		return 0
+	fi
 	hit=$(active_session_matching '^rtc-critical-continuation-benchmark-canary-fuzzer-gap' || true)
 	if [ -n "$hit" ]; then
 		printf '%s\n' "$hit"
@@ -528,10 +564,76 @@ benchmark_exact_stack_active() {
 }
 
 latest_benchmark_classification() {
-	find "$BASE/runs" -path '*/continuations/benchmark-canary-fuzzer-gap/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+	recent_executor_run_dirs |
+		while IFS= read -r run_dir; do
+			find "$run_dir/continuations/benchmark-canary-fuzzer-gap" -maxdepth 1 -type f -name 'classification.tsv' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+		done |
 		sort -n |
 		tail -1 |
 		cut -f2-
+}
+
+latest_benchmark_refresh_command() {
+	recent_executor_run_dirs |
+		while IFS= read -r run_dir; do
+			find "$run_dir/continuations/benchmark-canary-fuzzer-gap" -maxdepth 1 -type f -name 'refresh-current-feedback-command.sh' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+		done |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+launch_benchmark_feedback_refresh() {
+	local command active dedupe session ts run_dir runner stdout stderr rc status_file
+	benchmark_promotion_blocked || return 1
+	command=$(latest_benchmark_refresh_command || true)
+	[ -n "$command" ] && [ -s "$command" ] || return 1
+	bash -n "$command" >/dev/null 2>&1 || {
+		log "benchmark feedback refresh command has syntax errors: $command"
+		return 1
+	}
+	active=$(benchmark_feedback_refresh_active || true)
+	[ -z "$active" ] || return 0
+	dedupe="benchmark-feedback-refresh-$(file_hash "$command" | cut -c1-12)-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" | cut -c1-12)"
+	if task_recently_launched "$dedupe" 3600; then
+		return 0
+	fi
+	allow_heavy_work || {
+		log "benchmark feedback refresh queued but global admission denied command=$command reason=$(resource_reason)"
+		return 0
+	}
+	ts=$(date -u +%Y%m%dT%H%M%SZ)
+	session="rtc-benchmark-canary-feedback-refresh-$ts"
+	run_dir="$BASE/runs/$ts/feedback-refresh/benchmark-canary-fuzzer-gap"
+	mkdir -p "$run_dir"
+	runner="$run_dir/run.sh"
+	stdout="$run_dir/stdout.log"
+	stderr="$run_dir/stderr.log"
+	rc="$run_dir/rc"
+	status_file="$run_dir/refresh-status.tsv"
+	cat > "$runner" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+command="$command"
+status_file="$status_file"
+stdout="$stdout"
+stderr="$stderr"
+rc_file="$rc"
+mkdir -p "\$(dirname "\$status_file")"
+printf 'started_at_utc\tcommand\tstatus\texit_code\tstdout\tstderr\n' > "\$status_file"
+started=\$(date -u +%Y-%m-%dT%H:%M:%SZ)
+set +e
+bash "\$command" > "\$stdout" 2> "\$stderr"
+code=\$?
+set -e
+printf '%s\n' "\$code" > "\$rc_file"
+printf '%s\t%s\t%s\t%s\t%s\t%s\n' "\$started" "\$command" "\$([ "\$code" -eq 0 ] && printf refreshed || printf failed)" "\$code" "\$stdout" "\$stderr" >> "\$status_file"
+exit 0
+EOF
+	chmod +x "$runner"
+	append_launch feedback-refresh "$session" "$dedupe" "$run_dir"
+	json_event launch "benchmark feedback refresh command=$command session=$session"
+	tmux new-session -d -s "$session" "bash '$runner'"
 }
 
 benchmark_classification_only_coverage_repaired() {
@@ -941,11 +1043,12 @@ write_active_jobs() {
 	{
 		printf 'session\tclass\tstarted_hint\n'
 		tmux_sessions |
-			rg '^(rtc-critical-|rtc-pr-finalize-job-|rtc-deferred-job-|rtc-cycle|rtc-analysis-live-|rtc-prsplit-progress-unblock|rtc-fuzz-level-mix|rtc-coverage-guidance)' |
+			rg '^(rtc-critical-|rtc-benchmark-canary-feedback-refresh-|rtc-pr-finalize-job-|rtc-deferred-job-|rtc-cycle|rtc-analysis-live-|rtc-prsplit-progress-unblock|rtc-fuzz-level-mix|rtc-coverage-guidance)' |
 			while IFS= read -r session; do
 				case "$session" in
 					rtc-critical-validate-*) printf '%s\tcritical-validation\t\n' "$session" ;;
 					rtc-critical-continuation-*) printf '%s\tcritical-continuation\t\n' "$session" ;;
+					rtc-benchmark-canary-feedback-refresh-*) printf '%s\tfeedback-refresh\t\n' "$session" ;;
 					rtc-pr-finalize-job-*) printf '%s\tfinalization\t\n' "$session" ;;
 					rtc-deferred-job-*) printf '%s\tdeferred\t\n' "$session" ;;
 					rtc-cycle*) printf '%s\tprogress-unblock\t\n' "$session" ;;
@@ -1270,6 +1373,7 @@ EOF
 
 launch_continuation_jobs() {
 	if benchmark_feedback_present && benchmark_promotion_blocked; then
+		launch_benchmark_feedback_refresh || true
 		launch_continuation_job \
 			"benchmark-canary-fuzzer-gap" \
 			"benchmark-canary-exact-stack-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" | cut -c1-12)" \
@@ -1355,7 +1459,7 @@ write_status() {
 		echo "- fresh evidence scan timeout seconds: $FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS"
 		echo
 		echo "## Active Critical Jobs"
-		tmux_sessions | rg '^rtc-critical-(validate|continuation)-' || true
+		tmux_sessions | rg '^rtc-critical-(validate|continuation)-|^rtc-benchmark-canary-feedback-refresh-' || true
 		echo
 		echo "## Current Blockers"
 		column -t -s $'\t' "$BLOCKERS" 2>/dev/null | sed -n '1,80p' || sed -n '1,80p' "$BLOCKERS" 2>/dev/null || true
@@ -1379,6 +1483,11 @@ write_status() {
 }
 
 reconcile_once() {
+	exec 8>"$RECONCILE_LOCK_FILE"
+	if ! flock -n 8; then
+		log "reconcile skipped because another reconcile pass is active"
+		return 0
+	fi
 	write_branch_export_headers
 	write_inputs
 	write_no_progress

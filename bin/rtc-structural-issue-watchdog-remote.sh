@@ -88,8 +88,18 @@ active_session_matching() {
 benchmark_promotion_blocked() {
 	[ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ] || return 1
 	awk -F '\t' '
-		NR > 1 && tolower($7) ~ /promotion_blocked|known_bad_canary/ {
-			found = 1
+		NR == 1 {
+			for (i = 1; i <= NF; i++) {
+				if (tolower($i) == "status") status_col = i
+			}
+			next
+		}
+		NR > 1 {
+			status = status_col ? tolower($status_col) : ""
+			line = tolower($0)
+			if (status ~ /promotion_blocked|known_bad_canary/ || line ~ /(^|\t)(promotion_blocked|known_bad_canary)(\t|$)/) {
+				found = 1
+			}
 		}
 		END { exit found ? 0 : 1 }
 	' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
@@ -97,16 +107,27 @@ benchmark_promotion_blocked() {
 
 benchmark_exact_stack_repair_active() {
 	local hit
-	hit=$(active_session_matching '^rtc-critical-continuation-benchmark-canary-fuzzer-gap|^rtc-structural-repair-benchmark-canary' || true)
+	hit=$(active_session_matching '^rtc-critical-continuation-benchmark-canary-fuzzer-gap|^rtc-benchmark-canary-feedback-refresh-|^rtc-structural-repair-benchmark-canary' || true)
 	if [ -n "$hit" ]; then
 		printf '%s\n' "$hit"
 		return 0
 	fi
-	pgrep -af '[e]xact-stack-worktrees.*(title-reload-http|existing-post-crdt|large-http)' 2>/dev/null | sed -n '1p'
+	pgrep -af '[e]xact-stack-worktrees.*(title-reload-http|existing-post-crdt|large-http)|[r]efresh-current-feedback-command[.]sh|rtc-benchmark-canary-feedback-20260520/cycles/refresh-' 2>/dev/null | sed -n '1p'
+}
+
+recent_critical_run_dirs() {
+	find "$CRITICAL_BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\t%p\n' 2>/dev/null |
+		awk -F '\t' '$1 ~ /^[0-9]{8}T[0-9]{6}Z$/ { print }' |
+		sort |
+		tail -160 |
+		cut -f2-
 }
 
 latest_benchmark_classification() {
-	find "$CRITICAL_BASE/runs" -path '*/continuations/benchmark-canary-fuzzer-gap/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+	recent_critical_run_dirs |
+		while IFS= read -r run_dir; do
+			find "$run_dir/continuations/benchmark-canary-fuzzer-gap" -maxdepth 1 -type f -name 'classification.tsv' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+		done |
 		sort -n |
 		tail -1 |
 		cut -f2-
@@ -370,7 +391,10 @@ check_exact_sessions() {
 }
 
 latest_pr07c_classification() {
-	find "$CRITICAL_BASE/runs" -path '*/continuations/pr07c-browser-env/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+	recent_critical_run_dirs |
+		while IFS= read -r run_dir; do
+			find "$run_dir/continuations/pr07c-browser-env" -maxdepth 1 -type f -name 'classification.tsv' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+		done |
 		sort -n |
 		tail -1 |
 		cut -f2-
@@ -391,6 +415,14 @@ critical_script_has_pr07c_terminal_support() {
 	rg -q 'direct_path=.*(pr07c-browser-env/classification[.]tsv|latest_continuation_classification pr07c-browser-env)' "$script" || return 1
 }
 
+critical_script_has_benchmark_refresh_support() {
+	local script=$1
+	[ -s "$script" ] || return 1
+	rg -q 'launch_benchmark_feedback_refresh' "$script" || return 1
+	rg -q 'latest_benchmark_refresh_command' "$script" || return 1
+	rg -q 'rtc-benchmark-canary-feedback-refresh-' "$script" || return 1
+}
+
 critical_script_sha() {
 	local script=$1
 	if [ -s "$script" ]; then
@@ -403,6 +435,7 @@ critical_script_sha() {
 sync_critical_executor_copies_if_safe() {
 	local changed=0 target
 	critical_script_has_pr07c_terminal_support "$CRITICAL_REPO_SCRIPT" || return 1
+	critical_script_has_benchmark_refresh_support "$CRITICAL_REPO_SCRIPT" || return 1
 	bash -n "$CRITICAL_REPO_SCRIPT" >/dev/null 2>&1 || return 1
 	for target in "$CRITICAL_DEPLOYED_SCRIPT" "$CRITICAL_TMP_SCRIPT"; do
 		if [ ! -s "$target" ] || ! cmp -s "$CRITICAL_REPO_SCRIPT" "$target"; then
@@ -428,10 +461,13 @@ check_critical_path_script_copies() {
 	critical_script_has_pr07c_terminal_support "$CRITICAL_REPO_SCRIPT" || missing_support=1
 	critical_script_has_pr07c_terminal_support "$CRITICAL_DEPLOYED_SCRIPT" || missing_support=1
 	critical_script_has_pr07c_terminal_support "$CRITICAL_TMP_SCRIPT" || missing_support=1
+	critical_script_has_benchmark_refresh_support "$CRITICAL_REPO_SCRIPT" || missing_support=1
+	critical_script_has_benchmark_refresh_support "$CRITICAL_DEPLOYED_SCRIPT" || missing_support=1
+	critical_script_has_benchmark_refresh_support "$CRITICAL_TMP_SCRIPT" || missing_support=1
 	if [ "$missing_support" = 1 ]; then
-		emit_finding "$out" high "critical-path" "critical-executor-pr07c-terminal-support-missing" \
+		emit_finding "$out" high "critical-path" "critical-executor-required-support-missing" \
 			"repo=$CRITICAL_REPO_SCRIPT sha=$repo_sha deployed=$CRITICAL_DEPLOYED_SCRIPT sha=$deployed_sha tmp=$CRITICAL_TMP_SCRIPT sha=$tmp_sha" \
-			"patch all critical-path executor copies so repaired_ready closes pr07c-browser-env, then restart rtc-critical-path-pr-executor-loop"
+			"patch all critical-path executor copies so repaired_ready closes pr07c-browser-env and benchmark refresh handoffs are launched, then restart rtc-critical-path-pr-executor-loop"
 	fi
 	if [ "$repo_sha" != "missing" ] && { [ "$repo_sha" != "$deployed_sha" ] || [ "$repo_sha" != "$tmp_sha" ]; }; then
 		emit_finding "$out" high "critical-path" "critical-executor-script-copy-drift" \
