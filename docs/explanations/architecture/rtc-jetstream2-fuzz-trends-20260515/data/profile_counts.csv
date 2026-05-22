@@ -6,7 +6,7 @@ full,207,16,0,0.07729468599033816,block-structure
 large-post-three-user-http-lifecycle,167,36,0,0.2155688622754491,lifecycle
 permissions-auth-locks,148,87,0,0.5878378378378378,auth/locks
 async-server-blocks,135,74,0,0.5481481481481482,async/media
-media-cross-entity,102,56,0,0.5490196078431373,async/media
+media-cross-entity,102,56,1,0.5490196078431373,async/media
 block-gauntlet,92,64,0,0.6956521739130435,block-structure
 long-session-large-doc,87,39,0,0.4482758620689655,lifecycle
 three-user-late-join,64,25,0,0.390625,lifecycle
