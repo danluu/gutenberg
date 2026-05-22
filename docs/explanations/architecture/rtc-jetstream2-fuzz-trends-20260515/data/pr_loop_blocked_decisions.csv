@@ -1,16 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,no fresh exact-stack green replay or explicit downscope evidence exists.,reload-hydration@b01a3a21e2c,no fresh exact-stack green replay or explicit downscope evidence exists.
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale reload-hydration head is superseded by b01a3a21e2c.,reload-hydration@fa801a6aa13/exact-stack,stale reload-hydration head is superseded by b01a3a21e2c.
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,P0,no,active benchmark work already owns the blocker and latest large-post feedback is green.,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,"active benchmark work already owns the blocker and latest large-post feedback is
-green."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,owner evidence is already consumed in the progress snapshot; relaunch only for evidence newer than Cycle380.,PR07C/HOLD-07C,"owner evidence is already consumed in the progress snapshot; relaunch only for
-evidence newer than Cycle380."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until exact replay or newer owner evidence proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,held until exact replay or newer owner evidence proves product ownership.
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned input justifies relaunch.,seed-5200005-reducer/relaunch,no fresh product-owned input justifies relaunch.
-publish-ready,pre-save-search-live-collapse@de2b5502da0,P0,no,diagnostic publication is not product progress and lacks product-owned first-loss evidence.,pre-save-search-live-collapse@de2b5502da0,"diagnostic publication is not product progress and lacks product-owned
-first-loss evidence."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by ready/rtc-pr06b-malformed-save-request-payload-minimal.,ready/rtc-pr06b-malformed-save-request-payload,superseded by ready/rtc-pr06b-malformed-save-request-payload-minimal.
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path.,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path.,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path.,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path.
-publish-ready,current-push-manifest,P1,no,controller push manifest is header-only.,current-push-manifest,controller push manifest is header-only.
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,No fresh exact-stack green replay or replay-backed downscope evidence exists.,reload-hydration@b01a3a21e2c,No fresh exact-stack green replay or replay-backed downscope evidence exists.
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,Stale reload-hydration head is superseded by b01a3a21e2c.,reload-hydration@fa801a6aa13/exact-stack,Stale reload-hydration head is superseded by b01a3a21e2c.
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner evidence is already consumed by Cycle380-era evidence; relaunch only for newer owner evidence.,PR07C/HOLD-07C,"Owner evidence is already consumed by Cycle380-era evidence; relaunch only for
+newer owner evidence."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Held until exact replay or newer owner evidence proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,Held until exact replay or newer owner evidence proves product ownership.
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,P0,no,Active exact-stack repair owns the blocker; duplicate heavy rerun is churn under severe pressure.,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,"Active exact-stack repair owns the blocker; duplicate heavy rerun is churn under
+severe pressure."
+publish-ready,rtc-pr-stack-20260522T130531Z,P0,no,Publication remains blocked until large-post-three-user-http is exact-stack green for the current or successor stack.,rtc-pr-stack-20260522T130531Z,"Publication remains blocked until large-post-three-user-http is exact-stack
+green for the current or successor stack."
+publish-ready,pre-save-search-live-collapse@de2b5502da0,P0,no,Diagnostic publication is not product progress and lacks owner or first-loss replay evidence.,pre-save-search-live-collapse@de2b5502da0,"Diagnostic publication is not product progress and lacks owner or first-loss
+replay evidence."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Superseded by ready/rtc-pr06b-malformed-save-request-payload-minimal.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by ready/rtc-pr06b-malformed-save-request-payload-minimal.
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,Duplicates already published PR14B-based PR15A path.,ready/rtc-pr15a-fallback-group-move-green,Duplicates already published PR14B-based PR15A path.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,Duplicates already published PR14B-based PR15B path.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Duplicates already published PR14B-based PR15B path.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,Duplicates already published PR14B-based PR15C path.,ready/rtc-pr15c-fallback-group-delete-green,Duplicates already published PR14B-based PR15C path.
+publish-ready,current-push-manifest,P1,no,Controller push manifest is header-only.,current-push-manifest,Controller push manifest is header-only.
