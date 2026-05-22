@@ -1714,3 +1714,11 @@ timestamp,message,event_type
 2026-05-22T21:58:11Z,launched controller action job for repair-branch PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z at 20260522T215811Z,other
 2026-05-22T21:58:11Z,not launching PR07C owner matrix: job already active,heavy PR job already active
 2026-05-22T21:58:11Z,controller action repair-branch PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z 20260522T215811Z,launch
+2026-05-22T22:00:14Z,launched controller action job for repair-ready reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca at 20260522T220014Z,other
+2026-05-22T22:00:14Z,controller action repair-ready reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca 20260522T220014Z,launch
+2026-05-22T22:00:15Z,launched PR07C owner matrix job 20260522T220015Z,PR07C owner job launched
+2026-05-22T22:00:15Z,pr07c owner matrix 20260522T220015Z,launch
+2026-05-22T22:02:19Z,launched persona controller round 20260522T220218Z,persona round launched
+2026-05-22T22:02:19Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-22T22:04:23Z,launched PR07C owner matrix job 20260522T220422Z,PR07C owner job launched
+2026-05-22T22:04:23Z,pr07c owner matrix 20260522T220422Z,launch
