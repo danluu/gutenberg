@@ -546,16 +546,16 @@ test.describe( 'Collaboration - Stress Test', () => {
 			),
 		] );
 
-		// All 3 users should see all 3 new paragraphs.
-		for ( const ed of collaborationUtils.allEditors ) {
-			await expect( async () => {
-				const blocks = await ed.getBlocks();
-				const allContent = JSON.stringify( blocks );
-				expect( allContent ).toContain( 'Final paragraph from Admin' );
-				expect( allContent ).toContain( 'Final paragraph from Editor' );
-				expect( allContent ).toContain( 'Final paragraph from Author' );
-			} ).toPass( { timeout: 10_000 } );
-		}
+		// The HTTP provider may need multiple sync polls to settle a large post
+		// after three concurrent block insertions. Wait for all editors to
+		// converge before asserting the final shared block tree.
+		const phaseSixState = await collaborationUtils.waitForConvergence( {
+			timeout: 30_000,
+		} );
+		const phaseSixContent = JSON.stringify( phaseSixState.blocks );
+		expect( phaseSixContent ).toContain( 'Final paragraph from Admin' );
+		expect( phaseSixContent ).toContain( 'Final paragraph from Editor' );
+		expect( phaseSixContent ).toContain( 'Final paragraph from Author' );
 
 		// ── Phase 7 — Final save and publish ────────────────────
 		await editor.saveDraft();
