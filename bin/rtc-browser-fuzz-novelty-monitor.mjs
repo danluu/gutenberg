@@ -710,6 +710,7 @@ const DEFAULT_REQUIRED_COVERAGE_BREADTH_GROUPS = [
 	'novelty-http-table-stale-snapshot',
 	'novelty-http-title-reload-convergence',
 	'novelty-http-existing-post-crdt-metadata',
+	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-thirty-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
@@ -8106,9 +8107,21 @@ function getManyUserSuccessDeficitUserCount( group ) {
 	return null;
 }
 
+function getManyUserSuccessDeficitTarget( group ) {
+	const userCount = getManyUserSuccessDeficitUserCount( group );
+	if ( userCount === 30 ) {
+		return 3;
+	}
+	if ( userCount === 12 ) {
+		return 10;
+	}
+	return null;
+}
+
 function hasManyUserSuccessDeficit( group ) {
 	const userCount = getManyUserSuccessDeficitUserCount( group );
-	if ( userCount === null ) {
+	const target = getManyUserSuccessDeficitTarget( group );
+	if ( userCount === null || target === null ) {
 		return false;
 	}
 
@@ -8116,22 +8129,37 @@ function hasManyUserSuccessDeficit( group ) {
 		getUserDocumentConcurrencyCount(
 			'successfulByUserCount',
 			userCount
-		) === 0 ||
+		) < target ||
 		getUserDocumentConcurrencyNestedCount(
 			'successfulByProfileUserCount',
 			'many-user-lifecycle',
 			userCount
-		) === 0 ||
+		) < target ||
 		getUserDocumentConcurrencyCount(
 			'successfulLifecycleByTypeUserCount',
 			`late-join:${ userCount }`
-		) === 0
+		) < target
 	);
 }
 
 function getManyUserSuccessDeficitReason( group ) {
 	const userCount = getManyUserSuccessDeficitUserCount( group );
-	return `successful ${ userCount }-user many-user lifecycle coverage is still zero; do not let unrelated duplicate/noise holds starve this success target`;
+	const target = getManyUserSuccessDeficitTarget( group );
+	const successfulByUserCount = getUserDocumentConcurrencyCount(
+		'successfulByUserCount',
+		userCount
+	);
+	const successfulByProfileUserCount =
+		getUserDocumentConcurrencyNestedCount(
+			'successfulByProfileUserCount',
+			'many-user-lifecycle',
+			userCount
+		);
+	const successfulLateJoinCount = getUserDocumentConcurrencyCount(
+		'successfulLifecycleByTypeUserCount',
+		`late-join:${ userCount }`
+	);
+	return `successful ${ userCount }-user many-user lifecycle coverage is below target: user=${ successfulByUserCount }/${ target }, profile=${ successfulByProfileUserCount }/${ target }, late-join=${ successfulLateJoinCount }/${ target }; do not let unrelated duplicate/noise holds or benchmark-canary rotation starve this success target`;
 }
 
 function shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
@@ -11318,6 +11346,7 @@ async function applyPolicy(
 				candidate === group ||
 				! enabled.has( candidate ) ||
 				isRequiredCoverageBreadthGroup( candidate ) ||
+				hasManyUserSuccessDeficit( candidate ) ||
 				recommendedGroupsForPass.has( candidate )
 			) {
 				continue;
@@ -12428,6 +12457,8 @@ async function applyPolicy(
 					enabled.has( candidate ) &&
 					candidate !== group &&
 					! isBenchmarkCanaryForcedGroup( candidate ) &&
+					! isRequiredCoverageBreadthGroup( candidate ) &&
+					! hasManyUserSuccessDeficit( candidate ) &&
 					!(
 						ZERO_COVERAGE_PRIORITY_GROUPS.includes(
 							candidate
@@ -12839,6 +12870,7 @@ async function applyPolicy(
 				enabled.size <= COVERAGE_QUALITY_MAX_ENABLED_GROUPS ||
 				! enabled.has( group ) ||
 				isRequiredCoverageBreadthGroup( group ) ||
+				hasManyUserSuccessDeficit( group ) ||
 				recommendedGroupsForPass.has( group )
 			) {
 				continue;
@@ -13919,8 +13951,11 @@ async function ensureBootstrapSupervisorGroups() {
 			} );
 		}
 	}
+	const hasOutstandingManyUserSuccessDeficit =
+		SUCCESS_DEFICIT_BOOTSTRAP_GROUPS.some( hasManyUserSuccessDeficit );
 	const benchmarkCanaryBootstrapReserve =
-		benchmarkCanaryForcedGroups.size > 0
+		benchmarkCanaryForcedGroups.size > 0 &&
+		! hasOutstandingManyUserSuccessDeficit
 			? Math.min(
 					benchmarkCanaryForcedGroups.size,
 					Math.max(
@@ -13959,7 +13994,9 @@ async function ensureBootstrapSupervisorGroups() {
 			action: 'bootstrap-success-deficit-supervisor-groups',
 			groups: successDeficitBootstrapGroups,
 			reservedBenchmarkCanarySlots: benchmarkCanaryBootstrapReserve,
-			reason: 'fresh coverage-guided supervisor reserved initial browser slots for groups that map to still-unmet successful-completion goals before generic breadth rotation could spend the full producer budget elsewhere',
+			reason: hasOutstandingManyUserSuccessDeficit
+				? 'fresh coverage-guided supervisor reserved initial browser slots for below-target many-user successful-completion goals before benchmark-canary or generic breadth rotation could spend the producer budget elsewhere'
+				: 'fresh coverage-guided supervisor reserved initial browser slots for groups that map to still-unmet successful-completion goals before generic breadth rotation could spend the full producer budget elsewhere',
 		} );
 	}
 	const zeroCoverageBootstrapStart = selected.length;
