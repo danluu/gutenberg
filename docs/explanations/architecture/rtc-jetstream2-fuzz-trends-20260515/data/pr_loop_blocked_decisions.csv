@@ -1,13 +1,12 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,P0,no,not publishable until exact feedback is green for title reload existing-post CRDT persistence and large three-user HTTP,rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,"not publishable until exact feedback is green for title reload existing-post
-CRDT persistence and large three-user HTTP"
-publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,P0,no,stale stack failed title reload and persistence reload and is superseded by the replacement path,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,"stale stack failed title reload and persistence reload and is superseded by the
-replacement path"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until the reconciled owner matrix proves product ownership or newer exact product-failure replay appears,ready/rtc-pr07c-reload-record-snapshots,"hold until the reconciled owner matrix proves product ownership or newer exact
+publish-ready,rtc-pr-stack-20260522T044520Z-all-merged-benchmark-canary-harness@c4028ca8,P0,no,exact candidate failed large-post-three-user-http 2/2 and persistence-reload-http 1/1,rtc-pr-stack-20260522T044520Z-all-merged-benchmark-canary-harness@c4028ca8,"exact candidate failed large-post-three-user-http 2/2 and
+persistence-reload-http 1/1"
+publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,P0,no,stale stack is superseded and still blocked by exact benchmark canary gates,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,stale stack is superseded and still blocked by exact benchmark canary gates
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until reconciled owner matrix proves product ownership or newer exact product-failure replay appears,ready/rtc-pr07c-reload-record-snapshots,"hold until reconciled owner matrix proves product ownership or newer exact
 product-failure replay appears"
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,promotion requires green exact-stack title-reload-http existing-post-crdt-http and large-http-lifecycle evidence,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires green exact-stack title-reload-http existing-post-crdt-http
-and large-http-lifecycle evidence"
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,zero-byte or stale reducer artifacts do not justify another launch without fresh product-owned evidence,seed-5200005-reducer/relaunch,"zero-byte or stale reducer artifacts do not justify another launch without fresh
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,promotion requires green exact title-reload-http existing-post-crdt-http persistence reload and large-http-lifecycle evidence,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires green exact title-reload-http existing-post-crdt-http
+persistence reload and large-http-lifecycle evidence"
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,stale or zero-byte reducer artifacts do not justify another launch without fresh product-owned evidence,seed-5200005-reducer/relaunch,"stale or zero-byte reducer artifacts do not justify another launch without fresh
 product-owned evidence"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published; broader branch needs fresh product
 advantage"
