@@ -1,8 +1,6 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until the PR07C owner matrix or exact product-failure replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until the PR07C owner matrix or exact product-failure replay
-proves product ownership."
-launch-branch-repair,deferred/rtc-reload-hydration-20260521T223947Z/exact-stack,P0,no,Do not launch a duplicate exact-stack job while PR07C and benchmark consume the bounded heavy slots or while an active reload job exists.,deferred/rtc-reload-hydration-20260521T223947Z/exact-stack,"Do not launch a duplicate exact-stack job while PR07C and benchmark consume the
-bounded heavy slots or while an active reload job exists."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until PR07C owner evidence or exact product-failure replay proves product ownership and promotion gates are green.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until PR07C owner evidence or exact product-failure replay
+proves product ownership and promotion gates are green."
 publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,Block publication until exact-stack title-reload-http and existing-post-crdt-http are green with large-http-lifecycle retained.,deferred/rtc-reload-hydration-20260521T223947Z,"Block publication until exact-stack title-reload-http and
 existing-post-crdt-http are green with large-http-lifecycle retained."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Canonical minimal PR06B is already published; the broader branch needs fresh product advantage.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical minimal PR06B is already published; the broader branch needs fresh
@@ -13,7 +11,7 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,The PR14B
 duplicate under current evidence."
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,The PR14B-based PR15C variant is already published; the original-base branch is duplicate under current evidence.,ready/rtc-pr15c-fallback-group-delete-green,"The PR14B-based PR15C variant is already published; the original-base branch is
 duplicate under current evidence."
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,Do not relaunch stale reducer work while the current artifact is zero-byte or already resolved.,seed-5200005-reducer/relaunch,"Do not relaunch stale reducer work while the current artifact is zero-byte or
-already resolved."
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,Do not relaunch stale reducer work while the current classification says already resolved by active artifacts.,seed-5200005-reducer/relaunch,"Do not relaunch stale reducer work while the current classification says already
+resolved by active artifacts."
 launch-branch-repair,broad-pr-analysis-fanout,P0,no,Reject broad heavy PR fanout; use bounded product slots plus cheap analysis or manifest work.,broad-pr-analysis-fanout,"Reject broad heavy PR fanout; use bounded product slots plus cheap analysis or
 manifest work."

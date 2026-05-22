@@ -7,9 +7,9 @@ PR progress items,diagnostic-ready,deferred-manifest,medium,2
 PR progress items,held-by-controller,ready-product-pr,high,5
 PR progress items,published,ready-product-pr,high,13
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
-controller decisions,allowed,control decision,P0,21
-controller decisions,blocked,control decision,P0,5
-controller decisions,allowed,control decision,P1,3
+controller decisions,allowed,control decision,P0,23
+controller decisions,blocked,control decision,P0,4
+controller decisions,allowed,control decision,P1,2
 controller decisions,blocked,control decision,P1,4
 controller decisions,allowed,control decision,high,4
 critical blockers,runnable,control-feedback,high,1
