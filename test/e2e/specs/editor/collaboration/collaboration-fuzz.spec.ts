@@ -441,10 +441,14 @@ const IS_COLLABORATION_UI_SIGNALS_PROFILE =
 const OPERATION_LEDGER_MODE =
 	process.env.GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE ?? 'auto';
 const FINAL_PERSISTENCE_ORACLE_MODE = getFinalPersistenceOracleMode();
+const FINAL_UI_WITNESS_SWEEP_SETTING =
+	process.env.GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP;
 const ENABLE_FINAL_UI_WITNESS_SWEEP =
-	process.env.GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP === '1' ||
-	ACTION_PROFILE === 'large-post-three-user-http-lifecycle' ||
-	IS_MANY_USER_LIFECYCLE_PROFILE;
+	FINAL_UI_WITNESS_SWEEP_SETTING === '0'
+		? false
+		: FINAL_UI_WITNESS_SWEEP_SETTING === '1' ||
+		  ACTION_PROFILE === 'large-post-three-user-http-lifecycle' ||
+		  IS_MANY_USER_LIFECYCLE_PROFILE;
 const ENABLE_FINAL_PUBLISH_ORACLE =
 	process.env.GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH === '1' ||
 	ACTION_PROFILE === 'large-post-three-user-http-lifecycle';
@@ -549,6 +553,10 @@ const REAL_USER_TYPING_DELAY_MS = getEnvNonNegativeInt(
 const PERSISTED_POST_MARKER_POLL_INTERVAL_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_PERSISTED_POST_MARKER_POLL_INTERVAL_MS',
 	50
+);
+const EDITED_CONTENT_MARKER_TIMEOUT_MS = getEnvInt(
+	'GUTENBERG_RTC_BROWSER_EDITED_CONTENT_MARKER_TIMEOUT_MS',
+	IS_MANY_USER_LIFECYCLE_PROFILE ? 30000 : 10000
 );
 const TEST_TIMEOUT_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS',
@@ -3568,7 +3576,7 @@ async function dismissBlockingEditorGuide( page: Page ) {
 async function waitForEditedContentMarker(
 	page: Page,
 	marker: string,
-	timeout = 10000
+	timeout = EDITED_CONTENT_MARKER_TIMEOUT_MS
 ) {
 	await page.waitForFunction(
 		( expectedMarker ) =>

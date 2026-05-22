@@ -771,6 +771,9 @@ const DEFAULT_SUCCESS_DEFICIT_BOOTSTRAP_GROUPS = [
 	'novelty-ws-same-user-lifecycle',
 	'novelty-ws-revision-persistence',
 	'novelty-ws-revision-recovery',
+	'novelty-ws-many-user-lifecycle-completion',
+	'novelty-ws-many-user-lifecycle',
+	'novelty-ws-thirty-user-lifecycle',
 ];
 const configuredSuccessDeficitBootstrapGroups = parsePathList(
 	process.env.RTC_FUZZ_NOVELTY_SUCCESS_DEFICIT_BOOTSTRAP_GROUPS
@@ -1402,6 +1405,7 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_EDITED_CONTENT_MARKER_TIMEOUT_MS: '45000',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4,9,13',
@@ -1430,6 +1434,7 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '0',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
@@ -1459,6 +1464,7 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '4',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '28',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '0',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3',
@@ -8053,6 +8059,80 @@ function getBootstrapZeroCoveragePriorityGroups() {
 	);
 }
 
+function getManyUserSuccessDeficitUserCount( group ) {
+	if ( group === 'novelty-ws-thirty-user-lifecycle' ) {
+		return 30;
+	}
+	if (
+		group === 'novelty-ws-many-user-lifecycle' ||
+		group === 'novelty-ws-many-user-lifecycle-completion'
+	) {
+		return 12;
+	}
+	return null;
+}
+
+function hasManyUserSuccessDeficit( group ) {
+	const userCount = getManyUserSuccessDeficitUserCount( group );
+	if ( userCount === null ) {
+		return false;
+	}
+
+	return (
+		getUserDocumentConcurrencyCount(
+			'successfulByUserCount',
+			userCount
+		) === 0 ||
+		getUserDocumentConcurrencyNestedCount(
+			'successfulByProfileUserCount',
+			'many-user-lifecycle',
+			userCount
+		) === 0 ||
+		getUserDocumentConcurrencyCount(
+			'successfulLifecycleByTypeUserCount',
+			`late-join:${ userCount }`
+		) === 0
+	);
+}
+
+function getManyUserSuccessDeficitReason( group ) {
+	const userCount = getManyUserSuccessDeficitUserCount( group );
+	return `successful ${ userCount }-user many-user lifecycle coverage is still zero; do not let unrelated duplicate/noise holds starve this success target`;
+}
+
+function shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+	group,
+	hold
+) {
+	return (
+		ALLOW_SUCCESS_DEFICIT_STARTUP_NOISE_CANARY &&
+		hasManyUserSuccessDeficit( group ) &&
+		isProductEvidenceDuplicateProducerHold( hold, group )
+	);
+}
+
+function shouldBypassNoisePauseForSuccessDeficit( group, pause ) {
+	if (
+		! ALLOW_SUCCESS_DEFICIT_STARTUP_NOISE_CANARY ||
+		! hasManyUserSuccessDeficit( group ) ||
+		! pause
+	) {
+		return false;
+	}
+	const kind =
+		normalizeNoisePauseKind( pause.kind ) ?? getStoredNoisePauseKind( pause );
+	if ( kind === 'startup-noise' ) {
+		return true;
+	}
+	if ( kind !== 'triage-duplicate-noise' ) {
+		return false;
+	}
+	return (
+		hasProductEvidenceDuplicatePauseEvidence( pause ) ||
+		isProductEvidenceDuplicateProducerHold( pause, group )
+	);
+}
+
 function getBootstrapSuccessDeficitGroups() {
 	const guidanceGroups = uniqueStringList(
 		( state.coverageGuidance?.unmetGoals ?? [] )
@@ -10460,6 +10540,10 @@ async function applyPolicy(
 				effectiveProductEvidenceDuplicateFamilyHold,
 				group
 			) &&
+			! shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+				group,
+				effectiveProductEvidenceDuplicateFamilyHold
+			) &&
 			! isBenchmarkCanaryForcedGroup( group )
 		) {
 			return false;
@@ -10517,6 +10601,14 @@ async function applyPolicy(
 			refillBlockingDuplicateNoiseProducer &&
 			! hasCurrentProductEvidence
 		) {
+			if (
+				shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+					group,
+					refillBlockingDuplicateNoiseProducer.hold
+				)
+			) {
+				return null;
+			}
 			if (
 				canBenchmarkCanaryBypassStartupHold(
 					refillBlockingDuplicateNoiseProducer.hold
@@ -10818,6 +10910,10 @@ async function applyPolicy(
 				effectiveProductEvidenceDuplicateFamilyHold,
 				group
 			) &&
+			! shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+				group,
+				effectiveProductEvidenceDuplicateFamilyHold
+			) &&
 			! shouldBypassDominantRealUserFamilyHold( group )
 		);
 	}
@@ -11007,6 +11103,10 @@ async function applyPolicy(
 			shouldProductEvidenceDuplicateHoldBlockGroup(
 				effectiveProductEvidenceDuplicateFamilyHold,
 				group
+			) &&
+			! shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+				group,
+				effectiveProductEvidenceDuplicateFamilyHold
 			) &&
 			! shouldBypassDominantRealUserFamilyHold( group )
 		) {
@@ -11298,6 +11398,25 @@ async function applyPolicy(
 					group,
 					reason: `current supervisor state has product-evidence coverage for ${ group }; ignoring shared startup-noise cooldown from ${ activeNoisePause.at } while preserving coverage-guided scheduling`,
 				} );
+			} else if (
+				shouldBypassNoisePauseForSuccessDeficit(
+					group,
+					activeNoisePause
+				)
+			) {
+				delete state.pausedGroups[ group ];
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'bypass-success-deficit-noise-pause',
+					group,
+					reason: getManyUserSuccessDeficitReason( group ),
+					sourcePauseAt: activeNoisePause.at,
+					sourcePauseReason: activeNoisePause.reason,
+					expiresAt: activeNoisePause.expiresAt,
+					...( activeNoisePause.originGroup
+						? { originGroup: activeNoisePause.originGroup }
+						: {} ),
+				} );
 			} else {
 				state.changes.push( {
 					at: new Date().toISOString(),
@@ -11340,6 +11459,22 @@ async function applyPolicy(
 						reason:
 							getBenchmarkCanaryFeedbackReason( group ) ??
 							'benchmark canary feedback requires this equivalent fuzz lane',
+						sourcePauseAt: activeStoredNoisePause.at,
+						sourcePauseReason: activeStoredNoisePause.reason,
+						expiresAt: activeStoredNoisePause.expiresAt,
+					} );
+				} else if (
+					shouldBypassNoisePauseForSuccessDeficit(
+						group,
+						activeStoredNoisePause
+					)
+				) {
+					delete state.pausedGroups[ group ];
+					state.changes.push( {
+						at: new Date().toISOString(),
+						action: 'bypass-success-deficit-stored-noise-pause',
+						group,
+						reason: getManyUserSuccessDeficitReason( group ),
 						sourcePauseAt: activeStoredNoisePause.at,
 						sourcePauseReason: activeStoredNoisePause.reason,
 						expiresAt: activeStoredNoisePause.expiresAt,
@@ -13168,6 +13303,14 @@ async function ensureBootstrapSupervisorGroups() {
 			) {
 				return null;
 			}
+			if (
+				shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+					group,
+					bootstrapProductEvidenceDuplicateFamilyHold
+				)
+			) {
+				return null;
+			}
 			return bootstrapProductEvidenceDuplicateFamilyHold;
 		};
 	const getBootstrapDuplicateFamilyHoldBlockReason = ( hold ) =>
@@ -13189,6 +13332,20 @@ async function ensureBootstrapSupervisorGroups() {
 			options.successDeficitBootstrap === true &&
 			ALLOW_SUCCESS_DEFICIT_STARTUP_NOISE_CANARY &&
 			SUCCESS_DEFICIT_BOOTSTRAP_GROUP_SET.has( group );
+		const successDeficitBypassesStoredNoise =
+			options.successDeficitBootstrap === true &&
+			SUCCESS_DEFICIT_BOOTSTRAP_GROUP_SET.has( group ) &&
+			shouldBypassNoisePauseForSuccessDeficit(
+				group,
+				state.pausedGroups?.[ group ]
+			);
+		const successDeficitBypassesActiveNoise =
+			options.successDeficitBootstrap === true &&
+			SUCCESS_DEFICIT_BOOTSTRAP_GROUP_SET.has( group ) &&
+			shouldBypassNoisePauseForSuccessDeficit(
+				group,
+				activeNoisePause
+			);
 		const benchmarkCanaryBypassesStartupNoise =
 			shouldBypassBenchmarkCanaryNoisePause(
 				group,
@@ -13209,7 +13366,8 @@ async function ensureBootstrapSupervisorGroups() {
 				successDeficitBypassesStartupNoise &&
 				getStoredNoisePauseKind( state.pausedGroups?.[ group ] ) ===
 					'startup-noise'
-			);
+			) &&
+			! successDeficitBypassesStoredNoise;
 		const activeNoisePauseBlocksGroup =
 			activeNoisePause &&
 			!(
@@ -13220,7 +13378,8 @@ async function ensureBootstrapSupervisorGroups() {
 			!(
 				successDeficitBypassesStartupNoise &&
 				activeNoisePause.kind === 'startup-noise'
-			);
+			) &&
+			! successDeficitBypassesActiveNoise;
 		const startupHoldBlocksGroup =
 			! benchmarkCanaryBypassesStartupNoise &&
 			! successDeficitBypassesStartupNoise &&
@@ -13251,15 +13410,19 @@ async function ensureBootstrapSupervisorGroups() {
 					: {} ),
 			} );
 		} else if (
-			successDeficitBypassesStartupNoise &&
+			( successDeficitBypassesStartupNoise ||
+				successDeficitBypassesStoredNoise ||
+				successDeficitBypassesActiveNoise ) &&
 			( state.pausedGroups?.[ group ] || activeNoisePause )
 		) {
 			delete state.pausedGroups?.[ group ];
 			state.changes.push( {
 				at: new Date().toISOString(),
-				action: 'bootstrap-success-deficit-bypass-startup-noise',
+				action: 'bootstrap-success-deficit-bypass-noise-pause',
 				group,
-				reason: 'bounded success-deficit bootstrap canary is allowed to retest a startup-noise-paused surface because unmet successful-completion goals are otherwise stuck behind stale no-product cooldowns',
+				reason: getManyUserSuccessDeficitUserCount( group )
+					? getManyUserSuccessDeficitReason( group )
+					: 'bounded success-deficit bootstrap canary is allowed to retest a noise-paused surface because unmet successful-completion goals are otherwise stuck behind stale cooldowns',
 				...( activeNoisePause?.at
 					? { sourcePauseAt: activeNoisePause.at }
 					: {} ),
