@@ -1934,6 +1934,87 @@ describe( 'saveEntityRecord', () => {
 		expect( result ).toBe( staleSaveResponse );
 	} );
 
+	it( 'drops a stale normal save response saved edit content after the live CRDT advances', async () => {
+		const persistedRecord = {
+			id: 10,
+			title: 'checkpoint title 8',
+			content: { raw: 'checkpoint content 8' },
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			title: 'checkpoint title 9',
+			content: 'checkpoint content 9',
+			meta: { _crdt_document: 'save-content-9-crdt-doc' },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 9',
+				rendered: 'checkpoint title 9',
+			},
+			content: {
+				raw: 'checkpoint content 9',
+				rendered: 'checkpoint content 9',
+			},
+			meta: { _crdt_document: 'save-content-9-crdt-doc' },
+		};
+		const guardedSaveResponse = {
+			id: 10,
+			title: {
+				raw: 'checkpoint title 9',
+				rendered: 'checkpoint title 9',
+			},
+			meta: { _crdt_document: 'save-content-9-crdt-doc' },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'checkpoint title 9',
+				content: 'checkpoint content 10',
+			} ) ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			guardedSaveResponse,
+			undefined,
+			true,
+			post
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			guardedSaveResponse,
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
 	it( 'does not rewrite a stale normal save response title without outgoing CRDT document evidence', async () => {
 		const persistedRecord = {
 			id: 10,

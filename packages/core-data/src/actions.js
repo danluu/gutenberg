@@ -300,8 +300,25 @@ function getGuardedSaveResponseRecords(
 			areRawAttributeValuesEqual( key, responseValue, baseValue ) &&
 			( ! hasSavedEdit ||
 				! areRawAttributeValuesEqual( key, editValue, baseValue ) );
+		const responseIsStaleSavedEditValue =
+			isPersistedCRDTDocumentSaveResponse &&
+			hasSavedEdit &&
+			areRawAttributeValuesEqual( key, responseValue, editValue ) &&
+			! areRawAttributeValuesEqual( key, crdtValue, responseValue );
 
-		if ( ! responseIsStaleBaseValue ) {
+		if ( ! responseIsStaleBaseValue && ! responseIsStaleSavedEditValue ) {
+			continue;
+		}
+
+		if ( responseIsStaleSavedEditValue ) {
+			receiveRecord =
+				receiveRecord === updatedRecord
+					? getRecordWithoutKey( updatedRecord, key )
+					: getRecordWithoutKey( receiveRecord, key );
+			syncRecord =
+				syncRecord === updatedRecord
+					? getRecordWithoutKey( updatedRecord, key )
+					: getRecordWithoutKey( syncRecord, key );
 			continue;
 		}
 
