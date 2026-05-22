@@ -1627,3 +1627,13 @@ timestamp,message,event_type
 2026-05-22T20:43:42Z,controller action repair-branch PR17/stale-crdt-cas-background-delivery@c49e8cd8d176 20260522T204342Z,launch
 2026-05-22T20:43:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-05-22T20:45:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:47:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:49:54Z,launched persona controller round 20260522T204954Z,persona round launched
+2026-05-22T20:49:55Z,launched controller action job for repair-ready seed-5200005-reducer at 20260522T204955Z,other
+2026-05-22T20:49:55Z,controller action repair-ready seed-5200005-reducer 20260522T204955Z,launch
+2026-05-22T20:49:56Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:51:59Z,launched controller action job for launch-branch-repair rtc-table-query-array-crdt at 20260522T205159Z,other
+2026-05-22T20:51:59Z,controller action launch-branch-repair rtc-table-query-array-crdt 20260522T205159Z,launch
+2026-05-22T20:52:00Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:54:03Z,not launching controller action for reload-hydration@b01a3a21e2c: active PR jobs 2 >= max 2,heavy PR job deferred: PR concurrency
+2026-05-22T20:54:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
