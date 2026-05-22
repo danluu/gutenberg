@@ -1646,3 +1646,9 @@ timestamp,group,group_family
 2026-05-22T04:01:18Z,novelty-http-existing-post-crdt-metadata,http
 2026-05-22T04:01:18Z,novelty-http-persistence-probe,persistence
 2026-05-22T04:01:18Z,novelty-http-large-post-lifecycle,lifecycle
+2026-05-22T04:24:08Z,novelty-ws-parser-transform,parser
+2026-05-22T04:24:17Z,novelty-http-title-reload-convergence,lifecycle
+2026-05-22T04:24:17Z,novelty-http-existing-post-crdt-metadata,http
+2026-05-22T04:24:17Z,novelty-http-persistence-probe,persistence
+2026-05-22T04:24:17Z,novelty-http-large-post-lifecycle,lifecycle
+2026-05-22T04:24:17Z,novelty-http-large-post-lifecycle-completion,lifecycle
