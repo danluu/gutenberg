@@ -1,5 +1,6 @@
 session,class,started_hint
-rtc-critical-continuation-seed-5200005-reducer-20260522T154957Z,critical-continuation,
+rtc-analysis-live-1facc3ff-http-large-lifecycle-gen-2-20260522T155646Z,analysis,
+rtc-coverage-guidance-codex-20260522T155606Z,analysis,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,

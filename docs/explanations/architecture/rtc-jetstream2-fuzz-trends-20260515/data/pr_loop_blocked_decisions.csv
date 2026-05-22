@@ -1,13 +1,13 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C/duplicate-relaunch,P0,no,Do not relaunch duplicate owner-matrix work after the current resolved-readiness pass is running or consumed.,PR07C/HOLD-07C/duplicate-relaunch,"Do not relaunch duplicate owner-matrix work after the current resolved-readiness
-pass is running or consumed."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until the owner matrix or exact PR07C replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until the owner matrix or exact PR07C replay proves product
-ownership."
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,No fresh exact-stack green replay or replay-backed downscope exists.,reload-hydration@b01a3a21e2c,No fresh exact-stack green replay or replay-backed downscope exists.
 publish-ready,rtc-pr-stack-current,P0,no,Publication remains blocked until live current-feedback records exact branch and commit large-post rows as green.,rtc-pr-stack-current,"Publication remains blocked until live current-feedback records exact branch and
 commit large-post rows as green."
-repair-branch,benchmark-canary-fuzzer-gap/duplicate-generic-rerun,P0,no,Fresh repair-green evidence should be adopted first; another generic rerun is churn.,benchmark-canary-fuzzer-gap/duplicate-generic-rerun,"Fresh repair-green evidence should be adopted first; another generic rerun is
-churn."
+repair-branch,benchmark-canary-fuzzer-gap/duplicate-generic-rerun,P0,no,Fresh repair-green successor evidence exists; another generic exact-stack rerun is churn.,benchmark-canary-fuzzer-gap/duplicate-generic-rerun,"Fresh repair-green successor evidence exists; another generic exact-stack rerun
+is churn."
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,No fresh exact-stack green replay or replay-backed downscope exists.,reload-hydration@b01a3a21e2c,No fresh exact-stack green replay or replay-backed downscope exists.
+launch-owner-matrix,PR07C/HOLD-07C/duplicate-relaunch,P0,no,Deny duplicate owner-matrix relaunch after the resolved-readiness pass is running or consumed; reopen only with newer owner evidence.,PR07C/HOLD-07C/duplicate-relaunch,"Deny duplicate owner-matrix relaunch after the resolved-readiness pass is
+running or consumed; reopen only with newer owner evidence."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Hold publication until the owner matrix or exact PR07C replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold publication until the owner matrix or exact PR07C replay proves product
+ownership."
 publish-ready,pre-save-search-live-collapse@de2b5502da0,P0,no,No owner evidence or product-owned first-loss replay exists.,pre-save-search-live-collapse@de2b5502da0,No owner evidence or product-owned first-loss replay exists.
 publish-ready,rich-text-suffix-corruption@a2d47a072e1,P0,no,No product-owned suffix-divergence or owner evidence exists.,rich-text-suffix-corruption@a2d47a072e1,No product-owned suffix-divergence or owner evidence exists.
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal.

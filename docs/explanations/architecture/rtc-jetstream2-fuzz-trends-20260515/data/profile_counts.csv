@@ -1,11 +1,11 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-persistence-no-title,1390,831,0,0.597841726618705,persistence
+persistence-no-title,1397,836,0,0.5984251968503937,persistence
 real-user-editing,1116,415,0,0.3718637992831541,real-user
-session-lifecycle,883,494,0,0.5594563986409966,lifecycle
-permissions-auth-locks,748,265,0,0.35427807486631013,auth/locks
-async-server-blocks,617,136,0,0.22042139384116693,async/media
-large-post-three-user-http-lifecycle,542,44,1,0.08118081180811808,lifecycle
-long-session-large-doc,491,39,0,0.07942973523421588,lifecycle
+session-lifecycle,885,494,0,0.5581920903954802,lifecycle
+permissions-auth-locks,751,265,0,0.35286284953395475,auth/locks
+async-server-blocks,621,136,0,0.21900161030595813,async/media
+large-post-three-user-http-lifecycle,545,44,1,0.08073394495412844,lifecycle
+long-session-large-doc,494,39,0,0.07894736842105263,lifecycle
 media-cross-entity,225,111,0,0.49333333333333335,async/media
 full,207,16,0,0.07729468599033816,block-structure
 three-user-late-join,195,96,0,0.49230769230769234,lifecycle
