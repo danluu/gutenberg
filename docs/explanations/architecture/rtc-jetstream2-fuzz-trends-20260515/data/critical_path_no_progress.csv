@@ -1,4 +1,5 @@
 artifact_path,reason,size,mtime,associated_job,rejected_at,item_id
-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260521T161516Z/continuations/benchmark-canary-fuzzer-gap/report.md,zero_executor_artifact,0,1779380118,unknown,2026-05-22T04:51:04Z,benchmark-canary-fuzzer-gap
-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T044520Z/continuations/benchmark-canary-fuzzer-gap/report.md,zero_executor_artifact,0,1779425122,unknown,2026-05-22T04:51:04Z,benchmark-canary-fuzzer-gap
-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T045016Z/continuations/benchmark-canary-fuzzer-gap/report.md,zero_executor_artifact,0,1779425418,unknown,2026-05-22T04:51:04Z,benchmark-canary-fuzzer-gap
+/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260521T161516Z/continuations/benchmark-canary-fuzzer-gap/report.md,zero_executor_artifact,0,1779380118,unknown,2026-05-22T04:59:40Z,benchmark-canary-fuzzer-gap
+/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T044520Z/continuations/benchmark-canary-fuzzer-gap/report.md,zero_executor_artifact,0,1779425122,unknown,2026-05-22T04:59:40Z,benchmark-canary-fuzzer-gap
+/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T045016Z/continuations/benchmark-canary-fuzzer-gap/report.md,zero_executor_artifact,0,1779425418,unknown,2026-05-22T04:59:40Z,benchmark-canary-fuzzer-gap
+/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T045702Z/continuations/seed-5200005-reducer/report.md,zero_executor_artifact,0,1779425824,unknown,2026-05-22T04:59:40Z,seed-5200005-reducer
