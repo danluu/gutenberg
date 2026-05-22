@@ -3,7 +3,7 @@ cross-product:large-post-three-user-http-lifecycle,"strict combined HTTP large-p
 lifecycle records",0,25,FALSE,0,cross-product,25,0,0 / 25
 success-user-blocks:3:50,successful three-user large documents,0,5,FALSE,0,other,5,0,0 / 5
 success-profile-users:large-post-three-user-http-lifecycle:3,"successful large-post HTTP records with
-three users",1,10,FALSE,0.1,lifecycle/scale,9,0.1,1 / 10
-transport-profile:http:large-post-three-user-http-lifecycle,large post three-user HTTP lifecycle,491,10,TRUE,49.1,lifecycle/scale,0,1,491 / 10
+three users",2,10,FALSE,0.2,lifecycle/scale,8,0.2,2 / 10
+transport-profile:http:large-post-three-user-http-lifecycle,large post three-user HTTP lifecycle,497,10,TRUE,49.7,lifecycle/scale,0,1,497 / 10
 success-profile:large-post-three-user-http-lifecycle,"successful
-large-post-three-user-http-lifecycle records",42,10,TRUE,4.2,successful profiles,0,1,42 / 10
+large-post-three-user-http-lifecycle records",43,10,TRUE,4.3,successful profiles,0,1,43 / 10

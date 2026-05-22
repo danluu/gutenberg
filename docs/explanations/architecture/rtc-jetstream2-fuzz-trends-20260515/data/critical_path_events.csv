@@ -1106,3 +1106,4 @@ timestamp,event_type,message,target,blocker_class
 2026-05-22T13:50:48Z,launch,benchmark feedback refresh command=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T132430Z/continuations/benchmark-canary-fuzzer-gap/run-exact-refresh-ws-code-editor-workspace-deps.sh session=rtc-benchmark-canary-feedback-refresh-20260522T135048Z,unknown,critical-path launch
 2026-05-22T13:56:19Z,launch,continuation benchmark-canary-fuzzer-gap session=rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T135617Z,benchmark-canary-fuzzer-gap,benchmark canary/exact-stack
 2026-05-22T13:56:24Z,launch,continuation seed-5200005-reducer session=rtc-critical-continuation-seed-5200005-reducer-20260522T135622Z,seed-5200005-reducer,seed reducer/final-stack
+2026-05-22T14:13:00Z,launch,continuation seed-5200005-reducer session=rtc-critical-continuation-seed-5200005-reducer-20260522T141258Z,seed-5200005-reducer,seed reducer/final-stack
