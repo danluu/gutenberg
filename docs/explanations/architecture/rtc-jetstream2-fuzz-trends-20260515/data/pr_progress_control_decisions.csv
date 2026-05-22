@@ -1,24 +1,24 @@
 action,target,priority,allowed,reason
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Next product-progress slot; current-head owner replay is green and publication needs a non-header manifest.
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Run or consume the current adopted owner matrix now that readiness is resolved; suppress duplicate reruns after green evidence.
-repair-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Terminalize stale owner blocker and hand the current green head to local publication.
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Run or consume the current owner matrix once to terminalize readiness; suppress duplicate stale-head reruns.
+repair-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Terminalize the stale owner blocker and hand the current green head to local publication.
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale progress head is superseded by current branch head 2f8247258316bde60869c06c383090904e9426bd.
 repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Old repair rows are superseded by current-head green owner replay.
 repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,yes,Continue the existing bounded repair for remaining exact red large-post and revision-table rows.
 publish-ready,PR17/stale-crdt-cas-background-delivery@c49e8cd8d17682130736cd885565b900a8d954b2,P0,no,Latest exact-stack evidence is red; coverage-present and stale green rows do not clear publication.
-repair-ready,PR17/table-stale-snapshot/query-array,P0,yes,Attach lower-level query-array reproducer as required repair evidence for the revision-table/table-stale blocker.
-reserve-discovery,benchmark-canary-fuzzer-gap/http-equivalent-exact-stack,P0,yes,"Keep benchmark-equivalent HTTP, parser, list-refresh, same-user stale, and table coverage scheduled while PR17 exact-stack remains red."
+repair-ready,PR17/table-stale-snapshot/query-array,P0,yes,Attach the lower-level query-array reproducer as repair evidence for the revision-table/table-stale blocker.
+reserve-discovery,benchmark-canary-fuzzer-gap/http-equivalent-exact-stack,P0,yes,"Discovery is healthy; keep benchmark-equivalent HTTP, parser, list-refresh, same-user stale, and table coverage scheduled while PR17 remains red."
 reserve-discovery,benchmark-canary-fuzzer-gap/revision-table-body-http,P0,yes,Unpause or materialize revision-table/table-stale coverage until fresh behavior or reduced product failure exists.
 update-controller-rule,benchmark-canary-exact-stack-gate,P0,yes,Block PR17 publication until latest exact-stack rows are green or replaced by narrower replay-backed evidence.
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,Convert generic deferred hold to a head-specific exact-stack blocker and adopt manifest evidence only as candidate evidence.
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,Convert the generic deferred hold to a head-specific exact-stack blocker and adopt manifest evidence only as candidate evidence.
 adopt-candidate-manifest,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,Cheap manifest adoption is allowed as candidate evidence; it must not mark the branch product-ready.
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,P0,no,Needs fresh title reload plus existing-post or persistence reload plus large HTTP lifecycle green evidence or replay-backed downscope.
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,Do not launch duplicate heavy replay while single-flight hold and active blocker work own the path.
 cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,high,yes,403 launches plus a concrete candidate head make generic relaunch churn.
-cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da0+rich-text-suffix-corruption@a2d47a072e1,high,yes,Diagnostic-only heads lack owner or product first-loss evidence; suppress generic relaunch and product publication.
-publish-ready,pre-save-search-live-collapse@de2b5502da0/product,medium,no,Missing owner or product first-loss evidence.
-publish-ready,rich-text-suffix-corruption@a2d47a072e1/product,medium,no,Missing focused exact replay or owner evidence.
-repair-ready,seed-5200005-reducer,P0,yes,Terminalize resolved reducer blocker; reopen only with newer product-owned seed evidence.
+cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2+rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335,high,yes,Diagnostic-only heads lack owner or product first-loss evidence; suppress generic relaunch and product publication.
+publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2/product,medium,no,Missing owner or product first-loss evidence.
+publish-ready,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335/product,medium,no,Missing focused exact replay or owner evidence.
+repair-ready,seed-5200005-reducer,P0,yes,Terminalize the resolved reducer blocker; reopen only with newer product-owned seed evidence.
 repair-branch,rtc-table-query-array-crdt@unblock/table-query-array-crdt-20260522T200809Z,P0,yes,Continue the adopted bounded repair branch for canonical table query-array CRDT divergence.
 launch-branch-repair,rtc-table-query-array-crdt,P0,no,Do not launch duplicate table repair while the adopted repair branch exists.
 cooldown-diagnostic,table-stale-snapshot/broad-relaunch,high,yes,"Suppress broad relaunch until table query-array repair is promoted, rejected, or downscoped."

@@ -1743,3 +1743,12 @@ timestamp,message,event_type
 2026-05-22T22:18:49Z,pr07c owner matrix 20260522T221848Z,launch
 2026-05-22T22:20:52Z,not launching PR07C owner matrix: job already active,heavy PR job already active
 2026-05-22T22:22:56Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-22T22:24:58Z,launched controller action job for repair-ready PR17/table-stale-snapshot/query-array at 20260522T222458Z,other
+2026-05-22T22:24:58Z,controller action repair-ready PR17/table-stale-snapshot/query-array 20260522T222458Z,launch
+2026-05-22T22:24:59Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-22T22:27:02Z,launched persona controller round 20260522T222701Z,persona round launched
+2026-05-22T22:27:02Z,launched controller action job for repair-branch rtc-table-query-array-crdt@unblock/table-query-array-crdt-20260522T200809Z at 20260522T222702Z,other
+2026-05-22T22:27:02Z,controller action repair-branch rtc-table-query-array-crdt@unblock/table-query-array-crdt-20260522T200809Z 20260522T222702Z,launch
+2026-05-22T22:27:03Z,launched PR07C owner matrix job 20260522T222703Z,PR07C owner job launched
+2026-05-22T22:27:03Z,pr07c owner matrix 20260522T222703Z,launch
+2026-05-22T22:29:07Z,not launching PR07C owner matrix: job already active,heavy PR job already active

@@ -8,8 +8,8 @@ publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,
 HTTP lifecycle green evidence or replay-backed downscope."
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,Do not launch duplicate heavy replay while single-flight hold and active blocker work own the path.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,"Do not launch duplicate heavy replay while single-flight hold and active blocker
 work own the path."
-publish-ready,pre-save-search-live-collapse@de2b5502da0/product,medium,no,Missing owner or product first-loss evidence.,pre-save-search-live-collapse@de2b5502da0/product,Missing owner or product first-loss evidence.
-publish-ready,rich-text-suffix-corruption@a2d47a072e1/product,medium,no,Missing focused exact replay or owner evidence.,rich-text-suffix-corruption@a2d47a072e1/product,Missing focused exact replay or owner evidence.
+publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2/product,medium,no,Missing owner or product first-loss evidence.,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2/product,Missing owner or product first-loss evidence.
+publish-ready,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335/product,medium,no,Missing focused exact replay or owner evidence.,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335/product,Missing focused exact replay or owner evidence.
 launch-branch-repair,rtc-table-query-array-crdt,P0,no,Do not launch duplicate table repair while the adopted repair branch exists.,rtc-table-query-array-crdt,Do not launch duplicate table repair while the adopted repair branch exists.
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by already published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by already published PR15A-on-PR14B branch.
