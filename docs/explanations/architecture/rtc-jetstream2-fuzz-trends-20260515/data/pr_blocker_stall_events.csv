@@ -386,5 +386,6 @@ bucket,source,blocker_class,events,targets
 2026-05-22T15:00:00Z,PR controller,consumed owner evidence,14,PR07C/HOLD-07C
 2026-05-22T15:00:00Z,critical-path launches,benchmark canary/exact-stack,2,benchmark-canary-fuzzer-gap
 2026-05-22T15:00:00Z,critical-path launches,seed reducer/final-stack,2,seed-5200005-reducer
-2026-05-22T15:30:00Z,PR controller,consumed owner evidence,3,PR07C/HOLD-07C
+2026-05-22T15:30:00Z,PR controller,consumed owner evidence,7,PR07C/HOLD-07C
+2026-05-22T15:30:00Z,critical-path launches,benchmark canary/exact-stack,1,benchmark-canary-fuzzer-gap
 2026-05-22T15:30:00Z,critical-path launches,seed reducer/final-stack,1,seed-5200005-reducer
