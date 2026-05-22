@@ -1,5 +1,5 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery 13 exceeds min 3 with large headroom and PR jobs 0/2; allow one bounded heavy product-progress job while preserving discovery lanes
+reserve-discovery,discovery-reserve,P0,yes,active discovery 13 exceeds min 3 with modest headroom and PR jobs 0/2; allow one bounded heavy product-progress job while preserving discovery lanes
 update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,make discovery health a hard gate; deny heavy PR jobs when discovery is unhealthy except cheap publication manifest generation or analysis-only work
 launch-heavy-pr,discovery-unhealthy-heavy-pr,P0,no,preserve discovery reserve; heavy PR jobs are not allowed when discovery sessions are unhealthy unless the work is cheap manifest generation or analysis-only
 update-controller-rule,pr-progress-concurrency,P0,yes,run at most one additional heavy product-progress job while benchmark-canary ws8 repair is active
@@ -22,7 +22,7 @@ launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates ter
 cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic manifests are single-flight held; no generic relaunch without focused replay, owner evidence, green stack, or downscope"
 publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress and lacks owner evidence
 reserve-discovery,pre-save-search-live-collapse@de2b5502da0/focused-replay,P1,yes,allow one bounded focused replay only while discovery reserve remains healthy
-reserve-discovery,rich-text-suffix-corruption/focused-replay,P1,yes,allow bounded replay or owner-evidence work only from discovery reserve
+reserve-discovery,rich-text-suffix-corruption/focused-replay,P1,yes,allow bounded replay or owner-evidence work only while discovery reserve remains healthy
 cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscope because canonical PR06B minimal already covers product evidence
 cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscope because PR02A exists and no fresh healthy-user HTTP room-isolation evidence appears
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch

@@ -83,6 +83,7 @@ insert-common-block,75,block-gauntlet
 move-block-into-group,73,block-gauntlet
 edit-common-block-attributes,73,block-gauntlet
 edit-nested-paragraph,69,block-gauntlet
+replace-code-editor-content,68,code-editor-smoke
 edit-paragraph,65,parser-transform
 edit-nested-paragraph,63,multi-reload-lifecycle
 move-block,57,block-gauntlet
@@ -104,9 +105,10 @@ delete-block,38,multi-reload-lifecycle
 edit-block-gauntlet-attributes,38,common-blocks
 insert-heading,34,multi-reload-lifecycle
 move-block,34,parser-transform
+ui-type-title,34,code-editor-smoke
+ui-type-paragraph,34,code-editor-smoke
 edit-table-array-attributes,33,multi-reload-lifecycle
 append-paragraph,32,multi-reload-lifecycle
-replace-code-editor-content,32,code-editor-smoke
 append-paragraph,31,many-user-lifecycle
 insert-nested-group,28,multi-reload-lifecycle
 move-block-into-group,28,multi-reload-lifecycle
@@ -127,8 +129,6 @@ insert-heading,17,many-user-lifecycle
 move-block,17,many-user-lifecycle
 edit-table-array-attributes,17,many-user-lifecycle
 ui-type-paragraph,17,many-user-lifecycle
-ui-type-title,16,code-editor-smoke
-ui-type-paragraph,16,code-editor-smoke
 insert-async-server-block,14,multi-reload-lifecycle
 ui-type-title,14,many-user-lifecycle
 edit-rich-text-pair-block,13,full
