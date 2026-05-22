@@ -1,10 +1,10 @@
 action,target,priority,allowed,reason
 reserve-discovery,discovery-reserve,P0,yes,active discovery 15 exceeds min 3 and PR jobs are 0 of 2; allow one bounded product slot while preserving fuzzing lanes
-update-controller-rule,heavy-pr-discovery-reserve,P0,yes,"make discovery reserve binding; block heavy PR jobs when discovery is unhealthy, except cheap publication manifest generation or analysis-only reconciliation"
+update-controller-rule,heavy-pr-discovery-reserve,P0,yes,make discovery reserve binding; block heavy PR jobs when discovery is unhealthy except cheap publication manifest generation or analysis-only reconciliation
 update-controller-rule,productive-analysis-authoritative,P0,yes,consume Productive Analysis rows as controller input and explicitly accept or reject stale contradictions
 publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,adopt deferred manifest head only as candidate evidence; unit and lint evidence do not clear promotion
 repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,yes,replace generic deferred-family hold with head-specific blocker requiring fresh exact-stack evidence
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,next product-progress slot; run bounded title-reload plus existing-post or persistence reload plus large-http-lifecycle exact stack
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,next product-progress slot while reserve is healthy; run bounded title reload plus existing-post or persistence reload plus large HTTP lifecycle exact stack
 publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"no fresh all-green exact stack exists for title reload, reload persistence or existing-post CRDT, and large HTTP lifecycle"
 cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"concrete manifest exists; progress must be candidate adoption, exact replay, owner evidence, green-stack adoption, or downscope"
 update-controller-rule,deferred-family-single-flight,P0,yes,"manifest-held families progress only by adoption, focused replay, owner evidence, green-stack adoption, or explicit downscope"
@@ -24,8 +24,8 @@ publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path
-cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscope raw family because canonical PR06B minimal covers product evidence
-cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscope raw family because PR02A exists and no fresh healthy-user HTTP evidence appears
+downscope-family,malformed-save-payload/raw-deferred,P1,yes,downscope raw family because canonical PR06B minimal covers product evidence
+downscope-family,http-room-isolation/raw-deferred,P1,yes,downscope raw family because PR02A exists and no fresh healthy-user HTTP evidence appears
 publish-ready,current-push-manifest,P1,no,controller push manifest is header-only and is not a publication source
 update-controller-rule,rtc-http-polling-manager/reload-materialization-retarget,P0,yes,"credit lower-level HTTP work only for product yield, new coverage, oracle failure, title reload, or existing-post materialization"
 cooldown-diagnostic,rtc-http-polling-manager/saturated-generic-corpus,high,yes,cool saturated generic polling churn; continue only bounded canary or materialization diagnostics with yield gates
