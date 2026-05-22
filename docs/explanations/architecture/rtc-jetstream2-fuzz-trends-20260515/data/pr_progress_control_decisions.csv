@@ -1,26 +1,26 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery 11 exceeds min 3 and PR jobs are 0/2; allow one bounded heavy product-progress job while preserving discovery reserve
-update-controller-rule,pr-progress-concurrency,P0,yes,"use one heavy PR-progress slot now and keep the remaining capacity for reserve, cheap cleanup, or analysis-only work"
+reserve-discovery,discovery-reserve,P0,yes,active discovery 11 exceeds min 3 and PR jobs are 0/2; allow one bounded heavy PR-progress job while preserving reserve
+update-controller-rule,pr-progress-concurrency,P0,yes,"run at most one heavy PR-progress job at a time; keep remaining capacity for discovery reserve, cheap cleanup, or analysis-only work"
 update-controller-rule,productive-analysis-feed-dedupe-retarget,P0,yes,dedupe repeated Productive Analysis rows and retarget stale reload-hydration fa801a6aa13 actions to latest head b01a3a21e2c
 update-controller-rule,deferred-family-single-flight,P0,yes,"manifest-backed deferred families progress only by adoption, focused replay, owner evidence, green-stack adoption, or explicit downscope"
+launch-owner-matrix,PR07C/HOLD-07C/current-owner-evidence,P0,yes,"readiness is resolved; run or consume exactly one current owner-evidence path if attachable evidence is missing, then stop duplicate relaunches"
+cooldown-diagnostic,PR07C/HOLD-07C/duplicate-owner-matrix,P0,yes,suppress repeated owner-matrix queue work after the current evidence path is consumed; reopen only for newer owner evidence
+repair-ready,HOLD-PR07C/exact-stack-validation,P0,yes,route remaining PR07C work to exact-stack reload/persistence validation before publication
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until owner evidence and exact-stack validation prove product ownership
 repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,P0,yes,latest manifest-backed candidate needs a head-specific exact-stack blocker before promotion
-launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,next product-progress slot; run bounded title reload plus existing-post CRDT or persistence reload plus large HTTP lifecycle
+launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,next product candidate replay; run bounded title reload plus existing-post CRDT or persistence reload plus large HTTP lifecycle under the one-heavy gate
 publish-ready,reload-hydration@b01a3a21e2c,P0,no,no fresh all-green exact-stack evidence exists for this latest head
 repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,no,stale same-family head is superseded by latest manifest head b01a3a21e2c
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,retarget stale exact-stack rows to b01a3a21e2c
-cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,concrete candidate exists; generic relaunch would duplicate single-flight manifest work
-repair-ready,HOLD-PR07C/exact-stack-validation,P0,yes,replace stale owner-matrix routing with exact-stack reload and persistence validation
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner replay is already runtime-held-consumed; relaunch only for newer owner evidence
-cooldown-diagnostic,PR07C/HOLD-07C/duplicate-owner-matrix,P0,yes,suppress duplicate owner-matrix queue work and consume existing evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until exact-stack validation or newer owner evidence proves product ownership
+cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,concrete manifest candidate exists; generic relaunch duplicates single-flight work
+update-controller-rule,existing-post-crdt-http+large-http-lifecycle,P0,yes,"keep these lanes promotion-blocking for reload, persistence, saved-response, CRDT, and successor stacks"
+update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,current feedback is exact_stack_green; reopen only on newer promotion_blocked or changed equivalent-lane evidence
+repair-branch,benchmark-canary-fuzzer-gap/repair,P0,no,superseded by current exact_stack_green benchmark feedback
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,no current promotion_blocked row justifies another benchmark rerun
 update-controller-rule,seed-5200005-reducer/terminalize,P0,yes,consume already_resolved_by_active_artifacts classification; reopen only on newer product-owned evidence
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates terminal reducer evidence without a newer product-owned signal
-update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,current feedback is exact_stack_green; reopen only on newer promotion_blocked or changed equivalent-lane evidence
-repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by newer exact_stack_green benchmark feedback
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,no current promotion_blocked row justifies another benchmark rerun
-update-controller-rule,existing-post-crdt-http+large-http-lifecycle,P0,yes,"keep these lanes promotion-blocking for reload, persistence, saved-response, CRDT, and successor stacks"
 cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic manifests lack owner evidence, focused first-loss replay, green exact-stack adoption, or downscope"
-publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress; require focused first-loss or owner evidence before promotion
+publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress; require focused first-loss or owner evidence before product promotion
 reserve-discovery,pre-save-search-live-collapse@de2b5502da0/focused-replay,P1,yes,allow bounded focused replay only while discovery reserve remains healthy; do not spend the product PR slot
 cooldown-diagnostic,rich-text-suffix-corruption/generic-relaunch,P1,yes,single-flight diagnostic is held; do not relaunch without replay evidence or explicit downscope
 cooldown-diagnostic,rtc-http-polling-manager/generic-batches,P1,yes,generic batches show zero product yield and no new coverage; retarget to materialization or bounded canary diagnostics

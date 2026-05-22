@@ -1,17 +1,15 @@
 action,target,priority,allowed,reason,target_label,reason_label
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until owner evidence and exact-stack validation prove product ownership,ready/rtc-pr07c-reload-record-snapshots,"keep held until owner evidence and exact-stack validation prove product
+ownership"
 publish-ready,reload-hydration@b01a3a21e2c,P0,no,no fresh all-green exact-stack evidence exists for this latest head,reload-hydration@b01a3a21e2c,no fresh all-green exact-stack evidence exists for this latest head
 repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,no,stale same-family head is superseded by latest manifest head b01a3a21e2c,reload-hydration@fa801a6aa13/exact-stack-blocker,stale same-family head is superseded by latest manifest head b01a3a21e2c
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,retarget stale exact-stack rows to b01a3a21e2c,reload-hydration@fa801a6aa13/exact-stack,retarget stale exact-stack rows to b01a3a21e2c
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner replay is already runtime-held-consumed; relaunch only for newer owner evidence,PR07C/HOLD-07C,"Cycle380 owner replay is already runtime-held-consumed; relaunch only for newer
-owner evidence"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until exact-stack validation or newer owner evidence proves product ownership,ready/rtc-pr07c-reload-record-snapshots,"keep held until exact-stack validation or newer owner evidence proves product
-ownership"
+repair-branch,benchmark-canary-fuzzer-gap/repair,P0,no,superseded by current exact_stack_green benchmark feedback,benchmark-canary-fuzzer-gap/repair,superseded by current exact_stack_green benchmark feedback
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,no current promotion_blocked row justifies another benchmark rerun,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,no current promotion_blocked row justifies another benchmark rerun
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates terminal reducer evidence without a newer product-owned signal,seed-5200005-reducer/relaunch,"relaunch duplicates terminal reducer evidence without a newer product-owned
 signal"
-repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by newer exact_stack_green benchmark feedback,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,superseded by newer exact_stack_green benchmark feedback
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,no current promotion_blocked row justifies another benchmark rerun,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,no current promotion_blocked row justifies another benchmark rerun
-publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress; require focused first-loss or owner evidence before promotion,pre-save-search-live-collapse@de2b5502da0,"diagnostic branch is not product PR progress; require focused first-loss or
-owner evidence before promotion"
+publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,diagnostic branch is not product PR progress; require focused first-loss or owner evidence before product promotion,pre-save-search-live-collapse@de2b5502da0,"diagnostic branch is not product PR progress; require focused first-loss or
+owner evidence before product promotion"
 reserve-discovery,rtc-block-parser-serialization/current-repeat-isolation,P1,no,current repeat isolation is oracle-saturated with zero product yield and capped isolation,rtc-block-parser-serialization/current-repeat-isolation,"current repeat isolation is oracle-saturated with zero product yield and capped
 isolation"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
