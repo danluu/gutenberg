@@ -12,3 +12,4 @@ large document edge,block count or initial large-document profile >= 50,scale,TR
 HTTP polling transport,transport == http for the HTTP active-editor cross-product,transport,TRUE
 same-user tabs,collaboratorMode == same-user for the same-user active-editor cross-product,identity,TRUE
 revision restore,eligible revision restore completes with status ok,persistence,TRUE
+publish transition,final-persistence-publish completes with status ok,persistence,TRUE

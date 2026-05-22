@@ -1678,3 +1678,4 @@ timestamp,group,group_family
 2026-05-22T07:30:02Z,novelty-http-persistence-probe,persistence
 2026-05-22T07:30:02Z,novelty-http-large-post-lifecycle,lifecycle
 2026-05-22T07:30:02Z,novelty-http-large-post-lifecycle-completion,lifecycle
+2026-05-22T07:46:44Z,novelty-http-title-reload-convergence,lifecycle

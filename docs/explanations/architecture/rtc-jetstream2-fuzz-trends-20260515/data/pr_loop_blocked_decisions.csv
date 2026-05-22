@@ -1,17 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,"successor all-merged stack still lacks fresh green large-post-three-user-http, focused/persistence-reload-http, and focused/title-reload-http evidence",benchmark-canary-fuzzer-gap/maintainer-snapshot,"successor all-merged stack still lacks fresh green large-post-three-user-http,
-focused/persistence-reload-http, and focused/title-reload-http evidence"
-launch-branch-repair,benchmark-canary-fuzzer-gap/broad-refresh-or-fanout,P1,no,"use the single benchmark successor slot, stale cleanup, and retargeting instead of broad PR analysis fanout",benchmark-canary-fuzzer-gap/broad-refresh-or-fanout,"use the single benchmark successor slot, stale cleanup, and retargeting instead
-of broad PR analysis fanout"
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"no fresh exact-stack green title reload, existing-post CRDT or persistence, and large HTTP lifecycle evidence",reload-hydration@fa801a6aa13/promotion,"no fresh exact-stack green title reload, existing-post CRDT or persistence, and
-large HTTP lifecycle evidence"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,current PR progress marks owner evidence runtime-held-consumed; relaunch only with owner evidence newer than Cycle380 or exact product-failure replay,PR07C/HOLD-07C,"current PR progress marks owner evidence runtime-held-consumed; relaunch only
-with owner evidence newer than Cycle380 or exact product-failure replay"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until fresh product-owner evidence or exact product-failure replay appears,ready/rtc-pr07c-reload-record-snapshots,"keep held until fresh product-owner evidence or exact product-failure replay
-appears"
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,terminal reducer evidence exists; no fresher product-owned non-coverage evidence,seed-5200005-reducer/relaunch,terminal reducer evidence exists; no fresher product-owned non-coverage evidence
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal
+publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,"successor all-merged stack is not freshly green for large-post-three-user-http, focused/persistence-reload-http, and focused/title-reload-http",benchmark-canary-fuzzer-gap/maintainer-snapshot,"successor all-merged stack is not freshly green for large-post-three-user-http,
+focused/persistence-reload-http, and focused/title-reload-http"
+launch-branch-repair,benchmark-canary-fuzzer-gap/replacement-refresh,P0,no,superseded by newer stale-CRDT exact-green evidence; use successor rebuild instead of old refresh work,benchmark-canary-fuzzer-gap/replacement-refresh,"superseded by newer stale-CRDT exact-green evidence; use successor rebuild
+instead of old refresh work"
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"missing fresh exact-stack title reload, existing-post CRDT or persistence, and large HTTP lifecycle green evidence",reload-hydration@fa801a6aa13/promotion,"missing fresh exact-stack title reload, existing-post CRDT or persistence, and
+large HTTP lifecycle green evidence"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until PR07C owner matrix proves product ownership or fresh exact product-failure replay appears,ready/rtc-pr07c-reload-record-snapshots,"keep held until PR07C owner matrix proves product ownership or fresh exact
+product-failure replay appears"
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,terminal reducer evidence exists; no fresher product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,"terminal reducer evidence exists; no fresher product-owned non-coverage evidence
+justifies another reducer launch"
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path
-publish-ready,current-push-manifest,P1,no,current controller push manifest has only a header; no safe publication target,current-push-manifest,current controller push manifest has only a header; no safe publication target
+publish-ready,current-push-manifest,P1,no,current controller push manifest has only a header; use the deferred reload-hydration manifest only for candidate handling,current-push-manifest,"current controller push manifest has only a header; use the deferred
+reload-hydration manifest only for candidate handling"
