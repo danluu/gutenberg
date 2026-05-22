@@ -1,15 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@b01a3a21e2c,P0,no,"no fresh exact-stack green browser evidence; manifest, unit, lint, and diff evidence are not enough.",reload-hydration@b01a3a21e2c,"no fresh exact-stack green browser evidence; manifest, unit, lint, and diff
-evidence are not enough."
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,no fresh exact-stack green replay or explicit downscope evidence exists.,reload-hydration@b01a3a21e2c,no fresh exact-stack green replay or explicit downscope evidence exists.
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,stale reload-hydration head is superseded by b01a3a21e2c.,reload-hydration@fa801a6aa13/exact-stack,stale reload-hydration head is superseded by b01a3a21e2c.
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,P0,no,active exact-stack repair already owns the blocker; duplicate heavy rerun would compete with it.,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,"active exact-stack repair already owns the blocker; duplicate heavy rerun would
-compete with it."
-publish-ready,benchmark-canary-fuzzer-gap/finalization,P0,no,current feedback still has large-post-three-user-http exit_code=1 promotion_blocked.,benchmark-canary-fuzzer-gap/finalization,"current feedback still has large-post-three-user-http exit_code=1
-promotion_blocked."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,owner evidence is already consumed; relaunch only for newer owner evidence.,PR07C/HOLD-07C,owner evidence is already consumed; relaunch only for newer owner evidence.
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,P0,no,active benchmark work already owns the blocker and latest large-post feedback is green.,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,"active benchmark work already owns the blocker and latest large-post feedback is
+green."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,owner evidence is already consumed in the progress snapshot; relaunch only for evidence newer than Cycle380.,PR07C/HOLD-07C,"owner evidence is already consumed in the progress snapshot; relaunch only for
+evidence newer than Cycle380."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until exact replay or newer owner evidence proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,held until exact replay or newer owner evidence proves product ownership.
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned input justifies relaunch.,seed-5200005-reducer/relaunch,no fresh product-owned input justifies relaunch.
-publish-ready,pre-save-search-live-collapse@de2b5502da0,P0,no,diagnostic branch lacks product-owner first-loss evidence.,pre-save-search-live-collapse@de2b5502da0,diagnostic branch lacks product-owner first-loss evidence.
+publish-ready,pre-save-search-live-collapse@de2b5502da0,P0,no,diagnostic publication is not product progress and lacks product-owned first-loss evidence.,pre-save-search-live-collapse@de2b5502da0,"diagnostic publication is not product progress and lacks product-owned
+first-loss evidence."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by ready/rtc-pr06b-malformed-save-request-payload-minimal.,ready/rtc-pr06b-malformed-save-request-payload,superseded by ready/rtc-pr06b-malformed-save-request-payload-minimal.
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path.,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path.,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path.
