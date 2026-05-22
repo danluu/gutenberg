@@ -1,19 +1,19 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-heavy-pr-jobs,when-discovery-unhealthy,P0,no,"Preserve discovery reserve; if sessions fall below health, allow only cheap publication manifest generation or analysis-only controller updates.",when-discovery-unhealthy,"Preserve discovery reserve; if sessions fall below health, allow only cheap
-publication manifest generation or analysis-only controller updates."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale publish-ready rows are superseded by newer exact-head product-owned-red evidence; require repair plus exact-head green replay or replay-backed downscope.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale publish-ready rows are superseded by newer exact-head product-owned-red
-evidence; require repair plus exact-head green replay or replay-backed
-downscope."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner evidence is already conclusive enough to route to repair; relaunching the matrix is duplicate diagnostic churn.,PR07C/HOLD-07C,"Owner evidence is already conclusive enough to route to repair; relaunching the
-matrix is duplicate diagnostic churn."
-publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,Product publication requires fresh exact-stack green evidence or replay-backed downscope.,reload-hydration@b01a3a21e2c/product,"Product publication requires fresh exact-stack green evidence or replay-backed
-downscope."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale publish-ready rows are superseded by current product-owned-red evidence and the controller push manifest is header-only.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale publish-ready rows are superseded by current product-owned-red evidence
+and the controller push manifest is header-only."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner evidence is already terminal and conclusive; relaunching the owner matrix would be duplicate diagnostic churn.,PR07C/HOLD-07C,"Owner evidence is already terminal and conclusive; relaunching the owner matrix
+would be duplicate diagnostic churn."
+launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,no,Not a current heavy slot while PR07C repair and table query-array repair are higher-yield; run only after a PR slot clears and never as generic deferred relaunch.,reload-hydration@b01a3a21e2c/exact-stack,"Not a current heavy slot while PR07C repair and table query-array repair are
+higher-yield; run only after a PR slot clears and never as generic deferred
+relaunch."
+publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,Product publication requires fresh all-merged exact-stack green evidence or replay-backed downscope.,reload-hydration@b01a3a21e2c/product,"Product publication requires fresh all-merged exact-stack green evidence or
+replay-backed downscope."
 publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,Diagnostic candidate only; missing owner evidence or product-owned first-loss replay.,pre-save-search-live-collapse@de2b5502da0,"Diagnostic candidate only; missing owner evidence or product-owned first-loss
 replay."
 publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,Diagnostic candidate only; missing exact suffix-divergence replay or owner evidence.,rich-text-suffix-corruption@a2d47a072e1,"Diagnostic candidate only; missing exact suffix-divergence replay or owner
 evidence."
-repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates current exact-green feedback; reopen only on newer promotion_blocked evidence or exact branch/commit mismatch.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates current exact-green feedback; reopen only on newer
-promotion_blocked evidence or exact branch/commit mismatch."
+repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates current exact-green feedback; reopen only on newer promotion_blocked evidence or branch/commit mismatch.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates current exact-green feedback; reopen only on newer
+promotion_blocked evidence or branch/commit mismatch."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by already published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by already published PR15A-on-PR14B branch.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by already published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by already published PR15B-on-PR14B branch.

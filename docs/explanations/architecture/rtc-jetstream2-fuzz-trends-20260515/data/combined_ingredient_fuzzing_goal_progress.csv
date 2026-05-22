@@ -6,4 +6,4 @@ success-profile:large-post-three-user-http-lifecycle,"successful
 large-post-three-user-http-lifecycle records",63,10,TRUE,6.3,successful profiles,0,1,63 / 10
 success-profile-users:large-post-three-user-http-lifecycle:3,"successful large-post HTTP records with
 three users",19,10,TRUE,1.9,lifecycle/scale,0,1,19 / 10
-success-user-blocks:3:50,successful three-user large documents,20,5,TRUE,4,other,0,1,20 / 5
+success-user-blocks:3:50,successful three-user large documents,21,5,TRUE,4.2,other,0,1,21 / 5
