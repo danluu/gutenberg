@@ -1,11 +1,11 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-persistence-no-title,1293,771,0,0.5962877030162413,persistence
+persistence-no-title,1305,776,0,0.5946360153256705,persistence
 real-user-editing,1116,415,0,0.3718637992831541,real-user
-session-lifecycle,798,435,0,0.5451127819548872,lifecycle
-permissions-auth-locks,718,265,0,0.36908077994428967,auth/locks
-async-server-blocks,580,136,0,0.23448275862068965,async/media
-large-post-three-user-http-lifecycle,501,43,0,0.08582834331337326,lifecycle
-long-session-large-doc,461,39,0,0.08459869848156182,lifecycle
+session-lifecycle,808,437,0,0.5408415841584159,lifecycle
+permissions-auth-locks,722,265,0,0.3670360110803324,auth/locks
+async-server-blocks,583,136,0,0.2332761578044597,async/media
+large-post-three-user-http-lifecycle,506,44,0,0.08695652173913043,lifecycle
+long-session-large-doc,465,39,0,0.08387096774193549,lifecycle
 media-cross-entity,208,101,0,0.4855769230769231,async/media
 full,207,16,0,0.07729468599033816,block-structure
 three-user-late-join,195,96,0,0.49230769230769234,lifecycle
@@ -16,6 +16,6 @@ multi-reload-lifecycle,89,37,0,0.4157303370786517,lifecycle
 common-blocks,86,41,0,0.47674418604651164,block-structure
 collaboration-ui-signals,80,0,0,0,other
 many-user-lifecycle,74,17,0,0.22972972972972974,lifecycle
-code-editor-smoke,65,52,0,0.8,other
+code-editor-smoke,70,56,1,0.8,other
 revision-persistence,29,4,0,0.13793103448275862,persistence
 table-stale-snapshot-http,4,0,0,0,other
