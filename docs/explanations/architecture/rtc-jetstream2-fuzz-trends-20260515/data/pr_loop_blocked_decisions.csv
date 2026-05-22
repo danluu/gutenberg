@@ -1,14 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale publish-ready rows are superseded by newer product-owned-red owner evidence; require repaired exact-head green replay or explicit downscope.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale publish-ready rows are superseded by newer product-owned-red owner
-evidence; require repaired exact-head green replay or explicit downscope."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner matrix is already consumed and terminal; rerun only after newer repaired-head owner evidence appears.,PR07C/HOLD-07C,"Owner matrix is already consumed and terminal; rerun only after newer
-repaired-head owner evidence appears."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale publish-ready rows are superseded by newer product-owned-red evidence; require repaired exact-head green replay or explicit downscope.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale publish-ready rows are superseded by newer product-owned-red evidence;
+require repaired exact-head green replay or explicit downscope."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Do not relaunch owner matrix until newer repaired-head owner evidence appears.,PR07C/HOLD-07C,Do not relaunch owner matrix until newer repaired-head owner evidence appears.
+publish-ready,PR17/stale-crdt-cas-background-delivery@c49e8cd8d176,P0,no,Benchmark canary current feedback has exact-stack-red HTTP rows; block promotion and maintainer snapshot publication.,PR17/stale-crdt-cas-background-delivery@c49e8cd8d176,"Benchmark canary current feedback has exact-stack-red HTTP rows; block promotion
+and maintainer snapshot publication."
 repair-ready,benchmark-canary-fuzzer-gap/exact-green-ledger,P0,no,Older green ledger rows are stale relative to current exact-stack-red PR17 benchmark evidence.,benchmark-canary-fuzzer-gap/exact-green-ledger,"Older green ledger rows are stale relative to current exact-stack-red PR17
 benchmark evidence."
-launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,no,"Valid heavy replay, but queue behind PR17 and PR07C product-progress work while preserving discovery reserve and single-flight capacity.",reload-hydration@b01a3a21e2c/exact-stack,"Valid heavy replay, but queue behind PR17 and PR07C product-progress work while
-preserving discovery reserve and single-flight capacity."
-publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,"Product publication needs fresh all-merged exact replay green for title reload, existing-post or persistence reload, and large HTTP lifecycle, or replay-backed downscope.",reload-hydration@b01a3a21e2c/product,"Product publication needs fresh all-merged exact replay green for title reload,
-existing-post or persistence reload, and large HTTP lifecycle, or replay-backed
+launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,no,"Valid heavy replay, but queue behind PR07C repair and active PR17 exact-stack work while preserving discovery reserve.",reload-hydration@b01a3a21e2c/exact-stack,"Valid heavy replay, but queue behind PR07C repair and active PR17 exact-stack
+work while preserving discovery reserve."
+publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,Product publication needs fresh all-merged exact replay green or replay-backed downscope.,reload-hydration@b01a3a21e2c/product,"Product publication needs fresh all-merged exact replay green or replay-backed
 downscope."
 publish-ready,pre-save-search-live-collapse@de2b5502da0/product,medium,no,Missing owner or product first-loss evidence.,pre-save-search-live-collapse@de2b5502da0/product,Missing owner or product first-loss evidence.
 publish-ready,rich-text-suffix-corruption@a2d47a072e1/product,medium,no,Missing focused exact replay or owner evidence.,rich-text-suffix-corruption@a2d47a072e1/product,Missing focused exact replay or owner evidence.
