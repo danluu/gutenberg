@@ -1,10 +1,10 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,no fresh all-green exact stack exists for required reload and HTTP lifecycle rows,reload-hydration@fa801a6aa13/promotion,"no fresh all-green exact stack exists for required reload and HTTP lifecycle
-rows"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,suppress duplicate owner matrix; relaunch only for owner evidence newer than Cycle380 or exact product-failure replay,PR07C/HOLD-07C,"suppress duplicate owner matrix; relaunch only for owner evidence newer than
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,no fresh all-green exact stack exists for title reload plus existing-post or persistence reload plus large HTTP lifecycle,reload-hydration@fa801a6aa13/promotion,"no fresh all-green exact stack exists for title reload plus existing-post or
+persistence reload plus large HTTP lifecycle"
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,suppress duplicate owner matrix; reopen only for owner evidence newer than Cycle380 or exact product-failure replay,PR07C/HOLD-07C,"suppress duplicate owner matrix; reopen only for owner evidence newer than
 Cycle380 or exact product-failure replay"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until newer owner evidence or exact product-failure replay proves product ownership and ordering,ready/rtc-pr07c-reload-record-snapshots,"hold publication until newer owner evidence or exact product-failure replay
-proves product ownership and ordering"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until newer owner evidence or exact product-failure replay proves ownership,ready/rtc-pr07c-reload-record-snapshots,"keep held until newer owner evidence or exact product-failure replay proves
+ownership"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
 repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by newer current-feedback exact_stack_green rows,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,superseded by newer current-feedback exact_stack_green rows
 launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,rerun only if current-feedback.tsv gains newer promotion_blocked rows,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,rerun only if current-feedback.tsv gains newer promotion_blocked rows
