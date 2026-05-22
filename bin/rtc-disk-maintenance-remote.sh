@@ -9,6 +9,8 @@ LOCK="$BASE/rtc-disk-maintenance.lock"
 INTERVAL_SECONDS=${RTC_DISK_MAINTENANCE_INTERVAL_SECONDS:-900}
 DATA_PRESSURE_FREE_GIB=${RTC_DISK_MAINTENANCE_DATA_PRESSURE_FREE_GIB:-650}
 ROOT_PRESSURE_FREE_GIB=${RTC_DISK_MAINTENANCE_ROOT_PRESSURE_FREE_GIB:-28}
+DATA_INODE_PRESSURE_USED_PERCENT=${RTC_DISK_MAINTENANCE_DATA_INODE_PRESSURE_USED_PERCENT:-70}
+ROOT_INODE_PRESSURE_USED_PERCENT=${RTC_DISK_MAINTENANCE_ROOT_INODE_PRESSURE_USED_PERCENT:-85}
 RUN_ROOT_KEEP=${RTC_DISK_MAINTENANCE_RUN_ROOT_KEEP:-48}
 RUN_ROOT_KEEP_PRESSURE=${RTC_DISK_MAINTENANCE_RUN_ROOT_KEEP_PRESSURE:-24}
 RUN_ROOT_HEAVY_DIR_KEEP=${RTC_DISK_MAINTENANCE_RUN_ROOT_HEAVY_DIR_KEEP:-8}
@@ -16,8 +18,11 @@ RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_RUN_ROOT_HEAVY_DIR_R
 TRACE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TRACE_RETENTION_MINUTES:-720}
 VIDEO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_VIDEO_RETENTION_MINUTES:-360}
 TMP_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TMP_RETENTION_MINUTES:-360}
+ROOT_TMP_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_ROOT_TMP_RETENTION_MINUTES:-1440}
+ROOT_TMP_MAX_DELETE_PER_PASS=${RTC_DISK_MAINTENANCE_ROOT_TMP_MAX_DELETE_PER_PASS:-5000}
 ARTIFACT_PRUNE_SUMMARY_LIMIT=${RTC_DISK_MAINTENANCE_ARTIFACT_PRUNE_SUMMARY_LIMIT:-80}
 ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=${RTC_DISK_MAINTENANCE_ARTIFACT_DIR_LIMIT:-1000}
+ARTIFACT_PRUNE_CURSOR_DIR="$BASE/artifact-prune-cursors"
 STATUS="$BASE/current-status.md"
 ONCE=0
 
@@ -26,6 +31,7 @@ if [ "${1:-}" = "--once" ]; then
 fi
 
 mkdir -p "$LOG_DIR"
+mkdir -p "$ARTIFACT_PRUNE_CURSOR_DIR"
 LOG="$LOG_DIR/maintenance.log"
 
 exec 9>"$LOCK"
@@ -47,14 +53,27 @@ free_gib() {
 		awk 'NR == 2 { printf "%.1f\n", $4 / 1024 / 1024 }'
 }
 
+inode_used_percent() {
+	df -Pi "$1" 2>/dev/null |
+		awk 'NR == 2 { value = $5; sub(/%$/, "", value); printf "%.0f\n", value + 0 }'
+}
+
 under_pressure() {
-	local data_free root_free
+	local data_free root_free data_inode_used root_inode_used
 	data_free=$(free_gib "$DATA_VOLUME")
 	root_free=$(free_gib "$ROOT_VOLUME")
+	data_inode_used=$(inode_used_percent "$DATA_VOLUME")
+	root_inode_used=$(inode_used_percent "$ROOT_VOLUME")
 	awk -v data="$data_free" -v root="$root_free" \
 		-v data_limit="$DATA_PRESSURE_FREE_GIB" -v root_limit="$ROOT_PRESSURE_FREE_GIB" '
 		BEGIN {
 			exit !(data + 0 < data_limit || root + 0 < root_limit);
+		}
+	' && return 0
+	awk -v data_inode="$data_inode_used" -v root_inode="$root_inode_used" \
+		-v data_limit="$DATA_INODE_PRESSURE_USED_PERCENT" -v root_limit="$ROOT_INODE_PRESSURE_USED_PERCENT" '
+		BEGIN {
+			exit !(data_inode + 0 >= data_limit || root_inode + 0 >= root_limit);
 		}
 	'
 }
@@ -214,9 +233,14 @@ remove_dir_if_old() {
 
 artifact_dirs_from_summary() {
 	local summary=$1
-	node - "$summary" "$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT" <<'NODE'
+	local limit=${2:-$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT}
+	local cursor_key cursor_file
+	cursor_key=$(printf '%s' "$summary" | sha256sum | awk '{ print $1 }')
+	cursor_file="$ARTIFACT_PRUNE_CURSOR_DIR/$cursor_key.cursor"
+	node - "$summary" "$cursor_file" "$limit" <<'NODE'
 const fs = require( 'fs' );
-const [ summaryPath, limitText ] = process.argv.slice( 2 );
+const readline = require( 'readline' );
+const [ summaryPath, cursorPath, limitText ] = process.argv.slice( 2 );
 const limit = Number.parseInt( limitText, 10 ) || 1000;
 const seen = new Set();
 
@@ -226,30 +250,71 @@ function addPath( value ) {
 	}
 }
 
-let lineCount = 0;
-for ( const line of fs.readFileSync( summaryPath, 'utf8' ).split( /\n/ ) ) {
-	if ( ! line.trim() ) {
-		continue;
-	}
-	if ( lineCount >= limit ) {
-		break;
-	}
-	lineCount += 1;
-	let record;
+function readCursor() {
 	try {
-		record = JSON.parse( line );
+		const value = Number.parseInt(
+			fs.readFileSync( cursorPath, 'utf8' ),
+			10
+		);
+		return Number.isFinite( value ) && value > 0 ? value : 0;
 	} catch {
-		continue;
-	}
-	addPath( record.artifactsDir );
-	for ( const attempt of record.attempts || [] ) {
-		addPath( attempt?.artifactsDir );
+		return 0;
 	}
 }
 
-for ( const artifactDir of seen ) {
-	console.log( artifactDir );
+async function main() {
+	const cursor = readCursor();
+	let lineNumber = 0;
+	let lastScannedLine = cursor;
+	let emitted = 0;
+	let reachedEof = true;
+	const input = fs.createReadStream( summaryPath, { encoding: 'utf8' } );
+	const lines = readline.createInterface( {
+		input,
+		crlfDelay: Infinity,
+	} );
+
+	for await ( const line of lines ) {
+		lineNumber += 1;
+		if ( lineNumber <= cursor ) {
+			continue;
+		}
+		lastScannedLine = lineNumber;
+		if ( ! line.trim() ) {
+			continue;
+		}
+		let record;
+		try {
+			record = JSON.parse( line );
+		} catch {
+			continue;
+		}
+		addPath( record.artifactsDir );
+		for ( const attempt of record.attempts || [] ) {
+			addPath( attempt?.artifactsDir );
+		}
+		for ( const artifactDir of seen ) {
+			console.log( artifactDir );
+			emitted += 1;
+			if ( emitted >= limit ) {
+				reachedEof = false;
+				break;
+			}
+		}
+		seen.clear();
+		if ( emitted >= limit ) {
+			break;
+		}
+	}
+
+	const nextCursor = reachedEof ? 0 : lastScannedLine;
+	fs.writeFileSync( cursorPath, `${ nextCursor }\n` );
 }
+
+main().catch( ( error ) => {
+	console.error( error && error.stack ? error.stack : String( error ) );
+	process.exitCode = 0;
+} );
 NODE
 }
 
@@ -284,7 +349,7 @@ prune_indexed_artifact_dir() {
 
 prune_old_artifacts_in_tree() {
 	local root=$1
-	local artifact_dir count summary summary_count
+	local artifact_dir count summary summary_count remaining
 	count=0
 	summary_count=0
 	[ -d "$root" ] || return 0
@@ -295,6 +360,11 @@ prune_old_artifacts_in_tree() {
 		if [ "$summary_count" -gt "$ARTIFACT_PRUNE_SUMMARY_LIMIT" ]; then
 			log "artifact prune summary limit reached root=$root limit=$ARTIFACT_PRUNE_SUMMARY_LIMIT"
 			break
+		fi
+		remaining=$(( ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT - count ))
+		if [ "$remaining" -le 0 ]; then
+			log "artifact prune artifact-dir limit reached root=$root limit=$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT"
+			return 0
 		fi
 		while IFS= read -r artifact_dir; do
 			[ -n "$artifact_dir" ] || continue
@@ -312,12 +382,36 @@ prune_old_artifacts_in_tree() {
 				return 0
 			fi
 			prune_indexed_artifact_dir "$artifact_dir"
-		done < <(artifact_dirs_from_summary "$summary")
+		done < <(artifact_dirs_from_summary "$summary" "$remaining")
 	done
 
 	if [ "$summary_count" -eq 0 ]; then
 		log "skip artifact prune; no summary index root=$root"
 	fi
+}
+
+cleanup_root_tmp_known_prefixes() {
+	local tmp_root=/tmp
+	local candidates deleted_count
+	[ -d "$tmp_root" ] || return 0
+	candidates=$(mktemp "$BASE/root-tmp-cleanup.XXXXXX")
+	find "$tmp_root" -xdev -mindepth 1 -maxdepth 1 \
+		\( -name 'tmp.*' \
+			-o -name 'playwright-*' \
+			-o -name 'playwright_*' \
+			-o -name 'playwright_chromiumdev_profile-*' \
+			-o -name 'puppeteer_dev_chrome_profile-*' \
+			-o -name 'jest-*' \
+			-o -name 'v8-*' \
+			-o -name 'wp-env-*' \) \
+		-mmin +"$ROOT_TMP_RETENTION_MINUTES" \
+		-printf '%p\0' 2>/dev/null |
+		awk -v RS='\0' -v ORS='\0' -v max="$ROOT_TMP_MAX_DELETE_PER_PASS" 'NR <= max { print }' > "$candidates"
+	deleted_count=$(tr '\0' '\n' < "$candidates" | awk 'END { print NR + 0 }')
+	xargs -0 -r ionice -c3 nice -n 19 rm -rf -- < "$candidates" >> "$LOG" 2>&1 ||
+		log "cleanup_root_tmp_known_prefixes partial failure candidates=$candidates"
+	rm -f "$candidates"
+	log "cleanup_root_tmp_known_prefixes deleted=${deleted_count:-0} retention_minutes=$ROOT_TMP_RETENTION_MINUTES max=$ROOT_TMP_MAX_DELETE_PER_PASS"
 }
 
 prune_old_artifacts() {
@@ -353,8 +447,12 @@ write_status() {
 		echo "- state: $state"
 		echo "- data_free_gib: $(free_gib "$DATA_VOLUME")"
 		echo "- root_free_gib: $(free_gib "$ROOT_VOLUME")"
+		echo "- data_inode_used_percent: $(inode_used_percent "$DATA_VOLUME")"
+		echo "- root_inode_used_percent: $(inode_used_percent "$ROOT_VOLUME")"
 		echo "- data_pressure_free_gib: $DATA_PRESSURE_FREE_GIB"
 		echo "- root_pressure_free_gib: $ROOT_PRESSURE_FREE_GIB"
+		echo "- data_inode_pressure_used_percent: $DATA_INODE_PRESSURE_USED_PERCENT"
+		echo "- root_inode_pressure_used_percent: $ROOT_INODE_PRESSURE_USED_PERCENT"
 		echo "- run_root_keep_effective: $keep"
 		echo "- run_root_keep_default: $RUN_ROOT_KEEP"
 		echo "- run_root_keep_pressure: $RUN_ROOT_KEEP_PRESSURE"
@@ -363,6 +461,9 @@ write_status() {
 		echo "- trace_retention_minutes: $TRACE_RETENTION_MINUTES"
 		echo "- video_retention_minutes: $VIDEO_RETENTION_MINUTES"
 		echo "- tmp_retention_minutes: $TMP_RETENTION_MINUTES"
+		echo "- root_tmp_retention_minutes: $ROOT_TMP_RETENTION_MINUTES"
+		echo "- root_tmp_max_delete_per_pass: $ROOT_TMP_MAX_DELETE_PER_PASS"
+		echo "- artifact_prune_cursor_count: $(find "$ARTIFACT_PRUNE_CURSOR_DIR" -type f -name '*.cursor' 2>/dev/null | wc -l | tr -d ' ')"
 		echo
 		echo "## Run Root Counts"
 		echo "- coverage_guided: $(run_root_count "$DATA_VOLUME/rtc-coverage-guided-20260515/run-*")"
@@ -405,6 +506,7 @@ run_once() {
 	prune_old_artifacts "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
 	prune_old_artifacts "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
 	prune_old_artifacts "$DATA_VOLUME/rtc-gap-booster-20260515" "$DATA_VOLUME/rtc-gap-booster-20260515/current-run-root.txt"
+	cleanup_root_tmp_known_prefixes
 	log "done data_free_gib=$(free_gib "$DATA_VOLUME") root_free_gib=$(free_gib "$ROOT_VOLUME")"
 	write_status "$keep" "done"
 }

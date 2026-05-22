@@ -828,13 +828,23 @@ the newest roots. Some `wp-env` trees contain root-owned files from containers;
 the cleanup script uses passwordless `sudo -n` when available, after live-path
 checks, so those stale trees do not remain as undeletable disk pressure.
 
+The artifact pruner is cursor-based. Each pass advances through long
+`summary.ndjson` files instead of repeatedly rechecking the first batch of
+artifact directories. When it reaches the end of a summary it wraps to the
+beginning, so old traces/videos/tmp artifacts are revisited after they become
+eligible for retention cleanup. Disk pressure also considers inode usage, not
+just free GiB, because browser fuzzing produces many small artifacts. The loop
+also removes old known-safe root `/tmp` fuzz leftovers such as old Playwright,
+Jest, V8, `wp-env`, and `tmp.*` directories/files in capped batches.
+
 The maintenance loop writes
 `/media/volume/danluu-fuzz-data/rtc-disk-maintenance-20260520/current-status.md`
 with current free space, running/done state, effective retention, run-root
-counts, current roots, and recent log lines. Treat a missing or stale status
-file as a monitoring problem: without it, the graphs and control loops can see
-disk free space but not whether retention is actually being applied. The
-resource autoscaler budgets against both `/` and
+counts, current roots, inode usage, artifact-prune cursor count, and recent log
+lines. Treat a missing or stale status file as a monitoring problem: without
+it, the graphs and control loops can see disk free space but not whether
+retention is actually being applied. The resource autoscaler budgets against
+both `/` and
 `/media/volume/danluu-fuzz-data`, and writes
 `rtc-resource-autoscaler-20260516/disk-samples.csv` for the trend graphs.
 
