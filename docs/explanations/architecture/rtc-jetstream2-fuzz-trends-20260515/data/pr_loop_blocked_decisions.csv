@@ -1,14 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,P0,no,"stale stack remains blocked by title-reload-http, existing-post-crdt-http, and large-http-lifecycle gates",rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,"stale stack remains blocked by title-reload-http, existing-post-crdt-http, and
-large-http-lifecycle gates"
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,replacement evidence already exists and successor rebuild is the product-moving action,benchmark-canary-fuzzer-gap/duplicate-exact-stack,"replacement evidence already exists and successor rebuild is the product-moving
-action"
+publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,P0,no,"stale all-merged stack remains blocked by title-reload-http, existing-post-crdt-http, and large-http-lifecycle gates",rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,"stale all-merged stack remains blocked by title-reload-http,
+existing-post-crdt-http, and large-http-lifecycle gates"
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,replacement branch evidence exists; successor all-merged rebuild is the product-moving action,benchmark-canary-fuzzer-gap/duplicate-exact-stack,"replacement branch evidence exists; successor all-merged rebuild is the
+product-moving action"
+repair-branch,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,P0,no,superseded by replacement branch evidence and successor all-merged rebuild,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,superseded by replacement branch evidence and successor all-merged rebuild
 publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"promotion requires green exact-stack title-reload-http, existing-post-crdt-http, and retained large-http-lifecycle evidence",reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires green exact-stack title-reload-http, existing-post-crdt-http,
 and retained large-http-lifecycle evidence"
-launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind the active benchmark successor work; generic reload relaunch is not product progress,reload-hydration/exact-stack,"wait behind the active benchmark successor work; generic reload relaunch is not
-product progress"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until the owner matrix or newer exact product-failure replay proves ownership,ready/rtc-pr07c-reload-record-snapshots,"held until the owner matrix or newer exact product-failure replay proves
-ownership"
+launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind active benchmark successor and PR07C owner work; only exact replay or owner evidence should reopen scheduling,reload-hydration/exact-stack,"wait behind active benchmark successor and PR07C owner work; only exact replay
+or owner evidence should reopen scheduling"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until owner matrix or exact product-failure replay proves product ownership,ready/rtc-pr07c-reload-record-snapshots,held until owner matrix or exact product-failure replay proves product ownership
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresher product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresher product-owned non-coverage evidence justifies another reducer launch
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published; broader branch needs fresh product
 advantage"
