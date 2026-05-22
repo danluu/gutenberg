@@ -1,11 +1,11 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C/stale-consumed,high,no,Do not spend capacity relaunching old consumed owner evidence or stale queued jobs.,PR07C/HOLD-07C/stale-consumed,"Do not spend capacity relaunching old consumed owner evidence or stale queued
-jobs."
-publish-ready,reload-hydration@b01a3a21e2c/product,high,no,Manifest validation is candidate evidence only; promotion needs fresh exact-stack green or replay-backed downscope.,reload-hydration@b01a3a21e2c/product,"Manifest validation is candidate evidence only; promotion needs fresh
-exact-stack green or replay-backed downscope."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Fresh exact-head owner replay already resolved readiness; relaunching stale owner-matrix work burns PR capacity.,PR07C/HOLD-07C,"Fresh exact-head owner replay already resolved readiness; relaunching stale
+owner-matrix work burns PR capacity."
+publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,Publication needs fresh exact-stack green or replay-backed downscope; unit and lint manifest validation are insufficient.,reload-hydration@b01a3a21e2c/product,"Publication needs fresh exact-stack green or replay-backed downscope; unit and
+lint manifest validation are insufficient."
 publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,No owner evidence or product-owned first-loss replay is present.,pre-save-search-live-collapse@de2b5502da0,No owner evidence or product-owned first-loss replay is present.
 publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,No exact suffix-divergence replay or owner evidence is present.,rich-text-suffix-corruption@a2d47a072e1,No exact suffix-divergence replay or owner evidence is present.
-repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates exact green feedback; reopen only if newer current-feedback reintroduces promotion_blocked.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates exact green feedback; reopen only if newer
-current-feedback reintroduces promotion_blocked."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by the already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by the already published PR06B minimal branch.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
 publish-ready,ready/rtc-pr15a-pr15b-pr15c-originals,high,no,"Superseded by already published PR14B-based PR15A, PR15B, and PR15C branches.",ready/rtc-pr15a-pr15b-pr15c-originals,"Superseded by already published PR14B-based PR15A, PR15B, and PR15C branches."
+repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates exact-green feedback; reopen only on newer promotion_blocked evidence or branch/commit mismatch.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates exact-green feedback; reopen only on newer
+promotion_blocked evidence or branch/commit mismatch."
