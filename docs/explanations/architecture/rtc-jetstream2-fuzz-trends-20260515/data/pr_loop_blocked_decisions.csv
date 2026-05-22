@@ -1,23 +1,19 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,P0,no,"title and persistence are green, but large-post-three-user-http is not exact green",rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,"title and persistence are green, but large-post-three-user-http is not exact
-green"
-publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,P0,no,stale original all-merged stack remains blocked and is superseded by the replacement path,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,"stale original all-merged stack remains blocked and is superseded by the
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
+publish-ready,rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,P0,no,"publication waits for exact green focused title reload, focused persistence reload, and large-post-three-user-http on the replacement stack",rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,"publication waits for exact green focused title reload, focused persistence
+reload, and large-post-three-user-http on the replacement stack"
+publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,P0,no,stale original all-merged stack remains blocked and superseded by the replacement path,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,"stale original all-merged stack remains blocked and superseded by the
 replacement path"
-repair-branch,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,P0,no,superseded by replacement-stack title reload green evidence; remaining blocker is large HTTP lifecycle,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,"superseded by replacement-stack title reload green evidence; remaining blocker
-is large HTTP lifecycle"
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"promotion requires green title-reload-http, existing-post-crdt-http, and large-http-lifecycle exact evidence",reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires green title-reload-http, existing-post-crdt-http, and
-large-http-lifecycle exact evidence"
-launch-branch-repair,reload-hydration/exact-stack,P0,no,"wait behind benchmark large-http-lifecycle slot; reopen only for product-head exact replay, owner evidence, green exact-stack adoption, or downscope",reload-hydration/exact-stack,"wait behind benchmark large-http-lifecycle slot; reopen only for product-head
-exact replay, owner evidence, green exact-stack adoption, or downscope"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is consumed; require newer owner evidence or exact product-failure replay before spending browser-e2e,PR07C/HOLD-07C,"Cycle380 owner evidence is consumed; require newer owner evidence or exact
-product-failure replay before spending browser-e2e"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until fresh product-owner evidence or exact product-failure replay proves ownership,ready/rtc-pr07c-reload-record-snapshots,"held until fresh product-owner evidence or exact product-failure replay proves
-ownership"
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no newer product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no newer product-owned non-coverage evidence justifies another reducer launch
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until the PR07C owner matrix or exact replay produces fresh product-owner evidence,ready/rtc-pr07c-reload-record-snapshots,"hold publication until the PR07C owner matrix or exact replay produces fresh
+product-owner evidence"
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"promotion requires exact green title-reload-http, existing-post-crdt-http, and large-http-lifecycle evidence",reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires exact green title-reload-http, existing-post-crdt-http, and
+large-http-lifecycle evidence"
+launch-branch-repair,reload-hydration/exact-stack,P0,no,"wait behind benchmark and PR07C product slots unless fresh product-head exact replay, owner evidence, green exact-stack adoption, or downscope appears",reload-hydration/exact-stack,"wait behind benchmark and PR07C product slots unless fresh product-head exact
+replay, owner evidence, green exact-stack adoption, or downscope appears"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published; broader branch needs fresh product
 advantage"
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A branch is already published; original-base branch is duplicate,ready/rtc-pr15a-fallback-group-move-green,PR14B-based PR15A branch is already published; original-base branch is duplicate
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B branch is already published; original-base branch is duplicate,ready/rtc-pr15b-fallback-group-insert-anchor-green,PR14B-based PR15B branch is already published; original-base branch is duplicate
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C branch is already published; original-base branch is duplicate,ready/rtc-pr15c-fallback-group-delete-green,PR14B-based PR15C branch is already published; original-base branch is duplicate
-launch-branch-repair,broad-pr-analysis-fanout,P0,no,specific blocker-removal actions exist and discovery is not protected; broad heavy fanout would burn capacity without product progress,broad-pr-analysis-fanout,"specific blocker-removal actions exist and discovery is not protected; broad
-heavy fanout would burn capacity without product progress"
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,specific blocker-removal actions exist; broad fanout burns PR capacity without direct product progress,broad-pr-analysis-fanout,"specific blocker-removal actions exist; broad fanout burns PR capacity without
+direct product progress"

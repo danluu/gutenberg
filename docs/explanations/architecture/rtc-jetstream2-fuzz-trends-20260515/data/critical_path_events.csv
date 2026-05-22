@@ -1028,3 +1028,6 @@ timestamp,event_type,message,target,blocker_class
 2026-05-22T04:41:20Z,launch,continuation benchmark-canary-fuzzer-gap session=rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T044117Z,benchmark-canary-fuzzer-gap,benchmark canary/exact-stack
 2026-05-22T04:41:38Z,launch,continuation seed-5200005-reducer session=rtc-critical-continuation-seed-5200005-reducer-20260522T044136Z,seed-5200005-reducer,seed reducer/final-stack
 2026-05-22T04:41:39Z,launch,continuation seed-5200005-reducer session=rtc-critical-continuation-seed-5200005-reducer-20260522T044137Z,seed-5200005-reducer,seed reducer/final-stack
+2026-05-22T04:45:22Z,launch,continuation benchmark-canary-fuzzer-gap session=rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T044520Z,benchmark-canary-fuzzer-gap,benchmark canary/exact-stack
+2026-05-22T04:46:40Z,launch,benchmark feedback refresh command=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T042530Z/continuations/benchmark-canary-fuzzer-gap/refresh-current-feedback-command.sh session=rtc-benchmark-canary-feedback-refresh-20260522T044640Z,unknown,critical-path launch
+2026-05-22T04:50:18Z,launch,continuation benchmark-canary-fuzzer-gap session=rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T045016Z,benchmark-canary-fuzzer-gap,benchmark canary/exact-stack

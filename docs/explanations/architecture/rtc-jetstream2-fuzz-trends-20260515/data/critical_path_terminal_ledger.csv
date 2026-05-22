@@ -1,3 +1,4 @@
 lane_id,classification,evidence_path,evidence_mtime,queue_state,reopen_condition
 pr17-1020002,reclassify_downscope_not_product_owned,/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260521T222831Z/continuations/pr17-1020002/classification.tsv,1779402824,terminal,fresh rebuilt product evidence for seed 1020002 newer than terminal classification
+pr07c-browser-env,repaired_ready,/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260519T171842Z/continuations/pr07c-browser-env/classification.tsv,1779211509,terminal,fresh PR07C readiness regression or owner replay evidence newer than repaired_ready classification
 seed-1060015-reducer,resolved_by_active_artifact_downscoped,/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260521T223945Z/continuations/seed-1060015-reducer/classification.tsv,1779403501,terminal,fresh browser/source red evidence newer than downscope classification

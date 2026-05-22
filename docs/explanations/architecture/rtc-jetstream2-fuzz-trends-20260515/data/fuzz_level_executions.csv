@@ -4622,7 +4622,10 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T04:30:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,13,6,0,13,13,934824,FALSE
 2026-05-22T04:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,25,25,25,1,0,14689,FALSE
 2026-05-22T04:30:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,704,704,96,22,19,323000,FALSE
-2026-05-22T04:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,0,1,1,99023,FALSE
-2026-05-22T04:45:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,1,1,1,1,0,55191,FALSE
-2026-05-22T04:45:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,0,0,1,1,73231,FALSE
-2026-05-22T04:45:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,32,32,0,1,1,16000,FALSE
+2026-05-22T04:45:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,3,2,0,3,3,229581,FALSE
+2026-05-22T04:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,4,2,0,4,4,361437,FALSE
+2026-05-22T04:45:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,5,5,5,5,0,281311,FALSE
+2026-05-22T04:45:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,6,3,0,6,6,433225,FALSE
+2026-05-22T04:45:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,6,3,0,6,6,438860,FALSE
+2026-05-22T04:45:00Z,gap-booster,boost-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,7,4,0,7,7,474674,FALSE
+2026-05-22T04:45:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,320,320,0,10,10,154000,FALSE
