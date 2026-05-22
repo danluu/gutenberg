@@ -1,40 +1,34 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,"active discovery is 19 vs floor 3, but discovery_protected=no and coverage is startup/canary-closure work; allow one bounded product repair plus cheap adoption and analysis only"
-repair-branch,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,P0,yes,next concrete branch-changing blocker; active exact-stack continuation already owns the title-reload repair path
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z already owns this heavy repair path
-repair-ready,benchmark-canary-fuzzer-gap/existing-post-crdt-http/seed-7735005,P0,yes,consume replacement-stack green evidence and clear stale existing-post CRDT blocker pressure
-publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http and persistence-reload-http exact-stack gates are still promotion-blocking
-update-controller-rule,benchmark-canary-exact-stack-gate,P0,yes,"keep snapshot publication and all-merged finalization blocked until title-reload-http, existing-post-crdt-http, and large-http-lifecycle evidence is green"
-reserve-discovery,benchmark-canary-http-closure,P0,yes,keep forced HTTP canary groups scheduled as discovery reserve before optional WS expansion
-reserve-discovery,focused-shards-benchmark-minimum,P0,yes,"keep title-reload-http, existing-post-crdt-http, and large-http-lifecycle focused lanes P0 and promotion-blocking"
-reserve-discovery,large-http-lifecycle,P0,yes,retain large HTTP lifecycle as benchmark floor until equivalent current exact-stack coverage is continuously green
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,cheap manifest consumption or adoption is allowed so the sole reload-hydration candidate can enter a future exact stack
-repair-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13,P0,yes,adopt as sole reload-hydration product candidate and convert generic family churn into exact-stack blocker state
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,not promotion-ready until a fresh exact stack including this head passes title-reload-http and existing-post-crdt-http and retains large-http-lifecycle
-launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind active title-reload product repair; do not start a second heavy exact-stack PR job while discovery is unprotected
-cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,over launch budget and manifest-held; interval relaunches do not change product state
-update-controller-rule,reload-hydration/exact-blocker,P0,yes,"accept only product-head exact replay, green exact-stack evidence, newer owner evidence, or explicit downscope as progress"
-update-controller-rule,deferred-family-single-flight,P0,yes,"while manifest holds and launch budgets are exceeded, accept only exact replay, owner evidence, green exact-stack evidence, or explicit downscope"
-cooldown-diagnostic,pre-save-search-live-collapse,P1,yes,"diagnostic-only, over budget, and manifest-held; allow only owner evidence, dependency-complete exact replay, or explicit downscope"
-cooldown-diagnostic,rich-text-suffix-corruption,P1,yes,"diagnostic-only, over budget, and manifest-held; allow only owner evidence, dependency-complete exact replay, or explicit downscope"
-cooldown-diagnostic,malformed-save-payload,P1,yes,raw deferred family is superseded by published PR06B minimal unless fresh product evidence beats it
+reserve-discovery,discovery-reserve,P0,yes,active discovery 13 exceeds floor 3 but discovery_protected is no; allow bounded product work and cheap adoption while preserving reserve
+repair-ready,benchmark-canary-fuzzer-gap/replacement-stack@9a9ccbb67d8f,P0,yes,consume exact_stack_green evidence from try/rtc-benchmark-canary-fuzzer-gap-20260522T030200Z and use it for successor stack work
+repair-branch,benchmark-canary-fuzzer-gap/all-merged-successor,P0,yes,rebuild or replace the blocked all-merged candidate with the green benchmark-canary repair branch before snapshot publication
+publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,original all-merged stack remains blocked by title-reload-http and persistence-reload-http benchmark failures
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,replacement green artifacts already exist and a duplicate heavy exact-stack job would waste the discovery reserve
+reserve-discovery,benchmark-canary-http-closure,P0,yes,keep title-reload-http existing-post-crdt-http persistence and large-http-lifecycle canary-equivalent groups promotion-blocking
+launch-owner-matrix,PR07C/HOLD-07C,P0,yes,current blocker says browser readiness is resolved and owner matrix is queued; run exactly one matrix and promote only if product ownership is proven
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked until the new PR07C owner matrix proves product ownership or exact product-failure replay clears the hold
+cooldown-diagnostic,PR07C/HOLD-07C/duplicate-owner-matrix,P0,yes,allow only the single queued readiness-resolved matrix; terminalize additional duplicate owner-matrix work
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,cheap manifest consumption is allowed as candidate adoption only
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,promotion requires fresh exact-stack title-reload-http existing-post-crdt-http and large-http-lifecycle green evidence
+launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind benchmark-canary successor work and PR07C owner matrix while discovery is unprotected
+cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,family has 402 launches is over recent budget and is manifest-held; interval relaunches are not product progress
+update-controller-rule,deferred-family-single-flight,P0,yes,manifest-held or over-budget families progress only by product-head exact replay owner evidence green exact-stack adoption or explicit downscope
+cooldown-diagnostic,pre-save-search-live-collapse,P1,yes,diagnostic-only over budget and manifest-held; require owner evidence dependency-complete exact replay or downscope
+cooldown-diagnostic,rich-text-suffix-corruption,P1,yes,diagnostic-only over budget and manifest-held; require owner evidence dependency-complete exact replay or downscope
+cooldown-diagnostic,malformed-save-payload,P1,yes,raw deferred family is superseded by canonical published PR06B minimal unless fresh product evidence beats it
 cooldown-diagnostic,http-room-isolation,P1,yes,raw deferred family is superseded by published PR02A unless fresh product evidence beats it
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is consumed and discovery is unprotected; require newer owner evidence or exact product-failure replay before spending browser-e2e capacity
-cooldown-diagnostic,PR07C/HOLD-07C,P0,yes,terminalize duplicate owner-matrix queue work and keep ready/rtc-pr07c-reload-record-snapshots held
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked by consumed hold evidence and lacks newer product-owner proof
-repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts classification and clear stale reducer state unless fresher product-owned evidence appears
+repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts classification and clear stale blocker or queue state
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch
-repair-branch,ready/rtc-pr14b-table-query-array-local-suffix-append/remote-marker-seed-1592595164,P0,yes,route one minimized remote-marker reproducer into PR14B repair or explicit oracle downscope after the active title-reload slot
-cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker,P0,yes,"collapse repeated remote-marker rediscovery until PR14B has a repair head, oracle downscope, or distinct signature"
-update-controller-rule,lower-http-polling-canary-oracle-retarget,P0,yes,retarget lower HTTP polling to canary-equivalent title reload and existing-post CRDT oracles
-cooldown-diagnostic,lower-http-polling/feature-only-corpus,P1,yes,stop counting semantic corpus-only growth with zero new coverage keys and no failure as productive progress
-update-controller-rule,lower-http-polling-runner-crash-retarget,P0,no,current lower HTTP lane has valid live status; use oracle retargeting instead of separate runner repair
-reserve-discovery,lower-level-restore-state-storage-coverage,P1,yes,use freed lower-level capacity for restore-state storage and protocol coverage rather than duplicate diagnostics
-launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout is lower value than bounded product/evidence work
-update-controller-rule,discovery-protection-heavy-pr-gate,P0,yes,"when discovery is unhealthy or unprotected, block duplicate heavy PR jobs and allow only cheap analysis/adoption plus one bounded repair"
-update-controller-rule,effective-pr-slot-accounting,P0,yes,"count queued owner matrices, reducers, deferred jobs, exact replays, continuations, finalizers, and persona loops against PR capacity"
-update-controller-rule,productive-analysis-feed-binding,P0,yes,"map every high-priority Productive Analysis row to explicit allow, reject, or coalesced duplicate decision"
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A is already published; original-base branch is duplicate under current evidence
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B is already published; original-base branch is duplicate under current evidence
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C is already published; original-base branch is duplicate under current evidence
+repair-branch,ready/rtc-pr14b-table-query-array-local-suffix-append/remote-marker,P1,yes,route one minimized representative remote-marker reproducer to PR14B repair or explicit oracle downscope after P0 product slots
+cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker,P0,yes,collapse repeated rediscovery until PR14B has a repair head oracle downscope or distinct signature
+update-controller-rule,lower-http-polling-canary-oracle-retarget,P0,yes,retarget lower HTTP polling toward title-reload-http and existing-post-crdt-http canary-equivalent oracles
+cooldown-diagnostic,lower-http-polling/feature-only-corpus,P1,yes,stop counting feature-only corpus admissions with zero new coverage and no failures as productive progress
+reserve-discovery,lower-level-restore-state-storage-coverage,P1,yes,use freed lower-level capacity for restore-state storage or protocol coverage instead of duplicate diagnostics
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout would starve coverage and focused discovery work
+update-controller-rule,discovery-protection-heavy-pr-gate,P0,yes,block duplicate heavy PR jobs when discovery is unhealthy or unprotected except cheap manifest publication or analysis-only cleanup
+update-controller-rule,effective-pr-slot-accounting,P0,yes,count owner matrices reducers deferred exact replays continuations finalizers and persona loops against PR capacity
+update-controller-rule,productive-analysis-feed-binding,P0,yes,every high-priority Productive Analysis row must map to allow reject or coalesced duplicate in controller decisions
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published and broader branch needs fresh product advantage
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A branch is already published and original-base branch is duplicate
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B branch is already published and original-base branch is duplicate
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C branch is already published and original-base branch is duplicate

@@ -1,27 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z already owns this heavy repair path,benchmark-canary-fuzzer-gap/duplicate-exact-stack,"active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T031912Z
-already owns this heavy repair path"
-publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http and persistence-reload-http exact-stack gates are still promotion-blocking,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"title-reload-http and persistence-reload-http exact-stack gates are still
-promotion-blocking"
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,not promotion-ready until a fresh exact stack including this head passes title-reload-http and existing-post-crdt-http and retains large-http-lifecycle,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"not promotion-ready until a fresh exact stack including this head passes
-title-reload-http and existing-post-crdt-http and retains large-http-lifecycle"
-launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind active title-reload product repair; do not start a second heavy exact-stack PR job while discovery is unprotected,reload-hydration/exact-stack,"wait behind active title-reload product repair; do not start a second heavy
-exact-stack PR job while discovery is unprotected"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is consumed and discovery is unprotected; require newer owner evidence or exact product-failure replay before spending browser-e2e capacity,PR07C/HOLD-07C,"Cycle380 owner evidence is consumed and discovery is unprotected; require newer
-owner evidence or exact product-failure replay before spending browser-e2e
-capacity"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked by consumed hold evidence and lacks newer product-owner proof,ready/rtc-pr07c-reload-record-snapshots,"publication remains blocked by consumed hold evidence and lacks newer
-product-owner proof"
+publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,original all-merged stack remains blocked by title-reload-http and persistence-reload-http benchmark failures,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"original all-merged stack remains blocked by title-reload-http and
+persistence-reload-http benchmark failures"
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,replacement green artifacts already exist and a duplicate heavy exact-stack job would waste the discovery reserve,benchmark-canary-fuzzer-gap/duplicate-exact-stack,"replacement green artifacts already exist and a duplicate heavy exact-stack job
+would waste the discovery reserve"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked until the new PR07C owner matrix proves product ownership or exact product-failure replay clears the hold,ready/rtc-pr07c-reload-record-snapshots,"publication remains blocked until the new PR07C owner matrix proves product
+ownership or exact product-failure replay clears the hold"
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,promotion requires fresh exact-stack title-reload-http existing-post-crdt-http and large-http-lifecycle green evidence,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires fresh exact-stack title-reload-http existing-post-crdt-http
+and large-http-lifecycle green evidence"
+launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind benchmark-canary successor work and PR07C owner matrix while discovery is unprotected,reload-hydration/exact-stack,"wait behind benchmark-canary successor work and PR07C owner matrix while
+discovery is unprotected"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
-update-controller-rule,lower-http-polling-runner-crash-retarget,P0,no,current lower HTTP lane has valid live status; use oracle retargeting instead of separate runner repair,lower-http-polling-runner-crash-retarget,"current lower HTTP lane has valid live status; use oracle retargeting instead of
-separate runner repair"
-launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout is lower value than bounded product/evidence work,broad-pr-analysis-fanout,"discovery is unprotected and broad heavy PR fanout is lower value than bounded
-product/evidence work"
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published; broader branch needs fresh product
-advantage"
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A is already published; original-base branch is duplicate under
-current evidence"
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B is already published; original-base branch is duplicate under
-current evidence"
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C is already published; original-base branch is duplicate under
-current evidence"
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout would starve coverage and focused discovery work,broad-pr-analysis-fanout,"discovery is unprotected and broad heavy PR fanout would starve coverage and
+focused discovery work"
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published and broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published and broader branch needs fresh
+product advantage"
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A branch is already published and original-base branch is duplicate,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A branch is already published and original-base branch is
+duplicate"
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B branch is already published and original-base branch is duplicate,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based PR15B branch is already published and original-base branch is
+duplicate"
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C branch is already published and original-base branch is duplicate,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C branch is already published and original-base branch is
+duplicate"

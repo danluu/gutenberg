@@ -1,3 +1,3 @@
 item_id,reason,rejections
+benchmark-canary-fuzzer-gap,zero_executor_artifact,2
 benchmark-canary-fuzzer-gap,exact_stack_promotion_blocked_without_active_repair,1
-benchmark-canary-fuzzer-gap,zero_executor_artifact,1
