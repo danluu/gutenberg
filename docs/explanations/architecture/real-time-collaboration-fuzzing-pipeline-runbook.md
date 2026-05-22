@@ -585,6 +585,20 @@ and writes machine-readable state next to it:
 -   `no-progress.tsv`: zero-byte, temporary, or otherwise non-terminal artifacts
     that must not be counted as progress.
 
+For benchmark canary feedback, the executor keeps two states separate:
+
+-   `coverage_present`: equivalent fuzz coverage is scheduled or running.
+-   `exact_stack_green`: the exact stack row from the benchmark feedback passes,
+    or a smaller replacement stack with a product fix is explicitly green.
+
+Rows with `promotion_blocked` in
+`/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520/current-feedback.tsv`
+must be modeled as `exact-stack-promotion` blockers with
+`exact-stack-repair` queue entries. `coverage_repaired` alone must not clear
+them. The continuation output must include `exact-stack-status.tsv` and either
+`exact_stack_green`, `fix_branch_created`, `coverage_present_exact_stack_red`,
+or `exact_stack_blocked` in `classification.tsv`.
+
 The executor exists to turn blocker reports into continuation work and local-host
 handoff artifacts. It must not become another passive report loop:
 
@@ -1915,8 +1929,12 @@ lanes, but they must share state. In particular:
     `current-feedback.md`/`.tsv` in its persona context, and
     `bin/rtc-critical-path-pr-executor-loop-remote.sh` turns non-empty feedback
     into a high-priority `benchmark-canary-fuzzer-gap` blocker and bounded
-    continuation job. The benchmark is not the trust model for mergeability;
-    the fuzzer must already be exercising user-hit RTC behavior.
+    continuation job. If the TSV contains `promotion_blocked`, the blocker is an
+    exact-stack promotion repair, not a coverage-only repair: equivalent fuzzing
+    can prove the fuzzer is no longer blind, but maintainer publication remains
+    blocked until the exact stack is green or a replacement fix branch is
+    produced and validated. The benchmark is not the trust model for
+    mergeability; the fuzzer must already be exercising user-hit RTC behavior.
     Existing canary failures, including the
     `large-post-three-user-http` failure on
     `rtc-pr-stack-20260519T214027Z-validated-no-harness`, remain active

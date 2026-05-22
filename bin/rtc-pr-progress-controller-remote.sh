@@ -37,6 +37,9 @@ CODEX_MODEL=${RTC_PR_PROGRESS_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_PR_PROGRESS_CODEX_REASONING_EFFORT:-xhigh}
 CODEX_TIMEOUT_SECONDS=${RTC_PR_PROGRESS_CODEX_TIMEOUT_SECONDS:-5400}
 PERSONA_TIMEOUT_SECONDS=${RTC_PR_PROGRESS_PERSONA_TIMEOUT_SECONDS:-3600}
+JOB_SCAN_LIMIT=${RTC_PR_PROGRESS_JOB_SCAN_LIMIT:-120}
+PR_SPLIT_RUN_SCAN_LIMIT=${RTC_PR_PROGRESS_PR_SPLIT_RUN_SCAN_LIMIT:-80}
+ARTIFACT_INDEX_MAX_AGE_SECONDS=${RTC_PR_PROGRESS_ARTIFACT_INDEX_MAX_AGE_SECONDS:-3600}
 
 PERSONAS=(
 	"linus torvalds"
@@ -125,9 +128,43 @@ job_active() {
 	active_session_matching "^rtc-pr-progress-job-$slug-" >/dev/null
 }
 
+recent_child_dirs() {
+	local root=$1 limit=$2
+	[ -d "$root" ] || return 0
+	find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%T@\t%p\n' 2>/dev/null |
+		sort -nr |
+		awk -v limit="$limit" 'limit > 0 && count++ < limit' |
+		cut -f2-
+}
+
+recent_job_dirs() {
+	recent_child_dirs "$BASE/jobs" "$JOB_SCAN_LIMIT"
+}
+
+recent_branch_repair_manifests() {
+	recent_job_dirs |
+		while IFS= read -r job_dir; do
+			find "$job_dir" -maxdepth 4 -path '*/branch-repair-*/push-manifest.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null || true
+		done |
+		sort -n |
+		tail -80 |
+		cut -f2-
+}
+
 latest_file() {
 	local root=$1 pattern=$2
-	find "$root" -path "$pattern" -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+	[ -d "$root" ] || return 0
+	if [ "$root" = "$BASE/jobs" ]; then
+		recent_job_dirs |
+			while IFS= read -r job_dir; do
+				find "$job_dir" -maxdepth 5 -path "$pattern" -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null || true
+			done |
+			sort -n |
+			tail -1 |
+			cut -f2-
+		return 0
+	fi
+	find "$root" -maxdepth 6 -path "$pattern" -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
 		sort -n |
 		tail -1 |
 		cut -f2-
@@ -161,7 +198,7 @@ branch_repair_manifest_exists() {
 			}
 			END { exit found ? 0 : 1 }
 		' "$manifest" && return 0
-	done < <(find "$BASE/jobs" -path '*/branch-repair-*/push-manifest.tsv' -type f -size +0c -print 2>/dev/null)
+	done < <(recent_branch_repair_manifests)
 	return 1
 }
 
@@ -349,9 +386,7 @@ latest_pr07c_owner_report() {
 			return 0
 		fi
 	fi
-	find "$PR_SPLIT_BASE/runs" -mindepth 1 -maxdepth 1 -type d 2>/dev/null |
-		sort |
-		tail -30 |
+	recent_child_dirs "$PR_SPLIT_BASE/runs" "$PR_SPLIT_RUN_SCAN_LIMIT" |
 		while IFS= read -r run_dir; do
 			find "$run_dir/jobs/outputs" -maxdepth 3 -path '*pr07c*owner*replay*/report.md' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null || true
 		done |
@@ -366,7 +401,7 @@ artifact_index_fresh() {
 	now=$(date -u +%s)
 	mtime=$(stat -c %Y "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null || printf '0')
 	age=$(( now - mtime ))
-	[ "$age" -le 600 ]
+	[ "$age" -le "$ARTIFACT_INDEX_MAX_AGE_SECONDS" ]
 }
 
 latest_indexed_artifact() {
@@ -391,7 +426,10 @@ latest_owner_matrix() {
 			return 0
 		fi
 	fi
-	find "$PR_SPLIT_BASE/runs" -path '*/owner-matrix.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+	recent_child_dirs "$PR_SPLIT_BASE/runs" "$PR_SPLIT_RUN_SCAN_LIMIT" |
+		while IFS= read -r run_dir; do
+			find "$run_dir" -maxdepth 5 -name owner-matrix.tsv -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null || true
+		done |
 		sort -n |
 		tail -1 |
 		cut -f2-
@@ -504,13 +542,11 @@ write_controller_push_manifest() {
 					"$branch" "$head" "$dest" "$base" "$files" "$insertions" "$deletions" "critical-path diff check passed; controller prioritized product PR publication" "$report"
 			done
 		fi
-		find "$BASE/jobs" -path '*/branch-repair-*/push-manifest.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
-			sort -n |
-			tail -40 |
-			cut -f2- |
-			while IFS= read -r manifest; do
-				awk -F '\t' 'NR > 1 && NF >= 9 { print }' "$manifest"
-			done |
+			recent_branch_repair_manifests |
+				tail -40 |
+				while IFS= read -r manifest; do
+					awk -F '\t' 'NR > 1 && NF >= 9 { print }' "$manifest"
+				done |
 			awk -F '\t' '!seen[$1 "\t" $2]++' |
 			while IFS= read -r row; do
 				branch=$(printf '%s' "$row" | cut -f1)
@@ -702,7 +738,11 @@ cd "$SRC"
 timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$synthesis_prompt" > "$synthesis_report" 2> "$synthesis_stderr" || true
 if [ ! -s "$run_dir/control-decisions.tsv" ]; then
 	printf 'action\\ttarget\\tpriority\\tallowed\\treason\\n' > "$run_dir/control-decisions.tsv"
-	printf 'publish-ready\\t*\\thigh\\tyes\\tfallback: keep ready product PRs moving\\n' >> "$run_dir/control-decisions.tsv"
+	if awk -F '\\t' 'NR > 1 && tolower(\$7) ~ /promotion_blocked|known_bad_canary/ { found = 1 } END { exit found ? 0 : 1 }' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" 2>/dev/null; then
+		printf 'publish-ready\\t*\\thigh\\tno\\tfallback: exact-stack benchmark canary is promotion-blocked; require exact_stack_green before publication\\n' >> "$run_dir/control-decisions.tsv"
+	else
+		printf 'publish-ready\\t*\\thigh\\tyes\\tfallback: keep ready product PRs moving\\n' >> "$run_dir/control-decisions.tsv"
+	fi
 	printf 'launch-owner-matrix\\tpr07c-owner-matrix\\thigh\\tyes\\tfallback: readiness is resolved; need owner evidence\\n' >> "$run_dir/control-decisions.tsv"
 	printf 'reserve-discovery\\t*\\thigh\\tyes\\tfallback: preserve active fuzzing reserve\\n' >> "$run_dir/control-decisions.tsv"
 fi
@@ -975,11 +1015,18 @@ write_status() {
 		echo "## Current Decisions"
 		column -t -s $'\t' "$DECISIONS" 2>/dev/null || sed -n '1,120p' "$DECISIONS" 2>/dev/null || true
 		echo
-		echo "## Progress Table"
-		{ column -t -s $'\t' "$PROGRESS" 2>/dev/null || cat "$PROGRESS" 2>/dev/null || true; } | sed -n '1,140p'
-		echo
-		echo "## Controller Push Manifest"
-		sed -n '1,160p' "$PUSH_MANIFEST" 2>/dev/null || true
+			echo "## Progress Table"
+			{ column -t -s $'\t' "$PROGRESS" 2>/dev/null || cat "$PROGRESS" 2>/dev/null || true; } | sed -n '1,140p'
+			echo
+			echo "## Branch Links"
+			awk -F '\t' '
+				NR > 1 && $6 ~ /^(ready|finalized|fresh-prset|cycle|ready-pr03b)\// {
+					printf "- %s: [%s](https://github.com/danluu/gutenberg/tree/%s) status=%s head=%s\n", $2, $6, $6, $5, $7
+				}
+			' "$PROGRESS" 2>/dev/null | sed -n '1,120p'
+			echo
+			echo "## Controller Push Manifest"
+			sed -n '1,160p' "$PUSH_MANIFEST" 2>/dev/null || true
 		echo
 		echo "## Active Sessions"
 		tmux_sessions | rg 'pr-progress|pr-split|critical-path|deferred|coverage|focused|strict|fuzz|protocol|lower-level|native' || true

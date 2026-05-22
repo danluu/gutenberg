@@ -175,6 +175,13 @@ latest_nonempty_file() {
 		cut -f2-
 }
 
+recent_executor_run_dirs() {
+	find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%T@\t%p\n' 2>/dev/null |
+		sort -n |
+		tail -120 |
+		cut -f2-
+}
+
 latest_progress_unblock_artifact() {
 	local indexed
 	if artifact_index_fresh; then
@@ -496,6 +503,49 @@ append_launch() {
 	printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$kind" "$session" "$dedupe" "$run_dir" >> "$LAUNCHES"
 }
 
+benchmark_feedback_present() {
+	[ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]
+}
+
+benchmark_promotion_blocked() {
+	[ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ] || return 1
+	awk -F '\t' '
+		NR > 1 && tolower($7) ~ /promotion_blocked|known_bad_canary/ {
+			found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
+}
+
+benchmark_exact_stack_active() {
+	local hit
+	hit=$(active_session_matching '^rtc-critical-continuation-benchmark-canary-fuzzer-gap' || true)
+	if [ -n "$hit" ]; then
+		printf '%s\n' "$hit"
+		return 0
+	fi
+	pgrep -af '[e]xact-stack-worktrees.*(title-reload-http|existing-post-crdt|large-http)' 2>/dev/null | sed -n '1p'
+}
+
+latest_benchmark_classification() {
+	find "$BASE/runs" -path '*/continuations/benchmark-canary-fuzzer-gap/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+benchmark_classification_only_coverage_repaired() {
+	local classification=$1
+	[ -n "$classification" ] && [ -s "$classification" ] || return 1
+	awk -F '\t' '
+		NR > 1 {
+			rows++
+			if ($2 != "coverage_repaired") other++
+		}
+		END { exit (rows > 0 && other == 0) ? 0 : 1 }
+	' "$classification"
+}
+
 resolve_base_ref() {
 	if git -C "$SRC" rev-parse --verify -q "$BASE_REF^{commit}" >/dev/null; then
 		printf '%s' "$BASE_REF"
@@ -644,7 +694,7 @@ EOF
 
 write_no_progress() {
 	local tmp=$NO_PROGRESS.$$.tmp
-	local rejected_at file
+	local rejected_at file benchmark_classification
 	rejected_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	{
 		printf 'artifact_path\treason\tsize\tmtime\tassociated_job\trejected_at\n'
@@ -652,23 +702,44 @@ write_no_progress() {
 			while IFS=$'\t' read -r file reason size mtime job; do
 				printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$file" "$reason" "$size" "$mtime" "$job" "$rejected_at"
 			done
-		find "$BASE/runs" -maxdepth 7 \
-			-type f \( -name '*.md' -o -name '*.tsv' -o -name '*.tmp' \) -size 0c -print 2>/dev/null |
+		recent_executor_run_dirs |
+			while IFS= read -r run_dir; do
+				find "$run_dir" -maxdepth 6 \
+					-type f \( -name '*.md' -o -name '*.tsv' -o -name '*.tmp' \) -size 0c -print 2>/dev/null
+			done |
 			head -100 |
 			while IFS= read -r file; do
 				printf '%s\tzero_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
 			done
-			find "$BASE/runs" -maxdepth 7 -type f -name '*.tmp' -print 2>/dev/null |
-				head -100 |
-				while IFS= read -r file; do
-					printf '%s\ttmp_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
-				done
-			find "$BASE/runs" -maxdepth 7 -type f -name 'report.md' -size +0c -print 2>/dev/null |
-				while IFS= read -r file; do
-					if rg -qi 'disk[- ]preflight[- ]only|pre[- ]oracle|before oracle|runtime.*failed before|report\.tmp|header[- ]only' "$file" 2>/dev/null; then
-						printf '%s\tpre_oracle_or_preflight_only\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
-					fi
-				done
+		if benchmark_promotion_blocked; then
+			if ! benchmark_exact_stack_active >/dev/null; then
+				printf '%s\texact_stack_promotion_blocked_without_active_repair\t%s\t%s\tbenchmark-canary-fuzzer-gap\t%s\n' \
+					"$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" "$(file_size "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv")" "$(file_mtime "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv")" "$rejected_at"
+			fi
+			benchmark_classification=$(latest_benchmark_classification || true)
+			if benchmark_classification_only_coverage_repaired "$benchmark_classification"; then
+				printf '%s\tcoverage_repaired_without_exact_stack_green\t%s\t%s\tbenchmark-canary-fuzzer-gap\t%s\n' \
+					"$benchmark_classification" "$(file_size "$benchmark_classification")" "$(file_mtime "$benchmark_classification")" "$rejected_at"
+			fi
+		fi
+		recent_executor_run_dirs |
+			while IFS= read -r run_dir; do
+				find "$run_dir" -maxdepth 6 -type f -name '*.tmp' -print 2>/dev/null
+			done |
+			head -100 |
+			while IFS= read -r file; do
+				printf '%s\ttmp_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
+			done
+		recent_executor_run_dirs |
+			while IFS= read -r run_dir; do
+				find "$run_dir" -maxdepth 6 -type f -name 'report.md' -size +0c -print 2>/dev/null
+			done |
+			head -200 |
+			while IFS= read -r file; do
+				if rg -qi 'disk[- ]preflight[- ]only|pre[- ]oracle|before oracle|runtime.*failed before|report\.tmp|header[- ]only' "$file" 2>/dev/null; then
+					printf '%s\tpre_oracle_or_preflight_only\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
+				fi
+			done
 	} > "$tmp"
 	atomic_move "$tmp" "$NO_PROGRESS"
 }
@@ -732,8 +803,12 @@ write_lanes() {
 		if ! lane_terminal_suppressed seed-1060015-reducer; then
 			printf 'seed-1060015-reducer\tPR05?\treducer\tvalidation-only\t%s\t1060015\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/1060015-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
-		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
-			printf 'benchmark-canary-fuzzer-gap\tPROCESS\tcoverage-gap-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+		if benchmark_feedback_present; then
+			if benchmark_promotion_blocked; then
+				printf 'benchmark-canary-fuzzer-gap\tPROCESS\texact-stack-promotion-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,exact-stack\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+			else
+				printf 'benchmark-canary-fuzzer-gap\tPROCESS\tcoverage-gap-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+			fi
 		fi
 		if productive_analysis_feedback_present; then
 			printf 'productive-analysis-action\tPROCESS\tcontrol-feedback\tvalidation-only\t%s\tproductive-analysis-feedback\t%s\t%s\t\tcodex-analysis\tfeedback\tqueued\t%s/runs/productive-analysis-action\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
@@ -743,13 +818,27 @@ write_lanes() {
 }
 
 write_blockers_and_queue() {
-	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reason pr07c_active pr07c_report
+	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reason pr07c_active pr07c_report benchmark_active benchmark_state benchmark_kind benchmark_action benchmark_result benchmark_artifacts benchmark_next
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	pr17_active=$(active_session_matching '1020002|pr17' || true)
 	s5200005=$(active_session_matching '5200005' || true)
 	s1060015=$(active_session_matching '1060015' || true)
 	reload_active=$(active_session_matching 'reload|hydration' || true)
 	pr07c_active=$(active_session_matching 'owner-matrix|pr07c-owner|HOLD-07C' || true)
+	benchmark_active=$(benchmark_exact_stack_active || true)
+	benchmark_state=$([ -n "$benchmark_active" ] && printf active || printf runnable)
+	benchmark_kind=coverage-promotion
+	benchmark_action=coverage-gap-repair
+	benchmark_result=pending
+	benchmark_artifacts=fuzzer-feedback.md,fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv
+	benchmark_next='consume benchmark canary feedback; add or repair equivalent fuzz coverage and validate the fixed stack under that coverage before maintainer snapshot publication'
+	if benchmark_promotion_blocked; then
+		benchmark_kind=exact-stack-promotion
+		benchmark_action=exact-stack-repair
+		benchmark_artifacts=fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv,exact-stack-status.tsv,repair-branch.txt
+		benchmark_next='promotion is blocked on the exact all-merged stack; do not clear with coverage_repaired alone; create or advance a product fix branch and prove exact-stack green before maintainer snapshot publication'
+		benchmark_result=$([ -n "$benchmark_active" ] && printf exact_stack_repair_active || printf exact_stack_repair_required)
+	fi
 	pr07c_report=$(latest_pr07c_owner_replay_ready_report || true)
 	if [ -z "$pr07c_report" ] && pr07c_readiness_resolved; then
 		pr07c_report=$(latest_lane_classification pr07c-browser-env || true)
@@ -757,8 +846,9 @@ write_blockers_and_queue() {
 	reason=$(resource_reason)
 	{
 		printf 'blocker_id\tkind\tpriority\tstate\tsource_input\tblocks\tblocked_by\trequired_artifacts\tactive_session\tnext_action\tupdated_at\n'
-		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
-			printf 'benchmark-canary-fuzzer-gap\tcoverage-promotion\thigh\trunnable\tbenchmark-canary\tcoverage-confidence,snapshot-publication\tfuzzer-feedback\tfuzzer-feedback.md,fuzzer-feedback.tsv\t\tconsume benchmark canary feedback; add or repair equivalent fuzz coverage and validate the fixed stack under that coverage before maintainer snapshot publication\t%s\n' "$now"
+		if benchmark_feedback_present; then
+			printf 'benchmark-canary-fuzzer-gap\t%s\thigh\t%s\tbenchmark-canary\tcoverage-confidence,snapshot-publication,exact-stack-promotion\tfuzzer-feedback\t%s\t%s\t%s\t%s\n' \
+				"$benchmark_kind" "$benchmark_state" "$benchmark_artifacts" "${benchmark_active:-}" "$benchmark_next" "$now"
 		fi
 		if productive_analysis_feedback_present; then
 			printf 'productive-analysis-action\tcontrol-feedback\thigh\trunnable\tproductive-analysis\tcritical-path,pr-progress,deferred,coverage,level-mix\tproductive-analysis\tcritical-path-feedback.md,critical-path-feedback.tsv\t\tconsume productive-analysis action rows; convert them into a controller rule, continuation, coverage adjustment, branch repair, or explicit downscope with evidence\t%s\n' "$now"
@@ -829,8 +919,9 @@ write_blockers_and_queue() {
 ' \
 				"$([ -n "$s1060015" ] && printf active || printf queued)" "${s1060015:-}" "$BASE" "$now" "$now" "$([ -n "$s1060015" ] && printf adopted || printf queued_for_later)"
 		fi
-		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
-			printf 'job-benchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\tcoverage-gap-repair\tbenchmark-canary-fuzzer-gap\tcodex-analysis\thigh\trunnable\t0\t\t\t%s/runs/benchmark-canary-fuzzer-gap\t%s\t\t%s\t\tpending\n' "$BASE" "$now" "$now"
+		if benchmark_feedback_present; then
+			printf 'job-benchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\t%s\tbenchmark-canary-fuzzer-gap\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/benchmark-canary-fuzzer-gap\t%s\t\t%s\t\t%s\n' \
+				"$benchmark_action" "$benchmark_state" "${benchmark_active:-}" "$BASE" "$now" "$now" "$benchmark_result"
 		fi
 		if productive_analysis_feedback_present; then
 			printf 'job-productive-analysis-action\tproductive-analysis-action\tproductive-analysis-action\tcontrol-feedback\tproductive-analysis-action\tcodex-analysis\thigh\trunnable\t0\t\t\t%s/runs/productive-analysis-action\t%s\t\t%s\t\tpending\n' "$BASE" "$now" "$now"
@@ -992,11 +1083,12 @@ write_continuation_prompt() {
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
 Lane: $lane
-Goal: treat benchmark canary failures as evidence that fuzzing/promotion missed user-hit behavior, then repair the fuzzing and PR-refinement process.
+Goal: treat benchmark canary failures as exact-stack promotion blockers, not as coverage-only bookkeeping. Repair the product/PR stack or promotion process until the same stack gets exact-stack green evidence.
 Report path: $report
 Required classification TSV: $classification
 Required coverage-change TSV: ${report%/*}/coverage-change.tsv
 Required repair branch file: ${report%/*}/repair-branch.txt
+Required exact-stack status TSV: ${report%/*}/exact-stack-status.tsv
 
 Task:
 1. Read the critical-path executor state files:
@@ -1013,23 +1105,32 @@ Task:
    - the pointed novelty-status.md
    - relevant scheduler/coverage scripts in $SRC/bin
 4. Do not frame the benchmark as a downstream quality gate. A failure here means the fuzzer or promotion loop failed to exercise equivalent behavior early enough.
-5. Make a concrete repair when possible:
+5. Separate two states explicitly:
+   - coverage_present: equivalent fuzzing is scheduled/running;
+   - exact_stack_green: the exact branch/commit rows from current-feedback.tsv pass or are replaced by a narrower fixed stack with evidence.
+   Coverage alone must not clear a promotion_blocked row.
+6. Make a concrete repair when possible:
    - add or prioritize an equivalent fuzz lane/coverage goal;
    - fix stale accounting or scheduling that prevents the equivalent lane from running;
    - or create/advance a local product-fix branch if the product bug is already isolated.
-6. Do not stop shared fuzzing loops. If you start focused checks, use bounded runs and unique ports. Do not push to GitHub from Jetstream.
-7. Produce durable artifacts:
+   The current failure mode is the exact all-merged stack returning an empty CRDT document on reload. Prefer focused debugging/fix work over declaring coverage repaired.
+7. Do not stop shared fuzzing loops. If you start focused checks, use bounded runs and unique ports. Do not push to GitHub from Jetstream.
+8. Produce durable artifacts:
    - Write a concise report to $report.
    - Write ${report%/*}/coverage-change.tsv with header: change_id,kind,result,detail,artifact_path.
+   - Write ${report%/*}/exact-stack-status.tsv with header: row,branch,commit,status,evidence,next_action.
    - Write $classification with header: lane_id,classification,evidence,next_action,artifact_path.
    - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
-8. Classification rules:
-   - Use coverage_repaired only if equivalent fuzz coverage is now scheduled or running and artifact paths prove it.
+9. Classification rules:
+   - Use exact_stack_green only if exact-stack-status.tsv proves every promotion_blocked row is green or explicitly downscoped with a smaller replacement stack.
    - Use fix_branch_created only if a local branch exists and focused evidence points to it.
+   - Use coverage_present_exact_stack_red if equivalent fuzz coverage exists but current-feedback.tsv still has promotion_blocked rows.
+   - Use exact_stack_blocked if exact replay/fix work cannot proceed; next_action must be an exact command or artifact path.
+   - Do not use coverage_repaired for this lane while current-feedback.tsv has promotion_blocked rows.
    - Use blocked_specific only with an exact next command or exact missing artifact.
    - Use no_active_feedback only if both feedback files are absent or empty.
 
-Passive prose without coverage-change.tsv and classification.tsv is a failure.
+Passive prose without coverage-change.tsv, exact-stack-status.tsv, and classification.tsv is a failure.
 EOF
 		return
 	fi
@@ -1112,13 +1213,21 @@ EOF
 
 launch_continuation_job() {
 	local lane=$1 dedupe=$2 active_pattern=$3 goal=$4
-	local active session ts run_dir worktree prompt report classification stderr rc runner slug
+	local force=${5:-0}
+	local active active_continuations session ts run_dir worktree prompt report classification stderr rc runner slug
 	active=$(active_session_matching "$active_pattern" || true)
+	if [ "$lane" = "benchmark-canary-fuzzer-gap" ] && [ -z "$active" ]; then
+		active=$(benchmark_exact_stack_active || true)
+	fi
 	[ -z "$active" ] || return 0
 	if task_recently_launched "$dedupe" "$MIN_TASK_INTERVAL_SECONDS"; then
 		return 0
 	fi
-	if [ "$(active_count_matching '^rtc-critical-continuation-')" -ge "$MAX_ACTIVE_CONTINUATIONS" ]; then
+	active_continuations=$(active_count_matching '^rtc-critical-continuation-')
+	if [ "$active_continuations" -ge "$MAX_ACTIVE_CONTINUATIONS" ] && [ "$force" != 1 ]; then
+		return 0
+	fi
+	if [ "$active_continuations" -ge "$(( MAX_ACTIVE_CONTINUATIONS + 1 ))" ]; then
 		return 0
 	fi
 	ts=$(date -u +%Y%m%dT%H%M%SZ)
@@ -1160,6 +1269,14 @@ EOF
 }
 
 launch_continuation_jobs() {
+	if benchmark_feedback_present && benchmark_promotion_blocked; then
+		launch_continuation_job \
+			"benchmark-canary-fuzzer-gap" \
+			"benchmark-canary-exact-stack-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" | cut -c1-12)" \
+			"benchmark-canary-fuzzer-gap|benchmark-canary" \
+			"exact-stack promotion repair: current benchmark canary has promotion_blocked rows; do not clear this blocker with coverage_repaired alone. Create/advance a product fix branch or exact-stack replay evidence and write exact-stack-status.tsv/classification.tsv." \
+			1
+	fi
 	if ! lane_terminal_suppressed pr17-1020002; then
 		launch_continuation_job \
 			"pr17-1020002" \
@@ -1188,7 +1305,7 @@ launch_continuation_jobs() {
 			"pr07c-browser-env|pr07c|browser-env" \
 			"PR07C browser-environment repair: debug and fix collaboration readiness null so owner-proof replay can reach seeded action/reload/checkpoint phase. Reserve unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT if running browser checks; write validation.tsv/report.md/classification.tsv and repair-branch.txt."
 	fi
-	if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" ] || [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
+	if benchmark_feedback_present && ! benchmark_promotion_blocked; then
 		launch_continuation_job \
 			"benchmark-canary-fuzzer-gap" \
 			"benchmark-canary-fuzzer-gap-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" | cut -c1-12)" \
@@ -1287,13 +1404,13 @@ run_loop() {
 	log "critical-path PR executor loop started pid=$$"
 	while true; do
 		set +e
-		timeout --kill-after=15s "$RECONCILE_TIMEOUT_SECONDS" "$0" reconcile-once >> "$LOG" 2>&1
+		timeout --kill-after=15s "$RECONCILE_TIMEOUT_SECONDS" "$0" reconcile-once 9>&- >> "$LOG" 2>&1
 		rc=$?
 		set -e
 		if [ "$rc" -ne 0 ]; then
 			log "reconcile failed or timed out rc=$rc timeout=${RECONCILE_TIMEOUT_SECONDS}s"
 		fi
-		sleep "$CYCLE_SLEEP_SECONDS"
+		sleep "$CYCLE_SLEEP_SECONDS" 9>&-
 	done
 }
 

@@ -16,6 +16,7 @@ DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-2026051
 PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
 PRODUCTIVE_ANALYSIS_BASE=/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
+BENCHMARK_FEEDBACK_BASE=/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 DUP_NOISE_BASE=/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516
@@ -74,6 +75,50 @@ tmux_sessions() {
 
 has_session() {
 	tmux_sessions | grep -Fxq "$1"
+}
+
+active_session_matching() {
+	local pattern=$1
+	tmux_sessions | rg -i "$pattern" | sed -n '1p'
+}
+
+benchmark_promotion_blocked() {
+	[ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ] || return 1
+	awk -F '\t' '
+		NR > 1 && tolower($7) ~ /promotion_blocked|known_bad_canary/ {
+			found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
+}
+
+benchmark_exact_stack_repair_active() {
+	local hit
+	hit=$(active_session_matching '^rtc-critical-continuation-benchmark-canary-fuzzer-gap|^rtc-structural-repair-benchmark-canary' || true)
+	if [ -n "$hit" ]; then
+		printf '%s\n' "$hit"
+		return 0
+	fi
+	pgrep -af '[e]xact-stack-worktrees.*(title-reload-http|existing-post-crdt|large-http)' 2>/dev/null | sed -n '1p'
+}
+
+latest_benchmark_classification() {
+	find "$CRITICAL_BASE/runs" -path '*/continuations/benchmark-canary-fuzzer-gap/classification.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
+benchmark_classification_only_coverage_repaired() {
+	local classification=$1
+	[ -n "$classification" ] && [ -s "$classification" ] || return 1
+	awk -F '\t' '
+		NR > 1 {
+			rows++
+			if ($2 != "coverage_repaired") other++
+		}
+		END { exit (rows > 0 && other == 0) ? 0 : 1 }
+	' "$classification"
 }
 
 coverage_supervisor_session_live_for_root() {
@@ -429,6 +474,36 @@ check_critical_path_invariants() {
 	fi
 }
 
+check_benchmark_canary_promotion_invariants() {
+	local out=$1 active classification status_line queue_line exact_green_line
+	benchmark_promotion_blocked || return
+	active=$(benchmark_exact_stack_repair_active || true)
+	if [ -z "$active" ]; then
+		emit_finding "$out" high "benchmark-canary" "exact-stack-promotion-blocked-no-active-repair" \
+			"$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" \
+			"launch or repair benchmark-canary-fuzzer-gap as exact-stack promotion repair; coverage_present is not sufficient while current-feedback.tsv has promotion_blocked rows"
+	fi
+	classification=$(latest_benchmark_classification || true)
+	if benchmark_classification_only_coverage_repaired "$classification"; then
+		emit_finding "$out" high "benchmark-canary" "coverage-repaired-without-exact-stack-green" \
+			"$classification with active_feedback=$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" \
+			"change the controller state machine so coverage_repaired cannot close benchmark-canary promotion blockers; require exact-stack-status.tsv and exact_stack_green or a fix branch"
+	fi
+	status_line=$(awk -F '\t' '$1 == "benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null || true)
+	queue_line=$(awk -F '\t' '$1 == "job-benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/queue.tsv" 2>/dev/null || true)
+	if printf '%s\n%s\n' "$status_line" "$queue_line" | rg -q 'coverage-gap-repair|coverage-promotion'; then
+		emit_finding "$out" high "benchmark-canary" "promotion-blocker-modeled-as-coverage-only" \
+			"blocker=${status_line:-missing} queue=${queue_line:-missing}" \
+			"model promotion_blocked feedback as exact-stack-promotion/exact-stack-repair and prioritize it ahead of reducer work"
+	fi
+	exact_green_line=$(awk -F '\t' 'NR > 1 && $2 == "exact_stack_green" { print; found = 1 } END { exit found ? 0 : 1 }' "$classification" 2>/dev/null || true)
+	if [ -n "$exact_green_line" ] && benchmark_promotion_blocked; then
+		emit_finding "$out" high "benchmark-canary" "exact-green-contradicts-current-feedback" \
+			"classification=$classification green=$exact_green_line feedback=$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" \
+			"refresh current-feedback.tsv from exact-stack rerun or reject stale exact_stack_green classification"
+	fi
+}
+
 check_loop_statuses() {
 	local out=$1 coverage_root
 	check_status_freshness "$out" finalization "$FINALIZATION_BASE/current-finalization-status.md" 1800 rtc-pr-finalization-loop
@@ -714,6 +789,7 @@ detect_findings() {
 	check_runaway_scans "$tmp"
 	check_exact_sessions "$tmp"
 	check_critical_path_invariants "$tmp"
+	check_benchmark_canary_promotion_invariants "$tmp"
 	check_loop_statuses "$tmp"
 	if [ -s "$COVERAGE_BASE/current-output-dir.txt" ]; then
 		coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
@@ -778,6 +854,8 @@ Task:
 	   - $DEFERRED_BASE/current-deferred-status.md
 	   - $PR_PROGRESS_BASE/current-pr-progress-controller-status.md
 	   - $PR_PROGRESS_BASE/logs/controller.log
+	   - $BENCHMARK_FEEDBACK_BASE/current-feedback.md
+	   - $BENCHMARK_FEEDBACK_BASE/current-feedback.tsv
 	   - $RESOURCE_BASE/resource-autoscaler-status.md
    - $COVERAGE_BASE/current-output-dir.txt and the active novelty-status.md
    - $COVERAGE_BASE/logs/monitor.log
@@ -796,7 +874,8 @@ Task:
 6. Do not classify the issue as fixed unless the invariant that fired this finding is no longer true.
 7. For runaway scan findings, identify the controller or graph path that launched the scan and replace it with the artifact index, a current-run-only scan, or a bounded command. Do not just terminate the process.
 8. For analysis-productivity findings, decide whether more Codex analysis would actually advance PR/fuzzer work. If yes, fix the admission/cooldown/session-accounting problem and launch targeted unblock analysis. If no, write the exact reason and the invariant that should prevent future false alarms.
-9. Write a concise durable report to: $report
+9. For benchmark-canary promotion findings, keep coverage_present separate from exact_stack_green. Patch the critical-path executor or PR/finalization controller if coverage_repaired can close a promotion_blocked exact-stack row.
+10. Write a concise durable report to: $report
 
 Guardrails:
 - Do not use behavior-disabling flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
