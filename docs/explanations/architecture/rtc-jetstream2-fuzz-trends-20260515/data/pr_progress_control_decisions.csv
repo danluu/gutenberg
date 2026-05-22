@@ -1,32 +1,29 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery 15 exceeds min 3 and active PR jobs are 0 of 2; allow one bounded product-progress job while preserving fuzzing reserve
-update-controller-rule,heavy-pr-discovery-reserve,P0,yes,heavy PR jobs remain allowed only while discovery reserve is healthy; if unhealthy allow only cheap manifest generation or analysis-only cleanup
-update-controller-rule,productive-analysis-latest-manifest,P0,yes,consume Productive Analysis rows as binding input but retarget stale reload-hydration fa801a6aa13 rows to latest manifest-backed head b01a3a21e2c
-adopt-candidate,reload-hydration/deferred/rtc-reload-hydration-20260522T105924Z@b01a3a21e2c,P0,yes,adopt as candidate evidence only; unit lint and diff evidence do not clear exact-stack browser promotion
-repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,P0,yes,replace generic reload-hydration hold with a head-specific exact-stack blocker for the latest candidate
-launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,next product-progress slot; run title reload existing-post or persistence reload and large HTTP lifecycle on all-merged stack
-publish-ready,reload-hydration@b01a3a21e2c/promotion,P0,no,no fresh all-green exact-stack browser evidence exists for the latest candidate head
-repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,no,stale same-family head superseded by b01a3a21e2c
+reserve-discovery,discovery-reserve,P0,yes,active discovery 14 exceeds min 3 and active PR jobs are 0 of 2; allow bounded product-progress work while preserving fuzzing reserve
+update-controller-rule,productive-analysis-feed-dedupe-retarget,P0,yes,Productive Analysis rows are controller inputs; dedupe repeated historical rows and retarget stale reload-hydration fa801a6aa13 work to b01a3a21e2c
+repair-ready,reload-hydration@b01a3a21e2c/exact-stack-blocker,P0,yes,latest manifest-backed candidate needs a head-specific exact-stack blocker; manifest evidence is not promotion evidence
+launch-branch-repair,reload-hydration@b01a3a21e2c/exact-stack,P0,yes,next product-progress slot; run bounded all-merged title reload plus existing-post or persistence reload plus large HTTP lifecycle
+publish-ready,reload-hydration@b01a3a21e2c,P0,no,no fresh all-green exact-stack browser evidence exists for this candidate
+repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,no,stale same-family head is superseded by latest manifest-backed head b01a3a21e2c
 launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,retarget stale Productive Analysis exact-stack work to b01a3a21e2c
-cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,concrete candidate exists; progress must be exact replay owner evidence green-stack adoption or explicit downscope
-repair-ready,PR07C/HOLD-07C,P0,yes,terminalize stale queued owner-matrix state and reopen only for owner evidence newer than Cycle380 or exact product-failure replay
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,current progress marks owner evidence runtime-held-consumed; duplicate owner-matrix launch is churn
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until newer owner evidence or exact product-failure replay proves product ownership
-repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts classification as terminal lane evidence
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch would duplicate terminal reducer evidence without newer product-owned non-coverage signal
+cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"concrete candidate exists; progress must be exact replay, owner evidence, green-stack adoption, or explicit downscope"
+launch-owner-matrix,PR07C/HOLD-07C,P0,yes,current critical blocker says readiness is resolved and job-pr07c-owner-matrix is queued; run or consume exactly one owner matrix
+cooldown-diagnostic,PR07C/HOLD-07C/duplicate-owner-matrix,P0,yes,"after the queued owner matrix, suppress relaunches unless newer owner evidence or exact product-failure replay appears"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until owner matrix or exact product-failure replay proves product ownership
+repair-ready,seed-5200005-reducer,P0,yes,adopt the active reducer or consume already_resolved_by_active_artifacts classification as lane evidence
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,relaunch duplicates active or terminal reducer evidence without newer product-owned signal
 update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,current benchmark feedback is exact_stack_green; reopen only on newer promotion_blocked or changed equivalent-lane evidence
 repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by newer exact_stack_green benchmark feedback
 launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,no current promotion_blocked row justifies another benchmark rerun
-update-controller-rule,existing-post-crdt-http+large-http-lifecycle,P0,yes,keep these exact-stack lanes promotion-blocking for reload persistence saved-response CRDT and successor stacks
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,diagnostic manifests lack owner evidence focused first-loss replay green exact-stack adoption or downscope
-update-controller-rule,deferred-family-single-flight,P0,yes,manifest-backed deferred families progress by adoption focused replay owner evidence green-stack adoption or explicit downscope not interval relaunch
-update-controller-rule,rtc-http-polling-manager/reload-materialization-retarget,P0,yes,credit generic HTTP polling only for product yield new coverage oracle failure title reload or existing-post materialization
-cooldown-diagnostic,rtc-http-polling-manager/saturated-generic-corpus,high,yes,cool generic polling after repeated no-new-coverage and no-product-yield batches
+update-controller-rule,existing-post-crdt-http+large-http-lifecycle,P0,yes,"keep these exact-stack lanes promotion-blocking for reload, persistence, saved-response, CRDT, and successor stacks"
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic manifests lack owner evidence, focused first-loss replay, green exact-stack adoption, or explicit downscope"
+update-controller-rule,deferred-family-single-flight,P0,yes,"manifest-backed deferred families progress by adoption, focused replay, owner evidence, green-stack adoption, or explicit downscope, not interval relaunch"
+cooldown-diagnostic,rtc-http-polling-manager/saturated-generic-corpus,high,yes,cool generic polling after repeated zero new coverage and zero product yield; retarget only to materialization or bounded canary diagnostics
 reserve-discovery,rtc-http-polling-manager/canary-diagnostic-bounded,high,yes,allow bounded canary-equivalent HTTP diagnostics with corpus caps and no-yield stop conditions while reserve remains healthy
-cooldown-diagnostic,unit-property-rich-text-crdt-merge/placement-oracle,high,yes,cap green-only placement-zero batches until placement semantic delta or failure signal appears
+cooldown-diagnostic,unit-property-rich-text-crdt-merge/placement-oracle,high,yes,"cap green-only placement-zero batches until placement, multi-block, semantic delta, or failure signal appears"
 update-controller-rule,rtc-rich-text-crdt-merge/parser-accounting,medium,yes,correct stale metadata so rich-text CRDT work is not credited to parser-serialization coverage gaps
-reserve-discovery,rtc-block-parser-serialization/failure-isolation,P0,yes,allow one bounded parser failure-isolation or minimization pass for new canonical drift or spec-divergence keys
-cooldown-diagnostic,rtc-block-parser-serialization/broad-drift-admission,P0,yes,stop spending cycles on repeated non-new parser drift signatures until classification changes or new canonical signal appears
+cooldown-diagnostic,rtc-block-parser-serialization/broad-drift-admission,P0,yes,stop spending cycles on repeated non-new parser drift signatures until classification changes or a new canonical signal appears
+reserve-discovery,rtc-block-parser-serialization/failure-isolation,P0,yes,allow one bounded parser failure-isolation or minimization pass only for new canonical drift or spec-divergence keys
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path
