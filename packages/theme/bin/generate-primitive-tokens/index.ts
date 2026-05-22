@@ -29,12 +29,21 @@ const colorJsonPath = path.join( __dirname, '../../tokens/color.json' );
 // guaranteeing the rounded value stays within 0.5 of the original value.
 const HEX_ROUNDING_PRECISION = 3;
 
+function roundColorComponent( value: number ) {
+	if ( ! Number.isFinite( value ) ) {
+		return value;
+	}
+
+	const multiplier = 10 ** HEX_ROUNDING_PRECISION;
+	return Math.round( value * multiplier ) / multiplier;
+}
+
 const transformColorStringToDTCGValue = ( color: string ) => {
 	const parsed = to( color, sRGB );
 
 	return {
 		colorSpace: 'srgb',
-		components: getAll( parsed, { precision: HEX_ROUNDING_PRECISION } ),
+		components: getAll( parsed ).map( roundColorComponent ),
 		...( ( parsed.alpha ?? 1 ) < 1 ? { alpha: parsed.alpha } : undefined ),
 		hex: getColorString( parsed ),
 	};
