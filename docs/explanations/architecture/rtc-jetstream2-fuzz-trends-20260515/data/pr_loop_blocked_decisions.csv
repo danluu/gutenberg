@@ -1,11 +1,13 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,heavy-pr-jobs-while-discovery-unhealthy,P0,no,Discovery reserve must be preserved; heavy PR work is disallowed unless reserve is healthy.,heavy-pr-jobs-while-discovery-unhealthy,"Discovery reserve must be preserved; heavy PR work is disallowed unless reserve
-is healthy."
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,Duplicate while the active benchmark-canary exact-stack repair owns the blocker.,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,Duplicate while the active benchmark-canary exact-stack repair owns the blocker.
+launch-branch-repair,heavy-pr-jobs-while-discovery-unhealthy,P0,no,Heavy PR jobs must not consume reserve when discovery sessions are unhealthy; wait unless the work is cheap manifest generation or analysis-only.,heavy-pr-jobs-while-discovery-unhealthy,"Heavy PR jobs must not consume reserve when discovery sessions are unhealthy;
+wait unless the work is cheap manifest generation or analysis-only."
+publish-ready,current-push-manifest,P1,no,Current controller push manifest is header-only and not a publication source.,current-push-manifest,Current controller push manifest is header-only and not a publication source.
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,P0,no,Duplicate heavy rerun while the active benchmark-canary repair owns the exact-stack blocker.,benchmark-canary-fuzzer-gap/duplicate-all-merged-rerun,"Duplicate heavy rerun while the active benchmark-canary repair owns the
+exact-stack blocker."
 publish-ready,reload-hydration@b01a3a21e2c,P0,no,Fresh green exact-stack browser evidence is missing.,reload-hydration@b01a3a21e2c,Fresh green exact-stack browser evidence is missing.
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,Stale head is superseded by latest reload-hydration manifest head b01a3a21e2c.,reload-hydration@fa801a6aa13/exact-stack,Stale head is superseded by latest reload-hydration manifest head b01a3a21e2c.
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Existing owner evidence is already available or consumed; duplicate owner matrix is churn.,PR07C/HOLD-07C,"Existing owner evidence is already available or consumed; duplicate owner matrix
-is churn."
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,no,Stale head superseded by latest reload-hydration manifest head b01a3a21e2c.,reload-hydration@fa801a6aa13/exact-stack,Stale head superseded by latest reload-hydration manifest head b01a3a21e2c.
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner evidence is already runtime-held-consumed; relaunch only for newer owner evidence.,PR07C/HOLD-07C,"Owner evidence is already runtime-held-consumed; relaunch only for newer owner
+evidence."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Held until exact replay or newer owner evidence proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,Held until exact replay or newer owner evidence proves product ownership.
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,Relaunch duplicates terminal reducer evidence.,seed-5200005-reducer/relaunch,Relaunch duplicates terminal reducer evidence.
 publish-ready,pre-save-search-live-collapse@de2b5502da0,P1,no,Diagnostic branch lacks owner evidence and is not product PR progress.,pre-save-search-live-collapse@de2b5502da0,Diagnostic branch lacks owner evidence and is not product PR progress.
@@ -13,6 +15,5 @@ publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,Superseded by
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,Duplicates already published PR14B-based PR15A path.,ready/rtc-pr15a-fallback-group-move-green,Duplicates already published PR14B-based PR15A path.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,Duplicates already published PR14B-based PR15B path.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Duplicates already published PR14B-based PR15B path.
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,Duplicates already published PR14B-based PR15C path.,ready/rtc-pr15c-fallback-group-delete-green,Duplicates already published PR14B-based PR15C path.
-reserve-discovery,unit-property-rich-text-crdt-merge-open-ended-parser-window,P1,no,Broad parser replacement conflicts with parser oracle saturation; use bounded classifier or table-query target instead.,unit-property-rich-text-crdt-merge-open-ended-parser-window,"Broad parser replacement conflicts with parser oracle saturation; use bounded
-classifier or table-query target instead."
-publish-ready,current-push-manifest,P1,no,Current controller push manifest is header-only and not a publication source.,current-push-manifest,Current controller push manifest is header-only and not a publication source.
+reserve-discovery,unit-property-rich-text-crdt-merge-to-parser-window,P1,no,Broad replacement conflicts with parser oracle saturation; use bounded parser classifier and table-query targets instead.,unit-property-rich-text-crdt-merge-to-parser-window,"Broad replacement conflicts with parser oracle saturation; use bounded parser
+classifier and table-query targets instead."
