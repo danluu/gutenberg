@@ -4,7 +4,7 @@ PR progress items,diagnostic,deferred-family,medium,1
 PR progress items,held-by-controller,ready-product-pr,high,5
 PR progress items,published,ready-product-pr,high,13
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
-controller decisions,allowed,control decision,P0,15
+controller decisions,allowed,control decision,P0,16
 controller decisions,blocked,control decision,P0,6
 controller decisions,allowed,control decision,P1,8
 controller decisions,blocked,control decision,P1,6
