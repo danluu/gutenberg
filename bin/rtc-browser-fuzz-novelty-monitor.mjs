@@ -1434,15 +1434,14 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+			GUTENBERG_RTC_BROWSER_DISABLE_RELOAD: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '0',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
-			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5',
-			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
 			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
 			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
 			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '0',
-			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '1',
-			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '0',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '0',
 			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '900000',
 			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
 			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
@@ -1464,17 +1463,16 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '4',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '28',
+			GUTENBERG_RTC_BROWSER_DISABLE_RELOAD: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '0',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
-			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4',
-			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3',
 			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
 			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
 			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '0',
-			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '0',
 			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '1024',
 			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
-			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '0',
 			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '2400000',
 			GUTENBERG_RTC_TEST_WS_MAX_LISTENERS: '100',
 			NODE_OPTIONS: '--max-old-space-size=24576',
@@ -12472,6 +12470,10 @@ async function applyPolicy(
 			! shouldBypassBenchmarkCanaryNoisePause(
 				group,
 				activeNoisePause
+			) &&
+			! shouldBypassNoisePauseForSuccessDeficit(
+				group,
+				activeNoisePause
 			)
 		) {
 			state.changes.push( {
@@ -12486,8 +12488,35 @@ async function applyPolicy(
 			} );
 			continue;
 		}
+		if (
+			activeNoisePause &&
+			shouldBypassNoisePauseForSuccessDeficit(
+				group,
+				activeNoisePause
+			)
+		) {
+			delete state.pausedGroups?.[ group ];
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'bypass-zero-coverage-success-deficit-noise-pause',
+				group,
+				reason: getManyUserSuccessDeficitReason( group ),
+				sourcePauseAt: activeNoisePause.at,
+				sourcePauseReason: activeNoisePause.reason,
+				expiresAt: activeNoisePause.expiresAt,
+				...( activeNoisePause.originGroup
+					? { originGroup: activeNoisePause.originGroup }
+					: {} ),
+			} );
+		}
 		const zeroCoverageRotationHold = getZeroCoverageRotationHold();
-		if ( zeroCoverageRotationHold ) {
+		if (
+			zeroCoverageRotationHold &&
+			! shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+				group,
+				zeroCoverageRotationHold
+			)
+		) {
 			state.changes.push( {
 				at: new Date().toISOString(),
 				action: 'hold-zero-coverage-rotation-duplicate-noise',
@@ -12499,6 +12528,16 @@ async function applyPolicy(
 				),
 			} );
 			continue;
+		}
+		if ( zeroCoverageRotationHold ) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'bypass-zero-coverage-success-deficit-duplicate-hold',
+				group,
+				family: zeroCoverageRotationHold.family,
+				source: zeroCoverageRotationHold.source,
+				reason: getManyUserSuccessDeficitReason( group ),
+			} );
 		}
 		while ( enabled.size >= MAX_ENABLED_GROUPS ) {
 			const eviction = [
