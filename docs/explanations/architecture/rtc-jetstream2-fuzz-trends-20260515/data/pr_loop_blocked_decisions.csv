@@ -1,16 +1,15 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,current feedback has promotion_blocked rows; stale green or coverage-only evidence cannot clear publication,benchmark-canary-fuzzer-gap/maintainer-snapshot,"current feedback has promotion_blocked rows; stale green or coverage-only
-evidence cannot clear publication"
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,unit/lint and candidate publication are not browser exact-stack promotion clearance,reload-hydration@fa801a6aa13/promotion,"unit/lint and candidate publication are not browser exact-stack promotion
+publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,current feedback is promotion-blocked; stale green summaries and coverage-only evidence do not clear publication,benchmark-canary-fuzzer-gap/maintainer-snapshot,"current feedback is promotion-blocked; stale green summaries and coverage-only
+evidence do not clear publication"
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,unit/lint success and candidate publication are not exact-stack promotion clearance,reload-hydration@fa801a6aa13/promotion,"unit/lint success and candidate publication are not exact-stack promotion
 clearance"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,relaunch only with owner evidence newer than Cycle380 or exact product-failure replay,PR07C/HOLD-07C,"relaunch only with owner evidence newer than Cycle380 or exact product-failure
-replay"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until product ownership is proven by fresh owner matrix or exact replay,ready/rtc-pr07c-reload-record-snapshots,"hold publication until product ownership is proven by fresh owner matrix or
-exact replay"
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,relaunch only with owner evidence newer than Cycle380 or an exact product-failure replay,PR07C/HOLD-07C,"relaunch only with owner evidence newer than Cycle380 or an exact
+product-failure replay"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until fresh owner matrix evidence or exact replay proves product ownership,ready/rtc-pr07c-reload-record-snapshots,hold until fresh owner matrix evidence or exact replay proves product ownership
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer run,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer run
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,duplicates already published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,duplicates already published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path
-publish-ready,current-push-manifest,P1,no,controller push manifest is header-only; use reload-hydration deferred manifest for candidate handling,current-push-manifest,"controller push manifest is header-only; use reload-hydration deferred manifest
-for candidate handling"
+publish-ready,current-push-manifest,P1,no,controller push manifest is header-only; use the reload-hydration deferred manifest for candidate handling,current-push-manifest,"controller push manifest is header-only; use the reload-hydration deferred
+manifest for candidate handling"
