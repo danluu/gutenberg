@@ -1,11 +1,9 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,unit/lint validation and candidate publication are not exact-stack browser promotion clearance,reload-hydration@fa801a6aa13/promotion,"unit/lint validation and candidate publication are not exact-stack browser
-promotion clearance"
-publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,current exact stack is not all green; maintainer-facing publication remains blocked,benchmark-canary-fuzzer-gap/maintainer-snapshot,"current exact stack is not all green; maintainer-facing publication remains
-blocked"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,relaunch only for owner evidence newer than Cycle380 or an exact product-failure replay,PR07C/HOLD-07C,"relaunch only for owner evidence newer than Cycle380 or an exact product-failure
-replay"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked until fresh owner evidence proves product ownership,ready/rtc-pr07c-reload-record-snapshots,publication remains blocked until fresh owner evidence proves product ownership
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,unit/lint validation and candidate publication are not exact-stack promotion clearance,reload-hydration@fa801a6aa13/promotion,"unit/lint validation and candidate publication are not exact-stack promotion
+clearance"
+publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,current exact-stack gate is not clear; publication requires fresh all-green exact feedback,benchmark-canary-fuzzer-gap/maintainer-snapshot,"current exact-stack gate is not clear; publication requires fresh all-green
+exact feedback"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until fresh owner evidence proves product ownership,ready/rtc-pr07c-reload-record-snapshots,held until fresh owner evidence proves product ownership
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresher product-owned non-coverage evidence justifies another reducer,seed-5200005-reducer/relaunch,no fresher product-owned non-coverage evidence justifies another reducer
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
