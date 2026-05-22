@@ -12,5 +12,13 @@ large document edge,block count or initial large-document profile >= 50,scale,TR
 HTTP polling transport,transport == http for the HTTP active-editor cross-product,transport,TRUE
 HTTP client-limit override,http-max-clients-override:true feature reaches target,transport,TRUE
 same-user tabs,collaboratorMode == same-user for the same-user active-editor cross-product,identity,TRUE
+mixed same/distinct identities,collaboratorMode mixes same-user tabs and distinct users in one successful record,identity,TRUE
 revision restore,eligible revision restore completes with status ok,persistence,TRUE
 publish transition,final-persistence-publish completes with status ok,persistence,TRUE
+same-block contention burst,concurrent-same-paragraph action completes with same-block-contention history ok,contention,TRUE
+note reply/resolve/delete lifecycle,"ui-note-thread-lifecycle action reaches remote reply, resolve, reopen, and delete phases",collaboration UI,TRUE
+concurrent persistence race,"save, autosave, and optional publish are raced after multi-user convergence",persistence,TRUE
+WS reconnect and background churn,forced WS reconnect fault and browser pagehide/visibility/focus churn complete,transport,TRUE
+HTTP 413 compaction recovery,forced 413 sync failure recovers under HTTP polling with large content,transport,TRUE
+title/content/excerpt boundary,"title, body, and excerpt witnesses are edited and persisted in one record",post fields,TRUE
+strict 30-user operation ledger,30 active editors pass strict operation-ledger convergence and persistence checks,oracle,TRUE

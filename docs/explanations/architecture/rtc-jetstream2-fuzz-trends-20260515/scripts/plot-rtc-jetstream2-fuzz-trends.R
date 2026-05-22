@@ -63,7 +63,15 @@ many_user_active_editing_groups <- c(
 	"novelty-ws-many-user-active-editing",
 	"novelty-ws-twelve-user-active-rich-text",
 	"novelty-ws-thirty-user-active-editing",
+	"novelty-ws-thirty-user-active-editing-strict",
+	"novelty-ws-mixed-identity-active-editing",
+	"novelty-ws-contention-active-editing",
+	"novelty-ws-persistence-race-active-editing",
+	"novelty-ws-reconnect-background-active-editing",
+	"novelty-ws-notes-lifecycle-active-editing",
+	"novelty-ws-post-field-boundary-active-editing",
 	"novelty-http-many-user-active-editing",
+	"novelty-http-compaction-413-active-editing",
 	"novelty-ws-same-user-active-editing",
 	"novelty-ws-revision-active-editing",
 	"novelty-ws-publish-active-editing"
@@ -81,8 +89,16 @@ many_user_active_editing_goal_ids <- c(
 	"cross-product:active-editors-http-lifecycle:users-6",
 	"http-max-clients-override:true",
 	"cross-product:active-editors-same-user-lifecycle:users-6",
+	"cross-product:active-editors-mixed-identity-lifecycle:users-6",
 	"cross-product:active-editors-revision-restore:users-6",
 	"cross-product:active-editors-publish-lifecycle:users-6",
+	"cross-product:active-editors-same-block-contention:users-6",
+	"cross-product:active-editors-note-thread-lifecycle:users-6",
+	"cross-product:active-editors-persistence-race:users-6",
+	"cross-product:active-editors-ws-reconnect-background:users-6",
+	"cross-product:active-editors-http-413-compaction:users-6",
+	"cross-product:active-editors-post-field-boundary:users-6",
+	"cross-product:active-editors-strict-ledger:users-30",
 	"success-user-blocks:6:50",
 	"success-user-blocks:12:50",
 	"success-user-blocks:30:50",
@@ -1152,8 +1168,16 @@ many_user_active_editing_progress <- tibble(
 		notes_lifecycle_feature = paste0( "cross-product:active-editors-notes-lifecycle:users-", threshold ),
 		http_lifecycle_feature = "cross-product:active-editors-http-lifecycle:users-6",
 		same_user_lifecycle_feature = "cross-product:active-editors-same-user-lifecycle:users-6",
+		mixed_identity_lifecycle_feature = "cross-product:active-editors-mixed-identity-lifecycle:users-6",
 		revision_restore_feature = "cross-product:active-editors-revision-restore:users-6",
 		publish_lifecycle_feature = "cross-product:active-editors-publish-lifecycle:users-6",
+		same_block_contention_feature = "cross-product:active-editors-same-block-contention:users-6",
+		note_thread_lifecycle_feature = "cross-product:active-editors-note-thread-lifecycle:users-6",
+		persistence_race_feature = "cross-product:active-editors-persistence-race:users-6",
+		ws_reconnect_background_feature = "cross-product:active-editors-ws-reconnect-background:users-6",
+		http_413_compaction_feature = "cross-product:active-editors-http-413-compaction:users-6",
+		post_field_boundary_feature = "cross-product:active-editors-post-field-boundary:users-6",
+		strict_ledger_feature = "cross-product:active-editors-strict-ledger:users-30",
 		successful_active_editor_records = get_goal_numeric( success_action_goal, "count", 0 ),
 		successful_active_editor_target = get_goal_numeric( success_action_goal, "target", if_else( threshold >= 30, 3, if_else( threshold >= 10, 10, 25 ) ) ),
 		lifecycle_records = get_feature_numeric( lifecycle_feature, get_goal_numeric( lifecycle_feature, "count", 0 ) ),
@@ -1175,6 +1199,11 @@ many_user_active_editing_progress <- tibble(
 			get_feature_numeric( same_user_lifecycle_feature, get_goal_numeric( same_user_lifecycle_feature, "count", 0 ) ),
 			NA_real_
 		),
+		mixed_identity_lifecycle_records = if_else(
+			threshold == 6,
+			get_feature_numeric( mixed_identity_lifecycle_feature, get_goal_numeric( mixed_identity_lifecycle_feature, "count", 0 ) ),
+			NA_real_
+		),
 		revision_restore_records = if_else(
 			threshold == 6,
 			get_feature_numeric( revision_restore_feature, get_goal_numeric( revision_restore_feature, "count", 0 ) ),
@@ -1183,6 +1212,41 @@ many_user_active_editing_progress <- tibble(
 		publish_lifecycle_records = if_else(
 			threshold == 6,
 			get_feature_numeric( publish_lifecycle_feature, get_goal_numeric( publish_lifecycle_feature, "count", 0 ) ),
+			NA_real_
+		),
+		same_block_contention_records = if_else(
+			threshold == 6,
+			get_feature_numeric( same_block_contention_feature, get_goal_numeric( same_block_contention_feature, "count", 0 ) ),
+			NA_real_
+		),
+		note_thread_lifecycle_records = if_else(
+			threshold == 6,
+			get_feature_numeric( note_thread_lifecycle_feature, get_goal_numeric( note_thread_lifecycle_feature, "count", 0 ) ),
+			NA_real_
+		),
+		persistence_race_records = if_else(
+			threshold == 6,
+			get_feature_numeric( persistence_race_feature, get_goal_numeric( persistence_race_feature, "count", 0 ) ),
+			NA_real_
+		),
+		ws_reconnect_background_records = if_else(
+			threshold == 6,
+			get_feature_numeric( ws_reconnect_background_feature, get_goal_numeric( ws_reconnect_background_feature, "count", 0 ) ),
+			NA_real_
+		),
+		http_413_compaction_records = if_else(
+			threshold == 6,
+			get_feature_numeric( http_413_compaction_feature, get_goal_numeric( http_413_compaction_feature, "count", 0 ) ),
+			NA_real_
+		),
+		post_field_boundary_records = if_else(
+			threshold == 6,
+			get_feature_numeric( post_field_boundary_feature, get_goal_numeric( post_field_boundary_feature, "count", 0 ) ),
+			NA_real_
+		),
+		strict_ledger_records = if_else(
+			threshold == 30,
+			get_feature_numeric( strict_ledger_feature, get_goal_numeric( strict_ledger_feature, "count", 0 ) ),
 			NA_real_
 		),
 		progress = if_else( successful_active_editor_target > 0, successful_active_editor_records / successful_active_editor_target, NA_real_ ),
@@ -1211,8 +1275,16 @@ many_user_active_missing_goals <- tibble( id = many_user_active_editing_goal_ids
 			str_detect( id, "active-editors-http-lifecycle:users-6" ) ~ 10,
 			str_detect( id, "http-max-clients-override:true" ) ~ 10,
 			str_detect( id, "active-editors-same-user-lifecycle:users-6" ) ~ 10,
+			str_detect( id, "active-editors-mixed-identity-lifecycle:users-6" ) ~ 10,
 			str_detect( id, "active-editors-revision-restore:users-6" ) ~ 10,
 			str_detect( id, "active-editors-publish-lifecycle:users-6" ) ~ 10,
+			str_detect( id, "active-editors-same-block-contention:users-6" ) ~ 10,
+			str_detect( id, "active-editors-note-thread-lifecycle:users-6" ) ~ 10,
+			str_detect( id, "active-editors-persistence-race:users-6" ) ~ 10,
+			str_detect( id, "active-editors-ws-reconnect-background:users-6" ) ~ 10,
+			str_detect( id, "active-editors-http-413-compaction:users-6" ) ~ 10,
+			str_detect( id, "active-editors-post-field-boundary:users-6" ) ~ 10,
+			str_detect( id, "active-editors-strict-ledger:users-30" ) ~ 3,
 			str_detect( id, "30" ) ~ 3,
 			str_detect( id, "10|12" ) ~ 10,
 			TRUE ~ 25
@@ -1255,8 +1327,16 @@ many_user_active_editing_requirements <- tibble(
 		"HTTP polling transport",
 		"HTTP client-limit override",
 		"same-user tabs",
+		"mixed same/distinct identities",
 		"revision restore",
-		"publish transition"
+		"publish transition",
+		"same-block contention burst",
+		"note reply/resolve/delete lifecycle",
+		"concurrent persistence race",
+		"WS reconnect and background churn",
+		"HTTP 413 compaction recovery",
+		"title/content/excerpt boundary",
+		"strict 30-user operation ledger"
 	),
 	record_check = c(
 		"status == passed",
@@ -1272,8 +1352,16 @@ many_user_active_editing_requirements <- tibble(
 		"transport == http for the HTTP active-editor cross-product",
 		"http-max-clients-override:true feature reaches target",
 		"collaboratorMode == same-user for the same-user active-editor cross-product",
+		"collaboratorMode mixes same-user tabs and distinct users in one successful record",
 		"eligible revision restore completes with status ok",
-		"final-persistence-publish completes with status ok"
+		"final-persistence-publish completes with status ok",
+		"concurrent-same-paragraph action completes with same-block-contention history ok",
+		"ui-note-thread-lifecycle action reaches remote reply, resolve, reopen, and delete phases",
+		"save, autosave, and optional publish are raced after multi-user convergence",
+		"forced WS reconnect fault and browser pagehide/visibility/focus churn complete",
+		"forced 413 sync failure recovers under HTTP polling with large content",
+		"title, body, and excerpt witnesses are edited and persisted in one record",
+		"30 active editors pass strict operation-ledger convergence and persistence checks"
 	),
 	requirement_family = c(
 		"completion",
@@ -1289,8 +1377,16 @@ many_user_active_editing_requirements <- tibble(
 		"transport",
 		"transport",
 		"identity",
+		"identity",
 		"persistence",
-		"persistence"
+		"persistence",
+		"contention",
+		"collaboration UI",
+		"persistence",
+		"transport",
+		"transport",
+		"post fields",
+		"oracle"
 	),
 	required_for_cross_product_count = TRUE
 )
@@ -3155,8 +3251,16 @@ many_user_active_progress_long <- many_user_active_editing_progress %>%
 		notes_lifecycle_records,
 		http_lifecycle_records,
 		same_user_lifecycle_records,
+		mixed_identity_lifecycle_records,
 		revision_restore_records,
 		publish_lifecycle_records,
+		same_block_contention_records,
+		note_thread_lifecycle_records,
+		persistence_race_records,
+		ws_reconnect_background_records,
+		http_413_compaction_records,
+		post_field_boundary_records,
+		strict_ledger_records,
 		ui_signal_records,
 		large_doc_records,
 		successful_active_editor_target
@@ -3169,8 +3273,16 @@ many_user_active_progress_long <- many_user_active_editing_progress %>%
 			notes_lifecycle_records,
 			http_lifecycle_records,
 			same_user_lifecycle_records,
+			mixed_identity_lifecycle_records,
 			revision_restore_records,
 			publish_lifecycle_records,
+			same_block_contention_records,
+			note_thread_lifecycle_records,
+			persistence_race_records,
+			ws_reconnect_background_records,
+			http_413_compaction_records,
+			post_field_boundary_records,
+			strict_ledger_records,
 			ui_signal_records,
 			large_doc_records
 		),
@@ -3187,8 +3299,16 @@ many_user_active_progress_long <- many_user_active_editing_progress %>%
 			notes_lifecycle_records = "notes lifecycle",
 			http_lifecycle_records = "HTTP lifecycle",
 			same_user_lifecycle_records = "same-user lifecycle",
+			mixed_identity_lifecycle_records = "mixed-identity lifecycle",
 			revision_restore_records = "revision restore",
 			publish_lifecycle_records = "publish lifecycle",
+			same_block_contention_records = "same-block contention",
+			note_thread_lifecycle_records = "note thread lifecycle",
+			persistence_race_records = "persistence race",
+			ws_reconnect_background_records = "WS reconnect/background",
+			http_413_compaction_records = "HTTP 413 compaction",
+			post_field_boundary_records = "post-field boundary",
+			strict_ledger_records = "strict 30-user ledger",
 			ui_signal_records = "presence/cursor signals",
 			large_doc_records = "large-document edge"
 		),
@@ -3219,12 +3339,12 @@ write_plot(
 			x = "progress toward active-editor target",
 			y = NULL,
 			color = "threshold",
-			caption = "The rich/list, UI-signal, and large-document rows are strict cross-products; separate rich-text or many-user lane hits do not increment them."
+			caption = "The rows are strict cross-products; separate ingredient-lane hits do not increment same-block, note lifecycle, persistence-race, reconnect, 413, post-field, or ledger rows."
 		) +
 		theme_rtc() +
 		theme( legend.position = "none" ),
 	width = 12,
-	height = 7
+	height = 10
 )
 
 many_user_active_cross_product_plot <- many_user_active_editing_goal_progress %>%
@@ -3254,11 +3374,11 @@ write_plot(
 			color = "goal family",
 			shape = "met",
 			size = "target",
-			caption = "These goals track users who actually edited plus lifecycle, rich/list, collaboration UI, and large-document requirements in the same successful record."
+			caption = "These goals track users who actually edited plus lifecycle, rich/list, collaboration UI, identity, transport, persistence-race, contention, and large-document requirements in the same successful record."
 		) +
 		theme_rtc(),
 	width = 12,
-	height = 7.2
+	height = 9.2
 )
 
 many_user_active_requirement_plot <- many_user_active_editing_requirements %>%
@@ -3286,7 +3406,7 @@ write_plot(
 			panel.grid.major = element_blank()
 		),
 	width = 10.5,
-	height = 6
+	height = 8.3
 )
 
 feature_category_plot <- feature_categories %>%
@@ -4069,8 +4189,16 @@ summary_lines <- c(
 	paste0( "many_user_active_editing_http_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( http_lifecycle_records ) ),
 	paste0( "many_user_active_editing_http_max_clients_override: ", get_feature_numeric( "http-max-clients-override:true", get_goal_numeric( "http-max-clients-override:true", "count", 0 ) ) ),
 	paste0( "many_user_active_editing_same_user_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( same_user_lifecycle_records ) ),
+	paste0( "many_user_active_editing_mixed_identity_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( mixed_identity_lifecycle_records ) ),
 	paste0( "many_user_active_editing_revision_restore_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( revision_restore_records ) ),
 	paste0( "many_user_active_editing_publish_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( publish_lifecycle_records ) ),
+	paste0( "many_user_active_editing_same_block_contention_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( same_block_contention_records ) ),
+	paste0( "many_user_active_editing_note_thread_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( note_thread_lifecycle_records ) ),
+	paste0( "many_user_active_editing_persistence_race_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( persistence_race_records ) ),
+	paste0( "many_user_active_editing_ws_reconnect_background_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( ws_reconnect_background_records ) ),
+	paste0( "many_user_active_editing_http_413_compaction_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( http_413_compaction_records ) ),
+	paste0( "many_user_active_editing_post_field_boundary_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( post_field_boundary_records ) ),
+	paste0( "many_user_active_editing_strict_ledger_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( strict_ledger_records ) ),
 	paste0( "many_user_active_editing_large_doc_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( large_doc_records ) ),
 	paste0( "pr_review_events: ", nrow( pr_events ) ),
 	paste0( "pr_suggested_net_loc_snapshots: ", n_distinct( pr_suggested_loc$timestamp ) ),

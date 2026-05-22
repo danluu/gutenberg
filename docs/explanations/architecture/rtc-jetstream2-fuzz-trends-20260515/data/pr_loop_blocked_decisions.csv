@@ -1,6 +1,6 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Fresh exact-head owner evidence already resolves readiness; relaunching owner matrix would consume PR capacity without changing the branch decision.,PR07C/HOLD-07C,"Fresh exact-head owner evidence already resolves readiness; relaunching owner
-matrix would consume PR capacity without changing the branch decision."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Fresh exact-head owner evidence already resolves ownership; relaunching the owner matrix would consume PR capacity without changing readiness.,PR07C/HOLD-07C,"Fresh exact-head owner evidence already resolves ownership; relaunching the
+owner matrix would consume PR capacity without changing readiness."
 publish-ready,reload-hydration@b01a3a21e2c/product,P0,no,Product publication requires fresh exact-stack green evidence or replay-backed downscope.,reload-hydration@b01a3a21e2c/product,"Product publication requires fresh exact-stack green evidence or replay-backed
 downscope."
 publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,Diagnostic candidate only; missing owner evidence or product-owned first-loss replay.,pre-save-search-live-collapse@de2b5502da0,"Diagnostic candidate only; missing owner evidence or product-owned first-loss
@@ -11,7 +11,7 @@ publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded 
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by already published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by already published PR15A-on-PR14B branch.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by already published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by already published PR15B-on-PR14B branch.
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by already published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by already published PR15C-on-PR14B branch.
-repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates current exact-green feedback; reopen only on newer promotion_blocked evidence or branch and commit mismatch.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates current exact-green feedback; reopen only on newer
-promotion_blocked evidence or branch and commit mismatch."
-launch-branch-repair,generic-heavy-pr-jobs-while-reserve-unhealthy,high,no,"Block heavy PR jobs whenever discovery reserve is unhealthy; allow only cheap publication, manifest generation or adoption, and analysis-only work.",generic-heavy-pr-jobs-while-reserve-unhealthy,"Block heavy PR jobs whenever discovery reserve is unhealthy; allow only cheap
-publication, manifest generation or adoption, and analysis-only work."
+repair-branch,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic rerun duplicates current exact-green feedback; reopen only on newer promotion_blocked evidence or exact branch/commit mismatch.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic rerun duplicates current exact-green feedback; reopen only on newer
+promotion_blocked evidence or exact branch/commit mismatch."
+launch-branch-repair,generic-heavy-pr-jobs-while-reserve-unhealthy,high,no,"Block heavy PR jobs when discovery reserve is unhealthy; current reserve is healthy, but this standing guard preserves discovery capacity.",generic-heavy-pr-jobs-while-reserve-unhealthy,"Block heavy PR jobs when discovery reserve is unhealthy; current reserve is
+healthy, but this standing guard preserves discovery capacity."

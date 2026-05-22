@@ -1,3 +1,2 @@
 item_id,reason,rejections
 benchmark-canary-fuzzer-gap,pre_oracle_or_preflight_only,1
-benchmark-canary-fuzzer-gap,zero_executor_artifact,1

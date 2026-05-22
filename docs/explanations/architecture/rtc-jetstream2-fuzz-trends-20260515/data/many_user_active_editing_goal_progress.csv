@@ -10,6 +10,8 @@ success-profile:many-user-active-editing,success profile many user active editin
 success-profile-users:many-user-active-editing:6,"success profile users many user active editing
 6",0,25,FALSE,0,user-document-concurrency,25,0,0 / 25
 success-user-blocks:6:50,success user blocks 6 50,0,25,FALSE,0,lifecycle/scale,25,0,0 / 25
+cross-product:active-editors-http-413-compaction:users-6,"cross product active editors http 413
+compaction users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-http-lifecycle:users-6,"cross product active editors http lifecycle
 users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-large-doc:users-10,"cross product active editors large doc users
@@ -20,8 +22,16 @@ cross-product:active-editors-lifecycle:users-10,"cross product active editors li
 10",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-lifecycle:users-12,"cross product active editors lifecycle users
 12",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-mixed-identity-lifecycle:users-6,"cross product active editors mixed identity
+lifecycle users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-note-thread-lifecycle:users-6,"cross product active editors note thread
+lifecycle users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-notes-lifecycle:users-6,"cross product active editors notes lifecycle
 users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-persistence-race:users-6,"cross product active editors persistence race
+users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-post-field-boundary:users-6,"cross product active editors post field
+boundary users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-publish-lifecycle:users-6,"cross product active editors publish lifecycle
 users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-revision-restore:users-6,"cross product active editors revision restore
@@ -30,12 +40,16 @@ cross-product:active-editors-rich-list-lifecycle:users-10,"cross product active 
 lifecycle users 10",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-rich-list-lifecycle:users-12,"cross product active editors rich list
 lifecycle users 12",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-same-block-contention:users-6,"cross product active editors same block
+contention users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-same-user-lifecycle:users-6,"cross product active editors same user
 lifecycle users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-ui-signals:users-10,"cross product active editors ui signals users
 10",0,10,FALSE,0,cross-product,10,0,0 / 10
 cross-product:active-editors-ui-signals:users-12,"cross product active editors ui signals users
 12",0,10,FALSE,0,cross-product,10,0,0 / 10
+cross-product:active-editors-ws-reconnect-background:users-6,"cross product active editors ws reconnect
+background users 6",0,10,FALSE,0,cross-product,10,0,0 / 10
 http-max-clients-override:true,http max clients override true,0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
 success-action-users:10,success action users 10,0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
 success-action-users:12,success action users 12,0,10,FALSE,0,user-document-concurrency,10,0,0 / 10
@@ -50,6 +64,8 @@ cross-product:active-editors-lifecycle:users-30,"cross product active editors li
 30",0,3,FALSE,0,cross-product,3,0,0 / 3
 cross-product:active-editors-rich-list-lifecycle:users-30,"cross product active editors rich list
 lifecycle users 30",0,3,FALSE,0,cross-product,3,0,0 / 3
+cross-product:active-editors-strict-ledger:users-30,"cross product active editors strict ledger
+users 30",0,3,FALSE,0,cross-product,3,0,0 / 3
 cross-product:active-editors-ui-signals:users-30,"cross product active editors ui signals users
 30",0,3,FALSE,0,cross-product,3,0,0 / 3
 success-action-users:30,success action users 30,0,3,FALSE,0,user-document-concurrency,3,0,0 / 3
