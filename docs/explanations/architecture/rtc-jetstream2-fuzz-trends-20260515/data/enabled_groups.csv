@@ -1726,3 +1726,6 @@ timestamp,group,group_family
 2026-05-22T14:36:46Z,novelty-ws-block-gauntlet,auth/locks
 2026-05-22T14:52:37Z,novelty-ws-common-blocks,auth/locks
 2026-05-22T15:04:49Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-22T15:07:16Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-22T15:09:52Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-22T15:12:36Z,novelty-ws-parser-transform,parser
