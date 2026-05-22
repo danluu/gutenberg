@@ -1,15 +1,16 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380-relaunch,high,no,Cycle380 owner evidence is runtime-held-consumed; do not relaunch stale evidence as current proof.,PR07C/HOLD-07C/stale-cycle380-relaunch,"Cycle380 owner evidence is runtime-held-consumed; do not relaunch stale evidence
-as current proof."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold until the fresh PR07C owner matrix or exact PR07C replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold until the fresh PR07C owner matrix or exact PR07C replay proves product
-ownership."
-publish-ready,reload-hydration@b01a3a21e2c/product,high,no,No fresh exact-stack browser green or replay-backed downscope exists for the deferred head.,reload-hydration@b01a3a21e2c/product,"No fresh exact-stack browser green or replay-backed downscope exists for the
-deferred head."
-launch-branch-repair,benchmark-canary-fuzzer-gap/generic-exact-rerun,high,no,Duplicate repair ownership after exact repair evidence; reopen only if live feedback reintroduces a blocker.,benchmark-canary-fuzzer-gap/generic-exact-rerun,"Duplicate repair ownership after exact repair evidence; reopen only if live
-feedback reintroduces a blocker."
 publish-ready,current-push-manifest,high,no,Current controller push manifest has only the header and no publishable rows.,current-push-manifest,Current controller push manifest has only the header and no publishable rows.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,medium,no,Superseded by the already published minimal PR06B branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by the already published minimal PR06B branch.
-publish-ready,ready/rtc-pr15a-pr15b-pr15c-originals,medium,no,"Duplicate original fallback branches are superseded by the already published PR14B-based PR15A, PR15B, and PR15C paths.",ready/rtc-pr15a-pr15b-pr15c-originals,"Duplicate original fallback branches are superseded by the already published
-PR14B-based PR15A, PR15B, and PR15C paths."
+publish-ready,reload-hydration@b01a3a21e2c/product,high,no,No fresh all-merged exact-stack browser green or replay-backed downscope exists for this head.,reload-hydration@b01a3a21e2c/product,"No fresh all-merged exact-stack browser green or replay-backed downscope exists
+for this head."
+launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380-relaunch,high,no,Do not relaunch stale runtime-held-consumed evidence; only the current readiness-resolved pass should run.,PR07C/HOLD-07C/stale-cycle380-relaunch,"Do not relaunch stale runtime-held-consumed evidence; only the current
+readiness-resolved pass should run."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold until the current PR07C owner matrix or exact replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,"Hold until the current PR07C owner matrix or exact replay proves product
+ownership."
+launch-branch-repair,benchmark-canary-fuzzer-gap/generic-rerun,high,no,Generic benchmark reruns duplicate existing exact feedback and do not resolve the live branch+commit gate.,benchmark-canary-fuzzer-gap/generic-rerun,"Generic benchmark reruns duplicate existing exact feedback and do not resolve
+the live branch+commit gate."
+publish-ready,benchmark-canary-fuzzer-gap/large-post-three-user-http,high,no,Keep publication blocked until live current feedback has matching exact branch+commit green rows.,benchmark-canary-fuzzer-gap/large-post-three-user-http,"Keep publication blocked until live current feedback has matching exact
+branch+commit green rows."
 publish-ready,pre-save-search-live-collapse@de2b5502da0,medium,no,No owner evidence or product-owned first-loss replay is present.,pre-save-search-live-collapse@de2b5502da0,No owner evidence or product-owned first-loss replay is present.
-publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,No exact suffix-divergence or owner evidence is present.,rich-text-suffix-corruption@a2d47a072e1,No exact suffix-divergence or owner evidence is present.
+publish-ready,rich-text-suffix-corruption@a2d47a072e1,medium,no,No exact suffix-divergence replay or owner evidence is present.,rich-text-suffix-corruption@a2d47a072e1,No exact suffix-divergence replay or owner evidence is present.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,medium,no,Superseded by already published PR06B minimal.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal.
+publish-ready,ready/rtc-pr15a-pr15b-pr15c-originals,medium,no,"Superseded by already published PR14B-based PR15A, PR15B, and PR15C branches.",ready/rtc-pr15a-pr15b-pr15c-originals,"Superseded by already published PR14B-based PR15A, PR15B, and PR15C branches."
