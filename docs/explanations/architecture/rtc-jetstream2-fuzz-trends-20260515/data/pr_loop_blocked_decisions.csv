@@ -3,12 +3,12 @@ launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,act
 already owns exact-stack repair"
 publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http existing-post-crdt-http and large-http-lifecycle gates are not green on current exact-stack evidence,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"title-reload-http existing-post-crdt-http and large-http-lifecycle gates are not
 green on current exact-stack evidence"
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,P0,no,candidate publication is allowed but promotion waits for fresh title-reload existing-post CRDT and large-http exact-stack green evidence,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,"candidate publication is allowed but promotion waits for fresh title-reload
-existing-post CRDT and large-http exact-stack green evidence"
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99/promotion,P0,no,not promotion-ready until fresh exact-stack title-reload existing-post CRDT and large-http evidence is green,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99/promotion,"not promotion-ready until fresh exact-stack title-reload existing-post CRDT and
+large-http evidence is green"
 launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind the active title-reload product slot; do not spend a second heavy replay while discovery is unprotected,reload-hydration/exact-stack,"wait behind the active title-reload product slot; do not spend a second heavy
 replay while discovery is unprotected"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,current Cycle380 owner evidence is already consumed; require newer product-owner evidence or exact product-failure replay first,PR07C/HOLD-07C,"current Cycle380 owner evidence is already consumed; require newer product-owner
-evidence or exact product-failure replay first"
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is already consumed and discovery is unprotected; require newer product-owner evidence or exact product-failure replay first,PR07C/HOLD-07C,"Cycle380 owner evidence is already consumed and discovery is unprotected;
+require newer product-owner evidence or exact product-failure replay first"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked by consumed hold evidence and lacks newer product-owner proof,ready/rtc-pr07c-reload-record-snapshots,"publication remains blocked by consumed hold evidence and lacks newer
 product-owner proof"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
