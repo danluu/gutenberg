@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-22T08:52:32Z`
+Snapshot generated: `2026-05-22T08:59:26Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance, resource,
 and PR-progress logs. The plotting data is generated with R, ggplot2, tidyverse
@@ -18,7 +18,7 @@ so PR-controller graphs track current raw state instead of stale local state.
 ## High-Level Readout
 
 The monitor data is current through `2026-05-22T08:48:04Z`, and the latest
-current-run accounting row was sampled at `2026-05-22T08:51:27Z` for
+current-run accounting row was sampled at `2026-05-22T08:58:27Z` for
 `run-20260522T085006Z`. That active-run row is not trusted yet:
 `current_run_metrics_trusted` is `FALSE`, `pending_until_first_pass` is `TRUE`,
 and `full_pass_pending` is `TRUE`. The monitor has `3,942` passes from
@@ -37,18 +37,18 @@ startup failures `0`; the previous trusted current-run row had denominators
 
 The latest duplicate/noise synthesis rejects a product-bug or broad
 product-duplicate-storm interpretation and identifies a producer/scheduler
-control-plane leak around no-product startup failures. The latest
-duplicate/noise feedback-action file in the copied evidence is empty, so it
-does not add new action evidence beyond that synthesis. The refreshed graph
-does not prove a live no-product startup storm because the latest completed
-pass has summary startup failures `0`; it also cannot certify the newest root's
-duplicate/noise rate until the active run completes a full pass. This report
-treats the pending duplicate/noise accounting as a control-plane health issue,
-not as a measured product duplicate/noise rate.
+control-plane leak: benchmark-canary/P0 groups can bypass duplicate/noise holds
+after they already have a current-run product-evidence representative. The
+latest duplicate/noise feedback-action file in the copied evidence is empty, so
+it does not add new action evidence beyond that synthesis. The refreshed graph
+cannot certify the newest root's duplicate/noise rate until the active run
+completes a full pass. This report treats the pending duplicate/noise
+accounting as a control-plane health issue, not as a measured product
+duplicate/noise rate.
 
 Resource state is usable but pressure-sensitive. The latest monitor sample has
 `401.4G` free memory; the latest disk sample has `91.2GiB` free on `/` and
-`555.7GiB` free on `/media/volume/danluu-fuzz-data`. Latest CPU utilization is
+`558.9GiB` free on `/media/volume/danluu-fuzz-data`. Latest CPU utilization is
 `61.61%`, with `1.92%` iowait. Latest load averages are `38.72`, `45.69`, and
 `45.66` on `64` logical CPUs, with no blocked tasks in the same sample.
 
@@ -61,14 +61,14 @@ smoke row, and a protocol-server HTTP polling sentinel. `transport-integration`,
 `backend-api`, and standalone fuzz-only assertion work have no current
 graph-counted lane.
 
-The execution counter has `16,670,611` estimated individual executions. These
+The execution counter has `16,673,541` estimated individual executions. These
 are reconstructed from lane `events.ndjson`: browser seed attempts,
 unit/property fixed tests plus generated cases, coverage-guided inputs, and
 protocol/backend cases. Lower-level counts are approximate when reconstructed
 from batch metadata or legacy batch-count fields. The latest partial bucket at
-`2026-05-22T08:45:00Z` has `355` browser/e2e executions, `1,408`
-unit-property executions, and `1,260` protocol-server executions, about
-`1,420`/hour, `5,632`/hour, and `5,040`/hour. The preceding bucket had `792`
+`2026-05-22T08:45:00Z` has `715` browser/e2e executions, `2,816`
+unit-property executions, and `2,460` protocol-server executions, about
+`2,860`/hour, `11,264`/hour, and `9,840`/hour. The preceding bucket had `792`
 browser/e2e, `2,944` unit-property, and `2,545` protocol-server executions.
 The latest nonzero coverage-guided lower-level bucket remains
 `2026-05-21T11:00:00Z` with `2` executions.
@@ -77,8 +77,8 @@ The PR-focused data is live. The controller table has `21` distinct work items:
 `13` high-priority ready-product PR rows marked published, `5` high-priority
 ready-product rows held by the controller, `1` runtime-held consumed row, and
 deferred-family diagnostic/needs-product-decision rows. The current push
-manifest is empty. The critical-path executor has `7` blockers: `2` runnable,
-`1` queued, `1` held, `1` active benchmark-canary continuation, and `2`
+manifest is empty. The critical-path executor has `7` blockers: `2` active,
+`1` runnable, `1` queued, `1` held, and `2`
 terminal/downscoped. The latest PR-split feedback keeps the fileable prefix
 through `PR15C` and rejects `PR16-RLH` as fileable until strict seed `6000007`
 reaches the final persistence oracle and owner rows prove it.
@@ -106,7 +106,7 @@ not be read as a measured product duplicate/noise rate. If
 `current_run_metrics_trusted` is `FALSE`, treat the duplicate/noise share as
 incomplete current-run accounting and as a control-plane health issue until the
 active run completes a full pass. The latest sample for
-`run-20260522T085006Z` was taken at `2026-05-22T08:51:27Z` with
+`run-20260522T085006Z` was taken at `2026-05-22T08:58:27Z` with
 `current_run_metrics_trusted` `FALSE`, `pending_until_first_pass` `TRUE`, and
 `full_pass_pending` `TRUE`. The active current-run
 signature/actionable-signature/product-evidence denominators are still
@@ -117,18 +117,18 @@ summary startup failures `0`; the previous trusted active-root denominator was
 four-signature active root, not broad duplicate evidence.
 
 The latest duplicate/noise synthesis rejects a product-bug or broad product
-duplicate-storm interpretation. It says strict `pre_action_bootstrap_stall`
-noise is mostly suppressed by triage and analysis consumers, but producer and
-scheduler paths can still keep or re-materialize no-product startup groups
-through short supervisor cooldowns, novelty/materialization floors, forced
-publication, and inconsistent current-run scoping. The latest
+duplicate-storm interpretation. It says the stronger root cause is a
+producer/scheduler leak in which benchmark-canary/P0 groups bypass duplicate
+holds even after the current run already has a product-evidence representative,
+so duplicate-heavy `assertion` product-evidence families can keep being
+generated while downstream triage and analysis mostly cap siblings. The latest
 duplicate/noise feedback-action file is empty, so this snapshot has no newer
 action note to confirm remediation. The newest accounting row is incomplete,
 so it should be read as a control-plane health issue until the first full pass
-finishes, not as a measured duplicate/noise rate. It also does not show a live
-no-product startup storm in the latest completed pass, where summary startup
-failures are `0`. The synthesis remains useful as a control-plane watchpoint
-if no-product startup groups re-enter the current output directory.
+finishes, not as a measured duplicate/noise rate. The latest completed pass
+has summary startup failures `0`, and the previous trusted active-root
+denominator was only `4`/`4`/`4`, so the prior `0.25` share was one duplicated
+signature, not evidence of a broad duplicate storm.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
@@ -137,7 +137,7 @@ if no-product startup groups re-enter the current output directory.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. The data volume is
-around `84.3%` used and root is around `40.8%` used. Root pressure remains
+around `84.2%` used and root is around `40.8%` used. Root pressure remains
 stable, but output-size budgeting still matters on the data volume.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
@@ -235,15 +235,15 @@ The execution metric estimates individual test/case executions from lane
 `events.ndjson`: browser seed attempts, unit/property fixed tests plus
 generated cases, coverage-guided inputs, and protocol/backend cases.
 Lower-level rows are approximate when reconstructed from batch metadata or
-legacy batch-count fields. The latest totals are approximately `73,734`
-browser/e2e, `5,663,072` unit-property, `458,097` coverage-guided lower-level,
-and `10,475,708` protocol-server executions. Transport-integration,
+legacy batch-count fields. The latest totals are approximately `74,056`
+browser/e2e, `5,664,480` unit-property, `458,097` coverage-guided lower-level,
+and `10,476,908` protocol-server executions. Transport-integration,
 backend-api, fuzz-assertion, and other buckets are `0` in the current
 reconstructed table.
 
 The latest 15-minute bucket at `2026-05-22T08:45:00Z` is partial and has
-`355` browser/e2e executions (`1,420`/hour), `1,408` unit-property executions
-(`5,632`/hour), and `1,260` protocol-server executions (`5,040`/hour).
+`715` browser/e2e executions (`2,860`/hour), `2,816` unit-property executions
+(`11,264`/hour), and `2,460` protocol-server executions (`9,840`/hour).
 Coverage-guided lower-level, backend-api, transport-integration, and
 fuzz-assertion are zero in that bucket. The preceding
 `2026-05-22T08:30:00Z` bucket had `792` browser/e2e executions
@@ -260,14 +260,14 @@ The likely-real graph is a triage-output metric only. It counts non-duplicate
 `.triage-watcher/**/result.json` rows classified `likely_real`, deduped by
 canonical bug key and attributed to first-seen time. The latest collected
 triaged likely-real output is still all browser/e2e: `116` likely-real
-findings over about `555.9` runner-hours, or `20.87` per 100 runner-hours.
+findings over about `556.6` runner-hours, or `20.84` per 100 runner-hours.
 
 ![Unique bug-output candidates by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-level.png)
 
 ![Unique bug-output candidate rate by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-rate-by-level.png)
 
 The broader unique-output graphs include untriaged raw signatures and
-lower-level assertion failures. Current unique candidate output is `1,241`
+lower-level assertion failures. Current unique candidate output is `1,240`
 browser/e2e candidates, `6` unit-property candidates, and `2`
 coverage-guided-lower-level candidates. Backend-api, protocol-server,
 transport-integration, standalone fuzz-assertion, and other buckets have no
@@ -325,7 +325,7 @@ while the stricter cross-product key ramps up.
 
 Latest combined progress is `0`/`25` strict cross-product records. The
 combined group is currently marked enabled, and the adjacent large-post
-three-user HTTP profile has `391` records seen with `39` successful records.
+three-user HTTP profile has `393` records seen with `39` successful records.
 Those adjacent hits still do not count as completed combined coverage unless
 the strict feature key records the whole conjunction.
 
@@ -473,16 +473,16 @@ buckets.
 
 ![Repeated critical-path no-progress artifacts](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-no-progress-artifacts.png)
 
-The critical-path executor has `7` blockers: two runnable blockers
-(`productive-analysis-action` and `seed-5200005-reducer`), one queued blocker
-(`pr07c-owner-matrix`), one held blocker (`reload-hydration`), one active
-benchmark-canary continuation, and two terminal/downscoped blockers (`PR17`
-seed `1020002` and `seed-1060015-reducer`). The current job queue has the
-benchmark-canary continuation active, PR07C owner-matrix and seed `5200005`
-queued, productive-analysis runnable, and reload-hydration gated by the
-deferred single-flight hold. The repeated no-progress table currently has two
-`benchmark-canary-fuzzer-gap` rows: `pre_oracle_or_preflight_only` and
-`zero_executor_artifact`.
+The critical-path executor has `7` blockers: two active blockers
+(`benchmark-canary-fuzzer-gap` and `seed-5200005-reducer`), one runnable
+blocker (`productive-analysis-action`), one queued blocker
+(`pr07c-owner-matrix`), one held blocker (`reload-hydration`), and two
+terminal/downscoped blockers (`PR17` seed `1020002` and
+`seed-1060015-reducer`). The current job queue has the
+benchmark-canary continuation and seed `5200005` reducer active, PR07C
+owner-matrix queued, productive-analysis runnable, and reload-hydration gated
+by the deferred single-flight hold. The repeated no-progress table currently
+has one `benchmark-canary-fuzzer-gap` row: `zero_executor_artifact`.
 
 ## Interpretation
 
@@ -490,7 +490,7 @@ The graph-refresh pipeline is current: the collector brings in the current
 coverage-guided root, resource samples, PR-focused raw inputs, and the standard
 persona-loop outputs. The active coverage root is `run-20260522T085006Z`, and
 its latest current-run duplicate/noise accounting is incomplete. The live row
-was sampled at `2026-05-22T08:51:27Z` with `full_pass_pending` `TRUE`,
+was sampled at `2026-05-22T08:58:27Z` with `full_pass_pending` `TRUE`,
 `pending_until_first_pass` `TRUE`, and `current_run_metrics_trusted` `FALSE`.
 Current-run signature/actionable-signature/product-evidence denominators are
 not available yet. The latest completed monitor pass reports
@@ -501,14 +501,13 @@ not a measured product duplicate/noise rate.
 
 The duplicate/noise persona synthesis still matters because it rejects a
 product-bug reading and points at a plausible producer-side control-plane leak:
-no-product strict startup failures may be suppressed downstream while
-supervisor and novelty producer paths keep retrying or republishing them. That
-interpretation is not the current measured live health signal. With trusted
-active accounting unavailable and zero startup failures in the latest
-completed pass, the graph rejects a proven live startup-storm reading but does
-not certify the newest root's duplicate/noise rate yet. The startup leak
-remains a control-plane watchpoint if no-product startup groups re-enter the
-current output directory.
+benchmark-canary/P0 producers can keep bypassing duplicate holds after a
+current-run product-evidence representative exists. That interpretation is not
+the current measured live health signal. With trusted active accounting
+unavailable, the graph rejects a proven broad duplicate-storm reading but does
+not certify the newest root's duplicate/noise rate yet. The predicate leak
+remains a control-plane watchpoint if product-evidence duplicate families keep
+re-entering the current output directory.
 
 The resource picture is usable but still pressure-sensitive. Latest CPU
 utilization is `61.61%`, with `1.92%` iowait; load is `38.72`, `45.69`, and
@@ -528,8 +527,8 @@ row, and zero current-bucket coverage-guided lower-level executions.
 
 Browser/e2e remains the only level producing triaged likely-real findings in
 the committed triage-output metric. The latest execution bucket is partial: the
-`2026-05-22T08:45:00Z` bucket has `355` browser/e2e executions, `1,408`
-unit-property executions, and `1,260` protocol-server executions. The preceding
+`2026-05-22T08:45:00Z` bucket has `715` browser/e2e executions, `2,816`
+unit-property executions, and `2,460` protocol-server executions. The preceding
 `2026-05-22T08:30:00Z` bucket shows `792` browser/e2e executions, `2,944`
 unit-property executions, and `2,545` protocol-server executions. Lower-level
 counts remain approximate where
@@ -540,6 +539,6 @@ push manifest. The PR-split persona feedback keeps the fileable prefix through
 `PR15C` and rejects `PR16-RLH` as fileable until strict seed `6000007` reaches
 the final persistence oracle and owner rows prove it. The PR loop still needs
 to convert held ready-product rows, the queued PR07C owner matrix, held
-reload-hydration work, active benchmark-canary continuation, runnable
-productive-analysis feedback, and the seed `5200005` reducer into validated
+reload-hydration work, active benchmark-canary continuation, active seed
+`5200005` reducer, and runnable productive-analysis feedback into validated
 publishable branches rather than more blocked or no-progress artifacts.
