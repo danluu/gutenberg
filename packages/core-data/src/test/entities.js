@@ -522,6 +522,69 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
+	it( 'materializes CRDT block content when the save payload still has persisted content', async () => {
+		const baseContent = pageContent( [ 'Alpha', 'Beta' ] );
+		const crdtContent = pageContent( [
+			'Alpha',
+			'edited-second-duplicate',
+		] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: baseContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'local-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				blocks: parse( crdtContent ),
+				content: 'stale serialized CRDT content',
+			} ) ),
+			update: jest.fn(),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: baseContent },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			{ content: baseContent },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( syncManager.getCRDTRecordData ).toHaveBeenCalledWith(
+			'postType/page',
+			123
+		);
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/page',
+			123,
+			expect.objectContaining( {
+				content: crdtContent,
+				blocks: expect.any( Array ),
+			} ),
+			'gutenberg-undo-ignored',
+			expect.objectContaining( { isSave: true } )
+		);
+		expect( result ).toEqual( {
+			content: crdtContent,
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'local-doc',
+			},
+		} );
+	} );
+
 	it( 'does not persist empty content while the local CRDT blocks are non-empty', async () => {
 		const crdtContent = pageContent( [ 'Alpha', 'current content' ] );
 		const latestRecord = {

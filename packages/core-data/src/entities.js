@@ -456,6 +456,7 @@ export const additionalEntityConfigLoaders = [
  * @param {string}  name            Post type name.
  * @param {boolean} isTemplate      Whether the post type is a template.
  * @param {string}  baseURL         REST base URL for the post type.
+ * @param {Object}  options         Saving options.
  * @return {Promise< Object >} Updated edits.
  */
 export const prePersistPostType = async (
@@ -463,7 +464,8 @@ export const prePersistPostType = async (
 	edits,
 	name,
 	isTemplate,
-	baseURL
+	baseURL,
+	options = {}
 ) => {
 	const newEdits = {};
 	const objectType = `postType/${ name }`;
@@ -618,6 +620,30 @@ export const prePersistPostType = async (
 					newEdits.content = mergedContent;
 				}
 			}
+
+			if (
+				! options.__unstableSkipSyncUpdate &&
+				editedSavedFields.includes( 'content' ) &&
+				! locallyChangedSavedFieldSet.has( 'content' ) &&
+				! ( 'content' in newEdits )
+			) {
+				const crdtRecord = syncManager?.getCRDTRecordData?.(
+					objectType,
+					objectId
+				);
+				const crdtContent = getCRDTRawPostValue(
+					crdtRecord,
+					'content'
+				);
+
+				if (
+					typeof crdtContent === 'string' &&
+					crdtContent !== '' &&
+					crdtContent !== getRawPostValue( edits.content )
+				) {
+					newEdits.content = crdtContent;
+				}
+			}
 		} catch {
 			// A failed freshness check should not block saving. The request itself
 			// will still surface any real save errors to the editor.
@@ -746,13 +772,14 @@ async function loadPostTypeEntities() {
 				( isTemplate
 					? capitalCase( record.slug ?? '' )
 					: String( record.id ) ),
-			__unstablePrePersist: ( persistedRecord, edits ) =>
+			__unstablePrePersist: ( persistedRecord, edits, options ) =>
 				prePersistPostType(
 					persistedRecord,
 					edits,
 					name,
 					isTemplate,
-					`/${ namespace }/${ postType.rest_base }`
+					`/${ namespace }/${ postType.rest_base }`,
+					options
 				),
 			__unstable_rest_base: postType.rest_base,
 			supportsPagination: true,
