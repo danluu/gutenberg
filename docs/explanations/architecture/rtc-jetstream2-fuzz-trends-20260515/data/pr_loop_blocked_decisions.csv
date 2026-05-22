@@ -4,7 +4,7 @@ publish-ready,benchmark-canary-fuzzer-gap/current-stack,high,no,Publication rema
 large-post-three-user-http and paired reload evidence."
 launch-branch-repair,benchmark-canary-fuzzer-gap/generic-exact-rerun,high,no,Concrete exact repair evidence exists; another generic rerun would duplicate churn.,benchmark-canary-fuzzer-gap/generic-exact-rerun,"Concrete exact repair evidence exists; another generic rerun would duplicate
 churn."
-launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380-relaunch,high,no,Stale owner evidence is runtime-held-consumed; only the new readiness-resolved pass or exact PR07C replay should proceed.,PR07C/HOLD-07C/stale-cycle380-relaunch,"Stale owner evidence is runtime-held-consumed; only the new readiness-resolved
+launch-owner-matrix,PR07C/HOLD-07C/stale-cycle380-relaunch,high,no,Stale owner evidence is runtime-held-consumed; only a new readiness-resolved pass or exact PR07C replay should proceed.,PR07C/HOLD-07C/stale-cycle380-relaunch,"Stale owner evidence is runtime-held-consumed; only a new readiness-resolved
 pass or exact PR07C replay should proceed."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Hold until fresh PR07C owner evidence or exact replay proves product ownership.,ready/rtc-pr07c-reload-record-snapshots,Hold until fresh PR07C owner evidence or exact replay proves product ownership.
 publish-ready,current-push-manifest,high,no,Current push manifest contains only the header and has no publishable rows.,current-push-manifest,Current push manifest contains only the header and has no publishable rows.
