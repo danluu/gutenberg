@@ -25,5 +25,3 @@ critical lanes,adopt-or-queue,codex-analysis,lane,1
 critical lanes,queued,codex-analysis,lane,2
 active sessions,active,analysis,analysis,6
 active sessions,active,critical-continuation,critical-continuation,1
-active sessions,active,feedback-refresh,feedback-refresh,1
-active sessions,active,finalization,finalization,1
