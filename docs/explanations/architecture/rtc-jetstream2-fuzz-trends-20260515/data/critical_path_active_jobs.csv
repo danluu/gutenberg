@@ -1,7 +1,6 @@
 session,class,started_hint
-rtc-analysis-live-1facc3ff-http-large-lifecycle-gen-4-20260522T161258Z,analysis,
-rtc-analysis-live-1facc3ff-http-same-user-stale-draft-gen-4-20260522T161247Z,analysis,
-rtc-critical-continuation-seed-5200005-reducer-20260522T162200Z,critical-continuation,
+rtc-analysis-live-1facc3ff-http-large-lifecycle-gen-5-20260522T162727Z,analysis,
+rtc-analysis-live-1facc3ff-http-persistence-probe-gen-5-20260522T162705Z,analysis,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,

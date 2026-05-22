@@ -1,10 +1,10 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-persistence-no-title,1412,837,0,0.5927762039660056,persistence
+persistence-no-title,1415,837,0,0.5915194346289753,persistence
 real-user-editing,1116,415,0,0.3718637992831541,real-user
-session-lifecycle,892,494,0,0.5538116591928252,lifecycle
+session-lifecycle,894,494,0,0.5525727069351231,lifecycle
 permissions-auth-locks,752,265,0,0.3523936170212766,auth/locks
 async-server-blocks,622,136,0,0.21864951768488747,async/media
-large-post-three-user-http-lifecycle,561,46,1,0.08199643493761141,lifecycle
+large-post-three-user-http-lifecycle,563,46,1,0.08170515097690942,lifecycle
 long-session-large-doc,497,39,0,0.07847082494969819,lifecycle
 media-cross-entity,225,111,0,0.49333333333333335,async/media
 full,207,16,0,0.07729468599033816,block-structure
