@@ -44,6 +44,14 @@ export async function publishPost( this: Editor ) {
 	await this.page
 		.getByRole( 'button', { name: 'Dismiss this notice' } )
 		.filter( { hasText: 'published' } )
+		.or(
+			this.page
+				.locator(
+					'.components-snackbar, .components-notice, [role="status"], [aria-live]'
+				)
+				.filter( { hasText: /published/i } )
+		)
+		.first()
 		.waitFor();
 	const postId = new URL( this.page.url() ).searchParams.get( 'post' );
 
