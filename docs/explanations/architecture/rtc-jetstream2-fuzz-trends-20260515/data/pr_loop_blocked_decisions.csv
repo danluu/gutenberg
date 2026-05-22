@@ -1,15 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,P0,no,"publication waits for exact green title reload, persistence reload, and large-post-three-user HTTP evidence",rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,"publication waits for exact green title reload, persistence reload, and
-large-post-three-user HTTP evidence"
-publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,P0,no,stale all-merged stack failed title reload and persistence reload and is superseded by replacement path,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,"stale all-merged stack failed title reload and persistence reload and is
-superseded by replacement path"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until the fresh PR07C owner matrix or exact product-failure replay provides owner/result evidence,ready/rtc-pr07c-reload-record-snapshots,"hold publication until the fresh PR07C owner matrix or exact product-failure
-replay provides owner/result evidence"
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"promotion requires green title-reload-http, existing-post-crdt-http, and large-http-lifecycle exact evidence",reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires green title-reload-http, existing-post-crdt-http, and
-large-http-lifecycle exact evidence"
-launch-branch-repair,reload-hydration/exact-stack,P0,no,"wait behind benchmark and PR07C product slots unless fresh owner evidence, exact replay, green stack adoption, or downscope appears",reload-hydration/exact-stack,"wait behind benchmark and PR07C product slots unless fresh owner evidence, exact
-replay, green stack adoption, or downscope appears"
+publish-ready,rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,P0,no,"publish only after refreshed exact feedback is green for title reload, existing-post CRDT persistence, and large-post-three-user HTTP",rtc-pr-stack-20260522T041409Z-all-merged-benchmark-canary-replacement@9a9ccbb67d8f,"publish only after refreshed exact feedback is green for title reload,
+existing-post CRDT persistence, and large-post-three-user HTTP"
+publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,P0,no,stale stack failed title reload and persistence reload and is superseded by the replacement path,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text@14767c60,"stale stack failed title reload and persistence reload and is superseded by the
+replacement path"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until the PR07C owner matrix proves product ownership or an exact product-failure replay resolves the hold,ready/rtc-pr07c-reload-record-snapshots,"hold publication until the PR07C owner matrix proves product ownership or an
+exact product-failure replay resolves the hold"
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"promotion requires green exact-stack title reload, existing-post CRDT persistence, and large HTTP lifecycle evidence",reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires green exact-stack title reload, existing-post CRDT
+persistence, and large HTTP lifecycle evidence"
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,zero-byte artifacts and no fresh product-owned non-coverage evidence do not justify another reducer launch,seed-5200005-reducer/relaunch,"zero-byte artifacts and no fresh product-owned non-coverage evidence do not
+justify another reducer launch"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published; broader branch needs fresh product
 advantage"
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A branch is already published; original-base branch is duplicate,ready/rtc-pr15a-fallback-group-move-green,PR14B-based PR15A branch is already published; original-base branch is duplicate
