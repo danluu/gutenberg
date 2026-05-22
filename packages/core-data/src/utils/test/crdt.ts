@@ -1,3 +1,5 @@
+/// <reference types="@wordpress/jest-console" />
+
 /**
  * WordPress dependencies
  */
@@ -6,14 +8,7 @@ import { Y } from '@wordpress/sync';
 /**
  * External dependencies
  */
-import {
-	afterEach,
-	beforeEach,
-	describe,
-	expect,
-	it,
-	jest,
-} from '@jest/globals';
+import { afterEach, beforeEach, describe, it, jest } from '@jest/globals';
 
 /**
  * Mock getBlockTypes so CRDT merging can identify rich-text attributes.
@@ -70,6 +65,10 @@ const {
 } = jest.requireActual(
 	'@wordpress/blocks'
 ) as typeof import('@wordpress/blocks');
+
+type SerializableBlock = Parameters<
+	typeof __unstableSerializeAndClean
+>[ 0 ][ number ];
 
 import { createElement, RawHTML } from '@wordpress/element';
 import { RichTextData } from '@wordpress/rich-text';
@@ -990,7 +989,10 @@ describe( 'crdt', () => {
 				},
 			];
 			const generatedBlocks = staleBlocks.map( ( block ) => {
-				const generatedBlock = { ...block, isValid: true };
+				const generatedBlock: SerializableBlock = {
+					...block,
+					isValid: true,
+				};
 				delete generatedBlock.__unstableBlockSource;
 				delete generatedBlock.originalContent;
 				delete generatedBlock.validationIssues;

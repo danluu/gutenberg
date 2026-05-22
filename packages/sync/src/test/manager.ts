@@ -472,13 +472,15 @@ describe( 'SyncManager', () => {
 					...mockRecord,
 					content: 'old content',
 				};
-				mockSyncConfig.getPersistedCRDTDoc = jest.fn( ( record ) => {
-					const meta = record.meta as
-						| { _crdt_document?: string | null }
-						| undefined;
+				mockSyncConfig.getPersistedCRDTDoc = jest.fn(
+					( record: ObjectData ) => {
+						const meta = record.meta as
+							| { _crdt_document?: string | null }
+							| undefined;
 
-					return meta?._crdt_document ?? null;
-				} );
+						return meta?._crdt_document ?? null;
+					}
+				);
 				const manager = createSyncManager();
 
 				await manager.load(

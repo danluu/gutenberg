@@ -43,7 +43,9 @@ const transformColorStringToDTCGValue = ( color: string ) => {
 
 	return {
 		colorSpace: 'srgb',
-		components: getAll( parsed ).map( roundColorComponent ),
+		components: getAll( parsed ).map( ( component ) =>
+			component === null ? component : roundColorComponent( component )
+		),
 		...( ( parsed.alpha ?? 1 ) < 1 ? { alpha: parsed.alpha } : undefined ),
 		hex: getColorString( parsed ),
 	};

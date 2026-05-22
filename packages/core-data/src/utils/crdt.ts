@@ -324,10 +324,18 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
 	return getRootMap( crdtDoc, CRDT_RECORD_MAP_KEY ).toJSON();
 }
 
-function getGeneratedBlockSerialization( blocks: Block[] ): string {
+type SerializableBlocks = Parameters< typeof __unstableSerializeAndClean >[ 0 ];
+
+function serializeAndCleanBlocks( blocks: Block[] ): string {
 	return __unstableSerializeAndClean(
-		getGeneratedBlockSerializationBlocks( blocks )
+		blocks as unknown as SerializableBlocks
 	).trim();
+}
+
+function getGeneratedBlockSerialization( blocks: Block[] ): string {
+	return serializeAndCleanBlocks(
+		getGeneratedBlockSerializationBlocks( blocks )
+	);
 }
 
 function getGeneratedBlockSerializationBlocks( blocks: Block[] ): Block[] {
@@ -406,7 +414,7 @@ function hasPersistedBlockContentChanged(
 	}
 
 	const rawPersistedContent = persistedContent;
-	const serializedBlocks = __unstableSerializeAndClean( blocks ).trim();
+	const serializedBlocks = serializeAndCleanBlocks( blocks );
 
 	if ( serializedBlocks === rawPersistedContent ) {
 		return false;
