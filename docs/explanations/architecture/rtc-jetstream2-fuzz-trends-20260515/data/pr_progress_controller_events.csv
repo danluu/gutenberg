@@ -1730,3 +1730,11 @@ timestamp,message,event_type
 2026-05-22T22:10:33Z,launched controller action job for repair-branch rtc-table-query-array-crdt@unblock/table-query-array-crdt-20260522T200809Z at 20260522T221033Z,other
 2026-05-22T22:10:33Z,controller action repair-branch rtc-table-query-array-crdt@unblock/table-query-array-crdt-20260522T200809Z 20260522T221033Z,launch
 2026-05-22T22:10:34Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-22T22:12:38Z,launched PR07C owner matrix job 20260522T221237Z,PR07C owner job launched
+2026-05-22T22:12:38Z,pr07c owner matrix 20260522T221237Z,launch
+2026-05-22T22:14:41Z,launched controller action job for repair-branch PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z at 20260522T221441Z,other
+2026-05-22T22:14:41Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-22T22:14:41Z,controller action repair-branch PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z 20260522T221441Z,launch
+2026-05-22T22:16:44Z,launched controller action job for repair-ready reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca at 20260522T221644Z,other
+2026-05-22T22:16:44Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-22T22:16:44Z,controller action repair-ready reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca 20260522T221644Z,launch
