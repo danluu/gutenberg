@@ -1761,3 +1761,17 @@ timestamp,message,event_type
 2026-05-22T22:35:20Z,launched persona controller round 20260522T223520Z,persona round launched
 2026-05-22T22:35:22Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-05-22T22:37:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:39:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:41:35Z,launched controller action job for repair-ready PR17/table-stale-snapshot/query-array at 20260522T224135Z,other
+2026-05-22T22:41:35Z,controller action repair-ready PR17/table-stale-snapshot/query-array 20260522T224135Z,launch
+2026-05-22T22:41:36Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:42:04Z,launched persona controller round 20260522T224204Z,persona round launched
+2026-05-22T22:42:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:42:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:42:56Z,PR progress controller started pid=1917250,controller start
+2026-05-22T22:43:00Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:43:28Z,PR progress controller started pid=1948918,controller start
+2026-05-22T22:43:32Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:44:12Z,PR progress controller started pid=1995703,controller start
+2026-05-22T22:44:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T22:44:16Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other

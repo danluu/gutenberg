@@ -1,38 +1,38 @@
 action,target,priority,allowed,reason
-generate-publication-manifest,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Current-head owner evidence is green and the existing push manifest is header-only; this is cheap product publication prep.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Next product-progress slot; publish the current green head after generating a non-header manifest.
-consume-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Read and adopt the resolved current-head owner matrix to terminalize the owner-evidence-needed gate.
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,no,Do not rerun a heavy duplicate owner matrix unless newer red evidence appears; consume the existing matrix instead.
-repair-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,Clear stale blocker state and hand the current green head to publication.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale progress head is superseded by current green head 2f8247258316bde60869c06c383090904e9426bd.
-repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Old repair rows are superseded by current-head green owner replay.
-repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,yes,"Continue bounded repair for latest exact-stack red rows: large-post, same-user stale-content, and revision-table."
-publish-ready,PR17/stale-crdt-cas-background-delivery@c49e8cd8d17682130736cd885565b900a8d954b2,P0,no,Latest exact-stack evidence is red; coverage-present and stale green rows do not clear publication.
-repair-ready,PR17/table-stale-snapshot/query-array,P0,yes,Attach lower-level query-array reproducer as repair evidence for the revision-table/table-stale blocker.
-reserve-discovery,benchmark-canary-fuzzer-gap/http-equivalent-exact-stack,P0,yes,"Keep benchmark-equivalent HTTP, parser, list-refresh, same-user stale, and table/revision coverage active while PR17 remains red."
-reserve-discovery,benchmark-canary-fuzzer-gap/revision-table-body-http,P0,yes,Unpause or materialize table-stale/revision-table coverage until fresh behavior or reduced product failure exists.
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,Convert generic deferred hold to a head-specific exact-stack blocker; adopt manifest only as candidate evidence.
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,P0,no,Missing exact-stack proof; require title reload plus existing-post or persistence reload plus large HTTP lifecycle green evidence or replay-backed downscope.
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,Reject duplicate heavy replay while single-flight hold and focused blocker work own this path.
-cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,high,yes,403 launches plus a concrete candidate head make generic relaunch diagnostic churn.
-cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2+rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335,high,yes,Diagnostic-only heads lack owner or product first-loss evidence; suppress generic relaunch and product publication.
-publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2/product,medium,no,Missing owner or product first-loss evidence.
-publish-ready,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335/product,medium,no,Missing focused exact replay or owner evidence.
-repair-ready,seed-5200005-reducer,P0,yes,Terminalize the resolved reducer blocker; reopen only with newer product-owned seed evidence.
-repair-branch,rtc-table-query-array-crdt@unblock/table-query-array-crdt-20260522T200809Z,P0,yes,Continue the adopted bounded repair branch for canonical table query-array CRDT divergence.
-launch-branch-repair,rtc-table-query-array-crdt,P0,no,Do not launch duplicate table repair while the adopted repair branch exists.
-cooldown-diagnostic,table-stale-snapshot/broad-relaunch,high,yes,"Suppress broad relaunch until table query-array repair is promoted, rejected, or downscoped."
-cooldown-diagnostic,table-query-array-crdt/remote-marker-family,high,yes,Repeated same canonical key after repair adoption is diagnostic churn; keep only repair-confirmation uses.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by already published PR15A-on-PR14B branch.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by already published PR15B-on-PR14B branch.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by already published PR15C-on-PR14B branch.
-cooldown-diagnostic,malformed-save-payload/raw-deferred,medium,yes,Raw deferred heads are superseded by canonical published PR06B minimal.
-cooldown-diagnostic,http-room-isolation/raw-deferred,medium,yes,Raw deferred heads are superseded by PR02A absent fresh healthy-user HTTP evidence.
-reserve-discovery,discovery-reserve-policy,P0,yes,"Discovery is currently healthy at 16 active sessions over min 3; preserve focused, strict, protocol, lower-level, browser, and coverage-guided lanes."
-gate-heavy-pr-jobs,discovery-unhealthy,P0,yes,"If discovery becomes unhealthy, block new heavy PR jobs while allowing cheap publication manifests, evidence adoption, cleanup, and analysis-only work."
-update-controller-rule,product-progress-latest-evidence-head-precedence,P0,yes,"Latest exact owner, product, benchmark evidence and actual branch head override stale progress rows."
-update-controller-rule,product-progress-empty-push-manifest-gate,P0,yes,"Header-only push manifests do not count as publication, candidate adoption, or readiness."
-update-controller-rule,product-progress-single-flight-dedupe,P0,yes,Collapse repeated feed aliases and active sessions by concrete target while preserving explicit allow and reject decisions.
-update-controller-rule,benchmark-canary-exact-stack-gate,P0,yes,Block PR17 publication until latest exact-stack rows are green or replaced by narrower replay-backed evidence.
-update-controller-rule,diagnostic-family-caps,high,yes,"Cap duplicate lower-level and diagnostic families after first canonical failure per head, then retarget capacity to product blockers."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,current-head owner replay is green; generate a non-header manifest and publish this product branch
+consume-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,yes,consume the existing green owner evidence and clear stale blocker state
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,P0,no,rerun would be duplicate heavy browser work unless newer red owner evidence appears
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale progress head is superseded by current green head 2f8247258316bde60869c06c383090904e9426bd
+repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale repair rows are superseded by current-head owner evidence
+repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,yes,"continue bounded repair for latest exact red rows: large-post HTTP, same-user stale content, and revision-table body"
+publish-ready,PR17/stale-crdt-cas-background-delivery@c49e8cd8d17682130736cd885565b900a8d954b2,P0,no,exact-stack evidence remains red; coverage-present or stale green evidence cannot clear publication
+repair-ready,PR17/table-stale-snapshot/query-array,P0,yes,attach lower-level query-array reproducer as repair evidence for revision-table/table-stale blocker
+repair-branch,rtc-table-query-array-crdt@unblock/table-query-array-crdt-20260522T200809Z,P0,yes,continue adopted bounded repair branch for canonical table query-array CRDT divergence
+launch-branch-repair,rtc-table-query-array-crdt,P0,no,do not launch duplicate table repair while adopted repair branch exists
+reserve-discovery,benchmark-canary-fuzzer-gap/http-equivalent-exact-stack,P0,yes,"keep benchmark-equivalent large-post, same-user, table/revision, parser, list, and HTTP lanes active while PR17 is red"
+reserve-discovery,novelty-http-table-stale-snapshot,P0,yes,unpause or rematerialize forced table/revision coverage because revision-table-body remains red and table coverage is under target
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,convert generic deferred hold to head-specific exact-stack blocker; manifest is candidate evidence only
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/product,P0,no,missing exact-stack proof for title reload plus existing-post or persistence reload plus large HTTP lifecycle
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca/exact-stack,P0,no,reject duplicate heavy replay while single-flight/focused blocker work owns this path
+cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,high,yes,403 launches plus concrete candidate head make generic relaunch diagnostic churn
+cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2+rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335,high,yes,diagnostic-only heads lack owner or product first-loss evidence; suppress generic relaunch and publication
+publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2/product,medium,no,missing owner evidence or product first-loss evidence
+publish-ready,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335/product,medium,no,missing focused exact replay or owner evidence
+repair-ready,seed-5200005-reducer,P0,yes,terminalize resolved reducer blocker; reopen only with newer product-owned seed evidence
+cooldown-diagnostic,table-query-array-crdt/remote-marker-family,high,yes,repeated same canonical key after repair adoption is duplicate scheduling churn
+cooldown-diagnostic,table-stale-snapshot/broad-relaunch,high,yes,suppress broad relaunch while forced benchmark table/revision coverage and repair confirmation handle the exact gap
+retarget-discovery,lower-level-parser-table-list-http-corpus,high,yes,"retarget lower-level capacity to parser, table/list, polling, and persisted-save-response oracles seeded from benchmark failures"
+cooldown-diagnostic,lower-level-rich-text-crdt-merge/broad,medium,yes,long green/no-yield and bootstrap-noise batches should drain to low-rate canary instead of main lower-level slot
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already published PR15A-on-PR14B branch
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already published PR15B-on-PR14B branch
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already published PR15C-on-PR14B branch
+cooldown-diagnostic,malformed-save-payload/raw-deferred,medium,yes,raw deferred heads are superseded by canonical published PR06B minimal
+cooldown-diagnostic,http-room-isolation/raw-deferred,medium,yes,raw deferred heads are superseded by PR02A absent fresh healthy-user HTTP evidence
+reserve-discovery,discovery-reserve-policy,P0,yes,"discovery is healthy now at 17 active sessions over min 3; preserve focused, strict, protocol, lower-level, browser, and coverage-guided lanes"
+update-controller-rule,discovery-unhealthy-heavy-pr-gate,P0,yes,"if discovery falls below reserve, block new heavy PR jobs while allowing cheap manifests, evidence adoption, cleanup, and analysis-only work"
+update-controller-rule,product-progress-latest-evidence-head-precedence,P0,yes,latest exact owner/product/benchmark evidence and actual branch head override stale progress rows
+update-controller-rule,product-progress-empty-push-manifest-gate,P0,yes,"header-only push manifests do not count as publication, candidate adoption, or readiness"
+update-controller-rule,product-progress-single-flight-dedupe,P0,yes,collapse repeated feed aliases by concrete target while preserving explicit allow and reject decisions
+update-controller-rule,benchmark-canary-exact-stack-gate,P0,yes,block PR17 publication until latest exact-stack rows are green or replaced by narrower replay-backed evidence
+update-controller-rule,diagnostic-family-caps,high,yes,cap duplicate diagnostic and lower-level families after first canonical failure per head and retarget capacity to product blockers
