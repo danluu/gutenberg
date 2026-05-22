@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-22T22:05:34Z`
+Snapshot generated: `2026-05-22T22:13:00Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -17,41 +17,39 @@ state.
 
 ## High-Level Readout
 
-The graph-refresh pipeline is current through `2026-05-22T22:04:02Z` for
-current-run accounting and `2026-05-22T22:02:28Z` for monitor passes. The
-monitor has `4,099` passes from `2026-05-15T01:21:42Z` onward, cumulative
+The graph-refresh pipeline is current through `2026-05-22T22:11:02Z` for
+current-run accounting and `2026-05-22T22:09:11Z` for monitor passes. The
+monitor has `4,100` passes from `2026-05-15T01:21:42Z` onward, cumulative
 coverage record observations are
-`280,210`, and current-scan coverage files are `1,341`. The parsed
+`280,228`, and current-scan coverage files are `1,363`. The parsed
 coverage-goal table has `10` unmet target rows out of `136`.
 
 The live duplicate/noise signal is current-output-dir accounting, not the
 historical aggregate. The latest active run is `run-20260522T212524Z`; its
-current-run accounting row at `2026-05-22T22:04:02Z` is trusted
+current-run accounting row at `2026-05-22T22:11:02Z` is trusted
 (`current_run_metrics_trusted` `TRUE`, `full_pass_pending` `FALSE`,
 `pending_until_first_pass` `FALSE`). It reports latest completed
-`duplicateShareCurrent` `0.2`, summary startup failures `0`, and `5` current /
-`5` actionable / `5` product-evidence signatures, with top duplicate share
-`0.2`. Historical duplicate share is `0.2105` for context only and is not the
+`duplicateShareCurrent` `0.5`, summary startup failures `0`, and `2` current /
+`2` actionable / `2` product-evidence signatures, with top duplicate share
+`0.5`. Historical duplicate share is `0.2105` for context only and is not the
 plotted live health signal.
 
-The latest duplicate/noise synthesis file is empty; the latest non-empty
-duplicate/noise synthesis rejects a product-bug or broad
+The latest duplicate/noise synthesis rejects a product-bug or broad
 product-duplicate-storm interpretation and identifies a producer-side
 novelty-monitor control-plane leak: no-product startup/infra/`unknown` runs can
 be misclassified or kept alive because product-evidence detection is too loose,
-and pause paths can bypass duplicate/noise holds. The refreshed live row no
-longer shows pending accounting; the current duplicate share is on a
-five-signature denominator, so it should not be read as a broad product
-duplicate storm. The persona-loop feedback still calls for strict local
-same-family product evidence, stopping exact no-product producers even below
-materialization floors, and fixing the invalid `large-document-75` producer
-configuration.
+and benchmark-canary or pause paths can bypass duplicate/noise holds. The
+refreshed live row no longer shows pending accounting; the current duplicate
+share is high but is on a two-signature denominator, so it should not be read
+as a broad product duplicate storm. The persona-loop feedback still calls for
+strict local same-family product evidence, non-bypassable no-product
+duplicate/noise sentinels, and stopping exact no-product producers.
 
 Resource state is usable, but still not idle. The latest monitor sample has
-`401.5G` free memory; the latest disk sample has `90.2GiB` free on `/` and
-`459.8GiB` free on `/media/volume/danluu-fuzz-data`. Latest CPU utilization is
-`68.26%`, with `4.01%` iowait. Latest load averages are `51.42`, `53.74`, and
-`54.03` on `64` logical CPUs, with `2` blocked tasks in the same sample.
+`399.4G` free memory; the latest disk sample has `90.3GiB` free on `/` and
+`458.5GiB` free on `/media/volume/danluu-fuzz-data`. Latest CPU utilization is
+`63.78%`, with `3.63%` iowait. Latest load averages are `58.92`, `52.99`, and
+`53.32` on `64` logical CPUs, with `12` blocked tasks in the same sample.
 
 The latest graph-counted fuzzing mix is concentrated in browser/e2e: `21`
 browser/e2e lanes across `18` groups, plus one `unit-property` lane, one
@@ -78,13 +76,13 @@ execution, but still has zero backend-api lanes/executions and no current
 coverage-guided-lower-level execution bucket, so keep parser/backend action
 results as action evidence until graph-visible current residency appears.
 
-The execution counter has `16,912,708` estimated individual executions. These
+The execution counter has `16,913,093` estimated individual executions. These
 are reconstructed from lane `events.ndjson`: browser seed attempts,
 unit/property fixed tests plus generated cases, coverage-guided inputs, and
 protocol/backend cases. Lower-level counts are approximate when reconstructed
 from batch metadata or legacy batch-count fields. The latest partial bucket at
-`2026-05-22T22:00:00Z` has `224` unit-property executions (`896`/hour) and
-`84` browser/e2e executions (`336`/hour). Protocol-server is zero in that
+`2026-05-22T22:00:00Z` has `512` unit-property executions (`2,048`/hour) and
+`181` browser/e2e executions (`724`/hour). Protocol-server is zero in that
 partial bucket, after `2,725` executions in the `21:45` bucket. The latest
 bucket has zero coverage-guided lower-level, backend-api,
 transport-integration, and fuzz-assertion executions.
@@ -131,29 +129,27 @@ incomplete current-run accounting and as a control-plane health issue until the
 active run completes a full pass.
 
 The latest sample for `run-20260522T212524Z` was taken at
-`2026-05-22T22:04:02Z`; it reports `current_run_metrics_trusted` `TRUE`,
+`2026-05-22T22:11:02Z`; it reports `current_run_metrics_trusted` `TRUE`,
 `pending_until_first_pass` `FALSE`, and `full_pass_pending` `FALSE`. The latest
-completed duplicate share field is `0.2`, summary startup failures are `0`,
-and the current-run denominator is `5` current signatures / `5` actionable
-signatures / `5` product-evidence signatures with top duplicate share `0.2`.
-The latest completed full pass ended at `2026-05-22T22:02:28Z`, about `1.56`
+completed duplicate share field is `0.5`, summary startup failures are `0`,
+and the current-run denominator is `2` current signatures / `2` actionable
+signatures / `2` product-evidence signatures with top duplicate share `0.5`.
+The latest completed full pass ended at `2026-05-22T22:09:11Z`, about `1.85`
 minutes before the accounting snapshot. The earlier `21:27:54Z` row for the
 same active run was pending first-pass accounting; that pending state has
 cleared in the refreshed data.
 
-The latest duplicate/noise synthesis file is empty; the latest non-empty
-synthesis rejects a product-bug or broad product duplicate-storm interpretation.
-It says the stronger root cause is still in the producer-side control plane:
-no-product startup/infra/`unknown` runs can be misclassified or kept alive
-because product-evidence checks count loose, global, raw, or unrelated signals,
-and producer pause paths can bypass or defer stopping the noisy group. Earlier
-feedback-actions applied bounded fixes, including `repos` scan pruning and a
-benchmark-canary bypass stop once current product evidence exists, but the later
-synthesis still asks for strict local same-family product evidence, exact
-no-product producer stops, and replacement of the invalid `large-document-75`
-large-post readiness profile. The latest graph row is trusted and has a
-five-signature denominator; the remaining risk is control-plane recurrence, not
-a measured broad product duplicate storm.
+The latest duplicate/noise synthesis rejects a product-bug or broad product
+duplicate-storm interpretation. It says the stronger root cause is still in the
+producer-side control plane: no-product startup/infra/`unknown` runs can be
+misclassified or kept alive because product-evidence checks count loose,
+global, raw, or unrelated signals, and benchmark-canary or producer pause paths
+can bypass stopping the noisy group. Earlier feedback-actions applied bounded
+fixes, but the latest synthesis still asks for strict local same-family product
+evidence, non-bypassable no-product duplicate/noise sentinels, and exact
+no-product producer stops. The latest graph row is trusted and has a
+two-signature denominator; the remaining risk is control-plane recurrence, not a
+measured broad product duplicate storm.
 
 ![CPU utilization over time](rtc-jetstream2-fuzz-trends-20260515/plots/cpu-utilization-over-time.png)
 
@@ -162,8 +158,8 @@ a measured broad product duplicate storm.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. The latest sample
-has `90.2GiB` free on root and `459.8GiB` free on the data volume; the data
-volume is around `87.0%` used and root is around `41.4%` used. Root pressure
+has `90.3GiB` free on root and `458.5GiB` free on the data volume; the data
+volume is around `87.1%` used and root is around `41.3%` used. Root pressure
 remains stable, but output-size budgeting still matters on the data volume.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
@@ -233,8 +229,7 @@ Treat protocol-server as graph-present sentinel evidence, and keep
 parser/backend action results as action evidence until graph-visible current
 residency appears.
 
-The latest native-harness synthesis file is empty; the latest non-empty
-native-harness synthesis selects
+The latest native-harness synthesis selects
 `coverage-guided-lower-level-block-parser-serialization` as the first ready
 isolated Node/V8 coverage-guided lower-level target. The latest native action
 implemented the runner, launcher, Jest target, and npm script, then validated a
@@ -244,17 +239,18 @@ evidence, but the graph still rejects treating this as sustained live
 lower-level residency: the latest graph-counted coverage-guided lower-level row
 is a stale rich-text CRDT row and current execution buckets remain zero.
 
-The latest non-empty protocol-server synthesis selects the HTTP polling REST
-harness for `POST /wp-sync/v1/updates`. The latest action implemented and
-validated that protocol-server fuzz harness with a passing 25-case smoke seed,
-collector-style root/lane artifacts, and `fuzzLevel: "protocol-server"` events.
-The level-mix action later attempted a bounded protocol/server sentinel that
-passed some seeds and then stopped on timeout/wp-env infra failures. The
-refreshed graph has a protocol-server row and execution buckets through
-`2026-05-22T21:45:00Z`; protocol-server was nonzero at `20:30`, `21:00`,
-`21:30`, and `21:45`, with `2,365` executions in the `20:30` bucket and
-`1,620` executions in the `21:30` bucket. The latest `22:00` partial bucket has
-no protocol-server executions, after `2,725` executions in the `21:45` bucket.
+The latest protocol-server synthesis file is empty; the latest non-empty
+synthesis selects the HTTP polling REST harness for `POST /wp-sync/v1/updates`.
+The latest action implemented and validated that protocol-server fuzz harness
+with a passing 25-case smoke seed, collector-style root/lane artifacts, and
+`fuzzLevel: "protocol-server"` events. The level-mix action later attempted a
+bounded protocol/server sentinel that passed some seeds and then stopped on
+timeout/wp-env infra failures. The refreshed graph has a protocol-server row
+and execution buckets through `2026-05-22T21:45:00Z`; protocol-server was
+nonzero at `20:30`, `21:00`, `21:30`, and `21:45`, with `2,365` executions in
+the `20:30` bucket and `1,800` executions in the `21:30` bucket. The latest
+`22:00` partial bucket has no protocol-server executions, after `2,725`
+executions in the `21:45` bucket.
 Treat protocol-server as present but still sentinel-scale rather than broad
 expansion. The latest protocol-server synthesis and action evidence still
 select and validate the HTTP polling REST harness.
@@ -273,17 +269,17 @@ The execution metric estimates individual test/case executions from lane
 `events.ndjson`: browser seed attempts, unit/property fixed tests plus
 generated cases, coverage-guided inputs, and protocol/backend cases.
 Lower-level rows are approximate when reconstructed from batch metadata or
-legacy batch-count fields. The latest totals are approximately `90,411`
-browser/e2e, `5,794,400` unit-property, `458,097`
+legacy batch-count fields. The latest totals are approximately `90,508`
+browser/e2e, `5,794,688` unit-property, `458,097`
 coverage-guided lower-level, and `10,569,800`
 protocol-server executions. Transport-integration, backend-api,
 fuzz-assertion, and other buckets are `0` in the current reconstructed table.
 
 The latest 15-minute bucket at `2026-05-22T22:00:00Z` is partial and has
-`224` unit-property executions (`896`/hour), `84` browser/e2e executions
-(`336`/hour), and zero protocol-server executions. The previous `21:45` bucket
+`512` unit-property executions (`2,048`/hour), `181` browser/e2e executions
+(`724`/hour), and zero protocol-server executions. The previous `21:45` bucket
 had `2,725` protocol-server executions (`10,900`/hour), the `21:30` bucket had
-`1,620` protocol-server executions (`6,480`/hour), and the `20:30` bucket had
+`1,800` protocol-server executions (`7,200`/hour), and the `20:30` bucket had
 `2,365` protocol-server executions (`9,460`/hour). Coverage-guided lower-level,
 backend-api, transport-integration, and fuzz-assertion are zero in the latest
 bucket. The persona feedback reports a validated lower-level harness and a
@@ -298,16 +294,16 @@ That lower-level mismatch remains for the next accounting pass.
 The likely-real graph is a triage-output metric only. It counts non-duplicate
 `.triage-watcher/**/result.json` rows classified `likely_real`, deduped by
 canonical bug key and attributed to first-seen time. The latest collected
-triaged likely-real output is still all browser/e2e: `137` likely-real
-findings over about `587.9` runner-hours, or `23.30` per 100 runner-hours.
+triaged likely-real output is still all browser/e2e: `138` likely-real
+findings over about `589.2` runner-hours, or `23.42` per 100 runner-hours.
 
 ![Unique bug-output candidates by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-level.png)
 
 ![Unique bug-output candidate rate by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-rate-by-level.png)
 
 The broader unique-output graphs include untriaged raw signatures and
-lower-level assertion failures. Current unique candidate output has `1,277`
-total candidates: `1,269` browser/e2e candidates, `6` unit-property
+lower-level assertion failures. Current unique candidate output has `1,287`
+total candidates: `1,279` browser/e2e candidates, `6` unit-property
 candidates, and `2` coverage-guided-lower-level candidates. Backend-api,
 protocol-server, transport-integration, standalone fuzz-assertion, and other
 buckets have no unique candidates in the latest graph-counted data.
@@ -334,7 +330,7 @@ The latest weak-completion profiles have successful record counts at zero for
 collaboration UI signals (`114` records). Table stale snapshot HTTP now has
 `1` successful record from `15` records. Revision persistence has `8`
 successful records, full-profile rows have `16`, parser serialization has
-`32`, multi-reload lifecycle has `53`, long-session large-doc has `39`,
+`35`, multi-reload lifecycle has `56`, long-session large-doc has `39`,
 many-user lifecycle has `47`, common blocks have `43`, code-editor smoke has
 `64`, large-post three-user HTTP has `67`, parser transform has `68`,
 three-user late join has `113`, media cross-entity has `121`,
@@ -366,7 +362,7 @@ lanes remain visible while the stricter cross-product key ramps up.
 
 Latest combined progress is `0`/`25` strict cross-product records. The
 combined group is currently marked enabled in the sampled state, and the
-adjacent large-post three-user HTTP profile has `797` records seen with `67`
+adjacent large-post three-user HTTP profile has `800` records seen with `67`
 successful records. Those adjacent hits still do not count as completed
 combined coverage unless the strict feature key records the whole conjunction.
 
@@ -416,7 +412,7 @@ Largest current unmet goal and active-editing gaps:
 | six-active-editor UI-signal cross-product               |       0 |     25 |
 | six-active-editor large-document cross-product          |       0 |     25 |
 | remote selection and cursor visible                     |       1 |     25 |
-| successful parser-serialization records                 |      32 |     50 |
+| successful parser-serialization records                 |      35 |     50 |
 | async/server block core/template-part                   |       0 |     20 |
 | remote and local autosave checkpoints                   |      14 |     25 |
 | successful three-user late-join records                 |      17 |     25 |
@@ -537,31 +533,28 @@ row: `pre_oracle_or_preflight_only`.
 ## Interpretation
 
 The active coverage root is `run-20260522T212524Z`, and its latest accounting
-row is trusted. The row was sampled at `2026-05-22T22:04:02Z`; it reports
+row is trusted. The row was sampled at `2026-05-22T22:11:02Z`; it reports
 `full_pass_pending` `FALSE`, `pending_until_first_pass` `FALSE`,
 `current_run_metrics_trusted` `TRUE`, latest completed
-`duplicateShareCurrent` `0.2`, and summary startup failures `0`. The current
-signature denominator is `5` current signatures / `5` actionable signatures /
-`5` product-evidence signatures, with top duplicate share `0.2`. Historical
+`duplicateShareCurrent` `0.5`, and summary startup failures `0`. The current
+signature denominator is `2` current signatures / `2` actionable signatures /
+`2` product-evidence signatures, with top duplicate share `0.5`. Historical
 aggregate duplicate/noise remains context only. The live graph should be read
-as a trusted current-output-dir sample with a small duplicate share on a small
-denominator, not as proof that the broader duplicate/noise control-plane issue
-is finished.
+as a trusted current-output-dir sample with a high share on a tiny denominator,
+not as proof of a broad product duplicate storm.
 
-The latest duplicate/noise synthesis file is empty; the latest non-empty
-persona synthesis rejects a product-bug reading and points at a producer-side
-control-plane leak in novelty-monitor scheduling/accounting: no-product
-startup/infra/`unknown` runs can masquerade as product-evidence work or stay
-active while pause paths, benchmark-canary exceptions, no-analysis sentinels,
-and materialization floors defer stopping exact noisy groups. Earlier
-feedback-actions applied bounded fixes, but the later synthesis still
-recommends strict local same-family product evidence, no-product producer stops
-even below the materialization floor, and replacement/classification for the
-invalid `large-document-75` profile.
+The latest duplicate/noise persona synthesis rejects a product-bug reading and
+points at a producer-side control-plane leak in novelty-monitor
+scheduling/accounting: no-product startup/infra/`unknown` runs can masquerade
+as product-evidence work or stay active while pause paths, benchmark-canary
+exceptions, and no-analysis sentinels defer stopping exact noisy groups. The
+latest synthesis recommends strict local same-family product evidence and
+non-bypassable no-product duplicate/noise sentinels before benchmark-canary
+bypass or representative holds.
 
 The resource picture is usable but not idle: latest CPU utilization is
-`68.26%`, with `4.01%` iowait; load is `51.42`, `53.74`, and `54.03` on `64`
-logical CPUs, with `2` blocked tasks. Five-minute load is below the core count,
+`63.78%`, with `3.63%` iowait; load is `58.92`, `52.99`, and `53.32` on `64`
+logical CPUs, with `12` blocked tasks. Five-minute load is below the core count,
 but optional browser admission still needs to respect short-window load,
 blocked-task, and iowait pressure.
 
@@ -587,16 +580,16 @@ coverage-guided lower-level execution.
 
 Browser/e2e remains the only level producing triaged likely-real findings in
 the committed triage-output metric. The latest execution bucket is partial:
-the `2026-05-22T22:00:00Z` bucket has `224` unit-property executions, `84`
+the `2026-05-22T22:00:00Z` bucket has `512` unit-property executions, `181`
 browser/e2e executions, and zero protocol-server executions. Protocol-server
 was nonzero in the previous `21:45` bucket with `2,725` executions, at `21:30`
-with `1,620` executions, and in the `20:30` bucket with `2,365` executions.
+with `1,800` executions, and in the `20:30` bucket with `2,365` executions.
 Lower-level counts remain approximate where reconstructed from batch metadata
 or legacy batch-count fields.
 
 Coverage-goal pressure remains at the strict cross-product edges.
 `cross-product:large-post-three-user-http-lifecycle` remains `0`/`25`, even
-though the adjacent large-post three-user HTTP profile has `797` records and
+though the adjacent large-post three-user HTTP profile has `800` records and
 `67` successful records. Many-user active editing is also still `0` at the
 6/10/12/30 active-editor thresholds. Those counts require distinct users who
 actually edited, excluding final UI witness-sweep-only edits, not merely users
