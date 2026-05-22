@@ -1,13 +1,16 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,unit/lint validation and candidate publication are not exact-stack promotion clearance,reload-hydration@fa801a6aa13/promotion,"unit/lint validation and candidate publication are not exact-stack promotion
-clearance"
-publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,current exact-stack gate is not clear; publication requires fresh all-green exact feedback,benchmark-canary-fuzzer-gap/maintainer-snapshot,"current exact-stack gate is not clear; publication requires fresh all-green
-exact feedback"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,held until fresh owner evidence proves product ownership,ready/rtc-pr07c-reload-record-snapshots,held until fresh owner evidence proves product ownership
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,candidate publication and unit/lint validation are not browser exact-stack promotion clearance,reload-hydration@fa801a6aa13/promotion,"candidate publication and unit/lint validation are not browser exact-stack
+promotion clearance"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until the owner matrix or exact product-failure replay proves product ownership,ready/rtc-pr07c-reload-record-snapshots,"hold publication until the owner matrix or exact product-failure replay proves
+product ownership"
+launch-owner-matrix,PR07C/HOLD-07C/duplicate-relaunch,P0,no,"progress marks older owner evidence runtime-held-consumed; after the queued run is consumed, relaunch only with newer owner evidence",PR07C/HOLD-07C/duplicate-relaunch,"progress marks older owner evidence runtime-held-consumed; after the queued run
+is consumed, relaunch only with newer owner evidence"
+publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,exact all-merged stack is not green; coverage or partial green rows cannot clear publication gates,benchmark-canary-fuzzer-gap/maintainer-snapshot,"exact all-merged stack is not green; coverage or partial green rows cannot clear
+publication gates"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresher product-owned non-coverage evidence justifies another reducer,seed-5200005-reducer/relaunch,no fresher product-owned non-coverage evidence justifies another reducer
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,duplicates already published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,duplicates already published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path
-publish-ready,current-push-manifest,P1,no,controller push manifest has only a header; use the reload-hydration manifest for candidate handling,current-push-manifest,"controller push manifest has only a header; use the reload-hydration manifest
-for candidate handling"
+publish-ready,current-push-manifest,P1,no,controller push manifest has only a header; use reload-hydration deferred manifest for candidate handling,current-push-manifest,"controller push manifest has only a header; use reload-hydration deferred
+manifest for candidate handling"
