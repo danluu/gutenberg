@@ -1,35 +1,35 @@
 action,target,priority,allowed,reason
-repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,yes,next product-progress slot; latest exact feedback leaves large-post-three-user-http and revision-table-body-http red on commit 72854f05ed20106daac3d125206f2643dac41677
-publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,exact-stack rows remain red; publication requires build plus green remaining benchmark rows on the same successor commit
-launch-branch-repair,PR17/stale-crdt-cas-background-delivery,P0,no,active bounded PR17 repair already owns this product path; do not duplicate heavy repair ownership
-repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,P0,no,superseded by fresher saved-crdt-hydration exact feedback; keep only one PR17 repair owner
+repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,yes,next product-progress slot; latest exact feedback leaves large-post-three-user-http and revision-table-body-http red on 72854f05ed20106daac3d125206f2643dac41677
+publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,exact-stack rows remain red; require build plus green remaining benchmark rows on the same successor commit
+launch-branch-repair,PR17/stale-crdt-cas-background-delivery,P0,no,active bounded PR17 repair owns this path; do not duplicate heavy repair ownership
+repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,P0,no,superseded by fresher saved-crdt-hydration exact feedback
 repair-ready,PR17/table-stale-snapshot/query-array,P0,yes,attach lower-level RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE reproducer as repair evidence for revision-table-body-http
-reserve-discovery,novelty-http-large-post-lifecycle+novelty-http-table-stale-snapshot,P0,yes,remaining PR17 exact red rows need active HTTP fuzz reserve; current coverage still has large-post and table-stale-snapshot gaps
+reserve-discovery,novelty-http-large-post-lifecycle+novelty-http-table-stale-snapshot,P0,yes,remaining PR17 red rows need active HTTP fuzz reserve; current coverage still has large-post and table-stale gaps
 reserve-discovery,benchmark-canary-fuzzer-gap/http-equivalent-exact-stack,P0,yes,keep benchmark-equivalent HTTP lanes active until PR17 exact stack is green or replay-downscoped
 reserve-discovery,lower-level-parser-table-list-http-corpus,high,yes,retarget lower-level reserve to parser table/list HTTP corpus and persisted/revision oracles tied to PR17 failures
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,current head has green owner replay; cheap publication or manifest confirmation is allowed
-consume-owner-matrix,pr07c-owner-matrix@local-mac-20260522T172727Z,high,yes,existing owner replay is green with zero product-owned rows; consume it and terminalize the blocker
-launch-owner-matrix,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,P0,no,green owner evidence already exists; relaunch only if newer red owner evidence appears
+consume-owner-matrix,pr07c-owner-matrix@local-mac-20260522T172727Z,high,yes,consume existing green owner replay and terminalize the stale owner blocker
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,yes,current head has green owner replay; allow cheap non-header manifest confirmation or publication
+launch-owner-matrix,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,P0,no,green owner evidence already exists; relaunch only on newer red owner evidence
 launch-owner-matrix,PR07C/HOLD-07C@025c7638361f,P0,no,stale head is superseded by current published head 2f8247258316bde60869c06c383090904e9426bd
-repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale repair request is superseded by current-head green owner evidence and publication
-convert-to-exact-blocker,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt manifest as candidate evidence only and replace generic deferred hold with a head-specific exact-stack blocker
+repair-branch,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale repair request is superseded by current-head green owner evidence
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt manifest as candidate evidence only and convert generic hold to a head-specific exact-stack blocker
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh title-reload plus existing-post or persistence-reload plus large HTTP lifecycle green proof
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,do not spend a heavy replay slot while PR17 owns the product-progress repair slot and reload-hydration has an active deferred path
-cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,high,yes,404 launches plus a concrete candidate head make generic relaunch diagnostic churn
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,PR17 owns the product-progress repair slot and reload-hydration has an active deferred path
+cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,high,yes,404 launches plus concrete candidate head make generic relaunch diagnostic churn
 cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,high,yes,"current heads are diagnostic-only; require focused replay, owner evidence, or product first-loss evidence before promotion"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,medium,no,missing owner evidence or product first-loss evidence
 publish-ready,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335,medium,no,missing focused exact replay or owner evidence
 cooldown-diagnostic,unit-property-table-query-array-crdt/bootstrap-no-yield,P0,yes,repeated seed_start=1592599456 harness bootstrap failures should not consume lower-level budget until dependency preflight is clean
 cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker-family,P0,yes,cap duplicate remote-marker-family rows after one canonical attached reproducer per head
 cooldown-diagnostic,rtc-rich-text-crdt-merge/broad,high,yes,drain long green or bootstrap-noise batches to a low-rate canary
-cooldown-diagnostic,rtc-http-polling-manager/broad-zero-yield,high,yes,stop broad zero-yield batches; keep only capped readiness canary with semantic admission
+cooldown-diagnostic,rtc-http-polling-manager/broad-zero-yield,high,yes,stop broad zero-yield batches; keep capped readiness canary with semantic admission
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already published PR15A-on-PR14B branch
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already published PR15B-on-PR14B branch
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already published PR15C-on-PR14B branch
 cooldown-diagnostic,malformed-save-payload/raw-deferred,medium,yes,raw deferred heads are superseded by canonical published PR06B minimal
 cooldown-diagnostic,http-room-isolation/raw-deferred,medium,yes,raw deferred heads are superseded by PR02A absent fresh healthy-user HTTP evidence
-reserve-discovery,discovery-reserve-policy,P0,yes,"discovery is healthy at 14 active sessions over min 3; keep coverage, focused, strict, protocol, lower-level, and browser reserves protected"
+reserve-discovery,discovery-reserve-policy,P0,yes,"discovery is healthy at 13 active sessions over min 3; keep coverage, focused, strict, protocol, lower-level, and browser reserves protected"
 launch-branch-repair,discovery-unhealthy-mode,P0,no,"not triggered now; if discovery falls below reserve, new heavy PR jobs wait except cheap manifests and analysis-only cleanup"
 update-controller-rule,discovery-unhealthy-heavy-pr-gate,P0,yes,block new heavy PR jobs below reserve while allowing cheap publication manifest generation and analysis-only cleanup
 update-controller-rule,benchmark-exact-stack-same-commit-gate,P0,yes,block PR17 publication until branch builds and remaining benchmark rows are green on the same successor commit
