@@ -8162,6 +8162,31 @@ function getManyUserSuccessDeficitReason( group ) {
 	return `successful ${ userCount }-user many-user lifecycle coverage is below target: user=${ successfulByUserCount }/${ target }, profile=${ successfulByProfileUserCount }/${ target }, late-join=${ successfulLateJoinCount }/${ target }; do not let unrelated duplicate/noise holds or benchmark-canary rotation starve this success target`;
 }
 
+function getManyUserSuccessDeficitRatio( group ) {
+	const userCount = getManyUserSuccessDeficitUserCount( group );
+	const target = getManyUserSuccessDeficitTarget( group );
+	if ( userCount === null || target === null ) {
+		return 1;
+	}
+
+	const counts = [
+		getUserDocumentConcurrencyCount(
+			'successfulByUserCount',
+			userCount
+		),
+		getUserDocumentConcurrencyNestedCount(
+			'successfulByProfileUserCount',
+			'many-user-lifecycle',
+			userCount
+		),
+		getUserDocumentConcurrencyCount(
+			'successfulLifecycleByTypeUserCount',
+			`late-join:${ userCount }`
+		),
+	];
+	return Math.min( ...counts.map( ( count ) => count / target ) );
+}
+
 function shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
 	group,
 	hold
@@ -8196,6 +8221,13 @@ function shouldBypassNoisePauseForSuccessDeficit( group, pause ) {
 }
 
 function getBootstrapSuccessDeficitGroups() {
+	const manyUserDeficitGroups = SUCCESS_DEFICIT_BOOTSTRAP_GROUPS.filter(
+		hasManyUserSuccessDeficit
+	).sort(
+		( left, right ) =>
+			getManyUserSuccessDeficitRatio( left ) -
+			getManyUserSuccessDeficitRatio( right )
+	);
 	const guidanceGroups = uniqueStringList(
 		( state.coverageGuidance?.unmetGoals ?? [] )
 			.flatMap( ( goal ) => goal.groups ?? [] )
@@ -8204,6 +8236,7 @@ function getBootstrapSuccessDeficitGroups() {
 			)
 	);
 	return uniqueStringList( [
+		...manyUserDeficitGroups,
 		...guidanceGroups,
 		...SUCCESS_DEFICIT_BOOTSTRAP_GROUPS,
 	] ).filter( ( group ) => PROFILE_BY_GROUP[ group ] );
