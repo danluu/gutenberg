@@ -1,6 +1,8 @@
 session,class,started_hint
-rtc-coverage-guidance-codex-20260522T233557Z,analysis,
+rtc-benchmark-canary-feedback-refresh-20260522T234752Z,feedback-refresh,
 rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T233126Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
+rtc-deferred-job-rich-text-suffix-corruption-20260522T235012Z,deferred,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
+rtc-pr-finalize-job-20260522T235148Z,finalization,

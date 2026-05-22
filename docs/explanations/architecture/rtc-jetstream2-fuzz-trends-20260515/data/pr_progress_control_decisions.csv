@@ -29,7 +29,7 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superse
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already published PR15C-on-PR14B branch
 cooldown-diagnostic,malformed-save-payload/raw-deferred,medium,yes,raw deferred heads are superseded by canonical published PR06B minimal
 cooldown-diagnostic,http-room-isolation/raw-deferred,medium,yes,raw deferred heads are superseded by PR02A absent fresh healthy-user HTTP evidence
-reserve-discovery,discovery-reserve-policy,P0,yes,"discovery is healthy at 13 active sessions over min 3; keep coverage, focused, strict, protocol, lower-level, and browser reserves protected"
+reserve-discovery,discovery-reserve-policy,P0,yes,"discovery is healthy at 10 active sessions over min 3; keep coverage, focused, strict, protocol, lower-level, and browser reserves protected"
 launch-branch-repair,discovery-unhealthy-mode,P0,no,"not triggered now; if discovery falls below reserve, new heavy PR jobs wait except cheap manifests and analysis-only cleanup"
 update-controller-rule,discovery-unhealthy-heavy-pr-gate,P0,yes,block new heavy PR jobs below reserve while allowing cheap publication manifest generation and analysis-only cleanup
 update-controller-rule,benchmark-exact-stack-same-commit-gate,P0,yes,block PR17 publication until branch builds and remaining benchmark rows are green on the same successor commit
