@@ -1,9 +1,9 @@
-ingredient,record_check,requirement_family
-HTTP polling,transport == http,transport
-large initial post,initialContentProfile starts with large-document-,scale
-at least three browser users,userCount >= 3,collaboration
-at least two lifecycle reloads,reload count >= 2,lifecycle
-save checkpoints,save count >= 2,persistence
-autosave checkpoint,autosave count >= 1,persistence
-strict persistence oracles,operation ledger and final persistence are strict,oracle
-passed run,status == passed,completion
+ingredient,record_check,requirement_family,required_for_cross_product_count
+HTTP polling,transport == http,transport,TRUE
+large initial post,initialContentProfile starts with large-document-,scale,TRUE
+at least three browser users,userCount >= 3,collaboration,TRUE
+at least two lifecycle reloads,reload count >= 2,lifecycle,TRUE
+save checkpoints,save count >= 2,persistence,TRUE
+autosave checkpoint,autosave count >= 1,persistence,TRUE
+strict persistence oracles,operation ledger and final persistence are strict,oracle,TRUE
+passed run,status == passed,completion,TRUE
