@@ -20,6 +20,9 @@ BENCHMARK_FEEDBACK_BASE=/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feed
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 DUP_NOISE_BASE=/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516
+STRICT_EXPANSION_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515
+FOCUSED_SHARDS_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
+GAP_BOOSTER_BASE=/media/volume/danluu-fuzz-data/rtc-gap-booster-20260515
 CG_LOWER_LEVEL_B64_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516/holds/coverage-guided-lower-level-rich-text-crdt.hold
 CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP=coverage-guided-lower-level-rich-text-multiblock
 CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION=rtc-coverage-guided-lower-level-rich-text-multiblock
@@ -626,6 +629,38 @@ NODE
 	fi
 }
 
+check_unknown_action_profile_startup_failures() {
+	local out=$1 roots=() root match profile group
+	if [ -s "$COVERAGE_BASE/current-output-dir.txt" ]; then
+		root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
+		[ -n "$root" ] && roots+=( "$root" )
+	fi
+	for root_file in \
+		"$STRICT_EXPANSION_BASE/current-run-root.txt" \
+		"$FOCUSED_SHARDS_BASE/current-run-root.txt" \
+		"$GAP_BOOSTER_BASE/current-run-root.txt"; do
+		if [ -s "$root_file" ]; then
+			root=$(sed -n '1p' "$root_file")
+			[ -n "$root" ] && roots+=( "$root" )
+		fi
+	done
+
+	for root in "${roots[@]}"; do
+		[ -d "$root" ] || continue
+		match=$(
+			find "$root" -maxdepth 4 -type f \( -name 'summary.ndjson' -o -name 'startup-preflight.log' \) -mmin -90 -print0 2>/dev/null |
+				xargs -0 -r rg -m 1 'Unknown GUTENBERG_RTC_BROWSER_ACTION_PROFILE "[^"]+"' 2>/dev/null |
+				head -1 || true
+		)
+		[ -n "$match" ] || continue
+		profile=$(printf '%s\n' "$match" | sed -n 's/.*Unknown GUTENBERG_RTC_BROWSER_ACTION_PROFILE "\([^"]*\)".*/\1/p' | head -1)
+		group=$(printf '%s\n' "$match" | sed -n "s#.*runs/[^/]*/\\([^/]*\\)/lane-[0-9].*#\\1#p" | head -1)
+		emit_finding "$out" high "coverage-guided" "unknown-action-profile-startup-failure" \
+			"root=$root group=${group:-unknown} profile=${profile:-unknown} match=$match" \
+			"sync the RTC fuzz harness action-profile table before scheduling this group; startup/profile failures must not consume fuzz or triage capacity"
+	done
+}
+
 check_current_run_duplicate_noise() {
 	local out=$1 coverage_root status
 	[ -s "$COVERAGE_BASE/current-output-dir.txt" ] || return
@@ -796,6 +831,7 @@ detect_findings() {
 		check_coverage_supervisor_root_agreement "$tmp" "$coverage_root"
 		check_coverage_novelty_full_pass_health "$tmp" "$coverage_root"
 	fi
+	check_unknown_action_profile_startup_failures "$tmp"
 	check_current_run_duplicate_noise "$tmp"
 	if recent_log_matches "$GUARD_BASE/logs/guard.log" 1800 'restart requested pool=.*reason='; then
 		awk -F '\t' -v cutoff=$(( $(date -u +%s) - 1800 )) '
