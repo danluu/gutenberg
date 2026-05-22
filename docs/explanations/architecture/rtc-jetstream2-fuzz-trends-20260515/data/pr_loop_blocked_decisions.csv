@@ -1,17 +1,21 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T030200Z already owns exact-stack repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,"active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T030200Z
-already owns exact-stack repair"
-publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http existing-post-crdt-http and large-http-lifecycle gates are not green on the exact stack,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"title-reload-http existing-post-crdt-http and large-http-lifecycle gates are not
-green on the exact stack"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is already consumed as hold evidence and discovery is unprotected; require newer product-owner evidence first,PR07C/HOLD-07C,"Cycle380 owner evidence is already consumed as hold evidence and discovery is
-unprotected; require newer product-owner evidence first"
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,P0,no,active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T030200Z already owns the exact-stack repair,benchmark-canary-fuzzer-gap/duplicate-exact-stack,"active rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T030200Z
+already owns the exact-stack repair"
+publish-ready,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,P0,no,title-reload-http existing-post-crdt-http and large-http-lifecycle gates are not green on current exact-stack evidence,rtc-pr-stack-20260520T193645Z-all-merged-192647-latest-crdt-rich-text,"title-reload-http existing-post-crdt-http and large-http-lifecycle gates are not
+green on current exact-stack evidence"
+publish-ready,deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,P0,no,candidate adoption is allowed but promotion publication still lacks fresh title-reload existing-post CRDT and large-http exact-stack green evidence,deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,"candidate adoption is allowed but promotion publication still lacks fresh
+title-reload existing-post CRDT and large-http exact-stack green evidence"
+launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind the active title-reload product slot; do not spend a second heavy replay while discovery is unprotected,reload-hydration/exact-stack,"wait behind the active title-reload product slot; do not spend a second heavy
+replay while discovery is unprotected"
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Cycle380 owner evidence is already consumed and discovery is unprotected; require newer product-owner evidence or exact product-failure replay first,PR07C/HOLD-07C,"Cycle380 owner evidence is already consumed and discovery is unprotected;
+require newer product-owner evidence or exact product-failure replay first"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,publication remains blocked by consumed hold evidence and lacks newer product-owner proof,ready/rtc-pr07c-reload-record-snapshots,"publication remains blocked by consumed hold evidence and lacks newer
 product-owner proof"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch
-launch-branch-repair,reload-hydration/exact-stack,P0,no,wait behind active benchmark title repair; publication still needs title-reload-http existing-post-crdt-http and large-http-lifecycle evidence,reload-hydration/exact-stack,"wait behind active benchmark title repair; publication still needs
-title-reload-http existing-post-crdt-http and large-http-lifecycle evidence"
-publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,lacks fresh green exact-stack title-reload-http existing-post-crdt-http and large-http-lifecycle evidence,deferred/rtc-reload-hydration-20260521T223947Z,"lacks fresh green exact-stack title-reload-http existing-post-crdt-http and
-large-http-lifecycle evidence"
+update-controller-rule,lower-http-polling-runner-crash-retarget,P0,no,current lower HTTP lane has valid live status; use oracle retargeting instead of separate runner repair,lower-http-polling-runner-crash-retarget,"current lower HTTP lane has valid live status; use oracle retargeting instead of
+separate runner repair"
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout is lower value than bounded product and evidence work,broad-pr-analysis-fanout,"discovery is unprotected and broad heavy PR fanout is lower value than bounded
+product and evidence work"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR06B minimal is already published; broader branch needs fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal is already published; broader branch needs fresh product
 advantage"
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based PR15A is already published; original-base branch is duplicate under
@@ -20,7 +24,3 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-bas
 current evidence"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C is already published; original-base branch is duplicate under
 current evidence"
-update-controller-rule,lower-http-polling-runner-crash-retarget,P0,no,current lower HTTP lane has valid live status; use oracle retargeting instead of separate runner repair,lower-http-polling-runner-crash-retarget,"current lower HTTP lane has valid live status; use oracle retargeting instead of
-separate runner repair"
-launch-branch-repair,broad-pr-analysis-fanout,P0,no,discovery is unprotected and broad heavy PR fanout is lower value than bounded product and evidence work,broad-pr-analysis-fanout,"discovery is unprotected and broad heavy PR fanout is lower value than bounded
-product and evidence work"
