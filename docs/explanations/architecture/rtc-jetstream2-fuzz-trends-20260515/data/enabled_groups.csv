@@ -1682,3 +1682,4 @@ timestamp,group,group_family
 2026-05-22T08:13:32Z,novelty-ws-parser-transform,parser
 2026-05-22T08:13:51Z,novelty-ws-permissions-auth-locks,auth/locks
 2026-05-22T08:14:03Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-22T08:20:44Z,novelty-ws-block-gauntlet,auth/locks
