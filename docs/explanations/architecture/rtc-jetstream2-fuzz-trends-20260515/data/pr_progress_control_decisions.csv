@@ -1,31 +1,33 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery is 14 vs min 3 and active PR jobs are 0 of 2; allow one bounded product slot while preserving discovery reserve
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,"next product-progress slot; run bounded exact stack for title reload, existing-post or persistence reload, and large HTTP lifecycle"
-repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,yes,replace generic deferred hold with a head-specific exact-stack blocker
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,adopt or publish manifest head as candidate evidence only; this is cheap and does not clear promotion
+reserve-discovery,discovery-reserve,P0,yes,active discovery 14 exceeds min 3 and PR jobs are 0 of 2; allow one bounded product slot while preserving discovery lanes
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,"next product-progress slot; run bounded all-merged exact stack for title reload, existing-post or persistence reload, and large HTTP lifecycle"
+repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,yes,replace generic deferred hold with head-specific blocker requiring fresh exact-stack evidence
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,adopt manifest head as candidate evidence only; this does not clear promotion
 publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"no fresh all-green exact stack exists for title reload, existing-post or persistence reload, and large HTTP"
-cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"concrete manifest exists; progress must be candidate adoption, exact replay, owner evidence, green stack adoption, or downscope"
-update-controller-rule,deferred-family-single-flight,P0,yes,"manifest-held families must not generic-relaunch while adoption, focused replay, owner evidence, green stack adoption, or downscope paths exist"
-repair-ready,PR07C/HOLD-07C/stale-owner-matrix,P0,yes,terminalize stale owner-matrix blocker and queue state because current progress marks Cycle380 owner evidence runtime-held-consumed
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,reject duplicate owner-matrix launch; reopen only with owner evidence newer than Cycle380 or exact product-failure replay
+cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"concrete manifest exists; suppress generic relaunch in favor of adoption, exact replay, owner evidence, green adoption, or downscope"
+update-controller-rule,deferred-family-single-flight,P0,yes,"manifest-held families must not generic-relaunch while adoption, focused replay, owner evidence, green adoption, or downscope paths exist"
+repair-ready,PR07C/HOLD-07C/stale-owner-matrix,P0,yes,terminalize stale queue state because current progress marks Cycle380 owner evidence runtime-held-consumed
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,duplicate heavy browser owner matrix is blocked until owner evidence newer than Cycle380 or exact product-failure replay exists
+launch-branch-repair,PR07C/HOLD-07C/exact-product-failure-replay,P0,yes,product-specific exact replay is allowed if it uses current readiness and does not relaunch the duplicate matrix
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until newer owner evidence or exact product-failure replay proves product ownership
-repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts as terminal evidence and clear stale blocker or queue state
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer run
-repair-ready,benchmark-canary-fuzzer-gap,P0,yes,consume latest exact-stack green benchmark state and clear stale repair or rerun rows
-repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by fresher exact-stack green benchmark feedback; reopen only on new red current-feedback rows
-launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,current benchmark state is terminal green; rerun only if current-feedback.tsv gains promotion_blocked rows
-update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,"current-feedback.tsv and regenerated minimum-block state must control publication gates, not stale summaries or header-only files"
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic manifests are single-flight held; no interval relaunch without focused replay, owner evidence, green stack adoption, or downscope"
-cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscope raw deferred family because canonical PR06B minimal already covers it
-cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscope raw deferred family because PR02A exists and there is no fresh healthy-user HTTP product evidence
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,duplicates already published PR14B-based PR15A path
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,duplicates already published PR14B-based PR15B path
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,duplicates already published PR14B-based PR15C path
-publish-ready,current-push-manifest,P1,no,header-only or stale push manifest is not a product publication source
-cooldown-diagnostic,rtc-http-polling-manager/saturated-bare-corpus,high,yes,"cool generic 8000-corpus polling churn with zero new coverage, feature, failure, or product yield"
+repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts or the active reducer result as terminal evidence unless newer product-owned evidence appears
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch
+repair-ready,benchmark-canary-fuzzer-gap,P0,yes,consume current exact_stack_green benchmark feedback and terminal blocker state
+repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by fresher exact_stack_green feedback; reopen only on new current-feedback promotion_blocked rows
+launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,current benchmark feedback is terminal green; rerun only if current-feedback gains promotion_blocked rows
+update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,current-feedback.tsv and regenerated minimum-block state must remain authoritative for publication gates
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"manifest-held diagnostic families lack owner, replay, or green exact-stack evidence; no interval relaunch"
+cooldown-diagnostic,malformed-save-payload/raw-deferred,P1,yes,downscope raw family because canonical PR06B minimal already covers it
+cooldown-diagnostic,http-room-isolation/raw-deferred,P1,yes,downscope raw family because PR02A exists and no fresh healthy-user HTTP product evidence appears
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path
+publish-ready,current-push-manifest,P1,no,controller push manifest is header-only and is not a publication source
+cooldown-diagnostic,rtc-http-polling-manager/saturated-bare-corpus,high,yes,"cool generic 8000-corpus polling churn with zero durable coverage, product, or oracle yield"
 update-controller-rule,rtc-http-polling-manager/reload-materialization-retarget,P0,yes,"credit lower-level HTTP only for title reload, existing-post materialization, nonzero coverage, product yield, or oracle failure"
-cooldown-diagnostic,unit-property-rich-text-crdt-merge/placement-oracle,high,yes,cap green-only rich-text CRDT batches while placementCaseCount is 0 and no semantic or failure signal appears
-update-controller-rule,coverage-guided-lower-level/parser-richtext-accounting-split,P1,yes,do not credit parser-serialization coverage from the rich-text CRDT target mismatch
-reserve-discovery,rtc-block-parser-serialization,high,yes,use freed lower-level capacity on parser serialization or another unmet discovery lane without reducing the discovery reserve
-reserve-discovery,focused/title-reload-http,P0,yes,keep title-reload coverage/materialization alive because reload-hydration exact-stack promotion depends on it
+reserve-discovery,rtc-http-polling-manager/canary-diagnostic-bounded,high,yes,allow only bounded canary-diagnostic phase with corpus cap and stop after two no-new-coverage or no-failure passes
+cooldown-diagnostic,unit-property-rich-text-crdt-merge/placement-oracle,high,yes,cap green-only rich-text CRDT batches while placementCaseCount is zero and no semantic or failure signal appears
+update-controller-rule,rtc-rich-text-crdt-merge/parser-accounting,high,yes,do not credit placement-zero rich-text CRDT churn as parser-serialization coverage
+reserve-discovery,rtc-block-parser-serialization,high,yes,use freed lower-level capacity on parser serialization or another unmet discovery lane
+reserve-discovery,focused/title-reload-http,P0,yes,keep title-reload coverage and materialization alive because reload-hydration exact-stack promotion depends on it
