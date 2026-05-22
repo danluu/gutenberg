@@ -1592,3 +1592,14 @@ timestamp,message,event_type
 2026-05-22T20:16:39Z,launched persona controller round 20260522T201639Z,persona round launched
 2026-05-22T20:16:39Z,not launching controller action for PR17/stale-crdt-cas-background-delivery@ca767284b1d3/c49e8cd8d176: active PR jobs 2 >= max 2,heavy PR job deferred: PR concurrency
 2026-05-22T20:16:40Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:18:43Z,launched controller action job for repair-branch PR17/stale-crdt-cas-background-delivery@ca767284b1d3/c49e8cd8d176 at 20260522T201843Z,other
+2026-05-22T20:18:43Z,controller action repair-branch PR17/stale-crdt-cas-background-delivery@ca767284b1d3/c49e8cd8d176 20260522T201843Z,launch
+2026-05-22T20:18:44Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:20:49Z,launched controller action job for repair-ready benchmark-canary-fuzzer-gap/exact-green-ledger@80cae0b38df6 at 20260522T202049Z,other
+2026-05-22T20:20:49Z,controller action repair-ready benchmark-canary-fuzzer-gap/exact-green-ledger@80cae0b38df6 20260522T202049Z,launch
+2026-05-22T20:20:50Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:22:54Z,not launching controller action for reload-hydration@b01a3a21e2c: active PR jobs 2 >= max 2,heavy PR job deferred: PR concurrency
+2026-05-22T20:22:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:25:00Z,launched persona controller round 20260522T202459Z,persona round launched
+2026-05-22T20:25:00Z,not launching controller action for PR17/stale-crdt-cas-background-delivery@c49e8cd8d176: active PR jobs 2 >= max 2,heavy PR job deferred: PR concurrency
+2026-05-22T20:25:01Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other

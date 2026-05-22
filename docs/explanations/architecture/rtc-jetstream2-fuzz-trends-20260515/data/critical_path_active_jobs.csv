@@ -1,9 +1,8 @@
 session,class,started_hint
 rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T201314Z,critical-continuation,
-rtc-critical-continuation-productive-analysis-action-20260522T201321Z,critical-continuation,
+rtc-critical-continuation-productive-analysis-action-20260522T202051Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
-rtc-unblock-pre-save-search-live-collapse-20260522T200116Z,analysis,
 rtc-unblock-reload-hydration-exact-worktree-20260522T200116Z,analysis,
 rtc-unblock-table-query-array-crdt-20260522T200116Z,analysis,
