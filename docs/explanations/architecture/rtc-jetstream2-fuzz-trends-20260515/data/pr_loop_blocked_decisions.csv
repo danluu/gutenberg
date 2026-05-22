@@ -1,19 +1,19 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-refresh,P0,no,active exact-stack continuation already owns this blocker; duplicate launch would burn PR capacity,benchmark-canary-fuzzer-gap/duplicate-refresh,"active exact-stack continuation already owns this blocker; duplicate launch
-would burn PR capacity"
-publish-ready,benchmark-canary-fuzzer-gap/all-merged-publication,P0,no,"blocked until fresh title-reload-http, existing-post-crdt-http or persistence, and large-http-lifecycle rows are green",benchmark-canary-fuzzer-gap/all-merged-publication,"blocked until fresh title-reload-http, existing-post-crdt-http or persistence,
-and large-http-lifecycle rows are green"
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"no exact-stack browser validation; requires fresh title, existing-post CRDT, and large HTTP green evidence",reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"no exact-stack browser validation; requires fresh title, existing-post CRDT, and
-large HTTP green evidence"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,progress marks owner evidence runtime-held-consumed; wait for newer owner evidence or exact product-failure replay,PR07C/HOLD-07C,"progress marks owner evidence runtime-held-consumed; wait for newer owner
-evidence or exact product-failure replay"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until fresh product-owner evidence or exact product-failure replay,ready/rtc-pr07c-reload-record-snapshots,hold until fresh product-owner evidence or exact product-failure replay
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresher product-owned non-coverage evidence,seed-5200005-reducer/relaunch,no fresher product-owned non-coverage evidence
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,broader branch is superseded by published PR06B minimal unless it proves fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"broader branch is superseded by published PR06B minimal unless it proves fresh
-product advantage"
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,original-base branch duplicates published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,original-base branch duplicates published PR14B-based PR15A path
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,original-base branch duplicates published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,original-base branch duplicates published PR14B-based PR15B path
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,original-base branch duplicates published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,original-base branch duplicates published PR14B-based PR15C path
-publish-ready,current-push-manifest,P1,no,header-only manifest; nothing product-safe to publish,current-push-manifest,header-only manifest; nothing product-safe to publish
-launch-branch-repair,broad-pr-analysis-fanout,P1,no,specific product repair and blocker cleanup actions exist; broad fanout would burn PR capacity,broad-pr-analysis-fanout,"specific product repair and blocker cleanup actions exist; broad fanout would
-burn PR capacity"
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-refresh,P0,no,active benchmark-canary continuation already owns this blocker; duplicate repair loops would burn PR capacity,benchmark-canary-fuzzer-gap/duplicate-refresh,"active benchmark-canary continuation already owns this blocker; duplicate repair
+loops would burn PR capacity"
+publish-ready,benchmark-canary-fuzzer-gap/all-merged-publication,P0,no,"promotion remains blocked until large-post-three-user-http 2/2, persistence-reload-http, and title-reload-http are fresh green",benchmark-canary-fuzzer-gap/all-merged-publication,"promotion remains blocked until large-post-three-user-http 2/2,
+persistence-reload-http, and title-reload-http are fresh green"
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"no fresh exact-stack green for title-reload-http, existing-post-crdt-http, and large-http-lifecycle",reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"no fresh exact-stack green for title-reload-http, existing-post-crdt-http, and
+large-http-lifecycle"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold publication until PR07C owner matrix proves product ownership and exact product evidence is fresh,ready/rtc-pr07c-reload-record-snapshots,"hold publication until PR07C owner matrix proves product ownership and exact
+product evidence is fresh"
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresher product-owned non-coverage evidence justifies another reducer,seed-5200005-reducer/relaunch,no fresher product-owned non-coverage evidence justifies another reducer
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal unless fresh product advantage appears,ready/rtc-pr06b-malformed-save-request-payload,"superseded by already published PR06B minimal unless fresh product advantage
+appears"
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path
+publish-ready,current-push-manifest,P1,no,no additional product-safe publication should come from the current manifest without the exact-stack gates above,current-push-manifest,"no additional product-safe publication should come from the current manifest
+without the exact-stack gates above"
+launch-branch-repair,broad-pr-analysis-fanout,P1,no,specific product repair and stale-blocker cleanup actions exist; broad fanout would burn reserved capacity,broad-pr-analysis-fanout,"specific product repair and stale-blocker cleanup actions exist; broad fanout
+would burn reserved capacity"
