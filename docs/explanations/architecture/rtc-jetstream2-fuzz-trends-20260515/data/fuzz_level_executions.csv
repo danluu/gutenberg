@@ -4307,6 +4307,11 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T00:00:00Z,strict-expansion,ws-same-user-lifecycle,browser-e2e,ws,session-lifecycle,129,64,0,129,129,549705,FALSE
 2026-05-22T00:00:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,215,108,0,215,215,864791,FALSE
 2026-05-22T00:00:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,352,352,32,11,10,172000,FALSE
-2026-05-22T00:15:00Z,gap-booster,boost-three-user-late-join,browser-e2e,ws,three-user-late-join,2,1,0,2,2,7372,FALSE
-2026-05-22T00:15:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,2,1,0,2,2,7428,FALSE
-2026-05-22T00:15:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,32,32,0,1,1,16000,FALSE
+2026-05-22T00:15:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,5,4,2,5,3,302752,FALSE
+2026-05-22T00:15:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,227762,FALSE
+2026-05-22T00:15:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,3,3,2,3,1,138743,FALSE
+2026-05-22T00:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,6,3,0,6,6,360672,FALSE
+2026-05-22T00:15:00Z,coverage-guided,novelty-ws-collaboration-ui-signals,browser-e2e,ws,collaboration-ui-signals,4,2,0,4,4,203467,FALSE
+2026-05-22T00:15:00Z,gap-booster,boost-three-user-late-join,browser-e2e,ws,three-user-late-join,119,59,0,119,119,438266,FALSE
+2026-05-22T00:15:00Z,strict-expansion,ws-three-user-late-join,browser-e2e,ws,three-user-late-join,118,59,0,118,118,434378,FALSE
+2026-05-22T00:15:00Z,unit-property,unit-property-table-query-array-crdt,unit-property,in-process,rtc-table-query-array-crdt,352,352,0,11,11,159000,FALSE
