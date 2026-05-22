@@ -1124,6 +1124,99 @@ if ( nrow( pr_progress_events ) > 0 ) {
 }
 write_csv( pr_controller_events, file.path( data_dir, "pr_progress_controller_events.csv" ) )
 
+critical_path_events <- read_ndjson_optional( critical_events_path )
+if ( nrow( critical_path_events ) > 0 ) {
+	critical_path_events <- critical_path_events %>%
+		ensure_columns( c( "ts", "type", "message" ) ) %>%
+		transmute(
+			timestamp = parse_utc_timestamp( ts ),
+			event_type = replace_na( as.character( type ), "unknown" ),
+			message = replace_na( as.character( message ), "" )
+		) %>%
+		filter( ! is.na( timestamp ), message != "" ) %>%
+		mutate(
+			target = case_when(
+				str_detect( message, "^continuation " ) ~ str_match( message, "^continuation ([^ ]+)" )[ , 2 ],
+				str_detect( message, "^validation branch-" ) ~ str_match( message, "^validation branch-([^ ]+)" )[ , 2 ],
+				TRUE ~ "unknown"
+			),
+			blocker_class = case_when(
+				str_detect( target, "benchmark-canary" ) ~ "benchmark canary/exact-stack",
+				str_detect( target, "reload-hydration|deferred" ) ~ "deferred-family validation",
+				str_detect( target, "pr07c|PR07C" ) ~ "PR07C owner evidence",
+				str_detect( target, "seed-|pr17" ) ~ "seed reducer/final-stack",
+				TRUE ~ "critical-path launch"
+			)
+		)
+} else {
+	critical_path_events <- tibble(
+		timestamp = as.POSIXct( numeric(), origin = "1970-01-01", tz = "UTC" ),
+		event_type = character(),
+		message = character(),
+		target = character(),
+		blocker_class = character()
+	)
+}
+write_csv( critical_path_events, file.path( data_dir, "critical_path_events.csv" ) )
+
+controller_stall_events <- if ( nrow( pr_controller_events ) > 0 ) {
+	pr_controller_events %>%
+		filter(
+			str_detect( event_type, "deferred|blocked|already active" ) |
+				str_detect( message, "not launching|blocked|deferred|gate|exact-stack|cooldown" )
+		) %>%
+		transmute(
+			timestamp,
+			source = "PR controller",
+			blocker_class = case_when(
+				str_detect( event_type, "discovery reserve" ) ~ "resource/discovery reserve",
+				str_detect( event_type, "concurrency|already active" ) ~ "single-flight/concurrency",
+				str_detect( event_type, "persona" ) ~ "persona/control block",
+				str_detect( message, "latest no-promote" ) ~ "consumed owner evidence",
+				TRUE ~ event_type
+			),
+			target = case_when(
+				str_detect( message, "PR07C" ) ~ "PR07C/HOLD-07C",
+				TRUE ~ ""
+			),
+			event_type,
+			message
+		)
+} else {
+	tibble()
+}
+
+critical_launch_events <- if ( nrow( critical_path_events ) > 0 ) {
+	critical_path_events %>%
+		filter( event_type == "launch" ) %>%
+		transmute(
+			timestamp,
+			source = "critical-path launches",
+			blocker_class,
+			target,
+			event_type,
+			message
+		)
+} else {
+	tibble()
+}
+
+pr_blocker_stall_events <- bind_rows( controller_stall_events, critical_launch_events ) %>%
+	ensure_columns( c( "timestamp", "source", "blocker_class", "target", "event_type", "message" ) ) %>%
+	filter( ! is.na( timestamp ), blocker_class != "" ) %>%
+	mutate(
+		bucket = floor_date( timestamp, unit = "30 minutes" ),
+		target = replace_na( as.character( target ), "" )
+	) %>%
+	group_by( bucket, source, blocker_class ) %>%
+	summarise(
+		events = n(),
+		targets = paste( head( unique( target[ target != "" ] ), 5 ), collapse = "; " ),
+		.groups = "drop"
+	) %>%
+	arrange( bucket, source, blocker_class )
+write_csv( pr_blocker_stall_events, file.path( data_dir, "pr_blocker_stall_events.csv" ) )
+
 artifact_index_artifacts <- read_tsv_optional( artifact_index_artifacts_path )
 if ( nrow( artifact_index_artifacts ) > 0 ) {
 	artifact_index_artifacts <- artifact_index_artifacts %>%
@@ -2735,6 +2828,34 @@ if ( nrow( pr_controller_events ) > 0 ) {
 	)
 }
 
+if ( nrow( pr_blocker_stall_events ) > 0 ) {
+	blocker_stall_plot <- pr_blocker_stall_events %>%
+		mutate(
+			blocker_class = str_wrap( blocker_class, width = 26 ),
+			source = factor( source, levels = c( "PR controller", "critical-path launches" ) )
+		)
+
+	write_plot(
+		"pr-blocker-stall-events-over-time.png",
+		ggplot( blocker_stall_plot, aes( x = bucket, y = events, fill = blocker_class ) ) +
+			geom_col( alpha = 0.86, width = 30 * 60 ) +
+			facet_wrap( vars( source ), ncol = 1, scales = "free_y" ) +
+			scale_fill_brewer( palette = "Dark2" ) +
+			scale_y_continuous( labels = comma, breaks = pretty_breaks() ) +
+			scale_time_axis( date_breaks = "6 hours" ) +
+			labs(
+				title = "PR blocker and stall events over time",
+				x = "UTC time",
+				y = "events per 30-minute bucket",
+				fill = "blocker/stall class",
+				caption = "Controller stalls include resource reserve, single-flight/concurrency, consumed owner evidence, and persona blocks. Critical-path launches show repeated blocker continuation or validation churn."
+			) +
+			theme_rtc(),
+		width = 11,
+		height = 6.8
+	)
+}
+
 if ( nrow( pr_progress_push_manifest ) > 0 ) {
 	push_plot <- pr_progress_push_manifest %>%
 		mutate(
@@ -3143,6 +3264,16 @@ blocked_decision_text <- if ( nrow( pr_loop_blocked_decisions ) > 0 ) {
 	NA_character_
 }
 
+blocker_stall_event_text <- if ( nrow( pr_blocker_stall_events ) > 0 ) {
+	pr_blocker_stall_events %>%
+		count( source, blocker_class, wt = events, name = "events" ) %>%
+		mutate( text = paste0( source, "/", blocker_class, "=", events ) ) %>%
+		pull( text ) %>%
+		paste( collapse = "; " )
+} else {
+	NA_character_
+}
+
 repeated_validation_text <- if ( nrow( critical_branch_validation_summary ) > 0 && any( critical_branch_validation_summary$fail > 0, na.rm = TRUE ) ) {
 	critical_branch_validation_summary %>%
 		filter( fail > 0 ) %>%
@@ -3232,6 +3363,8 @@ summary_lines <- c(
 	paste0( "pr_loop_queue_depth: ", pr_queue_depth_text ),
 	paste0( "pr_loop_blocked_decisions: ", ifelse( nrow( pr_loop_blocked_decisions ) > 0, nrow( pr_loop_blocked_decisions ), 0 ) ),
 	paste0( "pr_loop_blocked_decision_types: ", blocked_decision_text ),
+	paste0( "pr_blocker_stall_event_buckets: ", ifelse( nrow( pr_blocker_stall_events ) > 0, nrow( pr_blocker_stall_events ), 0 ) ),
+	paste0( "pr_blocker_stall_event_types: ", blocker_stall_event_text ),
 	paste0( "critical_repeated_validation_failures: ", repeated_validation_text ),
 	paste0( "critical_no_progress_artifacts: ", ifelse( nrow( critical_no_progress ) > 0, nrow( critical_no_progress ), 0 ) ),
 	paste0( "critical_no_progress_top: ", no_progress_text ),

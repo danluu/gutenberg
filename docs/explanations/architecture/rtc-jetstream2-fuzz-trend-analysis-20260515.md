@@ -14,6 +14,10 @@ the resource autoscaler disk samples, PR progress controller snapshots,
 critical-path executor queues, artifact-index snapshots, and the latest copied
 standard persona-loop outputs. The collector copies `raw/pr-focused/...` inputs
 so PR-controller graphs track current raw state instead of stale local state.
+For blocker diagnosis, use the PR blocker/stall event timeline together with
+the current blocker-state plots: the timeline shows when controller stalls and
+critical-path launches cluster, while the current-state plots show what is
+blocked now and why.
 
 ## High-Level Readout
 
@@ -402,6 +406,16 @@ low-priority downscoped deferred-manifest rows, and `1` high-priority
 runtime-gated row held as consumed.
 
 ![PR-focused controller events](rtc-jetstream2-fuzz-trends-20260515/plots/pr-progress-controller-events.png)
+
+![PR blocker and stall events over time](rtc-jetstream2-fuzz-trends-20260515/plots/pr-blocker-stall-events-over-time.png)
+
+Use the blocker/stall timeline when asking whether exact-stack gates, deferred
+family budget gates, resource reserve, single-flight guards, or repeated
+critical-path continuations are slowing progress. It buckets controller stalls
+and critical-path blocker launches by 30-minute UTC windows. A spike is not
+automatically bad, but repeated spikes for the same blocker class mean the loop
+is spending capacity on a gate or relaunch pattern that should be consumed,
+downscoped, or converted into exact evidence.
 
 ![Controller-publishable PR branch diff sizes](rtc-jetstream2-fuzz-trends-20260515/plots/pr-progress-publishable-diff-size.png)
 

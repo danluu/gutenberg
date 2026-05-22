@@ -1,8 +1,7 @@
 session,class,started_hint
-rtc-analysis-live-2c76b4c0-http-persistence-probe-gen-6-20260522T003430Z,analysis,
+rtc-analysis-live-2c76b4c0-deep-http-persistence-probe-gen-6-20260522T003430Z,analysis,
 rtc-analysis-live-2c76b4c0-http-same-user-stale-draft-gen-4-20260522T003441Z,analysis,
-rtc-analysis-live-2c76b4c0-ws-many-user-lifecycle-gen-27-20260522T004243Z,analysis,
-rtc-critical-continuation-seed-5200005-reducer-20260522T003912Z,critical-continuation,
+rtc-analysis-live-2c76b4c0-ws-many-user-lifecycle-gen-31-20260522T004908Z,analysis,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
