@@ -1610,3 +1610,12 @@ timestamp,message,event_type
 2026-05-22T20:29:09Z,controller action launch-branch-repair rtc-table-query-array-crdt 20260522T202909Z,launch
 2026-05-22T20:29:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-05-22T20:31:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:33:19Z,launched persona controller round 20260522T203318Z,persona round launched
+2026-05-22T20:33:19Z,launched controller action job for repair-ready seed-5200005-reducer at 20260522T203319Z,other
+2026-05-22T20:33:19Z,controller action repair-ready seed-5200005-reducer 20260522T203319Z,launch
+2026-05-22T20:33:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:35:24Z,launched controller action job for repair-ready reload-hydration@b01a3a21e2c at 20260522T203524Z,other
+2026-05-22T20:35:24Z,controller action repair-ready reload-hydration@b01a3a21e2c 20260522T203524Z,launch
+2026-05-22T20:35:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:37:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:39:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
