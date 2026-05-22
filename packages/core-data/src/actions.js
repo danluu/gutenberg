@@ -115,12 +115,19 @@ function parsePersistedCRDTDocumentMetadata( serialized ) {
 
 	try {
 		const parsed = JSON.parse( serialized );
+		const recordSnapshot =
+			'object' === typeof parsed?.recordSnapshot &&
+			null !== parsed.recordSnapshot &&
+			! Array.isArray( parsed.recordSnapshot )
+				? parsed.recordSnapshot
+				: null;
 
 		return {
 			baseVersion:
 				typeof parsed?.baseVersion === 'string'
 					? parsed.baseVersion
 					: null,
+			recordSnapshot,
 			version:
 				typeof parsed?.version === 'string' ? parsed.version : null,
 		};
@@ -242,6 +249,12 @@ function getRecordWithPersistedCRDTDocument( record, crdtDocument ) {
 	};
 }
 
+function getPersistedCRDTDocumentRecordSnapshot( record ) {
+	return parsePersistedCRDTDocumentMetadata(
+		getPersistedCRDTDocument( record )
+	)?.recordSnapshot;
+}
+
 function getGuardedSaveResponseRecords(
 	entityConfig,
 	baseRecord,
@@ -254,23 +267,55 @@ function getGuardedSaveResponseRecords(
 	const defaultRecords = {
 		receiveRecord: updatedRecord,
 		syncRecord: updatedRecord,
+		persistedEdits: edits,
 	};
 	const rawAttributes = getGuardedSaveResponseRawAttributes( entityConfig );
 	const crdtRecord = syncManager?.getCRDTRecordData?.( objectType, objectId );
+	const isPersistedCRDTDocumentSaveResponse =
+		isSaveResponseForPersistedCRDTDocument( edits, updatedRecord );
+	const isBaseVersionPersistedCRDTDocumentSaveResponse =
+		isPersistedCRDTDocumentSaveResponse &&
+		! fastDeepEqual(
+			getPersistedCRDTDocument( updatedRecord ),
+			getPersistedCRDTDocument( edits )
+		);
+	const responseRecordSnapshot = isPersistedCRDTDocumentSaveResponse
+		? getPersistedCRDTDocumentRecordSnapshot( updatedRecord )
+		: null;
 
-	if ( ! rawAttributes.length || ! crdtRecord || ! updatedRecord ) {
+	if (
+		! rawAttributes.length ||
+		! updatedRecord ||
+		( ! crdtRecord && ! responseRecordSnapshot )
+	) {
 		return defaultRecords;
 	}
 
 	let receiveRecord = updatedRecord;
 	let syncRecord = updatedRecord;
-	const isPersistedCRDTDocumentSaveResponse =
-		isSaveResponseForPersistedCRDTDocument( edits, updatedRecord );
+	let persistedEdits = edits;
+	const omitPersistedEdit = ( key ) => {
+		if ( hasOwnProperty( persistedEdits, key ) ) {
+			persistedEdits = getRecordWithoutKey( persistedEdits, key );
+		}
+	};
 
 	for ( const key of rawAttributes ) {
+		const responseSnapshotValue =
+			responseRecordSnapshot &&
+			hasOwnProperty( responseRecordSnapshot, key )
+				? getRawAttributeValue(
+						entityConfig,
+						key,
+						responseRecordSnapshot[ key ]
+				  )
+				: undefined;
+		const hasResponseSnapshotValue = responseSnapshotValue !== undefined;
+		const hasCRDTValue = hasCRDTRawAttributeValue( crdtRecord, key );
+
 		if (
 			! hasOwnProperty( updatedRecord, key ) ||
-			! hasCRDTRawAttributeValue( crdtRecord, key )
+			( ! hasCRDTValue && ! hasResponseSnapshotValue )
 		) {
 			continue;
 		}
@@ -289,6 +334,10 @@ function getGuardedSaveResponseRecords(
 		const editValue = hasSavedEdit
 			? getRawAttributeValue( entityConfig, key, edits[ key ] )
 			: undefined;
+		const persistedValue = hasResponseSnapshotValue
+			? responseSnapshotValue
+			: editValue;
+		const hasPersistedValue = hasSavedEdit && persistedValue !== undefined;
 		const crdtValue = getCRDTRawAttributeValue(
 			entityConfig,
 			key,
@@ -297,8 +346,12 @@ function getGuardedSaveResponseRecords(
 
 		const responseIsStaleBaseValue =
 			areRawAttributeValuesEqual( key, responseValue, baseValue ) &&
-			( ! hasSavedEdit ||
-				! areRawAttributeValuesEqual( key, editValue, baseValue ) );
+			( ! hasPersistedValue ||
+				! areRawAttributeValuesEqual(
+					key,
+					persistedValue,
+					baseValue
+				) );
 		const responseIsStaleSavedEditValue =
 			isPersistedCRDTDocumentSaveResponse &&
 			hasSavedEdit &&
@@ -322,45 +375,54 @@ function getGuardedSaveResponseRecords(
 		}
 
 		const crdtMatchesSavedEdit =
-			hasSavedEdit &&
+			hasPersistedValue &&
+			hasCRDTValue &&
 			( ( key === 'content' &&
-				doesCRDTBlockContentMatchValue( crdtRecord, editValue ) ) ||
-				areRawAttributeValuesEqual( key, crdtValue, editValue ) );
-		const crdtMatchesStaleResponse = areRawAttributeValuesEqual(
-			key,
-			crdtValue,
-			responseValue
-		);
-		if (
-			isPersistedCRDTDocumentSaveResponse &&
-			hasSavedEdit &&
-			editValue !== undefined
-		) {
-			if ( crdtMatchesSavedEdit || crdtMatchesStaleResponse ) {
+				doesCRDTBlockContentMatchValue(
+					crdtRecord,
+					persistedValue
+				) ) ||
+				areRawAttributeValuesEqual( key, crdtValue, persistedValue ) );
+		const crdtMatchesStaleResponse =
+			hasCRDTValue &&
+			areRawAttributeValuesEqual( key, crdtValue, responseValue );
+		if ( isPersistedCRDTDocumentSaveResponse && hasPersistedValue ) {
+			if (
+				crdtMatchesSavedEdit ||
+				crdtMatchesStaleResponse ||
+				hasResponseSnapshotValue
+			) {
 				receiveRecord =
 					receiveRecord === updatedRecord
 						? getRecordWithRawAttributeValue(
 								updatedRecord,
 								key,
-								editValue
+								persistedValue
 						  )
 						: getRecordWithRawAttributeValue(
 								receiveRecord,
 								key,
-								editValue
+								persistedValue
 						  );
 				syncRecord =
 					syncRecord === updatedRecord
 						? getRecordWithRawAttributeValue(
 								updatedRecord,
 								key,
-								editValue
+								persistedValue
 						  )
 						: getRecordWithRawAttributeValue(
 								syncRecord,
 								key,
-								editValue
+								persistedValue
 						  );
+				if ( hasResponseSnapshotValue ) {
+					persistedEdits = getRecordWithRawAttributeValue(
+						persistedEdits,
+						key,
+						persistedValue
+					);
+				}
 			} else {
 				receiveRecord =
 					receiveRecord === updatedRecord
@@ -370,6 +432,9 @@ function getGuardedSaveResponseRecords(
 					syncRecord === updatedRecord
 						? getRecordWithoutKey( updatedRecord, key )
 						: getRecordWithoutKey( syncRecord, key );
+				if ( isBaseVersionPersistedCRDTDocumentSaveResponse ) {
+					omitPersistedEdit( key );
+				}
 			}
 			receiveRecord = getRecordWithPersistedCRDTDocument(
 				receiveRecord,
@@ -406,7 +471,7 @@ function getGuardedSaveResponseRecords(
 		}
 	}
 
-	return { receiveRecord, syncRecord };
+	return { receiveRecord, syncRecord, persistedEdits };
 }
 
 /**
@@ -1153,7 +1218,8 @@ export const saveEntityRecord =
 								...edits,
 								...( await entityConfig.__unstablePrePersist(
 									baseRecord,
-									edits
+									edits,
+									options
 								) ),
 							};
 						}
@@ -1218,11 +1284,12 @@ export const saveEntityRecord =
 					}
 					let receiveRecord = updatedRecord;
 					let syncRecord = updatedRecord;
+					let persistedEdits = edits;
 					let syncManager;
 					const objectType = `${ kind }/${ name }`;
 					if ( entityConfig.syncConfig ) {
 						syncManager = getSyncManager();
-						( { receiveRecord, syncRecord } =
+						( { receiveRecord, syncRecord, persistedEdits } =
 							getGuardedSaveResponseRecords(
 								entityConfig,
 								saveResponseBaseRecord,
@@ -1267,7 +1334,7 @@ export const saveEntityRecord =
 						receiveRecord,
 						undefined,
 						true,
-						edits
+						persistedEdits
 					);
 					if ( shouldHydrateFromSavedCRDTDocument ) {
 						try {
