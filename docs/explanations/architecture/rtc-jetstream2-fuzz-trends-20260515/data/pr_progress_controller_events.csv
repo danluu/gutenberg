@@ -1619,3 +1619,11 @@ timestamp,message,event_type
 2026-05-22T20:35:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-05-22T20:37:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-05-22T20:39:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:41:37Z,launched persona controller round 20260522T204137Z,persona round launched
+2026-05-22T20:41:37Z,launched controller action job for repair-branch rtc-table-query-array-crdt at 20260522T204137Z,other
+2026-05-22T20:41:37Z,controller action repair-branch rtc-table-query-array-crdt 20260522T204137Z,launch
+2026-05-22T20:41:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:43:42Z,launched controller action job for repair-branch PR17/stale-crdt-cas-background-delivery@c49e8cd8d176 at 20260522T204342Z,other
+2026-05-22T20:43:42Z,controller action repair-branch PR17/stale-crdt-cas-background-delivery@c49e8cd8d176 20260522T204342Z,launch
+2026-05-22T20:43:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-22T20:45:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
