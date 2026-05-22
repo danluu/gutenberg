@@ -1,8 +1,8 @@
 action,target,priority,allowed,reason,target_label,reason_label
 publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"no fresh all-green exact stack exists for title reload, reload persistence or existing-post CRDT, and large HTTP lifecycle",reload-hydration@fa801a6aa13/promotion,"no fresh all-green exact stack exists for title reload, reload persistence or
 existing-post CRDT, and large HTTP lifecycle"
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,reject duplicate owner-matrix launch until owner evidence newer than Cycle380 or exact product-failure replay exists,PR07C/HOLD-07C,"reject duplicate owner-matrix launch until owner evidence newer than Cycle380 or
-exact product-failure replay exists"
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,reject duplicate owner-matrix launch until owner evidence newer than Cycle380 exists or exact product-failure replay requires it,PR07C/HOLD-07C,"reject duplicate owner-matrix launch until owner evidence newer than Cycle380
+exists or exact product-failure replay requires it"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until newer owner evidence or exact product-failure replay proves product ownership,ready/rtc-pr07c-reload-record-snapshots,"keep held until newer owner evidence or exact product-failure replay proves
 product ownership"
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch,seed-5200005-reducer/relaunch,no fresh product-owned non-coverage evidence justifies another reducer launch

@@ -1,24 +1,24 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve,P0,yes,active discovery 12 exceeds min 3 and active PR jobs are 0 of 2; allow one bounded product slot while preserving fuzzing lanes
-update-controller-rule,heavy-pr-discovery-reserve,P0,yes,block heavy PR jobs when discovery is unhealthy; allow only cheap manifest/candidate publication and analysis-only reconciliation
+reserve-discovery,discovery-reserve,P0,yes,active discovery 15 exceeds min 3 and PR jobs are 0 of 2; allow one bounded product slot while preserving fuzzing lanes
+update-controller-rule,heavy-pr-discovery-reserve,P0,yes,"make discovery reserve binding; block heavy PR jobs when discovery is unhealthy, except cheap publication manifest generation or analysis-only reconciliation"
 update-controller-rule,productive-analysis-authoritative,P0,yes,consume Productive Analysis rows as controller input and explicitly accept or reject stale contradictions
-publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,adopt or publish manifest head only as candidate evidence; unit and lint evidence do not clear promotion
-repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,yes,replace generic deferred-family hold with a head-specific blocker requiring fresh exact-stack evidence
-launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,next product-progress slot; run bounded title reload plus existing-post or persistence reload plus large HTTP lifecycle exact stack
+publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/candidate,P0,yes,adopt deferred manifest head only as candidate evidence; unit and lint evidence do not clear promotion
+repair-ready,reload-hydration@fa801a6aa13/exact-stack-blocker,P0,yes,replace generic deferred-family hold with head-specific blocker requiring fresh exact-stack evidence
+launch-branch-repair,reload-hydration@fa801a6aa13/exact-stack,P0,yes,next product-progress slot; run bounded title-reload plus existing-post or persistence reload plus large-http-lifecycle exact stack
 publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,"no fresh all-green exact stack exists for title reload, reload persistence or existing-post CRDT, and large HTTP lifecycle"
 cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,"concrete manifest exists; progress must be candidate adoption, exact replay, owner evidence, green-stack adoption, or downscope"
 update-controller-rule,deferred-family-single-flight,P0,yes,"manifest-held families progress only by adoption, focused replay, owner evidence, green-stack adoption, or explicit downscope"
 cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic manifests lack owner evidence, focused first-loss replay, or green exact-stack adoption"
-repair-ready,PR07C/HOLD-07C,P0,yes,terminalize stale owner-matrix blocker/job because current progress marks Cycle380 owner evidence runtime-held-consumed
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,reject duplicate owner-matrix launch until owner evidence newer than Cycle380 or exact product-failure replay exists
+repair-ready,PR07C/HOLD-07C,P0,yes,consume current runtime-held-consumed state and terminalize stale owner-matrix blocker or queued job
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,reject duplicate owner-matrix launch until owner evidence newer than Cycle380 exists or exact product-failure replay requires it
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,keep held until newer owner evidence or exact product-failure replay proves product ownership
-launch-branch-repair,PR07C/HOLD-07C/exact-product-failure-replay,P1,yes,allowed after the reload-hydration P0 slot if PR07C ownership remains unresolved and discovery remains healthy
+launch-branch-repair,PR07C/HOLD-07C/exact-product-failure-replay,P1,yes,allowed after reload-hydration P0 slot if ownership remains unresolved and discovery remains healthy
 repair-ready,seed-5200005-reducer,P0,yes,consume latest already_resolved_by_active_artifacts classification as terminal evidence
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch
-update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,current-feedback cycle 20260522T091644Z is exact_stack_green; reopen only on newer promotion_blocked rows
+update-controller-rule,benchmark-canary-fuzzer-gap/finalization-promotion-gate,P0,yes,current feedback cycle 20260522T091644Z is exact_stack_green; reopen only on newer promotion_blocked rows
 repair-branch,benchmark-canary-fuzzer-gap/repair/benchmark-canary-ws-smoke-20260522T083852Z,P0,no,superseded by newer exact_stack_green current feedback
 launch-branch-repair,benchmark-canary-fuzzer-gap/exact-all-merged-rerun,P0,no,rerun only if current-feedback.tsv changes or gains promotion_blocked rows
-update-controller-rule,existing-post-crdt-http+large-http-lifecycle,P0,yes,"keep these exact-stack coverage lanes promotion-blocking for reload, persistence, saved-response, and successor stacks"
+update-controller-rule,existing-post-crdt-http+large-http-lifecycle,P0,yes,"keep exact-stack coverage lanes promotion-blocking for reload, persistence, saved-response, and successor stacks"
 reserve-discovery,focused/title-reload-http,P0,yes,keep title-reload coverage alive because reload-hydration promotion depends on it
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path
