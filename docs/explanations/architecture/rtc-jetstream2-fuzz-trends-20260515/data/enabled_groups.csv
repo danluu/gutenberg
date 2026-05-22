@@ -1679,3 +1679,6 @@ timestamp,group,group_family
 2026-05-22T07:30:02Z,novelty-http-large-post-lifecycle,lifecycle
 2026-05-22T07:30:02Z,novelty-http-large-post-lifecycle-completion,lifecycle
 2026-05-22T07:46:44Z,novelty-http-title-reload-convergence,lifecycle
+2026-05-22T08:13:32Z,novelty-ws-parser-transform,parser
+2026-05-22T08:13:51Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-22T08:14:03Z,novelty-ws-real-user-coverage-bridge,real-user

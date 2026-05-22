@@ -1,17 +1,16 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,unit and lint validation are not browser promotion clearance,reload-hydration@fa801a6aa13/promotion,unit and lint validation are not browser promotion clearance
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,current PR progress marks Cycle380 owner evidence runtime-held-consumed; relaunch only for newer owner evidence or exact product-failure replay,PR07C/HOLD-07C,"current PR progress marks Cycle380 owner evidence runtime-held-consumed;
-relaunch only for newer owner evidence or exact product-failure replay"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,owner evidence is consumed and product ownership is not freshly proven,ready/rtc-pr07c-reload-record-snapshots,owner evidence is consumed and product ownership is not freshly proven
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,terminal reducer evidence exists and no fresher product-owned non-coverage evidence justifies another reducer,seed-5200005-reducer/relaunch,"terminal reducer evidence exists and no fresher product-owned non-coverage
-evidence justifies another reducer"
-repair-branch,benchmark-canary-fuzzer-gap/stale-repair-rerun,P0,no,older promotion_blocked or repair rows are superseded by newer exact-green current feedback,benchmark-canary-fuzzer-gap/stale-repair-rerun,"older promotion_blocked or repair rows are superseded by newer exact-green
-current feedback"
-publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,no current ready branch or publish manifest exists; exact green closes blocker only,benchmark-canary-fuzzer-gap/maintainer-snapshot,"no current ready branch or publish manifest exists; exact green closes blocker
-only"
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,duplicates already published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,duplicates already published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path
-publish-ready,current-push-manifest,P1,no,controller push manifest has only a header; use deferred reload-hydration manifest for candidate handling,current-push-manifest,"controller push manifest has only a header; use deferred reload-hydration
-manifest for candidate handling"
+publish-ready,reload-hydration@fa801a6aa13/promotion,P0,no,unit and lint validation are not browser exact-stack promotion clearance,reload-hydration@fa801a6aa13/promotion,unit and lint validation are not browser exact-stack promotion clearance
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,PR07C publication remains blocked until fresh owner matrix evidence proves product ownership,ready/rtc-pr07c-reload-record-snapshots,"PR07C publication remains blocked until fresh owner matrix evidence proves
+product ownership"
+launch-owner-matrix,PR07C/HOLD-07C/duplicate-relaunch,P0,no,"after the queued owner replay is consumed, relaunch only for newer owner evidence or exact product-failure replay",PR07C/HOLD-07C/duplicate-relaunch,"after the queued owner replay is consumed, relaunch only for newer owner
+evidence or exact product-failure replay"
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresher product-owned non-coverage evidence justifies another reducer,seed-5200005-reducer/relaunch,no fresher product-owned non-coverage evidence justifies another reducer
+repair-branch,benchmark-canary-fuzzer-gap/stale-repair-rerun,P0,no,latest context marks benchmark canary terminal exact green; reopen only on changed feedback or new promotion_blocked rows,benchmark-canary-fuzzer-gap/stale-repair-rerun,"latest context marks benchmark canary terminal exact green; reopen only on
+changed feedback or new promotion_blocked rows"
+publish-ready,benchmark-canary-fuzzer-gap/maintainer-snapshot,P0,no,no current ready publication manifest; exact green only closes the blocker,benchmark-canary-fuzzer-gap/maintainer-snapshot,no current ready publication manifest; exact green only closes the blocker
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,duplicates already published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,duplicates already published PR14B-based PR15A path
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,duplicates already published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,duplicates already published PR14B-based PR15B path
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,duplicates already published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,duplicates already published PR14B-based PR15C path
+publish-ready,current-push-manifest,P1,no,controller push manifest has only a header; use the reload-hydration manifest for candidate handling,current-push-manifest,"controller push manifest has only a header; use the reload-hydration manifest
+for candidate handling"
