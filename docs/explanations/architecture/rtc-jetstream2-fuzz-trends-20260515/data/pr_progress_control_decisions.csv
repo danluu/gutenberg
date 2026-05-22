@@ -3,28 +3,28 @@ reserve-discovery,discovery-reserve,P0,yes,active discovery is 20 vs floor 3 but
 launch-branch-repair,benchmark-canary-fuzzer-gap/exact-stack@14767c60a7ef5295366fd8a1f31a64d610acdf80,P0,yes,adopt the already-active bounded exact-stack repair; do not launch a second parallel replay
 repair-branch,benchmark-canary-fuzzer-gap/existing-post-crdt-http/seed-7735005,P0,yes,confirmed reproducible real-bug seed should become a concrete repair branch or explicit downscope blocker
 repair-ready,benchmark-canary-fuzzer-gap/coverage-repair-classification,P0,yes,consume coverage repair as partial evidence only; exact title-reload-http and existing-post-crdt-http gates remain open
-update-controller-rule,benchmark-canary-exact-stack-gate,P0,yes,"block coverage-confidence, snapshot publication, and finalization until exact title-reload-http and existing-post-crdt-http are green"
+update-controller-rule,benchmark-canary-exact-stack-gate,P0,yes,block coverage-confidence snapshot publication and finalization until exact title-reload-http and existing-post-crdt-http are green
 update-controller-rule,benchmark-canary-large-http-floor,P0,yes,keep large-post-three-user-http or equivalent large-http-lifecycle in the promotion minimum
-update-controller-rule,benchmark-canary-coverage-accounting,P0,yes,"do not count setup-only, zero-byte, duplicate-head, startup-only, semantic-only, or forced-group-presence artifacts as blocker closure"
-reserve-discovery,benchmark-canary-equivalent-http-current-root,P0,yes,"retain or top off existing coverage capacity for title-reload-http, existing-post-crdt-http, and large-http-lifecycle without reducing discovery reserve"
+update-controller-rule,benchmark-canary-coverage-accounting,P0,yes,do not count setup-only zero-byte duplicate-head startup-only semantic-only or forced-group-presence artifacts as blocker closure
+reserve-discovery,benchmark-canary-equivalent-http-current-root,P0,yes,retain or top off existing coverage capacity for title-reload-http existing-post-crdt-http and large-http-lifecycle without reducing discovery reserve
 repair-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa131f67087f333ffff9a547633b91c99,P0,yes,adopt as the sole reload-hydration candidate and stop generic family relaunches
 launch-branch-repair,deferred/rtc-reload-hydration-20260521T223947Z/exact-stack,P0,no,new heavy exact-stack work waits behind the active benchmark repair and unprotected discovery reserve
 publish-ready,deferred/rtc-reload-hydration-20260521T223947Z,P0,no,manifest evidence is insufficient without fresh exact-stack title-reload-http and existing-post-crdt-http green with large HTTP retained
 cooldown-diagnostic,reload-hydration/generic-interval-relaunch,P0,yes,family is over recent launch budget with a manifest candidate; interval relaunches are churn
-cooldown-diagnostic,pre-save-search-live-collapse/generic-interval-relaunch,P0,yes,"diagnostic-only with manifest hold; allow only owner evidence, dependency-complete replay, or downscope"
-cooldown-diagnostic,rich-text-suffix-corruption/generic-interval-relaunch,P0,yes,"diagnostic-only with manifest hold; allow only replay evidence, owner evidence, or downscope"
-update-controller-rule,deferred-family-single-flight,P0,yes,"over-budget families get one artifact-complete lane; only product head, owner evidence, exact green evidence, or downscope counts"
+cooldown-diagnostic,pre-save-search-live-collapse/generic-interval-relaunch,P0,yes,diagnostic-only with manifest hold; allow only owner evidence dependency-complete replay or downscope
+cooldown-diagnostic,rich-text-suffix-corruption/generic-interval-relaunch,P0,yes,diagnostic-only with manifest hold; allow only replay evidence owner evidence or downscope
+update-controller-rule,deferred-family-single-flight,P0,yes,over-budget families get one artifact-complete lane; only product head owner evidence exact green evidence or downscope counts
 cooldown-diagnostic,deferred-http-room-isolation,P1,yes,superseded by published PR02A unless fresh product evidence beats the canonical track
 cooldown-diagnostic,deferred-malformed-save-payload,P1,yes,superseded by published PR06B minimal unless fresh product evidence beats the canonical track
-repair-ready,PR07C/HOLD-07C-owner-evidence,P0,yes,"consume Cycle380 owner evidence as current evidence; it supports hold, not publication"
+repair-ready,PR07C/HOLD-07C-owner-evidence,P0,yes,consume Cycle380 owner evidence as current evidence; it supports hold not publication
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,readiness is resolved but current owner evidence is already consumed; duplicate heavy browser matrix waits for fresh evidence or protected discovery
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until newer owner evidence or exact product-failure replay proves product ownership
 cooldown-diagnostic,PR07C/HOLD-07C/duplicate-owner-matrix,P0,yes,suppress duplicate owner-matrix work while discovery is unprotected
 repair-ready,seed-5200005-reducer,P0,yes,consume already_resolved_by_active_artifacts classification and clear stale PR05 reducer blocker
 launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,no fresh product-owned non-coverage evidence justifies another reducer launch
-repair-ready,ready/rtc-pr14b-table-query-array-local-suffix-append/remote-marker-seed-1592595164,high,yes,route one minimized PR14B repair or explicit oracle downscope blocker
-cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker-rediscovery,high,yes,collapse repeated remote-marker failures into one blocker until minimized repair or explicit oracle downscope exists
-update-controller-rule,pr14b-remote-marker-progress-accounting,high,yes,"count only a minimized repair head, explicit oracle downscope, or new distinct signature as progress"
+repair-ready,ready/rtc-pr14b-table-query-array-local-suffix-append/remote-marker-seed-1592595164,P0,yes,route one minimized PR14B repair or explicit oracle downscope blocker
+cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker-rediscovery,P0,yes,collapse repeated remote-marker failures into one blocker until minimized repair or explicit oracle downscope exists
+update-controller-rule,pr14b-remote-marker-progress-accounting,P0,yes,count only a minimized repair head explicit oracle downscope or new distinct signature as progress
 update-controller-rule,lower-http-polling-canary-oracle-retarget,P0,yes,retarget one existing lower-level HTTP lane to title-reload and existing-post CRDT oracles without reducing discovery reserve
 cooldown-diagnostic,lower-http-polling/feature-only-corpus,P1,yes,stop counting feature-only corpus growth with zero new coverage keys as productive progress
 update-controller-rule,lower-php-sync-storage-restore-state,P0,yes,add restore-state protocol and storage coverage only by reusing existing discovery capacity
@@ -33,8 +33,8 @@ publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,canonical PR0
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,PR14B-based PR15A is already published; original-base branch is duplicate under current evidence
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-based PR15B is already published; original-base branch is duplicate under current evidence
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C is already published; original-base branch is duplicate under current evidence
-launch-branch-repair,broad-pr-analysis-fanout,P0,no,"reject broad heavy PR fanout under unprotected discovery; use bounded repair, exact replay, classification, or downscope"
-update-controller-rule,discovery-protection-heavy-pr-gate,P0,yes,"while discovery protected is no, allow cheap manifests, controller updates, classification, and already-active bounded repair adoption"
-update-controller-rule,effective-pr-slot-accounting,P0,yes,"count queued and active owner matrices, exact-stack replays, reducers, deferred jobs, continuations, finalizers, and persona loops against PR capacity"
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,reject broad heavy PR fanout under unprotected discovery; use bounded repair exact replay classification or downscope
+update-controller-rule,discovery-protection-heavy-pr-gate,P0,yes,while discovery protected is no allow cheap manifests controller updates classification and already-active bounded repair adoption
+update-controller-rule,effective-pr-slot-accounting,P0,yes,count queued and active owner matrices exact-stack replays reducers deferred jobs continuations finalizers and persona loops against PR capacity
 update-controller-rule,productive-analysis-feed-binding,P0,yes,every high-priority productive-analysis row targeting controller loops must become an explicit allow or reject decision
-update-controller-rule,artifact-complete-single-flight,P0,yes,"reject duplicate-head, zero-byte, setup-only, pre-oracle, and semantic-churn artifacts as progress"
+update-controller-rule,artifact-complete-single-flight,P0,yes,reject duplicate-head zero-byte setup-only pre-oracle and semantic-churn artifacts as progress

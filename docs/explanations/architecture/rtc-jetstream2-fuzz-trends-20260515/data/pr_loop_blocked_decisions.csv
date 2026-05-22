@@ -16,5 +16,5 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,PR14B-bas
 current evidence"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,PR14B-based PR15C is already published; original-base branch is duplicate under current evidence,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based PR15C is already published; original-base branch is duplicate under
 current evidence"
-launch-branch-repair,broad-pr-analysis-fanout,P0,no,"reject broad heavy PR fanout under unprotected discovery; use bounded repair, exact replay, classification, or downscope",broad-pr-analysis-fanout,"reject broad heavy PR fanout under unprotected discovery; use bounded repair,
-exact replay, classification, or downscope"
+launch-branch-repair,broad-pr-analysis-fanout,P0,no,reject broad heavy PR fanout under unprotected discovery; use bounded repair exact replay classification or downscope,broad-pr-analysis-fanout,"reject broad heavy PR fanout under unprotected discovery; use bounded repair
+exact replay classification or downscope"
