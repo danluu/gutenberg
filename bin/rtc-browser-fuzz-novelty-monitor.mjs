@@ -2262,6 +2262,22 @@ function getSupervisorGroupPublicationNoiseBlock( group ) {
 		if ( ! currentRunDuplicateHold ) {
 			return null;
 		}
+		if (
+			shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+				group,
+				currentRunDuplicateHold
+			)
+		) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'bypass-supervisor-publication-success-deficit-duplicate-hold',
+				group,
+				family: currentRunDuplicateHold.family,
+				source: currentRunDuplicateHold.source,
+				reason: getManyUserSuccessDeficitReason( group ),
+			} );
+			return null;
+		}
 		const productEvidenceRecords = Number(
 			currentRunDuplicateHold.productEvidenceRecords
 		);
@@ -2318,6 +2334,22 @@ function getSupervisorGroupPublicationNoiseBlock( group ) {
 		};
 	}
 	if ( isProductEvidenceDuplicateProducerHold( activeNoisePause, group ) ) {
+		if (
+			shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+				group,
+				activeNoisePause
+			)
+		) {
+			state.changes.push( {
+				at: new Date().toISOString(),
+				action: 'bypass-supervisor-publication-success-deficit-noise-pause',
+				group,
+				family: activeNoisePause.family,
+				source: activeNoisePause.source,
+				reason: getManyUserSuccessDeficitReason( group ),
+			} );
+			return null;
+		}
 		const productEvidenceRecords = Number(
 			activeNoisePause.productEvidenceRecords
 		);
@@ -2369,7 +2401,11 @@ function getCurrentRunProductEvidencePublicationHold( group ) {
 	for ( const hold of [ actionGateHold, familyHold ] ) {
 		if (
 			isProductEvidenceDuplicateProducerHold( hold ) &&
-			shouldProductEvidenceDuplicateHoldBlockGroup( hold, group )
+			shouldProductEvidenceDuplicateHoldBlockGroup( hold, group ) &&
+			! shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+				group,
+				hold
+			)
 		) {
 			return hold;
 		}
@@ -12661,7 +12697,19 @@ async function applyPolicy(
 				group
 			)
 		) {
-			if ( shouldBypassDominantRealUserFamilyHold( group ) ) {
+			if (
+				shouldBypassProductEvidenceDuplicateHoldForSuccessDeficit(
+					group,
+					effectiveProductEvidenceDuplicateFamilyHold
+				)
+			) {
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'bypass-recommended-success-deficit-duplicate-hold',
+					group,
+					reason: getManyUserSuccessDeficitReason( group ),
+				} );
+			} else if ( shouldBypassDominantRealUserFamilyHold( group ) ) {
 				state.changes.push( {
 					at: new Date().toISOString(),
 					action: 'bypass-real-user-duplicate-family-hold',
