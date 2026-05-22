@@ -677,7 +677,8 @@ export const prePersistPostType = async (
 					latestPersistedCRDTDoc ||
 					persistedRecord?.meta?.[
 						POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-					] || null,
+					] ||
+					null,
 			} );
 		}
 
