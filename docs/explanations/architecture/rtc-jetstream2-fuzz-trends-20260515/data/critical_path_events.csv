@@ -1040,3 +1040,4 @@ timestamp,event_type,message,target,blocker_class
 2026-05-22T05:28:23Z,launch,continuation seed-5200005-reducer session=rtc-critical-continuation-seed-5200005-reducer-20260522T052821Z,seed-5200005-reducer,seed reducer/final-stack
 2026-05-22T05:43:53Z,launch,continuation seed-5200005-reducer session=rtc-critical-continuation-seed-5200005-reducer-20260522T054352Z,seed-5200005-reducer,seed reducer/final-stack
 2026-05-22T05:45:28Z,launch,benchmark feedback refresh command=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260522T044520Z/continuations/benchmark-canary-fuzzer-gap/refresh-current-feedback-command.sh session=rtc-benchmark-canary-feedback-refresh-20260522T054528Z,unknown,critical-path launch
+2026-05-22T05:51:42Z,launch,continuation benchmark-canary-fuzzer-gap session=rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260522T055140Z,benchmark-canary-fuzzer-gap,benchmark canary/exact-stack

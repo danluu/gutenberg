@@ -1,21 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,rtc-pr-stack-20260522T044520Z-all-merged-benchmark-canary-harness@c4028ca8,P0,no,exact candidate failed large-post-three-user-http 2/2 and persistence-reload-http 1/1,rtc-pr-stack-20260522T044520Z-all-merged-benchmark-canary-harness@c4028ca8,"exact candidate failed large-post-three-user-http 2/2 and
-persistence-reload-http 1/1"
-publish-ready,try/rtc-benchmark-canary-replacement-harness-20260522T045016Z@c66e202f823b,P0,no,replacement has title and persistence green but large-post-three-user-http still blocks promotion,try/rtc-benchmark-canary-replacement-harness-20260522T045016Z@c66e202f823b,"replacement has title and persistence green but large-post-three-user-http still
-blocks promotion"
-repair-branch,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,P0,no,superseded by newer exact feedback where title reload is green; remaining branch-changing blocker is large HTTP,benchmark-canary-fuzzer-gap/title-reload-http/seed-7730002,"superseded by newer exact feedback where title reload is green; remaining
-branch-changing blocker is large HTTP"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,wait for the owner matrix result or newer exact product-failure replay before publication,ready/rtc-pr07c-reload-record-snapshots,"wait for the owner matrix result or newer exact product-failure replay before
-publication"
+launch-branch-repair,benchmark-canary-fuzzer-gap/duplicate-exact-refresh,P0,no,active large HTTP exact repair is already running; duplicate refresh is churn until it returns,benchmark-canary-fuzzer-gap/duplicate-exact-refresh,"active large HTTP exact repair is already running; duplicate refresh is churn
+until it returns"
+repair-branch,benchmark-canary-fuzzer-gap/all-merged-successor,P0,no,rebuild successor only after the large HTTP fix has fresh exact green evidence,benchmark-canary-fuzzer-gap/all-merged-successor,rebuild successor only after the large HTTP fix has fresh exact green evidence
+publish-ready,try/rtc-benchmark-canary-replacement-harness-20260522T045016Z@c66e202f823b,P0,no,large-post-three-user-http remains promotion-blocked; green title and persistence are insufficient,try/rtc-benchmark-canary-replacement-harness-20260522T045016Z@c66e202f823b,"large-post-three-user-http remains promotion-blocked; green title and
+persistence are insufficient"
+publish-ready,benchmark-canary-fuzzer-gap/all-merged-publication,P0,no,publication requires fresh large-post-three-user-http 2/2 green or equivalent large-http-lifecycle evidence,benchmark-canary-fuzzer-gap/all-merged-publication,"publication requires fresh large-post-three-user-http 2/2 green or equivalent
+large-http-lifecycle evidence"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,hold until the PR07C owner matrix proves product ownership or fresh exact product-failure replay exists,ready/rtc-pr07c-reload-record-snapshots,"hold until the PR07C owner matrix proves product ownership or fresh exact
+product-failure replay exists"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,P1,no,broader branch is superseded by canonical PR06B minimal unless it proves fresh product advantage,ready/rtc-pr06b-malformed-save-request-payload,"broader branch is superseded by canonical PR06B minimal unless it proves fresh
 product advantage"
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,original-base branch duplicates published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,original-base branch duplicates published PR14B-based PR15A path
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,original-base branch duplicates published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,original-base branch duplicates published PR14B-based PR15B path
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,original-base branch duplicates published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,original-base branch duplicates published PR14B-based PR15C path
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,P1,no,original-base branch duplicates the published PR14B-based PR15A path,ready/rtc-pr15a-fallback-group-move-green,original-base branch duplicates the published PR14B-based PR15A path
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,P1,no,original-base branch duplicates the published PR14B-based PR15B path,ready/rtc-pr15b-fallback-group-insert-anchor-green,original-base branch duplicates the published PR14B-based PR15B path
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,P1,no,original-base branch duplicates the published PR14B-based PR15C path,ready/rtc-pr15c-fallback-group-delete-green,original-base branch duplicates the published PR14B-based PR15C path
 publish-ready,reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,P0,no,"promotion requires fresh exact green title-reload-http, existing-post-crdt-http, and large-http-lifecycle evidence",reload-hydration/deferred/rtc-reload-hydration-20260521T223947Z@fa801a6aa13/promotion,"promotion requires fresh exact green title-reload-http, existing-post-crdt-http,
 and large-http-lifecycle evidence"
-launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,stale reducer state and zero artifacts do not justify relaunch without newer product-owned evidence,seed-5200005-reducer/relaunch,"stale reducer state and zero artifacts do not justify relaunch without newer
-product-owned evidence"
-publish-ready,current-push-manifest,P1,no,current controller push manifest has no publish row to consume,current-push-manifest,current controller push manifest has no publish row to consume
+launch-branch-repair,seed-5200005-reducer/relaunch,P0,no,stale reducer state and zero-artifact loops do not justify relaunch without fresher product-owned evidence,seed-5200005-reducer/relaunch,"stale reducer state and zero-artifact loops do not justify relaunch without
+fresher product-owned evidence"
+publish-ready,current-push-manifest,P1,no,controller push manifest is header-only; nothing to consume,current-push-manifest,controller push manifest is header-only; nothing to consume
 launch-branch-repair,broad-pr-analysis-fanout,P0,no,specific blocker-removal actions exist; broad fanout burns PR capacity without product progress,broad-pr-analysis-fanout,"specific blocker-removal actions exist; broad fanout burns PR capacity without
 product progress"
