@@ -7,9 +7,8 @@ PR progress items,superseded,ready-product-pr,low,1
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
 controller decisions,allowed,control decision,P0,12
 controller decisions,blocked,control decision,P0,5
-controller decisions,allowed,control decision,high,12
+controller decisions,allowed,control decision,high,13
 controller decisions,blocked,control decision,high,7
-controller decisions,allowed,control decision,medium,1
 critical blockers,held,deferred-family,high,1
 critical blockers,active,exact-stack-promotion,high,1
 critical blockers,terminal,final-stack-join,high,1
