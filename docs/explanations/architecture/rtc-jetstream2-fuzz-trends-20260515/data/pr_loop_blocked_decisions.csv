@@ -1,8 +1,12 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,P0,no,failed mandatory large-post-three-user-http 2 of 2 and cannot replace the current PR07C snapshot,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,"failed mandatory large-post-three-user-http 2 of 2 and cannot replace the
-current PR07C snapshot"
-launch-branch-repair,product-pr-fanout,P0,no,PR17 owns the single branch-changing slot; broad fanout duplicates published heads and competes with discovery reserve,product-pr-fanout,"PR17 owns the single branch-changing slot; broad fanout duplicates published
-heads and competes with discovery reserve"
+repair-branch,PR17/stale-crdt-cas-background-delivery@clean-materialized-table-repair-from-bb4e7b84,P0,no,fold this older PR17 alias into the latest benchmark-canary large-post repair; do not open a second branch-changing slot,PR17/stale-crdt-cas-background-delivery@clean-materialized-table-repair-from-bb4e7b84,"fold this older PR17 alias into the latest benchmark-canary large-post repair;
+do not open a second branch-changing slot"
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,P0,no,failed mandatory large-post-three-user-http 2 of 2 with persisted status draft instead of publish,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,"failed mandatory large-post-three-user-http 2 of 2 with persisted status draft
+instead of publish"
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,current branch ref is not covered by benchmark feedback; require same-commit exact-stack evidence,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"current branch ref is not covered by benchmark feedback; require same-commit
+exact-stack evidence"
+launch-branch-repair,product-pr-fanout,P0,no,PR17 owns the single branch-changing slot; broad fanout duplicates published or superseded heads and can consume discovery reserve,product-pr-fanout,"PR17 owns the single branch-changing slot; broad fanout duplicates published or
+superseded heads and can consume discovery reserve"
 publish-ready,current-push-manifest.tsv,high,no,current controller push manifest has no new publication rows beyond already recorded heads,current-push-manifest.tsv,"current controller push manifest has no new publication rows beyond already
 recorded heads"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
