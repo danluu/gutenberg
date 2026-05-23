@@ -1,19 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,no,Superseded by the cleaner bb4e7b84 materialized-table route.,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,Superseded by the cleaner bb4e7b84 materialized-table route.
-publish-ready,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,P0,no,Raw repair refs lack a clean reviewed split and full same-commit exact-stack proof.,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,"Raw repair refs lack a clean reviewed split and full same-commit exact-stack
-proof."
-launch-branch-repair,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,P0,no,PR17 branch-changing work must remain single-flight.,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,PR17 branch-changing work must remain single-flight.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale PR07C head is superseded by current published head 2f8247258316bde60869c06c383090904e9426bd.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale PR07C head is superseded by current published head
+launch-heavy-pr,discovery-unhealthy-noncheap-pr-work,P0,no,"If discovery reserve falls below floor, deny heavy PR jobs except cheap publication manifest generation, blocker cleanup, or analysis-only work.",discovery-unhealthy-noncheap-pr-work,"If discovery reserve falls below floor, deny heavy PR jobs except cheap
+publication manifest generation, blocker cleanup, or analysis-only work."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale PR07C head is superseded by current head 2f8247258316bde60869c06c383090904e9426bd.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale PR07C head is superseded by current head
 2f8247258316bde60869c06c383090904e9426bd."
-launch-owner-matrix,pr07c-owner-matrix@duplicate,high,no,Suppress duplicate browser owner-matrix work unless newer red owner evidence appears.,pr07c-owner-matrix@duplicate,"Suppress duplicate browser owner-matrix work unless newer red owner evidence
-appears."
+launch-owner-matrix,pr07c-owner-matrix@duplicate,high,no,Suppress duplicate owner-matrix jobs after current-head evidence is consumed unless newer red owner evidence appears.,pr07c-owner-matrix@duplicate,"Suppress duplicate owner-matrix jobs after current-head evidence is consumed
+unless newer red owner evidence appears."
+repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,no,Superseded by the cleaner bb4e7b84 materialized-table route.,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,Superseded by the cleaner bb4e7b84 materialized-table route.
+publish-ready,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,P0,no,Raw or broad repair refs lack a clean split and same-commit exact-stack proof.,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,Raw or broad repair refs lack a clean split and same-commit exact-stack proof.
+launch-branch-repair,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,P0,no,PR17 branch-changing work must stay single-flight while the clean repair lane is active.,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,"PR17 branch-changing work must stay single-flight while the clean repair lane is
+active."
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,Missing fresh title-reload plus existing-post or persistence-reload plus large HTTP lifecycle green evidence.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing fresh title-reload plus existing-post or persistence-reload plus large
 HTTP lifecycle green evidence."
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,PR17 owns the branch-changing product slot; reload-hydration remains exact-stack gated.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing product slot; reload-hydration remains exact-stack
-gated."
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,PR17 owns the branch-changing product slot; reload-hydration is blocker replay only.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing product slot; reload-hydration is blocker replay
+only."
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,Missing owner evidence or product first-loss evidence.,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,Missing owner evidence or product first-loss evidence.
-publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,Missing focused exact replay owner evidence or product first-loss evidence.,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,Missing focused exact replay owner evidence or product first-loss evidence.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by published PR15A-on-PR14B branch.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by published PR15B-on-PR14B branch.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by published PR15C-on-PR14B branch.
+publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,Missing focused replay owner evidence or product first-loss evidence.,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,Missing focused replay owner evidence or product first-loss evidence.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by the already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by the already published PR06B minimal branch.
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by the published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by the published PR15A-on-PR14B branch.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by the published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by the published PR15B-on-PR14B branch.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by the published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by the published PR15C-on-PR14B branch.
+publish-ready,cycle264/pr05d-clean-base/semicolonless-entity-validation,medium,no,Not a product publication class.,cycle264/pr05d-clean-base/semicolonless-entity-validation,Not a product publication class.
