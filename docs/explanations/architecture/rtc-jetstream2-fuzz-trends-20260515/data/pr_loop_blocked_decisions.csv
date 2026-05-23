@@ -1,18 +1,20 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,newer same-head exact red overrides stale green/publication evidence; require full benchmark-minimum green plus non-skipped build,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,"newer same-head exact red overrides stale green/publication evidence; require
-full benchmark-minimum green plus non-skipped build"
+publish-ready,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,newer same-head exact red overrides stale green or local-publisher evidence,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,newer same-head exact red overrides stale green or local-publisher evidence
 publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@2335aa8c263f99138b5b64b8b90485be86cfa454,P0,no,"raw wait-only reconcile branch is repair evidence, not maintainer snapshot material",repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@2335aa8c263f99138b5b64b8b90485be86cfa454,"raw wait-only reconcile branch is repair evidence, not maintainer snapshot
 material"
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,PR17 owns the single branch-changing product slot this cycle; avoid PR fanout and keep discovery reserve intact,all-other-heavy-pr-jobs,"PR17 owns the single branch-changing product slot this cycle; avoid PR fanout
-and keep discovery reserve intact"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate browser owner-matrix is churn after current-head no-owner replay; reopen only with newer product-owned red evidence,PR07C/HOLD-07C,"duplicate browser owner-matrix is churn after current-head no-owner replay;
-reopen only with newer product-owned red evidence"
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,PR17 owns the only branch-changing product slot this cycle; avoid PR fanout and preserve discovery reserve,all-other-heavy-pr-jobs,"PR17 owns the only branch-changing product slot this cycle; avoid PR fanout and
+preserve discovery reserve"
+update-maintainer-docs,current-snapshot,P0,no,benchmark feedback reports no newer publishable maintainer stack than the documented green b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638 snapshot,current-snapshot,"benchmark feedback reports no newer publishable maintainer stack than the
+documented green b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638 snapshot"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate browser owner-matrix is churn unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C,"duplicate browser owner-matrix is churn unless newer current-head product-owned
+red evidence appears"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"exact-stack browser validation is missing for title reload, existing or persistence reload, and large HTTP lifecycle",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"exact-stack browser validation is missing for title reload, existing or
 persistence reload, and large HTTP lifecycle"
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"no branch fanout until replay proves owner evidence, green adoption, or explicit downscope",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"no branch fanout until replay proves owner evidence, green adoption, or explicit
-downscope"
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"block branch fanout until exact replay proves owner evidence, green adoption, or explicit downscope",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block branch fanout until exact replay proves owner evidence, green adoption, or
+explicit downscope"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,manifest lacks product owner or first-loss evidence,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,manifest lacks product owner or first-loss evidence
-publish-ready,rich-text-suffix-corruption@272233f38c9,high,no,deterministic unit and harness ambiguity are not product-ready fix evidence,rich-text-suffix-corruption@272233f38c9,deterministic unit and harness ambiguity are not product-ready fix evidence
+publish-ready,rich-text-suffix-corruption@272233f38c9,high,no,deterministic unit coverage and timeout or harness ambiguity are not product-ready fix evidence,rich-text-suffix-corruption@272233f38c9,"deterministic unit coverage and timeout or harness ambiguity are not
+product-ready fix evidence"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
