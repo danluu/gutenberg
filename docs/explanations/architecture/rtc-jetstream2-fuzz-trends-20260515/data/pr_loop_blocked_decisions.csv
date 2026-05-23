@@ -1,10 +1,9 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,publication remains blocked until the finalized fixed commit has full benchmark-minimum exact-stack green plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"publication remains blocked until the finalized fixed commit has full
-benchmark-minimum exact-stack green plus non-skipped build evidence"
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,current clean repair commit still fails realistic-e2e/large-post-three-user-http 2/2,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"current clean repair commit still fails realistic-e2e/large-post-three-user-http
-2/2"
-launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,preserve discovery reserve and avoid PR fanout beyond the single bounded PR17 repair slot,all-other-branch-changing-pr-jobs,"preserve discovery reserve and avoid PR fanout beyond the single bounded PR17
-repair slot"
+publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,publication blocked until the finalized fixed commit has full benchmark-minimum exact-stack green plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"publication blocked until the finalized fixed commit has full benchmark-minimum
+exact-stack green plus non-skipped build evidence"
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,current clean repair commit still fails realistic-e2e/large-post-three-user-http,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,current clean repair commit still fails realistic-e2e/large-post-three-user-http
+launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,preserve discovery reserve and avoid heavy PR fanout beyond the single bounded PR17 repair slot,all-other-branch-changing-pr-jobs,"preserve discovery reserve and avoid heavy PR fanout beyond the single bounded
+PR17 repair slot"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,"superseded by already published
 ready/rtc-pr06b-malformed-save-request-payload-minimal"
 publish-ready,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-fallback-green,high,no,superseded by already published on-PR14B fallback branches,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-fallback-green,superseded by already published on-PR14B fallback branches
