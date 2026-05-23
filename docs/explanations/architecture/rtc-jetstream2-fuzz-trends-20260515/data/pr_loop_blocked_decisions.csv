@@ -19,5 +19,5 @@ publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c258
 publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,missing focused replay owner evidence and product first-loss proof,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,missing focused replay owner evidence and product first-loss proof
 launch-lower-unit,benchmark-canary/provider-persisted-crdt-large-post-lower-unit,P0,no,lower-unit reserve is consumed for this cycle and should not compete with the PR17 exact browser gate,benchmark-canary/provider-persisted-crdt-large-post-lower-unit,"lower-unit reserve is consumed for this cycle and should not compete with the
 PR17 exact browser gate"
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,single heavy product slot is consumed by PR17; extra PR jobs wait to preserve discovery reserve,all-other-heavy-pr-jobs,"single heavy product slot is consumed by PR17; extra PR jobs wait to preserve
-discovery reserve"
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,single heavy product slot is consumed by PR17; extra PR jobs wait to preserve protected discovery reserve,all-other-heavy-pr-jobs,"single heavy product slot is consumed by PR17; extra PR jobs wait to preserve
+protected discovery reserve"
