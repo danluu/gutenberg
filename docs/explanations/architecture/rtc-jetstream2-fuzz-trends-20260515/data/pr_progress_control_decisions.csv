@@ -1,12 +1,12 @@
 action,target,priority,allowed,reason
 reserve-discovery,discovery-reserve-policy,P0,yes,active discovery 15 exceeds floor 3 and PR jobs are 0/4; preserve reserve while allowing one bounded product repair
-repair-branch,PR17/materialize/table@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,yes,next branch-changing product slot; latest exact refresh has large-post-three-user-http rep1 red after HTTP sync POST 500 and convergence timeout
+repair-branch,PR17/materialize/table@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,yes,next branch-changing product slot; latest exact refresh has large-post-three-user-http red on provider-persisted CRDT behavior
 hold-publication,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,yes,keep snapshot publication blocked until the same commit has full benchmark-minimum green rows and non-skipped build evidence
 publish-ready,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,newer same-head exact red overrides stale green or local-publisher evidence
 publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@2335aa8c263f99138b5b64b8b90485be86cfa454,P0,no,"raw wait-only reconcile branch is repair evidence, not maintainer snapshot material"
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,PR17 owns the only branch-changing product slot this cycle; avoid PR fanout and preserve discovery reserve
 generate-publication-manifest,current-published-ready-product-branches,P1,yes,cheap accounting is allowed; already-published ready branches need manifest tracking and validation only
-update-maintainer-docs,current-snapshot,P0,no,benchmark feedback reports no newer publishable maintainer stack than the documented green b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638 snapshot
+update-maintainer-docs,current-snapshot,P0,no,benchmark feedback reports no newer publishable maintainer stack than documented green b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638
 consume-owner-matrix,PR07C/HOLD-07C,high,yes,readiness is resolved; consume current-head green owner replay with product_owned_rows=0 as terminal no-promote for head 2f8247258316bde60869c06c383090904e9426bd
 launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate browser owner-matrix is churn unless newer current-head product-owned red evidence appears
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt held manifest only as candidate evidence and convert it into a same-head exact-stack blocker
@@ -22,11 +22,13 @@ publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded 
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
-reserve-discovery,benchmark-canary/provider-persisted-crdt-large-post,P0,yes,keep benchmark-seeded HTTP large-post lifecycle coverage sticky for the remaining rep1 failure shape
+reserve-discovery,benchmark-canary/provider-persisted-crdt-large-post,P0,yes,keep benchmark-seeded HTTP large-post lifecycle coverage sticky for the remaining PR17 failure shape
+reserve-discovery,benchmark-canary-forced-ws-groups,high,yes,materialize or explicitly block missing forced WS groups; HTTP-only coverage cannot close benchmark requirements
 reserve-discovery,ws-lower-level-breadth,P1,yes,"keep bounded WS coverage for collaboration UI signals, remote selection, async server blocks, and template-part gaps"
 reserve-discovery,focused-shards,high,yes,keep focused likely-real product-evidence lanes active instead of replacing them with PR fanout
 cooldown-diagnostic,coverage-guided-lower-level-http-polling-manager/broad-corpus,high,yes,current broad corpus has zero new coverage keys and zero product yield; reopen only benchmark-seeded oracle-strengthened shards
 update-controller-rule,coverage-guided-lower-level-http-polling-manager-oracles,P0,yes,"require stale-token, reload-convergence, and persisted raw-content oracles before narrow relaunch"
+cooldown-diagnostic,coverage-guided-lower-level-rich-text-crdt/feature-only-corpus,high,yes,feature-only corpus growth with zero coverage or product yield should not count as lower-level progress
 cooldown-diagnostic,unit-property-http-polling-provider-persisted-crdt-large-post,P0,yes,completed green lower-unit evidence is consumed; repeat only after fresh failing seed or browser signal
 cooldown-diagnostic,backend-api-autosave-meta,high,yes,"479 of 479 rows are pass-only in one unchanged group; rotate or pause until fresh seed, coverage delta, or backend oracle gap exists"
 cooldown-diagnostic,strict-expansion-ws-pre-action-bootstrap-stall,high,yes,pause bootstrap-stall dominated WS groups while preserving non-stalled strict and HTTP coverage

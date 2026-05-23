@@ -4,8 +4,8 @@ publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523
 material"
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,PR17 owns the only branch-changing product slot this cycle; avoid PR fanout and preserve discovery reserve,all-other-heavy-pr-jobs,"PR17 owns the only branch-changing product slot this cycle; avoid PR fanout and
 preserve discovery reserve"
-update-maintainer-docs,current-snapshot,P0,no,benchmark feedback reports no newer publishable maintainer stack than the documented green b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638 snapshot,current-snapshot,"benchmark feedback reports no newer publishable maintainer stack than the
-documented green b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638 snapshot"
+update-maintainer-docs,current-snapshot,P0,no,benchmark feedback reports no newer publishable maintainer stack than documented green b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,current-snapshot,"benchmark feedback reports no newer publishable maintainer stack than documented
+green b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638"
 launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate browser owner-matrix is churn unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C,"duplicate browser owner-matrix is churn unless newer current-head product-owned
 red evidence appears"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"exact-stack browser validation is missing for title reload, existing or persistence reload, and large HTTP lifecycle",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"exact-stack browser validation is missing for title reload, existing or
