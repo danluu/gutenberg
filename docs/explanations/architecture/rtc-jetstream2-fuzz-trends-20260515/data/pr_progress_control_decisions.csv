@@ -1,39 +1,40 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-policy,P0,yes,13 active discovery sessions exceed floor 3 and PR jobs are 0 of 4; allow one bounded PR17 repair while preserving discovery reserve
-launch-branch-repair,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,yes,next product-progress slot; current benchmark feedback reopens exact-stack repair and no newer publishable stack exists
-repair-ready,benchmark-canary-fuzzer-gap/provider-persisted-crdt-seeds,P0,yes,"route large-post HTTP, same-user stale-content, forced browser/e2e, and lower-level HTTP polling canary seeds into PR17 repair"
+reserve-discovery,discovery-reserve-policy,P0,yes,15 active discovery sessions exceed floor 3; allow one bounded product PR repair while keeping discovery lanes reserved
+continue-branch-repair,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,yes,active exact-stack repair is the single allowed branch-changing PR job; split product from broad repair evidence and require full benchmark-minimum green
+repair-ready,benchmark-canary-fuzzer-gap/provider-persisted-crdt-seeds,P0,yes,"feed large-post HTTP, same-user stale-content, forced browser/e2e, and lower-level canary seeds into the PR17 repair"
 repair-ready,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,P0,yes,consume selected green rows as repair evidence only for the reviewable split
-publish-ready,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,P0,no,broad repair head is not a small reviewable stack with non-skipped complete build and benchmark-minimum green
-repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,older product-only repair head still failed large-post-three-user-http; retain as blocker evidence only
-publish-ready,benchmark-canary-fuzzer-gap,P0,no,block publication until exact split stack has non-skipped complete build evidence and full benchmark-minimum green
-consume-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,yes,consume current-head local owner replay as terminal no-promote evidence with product_owned_rows=0
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,suppress duplicate browser/e2e owner matrix unless newer current-head product-owned red evidence appears
+publish-ready,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,P0,no,broad repair head is not a small reviewable PR stack and lacks full benchmark-minimum plus non-skipped complete build evidence
+repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,older product-only head failed large-post-three-user-http; keep as blocker evidence only
+publish-ready,benchmark-canary-fuzzer-gap,P0,no,current benchmark feedback is no_new_publishable_candidate
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt held manifest as candidate evidence and convert to same-head exact-stack replay gate
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"block generic branch fanout until title reload, existing-post or persistence reload, and large HTTP lifecycle rows are fresh green or replay-downscoped"
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"block generic branch fanout until title reload, persistence or existing-post reload, and large HTTP lifecycle rows are fresh green or replay-downscoped"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact-stack browser validation and large HTTP lifecycle evidence
-cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,yes,"diagnostic manifest lacks product-owned first loss, owner evidence, green-stack adoption, or explicit downscope"
-publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic-only evidence is not publishable without focused replay proof
-cooldown-diagnostic,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,yes,"diagnostic manifest lacks conclusive owner evidence, green-stack adoption, or explicit downscope"
-publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,diagnostic-only evidence is not publishable without focused replay proof
-cooldown-diagnostic,malformed-save-payload,high,yes,raw deferred malformed-save heads are superseded by published PR06B minimal
-cooldown-diagnostic,http-room-isolation,high,yes,raw room-isolation heads are downscoped by published PR02A absent fresh contrary evidence
+consume-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,yes,current-head local-mac replay resolves readiness as terminal no-promote with product_owned_rows=0
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,suppress duplicate browser/e2e owner matrix unless newer current-head product-owned red evidence appears
+generate-publication-manifest,current-push-manifest-ready-real-fix-branches,high,yes,cheap manifest refresh is allowed; current manifest has no new payload rows and ready real-fix branches are already published
+publish-ready,current-push-manifest-ready-real-fix-branches,high,no,no unpublished ready real-fix payload remains in the current manifest
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
-publish-ready,current-push-manifest-ready-real-fix-branches,high,no,current push manifest has no new payload rows and ready real-fix branches are already published
-reserve-discovery,benchmark-canary/provider-persisted-crdt-large-post-and-forced-ws,P0,yes,keep large HTTP lifecycle/readiness and forced WS/browser coverage sticky until PR17 exact-stack closure
-reserve-discovery,benchmark-canary-fuzzer-gap/forced-browser-e2e,P0,yes,recover or keep benchmark-forced browser/e2e lanes while exact-stack repair is active
-reserve-discovery,benchmark-canary-fuzzer-gap/ui-signal-backfill,P0,yes,backfill collaboration UI-signal coverage because it is part of canary closure and below target
+cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,yes,"diagnostic manifest lacks product-owned first loss, owner evidence, green-stack adoption, or explicit downscope"
+publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic-only evidence is not publishable without focused replay proof
+cooldown-diagnostic,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,yes,"diagnostic manifest lacks conclusive owner evidence, green-stack adoption, or explicit downscope"
+publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,diagnostic-only evidence is not publishable without focused replay proof
+downscope-family,malformed-save-payload,high,yes,raw deferred malformed-save heads are covered by published PR06B minimal
+downscope-family,http-room-isolation,high,yes,raw room-isolation heads are downscoped by published PR02A absent fresh contrary evidence
+reserve-discovery,benchmark-canary/provider-persisted-crdt-large-post-and-forced-ws,P0,yes,keep large HTTP lifecycle/readiness and forced browser/e2e coverage sticky until PR17 exact-stack closure
+reserve-discovery,benchmark-canary-fuzzer-gap/ui-signal-backfill,P0,yes,backfill collaboration UI-signal coverage because it is part of canary closure
 reserve-discovery,coverage-guided-lower-level-http-polling-manager/canary-large-http-readiness,P0,yes,"run bounded isolation and minimization, then feed minimized canary seeds into PR17"
+reserve-discovery,RTC_HTTP_POLLING_CANARY_PERSISTED_MULTIROOM_CONTENT_MISSING,P1,yes,bounded minimization only; count yield only after minimized executable seed or triage-ready failure
 cooldown-diagnostic,coverage-guided-lower-level-http-polling-manager/broad-corpus,P0,yes,"broad relaunch has no current product yield; reopen only with canary seed, coverage delta, or triage-ready oracle failure"
 cooldown-diagnostic,coverage-guided-lower-level-block-parser-serialization,high,yes,hold expansion unless isolated classified block-parser failure or real coverage delta appears
 cooldown-diagnostic,coverage-guided-lower-level-rich-text-crdt/feature-only-corpus,high,yes,feature-only corpus growth has no current coverage or product-failure yield
 cooldown-diagnostic,backend-api-autosave-meta,high,yes,"pass-only unchanged backend group should pause until fresh failing seed, coverage delta, or backend oracle gap exists"
 cooldown-diagnostic,strict-expansion-ws-pre-action-bootstrap-stall,high,yes,cool bootstrap-stall dominated variants while preserving non-stalled strict discovery
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block broad PR fanout while PR17 repair and discovery reserves are active
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block broad PR fanout while the PR17 repair and discovery reserves are active
 update-controller-rule,exact-stack-publication-gate,P0,yes,publish only small reviewable exact stacks with non-skipped complete build and benchmark-minimum green
-update-controller-rule,benchmark-feedback-precedence,P0,yes,current promotion-blocked feedback overrides stale exact-green publication handoff
+update-controller-rule,benchmark-feedback-precedence,P0,yes,current no-publish benchmark feedback overrides stale exact-green handoff
 update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,"if discovery becomes unhealthy, allow only cheap manifest generation or analysis-only work and block heavy PR jobs"
 update-controller-rule,deferred-diagnostic-promotion-gate,high,yes,"diagnostic manifests cannot publish or relaunch generically without owner proof, green adoption, or downscope evidence"
 update-controller-rule,lower-level-static-input-accounting,P0,yes,static or one-input greens require executable seed assertion plus coverage delta or triage-ready failure before yield credit
