@@ -1835,3 +1835,7 @@ timestamp,group,group_family
 2026-05-23T01:38:20Z,novelty-ws-collaboration-ui-signals,other
 2026-05-23T01:42:51Z,novelty-ws-block-gauntlet,auth/locks
 2026-05-23T01:42:51Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-23T03:26:53Z,novelty-ws-real-user-save-reload,real-user
+2026-05-23T03:26:54Z,novelty-ws-parser-serialization,parser
+2026-05-23T03:26:54Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-23T03:26:58Z,novelty-ws-parser-transform,parser
