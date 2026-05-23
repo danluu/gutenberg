@@ -1,5 +1,6 @@
 session,class,started_hint
-rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260523T022043Z,critical-continuation,
+rtc-coverage-guidance-codex-20260523T025822Z,analysis,
+rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260523T025908Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,

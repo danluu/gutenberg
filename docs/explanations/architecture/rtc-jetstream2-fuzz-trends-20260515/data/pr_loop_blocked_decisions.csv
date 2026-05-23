@@ -1,15 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,product-pr-fanout,P0,no,Do not fan out heavy PR work under modest headroom; keep branch-changing product work single-flight.,product-pr-fanout,"Do not fan out heavy PR work under modest headroom; keep branch-changing product
-work single-flight."
-launch-branch-repair,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,P0,no,PR17 branch-changing work must stay single-flight; another heavy repair job would be duplicate scheduling.,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,"PR17 branch-changing work must stay single-flight; another heavy repair job
-would be duplicate scheduling."
-publish-ready,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,P0,no,Raw bb4e7b84 repair evidence lacks clean reviewed split plus full same-commit exact-stack proof.,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,"Raw bb4e7b84 repair evidence lacks clean reviewed split plus full same-commit
-exact-stack proof."
+launch-branch-repair,product-pr-fanout,P0,no,"Discovery is healthy, but critical path is high-pressure with an active exact-stack PR17 job; keep heavy PR work single-flight.",product-pr-fanout,"Discovery is healthy, but critical path is high-pressure with an active
+exact-stack PR17 job; keep heavy PR work single-flight."
+publish-ready,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,P0,no,Raw repair evidence is direction only; it lacks a clean reviewed split plus full same-commit exact-stack proof.,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,"Raw repair evidence is direction only; it lacks a clean reviewed split plus full
+same-commit exact-stack proof."
 launch-owner-matrix,pr07c-owner-matrix@duplicate-browser-job,high,no,Suppress duplicate browser owner-matrix work unless newer red current-head owner evidence appears.,pr07c-owner-matrix@duplicate-browser-job,"Suppress duplicate browser owner-matrix work unless newer red current-head owner
 evidence appears."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale PR07C head is superseded by published head 2f8247258316bde60869c06c383090904e9426bd.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale PR07C head is superseded by published head
 2f8247258316bde60869c06c383090904e9426bd."
-publish-ready,current-push-manifest.tsv,high,no,Header-only current push manifest is not publication evidence.,current-push-manifest.tsv,Header-only current push manifest is not publication evidence.
+publish-ready,current-push-manifest.tsv,high,no,Manifest-only bookkeeping is not independent publication evidence; use concrete published branch refs and non-header manifests.,current-push-manifest.tsv,"Manifest-only bookkeeping is not independent publication evidence; use concrete
+published branch refs and non-header manifests."
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by published PR15A-on-PR14B branch.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by published PR15B-on-PR14B branch.
