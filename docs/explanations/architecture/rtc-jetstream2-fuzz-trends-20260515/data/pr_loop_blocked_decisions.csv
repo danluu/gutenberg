@@ -1,12 +1,8 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-heavy-pr,discovery-unhealthy-mode,P0,no,"if discovery drops below reserve, deny new heavy PR jobs except cheap publication manifest generation and analysis-only cleanup",discovery-unhealthy-mode,"if discovery drops below reserve, deny new heavy PR jobs except cheap
-publication manifest generation and analysis-only cleanup"
-publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,raw or broad PR17 repair refs are not maintainer-ready and lack full same-commit exact-stack proof,PR17/stale-crdt-cas-background-delivery,"raw or broad PR17 repair refs are not maintainer-ready and lack full same-commit
+publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,raw or broad PR17 repair refs lack a clean reviewed split and full same-commit exact-stack proof,PR17/stale-crdt-cas-background-delivery,"raw or broad PR17 repair refs lack a clean reviewed split and full same-commit
 exact-stack proof"
-launch-branch-repair,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,P0,no,keep PR17 branch-changing work single-flight,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,keep PR17 branch-changing work single-flight
-repair-branch,PR17/stale-crdt-cas-background-delivery@older-saved-crdt-hydration-or-buildable-refs,P0,no,superseded by newer targeted bb4e7b84 repair evidence and missing final exact-stack proof,PR17/stale-crdt-cas-background-delivery@older-saved-crdt-hydration-or-buildable-refs,"superseded by newer targeted bb4e7b84 repair evidence and missing final
-exact-stack proof"
-launch-owner-matrix,PR07C/current-head@duplicate-without-new-red-evidence,high,no,do not spend another browser owner-matrix job unless newer red owner evidence appears,PR07C/current-head@duplicate-without-new-red-evidence,"do not spend another browser owner-matrix job unless newer red owner evidence
+launch-branch-repair,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,P0,no,keep branch-changing PR17 repair single-flight on the clean materialized split,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,keep branch-changing PR17 repair single-flight on the clean materialized split
+launch-owner-matrix,pr07c-owner-matrix,high,no,do not spend a new browser owner-matrix slot unless newer red owner evidence appears,pr07c-owner-matrix,"do not spend a new browser owner-matrix slot unless newer red owner evidence
 appears"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale head is superseded by current published head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"stale head is superseded by current published head
 2f8247258316bde60869c06c383090904e9426bd"
@@ -16,7 +12,7 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superse
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published PR15C-on-PR14B branch,ready/rtc-pr15c-fallback-group-delete-green,superseded by published PR15C-on-PR14B branch
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh title-reload plus existing-post or persistence-reload plus large HTTP lifecycle green proof,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh title-reload plus existing-post or persistence-reload plus large
 HTTP lifecycle green proof"
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,PR17 owns the branch-changing product slot and reload-hydration is single-flight held,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing product slot and reload-hydration is single-flight
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,PR17 owns the branch-changing product slot and reload-hydration is exact-blocker held,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing product slot and reload-hydration is exact-blocker
 held"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,medium,no,missing owner evidence or product first-loss evidence,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,missing owner evidence or product first-loss evidence
 publish-ready,rich-text-suffix-corruption@a34adf221ce,medium,no,"missing focused exact replay, owner evidence, or product first-loss evidence",rich-text-suffix-corruption@a34adf221ce,"missing focused exact replay, owner evidence, or product first-loss evidence"
