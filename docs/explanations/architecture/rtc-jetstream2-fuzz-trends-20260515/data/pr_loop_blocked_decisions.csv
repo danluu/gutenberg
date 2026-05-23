@@ -1,17 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,P0,no,failed large-post-three-user-http 2 of 2 and omits current PR07C all-merged behavior,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,"failed large-post-three-user-http 2 of 2 and omits current PR07C all-merged
-behavior"
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,P0,no,failed mandatory large-post-three-user-http 2 of 2 and cannot replace the current PR07C snapshot,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,"failed mandatory large-post-three-user-http 2 of 2 and cannot replace the
+current PR07C snapshot"
 launch-branch-repair,product-pr-fanout,P0,no,PR17 owns the single branch-changing slot; broad fanout duplicates published heads and competes with discovery reserve,product-pr-fanout,"PR17 owns the single branch-changing slot; broad fanout duplicates published
 heads and competes with discovery reserve"
+publish-ready,current-push-manifest.tsv,high,no,current controller push manifest has no new publication rows beyond already recorded heads,current-push-manifest.tsv,"current controller push manifest has no new publication rows beyond already
+recorded heads"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-fallback-green,high,no,superseded by already published on-PR14B branches,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-fallback-green,superseded by already published on-PR14B branches
-publish-ready,current-push-manifest.tsv,high,no,current manifest is not independent evidence for any new publication beyond already recorded published heads,current-push-manifest.tsv,"current manifest is not independent evidence for any new publication beyond
-already recorded published heads"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate browser owner matrix; relaunch only if newer red current-head owner evidence appears,PR07C/HOLD-07C,"duplicate browser owner matrix; relaunch only if newer red current-head owner
+launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate owner-matrix work; relaunch only if newer red current-head owner evidence appears,PR07C/HOLD-07C,"duplicate owner-matrix work; relaunch only if newer red current-head owner
 evidence appears"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing-post or persistence reload, and
 large HTTP lifecycle green evidence"
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"PR17 owns the branch-changing slot; reload-hydration needs exact replay, owner evidence, green-stack adoption, or downscope first",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing slot; reload-hydration needs exact replay, owner
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"PR17 owns branch-changing capacity; reload-hydration needs exact replay, owner evidence, green-stack adoption, or downscope first",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns branch-changing capacity; reload-hydration needs exact replay, owner
 evidence, green-stack adoption, or downscope first"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,missing owner evidence and product first-loss proof,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,missing owner evidence and product first-loss proof
 publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,"missing focused replay, owner evidence, and product first-loss proof",rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,"missing focused replay, owner evidence, and product first-loss proof"

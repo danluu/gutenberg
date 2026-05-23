@@ -461,4 +461,6 @@ bucket,source,blocker_class,events,targets
 2026-05-23T03:30:00Z,critical-path launches,critical-path launch,2,unknown
 2026-05-23T04:00:00Z,PR controller,consumed owner evidence,15,PR07C/HOLD-07C
 2026-05-23T04:00:00Z,critical-path launches,critical-path launch,2,unknown
-2026-05-23T04:30:00Z,PR controller,consumed owner evidence,3,PR07C/HOLD-07C
+2026-05-23T04:30:00Z,PR controller,consumed owner evidence,6,PR07C/HOLD-07C
+2026-05-23T04:30:00Z,critical-path launches,benchmark canary/exact-stack,1,benchmark-canary-fuzzer-gap
+2026-05-23T04:30:00Z,critical-path launches,critical-path launch,1,unknown
