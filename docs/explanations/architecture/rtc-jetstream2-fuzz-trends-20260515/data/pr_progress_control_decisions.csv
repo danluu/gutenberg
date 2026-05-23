@@ -1,42 +1,44 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 12 over floor 3 with discovery protected and PR jobs 0 of 4; allow one bounded product lane while preserving reserve
-repair-branch,PR17/stale-crdt-cas-background-delivery@clean-materialized-table-repair-from-bb4e7b84,P0,yes,"next product-progress slot; materialize clean materialized-table split with current PR07C behavior, build gate, and same-commit exact-stack benchmark proof"
-launch-branch-repair,product-pr-fanout,P0,no,keep branch-changing product work single-flight on PR17 under high pressure
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 10 over floor 3 and PR jobs are 0 of 4; allow one bounded product lane while preserving reserve
+launch-branch-repair,product-pr-fanout,P0,no,resource pressure and discovery_protected=no require no fanout; PR17 owns the branch-changing slot
+repair-branch,PR17/stale-crdt-cas-background-delivery@clean-materialized-table-repair-from-bb4e7b84,P0,yes,"next product-progress slot; require clean split, current PR07C behavior, build gate, and same-commit exact-stack proof"
 repair-ready,PR17/table-query-array-canonical-reproducer,P0,yes,attach one current RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE remote-marker reproducer to PR17 table and revision repair
-repair-ready,benchmark-canary-fuzzer-gap@repair/benchmark-canary-clean-product-stack-20260523T025908Z,P0,yes,consume clean exact refresh only as blocker evidence; do not clear until benchmark-minimum rows are same-commit green or explicitly downscoped
-publish-ready,PR17/raw-or-build-failed-repair-refs,P0,no,"raw or build-failed repair refs lack clean split, current PR07C behavior, build gate, and full same-commit exact-stack proof"
+repair-ready,benchmark-canary-fuzzer-gap@repair/benchmark-canary-clean-product-stack-20260523T025908Z,P0,yes,consume clean exact refresh only as blocker evidence; clear only after same-commit benchmark-minimum green or explicit downscope
+publish-ready,PR17/raw-or-build-failed-repair-refs,P0,no,"raw or build-failed refs lack clean split, current PR07C behavior, build gate, and full same-commit exact-stack proof"
+publish-ready,already-published-ready-product-heads,high,yes,real-fix heads already published by the local machine should remain published and under fuzz validation
+generate-publication-manifest,already-published-ready-product-heads,high,yes,cheap publication manifest maintenance is allowed and does not consume the heavy PR job reserve
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,yes,current head is already published and has consumable green owner evidence; keep validating
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale PR07C head is superseded by published head 2f8247258316bde60869c06c383090904e9426bd
-consume-owner-matrix,PR07C/HOLD-07C,high,yes,consume current-head green owner replay with product_owned_rows=0 and terminalize the blocker
-launch-owner-matrix,job-pr07c-owner-matrix,high,no,suppress duplicate browser owner-matrix work unless newer red current-head evidence appears
-publish-ready,already-published-ready-product-heads,high,yes,real-fix heads already published by local machine should remain published and under fuzz validation
+consume-owner-matrix,PR07C/HOLD-07C,high,yes,current-head owner replay is green with product_owned_rows=0; terminalize blocker from existing evidence
+launch-owner-matrix,job-pr07c-owner-matrix,high,no,duplicate heavy browser owner-matrix work is rejected unless newer red current-head owner evidence appears
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green+ready/rtc-pr15b-fallback-group-insert-anchor-green+ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already published on-PR14B branches
-publish-ready,current-push-manifest.tsv,high,no,header-only or manifest-only artifact is not independent publication evidence
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt concrete deferred manifest as candidate evidence and convert generic hold to head-specific exact-stack blocker
+publish-ready,current-push-manifest.tsv,high,no,header-only or manifest-only output is not independent publication evidence
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt concrete deferred manifest as candidate evidence and convert generic hold to a head-specific exact-stack blocker
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head title reload plus existing-post or persistence reload plus large HTTP lifecycle green evidence
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"PR17 owns the branch-changing slot; reload hydration needs exact replay, owner evidence, green-stack adoption, or downscope first"
 cooldown-diagnostic,reload-hydration/generic-deferred-relaunch@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,concrete head exists; generic deferred relaunches are duplicate churn
-cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,yes,"diagnostic-only manifest; require focused replay, owner or product first-loss evidence, green-stack adoption, or downscope"
+cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2+rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,yes,"diagnostic-only manifests require focused replay, owner or product first-loss evidence, green adoption, or downscope"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,missing owner evidence and product first-loss proof
-cooldown-diagnostic,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,yes,diagnostic-only manifest with harness/action ambiguity; no generic relaunch or publication without stronger evidence
 publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,"missing focused replay, owner evidence, and product first-loss proof"
-cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker,P0,yes,hard-stop duplicate remote-marker loop after canonical reproducer handoff; reopen only for new head or semantic family
-reserve-discovery,table-query-array-crdt-benchmark-seeded,P1,yes,allow one retargeted lower-level table/revision lane after duplicate remote-marker sampling stops
+downscope-family,malformed-save-payload,high,yes,covered by canonical PR06B minimal; raw deferred malformed-save heads are superseded
+downscope-family,http-room-isolation,high,yes,covered by ready PR02A and no fresh healthy-user HTTP room-isolation product evidence is present
+cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker,P0,yes,hard-stop duplicate remote-marker loop after canonical PR17 reproducer handoff; reopen only for new head or semantic family
+retarget-fuzzer,table-query-array-crdt-benchmark-seeded,P1,yes,"use one freed lower-level lane for benchmark-shaped table, list, and revision coverage"
 cooldown-diagnostic,rtc-http-polling-manager/broad-zero-yield,high,yes,"broad polling plateau has zero new coverage, zero admitted features, and zero product yield"
-cooldown-diagnostic,rtc-http-polling-manager/same-user-stale-content-same-corpus,high,yes,"do not relaunch the same corpus unless new coverage, admitted features, or product yield becomes nonzero"
-reserve-discovery,rtc-http-polling-manager/benchmark-seeded-same-user-stale-content,high,yes,keep focused benchmark-seeded stale-content discovery only when it can add admitted coverage or product yield
+launch-diagnostic,rtc-http-polling-manager/same-user-stale-content-same-corpus,high,no,do not relaunch the same 68-entry corpus unless benchmark seeds change or admitted coverage/product yield becomes nonzero
+reserve-discovery,rtc-http-polling-manager/benchmark-seeded-same-user-stale-content,high,yes,allow focused benchmark-seeded stale-content discovery only with admitted coverage or product-yield gating
 reserve-discovery,benchmark-canary-fuzzer-gap/exact-stack-coverage,P0,yes,keep benchmark-equivalent exact-stack lanes as PR17 promotion gates
 reserve-discovery,novelty-http-list-move-refresh,P0,yes,keep forced until successful current-stack list-move-refresh HTTP records exist
-reserve-discovery,novelty-http-table-stale-snapshot,P0,yes,retarget to benchmark row shape and keep forced until table/revision exact-stack evidence is green
+reserve-discovery,novelty-http-table-stale-snapshot,P0,yes,retarget to benchmark table and revision row shape and keep forced until exact-stack evidence is green
 reserve-discovery,novelty-http-large-post-lifecycle+novelty-http-same-user-stale-draft,P0,yes,keep benchmark-forced coverage for large HTTP lifecycle and same-user stale-content rows
-update-controller-rule,product-progress-single-flight-latest-head,P0,yes,collapse aliases by concrete target and latest head; stale or duplicate rows become explicit no decisions
-update-controller-rule,benchmark-exact-stack-same-commit-clean-split-gate,P0,yes,"PR17 publication requires clean split, build gate, current PR07C behavior, and full same-commit benchmark-minimum green"
-update-controller-rule,product-progress-non-header-manifest-gate,high,yes,header-only or manifest-only artifacts must not count as publication evidence
+cooldown-diagnostic,benchmark-feedback-refresh-loop,P0,yes,repeated feedback refreshes are not blocker progress without a clean branch head and exact-stack proof
+update-controller-rule,product-progress-single-flight-latest-head,P0,yes,collapse aliases by concrete target and latest head; stale duplicates become explicit no decisions
+update-controller-rule,benchmark-exact-stack-same-commit-clean-split-gate,P0,yes,"publication requires clean split, build gate, current PR07C behavior, and full same-commit benchmark-minimum green"
 update-controller-rule,owner-evidence-consumption,high,yes,consume current-head green owner evidence and suppress duplicate owner-matrix jobs
 update-controller-rule,hard-stop-after-accepted-cap,P0,yes,"accepted duplicate-loop caps must stop active lanes, not only prevent future relaunches"
 update-controller-rule,diagnostic-family-caps,high,yes,cap diagnostic duplicate families after first useful canonical evidence per head
 update-controller-rule,lower-level-http-yield-accounting,high,yes,"use admitted_new_feature_keys, new_coverage_keys, and product_yield instead of raw feature churn"
-update-controller-rule,parser-serialization-corpus-admission,medium,yes,disable feature-only corpus admission or require new coverage or product yield before admitting more inputs
-update-controller-rule,productive-feed-row-ledger,high,yes,record every P0 and high Productive Analysis target as allowed or rejected in decision TSV
-update-controller-rule,discovery-reserve-hard-gate,P0,yes,preserve existing-code and existing-PR fuzzing reserve before heavy PR work; only cheap manifests and analysis-only actions bypass unhealthy discovery
+update-controller-rule,parser-serialization-corpus-admission,medium,yes,disable feature-only corpus admission or require new coverage or product yield before admitting inputs
+update-controller-rule,productive-feed-row-ledger,high,yes,record every P0 and high Productive Analysis target as an explicit allowed or rejected decision
+update-controller-rule,discovery-reserve-hard-gate,P0,yes,block heavy PR jobs when discovery is unhealthy except cheap publication manifest generation or analysis-only work
