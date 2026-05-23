@@ -1847,3 +1847,4 @@ timestamp,group,group_family
 2026-05-23T05:49:07Z,novelty-http-list-move-refresh,http
 2026-05-23T05:49:07Z,novelty-http-table-stale-snapshot,http
 2026-05-23T06:32:02Z,novelty-ws-real-user-editing,real-user
+2026-05-23T07:16:04Z,novelty-http-persistence-probe,persistence
