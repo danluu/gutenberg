@@ -1,5 +1,5 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,exact stack still has No-tests-found or zero-row benchmark-minimum evidence,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,exact stack still has No-tests-found or zero-row benchmark-minimum evidence
+publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,exact stack still has zero-row or No-tests-found benchmark-minimum evidence,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,exact stack still has zero-row or No-tests-found benchmark-minimum evidence
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
@@ -9,8 +9,8 @@ publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,high,no,super
 2f8247258316bde60869c06c383090904e9426bd"
 launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,duplicate browser owner replay wastes deadline budget after terminal current-head evidence,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"duplicate browser owner replay wastes deadline budget after terminal
 current-head evidence"
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,block generic fanout until same-head exact-stack browser rows are green or explicitly downscoped,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block generic fanout until same-head exact-stack browser rows are green or
-explicitly downscoped"
+launch-branch-repair,reload-hydration@generic,P0,no,generic deferred fanout is diagnostic churn until same-head exact-stack rows are green or downscoped,reload-hydration@generic,"generic deferred fanout is diagnostic churn until same-head exact-stack rows are
+green or downscoped"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,required same-head exact-stack browser validation rows are absent,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,required same-head exact-stack browser validation rows are absent
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,exact b8ca harness packaging owns the next branch-changing product slot,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,exact b8ca harness packaging owns the next branch-changing product slot
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus exact all-merged benchmark-minimum and canary green evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"requires reviewable split plus exact all-merged benchmark-minimum and canary
