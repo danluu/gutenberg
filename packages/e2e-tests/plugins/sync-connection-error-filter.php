@@ -11,6 +11,24 @@
  * Registers the editor.isSyncConnectionErrorHandled filter and custom modal.
  */
 function enqueue_sync_connection_error_filter_scripts() {
+	$max_clients_per_room = getenv( 'GUTENBERG_RTC_TEST_HTTP_MAX_CLIENTS_PER_ROOM' );
+
+	if ( $max_clients_per_room && is_numeric( $max_clients_per_room ) ) {
+		wp_add_inline_script(
+			'wp-hooks',
+			sprintf(
+				"wp.hooks.addFilter(
+					'sync.pollingProvider.maxClientsPerRoom',
+					'gutenberg-test/max-clients-per-room',
+					function() {
+						return %d;
+					}
+				);",
+				max( 1, absint( $max_clients_per_room ) )
+			)
+		);
+	}
+
 	// Register the filter early on wp-hooks so it's available before the
 	// editor modal renders. Plugins return true for error codes they handle.
 	wp_add_inline_script(

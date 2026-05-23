@@ -73,7 +73,10 @@ const test = base.extend< Fixtures >( {
 		use,
 		testInfo
 	) => {
-		if ( COLLABORATOR_MODE === 'same-user' ) {
+		if (
+			COLLABORATOR_MODE === 'same-user' ||
+			COLLABORATOR_MODE === 'mixed-same-and-distinct'
+		) {
 			await use( ADMIN_USER );
 			return;
 		}
@@ -137,6 +140,7 @@ type RestRenderedField = {
 
 type RestPost = {
 	content?: RestRenderedField | string;
+	excerpt?: RestRenderedField | string;
 	id: number;
 	meta?: {
 		_crdt_document?: string | null;
@@ -171,8 +175,9 @@ type SaveCheckpoint = {
 
 type OperationWitnessInput = {
 	marker: string;
-	scope: 'content' | 'title';
+	scope: 'content' | 'excerpt' | 'title';
 	source?: string;
+	userIndex?: number;
 };
 
 type OperationLedgerMode = 'fail' | 'off' | 'shadow';
@@ -401,6 +406,7 @@ type CdpCoverageSummary = {
 type CollaborativeState = {
 	blocks: Array< any >;
 	crdtDocument?: string | null;
+	excerpt: string;
 	title: string;
 };
 
@@ -436,6 +442,8 @@ const ACTION_PROFILE =
 	process.env.GUTENBERG_RTC_BROWSER_ACTION_PROFILE ?? 'full';
 const IS_MANY_USER_LIFECYCLE_PROFILE =
 	ACTION_PROFILE === 'many-user-lifecycle';
+const IS_MANY_USER_ACTIVE_EDITING_PROFILE =
+	ACTION_PROFILE === 'many-user-active-editing';
 const IS_COLLABORATION_UI_SIGNALS_PROFILE =
 	ACTION_PROFILE === 'collaboration-ui-signals';
 const OPERATION_LEDGER_MODE =
@@ -444,6 +452,7 @@ const FINAL_PERSISTENCE_ORACLE_MODE = getFinalPersistenceOracleMode();
 const ENABLE_FINAL_UI_WITNESS_SWEEP =
 	process.env.GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP === '1' ||
 	ACTION_PROFILE === 'large-post-three-user-http-lifecycle' ||
+	IS_MANY_USER_ACTIVE_EDITING_PROFILE ||
 	IS_MANY_USER_LIFECYCLE_PROFILE;
 const ENABLE_FINAL_PUBLISH_ORACLE =
 	process.env.GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH === '1' ||
@@ -457,12 +466,15 @@ const EXTRA_COLLABORATOR_COUNT = getEnvNonNegativeInt(
 	[
 		'collaboration-ui-signals',
 		'large-post-three-user-http-lifecycle',
+		'many-user-active-editing',
 		'many-user-lifecycle',
 		'session-lifecycle',
 		'three-user-late-join',
 	].includes( ACTION_PROFILE )
 		? IS_MANY_USER_LIFECYCLE_PROFILE
 			? 10
+			: IS_MANY_USER_ACTIVE_EDITING_PROFILE
+			? 4
 			: 1
 		: 0
 );
@@ -473,6 +485,7 @@ const ENABLE_LIFECYCLE_EVENTS =
 		'three-user-late-join',
 		'multi-reload-lifecycle',
 		'large-post-three-user-http-lifecycle',
+		'many-user-active-editing',
 		'many-user-lifecycle',
 		'collaboration-ui-signals',
 	].includes( ACTION_PROFILE );
@@ -494,6 +507,18 @@ const FORCE_SAVE_STEPS = getEnvIntList(
 const FORCE_AUTOSAVE_STEPS = getEnvIntList(
 	'GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS'
 );
+const FORCE_BODY_TOO_LARGE_STEPS = getEnvIntList(
+	'GUTENBERG_RTC_BROWSER_FORCE_BODY_TOO_LARGE_STEPS'
+);
+const FORCE_CONCURRENT_PERSISTENCE_RACE_STEPS = getEnvIntList(
+	'GUTENBERG_RTC_BROWSER_FORCE_CONCURRENT_PERSISTENCE_RACE_STEPS'
+);
+const FORCE_WS_RECONNECT_STEPS = getEnvIntList(
+	'GUTENBERG_RTC_BROWSER_FORCE_WS_RECONNECT_STEPS'
+);
+const ENABLE_CONCURRENT_PERSISTENCE_RACE_PUBLISH =
+	process.env.GUTENBERG_RTC_BROWSER_CONCURRENT_PERSISTENCE_RACE_PUBLISH ===
+	'1';
 const FORCE_LATE_JOIN_STEP = getEnvOptionalNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP'
 );
@@ -513,6 +538,9 @@ function getDefaultLargeDocumentBlocks() {
 	if ( IS_MANY_USER_LIFECYCLE_PROFILE ) {
 		return 24;
 	}
+	if ( IS_MANY_USER_ACTIVE_EDITING_PROFILE ) {
+		return 32;
+	}
 	if ( ACTION_PROFILE === 'long-session-large-doc' ) {
 		return 80;
 	}
@@ -527,6 +555,9 @@ const INCLUDE_AUTH_SYNC_FAILURES =
 	ACTION_PROFILE === 'permissions-auth-locks';
 const REAL_USER_EDITING_SEQUENCE = getEnvStringList(
 	'GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE'
+);
+const FORCED_ACTION_SEQUENCE = getEnvStringList(
+	'GUTENBERG_RTC_BROWSER_ACTION_SEQUENCE'
 );
 const REAL_USER_EDITING_ACTION_LABELS = getEnvStringList(
 	'GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_ACTION_LABELS'
@@ -546,6 +577,8 @@ const REAL_USER_TYPING_DELAY_MS = getEnvNonNegativeInt(
 	'GUTENBERG_RTC_BROWSER_REAL_USER_TYPING_DELAY_MS',
 	0
 );
+const FORCED_INITIAL_CONTENT_PROFILE =
+	process.env.GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE;
 const PERSISTED_POST_MARKER_POLL_INTERVAL_MS = getEnvInt(
 	'GUTENBERG_RTC_BROWSER_PERSISTED_POST_MARKER_POLL_INTERVAL_MS',
 	50
@@ -699,6 +732,10 @@ function getInitialContentProfile( seed: number ): string {
 		) }`;
 	}
 
+	if ( FORCED_INITIAL_CONTENT_PROFILE ) {
+		return FORCED_INITIAL_CONTENT_PROFILE;
+	}
+
 	if (
 		DISABLE_PARSER_STRESS ||
 		ACTION_PROFILE === 'persistence' ||
@@ -737,6 +774,7 @@ function isLowNoiseOperationLedgerProfile() {
 		'permissions-auth-locks',
 		'long-session-large-doc',
 		'large-post-three-user-http-lifecycle',
+		'many-user-active-editing',
 	].includes( ACTION_PROFILE );
 }
 
@@ -783,6 +821,7 @@ function createOperationLedgerSummary(
 	return {
 		byScope: {
 			content: 0,
+			excerpt: 0,
 			title: 0,
 		},
 		created: 0,
@@ -994,12 +1033,14 @@ function createOperationMarker( {
 
 function createContentWitness(
 	marker: string,
-	source?: string
+	source?: string,
+	userIndex?: number
 ): OperationWitnessInput {
 	return {
 		marker,
 		scope: 'content',
 		source,
+		userIndex,
 	};
 }
 
@@ -1011,6 +1052,19 @@ function createTitleWitness(
 		marker,
 		scope: 'title',
 		source,
+	};
+}
+
+function createExcerptWitness(
+	marker: string,
+	source?: string,
+	userIndex?: number
+): OperationWitnessInput {
+	return {
+		marker,
+		scope: 'excerpt',
+		source,
+		userIndex,
 	};
 }
 
@@ -1034,6 +1088,9 @@ function hasOperationWitness(
 	if ( witness.scope === 'title' ) {
 		return state.title.includes( witness.marker );
 	}
+	if ( witness.scope === 'excerpt' ) {
+		return state.excerpt.includes( witness.marker );
+	}
 
 	return hasMarker( state.blocks, witness.marker );
 }
@@ -1044,6 +1101,9 @@ function hasPersistedOperationWitness(
 ): boolean {
 	if ( witness.scope === 'title' ) {
 		return getRawFieldValue( post.title ).includes( witness.marker );
+	}
+	if ( witness.scope === 'excerpt' ) {
+		return getRawFieldValue( post.excerpt ).includes( witness.marker );
 	}
 
 	return getRawFieldValue( post.content ).includes( witness.marker );
@@ -1143,6 +1203,7 @@ function retireTitleOperationLedgerEntries( {
 	coverage,
 	ledger,
 	phase,
+	scope = 'title',
 	step,
 	userIndex,
 }: {
@@ -1150,14 +1211,15 @@ function retireTitleOperationLedgerEntries( {
 	coverage: BehaviorCoverage;
 	ledger: OperationLedgerState;
 	phase: string;
+	scope?: Extract< OperationWitnessInput[ 'scope' ], 'excerpt' | 'title' >;
 	step?: number;
 	userIndex?: number;
 } ) {
-	for ( const entry of getLiveOperationLedgerEntries( ledger, 'title' ) ) {
+	for ( const entry of getLiveOperationLedgerEntries( ledger, scope ) ) {
 		entry.status = 'retired';
 		recordOperationEvent( coverage, {
 			actionLabel,
-			details: { reason: 'title-overwrite' },
+			details: { reason: `${ scope }-overwrite` },
 			markerHash: entry.markerHash,
 			phase,
 			scope: entry.scope,
@@ -1256,6 +1318,7 @@ function acknowledgeOperationWitnesses( {
 	const missingEntries: OperationLedgerEntry[] = [];
 
 	for ( const witness of witnesses ) {
+		const witnessUserIndex = witness.userIndex ?? userIndex;
 		const entry: OperationLedgerEntry = {
 			...witness,
 			actionLabel,
@@ -1263,7 +1326,7 @@ function acknowledgeOperationWitnesses( {
 			phase,
 			status: 'live',
 			step,
-			userIndex,
+			userIndex: witnessUserIndex,
 		};
 
 		if ( ! hasOperationWitness( state, witness ) ) {
@@ -1278,17 +1341,18 @@ function acknowledgeOperationWitnesses( {
 				scope: entry.scope,
 				status: 'missing',
 				step,
-				userIndex,
+				userIndex: witnessUserIndex,
 			} );
 			continue;
 		}
 
-		if ( witness.scope === 'title' ) {
+		if ( witness.scope === 'title' || witness.scope === 'excerpt' ) {
 			retireTitleOperationLedgerEntries( {
 				actionLabel,
 				coverage,
 				ledger,
 				phase,
+				scope: witness.scope,
 				step,
 				userIndex,
 			} );
@@ -1298,12 +1362,12 @@ function acknowledgeOperationWitnesses( {
 		recordOperationEvent( coverage, {
 			actionLabel,
 			markerHash: entry.markerHash,
-			phase,
-			scope: entry.scope,
-			status: 'witnessed',
-			step,
-			userIndex,
-		} );
+				phase,
+				scope: entry.scope,
+				status: 'witnessed',
+				step,
+				userIndex: witnessUserIndex,
+			} );
 	}
 
 	enforceOperationLedgerLiveCap( {
@@ -2478,6 +2542,38 @@ function getInitialContent( seed: number ): string {
 		].join( '\n' );
 	}
 
+	if ( FORCED_INITIAL_CONTENT_PROFILE ) {
+		switch ( FORCED_INITIAL_CONTENT_PROFILE ) {
+			case 'base-seeded':
+			case 'base':
+				return baseContent;
+			case 'html-entity-reference':
+				return [ baseContent, htmlEntityReferenceContent( seed ) ].join(
+					'\n'
+				);
+			case 'deprecated-block-content':
+				return [ baseContent, deprecatedBlockContent( seed ) ].join(
+					'\n'
+				);
+			case 'validation-fix-content':
+				return [ baseContent, validationFixContent( seed ) ].join(
+					'\n'
+				);
+			case 'equivalent-html-content':
+				return [ baseContent, equivalentHtmlContent( seed ) ].join(
+					'\n'
+				);
+			case 'freeform-parser-content':
+				return [ baseContent, freeformParserContent( seed ) ].join(
+					'\n'
+				);
+			default:
+				throw new Error(
+					`Unknown GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE "${ FORCED_INITIAL_CONTENT_PROFILE }".`
+				);
+		}
+	}
+
 	if (
 		DISABLE_PARSER_STRESS ||
 		ACTION_PROFILE === 'persistence' ||
@@ -2541,6 +2637,15 @@ async function getEditedPostTitle( page: Page ): Promise< string > {
 	);
 }
 
+async function getEditedPostExcerpt( page: Page ): Promise< string > {
+	return page.evaluate(
+		() =>
+			( window as any ).wp.data
+				.select( 'core/editor' )
+				.getEditedPostAttribute( 'excerpt' ) ?? ''
+	);
+}
+
 async function getCanonicalPostContent(
 	page: Page,
 	content: string
@@ -2563,7 +2668,7 @@ async function getPersistedPost(
 		path: `/wp/v2/posts/${ postId }`,
 		params: {
 			context: 'edit',
-			_fields: 'id,status,title.raw,content.raw,meta',
+			_fields: 'id,status,title.raw,content.raw,excerpt.raw,meta',
 		},
 	} );
 }
@@ -3184,6 +3289,38 @@ async function editTitle(
 	return [ createTitleWitness( marker, 'edit-title' ) ];
 }
 
+async function editExcerpt(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random
+) {
+	const marker = createOperationMarker( {
+		kind: 'edit-excerpt',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+
+	await page.evaluate(
+		( { excerpt } ) => {
+			( window as any ).wp.data
+				.dispatch( 'core/editor' )
+				.editPost( { excerpt } );
+		},
+		{
+			excerpt: `${ marker } excerpt`,
+		}
+	);
+
+	const editedExcerpt = await getEditedPostExcerpt( page );
+	expect( editedExcerpt ).toContain( marker );
+
+	return [ createExcerptWitness( marker, 'edit-excerpt', userIndex ) ];
+}
+
 async function insertConcurrentParagraphs(
 	pages: PageRef[],
 	seed: number,
@@ -3203,6 +3340,7 @@ async function insertConcurrentParagraphs(
 			marker,
 			page,
 			content: `${ marker } concurrent paragraph`,
+			userIndex,
 		};
 	} );
 
@@ -3225,9 +3363,130 @@ async function insertConcurrentParagraphs(
 		} )
 	);
 
-	return payloads.map( ( { marker } ) =>
-		createContentWitness( marker, 'concurrent-paragraphs' )
+	return payloads.map( ( { marker, userIndex } ) =>
+		createContentWitness(
+			marker,
+			'concurrent-paragraphs',
+			userIndex
+		)
 	);
+}
+
+async function typeConcurrentSameParagraph(
+	pages: PageRef[],
+	seed: number,
+	step: number,
+	rng: Random
+): Promise< PageActionResult > {
+	const anchorUser = pages[ 0 ]?.userIndex ?? 0;
+	const anchorMarker = createOperationMarker( {
+		kind: 'concurrent-same-paragraph-anchor',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex: anchorUser,
+	} );
+	const payloads = pages.map( ( { page, userIndex } ) => ( {
+		marker: createOperationMarker( {
+			kind: 'concurrent-same-paragraph',
+			seed,
+			step,
+			suffix: Math.floor( rng() * 1000000 ),
+			userIndex,
+		} ),
+		page,
+		userIndex,
+	} ) );
+
+	await pages[ 0 ].editor.insertBlock( {
+		name: 'core/paragraph',
+		attributes: {
+			content: `${ anchorMarker } shared paragraph`,
+		},
+	} );
+	await Promise.all(
+		pages.map( ( { page } ) =>
+			waitForEditedContentMarker(
+				page,
+				anchorMarker,
+				CONVERGENCE_TIMEOUT_MS
+			)
+		)
+	);
+
+	await Promise.all(
+		payloads.map( async ( { marker, page } ) => {
+			await dismissBlockingEditorGuide( page );
+			const canvas = page.frameLocator(
+				'iframe[name="editor-canvas"]'
+			);
+			await canvas
+				.getByText( anchorMarker, { exact: false } )
+				.first()
+				.click( { timeout: 10000 } );
+			await page.keyboard.press( 'End' );
+			await page.keyboard.type( ` ${ marker }`, {
+				delay: REAL_USER_TYPING_DELAY_MS,
+			} );
+			await waitForEditedContentMarker( page, marker );
+		} )
+	);
+
+	return {
+		historyEvents: [
+			{
+				details: {
+					target: 'paragraph',
+					userCount: pages.length,
+				},
+				phase: 'same-block-contention',
+				status: 'ok',
+				step,
+			},
+		],
+		witnesses: [
+			createContentWitness(
+				anchorMarker,
+				'concurrent-same-paragraph-anchor',
+				anchorUser
+			),
+			...payloads.map( ( { marker, userIndex } ) =>
+				createContentWitness(
+					marker,
+					'concurrent-same-paragraph',
+					userIndex
+				)
+			),
+		],
+	};
+}
+
+async function exerciseBrowserLifecycleChurn(
+	page: Page,
+	_seed: number,
+	step: number,
+	userIndex: number
+): Promise< PageActionResult > {
+	await page.evaluate( () => {
+		const fire = ( target: Window | Document, name: string ) => {
+			target.dispatchEvent( new Event( name ) );
+		};
+		fire( window, 'pagehide' );
+		fire( document, 'visibilitychange' );
+		fire( window, 'pageshow' );
+		fire( window, 'focus' );
+	} );
+
+	return {
+		historyEvents: [
+			{
+				phase: 'browser-lifecycle-churn',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+		],
+	};
 }
 
 async function editRichTextPairBlock(
@@ -3531,6 +3790,414 @@ async function assertRemoteSelectionAndCursorVisible(
 	};
 }
 
+async function assertNestedTableSelectionAndCursorVisible(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random,
+	pages: PageRef[]
+): Promise< PageActionResult > {
+	const viewer =
+		pages.find( ( candidate ) => candidate.userIndex !== userIndex ) ??
+		pages[ 0 ];
+	const marker = createOperationMarker( {
+		kind: 'nested-table-selection',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+
+	await page.evaluate(
+		( { tableMarker }: { tableMarker: string } ) => {
+			const wp = ( window as any ).wp;
+			const blockEditor = wp.data.dispatch( 'core/block-editor' );
+			const existing = wp.data
+				.select( 'core/block-editor' )
+				.getBlocks()
+				.find(
+					( block: { attributes?: { body?: unknown }; name?: string } ) =>
+						block.name === 'core/table' &&
+						JSON.stringify( block.attributes?.body ?? '' ).includes(
+							tableMarker
+						)
+				);
+
+			if ( existing ) {
+				return;
+			}
+
+			const cell = ( content: string ) => ( { content, tag: 'td' } );
+			blockEditor.insertBlock(
+				wp.blocks.createBlock( 'core/table', {
+					body: [
+						{
+							cells: [
+								cell( `anchor ${ tableMarker }` ),
+								cell( `left ${ tableMarker }` ),
+							],
+						},
+						{
+							cells: [
+								cell( `middle ${ tableMarker }` ),
+								cell( `target ${ tableMarker } nested awareness` ),
+							],
+						},
+					],
+				} )
+			);
+		},
+		{ tableMarker: marker }
+	);
+	await Promise.all(
+		pages.map( ( { page: candidatePage } ) =>
+			waitForEditedContentMarker(
+				candidatePage,
+				marker,
+				CONVERGENCE_TIMEOUT_MS
+			)
+		)
+	);
+
+	const selectionLength = await page.evaluate( ( tableMarker: string ) => {
+		const wp = ( window as any ).wp;
+		const blockEditor = wp.data.dispatch( 'core/block-editor' );
+		const table = wp.data
+			.select( 'core/block-editor' )
+			.getBlocks()
+			.find(
+				( block: { attributes?: { body?: unknown }; clientId?: string; name?: string } ) =>
+					block.name === 'core/table' &&
+					JSON.stringify( block.attributes?.body ?? '' ).includes(
+						tableMarker
+					)
+			);
+
+		if ( ! table?.clientId ) {
+			return 0;
+		}
+
+		blockEditor.selectionChange(
+			table.clientId,
+			'body.1.cells.1.content',
+			2,
+			10
+		);
+
+		const selectionStart = wp.data
+			.select( 'core/block-editor' )
+			.getSelectionStart();
+		return selectionStart?.attributeKey === 'body.1.cells.1.content'
+			? 8
+			: 0;
+	}, marker );
+
+	expect( selectionLength ).toBeGreaterThan( 0 );
+
+	const viewerFrame = viewer.page.frameLocator(
+		'iframe[name="editor-canvas"]'
+	);
+	await expect
+		.poll(
+			() =>
+				viewerFrame
+					.locator( '.collaborators-overlay-selection-rect' )
+					.count(),
+			{ timeout: 15000 }
+		)
+		.toBeGreaterThan( 0 );
+
+	await page.evaluate( () => {
+		const wp = ( window as any ).wp;
+		const blockEditor = wp.data.dispatch( 'core/block-editor' );
+		const selectionStart = wp.data
+			.select( 'core/block-editor' )
+			.getSelectionStart();
+
+		if ( selectionStart?.clientId ) {
+			blockEditor.selectionChange(
+				selectionStart.clientId,
+				selectionStart.attributeKey ?? 'content',
+				selectionStart.offset ?? 0,
+				selectionStart.offset ?? 0
+			);
+		}
+	} );
+
+	await expect
+		.poll(
+			() =>
+				viewerFrame
+					.locator(
+						'.collaborators-overlay-user-cursor, .collaborators-overlay-user'
+					)
+					.count(),
+			{ timeout: 15000 }
+		)
+		.toBeGreaterThan( 0 );
+
+	return {
+		historyEvents: [
+			{
+				details: {
+					attributeKey: 'body.1.cells.1.content',
+					selectionLength,
+					viewerUserIndex: viewer.userIndex,
+				},
+				phase: 'nested-table-selection-cursor',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+		],
+		witnesses: [
+			createContentWitness(
+				marker,
+				'nested-table-selection',
+				userIndex
+			),
+		],
+	};
+}
+
+async function uiDeleteVisibleRemoteBlock(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random,
+	pages: PageRef[]
+): Promise< PageActionResult > {
+	const deleter =
+		pages.find( ( candidate ) => candidate.userIndex === userIndex ) ??
+		pages.find( ( candidate ) => candidate.page === page ) ??
+		pages[ 0 ];
+	const inserter =
+		pages.find( ( candidate ) => candidate.userIndex !== userIndex ) ??
+		deleter;
+	const marker = createOperationMarker( {
+		kind: 'visible-remote-delete',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex: inserter.userIndex,
+	} );
+
+	await focusRealUserTypingSurface( inserter.page );
+	await inserter.page.keyboard.press( 'End' );
+	await inserter.page.keyboard.press( 'Enter' );
+	await inserter.page.keyboard.type( `${ marker } remote block`, {
+		delay: REAL_USER_TYPING_DELAY_MS,
+	} );
+	await Promise.all(
+		pages.map( ( { page: candidatePage } ) =>
+			waitForEditedContentMarker(
+				candidatePage,
+				marker,
+				CONVERGENCE_TIMEOUT_MS
+			)
+		)
+	);
+
+	await deleter.page.bringToFront();
+	await dismissBlockingEditorGuide( deleter.page );
+	await deleter.editor.canvas
+		.getByText( marker, { exact: false } )
+		.first()
+		.click( { timeout: 15000 } );
+	await deleter.editor.clickBlockOptionsMenuItem( 'Delete' );
+	await Promise.all(
+		pages.map( ( { page: candidatePage } ) =>
+			waitForEditedContentWithoutMarker(
+				candidatePage,
+				marker,
+				CONVERGENCE_TIMEOUT_MS
+			)
+		)
+	);
+
+	return {
+		historyEvents: [
+			{
+				details: {
+					deleterUserIndex: deleter.userIndex,
+					inserterUserIndex: inserter.userIndex,
+					markerHash: hashString( marker ),
+				},
+				phase: 'visible-remote-delete',
+				status: 'ok',
+				step,
+				userIndex: deleter.userIndex,
+			},
+		],
+	};
+}
+
+async function getEmbedBlockClientIdByUrl(
+	page: Page,
+	url: string
+): Promise< string | null > {
+	return page.evaluate( ( embedUrl: string ) => {
+		const blocks = ( window as any ).wp.data
+			.select( 'core/block-editor' )
+			.getBlocks();
+		const embed = blocks.find(
+			( block: { attributes?: { url?: string }; clientId?: string; name?: string } ) =>
+				block.name === 'core/embed' &&
+				block.attributes?.url === embedUrl
+		);
+		return embed?.clientId ?? null;
+	}, url );
+}
+
+async function codeEditorContentOnlyUpdatePreservesEmbedIdentity(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random,
+	pages: PageRef[]
+): Promise< PageActionResult > {
+	const actor =
+		pages.find( ( candidate ) => candidate.userIndex === userIndex ) ??
+		pages.find( ( candidate ) => candidate.page === page ) ??
+		pages[ 0 ];
+	const viewer =
+		pages.find( ( candidate ) => candidate.userIndex !== actor.userIndex ) ??
+		actor;
+	const initialMarker = createOperationMarker( {
+		kind: 'code-editor-content-only-before',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const updatedMarker = createOperationMarker( {
+		kind: 'code-editor-content-only-after',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const embedUrl = `https://www.youtube.com/watch?v=dQw4w9WgXcQ&rtc=${ seed }-${ step }-${ userIndex }`;
+
+	await actor.page.evaluate(
+		( {
+			embedUrl: currentEmbedUrl,
+			marker,
+		}: {
+			embedUrl: string;
+			marker: string;
+		} ) => {
+			const wp = ( window as any ).wp;
+			const blockEditor = wp.data.dispatch( 'core/block-editor' );
+			const blocks = wp.data.select( 'core/block-editor' ).getBlocks();
+			const hasEmbed = blocks.some(
+				( block: { attributes?: { url?: string }; name?: string } ) =>
+					block.name === 'core/embed' &&
+					block.attributes?.url === currentEmbedUrl
+			);
+
+			if ( ! hasEmbed ) {
+				blockEditor.insertBlock(
+					wp.blocks.createBlock( 'core/embed', {
+						providerNameSlug: 'youtube',
+						responsive: true,
+						type: 'video',
+						url: currentEmbedUrl,
+					} )
+				);
+			}
+
+			blockEditor.insertBlock(
+				wp.blocks.createBlock( 'core/paragraph', {
+					content: `${ marker } code editor baseline`,
+				} )
+			);
+		},
+		{ embedUrl, marker: initialMarker }
+	);
+	await Promise.all(
+		pages.map( ( { page: candidatePage } ) =>
+			waitForEditedContentMarker(
+				candidatePage,
+				initialMarker,
+				CONVERGENCE_TIMEOUT_MS
+			)
+		)
+	);
+
+	const beforeEmbedClientId = await getEmbedBlockClientIdByUrl(
+		viewer.page,
+		embedUrl
+	);
+	expect( beforeEmbedClientId ).toBeTruthy();
+
+	await actor.page.evaluate(
+		( {
+			beforeMarker,
+			afterMarker,
+		}: {
+			beforeMarker: string;
+			afterMarker: string;
+		} ) => {
+			const wp = ( window as any ).wp;
+			const editor = wp.data.select( 'core/editor' );
+			const postType = editor.getCurrentPostType();
+			const postId = editor.getCurrentPostId();
+			const content = editor
+				.getEditedPostContent()
+				.replace( beforeMarker, afterMarker );
+			wp.data
+				.dispatch( 'core' )
+				.editEntityRecord( 'postType', postType, postId, {
+					blocks: undefined,
+					content,
+					selection: undefined,
+				} );
+		},
+		{ beforeMarker: initialMarker, afterMarker: updatedMarker }
+	);
+	await Promise.all(
+		pages.map( ( { page: candidatePage } ) =>
+			waitForEditedContentMarker(
+				candidatePage,
+				updatedMarker,
+				CONVERGENCE_TIMEOUT_MS
+			)
+		)
+	);
+
+	const afterEmbedClientId = await getEmbedBlockClientIdByUrl(
+		viewer.page,
+		embedUrl
+	);
+	expect( afterEmbedClientId ).toBe( beforeEmbedClientId );
+
+	return {
+		historyEvents: [
+			{
+				details: {
+					embedClientIdHash: hashString( afterEmbedClientId ?? '' ),
+					viewerUserIndex: viewer.userIndex,
+				},
+				phase: 'code-editor-content-only-embed-stability',
+				status: 'ok',
+				step,
+				userIndex: actor.userIndex,
+			},
+		],
+		witnesses: [
+			createContentWitness(
+				updatedMarker,
+				'code-editor-content-only-update',
+				userIndex
+			),
+		],
+	};
+}
+
 async function focusRealUserTypingSurface( page: Page ) {
 	await dismissBlockingEditorGuide( page );
 	const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
@@ -3777,6 +4444,274 @@ async function typeRealUserTitle(
 	await waitForEditedTitleMarker( page, marker );
 
 	return [ createTitleWitness( marker, kind ) ];
+}
+
+function getNotesSidebar( page: Page ) {
+	return page.getByRole( 'region', { name: 'Editor settings' } );
+}
+
+function getNoteThread( page: Page, noteText: string ) {
+	return getNotesSidebar( page ).getByRole( 'treeitem', {
+		name: `Note: ${ noteText }`,
+	} );
+}
+
+async function openNotesSidebar( page: Page ) {
+	const toggleButton = page
+		.getByRole( 'region', { name: 'Editor top bar' } )
+		.getByRole( 'button', { name: 'All notes', exact: true } );
+	await expect( toggleButton ).toBeVisible( { timeout: 15000 } );
+	const isExpanded = await toggleButton.getAttribute( 'aria-expanded' );
+	if ( isExpanded === 'false' ) {
+		await toggleButton.click();
+	}
+	await expect( getNotesSidebar( page ) ).toBeVisible( {
+		timeout: 15000,
+	} );
+	return toggleButton;
+}
+
+async function clickNoteActionMenuItem(
+	page: Page,
+	actionName: string,
+	index = 0
+) {
+	await getNotesSidebar( page )
+		.getByRole( 'button', { name: 'Actions' } )
+		.nth( index )
+		.click();
+	await page.getByRole( 'menuitem', { name: actionName } ).click();
+}
+
+async function addRealUserNote(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random,
+	pages: PageRef[]
+): Promise< PageActionResult > {
+	const actor =
+		pages.find( ( candidate ) => candidate.userIndex === userIndex ) ??
+		pages.find( ( candidate ) => candidate.page === page );
+
+	if ( ! actor ) {
+		throw new Error( `Unable to find page ref for note user ${ userIndex }` );
+	}
+
+	const viewer =
+		pages.find( ( candidate ) => candidate.userIndex !== userIndex ) ??
+		actor;
+	const marker = createOperationMarker( {
+		kind: 'ui-add-note',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const noteText = `note ${ marker }`;
+
+	await dismissBlockingEditorGuide( page );
+	await actor.editor.insertBlock( {
+		name: 'core/paragraph',
+		attributes: { content: `${ marker } note target` },
+	} );
+	await waitForEditedContentMarker( page, marker );
+
+	await actor.editor.clickBlockOptionsMenuItem( 'Add note' );
+	await page
+		.getByRole( 'textbox', { name: 'New note', exact: true } )
+		.fill( noteText );
+	await page
+		.getByRole( 'region', { name: 'Editor settings' } )
+		.getByRole( 'button', { name: 'Add note', exact: true } )
+		.click();
+
+	await expect(
+		page
+			.getByRole( 'region', { name: 'Editor settings' } )
+			.getByRole( 'treeitem', { name: `Note: ${ noteText }` } )
+	).toBeVisible( { timeout: 15000 } );
+
+	if ( viewer.page !== page ) {
+		await openNotesSidebar( viewer.page );
+		await expect(
+			getNoteThread( viewer.page, noteText )
+		).toBeVisible( { timeout: 15000 } );
+	}
+
+	return {
+		historyEvents: [
+			{
+				details: { marker },
+				phase: 'collaboration-note',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+			{
+				details: { marker, viewerUserIndex: viewer.userIndex },
+				phase: 'collaboration-note-remote-visible',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+		],
+	};
+}
+
+async function addRealUserNoteThreadLifecycle(
+	page: Page,
+	seed: number,
+	step: number,
+	userIndex: number,
+	rng: Random,
+	pages: PageRef[]
+): Promise< PageActionResult > {
+	const actor =
+		pages.find( ( candidate ) => candidate.userIndex === userIndex ) ??
+		pages.find( ( candidate ) => candidate.page === page );
+
+	if ( ! actor ) {
+		throw new Error( `Unable to find page ref for note user ${ userIndex }` );
+	}
+
+	const viewer =
+		pages.find( ( candidate ) => candidate.userIndex !== userIndex ) ??
+		actor;
+	const marker = createOperationMarker( {
+		kind: 'ui-note-thread-lifecycle',
+		seed,
+		step,
+		suffix: Math.floor( rng() * 1000000 ),
+		userIndex,
+	} );
+	const noteText = `note lifecycle ${ marker }`;
+	const replyText = `reply ${ marker }`;
+
+	await dismissBlockingEditorGuide( page );
+	await actor.editor.insertBlock( {
+		name: 'core/paragraph',
+		attributes: { content: `${ marker } note lifecycle target` },
+	} );
+	await waitForEditedContentMarker( page, marker );
+
+	await actor.editor.clickBlockOptionsMenuItem( 'Add note' );
+	await page
+		.getByRole( 'textbox', { name: 'New note', exact: true } )
+		.fill( noteText );
+	await getNotesSidebar( page )
+		.getByRole( 'button', { name: 'Add note', exact: true } )
+		.click();
+
+	const actorThread = getNoteThread( page, noteText );
+	await expect( actorThread ).toBeVisible( { timeout: 15000 } );
+	await actorThread.click();
+	await page
+		.getByRole( 'textbox', { name: 'Reply to' } )
+		.fill( replyText );
+	await getNotesSidebar( page )
+		.getByRole( 'button', { name: 'Reply', exact: true } )
+		.click();
+	await expect(
+		page
+			.locator( '.editor-collab-sidebar-panel__note-content' )
+			.filter( { hasText: replyText } )
+			.last()
+	).toBeVisible( { timeout: 15000 } );
+
+	if ( viewer.page !== page ) {
+		await openNotesSidebar( viewer.page );
+		const viewerThread = getNoteThread( viewer.page, noteText );
+		await expect( viewerThread ).toBeVisible( { timeout: 15000 } );
+		await viewerThread.click();
+		await expect(
+			viewer.page
+				.locator( '.editor-collab-sidebar-panel__note-content' )
+				.filter( { hasText: replyText } )
+				.last()
+		).toBeVisible( { timeout: 15000 } );
+	}
+
+	await actorThread.click();
+	const resolveButton = page.getByRole( 'button', { name: 'Resolve' } );
+	await expect( resolveButton ).toBeVisible( { timeout: 15000 } );
+	await resolveButton.click();
+	await expect(
+		page.getByText( 'Note marked as resolved.', { exact: true } )
+	).toBeVisible( { timeout: 15000 } );
+
+	await actorThread.click();
+	await clickNoteActionMenuItem( page, 'Reopen' );
+	await expect(
+		page.getByText( 'Note reopened.', { exact: true } )
+	).toBeVisible( { timeout: 15000 } );
+
+	await actorThread.click();
+	await clickNoteActionMenuItem( page, 'Delete' );
+	await page
+		.getByRole( 'dialog' )
+		.getByRole( 'button', { name: 'Delete' } )
+		.click();
+	await expect(
+		page
+			.locator( '.editor-collab-sidebar-panel__note-content' )
+			.filter( { hasText: noteText } )
+	).toBeHidden( { timeout: 15000 } );
+
+	return {
+		historyEvents: [
+			{
+				details: { marker },
+				phase: 'collaboration-note',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+			{
+				details: { marker },
+				phase: 'collaboration-note-reply',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+			{
+				details: { marker, viewerUserIndex: viewer.userIndex },
+				phase: 'collaboration-note-reply-remote-visible',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+			{
+				details: { marker },
+				phase: 'collaboration-note-resolve',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+			{
+				details: { marker },
+				phase: 'collaboration-note-reopen',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+			{
+				details: { marker },
+				phase: 'collaboration-note-delete',
+				status: 'ok',
+				step,
+				userIndex,
+			},
+		],
+		witnesses: [
+			createContentWitness(
+				marker,
+				'ui-note-thread-lifecycle',
+				userIndex
+			),
+		],
+	};
 }
 
 async function typeRealUserUndoRedoParagraph(
@@ -5161,6 +6096,194 @@ async function autosaveCheckpointAndVerify( {
 	await waitForLocalAutosaveMarker( saver.page, postId, marker );
 }
 
+async function runConcurrentPersistenceRace( {
+	collaborationUtils,
+	coverage,
+	ledger,
+	pages,
+	postId,
+	requestUtils,
+	seed,
+	step,
+}: {
+	collaborationUtils: CollaborationUtils;
+	coverage: BehaviorCoverage;
+	ledger: OperationLedgerState;
+	pages: PageRef[];
+	postId: number;
+	requestUtils: RestRequestUtils;
+	seed: number;
+	step: number;
+} ): Promise< PageRef > {
+	if ( pages.length < 2 ) {
+		return pages[ 0 ];
+	}
+
+	const orderedPages = [ ...pages ].sort(
+		( left, right ) => left.userIndex - right.userIndex
+	);
+	const saver = orderedPages[ step % orderedPages.length ];
+	const autosaver = orderedPages[ ( step + 1 ) % orderedPages.length ];
+	const publisher =
+		orderedPages[ ( step + 2 ) % orderedPages.length ] ?? saver;
+	const saveMarker = createOperationMarker( {
+		kind: 'concurrent-save',
+		seed,
+		step,
+		suffix: 1,
+		userIndex: saver.userIndex,
+	} );
+	const autosaveMarker = createOperationMarker( {
+		kind: 'concurrent-autosave',
+		seed,
+		step,
+		suffix: 2,
+		userIndex: autosaver.userIndex,
+	} );
+	const publishMarker = createOperationMarker( {
+		kind: 'concurrent-publish',
+		seed,
+		step,
+		suffix: 3,
+		userIndex: publisher.userIndex,
+	} );
+	const witnesses = [
+		createContentWitness( saveMarker, 'concurrent-save', saver.userIndex ),
+		createContentWitness(
+			autosaveMarker,
+			'concurrent-autosave',
+			autosaver.userIndex
+		),
+		...( ENABLE_CONCURRENT_PERSISTENCE_RACE_PUBLISH
+			? [
+					createContentWitness(
+						publishMarker,
+						'concurrent-publish',
+						publisher.userIndex
+					),
+			  ]
+			: [] ),
+	];
+
+	recordHistory( coverage, {
+		details: {
+			autosaveUserIndex: autosaver.userIndex,
+			publish: ENABLE_CONCURRENT_PERSISTENCE_RACE_PUBLISH,
+			publisherUserIndex: publisher.userIndex,
+			saveUserIndex: saver.userIndex,
+		},
+		phase: 'concurrent-persistence-race',
+		status: 'invoke',
+		step,
+	} );
+	await Promise.all( [
+		insertCheckpointMarker( saver.page, saveMarker ),
+		insertCheckpointMarker( autosaver.page, autosaveMarker ),
+		...( ENABLE_CONCURRENT_PERSISTENCE_RACE_PUBLISH
+			? [ insertCheckpointMarker( publisher.page, publishMarker ) ]
+			: [] ),
+	] );
+	const preRaceState = await collaborationUtils.waitForConvergence( {
+		includeCrdtDocument: true,
+		timeout: CONVERGENCE_TIMEOUT_MS,
+	} );
+	for ( const witness of witnesses ) {
+		expect( hasOperationWitness( preRaceState, witness ) ).toBe( true );
+	}
+
+	const tasks = [
+		{
+			phase: 'concurrent-save',
+			run: () => saveDraft( saver.page ),
+			userIndex: saver.userIndex,
+		},
+		{
+			phase: 'concurrent-autosave',
+			run: () => autosaveDraft( autosaver.page, { local: false } ),
+			userIndex: autosaver.userIndex,
+		},
+		...( ENABLE_CONCURRENT_PERSISTENCE_RACE_PUBLISH
+			? [
+					{
+						phase: 'concurrent-publish',
+						run: () => publisher.editor.publishPost(),
+						userIndex: publisher.userIndex,
+					},
+			  ]
+			: [] ),
+	];
+
+	const results = await Promise.allSettled(
+		tasks.map( async ( task ) => {
+			recordHistory( coverage, {
+				phase: task.phase,
+				status: 'invoke',
+				step,
+				userIndex: task.userIndex,
+			} );
+			await task.run();
+			recordHistory( coverage, {
+				phase: task.phase,
+				status: 'ok',
+				step,
+				userIndex: task.userIndex,
+			} );
+		} )
+	);
+	const failedTask = results.find(
+		( result ) => result.status === 'rejected'
+	);
+	if ( failedTask?.status === 'rejected' ) {
+		recordHistory( coverage, {
+			error: errorToString( failedTask.reason ),
+			phase: 'concurrent-persistence-race',
+			status: 'fail',
+			step,
+		} );
+		throw failedTask.reason;
+	}
+
+	const postRaceState = await collaborationUtils.waitForConvergence( {
+		includeCrdtDocument: true,
+		timeout: CONVERGENCE_TIMEOUT_MS,
+	} );
+	acknowledgeOperationWitnesses( {
+		actionLabel: 'concurrent-persistence-race',
+		coverage,
+		ledger,
+		phase: 'concurrent-persistence-race-convergence',
+		state: postRaceState,
+		step,
+		witnesses,
+	} );
+	assertOperationLedgerPreserved( {
+		coverage,
+		ledger,
+		phase: 'concurrent-persistence-race-convergence',
+		state: postRaceState,
+		step,
+	} );
+	await assertOperationLedgerPersisted( {
+		coverage,
+		ledger,
+		phase: 'concurrent-persistence-race-persisted',
+		postId,
+		requestUtils,
+		step,
+	} );
+	if ( ENABLE_CONCURRENT_PERSISTENCE_RACE_PUBLISH ) {
+		await waitForPersistedPostStatus( requestUtils, postId, 'publish' );
+	}
+	recordHistory( coverage, {
+		details: { witnessCount: witnesses.length },
+		phase: 'concurrent-persistence-race',
+		status: 'ok',
+		step,
+	} );
+
+	return ENABLE_CONCURRENT_PERSISTENCE_RACE_PUBLISH ? publisher : saver;
+}
+
 async function maybeRunFinalUiWitnessSweep( {
 	collaborationUtils,
 	coverage,
@@ -5334,6 +6457,7 @@ async function maybeRunFinalPersistenceOracle( {
 	const persistedPost = await getPersistedPost( requestUtils, postId );
 	const persistedContent = getRawFieldValue( persistedPost.content );
 	const persistedTitle = getRawFieldValue( persistedPost.title );
+	const persistedExcerpt = getRawFieldValue( persistedPost.excerpt );
 	const canonicalPersistedContent = await getCanonicalPostContent(
 		saver.page,
 		persistedContent
@@ -5342,8 +6466,10 @@ async function maybeRunFinalPersistenceOracle( {
 		saver.page
 	);
 	const editedTitle = await getEditedPostTitle( saver.page );
+	const editedExcerpt = await getEditedPostExcerpt( saver.page );
 	const contentMatches = canonicalPersistedContent === canonicalEditedContent;
 	const titleMatches = persistedTitle === editedTitle;
+	const excerptMatches = persistedExcerpt === editedExcerpt;
 	const hasCrdtDocument = Boolean( persistedPost.meta?._crdt_document );
 
 	if ( ! contentMatches ) {
@@ -5383,6 +6509,26 @@ async function maybeRunFinalPersistenceOracle( {
 			: {
 					editedHash: hashString( editedTitle ),
 					persistedHash: hashString( persistedTitle ),
+			  }
+	);
+
+	if ( ! excerptMatches ) {
+		failures.push( {
+			details: {
+				editedHash: hashString( editedExcerpt ),
+				persistedHash: hashString( persistedExcerpt ),
+			},
+			name: 'final-persistence-excerpt',
+		} );
+	}
+	recordCheck(
+		'final-persistence-excerpt',
+		signalStatus( ! excerptMatches ),
+		excerptMatches
+			? undefined
+			: {
+					editedHash: hashString( editedExcerpt ),
+					persistedHash: hashString( persistedExcerpt ),
 			  }
 	);
 
@@ -5496,7 +6642,11 @@ async function waitForCollaborationSessionSettled(
 	collaborationUtils: CollaborationUtils,
 	{ timeout = DISCOVERY_TIMEOUT_MS }: { timeout?: number } = {}
 ) {
-	if ( COLLABORATOR_MODE !== 'same-user' && ! SOFT_DISCOVERY_BOOTSTRAP ) {
+	if (
+		COLLABORATOR_MODE !== 'same-user' &&
+		COLLABORATOR_MODE !== 'mixed-same-and-distinct' &&
+		! SOFT_DISCOVERY_BOOTSTRAP
+	) {
 		await collaborationUtils.waitForMutualDiscovery( { timeout } );
 		return;
 	}
@@ -5868,6 +7018,17 @@ async function createAdditionalCollaborator(
 	if ( COLLABORATOR_MODE === 'same-user' ) {
 		return ADMIN_USER;
 	}
+	if ( COLLABORATOR_MODE === 'mixed-same-and-distinct' && index % 2 === 1 ) {
+		return ADMIN_USER;
+	}
+	if (
+		COLLABORATOR_MODE !== 'distinct-user' &&
+		COLLABORATOR_MODE !== 'mixed-same-and-distinct'
+	) {
+		throw new Error(
+			`Unknown GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE "${ COLLABORATOR_MODE }".`
+		);
+	}
 
 	const laneLabel = process.env.GUTENBERG_RTC_LANE_LABEL ?? 'lane0';
 	const uniqueSuffix = [
@@ -5924,6 +7085,11 @@ const ACTIONS: PageAction[] = [
 			editTitle( page, seed, step, userIndex, rng ),
 	},
 	{
+		label: 'edit-excerpt',
+		run: ( page, seed, step, userIndex, rng ) =>
+			editExcerpt( page, seed, step, userIndex, rng ),
+	},
+	{
 		label: 'insert-heading',
 		run: ( page, seed, step, userIndex, rng ) =>
 			insertHeading( page, seed, step, userIndex, rng ),
@@ -5937,6 +7103,16 @@ const ACTIONS: PageAction[] = [
 		label: 'concurrent-paragraphs',
 		run: async ( _page, seed, step, _userIndex, rng, pages ) =>
 			insertConcurrentParagraphs( pages, seed, step, rng ),
+	},
+	{
+		label: 'concurrent-same-paragraph',
+		run: async ( _page, seed, step, _userIndex, rng, pages ) =>
+			typeConcurrentSameParagraph( pages, seed, step, rng ),
+	},
+	{
+		label: 'browser-lifecycle-churn',
+		run: async ( page, seed, step, userIndex ) =>
+			exerciseBrowserLifecycleChurn( page, seed, step, userIndex ),
 	},
 	{
 		label: 'edit-formatted-paragraph-at-cursor',
@@ -5959,6 +7135,42 @@ const ACTIONS: PageAction[] = [
 		label: 'assert-selection-cursor',
 		run: async ( page, seed, step, userIndex, rng, pages ) =>
 			assertRemoteSelectionAndCursorVisible(
+				page,
+				seed,
+				step,
+				userIndex,
+				rng,
+				pages
+			),
+	},
+	{
+		label: 'assert-nested-table-selection-cursor',
+		run: async ( page, seed, step, userIndex, rng, pages ) =>
+			assertNestedTableSelectionAndCursorVisible(
+				page,
+				seed,
+				step,
+				userIndex,
+				rng,
+				pages
+			),
+	},
+	{
+		label: 'ui-delete-visible-remote-block',
+		run: async ( page, seed, step, userIndex, rng, pages ) =>
+			uiDeleteVisibleRemoteBlock(
+				page,
+				seed,
+				step,
+				userIndex,
+				rng,
+				pages
+			),
+	},
+	{
+		label: 'code-editor-content-only-update',
+		run: async ( page, seed, step, userIndex, rng, pages ) =>
+			codeEditorContentOnlyUpdatePreservesEmbedIdentity(
 				page,
 				seed,
 				step,
@@ -6111,6 +7323,23 @@ const ACTIONS: PageAction[] = [
 		run: async ( page, seed, step, userIndex, rng ) =>
 			editTableArrayAttributes( page, seed, step, userIndex, rng ),
 	},
+	{
+		label: 'ui-add-note',
+		run: async ( page, seed, step, userIndex, rng, pages ) =>
+			addRealUserNote( page, seed, step, userIndex, rng, pages ),
+	},
+	{
+		label: 'ui-note-thread-lifecycle',
+		run: async ( page, seed, step, userIndex, rng, pages ) =>
+			addRealUserNoteThreadLifecycle(
+				page,
+				seed,
+				step,
+				userIndex,
+				rng,
+				pages
+			),
+	},
 ];
 
 function getActionsByWeightedLabels( labels: string[] ): PageAction[] {
@@ -6130,6 +7359,10 @@ function getActionsByWeightedLabels( labels: string[] ): PageAction[] {
 }
 
 function getActiveActions(): PageAction[] {
+	if ( FORCED_ACTION_SEQUENCE ) {
+		return getActionsByWeightedLabels( FORCED_ACTION_SEQUENCE );
+	}
+
 	if (
 		ACTION_PROFILE === 'full' ||
 		ACTION_PROFILE === 'parser-serialization'
@@ -6147,6 +7380,11 @@ function getActiveActions(): PageAction[] {
 			'ui-composition-paragraph',
 			'ui-toolbar-format-paragraph',
 			'ui-table-cell-edit',
+			'ui-add-note',
+			'ui-note-thread-lifecycle',
+			'assert-nested-table-selection-cursor',
+			'ui-delete-visible-remote-block',
+			'code-editor-content-only-update',
 		] );
 
 		if ( ! DISABLE_PARSER_STRESS ) {
@@ -6215,6 +7453,35 @@ function getActiveActions(): PageAction[] {
 			'ui-type-paragraph',
 			'ui-type-title',
 		] );
+	}
+
+	if ( IS_MANY_USER_ACTIVE_EDITING_PROFILE ) {
+		return getActionsByWeightedLabels(
+			REAL_USER_EDITING_SEQUENCE ?? [
+				'assert-presence-list',
+				'concurrent-paragraphs',
+				'concurrent-same-paragraph',
+				'ui-type-paragraph',
+				'ui-paste-paragraph',
+				'ui-link-paragraph',
+				'ui-list-indent',
+				'edit-excerpt',
+				'ui-format-paragraph',
+				'concurrent-paragraphs',
+				'ui-toolbar-format-paragraph',
+				'ui-table-cell-edit',
+				'ui-add-note',
+				'ui-note-thread-lifecycle',
+				'ui-undo-redo-paragraph',
+				'ui-composition-paragraph',
+				'assert-nested-table-selection-cursor',
+				'ui-delete-visible-remote-block',
+				'code-editor-content-only-update',
+				'browser-lifecycle-churn',
+				'assert-selection-cursor',
+				'ui-type-title',
+			]
+		);
 	}
 
 	if ( ACTION_PROFILE === 'async-server-blocks' ) {
@@ -6388,7 +7655,8 @@ function pickActiveAction(
 	step = 0
 ) {
 	if (
-		ACTION_PROFILE === 'real-user-editing' &&
+		( ACTION_PROFILE === 'real-user-editing' ||
+			IS_MANY_USER_ACTIVE_EDITING_PROFILE ) &&
 		REAL_USER_EDITING_SEQUENCE
 	) {
 		const expectedLabel =
@@ -6404,7 +7672,8 @@ function pickActiveAction(
 	}
 
 	if (
-		ACTION_PROFILE === 'real-user-editing' &&
+		( ACTION_PROFILE === 'real-user-editing' ||
+			IS_MANY_USER_ACTIVE_EDITING_PROFILE ) &&
 		previousActionLabel === 'ui-type-paragraph'
 	) {
 		const alternatives = actions.filter(
@@ -6545,6 +7814,24 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					STEP_COUNT,
 					usedMilestones
 				);
+				const bodyTooLargeSteps =
+					reserveMilestoneSteps(
+						FORCE_BODY_TOO_LARGE_STEPS,
+						STEP_COUNT,
+						usedMilestones
+					) ?? new Set< number >();
+				const concurrentPersistenceRaceSteps =
+					reserveMilestoneSteps(
+						FORCE_CONCURRENT_PERSISTENCE_RACE_STEPS,
+						STEP_COUNT,
+						usedMilestones
+					) ?? new Set< number >();
+				const wsReconnectSteps =
+					reserveMilestoneSteps(
+						FORCE_WS_RECONNECT_STEPS,
+						STEP_COUNT,
+						usedMilestones
+					) ?? new Set< number >();
 				const saveSteps =
 					forcedSaveSteps ??
 					chooseMilestoneSteps(
@@ -6714,6 +8001,54 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					const faultRoll = rng();
 
 					if (
+						! DISABLE_SYNC_FAULTS &&
+						bodyTooLargeSteps.has( step ) &&
+						getTransport() === 'http'
+					) {
+						behavior.faults.push( {
+							status: 413,
+							step,
+							type: 'fail',
+							userIndex: actor.userIndex,
+						} );
+						recordHistory( behavior, {
+							details: {
+								code: 'rest_sync_body_too_large',
+								status: 413,
+							},
+							phase: 'http-body-too-large-compaction',
+							status: 'invoke',
+							step,
+							userIndex: actor.userIndex,
+						} );
+						await collaborationUtils.failNextSyncRequest(
+							actor.page,
+							413,
+							'rest_sync_body_too_large'
+						);
+					} else if (
+						! DISABLE_SYNC_FAULTS &&
+						wsReconnectSteps.has( step ) &&
+						getTransport() === 'ws'
+					) {
+						behavior.faults.push( {
+							status: 503,
+							step,
+							type: 'fail',
+							userIndex: actor.userIndex,
+						} );
+						recordHistory( behavior, {
+							details: { status: 503 },
+							phase: 'ws-reconnect-requested',
+							status: 'invoke',
+							step,
+							userIndex: actor.userIndex,
+						} );
+						await collaborationUtils.failNextSyncRequest(
+							actor.page,
+							503
+						);
+					} else if (
 						INCLUDE_AUTH_SYNC_FAILURES &&
 						! DISABLE_SYNC_FAULTS &&
 						step > 0 &&
@@ -6804,7 +8139,7 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 					} );
 
 					let operationWitnesses: OperationWitnessInput[] = [];
-					let actionResult: PageActionResult | void;
+					let actionResult: PageActionResult | void = undefined;
 					try {
 						await test.step( `seed ${ seed } step ${ step } ${ action.label } user ${ actor.userIndex }`, async () => {
 							actionResult = await action.run(
@@ -6895,6 +8230,55 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 						phase: 'post-action-convergence',
 						step,
 					} );
+
+					if (
+						! DISABLE_SYNC_FAULTS &&
+						bodyTooLargeSteps.has( step ) &&
+						getTransport() === 'http'
+					) {
+						recordHistory( behavior, {
+							details: {
+								code: 'rest_sync_body_too_large',
+								status: 413,
+							},
+							phase: 'http-body-too-large-compaction',
+							status: 'ok',
+							step,
+							userIndex: actor.userIndex,
+						} );
+					}
+					if (
+						! DISABLE_SYNC_FAULTS &&
+						wsReconnectSteps.has( step ) &&
+						getTransport() === 'ws'
+					) {
+						recordHistory( behavior, {
+							details: { status: 503 },
+							phase: 'ws-reconnect-requested',
+							status: 'ok',
+							step,
+							userIndex: actor.userIndex,
+						} );
+					}
+					if ( concurrentPersistenceRaceSteps.has( step ) ) {
+						finalPersistenceSaver =
+							await runConcurrentPersistenceRace( {
+								collaborationUtils,
+								coverage: behavior,
+								ledger: operationLedger,
+								pages,
+								postId: post.id,
+								requestUtils,
+								seed,
+								step,
+							} );
+						await assertEditorInvariants( {
+							coverage: behavior,
+							pages,
+							phase: 'concurrent-persistence-race-convergence',
+							step,
+						} );
+					}
 
 					if ( saveSteps.has( step ) ) {
 						const saver = pick( rng, pages );
@@ -7158,8 +8542,9 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 							try {
 								await test.step( `seed ${ seed } step ${ step } ${ actionLabel } user ${ reloader.userIndex }`, async () => {
 									if (
-										ACTION_PROFILE ===
-											'real-user-editing' &&
+										( ACTION_PROFILE ===
+											'real-user-editing' ||
+											IS_MANY_USER_ACTIVE_EDITING_PROFILE ) &&
 										RELOAD_POST_ACTION_KIND === 'title'
 									) {
 										reloadPostWitnesses =
@@ -7172,8 +8557,9 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 												{ kind: actionLabel }
 											) ) ?? [];
 									} else if (
-										ACTION_PROFILE ===
-											'real-user-editing' &&
+										( ACTION_PROFILE ===
+											'real-user-editing' ||
+											IS_MANY_USER_ACTIVE_EDITING_PROFILE ) &&
 										RELOAD_POST_ACTION_KIND === 'format'
 									) {
 										reloadPostWitnesses =
@@ -7185,8 +8571,9 @@ test.describe( 'Collaboration - Seeded Fuzzing', () => {
 												rng
 											) ) ?? [];
 									} else if (
-										ACTION_PROFILE ===
-											'real-user-editing' &&
+										( ACTION_PROFILE ===
+											'real-user-editing' ||
+											IS_MANY_USER_ACTIVE_EDITING_PROFILE ) &&
 										RELOAD_POST_ACTION_KIND === 'heading'
 									) {
 										reloadPostWitnesses =

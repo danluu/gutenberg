@@ -69,8 +69,7 @@ const BASE_URL =
 const WP_ENV_PORT = process.env.RTC_FUZZ_NOVELTY_WP_ENV_PORT ?? '8889';
 const WS_PORT = process.env.RTC_FUZZ_NOVELTY_WS_PORT ?? '18991';
 const REPOS_BASE = process.env.RTC_FUZZ_NOVELTY_REPOS_BASE ?? '';
-const WP_ENV_HOME_BASE =
-	process.env.RTC_FUZZ_NOVELTY_WP_ENV_HOME_BASE ?? '';
+const WP_ENV_HOME_BASE = process.env.RTC_FUZZ_NOVELTY_WP_ENV_HOME_BASE ?? '';
 const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 const CURRENT_RUN_DIRS = [ OUTPUT_DIR ];
 let currentRunCoverageRoots = CURRENT_RUN_DIRS;
@@ -115,16 +114,54 @@ const HTTP_PROVIDER_GATING_STARTUP_FIX_GROUPS = [
 	'novelty-http-title-reload-convergence',
 	'novelty-http-existing-post-crdt-metadata',
 	'novelty-http-same-user-stale-draft',
+	'novelty-http-many-user-active-editing',
+	'novelty-http-compaction-413-active-editing',
 ];
 const COLLABORATION_READINESS_STARTUP_FIX_VERSION = 1;
 const COLLABORATION_READINESS_STARTUP_FIX_GROUPS = [
 	'novelty-ws-collaboration-ui-signals',
+	'novelty-ws-many-user-active-editing',
+	'novelty-ws-twelve-user-active-rich-text',
+	'novelty-ws-thirty-user-active-editing',
+	'novelty-ws-thirty-user-active-editing-strict',
+	'novelty-ws-mixed-identity-active-editing',
+	'novelty-ws-contention-active-editing',
+	'novelty-ws-persistence-race-active-editing',
+	'novelty-ws-reconnect-background-active-editing',
+	'novelty-ws-notes-lifecycle-active-editing',
+	'novelty-ws-post-field-boundary-active-editing',
+	'novelty-ws-visible-delete-active-editing',
+	'novelty-ws-code-editor-embed-stability-active-editing',
+	'novelty-ws-nested-awareness-active-editing',
+	'novelty-http-many-user-active-editing',
+	'novelty-http-compaction-413-active-editing',
+	'novelty-ws-same-user-active-editing',
+	'novelty-ws-revision-active-editing',
+	'novelty-ws-publish-active-editing',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-thirty-user-lifecycle',
 ];
 const MANY_USER_JOIN_BATCH_STARTUP_FIX_VERSION = 1;
 const MANY_USER_JOIN_BATCH_STARTUP_FIX_GROUPS = [
+	'novelty-ws-many-user-active-editing',
+	'novelty-ws-twelve-user-active-rich-text',
+	'novelty-ws-thirty-user-active-editing',
+	'novelty-ws-thirty-user-active-editing-strict',
+	'novelty-ws-mixed-identity-active-editing',
+	'novelty-ws-contention-active-editing',
+	'novelty-ws-persistence-race-active-editing',
+	'novelty-ws-reconnect-background-active-editing',
+	'novelty-ws-notes-lifecycle-active-editing',
+	'novelty-ws-post-field-boundary-active-editing',
+	'novelty-ws-visible-delete-active-editing',
+	'novelty-ws-code-editor-embed-stability-active-editing',
+	'novelty-ws-nested-awareness-active-editing',
+	'novelty-http-many-user-active-editing',
+	'novelty-http-compaction-413-active-editing',
+	'novelty-ws-same-user-active-editing',
+	'novelty-ws-revision-active-editing',
+	'novelty-ws-publish-active-editing',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-thirty-user-lifecycle',
@@ -146,8 +183,8 @@ const START_SUPERVISOR = process.env.RTC_FUZZ_NOVELTY_START_SUPERVISOR !== '0';
 const ALLOW_FLEET_STARTUP_NOISE_CANARY =
 	process.env.RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY === '1';
 const ALLOW_SUCCESS_DEFICIT_STARTUP_NOISE_CANARY =
-	process.env
-		.RTC_FUZZ_NOVELTY_ALLOW_SUCCESS_DEFICIT_STARTUP_NOISE_CANARY !== '0';
+	process.env.RTC_FUZZ_NOVELTY_ALLOW_SUCCESS_DEFICIT_STARTUP_NOISE_CANARY !==
+	'0';
 const INCLUDE_RECHECK_COVERAGE =
 	process.env.RTC_FUZZ_NOVELTY_INCLUDE_RECHECK_COVERAGE === '1';
 const ENABLE_HTTP_PROBE =
@@ -242,6 +279,57 @@ const BROWSER_FREE_MEMORY_MIN_GB = getPositiveNumberEnv(
 	'RTC_FUZZ_NOVELTY_BROWSER_FREE_MEMORY_MIN_GB',
 	1
 );
+const LARGE_POST_THREE_USER_HTTP_LIFECYCLE_FEATURE =
+	'cross-product:large-post-three-user-http-lifecycle';
+const LARGE_POST_THREE_USER_HTTP_LIFECYCLE_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_LARGE_POST_THREE_USER_HTTP_LIFECYCLE_MIN_RECORDS',
+	25
+);
+const MANY_USER_ACTIVE_EDITING_PROFILE = 'many-user-active-editing';
+const MANY_USER_ACTIVE_EDITING_GROUPS = [
+	'novelty-ws-many-user-active-editing',
+	'novelty-ws-twelve-user-active-rich-text',
+	'novelty-ws-thirty-user-active-editing',
+	'novelty-ws-thirty-user-active-editing-strict',
+	'novelty-ws-mixed-identity-active-editing',
+	'novelty-ws-contention-active-editing',
+	'novelty-ws-persistence-race-active-editing',
+	'novelty-ws-reconnect-background-active-editing',
+	'novelty-ws-notes-lifecycle-active-editing',
+	'novelty-ws-post-field-boundary-active-editing',
+	'novelty-ws-visible-delete-active-editing',
+	'novelty-ws-code-editor-embed-stability-active-editing',
+	'novelty-ws-nested-awareness-active-editing',
+	'novelty-http-many-user-active-editing',
+	'novelty-http-compaction-413-active-editing',
+	'novelty-ws-same-user-active-editing',
+	'novelty-ws-revision-active-editing',
+	'novelty-ws-publish-active-editing',
+];
+const MANY_USER_ACTIVE_EDITING_THRESHOLDS = [ 6, 10, 12, 30 ];
+const MANY_USER_ACTIVE_EDITING_NOTE_THRESHOLDS = [ 6, 12 ];
+const MANY_USER_ACTIVE_EDITING_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_MANY_USER_ACTIVE_EDITING_MIN_RECORDS',
+	25
+);
+const MANY_USER_ACTIVE_EDITING_EDGE_MIN_RECORDS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_MANY_USER_ACTIVE_EDITING_EDGE_MIN_RECORDS',
+	10
+);
+const MANY_USER_ACTIVE_EDITING_THIRTY_USER_MIN_RECORDS =
+	getPositiveIntegerEnv(
+		'RTC_FUZZ_NOVELTY_MANY_USER_ACTIVE_EDITING_THIRTY_USER_MIN_RECORDS',
+		3
+	);
+function getManyUserActiveEditingTarget( threshold ) {
+	if ( threshold >= 30 ) {
+		return MANY_USER_ACTIVE_EDITING_THIRTY_USER_MIN_RECORDS;
+	}
+	if ( threshold >= 10 ) {
+		return MANY_USER_ACTIVE_EDITING_EDGE_MIN_RECORDS;
+	}
+	return MANY_USER_ACTIVE_EDITING_MIN_RECORDS;
+}
 const COMMON_BLOCK_MIN_RECORDS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_COMMON_BLOCK_MIN_RECORDS',
 	25
@@ -448,6 +536,8 @@ const REAL_USER_EDITING_ACTION_LABELS = [
 	'ui-composition-paragraph',
 	'ui-toolbar-format-paragraph',
 	'ui-table-cell-edit',
+	'ui-add-note',
+	'ui-note-thread-lifecycle',
 	'reload-post-action',
 ];
 const REAL_USER_DUPLICATE_FAMILY_HOLD_GROUPS = [
@@ -467,6 +557,7 @@ const PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS = [
 	'novelty-ws-revision-recovery',
 	'novelty-ws-async-server-blocks',
 	'novelty-ws-collaboration-ui-signals',
+	...MANY_USER_ACTIVE_EDITING_GROUPS,
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-thirty-user-lifecycle',
 ];
@@ -499,6 +590,21 @@ const GROUP_SCOPED_PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_FAMILIES = new Map( [
 	],
 	[ 'novelty-ws-async-server-blocks', new Set( [ 'unknown' ] ) ],
 	[ 'novelty-ws-collaboration-ui-signals', new Set( [ 'assertion' ] ) ],
+	[ 'novelty-ws-many-user-active-editing', new Set( [ 'assertion' ] ) ],
+	[ 'novelty-ws-twelve-user-active-rich-text', new Set( [ 'assertion' ] ) ],
+	[ 'novelty-ws-thirty-user-active-editing', new Set( [ 'assertion' ] ) ],
+	[
+		'novelty-ws-visible-delete-active-editing',
+		new Set( [ 'assertion' ] ),
+	],
+	[
+		'novelty-ws-code-editor-embed-stability-active-editing',
+		new Set( [ 'assertion' ] ),
+	],
+	[
+		'novelty-ws-nested-awareness-active-editing',
+		new Set( [ 'assertion' ] ),
+	],
 	[ 'novelty-ws-many-user-lifecycle', new Set( [ 'assertion' ] ) ],
 	[ 'novelty-ws-many-user-lifecycle-completion', new Set( [ 'assertion' ] ) ],
 	[ 'novelty-ws-thirty-user-lifecycle', new Set( [ 'assertion' ] ) ],
@@ -509,18 +615,44 @@ const ACTION_COVERAGE_GROUPS = {
 	'edit-paragraph': [ 'novelty-ws-structure' ],
 	'delete-block': [ 'novelty-ws-structure' ],
 	'edit-title': [ 'novelty-ws-lifecycle' ],
+	'edit-excerpt': [ 'novelty-ws-post-field-boundary-active-editing' ],
 	'insert-heading': [ 'novelty-ws-structure' ],
 	'move-block': [ 'novelty-ws-structure' ],
-	'concurrent-paragraphs': [ 'novelty-ws-lifecycle' ],
+	'concurrent-paragraphs': [
+		'novelty-ws-lifecycle',
+		...MANY_USER_ACTIVE_EDITING_GROUPS,
+	],
+	'concurrent-same-paragraph': [
+		'novelty-ws-contention-active-editing',
+		...MANY_USER_ACTIVE_EDITING_GROUPS,
+	],
+	'browser-lifecycle-churn': [
+		'novelty-ws-reconnect-background-active-editing',
+		...MANY_USER_ACTIVE_EDITING_GROUPS,
+	],
 	'assert-presence-list': [
 		'novelty-ws-collaboration-ui-signals',
+		...MANY_USER_ACTIVE_EDITING_GROUPS,
 		'novelty-ws-many-user-lifecycle',
 		'novelty-ws-many-user-lifecycle-completion',
 	],
 	'assert-selection-cursor': [
 		'novelty-ws-collaboration-ui-signals',
+		...MANY_USER_ACTIVE_EDITING_GROUPS,
 		'novelty-ws-many-user-lifecycle',
 		'novelty-ws-many-user-lifecycle-completion',
+	],
+	'assert-nested-table-selection-cursor': [
+		'novelty-ws-nested-awareness-active-editing',
+		...MANY_USER_ACTIVE_EDITING_GROUPS,
+	],
+	'ui-delete-visible-remote-block': [
+		'novelty-ws-visible-delete-active-editing',
+		...MANY_USER_ACTIVE_EDITING_GROUPS,
+	],
+	'code-editor-content-only-update': [
+		'novelty-ws-code-editor-embed-stability-active-editing',
+		...MANY_USER_ACTIVE_EDITING_GROUPS,
 	],
 	'edit-formatted-paragraph-at-cursor': [ 'novelty-ws-parser-serialization' ],
 	'edit-rich-text-pair-block': [ 'novelty-ws-parser-serialization' ],
@@ -567,6 +699,15 @@ const ACTION_COVERAGE_GROUPS = {
 	'ui-composition-paragraph': [ 'novelty-ws-real-user-rich-text' ],
 	'ui-toolbar-format-paragraph': [ 'novelty-ws-real-user-rich-text' ],
 	'ui-table-cell-edit': [ 'novelty-ws-real-user-rich-text' ],
+	'ui-add-note': [
+		'novelty-ws-many-user-active-editing',
+		'novelty-ws-twelve-user-active-rich-text',
+		'novelty-ws-notes-lifecycle-active-editing',
+	],
+	'ui-note-thread-lifecycle': [
+		'novelty-ws-notes-lifecycle-active-editing',
+		...MANY_USER_ACTIVE_EDITING_GROUPS,
+	],
 	'reload-post-action': [
 		'novelty-ws-real-user-save-reload',
 		'novelty-ws-real-user-editing',
@@ -576,7 +717,7 @@ const ACTION_COVERAGE_GROUPS = {
 	'insert-media-cross-entity-block': [ 'novelty-ws-media-cross-entity' ],
 };
 const REQUIRED_ACTION_LABELS = Object.keys( ACTION_COVERAGE_GROUPS );
-const EXPANSION_POLICY_VERSION = 18;
+const EXPANSION_POLICY_VERSION = 20;
 
 const WS_ENV_DEFAULTS = {
 	GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
@@ -622,6 +763,41 @@ const PROFILE_BY_GROUP = {
 	'novelty-ws-many-user-lifecycle': 'many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion': 'many-user-lifecycle',
 	'novelty-ws-thirty-user-lifecycle': 'many-user-lifecycle',
+	'novelty-ws-many-user-active-editing': MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-twelve-user-active-rich-text':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-thirty-user-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-thirty-user-active-editing-strict':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-mixed-identity-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-contention-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-persistence-race-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-reconnect-background-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-notes-lifecycle-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-post-field-boundary-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-visible-delete-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-code-editor-embed-stability-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-nested-awareness-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-http-many-user-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-http-compaction-413-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-same-user-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-revision-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
+	'novelty-ws-publish-active-editing':
+		MANY_USER_ACTIVE_EDITING_PROFILE,
 	'novelty-ws-collaboration-ui-signals': 'collaboration-ui-signals',
 	'novelty-ws-structure': 'structure',
 	'novelty-ws-three-user-late-join': 'three-user-late-join',
@@ -656,6 +832,7 @@ const HIGH_VALUE_EXPANSION_GROUPS = [
 	'novelty-http-table-stale-snapshot',
 	'novelty-http-title-reload-convergence',
 	'novelty-http-existing-post-crdt-metadata',
+	...MANY_USER_ACTIVE_EDITING_GROUPS,
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-thirty-user-lifecycle',
@@ -683,6 +860,7 @@ const PRODUCTIVE_FALLBACK_GROUPS = [
 	'novelty-http-table-stale-snapshot',
 	'novelty-http-title-reload-convergence',
 	'novelty-http-existing-post-crdt-metadata',
+	...MANY_USER_ACTIVE_EDITING_GROUPS,
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-thirty-user-lifecycle',
@@ -710,6 +888,16 @@ const DEFAULT_REQUIRED_COVERAGE_BREADTH_GROUPS = [
 	'novelty-http-table-stale-snapshot',
 	'novelty-http-title-reload-convergence',
 	'novelty-http-existing-post-crdt-metadata',
+	'novelty-ws-many-user-active-editing',
+	'novelty-ws-twelve-user-active-rich-text',
+	'novelty-ws-thirty-user-active-editing',
+	'novelty-http-many-user-active-editing',
+	'novelty-ws-visible-delete-active-editing',
+	'novelty-ws-code-editor-embed-stability-active-editing',
+	'novelty-ws-nested-awareness-active-editing',
+	'novelty-ws-same-user-active-editing',
+	'novelty-ws-revision-active-editing',
+	'novelty-ws-publish-active-editing',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-thirty-user-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
@@ -747,9 +935,28 @@ const MATERIALIZATION_FLOOR_GROUPS = [
 	'novelty-http-title-reload-convergence',
 	'novelty-http-existing-post-crdt-metadata',
 	'novelty-ws-collaboration-ui-signals',
+	...MANY_USER_ACTIVE_EDITING_GROUPS,
 ];
 const ZERO_COVERAGE_PRIORITY_GROUPS = [
+	'novelty-http-many-user-active-editing',
+	'novelty-ws-same-user-active-editing',
+	'novelty-ws-revision-active-editing',
+	'novelty-ws-publish-active-editing',
+	'novelty-ws-thirty-user-active-editing',
+	'novelty-ws-thirty-user-active-editing-strict',
+	'novelty-ws-mixed-identity-active-editing',
+	'novelty-ws-contention-active-editing',
+	'novelty-ws-persistence-race-active-editing',
+	'novelty-ws-reconnect-background-active-editing',
+	'novelty-ws-notes-lifecycle-active-editing',
+	'novelty-ws-post-field-boundary-active-editing',
+	'novelty-ws-visible-delete-active-editing',
+	'novelty-ws-code-editor-embed-stability-active-editing',
+	'novelty-ws-nested-awareness-active-editing',
+	'novelty-http-compaction-413-active-editing',
 	'novelty-ws-thirty-user-lifecycle',
+	'novelty-ws-twelve-user-active-rich-text',
+	'novelty-ws-many-user-active-editing',
 	'novelty-ws-collaboration-ui-signals',
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-many-user-lifecycle',
@@ -766,6 +973,24 @@ const DEFAULT_SUCCESS_DEFICIT_BOOTSTRAP_GROUPS = [
 	'novelty-ws-parser-transform',
 	'novelty-ws-multi-reload-lifecycle',
 	'novelty-ws-collaboration-ui-signals',
+	'novelty-ws-many-user-active-editing',
+	'novelty-ws-twelve-user-active-rich-text',
+	'novelty-ws-thirty-user-active-editing',
+	'novelty-ws-thirty-user-active-editing-strict',
+	'novelty-ws-mixed-identity-active-editing',
+	'novelty-ws-contention-active-editing',
+	'novelty-ws-persistence-race-active-editing',
+	'novelty-ws-reconnect-background-active-editing',
+	'novelty-ws-notes-lifecycle-active-editing',
+	'novelty-ws-post-field-boundary-active-editing',
+	'novelty-ws-visible-delete-active-editing',
+	'novelty-ws-code-editor-embed-stability-active-editing',
+	'novelty-ws-nested-awareness-active-editing',
+	'novelty-http-many-user-active-editing',
+	'novelty-http-compaction-413-active-editing',
+	'novelty-ws-same-user-active-editing',
+	'novelty-ws-revision-active-editing',
+	'novelty-ws-publish-active-editing',
 	'novelty-ws-media-cross-entity',
 	'novelty-ws-three-user-late-join',
 	'novelty-ws-same-user-lifecycle',
@@ -808,11 +1033,10 @@ const BENCHMARK_CANARY_ZERO_COVERAGE_EVICTION_ORDER = [
 	'novelty-http-same-user-stale-draft',
 	'novelty-http-table-stale-snapshot',
 ];
-const ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS =
-	getPositiveIntegerEnv(
-		'RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS',
-		1
-	);
+const ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS',
+	1
+);
 const BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS',
 	1
@@ -1482,6 +1706,728 @@ const PROFILE_GROUPS = [
 		},
 	},
 	{
+		name: 'novelty-ws-many-user-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1220001,
+		stepCount: 18,
+		lanes: 2,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6,12',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '8,14',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,9,15',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '512',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-title,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,concurrent-paragraphs,ui-format-paragraph,ui-toolbar-format-paragraph,ui-table-cell-edit,ui-add-note,ui-undo-redo-paragraph,ui-composition-paragraph,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-twelve-user-active-rich-text',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1230001,
+		stepCount: 20,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '7,13',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '6,14',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4,10,16',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '50',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-cut-copy-paragraph,concurrent-paragraphs,ui-toolbar-format-paragraph,ui-table-cell-edit,ui-add-note,ui-undo-redo-paragraph,ui-composition-paragraph,assert-selection-cursor,ui-type-title',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-thirty-user-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1240001,
+		stepCount: 8,
+		lanes: 1,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '4',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '28',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '5',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,7',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '50',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '1536',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'shadow',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-paragraph,ui-paste-paragraph,ui-list-indent,ui-link-paragraph,concurrent-paragraphs,ui-format-paragraph,ui-table-cell-edit,ui-undo-redo-paragraph,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '2400000',
+			GUTENBERG_RTC_TEST_WS_MAX_LISTENERS: '100',
+			NODE_OPTIONS: '--max-old-space-size=24576',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '120000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '600000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '2400000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '2',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'2',
+		},
+	},
+	{
+		name: 'novelty-http-many-user-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		transport: 'http',
+		startSeed: 1250001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '64',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-table-cell-edit,ui-add-note,concurrent-paragraphs,ui-format-paragraph,assert-selection-cursor,ui-type-title',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			GUTENBERG_RTC_TEST_HTTP_MAX_CLIENTS_PER_ROOM: '64',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-same-user-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1260001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE: 'same-user',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,concurrent-paragraphs,ui-format-paragraph,ui-table-cell-edit,ui-add-note,assert-selection-cursor,ui-type-title',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-revision-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1270001,
+		stepCount: 16,
+		lanes: 1,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_ENABLE_REVISION_RESTORE_PROBE: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,12',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,14',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-title,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-format-paragraph,concurrent-paragraphs,ui-toolbar-format-paragraph,ui-table-cell-edit,ui-undo-redo-paragraph,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_ENABLE_REVISION_RESTORE_PROBE: '1',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-publish-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1280001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH: '1',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-title,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-format-paragraph,ui-table-cell-edit,concurrent-paragraphs,ui-undo-redo-paragraph,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-thirty-user-active-editing-strict',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1290001,
+		stepCount: 8,
+		lanes: 1,
+		collectCdpCoverage: false,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '4',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '28',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '5',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '4',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,7',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '50',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '2048',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-paragraph,ui-paste-paragraph,ui-list-indent,ui-link-paragraph,edit-excerpt,concurrent-paragraphs,ui-format-paragraph,ui-table-cell-edit,browser-lifecycle-churn,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '2400000',
+			GUTENBERG_RTC_TEST_WS_MAX_LISTENERS: '100',
+			NODE_OPTIONS: '--max-old-space-size=24576',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '120000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '600000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '2400000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '2',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'2',
+		},
+	},
+	{
+		name: 'novelty-ws-mixed-identity-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1300001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_MODE:
+				'mixed-same-and-distinct',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '6',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,edit-excerpt,ui-format-paragraph,ui-table-cell-edit,ui-note-thread-lifecycle,browser-lifecycle-churn,assert-selection-cursor,ui-type-title',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-contention-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1310001,
+		stepCount: 12,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,10',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,11',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '50',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '1024',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-same-paragraph,ui-type-paragraph,concurrent-same-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-format-paragraph,ui-table-cell-edit,concurrent-same-paragraph,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1500000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '90000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '300000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1500000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-persistence-race-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1320001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_CONCURRENT_PERSISTENCE_RACE_PUBLISH: '1',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_CONCURRENT_PERSISTENCE_RACE_STEPS:
+				'4,10',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '1024',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-title,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,edit-excerpt,ui-format-paragraph,ui-table-cell-edit,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1500000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '90000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1500000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-reconnect-background-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1330001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_FORCE_WS_RECONNECT_STEPS: '4,10',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,browser-lifecycle-churn,concurrent-paragraphs,ui-type-paragraph,browser-lifecycle-churn,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-format-paragraph,ui-table-cell-edit,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-notes-lifecycle-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1340001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-paragraph,ui-note-thread-lifecycle,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-note-thread-lifecycle,ui-format-paragraph,ui-table-cell-edit,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-post-field-boundary-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1350001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,edit-excerpt,ui-type-title,ui-type-paragraph,edit-excerpt,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-format-paragraph,ui-table-cell-edit,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-http-compaction-413-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		transport: 'http',
+		startSeed: 1360001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_BODY_TOO_LARGE_STEPS: '4,10',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '96',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '1024',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,edit-excerpt,ui-format-paragraph,ui-table-cell-edit,concurrent-paragraphs,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_SOFT_DISCOVERY_BOOTSTRAP: '1',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1500000',
+			GUTENBERG_RTC_TEST_HTTP_MAX_CLIENTS_PER_ROOM: '64',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '90000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '300000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1500000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-visible-delete-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1370001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,ui-delete-visible-remote-block,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-delete-visible-remote-block,ui-format-paragraph,ui-table-cell-edit,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-code-editor-embed-stability-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1380001,
+		stepCount: 14,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '4',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '6',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '5,11',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3,8,12',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '32',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '768',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,code-editor-content-only-update,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,code-editor-content-only-update,ui-format-paragraph,ui-table-cell-edit,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '60000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '240000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1200000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
+		name: 'novelty-ws-nested-awareness-active-editing',
+		actionProfile: MANY_USER_ACTIVE_EDITING_PROFILE,
+		startSeed: 1390001,
+		stepCount: 16,
+		lanes: 1,
+		collectCdpCoverage: true,
+		env: {
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
+			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
+			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
+			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '7',
+			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '6,13',
+			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4,10,15',
+			GUTENBERG_RTC_BROWSER_INITIAL_CONTENT_PROFILE: 'base-seeded',
+			GUTENBERG_RTC_BROWSER_LATE_JOIN_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_LARGE_DOCUMENT_BLOCKS: '50',
+			GUTENBERG_RTC_BROWSER_LIFECYCLE_RELOAD_COUNT: '2',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MAX_LIVE: '1024',
+			GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE: 'fail',
+			GUTENBERG_RTC_BROWSER_REAL_USER_EDITING_SEQUENCE:
+				'assert-presence-list,concurrent-paragraphs,edit-table-array-attributes,assert-nested-table-selection-cursor,ui-type-paragraph,ui-paste-paragraph,ui-link-paragraph,ui-list-indent,ui-table-cell-edit,assert-nested-table-selection-cursor,ui-format-paragraph,assert-selection-cursor',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION: '1',
+			GUTENBERG_RTC_BROWSER_RELOAD_POST_ACTION_KIND: 'format',
+			GUTENBERG_RTC_BROWSER_SAVE_CHECKPOINT_COUNT: '3',
+			GUTENBERG_RTC_BROWSER_TEST_TIMEOUT_MS: '1500000',
+			RTC_FUZZ_BOOTSTRAP_STALL_RECHECKS: '1',
+			RTC_FUZZ_CONVERGENCE_TIMEOUT_MS: '90000',
+			RTC_FUZZ_DISCOVERY_TIMEOUT_MS: '300000',
+			RTC_FUZZ_RUN_TIMEOUT_MS: '1500000',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_MIN_FAILURES: '3',
+			RTC_FUZZ_SUPERVISOR_STARTUP_STALL_GUARD_NO_PRODUCT_MIN_FAILURES:
+				'3',
+		},
+	},
+	{
 		name: 'novelty-ws-collaboration-ui-signals',
 		actionProfile: 'collaboration-ui-signals',
 		startSeed: 1170001,
@@ -1518,9 +2464,11 @@ const PROFILE_GROUPS = [
 				'ui-type-paragraph,ui-type-title,append-paragraph,insert-heading,concurrent-paragraphs',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '20',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '8,18,28',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '6,14,24',
@@ -1551,9 +2499,11 @@ const PROFILE_GROUPS = [
 				'ui-type-paragraph,ui-type-title,append-paragraph,insert-heading,concurrent-paragraphs',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
+			GUTENBERG_RTC_BROWSER_AUTOSAVE_CHECKPOINT_COUNT: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_PUBLISH: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
+			GUTENBERG_RTC_BROWSER_FORCE_AUTOSAVE_STEPS: '8',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_RELOAD_STEPS: '8',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4,10',
@@ -2057,8 +3007,9 @@ function addBenchmarkCanaryGroupsForCase( groups, benchmarkCase ) {
 	if ( primaryGroup ) {
 		groups.add( primaryGroup );
 	}
-	for ( const group of
-		BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE[ benchmarkCase ] ?? [] ) {
+	for ( const group of BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE[
+		benchmarkCase
+	] ?? [] ) {
 		groups.add( group );
 	}
 }
@@ -2111,17 +3062,14 @@ function isBenchmarkCanaryForcedGroup( group ) {
 }
 
 function getBenchmarkCanaryFeedbackReason( group ) {
-	const matchingRows = benchmarkCanaryFeedbackRows.filter(
-		( row ) => {
-			const benchmarkCase = getBenchmarkCanaryCase( row );
-			return [
-				BENCHMARK_CANARY_GROUP_BY_CASE[ benchmarkCase ],
-				...( BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE[
-					benchmarkCase
-				] ?? [] ),
-			].includes( group );
-		}
-	);
+	const matchingRows = benchmarkCanaryFeedbackRows.filter( ( row ) => {
+		const benchmarkCase = getBenchmarkCanaryCase( row );
+		return [
+			BENCHMARK_CANARY_GROUP_BY_CASE[ benchmarkCase ],
+			...( BENCHMARK_CANARY_ADDITIONAL_GROUPS_BY_CASE[ benchmarkCase ] ??
+				[] ),
+		].includes( group );
+	} );
 	if ( matchingRows.length === 0 ) {
 		return null;
 	}
@@ -2385,9 +3333,12 @@ function recordSupervisorGroupPublicationNoiseBlock( group, block ) {
 		pause?.reason ?? block?.reason ?? '',
 		pause?.family ?? block?.metadata?.family ?? '',
 	].join( '|' );
-	const markerKey = `${ block?.action ?? 'block-supervisor-group' }:${ group }`;
+	const markerKey = `${
+		block?.action ?? 'block-supervisor-group'
+	}:${ group }`;
 	if (
-		state.supervisorGroupPublicationNoiseBlockMarkers[ markerKey ] === marker
+		state.supervisorGroupPublicationNoiseBlockMarkers[ markerKey ] ===
+		marker
 	) {
 		return;
 	}
@@ -2434,15 +3385,15 @@ function applyBenchmarkCanaryFeedbackStateRepair() {
 		if ( profile ) {
 			delete state.startupFailureCountsByProfile?.[ profile ];
 		}
-			state.changes.push( {
-				at: new Date().toISOString(),
-				action:
-					getStoredNoisePauseKind( bypassPause ) === 'startup-noise'
-						? 'bypass-benchmark-canary-startup-noise-cooldown'
-						: 'bypass-benchmark-canary-product-evidence-duplicate-pause',
-				group,
-				reason:
-					getBenchmarkCanaryFeedbackReason( group ) ??
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action:
+				getStoredNoisePauseKind( bypassPause ) === 'startup-noise'
+					? 'bypass-benchmark-canary-startup-noise-cooldown'
+					: 'bypass-benchmark-canary-product-evidence-duplicate-pause',
+			group,
+			reason:
+				getBenchmarkCanaryFeedbackReason( group ) ??
 				'benchmark canary feedback requires this equivalent fuzz lane',
 			sourcePauseAt: bypassPause.at,
 			sourcePauseReason: bypassPause.reason,
@@ -3158,12 +4109,12 @@ async function findCoverageFiles( roots ) {
 			return;
 		}
 
-			for ( const entry of entries ) {
-				const entryPath = path.join( dir, entry.name );
-				if ( entry.isDirectory() ) {
-					if ( shouldSkipArtifactScanDir( entry.name ) ) {
-						continue;
-					}
+		for ( const entry of entries ) {
+			const entryPath = path.join( dir, entry.name );
+			if ( entry.isDirectory() ) {
+				if ( shouldSkipArtifactScanDir( entry.name ) ) {
+					continue;
+				}
 				if (
 					! INCLUDE_RECHECK_COVERAGE &&
 					( entry.name.startsWith( 'analysis-' ) ||
@@ -3202,12 +4153,12 @@ async function findSummaryFiles( roots ) {
 			return;
 		}
 
-			for ( const entry of entries ) {
-				const entryPath = path.join( dir, entry.name );
-				if ( entry.isDirectory() ) {
-					if ( shouldSkipArtifactScanDir( entry.name ) ) {
-						continue;
-					}
+		for ( const entry of entries ) {
+			const entryPath = path.join( dir, entry.name );
+			if ( entry.isDirectory() ) {
+				if ( shouldSkipArtifactScanDir( entry.name ) ) {
+					continue;
+				}
 				await walk( entryPath, depth + 1 );
 			} else if ( entry.name === 'summary.ndjson' ) {
 				files.push( entryPath );
@@ -3241,14 +4192,14 @@ async function findTriageStateFiles( roots ) {
 
 		for ( const entry of entries ) {
 			const entryPath = path.join( dir, entry.name );
-				if ( entry.isDirectory() ) {
-					if ( entry.name === '.triage-watcher' ) {
-						files.push( path.join( entryPath, 'state.json' ) );
-						continue;
-					}
-					if ( shouldSkipArtifactScanDir( entry.name ) ) {
-						continue;
-					}
+			if ( entry.isDirectory() ) {
+				if ( entry.name === '.triage-watcher' ) {
+					files.push( path.join( entryPath, 'state.json' ) );
+					continue;
+				}
+				if ( shouldSkipArtifactScanDir( entry.name ) ) {
+					continue;
+				}
 				await walk( entryPath, depth + 1 );
 			}
 		}
@@ -3299,9 +4250,9 @@ async function findPreservedNoAnalysisRunDirs( rootDir = OUTPUT_DIR ) {
 				}
 				continue;
 			}
-				if ( shouldSkipArtifactScanDir( entry.name ) ) {
-					continue;
-				}
+			if ( shouldSkipArtifactScanDir( entry.name ) ) {
+				continue;
+			}
 			await walk( entryPath, depth + 1 );
 		}
 	}
@@ -3444,9 +4395,9 @@ async function restoreNoisePausesFromNoAnalysisSentinels(
 				restored += 1;
 				continue;
 			}
-				if ( shouldSkipArtifactScanDir( entry.name ) ) {
-					continue;
-				}
+			if ( shouldSkipArtifactScanDir( entry.name ) ) {
+				continue;
+			}
 			await walk( entryPath, depth + 1 );
 		}
 	}
@@ -5650,9 +6601,10 @@ function getActiveStartupNoiseCooldownBypass( group ) {
 			at: new Date().toISOString(),
 			action: 'clear-startup-noise-cooldown-bypass',
 			group,
-			reason: exactPause ?? historicalExactPause
-				? 'active no-product pre_action_bootstrap_stall cooldown takes precedence over startup-noise bypass state'
-				: 'stale no-product startup-noise bypass has no product-evidence cooldown to bypass',
+			reason:
+				exactPause ?? historicalExactPause
+					? 'active no-product pre_action_bootstrap_stall cooldown takes precedence over startup-noise bypass state'
+					: 'stale no-product startup-noise bypass has no product-evidence cooldown to bypass',
 			sourcePauseAt: exactPause?.at ?? historicalExactPause?.at,
 			sourcePauseReason:
 				exactPause?.reason ?? historicalExactPause?.reason,
@@ -6946,15 +7898,45 @@ function getRecordTotalBlockCount( record ) {
 	return totalBlocks;
 }
 
+function isActiveEditingActionLabel( label ) {
+	return (
+		typeof label === 'string' &&
+		label.length > 0 &&
+		! label.startsWith( 'assert-' ) &&
+		label !== 'final-ui-witness-sweep' &&
+		label !== 'ledger-live-cap'
+	);
+}
+
+function isActiveEditingOperationEvent( event ) {
+	if ( event.userIndex === undefined || event.userIndex === null ) {
+		return false;
+	}
+	if ( ! isActiveEditingActionLabel( event.actionLabel ) ) {
+		return false;
+	}
+	if (
+		typeof event.phase === 'string' &&
+		event.phase.startsWith( 'final-ui-witness-sweep' )
+	) {
+		return false;
+	}
+	return event.status === 'witnessed';
+}
+
 function getRecordActionUserCount( record ) {
 	const userIndexes = new Set();
 	for ( const action of record.actions ?? [] ) {
-		if ( action.userIndex !== undefined && action.userIndex !== null ) {
+		if (
+			isActiveEditingActionLabel( action.label ) &&
+			action.userIndex !== undefined &&
+			action.userIndex !== null
+		) {
 			userIndexes.add( String( action.userIndex ) );
 		}
 	}
 	for ( const event of record.operationEvents ?? [] ) {
-		if ( event.userIndex !== undefined && event.userIndex !== null ) {
+		if ( isActiveEditingOperationEvent( event ) ) {
 			userIndexes.add( String( event.userIndex ) );
 		}
 	}
@@ -6976,7 +7958,11 @@ function addUserDocumentConcurrencyRecord( summary, record ) {
 	summary.records += 1;
 	incrementCounter( summary.byUserCount, userCount );
 	incrementNestedCounter( summary.byProfileUserCount, profile, userCount );
-	incrementNestedCounter( summary.byTransportUserCount, transport, userCount );
+	incrementNestedCounter(
+		summary.byTransportUserCount,
+		transport,
+		userCount
+	);
 	incrementCounter( summary.byCollaboratorMode, collaboratorMode );
 	incrementCounter( summary.byActionUserCount, actionUserCount );
 	incrementNestedCounter(
@@ -6985,7 +7971,7 @@ function addUserDocumentConcurrencyRecord( summary, record ) {
 		actionUserCount
 	);
 
-	for ( const threshold of [ 2, 3, 10, 12, 30 ] ) {
+	for ( const threshold of [ 2, 3, 6, 10, 12, 30 ] ) {
 		if ( Number( userCount ) >= threshold ) {
 			incrementCounter(
 				summary.recordsWithUserCountAtLeast,
@@ -7000,7 +7986,10 @@ function addUserDocumentConcurrencyRecord( summary, record ) {
 		}
 	}
 
-	summary.maxUserCount = Math.max( summary.maxUserCount, Number( userCount ) );
+	summary.maxUserCount = Math.max(
+		summary.maxUserCount,
+		Number( userCount )
+	);
 	summary.maxActionUserCount = Math.max(
 		summary.maxActionUserCount,
 		Number( actionUserCount )
@@ -7039,7 +8028,7 @@ function addUserDocumentConcurrencyRecord( summary, record ) {
 		actionUserCount
 	);
 
-	for ( const threshold of [ 2, 3, 10, 12, 30 ] ) {
+	for ( const threshold of [ 2, 3, 6, 10, 12, 30 ] ) {
 		if ( Number( userCount ) >= threshold ) {
 			incrementCounter(
 				summary.successfulRecordsWithUserCountAtLeast,
@@ -7067,7 +8056,7 @@ function addUserDocumentConcurrencyRecord( summary, record ) {
 		);
 	}
 
-	for ( const userThreshold of [ 2, 3, 10, 12, 30 ] ) {
+	for ( const userThreshold of [ 2, 3, 6, 10, 12, 30 ] ) {
 		for ( const blockThreshold of [ 10, 50, 100 ] ) {
 			if (
 				Number( userCount ) >= userThreshold &&
@@ -7495,6 +8484,11 @@ function featureKeysForRecord( record ) {
 	const saveCount = record.saveCheckpointSteps?.length ?? 0;
 	const autosaveCount = record.autosaveSteps?.length ?? 0;
 	const reloadCount = record.reloads?.length ?? 0;
+	const actionLabels = ( record.actions ?? [] ).map(
+		( action ) => action.label
+	);
+	const actionSet = new Set( actionLabels );
+	const actionUserCount = getRecordActionUserCount( record );
 
 	keys.add( `profile:${ record.actionProfile ?? 'unknown' }` );
 	keys.add( `transport:${ record.transport ?? 'unknown' }` );
@@ -7514,6 +8508,9 @@ function featureKeysForRecord( record ) {
 		keys.add( 'soft-discovery-bootstrap:true' );
 	}
 	keys.add( `users:${ record.userCount ?? 0 }` );
+	if ( record.transport === 'http' && ( record.userCount ?? 0 ) > 3 ) {
+		keys.add( 'http-max-clients-override:true' );
+	}
 	keys.add( `initial:${ record.initialContentProfile ?? 'unknown' }` );
 	keys.add( `step-count:${ Math.min( record.stepCount ?? 0, 48 ) }` );
 	keys.add( `depth:${ Math.min( blockStats.maxDepth ?? 0, 4 ) }` );
@@ -7526,15 +8523,44 @@ function featureKeysForRecord( record ) {
 	if ( ( record.autosaveSteps ?? [] ).some( ( step ) => step.local ) ) {
 		keys.add( 'local-autosave:true' );
 	}
+	keys.add( `action-users:${ actionUserCount }` );
+	for ( const threshold of MANY_USER_ACTIVE_EDITING_THRESHOLDS ) {
+		if ( actionUserCount >= threshold ) {
+			keys.add( `action-users-at-least:${ threshold }` );
+		}
+	}
+	const hasLargeDocument =
+		( record.largeDocumentBlocks ?? 0 ) >= 50 ||
+		( record.initialContentProfile ?? '' ).startsWith(
+			'large-document-'
+		) ||
+		( record.invariantSnapshots ?? [] ).some(
+			( snapshot ) => ( snapshot.totalBlockCount ?? 0 ) >= 50
+		);
+	if (
+		record.status === 'passed' &&
+		record.transport === 'http' &&
+		record.actionProfile === 'large-post-three-user-http-lifecycle' &&
+		( record.userCount ?? 0 ) >= 3 &&
+		hasLargeDocument &&
+		saveCount >= 2 &&
+		autosaveCount >= 1 &&
+		reloadCount >= 2 &&
+		( record.operationLedger?.mode ?? 'unknown' ) === 'fail' &&
+		( record.historyEvents ?? [] ).some(
+			( event ) =>
+				event.phase === 'final-persistence-publish' &&
+				event.status === 'ok'
+		)
+	) {
+		keys.add( LARGE_POST_THREE_USER_HTTP_LIFECYCLE_FEATURE );
+	}
 
 	if (
 		record.actionProfile === 'real-user-editing' ||
+		record.actionProfile === MANY_USER_ACTIVE_EDITING_PROFILE ||
 		record.actionProfile === 'large-post-three-user-http-lifecycle'
 	) {
-		const actionLabels = ( record.actions ?? [] ).map(
-			( action ) => action.label
-		);
-		const actionSet = new Set( actionLabels );
 		if (
 			saveCount > 0 &&
 			reloadCount > 0 &&
@@ -7566,6 +8592,311 @@ function featureKeysForRecord( record ) {
 				.slice( 0, 6 )
 				.join( '>' ) }`
 		);
+	}
+
+	if (
+		record.status === 'passed' &&
+		record.actionProfile === MANY_USER_ACTIVE_EDITING_PROFILE
+	) {
+		const userCount = record.userCount ?? 0;
+		const hasLateJoin = ( record.lifecycleEvents ?? [] ).some(
+			( event ) => event.type === 'late-join'
+		);
+		const hasFinalUiWitness = ( record.historyEvents ?? [] ).some(
+			( event ) =>
+				event.phase === 'final-ui-witness-sweep' &&
+				event.status === 'ok'
+		);
+		const hasPresence = ( record.historyEvents ?? [] ).some(
+			( event ) =>
+				event.phase === 'presence-list' && event.status === 'ok'
+		);
+		const hasRemoteSelection = ( record.historyEvents ?? [] ).some(
+			( event ) =>
+				event.phase === 'remote-selection-cursor' &&
+				event.status === 'ok'
+		);
+		const hasRichListActions =
+			actionSet.has( 'ui-paste-paragraph' ) &&
+			actionSet.has( 'ui-link-paragraph' ) &&
+			actionSet.has( 'ui-list-indent' );
+		const hasNoteAction =
+			actionSet.has( 'ui-add-note' ) &&
+			( record.historyEvents ?? [] ).some(
+				( event ) =>
+					event.phase === 'collaboration-note-remote-visible' &&
+					event.status === 'ok'
+			);
+		const hasRevisionRestore =
+			record.revisionRestore?.eligible === true &&
+			( record.historyEvents ?? [] ).some(
+				( event ) =>
+					event.phase === 'revision-restore' &&
+					event.status === 'ok'
+			);
+		const hasFinalPublish = ( record.historyEvents ?? [] ).some(
+			( event ) =>
+				event.phase === 'final-persistence-publish' &&
+				event.status === 'ok'
+		);
+		const hasHistoryOk = ( phase ) =>
+			( record.historyEvents ?? [] ).some(
+				( event ) => event.phase === phase && event.status === 'ok'
+			);
+		const hasSameBlockContention =
+			actionSet.has( 'concurrent-same-paragraph' ) &&
+			hasHistoryOk( 'same-block-contention' );
+		const hasNoteThreadLifecycle =
+			actionSet.has( 'ui-note-thread-lifecycle' ) &&
+			hasHistoryOk( 'collaboration-note-reply-remote-visible' ) &&
+			hasHistoryOk( 'collaboration-note-resolve' ) &&
+			hasHistoryOk( 'collaboration-note-reopen' ) &&
+			hasHistoryOk( 'collaboration-note-delete' );
+		const hasConcurrentPersistenceRace = hasHistoryOk(
+			'concurrent-persistence-race'
+		);
+		const hasHttpBodyTooLargeCompaction = hasHistoryOk(
+			'http-body-too-large-compaction'
+		);
+		const hasVisibleRemoteDelete =
+			actionSet.has( 'ui-delete-visible-remote-block' ) &&
+			hasHistoryOk( 'visible-remote-delete' );
+		const hasCodeEditorEmbedStability =
+			actionSet.has( 'code-editor-content-only-update' ) &&
+			hasHistoryOk( 'code-editor-content-only-embed-stability' );
+		const hasNestedTableAwareness =
+			actionSet.has( 'assert-nested-table-selection-cursor' ) &&
+			hasHistoryOk( 'nested-table-selection-cursor' );
+		const hasWsReconnect = hasHistoryOk( 'ws-reconnect-requested' );
+		const hasBrowserLifecycleChurn =
+			actionSet.has( 'browser-lifecycle-churn' ) &&
+			hasHistoryOk( 'browser-lifecycle-churn' );
+		const hasPostFieldBoundary =
+			actionSet.has( 'edit-excerpt' ) &&
+			actionSet.has( 'ui-type-title' ) &&
+			( actionSet.has( 'ui-type-paragraph' ) ||
+				actionSet.has( 'concurrent-paragraphs' ) );
+		const hasLifecycle =
+			saveCount >= 1 && reloadCount >= 1 && hasLateJoin;
+		const hasStrictPersistence =
+			( record.operationLedger?.mode ?? 'off' ) !== 'off' &&
+			record.disableSyncFaults !== true;
+		const hasFailLedger =
+			( record.operationLedger?.mode ?? 'off' ) === 'fail';
+
+		for ( const threshold of MANY_USER_ACTIVE_EDITING_THRESHOLDS ) {
+			if (
+				userCount >= threshold &&
+				actionUserCount >= threshold &&
+				hasLifecycle &&
+				hasStrictPersistence
+			) {
+				keys.add(
+					`cross-product:active-editors-lifecycle:users-${ threshold }`
+				);
+			}
+			if (
+				userCount >= threshold &&
+				actionUserCount >= threshold &&
+				hasLifecycle &&
+				hasRichListActions &&
+				autosaveCount >= 1 &&
+				hasFinalUiWitness
+			) {
+				keys.add(
+					`cross-product:active-editors-rich-list-lifecycle:users-${ threshold }`
+				);
+			}
+			if (
+				userCount >= threshold &&
+				actionUserCount >= threshold &&
+				hasPresence &&
+				hasRemoteSelection
+			) {
+				keys.add(
+					`cross-product:active-editors-ui-signals:users-${ threshold }`
+				);
+			}
+			if (
+				userCount >= threshold &&
+				actionUserCount >= threshold &&
+				hasLargeDocument &&
+				hasLifecycle
+			) {
+				keys.add(
+					`cross-product:active-editors-large-doc:users-${ threshold }`
+				);
+			}
+		}
+		for ( const threshold of MANY_USER_ACTIVE_EDITING_NOTE_THRESHOLDS ) {
+			if (
+				userCount >= threshold &&
+				actionUserCount >= threshold &&
+				hasLifecycle &&
+				hasNoteAction
+			) {
+				keys.add(
+					`cross-product:active-editors-notes-lifecycle:users-${ threshold }`
+				);
+			}
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			record.transport === 'http' &&
+			hasLifecycle &&
+			hasStrictPersistence
+		) {
+			keys.add(
+				'cross-product:active-editors-http-lifecycle:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			record.collaboratorMode === 'same-user' &&
+			hasLifecycle &&
+			hasStrictPersistence
+		) {
+			keys.add(
+				'cross-product:active-editors-same-user-lifecycle:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			record.collaboratorMode === 'mixed-same-and-distinct' &&
+			hasLifecycle &&
+			hasStrictPersistence
+		) {
+			keys.add(
+				'cross-product:active-editors-mixed-identity-lifecycle:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			hasLifecycle &&
+			hasRevisionRestore
+		) {
+			keys.add(
+				'cross-product:active-editors-revision-restore:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			hasLifecycle &&
+			hasFinalPublish
+		) {
+			keys.add(
+				'cross-product:active-editors-publish-lifecycle:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			hasLifecycle &&
+			hasSameBlockContention
+		) {
+			keys.add(
+				'cross-product:active-editors-same-block-contention:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			hasLifecycle &&
+			hasNoteThreadLifecycle
+		) {
+			keys.add(
+				'cross-product:active-editors-note-thread-lifecycle:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			hasLifecycle &&
+			hasConcurrentPersistenceRace
+		) {
+			keys.add(
+				'cross-product:active-editors-persistence-race:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			record.transport === 'ws' &&
+			hasLifecycle &&
+			hasWsReconnect &&
+			hasBrowserLifecycleChurn
+		) {
+			keys.add(
+				'cross-product:active-editors-ws-reconnect-background:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			record.transport === 'http' &&
+			hasLifecycle &&
+			hasHttpBodyTooLargeCompaction &&
+			hasLargeDocument
+		) {
+			keys.add(
+				'cross-product:active-editors-http-413-compaction:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			hasLifecycle &&
+			hasPostFieldBoundary
+		) {
+			keys.add(
+				'cross-product:active-editors-post-field-boundary:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			hasLifecycle &&
+			hasVisibleRemoteDelete
+		) {
+			keys.add(
+				'cross-product:active-editors-visible-remote-delete:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			hasLifecycle &&
+			hasCodeEditorEmbedStability
+		) {
+			keys.add(
+				'cross-product:active-editors-code-editor-embed-stability:users-6'
+			);
+		}
+		if (
+			userCount >= 6 &&
+			actionUserCount >= 6 &&
+			hasLifecycle &&
+			hasNestedTableAwareness
+		) {
+			keys.add(
+				'cross-product:active-editors-nested-table-awareness:users-6'
+			);
+		}
+		if (
+			userCount >= 30 &&
+			actionUserCount >= 30 &&
+			hasLifecycle &&
+			hasFailLedger
+		) {
+			keys.add(
+				'cross-product:active-editors-strict-ledger:users-30'
+			);
+		}
 	}
 
 	for ( const type of blockStats.types ?? [] ) {
@@ -8005,6 +9336,34 @@ function getBootstrapZeroCoveragePriorityGroups() {
 		}
 	};
 
+	add(
+		getFeatureCount( 'cross-product:active-editors-lifecycle:users-30' ) ===
+			0 ||
+			getUserDocumentConcurrencyCount(
+				'successfulRecordsWithActionUserCountAtLeast',
+				30
+			) === 0,
+		'novelty-ws-thirty-user-active-editing'
+	);
+	add(
+		getFeatureCount( 'cross-product:active-editors-rich-list-lifecycle:users-12' ) ===
+			0 ||
+			getUserDocumentConcurrencyCount(
+				'successfulRecordsWithActionUserCountAtLeast',
+				12
+			) === 0,
+		'novelty-ws-twelve-user-active-rich-text',
+		'novelty-ws-many-user-active-editing'
+	);
+	add(
+		getFeatureCount( 'cross-product:active-editors-lifecycle:users-6' ) ===
+			0 ||
+			getUserDocumentConcurrencyCount(
+				'successfulRecordsWithActionUserCountAtLeast',
+				6
+			) === 0,
+		'novelty-ws-many-user-active-editing'
+	);
 	add(
 		getFeatureCount( 'users:30' ) === 0 ||
 			getFeatureCount( 'lifecycle:late-join:users-30' ) === 0 ||
@@ -8676,6 +10035,211 @@ function createCoverageGuidance( novelty ) {
 			rationale:
 				'paste, link, list, composition, toolbar, and cut/copy paths need real UI coverage',
 		},
+		...MANY_USER_ACTIVE_EDITING_THRESHOLDS.flatMap( ( threshold ) => [
+			{
+				id: `cross-product:active-editors-lifecycle:users-${ threshold }`,
+				label: `${ threshold } active editors with lifecycle`,
+				target: getManyUserActiveEditingTarget( threshold ),
+				groups:
+					threshold >= 30
+						? [
+								'novelty-ws-thirty-user-active-editing',
+								'novelty-ws-thirty-user-active-editing-strict',
+						  ]
+						: MANY_USER_ACTIVE_EDITING_GROUPS,
+				rationale:
+					'large RTC rooms must prove that connected users actually edited and completed save/reload/late-join lifecycle coverage',
+			},
+			{
+				id: `cross-product:active-editors-rich-list-lifecycle:users-${ threshold }`,
+				label: `${ threshold } active editors with rich text, lists, and lifecycle`,
+				target: getManyUserActiveEditingTarget( threshold ),
+				groups:
+					threshold >= 30
+						? [
+								'novelty-ws-thirty-user-active-editing',
+								'novelty-ws-thirty-user-active-editing-strict',
+						  ]
+						: MANY_USER_ACTIVE_EDITING_GROUPS,
+				rationale:
+					'rich text, links, lists, autosave, reload, late join, and final UI witnesses need to happen in the same successful many-user record',
+			},
+			{
+				id: `cross-product:active-editors-ui-signals:users-${ threshold }`,
+				label: `${ threshold } active editors with presence and cursor signals`,
+				target: getManyUserActiveEditingTarget( threshold ),
+				groups:
+					threshold >= 30
+						? [
+								'novelty-ws-thirty-user-active-editing',
+								'novelty-ws-thirty-user-active-editing-strict',
+						  ]
+						: MANY_USER_ACTIVE_EDITING_GROUPS,
+				rationale:
+					'presence and remote cursor/selection correctness must be proven at realistic active-editor room sizes',
+			},
+			{
+				id: `cross-product:active-editors-large-doc:users-${ threshold }`,
+				label: `${ threshold } active editors on a large document`,
+				target: getManyUserActiveEditingTarget( threshold ),
+				groups:
+					threshold >= 30
+						? [
+								'novelty-ws-thirty-user-active-editing',
+								'novelty-ws-thirty-user-active-editing-strict',
+						  ]
+						: [
+								'novelty-ws-many-user-active-editing',
+								'novelty-ws-twelve-user-active-rich-text',
+						  ],
+				rationale:
+					'large documents and active many-user editing need to be combined instead of counted in separate lanes',
+			},
+		] ),
+		...MANY_USER_ACTIVE_EDITING_NOTE_THRESHOLDS.map( ( threshold ) => ( {
+			id: `cross-product:active-editors-notes-lifecycle:users-${ threshold }`,
+			label: `${ threshold } active editors with synced notes and lifecycle`,
+			target: threshold >= 12 ? 5 : 10,
+			groups:
+				threshold >= 12
+					? [ 'novelty-ws-twelve-user-active-rich-text' ]
+					: [
+							'novelty-ws-many-user-active-editing',
+							'novelty-ws-twelve-user-active-rich-text',
+					  ],
+			rationale:
+				'collaboration notes must be proven with active multi-user editing and save/reload/late-join lifecycle coverage',
+		} ) ),
+		{
+			id: 'cross-product:active-editors-http-lifecycle:users-6',
+			label: 'six active editors over HTTP polling lifecycle',
+			target: 10,
+			groups: [ 'novelty-http-many-user-active-editing' ],
+			rationale:
+				'HTTP polling has different ordering, freshness, and persistence failure modes than WebSocket transport and needs active-editor scale coverage',
+		},
+		{
+			id: 'http-max-clients-override:true',
+			label: 'HTTP room client-limit override exercised',
+			target: 10,
+			groups: [ 'novelty-http-many-user-active-editing' ],
+			rationale:
+				'six-user HTTP polling coverage must prove it is testing the polling transport under load instead of stopping at the default three-client room limit',
+		},
+		{
+			id: 'cross-product:active-editors-same-user-lifecycle:users-6',
+			label: 'six active same-user tabs with lifecycle',
+			target: 10,
+			groups: [ 'novelty-ws-same-user-active-editing' ],
+			rationale:
+				'same-account tabs exercise lock ownership, local storage, autosave authority, and awareness identity differently from distinct users',
+		},
+		{
+			id: 'cross-product:active-editors-mixed-identity-lifecycle:users-6',
+			label: 'six active editors with mixed same and distinct identities',
+			target: 10,
+			groups: [ 'novelty-ws-mixed-identity-active-editing' ],
+			rationale:
+				'mixed duplicate-account and distinct-account rooms exercise awareness, lock ownership, autosave authority, and collaborator identity at the same time',
+		},
+		{
+			id: 'cross-product:active-editors-revision-restore:users-6',
+			label: 'six active editors with revision restore',
+			target: 10,
+			groups: [ 'novelty-ws-revision-active-editing' ],
+			rationale:
+				'revision restore is a destructive persistence edge and should be combined with active multi-user editing instead of only two-user recovery',
+		},
+		{
+			id: 'cross-product:active-editors-publish-lifecycle:users-6',
+			label: 'six active editors with publish lifecycle',
+			target: 10,
+			groups: [ 'novelty-ws-publish-active-editing' ],
+			rationale:
+				'publish exercises status transition, REST save, locks, and final persistence paths that draft save/reload coverage can miss',
+		},
+		{
+			id: 'cross-product:active-editors-same-block-contention:users-6',
+			label: 'six active editors with same-block contention',
+			target: 10,
+			groups: [ 'novelty-ws-contention-active-editing' ],
+			rationale:
+				'same-paragraph concurrent typing is a realistic contention pattern that independent block insertion cannot cover',
+		},
+		{
+			id: 'cross-product:active-editors-note-thread-lifecycle:users-6',
+			label: 'six active editors with note reply, resolve, reopen, and delete',
+			target: 10,
+			groups: [ 'novelty-ws-notes-lifecycle-active-editing' ],
+			rationale:
+				'notes need lifecycle coverage, not only add-and-observe coverage, while active editing and save/reload are also present',
+		},
+		{
+			id: 'cross-product:active-editors-persistence-race:users-6',
+			label: 'six active editors with concurrent save/autosave/publish',
+			target: 10,
+			groups: [ 'novelty-ws-persistence-race-active-editing' ],
+			rationale:
+				'concurrent persistence operations can lose CRDT, title, excerpt, or block updates even when isolated save milestones pass',
+		},
+		{
+			id: 'cross-product:active-editors-ws-reconnect-background:users-6',
+			label: 'six active editors with WS reconnect and background churn',
+			target: 10,
+			groups: [ 'novelty-ws-reconnect-background-active-editing' ],
+			rationale:
+				'WebSocket reconnect and browser lifecycle events need to happen in the same active-editing record as save/reload coverage',
+		},
+		{
+			id: 'cross-product:active-editors-http-413-compaction:users-6',
+			label: 'six active HTTP editors with 413 compaction recovery',
+			target: 10,
+			groups: [ 'novelty-http-compaction-413-active-editing' ],
+			rationale:
+				'HTTP body-too-large compaction handling needs browser-level coverage with active users and large documents',
+		},
+		{
+			id: 'cross-product:active-editors-post-field-boundary:users-6',
+			label: 'six active editors across title, excerpt, and body',
+			target: 10,
+			groups: [ 'novelty-ws-post-field-boundary-active-editing' ],
+			rationale:
+				'title, excerpt, and block content use different editor and REST fields and need to be fuzzed together',
+		},
+		{
+			id: 'cross-product:active-editors-visible-remote-delete:users-6',
+			label: 'six active editors with visible remote block deletion',
+			target: 10,
+			groups: [ 'novelty-ws-visible-delete-active-editing' ],
+			rationale:
+				'GitHub RTC history includes visible remote-delete propagation failures, so deletion must be observed through the UI in an active many-user lifecycle record',
+		},
+		{
+			id: 'cross-product:active-editors-code-editor-embed-stability:users-6',
+			label: 'six active editors with code-editor embed stability',
+			target: 10,
+			groups: [
+				'novelty-ws-code-editor-embed-stability-active-editing',
+			],
+			rationale:
+				'GitHub RTC history includes code-editor content-only updates remounting embeds, so the fuzzer must prove embed client IDs survive remote content-only edits',
+		},
+		{
+			id: 'cross-product:active-editors-nested-table-awareness:users-6',
+			label: 'six active editors with nested table awareness',
+			target: 10,
+			groups: [ 'novelty-ws-nested-awareness-active-editing' ],
+			rationale:
+				'GitHub RTC history includes nested RichText/table awareness regressions, so cursor coverage must include table cell attribute paths in active many-user sessions',
+		},
+		{
+			id: 'cross-product:active-editors-strict-ledger:users-30',
+			label: 'thirty active editors with strict operation ledger',
+			target: 3,
+			groups: [ 'novelty-ws-thirty-user-active-editing-strict' ],
+			rationale:
+				'thirty-user active editing should have a strict canary that fails on missing operation witnesses instead of only shadow-counting them',
+		},
 		{
 			id: 'auth-session-expiry-probe:true',
 			label: 'auth/session expiry probe',
@@ -8730,6 +10294,17 @@ function createCoverageGuidance( novelty ) {
 			],
 			rationale:
 				'the large-post miss requires HTTP, three users, large content, lifecycle, and persistence in one gate',
+		},
+		{
+			id: LARGE_POST_THREE_USER_HTTP_LIFECYCLE_FEATURE,
+			label: 'strict combined HTTP large-post three-user lifecycle records',
+			target: LARGE_POST_THREE_USER_HTTP_LIFECYCLE_MIN_RECORDS,
+			groups: [
+				'novelty-http-large-post-lifecycle',
+				'novelty-http-large-post-lifecycle-completion',
+			],
+			rationale:
+				'the benchmark-like HTTP, large-post, three-user, reload, save/autosave, and strict persistence oracle conjunction must be counted as one cross-product, not as separate ingredient lanes',
 		},
 		{
 			id: 'transport-profile:http:table-stale-snapshot-http',
@@ -8853,7 +10428,10 @@ function createCoverageGuidance( novelty ) {
 		{
 			id: 'success-users:2',
 			label: 'successful two-user documents',
-			count: getUserDocumentConcurrencyCount( 'successfulByUserCount', 2 ),
+			count: getUserDocumentConcurrencyCount(
+				'successfulByUserCount',
+				2
+			),
 			target: 100,
 			groups: [
 				'novelty-ws-structure',
@@ -8866,7 +10444,10 @@ function createCoverageGuidance( novelty ) {
 		{
 			id: 'success-users:3',
 			label: 'successful three-user documents',
-			count: getUserDocumentConcurrencyCount( 'successfulByUserCount', 3 ),
+			count: getUserDocumentConcurrencyCount(
+				'successfulByUserCount',
+				3
+			),
 			target: 25,
 			groups: [
 				'novelty-ws-three-user-late-join',
@@ -8879,7 +10460,10 @@ function createCoverageGuidance( novelty ) {
 		{
 			id: 'success-users:12',
 			label: 'successful twelve-user documents',
-			count: getUserDocumentConcurrencyCount( 'successfulByUserCount', 12 ),
+			count: getUserDocumentConcurrencyCount(
+				'successfulByUserCount',
+				12
+			),
 			target: 10,
 			groups: [
 				'novelty-ws-many-user-lifecycle-completion',
@@ -8891,7 +10475,10 @@ function createCoverageGuidance( novelty ) {
 		{
 			id: 'success-users:30',
 			label: 'successful thirty-user documents',
-			count: getUserDocumentConcurrencyCount( 'successfulByUserCount', 30 ),
+			count: getUserDocumentConcurrencyCount(
+				'successfulByUserCount',
+				30
+			),
 			target: 3,
 			groups: [ 'novelty-ws-thirty-user-lifecycle' ],
 			rationale:
@@ -8928,6 +10515,61 @@ function createCoverageGuidance( novelty ) {
 			],
 			rationale:
 				'three-user coverage should prove edits from at least three participants converge',
+		},
+		{
+			id: 'success-action-users:6',
+			label: 'successful documents edited by six or more users',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsWithActionUserCountAtLeast',
+				6
+			),
+			target: 25,
+			groups: MANY_USER_ACTIVE_EDITING_GROUPS,
+			rationale:
+				'six editors is a realistic collaborative document, not an edge case; it needs a successful active-editing gate',
+		},
+		{
+			id: 'success-action-users:10',
+			label: 'successful documents edited by ten or more users',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsWithActionUserCountAtLeast',
+				10
+			),
+			target: 10,
+			groups: MANY_USER_ACTIVE_EDITING_GROUPS,
+			rationale:
+				'larger meetings/classes need proof that most participants can edit, not only watch presence updates',
+		},
+		{
+			id: 'success-action-users:12',
+			label: 'successful documents edited by twelve or more users',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsWithActionUserCountAtLeast',
+				12
+			),
+			target: 10,
+			groups: [
+				'novelty-ws-twelve-user-active-rich-text',
+				'novelty-ws-thirty-user-active-editing',
+				'novelty-ws-thirty-user-active-editing-strict',
+			],
+			rationale:
+				'twelve-user coverage must require edits from twelve distinct users in the same completed record',
+		},
+		{
+			id: 'success-action-users:30',
+			label: 'successful documents edited by thirty users',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsWithActionUserCountAtLeast',
+				30
+			),
+			target: 3,
+			groups: [
+				'novelty-ws-thirty-user-active-editing',
+				'novelty-ws-thirty-user-active-editing-strict',
+			],
+			rationale:
+				'thirty-user scale coverage must prove active editing by the whole room, not only that thirty browsers joined',
 		},
 		{
 			id: 'success-collaborator-mode:same-user',
@@ -9018,6 +10660,52 @@ function createCoverageGuidance( novelty ) {
 				'the thirty-user target should count successful thirty-user records, not generic many-user attempts',
 		},
 		{
+			id: 'success-profile-users:many-user-active-editing:6',
+			label: 'successful active-editing records with six users',
+			count: getUserDocumentConcurrencyNestedCount(
+				'successfulByProfileUserCount',
+				MANY_USER_ACTIVE_EDITING_PROFILE,
+				6
+			),
+			target: 25,
+			groups: MANY_USER_ACTIVE_EDITING_GROUPS,
+			rationale:
+				'the active-editing profile should complete realistic six-user records before scaling further',
+		},
+		{
+			id: 'success-profile-users:many-user-active-editing:12',
+			label: 'successful active-editing records with twelve users',
+			count: getUserDocumentConcurrencyNestedCount(
+				'successfulByProfileUserCount',
+				MANY_USER_ACTIVE_EDITING_PROFILE,
+				12
+			),
+			target: 10,
+			groups: [
+				'novelty-ws-twelve-user-active-rich-text',
+				'novelty-ws-thirty-user-active-editing',
+				'novelty-ws-thirty-user-active-editing-strict',
+			],
+			rationale:
+				'twelve-user active editing should be a completed record target, not inferred from separate rich-text and many-user lanes',
+		},
+		{
+			id: 'success-profile-users:many-user-active-editing:30',
+			label: 'successful active-editing records with thirty users',
+			count: getUserDocumentConcurrencyNestedCount(
+				'successfulByProfileUserCount',
+				MANY_USER_ACTIVE_EDITING_PROFILE,
+				30
+			),
+			target: 3,
+			groups: [
+				'novelty-ws-thirty-user-active-editing',
+				'novelty-ws-thirty-user-active-editing-strict',
+			],
+			rationale:
+				'thirty-user active editing should complete as its own scale smoke target',
+		},
+		{
 			id: 'success-profile-users:three-user-late-join:3',
 			label: 'successful three-user late-join records',
 			count: getUserDocumentConcurrencyNestedCount(
@@ -9045,6 +10733,49 @@ function createCoverageGuidance( novelty ) {
 			],
 			rationale:
 				'large documents and multi-user sessions need to be combined in the same successful document',
+		},
+		{
+			id: 'success-user-blocks:6:50',
+			label: 'successful six-user large documents',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsByUserBlockBucket',
+				'users-6:blocks-50'
+			),
+			target: 10,
+			groups: MANY_USER_ACTIVE_EDITING_GROUPS,
+			rationale:
+				'large document coverage must include realistic active-editor room sizes',
+		},
+		{
+			id: 'success-user-blocks:12:50',
+			label: 'successful twelve-user large documents',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsByUserBlockBucket',
+				'users-12:blocks-50'
+			),
+			target: 5,
+			groups: [
+				'novelty-ws-twelve-user-active-rich-text',
+				'novelty-ws-thirty-user-active-editing',
+				'novelty-ws-thirty-user-active-editing-strict',
+			],
+			rationale:
+				'twelve-user editing and large content should converge in the same completed document',
+		},
+		{
+			id: 'success-user-blocks:30:50',
+			label: 'successful thirty-user large documents',
+			count: getUserDocumentConcurrencyCount(
+				'successfulRecordsByUserBlockBucket',
+				'users-30:blocks-50'
+			),
+			target: 3,
+			groups: [
+				'novelty-ws-thirty-user-active-editing',
+				'novelty-ws-thirty-user-active-editing-strict',
+			],
+			rationale:
+				'thirty-user scale needs at least a bounded large-document edge case',
 		},
 	] ) {
 		addGoal( {
@@ -9113,6 +10844,13 @@ function createCoverageGuidance( novelty ) {
 			],
 			rationale:
 				'many-user RTC coverage needs completed seeds, not only startup or discovery failures',
+		},
+		{
+			profile: MANY_USER_ACTIVE_EDITING_PROFILE,
+			target: 25,
+			groups: MANY_USER_ACTIVE_EDITING_GROUPS,
+			rationale:
+				'many-user active-editing coverage needs completed rich/list/lifecycle seeds, not only joined browsers',
 		},
 		{
 			profile: 'collaboration-ui-signals',
@@ -9955,7 +11693,9 @@ function buildGroup( profile ) {
 	const transport = profile.transport ?? 'ws';
 	const profileIndex = Math.max(
 		0,
-		PROFILE_GROUPS.findIndex( ( candidate ) => candidate.name === profile.name )
+		PROFILE_GROUPS.findIndex(
+			( candidate ) => candidate.name === profile.name
+		)
 	);
 	const wpEnvPortBase = Number.parseInt( WP_ENV_PORT, 10 );
 	const wpEnvPort = Number.isNaN( wpEnvPortBase )
@@ -10089,10 +11829,7 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 				publicationBlock.pause
 			);
 		}
-		recordSupervisorGroupPublicationNoiseBlock(
-			group,
-			publicationBlock
-		);
+		recordSupervisorGroupPublicationNoiseBlock( group, publicationBlock );
 		await writeNoAnalysisSentinelsForGroup(
 			group,
 			publicationBlock.reason,
@@ -10278,20 +12015,19 @@ async function applyPolicy(
 					drainOnly: true,
 			  }
 			: null;
-		const currentRunProducerDuplicateHold =
-			currentRunActionGateDuplicateHold ?? currentRunDuplicateNoiseHold;
-		const currentRunProductEvidenceActionGateHold =
-			PAUSE_ON_TRIAGE_NOISE
-				? getProductEvidenceActionGateHoldForScheduling(
-						currentRunActionGateDuplicateHold,
-						currentRunActionGateDuplicateHold?.drainOnly
-							? drainDuplicateNoiseTriageYield
-							: activeDuplicateNoiseTriageYield
-				  )
-				: null;
-		const fleetNoProductStartupNoiseHold = PAUSE_ON_TRIAGE_NOISE
-			? getFleetNoProductStartupNoiseHold()
-			: null;
+	const currentRunProducerDuplicateHold =
+		currentRunActionGateDuplicateHold ?? currentRunDuplicateNoiseHold;
+	const currentRunProductEvidenceActionGateHold = PAUSE_ON_TRIAGE_NOISE
+		? getProductEvidenceActionGateHoldForScheduling(
+				currentRunActionGateDuplicateHold,
+				currentRunActionGateDuplicateHold?.drainOnly
+					? drainDuplicateNoiseTriageYield
+					: activeDuplicateNoiseTriageYield
+		  )
+		: null;
+	const fleetNoProductStartupNoiseHold = PAUSE_ON_TRIAGE_NOISE
+		? getFleetNoProductStartupNoiseHold()
+		: null;
 	const holdNoisyBlockTopOff =
 		PAUSE_ON_TRIAGE_NOISE &&
 		( shouldHoldNoisyBlockTopOff( activeDuplicateNoiseTriageYield ) ||
@@ -10319,11 +12055,11 @@ async function applyPolicy(
 					drainOnly: true,
 			  }
 			: null );
-		const recentProductEvidenceDuplicateFamilyCooldown = PAUSE_ON_TRIAGE_NOISE
-			? getRecentProductEvidenceDuplicateFamilyCooldown()
-			: null;
-		const effectiveProductEvidenceDuplicateFamilyHold =
-			currentRunProductEvidenceActionGateHold ?? dominantRealUserFamilyHold;
+	const recentProductEvidenceDuplicateFamilyCooldown = PAUSE_ON_TRIAGE_NOISE
+		? getRecentProductEvidenceDuplicateFamilyCooldown()
+		: null;
+	const effectiveProductEvidenceDuplicateFamilyHold =
+		currentRunProductEvidenceActionGateHold ?? dominantRealUserFamilyHold;
 	const holdDominantRealUserFamilyActive =
 		!! effectiveProductEvidenceDuplicateFamilyHold;
 	const lateJoin3Records =
@@ -10822,13 +12558,13 @@ async function applyPolicy(
 		);
 	}
 
-		function getDuplicateNoiseHoldEnableBlockReason() {
-			const hold = effectiveProductEvidenceDuplicateFamilyHold;
-			const scope = currentRunProductEvidenceActionGateHold
-				? 'current-run action-gate'
-				: dominantRealUserFamilyHold
-				? 'current-run'
-				: 'recent cross-root';
+	function getDuplicateNoiseHoldEnableBlockReason() {
+		const hold = effectiveProductEvidenceDuplicateFamilyHold;
+		const scope = currentRunProductEvidenceActionGateHold
+			? 'current-run action-gate'
+			: dominantRealUserFamilyHold
+			? 'current-run'
+			: 'recent cross-root';
 		const producerScope = hold.groupName ? ` from ${ hold.groupName }` : '';
 		return `${ scope } product-evidence duplicate family ${
 			hold.family
@@ -11476,18 +13212,18 @@ async function applyPolicy(
 		return true;
 	}
 
-		async function pauseGroup( group, reason, metadata = {} ) {
-			if ( ! enabled.has( group ) ) {
-				return false;
-			}
+	async function pauseGroup( group, reason, metadata = {} ) {
+		if ( ! enabled.has( group ) ) {
+			return false;
+		}
 
-			const pausedAt = new Date().toISOString();
-			const noisePauseKind = getNoisePauseKind( reason, metadata.reasonKind );
-			const noisePauseFamily =
-				metadata.family ?? getNoisePauseFamily( noisePauseKind );
-			const inferredNoProductStartupPause =
-				noisePauseKind === 'startup-noise' &&
-				hasNoProductStartupPauseEvidence( {
+		const pausedAt = new Date().toISOString();
+		const noisePauseKind = getNoisePauseKind( reason, metadata.reasonKind );
+		const noisePauseFamily =
+			metadata.family ?? getNoisePauseFamily( noisePauseKind );
+		const inferredNoProductStartupPause =
+			noisePauseKind === 'startup-noise' &&
+			hasNoProductStartupPauseEvidence( {
 				reason,
 				noProductOnly: metadata.noProductOnly,
 				productEvidenceRecords: metadata.productEvidenceRecords,
@@ -11498,20 +13234,20 @@ async function applyPolicy(
 		const productEvidenceRecords =
 			metadata.productEvidenceRecords ??
 			( inferredNoProductStartupPause ? 0 : undefined );
-			const hasProductEvidence =
-				metadata.hasProductEvidence ??
-				( productEvidenceRecords !== undefined
-					? productEvidenceRecords > 0
-					: undefined );
-			const expiresAt = noisePauseKind
-				? new Date(
-						Date.now() +
-							TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS * 60 * 60 * 1000
-				  ).toISOString()
-				: null;
-			const materializationFloorBlockReason = noisePauseKind
-				? getMaterializationFloorPauseBlockReason( group )
-				: null;
+		const hasProductEvidence =
+			metadata.hasProductEvidence ??
+			( productEvidenceRecords !== undefined
+				? productEvidenceRecords > 0
+				: undefined );
+		const expiresAt = noisePauseKind
+			? new Date(
+					Date.now() +
+						TRIAGE_NOISE_PAUSE_COOLDOWN_HOURS * 60 * 60 * 1000
+			  ).toISOString()
+			: null;
+		const materializationFloorBlockReason = noisePauseKind
+			? getMaterializationFloorPauseBlockReason( group )
+			: null;
 		const noiseReplacement = noisePauseKind
 			? {
 					originGroup: group,
@@ -11525,26 +13261,26 @@ async function applyPolicy(
 				plannedRemoval: group,
 				noiseReplacement,
 			} );
-				if (
-					! replacementEnabled &&
-					! canPauseNoiseBelowMaterializationFloor( noiseReplacement )
-				) {
-					await writeNoAnalysisSentinelsForGroup( group, reason, {
-						reasonKind: noisePauseKind,
-						family: noisePauseFamily,
-						source: metadata.source,
-						expiresAt,
-						...( noProductOnly !== undefined ? { noProductOnly } : {} ),
-						...( productEvidenceRecords !== undefined
-							? { productEvidenceRecords }
-							: {} ),
-						...( hasProductEvidence !== undefined
-							? { hasProductEvidence }
-							: {} ),
-					} );
-					state.changes.push( {
-						at: pausedAt,
-						action: 'skip-noise-pause-below-materialization-floor',
+			if (
+				! replacementEnabled &&
+				! canPauseNoiseBelowMaterializationFloor( noiseReplacement )
+			) {
+				await writeNoAnalysisSentinelsForGroup( group, reason, {
+					reasonKind: noisePauseKind,
+					family: noisePauseFamily,
+					source: metadata.source,
+					expiresAt,
+					...( noProductOnly !== undefined ? { noProductOnly } : {} ),
+					...( productEvidenceRecords !== undefined
+						? { productEvidenceRecords }
+						: {} ),
+					...( hasProductEvidence !== undefined
+						? { hasProductEvidence }
+						: {} ),
+				} );
+				state.changes.push( {
+					at: pausedAt,
+					action: 'skip-noise-pause-below-materialization-floor',
 					group,
 					reason: `${ materializationFloorBlockReason }; no clean replacement group is available, so keep the bounded browser producer running and rely on no-analysis sentinels until another materialized group is available`,
 					originalPauseReason: reason,
@@ -11555,13 +13291,13 @@ async function applyPolicy(
 					...( productEvidenceRecords !== undefined
 						? { productEvidenceRecords }
 						: {} ),
-						...( hasProductEvidence !== undefined
-							? { hasProductEvidence }
-							: {} ),
-						...( expiresAt ? { expiresAt } : {} ),
-					} );
-					return false;
-				}
+					...( hasProductEvidence !== undefined
+						? { hasProductEvidence }
+						: {} ),
+					...( expiresAt ? { expiresAt } : {} ),
+				} );
+				return false;
+			}
 			if ( ! replacementEnabled ) {
 				state.changes.push( {
 					at: pausedAt,
@@ -11584,8 +13320,8 @@ async function applyPolicy(
 			}
 		}
 
-			enabled.delete( group );
-			state.pausedGroups[ group ] = {
+		enabled.delete( group );
+		state.pausedGroups[ group ] = {
 			at: pausedAt,
 			reason,
 			outputDir: OUTPUT_DIR,
@@ -11717,11 +13453,11 @@ async function applyPolicy(
 		return false;
 	}
 
-		async function ensureRequiredCoverageBreadthGroups() {
-			let changed = false;
-			for ( const group of REQUIRED_COVERAGE_BREADTH_GROUPS ) {
-				if ( enabled.has( group ) ) {
-					continue;
+	async function ensureRequiredCoverageBreadthGroups() {
+		let changed = false;
+		for ( const group of REQUIRED_COVERAGE_BREADTH_GROUPS ) {
+			if ( enabled.has( group ) ) {
+				continue;
 			}
 			changed =
 				( await enableGroup(
@@ -11730,94 +13466,94 @@ async function applyPolicy(
 					{ allowRotation: true }
 				) ) || changed;
 		}
-			return changed;
-		}
+		return changed;
+	}
 
-		async function sweepEnabledGroupsBlockedByActiveHolds() {
-			let changed = false;
-			for ( const group of [ ...enabled ] ) {
-				const activeNoisePause = getActiveNoisePauseCooldown( group );
-				if ( isNoProductStartupNoiseCooldown( activeNoisePause ) ) {
-					changed =
-						( await pauseGroup(
-							group,
-							`final scheduling sweep: active no-product startup-noise cooldown from ${ activeNoisePause.at } still blocks ${ group }; do not publish it to supervisor groups while strict pre-action bootstrap noise has no product evidence: ${ activeNoisePause.reason }`,
-							{
-								reasonKind: 'startup-noise',
-								family: 'pre_action_bootstrap_stall',
-								source:
-									activeNoisePause.source ??
-									'active-noise-cooldown',
-								noProductOnly: true,
-								productEvidenceRecords: 0,
-								hasProductEvidence: false,
-							}
-						) ) || changed;
-					continue;
-				}
-
-				const startupBlock = getCurrentStartupHoldEnableBlock( group );
-				if (
-					startupBlock &&
-					( startupBlock.matchedProducerHold ||
-						startupBlock.fleetStartupNoiseHold ||
-						startupBlock.producerName === group )
-				) {
-					const hold = startupBlock.hold;
-					const isProductEvidenceHold =
-						isProductEvidenceDuplicateProducerHold( hold );
-					changed =
-						( await pauseGroup(
-							group,
-							`final scheduling sweep: ${ getCurrentStartupHoldEnableBlockReason(
-								group
-							) }`,
-							{
-								reasonKind:
-									getEffectiveDuplicateNoiseHoldKind( hold ) ??
-									hold?.kind,
-								family: hold?.family,
-								source: hold?.source,
-								noProductOnly: isProductEvidenceHold
-									? false
-									: hold?.noProductOnly ?? true,
-								productEvidenceRecords: isProductEvidenceHold
-									? hold?.productEvidenceRecords ??
-									  hold?.count ??
-									  1
-									: hold?.productEvidenceRecords ?? 0,
-								hasProductEvidence: isProductEvidenceHold,
-							}
-						) ) || changed;
-					continue;
-				}
-
-				if ( shouldBlockGroupEnableForDuplicateNoiseHold( group ) ) {
-					const hold = effectiveProductEvidenceDuplicateFamilyHold;
-					changed =
-						( await pauseGroup(
-							group,
-							`final scheduling sweep: ${ getDuplicateNoiseHoldEnableBlockReason() }`,
-							{
-								reasonKind: hold?.kind,
-								family: hold?.family,
-								source: hold?.source,
-								noProductOnly: false,
-								productEvidenceRecords:
-									hold?.productEvidenceRecords ??
-									hold?.count ??
-									1,
-								hasProductEvidence: true,
-							}
-						) ) || changed;
-				}
+	async function sweepEnabledGroupsBlockedByActiveHolds() {
+		let changed = false;
+		for ( const group of [ ...enabled ] ) {
+			const activeNoisePause = getActiveNoisePauseCooldown( group );
+			if ( isNoProductStartupNoiseCooldown( activeNoisePause ) ) {
+				changed =
+					( await pauseGroup(
+						group,
+						`final scheduling sweep: active no-product startup-noise cooldown from ${ activeNoisePause.at } still blocks ${ group }; do not publish it to supervisor groups while strict pre-action bootstrap noise has no product evidence: ${ activeNoisePause.reason }`,
+						{
+							reasonKind: 'startup-noise',
+							family: 'pre_action_bootstrap_stall',
+							source:
+								activeNoisePause.source ??
+								'active-noise-cooldown',
+							noProductOnly: true,
+							productEvidenceRecords: 0,
+							hasProductEvidence: false,
+						}
+					) ) || changed;
+				continue;
 			}
-			return changed;
-		}
 
-		async function reserveBudgetForParserTransform( reason ) {
-			if ( resources.hasHeadroom || enabled.size < TARGET_ENABLED_GROUPS ) {
-				return true;
+			const startupBlock = getCurrentStartupHoldEnableBlock( group );
+			if (
+				startupBlock &&
+				( startupBlock.matchedProducerHold ||
+					startupBlock.fleetStartupNoiseHold ||
+					startupBlock.producerName === group )
+			) {
+				const hold = startupBlock.hold;
+				const isProductEvidenceHold =
+					isProductEvidenceDuplicateProducerHold( hold );
+				changed =
+					( await pauseGroup(
+						group,
+						`final scheduling sweep: ${ getCurrentStartupHoldEnableBlockReason(
+							group
+						) }`,
+						{
+							reasonKind:
+								getEffectiveDuplicateNoiseHoldKind( hold ) ??
+								hold?.kind,
+							family: hold?.family,
+							source: hold?.source,
+							noProductOnly: isProductEvidenceHold
+								? false
+								: hold?.noProductOnly ?? true,
+							productEvidenceRecords: isProductEvidenceHold
+								? hold?.productEvidenceRecords ??
+								  hold?.count ??
+								  1
+								: hold?.productEvidenceRecords ?? 0,
+							hasProductEvidence: isProductEvidenceHold,
+						}
+					) ) || changed;
+				continue;
+			}
+
+			if ( shouldBlockGroupEnableForDuplicateNoiseHold( group ) ) {
+				const hold = effectiveProductEvidenceDuplicateFamilyHold;
+				changed =
+					( await pauseGroup(
+						group,
+						`final scheduling sweep: ${ getDuplicateNoiseHoldEnableBlockReason() }`,
+						{
+							reasonKind: hold?.kind,
+							family: hold?.family,
+							source: hold?.source,
+							noProductOnly: false,
+							productEvidenceRecords:
+								hold?.productEvidenceRecords ??
+								hold?.count ??
+								1,
+							hasProductEvidence: true,
+						}
+					) ) || changed;
+			}
+		}
+		return changed;
+	}
+
+	async function reserveBudgetForParserTransform( reason ) {
+		if ( resources.hasHeadroom || enabled.size < TARGET_ENABLED_GROUPS ) {
+			return true;
 		}
 
 		for ( const candidate of [
@@ -11953,23 +13689,25 @@ async function applyPolicy(
 		}
 	}
 
-		if ( holdDominantRealUserFamilyActive ) {
-			const hold = effectiveProductEvidenceDuplicateFamilyHold;
-			const holdScope = currentRunProductEvidenceActionGateHold
-				? 'current-run action-gate'
-				: dominantRealUserFamilyHold
-				? 'current-run'
-				: 'recent cross-root';
-			const heldGroups = uniqueStringList( [
+	if ( holdDominantRealUserFamilyActive ) {
+		const hold = effectiveProductEvidenceDuplicateFamilyHold;
+		const holdScope = currentRunProductEvidenceActionGateHold
+			? 'current-run action-gate'
+			: dominantRealUserFamilyHold
+			? 'current-run'
+			: 'recent cross-root';
+		const heldGroups = uniqueStringList(
+			[
 				...PRODUCT_EVIDENCE_DUPLICATE_FAMILY_HOLD_GROUPS,
 				...( Array.isArray( hold.groups ) ? hold.groups : [] ),
 				hold.groupName,
 				hold.group,
-			].filter( Boolean ) );
-			for ( const group of heldGroups ) {
-				if ( ! enabled.has( group ) ) {
-					continue;
-				}
+			].filter( Boolean )
+		);
+		for ( const group of heldGroups ) {
+			if ( ! enabled.has( group ) ) {
+				continue;
+			}
 			if (
 				! shouldProductEvidenceDuplicateHoldBlockGroup( hold, group )
 			) {
@@ -12259,10 +13997,8 @@ async function applyPolicy(
 					enabled.has( candidate ) &&
 					candidate !== group &&
 					! isBenchmarkCanaryForcedGroup( candidate ) &&
-					!(
-						ZERO_COVERAGE_PRIORITY_GROUPS.includes(
-							candidate
-						) &&
+					! (
+						ZERO_COVERAGE_PRIORITY_GROUPS.includes( candidate ) &&
 						getZeroCoverageGapsForGroup( candidate ).length > 0
 					)
 			);
@@ -12334,10 +14070,7 @@ async function applyPolicy(
 		if (
 			activeNoisePause &&
 			! canBypassStartupNoiseCooldown( group, activeNoisePause ) &&
-			! shouldBypassBenchmarkCanaryNoisePause(
-				group,
-				activeNoisePause
-			)
+			! shouldBypassBenchmarkCanaryNoisePause( group, activeNoisePause )
 		) {
 			state.changes.push( {
 				at: new Date().toISOString(),
@@ -12397,9 +14130,7 @@ async function applyPolicy(
 				if ( paused ) {
 					benchmarkCanaryZeroCoverageEvictions += 1;
 				} else {
-					deferredBenchmarkCanariesForZeroCoverage.delete(
-						eviction
-					);
+					deferredBenchmarkCanariesForZeroCoverage.delete( eviction );
 					syncDeferredBenchmarkCanariesForZeroCoverage();
 				}
 			}
@@ -13134,42 +14865,42 @@ async function ensureBootstrapSupervisorGroups() {
 			drainOnly: true,
 		};
 	}
-		const bootstrapFleetStartupNoiseHold = getFleetNoProductStartupNoiseHold();
-		const bootstrapProducerStartupHold = isStartupHoldBlockingProducerSelection(
-			bootstrapDuplicateNoiseHold
-		)
-			? bootstrapDuplicateNoiseHold
-			: bootstrapFleetStartupNoiseHold;
-		const bootstrapProductEvidenceActionGateHold =
-			getProductEvidenceActionGateHoldForScheduling(
-				withRunDirProducerGroups(
-					getCurrentRunActionGateDuplicateHold(
-						state.triageYieldCurrent
-					),
-					state.currentRunDirs ?? []
+	const bootstrapFleetStartupNoiseHold = getFleetNoProductStartupNoiseHold();
+	const bootstrapProducerStartupHold = isStartupHoldBlockingProducerSelection(
+		bootstrapDuplicateNoiseHold
+	)
+		? bootstrapDuplicateNoiseHold
+		: bootstrapFleetStartupNoiseHold;
+	const bootstrapProductEvidenceActionGateHold =
+		getProductEvidenceActionGateHoldForScheduling(
+			withRunDirProducerGroups(
+				getCurrentRunActionGateDuplicateHold(
+					state.triageYieldCurrent
 				),
-				state.triageYieldCurrent
-			);
-		const bootstrapProductEvidenceDuplicateFamilyHold =
-			bootstrapProductEvidenceActionGateHold ??
-			getCurrentRunProductEvidenceDuplicateHold(
-				state.triageYieldCurrent,
 				state.currentRunDirs ?? []
-			);
-		const getBootstrapDuplicateFamilyHoldBlock = ( group ) => {
-			if (
-				! isProductEvidenceDuplicateProducerHold(
-					bootstrapProductEvidenceDuplicateFamilyHold
-				) ||
-				! shouldProductEvidenceDuplicateHoldBlockGroup(
-					bootstrapProductEvidenceDuplicateFamilyHold,
-					group
-				)
-			) {
-				return null;
-			}
-			return bootstrapProductEvidenceDuplicateFamilyHold;
-		};
+			),
+			state.triageYieldCurrent
+		);
+	const bootstrapProductEvidenceDuplicateFamilyHold =
+		bootstrapProductEvidenceActionGateHold ??
+		getCurrentRunProductEvidenceDuplicateHold(
+			state.triageYieldCurrent,
+			state.currentRunDirs ?? []
+		);
+	const getBootstrapDuplicateFamilyHoldBlock = ( group ) => {
+		if (
+			! isProductEvidenceDuplicateProducerHold(
+				bootstrapProductEvidenceDuplicateFamilyHold
+			) ||
+			! shouldProductEvidenceDuplicateHoldBlockGroup(
+				bootstrapProductEvidenceDuplicateFamilyHold,
+				group
+			)
+		) {
+			return null;
+		}
+		return bootstrapProductEvidenceDuplicateFamilyHold;
+	};
 	const getBootstrapDuplicateFamilyHoldBlockReason = ( hold ) =>
 		`bootstrap supervisor group selection held while product-evidence duplicate family ${
 			hold.family
@@ -13196,7 +14927,7 @@ async function ensureBootstrapSupervisorGroups() {
 			);
 		const storedPauseBlocksGroup =
 			state.pausedGroups?.[ group ] &&
-			!(
+			! (
 				canBypassNonStartupPolicyGuards &&
 				getStoredNoisePauseKind( state.pausedGroups?.[ group ] ) !==
 					'startup-noise'
@@ -13205,19 +14936,22 @@ async function ensureBootstrapSupervisorGroups() {
 				group,
 				state.pausedGroups?.[ group ]
 			) &&
-			!(
+			! (
 				successDeficitBypassesStartupNoise &&
 				getStoredNoisePauseKind( state.pausedGroups?.[ group ] ) ===
 					'startup-noise'
 			);
 		const activeNoisePauseBlocksGroup =
 			activeNoisePause &&
-			!(
+			! (
 				canBypassNonStartupPolicyGuards &&
 				activeNoisePause.kind !== 'startup-noise'
 			) &&
-			! shouldBypassBenchmarkCanaryNoisePause( group, activeNoisePause ) &&
-			!(
+			! shouldBypassBenchmarkCanaryNoisePause(
+				group,
+				activeNoisePause
+			) &&
+			! (
 				successDeficitBypassesStartupNoise &&
 				activeNoisePause.kind === 'startup-noise'
 			);
@@ -13279,8 +15013,7 @@ async function ensureBootstrapSupervisorGroups() {
 				! canBypassNonStartupPolicyGuards ) ||
 			storedPauseBlocksGroup ||
 			activeNoisePauseBlocksGroup ||
-			( duplicateFamilyHoldBlock &&
-				! canBypassNonStartupPolicyGuards ) ||
+			( duplicateFamilyHoldBlock && ! canBypassNonStartupPolicyGuards ) ||
 			startupHoldBlocksGroup
 		) {
 			if ( group && activeNoisePauseBlocksGroup ) {
@@ -13723,9 +15456,7 @@ async function ensureBootstrapSupervisorGroups() {
 	}
 	const zeroCoverageBootstrapGroups = selected
 		.slice( zeroCoverageBootstrapStart )
-		.filter( ( group ) =>
-			ZERO_COVERAGE_PRIORITY_GROUPS.includes( group )
-		);
+		.filter( ( group ) => ZERO_COVERAGE_PRIORITY_GROUPS.includes( group ) );
 	if ( zeroCoverageBootstrapGroups.length > 0 ) {
 		state.changes.push( {
 			at: new Date().toISOString(),
@@ -14670,88 +16401,96 @@ async function writeStatus(
 		`- successful records by profile: ${ JSON.stringify(
 			state.successfulRecordCountsByProfile ?? {}
 		) }`,
-			`- all-time records by transport: ${ JSON.stringify(
-				state.recordCountsByTransport ?? {}
-			) }`,
-			`- all-time records by user count: ${ JSON.stringify(
-				state.userDocumentConcurrency?.byUserCount ?? {}
-			) }`,
-			`- successful records by user count: ${ JSON.stringify(
-				state.userDocumentConcurrency?.successfulByUserCount ?? {}
-			) }`,
-			`- successful records by profile/user count: ${ JSON.stringify(
-				state.userDocumentConcurrency?.successfulByProfileUserCount ?? {}
-			) }`,
-			`- successful records by transport/user count: ${ JSON.stringify(
-				state.userDocumentConcurrency?.successfulByTransportUserCount ?? {}
-			) }`,
-			`- successful records by collaborator mode: ${ JSON.stringify(
-				state.userDocumentConcurrency?.successfulByCollaboratorMode ?? {}
-			) }`,
-			`- successful records by action-user count: ${ JSON.stringify(
-				state.userDocumentConcurrency?.successfulByActionUserCount ?? {}
-			) }`,
-			`- successful lifecycle events by type/user count: ${ JSON.stringify(
-				state.userDocumentConcurrency?.successfulLifecycleByTypeUserCount ??
-					{}
-			) }`,
-			`- successful records by user/block bucket: ${ JSON.stringify(
-				state.userDocumentConcurrency?.successfulRecordsByUserBlockBucket ??
-					{}
-			) }`,
-			`- max users in one document: ${
-				state.userDocumentConcurrency?.maxUserCount ?? 0
-			}`,
-			`- max users who edited one document: ${
-				state.userDocumentConcurrency?.maxActionUserCount ?? 0
-			}`,
-			`- max extra collaborators in one document: ${
-				state.userDocumentConcurrency?.maxExtraCollaborators ?? 0
-			}`,
-			`- max total blocks in one document: ${
-				state.userDocumentConcurrency?.maxTotalBlocks ?? 0
-			}`,
-			`- max large-document blocks in one document: ${
-				state.userDocumentConcurrency?.maxLargeDocumentBlocks ?? 0
-			}`,
-			`- current-run records by profile: ${ JSON.stringify(
-				state.currentRunRecordCountsByProfile ?? {}
-			) }`,
+		`- all-time records by transport: ${ JSON.stringify(
+			state.recordCountsByTransport ?? {}
+		) }`,
+		`- all-time records by user count: ${ JSON.stringify(
+			state.userDocumentConcurrency?.byUserCount ?? {}
+		) }`,
+		`- successful records by user count: ${ JSON.stringify(
+			state.userDocumentConcurrency?.successfulByUserCount ?? {}
+		) }`,
+		`- successful records by profile/user count: ${ JSON.stringify(
+			state.userDocumentConcurrency?.successfulByProfileUserCount ?? {}
+		) }`,
+		`- successful records by transport/user count: ${ JSON.stringify(
+			state.userDocumentConcurrency?.successfulByTransportUserCount ?? {}
+		) }`,
+		`- successful records by collaborator mode: ${ JSON.stringify(
+			state.userDocumentConcurrency?.successfulByCollaboratorMode ?? {}
+		) }`,
+		`- successful records by action-user count: ${ JSON.stringify(
+			state.userDocumentConcurrency?.successfulByActionUserCount ?? {}
+		) }`,
+		`- successful records with action-user count at least: ${ JSON.stringify(
+			state.userDocumentConcurrency
+				?.successfulRecordsWithActionUserCountAtLeast ?? {}
+		) }`,
+		`- successful lifecycle events by type/user count: ${ JSON.stringify(
+			state.userDocumentConcurrency?.successfulLifecycleByTypeUserCount ??
+				{}
+		) }`,
+		`- successful records by user/block bucket: ${ JSON.stringify(
+			state.userDocumentConcurrency?.successfulRecordsByUserBlockBucket ??
+				{}
+		) }`,
+		`- max users in one document: ${
+			state.userDocumentConcurrency?.maxUserCount ?? 0
+		}`,
+		`- max users who edited one document: ${
+			state.userDocumentConcurrency?.maxActionUserCount ?? 0
+		}`,
+		`- max extra collaborators in one document: ${
+			state.userDocumentConcurrency?.maxExtraCollaborators ?? 0
+		}`,
+		`- max total blocks in one document: ${
+			state.userDocumentConcurrency?.maxTotalBlocks ?? 0
+		}`,
+		`- max large-document blocks in one document: ${
+			state.userDocumentConcurrency?.maxLargeDocumentBlocks ?? 0
+		}`,
+		`- current-run records by profile: ${ JSON.stringify(
+			state.currentRunRecordCountsByProfile ?? {}
+		) }`,
 		`- current-run records by group: ${ JSON.stringify(
 			state.currentRunRecordCountsByGroup ?? {}
 		) }`,
 		`- current-run successful records by profile: ${ JSON.stringify(
 			state.currentRunSuccessfulRecordCountsByProfile ?? {}
 		) }`,
-			`- current-run records by transport: ${ JSON.stringify(
-				state.currentRunRecordCountsByTransport ?? {}
-			) }`,
-			`- current-run records by user count: ${ JSON.stringify(
-				state.currentRunUserDocumentConcurrency?.byUserCount ?? {}
-			) }`,
-			`- current-run successful records by user count: ${ JSON.stringify(
-				state.currentRunUserDocumentConcurrency?.successfulByUserCount ?? {}
-			) }`,
-			`- current-run successful records by profile/user count: ${ JSON.stringify(
-				state.currentRunUserDocumentConcurrency
-					?.successfulByProfileUserCount ?? {}
-			) }`,
-			`- current-run successful records by action-user count: ${ JSON.stringify(
-				state.currentRunUserDocumentConcurrency
-					?.successfulByActionUserCount ?? {}
-			) }`,
-			`- current-run max users in one document: ${
-				state.currentRunUserDocumentConcurrency?.maxUserCount ?? 0
-			}`,
-			`- current-run max users who edited one document: ${
-				state.currentRunUserDocumentConcurrency?.maxActionUserCount ?? 0
-			}`,
-			`- current-run max total blocks in one document: ${
-				state.currentRunUserDocumentConcurrency?.maxTotalBlocks ?? 0
-			}`,
-			`- current-run pre-action startup failures by profile: ${ JSON.stringify(
-				state.startupFailureCountsByProfile ?? {}
-			) }`,
+		`- current-run records by transport: ${ JSON.stringify(
+			state.currentRunRecordCountsByTransport ?? {}
+		) }`,
+		`- current-run records by user count: ${ JSON.stringify(
+			state.currentRunUserDocumentConcurrency?.byUserCount ?? {}
+		) }`,
+		`- current-run successful records by user count: ${ JSON.stringify(
+			state.currentRunUserDocumentConcurrency?.successfulByUserCount ?? {}
+		) }`,
+		`- current-run successful records by profile/user count: ${ JSON.stringify(
+			state.currentRunUserDocumentConcurrency
+				?.successfulByProfileUserCount ?? {}
+		) }`,
+		`- current-run successful records by action-user count: ${ JSON.stringify(
+			state.currentRunUserDocumentConcurrency
+				?.successfulByActionUserCount ?? {}
+		) }`,
+		`- current-run successful records with action-user count at least: ${ JSON.stringify(
+			state.currentRunUserDocumentConcurrency
+				?.successfulRecordsWithActionUserCountAtLeast ?? {}
+		) }`,
+		`- current-run max users in one document: ${
+			state.currentRunUserDocumentConcurrency?.maxUserCount ?? 0
+		}`,
+		`- current-run max users who edited one document: ${
+			state.currentRunUserDocumentConcurrency?.maxActionUserCount ?? 0
+		}`,
+		`- current-run max total blocks in one document: ${
+			state.currentRunUserDocumentConcurrency?.maxTotalBlocks ?? 0
+		}`,
+		`- current-run pre-action startup failures by profile: ${ JSON.stringify(
+			state.startupFailureCountsByProfile ?? {}
+		) }`,
 		`- current-run pre-action startup failures by group: ${ JSON.stringify(
 			state.startupFailureCountsByGroup ?? {}
 		) }`,
@@ -14784,8 +16523,23 @@ async function writeStatus(
 		`- many-user lifecycle records: ${
 			state.featureCounts?.[ 'users:12' ] ?? 0
 		}`,
+		`- many-user active-editing records: ${
+			state.successfulRecordCountsByProfile?.[
+				MANY_USER_ACTIVE_EDITING_PROFILE
+			] ?? 0
+		}`,
+		`- successful twelve-user active-editing records: ${
+			state.userDocumentConcurrency?.successfulByProfileUserCount?.[
+				MANY_USER_ACTIVE_EDITING_PROFILE
+			]?.[ '12' ] ?? 0
+		}`,
 		`- thirty-user lifecycle records: ${
 			state.featureCounts?.[ 'users:30' ] ?? 0
+		}`,
+		`- successful thirty-user active-editing records: ${
+			state.userDocumentConcurrency?.successfulByProfileUserCount?.[
+				MANY_USER_ACTIVE_EDITING_PROFILE
+			]?.[ '30' ] ?? 0
 		}`,
 		`- successful thirty-user records: ${
 			state.userDocumentConcurrency?.successfulByUserCount?.[ '30' ] ?? 0

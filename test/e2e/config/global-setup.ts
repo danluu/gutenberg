@@ -72,6 +72,8 @@ async function globalSetup( config: FullConfig ) {
 
 	const useTestWebSocketProvider =
 		process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1';
+	const httpMaxClientsPerRoom =
+		process.env.GUTENBERG_RTC_TEST_HTTP_MAX_CLIENTS_PER_ROOM;
 
 	if ( useTestWebSocketProvider ) {
 		if ( process.env.GUTENBERG_RTC_TEST_WS_SKIP_RESET !== '1' ) {
@@ -87,6 +89,20 @@ async function globalSetup( config: FullConfig ) {
 		resetTasks.push(
 			requestUtils.deactivatePlugin(
 				'gutenberg-test-plugin-rtc-websocket-provider'
+			)
+		);
+	}
+
+	if ( httpMaxClientsPerRoom ) {
+		resetTasks.push(
+			requestUtils.activatePlugin(
+				'gutenberg-test-plugin-sync-connection-error-filter'
+			)
+		);
+	} else {
+		resetTasks.push(
+			requestUtils.deactivatePlugin(
+				'gutenberg-test-plugin-sync-connection-error-filter'
 			)
 		);
 	}

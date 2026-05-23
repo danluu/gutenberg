@@ -20,6 +20,8 @@ cpu_path = artifact / "data" / "cpu_utilization.csv"
 load_path = artifact / "data" / "load_average.csv"
 disk_path = artifact / "data" / "disk_free_space.csv"
 fuzz_level_path = artifact / "data" / "fuzz_level_mix.csv"
+combined_ingredient_progress_path = artifact / "data" / "combined_ingredient_fuzzing_progress.csv"
+many_user_active_editing_progress_path = artifact / "data" / "many_user_active_editing_progress.csv"
 
 summary = {}
 if summary_path.exists():
@@ -96,6 +98,18 @@ if fuzz_level_path.exists():
 			counts[0] += lanes
 			counts[1] += 1
 
+combined_ingredient_progress = None
+if combined_ingredient_progress_path.exists():
+	with combined_ingredient_progress_path.open(newline="") as f:
+		rows = list(csv.DictReader(f))
+	if rows:
+		combined_ingredient_progress = rows[-1]
+
+many_user_active_editing_progress = []
+if many_user_active_editing_progress_path.exists():
+	with many_user_active_editing_progress_path.open(newline="") as f:
+		many_user_active_editing_progress = list(csv.DictReader(f))
+
 lines = [
 	"# RTC Trend Evidence Packet",
 	"",
@@ -148,6 +162,33 @@ for key in [
 	"fuzz_level_test_executions_has_approximate_rows",
 	"fuzz_level_execution_events",
 	"fuzz_level_execution_latest",
+	"combined_ingredient_feature",
+	"combined_ingredient_completed",
+	"combined_ingredient_target",
+	"combined_ingredient_remaining",
+	"combined_ingredient_group_enabled",
+	"combined_ingredient_profile_successful_records",
+	"many_user_active_editing_profile_successful_records",
+	"many_user_active_editing_success_action_users_6",
+	"many_user_active_editing_success_action_users_12",
+	"many_user_active_editing_success_action_users_30",
+	"many_user_active_editing_rich_list_users_12",
+	"many_user_active_editing_notes_lifecycle_users_6",
+	"many_user_active_editing_notes_lifecycle_users_12",
+	"many_user_active_editing_http_lifecycle_users_6",
+	"many_user_active_editing_http_max_clients_override",
+	"many_user_active_editing_same_user_lifecycle_users_6",
+	"many_user_active_editing_mixed_identity_users_6",
+	"many_user_active_editing_revision_restore_users_6",
+	"many_user_active_editing_publish_lifecycle_users_6",
+	"many_user_active_editing_same_block_contention_users_6",
+	"many_user_active_editing_note_thread_lifecycle_users_6",
+	"many_user_active_editing_persistence_race_users_6",
+	"many_user_active_editing_ws_reconnect_background_users_6",
+	"many_user_active_editing_http_413_compaction_users_6",
+	"many_user_active_editing_post_field_boundary_users_6",
+	"many_user_active_editing_strict_ledger_users_30",
+	"many_user_active_editing_large_doc_users_30",
 ]:
 	if key in summary:
 		lines.append(f"- {key}: {summary[key]}")
@@ -192,6 +233,108 @@ else:
 	lines.append("- no latest fuzz-level mix CSV rows available")
 if fuzz_level_campaigns:
 	lines.append(f"- campaigns: {', '.join(sorted(x for x in fuzz_level_campaigns if x))}")
+
+lines += ["", "## Combined-Ingredient Fuzzing Progress"]
+if combined_ingredient_progress:
+	lines.append(
+		"- strict cross-product: "
+		f"{combined_ingredient_progress.get('completed_cross_product_records')}/"
+		f"{combined_ingredient_progress.get('target_records')}; "
+		f"remaining={combined_ingredient_progress.get('remaining_records')}; "
+		f"group_enabled={combined_ingredient_progress.get('group_enabled')}; "
+		f"profile_successes={combined_ingredient_progress.get('profile_successful_records')}/"
+		f"{combined_ingredient_progress.get('profile_records_seen')}"
+	)
+	lines.append(
+		f"- feature: {combined_ingredient_progress.get('feature')} "
+		"(separate ingredient-lane hits do not count)"
+	)
+else:
+	lines.append("- no combined-ingredient progress CSV available")
+
+lines += ["", "## Many-User Active-Editing Progress"]
+if many_user_active_editing_progress:
+	for row in many_user_active_editing_progress:
+		notes_lifecycle = row.get('notes_lifecycle_records')
+		if notes_lifecycle in ("", "NA", None):
+			notes_lifecycle = "not_required"
+		http_lifecycle = row.get('http_lifecycle_records')
+		if http_lifecycle in ("", "NA", None):
+			http_lifecycle = "not_required"
+		same_user_lifecycle = row.get('same_user_lifecycle_records')
+		if same_user_lifecycle in ("", "NA", None):
+			same_user_lifecycle = "not_required"
+		mixed_identity_lifecycle = row.get('mixed_identity_lifecycle_records')
+		if mixed_identity_lifecycle in ("", "NA", None):
+			mixed_identity_lifecycle = "not_required"
+		revision_restore = row.get('revision_restore_records')
+		if revision_restore in ("", "NA", None):
+			revision_restore = "not_required"
+		publish_lifecycle = row.get('publish_lifecycle_records')
+		if publish_lifecycle in ("", "NA", None):
+			publish_lifecycle = "not_required"
+		same_block_contention = row.get('same_block_contention_records')
+		if same_block_contention in ("", "NA", None):
+			same_block_contention = "not_required"
+		note_thread_lifecycle = row.get('note_thread_lifecycle_records')
+		if note_thread_lifecycle in ("", "NA", None):
+			note_thread_lifecycle = "not_required"
+		persistence_race = row.get('persistence_race_records')
+		if persistence_race in ("", "NA", None):
+			persistence_race = "not_required"
+		ws_reconnect_background = row.get('ws_reconnect_background_records')
+		if ws_reconnect_background in ("", "NA", None):
+			ws_reconnect_background = "not_required"
+		http_413_compaction = row.get('http_413_compaction_records')
+		if http_413_compaction in ("", "NA", None):
+			http_413_compaction = "not_required"
+		post_field_boundary = row.get('post_field_boundary_records')
+		if post_field_boundary in ("", "NA", None):
+			post_field_boundary = "not_required"
+		visible_remote_delete = row.get('visible_remote_delete_records')
+		if visible_remote_delete in ("", "NA", None):
+			visible_remote_delete = "not_required"
+		code_editor_embed_stability = row.get('code_editor_embed_stability_records')
+		if code_editor_embed_stability in ("", "NA", None):
+			code_editor_embed_stability = "not_required"
+		nested_table_awareness = row.get('nested_table_awareness_records')
+		if nested_table_awareness in ("", "NA", None):
+			nested_table_awareness = "not_required"
+		strict_ledger = row.get('strict_ledger_records')
+		if strict_ledger in ("", "NA", None):
+			strict_ledger = "not_required"
+		lines.append(
+			"- active editors "
+			f"{row.get('threshold')}: "
+			f"success_action={row.get('successful_active_editor_records')}/"
+			f"{row.get('successful_active_editor_target')}; "
+			f"lifecycle={row.get('lifecycle_records')}; "
+			f"rich_list_lifecycle={row.get('rich_list_lifecycle_records')}; "
+			f"notes_lifecycle={notes_lifecycle}; "
+			f"http_lifecycle={http_lifecycle}; "
+			f"same_user_lifecycle={same_user_lifecycle}; "
+			f"mixed_identity_lifecycle={mixed_identity_lifecycle}; "
+			f"revision_restore={revision_restore}; "
+			f"publish_lifecycle={publish_lifecycle}; "
+			f"same_block_contention={same_block_contention}; "
+			f"note_thread_lifecycle={note_thread_lifecycle}; "
+			f"persistence_race={persistence_race}; "
+			f"ws_reconnect_background={ws_reconnect_background}; "
+			f"http_413_compaction={http_413_compaction}; "
+			f"post_field_boundary={post_field_boundary}; "
+			f"visible_remote_delete={visible_remote_delete}; "
+			f"code_editor_embed_stability={code_editor_embed_stability}; "
+			f"nested_table_awareness={nested_table_awareness}; "
+			f"strict_ledger={strict_ledger}; "
+			f"ui_signals={row.get('ui_signal_records')}; "
+			f"large_doc={row.get('large_doc_records')}; "
+			f"group_enabled={row.get('group_enabled')}"
+		)
+	lines.append(
+		"- these counts require distinct editing users; users present without actions do not satisfy the active-editor goals"
+	)
+else:
+	lines.append("- no many-user active-editing progress CSV available")
 
 lines += [
 	"",

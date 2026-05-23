@@ -37,6 +37,7 @@ interface NormalizedBlock {
 interface NormalizedCollaborativeState {
 	blocks: NormalizedBlock[];
 	crdtDocument: string | null;
+	excerpt: string;
 	title: string;
 }
 
@@ -618,7 +619,11 @@ export default class CollaborationUtils {
 		} );
 	}
 
-	async failNextSyncRequest( page: Page, status: number ) {
+	async failNextSyncRequest(
+		page: Page,
+		status: number,
+		code = 'rtc_fuzz_injected_sync_failure'
+	) {
 		if ( USE_TEST_WS_PROVIDER ) {
 			await page.evaluate( () => {
 				const testWebSocketSync = ( window as any )
@@ -634,7 +639,7 @@ export default class CollaborationUtils {
 					status,
 					contentType: 'application/json',
 					body: JSON.stringify( {
-						code: 'rtc_fuzz_injected_sync_failure',
+						code,
 						message:
 							'Injected sync failure from RTC browser fuzzer.',
 						data: { status },
@@ -839,6 +844,10 @@ export default class CollaborationUtils {
 						( window as any ).wp.data
 							.select( 'core/editor' )
 							.getEditedPostAttribute( 'title' ) ?? '',
+					excerpt:
+						( window as any ).wp.data
+							.select( 'core/editor' )
+							.getEditedPostAttribute( 'excerpt' ) ?? '',
 					blocks: normalizeBlocks( blocks ),
 					crdtDocument: includePersistedDoc
 						? record?.meta?._crdt_document ?? null
