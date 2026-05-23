@@ -1,23 +1,23 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z,P0,no,raw reconcile feedback remains no_new_publishable_stack on large-post-three-user-http rep2; broad or wait-only evidence is not publication quality,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z,"raw reconcile feedback remains no_new_publishable_stack on
-large-post-three-user-http rep2; broad or wait-only evidence is not publication
-quality"
-repair-branch,PR17/materialize/table,P0,no,product-split exact green supersedes branch-changing repair unless publication fails or fresh same-head red evidence appears,PR17/materialize/table,"product-split exact green supersedes branch-changing repair unless publication
-fails or fresh same-head red evidence appears"
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,high_pressure single-flight posture; do not fan out PR jobs while PR17 publish accounting owns the bounded slot,all-other-heavy-pr-jobs,"high_pressure single-flight posture; do not fan out PR jobs while PR17 publish
-accounting owns the bounded slot"
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing or persistence reload, and large
-HTTP lifecycle green evidence"
+publish-ready,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,2026-05-23T11:54:12Z hold-publication/no_new_publishable_stack is newer same-head evidence; publish only after same-commit benchmark-minimum rows all exit 0 plus non-skipped build,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,"2026-05-23T11:54:12Z hold-publication/no_new_publishable_stack is newer
+same-head evidence; publish only after same-commit benchmark-minimum rows all
+exit 0 plus non-skipped build"
+publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,raw wait-only/broad reconcile branch remains blocked by large-post-three-user-http rep2 and should stay out of maintainer snapshots,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,"raw wait-only/broad reconcile branch remains blocked by
+large-post-three-user-http rep2 and should stay out of maintainer snapshots"
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,high-pressure single-flight; PR17 owns the only allowed heavy product slot while discovery reserve stays protected,all-other-heavy-pr-jobs,"high-pressure single-flight; PR17 owns the only allowed heavy product slot while
+discovery reserve stays protected"
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh title-reload, existing/persistence reload, and large HTTP lifecycle green/downscope evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh title-reload, existing/persistence reload, and large HTTP
+lifecycle green/downscope evidence"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"no branch fanout until exact replay proves ownership, green adoption, or replay-backed downscope",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"no branch fanout until exact replay proves ownership, green adoption, or
 replay-backed downscope"
-publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,no owner evidence or product first-loss proof,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,no owner evidence or product first-loss proof
+publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,"no owner evidence, product first-loss proof, green adoption, or downscope",pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,"no owner evidence, product first-loss proof, green adoption, or downscope"
 publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,no focused replay owner evidence or product first-loss proof,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,no focused replay owner evidence or product first-loss proof
-launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate browser owner-matrix is churn unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C,"duplicate browser owner-matrix is churn unless newer current-head product-owned
-red evidence appears"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate owner-matrix is churn unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C,"duplicate owner-matrix is churn unless newer current-head product-owned red
+evidence appears"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
 ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
-reserve-discovery,benchmark-canary/provider-persisted-crdt-large-post-lower-unit,P0,no,bounded lower-unit pass is consumed; repeat only after fixed accounting and fresh failing seed or yield signal,benchmark-canary/provider-persisted-crdt-large-post-lower-unit,"bounded lower-unit pass is consumed; repeat only after fixed accounting and
+reserve-discovery,benchmark-canary/provider-persisted-crdt-large-post-lower-unit,P0,no,bounded lower-unit green is consumed; repeat only after fixed accounting and fresh failing seed or yield signal,benchmark-canary/provider-persisted-crdt-large-post-lower-unit,"bounded lower-unit green is consumed; repeat only after fixed accounting and
 fresh failing seed or yield signal"
