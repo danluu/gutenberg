@@ -1,6 +1,6 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,fresh same-head exact-stack failures block publication until same-commit benchmark-minimum green and non-skipped complete-dependency build evidence,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"fresh same-head exact-stack failures block publication until same-commit
-benchmark-minimum green and non-skipped complete-dependency build evidence"
+publish-ready,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,fresh same-head exact-stack failures block publication until same-commit benchmark-minimum green plus non-skipped complete-dependency build evidence,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"fresh same-head exact-stack failures block publication until same-commit
+benchmark-minimum green plus non-skipped complete-dependency build evidence"
 publish-ready,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,older green or publish-ready evidence is superseded by newer exact-stack red at 69df480bc3dcfe99e7fe09afbbcd9990dba006da,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,"older green or publish-ready evidence is superseded by newer exact-stack red at
 69df480bc3dcfe99e7fe09afbbcd9990dba006da"
 publish-ready,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z,P0,no,stale product-split publication signal is superseded by later exact-stack red evidence,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z,"stale product-split publication signal is superseded by later exact-stack red
