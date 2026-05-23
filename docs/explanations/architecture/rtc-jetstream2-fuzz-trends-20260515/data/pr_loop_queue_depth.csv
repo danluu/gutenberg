@@ -9,7 +9,7 @@ controller decisions,allowed,control decision,P0,16
 controller decisions,blocked,control decision,P0,5
 controller decisions,allowed,control decision,P1,1
 controller decisions,allowed,control decision,high,12
-controller decisions,blocked,control decision,high,5
+controller decisions,blocked,control decision,high,7
 controller decisions,allowed,control decision,medium,1
 critical blockers,held,deferred-family,high,1
 critical blockers,active,exact-stack-promotion,high,1
