@@ -1,351 +1,351 @@
 feature,count,feature_category
-profile:table-stale-snapshot-http,96,profile
-transport:http,4223,transport
-transport-profile:http:table-stale-snapshot-http,96,transport
-collaborator-mode:distinct-user,9599,collaborator
-collaborator-role:editor,9173,collaborator
-soft-discovery-bootstrap:true,8937,other
-users:2,4819,users
-initial:freeform-parser-content,768,initial-content
-step-count:6,148,step-count
-depth:1,2962,other
-save-count:0,3108,save
-autosave-count:0,10053,autosave
-reload-count:0,3443,reload
-revision-eligible:false,7125,revision
-block:core/freeform,556,block
-block:core/heading,6391,block
-block:core/paragraph,8041,block
-action:table-stale-snapshot-html,46,action
-fault:delay:delay,5431,fault
-history:seed:invoke,10127,history
-history:create-post:ok,10127,history
-history:fault:invoke,6575,history
-history:action:invoke,8033,history
-history-label:action:table-stale-snapshot-html:invoke,46,history
+profile:table-stale-snapshot-http,100,profile
+transport:http,4233,transport
+transport-profile:http:table-stale-snapshot-http,100,transport
+collaborator-mode:distinct-user,9646,collaborator
+collaborator-role:editor,9238,collaborator
+soft-discovery-bootstrap:true,8999,other
+users:2,4869,users
+initial:freeform-parser-content,778,initial-content
+step-count:6,152,step-count
+depth:1,2975,other
+save-count:0,3111,save
+autosave-count:0,10107,autosave
+reload-count:0,3449,reload
+revision-eligible:false,7158,revision
+block:core/freeform,566,block
+block:core/heading,6454,block
+block:core/paragraph,8105,block
+action:table-stale-snapshot-html,50,action
+fault:delay:delay,5474,fault
+history:seed:invoke,10192,history
+history:create-post:ok,10192,history
+history:fault:invoke,6630,history
+history:action:invoke,8097,history
+history-label:action:table-stale-snapshot-html:invoke,50,history
 history:action:fail,761,history
 history-label:action:table-stale-snapshot-html:fail,8,history
-history:seed:fail,6132,history
-invariant:serialize-parse-current-blocks:ok,8039,invariant
-invariant:unique-client-ids:ok,8039,invariant
-invariant:non-empty-client-ids:ok,8039,invariant
-invariant:inner-blocks-are-arrays:ok,8039,invariant
-invariant:no-object-object-strings:ok,8039,invariant
-invariant:unexpected-invalid-blocks:ok,6573,invariant
-invariant:serialize-parse-roundtrip-stable:ok,8039,invariant
-invariant:edited-content-matches-block-store:ok,8039,invariant
-invariant:cross-page-exact-serialized-content:ok,8039,invariant
-invariant:cross-page-canonical-serialized-content:ok,8039,invariant
-invariant:cross-page-canonical-edited-content:ok,8039,invariant
-invariant:cross-page-exact-edited-content:ok,8038,invariant
-operation-ledger-mode:fail,4220,operation-ledger
-invalid-blocks:0,6478,other
-total-blocks:4,72,other
+history:seed:fail,6152,history
+invariant:serialize-parse-current-blocks:ok,8103,invariant
+invariant:unique-client-ids:ok,8103,invariant
+invariant:non-empty-client-ids:ok,8103,invariant
+invariant:inner-blocks-are-arrays:ok,8103,invariant
+invariant:no-object-object-strings:ok,8103,invariant
+invariant:unexpected-invalid-blocks:ok,6611,invariant
+invariant:serialize-parse-roundtrip-stable:ok,8103,invariant
+invariant:edited-content-matches-block-store:ok,8103,invariant
+invariant:cross-page-exact-serialized-content:ok,8103,invariant
+invariant:cross-page-canonical-serialized-content:ok,8103,invariant
+invariant:cross-page-canonical-edited-content:ok,8103,invariant
+invariant:cross-page-exact-edited-content:ok,8102,invariant
+operation-ledger-mode:fail,4230,operation-ledger
+invalid-blocks:0,6514,other
+total-blocks:4,74,other
 serialized-size-log2:8,94,serialized-size
 payload-size-profile:table-stale-snapshot-http:8,2,payload-size
 payload-size-transport:http:8,31,payload-size
-block-depth:core/heading:0,6295,block-depth
-block-depth:core/paragraph:0,4771,block-depth
-block-depth:core/freeform:0,574,block-depth
+block-depth:core/heading:0,6350,block-depth
+block-depth:core/paragraph:0,4805,block-depth
+block-depth:core/freeform:0,584,block-depth
 cdp:d9e5f492c5fa7eab,1,code coverage
 profile:async-server-blocks,714,profile
-transport:ws,5904,transport
+transport:ws,5959,transport
 transport-profile:ws:async-server-blocks,714,transport
-initial:validation-fix-content,802,initial-content
-step-count:12,838,step-count
-depth:2,3840,other
-block:core/group,3905,block
-block:core/image,1670,block
-block:core/quote,2540,block
-operation-ledger-mode:shadow,5907,operation-ledger
-total-blocks:10,208,other
-serialized-size-log2:11,2687,serialized-size
+initial:validation-fix-content,812,initial-content
+step-count:12,847,step-count
+depth:2,3885,other
+block:core/group,3955,block
+block:core/image,1697,block
+block:core/quote,2569,block
+operation-ledger-mode:shadow,5962,operation-ledger
+total-blocks:10,210,other
+serialized-size-log2:11,2720,serialized-size
 payload-size-profile:async-server-blocks:11,61,payload-size
-payload-size-transport:ws:11,1145,payload-size
-block-depth:core/paragraph:1,4308,block-depth
-block-depth:core/group:0,3971,block-depth
-block-depth:core/quote:0,2646,block-depth
-block-depth:core/image:0,1646,block-depth
+payload-size-transport:ws:11,1177,payload-size
+block-depth:core/paragraph:1,4360,block-depth
+block-depth:core/group:0,4021,block-depth
+block-depth:core/quote:0,2675,block-depth
+block-depth:core/image:0,1675,block-depth
 profile:collaboration-ui-signals,146,profile
 transport-profile:ws:collaboration-ui-signals,146,transport
-initial:base-seeded,1666,initial-content
-action:assert-presence-list,156,action
+initial:base-seeded,1669,initial-content
+action:assert-presence-list,161,action
 action:assert-remote-cursor,42,action
 action-pair:assert-presence-list->assert-remote-cursor,12,action-pair
-fault:fail:503,1932,fault
-history-label:action:assert-presence-list:invoke,156,history
-history:presence-list:ok,156,history
-history:action:ok,7957,history
-history-label:action:assert-presence-list:ok,156,history
-history:convergence:ok,7925,history
+fault:fail:503,1950,fault
+history-label:action:assert-presence-list:invoke,161,history
+history:presence-list:ok,161,history
+history:action:ok,8021,history
+history-label:action:assert-presence-list:ok,161,history
+history:convergence:ok,7989,history
 history-label:action:assert-remote-cursor:invoke,42,history
 history-label:action:assert-remote-cursor:fail,41,history
-operation-event:assert-ok:any,7924,operation-ledger
+operation-event:assert-ok:any,7988,operation-ledger
 total-blocks:3,38,other
 payload-size-profile:collaboration-ui-signals:8,35,payload-size
 payload-size-transport:ws:8,63,payload-size
 cdp:0b0e8ac1b2496ea7,1,code coverage
-block:core/list,3512,block
-block:core/list-item,3511,block
-fault:fail:500,2168,fault
-serialized-size-log2:9,882,serialized-size
+block:core/list,3534,block
+block:core/list-item,3533,block
+fault:fail:500,2186,fault
+serialized-size-log2:9,884,serialized-size
 payload-size-profile:collaboration-ui-signals:9,41,payload-size
 payload-size-transport:ws:9,779,payload-size
-block-depth:core/list:0,2859,block-depth
-block-depth:core/list-item:1,2859,block-depth
+block-depth:core/list:0,2881,block-depth
+block-depth:core/list-item:1,2881,block-depth
 cdp:3821cde5af3fd7fd,1,code coverage
-users:3,3104,users
-lifecycle:late-join:users-3,3104,lifecycle
-history:late-join:invoke,3365,history
-history:late-join:ok,3221,history
+users:3,3118,users
+lifecycle:late-join:users-3,3118,lifecycle
+history:late-join:invoke,3379,history
+history:late-join:ok,3235,history
 cdp:10b7c5225363775b,1,code coverage
 profile:many-user-lifecycle,177,profile
 transport-profile:ws:many-user-lifecycle,177,transport
-users:0,2086,users
-step-count:8,1039,step-count
-depth:0,2086,other
+users:0,2087,users
+step-count:8,1051,step-count
+depth:0,2087,other
 step-count:5,608,step-count
 profile:persistence-no-title,1784,profile
 transport-profile:http:persistence-no-title,1784,transport
-step-count:10,3255,step-count
-save-count:3,730,save
-reload-count:3,2055,reload
-revision-eligible:true,3002,revision
-block:core/search,6617,block
-action:append-paragraph,4034,action
-action:insert-heading,3214,action
-action:concurrent-paragraphs,3820,action
-action:edit-paragraph,2553,action
-action-pair:append-paragraph->insert-heading,1573,action-pair
-action-pair:insert-heading->concurrent-paragraphs,1085,action-pair
-action-pair:concurrent-paragraphs->edit-paragraph,909,action-pair
-action-pair:edit-paragraph->append-paragraph,949,action-pair
-lifecycle:lifecycle-reload:users-3,1798,lifecycle
-history-label:action:append-paragraph:invoke,4034,history
-history-label:action:append-paragraph:ok,4033,history
-history-label:action:insert-heading:invoke,3214,history
-history-label:action:insert-heading:ok,3214,history
-history-label:action:concurrent-paragraphs:invoke,3820,history
-history-label:action:concurrent-paragraphs:ok,3819,history
-history:save-checkpoint:invoke,7019,history
-history:save-checkpoint:ok,6679,history
-history-label:action:edit-paragraph:invoke,2553,history
-history-label:action:edit-paragraph:ok,2553,history
-history:reload:invoke,6766,history
-history:reload:ok,6685,history
-history:final-convergence:ok,5489,history
-history:final-persistence-oracle:invoke,2922,history
-history:final-persistence-oracle:ok,2852,history
-history:revision-restore:invoke,5419,history
-history:revision-restore:ok,3995,history
-history:seed:ok,3995,history
-revision-restored:true,1578,revision
-invariant:final-persistence-live-canonical-convergence:ok,2892,invariant
-invariant:final-persistence-canonical-content:ok,2888,invariant
-invariant:final-persistence-title:ok,2891,invariant
-invariant:final-persistence-crdt-document-present:ok,2891,invariant
-operation-ledger:active,7804,operation-ledger
-operation-ledger-created:8,5772,operation-ledger
-operation-ledger-live:3,1982,operation-ledger
-operation-ledger-missing:0,6776,operation-ledger
-operation-event:witnessed:content,7775,operation-ledger
-operation-event-action:witnessed:append-paragraph:content,4020,operation-ledger
-operation-event-action:witnessed:insert-heading:content,3207,operation-ledger
-operation-event-action:witnessed:concurrent-paragraphs:content,3803,operation-ledger
-operation-event-action:witnessed:save-checkpoint:content,6677,operation-ledger
-operation-event:witnessed:title,6925,operation-ledger
-operation-event-action:witnessed:save-checkpoint:title,6677,operation-ledger
-operation-event:invalidated:content,4201,operation-ledger
-operation-event-action:invalidated:edit-paragraph:content,2265,operation-ledger
-operation-event-action:witnessed:edit-paragraph:content,2552,operation-ledger
-operation-event:retired:title,4478,operation-ledger
-operation-event-action:retired:save-checkpoint:title,4371,operation-ledger
-operation-event-action:invalidated:revision-restore:content,1306,operation-ledger
-operation-event:invalidated:title,1578,operation-ledger
-operation-event-action:invalidated:revision-restore:title,1578,operation-ledger
-operation-event-action:witnessed:revision-restore:content,1578,operation-ledger
-operation-event-action:witnessed:revision-restore:title,1578,operation-ledger
-total-blocks:21,247,other
+step-count:10,3274,step-count
+save-count:3,735,save
+reload-count:3,2076,reload
+revision-eligible:true,3034,revision
+block:core/search,6677,block
+action:append-paragraph,4067,action
+action:insert-heading,3243,action
+action:concurrent-paragraphs,3852,action
+action:edit-paragraph,2577,action
+action-pair:append-paragraph->insert-heading,1582,action-pair
+action-pair:insert-heading->concurrent-paragraphs,1093,action-pair
+action-pair:concurrent-paragraphs->edit-paragraph,915,action-pair
+action-pair:edit-paragraph->append-paragraph,954,action-pair
+lifecycle:lifecycle-reload:users-3,1809,lifecycle
+history-label:action:append-paragraph:invoke,4067,history
+history-label:action:append-paragraph:ok,4066,history
+history-label:action:insert-heading:invoke,3243,history
+history-label:action:insert-heading:ok,3243,history
+history-label:action:concurrent-paragraphs:invoke,3852,history
+history-label:action:concurrent-paragraphs:ok,3851,history
+history:save-checkpoint:invoke,7081,history
+history:save-checkpoint:ok,6739,history
+history-label:action:edit-paragraph:invoke,2577,history
+history-label:action:edit-paragraph:ok,2577,history
+history:reload:invoke,6825,history
+history:reload:ok,6744,history
+history:final-convergence:ok,5542,history
+history:final-persistence-oracle:invoke,2952,history
+history:final-persistence-oracle:ok,2882,history
+history:revision-restore:invoke,5472,history
+history:revision-restore:ok,4040,history
+history:seed:ok,4040,history
+revision-restored:true,1602,revision
+invariant:final-persistence-live-canonical-convergence:ok,2922,invariant
+invariant:final-persistence-canonical-content:ok,2918,invariant
+invariant:final-persistence-title:ok,2921,invariant
+invariant:final-persistence-crdt-document-present:ok,2921,invariant
+operation-ledger:active,7867,operation-ledger
+operation-ledger-created:8,5819,operation-ledger
+operation-ledger-live:3,2012,operation-ledger
+operation-ledger-missing:0,6830,operation-ledger
+operation-event:witnessed:content,7838,operation-ledger
+operation-event-action:witnessed:append-paragraph:content,4053,operation-ledger
+operation-event-action:witnessed:insert-heading:content,3236,operation-ledger
+operation-event-action:witnessed:concurrent-paragraphs:content,3835,operation-ledger
+operation-event-action:witnessed:save-checkpoint:content,6737,operation-ledger
+operation-event:witnessed:title,6985,operation-ledger
+operation-event-action:witnessed:save-checkpoint:title,6737,operation-ledger
+operation-event:invalidated:content,4254,operation-ledger
+operation-event-action:invalidated:edit-paragraph:content,2285,operation-ledger
+operation-event-action:witnessed:edit-paragraph:content,2576,operation-ledger
+operation-event:retired:title,4518,operation-ledger
+operation-event-action:retired:save-checkpoint:title,4410,operation-ledger
+operation-event-action:invalidated:revision-restore:content,1324,operation-ledger
+operation-event:invalidated:title,1602,operation-ledger
+operation-event-action:invalidated:revision-restore:title,1602,operation-ledger
+operation-event-action:witnessed:revision-restore:content,1602,operation-ledger
+operation-event-action:witnessed:revision-restore:title,1602,operation-ledger
+total-blocks:21,251,other
 payload-size-profile:persistence-no-title:11,878,payload-size
-payload-size-transport:http:11,1542,payload-size
-block-depth:core/search:0,6703,block-depth
+payload-size-transport:http:11,1543,payload-size
+block-depth:core/search:0,6763,block-depth
 cdp:ed447a6c3dcee1f6,1,code coverage
-profile:large-post-three-user-http-lifecycle,989,profile
-transport-profile:http:large-post-three-user-http-lifecycle,989,transport
+profile:large-post-three-user-http-lifecycle,993,profile
+transport-profile:http:large-post-three-user-http-lifecycle,993,transport
 initial:large-document-75,369,initial-content
 real-user-action-sequence:,113,real-user
 cdp:991d297375ef6a49,1,code coverage
-initial:base-2,760,initial-content
-block:core/table,2218,block
+initial:base-2,766,initial-content
+block:core/table,2250,block
 action:ui-table-cell-edit,274,action
 action-pair:ui-table-cell-edit->table-stale-snapshot-html,5,action-pair
 history-label:action:ui-table-cell-edit:invoke,274,history
 history-label:action:ui-table-cell-edit:ok,274,history
 operation-ledger-created:1,215,operation-ledger
-operation-ledger-live:1,888,operation-ledger
+operation-ledger-live:1,901,operation-ledger
 operation-event-action:witnessed:ui-table-cell-edit:content,273,operation-ledger
-total-blocks:11,224,other
-serialized-size-log2:10,2387,serialized-size
-payload-size-profile:table-stale-snapshot-http:10,41,payload-size
-payload-size-transport:http:10,1208,payload-size
-block-depth:core/table:0,2301,block-depth
+total-blocks:11,226,other
+serialized-size-log2:10,2397,serialized-size
+payload-size-profile:table-stale-snapshot-http:10,43,payload-size
+payload-size-transport:http:10,1210,payload-size
+block-depth:core/table:0,2334,block-depth
 cdp:097bd73e09c51f69,1,code coverage
-initial:html-entity-reference,763,initial-content
-invariant:unexpected-invalid-blocks:observed,1560,invariant
-invariant-signal:unexpected-invalid-blocks,1561,invariant
-invalid-blocks:3,531,other
+initial:html-entity-reference,772,initial-content
+invariant:unexpected-invalid-blocks:observed,1588,invariant
+invariant-signal:unexpected-invalid-blocks,1589,invariant
+invalid-blocks:3,540,other
 total-blocks:6,645,other
-payload-size-profile:table-stale-snapshot-http:9,24,payload-size
-payload-size-transport:http:9,103,payload-size
+payload-size-profile:table-stale-snapshot-http:9,26,payload-size
+payload-size-transport:http:9,105,payload-size
 cdp:07b9f9e716c260dc,1,code coverage
-profile:session-lifecycle,1366,profile
-transport-profile:http:session-lifecycle,1234,transport
-action:edit-title,1271,action
-action-pair:edit-title->append-paragraph,774,action-pair
-action-pair:append-paragraph->edit-title,789,action-pair
-action-pair:edit-title->concurrent-paragraphs,773,action-pair
-action-pair:concurrent-paragraphs->edit-title,778,action-pair
-lifecycle:lifecycle-reload:users-2,1790,lifecycle
-history-label:action:edit-title:invoke,1271,history
-history-label:action:edit-title:ok,1271,history
-history:revision-restore:fail,1424,history
-operation-ledger-live:8,2429,operation-ledger
-operation-event-action:witnessed:edit-title:title,1268,operation-ledger
-operation-event-action:retired:edit-title:title,1057,operation-ledger
-total-blocks:16,275,other
-payload-size-profile:session-lifecycle:11,573,payload-size
+profile:session-lifecycle,1384,profile
+transport-profile:http:session-lifecycle,1235,transport
+action:edit-title,1295,action
+action-pair:edit-title->append-paragraph,778,action-pair
+action-pair:append-paragraph->edit-title,790,action-pair
+action-pair:edit-title->concurrent-paragraphs,780,action-pair
+action-pair:concurrent-paragraphs->edit-title,781,action-pair
+lifecycle:lifecycle-reload:users-2,1819,lifecycle
+history-label:action:edit-title:invoke,1295,history
+history-label:action:edit-title:ok,1295,history
+history:revision-restore:fail,1432,history
+operation-ledger-live:8,2438,operation-ledger
+operation-event-action:witnessed:edit-title:title,1292,operation-ledger
+operation-event-action:retired:edit-title:title,1072,operation-ledger
+total-blocks:16,278,other
+payload-size-profile:session-lifecycle:11,582,payload-size
 cdp:144b1a766aa63573,1,code coverage
 cdp:281406bd5a60078f,1,code coverage
 cdp:16807a71a6ea401a,1,code coverage
 cdp:03a58d1b96a2e3ed,1,code coverage
 cdp:a001c9106577354f,1,code coverage
-fault:fail:429,2106,fault
+fault:fail:429,2124,fault
 cdp:0a2ce3c627c63297,1,code coverage
-action:late-join-post-action,1276,action
+action:late-join-post-action,1280,action
 action-pair:assert-presence-list->late-join-post-action,71,action-pair
 action-pair:late-join-post-action->assert-remote-cursor,13,action-pair
-lifecycle:late-join-post-action:users-3,1159,lifecycle
-history-label:action:late-join-post-action:invoke,1276,history
-history-label:action:late-join-post-action:ok,1276,history
-operation-event-action:witnessed:late-join-post-action:content,1276,operation-ledger
+lifecycle:late-join-post-action:users-3,1163,lifecycle
+history-label:action:late-join-post-action:invoke,1280,history
+history-label:action:late-join-post-action:ok,1280,history
+operation-event-action:witnessed:late-join-post-action:content,1280,operation-ledger
 cdp:5450308ad10ef445,1,code coverage
 payload-size-profile:collaboration-ui-signals:10,35,payload-size
-payload-size-transport:ws:10,1179,payload-size
+payload-size-transport:ws:10,1187,payload-size
 cdp:c67b0fcf98a4e183,1,code coverage
 users:11,1,users
 payload-size-profile:many-user-lifecycle:8,20,payload-size
-total-blocks:15,389,other
+total-blocks:15,393,other
 cdp:4d0f32a36a02c681,1,code coverage
-reload-count:2,911,reload
-real-user-action-sequence:ui-type-paragraph>late-join-post-action>ui-type-title>append-paragraph>insert-heading>concurrent-paragraphs,106,real-user
-action:ui-type-paragraph,968,action
-action:ui-type-title,911,action
-action-pair:ui-type-paragraph->late-join-post-action,526,action-pair
-action-pair:late-join-post-action->ui-type-title,518,action-pair
-action-pair:ui-type-title->append-paragraph,503,action-pair
-action-pair:concurrent-paragraphs->ui-type-paragraph,128,action-pair
-action-pair:ui-type-paragraph->ui-type-title,456,action-pair
-history-label:action:ui-type-paragraph:invoke,968,history
-history-label:action:ui-type-paragraph:ok,964,history
-history-label:action:ui-type-title:invoke,911,history
-history-label:action:ui-type-title:ok,909,history
-history:final-ui-witness-sweep:invoke,441,history
-history:final-ui-witness-sweep:ok,148,history
-history:final-persistence-publish:invoke,182,history
+reload-count:2,924,reload
+real-user-action-sequence:ui-type-paragraph>late-join-post-action>ui-type-title>append-paragraph>insert-heading>concurrent-paragraphs,108,real-user
+action:ui-type-paragraph,970,action
+action:ui-type-title,913,action
+action-pair:ui-type-paragraph->late-join-post-action,528,action-pair
+action-pair:late-join-post-action->ui-type-title,520,action-pair
+action-pair:ui-type-title->append-paragraph,505,action-pair
+action-pair:concurrent-paragraphs->ui-type-paragraph,130,action-pair
+action-pair:ui-type-paragraph->ui-type-title,458,action-pair
+history-label:action:ui-type-paragraph:invoke,970,history
+history-label:action:ui-type-paragraph:ok,966,history
+history-label:action:ui-type-title:invoke,913,history
+history-label:action:ui-type-title:ok,911,history
+history:final-ui-witness-sweep:invoke,445,history
+history:final-ui-witness-sweep:ok,149,history
+history:final-persistence-publish:invoke,183,history
 history:publish-ui-preflight:ok,37,history
 history:publish-ui-readiness:ok,37,history
-history:final-persistence-publish:ok,146,history
-operation-event-action:witnessed:ui-type-paragraph:content,960,operation-ledger
-operation-event-action:witnessed:ui-type-title:title,907,operation-ledger
-operation-event-action:retired:ui-type-title:title,592,operation-ledger
-operation-event-action:witnessed:final-ui-witness-sweep:content,167,operation-ledger
-total-blocks:117,67,other
-large-document:blocks-50,1033,large-document
-large-document:blocks-100,997,large-document
-serialized-size-log2:13,505,serialized-size
-payload-size-profile:large-post-three-user-http-lifecycle:13,461,payload-size
-payload-size-transport:http:13,462,payload-size
+history:final-persistence-publish:ok,147,history
+operation-event-action:witnessed:ui-type-paragraph:content,962,operation-ledger
+operation-event-action:witnessed:ui-type-title:title,909,operation-ledger
+operation-event-action:retired:ui-type-title:title,594,operation-ledger
+operation-event-action:witnessed:final-ui-witness-sweep:content,168,operation-ledger
+total-blocks:117,68,other
+large-document:blocks-50,1037,large-document
+large-document:blocks-100,1001,large-document
+serialized-size-log2:13,508,serialized-size
+payload-size-profile:large-post-three-user-http-lifecycle:13,464,payload-size
+payload-size-transport:http:13,465,payload-size
 cdp:de4c9f4482f2d211,1,code coverage
 cdp:4665f081f3bb1f8d,1,code coverage
-total-blocks:26,143,other
+total-blocks:26,144,other
 cdp:91a83e460ad3f06c,1,code coverage
-total-blocks:19,238,other
+total-blocks:19,244,other
 cdp:5546bbdea692ce87,1,code coverage
-operation-ledger-live:6,332,operation-ledger
+operation-ledger-live:6,333,operation-ledger
 cdp:d902fee782a37ea7,1,code coverage
 cdp:b9a544e324651fc1,1,code coverage
-total-blocks:120,715,other
+total-blocks:120,718,other
 cdp:9db32c285fe52024,1,code coverage
 cdp:b93f440b8f21304e,1,code coverage
 cdp:3252976bb823a402,1,code coverage
 cdp:b414ac8cc4cbb08e,1,code coverage
-initial:large-document-175,445,initial-content
-step-count:36,445,step-count
-real-user-template:body-save-reload,628,real-user
-real-user-template:title-save-reload,624,real-user
-serialized-size-log2:15,67,serialized-size
-payload-size-profile:large-post-three-user-http-lifecycle:15,67,payload-size
-payload-size-transport:http:15,67,payload-size
+initial:large-document-175,446,initial-content
+step-count:36,446,step-count
+real-user-template:body-save-reload,630,real-user
+real-user-template:title-save-reload,626,real-user
+serialized-size-log2:15,68,serialized-size
+payload-size-profile:large-post-three-user-http-lifecycle:15,68,payload-size
+payload-size-transport:http:15,68,payload-size
 cdp:72a9f070054d1b6f,1,code coverage
-save-count:2,2811,save
+save-count:2,2841,save
 history:reload:fail,211,history
 serialized-size-log2:14,469,serialized-size
 payload-size-profile:large-post-three-user-http-lifecycle:14,367,payload-size
 payload-size-transport:http:14,367,payload-size
 cdp:543719d9058f3a40,1,code coverage
-initial:base-1,386,initial-content
-reload-count:1,3718,reload
-action:edit-table-array-attributes,2088,action
-action:insert-paragraph,1804,action
-action-pair:edit-table-array-attributes->edit-paragraph,296,action-pair
-action-pair:edit-paragraph->insert-heading,315,action-pair
-action-pair:insert-heading->append-paragraph,338,action-pair
-action-pair:append-paragraph->concurrent-paragraphs,378,action-pair
-action-pair:concurrent-paragraphs->insert-paragraph,309,action-pair
-action-pair:insert-paragraph->edit-paragraph,428,action-pair
-history-label:action:edit-table-array-attributes:invoke,2088,history
-history-label:action:edit-table-array-attributes:ok,2087,history
-history-label:action:insert-paragraph:invoke,1804,history
-history-label:action:insert-paragraph:ok,1804,history
-operation-event-action:witnessed:edit-table-array-attributes:content,2069,operation-ledger
-operation-event-action:witnessed:insert-paragraph:content,1803,operation-ledger
-total-blocks:14,966,other
-action:move-block,2955,action
-action-pair:append-paragraph->edit-table-array-attributes,326,action-pair
-action-pair:edit-table-array-attributes->move-block,263,action-pair
-action-pair:move-block->insert-paragraph,316,action-pair
-action-pair:insert-paragraph->concurrent-paragraphs,323,action-pair
-action-pair:concurrent-paragraphs->concurrent-paragraphs,265,action-pair
-history-label:action:move-block:invoke,2955,history
-history-label:action:move-block:ok,2955,history
-operation-event-action:invalidated:edit-table-array-attributes:content,1621,operation-ledger
-total-blocks:24,178,other
-initial:base-3,339,initial-content
-action:delete-block,1753,action
-action-pair:edit-paragraph->edit-table-array-attributes,326,action-pair
-action-pair:edit-table-array-attributes->insert-paragraph,260,action-pair
-action-pair:insert-paragraph->delete-block,268,action-pair
-action-pair:delete-block->move-block,349,action-pair
-action-pair:move-block->edit-paragraph,329,action-pair
-action-pair:edit-paragraph->edit-paragraph,225,action-pair
+initial:base-1,387,initial-content
+reload-count:1,3743,reload
+action:edit-table-array-attributes,2121,action
+action:insert-paragraph,1832,action
+action-pair:edit-table-array-attributes->edit-paragraph,300,action-pair
+action-pair:edit-paragraph->insert-heading,317,action-pair
+action-pair:insert-heading->append-paragraph,344,action-pair
+action-pair:append-paragraph->concurrent-paragraphs,383,action-pair
+action-pair:concurrent-paragraphs->insert-paragraph,310,action-pair
+action-pair:insert-paragraph->edit-paragraph,430,action-pair
+history-label:action:edit-table-array-attributes:invoke,2121,history
+history-label:action:edit-table-array-attributes:ok,2120,history
+history-label:action:insert-paragraph:invoke,1832,history
+history-label:action:insert-paragraph:ok,1832,history
+operation-event-action:witnessed:edit-table-array-attributes:content,2100,operation-ledger
+operation-event-action:witnessed:insert-paragraph:content,1831,operation-ledger
+total-blocks:14,969,other
+action:move-block,2987,action
+action-pair:append-paragraph->edit-table-array-attributes,328,action-pair
+action-pair:edit-table-array-attributes->move-block,267,action-pair
+action-pair:move-block->insert-paragraph,318,action-pair
+action-pair:insert-paragraph->concurrent-paragraphs,327,action-pair
+action-pair:concurrent-paragraphs->concurrent-paragraphs,269,action-pair
+history-label:action:move-block:invoke,2987,history
+history-label:action:move-block:ok,2987,history
+operation-event-action:invalidated:edit-table-array-attributes:content,1641,operation-ledger
+total-blocks:24,180,other
+initial:base-3,340,initial-content
+action:delete-block,1784,action
+action-pair:edit-paragraph->edit-table-array-attributes,328,action-pair
+action-pair:edit-table-array-attributes->insert-paragraph,263,action-pair
+action-pair:insert-paragraph->delete-block,272,action-pair
+action-pair:delete-block->move-block,353,action-pair
+action-pair:move-block->edit-paragraph,333,action-pair
+action-pair:edit-paragraph->edit-paragraph,227,action-pair
 action-pair:edit-paragraph->delete-block,349,action-pair
-history-label:action:delete-block:invoke,1753,history
-history-label:action:delete-block:ok,1753,history
-operation-event-action:invalidated:delete-block:content,1448,operation-ledger
-total-blocks:8,202,other
+history-label:action:delete-block:invoke,1784,history
+history-label:action:delete-block:ok,1784,history
+operation-event-action:invalidated:delete-block:content,1466,operation-ledger
+total-blocks:8,203,other
 payload-size-profile:persistence-no-title:10,739,payload-size
-initial:base-0,1806,initial-content
-action-pair:concurrent-paragraphs->append-paragraph,330,action-pair
-action-pair:insert-heading->insert-paragraph,352,action-pair
-action-pair:insert-paragraph->edit-table-array-attributes,239,action-pair
-action-pair:edit-table-array-attributes->edit-table-array-attributes,283,action-pair
-action-pair:edit-table-array-attributes->append-paragraph,339,action-pair
-history:convergence:fail,415,history
+initial:base-0,1811,initial-content
+action-pair:concurrent-paragraphs->append-paragraph,332,action-pair
+action-pair:insert-heading->insert-paragraph,356,action-pair
+action-pair:insert-paragraph->edit-table-array-attributes,242,action-pair
+action-pair:edit-table-array-attributes->edit-table-array-attributes,286,action-pair
+action-pair:edit-table-array-attributes->append-paragraph,343,action-pair
+history:convergence:fail,418,history
 payload-size-profile:persistence-no-title:8,18,payload-size
 cdp:faec9ee70e315700,1,code coverage
-total-blocks:23,204,other
+total-blocks:23,207,other
 cdp:9a16d6c661abcb5f,1,code coverage
-total-blocks:18,195,other
+total-blocks:18,199,other
 cdp:b5aa5cfd63a9f59c,1,code coverage
 cdp:82b5a46cd6b40caa,1,code coverage
 cdp:47df340f371762a4,1,code coverage
@@ -362,310 +362,310 @@ cdp:ea4066fb5abddbe7,1,code coverage
 cdp:03993b24ba49a535,1,code coverage
 cdp:989df7f6d7d4b632,1,code coverage
 cdp:b50261c6557bb11b,1,code coverage
-history:final-ui-witness-sweep:fail,293,history
-collaborator-mode:same-user,528,collaborator
-step-count:24,520,step-count
-action:insert-nested-group,1180,action
-action:edit-nested-paragraph,1147,action
-action-pair:concurrent-paragraphs->insert-nested-group,120,action-pair
-action-pair:insert-nested-group->edit-title,80,action-pair
-action-pair:edit-title->edit-nested-paragraph,63,action-pair
-action-pair:edit-nested-paragraph->edit-paragraph,106,action-pair
-history-label:action:insert-nested-group:invoke,1180,history
-history-label:action:insert-nested-group:ok,1180,history
-history-label:action:edit-nested-paragraph:invoke,1147,history
-history-label:action:edit-nested-paragraph:ok,1147,history
-operation-ledger-created:5,122,operation-ledger
-operation-ledger-live:2,554,operation-ledger
-operation-event-action:witnessed:insert-nested-group:content,1177,operation-ledger
-operation-event-action:invalidated:edit-nested-paragraph:content,856,operation-ledger
+history:final-ui-witness-sweep:fail,296,history
+collaborator-mode:same-user,546,collaborator
+step-count:24,521,step-count
+action:insert-nested-group,1205,action
+action:edit-nested-paragraph,1176,action
+action-pair:concurrent-paragraphs->insert-nested-group,121,action-pair
+action-pair:insert-nested-group->edit-title,81,action-pair
+action-pair:edit-title->edit-nested-paragraph,65,action-pair
+action-pair:edit-nested-paragraph->edit-paragraph,108,action-pair
+history-label:action:insert-nested-group:invoke,1205,history
+history-label:action:insert-nested-group:ok,1205,history
+history-label:action:edit-nested-paragraph:invoke,1176,history
+history-label:action:edit-nested-paragraph:ok,1176,history
+operation-ledger-created:5,123,operation-ledger
+operation-ledger-live:2,559,operation-ledger
+operation-event-action:witnessed:insert-nested-group:content,1202,operation-ledger
+operation-event-action:invalidated:edit-nested-paragraph:content,879,operation-ledger
 total-blocks:9,120,other
-payload-size-profile:session-lifecycle:10,425,payload-size
-block-depth:core/heading:1,1535,block-depth
-action-pair:edit-paragraph->move-block,232,action-pair
-action-pair:move-block->insert-nested-group,155,action-pair
-action-pair:insert-nested-group->edit-paragraph,115,action-pair
-action-pair:edit-paragraph->insert-paragraph,274,action-pair
-action-pair:insert-paragraph->append-paragraph,249,action-pair
-action-pair:append-paragraph->delete-block,219,action-pair
-action-pair:delete-block->edit-paragraph,275,action-pair
-action-pair:delete-block->edit-table-array-attributes,229,action-pair
-action-pair:edit-table-array-attributes->concurrent-paragraphs,314,action-pair
-action-pair:edit-title->move-block,87,action-pair
-action-pair:edit-paragraph->concurrent-paragraphs,277,action-pair
-action-pair:insert-nested-group->concurrent-paragraphs,140,action-pair
-action-pair:edit-paragraph->edit-title,59,action-pair
+payload-size-profile:session-lifecycle:10,427,payload-size
+block-depth:core/heading:1,1565,block-depth
+action-pair:edit-paragraph->move-block,236,action-pair
+action-pair:move-block->insert-nested-group,156,action-pair
+action-pair:insert-nested-group->edit-paragraph,118,action-pair
+action-pair:edit-paragraph->insert-paragraph,279,action-pair
+action-pair:insert-paragraph->append-paragraph,253,action-pair
+action-pair:append-paragraph->delete-block,223,action-pair
+action-pair:delete-block->edit-paragraph,279,action-pair
+action-pair:delete-block->edit-table-array-attributes,233,action-pair
+action-pair:edit-table-array-attributes->concurrent-paragraphs,317,action-pair
+action-pair:edit-title->move-block,92,action-pair
+action-pair:edit-paragraph->concurrent-paragraphs,280,action-pair
+action-pair:insert-nested-group->concurrent-paragraphs,144,action-pair
+action-pair:edit-paragraph->edit-title,63,action-pair
 total-blocks:29,99,other
-action-pair:edit-nested-paragraph->edit-nested-paragraph,140,action-pair
-action-pair:edit-nested-paragraph->concurrent-paragraphs,113,action-pair
-action-pair:insert-nested-group->move-block,183,action-pair
-action-pair:move-block->insert-heading,250,action-pair
-action-pair:insert-heading->edit-nested-paragraph,140,action-pair
-action-pair:edit-nested-paragraph->insert-paragraph,153,action-pair
-action-pair:insert-paragraph->edit-title,73,action-pair
-action-pair:edit-title->delete-block,83,action-pair
-action-pair:delete-block->append-paragraph,256,action-pair
-action-pair:edit-title->insert-nested-group,109,action-pair
-action-pair:insert-nested-group->delete-block,177,action-pair
-action-pair:move-block->edit-table-array-attributes,281,action-pair
-action-pair:edit-table-array-attributes->insert-heading,309,action-pair
-action-pair:append-paragraph->append-paragraph,275,action-pair
-save-count:1,3478,save
+action-pair:edit-nested-paragraph->edit-nested-paragraph,144,action-pair
+action-pair:edit-nested-paragraph->concurrent-paragraphs,115,action-pair
+action-pair:insert-nested-group->move-block,184,action-pair
+action-pair:move-block->insert-heading,257,action-pair
+action-pair:insert-heading->edit-nested-paragraph,143,action-pair
+action-pair:edit-nested-paragraph->insert-paragraph,155,action-pair
+action-pair:insert-paragraph->edit-title,78,action-pair
+action-pair:edit-title->delete-block,87,action-pair
+action-pair:delete-block->append-paragraph,259,action-pair
+action-pair:edit-title->insert-nested-group,110,action-pair
+action-pair:insert-nested-group->delete-block,180,action-pair
+action-pair:move-block->edit-table-array-attributes,285,action-pair
+action-pair:edit-table-array-attributes->insert-heading,317,action-pair
+action-pair:append-paragraph->append-paragraph,276,action-pair
+save-count:1,3505,save
 action-pair:edit-nested-paragraph->insert-heading,126,action-pair
-action-pair:append-paragraph->insert-paragraph,207,action-pair
-action-pair:insert-paragraph->insert-paragraph,201,action-pair
-action-pair:insert-paragraph->move-block,255,action-pair
-action-pair:move-block->move-block,440,action-pair
-history:save-checkpoint:fail,414,history
-operation-ledger-live:5,143,operation-ledger
-action-pair:concurrent-paragraphs->delete-block,268,action-pair
-action-pair:delete-block->insert-heading,228,action-pair
-action-pair:insert-heading->delete-block,199,action-pair
-action-pair:append-paragraph->move-block,338,action-pair
-action-pair:move-block->delete-block,246,action-pair
-action-pair:delete-block->insert-paragraph,252,action-pair
-total-blocks:17,357,other
-action-pair:move-block->append-paragraph,398,action-pair
-action-pair:append-paragraph->edit-paragraph,213,action-pair
+action-pair:append-paragraph->insert-paragraph,215,action-pair
+action-pair:insert-paragraph->insert-paragraph,204,action-pair
+action-pair:insert-paragraph->move-block,257,action-pair
+action-pair:move-block->move-block,445,action-pair
+history:save-checkpoint:fail,416,history
+operation-ledger-live:5,145,operation-ledger
+action-pair:concurrent-paragraphs->delete-block,271,action-pair
+action-pair:delete-block->insert-heading,230,action-pair
+action-pair:insert-heading->delete-block,202,action-pair
+action-pair:append-paragraph->move-block,339,action-pair
+action-pair:move-block->delete-block,249,action-pair
+action-pair:delete-block->insert-paragraph,254,action-pair
+total-blocks:17,359,other
+action-pair:move-block->append-paragraph,402,action-pair
+action-pair:append-paragraph->edit-paragraph,214,action-pair
 action-pair:delete-block->concurrent-paragraphs,215,action-pair
-action-pair:concurrent-paragraphs->move-block,612,action-pair
-action-pair:edit-table-array-attributes->delete-block,250,action-pair
-action-pair:concurrent-paragraphs->edit-table-array-attributes,261,action-pair
-action-pair:concurrent-paragraphs->insert-heading,313,action-pair
-action-pair:insert-heading->edit-table-array-attributes,278,action-pair
-action-pair:delete-block->delete-block,202,action-pair
-action-pair:insert-heading->edit-paragraph,327,action-pair
+action-pair:concurrent-paragraphs->move-block,619,action-pair
+action-pair:edit-table-array-attributes->delete-block,253,action-pair
+action-pair:concurrent-paragraphs->edit-table-array-attributes,265,action-pair
+action-pair:concurrent-paragraphs->insert-heading,315,action-pair
+action-pair:insert-heading->edit-table-array-attributes,280,action-pair
+action-pair:delete-block->delete-block,204,action-pair
+action-pair:insert-heading->edit-paragraph,330,action-pair
 payload-size-profile:persistence-no-title:9,48,payload-size
-action-pair:insert-heading->insert-heading,282,action-pair
-action-pair:insert-heading->move-block,610,action-pair
-action-pair:insert-paragraph->insert-heading,241,action-pair
+action-pair:insert-heading->insert-heading,290,action-pair
+action-pair:insert-heading->move-block,613,action-pair
+action-pair:insert-paragraph->insert-heading,245,action-pair
 total-blocks:12,289,other
-total-blocks:13,284,other
-action-pair:move-block->concurrent-paragraphs,602,action-pair
-profile:block-gauntlet,352,profile
-transport-profile:ws:block-gauntlet,352,transport
-initial:deprecated-block-content,683,initial-content
+total-blocks:13,286,other
+action-pair:move-block->concurrent-paragraphs,604,action-pair
+profile:block-gauntlet,364,profile
+transport-profile:ws:block-gauntlet,364,transport
+initial:deprecated-block-content,692,initial-content
 profile:common-blocks,88,profile
 transport-profile:ws:common-blocks,88,transport
-profile:multi-reload-lifecycle,174,profile
-transport-profile:ws:multi-reload-lifecycle,174,transport
-initial:equivalent-html-content,718,initial-content
-profile:parser-serialization,193,profile
-transport-profile:ws:parser-serialization,193,transport
+profile:multi-reload-lifecycle,182,profile
+transport-profile:ws:multi-reload-lifecycle,182,transport
+initial:equivalent-html-content,728,initial-content
+profile:parser-serialization,199,profile
+transport-profile:ws:parser-serialization,199,transport
 profile:parser-transform,120,profile
 transport-profile:ws:parser-transform,120,transport
 profile:real-user-editing,1622,profile
 transport-profile:ws:real-user-editing,1622,transport
-profile:revision-persistence,100,profile
-transport-profile:ws:revision-persistence,100,transport
-transport-profile:ws:session-lifecycle,132,transport
+profile:revision-persistence,112,profile
+transport-profile:ws:revision-persistence,112,transport
+transport-profile:ws:session-lifecycle,149,transport
 profile:three-user-late-join,217,profile
 transport-profile:ws:three-user-late-join,217,transport
 profile:full,207,profile
 transport-profile:http:full,80,transport
-block:core/file,240,block
-action:edit-block-gauntlet-attributes,769,action
-action:reparse-edited-content,259,action
-action-pair:edit-block-gauntlet-attributes->edit-block-gauntlet-attributes,224,action-pair
+block:core/file,241,block
+action:edit-block-gauntlet-attributes,783,action
+action:reparse-edited-content,264,action
+action-pair:edit-block-gauntlet-attributes->edit-block-gauntlet-attributes,227,action-pair
 action-pair:edit-block-gauntlet-attributes->reparse-edited-content,19,action-pair
-history-label:action:edit-block-gauntlet-attributes:invoke,769,history
-history-label:action:edit-block-gauntlet-attributes:ok,769,history
-history-label:action:reparse-edited-content:invoke,259,history
-history-label:action:reparse-edited-content:ok,259,history
-total-blocks:7,210,other
+history-label:action:edit-block-gauntlet-attributes:invoke,783,history
+history-label:action:edit-block-gauntlet-attributes:ok,783,history
+history-label:action:reparse-edited-content:invoke,264,history
+history-label:action:reparse-edited-content:ok,264,history
+total-blocks:7,211,other
 payload-size-profile:full:10,26,payload-size
-block-depth:core/file:0,240,block-depth
-block:core/button,604,block
-block:core/buttons,604,block
-block:core/more,63,block
-block:core/pullquote,55,block
-block:core/separator,1056,block
-block:core/spacer,519,block
-block:core/verse,549,block
-action:edit-common-block-attributes,262,action
-action:insert-block-gauntlet-block,426,action
-action:edit-rich-text-pair-block,56,action
+block-depth:core/file:0,241,block-depth
+block:core/button,615,block
+block:core/buttons,615,block
+block:core/more,66,block
+block:core/pullquote,57,block
+block:core/separator,1074,block
+block:core/spacer,530,block
+block:core/verse,559,block
+action:edit-common-block-attributes,268,action
+action:insert-block-gauntlet-block,437,action
+action:edit-rich-text-pair-block,58,action
 action-pair:edit-common-block-attributes->insert-block-gauntlet-block,24,action-pair
-action-pair:insert-block-gauntlet-block->edit-common-block-attributes,65,action-pair
+action-pair:insert-block-gauntlet-block->edit-common-block-attributes,66,action-pair
 action-pair:edit-common-block-attributes->delete-block,6,action-pair
 action-pair:delete-block->edit-common-block-attributes,9,action-pair
 action-pair:edit-common-block-attributes->append-paragraph,3,action-pair
 action-pair:edit-paragraph->edit-rich-text-pair-block,3,action-pair
 action-pair:edit-rich-text-pair-block->edit-table-array-attributes,16,action-pair
-history-label:action:edit-common-block-attributes:invoke,262,history
-history-label:action:edit-common-block-attributes:ok,262,history
-history-label:action:insert-block-gauntlet-block:invoke,426,history
-history-label:action:insert-block-gauntlet-block:ok,426,history
-history-label:action:edit-rich-text-pair-block:invoke,56,history
-history-label:action:edit-rich-text-pair-block:ok,56,history
-operation-ledger-created:3,309,operation-ledger
-operation-event-action:invalidated:edit-rich-text-pair-block:content,25,operation-ledger
-invalid-blocks:2,496,other
+history-label:action:edit-common-block-attributes:invoke,268,history
+history-label:action:edit-common-block-attributes:ok,268,history
+history-label:action:insert-block-gauntlet-block:invoke,437,history
+history-label:action:insert-block-gauntlet-block:ok,437,history
+history-label:action:edit-rich-text-pair-block:invoke,58,history
+history-label:action:edit-rich-text-pair-block:ok,58,history
+operation-ledger-created:3,317,operation-ledger
+operation-event-action:invalidated:edit-rich-text-pair-block:content,27,operation-ledger
+invalid-blocks:2,504,other
 payload-size-profile:full:11,46,payload-size
-block-depth:core/separator:0,1071,block-depth
-block-depth:core/spacer:0,544,block-depth
-block-depth:core/verse:0,575,block-depth
-block-depth:core/buttons:0,624,block-depth
-block-depth:core/button:1,624,block-depth
-block-depth:core/more:0,63,block-depth
-block-depth:core/pullquote:0,56,block-depth
-action:edit-formatted-paragraph-at-cursor,81,action
-action-pair:edit-common-block-attributes->move-block,27,action-pair
+block-depth:core/separator:0,1090,block-depth
+block-depth:core/spacer:0,555,block-depth
+block-depth:core/verse:0,585,block-depth
+block-depth:core/buttons:0,636,block-depth
+block-depth:core/button:1,636,block-depth
+block-depth:core/more:0,66,block-depth
+block-depth:core/pullquote:0,58,block-depth
+action:edit-formatted-paragraph-at-cursor,85,action
+action-pair:edit-common-block-attributes->move-block,28,action-pair
 action-pair:move-block->edit-formatted-paragraph-at-cursor,1,action-pair
-action-pair:edit-formatted-paragraph-at-cursor->delete-block,1,action-pair
-action-pair:delete-block->edit-nested-paragraph,134,action-pair
-action-pair:edit-nested-paragraph->delete-block,161,action-pair
-history-label:action:edit-formatted-paragraph-at-cursor:invoke,81,history
-history-label:action:edit-formatted-paragraph-at-cursor:ok,81,history
-depth:3,344,other
-block:core/column,206,block
-block:core/columns,206,block
-block:core/cover,88,block
-action:insert-common-block,411,action
+action-pair:edit-formatted-paragraph-at-cursor->delete-block,3,action-pair
+action-pair:delete-block->edit-nested-paragraph,136,action-pair
+action-pair:edit-nested-paragraph->delete-block,164,action-pair
+history-label:action:edit-formatted-paragraph-at-cursor:invoke,85,history
+history-label:action:edit-formatted-paragraph-at-cursor:ok,85,history
+depth:3,349,other
+block:core/column,210,block
+block:core/columns,210,block
+block:core/cover,90,block
+action:insert-common-block,419,action
 action-pair:edit-formatted-paragraph-at-cursor->edit-table-array-attributes,3,action-pair
 action-pair:edit-table-array-attributes->insert-block-gauntlet-block,14,action-pair
 action-pair:insert-block-gauntlet-block->insert-common-block,39,action-pair
 action-pair:insert-common-block->edit-title,2,action-pair
-action-pair:edit-title->insert-heading,59,action-pair
-action-pair:insert-heading->edit-formatted-paragraph-at-cursor,18,action-pair
-history-label:action:insert-common-block:invoke,411,history
-history-label:action:insert-common-block:ok,411,history
-invariant:serialize-parse-roundtrip-stable:observed,72,invariant
-invariant-signal:serialize-parse-roundtrip-stable,93,invariant
-operation-event-action:invalidated:edit-formatted-paragraph-at-cursor:content,44,operation-ledger
-invalid-blocks:1,497,other
-block-depth:core/cover:0,89,block-depth
-block-depth:core/paragraph:2,307,block-depth
-block-depth:core/columns:0,207,block-depth
-block-depth:core/column:1,207,block-depth
-serialization-roundtrip-changed,93,other
-block:core/preformatted,184,block
-action:delete-nested-block,743,action
-action:append-parser-stress-content,174,action
-action:insert-async-server-block,893,action
+action-pair:edit-title->insert-heading,61,action-pair
+action-pair:insert-heading->edit-formatted-paragraph-at-cursor,19,action-pair
+history-label:action:insert-common-block:invoke,419,history
+history-label:action:insert-common-block:ok,419,history
+invariant:serialize-parse-roundtrip-stable:observed,75,invariant
+invariant-signal:serialize-parse-roundtrip-stable,96,invariant
+operation-event-action:invalidated:edit-formatted-paragraph-at-cursor:content,47,operation-ledger
+invalid-blocks:1,507,other
+block-depth:core/cover:0,92,block-depth
+block-depth:core/paragraph:2,312,block-depth
+block-depth:core/columns:0,211,block-depth
+block-depth:core/column:1,211,block-depth
+serialization-roundtrip-changed,96,other
+block:core/preformatted,186,block
+action:delete-nested-block,756,action
+action:append-parser-stress-content,176,action
+action:insert-async-server-block,899,action
 action-pair:insert-paragraph->reparse-edited-content,19,action-pair
-action-pair:reparse-edited-content->delete-nested-block,37,action-pair
+action-pair:reparse-edited-content->delete-nested-block,38,action-pair
 action-pair:delete-nested-block->append-parser-stress-content,3,action-pair
 action-pair:append-parser-stress-content->reparse-edited-content,53,action-pair
 action-pair:reparse-edited-content->insert-async-server-block,3,action-pair
 action-pair:insert-async-server-block->edit-table-array-attributes,64,action-pair
 action-pair:insert-paragraph->insert-nested-group,187,action-pair
-action-pair:insert-nested-group->edit-block-gauntlet-attributes,36,action-pair
-action-pair:edit-block-gauntlet-attributes->insert-common-block,87,action-pair
-history-label:action:delete-nested-block:invoke,743,history
-history-label:action:delete-nested-block:ok,743,history
-history-label:action:append-parser-stress-content:invoke,174,history
-history-label:action:append-parser-stress-content:ok,174,history
-history-label:action:insert-async-server-block:invoke,893,history
-history-label:action:insert-async-server-block:ok,893,history
-operation-event-action:invalidated:reparse-edited-content:content,85,operation-ledger
-operation-event-action:witnessed:insert-async-server-block:content,729,operation-ledger
-operation-event-action:invalidated:edit-block-gauntlet-attributes:content,442,operation-ledger
-total-blocks:32,59,other
-serialized-size-log2:12,948,serialized-size
+action-pair:insert-nested-group->edit-block-gauntlet-attributes,37,action-pair
+action-pair:edit-block-gauntlet-attributes->insert-common-block,88,action-pair
+history-label:action:delete-nested-block:invoke,756,history
+history-label:action:delete-nested-block:ok,756,history
+history-label:action:append-parser-stress-content:invoke,176,history
+history-label:action:append-parser-stress-content:ok,176,history
+history-label:action:insert-async-server-block:invoke,899,history
+history-label:action:insert-async-server-block:ok,899,history
+operation-event-action:invalidated:reparse-edited-content:content,87,operation-ledger
+operation-event-action:witnessed:insert-async-server-block:content,734,operation-ledger
+operation-event-action:invalidated:edit-block-gauntlet-attributes:content,444,operation-ledger
+total-blocks:32,61,other
+serialized-size-log2:12,963,serialized-size
 payload-size-profile:full:12,15,payload-size
-payload-size-transport:http:12,214,payload-size
-block-depth:core/preformatted:0,185,block-depth
-action:move-block-into-group,755,action
+payload-size-transport:http:12,215,payload-size
+block-depth:core/preformatted:0,187,block-depth
+action:move-block-into-group,769,action
 action-pair:delete-nested-block->edit-paragraph,73,action-pair
-action-pair:concurrent-paragraphs->insert-async-server-block,82,action-pair
+action-pair:concurrent-paragraphs->insert-async-server-block,83,action-pair
 action-pair:insert-async-server-block->insert-block-gauntlet-block,10,action-pair
-action-pair:insert-block-gauntlet-block->move-block-into-group,53,action-pair
+action-pair:insert-block-gauntlet-block->move-block-into-group,56,action-pair
 action-pair:move-block-into-group->edit-table-array-attributes,68,action-pair
 action-pair:edit-table-array-attributes->delete-nested-block,53,action-pair
-action-pair:delete-nested-block->move-block-into-group,57,action-pair
-action-pair:move-block-into-group->insert-common-block,8,action-pair
+action-pair:delete-nested-block->move-block-into-group,58,action-pair
+action-pair:move-block-into-group->insert-common-block,9,action-pair
 action-pair:insert-common-block->move-block,113,action-pair
-history-label:action:move-block-into-group:invoke,755,history
-history-label:action:move-block-into-group:ok,755,history
-operation-ledger-missing:1,551,operation-ledger
-operation-event:missing:content,1026,operation-ledger
-operation-event-action:missing:insert-async-server-block:content,479,operation-ledger
-operation-missing:insert-async-server-block:content,479,operation-ledger
-operation-event-action:invalidated:delete-nested-block:content,495,operation-ledger
+history-label:action:move-block-into-group:invoke,769,history
+history-label:action:move-block-into-group:ok,769,history
+operation-ledger-missing:1,560,operation-ledger
+operation-event:missing:content,1035,operation-ledger
+operation-event-action:missing:insert-async-server-block:content,483,operation-ledger
+operation-missing:insert-async-server-block:content,483,operation-ledger
+operation-event-action:invalidated:delete-nested-block:content,501,operation-ledger
 payload-size-profile:full:8,1,payload-size
 action-pair:delete-nested-block->delete-block,85,action-pair
-action-pair:move-block->move-block-into-group,73,action-pair
+action-pair:move-block->move-block-into-group,75,action-pair
 payload-size-profile:full:9,11,payload-size
 block-depth:core/quote:1,96,block-depth
 block:core/html,56,block
 action-pair:insert-paragraph->edit-rich-text-pair-block,2,action-pair
 action-pair:edit-rich-text-pair-block->edit-nested-paragraph,1,action-pair
-action-pair:edit-nested-paragraph->insert-block-gauntlet-block,41,action-pair
+action-pair:edit-nested-paragraph->insert-block-gauntlet-block,47,action-pair
 action-pair:insert-block-gauntlet-block->insert-nested-group,21,action-pair
-action-pair:insert-nested-group->reparse-edited-content,9,action-pair
-operation-ledger-created:6,138,operation-ledger
-operation-ledger-live:4,1163,operation-ledger
+action-pair:insert-nested-group->reparse-edited-content,10,action-pair
+operation-ledger-created:6,139,operation-ledger
+operation-ledger-live:4,1164,operation-ledger
 block-depth:core/html:0,56,block-depth
-action-pair:reparse-edited-content->edit-paragraph,25,action-pair
+action-pair:reparse-edited-content->edit-paragraph,26,action-pair
 total-blocks:20,276,other
 action-pair:edit-common-block-attributes->edit-nested-paragraph,19,action-pair
 action-pair:edit-nested-paragraph->move-block-into-group,84,action-pair
-action-pair:move-block-into-group->delete-block,68,action-pair
+action-pair:move-block-into-group->delete-block,69,action-pair
 action-pair:delete-block->reparse-edited-content,14,action-pair
 action-pair:reparse-edited-content->insert-heading,15,action-pair
-action-pair:edit-table-array-attributes->edit-title,97,action-pair
-action-pair:edit-paragraph->insert-nested-group,187,action-pair
+action-pair:edit-table-array-attributes->edit-title,100,action-pair
+action-pair:edit-paragraph->insert-nested-group,189,action-pair
 action-pair:edit-paragraph->append-parser-stress-content,18,action-pair
 action-pair:append-parser-stress-content->edit-title,3,action-pair
-operation-event-action:invalidated:append-parser-stress-content:content,86,operation-ledger
-total-blocks:27,77,other
+operation-event-action:invalidated:append-parser-stress-content:content,87,operation-ledger
+total-blocks:27,79,other
 block-depth:core/list:1,48,block-depth
 block-depth:core/list-item:2,48,block-depth
-action-pair:insert-nested-group->insert-paragraph,143,action-pair
+action-pair:insert-nested-group->insert-paragraph,147,action-pair
 action-pair:insert-paragraph->insert-common-block,14,action-pair
-action-pair:insert-common-block->edit-nested-paragraph,12,action-pair
-block:core/block,510,block
+action-pair:insert-common-block->edit-nested-paragraph,13,action-pair
+block:core/block,513,block
 action-pair:append-paragraph->move-block-into-group,77,action-pair
-action-pair:move-block-into-group->concurrent-paragraphs,75,action-pair
-action-pair:concurrent-paragraphs->move-block-into-group,77,action-pair
+action-pair:move-block-into-group->concurrent-paragraphs,76,action-pair
+action-pair:concurrent-paragraphs->move-block-into-group,78,action-pair
 action-pair:move-block-into-group->edit-rich-text-pair-block,2,action-pair
 action-pair:edit-rich-text-pair-block->edit-common-block-attributes,2,action-pair
 action-pair:edit-common-block-attributes->insert-async-server-block,1,action-pair
-action-pair:insert-async-server-block->insert-async-server-block,284,action-pair
+action-pair:insert-async-server-block->insert-async-server-block,286,action-pair
 action-pair:insert-async-server-block->insert-paragraph,69,action-pair
-total-blocks:22,182,other
-block-depth:core/image:1,238,block-depth
-block-depth:core/block:0,507,block-depth
-action-pair:delete-block->insert-nested-group,172,action-pair
+total-blocks:22,184,other
+block-depth:core/image:1,242,block-depth
+block-depth:core/block:0,511,block-depth
+action-pair:delete-block->insert-nested-group,175,action-pair
 action-pair:insert-nested-group->edit-formatted-paragraph-at-cursor,1,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->edit-formatted-paragraph-at-cursor,4,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->append-parser-stress-content,18,action-pair
 action-pair:append-parser-stress-content->delete-nested-block,3,action-pair
 action-pair:delete-nested-block->edit-title,1,action-pair
 operation-ledger-created:2,230,operation-ledger
-action-pair:insert-block-gauntlet-block->edit-formatted-paragraph-at-cursor,3,action-pair
-action-pair:edit-formatted-paragraph-at-cursor->insert-heading,3,action-pair
+action-pair:insert-block-gauntlet-block->edit-formatted-paragraph-at-cursor,4,action-pair
+action-pair:edit-formatted-paragraph-at-cursor->insert-heading,4,action-pair
 action-pair:insert-heading->edit-rich-text-pair-block,1,action-pair
 action-pair:edit-rich-text-pair-block->delete-nested-block,2,action-pair
 action-pair:delete-nested-block->insert-heading,73,action-pair
 action-pair:insert-heading->reparse-edited-content,14,action-pair
-action-pair:reparse-edited-content->move-block-into-group,5,action-pair
+action-pair:reparse-edited-content->move-block-into-group,6,action-pair
 action-pair:insert-common-block->edit-formatted-paragraph-at-cursor,2,action-pair
-block:core/categories,280,block
+block:core/categories,283,block
 action-pair:insert-async-server-block->append-paragraph,56,action-pair
 action-pair:append-paragraph->append-parser-stress-content,3,action-pair
-block-depth:core/categories:0,280,block-depth
-action-pair:insert-async-server-block->insert-nested-group,64,action-pair
+block-depth:core/categories:0,283,block-depth
+action-pair:insert-async-server-block->insert-nested-group,65,action-pair
 action-pair:insert-nested-group->insert-common-block,7,action-pair
 action-pair:insert-common-block->delete-nested-block,8,action-pair
 action-pair:delete-nested-block->edit-block-gauntlet-attributes,36,action-pair
 action-pair:edit-block-gauntlet-attributes->edit-paragraph,2,action-pair
-action-pair:edit-paragraph->edit-nested-paragraph,159,action-pair
-action-pair:edit-title->insert-block-gauntlet-block,10,action-pair
+action-pair:edit-paragraph->edit-nested-paragraph,163,action-pair
+action-pair:edit-title->insert-block-gauntlet-block,11,action-pair
 action-pair:insert-block-gauntlet-block->insert-paragraph,4,action-pair
-action-pair:insert-common-block->move-block-into-group,14,action-pair
+action-pair:insert-common-block->move-block-into-group,15,action-pair
 action-pair:move-block-into-group->reparse-edited-content,19,action-pair
-total-blocks:28,63,other
-block:core/latest-posts,293,block
+total-blocks:28,65,other
+block:core/latest-posts,294,block
 action-pair:edit-table-array-attributes->insert-async-server-block,93,action-pair
 action-pair:insert-paragraph->move-block-into-group,72,action-pair
-action-pair:move-block-into-group->edit-paragraph,47,action-pair
+action-pair:move-block-into-group->edit-paragraph,48,action-pair
 action-pair:edit-paragraph->move-block-into-group,57,action-pair
 action-pair:append-parser-stress-content->edit-rich-text-pair-block,10,action-pair
 action-pair:edit-rich-text-pair-block->reparse-edited-content,2,action-pair
 action-pair:reparse-edited-content->move-block,16,action-pair
-block-depth:core/latest-posts:0,294,block-depth
+block-depth:core/latest-posts:0,295,block-depth
 block-depth:core/table:1,22,block-depth
 block:core/embed,308,block
 action-pair:edit-rich-text-pair-block->append-parser-stress-content,2,action-pair
@@ -673,32 +673,32 @@ action-pair:append-parser-stress-content->delete-block,20,action-pair
 action-pair:delete-block->append-parser-stress-content,2,action-pair
 action-pair:append-parser-stress-content->insert-heading,13,action-pair
 action-pair:insert-heading->insert-async-server-block,78,action-pair
-action-pair:delete-block->delete-nested-block,77,action-pair
+action-pair:delete-block->delete-nested-block,78,action-pair
 action-pair:append-parser-stress-content->edit-paragraph,29,action-pair
-total-blocks:31,77,other
+total-blocks:31,79,other
 block-depth:core/embed:0,320,block-depth
 action-pair:edit-common-block-attributes->edit-paragraph,4,action-pair
 action-pair:insert-paragraph->edit-block-gauntlet-attributes,20,action-pair
-action-pair:edit-block-gauntlet-attributes->delete-nested-block,55,action-pair
-action-pair:delete-nested-block->append-paragraph,72,action-pair
+action-pair:edit-block-gauntlet-attributes->delete-nested-block,57,action-pair
+action-pair:delete-nested-block->append-paragraph,74,action-pair
 action-pair:append-paragraph->insert-common-block,2,action-pair
 action-pair:insert-common-block->edit-rich-text-pair-block,2,action-pair
-action-pair:edit-rich-text-pair-block->insert-block-gauntlet-block,3,action-pair
+action-pair:edit-rich-text-pair-block->insert-block-gauntlet-block,4,action-pair
 action-pair:insert-block-gauntlet-block->insert-async-server-block,3,action-pair
 action-pair:reparse-edited-content->edit-title,1,action-pair
 action-pair:edit-title->move-block-into-group,4,action-pair
-action-pair:move-block-into-group->edit-common-block-attributes,30,action-pair
-action-pair:edit-common-block-attributes->move-block-into-group,13,action-pair
-action-pair:move-block-into-group->edit-nested-paragraph,86,action-pair
+action-pair:move-block-into-group->edit-common-block-attributes,31,action-pair
+action-pair:edit-common-block-attributes->move-block-into-group,14,action-pair
+action-pair:move-block-into-group->edit-nested-paragraph,87,action-pair
 action-pair:edit-nested-paragraph->edit-common-block-attributes,18,action-pair
-action-pair:delete-block->edit-rich-text-pair-block,2,action-pair
+action-pair:delete-block->edit-rich-text-pair-block,3,action-pair
 action-pair:edit-rich-text-pair-block->edit-paragraph,4,action-pair
 action-pair:edit-table-array-attributes->edit-block-gauntlet-attributes,3,action-pair
 action-pair:edit-block-gauntlet-attributes->insert-async-server-block,157,action-pair
-action-pair:insert-block-gauntlet-block->delete-block,23,action-pair
+action-pair:insert-block-gauntlet-block->delete-block,25,action-pair
 action-pair:insert-heading->insert-block-gauntlet-block,3,action-pair
-block:core/calendar,284,block
-action-pair:insert-paragraph->insert-async-server-block,55,action-pair
+block:core/calendar,286,block
+action-pair:insert-paragraph->insert-async-server-block,57,action-pair
 action-pair:insert-async-server-block->edit-rich-text-pair-block,1,action-pair
 action-pair:edit-rich-text-pair-block->insert-nested-group,11,action-pair
 action-pair:edit-paragraph->edit-common-block-attributes,6,action-pair
@@ -707,17 +707,17 @@ action-pair:reparse-edited-content->append-parser-stress-content,44,action-pair
 action-pair:append-parser-stress-content->edit-block-gauntlet-attributes,3,action-pair
 action-pair:edit-block-gauntlet-attributes->append-parser-stress-content,5,action-pair
 action-pair:append-parser-stress-content->edit-table-array-attributes,2,action-pair
-operation-event-action:invalidated:edit-common-block-attributes:content,99,operation-ledger
-invalid-blocks:4,37,other
+operation-event-action:invalidated:edit-common-block-attributes:content,101,operation-ledger
+invalid-blocks:4,38,other
 total-blocks:47,8,other
 payload-size-profile:full:13,1,payload-size
-block-depth:core/calendar:0,285,block-depth
+block-depth:core/calendar:0,287,block-depth
 action-pair:edit-table-array-attributes->edit-formatted-paragraph-at-cursor,2,action-pair
-action-pair:edit-table-array-attributes->reparse-edited-content,4,action-pair
+action-pair:edit-table-array-attributes->reparse-edited-content,5,action-pair
 action-pair:reparse-edited-content->edit-formatted-paragraph-at-cursor,10,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->edit-common-block-attributes,3,action-pair
 action-pair:delete-nested-block->edit-common-block-attributes,5,action-pair
-action-pair:edit-common-block-attributes->edit-common-block-attributes,45,action-pair
+action-pair:edit-common-block-attributes->edit-common-block-attributes,46,action-pair
 action-pair:edit-common-block-attributes->edit-formatted-paragraph-at-cursor,4,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->edit-title,2,action-pair
 action-pair:edit-title->edit-block-gauntlet-attributes,17,action-pair
@@ -726,13 +726,13 @@ operation-ledger-live:0,75,operation-ledger
 block:core/query,274,block
 action-pair:insert-async-server-block->move-block-into-group,73,action-pair
 block-depth:core/query:0,283,block-depth
-block:core/code,178,block
+block:core/code,179,block
 action-pair:edit-nested-paragraph->insert-async-server-block,80,action-pair
 action-pair:insert-async-server-block->reparse-edited-content,1,action-pair
-action-pair:reparse-edited-content->edit-common-block-attributes,5,action-pair
+action-pair:reparse-edited-content->edit-common-block-attributes,6,action-pair
 action-pair:edit-common-block-attributes->insert-heading,19,action-pair
-block-depth:core/code:0,179,block-depth
-action-pair:delete-block->insert-common-block,14,action-pair
+block-depth:core/code:0,181,block-depth
+action-pair:delete-block->insert-common-block,15,action-pair
 action-pair:insert-common-block->insert-paragraph,5,action-pair
 action-pair:insert-paragraph->edit-common-block-attributes,18,action-pair
 invariant:cross-page-exact-serialized-content:observed,93,invariant
@@ -743,140 +743,140 @@ invariant:cross-page-canonical-edited-content:fail,93,invariant
 invariant-signal:cross-page-canonical-edited-content,93,invariant
 invariant:cross-page-exact-edited-content:observed,85,invariant
 invariant-signal:cross-page-exact-edited-content,94,invariant
-action-pair:insert-heading->edit-title,111,action-pair
-action-pair:edit-title->edit-table-array-attributes,116,action-pair
-action-pair:edit-common-block-attributes->insert-common-block,27,action-pair
-total-blocks:34,49,other
+action-pair:insert-heading->edit-title,115,action-pair
+action-pair:edit-title->edit-table-array-attributes,119,action-pair
+action-pair:edit-common-block-attributes->insert-common-block,29,action-pair
+total-blocks:34,50,other
 action-pair:edit-title->delete-nested-block,2,action-pair
 action-pair:delete-nested-block->edit-formatted-paragraph-at-cursor,2,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->append-paragraph,3,action-pair
 action-pair:append-paragraph->edit-rich-text-pair-block,3,action-pair
-action-pair:insert-nested-group->insert-nested-group,154,action-pair
+action-pair:insert-nested-group->insert-nested-group,155,action-pair
 action-pair:insert-nested-group->insert-async-server-block,82,action-pair
 action-pair:insert-async-server-block->insert-common-block,170,action-pair
-action-pair:delete-nested-block->delete-nested-block,92,action-pair
+action-pair:delete-nested-block->delete-nested-block,94,action-pair
 action-pair:edit-common-block-attributes->concurrent-paragraphs,3,action-pair
 action-pair:concurrent-paragraphs->reparse-edited-content,2,action-pair
-action-pair:edit-formatted-paragraph-at-cursor->delete-nested-block,2,action-pair
+action-pair:edit-formatted-paragraph-at-cursor->delete-nested-block,3,action-pair
 action-pair:delete-nested-block->edit-rich-text-pair-block,1,action-pair
 action-pair:edit-rich-text-pair-block->edit-title,3,action-pair
-action-pair:edit-title->edit-paragraph,62,action-pair
+action-pair:edit-title->edit-paragraph,65,action-pair
 action-pair:append-paragraph->insert-async-server-block,78,action-pair
-action-pair:insert-nested-group->edit-nested-paragraph,189,action-pair
+action-pair:insert-nested-group->edit-nested-paragraph,194,action-pair
 action-pair:edit-nested-paragraph->insert-common-block,22,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->edit-rich-text-pair-block,2,action-pair
 action-pair:delete-nested-block->insert-paragraph,70,action-pair
-action-pair:move-block-into-group->insert-async-server-block,80,action-pair
+action-pair:move-block-into-group->insert-async-server-block,81,action-pair
 block-depth:core/freeform:1,21,block-depth
-action-pair:edit-rich-text-pair-block->edit-rich-text-pair-block,2,action-pair
-action-pair:edit-block-gauntlet-attributes->edit-nested-paragraph,28,action-pair
+action-pair:edit-rich-text-pair-block->edit-rich-text-pair-block,3,action-pair
+action-pair:edit-block-gauntlet-attributes->edit-nested-paragraph,34,action-pair
 action-pair:insert-nested-group->append-parser-stress-content,2,action-pair
-action-pair:edit-nested-paragraph->edit-block-gauntlet-attributes,28,action-pair
+action-pair:edit-nested-paragraph->edit-block-gauntlet-attributes,31,action-pair
 action-pair:move-block-into-group->insert-nested-group,109,action-pair
-action-pair:insert-nested-group->edit-common-block-attributes,25,action-pair
-block:core/media-text,276,block
+action-pair:insert-nested-group->edit-common-block-attributes,26,action-pair
+block:core/media-text,281,block
 action-pair:append-parser-stress-content->insert-async-server-block,2,action-pair
-action-pair:move-block-into-group->insert-paragraph,87,action-pair
+action-pair:move-block-into-group->insert-paragraph,88,action-pair
 action-pair:insert-paragraph->insert-block-gauntlet-block,10,action-pair
 action-pair:insert-block-gauntlet-block->append-parser-stress-content,9,action-pair
 action-pair:edit-title->edit-common-block-attributes,2,action-pair
-operation-ledger-created:4,803,operation-ledger
+operation-ledger-created:4,808,operation-ledger
 block-depth:core/block:1,12,block-depth
-block-depth:core/media-text:0,276,block-depth
-action-pair:move-block->edit-title,92,action-pair
+block-depth:core/media-text:0,281,block-depth
+action-pair:move-block->edit-title,94,action-pair
 action-pair:edit-title->append-parser-stress-content,2,action-pair
 action-pair:edit-nested-paragraph->edit-formatted-paragraph-at-cursor,7,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->insert-block-gauntlet-block,2,action-pair
-action-pair:insert-block-gauntlet-block->edit-block-gauntlet-attributes,116,action-pair
+action-pair:insert-block-gauntlet-block->edit-block-gauntlet-attributes,120,action-pair
 action-pair:edit-block-gauntlet-attributes->edit-formatted-paragraph-at-cursor,1,action-pair
 action-pair:move-block-into-group->edit-formatted-paragraph-at-cursor,14,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->insert-common-block,2,action-pair
 action-pair:insert-common-block->concurrent-paragraphs,3,action-pair
 action-pair:move-block-into-group->append-paragraph,77,action-pair
 action-pair:edit-table-array-attributes->edit-rich-text-pair-block,3,action-pair
-action-pair:insert-heading->insert-nested-group,106,action-pair
-action-pair:insert-nested-group->insert-block-gauntlet-block,28,action-pair
-action-pair:insert-async-server-block->delete-nested-block,87,action-pair
+action-pair:insert-heading->insert-nested-group,108,action-pair
+action-pair:insert-nested-group->insert-block-gauntlet-block,29,action-pair
+action-pair:insert-async-server-block->delete-nested-block,88,action-pair
 action-pair:edit-rich-text-pair-block->edit-block-gauntlet-attributes,2,action-pair
 action-pair:insert-async-server-block->edit-block-gauntlet-attributes,181,action-pair
-action-pair:edit-block-gauntlet-attributes->concurrent-paragraphs,4,action-pair
+action-pair:edit-block-gauntlet-attributes->concurrent-paragraphs,5,action-pair
 action-pair:insert-heading->edit-common-block-attributes,2,action-pair
-action-pair:delete-block->edit-title,56,action-pair
-action-pair:edit-title->insert-paragraph,82,action-pair
+action-pair:delete-block->edit-title,61,action-pair
+action-pair:edit-title->insert-paragraph,86,action-pair
 action-pair:append-parser-stress-content->append-paragraph,1,action-pair
 action-pair:append-paragraph->insert-block-gauntlet-block,4,action-pair
-action-pair:insert-block-gauntlet-block->insert-heading,5,action-pair
+action-pair:insert-block-gauntlet-block->insert-heading,6,action-pair
 action-pair:insert-heading->edit-block-gauntlet-attributes,3,action-pair
 action-pair:append-parser-stress-content->move-block,1,action-pair
-action-pair:append-paragraph->edit-nested-paragraph,133,action-pair
+action-pair:append-paragraph->edit-nested-paragraph,135,action-pair
 action-pair:insert-common-block->append-paragraph,1,action-pair
 action-pair:move-block-into-group->edit-title,2,action-pair
 total-blocks:41,11,other
-block-depth:core/separator:1,62,block-depth
-block:core/gallery,212,block
+block-depth:core/separator:1,63,block-depth
+block:core/gallery,215,block
 action-pair:edit-block-gauntlet-attributes->insert-paragraph,9,action-pair
 action-pair:insert-paragraph->append-parser-stress-content,21,action-pair
-block-depth:core/gallery:0,213,block-depth
+block-depth:core/gallery:0,216,block-depth
 action-pair:append-parser-stress-content->edit-nested-paragraph,2,action-pair
-action-pair:edit-block-gauntlet-attributes->edit-common-block-attributes,33,action-pair
+action-pair:edit-block-gauntlet-attributes->edit-common-block-attributes,36,action-pair
 total-blocks:37,25,other
-action-pair:move-block-into-group->edit-block-gauntlet-attributes,34,action-pair
+action-pair:move-block-into-group->edit-block-gauntlet-attributes,36,action-pair
 action-pair:edit-block-gauntlet-attributes->append-paragraph,3,action-pair
-action-pair:insert-block-gauntlet-block->move-block,71,action-pair
-action-pair:move-block->delete-nested-block,61,action-pair
+action-pair:insert-block-gauntlet-block->move-block,73,action-pair
+action-pair:move-block->delete-nested-block,62,action-pair
 action-pair:move-block->edit-common-block-attributes,18,action-pair
 action-pair:delete-block->edit-formatted-paragraph-at-cursor,2,action-pair
 action-pair:insert-common-block->insert-common-block,81,action-pair
 action-pair:insert-nested-group->delete-nested-block,70,action-pair
-action-pair:delete-nested-block->edit-nested-paragraph,41,action-pair
-action-pair:insert-common-block->edit-block-gauntlet-attributes,136,action-pair
+action-pair:delete-nested-block->edit-nested-paragraph,42,action-pair
+action-pair:insert-common-block->edit-block-gauntlet-attributes,138,action-pair
 action-pair:edit-paragraph->edit-formatted-paragraph-at-cursor,1,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->edit-block-gauntlet-attributes,3,action-pair
-action-pair:append-paragraph->insert-nested-group,146,action-pair
-action-pair:insert-nested-group->move-block-into-group,74,action-pair
-action-pair:edit-nested-paragraph->edit-title,80,action-pair
+action-pair:append-paragraph->insert-nested-group,150,action-pair
+action-pair:insert-nested-group->move-block-into-group,75,action-pair
+action-pair:edit-nested-paragraph->edit-title,81,action-pair
 action-pair:edit-common-block-attributes->insert-paragraph,12,action-pair
 action-pair:insert-common-block->edit-common-block-attributes,15,action-pair
-total-blocks:25,132,other
-block:core/shortcode,56,block
-action-pair:edit-block-gauntlet-attributes->insert-block-gauntlet-block,144,action-pair
+total-blocks:25,134,other
+block:core/shortcode,59,block
+action-pair:edit-block-gauntlet-attributes->insert-block-gauntlet-block,145,action-pair
 action-pair:insert-block-gauntlet-block->edit-paragraph,14,action-pair
 action-pair:append-parser-stress-content->insert-common-block,1,action-pair
 action-pair:insert-common-block->insert-async-server-block,178,action-pair
 action-pair:insert-async-server-block->edit-title,2,action-pair
-action-pair:concurrent-paragraphs->edit-nested-paragraph,146,action-pair
+action-pair:concurrent-paragraphs->edit-nested-paragraph,151,action-pair
 total-blocks:33,85,other
-block-depth:core/shortcode:0,57,block-depth
+block-depth:core/shortcode:0,60,block-depth
 action-pair:concurrent-paragraphs->edit-common-block-attributes,2,action-pair
 action-pair:append-parser-stress-content->move-block-into-group,1,action-pair
 action-pair:insert-nested-group->edit-rich-text-pair-block,5,action-pair
 action-pair:edit-rich-text-pair-block->insert-async-server-block,2,action-pair
-action-pair:insert-nested-group->append-paragraph,165,action-pair
-action-pair:edit-nested-paragraph->edit-table-array-attributes,193,action-pair
+action-pair:insert-nested-group->append-paragraph,166,action-pair
+action-pair:edit-nested-paragraph->edit-table-array-attributes,200,action-pair
 action-pair:move-block-into-group->insert-heading,83,action-pair
 action-pair:insert-heading->move-block-into-group,68,action-pair
 block-depth:core/spacer:1,7,block-depth
 action-pair:edit-common-block-attributes->edit-rich-text-pair-block,2,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->move-block,1,action-pair
-action-pair:move-block->insert-block-gauntlet-block,32,action-pair
-action-pair:delete-nested-block->edit-table-array-attributes,91,action-pair
+action-pair:move-block->insert-block-gauntlet-block,35,action-pair
+action-pair:delete-nested-block->edit-table-array-attributes,92,action-pair
 action-pair:append-parser-stress-content->edit-common-block-attributes,1,action-pair
 action-pair:insert-async-server-block->insert-heading,66,action-pair
 action-pair:insert-heading->append-parser-stress-content,9,action-pair
 total-blocks:52,5,other
-action-pair:insert-heading->delete-nested-block,102,action-pair
+action-pair:insert-heading->delete-nested-block,103,action-pair
 action-pair:edit-common-block-attributes->edit-table-array-attributes,1,action-pair
 action-pair:edit-block-gauntlet-attributes->edit-rich-text-pair-block,2,action-pair
 action-pair:edit-paragraph->edit-block-gauntlet-attributes,14,action-pair
-block:core/social-link,66,block
-block:core/social-links,68,block
+block:core/social-link,68,block
+block:core/social-links,70,block
 action-pair:concurrent-paragraphs->insert-block-gauntlet-block,1,action-pair
-action-pair:insert-common-block->insert-block-gauntlet-block,52,action-pair
-block-depth:core/social-links:0,81,block-depth
-block-depth:core/social-link:1,81,block-depth
+action-pair:insert-common-block->insert-block-gauntlet-block,54,action-pair
+block-depth:core/social-links:0,83,block-depth
+block-depth:core/social-link:1,83,block-depth
 action-pair:insert-block-gauntlet-block->concurrent-paragraphs,2,action-pair
 action-pair:insert-common-block->edit-table-array-attributes,2,action-pair
-total-blocks:30,52,other
+total-blocks:30,53,other
 action-pair:edit-nested-paragraph->append-parser-stress-content,2,action-pair
 transport-profile:ws:full,127,transport
 block:core/details,91,block
@@ -884,21 +884,21 @@ block-depth:core/details:0,91,block-depth
 invariant:unexpected-invalid-blocks:fail,1,invariant
 action-pair:edit-table-array-attributes->edit-common-block-attributes,8,action-pair
 action-pair:edit-paragraph->delete-nested-block,80,action-pair
-action-pair:delete-nested-block->move-block,82,action-pair
+action-pair:delete-nested-block->move-block,85,action-pair
 action-pair:edit-block-gauntlet-attributes->edit-table-array-attributes,2,action-pair
-action-pair:insert-common-block->insert-nested-group,3,action-pair
+action-pair:insert-common-block->insert-nested-group,5,action-pair
 action-pair:edit-block-gauntlet-attributes->insert-heading,3,action-pair
-payload-size-transport:ws:12,734,payload-size
-action-pair:edit-nested-paragraph->delete-nested-block,116,action-pair
+payload-size-transport:ws:12,748,payload-size
+action-pair:edit-nested-paragraph->delete-nested-block,118,action-pair
 action-pair:edit-title->reparse-edited-content,1,action-pair
-action-pair:append-paragraph->delete-nested-block,73,action-pair
-action-pair:insert-paragraph->edit-formatted-paragraph-at-cursor,2,action-pair
-step-count:18,983,step-count
-action-pair:move-block->insert-async-server-block,282,action-pair
+action-pair:append-paragraph->delete-nested-block,74,action-pair
+action-pair:insert-paragraph->edit-formatted-paragraph-at-cursor,3,action-pair
+step-count:18,990,step-count
+action-pair:move-block->insert-async-server-block,283,action-pair
 operation-ledger-missing:4,154,operation-ledger
 payload-size-profile:async-server-blocks:12,137,payload-size
 initial:large-document-100,520,initial-content
-step-count:9,187,step-count
+step-count:9,193,step-count
 real-user-template:undo-redo-canary,331,real-user
 real-user-action-sequence:ui-undo-redo-paragraph,12,real-user
 action:ui-undo-redo-paragraph,353,action
@@ -908,21 +908,21 @@ history-label:action:ui-undo-redo-paragraph:fail,205,history
 profile:long-session-large-doc,581,profile
 transport-profile:ws:long-session-large-doc,581,transport
 step-count:48,581,step-count
-action-pair:delete-block->insert-async-server-block,46,action-pair
-action-pair:move-block-into-group->move-block-into-group,73,action-pair
-action-pair:move-block-into-group->move-block,73,action-pair
+action-pair:delete-block->insert-async-server-block,47,action-pair
+action-pair:move-block-into-group->move-block-into-group,74,action-pair
+action-pair:move-block-into-group->move-block,74,action-pair
 payload-size-profile:long-session-large-doc:14,102,payload-size
 payload-size-transport:ws:14,102,payload-size
 profile:permissions-auth-locks,838,profile
 transport-profile:ws:permissions-auth-locks,838,transport
 collaborator-role:contributor,838,collaborator
 auth-session-expiry-probe:true,838,auth
-step-count:16,649,step-count
-action-pair:edit-table-array-attributes->edit-nested-paragraph,148,action-pair
-action-pair:edit-nested-paragraph->move-block,172,action-pair
+step-count:16,654,step-count
+action-pair:edit-table-array-attributes->edit-nested-paragraph,149,action-pair
+action-pair:edit-nested-paragraph->move-block,174,action-pair
 action-pair:insert-async-server-block->delete-block,74,action-pair
 payload-size-profile:permissions-auth-locks:11,206,payload-size
-action-pair:edit-nested-paragraph->append-paragraph,161,action-pair
+action-pair:edit-nested-paragraph->append-paragraph,165,action-pair
 cdp:349a1f6c19f936a1,1,code coverage
 operation-ledger-missing:2,202,operation-ledger
 payload-size-profile:async-server-blocks:10,20,payload-size
@@ -947,13 +947,13 @@ invariant:cross-page-exact-edited-content:fail,9,invariant
 operation-event-action:witnessed:insert-media-cross-entity-block:content,253,operation-ledger
 payload-size-profile:media-cross-entity:10,8,payload-size
 cdp:d8fcc6fe80162bec,1,code coverage
-step-count:14,189,step-count
-autosave-count:4,31,autosave
-local-autosave:true,74,autosave
-history:autosave-checkpoint:invoke,74,history
-history:autosave-checkpoint:ok,74,history
-operation-event-action:witnessed:autosave-checkpoint:content,74,operation-ledger
-payload-size-profile:revision-persistence:11,49,payload-size
+step-count:14,190,step-count
+autosave-count:4,35,autosave
+local-autosave:true,85,autosave
+history:autosave-checkpoint:invoke,85,history
+history:autosave-checkpoint:ok,85,history
+operation-event-action:witnessed:autosave-checkpoint:content,85,operation-ledger
+payload-size-profile:revision-persistence:11,58,payload-size
 cdp:a126146fa84c4189,1,code coverage
 cdp:87c0973a9f470a53,1,code coverage
 cdp:b2123a1a26f756d5,1,code coverage
@@ -979,13 +979,13 @@ history-label:action:assert-selection-cursor:fail,168,history
 payload-size-profile:real-user-editing:8,3,payload-size
 cdp:211b91bb9023c449,1,code coverage
 cdp:041621da8e3fb779,1,code coverage
-action-pair:insert-async-server-block->move-block,260,action-pair
+action-pair:insert-async-server-block->move-block,263,action-pair
 action-pair:edit-block-gauntlet-attributes->move-block,185,action-pair
 cdp:60b4161fcde5482a,1,code coverage
 cdp:6166e104e410ac83,1,code coverage
-operation-ledger-live:7,238,operation-ledger
+operation-ledger-live:7,240,operation-ledger
 cdp:188233f5864c0a8e,1,code coverage
-depth:4,895,other
+depth:4,896,other
 real-user-template:rich-text-editing,914,real-user
 real-user-action-sequence:ui-type-paragraph>ui-format-paragraph>ui-type-title>ui-heading-shortcut>reload-post-action>ui-paste-paragraph,85,real-user
 action:ui-format-paragraph,187,action
@@ -993,7 +993,7 @@ action:ui-heading-shortcut,159,action
 action:reload-post-action,230,action
 action:ui-paste-paragraph,1060,action
 action:ui-link-paragraph,1016,action
-action:ui-list-indent,1035,action
+action:ui-list-indent,1036,action
 action:ui-composition-paragraph,831,action
 action:ui-toolbar-format-paragraph,1503,action
 action-pair:ui-type-paragraph->ui-format-paragraph,161,action-pair
@@ -1018,8 +1018,8 @@ history-label:action:ui-paste-paragraph:invoke,1060,history
 history-label:action:ui-paste-paragraph:ok,1056,history
 history-label:action:ui-link-paragraph:invoke,1016,history
 history-label:action:ui-link-paragraph:ok,968,history
-history-label:action:ui-list-indent:invoke,1035,history
-history-label:action:ui-list-indent:ok,988,history
+history-label:action:ui-list-indent:invoke,1036,history
+history-label:action:ui-list-indent:ok,989,history
 history-label:action:ui-composition-paragraph:invoke,831,history
 history-label:action:ui-composition-paragraph:ok,804,history
 history-label:action:ui-toolbar-format-paragraph:invoke,1503,history
@@ -1029,25 +1029,25 @@ operation-event-action:witnessed:ui-heading-shortcut:content,159,operation-ledge
 operation-event-action:witnessed:reload-post-action:content,226,operation-ledger
 operation-event-action:witnessed:ui-paste-paragraph:content,1056,operation-ledger
 operation-event-action:witnessed:ui-link-paragraph:content,962,operation-ledger
-operation-event-action:witnessed:ui-list-indent:content,982,operation-ledger
+operation-event-action:witnessed:ui-list-indent:content,983,operation-ledger
 operation-event-action:witnessed:ui-composition-paragraph:content,804,operation-ledger
 payload-size-profile:real-user-editing:10,775,payload-size
-block-depth:core/list:2,849,block-depth
-block-depth:core/list-item:3,849,block-depth
+block-depth:core/list:2,850,block-depth
+block-depth:core/list-item:3,850,block-depth
 cdp:9ab55346ed037963,1,code coverage
 payload-size-profile:real-user-editing:11,157,payload-size
 cdp:318239ce0c32d173,1,code coverage
 cdp:a5f4d5d6a1647ba9,1,code coverage
 cdp:6d96957a8a680fb3,1,code coverage
-action-pair:move-block->insert-common-block,97,action-pair
+action-pair:move-block->insert-common-block,98,action-pair
 cdp:71dc560b8c180ba1,1,code coverage
 cdp:17fba752ed15ec69,1,code coverage
 real-user-action-sequence:ui-type-paragraph>ui-format-paragraph>ui-type-title>ui-heading-shortcut>reload-post-action>ui-undo-redo-paragraph,40,real-user
 action-pair:reload-post-action->ui-undo-redo-paragraph,51,action-pair
 cdp:ee9d9d5e0a13ec49,1,code coverage
 cdp:80f1b8faa8ce39f9,1,code coverage
-action-pair:move-block->edit-block-gauntlet-attributes,161,action-pair
-operation-ledger-created:7,215,operation-ledger
+action-pair:move-block->edit-block-gauntlet-attributes,164,action-pair
+operation-ledger-created:7,216,operation-ledger
 total-blocks:36,51,other
 cdp:de2d33f1831c9bb2,1,code coverage
 cdp:01c4781af4142950,1,code coverage
@@ -1171,60 +1171,60 @@ operation-event-action:witnessed:ui-toolbar-format-paragraph:content,1349,operat
 operation-event-action:witnessed:ui-cut-copy-paragraph:content,144,operation-ledger
 block-depth:core/list:3,46,block-depth
 block-depth:core/list-item:4,48,block-depth
-payload-size-profile:revision-persistence:12,17,payload-size
+payload-size-profile:revision-persistence:12,19,payload-size
 operation-ledger-missing:3,121,operation-ledger
 real-user-action-sequence:ui-paste-paragraph>ui-link-paragraph,35,real-user
-payload-size-profile:multi-reload-lifecycle:10,36,payload-size
-total-blocks:38,36,other
+payload-size-profile:multi-reload-lifecycle:10,37,payload-size
+total-blocks:38,37,other
 step-count:28,102,step-count
-action-pair:delete-nested-block->insert-async-server-block,97,action-pair
+action-pair:delete-nested-block->insert-async-server-block,98,action-pair
 fault:fail:403,110,fault
 real-user-action-sequence:ui-paste-paragraph>ui-link-paragraph>ui-list-indent>ui-composition-paragraph>ui-toolbar-format-paragraph>ui-cut-copy-paragraph,105,real-user
 real-user-action-sequence:ui-paste-paragraph>ui-link-paragraph>ui-list-indent>ui-composition-paragraph>ui-toolbar-format-paragraph>reload-post-action,14,real-user
 action-pair:ui-toolbar-format-paragraph->reload-post-action,16,action-pair
 action-pair:reload-post-action->ui-cut-copy-paragraph,16,action-pair
 action-pair:edit-paragraph->insert-async-server-block,88,action-pair
-action-pair:edit-table-array-attributes->move-block-into-group,66,action-pair
+action-pair:edit-table-array-attributes->move-block-into-group,68,action-pair
 fault:fail:401,152,fault
 payload-size-profile:permissions-auth-locks:12,88,payload-size
 action-pair:insert-heading->late-join-post-action,30,action-pair
-action-pair:late-join-post-action->insert-heading,142,action-pair
-action-pair:concurrent-paragraphs->delete-nested-block,65,action-pair
-total-blocks:40,28,other
+action-pair:late-join-post-action->insert-heading,144,action-pair
+action-pair:concurrent-paragraphs->delete-nested-block,67,action-pair
+total-blocks:40,29,other
 payload-size-profile:three-user-late-join:12,47,payload-size
 history-label:action:ui-link-paragraph:fail,50,history
-action-pair:insert-nested-group->insert-heading,129,action-pair
+action-pair:insert-nested-group->insert-heading,131,action-pair
 action-pair:insert-async-server-block->concurrent-paragraphs,85,action-pair
-action-pair:edit-nested-paragraph->insert-nested-group,123,action-pair
+action-pair:edit-nested-paragraph->insert-nested-group,129,action-pair
 payload-size-profile:permissions-auth-locks:10,57,payload-size
 action-pair:move-block-into-group->late-join-post-action,35,action-pair
 action-pair:late-join-post-action->delete-nested-block,15,action-pair
 payload-size-profile:three-user-late-join:11,93,payload-size
 payload-size-profile:real-user-editing:12,34,payload-size
 cdp:fb37d9300b049ad7,1,code coverage
-total-blocks:39,31,other
-block-depth:core/search:1,36,block-depth
-action-pair:append-paragraph->late-join-post-action,191,action-pair
+total-blocks:39,32,other
+block-depth:core/search:1,37,block-depth
+action-pair:append-paragraph->late-join-post-action,193,action-pair
 action-pair:late-join-post-action->insert-paragraph,17,action-pair
-action-pair:delete-nested-block->insert-nested-group,71,action-pair
-action-pair:edit-table-array-attributes->insert-nested-group,135,action-pair
+action-pair:delete-nested-block->insert-nested-group,73,action-pair
+action-pair:edit-table-array-attributes->insert-nested-group,137,action-pair
 initial:large-document-150,67,initial-content
 action-pair:insert-paragraph->delete-nested-block,53,action-pair
-action-pair:insert-paragraph->edit-nested-paragraph,122,action-pair
+action-pair:insert-paragraph->edit-nested-paragraph,125,action-pair
 real-user-action-sequence:ui-type-paragraph,12,real-user
 cdp:6afd9f4a3dafbd33,1,code coverage
 action-pair:insert-async-server-block->edit-paragraph,80,action-pair
-action-pair:delete-block->move-block-into-group,78,action-pair
-action-pair:move-block-into-group->delete-nested-block,62,action-pair
+action-pair:delete-block->move-block-into-group,79,action-pair
+action-pair:move-block-into-group->delete-nested-block,64,action-pair
 total-blocks:101,7,other
 cdp:c4f9ca05db473bf2,1,code coverage
 total-blocks:44,20,other
 operation-event-action:missing:ui-link-paragraph:content,54,operation-ledger
 operation-missing:ui-link-paragraph:content,54,operation-ledger
-action-pair:insert-nested-group->edit-table-array-attributes,108,action-pair
-action-pair:insert-async-server-block->edit-nested-paragraph,69,action-pair
-action-pair:move-block->edit-nested-paragraph,147,action-pair
-payload-size-profile:session-lifecycle:12,228,payload-size
+action-pair:insert-nested-group->edit-table-array-attributes,110,action-pair
+action-pair:insert-async-server-block->edit-nested-paragraph,71,action-pair
+action-pair:move-block->edit-nested-paragraph,150,action-pair
+payload-size-profile:session-lifecycle:12,235,payload-size
 real-user-action-sequence:insert-nested-group>late-join-post-action>ui-list-indent>ui-paste-paragraph>ui-undo-redo-paragraph,15,real-user
 action-pair:insert-nested-group->late-join-post-action,53,action-pair
 action-pair:late-join-post-action->ui-list-indent,35,action-pair
@@ -1239,7 +1239,7 @@ cdp:b5b1a811cd87f07d,1,code coverage
 total-blocks:51,9,other
 payload-size-profile:async-server-blocks:13,5,payload-size
 payload-size-transport:ws:13,43,payload-size
-action-pair:delete-nested-block->concurrent-paragraphs,44,action-pair
+action-pair:delete-nested-block->concurrent-paragraphs,45,action-pair
 action-pair:ui-cut-copy-paragraph->reload-post-action,7,action-pair
 action-pair:reload-post-action->ui-table-cell-edit,7,action-pair
 real-user-action-sequence:ui-link-paragraph,8,real-user
@@ -1265,8 +1265,8 @@ payload-size-profile:many-user-lifecycle:12,41,payload-size
 operation-event-action:missing:ui-toolbar-format-paragraph:content,24,operation-ledger
 operation-missing:ui-toolbar-format-paragraph:content,24,operation-ledger
 real-user-action-sequence:ui-paste-paragraph>ui-link-paragraph>ui-list-indent>ui-composition-paragraph>ui-toolbar-format-paragraph,616,real-user
-action-pair:edit-title->edit-title,84,action-pair
-total-blocks:45,12,other
+action-pair:edit-title->edit-title,85,action-pair
+total-blocks:45,13,other
 real-user-action-sequence:concurrent-paragraphs>late-join-post-action>ui-type-title>append-paragraph>concurrent-paragraphs>ui-undo-redo-paragraph,12,real-user
 action-pair:concurrent-paragraphs->late-join-post-action,43,action-pair
 action-pair:concurrent-paragraphs->ui-undo-redo-paragraph,18,action-pair
@@ -1298,7 +1298,7 @@ action-pair:ui-toolbar-format-paragraph->move-block,8,action-pair
 action-pair:move-block->ui-type-paragraph,352,action-pair
 action-pair:ui-type-paragraph->append-paragraph,8,action-pair
 action-pair:move-block->ui-list-indent,11,action-pair
-action-pair:ui-list-indent->ui-list-indent,26,action-pair
+action-pair:ui-list-indent->ui-list-indent,27,action-pair
 action-pair:ui-list-indent->ui-undo-redo-paragraph,5,action-pair
 cdp:5bdcd86a33d9d980,1,code coverage
 cdp:40ac120813cbbe93,1,code coverage
@@ -1339,19 +1339,19 @@ action-pair:late-join-post-action->insert-async-server-block,29,action-pair
 real-user-action-sequence:ui-paste-paragraph>late-join-post-action>insert-nested-group>move-block>move-block>ui-link-paragraph,4,real-user
 action-pair:late-join-post-action->insert-nested-group,35,action-pair
 action-pair:move-block->ui-link-paragraph,11,action-pair
-payload-size-profile:multi-reload-lifecycle:12,40,payload-size
-payload-size-profile:multi-reload-lifecycle:11,79,payload-size
+payload-size-profile:multi-reload-lifecycle:12,41,payload-size
+payload-size-profile:multi-reload-lifecycle:11,85,payload-size
 action-pair:insert-common-block->reparse-edited-content,13,action-pair
-action-pair:edit-nested-paragraph->assert-presence-list,11,action-pair
+action-pair:edit-nested-paragraph->assert-presence-list,12,action-pair
 action-pair:assert-presence-list->append-parser-stress-content,9,action-pair
 action-pair:append-parser-stress-content->assert-presence-list,9,action-pair
-payload-size-profile:parser-serialization:12,58,payload-size
+payload-size-profile:parser-serialization:12,60,payload-size
 cdp:d865ab6d21f22120,1,code coverage
 action-pair:insert-block-gauntlet-block->assert-remote-cursor,5,action-pair
 payload-size-profile:parser-serialization:10,36,payload-size
 cdp:02fa5a5f325dfeb0,1,code coverage
-operation-event-action:missing:concurrent-paragraphs:content,65,operation-ledger
-operation-missing:concurrent-paragraphs:content,65,operation-ledger
+operation-event-action:missing:concurrent-paragraphs:content,66,operation-ledger
+operation-missing:concurrent-paragraphs:content,66,operation-ledger
 real-user-action-sequence:ui-type-paragraph>late-join-post-action>ui-table-cell-edit>ui-list-indent>ui-paste-paragraph>ui-type-paragraph,5,real-user
 action-pair:late-join-post-action->ui-table-cell-edit,18,action-pair
 action-pair:ui-table-cell-edit->ui-list-indent,22,action-pair
@@ -1370,7 +1370,7 @@ action-pair:ui-table-cell-edit->insert-heading,15,action-pair
 action-pair:insert-async-server-block->ui-toolbar-format-paragraph,10,action-pair
 cdp:508479152ae72365,1,code coverage
 cdp:1716501ae5f52996,1,code coverage
-action-pair:assert-presence-list->edit-block-gauntlet-attributes,5,action-pair
+action-pair:assert-presence-list->edit-block-gauntlet-attributes,6,action-pair
 cdp:52d00ba10907ea6d,1,code coverage
 payload-size-profile:many-user-lifecycle:9,10,payload-size
 action-pair:insert-paragraph->late-join-post-action,24,action-pair
@@ -1617,23 +1617,23 @@ action-pair:ui-toolbar-format-paragraph->ui-table-cell-edit,1,action-pair
 action-pair:ui-table-cell-edit->concurrent-paragraphs,8,action-pair
 action-pair:ui-table-cell-edit->ui-toolbar-format-paragraph,2,action-pair
 action-pair:ui-toolbar-format-paragraph->append-paragraph,5,action-pair
-payload-size-profile:block-gauntlet:10,74,payload-size
+payload-size-profile:block-gauntlet:10,79,payload-size
 cdp:cfefb1959b26c43c,1,code coverage
 action-pair:delete-nested-block->insert-common-block,32,action-pair
-payload-size-profile:block-gauntlet:12,64,payload-size
+payload-size-profile:block-gauntlet:12,67,payload-size
 cdp:9582d442c52e2032,1,code coverage
-action-pair:delete-block->insert-block-gauntlet-block,59,action-pair
-action-pair:insert-block-gauntlet-block->delete-nested-block,29,action-pair
-payload-size-profile:block-gauntlet:11,173,payload-size
+action-pair:delete-block->insert-block-gauntlet-block,60,action-pair
+action-pair:insert-block-gauntlet-block->delete-nested-block,30,action-pair
+payload-size-profile:block-gauntlet:11,177,payload-size
 cdp:3bea476b9561bd8b,1,code coverage
-action-pair:insert-block-gauntlet-block->reparse-edited-content,50,action-pair
+action-pair:insert-block-gauntlet-block->reparse-edited-content,52,action-pair
 action-pair:reparse-edited-content->edit-block-gauntlet-attributes,27,action-pair
-action-pair:edit-common-block-attributes->delete-nested-block,18,action-pair
-action-pair:delete-nested-block->insert-block-gauntlet-block,74,action-pair
+action-pair:edit-common-block-attributes->delete-nested-block,20,action-pair
+action-pair:delete-nested-block->insert-block-gauntlet-block,76,action-pair
 cdp:a6156518b4bbd8ca,1,code coverage
 action-pair:edit-block-gauntlet-attributes->move-block-into-group,62,action-pair
 action-pair:reparse-edited-content->insert-common-block,23,action-pair
-action-pair:edit-common-block-attributes->edit-block-gauntlet-attributes,67,action-pair
+action-pair:edit-common-block-attributes->edit-block-gauntlet-attributes,69,action-pair
 block-depth:core/buttons:1,16,block-depth
 block-depth:core/button:2,16,block-depth
 cdp:8088fc155f5fd6f4,1,code coverage
@@ -1714,7 +1714,7 @@ cdp:bdb6585e4160c993,1,code coverage
 cdp:22aba248a43390c7,1,code coverage
 cdp:4968d4342ddf1192,1,code coverage
 cdp:390610f525b77b14,1,code coverage
-action-pair:insert-block-gauntlet-block->insert-block-gauntlet-block,97,action-pair
+action-pair:insert-block-gauntlet-block->insert-block-gauntlet-block,101,action-pair
 cdp:c5b2951c2ac5935c,1,code coverage
 cdp:f64f1f3f0a1bdf9b,1,code coverage
 cdp:b40905f28e6d7e8e,1,code coverage
@@ -1735,7 +1735,7 @@ cdp:a50635897165161d,1,code coverage
 action-pair:insert-block-gauntlet-block->append-paragraph,6,action-pair
 cdp:f28562d0f46202f8,1,code coverage
 cdp:0e7fbd7c693d4486,1,code coverage
-action-pair:insert-block-gauntlet-block->edit-nested-paragraph,30,action-pair
+action-pair:insert-block-gauntlet-block->edit-nested-paragraph,31,action-pair
 cdp:1244ace464d72f4a,1,code coverage
 action-pair:edit-block-gauntlet-attributes->delete-block,15,action-pair
 cdp:ee9e90d9b1c9d73a,1,code coverage
@@ -1760,9 +1760,9 @@ cdp:100b193de082ab4c,1,code coverage
 cdp:5645ce3086769b38,1,code coverage
 cdp:58161b083443349c,1,code coverage
 action-pair:edit-nested-paragraph->reparse-edited-content,10,action-pair
-action-pair:edit-block-gauntlet-attributes->insert-nested-group,25,action-pair
+action-pair:edit-block-gauntlet-attributes->insert-nested-group,26,action-pair
 cdp:937a4279766d88d2,1,code coverage
-action-pair:delete-block->edit-block-gauntlet-attributes,29,action-pair
+action-pair:delete-block->edit-block-gauntlet-attributes,30,action-pair
 block-depth:core/details:1,15,block-depth
 cdp:e61c123cbfc00604,1,code coverage
 payload-size-profile:block-gauntlet:9,17,payload-size
@@ -2018,8 +2018,8 @@ real-user-action-sequence:append-paragraph>late-join-post-action>insert-async-se
 operation-event:missing:title,2,operation-ledger
 operation-event-action:missing:edit-title:title,2,operation-ledger
 operation-missing:edit-title:title,2,operation-ledger
-operation-event-action:missing:final-ui-witness-sweep:content,57,operation-ledger
-operation-missing:final-ui-witness-sweep:content,57,operation-ledger
+operation-event-action:missing:final-ui-witness-sweep:content,58,operation-ledger
+operation-missing:final-ui-witness-sweep:content,58,operation-ledger
 total-blocks:114,93,other
 cdp:f658557d0bcd7e30,1,code coverage
 cdp:c943950fb23569da,1,code coverage
@@ -2057,11 +2057,11 @@ action-pair:insert-heading->assert-presence-list,16,action-pair
 action-pair:assert-presence-list->assert-selection-cursor,23,action-pair
 cdp:7bdb0269558ae495,1,code coverage
 cdp:8348696300fec517,1,code coverage
-action-pair:concurrent-paragraphs->append-parser-stress-content,9,action-pair
+action-pair:concurrent-paragraphs->append-parser-stress-content,10,action-pair
 action-pair:edit-formatted-paragraph-at-cursor->edit-nested-paragraph,10,action-pair
 cdp:470b685306a35249,1,code coverage
 cdp:3e11fcb5419c0e97,1,code coverage
-payload-size-profile:parser-serialization:11,57,payload-size
+payload-size-profile:parser-serialization:11,61,payload-size
 cdp:a766156960e30e17,1,code coverage
 cdp:b3d7f28c9a61dec4,1,code coverage
 cdp:6e8b0d8d7b234ea2,1,code coverage
@@ -2221,7 +2221,7 @@ action-pair:ui-format-paragraph->assert-presence-list,6,action-pair
 cdp:3796e0a301986eff,2,code coverage
 action-pair:ui-type-paragraph->concurrent-paragraphs,13,action-pair
 action-pair:edit-table-array-attributes->ui-type-title,26,action-pair
-action-pair:edit-paragraph->assert-presence-list,6,action-pair
+action-pair:edit-paragraph->assert-presence-list,7,action-pair
 action-pair:assert-presence-list->move-block,5,action-pair
 action-pair:ui-type-title->ui-type-title,14,action-pair
 total-blocks:86,5,other
@@ -2558,7 +2558,7 @@ cdp:0a823dbf3a99b7ac,1,code coverage
 cdp:8ca28d1b2997e700,1,code coverage
 cdp:ef3f344e98921722,1,code coverage
 payload-size-profile:multi-reload-lifecycle:9,1,payload-size
-autosave-count:2,43,autosave
+autosave-count:2,50,autosave
 block-depth:core/query:1,1,block-depth
 cdp:214981694212097e,1,code coverage
 cdp:bf773b6eb5b8976b,1,code coverage
@@ -2597,8 +2597,8 @@ history-label:action:edit-table-array-attributes:fail,1,history
 total-blocks:62,2,other
 history-label:action:append-paragraph:fail,1,history
 action-pair:edit-table-array-attributes->assert-selection-cursor,1,action-pair
-operation-event-action:missing:ui-list-indent:content,51,operation-ledger
-operation-missing:ui-list-indent:content,51,operation-ledger
+operation-event-action:missing:ui-list-indent:content,52,operation-ledger
+operation-missing:ui-list-indent:content,52,operation-ledger
 operation-event-action:missing:ui-composition-paragraph:content,9,operation-ledger
 operation-missing:ui-composition-paragraph:content,9,operation-ledger
 operation-event-action:missing:ui-cut-copy-paragraph:content,5,operation-ledger
@@ -2662,8 +2662,8 @@ cdp:fc5a235284dfbf30,1,code coverage
 cdp:55576a0d1bb377be,1,code coverage
 cdp:da8819878ac9e338,1,code coverage
 cdp:7cfbe346313bf674,1,code coverage
-history:late-join-batch:invoke,1683,history
-history:late-join-batch:ok,1643,history
+history:late-join-batch:invoke,1697,history
+history:late-join-batch:ok,1657,history
 cdp:e96c550bb3ff4369,1,code coverage
 action-pair:edit-formatted-paragraph-at-cursor->assert-selection-cursor,5,action-pair
 cdp:952419c49b30a3de,1,code coverage
@@ -2890,7 +2890,7 @@ cdp:303a785c9c29db8c,1,code coverage
 cdp:fed4b9000c17a12a,1,code coverage
 cdp:dc51bdd2b4073c21,1,code coverage
 cdp:b7a7006fa8b355f0,1,code coverage
-real-user-action-sequence:append-paragraph>late-join-post-action>insert-heading>concurrent-paragraphs>move-block>append-paragraph,87,real-user
+real-user-action-sequence:append-paragraph>late-join-post-action>insert-heading>concurrent-paragraphs>move-block>append-paragraph,89,real-user
 cdp:7b1e5d77dec4c6db,1,code coverage
 cdp:5fa3ada21e8f8066,1,code coverage
 cdp:34cbc1573468552e,1,code coverage
@@ -3014,7 +3014,7 @@ cdp:b4eec5780815d172,1,code coverage
 real-user-action-sequence:insert-async-server-block,1,real-user
 action-pair:append-paragraph->assert-presence-list,10,action-pair
 action-pair:assert-presence-list->insert-heading,8,action-pair
-action-pair:assert-presence-list->append-paragraph,7,action-pair
+action-pair:assert-presence-list->append-paragraph,8,action-pair
 action-pair:ui-toolbar-format-paragraph->edit-table-array-attributes,2,action-pair
 cdp:0a8d6ab99c257f19,1,code coverage
 total-blocks:100,12,other
@@ -3043,7 +3043,7 @@ action-pair:ui-list-indent->late-join-post-action,15,action-pair
 action-pair:ui-list-indent->ui-type-title,4,action-pair
 cdp:ca5225b0f1a43117,1,code coverage
 cdp:cdf4372b0ddfd331,1,code coverage
-action-pair:assert-presence-list->edit-table-array-attributes,5,action-pair
+action-pair:assert-presence-list->edit-table-array-attributes,6,action-pair
 action-pair:edit-table-array-attributes->assert-presence-list,7,action-pair
 action-pair:assert-presence-list->edit-paragraph,2,action-pair
 cdp:25bf4e7d44e3fe6d,1,code coverage
@@ -3473,12 +3473,12 @@ cdp:84aa2dc4ba424987,1,code coverage
 cdp:915a510b2b369231,1,code coverage
 cdp:396af6d9f507c756,1,code coverage
 cdp:d95cf3f90addbcf7,1,code coverage
-action-pair:assert-presence-list->insert-async-server-block,1,action-pair
+action-pair:assert-presence-list->insert-async-server-block,2,action-pair
 cdp:0d1882fc2ba51fff,1,code coverage
 action-pair:edit-common-block-attributes->append-parser-stress-content,1,action-pair
 cdp:5837369b2ede53e5,1,code coverage
 action-pair:assert-presence-list->delete-block,1,action-pair
-action-pair:delete-block->assert-presence-list,1,action-pair
+action-pair:delete-block->assert-presence-list,2,action-pair
 cdp:0eb7a6a452cc0cdc,1,code coverage
 cdp:b41ee70c47231bf0,1,code coverage
 cdp:8725b65ebaa09e4f,1,code coverage
@@ -3575,7 +3575,7 @@ cdp:e034ea2f1274806f,1,code coverage
 cdp:c7ba3f6cbfe2bf52,1,code coverage
 cdp:e0e7f7cd249651e7,1,code coverage
 action-pair:insert-async-server-block->append-parser-stress-content,1,action-pair
-action-pair:delete-nested-block->assert-presence-list,1,action-pair
+action-pair:delete-nested-block->assert-presence-list,2,action-pair
 cdp:907315166f293554,1,code coverage
 action-pair:insert-media-cross-entity-block->delete-nested-block,1,action-pair
 action-pair:insert-media-cross-entity-block->delete-block,1,action-pair
@@ -3600,31 +3600,31 @@ action-pair:move-block-into-group->ui-link-paragraph,1,action-pair
 cdp:ff94a447c87a8f61,1,code coverage
 cdp:817537b5444eedfc,1,code coverage
 cdp:228187176b432005,1,code coverage
-action:move-list-item,45,action
+action:move-list-item,47,action
 action-pair:edit-rich-text-pair-block->move-list-item,1,action-pair
 action-pair:move-list-item->edit-nested-paragraph,1,action-pair
 action-pair:insert-common-block->move-list-item,3,action-pair
 action-pair:move-list-item->delete-nested-block,3,action-pair
-history-label:action:move-list-item:invoke,45,history
+history-label:action:move-list-item:invoke,47,history
 history:list-item-move:observed,5,history
 history-label:list-item-move:move-list-item:observed,5,history
-history-label:action:move-list-item:ok,45,history
+history-label:action:move-list-item:ok,47,history
 cdp:faa0f51dd861dea8,1,code coverage
 cdp:fcf55cec2d9bf1a1,1,code coverage
 cdp:ee723955ad4aef30,1,code coverage
 cdp:5bf7c37658db5864,1,code coverage
 cdp:347a4bd76ed2a79e,1,code coverage
 cdp:00157dc0b3099ef4,1,code coverage
-profile:list-move-refresh-http,40,profile
-transport-profile:http:list-move-refresh-http,40,transport
-action-pair:move-list-item->concurrent-paragraphs,29,action-pair
+profile:list-move-refresh-http,41,profile
+transport-profile:http:list-move-refresh-http,41,transport
+action-pair:move-list-item->concurrent-paragraphs,30,action-pair
 action-pair:ui-list-indent->move-list-item,21,action-pair
 action-pair:move-list-item->move-list-item,34,action-pair
-action-pair:concurrent-paragraphs->move-list-item,27,action-pair
-action-pair:move-list-item->ui-list-indent,28,action-pair
-history:list-item-move:ok,40,history
-history-label:list-item-move:move-list-item:ok,40,history
-payload-size-profile:list-move-refresh-http:11,34,payload-size
+action-pair:concurrent-paragraphs->move-list-item,28,action-pair
+action-pair:move-list-item->ui-list-indent,29,action-pair
+history:list-item-move:ok,42,history
+history-label:list-item-move:move-list-item:ok,42,history
+payload-size-profile:list-move-refresh-http:11,35,payload-size
 cdp:240afa0317de020d,1,code coverage
 cdp:40bcabe83d27dac5,1,code coverage
 real-user-action-sequence:move-block>late-join-post-action>insert-async-server-block>ui-undo-redo-paragraph,3,real-user
@@ -3687,8 +3687,8 @@ cdp:2ed54fd53f6f60da,1,code coverage
 cdp:d5b1cc8f550c0582,1,code coverage
 cdp:4971b30aaecf79c8,1,code coverage
 cdp:6e80e89c5a4ee3d1,1,code coverage
-action-pair:move-list-item->append-paragraph,19,action-pair
-action-pair:append-paragraph->move-list-item,21,action-pair
+action-pair:move-list-item->append-paragraph,20,action-pair
+action-pair:append-paragraph->move-list-item,22,action-pair
 cdp:a98224c5967ec40a,1,code coverage
 cdp:a7eea65615900614,1,code coverage
 cdp:e7b96927300460e6,1,code coverage
@@ -3885,17 +3885,17 @@ cdp:6f0aabe21b21a7ec,1,code coverage
 cdp:e6b873decc8478d5,1,code coverage
 action-pair:move-block->table-stale-snapshot-html,2,action-pair
 action-pair:table-stale-snapshot-html->ui-table-cell-edit,1,action-pair
-history:table-stale-snapshot:ok,38,history
-history-label:table-stale-snapshot:html:ok,38,history
-history-label:action:table-stale-snapshot-html:ok,38,history
-operation-event-action:witnessed:table-stale-snapshot-html:content,38,operation-ledger
-operation-event-action:missing:table-stale-snapshot-html:content,22,operation-ledger
-operation-missing:table-stale-snapshot-html:content,22,operation-ledger
+history:table-stale-snapshot:ok,42,history
+history-label:table-stale-snapshot:html:ok,42,history
+history-label:action:table-stale-snapshot-html:ok,42,history
+operation-event-action:witnessed:table-stale-snapshot-html:content,42,operation-ledger
+operation-event-action:missing:table-stale-snapshot-html:content,24,operation-ledger
+operation-missing:table-stale-snapshot-html:content,24,operation-ledger
 cdp:adc5346fc698da39,1,code coverage
 cdp:f52bbab3dcf5a86f,1,code coverage
 cdp:f824618cf8d45e95,1,code coverage
 cdp:1a833c0435060dec,1,code coverage
-action-pair:reparse-edited-content->insert-nested-group,5,action-pair
+action-pair:reparse-edited-content->insert-nested-group,6,action-pair
 cdp:459ebaec932511cc,1,code coverage
 cdp:eb4fb2436aa0462b,1,code coverage
 cdp:f36e5ceffc0f7164,1,code coverage
@@ -3906,7 +3906,7 @@ cdp:2bc34f3cf4e49632,1,code coverage
 cdp:e283d3860af8d2b7,1,code coverage
 payload-size-profile:list-move-refresh-http:10,2,payload-size
 cdp:3b1fe5ccbf26f0b8,1,code coverage
-action-pair:append-paragraph->table-stale-snapshot-html,19,action-pair
+action-pair:append-paragraph->table-stale-snapshot-html,21,action-pair
 cdp:6d1832149cdca257,1,code coverage
 action-pair:concurrent-paragraphs->table-stale-snapshot-html,2,action-pair
 cdp:76cad61252bd03bc,1,code coverage
@@ -3935,7 +3935,7 @@ cdp:12c8ca7e8682da60,1,code coverage
 action-pair:edit-table-array-attributes->table-stale-snapshot-html,2,action-pair
 cdp:62e82a85421f58a9,1,code coverage
 cdp:57e8c9d3d5842b0f,1,code coverage
-block-depth:core/cover:1,1,block-depth
+block-depth:core/cover:1,2,block-depth
 cdp:d00c41e91d68edde,1,code coverage
 cdp:b1fb0b5a2234f78b,1,code coverage
 cdp:8c19daabc5676e5a,1,code coverage
@@ -3978,7 +3978,7 @@ cdp:39bdc5b43a0dc696,1,code coverage
 cdp:ae1cf60e7e5ab49a,1,code coverage
 payload-size-profile:list-move-refresh-http:12,1,payload-size
 cdp:2ec2c9df754846ad,1,code coverage
-action-pair:table-stale-snapshot-html->edit-table-array-attributes,33,action-pair
+action-pair:table-stale-snapshot-html->edit-table-array-attributes,37,action-pair
 cdp:a4fe1c826d4dcac1,1,code coverage
 cdp:ea69c3d99cebc9db,1,code coverage
 cdp:6ac1fb1f296a2b93,1,code coverage
@@ -4174,3 +4174,35 @@ action-pair:insert-common-block->assert-selection-cursor,1,action-pair
 cdp:3c2ab1db9e05e327,1,code coverage
 action-pair:edit-block-gauntlet-attributes->assert-selection-cursor,1,action-pair
 cdp:b4fb7f5370b512dd,1,code coverage
+cdp:eda02acf9f17f721,1,code coverage
+cdp:14eec5a62837b666,1,code coverage
+cdp:7b0b65f0b9aa6544,1,code coverage
+cdp:d47149fce8cf1116,1,code coverage
+cdp:d9eb4b588bf23090,1,code coverage
+cdp:1dba47a3776d72e6,1,code coverage
+cdp:084038de6840179e,1,code coverage
+cdp:d0ff243b30dc1ed1,1,code coverage
+cdp:1056386b2dbca741,1,code coverage
+cdp:a02ff99e6ccecdda,1,code coverage
+cdp:f7e8e6b3d2cd89f9,1,code coverage
+cdp:1b70e8a49add5dab,1,code coverage
+cdp:07028bf31f06507a,1,code coverage
+cdp:14f1b71ed7928e99,1,code coverage
+cdp:379d5dd941a86531,1,code coverage
+cdp:e9c6d9a6d8df101e,1,code coverage
+cdp:aa82906d04a70c02,1,code coverage
+cdp:5ed3c6408635483a,1,code coverage
+cdp:611b2c9436ea5734,1,code coverage
+cdp:af909f6f2085b275,1,code coverage
+cdp:3e72fcdbe3e9a5e0,1,code coverage
+cdp:0cb2edf777880bbe,1,code coverage
+action-pair:edit-table-array-attributes->insert-common-block,1,action-pair
+action-pair:insert-common-block->append-parser-stress-content,1,action-pair
+cdp:ced078ffd7540077,1,code coverage
+cdp:850b6e05eb855332,1,code coverage
+cdp:aaa3ccb0d98f03a0,1,code coverage
+cdp:f0c2fd1eeb44b986,1,code coverage
+action-pair:move-list-item->edit-table-array-attributes,1,action-pair
+action-pair:assert-presence-list->edit-rich-text-pair-block,1,action-pair
+action-pair:edit-rich-text-pair-block->insert-common-block,1,action-pair
+cdp:f4ee0c54a32ede90,1,code coverage
