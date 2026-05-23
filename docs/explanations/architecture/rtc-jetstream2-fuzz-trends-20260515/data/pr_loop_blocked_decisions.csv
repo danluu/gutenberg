@@ -1,12 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,P0,no,current feedback says this broad repair head is not a small reviewable stack with complete build plus benchmark-minimum green,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,"current feedback says this broad repair head is not a small reviewable stack
-with complete build plus benchmark-minimum green"
-repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,older product-only repair head still failed large-post rows; retain as failure evidence,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"older product-only repair head still failed large-post rows; retain as failure
-evidence"
+publish-ready,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,P0,no,broad repair head is not a small reviewable stack with non-skipped complete build and benchmark-minimum green,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,"broad repair head is not a small reviewable stack with non-skipped complete
+build and benchmark-minimum green"
+repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,older product-only repair head still failed large-post-three-user-http; retain as blocker evidence only,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"older product-only repair head still failed large-post-three-user-http; retain
+as blocker evidence only"
+publish-ready,benchmark-canary-fuzzer-gap,P0,no,block publication until exact split stack has non-skipped complete build evidence and full benchmark-minimum green,benchmark-canary-fuzzer-gap,"block publication until exact split stack has non-skipped complete build
+evidence and full benchmark-minimum green"
 launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,suppress duplicate browser/e2e owner matrix unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"suppress duplicate browser/e2e owner matrix unless newer current-head
 product-owned red evidence appears"
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"block generic fanout until title reload, existing-post or persistence reload, and large HTTP lifecycle are fresh green or replay-downscoped",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block generic fanout until title reload, existing-post or persistence reload,
-and large HTTP lifecycle are fresh green or replay-downscoped"
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"block generic branch fanout until title reload, existing-post or persistence reload, and large HTTP lifecycle rows are fresh green or replay-downscoped",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block generic branch fanout until title reload, existing-post or persistence
+reload, and large HTTP lifecycle rows are fresh green or replay-downscoped"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact-stack browser validation and large HTTP lifecycle evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head exact-stack browser validation and large HTTP lifecycle
 evidence"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic-only evidence is not publishable without focused replay proof,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,diagnostic-only evidence is not publishable without focused replay proof
@@ -18,5 +20,4 @@ ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
 publish-ready,current-push-manifest-ready-real-fix-branches,high,no,current push manifest has no new payload rows and ready real-fix branches are already published,current-push-manifest-ready-real-fix-branches,"current push manifest has no new payload rows and ready real-fix branches are
 already published"
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block broad PR fanout while PR17 repair and discovery reserves are active under disk_pressure,all-other-heavy-pr-jobs,"block broad PR fanout while PR17 repair and discovery reserves are active under
-disk_pressure"
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block broad PR fanout while PR17 repair and discovery reserves are active,all-other-heavy-pr-jobs,block broad PR fanout while PR17 repair and discovery reserves are active
