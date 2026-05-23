@@ -1,4 +1,6 @@
 session,class,started_hint
+rtc-benchmark-canary-feedback-refresh-20260523T063802Z,feedback-refresh,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
+rtc-pr-finalize-job-20260523T063247Z,finalization,

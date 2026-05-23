@@ -1,5 +1,5 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 12 against floor 3 with headroom and 0 active PR jobs; allow one bounded PR17 repair while preserving fuzz reserve
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 11 against floor 3 with 0 active PR jobs; allow one bounded PR17 repair while preserving fuzz reserve
 repair-branch,benchmark-canary-fuzzer-gap/large-post-publish-save,P0,yes,next product-progress slot; large-post three-user HTTP still fails 2/2 with missing Author final paragraph and needs a real PR17 fix plus same-commit exact-stack rerun
 publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed branch and commit have full benchmark-minimum green evidence plus non-skipped build evidence
 publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,current clean repair commit still fails realistic-e2e/large-post-three-user-http
