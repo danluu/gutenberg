@@ -1,20 +1,20 @@
 action,target,priority,allowed,reason,target_label,reason_label
 publish-ready,rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact gate has repeated No-tests-found benchmark-minimum failures,rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,current exact gate has repeated No-tests-found benchmark-minimum failures
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,newest feed reclassifies active blocker to benchmark harness packaging; preserve PR17 inputs but do not spend the next branch-changing slot here,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"newest feed reclassifies active blocker to benchmark harness packaging; preserve
-PR17 inputs but do not spend the next branch-changing slot here"
-publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus complete non-skipped exact all-merged benchmark-minimum and canary green evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"requires reviewable split plus complete non-skipped exact all-merged
-benchmark-minimum and canary green evidence"
-publish-ready,benchmark-canary-fuzzer-gap/broad-repair-heads,P0,no,broad repair heads are evidence only and not maintainer-reviewable product branches,benchmark-canary-fuzzer-gap/broad-repair-heads,"broad repair heads are evidence only and not maintainer-reviewable product
-branches"
-publish-ready,current-push-manifest-header-only,P0,no,current-push-manifest.tsv has only a header and is insufficient as maintainer-facing live-branch evidence,current-push-manifest-header-only,"current-push-manifest.tsv has only a header and is insufficient as
-maintainer-facing live-branch evidence"
+publish-ready,current-push-manifest-header-only,P0,no,header-only manifest in this run context is insufficient as maintainer-facing live-branch evidence,current-push-manifest-header-only,"header-only manifest in this run context is insufficient as maintainer-facing
+live-branch evidence"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
 ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,block branch fanout until title reload plus existing-post or persistence reload plus large HTTP lifecycle rows are green or downscoped,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block branch fanout until title reload plus existing-post or persistence reload
-plus large HTTP lifecycle rows are green or downscoped"
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,newest feed reclassifies immediate blocker to benchmark harness packaging; preserve PR17 inputs but do not spend the next branch-changing slot here,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"newest feed reclassifies immediate blocker to benchmark harness packaging;
+preserve PR17 inputs but do not spend the next branch-changing slot here"
+publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus complete non-skipped exact all-merged benchmark-minimum and canary green evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"requires reviewable split plus complete non-skipped exact all-merged
+benchmark-minimum and canary green evidence"
+publish-ready,benchmark-canary-fuzzer-gap/broad-repair-heads,P0,no,broad repair heads are evidence only and not maintainer-reviewable product branches,benchmark-canary-fuzzer-gap/broad-repair-heads,"broad repair heads are evidence only and not maintainer-reviewable product
+branches"
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,block fanout until title reload plus existing-post or persistence reload plus large HTTP lifecycle rows are green or downscoped,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block fanout until title reload plus existing-post or persistence reload plus
+large HTTP lifecycle rows are green or downscoped"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,required same-head exact-stack browser validation rows are absent,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,required same-head exact-stack browser validation rows are absent
 launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,current-head owner replay is terminal no-promote with product_owned_rows=0,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,current-head owner replay is terminal no-promote with product_owned_rows=0
 launch-branch-repair,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic evidence is not product-owned,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,diagnostic evidence is not product-owned
