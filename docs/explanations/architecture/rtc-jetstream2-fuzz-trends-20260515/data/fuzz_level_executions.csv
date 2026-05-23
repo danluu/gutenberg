@@ -2645,7 +2645,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T15:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1705,1705,1705,29,0,912675,FALSE
 2026-05-22T15:30:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2816,2816,2816,88,0,887000,FALSE
 2026-05-22T15:45:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,1,1,0,1,1,121447,FALSE
-2026-05-22T15:45:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,2,2,2,2,0,216661,FALSE
 2026-05-22T15:45:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,9,8,8,9,1,660242,FALSE
 2026-05-22T15:45:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,4,2,0,4,4,822653,FALSE
 2026-05-22T15:45:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,4,2,0,4,4,863015,FALSE
@@ -2657,7 +2656,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T15:45:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2720,2720,2720,85,0,873000,FALSE
 2026-05-22T16:00:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,10,9,9,10,1,767592,FALSE
 2026-05-22T16:00:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,5,3,0,5,5,523543,FALSE
-2026-05-22T16:00:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,6,5,5,6,1,615030,FALSE
 2026-05-22T16:00:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,11,11,11,11,0,780378,FALSE
 2026-05-22T16:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,3,1,0,3,3,896847,FALSE
 2026-05-22T16:00:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,3,2,0,3,3,951164,FALSE
@@ -2669,7 +2667,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T16:00:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2848,2848,2848,89,0,889000,FALSE
 2026-05-22T16:15:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,7,6,5,7,2,664155,FALSE
 2026-05-22T16:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,6,4,0,6,6,680964,FALSE
-2026-05-22T16:15:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,8,7,6,8,2,768149,FALSE
 2026-05-22T16:15:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,9,9,9,9,0,637096,FALSE
 2026-05-22T16:15:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,1,0,1,1,588127,FALSE
 2026-05-22T16:15:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,0,0,1,1,589979,FALSE
@@ -2681,7 +2678,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T16:15:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2816,2816,2816,88,0,882000,FALSE
 2026-05-22T16:30:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,9,7,6,9,3,542038,FALSE
 2026-05-22T16:30:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,5,2,0,5,5,458041,FALSE
-2026-05-22T16:30:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,9,7,5,9,4,712404,FALSE
 2026-05-22T16:30:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,8,8,8,8,0,509708,FALSE
 2026-05-22T16:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,1,0,2,2,1172720,FALSE
 2026-05-22T16:30:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,2,1,0,2,2,1174938,FALSE
@@ -2693,7 +2689,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T16:30:00Z,unit-property,unit-property-rich-text-crdt-merge,unit-property,in-process,rtc-rich-text-crdt-merge,2784,2784,2784,87,0,880000,FALSE
 2026-05-22T16:45:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,11,9,8,11,3,665025,FALSE
 2026-05-22T16:45:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,7,4,0,7,7,741146,FALSE
-2026-05-22T16:45:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,9,8,8,9,1,738320,FALSE
 2026-05-22T16:45:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,11,11,11,11,0,686427,FALSE
 2026-05-22T16:45:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,0,0,1,1,585784,FALSE
 2026-05-22T16:45:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,586284,FALSE
@@ -2710,7 +2705,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T17:00:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,4,3,2,4,2,341189,FALSE
 2026-05-22T17:00:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,12,11,9,12,3,859607,FALSE
 2026-05-22T17:00:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,10,5,0,10,10,895504,FALSE
-2026-05-22T17:00:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,11,10,10,11,1,931051,FALSE
 2026-05-22T17:00:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,14,14,14,14,0,859162,FALSE
 2026-05-22T17:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,1,0,2,2,1172318,FALSE
 2026-05-22T17:00:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,2,1,0,2,2,1170726,FALSE
@@ -2727,7 +2721,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T17:15:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,11,9,7,11,4,848678,FALSE
 2026-05-22T17:15:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,9,8,9,9,0,674027,FALSE
 2026-05-22T17:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,6,4,0,6,6,511016,FALSE
-2026-05-22T17:15:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,9,7,5,9,4,752326,FALSE
 2026-05-22T17:15:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,10,9,9,10,1,688134,FALSE
 2026-05-22T17:15:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,1,0,1,1,586375,FALSE
 2026-05-22T17:15:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,0,0,1,1,586375,FALSE
@@ -2746,7 +2739,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T17:30:00Z,coverage-guided,novelty-ws-thirty-user-lifecycle,browser-e2e,ws,many-user-lifecycle,1,1,0,1,1,262933,FALSE
 2026-05-22T17:30:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,11,11,11,11,0,650555,FALSE
 2026-05-22T17:30:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,7,3,0,7,7,672857,FALSE
-2026-05-22T17:30:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,8,7,5,8,3,695161,FALSE
 2026-05-22T17:30:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,12,12,12,12,0,707866,FALSE
 2026-05-22T17:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,1,0,2,2,1174902,FALSE
 2026-05-22T17:30:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,2,1,0,2,2,1174114,FALSE
@@ -2761,7 +2753,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T17:45:00Z,coverage-guided,novelty-ws-many-user-lifecycle-completion,browser-e2e,ws,many-user-lifecycle,5,4,2,5,3,474283,FALSE
 2026-05-22T17:45:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,7,6,6,7,1,429571,FALSE
 2026-05-22T17:45:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,4,2,0,4,4,403440,FALSE
-2026-05-22T17:45:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,5,4,2,5,3,519572,FALSE
 2026-05-22T17:45:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,6,6,5,6,1,377806,FALSE
 2026-05-22T17:45:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,0,0,1,1,588718,FALSE
 2026-05-22T17:45:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,589061,FALSE
@@ -2778,7 +2769,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T18:00:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,2,1,0,2,2,62772,FALSE
 2026-05-22T18:00:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,9,9,9,9,0,589429,FALSE
 2026-05-22T18:00:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,5,3,0,5,5,571526,FALSE
-2026-05-22T18:00:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,10,8,7,10,3,818327,FALSE
 2026-05-22T18:00:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,9,9,8,9,1,602893,FALSE
 2026-05-22T18:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,1,0,2,2,1176753,FALSE
 2026-05-22T18:00:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,2,1,0,2,2,1175127,FALSE
@@ -2794,7 +2784,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T18:15:00Z,coverage-guided,novelty-ws-thirty-user-lifecycle,browser-e2e,ws,many-user-lifecycle,6,4,1,6,5,182847,FALSE
 2026-05-22T18:15:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,101,52,4,101,97,682858,FALSE
 2026-05-22T18:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,96,48,0,96,96,694952,FALSE
-2026-05-22T18:15:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,12,8,6,12,6,778824,FALSE
 2026-05-22T18:15:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,103,54,5,103,98,718591,FALSE
 2026-05-22T18:15:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,1,0,2,2,1177289,FALSE
 2026-05-22T18:15:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,0,0,1,1,587096,FALSE
@@ -2812,7 +2801,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T18:30:00Z,coverage-guided,novelty-ws-thirty-user-lifecycle,browser-e2e,ws,many-user-lifecycle,3,2,1,3,2,1094529,FALSE
 2026-05-22T18:30:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,208,104,0,208,208,862029,FALSE
 2026-05-22T18:30:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,208,104,0,208,208,861255,FALSE
-2026-05-22T18:30:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,12,10,11,12,1,921144,FALSE
 2026-05-22T18:30:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,208,104,0,208,208,862458,FALSE
 2026-05-22T18:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,1,0,1,1,587780,FALSE
 2026-05-22T18:30:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,2,1,0,2,2,1177919,FALSE
@@ -2828,7 +2816,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T18:45:00Z,coverage-guided,novelty-ws-many-user-lifecycle-completion,browser-e2e,ws,many-user-lifecycle,6,4,2,6,4,412405,FALSE
 2026-05-22T18:45:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,208,104,0,208,208,863793,FALSE
 2026-05-22T18:45:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,207,103,0,207,207,864301,FALSE
-2026-05-22T18:45:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,13,8,8,13,5,905945,FALSE
 2026-05-22T18:45:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,209,105,0,209,209,863818,FALSE
 2026-05-22T18:45:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,1,0,2,2,1179667,FALSE
 2026-05-22T18:45:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,2,1,0,2,2,1177712,FALSE
@@ -2846,7 +2833,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T19:00:00Z,coverage-guided,novelty-ws-three-user-late-join,browser-e2e,ws,three-user-late-join,14,12,10,14,4,654655,FALSE
 2026-05-22T19:00:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,156,78,0,156,156,656875,FALSE
 2026-05-22T19:00:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,208,104,0,208,208,866069,FALSE
-2026-05-22T19:00:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,67,36,6,67,61,808471,FALSE
 2026-05-22T19:00:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,157,78,0,157,157,672685,FALSE
 2026-05-22T19:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,0,0,1,1,587633,FALSE
 2026-05-22T19:00:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,585586,FALSE
@@ -2864,7 +2850,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T19:15:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,9,4,1,9,8,365909,FALSE
 2026-05-22T19:15:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,210,105,0,210,210,864798,FALSE
 2026-05-22T19:15:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,204,102,0,204,204,861593,FALSE
-2026-05-22T19:15:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,207,104,0,207,207,861049,FALSE
 2026-05-22T19:15:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,211,106,0,211,211,867581,FALSE
 2026-05-22T19:15:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,1,0,2,2,1172240,FALSE
 2026-05-22T19:15:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,2,1,0,2,2,1173748,FALSE
@@ -2884,7 +2869,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T19:30:00Z,coverage-guided,novelty-ws-many-user-lifecycle-completion,browser-e2e,ws,many-user-lifecycle,3,2,1,3,2,716324,FALSE
 2026-05-22T19:30:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,206,103,0,206,206,862075,FALSE
 2026-05-22T19:30:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,209,105,0,209,209,864179,FALSE
-2026-05-22T19:30:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,206,103,0,206,206,863133,FALSE
 2026-05-22T19:30:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,209,104,0,209,209,862840,FALSE
 2026-05-22T19:30:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,1,0,1,1,584584,FALSE
 2026-05-22T19:30:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,0,0,1,1,584035,FALSE
@@ -2905,7 +2889,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T19:45:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,14,12,10,14,4,1228821,FALSE
 2026-05-22T19:45:00Z,focused-shards,focused-existing-post-crdt-http,browser-e2e,http,persistence-no-title,201,101,0,201,201,865760,FALSE
 2026-05-22T19:45:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,203,101,0,203,203,862921,FALSE
-2026-05-22T19:45:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,186,93,0,186,186,792751,FALSE
 2026-05-22T19:45:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,180,91,0,180,180,769197,FALSE
 2026-05-22T19:45:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,2,1,0,2,2,1173809,FALSE
 2026-05-22T19:45:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,2,1,0,2,2,1175110,FALSE
@@ -2925,7 +2908,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-22T20:00:00Z,coverage-guided,novelty-ws-many-user-lifecycle-completion,browser-e2e,ws,many-user-lifecycle,2,1,1,2,1,184186,FALSE
 2026-05-22T20:00:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,16,15,14,16,2,1686254,FALSE
 2026-05-22T20:00:00Z,focused-shards,focused-large-http-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,0,1,1,4049,FALSE
-2026-05-22T20:00:00Z,focused-shards,focused-large-http-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,61,31,0,61,61,284840,FALSE
 2026-05-22T20:00:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,1,0,0,1,1,4288,FALSE
 2026-05-22T20:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,1,0,0,1,1,586323,FALSE
 2026-05-22T20:00:00Z,gap-booster,boost-long-session-large-doc,browser-e2e,ws,long-session-large-doc,1,1,0,1,1,587909,FALSE
@@ -4137,14 +4119,16 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T12:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,9,5,0,9,9,886393,FALSE
 2026-05-23T12:15:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,24,19,13,24,11,884198,FALSE
 2026-05-23T12:15:00Z,unit-property,unit-property-http-polling-canary,unit-property,in-process,rtc-http-polling-manager-canary,3,3,3,1,0,8000,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,6,5,3,6,3,481859,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,0,1,1,259960,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,5,2,0,5,5,537460,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,6,3,2,6,4,503672,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,3,2,0,3,3,401779,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,8,5,1,8,7,521665,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,6,5,3,6,3,445009,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,8,8,8,8,0,471084,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,6,3,0,6,6,497036,FALSE
-2026-05-23T12:30:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,13,10,8,13,5,465673,FALSE
-2026-05-23T12:30:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,5,5,5,5,0,247504,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,10,7,3,10,7,813695,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,4,2,0,4,4,858587,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,9,4,0,9,9,898078,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,9,5,3,9,6,891001,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,6,3,0,6,6,860339,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,13,7,1,13,12,842978,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,10,9,7,10,3,835326,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,13,12,12,13,1,731964,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,12,6,0,12,12,909833,FALSE
+2026-05-23T12:30:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,21,15,10,21,11,858628,FALSE
+2026-05-23T12:30:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,10,10,10,10,0,613306,FALSE
+2026-05-23T12:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,25,25,25,1,0,14490,FALSE
+2026-05-23T12:30:00Z,strict-expansion,ws-real-user-editing,browser-e2e,ws,real-user-editing,7,4,0,7,7,27780,FALSE
