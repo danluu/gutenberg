@@ -1,6 +1,6 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,zero-row or No-tests-found benchmark-minimum evidence is not reviewable green evidence,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"zero-row or No-tests-found benchmark-minimum evidence is not reviewable green
-evidence"
+publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has zero-row or No-tests-found benchmark-minimum failures,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"current exact-stack evidence has zero-row or No-tests-found benchmark-minimum
+failures"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
@@ -8,16 +8,16 @@ ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,high,no,superseded by current published PR07C head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"superseded by current published PR07C head
 2f8247258316bde60869c06c383090904e9426bd"
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,duplicate browser owner replay wastes deadline budget after current-head owner evidence was already produced,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"duplicate browser owner replay wastes deadline budget after current-head owner
-evidence was already produced"
-launch-branch-repair,reload-hydration@generic,P0,no,generic deferred fanout is diagnostic churn until same-head exact-stack rows are green or downscoped,reload-hydration@generic,"generic deferred fanout is diagnostic churn until same-head exact-stack rows are
-green or downscoped"
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,required same-head title reload existing-post or persistence reload and large HTTP lifecycle rows are absent,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"required same-head title reload existing-post or persistence reload and large
-HTTP lifecycle rows are absent"
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,duplicate browser owner replay wastes deadline budget unless newer current-head product-owned evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"duplicate browser owner replay wastes deadline budget unless newer current-head
+product-owned evidence appears"
+launch-branch-repair,reload-hydration@generic,P0,no,generic deferred fanout is diagnostic churn until same-head exact rows are green or downscoped,reload-hydration@generic,"generic deferred fanout is diagnostic churn until same-head exact rows are green
+or downscoped"
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing same-head title reload existing-post-or-persistence reload and large HTTP lifecycle evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing same-head title reload existing-post-or-persistence reload and large
+HTTP lifecycle evidence"
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,exact b8ca harness packaging owns the next branch-changing product slot,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,exact b8ca harness packaging owns the next branch-changing product slot
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus exact all-merged benchmark-minimum and canary green evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"requires reviewable split plus exact all-merged benchmark-minimum and canary
 green evidence"
-reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-generic,P0,no,do not add broad HTTP materialization while exact harness and bounded canary gates are active,benchmark-canary-fuzzer-gap/large-post-http-generic,"do not add broad HTTP materialization while exact harness and bounded canary
+reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-generic,P0,no,do not launch broad HTTP materialization while exact harness and bounded canary gates are active,benchmark-canary-fuzzer-gap/large-post-http-generic,"do not launch broad HTTP materialization while exact harness and bounded canary
 gates are active"
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,disk pressure and red exact-stack gate allow only bounded harness repair exact replay docs manifest analysis-only work and protected discovery,all-other-heavy-pr-jobs,"disk pressure and red exact-stack gate allow only bounded harness repair exact
 replay docs manifest analysis-only work and protected discovery"
