@@ -1,5 +1,5 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"block broad PR fanout under deadline plus high load and data disk pressure; allow only PR17, exact replay/downscope gates, cheap status generation, and analysis-only decisions",all-other-heavy-pr-jobs,"block broad PR fanout under deadline plus high load and data disk pressure;
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"block broad PR fanout under deadline, high load, and 98 percent data disk use; allow only PR17, exact replay/downscope gates, cheap status generation, and analysis-only decisions",all-other-heavy-pr-jobs,"block broad PR fanout under deadline, high load, and 98 percent data disk use;
 allow only PR17, exact replay/downscope gates, cheap status generation, and
 analysis-only decisions"
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"publication waits for reviewable split, non-skipped complete build, and exact all-merged benchmark-minimum/canary green",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"publication waits for reviewable split, non-skipped complete build, and exact
