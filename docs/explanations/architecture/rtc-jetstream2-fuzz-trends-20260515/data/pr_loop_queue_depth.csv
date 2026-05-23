@@ -2,12 +2,13 @@ queue,state,class,priority,depth
 PR progress items,needs-product-decision,deferred-family,high,1
 PR progress items,diagnostic,deferred-family,medium,1
 PR progress items,held-by-controller,ready-product-pr,high,4
+PR progress items,publish-manifest-ready,ready-product-pr,high,1
 PR progress items,published,ready-product-pr,high,27
 PR progress items,superseded,ready-product-pr,low,1
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
 controller decisions,allowed,control decision,P0,19
 controller decisions,blocked,control decision,P0,8
-controller decisions,allowed,control decision,high,12
+controller decisions,allowed,control decision,high,13
 controller decisions,blocked,control decision,high,7
 controller decisions,allowed,control decision,medium,2
 critical blockers,active,coverage-promotion,high,1
@@ -21,4 +22,4 @@ critical job queue,gated,codex-analysis,high,1
 critical lanes,queued,browser-e2e,lane,1
 critical lanes,queued,codex-analysis,lane,1
 active sessions,active,analysis,analysis,3
-active sessions,active,critical-continuation,critical-continuation,2
+active sessions,active,critical-continuation,critical-continuation,1

@@ -1899,3 +1899,10 @@ timestamp,group,group_family
 2026-05-23T20:47:45Z,novelty-ws-parser-serialization,parser
 2026-05-23T20:57:47Z,novelty-ws-parser-serialization,parser
 2026-05-23T21:07:50Z,novelty-ws-parser-serialization,parser
+2026-05-23T21:16:49Z,novelty-ws-parser-serialization,parser
+2026-05-23T21:19:32Z,novelty-ws-multi-reload-lifecycle,lifecycle
+2026-05-23T21:19:32Z,novelty-ws-parser-serialization,parser
+2026-05-23T21:19:33Z,novelty-ws-revision-persistence,persistence
+2026-05-23T21:19:33Z,novelty-ws-same-user-lifecycle,lifecycle
+2026-05-23T21:19:33Z,novelty-ws-same-user-stale-tabs,lifecycle
+2026-05-23T21:19:33Z,novelty-ws-thirty-user-lifecycle,lifecycle
