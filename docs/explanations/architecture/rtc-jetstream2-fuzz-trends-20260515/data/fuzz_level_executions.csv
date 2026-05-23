@@ -4353,7 +4353,11 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T16:45:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,9,7,6,9,3,590751,FALSE
 2026-05-23T16:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,7,4,0,7,7,647124,FALSE
 2026-05-23T16:45:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,16,14,12,16,4,605251,FALSE
-2026-05-23T16:45:00Z,focused-shards,focused-same-user-stale-tabs-http,browser-e2e,http,session-lifecycle,4,3,2,4,2,681349,FALSE
-2026-05-23T16:45:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,10,5,0,10,10,735032,FALSE
-2026-05-23T16:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,4885,4885,4885,28,0,808284,FALSE
+2026-05-23T16:45:00Z,focused-shards,focused-same-user-stale-tabs-http,browser-e2e,http,session-lifecycle,6,5,4,6,2,883858,FALSE
+2026-05-23T16:45:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,12,6,0,12,12,892165,FALSE
+2026-05-23T16:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,5425,5425,5425,31,0,919672,FALSE
 2026-05-23T16:45:00Z,strict-expansion,http-large-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,5,2,0,5,5,740952,FALSE
+2026-05-23T17:00:00Z,focused-shards,focused-same-user-stale-tabs-http,browser-e2e,http,session-lifecycle,3,3,3,3,0,353431,FALSE
+2026-05-23T17:00:00Z,gap-booster,boost-async-server-blocks-template-parts,browser-e2e,ws,async-server-blocks,5,2,0,5,5,382744,FALSE
+2026-05-23T17:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,2700,2700,2700,15,0,440607,FALSE
+2026-05-23T17:00:00Z,strict-expansion,http-large-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,683857,FALSE
