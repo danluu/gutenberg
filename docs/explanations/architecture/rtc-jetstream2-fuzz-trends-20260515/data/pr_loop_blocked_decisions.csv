@@ -1,24 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,fresh same-head exact-stack red blocks publication until same-commit benchmark-minimum green and accepted non-skipped build evidence,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"fresh same-head exact-stack red blocks publication until same-commit
-benchmark-minimum green and accepted non-skipped build evidence"
+publish-ready,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,fresh same-head exact-stack failures block publication until same-commit benchmark-minimum green and non-skipped complete-dependency build evidence,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"fresh same-head exact-stack failures block publication until same-commit
+benchmark-minimum green and non-skipped complete-dependency build evidence"
 publish-ready,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,older green or publish-ready evidence is superseded by newer exact-stack red at 69df480bc3dcfe99e7fe09afbbcd9990dba006da,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,"older green or publish-ready evidence is superseded by newer exact-stack red at
 69df480bc3dcfe99e7fe09afbbcd9990dba006da"
-publish-ready,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z,P0,no,local-publisher row is stale because current feedback still has promotion-blocking exact-stack failures,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z,"local-publisher row is stale because current feedback still has
-promotion-blocking exact-stack failures"
-repair-branch,PR17/materialize/table@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,fold older materialize-table evidence into the active PR17 repair instead of spending a second branch-changing slot,PR17/materialize/table@30e2fd58040064c6401a83f15927941c8f2f3b5d,"fold older materialize-table evidence into the active PR17 repair instead of
-spending a second branch-changing slot"
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,PR17 owns the single heavy branch-changing product slot while discovery reserve is preserved,all-other-heavy-pr-jobs,"PR17 owns the single heavy branch-changing product slot while discovery reserve
-is preserved"
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,duplicate browser owner-matrix launch is churn unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"duplicate browser owner-matrix launch is churn unless newer current-head
-product-owned red evidence appears"
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing-post or persistence reload, and
-large HTTP lifecycle green evidence"
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"block generic branch fanout until exact replay proves owner evidence, green adoption, or replay-backed downscope",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block generic branch fanout until exact replay proves owner evidence, green
-adoption, or replay-backed downscope"
-publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,"no product-owned first-loss, owner evidence, green-stack adoption, or explicit downscope evidence",pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,"no product-owned first-loss, owner evidence, green-stack adoption, or explicit
-downscope evidence"
-publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,"no conclusive owner evidence, green-stack adoption, or explicit downscope evidence",rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,"no conclusive owner evidence, green-stack adoption, or explicit downscope
+publish-ready,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z,P0,no,stale product-split publication signal is superseded by later exact-stack red evidence,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z,"stale product-split publication signal is superseded by later exact-stack red
 evidence"
+launch-branch-repair,PR17/materialize/table@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,"older materialize/table evidence should seed the active PR17 repair, not consume a second branch-changing slot",PR17/materialize/table@30e2fd58040064c6401a83f15927941c8f2f3b5d,"older materialize/table evidence should seed the active PR17 repair, not consume
+a second branch-changing slot"
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,PR17 owns the single heavy branch-changing slot this cycle while discovery reserve is preserved,all-other-heavy-pr-jobs,"PR17 owns the single heavy branch-changing slot this cycle while discovery
+reserve is preserved"
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,duplicate browser owner-matrix is churn unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"duplicate browser owner-matrix is churn unless newer current-head product-owned
+red evidence appears"
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green or replay-backed downscope evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing-post or persistence reload, and
+large HTTP lifecycle green or replay-backed downscope evidence"
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"generic branch fanout is blocked until exact replay proves product ownership, green adoption, or downscope",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"generic branch fanout is blocked until exact replay proves product ownership,
+green adoption, or downscope"
+publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic-only evidence is not publishable without focused replay proof,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,diagnostic-only evidence is not publishable without focused replay proof
+publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,diagnostic-only evidence is not publishable without focused replay proof,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,diagnostic-only evidence is not publishable without focused replay proof
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
