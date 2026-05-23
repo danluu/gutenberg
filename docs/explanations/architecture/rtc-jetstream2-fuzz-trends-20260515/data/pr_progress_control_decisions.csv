@@ -26,8 +26,8 @@ cooldown-diagnostic,malformed-save-payload,high,yes,raw deferred heads are super
 cooldown-diagnostic,http-room-isolation,high,yes,raw deferred heads are superseded by published PR02A absent fresh healthy-user evidence
 reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 9 versus floor 3; bounded finalization may proceed but heavy PR jobs must wait if reserve degrades
 reserve-discovery,benchmark-canary-fuzzer-gap/provider-persisted-crdt-large-post,P0,yes,keep one hard-discovery provider-persisted large-post HTTP lane; do not satisfy canary gap from soft-bootstrap or stale rows
-reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-forced-materialization,P0,yes,restart or replace exactly one forced current-run HTTP canary slot and require current_run_group_records greater than zero
-reserve-discovery,benchmark-canary-http-forced-groups,P0,yes,reactivate forced HTTP groups so policy_active_run_dirs and current_run_transport_records are nonzero before coverage-ready claims
+reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-forced-materialization,P0,yes,keep exactly one forced current-run HTTP canary slot and require current_run_group_records greater than zero
+reserve-discovery,benchmark-canary-http-forced-groups,P0,yes,keep forced HTTP groups policy-active with nonzero current-run transport records before coverage-ready claims
 reserve-discovery,coverage-guided-lower-level-http-polling-manager/canary-large-http-readiness,P0,yes,keep one bounded replay/minimization lane until reproducers 0022 0036 0039 0055 are exported and consumed
 cooldown-diagnostic,coverage-guided-lower-level-http-polling-manager/broad-corpus,P0,yes,suppress broad expansion while bounded large-readiness replay and PR17 handoff inputs are active
 repair-ready,rtc-http-polling-manager/large-readiness-oracles,high,yes,split 0022 0036 0039 persisted multiroom content-missing from 0055 bridge hard-readiness union-incomplete before crediting yield

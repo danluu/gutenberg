@@ -1303,3 +1303,5 @@ timestamp,event_type,message,target,blocker_class
 2026-05-23T21:04:16Z,launch,continuation productive-analysis-action session=rtc-critical-continuation-productive-analysis-action-20260523T210414Z,productive-analysis-action,critical-path launch
 2026-05-23T21:08:36Z,launch,continuation benchmark-canary-fuzzer-gap session=rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260523T210834Z,benchmark-canary-fuzzer-gap,benchmark canary/exact-stack
 2026-05-23T21:25:21Z,launch,continuation benchmark-canary-fuzzer-gap session=rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260523T212519Z,benchmark-canary-fuzzer-gap,benchmark canary/exact-stack
+2026-05-23T21:43:04Z,launch,continuation benchmark-canary-fuzzer-gap session=rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260523T214302Z,benchmark-canary-fuzzer-gap,benchmark canary/exact-stack
+2026-05-23T21:44:59Z,launch,continuation seed-5200005-reducer session=rtc-critical-continuation-seed-5200005-reducer-20260523T214457Z,seed-5200005-reducer,seed reducer/final-stack
