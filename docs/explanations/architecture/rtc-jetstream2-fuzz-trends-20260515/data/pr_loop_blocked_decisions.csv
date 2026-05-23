@@ -1,13 +1,16 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,PR17/raw-or-broad-repair-refs,P0,no,"raw repair refs are direction only and lack clean split, build gate, and full same-commit exact-stack proof",PR17/raw-or-broad-repair-refs,"raw repair refs are direction only and lack clean split, build gate, and full
+launch-heavy-pr-jobs,discovery-unhealthy-reserve-breach,P0,no,"if discovery falls below reserve health, block heavy PR work except cheap publication manifest generation or analysis-only actions",discovery-unhealthy-reserve-breach,"if discovery falls below reserve health, block heavy PR work except cheap
+publication manifest generation or analysis-only actions"
+publish-ready,PR17/raw-or-broad-repair-refs,P0,no,"raw repair refs lack clean split, current PR07C behavior, build gate, and full same-commit exact-stack proof",PR17/raw-or-broad-repair-refs,"raw repair refs lack clean split, current PR07C behavior, build gate, and full
 same-commit exact-stack proof"
 launch-branch-repair,product-pr-fanout,P0,no,do not fan out heavy PR jobs; PR17 owns the single branch-changing lane while discovery reserve is preserved,product-pr-fanout,"do not fan out heavy PR jobs; PR17 owns the single branch-changing lane while
 discovery reserve is preserved"
-launch-owner-matrix,pr07c-owner-matrix@duplicate-browser-job,high,no,suppress duplicate owner-matrix work unless newer red current-head owner evidence appears,pr07c-owner-matrix@duplicate-browser-job,"suppress duplicate owner-matrix work unless newer red current-head owner
+launch-owner-matrix,job-pr07c-owner-matrix,high,no,suppress duplicate browser owner-matrix work unless newer red current-head owner evidence appears,job-pr07c-owner-matrix,"suppress duplicate browser owner-matrix work unless newer red current-head owner
 evidence appears"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale PR07C head is superseded by published head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"stale PR07C head is superseded by published head
 2f8247258316bde60869c06c383090904e9426bd"
-publish-ready,current-push-manifest.tsv,high,no,header-only push manifest is not independent publication evidence,current-push-manifest.tsv,header-only push manifest is not independent publication evidence
+publish-ready,current-push-manifest.tsv,high,no,controller push manifest is header-only and is not independent publication evidence,current-push-manifest.tsv,"controller push manifest is header-only and is not independent publication
+evidence"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR15A-on-PR14B branch,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR15A-on-PR14B branch
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published PR15B-on-PR14B branch,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by published PR15B-on-PR14B branch
