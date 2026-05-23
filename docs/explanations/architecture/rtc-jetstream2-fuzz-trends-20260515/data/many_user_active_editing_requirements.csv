@@ -21,4 +21,7 @@ concurrent persistence race,"save, autosave, and optional publish are raced afte
 WS reconnect and background churn,forced WS reconnect fault and browser pagehide/visibility/focus churn complete,transport,TRUE
 HTTP 413 compaction recovery,forced 413 sync failure recovers under HTTP polling with large content,transport,TRUE
 title/content/excerpt boundary,"title, body, and excerpt witnesses are edited and persisted in one record",post fields,TRUE
+visible remote block delete,remote-inserted visible block is deleted through another user's UI and disappears for every participant,block deletion,TRUE
+code-editor embed stability,content-only code-editor update preserves the remote embed block clientId,block identity,TRUE
+nested table awareness,nested table-cell selection publishes a remote cursor/selection with body.*.cells.*.content awareness,collaboration UI,TRUE
 strict 30-user operation ledger,30 active editors pass strict operation-ledger convergence and persistence checks,oracle,TRUE

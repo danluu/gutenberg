@@ -70,6 +70,9 @@ many_user_active_editing_groups <- c(
 	"novelty-ws-reconnect-background-active-editing",
 	"novelty-ws-notes-lifecycle-active-editing",
 	"novelty-ws-post-field-boundary-active-editing",
+	"novelty-ws-visible-delete-active-editing",
+	"novelty-ws-code-editor-embed-stability-active-editing",
+	"novelty-ws-nested-awareness-active-editing",
 	"novelty-http-many-user-active-editing",
 	"novelty-http-compaction-413-active-editing",
 	"novelty-ws-same-user-active-editing",
@@ -98,6 +101,9 @@ many_user_active_editing_goal_ids <- c(
 	"cross-product:active-editors-ws-reconnect-background:users-6",
 	"cross-product:active-editors-http-413-compaction:users-6",
 	"cross-product:active-editors-post-field-boundary:users-6",
+	"cross-product:active-editors-visible-remote-delete:users-6",
+	"cross-product:active-editors-code-editor-embed-stability:users-6",
+	"cross-product:active-editors-nested-table-awareness:users-6",
 	"cross-product:active-editors-strict-ledger:users-30",
 	"success-user-blocks:6:50",
 	"success-user-blocks:12:50",
@@ -1177,6 +1183,9 @@ many_user_active_editing_progress <- tibble(
 		ws_reconnect_background_feature = "cross-product:active-editors-ws-reconnect-background:users-6",
 		http_413_compaction_feature = "cross-product:active-editors-http-413-compaction:users-6",
 		post_field_boundary_feature = "cross-product:active-editors-post-field-boundary:users-6",
+		visible_remote_delete_feature = "cross-product:active-editors-visible-remote-delete:users-6",
+		code_editor_embed_stability_feature = "cross-product:active-editors-code-editor-embed-stability:users-6",
+		nested_table_awareness_feature = "cross-product:active-editors-nested-table-awareness:users-6",
 		strict_ledger_feature = "cross-product:active-editors-strict-ledger:users-30",
 		successful_active_editor_records = get_goal_numeric( success_action_goal, "count", 0 ),
 		successful_active_editor_target = get_goal_numeric( success_action_goal, "target", if_else( threshold >= 30, 3, if_else( threshold >= 10, 10, 25 ) ) ),
@@ -1242,6 +1251,21 @@ many_user_active_editing_progress <- tibble(
 		post_field_boundary_records = if_else(
 			threshold == 6,
 			get_feature_numeric( post_field_boundary_feature, get_goal_numeric( post_field_boundary_feature, "count", 0 ) ),
+			NA_real_
+		),
+		visible_remote_delete_records = if_else(
+			threshold == 6,
+			get_feature_numeric( visible_remote_delete_feature, get_goal_numeric( visible_remote_delete_feature, "count", 0 ) ),
+			NA_real_
+		),
+		code_editor_embed_stability_records = if_else(
+			threshold == 6,
+			get_feature_numeric( code_editor_embed_stability_feature, get_goal_numeric( code_editor_embed_stability_feature, "count", 0 ) ),
+			NA_real_
+		),
+		nested_table_awareness_records = if_else(
+			threshold == 6,
+			get_feature_numeric( nested_table_awareness_feature, get_goal_numeric( nested_table_awareness_feature, "count", 0 ) ),
 			NA_real_
 		),
 		strict_ledger_records = if_else(
@@ -1336,6 +1360,9 @@ many_user_active_editing_requirements <- tibble(
 		"WS reconnect and background churn",
 		"HTTP 413 compaction recovery",
 		"title/content/excerpt boundary",
+		"visible remote block delete",
+		"code-editor embed stability",
+		"nested table awareness",
 		"strict 30-user operation ledger"
 	),
 	record_check = c(
@@ -1361,6 +1388,9 @@ many_user_active_editing_requirements <- tibble(
 		"forced WS reconnect fault and browser pagehide/visibility/focus churn complete",
 		"forced 413 sync failure recovers under HTTP polling with large content",
 		"title, body, and excerpt witnesses are edited and persisted in one record",
+		"remote-inserted visible block is deleted through another user's UI and disappears for every participant",
+		"content-only code-editor update preserves the remote embed block clientId",
+		"nested table-cell selection publishes a remote cursor/selection with body.*.cells.*.content awareness",
 		"30 active editors pass strict operation-ledger convergence and persistence checks"
 	),
 	requirement_family = c(
@@ -1386,6 +1416,9 @@ many_user_active_editing_requirements <- tibble(
 		"transport",
 		"transport",
 		"post fields",
+		"block deletion",
+		"block identity",
+		"collaboration UI",
 		"oracle"
 	),
 	required_for_cross_product_count = TRUE
@@ -3260,6 +3293,9 @@ many_user_active_progress_long <- many_user_active_editing_progress %>%
 		ws_reconnect_background_records,
 		http_413_compaction_records,
 		post_field_boundary_records,
+		visible_remote_delete_records,
+		code_editor_embed_stability_records,
+		nested_table_awareness_records,
 		strict_ledger_records,
 		ui_signal_records,
 		large_doc_records,
@@ -3282,6 +3318,9 @@ many_user_active_progress_long <- many_user_active_editing_progress %>%
 			ws_reconnect_background_records,
 			http_413_compaction_records,
 			post_field_boundary_records,
+			visible_remote_delete_records,
+			code_editor_embed_stability_records,
+			nested_table_awareness_records,
 			strict_ledger_records,
 			ui_signal_records,
 			large_doc_records
@@ -3308,6 +3347,9 @@ many_user_active_progress_long <- many_user_active_editing_progress %>%
 			ws_reconnect_background_records = "WS reconnect/background",
 			http_413_compaction_records = "HTTP 413 compaction",
 			post_field_boundary_records = "post-field boundary",
+			visible_remote_delete_records = "visible remote delete",
+			code_editor_embed_stability_records = "code-editor embed stability",
+			nested_table_awareness_records = "nested table awareness",
 			strict_ledger_records = "strict 30-user ledger",
 			ui_signal_records = "presence/cursor signals",
 			large_doc_records = "large-document edge"
@@ -4198,6 +4240,9 @@ summary_lines <- c(
 	paste0( "many_user_active_editing_ws_reconnect_background_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( ws_reconnect_background_records ) ),
 	paste0( "many_user_active_editing_http_413_compaction_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( http_413_compaction_records ) ),
 	paste0( "many_user_active_editing_post_field_boundary_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( post_field_boundary_records ) ),
+	paste0( "many_user_active_editing_visible_remote_delete_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( visible_remote_delete_records ) ),
+	paste0( "many_user_active_editing_code_editor_embed_stability_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( code_editor_embed_stability_records ) ),
+	paste0( "many_user_active_editing_nested_table_awareness_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( nested_table_awareness_records ) ),
 	paste0( "many_user_active_editing_strict_ledger_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( strict_ledger_records ) ),
 	paste0( "many_user_active_editing_large_doc_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( large_doc_records ) ),
 	paste0( "pr_review_events: ", nrow( pr_events ) ),

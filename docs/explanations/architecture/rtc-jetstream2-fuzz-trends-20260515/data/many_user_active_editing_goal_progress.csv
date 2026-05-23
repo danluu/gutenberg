@@ -1,10 +1,16 @@
 id,label,count,target,met,progress,goal_family,remaining,progress_capped,count_target
+cross-product:active-editors-code-editor-embed-stability:users-6,"cross product active editors code editor embed
+stability users 6",0,25,FALSE,0,cross-product,25,0,0 / 25
 cross-product:active-editors-large-doc:users-6,cross product active editors large doc users 6,0,25,FALSE,0,cross-product,25,0,0 / 25
 cross-product:active-editors-lifecycle:users-6,cross product active editors lifecycle users 6,0,25,FALSE,0,cross-product,25,0,0 / 25
+cross-product:active-editors-nested-table-awareness:users-6,"cross product active editors nested table
+awareness users 6",0,25,FALSE,0,cross-product,25,0,0 / 25
 cross-product:active-editors-rich-list-lifecycle:users-6,"cross product active editors rich list
 lifecycle users 6",0,25,FALSE,0,cross-product,25,0,0 / 25
 cross-product:active-editors-ui-signals:users-6,"cross product active editors ui signals users
 6",0,25,FALSE,0,cross-product,25,0,0 / 25
+cross-product:active-editors-visible-remote-delete:users-6,"cross product active editors visible remote
+delete users 6",0,25,FALSE,0,cross-product,25,0,0 / 25
 success-action-users:6,success action users 6,0,25,FALSE,0,user-document-concurrency,25,0,0 / 25
 success-profile:many-user-active-editing,success profile many user active editing,0,25,FALSE,0,user-document-concurrency,25,0,0 / 25
 success-profile-users:many-user-active-editing:6,"success profile users many user active editing

@@ -3,12 +3,11 @@ publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,raw targeted and par
 build and full exact-stack green on the clean split"
 launch-branch-repair,PR17/stale-crdt-cas-background-delivery,P0,no,avoid duplicate heavy repair ownership while the bounded PR17 materialization path owns the product slot,PR17/stale-crdt-cas-background-delivery,"avoid duplicate heavy repair ownership while the bounded PR17 materialization
 path owns the product slot"
-repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,no,superseded for next branch work by newer bb4e7b84 targeted evidence; keep only as history,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,"superseded for next branch work by newer bb4e7b84 targeted evidence; keep only
-as history"
-repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,P0,no,intermediate repair still lacked full same-commit exact-stack proof,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,intermediate repair still lacked full same-commit exact-stack proof
-launch-owner-matrix,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,high,no,do not spend a browser-e2e slot unless newer red owner evidence appears; consume existing green evidence first,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,"do not spend a browser-e2e slot unless newer red owner evidence appears; consume
-existing green evidence first"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale head is superseded by current published head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"stale head is superseded by current published head
+repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,no,superseded for next branch work by newer bb4e7b84 targeted evidence,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,superseded for next branch work by newer bb4e7b84 targeted evidence
+repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,P0,no,intermediate repair lacked full same-commit exact-stack proof and is superseded by targeted evidence,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,"intermediate repair lacked full same-commit exact-stack proof and is superseded
+by targeted evidence"
+launch-owner-matrix,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,high,no,do not spend a browser slot unless newer red owner evidence appears,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,do not spend a browser slot unless newer red owner evidence appears
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale head is superseded by current head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"stale head is superseded by current head
 2f8247258316bde60869c06c383090904e9426bd"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR15A-on-PR14B branch,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR15A-on-PR14B branch
@@ -20,5 +19,5 @@ launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P
 held"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,medium,no,missing owner evidence or product first-loss evidence,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,missing owner evidence or product first-loss evidence
 publish-ready,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335,medium,no,missing focused exact replay or owner evidence,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335,missing focused exact replay or owner evidence
-launch-branch-repair,discovery-unhealthy-mode,P0,no,"not triggered now; when discovery is below reserve, block heavy PR jobs except cheap manifests and analysis-only cleanup",discovery-unhealthy-mode,"not triggered now; when discovery is below reserve, block heavy PR jobs except
-cheap manifests and analysis-only cleanup"
+launch-heavy-pr,discovery-unhealthy-mode,P0,no,"not triggered now; below discovery reserve, block heavy PR jobs except cheap manifests and analysis-only cleanup",discovery-unhealthy-mode,"not triggered now; below discovery reserve, block heavy PR jobs except cheap
+manifests and analysis-only cleanup"
