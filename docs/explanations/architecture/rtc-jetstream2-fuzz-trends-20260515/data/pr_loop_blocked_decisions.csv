@@ -5,16 +5,16 @@ publish-ready,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990d
 complete-dependency build evidence"
 publish-ready,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,superseded by fresher PR17 exact-stack blocker at 69df480bc3dcfe99e7fe09afbbcd9990dba006da,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,"superseded by fresher PR17 exact-stack blocker at
 69df480bc3dcfe99e7fe09afbbcd9990dba006da"
-publish-ready,current-push-manifest-ready-real-fix-branches,high,no,current push manifest is header-only; earlier ready real-fix branches are already published or superseded,current-push-manifest-ready-real-fix-branches,"current push manifest is header-only; earlier ready real-fix branches are
-already published or superseded"
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,current-head owner replay is already green with product_owned_rows=0; relaunch would be duplicate churn,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"current-head owner replay is already green with product_owned_rows=0; relaunch
-would be duplicate churn"
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,queued owner-matrix job would duplicate already conclusive current-head no-product-owned evidence,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"queued owner-matrix job would duplicate already conclusive current-head
+no-product-owned evidence"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"generic branch fanout is blocked until exact replay proves ownership, green adoption, or replay-backed downscope",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"generic branch fanout is blocked until exact replay proves ownership, green
 adoption, or replay-backed downscope"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing-post or persistence reload, and
 large HTTP lifecycle green evidence"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic-only evidence is not publishable without focused replay proof,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,diagnostic-only evidence is not publishable without focused replay proof
 publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,diagnostic-only evidence is not publishable without focused replay proof,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,diagnostic-only evidence is not publishable without focused replay proof
+publish-ready,current-push-manifest-ready-real-fix-branches,high,no,current push manifest is header-only; earlier ready real-fix branches are already published or superseded,current-push-manifest-ready-real-fix-branches,"current push manifest is header-only; earlier ready real-fix branches are
+already published or superseded"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
