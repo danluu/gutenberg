@@ -2,7 +2,7 @@ action,target,priority,allowed,reason
 reserve-discovery,discovery-reserve-policy,P0,yes,active discovery 21 exceeds floor 3 and PR jobs are 0/4; allow one heavy PR17 repair while preserving fuzz reserve
 publish-manifest,published-ready-real-fix-branches,P0,yes,cheap manifest/adoption work is allowed for already published ready product branches without starting duplicate heavy jobs
 repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,yes,next product-progress slot; fresh exact-stack failures require a real PR17 provider-persisted CRDT repair
-repair-ready,benchmark-canary-fuzzer-gap/provider-persisted-crdt-seeds,P0,yes,"route large-post HTTP, same-user stale-content, and lower-level canary readiness seeds into the active PR17 repair"
+repair-ready,benchmark-canary-fuzzer-gap/provider-persisted-crdt-seeds,P0,yes,"route older large-post HTTP, same-user stale-content, and lower-level canary readiness evidence into the active PR17 repair"
 publish-ready,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,fresh same-head exact-stack red blocks publication until same-commit benchmark-minimum green and accepted non-skipped build evidence
 publish-ready,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,older green or publish-ready evidence is superseded by newer exact-stack red at 69df480bc3dcfe99e7fe09afbbcd9990dba006da
 publish-ready,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z,P0,no,local-publisher row is stale because current feedback still has promotion-blocking exact-stack failures
@@ -33,12 +33,13 @@ reserve-discovery,novelty-ws-collaboration-ui-signals,P1,yes,keep active until c
 cooldown-diagnostic,coverage-guided-lower-level-rich-text-crdt/feature-only-corpus,high,yes,feature-only corpus growth has no new coverage or product-failure yield
 cooldown-diagnostic,backend-api-autosave-meta,high,yes,"pass-only unchanged backend group should pause or rotate until fresh seed, coverage delta, or backend oracle gap exists"
 cooldown-diagnostic,strict-expansion-ws-pre-action-bootstrap-stall,high,yes,pause bootstrap-stall dominated strict variants while preserving non-stalled strict discovery
+reserve-discovery,coverage-guided-lower-level-block-parser-serialization,high,yes,allow only failure-isolated oracle-classified runs; invalid-by-construction inputs must not count as product yield
 update-controller-rule,product-progress-latest-head-hold,P0,yes,"fresh same-head exact-stack failure overrides stale publish-ready, selected-row green, or downscope evidence"
 update-controller-rule,benchmark-exact-stack-build-gate,P0,yes,publication requires same-commit benchmark-minimum green plus accepted non-skipped complete-dependency build evidence
 update-controller-rule,benchmark-canary-status-normalization,P0,yes,"status no_new_publishable_stack with nonzero exact-row exit is promotion blocked, not exact_stack_green"
 update-controller-rule,deferred-diagnostic-promotion-gate,high,yes,"diagnostic manifests cannot publish or generic relaunch without owner, first-loss, green-adoption, or downscope evidence"
 update-controller-rule,lower-level-static-input-accounting,P0,yes,"static or one-input greens require executable seed, final-state assertion, persisted-CRDT assertion, and coverage delta or triage-ready failure"
 update-controller-rule,coverage-guided-lower-level-http-polling-manager-oracles,P0,yes,"require stale-token, reload-convergence, and persisted raw-content oracles before continuous relaunch"
-update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,allow only one branch-changing PR repair while preserving discovery reserve; otherwise allow cheap manifest or analysis-only work
+update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,"allow only one branch-changing PR repair while preserving discovery reserve; if discovery is unhealthy, allow only cheap publication manifest generation or analysis-only work"
 update-controller-rule,level-mix-heartbeat-accounting,high,yes,require current atomic status heartbeat before using level-mix output for scheduling decisions
 update-controller-rule,productive-feed-action-normalization,high,yes,normalize feed-only action kinds into valid controller actions or explicit rejection rows

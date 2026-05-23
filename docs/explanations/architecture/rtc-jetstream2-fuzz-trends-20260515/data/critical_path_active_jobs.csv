@@ -1,6 +1,6 @@
 session,class,started_hint
-rtc-analysis-live-ce1e3092-http-large-lifecycle-gen-2-20260523T143634Z,analysis,
-rtc-benchmark-canary-feedback-refresh-20260523T144132Z,feedback-refresh,
+rtc-analysis-live-ce1e3092-http-large-lifecycle-gen-3-20260523T144838Z,analysis,
+rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260523T145144Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
 rtc-fuzz-level-mix-persona-loop,analysis,
 rtc-fuzz-level-mix-persona-loop-watchdog,analysis,
