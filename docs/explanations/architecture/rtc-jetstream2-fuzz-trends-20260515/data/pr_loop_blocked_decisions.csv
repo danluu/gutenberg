@@ -1,22 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-heavy-pr-fanout,product-pr-fanout,P0,no,"Do not fan out heavy PR work; if discovery drops below reserve, only cheap manifest/status generation or analysis-only actions remain allowed.",product-pr-fanout,"Do not fan out heavy PR work; if discovery drops below reserve, only cheap
-manifest/status generation or analysis-only actions remain allowed."
+launch-branch-repair,product-pr-fanout,P0,no,Do not fan out heavy PR work under modest headroom; keep branch-changing product work single-flight.,product-pr-fanout,"Do not fan out heavy PR work under modest headroom; keep branch-changing product
+work single-flight."
 launch-branch-repair,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,P0,no,PR17 branch-changing work must stay single-flight; another heavy repair job would be duplicate scheduling.,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,"PR17 branch-changing work must stay single-flight; another heavy repair job
 would be duplicate scheduling."
-publish-ready,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,P0,no,Raw bb4e7b84 repair evidence is direction only and lacks clean split plus full same-commit exact-stack proof.,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,"Raw bb4e7b84 repair evidence is direction only and lacks clean split plus full
-same-commit exact-stack proof."
+publish-ready,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,P0,no,Raw bb4e7b84 repair evidence lacks clean reviewed split plus full same-commit exact-stack proof.,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,"Raw bb4e7b84 repair evidence lacks clean reviewed split plus full same-commit
+exact-stack proof."
 launch-owner-matrix,pr07c-owner-matrix@duplicate-browser-job,high,no,Suppress duplicate browser owner-matrix work unless newer red current-head owner evidence appears.,pr07c-owner-matrix@duplicate-browser-job,"Suppress duplicate browser owner-matrix work unless newer red current-head owner
 evidence appears."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale PR07C head is superseded by published head 2f8247258316bde60869c06c383090904e9426bd.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale PR07C head is superseded by published head
 2f8247258316bde60869c06c383090904e9426bd."
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,Missing fresh title-reload plus existing-post or persistence-reload plus large HTTP lifecycle green evidence.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing fresh title-reload plus existing-post or persistence-reload plus large
-HTTP lifecycle green evidence."
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"PR17 owns the branch-changing product slot; reload-hydration should progress only by exact replay, owner evidence, green-stack adoption, or downscope.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing product slot; reload-hydration should progress
-only by exact replay, owner evidence, green-stack adoption, or downscope."
-publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,Missing owner evidence or product first-loss evidence.,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,Missing owner evidence or product first-loss evidence.
-publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,Missing focused replay owner evidence or product first-loss evidence.,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,Missing focused replay owner evidence or product first-loss evidence.
-publish-ready,current-push-manifest.tsv,high,no,Header-only or cycle-local push manifests are not publication evidence.,current-push-manifest.tsv,Header-only or cycle-local push manifests are not publication evidence.
+publish-ready,current-push-manifest.tsv,high,no,Header-only current push manifest is not publication evidence.,current-push-manifest.tsv,Header-only current push manifest is not publication evidence.
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by published PR15A-on-PR14B branch.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by published PR15B-on-PR14B branch.
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by published PR15C-on-PR14B branch.
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,Missing fresh title-reload plus existing-post or persistence-reload plus large HTTP lifecycle green evidence.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing fresh title-reload plus existing-post or persistence-reload plus large
+HTTP lifecycle green evidence."
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"PR17 owns the branch-changing slot; reload-hydration should progress by exact replay, owner evidence, green-stack adoption, or downscope.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing slot; reload-hydration should progress by exact
+replay, owner evidence, green-stack adoption, or downscope."
+publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,Missing owner evidence or product first-loss evidence.,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,Missing owner evidence or product first-loss evidence.
+publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,Missing focused replay owner evidence or product first-loss evidence.,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,Missing focused replay owner evidence or product first-loss evidence.
