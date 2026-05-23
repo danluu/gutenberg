@@ -1,10 +1,10 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,P0,no,raw PR17 repair refs lack clean reviewed split plus full same-commit exact-stack green proof,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,"raw PR17 repair refs lack clean reviewed split plus full same-commit exact-stack
+publish-ready,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,P0,no,raw repair refs lack a clean reviewed split plus full same-commit exact-stack green proof,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,"raw repair refs lack a clean reviewed split plus full same-commit exact-stack
 green proof"
-launch-branch-repair,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,P0,no,keep branch-changing PR17 repair single-flight on the clean materialized split,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,keep branch-changing PR17 repair single-flight on the clean materialized split
-launch-owner-matrix,pr07c-owner-matrix,high,no,current-head owner evidence is already green; do not spend another browser owner-matrix slot without newer red evidence,pr07c-owner-matrix,"current-head owner evidence is already green; do not spend another browser
-owner-matrix slot without newer red evidence"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale head is superseded by current published head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"stale head is superseded by current published head
+launch-branch-repair,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,P0,no,keep PR17 branch-changing work single-flight on the clean materialized split,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,keep PR17 branch-changing work single-flight on the clean materialized split
+launch-owner-matrix,pr07c-owner-matrix,high,no,current-head owner evidence is already green; suppress duplicate browser owner-matrix work unless newer red evidence appears,pr07c-owner-matrix,"current-head owner evidence is already green; suppress duplicate browser
+owner-matrix work unless newer red evidence appears"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale PR07C head is superseded by current published head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"stale PR07C head is superseded by current published head
 2f8247258316bde60869c06c383090904e9426bd"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR15A-on-PR14B branch,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR15A-on-PR14B branch
