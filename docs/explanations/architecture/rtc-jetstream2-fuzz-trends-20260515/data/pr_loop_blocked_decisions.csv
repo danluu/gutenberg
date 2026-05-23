@@ -1,11 +1,11 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,keep branch-changing PR work single-flight on PR17; avoid fanout while exact-stack blockers and diagnostic heads lack publishable evidence,all-other-branch-changing-pr-jobs,"keep branch-changing PR work single-flight on PR17; avoid fanout while
-exact-stack blockers and diagnostic heads lack publishable evidence"
-publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed commit has full benchmark-minimum green evidence plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"blocked until the exact proposed commit has full benchmark-minimum green
-evidence plus non-skipped build evidence"
+launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,keep branch-changing PR work single-flight on PR17 while exact-stack and deferred diagnostic blockers lack publishable evidence,all-other-branch-changing-pr-jobs,"keep branch-changing PR work single-flight on PR17 while exact-stack and
+deferred diagnostic blockers lack publishable evidence"
+publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until exact proposed commit has full benchmark-minimum green evidence plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"blocked until exact proposed commit has full benchmark-minimum green evidence
+plus non-skipped build evidence"
 publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,current repair commit fails realistic-e2e large-post-three-user-http 2/2,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,current repair commit fails realistic-e2e large-post-three-user-http 2/2
-launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate owner matrix is not allowed after consumed current-head green replay; relaunch only on newer red current-head evidence,PR07C/HOLD-07C,"duplicate owner matrix is not allowed after consumed current-head green replay;
-relaunch only on newer red current-head evidence"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,queued browser-e2e owner matrix is a duplicate; relaunch only if newer red current-head owner evidence appears,PR07C/HOLD-07C,"queued browser-e2e owner matrix is a duplicate; relaunch only if newer red
+current-head owner evidence appears"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head title reload existing-post or persistence reload and large HTTP lifecycle green evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload existing-post or persistence reload and
 large HTTP lifecycle green evidence"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,requires exact replay owner evidence green-stack adoption or replay-backed downscope before branch-changing work,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"requires exact replay owner evidence green-stack adoption or replay-backed
