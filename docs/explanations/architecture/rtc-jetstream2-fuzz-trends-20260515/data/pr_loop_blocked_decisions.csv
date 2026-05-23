@@ -1,19 +1,18 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,fresh same-head exact-stack failure blocks publication until non-skipped build and full benchmark-minimum green,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,"fresh same-head exact-stack failure blocks publication until non-skipped build
-and full benchmark-minimum green"
-publish-ready,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,stale selected-row green evidence is overridden by current same-head exact-stack failure,repair/benchmark-canary-provider-persisted-crdt-product-split-20260523T101058Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,"stale selected-row green evidence is overridden by current same-head exact-stack
-failure"
-publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z,P0,no,raw reconcile branch mixes repair and harness work and is not maintainer-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z,raw reconcile branch mixes repair and harness work and is not maintainer-ready
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,PR17 owns the single branch-changing product slot this cycle; avoid heavy PR fanout,all-other-heavy-pr-jobs,"PR17 owns the single branch-changing product slot this cycle; avoid heavy PR
-fanout"
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,duplicate heavy browser owner-matrix launch is churn after current-head terminal no-promote evidence,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"duplicate heavy browser owner-matrix launch is churn after current-head terminal
-no-promote evidence"
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh title reload existing-or-persistence reload and large HTTP lifecycle green evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh title reload existing-or-persistence reload and large HTTP
-lifecycle green evidence"
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,block branch fanout until exact replay proves ownership green adoption or replay-backed downscope,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block branch fanout until exact replay proves ownership green adoption or
+publish-ready,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,fresh same-head exact-stack failures block publication until same-commit benchmark-minimum green and non-skipped build evidence,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"fresh same-head exact-stack failures block publication until same-commit
+benchmark-minimum green and non-skipped build evidence"
+publish-ready,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,older selected-row green evidence is superseded by newer exact-stack red at 69df480bc3dcfe99e7fe09afbbcd9990dba006da,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,"older selected-row green evidence is superseded by newer exact-stack red at
+69df480bc3dcfe99e7fe09afbbcd9990dba006da"
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,PR17 owns the single branch-changing product slot this cycle; avoid heavy PR fanout under resource pressure,all-other-heavy-pr-jobs,"PR17 owns the single branch-changing product slot this cycle; avoid heavy PR
+fanout under resource pressure"
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title-reload, existing-post or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title-reload, existing-post or persistence reload, and
+large HTTP lifecycle green evidence"
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"block branch fanout until exact replay proves ownership, green adoption, or replay-backed downscope",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block branch fanout until exact replay proves ownership, green adoption, or
 replay-backed downscope"
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,duplicate owner-matrix launch is churn unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"duplicate owner-matrix launch is churn unless newer current-head product-owned
+red evidence appears"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,no product-owned first-loss or owner evidence,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,no product-owned first-loss or owner evidence
-publish-ready,rich-text-suffix-corruption@272233f38c9,high,no,diagnostic branch lacks conclusive owner evidence and remains non-publishable,rich-text-suffix-corruption@272233f38c9,diagnostic branch lacks conclusive owner evidence and remains non-publishable
+publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,no conclusive owner evidence or green-stack adoption,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,no conclusive owner evidence or green-stack adoption
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
