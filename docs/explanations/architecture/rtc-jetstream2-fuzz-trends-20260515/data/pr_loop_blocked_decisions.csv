@@ -1,16 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,all-other-pr-jobs,P0,no,resource state is high_pressure; no heavy PR fanout beyond the single PR17 branch-changing repair lane,all-other-pr-jobs,"resource state is high_pressure; no heavy PR fanout beyond the single PR17
-branch-changing repair lane"
+launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,resource state is pressure and discovery protected is no; no heavy PR fanout beyond the single PR17 repair slot,all-other-branch-changing-pr-jobs,"resource state is pressure and discovery protected is no; no heavy PR fanout
+beyond the single PR17 repair slot"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,"superseded by already published
 ready/rtc-pr06b-malformed-save-request-payload-minimal"
 publish-ready,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-fallback-green,high,no,superseded by already published on-PR14B fallback branches,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-fallback-green,superseded by already published on-PR14B fallback branches
-publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,publication lacks all benchmark-minimum rows green on the same fixed commit with non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"publication lacks all benchmark-minimum rows green on the same fixed commit with
-non-skipped build evidence"
+publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,current feedback is promotion_blocked; publication lacks all benchmark-minimum rows green on the same fixed commit with non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"current feedback is promotion_blocked; publication lacks all benchmark-minimum
+rows green on the same fixed commit with non-skipped build evidence"
 publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,P0,no,known failed commit; large-post three-user HTTP failed 2 of 2,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,known failed commit; large-post three-user HTTP failed 2 of 2
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,targeted rows are green but this is not a finalized review split and lacks full same-commit benchmark-minimum plus build evidence,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"targeted rows are green but this is not a finalized review split and lacks full
-same-commit benchmark-minimum plus build evidence"
-launch-branch-repair,PR17/stale-crdt-cas-background-delivery@clean-materialized-table-repair-from-bb4e7b84,P0,no,fold into the single benchmark-canary large-post PR17 repair lane; no second branch-changing slot,PR17/stale-crdt-cas-background-delivery@clean-materialized-table-repair-from-bb4e7b84,"fold into the single benchmark-canary large-post PR17 repair lane; no second
-branch-changing slot"
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,targeted rows are useful repair evidence but this is not a finalized review split and lacks full same-commit benchmark-minimum plus build evidence,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"targeted rows are useful repair evidence but this is not a finalized review
+split and lacks full same-commit benchmark-minimum plus build evidence"
 launch-owner-matrix,PR07C/HOLD-07C,high,no,suppress duplicate owner-matrix work unless newer red current-head evidence appears,PR07C/HOLD-07C,"suppress duplicate owner-matrix work unless newer red current-head evidence
 appears"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing-post or persistence reload, and

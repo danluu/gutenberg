@@ -1,14 +1,13 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 19 against floor 3 with discovery protected and PR jobs 0 of 4; allow one bounded product repair lane while preserving fuzz reserve
-launch-branch-repair,all-other-pr-jobs,P0,no,resource state is high_pressure; no heavy PR fanout beyond the single PR17 branch-changing repair lane
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 11 against floor 3 with PR jobs 0 of 4; allow one bounded PR17 repair lane while preserving fuzz reserve under pressure
+launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,resource state is pressure and discovery protected is no; no heavy PR fanout beyond the single PR17 repair slot
 publish-ready,published-ready-real-fix-branches,high,yes,already published ready real-fix branches remain valid cheap publication bookkeeping and should keep fuzz validation
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-fallback-green,high,no,superseded by already published on-PR14B fallback branches
 repair-branch,benchmark-canary-fuzzer-gap/large-post-publish-save,P0,yes,"next product-progress slot; fix PR17 large-post three-user HTTP publish/save, preserve PR07C behavior, pass build, and rerun full same-commit exact-stack benchmark minimum"
-publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,publication lacks all benchmark-minimum rows green on the same fixed commit with non-skipped build evidence
+publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,current feedback is promotion_blocked; publication lacks all benchmark-minimum rows green on the same fixed commit with non-skipped build evidence
 publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,P0,no,known failed commit; large-post three-user HTTP failed 2 of 2
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,targeted rows are green but this is not a finalized review split and lacks full same-commit benchmark-minimum plus build evidence
-launch-branch-repair,PR17/stale-crdt-cas-background-delivery@clean-materialized-table-repair-from-bb4e7b84,P0,no,fold into the single benchmark-canary large-post PR17 repair lane; no second branch-changing slot
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,targeted rows are useful repair evidence but this is not a finalized review split and lacks full same-commit benchmark-minimum plus build evidence
 repair-ready,PR17/table-query-array-canonical-reproducer,P0,yes,attach one canonical RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE remote-marker reproducer to PR17 and stop duplicate sampling for this head
 consume-owner-matrix,PR07C/HOLD-07C,high,yes,current-head owner replay for 2f8247258316bde60869c06c383090904e9426bd is conclusive with product_owned_rows=0
 launch-owner-matrix,PR07C/HOLD-07C,high,no,suppress duplicate owner-matrix work unless newer red current-head evidence appears
