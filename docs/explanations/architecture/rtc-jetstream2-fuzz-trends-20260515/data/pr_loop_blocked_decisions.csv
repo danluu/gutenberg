@@ -1,25 +1,20 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-heavy-pr-job,when-discovery-sessions-below-reserve,P0,no,preserve discovery reserve; allow only cheap publication manifest generation or analysis-only work while discovery is unhealthy,when-discovery-sessions-below-reserve,"preserve discovery reserve; allow only cheap publication manifest generation or
-analysis-only work while discovery is unhealthy"
-launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,keep branch-changing product work single-flight on PR17 until the exact-stack benchmark gate moves,all-other-branch-changing-pr-jobs,"keep branch-changing product work single-flight on PR17 until the exact-stack
-benchmark gate moves"
-publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed commit has full benchmark-minimum green plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"blocked until the exact proposed commit has full benchmark-minimum green plus
-non-skipped build evidence"
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,"raw broad repair stack has recent same-family red evidence and selected-row green only; use as repair evidence, not publication material",repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"raw broad repair stack has recent same-family red evidence and selected-row
-green only; use as repair evidence, not publication material"
-publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,large-post-three-user-http rep2 failed; preserve failing log as reproducer and rerun full benchmark minimum after split repair,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,"large-post-three-user-http rep2 failed; preserve failing log as reproducer and
-rerun full benchmark minimum after split repair"
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,"superseded by already published
-ready/rtc-pr06b-malformed-save-request-payload-minimal"
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,"superseded by already published
-ready/rtc-pr15a-fallback-group-move-green-on-pr14b"
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by already published
+launch-branch-repair,when-discovery-sessions-below-reserve,P0,no,heavy PR jobs are blocked when discovery reserve is unhealthy except cheap publication manifest generation or analysis-only work,when-discovery-sessions-below-reserve,"heavy PR jobs are blocked when discovery reserve is unhealthy except cheap
+publication manifest generation or analysis-only work"
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
 ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,"superseded by already published
-ready/rtc-pr15c-fallback-group-delete-green-on-pr14b"
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,low,no,superseded by published newer head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,superseded by published newer head 2f8247258316bde60869c06c383090904e9426bd
-launch-owner-matrix,PR07C/HOLD-07C,high,no,relaunch only if newer red current-head owner evidence appears; queued duplicate owner-matrix work should be dropped,PR07C/HOLD-07C,"relaunch only if newer red current-head owner evidence appears; queued duplicate
-owner-matrix work should be dropped"
+launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,product work stays single-flight on PR17 until exact-stack benchmark gate moves,all-other-branch-changing-pr-jobs,product work stays single-flight on PR17 until exact-stack benchmark gate moves
+publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed commit has full benchmark-minimum green and non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"blocked until the exact proposed commit has full benchmark-minimum green and
+non-skipped build evidence"
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,"recent large-post red evidence makes this repair input only, not publication material",repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"recent large-post red evidence makes this repair input only, not publication
+material"
+publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,large-post-three-user-http rep2 failed; preserve the log as a reproducer,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,large-post-three-user-http rep2 failed; preserve the log as a reproducer
+launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate owner-matrix relaunch is suppressed unless newer red current-head owner evidence appears,PR07C/HOLD-07C,"duplicate owner-matrix relaunch is suppressed unless newer red current-head
+owner evidence appears"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing-post or persistence reload, and
 large HTTP lifecycle green evidence"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"block fanout until exact replay, owner evidence, green-stack adoption, or replay-backed downscope exists",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block fanout until exact replay, owner evidence, green-stack adoption, or
