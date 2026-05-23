@@ -4094,3 +4094,14 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T10:15:00Z,focused-shards,focused-same-user-stale-tabs,browser-e2e,ws,session-lifecycle,6,4,2,6,4,216891,FALSE
 2026-05-23T10:15:00Z,focused-shards,focused-same-user-stale-tabs-http,browser-e2e,http,session-lifecycle,2,2,2,2,0,190128,FALSE
 2026-05-23T10:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,50,50,50,2,0,35211,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,5,3,1,5,4,391186,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,3,1,0,3,3,535846,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,4,2,0,4,4,416440,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,7,4,1,7,6,508255,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,4,2,0,4,4,409991,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,http,persistence-no-title,7,6,4,7,3,415005,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,5,4,3,5,2,394019,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,7,6,6,7,1,423665,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,6,3,0,6,6,477114,FALSE
+2026-05-23T10:30:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,11,9,7,11,4,446352,FALSE
+2026-05-23T10:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,25,25,25,1,0,13661,FALSE
