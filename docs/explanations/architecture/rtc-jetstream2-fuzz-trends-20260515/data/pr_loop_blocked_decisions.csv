@@ -1,17 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,avoid duplicate heavy PR fanout while PR17 benchmark-canary exact-stack repair is active,all-other-branch-changing-pr-jobs,"avoid duplicate heavy PR fanout while PR17 benchmark-canary exact-stack repair
-is active"
-publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed commit has full benchmark-minimum green plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"blocked until the exact proposed commit has full benchmark-minimum green plus
-non-skipped build evidence"
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,raw broad repair input has recent large-post red evidence and is not publication material,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"raw broad repair input has recent large-post red evidence and is not publication
-material"
-publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,large-post-three-user-http rep2 remains red with provider sync awareness timeout; preserve as reproducer evidence,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,"large-post-three-user-http rep2 remains red with provider sync awareness
-timeout; preserve as reproducer evidence"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,current-head owner replay is already conclusive with product_owned_rows=0; relaunch only if newer red current-head evidence appears,PR07C/HOLD-07C,"current-head owner replay is already conclusive with product_owned_rows=0;
-relaunch only if newer red current-head evidence appears"
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing-post or persistence reload, and
+launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,avoid duplicate heavy PR fanout while the single PR17 benchmark-canary repair slot is active,all-other-branch-changing-pr-jobs,"avoid duplicate heavy PR fanout while the single PR17 benchmark-canary repair
+slot is active"
+publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,publication is blocked until the exact proposed commit has full benchmark-minimum green plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"publication is blocked until the exact proposed commit has full
+benchmark-minimum green plus non-skipped build evidence"
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,raw broad repair stack has large-post red evidence and is reproducer material only,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"raw broad repair stack has large-post red evidence and is reproducer material
+only"
+publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,exact refresh still has large-post-three-user-http rep2 red with provider sync or awareness timeout,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,"exact refresh still has large-post-three-user-http rep2 red with provider sync
+or awareness timeout"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,suppress the queued duplicate browser owner-matrix job unless newer red current-head owner evidence appears,PR07C/HOLD-07C,"suppress the queued duplicate browser owner-matrix job unless newer red
+current-head owner evidence appears"
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head title reload existing-post or persistence reload and large HTTP lifecycle green evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload existing-post or persistence reload and
 large HTTP lifecycle green evidence"
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"no branch fanout until exact replay, owner proof, green-stack adoption, or replay-backed downscope exists",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"no branch fanout until exact replay, owner proof, green-stack adoption, or
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,no branch fanout until exact replay owner proof green-stack adoption or replay-backed downscope exists,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"no branch fanout until exact replay owner proof green-stack adoption or
 replay-backed downscope exists"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,missing owner evidence and product first-loss proof,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,missing owner evidence and product first-loss proof
 publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,missing focused replay owner evidence and product first-loss proof,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,missing focused replay owner evidence and product first-loss proof
