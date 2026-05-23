@@ -1,18 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,product-pr-fanout,P0,no,Resource pressure plus active PR17 exact-stack work; keep heavy PR branch work single-flight.,product-pr-fanout,"Resource pressure plus active PR17 exact-stack work; keep heavy PR branch work
-single-flight."
-publish-ready,PR17/raw-or-broad-repair-refs,P0,no,Raw repair refs are repair direction only; they lack a clean reviewed split plus full same-commit exact-stack proof.,PR17/raw-or-broad-repair-refs,"Raw repair refs are repair direction only; they lack a clean reviewed split plus
-full same-commit exact-stack proof."
+launch-branch-repair,product-pr-fanout,P0,no,Critical executor reports pressure and PR17 owns the bounded product lane; do not fan out heavy branch-changing PR jobs.,product-pr-fanout,"Critical executor reports pressure and PR17 owns the bounded product lane; do
+not fan out heavy branch-changing PR jobs."
+publish-ready,PR17/raw-or-broad-repair-refs,P0,no,Raw repair refs are direction only; they lack clean reviewed split plus full same-commit exact-stack proof.,PR17/raw-or-broad-repair-refs,"Raw repair refs are direction only; they lack clean reviewed split plus full
+same-commit exact-stack proof."
 launch-owner-matrix,pr07c-owner-matrix@duplicate-browser-job,high,no,Suppress duplicate owner-matrix work unless newer red current-head owner evidence appears.,pr07c-owner-matrix@duplicate-browser-job,"Suppress duplicate owner-matrix work unless newer red current-head owner
 evidence appears."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,Stale PR07C head is superseded by published head 2f8247258316bde60869c06c383090904e9426bd.,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"Stale PR07C head is superseded by published head
 2f8247258316bde60869c06c383090904e9426bd."
-publish-ready,current-push-manifest.tsv,high,no,Header-only or manifest-only bookkeeping is not independent publication evidence.,current-push-manifest.tsv,"Header-only or manifest-only bookkeeping is not independent publication
-evidence."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by the already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by the already published PR06B minimal branch.
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by the published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by the published PR15A-on-PR14B branch.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by the published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by the published PR15B-on-PR14B branch.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by the published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by the published PR15C-on-PR14B branch.
+publish-ready,current-push-manifest.tsv,high,no,Header-only push manifest is not independent publication evidence.,current-push-manifest.tsv,Header-only push manifest is not independent publication evidence.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already published PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published PR06B minimal branch.
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by published PR15A-on-PR14B branch.,ready/rtc-pr15a-fallback-group-move-green,Superseded by published PR15A-on-PR14B branch.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by published PR15B-on-PR14B branch.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by published PR15B-on-PR14B branch.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by published PR15C-on-PR14B branch.,ready/rtc-pr15c-fallback-group-delete-green,Superseded by published PR15C-on-PR14B branch.
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,Missing fresh title-reload plus existing-post or persistence-reload plus large HTTP lifecycle green evidence.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing fresh title-reload plus existing-post or persistence-reload plus large
 HTTP lifecycle green evidence."
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"PR17 owns the branch-changing slot; reload-hydration should progress by exact replay, owner evidence, green-stack adoption, or downscope.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing slot; reload-hydration should progress by exact
