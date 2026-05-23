@@ -1,24 +1,23 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,PR17/materialize/table@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,"older PR17 head is seed evidence for the 69df480 repair, not a second branch-changing job",PR17/materialize/table@30e2fd58040064c6401a83f15927941c8f2f3b5d,"older PR17 head is seed evidence for the 69df480 repair, not a second
-branch-changing job"
-publish-ready,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,blocked until same-commit benchmark-minimum green plus accepted non-skipped complete-dependency build evidence,benchmark-canary-fuzzer-gap/PR17@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"blocked until same-commit benchmark-minimum green plus accepted non-skipped
-complete-dependency build evidence"
-publish-ready,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,superseded by fresher PR17 exact-stack blocker at 69df480bc3dcfe99e7fe09afbbcd9990dba006da,benchmark-canary-fuzzer-gap/PR17@30e2fd58040064c6401a83f15927941c8f2f3b5d,"superseded by fresher PR17 exact-stack blocker at
-69df480bc3dcfe99e7fe09afbbcd9990dba006da"
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,existing current-head owner replay is green with product_owned_rows=0; relaunching duplicates browser/e2e work,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"existing current-head owner replay is green with product_owned_rows=0;
-relaunching duplicates browser/e2e work"
+publish-ready,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,P0,no,current push manifest has no reviewable publish payload yet; generate and validate the publication manifest first,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,"current push manifest has no reviewable publish payload yet; generate and
+validate the publication manifest first"
+repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,superseded by exact-green replacement stack at 4da34592486017c8b566429ce47edc3a89e155cb,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"superseded by exact-green replacement stack at
+4da34592486017c8b566429ce47edc3a89e155cb"
+launch-branch-repair,PR17/materialize-table@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,stale red stack is repair history only after replacement exact-stack green evidence,PR17/materialize-table@30e2fd58040064c6401a83f15927941c8f2f3b5d,"stale red stack is repair history only after replacement exact-stack green
+evidence"
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,duplicate browser/e2e owner-matrix work is blocked unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"duplicate browser/e2e owner-matrix work is blocked unless newer current-head
+product-owned red evidence appears"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"generic branch fanout is blocked until exact replay proves ownership, green adoption, or replay-backed downscope",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"generic branch fanout is blocked until exact replay proves ownership, green
 adoption, or replay-backed downscope"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing-post or persistence reload, and
 large HTTP lifecycle green evidence"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic-only evidence is not publishable without focused replay proof,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,diagnostic-only evidence is not publishable without focused replay proof
 publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,diagnostic-only evidence is not publishable without focused replay proof,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,diagnostic-only evidence is not publishable without focused replay proof
-publish-ready,current-push-manifest-ready-real-fix-branches,high,no,current push manifest has no new ready product payload; earlier ready real-fix branches are already published or superseded,current-push-manifest-ready-real-fix-branches,"current push manifest has no new ready product payload; earlier ready real-fix
-branches are already published or superseded"
+publish-ready,current-push-manifest-ready-real-fix-branches,high,no,current push manifest has no new ready product payload,current-push-manifest-ready-real-fix-branches,current push manifest has no new ready product payload
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
 ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block broad PR fanout while PR17 repair is active and discovery/browser/lower-level reserves need protection,all-other-heavy-pr-jobs,"block broad PR fanout while PR17 repair is active and
-discovery/browser/lower-level reserves need protection"
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block broad PR fanout while PR17 manifest handoff and discovery reserves are active under disk_pressure,all-other-heavy-pr-jobs,"block broad PR fanout while PR17 manifest handoff and discovery reserves are
+active under disk_pressure"
