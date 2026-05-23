@@ -1,7 +1,8 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed branch and commit have full benchmark-minimum green evidence plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"blocked until the exact proposed branch and commit have full benchmark-minimum
-green evidence plus non-skipped build evidence"
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,current clean repair commit still fails realistic-e2e/large-post-three-user-http,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,current clean repair commit still fails realistic-e2e/large-post-three-user-http
+publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed branch and commit have full benchmark-minimum green plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"blocked until the exact proposed branch and commit have full benchmark-minimum
+green plus non-skipped build evidence"
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,current repair commit fails realistic-e2e large-post-three-user-http and is not publishable,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"current repair commit fails realistic-e2e large-post-three-user-http and is not
+publishable"
 launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,preserve discovery reserve and avoid PR fanout beyond the single bounded PR17 repair slot,all-other-branch-changing-pr-jobs,"preserve discovery reserve and avoid PR fanout beyond the single bounded PR17
 repair slot"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,"superseded by already published
@@ -12,10 +13,13 @@ publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superse
 ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,"superseded by already published
 ready/rtc-pr15c-fallback-group-delete-green-on-pr14b"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate launch rejected unless newer red current-head owner evidence appears,PR07C/HOLD-07C,duplicate launch rejected unless newer red current-head owner evidence appears
+launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate owner-matrix launch is rejected unless newer red current-head owner evidence appears,PR07C/HOLD-07C,"duplicate owner-matrix launch is rejected unless newer red current-head owner
+evidence appears"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload, existing-post or persistence reload, and
 large HTTP lifecycle green evidence"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"needs exact replay, owner evidence, green-stack adoption, or replay-backed downscope before branch-changing work",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"needs exact replay, owner evidence, green-stack adoption, or replay-backed
 downscope before branch-changing work"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,missing owner evidence and product first-loss proof,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,missing owner evidence and product first-loss proof
 publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,"missing focused replay, owner evidence, and product first-loss proof",rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,"missing focused replay, owner evidence, and product first-loss proof"
+launch-heavy-pr-jobs,discovery-unhealthy,P0,no,"when discovery sessions are unhealthy, heavy PR jobs are blocked except cheap publication manifests or analysis-only work",discovery-unhealthy,"when discovery sessions are unhealthy, heavy PR jobs are blocked except cheap
+publication manifests or analysis-only work"
