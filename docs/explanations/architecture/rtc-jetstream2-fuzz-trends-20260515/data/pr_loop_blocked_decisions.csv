@@ -1,14 +1,13 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,avoid duplicate heavy PR fanout while the single PR17 benchmark-canary repair slot is active,all-other-branch-changing-pr-jobs,"avoid duplicate heavy PR fanout while the single PR17 benchmark-canary repair
-slot is active"
-publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,publication is blocked until the exact proposed commit has full benchmark-minimum green plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"publication is blocked until the exact proposed commit has full
-benchmark-minimum green plus non-skipped build evidence"
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,raw broad repair stack has large-post red evidence and is reproducer material only,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"raw broad repair stack has large-post red evidence and is reproducer material
-only"
-publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,exact refresh still has large-post-three-user-http rep2 red with provider sync or awareness timeout,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,"exact refresh still has large-post-three-user-http rep2 red with provider sync
-or awareness timeout"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,suppress the queued duplicate browser owner-matrix job unless newer red current-head owner evidence appears,PR07C/HOLD-07C,"suppress the queued duplicate browser owner-matrix job unless newer red
-current-head owner evidence appears"
+launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,avoid duplicate PR fanout while PR17 benchmark-canary repair is the selected product slot,all-other-branch-changing-pr-jobs,"avoid duplicate PR fanout while PR17 benchmark-canary repair is the selected
+product slot"
+publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until exact proposed commit has full benchmark-minimum green plus non-skipped build evidence,benchmark-canary-fuzzer-gap/snapshot,"blocked until exact proposed commit has full benchmark-minimum green plus
+non-skipped build evidence"
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,raw broad repair stack is reproducer material and lacks green exact-stack evidence,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,"raw broad repair stack is reproducer material and lacks green exact-stack
+evidence"
+publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,exact refresh still has large-post-three-user-http rep2 red,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,exact refresh still has large-post-three-user-http rep2 red
+launch-owner-matrix,PR07C/HOLD-07C,high,no,queued browser owner-matrix is duplicate unless newer red current-head owner evidence appears,PR07C/HOLD-07C,"queued browser owner-matrix is duplicate unless newer red current-head owner
+evidence appears"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head title reload existing-post or persistence reload and large HTTP lifecycle green evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title reload existing-post or persistence reload and
 large HTTP lifecycle green evidence"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,no branch fanout until exact replay owner proof green-stack adoption or replay-backed downscope exists,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"no branch fanout until exact replay owner proof green-stack adoption or
