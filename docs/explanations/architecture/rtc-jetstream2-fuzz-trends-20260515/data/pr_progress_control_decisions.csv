@@ -1,5 +1,5 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-policy,P0,yes,11 active discovery sessions exceed floor 3 and PR jobs are 0/4; allow one bounded product slot under disk_pressure while preserving browser/e2e and lower-level reserves
+reserve-discovery,discovery-reserve-policy,P0,yes,14 active discovery sessions exceed floor 3 and PR jobs are 0/4; allow one bounded product slot under disk_pressure while preserving browser/e2e and lower-level reserves
 repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,yes,next product-progress slot; freshest PR17 exact-stack blocker should advance the reviewable provider-persisted CRDT repair branch
 repair-ready,benchmark-canary-fuzzer-gap/provider-persisted-crdt-seeds,P0,yes,"fold older PR17 materialize/table logs, large-post failures, same-user stale-content, forced browser/WS gaps, and lower-level large-http-readiness seeds into the active PR17 repair"
 launch-branch-repair,PR17/materialize/table@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,"older PR17 head is seed evidence for the 69df480 repair, not a second branch-changing job"
