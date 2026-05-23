@@ -3,20 +3,19 @@ launch-heavy-pr-jobs,discovery-unhealthy-reserve-breach,P0,no,"if discovery fall
 publication manifest generation or analysis-only actions"
 publish-ready,PR17/raw-or-broad-repair-refs,P0,no,"raw repair refs lack clean split, current PR07C behavior, build gate, and full same-commit exact-stack proof",PR17/raw-or-broad-repair-refs,"raw repair refs lack clean split, current PR07C behavior, build gate, and full
 same-commit exact-stack proof"
-launch-branch-repair,product-pr-fanout,P0,no,do not fan out heavy PR jobs; PR17 owns the single branch-changing lane while discovery reserve is preserved,product-pr-fanout,"do not fan out heavy PR jobs; PR17 owns the single branch-changing lane while
-discovery reserve is preserved"
+launch-branch-repair,product-pr-fanout,P0,no,no heavy PR fanout; PR17 owns the single branch-changing lane while discovery reserve is preserved,product-pr-fanout,"no heavy PR fanout; PR17 owns the single branch-changing lane while discovery
+reserve is preserved"
 launch-owner-matrix,job-pr07c-owner-matrix,high,no,suppress duplicate browser owner-matrix work unless newer red current-head owner evidence appears,job-pr07c-owner-matrix,"suppress duplicate browser owner-matrix work unless newer red current-head owner
 evidence appears"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale PR07C head is superseded by published head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"stale PR07C head is superseded by published head
 2f8247258316bde60869c06c383090904e9426bd"
-publish-ready,current-push-manifest.tsv,high,no,controller push manifest is header-only and is not independent publication evidence,current-push-manifest.tsv,"controller push manifest is header-only and is not independent publication
-evidence"
+publish-ready,current-push-manifest.tsv,high,no,header-only controller push manifest is not independent publication evidence,current-push-manifest.tsv,header-only controller push manifest is not independent publication evidence
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR15A-on-PR14B branch,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR15A-on-PR14B branch
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published PR15B-on-PR14B branch,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by published PR15B-on-PR14B branch
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published PR15C-on-PR14B branch,ready/rtc-pr15c-fallback-group-delete-green,superseded by published PR15C-on-PR14B branch
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh title-reload plus existing-post or persistence-reload plus large HTTP lifecycle green evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh title-reload plus existing-post or persistence-reload plus large
-HTTP lifecycle green evidence"
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head title-reload plus existing-post or persistence-reload plus large HTTP lifecycle green evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head title-reload plus existing-post or persistence-reload
+plus large HTTP lifecycle green evidence"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"PR17 owns the branch-changing slot; reload-hydration should progress by exact replay, owner evidence, green-stack adoption, or downscope",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing slot; reload-hydration should progress by exact
 replay, owner evidence, green-stack adoption, or downscope"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,missing owner evidence and product first-loss evidence,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,missing owner evidence and product first-loss evidence
