@@ -1,11 +1,12 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-policy,P0,yes,10 active discovery sessions vs floor 3 and 0 active PR jobs allow one bounded PR17 slot; if reserve becomes unhealthy only cheap manifest or analysis-only work remains allowed
+reserve-discovery,discovery-reserve-policy,P0,yes,12 active discovery sessions vs floor 3 permit one bounded PR17 slot; if reserve becomes unhealthy only cheap manifest or analysis-only work remains allowed
 generate-publication-manifest,published-ready-product-branches,high,yes,cheap accounting for already published ready real-fix branches keeps product progress visible without consuming a heavy PR slot
-repair-branch,PR17/materialize/table,P0,yes,next product-progress slot; narrow provider-persisted CRDT large-post repair into a small reviewable split
-repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt-large-post,P0,yes,current blocker is large-post-three-user-http rep2; advance only the PR17 provider-persisted CRDT split path
+repair-branch,PR17/materialize/table,P0,yes,next product-progress slot; fix clean branch 02356443aa5e only for large-post-three-user-http rep2 then rerun six-row exact refresh
+repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt-large-post,P0,yes,alias of selected PR17 lane; advance only the narrow provider-persisted CRDT split path
 repair-branch,benchmark-canary-fuzzer-gap/large-post-publish-save,P0,yes,alias of selected PR17 lane; consumes the single branch-changing allowance for this cycle
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,discovery is unprotected and PR17 owns the only heavy PR slot; preserve reserve unless work is cheap manifest generation or analysis-only
 publish-ready,benchmark-canary-fuzzer-gap/PR17,P0,no,raw PR17 repair stack is broad and lacks same-commit full benchmark-minimum plus non-skipped build evidence
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,clean repair head still has large-post-three-user-http rep2 red; repair and rerun exact refresh before publication
 publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,exact refresh still fails realistic-e2e large-post-three-user-http rep2
 publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@2335aa8c263f99138b5b64b8b90485be86cfa454,P0,no,selected rows are useful evidence but the branch is broad unsplit and lacks full same-commit benchmark plus build evidence
 consume-owner-matrix,PR07C/HOLD-07C,high,yes,current-head owner replay is terminal no-promote evidence with product_owned_rows=0
@@ -13,23 +14,25 @@ launch-owner-matrix,PR07C/HOLD-07C,high,no,suppress duplicate owner-matrix job u
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt held manifest as candidate evidence and convert generic hold to same-head exact-stack replay gate
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh title reload existing or persistence reload and large HTTP lifecycle green evidence
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,no branch fanout until exact replay owner proof green-stack adoption or replay-backed downscope exists
-cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,concrete held head exists so generic reload-hydration relaunch would be churn
+cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,concrete held head exists so generic reload-hydration relaunch would repeat 404-launch churn
 cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,high,yes,diagnostic manifests lack owner evidence product first-loss proof green-stack adoption or downscope
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,missing owner evidence and product first-loss proof
 publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,missing focused replay owner evidence and product first-loss proof
-cooldown-diagnostic,malformed-save-payload/raw-deferred-heads,high,yes,downscoped to canonical published PR06B minimal path
-cooldown-diagnostic,http-room-isolation/raw-deferred-heads,high,yes,downscoped to published PR02A path without fresh product evidence
+downscope-family,malformed-save-payload/raw-deferred-heads,high,yes,covered by canonical published PR06B minimal path
+downscope-family,http-room-isolation/raw-deferred-heads,high,yes,covered by published PR02A path without fresh product evidence
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
 reserve-discovery,benchmark-canary-large-post-three-user-http,P0,yes,keep readiness lifecycle and completion coverage forced until the PR17 exact stack is green
-reserve-discovery,benchmark-canary/provider-persisted-crdt-large-post,P0,yes,retarget lower-level reserve to the failing provider-persisted CRDT large-post shape
+coverage-retarget,benchmark-canary/provider-persisted-crdt-large-post,P0,yes,force one benchmark-seeded HTTP large-post lifecycle shard from failing rep2 log with final convergence oracle
 reserve-discovery,benchmark-canary/provider-persisted-crdt-large-post-lower-unit,P0,yes,allow exactly one bounded lower-level shard after static-input handoff and accounting are fixed
+controller-code-fix,lower-level-static-input-accounting,P0,yes,require quoted JSON or base64 static-input handoff plus fixed and useful execution counts before trusting lower-level yield
 cooldown-diagnostic,benchmark-feedback-refresh-loop,P0,yes,refreshes without changed repair head or full same-commit green evidence repeat the known blocker
 cooldown-diagnostic,coverage-guided-lower-level-http-polling-manager/broad-corpus,high,yes,current broad corpus reports zero new coverage keys and zero product yield; rotate budget to benchmark-seeded shard
 cooldown-diagnostic,unit-property-http-polling-canary/generated-green-accounting,high,yes,generated green batches without final-state or persisted-CRDT oracles are not benchmark-equivalent coverage
 reserve-discovery,unit-property-http-polling-canary/large-http-readiness,high,yes,after static-accounting fix allow one bounded readiness shard then rotate unless useful evidence appears
+analysis-only,product-progress-status-review,high,yes,analysis-only status review is allowed because it does not consume heavy PR job capacity
 update-controller-rule,lower-level-static-input-accounting,P0,yes,require quoted JSON or base64 static-input handoff plus fixed and useful execution counts before trusting lower-level yield
 update-controller-rule,product-progress-single-flight-latest-head,P0,yes,collapse duplicate aliases by concrete target and latest head while ledgering every P0 or high target
 update-controller-rule,benchmark-exact-stack-same-commit-build-gate,P0,yes,publication requires same-commit full benchmark-minimum green plus non-skipped build evidence
