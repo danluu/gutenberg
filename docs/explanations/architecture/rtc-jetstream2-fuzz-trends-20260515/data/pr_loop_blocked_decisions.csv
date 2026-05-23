@@ -6,8 +6,8 @@ publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by pu
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
 ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,newer harness-packaging evidence supersedes older PR17 branch-slot rows for the next branch-changing slot,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"newer harness-packaging evidence supersedes older PR17 branch-slot rows for the
-next branch-changing slot"
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,newer exact harness-packaging blocker supersedes PR17 as the next branch-changing slot,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"newer exact harness-packaging blocker supersedes PR17 as the next
+branch-changing slot"
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus complete non-skipped exact all-merged benchmark-minimum and canary green evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"requires reviewable split plus complete non-skipped exact all-merged
 benchmark-minimum and canary green evidence"
 publish-ready,benchmark-canary-fuzzer-gap/broad-repair-heads,P0,no,evidence only; not maintainer-reviewable product branches,benchmark-canary-fuzzer-gap/broad-repair-heads,evidence only; not maintainer-reviewable product branches
@@ -16,9 +16,9 @@ large HTTP lifecycle rows are fresh green or downscoped"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,required same-head exact-stack browser validation rows are absent,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,required same-head exact-stack browser validation rows are absent
 launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,relaunch only if newer current-head evidence has product_owned_rows greater than zero,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"relaunch only if newer current-head evidence has product_owned_rows greater than
 zero"
-launch-branch-repair,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,"no generic repair or publication without product-owned first-loss evidence, owner evidence, green-stack adoption, or explicit downscope",pre-save-search-live-collapse+rich-text-suffix-corruption,"no generic repair or publication without product-owned first-loss evidence,
-owner evidence, green-stack adoption, or explicit downscope"
-reserve-discovery,benchmark-canary-fuzzer-gap/extra-large-post-http-materialization,P0,no,latest feed retargets reserve work to lower/micro-html parser coverage; older extra HTTP materialization rows are superseded,benchmark-canary-fuzzer-gap/extra-large-post-http-materialization,"latest feed retargets reserve work to lower/micro-html parser coverage; older
-extra HTTP materialization rows are superseded"
+launch-branch-repair,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,no generic repair or publication without product-owned first-loss evidence owner evidence green-stack adoption or explicit downscope,pre-save-search-live-collapse+rich-text-suffix-corruption,"no generic repair or publication without product-owned first-loss evidence owner
+evidence green-stack adoption or explicit downscope"
+reserve-discovery,benchmark-canary-fuzzer-gap/extra-large-post-http-materialization,P0,no,latest controller feed retargets reserve work to parser coverage and bounded provider-persisted lanes,benchmark-canary-fuzzer-gap/extra-large-post-http-materialization,"latest controller feed retargets reserve work to parser coverage and bounded
+provider-persisted lanes"
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,disk pressure and red exact gates allow only bounded harness repair exact replay status publication analysis-only work and reserve-preserving discovery,all-other-heavy-pr-jobs,"disk pressure and red exact gates allow only bounded harness repair exact replay
 status publication analysis-only work and reserve-preserving discovery"
