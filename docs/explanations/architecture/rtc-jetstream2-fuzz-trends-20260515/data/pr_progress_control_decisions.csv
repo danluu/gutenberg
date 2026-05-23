@@ -1,38 +1,40 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery 12 exceeds floor 3 and active PR jobs are 0/4; allow one bounded PR repair while preserving the reserve
-repair-branch,benchmark-canary-fuzzer-gap/large-post-publish-save,P0,yes,next product-progress slot; PR17 clean exact-stack repair is red on large-post-three-user-http 2/2 and needs the smallest reviewable fix
-launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,keep branch-changing product work single-flight on PR17 until the exact-stack gate moves
-publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed commit has full benchmark-minimum green evidence plus a non-skipped build
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery 12 exceeds floor 3 and PR jobs are 0/4; allow one bounded PR repair while preserving discovery reserve
+update-controller-rule,discovery-reserve-hard-gate,P0,yes,when discovery reserve is unhealthy block heavy PR jobs except cheap publication manifest generation or analysis-only work
+repair-branch,benchmark-canary-fuzzer-gap/large-post-publish-save,P0,yes,next product-progress slot; current PR17 exact-stack repair is red on large-post-three-user-http 2/2 and needs a narrow fix
+repair-branch,PR17/materialize/table,P0,yes,"same PR17 repair slot; require reviewable split, non-skipped build, and full same-commit exact-stack benchmark minimum"
+launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,keep branch-changing product work single-flight on PR17 until exact-stack gate moves
+publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed commit has full benchmark-minimum green evidence plus non-skipped build evidence
 publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,current repair commit fails realistic-e2e large-post-three-user-http 2/2
 reserve-discovery,benchmark-canary-large-post-three-user-http,P0,yes,keep HTTP readiness lifecycle and completion coverage promotion-blocking until finalized PR17 exact-stack row is green
-consume-owner-matrix,PR07C/HOLD-07C,high,yes,current-head owner replay is conclusive with product_owned_rows=0; terminalize blocker and drop queued duplicate unless newer red evidence appears
-launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate owner-matrix work; relaunch only if newer red current-head owner evidence appears
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt held manifest as candidate evidence and convert generic hold to a head-specific exact-stack gate
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head title reload existing-post or persistence reload and large HTTP lifecycle green evidence
-launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,requires exact replay owner evidence green-stack adoption or replay-backed downscope before branch-changing work
-cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,concrete manifest-held head exists; generic relaunches are duplicate diagnostic churn
-reserve-discovery,novelty-http-title-reload+existing-post+persistence-reload+large-http-lifecycle,P0,yes,required evidence for reload-hydration exact-stack gate and must not be traded away for PR fanout
-cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2+rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,yes,diagnostic manifests lack owner or product first-loss proof; allow only focused replay green adoption owner evidence or downscope
-publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,missing owner evidence and product first-loss proof
-publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,missing focused replay owner evidence and product first-loss proof
-cooldown-diagnostic,malformed-save-payload,high,yes,downscoped because canonical PR06B minimal is already published
-cooldown-diagnostic,http-room-isolation,high,yes,downscoped because PR02A is published and no fresh contrary healthy-user evidence exists
+publish-ready,published-ready-real-fix-branches,high,yes,already published by local machine; allow cheap manifest bookkeeping and continued fuzz validation only
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,low,no,superseded by already published ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
-publish-ready,published-ready-real-fix-branches,high,yes,already published by local machine; allow cheap manifest bookkeeping and continued fuzz validation
+repair-ready,PR07C/HOLD-07C,high,yes,consume conclusive current-head owner replay with product_owned_rows=0 and terminalize the blocker
+launch-owner-matrix,PR07C/HOLD-07C,high,no,duplicate browser owner-matrix work; relaunch only if newer red current-head owner evidence appears
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt held manifest as candidate evidence and convert generic hold to a head-specific exact-stack gate
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence"
+launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"requires exact replay, owner evidence, green-stack adoption, or replay-backed downscope before branch-changing fanout"
+cooldown-diagnostic,reload-hydration/generic-deferred-relaunch,P0,yes,concrete manifest-held head exists; generic relaunches are duplicate diagnostic churn
+reserve-discovery,novelty-http-title-reload+existing-post+persistence-reload+large-http-lifecycle,P0,yes,required evidence for reload-hydration exact-stack gate and should not be traded away for PR fanout
+cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2+rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,yes,"diagnostic manifests lack owner or product first-loss proof; allow only focused replay, green adoption, owner evidence, or downscope"
+publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,missing owner evidence and product first-loss proof
+publish-ready,rich-text-suffix-corruption@a34adf221cec69c81485823a7e365a2c8f8bcc08,high,no,missing focused replay owner evidence and product first-loss proof
+cooldown-diagnostic,malformed-save-payload,high,yes,downscoped because canonical PR06B minimal is already published
+cooldown-diagnostic,http-room-isolation,high,yes,downscoped because PR02A is published and no fresh contrary healthy-user evidence exists
 cooldown-diagnostic,benchmark-feedback-refresh-loop,P0,yes,refresh without a new fixed branch head or same-commit exact-stack status repeats the known blocker
 update-controller-rule,lower-level-static-input-accounting,P0,yes,static input handoff must be quoted JSON or base64 before static-canary scheduling or yield accounting is trusted
 reserve-discovery,unit-property-http-polling-canary/large-http-readiness,P0,yes,after static-input fix allow one bounded benchmark-seeded readiness shard and rotate unless it yields failure or new readiness keys
 cooldown-diagnostic,unit-property-http-polling-canary/saturated-current-shape,high,yes,current generated-only shape has repeated exit=0 and failureKind=null; cap after bounded retarget
 cooldown-diagnostic,unit-property-rich-text-crdt-merge/current-foreground,high,yes,cap clean foreground churn and keep low-share unless failures or new semantic features appear
-reserve-discovery,coverage-guided-lower-level-http-polling-manager,high,yes,allow bounded benchmark-seeded feature admission; continue only on admitted features coverage or product yield
+reserve-discovery,coverage-guided-lower-level-http-polling-manager,high,yes,"observe active feature-corpus retarget; continue only on admitted features, coverage, or product yield"
 reserve-discovery,benchmark-canary-clean-exact-stack-lower-unit,high,yes,preserve benchmark-aligned lower-unit rotation for table parser and stale-top-level exact-stack validation
 update-controller-rule,product-progress-single-flight-latest-head,P0,yes,collapse duplicate feed aliases by concrete target and latest head; stale duplicates become explicit no decisions
-update-controller-rule,discovery-reserve-hard-gate,P0,yes,when discovery reserve is unhealthy block heavy PR jobs except cheap publication manifest generation or analysis-only work
 update-controller-rule,benchmark-exact-stack-same-commit-build-gate,P0,yes,publication requires same-commit full benchmark-minimum green evidence plus non-skipped build evidence
 update-controller-rule,owner-evidence-consumption,high,yes,consume conclusive current-head owner evidence and suppress duplicate owner-matrix jobs
-update-controller-rule,deferred-diagnostic-promotion-gate,high,yes,deferred diagnostic manifests cannot publish or relaunch generically without owner evidence first-loss proof green adoption or downscope
+update-controller-rule,deferred-diagnostic-promotion-gate,high,yes,"deferred diagnostic manifests cannot publish or relaunch generically without owner evidence, first-loss proof, green adoption, or downscope"
 update-controller-rule,productive-feed-row-ledger,high,yes,record every P0 or high Productive Analysis target as an explicit allowed or rejected TSV decision
-update-controller-rule,lower-level-yield-and-saturation-gates,high,yes,gate lower-level slots on admitted features new coverage product yield or failure and rotate saturated clean groups
+update-controller-rule,lower-level-yield-and-saturation-gates,high,yes,"gate lower-level slots on admitted features, new coverage, product yield, or failure and rotate saturated clean groups"
