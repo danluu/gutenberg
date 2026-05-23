@@ -19,5 +19,4 @@ critical job queue,gated,codex-analysis,high,1
 critical job queue,terminal,codex-analysis,high,1
 critical lanes,queued,browser-e2e,lane,1
 critical lanes,terminal,codex-analysis,lane,1
-active sessions,active,analysis,analysis,4
-active sessions,active,feedback-refresh,feedback-refresh,1
+active sessions,active,analysis,analysis,3
