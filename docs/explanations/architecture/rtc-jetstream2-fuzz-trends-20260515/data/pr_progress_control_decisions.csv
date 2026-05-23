@@ -1,9 +1,9 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-policy,P0,yes,Active discovery is 16 vs floor 3 and PR jobs are 0/4; allow one heavy PR17 lane while preserving fuzzing reserve.
-update-controller-rule,discovery-unhealthy-heavy-pr-gate,P0,yes,Block new heavy PR jobs when discovery drops below reserve or becomes unhealthy; cheap manifest generation and analysis-only cleanup may continue.
+reserve-discovery,discovery-reserve-policy,P0,yes,Active discovery is 10 vs floor 3 and PR jobs are 0/4; allow one heavy PR17 lane while preserving forced/focused fuzzing reserve.
+update-controller-rule,discovery-unhealthy-heavy-pr-gate,P0,yes,Block new heavy PR jobs when discovery drops below reserve or becomes unhealthy; cheap publication manifest generation and analysis-only cleanup may continue.
 repair-branch,PR17/stale-crdt-cas-background-delivery@clean-materialized-table-repair-from-bb4e7b84,P0,yes,Next product-progress slot; materialize clean PR17 split and require build plus full same-commit exact-stack green before publication.
-repair-ready,benchmark-canary-fuzzer-gap/PR17-stale-crdt-cas-background-delivery,P0,yes,Retarget active benchmark blocker to clean PR17 successor and stop treating repeated feedback refreshes as progress.
 repair-ready,PR17/materialize-table,P0,yes,Same single-flight PR17 lane; advance clean materialized-table repair with exact-stack benchmark minimum gating.
+repair-ready,benchmark-canary-fuzzer-gap/PR17-stale-crdt-cas-background-delivery,P0,yes,Retarget active benchmark blocker to clean PR17 successor and stop treating repeated feedback refreshes as progress.
 publish-ready,PR17/stale-crdt-cas-background-delivery@raw-or-broad-repair-refs,P0,no,Raw repair refs lack clean reviewed split and full same-commit exact-stack proof.
 launch-branch-repair,PR17/stale-crdt-cas-background-delivery@duplicate-heavy-slot,P0,no,PR17 branch-changing work must remain single-flight on the clean bb4e7b84 split.
 repair-branch,PR17/stale-crdt-cas-background-delivery@old-repair-refs,P0,no,Older raw saved-crdt and build-gate repair refs are superseded by the clean bb4e7b84 path.
