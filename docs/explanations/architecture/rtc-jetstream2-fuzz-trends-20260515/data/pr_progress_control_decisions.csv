@@ -1,11 +1,12 @@
 action,target,priority,allowed,reason
 reserve-discovery,discovery-reserve-policy,P0,yes,active discovery 12 exceeds floor 3 and PR jobs are 0/4; one bounded product slot is allowed while preserving fuzzing reserve
 launch-heavy-pr-job,when-discovery-sessions-below-reserve,P0,no,preserve discovery reserve; allow only cheap publication manifest generation or analysis-only work while discovery is unhealthy
-repair-branch,PR17/materialize/table,P0,yes,"next product-progress slot; produce a small reviewable split, then require non-skipped build and full same-commit benchmark-minimum green"
+repair-branch,PR17/materialize/table,P0,yes,"next product-progress slot; split the large-post/table repair into a small reviewable branch, preserve PR07C behavior, pass build, and require full same-commit benchmark-minimum green"
 repair-branch,benchmark-canary-fuzzer-gap/large-post-publish-save,P0,yes,same PR17 single-flight slot for the large-post three-user HTTP publish/save failure
-launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,keep branch-changing product work single-flight on PR17 until exact-stack gate moves
+launch-branch-repair,all-other-branch-changing-pr-jobs,P0,no,keep branch-changing product work single-flight on PR17 until the exact-stack benchmark gate moves
 publish-ready,benchmark-canary-fuzzer-gap/snapshot,P0,no,blocked until the exact proposed commit has full benchmark-minimum green plus non-skipped build evidence
-publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,raw broad repair stack has recent same-family red evidence and selected-row green only; use as repair evidence
+publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@02356443aa5ea0744f0c3329992f0222f73f5bb3,P0,no,"raw broad repair stack has recent same-family red evidence and selected-row green only; use as repair evidence, not publication material"
+publish-ready,repair/benchmark-canary-provider-persisted-crdt-reconcile-20260523T072733Z@30e2fd58040064c6401a83f15927941c8f2f3b5d,P0,no,large-post-three-user-http rep2 failed; preserve failing log as reproducer and rerun full benchmark minimum after split repair
 reserve-discovery,benchmark-canary-large-post-three-user-http,P0,yes,"keep HTTP readiness, lifecycle, and completion coverage promotion-blocking until finalized PR17 exact-stack is green"
 cooldown-diagnostic,benchmark-feedback-refresh-loop,P0,yes,refresh without a new fixed branch head or same-commit exact-stack status repeats the known blocker
 publish-ready,published-ready-real-fix-branches,high,yes,already published locally; allow cheap manifest bookkeeping and continued fuzz validation
@@ -17,7 +18,7 @@ publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,low,no,supers
 cooldown-diagnostic,malformed-save-payload,high,yes,downscope because canonical PR06B minimal is already published
 cooldown-diagnostic,http-room-isolation,high,yes,downscope because PR02A is published and no fresh contrary product evidence exists
 consume-owner-matrix,PR07C/HOLD-07C,high,yes,consume current-head owner replay with product_owned_rows=0 and terminalize the no-promote blocker
-launch-owner-matrix,PR07C/HOLD-07C,high,no,relaunch only if newer red current-head owner evidence appears; queued duplicate should be dropped
+launch-owner-matrix,PR07C/HOLD-07C,high,no,relaunch only if newer red current-head owner evidence appears; queued duplicate owner-matrix work should be dropped
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt held manifest as candidate evidence and convert generic hold to a head-specific exact-stack replay gate
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing fresh same-head title reload, existing-post or persistence reload, and large HTTP lifecycle green evidence"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"block fanout until exact replay, owner evidence, green-stack adoption, or replay-backed downscope exists"
@@ -34,6 +35,7 @@ cooldown-diagnostic,unit-property-rich-text-crdt-merge/current-foreground,high,y
 reserve-discovery,benchmark-canary-clean-exact-stack-lower-unit,high,yes,"after static-input fix, preserve lower-level reserve for table parser and stale top-level CRDT validation targets"
 update-controller-rule,product-progress-single-flight-latest-head,P0,yes,collapse duplicate Productive Analysis aliases by concrete target and latest head; stale duplicates get explicit no decisions
 update-controller-rule,benchmark-exact-stack-same-commit-build-gate,P0,yes,publication requires same-commit full benchmark-minimum green evidence plus non-skipped build evidence
+update-controller-rule,benchmark-large-post-repeat-gate,P0,yes,selected green rows are insufficient; require repeated clean large-post passes plus full same-commit benchmark minimum
 update-controller-rule,owner-evidence-consumption,high,yes,consume conclusive current-head owner evidence and suppress duplicate owner-matrix jobs
 update-controller-rule,deferred-diagnostic-promotion-gate,high,yes,"deferred diagnostics cannot publish or relaunch generically without owner evidence, first-loss proof, green adoption, or downscope"
 update-controller-rule,lower-level-yield-and-saturation-gates,high,yes,rotate saturated clean groups and distrust static-canary accounting until static input handoff is fixed
