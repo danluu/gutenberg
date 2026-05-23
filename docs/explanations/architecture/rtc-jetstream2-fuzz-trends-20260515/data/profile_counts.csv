@@ -2,11 +2,11 @@ profile,records_seen,successful_records,startup_failures,success_rate,profile_fa
 persistence-no-title,1784,1064,0,0.5964125560538116,persistence
 real-user-editing,1571,616,0,0.392106938255888,real-user
 session-lifecycle,1268,754,0,0.5946372239747634,lifecycle
-large-post-three-user-http-lifecycle,938,83,0,0.08848614072494669,lifecycle
-permissions-auth-locks,822,268,0,0.3260340632603406,auth/locks
-async-server-blocks,701,147,0,0.20970042796005706,async/media
-long-session-large-doc,569,39,0,0.06854130052724078,lifecycle
-block-gauntlet,275,197,0,0.7163636363636363,block-structure
+large-post-three-user-http-lifecycle,942,83,0,0.0881104033970276,lifecycle
+permissions-auth-locks,825,268,0,0.32484848484848483,auth/locks
+async-server-blocks,704,147,0,0.20880681818181818,async/media
+long-session-large-doc,572,39,0,0.06818181818181818,lifecycle
+block-gauntlet,283,204,0,0.7208480565371025,block-structure
 media-cross-entity,243,121,0,0.49794238683127573,async/media
 three-user-late-join,217,113,0,0.5207373271889401,lifecycle
 full,207,16,0,0.07729468599033816,block-structure
@@ -17,6 +17,6 @@ multi-reload-lifecycle,144,69,0,0.4791666666666667,lifecycle
 parser-transform,120,68,0,0.5666666666666667,parser
 common-blocks,88,43,0,0.48863636363636365,block-structure
 code-editor-smoke,80,64,0,0.8,other
-table-stale-snapshot-http,58,7,0,0.1206896551724138,other
+table-stale-snapshot-http,60,7,0,0.11666666666666667,other
 revision-persistence,40,8,0,0.2,persistence
-list-move-refresh-http,25,0,0,0,other
+list-move-refresh-http,26,0,0,0,other
