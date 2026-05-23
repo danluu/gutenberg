@@ -1,6 +1,7 @@
 action,target,priority,allowed,reason
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery 11 exceeds floor 3 and PR jobs are 0 of 4; allow one bounded PR17 lane while preserving fuzz reserve
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery 13 exceeds floor 3 and PR jobs are 0 of 4; allow one bounded PR17 lane while preserving fuzz reserve
 repair-branch,PR17/stale-crdt-cas-background-delivery@clean-materialized-table-repair-from-bb4e7b84,P0,yes,"next product-progress slot; attach table-query-array reproducer, include current PR07C behavior, fix large-post publish persistence, pass build, and prove same-commit exact-stack green"
+repair-branch,benchmark-canary-fuzzer-gap/large-post-publish-save,P0,yes,same PR17 slot; latest concrete failure is large-post-three-user-http returning draft instead of publish
 repair-ready,PR17/table-query-array-canonical-reproducer,P0,yes,"claim one current RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE remote-marker reproducer for PR17, then stop duplicate sampling"
 repair-ready,benchmark-canary-fuzzer-gap/exact-stack-refresh,P0,yes,consume exact-stack refreshes only as blocker evidence; PR17 remains blocked until benchmark-minimum rows are same-commit green
 publish-ready,repair/benchmark-canary-clean-exact-stack-20260523T031412Z@20f7035e8a867fdeeb3013531ae7bbb6923f553a,P0,no,failed large-post-three-user-http 2 of 2 and omits current PR07C all-merged behavior
@@ -24,7 +25,10 @@ cooldown-diagnostic,unit-property-table-query-array-crdt/remote-marker,P0,yes,ha
 reserve-discovery,table-query-array-crdt-benchmark-shaped-lower-level,P1,yes,"move freed lower-level capacity to benchmark-shaped table, list, and revision coverage"
 cooldown-diagnostic,rtc-http-polling-manager/broad-zero-yield,high,yes,"broad HTTP polling plateaued with zero new coverage, zero admitted features, and zero product yield"
 reserve-discovery,rtc-http-polling-manager/benchmark-seeded-same-user-stale-content,high,yes,"allow only benchmark-seeded stale-content discovery gated on admitted coverage, canary-relevant features, or product yield"
+cooldown-diagnostic,unit-property-rich-text-crdt-merge,P1,yes,cap foreground rich-text after clean batches and retarget lower-level lane to publish-persistence/core-data oracle
+reserve-discovery,publish-persistence-core-data-oracle-seeded-large-post,P1,yes,preserve lower-level discovery while targeting save/publish REST status and convergence
 reserve-discovery,benchmark-canary-fuzzer-gap/exact-stack-coverage,P0,yes,keep benchmark-equivalent exact-stack lanes as PR17 promotion gates; large-post remains an independent hard row
+reserve-discovery,benchmark-canary-large-post-three-user-http,P0,yes,keep large-post HTTP publish lane hard-pinned; other green rows cannot satisfy this blocker
 reserve-discovery,novelty-http-list-move-refresh,P0,yes,keep forced until successful current-stack list-move-refresh HTTP records exist
 reserve-discovery,novelty-http-table-stale-snapshot,P0,yes,retarget to benchmark table and revision row shape and keep forced until PR17 table/revision exact-stack evidence is green
 reserve-discovery,novelty-http-large-post-lifecycle+title-reload+existing-post,P0,yes,keep benchmark-forced HTTP lifecycle and reload coverage; do not spend this reserve on PR fanout

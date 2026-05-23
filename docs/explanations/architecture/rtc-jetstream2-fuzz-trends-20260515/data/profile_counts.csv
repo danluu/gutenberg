@@ -1,6 +1,6 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
 persistence-no-title,1784,1064,0,0.5964125560538116,persistence
-real-user-editing,1709,714,1,0.41778818022235226,real-user
+real-user-editing,1709,714,0,0.41778818022235226,real-user
 session-lifecycle,1687,1107,0,0.6561944279786603,lifecycle
 large-post-three-user-http-lifecycle,1068,96,0,0.0898876404494382,lifecycle
 permissions-auth-locks,838,268,0,0.3198090692124105,auth/locks
