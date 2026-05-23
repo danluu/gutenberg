@@ -24,6 +24,7 @@ cooldown-diagnostic,http-room-isolation,high,yes,covered by published PR02A abse
 cooldown-diagnostic,benchmark-feedback-refresh-loop,P0,yes,refresh without a new fixed branch head or same-commit exact-stack status repeats the known blocker
 reserve-discovery,coverage-guided-lower-level-http-polling-manager,high,yes,allow one bounded benchmark-seeded feature-admission run; continue only on new coverage admitted features or product yield
 reserve-discovery,unit-property-http-polling-canary/large-http-readiness,high,yes,after static-input fix retarget one bounded shard to the harder readiness token and rotate unless it yields
+reserve-discovery,benchmark-canary-clean-exact-stack-lower-unit,high,yes,preserve benchmark-aligned lower-unit rotation after active static-input and HTTP readiness gates
 cooldown-diagnostic,unit-property-http-polling-canary/saturated-current-shape,high,yes,current shape has repeated exit=0 and failureKind=null; cap repeated corpus after bounded retarget
 cooldown-diagnostic,unit-property-rich-text-crdt-merge/current-run-mismatch,P0,yes,sync active-run ledger and cap unbounded foreground rich-text work before trusting accounting
 update-controller-rule,product-progress-single-flight-latest-head,P0,yes,collapse repeated feed aliases by concrete target and latest head; stale duplicates become explicit no decisions
