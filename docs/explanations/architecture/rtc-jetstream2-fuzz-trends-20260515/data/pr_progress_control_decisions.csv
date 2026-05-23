@@ -1,39 +1,41 @@
 action,target,priority,allowed,reason
-repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot; hydrate missing lower and many-user benchmark-minimum harness files in exact b8ca stack
-repair-ready,exact-all-merged-benchmark-minimum-canary-rerun,P0,yes,after harness hydration rerun lower/micro-crdt lower/micro-html lower/micro-sync multi-user/many-users-sync plus current canary rows
-publish-ready,rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,exact stack has repeated No tests found benchmark-minimum rows
+repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot; hydrate or version missing lower/micro-crdt lower/micro-html lower/micro-sync and multi-user/many-users-sync benchmark-minimum harness files in exact b8ca stack
+repair-ready,exact-all-merged-benchmark-minimum-canary-rerun,P0,yes,after harness hydration rerun blocked benchmark-minimum rows plus current canary rows and require complete non-skipped green evidence or explicit downscope
+repair-ready,benchmark-canary-fuzzer-gap,P0,yes,reclassify active blocker from generic coverage gap to exact-stack benchmark-minimum harness gate
+publish-ready,rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,repeated exact-stack No tests found benchmark-minimum rows block final all-merged publication
 publish-ready,final-all-merged-after-harness-green,P0,yes,allowed only after complete non-skipped exact benchmark-minimum and canary green evidence or explicit row downscope
 publish-ready,maintainer-status-live-branches,P0,yes,cheap status docs may link live branches and deliberate downscopes but must not claim final benchmark green
-publish-ready,ready-product-prs-already-published,high,yes,keep live refs linked for PR02A PR03B PR06B-minimal PR07B PR07C PR09 PR10 PR11A PR11B PR14 PR14B and PR15A/B/C-on-PR14B
+publish-ready,ready-product-prs-already-published,high,yes,keep live refs linked for already published ready branches
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
 repair-ready,ready-product-pr-branch-diff-audit,high,yes,cheap audit allowed for published branches still tied to older product_candidate_diff_check_failed evidence
-repair-ready,PR07C/HOLD-07C-owner-matrix-terminalization,high,yes,consume current-head owner evidence at 2f8247258316bde60869c06c383090904e9426bd with classification green and product_owned_rows 0
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,relaunch only if newer current-head evidence has product_owned_rows greater than zero
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt held manifest as candidate evidence and convert to same-head exact replay or explicit downscope gate
+repair-ready,PR07C/HOLD-07C-owner-matrix-terminalization,high,yes,consume current-head owner replay at 2f8247258316bde60869c06c383090904e9426bd with classification green and product_owned_rows 0
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,duplicate browser owner replay wastes budget; relaunch only for newer current-head evidence with product_owned_rows greater than zero
+launch-owner-matrix,PR07C/HOLD-07C@025c7638361f,high,no,stale-head owner evidence is superseded by published current-head classification
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt held manifest as candidate evidence only and convert to same-head exact replay or explicit downscope gate
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,block generic fanout until title reload existing-post or persistence reload and large HTTP lifecycle rows are green or downscoped
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,required same-head exact-stack browser validation rows are absent
 repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds-22-36-39-55-1130007-1130009-1230008,P0,yes,preserve bounded reproducers as PR17 inputs after exact b8ca harness gate clears
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,exact b8ca harness-packaging gate supersedes PR17 as the next branch-changing product slot under deadline mode
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,exact b8ca harness-packaging gate supersedes PR17 as next branch-changing product slot under deadline mode
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus complete non-skipped exact all-merged benchmark-minimum and canary green evidence
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,diagnostic only; no generic relaunch or publication without product-owned first-loss evidence green-stack adoption or explicit downscope
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,diagnostic-only; no generic relaunch or publication without product-owned first-loss evidence green-stack adoption or explicit downscope
 cooldown-diagnostic,malformed-save-payload,high,yes,raw deferred heads are superseded by published PR06B minimal
 cooldown-diagnostic,http-room-isolation,high,yes,raw deferred heads are superseded by published PR02A absent fresh healthy-user evidence
 cooldown-diagnostic,coverage-guided-lower-level-http-polling-manager/broad-corpus,P0,yes,suppress broad expansion while bounded large-readiness replay and PR17 handoff inputs are active
-cooldown-diagnostic,coverage-guided-lower-level-rich-text-multiblock,medium,yes,corpus is saturated with zero new coverage features or failures; deprioritize until oracle or corpus changes
+cooldown-diagnostic,coverage-guided-lower-level-rich-text-multiblock,medium,yes,corpus saturated with zero new coverage features or failures; deprioritize until oracle or corpus changes
 cooldown-diagnostic,stale-lower-level-parser-rich-text-table,high,yes,no yield credit or reschedule without executable seed plus coverage delta or triage-ready oracle failure
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 9 versus floor 3; bounded finalization may proceed but heavy PR jobs must stop if reserve degrades
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 9 versus floor 3; bounded finalization may proceed but heavy PR jobs must stop if reserve degrades or discovery is unhealthy
 reserve-discovery,benchmark-canary-fuzzer-gap/lower-micro-html-parser-equivalent,P0,yes,keep exactly one parser serialization or transform lane live before crediting lower/micro-html coverage
-reserve-discovery,benchmark-canary-fuzzer-gap/provider-persisted-crdt-large-post,P0,yes,keep one hard-discovery provider-persisted large-post lane sticky
-reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-generic,P0,no,do not add broad HTTP materialization while current status has HTTP records; reopen only on stale or missing records
+reserve-discovery,benchmark-canary-fuzzer-gap/provider-persisted-crdt-large-post,P0,yes,keep one sticky hard-discovery provider-persisted large-post lane live
+reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-generic,P0,no,do not add broad HTTP materialization while current status has current-run HTTP records
 reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-lifecycle-completion,P0,yes,allow one bounded materialization lane if large HTTP lifecycle completion lacks current-run records
 reserve-discovery,coverage-guided-lower-level-http-polling-manager/canary-large-http-readiness,P0,yes,keep one bounded replay/minimization lane until reproducers 0022 0036 0039 0055 are exported and consumed
 reserve-discovery,unit-property-http-polling-canary/large-readiness,medium,yes,retarget bounded unit canary to minimized large-readiness reproducers
 repair-ready,rtc-http-polling-manager/large-readiness-oracles,high,yes,split persisted multiroom content-missing from bridge hard-readiness before crediting yield or PR17 handoff
 repair-ready,productive-analysis-action,high,yes,analysis-only control feedback may continue if it does not launch heavy commands outside global budget
-repair-ready,disk-maintenance-evidence-compaction,P0,yes,preserve PR review and current-run triage evidence while compacting redundant artifacts under disk_severe_pressure
+repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_severe_pressure is P0; preserve PR review and current-run triage evidence while compacting redundant artifacts
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,disk pressure and red exact gates allow only bounded harness repair exact replay docs status analysis-only work and reserve-preserving discovery
 update-controller-rule,finalization-deadline-priority,P0,yes,until 2026-05-26T06:59:59Z prioritize reviewable branches exact evidence publication readiness terminal owner evidence and explicit downscope
 update-controller-rule,benchmark-minimum-nonempty-publication-gate,P0,yes,zero-row or No tests found benchmark-minimum evidence blocks finalization
