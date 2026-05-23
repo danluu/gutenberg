@@ -33,9 +33,9 @@ or fuzzing coverage:
 ```text
 # Productive Analysis Loop Status
 
-- updated: 2026-05-23T04:40:02Z
+- updated: 2026-05-23T04:50:04Z
 - session: rtc-productive-analysis-loop
-- active lane jobs: 0
+- active lane jobs: 4
 - actions: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/current-actions.tsv
 - critical feedback: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/critical-path-feedback.md
 
@@ -44,9 +44,9 @@ or fuzzing coverage:
 - high-priority controller rows: 40
 # RTC Productive Analysis Loop
 
-- updated: 2026-05-23T04:40:02Z
+- updated: 2026-05-23T04:50:04Z
 - base: /media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521
-- active lane jobs: 0
+- active lane jobs: 4
 - cycle interval seconds: 600
 - max active lanes: 4
 
