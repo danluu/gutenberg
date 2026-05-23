@@ -1,5 +1,5 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-session-lifecycle,2422,1501,3,0.6197357555739058,lifecycle
+session-lifecycle,2422,1501,1,0.6197357555739058,lifecycle
 persistence-no-title,2326,1287,0,0.5533104041272571,persistence
 real-user-editing,2030,905,0,0.4458128078817734,real-user
 large-post-three-user-http-lifecycle,1713,190,0,0.11091652072387624,lifecycle

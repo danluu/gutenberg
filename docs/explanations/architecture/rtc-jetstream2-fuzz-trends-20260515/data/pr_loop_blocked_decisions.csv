@@ -1,23 +1,25 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,benchmark-canary-fuzzer-gap,P0,no,current feedback reports no_new_publishable_candidate; publish only a small exact stack with complete benchmark-minimum green,benchmark-canary-fuzzer-gap,"current feedback reports no_new_publishable_candidate; publish only a small
-exact stack with complete benchmark-minimum green"
-publish-ready,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,P0,no,broad repair head is not a reviewable split and lacks full benchmark-minimum evidence,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,"broad repair head is not a reviewable split and lacks full benchmark-minimum
-evidence"
 repair-branch,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,P0,no,older product-only head remains red on realistic-e2e large-post-three-user-http; keep as blocker evidence,benchmark-canary-fuzzer-gap/provider-persisted-crdt@69df480bc3dcfe99e7fe09afbbcd9990dba006da,"older product-only head remains red on realistic-e2e large-post-three-user-http;
 keep as blocker evidence"
+publish-ready,benchmark-canary-fuzzer-gap,P0,no,current feedback reports no new publishable stack; publish only a small exact stack with full benchmark-minimum evidence,benchmark-canary-fuzzer-gap,"current feedback reports no new publishable stack; publish only a small exact
+stack with full benchmark-minimum evidence"
+publish-ready,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,P0,no,broad repair head is not a reviewable split and lacks complete benchmark-minimum publication evidence,benchmark-canary-fuzzer-gap@4da34592486017c8b566429ce47edc3a89e155cb,"broad repair head is not a reviewable split and lacks complete benchmark-minimum
+publication evidence"
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,suppress duplicate browser-e2e owner-matrix work unless newer current-head product-owned red evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"suppress duplicate browser-e2e owner-matrix work unless newer current-head
+product-owned red evidence appears"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,block generic branch fanout until title reload existing-post or persistence reload and large HTTP lifecycle rows are fresh green or replay-downscoped,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"block generic branch fanout until title reload existing-post or persistence
 reload and large HTTP lifecycle rows are fresh green or replay-downscoped"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,candidate lacks same-head exact-stack browser validation and large HTTP lifecycle evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"candidate lacks same-head exact-stack browser validation and large HTTP
 lifecycle evidence"
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,current-head local-mac replay is terminal no-promote with product_owned_rows=0; reopen only on newer product-owned red evidence,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"current-head local-mac replay is terminal no-promote with product_owned_rows=0;
-reopen only on newer product-owned red evidence"
-publish-ready,current-push-manifest-ready-real-fix-branches,high,no,current push manifest has no payload rows; ready real-fix branches are already published,current-push-manifest-ready-real-fix-branches,"current push manifest has no payload rows; ready real-fix branches are already
-published"
+publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic-only evidence is not publishable,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,diagnostic-only evidence is not publishable
+publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,diagnostic-only evidence is not publishable,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,diagnostic-only evidence is not publishable
+publish-ready,malformed-save-payload,high,no,raw deferred heads are superseded by the canonical PR06B minimal path,malformed-save-payload,raw deferred heads are superseded by the canonical PR06B minimal path
+publish-ready,http-room-isolation,high,no,raw deferred family is downscoped to PR02A absent fresh healthy-user HTTP room-isolation evidence,http-room-isolation,"raw deferred family is downscoped to PR02A absent fresh healthy-user HTTP
+room-isolation evidence"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b,ready/rtc-pr15a-fallback-group-move-green,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,ready/rtc-pr15b-fallback-group-insert-anchor-green,"superseded by published
 ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
-publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic-only evidence is not publishable without focused replay proof,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,diagnostic-only evidence is not publishable without focused replay proof
-publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,diagnostic-only evidence is not publishable,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,diagnostic-only evidence is not publishable
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block broad PR fanout while PR17 repair and discovery reserves are active,all-other-heavy-pr-jobs,block broad PR fanout while PR17 repair and discovery reserves are active
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block broad PR fanout while bounded PR17 repair is active and discovery reserve must be preserved,all-other-heavy-pr-jobs,"block broad PR fanout while bounded PR17 repair is active and discovery reserve
+must be preserved"
