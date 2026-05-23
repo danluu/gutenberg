@@ -1,14 +1,14 @@
 action,target,priority,allowed,reason
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,yes,"next bounded branch-changing product slot; consume seed 1130007 and lower-level reproducers 22,36,39,55 into a reviewable split"
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,yes,next bounded branch-changing product slot; consume seed 1130007 plus lower-level reproducers 0022/0036/0039/0055 into a reviewable split while discovery is healthy
 repair-ready,benchmark-canary-fuzzer-gap/provider-persisted-crdt-seed-1130007,P0,yes,clean skipped-sync persisted CRDT repro; preserve seed 1130009 as corroboration
-repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds-22-36-39-55,P0,yes,attach minimized HTTP polling reproducers before broad repair heads
-repair-ready,benchmark-canary-fuzzer-gap/repair-benchmark-canary-editor-bootstrap-wait@b627c9d95e1f9bb3f93f2c8887ec9aa8a371dffd,P0,yes,consume exact-stack-green repair input while keeping product fix split reviewable
+repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds-22-36-39-55,P0,yes,attach minimized HTTP polling reproducers before spending budget on broad repair heads
+repair-ready,benchmark-canary-fuzzer-gap/repair-benchmark-canary-editor-bootstrap-wait@b627c9d95e1f9bb3f93f2c8887ec9aa8a371dffd,P0,yes,consume exact-stack-green repair input while keeping product fix separate from benchmark/test-wait scaffolding
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"publication waits for reviewable split, complete non-skipped build, and exact all-merged benchmark-minimum/canary green"
-publish-ready,benchmark-canary-fuzzer-gap/broad-repair-heads,P0,no,"selected-row greens and broad repair heads are evidence only, not maintainer-reviewable branches"
-repair-ready,benchmark-minimum-harness-packaging/exact-all-merged,P0,yes,lower/many-user rows failed as No tests found; hydrate or commit versioned harness before final publication
+publish-ready,benchmark-canary-fuzzer-gap/broad-repair-heads,P0,no,"selected-row greens and broad repair heads are evidence only, not maintainer-reviewable product branches"
+repair-ready,benchmark-minimum-harness-packaging/exact-all-merged,P0,yes,"lower/micro-crdt, lower/micro-html, lower/micro-sync, and multi-user/many-users-sync failed as No tests found; hydrate or commit versioned harness before publication"
 publish-ready,rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,linkable candidate only; benchmark-minimum rows are not runnable and green or explicitly downscoped
-publish-ready,maintainer-status-live-branches,P0,yes,cheap status docs should link live branches and name benchmark-minimum blocker plus deliberate downscopes
-publish-ready,ready-product-prs-already-published,high,yes,keep published danluu/rtc-pr-progress refs linked and under fuzz validation; avoid republish churn
+generate-manifest,maintainer-status-live-branches,P0,yes,cheap status docs may link live branches and blockers but must not claim a validated final all-merged stack
+publish-ready,ready-product-prs-already-published,high,yes,keep current danluu/rtc-pr-progress refs linked and fuzz-validated; avoid republish churn
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published ready/rtc-pr15a-fallback-group-move-green-on-pr14b
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b
@@ -16,18 +16,19 @@ publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by 
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,adopt held manifest as candidate evidence and run same-head exact replay/downscope gate
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,block branch fanout until title reload plus existing-post or persistence reload plus large HTTP lifecycle rows are green or downscoped
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,required same-head exact-stack browser validation rows are absent
-cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,P0,yes,"diagnostic manifest lacks product-owned first-loss evidence; allow only focused replay, owner evidence, or explicit downscope"
+focused-replay,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,yes,allow one dependency-complete focused first-loss replay; promote only if product-owned evidence appears
+cooldown-diagnostic,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,P0,yes,"no generic relaunch, branch repair, or publication without owner/product first-loss evidence"
 launch-branch-repair,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,no product-owned first-loss or owner evidence exists
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic evidence is not publishable
-cooldown-diagnostic,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,P0,yes,timeout-heavy diagnostic evidence lacks product-owner proof; keep as replay/downscope input
+cooldown-diagnostic,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,P0,yes,hold as replay/downscope input; timeout-heavy evidence lacks product-owner proof
 launch-branch-repair,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,no conclusive product-owned first-loss evidence exists
 publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,diagnostic evidence is not publishable
 cooldown-diagnostic,malformed-save-payload,high,yes,raw deferred heads remain downscoped because published PR06B minimal covers the family absent fresh contrary evidence
 cooldown-diagnostic,http-room-isolation,high,yes,raw deferred heads remain downscoped because published PR02A covers the family absent fresh healthy-user evidence
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,current-head owner replay is terminal no-promote with product_owned_rows=0; relaunch only with newer product-owned red evidence
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,current-head local owner replay is terminal no-promote with product_owned_rows=0; relaunch only with newer product-owned red evidence
 repair-ready,PR07C/HOLD-07C-owner-matrix-terminalization,high,yes,consume current owner replay and clear duplicate queued owner-matrix job
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 10 vs floor 3; allow bounded PR17 and exact replay while blocking broad heavy PR jobs if reserve degrades
-reserve-discovery,benchmark-canary-fuzzer-gap/provider-persisted-crdt-large-post-http,P0,yes,current run is WS-only; keep exactly one hard HTTP provider-persisted large-post slot or blocker artifact
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 9 vs floor 3; allow bounded PR17 and exact replay while blocking broad heavy PR jobs if reserve degrades
+reserve-discovery,benchmark-canary-fuzzer-gap/provider-persisted-crdt-large-post-http,P0,yes,keep exactly one hard HTTP provider-persisted large-post slot or blocker artifact because current run is WS-only
 reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-forced-materialization,P0,yes,restart or replace one stalled forced HTTP canary slot before marking coverage_present
 reserve-discovery,coverage-guided-lower-level-http-polling-manager/canary-large-http-readiness,P0,yes,keep one bounded replay/minimization lane until reproducers are exported and consumed by PR17
 cooldown-diagnostic,coverage-guided-lower-level-http-polling-manager/broad-corpus,P0,yes,suppress broad expansion while bounded large-http-readiness replay and PR17 handoff are active
@@ -35,9 +36,10 @@ repair-ready,rtc-http-polling-manager/isolated-failure-accounting,high,yes,split
 repair-ready,unit-property-http-polling-canary/large-readiness-retarget,medium,yes,retarget bounded unit canary to minimized large-readiness reproducers instead of fixed low-yield cases
 cooldown-diagnostic,stale-lower-level-parser-rich-text-table,high,yes,no product-yield credit without executable seed plus coverage delta or triage-ready oracle failure
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"deadline and disk pressure allow only PR17, benchmark harness repair, reload exact replay/downscope, cheap status, and analysis-only work"
+run-analysis,analysis-only-controller-inputs,high,yes,analysis-only jobs are allowed while CPU/disk pressure is active if they do not launch heavy commands
 update-controller-rule,finalization-deadline-priority,P0,yes,"until 2026-05-26T06:59:59Z prioritize reviewable branches, exact evidence, publication readiness, terminal owner evidence, and explicit downscope"
 update-controller-rule,benchmark-minimum-nonempty-publication-gate,P0,yes,zero-row or No-tests-found benchmark-minimum evidence blocks finalization
-update-controller-rule,exact-stack-publication-gate,P0,yes,publish only small reviewable exact stacks with complete non-skipped benchmark-minimum/canary green or explicit row downscope
+update-controller-rule,exact-stack-publication-gate,P0,yes,publish only exact stacks with complete non-skipped benchmark-minimum/canary green or explicit row downscope
 update-controller-rule,deferred-diagnostic-promotion-gate,high,yes,"diagnostic manifests cannot publish or generic-relaunch without owner proof, product first-loss evidence, green-stack adoption, or explicit downscope"
 update-controller-rule,owner-matrix-terminalization,high,yes,PR07C owner matrix remains terminal unless newer current-head evidence has product_owned_rows greater than 0
 update-controller-rule,lower-level-yield-accounting,high,yes,credit lower-level product yield only with executable seed plus coverage delta or triage-ready oracle failure

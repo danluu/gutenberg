@@ -1,8 +1,8 @@
 action,target,priority,allowed,reason,target_label,reason_label
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"publication waits for reviewable split, complete non-skipped build, and exact all-merged benchmark-minimum/canary green",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"publication waits for reviewable split, complete non-skipped build, and exact
 all-merged benchmark-minimum/canary green"
-publish-ready,benchmark-canary-fuzzer-gap/broad-repair-heads,P0,no,"selected-row greens and broad repair heads are evidence only, not maintainer-reviewable branches",benchmark-canary-fuzzer-gap/broad-repair-heads,"selected-row greens and broad repair heads are evidence only, not
-maintainer-reviewable branches"
+publish-ready,benchmark-canary-fuzzer-gap/broad-repair-heads,P0,no,"selected-row greens and broad repair heads are evidence only, not maintainer-reviewable product branches",benchmark-canary-fuzzer-gap/broad-repair-heads,"selected-row greens and broad repair heads are evidence only, not
+maintainer-reviewable product branches"
 publish-ready,rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,linkable candidate only; benchmark-minimum rows are not runnable and green or explicitly downscoped,rtc-pr-stack-20260522T175152Z-all-merged-pr07c-reload-record-snapshots@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"linkable candidate only; benchmark-minimum rows are not runnable and green or
 explicitly downscoped"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded by published ready/rtc-pr06b-malformed-save-request-payload-minimal
@@ -17,7 +17,7 @@ launch-branch-repair,pre-save-search-live-collapse@de2b5502da052bb46609421838022
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,high,no,diagnostic evidence is not publishable,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,diagnostic evidence is not publishable
 launch-branch-repair,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,no conclusive product-owned first-loss evidence exists,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,no conclusive product-owned first-loss evidence exists
 publish-ready,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,high,no,diagnostic evidence is not publishable,rich-text-suffix-corruption@272233f38c96ab5eeb9aae744ac2d00ba86f95f7,diagnostic evidence is not publishable
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,current-head owner replay is terminal no-promote with product_owned_rows=0; relaunch only with newer product-owned red evidence,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"current-head owner replay is terminal no-promote with product_owned_rows=0;
-relaunch only with newer product-owned red evidence"
+launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,current-head local owner replay is terminal no-promote with product_owned_rows=0; relaunch only with newer product-owned red evidence,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"current-head local owner replay is terminal no-promote with
+product_owned_rows=0; relaunch only with newer product-owned red evidence"
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"deadline and disk pressure allow only PR17, benchmark harness repair, reload exact replay/downscope, cheap status, and analysis-only work",all-other-heavy-pr-jobs,"deadline and disk pressure allow only PR17, benchmark harness repair, reload
 exact replay/downscope, cheap status, and analysis-only work"
