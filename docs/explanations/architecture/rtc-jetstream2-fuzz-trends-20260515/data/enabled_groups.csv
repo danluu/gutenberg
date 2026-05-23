@@ -1817,3 +1817,13 @@ timestamp,group,group_family
 2026-05-22T23:50:00Z,novelty-http-title-reload-convergence,lifecycle
 2026-05-22T23:50:17Z,novelty-ws-block-gauntlet,auth/locks
 2026-05-22T23:57:51Z,novelty-ws-multi-reload-lifecycle,lifecycle
+2026-05-23T00:14:16Z,novelty-ws-real-user-editing,real-user
+2026-05-23T00:14:16Z,novelty-http-same-user-stale-draft,lifecycle
+2026-05-23T00:14:16Z,novelty-http-table-stale-snapshot,http
+2026-05-23T00:14:16Z,novelty-ws-collaboration-ui-signals,other
+2026-05-23T00:14:16Z,novelty-ws-async-server-blocks,async/media
+2026-05-23T00:15:37Z,novelty-ws-real-user-editing,real-user
+2026-05-23T00:15:37Z,novelty-http-same-user-stale-draft,lifecycle
+2026-05-23T00:15:37Z,novelty-http-table-stale-snapshot,http
+2026-05-23T00:15:37Z,novelty-http-large-post-lifecycle,lifecycle
+2026-05-23T00:15:37Z,novelty-http-large-post-lifecycle-completion,lifecycle

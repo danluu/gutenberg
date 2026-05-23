@@ -1,12 +1,13 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,raw targeted and partial repair evidence is not publishable; require same-commit build and full exact-stack green on the clean split,PR17/stale-crdt-cas-background-delivery,"raw targeted and partial repair evidence is not publishable; require same-commit
-build and full exact-stack green on the clean split"
-launch-branch-repair,PR17/stale-crdt-cas-background-delivery,P0,no,avoid duplicate heavy repair ownership while the bounded PR17 materialization path owns the product slot,PR17/stale-crdt-cas-background-delivery,"avoid duplicate heavy repair ownership while the bounded PR17 materialization
-path owns the product slot"
-repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,no,superseded for next branch work by newer bb4e7b84 targeted evidence,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,superseded for next branch work by newer bb4e7b84 targeted evidence
-repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,P0,no,intermediate repair lacked full same-commit exact-stack proof and is superseded by targeted evidence,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,"intermediate repair lacked full same-commit exact-stack proof and is superseded
-by targeted evidence"
-launch-owner-matrix,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,high,no,do not spend a browser slot unless newer red owner evidence appears,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,do not spend a browser slot unless newer red owner evidence appears
+publish-ready,PR17/stale-crdt-cas-background-delivery,P0,no,raw targeted repair evidence is not maintainer-ready; require same-commit build and full exact-stack green on the clean split,PR17/stale-crdt-cas-background-delivery,"raw targeted repair evidence is not maintainer-ready; require same-commit build
+and full exact-stack green on the clean split"
+launch-branch-repair,PR17/stale-crdt-cas-background-delivery,P0,no,avoid duplicate heavy repair ownership while the clean PR17 materialization path owns the branch-changing slot,PR17/stale-crdt-cas-background-delivery,"avoid duplicate heavy repair ownership while the clean PR17 materialization path
+owns the branch-changing slot"
+repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,P0,no,superseded by newer bb4e7b84 targeted evidence,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-saved-crdt-hydration-20260522T202944Z,superseded by newer bb4e7b84 targeted evidence
+repair-branch,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,P0,no,intermediate branch lacked full same-commit exact-stack proof and was superseded by later targeted evidence,PR17/stale-crdt-cas-background-delivery@repair/benchmark-canary-materialize-crdt-save-content-buildable-20260522T223100Z,"intermediate branch lacked full same-commit exact-stack proof and was superseded
+by later targeted evidence"
+launch-owner-matrix,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,high,no,do not spend browser owner-matrix capacity unless newer red owner evidence appears,PR07C/current-head@2f8247258316bde60869c06c383090904e9426bd,"do not spend browser owner-matrix capacity unless newer red owner evidence
+appears"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,P0,no,stale head is superseded by current head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"stale head is superseded by current head
 2f8247258316bde60869c06c383090904e9426bd"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already published PR06B minimal branch
@@ -18,6 +19,6 @@ HTTP lifecycle green proof"
 launch-branch-repair,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,PR17 owns the branch-changing product slot and reload-hydration is single-flight held,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"PR17 owns the branch-changing product slot and reload-hydration is single-flight
 held"
 publish-ready,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,medium,no,missing owner evidence or product first-loss evidence,pre-save-search-live-collapse@de2b5502da052bb466094218380220a2c25812c2,missing owner evidence or product first-loss evidence
-publish-ready,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335,medium,no,missing focused exact replay or owner evidence,rich-text-suffix-corruption@a2d47a072e18bea3bcf219a9ba258f3705127335,missing focused exact replay or owner evidence
-launch-heavy-pr,discovery-unhealthy-mode,P0,no,"not triggered now; below discovery reserve, block heavy PR jobs except cheap manifests and analysis-only cleanup",discovery-unhealthy-mode,"not triggered now; below discovery reserve, block heavy PR jobs except cheap
-manifests and analysis-only cleanup"
+publish-ready,rich-text-suffix-corruption@a34adf221ce,medium,no,"missing focused exact replay, owner evidence, or product first-loss evidence",rich-text-suffix-corruption@a34adf221ce,"missing focused exact replay, owner evidence, or product first-loss evidence"
+launch-branch-repair,discovery-unhealthy-mode,P0,no,"if discovery falls below reserve, block new heavy PR jobs except cheap manifests and analysis-only cleanup",discovery-unhealthy-mode,"if discovery falls below reserve, block new heavy PR jobs except cheap manifests
+and analysis-only cleanup"
