@@ -2047,6 +2047,9 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T14:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6660,6660,6660,37,0,897562,FALSE
 2026-05-24T14:15:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,NA,NA,1,1,0,1,1,100459,FALSE
 2026-05-24T14:15:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,0,1,1,74079,FALSE
-2026-05-24T14:15:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,6,3,0,6,6,793134,FALSE
+2026-05-24T14:15:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,7,3,0,7,7,923079,FALSE
 2026-05-24T14:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,3,2,0,3,3,266607,FALSE
-2026-05-24T14:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6300,6300,6300,35,0,890086,FALSE
+2026-05-24T14:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6480,6480,6480,36,0,918152,FALSE
+2026-05-24T14:30:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,413152,FALSE
+2026-05-24T14:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,6,3,0,6,6,412785,FALSE
+2026-05-24T14:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,3060,3060,3060,17,0,404581,FALSE
