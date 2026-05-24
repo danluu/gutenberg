@@ -1,21 +1,22 @@
 action,target,priority,allowed,reason
 repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_severe_pressure is active; preserve PR review evidence and current-run triage artifacts before artifact-heavy work
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is above floor but unprotected; protect bounded discovery before heavy PR work
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is above floor but unprotected; hard-protect bounded existing-code and existing-PR fuzzing before heavy PR work
 update-controller-rule,discovery-reserve-protection,P0,yes,hard-protect the minimum discovery floor through 2026-05-26T06:59:59Z
 update-controller-rule,materialized-discovery-health,P0,yes,count discovery healthy only with live materialized run dirs or explicit disk/load blockers
 launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,discovery is unprotected under disk pressure; allow only cheap docs manifests analysis disk maintenance protected discovery and non-heavy packaging
 launch-branch-repair,artifact-heavy-broad-work-under-disk-pressure,P0,no,disk severe pressure blocks broad artifact-heavy PR and exploratory jobs
 repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot; hydrate or commit missing lower/micro-crdt lower/micro-html lower/micro-sync and multi-user/many-users-sync harness files
-repair-ready,benchmark-canary-fuzzer-gap/active-continuation-infra-stall,P0,yes,preserve nonempty logs and requeue any zero-byte ENOSPC continuation behind disk maintenance to benchmark-minimum harness packaging
-repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until harness files exist and discovery reserve is protected/materialized
+repair-ready,benchmark-canary-fuzzer-gap/active-continuation-infra-stall,P0,yes,preserve nonempty stderr/worktree logs and requeue zero-byte ENOSPC continuation behind disk maintenance to benchmark-minimum harness packaging
+repair-ready,benchmark-canary-fuzzer-gap/exact-stack-harness-packaging@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,"keep exact-stack promotion blocker pointed at harness packaging, not generic fuzzer-feedback repair"
+repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until missing harness files exist and discovery reserve is protected/materialized
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has missing or No-tests-found benchmark-minimum rows
 update-controller-rule,benchmark-minimum-nonempty-publication-gate,P0,yes,block final all-merged publication on skipped zero-row or No-tests-found evidence unless explicitly downscoped
-publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata repair is allowed because branch evidence exists while controller push manifest needs refresh
+publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata repair is allowed because branch evidence exists while controller push manifest is header-only
 publish-ready,maintainer-status-live-branches,P0,yes,update maintainer-facing docs with live branch links and deliberate downscopes without claiming final green
 publish-ready,ready-published-real-fix-branches,high,yes,keep PR02A PR03B PR06B-minimal PR07B PR07C PR09 PR10 PR11A PR11B PR14 PR14B and PR15A/B/C-on-PR14B linked and validating
 repair-ready,ready-product-pr-branch-diff-audit,high,yes,cheap audit may reconcile stale failed diff-check evidence against current published refs without consuming heavy PR capacity
 publish-ready,superseded-ready-branch-variants,high,no,raw PR06B raw PR15A/B/C and old PR07C heads are superseded by published replacements
-repair-ready,PR07C/HOLD-07C-owner-matrix-terminalization@2f8247258316bde60869c06c383090904e9426bd,high,yes,consume current-head owner replay as terminal owner-gated evidence
+repair-ready,PR07C/HOLD-07C-owner-matrix-terminalization@2f8247258316bde60869c06c383090904e9426bd,high,yes,consume current-head owner replay as terminal owner-gated evidence for the resolved PR07C readiness path
 launch-owner-matrix,PR07C/HOLD-07C-browser-e2e-duplicate,high,no,do not relaunch duplicate heavy owner matrix while no newer current-head product-owned evidence exists
 repair-ready,reload-hydration-current-deferred-report,P0,yes,consume the 20260524 deferred report as candidate evidence only
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay waits until b8ca harness gate clears and discovery reserve is protected/materialized
@@ -23,11 +24,12 @@ launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate di
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence or replay-backed downscope
 cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,diagnostic-only until product-owned first-loss evidence owner evidence green-stack adoption or explicit downscope exists
 cooldown-diagnostic,benchmark-feedback-refresh-without-harness-change,P0,yes,repeated feedback refresh is churn until exact b8ca harness content changes
-cooldown-diagnostic,malformed-save-payload+http-room-isolation,high,yes,raw deferred heads are superseded by published PR06B minimal and PR02A absent fresh contrary evidence
+cooldown-diagnostic,malformed-save-payload+http-room-isolation,high,yes,raw deferred heads are superseded by published PR06B-minimal and PR02A absent fresh contrary evidence
 reserve-discovery,benchmark-canary-fuzzer-gap/primary-forced-canary-discovery,P0,yes,keep bounded large-post parser/serialization many-user same-user and provider-persisted canary discovery alive
 repair-ready,benchmark-canary-fuzzer-gap/primary-forced-canary-lanes,P0,yes,materialize bounded forced canary lanes or write explicit disk/load blocker; do not credit absent lanes as coverage_ready
 repair-ready,benchmark-canary-fuzzer-gap/lower-equivalent-forced-ws-lanes,P0,yes,materialize absent primary lower-equivalent WS lanes with live run dirs or explicit blockers
-repair-ready,large-post-three-user-http,P0,yes,continue bounded large-post readiness lane; current-run records exist but HTTP canary coverage is not fully ready
+repair-ready,benchmark-canary-http-coverage/forced-http-groups,P0,yes,re-enable bounded benchmark-canary HTTP forced groups with current-run records or explicit disk/load blockers
+repair-ready,large-post-three-user-http,P0,yes,continue bounded large-post readiness lane; current HTTP canary coverage is not fully ready
 launch-branch-repair,benchmark-canary-fuzzer-gap/broad-http-or-generic-materialization,P0,no,disk pressure and exact b8ca gate block broad artifact-heavy fanout
 repair-ready,benchmark-canary-fuzzer-gap/http-polling-large-readiness,high,yes,consume reproducers 0022 0036 and 0039 as PR17 seed handoff and classify 0055 separately
 repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds,high,yes,preserve bounded reproducers as PR17 handoff inputs after exact b8ca gate clears
@@ -44,3 +46,4 @@ repair-ready,productive-analysis-action,high,yes,analysis-only feedback may cont
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,disk pressure and unprotected discovery allow only bounded non-heavy repair exact prep docs manifest analysis disk maintenance and protected discovery
 update-controller-rule,finalization-deadline-priority,P0,yes,until 2026-05-26T06:59:59Z prioritize reviewable branches exact evidence terminal owner evidence and explicit downscope over raw fuzz volume
 update-controller-rule,disk-pressure-accounting,P0,yes,block artifact-heavy broad jobs while preserving PR review evidence and current-run triage artifacts
+update-controller-rule,productive-analysis-feed-row-accounting,P0,yes,every P0/high Productive Analysis feed row must be returned as an allowed action or explicit rejection
