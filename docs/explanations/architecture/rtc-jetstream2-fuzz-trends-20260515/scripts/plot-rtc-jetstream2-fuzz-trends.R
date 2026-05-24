@@ -756,18 +756,19 @@ if ( file.exists( bug_findings_path ) ) {
 			mutate(
 				timestamp = parse_utc_timestamp( timestamp ),
 				triaged_at = parse_utc_timestamp( triaged_at ),
+				duplicate_of = replace_na( as.character( duplicate_of ), "" ),
+				recommended_action = replace_na( as.character( recommended_action ), "" ),
 				is_duplicate = case_when(
 					is.logical( is_duplicate ) ~ is_duplicate,
 					str_to_lower( as.character( is_duplicate ) ) == "true" ~ TRUE,
-					! is.na( duplicate_of ) & duplicate_of != "" ~ TRUE,
+					duplicate_of != "" ~ TRUE,
 					str_detect( str_to_lower( coalesce( recommended_action, "" ) ), "duplicate|merge_with_duplicate" ) ~ TRUE,
 					TRUE ~ FALSE
 				),
-				classification = replace_na( classification, "unknown" ),
-				candidate_status = replace_na( candidate_status, "" ),
-				recommended_action = replace_na( recommended_action, "" ),
-				profile = replace_na( profile, "unknown" ),
-				fuzz_level = replace_na( fuzz_level, "other" ),
+				classification = replace_na( as.character( classification ), "unknown" ),
+				candidate_status = replace_na( as.character( candidate_status ), "" ),
+				profile = replace_na( as.character( profile ), "unknown" ),
+				fuzz_level = replace_na( as.character( fuzz_level ), "other" ),
 				fuzz_level = factor(
 					fuzz_level,
 					levels = c(

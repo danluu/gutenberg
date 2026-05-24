@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T03:03:10Z`
+Snapshot generated: `2026-05-24T03:09:52Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -58,7 +58,7 @@ Disk remains the resource constraint, while CPU/load are not saturated in the
 newest sample. Latest CPU utilization is `13.42%`, with `1.72%` iowait.
 Latest load averages are `8.93`, `12.77`, and `12.30` on `64` logical CPUs,
 with `1` blocked task. Root has `89.0GiB` free and the data volume has
-`17.5GiB` free while `99.5%` used.
+`76.7GiB` free while `97.8%` used.
 
 The latest graph-counted fuzzing mix is still browser/e2e-heavy and remains
 below the plotted `24`-lane persona-loop floor: `19` browser/e2e lanes across
@@ -73,12 +73,12 @@ the lane count as trusted active capacity: the latest synthesis says current
 browser/e2e capacity is effectively `0` until materialization is repaired
 because the current coverage root lacks authoritative supervisor/session
 evidence and disk/materialization failed under `ENOSPC`. The matching
-feedback-action chose deadline-mode tightening, terminalized PR07C
-owner-matrix work from green no-product owner evidence, noted a fresh
-coverage-guided root with `11` groups still starting and `0` running, and
-kept broad backfill/lower-level expansion held under high disk pressure.
+feedback-action file for this loop is empty, so the latest level-mix evidence
+is the synthesis: preserve evidence, free disk, run one bounded large-post
+browser canary, and keep lower-level work to bounded sentinel/replay
+validation rather than broad expansion.
 
-The execution counter has `17,311,569` estimated individual executions. The
+The execution counter has `17,245,106` estimated individual executions. The
 latest nonzero plotted `2026-05-24T02:45:00Z` bucket has `25`
 protocol-server executions and no browser/e2e executions. The prior nonzero
 `00:30` bucket had `18` browser/e2e executions; `00:15` had `26` browser/e2e
@@ -160,10 +160,10 @@ finishes.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. In the latest
-`2026-05-24T03:02:15Z` sample, root pressure is stable at `89.0GiB` free and
-`42.2%` used; the data volume is at `17.5GiB` free and `99.5%` used. That is
-no longer a hard-zero free-space sample, but output-size budgeting remains the
-dominant live resource constraint.
+`2026-05-24T03:08:37Z` sample, root pressure is stable at `89.0GiB` free and
+`42.2%` used; the data volume is at `76.7GiB` free and `97.8%` used. That is
+well clear of the earlier hard-zero free-space samples, but output-size
+budgeting remains the dominant live resource constraint.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
 
@@ -224,14 +224,12 @@ disk, then run exactly one bounded large-post browser canary. Lower-level work
 stays at sentinel/replay budget: keep protocol/server and backend/API held or
 sentinel-only, cap unit/property to bounded replay/canary, hold persistent
 coverage-guided lower-level and fuzz-assertion expansion, and do not credit
-them as active discovery. The latest level-mix feedback-action agrees with
-that interpretation, terminalizes PR07C owner-matrix work from current-head
-green owner evidence with `product_owned_rows=0`, and notes the fresh
-coverage-guided root had `11` groups still starting and `0` running at
-`2026-05-24T00:39:20Z`. The refreshed mix graph has `19` browser/e2e
-is-latest lanes and the latest resource graph has `17.5GiB` free on a `99.5%`
-used data volume; treat that as continued evidence for disk-constrained,
-bounded-lane operation rather than broad expansion.
+them as active discovery. The latest level-mix feedback-action file is empty,
+so it does not add a separate rejection or acceptance beyond the synthesis.
+The refreshed mix graph has `19` browser/e2e is-latest lanes and the latest
+resource graph has `76.7GiB` free on a `97.8%` used data volume; treat that as
+continued evidence for disk-constrained, bounded-lane operation rather than
+broad expansion.
 
 The latest native-harness synthesis selects
 `coverage-guided-lower-level-block-parser-serialization` as the first bounded
@@ -249,14 +247,13 @@ The graph-counted coverage-guided lower-level lane still remains the stale
 rich-text CRDT row, and the latest execution buckets have zero
 coverage-guided-lower-level executions, so this should not be read as
 sustained coverage-guided lower-level residency. The latest protocol-server
-synthesis selects `POST /wp-sync/v1/updates` through real REST dispatch and
-durable post-meta storage as the first protocol/server target, with WebSocket
-relay left as a later transport target. The latest protocol-server action
-implemented and validated the harness with syntax checks, PHP lint, a one-seed
-25-case smoke `validation-codex-20260524T025114Z`, collector-style
-`supervisor-groups.json` and `seed-attempt-complete` events, and a tmux start
-script check that respected the global CPU admission guard. The graph has a
-current `protocol-server-http-polling` row sampled at
+synthesis file in this loop is empty, but the latest protocol-server action
+implemented and validated the HTTP polling protocol harness with syntax
+checks, PHP lint, a one-seed 25-case smoke
+`validation-codex-20260524T025114Z`, collector-style `supervisor-groups.json`
+and `seed-attempt-complete` events, and a tmux start script check that
+respected the global CPU admission guard. The graph has a current
+`protocol-server-http-polling` row sampled at
 `2026-05-24T02:51:15Z` and recent protocol-server execution volume through the
 `02:45` bucket.
 
@@ -272,7 +269,7 @@ generated cases, coverage-guided inputs, or protocol/backend cases.
 Lower-level counts are approximate when reconstructed from batch metadata or
 legacy batch-count fields.
 
-Latest cumulative totals are approximately `4,831,353` browser/e2e,
+Latest cumulative totals are approximately `4,764,890` browser/e2e,
 `1,132,740` unit-property, `458,097` coverage-guided lower-level, and
 `10,889,379` protocol-server executions. Transport-integration, backend-api,
 fuzz-assertion, and other buckets are `0` in the reconstructed table.
@@ -292,16 +289,16 @@ executions.
 The likely-real graph is a triage-output metric only. It counts non-duplicate
 `.triage-watcher/**/result.json` rows classified `likely_real`, deduped by
 canonical bug key and attributed to first-seen time. The latest collected
-triaged likely-real output is still all browser/e2e: `168` likely-real
-findings over about `803.4` runner-hours, or `20.91` per 100 runner-hours.
+triaged likely-real output is still all browser/e2e: `58` likely-real
+findings over about `523.2` runner-hours, or `11.09` per 100 runner-hours.
 
 ![Unique bug-output candidates by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-cumulative-by-level.png)
 
 ![Unique bug-output candidate rate by fuzzing level](rtc-jetstream2-fuzz-trends-20260515/plots/unique-bug-output-rate-by-level.png)
 
 The broader unique-output graphs include untriaged raw signatures and
-lower-level assertion failures. Current unique candidate output has `1,879`
-raw candidates. The by-level rate table attributes `1,872` browser/e2e
+lower-level assertion failures. Current unique candidate output has `1,326`
+raw candidates. The by-level rate table attributes `1,319` browser/e2e
 candidates, `5` unit-property candidates, and `2` coverage-guided-lower-level
 candidates. Backend-api, protocol-server, transport-integration, standalone
 fuzz-assertion, and other buckets have no unique candidates in the latest
@@ -565,7 +562,7 @@ strong product evidence.
 The resource picture is disk-constrained but no longer CPU/load-bound in the
 newest sample: latest CPU utilization is `13.42%`, iowait is `1.72%`,
 one-minute load is `8.93` on `64` logical CPUs with `1` blocked task, and the
-data volume is `99.5%` used with `17.5GiB` free. Optional browser admission
+data volume is `97.8%` used with `76.7GiB` free. Optional browser admission
 should still respect load, iowait, and output-volume pressure.
 
 The graph-counted fuzzing mix is browser/e2e-heavy but below the plotted
@@ -580,10 +577,10 @@ is-latest rows. The latest level-mix synthesis rejects trusting stale raw row
 counts until active-dir/current-root reconciliation and benchmark readiness are
 fail-closed, and says browser/e2e should be treated as effectively zero active
 capacity until disk/materialization is repaired and one bounded large-post
-canary is restored. The latest feedback-action agrees, keeping sentinel
-lower-level budgets, terminalizing PR07C owner-matrix work from current-head
-green owner evidence with `product_owned_rows=0`, and treating the fresh
-root's `11` starting groups and `0` running groups as not safe for expansion.
+canary is restored. The latest feedback-action file is empty, so there is no
+separate level-mix action result in this loop; the synthesis is the evidence
+for bounded sentinel/replay lower-level budgets and one repaired browser
+canary rather than broad expansion.
 
 Current lower-level evidence remains limited. Unit-property has a bounded HTTP
 polling canary row and no executions in the latest nonzero bucket.
@@ -594,11 +591,11 @@ selects the parser/serialization Node/V8 harness. The latest native action is
 the bounded `20260524T002637Z` validation with event/supervisor accounting,
 `coverageKeys=192`, `featureKeys=38`, `productYield=true`, and
 `testExecutionCount=2` without starting an unbounded lane.
-The latest protocol-server synthesis selects the HTTP polling REST endpoint
-through real REST dispatch and durable post-meta storage; the latest action
-implemented the harness, passed syntax/PHP checks, passed a one-seed 25-case
-smoke, wrote collector-style protocol-server events, and confirmed the tmux
-start script respects the global CPU admission guard. The graph-counted
+The latest protocol-server synthesis file is empty; the latest action
+implemented the HTTP polling protocol harness, passed syntax/PHP checks,
+passed a one-seed 25-case smoke, wrote collector-style protocol-server
+events, and confirmed the tmux start script respects the global CPU admission
+guard. The graph-counted
 coverage-guided lower-level residency is still the stale rich-text CRDT row and
 recent coverage-guided lower-level execution buckets are zero, so
 protocol-server is the only lower-level lane with fresh graph-counted
