@@ -12,8 +12,8 @@ table-stale-snapshot-http,97,76,0,0.7835051546391752,other
 parser-transform,90,37,0,0.4111111111111111,parser
 many-user-lifecycle,90,24,0,0.26666666666666666,lifecycle
 parser-serialization,87,21,0,0.2413793103448276,parser
+list-move-refresh-http,85,0,0,0,other
 multi-reload-lifecycle,85,39,0,0.4588235294117647,lifecycle
-list-move-refresh-http,78,0,0,0,other
 permissions-auth-locks,49,7,0,0.14285714285714285,auth/locks
 media-cross-entity,45,19,0,0.4222222222222222,async/media
 long-session-large-doc,40,0,0,0,lifecycle

@@ -2064,5 +2064,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T15:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,NA,NA,7,3,0,7,7,481709,FALSE
 2026-05-24T15:15:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,3,2,0,3,3,65438,FALSE
 2026-05-24T15:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6170,6170,6170,36,0,911566,FALSE
-2026-05-24T15:30:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,4,2,0,4,4,383466,FALSE
-2026-05-24T15:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,3240,3240,3240,18,0,455717,FALSE
+2026-05-24T15:30:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,9,5,0,9,9,870992,FALSE
+2026-05-24T15:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6480,6480,6480,36,0,917779,FALSE
+2026-05-24T15:45:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,3,1,0,3,3,264574,FALSE
+2026-05-24T15:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1620,1620,1620,9,0,217611,FALSE
