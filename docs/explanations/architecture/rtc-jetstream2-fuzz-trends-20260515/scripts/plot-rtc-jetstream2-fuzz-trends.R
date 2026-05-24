@@ -1002,12 +1002,50 @@ feature_categories <- feature_counts %>%
 write_csv( feature_counts, file.path( data_dir, "feature_counts.csv" ) )
 write_csv( feature_categories, file.path( data_dir, "feature_categories.csv" ) )
 
-coverage_goals <- as_tibble( state$coverageGuidance$goals ) %>%
+coverage_goals_raw <- state$coverageGuidance$goals
+if ( is.null( coverage_goals_raw ) || length( coverage_goals_raw ) == 0 ) {
+	coverage_goals_raw <- state$autoCoverageGoals
+}
+
+coverage_goal_defaults <- tibble(
+	id = character(),
+	label = character(),
+	count = numeric(),
+	target = numeric(),
+	met = logical(),
+	groups = character(),
+	rationale = character(),
+	harnessAfter = character(),
+	countSource = character(),
+	source = character(),
+	sourceGoalId = character()
+)
+
+coverage_goals <- if ( is.null( coverage_goals_raw ) || length( coverage_goals_raw ) == 0 ) {
+	coverage_goal_defaults
+} else {
+	as_tibble( coverage_goals_raw )
+}
+
+for ( column in names( coverage_goal_defaults ) ) {
+	if ( ! column %in% names( coverage_goals ) ) {
+		coverage_goals[[ column ]] <- coverage_goal_defaults[[ column ]]
+	}
+}
+
+if ( is.list( coverage_goals$groups ) ) {
+	coverage_goals$groups <- map_chr( coverage_goals$groups, ~ paste( .x, collapse = "," ) )
+} else {
+	coverage_goals$groups <- as.character( coverage_goals$groups )
+}
+
+coverage_goals <- coverage_goals %>%
 	mutate(
 		count = as.numeric( count ),
 		target = as.numeric( target ),
+		met = as.logical( met ),
+		met = if_else( is.na( met ) & ! is.na( count ) & ! is.na( target ), count >= target, met ),
 		progress = if_else( target > 0, count / target, NA_real_ ),
-		groups = map_chr( groups, ~ paste( .x, collapse = "," ) ),
 		goal_family = case_when(
 			str_starts( id, "success-profile:" ) ~ "successful profiles",
 			str_starts( id, "media-cross-entity" ) ~ "media/cross-entity",
@@ -1432,7 +1470,13 @@ write_csv( many_user_active_editing_requirements, many_user_active_editing_requi
 action_counts <- imap_dfr(
 	state$successfulActionCountsByProfile,
 	~ named_number_frame( .x, "action", "count" ) %>% mutate( profile = .y )
-) %>%
+)
+
+if ( nrow( action_counts ) == 0 && ! all( c( "action", "count", "profile" ) %in% names( action_counts ) ) ) {
+	action_counts <- tibble( action = character(), count = numeric(), profile = character() )
+}
+
+action_counts <- action_counts %>%
 	arrange( desc( count ) )
 
 write_csv( action_counts, file.path( data_dir, "successful_action_counts.csv" ) )
@@ -3515,25 +3559,42 @@ top_actions <- action_counts %>%
 	ungroup() %>%
 	mutate( action_key = factor( action_key, levels = unique( action_key ) ) )
 
-write_plot(
-	"successful-actions-by-profile.png",
-	ggplot( top_actions, aes( x = count, y = action_key, color = profile_family ) ) +
-		geom_point( alpha = 0.78, size = 2.4 ) +
-		facet_wrap( vars( profile ), scales = "free_y", ncol = 2 ) +
-		scale_x_continuous( labels = comma ) +
-		scale_y_discrete( labels = function( x ) str_remove( x, "^.*___" ) ) +
-		scale_color_brewer( palette = "Set2" ) +
-		labs(
-			title = "Successful actions within weak-completion profiles",
-			x = "successful action count",
-			y = NULL,
-			color = "profile family",
-			caption = "Profiles with zero successful action records do not appear in this chart."
-		) +
-		theme_rtc(),
-	width = 10,
-	height = 8
-)
+if ( nrow( top_actions ) > 0 ) {
+	write_plot(
+		"successful-actions-by-profile.png",
+		ggplot( top_actions, aes( x = count, y = action_key, color = profile_family ) ) +
+			geom_point( alpha = 0.78, size = 2.4 ) +
+			facet_wrap( vars( profile ), scales = "free_y", ncol = 2 ) +
+			scale_x_continuous( labels = comma ) +
+			scale_y_discrete( labels = function( x ) str_remove( x, "^.*___" ) ) +
+			scale_color_brewer( palette = "Set2" ) +
+			labs(
+				title = "Successful actions within weak-completion profiles",
+				x = "successful action count",
+				y = NULL,
+				color = "profile family",
+				caption = "Profiles with zero successful action records do not appear in this chart."
+			) +
+			theme_rtc(),
+		width = 10,
+		height = 8
+	)
+} else {
+	write_plot(
+		"successful-actions-by-profile.png",
+		ggplot() +
+			annotate( "text", x = 0, y = 0, label = "No successful action records in the current state.", size = 4 ) +
+			labs(
+				title = "Successful actions within weak-completion profiles",
+				x = NULL,
+				y = NULL
+			) +
+			theme_rtc() +
+			theme( axis.text = element_blank(), panel.grid = element_blank() ),
+		width = 10,
+		height = 8
+	)
+}
 
 write_plot(
 	"pr-review-loop-events.png",

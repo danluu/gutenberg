@@ -1,18 +1,19 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,"if discovery drops below floor or cannot materialize live lanes, allow only cheap docs/manifest, analysis-only, disk maintenance, or bounded exact repair",heavy-pr-when-discovery-unhealthy,"if discovery drops below floor or cannot materialize live lanes, allow only
-cheap docs/manifest, analysis-only, disk maintenance, or bounded exact repair"
+launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,"if discovery drops below floor or required lanes cannot materialize, allow only cheap docs/manifest, analysis-only, disk maintenance, protected discovery, or bounded exact repair",heavy-pr-when-discovery-unhealthy,"if discovery drops below floor or required lanes cannot materialize, allow only
+cheap docs/manifest, analysis-only, disk maintenance, protected discovery, or
+bounded exact repair"
 launch-branch-repair,artifact-heavy-broad-work-under-disk-pressure,P0,no,data disk is under severe pressure; block broad artifact-heavy PR and exploratory jobs,artifact-heavy-broad-work-under-disk-pressure,"data disk is under severe pressure; block broad artifact-heavy PR and
 exploratory jobs"
-publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has skipped/zero-row/No-tests-found or missing benchmark-minimum rows,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"current exact-stack evidence has skipped/zero-row/No-tests-found or missing
+publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,"current exact-stack evidence has missing, skipped, zero-row, or No-tests-found benchmark-minimum rows",final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"current exact-stack evidence has missing, skipped, zero-row, or No-tests-found
 benchmark-minimum rows"
 publish-ready,superseded-ready-branch-variants,high,no,"raw PR06B, raw PR15A/B/C, and old PR07C heads are superseded by current published replacements",superseded-ready-branch-variants,"raw PR06B, raw PR15A/B/C, and old PR07C heads are superseded by current
 published replacements"
-launch-owner-matrix,PR07C/HOLD-07C-browser-e2e-duplicate,high,no,do not relaunch duplicate owner matrix unless newer current-head product-owned evidence appears,PR07C/HOLD-07C-browser-e2e-duplicate,"do not relaunch duplicate owner matrix unless newer current-head product-owned
-evidence appears"
+launch-owner-matrix,PR07C/HOLD-07C-browser-e2e-duplicate,high,no,do not relaunch duplicate owner matrix unless newer current-head product-owned owner evidence appears,PR07C/HOLD-07C-browser-e2e-duplicate,"do not relaunch duplicate owner matrix unless newer current-head product-owned
+owner evidence appears"
 launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate diagnostic churn while same-head exact replay evidence is missing,reload-hydration@generic-deferred-fanout,duplicate diagnostic churn while same-head exact replay evidence is missing
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence or replay-backed downscope,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head exact browser promotion evidence or replay-backed
 downscope"
-launch-branch-repair,benchmark-canary-fuzzer-gap/broad-http-or-generic-materialization,P0,no,disk pressure and exact b8ca gate block broad artifact-heavy fanout,benchmark-canary-fuzzer-gap/broad-http-or-generic-materialization,disk pressure and exact b8ca gate block broad artifact-heavy fanout
+launch-branch-repair,benchmark-canary-fuzzer-gap/broad-http-or-generic-materialization,P0,no,disk pressure and the exact b8ca gate block broad artifact-heavy fanout,benchmark-canary-fuzzer-gap/broad-http-or-generic-materialization,disk pressure and the exact b8ca gate block broad artifact-heavy fanout
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,exact b8ca harness packaging owns the next branch-changing product slot,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,exact b8ca harness packaging owns the next branch-changing product slot
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus exact all-merged benchmark-minimum and canary green evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"requires reviewable split plus exact all-merged benchmark-minimum and canary
 green evidence"
