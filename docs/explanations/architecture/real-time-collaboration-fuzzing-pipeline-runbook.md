@@ -828,6 +828,39 @@ the newest roots. Some `wp-env` trees contain root-owned files from containers;
 the cleanup script uses passwordless `sudo -n` when available, after live-path
 checks, so those stale trees do not remain as undeletable disk pressure.
 
+The disk-maintenance loop also owns three scratch areas that previously grew
+outside the coverage-root retention rules:
+
+-   PR finalization stack worktrees in
+    `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/worktrees`.
+    These are regenerable checked-out trees. The loop keeps the newest
+    `RTC_DISK_MAINTENANCE_PR_FINALIZATION_WORKTREE_KEEP` entries and prunes
+    older entries after
+    `RTC_DISK_MAINTENANCE_PR_FINALIZATION_WORKTREE_RETENTION_MINUTES`.
+-   PR finalization validation checkouts nested under
+    `/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/cycles`.
+    Cycle reports, logs, TSVs, prompts, and context files stay in place; only
+    nested `validation-*` checked-out source trees are removed after
+    `RTC_DISK_MAINTENANCE_PR_FINALIZATION_VALIDATION_RETENTION_MINUTES`.
+-   Spill-backed `wp-env-*` instance directories under `/home/exouser/wp-env`,
+    which is symlinked to the mounted data volume. The loop only prunes
+    directories under the mounted volume, checks whether the path is live, and
+    applies `RTC_DISK_MAINTENANCE_STALE_WP_ENV_RETENTION_MINUTES` plus
+    `RTC_DISK_MAINTENANCE_STALE_WP_ENV_MAX_DELETE_PER_PASS`.
+-   Top-level `repos-*` scratch batches under focused-shard, strict-expansion,
+    and gap-booster roots. These batches are cloned source trees used to launch
+    lanes and can contain large duplicate Git packs. The loop keeps
+    `RTC_DISK_MAINTENANCE_FUZZ_REPO_BATCH_KEEP` newest batches per root and
+    removes older batches after
+    `RTC_DISK_MAINTENANCE_FUZZ_REPO_BATCH_RETENTION_MINUTES`, after live-path
+    checks. It deletes large `.git/objects/pack` files first so severe disk
+    pressure is relieved before the slower full tree removal completes.
+-   Old maintainer-test scratch worktrees and `wp-env` homes under
+    `/media/volume/danluu-fuzz-data/rtc-maintainer-tested-set-20260519`.
+    Logs and artifacts are preserved; checked-out worktrees and isolated
+    `wp-env` home directories are removed after
+    `RTC_DISK_MAINTENANCE_MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES`.
+
 The artifact pruner is cursor-based. Each pass advances through long
 `summary.ndjson` files instead of repeatedly rechecking the first batch of
 artifact directories. When it reaches the end of a summary it wraps to the
@@ -844,8 +877,9 @@ does not stop after deleting a fixed number of old run roots; while free space
 is still below its target, it runs extra cleanup passes with tighter retention
 against stale retained-root heavy directories, inactive current coverage repo
 clones, and benchmark-canary feedback directories. Inactive benchmark cycles
-can keep summaries and logs while dropping heavyweight `wp-env`, `node_modules`,
-`.git`, Playwright report, blob report, and test-result trees.
+can keep summaries and logs while dropping the nested worktree plus
+heavyweight `wp-env`, `node_modules`, `.git`, Playwright report, blob report,
+and test-result trees.
 
 The maintenance loop also performs bounded Docker cleanup when Docker's daemon
 root is the mounted data volume. It prunes unused containers and unused images

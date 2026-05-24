@@ -30,6 +30,14 @@ CURRENT_ROOT_REPO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_CURRENT_ROOT_REPO_RET
 CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=${RTC_DISK_MAINTENANCE_CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS:-4}
 BENCHMARK_CYCLE_KEEP=${RTC_DISK_MAINTENANCE_BENCHMARK_CYCLE_KEEP:-24}
 BENCHMARK_CYCLE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_BENCHMARK_CYCLE_RETENTION_MINUTES:-720}
+PR_FINALIZATION_WORKTREE_KEEP=${RTC_DISK_MAINTENANCE_PR_FINALIZATION_WORKTREE_KEEP:-24}
+PR_FINALIZATION_WORKTREE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_PR_FINALIZATION_WORKTREE_RETENTION_MINUTES:-720}
+PR_FINALIZATION_VALIDATION_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_PR_FINALIZATION_VALIDATION_RETENTION_MINUTES:-720}
+STALE_WP_ENV_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_STALE_WP_ENV_RETENTION_MINUTES:-2880}
+STALE_WP_ENV_MAX_DELETE_PER_PASS=${RTC_DISK_MAINTENANCE_STALE_WP_ENV_MAX_DELETE_PER_PASS:-2000}
+FUZZ_REPO_BATCH_KEEP=${RTC_DISK_MAINTENANCE_FUZZ_REPO_BATCH_KEEP:-4}
+FUZZ_REPO_BATCH_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_FUZZ_REPO_BATCH_RETENTION_MINUTES:-720}
+MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES:-2880}
 DOCKER_PRUNE_MIN_INTERVAL_SECONDS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_MIN_INTERVAL_SECONDS:-3600}
 DOCKER_PRUNE_UNTIL_NORMAL_HOURS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_UNTIL_NORMAL_HOURS:-48}
 DOCKER_PRUNE_UNTIL_PRESSURE_HOURS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_UNTIL_PRESSURE_HOURS:-12}
@@ -200,16 +208,16 @@ remove_path() {
 	[ -e "$path" ] || return 0
 	log "remove path=$path"
 	if sudo -n true >/dev/null 2>&1; then
-		if sudo ionice -c3 nice -n 19 rm -rf -- "$path" >> "$LOG" 2>&1; then
+		if sudo ionice -c3 nice -n 19 rm -rf --one-file-system -- "$path" >> "$LOG" 2>&1; then
 			return 0
 		fi
 	fi
-	if ionice -c3 nice -n 19 rm -rf -- "$path" >> "$LOG" 2>&1; then
+	if ionice -c3 nice -n 19 rm -rf --one-file-system -- "$path" >> "$LOG" 2>&1; then
 		return 0
 	fi
 	chmod -R u+rwX "$path" >/dev/null 2>> "$LOG" || true
-	ionice -c3 nice -n 19 rm -rf -- "$path" >> "$LOG" 2>&1 ||
-		sudo ionice -c3 nice -n 19 rm -rf -- "$path" >> "$LOG" 2>&1 ||
+	ionice -c3 nice -n 19 rm -rf --one-file-system -- "$path" >> "$LOG" 2>&1 ||
+		sudo ionice -c3 nice -n 19 rm -rf --one-file-system -- "$path" >> "$LOG" 2>&1 ||
 		log "remove failed path=$path"
 }
 
@@ -576,6 +584,7 @@ prune_benchmark_feedback_heavy_dirs() {
 		fi
 		for child in \
 			"$path/wp-env" \
+			"$path/worktree" \
 			"$path/worktree/node_modules" \
 			"$path/worktree/.git" \
 			"$path/worktree/.cache" \
@@ -591,6 +600,133 @@ prune_benchmark_feedback_heavy_dirs() {
 			sort -z -nr |
 			sed -z 's/^[^ ]* //'
 	)
+}
+
+prune_pr_finalization_worktrees() {
+	local worktrees="$DATA_VOLUME/rtc-pr-finalization-20260516/worktrees"
+	local keep=$1 retention=$2 path count=0
+	[ -d "$worktrees" ] || return 0
+	while IFS= read -r path; do
+		[ -n "$path" ] || continue
+		count=$(( count + 1 ))
+		if [ "$count" -le "$keep" ]; then
+			continue
+		fi
+		if path_is_live "$path"; then
+			log "skip live pr finalization worktree path=$path"
+			continue
+		fi
+		if ! path_older_than_minutes "$path" "$retention"; then
+			continue
+		fi
+		remove_path "$path"
+	done < <(
+		find "$worktrees" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\0' 2>/dev/null |
+			sort -z -nr |
+			sed -z 's/^[^ ]* //'
+	)
+}
+
+prune_pr_finalization_validation_checkouts() {
+	local cycles="$DATA_VOLUME/rtc-pr-finalization-20260516/cycles"
+	local checkout
+	[ -d "$cycles" ] || return 0
+	while IFS= read -r -d '' checkout; do
+		if path_is_live "$checkout"; then
+			log "skip live pr finalization validation checkout path=$checkout"
+			continue
+		fi
+		if ! path_older_than_minutes "$checkout" "$PR_FINALIZATION_VALIDATION_RETENTION_MINUTES"; then
+			continue
+		fi
+		remove_path "$checkout"
+	done < <(find "$cycles" -mindepth 2 -maxdepth 2 -type d -name 'validation-*' -print0 2>/dev/null)
+}
+
+prune_stale_wp_env_dirs() {
+	local env_root path count=0
+	env_root=$(readlink -f /home/exouser/wp-env 2>/dev/null || true)
+	[ -n "$env_root" ] || return 0
+	[ -d "$env_root" ] || return 0
+	case "$env_root" in
+		"$DATA_VOLUME"/*)
+			;;
+		*)
+			log "skip stale wp-env prune; env root outside data volume path=$env_root"
+			return 0
+			;;
+	esac
+	while IFS= read -r -d '' path; do
+		if [ "$count" -ge "$STALE_WP_ENV_MAX_DELETE_PER_PASS" ]; then
+			log "stale wp-env prune limit reached max=$STALE_WP_ENV_MAX_DELETE_PER_PASS"
+			return 0
+		fi
+		if path_is_live "$path"; then
+			log "skip live stale wp-env path=$path"
+			continue
+		fi
+		remove_path "$path"
+		count=$(( count + 1 ))
+	done < <(
+		find "$env_root" -mindepth 1 -maxdepth 1 -type d -name 'wp-env-*' -mmin +"$STALE_WP_ENV_RETENTION_MINUTES" -print0 2>/dev/null
+	)
+	log "prune_stale_wp_env_dirs deleted=$count retention_minutes=$STALE_WP_ENV_RETENTION_MINUTES max=$STALE_WP_ENV_MAX_DELETE_PER_PASS root=$env_root"
+}
+
+prune_fuzz_repo_batches_for_root() {
+	local root=$1 keep=$2 retention=$3 path pack_file count=0
+	[ -d "$root" ] || return 0
+	while IFS= read -r path; do
+		[ -n "$path" ] || continue
+		count=$(( count + 1 ))
+		if [ "$count" -le "$keep" ]; then
+			continue
+		fi
+		if path_is_live "$path"; then
+			log "skip live fuzz repo batch path=$path"
+			continue
+		fi
+		if ! path_older_than_minutes "$path" "$retention"; then
+			continue
+		fi
+		for pack_file in \
+			"$path"/*/.git/objects/pack/*.pack \
+			"$path"/*/.git/objects/pack/*.idx \
+			"$path"/*/.git/objects/pack/*.rev; do
+			[ -f "$pack_file" ] || continue
+			rm -f -- "$pack_file" 2>> "$LOG" || true
+		done
+		remove_path "$path"
+	done < <(
+		find "$root" -mindepth 1 -maxdepth 1 -type d -name 'repos-*' -printf '%T@ %p\0' 2>/dev/null |
+			sort -z -nr |
+			sed -z 's/^[^ ]* //'
+	)
+}
+
+prune_fuzz_repo_batches() {
+	prune_fuzz_repo_batches_for_root "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515" "$FUZZ_REPO_BATCH_KEEP" "$FUZZ_REPO_BATCH_RETENTION_MINUTES"
+	prune_fuzz_repo_batches_for_root "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515" "$FUZZ_REPO_BATCH_KEEP" "$FUZZ_REPO_BATCH_RETENTION_MINUTES"
+	prune_fuzz_repo_batches_for_root "$DATA_VOLUME/rtc-gap-booster-20260515" "$FUZZ_REPO_BATCH_KEEP" "$FUZZ_REPO_BATCH_RETENTION_MINUTES"
+}
+
+prune_maintainer_tested_scratch() {
+	local root="$DATA_VOLUME/rtc-maintainer-tested-set-20260519"
+	local parent path
+	[ -d "$root" ] || return 0
+	for parent in "$root/worktrees" "$root/wp-env-home"; do
+		[ -d "$parent" ] || continue
+		while IFS= read -r -d '' path; do
+			if path_is_live "$path"; then
+				log "skip live maintainer-tested scratch path=$path"
+				continue
+			fi
+			if ! path_older_than_minutes "$path" "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES"; then
+				continue
+			fi
+			remove_path "$path"
+		done < <(find "$parent" -mindepth 1 -maxdepth 1 -type d -print0 2>/dev/null)
+	done
 }
 
 prune_docker_wp_env_if_due() {
@@ -638,10 +774,20 @@ run_space_target_extra_passes() {
 		TMP_RETENTION_MINUTES=$(min_int "$TMP_RETENTION_MINUTES" 30)
 		CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 30)
 		BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 60)
+		PR_FINALIZATION_WORKTREE_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_WORKTREE_RETENTION_MINUTES" 60)
+		PR_FINALIZATION_VALIDATION_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_VALIDATION_RETENTION_MINUTES" 60)
+		STALE_WP_ENV_RETENTION_MINUTES=$(min_int "$STALE_WP_ENV_RETENTION_MINUTES" 720)
+		FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 60)
+		MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 720)
 		ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 1200)
 		ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=$(max_int "$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT" 80000)
 		prune_current_coverage_inactive_repos
 		prune_benchmark_feedback_heavy_dirs 3 "$BENCHMARK_CYCLE_RETENTION_MINUTES"
+		prune_pr_finalization_worktrees 8 "$PR_FINALIZATION_WORKTREE_RETENTION_MINUTES"
+		prune_pr_finalization_validation_checkouts
+		prune_stale_wp_env_dirs
+		prune_fuzz_repo_batches
+		prune_maintainer_tested_scratch
 		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-coverage-guided-20260515" "$DATA_VOLUME/rtc-coverage-guided-20260515/run-*" "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt"
 		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-*" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
 		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs/focused-shards-*" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
@@ -710,6 +856,14 @@ write_status() {
 		echo "- current_root_repo_max_delete_per_pass: $CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS"
 		echo "- benchmark_cycle_keep: $BENCHMARK_CYCLE_KEEP"
 		echo "- benchmark_cycle_retention_minutes: $BENCHMARK_CYCLE_RETENTION_MINUTES"
+		echo "- pr_finalization_worktree_keep: $PR_FINALIZATION_WORKTREE_KEEP"
+		echo "- pr_finalization_worktree_retention_minutes: $PR_FINALIZATION_WORKTREE_RETENTION_MINUTES"
+		echo "- pr_finalization_validation_retention_minutes: $PR_FINALIZATION_VALIDATION_RETENTION_MINUTES"
+		echo "- stale_wp_env_retention_minutes: $STALE_WP_ENV_RETENTION_MINUTES"
+		echo "- stale_wp_env_max_delete_per_pass: $STALE_WP_ENV_MAX_DELETE_PER_PASS"
+		echo "- fuzz_repo_batch_keep: $FUZZ_REPO_BATCH_KEEP"
+		echo "- fuzz_repo_batch_retention_minutes: $FUZZ_REPO_BATCH_RETENTION_MINUTES"
+		echo "- maintainer_tested_scratch_retention_minutes: $MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES"
 		echo "- root_tmp_retention_minutes: $ROOT_TMP_RETENTION_MINUTES"
 		echo "- root_tmp_max_delete_per_pass: $ROOT_TMP_MAX_DELETE_PER_PASS"
 		echo "- artifact_prune_summary_limit: $ARTIFACT_PRUNE_SUMMARY_LIMIT"
@@ -746,6 +900,14 @@ run_once() {
 	local CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS
 	local BENCHMARK_CYCLE_KEEP=$BENCHMARK_CYCLE_KEEP
 	local BENCHMARK_CYCLE_RETENTION_MINUTES=$BENCHMARK_CYCLE_RETENTION_MINUTES
+	local PR_FINALIZATION_WORKTREE_KEEP=$PR_FINALIZATION_WORKTREE_KEEP
+	local PR_FINALIZATION_WORKTREE_RETENTION_MINUTES=$PR_FINALIZATION_WORKTREE_RETENTION_MINUTES
+	local PR_FINALIZATION_VALIDATION_RETENTION_MINUTES=$PR_FINALIZATION_VALIDATION_RETENTION_MINUTES
+	local STALE_WP_ENV_RETENTION_MINUTES=$STALE_WP_ENV_RETENTION_MINUTES
+	local STALE_WP_ENV_MAX_DELETE_PER_PASS=$STALE_WP_ENV_MAX_DELETE_PER_PASS
+	local FUZZ_REPO_BATCH_KEEP=$FUZZ_REPO_BATCH_KEEP
+	local FUZZ_REPO_BATCH_RETENTION_MINUTES=$FUZZ_REPO_BATCH_RETENTION_MINUTES
+	local MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES
 	local ROOT_TMP_RETENTION_MINUTES=$ROOT_TMP_RETENTION_MINUTES
 	local ROOT_TMP_MAX_DELETE_PER_PASS=$ROOT_TMP_MAX_DELETE_PER_PASS
 	local ARTIFACT_PRUNE_SUMMARY_LIMIT=$ARTIFACT_PRUNE_SUMMARY_LIMIT
@@ -770,6 +932,14 @@ run_once() {
 			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 12)
 			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 2)
 			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 30)
+			PR_FINALIZATION_WORKTREE_KEEP=$(min_int "$PR_FINALIZATION_WORKTREE_KEEP" 8)
+			PR_FINALIZATION_WORKTREE_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_WORKTREE_RETENTION_MINUTES" 60)
+			PR_FINALIZATION_VALIDATION_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_VALIDATION_RETENTION_MINUTES" 60)
+			STALE_WP_ENV_RETENTION_MINUTES=$(min_int "$STALE_WP_ENV_RETENTION_MINUTES" 720)
+			STALE_WP_ENV_MAX_DELETE_PER_PASS=$(max_int "$STALE_WP_ENV_MAX_DELETE_PER_PASS" 4000)
+			FUZZ_REPO_BATCH_KEEP=$(min_int "$FUZZ_REPO_BATCH_KEEP" 2)
+			FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 60)
+			MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 720)
 			ROOT_TMP_RETENTION_MINUTES=$(min_int "$ROOT_TMP_RETENTION_MINUTES" 180)
 			ROOT_TMP_MAX_DELETE_PER_PASS=$(max_int "$ROOT_TMP_MAX_DELETE_PER_PASS" 20000)
 			ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 800)
@@ -787,6 +957,14 @@ run_once() {
 			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 8)
 			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 4)
 			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 60)
+			PR_FINALIZATION_WORKTREE_KEEP=$(min_int "$PR_FINALIZATION_WORKTREE_KEEP" 8)
+			PR_FINALIZATION_WORKTREE_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_WORKTREE_RETENTION_MINUTES" 120)
+			PR_FINALIZATION_VALIDATION_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_VALIDATION_RETENTION_MINUTES" 120)
+			STALE_WP_ENV_RETENTION_MINUTES=$(min_int "$STALE_WP_ENV_RETENTION_MINUTES" 1440)
+			STALE_WP_ENV_MAX_DELETE_PER_PASS=$(max_int "$STALE_WP_ENV_MAX_DELETE_PER_PASS" 3000)
+			FUZZ_REPO_BATCH_KEEP=$(min_int "$FUZZ_REPO_BATCH_KEEP" 2)
+			FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 120)
+			MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 1440)
 			ROOT_TMP_RETENTION_MINUTES=$(min_int "$ROOT_TMP_RETENTION_MINUTES" 240)
 			ROOT_TMP_MAX_DELETE_PER_PASS=$(max_int "$ROOT_TMP_MAX_DELETE_PER_PASS" 20000)
 			ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 800)
@@ -804,6 +982,14 @@ run_once() {
 			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 4)
 			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 8)
 			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 180)
+			PR_FINALIZATION_WORKTREE_KEEP=$(min_int "$PR_FINALIZATION_WORKTREE_KEEP" 12)
+			PR_FINALIZATION_WORKTREE_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_WORKTREE_RETENTION_MINUTES" 360)
+			PR_FINALIZATION_VALIDATION_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_VALIDATION_RETENTION_MINUTES" 360)
+			STALE_WP_ENV_RETENTION_MINUTES=$(min_int "$STALE_WP_ENV_RETENTION_MINUTES" 2880)
+			STALE_WP_ENV_MAX_DELETE_PER_PASS=$(max_int "$STALE_WP_ENV_MAX_DELETE_PER_PASS" 2000)
+			FUZZ_REPO_BATCH_KEEP=$(min_int "$FUZZ_REPO_BATCH_KEEP" 4)
+			FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 720)
+			MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 2880)
 			ROOT_TMP_RETENTION_MINUTES=$(min_int "$ROOT_TMP_RETENTION_MINUTES" 720)
 			ROOT_TMP_MAX_DELETE_PER_PASS=$(max_int "$ROOT_TMP_MAX_DELETE_PER_PASS" 10000)
 			ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 200)
@@ -825,6 +1011,11 @@ run_once() {
 	prune_orphan_current_coverage_tmp_repos
 	prune_current_coverage_inactive_repos
 	prune_benchmark_feedback_heavy_dirs "$BENCHMARK_CYCLE_KEEP" "$BENCHMARK_CYCLE_RETENTION_MINUTES"
+	prune_pr_finalization_worktrees "$PR_FINALIZATION_WORKTREE_KEEP" "$PR_FINALIZATION_WORKTREE_RETENTION_MINUTES"
+	prune_pr_finalization_validation_checkouts
+	prune_stale_wp_env_dirs
+	prune_fuzz_repo_batches
+	prune_maintainer_tested_scratch
 	prune_docker_wp_env_if_due "$tier"
 
 	prune_old_artifacts "$DATA_VOLUME/rtc-coverage-guided-20260515" "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt"
