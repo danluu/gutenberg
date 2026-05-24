@@ -4,8 +4,8 @@ downscoped and discovery reserve is protected"
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,exact stack lacks complete nonempty green benchmark-minimum and canary evidence,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,exact stack lacks complete nonempty green benchmark-minimum and canary evidence
 publish-ready,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,high,no,raw heads are superseded by canonical minimal/on-PR14B/current PR07C heads absent fresh contrary evidence,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,"raw heads are superseded by canonical minimal/on-PR14B/current PR07C heads
 absent fresh contrary evidence"
-launch-owner-matrix,PR07C/HOLD-07C-current-head,high,no,duplicate heavy owner matrix is not justified under disk pressure unless newer product-owned evidence appears,PR07C/HOLD-07C-current-head,"duplicate heavy owner matrix is not justified under disk pressure unless newer
-product-owned evidence appears"
+launch-owner-matrix,PR07C/HOLD-07C-current-head,high,no,duplicate heavy owner matrix is not justified under disk pressure unless newer product-owned evidence appears and discovery reserve is protected,PR07C/HOLD-07C-current-head,"duplicate heavy owner matrix is not justified under disk pressure unless newer
+product-owned evidence appears and discovery reserve is protected"
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay waits until b8ca harness gate clears and discovery reserve is protected,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"same-head exact replay waits until b8ca harness gate clears and discovery
 reserve is protected"
 launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate-head generic relaunch is diagnostic churn while exact replay evidence is missing,reload-hydration@generic-deferred-fanout,"duplicate-head generic relaunch is diagnostic churn while exact replay evidence
