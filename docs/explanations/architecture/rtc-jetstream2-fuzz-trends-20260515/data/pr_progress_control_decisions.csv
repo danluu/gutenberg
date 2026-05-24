@@ -1,41 +1,42 @@
 action,target,priority,allowed,reason
-repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_pressure is active and discovery is not protected; preserve PR evidence and current-run triage before artifact-heavy work
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 9 versus floor 3 but discovery_protected is no; reserve bounded discovery before extra PR breadth
-publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata generation is needed because current-push-manifest.tsv is header-only while status docs need live branch links
-publish-ready,maintainer-status-live-branches,P0,yes,status docs may link live ready branches and deliberate downscopes but must not claim all-merged green
+repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_pressure is active; preserve PR evidence and current-run triage before artifact-heavy breadth
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 9 vs floor 3 but discovery_protected=no; keep bounded discovery reserve before extra PR breadth
+publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata publication is needed because current-push-manifest.tsv is header-only
+publish-ready,maintainer-status-live-branches,P0,yes,link live published ready branches and deliberate downscopes without claiming all-merged green
 publish-ready,non-pr07c-ready-published-real-fix-branches,high,yes,keep canonical PR02A PR03B PR06B-minimal PR07B PR09 PR10 PR11A PR11B PR14 PR14B and PR15-on-PR14B branches linked and fuzz-validated
-publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,canonical minimal on-PR14B and repaired current variants supersede raw branches absent fresh contrary evidence
-repair-ready,benchmark-canary-fuzzer-gap/consume-fix-branch-created@f4ba087d2fe34c66530afa8828081aecc1df81ac,P0,yes,active continuation produced repair/rtc-pr07c-build-clean-20260524T0756Z with build-green evidence; consume it instead of launching another generic repair
-repair-ready,benchmark-canary-fuzzer-gap/regenerate-exact-stack@repair/rtc-pr07c-build-clean-20260524T0756Z,P0,yes,next product-progress slot; rebuild exact all-merged stack from the PR07C build-clean repair branch
-repair-ready,benchmark-canary-fuzzer-gap/exact-stack-harness-packaging@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,hydrate or explicitly downscope lower/micro-crdt lower/micro-html lower/micro-sync and many-users-sync rows before final exact evidence
-repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@repair/rtc-pr07c-build-clean-20260524T0756Z,P0,yes,build-clean repair exists; rerun current benchmark-minimum and canary rows on the regenerated exact stack despite blocking other heavy PR breadth
-launch-owner-matrix,PR07C/HOLD-07C-repaired-current-head,P0,yes,readiness blocker is resolved by the build-green repair branch; run owner evidence on the regenerated repaired stack to resolve the PR07C gate before deadline
-launch-owner-matrix,PR07C/HOLD-07C-old-head,P0,no,old owner matrix is terminal no_product_owned for stale evidence and the old all-merged stack is build-red
-publish-ready,repair/rtc-pr07c-build-clean-20260524T0756Z,P0,no,repair branch build is green but it is not the final all-merged branch and has no same-commit benchmark/canary green evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,do not mark PR07C finalized while exact all-merged benchmark/canary evidence is red absent or downscope-only pending
+publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,canonical minimal on-PR14B and repaired variants supersede raw branches absent fresh contrary evidence
+repair-ready,benchmark-canary-fuzzer-gap/consume-fix-branch-created@f4ba087d2fe34c66530afa8828081aecc1df81ac,P0,yes,consume repair/rtc-pr07c-build-clean-20260524T0756Z instead of launching generic repair
+repair-ready,benchmark-canary-fuzzer-gap/regenerate-exact-stack@repair/rtc-pr07c-build-clean-20260524T0756Z,P0,yes,next product-progress slot; rebuild the exact all-merged stack from the PR07C build-clean repair branch
+repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,hydrate or explicitly downscope lower/micro-crdt lower/micro-html lower/micro-sync and many-users-sync rows before publication
+repair-ready,exact-all-merged-build-benchmark-canary-rerun@repair/rtc-pr07c-build-clean-20260524T0756Z,P0,yes,rerun setup/build plus all current benchmark-minimum and canary rows on the regenerated exact stack
+launch-owner-matrix,PR07C/HOLD-07C-repaired-current-head,P0,yes,"readiness is resolved by the build-clean repair; run owner evidence on the repaired current head, not stale old-head evidence"
+launch-owner-matrix,PR07C/HOLD-07C-old-head,P0,no,old owner matrix is terminal no_product_owned and stale relative to the repaired stack
+publish-ready,repair/rtc-pr07c-build-clean-20260524T0756Z,P0,no,build-clean repair branch is not the final all-merged branch and lacks same-commit benchmark/canary evidence
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,PR07C is not finalized until regenerated exact stack has green or explicitly downscoped current rows
 publish-ready,final-all-merged@2f8247258316bde60869c06c383090904e9426bd,P0,no,setup/build failed and browser/focused rows failed before product behavior
-publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,lacks nonempty green benchmark-minimum plus canary evidence or explicit row downscopes
-update-controller-rule,finalization-deadline-priority,P0,yes,until 2026-05-26T06:59:59Z prioritize reviewable branches exact green/downscope evidence disk preservation and explicit rejections
+publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,lacks nonempty same-commit benchmark-minimum plus canary evidence or explicit row downscopes
+update-controller-rule,finalization-deadline-priority,P0,yes,until 2026-05-26T06:59:59Z prioritize reviewable branches exact evidence disk preservation and explicit rejections
 update-controller-rule,build-clean-finalization-gate,P0,yes,require npm run build or equivalent before owner matrix maintainer snapshot or all-merged publication
 update-controller-rule,benchmark-minimum-nonempty-publication-gate,P0,yes,skipped empty missing disabled stale or no-tests-found rows cannot count as green without explicit downscope evidence
-update-controller-rule,coverage-ready-current-run-records,P0,yes,do not credit scheduled disabled empty or stale canary groups as ready without current-run records and required successes
+update-controller-rule,coverage-ready-current-run-records,P0,yes,do not credit scheduled disabled empty or stale canary groups without current-run records and required successes
 update-controller-rule,benchmark-canary-fuzzer-gap-owner,P0,yes,route blocker from generic fuzzer feedback to exact repaired-stack build harness packaging and canary rerun
 cooldown-diagnostic,benchmark-feedback-refresh-without-build-or-harness-change,P0,yes,repeated refreshes cannot change branch head build state harness packaging or publication evidence
-launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,active blocker is exact repaired-stack validation not broad fuzzer feedback
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,broad PR17 repair waits behind repaired exact stack validation and reviewable split evidence
-repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds,P0,yes,preserve reproducers 0022 0036 and 0039 as PR17 seed handoff and keep 0055 separate
-update-controller-rule,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,convert held duplicate-head family to same-head exact replay blocker after repaired PR07C exact-stack gate clears
+launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,"active blocker is exact repaired-stack validation, not broad fuzzer-feedback repair"
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,broad PR17 repair waits behind regenerated PR07C exact-stack validation and reviewable split evidence
+repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds,P0,yes,preserve reproducers 0022 0036 and 0039 as PR17 seed handoff; keep 0055 separate
+update-controller-rule,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,convert held duplicate-head family to same-head exact replay blocker after PR07C exact-stack gate clears
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,heavy replay waits behind repaired exact all-merged validation and protected discovery reserve
 launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate same-head deferred relaunch is diagnostic churn while manifest is held
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing same-head title-reload existing-or-persistence-reload and large-http-lifecycle green or downscope evidence
 cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,diagnostic-only until focused first-loss product evidence owner evidence green-stack adoption or explicit downscope
-reserve-discovery,benchmark-canary-http-coverage/forced-http-groups,P0,yes,materialize bounded forced HTTP canary groups with current-run records or write explicit disk/load blocker
-reserve-discovery,benchmark-canary-forced-equivalence,P0,yes,rotate through missing forced lower micro and many-user equivalents until records successes or blockers exist
-reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http,P0,yes,keep one primary HTTP canary lane such as provider-persisted large-post or large-post readiness
+reserve-discovery,benchmark-canary-http-coverage/forced-http-groups,P0,yes,materialize bounded forced HTTP canary groups with current-run successes or explicit disk/load blockers
+reserve-discovery,benchmark-canary-forced-equivalence,P0,yes,rotate through forced lower micro HTTP and many-user equivalents until records successes or blockers exist
+reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http,P0,yes,keep one primary HTTP canary lane active for large-post readiness and lifecycle coverage
 reserve-discovery,coverage-guided-lower-level-http-polling-manager,high,yes,keep exactly one large-http-readiness lane and preserve PR17 seed handoff evidence
 launch-discovery,coverage-guided-lower-level-http-polling-broad-corpus,high,no,do not broaden corpus under disk pressure and exact finalization gates
 reserve-discovery,rtc-table-query-array-crdt,high,yes,allow one bounded mutation-enabled isolated lower-level lane as discovery reserve
 update-controller-rule,rtc-block-parser-serialization-profile-mismatch,high,yes,remove stale rich-text parser accounting and require canonical isolated RTC_BLOCK_PARSER evidence before yield credit
-launch-discovery,rtc-rich-text-crdt-multiblock,medium,no,keep unscheduled while corpus is capped and recent attempts produce no new coverage or feature keys
+update-controller-rule,lower-level-product-yield-accounting,high,yes,count product yield only from failing or isolated-failing rows with canonical failure or oracle keys
+reserve-discovery,rtc-rich-text-crdt-multiblock,medium,no,keep unscheduled while corpus is capped and recent attempts add no actionable yield
 repair-ready,productive-analysis-action,high,yes,analysis-only feedback may continue if it does not launch heavy commands outside the global budget
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,nonessential heavy PR work waits; slots belong to repaired exact-stack validation disk preservation and protected discovery
