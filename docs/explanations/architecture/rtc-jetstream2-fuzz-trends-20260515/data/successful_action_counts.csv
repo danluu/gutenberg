@@ -17,7 +17,7 @@ append-paragraph,110,large-post-three-user-http-lifecycle
 insert-heading,110,large-post-three-user-http-lifecycle
 concurrent-paragraphs,110,large-post-three-user-http-lifecycle
 move-block,110,large-post-three-user-http-lifecycle
-ui-toolbar-format-paragraph,106,real-user-editing
+ui-toolbar-format-paragraph,108,real-user-editing
 insert-media-cross-entity-block,102,media-cross-entity
 insert-paragraph,92,revision-persistence
 edit-paragraph,85,revision-persistence

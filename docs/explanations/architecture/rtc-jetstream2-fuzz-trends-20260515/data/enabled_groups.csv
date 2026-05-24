@@ -2053,3 +2053,17 @@ timestamp,group,group_family
 2026-05-24T12:09:26Z,novelty-ws-permissions-auth-locks,auth/locks
 2026-05-24T12:12:01Z,novelty-ws-parser-serialization,parser
 2026-05-24T12:15:21Z,novelty-http-large-post-lifecycle,lifecycle
+2026-05-24T12:18:01Z,novelty-http-large-post-lifecycle-completion,lifecycle
+2026-05-24T12:21:13Z,novelty-http-large-post-lifecycle,lifecycle
+2026-05-24T12:23:28Z,novelty-http-large-post-lifecycle-completion,lifecycle
+2026-05-24T12:23:28Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T12:23:28Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T12:23:28Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T12:25:43Z,novelty-http-large-post-lifecycle,lifecycle
+2026-05-24T12:25:43Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T12:25:43Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T12:25:43Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T12:27:57Z,novelty-http-large-post-lifecycle-completion,lifecycle
+2026-05-24T12:27:57Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T12:27:57Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T12:27:57Z,novelty-ws-many-user-lifecycle-completion,lifecycle

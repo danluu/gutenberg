@@ -1907,8 +1907,8 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T08:45:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,13,13,13,13,0,1176605,FALSE
 2026-05-24T08:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1175,1175,1125,47,2,754189,FALSE
 2026-05-24T09:00:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,NA,NA,7,4,0,7,7,615806,FALSE
-2026-05-24T09:00:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,817708,FALSE
-2026-05-24T09:00:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,NA,NA,7,4,0,7,7,848061,FALSE
+2026-05-24T09:00:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,NA,NA,3,2,0,3,3,817708,FALSE
+2026-05-24T09:00:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,7,4,0,7,7,848061,FALSE
 2026-05-24T09:00:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,10,6,3,10,7,942450,FALSE
 2026-05-24T09:00:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,8,4,0,8,8,926791,FALSE
 2026-05-24T09:00:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,NA,NA,8,6,4,8,4,582409,FALSE
@@ -1929,8 +1929,8 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T09:00:00Z,coverage-guided,novelty-ws-same-user-stale-tabs,browser-e2e,NA,NA,15,12,10,15,5,852733,FALSE
 2026-05-24T09:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1153,1153,900,7,2,155913,FALSE
 2026-05-24T09:15:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,NA,NA,10,5,0,10,10,928777,FALSE
-2026-05-24T09:15:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,3,1,0,3,3,832817,FALSE
-2026-05-24T09:15:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,NA,NA,7,3,0,7,7,841252,FALSE
+2026-05-24T09:15:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,NA,NA,3,1,0,3,3,832817,FALSE
+2026-05-24T09:15:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,7,3,0,7,7,841252,FALSE
 2026-05-24T09:15:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,10,6,2,10,8,886719,FALSE
 2026-05-24T09:15:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,7,3,0,7,7,868185,FALSE
 2026-05-24T09:15:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,NA,NA,14,12,10,14,4,934024,FALSE
@@ -1949,8 +1949,8 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T09:15:00Z,coverage-guided,novelty-ws-same-user-lifecycle,browser-e2e,NA,NA,27,25,23,27,4,907015,FALSE
 2026-05-24T09:15:00Z,coverage-guided,novelty-ws-same-user-stale-tabs,browser-e2e,NA,NA,17,16,15,17,2,903531,FALSE
 2026-05-24T09:30:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,NA,NA,10,5,0,10,10,940371,FALSE
-2026-05-24T09:30:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,4,2,0,4,4,1069179,FALSE
-2026-05-24T09:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,NA,NA,8,4,0,8,8,959776,FALSE
+2026-05-24T09:30:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,NA,NA,4,2,0,4,4,1069179,FALSE
+2026-05-24T09:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,8,4,0,8,8,959776,FALSE
 2026-05-24T09:30:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,10,6,3,10,7,895981,FALSE
 2026-05-24T09:30:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,7,4,0,7,7,914949,FALSE
 2026-05-24T09:30:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,NA,NA,12,9,6,12,6,843396,FALSE
@@ -1968,8 +1968,8 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T09:30:00Z,coverage-guided,novelty-ws-same-user-stale-tabs,browser-e2e,NA,NA,18,16,14,18,4,944850,FALSE
 2026-05-24T09:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,50,50,50,2,0,36854,FALSE
 2026-05-24T09:45:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,NA,NA,8,5,2,8,6,665216,FALSE
-2026-05-24T09:45:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,2,1,0,2,2,543732,FALSE
-2026-05-24T09:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,NA,NA,6,3,0,6,6,638982,FALSE
+2026-05-24T09:45:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,NA,NA,2,1,0,2,2,543732,FALSE
+2026-05-24T09:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,6,3,0,6,6,638982,FALSE
 2026-05-24T09:45:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,6,4,2,6,4,509592,FALSE
 2026-05-24T09:45:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,8,4,0,8,8,817635,FALSE
 2026-05-24T09:45:00Z,coverage-guided,novelty-http-persistence-probe,browser-e2e,NA,NA,11,9,6,11,5,703154,FALSE
