@@ -2195,3 +2195,8 @@ timestamp,group,group_family
 2026-05-24T18:33:45Z,novelty-ws-many-user-lifecycle,lifecycle
 2026-05-24T18:36:29Z,novelty-ws-many-user-lifecycle,lifecycle
 2026-05-24T18:37:57Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T18:41:00Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T18:42:46Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T18:43:54Z,novelty-http-table-stale-snapshot,http
+2026-05-24T18:48:57Z,novelty-http-persistence-probe,persistence
+2026-05-24T18:48:57Z,novelty-http-large-post-readiness,http
