@@ -2067,3 +2067,13 @@ timestamp,group,group_family
 2026-05-24T12:27:57Z,novelty-ws-collaboration-ui-signals,other
 2026-05-24T12:27:57Z,novelty-ws-many-user-lifecycle,lifecycle
 2026-05-24T12:27:57Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T12:30:11Z,novelty-http-large-post-lifecycle,lifecycle
+2026-05-24T12:30:11Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T12:30:11Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T12:30:11Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T12:30:39Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T12:30:39Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T12:30:39Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T12:32:47Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T12:32:47Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T12:32:47Z,novelty-ws-many-user-lifecycle-completion,lifecycle

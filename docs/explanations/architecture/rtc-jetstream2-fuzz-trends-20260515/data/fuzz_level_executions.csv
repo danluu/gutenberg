@@ -2021,3 +2021,4 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T12:00:00Z,coverage-guided,novelty-ws-thirty-user-lifecycle,browser-e2e,NA,NA,1,1,1,1,0,144774,FALSE
 2026-05-24T12:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,30,30,30,2,0,16124,FALSE
 2026-05-24T12:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,NA,NA,1,0,0,1,1,70766,FALSE
+2026-05-24T12:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,4,2,0,4,4,400767,FALSE
