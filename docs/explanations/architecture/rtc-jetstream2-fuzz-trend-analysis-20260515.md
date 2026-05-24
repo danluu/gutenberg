@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T01:14:24Z`
+Snapshot generated: `2026-05-24T01:17:34Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -524,7 +524,9 @@ feedback rejects `PR16-RLH` as fileable and says the strict seed `6000007`
 repair job was launched but still pending; treat queued, held, or blocked rows
 as unresolved until row-bearing owner evidence appears, while PR07C
 owner-matrix should stay terminal unless newer current-head owner evidence
-appears.
+appears. The refreshed controller stream added another PR07C no-relaunch event
+at `2026-05-24T01:15:39Z`; that is suppression evidence, not a new filing
+surface.
 
 ## Interpretation
 
