@@ -1344,6 +1344,7 @@ bucket,fuzz_level,profile,duration_ms,runner_hours,cumulative_runner_hours,uniqu
 2026-05-24T08:45:00Z,protocol-server,wp-http-polling-protocol-state-machine,754189,0.20949694444444444,126.56031250000008,0,0,0,0,0,0
 2026-05-24T09:00:00Z,protocol-server,wp-http-polling-protocol-state-machine,155913,0.04330916666666667,126.60362166666674,0,0,0,0,0,0
 2026-05-24T09:30:00Z,protocol-server,wp-http-polling-protocol-state-machine,36854,0.010237222222222222,126.61385888888896,0,0,0,0,0,0
+2026-05-24T10:00:00Z,protocol-server,wp-http-polling-protocol-state-machine,13017,0.0036158333333333333,126.61747472222228,0,0,0,0,0,0
 2026-05-23T05:00:00Z,unit-property,rtc-http-polling-manager-canary,232000,0.06444444444444444,0.06444444444444444,0,0,0,0,0,0
 2026-05-23T05:15:00Z,unit-property,rtc-http-polling-manager-canary,72000,0.02,0.08444444444444445,0,0,0,0,0,0
 2026-05-23T05:30:00Z,unit-property,rtc-http-polling-manager-canary,531000,0.1475,0.23194444444444445,0,0,0,0,0,0

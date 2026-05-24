@@ -2074,3 +2074,4 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T09:45:00Z,coverage-guided,novelty-ws-same-user-stale-tabs,browser-e2e,NA,NA,13,13,13,13,0,654643,FALSE
 2026-05-24T10:00:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,3,2,0,3,3,179299,FALSE
 2026-05-24T10:00:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,1,1,0,73404,FALSE
+2026-05-24T10:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,25,25,25,1,0,13017,FALSE
