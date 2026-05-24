@@ -1,40 +1,38 @@
 action,target,priority,allowed,reason
-launch-owner-matrix,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,P0,yes,Next product-progress slot; repaired head f4ba087d2fe34c66530afa8828081aecc1df81ac has exact-stack green evidence and needs one same-head owner matrix.
-update-controller-rule,pr07c-owner-matrix-dedupe-by-head,P0,yes,Owner-matrix dedupe and owner-evidence consumption must include exact branch head; stale 2026-05-22 old-head owner evidence must not clear or block this repaired head.
-repair-ready,benchmark-canary-fuzzer-gap/PR07C-exact-green-adoption,P0,yes,Consume repaired-head exact_stack_green evidence and stop old exact-row repair or feedback-refresh churn against failed stack 2f8247258316bde60869c06c383090904e9426bd.
-cooldown-diagnostic,benchmark-canary-fuzzer-gap/PR07C-old-row-repairs,P0,yes,Old PR07C failed-stack refreshes are superseded by repaired-head exact green evidence.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Block PR07C finalization until same-head owner evidence and exact-head publication gates are consumed.
-publish-ready,final-all-merged-current,P0,no,"Block all-merged publication until PR07C owner evidence, exact-head build-clean, benchmark rows, canary coverage, manifest evidence, and downscopes agree."
-publish-ready,current-push-manifest-refresh,P0,yes,Cheap manifest refresh is allowed to expose live branch links and intended diffs without claiming final merged validation.
+launch-owner-matrix,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,P0,yes,Next product-progress slot; repaired head f4ba087d2fe34c66530afa8828081aecc1df81ac has exact-stack green evidence and needs same-head owner evidence.
+update-controller-rule,pr07c-owner-evidence-head-match,P0,yes,Owner evidence and dedupe must include exact branch head; stale 2026-05-22 owner evidence must not clear or block the repaired head.
+repair-ready,benchmark-canary-fuzzer-gap/PR07C-exact-green-adoption,P0,yes,Consume repaired-head exact_stack_green evidence and close the exact-stack repair portion for PR07C.
+cooldown-diagnostic,benchmark-canary-fuzzer-gap/PR07C-old-failed-stack-2f8247258316,P0,yes,Old failed stack 2f8247258316bde60869c06c383090904e9426bd is superseded by repaired exact-green head f4ba087d2fe34c66530afa8828081aecc1df81ac.
+update-controller-rule,benchmark-canary/setup-build-preflight,P0,yes,"Require exact-head build-clean before owner credit, browser coverage credit, maintainer canary credit, or all-merged publication."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until same-head owner evidence, exact-head build-clean, benchmark rows, and coverage gates are consumed."
+publish-ready,final-all-merged-current,P0,no,"Block until PR07C owner evidence, exact-head build evidence, benchmark-minimum rows, canary coverage, manifest links, and downscopes agree."
+publish-ready,current-push-manifest-refresh,P0,yes,Cheap manifest refresh may expose live branch links and intended diffs without claiming final merged validation.
 publish-ready,maintainer-status-live-branches,P0,yes,"Status docs may link live branches only with explicit PR07C, coverage, manifest, build, and downscope caveats."
 publish-ready,non-pr07c-ready-published-real-fix-branches,high,yes,Keep already published real-fix branches visible and under fuzz validation while PR07C and all-merged gates close.
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence."
-update-controller-rule,owner-evidence-head-match,P0,yes,"Owner evidence may gate, clear, promote, or downscope PR07C only when it names the exact branch head being finalized."
-update-controller-rule,benchmark-canary/setup-build-preflight,P0,yes,"Require exact-head build-clean before owner credit, maintainer canary credit, browser coverage credit, or all-merged publication."
-update-controller-rule,exact-stack-publication-gate,P0,yes,Require exact branch-head benchmark-minimum and canary rows green or explicitly downscoped before all-merged publication.
-repair-ready,benchmark-canary-forced-http-equivalence,P0,yes,Materialize or re-enable promotion-blocked forced HTTP canary groups while discovery reserve remains healthy.
-publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Current coverage is not ready; required HTTP groups are absent, disabled, recovering, or lack current-run successful records."
-update-controller-rule,coverage-ready-current-run-records,P0,yes,"Do not credit scheduled, disabled, absent, recovering, or zero-success groups without current-run success or explicit blocker evidence."
+repair-ready,benchmark-canary-forced-http-equivalence,P0,yes,"Materialize or re-enable promotion-blocked forced HTTP canary groups that are absent, disabled, or lack current-run successful records."
+publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Current coverage is not ready; required HTTP groups are absent, disabled, or have zero current-run successful group records."
+update-controller-rule,coverage-ready-current-run-success,P0,yes,"Credit only current-run successful group records or explicit blocker evidence, not scheduled, disabled, absent, recovering, or zero-success groups."
 reserve-discovery,discovery-reserve-policy,P0,yes,Discovery reserve is healthy at 9 active sessions versus floor 3 with PR jobs 0 of 2; allow one focused PR finalization lane.
 update-controller-rule,discovery-protection-hard-floor,P0,yes,Context reports discovery protected=no; enforce the hard discovery floor before adding heavy PR work.
 launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status generation and analysis-only work."
 repair-ready,disk-maintenance-evidence-compaction,P0,yes,Data disk is 95% used; preserve PR evidence and current triage while compacting redundant artifacts before broad work.
 update-controller-rule,finalization-deadline-priority,P0,yes,"Until 2026-05-26T06:59:59Z prioritize reviewable branches, exact evidence, disk preservation, and explicit downscopes over exploratory churn."
-update-controller-rule,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,"After PR07C same-head owner evidence resolves, convert held duplicate-head reload-hydration into a same-head exact replay blocker."
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind PR07C owner evidence, disk preservation, and discovery reserve."
+update-controller-rule,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,"After PR07C same-head owner evidence resolves, convert this held duplicate-head family into a same-head exact replay blocker."
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind PR07C owner evidence, disk preservation, coverage materialization, and discovery reserve."
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Missing same-head title-reload, existing-or-persistence reload, and large-http-lifecycle evidence."
 cooldown-diagnostic,reload-hydration@generic-deferred-fanout,high,yes,"Suppress duplicate deferred fanout; progress only by exact replay, owner evidence, green-stack adoption, or explicit downscope."
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"Hold diagnostic-only families until focused owner evidence, green-stack adoption, exact replay evidence, or explicit downscope exists."
-publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,Do not publish diagnostic-only families as product PRs without owner evidence or green-stack adoption.
-reserve-discovery,coverage-guided-lower-level-http-polling-manager,high,yes,"Keep one scoped HTTP polling lane for large-http readiness, PR17 seed handoff, and same-user title or stale-content oracle work."
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"Hold diagnostic-only families until focused owner evidence, exact replay evidence, green-stack adoption, or explicit downscope exists."
+publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,Do not publish diagnostic-only families as product PRs without product-owned replay evidence or green-stack adoption.
+reserve-discovery,coverage-guided-lower-level-http-polling-manager/scoped-seeds,high,yes,"Keep one scoped HTTP polling lane for large-http readiness, PR17 seed handoff, and same-user title or stale-content oracle work."
 repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds,P0,yes,"Preserve isolated reproducers 0022, 0036, 0039, and 0055 as PR17 handoff evidence."
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, disk preservation, and discovery reserve."
-cooldown-diagnostic,coverage-guided-lower-level-http-polling-broad-corpus,high,yes,"Suppress broad HTTP polling corpus restarts until scoped seeds are consumed by PR17 repair or downscope, or a newer distinct canonical failure appears."
-cooldown-diagnostic,rtc-table-query-array-crdt/remote-marker-sampling,high,yes,Hold broad unisolated sampling; relaunch only bounded isolation or minimization after oracle improvement.
-repair-ready,rtc-table-query-array-crdt/existing-canonical-evidence,high,yes,Preserve existing RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE evidence as minimization material.
-update-controller-rule,rtc-table-query-array-crdt/current-run-accounting,high,yes,Refresh current-run accounting and avoid stale query-array yield credit before scheduling more mutation.
-update-controller-rule,rtc-block-parser-serialization,P1,yes,Require isolated canonical RTC_BLOCK_PARSER evidence before parser yield credit or more parser mutation scheduling.
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, disk preservation, coverage materialization, and discovery reserve."
+cooldown-diagnostic,coverage-guided-lower-level-http-polling-broad-corpus,high,yes,Suppress broad HTTP polling corpus restarts until scoped seeds are consumed or a newer distinct canonical failure appears.
+repair-ready,rtc-table-query-array-crdt/isolation-minimization,high,yes,Run bounded isolation or minimization of existing RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE artifacts before more query-array mutation.
+cooldown-diagnostic,rtc-table-query-array-crdt/broad-mutation,high,yes,Pause broad query-array mutation and duplicate remote-marker sampling until oracle ownership changes.
+update-controller-rule,lower-level-product-yield-accounting,P0,yes,Count product yield only from failing executable reproducers with canonical RTC_* oracle keys.
+update-controller-rule,lower-level-profile-accounting,high,yes,Refresh lower-level status from current roots and supervisor state before scheduling; remove stale parser-profile and rich-text credit.
+update-controller-rule,rtc-block-parser-serialization,P1,yes,Require isolated canonical RTC_BLOCK_PARSER evidence before parser yield credit or more parser mutation.
 update-controller-rule,coverage-guided-lower-level-rich-text-crdt,medium,yes,Remove stale parser-profile rich-text credit; relaunch only under the correct rich-text profile or retire as duplicate.
-update-controller-rule,lower-level-product-yield-accounting,P0,yes,Count product yield only from failing rows with executable reproducer and canonical RTC_* oracle keys.
 repair-ready,productive-analysis-action,high,yes,Analysis-only lanes may continue if they do not launch heavy commands outside the global budget.
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation, coverage materialization, and discovery reserve."
