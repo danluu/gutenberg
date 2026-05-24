@@ -1,21 +1,21 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,duplicate diagnostic churn while exact b8ca harness packaging owns the blocker,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,duplicate diagnostic churn while exact b8ca harness packaging owns the blocker
-repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until missing harness rows are runnable or explicitly downscoped,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"heavy rerun waits until missing harness rows are runnable or explicitly
+repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until missing harness rows are packaged or explicitly downscoped,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"heavy rerun waits until missing harness rows are packaged or explicitly
 downscoped"
-publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,exact stack lacks complete nonempty green benchmark-minimum and canary evidence,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,exact stack lacks complete nonempty green benchmark-minimum and canary evidence
+publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,exact stack lacks nonempty green benchmark-minimum and canary evidence,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,exact stack lacks nonempty green benchmark-minimum and canary evidence
 publish-ready,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,high,no,canonical minimal on-PR14B and current PR07C heads supersede raw heads absent fresh contrary evidence,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,"canonical minimal on-PR14B and current PR07C heads supersede raw heads absent
 fresh contrary evidence"
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay is heavy and waits until b8ca harness gate clears and reserve protection is explicit,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"same-head exact replay is heavy and waits until b8ca harness gate clears and
-reserve protection is explicit"
-launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate-head generic relaunch is diagnostic churn while exact replay evidence is missing,reload-hydration@generic-deferred-fanout,"duplicate-head generic relaunch is diagnostic churn while exact replay evidence
-is missing"
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing same-head title existing-or-persistence and large-http evidence or replay-backed downscope,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing same-head title existing-or-persistence and large-http evidence or
-replay-backed downscope"
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,b8ca harness packaging and PR07C owner matrix own the product slots; broad PR17 repair is heavy,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"b8ca harness packaging and PR07C owner matrix own the product slots; broad PR17
-repair is heavy"
+launch-owner-matrix,PR07C/HOLD-07C-current-head,P0,no,current owner matrix is terminal with product_owned_rows=0 and newer PR07C all-merged candidate failed build preflight; relaunch only with newer owner evidence on a build-clean head,PR07C/HOLD-07C-current-head,"current owner matrix is terminal with product_owned_rows=0 and newer PR07C
+all-merged candidate failed build preflight; relaunch only with newer owner
+evidence on a build-clean head"
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,heavy exact replay waits until b8ca harness gate clears and discovery reserve is protected,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"heavy exact replay waits until b8ca harness gate clears and discovery reserve is
+protected"
+launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate same-head diagnostic churn while current manifest is held,reload-hydration@generic-deferred-fanout,duplicate same-head diagnostic churn while current manifest is held
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing same-head title-reload existing-or-persistence-reload and large-http-lifecycle evidence or replay-backed downscope,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing same-head title-reload existing-or-persistence-reload and
+large-http-lifecycle evidence or replay-backed downscope"
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,broad PR17 repair is heavy and waits behind b8ca harness packaging plus reviewable split evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"broad PR17 repair is heavy and waits behind b8ca harness packaging plus
+reviewable split evidence"
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus exact all-merged benchmark-minimum and canary green evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"requires reviewable split plus exact all-merged benchmark-minimum and canary
 green evidence"
-repair-branch,PR17/materialize-table-provider-persisted-split,high,no,keep as refinement input until exact b8ca evidence gate is green and split is reviewable,PR17/materialize-table-provider-persisted-split,"keep as refinement input until exact b8ca evidence gate is green and split is
-reviewable"
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block nonessential heavy PR jobs under disk pressure; preserve discovery reserve and use slots only for exact packaging or PR07C matrix,all-other-heavy-pr-jobs,"block nonessential heavy PR jobs under disk pressure; preserve discovery reserve
-and use slots only for exact packaging or PR07C matrix"
+launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,diagnostic churn while exact b8ca harness packaging owns the blocker,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,diagnostic churn while exact b8ca harness packaging owns the blocker
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block nonessential heavy PR jobs under disk pressure; slots are for exact b8ca harness packaging after reserve protection,all-other-heavy-pr-jobs,"block nonessential heavy PR jobs under disk pressure; slots are for exact b8ca
+harness packaging after reserve protection"

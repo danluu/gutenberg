@@ -3,12 +3,12 @@ edit-title,690,session-lifecycle
 append-paragraph,414,session-lifecycle
 concurrent-paragraphs,276,session-lifecycle
 ui-toolbar-format-paragraph,44,real-user-editing
-append-paragraph,40,large-post-three-user-http-lifecycle
-insert-heading,40,large-post-three-user-http-lifecycle
-concurrent-paragraphs,40,large-post-three-user-http-lifecycle
-move-block,40,large-post-three-user-http-lifecycle
+append-paragraph,44,large-post-three-user-http-lifecycle
+insert-heading,44,large-post-three-user-http-lifecycle
+concurrent-paragraphs,44,large-post-three-user-http-lifecycle
+move-block,44,large-post-three-user-http-lifecycle
 insert-paragraph,28,full
-late-join-post-action,20,large-post-three-user-http-lifecycle
+late-join-post-action,22,large-post-three-user-http-lifecycle
 append-paragraph,20,table-stale-snapshot-http
 append-parser-stress-content,19,full
 insert-common-block,19,full

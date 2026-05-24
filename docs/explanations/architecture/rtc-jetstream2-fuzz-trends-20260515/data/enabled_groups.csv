@@ -1983,3 +1983,9 @@ timestamp,group,group_family
 2026-05-24T07:23:48Z,novelty-ws-many-user-lifecycle,lifecycle
 2026-05-24T07:23:48Z,novelty-ws-many-user-lifecycle-completion,lifecycle
 2026-05-24T07:23:48Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-24T07:26:12Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T07:26:12Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T07:26:12Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-24T07:30:57Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T07:30:57Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T07:30:57Z,novelty-ws-permissions-auth-locks,auth/locks
