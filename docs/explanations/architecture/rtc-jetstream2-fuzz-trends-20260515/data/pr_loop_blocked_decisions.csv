@@ -5,7 +5,7 @@ publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,Current canary c
 blocker/downscope rows."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until repaired-head owner evidence, build evidence, canary rows, and seed 1190001 resolution agree.",ready/rtc-pr07c-reload-record-snapshots,"Block until repaired-head owner evidence, build evidence, canary rows, and seed
 1190001 resolution agree."
-publish-ready,final-all-merged-current,P0,no,"Block until PR07C gates, benchmark-minimum rows, canary coverage/downscopes, live manifest links, and status docs agree.",final-all-merged-current,"Block until PR07C gates, benchmark-minimum rows, canary coverage/downscopes,
+publish-ready,final-all-merged-current,P0,no,"Block until PR07C gates, benchmark-minimum rows, canary coverage or downscopes, live manifest links, and status docs agree.",final-all-merged-current,"Block until PR07C gates, benchmark-minimum rows, canary coverage or downscopes,
 live manifest links, and status docs agree."
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches
 absent fresh contrary evidence."
