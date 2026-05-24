@@ -1969,3 +1969,8 @@ timestamp,group,group_family
 2026-05-24T06:07:14Z,novelty-ws-long-session-large-doc,lifecycle
 2026-05-24T06:07:14Z,novelty-http-large-post-lifecycle,lifecycle
 2026-05-24T06:07:14Z,novelty-http-large-post-lifecycle-completion,lifecycle
+2026-05-24T07:12:50Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T07:12:50Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T07:12:50Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-24T07:12:50Z,novelty-ws-structure,block-structure
+2026-05-24T07:12:50Z,novelty-ws-real-user-coverage-bridge,real-user
