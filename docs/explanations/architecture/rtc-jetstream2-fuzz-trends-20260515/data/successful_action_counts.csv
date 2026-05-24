@@ -2,7 +2,7 @@ action,count,profile
 edit-title,690,session-lifecycle
 append-paragraph,414,session-lifecycle
 concurrent-paragraphs,276,session-lifecycle
-ui-toolbar-format-paragraph,29,real-user-editing
+ui-toolbar-format-paragraph,32,real-user-editing
 insert-paragraph,28,full
 append-paragraph,28,large-post-three-user-http-lifecycle
 insert-heading,28,large-post-three-user-http-lifecycle

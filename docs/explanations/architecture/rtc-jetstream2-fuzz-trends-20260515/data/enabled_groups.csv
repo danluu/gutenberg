@@ -1917,3 +1917,8 @@ timestamp,group,group_family
 2026-05-24T04:31:45Z,novelty-ws-parser-serialization,parser
 2026-05-24T04:35:14Z,novelty-ws-block-gauntlet,auth/locks
 2026-05-24T04:35:37Z,novelty-http-same-user-stale-draft,lifecycle
+2026-05-24T04:38:38Z,novelty-ws-common-blocks,auth/locks
+2026-05-24T04:39:01Z,novelty-http-large-post-lifecycle,lifecycle
+2026-05-24T04:42:28Z,novelty-http-large-post-lifecycle-completion,lifecycle
+2026-05-24T04:45:10Z,novelty-http-list-move-refresh,http
+2026-05-24T04:47:58Z,novelty-http-table-stale-snapshot,http
