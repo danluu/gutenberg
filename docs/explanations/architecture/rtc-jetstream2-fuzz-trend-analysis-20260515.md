@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T02:25:28Z`
+Snapshot generated: `2026-05-24T02:31:03Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -55,8 +55,8 @@ trusted and should be treated as pending current-run accounting, not as a
 measured product duplicate/noise rate.
 
 Disk remains the resource constraint, while CPU/load are not saturated in the
-newest sample. Latest CPU utilization is `8.17%`, with `0.16%` iowait. Latest
-load averages are `11.78`, `8.75`, and `8.24` on `64` logical CPUs, with `1`
+newest sample. Latest CPU utilization is `8.63%`, with `1.34%` iowait. Latest
+load averages are `11.42`, `9.11`, and `8.34` on `64` logical CPUs, with `1`
 blocked task. Root has `89.0GiB` free and the data volume has `18.2GiB` free
 while `99.5%` used.
 
@@ -157,7 +157,7 @@ finishes.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. In the latest
-`2026-05-24T02:24:45Z` sample, root pressure is stable at `89.0GiB` free and
+`2026-05-24T02:30:17Z` sample, root pressure is stable at `89.0GiB` free and
 `42.2%` used; the data volume is at `18.2GiB` free and `99.5%` used. That is
 no longer a hard-zero free-space sample, but output-size budgeting remains the
 dominant live resource constraint.
@@ -474,7 +474,7 @@ parsed status snapshots, not filing authority. The largest latest rows are
 ![PR loop current queue depth](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-queue-depth-current.png)
 
 The current PR-progress controller snapshot is populated again at
-`2026-05-24T02:23:36Z`. The state-count table has `35` counted items:
+`2026-05-24T02:29:47Z`. The state-count table has `35` counted items:
 `27` published ready-product rows,
 `4` held-by-controller ready-product rows, `1` superseded ready-product row,
 `1` runtime-held-consumed PR07C owner-matrix row, and `2` deferred-family rows
@@ -526,7 +526,7 @@ repair job was launched but still pending; treat queued, held, or blocked rows
 as unresolved until row-bearing owner evidence appears, while PR07C
 owner-matrix should stay terminal unless newer current-head owner evidence
 appears. The refreshed controller stream continues to record PR07C
-no-relaunch events through `2026-05-24T02:23:39Z`; that is suppression
+no-relaunch events through `2026-05-24T02:29:50Z`; that is suppression
 evidence, not a new filing surface.
 
 ## Interpretation
@@ -560,8 +560,8 @@ authoritative, and keep startup-ish duplicate producers held unless there is
 strong product evidence.
 
 The resource picture is disk-constrained but no longer CPU/load-bound in the
-newest sample: latest CPU utilization is `8.17%`, iowait is `0.16%`,
-one-minute load is `11.78` on `64` logical CPUs with `1` blocked task, and
+newest sample: latest CPU utilization is `8.63%`, iowait is `1.34%`,
+one-minute load is `11.42` on `64` logical CPUs with `1` blocked task, and
 the data volume is `99.5%` used with `18.2GiB` free. Optional browser
 admission should still respect load, iowait, and output-volume pressure.
 
