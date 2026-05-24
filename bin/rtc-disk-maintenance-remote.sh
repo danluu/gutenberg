@@ -586,7 +586,11 @@ prune_benchmark_feedback_heavy_dirs() {
 			[ -e "$child" ] || continue
 			remove_path "$child"
 		done
-	done < <(ls -td "$cycles"/* 2>/dev/null || true)
+	done < <(
+		find "$cycles" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\0' 2>/dev/null |
+			sort -z -nr |
+			sed -z 's/^[^ ]* //'
+	)
 }
 
 prune_docker_wp_env_if_due() {
