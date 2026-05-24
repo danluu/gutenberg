@@ -1,4 +1,4 @@
-generated_at_utc: 2026-05-24T01:26:19Z
+generated_at_utc: 2026-05-24T01:30:23Z
 monitor_passes: 4302
 first_pass_utc: 2026-05-15T01:21:42Z
 last_pass_utc: 2026-05-24T00:08:54Z
@@ -25,7 +25,7 @@ quality_issues_last: 0
 memory_free_gb_last: 380.8
 root_disk_free_gib_last: 89
 root_disk_used_percent_last: 42.2
-data_disk_free_gib_last: 20.1
+data_disk_free_gib_last: 20
 data_disk_used_percent_last: 99.4
 coverage_root_loss_events: 0
 coverage_root_loss_restarts: 0
@@ -92,7 +92,7 @@ pr_progress_controller_items: 35
 pr_progress_state_counts: deferred-family/needs-product-decision/high=1; deferred-family/diagnostic/medium=1; ready-product-pr/held-by-controller/high=4; ready-product-pr/published/high=27; ready-product-pr/superseded/low=1; runtime-gated-pr/runtime-held-consumed/high=1
 pr_progress_publishable_branches: 0
 pr_progress_publishable_net_loc: 0
-pr_progress_controller_events: PR07C owner job launched=47; controller start=35; heavy PR job already active=73; heavy PR job deferred: PR concurrency=6; heavy PR job deferred: discovery reserve=269; launch=92; operator_directive_adopted=1; other=1689; persona round launched=523
+pr_progress_controller_events: PR07C owner job launched=47; controller start=35; heavy PR job already active=73; heavy PR job deferred: PR concurrency=6; heavy PR job deferred: discovery reserve=269; launch=92; operator_directive_adopted=1; other=1691; persona round launched=523
 artifact_index_rows: 3291
 artifact_index_scope_rows: 23
 critical_blockers: 6
@@ -101,7 +101,7 @@ pr_loop_queue_depth: PR progress items/needs-product-decision=1; PR progress ite
 pr_loop_blocked_decisions: 13
 pr_loop_blocked_decision_types: launch-branch-repair/P0=2; launch-owner-matrix/high=1; publish-ready/P0=3; publish-ready/high=5; repair-branch/P0=1; reserve-discovery/P0=1
 pr_blocker_stall_event_buckets: 578
-pr_blocker_stall_event_types: PR controller/consumed owner evidence=1644; PR controller/resource/discovery reserve=269; PR controller/single-flight/concurrency=79; critical-path launches/PR07C owner evidence=140; critical-path launches/benchmark canary/exact-stack=205; critical-path launches/critical-path launch=398; critical-path launches/deferred-family validation=381; critical-path launches/seed reducer/final-stack=194
+pr_blocker_stall_event_types: PR controller/consumed owner evidence=1646; PR controller/resource/discovery reserve=269; PR controller/single-flight/concurrency=79; critical-path launches/PR07C owner evidence=140; critical-path launches/benchmark canary/exact-stack=205; critical-path launches/critical-path launch=398; critical-path launches/deferred-family validation=381; critical-path launches/seed reducer/final-stack=194
 critical_repeated_validation_failures: deferred/rtc-http-room-isolation-20260517T023739Z fail=28 pass=0; deferred/rtc-pre-save-search-live-collapse-20260517T022131Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T035704Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T042707Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T045710Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T055716Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T062719Z fail=28 pass=0; deferred/rtc-rich-text-suffix-corruption-20260517T022133Z fail=28 pass=0
 critical_no_progress_artifacts: 3
 critical_no_progress_top: benchmark-canary-fuzzer-gap/exact_stack_promotion_blocked_without_active_repair=1; benchmark-canary-fuzzer-gap/zero_executor_artifact=1; productive_analysis_actions/zero_current_input=1
