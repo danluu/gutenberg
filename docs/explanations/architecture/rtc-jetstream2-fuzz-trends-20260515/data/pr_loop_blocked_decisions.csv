@@ -1,22 +1,25 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,P0,no,wait until remaining exact PR07C rows are green or downscoped; old owner evidence is stale but immediate heavy matrix would run before row closure,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,"wait until remaining exact PR07C rows are green or downscoped; old owner
-evidence is stale but immediate heavy matrix would run before row closure"
-launch-owner-matrix,PR07C/HOLD-07C-old-head,P0,no,old owner matrix evidence does not apply to repaired PR07C head,PR07C/HOLD-07C-old-head,old owner matrix evidence does not apply to repaired PR07C head
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,PR07C is not final while repaired-head exact rows remain blocked,ready/rtc-pr07c-reload-record-snapshots,PR07C is not final while repaired-head exact rows remain blocked
-publish-ready,final-all-merged-current,P0,no,all-merged branch lacks complete same-head green/downscope evidence for current benchmark-minimum and canary rows,final-all-merged-current,"all-merged branch lacks complete same-head green/downscope evidence for current
-benchmark-minimum and canary rows"
-publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"canonical minimal, on-PR14B, and repaired variants supersede raw branches absent fresh contrary evidence",raw-superseded-pr06b-pr15-and-old-pr07c,"canonical minimal, on-PR14B, and repaired variants supersede raw branches absent
-fresh contrary evidence"
-launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,"active blocker is exact PR07C row closure, not broad fuzzer feedback",benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,"active blocker is exact PR07C row closure, not broad fuzzer feedback"
-repair-ready,benchmark-canary-fuzzer-gap/b8ca68ad-lower-harness,P0,no,superseded by the repaired-head full exact refresh and not the next blocker,benchmark-canary-fuzzer-gap/b8ca68ad-lower-harness,superseded by the repaired-head full exact refresh and not the next blocker
-launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,preserve discovery reserve; only cheap publication manifest/status generation or analysis-only work may run when discovery is unhealthy,heavy-pr-jobs-when-discovery-unhealthy,"preserve discovery reserve; only cheap publication manifest/status generation or
-analysis-only work may run when discovery is unhealthy"
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,broad PR17 repair waits behind PR07C exact-row closure and discovery reserve,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,broad PR17 repair waits behind PR07C exact-row closure and discovery reserve
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,heavy reload replay waits behind PR07C row closure and discovery reserve,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,heavy reload replay waits behind PR07C row closure and discovery reserve
-launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate same-head deferred relaunch is diagnostic churn while manifest is held,reload-hydration@generic-deferred-fanout,duplicate same-head deferred relaunch is diagnostic churn while manifest is held
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing same-head title-reload, existing-or-persistence reload, and large-http-lifecycle evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing same-head title-reload, existing-or-persistence reload, and
-large-http-lifecycle evidence"
-publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,do not publish diagnostic-only families without owner evidence or green-stack adoption,pre-save-search-live-collapse+rich-text-suffix-corruption,"do not publish diagnostic-only families without owner evidence or green-stack
-adoption"
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"nonessential heavy PR work waits behind PR07C row closure, disk preservation, and discovery reserve",all-other-heavy-pr-jobs,"nonessential heavy PR work waits behind PR07C row closure, disk preservation,
-and discovery reserve"
+repair-ready,benchmark-canary-fuzzer-gap/PR07C/table-stale-snapshot-http,P0,no,Superseded by newer 20260524T100227Z exact-refresh evidence; do not chase unless it reappears.,benchmark-canary-fuzzer-gap/PR07C/table-stale-snapshot-http,"Superseded by newer 20260524T100227Z exact-refresh evidence; do not chase unless
+it reappears."
+repair-ready,benchmark-canary-fuzzer-gap/PR07C/same-user-stale-content-http,P0,no,Superseded by newer 20260524T100227Z exact-refresh evidence; current blocker set is two rows.,benchmark-canary-fuzzer-gap/PR07C/same-user-stale-content-http,"Superseded by newer 20260524T100227Z exact-refresh evidence; current blocker set
+is two rows."
+launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,"Active blocker is exact PR07C row closure, not broad feedback.",benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,"Active blocker is exact PR07C row closure, not broad feedback."
+launch-owner-matrix,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,P0,no,Wait until remaining exact rows are green or downscoped; old 2026-05-22 owner evidence is stale for this head.,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,"Wait until remaining exact rows are green or downscoped; old 2026-05-22 owner
+evidence is stale for this head."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,PR07C is not final while repaired-head exact rows and current-head owner evidence remain open.,ready/rtc-pr07c-reload-record-snapshots,"PR07C is not final while repaired-head exact rows and current-head owner
+evidence remain open."
+publish-ready,final-all-merged-current,P0,no,All-merged lacks complete same-head benchmark-minimum and canary green or explicit row downscope evidence.,final-all-merged-current,"All-merged lacks complete same-head benchmark-minimum and canary green or
+explicit row downscope evidence."
+publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw branches absent fresh evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw branches absent
+fresh evidence."
+launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"When discovery reserve is unhealthy, allow only cheap publication/status work or analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"When discovery reserve is unhealthy, allow only cheap publication/status work or
+analysis-only work."
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,Broad PR17 repair waits behind PR07C exact-row closure and discovery reserve.,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,Broad PR17 repair waits behind PR07C exact-row closure and discovery reserve.
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,Heavy reload replay waits behind PR07C row closure and discovery reserve.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,Heavy reload replay waits behind PR07C row closure and discovery reserve.
+launch-branch-repair,reload-hydration@generic-deferred-fanout,high,no,Duplicate same-head deferred fanout is diagnostic churn while manifest is held.,reload-hydration@generic-deferred-fanout,Duplicate same-head deferred fanout is diagnostic churn while manifest is held.
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Missing same-head title-reload, existing-or-persistence reload, and large-http-lifecycle evidence.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing same-head title-reload, existing-or-persistence reload, and
+large-http-lifecycle evidence."
+publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,Do not publish diagnostic-only families without owner evidence or green-stack adoption.,pre-save-search-live-collapse+rich-text-suffix-corruption,"Do not publish diagnostic-only families without owner evidence or green-stack
+adoption."
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C row closure, disk preservation, and discovery reserve.",all-other-heavy-pr-jobs,"Nonessential heavy PR work waits behind PR07C row closure, disk preservation,
+and discovery reserve."
