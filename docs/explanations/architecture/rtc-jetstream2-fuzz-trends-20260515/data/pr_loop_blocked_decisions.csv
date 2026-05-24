@@ -8,8 +8,8 @@ ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b"
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,ready/rtc-pr15c-fallback-group-delete-green,superseded by published ready/rtc-pr15c-fallback-group-delete-green-on-pr14b
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,high,no,superseded by current published PR07C head 2f8247258316bde60869c06c383090904e9426bd,ready/rtc-pr07c-reload-record-snapshots@025c7638361f,"superseded by current published PR07C head
 2f8247258316bde60869c06c383090904e9426bd"
-launch-owner-matrix,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,high,no,current-head owner replay is terminal green with product_owned_rows=0; relaunch only if newer product-owned evidence appears,PR07C/HOLD-07C@2f8247258316bde60869c06c383090904e9426bd,"current-head owner replay is terminal green with product_owned_rows=0; relaunch
-only if newer product-owned evidence appears"
+launch-owner-matrix,PR07C/HOLD-07C-browser-e2e-duplicate,high,no,do not relaunch duplicate browser owner matrix unless newer current-head product-owned evidence appears,PR07C/HOLD-07C-browser-e2e-duplicate,"do not relaunch duplicate browser owner matrix unless newer current-head
+product-owned evidence appears"
 launch-branch-repair,reload-hydration@generic,P0,no,generic deferred fanout is diagnostic churn until same-head exact rows are green or explicitly downscoped,reload-hydration@generic,"generic deferred fanout is diagnostic churn until same-head exact rows are green
 or explicitly downscoped"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,missing fresh same-head exact browser promotion evidence
