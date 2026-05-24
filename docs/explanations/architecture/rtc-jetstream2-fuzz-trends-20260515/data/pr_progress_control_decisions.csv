@@ -24,7 +24,7 @@ publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,
 reserve-discovery,discovery-reserve-policy,P0,yes,Discovery reserve is healthy at 9 active sessions versus floor 3 with PR jobs 0/2; allow one focused PR finalization lane.
 update-controller-rule,discovery-protection-hard-floor,P0,yes,Context reports discovery protected=no; enforce the hard discovery floor before heavy PR work.
 launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status generation and analysis-only work."
-repair-ready,disk-maintenance-evidence-compaction,P0,yes,Data volume is 95% used; preserve PR evidence and current triage while compacting redundant artifacts before broad work.
+repair-ready,disk-maintenance-evidence-compaction,P0,yes,Data volume is tight; preserve PR evidence and current triage while compacting redundant artifacts before broad work.
 reserve-discovery,coverage-guided-lower-level-http-polling-manager/scoped-seeds,high,yes,"Keep one scoped HTTP polling lane for PR17/large-http readiness seeds 0022,0036,0039,0055."
 cooldown-diagnostic,coverage-guided-lower-level-http-polling-broad-corpus,high,yes,Suppress broad HTTP polling corpus restarts until scoped seeds are consumed or a newer distinct canonical failure appears.
 repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds,P0,yes,"Preserve isolated reproducers 0022,0036,0039,0055 as PR17 handoff evidence without launching broad PR17 repair."
@@ -34,7 +34,9 @@ cooldown-diagnostic,rtc-table-query-array-crdt/broad-mutation,high,yes,Pause bro
 update-controller-rule,lower-level-product-yield-accounting,P0,yes,Count product yield only from failing executable reproducers with canonical RTC_* oracle keys.
 update-controller-rule,lower-level-profile-accounting,high,yes,Refresh lower-level status from current roots and supervisor state before scheduling; remove stale parser-profile and rich-text credit.
 update-controller-rule,rtc-block-parser-serialization,P1,yes,Require isolated canonical RTC_BLOCK_PARSER evidence before parser yield credit or more parser mutation.
+reserve-discovery,rtc-block-parser-serialization/feature-corpus-admission,medium,yes,"Allow bounded corpus-admission retarget as discovery work, not as a product-progress slot."
 update-controller-rule,coverage-guided-lower-level-rich-text-crdt,medium,yes,Remove stale parser-profile rich-text credit; relaunch only under correct rich-text profile or retire as duplicate.
+reserve-discovery,unit-property-http-polling-canary/scoped-replacement,high,yes,Bounded three-case canary replacement is allowed as discovery reserve and should not consume the product-progress slot.
 repair-ready,productive-analysis-action,high,yes,Analysis-only lanes may continue if they do not launch heavy commands outside the global budget.
 update-controller-rule,finalization-deadline-priority,P0,yes,"Until 2026-05-26T06:59:59Z prioritize reviewable branches, exact evidence, disk preservation, and explicit downscopes over exploratory churn."
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation, coverage materialization, and discovery reserve."

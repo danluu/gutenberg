@@ -2041,6 +2041,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T13:45:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,7,3,0,7,7,860418,FALSE
 2026-05-24T13:45:00Z,coverage-guided-lower-level,coverage-guided-lower-level-rich-text-crdt,coverage-guided-lower-level,in-process,rtc-rich-text-crdt,2,2,2,1,0,24317,FALSE
 2026-05-24T13:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6530,6530,6530,38,0,912227,FALSE
-2026-05-24T14:00:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,4,2,0,4,4,366883,FALSE
-2026-05-24T14:00:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,380512,FALSE
-2026-05-24T14:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,2880,2880,2880,16,0,388311,FALSE
+2026-05-24T14:00:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,8,4,0,8,8,774511,FALSE
+2026-05-24T14:00:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,6,3,0,6,6,779779,FALSE
+2026-05-24T14:00:00Z,coverage-guided-lower-level,coverage-guided-lower-level-rich-text-crdt,coverage-guided-lower-level,in-process,rtc-rich-text-crdt,2,2,2,1,0,24572,FALSE
+2026-05-24T14:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,5940,5940,5940,33,0,805647,FALSE
