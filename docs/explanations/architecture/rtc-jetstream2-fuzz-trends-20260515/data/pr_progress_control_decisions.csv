@@ -1,44 +1,41 @@
 action,target,priority,allowed,reason
-repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk pressure and materialization invariant failure are P0; preserve PR review evidence and current-run triage before artifact-heavy work
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is above floor but discovery_protected is no; protect bounded discovery before extra heavy PR work
-update-controller-rule,finalization-deadline-priority,P0,yes,until 2026-05-26T06:59:59Z prioritize reviewable branches exact evidence disk preservation and explicit downscope
-repair-ready,benchmark-canary-fuzzer-gap/b8ca68ad-lower-harness,P0,yes,next product-progress slot; exact b8ca benchmark-minimum lower and many-user harness rows are missing or runnable-blocked
-repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,package or explicitly downscope lower/micro-crdt lower/micro-html lower/micro-sync and multi-user/many-users-sync before rerun
-repair-ready,benchmark-canary-fuzzer-gap/active-continuation-artifact-gate,P0,yes,accept only exact-stack artifacts proving green fix branch or specific blocker; preserve zero-output ENOSPC and bad-path logs
-repair-ready,benchmark-canary-fuzzer-gap/repair-benchmark-canary-editor-bootstrap-wait,P0,yes,consume exact refresh as replacement-candidate evidence only; blocker clears only when promotion rows are green or downscoped
-repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until missing harness rows are packaged or explicitly downscoped
-publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,exact stack lacks nonempty green benchmark-minimum and canary evidence
-publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata refresh is allowed; progress lists live pushed refs and status docs need current branch links
-publish-ready,maintainer-status-live-branches,P0,yes,status docs may link live branches and deliberate downscopes without claiming final green evidence
+repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_pressure is active; preserve PR evidence and current-run triage before artifact-heavy work
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 9 versus floor 3 but discovery_protected is no; protect bounded discovery before extra heavy PR work
+update-controller-rule,finalization-deadline-priority,P0,yes,"until 2026-05-26T06:59:59Z prioritize reviewable branches, exact green or downscope evidence, disk preservation, and explicit rejections"
+update-controller-rule,build-clean-preflight-before-finalization,P0,yes,latest PR07C all-merged candidate failed setup/build; build-clean evidence must supersede benchmark-row routing and publication
+repair-ready,ready/rtc-pr07c-reload-record-snapshots,P0,yes,next product-progress slot; repair npm run build quickly or explicitly downscope PR07C before final all-merged publication
+launch-owner-matrix,PR07C/HOLD-07C-current-head,P0,no,current owner matrix is terminal with product_owned_rows=0 and the current all-merged PR07C candidate is not build-clean
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,do not publish PR07C as final or validated while build preflight and browser canary rows fail
+publish-ready,final-all-merged@2f8247258316bde60869c06c383090904e9426bd,P0,no,setup/build is red and browser canary rows failed before product behavior
+repair-ready,benchmark-canary-fuzzer-gap/exact-stack-harness-packaging@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,"after PR07C build or downscope, hydrate or explicitly downscope lower/micro-crdt lower/micro-html lower/micro-sync and multi-user/many-users-sync"
+repair-ready,exact-all-merged-benchmark-minimum-canary-rerun,P0,no,heavy rerun waits until PR07C build/downscope and missing exact harness rows are green or explicitly downscoped
+publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,lacks nonempty green benchmark-minimum plus canary evidence or explicit row downscopes
+update-controller-rule,benchmark-canary-fuzzer-gap-owner,P0,yes,change blocker owner from generic fuzzer-feedback to exact build and benchmark-minimum harness preflight packaging
+repair-ready,benchmark-canary-fuzzer-gap/active-continuation-artifact-gate,P0,yes,accept active continuation only if it emits exact-stack artifacts or a concrete blocker; otherwise preserve logs and requeue to exact harness packaging
+cooldown-diagnostic,benchmark-feedback-refresh-without-build-or-harness-change,P0,yes,"repeated feedback refresh cannot change branch head, build state, harness rows, or publication evidence"
+launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,"active blocker must route to exact build/harness packaging, not broad fuzzer-feedback repair"
+update-controller-rule,benchmark-minimum-nonempty-publication-gate,P0,yes,skipped empty missing or no-tests-found rows cannot count as green unless explicitly downscoped with evidence
+update-controller-rule,coverage-ready-current-run-records,P0,yes,do not credit disabled scheduled skipped or empty canary groups as ready without current-run records or explicit downscope
+reserve-discovery,benchmark-canary-http-coverage/forced-http-groups,P0,yes,materialize bounded forced HTTP canary groups with current-run records or write an explicit disk/load blocker
+reserve-discovery,benchmark-canary-forced-equivalence,P0,yes,materialize disabled or absent promotion-blocked equivalents for lower/micro and many-user rows with records or blockers
+reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http,P0,yes,"keep one primary HTTP canary lane, preferably provider-persisted or large-post readiness, until current-run records exist"
+publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata refresh is allowed because status docs need live branch links and the run manifest is header-only
+publish-ready,maintainer-status-live-branches,P0,yes,status docs may link live branches and deliberate downscopes but must not claim final green all-merged evidence
 publish-ready,ready-published-real-fix-branches,high,yes,keep canonical PR02A PR03B PR06B-minimal PR07B PR09 PR10 PR11A PR11B PR14 PR14B and PR15-on-PR14B branches linked and validating
-publish-ready,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,high,no,canonical minimal on-PR14B and current PR07C heads supersede raw heads absent fresh contrary evidence
-launch-owner-matrix,PR07C/HOLD-07C-current-head,P0,no,current owner matrix is terminal with product_owned_rows=0 and newer PR07C all-merged candidate failed build preflight
-repair-ready,PR07C/HOLD-07C-owner-matrix-terminalization@2f8247258316bde60869c06c383090904e9426bd,high,yes,consume existing current-head owner replay as terminal no-promote evidence
-update-controller-rule,PR07C/build-clean-preflight,P0,yes,ready or finalized PR07C stacks must be build-clean before owner-matrix rerun or maintainer snapshot gate
-repair-ready,reload-hydration-current-deferred-report,P0,yes,consume current held manifest and report as candidate evidence only
-update-controller-rule,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,convert generic deferred fanout into same-head exact replay blocker after b8ca harness gate clears
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,heavy exact replay waits until b8ca harness gate clears and discovery reserve is protected
-launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate same-head diagnostic churn while current manifest is held
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing same-head title-reload existing-or-persistence-reload and large-http-lifecycle evidence or replay-backed downscope
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,diagnostic-only until focused first-loss product-owner evidence owner evidence green-stack adoption or explicit downscope
-reserve-discovery,benchmark-canary-http-coverage/forced-http-groups,P0,yes,materialize bounded forced HTTP canary groups with current-run records or explicit disk/load blocker
-reserve-discovery,benchmark-canary-forced-equivalence,P0,yes,materialize disabled or absent promotion-blocked equivalents for lower/micro and many-user rows with current-run records or blockers
-reserve-discovery,benchmark-canary-http-coverage/novelty-http-large-post-readiness,P0,yes,require current_run_group_records before coverage_ready then rotate one slot through disabled primary HTTP canary groups
-reserve-discovery,coverage-guided-lower-level-http-polling-manager,high,yes,keep exactly one lower-level lane focused on httpPollingFocus=large-http-readiness
-cooldown-diagnostic,coverage-guided-lower-level-http-polling-broad-corpus,high,yes,do not reopen broad HTTP polling corpus under disk pressure and exact harness gates
+publish-ready,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,high,no,canonical minimal on-PR14B and current PR07C heads supersede raw variants absent fresh contrary evidence
+update-controller-rule,downscope/malformed-save-payload,high,yes,raw malformed-save heads are covered by canonical PR06B-minimal
+update-controller-rule,downscope/http-room-isolation,high,yes,ready PR02A covers the family absent fresh healthy-user HTTP room-isolation product evidence
+update-controller-rule,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,convert generic deferred fanout to same-head exact replay blocker after the b8ca harness gate clears
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"heavy replay waits behind PR07C build/downscope, b8ca exact harness gate, and protected discovery reserve"
+launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate same-head deferred relaunch is diagnostic churn while the current manifest is held
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing same-head title-reload existing-or-persistence-reload and large-http-lifecycle green or downscope evidence
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,"diagnostic-only until focused first-loss product evidence, owner evidence, green-stack adoption, or explicit downscope"
+reserve-discovery,coverage-guided-lower-level-http-polling-manager,high,yes,keep exactly one lower-level lane focused on httpPollingFocus=large-http-readiness and preserve PR17 seed handoff evidence
+cooldown-diagnostic,coverage-guided-lower-level-http-polling-broad-corpus,high,yes,do not broaden HTTP polling corpus under disk pressure and exact finalization gates
 reserve-discovery,rtc-table-query-array-crdt,high,yes,allow one bounded mutation-enabled isolated lower-level lane as discovery reserve
-update-controller-rule,rtc-block-parser-serialization-profile-mismatch,high,yes,remove stale rich-text-crdt parser accounting; require canonical RTC_BLOCK_PARSER key plus isolation and minimization before yield credit
-cooldown-diagnostic,rtc-rich-text-crdt-multiblock,medium,yes,keep unscheduled while corpus is capped and recent attempts show no new coverage or feature keys
-repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds,P0,yes,preserve reproducers 0022 0036 and 0039 as PR17 seed handoff and keep 0055 split evidence separate
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,broad PR17 repair is heavy and waits behind b8ca harness packaging plus reviewable split evidence
-publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus exact all-merged benchmark-minimum and canary green evidence
-cooldown-diagnostic,benchmark-feedback-refresh-without-harness-change,P0,yes,repeated refresh is churn until exact b8ca harness content or row downscope changes
-launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,diagnostic churn while exact b8ca harness packaging owns the blocker
-update-controller-rule,benchmark-minimum-nonempty-publication-gate,P0,yes,block final publication on skipped zero-row missing empty or no-tests-found evidence unless explicitly downscoped
-update-controller-rule,coverage-ready-current-run-records,P0,yes,do not credit disabled scheduled skipped empty or no-tests-found canary groups as ready without current-run records or downscope
-update-controller-rule,deferred-diagnostic-promotion-gate,high,yes,diagnostic manifests cannot publish or generic-relaunch without product-owned evidence owner evidence green-stack adoption or downscope
-update-controller-rule,productive-analysis-feed-row-accounting,P0,yes,every P0 or high productive-analysis feed row must return as an allowed action or explicit rejection
+update-controller-rule,rtc-block-parser-serialization-profile-mismatch,high,yes,remove stale rich-text-crdt parser accounting; require canonical isolated RTC_BLOCK_PARSER evidence before yield credit
+cooldown-diagnostic,rtc-rich-text-crdt-multiblock,medium,yes,keep unscheduled while corpus is capped and recent attempts produce no new coverage or feature keys
+repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds,P0,yes,preserve reproducers 0022 0036 and 0039 as PR17 seed handoff; keep 0055 split separately
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"broad PR17 branch repair waits behind PR07C build/downscope, exact b8ca harness packaging, and reviewable split evidence"
 repair-ready,productive-analysis-action,high,yes,analysis-only feedback may continue if it does not launch heavy commands outside budget
-update-controller-rule,downscope/malformed-save-payload,high,yes,covered by canonical PR06B-minimal; raw deferred malformed-save heads are superseded
-update-controller-rule,downscope/http-room-isolation,high,yes,covered by ready PR02A absent fresh contrary healthy-user HTTP room-isolation evidence
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,block nonessential heavy PR jobs under disk pressure; slots are for exact b8ca harness packaging after reserve protection
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"nonessential heavy PR work waits under disk pressure; slots belong to PR07C repair/downscope, exact b8ca harness packaging, and protected discovery"
