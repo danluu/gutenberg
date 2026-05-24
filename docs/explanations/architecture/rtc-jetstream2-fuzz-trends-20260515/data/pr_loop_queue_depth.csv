@@ -1,4 +1,10 @@
 queue,state,class,priority,depth
+PR progress items,needs-product-decision,deferred-family,high,1
+PR progress items,diagnostic,deferred-family,medium,1
+PR progress items,held-by-controller,ready-product-pr,high,4
+PR progress items,published,ready-product-pr,high,27
+PR progress items,superseded,ready-product-pr,low,1
+PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
 controller decisions,allowed,control decision,P0,16
 controller decisions,blocked,control decision,P0,7
 controller decisions,allowed,control decision,P1,1
