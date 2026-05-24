@@ -3,9 +3,9 @@ edit-title,716,session-lifecycle
 append-paragraph,448,session-lifecycle
 concurrent-paragraphs,292,session-lifecycle
 append-paragraph,72,table-stale-snapshot-http
+ui-toolbar-format-paragraph,64,real-user-editing
 insert-block-gauntlet-block,63,block-gauntlet
 edit-block-gauntlet-attributes,60,block-gauntlet
-ui-toolbar-format-paragraph,55,real-user-editing
 append-paragraph,50,large-post-three-user-http-lifecycle
 insert-heading,50,large-post-three-user-http-lifecycle
 concurrent-paragraphs,50,large-post-three-user-http-lifecycle
