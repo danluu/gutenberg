@@ -1898,7 +1898,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T06:00:00Z,coverage-guided,novelty-ws-async-server-blocks,browser-e2e,NA,NA,1,1,0,1,1,47408,FALSE
 2026-05-24T06:00:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,3,2,0,3,3,228341,FALSE
 2026-05-24T06:00:00Z,coverage-guided,novelty-ws-permissions-auth-locks,browser-e2e,NA,NA,1,1,1,1,0,25767,FALSE
-2026-05-24T06:00:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,NA,NA,2,2,0,2,2,212639,FALSE
+2026-05-24T06:00:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,2,2,0,2,2,212639,FALSE
 2026-05-24T06:00:00Z,coverage-guided,novelty-ws-revision-recovery,browser-e2e,NA,NA,2,1,0,2,2,102458,FALSE
 2026-05-24T06:00:00Z,coverage-guided,novelty-ws-structure,browser-e2e,NA,NA,1,1,1,1,0,32522,FALSE
 2026-05-24T06:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1650,1650,1650,66,0,923520,FALSE
@@ -1966,7 +1966,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T08:30:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,NA,NA,2,1,0,2,2,158920,FALSE
 2026-05-24T08:30:00Z,coverage-guided,novelty-ws-block-gauntlet,browser-e2e,NA,NA,8,7,5,8,3,369572,FALSE
 2026-05-24T08:30:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,NA,NA,3,2,0,3,3,87074,FALSE
-2026-05-24T08:30:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,NA,NA,19,11,0,19,19,2429032,FALSE
+2026-05-24T08:30:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,19,11,0,19,19,2429032,FALSE
 2026-05-24T08:30:00Z,focused-shards,focused-same-user-stale-tabs-http,browser-e2e,http,session-lifecycle,1,1,0,1,1,169995,FALSE
 2026-05-24T08:30:00Z,focused-shards,focused-title-reload-http,browser-e2e,http,session-lifecycle,1,1,1,1,0,68190,FALSE
 2026-05-24T08:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1175,1175,1175,47,0,905179,FALSE
@@ -1982,7 +1982,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T08:45:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,NA,NA,5,2,0,5,5,190572,FALSE
 2026-05-24T08:45:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,NA,NA,5,3,0,5,5,217145,FALSE
 2026-05-24T08:45:00Z,coverage-guided,novelty-ws-parser-transform,browser-e2e,NA,NA,5,5,4,5,1,155147,FALSE
-2026-05-24T08:45:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,NA,NA,4,1,0,4,4,484169,FALSE
+2026-05-24T08:45:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,4,1,0,4,4,484169,FALSE
 2026-05-24T08:45:00Z,coverage-guided,novelty-ws-revision-persistence,browser-e2e,NA,NA,17,14,10,17,7,525590,FALSE
 2026-05-24T08:45:00Z,coverage-guided,novelty-ws-revision-recovery,browser-e2e,NA,NA,8,5,0,8,8,425637,FALSE
 2026-05-24T08:45:00Z,coverage-guided,novelty-ws-same-user-lifecycle,browser-e2e,NA,NA,14,12,10,14,4,390608,FALSE
