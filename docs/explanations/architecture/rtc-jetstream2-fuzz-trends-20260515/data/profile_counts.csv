@@ -5,9 +5,9 @@ real-user-editing,2207,989,0,0.44811961939284095,real-user
 large-post-three-user-http-lifecycle,2118,226,0,0.10670443814919736,lifecycle
 collaboration-ui-signals,1649,0,0,0,other
 multi-reload-lifecycle,1102,684,0,0.6206896551724138,lifecycle
-block-gauntlet,996,662,3,0.6646586345381527,block-structure
+block-gauntlet,996,662,0,0.6646586345381527,block-structure
 async-server-blocks,966,155,0,0.16045548654244307,async/media
-table-stale-snapshot-http,924,602,2,0.6515151515151515,other
+table-stale-snapshot-http,924,602,0,0.6515151515151515,other
 permissions-auth-locks,901,299,0,0.3318534961154273,auth/locks
 revision-persistence,683,310,0,0.4538799414348463,persistence
 long-session-large-doc,646,39,0,0.06037151702786378,lifecycle
