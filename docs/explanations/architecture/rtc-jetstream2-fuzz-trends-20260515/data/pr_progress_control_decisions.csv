@@ -33,10 +33,8 @@ repair-ready,rtc-table-query-array-crdt/isolation-minimization,high,yes,Run boun
 cooldown-diagnostic,rtc-table-query-array-crdt/broad-mutation,high,yes,Pause broad query-array mutation and duplicate remote-marker sampling until oracle ownership changes.
 update-controller-rule,lower-level-product-yield-accounting,P0,yes,Count product yield only from failing executable reproducers with canonical RTC_* oracle keys.
 update-controller-rule,lower-level-profile-accounting,high,yes,Refresh lower-level status from current roots and supervisor state before scheduling; remove stale parser-profile and rich-text credit.
-update-controller-rule,rtc-block-parser-serialization,P1,yes,Require isolated canonical RTC_BLOCK_PARSER evidence before parser yield credit or more parser mutation.
-reserve-discovery,rtc-block-parser-serialization/feature-corpus-admission,medium,yes,"Allow bounded corpus-admission retarget as discovery work, not as a product-progress slot."
-update-controller-rule,coverage-guided-lower-level-rich-text-crdt,medium,yes,Remove stale parser-profile rich-text credit; relaunch only under correct rich-text profile or retire as duplicate.
 reserve-discovery,unit-property-http-polling-canary/scoped-replacement,high,yes,Bounded three-case canary replacement is allowed as discovery reserve and should not consume the product-progress slot.
+reserve-discovery,rtc-block-parser-serialization/feature-corpus-admission,medium,yes,"Allow bounded corpus-admission retarget as discovery work, not as a product-progress slot."
 repair-ready,productive-analysis-action,high,yes,Analysis-only lanes may continue if they do not launch heavy commands outside the global budget.
 update-controller-rule,finalization-deadline-priority,P0,yes,"Until 2026-05-26T06:59:59Z prioritize reviewable branches, exact evidence, disk preservation, and explicit downscopes over exploratory churn."
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation, coverage materialization, and discovery reserve."
