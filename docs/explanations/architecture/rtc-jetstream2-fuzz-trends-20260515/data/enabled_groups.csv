@@ -1910,3 +1910,5 @@ timestamp,group,group_family
 2026-05-23T21:39:44Z,novelty-ws-lifecycle,lifecycle
 2026-05-23T21:39:44Z,novelty-ws-revision-recovery,persistence
 2026-05-24T03:54:55Z,novelty-ws-parser-transform,parser
+2026-05-24T03:57:49Z,novelty-ws-real-user-save-reload,real-user
+2026-05-24T03:58:10Z,novelty-ws-thirty-user-lifecycle,lifecycle
