@@ -14,7 +14,7 @@ edit-nested-paragraph,199,session-lifecycle
 edit-paragraph,193,session-lifecycle
 append-paragraph,152,table-stale-snapshot-http
 insert-media-cross-entity-block,120,media-cross-entity
-ui-toolbar-format-paragraph,110,real-user-editing
+ui-toolbar-format-paragraph,111,real-user-editing
 append-paragraph,110,large-post-three-user-http-lifecycle
 insert-heading,110,large-post-three-user-http-lifecycle
 concurrent-paragraphs,110,large-post-three-user-http-lifecycle
