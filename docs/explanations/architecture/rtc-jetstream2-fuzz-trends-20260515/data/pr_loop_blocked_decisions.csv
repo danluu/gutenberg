@@ -1,15 +1,20 @@
 action,target,priority,allowed,reason,target_label,reason_label
 launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,discovery is unprotected under disk pressure; allow only cheap docs manifests analysis disk maintenance protected discovery and non-heavy packaging,heavy-pr-when-discovery-unhealthy,"discovery is unprotected under disk pressure; allow only cheap docs manifests
 analysis disk maintenance protected discovery and non-heavy packaging"
-launch-branch-repair,artifact-heavy-broad-work-under-disk-pressure,P0,no,disk severe pressure blocks broad artifact-heavy PR and exploratory jobs,artifact-heavy-broad-work-under-disk-pressure,disk severe pressure blocks broad artifact-heavy PR and exploratory jobs
+launch-branch-repair,artifact-heavy-broad-work-under-disk-pressure,P0,no,disk pressure blocks broad artifact-heavy PR and exploratory jobs,artifact-heavy-broad-work-under-disk-pressure,disk pressure blocks broad artifact-heavy PR and exploratory jobs
 repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until missing harness files exist and discovery reserve is protected/materialized,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"heavy rerun waits until missing harness files exist and discovery reserve is
 protected/materialized"
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has missing or No-tests-found benchmark-minimum rows,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"current exact-stack evidence has missing or No-tests-found benchmark-minimum
 rows"
 publish-ready,superseded-ready-branch-variants,high,no,raw PR06B raw PR15A/B/C and old PR07C heads are superseded by published replacements,superseded-ready-branch-variants,"raw PR06B raw PR15A/B/C and old PR07C heads are superseded by published
 replacements"
-launch-owner-matrix,PR07C/HOLD-07C-browser-e2e-duplicate,high,no,do not relaunch duplicate heavy owner matrix while no newer current-head product-owned evidence exists,PR07C/HOLD-07C-browser-e2e-duplicate,"do not relaunch duplicate heavy owner matrix while no newer current-head
-product-owned evidence exists"
+publish-ready,branch-ready-rtc-pr06b-malformed-save-request-payload,high,no,raw PR06B is superseded by the published PR06B-minimal branch absent fresh contrary evidence,branch-ready-rtc-pr06b-malformed-save-request-payload,"raw PR06B is superseded by the published PR06B-minimal branch absent fresh
+contrary evidence"
+publish-ready,branch-ready-rtc-pr15a-fallback-group-move-green,high,no,raw PR15A is superseded by the published PR15A-on-PR14B branch,branch-ready-rtc-pr15a-fallback-group-move-green,raw PR15A is superseded by the published PR15A-on-PR14B branch
+publish-ready,branch-ready-rtc-pr15b-fallback-group-insert-anchor-green,high,no,raw PR15B is superseded by the published PR15B-on-PR14B branch,branch-ready-rtc-pr15b-fallback-group-insert-anchor-green,raw PR15B is superseded by the published PR15B-on-PR14B branch
+publish-ready,branch-ready-rtc-pr15c-fallback-group-delete-green,high,no,raw PR15C is superseded by the published PR15C-on-PR14B branch,branch-ready-rtc-pr15c-fallback-group-delete-green,raw PR15C is superseded by the published PR15C-on-PR14B branch
+launch-owner-matrix,PR07C/HOLD-07C-browser-e2e-duplicate,high,no,do not relaunch duplicate heavy owner matrix without newer current-head product-owned evidence,PR07C/HOLD-07C-browser-e2e-duplicate,"do not relaunch duplicate heavy owner matrix without newer current-head
+product-owned evidence"
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay waits until b8ca harness gate clears and discovery reserve is protected/materialized,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"same-head exact replay waits until b8ca harness gate clears and discovery
 reserve is protected/materialized"
 launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate diagnostic churn while same-head exact replay evidence is missing,reload-hydration@generic-deferred-fanout,duplicate diagnostic churn while same-head exact replay evidence is missing
