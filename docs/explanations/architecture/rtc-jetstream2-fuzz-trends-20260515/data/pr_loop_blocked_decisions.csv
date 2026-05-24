@@ -1,24 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C-current-head,P0,no,current owner matrix is terminal with product_owned_rows=0 and the current all-merged PR07C candidate is not build-clean,PR07C/HOLD-07C-current-head,"current owner matrix is terminal with product_owned_rows=0 and the current
-all-merged PR07C candidate is not build-clean"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,do not publish PR07C as final or validated while build preflight and browser canary rows fail,ready/rtc-pr07c-reload-record-snapshots,"do not publish PR07C as final or validated while build preflight and browser
-canary rows fail"
-publish-ready,final-all-merged@2f8247258316bde60869c06c383090904e9426bd,P0,no,setup/build is red and browser canary rows failed before product behavior,final-all-merged@2f8247258316bde60869c06c383090904e9426bd,setup/build is red and browser canary rows failed before product behavior
-repair-ready,exact-all-merged-benchmark-minimum-canary-rerun,P0,no,heavy rerun waits until PR07C build/downscope and missing exact harness rows are green or explicitly downscoped,exact-all-merged-benchmark-minimum-canary-rerun,"heavy rerun waits until PR07C build/downscope and missing exact harness rows are
+publish-ready,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,high,no,"canonical minimal, on-PR14B, and current PR07C heads supersede raw variants absent fresh contrary evidence",raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,"canonical minimal, on-PR14B, and current PR07C heads supersede raw variants
+absent fresh contrary evidence"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,do not publish PR07C as final or validated until owner/build/canary evidence is green or explicitly downscoped,ready/rtc-pr07c-reload-record-snapshots,"do not publish PR07C as final or validated until owner/build/canary evidence is
+green or explicitly downscoped"
+publish-ready,final-all-merged@2f8247258316bde60869c06c383090904e9426bd,P0,no,existing evidence shows setup/build red and browser canary failures before product behavior,final-all-merged@2f8247258316bde60869c06c383090904e9426bd,"existing evidence shows setup/build red and browser canary failures before
+product behavior"
+repair-ready,exact-all-merged-benchmark-minimum-canary-rerun,P0,no,heavy rerun waits until PR07C owner result and missing exact harness rows are green or explicitly downscoped,exact-all-merged-benchmark-minimum-canary-rerun,"heavy rerun waits until PR07C owner result and missing exact harness rows are
 green or explicitly downscoped"
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,lacks nonempty green benchmark-minimum plus canary evidence or explicit row downscopes,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"lacks nonempty green benchmark-minimum plus canary evidence or explicit row
 downscopes"
-launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,"active blocker must route to exact build/harness packaging, not broad fuzzer-feedback repair",benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,"active blocker must route to exact build/harness packaging, not broad
-fuzzer-feedback repair"
-publish-ready,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,high,no,canonical minimal on-PR14B and current PR07C heads supersede raw variants absent fresh contrary evidence,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,"canonical minimal on-PR14B and current PR07C heads supersede raw variants absent
-fresh contrary evidence"
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"heavy replay waits behind PR07C build/downscope, b8ca exact harness gate, and protected discovery reserve",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"heavy replay waits behind PR07C build/downscope, b8ca exact harness gate, and
+launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,active blocker must route to exact build and harness packaging,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,active blocker must route to exact build and harness packaging
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"heavy replay waits behind PR07C owner result, b8ca exact harness gate, and protected discovery reserve",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"heavy replay waits behind PR07C owner result, b8ca exact harness gate, and
 protected discovery reserve"
-launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate same-head deferred relaunch is diagnostic churn while the current manifest is held,reload-hydration@generic-deferred-fanout,"duplicate same-head deferred relaunch is diagnostic churn while the current
-manifest is held"
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing same-head title-reload existing-or-persistence-reload and large-http-lifecycle green or downscope evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing same-head title-reload existing-or-persistence-reload and
+launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate same-head deferred relaunch is diagnostic churn while current manifest is held,reload-hydration@generic-deferred-fanout,"duplicate same-head deferred relaunch is diagnostic churn while current manifest
+is held"
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing same-head title-reload, existing-or-persistence-reload, and large-http-lifecycle green or downscope evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing same-head title-reload, existing-or-persistence-reload, and
 large-http-lifecycle green or downscope evidence"
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"broad PR17 branch repair waits behind PR07C build/downscope, exact b8ca harness packaging, and reviewable split evidence",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"broad PR17 branch repair waits behind PR07C build/downscope, exact b8ca harness
-packaging, and reviewable split evidence"
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"nonessential heavy PR work waits under disk pressure; slots belong to PR07C repair/downscope, exact b8ca harness packaging, and protected discovery",all-other-heavy-pr-jobs,"nonessential heavy PR work waits under disk pressure; slots belong to PR07C
-repair/downscope, exact b8ca harness packaging, and protected discovery"
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"broad PR17 branch repair waits behind PR07C, exact b8ca harness packaging, and reviewable split evidence",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"broad PR17 branch repair waits behind PR07C, exact b8ca harness packaging, and
+reviewable split evidence"
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"nonessential heavy PR work waits under disk pressure; slots belong to PR07C, b8ca exact harness packaging, and protected discovery",all-other-heavy-pr-jobs,"nonessential heavy PR work waits under disk pressure; slots belong to PR07C,
+b8ca exact harness packaging, and protected discovery"
