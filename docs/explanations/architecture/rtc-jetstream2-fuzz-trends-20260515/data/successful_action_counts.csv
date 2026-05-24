@@ -142,6 +142,12 @@ move-block-into-group,5,permissions-auth-locks
 insert-async-server-block,5,permissions-auth-locks
 append-paragraph,5,parser-serialization
 insert-async-server-block,5,parser-serialization
+ui-type-paragraph,4,real-user-editing
+ui-format-paragraph,4,real-user-editing
+reload-post-action,4,real-user-editing
+ui-type-title,4,real-user-editing
+ui-heading-shortcut,4,real-user-editing
+ui-undo-redo-paragraph,4,real-user-editing
 edit-rich-text-pair-block,4,parser-serialization
 edit-paragraph,4,parser-serialization
 insert-paragraph,4,parser-serialization
