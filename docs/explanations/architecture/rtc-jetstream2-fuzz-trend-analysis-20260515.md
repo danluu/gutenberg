@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T02:35:34Z`
+Snapshot generated: `2026-05-24T02:39:58Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -157,7 +157,7 @@ finishes.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. In the latest
-`2026-05-24T02:34:50Z` sample, root pressure is stable at `89.0GiB` free and
+`2026-05-24T02:39:17Z` sample, root pressure is stable at `89.0GiB` free and
 `42.2%` used; the data volume is at `18.0GiB` free and `99.5%` used. That is
 no longer a hard-zero free-space sample, but output-size budgeting remains the
 dominant live resource constraint.
@@ -474,7 +474,7 @@ parsed status snapshots, not filing authority. The largest latest rows are
 ![PR loop current queue depth](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-queue-depth-current.png)
 
 The current PR-progress controller snapshot is populated again at
-`2026-05-24T02:33:55Z`. The state-count table has `35` counted items:
+`2026-05-24T02:38:02Z`. The state-count table has `35` counted items:
 `27` published ready-product rows,
 `4` held-by-controller ready-product rows, `1` superseded ready-product row,
 `1` runtime-held-consumed PR07C owner-matrix row, and `2` deferred-family rows
@@ -526,7 +526,7 @@ repair job was launched but still pending; treat queued, held, or blocked rows
 as unresolved until row-bearing owner evidence appears, while PR07C
 owner-matrix should stay terminal unless newer current-head owner evidence
 appears. The refreshed controller stream continues to record PR07C
-no-relaunch events through `2026-05-24T02:33:58Z`; that is suppression
+no-relaunch events through `2026-05-24T02:38:05Z`; that is suppression
 evidence, not a new filing surface.
 
 ## Interpretation

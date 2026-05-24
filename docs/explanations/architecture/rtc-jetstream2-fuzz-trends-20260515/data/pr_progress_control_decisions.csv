@@ -1,5 +1,5 @@
 action,target,priority,allowed,reason
-repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_severe_pressure is active; restore headroom while preserving PR review and current-run evidence
+repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_severe_pressure is active; restore headroom while preserving PR review evidence and current-run triage artifacts
 reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 5 vs floor 3; keep existing discovery lanes alive
 update-controller-rule,discovery-reserve-protection,P0,yes,context says discovery protected=no; make the minimum discovery floor hard through the deadline
 launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,"deny heavy PR work if discovery falls below reserve except cheap manifest/docs, analysis-only, disk maintenance, or bounded exact repair"
@@ -7,17 +7,18 @@ launch-branch-repair,artifact-heavy-broad-work-under-disk-pressure,P0,no,disk_se
 repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot; hydrate or commit the four missing benchmark-minimum harness files
 repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,run after harness packaging and require nonempty green benchmark-minimum and canary rows
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has skipped zero-row or No-tests-found benchmark-minimum failures
-publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata repair; run context has header-only push manifest despite published branch evidence
+publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata repair; current-push-manifest.tsv is header-only despite published branch evidence
 publish-ready,maintainer-status-live-branches,P0,yes,update maintainer-facing docs with live branch links and deliberate downscopes without claiming final green
 publish-ready,ready-published-real-fix-branches,high,yes,keep published PR02A PR03B PR06B-minimal PR07B PR07C PR09 PR10 PR11A PR11B PR14 PR14B and PR15A/B/C-on-PR14B linked and validated
 repair-ready,ready-product-pr-branch-diff-audit,high,yes,cheap audit allowed for already-published ready refs and stale failed diff-check evidence
 publish-ready,superseded-ready-branch-variants,high,no,raw PR06B raw PR15A/B/C and old PR07C heads are superseded by current published replacements
-repair-ready,PR07C/HOLD-07C-owner-matrix-terminalization@2f8247258316bde60869c06c383090904e9426bd,high,yes,consume current-head owner replay as terminal no-promote evidence with product_owned_rows=0
+repair-ready,PR07C/HOLD-07C-owner-matrix-terminalization@2f8247258316bde60869c06c383090904e9426bd,high,yes,consume readiness-resolved owner replay as terminal no-promote evidence with product_owned_rows=0
 launch-owner-matrix,PR07C/HOLD-07C-browser-e2e-duplicate,high,no,do not relaunch duplicate owner matrix unless newer current-head product-owned evidence appears
 repair-ready,reload-hydration-current-deferred-report,P0,yes,consume the completed 20260524 deferred report as candidate evidence only
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,after b8ca harness gate run one same-head exact replay for reload and large HTTP lifecycle rows
 launch-branch-repair,reload-hydration@generic,P0,no,generic deferred fanout is diagnostic churn while same-head exact replay evidence is missing
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence
+repair-ready,benchmark-canary-fuzzer-gap/active-continuation-infra-stall,P0,yes,treat empty 20260524T003724Z continuation artifacts as infra-stalled and requeue behind disk maintenance
 repair-ready,benchmark-canary-fuzzer-gap/forced-canary-materialization-gaps,P0,yes,repair only bounded forced canary materialization gaps with current-run records
 reserve-discovery,benchmark-canary-fuzzer-gap/primary-forced-canary-lanes,P0,yes,keep bounded large-post parser many-user same-user and provider-persisted canary lanes
 reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-generic,P0,no,avoid broad HTTP materialization while exact harness and disk-pressure gates are active
