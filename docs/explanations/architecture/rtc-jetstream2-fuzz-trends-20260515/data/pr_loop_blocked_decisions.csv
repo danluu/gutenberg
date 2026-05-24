@@ -5,8 +5,8 @@ publish-ready,final-all-merged-current,P0,no,"Block until PR07C owner evidence, 
 rows, canary coverage, manifest links, and downscopes agree."
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches
 absent fresh contrary evidence."
-publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Current coverage is not ready; required HTTP groups are absent, disabled, or have zero current-run successful group records.",coverage-ready-benchmark-canary-equivalence,"Current coverage is not ready; required HTTP groups are absent, disabled, or
-have zero current-run successful group records."
+publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Coverage is not ready; required groups are absent, disabled, or have zero current-run successful records.",coverage-ready-benchmark-canary-equivalence,"Coverage is not ready; required groups are absent, disabled, or have zero
+current-run successful records."
 launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status generation and analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication/status
 generation and analysis-only work."
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind PR07C owner evidence, disk preservation, coverage materialization, and discovery reserve.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Heavy reload replay waits behind PR07C owner evidence, disk preservation,
