@@ -1,8 +1,8 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Broad PR07C target risks stale no-product-owned evidence from failed head 2f8247258316bde60869c06c383090904e9426bd deduping or clearing the repaired head.,PR07C/HOLD-07C,"Broad PR07C target risks stale no-product-owned evidence from failed head
-2f8247258316bde60869c06c383090904e9426bd deduping or clearing the repaired head."
-publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,Required HTTP canary coverage still lacks current-run successes or agreed explicit downscope rows.,coverage-ready-benchmark-canary-equivalence,"Required HTTP canary coverage still lacks current-run successes or agreed
-explicit downscope rows."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Broad target can reuse stale no-product-owned evidence from failed head 2f8247258316bde60869c06c383090904e9426bd and must not clear the repaired head.,PR07C/HOLD-07C,"Broad target can reuse stale no-product-owned evidence from failed head
+2f8247258316bde60869c06c383090904e9426bd and must not clear the repaired head."
+publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,Required benchmark canary coverage lacks current-run successful records or agreed explicit downscope rows.,coverage-ready-benchmark-canary-equivalence,"Required benchmark canary coverage lacks current-run successful records or
+agreed explicit downscope rows."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until repaired-head owner evidence, exact-head build evidence, benchmark rows, and canary success or downscope rows agree.",ready/rtc-pr07c-reload-record-snapshots,"Block until repaired-head owner evidence, exact-head build evidence, benchmark
 rows, and canary success or downscope rows agree."
 publish-ready,final-all-merged-current,P0,no,"Block until PR07C gates, benchmark-minimum rows, canary coverage or explicit downscopes, live manifest links, and status docs agree.",final-all-merged-current,"Block until PR07C gates, benchmark-minimum rows, canary coverage or explicit

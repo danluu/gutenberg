@@ -3292,3 +3292,19 @@ timestamp,message,event_type
 2026-05-24T17:07:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-05-24T17:09:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
 2026-05-24T17:11:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-24T17:14:00Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-24T17:16:03Z,launched persona controller round 20260524T171603Z,persona round launched
+2026-05-24T17:16:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-24T17:18:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-24T17:20:13Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-05-24T17:20:20Z,not consuming PR07C owner matrix: latest evidence does not mention repaired exact-stack head f4ba087d2fe34c66530afa8828081aecc1df81ac,other
+2026-05-24T17:20:27Z,not consuming PR07C owner matrix: latest evidence does not mention repaired exact-stack head f4ba087d2fe34c66530afa8828081aecc1df81ac,other
+2026-05-24T17:20:33Z,launched PR07C owner matrix job 20260524T172027Z,PR07C owner job launched
+2026-05-24T17:20:33Z,pr07c owner matrix 20260524T172027Z,launch
+2026-05-24T17:20:34Z,PR progress controller started pid=1614326,controller start
+2026-05-24T17:20:40Z,not consuming PR07C owner matrix: latest evidence does not mention repaired exact-stack head f4ba087d2fe34c66530afa8828081aecc1df81ac,other
+2026-05-24T17:20:47Z,not consuming PR07C owner matrix: latest evidence does not mention repaired exact-stack head f4ba087d2fe34c66530afa8828081aecc1df81ac,other
+2026-05-24T17:20:47Z,not launching PR07C owner matrix: job already active,heavy PR job already active
+2026-05-24T17:22:55Z,not consuming PR07C owner matrix: latest evidence does not mention repaired exact-stack head f4ba087d2fe34c66530afa8828081aecc1df81ac,other
+2026-05-24T17:23:02Z,not consuming PR07C owner matrix: latest evidence does not mention repaired exact-stack head f4ba087d2fe34c66530afa8828081aecc1df81ac,other
+2026-05-24T17:23:02Z,not launching PR07C owner matrix: job already active,heavy PR job already active
