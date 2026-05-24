@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T03:09:52Z`
+Snapshot generated: `2026-05-24T03:16:29Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -19,11 +19,11 @@ state.
 
 The graph-refresh pipeline is current through `2026-05-24T00:08:54Z` for
 monitor passes, with the latest current-run accounting sample at
-`2026-05-24T00:49:03Z`. The active accounting row has advanced to
-`run-20260524T004854Z`, but its first full duplicate/noise pass is still
+`2026-05-24T03:15:08Z`. The active accounting row has advanced to
+`run-20260524T031354Z`, but its first full duplicate/noise pass is still
 pending: `current_run_metrics_trusted_last` is `FALSE`, the latest completed
 duplicate/noise pass is still `2026-05-24T00:08:16Z`, and sampled
-completed-pass lag is about `40.8` minutes. The monitor has `4,302` passes
+completed-pass lag is about `186.9` minutes. The monitor has `4,302` passes
 from `2026-05-15T01:21:42Z` onward, cumulative coverage record observations
 are `291,426`, current-scan coverage files are `7,118`, and the parsed
 coverage-goal table has `8` unmet rows out of `149`.
@@ -35,7 +35,7 @@ read as a control-plane health issue until the pass completes. The row carries
 forward the latest completed-pass duplicate share `0.0` and summary startup
 failures `0`, but current signatures, actionable signatures, product-evidence
 signatures, and top duplicate share are not yet available. The active row sees
-`0` active run dirs, no supervisor-groups file value, and `21` observed roots,
+`0` active run dirs, no supervisor-groups file value, and `9` observed roots,
 so the missing denominator is accounting/startup incompleteness, not evidence
 of a broad duplicate storm. The prior trusted sample at
 `2026-05-24T00:12:42Z` had `0` current signatures; the earlier trusted
@@ -55,10 +55,10 @@ trusted and should be treated as pending current-run accounting, not as a
 measured product duplicate/noise rate.
 
 Disk remains the resource constraint, while CPU/load are not saturated in the
-newest sample. Latest CPU utilization is `13.42%`, with `1.72%` iowait.
-Latest load averages are `8.93`, `12.77`, and `12.30` on `64` logical CPUs,
+newest sample. Latest CPU utilization is `11.14%`, with `1.80%` iowait.
+Latest load averages are `7.24`, `12.24`, and `12.20` on `64` logical CPUs,
 with `1` blocked task. Root has `89.0GiB` free and the data volume has
-`76.7GiB` free while `97.8%` used.
+`84.1GiB` free while `97.6%` used.
 
 The latest graph-counted fuzzing mix is still browser/e2e-heavy and remains
 below the plotted `24`-lane persona-loop floor: `19` browser/e2e lanes across
@@ -121,17 +121,18 @@ not be read as a measured product duplicate/noise rate. If
 as incomplete current-run accounting and as a control-plane health issue until
 the active run completes a full pass.
 
-The latest current-run accounting sample for `run-20260524T004854Z` was taken
-at `2026-05-24T00:49:03Z`. The active row is available, but it has not
+The latest current-run accounting sample for `run-20260524T031354Z` was taken
+at `2026-05-24T03:15:08Z`. The active row is available, but it has not
 completed a full pass: `current_run_metrics_trusted_last` is `FALSE`,
 `pending_until_first_pass` is `TRUE`, the latest completed full
 duplicate/noise pass recorded in the row is still
 `2026-05-24T00:08:16Z`, and the sampled completed-pass lag is about `0.7`
 minutes at `23:46:14Z`, `1.5` minutes at `23:58:28Z`, `4.4` minutes at
 `00:12:42Z`, `12.1` minutes at `00:20:24Z`, `20.4` minutes at `00:28:41Z`,
-`25.4` minutes at `00:33:41Z`, and `40.8` minutes in the latest sample. The
-row has `0` active run dirs, no supervisor-groups file value, and `21`
-observed roots; it carries forward latest completed-pass
+`25.4` minutes at `00:33:41Z`, `40.8` minutes at `00:49:03Z`, and `186.9`
+minutes in the latest sample. The row has `0` active run dirs, no
+supervisor-groups file value, and `9` observed roots; it carries forward
+latest completed-pass
 `duplicateShareCurrent` `0.0` and summary startup failures `0`, but current
 signatures, actionable signatures, product-evidence signatures, and top
 duplicate share are incomplete. The prior trusted sample at
@@ -160,8 +161,8 @@ finishes.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. In the latest
-`2026-05-24T03:08:37Z` sample, root pressure is stable at `89.0GiB` free and
-`42.2%` used; the data volume is at `76.7GiB` free and `97.8%` used. That is
+`2026-05-24T03:15:38Z` sample, root pressure is stable at `89.0GiB` free and
+`42.2%` used; the data volume is at `84.1GiB` free and `97.6%` used. That is
 well clear of the earlier hard-zero free-space samples, but output-size
 budgeting remains the dominant live resource constraint.
 
@@ -227,7 +228,7 @@ coverage-guided lower-level and fuzz-assertion expansion, and do not credit
 them as active discovery. The latest level-mix feedback-action file is empty,
 so it does not add a separate rejection or acceptance beyond the synthesis.
 The refreshed mix graph has `19` browser/e2e is-latest lanes and the latest
-resource graph has `76.7GiB` free on a `97.8%` used data volume; treat that as
+resource graph has `84.1GiB` free on a `97.6%` used data volume; treat that as
 continued evidence for disk-constrained, bounded-lane operation rather than
 broad expansion.
 
@@ -474,7 +475,7 @@ parsed status snapshots, not filing authority. The largest latest rows are
 ![PR loop current queue depth](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-queue-depth-current.png)
 
 The current PR-progress controller snapshot is populated again at
-`2026-05-24T02:54:34Z`. The state-count table has `35` counted items:
+`2026-05-24T03:15:14Z`. The state-count table has `35` counted items:
 `27` published ready-product rows,
 `4` held-by-controller ready-product rows, `1` superseded ready-product row,
 `1` runtime-held-consumed PR07C owner-matrix row, and `2` deferred-family rows
@@ -526,23 +527,23 @@ repair job was launched but still pending; treat queued, held, or blocked rows
 as unresolved until row-bearing owner evidence appears, while PR07C
 owner-matrix should stay terminal unless newer current-head owner evidence
 appears. The refreshed controller stream continues to record PR07C
-no-relaunch events through `2026-05-24T02:54:37Z`; that is suppression
+no-relaunch events through `2026-05-24T03:15:17Z`; that is suppression
 evidence, not a new filing surface.
 
 ## Interpretation
 
 The latest active current-output-dir accounting row is for
-`run-20260524T004854Z`, and it is not trusted yet:
+`run-20260524T031354Z`, and it is not trusted yet:
 `current_run_metrics_trusted_last` is `FALSE`,
 `pending_until_first_pass` is `TRUE`, and startup status says the monitor has
 started but the full coverage pass is pending in the latest
-`2026-05-24T00:49:03Z` sample. The latest completed full pass remains
-`2026-05-24T00:08:16Z`, with about `40.8` minutes of sampled completed-pass
+`2026-05-24T03:15:08Z` sample. The latest completed full pass remains
+`2026-05-24T00:08:16Z`, with about `186.9` minutes of sampled completed-pass
 lag. The row carries forward completed-pass `duplicateShareCurrent` `0.0` and
 summary startup failures `0`,
 but the current-run signature, actionable-signature, product-evidence, and top
 duplicate-share denominators are incomplete. It shows `0` active run dirs, no
-supervisor-groups file value, and `21` observed roots. The prior trusted
+supervisor-groups file value, and `9` observed roots. The prior trusted
 `00:12:42Z` sample had a zero-signature denominator; the earlier `21:21:48Z`
 trusted sample had a `1/1` duplicate/noise point. The live health
 interpretation is therefore pending accounting/control-plane startup
@@ -560,9 +561,9 @@ authoritative, and keep startup-ish duplicate producers held unless there is
 strong product evidence.
 
 The resource picture is disk-constrained but no longer CPU/load-bound in the
-newest sample: latest CPU utilization is `13.42%`, iowait is `1.72%`,
-one-minute load is `8.93` on `64` logical CPUs with `1` blocked task, and the
-data volume is `97.8%` used with `76.7GiB` free. Optional browser admission
+newest sample: latest CPU utilization is `11.14%`, iowait is `1.80%`,
+one-minute load is `7.24` on `64` logical CPUs with `1` blocked task, and the
+data volume is `97.6%` used with `84.1GiB` free. Optional browser admission
 should still respect load, iowait, and output-volume pressure.
 
 The graph-counted fuzzing mix is browser/e2e-heavy but below the plotted
