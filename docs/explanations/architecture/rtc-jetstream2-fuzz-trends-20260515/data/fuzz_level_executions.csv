@@ -3691,4 +3691,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T05:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1325,1325,1325,53,0,744526,FALSE
 2026-05-24T05:30:00Z,coverage-guided,novelty-ws-many-user-lifecycle,browser-e2e,ws,many-user-lifecycle,4,4,0,4,4,394653,FALSE
 2026-05-24T05:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1600,1600,1600,64,0,920013,FALSE
-2026-05-24T05:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,150,150,150,6,0,83462,FALSE
+2026-05-24T05:45:00Z,coverage-guided,novelty-ws-many-user-lifecycle,browser-e2e,ws,many-user-lifecycle,3,3,0,3,3,288194,FALSE
+2026-05-24T05:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1575,1575,1575,63,0,907761,FALSE
+2026-05-24T06:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,50,50,50,2,0,28598,FALSE
