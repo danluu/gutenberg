@@ -2170,3 +2170,14 @@ timestamp,group,group_family
 2026-05-24T17:45:09Z,novelty-ws-many-user-lifecycle-completion,lifecycle
 2026-05-24T17:46:29Z,novelty-ws-many-user-lifecycle-completion,lifecycle
 2026-05-24T17:47:48Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T17:49:08Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T17:50:25Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T17:51:43Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T17:53:00Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T17:54:18Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T17:55:35Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T17:56:54Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T17:58:13Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T17:59:30Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T18:00:34Z,novelty-http-existing-post-crdt-metadata,http
+2026-05-24T18:00:34Z,novelty-ws-collaboration-ui-signals,other
