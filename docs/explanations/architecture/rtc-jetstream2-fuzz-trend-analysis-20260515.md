@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T01:47:41Z`
+Snapshot generated: `2026-05-24T01:51:25Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -55,8 +55,8 @@ trusted and should be treated as pending current-run accounting, not as a
 measured product duplicate/noise rate.
 
 Disk remains the resource constraint, while CPU/load are not saturated in the
-newest sample. Latest CPU utilization is `8.08%`, with `0.01%` iowait. Latest
-load averages are `14.30`, `8.11`, and `7.61` on `64` logical CPUs, with `0`
+newest sample. Latest CPU utilization is `6.94%`, with `0.01%` iowait. Latest
+load averages are `9.94`, `8.47`, and `8.25` on `64` logical CPUs, with `0`
 blocked tasks. Root has `89.0GiB` free and the data volume has `19.6GiB` free
 while `99.4%` used.
 
@@ -474,7 +474,7 @@ parsed status snapshots, not filing authority. The largest latest rows are
 ![PR loop current queue depth](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-queue-depth-current.png)
 
 The current PR-progress controller snapshot is populated again at
-`2026-05-24T01:46:29Z`. The state-count table has `35` counted items:
+`2026-05-24T01:50:36Z`. The state-count table has `35` counted items:
 `27` published ready-product rows,
 `4` held-by-controller ready-product rows, `1` superseded ready-product row,
 `1` runtime-held-consumed PR07C owner-matrix row, and `2` deferred-family rows
@@ -526,7 +526,7 @@ repair job was launched but still pending; treat queued, held, or blocked rows
 as unresolved until row-bearing owner evidence appears, while PR07C
 owner-matrix should stay terminal unless newer current-head owner evidence
 appears. The refreshed controller stream continues to record PR07C
-no-relaunch events through `2026-05-24T01:46:32Z`; that is suppression
+no-relaunch events through `2026-05-24T01:50:39Z`; that is suppression
 evidence, not a new filing surface.
 
 ## Interpretation
@@ -560,8 +560,8 @@ authoritative, and keep startup-ish duplicate producers held unless there is
 strong product evidence.
 
 The resource picture is disk-constrained but no longer CPU/load-bound in the
-newest sample: latest CPU utilization is `8.08%`, iowait is `0.01%`,
-one-minute load is `14.30` on `64` logical CPUs with `0` blocked tasks, and
+newest sample: latest CPU utilization is `6.94%`, iowait is `0.01%`,
+one-minute load is `9.94` on `64` logical CPUs with `0` blocked tasks, and
 the data volume is `99.4%` used with `19.6GiB` free. Optional browser
 admission should still respect load, iowait, and output-volume pressure.
 
