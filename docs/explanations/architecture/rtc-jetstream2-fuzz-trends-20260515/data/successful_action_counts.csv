@@ -76,6 +76,12 @@ move-block,25,parser-transform
 late-join-post-action,25,many-user-lifecycle
 move-block-into-group,25,three-user-late-join
 edit-paragraph,23,three-user-late-join
+ui-type-paragraph,22,real-user-editing
+ui-format-paragraph,22,real-user-editing
+reload-post-action,22,real-user-editing
+ui-type-title,22,real-user-editing
+ui-heading-shortcut,22,real-user-editing
+ui-undo-redo-paragraph,22,real-user-editing
 edit-table-array-attributes,21,many-user-lifecycle
 insert-paragraph,21,three-user-late-join
 move-block,21,three-user-late-join
@@ -142,12 +148,6 @@ move-block-into-group,5,permissions-auth-locks
 insert-async-server-block,5,permissions-auth-locks
 append-paragraph,5,parser-serialization
 insert-async-server-block,5,parser-serialization
-ui-type-paragraph,4,real-user-editing
-ui-format-paragraph,4,real-user-editing
-reload-post-action,4,real-user-editing
-ui-type-title,4,real-user-editing
-ui-heading-shortcut,4,real-user-editing
-ui-undo-redo-paragraph,4,real-user-editing
 edit-rich-text-pair-block,4,parser-serialization
 edit-paragraph,4,parser-serialization
 insert-paragraph,4,parser-serialization

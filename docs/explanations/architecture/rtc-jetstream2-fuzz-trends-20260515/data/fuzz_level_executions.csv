@@ -2017,6 +2017,10 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T19:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6325,6325,6325,36,0,929367,FALSE
 2026-05-24T19:30:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,4,2,0,4,4,913678,FALSE
 2026-05-24T19:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,5940,5940,5940,33,0,889974,FALSE
-2026-05-24T19:45:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,713312,FALSE
-2026-05-24T19:45:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,4,4,2,4,2,299034,FALSE
-2026-05-24T19:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,4320,4320,4320,24,0,590232,FALSE
+2026-05-24T19:45:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,4,2,0,4,4,951243,FALSE
+2026-05-24T19:45:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,8,8,3,8,5,677865,FALSE
+2026-05-24T19:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6480,6480,6480,36,0,899734,FALSE
+2026-05-24T20:00:00Z,coverage-guided,novelty-http-large-post-lifecycle,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,696095,FALSE
+2026-05-24T20:00:00Z,coverage-guided,novelty-ws-real-user-editing,browser-e2e,ws,real-user-editing,12,11,10,12,2,1063822,FALSE
+2026-05-24T20:00:00Z,coverage-guided-lower-level,coverage-guided-lower-level-rich-text-crdt,coverage-guided-lower-level,in-process,rtc-rich-text-crdt,2,2,2,1,0,25573,FALSE
+2026-05-24T20:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,5605,5605,5605,32,0,850582,FALSE
