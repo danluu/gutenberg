@@ -6,8 +6,9 @@ COVERAGE_BASE=${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-g
 DISK_VOLUME=${RTC_DATA_VOLUME:-/media/volume/danluu-fuzz-data}
 ROOT_DISK_VOLUME=${RTC_ROOT_DISK_VOLUME:-/}
 EXPECTED_DOCKER_ROOT=${RTC_EXPECTED_DOCKER_ROOT:-$DISK_VOLUME/docker-data-root}
-START=${RTC_COVERAGE_START_SCRIPT:-/tmp/start_rtc_coverage_guided_remote.sh}
-WATCHDOG_START=${RTC_COVERAGE_WATCHDOG_START_SCRIPT:-/tmp/start_rtc_coverage_guided_watchdog_remote.sh}
+FUZZ_REPO=${RTC_FUZZ_REPO:-/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo}
+START=${RTC_COVERAGE_START_SCRIPT:-$FUZZ_REPO/bin/rtc-coverage-guided-start-remote.sh}
+WATCHDOG_START=${RTC_COVERAGE_WATCHDOG_START_SCRIPT:-$FUZZ_REPO/bin/rtc-coverage-guided-watchdog-start-remote.sh}
 NODE_BIN=${RTC_NODE_BIN:-/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin}
 TMUX=${RTC_TMUX:-/usr/bin/tmux}
 TMUX_SOCKET=${RTC_TMUX_SOCKET:-rtc-fuzz}
@@ -36,20 +37,49 @@ MATERIALIZATION_STALE_SECONDS=${RTC_RESOURCE_AUTOSCALER_MATERIALIZATION_STALE_SE
 FIRST_PASS_BUDGET_RESTART_DEFER_SECONDS=${RTC_RESOURCE_AUTOSCALER_FIRST_PASS_BUDGET_RESTART_DEFER_SECONDS:-900}
 WP_ENV_RESET_COOLDOWN_SECONDS=${RTC_RESOURCE_AUTOSCALER_WP_ENV_RESET_COOLDOWN_SECONDS:-1800}
 RESET_WP_ENV_ON_INFRA_FAILURE=${RTC_RESOURCE_AUTOSCALER_RESET_WP_ENV_ON_INFRA_FAILURE:-1}
-DISK_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_PRESSURE_FREE_GIB:-160}
-DISK_HIGH_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_HIGH_PRESSURE_FREE_GIB:-80}
-DISK_SEVERE_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_SEVERE_PRESSURE_FREE_GIB:-40}
-ROOT_DISK_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_ROOT_DISK_PRESSURE_FREE_GIB:-25}
+DISK_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_PRESSURE_FREE_GIB:-650}
+DISK_HIGH_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_HIGH_PRESSURE_FREE_GIB:-200}
+DISK_SEVERE_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_DISK_SEVERE_PRESSURE_FREE_GIB:-75}
+ROOT_DISK_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_ROOT_DISK_PRESSURE_FREE_GIB:-28}
 ROOT_DISK_HIGH_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_ROOT_DISK_HIGH_PRESSURE_FREE_GIB:-12}
 ROOT_DISK_SEVERE_PRESSURE_FREE_GIB=${RTC_RESOURCE_AUTOSCALER_ROOT_DISK_SEVERE_PRESSURE_FREE_GIB:-6}
+top_level_env_or_budget_value() {
+	local name=$1 fallback=${2:-} value
+	value=${!name-}
+	if [ -z "$value" ] && [ -f "$BUDGET_ENV" ]; then
+		value=$(sed -n "s/^export ${name}='\([^']*\)'.*/\1/p" "$BUDGET_ENV" | tail -1)
+	fi
+	printf '%s\n' "${value:-$fallback}"
+}
+
 ONE_CANARY_MATERIALIZATION_RESCUE=0
-if [ "${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-0}" = "1" ] &&
-	[ -n "${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-}" ]; then
+allow_empty_materialization_no_product_startup_canary=$(
+	top_level_env_or_budget_value RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY 0
+)
+fleet_startup_noise_canary_group=$(
+	top_level_env_or_budget_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP ''
+)
+benchmark_canary_sticky_group_limit=$(
+	top_level_env_or_budget_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT ''
+)
+if [ "${RTC_RESOURCE_AUTOSCALER_ONE_CANARY_MATERIALIZATION_RESCUE:-0}" = "1" ] ||
+	{ [ "$allow_empty_materialization_no_product_startup_canary" = "1" ] &&
+		[ -n "$fleet_startup_noise_canary_group" ]; }; then
 	ONE_CANARY_MATERIALIZATION_RESCUE=1
 	MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-1}
 else
 	MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-10}
 fi
+case "$benchmark_canary_sticky_group_limit" in
+	0|1)
+		ONE_CANARY_MATERIALIZATION_RESCUE=1
+		MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-1}
+		;;
+	2)
+		ONE_CANARY_MATERIALIZATION_RESCUE=1
+		MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-2}
+		;;
+esac
 
 mkdir -p "$BASE" "$MATERIALIZATION_DIR"
 exec 9>"$LOCK"
@@ -335,8 +365,8 @@ apply_coverage_breadth_floor() {
 			;;
 	esac
 	if [ "$ONE_CANARY_MATERIALIZATION_RESCUE" = 1 ]; then
-		target=${RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS:-1}
-		max=${RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS:-$target}
+		target=${RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS:-$(top_level_env_or_budget_value RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS 1)}
+		max=${RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS:-$(top_level_env_or_budget_value RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS "$target")}
 		[[ "$target" =~ ^[0-9]+$ ]] || target=1
 		[[ "$max" =~ ^[0-9]+$ ]] || max=$target
 		if [ "$target" -lt 1 ]; then
@@ -417,7 +447,7 @@ apply_disk_budget() {
 				exit;
 			}
 			if (level >= 3) {
-				print "1 1 disk_severe_pressure";
+				print "0 0 disk_severe_pressure";
 			} else if (level == 2) {
 				print "1 2 disk_high_pressure";
 			} else if (level == 1) {
@@ -851,6 +881,12 @@ materialization_needs_remediation() {
 	if printf '%s' "$status_counts" | grep -Eq '(^|\|)(starting|launching|recovering):[1-9]' &&
 		[ "${stale_seconds:-0}" -lt "$MATERIALIZATION_STALE_SECONDS" ]; then
 		return 1
+	fi
+	if [ "${desired_target:-0}" -gt 0 ] &&
+		[ "${active:-0}" -lt "${desired_target:-0}" ] &&
+		[ "${running:-0}" -lt "${desired_target:-0}" ] &&
+		[ "${enabled:-0}" -lt "${desired_target:-0}" ]; then
+		return 0
 	fi
 	if [ "${enabled:-0}" -le 0 ]; then
 		return 1
@@ -1298,10 +1334,42 @@ write_budget_env() {
 	local fleet_startup_noise_canary_group
 	local allow_empty_materialization_no_product_startup_canary
 	local min_enabled_browser_lanes
+	local benchmark_canary_bootstrap_reserve_slots
+	local benchmark_canary_ws_backfill_slots
+	local benchmark_canary_sticky_group_limit
+	local zero_coverage_benchmark_canary_min_active_groups
 	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
 	allow_empty_materialization_no_product_startup_canary=${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY 0)}
 	min_enabled_browser_lanes=${RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES:-$(run_script_value RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES '')}
+	benchmark_canary_bootstrap_reserve_slots=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS 6)}
+	benchmark_canary_ws_backfill_slots=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS 1)}
+	benchmark_canary_sticky_group_limit=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT '')}
+	zero_coverage_benchmark_canary_min_active_groups=${RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS:-$(run_script_value RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS 1)}
+	if [ "${target:-0}" -le 0 ] && [ "${max:-0}" -le 0 ]; then
+		min_enabled_browser_lanes=''
+		allow_empty_materialization_no_product_startup_canary=0
+		benchmark_canary_bootstrap_reserve_slots=0
+		benchmark_canary_ws_backfill_slots=0
+		benchmark_canary_sticky_group_limit=0
+		zero_coverage_benchmark_canary_min_active_groups=0
+	elif [ "${max:-0}" -le 4 ]; then
+		local low_budget_canary_limit=$target
+		[[ "$low_budget_canary_limit" =~ ^[0-9]+$ ]] || low_budget_canary_limit=1
+		[ "$low_budget_canary_limit" -lt 1 ] && low_budget_canary_limit=1
+		[ "$low_budget_canary_limit" -gt 2 ] && low_budget_canary_limit=2
+		[ "$low_budget_canary_limit" -gt "${max:-1}" ] && low_budget_canary_limit=$max
+		[ "$low_budget_canary_limit" -lt 1 ] && low_budget_canary_limit=1
+		benchmark_canary_bootstrap_reserve_slots=1
+		benchmark_canary_ws_backfill_slots=0
+		benchmark_canary_sticky_group_limit=$low_budget_canary_limit
+		zero_coverage_benchmark_canary_min_active_groups=$low_budget_canary_limit
+	elif [ "$benchmark_canary_sticky_group_limit" = "1" ]; then
+		benchmark_canary_bootstrap_reserve_slots=1
+		benchmark_canary_ws_backfill_slots=0
+	elif [ "${benchmark_canary_bootstrap_reserve_slots:-0}" -lt 6 ]; then
+		benchmark_canary_bootstrap_reserve_slots=6
+	fi
 	cat > "$BUDGET_ENV" <<EOF_BUDGET
 export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='$target'
 export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='$max'
@@ -1313,6 +1381,10 @@ export RTC_FUZZ_NOVELTY_LOAD_HEADROOM_MULTIPLIER='$multiplier'
 export RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY='$allow_fleet_startup_noise_canary'
 export RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP='$fleet_startup_noise_canary_group'
 export RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY='$allow_empty_materialization_no_product_startup_canary'
+export RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS='$benchmark_canary_bootstrap_reserve_slots'
+export RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS='$benchmark_canary_ws_backfill_slots'
+export RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT='$benchmark_canary_sticky_group_limit'
+export RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS='$zero_coverage_benchmark_canary_min_active_groups'
 EOF_BUDGET
 }
 
@@ -1323,22 +1395,63 @@ rewrite_current_run_budget_exports() {
 	node - "$latest/run-monitor.sh" "$target" "$max" <<'NODE'
 const fs = require( 'fs' );
 const [ file, target, max ] = process.argv.slice( 2 );
-let text = fs.readFileSync( file, 'utf8' );
-const replaceExport = ( name, value ) => {
-	const re = new RegExp( `^export ${ name }='[^']*'$`, 'm' );
-	const next = `export ${ name }='${ value }'`;
-	if ( re.test( text ) ) {
-		text = text.replace( re, next );
-	} else {
-		text += `\n${ next }\n`;
-	}
+let lines = fs.readFileSync( file, 'utf8' ).split( /\n/ );
+const hadStickyCap = lines.some( ( line ) =>
+	/^export RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT='[01]'/.test( line )
+);
+const exportNames = new Set( [
+	'RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS',
+	'RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS',
+	'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS',
+	'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS',
+	'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS',
+	'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS',
+	'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS',
+	'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT',
+	'RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS',
+] );
+lines = lines.filter( ( line ) => {
+	const match = line.match( /^export ([A-Z0-9_]+)=/ );
+	return ! match || ! exportNames.has( match[ 1 ] );
+} );
+const strictLowBudget = Number.parseInt( max, 10 ) <= 4 || hadStickyCap;
+const targetNumber = Math.max( 0, Number.parseInt( target, 10 ) || 0 );
+const maxNumber = Math.max( 0, Number.parseInt( max, 10 ) || 0 );
+const lowBudgetCanaryLimit = strictLowBudget
+	? String( Math.max( 1, Math.min( 2, targetNumber || 1, maxNumber || 1 ) ) )
+	: '';
+const exports = [
+	[ 'RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS', target ],
+	[ 'RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS', max ],
+	[ 'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS', target ],
+	[ 'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS', max ],
+	[ 'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS', max ],
+	[
+		'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS',
+		strictLowBudget ? '1' : '6',
+	],
+	[
+		'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS',
+		strictLowBudget ? '0' : '1',
+	],
+	[
+		'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT',
+		lowBudgetCanaryLimit,
+	],
+	[
+		'RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS',
+		strictLowBudget ? lowBudgetCanaryLimit : '1',
+	],
+] ).map( ( [ name, value ] ) => `export ${ name }='${ value }'` );
+const nodeIndex = lines.findIndex( ( line ) =>
+	line.includes( 'node bin/rtc-browser-fuzz-novelty-monitor.mjs' )
+);
+if ( nodeIndex === -1 ) {
+	lines.push( ...exports );
+} else {
+	lines.splice( nodeIndex, 0, ...exports );
 };
-replaceExport( 'RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS', target );
-replaceExport( 'RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS', max );
-replaceExport( 'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS', target );
-replaceExport( 'RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS', max );
-replaceExport( 'RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS', max );
-fs.writeFileSync( file, text );
+fs.writeFileSync( file, lines.join( '\n' ) );
 NODE
 }
 
@@ -1376,16 +1489,40 @@ apply_in_place_coverage_budget() {
 	before=$(node -e "const fs=require('fs'); const groups=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); console.log(Array.isArray(groups)?groups.length:0)" "$groups_path" 2>/dev/null || echo 0)
 	write_budget_env "$desired_target" "$desired_max" 1.02
 	rewrite_current_run_budget_exports "$desired_target" "$desired_max"
-	node - "$groups_path" "$latest/novelty-state.json" "$desired_max" "$mode" <<'NODE'
+node - "$groups_path" "$latest/novelty-state.json" "$desired_max" "$mode" <<'NODE'
 const fs = require( 'fs' );
 const [ groupsPath, statePath, desiredMaxRaw, mode ] = process.argv.slice( 2 );
-const desiredMax = Math.max( 1, Number.parseInt( desiredMaxRaw, 10 ) || 1 );
+const stickyBenchmarkGroups = new Set( [
+	'novelty-http-table-stale-snapshot',
+	'novelty-http-list-move-refresh',
+	'novelty-http-large-post-readiness',
+	'novelty-http-large-post-lifecycle',
+	'novelty-http-large-post-lifecycle-completion',
+	'novelty-http-same-user-stale-draft',
+	'novelty-http-title-reload-convergence',
+	'novelty-http-existing-post-crdt-metadata',
+	'novelty-http-provider-persisted-crdt-large-post',
+	'novelty-http-persistence-probe',
+] );
+let desiredMax = Math.max( 0, Number.parseInt( desiredMaxRaw, 10 ) || 0 );
 let groups = JSON.parse( fs.readFileSync( groupsPath, 'utf8' ) );
 if ( ! Array.isArray( groups ) ) {
 	process.exit( 1 );
 }
+if ( mode === 'down' && desiredMax > 0 ) {
+	const stickyCount = groups.filter( ( group ) =>
+		stickyBenchmarkGroups.has( group?.name )
+	).length;
+	desiredMax = Math.max( desiredMax, stickyCount );
+}
 if ( mode === 'down' && groups.length > desiredMax ) {
-	groups = groups.slice( 0, desiredMax );
+	const stickyGroups = groups.filter( ( group ) =>
+		stickyBenchmarkGroups.has( group?.name )
+	);
+	const otherGroups = groups.filter(
+		( group ) => ! stickyBenchmarkGroups.has( group?.name )
+	);
+	groups = [ ...stickyGroups, ...otherGroups ].slice( 0, desiredMax );
 	fs.writeFileSync(
 		groupsPath,
 		`${ JSON.stringify( groups, null, '\t' ) }\n`
@@ -1443,7 +1580,7 @@ write_materialization_diagnostic() {
 			sed -n '1,120p' || true
 		echo
 		echo "## Docker Summary"
-		docker system df 2>&1 | sed -n '1,120p' || true
+		timeout 20s docker system df 2>&1 | sed -n '1,120p' || true
 		echo
 		echo "## Recent wp-env Start Logs"
 		if [ -n "$latest" ]; then
@@ -1468,6 +1605,10 @@ restart_coverage() {
 	local fleet_startup_noise_canary_group
 	local allow_empty_materialization_no_product_startup_canary
 	local min_enabled_browser_lanes
+	local benchmark_canary_ws_backfill_slots
+	local benchmark_canary_sticky_group_limit
+	local benchmark_canary_bootstrap_reserve_slots
+	local zero_coverage_benchmark_canary_min_active_groups
 	local start_rc=0
 	[[ "$desired_target" =~ ^[0-9]+$ ]] || desired_target=1
 	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=$desired_target
@@ -1483,6 +1624,32 @@ restart_coverage() {
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
 	allow_empty_materialization_no_product_startup_canary=${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY 0)}
 	min_enabled_browser_lanes=${RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES:-$(run_script_value RTC_FUZZ_NOVELTY_MIN_ENABLED_BROWSER_LANES '')}
+	benchmark_canary_ws_backfill_slots=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS 1)}
+	benchmark_canary_sticky_group_limit=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT '')}
+	benchmark_canary_bootstrap_reserve_slots=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS 6)}
+	zero_coverage_benchmark_canary_min_active_groups=${RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS:-$(run_script_value RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS 1)}
+	if [ "${desired_target:-0}" -le 0 ] && [ "${desired_max:-0}" -le 0 ]; then
+		min_enabled_browser_lanes=''
+		allow_empty_materialization_no_product_startup_canary=0
+		benchmark_canary_bootstrap_reserve_slots=0
+		benchmark_canary_ws_backfill_slots=0
+		benchmark_canary_sticky_group_limit=0
+		zero_coverage_benchmark_canary_min_active_groups=0
+	elif [ "${desired_max:-0}" -le 4 ]; then
+		local low_budget_canary_limit=$desired_target
+		[[ "$low_budget_canary_limit" =~ ^[0-9]+$ ]] || low_budget_canary_limit=1
+		[ "$low_budget_canary_limit" -lt 1 ] && low_budget_canary_limit=1
+		[ "$low_budget_canary_limit" -gt 2 ] && low_budget_canary_limit=2
+		[ "$low_budget_canary_limit" -gt "${desired_max:-1}" ] && low_budget_canary_limit=$desired_max
+		[ "$low_budget_canary_limit" -lt 1 ] && low_budget_canary_limit=1
+		benchmark_canary_bootstrap_reserve_slots=1
+		benchmark_canary_ws_backfill_slots=0
+		benchmark_canary_sticky_group_limit=$low_budget_canary_limit
+		zero_coverage_benchmark_canary_min_active_groups=$low_budget_canary_limit
+	elif [ "$benchmark_canary_sticky_group_limit" = "1" ]; then
+		benchmark_canary_bootstrap_reserve_slots=1
+		benchmark_canary_ws_backfill_slots=0
+	fi
 	latest_before=$(latest_run)
 	append_loss_event "$(stamp)" "restart" "$reason" "$desired_target" "$desired_max" "$latest_before" "${materialized_active_run_dirs:-}" "${materialized_running_groups:-}" "${supervisor_status_counts:-}"
 	echo "[$(stamp)] restarting coverage-guided loop target=$desired_target max=$desired_max reason=$reason previous_root=${latest_before:-none}" >> "$LOG"
@@ -1498,6 +1665,10 @@ restart_coverage() {
 	RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY="$allow_fleet_startup_noise_canary" \
 	RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP="$fleet_startup_noise_canary_group" \
 	RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY="$allow_empty_materialization_no_product_startup_canary" \
+	RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS="$benchmark_canary_bootstrap_reserve_slots" \
+	RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS="$benchmark_canary_ws_backfill_slots" \
+	RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT="$benchmark_canary_sticky_group_limit" \
+	RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS="$zero_coverage_benchmark_canary_min_active_groups" \
 		"$START" >> "$LOG" 2>&1 || start_rc=$?
 	if [ "$start_rc" -ne 0 ]; then
 		echo "[$(stamp)] coverage-guided start script exited rc=$start_rc reason=$reason" >> "$LOG"
@@ -1589,8 +1760,13 @@ while true; do
 	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max" "$reason")"
 	browser_live_lanes=$(live_browser_lane_pids_all_roots)
 	e2e_floor=${RTC_RESOURCE_AUTOSCALER_E2E_MIN_LIVE_LANES:-24}
-	e2e_repair_target=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_TARGET_GROUPS:-4}
-	e2e_repair_max=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_MAX_GROUPS:-5}
+	e2e_repair_target=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_TARGET_GROUPS:-9}
+	e2e_repair_max=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_MAX_GROUPS:-10}
+	if [ "$ONE_CANARY_MATERIALIZATION_RESCUE" = 1 ] &&
+			[ "${MIN_COVERAGE_BREADTH_GROUPS:-1}" -lt "$e2e_repair_target" ]; then
+		e2e_repair_target=$MIN_COVERAGE_BREADTH_GROUPS
+		e2e_repair_max=$MIN_COVERAGE_BREADTH_GROUPS
+	fi
 	if [ "${browser_live_lanes:-0}" -lt "$e2e_floor" ] &&
 			e2e_floor_repair_allowed "$reason" "$cpu" "$load" "$load_five" "$ncpu" &&
 			[ "$desired_target" -lt "$e2e_repair_target" ]; then
@@ -1626,7 +1802,11 @@ while true; do
 			printf '%s' "$supervisor_status_counts" | grep -Eq '^(unknown|starting:[1-9])'; then
 		cold_starting_overbudget=1
 	fi
-	if ! session_running; then
+	if ! session_running && [ "${desired_target:-0}" -le 0 ] && [ "${desired_max:-0}" -le 0 ]; then
+		action=hold_missing_monitor_disk_zero_budget
+		up_streak=0
+		down_streak=0
+	elif ! session_running; then
 		action=restart_missing_monitor
 		restart_coverage "$desired_target" "$desired_max" missing_monitor
 		last_restart_epoch=$(epoch)

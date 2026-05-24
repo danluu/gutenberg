@@ -837,6 +837,22 @@ just free GiB, because browser fuzzing produces many small artifacts. The loop
 also removes old known-safe root `/tmp` fuzz leftovers such as old Playwright,
 Jest, V8, `wp-env`, and `tmp.*` directories/files in capped batches.
 
+The autoscaler and disk-maintenance pressure thresholds should stay aligned.
+The current defaults treat the data disk as under pressure below 650 GiB free,
+high pressure below 200 GiB, and emergency below 75 GiB. The maintenance loop
+does not stop after deleting a fixed number of old run roots; while free space
+is still below its target, it runs extra cleanup passes with tighter retention
+against stale retained-root heavy directories, inactive current coverage repo
+clones, and benchmark-canary feedback directories. Inactive benchmark cycles
+can keep summaries and logs while dropping heavyweight `wp-env`, `node_modules`,
+`.git`, Playwright report, blob report, and test-result trees.
+
+The maintenance loop also performs bounded Docker cleanup when Docker's daemon
+root is the mounted data volume. It prunes unused containers and unused images
+older than a tier-specific age, with a timeout and a minimum interval between
+Docker prune attempts. This is intended to remove stale per-run `wp-env` images
+and containers without letting Docker cleanup become the main workload.
+
 The maintenance loop writes
 `/media/volume/danluu-fuzz-data/rtc-disk-maintenance-20260520/current-status.md`
 with current free space, running/done state, effective retention, run-root

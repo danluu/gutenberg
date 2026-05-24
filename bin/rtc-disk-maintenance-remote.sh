@@ -8,9 +8,16 @@ LOG_DIR="$BASE/logs"
 LOCK="$BASE/rtc-disk-maintenance.lock"
 INTERVAL_SECONDS=${RTC_DISK_MAINTENANCE_INTERVAL_SECONDS:-900}
 DATA_PRESSURE_FREE_GIB=${RTC_DISK_MAINTENANCE_DATA_PRESSURE_FREE_GIB:-650}
+DATA_HIGH_PRESSURE_FREE_GIB=${RTC_DISK_MAINTENANCE_DATA_HIGH_PRESSURE_FREE_GIB:-200}
+DATA_EMERGENCY_FREE_GIB=${RTC_DISK_MAINTENANCE_DATA_EMERGENCY_FREE_GIB:-75}
+DATA_TARGET_FREE_GIB=${RTC_DISK_MAINTENANCE_DATA_TARGET_FREE_GIB:-500}
+DATA_EMERGENCY_TARGET_FREE_GIB=${RTC_DISK_MAINTENANCE_DATA_EMERGENCY_TARGET_FREE_GIB:-300}
 ROOT_PRESSURE_FREE_GIB=${RTC_DISK_MAINTENANCE_ROOT_PRESSURE_FREE_GIB:-28}
+ROOT_EMERGENCY_FREE_GIB=${RTC_DISK_MAINTENANCE_ROOT_EMERGENCY_FREE_GIB:-12}
 DATA_INODE_PRESSURE_USED_PERCENT=${RTC_DISK_MAINTENANCE_DATA_INODE_PRESSURE_USED_PERCENT:-70}
+DATA_EMERGENCY_INODE_USED_PERCENT=${RTC_DISK_MAINTENANCE_DATA_EMERGENCY_INODE_USED_PERCENT:-90}
 ROOT_INODE_PRESSURE_USED_PERCENT=${RTC_DISK_MAINTENANCE_ROOT_INODE_PRESSURE_USED_PERCENT:-85}
+ROOT_EMERGENCY_INODE_USED_PERCENT=${RTC_DISK_MAINTENANCE_ROOT_EMERGENCY_INODE_USED_PERCENT:-95}
 RUN_ROOT_KEEP=${RTC_DISK_MAINTENANCE_RUN_ROOT_KEEP:-48}
 RUN_ROOT_KEEP_PRESSURE=${RTC_DISK_MAINTENANCE_RUN_ROOT_KEEP_PRESSURE:-24}
 RUN_ROOT_HEAVY_DIR_KEEP=${RTC_DISK_MAINTENANCE_RUN_ROOT_HEAVY_DIR_KEEP:-8}
@@ -18,10 +25,22 @@ RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_RUN_ROOT_HEAVY_DIR_R
 TRACE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TRACE_RETENTION_MINUTES:-720}
 VIDEO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_VIDEO_RETENTION_MINUTES:-360}
 TMP_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TMP_RETENTION_MINUTES:-360}
+CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES:-15}
+CURRENT_ROOT_REPO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_CURRENT_ROOT_REPO_RETENTION_MINUTES:-240}
+CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=${RTC_DISK_MAINTENANCE_CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS:-4}
+BENCHMARK_CYCLE_KEEP=${RTC_DISK_MAINTENANCE_BENCHMARK_CYCLE_KEEP:-24}
+BENCHMARK_CYCLE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_BENCHMARK_CYCLE_RETENTION_MINUTES:-720}
+DOCKER_PRUNE_MIN_INTERVAL_SECONDS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_MIN_INTERVAL_SECONDS:-3600}
+DOCKER_PRUNE_UNTIL_NORMAL_HOURS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_UNTIL_NORMAL_HOURS:-48}
+DOCKER_PRUNE_UNTIL_PRESSURE_HOURS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_UNTIL_PRESSURE_HOURS:-12}
+DOCKER_PRUNE_UNTIL_HIGH_HOURS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_UNTIL_HIGH_HOURS:-4}
+DOCKER_PRUNE_UNTIL_EMERGENCY_HOURS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_UNTIL_EMERGENCY_HOURS:-1}
+DOCKER_PRUNE_TIMEOUT_SECONDS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_TIMEOUT_SECONDS:-180}
+TARGET_CLEANUP_MAX_EXTRA_PASSES=${RTC_DISK_MAINTENANCE_TARGET_CLEANUP_MAX_EXTRA_PASSES:-3}
 ROOT_TMP_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_ROOT_TMP_RETENTION_MINUTES:-1440}
 ROOT_TMP_MAX_DELETE_PER_PASS=${RTC_DISK_MAINTENANCE_ROOT_TMP_MAX_DELETE_PER_PASS:-5000}
 ARTIFACT_PRUNE_SUMMARY_LIMIT=${RTC_DISK_MAINTENANCE_ARTIFACT_PRUNE_SUMMARY_LIMIT:-80}
-ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=${RTC_DISK_MAINTENANCE_ARTIFACT_DIR_LIMIT:-1000}
+ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=${RTC_DISK_MAINTENANCE_ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT:-${RTC_DISK_MAINTENANCE_ARTIFACT_DIR_LIMIT:-1000}}
 ARTIFACT_PRUNE_CURSOR_DIR="$BASE/artifact-prune-cursors"
 STATUS="$BASE/current-status.md"
 ONCE=0
@@ -58,6 +77,10 @@ inode_used_percent() {
 		awk 'NR == 2 { value = $5; sub(/%$/, "", value); printf "%.0f\n", value + 0 }'
 }
 
+docker_root_dir() {
+	docker info --format '{{.DockerRootDir}}' 2>/dev/null || true
+}
+
 under_pressure() {
 	local data_free root_free data_inode_used root_inode_used
 	data_free=$(free_gib "$DATA_VOLUME")
@@ -75,7 +98,63 @@ under_pressure() {
 		BEGIN {
 			exit !(data_inode + 0 >= data_limit || root_inode + 0 >= root_limit);
 		}
-	'
+		'
+}
+
+min_int() {
+	local value=$1
+	local limit=$2
+	if [ "$value" -gt "$limit" ]; then
+		echo "$limit"
+	else
+		echo "$value"
+	fi
+}
+
+max_int() {
+	local value=$1
+	local limit=$2
+	if [ "$value" -lt "$limit" ]; then
+		echo "$limit"
+	else
+		echo "$value"
+	fi
+}
+
+pressure_tier() {
+	local data_free root_free data_inode_used root_inode_used
+	data_free=$(free_gib "$DATA_VOLUME")
+	root_free=$(free_gib "$ROOT_VOLUME")
+	data_inode_used=$(inode_used_percent "$DATA_VOLUME")
+	root_inode_used=$(inode_used_percent "$ROOT_VOLUME")
+	if awk -v data="$data_free" -v root="$root_free" \
+		-v data_limit="$DATA_EMERGENCY_FREE_GIB" -v root_limit="$ROOT_EMERGENCY_FREE_GIB" \
+		-v data_inode="$data_inode_used" -v root_inode="$root_inode_used" \
+		-v data_inode_limit="$DATA_EMERGENCY_INODE_USED_PERCENT" \
+		-v root_inode_limit="$ROOT_EMERGENCY_INODE_USED_PERCENT" '
+		BEGIN {
+			exit !(data + 0 < data_limit ||
+				root + 0 < root_limit ||
+				data_inode + 0 >= data_inode_limit ||
+				root_inode + 0 >= root_inode_limit);
+		}
+	'; then
+		echo emergency
+		return 0
+	fi
+	if awk -v data="$data_free" -v limit="$DATA_HIGH_PRESSURE_FREE_GIB" '
+		BEGIN {
+			exit !(data + 0 < limit);
+		}
+	'; then
+		echo high
+		return 0
+	fi
+	if under_pressure; then
+		echo pressure
+	else
+		echo normal
+	fi
 }
 
 path_is_live() {
@@ -106,7 +185,7 @@ path_is_live() {
 				;;
 		esac
 		[ -r "/proc/$pid/environ" ] || continue
-		env=$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null || true)
+		env=$(cat "/proc/$pid/environ" 2>/dev/null | tr '\0' '\n' || true)
 		case "$env" in
 			*"RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=$path"*|*"RTC_FUZZ_NOVELTY_OUTPUT_DIR=$path"*|*"RTC_FUZZ_OUTPUT_DIR=$path"*)
 				return 0
@@ -199,6 +278,26 @@ prune_stale_run_root_heavy_dirs() {
 			remove_path "$child"
 		done
 	done < <(ls -td $glob 2>/dev/null || true)
+}
+
+prune_orphan_current_coverage_tmp_repos() {
+	local current tmp
+	current=$(sed -n '1p' "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt" 2>/dev/null || true)
+	[ -n "$current" ] || return 0
+	[ -d "$current/repos" ] || return 0
+
+	for tmp in "$current"/repos/*.tmp-*; do
+		[ -d "$tmp" ] || continue
+		if ! path_older_than_minutes "$tmp" "$CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES"; then
+			continue
+		fi
+		if path_is_live "$tmp"; then
+			log "skip live current coverage tmp repo path=$tmp"
+			continue
+		fi
+		log "remove orphan current coverage tmp repo path=$tmp"
+		remove_path "$tmp"
+	done
 }
 
 path_older_than_minutes() {
@@ -414,6 +513,138 @@ cleanup_root_tmp_known_prefixes() {
 	log "cleanup_root_tmp_known_prefixes deleted=${deleted_count:-0} retention_minutes=$ROOT_TMP_RETENTION_MINUTES max=$ROOT_TMP_MAX_DELETE_PER_PASS"
 }
 
+
+free_below_cleanup_target() {
+	local tier=${1:-$(pressure_tier)} target
+	case "$tier" in
+		emergency|high)
+			target=$DATA_EMERGENCY_TARGET_FREE_GIB
+			;;
+		*)
+			target=$DATA_TARGET_FREE_GIB
+			;;
+	esac
+	awk -v free="$(free_gib "$DATA_VOLUME")" -v target="$target" 'BEGIN { exit !(free + 0 < target + 0) }'
+}
+
+prune_current_coverage_inactive_repos() {
+	local current repos repo count=0
+	current=$(sed -n '1p' "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt" 2>/dev/null || true)
+	[ -n "$current" ] || return 0
+	repos="$current/repos"
+	[ -d "$repos" ] || return 0
+	for repo in "$repos"/*; do
+		[ -d "$repo" ] || continue
+		case "$(basename "$repo")" in
+			*.tmp-*)
+				continue
+				;;
+		esac
+		if [ "$count" -ge "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" ]; then
+			log "current coverage repo prune limit reached max=$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS"
+			return 0
+		fi
+		if ! path_older_than_minutes "$repo" "$CURRENT_ROOT_REPO_RETENTION_MINUTES"; then
+			continue
+		fi
+		if path_is_live "$repo"; then
+			log "skip live current coverage repo path=$repo"
+			continue
+		fi
+		log "remove inactive current coverage repo path=$repo"
+		remove_path "$repo"
+		count=$(( count + 1 ))
+	done
+}
+
+prune_benchmark_feedback_heavy_dirs() {
+	local cycles="$DATA_VOLUME/rtc-benchmark-canary-feedback-20260520/cycles"
+	local keep=$1 retention=$2 path child count=0
+	[ -d "$cycles" ] || return 0
+	while IFS= read -r path; do
+		[ -n "$path" ] || continue
+		count=$(( count + 1 ))
+		if [ "$count" -le "$keep" ]; then
+			continue
+		fi
+		if path_is_live "$path"; then
+			log "skip live benchmark cycle prune path=$path"
+			continue
+		fi
+		if ! path_older_than_minutes "$path" "$retention"; then
+			continue
+		fi
+		for child in \
+			"$path/wp-env" \
+			"$path/worktree/node_modules" \
+			"$path/worktree/.git" \
+			"$path/worktree/.cache" \
+			"$path/worktree/build" \
+			"$path/artifacts/test-results" \
+			"$path/playwright-report" \
+			"$path/blob-report"; do
+			[ -e "$child" ] || continue
+			remove_path "$child"
+		done
+	done < <(ls -td "$cycles"/* 2>/dev/null || true)
+}
+
+prune_docker_wp_env_if_due() {
+	local tier=$1 now last until_hours
+	command -v docker >/dev/null 2>&1 || return 0
+	if [ "$(docker_root_dir)" != "$DATA_VOLUME/docker-data-root" ]; then
+		log "skip docker prune; docker root mismatch actual=$(docker_root_dir) expected=$DATA_VOLUME/docker-data-root"
+		return 0
+	fi
+	case "$tier" in
+		emergency)
+			until_hours=$DOCKER_PRUNE_UNTIL_EMERGENCY_HOURS
+			;;
+		high)
+			until_hours=$DOCKER_PRUNE_UNTIL_HIGH_HOURS
+			;;
+		pressure)
+			until_hours=$DOCKER_PRUNE_UNTIL_PRESSURE_HOURS
+			;;
+		*)
+			until_hours=$DOCKER_PRUNE_UNTIL_NORMAL_HOURS
+			;;
+	esac
+	now=$(date +%s)
+	last=$(cat "$BASE/docker-prune-last-epoch" 2>/dev/null || echo 0)
+	if [ $(( now - last )) -lt "$DOCKER_PRUNE_MIN_INTERVAL_SECONDS" ]; then
+		return 0
+	fi
+	echo "$now" > "$BASE/docker-prune-last-epoch"
+	log "docker prune start tier=$tier until=${until_hours}h"
+	timeout --kill-after=30s "$DOCKER_PRUNE_TIMEOUT_SECONDS" docker container prune --force --filter "until=${until_hours}h" >> "$LOG" 2>&1 || log "docker container prune incomplete tier=$tier"
+	timeout --kill-after=30s "$DOCKER_PRUNE_TIMEOUT_SECONDS" docker image prune --all --force --filter "until=${until_hours}h" >> "$LOG" 2>&1 || log "docker image prune incomplete tier=$tier"
+	log "docker prune done tier=$tier until=${until_hours}h"
+}
+
+run_space_target_extra_passes() {
+	local tier=$1 keep=$2 pass=0
+	while free_below_cleanup_target "$tier" && [ "$pass" -lt "$TARGET_CLEANUP_MAX_EXTRA_PASSES" ]; do
+		pass=$(( pass + 1 ))
+		log "space target extra cleanup pass=$pass tier=$tier data_free_gib=$(free_gib "$DATA_VOLUME")"
+		RUN_ROOT_HEAVY_DIR_KEEP=$(min_int "$RUN_ROOT_HEAVY_DIR_KEEP" 1)
+		RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES=$(min_int "$RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES" 15)
+		TRACE_RETENTION_MINUTES=$(min_int "$TRACE_RETENTION_MINUTES" 60)
+		VIDEO_RETENTION_MINUTES=$(min_int "$VIDEO_RETENTION_MINUTES" 30)
+		TMP_RETENTION_MINUTES=$(min_int "$TMP_RETENTION_MINUTES" 30)
+		CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 30)
+		BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 60)
+		ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 1200)
+		ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=$(max_int "$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT" 80000)
+		prune_current_coverage_inactive_repos
+		prune_benchmark_feedback_heavy_dirs 3 "$BENCHMARK_CYCLE_RETENTION_MINUTES"
+		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-coverage-guided-20260515" "$DATA_VOLUME/rtc-coverage-guided-20260515/run-*" "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt"
+		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-*" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
+		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs/focused-shards-*" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
+		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-gap-booster-20260515/runs" "$DATA_VOLUME/rtc-gap-booster-20260515/runs/gap-booster-*" "$DATA_VOLUME/rtc-gap-booster-20260515/current-run-root.txt"
+	done
+}
+
 prune_old_artifacts() {
 	local root=$1
 	local pointer=${2:-}
@@ -440,19 +671,28 @@ run_root_count() {
 write_status() {
 	local keep=$1
 	local state=${2:-done}
+	local tier=${3:-$(pressure_tier)}
 	{
 		echo "# RTC Disk Maintenance Status"
 		echo
 		echo "- updated: $(stamp)"
 		echo "- state: $state"
+		echo "- pressure_tier: $tier"
 		echo "- data_free_gib: $(free_gib "$DATA_VOLUME")"
 		echo "- root_free_gib: $(free_gib "$ROOT_VOLUME")"
 		echo "- data_inode_used_percent: $(inode_used_percent "$DATA_VOLUME")"
 		echo "- root_inode_used_percent: $(inode_used_percent "$ROOT_VOLUME")"
 		echo "- data_pressure_free_gib: $DATA_PRESSURE_FREE_GIB"
+		echo "- data_high_pressure_free_gib: $DATA_HIGH_PRESSURE_FREE_GIB"
+		echo "- data_emergency_free_gib: $DATA_EMERGENCY_FREE_GIB"
+		echo "- data_target_free_gib: $DATA_TARGET_FREE_GIB"
+		echo "- data_emergency_target_free_gib: $DATA_EMERGENCY_TARGET_FREE_GIB"
 		echo "- root_pressure_free_gib: $ROOT_PRESSURE_FREE_GIB"
+		echo "- root_emergency_free_gib: $ROOT_EMERGENCY_FREE_GIB"
 		echo "- data_inode_pressure_used_percent: $DATA_INODE_PRESSURE_USED_PERCENT"
+		echo "- data_emergency_inode_used_percent: $DATA_EMERGENCY_INODE_USED_PERCENT"
 		echo "- root_inode_pressure_used_percent: $ROOT_INODE_PRESSURE_USED_PERCENT"
+		echo "- root_emergency_inode_used_percent: $ROOT_EMERGENCY_INODE_USED_PERCENT"
 		echo "- run_root_keep_effective: $keep"
 		echo "- run_root_keep_default: $RUN_ROOT_KEEP"
 		echo "- run_root_keep_pressure: $RUN_ROOT_KEEP_PRESSURE"
@@ -461,8 +701,15 @@ write_status() {
 		echo "- trace_retention_minutes: $TRACE_RETENTION_MINUTES"
 		echo "- video_retention_minutes: $VIDEO_RETENTION_MINUTES"
 		echo "- tmp_retention_minutes: $TMP_RETENTION_MINUTES"
+		echo "- current_root_tmp_repo_retention_minutes: $CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES"
+		echo "- current_root_repo_retention_minutes: $CURRENT_ROOT_REPO_RETENTION_MINUTES"
+		echo "- current_root_repo_max_delete_per_pass: $CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS"
+		echo "- benchmark_cycle_keep: $BENCHMARK_CYCLE_KEEP"
+		echo "- benchmark_cycle_retention_minutes: $BENCHMARK_CYCLE_RETENTION_MINUTES"
 		echo "- root_tmp_retention_minutes: $ROOT_TMP_RETENTION_MINUTES"
 		echo "- root_tmp_max_delete_per_pass: $ROOT_TMP_MAX_DELETE_PER_PASS"
+		echo "- artifact_prune_summary_limit: $ARTIFACT_PRUNE_SUMMARY_LIMIT"
+		echo "- artifact_prune_artifact_dir_limit: $ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT"
 		echo "- artifact_prune_cursor_count: $(find "$ARTIFACT_PRUNE_CURSOR_DIR" -type f -name '*.cursor' 2>/dev/null | wc -l | tr -d ' ')"
 		echo
 		echo "## Run Root Counts"
@@ -484,14 +731,84 @@ write_status() {
 }
 
 run_once() {
-	local keep
-	keep="$RUN_ROOT_KEEP"
-	if under_pressure; then
-		keep="$RUN_ROOT_KEEP_PRESSURE"
-	fi
+	local keep tier
+	local RUN_ROOT_HEAVY_DIR_KEEP=$RUN_ROOT_HEAVY_DIR_KEEP
+	local RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES=$RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES
+	local TRACE_RETENTION_MINUTES=$TRACE_RETENTION_MINUTES
+	local VIDEO_RETENTION_MINUTES=$VIDEO_RETENTION_MINUTES
+	local TMP_RETENTION_MINUTES=$TMP_RETENTION_MINUTES
+	local CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=$CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES
+	local CURRENT_ROOT_REPO_RETENTION_MINUTES=$CURRENT_ROOT_REPO_RETENTION_MINUTES
+	local CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS
+	local BENCHMARK_CYCLE_KEEP=$BENCHMARK_CYCLE_KEEP
+	local BENCHMARK_CYCLE_RETENTION_MINUTES=$BENCHMARK_CYCLE_RETENTION_MINUTES
+	local ROOT_TMP_RETENTION_MINUTES=$ROOT_TMP_RETENTION_MINUTES
+	local ROOT_TMP_MAX_DELETE_PER_PASS=$ROOT_TMP_MAX_DELETE_PER_PASS
+	local ARTIFACT_PRUNE_SUMMARY_LIMIT=$ARTIFACT_PRUNE_SUMMARY_LIMIT
+	local ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT
 
-	log "start data_free_gib=$(free_gib "$DATA_VOLUME") root_free_gib=$(free_gib "$ROOT_VOLUME") keep=$keep"
-	write_status "$keep" "running"
+	keep="$RUN_ROOT_KEEP"
+	tier=$(pressure_tier)
+	case "$tier" in
+		emergency)
+			keep=$(min_int "$RUN_ROOT_KEEP_PRESSURE" 6)
+			RUN_ROOT_HEAVY_DIR_KEEP=$(min_int "$RUN_ROOT_HEAVY_DIR_KEEP" 2)
+			RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES=$(min_int "$RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES" 30)
+			TRACE_RETENTION_MINUTES=$(min_int "$TRACE_RETENTION_MINUTES" 120)
+			VIDEO_RETENTION_MINUTES=$(min_int "$VIDEO_RETENTION_MINUTES" 60)
+			TMP_RETENTION_MINUTES=$(min_int "$TMP_RETENTION_MINUTES" 45)
+			CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES" 10)
+			CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 60)
+			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 8)
+			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 4)
+			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 60)
+			CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 30)
+			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 12)
+			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 2)
+			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 30)
+			ROOT_TMP_RETENTION_MINUTES=$(min_int "$ROOT_TMP_RETENTION_MINUTES" 180)
+			ROOT_TMP_MAX_DELETE_PER_PASS=$(max_int "$ROOT_TMP_MAX_DELETE_PER_PASS" 20000)
+			ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 800)
+			ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=$(max_int "$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT" 50000)
+			;;
+		high)
+			keep=$(min_int "$RUN_ROOT_KEEP_PRESSURE" 6)
+			RUN_ROOT_HEAVY_DIR_KEEP=$(min_int "$RUN_ROOT_HEAVY_DIR_KEEP" 2)
+			RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES=$(min_int "$RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES" 30)
+			TRACE_RETENTION_MINUTES=$(min_int "$TRACE_RETENTION_MINUTES" 120)
+			VIDEO_RETENTION_MINUTES=$(min_int "$VIDEO_RETENTION_MINUTES" 60)
+			TMP_RETENTION_MINUTES=$(min_int "$TMP_RETENTION_MINUTES" 60)
+			CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES" 10)
+			CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 60)
+			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 8)
+			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 4)
+			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 60)
+			ROOT_TMP_RETENTION_MINUTES=$(min_int "$ROOT_TMP_RETENTION_MINUTES" 240)
+			ROOT_TMP_MAX_DELETE_PER_PASS=$(max_int "$ROOT_TMP_MAX_DELETE_PER_PASS" 20000)
+			ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 800)
+			ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=$(max_int "$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT" 50000)
+			;;
+		pressure)
+			keep=$(min_int "$RUN_ROOT_KEEP_PRESSURE" 12)
+			RUN_ROOT_HEAVY_DIR_KEEP=$(min_int "$RUN_ROOT_HEAVY_DIR_KEEP" 4)
+			RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES=$(min_int "$RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES" 90)
+			TRACE_RETENTION_MINUTES=$(min_int "$TRACE_RETENTION_MINUTES" 360)
+			VIDEO_RETENTION_MINUTES=$(min_int "$VIDEO_RETENTION_MINUTES" 180)
+			TMP_RETENTION_MINUTES=$(min_int "$TMP_RETENTION_MINUTES" 180)
+			CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES" 15)
+			CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 120)
+			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 4)
+			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 8)
+			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 180)
+			ROOT_TMP_RETENTION_MINUTES=$(min_int "$ROOT_TMP_RETENTION_MINUTES" 720)
+			ROOT_TMP_MAX_DELETE_PER_PASS=$(max_int "$ROOT_TMP_MAX_DELETE_PER_PASS" 10000)
+			ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 200)
+			ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=$(max_int "$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT" 10000)
+			;;
+	esac
+
+	log "start data_free_gib=$(free_gib "$DATA_VOLUME") root_free_gib=$(free_gib "$ROOT_VOLUME") tier=$tier keep=$keep trace_retention_minutes=$TRACE_RETENTION_MINUTES video_retention_minutes=$VIDEO_RETENTION_MINUTES artifact_dir_limit=$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT"
+	write_status "$keep" "running" "$tier"
 	trim_run_roots "$DATA_VOLUME/rtc-coverage-guided-20260515" "$DATA_VOLUME/rtc-coverage-guided-20260515/run-*" "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt" "$keep"
 	trim_run_roots "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-*" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt" "$keep"
 	trim_run_roots "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs/focused-shards-*" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt" "$keep"
@@ -501,14 +818,19 @@ run_once() {
 	prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-*" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
 	prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs/focused-shards-*" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
 	prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-gap-booster-20260515/runs" "$DATA_VOLUME/rtc-gap-booster-20260515/runs/gap-booster-*" "$DATA_VOLUME/rtc-gap-booster-20260515/current-run-root.txt"
+	prune_orphan_current_coverage_tmp_repos
+	prune_current_coverage_inactive_repos
+	prune_benchmark_feedback_heavy_dirs "$BENCHMARK_CYCLE_KEEP" "$BENCHMARK_CYCLE_RETENTION_MINUTES"
+	prune_docker_wp_env_if_due "$tier"
 
 	prune_old_artifacts "$DATA_VOLUME/rtc-coverage-guided-20260515" "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt"
 	prune_old_artifacts "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
 	prune_old_artifacts "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
 	prune_old_artifacts "$DATA_VOLUME/rtc-gap-booster-20260515" "$DATA_VOLUME/rtc-gap-booster-20260515/current-run-root.txt"
 	cleanup_root_tmp_known_prefixes
-	log "done data_free_gib=$(free_gib "$DATA_VOLUME") root_free_gib=$(free_gib "$ROOT_VOLUME")"
-	write_status "$keep" "done"
+	run_space_target_extra_passes "$tier" "$keep"
+	log "done data_free_gib=$(free_gib "$DATA_VOLUME") root_free_gib=$(free_gib "$ROOT_VOLUME") tier=$tier"
+	write_status "$keep" "done" "$tier"
 }
 
 while true; do
