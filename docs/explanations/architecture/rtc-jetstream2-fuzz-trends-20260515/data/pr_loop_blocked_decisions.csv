@@ -1,15 +1,15 @@
 action,target,priority,allowed,reason,target_label,reason_label
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,canonical minimal on-PR14B and repaired variants supersede raw branches absent fresh contrary evidence,raw-superseded-pr06b-pr15-and-old-pr07c,"canonical minimal on-PR14B and repaired variants supersede raw branches absent
 fresh contrary evidence"
-launch-owner-matrix,PR07C/HOLD-07C-old-head,P0,no,old owner matrix is terminal no_product_owned and stale relative to the repaired stack,PR07C/HOLD-07C-old-head,"old owner matrix is terminal no_product_owned and stale relative to the repaired
-stack"
-publish-ready,repair/rtc-pr07c-build-clean-20260524T0756Z,P0,no,build-clean repair branch is not the final all-merged branch and lacks same-commit benchmark/canary evidence,repair/rtc-pr07c-build-clean-20260524T0756Z,"build-clean repair branch is not the final all-merged branch and lacks
-same-commit benchmark/canary evidence"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,PR07C is not finalized until regenerated exact stack has green or explicitly downscoped current rows,ready/rtc-pr07c-reload-record-snapshots,"PR07C is not finalized until regenerated exact stack has green or explicitly
-downscoped current rows"
+launch-owner-matrix,PR07C/HOLD-07C-old-head,P0,no,old owner matrix is terminal no_product_owned and stale relative to the repaired PR07C stack,PR07C/HOLD-07C-old-head,"old owner matrix is terminal no_product_owned and stale relative to the repaired
+PR07C stack"
+publish-ready,repair/rtc-pr07c-build-clean-20260524T0756Z,P0,no,repair branch is not the final all-merged branch and lacks same-commit benchmark/canary evidence,repair/rtc-pr07c-build-clean-20260524T0756Z,"repair branch is not the final all-merged branch and lacks same-commit
+benchmark/canary evidence"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,PR07C is not finalized until the regenerated exact stack is green or explicitly downscoped,ready/rtc-pr07c-reload-record-snapshots,"PR07C is not finalized until the regenerated exact stack is green or explicitly
+downscoped"
 publish-ready,final-all-merged@2f8247258316bde60869c06c383090904e9426bd,P0,no,setup/build failed and browser/focused rows failed before product behavior,final-all-merged@2f8247258316bde60869c06c383090904e9426bd,setup/build failed and browser/focused rows failed before product behavior
-publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,lacks nonempty same-commit benchmark-minimum plus canary evidence or explicit row downscopes,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"lacks nonempty same-commit benchmark-minimum plus canary evidence or explicit
-row downscopes"
+publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,lacks nonempty same-commit benchmark-minimum plus canary evidence or explicit downscopes,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"lacks nonempty same-commit benchmark-minimum plus canary evidence or explicit
+downscopes"
 launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,"active blocker is exact repaired-stack validation, not broad fuzzer-feedback repair",benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,"active blocker is exact repaired-stack validation, not broad fuzzer-feedback
 repair"
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,broad PR17 repair waits behind regenerated PR07C exact-stack validation and reviewable split evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"broad PR17 repair waits behind regenerated PR07C exact-stack validation and
@@ -19,8 +19,8 @@ discovery reserve"
 launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate same-head deferred relaunch is diagnostic churn while manifest is held,reload-hydration@generic-deferred-fanout,duplicate same-head deferred relaunch is diagnostic churn while manifest is held
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing same-head title-reload existing-or-persistence-reload and large-http-lifecycle green or downscope evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing same-head title-reload existing-or-persistence-reload and
 large-http-lifecycle green or downscope evidence"
-launch-discovery,coverage-guided-lower-level-http-polling-broad-corpus,high,no,do not broaden corpus under disk pressure and exact finalization gates,coverage-guided-lower-level-http-polling-broad-corpus,do not broaden corpus under disk pressure and exact finalization gates
+reserve-discovery,coverage-guided-lower-level-http-polling-broad-corpus,high,no,do not broaden corpus under disk pressure and exact finalization gates,coverage-guided-lower-level-http-polling-broad-corpus,do not broaden corpus under disk pressure and exact finalization gates
 reserve-discovery,rtc-rich-text-crdt-multiblock,medium,no,keep unscheduled while corpus is capped and recent attempts add no actionable yield,rtc-rich-text-crdt-multiblock,"keep unscheduled while corpus is capped and recent attempts add no actionable
 yield"
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,nonessential heavy PR work waits; slots belong to repaired exact-stack validation disk preservation and protected discovery,all-other-heavy-pr-jobs,"nonessential heavy PR work waits; slots belong to repaired exact-stack
-validation disk preservation and protected discovery"
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,nonessential heavy PR work waits; slots belong to PR07C exact-stack validation owner evidence disk preservation and protected discovery,all-other-heavy-pr-jobs,"nonessential heavy PR work waits; slots belong to PR07C exact-stack validation
+owner evidence disk preservation and protected discovery"
