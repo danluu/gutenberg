@@ -25,9 +25,12 @@ RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_RUN_ROOT_HEAVY_DIR_R
 TRACE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TRACE_RETENTION_MINUTES:-720}
 VIDEO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_VIDEO_RETENTION_MINUTES:-360}
 TMP_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TMP_RETENTION_MINUTES:-360}
+DATA_TMP_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_DATA_TMP_RETENTION_MINUTES:-2880}
 CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES:-15}
 CURRENT_ROOT_REPO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_CURRENT_ROOT_REPO_RETENTION_MINUTES:-240}
 CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=${RTC_DISK_MAINTENANCE_CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS:-4}
+COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES:-120}
+COVERAGE_RUN_PAYLOAD_KEEP=${RTC_DISK_MAINTENANCE_COVERAGE_RUN_PAYLOAD_KEEP:-2}
 BENCHMARK_CYCLE_KEEP=${RTC_DISK_MAINTENANCE_BENCHMARK_CYCLE_KEEP:-24}
 BENCHMARK_CYCLE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_BENCHMARK_CYCLE_RETENTION_MINUTES:-720}
 PR_FINALIZATION_WORKTREE_KEEP=${RTC_DISK_MAINTENANCE_PR_FINALIZATION_WORKTREE_KEEP:-24}
@@ -38,6 +41,10 @@ STALE_WP_ENV_MAX_DELETE_PER_PASS=${RTC_DISK_MAINTENANCE_STALE_WP_ENV_MAX_DELETE_
 FUZZ_REPO_BATCH_KEEP=${RTC_DISK_MAINTENANCE_FUZZ_REPO_BATCH_KEEP:-4}
 FUZZ_REPO_BATCH_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_FUZZ_REPO_BATCH_RETENTION_MINUTES:-720}
 MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES:-2880}
+REPO_ARTIFACT_CHILD_KEEP=${RTC_DISK_MAINTENANCE_REPO_ARTIFACT_CHILD_KEEP:-40}
+REPO_ARTIFACT_CHILD_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_REPO_ARTIFACT_CHILD_RETENTION_MINUTES:-720}
+REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES:-2880}
+STALE_ROOT_ARCHIVE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_STALE_ROOT_ARCHIVE_RETENTION_MINUTES:-10080}
 DOCKER_PRUNE_MIN_INTERVAL_SECONDS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_MIN_INTERVAL_SECONDS:-3600}
 DOCKER_PRUNE_UNTIL_NORMAL_HOURS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_UNTIL_NORMAL_HOURS:-48}
 DOCKER_PRUNE_UNTIL_PRESSURE_HOURS=${RTC_DISK_MAINTENANCE_DOCKER_PRUNE_UNTIL_PRESSURE_HOURS:-12}
@@ -168,6 +175,9 @@ pressure_tier() {
 path_is_live() {
 	local path=$1
 	local pid cwd env
+	if pgrep -af -- "$path" >/dev/null 2>&1; then
+		return 0
+	fi
 	if [ -f "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt" ] &&
 		[ "$(sed -n '1p' "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt" 2>/dev/null || true)" = "$path" ]; then
 		return 0
@@ -281,11 +291,60 @@ prune_stale_run_root_heavy_dirs() {
 		if ! path_older_than_minutes "$path" "$RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES"; then
 			continue
 		fi
-		for child in "$path/wp-env" "$path/repos" "$path/playwright-report" "$path/blob-report"; do
+		for child in "$path/wp-env" "$path/repos" "$path/external-imports" "$path/playwright-report" "$path/blob-report"; do
 			[ -e "$child" ] || continue
 			remove_path "$child"
 		done
 	done < <(ls -td $glob 2>/dev/null || true)
+}
+
+prune_stale_coverage_run_payloads() {
+	local base="$DATA_VOLUME/rtc-coverage-guided-20260515"
+	local pointer="$base/current-output-dir.txt"
+	local current="" path count=0 payload
+	[ -d "$base" ] || return 0
+	if [ -f "$pointer" ]; then
+		current=$(sed -n '1p' "$pointer" 2>/dev/null || true)
+	fi
+	while IFS= read -r path; do
+		[ -n "$path" ] || continue
+		count=$(( count + 1 ))
+		if [ "$count" -le "$COVERAGE_RUN_PAYLOAD_KEEP" ]; then
+			continue
+		fi
+		if [ -n "$current" ] && [ "$path" = "$current" ]; then
+			continue
+		fi
+		if path_is_live "$path"; then
+			log "skip live stale coverage payload path=$path"
+			continue
+		fi
+		if ! path_older_than_minutes "$path" "$COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES"; then
+			continue
+		fi
+		for payload in "$path"/repos "$path"/wp-env "$path"/external-imports; do
+			[ -e "$payload" ] || continue
+			remove_path "$payload"
+		done
+		while IFS= read -r -d '' payload; do
+			if path_is_live "$payload"; then
+				log "skip live nested external-imports path=$payload"
+				continue
+			fi
+			remove_path "$payload"
+		done < <(find "$path" -xdev -type d -name external-imports -print0 2>/dev/null)
+		while IFS= read -r -d '' payload; do
+			remove_file_if_old "$payload" "$COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES"
+		done < <(
+			find "$path" -xdev -type f \
+				\( -name trace.zip -o -name '*.trace.zip' -o -name '*.trace' -o -name '*.webm' -o -name video.zip \) \
+				-print0 2>/dev/null
+		)
+	done < <(
+		find "$base" -mindepth 1 -maxdepth 1 -type d -name 'run-*' -printf '%T@ %p\0' 2>/dev/null |
+			sort -z -nr |
+			sed -z 's/^[^ ]* //'
+	)
 }
 
 prune_orphan_current_coverage_tmp_repos() {
@@ -710,6 +769,79 @@ prune_fuzz_repo_batches() {
 	prune_fuzz_repo_batches_for_root "$DATA_VOLUME/rtc-gap-booster-20260515" "$FUZZ_REPO_BATCH_KEEP" "$FUZZ_REPO_BATCH_RETENTION_MINUTES"
 }
 
+prune_repo_artifact_child_root() {
+	local root=$1 keep=$2 retention=$3 path count=0
+	[ -d "$root" ] || return 0
+	if path_is_live "$root"; then
+		log "skip live repo artifact child root=$root"
+		return 0
+	fi
+	while IFS= read -r path; do
+		[ -n "$path" ] || continue
+		count=$(( count + 1 ))
+		if [ "$count" -le "$keep" ]; then
+			continue
+		fi
+		if ! path_older_than_minutes "$path" "$retention"; then
+			continue
+		fi
+		remove_path "$path"
+	done < <(
+		find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\0' 2>/dev/null |
+			sort -z -nr |
+			sed -z 's/^[^ ]* //'
+	)
+}
+
+prune_repo_artifact_payloads() {
+	local artifact_root="$DATA_VOLUME/rtc-fuzz-validation-20260515/repo/artifacts"
+	local path
+	[ -d "$artifact_root" ] || return 0
+
+	if [ -d "$artifact_root/rtc-browser-fuzz" ] && ! path_is_live "$artifact_root/rtc-browser-fuzz"; then
+		while IFS= read -r -d '' path; do
+			remove_file_if_old "$path" "$REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES"
+		done < <(
+			find "$artifact_root/rtc-browser-fuzz" -xdev -type f \
+				\( -name trace.zip -o -name '*.trace.zip' -o -name '*.trace' -o -name '*.webm' -o -name video.zip \) \
+				-print0 2>/dev/null
+		)
+	fi
+
+	prune_repo_artifact_child_root "$artifact_root/.rtc-protocol-server-fuzz-php" "$REPO_ARTIFACT_CHILD_KEEP" "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES"
+	prune_repo_artifact_child_root "$artifact_root/.rtc-protocol-server-fuzz-preflight" "$REPO_ARTIFACT_CHILD_KEEP" "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES"
+	prune_repo_artifact_child_root "$artifact_root/.rtc-backend-api-fuzz" "$REPO_ARTIFACT_CHILD_KEEP" "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES"
+	prune_repo_artifact_child_root "$artifact_root/.rtc-backend-api-fuzz-preflight" "$REPO_ARTIFACT_CHILD_KEEP" "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES"
+}
+
+prune_stale_data_tmp() {
+	local tmp_root="$DATA_VOLUME/tmp"
+	local path count=0
+	[ -d "$tmp_root" ] || return 0
+	while IFS= read -r -d '' path; do
+		if path_is_live "$path"; then
+			log "skip live data tmp path=$path"
+			continue
+		fi
+		remove_path "$path"
+		count=$(( count + 1 ))
+	done < <(find "$tmp_root" -mindepth 1 -maxdepth 1 -mmin +"$DATA_TMP_RETENTION_MINUTES" -print0 2>/dev/null)
+	log "prune_stale_data_tmp deleted=$count retention_minutes=$DATA_TMP_RETENTION_MINUTES root=$tmp_root"
+}
+
+prune_stale_root_archive() {
+	local archive="$DATA_VOLUME/stale-root-archive/wp-gym-continuous-runs-20260514-20260517T213328Z"
+	[ -d "$archive" ] || return 0
+	if path_is_live "$archive"; then
+		log "skip live stale root archive path=$archive"
+		return 0
+	fi
+	if ! path_older_than_minutes "$archive" "$STALE_ROOT_ARCHIVE_RETENTION_MINUTES"; then
+		return 0
+	fi
+	remove_path "$archive"
+}
+
 prune_maintainer_tested_scratch() {
 	local root="$DATA_VOLUME/rtc-maintainer-tested-set-20260519"
 	local parent path
@@ -772,15 +904,23 @@ run_space_target_extra_passes() {
 		TRACE_RETENTION_MINUTES=$(min_int "$TRACE_RETENTION_MINUTES" 60)
 		VIDEO_RETENTION_MINUTES=$(min_int "$VIDEO_RETENTION_MINUTES" 30)
 		TMP_RETENTION_MINUTES=$(min_int "$TMP_RETENTION_MINUTES" 30)
+		DATA_TMP_RETENTION_MINUTES=$(min_int "$DATA_TMP_RETENTION_MINUTES" 720)
 		CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 30)
+		COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES=$(min_int "$COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES" 30)
+		COVERAGE_RUN_PAYLOAD_KEEP=$(min_int "$COVERAGE_RUN_PAYLOAD_KEEP" 1)
 		BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 60)
 		PR_FINALIZATION_WORKTREE_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_WORKTREE_RETENTION_MINUTES" 60)
 		PR_FINALIZATION_VALIDATION_RETENTION_MINUTES=$(min_int "$PR_FINALIZATION_VALIDATION_RETENTION_MINUTES" 60)
 		STALE_WP_ENV_RETENTION_MINUTES=$(min_int "$STALE_WP_ENV_RETENTION_MINUTES" 720)
 		FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 60)
 		MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 720)
+		REPO_ARTIFACT_CHILD_KEEP=$(min_int "$REPO_ARTIFACT_CHILD_KEEP" 10)
+		REPO_ARTIFACT_CHILD_RETENTION_MINUTES=$(min_int "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES" 120)
+		REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES=$(min_int "$REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES" 720)
 		ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 1200)
 		ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT=$(max_int "$ARTIFACT_PRUNE_ARTIFACT_DIR_LIMIT" 80000)
+		prune_stale_coverage_run_payloads
+		prune_repo_artifact_payloads
 		prune_current_coverage_inactive_repos
 		prune_benchmark_feedback_heavy_dirs 3 "$BENCHMARK_CYCLE_RETENTION_MINUTES"
 		prune_pr_finalization_worktrees 8 "$PR_FINALIZATION_WORKTREE_RETENTION_MINUTES"
@@ -788,6 +928,8 @@ run_space_target_extra_passes() {
 		prune_stale_wp_env_dirs
 		prune_fuzz_repo_batches
 		prune_maintainer_tested_scratch
+		prune_stale_data_tmp
+		prune_stale_root_archive
 		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-coverage-guided-20260515" "$DATA_VOLUME/rtc-coverage-guided-20260515/run-*" "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt"
 		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-*" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
 		prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs/focused-shards-*" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
@@ -851,9 +993,12 @@ write_status() {
 		echo "- trace_retention_minutes: $TRACE_RETENTION_MINUTES"
 		echo "- video_retention_minutes: $VIDEO_RETENTION_MINUTES"
 		echo "- tmp_retention_minutes: $TMP_RETENTION_MINUTES"
+		echo "- data_tmp_retention_minutes: $DATA_TMP_RETENTION_MINUTES"
 		echo "- current_root_tmp_repo_retention_minutes: $CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES"
 		echo "- current_root_repo_retention_minutes: $CURRENT_ROOT_REPO_RETENTION_MINUTES"
 		echo "- current_root_repo_max_delete_per_pass: $CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS"
+		echo "- coverage_run_payload_retention_minutes: $COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES"
+		echo "- coverage_run_payload_keep: $COVERAGE_RUN_PAYLOAD_KEEP"
 		echo "- benchmark_cycle_keep: $BENCHMARK_CYCLE_KEEP"
 		echo "- benchmark_cycle_retention_minutes: $BENCHMARK_CYCLE_RETENTION_MINUTES"
 		echo "- pr_finalization_worktree_keep: $PR_FINALIZATION_WORKTREE_KEEP"
@@ -864,6 +1009,10 @@ write_status() {
 		echo "- fuzz_repo_batch_keep: $FUZZ_REPO_BATCH_KEEP"
 		echo "- fuzz_repo_batch_retention_minutes: $FUZZ_REPO_BATCH_RETENTION_MINUTES"
 		echo "- maintainer_tested_scratch_retention_minutes: $MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES"
+		echo "- repo_artifact_child_keep: $REPO_ARTIFACT_CHILD_KEEP"
+		echo "- repo_artifact_child_retention_minutes: $REPO_ARTIFACT_CHILD_RETENTION_MINUTES"
+		echo "- repo_browser_artifact_payload_retention_minutes: $REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES"
+		echo "- stale_root_archive_retention_minutes: $STALE_ROOT_ARCHIVE_RETENTION_MINUTES"
 		echo "- root_tmp_retention_minutes: $ROOT_TMP_RETENTION_MINUTES"
 		echo "- root_tmp_max_delete_per_pass: $ROOT_TMP_MAX_DELETE_PER_PASS"
 		echo "- artifact_prune_summary_limit: $ARTIFACT_PRUNE_SUMMARY_LIMIT"
@@ -895,9 +1044,12 @@ run_once() {
 	local TRACE_RETENTION_MINUTES=$TRACE_RETENTION_MINUTES
 	local VIDEO_RETENTION_MINUTES=$VIDEO_RETENTION_MINUTES
 	local TMP_RETENTION_MINUTES=$TMP_RETENTION_MINUTES
+	local DATA_TMP_RETENTION_MINUTES=$DATA_TMP_RETENTION_MINUTES
 	local CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=$CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES
 	local CURRENT_ROOT_REPO_RETENTION_MINUTES=$CURRENT_ROOT_REPO_RETENTION_MINUTES
 	local CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS
+	local COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES=$COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES
+	local COVERAGE_RUN_PAYLOAD_KEEP=$COVERAGE_RUN_PAYLOAD_KEEP
 	local BENCHMARK_CYCLE_KEEP=$BENCHMARK_CYCLE_KEEP
 	local BENCHMARK_CYCLE_RETENTION_MINUTES=$BENCHMARK_CYCLE_RETENTION_MINUTES
 	local PR_FINALIZATION_WORKTREE_KEEP=$PR_FINALIZATION_WORKTREE_KEEP
@@ -908,6 +1060,10 @@ run_once() {
 	local FUZZ_REPO_BATCH_KEEP=$FUZZ_REPO_BATCH_KEEP
 	local FUZZ_REPO_BATCH_RETENTION_MINUTES=$FUZZ_REPO_BATCH_RETENTION_MINUTES
 	local MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES
+	local REPO_ARTIFACT_CHILD_KEEP=$REPO_ARTIFACT_CHILD_KEEP
+	local REPO_ARTIFACT_CHILD_RETENTION_MINUTES=$REPO_ARTIFACT_CHILD_RETENTION_MINUTES
+	local REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES=$REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES
+	local STALE_ROOT_ARCHIVE_RETENTION_MINUTES=$STALE_ROOT_ARCHIVE_RETENTION_MINUTES
 	local ROOT_TMP_RETENTION_MINUTES=$ROOT_TMP_RETENTION_MINUTES
 	local ROOT_TMP_MAX_DELETE_PER_PASS=$ROOT_TMP_MAX_DELETE_PER_PASS
 	local ARTIFACT_PRUNE_SUMMARY_LIMIT=$ARTIFACT_PRUNE_SUMMARY_LIMIT
@@ -923,9 +1079,12 @@ run_once() {
 			TRACE_RETENTION_MINUTES=$(min_int "$TRACE_RETENTION_MINUTES" 120)
 			VIDEO_RETENTION_MINUTES=$(min_int "$VIDEO_RETENTION_MINUTES" 60)
 			TMP_RETENTION_MINUTES=$(min_int "$TMP_RETENTION_MINUTES" 45)
+			DATA_TMP_RETENTION_MINUTES=$(min_int "$DATA_TMP_RETENTION_MINUTES" 720)
 			CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES" 10)
 			CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 60)
 			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 8)
+			COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES=$(min_int "$COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES" 30)
+			COVERAGE_RUN_PAYLOAD_KEEP=$(min_int "$COVERAGE_RUN_PAYLOAD_KEEP" 1)
 			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 4)
 			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 60)
 			CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 30)
@@ -940,6 +1099,9 @@ run_once() {
 			FUZZ_REPO_BATCH_KEEP=$(min_int "$FUZZ_REPO_BATCH_KEEP" 2)
 			FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 60)
 			MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 720)
+			REPO_ARTIFACT_CHILD_KEEP=$(min_int "$REPO_ARTIFACT_CHILD_KEEP" 10)
+			REPO_ARTIFACT_CHILD_RETENTION_MINUTES=$(min_int "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES" 120)
+			REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES=$(min_int "$REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES" 720)
 			ROOT_TMP_RETENTION_MINUTES=$(min_int "$ROOT_TMP_RETENTION_MINUTES" 180)
 			ROOT_TMP_MAX_DELETE_PER_PASS=$(max_int "$ROOT_TMP_MAX_DELETE_PER_PASS" 20000)
 			ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 800)
@@ -952,9 +1114,12 @@ run_once() {
 			TRACE_RETENTION_MINUTES=$(min_int "$TRACE_RETENTION_MINUTES" 120)
 			VIDEO_RETENTION_MINUTES=$(min_int "$VIDEO_RETENTION_MINUTES" 60)
 			TMP_RETENTION_MINUTES=$(min_int "$TMP_RETENTION_MINUTES" 60)
+			DATA_TMP_RETENTION_MINUTES=$(min_int "$DATA_TMP_RETENTION_MINUTES" 1440)
 			CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES" 10)
 			CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 60)
 			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 8)
+			COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES=$(min_int "$COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES" 60)
+			COVERAGE_RUN_PAYLOAD_KEEP=$(min_int "$COVERAGE_RUN_PAYLOAD_KEEP" 1)
 			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 4)
 			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 60)
 			PR_FINALIZATION_WORKTREE_KEEP=$(min_int "$PR_FINALIZATION_WORKTREE_KEEP" 8)
@@ -965,6 +1130,9 @@ run_once() {
 			FUZZ_REPO_BATCH_KEEP=$(min_int "$FUZZ_REPO_BATCH_KEEP" 2)
 			FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 120)
 			MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 1440)
+			REPO_ARTIFACT_CHILD_KEEP=$(min_int "$REPO_ARTIFACT_CHILD_KEEP" 20)
+			REPO_ARTIFACT_CHILD_RETENTION_MINUTES=$(min_int "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES" 360)
+			REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES=$(min_int "$REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES" 1440)
 			ROOT_TMP_RETENTION_MINUTES=$(min_int "$ROOT_TMP_RETENTION_MINUTES" 240)
 			ROOT_TMP_MAX_DELETE_PER_PASS=$(max_int "$ROOT_TMP_MAX_DELETE_PER_PASS" 20000)
 			ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 800)
@@ -977,9 +1145,12 @@ run_once() {
 			TRACE_RETENTION_MINUTES=$(min_int "$TRACE_RETENTION_MINUTES" 360)
 			VIDEO_RETENTION_MINUTES=$(min_int "$VIDEO_RETENTION_MINUTES" 180)
 			TMP_RETENTION_MINUTES=$(min_int "$TMP_RETENTION_MINUTES" 180)
+			DATA_TMP_RETENTION_MINUTES=$(min_int "$DATA_TMP_RETENTION_MINUTES" 2880)
 			CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_TMP_REPO_RETENTION_MINUTES" 15)
 			CURRENT_ROOT_REPO_RETENTION_MINUTES=$(min_int "$CURRENT_ROOT_REPO_RETENTION_MINUTES" 120)
 			CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS=$(max_int "$CURRENT_ROOT_REPO_MAX_DELETE_PER_PASS" 4)
+			COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES=$(min_int "$COVERAGE_RUN_PAYLOAD_RETENTION_MINUTES" 120)
+			COVERAGE_RUN_PAYLOAD_KEEP=$(min_int "$COVERAGE_RUN_PAYLOAD_KEEP" 2)
 			BENCHMARK_CYCLE_KEEP=$(min_int "$BENCHMARK_CYCLE_KEEP" 8)
 			BENCHMARK_CYCLE_RETENTION_MINUTES=$(min_int "$BENCHMARK_CYCLE_RETENTION_MINUTES" 180)
 			PR_FINALIZATION_WORKTREE_KEEP=$(min_int "$PR_FINALIZATION_WORKTREE_KEEP" 12)
@@ -990,6 +1161,9 @@ run_once() {
 			FUZZ_REPO_BATCH_KEEP=$(min_int "$FUZZ_REPO_BATCH_KEEP" 4)
 			FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 720)
 			MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 2880)
+			REPO_ARTIFACT_CHILD_KEEP=$(min_int "$REPO_ARTIFACT_CHILD_KEEP" 40)
+			REPO_ARTIFACT_CHILD_RETENTION_MINUTES=$(min_int "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES" 720)
+			REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES=$(min_int "$REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES" 2880)
 			ROOT_TMP_RETENTION_MINUTES=$(min_int "$ROOT_TMP_RETENTION_MINUTES" 720)
 			ROOT_TMP_MAX_DELETE_PER_PASS=$(max_int "$ROOT_TMP_MAX_DELETE_PER_PASS" 10000)
 			ARTIFACT_PRUNE_SUMMARY_LIMIT=$(max_int "$ARTIFACT_PRUNE_SUMMARY_LIMIT" 200)
@@ -1008,6 +1182,7 @@ run_once() {
 	prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-*" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
 	prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs/focused-shards-*" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
 	prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-gap-booster-20260515/runs" "$DATA_VOLUME/rtc-gap-booster-20260515/runs/gap-booster-*" "$DATA_VOLUME/rtc-gap-booster-20260515/current-run-root.txt"
+	prune_stale_coverage_run_payloads
 	prune_orphan_current_coverage_tmp_repos
 	prune_current_coverage_inactive_repos
 	prune_benchmark_feedback_heavy_dirs "$BENCHMARK_CYCLE_KEEP" "$BENCHMARK_CYCLE_RETENTION_MINUTES"
@@ -1016,6 +1191,9 @@ run_once() {
 	prune_stale_wp_env_dirs
 	prune_fuzz_repo_batches
 	prune_maintainer_tested_scratch
+	prune_repo_artifact_payloads
+	prune_stale_data_tmp
+	prune_stale_root_archive
 	prune_docker_wp_env_if_due "$tier"
 
 	prune_old_artifacts "$DATA_VOLUME/rtc-coverage-guided-20260515" "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt"

@@ -822,11 +822,12 @@ gap-booster roots. Under disk pressure it keeps fewer old roots; otherwise it
 retains a wider recent history. The default pressure threshold is deliberately
 above the last few hundred GiB of free space so the loop starts freeing space
 before the project is close to running out. It also prunes large generated
-`wp-env`, per-run repo, Playwright report, and blob report directories from
-older retained roots while preserving summaries, logs, coverage metadata, and
-the newest roots. Some `wp-env` trees contain root-owned files from containers;
-the cleanup script uses passwordless `sudo -n` when available, after live-path
-checks, so those stale trees do not remain as undeletable disk pressure.
+`wp-env`, per-run repo, duplicated `external-imports`, Playwright report, blob
+report, raw trace, zipped trace, and video payloads from older retained roots
+while preserving summaries, logs, coverage metadata, and the newest roots.
+Some `wp-env` trees contain root-owned files from containers; the cleanup
+script uses passwordless `sudo -n` when available, after live-path checks, so
+those stale trees do not remain as undeletable disk pressure.
 
 The disk-maintenance loop also owns three scratch areas that previously grew
 outside the coverage-root retention rules:
@@ -860,6 +861,19 @@ outside the coverage-root retention rules:
     Logs and artifacts are preserved; checked-out worktrees and isolated
     `wp-env` home directories are removed after
     `RTC_DISK_MAINTENANCE_MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES`.
+-   Generated repo-local fuzz artifacts under
+    `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo/artifacts`.
+    Old protocol/backend child run directories are bounded by
+    `RTC_DISK_MAINTENANCE_REPO_ARTIFACT_CHILD_KEEP` and
+    `RTC_DISK_MAINTENANCE_REPO_ARTIFACT_CHILD_RETENTION_MINUTES`. Old browser
+    artifact trace/video payloads are removed after
+    `RTC_DISK_MAINTENANCE_REPO_BROWSER_ARTIFACT_PAYLOAD_RETENTION_MINUTES`;
+    compact summaries and logs remain.
+-   The stale root archive
+    `/media/volume/danluu-fuzz-data/stale-root-archive/wp-gym-continuous-runs-20260514-20260517T213328Z`
+    and old top-level data-volume tmp entries. These are not active RTC fuzz
+    roots and are removed only after live-path checks and their retention
+    windows.
 
 The artifact pruner is cursor-based. Each pass advances through long
 `summary.ndjson` files instead of repeatedly rechecking the first batch of
