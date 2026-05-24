@@ -2,8 +2,10 @@ profile,records_seen,successful_records,startup_failures,success_rate,profile_fa
 async-server-blocks,425,0,0,0,async/media
 full,288,25,0,0.08680555555555555,block-structure
 collaboration-ui-signals,264,0,0,0,other
-large-post-three-user-http-lifecycle,246,2,1,0.008130081300813009,lifecycle
-session-lifecycle,159,138,0,0.8679245283018868,lifecycle
+large-post-three-user-http-lifecycle,258,6,3,0.023255813953488372,lifecycle
+session-lifecycle,160,138,0,0.8625,lifecycle
 real-user-editing,48,24,0,0.5,real-user
 long-session-large-doc,37,0,0,0,lifecycle
 permissions-auth-locks,35,0,0,0,auth/locks
+table-stale-snapshot-http,3,3,0,1,other
+list-move-refresh-http,2,0,0,0,other
