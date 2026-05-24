@@ -1,14 +1,14 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-collaboration-ui-signals,484,0,0,0,other
+collaboration-ui-signals,539,0,0,0,other
 async-server-blocks,426,0,0,0,async/media
 large-post-three-user-http-lifecycle,328,22,0,0.06707317073170732,lifecycle
 full,288,25,0,0.08680555555555555,block-structure
 session-lifecycle,164,138,0,0.8414634146341463,lifecycle
-real-user-editing,92,44,0,0.4782608695652174,real-user
+real-user-editing,102,49,0,0.4803921568627451,real-user
 long-session-large-doc,40,0,0,0,lifecycle
 many-user-lifecycle,40,10,0,0.25,lifecycle
 permissions-auth-locks,37,1,0,0.02702702702702703,auth/locks
-table-stale-snapshot-http,11,10,0,0.9090909090909091,other
+table-stale-snapshot-http,13,12,0,0.9230769230769231,other
 persistence-no-title,8,0,0,0,persistence
 media-cross-entity,8,3,0,0.375,async/media
 list-move-refresh-http,4,0,0,0,other

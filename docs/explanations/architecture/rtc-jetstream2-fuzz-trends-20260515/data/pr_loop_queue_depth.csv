@@ -10,7 +10,8 @@ controller decisions,blocked,control decision,P0,10
 controller decisions,allowed,control decision,high,10
 controller decisions,blocked,control decision,high,1
 controller decisions,allowed,control decision,medium,1
-critical blockers,active,coverage-promotion,high,1
+critical blockers,active,control-feedback,high,1
+critical blockers,runnable,coverage-promotion,high,1
 critical blockers,held,deferred-family,high,1
 critical blockers,terminal,final-stack-join,high,1
 critical blockers,terminal,owner-evidence,high,1
@@ -18,7 +19,7 @@ critical blockers,terminal,reducer,high,2
 critical job queue,terminal,browser-e2e,high,1
 critical job queue,active,codex-analysis,high,1
 critical job queue,gated,codex-analysis,high,1
+critical job queue,runnable,codex-analysis,high,1
 critical lanes,terminal,browser-e2e,lane,1
-critical lanes,queued,codex-analysis,lane,1
+critical lanes,queued,codex-analysis,lane,2
 active sessions,active,analysis,analysis,3
-active sessions,active,critical-continuation,critical-continuation,1
