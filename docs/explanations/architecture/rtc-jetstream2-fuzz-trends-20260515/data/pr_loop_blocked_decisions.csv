@@ -3,8 +3,8 @@ launch-owner-matrix,PR07C/HOLD-07C,P0,no,Broad PR07C key can reuse stale no-prod
 2f8247258316bde60869c06c383090904e9426bd."
 publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,Current canary coverage lacks required current-run successes or explicit blocker/downscope rows.,coverage-ready-benchmark-canary-equivalence,"Current canary coverage lacks required current-run successes or explicit
 blocker/downscope rows."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until repaired-head owner evidence, build evidence, canary rows, and seed 1190001 blocker resolution agree.",ready/rtc-pr07c-reload-record-snapshots,"Block until repaired-head owner evidence, build evidence, canary rows, and seed
-1190001 blocker resolution agree."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until repaired-head owner evidence, build evidence, canary rows, and seed 1190001 resolution agree.",ready/rtc-pr07c-reload-record-snapshots,"Block until repaired-head owner evidence, build evidence, canary rows, and seed
+1190001 resolution agree."
 publish-ready,final-all-merged-current,P0,no,"Block until PR07C gates, benchmark-minimum rows, canary coverage/downscopes, live manifest links, and status docs agree.",final-all-merged-current,"Block until PR07C gates, benchmark-minimum rows, canary coverage/downscopes,
 live manifest links, and status docs agree."
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches
@@ -17,7 +17,5 @@ publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,
 replay evidence or green-stack adoption."
 launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status manifest generation and analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication/status
 manifest generation and analysis-only work."
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C owner evidence, seed 1190001, canary materialization, disk preservation, and discovery reserve.",all-other-heavy-pr-jobs,"Nonessential heavy PR work waits behind PR07C owner evidence, seed 1190001,
-canary materialization, disk preservation, and discovery reserve."
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, seed 1190001, canary materialization, disk preservation, and discovery reserve.",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"Broad PR17 repair waits behind PR07C owner evidence, seed 1190001, canary
 materialization, disk preservation, and discovery reserve."
