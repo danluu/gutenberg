@@ -2089,3 +2089,6 @@ timestamp,group,group_family
 2026-05-24T15:19:59Z,novelty-ws-real-user-coverage-bridge,real-user
 2026-05-24T15:23:01Z,novelty-http-list-move-refresh,http
 2026-05-24T16:47:37Z,novelty-http-same-user-stale-draft,lifecycle
+2026-05-24T16:49:58Z,novelty-http-table-stale-snapshot,http
+2026-05-24T16:52:13Z,novelty-http-persistence-probe,persistence
+2026-05-24T16:55:36Z,novelty-http-large-post-lifecycle,lifecycle
