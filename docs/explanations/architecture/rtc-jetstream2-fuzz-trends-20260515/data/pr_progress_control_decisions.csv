@@ -1,15 +1,16 @@
 action,target,priority,allowed,reason
 repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_severe_pressure is active; preserve PR review and current triage evidence before artifact-heavy work
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 4 vs floor 3 but unprotected and not materially healthy
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 7 vs floor 3 but unprotected and not materially healthy
 update-controller-rule,discovery-reserve-protection,P0,yes,hard-protect minimum discovery floor through 2026-05-26T06:59:59Z
 update-controller-rule,materialized-discovery-health,P0,yes,count discovery healthy only with live materialized run dirs or explicit disk/load blockers
-launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,preserve discovery reserve; allow only cheap docs/manifest analysis-only disk maintenance protected discovery or non-heavy packaging
+launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,"preserve discovery reserve; allow only cheap docs/manifest work, analysis-only work, disk maintenance, protected discovery, or non-heavy packaging"
 launch-branch-repair,artifact-heavy-broad-work-under-disk-pressure,P0,no,disk severe pressure blocks broad artifact-heavy PR and exploratory jobs
 repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot; non-heavy hydrate or commit missing lower benchmark harness files
+repair-ready,benchmark-canary-fuzzer-gap/active-continuation-infra-stall,P0,yes,if zero-byte continuation artifacts persist preserve logs mark infra-stalled and requeue behind disk maintenance to harness packaging
 repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until harness files exist and discovery reserve is protected/materialized
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has missing skipped zero-row or No-tests-found benchmark-minimum rows
 update-controller-rule,benchmark-minimum-nonempty-publication-gate,P0,yes,block final all-merged publication on skipped zero-row or No-tests-found evidence unless explicitly downscoped
-publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata repair is allowed while published branch evidence exists
+publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata repair is allowed because current-push-manifest.tsv is header-only while published branch evidence exists
 publish-ready,maintainer-status-live-branches,P0,yes,update maintainer-facing docs with live branch links and deliberate downscopes without claiming final green
 publish-ready,ready-published-real-fix-branches,high,yes,keep PR02A PR03B PR06B-minimal PR07B PR07C PR09 PR10 PR11A PR11B PR14 PR14B and PR15A/B/C-on-PR14B linked and validating
 repair-ready,ready-product-pr-branch-diff-audit,high,yes,cheap audit can reconcile stale failed diff-check evidence against current published refs
@@ -20,7 +21,10 @@ repair-ready,reload-hydration-current-deferred-report,P0,yes,consume completed 2
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,heavy exact replay waits until b8ca harness gate is repaired and discovery reserve is protected/materialized
 launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate diagnostic churn while same-head exact replay evidence is missing
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence or replay-backed downscope
-repair-ready,benchmark-canary-fuzzer-gap/active-continuation-infra-stall,P0,yes,if zero-byte continuation artifacts persist preserve logs mark infra-stalled and requeue behind disk maintenance to harness packaging
+cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,diagnostic-only until product-owned first-loss evidence owner evidence green-stack adoption or explicit downscope exists
+cooldown-diagnostic,benchmark-feedback-refresh-without-harness-change,P0,yes,repeated feedback refresh is churn until exact b8ca harness content changes
+cooldown-diagnostic,malformed-save-payload,high,yes,raw deferred heads are superseded by published PR06B minimal
+cooldown-diagnostic,http-room-isolation,high,yes,raw deferred heads are superseded by published PR02A absent fresh contrary evidence
 reserve-discovery,benchmark-canary-fuzzer-gap/primary-forced-canary-discovery,P0,yes,keep bounded large-post parser/serialization many-user same-user and provider-persisted canary discovery alive
 repair-ready,benchmark-canary-fuzzer-gap/primary-forced-canary-lanes,P0,yes,repair bounded forced canary materialization or write explicit disk/load blocker; do not credit absent lanes
 repair-ready,large-post-three-user-http,P0,yes,materialize primary large-post readiness lane if disk/load permits; otherwise write explicit blocker
@@ -29,10 +33,6 @@ repair-ready,benchmark-canary-fuzzer-gap/http-polling-large-readiness,high,yes,c
 repair-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt-seeds,high,yes,preserve bounded reproducers as PR17 handoff inputs after exact b8ca gate clears
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,exact b8ca harness packaging owns the next branch-changing product slot
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus exact all-merged benchmark-minimum and canary green evidence
-cooldown-diagnostic,benchmark-feedback-refresh-without-harness-change,P0,yes,repeated feedback refresh is churn until exact b8ca harness content changes
-cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,diagnostic-only until product-owned first-loss evidence owner evidence green-stack adoption or explicit downscope exists
-cooldown-diagnostic,malformed-save-payload,high,yes,raw deferred heads are superseded by published PR06B minimal
-cooldown-diagnostic,http-room-isolation,high,yes,raw deferred heads are superseded by published PR02A absent fresh contrary evidence
 reserve-discovery,coverage-guided-lower-level-http-polling-manager,high,yes,keep one retargeted large-http-readiness lower-level lane while disk pressure is active
 cooldown-diagnostic,coverage-guided-lower-level-http-polling-broad-corpus,high,yes,do not reopen broad HTTP polling corpus while exact harness and disk gates are active
 repair-ready,benchmark-minimum-lower-micro-rows,high,yes,retarget lower-level work only after exact b8ca harness files exist in candidate environment
