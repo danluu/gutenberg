@@ -13,7 +13,7 @@ insert-heading,210,session-lifecycle
 edit-nested-paragraph,206,session-lifecycle
 edit-paragraph,200,session-lifecycle
 append-paragraph,162,table-stale-snapshot-http
-ui-toolbar-format-paragraph,134,real-user-editing
+ui-toolbar-format-paragraph,135,real-user-editing
 insert-media-cross-entity-block,131,media-cross-entity
 append-paragraph,112,large-post-three-user-http-lifecycle
 insert-heading,112,large-post-three-user-http-lifecycle

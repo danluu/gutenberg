@@ -1,14 +1,14 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Broad PR07C key can reuse stale no-product-owned evidence from failed head 2f8247258316bde60869c06c383090904e9426bd.,PR07C/HOLD-07C,"Broad PR07C key can reuse stale no-product-owned evidence from failed head
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Broad PR07C key can reuse stale no-product evidence from failed head 2f8247258316bde60869c06c383090904e9426bd.,PR07C/HOLD-07C,"Broad PR07C key can reuse stale no-product evidence from failed head
 2f8247258316bde60869c06c383090904e9426bd."
 publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,Current canary coverage lacks required current-run successes or explicit blocker/downscope rows.,coverage-ready-benchmark-canary-equivalence,"Current canary coverage lacks required current-run successes or explicit
 blocker/downscope rows."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until repaired-head owner evidence, build evidence, canary rows, and seed 1190001 resolution agree.",ready/rtc-pr07c-reload-record-snapshots,"Block until repaired-head owner evidence, build evidence, canary rows, and seed
-1190001 resolution agree."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until repaired-head build and owner evidence, canary rows or downscopes, and seed 1190001 resolution agree.",ready/rtc-pr07c-reload-record-snapshots,"Block until repaired-head build and owner evidence, canary rows or downscopes,
+and seed 1190001 resolution agree."
 publish-ready,final-all-merged-current,P0,no,"Block until PR07C gates, benchmark-minimum rows, canary coverage or downscopes, live manifest links, and status docs agree.",final-all-merged-current,"Block until PR07C gates, benchmark-minimum rows, canary coverage or downscopes,
 live manifest links, and status docs agree."
-publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches
-absent fresh contrary evidence."
+publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical PR06B minimal, PR15 on-PR14B variants, and repaired PR07C path supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical PR06B minimal, PR15 on-PR14B variants, and repaired PR07C path
+supersede raw held branches absent fresh contrary evidence."
 repair-branch,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind PR07C owner evidence, seed 1190001 handling, canary materialization, disk preservation, and discovery reserve.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Heavy reload replay waits behind PR07C owner evidence, seed 1190001 handling,
 canary materialization, disk preservation, and discovery reserve."
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Missing same-head title-reload, existing-post CRDT or persistence-reload, and large-http-lifecycle green or replay-backed downscope rows.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing same-head title-reload, existing-post CRDT or persistence-reload, and
@@ -17,5 +17,5 @@ publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,
 replay evidence or green-stack adoption."
 launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status manifest generation and analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication/status
 manifest generation and analysis-only work."
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, seed 1190001, canary materialization, disk preservation, and discovery reserve.",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"Broad PR17 repair waits behind PR07C owner evidence, seed 1190001, canary
-materialization, disk preservation, and discovery reserve."
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, seed 1190001 handling, canary materialization, disk preservation, and discovery reserve.",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"Broad PR17 repair waits behind PR07C owner evidence, seed 1190001 handling,
+canary materialization, disk preservation, and discovery reserve."
