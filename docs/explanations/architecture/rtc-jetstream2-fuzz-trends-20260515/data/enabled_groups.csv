@@ -1915,3 +1915,5 @@ timestamp,group,group_family
 2026-05-24T04:09:40Z,novelty-ws-real-user-save-reload,real-user
 2026-05-24T04:09:49Z,novelty-ws-many-user-lifecycle-completion,lifecycle
 2026-05-24T04:31:45Z,novelty-ws-parser-serialization,parser
+2026-05-24T04:35:14Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-24T04:35:37Z,novelty-http-same-user-stale-draft,lifecycle
