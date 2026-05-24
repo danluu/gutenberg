@@ -2074,5 +2074,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T16:15:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,11,5,0,11,11,848796,FALSE
 2026-05-24T16:15:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,9,4,0,9,9,896702,FALSE
 2026-05-24T16:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6300,6300,6300,35,0,902018,FALSE
-2026-05-24T16:30:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,1,1,0,1,1,73927,FALSE
-2026-05-24T16:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,180,180,180,1,0,28138,FALSE
+2026-05-24T16:30:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,10,5,0,10,10,730689,FALSE
+2026-05-24T16:30:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,7,4,0,7,7,694259,FALSE
+2026-05-24T16:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,4885,4885,4885,28,0,712457,FALSE
