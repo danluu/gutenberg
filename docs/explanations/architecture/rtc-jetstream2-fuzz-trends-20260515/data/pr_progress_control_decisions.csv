@@ -1,15 +1,16 @@
 action,target,priority,allowed,reason
 launch-owner-matrix,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,P0,yes,Next product-progress slot; repaired head f4ba087d2fe34c66530afa8828081aecc1df81ac has exact-stack green evidence and needs same-head owner evidence.
-update-controller-rule,pr07c-owner-evidence-head-match,P0,yes,Owner evidence and dedupe must include exact branch head; stale 2026-05-22 owner evidence must not clear or block the repaired head.
+update-controller-rule,pr07c-owner-evidence-head-match,P0,yes,Owner evidence and dedupe must include the exact branch head; stale 2026-05-22 evidence for old PR07C heads must not clear or block the repaired head.
 repair-ready,benchmark-canary-fuzzer-gap/PR07C-exact-green-adoption,P0,yes,Consume repaired-head exact_stack_green evidence and close the exact-stack repair portion for PR07C.
 cooldown-diagnostic,benchmark-canary-fuzzer-gap/PR07C-old-failed-stack-2f8247258316,P0,yes,Old failed stack 2f8247258316bde60869c06c383090904e9426bd is superseded by repaired exact-green head f4ba087d2fe34c66530afa8828081aecc1df81ac.
 update-controller-rule,benchmark-canary/setup-build-preflight,P0,yes,"Require exact-head build-clean before owner credit, browser coverage credit, maintainer canary credit, or all-merged publication."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until same-head owner evidence, exact-head build-clean, benchmark rows, and coverage gates are consumed."
 publish-ready,final-all-merged-current,P0,no,"Block until PR07C owner evidence, exact-head build evidence, benchmark-minimum rows, canary coverage, manifest links, and downscopes agree."
-publish-ready,current-push-manifest-refresh,P0,yes,Cheap manifest refresh may expose live branch links and intended diffs without claiming final merged validation.
+publish-ready,current-push-manifest-refresh,P0,yes,Cheap manifest refresh may expose live branch links and intended diffs without claiming final validation.
 publish-ready,maintainer-status-live-branches,P0,yes,"Status docs may link live branches only with explicit PR07C, coverage, manifest, build, and downscope caveats."
 publish-ready,non-pr07c-ready-published-real-fix-branches,high,yes,Keep already published real-fix branches visible and under fuzz validation while PR07C and all-merged gates close.
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence."
+downscope-family,raw-deferred-malformed-save-payload-and-http-room-isolation,high,yes,Keep low-value raw deferred heads downscoped because PR06B minimal and PR02A cover the reviewable fixes without fresh contrary product evidence.
 repair-ready,benchmark-canary-forced-http-equivalence,P0,yes,"Materialize or re-enable promotion-blocked forced HTTP canary groups that are absent, disabled, or lack current-run successful records."
 publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Current coverage is not ready; required HTTP groups are absent, disabled, or have zero current-run successful group records."
 update-controller-rule,coverage-ready-current-run-success,P0,yes,"Credit only current-run successful group records or explicit blocker evidence, not scheduled, disabled, absent, recovering, or zero-success groups."
