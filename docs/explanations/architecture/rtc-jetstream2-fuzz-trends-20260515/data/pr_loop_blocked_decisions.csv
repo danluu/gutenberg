@@ -1,20 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C-old-head,P0,no,old owner evidence is stale for the repaired PR07C head,PR07C/HOLD-07C-old-head,old owner evidence is stale for the repaired PR07C head
+launch-owner-matrix,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,P0,no,wait until remaining exact PR07C rows are green or downscoped; old owner evidence is stale but immediate heavy matrix would run before row closure,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,"wait until remaining exact PR07C rows are green or downscoped; old owner
+evidence is stale but immediate heavy matrix would run before row closure"
+launch-owner-matrix,PR07C/HOLD-07C-old-head,P0,no,old owner matrix evidence does not apply to repaired PR07C head,PR07C/HOLD-07C-old-head,old owner matrix evidence does not apply to repaired PR07C head
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,PR07C is not final while repaired-head exact rows remain blocked,ready/rtc-pr07c-reload-record-snapshots,PR07C is not final while repaired-head exact rows remain blocked
-publish-ready,final-all-merged-current,P0,no,all-merged branch lacks complete same-head green/downscope evidence for PR07C rows,final-all-merged-current,"all-merged branch lacks complete same-head green/downscope evidence for PR07C
-rows"
-publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,canonical minimal/on-PR14B/repaired variants supersede these raw branches absent fresh contrary evidence,raw-superseded-pr06b-pr15-and-old-pr07c,"canonical minimal/on-PR14B/repaired variants supersede these raw branches absent
+publish-ready,final-all-merged-current,P0,no,all-merged branch lacks complete same-head green/downscope evidence for current benchmark-minimum and canary rows,final-all-merged-current,"all-merged branch lacks complete same-head green/downscope evidence for current
+benchmark-minimum and canary rows"
+publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"canonical minimal, on-PR14B, and repaired variants supersede raw branches absent fresh contrary evidence",raw-superseded-pr06b-pr15-and-old-pr07c,"canonical minimal, on-PR14B, and repaired variants supersede raw branches absent
 fresh contrary evidence"
 launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,"active blocker is exact PR07C row closure, not broad fuzzer feedback",benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,"active blocker is exact PR07C row closure, not broad fuzzer feedback"
-repair-ready,benchmark-canary-fuzzer-gap/b8ca68ad-lower-harness,P0,no,superseded by current repaired-head exact refresh and not the next finalization blocker,benchmark-canary-fuzzer-gap/b8ca68ad-lower-harness,"superseded by current repaired-head exact refresh and not the next finalization
-blocker"
-reserve-discovery,coverage-guided-lower-level-http-polling-broad-corpus,high,no,do not broaden corpus under disk pressure and open exact-stack gates,coverage-guided-lower-level-http-polling-broad-corpus,do not broaden corpus under disk pressure and open exact-stack gates
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,broad PR17 repair waits behind PR07C row closure and discovery reserve,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,broad PR17 repair waits behind PR07C row closure and discovery reserve
+repair-ready,benchmark-canary-fuzzer-gap/b8ca68ad-lower-harness,P0,no,superseded by the repaired-head full exact refresh and not the next blocker,benchmark-canary-fuzzer-gap/b8ca68ad-lower-harness,superseded by the repaired-head full exact refresh and not the next blocker
+launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,preserve discovery reserve; only cheap publication manifest/status generation or analysis-only work may run when discovery is unhealthy,heavy-pr-jobs-when-discovery-unhealthy,"preserve discovery reserve; only cheap publication manifest/status generation or
+analysis-only work may run when discovery is unhealthy"
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,broad PR17 repair waits behind PR07C exact-row closure and discovery reserve,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,broad PR17 repair waits behind PR07C exact-row closure and discovery reserve
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,heavy reload replay waits behind PR07C row closure and discovery reserve,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,heavy reload replay waits behind PR07C row closure and discovery reserve
 launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate same-head deferred relaunch is diagnostic churn while manifest is held,reload-hydration@generic-deferred-fanout,duplicate same-head deferred relaunch is diagnostic churn while manifest is held
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"missing same-head title-reload, existing-or-persistence reload, and large-http-lifecycle evidence",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing same-head title-reload, existing-or-persistence reload, and
 large-http-lifecycle evidence"
-publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,do not promote diagnostic-only families without owner evidence or green-stack adoption,pre-save-search-live-collapse+rich-text-suffix-corruption,"do not promote diagnostic-only families without owner evidence or green-stack
+publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,do not publish diagnostic-only families without owner evidence or green-stack adoption,pre-save-search-live-collapse+rich-text-suffix-corruption,"do not publish diagnostic-only families without owner evidence or green-stack
 adoption"
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"nonessential heavy PR work waits behind PR07C row closure, disk preservation, and discovery reserve",all-other-heavy-pr-jobs,"nonessential heavy PR work waits behind PR07C row closure, disk preservation,
 and discovery reserve"

@@ -23,9 +23,9 @@ move-block,83,revision-persistence
 append-paragraph,82,revision-persistence
 move-block,81,block-gauntlet
 delete-block,81,revision-persistence
+ui-toolbar-format-paragraph,79,real-user-editing
 edit-nested-paragraph,79,block-gauntlet
 delete-nested-block,79,block-gauntlet
-ui-toolbar-format-paragraph,78,real-user-editing
 append-parser-stress-content,77,parser-transform
 table-stale-snapshot-html,76,table-stale-snapshot-http
 move-block,76,table-stale-snapshot-http
