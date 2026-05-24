@@ -3,8 +3,8 @@ launch-branch-repair,PR07C/benchmark-canary-large-post-http-final-union@seed-119
 launch-owner-matrix,PR07C/HOLD-07C@repair-rtc-pr07c-build-clean-20260524T0756Z,P0,yes,Run owner evidence only on repaired PR07C head f4ba087d2fe34c66530afa8828081aecc1df81ac; PR lanes are free and discovery reserve is healthy.
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,Broad key can reuse stale no-product evidence from failed head 2f8247258316bde60869c06c383090904e9426bd.
 update-controller-rule,PR07C/head-keyed-blockers,P0,yes,"Key seed 1190001, build-clean, owner, and canary evidence to the exact repaired head before PR07C publication credit."
-repair-ready,benchmark-canary-fuzzer-gap/PR07C-exact-green-adoption,P0,yes,Consume repaired exact-stack green evidence for head f4ba087d2fe34c66530afa8828081aecc1df81ac and stop old failed-stack churn.
-cooldown-diagnostic,benchmark-canary-fuzzer-gap/PR07C-old-failed-stack,P0,yes,Old setup/build failed stack is superseded by repaired-head evidence and should not consume PR or browser lanes.
+repair-ready,benchmark-canary-fuzzer-gap/PR07C-exact-green-adoption,P0,yes,Consume repaired exact-stack evidence for head f4ba087d2fe34c66530afa8828081aecc1df81ac and stop old failed-stack churn.
+cooldown-diagnostic,benchmark-canary-fuzzer-gap/PR07C-old-failed-stack,P0,yes,Old setup/build failed stack is superseded by repaired-head work and should not consume PR or browser lanes.
 update-controller-rule,benchmark-canary/setup-build-preflight,P0,yes,"Require exact-head build-clean evidence before owner evidence, browser coverage, benchmark canary credit, or all-merged publication credit."
 repair-ready,benchmark-canary/final-ui-witness,P0,yes,Retarget final-ui-witness insertion to a guaranteed top-level paragraph before rerunning stuck zero-success HTTP canary rows.
 repair-ready,benchmark-canary/promotion-blocked-coverage,P0,yes,"Materialize or re-enable forced canary groups with coverage_ready=no, missing or disabled supervisor state, policy removal, or zero current-run success."
@@ -13,7 +13,7 @@ cooldown-diagnostic,benchmark-canary/final-ui-zero-success-reruns,high,yes,Do no
 publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,Current canary coverage lacks required current-run successes or explicit blocker/downscope rows for the forced benchmark canary set.
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until seed1190001, exact repaired-head owner evidence, build-clean evidence, and canary/downscope rows agree."
 publish-ready,final-all-merged-current,P0,no,"Block until PR07C gates, benchmark-minimum rows, canary evidence or downscopes, live branch manifest links, and maintainer status docs agree."
-publish-ready,current-push-manifest-refresh,P0,yes,Cheap finalization work; refresh live branch links and current heads before maintainer-facing docs rely on the manifest.
+publish-ready,current-push-manifest-refresh,P0,yes,"Cheap finalization work; current-push-manifest.tsv is header-only, so refresh live branch links and current heads before maintainer-facing docs rely on it."
 publish-ready,maintainer-status-live-branches,P0,yes,"Cheap status update is allowed if it names PR07C, canary coverage, manifest freshness, build evidence, and deliberate downscopes."
 publish-ready,non-pr07c-ready-published-real-fix-branches,high,yes,Keep already published real-fix branches visible and under fuzz validation while PR07C closes.
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical PR06B minimal, PR15 on-PR14B variants, and repaired PR07C path supersede raw held branches absent fresh contrary evidence."
