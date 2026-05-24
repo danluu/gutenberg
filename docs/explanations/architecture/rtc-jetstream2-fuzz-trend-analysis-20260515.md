@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T01:03:54Z`
+Snapshot generated: `2026-05-24T01:09:54Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -57,7 +57,7 @@ measured product duplicate/noise rate.
 Resources remain constrained. Latest CPU utilization is `8.20%`, with
 `0.59%` iowait. Latest load averages are `8.24`, `7.86`, and `13.40` on
 `64` logical CPUs, with `0` blocked tasks. Root has `89.0GiB` free and the
-data volume has `21.1GiB` free while `99.4%` used.
+data volume has `20.8GiB` free while `99.4%` used.
 
 The latest graph-counted fuzzing mix is still browser/e2e-heavy and remains
 below the plotted `24`-lane persona-loop floor: `19` browser/e2e lanes across
@@ -157,7 +157,7 @@ finishes.
 
 The disk graph tracks both root and the mounted data volume. Root pressure is
 stable at `89.0GiB` free and `42.2%` used; the data volume is now at
-`21.1GiB` free and `99.4%` used in the latest sample. That is no longer a
+`20.8GiB` free and `99.4%` used in the latest sample. That is no longer a
 hard-zero free-space sample, but output-size budgeting remains the dominant
 live resource constraint.
 
@@ -227,7 +227,7 @@ PR07C owner-matrix work from current-head green owner evidence with
 `product_owned_rows=0`. It also notes the fresh coverage-guided root had `11`
 groups still starting and `0` running at `2026-05-24T00:39:20Z`, and observed
 severe disk pressure at feedback time. The refreshed mix graph has `19`
-browser/e2e is-latest lanes and the latest resource graph has `21.1GiB` free
+browser/e2e is-latest lanes and the latest resource graph has `20.8GiB` free
 on a `99.4%` used data volume; treat that as continued evidence for
 disk-constrained, bounded-lane operation rather than broad expansion.
 
@@ -558,7 +558,7 @@ strong product evidence.
 The resource picture is constrained but still producing output: latest CPU
 utilization is `8.20%`, iowait is `0.59%`, one-minute load is `8.24` on
 `64` logical CPUs with `0` blocked tasks, and the data volume is `99.4%`
-used with `21.1GiB` free. Optional browser admission should still respect
+used with `20.8GiB` free. Optional browser admission should still respect
 load, iowait, and output-volume pressure.
 
 The graph-counted fuzzing mix is browser/e2e-heavy but below the plotted
