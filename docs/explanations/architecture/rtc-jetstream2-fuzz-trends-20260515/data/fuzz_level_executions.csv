@@ -3718,3 +3718,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T07:00:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,1,1,1,1,0,47005,FALSE
 2026-05-24T07:00:00Z,coverage-guided-lower-level,coverage-guided-lower-level-rich-text-crdt,coverage-guided-lower-level,in-process,rtc-rich-text-crdt,80,80,80,10,0,148446,FALSE
 2026-05-24T07:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1650,1650,1650,66,0,902808,FALSE
+2026-05-24T07:15:00Z,coverage-guided,novelty-http-large-post-readiness,browser-e2e,http,large-post-three-user-http-lifecycle,3,3,3,3,0,223697,FALSE
+2026-05-24T07:15:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,1,1,1,1,0,48925,FALSE
+2026-05-24T07:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1200,1200,1200,48,0,649373,FALSE

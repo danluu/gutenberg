@@ -1974,3 +1974,12 @@ timestamp,group,group_family
 2026-05-24T07:12:50Z,novelty-ws-permissions-auth-locks,auth/locks
 2026-05-24T07:12:50Z,novelty-ws-structure,block-structure
 2026-05-24T07:12:50Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-24T07:16:00Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T07:16:00Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T07:16:00Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-24T07:20:34Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T07:20:34Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T07:20:34Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-24T07:23:48Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T07:23:48Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T07:23:48Z,novelty-ws-permissions-auth-locks,auth/locks
