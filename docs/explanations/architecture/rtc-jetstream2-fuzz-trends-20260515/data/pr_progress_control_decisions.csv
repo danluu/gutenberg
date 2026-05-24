@@ -2,7 +2,7 @@ action,target,priority,allowed,reason
 repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_severe_pressure is active; preserve PR-review and current-run evidence while restoring headroom before artifact-heavy work
 reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 5 versus floor 3; preserve reserve and deny heavy PR jobs when sessions fall below floor
 update-controller-rule,discovery-reserve-protection,P0,yes,context says discovery protected=no; make minimum discovery sessions a hard reserve
-launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,"deny heavy PR jobs below reserve except cheap publication manifest generation, analysis-only work, and disk maintenance"
+launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,deny heavy PR jobs below reserve except cheap publication manifest generation analysis-only work and disk maintenance
 repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot once disk headroom and discovery reserve are healthy; hydrate or commit the four missing benchmark-minimum harness files
 repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,run after harness packaging; require lower/micro-crdt lower/micro-html lower/micro-sync multi-user/many-users-sync and canary rows green or explicitly downscoped
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has skipped zero-row or No-tests-found benchmark-minimum failures
