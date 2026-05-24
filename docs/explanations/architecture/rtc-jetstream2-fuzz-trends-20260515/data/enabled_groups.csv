@@ -2200,3 +2200,12 @@ timestamp,group,group_family
 2026-05-24T18:43:54Z,novelty-http-table-stale-snapshot,http
 2026-05-24T18:48:57Z,novelty-http-persistence-probe,persistence
 2026-05-24T18:48:57Z,novelty-http-large-post-readiness,http
+2026-05-24T18:52:20Z,novelty-http-large-post-lifecycle,lifecycle
+2026-05-24T18:54:42Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-24T18:54:42Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T18:56:12Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-24T18:56:12Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T18:57:41Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-24T18:57:41Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T18:59:12Z,novelty-ws-block-gauntlet,auth/locks
+2026-05-24T18:59:12Z,novelty-ws-many-user-lifecycle-completion,lifecycle
