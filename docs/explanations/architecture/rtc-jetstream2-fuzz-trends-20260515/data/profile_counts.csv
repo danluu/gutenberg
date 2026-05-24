@@ -7,7 +7,7 @@ session-lifecycle,164,138,0,0.8414634146341463,lifecycle
 real-user-editing,68,34,0,0.5,real-user
 long-session-large-doc,37,0,0,0,lifecycle
 permissions-auth-locks,35,0,0,0,auth/locks
-many-user-lifecycle,27,10,0,0.37037037037037035,lifecycle
+many-user-lifecycle,30,10,0,0.3333333333333333,lifecycle
 table-stale-snapshot-http,8,8,0,1,other
 persistence-no-title,8,0,0,0,persistence
 media-cross-entity,8,3,0,0.375,async/media
