@@ -2053,6 +2053,6 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T14:30:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,6,3,0,6,6,815364,FALSE
 2026-05-24T14:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,13,6,0,13,13,926416,FALSE
 2026-05-24T14:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6300,6300,6300,35,0,886983,FALSE
-2026-05-24T14:45:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,417272,FALSE
-2026-05-24T14:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,5,3,0,5,5,352230,FALSE
-2026-05-24T14:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,2880,2880,2880,16,0,373385,FALSE
+2026-05-24T14:45:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,7,4,0,7,7,929559,FALSE
+2026-05-24T14:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,12,6,0,12,12,842987,FALSE
+2026-05-24T14:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6505,6505,6505,37,0,886974,FALSE
