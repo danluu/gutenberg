@@ -13,6 +13,8 @@ contrary evidence"
 publish-ready,branch-ready-rtc-pr15a-fallback-group-move-green,high,no,raw PR15A is superseded by the published PR15A-on-PR14B branch,branch-ready-rtc-pr15a-fallback-group-move-green,raw PR15A is superseded by the published PR15A-on-PR14B branch
 publish-ready,branch-ready-rtc-pr15b-fallback-group-insert-anchor-green,high,no,raw PR15B is superseded by the published PR15B-on-PR14B branch,branch-ready-rtc-pr15b-fallback-group-insert-anchor-green,raw PR15B is superseded by the published PR15B-on-PR14B branch
 publish-ready,branch-ready-rtc-pr15c-fallback-group-delete-green,high,no,raw PR15C is superseded by the published PR15C-on-PR14B branch,branch-ready-rtc-pr15c-fallback-group-delete-green,raw PR15C is superseded by the published PR15C-on-PR14B branch
+launch-owner-matrix,PR07C/HOLD-07C-current-head,high,no,heavy owner matrix waits because discovery reserve is unprotected under disk pressure; terminalize existing current-head owner replay now,PR07C/HOLD-07C-current-head,"heavy owner matrix waits because discovery reserve is unprotected under disk
+pressure; terminalize existing current-head owner replay now"
 launch-owner-matrix,PR07C/HOLD-07C-browser-e2e-duplicate,high,no,do not relaunch duplicate heavy owner matrix without newer current-head product-owned evidence,PR07C/HOLD-07C-browser-e2e-duplicate,"do not relaunch duplicate heavy owner matrix without newer current-head
 product-owned evidence"
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay waits until b8ca harness gate clears and discovery reserve is protected/materialized,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"same-head exact replay waits until b8ca harness gate clears and discovery
