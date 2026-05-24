@@ -4,10 +4,10 @@ reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 5 versus f
 update-controller-rule,discovery-reserve-protection,P0,yes,context says discovery protected=no; make minimum discovery sessions a hard reserve
 launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,deny heavy PR jobs below discovery reserve except disk maintenance cheap publication metadata and analysis-only work
 repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot after disk headroom; hydrate or commit the four missing benchmark-minimum harness files
-repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,run after harness packaging; require lower/micro-crdt lower/micro-html lower/micro-sync multi-user/many-users-sync plus canary rows green or downscoped
+repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,run after harness packaging; require lower/micro-crdt lower/micro-html lower/micro-sync multi-user/many-users-sync plus canary rows green or explicitly downscoped
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has skipped zero-row or No-tests-found benchmark-minimum failures
 publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata repair; refresh live branch links without claiming final all-merged green
-publish-ready,maintainer-status-live-branches,P0,yes,update maintainer-facing status and snapshot docs with live branches and deliberate downscopes without claiming final green
+publish-ready,maintainer-status-live-branches,P0,yes,update status/snapshot docs with live branches and deliberate downscopes without claiming final green
 publish-ready,ready-published-real-fix-branches,high,yes,PR02A PR03B PR06B-minimal PR07B current-PR07C PR09 PR10 PR11A PR11B PR14 PR14B and PR15A/B/C-on-PR14B are already published and should stay linked
 repair-ready,ready-product-pr-branch-diff-audit,high,yes,cheap audit is allowed for published ready refs with stale failed diff-check evidence after branch repair
 repair-ready,concrete-failed-pr-branches,high,yes,repair only current published branch diff mismatches found by audit; keep superseded variants blocked
@@ -34,10 +34,11 @@ cooldown-diagnostic,http-room-isolation,high,yes,raw deferred heads are supersed
 reserve-discovery,coverage-guided-lower-level-http-polling-manager,high,yes,keep the single fresh audited lower-level lane while disk_severe_pressure is active
 cooldown-diagnostic,stale-lower-level-parser-rich-text-table-and-http-broad-corpus,high,yes,reopen only with executable seed plus coverage delta or triage-ready oracle failure
 cooldown-diagnostic,coverage-guided-lower-level-rich-text-multiblock,medium,yes,keep at zero lanes unless retargeted to lower/micro-html seed pack with coverage delta or oracle failure
+update-controller-rule,coverage-guided-lower-level-block-parser-serialization,high,yes,require RTC_BLOCK_PARSER_UNEXPECTED_BLOCK_VALIDATION_LOG as canonical key with isolation/minimization before product_yield=1
+update-controller-rule,lower-level-yield-accounting,high,yes,credit lower-level yield only with executable seed plus coverage delta or triage-ready oracle failure
 repair-ready,productive-analysis-action,high,yes,analysis-only feedback may continue if it does not launch heavy commands outside the global budget
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,disk pressure and red exact-stack gate allow only bounded harness repair exact rerun docs/manifest refresh analysis-only work disk maintenance and protected discovery
 update-controller-rule,finalization-deadline-priority,P0,yes,until 2026-05-26T06:59:59Z prioritize reviewable branches exact evidence publication readiness terminal owner evidence and explicit downscope
 update-controller-rule,benchmark-minimum-nonempty-publication-gate,P0,yes,block final all-merged publication on skipped zero-row or No-tests-found benchmark-minimum evidence unless explicitly downscoped
 update-controller-rule,disk-pressure-accounting,P0,yes,block artifact-heavy broad jobs while preserving PR review evidence and current-run triage artifacts
 update-controller-rule,deferred-diagnostic-promotion-gate,high,yes,diagnostic manifests cannot publish or generic-relaunch without product-owned first-loss evidence owner evidence green-stack adoption or explicit downscope
-update-controller-rule,lower-level-yield-accounting,high,yes,credit lower-level yield only with executable seed plus coverage delta or triage-ready oracle failure
