@@ -2027,3 +2027,7 @@ timestamp,group,group_family
 2026-05-24T11:27:32Z,novelty-http-large-post-readiness,http
 2026-05-24T11:30:47Z,novelty-http-list-move-refresh,http
 2026-05-24T11:33:39Z,novelty-http-large-post-readiness,http
+2026-05-24T11:35:55Z,novelty-http-list-move-refresh,http
+2026-05-24T11:38:14Z,novelty-http-large-post-readiness,http
+2026-05-24T11:40:37Z,novelty-http-list-move-refresh,http
+2026-05-24T11:41:38Z,novelty-http-provider-persisted-crdt-large-post,http
