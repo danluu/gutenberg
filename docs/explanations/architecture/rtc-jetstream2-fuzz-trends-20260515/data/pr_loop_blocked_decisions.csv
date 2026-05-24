@@ -1,8 +1,8 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Coverage is not ready; required canary groups are absent, disabled, or have zero successful current-run records.",coverage-ready-benchmark-canary-equivalence,"Coverage is not ready; required canary groups are absent, disabled, or have zero
-successful current-run records."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until same-head owner evidence, exact-head build-clean evidence, benchmark rows, and coverage gates are consumed.",ready/rtc-pr07c-reload-record-snapshots,"Block until same-head owner evidence, exact-head build-clean evidence, benchmark
-rows, and coverage gates are consumed."
+publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Coverage is not ready; required canary groups are absent, disabled, or have zero current-run successful records.",coverage-ready-benchmark-canary-equivalence,"Coverage is not ready; required canary groups are absent, disabled, or have zero
+current-run successful records."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until same-head owner evidence, exact-head build-clean evidence, benchmark rows, and canary coverage gates are consumed.",ready/rtc-pr07c-reload-record-snapshots,"Block until same-head owner evidence, exact-head build-clean evidence, benchmark
+rows, and canary coverage gates are consumed."
 publish-ready,final-all-merged-current,P0,no,"Block until PR07C same-head owner evidence, exact-head build evidence, benchmark-minimum rows, canary coverage, manifest links, and downscopes agree.",final-all-merged-current,"Block until PR07C same-head owner evidence, exact-head build evidence,
 benchmark-minimum rows, canary coverage, manifest links, and downscopes agree."
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches
