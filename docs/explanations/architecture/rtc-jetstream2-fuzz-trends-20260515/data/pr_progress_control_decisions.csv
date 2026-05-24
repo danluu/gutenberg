@@ -1,10 +1,10 @@
 action,target,priority,allowed,reason
-repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_severe_pressure is active; preserve PR-review and current-run evidence while restoring headroom before artifact-heavy work
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 5 versus floor 3; preserve reserve and deny heavy PR jobs when sessions fall below floor
+repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_severe_pressure is active; preserve PR-review and current-run evidence while restoring headroom
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 5 versus floor 3; preserve reserve during deadline mode
 update-controller-rule,discovery-reserve-protection,P0,yes,context says discovery protected=no; make minimum discovery sessions a hard reserve
-launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,deny heavy PR jobs below reserve except cheap publication manifest generation analysis-only work and disk maintenance
-repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot once disk headroom and discovery reserve are healthy; hydrate or commit the four missing benchmark-minimum harness files
-repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,run after harness packaging; require lower/micro-crdt lower/micro-html lower/micro-sync multi-user/many-users-sync and canary rows green or explicitly downscoped
+launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,deny heavy PR jobs below discovery reserve except disk maintenance cheap publication metadata and analysis-only work
+repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot after disk headroom; hydrate or commit the four missing benchmark-minimum harness files
+repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,run after harness packaging; require lower/micro-crdt lower/micro-html lower/micro-sync multi-user/many-users-sync plus canary rows green or downscoped
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has skipped zero-row or No-tests-found benchmark-minimum failures
 publish-ready,current-push-manifest-refresh,P0,yes,cheap metadata repair; refresh live branch links without claiming final all-merged green
 publish-ready,maintainer-status-live-branches,P0,yes,update maintainer-facing status and snapshot docs with live branches and deliberate downscopes without claiming final green
@@ -18,8 +18,8 @@ repair-ready,reload-hydration-current-deferred-report,P0,yes,consume completed 2
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,yes,after b8ca harness gate run one same-head exact replay for title reload existing-post or persistence reload and large HTTP lifecycle
 launch-branch-repair,reload-hydration@generic,P0,no,generic deferred fanout is diagnostic churn while same-head exact evidence is missing
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence
-repair-ready,benchmark-canary-fuzzer-gap@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,route exact-stack blocker to b8ca benchmark-minimum harness packaging; do not treat as generic fuzz gap
-update-controller-rule,benchmark-canary-fuzzer-gap-closure,P0,yes,do not clear on coverage_present or coverage_repaired alone; require exact-stack benchmark-minimum plus canary green evidence or explicit row downscope
+repair-ready,benchmark-canary-fuzzer-gap@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,route exact-stack blocker to b8ca benchmark-minimum harness packaging rather than generic fuzz expansion
+update-controller-rule,benchmark-canary-fuzzer-gap-closure,P0,yes,do not clear on coverage_present or coverage_repaired alone; require exact-stack benchmark-minimum plus canary green evidence or explicit downscope
 repair-ready,benchmark-canary-fuzzer-gap/forced-canary-materialization-gaps,P0,yes,repair only bounded forced canary materialization gaps with current-run records before crediting coverage_ready
 reserve-discovery,benchmark-canary-fuzzer-gap/primary-forced-canary-lanes,P0,yes,keep bounded primary large-post parser many-user same-user and provider-persisted lanes; do not broaden under disk pressure
 reserve-discovery,benchmark-canary-fuzzer-gap/large-post-http-generic,P0,no,avoid broad HTTP materialization while exact harness and disk-pressure gates are active

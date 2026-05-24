@@ -1,6 +1,6 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,deny heavy PR jobs below reserve except cheap publication manifest generation analysis-only work and disk maintenance,heavy-pr-when-discovery-unhealthy,"deny heavy PR jobs below reserve except cheap publication manifest generation
-analysis-only work and disk maintenance"
+launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,deny heavy PR jobs below discovery reserve except disk maintenance cheap publication metadata and analysis-only work,heavy-pr-when-discovery-unhealthy,"deny heavy PR jobs below discovery reserve except disk maintenance cheap
+publication metadata and analysis-only work"
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has skipped zero-row or No-tests-found benchmark-minimum failures,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"current exact-stack evidence has skipped zero-row or No-tests-found
 benchmark-minimum failures"
 publish-ready,superseded-ready-branch-variants,high,no,PR06B raw PR15A/B/C raw and old PR07C head are superseded by current published replacements,superseded-ready-branch-variants,"PR06B raw PR15A/B/C raw and old PR07C head are superseded by current published
