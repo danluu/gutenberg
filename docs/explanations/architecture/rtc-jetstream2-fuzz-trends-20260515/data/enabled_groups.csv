@@ -2012,3 +2012,6 @@ timestamp,group,group_family
 2026-05-24T10:49:31Z,novelty-ws-collaboration-ui-signals,other
 2026-05-24T10:49:31Z,novelty-ws-permissions-auth-locks,auth/locks
 2026-05-24T10:49:31Z,novelty-ws-three-user-late-join,lifecycle
+2026-05-24T10:58:31Z,novelty-ws-real-user-editing,real-user
+2026-05-24T10:58:31Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T10:58:31Z,novelty-ws-many-user-lifecycle,lifecycle

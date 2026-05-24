@@ -1,22 +1,29 @@
 action,target,priority,allowed,reason,target_label,reason_label
-repair-ready,benchmark-canary-fuzzer-gap/PR07C/table-stale-snapshot-http,P0,no,Superseded by newer 20260524T100227Z exact-refresh evidence; do not chase unless it reappears.,benchmark-canary-fuzzer-gap/PR07C/table-stale-snapshot-http,"Superseded by newer 20260524T100227Z exact-refresh evidence; do not chase unless
-it reappears."
-repair-ready,benchmark-canary-fuzzer-gap/PR07C/same-user-stale-content-http,P0,no,Superseded by newer 20260524T100227Z exact-refresh evidence; current blocker set is two rows.,benchmark-canary-fuzzer-gap/PR07C/same-user-stale-content-http,"Superseded by newer 20260524T100227Z exact-refresh evidence; current blocker set
-is two rows."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,PR07C is not final while the two current exact rows and current-head owner evidence remain open.,ready/rtc-pr07c-reload-record-snapshots,"PR07C is not final while the two current exact rows and current-head owner
-evidence remain open."
-publish-ready,final-all-merged-current,P0,no,All-merged lacks complete same-head benchmark-minimum and canary green evidence or explicit row downscope evidence.,final-all-merged-current,"All-merged lacks complete same-head benchmark-minimum and canary green evidence
-or explicit row downscope evidence."
+repair-ready,benchmark-canary-fuzzer-gap/PR07C@repair-rtc-pr07c-build-clean-20260524T0756Z,P0,no,Exact-stack repair is consumed by green evidence on f4ba087d2fe34c66530afa8828081aecc1df81ac.,benchmark-canary-fuzzer-gap/PR07C@repair-rtc-pr07c-build-clean-20260524T0756Z,"Exact-stack repair is consumed by green evidence on
+f4ba087d2fe34c66530afa8828081aecc1df81ac."
+repair-ready,benchmark-canary-fuzzer-gap/PR07C/large-post-three-user-http-rep2,P0,no,Rep2 rerun is exact_stack_green in the 20260524T101546Z remaining-row refresh.,benchmark-canary-fuzzer-gap/PR07C/large-post-three-user-http-rep2,Rep2 rerun is exact_stack_green in the 20260524T101546Z remaining-row refresh.
+repair-ready,benchmark-canary-fuzzer-gap/PR07C/same-user-title-reload-ws-rep1,P0,no,Corrected WebSocket-config rerun is exact_stack_green in the 20260524T101546Z remaining-row refresh.,benchmark-canary-fuzzer-gap/PR07C/same-user-title-reload-ws-rep1,"Corrected WebSocket-config rerun is exact_stack_green in the 20260524T101546Z
+remaining-row refresh."
+repair-ready,benchmark-canary-fuzzer-gap/PR07C/table-stale-snapshot-http,P0,no,Superseded by later same-head exact-stack green evidence; do not chase stale row blockers.,benchmark-canary-fuzzer-gap/PR07C/table-stale-snapshot-http,"Superseded by later same-head exact-stack green evidence; do not chase stale row
+blockers."
+repair-ready,benchmark-canary-fuzzer-gap/PR07C/same-user-stale-content-http,P0,no,Superseded by later same-head exact-stack green evidence; do not chase stale row blockers.,benchmark-canary-fuzzer-gap/PR07C/same-user-stale-content-http,"Superseded by later same-head exact-stack green evidence; do not chase stale row
+blockers."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Replacement stack is exact-green but publication remains blocked until current-head owner evidence is consumed.,ready/rtc-pr07c-reload-record-snapshots,"Replacement stack is exact-green but publication remains blocked until
+current-head owner evidence is consumed."
+publish-ready,final-all-merged-current,P0,no,All-merged remains blocked until PR07C owner evidence plus current benchmark/canary/manifest evidence are reconciled.,final-all-merged-current,"All-merged remains blocked until PR07C owner evidence plus current
+benchmark/canary/manifest evidence are reconciled."
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw branches absent fresh evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw branches absent
 fresh evidence."
-launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status work or analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication/status work
-or analysis-only work."
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C exact-row closure, owner evidence, and discovery reserve.",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"Broad PR17 repair waits behind PR07C exact-row closure, owner evidence, and
+launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status or analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication/status or
+analysis-only work."
+publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,Current forced-canary supervisor lacks successful current-run records or explicit blockers.,coverage-ready-benchmark-canary-equivalence,"Current forced-canary supervisor lacks successful current-run records or
+explicit blockers."
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, disk preservation, and discovery reserve.",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"Broad PR17 repair waits behind PR07C owner evidence, disk preservation, and
 discovery reserve."
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,Heavy reload replay waits behind PR07C row closure and owner evidence.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,Heavy reload replay waits behind PR07C row closure and owner evidence.
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Missing required same-head title-reload, existing-or-persistence reload, and large-http-lifecycle evidence.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing required same-head title-reload, existing-or-persistence reload, and
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,Heavy reload replay waits until PR07C current-head owner evidence is consumed.,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,Heavy reload replay waits until PR07C current-head owner evidence is consumed.
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Missing same-head title-reload, existing-or-persistence reload, and large-http-lifecycle evidence.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing same-head title-reload, existing-or-persistence reload, and
 large-http-lifecycle evidence."
 publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,Do not publish diagnostic-only families without owner evidence or green-stack adoption.,pre-save-search-live-collapse+rich-text-suffix-corruption,"Do not publish diagnostic-only families without owner evidence or green-stack
 adoption."
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C row closure, current-head owner evidence, disk preservation, and discovery reserve.",all-other-heavy-pr-jobs,"Nonessential heavy PR work waits behind PR07C row closure, current-head owner
-evidence, disk preservation, and discovery reserve."
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation, and discovery reserve.",all-other-heavy-pr-jobs,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation,
+and discovery reserve."
