@@ -2088,3 +2088,4 @@ timestamp,group,group_family
 2026-05-24T15:17:48Z,novelty-ws-media-cross-entity,async/media
 2026-05-24T15:19:59Z,novelty-ws-real-user-coverage-bridge,real-user
 2026-05-24T15:23:01Z,novelty-http-list-move-refresh,http
+2026-05-24T16:47:37Z,novelty-http-same-user-stale-draft,lifecycle
