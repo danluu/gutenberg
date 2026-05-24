@@ -1,23 +1,24 @@
 action,target,priority,allowed,reason,target_label,reason_label
 repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until missing harness rows exist or are explicitly downscoped and discovery reserve is protected/materialized,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"heavy rerun waits until missing harness rows exist or are explicitly downscoped
 and discovery reserve is protected/materialized"
-publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact-stack evidence has missing or No-tests-found benchmark-minimum rows,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"current exact-stack evidence has missing or No-tests-found benchmark-minimum
-rows"
+publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,current exact stack lacks complete nonempty green benchmark-minimum evidence,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,current exact stack lacks complete nonempty green benchmark-minimum evidence
 publish-ready,branch-ready-rtc-pr06b-malformed-save-request-payload,high,no,raw PR06B is superseded by published PR06B-minimal absent fresh contrary evidence,branch-ready-rtc-pr06b-malformed-save-request-payload,"raw PR06B is superseded by published PR06B-minimal absent fresh contrary
 evidence"
 publish-ready,branch-ready-rtc-pr15a-fallback-group-move-green,high,no,raw PR15A is superseded by published PR15A-on-PR14B,branch-ready-rtc-pr15a-fallback-group-move-green,raw PR15A is superseded by published PR15A-on-PR14B
 publish-ready,branch-ready-rtc-pr15b-fallback-group-insert-anchor-green,high,no,raw PR15B is superseded by published PR15B-on-PR14B,branch-ready-rtc-pr15b-fallback-group-insert-anchor-green,raw PR15B is superseded by published PR15B-on-PR14B
 publish-ready,branch-ready-rtc-pr15c-fallback-group-delete-green,high,no,raw PR15C is superseded by published PR15C-on-PR14B,branch-ready-rtc-pr15c-fallback-group-delete-green,raw PR15C is superseded by published PR15C-on-PR14B
-publish-ready,branch-ready-rtc-pr07c-reload-record-snapshots-old-head,high,no,old PR07C head is superseded by published current PR07C head 2f8247258316bde60869c06c383090904e9426bd,branch-ready-rtc-pr07c-reload-record-snapshots-old-head,"old PR07C head is superseded by published current PR07C head
+publish-ready,branch-ready-rtc-pr07c-reload-record-snapshots-old-head,high,no,old PR07C head is superseded by current published PR07C head 2f8247258316bde60869c06c383090904e9426bd,branch-ready-rtc-pr07c-reload-record-snapshots-old-head,"old PR07C head is superseded by current published PR07C head
 2f8247258316bde60869c06c383090904e9426bd"
-launch-owner-matrix,PR07C/HOLD-07C-current-head,high,no,duplicate heavy owner matrix waits under disk pressure unless newer current-head product-owned evidence appears,PR07C/HOLD-07C-current-head,"duplicate heavy owner matrix waits under disk pressure unless newer current-head
-product-owned evidence appears"
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay waits until the b8ca harness gate clears and discovery reserve is protected/materialized,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"same-head exact replay waits until the b8ca harness gate clears and discovery
+launch-owner-matrix,PR07C/HOLD-07C-current-head,high,no,duplicate heavy owner matrix waits under disk pressure and unprotected discovery unless newer current-head product-owned evidence appears,PR07C/HOLD-07C-current-head,"duplicate heavy owner matrix waits under disk pressure and unprotected discovery
+unless newer current-head product-owned evidence appears"
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay waits until b8ca harness gate clears and discovery reserve is protected/materialized,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"same-head exact replay waits until b8ca harness gate clears and discovery
 reserve is protected/materialized"
-launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate diagnostic churn while same-head exact replay evidence is missing,reload-hydration@generic-deferred-fanout,duplicate diagnostic churn while same-head exact replay evidence is missing
+launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,generic deferred fanout is duplicate diagnostic churn while same-head exact replay evidence is missing,reload-hydration@generic-deferred-fanout,"generic deferred fanout is duplicate diagnostic churn while same-head exact
+replay evidence is missing"
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence or replay-backed downscope,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head exact browser promotion evidence or replay-backed
 downscope"
-launch-branch-repair,benchmark-canary-fuzzer-gap/broad-http-or-generic-materialization,P0,no,disk pressure and exact b8ca gate block broad artifact-heavy fanout,benchmark-canary-fuzzer-gap/broad-http-or-generic-materialization,disk pressure and exact b8ca gate block broad artifact-heavy fanout
+launch-branch-repair,benchmark-canary-fuzzer-gap/broad-http-or-generic-materialization,P0,no,disk pressure exact b8ca gate and unprotected discovery block broad artifact-heavy fanout,benchmark-canary-fuzzer-gap/broad-http-or-generic-materialization,"disk pressure exact b8ca gate and unprotected discovery block broad
+artifact-heavy fanout"
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,exact b8ca harness packaging owns the next branch-changing product slot,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,exact b8ca harness packaging owns the next branch-changing product slot
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus exact all-merged benchmark-minimum and canary green evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"requires reviewable split plus exact all-merged benchmark-minimum and canary
 green evidence"
