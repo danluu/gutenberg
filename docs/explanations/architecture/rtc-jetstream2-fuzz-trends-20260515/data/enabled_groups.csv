@@ -2046,3 +2046,10 @@ timestamp,group,group_family
 2026-05-24T12:03:51Z,novelty-http-title-reload-convergence,lifecycle
 2026-05-24T12:03:51Z,novelty-ws-thirty-user-lifecycle,lifecycle
 2026-05-24T12:06:31Z,novelty-http-provider-persisted-crdt-large-post,http
+2026-05-24T12:09:26Z,novelty-http-title-reload-convergence,lifecycle
+2026-05-24T12:09:26Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T12:09:26Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T12:09:26Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T12:09:26Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-24T12:12:01Z,novelty-ws-parser-serialization,parser
+2026-05-24T12:15:21Z,novelty-http-large-post-lifecycle,lifecycle
