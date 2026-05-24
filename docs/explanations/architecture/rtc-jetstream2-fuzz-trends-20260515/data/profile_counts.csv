@@ -1,6 +1,6 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
 collaboration-ui-signals,1231,0,0,0,other
-large-post-three-user-http-lifecycle,566,55,0,0.09717314487632508,lifecycle
+large-post-three-user-http-lifecycle,576,55,0,0.0954861111111111,lifecycle
 session-lifecycle,474,304,0,0.6413502109704642,lifecycle
 async-server-blocks,432,0,0,0,async/media
 full,288,25,0,0.08680555555555555,block-structure
