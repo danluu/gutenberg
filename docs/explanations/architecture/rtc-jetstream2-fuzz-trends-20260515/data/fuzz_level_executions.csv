@@ -3160,11 +3160,11 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T18:30:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,6,5,4,6,2,705769,FALSE
 2026-05-23T18:30:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,9,5,0,9,9,705600,FALSE
 2026-05-23T18:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,8,4,0,8,8,759728,FALSE
-2026-05-23T18:30:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,4,2,0,4,4,426891,FALSE
+2026-05-23T18:30:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,4,2,0,4,4,426891,FALSE
 2026-05-23T18:30:00Z,coverage-guided,novelty-ws-many-user-lifecycle-completion,browser-e2e,ws,many-user-lifecycle,4,3,2,4,2,402814,FALSE
 2026-05-23T18:30:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,18,12,7,18,11,649293,FALSE
 2026-05-23T18:30:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,16,11,5,16,11,761704,FALSE
-2026-05-23T18:30:00Z,coverage-guided,novelty-ws-permissions-auth-locks,browser-e2e,NA,NA,15,14,14,15,1,535253,FALSE
+2026-05-23T18:30:00Z,coverage-guided,novelty-ws-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,15,14,14,15,1,535253,FALSE
 2026-05-23T18:30:00Z,coverage-guided,novelty-ws-structure,browser-e2e,NA,NA,14,10,6,14,8,570284,FALSE
 2026-05-23T18:30:00Z,coverage-guided,novelty-ws-thirty-user-lifecycle,browser-e2e,ws,many-user-lifecycle,3,2,0,3,3,351897,FALSE
 2026-05-23T18:30:00Z,focused-shards,focused-same-user-stale-tabs-http,browser-e2e,http,session-lifecycle,8,8,8,8,0,887771,FALSE
@@ -3183,12 +3183,12 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T18:45:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,9,5,3,9,6,925413,FALSE
 2026-05-23T18:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,8,4,0,8,8,903214,FALSE
 2026-05-23T18:45:00Z,coverage-guided,novelty-ws-block-gauntlet,browser-e2e,ws,block-gauntlet,19,15,10,19,9,773835,FALSE
-2026-05-23T18:45:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,8,4,0,8,8,911216,FALSE
+2026-05-23T18:45:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,8,4,0,8,8,911216,FALSE
 2026-05-23T18:45:00Z,coverage-guided,novelty-ws-many-user-lifecycle-completion,browser-e2e,ws,many-user-lifecycle,8,5,3,8,5,845996,FALSE
 2026-05-23T18:45:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,20,17,17,20,3,892600,FALSE
 2026-05-23T18:45:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,3,2,0,3,3,128793,FALSE
 2026-05-23T18:45:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,17,10,6,17,11,896059,FALSE
-2026-05-23T18:45:00Z,coverage-guided,novelty-ws-permissions-auth-locks,browser-e2e,NA,NA,15,14,12,15,3,754092,FALSE
+2026-05-23T18:45:00Z,coverage-guided,novelty-ws-permissions-auth-locks,browser-e2e,ws,permissions-auth-locks,15,14,12,15,3,754092,FALSE
 2026-05-23T18:45:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,8,4,0,8,8,1216421,FALSE
 2026-05-23T18:45:00Z,coverage-guided,novelty-ws-revision-persistence,browser-e2e,ws,revision-persistence,14,12,8,14,6,677926,FALSE
 2026-05-23T18:45:00Z,coverage-guided,novelty-ws-revision-recovery,browser-e2e,ws,revision-persistence,8,4,0,8,8,592531,FALSE
@@ -3211,7 +3211,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T19:00:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,6,3,0,6,6,892422,FALSE
 2026-05-23T19:00:00Z,coverage-guided,novelty-ws-async-server-blocks,browser-e2e,NA,NA,1,1,0,1,1,53025,FALSE
 2026-05-23T19:00:00Z,coverage-guided,novelty-ws-block-gauntlet,browser-e2e,ws,block-gauntlet,19,14,8,19,11,916673,FALSE
-2026-05-23T19:00:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,8,4,0,8,8,938295,FALSE
+2026-05-23T19:00:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,8,4,0,8,8,938295,FALSE
 2026-05-23T19:00:00Z,coverage-guided,novelty-ws-many-user-lifecycle-completion,browser-e2e,ws,many-user-lifecycle,5,3,1,5,4,695206,FALSE
 2026-05-23T19:00:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,15,11,10,15,5,844797,FALSE
 2026-05-23T19:00:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,16,12,9,16,7,940367,FALSE
@@ -3239,7 +3239,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T19:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,7,4,0,7,7,949483,FALSE
 2026-05-23T19:15:00Z,coverage-guided,novelty-ws-async-server-blocks,browser-e2e,NA,NA,8,4,0,8,8,434960,FALSE
 2026-05-23T19:15:00Z,coverage-guided,novelty-ws-block-gauntlet,browser-e2e,ws,block-gauntlet,21,18,15,21,6,887044,FALSE
-2026-05-23T19:15:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,7,4,0,7,7,876668,FALSE
+2026-05-23T19:15:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,7,4,0,7,7,876668,FALSE
 2026-05-23T19:15:00Z,coverage-guided,novelty-ws-many-user-lifecycle-completion,browser-e2e,ws,many-user-lifecycle,2,1,1,2,1,472236,FALSE
 2026-05-23T19:15:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,20,13,10,20,10,938670,FALSE
 2026-05-23T19:15:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,16,14,11,16,5,898411,FALSE
@@ -3264,7 +3264,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T19:30:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,9,5,3,9,6,687091,FALSE
 2026-05-23T19:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,8,4,0,8,8,869557,FALSE
 2026-05-23T19:30:00Z,coverage-guided,novelty-ws-block-gauntlet,browser-e2e,ws,block-gauntlet,25,21,17,25,8,904230,FALSE
-2026-05-23T19:30:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,8,4,0,8,8,903342,FALSE
+2026-05-23T19:30:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,8,4,0,8,8,903342,FALSE
 2026-05-23T19:30:00Z,coverage-guided,novelty-ws-many-user-lifecycle,browser-e2e,ws,many-user-lifecycle,6,3,0,6,6,1023547,FALSE
 2026-05-23T19:30:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,24,19,14,24,10,904589,FALSE
 2026-05-23T19:30:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,17,12,8,17,9,897069,FALSE
@@ -3288,7 +3288,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T19:45:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,12,9,6,12,6,856555,FALSE
 2026-05-23T19:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,9,4,0,9,9,882831,FALSE
 2026-05-23T19:45:00Z,coverage-guided,novelty-ws-block-gauntlet,browser-e2e,ws,block-gauntlet,22,19,16,22,6,828725,FALSE
-2026-05-23T19:45:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,7,3,0,7,7,783948,FALSE
+2026-05-23T19:45:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,7,3,0,7,7,783948,FALSE
 2026-05-23T19:45:00Z,coverage-guided,novelty-ws-many-user-lifecycle,browser-e2e,ws,many-user-lifecycle,2,1,0,2,2,285336,FALSE
 2026-05-23T19:45:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,21,15,12,21,9,786081,FALSE
 2026-05-23T19:45:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,15,10,5,15,10,814084,FALSE
@@ -3310,7 +3310,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T20:00:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,8,7,6,8,2,850335,FALSE
 2026-05-23T20:00:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,15,15,15,15,0,865122,FALSE
 2026-05-23T20:00:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,2,1,0,2,2,237914,FALSE
-2026-05-23T20:00:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,2,1,0,2,2,210211,FALSE
+2026-05-23T20:00:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,2,1,0,2,2,210211,FALSE
 2026-05-23T20:00:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,8,5,3,8,5,283258,FALSE
 2026-05-23T20:00:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,6,5,4,6,2,304590,FALSE
 2026-05-23T20:00:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,7,4,1,7,6,353156,FALSE
@@ -3330,7 +3330,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T20:15:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,9,6,4,9,5,915148,FALSE
 2026-05-23T20:15:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,13,8,5,13,8,929102,FALSE
 2026-05-23T20:15:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,9,5,0,9,9,889870,FALSE
-2026-05-23T20:15:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,9,5,0,9,9,908549,FALSE
+2026-05-23T20:15:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,9,5,0,9,9,908549,FALSE
 2026-05-23T20:15:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,24,19,15,24,9,896508,FALSE
 2026-05-23T20:15:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,19,15,11,19,8,906555,FALSE
 2026-05-23T20:15:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,17,12,7,17,10,756075,FALSE
@@ -3351,7 +3351,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T20:30:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,8,6,5,8,3,910369,FALSE
 2026-05-23T20:30:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,12,11,10,12,2,788395,FALSE
 2026-05-23T20:30:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,10,5,0,10,10,947669,FALSE
-2026-05-23T20:30:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,9,4,0,9,9,958246,FALSE
+2026-05-23T20:30:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,9,4,0,9,9,958246,FALSE
 2026-05-23T20:30:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,25,19,14,25,11,911914,FALSE
 2026-05-23T20:30:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,18,13,8,18,10,873701,FALSE
 2026-05-23T20:30:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,17,9,2,17,15,788454,FALSE
@@ -3371,7 +3371,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T20:45:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,9,6,4,9,5,940459,FALSE
 2026-05-23T20:45:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,10,6,2,10,8,708821,FALSE
 2026-05-23T20:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,9,4,0,9,9,850605,FALSE
-2026-05-23T20:45:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,9,5,0,9,9,884310,FALSE
+2026-05-23T20:45:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,9,5,0,9,9,884310,FALSE
 2026-05-23T20:45:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,25,18,15,25,10,891641,FALSE
 2026-05-23T20:45:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,19,14,9,19,10,927188,FALSE
 2026-05-23T20:45:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,15,10,4,15,11,695487,FALSE
@@ -3391,7 +3391,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-23T21:00:00Z,coverage-guided,novelty-http-same-user-stale-draft,browser-e2e,http,session-lifecycle,7,6,5,7,2,831767,FALSE
 2026-05-23T21:00:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,10,7,6,10,4,684469,FALSE
 2026-05-23T21:00:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,8,4,0,8,8,775623,FALSE
-2026-05-23T21:00:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,NA,NA,9,4,0,9,9,806914,FALSE
+2026-05-23T21:00:00Z,coverage-guided,novelty-ws-long-session-large-doc,browser-e2e,ws,long-session-large-doc,9,4,0,9,9,806914,FALSE
 2026-05-23T21:00:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,22,17,15,22,7,799170,FALSE
 2026-05-23T21:00:00Z,coverage-guided,novelty-ws-multi-reload-lifecycle,browser-e2e,ws,multi-reload-lifecycle,15,12,9,15,6,780601,FALSE
 2026-05-23T21:00:00Z,coverage-guided,novelty-ws-parser-serialization,browser-e2e,ws,parser-serialization,16,10,3,16,13,741696,FALSE
@@ -3693,4 +3693,9 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T05:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1600,1600,1600,64,0,920013,FALSE
 2026-05-24T05:45:00Z,coverage-guided,novelty-ws-many-user-lifecycle,browser-e2e,ws,many-user-lifecycle,3,3,0,3,3,288194,FALSE
 2026-05-24T05:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1575,1575,1575,63,0,907761,FALSE
-2026-05-24T06:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,50,50,50,2,0,28598,FALSE
+2026-05-24T06:00:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,393759,FALSE
+2026-05-24T06:00:00Z,coverage-guided,novelty-ws-async-server-blocks,browser-e2e,NA,NA,1,1,0,1,1,47408,FALSE
+2026-05-24T06:00:00Z,coverage-guided,novelty-ws-real-user-rich-text,browser-e2e,ws,real-user-editing,2,2,0,2,2,212639,FALSE
+2026-05-24T06:00:00Z,coverage-guided,novelty-ws-revision-recovery,browser-e2e,ws,revision-persistence,2,1,0,2,2,102458,FALSE
+2026-05-24T06:00:00Z,coverage-guided,novelty-ws-structure,browser-e2e,NA,NA,1,1,1,1,0,32522,FALSE
+2026-05-24T06:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,875,875,875,35,0,492700,FALSE
