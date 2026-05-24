@@ -1922,3 +1922,6 @@ timestamp,group,group_family
 2026-05-24T04:42:28Z,novelty-http-large-post-lifecycle-completion,lifecycle
 2026-05-24T04:45:10Z,novelty-http-list-move-refresh,http
 2026-05-24T04:47:58Z,novelty-http-table-stale-snapshot,http
+2026-05-24T04:51:28Z,novelty-http-title-reload-convergence,lifecycle
+2026-05-24T04:53:59Z,novelty-http-existing-post-crdt-metadata,http
+2026-05-24T04:56:32Z,novelty-ws-media-cross-entity,async/media
