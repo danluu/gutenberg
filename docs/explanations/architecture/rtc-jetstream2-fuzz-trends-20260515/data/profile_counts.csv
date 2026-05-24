@@ -1,10 +1,10 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-collaboration-ui-signals,1028,0,0,0,other
-large-post-three-user-http-lifecycle,521,51,0,0.09788867562380038,lifecycle
+collaboration-ui-signals,1061,0,0,0,other
+large-post-three-user-http-lifecycle,524,53,0,0.10114503816793893,lifecycle
 session-lifecycle,467,304,0,0.6509635974304069,lifecycle
 async-server-blocks,429,0,0,0,async/media
 full,288,25,0,0.08680555555555555,block-structure
-real-user-editing,212,92,0,0.4339622641509434,real-user
+real-user-editing,218,95,0,0.43577981651376146,real-user
 block-gauntlet,185,116,0,0.6270270270270271,block-structure
 revision-persistence,173,66,0,0.3815028901734104,persistence
 persistence-no-title,149,44,0,0.2953020134228188,persistence
@@ -12,7 +12,7 @@ table-stale-snapshot-http,96,76,0,0.7916666666666666,other
 parser-transform,90,37,0,0.4111111111111111,parser
 parser-serialization,86,21,0,0.2441860465116279,parser
 multi-reload-lifecycle,85,39,0,0.4588235294117647,lifecycle
-list-move-refresh-http,69,0,0,0,other
+list-move-refresh-http,70,0,0,0,other
 many-user-lifecycle,69,17,0,0.2463768115942029,lifecycle
 long-session-large-doc,40,0,0,0,lifecycle
 permissions-auth-locks,39,2,0,0.05128205128205128,auth/locks
