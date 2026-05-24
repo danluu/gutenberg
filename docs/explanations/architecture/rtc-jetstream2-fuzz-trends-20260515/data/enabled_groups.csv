@@ -2085,3 +2085,6 @@ timestamp,group,group_family
 2026-05-24T14:16:05Z,novelty-http-large-post-readiness,http
 2026-05-24T14:19:24Z,novelty-http-large-post-lifecycle,lifecycle
 2026-05-24T14:23:12Z,novelty-http-title-reload-convergence,lifecycle
+2026-05-24T15:17:48Z,novelty-ws-media-cross-entity,async/media
+2026-05-24T15:19:59Z,novelty-ws-real-user-coverage-bridge,real-user
+2026-05-24T15:23:01Z,novelty-http-list-move-refresh,http

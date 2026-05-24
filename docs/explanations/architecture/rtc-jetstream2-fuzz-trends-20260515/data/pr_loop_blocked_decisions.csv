@@ -1,27 +1,23 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Reject broad or stale target form; launch only the exact repaired head so stale 2026-05-22 no_product_owned evidence cannot dedupe or clear it.,PR07C/HOLD-07C,"Reject broad or stale target form; launch only the exact repaired head so stale
-2026-05-22 no_product_owned evidence cannot dedupe or clear it."
-publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Coverage is not ready; required canary groups are absent, disabled, or have zero current-run successful records.",coverage-ready-benchmark-canary-equivalence,"Coverage is not ready; required canary groups are absent, disabled, or have zero
-current-run successful records."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until same-head owner evidence, exact-head build-clean evidence, benchmark rows, and canary coverage gates are consumed.",ready/rtc-pr07c-reload-record-snapshots,"Block until same-head owner evidence, exact-head build-clean evidence, benchmark
-rows, and canary coverage gates are consumed."
-publish-ready,final-all-merged-current,P0,no,"Block until PR07C same-head owner evidence, exact-head build evidence, benchmark-minimum rows, current-run canary coverage, manifest links, and downscopes agree.",final-all-merged-current,"Block until PR07C same-head owner evidence, exact-head build evidence,
-benchmark-minimum rows, current-run canary coverage, manifest links, and
-downscopes agree."
-launch-benchmark,final-all-merged-current,P0,no,"Do not rerun maintainer benchmark on an unpublished or ungated stack; wait for PR07C same-head owner evidence, build preflight, and coverage materialization or explicit downscopes.",final-all-merged-current,"Do not rerun maintainer benchmark on an unpublished or ungated stack; wait for
-PR07C same-head owner evidence, build preflight, and coverage materialization or
-explicit downscopes."
-publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary product evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches
-absent fresh contrary product evidence."
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind PR07C same-head owner evidence, disk preservation, coverage materialization, and discovery reserve.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Heavy reload replay waits behind PR07C same-head owner evidence, disk
-preservation, coverage materialization, and discovery reserve."
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Missing same-head title-reload, existing-or-persistence reload, and large-http-lifecycle evidence.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing same-head title-reload, existing-or-persistence reload, and
-large-http-lifecycle evidence."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Broad PR07C target is stale; existing owner evidence names failed head 2f8247258316bde60869c06c383090904e9426bd and cannot clear the repaired head.,PR07C/HOLD-07C,"Broad PR07C target is stale; existing owner evidence names failed head
+2f8247258316bde60869c06c383090904e9426bd and cannot clear the repaired head."
+publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Required current-run canary successes are missing, absent, disabled, zero-success, or explicitly blocked.",coverage-ready-benchmark-canary-equivalence,"Required current-run canary successes are missing, absent, disabled,
+zero-success, or explicitly blocked."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block finalization until same-head owner evidence, exact-head build-clean evidence, benchmark rows, and canary coverage gates agree.",ready/rtc-pr07c-reload-record-snapshots,"Block finalization until same-head owner evidence, exact-head build-clean
+evidence, benchmark rows, and canary coverage gates agree."
+publish-ready,final-all-merged-current,P0,no,"Block until PR07C owner evidence, exact-head build evidence, benchmark-minimum rows, current-run canary coverage, live manifest links, and downscopes agree.",final-all-merged-current,"Block until PR07C owner evidence, exact-head build evidence, benchmark-minimum
+rows, current-run canary coverage, live manifest links, and downscopes agree."
+publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches
+absent fresh contrary evidence."
+repair-branch,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind PR07C same-head owner evidence, coverage materialization, disk preservation, and discovery reserve.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Heavy reload replay waits behind PR07C same-head owner evidence, coverage
+materialization, disk preservation, and discovery reserve."
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Missing same-head title-reload, existing-post-crdt or persistence-reload, and large-http-lifecycle green rows or replay-backed downscope.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing same-head title-reload, existing-post-crdt or persistence-reload, and
+large-http-lifecycle green rows or replay-backed downscope."
 publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,Do not publish diagnostic-only families as product PRs without product-owned replay evidence or green-stack adoption.,pre-save-search-live-collapse+rich-text-suffix-corruption,"Do not publish diagnostic-only families as product PRs without product-owned
 replay evidence or green-stack adoption."
 launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status generation and analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication/status
 generation and analysis-only work."
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, disk preservation, coverage materialization, and discovery reserve.",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"Broad PR17 repair waits behind PR07C owner evidence, disk preservation, coverage
-materialization, and discovery reserve."
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation, coverage materialization, and discovery reserve.",all-other-heavy-pr-jobs,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation,
-coverage materialization, and discovery reserve."
+repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, coverage materialization, disk preservation, and discovery reserve.",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"Broad PR17 repair waits behind PR07C owner evidence, coverage materialization,
+disk preservation, and discovery reserve."
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C owner evidence, coverage materialization, disk preservation, and discovery reserve.",all-other-heavy-pr-jobs,"Nonessential heavy PR work waits behind PR07C owner evidence, coverage
+materialization, disk preservation, and discovery reserve."
