@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T02:44:42Z`
+Snapshot generated: `2026-05-24T02:50:37Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -58,7 +58,7 @@ Disk remains the resource constraint, while CPU/load are not saturated in the
 newest sample. Latest CPU utilization is `12.25%`, with `1.34%` iowait.
 Latest load averages are `14.38`, `12.45`, and `9.91` on `64` logical CPUs,
 with `1` blocked task. Root has `89.0GiB` free and the data volume has
-`17.8GiB` free while `99.5%` used.
+`17.6GiB` free while `99.5%` used.
 
 The latest graph-counted fuzzing mix is still browser/e2e-heavy and remains
 below the plotted `24`-lane persona-loop floor: `19` browser/e2e lanes across
@@ -157,8 +157,8 @@ finishes.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. In the latest
-`2026-05-24T02:44:01Z` sample, root pressure is stable at `89.0GiB` free and
-`42.2%` used; the data volume is at `17.8GiB` free and `99.5%` used. That is
+`2026-05-24T02:49:43Z` sample, root pressure is stable at `89.0GiB` free and
+`42.2%` used; the data volume is at `17.6GiB` free and `99.5%` used. That is
 no longer a hard-zero free-space sample, but output-size budgeting remains the
 dominant live resource constraint.
 
@@ -228,7 +228,7 @@ PR07C owner-matrix work from current-head green owner evidence with
 `product_owned_rows=0`. It also notes the fresh coverage-guided root had `11`
 groups still starting and `0` running at `2026-05-24T00:39:20Z`, and observed
 severe disk pressure at feedback time. The refreshed mix graph has `19`
-browser/e2e is-latest lanes and the latest resource graph has `17.8GiB` free
+browser/e2e is-latest lanes and the latest resource graph has `17.6GiB` free
 on a `99.5%` used data volume; treat that as continued evidence for
 disk-constrained, bounded-lane operation rather than broad expansion.
 
@@ -236,13 +236,14 @@ The latest native-harness synthesis selects
 `coverage-guided-lower-level-block-parser-serialization` as the first bounded
 Node/V8 parser/serialization harness and says the next engineering change is
 to cap duplicate `RTC_BLOCK_PARSER_*` isolation/minimization before sustained
-runs. The latest native-harness action file is empty, so the latest non-empty
-action remains the bounded `20260523T232127Z` parser/serialization validation:
-the bounded smoke wrote `supervisor-groups.json`, root/lane `events.ndjson`,
-`seed-attempt-complete`, `coverageKeys=192`, `featureKeys=38`, and
-`productYield=true`, and the ordinary unit-run gate skipped the fuzz target
-without fuzz flags. It did not start an unbounded tmux loop because the parser
-group is still held.
+runs. The latest native-harness action is the bounded `20260524T002637Z`
+parser/serialization validation: syntax checks, spec-parser `build:js`,
+the fuzz-gated parser Jest target, bounded lower-level smoke, and the ordinary
+unit gate all passed. The smoke wrote `supervisor-groups.json`, root/lane
+`events.ndjson`, `seed-attempt-complete`, `coverageKeys=192`,
+`featureKeys=38`, `productYield=true`, and `testExecutionCount=2`; the
+ordinary unit-run gate skipped the fuzz target without fuzz flags. It did not
+start an unbounded tmux loop because the parser group is still held.
 The graph-counted coverage-guided lower-level lane still remains the stale
 rich-text CRDT row, and the latest execution buckets have zero
 coverage-guided-lower-level executions, so this should not be read as
@@ -474,7 +475,7 @@ parsed status snapshots, not filing authority. The largest latest rows are
 ![PR loop current queue depth](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-queue-depth-current.png)
 
 The current PR-progress controller snapshot is populated again at
-`2026-05-24T02:42:10Z`. The state-count table has `35` counted items:
+`2026-05-24T02:48:22Z`. The state-count table has `35` counted items:
 `27` published ready-product rows,
 `4` held-by-controller ready-product rows, `1` superseded ready-product row,
 `1` runtime-held-consumed PR07C owner-matrix row, and `2` deferred-family rows
@@ -526,7 +527,7 @@ repair job was launched but still pending; treat queued, held, or blocked rows
 as unresolved until row-bearing owner evidence appears, while PR07C
 owner-matrix should stay terminal unless newer current-head owner evidence
 appears. The refreshed controller stream continues to record PR07C
-no-relaunch events through `2026-05-24T02:42:14Z`; that is suppression
+no-relaunch events through `2026-05-24T02:48:26Z`; that is suppression
 evidence, not a new filing surface.
 
 ## Interpretation
@@ -562,7 +563,7 @@ strong product evidence.
 The resource picture is disk-constrained but no longer CPU/load-bound in the
 newest sample: latest CPU utilization is `12.25%`, iowait is `1.34%`,
 one-minute load is `14.38` on `64` logical CPUs with `1` blocked task, and
-the data volume is `99.5%` used with `17.8GiB` free. Optional browser
+the data volume is `99.5%` used with `17.6GiB` free. Optional browser
 admission should still respect load, iowait, and output-volume pressure.
 
 The graph-counted fuzzing mix is browser/e2e-heavy but below the plotted
@@ -587,10 +588,10 @@ polling canary row and no executions in the latest partial bucket.
 Protocol-server has a current HTTP polling row and recent execution volume,
 including `2,005` executions in the `00:00` bucket, but the latest `00:30`
 bucket has `0` protocol-server executions. The latest native-harness synthesis
-selects the parser/serialization Node/V8 harness. The latest native action
-file is empty, so the latest non-empty action remains the bounded parser
-validation with event/supervisor accounting, `coverageKeys=192`,
-`featureKeys=38`, and `productYield=true` without starting an unbounded lane.
+selects the parser/serialization Node/V8 harness. The latest native action is
+the bounded `20260524T002637Z` validation with event/supervisor accounting,
+`coverageKeys=192`, `featureKeys=38`, `productYield=true`, and
+`testExecutionCount=2` without starting an unbounded lane.
 The latest protocol-server synthesis selects the HTTP polling REST endpoint
 through real REST dispatch and durable post-meta storage; the latest action
 file is empty, so the latest non-empty protocol action remains the syntax
