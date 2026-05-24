@@ -2031,3 +2031,11 @@ timestamp,group,group_family
 2026-05-24T11:38:14Z,novelty-http-large-post-readiness,http
 2026-05-24T11:40:37Z,novelty-http-list-move-refresh,http
 2026-05-24T11:41:38Z,novelty-http-provider-persisted-crdt-large-post,http
+2026-05-24T11:45:01Z,novelty-http-same-user-stale-draft,lifecycle
+2026-05-24T11:48:21Z,novelty-http-same-user-stale-draft,lifecycle
+2026-05-24T11:48:21Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T11:48:21Z,novelty-ws-many-user-lifecycle,lifecycle
+2026-05-24T11:48:21Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-05-24T11:48:21Z,novelty-ws-thirty-user-lifecycle,lifecycle
+2026-05-24T11:48:21Z,novelty-ws-async-server-blocks,async/media
+2026-05-24T11:48:21Z,novelty-ws-permissions-auth-locks,auth/locks

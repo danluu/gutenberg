@@ -18,7 +18,7 @@ insert-heading,110,large-post-three-user-http-lifecycle
 concurrent-paragraphs,110,large-post-three-user-http-lifecycle
 move-block,110,large-post-three-user-http-lifecycle
 insert-media-cross-entity-block,102,media-cross-entity
-ui-toolbar-format-paragraph,95,real-user-editing
+ui-toolbar-format-paragraph,97,real-user-editing
 insert-paragraph,92,revision-persistence
 edit-paragraph,85,revision-persistence
 move-block,83,revision-persistence
