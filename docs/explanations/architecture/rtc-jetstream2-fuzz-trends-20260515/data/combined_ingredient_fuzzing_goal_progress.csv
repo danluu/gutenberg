@@ -1,3 +1,9 @@
 id,label,count,target,met,progress,goal_family,remaining,progress_capped,count_target
 cross-product:large-post-three-user-http-lifecycle,"strict combined HTTP large-post three-user
 lifecycle records",0,25,FALSE,0,cross-product,25,0,0 / 25
+success-profile:large-post-three-user-http-lifecycle,"successful
+large-post-three-user-http-lifecycle records",2,10,FALSE,0.2,successful profiles,8,0.2,2 / 10
+success-profile-users:large-post-three-user-http-lifecycle:3,"successful large-post HTTP records with
+three users",3,10,FALSE,0.3,lifecycle/scale,7,0.3,3 / 10
+success-user-blocks:3:50,successful three-user large documents,3,5,FALSE,0.6,other,2,0.6,3 / 5
+transport-profile:http:large-post-three-user-http-lifecycle,large post three-user HTTP lifecycle,246,10,TRUE,24.6,lifecycle/scale,0,1,246 / 10

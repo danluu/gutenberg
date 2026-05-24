@@ -1029,7 +1029,10 @@ coverage_goals <- if ( is.null( coverage_goals_raw ) || length( coverage_goals_r
 
 for ( column in names( coverage_goal_defaults ) ) {
 	if ( ! column %in% names( coverage_goals ) ) {
-		coverage_goals[[ column ]] <- coverage_goal_defaults[[ column ]]
+		coverage_goals[[ column ]] <- rep(
+			coverage_goal_defaults[[ column ]][ NA_integer_ ],
+			nrow( coverage_goals )
+		)
 	}
 }
 

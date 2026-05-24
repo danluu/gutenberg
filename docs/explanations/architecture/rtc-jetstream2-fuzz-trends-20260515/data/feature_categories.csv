@@ -1,1 +1,27 @@
 feature_category,keys,total_count,max_count
+history,108,18640,1502
+invariant,32,10989,845
+operation-ledger,80,10270,1097
+block-depth,52,4394,749
+other,49,4142,947
+block,36,3978,845
+action,34,3421,266
+action-pair,485,3359,154
+transport,12,3004,766
+collaborator,3,2866,1502
+payload-size,29,1690,240
+revision,3,1527,1442
+autosave,1,1502,1502
+initial-content,10,1502,426
+profile,8,1502,425
+reload,4,1502,1169
+save,4,1502,1103
+step-count,10,1502,425
+users,3,1502,657
+serialized-size,8,845,244
+lifecycle,4,784,358
+fault,4,713,381
+real-user,56,512,93
+large-document,2,475,238
+auth,1,35,35
+code coverage,3,3,1
