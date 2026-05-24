@@ -13,12 +13,12 @@ insert-heading,206,session-lifecycle
 edit-nested-paragraph,199,session-lifecycle
 edit-paragraph,193,session-lifecycle
 append-paragraph,152,table-stale-snapshot-http
+insert-media-cross-entity-block,120,media-cross-entity
+ui-toolbar-format-paragraph,110,real-user-editing
 append-paragraph,110,large-post-three-user-http-lifecycle
 insert-heading,110,large-post-three-user-http-lifecycle
 concurrent-paragraphs,110,large-post-three-user-http-lifecycle
 move-block,110,large-post-three-user-http-lifecycle
-ui-toolbar-format-paragraph,109,real-user-editing
-insert-media-cross-entity-block,102,media-cross-entity
 insert-paragraph,92,revision-persistence
 edit-paragraph,85,revision-persistence
 move-block,83,revision-persistence
@@ -49,6 +49,7 @@ move-block,48,multi-reload-lifecycle
 append-paragraph,46,persistence-no-title
 concurrent-paragraphs,46,persistence-no-title
 edit-nested-paragraph,46,multi-reload-lifecycle
+edit-block-gauntlet-attributes,43,media-cross-entity
 append-paragraph,42,multi-reload-lifecycle
 edit-paragraph,40,persistence-no-title
 insert-nested-group,40,multi-reload-lifecycle
@@ -56,7 +57,6 @@ delete-block,39,multi-reload-lifecycle
 insert-paragraph,38,parser-transform
 move-block-into-group,36,multi-reload-lifecycle
 insert-heading,34,parser-transform
-edit-block-gauntlet-attributes,34,media-cross-entity
 move-block,34,persistence-no-title
 delete-block,34,persistence-no-title
 delete-nested-block,34,multi-reload-lifecycle
@@ -69,10 +69,10 @@ edit-table-array-attributes,31,multi-reload-lifecycle
 edit-paragraph,31,multi-reload-lifecycle
 insert-async-server-block,30,multi-reload-lifecycle
 insert-paragraph,28,full
+move-block,27,media-cross-entity
 assert-presence-list,26,many-user-lifecycle
 insert-heading,26,multi-reload-lifecycle
 move-block,25,parser-transform
-move-block,24,media-cross-entity
 late-join-post-action,23,many-user-lifecycle
 move-block-into-group,23,three-user-late-join
 edit-table-array-attributes,21,many-user-lifecycle

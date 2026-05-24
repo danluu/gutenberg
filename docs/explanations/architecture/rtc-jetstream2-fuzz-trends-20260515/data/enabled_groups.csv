@@ -2081,3 +2081,4 @@ timestamp,group,group_family
 2026-05-24T12:47:41Z,novelty-ws-permissions-auth-locks,auth/locks
 2026-05-24T12:50:44Z,novelty-ws-three-user-late-join,lifecycle
 2026-05-24T12:53:09Z,novelty-ws-media-cross-entity,async/media
+2026-05-24T12:59:15Z,novelty-ws-thirty-user-lifecycle,lifecycle

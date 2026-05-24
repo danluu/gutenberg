@@ -1,14 +1,13 @@
 action,target,priority,allowed,reason,target_label,reason_label
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Block PR07C finalization until same-head owner evidence and exact-head publication gates are consumed.,ready/rtc-pr07c-reload-record-snapshots,"Block PR07C finalization until same-head owner evidence and exact-head
 publication gates are consumed."
-publish-ready,final-all-merged-current,P0,no,"Block all-merged publication until PR07C owner evidence, exact-head build-clean, benchmark rows, canary coverage, and manifest evidence agree or are explicitly downscoped.",final-all-merged-current,"Block all-merged publication until PR07C owner evidence, exact-head build-clean,
-benchmark rows, canary coverage, and manifest evidence agree or are explicitly
-downscoped."
+publish-ready,final-all-merged-current,P0,no,"Block all-merged publication until PR07C owner evidence, exact-head build-clean, benchmark rows, canary coverage, manifest evidence, and any downscopes agree.",final-all-merged-current,"Block all-merged publication until PR07C owner evidence, exact-head build-clean,
+benchmark rows, canary coverage, manifest evidence, and any downscopes agree."
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches
 absent fresh contrary evidence."
 publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Current coverage is not ready; required HTTP groups are absent, disabled, recovering, or lack current-run successful records.",coverage-ready-benchmark-canary-equivalence,"Current coverage is not ready; required HTTP groups are absent, disabled,
 recovering, or lack current-run successful records."
-launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication or status generation and analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication or status
+launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status generation and analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication/status
 generation and analysis-only work."
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind PR07C owner evidence, disk preservation, and discovery reserve.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Heavy reload replay waits behind PR07C owner evidence, disk preservation, and
 discovery reserve."
