@@ -2039,3 +2039,7 @@ timestamp,group,group_family
 2026-05-24T11:48:21Z,novelty-ws-thirty-user-lifecycle,lifecycle
 2026-05-24T11:48:21Z,novelty-ws-async-server-blocks,async/media
 2026-05-24T11:48:21Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-24T11:51:18Z,novelty-http-table-stale-snapshot,http
+2026-05-24T11:51:18Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-24T11:58:04Z,novelty-http-title-reload-convergence,lifecycle
+2026-05-24T11:58:04Z,novelty-ws-permissions-auth-locks,auth/locks
