@@ -851,8 +851,9 @@ function normalizeBlockAttributeForComparison(
 	}
 
 	if ( schema?.type === 'array' && schema.query && Array.isArray( value ) ) {
+		const query = schema.query;
 		return value.map( ( item ) =>
-			normalizeQueryObjectForComparison( item, schema.query )
+			normalizeQueryObjectForComparison( item, query )
 		);
 	}
 

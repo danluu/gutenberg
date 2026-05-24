@@ -326,7 +326,7 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
 
 function getGeneratedBlockSerialization( blocks: Block[] ): string {
 	return __unstableSerializeAndClean(
-		getGeneratedBlockSerializationBlocks( blocks )
+		getGeneratedBlockSerializationBlocks( blocks ) as any
 	).trim();
 }
 
@@ -406,7 +406,9 @@ function hasPersistedBlockContentChanged(
 	}
 
 	const rawPersistedContent = persistedContent;
-	const serializedBlocks = __unstableSerializeAndClean( blocks ).trim();
+	const serializedBlocks = __unstableSerializeAndClean(
+		blocks as any
+	).trim();
 
 	if ( serializedBlocks === rawPersistedContent ) {
 		return false;
@@ -509,12 +511,16 @@ export function getPostChangesFromCRDTDoc(
 						ydoc.meta?.get( CRDT_DOC_META_PERSISTENCE_KEY ) &&
 						editedRecord.content
 					) {
-						const blocksJson = ymap.get( 'blocks' )?.toJSON() ?? [];
+						const blocksJson = ( ymap.get( 'blocks' )?.toJSON() ??
+							[] ) as Block[];
+						const editedRecordBlocks = (
+							editedRecord as PostChanges
+						 ).blocks;
 						const persistedContent = Array.isArray(
-							editedRecord.blocks
+							editedRecordBlocks
 						)
 							? __unstableSerializeAndClean(
-									editedRecord.blocks
+									editedRecordBlocks as any
 							  ).trim()
 							: getRawValue( editedRecord.content );
 

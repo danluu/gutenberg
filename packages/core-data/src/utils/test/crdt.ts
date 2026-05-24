@@ -985,8 +985,12 @@ describe( 'crdt', () => {
 			expect( __unstableSerializeAndClean( blocks ).trim() ).not.toBe(
 				persistedContent
 			);
-			expect( console ).toHaveWarned();
-			expect( console ).toHaveErrored();
+			const testConsole = globalThis.console as typeof console & {
+				error: jest.Mock;
+				warn: jest.Mock;
+			};
+			expect( testConsole.warn.mock.calls.length ).toBeGreaterThan( 0 );
+			expect( testConsole.error.mock.calls.length ).toBeGreaterThan( 0 );
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -1044,8 +1048,12 @@ describe( 'crdt', () => {
 			].join( '\n' );
 			const blocks = parse( originalContent );
 
-			expect( console ).toHaveWarned();
-			expect( console ).toHaveErrored();
+			const testConsole = globalThis.console as typeof console & {
+				error: jest.Mock;
+				warn: jest.Mock;
+			};
+			expect( testConsole.warn.mock.calls.length ).toBeGreaterThan( 0 );
+			expect( testConsole.error.mock.calls.length ).toBeGreaterThan( 0 );
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -1131,7 +1139,9 @@ describe( 'crdt', () => {
 
 			expect( changes ).toHaveProperty( 'blocks' );
 			expect(
-				__unstableSerializeAndClean( changes.blocks as Block[] ).trim()
+				__unstableSerializeAndClean(
+					changes.blocks as Block[] as any
+				).trim()
 			).toBe( persistedContent );
 		} );
 
@@ -1166,7 +1176,9 @@ describe( 'crdt', () => {
 				},
 			];
 			const generatedBlocks = staleBlocks.map( ( block ) => {
-				const generatedBlock = { ...block, isValid: true };
+				const generatedBlock: Block & {
+					__unstableBlockSource?: unknown;
+				} = { ...block, isValid: true };
 				delete generatedBlock.__unstableBlockSource;
 				delete generatedBlock.originalContent;
 				delete generatedBlock.validationIssues;
@@ -1186,7 +1198,7 @@ describe( 'crdt', () => {
 				__unstableSerializeAndClean( staleBlocks ).trim()
 			).not.toBe( persistedContent );
 			expect(
-				__unstableSerializeAndClean( generatedBlocks ).trim()
+				__unstableSerializeAndClean( generatedBlocks as any ).trim()
 			).not.toBe( persistedContent );
 
 			applyPostChangesToCRDTDoc(
