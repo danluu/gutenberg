@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T01:30:23Z`
+Snapshot generated: `2026-05-24T01:34:40Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -54,10 +54,10 @@ prior trusted graph sample agreed with that status; the newest row is not yet
 trusted and should be treated as pending current-run accounting, not as a
 measured product duplicate/noise rate.
 
-Disk remains the resource constraint, while CPU/load eased in the newest
-sample. Latest CPU utilization is `7.13%`, with `0.01%` iowait. Latest load
-averages are `4.97`, `5.56`, and `8.07` on `64` logical CPUs, with `0`
-blocked tasks. Root has `89.0GiB` free and the data volume has `20.0GiB` free
+Disk remains the resource constraint, while CPU/load are not saturated in the
+newest sample. Latest CPU utilization is `6.11%`, with `0.01%` iowait. Latest
+load averages are `7.50`, `5.84`, and `7.45` on `64` logical CPUs, with `0`
+blocked tasks. Root has `89.0GiB` free and the data volume has `19.9GiB` free
 while `99.4%` used.
 
 The latest graph-counted fuzzing mix is still browser/e2e-heavy and remains
@@ -158,7 +158,7 @@ finishes.
 
 The disk graph tracks both root and the mounted data volume. Root pressure is
 stable at `89.0GiB` free and `42.2%` used; the data volume is now at
-`20.0GiB` free and `99.4%` used in the latest sample. That is no longer a
+`19.9GiB` free and `99.4%` used in the latest sample. That is no longer a
 hard-zero free-space sample, but output-size budgeting remains the dominant
 live resource constraint.
 
@@ -228,7 +228,7 @@ PR07C owner-matrix work from current-head green owner evidence with
 `product_owned_rows=0`. It also notes the fresh coverage-guided root had `11`
 groups still starting and `0` running at `2026-05-24T00:39:20Z`, and observed
 severe disk pressure at feedback time. The refreshed mix graph has `19`
-browser/e2e is-latest lanes and the latest resource graph has `20.0GiB` free
+browser/e2e is-latest lanes and the latest resource graph has `19.9GiB` free
 on a `99.4%` used data volume; treat that as continued evidence for
 disk-constrained, bounded-lane operation rather than broad expansion.
 
@@ -473,8 +473,9 @@ parsed status snapshots, not filing authority. The largest latest rows are
 
 ![PR loop current queue depth](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-queue-depth-current.png)
 
-The current PR-progress controller snapshot is populated again. The
-state-count table has `35` counted items: `27` published ready-product rows,
+The current PR-progress controller snapshot is populated again at
+`2026-05-24T01:32:03Z`. The state-count table has `35` counted items:
+`27` published ready-product rows,
 `4` held-by-controller ready-product rows, `1` superseded ready-product row,
 `1` runtime-held-consumed PR07C owner-matrix row, and `2` deferred-family rows
 split across needs-product-decision and diagnostic states.
@@ -525,7 +526,7 @@ repair job was launched but still pending; treat queued, held, or blocked rows
 as unresolved until row-bearing owner evidence appears, while PR07C
 owner-matrix should stay terminal unless newer current-head owner evidence
 appears. The refreshed controller stream continues to record PR07C
-no-relaunch events through `2026-05-24T01:27:59Z`; that is suppression
+no-relaunch events through `2026-05-24T01:32:06Z`; that is suppression
 evidence, not a new filing surface.
 
 ## Interpretation
@@ -559,9 +560,9 @@ authoritative, and keep startup-ish duplicate producers held unless there is
 strong product evidence.
 
 The resource picture is disk-constrained but no longer CPU/load-bound in the
-newest sample: latest CPU utilization is `7.13%`, iowait is `0.01%`,
-one-minute load is `4.97` on `64` logical CPUs with `0` blocked tasks, and
-the data volume is `99.4%` used with `20.0GiB` free. Optional browser
+newest sample: latest CPU utilization is `6.11%`, iowait is `0.01%`,
+one-minute load is `7.50` on `64` logical CPUs with `0` blocked tasks, and
+the data volume is `99.4%` used with `19.9GiB` free. Optional browser
 admission should still respect load, iowait, and output-volume pressure.
 
 The graph-counted fuzzing mix is browser/e2e-heavy but below the plotted
