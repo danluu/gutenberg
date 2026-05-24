@@ -2034,6 +2034,9 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T13:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6300,6300,6300,35,0,915701,FALSE
 2026-05-24T13:15:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,9,5,0,9,9,829741,FALSE
 2026-05-24T13:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6505,6505,6505,37,0,914149,FALSE
-2026-05-24T13:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,8,4,0,8,8,750361,FALSE
-2026-05-24T13:30:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,5,3,0,5,5,750496,FALSE
-2026-05-24T13:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,4680,4680,4680,26,0,693166,FALSE
+2026-05-24T13:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,10,5,0,10,10,936339,FALSE
+2026-05-24T13:30:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,7,4,0,7,7,1024875,FALSE
+2026-05-24T13:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,6120,6120,6120,34,0,898414,FALSE
+2026-05-24T13:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,3,1,0,3,3,273335,FALSE
+2026-05-24T13:45:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,2,1,0,2,2,239245,FALSE
+2026-05-24T13:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,2160,2160,2160,12,0,293874,FALSE
