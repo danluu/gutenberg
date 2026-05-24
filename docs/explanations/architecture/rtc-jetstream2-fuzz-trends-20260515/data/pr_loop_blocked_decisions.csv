@@ -1,24 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-repair-ready,benchmark-canary-fuzzer-gap/PR07C-old-exact-refreshes,P0,no,Superseded by repaired-head exact_stack_green; rerun only if current feedback changes or same-head evidence regresses.,benchmark-canary-fuzzer-gap/PR07C-old-exact-refreshes,"Superseded by repaired-head exact_stack_green; rerun only if current feedback
-changes or same-head evidence regresses."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Block PR07C finalization claims until same-head owner evidence and exact-head publication gates are consumed.,ready/rtc-pr07c-reload-record-snapshots,"Block PR07C finalization claims until same-head owner evidence and exact-head
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,Block PR07C finalization until same-head owner evidence and exact-head publication gates are consumed.,ready/rtc-pr07c-reload-record-snapshots,"Block PR07C finalization until same-head owner evidence and exact-head
 publication gates are consumed."
 publish-ready,final-all-merged-current,P0,no,"Block all-merged publication until PR07C owner evidence, exact-head build-clean, benchmark rows, canary coverage, and manifest evidence agree or are explicitly downscoped.",final-all-merged-current,"Block all-merged publication until PR07C owner evidence, exact-head build-clean,
 benchmark rows, canary coverage, and manifest evidence agree or are explicitly
 downscoped."
 publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical minimal, on-PR14B, and repaired variants supersede raw held branches
 absent fresh contrary evidence."
-publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Current coverage is not ready; primary HTTP groups are absent, disabled, recovering, or missing current-run successful records.",coverage-ready-benchmark-canary-equivalence,"Current coverage is not ready; primary HTTP groups are absent, disabled,
-recovering, or missing current-run successful records."
-launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status generation or analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication/status
-generation or analysis-only work."
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind current-head PR07C owner evidence, disk preservation, and discovery reserve.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Heavy reload replay waits behind current-head PR07C owner evidence, disk
-preservation, and discovery reserve."
+publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,"Current coverage is not ready; required HTTP groups are absent, disabled, recovering, or lack current-run successful records.",coverage-ready-benchmark-canary-equivalence,"Current coverage is not ready; required HTTP groups are absent, disabled,
+recovering, or lack current-run successful records."
+launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication or status generation and analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication or status
+generation and analysis-only work."
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind PR07C owner evidence, disk preservation, and discovery reserve.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Heavy reload replay waits behind PR07C owner evidence, disk preservation, and
+discovery reserve."
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Missing same-head title-reload, existing-or-persistence reload, and large-http-lifecycle evidence.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing same-head title-reload, existing-or-persistence reload, and
 large-http-lifecycle evidence."
 publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,Do not publish diagnostic-only families as product PRs without owner evidence or green-stack adoption.,pre-save-search-live-collapse+rich-text-suffix-corruption,"Do not publish diagnostic-only families as product PRs without owner evidence or
 green-stack adoption."
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, disk preservation, and discovery reserve.",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"Broad PR17 repair waits behind PR07C owner evidence, disk preservation, and
 discovery reserve."
-launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation, and discovery reserve.",all-other-heavy-pr-jobs,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation,
-and discovery reserve."
+launch-branch-repair,all-other-heavy-pr-jobs,P0,no,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation, coverage materialization, and discovery reserve.",all-other-heavy-pr-jobs,"Nonessential heavy PR work waits behind PR07C owner evidence, disk preservation,
+coverage materialization, and discovery reserve."

@@ -2024,6 +2024,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T12:30:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,8,4,0,8,8,752210,FALSE
 2026-05-24T12:30:00Z,coverage-guided,novelty-ws-three-user-late-join,browser-e2e,ws,three-user-late-join,4,4,4,4,0,146530,FALSE
 2026-05-24T12:30:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,2725,2725,2725,16,0,395663,FALSE
-2026-05-24T12:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,1,1,0,1,1,96209,FALSE
-2026-05-24T12:45:00Z,coverage-guided,novelty-ws-three-user-late-join,browser-e2e,ws,three-user-late-join,3,3,3,3,0,109109,FALSE
-2026-05-24T12:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,720,720,720,4,0,102591,FALSE
+2026-05-24T12:45:00Z,coverage-guided,novelty-http-large-post-lifecycle-completion,browser-e2e,http,large-post-three-user-http-lifecycle,6,3,0,6,6,570453,FALSE
+2026-05-24T12:45:00Z,coverage-guided,novelty-ws-permissions-auth-locks,browser-e2e,NA,NA,4,3,2,4,2,146448,FALSE
+2026-05-24T12:45:00Z,coverage-guided,novelty-ws-three-user-late-join,browser-e2e,ws,three-user-late-join,8,7,5,8,3,266930,FALSE
+2026-05-24T12:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,3780,3780,3780,21,0,541929,FALSE

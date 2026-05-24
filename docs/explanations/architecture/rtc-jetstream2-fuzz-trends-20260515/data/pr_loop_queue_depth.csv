@@ -6,7 +6,7 @@ PR progress items,published,ready-product-pr,high,27
 PR progress items,superseded,ready-product-pr,low,1
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
 controller decisions,allowed,control decision,P0,18
-controller decisions,blocked,control decision,P0,9
+controller decisions,blocked,control decision,P0,8
 controller decisions,allowed,control decision,P1,1
 controller decisions,allowed,control decision,high,8
 controller decisions,blocked,control decision,high,2
