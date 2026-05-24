@@ -1,2 +1,2 @@
 generated_at,profile,group,feature,completed_cross_product_records,target_records,remaining_records,progress,group_enabled,profile_records_seen,profile_successful_records,profile_success_rate
-2026-05-24T09:53:37Z,large-post-three-user-http-lifecycle,novelty-http-large-post-lifecycle,cross-product:large-post-three-user-http-lifecycle,0,25,25,0,TRUE,420,34,0.08095238095238096
+2026-05-24T10:00:36Z,large-post-three-user-http-lifecycle,novelty-http-large-post-lifecycle,cross-product:large-post-three-user-http-lifecycle,0,25,25,0,FALSE,424,34,0.08018867924528301
