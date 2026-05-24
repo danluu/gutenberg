@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-05-24T02:55:56Z`
+Snapshot generated: `2026-05-24T03:03:10Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The summarized CSVs and plots are committed
@@ -55,10 +55,10 @@ trusted and should be treated as pending current-run accounting, not as a
 measured product duplicate/noise rate.
 
 Disk remains the resource constraint, while CPU/load are not saturated in the
-newest sample. Latest CPU utilization is `15.41%`, with `1.69%` iowait.
-Latest load averages are `16.27`, `15.56`, and `12.18` on `64` logical CPUs,
-with `2` blocked tasks. Root has `89.0GiB` free and the data volume has
-`17.6GiB` free while `99.5%` used.
+newest sample. Latest CPU utilization is `13.42%`, with `1.72%` iowait.
+Latest load averages are `8.93`, `12.77`, and `12.30` on `64` logical CPUs,
+with `1` blocked task. Root has `89.0GiB` free and the data volume has
+`17.5GiB` free while `99.5%` used.
 
 The latest graph-counted fuzzing mix is still browser/e2e-heavy and remains
 below the plotted `24`-lane persona-loop floor: `19` browser/e2e lanes across
@@ -69,11 +69,14 @@ rows older. Current lower-level graph residency is narrow: one bounded
 polling row, and one stale `coverage-guided-lower-level` rich-text CRDT row.
 `transport-integration`, `backend-api`, and standalone fuzz-only assertion
 work have no current graph-counted lane. Persona-loop evidence rejects treating
-the lane count as a reason to expand: the latest feedback-action chose
-deadline-mode tightening, terminalized PR07C owner-matrix work from green
-no-product owner evidence, noted a fresh coverage-guided root with `11`
-groups still starting and `0` running, and kept broad backfill/lower-level
-expansion held under high disk pressure.
+the lane count as trusted active capacity: the latest synthesis says current
+browser/e2e capacity is effectively `0` until materialization is repaired
+because the current coverage root lacks authoritative supervisor/session
+evidence and disk/materialization failed under `ENOSPC`. The matching
+feedback-action chose deadline-mode tightening, terminalized PR07C
+owner-matrix work from green no-product owner evidence, noted a fresh
+coverage-guided root with `11` groups still starting and `0` running, and
+kept broad backfill/lower-level expansion held under high disk pressure.
 
 The execution counter has `17,311,569` estimated individual executions. The
 latest nonzero plotted `2026-05-24T02:45:00Z` bucket has `25`
@@ -157,8 +160,8 @@ finishes.
 ![Free disk space over time](rtc-jetstream2-fuzz-trends-20260515/plots/disk-free-space-over-time.png)
 
 The disk graph tracks both root and the mounted data volume. In the latest
-`2026-05-24T02:55:02Z` sample, root pressure is stable at `89.0GiB` free and
-`42.2%` used; the data volume is at `17.6GiB` free and `99.5%` used. That is
+`2026-05-24T03:02:15Z` sample, root pressure is stable at `89.0GiB` free and
+`42.2%` used; the data volume is at `17.5GiB` free and `99.5%` used. That is
 no longer a hard-zero free-space sample, but output-size budgeting remains the
 dominant live resource constraint.
 
@@ -212,25 +215,23 @@ native parser/serialization smoke validation, stale
 evidence for `transport-integration`, `backend-api`, or `fuzz-assertion`.
 
 Persona-loop evidence rejects the simple interpretation that graph-counted
-rows equal trusted useful capacity. The latest level-mix synthesis asks for
-deadline-mode tightening, not more fuzz volume: keep current browser/e2e lanes
-running without backfilling under feedback-time full-disk pressure, keep
-backend/API and protocol/server as one-lane sentinels, cap unit/property to
-bounded replay, hold persistent lower-level fuzzing except bounded HTTP
-polling replay/minimization, and keep fuzz-assertion held. It also says mix
-totals are not yet trustworthy when stale roots are counted without live
-PID/session evidence. The latest level-mix feedback-action agrees with that
-interpretation: it chooses deadline-mode tightening, keeps backend/API and
-protocol/server at
-sentinel budget, caps unit/property to bounded replay/canary, holds persistent
-coverage-guided lower-level and fuzz-assertion expansion, and terminalizes
-PR07C owner-matrix work from current-head green owner evidence with
-`product_owned_rows=0`. It also notes the fresh coverage-guided root had `11`
-groups still starting and `0` running at `2026-05-24T00:39:20Z`, and observed
-severe disk pressure at feedback time. The refreshed mix graph has `19`
-browser/e2e is-latest lanes and the latest resource graph has `17.6GiB` free
-on a `99.5%` used data volume; treat that as continued evidence for
-disk-constrained, bounded-lane operation rather than broad expansion.
+rows equal trusted useful capacity. The latest level-mix synthesis says
+current browser/e2e capacity is effectively `0` until materialization is
+repaired: the current coverage root lacks authoritative supervisor files and
+exact tmux/session evidence, and disk/materialization failed under `ENOSPC`.
+The requested change is deadline-mode tightening: preserve evidence, free
+disk, then run exactly one bounded large-post browser canary. Lower-level work
+stays at sentinel/replay budget: keep protocol/server and backend/API held or
+sentinel-only, cap unit/property to bounded replay/canary, hold persistent
+coverage-guided lower-level and fuzz-assertion expansion, and do not credit
+them as active discovery. The latest level-mix feedback-action agrees with
+that interpretation, terminalizes PR07C owner-matrix work from current-head
+green owner evidence with `product_owned_rows=0`, and notes the fresh
+coverage-guided root had `11` groups still starting and `0` running at
+`2026-05-24T00:39:20Z`. The refreshed mix graph has `19` browser/e2e
+is-latest lanes and the latest resource graph has `17.5GiB` free on a `99.5%`
+used data volume; treat that as continued evidence for disk-constrained,
+bounded-lane operation rather than broad expansion.
 
 The latest native-harness synthesis selects
 `coverage-guided-lower-level-block-parser-serialization` as the first bounded
@@ -562,10 +563,10 @@ authoritative, and keep startup-ish duplicate producers held unless there is
 strong product evidence.
 
 The resource picture is disk-constrained but no longer CPU/load-bound in the
-newest sample: latest CPU utilization is `15.41%`, iowait is `1.69%`,
-one-minute load is `16.27` on `64` logical CPUs with `2` blocked tasks, and
-the data volume is `99.5%` used with `17.6GiB` free. Optional browser
-admission should still respect load, iowait, and output-volume pressure.
+newest sample: latest CPU utilization is `13.42%`, iowait is `1.72%`,
+one-minute load is `8.93` on `64` logical CPUs with `1` blocked task, and the
+data volume is `99.5%` used with `17.5GiB` free. Optional browser admission
+should still respect load, iowait, and output-volume pressure.
 
 The graph-counted fuzzing mix is browser/e2e-heavy but below the plotted
 `24`-lane browser/e2e floor with `19` is-latest lanes across `19` groups. The
@@ -577,12 +578,12 @@ title-reload convergence, large-post lifecycle/completion, and table
 stale-snapshot. The focused, gap-booster, and strict-expansion rows are older
 is-latest rows. The latest level-mix synthesis rejects trusting stale raw row
 counts until active-dir/current-root reconciliation and benchmark readiness are
-fail-closed. It also says deadline-mode tightening should keep current
-browser/e2e lanes running without backfill while disk pressure is severe. The
-latest feedback-action agrees, keeping sentinel lower-level budgets,
-terminalizing PR07C owner-matrix work from current-head green owner evidence
-with `product_owned_rows=0`, and treating the fresh root's `11` starting
-groups and `0` running groups as not safe for expansion.
+fail-closed, and says browser/e2e should be treated as effectively zero active
+capacity until disk/materialization is repaired and one bounded large-post
+canary is restored. The latest feedback-action agrees, keeping sentinel
+lower-level budgets, terminalizing PR07C owner-matrix work from current-head
+green owner evidence with `product_owned_rows=0`, and treating the fresh
+root's `11` starting groups and `0` running groups as not safe for expansion.
 
 Current lower-level evidence remains limited. Unit-property has a bounded HTTP
 polling canary row and no executions in the latest nonzero bucket.

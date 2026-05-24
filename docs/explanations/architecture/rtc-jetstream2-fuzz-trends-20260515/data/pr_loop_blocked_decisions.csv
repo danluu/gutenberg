@@ -1,16 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,"discovery reserve is binding; deny heavy PR work below the floor except cheap manifest/docs, analysis-only, disk maintenance, or bounded exact repair",heavy-pr-when-discovery-unhealthy,"discovery reserve is binding; deny heavy PR work below the floor except cheap
-manifest/docs, analysis-only, disk maintenance, or bounded exact repair"
-launch-heavy-work,artifact-heavy-broad-work-under-disk-pressure,P0,no,disk_severe_pressure blocks broad artifact-heavy jobs until headroom is restored,artifact-heavy-broad-work-under-disk-pressure,disk_severe_pressure blocks broad artifact-heavy jobs until headroom is restored
-publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,"current exact-stack evidence has skipped, zero-row, or No-tests-found benchmark-minimum failures",final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"current exact-stack evidence has skipped, zero-row, or No-tests-found
-benchmark-minimum failures"
+launch-branch-repair,heavy-pr-when-discovery-unhealthy,P0,no,"if active discovery drops below floor allow only cheap manifest/docs, analysis-only, disk maintenance, or bounded exact repair",heavy-pr-when-discovery-unhealthy,"if active discovery drops below floor allow only cheap manifest/docs,
+analysis-only, disk maintenance, or bounded exact repair"
+launch-branch-repair,artifact-heavy-broad-work-under-disk-pressure,P0,no,disk_severe_pressure blocks broad artifact-heavy jobs until headroom is restored,artifact-heavy-broad-work-under-disk-pressure,disk_severe_pressure blocks broad artifact-heavy jobs until headroom is restored
+publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,"current exact-stack evidence has skipped, zero-row, or No-tests-found benchmark-minimum rows",final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"current exact-stack evidence has skipped, zero-row, or No-tests-found
+benchmark-minimum rows"
 publish-ready,superseded-ready-branch-variants,high,no,"raw PR06B, raw PR15A/B/C, and old PR07C heads are superseded by current published replacements",superseded-ready-branch-variants,"raw PR06B, raw PR15A/B/C, and old PR07C heads are superseded by current
 published replacements"
 launch-owner-matrix,PR07C/HOLD-07C-browser-e2e-duplicate,high,no,do not relaunch duplicate owner matrix unless newer current-head product-owned evidence appears,PR07C/HOLD-07C-browser-e2e-duplicate,"do not relaunch duplicate owner matrix unless newer current-head product-owned
 evidence appears"
-launch-branch-repair,reload-hydration@generic,P0,no,generic deferred fanout is diagnostic churn while same-head exact replay evidence is missing,reload-hydration@generic,"generic deferred fanout is diagnostic churn while same-head exact replay
-evidence is missing"
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,missing fresh same-head exact browser promotion evidence
+launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,generic deferred fanout is duplicate diagnostic churn while same-head exact replay evidence is missing,reload-hydration@generic-deferred-fanout,"generic deferred fanout is duplicate diagnostic churn while same-head exact
+replay evidence is missing"
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence or explicit replay-backed downscope,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"missing fresh same-head exact browser promotion evidence or explicit
+replay-backed downscope"
 launch-discovery,benchmark-canary-fuzzer-gap/large-post-http-generic,P0,no,avoid broad HTTP materialization while exact harness and disk-pressure gates are active,benchmark-canary-fuzzer-gap/large-post-http-generic,"avoid broad HTTP materialization while exact harness and disk-pressure gates are
 active"
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,exact b8ca harness packaging owns the next branch-changing product slot,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,exact b8ca harness packaging owns the next branch-changing product slot
