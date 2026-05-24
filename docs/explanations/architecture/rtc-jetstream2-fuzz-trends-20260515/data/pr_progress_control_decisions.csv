@@ -35,8 +35,10 @@ repair-ready,PR17/provider-persisted-crdt-seed-handoff,P0,yes,Preserve isolated 
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, seed1190001 handling, canary materialization, disk preservation, and discovery reserve."
 repair-ready,coverage-guided-lower-level-block-parser-serialization/isolation-replay,P0,yes,Run one bounded parser isolation replay before granting parser work product-yield credit.
 update-controller-rule,coverage-guided-lower-level-block-parser-serialization/parser-oracle-accounting,P0,yes,Require RTC_BLOCK_PARSER keys or isolated/minimized executable crash artifacts for parser product-yield credit.
+update-controller-rule,rtc-block-parser-serialization/canonicalize-failures,medium,yes,Collapse parser failure keys by oracle family and parser shape before scheduling more parser batches.
 cooldown-diagnostic,coverage-guided-lower-level-block-parser-serialization/generic-jest-fail-yield,high,yes,Do not count generic non-isolated Jest FAIL rows or exit-0 productYield rows as product progress.
 cooldown-diagnostic,coverage-guided-lower-level-rich-text-crdt/saturated-corpus,high,yes,"Saturated no-oracle exit-0 corpus growth is coverage progress, not bug yield."
+repair-ready,coverage-guided-lower-level-table-query-array-crdt/bounded-continuation,high,yes,Retarget the next lower-level slot from stale rich-text corpus growth to one bounded table-query-array continuation with existing divergence corpus.
 repair-ready,productive-analysis-action,high,yes,Analysis-only lanes may continue if they do not launch heavy commands outside the global CPU budget.
 update-controller-rule,productive-analysis-feed-dedupe,P0,yes,Dedupe repeated feed rows by normalized action and target while preserving one decision per high-priority target.
 update-controller-rule,lower-level-product-yield-accounting,P0,yes,Count product yield only from failing executable reproducers with canonical RTC oracle keys or isolated crash artifacts.

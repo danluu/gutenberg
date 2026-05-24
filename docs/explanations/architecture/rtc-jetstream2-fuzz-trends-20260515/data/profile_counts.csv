@@ -1,9 +1,9 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
 collaboration-ui-signals,1510,0,0,0,other
-large-post-three-user-http-lifecycle,699,56,0,0.08011444921316166,lifecycle
+large-post-three-user-http-lifecycle,703,56,0,0.07965860597439545,lifecycle
 session-lifecycle,536,307,0,0.5727611940298507,lifecycle
 async-server-blocks,438,0,0,0,async/media
-real-user-editing,321,148,0,0.46105919003115264,real-user
+real-user-editing,333,157,0,0.47147147147147145,real-user
 full,288,25,0,0.08680555555555555,block-structure
 persistence-no-title,224,50,0,0.22321428571428573,persistence
 block-gauntlet,185,116,0,0.6270270270270271,block-structure
