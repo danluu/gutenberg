@@ -4,4 +4,4 @@ deferred-family,medium,diagnostic,1
 ready-product-pr,high,held-by-controller,4
 ready-product-pr,high,published,27
 ready-product-pr,low,superseded,1
-runtime-gated-pr,high,owner-evidence-needed,1
+runtime-gated-pr,high,runtime-held-consumed,1

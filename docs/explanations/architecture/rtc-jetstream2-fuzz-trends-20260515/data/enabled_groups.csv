@@ -2156,3 +2156,5 @@ timestamp,group,group_family
 2026-05-24T17:13:19Z,novelty-ws-async-server-blocks,async/media
 2026-05-24T17:13:49Z,novelty-http-large-post-lifecycle-completion,lifecycle
 2026-05-24T17:13:50Z,novelty-ws-async-server-blocks,async/media
+2026-05-24T17:23:30Z,novelty-http-existing-post-crdt-metadata,http
+2026-05-24T17:28:13Z,novelty-ws-collaboration-ui-signals,other
