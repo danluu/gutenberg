@@ -1,20 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until missing harness rows are runnable or explicitly downscoped and discovery reserve is protected,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"heavy rerun waits until missing harness rows are runnable or explicitly
-downscoped and discovery reserve is protected"
+launch-branch-repair,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,P0,no,exact harness packaging owns the blocker; generic feedback refresh is duplicate churn,benchmark-canary-fuzzer-gap/generic-fuzzer-feedback,"exact harness packaging owns the blocker; generic feedback refresh is duplicate
+churn"
+repair-ready,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,heavy rerun waits until missing harness rows are runnable or downscoped and discovery reserve is protected,exact-all-merged-benchmark-minimum-canary-rerun@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,"heavy rerun waits until missing harness rows are runnable or downscoped and
+discovery reserve is protected"
 publish-ready,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,no,exact stack lacks complete nonempty green benchmark-minimum and canary evidence,final-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,exact stack lacks complete nonempty green benchmark-minimum and canary evidence
-publish-ready,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,high,no,raw heads are superseded by canonical minimal/on-PR14B/current PR07C heads absent fresh contrary evidence,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,"raw heads are superseded by canonical minimal/on-PR14B/current PR07C heads
-absent fresh contrary evidence"
-launch-owner-matrix,PR07C/HOLD-07C-current-head,high,no,duplicate heavy owner matrix is not justified under disk pressure unless newer product-owned evidence appears and discovery reserve is protected,PR07C/HOLD-07C-current-head,"duplicate heavy owner matrix is not justified under disk pressure unless newer
-product-owned evidence appears and discovery reserve is protected"
-repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay waits until b8ca harness gate clears and discovery reserve is protected,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"same-head exact replay waits until b8ca harness gate clears and discovery
+publish-ready,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,high,no,canonical minimal on-PR14B or current PR07C heads supersede raw heads absent fresh contrary evidence,raw-superseded-pr06b-pr15a-pr15b-pr15c-and-old-pr07c,"canonical minimal on-PR14B or current PR07C heads supersede raw heads absent
+fresh contrary evidence"
+launch-owner-matrix,PR07C/HOLD-07C-current-head,high,no,duplicate heavy owner matrix is not justified under disk pressure unless newer product-owned evidence appears,PR07C/HOLD-07C-current-head,"duplicate heavy owner matrix is not justified under disk pressure unless newer
+product-owned evidence appears"
+repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay waits until the b8ca harness gate clears and discovery reserve is protected,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"same-head exact replay waits until the b8ca harness gate clears and discovery
 reserve is protected"
 launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate-head generic relaunch is diagnostic churn while exact replay evidence is missing,reload-hydration@generic-deferred-fanout,"duplicate-head generic relaunch is diagnostic churn while exact replay evidence
 is missing"
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser evidence or replay-backed downscope,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,missing fresh same-head exact browser evidence or replay-backed downscope
+publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing same-head exact browser evidence or replay-backed downscope,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,missing same-head exact browser evidence or replay-backed downscope
 repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,exact b8ca harness packaging owns the next branch-changing product slot,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,exact b8ca harness packaging owns the next branch-changing product slot
 publish-ready,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,requires reviewable split plus exact all-merged benchmark-minimum and canary green evidence,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"requires reviewable split plus exact all-merged benchmark-minimum and canary
 green evidence"
-repair-branch,PR17/materialize-table-provider-persisted-split,high,no,keep as refinement input until exact b8ca evidence gate is green and split is reviewable,PR17/materialize-table-provider-persisted-split,"keep as refinement input until exact b8ca evidence gate is green and split is
-reviewable"
+repair-branch,PR17/materialize-table-provider-persisted-split,high,no,keep as refinement input until exact b8ca evidence gate is green and the split is reviewable,PR17/materialize-table-provider-persisted-split,"keep as refinement input until exact b8ca evidence gate is green and the split
+is reviewable"
 launch-branch-repair,all-other-heavy-pr-jobs,P0,no,disk pressure and unprotected discovery allow only bounded non-heavy repair docs manifest refresh analysis disk maintenance and protected discovery,all-other-heavy-pr-jobs,"disk pressure and unprotected discovery allow only bounded non-heavy repair docs
 manifest refresh analysis disk maintenance and protected discovery"
