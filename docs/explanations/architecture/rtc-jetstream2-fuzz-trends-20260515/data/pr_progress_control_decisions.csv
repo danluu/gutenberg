@@ -1,6 +1,6 @@
 action,target,priority,allowed,reason
-repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk pressure is active; preserve PR review evidence and current-run triage artifacts before artifact-heavy work
-reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is above floor but unprotected; hard-protect bounded existing-code and existing-PR fuzzing before heavy PR work
+repair-ready,disk-maintenance-evidence-compaction,P0,yes,disk_high_pressure is active; preserve PR review evidence and current-run triage artifacts before artifact-heavy work
+reserve-discovery,discovery-reserve-policy,P0,yes,active discovery is 8 above floor 3 but unprotected; hard-protect bounded existing-code and existing-PR fuzzing before heavy PR work
 update-controller-rule,finalization-deadline-priority,P0,yes,until 2026-05-26T06:59:59Z prioritize reviewable branches exact evidence terminal owner evidence and explicit downscope over raw fuzz volume
 repair-ready,benchmark-minimum-harness-packaging/exact-all-merged@b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638,P0,yes,next product-progress slot; hydrate or downscope lower/micro-crdt lower/micro-html lower/micro-sync and multi-user/many-users-sync harness rows
 repair-ready,benchmark-canary-fuzzer-gap/active-continuation-infra-stall,P0,yes,preserve stderr/worktree logs and requeue ENOSPC zero-byte continuation behind disk maintenance to benchmark-minimum harness packaging
@@ -22,6 +22,8 @@ repair-ready,reload-hydration-current-deferred-report,P0,yes,consume the 2026052
 repair-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,same-head exact replay waits until the b8ca harness gate clears and discovery reserve is protected/materialized
 launch-branch-repair,reload-hydration@generic-deferred-fanout,P0,no,duplicate diagnostic churn while same-head exact replay evidence is missing
 publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,missing fresh same-head exact browser promotion evidence or replay-backed downscope
+downscope-deferred,malformed-save-payload,high,yes,covered by canonical PR06B-minimal; raw deferred malformed-save heads are superseded
+downscope-deferred,http-room-isolation,high,yes,covered by ready PR02A without fresh contrary healthy-user HTTP room-isolation evidence
 cooldown-diagnostic,pre-save-search-live-collapse+rich-text-suffix-corruption,P0,yes,diagnostic-only until product-owned first-loss evidence owner evidence green-stack adoption or explicit downscope exists
 cooldown-diagnostic,benchmark-feedback-refresh-without-harness-change,P0,yes,repeated benchmark feedback refresh is churn until exact b8ca harness content changes
 reserve-discovery,benchmark-canary-fuzzer-gap/primary-forced-canary-discovery,P0,yes,keep bounded large-post parser/serialization same-user many-user and provider-persisted canary discovery alive

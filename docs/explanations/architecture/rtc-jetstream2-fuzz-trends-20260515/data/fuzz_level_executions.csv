@@ -3680,4 +3680,7 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T04:45:00Z,coverage-guided,novelty-http-list-move-refresh,browser-e2e,http,list-move-refresh-http,1,1,0,1,1,90410,FALSE
 2026-05-24T04:45:00Z,coverage-guided,novelty-http-table-stale-snapshot,browser-e2e,http,table-stale-snapshot-http,4,4,4,4,0,188163,FALSE
 2026-05-24T04:45:00Z,coverage-guided,novelty-http-title-reload-convergence,browser-e2e,http,session-lifecycle,1,1,0,1,1,70301,FALSE
+2026-05-24T04:45:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,2,1,0,2,2,55375,FALSE
 2026-05-24T04:45:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,25,25,25,1,0,13246,FALSE
+2026-05-24T05:00:00Z,coverage-guided,novelty-http-existing-post-crdt-metadata,browser-e2e,http,persistence-no-title,3,2,0,3,3,216801,FALSE
+2026-05-24T05:00:00Z,coverage-guided,novelty-ws-media-cross-entity,browser-e2e,ws,media-cross-entity,6,5,3,6,3,154725,FALSE

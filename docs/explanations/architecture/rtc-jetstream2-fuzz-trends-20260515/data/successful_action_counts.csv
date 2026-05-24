@@ -2,7 +2,7 @@ action,count,profile
 edit-title,690,session-lifecycle
 append-paragraph,414,session-lifecycle
 concurrent-paragraphs,276,session-lifecycle
-ui-toolbar-format-paragraph,32,real-user-editing
+ui-toolbar-format-paragraph,33,real-user-editing
 insert-paragraph,28,full
 append-paragraph,28,large-post-three-user-http-lifecycle
 insert-heading,28,large-post-three-user-http-lifecycle
@@ -10,6 +10,7 @@ concurrent-paragraphs,28,large-post-three-user-http-lifecycle
 move-block,28,large-post-three-user-http-lifecycle
 append-parser-stress-content,19,full
 insert-common-block,19,full
+insert-media-cross-entity-block,18,media-cross-entity
 edit-table-array-attributes,17,full
 move-block-into-group,17,full
 edit-paragraph,16,full
@@ -30,6 +31,7 @@ assert-presence-list,12,many-user-lifecycle
 reparse-edited-content,11,full
 late-join-post-action,10,many-user-lifecycle
 delete-nested-block,9,full
+edit-block-gauntlet-attributes,9,media-cross-entity
 append-paragraph,8,full
 insert-block-gauntlet-block,8,full
 table-stale-snapshot-html,8,table-stale-snapshot-http
@@ -48,4 +50,5 @@ insert-paragraph,4,parser-transform
 ui-type-paragraph,4,many-user-lifecycle
 edit-paragraph,3,parser-transform
 insert-heading,3,parser-transform
+move-block,3,media-cross-entity
 delete-block,2,parser-transform
