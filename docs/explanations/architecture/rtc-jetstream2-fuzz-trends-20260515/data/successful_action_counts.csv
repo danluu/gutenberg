@@ -13,13 +13,13 @@ insert-heading,206,session-lifecycle
 edit-nested-paragraph,199,session-lifecycle
 edit-paragraph,193,session-lifecycle
 append-paragraph,152,table-stale-snapshot-http
+append-paragraph,102,large-post-three-user-http-lifecycle
+insert-heading,102,large-post-three-user-http-lifecycle
+concurrent-paragraphs,102,large-post-three-user-http-lifecycle
+move-block,102,large-post-three-user-http-lifecycle
 insert-media-cross-entity-block,102,media-cross-entity
-append-paragraph,100,large-post-three-user-http-lifecycle
-insert-heading,100,large-post-three-user-http-lifecycle
-concurrent-paragraphs,100,large-post-three-user-http-lifecycle
-move-block,100,large-post-three-user-http-lifecycle
+ui-toolbar-format-paragraph,92,real-user-editing
 insert-paragraph,92,revision-persistence
-ui-toolbar-format-paragraph,91,real-user-editing
 edit-paragraph,85,revision-persistence
 move-block,83,revision-persistence
 append-paragraph,82,revision-persistence
@@ -42,7 +42,7 @@ delete-block,59,block-gauntlet
 reparse-edited-content,59,block-gauntlet
 edit-table-array-attributes,57,revision-persistence
 reparse-edited-content,56,parser-transform
-late-join-post-action,50,large-post-three-user-http-lifecycle
+late-join-post-action,51,large-post-three-user-http-lifecycle
 insert-paragraph,49,persistence-no-title
 edit-table-array-attributes,48,persistence-no-title
 move-block,48,multi-reload-lifecycle

@@ -776,7 +776,8 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,attempts,f
 2026-05-24T10:15:00Z,browser-e2e,0,0,0,0,0,0,FALSE,0,4727318,26734,22028,0,124.60390388888884,0
 2026-05-24T10:30:00Z,browser-e2e,0,0,0,0,0,0,FALSE,0,4727318,26734,22028,0,124.60390388888884,0
 2026-05-24T10:45:00Z,browser-e2e,47,33,22,47,25,2191176,FALSE,1,4727365,26781,22053,0.60866,125.21256388888884,188
-2026-05-24T11:00:00Z,browser-e2e,17,14,9,17,8,791619,FALSE,1,4727382,26798,22061,0.21989416666666667,125.4324580555555,68
+2026-05-24T11:00:00Z,browser-e2e,18,15,10,18,8,863776,FALSE,1,4727383,26799,22061,0.23993777777777778,125.45250166666662,72
+2026-05-24T11:15:00Z,browser-e2e,1,1,1,1,0,72951,FALSE,1,4727384,26800,22061,0.020264166666666666,125.47276583333328,4
 2026-05-16T08:45:00Z,transport-integration,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:00:00Z,transport-integration,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:15:00Z,transport-integration,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
@@ -1555,6 +1556,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,attempts,f
 2026-05-24T10:30:00Z,transport-integration,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-24T10:45:00Z,transport-integration,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-24T11:00:00Z,transport-integration,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
+2026-05-24T11:15:00Z,transport-integration,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T08:45:00Z,unit-property,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:00:00Z,unit-property,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:15:00Z,unit-property,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
@@ -2333,6 +2335,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,attempts,f
 2026-05-24T10:30:00Z,unit-property,0,0,0,0,0,0,FALSE,0,1132740,35914,5807,0,89.77111111111111,0
 2026-05-24T10:45:00Z,unit-property,0,0,0,0,0,0,FALSE,0,1132740,35914,5807,0,89.77111111111111,0
 2026-05-24T11:00:00Z,unit-property,0,0,0,0,0,0,FALSE,0,1132740,35914,5807,0,89.77111111111111,0
+2026-05-24T11:15:00Z,unit-property,0,0,0,0,0,0,FALSE,0,1132740,35914,5807,0,89.77111111111111,0
 2026-05-16T08:45:00Z,coverage-guided-lower-level,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:00:00Z,coverage-guided-lower-level,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:15:00Z,coverage-guided-lower-level,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
@@ -3111,6 +3114,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,attempts,f
 2026-05-24T10:30:00Z,coverage-guided-lower-level,0,0,0,0,0,0,FALSE,0,458609,9321,159,0,22.259677777777785,0
 2026-05-24T10:45:00Z,coverage-guided-lower-level,0,0,0,0,0,0,FALSE,0,458609,9321,159,0,22.259677777777785,0
 2026-05-24T11:00:00Z,coverage-guided-lower-level,0,0,0,0,0,0,FALSE,0,458609,9321,159,0,22.259677777777785,0
+2026-05-24T11:15:00Z,coverage-guided-lower-level,0,0,0,0,0,0,FALSE,0,458609,9321,159,0,22.259677777777785,0
 2026-05-16T08:45:00Z,backend-api,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:00:00Z,backend-api,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:15:00Z,backend-api,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
@@ -3889,6 +3893,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,attempts,f
 2026-05-24T10:30:00Z,backend-api,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-24T10:45:00Z,backend-api,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-24T11:00:00Z,backend-api,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
+2026-05-24T11:15:00Z,backend-api,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T08:45:00Z,protocol-server,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:00:00Z,protocol-server,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:15:00Z,protocol-server,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
@@ -4667,6 +4672,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,attempts,f
 2026-05-24T10:30:00Z,protocol-server,0,0,0,0,0,0,FALSE,0,10915507,63673,26876,0,126.61747472222228,0
 2026-05-24T10:45:00Z,protocol-server,25,25,25,1,0,18184,FALSE,1,10915532,63674,26876,0.005051111111111111,126.6225258333334,100
 2026-05-24T11:00:00Z,protocol-server,0,0,0,0,0,0,FALSE,0,10915532,63674,26876,0,126.6225258333334,0
+2026-05-24T11:15:00Z,protocol-server,0,0,0,0,0,0,FALSE,0,10915532,63674,26876,0,126.6225258333334,0
 2026-05-16T08:45:00Z,fuzz-assertion,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:00:00Z,fuzz-assertion,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:15:00Z,fuzz-assertion,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
@@ -5445,6 +5451,7 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,attempts,f
 2026-05-24T10:30:00Z,fuzz-assertion,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-24T10:45:00Z,fuzz-assertion,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-24T11:00:00Z,fuzz-assertion,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
+2026-05-24T11:15:00Z,fuzz-assertion,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T08:45:00Z,other,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:00:00Z,other,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-16T09:15:00Z,other,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
@@ -6223,3 +6230,4 @@ bucket,fuzz_level,executions,primary_executions,successful_executions,attempts,f
 2026-05-24T10:30:00Z,other,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-24T10:45:00Z,other,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
 2026-05-24T11:00:00Z,other,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
+2026-05-24T11:15:00Z,other,0,0,0,0,0,0,FALSE,0,0,0,0,0,0,0
