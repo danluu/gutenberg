@@ -1,10 +1,10 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-collaboration-ui-signals,878,0,0,0,other
-large-post-three-user-http-lifecycle,504,42,0,0.08333333333333333,lifecycle
+collaboration-ui-signals,900,0,0,0,other
+large-post-three-user-http-lifecycle,505,42,0,0.08316831683168317,lifecycle
 session-lifecycle,467,304,0,0.6509635974304069,lifecycle
 async-server-blocks,426,0,0,0,async/media
 full,288,25,0,0.08680555555555555,block-structure
-real-user-editing,186,79,0,0.42473118279569894,real-user
+real-user-editing,190,81,0,0.4263157894736842,real-user
 block-gauntlet,185,116,0,0.6270270270270271,block-structure
 revision-persistence,173,66,0,0.3815028901734104,persistence
 persistence-no-title,149,44,0,0.2953020134228188,persistence

@@ -2005,3 +2005,10 @@ timestamp,group,group_family
 2026-05-24T10:35:23Z,novelty-http-large-post-readiness,http
 2026-05-24T10:38:10Z,novelty-http-large-post-readiness,http
 2026-05-24T10:40:53Z,novelty-http-large-post-readiness,http
+2026-05-24T10:45:05Z,novelty-http-large-post-readiness,http
+2026-05-24T10:49:19Z,novelty-ws-real-user-editing,real-user
+2026-05-24T10:49:19Z,novelty-ws-media-cross-entity,async/media
+2026-05-24T10:49:31Z,novelty-ws-async-server-blocks,async/media
+2026-05-24T10:49:31Z,novelty-ws-collaboration-ui-signals,other
+2026-05-24T10:49:31Z,novelty-ws-permissions-auth-locks,auth/locks
+2026-05-24T10:49:31Z,novelty-ws-three-user-late-join,lifecycle
