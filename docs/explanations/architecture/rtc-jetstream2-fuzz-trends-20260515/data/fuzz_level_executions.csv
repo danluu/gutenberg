@@ -3704,4 +3704,5 @@ timestamp,campaign,group,fuzz_level,transport,profile,executions,primary_executi
 2026-05-24T06:00:00Z,coverage-guided,novelty-ws-revision-recovery,browser-e2e,ws,revision-persistence,2,1,0,2,2,102458,FALSE
 2026-05-24T06:00:00Z,coverage-guided,novelty-ws-structure,browser-e2e,NA,NA,1,1,1,1,0,32522,FALSE
 2026-05-24T06:00:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,1650,1650,1650,66,0,923520,FALSE
-2026-05-24T06:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,150,150,150,6,0,89185,FALSE
+2026-05-24T06:15:00Z,coverage-guided,novelty-http-provider-persisted-crdt-large-post,browser-e2e,http,large-post-three-user-http-lifecycle,3,2,0,3,3,426047,FALSE
+2026-05-24T06:15:00Z,protocol-server,protocol-server-http-polling,protocol-server,http-polling-rest,wp-http-polling-protocol-state-machine,900,900,900,36,0,516027,FALSE

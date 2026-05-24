@@ -3,11 +3,11 @@ edit-title,690,session-lifecycle
 append-paragraph,414,session-lifecycle
 concurrent-paragraphs,276,session-lifecycle
 ui-toolbar-format-paragraph,44,real-user-editing
+append-paragraph,32,large-post-three-user-http-lifecycle
+insert-heading,32,large-post-three-user-http-lifecycle
+concurrent-paragraphs,32,large-post-three-user-http-lifecycle
+move-block,32,large-post-three-user-http-lifecycle
 insert-paragraph,28,full
-append-paragraph,28,large-post-three-user-http-lifecycle
-insert-heading,28,large-post-three-user-http-lifecycle
-concurrent-paragraphs,28,large-post-three-user-http-lifecycle
-move-block,28,large-post-three-user-http-lifecycle
 append-parser-stress-content,19,full
 insert-common-block,19,full
 insert-media-cross-entity-block,18,media-cross-entity
@@ -16,10 +16,10 @@ move-block-into-group,17,full
 edit-paragraph,16,full
 insert-nested-group,16,full
 edit-rich-text-pair-block,16,full
+late-join-post-action,16,large-post-three-user-http-lifecycle
 append-paragraph,16,table-stale-snapshot-http
 append-paragraph,16,many-user-lifecycle
 insert-async-server-block,15,full
-late-join-post-action,14,large-post-three-user-http-lifecycle
 edit-common-block-attributes,13,full
 edit-nested-paragraph,13,full
 delete-block,13,full
