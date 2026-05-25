@@ -51,6 +51,7 @@ BENCHMARK_UNBLOCK_MAX_ACTIVE=${RTC_PR_FINALIZATION_BENCHMARK_UNBLOCK_MAX_ACTIVE:
 BENCHMARK_UNBLOCK_TIMEOUT_SECONDS=${RTC_PR_FINALIZATION_BENCHMARK_UNBLOCK_TIMEOUT_SECONDS:-14400}
 BENCHMARK_UNBLOCK_MIN_INTERVAL_SECONDS=${RTC_PR_FINALIZATION_BENCHMARK_UNBLOCK_MIN_INTERVAL_SECONDS:-1800}
 BENCHMARK_REPAIR_BASE="$BASE/benchmark-minimum-repair"
+BENCHMARK_STACK_REPLACEMENTS="$BASE/benchmark-minimum-stack-replacements.tsv"
 
 mkdir -p "$BASE/logs" "$BASE/cycles" "$BASE/worktrees" "$BENCHMARK_UNBLOCK_BASE" "$BENCHMARK_REPAIR_BASE"
 touch "$STATE" "$BENCHMARK_UNBLOCK_STATE"
@@ -84,12 +85,16 @@ ensure_benchmark_unblock_override_header() {
 	if [ ! -s "$BENCHMARK_UNBLOCK_OVERRIDES" ]; then
 		printf 'branch\tcommit\trow\tresult\tevidence\tupdated_at\n' > "$BENCHMARK_UNBLOCK_OVERRIDES"
 	fi
+	if [ ! -s "$BENCHMARK_STACK_REPLACEMENTS" ]; then
+		printf 'old_branch\told_commit\tnew_branch\tnew_commit\tevidence\tupdated_at\n' > "$BENCHMARK_STACK_REPLACEMENTS"
+	fi
 }
 
 write_benchmark_minimum_block() {
 	local output=$1
 	local tmp=$output.tmp
 	local raw=$output.raw.tmp
+	ensure_benchmark_unblock_override_header
 	{
 		printf 'run_id\tbranch\tcommit\trow\texit_code\tresult\tnext_command\tfeedback_path\tlog_path\n'
 		if [ -s "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" ]; then
@@ -100,7 +105,15 @@ write_benchmark_minimum_block() {
 				-v stack_fetch_remote="$STACK_FETCH_REMOTE" \
 				-v benchmark_harness_src="$BENCHMARK_HARNESS_SRC" \
 				-v focused_launcher="$SRC/bin/rtc-focused-shards-start-remote.sh" '
-				NR == 1 {
+				FNR == NR {
+					if ( FNR > 1 && $1 != "" && $2 != "" && $3 != "" && $4 != "" ) {
+						replacement_branch[ $1 FS $2 ] = $3
+						replacement_commit[ $1 FS $2 ] = $4
+						replacement_evidence[ $1 FS $2 ] = $5
+					}
+					next
+				}
+				FNR == 1 {
 					for ( i = 1; i <= NF; i++ ) {
 						h[ $i ] = i
 					}
@@ -109,54 +122,83 @@ write_benchmark_minimum_block() {
 				function value( name ) {
 					return ( name in h ) ? $( h[ name ] ) : ""
 				}
-				function run_identifier() {
-					id = value( "run_id" )
-					if ( id != "" ) {
-						return id
-					}
-					id = value( "benchmark_run_id" )
-					if ( id != "" ) {
-						return id
-					}
-					id = value( "cycle" )
-					if ( id != "" ) {
-						return id
-					}
-					id = value( "gate_cycle" )
-					if ( id != "" ) {
-						return id
-					}
-					return branch_name()
-				}
-				function branch_name() {
+				function source_branch_name() {
 					branch = value( "branch" )
 					if ( branch != "" ) {
 						return branch
 					}
 					return value( "failing_branch" )
 				}
-					function commit_sha() {
-						commit = value( "current_ref_commit" )
-						if ( commit != "" ) {
-							return commit
-						}
-						commit = value( "branch_commit" )
-						if ( commit != "" ) {
-							return commit
-						}
-						commit = value( "commit" )
-						if ( commit != "" ) {
-							return commit
-						}
-						commit = value( "active_failure_commit" )
-						if ( commit != "" ) {
-							return commit
-						}
-						commit = value( "failing_commit" )
-						if ( commit != "" ) {
-							return commit
-						}
+				function source_commit_sha() {
+					commit = value( "current_ref_commit" )
+					if ( commit != "" ) {
+						return commit
+					}
+					commit = value( "branch_commit" )
+					if ( commit != "" ) {
+						return commit
+					}
+					commit = value( "commit" )
+					if ( commit != "" ) {
+						return commit
+					}
+					commit = value( "active_failure_commit" )
+					if ( commit != "" ) {
+						return commit
+					}
+					commit = value( "failing_commit" )
+					if ( commit != "" ) {
+						return commit
+					}
 					return value( "branch_head" )
+				}
+				function replacement_key() {
+					return source_branch_name() FS source_commit_sha()
+				}
+				function run_identifier() {
+					id = value( "run_id" )
+					if ( id != "" ) {
+						if ( replacement_key() in replacement_commit ) {
+							return id "-replacement-" substr( replacement_commit[ replacement_key() ], 1, 12 )
+						}
+						return id
+					}
+					id = value( "benchmark_run_id" )
+					if ( id != "" ) {
+						if ( replacement_key() in replacement_commit ) {
+							return id "-replacement-" substr( replacement_commit[ replacement_key() ], 1, 12 )
+						}
+						return id
+					}
+					id = value( "cycle" )
+					if ( id != "" ) {
+						if ( replacement_key() in replacement_commit ) {
+							return id "-replacement-" substr( replacement_commit[ replacement_key() ], 1, 12 )
+						}
+						return id
+					}
+					id = value( "gate_cycle" )
+					if ( id != "" ) {
+						if ( replacement_key() in replacement_commit ) {
+							return id "-replacement-" substr( replacement_commit[ replacement_key() ], 1, 12 )
+						}
+						return id
+					}
+					return branch_name()
+				}
+				function branch_name() {
+					key = replacement_key()
+					if ( key in replacement_branch ) {
+						return replacement_branch[ key ]
+					}
+					return source_branch_name()
+				}
+				function commit_sha() {
+					key = replacement_key()
+					if ( key in replacement_commit ) {
+						return replacement_commit[ key ]
+					}
+					return source_commit_sha()
 				}
 				function exact_stack_worktree( branch, commit, slug ) {
 					slug = branch
@@ -441,10 +483,9 @@ write_benchmark_minimum_block() {
 							print run_identifier(), branch_name(), commit_sha(), row, failure, "promotion_blocked", next_command( row ), feedback, log_path()
 						}
 					}
-				' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
+				' "$BENCHMARK_STACK_REPLACEMENTS" "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
 		fi
 	} > "$raw"
-	ensure_benchmark_unblock_override_header
 	awk -F '\t' -v OFS='\t' '
 		FNR == NR {
 			if ( FNR > 1 && ( $4 == "passed" || $4 == "downscoped" ) ) {
