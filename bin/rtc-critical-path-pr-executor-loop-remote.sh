@@ -9,6 +9,7 @@ TMUX_WRAP=$BASE/tmux-wrapper/bin
 PR_SPLIT_BASE=/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515
 FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 LOCAL_PUBLISH_MANIFEST=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
+PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 BENCHMARK_FEEDBACK_BASE=${RTC_CRITICAL_PR_EXECUTOR_BENCHMARK_FEEDBACK_BASE:-/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520}
@@ -418,6 +419,18 @@ pr07c_readiness_resolved() {
 	rg -qi 'status:[[:space:]]*`?PASS`?' "$report" 2>/dev/null || return 1
 	rg -qi 'readiness_failure_matches:[[:space:]]*`?0`?' "$report" 2>/dev/null || return 1
 	return 0
+}
+
+pr07c_owner_matrix_consumed_by_progress() {
+	local progress=$PR_PROGRESS_BASE/current-pr-progress.tsv
+	[ -s "$progress" ] || return 1
+	awk -F '\t' '
+		NR > 1 && $2 == "pr07c-owner-matrix" &&
+			$5 == "runtime-held-consumed" {
+			found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$progress" 2>/dev/null
 }
 
 resource_reason() {
@@ -1060,7 +1073,9 @@ write_lanes() {
 		if ! lane_terminal_suppressed pr17-1020002; then
 			printf 'pr17-1020002\tPR17\tproof-reclassification\tvalidation-only\t%s\t1020002\t%s\t%s\t\tcodex-analysis\tnone\tqueued\t%s/runs/pr17-1020002\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
-		if pr07c_readiness_resolved; then
+		if pr07c_owner_matrix_consumed_by_progress; then
+			:
+		elif pr07c_readiness_resolved; then
 			printf 'pr07c-owner-matrix\tPR07C\towner-evidence-matrix\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tpr-split-owner-matrix\tqueued\t%s/runs/pr07c-owner-matrix\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		else
 			printf 'pr07c-browser-env\tPR07C\tbrowser-env-repair\tvalidation-only\t%s\tPR07C\t%s\t%s\t\tbrowser-e2e\tresource-and-env\tgated\t%s/runs/pr07c-browser-env\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
@@ -1171,7 +1186,9 @@ write_blockers_and_queue() {
 				"$([ -n "$pr17_active" ] && printf active-job || printf none)" \
 				"${pr17_active:-}" "$now"
 		fi
-		if pr07c_readiness_resolved; then
+		if pr07c_owner_matrix_consumed_by_progress; then
+			printf 'pr07c-owner-matrix\towner-evidence\thigh\tterminal\tpr_split/finalization\tPR07C/HOLD-07C promotion decision\tpr-progress-controller\tclassification.tsv,report.md\t\truntime-held/downscoped by PR progress controller; reopen only when newer owner evidence appears\t%s\n' "$now"
+		elif pr07c_readiness_resolved; then
 			printf 'pr07c-owner-matrix\towner-evidence\thigh\t%s\tpr_split/finalization\tPR07C/HOLD-07C promotion decision\t%s\towner-matrix.tsv,report.md,classification.tsv\t%s\treadiness is resolved by %s; run/consume PR07C owner matrix and promote only if product ownership is proven\t%s\n' \
 				"$([ -n "$pr07c_active" ] && printf active || printf queued)" \
 				"$([ -n "$pr07c_active" ] && printf active-job || printf pr-split-review)" \
@@ -1210,7 +1227,9 @@ write_blockers_and_queue() {
 			printf 'job-pr17-1020002\tpr17-1020002\tpr17-1020002\tproof-reclassify\tpr17-1020002-proof\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/pr17-1020002\t%s\t\t%s\t\t%s\n' \
 				"$([ -n "$pr17_active" ] && printf active || printf runnable)" "${pr17_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr17_active" ] && printf adopted || printf pending)"
 		fi
-		if pr07c_readiness_resolved; then
+		if pr07c_owner_matrix_consumed_by_progress; then
+			printf 'job-pr07c-owner-matrix\tpr07c-owner-matrix\tpr07c-owner-matrix\towner-matrix\tpr07c-owner-matrix\tbrowser-e2e\thigh\tterminal\t0\t\t\t%s/runs/pr07c-owner-matrix\t%s\t\t%s\t\tprogress_controller_runtime_held\n' "$BASE" "$now" "$now"
+		elif pr07c_readiness_resolved; then
 			printf 'job-pr07c-owner-matrix\tpr07c-owner-matrix\tpr07c-owner-matrix\towner-matrix\tpr07c-owner-matrix\tbrowser-e2e\thigh\t%s\t0\t%s\t\t%s/runs/pr07c-owner-matrix\t%s\t\t%s\t\t%s\n' \
 				"$([ -n "$pr07c_active" ] && printf active || printf queued)" "${pr07c_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr07c_active" ] && printf adopted || printf owned_by_pr_split_review)"
 		else

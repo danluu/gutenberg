@@ -247,6 +247,29 @@ NODE
 	then
 		return 0
 	fi
+
+	if [ "$HARNESS_SRC" != "$SRC" ] && [ -d "$HARNESS_SRC/test/e2e/node_modules" ]; then
+		mkdir -p "$dest/test/e2e"
+		rm -rf "$target"
+		if ln -s "$HARNESS_SRC/test/e2e/node_modules" "$target" || cp -al "$HARNESS_SRC/test/e2e/node_modules" "$target"; then
+			if node - "$dest" <<'NODE' >/dev/null 2>&1
+const path = require( 'path' );
+const root = process.argv[ 2 ];
+const e2ePath = path.join( root, 'test/e2e' );
+const wsPath = require.resolve( 'ws', { paths: [ e2ePath ] } );
+const wsPackagePath = require.resolve( 'ws/package.json', { paths: [ e2ePath ] } );
+const ws = require( wsPath );
+const wsPackage = require( wsPackagePath );
+const major = Number.parseInt( String( wsPackage.version || '' ).split( '.' )[ 0 ], 10 );
+process.exit( major === 8 && !! ws.WebSocketServer ? 0 : 1 );
+NODE
+			then
+				return 0
+			fi
+		fi
+		rm -rf "$target"
+	fi
+
 	[ -d "$dest/node_modules/@wordpress/e2e-tests-playwright/node_modules" ] || return 0
 	mkdir -p "$dest/test/e2e"
 	rm -rf "$target"
