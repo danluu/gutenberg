@@ -757,9 +757,10 @@ export function createSyncManager( debug = false ): SyncManager {
 				log( 'updateCRDTDoc', 'applying changes', entityId, {
 					changedKeys: Object.keys( changesToApply ),
 				} );
-				if ( options.baseRecord ) {
+				if ( options.baseRecord || options.replaceBlocks ) {
 					syncConfig.applyChangesToCRDTDoc( ydoc, changesToApply, {
 						baseRecord: options.baseRecord,
+						replaceBlocks: options.replaceBlocks,
 					} );
 				} else {
 					syncConfig.applyChangesToCRDTDoc( ydoc, changesToApply );
