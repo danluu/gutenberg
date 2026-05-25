@@ -820,8 +820,13 @@ Allowed classifications:
 - needs_exact_replay: if a concrete bounded replay command is still needed.
 
 You may run focused commands and bounded replay/classification checks, but do
-not run broad fuzzing and do not stop discovery fuzzers. If a branch should be
-published, write $run_dir/push-manifest.tsv with columns:
+not run broad fuzzing and do not stop discovery fuzzers. If the current
+evidence would otherwise classify as `needs_exact_replay` and the replay is
+bounded to a small seed list or exact branch/head, run that replay inside this
+job and classify the replay result. Do not hand back `needs_exact_replay`
+unless the exact replay cannot be started because of a concrete environment
+failure that is recorded in the report. If a branch should be published, write
+$run_dir/push-manifest.tsv with columns:
 source_branch	source_commit	intended_danluu_branch	base_ref	files_changed	insertions	deletions	validation_summary	reason
 PROMPT
 	cat > "$runner" <<EOF
