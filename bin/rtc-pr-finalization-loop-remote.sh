@@ -52,9 +52,12 @@ BENCHMARK_UNBLOCK_TIMEOUT_SECONDS=${RTC_PR_FINALIZATION_BENCHMARK_UNBLOCK_TIMEOU
 BENCHMARK_UNBLOCK_MIN_INTERVAL_SECONDS=${RTC_PR_FINALIZATION_BENCHMARK_UNBLOCK_MIN_INTERVAL_SECONDS:-1800}
 BENCHMARK_REPAIR_BASE="$BASE/benchmark-minimum-repair"
 BENCHMARK_STACK_REPLACEMENTS="$BASE/benchmark-minimum-stack-replacements.tsv"
+BENCHMARK_HARNESS_BUILDER_BASE="$BASE/benchmark-harness-builder"
+BENCHMARK_HARNESS_BUILDER_STATE="$BASE/logs/benchmark-harness-builder-launches.tsv"
+BENCHMARK_HARNESS_BUILDER_MIN_INTERVAL_SECONDS=${RTC_PR_FINALIZATION_BENCHMARK_HARNESS_BUILDER_MIN_INTERVAL_SECONDS:-3600}
 
-mkdir -p "$BASE/logs" "$BASE/cycles" "$BASE/worktrees" "$BENCHMARK_UNBLOCK_BASE" "$BENCHMARK_REPAIR_BASE"
-touch "$STATE" "$BENCHMARK_UNBLOCK_STATE"
+mkdir -p "$BASE/logs" "$BASE/cycles" "$BASE/worktrees" "$BENCHMARK_UNBLOCK_BASE" "$BENCHMARK_REPAIR_BASE" "$BENCHMARK_HARNESS_BUILDER_BASE"
+touch "$STATE" "$BENCHMARK_UNBLOCK_STATE" "$BENCHMARK_HARNESS_BUILDER_STATE"
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
 log() {
@@ -513,8 +516,39 @@ benchmark_minimum_block_has_rows() {
 	[ -s "$block_file" ] && [ "$(wc -l < "$block_file")" -gt 1 ]
 }
 
+required_benchmark_harness_files() {
+	cat <<'EOF'
+packages/core-data/src/utils/test/rtc-merge-benchmark.test.ts
+packages/blocks/src/api/test/rtc-html-equivalence-benchmark.js
+packages/sync/src/providers/http-polling/test/rtc-sync-benchmark.test.ts
+packages/sync/src/providers/http-polling/test/rtc-many-user-sync-benchmark.test.ts
+EOF
+}
+
+missing_benchmark_harness_files() {
+	local path
+	required_benchmark_harness_files |
+		while IFS= read -r path; do
+			[ -n "$path" ] || continue
+			[ -f "$BENCHMARK_HARNESS_SRC/$path" ] || printf '%s\n' "$path"
+		done
+}
+
 active_benchmark_unblock_sessions() {
 	tmux ls 2>/dev/null | awk -F: '/^rtc-pr-benchmark-minimum-unblock-/ { count++ } END { print count + 0 }'
+}
+
+active_benchmark_harness_builder_sessions() {
+	tmux ls 2>/dev/null | awk -F: '/^rtc-pr-benchmark-harness-builder-/ { count++ } END { print count + 0 }'
+}
+
+benchmark_harness_builder_recently_launched() {
+	local now
+	now=$(date -u +%s)
+	awk -F '\t' -v now="$now" -v interval="$BENCHMARK_HARNESS_BUILDER_MIN_INTERVAL_SECONDS" '
+		NR > 1 { last = $1 }
+		END { exit !( last != "" && now - last < interval ) }
+	' "$BENCHMARK_HARNESS_BUILDER_STATE" 2>/dev/null
 }
 
 benchmark_unblock_recently_launched() {
@@ -648,6 +682,79 @@ EOF_RUNNER
 	printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$branch" "$commit" "$row" "$session" "$run_dir" >> "$BENCHMARK_UNBLOCK_STATE"
 	log "launching benchmark minimum unblock row=$row branch=$branch commit=$commit session=$session"
 	tmux new-session -d -s "$session" "bash '$runner'"
+	}
+
+launch_benchmark_harness_builder_job() {
+	local missing ts run_dir prompt report stderr runner session exact_branch exact_commit exact_worktree
+	missing=$(missing_benchmark_harness_files || true)
+	[ -n "$missing" ] || return 0
+	[ "$(active_benchmark_harness_builder_sessions)" -eq 0 ] || return 0
+	benchmark_harness_builder_recently_launched && return 0
+	ts=$(date -u +%Y%m%dT%H%M%SZ)
+	run_dir="$BENCHMARK_HARNESS_BUILDER_BASE/$ts"
+	mkdir -p "$run_dir"
+	prompt="$run_dir/prompt.md"
+	report="$run_dir/report.md"
+	stderr="$run_dir/stderr.log"
+	runner="$run_dir/run.sh"
+	session="rtc-pr-benchmark-harness-builder-$ts"
+	exact_branch=$(git -C "$SRC" for-each-ref --sort=-committerdate --format='%(refname:short)' 'refs/heads/blocked/rtc-pr-stack-*-all-merged-build-repaired' 2>/dev/null | head -1 || true)
+	if [ -z "$exact_branch" ]; then
+		exact_branch=$(git -C "$SRC" for-each-ref --sort=-committerdate --format='%(refname:short)' 'refs/heads/repair/pr07c-exact-stack-build-*' 2>/dev/null | head -1 || true)
+	fi
+	exact_commit=$(git -C "$SRC" rev-parse --verify "${exact_branch:-HEAD}" 2>/dev/null || git -C "$SRC" rev-parse HEAD)
+	exact_worktree="$STACK_WORKTREE_BASE/harness-builder-${ts}-${exact_commit:0:12}"
+	cat > "$prompt" <<PROMPT
+You are running inside Jetstream2 on the Gutenberg RTC PR finalization loop.
+Do not use API subagents.
+
+The finalizer requires lower benchmark-minimum rows, but the harness files are
+missing from both the exact stack and the versioned harness source directory.
+
+Missing files:
+$missing
+
+Harness source directory to populate:
+$BENCHMARK_HARNESS_SRC
+
+Validation branch/commit:
+${exact_branch:-HEAD}
+$exact_commit
+
+Validation worktree:
+$exact_worktree
+
+Task:
+1. Inspect the existing tests and RTC/sync/block APIs in $SRC.
+2. Create the missing benchmark harness files under $BENCHMARK_HARNESS_SRC.
+   Keep them deterministic, fast, and meaningful: exercise CRDT block merge,
+   parser/serializer/HTML equivalence, HTTP polling update queue/body-size
+   behavior, and many-user Yjs sync convergence respectively.
+3. Copy or link them into the validation worktree, then run the narrow
+   npm run test:unit commands for each file if feasible.
+4. Write $report with Summary, Files created, Validation, Remaining blockers.
+5. Write $run_dir/validation.tsv with columns test_path,exit_code,log_path.
+Do not weaken product code or mark rows passed unless tests actually run.
+PROMPT
+	cat > "$runner" <<EOF_RUNNER
+#!/usr/bin/env bash
+set -euo pipefail
+mkdir -p "$STACK_WORKTREE_BASE" "$BENCHMARK_HARNESS_SRC"
+if git -C "$exact_worktree" rev-parse --git-dir >/dev/null 2>&1; then
+	git -C "$exact_worktree" checkout --detach "$exact_commit"
+else
+	git -C "$SRC" worktree add --detach "$exact_worktree" "$exact_commit"
+fi
+cd "$SRC"
+timeout "$BENCHMARK_UNBLOCK_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" || true
+EOF_RUNNER
+	chmod +x "$runner"
+	if [ ! -s "$BENCHMARK_HARNESS_BUILDER_STATE" ]; then
+		printf 'epoch\tsession\trun_dir\tmissing\n' > "$BENCHMARK_HARNESS_BUILDER_STATE"
+	fi
+	printf '%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$session" "$run_dir" "$(printf '%s' "$missing" | tr '\n' ',')" >> "$BENCHMARK_HARNESS_BUILDER_STATE"
+	log "launching benchmark harness builder missing=$(printf '%s' "$missing" | tr '\n' ',') session=$session"
+	tmux new-session -d -s "$session" "bash '$runner'"
 }
 
 collect_context() {
@@ -726,16 +833,23 @@ collect_context() {
 			echo "missing $BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
 		fi
 		echo
-		echo "## Benchmark Minimum Promotion Block"
-		if [ -s "$benchmark_block" ] && [ "$(wc -l < "$benchmark_block")" -gt 1 ]; then
+			echo "## Benchmark Minimum Promotion Block"
+			if [ -s "$benchmark_block" ] && [ "$(wc -l < "$benchmark_block")" -gt 1 ]; then
 			sed -n '1,80p' "$benchmark_block"
 			echo
 				echo "Promotion hard-block: do not mark a reload-hydration, large-document collaboration, WebSocket code-editor smoke, or all-merged stack maintainer-ready until every row above has fresh passing evidence on the exact stack."
-		else
-			echo "none"
-		fi
-		echo
-		echo "## Recent Finalization Reports"
+			else
+				echo "none"
+			fi
+			echo
+			echo "## Required Lower Benchmark Harness Files"
+			missing_benchmark_harness_files |
+				awk '{ print "- missing: " $0 }'
+			if [ -z "$(missing_benchmark_harness_files || true)" ]; then
+				echo "all present"
+			fi
+			echo
+			echo "## Recent Finalization Reports"
 		find "$BASE/cycles" -maxdepth 2 -type f -name 'finalization.report.md' -print 2>/dev/null |
 			sort |
 			tail -6 |
@@ -821,13 +935,15 @@ write_status() {
 		echo
 		echo "- updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 		echo "- max active jobs: $MAX_ACTIVE_JOBS"
-		echo "- active finalization jobs: $(active_finalization_sessions)"
-		echo "- active benchmark-minimum unblock jobs: $(active_benchmark_unblock_sessions)"
-		echo "- cycle sleep seconds: $CYCLE_SLEEP_SECONDS"
+			echo "- active finalization jobs: $(active_finalization_sessions)"
+			echo "- active benchmark-minimum unblock jobs: $(active_benchmark_unblock_sessions)"
+			echo "- active benchmark-harness builder jobs: $(active_benchmark_harness_builder_sessions)"
+			echo "- cycle sleep seconds: $CYCLE_SLEEP_SECONDS"
 		echo
 		echo "## Active Sessions"
-		tmux ls 2>/dev/null | rg '^rtc-pr-finalize-job-' || true
-		tmux ls 2>/dev/null | rg '^rtc-pr-benchmark-minimum-unblock-' || true
+			tmux ls 2>/dev/null | rg '^rtc-pr-finalize-job-' || true
+			tmux ls 2>/dev/null | rg '^rtc-pr-benchmark-minimum-unblock-' || true
+			tmux ls 2>/dev/null | rg '^rtc-pr-benchmark-harness-builder-' || true
 		echo
 		echo "## Launch History"
 		tail -30 "$STATE" 2>/dev/null || true
@@ -844,11 +960,18 @@ write_status() {
 				echo "Finalization launch hard-blocked: the benchmark canary exposed missing exact-stack build or benchmark-minimum evidence. Do not mark reload-hydration, large-document collaboration, WebSocket smoke, focused HTTP/WS canary rows, or all-merged stacks maintainer-ready until every row above passes on the exact stack or is explicitly downscoped with replacement evidence."
 			echo
 			echo "Benchmark-minimum unblock jobs consume one row at a time and record passes in $BENCHMARK_UNBLOCK_OVERRIDES."
-		else
-			echo "none"
-		fi
-		echo
-		echo "## Recent Reports"
+			else
+				echo "none"
+			fi
+			echo
+			echo "## Required Lower Benchmark Harness Files"
+			missing_benchmark_harness_files |
+				awk '{ print "- missing: " $0 }'
+			if [ -z "$(missing_benchmark_harness_files || true)" ]; then
+				echo "all present"
+			fi
+			echo
+			echo "## Recent Reports"
 		find "$BASE/cycles" -maxdepth 2 -type f -name 'finalization.report.md' -print 2>/dev/null |
 			sort |
 			tail -8 |
@@ -864,6 +987,7 @@ write_status() {
 log "PR finalization loop started pid=$$"
 while true; do
 	write_status
+	launch_benchmark_harness_builder_job || true
 	if benchmark_minimum_block_has_rows "$BASE/current-benchmark-minimum-block.tsv"; then
 		launch_benchmark_minimum_unblock_job || true
 		log "finalization launch skipped benchmark_minimum_block=$BASE/current-benchmark-minimum-block.tsv"
