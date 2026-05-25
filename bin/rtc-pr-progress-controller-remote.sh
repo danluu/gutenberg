@@ -208,7 +208,7 @@ latest_pr07c_controller_classification() {
 }
 
 pr07c_owner_matrix_consumed() {
-	local classification latest_report owner_matrix class_mtime report_mtime matrix_mtime now
+	local classification latest_report owner_matrix class_mtime report_mtime matrix_mtime now expected_head
 	classification=$(latest_pr07c_controller_classification || true)
 	[ -n "$classification" ] || return 1
 	if grep -q $'\tpromote_product_pr\t' "$classification" 2>/dev/null; then
@@ -216,6 +216,15 @@ pr07c_owner_matrix_consumed() {
 	fi
 	latest_report=$(latest_pr07c_owner_report || true)
 	owner_matrix=$(latest_owner_matrix || true)
+	expected_head=$(latest_pr07c_exact_green_head || true)
+	if [ -n "${expected_head:-}" ]; then
+		if ! artifact_mentions_sha "$classification" "$expected_head" &&
+			! artifact_mentions_sha "$latest_report" "$expected_head" &&
+			! artifact_mentions_sha "$owner_matrix" "$expected_head"; then
+			log "not consuming PR07C owner matrix: latest classification does not mention repaired exact-stack head $expected_head"
+			return 1
+		fi
+	fi
 	class_mtime=$(file_mtime "$classification")
 	report_mtime=0
 	matrix_mtime=0
@@ -398,6 +407,38 @@ latest_pr07c_owner_report() {
 		sort -n |
 		tail -1 |
 		cut -f2-
+}
+
+latest_pr07c_exact_green_head() {
+	local status_file sha
+	[ -d "$CRITICAL_BASE/runs" ] || return 1
+	while IFS= read -r status_file; do
+		sha=$(awk -F '\t' '
+			NR == 1 { next }
+			$4 == "exact_stack_green" && $2 ~ /^repair\/rtc-pr07c-/ && length($3) >= 12 {
+				print $3
+				exit
+			}
+		' "$status_file" 2>/dev/null || true)
+		if [ -n "$sha" ]; then
+			printf '%s\n' "$sha"
+			return 0
+		fi
+	done < <(
+		find "$CRITICAL_BASE/runs" -path '*/continuations/benchmark-canary-fuzzer-gap/exact-stack-status.tsv' -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null |
+			sort -nr |
+			head -20 |
+			cut -f2-
+	)
+	return 1
+}
+
+artifact_mentions_sha() {
+	local file=${1:-} sha=${2:-}
+	[ -n "$file" ] || return 1
+	[ -n "$sha" ] || return 1
+	[ -s "$file" ] || return 1
+	grep -q "$sha" "$file" 2>/dev/null
 }
 
 artifact_index_fresh() {
@@ -743,7 +784,29 @@ cd "$SRC"
 timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$synthesis_prompt" > "$synthesis_report" 2> "$synthesis_stderr" || true
 if [ ! -s "$run_dir/control-decisions.tsv" ]; then
 	printf 'action\\ttarget\\tpriority\\tallowed\\treason\\n' > "$run_dir/control-decisions.tsv"
-	if awk -F '\\t' 'NR > 1 && tolower(\$7) ~ /promotion_blocked|known_bad_canary/ { found = 1 } END { exit found ? 0 : 1 }' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" 2>/dev/null; then
+	if awk -F '\\t' '
+		NR == 1 {
+			for (i = 1; i <= NF; i++) cols[tolower($i)] = i
+			next
+		}
+		function value(name) { return (name in cols) ? $(cols[name]) : "" }
+		function failed_reps_count(value) {
+			gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+			return value ~ /^[1-9][0-9]*(\\/[0-9]+)?$/ || value ~ /^[1-9][0-9]*-[0-9]+$/
+		}
+		NR > 1 {
+			status = tolower(value("status") " " value("result"))
+			failure_type = tolower(value("failure_type"))
+			reps_failed = value("reps_failed")
+			if (reps_failed == "") reps_failed = value("failed_reps")
+			repair_or_priority = tolower(value("repair_or_priority") " " value("priority"))
+			line = tolower($0)
+			if (status ~ /promotion_blocked|known_bad_canary/ || line ~ /(^|\\t)(promotion_blocked|known_bad_canary)(\\t|$)/) found = 1
+			if (failed_reps_count(reps_failed) && failure_type ~ /promotion-preflight|benchmark-row/) found = 1
+			if (failed_reps_count(reps_failed) && repair_or_priority ~ /p0|block promotion|promotion.*blocked|block.*until/) found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" 2>/dev/null; then
 		printf 'publish-ready\\t*\\thigh\\tno\\tfallback: exact-stack benchmark canary is promotion-blocked; require exact_stack_green before publication\\n' >> "$run_dir/control-decisions.tsv"
 	else
 		printf 'publish-ready\\t*\\thigh\\tyes\\tfallback: keep ready product PRs moving\\n' >> "$run_dir/control-decisions.tsv"
@@ -761,7 +824,7 @@ EOF
 }
 
 launch_pr07c_owner_matrix_job() {
-	local ts run_dir prompt report stderr classification runner latest_report owner_matrix active_jobs
+	local ts run_dir prompt report stderr classification runner latest_report owner_matrix active_jobs target_head
 	if pr07c_owner_matrix_consumed; then
 		log "not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence"
 		return 0
@@ -793,6 +856,7 @@ launch_pr07c_owner_matrix_job() {
 	runner="$run_dir/run.sh"
 	latest_report=$(latest_pr07c_owner_report || true)
 	owner_matrix=$(latest_owner_matrix || true)
+	target_head=$(latest_pr07c_exact_green_head || true)
 	cat > "$prompt" <<PROMPT
 You are running inside Jetstream2 on the Gutenberg RTC PR progress controller.
 Do not use API subagents. Work in this one Codex process.
@@ -804,6 +868,7 @@ decision. Read:
 - $PR_SPLIT_BASE/current-pr-split.md
 - latest PR07C owner replay report: ${latest_report:-missing}
 - latest owner matrix: ${owner_matrix:-missing}
+- required repaired exact-stack head: ${target_head:-unknown}
 
 Required outputs:
 - report: $report
@@ -825,7 +890,10 @@ evidence would otherwise classify as needs_exact_replay and the replay is
 bounded to a small seed list or exact branch/head, run that replay inside this
 job and classify the replay result. Do not hand back needs_exact_replay
 unless the exact replay cannot be started because of a concrete environment
-failure that is recorded in the report. If a branch should be published, write
+failure that is recorded in the report. If required repaired exact-stack head
+is not unknown, stale owner evidence that does not mention that head cannot
+clear PR07C; run or request evidence for that exact head instead. If a branch
+should be published, write
 $run_dir/push-manifest.tsv with columns:
 source_branch	source_commit	intended_danluu_branch	base_ref	files_changed	insertions	deletions	validation_summary	reason
 PROMPT

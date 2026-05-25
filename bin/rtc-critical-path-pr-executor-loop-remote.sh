@@ -698,19 +698,70 @@ benchmark_promotion_blocked() {
 	awk -F '\t' '
 		NR == 1 {
 			for (i = 1; i <= NF; i++) {
-				if (tolower($i) == "status") status_col = i
+				cols[tolower($i)] = i
 			}
 			next
 		}
+		function value(name) {
+			return (name in cols) ? $(cols[name]) : ""
+		}
+		function failed_reps_count(value) {
+			gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+			return value ~ /^[1-9][0-9]*(\/[0-9]+)?$/ || value ~ /^[1-9][0-9]*-[0-9]+$/
+		}
 		NR > 1 {
-			status = status_col ? tolower($status_col) : ""
+			status = tolower(value("status") " " value("result"))
+			failure_type = tolower(value("failure_type"))
+			reps_failed = value("reps_failed")
+			if (reps_failed == "") {
+				reps_failed = value("failed_reps")
+			}
+			repair_or_priority = tolower(value("repair_or_priority") " " value("priority"))
 			line = tolower($0)
 			if (status ~ /promotion_blocked|known_bad_canary/ || line ~ /(^|\t)(promotion_blocked|known_bad_canary)(\t|$)/) {
+				found = 1
+			}
+			if (failed_reps_count(reps_failed) && failure_type ~ /promotion-preflight|benchmark-row/) {
+				found = 1
+			}
+			if (failed_reps_count(reps_failed) && repair_or_priority ~ /p0|block promotion|promotion.*blocked|block.*until/) {
 				found = 1
 			}
 		}
 		END { exit found ? 0 : 1 }
 	' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
+}
+
+benchmark_exact_stack_green_current() {
+	local classification exact_status feedback
+	feedback="$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv"
+	[ -s "$feedback" ] || return 1
+	classification=$(latest_benchmark_classification || true)
+	[ -n "$classification" ] && [ -s "$classification" ] || return 1
+	[ "$classification" -nt "$feedback" ] || return 1
+	exact_status="${classification%/*}/exact-stack-status.tsv"
+	[ -s "$exact_status" ] || return 1
+	[ "$exact_status" -nt "$feedback" ] || return 1
+	awk -F '\t' '
+		NR > 1 && $1 == "benchmark-canary-fuzzer-gap" && $2 == "exact_stack_green" {
+			found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$classification" || return 1
+	awk -F '\t' '
+		NR > 1 {
+			rows++
+			if ($4 !~ /^(exact_stack_green|downscoped_replacement_green)$/) {
+				bad++
+			}
+		}
+		END { exit (rows > 0 && bad == 0) ? 0 : 1 }
+	' "$exact_status"
+}
+
+benchmark_effective_promotion_blocked() {
+	benchmark_promotion_blocked || return 1
+	! benchmark_exact_stack_green_current
 }
 
 benchmark_feedback_refresh_active() {
@@ -720,7 +771,7 @@ benchmark_feedback_refresh_active() {
 		printf '%s\n' "$hit"
 		return 0
 	fi
-	pgrep -af '[r]efresh-current-feedback-command[.]sh|rtc-benchmark-canary-feedback-20260520/cycles/refresh-' 2>/dev/null | sed -n '1p'
+	pgrep -af '[b]ash .*/(refresh-current-feedback-command|run-exact-refresh[^[:space:]]*)[.]sh|rtc-benchmark-canary-feedback-20260520/cycles/refresh-[^[:space:]]+' 2>/dev/null | sed -n '1p'
 }
 
 benchmark_exact_stack_active() {
@@ -735,7 +786,7 @@ benchmark_exact_stack_active() {
 		printf '%s\n' "$hit"
 		return 0
 	fi
-	pgrep -af '[e]xact-stack-worktrees.*(title-reload-http|existing-post-crdt|large-http)' 2>/dev/null | sed -n '1p'
+	pgrep -af '[e]xact-stack-worktrees.*(title-reload-http|existing-post-crdt|large-http|ws-code-editor|code-editor)' 2>/dev/null | sed -n '1p'
 }
 
 latest_benchmark_classification() {
@@ -751,7 +802,7 @@ latest_benchmark_classification() {
 latest_benchmark_refresh_command() {
 	recent_executor_run_dirs |
 		while IFS= read -r run_dir; do
-			find "$run_dir/continuations/benchmark-canary-fuzzer-gap" -maxdepth 1 -type f -name 'refresh-current-feedback-command.sh' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+			find "$run_dir/continuations/benchmark-canary-fuzzer-gap" -maxdepth 1 -type f \( -name 'refresh-current-feedback-command.sh' -o -name 'run-exact-refresh*.sh' \) -size +0c -printf '%T@\t%p\n' 2>/dev/null
 		done |
 		sort -n |
 		tail -1 |
@@ -760,7 +811,7 @@ latest_benchmark_refresh_command() {
 
 launch_benchmark_feedback_refresh() {
 	local command active dedupe session ts run_dir runner stdout stderr rc status_file
-	benchmark_promotion_blocked || return 1
+	benchmark_effective_promotion_blocked || return 1
 	command=$(latest_benchmark_refresh_command || true)
 	[ -n "$command" ] && [ -s "$command" ] || return 1
 	bash -n "$command" >/dev/null 2>&1 || {
@@ -992,7 +1043,7 @@ write_no_progress() {
 				fi
 				printf '%s\tzero_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
 			done
-		if benchmark_promotion_blocked; then
+		if benchmark_effective_promotion_blocked; then
 			if ! benchmark_exact_stack_active >/dev/null; then
 				printf '%s\texact_stack_promotion_blocked_without_active_repair\t%s\t%s\tbenchmark-canary-fuzzer-gap\t%s\n' \
 					"$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" "$(file_size "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv")" "$(file_mtime "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv")" "$rejected_at"
@@ -1087,7 +1138,9 @@ write_lanes() {
 			printf 'seed-1060015-reducer\tPR05?\treducer\tvalidation-only\t%s\t1060015\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/1060015-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
 		if benchmark_feedback_present; then
-			if benchmark_promotion_blocked; then
+			if benchmark_exact_stack_green_current; then
+				printf 'benchmark-canary-fuzzer-gap\tPROCESS\texact-stack-promotion-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,exact-stack\tterminal\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+			elif benchmark_effective_promotion_blocked; then
 				printf 'benchmark-canary-fuzzer-gap\tPROCESS\texact-stack-promotion-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,exact-stack\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 			else
 				printf 'benchmark-canary-fuzzer-gap\tPROCESS\tcoverage-gap-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
@@ -1157,7 +1210,14 @@ write_blockers_and_queue() {
 	benchmark_result=pending
 	benchmark_artifacts=fuzzer-feedback.md,fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv
 	benchmark_next='consume benchmark canary feedback; add or repair equivalent fuzz coverage and validate the fixed stack under that coverage before maintainer snapshot publication'
-	if benchmark_promotion_blocked; then
+	if benchmark_exact_stack_green_current; then
+		benchmark_state=terminal
+		benchmark_kind=exact-stack-promotion
+		benchmark_action=exact-stack-repair
+		benchmark_artifacts=fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv,exact-stack-status.tsv,repair-branch.txt
+		benchmark_next='current benchmark canary feedback has fresh exact-stack green evidence; reopen only when current-feedback.tsv changes or new promotion_blocked rows appear'
+		benchmark_result=exact_stack_green
+	elif benchmark_effective_promotion_blocked; then
 		benchmark_kind=exact-stack-promotion
 		benchmark_action=exact-stack-repair
 		benchmark_artifacts=fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv,exact-stack-status.tsv,repair-branch.txt
@@ -1616,7 +1676,7 @@ EOF
 }
 
 launch_continuation_jobs() {
-	if benchmark_feedback_present && benchmark_promotion_blocked; then
+	if benchmark_feedback_present && benchmark_effective_promotion_blocked; then
 		launch_benchmark_feedback_refresh || true
 		launch_continuation_job \
 			"benchmark-canary-fuzzer-gap" \
@@ -1653,7 +1713,7 @@ launch_continuation_jobs() {
 			"pr07c-browser-env|pr07c|browser-env" \
 			"PR07C browser-environment repair: debug and fix collaboration readiness null so owner-proof replay can reach seeded action/reload/checkpoint phase. Reserve unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT if running browser checks; write validation.tsv/report.md/classification.tsv and repair-branch.txt."
 	fi
-	if benchmark_feedback_present && ! benchmark_promotion_blocked; then
+	if benchmark_feedback_present && ! benchmark_effective_promotion_blocked && ! benchmark_exact_stack_green_current; then
 		launch_continuation_job \
 			"benchmark-canary-fuzzer-gap" \
 			"benchmark-canary-fuzzer-gap-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" | cut -c1-12)" \

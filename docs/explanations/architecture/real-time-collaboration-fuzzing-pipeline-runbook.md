@@ -627,15 +627,21 @@ them. The continuation output must include `exact-stack-status.tsv` and either
 `exact_stack_green`, `fix_branch_created`, `coverage_present_exact_stack_red`,
 or `exact_stack_blocked` in `classification.tsv`.
 
-The feedback TSV parser must locate the `status` column by header and also
-accept older files where status was in a fixed position. Benchmark feedback has
-grown extra fields over time, so fixed-column status parsing can silently turn
-`promotion_blocked` rows into coverage-only work. If a continuation writes a
-bounded `refresh-current-feedback-command.sh`, the executor owns running that
-handoff in a `rtc-benchmark-canary-feedback-refresh-*` tmux session and records
-`feedback-refresh` in `logs/launches.tsv`. A failed refresh remains an
-exact-stack blocker and should feed a new product-fix continuation; a successful
-refresh is the only path that updates `current-feedback.tsv` to green.
+The feedback TSV parser must locate `status`, `result`, `failure_type`,
+`reps_failed`/`failed_reps`, `repair_or_priority`, and `priority` by header and
+also accept older files where status was in a fixed position. Benchmark feedback
+has grown extra fields over time, so fixed-column status parsing can silently
+turn `promotion_blocked`, failed `promotion-preflight`, or P0 benchmark rows
+into coverage-only work. If a continuation writes a bounded
+`refresh-current-feedback-command.sh` or `run-exact-refresh*.sh`, the executor
+owns running that handoff in a `rtc-benchmark-canary-feedback-refresh-*` tmux
+session and records `feedback-refresh` in `logs/launches.tsv`. A failed refresh
+remains an exact-stack blocker and should feed a new product-fix continuation.
+A fresh `classification.tsv` with `exact_stack_green`, paired with an
+`exact-stack-status.tsv` newer than `current-feedback.tsv` where every row is
+`exact_stack_green` or `downscoped_replacement_green`, is terminal for the
+current feedback file and should suppress exact-stack repair churn until the
+benchmark feedback changes.
 
 The executor exists to turn blocker reports into continuation work and local-host
 handoff artifacts. It must not become another passive report loop:
@@ -805,7 +811,9 @@ The long-running Jetstream2 strict-expansion, focused-shards, gap-booster, and
 coverage-guided browser loops should all run broad discovery in low-disk mode.
 If artifact growth accelerates, first verify the tmux pane environment for
 `RTC_FUZZ_LOW_DISK_MODE=1` and `RTC_FUZZ_PLAYWRIGHT_VIDEO=off` before deleting
-run outputs.
+run outputs. `RTC_FUZZ_PLAYWRIGHT_VIDEO` must be the explicit value `off`; an
+empty variable does not disable Playwright video recording and can silently
+produce large video trees even while low-disk mode is otherwise enabled.
 
 The remote script branch also includes `bin/rtc-disk-maintenance-remote.sh` for
 continuous low-priority pruning of stale fuzz roots and old Playwright
@@ -1898,6 +1906,18 @@ capacity. A live novelty monitor with `materialized_active_run_dirs: 0`, stale
 `supervisor-state.json`, or nonzero `paused_infra_startup_groups` is a
 materialization failure, not a successful high-level fuzzing run.
 
+The coverage-guided starter defaults to fresh scheduler state on Jetstream
+(`RTC_FUZZ_NOVELTY_DISABLE_STATE_CARRYOVER=1`) so stale coverage-state files do
+not keep benchmark-canary groups suppressed after controller fixes. Its budget
+profile must preserve explicit benchmark-canary reserve, WS backfill, sticky
+group limit, deadline coverage-gap reserve, and feedback-base overrides. When
+an explicit benchmark feedback source is stale or has fewer blockers than the
+authoritative global feedback, the starter should use the global
+`rtc-benchmark-canary-feedback-20260520/current-feedback.tsv` unless
+`RTC_FUZZ_BENCHMARK_CANARY_ALLOW_STALE_EXPLICIT=1` is set. A sticky group limit
+is a reserve/backfill hint, not a global cap, unless
+`RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STRICT_CAP=1` is explicitly enabled.
+
 The parser-transform lane can produce a high volume of likely-real but
 duplicative failures. In recent runs, the common families were:
 
@@ -2084,11 +2104,16 @@ lanes, but they must share state. In particular:
     `current-feedback.md`/`.tsv` in its persona context, and
     `bin/rtc-critical-path-pr-executor-loop-remote.sh` turns non-empty feedback
     into a high-priority `benchmark-canary-fuzzer-gap` blocker and bounded
-    continuation job. If the TSV contains `promotion_blocked`, the blocker is an
-    exact-stack promotion repair, not a coverage-only repair: equivalent fuzzing
-    can prove the fuzzer is no longer blind, but maintainer publication remains
-    blocked until the exact stack is green or a replacement fix branch is
-    produced and validated. The benchmark is not the trust model for
+    continuation job. Both scripts parse benchmark feedback by header, including
+    `status`, `result`, `failure_type`, failed-rep counts, and priority/repair
+    hints, so new TSV schemas still block publication when they report P0 or
+    promotion-preflight failures. If the TSV contains `promotion_blocked`, the
+    blocker is an exact-stack promotion repair, not a coverage-only repair:
+    equivalent fuzzing can prove the fuzzer is no longer blind, but maintainer
+    publication remains blocked until the exact stack is green or a replacement
+    fix branch is produced and validated. Exact refresh artifacts may be named
+    `refresh-current-feedback-command.sh` or `run-exact-refresh*.sh`; the
+    executor owns running both forms. The benchmark is not the trust model for
     mergeability; the fuzzer must already be exercising user-hit RTC behavior.
     Existing canary failures, including the
     `large-post-three-user-http` failure on
@@ -2101,6 +2126,10 @@ lanes, but they must share state. In particular:
     failing branch
     `rtc-pr-stack-20260519T214027Z-validated-no-harness` must not be republished
     as a passing candidate.
+-   PR07C owner-matrix evidence is consumed by repaired exact-stack head, not
+    only by wall-clock recency. If the latest exact-stack status has a green
+    `repair/rtc-pr07c-*` head, a stale owner report or matrix that does not name
+    that SHA must not clear PR07C or suppress a fresh bounded owner replay.
 
 After changing one of these scripts on Jetstream, restart the matching tmux
 session on the `rtc-fuzz` socket and confirm that the status file shows the new

@@ -20,6 +20,8 @@ BENCHMARK_FEEDBACK_BASE=/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feed
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 DUP_NOISE_BASE=/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516
+ARTIFACT_INDEX_BASE=/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518
+ARTIFACT_INDEX_ARTIFACTS=$ARTIFACT_INDEX_BASE/current-artifacts.tsv
 STRICT_EXPANSION_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515
 FOCUSED_SHARDS_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
 GAP_BOOSTER_BASE=/media/volume/danluu-fuzz-data/rtc-gap-booster-20260515
@@ -30,8 +32,12 @@ CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-cove
 CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP=coverage-guided-lower-level-table-query-array-crdt
 CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION=rtc-coverage-guided-lower-level-table-query-array-crdt
 CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-query-array-20260517/holds/coverage-guided-lower-level-table-query-array-crdt.hold
+CG_LOWER_LEVEL_HTTP_POLLING_GROUP=coverage-guided-lower-level-http-polling-manager
+CG_LOWER_LEVEL_HTTP_POLLING_SESSION=rtc-coverage-guided-lower-level-http-polling-manager
+CG_LOWER_LEVEL_HTTP_POLLING_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-http-polling-manager-20260520/holds/coverage-guided-lower-level-http-polling-manager.hold
 CG_LOWER_LEVEL_BLOCK_PARSER_GROUP=coverage-guided-lower-level-block-parser-serialization
 CG_LOWER_LEVEL_BLOCK_PARSER_SESSION=rtc-coverage-guided-lower-level-block-parser-serialization
+CG_LOWER_LEVEL_BLOCK_PARSER_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-block-parser-serialization-20260519/holds/coverage-guided-lower-level-block-parser-serialization.hold
 
 SESSION=rtc-structural-issue-watchdog
 FINDINGS=$BASE/current-structural-findings.tsv
@@ -57,19 +63,37 @@ RUNAWAY_SCAN_MIN_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_MIN_AGE_SECO
 RUNAWAY_SCAN_TARGET_ROOTS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_ROOTS:-/media/volume/danluu-fuzz-data:/home/exouser/.codex}
 TERMINATE_RUNAWAY_RG=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_RG:-1}
 TERMINATE_RUNAWAY_TEXT_SEARCH=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_TEXT_SEARCH:-$TERMINATE_RUNAWAY_RG}
+TERMINATE_RUNAWAY_SCANS=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_SCANS:-1}
 ANALYSIS_LOW_WORKER_MAX_LOAD_PER_CORE=${RTC_STRUCTURAL_WATCHDOG_ANALYSIS_LOW_WORKER_MAX_LOAD_PER_CORE:-1.0}
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$TMUX_WRAP"
 touch "$EVENTS" "$REPAIR_LEDGER" "$RUNAWAY_SCAN_KILL_LEDGER"
-cat > "$TMUX_WRAP/tmux" <<'SH'
+ensure_tmux_wrapper() {
+	local wrapper="$TMUX_WRAP/tmux"
+	local tmp
+	tmp=$(mktemp "$TMUX_WRAP/tmux.XXXXXX")
+	cat > "$tmp" <<'SH'
 #!/usr/bin/env bash
 exec /usr/bin/tmux -L rtc-fuzz "$@"
 SH
-chmod +x "$TMUX_WRAP/tmux"
+	chmod +x "$tmp"
+	if [ -f "$wrapper" ] && cmp -s "$tmp" "$wrapper"; then
+		rm -f "$tmp"
+	else
+		mv -f "$tmp" "$wrapper"
+	fi
+}
+ensure_tmux_wrapper
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
 log() {
 	printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"
+}
+
+terminate_runaway_pid() {
+	local pid=$1
+	pkill -TERM -P "$pid" 2>/dev/null || true
+	kill "$pid" 2>/dev/null || true
 }
 
 tmux_sessions() {
@@ -78,6 +102,36 @@ tmux_sessions() {
 
 has_session() {
 	tmux_sessions | grep -Fxq "$1"
+}
+
+has_lower_level_session() {
+	tmux_sessions | grep -Eq '^rtc-lower-level-fuzz-loop($|-)'
+}
+
+coverage_guided_lower_level_group_session_exists() {
+	local session=$1
+	local group=$2
+	local legacy_session=rtc-coverage-guided-lower-level
+
+	if has_session "$session"; then
+		return 0
+	fi
+	if ! has_session "$legacy_session"; then
+		return 1
+	fi
+
+	tmux list-panes -t "$legacy_session" -F '#{pane_start_command}' 2>/dev/null |
+		awk -v group="$group" \
+			'index($0, "RTC_CG_LOWER_LEVEL_GROUP") && index($0, group) { found = 1 } END { exit ! found }'
+}
+
+coverage_guided_lower_level_group_session_or_hold_exists() {
+	local session=$1
+	local group=$2
+	local hold_file=$3
+
+	coverage_guided_lower_level_group_session_exists "$session" "$group" ||
+		[ -f "$hold_file" ]
 }
 
 active_session_matching() {
@@ -90,14 +144,33 @@ benchmark_promotion_blocked() {
 	awk -F '\t' '
 		NR == 1 {
 			for (i = 1; i <= NF; i++) {
-				if (tolower($i) == "status") status_col = i
+				cols[tolower($i)] = i
 			}
 			next
 		}
+		function value(name) {
+			return (name in cols) ? $(cols[name]) : ""
+		}
+		function failed_reps_count(value) {
+			gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+			return value ~ /^[1-9][0-9]*(\/[0-9]+)?$/ || value ~ /^[1-9][0-9]*-[0-9]+$/
+		}
 		NR > 1 {
-			status = status_col ? tolower($status_col) : ""
+			status = tolower(value("status") " " value("result"))
+			failure_type = tolower(value("failure_type"))
+			reps_failed = value("reps_failed")
+			if (reps_failed == "") {
+				reps_failed = value("failed_reps")
+			}
+			repair_or_priority = tolower(value("repair_or_priority") " " value("priority"))
 			line = tolower($0)
 			if (status ~ /promotion_blocked|known_bad_canary/ || line ~ /(^|\t)(promotion_blocked|known_bad_canary)(\t|$)/) {
+				found = 1
+			}
+			if (failed_reps_count(reps_failed) && failure_type ~ /promotion-preflight|benchmark-row/) {
+				found = 1
+			}
+			if (failed_reps_count(reps_failed) && repair_or_priority ~ /p0|block promotion|promotion.*blocked|block.*until/) {
 				found = 1
 			}
 		}
@@ -184,6 +257,29 @@ hash_key() {
 	fi
 }
 
+repair_issue_key() {
+	local component=$1 key=$2 evidence=$3 stable
+	case "$component:$key" in
+		structural-scan:runaway-scan-detected|structural-scan:runaway-text-search-terminated)
+			stable=$(
+				printf '%s\n' "$evidence" |
+					sed -n 's/.*pid=\([0-9][0-9]*\).*/pid=\1/p' |
+					sed -n '1p'
+			)
+			if [ -z "$stable" ]; then
+				stable=$(
+					printf '%s\n' "$evidence" |
+						sed -E 's/ age=[0-9]+s/ age=<age>/g; s/ cpu=[0-9.]+%/ cpu=<cpu>%/g; s/ mem=[0-9.]+%/ mem=<mem>%/g'
+				)
+			fi
+			hash_key "$component:$key:$stable"
+			;;
+		*)
+			hash_key "$component:$key:$evidence"
+			;;
+	esac
+}
+
 file_age_seconds() {
 	local file=$1 now mtime
 	[ -e "$file" ] || return 1
@@ -254,11 +350,17 @@ PY
 			if [ "$TERMINATE_RUNAWAY_TEXT_SEARCH" = 1 ] &&
 				{ [ "$command" = "rg" ] || [ "$command" = "grep" ] || [ "$command" = "egrep" ] || [ "$command" = "fgrep" ] || { [ "$command" = "bash" ] && printf '%s\n' "$evidence" | grep -Eq '(^|[ /])(rg|grep|egrep|fgrep)([[:space:]]|$)'; }; } &&
 				kill -0 "$pid" 2>/dev/null; then
-				kill "$pid" 2>/dev/null || true
+				terminate_runaway_pid "$pid"
 				printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$pid" "$age" "$pcpu" "$evidence" >> "$RUNAWAY_SCAN_KILL_LEDGER"
 				emit_finding "$out" high "structural-scan" "runaway-text-search-terminated" \
 					"pid=$pid age=${age}s cpu=${pcpu}% mem=${pmem}% args=$evidence" \
 					"replace the broad text-search source with artifact-index or bounded current-run scans; do not let historical rg/grep scans run indefinitely"
+			elif [ "$TERMINATE_RUNAWAY_SCANS" = 1 ] && kill -0 "$pid" 2>/dev/null; then
+				terminate_runaway_pid "$pid"
+				printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$pid" "$age" "$pcpu" "$evidence" >> "$RUNAWAY_SCAN_KILL_LEDGER"
+				emit_finding "$out" high "structural-scan" "runaway-scan-terminated" \
+					"pid=$pid command=$command age=${age}s cpu=${pcpu}% mem=${pmem}% args=$evidence" \
+					"debug the caller and replace broad historical scans with indexed or bounded current-run probes; this watchdog terminated only the runaway process after recording evidence"
 			else
 				emit_finding "$out" high "structural-scan" "runaway-scan-detected" \
 					"pid=$pid command=$command age=${age}s cpu=${pcpu}% mem=${pmem}% args=$evidence" \
@@ -281,7 +383,7 @@ eligible_structural_repair_count() {
 	while IFS=$'\t' read -r _ts severity component key evidence next_action; do
 		[ "$severity" = "high" ] || continue
 		[ -n "$key" ] || continue
-		issue_key=$(hash_key "$component:$key:$evidence")
+		issue_key=$(repair_issue_key "$component" "$key" "$evidence")
 		if ! recent_repair_for_key "$issue_key"; then
 			count=$(( count + 1 ))
 		fi
@@ -367,6 +469,87 @@ check_status_freshness() {
 	fi
 }
 
+collapse_evidence() {
+	tr '\n\t' '  ' | sed 's/  */ /g' | cut -c1-700
+}
+
+check_productive_analysis_health() {
+	local out=$1 pane evidence
+
+	pane=$(tmux capture-pane -pt rtc-productive-analysis-loop:0 -S -200 2>/dev/null || true)
+	if printf '%s\n' "$pane" | rg -qi 'cannot stat .*[.]tmp|duplicate session: rtc-productive-lane-'; then
+		evidence=$(printf '%s\n' "$pane" | rg -i 'cannot stat .*[.]tmp|duplicate session: rtc-productive-lane-' | collapse_evidence)
+		emit_finding "$out" high "productive-analysis" "temp-or-duplicate-session-error" \
+			"pane=rtc-productive-analysis-loop evidence=${evidence:-matched}" \
+			"patch productive-analysis to use per-write mktemp files, unique lane session names, logged non-fatal launch failures, and restart rtc-productive-analysis-loop"
+	fi
+	if log_matches_after_last_start "$PRODUCTIVE_ANALYSIS_BASE/logs/productive-analysis-loop.log" 'productive-analysis loop started' 'cannot stat .*[.]tmp|duplicate session: rtc-productive-lane-|cycle failed rc='; then
+		emit_finding "$out" high "productive-analysis" "recent-cycle-or-launch-error" \
+			"$PRODUCTIVE_ANALYSIS_BASE/logs/productive-analysis-loop.log" \
+			"debug recent productive-analysis cycle failure; do not treat fresh current-status.md as sufficient health"
+	fi
+}
+
+browser_pool_current_root() {
+	case "$1" in
+		strict-expansion)
+			sed -n '1p' "$STRICT_EXPANSION_BASE/current-run-root.txt" 2>/dev/null || true
+			;;
+		focused-shards)
+			sed -n '1p' "$FOCUSED_SHARDS_BASE/current-run-root.txt" 2>/dev/null || true
+			;;
+		gap-booster)
+			sed -n '1p' "$GAP_BOOSTER_BASE/current-run-root.txt" 2>/dev/null || true
+			;;
+	esac
+}
+
+browser_pool_sessions_for_component() {
+	case "$1" in
+		strict-expansion)
+			printf '%s\t%s\t%s\n' rtc-fuzz-strict-expansion rtc-fuzz-strict-expansion-watchdog rtc-fuzz-strict-expansion-analysis
+			;;
+		focused-shards)
+			printf '%s\t%s\t%s\n' rtc-focused-shards rtc-focused-shards-watchdog rtc-focused-shards-analysis
+			;;
+		gap-booster)
+			printf '%s\t%s\t%s\n' rtc-gap-booster rtc-gap-booster-watchdog rtc-gap-booster-analysis
+			;;
+	esac
+}
+
+browser_pool_supervisor_state_fresh() {
+	local component=$1 max_age=${2:-900} root age supervisor_session watchdog_session analysis_session
+
+	root=$(browser_pool_current_root "$component")
+	[ -n "$root" ] && [ -s "$root/supervisor-state.json" ] || return 1
+	age=$(file_age_seconds "$root/supervisor-state.json" || printf 999999)
+	[ "$age" -le "$max_age" ] || return 1
+	IFS=$'\t' read -r supervisor_session watchdog_session analysis_session <<<"$(browser_pool_sessions_for_component "$component")"
+	has_session "$supervisor_session" &&
+		has_session "$watchdog_session" &&
+		has_session "$analysis_session"
+}
+
+check_browser_pool_supervisor_freshness() {
+	local out=$1 component=$2 max_age=${3:-900} root age supervisor_session watchdog_session analysis_session live_hint
+
+	root=$(browser_pool_current_root "$component")
+	[ -n "$root" ] && [ -d "$root" ] || return 0
+	[ -s "$root/supervisor-state.json" ] || return 0
+	age=$(file_age_seconds "$root/supervisor-state.json" || printf 999999)
+	[ "$age" -gt "$max_age" ] || return 0
+	IFS=$'\t' read -r supervisor_session watchdog_session analysis_session <<<"$(browser_pool_sessions_for_component "$component")"
+	live_hint=0
+	has_session "$supervisor_session" && live_hint=1
+	has_session "$watchdog_session" && live_hint=1
+	has_session "$analysis_session" && live_hint=1
+	[ "$live_hint" = 1 ] || return 0
+	emit_finding "$out" high "$component" "stale-supervisor-state" \
+		"$root/supervisor-state.json age=${age}s max=${max_age}s sessions=$supervisor_session,$watchdog_session,$analysis_session" \
+		"teach guard to restart or retire stale sidecars for $component when supervisor-state stops advancing; do not let analysis monitors keep polling stale current roots"
+}
+
 check_exact_sessions() {
 	local out=$1 name prefix_matches
 	for name in \
@@ -423,6 +606,15 @@ critical_script_has_benchmark_refresh_support() {
 	rg -q 'rtc-benchmark-canary-feedback-refresh-' "$script" || return 1
 }
 
+critical_script_has_stable_runtime_support() {
+	local script=$1
+	[ -s "$script" ] || return 1
+	rg -q 'RUNTIME_SCRIPT=' "$script" || return 1
+	rg -q 'snapshot_executor_script' "$script" || return 1
+	rg -q 'executor-runtime-' "$script" || return 1
+	rg -q 'critical-path PR executor loop exiting rc=' "$script" || return 1
+}
+
 critical_script_sha() {
 	local script=$1
 	if [ -s "$script" ]; then
@@ -433,22 +625,37 @@ critical_script_sha() {
 }
 
 sync_critical_executor_copies_if_safe() {
-	local changed=0 target
+	local changed=0 deployed_changed=0 target tmp
 	critical_script_has_pr07c_terminal_support "$CRITICAL_REPO_SCRIPT" || return 1
 	critical_script_has_benchmark_refresh_support "$CRITICAL_REPO_SCRIPT" || return 1
+	critical_script_has_stable_runtime_support "$CRITICAL_REPO_SCRIPT" || return 1
 	bash -n "$CRITICAL_REPO_SCRIPT" >/dev/null 2>&1 || return 1
 	for target in "$CRITICAL_DEPLOYED_SCRIPT" "$CRITICAL_TMP_SCRIPT"; do
 		if [ ! -s "$target" ] || ! cmp -s "$CRITICAL_REPO_SCRIPT" "$target"; then
-			cp "$CRITICAL_REPO_SCRIPT" "$target"
-			chmod +x "$target"
+			tmp=$(mktemp "$target.XXXXXX.tmp")
+			cp "$CRITICAL_REPO_SCRIPT" "$tmp"
+			chmod +x "$tmp"
+			if ! bash -n "$tmp" >/dev/null 2>&1; then
+				rm -f "$tmp"
+				return 1
+			fi
+			mv -f "$tmp" "$target"
 			changed=1
+			if [ "$target" = "$CRITICAL_DEPLOYED_SCRIPT" ]; then
+				deployed_changed=1
+			fi
 			log "synced critical executor copy target=$target from=$CRITICAL_REPO_SCRIPT"
 		fi
 	done
-	if [ "$changed" = 1 ] && has_session rtc-critical-path-pr-executor-loop; then
-		"$CRITICAL_DEPLOYED_SCRIPT" stop >> "$LOG" 2>&1 || true
-		"$CRITICAL_DEPLOYED_SCRIPT" start >> "$LOG" 2>&1 || true
-		log "restarted critical-path executor after script-copy sync"
+	if [ "$changed" = 1 ]; then
+		if has_session rtc-critical-path-pr-executor-loop && [ "$deployed_changed" = 1 ]; then
+			bash "$CRITICAL_DEPLOYED_SCRIPT" stop >> "$LOG" 2>&1 || true
+			bash "$CRITICAL_DEPLOYED_SCRIPT" start >> "$LOG" 2>&1 || true
+			log "restarted critical-path executor after deployed script-copy sync"
+		elif ! has_session rtc-critical-path-pr-executor-loop; then
+			bash "$CRITICAL_DEPLOYED_SCRIPT" start >> "$LOG" 2>&1 || true
+			log "started critical-path executor after script-copy sync"
+		fi
 	fi
 	return 0
 }
@@ -464,6 +671,9 @@ check_critical_path_script_copies() {
 	critical_script_has_benchmark_refresh_support "$CRITICAL_REPO_SCRIPT" || missing_support=1
 	critical_script_has_benchmark_refresh_support "$CRITICAL_DEPLOYED_SCRIPT" || missing_support=1
 	critical_script_has_benchmark_refresh_support "$CRITICAL_TMP_SCRIPT" || missing_support=1
+	critical_script_has_stable_runtime_support "$CRITICAL_REPO_SCRIPT" || missing_support=1
+	critical_script_has_stable_runtime_support "$CRITICAL_DEPLOYED_SCRIPT" || missing_support=1
+	critical_script_has_stable_runtime_support "$CRITICAL_TMP_SCRIPT" || missing_support=1
 	if [ "$missing_support" = 1 ]; then
 		emit_finding "$out" high "critical-path" "critical-executor-required-support-missing" \
 			"repo=$CRITICAL_REPO_SCRIPT sha=$repo_sha deployed=$CRITICAL_DEPLOYED_SCRIPT sha=$deployed_sha tmp=$CRITICAL_TMP_SCRIPT sha=$tmp_sha" \
@@ -549,7 +759,11 @@ check_loop_statuses() {
 	check_status_freshness "$out" deferred-work "$DEFERRED_BASE/current-deferred-status.md" 1800 rtc-deferred-work-promotion-loop
 	check_status_freshness "$out" pr-progress "$PR_PROGRESS_BASE/current-pr-progress-controller-status.md" 900 rtc-pr-progress-controller-loop
 	check_status_freshness "$out" productive-analysis "$PRODUCTIVE_ANALYSIS_BASE/current-status.md" 1800 rtc-productive-analysis-loop
+	check_productive_analysis_health "$out"
 	check_status_freshness "$out" resource-autoscaler "$RESOURCE_BASE/resource-autoscaler-status.md" 600 rtc-resource-autoscaler
+	check_browser_pool_supervisor_freshness "$out" strict-expansion 900
+	check_browser_pool_supervisor_freshness "$out" focused-shards 900
+	check_browser_pool_supervisor_freshness "$out" gap-booster 900
 	if [ -s "$COVERAGE_BASE/current-output-dir.txt" ]; then
 		coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
 		if [ -n "$coverage_root" ]; then
@@ -718,6 +932,24 @@ check_current_run_duplicate_noise() {
 		in_section && /^- raw signatures:/ {
 			raw_signatures = $2 + 0
 		}
+		in_section && /^- known-infra signatures:/ {
+			known_infra = $2 + 0
+		}
+		in_section && /^- family-capped signatures:/ {
+			family_capped = $2 + 0
+		}
+		in_section && /^- source-suppressed signatures:/ {
+			source_suppressed = $2 + 0
+		}
+		in_section && /^- stale-source signatures:/ {
+			stale_source = $2 + 0
+		}
+		in_section && /^- analysis-gated non-actionable signatures:/ {
+			analysis_gated = $2 + 0
+		}
+		in_section && /^- normalization-noise excluded signatures:/ {
+			normalization_noise = $2 + 0
+		}
 		in_section && /^- likely-real visible:/ {
 			likely = $2 + 0
 		}
@@ -734,10 +966,17 @@ check_current_run_duplicate_noise() {
 			raw_top_families = $2
 		}
 		END {
-			if (signatures >= 3 && top_share >= 0.50) {
+			current_fires = (signatures >= 3 && top_share >= 0.50 && likely == 0)
+			raw_delta = raw_signatures - signatures
+			accounted_delta = known_infra + family_capped + source_suppressed + stale_source + analysis_gated + normalization_noise
+			raw_uncapped_fires = 0
+			if (raw_signatures >= 3 && raw_top_share >= 0.50 && likely == 0 && (current_fires || raw_delta > accounted_delta)) {
+				raw_uncapped_fires = 1
+			}
+			if (current_fires) {
 				printf "current\t%d\t%.4f\t%d\t%s\n", signatures, top_share, likely, top_families
 			}
-			if (raw_signatures >= 3 && raw_top_share >= 0.50) {
+			if (raw_uncapped_fires) {
 				printf "raw-current\t%d\t%.4f\t%d\t%s\n", raw_signatures, raw_top_share, likely, raw_top_families
 			}
 		}
@@ -754,19 +993,38 @@ coverage_guided_lower_level_satisfied() {
 	if has_session rtc-coverage-guided-lower-level-b64; then
 		return 0
 	fi
-	if [ -f "$CG_LOWER_LEVEL_B64_HOLD_FILE" ] &&
-		grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
+	if [ -f "$CG_LOWER_LEVEL_B64_HOLD_FILE" ]; then
+		if ! grep -Fq "$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" "$CG_LOWER_LEVEL_B64_HOLD_FILE"; then
+			return 0
+		fi
 		if [ -f "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE" ] &&
 			grep -Eq "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP|rtc-table-query-array-crdt|table-query-array" "$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE"; then
 			if [ -f "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE" ] &&
 				grep -Eq "$CG_LOWER_LEVEL_BLOCK_PARSER_GROUP|rtc-block-parser-serialization|block-parser|parser-serialization" "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE"; then
-				has_session "$CG_LOWER_LEVEL_BLOCK_PARSER_SESSION"
+				coverage_guided_lower_level_group_session_or_hold_exists \
+					"$CG_LOWER_LEVEL_BLOCK_PARSER_SESSION" \
+					"$CG_LOWER_LEVEL_BLOCK_PARSER_GROUP" \
+					"$CG_LOWER_LEVEL_BLOCK_PARSER_HOLD_FILE"
 				return
 			fi
-			has_session "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION"
+			if [ -f "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE" ] &&
+				grep -Eq "$CG_LOWER_LEVEL_HTTP_POLLING_GROUP|rtc-http-polling-manager|http-polling|polling-manager" "$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE"; then
+				coverage_guided_lower_level_group_session_or_hold_exists \
+					"$CG_LOWER_LEVEL_HTTP_POLLING_SESSION" \
+					"$CG_LOWER_LEVEL_HTTP_POLLING_GROUP" \
+					"$CG_LOWER_LEVEL_HTTP_POLLING_HOLD_FILE"
+				return
+			fi
+			coverage_guided_lower_level_group_session_or_hold_exists \
+				"$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_SESSION" \
+				"$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_GROUP" \
+				"$CG_LOWER_LEVEL_TABLE_QUERY_ARRAY_HOLD_FILE"
 			return
 		fi
-		has_session "$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION"
+		coverage_guided_lower_level_group_session_or_hold_exists \
+			"$CG_LOWER_LEVEL_B64_REPLACEMENT_SESSION" \
+			"$CG_LOWER_LEVEL_B64_REPLACEMENT_GROUP" \
+			"$CG_LOWER_LEVEL_B64_REPLACEMENT_HOLD_FILE"
 		return
 	fi
 	return 1
@@ -794,22 +1052,16 @@ guard_pool_currently_satisfied() {
 			has_session rtc-coverage-guided-supervisor || has_session "$scoped_session"
 			;;
 		strict)
-			has_session rtc-fuzz-strict-expansion &&
-				has_session rtc-fuzz-strict-expansion-watchdog &&
-				has_session rtc-fuzz-strict-expansion-analysis
+			browser_pool_supervisor_state_fresh strict-expansion 900
 			;;
 		focused)
-			has_session rtc-focused-shards &&
-				has_session rtc-focused-shards-watchdog &&
-				has_session rtc-focused-shards-analysis
+			browser_pool_supervisor_state_fresh focused-shards 900
 			;;
 		gap-booster)
-			has_session rtc-gap-booster &&
-				has_session rtc-gap-booster-watchdog &&
-				has_session rtc-gap-booster-analysis
+			browser_pool_supervisor_state_fresh gap-booster 900
 			;;
 		lower-level)
-			has_session rtc-lower-level-fuzz-loop
+			has_lower_level_session
 			;;
 		cg-lower-level)
 			coverage_guided_lower_level_satisfied
@@ -939,6 +1191,7 @@ Task:
 	   - $RUNAWAY_SCAN_REPORT
 	   - $RUNAWAY_SCAN_KILL_LEDGER
 	   - $ANALYSIS_PRODUCTIVITY_REPORT
+	   - $ARTIFACT_INDEX_ARTIFACTS when it is relevant and fresh enough for the question
 	   - tmux -L rtc-fuzz list-sessions -F '#S'
 3. If a minimal safe fix is clear, apply it to scripts under $REPO/bin and the relevant deployed /tmp launcher, run focused syntax checks, and restart only the affected loop. Do not stop broad fuzzing or unrelated loops.
 4. For critical-path executor issues, keep the repo script, deployed script, and /tmp guard restart script synchronized unless evidence proves one copy is intentionally different.
@@ -953,6 +1206,9 @@ Guardrails:
 - Do not use behavior-disabling flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
 - Do not run broad browser fuzzing from this repair job.
 - Prefer bounded shell probes and exact source edits.
+- Do not run historical or aggregate scans such as `du -shx` over /media/volume/danluu-fuzz-data, /tmp, /var/tmp, /home/exouser, the repo root, or old runs. Use current status files, launch ledgers, the artifact index, current-output-dir, or one exact current-run path instead.
+- If size or disk evidence is necessary, prefer `df -h` or `stat` on exact files. Any `du`, `find`, `rg`, or `grep` must be limited to one current-run/artifact path and bounded with `timeout`, `-maxdepth`, `-m`, or an equivalent small script.
+- For runaway scan findings, record the controller/session path that launched the scan, patch that path to use the bounded/indexed probe, then verify $RUNAWAY_SCAN_REPORT no longer lists the process.
 PROMPT
 }
 
@@ -961,7 +1217,7 @@ launch_repair_jobs() {
 	awk -F '\t' 'NR > 1 && $2 == "high" { print }' "$FINDINGS" |
 		while IFS=$'\t' read -r _ts severity component key evidence next_action; do
 			[ -n "$key" ] || continue
-			issue_key=$(hash_key "$component:$key:$evidence")
+			issue_key=$(repair_issue_key "$component" "$key" "$evidence")
 			if recent_repair_for_key "$issue_key"; then
 				continue
 			fi
