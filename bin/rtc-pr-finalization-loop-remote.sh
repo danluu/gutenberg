@@ -213,7 +213,7 @@ write_benchmark_minimum_block() {
 						return "missing-exact-stack-branch-or-commit"
 					}
 					worktree = exact_stack_worktree( branch, commit )
-					return "mkdir -p " stack_base " && ( git -C " source_repo " rev-parse --verify " commit "^{commit} >/dev/null 2>&1 || git -C " source_repo " fetch " stack_fetch_remote " refs/heads/" branch ":refs/remotes/danluu/" branch " ) && { [ -d " worktree "/.git ] || git -C " source_repo " worktree add --detach " worktree " " commit "; }"
+					return "mkdir -p " stack_base " && ( git -C " source_repo " rev-parse --verify " commit "^{commit} >/dev/null 2>&1 || git -C " source_repo " fetch " stack_fetch_remote " refs/heads/" branch ":refs/remotes/danluu/" branch " ) && { if git -C " worktree " rev-parse --git-dir >/dev/null 2>&1; then git -C " worktree " checkout --detach " commit "; else git -C " source_repo " worktree add --detach " worktree " " commit "; fi; }"
 				}
 				function exact_stack_build_command( worktree ) {
 					return "( cd " worktree " && npm run build )"
