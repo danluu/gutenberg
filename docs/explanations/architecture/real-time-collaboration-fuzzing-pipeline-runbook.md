@@ -662,6 +662,10 @@ handoff artifacts. It must not become another passive report loop:
     classifications visible. Broad historical `find` over `cycles/` or `runs/`
     is a structural bug because it can hold the controller lock and stop PR
     progress.
+-   The artifact-index loop itself must stay bounded. It indexes recent
+    controller run/cycle roots and carries forward cached historical PR-split
+    rows instead of re-walking the whole PR-split archive; a fresh bounded index
+    is preferable to a complete historical scan that never publishes status.
 -   It gates browser/e2e work behind the resource autoscaler, but the PR07C
     browser lane is a repair lane, not a passive preflight. A
     `runtime-readiness-blocked` artifact, including `_wpCollaborationEnabled`

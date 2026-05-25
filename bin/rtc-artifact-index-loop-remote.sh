@@ -26,6 +26,8 @@ LOCK=$BASE/artifact-index.lock
 PID_FILE=$BASE/artifact-index.pid
 
 INDEX_INTERVAL_SECONDS=${RTC_ARTIFACT_INDEX_INTERVAL_SECONDS:-180}
+RECENT_RUN_LIMIT=${RTC_ARTIFACT_INDEX_RECENT_RUN_LIMIT:-240}
+FIND_MAXDEPTH=${RTC_ARTIFACT_INDEX_FIND_MAXDEPTH:-8}
 
 mkdir -p "$BASE/logs" "$BASE/tmp" "$TMUX_WRAP"
 cat > "$TMUX_WRAP/tmux" <<'SH'
@@ -49,6 +51,41 @@ artifact_roots() {
 	printf 'pr_progress\t%s\n' "$PROGRESS_BASE"
 }
 
+recent_child_dirs() {
+	local root=$1 limit=$2
+	[ -d "$root" ] || return 0
+	find "$root" -mindepth 1 -maxdepth 1 -type d -printf '%T@\t%p\n' 2>/dev/null |
+		sort -nr |
+		awk -F '\t' -v limit="$limit" 'limit <= 0 || count++ < limit { print $2 }'
+}
+
+scan_roots_for_index_root() {
+	local root_name=$1 root=$2
+	case "$root_name" in
+		critical)
+			recent_child_dirs "$root/runs" "$RECENT_RUN_LIMIT"
+			;;
+		pr_split)
+			recent_child_dirs "$root/runs" "$RECENT_RUN_LIMIT"
+			;;
+		deferred)
+			recent_child_dirs "$root/cycles" "$RECENT_RUN_LIMIT"
+			;;
+		finalization)
+			recent_child_dirs "$root/cycles" "$RECENT_RUN_LIMIT"
+			;;
+		pr_progress)
+			recent_child_dirs "$root/jobs" "$RECENT_RUN_LIMIT"
+			;;
+		fresh_pr_split)
+			printf '%s\n' "$root"
+			;;
+		*)
+			printf '%s\n' "$root"
+			;;
+	esac
+}
+
 special_context_files() {
 	printf 'critical\t%s/current-push-manifest.tsv\n' "$CRITICAL_BASE"
 	printf 'critical\t%s/current-critical-path-status.md\n' "$CRITICAL_BASE"
@@ -61,26 +98,38 @@ special_context_files() {
 }
 
 scan_key_artifacts() {
-	local root_name root epoch path
+	local root_name root scan_root epoch path
 	artifact_roots |
 	while IFS=$'\t' read -r root_name root; do
 		[ -d "$root" ] || continue
-		find "$root" \
-			\( -path '*/.git' -o -path '*/node_modules' -o -path '*/vendor' -o -path '*/worktrees' \) -prune -o \
-			-type f -size +0c \
-			\( -name 'current-push-manifest.tsv' \
-				-o -name 'push-manifest.tsv' \
-				-o -name 'classification.tsv' \
-				-o -name 'replay-classification.tsv' \
-				-o -name 'validation.tsv' \
-				-o -name 'validation-head.tsv' \
-				-o -name 'validation-checks.tsv' \
-				-o -name 'owner-matrix.tsv' \
-				-o -name 'branch-audit.tsv' \
-				-o -name 'finalization.report.md' \
-				-o -name 'report.md' \
-				-o -name '*.report.md' \) \
-			-printf "%T@\t$root_name\t%p\n" 2>/dev/null || true
+		if [ "$root_name" = "pr_split" ] && [ -s "$ARTIFACTS" ]; then
+			awk -F '\t' '
+				NR > 1 && $3 == "pr_split" && $6 != "" {
+					print $1 "\t" $3 "\t" $6
+				}
+			' "$ARTIFACTS" 2>/dev/null || true
+			continue
+		fi
+		scan_roots_for_index_root "$root_name" "$root" |
+		while IFS= read -r scan_root; do
+			[ -d "$scan_root" ] || continue
+			find "$scan_root" -maxdepth "$FIND_MAXDEPTH" \
+				\( -path '*/.git' -o -path '*/node_modules' -o -path '*/vendor' -o -path '*/worktrees' \) -prune -o \
+				-type f -size +0c \
+				\( -name 'current-push-manifest.tsv' \
+					-o -name 'push-manifest.tsv' \
+					-o -name 'classification.tsv' \
+					-o -name 'replay-classification.tsv' \
+					-o -name 'validation.tsv' \
+					-o -name 'validation-head.tsv' \
+					-o -name 'validation-checks.tsv' \
+					-o -name 'owner-matrix.tsv' \
+					-o -name 'branch-audit.tsv' \
+					-o -name 'finalization.report.md' \
+					-o -name 'report.md' \
+					-o -name '*.report.md' \) \
+				-printf "%T@\t$root_name\t%p\n" 2>/dev/null || true
+		done
 	done
 	special_context_files |
 	while IFS=$'\t' read -r root_name path; do

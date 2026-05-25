@@ -33,7 +33,7 @@ CYCLE_SLEEP_SECONDS=${RTC_PR_PROGRESS_CYCLE_SLEEP_SECONDS:-120}
 PERSONA_EVERY_CYCLES=${RTC_PR_PROGRESS_PERSONA_EVERY_CYCLES:-2}
 MAX_ACTIVE_PR_JOBS=${RTC_PR_PROGRESS_MAX_ACTIVE_PR_JOBS:-2}
 MIN_DISCOVERY_SESSIONS=${RTC_PR_PROGRESS_MIN_DISCOVERY_SESSIONS:-3}
-PR07C_OWNER_CONSUMED_TTL_SECONDS=${RTC_PR_PROGRESS_PR07C_OWNER_CONSUMED_TTL_SECONDS:-0}
+PR07C_OWNER_CONSUMED_TTL_SECONDS=${RTC_PR_PROGRESS_PR07C_OWNER_CONSUMED_TTL_SECONDS:-1800}
 CODEX_MODEL=${RTC_PR_PROGRESS_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_PR_PROGRESS_CODEX_REASONING_EFFORT:-xhigh}
 CODEX_TIMEOUT_SECONDS=${RTC_PR_PROGRESS_CODEX_TIMEOUT_SECONDS:-5400}
@@ -152,6 +152,16 @@ recent_branch_repair_manifests() {
 		cut -f2-
 }
 
+recent_job_push_manifests() {
+	recent_job_dirs |
+		while IFS= read -r job_dir; do
+			find "$job_dir" -maxdepth 5 -name push-manifest.tsv -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null || true
+		done |
+		sort -n |
+		tail -80 |
+		cut -f2-
+}
+
 latest_file() {
 	local root=$1 pattern=$2
 	[ -d "$root" ] || return 0
@@ -173,6 +183,26 @@ latest_file() {
 
 file_mtime() {
 	stat -c %Y "$1" 2>/dev/null || printf '0'
+}
+
+branch_current_head() {
+	local branch=$1
+	git -C "$SRC" rev-parse --verify --quiet "$branch^{commit}" 2>/dev/null || true
+}
+
+same_commit_prefix() {
+	local left=$1 right=$2
+	[ -n "$left" ] && [ -n "$right" ] || return 1
+	case "$left:$right" in
+		"$right":*|*:"$left") return 0 ;;
+	esac
+	case "$left" in
+		"$right"*) return 0 ;;
+	esac
+	case "$right" in
+		"$left"*) return 0 ;;
+	esac
+	return 1
 }
 
 branch_published() {
@@ -259,12 +289,24 @@ branch_repair_active() {
 	active_session_matching '^rtc-pr-progress-job-branch-repair-' >/dev/null
 }
 
+stale_resource_decision_filter_enabled() {
+	case "$(resource_reason)" in
+		disk_pressure|high_pressure|severe_pressure)
+			return 1
+			;;
+	esac
+	return 0
+}
+
 decision_allows() {
-	local action=$1 target=${2:-}
+	local action=$1 target=${2:-} skip_stale_resource=0
 	[ -s "$DECISIONS" ] || return 0
-	awk -F '\t' -v action="$action" -v target="$target" '
+	stale_resource_decision_filter_enabled && skip_stale_resource=1
+	awk -F '\t' -v action="$action" -v target="$target" -v skip_stale_resource="$skip_stale_resource" '
 		NR == 1 { next }
 		$1 == action && ( target == "" || $2 == target || $2 == "*" ) {
+			reason = tolower($5)
+			if ( skip_stale_resource && reason ~ /(disk[_ -]?pressure|discovery reserve|discovery protection|discovery is unprotected|discovery.*protected)/ ) next
 			if ( tolower($4) ~ /^(no|false|block|blocked|0)$/ ) blocked = 1
 			if ( tolower($4) ~ /^(yes|true|allow|allowed|1)$/ ) allowed = 1
 		}
@@ -276,11 +318,14 @@ decision_allows() {
 }
 
 decision_blocks() {
-	local action=$1 target=${2:-}
+	local action=$1 target=${2:-} skip_stale_resource=0
 	[ -s "$DECISIONS" ] || return 1
-	awk -F '\t' -v action="$action" -v target="$target" '
+	stale_resource_decision_filter_enabled && skip_stale_resource=1
+	awk -F '\t' -v action="$action" -v target="$target" -v skip_stale_resource="$skip_stale_resource" '
 		NR == 1 { next }
 		$1 == action && ( target == "" || $2 == target || $2 == "*" ) && tolower($4) ~ /^(no|false|block|blocked|0)$/ {
+			reason = tolower($5)
+			if ( skip_stale_resource && reason ~ /(disk[_ -]?pressure|discovery reserve|discovery protection|discovery is unprotected|discovery.*protected)/ ) next
 			blocked = 1
 		}
 		END { exit blocked ? 0 : 1 }
@@ -296,6 +341,50 @@ decision_explicitly_allows() {
 			allowed = 1
 		}
 		END { exit allowed ? 0 : 1 }
+	' "$DECISIONS"
+}
+
+decision_explicitly_allows_ref() {
+	local action=$1 branch=$2 head=${3:-}
+	[ -s "$DECISIONS" ] || return 1
+	awk -F '\t' -v action="$action" -v branch="$branch" -v head="$head" '
+		NR == 1 { next }
+		$1 != action { next }
+		{
+			target = $2
+			target_branch = target
+			target_head = ""
+			if (index(target, "@") > 0) {
+				target_branch = substr(target, 1, index(target, "@") - 1)
+				target_head = substr(target, index(target, "@") + 1)
+			}
+			if (target == branch || (head != "" && target_branch == branch && target_head != "" && (target_head == head || index(head, target_head) == 1 || index(target_head, head) == 1))) {
+				if (tolower($4) ~ /^(yes|true|allow|allowed|1)$/) allowed = 1
+			}
+		}
+		END { exit allowed ? 0 : 1 }
+	' "$DECISIONS"
+}
+
+decision_blocks_ref() {
+	local action=$1 branch=$2 head=${3:-}
+	[ -s "$DECISIONS" ] || return 1
+	awk -F '\t' -v action="$action" -v branch="$branch" -v head="$head" '
+		NR == 1 { next }
+		$1 != action { next }
+		{
+			target = $2
+			target_branch = target
+			target_head = ""
+			if (index(target, "@") > 0) {
+				target_branch = substr(target, 1, index(target, "@") - 1)
+				target_head = substr(target, index(target, "@") + 1)
+			}
+			if (target == branch || (head != "" && target_branch == branch && target_head != "" && (target_head == head || index(head, target_head) == 1 || index(target_head, head) == 1))) {
+				if (tolower($4) ~ /^(no|false|block|blocked|0)$/) blocked = 1
+			}
+		}
+		END { exit blocked ? 0 : 1 }
 	' "$DECISIONS"
 }
 
@@ -336,7 +425,7 @@ pr15_next_child_allowed_by_controller() {
 }
 
 publish_allowed_by_controller() {
-	local branch=$1
+	local branch=$1 head=${2:-}
 	[ -s "$DECISIONS" ] || return 0
 	case "$branch" in
 		ready/rtc-pr15*)
@@ -344,15 +433,17 @@ publish_allowed_by_controller() {
 			return 1
 			;;
 	esac
-	decision_explicitly_allows publish-ready "$branch" && return 0
+	decision_explicitly_allows_ref publish-ready "$branch" "$head" && return 0
+	decision_explicitly_allows_ref publish-manifest "$branch" "$head" && return 0
 	pr15_next_child_allowed_by_controller "$branch" && return 0
 	return 1
 }
 
 publish_blocked_by_controller() {
-	local branch=$1
-	decision_blocks publish-ready "$branch" && return 0
-	decision_blocks hold-publication "$branch" && return 0
+	local branch=$1 head=${2:-}
+	decision_blocks_ref publish-ready "$branch" "$head" && return 0
+	decision_blocks_ref publish-manifest "$branch" "$head" && return 0
+	decision_blocks_ref hold-publication "$branch" "$head" && return 0
 	case "$branch" in
 		ready/rtc-pr06b-malformed-save-request-payload)
 			decision_explicitly_allows maintain-downscope malformed-save-payload && return 0
@@ -366,6 +457,40 @@ publish_blocked_by_controller() {
 			;;
 	esac
 	return 1
+}
+
+policy_superseded_by_controller() {
+	local branch=$1 target target_alt
+	target=$branch
+	target_alt=
+	case "$branch" in
+		ready/rtc-pr15a-fallback-group-move-green|ready/rtc-pr15b-fallback-group-insert-anchor-green|ready/rtc-pr15c-fallback-group-delete-green)
+			target=ready/rtc-pr15a-pr15b-pr15c-base-heads
+			target_alt=ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-base-variants
+			;;
+	esac
+	[ -s "$DECISIONS" ] || return 1
+	awk -F '\t' -v target="$target" -v target_alt="$target_alt" '
+		NR == 1 { next }
+		$1 == "publish-ready" && ($2 == target || (target_alt != "" && $2 == target_alt)) && tolower($4) ~ /^(no|false|block|blocked|0)$/ && tolower($5) ~ /superseded/ {
+			found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$DECISIONS"
+}
+
+pr07c_direct_ready_superseded_by_repair() {
+	local branch=$1
+	[ "$branch" = "ready/rtc-pr07c-reload-record-snapshots" ] || return 1
+	[ -s "$DECISIONS" ] || return 1
+	awk -F '\t' '
+		NR == 1 { next }
+		$1 == "publish-ready" && $2 ~ /^ready\/rtc-pr07c-reload-record-snapshots@/ && tolower($4) ~ /^(no|false|block|blocked|0)$/ &&
+			tolower($5) ~ /(stale|repair|repaired|superseded|build)/ {
+			found = 1
+		}
+		END { exit found ? 0 : 1 }
+	' "$DECISIONS"
 }
 
 branch_repair_blocked_by_controller() {
@@ -486,8 +611,16 @@ pr07c_owner_matrix_needed() {
 }
 
 write_progress_table() {
-	local tmp=$PROGRESS.$$.tmp now source class branch base head allowed reason report pr07c_report
+	local tmp=$PROGRESS.$$.tmp now source class branch base head current_head allowed reason report pr07c_report reload_status reload_next reload_evidence
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+	reload_status=needs-product-decision
+	reload_next='promote product fix, produce owner evidence, or downscope'
+	reload_evidence=reload-hydration
+	if awk -F '\t' 'NR > 1 && $1 == "reload-hydration" && $4 == "active" && $7 == "active-exact-replay" { found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null; then
+		reload_status=exact-replay-active
+		reload_next='consume active exact same-head replay; do not relaunch generic deferred family'
+		reload_evidence=$(awk -F '\t' 'NR > 1 && $1 == "reload-hydration" { print $9; exit }' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null || printf 'active-exact-replay')
+	fi
 	{
 		printf 'generated_at\titem_id\tkind\tpriority\tstatus\tbranch_or_target\thead_sha\tnext_action\tevidence\n'
 		if [ -s "$CRITICAL_BASE/current-push-manifest.tsv" ]; then
@@ -504,11 +637,22 @@ write_progress_table() {
 			sort |
 			while IFS=$'\t' read -r source class branch base head allowed reason report; do
 				[ -n "${source:-}" ] || continue
+				current_head=$(branch_current_head "$branch")
+				if [ -n "$current_head" ] && ! same_commit_prefix "$current_head" "$head"; then
+					if pr07c_direct_ready_superseded_by_repair "$branch"; then
+						printf '%s\t%s\tready-product-pr\tlow\tsuperseded-by-repair\t%s\t%s\tstale direct PR07C head is superseded by the repaired build-clean PR07C branch\t%s\n' "$now" "$source" "$branch" "$current_head" "$report"
+						continue
+					fi
+					printf '%s\t%s\tready-product-pr\thigh\tstale-validation\t%s\t%s\tbranch head moved after validation; validated head was %s, rerun exact validation before publication\t%s\n' "$now" "$source" "$branch" "$current_head" "$head" "$report"
+					continue
+				fi
 				case "$class:$allowed:$reason" in
 					product-candidate:1:*)
 						if branch_published "$branch" "$head"; then
 							printf '%s\t%s\tready-product-pr\thigh\tpublished\t%s\t%s\talready published by local machine; keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
-						elif publish_blocked_by_controller "$branch" || ! publish_allowed_by_controller "$branch"; then
+						elif policy_superseded_by_controller "$branch"; then
+							printf '%s\t%s\tready-product-pr\tlow\tsuperseded\t%s\t%s\tcontroller policy says this candidate is superseded by an already-published canonical branch\t%s\n' "$now" "$source" "$branch" "$head" "$report"
+						elif publish_blocked_by_controller "$branch" "$head" || ! publish_allowed_by_controller "$branch" "$head"; then
 							printf '%s\t%s\tready-product-pr\thigh\theld-by-controller\t%s\t%s\tcontroller decision currently blocks publication\t%s\n' "$now" "$source" "$branch" "$head" "$report"
 						else
 							printf '%s\t%s\tready-product-pr\thigh\tpublishable\t%s\t%s\tpublish from local machine and keep validating against fuzz\t%s\n' "$now" "$source" "$branch" "$head" "$report"
@@ -529,15 +673,15 @@ write_progress_table() {
 		if pr07c_owner_matrix_needed; then
 			pr07c_report=$(latest_pr07c_owner_report || true)
 			if pr07c_owner_matrix_consumed; then
-				printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\truntime-held-consumed\tPR07C/HOLD-07C\t\tdo not relaunch owner matrix until newer owner evidence appears%s; repair setup or run exact replay only for newer evidence\t%s\n' "$now" "$( [ "$PR07C_OWNER_CONSUMED_TTL_SECONDS" -gt 0 ] && printf ' or the %ss consumed-evidence TTL expires' "$PR07C_OWNER_CONSUMED_TTL_SECONDS" )" "${pr07c_report:-missing}"
+				printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\truntime-held-consumed\tPR07C/HOLD-07C\t\tdo not relaunch owner matrix until newer owner evidence appears or the %ss consumed-evidence TTL expires; repair setup or run exact replay instead\t%s\n' "$now" "$PR07C_OWNER_CONSUMED_TTL_SECONDS" "${pr07c_report:-missing}"
 			else
 				printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\towner-evidence-needed\tPR07C/HOLD-07C\t\tconsume owner matrix; promote only with product ownership proof\t%s\n' "$now" "${pr07c_report:-missing}"
 			fi
 		fi
 		if [ -s "$DEFERRED_BASE/current-deferred-status.md" ]; then
-			awk -v now="$now" '
-				/^reload-hydration[[:space:]]/ { print now "\treload-hydration\tdeferred-family\thigh\tneeds-product-decision\treload-hydration\t\tpromote product fix, produce owner evidence, or downscope\t" $0 }
-				/^rich-text-suffix-corruption[[:space:]].*duplicate_head=cooldown/ { print now "\trich-text-suffix-corruption\tdeferred-family\tlow\tcooldown\trich-text-suffix-corruption\t\trequire fresh evidence before relaunch\t" $0 }
+			awk -v now="$now" -v reload_status="$reload_status" -v reload_next="$reload_next" -v reload_evidence="$reload_evidence" '
+				/^reload-hydration[[:space:]]/ { print now "\treload-hydration\tdeferred-family\thigh\t" reload_status "\treload-hydration\t\t" reload_next "\t" $0 " active_replay=" reload_evidence }
+				/^rich-text-suffix-corruption[[:space:]]/ { print now "\trich-text-suffix-corruption\tdeferred-family\tmedium\tdiagnostic\trich-text-suffix-corruption\t\tpromote only with owner evidence or explicit product downscope\t" $0 }
 				/^pre-save-search-live-collapse[[:space:]]/ { print now "\tpre-save-search-live-collapse\tdeferred-family\tmedium\tdiagnostic\ttsearch-live-collapse\t\tpromote only with owner evidence\t" $0 }
 			' "$DEFERRED_BASE/current-deferred-status.md" 2>/dev/null || true
 		fi
@@ -574,8 +718,8 @@ write_controller_push_manifest() {
 				[ "$class" = "product-candidate" ] || continue
 				[ "$allowed" = "1" ] || continue
 				branch_published "$branch" "$head" && continue
-				publish_blocked_by_controller "$branch" && continue
-				publish_allowed_by_controller "$branch" || continue
+				publish_blocked_by_controller "$branch" "$head" && continue
+				publish_allowed_by_controller "$branch" "$head" || continue
 				case "$branch" in
 					ready/*|finalized/*|fresh-prset/*|cycle*|ready-pr03b/*) ;;
 					*) continue ;;
@@ -588,18 +732,118 @@ write_controller_push_manifest() {
 					"$branch" "$head" "$dest" "$base" "$files" "$insertions" "$deletions" "critical-path diff check passed; controller prioritized product PR publication" "$report"
 			done
 		fi
-			recent_branch_repair_manifests |
-				tail -40 |
-				while IFS= read -r manifest; do
-					awk -F '\t' 'NR > 1 && NF >= 9 { print }' "$manifest"
-				done |
+		recent_job_push_manifests |
+			tail -40 |
+			while IFS= read -r manifest; do
+				awk -F '\t' 'NR > 1 && NF >= 9 { print }' "$manifest"
+			done |
 			awk -F '\t' '!seen[$1 "\t" $2]++' |
 			while IFS= read -r row; do
 				branch=$(printf '%s' "$row" | cut -f1)
 				head=$(printf '%s' "$row" | cut -f2)
 				branch_published "$branch" "$head" && continue
+				publish_blocked_by_controller "$branch" "$head" && continue
+				publish_allowed_by_controller "$branch" "$head" || continue
 				printf '%s\n' "$row"
 			done
+		if [ -s "$DECISIONS" ]; then
+			{
+				awk -F '\t' '
+					NR == 1 { next }
+					$1 == "include-candidate" && tolower($4) ~ /^(yes|true|allow|allowed|1)$/ {
+						target = $2
+						sub(/@.*/, "", target)
+						if (target ~ /^(repair|candidate)\//) print target
+						if (target ~ /^repair\/pr07c-exact-stack-build/) print "__latest_pr07c_candidate__"
+					}
+				' "$DECISIONS"
+				if decision_explicitly_allows include-candidate PR07C || decision_explicitly_allows include-candidate-stack PR07C; then
+					printf '__latest_pr07c_candidate__\n'
+				fi
+			} |
+				while IFS= read -r branch; do
+					[ -n "$branch" ] || continue
+					if [ "$branch" = "__latest_pr07c_candidate__" ]; then
+						branch=$(git -C "$SRC" for-each-ref 'refs/heads/candidate/rtc-risk-reducing-pr07c-all-merged-*' --sort=-committerdate --format='%(refname:short)' 2>/dev/null | head -1)
+					fi
+					case "$branch" in
+						repair/*|candidate/*) ;;
+						*) continue ;;
+					esac
+					head=$(branch_current_head "$branch")
+					[ -n "$head" ] || continue
+					branch_published "$branch" "$head" && continue
+					case "$branch" in
+						repair/pr07c-exact-stack-build-*) base=ready/rtc-pr07b-save-response-manager-base-record ;;
+						*) base=origin/trunk ;;
+					esac
+					files=$(git -C "$SRC" diff --numstat "$base" "$branch" 2>/dev/null | wc -l | tr -d ' ' || printf '0')
+					insertions=$(git -C "$SRC" diff --numstat "$base" "$branch" 2>/dev/null | awk '{ s += $1 } END { print s + 0 }' || printf '0')
+					deletions=$(git -C "$SRC" diff --numstat "$base" "$branch" 2>/dev/null | awk '{ s += $2 } END { print s + 0 }' || printf '0')
+					dest=$(safe_destination_for_branch "$branch")
+					printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+						"$branch" "$head" "$dest" "$base" "$files" "$insertions" "$deletions" "controller decision selected this repaired/candidate branch; exact validation and forced coverage gates still apply" "include-candidate decision materialized a concrete branch row"
+				done |
+				awk -F '\t' '!seen[$1 "\t" $2]++'
+		fi
+		if [ -s "$DECISIONS" ]; then
+			awk -F '\t' '
+				NR == 1 { next }
+				$1 == "include-candidate-stack" && tolower($4) ~ /^(yes|true|allow|allowed|1)$/ {
+					if ($2 == "PR07C") include_pr07c = 1
+					if ($2 ~ /^candidate\//) candidate[$2] = 1
+				}
+				$1 == "credit-final-stack" && $2 ~ /^candidate\// {
+					final_candidate[$2] = 1
+				}
+				END {
+					for (branch in candidate) print branch
+					if (include_pr07c) {
+						for (branch in final_candidate) print branch
+					}
+				}
+			' "$DECISIONS" |
+				sort -u |
+				while IFS= read -r branch; do
+					case "$branch" in
+						candidate/*) ;;
+						*) continue ;;
+					esac
+					head=$(branch_current_head "$branch")
+					[ -n "$head" ] || continue
+					branch_published "$branch" "$head" && continue
+					publish_blocked_by_controller "$branch" "$head" && continue
+					if ! decision_explicitly_allows_ref include-candidate-stack "$branch" "$head"; then
+						decision_explicitly_allows include-candidate-stack PR07C || continue
+					fi
+					row=$(
+						{
+							recent_job_push_manifests |
+								tail -40 |
+								while IFS= read -r manifest; do
+									awk -F '\t' -v head="$head" 'NR > 1 && NF >= 9 && $2 == head { print; found = 1; exit }' "$manifest"
+								done |
+								awk 'NF { print; exit }'
+						} || true
+					)
+					if [ -n "$row" ]; then
+						base=$(printf '%s' "$row" | cut -f4)
+						files=$(printf '%s' "$row" | cut -f5)
+						insertions=$(printf '%s' "$row" | cut -f6)
+						deletions=$(printf '%s' "$row" | cut -f7)
+						report=$(printf '%s' "$row" | cut -f8)
+					else
+						base=origin/trunk
+						files=$(git -C "$SRC" diff --numstat "$base" "$branch" 2>/dev/null | wc -l | tr -d ' ' || printf '0')
+						insertions=$(git -C "$SRC" diff --numstat "$base" "$branch" 2>/dev/null | awk '{ s += $1 } END { print s + 0 }' || printf '0')
+						deletions=$(git -C "$SRC" diff --numstat "$base" "$branch" 2>/dev/null | awk '{ s += $2 } END { print s + 0 }' || printf '0')
+						report='candidate stack included by controller decision; exact validation and coverage gates still required'
+					fi
+					dest=$(safe_destination_for_branch "$branch")
+					printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+						"$branch" "$head" "$dest" "$base" "$files" "$insertions" "$deletions" "$report" "include-candidate-stack decision allows a validation/publication alias; final credit remains gated"
+				done
+		fi
 	} > "$tmp"
 	mv "$tmp" "$PUSH_MANIFEST"
 }
@@ -615,6 +859,16 @@ collect_context() {
 		echo "- discovery protected: $(discovery_protected && printf yes || printf no)"
 		echo "- active PR jobs: $(active_pr_jobs)"
 		echo "- max active PR jobs: $MAX_ACTIVE_PR_JOBS"
+		echo
+		echo "## Operator Directive"
+		if [ -f "/media/volume/danluu-fuzz-data/rtc-operator-directives/current.md" ]; then
+			sed -n '1,320p' "/media/volume/danluu-fuzz-data/rtc-operator-directives/current.md"
+		else
+			echo "missing operator directive"
+		fi
+		echo
+		echo "## Current Promotion Policy"
+		sed -n '1,160p' "/current-promotion-policy.tsv" 2>/dev/null || sed -n '1,160p' "/current-promotion-policy.tsv" 2>/dev/null || true
 		echo
 		echo "## Current PR Progress"
 		column -t -s $'\t' "$PROGRESS" 2>/dev/null || sed -n '1,220p' "$PROGRESS" 2>/dev/null || true
@@ -770,7 +1024,7 @@ jobs if discovery sessions are unhealthy unless the action is cheap publication
 manifest generation or analysis-only.
 
 Prefer decisions that move product PRs: publish ready real-fix branches, run
-PR07C owner matrix now that readiness is resolved, repair concrete failed PR
+include PR07C in the candidate stack when current promotion policy says it is net-risk-reducing, run exact validation/repair for PR07C, repair concrete failed PR
 branches, cool down duplicate diagnostics, or downscope low-value families.
 PROMPT
 	cat > "$synthesis_runner" <<EOF
@@ -784,29 +1038,7 @@ cd "$SRC"
 timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$synthesis_prompt" > "$synthesis_report" 2> "$synthesis_stderr" || true
 if [ ! -s "$run_dir/control-decisions.tsv" ]; then
 	printf 'action\\ttarget\\tpriority\\tallowed\\treason\\n' > "$run_dir/control-decisions.tsv"
-	if awk -F '\\t' '
-		NR == 1 {
-			for (i = 1; i <= NF; i++) cols[tolower($i)] = i
-			next
-		}
-		function value(name) { return (name in cols) ? $(cols[name]) : "" }
-		function failed_reps_count(value) {
-			gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
-			return value ~ /^[1-9][0-9]*(\\/[0-9]+)?$/ || value ~ /^[1-9][0-9]*-[0-9]+$/
-		}
-		NR > 1 {
-			status = tolower(value("status") " " value("result"))
-			failure_type = tolower(value("failure_type"))
-			reps_failed = value("reps_failed")
-			if (reps_failed == "") reps_failed = value("failed_reps")
-			repair_or_priority = tolower(value("repair_or_priority") " " value("priority"))
-			line = tolower($0)
-			if (status ~ /promotion_blocked|known_bad_canary/ || line ~ /(^|\\t)(promotion_blocked|known_bad_canary)(\\t|$)/) found = 1
-			if (failed_reps_count(reps_failed) && failure_type ~ /promotion-preflight|benchmark-row/) found = 1
-			if (failed_reps_count(reps_failed) && repair_or_priority ~ /p0|block promotion|promotion.*blocked|block.*until/) found = 1
-		}
-		END { exit found ? 0 : 1 }
-	' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" 2>/dev/null; then
+	if awk -F '\\t' 'NR > 1 && tolower(\$7) ~ /promotion_blocked|known_bad_canary/ { found = 1 } END { exit found ? 0 : 1 }' "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" 2>/dev/null; then
 		printf 'publish-ready\\t*\\thigh\\tno\\tfallback: exact-stack benchmark canary is promotion-blocked; require exact_stack_green before publication\\n' >> "$run_dir/control-decisions.tsv"
 	else
 		printf 'publish-ready\\t*\\thigh\\tyes\\tfallback: keep ready product PRs moving\\n' >> "$run_dir/control-decisions.tsv"
