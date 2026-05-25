@@ -46,6 +46,8 @@ import {
 	type YMapWrap,
 } from './crdt-utils';
 
+type SerializableBlocks = Parameters< typeof __unstableSerializeAndClean >[ 0 ];
+
 // Changes that can be applied to a post entity record.
 export type PostChanges = Omit<
 	Partial< Post >,
@@ -325,8 +327,14 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
 }
 
 function getGeneratedBlockSerialization( blocks: Block[] ): string {
-	return __unstableSerializeAndClean(
+	return serializeAndCleanBlocks(
 		getGeneratedBlockSerializationBlocks( blocks )
+	);
+}
+
+function serializeAndCleanBlocks( blocks: Block[] ): string {
+	return __unstableSerializeAndClean(
+		blocks as unknown as SerializableBlocks
 	).trim();
 }
 
@@ -406,7 +414,7 @@ function hasPersistedBlockContentChanged(
 	}
 
 	const rawPersistedContent = persistedContent;
-	const serializedBlocks = __unstableSerializeAndClean( blocks ).trim();
+	const serializedBlocks = serializeAndCleanBlocks( blocks );
 
 	if ( serializedBlocks === rawPersistedContent ) {
 		return false;

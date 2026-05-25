@@ -91,6 +91,21 @@ import { updateSelectionHistory } from '../crdt-selection';
 import { createYMap, getRootMap, type YMapWrap } from '../crdt-utils';
 import type { Post } from '../../entity-types';
 
+type SerializableBlocks = Parameters< typeof __unstableSerializeAndClean >[ 0 ];
+
+function expectConsoleWarnings() {
+	return expect( console ) as unknown as {
+		toHaveErrored: () => void;
+		toHaveWarned: () => void;
+	};
+}
+
+function serializeBlocksForTest( blocks: Block[] ): string {
+	return __unstableSerializeAndClean(
+		blocks as unknown as SerializableBlocks
+	).trim();
+}
+
 function renderRichTextValue( value?: string | RichTextData ): string {
 	return typeof value === 'string' ? value : value?.toHTMLString() ?? '';
 }
@@ -873,8 +888,8 @@ describe( 'crdt', () => {
 			expect( __unstableSerializeAndClean( blocks ).trim() ).not.toBe(
 				persistedContent
 			);
-			expect( console ).toHaveWarned();
-			expect( console ).toHaveErrored();
+			expectConsoleWarnings().toHaveWarned();
+			expectConsoleWarnings().toHaveErrored();
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -932,8 +947,8 @@ describe( 'crdt', () => {
 			].join( '\n' );
 			const blocks = parse( originalContent );
 
-			expect( console ).toHaveWarned();
-			expect( console ).toHaveErrored();
+			expectConsoleWarnings().toHaveWarned();
+			expectConsoleWarnings().toHaveErrored();
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -962,7 +977,7 @@ describe( 'crdt', () => {
 		it( 'does not invalidate persisted blocks for equivalent entity references and link attribute order', () => {
 			registerEntityReferenceBlocks();
 
-			const staleBlocks = [
+			const staleBlocks: Block[] = [
 				{
 					name: 'core/paragraph',
 					clientId: 'paragraph-1',
@@ -990,7 +1005,9 @@ describe( 'crdt', () => {
 				},
 			];
 			const generatedBlocks = staleBlocks.map( ( block ) => {
-				const generatedBlock = { ...block, isValid: true };
+				const generatedBlock: Block & {
+					__unstableBlockSource?: unknown;
+				} = { ...block, isValid: true };
 				delete generatedBlock.__unstableBlockSource;
 				delete generatedBlock.originalContent;
 				delete generatedBlock.validationIssues;
@@ -1006,12 +1023,12 @@ describe( 'crdt', () => {
 				'<!-- /wp:heading -->',
 			].join( '\n' );
 
-			expect(
-				__unstableSerializeAndClean( staleBlocks ).trim()
-			).not.toBe( persistedContent );
-			expect(
-				__unstableSerializeAndClean( generatedBlocks ).trim()
-			).not.toBe( persistedContent );
+			expect( serializeBlocksForTest( staleBlocks ) ).not.toBe(
+				persistedContent
+			);
+			expect( serializeBlocksForTest( generatedBlocks ) ).not.toBe(
+				persistedContent
+			);
 
 			applyPostChangesToCRDTDoc(
 				doc,
