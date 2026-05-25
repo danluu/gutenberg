@@ -1170,12 +1170,14 @@ function mergeYBlocksLocalChanges(
  *                        RichText field associated with a specific block and attribute.
  *                        Derived from the changes that produced the blocks.
  * @param baseBlocks      Optional pre-change block snapshot used for rebasing.
+ * @param replaceBlocks   Whether to replace the full block tree with incoming blocks.
  */
 export function mergeCrdtBlocks(
 	yblocks: YBlocks,
 	incomingBlocks: Block[],
 	attributeCursor: MergeCursorPosition,
-	baseBlocks?: Block[]
+	baseBlocks?: Block[],
+	replaceBlocks = false
 ): void {
 	// Ensure we are working with serializable block data.
 	if ( ! serializableBlocksCache.has( incomingBlocks ) ) {
@@ -1199,6 +1201,21 @@ export function mergeCrdtBlocks(
 	const baseBlocksToSync = useCachedLocalBlocksAsBase
 		? cachedBaseBlocksToSync
 		: explicitBaseBlocksToSync ?? cachedBaseBlocksToSync;
+
+	if ( replaceBlocks ) {
+		if ( yblocks.length ) {
+			yblocks.delete( 0, yblocks.length );
+		}
+		if ( blocksToSync.length ) {
+			yblocks.insert(
+				0,
+				blocksToSync.map( ( block ) => createNewYBlock( block ) )
+			);
+		}
+		removeDuplicateClientIds( yblocks );
+		previousLocalBlocksCache.set( yblocks, blocksToSync );
+		return;
+	}
 
 	if (
 		baseBlocksToSync &&

@@ -3,6 +3,7 @@
  */
 import apiFetch from '@wordpress/api-fetch';
 import { store as blockEditorStore } from '@wordpress/block-editor';
+import { registerBlockType, unregisterBlockType } from '@wordpress/blocks';
 import { store as coreStore } from '@wordpress/core-data';
 import { createRegistry } from '@wordpress/data';
 import { store as noticesStore } from '@wordpress/notices';
@@ -13,6 +14,7 @@ import { store as preferencesStore } from '@wordpress/preferences';
  */
 
 import * as actions from '../actions';
+import * as privateActions from '../private-actions';
 import { store as editorStore } from '..';
 
 const postId = 44;
@@ -230,6 +232,97 @@ describe( 'Post actions', () => {
 			// Check that no notice has been shown on autosave.
 			const notices = registry.select( noticesStore ).getNotices();
 			expect( notices ).toMatchObject( [] );
+		} );
+	} );
+
+	describe( 'restoreRevision()', () => {
+		it( 'restores parsed blocks alongside revision content', async () => {
+			const blockName = 'core/restore-revision-test';
+			const revisionId = 123;
+			const restoredContent =
+				'<!-- wp:restore-revision-test --><p>Restored marker</p><!-- /wp:restore-revision-test -->';
+			const revision = {
+				id: revisionId,
+				date: '2026-05-21T08:52:26',
+				title: { raw: 'Restored title' },
+				excerpt: { raw: 'Restored excerpt' },
+				content: { raw: restoredContent },
+			};
+
+			const getEntityConfig = jest.fn( () => ( { revisionKey: 'id' } ) );
+			const getRevision = jest.fn( () => Promise.resolve( revision ) );
+			const createSuccessNotice = jest.fn();
+			const dispatch = {
+				editPost: jest.fn(),
+				savePost: jest.fn( () => Promise.resolve() ),
+				setCurrentRevisionId: jest.fn(),
+			};
+			const registry = {
+				dispatch: jest.fn( () => ( { createSuccessNotice } ) ),
+				resolveSelect: jest.fn( () => ( { getRevision } ) ),
+				select: jest.fn( () => ( { getEntityConfig } ) ),
+			};
+			const select = {
+				getCurrentPostId: () => postId,
+				getCurrentPostType: () => 'post',
+			};
+
+			registerBlockType( blockName, {
+				apiVersion: 3,
+				attributes: {
+					content: {
+						source: 'html',
+						selector: 'p',
+						type: 'string',
+					},
+				},
+				category: 'text',
+				save: ( { attributes } ) => <p>{ attributes.content }</p>,
+				title: 'Restore Revision Test',
+			} );
+
+			try {
+				await privateActions.restoreRevision( revisionId )( {
+					dispatch,
+					registry,
+					select,
+				} );
+
+				expect( getEntityConfig ).toHaveBeenCalledWith(
+					'postType',
+					'post'
+				);
+				expect( getRevision ).toHaveBeenCalledWith(
+					'postType',
+					'post',
+					postId,
+					revisionId,
+					expect.objectContaining( {
+						context: 'edit',
+						_fields: expect.stringContaining( 'content.raw' ),
+					} )
+				);
+				expect( dispatch.editPost ).toHaveBeenCalledTimes( 1 );
+
+				const restoredEdits = dispatch.editPost.mock.calls[ 0 ][ 0 ];
+				expect( restoredEdits ).toMatchObject( {
+					content: restoredContent,
+					excerpt: 'Restored excerpt',
+					title: 'Restored title',
+				} );
+				expect( restoredEdits.blocks ).toHaveLength( 1 );
+				expect( restoredEdits.blocks[ 0 ] ).toMatchObject( {
+					attributes: { content: 'Restored marker' },
+					name: blockName,
+				} );
+				expect( dispatch.setCurrentRevisionId ).toHaveBeenCalledWith(
+					null
+				);
+				expect( dispatch.savePost ).toHaveBeenCalled();
+				expect( createSuccessNotice ).toHaveBeenCalled();
+			} finally {
+				unregisterBlockType( blockName );
+			}
 		} );
 	} );
 

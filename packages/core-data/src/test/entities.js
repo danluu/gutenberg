@@ -267,6 +267,76 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
+	it( 'marks revision restores as authoritative CRDT block snapshots', async () => {
+		const baseContent = pageContent( [ 'Alpha', 'Beta' ] );
+		const restoredContent = pageContent( [ 'Alpha' ] );
+		const latestRecord = {
+			id: 123,
+			content: { raw: baseContent },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest
+				.fn()
+				.mockResolvedValue( 'restore-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: baseContent,
+			} ) ),
+			update: jest.fn(),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: { raw: baseContent },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			{ content: restoredContent },
+			'page',
+			false,
+			'/wp/v2/pages',
+			{ __unstableCRDTSnapshotReplace: true }
+		);
+
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/page',
+			123,
+			expect.objectContaining( {
+				content: restoredContent,
+				blocks: expect.any( Array ),
+			} ),
+			'gutenberg-undo-ignored',
+			expect.objectContaining( {
+				isSave: true,
+				replaceBlocks: true,
+				baseRecord: expect.objectContaining( {
+					...latestRecord,
+					blocks: expect.any( Array ),
+				} ),
+			} )
+		);
+		expect(
+			syncManager.update.mock.calls[ 0 ][ 2 ].blocks.map(
+				( block ) => block.attributes.content
+			)
+		).toEqual( [ 'Alpha' ] );
+		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'restore-doc',
+			},
+		} );
+	} );
+
 	it( 'snapshots only saved raw fields before serializing the persisted document', async () => {
 		const baseContent = pageContent( [ 'Alpha' ] );
 		const latestRecord = {

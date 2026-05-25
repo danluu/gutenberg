@@ -122,6 +122,7 @@ export interface SyncManagerUpdateOptions {
 	baseRecord?: ObjectData;
 	isSave?: boolean;
 	isNewUndoLevel?: boolean;
+	replaceBlocks?: boolean;
 }
 
 export interface CreatePersistedCRDTDocOptions {

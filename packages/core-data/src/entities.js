@@ -456,6 +456,7 @@ export const additionalEntityConfigLoaders = [
  * @param {string}  name            Post type name.
  * @param {boolean} isTemplate      Whether the post type is a template.
  * @param {string}  baseURL         REST base URL for the post type.
+ * @param {Object}  options         Save options.
  * @return {Promise< Object >} Updated edits.
  */
 export const prePersistPostType = async (
@@ -463,7 +464,8 @@ export const prePersistPostType = async (
 	edits,
 	name,
 	isTemplate,
-	baseURL
+	baseURL,
+	options = {}
 ) => {
 	const newEdits = {};
 	const objectType = `postType/${ name }`;
@@ -473,6 +475,8 @@ export const prePersistPostType = async (
 	let hasSerializedDoc = false;
 	let latestRecordForCRDTSnapshot;
 	let latestPersistedCRDTDoc;
+	const shouldReplaceCRDTSnapshotBlocks =
+		!! options.__unstableCRDTSnapshotReplace;
 	const editedSavedFields = POST_RAW_ATTRIBUTES.filter(
 		( key ) => key in edits
 	);
@@ -574,6 +578,7 @@ export const prePersistPostType = async (
 				hasSerializedDoc = !! serializedDoc;
 
 				if (
+					! shouldReplaceCRDTSnapshotBlocks &&
 					hasLatestPersistedCRDTDoc &&
 					locallyChangedSavedFields.length
 				) {
@@ -607,6 +612,7 @@ export const prePersistPostType = async (
 			}
 
 			if (
+				! shouldReplaceCRDTSnapshotBlocks &&
 				locallyChangedSavedFieldSet.has( 'content' ) &&
 				! ( 'content' in newEdits )
 			) {
@@ -632,6 +638,7 @@ export const prePersistPostType = async (
 	if (
 		window._wpCollaborationEnabled &&
 		POST_TYPES_WITH_STALE_SAVE_PROTECTION.has( name ) &&
+		! shouldReplaceCRDTSnapshotBlocks &&
 		objectId &&
 		locallyChangedSavedFieldSet.has( 'content' ) &&
 		getRawPostValue( edits.content ) === '' &&
@@ -661,6 +668,9 @@ export const prePersistPostType = async (
 				LOCAL_UNDO_IGNORED_ORIGIN,
 				{
 					isSave: true,
+					...( options.__unstableCRDTSnapshotReplace
+						? { replaceBlocks: true }
+						: {} ),
 					baseRecord: getCRDTSnapshotBaseRecord(
 						latestRecordForCRDTSnapshot ?? persistedRecord
 					),
@@ -752,13 +762,14 @@ async function loadPostTypeEntities() {
 				( isTemplate
 					? capitalCase( record.slug ?? '' )
 					: String( record.id ) ),
-			__unstablePrePersist: ( persistedRecord, edits ) =>
+			__unstablePrePersist: ( persistedRecord, edits, options ) =>
 				prePersistPostType(
 					persistedRecord,
 					edits,
 					name,
 					isTemplate,
-					`/${ namespace }/${ postType.rest_base }`
+					`/${ namespace }/${ postType.rest_base }`,
+					options
 				),
 			__unstable_rest_base: postType.rest_base,
 			supportsPagination: true,

@@ -129,13 +129,14 @@ function defaultApplyChangesToCRDTDoc(
  * @param {Set<string>} syncedProperties
  * @param {Object}      options
  * @param {ObjectData}  options.baseRecord
+ * @param {boolean}     options.replaceBlocks
  * @return {void}
  */
 export function applyPostChangesToCRDTDoc(
 	ydoc: CRDTDoc,
 	changes: PostChanges,
 	syncedProperties: Set< string >,
-	options: { baseRecord?: ObjectData } = {}
+	options: { baseRecord?: ObjectData; replaceBlocks?: boolean } = {}
 ): void {
 	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
 	const shouldDeriveContentFromBlocks =
@@ -183,7 +184,8 @@ export function applyPostChangesToCRDTDoc(
 					currentBlocks,
 					newValue,
 					newCursorPosition,
-					( options.baseRecord as PostChanges | undefined )?.blocks
+					( options.baseRecord as PostChanges | undefined )?.blocks,
+					options.replaceBlocks
 				);
 				break;
 			}
