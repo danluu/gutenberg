@@ -70,16 +70,10 @@ if [ "${RTC_RESOURCE_AUTOSCALER_ONE_CANARY_MATERIALIZATION_RESCUE:-0}" = "1" ] |
 else
 	MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-10}
 fi
-case "$benchmark_canary_sticky_group_limit" in
-	0|1)
-		ONE_CANARY_MATERIALIZATION_RESCUE=1
-		MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-1}
-		;;
-	2)
-		ONE_CANARY_MATERIALIZATION_RESCUE=1
-		MIN_COVERAGE_BREADTH_GROUPS=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-2}
-		;;
-esac
+# The sticky group limit constrains benchmark-canary selection inside the
+# novelty monitor. It must not turn into a global autoscaler rescue cap after
+# disk/load pressure has cleared; otherwise a stale low-budget env keeps the
+# browser fleet at one or two groups indefinitely.
 
 mkdir -p "$BASE" "$MATERIALIZATION_DIR"
 exec 9>"$LOCK"
@@ -1338,6 +1332,7 @@ write_budget_env() {
 	local benchmark_canary_ws_backfill_slots
 	local benchmark_canary_sticky_group_limit
 	local zero_coverage_benchmark_canary_min_active_groups
+	local deadline_coverage_gap_reserved_groups
 	allow_fleet_startup_noise_canary=${RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_FLEET_STARTUP_NOISE_CANARY 0)}
 	fleet_startup_noise_canary_group=${RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP:-$(run_script_value RTC_FUZZ_NOVELTY_FLEET_STARTUP_NOISE_CANARY_GROUP novelty-ws-media-cross-entity)}
 	allow_empty_materialization_no_product_startup_canary=${RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY:-$(run_script_value RTC_FUZZ_NOVELTY_ALLOW_EMPTY_MATERIALIZATION_NO_PRODUCT_STARTUP_CANARY 0)}
@@ -1346,6 +1341,7 @@ write_budget_env() {
 	benchmark_canary_ws_backfill_slots=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS 1)}
 	benchmark_canary_sticky_group_limit=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT '')}
 	zero_coverage_benchmark_canary_min_active_groups=${RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS:-$(run_script_value RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS 1)}
+	deadline_coverage_gap_reserved_groups=${RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS:-$(run_script_value RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS '')}
 	if [ "${target:-0}" -le 0 ] && [ "${max:-0}" -le 0 ]; then
 		min_enabled_browser_lanes=''
 		allow_empty_materialization_no_product_startup_canary=0
@@ -1353,6 +1349,7 @@ write_budget_env() {
 		benchmark_canary_ws_backfill_slots=0
 		benchmark_canary_sticky_group_limit=0
 		zero_coverage_benchmark_canary_min_active_groups=0
+		deadline_coverage_gap_reserved_groups=0
 	elif [ "${max:-0}" -le 4 ]; then
 		local low_budget_canary_limit=$target
 		[[ "$low_budget_canary_limit" =~ ^[0-9]+$ ]] || low_budget_canary_limit=1
@@ -1364,11 +1361,16 @@ write_budget_env() {
 		benchmark_canary_ws_backfill_slots=0
 		benchmark_canary_sticky_group_limit=$low_budget_canary_limit
 		zero_coverage_benchmark_canary_min_active_groups=$low_budget_canary_limit
-	elif [ "$benchmark_canary_sticky_group_limit" = "1" ]; then
-		benchmark_canary_bootstrap_reserve_slots=1
-		benchmark_canary_ws_backfill_slots=0
-	elif [ "${benchmark_canary_bootstrap_reserve_slots:-0}" -lt 6 ]; then
-		benchmark_canary_bootstrap_reserve_slots=6
+		deadline_coverage_gap_reserved_groups=0
+	else
+		case "${benchmark_canary_sticky_group_limit:-}" in
+			''|0|1|2)
+				benchmark_canary_sticky_group_limit=''
+				;;
+		esac
+		if [ "${benchmark_canary_bootstrap_reserve_slots:-0}" -lt 6 ]; then
+			benchmark_canary_bootstrap_reserve_slots=6
+		fi
 	fi
 	cat > "$BUDGET_ENV" <<EOF_BUDGET
 export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='$target'
@@ -1385,6 +1387,7 @@ export RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS='$benchmark_can
 export RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS='$benchmark_canary_ws_backfill_slots'
 export RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT='$benchmark_canary_sticky_group_limit'
 export RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS='$zero_coverage_benchmark_canary_min_active_groups'
+export RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS='$deadline_coverage_gap_reserved_groups'
 EOF_BUDGET
 }
 
@@ -1396,9 +1399,16 @@ rewrite_current_run_budget_exports() {
 const fs = require( 'fs' );
 const [ file, target, max ] = process.argv.slice( 2 );
 let lines = fs.readFileSync( file, 'utf8' ).split( /\n/ );
-const hadStickyCap = lines.some( ( line ) =>
-	/^export RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT='[01]'/.test( line )
-);
+const existingDeadlineReserve =
+	lines
+		.map( ( line ) =>
+			line.match(
+				/^export RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS='([^']*)'/
+			)
+		)
+		.filter( Boolean )
+		.map( ( match ) => match[ 1 ] )
+		.pop() || '';
 const exportNames = new Set( [
 	'RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS',
 	'RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS',
@@ -1409,12 +1419,13 @@ const exportNames = new Set( [
 	'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS',
 	'RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT',
 	'RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS',
+	'RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS',
 ] );
 lines = lines.filter( ( line ) => {
 	const match = line.match( /^export ([A-Z0-9_]+)=/ );
 	return ! match || ! exportNames.has( match[ 1 ] );
 } );
-const strictLowBudget = Number.parseInt( max, 10 ) <= 4 || hadStickyCap;
+const strictLowBudget = Number.parseInt( max, 10 ) <= 4;
 const targetNumber = Math.max( 0, Number.parseInt( target, 10 ) || 0 );
 const maxNumber = Math.max( 0, Number.parseInt( max, 10 ) || 0 );
 const lowBudgetCanaryLimit = strictLowBudget
@@ -1441,6 +1452,10 @@ const exports = [
 	[
 		'RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS',
 		strictLowBudget ? lowBudgetCanaryLimit : '1',
+	],
+	[
+		'RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS',
+		strictLowBudget ? '0' : existingDeadlineReserve,
 	],
 ] ).map( ( [ name, value ] ) => `export ${ name }='${ value }'` );
 const nodeIndex = lines.findIndex( ( line ) =>
@@ -1609,6 +1624,7 @@ restart_coverage() {
 	local benchmark_canary_sticky_group_limit
 	local benchmark_canary_bootstrap_reserve_slots
 	local zero_coverage_benchmark_canary_min_active_groups
+	local deadline_coverage_gap_reserved_groups
 	local start_rc=0
 	[[ "$desired_target" =~ ^[0-9]+$ ]] || desired_target=1
 	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=$desired_target
@@ -1628,6 +1644,7 @@ restart_coverage() {
 	benchmark_canary_sticky_group_limit=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT '')}
 	benchmark_canary_bootstrap_reserve_slots=${RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS:-$(run_script_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS 6)}
 	zero_coverage_benchmark_canary_min_active_groups=${RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS:-$(run_script_value RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS 1)}
+	deadline_coverage_gap_reserved_groups=${RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS:-$(run_script_value RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS '')}
 	if [ "${desired_target:-0}" -le 0 ] && [ "${desired_max:-0}" -le 0 ]; then
 		min_enabled_browser_lanes=''
 		allow_empty_materialization_no_product_startup_canary=0
@@ -1635,6 +1652,7 @@ restart_coverage() {
 		benchmark_canary_ws_backfill_slots=0
 		benchmark_canary_sticky_group_limit=0
 		zero_coverage_benchmark_canary_min_active_groups=0
+		deadline_coverage_gap_reserved_groups=0
 	elif [ "${desired_max:-0}" -le 4 ]; then
 		local low_budget_canary_limit=$desired_target
 		[[ "$low_budget_canary_limit" =~ ^[0-9]+$ ]] || low_budget_canary_limit=1
@@ -1646,9 +1664,16 @@ restart_coverage() {
 		benchmark_canary_ws_backfill_slots=0
 		benchmark_canary_sticky_group_limit=$low_budget_canary_limit
 		zero_coverage_benchmark_canary_min_active_groups=$low_budget_canary_limit
-	elif [ "$benchmark_canary_sticky_group_limit" = "1" ]; then
-		benchmark_canary_bootstrap_reserve_slots=1
-		benchmark_canary_ws_backfill_slots=0
+		deadline_coverage_gap_reserved_groups=0
+	else
+		case "${benchmark_canary_sticky_group_limit:-}" in
+			''|0|1|2)
+				benchmark_canary_sticky_group_limit=''
+				;;
+		esac
+		if [ "${benchmark_canary_bootstrap_reserve_slots:-0}" -lt 6 ]; then
+			benchmark_canary_bootstrap_reserve_slots=6
+		fi
 	fi
 	latest_before=$(latest_run)
 	append_loss_event "$(stamp)" "restart" "$reason" "$desired_target" "$desired_max" "$latest_before" "${materialized_active_run_dirs:-}" "${materialized_running_groups:-}" "${supervisor_status_counts:-}"
@@ -1669,6 +1694,7 @@ restart_coverage() {
 	RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS="$benchmark_canary_ws_backfill_slots" \
 	RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT="$benchmark_canary_sticky_group_limit" \
 	RTC_FUZZ_NOVELTY_ZERO_COVERAGE_BENCHMARK_CANARY_MIN_ACTIVE_GROUPS="$zero_coverage_benchmark_canary_min_active_groups" \
+	RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS="$deadline_coverage_gap_reserved_groups" \
 		"$START" >> "$LOG" 2>&1 || start_rc=$?
 	if [ "$start_rc" -ne 0 ]; then
 		echo "[$(stamp)] coverage-guided start script exited rc=$start_rc reason=$reason" >> "$LOG"
