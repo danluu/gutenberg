@@ -1492,7 +1492,7 @@ NODE
 
 apply_in_place_coverage_budget() {
 	local desired_target=$1 desired_max=$2 reason=$3 mode=${4:-ordinary}
-	local latest groups_path before after
+	local latest groups_path before after sticky_limit
 	[[ "$desired_target" =~ ^[0-9]+$ ]] || desired_target=1
 	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=$desired_target
 	if [ "$desired_max" -lt "$desired_target" ]; then
@@ -1503,10 +1503,12 @@ apply_in_place_coverage_budget() {
 	groups_path="$latest/supervisor-groups.json"
 	before=$(node -e "const fs=require('fs'); const groups=JSON.parse(fs.readFileSync(process.argv[1],'utf8')); console.log(Array.isArray(groups)?groups.length:0)" "$groups_path" 2>/dev/null || echo 0)
 	write_budget_env "$desired_target" "$desired_max" 1.02
+	sticky_limit=$(budget_env_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT '')
 	rewrite_current_run_budget_exports "$desired_target" "$desired_max"
-node - "$groups_path" "$latest/novelty-state.json" "$desired_max" "$mode" <<'NODE'
+node - "$groups_path" "$latest/novelty-state.json" "$desired_max" "$mode" "$sticky_limit" <<'NODE'
 const fs = require( 'fs' );
-const [ groupsPath, statePath, desiredMaxRaw, mode ] = process.argv.slice( 2 );
+const [ groupsPath, statePath, desiredMaxRaw, mode, stickyLimitRaw ] =
+	process.argv.slice( 2 );
 const stickyBenchmarkGroups = new Set( [
 	'novelty-http-table-stale-snapshot',
 	'novelty-http-list-move-refresh',
@@ -1520,24 +1522,26 @@ const stickyBenchmarkGroups = new Set( [
 	'novelty-http-persistence-probe',
 ] );
 let desiredMax = Math.max( 0, Number.parseInt( desiredMaxRaw, 10 ) || 0 );
+const parsedStickyLimit = Number.parseInt( stickyLimitRaw || '', 10 );
+const stickyLimit = Number.isFinite( parsedStickyLimit )
+	? Math.max( 0, parsedStickyLimit )
+	: Number.POSITIVE_INFINITY;
 let groups = JSON.parse( fs.readFileSync( groupsPath, 'utf8' ) );
 if ( ! Array.isArray( groups ) ) {
 	process.exit( 1 );
-}
-if ( mode === 'down' && desiredMax > 0 ) {
-	const stickyCount = groups.filter( ( group ) =>
-		stickyBenchmarkGroups.has( group?.name )
-	).length;
-	desiredMax = Math.max( desiredMax, stickyCount );
 }
 if ( mode === 'down' && groups.length > desiredMax ) {
 	const stickyGroups = groups.filter( ( group ) =>
 		stickyBenchmarkGroups.has( group?.name )
 	);
+	const keptStickyGroups = stickyGroups.slice(
+		0,
+		Math.min( stickyLimit, desiredMax )
+	);
 	const otherGroups = groups.filter(
 		( group ) => ! stickyBenchmarkGroups.has( group?.name )
 	);
-	groups = [ ...stickyGroups, ...otherGroups ].slice( 0, desiredMax );
+	groups = [ ...keptStickyGroups, ...otherGroups ].slice( 0, desiredMax );
 	fs.writeFileSync(
 		groupsPath,
 		`${ JSON.stringify( groups, null, '\t' ) }\n`
@@ -1856,6 +1860,16 @@ while true; do
 			last_restart_epoch=$(epoch)
 		else
 			action=materialization_cooldown
+		fi
+		up_streak=0
+		down_streak=0
+	elif [ "${desired_max:-0}" -ge 0 ] && [ "${enabled:-0}" -gt "${desired_max:-0}" ]; then
+		action=trim_overenabled_groups
+		if apply_in_place_coverage_budget "$desired_target" "$desired_max" "$reason" down; then
+			action=trim_overenabled_groups_in_place
+		else
+			restart_coverage "$desired_target" "$desired_max" "$reason"
+			last_restart_epoch=$(epoch)
 		fi
 		up_streak=0
 		down_streak=0
