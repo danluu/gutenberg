@@ -2,6 +2,7 @@
  * WordPress dependencies
  */
 import { Y } from '@wordpress/sync';
+import type { Block as WPBlock } from '@wordpress/blocks';
 
 /**
  * External dependencies
@@ -91,18 +92,16 @@ import { updateSelectionHistory } from '../crdt-selection';
 import { createYMap, getRootMap, type YMapWrap } from '../crdt-utils';
 import type { Post } from '../../entity-types';
 
-type SerializableBlocks = Parameters< typeof __unstableSerializeAndClean >[ 0 ];
+type ConsoleMatcherExpect = ( actual: Console ) => {
+	toHaveErrored: () => void;
+	toHaveWarned: () => void;
+};
 
-function expectConsoleWarnings() {
-	return expect( console ) as unknown as {
-		toHaveErrored: () => void;
-		toHaveWarned: () => void;
-	};
-}
+const expectConsole = expect as unknown as ConsoleMatcherExpect;
 
-function serializeBlocksForTest( blocks: Block[] ): string {
+function serializeBlocksForTest( blocks: Block[] | WPBlock[] ): string {
 	return __unstableSerializeAndClean(
-		blocks as unknown as SerializableBlocks
+		blocks as unknown as WPBlock[]
 	).trim();
 }
 
@@ -1000,8 +999,8 @@ describe( 'crdt', () => {
 			expect( __unstableSerializeAndClean( blocks ).trim() ).not.toBe(
 				persistedContent
 			);
-			expectConsoleWarnings().toHaveWarned();
-			expectConsoleWarnings().toHaveErrored();
+			expectConsole( console ).toHaveWarned();
+			expectConsole( console ).toHaveErrored();
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -1059,8 +1058,8 @@ describe( 'crdt', () => {
 			].join( '\n' );
 			const blocks = parse( originalContent );
 
-			expectConsoleWarnings().toHaveWarned();
-			expectConsoleWarnings().toHaveErrored();
+			expectConsole( console ).toHaveWarned();
+			expectConsole( console ).toHaveErrored();
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -1146,14 +1145,16 @@ describe( 'crdt', () => {
 
 			expect( changes ).toHaveProperty( 'blocks' );
 			expect(
-				__unstableSerializeAndClean( changes.blocks as Block[] ).trim()
+				__unstableSerializeAndClean(
+					changes.blocks as unknown as WPBlock[]
+				).trim()
 			).toBe( persistedContent );
 		} );
 
 		it( 'does not invalidate persisted blocks for equivalent entity references and link attribute order', () => {
 			registerEntityReferenceBlocks();
 
-			const staleBlocks: Block[] = [
+			const staleBlocks: WPBlock[] = [
 				{
 					name: 'core/paragraph',
 					clientId: 'paragraph-1',

@@ -6,7 +6,10 @@ import fastDeepEqual from 'fast-deep-equal/es6/index.js';
 /**
  * WordPress dependencies
  */
-import { __unstableSerializeAndClean } from '@wordpress/blocks';
+import {
+	__unstableSerializeAndClean,
+	type Block as WPBlock,
+} from '@wordpress/blocks';
 import {
 	type CRDTDoc,
 	type ObjectData,
@@ -46,8 +49,6 @@ import {
 	type YMapWrap,
 } from './crdt-utils';
 
-type SerializableBlocks = Parameters< typeof __unstableSerializeAndClean >[ 0 ];
-
 // Changes that can be applied to a post entity record.
 export type PostChanges = Omit<
 	Partial< Post >,
@@ -59,6 +60,8 @@ export type PostChanges = Omit<
 	selection?: WPSelection;
 	title?: Post[ 'title' ] | string;
 };
+
+type PostWithTransientBlocks = Post & { blocks?: Block[] };
 
 // A post record as represented in the CRDT document (Y.Map).
 export interface YPostRecord extends YMapRecord {
@@ -326,6 +329,10 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
 	return getRootMap( crdtDoc, CRDT_RECORD_MAP_KEY ).toJSON();
 }
 
+function serializeBlocks( blocks: Block[] ): string {
+	return __unstableSerializeAndClean( blocks as unknown as WPBlock[] );
+}
+
 function getGeneratedBlockSerialization( blocks: Block[] ): string {
 	return serializeAndCleanBlocks(
 		getGeneratedBlockSerializationBlocks( blocks )
@@ -333,9 +340,7 @@ function getGeneratedBlockSerialization( blocks: Block[] ): string {
 }
 
 function serializeAndCleanBlocks( blocks: Block[] ): string {
-	return __unstableSerializeAndClean(
-		blocks as unknown as SerializableBlocks
-	).trim();
+	return serializeBlocks( blocks ).trim();
 }
 
 function getGeneratedBlockSerializationBlocks( blocks: Block[] ): Block[] {
@@ -495,12 +500,13 @@ export function getPostChangesFromCRDTDoc(
 						editedRecord.content
 					) {
 						const blocksJson = ymap.get( 'blocks' )?.toJSON() ?? [];
+						const editedRecordBlocks = (
+							editedRecord as PostWithTransientBlocks
+						 ).blocks;
 						const persistedContent = Array.isArray(
-							editedRecord.blocks
+							editedRecordBlocks
 						)
-							? __unstableSerializeAndClean(
-									editedRecord.blocks
-							  ).trim()
+							? serializeBlocks( editedRecordBlocks ).trim()
 							: getRawValue( editedRecord.content );
 
 						return hasPersistedBlockContentChanged(
