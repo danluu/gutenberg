@@ -850,14 +850,16 @@ function normalizeBlockAttributeForComparison(
 		);
 	}
 
-	if ( schema?.type === 'array' && schema.query && Array.isArray( value ) ) {
+	const query = schema?.query;
+
+	if ( schema?.type === 'array' && query && Array.isArray( value ) ) {
 		return value.map( ( item ) =>
-			normalizeQueryObjectForComparison( item, schema.query )
+			normalizeQueryObjectForComparison( item, query )
 		);
 	}
 
-	if ( schema?.type === 'object' && schema.query ) {
-		return normalizeQueryObjectForComparison( value, schema.query );
+	if ( schema?.type === 'object' && query ) {
+		return normalizeQueryObjectForComparison( value, query );
 	}
 
 	return normalizeBlockForComparison( value );

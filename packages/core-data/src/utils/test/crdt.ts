@@ -2,6 +2,7 @@
  * WordPress dependencies
  */
 import { Y } from '@wordpress/sync';
+import type { Block as WPBlock } from '@wordpress/blocks';
 
 /**
  * External dependencies
@@ -90,6 +91,13 @@ import type { Block, YBlock, YBlockRecord, YBlocks } from '../crdt-blocks';
 import { updateSelectionHistory } from '../crdt-selection';
 import { createYMap, getRootMap, type YMapWrap } from '../crdt-utils';
 import type { Post } from '../../entity-types';
+
+type ConsoleMatcherExpect = ( actual: Console ) => {
+	toHaveErrored: () => void;
+	toHaveWarned: () => void;
+};
+
+const expectConsole = expect as unknown as ConsoleMatcherExpect;
 
 function renderRichTextValue( value?: string | RichTextData ): string {
 	return typeof value === 'string' ? value : value?.toHTMLString() ?? '';
@@ -985,8 +993,8 @@ describe( 'crdt', () => {
 			expect( __unstableSerializeAndClean( blocks ).trim() ).not.toBe(
 				persistedContent
 			);
-			expect( console ).toHaveWarned();
-			expect( console ).toHaveErrored();
+			expectConsole( console ).toHaveWarned();
+			expectConsole( console ).toHaveErrored();
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -1044,8 +1052,8 @@ describe( 'crdt', () => {
 			].join( '\n' );
 			const blocks = parse( originalContent );
 
-			expect( console ).toHaveWarned();
-			expect( console ).toHaveErrored();
+			expectConsole( console ).toHaveWarned();
+			expectConsole( console ).toHaveErrored();
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -1131,14 +1139,16 @@ describe( 'crdt', () => {
 
 			expect( changes ).toHaveProperty( 'blocks' );
 			expect(
-				__unstableSerializeAndClean( changes.blocks as Block[] ).trim()
+				__unstableSerializeAndClean(
+					changes.blocks as unknown as WPBlock[]
+				).trim()
 			).toBe( persistedContent );
 		} );
 
 		it( 'does not invalidate persisted blocks for equivalent entity references and link attribute order', () => {
 			registerEntityReferenceBlocks();
 
-			const staleBlocks = [
+			const staleBlocks: WPBlock[] = [
 				{
 					name: 'core/paragraph',
 					clientId: 'paragraph-1',

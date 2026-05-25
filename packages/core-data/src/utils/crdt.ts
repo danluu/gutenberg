@@ -6,7 +6,10 @@ import fastDeepEqual from 'fast-deep-equal/es6/index.js';
 /**
  * WordPress dependencies
  */
-import { __unstableSerializeAndClean } from '@wordpress/blocks';
+import {
+	__unstableSerializeAndClean,
+	type Block as WPBlock,
+} from '@wordpress/blocks';
 import {
 	type CRDTDoc,
 	type ObjectData,
@@ -57,6 +60,8 @@ export type PostChanges = Omit<
 	selection?: WPSelection;
 	title?: Post[ 'title' ] | string;
 };
+
+type PostWithTransientBlocks = Post & { blocks?: Block[] };
 
 // A post record as represented in the CRDT document (Y.Map).
 export interface YPostRecord extends YMapRecord {
@@ -324,8 +329,12 @@ function defaultGetChangesFromCRDTDoc( crdtDoc: CRDTDoc ): ObjectData {
 	return getRootMap( crdtDoc, CRDT_RECORD_MAP_KEY ).toJSON();
 }
 
+function serializeBlocks( blocks: Block[] ): string {
+	return __unstableSerializeAndClean( blocks as unknown as WPBlock[] );
+}
+
 function getGeneratedBlockSerialization( blocks: Block[] ): string {
-	return __unstableSerializeAndClean(
+	return serializeBlocks(
 		getGeneratedBlockSerializationBlocks( blocks )
 	).trim();
 }
@@ -406,7 +415,7 @@ function hasPersistedBlockContentChanged(
 	}
 
 	const rawPersistedContent = persistedContent;
-	const serializedBlocks = __unstableSerializeAndClean( blocks ).trim();
+	const serializedBlocks = serializeBlocks( blocks ).trim();
 
 	if ( serializedBlocks === rawPersistedContent ) {
 		return false;
@@ -510,12 +519,13 @@ export function getPostChangesFromCRDTDoc(
 						editedRecord.content
 					) {
 						const blocksJson = ymap.get( 'blocks' )?.toJSON() ?? [];
+						const editedRecordBlocks = (
+							editedRecord as PostWithTransientBlocks
+						 ).blocks;
 						const persistedContent = Array.isArray(
-							editedRecord.blocks
+							editedRecordBlocks
 						)
-							? __unstableSerializeAndClean(
-									editedRecord.blocks
-							  ).trim()
+							? serializeBlocks( editedRecordBlocks ).trim()
 							: getRawValue( editedRecord.content );
 
 						return hasPersistedBlockContentChanged(
