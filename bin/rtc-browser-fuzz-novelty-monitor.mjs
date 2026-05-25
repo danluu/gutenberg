@@ -15359,6 +15359,21 @@ async function writeStatusHeartbeat() {
 		} else {
 			nextText = `${ nextText.trimEnd() }\n\n## Health\n${ heartbeatLine }\n`;
 		}
+		const liveCurrentRunDirSource =
+			state.currentRunDirSource ?? 'unknown';
+		const liveCurrentRunDirCount = ( state.currentRunDirs ?? [] ).length;
+		if ( /^- current-run dir source: /m.test( nextText ) ) {
+			nextText = nextText.replace(
+				/^- current-run dir source: .*$/m,
+				`- current-run dir source: ${ liveCurrentRunDirSource }`
+			);
+		}
+		if ( /^- current-run active dirs: /m.test( nextText ) ) {
+			nextText = nextText.replace(
+				/^- current-run active dirs: .*$/m,
+				`- current-run active dirs: ${ liveCurrentRunDirCount }`
+			);
+		}
 		await writeTextFileAtomic(
 			STATUS_PATH,
 			nextText.endsWith( '\n' ) ? nextText : `${ nextText }\n`

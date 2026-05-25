@@ -50,8 +50,9 @@ BENCHMARK_UNBLOCK_STATE="$BASE/logs/benchmark-minimum-unblock-launches.tsv"
 BENCHMARK_UNBLOCK_MAX_ACTIVE=${RTC_PR_FINALIZATION_BENCHMARK_UNBLOCK_MAX_ACTIVE:-2}
 BENCHMARK_UNBLOCK_TIMEOUT_SECONDS=${RTC_PR_FINALIZATION_BENCHMARK_UNBLOCK_TIMEOUT_SECONDS:-14400}
 BENCHMARK_UNBLOCK_MIN_INTERVAL_SECONDS=${RTC_PR_FINALIZATION_BENCHMARK_UNBLOCK_MIN_INTERVAL_SECONDS:-1800}
+BENCHMARK_REPAIR_BASE="$BASE/benchmark-minimum-repair"
 
-mkdir -p "$BASE/logs" "$BASE/cycles" "$BASE/worktrees" "$BENCHMARK_UNBLOCK_BASE"
+mkdir -p "$BASE/logs" "$BASE/cycles" "$BASE/worktrees" "$BENCHMARK_UNBLOCK_BASE" "$BENCHMARK_REPAIR_BASE"
 touch "$STATE" "$BENCHMARK_UNBLOCK_STATE"
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
@@ -548,6 +549,52 @@ if [ "\$rc" -eq 0 ]; then
 	printf -- '- result: passed\n' >> "$run_dir/report.md"
 else
 	printf -- '- result: failed\n- exit_code: %s\n' "\$rc" >> "$run_dir/report.md"
+	repair_ts=\$(date -u +%Y%m%dT%H%M%SZ)
+	repair_slug=\$(printf '%s-%s' "$row" "$commit" | tr '/[:space:]' '--' | tr -cd 'A-Za-z0-9._-' | cut -c1-80)
+	repair_dir="$BENCHMARK_REPAIR_BASE/\$repair_ts-\$repair_slug"
+	mkdir -p "\$repair_dir"
+	branch_slug=\$(printf '%s' "$branch" | sed 's/[^A-Za-z0-9_.-]/-/g')
+	exact_worktree="$STACK_WORKTREE_BASE/\$branch_slug-${commit:0:12}"
+	repair_branch="repair/benchmark-minimum-\$repair_ts-\$repair_slug"
+	cat > "\$repair_dir/prompt.md" <<EOF_REPAIR_PROMPT
+You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents.
+
+The PR finalization loop ran a benchmark-minimum promotion command and it failed.
+
+Branch under validation: $branch
+Commit under validation: $commit
+Benchmark row: $row
+Exact worktree: \$exact_worktree
+Failing command file: $command_file
+Failing command log: $run_dir/command.log
+Repair branch to create: \$repair_branch
+Report path: \$repair_dir/report.md
+
+Task:
+1. Inspect the failing command log and the exact worktree.
+2. Make the smallest type-safe repair needed for this benchmark-minimum row. Prefer fixing the proposed PR stack over weakening the benchmark. Do not disable tests or hide product behavior.
+3. Work in the exact worktree or a sibling worktree, and create the non-destructive local branch named above.
+4. Run the narrowest useful validation first, then rerun the failing command if feasible.
+5. Write \$repair_dir/report.md with Summary, Changes, Validation, Remaining blockers, and Local branch.
+6. Write \$repair_dir/repair-branch.txt containing only the local branch name.
+7. Write \$repair_dir/validation.tsv with columns command,exit_code,log_path.
+8. Do not push to GitHub from Jetstream.
+EOF_REPAIR_PROMPT
+	{
+		printf '#!/usr/bin/env bash\n'
+		printf 'set -euo pipefail\n'
+		printf 'cd %q\n' "\$exact_worktree"
+		printf 'export PATH=%q:%q:%q:$PATH\n' "$CODEX_BIN_DIR" "$TMUX_WRAP" "$NODE_BIN"
+		printf '%q -a never exec --skip-git-repo-check -m %q -c model_reasoning_effort=%q -s danger-full-access < %q > %q 2> %q\n' "$CODEX_BIN_DIR/codex" "$CODEX_MODEL" "$CODEX_REASONING_EFFORT" "\$repair_dir/prompt.md" "\$repair_dir/stdout.log" "\$repair_dir/stderr.log"
+	} > "\$repair_dir/run.sh"
+	chmod +x "\$repair_dir/run.sh"
+	printf -- '- repair_job: %s\n' "\$repair_dir" >> "$run_dir/report.md"
+	set +e
+	bash "\$repair_dir/run.sh"
+	repair_rc=\$?
+	set -e
+	printf '%s\n' "\$repair_rc" > "\$repair_dir/exit-code"
+	printf -- '- repair_exit_code: %s\n' "\$repair_rc" >> "$run_dir/report.md"
 fi
 printf '\n## Command Tail\n\n```text\n' >> "$run_dir/report.md"
 tail -200 "$run_dir/command.log" >> "$run_dir/report.md" 2>/dev/null || true
