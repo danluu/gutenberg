@@ -1,0 +1,176 @@
+#!/usr/bin/env node
+
+/**
+ * Local-only WebSocket sync server for Gutenberg RTC e2e tests.
+ *
+ * Built on @y/websocket-server so the test harness exercises the same
+ * y-protocol wire format as the production broker. No auth, no metrics,
+ * no persistence. /reset closes every live connection and drops the
+ * server's in-memory document map so each test starts clean.
+ */
+
+import http from 'node:http';
+import { createRequire } from 'node:module';
+import process from 'node:process';
+import {
+	docs,
+	setPersistence,
+	setupWSConnection,
+} from '@y/websocket-server/utils';
+
+const require = createRequire( import.meta.url );
+const ws = require( 'ws' );
+const wsPackagePath = require.resolve( 'ws/package.json' );
+const wsPackage = require( wsPackagePath );
+
+const wsMajor = Number.parseInt(
+	String( wsPackage.version ?? '' ).split( '.' )[ 0 ],
+	10
+);
+if ( wsMajor !== 8 || ! ws.WebSocketServer ) {
+	throw new Error(
+		`RTC test WebSocket server requires ws@8 with WebSocketServer; resolved ws@${
+			wsPackage.version ?? 'unknown'
+		} from ${ wsPackagePath }.`
+	);
+}
+
+/**
+ * @typedef {import('node:http').ServerResponse} ServerResponse
+ */
+
+const DEFAULT_PORT = 18991;
+const PORT = parsePortArg();
+
+function parsePortArg() {
+	const portIndex = process.argv.indexOf( '--port' );
+	const rawPort =
+		portIndex === -1
+			? process.env.GUTENBERG_RTC_TEST_WS_PORT
+			: process.argv[ portIndex + 1 ];
+
+	if ( ! rawPort ) {
+		return DEFAULT_PORT;
+	}
+
+	const port = Number.parseInt( rawPort, 10 );
+	if ( ! Number.isInteger( port ) || port <= 0 ) {
+		throw new Error( `Invalid port: ${ rawPort }` );
+	}
+	return port;
+}
+
+// Noop persistence so y-websocket-server still evicts documents from
+// memory once their last client disconnects.
+setPersistence( {
+	bindState: () => {},
+	writeState: async () => {},
+	provider: null,
+} );
+
+const wss = new ws.WebSocketServer( { noServer: true } );
+
+wss.on( 'connection', ( connection, request ) => {
+	setupWSConnection( connection, request );
+} );
+
+function getSnapshot() {
+	const roomEntries = Array.from( docs.entries() )
+		.slice( 0, 50 )
+		.map( ( [ roomName, doc ] ) => {
+			const connectionControlledClientCounts = Array.from(
+				doc.conns?.values?.() ?? []
+			)
+				.slice( 0, 20 )
+				.map( ( clientIds ) => clientIds.size );
+			return [
+				roomName,
+				{
+					awarenessClientCount:
+						doc.awareness?.getStates?.().size ?? null,
+					connectionControlledClientCounts,
+					connectionCount: doc.conns?.size ?? null,
+				},
+			];
+		} );
+
+	return {
+		name: 'gutenberg-rtc-test-ws-sync-server',
+		ok: true,
+		port: PORT,
+		wsPackagePath,
+		wsVersion: wsPackage.version,
+		docs: docs.size,
+		liveSocketCount: wss.clients.size,
+		rooms: Object.fromEntries( roomEntries ),
+		truncatedRooms: docs.size > roomEntries.length,
+	};
+}
+
+/**
+ * @param {ServerResponse} response HTTP response.
+ */
+function reset( response ) {
+	for ( const client of wss.clients ) {
+		client.close( 1001, 'reset' );
+	}
+	docs.clear();
+	response.writeHead( 204 );
+	response.end();
+}
+
+const server = http.createServer( ( request, response ) => {
+	if ( request.url === '/health' ) {
+		response.writeHead( 200, { 'content-type': 'application/json' } );
+		response.end(
+			JSON.stringify( {
+				name: 'gutenberg-rtc-test-ws-sync-server',
+				ok: true,
+				port: PORT,
+				wsPackagePath,
+				wsVersion: wsPackage.version,
+				docs: docs.size,
+			} )
+		);
+		return;
+	}
+
+	if ( request.url === '/snapshot' ) {
+		response.writeHead( 200, { 'content-type': 'application/json' } );
+		response.end( JSON.stringify( getSnapshot() ) );
+		return;
+	}
+
+	if ( request.method === 'POST' && request.url === '/reset' ) {
+		reset( response );
+		return;
+	}
+
+	response.writeHead( 404, { 'content-type': 'application/json' } );
+	response.end( JSON.stringify( { ok: false } ) );
+} );
+
+server.on( 'upgrade', ( request, socket, head ) => {
+	wss.handleUpgrade( request, socket, head, ( connection ) => {
+		wss.emit( 'connection', connection, request );
+	} );
+} );
+
+server.listen( PORT, '127.0.0.1', () => {
+	process.stdout.write(
+		`gutenberg-rtc-test-ws-sync-server listening on 127.0.0.1:${ PORT }\n`
+	);
+} );
+
+function shutdown() {
+	for ( const client of wss.clients ) {
+		client.close( 1001, 'shutdown' );
+	}
+	docs.clear();
+	wss.close();
+	server.close( () => process.exit( 0 ) );
+	setTimeout( () => process.exit( 0 ), 500 ).unref();
+}
+
+process.on( 'SIGINT', shutdown );
+process.on( 'SIGTERM', shutdown );

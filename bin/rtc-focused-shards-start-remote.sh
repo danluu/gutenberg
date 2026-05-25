@@ -199,6 +199,20 @@ overlay_harness_fuzz_specs() {
 		copy_path_with_retry "$src" "$target" "$label/$name"
 	done
 	for name in \
+		test/e2e/bin/rtc-test-ws-sync-server.mjs
+	do
+		src="$HARNESS_SRC/$name"
+		target="$dest/$name"
+		target_dir=${target%/*}
+		[ -f "$src" ] || continue
+		mkdir -p "$target_dir"
+		rm -f "$target"
+		if ! cp -al "$src" "$target"; then
+			printf 'failed to overlay focused shard harness helper profile=%s source=%s dest=%s\n' "$label" "$src" "$target" >&2
+			return 1
+		fi
+	done
+	for name in \
 		test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts
 	do
 		src="$HARNESS_SRC/$name"
