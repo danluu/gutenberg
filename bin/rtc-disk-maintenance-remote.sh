@@ -22,6 +22,10 @@ RUN_ROOT_KEEP=${RTC_DISK_MAINTENANCE_RUN_ROOT_KEEP:-48}
 RUN_ROOT_KEEP_PRESSURE=${RTC_DISK_MAINTENANCE_RUN_ROOT_KEEP_PRESSURE:-24}
 RUN_ROOT_HEAVY_DIR_KEEP=${RTC_DISK_MAINTENANCE_RUN_ROOT_HEAVY_DIR_KEEP:-8}
 RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES:-120}
+RUN_ROOT_BROWSER_PAYLOAD_KEEP=${RTC_DISK_MAINTENANCE_RUN_ROOT_BROWSER_PAYLOAD_KEEP:-2}
+RUN_ROOT_BROWSER_PAYLOAD_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_RUN_ROOT_BROWSER_PAYLOAD_RETENTION_MINUTES:-360}
+RUN_ROOT_SEED_PAYLOAD_KEEP=${RTC_DISK_MAINTENANCE_RUN_ROOT_SEED_PAYLOAD_KEEP:-2}
+RUN_ROOT_SEED_PAYLOAD_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_RUN_ROOT_SEED_PAYLOAD_RETENTION_MINUTES:-720}
 TRACE_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TRACE_RETENTION_MINUTES:-720}
 VIDEO_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_VIDEO_RETENTION_MINUTES:-360}
 TMP_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_TMP_RETENTION_MINUTES:-360}
@@ -40,6 +44,8 @@ STALE_WP_ENV_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_STALE_WP_ENV_RETENTION_MIN
 STALE_WP_ENV_MAX_DELETE_PER_PASS=${RTC_DISK_MAINTENANCE_STALE_WP_ENV_MAX_DELETE_PER_PASS:-2000}
 FUZZ_REPO_BATCH_KEEP=${RTC_DISK_MAINTENANCE_FUZZ_REPO_BATCH_KEEP:-4}
 FUZZ_REPO_BATCH_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_FUZZ_REPO_BATCH_RETENTION_MINUTES:-720}
+FUZZ_WP_ENV_BATCH_KEEP=${RTC_DISK_MAINTENANCE_FUZZ_WP_ENV_BATCH_KEEP:-8}
+FUZZ_WP_ENV_BATCH_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_FUZZ_WP_ENV_BATCH_RETENTION_MINUTES:-720}
 MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES:-2880}
 REPO_ARTIFACT_CHILD_KEEP=${RTC_DISK_MAINTENANCE_REPO_ARTIFACT_CHILD_KEEP:-40}
 REPO_ARTIFACT_CHILD_RETENTION_MINUTES=${RTC_DISK_MAINTENANCE_REPO_ARTIFACT_CHILD_RETENTION_MINUTES:-720}
@@ -245,7 +251,7 @@ trim_run_roots() {
 		current=$(sed -n '1p' "$pointer" 2>/dev/null || true)
 	fi
 
-	while IFS= read -r path; do
+	while IFS= read -r -d '' path; do
 		[ -n "$path" ] || continue
 		count=$(( count + 1 ))
 		if [ "$count" -le "$keep" ]; then
@@ -275,7 +281,7 @@ prune_stale_run_root_heavy_dirs() {
 		current=$(sed -n '1p' "$pointer" 2>/dev/null || true)
 	fi
 
-	while IFS= read -r path; do
+	while IFS= read -r -d '' path; do
 		[ -n "$path" ] || continue
 		count=$(( count + 1 ))
 		if [ "$count" -le "$RUN_ROOT_HEAVY_DIR_KEEP" ]; then
@@ -298,6 +304,121 @@ prune_stale_run_root_heavy_dirs() {
 	done < <(ls -td $glob 2>/dev/null || true)
 }
 
+prune_browser_payloads_under_path() {
+	local path=$1
+	local retention_minutes=$2
+	local candidates file_count dir_count
+
+	[ -d "$path" ] || return 0
+
+	candidates=$(mktemp "$BASE/browser-payload-files.XXXXXX")
+	find "$path" -xdev -type f \
+		\( -name trace.zip -o -name '*.trace.zip' -o -name '*.trace' -o -name '*.webm' -o -name video.zip \) \
+		-mmin +"$retention_minutes" \
+		-print0 2>/dev/null > "$candidates"
+	file_count=$(tr '\0' '\n' < "$candidates" | awk 'END { print NR + 0 }')
+	xargs -0 -r ionice -c3 nice -n 19 rm -f -- < "$candidates" >> "$LOG" 2>&1 ||
+		log "prune_browser_payloads_under_path file prune partial failure path=$path candidates=$candidates"
+	rm -f "$candidates"
+
+	candidates=$(mktemp "$BASE/browser-payload-dirs.XXXXXX")
+	find "$path" -xdev -type d \
+		\( -name '.playwright-artifacts-*' -o -name 'playwright-artifacts-*' -o -name playwright-report -o -name blob-report \) \
+		-mmin +"$retention_minutes" \
+		-prune -print0 2>/dev/null > "$candidates"
+	dir_count=$(tr '\0' '\n' < "$candidates" | awk 'END { print NR + 0 }')
+	xargs -0 -r ionice -c3 nice -n 19 rm -rf -- < "$candidates" >> "$LOG" 2>&1 ||
+		log "prune_browser_payloads_under_path dir prune partial failure path=$path candidates=$candidates"
+	rm -f "$candidates"
+
+	log "prune_browser_payloads_under_path path=$path files=$file_count dirs=$dir_count retention_minutes=$retention_minutes"
+}
+
+prune_stale_run_root_browser_payloads() {
+	local base=$1
+	local glob=$2
+	local pointer=${3:-}
+	local current=""
+	local count=0
+	local path
+
+	[ -d "$base" ] || return 0
+	if [ -n "$pointer" ] && [ -f "$pointer" ]; then
+		current=$(sed -n '1p' "$pointer" 2>/dev/null || true)
+	fi
+
+	while IFS= read -r -d '' path; do
+		[ -n "$path" ] || continue
+		count=$(( count + 1 ))
+		if [ "$count" -le "$RUN_ROOT_BROWSER_PAYLOAD_KEEP" ]; then
+			continue
+		fi
+		if [ -n "$current" ] && [ "$path" = "$current" ]; then
+			continue
+		fi
+		if path_is_live "$path"; then
+			log "skip live browser-payload prune path=$path"
+			continue
+		fi
+		if ! path_older_than_minutes "$path" "$RUN_ROOT_BROWSER_PAYLOAD_RETENTION_MINUTES"; then
+			continue
+		fi
+		prune_browser_payloads_under_path "$path" "$RUN_ROOT_BROWSER_PAYLOAD_RETENTION_MINUTES"
+	done < <(ls -td $glob 2>/dev/null || true)
+}
+
+prune_seed_payloads_under_path() {
+	local path=$1
+	local retention_minutes=$2
+	local candidates count
+
+	[ -d "$path" ] || return 0
+
+	candidates=$(mktemp "$BASE/seed-payload-dirs.XXXXXX")
+	find "$path" -xdev -type d -name 'seed-*' -path '*/lane-*/*' \
+		-mmin +"$retention_minutes" \
+		-prune -print0 2>/dev/null > "$candidates"
+	count=$(tr '\0' '\n' < "$candidates" | awk 'END { print NR + 0 }')
+	xargs -0 -r ionice -c3 nice -n 19 rm -rf -- < "$candidates" >> "$LOG" 2>&1 ||
+		log "prune_seed_payloads_under_path partial failure path=$path candidates=$candidates"
+	rm -f "$candidates"
+
+	log "prune_seed_payloads_under_path path=$path dirs=$count retention_minutes=$retention_minutes"
+}
+
+prune_stale_run_root_seed_payloads() {
+	local base=$1
+	local glob=$2
+	local pointer=${3:-}
+	local current=""
+	local count=0
+	local path
+
+	[ -d "$base" ] || return 0
+	if [ -n "$pointer" ] && [ -f "$pointer" ]; then
+		current=$(sed -n '1p' "$pointer" 2>/dev/null || true)
+	fi
+
+	while IFS= read -r -d '' path; do
+		[ -n "$path" ] || continue
+		count=$(( count + 1 ))
+		if [ "$count" -le "$RUN_ROOT_SEED_PAYLOAD_KEEP" ]; then
+			continue
+		fi
+		if [ -n "$current" ] && [ "$path" = "$current" ]; then
+			continue
+		fi
+		if path_is_live "$path"; then
+			log "skip live seed-payload prune path=$path"
+			continue
+		fi
+		if ! path_older_than_minutes "$path" "$RUN_ROOT_SEED_PAYLOAD_RETENTION_MINUTES"; then
+			continue
+		fi
+		prune_seed_payloads_under_path "$path" "$RUN_ROOT_SEED_PAYLOAD_RETENTION_MINUTES"
+	done < <(ls -td $glob 2>/dev/null || true)
+}
+
 prune_stale_coverage_run_payloads() {
 	local base="$DATA_VOLUME/rtc-coverage-guided-20260515"
 	local pointer="$base/current-output-dir.txt"
@@ -306,7 +427,7 @@ prune_stale_coverage_run_payloads() {
 	if [ -f "$pointer" ]; then
 		current=$(sed -n '1p' "$pointer" 2>/dev/null || true)
 	fi
-	while IFS= read -r path; do
+	while IFS= read -r -d '' path; do
 		[ -n "$path" ] || continue
 		count=$(( count + 1 ))
 		if [ "$count" -le "$COVERAGE_RUN_PAYLOAD_KEEP" ]; then
@@ -628,7 +749,7 @@ prune_benchmark_feedback_heavy_dirs() {
 	local cycles="$DATA_VOLUME/rtc-benchmark-canary-feedback-20260520/cycles"
 	local keep=$1 retention=$2 path child count=0
 	[ -d "$cycles" ] || return 0
-	while IFS= read -r path; do
+	while IFS= read -r -d '' path; do
 		[ -n "$path" ] || continue
 		count=$(( count + 1 ))
 		if [ "$count" -le "$keep" ]; then
@@ -665,7 +786,7 @@ prune_pr_finalization_worktrees() {
 	local worktrees="$DATA_VOLUME/rtc-pr-finalization-20260516/worktrees"
 	local keep=$1 retention=$2 path count=0
 	[ -d "$worktrees" ] || return 0
-	while IFS= read -r path; do
+	while IFS= read -r -d '' path; do
 		[ -n "$path" ] || continue
 		count=$(( count + 1 ))
 		if [ "$count" -le "$keep" ]; then
@@ -735,7 +856,7 @@ prune_stale_wp_env_dirs() {
 prune_fuzz_repo_batches_for_root() {
 	local root=$1 keep=$2 retention=$3 path pack_file count=0
 	[ -d "$root" ] || return 0
-	while IFS= read -r path; do
+	while IFS= read -r -d '' path; do
 		[ -n "$path" ] || continue
 		count=$(( count + 1 ))
 		if [ "$count" -le "$keep" ]; then
@@ -769,6 +890,37 @@ prune_fuzz_repo_batches() {
 	prune_fuzz_repo_batches_for_root "$DATA_VOLUME/rtc-gap-booster-20260515" "$FUZZ_REPO_BATCH_KEEP" "$FUZZ_REPO_BATCH_RETENTION_MINUTES"
 }
 
+prune_fuzz_wp_env_batches_for_root() {
+	local root=$1 keep=$2 retention=$3 env_root path count=0
+	env_root="$root/wp-env"
+	[ -d "$env_root" ] || return 0
+	while IFS= read -r -d '' path; do
+		[ -n "$path" ] || continue
+		count=$(( count + 1 ))
+		if [ "$count" -le "$keep" ]; then
+			continue
+		fi
+		if path_is_live "$path"; then
+			log "skip live fuzz wp-env batch path=$path"
+			continue
+		fi
+		if ! path_older_than_minutes "$path" "$retention"; then
+			continue
+		fi
+		remove_path "$path"
+	done < <(
+		find "$env_root" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\0' 2>/dev/null |
+			sort -z -nr |
+			sed -z 's/^[^ ]* //'
+	)
+}
+
+prune_fuzz_wp_env_batches() {
+	prune_fuzz_wp_env_batches_for_root "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515" "$FUZZ_WP_ENV_BATCH_KEEP" "$FUZZ_WP_ENV_BATCH_RETENTION_MINUTES"
+	prune_fuzz_wp_env_batches_for_root "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515" "$FUZZ_WP_ENV_BATCH_KEEP" "$FUZZ_WP_ENV_BATCH_RETENTION_MINUTES"
+	prune_fuzz_wp_env_batches_for_root "$DATA_VOLUME/rtc-gap-booster-20260515" "$FUZZ_WP_ENV_BATCH_KEEP" "$FUZZ_WP_ENV_BATCH_RETENTION_MINUTES"
+}
+
 prune_repo_artifact_child_root() {
 	local root=$1 keep=$2 retention=$3 path count=0
 	[ -d "$root" ] || return 0
@@ -776,7 +928,7 @@ prune_repo_artifact_child_root() {
 		log "skip live repo artifact child root=$root"
 		return 0
 	fi
-	while IFS= read -r path; do
+	while IFS= read -r -d '' path; do
 		[ -n "$path" ] || continue
 		count=$(( count + 1 ))
 		if [ "$count" -le "$keep" ]; then
@@ -990,6 +1142,10 @@ write_status() {
 		echo "- run_root_keep_pressure: $RUN_ROOT_KEEP_PRESSURE"
 		echo "- heavy_dir_keep: $RUN_ROOT_HEAVY_DIR_KEEP"
 		echo "- heavy_dir_retention_minutes: $RUN_ROOT_HEAVY_DIR_RETENTION_MINUTES"
+		echo "- run_root_browser_payload_keep: $RUN_ROOT_BROWSER_PAYLOAD_KEEP"
+		echo "- run_root_browser_payload_retention_minutes: $RUN_ROOT_BROWSER_PAYLOAD_RETENTION_MINUTES"
+		echo "- run_root_seed_payload_keep: $RUN_ROOT_SEED_PAYLOAD_KEEP"
+		echo "- run_root_seed_payload_retention_minutes: $RUN_ROOT_SEED_PAYLOAD_RETENTION_MINUTES"
 		echo "- trace_retention_minutes: $TRACE_RETENTION_MINUTES"
 		echo "- video_retention_minutes: $VIDEO_RETENTION_MINUTES"
 		echo "- tmp_retention_minutes: $TMP_RETENTION_MINUTES"
@@ -1008,6 +1164,8 @@ write_status() {
 		echo "- stale_wp_env_max_delete_per_pass: $STALE_WP_ENV_MAX_DELETE_PER_PASS"
 		echo "- fuzz_repo_batch_keep: $FUZZ_REPO_BATCH_KEEP"
 		echo "- fuzz_repo_batch_retention_minutes: $FUZZ_REPO_BATCH_RETENTION_MINUTES"
+		echo "- fuzz_wp_env_batch_keep: $FUZZ_WP_ENV_BATCH_KEEP"
+		echo "- fuzz_wp_env_batch_retention_minutes: $FUZZ_WP_ENV_BATCH_RETENTION_MINUTES"
 		echo "- maintainer_tested_scratch_retention_minutes: $MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES"
 		echo "- repo_artifact_child_keep: $REPO_ARTIFACT_CHILD_KEEP"
 		echo "- repo_artifact_child_retention_minutes: $REPO_ARTIFACT_CHILD_RETENTION_MINUTES"
@@ -1059,6 +1217,8 @@ run_once() {
 	local STALE_WP_ENV_MAX_DELETE_PER_PASS=$STALE_WP_ENV_MAX_DELETE_PER_PASS
 	local FUZZ_REPO_BATCH_KEEP=$FUZZ_REPO_BATCH_KEEP
 	local FUZZ_REPO_BATCH_RETENTION_MINUTES=$FUZZ_REPO_BATCH_RETENTION_MINUTES
+	local FUZZ_WP_ENV_BATCH_KEEP=$FUZZ_WP_ENV_BATCH_KEEP
+	local FUZZ_WP_ENV_BATCH_RETENTION_MINUTES=$FUZZ_WP_ENV_BATCH_RETENTION_MINUTES
 	local MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES
 	local REPO_ARTIFACT_CHILD_KEEP=$REPO_ARTIFACT_CHILD_KEEP
 	local REPO_ARTIFACT_CHILD_RETENTION_MINUTES=$REPO_ARTIFACT_CHILD_RETENTION_MINUTES
@@ -1098,6 +1258,8 @@ run_once() {
 			STALE_WP_ENV_MAX_DELETE_PER_PASS=$(max_int "$STALE_WP_ENV_MAX_DELETE_PER_PASS" 4000)
 			FUZZ_REPO_BATCH_KEEP=$(min_int "$FUZZ_REPO_BATCH_KEEP" 2)
 			FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 60)
+			FUZZ_WP_ENV_BATCH_KEEP=$(min_int "$FUZZ_WP_ENV_BATCH_KEEP" 4)
+			FUZZ_WP_ENV_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_WP_ENV_BATCH_RETENTION_MINUTES" 60)
 			MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 720)
 			REPO_ARTIFACT_CHILD_KEEP=$(min_int "$REPO_ARTIFACT_CHILD_KEEP" 10)
 			REPO_ARTIFACT_CHILD_RETENTION_MINUTES=$(min_int "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES" 120)
@@ -1129,6 +1291,8 @@ run_once() {
 			STALE_WP_ENV_MAX_DELETE_PER_PASS=$(max_int "$STALE_WP_ENV_MAX_DELETE_PER_PASS" 3000)
 			FUZZ_REPO_BATCH_KEEP=$(min_int "$FUZZ_REPO_BATCH_KEEP" 2)
 			FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 120)
+			FUZZ_WP_ENV_BATCH_KEEP=$(min_int "$FUZZ_WP_ENV_BATCH_KEEP" 4)
+			FUZZ_WP_ENV_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_WP_ENV_BATCH_RETENTION_MINUTES" 120)
 			MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 1440)
 			REPO_ARTIFACT_CHILD_KEEP=$(min_int "$REPO_ARTIFACT_CHILD_KEEP" 20)
 			REPO_ARTIFACT_CHILD_RETENTION_MINUTES=$(min_int "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES" 360)
@@ -1160,6 +1324,8 @@ run_once() {
 			STALE_WP_ENV_MAX_DELETE_PER_PASS=$(max_int "$STALE_WP_ENV_MAX_DELETE_PER_PASS" 2000)
 			FUZZ_REPO_BATCH_KEEP=$(min_int "$FUZZ_REPO_BATCH_KEEP" 4)
 			FUZZ_REPO_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_REPO_BATCH_RETENTION_MINUTES" 720)
+			FUZZ_WP_ENV_BATCH_KEEP=$(min_int "$FUZZ_WP_ENV_BATCH_KEEP" 6)
+			FUZZ_WP_ENV_BATCH_RETENTION_MINUTES=$(min_int "$FUZZ_WP_ENV_BATCH_RETENTION_MINUTES" 720)
 			MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES=$(min_int "$MAINTAINER_TESTED_SCRATCH_RETENTION_MINUTES" 2880)
 			REPO_ARTIFACT_CHILD_KEEP=$(min_int "$REPO_ARTIFACT_CHILD_KEEP" 40)
 			REPO_ARTIFACT_CHILD_RETENTION_MINUTES=$(min_int "$REPO_ARTIFACT_CHILD_RETENTION_MINUTES" 720)
@@ -1182,6 +1348,14 @@ run_once() {
 	prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-*" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
 	prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs/focused-shards-*" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
 	prune_stale_run_root_heavy_dirs "$DATA_VOLUME/rtc-gap-booster-20260515/runs" "$DATA_VOLUME/rtc-gap-booster-20260515/runs/gap-booster-*" "$DATA_VOLUME/rtc-gap-booster-20260515/current-run-root.txt"
+	prune_stale_run_root_browser_payloads "$DATA_VOLUME/rtc-coverage-guided-20260515" "$DATA_VOLUME/rtc-coverage-guided-20260515/run-*" "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt"
+	prune_stale_run_root_browser_payloads "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-*" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
+	prune_stale_run_root_browser_payloads "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs/focused-shards-*" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
+	prune_stale_run_root_browser_payloads "$DATA_VOLUME/rtc-gap-booster-20260515/runs" "$DATA_VOLUME/rtc-gap-booster-20260515/runs/gap-booster-*" "$DATA_VOLUME/rtc-gap-booster-20260515/current-run-root.txt"
+	prune_stale_run_root_seed_payloads "$DATA_VOLUME/rtc-coverage-guided-20260515" "$DATA_VOLUME/rtc-coverage-guided-20260515/run-*" "$DATA_VOLUME/rtc-coverage-guided-20260515/current-output-dir.txt"
+	prune_stale_run_root_seed_payloads "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/runs/strict-expansion-*" "$DATA_VOLUME/rtc-fuzz-strict-expansion-20260515/current-run-root.txt"
+	prune_stale_run_root_seed_payloads "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/runs/focused-shards-*" "$DATA_VOLUME/rtc-fuzz-focused-shards-20260515/current-run-root.txt"
+	prune_stale_run_root_seed_payloads "$DATA_VOLUME/rtc-gap-booster-20260515/runs" "$DATA_VOLUME/rtc-gap-booster-20260515/runs/gap-booster-*" "$DATA_VOLUME/rtc-gap-booster-20260515/current-run-root.txt"
 	prune_stale_coverage_run_payloads
 	prune_orphan_current_coverage_tmp_repos
 	prune_current_coverage_inactive_repos
@@ -1190,6 +1364,7 @@ run_once() {
 	prune_pr_finalization_validation_checkouts
 	prune_stale_wp_env_dirs
 	prune_fuzz_repo_batches
+	prune_fuzz_wp_env_batches
 	prune_maintainer_tested_scratch
 	prune_repo_artifact_payloads
 	prune_stale_data_tmp

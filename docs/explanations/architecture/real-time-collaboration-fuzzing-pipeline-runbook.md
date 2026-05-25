@@ -825,6 +825,19 @@ before the project is close to running out. It also prunes large generated
 `wp-env`, per-run repo, duplicated `external-imports`, Playwright report, blob
 report, raw trace, zipped trace, and video payloads from older retained roots
 while preserving summaries, logs, coverage metadata, and the newest roots.
+For strict-expansion, focused-shard, gap-booster, and coverage-guided roots,
+`RTC_DISK_MAINTENANCE_RUN_ROOT_BROWSER_PAYLOAD_KEEP` keeps the newest roots'
+browser payloads intact and
+`RTC_DISK_MAINTENANCE_RUN_ROOT_BROWSER_PAYLOAD_RETENTION_MINUTES` controls when
+older roots lose trace/video/blob/playwright-report payloads. This is separate
+from whole-run retention so old evidence summaries can stay available without
+forcing browser coverage down due to raw artifact storage.
+The same loop also compacts old, non-current `lane-*/seed-*` payload directories
+after `RTC_DISK_MAINTENANCE_RUN_ROOT_SEED_PAYLOAD_RETENTION_MINUTES`, keeping
+the newest `RTC_DISK_MAINTENANCE_RUN_ROOT_SEED_PAYLOAD_KEEP` run roots intact.
+Those seed directories are reproducible browser execution payloads; top-level
+run metadata, lane summaries, events, and logs stay in place for trend graphs
+and triage history.
 Some `wp-env` trees contain root-owned files from containers; the cleanup
 script uses passwordless `sudo -n` when available, after live-path checks, so
 those stale trees do not remain as undeletable disk pressure.
@@ -856,6 +869,13 @@ outside the coverage-root retention rules:
     `RTC_DISK_MAINTENANCE_FUZZ_REPO_BATCH_RETENTION_MINUTES`, after live-path
     checks. It deletes large `.git/objects/pack` files first so severe disk
     pressure is relieved before the slower full tree removal completes.
+-   Top-level per-lane `wp-env` homes under focused-shard, strict-expansion,
+    and gap-booster roots. These are isolated WordPress environments used by
+    old fuzz launches. The loop keeps
+    `RTC_DISK_MAINTENANCE_FUZZ_WP_ENV_BATCH_KEEP` newest entries per root and
+    removes older entries after
+    `RTC_DISK_MAINTENANCE_FUZZ_WP_ENV_BATCH_RETENTION_MINUTES`, after live-path
+    checks.
 -   Old maintainer-test scratch worktrees and `wp-env` homes under
     `/media/volume/danluu-fuzz-data/rtc-maintainer-tested-set-20260519`.
     Logs and artifacts are preserved; checked-out worktrees and isolated
