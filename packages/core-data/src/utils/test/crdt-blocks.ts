@@ -331,6 +331,83 @@ describe( 'crdt-blocks', () => {
 			expect( innerBlock.get( 'name' ) ).toBe( 'core/paragraph' );
 		} );
 
+		it( 'does not duplicate unchanged innerBlocks when parsed clientIds change', () => {
+			const initialBlocks: Block[] = [
+				{
+					name: 'core/group',
+					attributes: {},
+					clientId: 'group-1',
+					innerBlocks: [
+						{
+							name: 'core/paragraph',
+							attributes: { content: 'Nested one' },
+							clientId: 'old-inner-1',
+							innerBlocks: [],
+						},
+						{
+							name: 'core/paragraph',
+							attributes: { content: 'Nested two' },
+							clientId: 'old-inner-2',
+							innerBlocks: [],
+						},
+					],
+				},
+			];
+
+			mergeCrdtBlocks( yblocks, initialBlocks, null );
+
+			const reparsedBlocks: Block[] = [
+				{
+					name: 'core/group',
+					attributes: {},
+					clientId: 'group-1',
+					innerBlocks: [
+						{
+							name: 'core/paragraph',
+							attributes: { content: 'Nested one' },
+							clientId: 'new-inner-1',
+							innerBlocks: [],
+						},
+						{
+							name: 'core/paragraph',
+							attributes: { content: 'Nested two' },
+							clientId: 'new-inner-2',
+							innerBlocks: [],
+						},
+					],
+				},
+			];
+			const baseBlocksWithMissingInnerBlocks: Block[] = [
+				{
+					...reparsedBlocks[ 0 ],
+					innerBlocks: [],
+				},
+			];
+
+			mergeCrdtBlocks(
+				yblocks,
+				reparsedBlocks,
+				null,
+				baseBlocksWithMissingInnerBlocks
+			);
+
+			const innerBlocks = yblocks
+				.get( 0 )
+				.get( 'innerBlocks' ) as YBlocks;
+			expect( innerBlocks.length ).toBe( 2 );
+			expect(
+				innerBlocks
+					.toArray()
+					.map( ( block ) =>
+						(
+							(
+								block.get( 'attributes' ) as YBlockAttributes
+							 ).get( 'content' ) as Y.Text
+						 ).toString()
+					)
+			).toEqual( [ 'Nested one', 'Nested two' ] );
+		} );
+
 		it( 'strips local attributes when syncing blocks', () => {
 			const imageWithBlob: Block[] = [
 				{
