@@ -33,7 +33,7 @@ CYCLE_SLEEP_SECONDS=${RTC_PR_PROGRESS_CYCLE_SLEEP_SECONDS:-120}
 PERSONA_EVERY_CYCLES=${RTC_PR_PROGRESS_PERSONA_EVERY_CYCLES:-2}
 MAX_ACTIVE_PR_JOBS=${RTC_PR_PROGRESS_MAX_ACTIVE_PR_JOBS:-2}
 MIN_DISCOVERY_SESSIONS=${RTC_PR_PROGRESS_MIN_DISCOVERY_SESSIONS:-3}
-PR07C_OWNER_CONSUMED_TTL_SECONDS=${RTC_PR_PROGRESS_PR07C_OWNER_CONSUMED_TTL_SECONDS:-1800}
+PR07C_OWNER_CONSUMED_TTL_SECONDS=${RTC_PR_PROGRESS_PR07C_OWNER_CONSUMED_TTL_SECONDS:-0}
 CODEX_MODEL=${RTC_PR_PROGRESS_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_PR_PROGRESS_CODEX_REASONING_EFFORT:-xhigh}
 CODEX_TIMEOUT_SECONDS=${RTC_PR_PROGRESS_CODEX_TIMEOUT_SECONDS:-5400}
@@ -673,7 +673,11 @@ write_progress_table() {
 		if pr07c_owner_matrix_needed; then
 			pr07c_report=$(latest_pr07c_owner_report || true)
 			if pr07c_owner_matrix_consumed; then
-				printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\truntime-held-consumed\tPR07C/HOLD-07C\t\tdo not relaunch owner matrix until newer owner evidence appears or the %ss consumed-evidence TTL expires; repair setup or run exact replay instead\t%s\n' "$now" "$PR07C_OWNER_CONSUMED_TTL_SECONDS" "${pr07c_report:-missing}"
+				if [ "$PR07C_OWNER_CONSUMED_TTL_SECONDS" -gt 0 ]; then
+					printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\truntime-held-consumed\tPR07C/HOLD-07C\t\tdo not relaunch owner matrix until newer owner evidence appears or the %ss consumed-evidence TTL expires; repair setup or run exact replay instead\t%s\n' "$now" "$PR07C_OWNER_CONSUMED_TTL_SECONDS" "${pr07c_report:-missing}"
+				else
+					printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\truntime-held-consumed\tPR07C/HOLD-07C\t\tdo not relaunch owner matrix until newer owner evidence appears; repair setup or run exact replay instead\t%s\n' "$now" "${pr07c_report:-missing}"
+				fi
 			else
 				printf '%s\tpr07c-owner-matrix\truntime-gated-pr\thigh\towner-evidence-needed\tPR07C/HOLD-07C\t\tconsume owner matrix; promote only with product ownership proof\t%s\n' "$now" "${pr07c_report:-missing}"
 			fi
