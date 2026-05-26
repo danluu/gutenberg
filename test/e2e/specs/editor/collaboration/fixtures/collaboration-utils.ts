@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import type { Page, BrowserContext } from '@playwright/test';
+import type { Page, BrowserContext, Route } from '@playwright/test';
 
 /**
  * WordPress dependencies
@@ -41,6 +41,7 @@ interface NormalizedCollaborativeState {
 }
 
 type CleanupUsersMode = 'all' | 'tracked' | 'none';
+type SyncFaultRouteHandler = ( route: Route ) => Promise< void >;
 
 export const SECOND_USER: UserCredentials = {
 	username: 'collaborator',
@@ -53,6 +54,7 @@ export const SECOND_USER: UserCredentials = {
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 const USE_TEST_WS_PROVIDER = process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1';
+const SYNC_ROUTE_PATTERN = '**/*wp-sync*';
 
 export default class CollaborationUtils {
 	private admin: Admin;
@@ -61,6 +63,7 @@ export default class CollaborationUtils {
 	private requestUtils: RequestUtils;
 	private primaryPage: Page;
 	private sessions: UserSession[] = [];
+	private syncFaultRoutes = new WeakMap< Page, SyncFaultRouteHandler >();
 	private trackedUserIds: number[] = [];
 
 	constructor( {
@@ -574,6 +577,63 @@ export default class CollaborationUtils {
 				{ timeout }
 			);
 		}
+	}
+
+	async failNextSyncRequest( page: Page, status = 503 ) {
+		const responseStatus =
+			Number.isInteger( status ) && status >= 400 ? status : 503;
+
+		await this.interceptNextSyncRequest( page, async ( route ) => {
+			await route.fulfill( {
+				status: responseStatus,
+				contentType: 'application/json',
+				body: JSON.stringify( {
+					code: 'rtc_fuzz_sync_failure',
+					message: 'Injected sync failure from RTC fuzz harness.',
+					data: {
+						status: responseStatus,
+					},
+				} ),
+			} );
+		} );
+	}
+
+	async delayNextSyncRequest( page: Page, delayMs: number ) {
+		const boundedDelayMs =
+			Number.isFinite( delayMs ) && delayMs > 0 ? delayMs : 0;
+
+		await this.interceptNextSyncRequest( page, async ( route ) => {
+			await new Promise( ( resolve ) =>
+				setTimeout( resolve, boundedDelayMs )
+			);
+			await route.continue();
+		} );
+	}
+
+	private async interceptNextSyncRequest(
+		page: Page,
+		handleRoute: SyncFaultRouteHandler
+	) {
+		const previousRoute = this.syncFaultRoutes.get( page );
+		if ( previousRoute ) {
+			await page.unroute( SYNC_ROUTE_PATTERN, previousRoute );
+		}
+
+		let consumed = false;
+		const routeHandler = async ( route: Route ) => {
+			if ( consumed ) {
+				await route.continue();
+				return;
+			}
+
+			consumed = true;
+			this.syncFaultRoutes.delete( page );
+			await page.unroute( SYNC_ROUTE_PATTERN, routeHandler );
+			await handleRoute( route );
+		};
+
+		this.syncFaultRoutes.set( page, routeHandler );
+		await page.route( SYNC_ROUTE_PATTERN, routeHandler );
 	}
 
 	/**

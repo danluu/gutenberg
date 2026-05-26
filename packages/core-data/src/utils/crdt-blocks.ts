@@ -1510,6 +1510,61 @@ function isYArrayEqualToPlainArray(
 	);
 }
 
+function hasSharedArrayElementAnchor(
+	firstElement: unknown,
+	secondElement: unknown
+): boolean {
+	const firstId = getArrayElementId( firstElement );
+	const secondId = getArrayElementId( secondElement );
+
+	if ( firstId && secondId ) {
+		return firstId === secondId;
+	}
+
+	const firstValue =
+		firstElement instanceof Y.Map ? firstElement.toJSON() : firstElement;
+	const secondValue =
+		secondElement instanceof Y.Map ? secondElement.toJSON() : secondElement;
+
+	if ( arePlainValuesEqual( firstValue, secondValue ) ) {
+		return true;
+	}
+
+	if ( Array.isArray( firstValue ) && Array.isArray( secondValue ) ) {
+		const sharedLength = Math.min( firstValue.length, secondValue.length );
+
+		for ( let index = 0; index < sharedLength; index++ ) {
+			if (
+				hasSharedArrayElementAnchor(
+					firstValue[ index ],
+					secondValue[ index ]
+				)
+			) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	if ( isRecord( firstValue ) && isRecord( secondValue ) ) {
+		for ( const [ key, value ] of Object.entries( firstValue ) ) {
+			if (
+				key === ARRAY_ELEMENT_ID_KEY ||
+				! Object.hasOwn( secondValue, key )
+			) {
+				continue;
+			}
+
+			if ( hasSharedArrayElementAnchor( value, secondValue[ key ] ) ) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 function findYArrayElementIndex(
 	yArray: Y.Array< unknown >,
 	previousElement: unknown,
@@ -1594,6 +1649,32 @@ function mergeYArrayLocalChanges(
 				isRecord( previousElement ) ? previousElement : undefined
 			);
 		}
+	}
+
+	for ( let i = sharedLength; i < newValue.length; i++ ) {
+		const newElement = newValue[ i ];
+
+		if ( i < yArray.length ) {
+			const currentElement = yArray.get( i );
+
+			if (
+				currentElement instanceof Y.Map &&
+				isRecord( newElement ) &&
+				hasSharedArrayElementAnchor( currentElement, newElement )
+			) {
+				mergeYMapValues(
+					currentElement,
+					newElement,
+					query,
+					cursorPosition,
+					appendCursorScopeKey( cursorScope, i.toString() )
+				);
+			}
+
+			continue;
+		}
+
+		yArray.insert( i, [ createYMapFromQuery( query, newElement, true ) ] );
 	}
 
 	return true;

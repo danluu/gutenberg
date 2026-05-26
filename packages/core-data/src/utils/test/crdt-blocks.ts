@@ -2247,6 +2247,81 @@ describe( 'crdt-blocks', () => {
 			expect( body[ 0 ].cells[ 0 ].tag ).toBe( 'th' );
 		} );
 
+		it( 'merges local edits made to a remotely inserted table row', () => {
+			const createTableBlocks = (
+				body: {
+					cells: { content: string; tag: string }[];
+				}[]
+			): Block[] => [
+				{
+					name: 'core/table',
+					clientId: 'table-block',
+					attributes: { body },
+					innerBlocks: [],
+				},
+			];
+			const baseBody = [
+				{
+					cells: [
+						{ content: 'base row 1', tag: 'td' },
+						{ content: 'base row 1 sibling', tag: 'td' },
+					],
+				},
+				{
+					cells: [
+						{ content: 'base row 2', tag: 'td' },
+						{ content: 'base row 2 sibling', tag: 'td' },
+					],
+				},
+			];
+			const baseBlocks = createTableBlocks( baseBody );
+
+			mergeCrdtBlocks( yblocks, baseBlocks, null );
+
+			mergeCrdtBlocks(
+				yblocks,
+				createTableBlocks( [
+					...baseBody,
+					{
+						cells: [
+							{ content: 'remote row', tag: 'td' },
+							{ content: 'remote row sibling', tag: 'td' },
+						],
+					},
+				] ),
+				null,
+				baseBlocks
+			);
+
+			mergeCrdtBlocks(
+				yblocks,
+				createTableBlocks( [
+					...baseBody,
+					{
+						cells: [
+							{ content: 'remote row', tag: 'td' },
+							{ content: 'local edit in remote row', tag: 'td' },
+						],
+					},
+				] ),
+				null,
+				baseBlocks
+			);
+
+			const attrs = yblocks
+				.get( 0 )
+				.get( 'attributes' ) as YBlockAttributes;
+			const body = (
+				attrs.get( 'body' ) as Y.Array< unknown >
+			 ).toJSON() as { cells: { content: string; tag: string }[] }[];
+
+			expect( body ).toHaveLength( 3 );
+			expect( body[ 2 ].cells[ 0 ].content ).toBe( 'remote row' );
+			expect( body[ 2 ].cells[ 1 ].content ).toBe(
+				'local edit in remote row'
+			);
+		} );
+
 		it( 'preserves Y.Map identity for untouched rows when a row is appended', () => {
 			const initialBlocks: Block[] = [
 				{
