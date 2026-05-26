@@ -537,25 +537,25 @@ function findEquivalentYBlockIndex( yblocks: YBlocks, block: Block ): number {
 				return index;
 			}
 		}
-
-		return -1;
 	}
 
 	const semanticKey = getBlockSemanticKey( block );
+	let matchingSemanticIndex = -1;
+	let semanticMatchCount = 0;
 
 	for ( let index = 0; index < yblocks.length; index++ ) {
 		const yblock = yblocks.get( index );
 
-		if ( getYBlockSemanticKey( yblock ) === semanticKey ) {
-			return index;
-		}
-
-		if ( areBlocksEqual( block, yblock ) ) {
-			return index;
+		if (
+			getYBlockSemanticKey( yblock ) === semanticKey ||
+			areBlocksEqual( block, yblock )
+		) {
+			matchingSemanticIndex = index;
+			semanticMatchCount++;
 		}
 	}
 
-	return -1;
+	return semanticMatchCount === 1 ? matchingSemanticIndex : -1;
 }
 
 function getUniqueKeys< T >(
@@ -1222,14 +1222,10 @@ function insertMissingLocalBlocks(
 			continue;
 		}
 
-		const matchingIndex = findYBlockIndexByClientId(
-			yblocks,
-			clientId,
-			insertIndex
-		);
+		const matchingIndex = findEquivalentYBlockIndex( yblocks, block );
 
 		if ( matchingIndex !== -1 ) {
-			insertIndex = matchingIndex + 1;
+			insertIndex = Math.max( insertIndex, matchingIndex + 1 );
 			continue;
 		}
 
