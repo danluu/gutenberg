@@ -729,7 +729,10 @@ export const restoreRevision =
 		dispatch.setCurrentRevisionId( null );
 
 		// Save the post to persist the restored revision.
-		await dispatch.savePost( { __unstableIsRevisionRestore: true } );
+		await dispatch.savePost( {
+			__unstableIsRevisionRestore: true,
+			__unstableRevisionRestoreEdits: edits,
+		} );
 
 		// Show success notice.
 		registry.dispatch( noticesStore ).createSuccessNotice(

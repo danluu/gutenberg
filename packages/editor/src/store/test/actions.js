@@ -246,6 +246,64 @@ describe( 'Post actions', () => {
 				},
 			] );
 		} );
+
+		it( 'saves explicit revision restore fields', async () => {
+			const post = {
+				id: postId,
+				type: 'post',
+				title: 'newer title',
+				content: 'newer content',
+				excerpt: 'newer excerpt',
+				status: 'draft',
+			};
+			const revisionRestoreEdits = {
+				content: 'older content',
+				excerpt: 'older excerpt',
+				title: 'older title',
+			};
+			let savedData;
+
+			apiFetch.setFetchHandler( async ( options ) => {
+				const method = getMethod( options );
+				const { path, data } = options;
+
+				if (
+					method === 'PUT' &&
+					path.startsWith( `/wp/v2/posts/${ postId }` )
+				) {
+					savedData = data;
+					return { ...post, ...data };
+				} else if (
+					method === 'GET' &&
+					path.startsWith( '/wp/v2/types/post' )
+				) {
+					return {
+						json: () => Promise.resolve( {} ),
+					};
+				}
+
+				throw {
+					code: 'unknown_path',
+					message: `Unknown path: ${ method } ${ path }`,
+				};
+			} );
+
+			const registry = createRegistryWithStores();
+
+			registry
+				.dispatch( coreStore )
+				.receiveEntityRecords( 'postType', 'post', post );
+			registry.dispatch( editorStore ).setupEditor( post, {
+				content: 'local current content',
+			} );
+
+			await registry.dispatch( editorStore ).savePost( {
+				__unstableIsRevisionRestore: true,
+				__unstableRevisionRestoreEdits: revisionRestoreEdits,
+			} );
+
+			expect( savedData ).toMatchObject( revisionRestoreEdits );
+		} );
 	} );
 
 	describe( 'autosave()', () => {
