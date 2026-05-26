@@ -727,12 +727,24 @@ export default class CollaborationUtils {
 				)
 			);
 
-			const serializedFirstState = JSON.stringify( lastStates[ 0 ] );
-			const isSettled = lastStates.every(
-				( state ) =>
-					JSON.stringify( state ) === serializedFirstState &&
-					( ! includeCrdtDocument || !! state.crdtDocument )
+			const comparableStates = lastStates.map( ( state ) => ( {
+				...state,
+				crdtDocument: includeCrdtDocument
+					? Boolean( state.crdtDocument )
+					: state.crdtDocument,
+			} ) );
+			const serializedFirstState = JSON.stringify(
+				comparableStates[ 0 ]
 			);
+			const allHaveCrdtDocument =
+				! includeCrdtDocument ||
+				lastStates.every( ( state ) => !! state.crdtDocument );
+			const isSettled =
+				allHaveCrdtDocument &&
+				comparableStates.every(
+					( state ) =>
+						JSON.stringify( state ) === serializedFirstState
+				);
 
 			if ( isSettled ) {
 				return lastStates[ 0 ];
