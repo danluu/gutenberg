@@ -765,16 +765,19 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
-	it( 'preserves revision restore content without merging latest saved blocks back in', async () => {
+	it( 'preserves revision restore fields without merging latest saved blocks back in', async () => {
 		const restoredContent = pageContent( [ 'Alpha', 'older revision' ] );
 		const latestContent = pageContent( [
 			'Alpha',
 			'older revision',
 			'newer checkpoint',
 		] );
+		const restoredTitle = 'Older revision title';
+		const latestTitle = 'Newer checkpoint title';
 		const latestRecord = {
 			id: 123,
 			content: { raw: latestContent },
+			title: { raw: latestTitle },
 			meta: {
 				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
 			},
@@ -785,6 +788,7 @@ describe( 'prePersistPostType', () => {
 			getCRDTRecordData: jest.fn( () => ( {
 				blocks: parse( restoredContent ),
 				content: restoredContent,
+				title: latestTitle,
 			} ) ),
 		};
 		apiFetch.mockResolvedValue( latestRecord );
@@ -796,11 +800,12 @@ describe( 'prePersistPostType', () => {
 				id: 123,
 				status: 'publish',
 				content: { raw: latestContent },
+				title: { raw: latestTitle },
 				meta: {
 					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
 				},
 			},
-			{ content: restoredContent },
+			{ content: restoredContent, title: restoredTitle },
 			'page',
 			false,
 			'/wp/v2/pages',

@@ -519,9 +519,11 @@ export const prePersistPostType = async (
 			getRawPostValue( persistedRecord?.[ key ] )
 	);
 	const locallyChangedSavedFieldSet = new Set( locallyChangedSavedFields );
-	const shouldPreserveRevisionRestoreContent =
+	const shouldPreserveRevisionRestoreSavedField = ( key ) =>
 		options.__unstableIsRevisionRestore &&
-		locallyChangedSavedFieldSet.has( 'content' );
+		locallyChangedSavedFieldSet.has( key );
+	const shouldPreserveRevisionRestoreContent =
+		shouldPreserveRevisionRestoreSavedField( 'content' );
 
 	if ( ! isTemplate && persistedRecord?.status === 'auto-draft' ) {
 		// Saving an auto-draft should create a draft by default.
@@ -569,6 +571,9 @@ export const prePersistPostType = async (
 				( key ) =>
 					getRawPostValue( latestRecord?.[ key ] ) !==
 					getRawPostValue( persistedRecord?.[ key ] )
+			);
+			const serverChangedSavedFieldSet = new Set(
+				serverChangedSavedFields
 			);
 			for ( const key of serverChangedSavedFields ) {
 				if (
@@ -622,10 +627,7 @@ export const prePersistPostType = async (
 					);
 
 					for ( const key of locallyChangedSavedFields ) {
-						if (
-							shouldPreserveRevisionRestoreContent &&
-							key === 'content'
-						) {
+						if ( shouldPreserveRevisionRestoreSavedField( key ) ) {
 							continue;
 						}
 
@@ -671,12 +673,18 @@ export const prePersistPostType = async (
 				}
 			}
 
-			const repairableSavedFields = editedSavedFields.filter(
-				( key ) =>
+			const repairableSavedFields = editedSavedFields.filter( ( key ) => {
+				const shouldRepairSavedFieldFromCRDT =
+					didApplyLatestCRDTDoc ||
+					serverChangedSavedFieldSet.has( key );
+
+				return (
 					! ( key in newEdits ) &&
+					shouldRepairSavedFieldFromCRDT &&
 					( key !== 'content' ||
 						! serverChangedSavedFieldSet.has( key ) )
-			);
+				);
+			} );
 
 			if ( hasLatestPersistedCRDTDoc && repairableSavedFields.length ) {
 				const crdtRecord = syncManager?.getCRDTRecordData?.(
@@ -685,10 +693,7 @@ export const prePersistPostType = async (
 				);
 
 				for ( const key of repairableSavedFields ) {
-					if (
-						shouldPreserveRevisionRestoreContent &&
-						key === 'content'
-					) {
+					if ( shouldPreserveRevisionRestoreSavedField( key ) ) {
 						continue;
 					}
 
