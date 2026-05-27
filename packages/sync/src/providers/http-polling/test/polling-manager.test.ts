@@ -9,11 +9,7 @@ import {
 	it,
 	jest,
 } from '@jest/globals';
-import {
-	SyncUpdateType,
-	type SyncPayload,
-	type SyncResponse,
-} from '../types';
+import { SyncUpdateType, type SyncPayload, type SyncResponse } from '../types';
 
 // Mock all external dependencies before imports.
 jest.mock( 'yjs', () => ( {
@@ -2097,6 +2093,21 @@ describe( 'polling-manager', () => {
 			);
 			expect( beaconsSent.every( ( n ) => n <= 10 ) ).toBe( true );
 			expect( beaconsSent.reduce( ( a, b ) => a + b, 0 ) ).toBe( 21 );
+		} );
+
+		it( 'does not send disconnect beacons for persisted pagehide events', async () => {
+			mockPostSyncUpdate.mockResolvedValue( { rooms: [] } );
+
+			registerPrimaryAndOverflow( pollingManager, 2 );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+			mockPostSyncUpdateNonBlocking.mockClear();
+
+			const event = new Event( 'pagehide' );
+			Object.defineProperty( event, 'persisted', { value: true } );
+			window.dispatchEvent( event );
+
+			expect( mockPostSyncUpdateNonBlocking ).not.toHaveBeenCalled();
 		} );
 	} );
 } );
