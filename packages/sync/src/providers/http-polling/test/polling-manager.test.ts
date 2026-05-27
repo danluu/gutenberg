@@ -346,25 +346,27 @@ describe( 'polling-manager', () => {
 			] );
 		} );
 
-		it( 'disconnects when generated sync step 2 and fallback compaction updates are oversized', async () => {
+		it( 'skips an oversized sync step 2 response when fallback compaction is oversized', async () => {
 			const onStatusChange = jest.fn();
 			const doc = createMockDoc( 1 );
 
-			mockPostSyncUpdate.mockResolvedValueOnce( {
-				rooms: [
-					{
-						room: 'test-room',
-						end_cursor: 1,
-						awareness: {},
-						updates: [
-							{
-								type: SyncUpdateType.SYNC_STEP_1,
-								data: 'AQ==',
-							},
-						],
-					},
-				],
-			} );
+			mockPostSyncUpdate
+				.mockResolvedValueOnce( {
+					rooms: [
+						{
+							room: 'test-room',
+							end_cursor: 1,
+							awareness: { 1: {}, 2: {} },
+							updates: [
+								{
+									type: SyncUpdateType.SYNC_STEP_1,
+									data: 'AQ==',
+								},
+							],
+						},
+					],
+				} )
+				.mockResolvedValue( syncResponse );
 
 			pollingManager.registerRoom( {
 				room: 'test-room',
@@ -383,14 +385,15 @@ describe( 'polling-manager', () => {
 			);
 
 			await jest.advanceTimersByTimeAsync( 0 );
+			await jest.advanceTimersByTimeAsync( 1000 );
 
-			expect( onStatusChange ).toHaveBeenCalledWith( {
+			expect( onStatusChange ).not.toHaveBeenCalledWith( {
 				status: 'disconnected',
 				error: expect.objectContaining( {
 					code: 'document-size-limit-exceeded',
 				} ),
 			} );
-			expect( mockPostSyncUpdateNonBlocking ).toHaveBeenCalledWith(
+			expect( mockPostSyncUpdateNonBlocking ).not.toHaveBeenCalledWith(
 				expect.objectContaining( {
 					rooms: expect.arrayContaining( [
 						expect.objectContaining( {
@@ -400,23 +403,38 @@ describe( 'polling-manager', () => {
 					] ),
 				} )
 			);
+			const retryPayload = mockPostSyncUpdate.mock
+				.calls[ 1 ][ 0 ] as SyncPayload;
+			const retryUpdates = retryPayload.rooms[ 0 ].updates;
+			expect( retryUpdates ).not.toEqual(
+				expect.arrayContaining( [
+					expect.objectContaining( {
+						type: SyncUpdateType.SYNC_STEP_2,
+					} ),
+					expect.objectContaining( {
+						type: SyncUpdateType.COMPACTION,
+					} ),
+				] )
+			);
 		} );
 
-		it( 'disconnects instead of queueing an oversized generated compaction update', async () => {
+		it( 'skips an oversized generated compaction update without disconnecting', async () => {
 			const onStatusChange = jest.fn();
 			const doc = createMockDoc( 1 );
 
-			mockPostSyncUpdate.mockResolvedValueOnce( {
-				rooms: [
-					{
-						room: 'test-room',
-						end_cursor: 1,
-						awareness: {},
-						updates: [],
-						should_compact: true,
-					},
-				],
-			} );
+			mockPostSyncUpdate
+				.mockResolvedValueOnce( {
+					rooms: [
+						{
+							room: 'test-room',
+							end_cursor: 1,
+							awareness: {},
+							updates: [],
+							should_compact: true,
+						},
+					],
+				} )
+				.mockResolvedValue( syncResponse );
 
 			pollingManager.registerRoom( {
 				room: 'test-room',
@@ -432,14 +450,15 @@ describe( 'polling-manager', () => {
 			);
 
 			await jest.advanceTimersByTimeAsync( 0 );
+			await jest.advanceTimersByTimeAsync( 4000 );
 
-			expect( onStatusChange ).toHaveBeenCalledWith( {
+			expect( onStatusChange ).not.toHaveBeenCalledWith( {
 				status: 'disconnected',
 				error: expect.objectContaining( {
 					code: 'document-size-limit-exceeded',
 				} ),
 			} );
-			expect( mockPostSyncUpdateNonBlocking ).toHaveBeenCalledWith(
+			expect( mockPostSyncUpdateNonBlocking ).not.toHaveBeenCalledWith(
 				expect.objectContaining( {
 					rooms: expect.arrayContaining( [
 						expect.objectContaining( {
@@ -449,6 +468,11 @@ describe( 'polling-manager', () => {
 					] ),
 				} )
 			);
+			expect( mockPostSyncUpdate ).toHaveBeenCalledTimes( 2 );
+			expect(
+				( mockPostSyncUpdate.mock.calls[ 1 ][ 0 ] as SyncPayload )
+					.rooms[ 0 ].updates
+			).toEqual( [] );
 		} );
 	} );
 

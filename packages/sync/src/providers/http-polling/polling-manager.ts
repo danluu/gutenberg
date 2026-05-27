@@ -268,6 +268,23 @@ function queueUpdateOrDisconnect(
 	return true;
 }
 
+function queueCompactionUpdate( state: RoomState ): boolean {
+	const compactionUpdate = state.createCompactionUpdate();
+	const compactionUpdateSize = getSyncUpdateByteLength( compactionUpdate );
+
+	if ( compactionUpdateSize > MAX_UPDATE_SIZE_IN_BYTES ) {
+		state.log( 'Generated compaction update exceeded document size limit', {
+			compactionUpdateSize,
+			maxUpdateSizeInBytes: MAX_UPDATE_SIZE_IN_BYTES,
+		} );
+		return false;
+	}
+
+	state.updateQueue.clear();
+	state.updateQueue.add( compactionUpdate );
+	return true;
+}
+
 function queueUpdatesOrDisconnect(
 	state: RoomState,
 	updates: SyncUpdate[]
@@ -279,23 +296,25 @@ function queueUpdatesOrDisconnect(
 
 	if ( oversizedUpdate ) {
 		if ( oversizedUpdate.type === SyncUpdateType.SYNC_STEP_2 ) {
-			const compactionUpdate = state.createCompactionUpdate();
-			const compactionUpdateSize =
-				getSyncUpdateByteLength( compactionUpdate );
-
-			if ( compactionUpdateSize <= MAX_UPDATE_SIZE_IN_BYTES ) {
+			if ( queueCompactionUpdate( state ) ) {
 				state.log(
 					'Generated sync step 2 exceeded document size limit, queueing compaction update instead',
 					{
-						compactionUpdateSize,
 						syncStep2UpdateSize:
 							getSyncUpdateByteLength( oversizedUpdate ),
 					}
 				);
-				state.updateQueue.clear();
-				state.updateQueue.add( compactionUpdate );
-				return true;
+			} else {
+				state.log(
+					'Generated sync step 2 exceeded document size limit, skipping response',
+					{
+						syncStep2UpdateSize:
+							getSyncUpdateByteLength( oversizedUpdate ),
+					}
+				);
 			}
+
+			return true;
 		}
 
 		disconnectRoomForDocumentSizeLimit(
@@ -901,11 +920,7 @@ function poll(): void {
 				// full document state to replace all prior updates on the server.
 				if ( room.should_compact ) {
 					roomState.log( 'Server requested compaction update' );
-					roomState.updateQueue.clear();
-					queueUpdateOrDisconnect(
-						roomState,
-						roomState.createCompactionUpdate()
-					);
+					queueCompactionUpdate( roomState );
 				} else if ( room.compaction_request ) {
 					// Deprecated
 					roomState.log( 'Server requested (old) compaction update' );
