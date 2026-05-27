@@ -282,7 +282,74 @@ describe( 'polling-manager', () => {
 			);
 		} );
 
-		it( 'disconnects instead of queueing an oversized generated sync step 2 update', async () => {
+		it( 'falls back to compaction when a generated sync step 2 update is oversized', async () => {
+			const onStatusChange = jest.fn();
+			const doc = createMockDoc( 1 );
+
+			mockPostSyncUpdate
+				.mockResolvedValueOnce( {
+					rooms: [
+						{
+							room: 'test-room',
+							end_cursor: 1,
+							awareness: { 1: {}, 2: {} },
+							updates: [
+								{
+									type: SyncUpdateType.SYNC_STEP_1,
+									data: 'AQ==',
+								},
+							],
+						},
+					],
+				} )
+				.mockResolvedValue( syncResponse );
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			mockEncoding.toUint8Array.mockReturnValueOnce(
+				new Uint8Array( 11 )
+			);
+			mockYjs.encodeStateAsUpdateV2.mockReturnValueOnce(
+				new Uint8Array( 10 )
+			);
+
+			await jest.advanceTimersByTimeAsync( 0 );
+			await jest.advanceTimersByTimeAsync( 1000 );
+
+			expect( onStatusChange ).not.toHaveBeenCalledWith( {
+				status: 'disconnected',
+				error: expect.objectContaining( {
+					code: 'document-size-limit-exceeded',
+				} ),
+			} );
+			expect( mockPostSyncUpdateNonBlocking ).not.toHaveBeenCalledWith(
+				expect.objectContaining( {
+					rooms: expect.arrayContaining( [
+						expect.objectContaining( {
+							room: 'test-room',
+							awareness: null,
+						} ),
+					] ),
+				} )
+			);
+			expect(
+				( mockPostSyncUpdate.mock.calls[ 1 ][ 0 ] as SyncPayload )
+					.rooms[ 0 ].updates
+			).toEqual( [
+				expect.objectContaining( {
+					type: SyncUpdateType.COMPACTION,
+				} ),
+			] );
+		} );
+
+		it( 'disconnects when generated sync step 2 and fallback compaction updates are oversized', async () => {
 			const onStatusChange = jest.fn();
 			const doc = createMockDoc( 1 );
 
@@ -312,6 +379,9 @@ describe( 'polling-manager', () => {
 			} );
 
 			mockEncoding.toUint8Array.mockReturnValueOnce(
+				new Uint8Array( 11 )
+			);
+			mockYjs.encodeStateAsUpdateV2.mockReturnValueOnce(
 				new Uint8Array( 11 )
 			);
 
