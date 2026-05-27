@@ -263,6 +263,26 @@ function queueUpdatesOrDisconnect(
 	);
 
 	if ( oversizedUpdate ) {
+		if ( oversizedUpdate.type === SyncUpdateType.SYNC_STEP_2 ) {
+			const compactionUpdate = state.createCompactionUpdate();
+			const compactionUpdateSize =
+				getSyncUpdateByteLength( compactionUpdate );
+
+			if ( compactionUpdateSize <= MAX_UPDATE_SIZE_IN_BYTES ) {
+				state.log(
+					'Generated sync step 2 exceeded document size limit, queueing compaction update instead',
+					{
+						compactionUpdateSize,
+						syncStep2UpdateSize:
+							getSyncUpdateByteLength( oversizedUpdate ),
+					}
+				);
+				state.updateQueue.clear();
+				state.updateQueue.add( compactionUpdate );
+				return true;
+			}
+		}
+
 		disconnectRoomForDocumentSizeLimit(
 			state,
 			getSyncUpdateByteLength( oversizedUpdate )
