@@ -527,10 +527,21 @@ function handleBeforeUnload(): void {
 }
 
 /**
- * Send a disconnect signal for all registered rooms when the page is
- * being unloaded. Uses `sendBeacon` so the request survives navigation.
+ * Send a disconnect signal for all registered rooms when the page is being
+ * unloaded. A persisted pagehide means the page is entering the back/forward
+ * cache rather than leaving permanently; keep the rooms registered so a
+ * restored page can continue polling instead of looking like a disconnected
+ * collaborator that still has an open editor.
+ *
+ * Uses a keepalive request so the request survives navigation.
+ *
+ * @param event Page transition event.
  */
-function handlePageHide(): void {
+function handlePageHide( event: PageTransitionEvent ): void {
+	if ( event.persisted ) {
+		return;
+	}
+
 	const rooms = Array.from( roomStates.entries() ).map(
 		( [ room, state ] ) => ( {
 			after: 0,
@@ -545,6 +556,19 @@ function handlePageHide(): void {
 		postSyncUpdateNonBlocking( {
 			rooms: rooms.slice( i, i + MAX_ROOMS_PER_REQUEST ),
 		} );
+	}
+}
+
+/**
+ * Resume polling immediately when a page is restored from the back/forward
+ * cache. Timers can be paused while the page is cached, so waiting for the
+ * previous timeout can leave the document stale after restore.
+ *
+ * @param event Page transition event.
+ */
+function handlePageShow( event: PageTransitionEvent ): void {
+	if ( event.persisted ) {
+		retryNow();
 	}
 }
 
@@ -1127,6 +1151,7 @@ function registerRoom( {
 	if ( ! areListenersRegistered ) {
 		window.addEventListener( 'beforeunload', handleBeforeUnload );
 		window.addEventListener( 'pagehide', handlePageHide );
+		window.addEventListener( 'pageshow', handlePageShow );
 		document.addEventListener( 'visibilitychange', handleVisibilityChange );
 		areListenersRegistered = true;
 	}
@@ -1165,6 +1190,7 @@ function unregisterRoom(
 	if ( 0 === roomStates.size && areListenersRegistered ) {
 		window.removeEventListener( 'beforeunload', handleBeforeUnload );
 		window.removeEventListener( 'pagehide', handlePageHide );
+		window.removeEventListener( 'pageshow', handlePageShow );
 		document.removeEventListener(
 			'visibilitychange',
 			handleVisibilityChange
