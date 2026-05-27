@@ -100,9 +100,7 @@ type ConsoleMatcherExpect = ( actual: Console ) => {
 const expectConsole = expect as unknown as ConsoleMatcherExpect;
 
 function serializeBlocksForTest( blocks: Block[] | WPBlock[] ): string {
-	return __unstableSerializeAndClean(
-		blocks as unknown as WPBlock[]
-	).trim();
+	return __unstableSerializeAndClean( blocks as unknown as WPBlock[] ).trim();
 }
 
 function renderRichTextValue( value?: string | RichTextData ): string {
@@ -639,6 +637,30 @@ describe( 'crdt', () => {
 
 			expect( map.get( 'content' ) ).toBe( contentRef );
 			expect( map.get( 'content' )?.toString() ).toBe( 'New content' );
+		} );
+
+		it( 'clears stale content text when syncing block changes', () => {
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ content: 'Stale content' } as PostChanges,
+				defaultSyncedProperties
+			);
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{
+					blocks: parse(
+						[
+							'<!-- wp:paragraph -->',
+							'<p>Block content</p>',
+							'<!-- /wp:paragraph -->',
+						].join( '\n' )
+					),
+				} as PostChanges,
+				defaultSyncedProperties
+			);
+
+			expect( map.get( 'content' )?.toString() ?? '' ).toBe( '' );
 		} );
 
 		it( 'updates existing Y.Text excerpt in place via mergeRichTextUpdate', () => {
@@ -1318,6 +1340,39 @@ describe( 'crdt', () => {
 				defaultSyncedProperties
 			);
 
+			expect( changes ).not.toHaveProperty( 'content' );
+		} );
+
+		it( 'ignores stale content text when persisted block data matches the edited record', () => {
+			const parsedBlocks = parse(
+				[
+					'<!-- wp:paragraph -->',
+					'<p>Block content</p>',
+					'<!-- /wp:paragraph -->',
+				].join( '\n' )
+			);
+			const persistedContent = serializeBlocksForTest( parsedBlocks );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: parsedBlocks } as PostChanges,
+				defaultSyncedProperties
+			);
+			map.set( 'content', new Y.Text( 'Stale content' ) );
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					content: {
+						raw: persistedContent,
+						rendered: persistedContent,
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).not.toHaveProperty( 'blocks' );
 			expect( changes ).not.toHaveProperty( 'content' );
 		} );
 

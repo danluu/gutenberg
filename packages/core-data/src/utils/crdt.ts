@@ -166,6 +166,10 @@ export function applyPostChangesToCRDTDoc(
 					break;
 				}
 
+				if ( syncedProperties.has( 'content' ) ) {
+					ymap.delete( 'content' );
+				}
+
 				let currentBlocks = ymap.get( key );
 
 				// Initialize.
@@ -574,6 +578,13 @@ export function getPostChangesFromCRDTDoc(
 				case 'content':
 				case 'excerpt':
 				case 'title': {
+					if (
+						key === 'content' &&
+						ymap.get( 'blocks' ) instanceof Y.Array
+					) {
+						return false;
+					}
+
 					return haveValuesChanged(
 						getRawValue( currentValue ),
 						newValue
