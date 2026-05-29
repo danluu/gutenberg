@@ -16,6 +16,7 @@ import {
 	type ObjectID,
 	type ObjectType,
 	type SyncConfig,
+	type SyncManagerUpdateOptions,
 	Y,
 } from '@wordpress/sync';
 
@@ -138,11 +139,13 @@ export function applyPostChangesToCRDTDoc(
 	ydoc: CRDTDoc,
 	changes: PostChanges,
 	syncedProperties: Set< string >,
-	options: { baseRecord?: ObjectData } = {}
+	options: SyncManagerUpdateOptions = {}
 ): void {
 	const ymap = getRootMap< YPostRecord >( ydoc, CRDT_RECORD_MAP_KEY );
 	const shouldDeriveContentFromBlocks =
 		syncedProperties.has( 'content' ) && Array.isArray( changes.blocks );
+	const baseRecord = options.baseRecord as PostChanges | undefined;
+	const baseBlocks = options.isSave ? undefined : baseRecord?.blocks;
 
 	Object.keys( changes ).forEach( ( key ) => {
 		if ( ! syncedProperties.has( key ) ) {
@@ -190,7 +193,7 @@ export function applyPostChangesToCRDTDoc(
 					currentBlocks,
 					newValue,
 					newCursorPosition,
-					( options.baseRecord as PostChanges | undefined )?.blocks
+					baseBlocks
 				);
 				break;
 			}

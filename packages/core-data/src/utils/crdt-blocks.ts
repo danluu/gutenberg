@@ -1214,6 +1214,7 @@ function insertMissingLocalBlocks(
 			.filter( ( clientId ): clientId is string => !! clientId )
 	);
 	let insertIndex = 0;
+	let hasInsertionAnchor = true;
 
 	for ( const block of blocksToSync ) {
 		const clientId = getBlockClientId( block );
@@ -1222,17 +1223,31 @@ function insertMissingLocalBlocks(
 			continue;
 		}
 
-		const matchingIndex = findEquivalentYBlockIndex( yblocks, block );
+		if ( baseClientIds.has( clientId ) ) {
+			const matchingIndex = findYBlockIndexByClientId(
+				yblocks,
+				clientId
+			);
 
-		if ( matchingIndex !== -1 ) {
-			insertIndex = Math.max( insertIndex, matchingIndex + 1 );
+			if ( matchingIndex !== -1 ) {
+				insertIndex = Math.max( insertIndex, matchingIndex + 1 );
+				hasInsertionAnchor = true;
+			} else {
+				hasInsertionAnchor = false;
+			}
 			continue;
 		}
 
-		if (
-			baseClientIds.has( clientId ) ||
-			findYBlockIndexByClientId( yblocks, clientId ) !== -1
-		) {
+		const matchingIndex = findYBlockIndexByClientId( yblocks, clientId );
+
+		if ( matchingIndex !== -1 ) {
+			mergeBlockIntoYBlock( yblocks.get( matchingIndex ), block, null );
+			insertIndex = Math.max( insertIndex, matchingIndex + 1 );
+			hasInsertionAnchor = true;
+			continue;
+		}
+
+		if ( ! hasInsertionAnchor ) {
 			continue;
 		}
 

@@ -576,6 +576,81 @@ describe( 'stale top-level block snapshots', () => {
 		remoteDoc.destroy();
 	} );
 
+	it( 'updates an existing locally inserted block instead of preserving stale nested children', () => {
+		const baseBlocks = [ paragraph( 'base', 'Base' ) ];
+		const staleInsertedGroup = group( 'inserted-group', [
+			paragraph( 'inner-a', 'Nested paragraph' ),
+			paragraph( 'inner-b', 'Nested heading' ),
+			paragraph( 'inner-a-duplicate', 'Nested paragraph' ),
+			paragraph( 'inner-b-duplicate', 'Nested heading' ),
+		] );
+
+		mergeCrdtBlocks(
+			yblocks,
+			[ baseBlocks[ 0 ], staleInsertedGroup ],
+			null
+		);
+
+		const incomingBlocks = [
+			baseBlocks[ 0 ],
+			group( 'inserted-group', [
+				paragraph( 'inner-a', 'Nested paragraph' ),
+				paragraph( 'inner-b', 'Nested heading' ),
+			] ),
+		];
+
+		mergeCrdtBlocks( yblocks, incomingBlocks, null, baseBlocks );
+
+		expect( blockTreeOf( yblocks ) ).toEqual( [
+			'base:Base',
+			'inserted-group:core/group[inner-a:Nested paragraph,inner-b:Nested heading]',
+		] );
+	} );
+
+	it( 'uses save snapshots to remove stale nested children even when the base record matches the save', () => {
+		const baseBlocks = [
+			paragraph( 'base', 'Base' ),
+			group( 'inserted-group', [
+				paragraph( 'inner-a', 'Nested paragraph' ),
+				paragraph( 'inner-b', 'Nested heading' ),
+			] ),
+		];
+		const staleBlocks = [
+			baseBlocks[ 0 ],
+			group( 'inserted-group', [
+				paragraph( 'inner-a', 'Nested paragraph' ),
+				paragraph( 'inner-b', 'Nested heading' ),
+				paragraph( 'inner-a-duplicate', 'Nested paragraph' ),
+				paragraph( 'inner-b-duplicate', 'Nested heading' ),
+			] ),
+		];
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: staleBlocks,
+				content: serializeBlocks( staleBlocks ),
+			},
+			SYNCED_POST_PROPERTIES
+		);
+
+		applyPostChangesToCRDTDoc(
+			doc,
+			{
+				blocks: baseBlocks,
+				content: serializeBlocks( baseBlocks ),
+			},
+			SYNCED_POST_PROPERTIES,
+			{ baseRecord: { blocks: baseBlocks }, isSave: true }
+		);
+
+		expect( blockTreeOf( postBlocks( doc ) ) ).toEqual( [
+			'base:Base',
+			'inserted-group:core/group[inner-a:Nested paragraph,inner-b:Nested heading]',
+		] );
+		expect( postContent( doc ) ).toBe( serializeBlocks( baseBlocks ) );
+	} );
+
 	it( 'preserves a remote top-level append through the post CRDT adapter', () => {
 		const initialBlocks = [
 			paragraph( 'local-edited', 'Alpha' ),

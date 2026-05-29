@@ -892,6 +892,7 @@ export function createSyncManager( debug = false ): SyncManager {
 				if ( options.baseRecord ) {
 					syncConfig.applyChangesToCRDTDoc( ydoc, changesToApply, {
 						baseRecord: options.baseRecord,
+						...( isSave ? { isSave } : {} ),
 					} );
 				} else {
 					syncConfig.applyChangesToCRDTDoc( ydoc, changesToApply );
