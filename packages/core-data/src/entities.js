@@ -47,6 +47,22 @@ function getRawPostSnapshot( record ) {
 	);
 }
 
+function getRawPostSnapshotForPersistence( baseRecord, ...records ) {
+	const recordSnapshot = Object.assign(
+		{},
+		...records.map( getRawPostSnapshot )
+	);
+
+	if ( ! ( 'content' in recordSnapshot ) ) {
+		return recordSnapshot;
+	}
+
+	return {
+		...getRawPostSnapshot( baseRecord ),
+		...recordSnapshot,
+	};
+}
+
 function getSerializedBlockValue( block ) {
 	return __unstableSerializeAndClean( [ block ] ).trim();
 }
@@ -555,19 +571,19 @@ export const prePersistPostType = async (
 		basePersistedCRDTDoc,
 		baseRecordSnapshot = persistedRecord
 	) => {
-		const recordSnapshot = Object.assign(
-			{},
-			...[ options.recordSnapshot, edits, newEdits ].map(
-				getRawPostSnapshot
-			)
+		const baseRawRecordSnapshot = getRawPostSnapshot( baseRecordSnapshot );
+		const recordSnapshot = getRawPostSnapshotForPersistence(
+			baseRecordSnapshot,
+			options.recordSnapshot,
+			edits,
+			newEdits
 		);
 
 		return {
 			basePersistedCRDTDoc,
 			...( Object.keys( recordSnapshot ).length
 				? {
-						baseRecordSnapshot:
-							getRawPostSnapshot( baseRecordSnapshot ),
+						baseRecordSnapshot: baseRawRecordSnapshot,
 						recordSnapshot,
 				  }
 				: {} ),
@@ -836,11 +852,11 @@ export const prePersistPostType = async (
 
 	// Add meta for persisted CRDT document.
 	if ( persistedRecord ) {
-		const snapshotEdits = Object.assign(
-			{},
-			...[ options.recordSnapshot, edits, newEdits ].map(
-				getRawPostSnapshot
-			)
+		const snapshotEdits = getRawPostSnapshotForPersistence(
+			latestRecordForCRDTSnapshot ?? persistedRecord,
+			options.recordSnapshot,
+			edits,
+			newEdits
 		);
 		const snapshotSyncManager = syncManager ?? getSyncManager();
 		const hasBasePersistedCRDTDoc = Boolean(

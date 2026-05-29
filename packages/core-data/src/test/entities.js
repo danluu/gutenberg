@@ -515,6 +515,53 @@ describe( 'prePersistPostType', () => {
 		);
 	} );
 
+	it( 'preserves base record metadata in persisted CRDT document metadata when recordSnapshot is partial', async () => {
+		const syncManager = {
+			createPersistedCRDTDoc: jest
+				.fn()
+				.mockResolvedValue( 'snapshot-doc' ),
+		};
+		getSyncManager.mockReturnValue( syncManager );
+
+		const savedContent = pageContent( [ 'Live content' ] );
+
+		await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				title: { raw: 'Base title' },
+				excerpt: { raw: 'Base excerpt' },
+				content: { raw: pageContent( [ 'Base content' ] ) },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			{
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			'post',
+			false,
+			'/wp/v2/posts',
+			{
+				recordSnapshot: { content: savedContent },
+			}
+		);
+
+		expect( syncManager.createPersistedCRDTDoc ).toHaveBeenCalledWith(
+			'postType/post',
+			123,
+			expect.objectContaining( {
+				recordSnapshot: {
+					content: savedContent,
+					excerpt: 'Base excerpt',
+					title: 'Base title',
+				},
+			} )
+		);
+	} );
+
 	it( 'preserves an explicit local title save when the latest persisted CRDT has an older title', async () => {
 		const latestRecord = {
 			id: 123,
