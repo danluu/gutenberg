@@ -80,6 +80,13 @@ function resolveTargetElement(
 		return blockElement ?? null;
 	}
 
+	if (
+		blockElement.getAttribute( 'data-wp-block-attribute-key' ) ===
+		resolvedSelection.attributeKey
+	) {
+		return blockElement;
+	}
+
 	return (
 		Array.from(
 			blockElement.querySelectorAll< HTMLElement >(
