@@ -1949,7 +1949,10 @@ describe( 'saveEntityRecord', () => {
 			guardedSaveResponse,
 			undefined,
 			true,
-			post
+			{
+				id: 10,
+				meta: { _crdt_document: savedCRDTDocument },
+			}
 		);
 		expect(
 			syncManager.hydrateRecordFromPersistedCRDTDoc
@@ -2027,7 +2030,11 @@ describe( 'saveEntityRecord', () => {
 			syncSaveResponse,
 			undefined,
 			true,
-			post
+			{
+				id: 10,
+				content: 'checkpoint content 9',
+				meta: { _crdt_document: 'save-title-9-crdt-doc' },
+			}
 		);
 		expect( syncManager.update ).toHaveBeenCalledWith(
 			'postType/post',
@@ -2108,7 +2115,11 @@ describe( 'saveEntityRecord', () => {
 			syncSaveResponse,
 			undefined,
 			true,
-			post
+			{
+				id: 10,
+				title: 'checkpoint title 9',
+				meta: { _crdt_document: 'save-content-9-crdt-doc' },
+			}
 		);
 		expect( syncManager.update ).toHaveBeenCalledWith(
 			'postType/post',
@@ -2189,7 +2200,11 @@ describe( 'saveEntityRecord', () => {
 			guardedSaveResponse,
 			undefined,
 			true,
-			post
+			{
+				id: 10,
+				title: 'checkpoint title 9',
+				meta: { _crdt_document: 'save-content-9-crdt-doc' },
+			}
 		);
 		expect( syncManager.update ).toHaveBeenCalledWith(
 			'postType/post',

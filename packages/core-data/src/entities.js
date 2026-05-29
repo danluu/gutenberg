@@ -643,6 +643,15 @@ export const prePersistPostType = async (
 								key
 							);
 
+							const editValue = getRawPostValue( edits[ key ] );
+
+							if (
+								key !== 'content' &&
+								crdtValue !== editValue
+							) {
+								continue;
+							}
+
 							if (
 								crdtValue !==
 								getRawPostValue( latestRecord?.[ key ] )
@@ -718,6 +727,10 @@ export const prePersistPostType = async (
 						crdtValue === '' &&
 						editValue !== ''
 					) {
+						continue;
+					}
+
+					if ( key !== 'content' && crdtValue !== editValue ) {
 						continue;
 					}
 
