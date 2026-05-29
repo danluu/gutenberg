@@ -331,6 +331,55 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
+	it( 'preserves an explicit local title save when the latest persisted CRDT has an older title', async () => {
+		const latestRecord = {
+			id: 123,
+			title: { raw: 'older CRDT title' },
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( true ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'title-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				title: 'older CRDT title',
+			} ) ),
+			update: jest.fn(),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				title: { raw: 'older CRDT title' },
+				meta: {
+					[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'base-doc',
+				},
+			},
+			{ title: 'local checkpoint title' },
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/page',
+			123,
+			{ title: 'local checkpoint title' },
+			'gutenberg-undo-ignored',
+			expect.objectContaining( { isSave: true } )
+		);
+		expect( result ).toEqual( {
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'title-doc',
+			},
+		} );
+	} );
+
 	it( 'snapshots only saved raw fields before serializing the persisted document', async () => {
 		const baseContent = pageContent( [ 'Alpha' ] );
 		const latestRecord = {

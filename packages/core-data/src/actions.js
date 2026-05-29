@@ -356,6 +356,7 @@ function getGuardedSaveResponseRecords(
 		const responseIsStaleSavedEditValue =
 			isPersistedCRDTDocumentSaveResponse &&
 			hasSavedEdit &&
+			! hasResponseSnapshotValue &&
 			areRawAttributeValuesEqual( key, responseValue, editValue ) &&
 			! areRawAttributeValuesEqual( key, crdtValue, responseValue );
 
@@ -372,6 +373,7 @@ function getGuardedSaveResponseRecords(
 				syncRecord === updatedRecord
 					? getRecordWithoutKey( updatedRecord, key )
 					: getRecordWithoutKey( syncRecord, key );
+			omitPersistedEdit( key );
 			continue;
 		}
 
@@ -433,9 +435,7 @@ function getGuardedSaveResponseRecords(
 					syncRecord === updatedRecord
 						? getRecordWithoutKey( updatedRecord, key )
 						: getRecordWithoutKey( syncRecord, key );
-				if ( isBaseVersionPersistedCRDTDocumentSaveResponse ) {
-					omitPersistedEdit( key );
-				}
+				omitPersistedEdit( key );
 			}
 			receiveRecord = getRecordWithPersistedCRDTDocument(
 				receiveRecord,
