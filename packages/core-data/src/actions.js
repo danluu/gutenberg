@@ -255,6 +255,25 @@ function getPersistedCRDTDocumentRecordSnapshot( record ) {
 	)?.recordSnapshot;
 }
 
+function getRecordWithoutPersistedCRDTDocumentSnapshotRawAttributes(
+	entityConfig,
+	record
+) {
+	const recordSnapshot = getPersistedCRDTDocumentRecordSnapshot( record );
+
+	if ( ! recordSnapshot ) {
+		return record;
+	}
+
+	return getGuardedSaveResponseRawAttributes( entityConfig ).reduce(
+		( nextRecord, key ) =>
+			hasOwnProperty( recordSnapshot, key )
+				? getRecordWithoutKey( nextRecord, key )
+				: nextRecord,
+		record
+	);
+}
+
 function getGuardedSaveResponseRecords(
 	entityConfig,
 	baseRecord,
@@ -273,12 +292,6 @@ function getGuardedSaveResponseRecords(
 	const crdtRecord = syncManager?.getCRDTRecordData?.( objectType, objectId );
 	const isPersistedCRDTDocumentSaveResponse =
 		isSaveResponseForPersistedCRDTDocument( edits, updatedRecord );
-	const isBaseVersionPersistedCRDTDocumentSaveResponse =
-		isPersistedCRDTDocumentSaveResponse &&
-		! fastDeepEqual(
-			getPersistedCRDTDocument( updatedRecord ),
-			getPersistedCRDTDocument( edits )
-		);
 	const responseRecordSnapshot = isPersistedCRDTDocumentSaveResponse
 		? getPersistedCRDTDocumentRecordSnapshot( updatedRecord )
 		: null;
@@ -1352,12 +1365,20 @@ export const saveEntityRecord =
 						entityConfig.syncConfig &&
 						! __unstableSkipSyncUpdate
 					) {
+						const syncUpdateRecord =
+							shouldHydrateFromSavedCRDTDocument
+								? getRecordWithoutPersistedCRDTDocumentSnapshotRawAttributes(
+										entityConfig,
+										syncRecord
+								  )
+								: syncRecord;
+
 						// Use an untracked origin so that the save
 						// response does not create undo levels.
 						syncManager?.update(
 							objectType,
 							recordId,
-							syncRecord,
+							syncUpdateRecord,
 							LOCAL_UNDO_IGNORED_ORIGIN,
 							{ isSave: true }
 						);

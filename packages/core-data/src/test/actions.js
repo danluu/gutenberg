@@ -1635,6 +1635,101 @@ describe( 'saveEntityRecord', () => {
 		expect( result ).toBe( staleSaveResponse );
 	} );
 
+	it( 'does not write snapshot raw fields to sync after hydrating a CRDT document save response', async () => {
+		const baseContent = blockContent( 'base' );
+		const savedContent = blockContent( 'checkpoint content 9' );
+		const savedCRDTDocument = JSON.stringify( {
+			document: 'saved-document',
+			version: 'document:saved',
+			recordSnapshot: {
+				content: savedContent,
+			},
+		} );
+		const persistedRecord = {
+			id: 10,
+			content: {
+				raw: baseContent,
+			},
+			meta: {},
+		};
+		const post = {
+			id: 10,
+			content: savedContent,
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const staleSaveResponse = {
+			id: 10,
+			content: {
+				raw: baseContent,
+				rendered: '<p>base</p>',
+			},
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const guardedSaveResponse = {
+			...staleSaveResponse,
+			content: {
+				raw: savedContent,
+				rendered: savedContent,
+			},
+			meta: { _crdt_document: savedCRDTDocument },
+		};
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				rawAttributes: [ 'title', 'excerpt', 'content' ],
+				syncConfig: {},
+			},
+		];
+		const syncManager = {
+			hydrateRecordFromPersistedCRDTDoc: jest
+				.fn()
+				.mockResolvedValue( true ),
+			getCRDTRecordData: jest.fn( () => undefined ),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => persistedRecord,
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+
+		apiFetch.mockImplementation( () => staleSaveResponse );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( dispatch.receiveEntityRecords ).toHaveBeenCalledWith(
+			'postType',
+			'post',
+			guardedSaveResponse,
+			undefined,
+			true,
+			{
+				...post,
+				content: savedContent,
+			}
+		);
+		expect(
+			syncManager.hydrateRecordFromPersistedCRDTDoc
+		).toHaveBeenCalledWith( 'postType/post', 10, guardedSaveResponse );
+		expect( syncManager.update ).toHaveBeenCalledWith(
+			'postType/post',
+			10,
+			{
+				id: 10,
+				meta: { _crdt_document: savedCRDTDocument },
+			},
+			'gutenberg-undo-ignored',
+			{ isSave: true }
+		);
+		expect( result ).toBe( staleSaveResponse );
+	} );
+
 	it( 'strips stale raw fields absent from a CRDT base-version save response', async () => {
 		const savedCRDTDocument = JSON.stringify( {
 			document: 'saved-document',
