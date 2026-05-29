@@ -192,6 +192,12 @@ The branch-link audit was generated at `2026-05-19T18:51:28Z` from fetched
 prove final publication shape, owner evidence, CI, upstream rebase, or filing
 readiness.
 
+The proposed all-PRs-merged branch for this report is
+[`rtc-pr-stack-20260519T161502Z-all-ready-merged`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-all-ready-merged).
+This is a combined stack/benchmark target for the ready rows, not a GitHub
+filing, CI result, upstream rebase, or substitute for the row-specific evidence
+gates below.
+
 Use only these repaired audited PR13 review refs for PR13 content:
 
 - [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired)
