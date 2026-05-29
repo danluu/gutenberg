@@ -388,7 +388,7 @@ describe( 'SyncManager', () => {
 				expect( mockHandlers.persistCRDTDoc ).not.toHaveBeenCalled();
 				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
 					{ title: 'Snapshot title' },
-					{ undoIgnore: true }
+					{ undoIgnore: true, __unstableSkipSyncUpdate: true }
 				);
 			} );
 
@@ -413,7 +413,7 @@ describe( 'SyncManager', () => {
 				expect( mockHandlers.editRecord ).toHaveBeenCalledTimes( 1 );
 				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
 					{ title: 'Normalized Title' },
-					{ undoIgnore: true }
+					{ undoIgnore: true, __unstableSkipSyncUpdate: true }
 				);
 			} );
 
@@ -565,7 +565,7 @@ describe( 'SyncManager', () => {
 				expect( mockHandlers.persistCRDTDoc ).not.toHaveBeenCalled();
 				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
 					{ content: 'accepted content' },
-					{ undoIgnore: true }
+					{ undoIgnore: true, __unstableSkipSyncUpdate: true }
 				);
 			} );
 
@@ -776,7 +776,7 @@ describe( 'SyncManager', () => {
 				expect( mockHandlers.persistCRDTDoc ).not.toHaveBeenCalled();
 				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
 					{ content: 'accepted content' },
-					{ undoIgnore: true }
+					{ undoIgnore: true, __unstableSkipSyncUpdate: true }
 				);
 			} );
 		} );
@@ -1330,9 +1330,12 @@ describe( 'SyncManager', () => {
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
 			expect( mockHandlers.editRecord ).toHaveBeenCalledTimes( 1 );
-			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
-				remoteOnly: 'Value from remote peer',
-			} );
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+				{
+					remoteOnly: 'Value from remote peer',
+				},
+				{ __unstableSkipSyncUpdate: true }
+			);
 		} );
 
 		it( 'refetches the entity record when a remote save updates save metadata', async () => {
@@ -1418,9 +1421,12 @@ describe( 'SyncManager', () => {
 
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
-			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
-				title: 'Title from remote peer',
-			} );
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+				{
+					title: 'Title from remote peer',
+				},
+				{ __unstableSkipSyncUpdate: true }
+			);
 
 			manager.update(
 				'post',
@@ -1527,9 +1533,12 @@ describe( 'SyncManager', () => {
 
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
-			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
-				title: 'Title from remote peer',
-			} );
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+				{
+					title: 'Title from remote peer',
+				},
+				{ __unstableSkipSyncUpdate: true }
+			);
 		} );
 
 		it( 'filters unchanged base-record keys while remote updates are reconciling', async () => {
@@ -1620,9 +1629,12 @@ describe( 'SyncManager', () => {
 
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
-			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
-				title: 'Title from remote peer',
-			} );
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+				{
+					title: 'Title from remote peer',
+				},
+				{ __unstableSkipSyncUpdate: true }
+			);
 		} );
 
 		it( 'filters stale save-response keys while remote updates are reconciling', async () => {
@@ -1715,9 +1727,12 @@ describe( 'SyncManager', () => {
 
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
-			expect( mockHandlers.editRecord ).toHaveBeenCalledWith( {
-				title: 'Title from remote peer',
-			} );
+			expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+				{
+					title: 'Title from remote peer',
+				},
+				{ __unstableSkipSyncUpdate: true }
+			);
 		} );
 
 		it( 'allows local same-key updates scheduled after remote reconciliation starts', async () => {
