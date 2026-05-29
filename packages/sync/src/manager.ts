@@ -252,6 +252,25 @@ function getScheduledRemoteKeyVersions(
 	return versions;
 }
 
+function isUnchangedBaseRecordValue(
+	key: string,
+	value: unknown,
+	options: SyncManagerUpdateOptions
+): boolean {
+	if ( ! options.baseRecord || key === 'blocks' ) {
+		return false;
+	}
+
+	if ( ! Object.prototype.hasOwnProperty.call( options.baseRecord, key ) ) {
+		return false;
+	}
+
+	return fastDeepEqual(
+		getComparableSnapshotValue( options.baseRecord[ key ] ),
+		getComparableSnapshotValue( value )
+	);
+}
+
 /**
  * The sync manager orchestrates the lifecycle of syncing entity records. It
  * creates Yjs documents, connects to providers, creates awareness instances,
@@ -848,19 +867,21 @@ export function createSyncManager( debug = false ): SyncManager {
 			const { syncConfig, ydoc } = entityState;
 			let changesToApply = changes;
 
-			if (
-				! isSave &&
-				! options.baseRecord &&
-				entityState.reconcilingRemoteKeys.size > 0
-			) {
+			if ( ! isSave && entityState.reconcilingRemoteKeys.size > 0 ) {
 				changesToApply = Object.fromEntries(
-					Object.entries( changes ).filter( ( [ key ] ) => {
+					Object.entries( changes ).filter( ( [ key, value ] ) => {
 						if ( key === 'blocks' ) {
 							return true;
 						}
 
 						if ( ! entityState.reconcilingRemoteKeys.has( key ) ) {
 							return true;
+						}
+
+						if (
+							isUnchangedBaseRecordValue( key, value, options )
+						) {
+							return false;
 						}
 
 						return (
