@@ -857,7 +857,10 @@ export function createSyncManager( debug = false ): SyncManager {
 		log( 'hydrateRecordFromCrdtDoc', 'changes', entityId, {
 			changedKeys,
 		} );
-		handlers.editRecord( changes, { undoIgnore: true } );
+		handlers.editRecord( changes, {
+			undoIgnore: true,
+			__unstableSkipSyncUpdate: true,
+		} );
 	}
 
 	/**
@@ -1013,7 +1016,7 @@ export function createSyncManager( debug = false ): SyncManager {
 		keysToReconcile.forEach( ( key ) =>
 			entityState.reconcilingRemoteKeys.add( key )
 		);
-		handlers.editRecord( changes );
+		handlers.editRecord( changes, { __unstableSkipSyncUpdate: true } );
 		void clearReconciledRemoteKeys( entityState, keysToReconcile );
 	}
 
