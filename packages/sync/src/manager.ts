@@ -158,17 +158,28 @@ function filterStaleRecordSnapshotInvalidations(
 				return true;
 			}
 
-			return ! (
-				baseRecordSnapshot &&
-				Object.prototype.hasOwnProperty.call(
+			if (
+				! baseRecordSnapshot ||
+				! Object.prototype.hasOwnProperty.call(
 					baseRecordSnapshot,
 					key
-				) &&
-				fastDeepEqual(
-					recordValue,
-					getComparableSnapshotValue( baseRecordSnapshot[ key ] )
 				)
+			) {
+				return true;
+			}
+
+			const baseSnapshotValue = getComparableSnapshotValue(
+				baseRecordSnapshot[ key ]
 			);
+
+			// If the persisted snapshot did not change this field, a divergent
+			// record value can be a stale entity value from the same save cycle.
+			// Do not let it overwrite the persisted CRDT document.
+			if ( fastDeepEqual( snapshotValue, baseSnapshotValue ) ) {
+				return false;
+			}
+
+			return ! fastDeepEqual( recordValue, baseSnapshotValue );
 		} )
 	);
 }
@@ -411,10 +422,34 @@ export function createSyncManager( debug = false ): SyncManager {
 		const stateMap = ydoc.getMap( CRDT_STATE_MAP_KEY );
 		const now = Date.now();
 		let providerResults: ProviderCreatorResult[] = [];
+		let isObservingProviderBootstrapRemoteState = true;
+		const markProviderSyncedRemoteState = (
+			transaction: Y.Transaction
+		): void => {
+			if ( transaction.local ) {
+				return;
+			}
+
+			ydoc.meta?.set(
+				CRDT_DOC_META_HAS_PROVIDER_SYNCED_REMOTE_STATE,
+				true
+			);
+		};
+		const stopObservingProviderBootstrapRemoteState = (): void => {
+			if ( ! isObservingProviderBootstrapRemoteState ) {
+				return;
+			}
+
+			ydoc.off( 'afterTransaction', markProviderSyncedRemoteState );
+			isObservingProviderBootstrapRemoteState = false;
+		};
+
+		ydoc.on( 'afterTransaction', markProviderSyncedRemoteState );
 
 		// Clean up providers and in-memory state when the entity is unloaded.
 		const unload = (): void => {
 			log( 'loadEntity', 'unloading', entityId );
+			stopObservingProviderBootstrapRemoteState();
 			providerResults.forEach( ( result ) => result.destroy() );
 			handlers.onStatusChange( null );
 			recordMap.unobserveDeep( onRecordUpdate );
@@ -528,22 +563,31 @@ export function createSyncManager( debug = false ): SyncManager {
 			} )
 		);
 
-		// Initialize the Yjs document with the necessary CRDT state.
-		initializeYjsDoc( ydoc );
+		// Give providers one event loop turn to flush bootstrap updates that can
+		// be queued immediately after their initial sync signal. Otherwise, stale
+		// persisted state may be applied before remote peer state is observed.
+		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
-		// Get and apply the persisted CRDT document, if it exists. Observers are
-		// attached after this load-time CRDT initialization so local hydration
-		// does not trigger a redundant CRDT-to-store update.
-		internal.applyPersistedCrdtDoc( objectType, objectId, record );
+		try {
+			// Initialize the Yjs document with the necessary CRDT state.
+			initializeYjsDoc( ydoc );
 
-		// Attach observers.
-		recordMap.observeDeep( onRecordUpdate );
-		stateMap.observe( onStateMapUpdate );
+			// Get and apply the persisted CRDT document, if it exists. Observers are
+			// attached after this load-time CRDT initialization so local hydration
+			// does not trigger a redundant CRDT-to-store update.
+			internal.applyPersistedCrdtDoc( objectType, objectId, record );
 
-		// Reflect CRDT-normalized runtime values, such as hidden table row
-		// identities, back into the local edited record after it exists in the
-		// store.
-		await internal.hydrateRecordFromCrdtDoc( objectType, objectId );
+			// Attach observers.
+			recordMap.observeDeep( onRecordUpdate );
+			stateMap.observe( onStateMapUpdate );
+
+			// Reflect CRDT-normalized runtime values, such as hidden table row
+			// identities, back into the local edited record after it exists in the
+			// store.
+			await internal.hydrateRecordFromCrdtDoc( objectType, objectId );
+		} finally {
+			stopObservingProviderBootstrapRemoteState();
+		}
 	}
 
 	/**
@@ -1178,8 +1222,48 @@ export function createSyncManager( debug = false ): SyncManager {
 		const tempDoc = serialized ? deserializeCrdtDoc( serialized ) : null;
 
 		if ( tempDoc ) {
-			const update = Y.encodeStateAsUpdateV2( tempDoc );
-			Y.applyUpdateV2( entityState.ydoc, update );
+			const recordSnapshot =
+				getPersistedCrdtDocRecordSnapshot( serialized );
+			const baseRecordSnapshot =
+				getPersistedCrdtDocBaseRecordSnapshot( serialized );
+			const invalidations = recordSnapshot
+				? filterStaleRecordSnapshotInvalidations(
+						entityState.syncConfig.getChangesFromCRDTDoc(
+							tempDoc,
+							record
+						),
+						record,
+						recordSnapshot,
+						baseRecordSnapshot
+				  )
+				: {};
+			const invalidatedKeys = Object.keys( invalidations );
+
+			if ( invalidatedKeys.length ) {
+				const changes = invalidatedKeys.reduce< ObjectData >(
+					( acc, key ) =>
+						Object.assign( acc, {
+							[ key ]: record[ key ],
+						} ),
+					{}
+				);
+				if (
+					invalidatedKeys.includes( 'blocks' ) &&
+					! ( 'content' in changes ) &&
+					Object.prototype.hasOwnProperty.call( record, 'content' )
+				) {
+					changes.content = record.content;
+				}
+				entityState.ydoc.transact( () => {
+					entityState.syncConfig.applyChangesToCRDTDoc(
+						entityState.ydoc,
+						changes
+					);
+				}, LOCAL_SYNC_MANAGER_ORIGIN );
+			} else {
+				const update = Y.encodeStateAsUpdateV2( tempDoc );
+				Y.applyUpdateV2( entityState.ydoc, update );
+			}
 			tempDoc.destroy();
 		} else {
 			log(
