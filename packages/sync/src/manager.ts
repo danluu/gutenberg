@@ -271,6 +271,27 @@ function isUnchangedBaseRecordValue(
 	);
 }
 
+function isStaleSaveReconciliationValue(
+	key: string,
+	value: unknown,
+	ydoc: CRDTDoc,
+	options: SyncManagerUpdateOptions
+): boolean {
+	if ( ! options.isSave || key === 'blocks' ) {
+		return false;
+	}
+
+	const recordMap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
+	if ( ! recordMap.has( key ) ) {
+		return false;
+	}
+
+	return ! fastDeepEqual(
+		getComparableSnapshotValue( recordMap.get( key ) ),
+		getComparableSnapshotValue( value )
+	);
+}
+
 /**
  * The sync manager orchestrates the lifecycle of syncing entity records. It
  * creates Yjs documents, connects to providers, creates awareness instances,
@@ -867,7 +888,7 @@ export function createSyncManager( debug = false ): SyncManager {
 			const { syncConfig, ydoc } = entityState;
 			let changesToApply = changes;
 
-			if ( ! isSave && entityState.reconcilingRemoteKeys.size > 0 ) {
+			if ( entityState.reconcilingRemoteKeys.size > 0 ) {
 				changesToApply = Object.fromEntries(
 					Object.entries( changes ).filter( ( [ key, value ] ) => {
 						if ( key === 'blocks' ) {
@@ -876,6 +897,17 @@ export function createSyncManager( debug = false ): SyncManager {
 
 						if ( ! entityState.reconcilingRemoteKeys.has( key ) ) {
 							return true;
+						}
+
+						if (
+							isStaleSaveReconciliationValue(
+								key,
+								value,
+								ydoc,
+								options
+							)
+						) {
+							return false;
 						}
 
 						if (
@@ -892,7 +924,7 @@ export function createSyncManager( debug = false ): SyncManager {
 					} )
 				);
 
-				if ( 0 === Object.keys( changesToApply ).length ) {
+				if ( 0 === Object.keys( changesToApply ).length && ! isSave ) {
 					return;
 				}
 			}
