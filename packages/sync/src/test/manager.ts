@@ -392,6 +392,47 @@ describe( 'SyncManager', () => {
 				);
 			} );
 
+			it( 'ignores stale record invalidations when persisted snapshots are unchanged', async () => {
+				mockRecord = {
+					...mockRecord,
+					title: '',
+				};
+				mockSyncConfig = {
+					...mockSyncConfig,
+					getPersistedCRDTDoc: jest.fn( () =>
+						createPersistedCRDTDoc(
+							{
+								...mockRecord,
+								title: 'Snapshot title',
+							},
+							{
+								baseRecordSnapshot: { title: 'Snapshot title' },
+								recordSnapshot: { title: 'Snapshot title' },
+							}
+						)
+					),
+				};
+
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).not.toHaveBeenCalled();
+				expect( mockHandlers.persistCRDTDoc ).not.toHaveBeenCalled();
+				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+					{ title: 'Snapshot title' },
+					{ undoIgnore: true, __unstableSkipSyncUpdate: true }
+				);
+			} );
+
 			it( 'hydrates normalized CRDT changes when no persisted CRDT doc exists', async () => {
 				mockSyncConfig.applyChangesToCRDTDoc = jest.fn(
 					( ydoc: CRDTDoc ) => {
@@ -455,6 +496,54 @@ describe( 'SyncManager', () => {
 				// Verify that the CRDT doc was persisted.
 				expect( mockHandlers.editRecord ).not.toHaveBeenCalled();
 				expect( mockHandlers.persistCRDTDoc ).not.toHaveBeenCalled();
+			} );
+
+			it( 'does not apply persisted CRDT doc over bootstrap remote state', async () => {
+				mockRecord = {
+					...mockRecord,
+					title: 'Persisted title',
+				};
+				mockSyncConfig = {
+					...mockSyncConfig,
+					getPersistedCRDTDoc: jest.fn( () =>
+						createPersistedCRDTDoc( mockRecord )
+					),
+				};
+				mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
+					setTimeout( () => {
+						const remoteDoc = new Y.Doc();
+						remoteDoc
+							.getMap( CRDT_RECORD_MAP_KEY )
+							.set( 'title', 'Remote title' );
+						Y.applyUpdateV2(
+							ydoc,
+							Y.encodeStateAsUpdateV2( remoteDoc )
+						);
+						remoteDoc.destroy();
+					}, 0 );
+					return mockProviderResult;
+				} );
+
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).not.toHaveBeenCalled();
+				expect( mockHandlers.persistCRDTDoc ).not.toHaveBeenCalled();
+				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
+					{ title: 'Remote title' },
+					expect.objectContaining( {
+						__unstableSkipSyncUpdate: true,
+					} )
+				);
 			} );
 
 			it( 'applies a persisted CRDT doc with invalidated fields, then applies changes', async () => {
@@ -566,6 +655,68 @@ describe( 'SyncManager', () => {
 				expect( mockHandlers.editRecord ).toHaveBeenCalledWith(
 					{ content: 'accepted content' },
 					{ undoIgnore: true, __unstableSkipSyncUpdate: true }
+				);
+			} );
+
+			it( 'does not hydrate save responses from CRDT content invalidated by the saved record snapshot', async () => {
+				mockRecord = {
+					...mockRecord,
+					content: 'saved content',
+				};
+				mockSyncConfig.getPersistedCRDTDoc = jest.fn(
+					( record: ObjectData ) => {
+						const meta = record.meta as
+							| { _crdt_document?: string | null }
+							| undefined;
+
+						return meta?._crdt_document ?? null;
+					}
+				);
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				const staleCRDTDocument = createPersistedCRDTDoc(
+					{ content: 'stale crdt content' },
+					{
+						baseRecordSnapshot: { content: 'base content' },
+						recordSnapshot: { content: 'saved content' },
+					}
+				);
+
+				jest.clearAllMocks();
+				mockSyncConfig.getChangesFromCRDTDoc.mockReturnValueOnce( {
+					blocks: [ 'stale crdt blocks' ],
+				} );
+				mockHandlers.getEditedRecord.mockResolvedValue( mockRecord );
+
+				await manager.hydrateRecordFromPersistedCRDTDoc(
+					'post',
+					'123',
+					{
+						id: '123',
+						content: 'saved content',
+						meta: {
+							_crdt_document: staleCRDTDocument,
+						},
+					}
+				);
+
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).toHaveBeenCalledWith( expect.any( Y.Doc ), {
+					blocks: undefined,
+					content: 'saved content',
+				} );
+				expect( mockHandlers.editRecord ).not.toHaveBeenCalledWith(
+					{ content: 'stale crdt content' },
+					expect.anything()
 				);
 			} );
 
@@ -714,7 +865,7 @@ describe( 'SyncManager', () => {
 				);
 			} );
 
-			it( 'hydrates from a persisted CRDT doc without invalidating missing record fields', async () => {
+			it( 'hydrates from a persisted CRDT doc stored in meta without invalidating missing record fields', async () => {
 				mockRecord = {
 					...mockRecord,
 					content: 'old content',
