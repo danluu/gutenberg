@@ -1,21 +1,16 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Broad key can reuse stale no-product evidence from failed head 2f8247258316bde60869c06c383090904e9426bd.,PR07C/HOLD-07C,"Broad key can reuse stale no-product evidence from failed head
-2f8247258316bde60869c06c383090904e9426bd."
-publish-ready,coverage-ready-benchmark-canary-equivalence,P0,no,Current canary coverage lacks required current-run successes or explicit blocker/downscope rows for the forced benchmark canary set.,coverage-ready-benchmark-canary-equivalence,"Current canary coverage lacks required current-run successes or explicit
-blocker/downscope rows for the forced benchmark canary set."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,P0,no,"Block until seed1190001, exact repaired-head owner evidence, build-clean evidence, and canary/downscope rows agree.",ready/rtc-pr07c-reload-record-snapshots,"Block until seed1190001, exact repaired-head owner evidence, build-clean
-evidence, and canary/downscope rows agree."
-publish-ready,final-all-merged-current,P0,no,"Block until PR07C gates, benchmark-minimum rows, canary evidence or downscopes, live branch manifest links, and maintainer status docs agree.",final-all-merged-current,"Block until PR07C gates, benchmark-minimum rows, canary evidence or downscopes,
-live branch manifest links, and maintainer status docs agree."
-publish-ready,raw-superseded-pr06b-pr15-and-old-pr07c,high,no,"Canonical PR06B minimal, PR15 on-PR14B variants, and repaired PR07C path supersede raw held branches absent fresh contrary evidence.",raw-superseded-pr06b-pr15-and-old-pr07c,"Canonical PR06B minimal, PR15 on-PR14B variants, and repaired PR07C path
-supersede raw held branches absent fresh contrary evidence."
-repair-branch,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Heavy reload replay waits behind PR07C seed1190001, owner evidence, canary materialization, disk preservation, and discovery reserve.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Heavy reload replay waits behind PR07C seed1190001, owner evidence, canary
-materialization, disk preservation, and discovery reserve."
-publish-ready,reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,P0,no,"Missing same-head title-reload, existing-post CRDT or persistence-reload, and large-http-lifecycle green or replay-backed downscope rows.",reload-hydration@b01a3a21e2c83af903bc0f61cb9c875249d027ca,"Missing same-head title-reload, existing-post CRDT or persistence-reload, and
-large-http-lifecycle green or replay-backed downscope rows."
-publish-ready,pre-save-search-live-collapse+rich-text-suffix-corruption,high,no,Do not publish diagnostic-only families as product PRs without product-owned replay evidence or green-stack adoption.,pre-save-search-live-collapse+rich-text-suffix-corruption,"Do not publish diagnostic-only families as product PRs without product-owned
-replay evidence or green-stack adoption."
-launch-branch-repair,heavy-pr-jobs-when-discovery-unhealthy,P0,no,"If discovery reserve becomes unhealthy, allow only cheap publication/status manifest generation and analysis-only work.",heavy-pr-jobs-when-discovery-unhealthy,"If discovery reserve becomes unhealthy, allow only cheap publication/status
-manifest generation and analysis-only work."
-repair-branch,benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,P0,no,"Broad PR17 repair waits behind PR07C owner evidence, seed1190001 handling, canary materialization, disk preservation, and discovery reserve.",benchmark-canary-fuzzer-gap/PR17-provider-persisted-crdt,"Broad PR17 repair waits behind PR07C owner evidence, seed1190001 handling,
-canary materialization, disk preservation, and discovery reserve."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,stale direct PR07C head lacks the build/type repair and is superseded by 9617d576354444657e7278c0dd9abc5d4f05dcb9.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"stale direct PR07C head lacks the build/type repair and is superseded by
+9617d576354444657e7278c0dd9abc5d4f05dcb9."
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; relaunch only with newer target-head owner evidence.,PR07C/HOLD-07C,"owner matrix is runtime-held and consumed; relaunch only with newer target-head
+owner evidence."
+repair-ready,benchmark-canary/novelty-http-self-presence-ui-signals/materialization-only,P0,no,materialization-only repair is superseded by current product-or-test failure plus green exact repair evidence.,benchmark-canary/novelty-http-self-presence-ui-signals/materialization-only,"materialization-only repair is superseded by current product-or-test failure
+plus green exact repair evidence."
+launch-branch-repair,reload-hydration/generic-deferred-heads,high,no,generic reload-hydration repair or relaunch is diagnostic churn after replay-backed downscope; reopen only on newer same-head final-ui product evidence.,reload-hydration/generic-deferred-heads,"generic reload-hydration repair or relaunch is diagnostic churn after
+replay-backed downscope; reopen only on newer same-head final-ui product
+evidence."
+launch-branch-repair,coverage-guided-lower-level/productless-broad-reruns,high,no,"broad lower-level expansion stays capped until product_yield, product_failure_key, or active-blocker evidence appears.",coverage-guided-lower-level/productless-broad-reruns,"broad lower-level expansion stays capped until product_yield,
+product_failure_key, or active-blocker evidence appears."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch.
+publish-ready,ready/rtc-pr15a-pr15b-pr15c-non-pr14b-variants,high,no,superseded by already-published PR14B-based PR15 variants.,ready/rtc-pr15a-pr15b-pr15c-non-pr14b-variants,superseded by already-published PR14B-based PR15 variants.
+publish-ready,published-product-pr-set,high,no,already published; continue fuzz validation rather than republishing unchanged heads.,published-product-pr-set,"already published; continue fuzz validation rather than republishing unchanged
+heads."
