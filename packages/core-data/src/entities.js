@@ -51,6 +51,63 @@ function getSerializedBlockValue( block ) {
 	return __unstableSerializeAndClean( [ block ] ).trim();
 }
 
+function getSerializedBlockShellValue( block ) {
+	return getSerializedBlockValue( {
+		...block,
+		innerBlocks: [],
+	} );
+}
+
+function areCRDTSnapshotBlocksCompatible( snapshotBlock, crdtBlock ) {
+	if (
+		! snapshotBlock ||
+		! crdtBlock ||
+		snapshotBlock.name !== crdtBlock.name
+	) {
+		return false;
+	}
+
+	try {
+		if (
+			getSerializedBlockShellValue( snapshotBlock ) ===
+			getSerializedBlockShellValue( crdtBlock )
+		) {
+			return true;
+		}
+	} catch {}
+
+	return true;
+}
+
+function reuseCRDTBlockClientIds( snapshotBlocks, crdtBlocks = [] ) {
+	let searchStart = 0;
+
+	return snapshotBlocks.map( ( snapshotBlock ) => {
+		let crdtBlock;
+		for ( let i = searchStart; i < crdtBlocks.length; i++ ) {
+			if (
+				areCRDTSnapshotBlocksCompatible(
+					snapshotBlock,
+					crdtBlocks[ i ]
+				)
+			) {
+				crdtBlock = crdtBlocks[ i ];
+				searchStart = i + 1;
+				break;
+			}
+		}
+
+		return {
+			...snapshotBlock,
+			...( crdtBlock?.clientId ? { clientId: crdtBlock.clientId } : {} ),
+			innerBlocks: reuseCRDTBlockClientIds(
+				snapshotBlock.innerBlocks ?? [],
+				crdtBlock?.innerBlocks ?? []
+			),
+		};
+	} );
+}
+
 function getSerializedCRDTBlockContent( crdtRecord ) {
 	return Array.isArray( crdtRecord?.blocks )
 		? __unstableSerializeAndClean( crdtRecord.blocks ).trim()
@@ -68,7 +125,7 @@ function getCRDTRawPostValue( crdtRecord, key ) {
 	return getRawPostValue( crdtRecord?.[ key ] );
 }
 
-function getCRDTSnapshotChangesFromPostEdits( edits ) {
+function getCRDTSnapshotChangesFromPostEdits( edits, crdtRecord ) {
 	const changes = {};
 
 	for ( const key of POST_RAW_ATTRIBUTES ) {
@@ -84,7 +141,10 @@ function getCRDTSnapshotChangesFromPostEdits( edits ) {
 		changes[ key ] = rawValue;
 
 		if ( key === 'content' ) {
-			changes.blocks = parse( rawValue );
+			const blocks = parse( rawValue );
+			changes.blocks = Array.isArray( crdtRecord?.blocks )
+				? reuseCRDTBlockClientIds( blocks, crdtRecord.blocks )
+				: blocks;
 		}
 	}
 
@@ -495,8 +555,11 @@ export const prePersistPostType = async (
 		basePersistedCRDTDoc,
 		baseRecordSnapshot = persistedRecord
 	) => {
-		const recordSnapshot = getRawPostSnapshot(
-			options.recordSnapshot ?? edits
+		const recordSnapshot = Object.assign(
+			{},
+			...[ options.recordSnapshot, edits, newEdits ].map(
+				getRawPostSnapshot
+			)
 		);
 
 		return {
@@ -773,23 +836,63 @@ export const prePersistPostType = async (
 
 	// Add meta for persisted CRDT document.
 	if ( persistedRecord ) {
-		const crdtSnapshotChanges = getCRDTSnapshotChangesFromPostEdits( {
-			...edits,
-			...newEdits,
-		} );
+		const snapshotEdits = Object.assign(
+			{},
+			...[ options.recordSnapshot, edits, newEdits ].map(
+				getRawPostSnapshot
+			)
+		);
+		const snapshotSyncManager = syncManager ?? getSyncManager();
+		const hasBasePersistedCRDTDoc = Boolean(
+			latestPersistedCRDTDoc ||
+				persistedRecord?.meta?.[
+					POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
+				]
+		);
+		const shouldReuseCRDTBlockClientIds =
+			snapshotSyncManager?.update &&
+			hasBasePersistedCRDTDoc &&
+			'content' in snapshotEdits &&
+			getRawPostValue( snapshotEdits.content ) !== undefined;
+		const currentCRDTRecord = shouldReuseCRDTBlockClientIds
+			? snapshotSyncManager?.getCRDTRecordData?.( objectType, objectId )
+			: undefined;
+		const crdtSnapshotChanges = getCRDTSnapshotChangesFromPostEdits(
+			snapshotEdits,
+			currentCRDTRecord
+		);
 		if ( Object.keys( crdtSnapshotChanges ).length ) {
-			( syncManager ?? getSyncManager() )?.update?.(
+			const snapshotBaseRecord = Array.isArray(
+				currentCRDTRecord?.blocks
+			)
+				? currentCRDTRecord
+				: getCRDTSnapshotBaseRecord(
+						latestRecordForCRDTSnapshot ?? persistedRecord
+				  );
+			const snapshotUpdateOptions = {
+				baseRecord: snapshotBaseRecord,
+			};
+			snapshotSyncManager?.update?.(
 				objectType,
 				objectId,
 				crdtSnapshotChanges,
 				LOCAL_UNDO_IGNORED_ORIGIN,
-				{
-					isSave: true,
-					baseRecord: getCRDTSnapshotBaseRecord(
-						latestRecordForCRDTSnapshot ?? persistedRecord
-					),
-				}
+				crdtSnapshotChanges.blocks
+					? snapshotUpdateOptions
+					: {
+							...snapshotUpdateOptions,
+							isSave: true,
+					  }
 			);
+			if ( crdtSnapshotChanges.blocks ) {
+				snapshotSyncManager?.update?.(
+					objectType,
+					objectId,
+					{},
+					LOCAL_UNDO_IGNORED_ORIGIN,
+					{ isSave: true }
+				);
+			}
 			hasSerializedDoc = false;
 		}
 
