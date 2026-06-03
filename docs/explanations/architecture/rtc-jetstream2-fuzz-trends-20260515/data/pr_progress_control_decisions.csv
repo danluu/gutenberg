@@ -1,39 +1,41 @@
 action,target,priority,allowed,reason
-include-candidate,PR07C/repaired-head-9617d576,P0,yes,Current promotion policy says repaired PR07C is net-risk-reducing and should be in the candidate stack unless concrete same-stack validation finds a PR07C regression.
-repair-ready,PR07C/repaired-head-9617d576/current-push-manifest,P0,yes,Materialize exactly one same-head nonheader current-push-manifest row for repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9.
-publish-ready,PR07C/repaired-head-9617d576,P0,no,"Blocked until same-head manifest, same-head build or exact evidence, primary benchmark-canary closure, and protected discovery reserve."
-build-preflight,PR07C/repaired-head-9617d576,P0,no,Heavy PR work is blocked while discovery protected=no; run after manifest exists and discovery reserve is healthy.
-exact-validate,PR07C/repaired-head-9617d576,P0,no,Heavy exact validation is blocked while discovery protected=no; queue after same-head manifest and reserve gates close.
-browser-validate,PR07C/repaired-head-9617d576,high,no,Heavy browser validation is blocked while discovery protected=no and same-head build/exact evidence is missing.
-publish-ready,aggregate-all-merged-ready,P0,no,"Inherits PR07C manifest/build/exact, primary benchmark-canary, and discovery-reserve gates."
-repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Do not publish stale direct PR07C; route only the repaired head.
+repair-ready,PR07C/repaired-head-9617d576/current-push-manifest,P0,yes,Next cheap product-progress step; current-push-manifest.tsv is header-only and needs one same-head row for repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9.
+update-controller-rule,PR07C/include-repaired-head-in-candidate-stack,P0,yes,"Current policy says include PR07C as net-risk-reducing, but candidate and aggregate paths must use repaired head 9617d576354444657e7278c0dd9abc5d4f05dcb9."
+publish-ready,PR07C/repaired-head-9617d576,P0,no,"Blocked by missing nonheader same-head manifest row, missing same-head build or exact evidence, open canary and seed-1010001 gates, and discovery protected=no."
+repair-ready,PR07C/repaired-head-9617d576/build-preflight,P0,no,Heavy PR work must wait until the manifest exists and discovery reserve is protected.
+repair-ready,PR07C/repaired-head-9617d576/exact-validation,P0,no,"Heavy exact validation waits behind manifest, same-head evidence, primary canary, seed-1010001, and protected discovery gates."
+repair-ready,PR07C/repaired-head-9617d576/browser-validation,P0,no,Browser validation is heavy PR work and discovery protected=no.
+repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale ready head is superseded for candidate use by repaired PR07C head 9617d576354444657e7278c0dd9abc5d4f05dcb9.
 launch-owner-matrix,pr07c-owner-matrix,high,no,Runtime-held-consumed; PR07C inclusion no longer depends on owner proof unless newer owner evidence appears.
-cooldown-diagnostic,reload-hydration,P0,yes,"Consume replay-backed seed 7800014 downscope and suppress repair, raw publication, owner work, and generic replay unless newer same-head final-ui product evidence appears."
-cooldown-diagnostic,pa-exact-reload-hydration-seed-7800014-final-ui-witness,high,yes,Terminalize or hold the duplicate exact blocker as replay-backed downscope using the seed 7800014 exact-current-head evidence.
-repair-branch,reload-hydration,high,no,"Current evidence supports downscope, and deferred manifest validity is build-or-exact-validation-missing."
-publish-ready,reload-hydration,high,no,Raw deferred publication is blocked by replay-backed downscope evidence and missing build/exact validation.
-cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,Keep diagnostic downscope; reopen only with repeatable core/search first-loss owner evidence.
-cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,Keep diagnostic downscope; reopen only with deterministic product-owned suffix/content-ledger evidence.
-cooldown-diagnostic,malformed-save-payload,medium,yes,Raw family is covered by the already-published canonical PR06B minimal branch.
-cooldown-diagnostic,http-room-isolation,medium,yes,Ready PR02A is already published and no fresh healthy-user product evidence is present.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Broader held branch overbroadens review scope; canonical PR06B minimal branch is already published.
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,On-PR14B PR15A variant is already published; keep alternate branch held.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,On-PR14B PR15B variant is already published; keep alternate branch held.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,On-PR14B PR15C variant is already published; keep alternate branch held.
-reserve-discovery,global-discovery-reserve,P0,yes,Active discovery is 4 over floor 3 but discovery protected=no; preserve reserve before heavy PR work.
-reserve-discovery,global-heavy-pr-work,P0,no,"Block heavy PR build, exact, browser, owner-matrix, and publication while discovery reserve is unprotected."
-reserve-discovery,coverage-guided-current-pass,medium,yes,Keep existing discovery alive because primary canary goals remain open and current-run product signatures are visible.
-reserve-discovery,benchmark-canary/novelty-http-existing-post-crdt-metadata,P0,yes,Materialize a protected canary slot for the remaining primary forced row without current-run success or explicit downscope.
-update-controller-rule,benchmark-canary/current-run-green-credit,P0,yes,Credit direct current-root successes as current_run_green=yes and coverage_ready=yes for primary promotion closure.
-cooldown-diagnostic,benchmark-canary/nonprimary-promotion-blocked-aliases,P0,yes,Remove or explicitly downscope primary=no aliases so they cannot consume protected canary slots or block promotion.
-update-controller-rule,benchmark-canary-primary-only-closure,P0,yes,Only primary forced rows own benchmark-canary closure; nonprimary aliases cannot block PR promotion.
-reserve-discovery,self-presence-ui-signals/browser-payload-bridge,high,yes,"Allow one bounded rendered-overlay/browser-payload retarget, accepting credit only with canonical RTC_COLLABORATOR_CURSOR_VISUAL_* or RTC_HTTP_AWARENESS_SELECTION_* product keys."
-update-controller-rule,coverage-guided-lower-level/rendered-overlay-dom:self-presence,high,yes,Credit retained RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING as product-keyed lower-level evidence.
-cooldown-diagnostic,http-awareness-selection-propagation+client-overlay-projection,high,yes,Productless lower-level roots stay capped until retained canonical product keys appear.
-launch-branch-repair,novelty-ws-collaboration-ui-signals/self-presence-ui-signal-http,high,no,Branch repair ownership and scope are not conclusive; route product evidence before repair.
-update-controller-rule,productive-feed-action-normalization,P0,yes,"Map Productive Analysis manifest, gate, downscope, coverage, level-mix, and evidence rows into controller TSV actions."
-update-controller-rule,pr-progress-manifest-dedup,P0,yes,Dedupe repeated PR07C manifest rows by target and head until one same-head nonheader manifest row exists.
-update-controller-rule,push-manifest-publication-gate,P0,yes,Require a nonempty same-head current-push-manifest row before publish-ready.
-update-controller-rule,ready-finalized-build-preflight,P0,yes,"Require same-head setup build or exact validation before ready, finalized, aggregate publication, browser credit, or benchmark credit."
-update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,"Block heavy PR work while discovery is unprotected or at the floor; cheap manifest, accounting, downscope, and analysis-only work may proceed."
+publish-ready,aggregate-all-merged-ready,P0,no,"Aggregate publication inherits PR07C manifest, same-head build or exact evidence, primary canary, seed-1010001, and discovery-reserve gates."
+reserve-discovery,global-discovery-reserve,P0,yes,Active discovery is 4 over floor 3 but discovery protected=no; preserve existing-code and existing-PR fuzzing reserve.
+repair-ready,global-heavy-pr-work,P0,no,"Block heavy PR build, exact, browser, owner, branch-repair, and publication work while discovery protected=no."
+refresh-status,benchmark-canary/primary-forced-open,P0,yes,Cheap status refresh can reconcile stale benchmark-canary status with current supervisor activeRunDirs without launching PR work.
+reserve-discovery,benchmark-canary/primary-forced-floor,P0,yes,Keep protected canary attention on primary forced rows until direct current-run green or explicit downscope.
+update-controller-rule,benchmark-canary/current-root-primary-green,P0,yes,Credit direct current-root primary successes as current_run_green=yes and coverage_ready=yes after refreshed status confirms them.
+update-controller-rule,benchmark-canary/quote-serialization-gate,high,yes,Seed 1010001 quote-block serialization loss remains a promotion gate until exact repro plus fix or explicit downscope exists.
+repair-ready,block_validation_entity_reference_mismatch:seed-1010001,high,yes,Allow analysis-only exact repair-or-downscope blocker routing for the seed 1010001 quote-block serialization loss.
+launch-branch-repair,block_validation_entity_reference_mismatch:seed-1010001,high,no,Heavy branch repair waits while discovery protected=no and analysis-only exact routing is still pending.
+cooldown-diagnostic,reload-hydration,P0,yes,"Replay-backed seed 7800014 downscope stands; suppress repair, raw publication, owner work, and generic replay absent newer same-head final-ui product evidence."
+cooldown-diagnostic,pa-exact-reload-hydration-seed-7800014-final-ui-witness,high,yes,Terminalize duplicate exact blocker using existing same-head seed 7800014 replay evidence.
+repair-branch,reload-hydration,high,no,"Evidence supports downscope rather than repair, and branch repair is heavy while discovery protected=no."
+publish-ready,reload-hydration,high,no,Raw deferred publication is blocked by replay-backed downscope and missing build or exact validation.
+launch-owner-matrix,reload-hydration,high,no,Owner work would duplicate diagnostic churn while replay-backed downscope stands.
+cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,Diagnostic downscope stands; reopen only with repeatable core/search first-loss owner evidence.
+cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,Diagnostic downscope stands; reopen only with deterministic product-owned suffix or content-ledger evidence.
+cooldown-diagnostic,malformed-save-payload,medium,yes,Raw family is covered by already published canonical PR06B minimal.
+cooldown-diagnostic,http-room-isolation,medium,yes,Raw family is covered by already published PR02A and lacks fresh healthy-user product evidence.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Broader alternate remains held because canonical PR06B minimal is already published.
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Non-PR14B alternate remains held because on-PR14B PR15A is already published.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Non-PR14B alternate remains held because on-PR14B PR15B is already published.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Non-PR14B alternate remains held because on-PR14B PR15C is already published.
+update-controller-rule,coverage-guided-lower-level/rendered-overlay-dom:self-presence,P0,yes,Credit retained rendered-overlay artifact as lower-level product-yield evidence for RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING.
+repair-ready,RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING:self-presence,high,yes,Allow analysis-only exact repair-or-downscope blocker creation for the retained isolated product key.
+launch-branch-repair,RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING:self-presence,high,no,Heavy branch repair waits while discovery protected=no; consume analysis-only blocker routing first.
+reserve-discovery,self-presence-ui-signals/browser-payload-bridge,high,yes,Allow only bounded bridge/accounting work that preserves discovery reserve and records canonical RTC product keys.
+cooldown-diagnostic,coverage-guided-lower-level/http-awareness-selection-propagation+client-overlay-projection,high,yes,Keep productless lower-level roots capped until current-root status records canonical product or active-blocker yield.
+cooldown-diagnostic,productive-analysis/pre-oracle-preflight-only,high,yes,Recent no-progress artifacts are pre-oracle or preflight-only and should not consume product-progress slots.
+update-controller-rule,productive-feed-action-normalization,P0,yes,Map Productive Analysis action kinds into valid controller actions and dedupe repeated rows by target/head without dropping unconsumed P0 rows.
+update-controller-rule,push-manifest-publication-gate,P0,yes,Require a nonempty same-head manifest row before PR07C or aggregate publish-ready.
+update-controller-rule,ready-finalized-build-preflight,P0,yes,"Require same-head setup build or exact validation before ready or finalized publication, browser credit, or benchmark credit."
+update-controller-rule,discovery-reserve-heavy-pr-gate,P0,yes,"Allow only cheap manifest, accounting, downscope, status refresh, and analysis-only work while discovery protected=no or active discovery is at the floor."
