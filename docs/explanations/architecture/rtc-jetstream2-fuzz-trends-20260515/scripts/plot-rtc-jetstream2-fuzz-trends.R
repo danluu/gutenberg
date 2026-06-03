@@ -1445,11 +1445,11 @@ if ( file.exists( cpu_path ) ) {
 		mutate( timestamp = parse_utc_timestamp( timestamp ) ) %>%
 		filter( timestamp >= floor_date( min( monitor$timestamp ), "day" ) )
 
-	write_plot(
-		"cpu-utilization-over-time.png",
-		ggplot( cpu_utilization, aes( x = timestamp, y = cpu_utilization ) ) +
-			geom_point( aes( color = iowait_pct ), alpha = 0.72, size = 1.6 ) +
-			scale_color_distiller( palette = "YlOrRd", direction = 1, labels = label_percent( scale = 1 ) ) +
+		write_plot(
+			"cpu-utilization-over-time.png",
+			ggplot( cpu_utilization, aes( x = timestamp, y = cpu_utilization ) ) +
+				geom_point( aes( color = iowait_pct ), alpha = 0.42, size = 0.45 ) +
+				scale_color_distiller( palette = "YlOrRd", direction = 1, labels = label_percent( scale = 1 ) ) +
 			scale_y_continuous( labels = label_percent( scale = 1 ), limits = c( 0, 100 ) ) +
 			scale_time_axis( date_breaks = "4 hours" ) +
 				labs(
@@ -1483,10 +1483,10 @@ if ( file.exists( load_path ) ) {
 			)
 		)
 
-	write_plot(
-		"load-average-over-time.png",
-		ggplot( load_average_long, aes( x = timestamp, y = load_average, color = metric ) ) +
-			geom_point( alpha = 0.68, size = 1.5 ) +
+		write_plot(
+			"load-average-over-time.png",
+			ggplot( load_average_long, aes( x = timestamp, y = load_average, color = metric ) ) +
+				geom_point( alpha = 0.48, size = 0.5 ) +
 			geom_hline(
 				data = load_average %>% distinct( core_count ),
 				aes( yintercept = core_count ),

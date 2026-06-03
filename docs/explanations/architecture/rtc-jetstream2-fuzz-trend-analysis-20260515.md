@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-06-03T19:21:35Z`
+Snapshot generated: `2026-06-03T20:41:17Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The refreshed CSVs and plots are committed
