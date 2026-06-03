@@ -1452,14 +1452,14 @@ if ( file.exists( cpu_path ) ) {
 			scale_color_distiller( palette = "YlOrRd", direction = 1, labels = label_percent( scale = 1 ) ) +
 			scale_y_continuous( labels = label_percent( scale = 1 ), limits = c( 0, 100 ) ) +
 			scale_time_axis( date_breaks = "4 hours" ) +
-			labs(
-				title = "CPU utilization over time",
-				x = "UTC time",
-				y = "CPU utilization",
-				color = "I/O wait",
-				caption = "Each point is one sysstat sample for all CPUs. Color indicates the I/O-wait share."
-			) +
-			theme_rtc(),
+				labs(
+					title = "CPU utilization over time",
+					x = "UTC time",
+					y = "CPU utilization",
+					color = "I/O wait",
+					caption = "Each point is one all-CPU telemetry sample. Color indicates I/O wait when sysstat data is available."
+				) +
+				theme_rtc(),
 		width = 9,
 		height = 5.4
 	)
@@ -1497,14 +1497,14 @@ if ( file.exists( load_path ) ) {
 			scale_color_brewer( palette = "Dark2" ) +
 			scale_y_log2_powers() +
 			scale_time_axis( date_breaks = "4 hours" ) +
-			labs(
-				title = "Load average over time",
-				x = "UTC time",
-				y = "load average",
-				color = NULL,
-				caption = "Each point is one sysstat sample. The y-axis uses a base-2 log scale; the dashed line is the logical CPU count."
-			) +
-			theme_rtc(),
+				labs(
+					title = "Load average over time",
+					x = "UTC time",
+					y = "load average",
+					color = NULL,
+					caption = "Each point is one load telemetry sample. The y-axis uses a base-2 log scale; the dashed line is the logical CPU count."
+				) +
+				theme_rtc(),
 		width = 9,
 		height = 5.4
 	)
@@ -3003,11 +3003,12 @@ summary_lines <- c(
 	paste0( "unmet_coverage_last: ", last( monitor$unmet_coverage ) ),
 	paste0( "likely_real_max: ", max( monitor$likely_real, na.rm = TRUE ) ),
 	paste0( "duplicate_share_current_last: ", last( monitor$duplicate_share_current ) ),
-	paste0( "duplicate_share_historical_last: ", last( monitor$duplicate_share_historical ) ),
-	paste0( "summary_startup_failures_last: ", last( monitor$summary_startup_failures ) ),
-	paste0( "quality_issues_last: ", last( monitor$quality_issues ) ),
-	paste0( "memory_free_gb_last: ", last( monitor$memory_free_gb ) ),
-	paste0( "load_1_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_1 ), NA ) ),
+		paste0( "duplicate_share_historical_last: ", last( monitor$duplicate_share_historical ) ),
+		paste0( "summary_startup_failures_last: ", last( monitor$summary_startup_failures ) ),
+		paste0( "quality_issues_last: ", last( monitor$quality_issues ) ),
+		paste0( "memory_free_gb_last: ", last( monitor$memory_free_gb ) ),
+		paste0( "cpu_utilization_last: ", ifelse( exists( "cpu_utilization" ) && nrow( cpu_utilization ) > 0, last( cpu_utilization$cpu_utilization ), NA ) ),
+		paste0( "load_1_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_1 ), NA ) ),
 	paste0( "load_5_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_5 ), NA ) ),
 	paste0( "load_15_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_15 ), NA ) ),
 	paste0( "core_count: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$core_count ), NA ) ),

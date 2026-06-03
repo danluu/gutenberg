@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-06-03T07:22:27Z`
+Snapshot generated: `2026-06-03T07:41:06Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The refreshed CSVs and plots are committed
@@ -10,9 +10,7 @@ under
 Source inputs include the coverage-guided run root, novelty state, PR split
 review loop, standard persona-loop outputs, resource autoscaler disk samples,
 PR progress controller snapshots, critical-path executor queues, and artifact
-index snapshots. CPU and load-average CSVs are present but empty in this
-snapshot, so current CPU/load values are unavailable from the committed graph
-data.
+index snapshots. CPU and load-average CSVs are populated from sysstat when available and from resource-autoscaler telemetry on hosts without sysstat.
 
 ## High-Level Readout
 
@@ -34,23 +32,25 @@ failures are `0`, quality issues are
 current-output signal that needs direct current-run triage, not as broad proof
 of product duplicate failures.
 
-The latest disk sample is `2026-06-03T07:21:43Z`: root has `118.6GiB` free and is `16.4%` used; the data volume has `245.9GiB` free and is `93.1%` used.
+The latest CPU/load telemetry sample has CPU utilization `8.4`, load1/load5/load15 `6.6`/`9.12`/`10.14`, and `64` logical cores.
+
+The latest disk sample is `2026-06-03T07:40:22Z`: root has `116.8GiB` free and is `17.7%` used; the data volume has `239.5GiB` free and is `93.2%` used.
 
 The latest graph-counted fuzzing mix is: `browser-e2e=24 lanes/24 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups; protocol-server=1 lanes/1 groups`.
 Browser/e2e remains the dominant live surface, with bounded lower-level and
 protocol-server coverage still active.
 
 Approximate execution counts now total
-`18,634,564` individual test or case executions.
+`18,634,599` individual test or case executions.
 The latest cumulative/rate summary is:
-`browser-e2e=692656 cumulative/8 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=5838464 cumulative/0 per-hour; coverage-guided-lower-level=623766 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=11479678 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
+`browser-e2e=692691 cumulative/84 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=5838464 cumulative/0 per-hour; coverage-guided-lower-level=623766 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=11479678 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
 because they are reconstructed from batch metadata or legacy batch-count fields.
 
 Bug and candidate output graphing is current. The latest summary has
-`334` triaged bug-finding rows,
+`335` triaged bug-finding rows,
 `195` unique likely-real findings,
-`1,761` bug-output rows, and
-`1,422` unique output candidates.
+`1,765` bug-output rows, and
+`1,425` unique output candidates.
 
 PR-controller graph inputs are present. The controller snapshot has
 `22` items:
@@ -78,9 +78,8 @@ signal for current split shape, not filing readiness.
 
 ![Load average over time](rtc-jetstream2-fuzz-trends-20260515/plots/load-average-over-time.png)
 
-CPU and load plots are kept in place for continuity, but the current committed
-CSV inputs contain only headers. The disk free-space data is populated in
-`data/disk_free_space.csv`.
+CPU and load plots are populated from the best available host telemetry source.
+The disk free-space data is populated in `data/disk_free_space.csv`.
 
 ![](rtc-jetstream2-fuzz-trends-20260515/plots/project-activity-cumulative.png)
 
@@ -94,7 +93,7 @@ CSV inputs contain only headers. The disk free-space data is populated in
 
 ![Coverage goal progress](rtc-jetstream2-fuzz-trends-20260515/plots/coverage-goal-progress.png)
 
-Current enabled groups: `novelty-http-large-post-lifecycle`.
+Current enabled groups: `novelty-http-rtc-reference-oracle,novelty-http-large-post-lifecycle,novelty-http-title-reload-convergence,novelty-http-same-user-stale-draft,novelty-http-table-stale-snapshot,novelty-http-existing-post-crdt-metadata,novelty-http-persistence-probe,novelty-ws-parser-serialization,novelty-ws-multi-reload-lifecycle,novelty-ws-collaboration-ui-signals`.
 
 The largest unmet goals are tracked in `data/coverage_goals.csv`; review that
 CSV with the coverage-goal plot before adding another broad class of actions.
