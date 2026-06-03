@@ -1,27 +1,29 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,PR07C/repaired-head-9617d576,P0,no,"Blocked until the repaired-head manifest is nonempty and same-head build, exact validation, and current-root canary green/downscope gates close; publication is not allowed while discovery is unprotected.",PR07C/repaired-head-9617d576,"Blocked until the repaired-head manifest is nonempty and same-head build, exact
-validation, and current-root canary green/downscope gates close; publication is
-not allowed while discovery is unprotected."
-launch-exact-validation,PR07C/repaired-head-9617d576,P0,no,"Exact/build/browser validation is heavy PR work and must wait because active discovery is only 4, the minimum is 3, discovery protected=no, and current-root canary rows remain open.",PR07C/repaired-head-9617d576,"Exact/build/browser validation is heavy PR work and must wait because active
-discovery is only 4, the minimum is 3, discovery protected=no, and current-root
-canary rows remain open."
-repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head lacks the build/type repair and is superseded by repaired head 9617d576.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale direct PR07C head lacks the build/type repair and is superseded by
-repaired head 9617d576."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Do not publish or credit the stale PR07C head; use the repaired build-clean branch route instead.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Do not publish or credit the stale PR07C head; use the repaired build-clean
-branch route instead."
-launch-owner-matrix,pr07c-owner-matrix,high,no,Owner evidence is runtime-held/consumed and owner proof is no longer required for PR07C inclusion; reopen only with newer owner evidence.,pr07c-owner-matrix,"Owner evidence is runtime-held/consumed and owner proof is no longer required
-for PR07C inclusion; reopen only with newer owner evidence."
-repair-branch,reload-hydration,high,no,Current evidence supports replay-backed downscope and the deferred manifest lacks build/exact validation.,reload-hydration,"Current evidence supports replay-backed downscope and the deferred manifest
-lacks build/exact validation."
-publish-ready,reload-hydration,high,no,Raw deferred publication is blocked by replay-backed downscope and missing build/exact evidence.,reload-hydration,"Raw deferred publication is blocked by replay-backed downscope and missing
-build/exact evidence."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Minimal PR06B branch is already published; broader held branch would duplicate or overbroaden review scope.,ready/rtc-pr06b-malformed-save-request-payload,"Minimal PR06B branch is already published; broader held branch would duplicate
-or overbroaden review scope."
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,On-PR14B PR15A variant is already published; keep alternate held to avoid duplicate publication.,ready/rtc-pr15a-fallback-group-move-green,"On-PR14B PR15A variant is already published; keep alternate held to avoid
-duplicate publication."
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,On-PR14B PR15B variant is already published; keep alternate held to avoid duplicate publication.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"On-PR14B PR15B variant is already published; keep alternate held to avoid
-duplicate publication."
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,On-PR14B PR15C variant is already published; keep alternate held to avoid duplicate publication.,ready/rtc-pr15c-fallback-group-delete-green,"On-PR14B PR15C variant is already published; keep alternate held to avoid
-duplicate publication."
-publish-ready,aggregate-all-merged-ready,P0,no,"Block aggregate/snapshot publication until nonempty manifest, build preflight, exact validation, and current-root canary gates pass.",aggregate-all-merged-ready,"Block aggregate/snapshot publication until nonempty manifest, build preflight,
-exact validation, and current-root canary gates pass."
+publish-ready,PR07C/repaired-head-9617d576,P0,no,"Blocked until same-head manifest, same-head build or exact evidence, primary benchmark-canary closure, and protected discovery reserve.",PR07C/repaired-head-9617d576,"Blocked until same-head manifest, same-head build or exact evidence, primary
+benchmark-canary closure, and protected discovery reserve."
+build-preflight,PR07C/repaired-head-9617d576,P0,no,Heavy PR work is blocked while discovery protected=no; run after manifest exists and discovery reserve is healthy.,PR07C/repaired-head-9617d576,"Heavy PR work is blocked while discovery protected=no; run after manifest exists
+and discovery reserve is healthy."
+exact-validate,PR07C/repaired-head-9617d576,P0,no,Heavy exact validation is blocked while discovery protected=no; queue after same-head manifest and reserve gates close.,PR07C/repaired-head-9617d576,"Heavy exact validation is blocked while discovery protected=no; queue after
+same-head manifest and reserve gates close."
+browser-validate,PR07C/repaired-head-9617d576,high,no,Heavy browser validation is blocked while discovery protected=no and same-head build/exact evidence is missing.,PR07C/repaired-head-9617d576,"Heavy browser validation is blocked while discovery protected=no and same-head
+build/exact evidence is missing."
+publish-ready,aggregate-all-merged-ready,P0,no,"Inherits PR07C manifest/build/exact, primary benchmark-canary, and discovery-reserve gates.",aggregate-all-merged-ready,"Inherits PR07C manifest/build/exact, primary benchmark-canary, and
+discovery-reserve gates."
+repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale direct PR07C head is superseded by repaired build-clean head
+9617d576354444657e7278c0dd9abc5d4f05dcb9."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Do not publish stale direct PR07C; route only the repaired head.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,Do not publish stale direct PR07C; route only the repaired head.
+launch-owner-matrix,pr07c-owner-matrix,high,no,Runtime-held-consumed; PR07C inclusion no longer depends on owner proof unless newer owner evidence appears.,pr07c-owner-matrix,"Runtime-held-consumed; PR07C inclusion no longer depends on owner proof unless
+newer owner evidence appears."
+repair-branch,reload-hydration,high,no,"Current evidence supports downscope, and deferred manifest validity is build-or-exact-validation-missing.",reload-hydration,"Current evidence supports downscope, and deferred manifest validity is
+build-or-exact-validation-missing."
+publish-ready,reload-hydration,high,no,Raw deferred publication is blocked by replay-backed downscope evidence and missing build/exact validation.,reload-hydration,"Raw deferred publication is blocked by replay-backed downscope evidence and
+missing build/exact validation."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Broader held branch overbroadens review scope; canonical PR06B minimal branch is already published.,ready/rtc-pr06b-malformed-save-request-payload,"Broader held branch overbroadens review scope; canonical PR06B minimal branch is
+already published."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,On-PR14B PR15A variant is already published; keep alternate branch held.,ready/rtc-pr15a-fallback-group-move-green,On-PR14B PR15A variant is already published; keep alternate branch held.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,On-PR14B PR15B variant is already published; keep alternate branch held.,ready/rtc-pr15b-fallback-group-insert-anchor-green,On-PR14B PR15B variant is already published; keep alternate branch held.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,On-PR14B PR15C variant is already published; keep alternate branch held.,ready/rtc-pr15c-fallback-group-delete-green,On-PR14B PR15C variant is already published; keep alternate branch held.
+reserve-discovery,global-heavy-pr-work,P0,no,"Block heavy PR build, exact, browser, owner-matrix, and publication while discovery reserve is unprotected.",global-heavy-pr-work,"Block heavy PR build, exact, browser, owner-matrix, and publication while
+discovery reserve is unprotected."
+launch-branch-repair,novelty-ws-collaboration-ui-signals/self-presence-ui-signal-http,high,no,Branch repair ownership and scope are not conclusive; route product evidence before repair.,novelty-ws-collaboration-ui-signals/self-presence-ui-signal-http,"Branch repair ownership and scope are not conclusive; route product evidence
+before repair."
