@@ -382,6 +382,137 @@ named_number_frame <- function( values, name_col, value_col ) {
 	)
 }
 
+read_csv_lines_or_fallback <- function( lines, fallback ) {
+	if ( length( lines ) == 0 ) {
+		return( fallback )
+	}
+
+	parsed <- tryCatch(
+		read_csv( I( paste( lines, collapse = "\n" ) ), show_col_types = FALSE ),
+		error = function( e ) fallback
+	)
+	if ( nrow( parsed ) == 0 ) {
+		return( fallback )
+	}
+
+	parsed
+}
+
+read_previous_rows <- function( path, fallback, git_rel_path = NULL ) {
+	if ( ! file.exists( path ) || file.size( path ) == 0 ) {
+		previous <- fallback
+	} else {
+		previous <- tryCatch(
+			read_csv( path, show_col_types = FALSE ),
+			error = function( e ) fallback
+		)
+		if ( nrow( previous ) > 0 ) {
+			return( previous )
+		}
+	}
+
+	if ( is.null( git_rel_path ) ) {
+		return( fallback )
+	}
+
+	branch <- tryCatch(
+		str_trim( system2( "git", c( "rev-parse", "--abbrev-ref", "HEAD" ), stdout = TRUE, stderr = FALSE ) ),
+		error = function( e ) character()
+	)
+	refs <- unique( c( paste0( "origin/", branch ), paste0( "danluu/", branch ) ) )
+	refs <- refs[ ! is.na( refs ) & ! str_ends( refs, "/HEAD" ) & ! str_ends( refs, "/" ) ]
+
+	for ( ref in refs ) {
+		lines <- tryCatch(
+			system2( "git", c( "show", paste0( ref, ":", git_rel_path ) ), stdout = TRUE, stderr = FALSE ),
+			error = function( e ) character()
+		)
+		if ( length( lines ) == 0 || ! is.null( attr( lines, "status" ) ) ) {
+			next
+		}
+		previous <- read_csv_lines_or_fallback( lines, fallback )
+		if ( nrow( previous ) > 0 ) {
+			return( previous )
+		}
+	}
+
+	fallback
+}
+
+empty_coverage_goals <- function() {
+	tibble(
+		id = character(),
+		label = character(),
+		count = numeric(),
+		target = numeric(),
+		met = logical(),
+		groups = character(),
+		rationale = character(),
+		harnessAfter = numeric(),
+		countSource = character(),
+		progress = numeric(),
+		goal_family = character()
+	)
+}
+
+normalize_coverage_goals <- function( goals ) {
+	if ( is.null( goals ) || length( goals ) == 0 ) {
+		return( empty_coverage_goals() )
+	}
+
+	goals <- as_tibble( goals )
+	for ( column in c( "id", "label", "groups", "rationale", "countSource" ) ) {
+		if ( ! column %in% names( goals ) ) {
+			goals[[ column ]] <- NA_character_
+		}
+	}
+	for ( column in c( "count", "target", "harnessAfter" ) ) {
+		if ( ! column %in% names( goals ) ) {
+			goals[[ column ]] <- NA_real_
+		}
+	}
+	if ( ! "met" %in% names( goals ) ) {
+		goals$met <- FALSE
+	}
+
+	goals %>%
+		mutate(
+			id = replace_na( as.character( id ), "" ),
+			label = coalesce( as.character( label ), id ),
+			rationale = replace_na( as.character( rationale ), "" ),
+			countSource = replace_na( as.character( countSource ), "" ),
+			count = replace_na( as.numeric( count ), 0 ),
+			target = replace_na( as.numeric( target ), 0 ),
+			met = case_when(
+				is.logical( met ) ~ met,
+				str_to_lower( as.character( met ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
+			progress = if_else( target > 0, count / target, NA_real_ ),
+			groups = map_chr( groups, function( group_values ) {
+				if ( length( group_values ) == 0 || all( is.na( group_values ) ) ) {
+					return( "" )
+				}
+				paste( group_values, collapse = "," )
+			} ),
+			goal_family = case_when(
+				str_starts( id, "success-profile:" ) ~ "successful profiles",
+				str_starts( id, "media-cross-entity" ) ~ "media/cross-entity",
+				str_starts( id, "real-user" ) ~ "real-user UI",
+				str_starts( id, "initial:" ) ~ "parser seeds",
+				str_starts( id, "block:" ) ~ "block coverage",
+				str_starts( id, "action:" ) ~ "action coverage",
+				str_starts( id, "fault:" ) ~ "fault coverage",
+				str_detect( id, "reload|lifecycle|same-user|late-join|step-count|large-document" ) ~ "lifecycle/scale",
+				str_detect( id, "revision|autosave|save-count|local-autosave" ) ~ "persistence/revision",
+				str_detect( id, "auth|collaborator-role" ) ~ "auth/locks",
+				str_detect( id, "cdp" ) ~ "code coverage",
+				TRUE ~ "other"
+			)
+		) %>%
+		arrange( met, progress )
+}
+
 read_tsv_optional <- function( path, col_names = TRUE ) {
 	if ( ! file.exists( path ) || file.size( path ) == 0 ) {
 		return( tibble() )
@@ -783,7 +914,8 @@ if ( nrow( bug_outputs ) > 0 ) {
 	write_csv( bug_outputs, bug_outputs_path )
 }
 
-profile_counts <- named_number_frame( state$recordCountsByProfile, "profile", "records_seen" ) %>%
+profile_counts_path <- file.path( data_dir, "profile_counts.csv" )
+profile_counts_current <- named_number_frame( state$recordCountsByProfile, "profile", "records_seen" ) %>%
 	full_join(
 		named_number_frame( state$successfulRecordCountsByProfile, "profile", "successful_records" ),
 		by = "profile"
@@ -808,12 +940,32 @@ profile_counts <- named_number_frame( state$recordCountsByProfile, "profile", "r
 	) %>%
 	arrange( desc( records_seen ) )
 
-write_csv( profile_counts, file.path( data_dir, "profile_counts.csv" ) )
+profile_counts <- if ( nrow( profile_counts_current ) > 0 ) {
+	profile_counts_current
+} else {
+	read_previous_rows(
+		profile_counts_path,
+		profile_counts_current,
+		"docs/explanations/architecture/rtc-jetstream2-fuzz-trends-20260515/data/profile_counts.csv"
+	)
+}
+write_csv( profile_counts, profile_counts_path )
 
-transport_counts <- named_number_frame( state$recordCountsByTransport, "transport", "records_seen" )
-write_csv( transport_counts, file.path( data_dir, "transport_counts.csv" ) )
+transport_counts_path <- file.path( data_dir, "transport_counts.csv" )
+transport_counts_current <- named_number_frame( state$recordCountsByTransport, "transport", "records_seen" )
+transport_counts <- if ( nrow( transport_counts_current ) > 0 ) {
+	transport_counts_current
+} else {
+	read_previous_rows(
+		transport_counts_path,
+		transport_counts_current,
+		"docs/explanations/architecture/rtc-jetstream2-fuzz-trends-20260515/data/transport_counts.csv"
+	)
+}
+write_csv( transport_counts, transport_counts_path )
 
-feature_counts <- named_number_frame( state$featureCounts, "feature", "count" ) %>%
+feature_counts_path <- file.path( data_dir, "feature_counts.csv" )
+feature_counts_current <- named_number_frame( state$featureCounts, "feature", "count" ) %>%
 	mutate(
 		feature_category = case_when(
 			str_starts( feature, "profile:" ) ~ "profile",
@@ -847,51 +999,95 @@ feature_counts <- named_number_frame( state$featureCounts, "feature", "count" ) 
 		)
 	)
 
-feature_categories <- feature_counts %>%
-	group_by( feature_category ) %>%
-	summarise(
-		keys = n(),
-		total_count = sum( count ),
-		max_count = max( count ),
-		.groups = "drop"
-	) %>%
-	arrange( desc( total_count ) )
+feature_counts <- if ( nrow( feature_counts_current ) > 0 ) {
+	feature_counts_current
+} else {
+	read_previous_rows(
+		feature_counts_path,
+		feature_counts_current,
+		"docs/explanations/architecture/rtc-jetstream2-fuzz-trends-20260515/data/feature_counts.csv"
+	)
+}
 
-write_csv( feature_counts, file.path( data_dir, "feature_counts.csv" ) )
-write_csv( feature_categories, file.path( data_dir, "feature_categories.csv" ) )
+feature_categories_path <- file.path( data_dir, "feature_categories.csv" )
+feature_categories_current <- if ( nrow( feature_counts ) > 0 ) {
+	feature_counts %>%
+		group_by( feature_category ) %>%
+		summarise(
+			keys = n(),
+			total_count = sum( count, na.rm = TRUE ),
+			max_count = max( count, na.rm = TRUE ),
+			.groups = "drop"
+		) %>%
+		arrange( desc( total_count ) )
+} else {
+	tibble(
+		feature_category = character(),
+		keys = integer(),
+		total_count = numeric(),
+		max_count = numeric()
+	)
+}
+feature_categories <- if ( nrow( feature_categories_current ) > 0 ) {
+	feature_categories_current
+} else {
+	read_previous_rows(
+		feature_categories_path,
+		feature_categories_current,
+		"docs/explanations/architecture/rtc-jetstream2-fuzz-trends-20260515/data/feature_categories.csv"
+	)
+}
 
-coverage_goals <- as_tibble( state$coverageGuidance$goals ) %>%
-	mutate(
-		count = as.numeric( count ),
-		target = as.numeric( target ),
-		progress = if_else( target > 0, count / target, NA_real_ ),
-		groups = map_chr( groups, ~ paste( .x, collapse = "," ) ),
-		goal_family = case_when(
-			str_starts( id, "success-profile:" ) ~ "successful profiles",
-			str_starts( id, "media-cross-entity" ) ~ "media/cross-entity",
-			str_starts( id, "real-user" ) ~ "real-user UI",
-			str_starts( id, "initial:" ) ~ "parser seeds",
-			str_starts( id, "block:" ) ~ "block coverage",
-			str_starts( id, "action:" ) ~ "action coverage",
-			str_starts( id, "fault:" ) ~ "fault coverage",
-			str_detect( id, "reload|lifecycle|same-user|late-join|step-count|large-document" ) ~ "lifecycle/scale",
-			str_detect( id, "revision|autosave|save-count|local-autosave" ) ~ "persistence/revision",
-			str_detect( id, "auth|collaborator-role" ) ~ "auth/locks",
-			str_detect( id, "cdp" ) ~ "code coverage",
-			TRUE ~ "other"
+write_csv( feature_counts, feature_counts_path )
+write_csv( feature_categories, feature_categories_path )
+
+coverage_goal_source <- state$coverageGuidance$goals
+if ( is.null( coverage_goal_source ) || length( coverage_goal_source ) == 0 ) {
+	coverage_goal_source <- state$autoCoverageGoals
+}
+coverage_goals_path <- file.path( data_dir, "coverage_goals.csv" )
+coverage_goals_current <- normalize_coverage_goals( coverage_goal_source )
+coverage_goals <- if ( nrow( coverage_goals_current ) > 0 ) {
+	coverage_goals_current
+} else {
+	normalize_coverage_goals(
+		read_previous_rows(
+			coverage_goals_path,
+			coverage_goals_current,
+			"docs/explanations/architecture/rtc-jetstream2-fuzz-trends-20260515/data/coverage_goals.csv"
 		)
-	) %>%
-	arrange( met, progress )
+	)
+}
 
-write_csv( coverage_goals, file.path( data_dir, "coverage_goals.csv" ) )
+write_csv( coverage_goals, coverage_goals_path )
 
-action_counts <- imap_dfr(
+action_counts_path <- file.path( data_dir, "successful_action_counts.csv" )
+action_counts_current <- imap_dfr(
 	state$successfulActionCountsByProfile,
 	~ named_number_frame( .x, "action", "count" ) %>% mutate( profile = .y )
-) %>%
-	arrange( desc( count ) )
+)
+if ( ! all( c( "action", "count", "profile" ) %in% names( action_counts_current ) ) ) {
+	action_counts_current <- tibble(
+		action = character(),
+		count = numeric(),
+		profile = character()
+	)
+} else {
+	action_counts_current <- action_counts_current %>%
+		arrange( desc( count ) )
+}
 
-write_csv( action_counts, file.path( data_dir, "successful_action_counts.csv" ) )
+action_counts <- if ( nrow( action_counts_current ) > 0 ) {
+	action_counts_current
+} else {
+	read_previous_rows(
+		action_counts_path,
+		action_counts_current,
+		"docs/explanations/architecture/rtc-jetstream2-fuzz-trends-20260515/data/successful_action_counts.csv"
+	)
+}
+
+write_csv( action_counts, action_counts_path )
 
 loop_lines <- read_lines( loop_path, progress = FALSE )
 pr_events <- tibble(

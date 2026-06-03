@@ -5787,3 +5787,5 @@ timestamp,group,group_family
 2026-06-03T14:31:21Z,novelty-http-same-user-stale-draft,lifecycle
 2026-06-03T14:31:21Z,novelty-http-title-reload-convergence,lifecycle
 2026-06-03T14:31:21Z,novelty-ws-collaboration-ui-signals,other
+2026-06-03T20:50:33Z,novelty-ws-parser-transform,parser
+2026-06-03T20:50:34Z,novelty-ws-thirty-user-lifecycle,lifecycle
