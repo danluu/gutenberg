@@ -30,86 +30,13 @@ pr_focus_raw_dir <- file.path( raw_dir, "pr-focused" )
 monitor_path <- file.path( raw_dir, "monitor.log" )
 loop_path <- file.path( raw_dir, "pr-split-loop.log" )
 state_path <- file.path( raw_dir, "novelty-state.json" )
-novelty_status_path <- file.path( raw_dir, "novelty-status.md" )
 cpu_path <- file.path( data_dir, "cpu_utilization.csv" )
 load_path <- file.path( data_dir, "load_average.csv" )
-disk_path <- file.path( data_dir, "disk_free_space.csv" )
-coverage_root_loss_path <- file.path( data_dir, "coverage_root_loss_events.csv" )
 activity_path <- file.path( data_dir, "project_activity.csv" )
 fuzz_level_mix_path <- file.path( data_dir, "fuzz_level_mix.csv" )
 fuzz_level_executions_path <- file.path( data_dir, "fuzz_level_executions.csv" )
-current_run_accounting_path <- file.path( data_dir, "current_run_accounting.csv" )
 bug_findings_path <- file.path( data_dir, "bug_findings.csv" )
 bug_outputs_path <- file.path( data_dir, "bug_outputs.csv" )
-combined_ingredient_progress_path <- file.path( data_dir, "combined_ingredient_fuzzing_progress.csv" )
-combined_ingredient_goal_progress_path <- file.path( data_dir, "combined_ingredient_fuzzing_goal_progress.csv" )
-combined_ingredient_requirements_path <- file.path( data_dir, "combined_ingredient_fuzzing_requirements.csv" )
-many_user_active_editing_progress_path <- file.path( data_dir, "many_user_active_editing_progress.csv" )
-many_user_active_editing_goal_progress_path <- file.path( data_dir, "many_user_active_editing_goal_progress.csv" )
-many_user_active_editing_requirements_path <- file.path( data_dir, "many_user_active_editing_requirements.csv" )
-combined_ingredient_profile <- "large-post-three-user-http-lifecycle"
-combined_ingredient_group <- "novelty-http-large-post-lifecycle"
-combined_ingredient_feature <- "cross-product:large-post-three-user-http-lifecycle"
-combined_ingredient_related_goal_ids <- c(
-	combined_ingredient_feature,
-	"success-profile-users:large-post-three-user-http-lifecycle:3",
-	"success-user-blocks:3:50",
-	"success-profile:large-post-three-user-http-lifecycle",
-	"transport-profile:http:large-post-three-user-http-lifecycle"
-)
-combined_ingredient_target_default <- 25
-many_user_active_editing_profile <- "many-user-active-editing"
-many_user_active_editing_groups <- c(
-	"novelty-ws-many-user-active-editing",
-	"novelty-ws-twelve-user-active-rich-text",
-	"novelty-ws-thirty-user-active-editing",
-	"novelty-ws-thirty-user-active-editing-strict",
-	"novelty-ws-mixed-identity-active-editing",
-	"novelty-ws-contention-active-editing",
-	"novelty-ws-persistence-race-active-editing",
-	"novelty-ws-reconnect-background-active-editing",
-	"novelty-ws-notes-lifecycle-active-editing",
-	"novelty-ws-post-field-boundary-active-editing",
-	"novelty-ws-visible-delete-active-editing",
-	"novelty-ws-code-editor-embed-stability-active-editing",
-	"novelty-ws-nested-awareness-active-editing",
-	"novelty-http-many-user-active-editing",
-	"novelty-http-compaction-413-active-editing",
-	"novelty-ws-same-user-active-editing",
-	"novelty-ws-revision-active-editing",
-	"novelty-ws-publish-active-editing"
-)
-many_user_active_editing_thresholds <- c( 6, 10, 12, 30 )
-many_user_active_editing_note_thresholds <- c( 6, 12 )
-many_user_active_editing_goal_ids <- c(
-	paste0( "success-action-users:", many_user_active_editing_thresholds ),
-	paste0( "success-profile-users:many-user-active-editing:", c( 6, 12, 30 ) ),
-	paste0( "cross-product:active-editors-lifecycle:users-", many_user_active_editing_thresholds ),
-	paste0( "cross-product:active-editors-rich-list-lifecycle:users-", many_user_active_editing_thresholds ),
-	paste0( "cross-product:active-editors-ui-signals:users-", many_user_active_editing_thresholds ),
-	paste0( "cross-product:active-editors-large-doc:users-", many_user_active_editing_thresholds ),
-	paste0( "cross-product:active-editors-notes-lifecycle:users-", many_user_active_editing_note_thresholds ),
-	"cross-product:active-editors-http-lifecycle:users-6",
-	"http-max-clients-override:true",
-	"cross-product:active-editors-same-user-lifecycle:users-6",
-	"cross-product:active-editors-mixed-identity-lifecycle:users-6",
-	"cross-product:active-editors-revision-restore:users-6",
-	"cross-product:active-editors-publish-lifecycle:users-6",
-	"cross-product:active-editors-same-block-contention:users-6",
-	"cross-product:active-editors-note-thread-lifecycle:users-6",
-	"cross-product:active-editors-persistence-race:users-6",
-	"cross-product:active-editors-ws-reconnect-background:users-6",
-	"cross-product:active-editors-http-413-compaction:users-6",
-	"cross-product:active-editors-post-field-boundary:users-6",
-	"cross-product:active-editors-visible-remote-delete:users-6",
-	"cross-product:active-editors-code-editor-embed-stability:users-6",
-	"cross-product:active-editors-nested-table-awareness:users-6",
-	"cross-product:active-editors-strict-ledger:users-30",
-	"success-user-blocks:6:50",
-	"success-user-blocks:12:50",
-	"success-user-blocks:30:50",
-	"success-profile:many-user-active-editing"
-)
 status_report_rel <- "docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md"
 status_report_path <- file.path( root, status_report_rel )
 pr_progress_current_path <- file.path( pr_focus_raw_dir, "pr-progress/current-pr-progress.tsv" )
@@ -132,33 +59,6 @@ local_publisher_state_path <- file.path( pr_focus_raw_dir, "local-publisher-stat
 stopifnot( file.exists( monitor_path ) )
 stopifnot( file.exists( loop_path ) )
 stopifnot( file.exists( state_path ) )
-
-sync_pr_status_links_script <- file.path(
-	artifact_dir,
-	"scripts/sync-pr-status-links.mjs"
-)
-if (
-	Sys.getenv( "RTC_SYNC_PR_STATUS_LINKS", unset = "1" ) != "0" &&
-	file.exists( sync_pr_status_links_script )
-) {
-	sync_status <- system2(
-		"node",
-		c(
-			sync_pr_status_links_script,
-			"--root",
-			root,
-			"--status-report",
-			status_report_rel,
-			"--progress-csv",
-			pr_progress_current_path
-		),
-		stdout = TRUE,
-		stderr = TRUE
-	)
-	if ( ! is.null( attr( sync_status, "status" ) ) && attr( sync_status, "status" ) != 0 ) {
-		warning( paste( sync_status, collapse = "\n" ) )
-	}
-}
 
 theme_rtc <- function() {
 	theme_minimal( base_size = 11 ) +
@@ -233,31 +133,6 @@ parse_utc_timestamp <- function( timestamp ) {
 	ymd_hms( timestamp, tz = "UTC" )
 }
 
-first_status_match <- function( lines, pattern ) {
-	matches <- str_match( lines, pattern )[ , 2 ]
-	matches <- matches[ ! is.na( matches ) ]
-	if ( length( matches ) == 0 ) {
-		return( NA_character_ )
-	}
-	matches[ 1 ]
-}
-
-first_status_number <- function( lines, pattern ) {
-	value <- first_status_match( lines, pattern )
-	if ( is.na( value ) ) {
-		return( NA_real_ )
-	}
-	as.numeric( value )
-}
-
-state_timestamp <- function( state, name ) {
-	value <- state[[ name ]]
-	if ( is.null( value ) || length( value ) == 0 || is.na( value ) ) {
-		return( as.POSIXct( NA_real_, origin = "1970-01-01", tz = "UTC" ) )
-	}
-	ymd_hms( as.character( value ), tz = "UTC", quiet = TRUE )
-}
-
 parse_status_snapshot_time <- function( lines, fallback ) {
 	snapshot <- str_match( lines, "^Snapshot time: `([^`]+)`" )[ , 2 ]
 	snapshot <- snapshot[ ! is.na( snapshot ) ][ 1 ]
@@ -281,15 +156,76 @@ extract_markdown_section <- function( lines, heading ) {
 	lines[ start:end ]
 }
 
+empty_pr_split_table <- function() {
+	tibble(
+		timestamp = as.POSIXct( character(), tz = "UTC" ),
+		commit = character(),
+		pr = character(),
+		scope = character(),
+		files = numeric(),
+		additions = numeric(),
+		deletions = numeric(),
+		net_loc = numeric(),
+		status = character()
+	)
+}
+
+normalize_pr_split_table <- function( data ) {
+	if ( nrow( data ) == 0 ) {
+		return( empty_pr_split_table() )
+	}
+
+	if ( ! "timestamp" %in% names( data ) ) {
+		data$timestamp <- as.POSIXct( NA, tz = "UTC" )
+	}
+	if ( ! "commit" %in% names( data ) ) {
+		data$commit <- NA_character_
+	}
+	if ( ! "pr" %in% names( data ) ) {
+		data$pr <- NA_character_
+	}
+	if ( ! "scope" %in% names( data ) ) {
+		data$scope <- NA_character_
+	}
+	if ( ! "files" %in% names( data ) ) {
+		data$files <- NA_real_
+	}
+	if ( ! "additions" %in% names( data ) ) {
+		data$additions <- NA_real_
+	}
+	if ( ! "deletions" %in% names( data ) ) {
+		data$deletions <- NA_real_
+	}
+	if ( ! "net_loc" %in% names( data ) ) {
+		data$net_loc <- NA_real_
+	}
+	if ( ! "status" %in% names( data ) ) {
+		data$status <- NA_character_
+	}
+
+	data %>%
+		transmute(
+			timestamp = parse_utc_timestamp( timestamp ),
+			commit = as.character( commit ),
+			pr = as.character( pr ),
+			scope = as.character( scope ),
+			files = as.numeric( files ),
+			additions = as.numeric( additions ),
+			deletions = as.numeric( deletions ),
+			net_loc = as.numeric( net_loc ),
+			status = as.character( status )
+		)
+}
+
 parse_pr_split_table <- function( lines, commit, commit_time ) {
 	section <- extract_markdown_section( lines, "## Proposed PR Split" )
 	if ( length( section ) == 0 ) {
-		return( tibble() )
+		return( empty_pr_split_table() )
 	}
 
 	table_lines <- section[ str_detect( section, "^\\| PR" ) ]
 	if ( length( table_lines ) < 2 ) {
-		return( tibble() )
+		return( empty_pr_split_table() )
 	}
 
 	header <- table_lines[ 1 ] %>%
@@ -301,21 +237,21 @@ parse_pr_split_table <- function( lines, commit, commit_time ) {
 	rows <- table_lines[ -1 ]
 	rows <- rows[ ! str_detect( rows, "^\\|\\s*---" ) ]
 	if ( length( rows ) == 0 ) {
-		return( tibble() )
+		return( empty_pr_split_table() )
 	}
 
-	diff_idx <- match( "Diff", header )
+	diff_idx <- match( TRUE, str_detect( str_to_lower( header ), "\\bdiff\\b" ) )
 	pr_idx <- match( "PR", header )
 	scope_idx <- match( "Scope", header )
-	files_idx <- match( "Files", header )
+	files_idx <- match( TRUE, str_detect( str_to_lower( header ), "\\bfiles?\\b" ) )
 	status_idx <- match( "Current status", header )
 	if ( any( is.na( c( diff_idx, pr_idx ) ) ) ) {
-		return( tibble() )
+		return( empty_pr_split_table() )
 	}
 
 	snapshot_time <- parse_status_snapshot_time( lines, commit_time )
 
-	map_dfr( rows, function( row ) {
+	parsed <- map_dfr( rows, function( row ) {
 		cells <- row %>%
 			str_remove_all( "^\\||\\|$" ) %>%
 			str_split( "\\|", simplify = TRUE ) %>%
@@ -332,7 +268,12 @@ parse_pr_split_table <- function( lines, commit, commit_time ) {
 		additions <- as.numeric( str_remove_all( diff_match[ 1, 2 ], "," ) )
 		deletions <- as.numeric( str_remove_all( diff_match[ 1, 3 ], "," ) )
 		files <- if ( ! is.na( files_idx ) && length( cells ) >= files_idx ) {
-			as.numeric( str_remove_all( cells[ files_idx ], "[^0-9]" ) )
+			files_match <- str_match( cells[ files_idx ], "([0-9,]+)\\s+files?" )
+			if ( is.na( files_match[ 1, 2 ] ) ) {
+				suppressWarnings( as.numeric( str_remove_all( cells[ files_idx ], "[^0-9]" ) ) )
+			} else {
+				as.numeric( str_remove_all( files_match[ 1, 2 ], "," ) )
+			}
 		} else {
 			NA_real_
 		}
@@ -348,6 +289,8 @@ parse_pr_split_table <- function( lines, commit, commit_time ) {
 			status = if ( ! is.na( status_idx ) && length( cells ) >= status_idx ) cells[ status_idx ] else NA_character_
 		)
 	} )
+
+	normalize_pr_split_table( parsed )
 }
 
 pr_number_levels <- function( pr_values ) {
@@ -408,8 +351,9 @@ status_report_history <- function() {
 		if ( length( content ) == 0 ) {
 			return( tibble() )
 		}
-		parse_pr_split_table( content, commit, entries$commit_time[ index ] )
-	} )
+			parse_pr_split_table( content, commit, entries$commit_time[ index ] )
+		} )
+	history <- normalize_pr_split_table( history )
 
 	current <- parse_pr_split_table( read_lines( status_report_path, progress = FALSE ), "working-tree", now( tzone = "UTC" ) )
 	if ( nrow( current ) > 0 ) {
@@ -555,106 +499,6 @@ write_csv( enabled_groups, file.path( data_dir, "enabled_groups.csv" ) )
 
 state <- fromJSON( state_path, flatten = TRUE )
 
-novelty_status_lines <- if ( file.exists( novelty_status_path ) ) {
-	read_lines( novelty_status_path, progress = FALSE )
-} else {
-	character()
-}
-status_updated <- ymd_hms(
-	first_status_match( novelty_status_lines, "^Updated: ([^ ]+)" ),
-	tz = "UTC",
-	quiet = TRUE
-)
-if ( is.na( status_updated ) ) {
-	status_updated <- if ( nrow( monitor ) > 0 ) max( monitor$timestamp ) else with_tz( now(), "UTC" )
-}
-current_output_dir <- first_status_match( novelty_status_lines, "^Output dir: (.+)$" )
-startup_status <- first_status_match( novelty_status_lines, "^- status: (.+)$" )
-status_available <- length( novelty_status_lines ) > 0
-full_pass_pending <- any( str_detect( novelty_status_lines, "full coverage pass pending" ) )
-pending_until_first_pass <- any( str_detect( novelty_status_lines, "pending until first pass" ) )
-last_completed_full_pass_at <- state_timestamp( state, "lastCompletedFullPassAt" )
-last_state_update_at <- state_timestamp( state, "lastUpdatedAt" )
-last_current_run_triage_completed_at <- state_timestamp( state, "lastCurrentRunTriageCompletedAt" )
-latest_completed_monitor_pass_at <- if ( nrow( monitor ) > 0 ) max( monitor$timestamp ) else as.POSIXct( NA_real_, origin = "1970-01-01", tz = "UTC" )
-current_run_metrics_trusted <- status_available &&
-	! full_pass_pending &&
-	! pending_until_first_pass &&
-	! is.na( last_completed_full_pass_at )
-
-current_run_accounting_snapshot <- tibble(
-	timestamp = floor_date( status_updated, "second" ),
-	output_dir = current_output_dir,
-	run_id = basename( current_output_dir ),
-	status_available = status_available,
-	startup_status = startup_status,
-	full_pass_pending = full_pass_pending,
-	pending_until_first_pass = pending_until_first_pass,
-	current_run_metrics_trusted = current_run_metrics_trusted,
-	active_run_dirs = first_status_number( novelty_status_lines, "^- active run dirs: ([0-9]+)" ),
-	supervisor_groups_file = first_status_number( novelty_status_lines, "^- supervisor groups file: ([0-9]+)" ),
-	observed_roots = first_status_number( novelty_status_lines, "^- observed roots: ([0-9]+)" ),
-	current_run_signatures = first_status_number( novelty_status_lines, "^- signatures: ([0-9]+)" ),
-	current_run_actionable_signatures = first_status_number( novelty_status_lines, "^- actionable signatures: ([0-9]+)" ),
-	current_run_product_evidence_signatures = first_status_number( novelty_status_lines, "^- product-evidence signatures: ([0-9]+)" ),
-	current_run_top_duplicate_share = first_status_number( novelty_status_lines, "^- top duplicate family share: ([0-9.]+)" ),
-	last_completed_full_pass_at = last_completed_full_pass_at,
-	last_state_update_at = last_state_update_at,
-	last_current_run_triage_completed_at = last_current_run_triage_completed_at,
-	latest_completed_monitor_pass_at = latest_completed_monitor_pass_at,
-	minutes_since_completed_full_pass = as.numeric(
-		difftime( status_updated, last_completed_full_pass_at, units = "mins" )
-	),
-	minutes_since_state_update = as.numeric(
-		difftime( status_updated, last_state_update_at, units = "mins" )
-	),
-	latest_completed_duplicate_share_current = if ( nrow( monitor ) > 0 ) last( monitor$duplicate_share_current ) else NA_real_,
-	latest_completed_summary_startup_failures = if ( nrow( monitor ) > 0 ) last( monitor$summary_startup_failures ) else NA_real_
-)
-
-current_run_accounting_existing <- if ( file.exists( current_run_accounting_path ) ) {
-	read_csv( current_run_accounting_path, show_col_types = FALSE ) %>%
-		mutate(
-			timestamp = floor_date( parse_utc_timestamp( timestamp ), "second" ),
-			status_available = case_when(
-				is.logical( status_available ) ~ status_available,
-				str_to_lower( as.character( status_available ) ) == "true" ~ TRUE,
-				TRUE ~ FALSE
-			),
-			full_pass_pending = case_when(
-				is.logical( full_pass_pending ) ~ full_pass_pending,
-				str_to_lower( as.character( full_pass_pending ) ) == "true" ~ TRUE,
-				TRUE ~ FALSE
-			),
-			pending_until_first_pass = case_when(
-				is.logical( pending_until_first_pass ) ~ pending_until_first_pass,
-				str_to_lower( as.character( pending_until_first_pass ) ) == "true" ~ TRUE,
-				TRUE ~ FALSE
-			),
-			current_run_metrics_trusted = case_when(
-				is.logical( current_run_metrics_trusted ) ~ current_run_metrics_trusted,
-				str_to_lower( as.character( current_run_metrics_trusted ) ) == "true" ~ TRUE,
-				TRUE ~ FALSE
-			),
-			last_completed_full_pass_at = parse_utc_timestamp( last_completed_full_pass_at ),
-			last_state_update_at = parse_utc_timestamp( last_state_update_at ),
-			last_current_run_triage_completed_at = parse_utc_timestamp( last_current_run_triage_completed_at ),
-			latest_completed_monitor_pass_at = parse_utc_timestamp( latest_completed_monitor_pass_at )
-		)
-} else {
-	tibble()
-}
-
-current_run_accounting <- bind_rows(
-	current_run_accounting_existing,
-	current_run_accounting_snapshot
-) %>%
-	filter( ! is.na( timestamp ) ) %>%
-	arrange( timestamp ) %>%
-	distinct( timestamp, output_dir, .keep_all = TRUE )
-
-write_csv( current_run_accounting, current_run_accounting_path )
-
 fuzz_level_mix <- tibble()
 if ( file.exists( fuzz_level_mix_path ) ) {
 	fuzz_level_mix <- read_csv( fuzz_level_mix_path, show_col_types = FALSE )
@@ -666,7 +510,11 @@ if ( file.exists( fuzz_level_mix_path ) ) {
 			timestamp = parse_utc_timestamp( timestamp ),
 			lanes = replace_na( as.numeric( lanes ), 1 ),
 			step_count = replace_na( as.numeric( step_count ), 0 ),
-			is_latest = str_to_lower( as.character( is_latest ) ) == "true",
+			is_latest = case_when(
+				is.logical( is_latest ) ~ is_latest,
+				str_to_lower( as.character( is_latest ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
 			fuzz_level = replace_na( fuzz_level, "other" ),
 			fuzz_level = factor(
 				fuzz_level,
@@ -692,8 +540,16 @@ if ( file.exists( fuzz_level_executions_path ) ) {
 	if ( ! "executions" %in% names( fuzz_level_executions ) ) {
 		fuzz_level_executions <- fuzz_level_executions %>%
 			mutate(
-				is_primary = str_to_lower( as.character( is_primary ) ) == "true",
-				ok = str_to_lower( as.character( ok ) ) == "true",
+				is_primary = case_when(
+					is.logical( is_primary ) ~ is_primary,
+					str_to_lower( as.character( is_primary ) ) == "true" ~ TRUE,
+					TRUE ~ FALSE
+				),
+				ok = case_when(
+					is.logical( ok ) ~ ok,
+					str_to_lower( as.character( ok ) ) == "true" ~ TRUE,
+					TRUE ~ FALSE
+				),
 				executions = 1,
 				primary_executions = if_else( is_primary, 1, 0 ),
 				successful_executions = if_else( ok, 1, 0 )
@@ -719,7 +575,11 @@ if ( file.exists( fuzz_level_executions_path ) ) {
 		mutate(
 			timestamp = parse_utc_timestamp( timestamp ),
 			across( c( executions, primary_executions, successful_executions, attempts, failed_attempts, duration_ms ), ~ replace_na( as.numeric( .x ), 0 ) ),
-			approximate = str_to_lower( as.character( approximate ) ) == "true",
+			approximate = case_when(
+				is.logical( approximate ) ~ approximate,
+				str_to_lower( as.character( approximate ) ) == "true" ~ TRUE,
+				TRUE ~ FALSE
+			),
 			fuzz_level = replace_na( fuzz_level, "other" ),
 			fuzz_level = factor(
 				fuzz_level,
@@ -756,19 +616,18 @@ if ( file.exists( bug_findings_path ) ) {
 			mutate(
 				timestamp = parse_utc_timestamp( timestamp ),
 				triaged_at = parse_utc_timestamp( triaged_at ),
-				duplicate_of = replace_na( as.character( duplicate_of ), "" ),
-				recommended_action = replace_na( as.character( recommended_action ), "" ),
 				is_duplicate = case_when(
 					is.logical( is_duplicate ) ~ is_duplicate,
 					str_to_lower( as.character( is_duplicate ) ) == "true" ~ TRUE,
-					duplicate_of != "" ~ TRUE,
+					! is.na( duplicate_of ) & duplicate_of != "" ~ TRUE,
 					str_detect( str_to_lower( coalesce( recommended_action, "" ) ), "duplicate|merge_with_duplicate" ) ~ TRUE,
 					TRUE ~ FALSE
 				),
-				classification = replace_na( as.character( classification ), "unknown" ),
-				candidate_status = replace_na( as.character( candidate_status ), "" ),
-				profile = replace_na( as.character( profile ), "unknown" ),
-				fuzz_level = replace_na( as.character( fuzz_level ), "other" ),
+				classification = replace_na( classification, "unknown" ),
+				candidate_status = replace_na( candidate_status, "" ),
+				recommended_action = replace_na( recommended_action, "" ),
+				profile = replace_na( profile, "unknown" ),
+				fuzz_level = replace_na( fuzz_level, "other" ),
 				fuzz_level = factor(
 					fuzz_level,
 					levels = c(
@@ -983,7 +842,6 @@ feature_counts <- named_number_frame( state$featureCounts, "feature", "count" ) 
 			str_starts( feature, "auth-session-expiry-probe" ) ~ "auth",
 			str_starts( feature, "local-autosave" ) ~ "autosave",
 			str_starts( feature, "media-cross-entity" ) ~ "media/cross-entity",
-			str_starts( feature, "cross-product:" ) ~ "cross-product",
 			str_starts( feature, "cdp" ) ~ "code coverage",
 			TRUE ~ "other"
 		)
@@ -1002,53 +860,12 @@ feature_categories <- feature_counts %>%
 write_csv( feature_counts, file.path( data_dir, "feature_counts.csv" ) )
 write_csv( feature_categories, file.path( data_dir, "feature_categories.csv" ) )
 
-coverage_goals_raw <- state$coverageGuidance$goals
-if ( is.null( coverage_goals_raw ) || length( coverage_goals_raw ) == 0 ) {
-	coverage_goals_raw <- state$autoCoverageGoals
-}
-
-coverage_goal_defaults <- tibble(
-	id = character(),
-	label = character(),
-	count = numeric(),
-	target = numeric(),
-	met = logical(),
-	groups = character(),
-	rationale = character(),
-	harnessAfter = character(),
-	countSource = character(),
-	source = character(),
-	sourceGoalId = character()
-)
-
-coverage_goals <- if ( is.null( coverage_goals_raw ) || length( coverage_goals_raw ) == 0 ) {
-	coverage_goal_defaults
-} else {
-	as_tibble( coverage_goals_raw )
-}
-
-for ( column in names( coverage_goal_defaults ) ) {
-	if ( ! column %in% names( coverage_goals ) ) {
-		coverage_goals[[ column ]] <- rep(
-			coverage_goal_defaults[[ column ]][ NA_integer_ ],
-			nrow( coverage_goals )
-		)
-	}
-}
-
-if ( is.list( coverage_goals$groups ) ) {
-	coverage_goals$groups <- map_chr( coverage_goals$groups, ~ paste( .x, collapse = "," ) )
-} else {
-	coverage_goals$groups <- as.character( coverage_goals$groups )
-}
-
-coverage_goals <- coverage_goals %>%
+coverage_goals <- as_tibble( state$coverageGuidance$goals ) %>%
 	mutate(
 		count = as.numeric( count ),
 		target = as.numeric( target ),
-		met = as.logical( met ),
-		met = if_else( is.na( met ) & ! is.na( count ) & ! is.na( target ), count >= target, met ),
 		progress = if_else( target > 0, count / target, NA_real_ ),
+		groups = map_chr( groups, ~ paste( .x, collapse = "," ) ),
 		goal_family = case_when(
 			str_starts( id, "success-profile:" ) ~ "successful profiles",
 			str_starts( id, "media-cross-entity" ) ~ "media/cross-entity",
@@ -1057,7 +874,6 @@ coverage_goals <- coverage_goals %>%
 			str_starts( id, "block:" ) ~ "block coverage",
 			str_starts( id, "action:" ) ~ "action coverage",
 			str_starts( id, "fault:" ) ~ "fault coverage",
-			str_starts( id, "cross-product:" ) ~ "cross-product",
 			str_detect( id, "reload|lifecycle|same-user|late-join|step-count|large-document" ) ~ "lifecycle/scale",
 			str_detect( id, "revision|autosave|save-count|local-autosave" ) ~ "persistence/revision",
 			str_detect( id, "auth|collaborator-role" ) ~ "auth/locks",
@@ -1069,417 +885,10 @@ coverage_goals <- coverage_goals %>%
 
 write_csv( coverage_goals, file.path( data_dir, "coverage_goals.csv" ) )
 
-combined_ingredient_goal <- coverage_goals %>%
-	filter( id == combined_ingredient_feature ) %>%
-	slice_head( n = 1 )
-
-combined_ingredient_feature_count <- feature_counts %>%
-	filter( feature == combined_ingredient_feature ) %>%
-	pull( count )
-
-combined_ingredient_profile_count <- profile_counts %>%
-	filter( profile == combined_ingredient_profile ) %>%
-	slice_head( n = 1 )
-
-combined_ingredient_completed <- if ( nrow( combined_ingredient_goal ) > 0 ) {
-	combined_ingredient_goal$count[[ 1 ]]
-} else if ( length( combined_ingredient_feature_count ) > 0 ) {
-	combined_ingredient_feature_count[[ 1 ]]
-} else {
-	0
-}
-
-combined_ingredient_target <- if ( nrow( combined_ingredient_goal ) > 0 ) {
-	combined_ingredient_goal$target[[ 1 ]]
-} else {
-	combined_ingredient_target_default
-}
-
-combined_ingredient_progress <- tibble(
-	generated_at = with_tz( now(), "UTC" ),
-	profile = combined_ingredient_profile,
-	group = combined_ingredient_group,
-	feature = combined_ingredient_feature,
-	completed_cross_product_records = combined_ingredient_completed,
-	target_records = combined_ingredient_target,
-	remaining_records = pmax( combined_ingredient_target - combined_ingredient_completed, 0 ),
-	progress = if_else( combined_ingredient_target > 0, combined_ingredient_completed / combined_ingredient_target, NA_real_ ),
-	group_enabled = combined_ingredient_group %in% state$enabledGroups,
-	profile_records_seen = if ( nrow( combined_ingredient_profile_count ) > 0 ) combined_ingredient_profile_count$records_seen[[ 1 ]] else 0,
-	profile_successful_records = if ( nrow( combined_ingredient_profile_count ) > 0 ) combined_ingredient_profile_count$successful_records[[ 1 ]] else 0,
-	profile_success_rate = if ( nrow( combined_ingredient_profile_count ) > 0 ) combined_ingredient_profile_count$success_rate[[ 1 ]] else NA_real_
-)
-
-combined_ingredient_goal_progress <- bind_rows(
-	coverage_goals %>%
-		filter( id %in% combined_ingredient_related_goal_ids ) %>%
-		select( id, label, count, target, met, progress, goal_family ),
-	if ( ! ( combined_ingredient_feature %in% coverage_goals$id ) ) {
-		tibble(
-			id = combined_ingredient_feature,
-			label = "strict combined HTTP large-post three-user lifecycle records",
-			count = combined_ingredient_completed,
-			target = combined_ingredient_target,
-			met = combined_ingredient_completed >= combined_ingredient_target,
-			progress = if_else( combined_ingredient_target > 0, combined_ingredient_completed / combined_ingredient_target, NA_real_ ),
-			goal_family = "cross-product"
-		)
-	} else {
-		tibble()
-	}
-) %>%
-	mutate(
-		count = as.numeric( count ),
-		target = as.numeric( target ),
-		remaining = pmax( target - count, 0 ),
-		progress_capped = pmin( progress, 1 ),
-		count_target = paste0( comma( count ), " / ", comma( target ) ),
-		label = str_wrap( label, width = 44 )
-	) %>%
-	arrange( progress_capped, desc( remaining ), label )
-
-combined_ingredient_requirements <- tibble(
-	ingredient = c(
-		"HTTP polling",
-		"large initial post",
-		"at least three browser users",
-		"at least two lifecycle reloads",
-		"save checkpoints",
-		"autosave checkpoint",
-		"strict persistence oracles",
-		"passed run"
-	),
-	record_check = c(
-		"transport == http",
-		"initialContentProfile starts with large-document-",
-		"userCount >= 3",
-		"reload count >= 2",
-		"save count >= 2",
-		"autosave count >= 1",
-		"operation ledger and final persistence are strict",
-		"status == passed"
-	),
-	requirement_family = c(
-		"transport",
-		"scale",
-		"collaboration",
-		"lifecycle",
-		"persistence",
-		"persistence",
-		"oracle",
-		"completion"
-	),
-	required_for_cross_product_count = TRUE
-)
-
-write_csv( combined_ingredient_progress, combined_ingredient_progress_path )
-write_csv( combined_ingredient_goal_progress, combined_ingredient_goal_progress_path )
-write_csv( combined_ingredient_requirements, combined_ingredient_requirements_path )
-
-get_goal_numeric <- function( goal_id, field, default = 0 ) {
-	row <- coverage_goals %>%
-		filter( id == goal_id ) %>%
-		slice_head( n = 1 )
-	if ( nrow( row ) == 0 || ! field %in% names( row ) ) {
-		return( default )
-	}
-	value <- suppressWarnings( as.numeric( row[[ field ]][[ 1 ]] ) )
-	ifelse( is.na( value ), default, value )
-}
-
-get_feature_numeric <- function( feature_id, default = 0 ) {
-	row <- feature_counts %>%
-		filter( feature == feature_id ) %>%
-		slice_head( n = 1 )
-	if ( nrow( row ) == 0 ) {
-		return( default )
-	}
-	value <- suppressWarnings( as.numeric( row$count[[ 1 ]] ) )
-	ifelse( is.na( value ), default, value )
-}
-
-many_user_active_editing_profile_count <- profile_counts %>%
-	filter( profile == many_user_active_editing_profile ) %>%
-	slice_head( n = 1 )
-
-many_user_active_editing_progress <- tibble(
-	generated_at = with_tz( now(), "UTC" ),
-	threshold = many_user_active_editing_thresholds
-) %>%
-	rowwise() %>%
-	mutate(
-		success_action_goal = paste0( "success-action-users:", threshold ),
-		lifecycle_feature = paste0( "cross-product:active-editors-lifecycle:users-", threshold ),
-		rich_list_feature = paste0( "cross-product:active-editors-rich-list-lifecycle:users-", threshold ),
-		ui_signal_feature = paste0( "cross-product:active-editors-ui-signals:users-", threshold ),
-		large_doc_feature = paste0( "cross-product:active-editors-large-doc:users-", threshold ),
-		notes_lifecycle_feature = paste0( "cross-product:active-editors-notes-lifecycle:users-", threshold ),
-		http_lifecycle_feature = "cross-product:active-editors-http-lifecycle:users-6",
-		same_user_lifecycle_feature = "cross-product:active-editors-same-user-lifecycle:users-6",
-		mixed_identity_lifecycle_feature = "cross-product:active-editors-mixed-identity-lifecycle:users-6",
-		revision_restore_feature = "cross-product:active-editors-revision-restore:users-6",
-		publish_lifecycle_feature = "cross-product:active-editors-publish-lifecycle:users-6",
-		same_block_contention_feature = "cross-product:active-editors-same-block-contention:users-6",
-		note_thread_lifecycle_feature = "cross-product:active-editors-note-thread-lifecycle:users-6",
-		persistence_race_feature = "cross-product:active-editors-persistence-race:users-6",
-		ws_reconnect_background_feature = "cross-product:active-editors-ws-reconnect-background:users-6",
-		http_413_compaction_feature = "cross-product:active-editors-http-413-compaction:users-6",
-		post_field_boundary_feature = "cross-product:active-editors-post-field-boundary:users-6",
-		visible_remote_delete_feature = "cross-product:active-editors-visible-remote-delete:users-6",
-		code_editor_embed_stability_feature = "cross-product:active-editors-code-editor-embed-stability:users-6",
-		nested_table_awareness_feature = "cross-product:active-editors-nested-table-awareness:users-6",
-		strict_ledger_feature = "cross-product:active-editors-strict-ledger:users-30",
-		successful_active_editor_records = get_goal_numeric( success_action_goal, "count", 0 ),
-		successful_active_editor_target = get_goal_numeric( success_action_goal, "target", if_else( threshold >= 30, 3, if_else( threshold >= 10, 10, 25 ) ) ),
-		lifecycle_records = get_feature_numeric( lifecycle_feature, get_goal_numeric( lifecycle_feature, "count", 0 ) ),
-		rich_list_lifecycle_records = get_feature_numeric( rich_list_feature, get_goal_numeric( rich_list_feature, "count", 0 ) ),
-		ui_signal_records = get_feature_numeric( ui_signal_feature, get_goal_numeric( ui_signal_feature, "count", 0 ) ),
-		large_doc_records = get_feature_numeric( large_doc_feature, get_goal_numeric( large_doc_feature, "count", 0 ) ),
-		notes_lifecycle_records = if_else(
-			threshold %in% many_user_active_editing_note_thresholds,
-			get_feature_numeric( notes_lifecycle_feature, get_goal_numeric( notes_lifecycle_feature, "count", 0 ) ),
-			NA_real_
-		),
-		http_lifecycle_records = if_else(
-			threshold == 6,
-			get_feature_numeric( http_lifecycle_feature, get_goal_numeric( http_lifecycle_feature, "count", 0 ) ),
-			NA_real_
-		),
-		same_user_lifecycle_records = if_else(
-			threshold == 6,
-			get_feature_numeric( same_user_lifecycle_feature, get_goal_numeric( same_user_lifecycle_feature, "count", 0 ) ),
-			NA_real_
-		),
-		mixed_identity_lifecycle_records = if_else(
-			threshold == 6,
-			get_feature_numeric( mixed_identity_lifecycle_feature, get_goal_numeric( mixed_identity_lifecycle_feature, "count", 0 ) ),
-			NA_real_
-		),
-		revision_restore_records = if_else(
-			threshold == 6,
-			get_feature_numeric( revision_restore_feature, get_goal_numeric( revision_restore_feature, "count", 0 ) ),
-			NA_real_
-		),
-		publish_lifecycle_records = if_else(
-			threshold == 6,
-			get_feature_numeric( publish_lifecycle_feature, get_goal_numeric( publish_lifecycle_feature, "count", 0 ) ),
-			NA_real_
-		),
-		same_block_contention_records = if_else(
-			threshold == 6,
-			get_feature_numeric( same_block_contention_feature, get_goal_numeric( same_block_contention_feature, "count", 0 ) ),
-			NA_real_
-		),
-		note_thread_lifecycle_records = if_else(
-			threshold == 6,
-			get_feature_numeric( note_thread_lifecycle_feature, get_goal_numeric( note_thread_lifecycle_feature, "count", 0 ) ),
-			NA_real_
-		),
-		persistence_race_records = if_else(
-			threshold == 6,
-			get_feature_numeric( persistence_race_feature, get_goal_numeric( persistence_race_feature, "count", 0 ) ),
-			NA_real_
-		),
-		ws_reconnect_background_records = if_else(
-			threshold == 6,
-			get_feature_numeric( ws_reconnect_background_feature, get_goal_numeric( ws_reconnect_background_feature, "count", 0 ) ),
-			NA_real_
-		),
-		http_413_compaction_records = if_else(
-			threshold == 6,
-			get_feature_numeric( http_413_compaction_feature, get_goal_numeric( http_413_compaction_feature, "count", 0 ) ),
-			NA_real_
-		),
-		post_field_boundary_records = if_else(
-			threshold == 6,
-			get_feature_numeric( post_field_boundary_feature, get_goal_numeric( post_field_boundary_feature, "count", 0 ) ),
-			NA_real_
-		),
-		visible_remote_delete_records = if_else(
-			threshold == 6,
-			get_feature_numeric( visible_remote_delete_feature, get_goal_numeric( visible_remote_delete_feature, "count", 0 ) ),
-			NA_real_
-		),
-		code_editor_embed_stability_records = if_else(
-			threshold == 6,
-			get_feature_numeric( code_editor_embed_stability_feature, get_goal_numeric( code_editor_embed_stability_feature, "count", 0 ) ),
-			NA_real_
-		),
-		nested_table_awareness_records = if_else(
-			threshold == 6,
-			get_feature_numeric( nested_table_awareness_feature, get_goal_numeric( nested_table_awareness_feature, "count", 0 ) ),
-			NA_real_
-		),
-		strict_ledger_records = if_else(
-			threshold == 30,
-			get_feature_numeric( strict_ledger_feature, get_goal_numeric( strict_ledger_feature, "count", 0 ) ),
-			NA_real_
-		),
-		progress = if_else( successful_active_editor_target > 0, successful_active_editor_records / successful_active_editor_target, NA_real_ ),
-		remaining_records = pmax( successful_active_editor_target - successful_active_editor_records, 0 )
-	) %>%
-	ungroup() %>%
-	mutate(
-		group_enabled = map_lgl( threshold, ~ any( many_user_active_editing_groups %in% state$enabledGroups ) ),
-		profile_records_seen = if ( nrow( many_user_active_editing_profile_count ) > 0 ) many_user_active_editing_profile_count$records_seen[[ 1 ]] else 0,
-		profile_successful_records = if ( nrow( many_user_active_editing_profile_count ) > 0 ) many_user_active_editing_profile_count$successful_records[[ 1 ]] else 0,
-		profile_success_rate = if ( nrow( many_user_active_editing_profile_count ) > 0 ) many_user_active_editing_profile_count$success_rate[[ 1 ]] else NA_real_
-	)
-
-many_user_active_existing_goals <- coverage_goals %>%
-	filter( id %in% many_user_active_editing_goal_ids ) %>%
-	select( id, label, count, target, met, progress, goal_family )
-
-many_user_active_missing_goals <- tibble( id = many_user_active_editing_goal_ids ) %>%
-	anti_join( many_user_active_existing_goals, by = "id" ) %>%
-	mutate(
-		label = str_replace_all( id, "[-:]", " " ),
-		count = map_dbl( id, get_feature_numeric ),
-		target = case_when(
-			str_detect( id, "active-editors-notes-lifecycle:users-12" ) ~ 5,
-			str_detect( id, "active-editors-notes-lifecycle:users-6" ) ~ 10,
-			str_detect( id, "active-editors-http-lifecycle:users-6" ) ~ 10,
-			str_detect( id, "http-max-clients-override:true" ) ~ 10,
-			str_detect( id, "active-editors-same-user-lifecycle:users-6" ) ~ 10,
-			str_detect( id, "active-editors-mixed-identity-lifecycle:users-6" ) ~ 10,
-			str_detect( id, "active-editors-revision-restore:users-6" ) ~ 10,
-			str_detect( id, "active-editors-publish-lifecycle:users-6" ) ~ 10,
-			str_detect( id, "active-editors-same-block-contention:users-6" ) ~ 10,
-			str_detect( id, "active-editors-note-thread-lifecycle:users-6" ) ~ 10,
-			str_detect( id, "active-editors-persistence-race:users-6" ) ~ 10,
-			str_detect( id, "active-editors-ws-reconnect-background:users-6" ) ~ 10,
-			str_detect( id, "active-editors-http-413-compaction:users-6" ) ~ 10,
-			str_detect( id, "active-editors-post-field-boundary:users-6" ) ~ 10,
-			str_detect( id, "active-editors-strict-ledger:users-30" ) ~ 3,
-			str_detect( id, "30" ) ~ 3,
-			str_detect( id, "10|12" ) ~ 10,
-			TRUE ~ 25
-		),
-		met = count >= target,
-		progress = if_else( target > 0, count / target, NA_real_ ),
-		goal_family = case_when(
-			str_starts( id, "cross-product:" ) ~ "cross-product",
-			str_detect( id, "blocks" ) ~ "lifecycle/scale",
-			TRUE ~ "user-document-concurrency"
-		)
-	)
-
-many_user_active_editing_goal_progress <- bind_rows(
-	many_user_active_existing_goals,
-	many_user_active_missing_goals
-) %>%
-	mutate(
-		count = as.numeric( count ),
-		target = as.numeric( target ),
-		remaining = pmax( target - count, 0 ),
-		progress_capped = pmin( progress, 1 ),
-		count_target = paste0( comma( count ), " / ", comma( target ) ),
-		label = str_wrap( label, width = 46 )
-	) %>%
-	arrange( progress_capped, desc( remaining ), label )
-
-many_user_active_editing_requirements <- tibble(
-	ingredient = c(
-		"passed run",
-		"at least N browser users",
-		"at least N active editors",
-		"late join",
-		"save and reload",
-		"autosave checkpoint",
-		"rich text and list actions",
-		"synced collaboration note",
-		"presence and cursor signals",
-		"large document edge",
-		"HTTP polling transport",
-		"HTTP client-limit override",
-		"same-user tabs",
-		"mixed same/distinct identities",
-		"revision restore",
-		"publish transition",
-		"same-block contention burst",
-		"note reply/resolve/delete lifecycle",
-		"concurrent persistence race",
-		"WS reconnect and background churn",
-		"HTTP 413 compaction recovery",
-		"title/content/excerpt boundary",
-		"visible remote block delete",
-		"code-editor embed stability",
-		"nested table awareness",
-		"strict 30-user operation ledger"
-	),
-	record_check = c(
-		"status == passed",
-		"userCount >= N",
-		"distinct editing action/operation userIndex count >= N, excluding final UI witness-sweep-only edits",
-		"late-join lifecycle event is present",
-		"save count >= 1 and reload count >= 1",
-		"autosave count >= 1 for rich/list lifecycle",
-		"paste + link + list indent in one record",
-		"ui-add-note action + remote note visibility",
-		"presence-list ok + remote-selection-cursor ok",
-		"block count or initial large-document profile >= 50",
-		"transport == http for the HTTP active-editor cross-product",
-		"http-max-clients-override:true feature reaches target",
-		"collaboratorMode == same-user for the same-user active-editor cross-product",
-		"collaboratorMode mixes same-user tabs and distinct users in one successful record",
-		"eligible revision restore completes with status ok",
-		"final-persistence-publish completes with status ok",
-		"concurrent-same-paragraph action completes with same-block-contention history ok",
-		"ui-note-thread-lifecycle action reaches remote reply, resolve, reopen, and delete phases",
-		"save, autosave, and optional publish are raced after multi-user convergence",
-		"forced WS reconnect fault and browser pagehide/visibility/focus churn complete",
-		"forced 413 sync failure recovers under HTTP polling with large content",
-		"title, body, and excerpt witnesses are edited and persisted in one record",
-		"remote-inserted visible block is deleted through another user's UI and disappears for every participant",
-		"content-only code-editor update preserves the remote embed block clientId",
-		"nested table-cell selection publishes a remote cursor/selection with body.*.cells.*.content awareness",
-		"30 active editors pass strict operation-ledger convergence and persistence checks"
-	),
-	requirement_family = c(
-		"completion",
-		"scale",
-		"active editing",
-		"lifecycle",
-		"persistence",
-		"persistence",
-		"real-user UI",
-		"collaboration UI",
-		"collaboration UI",
-		"scale",
-		"transport",
-		"transport",
-		"identity",
-		"identity",
-		"persistence",
-		"persistence",
-		"contention",
-		"collaboration UI",
-		"persistence",
-		"transport",
-		"transport",
-		"post fields",
-		"block deletion",
-		"block identity",
-		"collaboration UI",
-		"oracle"
-	),
-	required_for_cross_product_count = TRUE
-)
-
-write_csv( many_user_active_editing_progress, many_user_active_editing_progress_path )
-write_csv( many_user_active_editing_goal_progress, many_user_active_editing_goal_progress_path )
-write_csv( many_user_active_editing_requirements, many_user_active_editing_requirements_path )
-
 action_counts <- imap_dfr(
 	state$successfulActionCountsByProfile,
 	~ named_number_frame( .x, "action", "count" ) %>% mutate( profile = .y )
-)
-
-if ( nrow( action_counts ) == 0 && ! all( c( "action", "count", "profile" ) %in% names( action_counts ) ) ) {
-	action_counts <- tibble( action = character(), count = numeric(), profile = character() )
-}
-
-action_counts <- action_counts %>%
+) %>%
 	arrange( desc( count ) )
 
 write_csv( action_counts, file.path( data_dir, "successful_action_counts.csv" ) )
@@ -1644,99 +1053,6 @@ if ( nrow( pr_progress_events ) > 0 ) {
 		arrange( timestamp )
 }
 write_csv( pr_controller_events, file.path( data_dir, "pr_progress_controller_events.csv" ) )
-
-critical_path_events <- read_ndjson_optional( critical_events_path )
-if ( nrow( critical_path_events ) > 0 ) {
-	critical_path_events <- critical_path_events %>%
-		ensure_columns( c( "ts", "type", "message" ) ) %>%
-		transmute(
-			timestamp = parse_utc_timestamp( ts ),
-			event_type = replace_na( as.character( type ), "unknown" ),
-			message = replace_na( as.character( message ), "" )
-		) %>%
-		filter( ! is.na( timestamp ), message != "" ) %>%
-		mutate(
-			target = case_when(
-				str_detect( message, "^continuation " ) ~ str_match( message, "^continuation ([^ ]+)" )[ , 2 ],
-				str_detect( message, "^validation branch-" ) ~ str_match( message, "^validation branch-([^ ]+)" )[ , 2 ],
-				TRUE ~ "unknown"
-			),
-			blocker_class = case_when(
-				str_detect( target, "benchmark-canary" ) ~ "benchmark canary/exact-stack",
-				str_detect( target, "reload-hydration|deferred" ) ~ "deferred-family validation",
-				str_detect( target, "pr07c|PR07C" ) ~ "PR07C owner evidence",
-				str_detect( target, "seed-|pr17" ) ~ "seed reducer/final-stack",
-				TRUE ~ "critical-path launch"
-			)
-		)
-} else {
-	critical_path_events <- tibble(
-		timestamp = as.POSIXct( numeric(), origin = "1970-01-01", tz = "UTC" ),
-		event_type = character(),
-		message = character(),
-		target = character(),
-		blocker_class = character()
-	)
-}
-write_csv( critical_path_events, file.path( data_dir, "critical_path_events.csv" ) )
-
-controller_stall_events <- if ( nrow( pr_controller_events ) > 0 ) {
-	pr_controller_events %>%
-		filter(
-			str_detect( event_type, "deferred|blocked|already active" ) |
-				str_detect( message, "not launching|blocked|deferred|gate|exact-stack|cooldown" )
-		) %>%
-		transmute(
-			timestamp,
-			source = "PR controller",
-			blocker_class = case_when(
-				str_detect( event_type, "discovery reserve" ) ~ "resource/discovery reserve",
-				str_detect( event_type, "concurrency|already active" ) ~ "single-flight/concurrency",
-				str_detect( event_type, "persona" ) ~ "persona/control block",
-				str_detect( message, "latest no-promote" ) ~ "consumed owner evidence",
-				TRUE ~ event_type
-			),
-			target = case_when(
-				str_detect( message, "PR07C" ) ~ "PR07C/HOLD-07C",
-				TRUE ~ ""
-			),
-			event_type,
-			message
-		)
-} else {
-	tibble()
-}
-
-critical_launch_events <- if ( nrow( critical_path_events ) > 0 ) {
-	critical_path_events %>%
-		filter( event_type == "launch" ) %>%
-		transmute(
-			timestamp,
-			source = "critical-path launches",
-			blocker_class,
-			target,
-			event_type,
-			message
-		)
-} else {
-	tibble()
-}
-
-pr_blocker_stall_events <- bind_rows( controller_stall_events, critical_launch_events ) %>%
-	ensure_columns( c( "timestamp", "source", "blocker_class", "target", "event_type", "message" ) ) %>%
-	filter( ! is.na( timestamp ), blocker_class != "" ) %>%
-	mutate(
-		bucket = floor_date( timestamp, unit = "30 minutes" ),
-		target = replace_na( as.character( target ), "" )
-	) %>%
-	group_by( bucket, source, blocker_class ) %>%
-	summarise(
-		events = n(),
-		targets = paste( head( unique( target[ target != "" ] ), 5 ), collapse = "; " ),
-		.groups = "drop"
-	) %>%
-	arrange( bucket, source, blocker_class )
-write_csv( pr_blocker_stall_events, file.path( data_dir, "pr_blocker_stall_events.csv" ) )
 
 artifact_index_artifacts <- read_tsv_optional( artifact_index_artifacts_path )
 if ( nrow( artifact_index_artifacts ) > 0 ) {
@@ -1961,10 +1277,23 @@ pr_loop_queue_depth <- bind_rows(
 	} else {
 		tibble()
 	}
-) %>%
-	ensure_columns( c( "queue", "state", "class", "priority", "depth" ) ) %>%
-	mutate( depth = as.numeric( depth ) ) %>%
-	filter( ! is.na( depth ), depth > 0 )
+)
+if ( nrow( pr_loop_queue_depth ) > 0 && "depth" %in% names( pr_loop_queue_depth ) ) {
+	pr_loop_queue_depth <- pr_loop_queue_depth %>%
+		mutate(
+			across( c( queue, state, class, priority ), ~ replace_na( as.character( .x ), "" ) ),
+			depth = as.numeric( depth )
+		) %>%
+		filter( ! is.na( depth ), depth > 0 )
+} else {
+	pr_loop_queue_depth <- tibble(
+		queue = character(),
+		state = character(),
+		class = character(),
+		priority = character(),
+		depth = numeric()
+	)
+}
 write_csv( pr_loop_queue_depth, file.path( data_dir, "pr_loop_queue_depth.csv" ) )
 
 pr_loop_blocked_decisions <- if ( nrow( pr_progress_control_decisions ) > 0 ) {
@@ -2111,70 +1440,6 @@ write_plot(
 	height = 9
 )
 
-if ( nrow( current_run_accounting ) > 0 ) {
-	accounting_plot <- current_run_accounting %>%
-		mutate(
-			metric_trusted_value = if_else( current_run_metrics_trusted, 1, 0 ),
-			pending_value = if_else( full_pass_pending | pending_until_first_pass, 1, 0 ),
-			minutes_since_completed_full_pass = if_else(
-				is.na( minutes_since_completed_full_pass ),
-				NA_real_,
-				pmax( minutes_since_completed_full_pass, 0 )
-			)
-		) %>%
-		select(
-			timestamp,
-			run_id,
-			metric_trusted_value,
-			pending_value,
-			minutes_since_completed_full_pass,
-			active_run_dirs,
-			supervisor_groups_file,
-			current_run_signatures,
-			current_run_actionable_signatures,
-			current_run_product_evidence_signatures,
-			current_run_top_duplicate_share
-		) %>%
-		pivot_longer(
-			cols = -c( timestamp, run_id ),
-			names_to = "metric",
-			values_to = "value"
-		) %>%
-		mutate(
-			metric = recode(
-				metric,
-				metric_trusted_value = "current-run dup/noise metric trusted",
-				pending_value = "full-pass accounting pending",
-				minutes_since_completed_full_pass = "minutes since completed full pass",
-				active_run_dirs = "active run directories",
-				supervisor_groups_file = "supervisor groups published",
-				current_run_signatures = "current-run signatures",
-				current_run_actionable_signatures = "current-run actionable signatures",
-				current_run_product_evidence_signatures = "current-run product-evidence signatures",
-				current_run_top_duplicate_share = "current-run top duplicate share"
-			)
-		)
-
-	write_plot(
-		"current-run-accounting-completeness.png",
-		ggplot( accounting_plot, aes( x = timestamp, y = value, color = metric ) ) +
-			geom_point( alpha = 0.65, size = 0.9 ) +
-			facet_wrap( vars( metric ), scales = "free_y", ncol = 1 ) +
-			scale_color_brewer( palette = "Dark2" ) +
-			scale_time_axis( date_breaks = "4 hours" ) +
-			labs(
-				title = "Current-run accounting completeness over time",
-				x = "UTC time",
-				y = NULL,
-				color = NULL,
-				caption = "The duplicate/noise metric is trusted only after the active novelty run has completed a full pass. Pending states are control-plane health signals, not product bug-rate measurements."
-			) +
-			theme_rtc(),
-		width = 9,
-		height = 9
-	)
-}
-
 if ( file.exists( cpu_path ) ) {
 	cpu_utilization <- read_csv( cpu_path, show_col_types = FALSE ) %>%
 		mutate( timestamp = parse_utc_timestamp( timestamp ) ) %>%
@@ -2244,169 +1509,6 @@ if ( file.exists( load_path ) ) {
 		height = 5.4
 	)
 }
-
-if ( file.exists( disk_path ) ) {
-	disk_free_space <- read_csv( disk_path, show_col_types = FALSE ) %>%
-		mutate(
-			timestamp = parse_utc_timestamp( timestamp ),
-			root_free_gib = as.numeric( root_free_gib ),
-			root_used_percent = as.numeric( root_used_percent ),
-			data_free_gib = as.numeric( data_free_gib ),
-			data_used_percent = as.numeric( data_used_percent )
-		) %>%
-		filter( ! is.na( timestamp ) ) %>%
-		filter( timestamp >= floor_date( min( monitor$timestamp ), "day" ) )
-
-	disk_free_long <- disk_free_space %>%
-		select( timestamp, root_free_gib, data_free_gib ) %>%
-		pivot_longer( ends_with( "_free_gib" ), names_to = "volume", values_to = "free_gib" ) %>%
-		filter( ! is.na( free_gib ) ) %>%
-		mutate(
-			volume = recode(
-				volume,
-				root_free_gib = "root (/)",
-				data_free_gib = "data (/media/volume/danluu-fuzz-data)"
-			)
-		)
-
-	disk_thresholds <- tibble(
-		volume = c( "root (/)", "data (/media/volume/danluu-fuzz-data)" ),
-		pressure_free_gib = c( 25, 160 )
-	)
-
-	write_plot(
-		"disk-free-space-over-time.png",
-		ggplot( disk_free_long, aes( x = timestamp, y = free_gib ) ) +
-			geom_point( color = "#2c7fb8", alpha = 0.76, size = 1.7 ) +
-			geom_hline(
-				data = disk_thresholds,
-				aes( yintercept = pressure_free_gib ),
-				linetype = "dashed",
-				color = "grey35",
-				inherit.aes = FALSE
-			) +
-			facet_wrap( vars( volume ), ncol = 1, scales = "free_y" ) +
-			scale_y_continuous( labels = comma ) +
-			scale_time_axis( date_breaks = "4 hours" ) +
-			labs(
-				title = "Free disk space over time",
-				x = "UTC time",
-				y = "free GiB",
-				caption = "Each point is an autoscaler or graph-refresh sample. Dashed lines show the default pressure thresholds used by the disk-aware controller."
-			) +
-			theme_rtc(),
-		width = 9,
-		height = 7.2
-	)
-}
-
-coverage_root_loss <- if ( file.exists( coverage_root_loss_path ) ) {
-	read_csv( coverage_root_loss_path, show_col_types = FALSE ) %>%
-		mutate(
-			timestamp = parse_utc_timestamp( timestamp ),
-			root_age_seconds = as.numeric( root_age_seconds ),
-			records_seen = as.numeric( records_seen ),
-			current_run_records = as.numeric( current_run_records ),
-			estimated_lost_seconds = as.numeric( estimated_lost_seconds ),
-			estimated_lost_records = as.numeric( estimated_lost_records ),
-			desired_target = as.numeric( desired_target ),
-			desired_max = as.numeric( desired_max ),
-			event_type = replace_na( event_type, "unknown" ),
-			reason = replace_na( reason, "unknown" )
-		) %>%
-		filter( ! is.na( timestamp ) ) %>%
-		arrange( timestamp )
-} else {
-	tibble(
-		timestamp = as.POSIXct( character(), tz = "UTC" ),
-		event_type = character(),
-		reason = character(),
-		coverage_root = character(),
-		root_age_seconds = numeric(),
-		full_pass_completed = numeric(),
-		seconds_since_completed_full_pass = numeric(),
-		records_seen = numeric(),
-		current_run_records = numeric(),
-		coverage_files = numeric(),
-		materialized_active_run_dirs = numeric(),
-		materialized_running_groups = numeric(),
-		supervisor_status_counts = character(),
-		desired_target = numeric(),
-		desired_max = numeric(),
-		estimated_lost_seconds = numeric(),
-		estimated_lost_records = numeric()
-	)
-}
-
-if ( nrow( coverage_root_loss ) > 0 ) {
-	coverage_root_loss <- coverage_root_loss %>%
-		mutate(
-			cumulative_lost_hours = cumsum( coalesce( estimated_lost_seconds, 0 ) ) / 3600,
-			cumulative_lost_records = cumsum( coalesce( estimated_lost_records, 0 ) ),
-			lost_minutes = coalesce( estimated_lost_seconds, 0 ) / 60,
-			loss_event_label = case_when(
-				event_type == "restart" ~ "root reset restart",
-				event_type == "in_place_budget" ~ "in-place budget change",
-				TRUE ~ event_type
-			),
-			reason = str_replace_all( reason, "_", " " )
-		)
-} else {
-	coverage_root_loss <- coverage_root_loss %>%
-		mutate(
-			cumulative_lost_hours = numeric(),
-			cumulative_lost_records = numeric(),
-			lost_minutes = numeric(),
-			loss_event_label = character()
-		)
-}
-
-coverage_loss_plot_base <- ggplot( coverage_root_loss, aes( x = timestamp ) ) +
-	scale_time_axis( date_breaks = "4 hours" ) +
-	theme_rtc()
-
-write_plot(
-	"coverage-root-lost-time-over-time.png",
-	coverage_loss_plot_base +
-		geom_point(
-			aes( y = cumulative_lost_hours, color = loss_event_label, size = lost_minutes ),
-			alpha = 0.74
-		) +
-		scale_color_brewer( palette = "Dark2", na.translate = FALSE ) +
-		scale_size_continuous( range = c( 1.2, 4.5 ), labels = comma ) +
-		labs(
-			title = "Coverage-root restart lost time over time",
-			x = "UTC time",
-			y = "cumulative estimated lost hours",
-			color = NULL,
-			size = "lost minutes",
-			caption = "Root-reset restarts count the active-root age before the first full pass, or time since the last completed full pass. In-place budget changes are recorded but add zero lost continuity."
-		),
-	width = 9,
-	height = 5.4
-)
-
-write_plot(
-	"coverage-root-lost-records-over-time.png",
-	coverage_loss_plot_base +
-		geom_point(
-			aes( y = cumulative_lost_records, color = loss_event_label, size = pmax( estimated_lost_records, 1 ) ),
-			alpha = 0.74
-		) +
-		scale_color_brewer( palette = "Dark2", na.translate = FALSE ) +
-		scale_size_continuous( range = c( 1.2, 4.5 ), labels = comma ) +
-		scale_y_continuous( labels = comma ) +
-		labs(
-			title = "Coverage-root restart lost progress over time",
-			x = "UTC time",
-			y = "cumulative estimated lost current-run records",
-			color = NULL,
-			size = "records lost",
-			caption = "This tracks current-root continuity loss from controller-driven root resets. It is an estimate from novelty-state counters, not a count of discarded files."
-		),
-	width = 9,
-	height = 5.4
-)
 
 if ( file.exists( activity_path ) ) {
 	activity <- read_csv( activity_path, show_col_types = FALSE ) %>%
@@ -3219,286 +2321,6 @@ write_plot(
 	height = 6.2
 )
 
-combined_progress_segments <- tibble(
-	segment = factor( c( "completed", "remaining" ), levels = c( "completed", "remaining" ) ),
-	records = c(
-		combined_ingredient_progress$completed_cross_product_records[[ 1 ]],
-		combined_ingredient_progress$remaining_records[[ 1 ]]
-	)
-) %>%
-	mutate(
-		label = paste0( comma( records ), " ", segment ),
-		records = pmax( records, 0 )
-	)
-
-write_plot(
-	"combined-ingredient-fuzz-progress.png",
-	ggplot( combined_progress_segments, aes( x = "combined cross-product target", y = records, fill = segment ) ) +
-		geom_col( width = 0.42 ) +
-		geom_text(
-			aes( label = label ),
-			position = position_stack( vjust = 0.5 ),
-			size = 3.4,
-			color = "white"
-		) +
-		coord_flip() +
-		scale_y_continuous(
-			labels = comma,
-			limits = c( 0, max( combined_ingredient_progress$target_records[[ 1 ]], 1 ) ),
-			expand = expansion( mult = c( 0, 0.04 ) )
-		) +
-		scale_fill_brewer( palette = "Set2" ) +
-		labs(
-			title = "Combined-ingredient fuzzing progress",
-			subtitle = paste0(
-				combined_ingredient_feature,
-				"; group enabled=",
-				combined_ingredient_progress$group_enabled[[ 1 ]]
-			),
-			x = NULL,
-			y = "completed records toward coverage floor",
-			fill = NULL,
-			caption = "A completed count requires HTTP polling, a large initial post, at least three browser users, reloads, save/autosave checkpoints, strict oracles, and a passed run."
-		) +
-		theme_rtc(),
-	width = 10,
-	height = 4.2
-)
-
-write_plot(
-	"combined-ingredient-fuzz-goal-progress.png",
-	ggplot( combined_ingredient_goal_progress, aes( x = progress_capped, y = reorder( label, progress_capped ), color = goal_family ) ) +
-		geom_segment( aes( x = 0, xend = progress_capped, yend = reorder( label, progress_capped ) ), linewidth = 1.2, alpha = 0.72 ) +
-		geom_point( aes( shape = met, size = target ), alpha = 0.85 ) +
-		geom_text(
-			aes( label = count_target ),
-			hjust = -0.1,
-			vjust = 0.5,
-			size = 2.9,
-			show.legend = FALSE
-		) +
-		scale_x_continuous( labels = percent_format( accuracy = 1 ), limits = c( 0, 1 ), expand = expansion( mult = c( 0.01, 0.22 ) ) ) +
-		scale_color_brewer( palette = "Dark2" ) +
-		scale_shape_manual( values = c( "FALSE" = 17, "TRUE" = 16 ) ) +
-		scale_size_continuous( labels = comma, range = c( 2.4, 5.8 ) ) +
-		labs(
-			title = "Combined-ingredient fuzzing goal progress",
-			x = "progress toward target",
-			y = NULL,
-			color = "goal family",
-			shape = "met",
-			size = "target",
-			caption = "Includes the strict cross-product key plus adjacent large-post/three-user/HTTP goals so separate ingredient progress remains visible."
-		) +
-		theme_rtc(),
-	width = 12,
-	height = 5.8
-)
-
-combined_requirement_plot <- combined_ingredient_requirements %>%
-	mutate(
-		ingredient = factor( ingredient, levels = rev( ingredient ) ),
-		record_check = str_wrap( record_check, width = 38 )
-	)
-
-write_plot(
-	"combined-ingredient-fuzz-requirements.png",
-	ggplot( combined_requirement_plot, aes( x = "required for one count", y = ingredient, fill = requirement_family ) ) +
-		geom_tile( color = "white", linewidth = 0.7, width = 0.9, height = 0.78 ) +
-		geom_text( aes( label = record_check ), size = 3.1, color = "gray15" ) +
-		scale_fill_brewer( palette = "Set3" ) +
-		labs(
-			title = "Combined-ingredient fuzzing count criteria",
-			x = NULL,
-			y = NULL,
-			fill = "ingredient family",
-			caption = "These checks are conjunctive: separate ingredient-lane hits do not increment the combined cross-product key."
-		) +
-		theme_rtc() +
-		theme(
-			axis.text.x = element_blank(),
-			panel.grid.major = element_blank()
-		),
-	width = 10,
-	height = 5.7
-)
-
-many_user_active_progress_long <- many_user_active_editing_progress %>%
-	select(
-		threshold,
-		successful_active_editor_records,
-		lifecycle_records,
-		rich_list_lifecycle_records,
-		notes_lifecycle_records,
-		http_lifecycle_records,
-		same_user_lifecycle_records,
-		mixed_identity_lifecycle_records,
-		revision_restore_records,
-		publish_lifecycle_records,
-		same_block_contention_records,
-		note_thread_lifecycle_records,
-		persistence_race_records,
-		ws_reconnect_background_records,
-		http_413_compaction_records,
-		post_field_boundary_records,
-		visible_remote_delete_records,
-		code_editor_embed_stability_records,
-		nested_table_awareness_records,
-		strict_ledger_records,
-		ui_signal_records,
-		large_doc_records,
-		successful_active_editor_target
-	) %>%
-	pivot_longer(
-		cols = c(
-			successful_active_editor_records,
-			lifecycle_records,
-			rich_list_lifecycle_records,
-			notes_lifecycle_records,
-			http_lifecycle_records,
-			same_user_lifecycle_records,
-			mixed_identity_lifecycle_records,
-			revision_restore_records,
-			publish_lifecycle_records,
-			same_block_contention_records,
-			note_thread_lifecycle_records,
-			persistence_race_records,
-			ws_reconnect_background_records,
-			http_413_compaction_records,
-			post_field_boundary_records,
-			visible_remote_delete_records,
-			code_editor_embed_stability_records,
-			nested_table_awareness_records,
-			strict_ledger_records,
-			ui_signal_records,
-			large_doc_records
-		),
-		names_to = "metric",
-		values_to = "records"
-	) %>%
-	filter( ! is.na( records ) ) %>%
-	mutate(
-		metric = recode(
-			metric,
-			successful_active_editor_records = "successful active-editor records",
-			lifecycle_records = "active editors + lifecycle",
-			rich_list_lifecycle_records = "rich/list lifecycle",
-			notes_lifecycle_records = "notes lifecycle",
-			http_lifecycle_records = "HTTP lifecycle",
-			same_user_lifecycle_records = "same-user lifecycle",
-			mixed_identity_lifecycle_records = "mixed-identity lifecycle",
-			revision_restore_records = "revision restore",
-			publish_lifecycle_records = "publish lifecycle",
-			same_block_contention_records = "same-block contention",
-			note_thread_lifecycle_records = "note thread lifecycle",
-			persistence_race_records = "persistence race",
-			ws_reconnect_background_records = "WS reconnect/background",
-			http_413_compaction_records = "HTTP 413 compaction",
-			post_field_boundary_records = "post-field boundary",
-			visible_remote_delete_records = "visible remote delete",
-			code_editor_embed_stability_records = "code-editor embed stability",
-			nested_table_awareness_records = "nested table awareness",
-			strict_ledger_records = "strict 30-user ledger",
-			ui_signal_records = "presence/cursor signals",
-			large_doc_records = "large-document edge"
-		),
-		threshold_label = paste0( threshold, "+ active editors" ),
-		progress = if_else( successful_active_editor_target > 0, records / successful_active_editor_target, NA_real_ ),
-		progress_capped = pmin( progress, 1 ),
-		count_target = paste0( comma( records ), " / ", comma( successful_active_editor_target ) )
-	)
-
-write_plot(
-	"many-user-active-editing-progress.png",
-	ggplot( many_user_active_progress_long, aes( x = progress_capped, y = reorder( metric, progress_capped ), color = threshold_label ) ) +
-		geom_segment( aes( x = 0, xend = progress_capped, yend = reorder( metric, progress_capped ) ), linewidth = 1.1, alpha = 0.66 ) +
-		geom_point( size = 3, alpha = 0.86 ) +
-		geom_text(
-			aes( label = count_target ),
-			hjust = -0.1,
-			vjust = 0.5,
-			size = 2.8,
-			show.legend = FALSE
-		) +
-		facet_wrap( vars( threshold_label ), ncol = 2 ) +
-		scale_x_continuous( labels = percent_format( accuracy = 1 ), limits = c( 0, 1 ), expand = expansion( mult = c( 0.01, 0.28 ) ) ) +
-		scale_color_brewer( palette = "Dark2" ) +
-		labs(
-			title = "Many-user active-editing progress",
-			subtitle = "Counts require distinct editing users, not only users present in the room.",
-			x = "progress toward active-editor target",
-			y = NULL,
-			color = "threshold",
-			caption = "The rows are strict cross-products; separate ingredient-lane hits do not increment same-block, note lifecycle, persistence-race, reconnect, 413, post-field, or ledger rows."
-		) +
-		theme_rtc() +
-		theme( legend.position = "none" ),
-	width = 12,
-	height = 10
-)
-
-many_user_active_cross_product_plot <- many_user_active_editing_goal_progress %>%
-	filter( str_starts( id, "cross-product:active-editors" ) ) %>%
-	mutate( label = str_wrap( label, width = 44 ) )
-
-write_plot(
-	"many-user-active-editing-cross-products.png",
-	ggplot( many_user_active_cross_product_plot, aes( x = progress_capped, y = reorder( label, progress_capped ), color = goal_family ) ) +
-		geom_segment( aes( x = 0, xend = progress_capped, yend = reorder( label, progress_capped ) ), linewidth = 1.1, alpha = 0.7 ) +
-		geom_point( aes( shape = met, size = target ), alpha = 0.86 ) +
-		geom_text(
-			aes( label = count_target ),
-			hjust = -0.1,
-			vjust = 0.5,
-			size = 2.75,
-			show.legend = FALSE
-		) +
-		scale_x_continuous( labels = percent_format( accuracy = 1 ), limits = c( 0, 1 ), expand = expansion( mult = c( 0.01, 0.24 ) ) ) +
-		scale_color_brewer( palette = "Dark2" ) +
-		scale_shape_manual( values = c( "FALSE" = 17, "TRUE" = 16 ) ) +
-		scale_size_continuous( labels = comma, range = c( 2.3, 5.4 ) ) +
-		labs(
-			title = "Many-user active-editing cross-product goals",
-			x = "progress toward target",
-			y = NULL,
-			color = "goal family",
-			shape = "met",
-			size = "target",
-			caption = "These goals track users who actually edited plus lifecycle, rich/list, collaboration UI, identity, transport, persistence-race, contention, and large-document requirements in the same successful record."
-		) +
-		theme_rtc(),
-	width = 12,
-	height = 9.2
-)
-
-many_user_active_requirement_plot <- many_user_active_editing_requirements %>%
-	mutate(
-		ingredient = factor( ingredient, levels = rev( ingredient ) ),
-		record_check = str_wrap( record_check, width = 40 )
-	)
-
-write_plot(
-	"many-user-active-editing-requirements.png",
-	ggplot( many_user_active_requirement_plot, aes( x = "required for one count", y = ingredient, fill = requirement_family ) ) +
-		geom_tile( color = "white", linewidth = 0.7, width = 0.9, height = 0.78 ) +
-		geom_text( aes( label = record_check ), size = 3, color = "gray15" ) +
-		scale_fill_brewer( palette = "Set3" ) +
-		labs(
-			title = "Many-user active-editing count criteria",
-			x = NULL,
-			y = NULL,
-			fill = "ingredient family",
-			caption = "N is the threshold shown in the progress graphs: 6, 10, 12, or 30 active editors."
-		) +
-		theme_rtc() +
-		theme(
-			axis.text.x = element_blank(),
-			panel.grid.major = element_blank()
-		),
-	width = 10.5,
-	height = 8.3
-)
-
 feature_category_plot <- feature_categories %>%
 	mutate(
 		category_family = case_when(
@@ -3507,7 +2329,6 @@ feature_category_plot <- feature_categories %>%
 			feature_category %in% c( "history", "operation-ledger", "invariant" ) ~ "state/invariants",
 			feature_category %in% c( "real-user", "collaborator", "revision", "save", "reload", "autosave", "lifecycle", "users", "auth" ) ~ "user/lifecycle",
 			feature_category %in% c( "large-document", "step-count", "payload-size", "serialized-size" ) ~ "scale",
-			feature_category == "cross-product" ~ "cross-product",
 			feature_category %in% c( "fault", "transport", "profile", "code coverage" ) ~ "harness",
 			TRUE ~ "other"
 		),
@@ -3562,42 +2383,25 @@ top_actions <- action_counts %>%
 	ungroup() %>%
 	mutate( action_key = factor( action_key, levels = unique( action_key ) ) )
 
-if ( nrow( top_actions ) > 0 ) {
-	write_plot(
-		"successful-actions-by-profile.png",
-		ggplot( top_actions, aes( x = count, y = action_key, color = profile_family ) ) +
-			geom_point( alpha = 0.78, size = 2.4 ) +
-			facet_wrap( vars( profile ), scales = "free_y", ncol = 2 ) +
-			scale_x_continuous( labels = comma ) +
-			scale_y_discrete( labels = function( x ) str_remove( x, "^.*___" ) ) +
-			scale_color_brewer( palette = "Set2" ) +
-			labs(
-				title = "Successful actions within weak-completion profiles",
-				x = "successful action count",
-				y = NULL,
-				color = "profile family",
-				caption = "Profiles with zero successful action records do not appear in this chart."
-			) +
-			theme_rtc(),
-		width = 10,
-		height = 8
-	)
-} else {
-	write_plot(
-		"successful-actions-by-profile.png",
-		ggplot() +
-			annotate( "text", x = 0, y = 0, label = "No successful action records in the current state.", size = 4 ) +
-			labs(
-				title = "Successful actions within weak-completion profiles",
-				x = NULL,
-				y = NULL
-			) +
-			theme_rtc() +
-			theme( axis.text = element_blank(), panel.grid = element_blank() ),
-		width = 10,
-		height = 8
-	)
-}
+write_plot(
+	"successful-actions-by-profile.png",
+	ggplot( top_actions, aes( x = count, y = action_key, color = profile_family ) ) +
+		geom_point( alpha = 0.78, size = 2.4 ) +
+		facet_wrap( vars( profile ), scales = "free_y", ncol = 2 ) +
+		scale_x_continuous( labels = comma ) +
+		scale_y_discrete( labels = function( x ) str_remove( x, "^.*___" ) ) +
+		scale_color_brewer( palette = "Set2" ) +
+		labs(
+			title = "Successful actions within weak-completion profiles",
+			x = "successful action count",
+			y = NULL,
+			color = "profile family",
+			caption = "Profiles with zero successful action records do not appear in this chart."
+		) +
+		theme_rtc(),
+	width = 10,
+	height = 8
+)
 
 write_plot(
 	"pr-review-loop-events.png",
@@ -3752,34 +2556,6 @@ if ( nrow( pr_controller_events ) > 0 ) {
 			theme_rtc(),
 		width = 9,
 		height = 4.8
-	)
-}
-
-if ( nrow( pr_blocker_stall_events ) > 0 ) {
-	blocker_stall_plot <- pr_blocker_stall_events %>%
-		mutate(
-			blocker_class = str_wrap( blocker_class, width = 26 ),
-			source = factor( source, levels = c( "PR controller", "critical-path launches" ) )
-		)
-
-	write_plot(
-		"pr-blocker-stall-events-over-time.png",
-		ggplot( blocker_stall_plot, aes( x = bucket, y = events, fill = blocker_class ) ) +
-			geom_col( alpha = 0.86, width = 30 * 60 ) +
-			facet_wrap( vars( source ), ncol = 1, scales = "free_y" ) +
-			scale_fill_brewer( palette = "Dark2" ) +
-			scale_y_continuous( labels = comma, breaks = pretty_breaks() ) +
-			scale_time_axis( date_breaks = "6 hours" ) +
-			labs(
-				title = "PR blocker and stall events over time",
-				x = "UTC time",
-				y = "events per 30-minute bucket",
-				fill = "blocker/stall class",
-				caption = "Controller stalls include resource reserve, single-flight/concurrency, consumed owner evidence, and persona blocks. Critical-path launches show repeated blocker continuation or validation churn."
-			) +
-			theme_rtc(),
-		width = 11,
-		height = 6.8
 	)
 }
 
@@ -4008,7 +2784,7 @@ if ( nrow( critical_no_progress_summary ) > 0 ) {
 		mutate(
 			item_label = str_wrap( item_id, width = 34 ),
 			reason = str_wrap( reason, width = 32 ),
-			item_label = factor( item_label, levels = unique( item_label[ order( rejections ) ] ) )
+			item_label = factor( item_label, levels = item_label[ order( rejections ) ] )
 		)
 
 	write_plot(
@@ -4191,16 +2967,6 @@ blocked_decision_text <- if ( nrow( pr_loop_blocked_decisions ) > 0 ) {
 	NA_character_
 }
 
-blocker_stall_event_text <- if ( nrow( pr_blocker_stall_events ) > 0 ) {
-	pr_blocker_stall_events %>%
-		count( source, blocker_class, wt = events, name = "events" ) %>%
-		mutate( text = paste0( source, "/", blocker_class, "=", events ) ) %>%
-		pull( text ) %>%
-		paste( collapse = "; " )
-} else {
-	NA_character_
-}
-
 repeated_validation_text <- if ( nrow( critical_branch_validation_summary ) > 0 && any( critical_branch_validation_summary$fail > 0, na.rm = TRUE ) ) {
 	critical_branch_validation_summary %>%
 		filter( fail > 0 ) %>%
@@ -4239,24 +3005,8 @@ summary_lines <- c(
 	paste0( "duplicate_share_current_last: ", last( monitor$duplicate_share_current ) ),
 	paste0( "duplicate_share_historical_last: ", last( monitor$duplicate_share_historical ) ),
 	paste0( "summary_startup_failures_last: ", last( monitor$summary_startup_failures ) ),
-	paste0( "current_run_accounting_snapshots: ", nrow( current_run_accounting ) ),
-	paste0( "current_run_metrics_trusted_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_metrics_trusted ), NA ) ),
-	paste0( "current_run_full_pass_pending_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$full_pass_pending | current_run_accounting$pending_until_first_pass ), NA ) ),
-	paste0( "current_run_minutes_since_completed_full_pass_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$minutes_since_completed_full_pass ), NA ) ),
-	paste0( "current_run_signatures_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_signatures ), NA ) ),
-	paste0( "current_run_actionable_signatures_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_actionable_signatures ), NA ) ),
-	paste0( "current_run_top_duplicate_share_last: ", ifelse( nrow( current_run_accounting ) > 0, last( current_run_accounting$current_run_top_duplicate_share ), NA ) ),
 	paste0( "quality_issues_last: ", last( monitor$quality_issues ) ),
 	paste0( "memory_free_gb_last: ", last( monitor$memory_free_gb ) ),
-	paste0( "root_disk_free_gib_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$root_free_gib ), NA ) ),
-	paste0( "root_disk_used_percent_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$root_used_percent ), NA ) ),
-	paste0( "data_disk_free_gib_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$data_free_gib ), NA ) ),
-	paste0( "data_disk_used_percent_last: ", ifelse( exists( "disk_free_space" ) && nrow( disk_free_space ) > 0, last( disk_free_space$data_used_percent ), NA ) ),
-	paste0( "coverage_root_loss_events: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, nrow( coverage_root_loss ), 0 ) ),
-	paste0( "coverage_root_loss_restarts: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, sum( coverage_root_loss$event_type == "restart", na.rm = TRUE ), 0 ) ),
-	paste0( "coverage_root_budget_in_place_events: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, sum( coverage_root_loss$event_type == "in_place_budget", na.rm = TRUE ), 0 ) ),
-	paste0( "coverage_root_estimated_lost_hours: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, round( sum( coverage_root_loss$estimated_lost_seconds, na.rm = TRUE ) / 3600, 3 ), 0 ) ),
-	paste0( "coverage_root_estimated_lost_records: ", ifelse( exists( "coverage_root_loss" ) && nrow( coverage_root_loss ) > 0, sum( coverage_root_loss$estimated_lost_records, na.rm = TRUE ), 0 ) ),
 	paste0( "load_1_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_1 ), NA ) ),
 	paste0( "load_5_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_5 ), NA ) ),
 	paste0( "load_15_last: ", ifelse( exists( "load_average" ) && nrow( load_average ) > 0, last( load_average$load_15 ), NA ) ),
@@ -4280,36 +3030,6 @@ summary_lines <- c(
 	paste0( "profiles_seen: ", nrow( profile_counts ) ),
 	paste0( "goals_total: ", nrow( coverage_goals ) ),
 	paste0( "goals_unmet: ", sum( ! coverage_goals$met ) ),
-	paste0( "combined_ingredient_feature: ", combined_ingredient_feature ),
-	paste0( "combined_ingredient_completed: ", combined_ingredient_progress$completed_cross_product_records[[ 1 ]] ),
-	paste0( "combined_ingredient_target: ", combined_ingredient_progress$target_records[[ 1 ]] ),
-	paste0( "combined_ingredient_remaining: ", combined_ingredient_progress$remaining_records[[ 1 ]] ),
-	paste0( "combined_ingredient_group_enabled: ", combined_ingredient_progress$group_enabled[[ 1 ]] ),
-	paste0( "combined_ingredient_profile_successful_records: ", combined_ingredient_progress$profile_successful_records[[ 1 ]] ),
-	paste0( "many_user_active_editing_profile_successful_records: ", many_user_active_editing_progress$profile_successful_records[[ 1 ]] ),
-	paste0( "many_user_active_editing_success_action_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( successful_active_editor_records ) ),
-	paste0( "many_user_active_editing_success_action_users_12: ", many_user_active_editing_progress %>% filter( threshold == 12 ) %>% pull( successful_active_editor_records ) ),
-	paste0( "many_user_active_editing_success_action_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( successful_active_editor_records ) ),
-	paste0( "many_user_active_editing_rich_list_users_12: ", many_user_active_editing_progress %>% filter( threshold == 12 ) %>% pull( rich_list_lifecycle_records ) ),
-	paste0( "many_user_active_editing_notes_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( notes_lifecycle_records ) ),
-	paste0( "many_user_active_editing_notes_lifecycle_users_12: ", many_user_active_editing_progress %>% filter( threshold == 12 ) %>% pull( notes_lifecycle_records ) ),
-	paste0( "many_user_active_editing_http_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( http_lifecycle_records ) ),
-	paste0( "many_user_active_editing_http_max_clients_override: ", get_feature_numeric( "http-max-clients-override:true", get_goal_numeric( "http-max-clients-override:true", "count", 0 ) ) ),
-	paste0( "many_user_active_editing_same_user_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( same_user_lifecycle_records ) ),
-	paste0( "many_user_active_editing_mixed_identity_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( mixed_identity_lifecycle_records ) ),
-	paste0( "many_user_active_editing_revision_restore_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( revision_restore_records ) ),
-	paste0( "many_user_active_editing_publish_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( publish_lifecycle_records ) ),
-	paste0( "many_user_active_editing_same_block_contention_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( same_block_contention_records ) ),
-	paste0( "many_user_active_editing_note_thread_lifecycle_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( note_thread_lifecycle_records ) ),
-	paste0( "many_user_active_editing_persistence_race_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( persistence_race_records ) ),
-	paste0( "many_user_active_editing_ws_reconnect_background_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( ws_reconnect_background_records ) ),
-	paste0( "many_user_active_editing_http_413_compaction_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( http_413_compaction_records ) ),
-	paste0( "many_user_active_editing_post_field_boundary_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( post_field_boundary_records ) ),
-	paste0( "many_user_active_editing_visible_remote_delete_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( visible_remote_delete_records ) ),
-	paste0( "many_user_active_editing_code_editor_embed_stability_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( code_editor_embed_stability_records ) ),
-	paste0( "many_user_active_editing_nested_table_awareness_users_6: ", many_user_active_editing_progress %>% filter( threshold == 6 ) %>% pull( nested_table_awareness_records ) ),
-	paste0( "many_user_active_editing_strict_ledger_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( strict_ledger_records ) ),
-	paste0( "many_user_active_editing_large_doc_users_30: ", many_user_active_editing_progress %>% filter( threshold == 30 ) %>% pull( large_doc_records ) ),
 	paste0( "pr_review_events: ", nrow( pr_events ) ),
 	paste0( "pr_suggested_net_loc_snapshots: ", n_distinct( pr_suggested_loc$timestamp ) ),
 	paste0( "pr_suggested_net_loc_latest_total: ", ifelse( nrow( pr_suggested_loc ) > 0, pr_suggested_loc %>% filter( timestamp == max( timestamp, na.rm = TRUE ) ) %>% summarise( total = sum( net_loc, na.rm = TRUE ) ) %>% pull( total ), NA ) ),
@@ -4325,8 +3045,6 @@ summary_lines <- c(
 	paste0( "pr_loop_queue_depth: ", pr_queue_depth_text ),
 	paste0( "pr_loop_blocked_decisions: ", ifelse( nrow( pr_loop_blocked_decisions ) > 0, nrow( pr_loop_blocked_decisions ), 0 ) ),
 	paste0( "pr_loop_blocked_decision_types: ", blocked_decision_text ),
-	paste0( "pr_blocker_stall_event_buckets: ", ifelse( nrow( pr_blocker_stall_events ) > 0, nrow( pr_blocker_stall_events ), 0 ) ),
-	paste0( "pr_blocker_stall_event_types: ", blocker_stall_event_text ),
 	paste0( "critical_repeated_validation_failures: ", repeated_validation_text ),
 	paste0( "critical_no_progress_artifacts: ", ifelse( nrow( critical_no_progress ) > 0, nrow( critical_no_progress ), 0 ) ),
 	paste0( "critical_no_progress_top: ", no_progress_text ),

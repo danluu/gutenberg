@@ -1,16 +1,25 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,stale direct PR07C head lacks the build/type repair and is superseded by 9617d576354444657e7278c0dd9abc5d4f05dcb9.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"stale direct PR07C head lacks the build/type repair and is superseded by
-9617d576354444657e7278c0dd9abc5d4f05dcb9."
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; relaunch only with newer target-head owner evidence.,PR07C/HOLD-07C,"owner matrix is runtime-held and consumed; relaunch only with newer target-head
-owner evidence."
-repair-ready,benchmark-canary/novelty-http-self-presence-ui-signals/materialization-only,P0,no,materialization-only repair is superseded by current product-or-test failure plus green exact repair evidence.,benchmark-canary/novelty-http-self-presence-ui-signals/materialization-only,"materialization-only repair is superseded by current product-or-test failure
-plus green exact repair evidence."
-launch-branch-repair,reload-hydration/generic-deferred-heads,high,no,generic reload-hydration repair or relaunch is diagnostic churn after replay-backed downscope; reopen only on newer same-head final-ui product evidence.,reload-hydration/generic-deferred-heads,"generic reload-hydration repair or relaunch is diagnostic churn after
-replay-backed downscope; reopen only on newer same-head final-ui product
-evidence."
-launch-branch-repair,coverage-guided-lower-level/productless-broad-reruns,high,no,"broad lower-level expansion stays capped until product_yield, product_failure_key, or active-blocker evidence appears.",coverage-guided-lower-level/productless-broad-reruns,"broad lower-level expansion stays capped until product_yield,
-product_failure_key, or active-blocker evidence appears."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch.
-publish-ready,ready/rtc-pr15a-pr15b-pr15c-non-pr14b-variants,high,no,superseded by already-published PR14B-based PR15 variants.,ready/rtc-pr15a-pr15b-pr15c-non-pr14b-variants,superseded by already-published PR14B-based PR15 variants.
-publish-ready,published-product-pr-set,high,no,already published; continue fuzz validation rather than republishing unchanged heads.,published-product-pr-set,"already published; continue fuzz validation rather than republishing unchanged
-heads."
+publish-ready,PR07C/repaired-head-9617d576,P0,no,Blocked until repaired-head manifest is nonempty and same-head build/exact evidence plus current-root canary closure exist.,PR07C/repaired-head-9617d576,"Blocked until repaired-head manifest is nonempty and same-head build/exact
+evidence plus current-root canary closure exist."
+repair-branch,PR07C/repaired-head-9617d576,P0,no,Heavy exact/build/browser PR work waits because discovery is at floor 3/3 and protected=no.,PR07C/repaired-head-9617d576,"Heavy exact/build/browser PR work waits because discovery is at floor 3/3 and
+protected=no."
+repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,Stale direct PR07C head lacks the build/type repair and is superseded by repaired head 9617d576.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale direct PR07C head lacks the build/type repair and is superseded by
+repaired head 9617d576."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,"Current PR07C policy requires the repaired or restacked build-clean head, not the stale direct head.",ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Current PR07C policy requires the repaired or restacked build-clean head, not
+the stale direct head."
+launch-owner-matrix,pr07c-owner-matrix,high,no,Owner evidence is runtime-held/consumed and owner proof is no longer required for PR07C inclusion; reopen only with newer owner evidence.,pr07c-owner-matrix,"Owner evidence is runtime-held/consumed and owner proof is no longer required
+for PR07C inclusion; reopen only with newer owner evidence."
+publish-ready,aggregate-all-merged-ready,P0,no,"Aggregate publication is blocked until nonempty manifest, build preflight, exact validation, and current-root canary closure gates are satisfied.",aggregate-all-merged-ready,"Aggregate publication is blocked until nonempty manifest, build preflight, exact
+validation, and current-root canary closure gates are satisfied."
+repair-branch,reload-hydration,high,no,Deferred manifest lacks build/exact validation and current evidence supports downscope rather than repair.,reload-hydration,"Deferred manifest lacks build/exact validation and current evidence supports
+downscope rather than repair."
+publish-ready,reload-hydration,high,no,Replay-backed downscope and missing build/exact validation block raw deferred publication.,reload-hydration,"Replay-backed downscope and missing build/exact validation block raw deferred
+publication."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Minimal PR06B branch is already published; broader held branch would duplicate or overbroaden the PR.,ready/rtc-pr06b-malformed-save-request-payload,"Minimal PR06B branch is already published; broader held branch would duplicate
+or overbroaden the PR."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,On-PR14B variant is already published; keep alternate held to avoid duplicate publication.,ready/rtc-pr15a-fallback-group-move-green,"On-PR14B variant is already published; keep alternate held to avoid duplicate
+publication."
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,On-PR14B variant is already published; keep alternate held to avoid duplicate publication.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"On-PR14B variant is already published; keep alternate held to avoid duplicate
+publication."
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,On-PR14B variant is already published; keep alternate held to avoid duplicate publication.,ready/rtc-pr15c-fallback-group-delete-green,"On-PR14B variant is already published; keep alternate held to avoid duplicate
+publication."
