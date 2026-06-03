@@ -1,31 +1,23 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,PR07C/repaired-head-9617d576,P0,no,"Blocked by missing nonheader same-head manifest row, missing same-head build or exact evidence, open canary and seed-1010001 gates, and discovery protected=no.",PR07C/repaired-head-9617d576,"Blocked by missing nonheader same-head manifest row, missing same-head build or
-exact evidence, open canary and seed-1010001 gates, and discovery protected=no."
-repair-ready,PR07C/repaired-head-9617d576/build-preflight,P0,no,Heavy PR work must wait until the manifest exists and discovery reserve is protected.,PR07C/repaired-head-9617d576/build-preflight,"Heavy PR work must wait until the manifest exists and discovery reserve is
-protected."
-repair-ready,PR07C/repaired-head-9617d576/exact-validation,P0,no,"Heavy exact validation waits behind manifest, same-head evidence, primary canary, seed-1010001, and protected discovery gates.",PR07C/repaired-head-9617d576/exact-validation,"Heavy exact validation waits behind manifest, same-head evidence, primary
-canary, seed-1010001, and protected discovery gates."
-repair-ready,PR07C/repaired-head-9617d576/browser-validation,P0,no,Browser validation is heavy PR work and discovery protected=no.,PR07C/repaired-head-9617d576/browser-validation,Browser validation is heavy PR work and discovery protected=no.
-repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale ready head is superseded for candidate use by repaired PR07C head 9617d576354444657e7278c0dd9abc5d4f05dcb9.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale ready head is superseded for candidate use by repaired PR07C head
+launch-branch-repair,PR07C/repaired-head-9617d576/exact-browser-validation,P0,no,"Heavy validation waits for nonheader manifest, same-head build or exact evidence, benchmark-canary closure, seed routing, and discovery protected=yes.",PR07C/repaired-head-9617d576/exact-browser-validation,"Heavy validation waits for nonheader manifest, same-head build or exact
+evidence, benchmark-canary closure, seed routing, and discovery protected=yes."
+repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale ready head is superseded by repaired PR07C candidate 9617d576354444657e7278c0dd9abc5d4f05dcb9.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale ready head is superseded by repaired PR07C candidate
 9617d576354444657e7278c0dd9abc5d4f05dcb9."
-launch-owner-matrix,pr07c-owner-matrix,high,no,Runtime-held-consumed; PR07C inclusion no longer depends on owner proof unless newer owner evidence appears.,pr07c-owner-matrix,"Runtime-held-consumed; PR07C inclusion no longer depends on owner proof unless
-newer owner evidence appears."
-publish-ready,aggregate-all-merged-ready,P0,no,"Aggregate publication inherits PR07C manifest, same-head build or exact evidence, primary canary, seed-1010001, and discovery-reserve gates.",aggregate-all-merged-ready,"Aggregate publication inherits PR07C manifest, same-head build or exact
-evidence, primary canary, seed-1010001, and discovery-reserve gates."
-repair-ready,global-heavy-pr-work,P0,no,"Block heavy PR build, exact, browser, owner, branch-repair, and publication work while discovery protected=no.",global-heavy-pr-work,"Block heavy PR build, exact, browser, owner, branch-repair, and publication work
-while discovery protected=no."
-launch-branch-repair,block_validation_entity_reference_mismatch:seed-1010001,high,no,Heavy branch repair waits while discovery protected=no and analysis-only exact routing is still pending.,block_validation_entity_reference_mismatch:seed-1010001,"Heavy branch repair waits while discovery protected=no and analysis-only exact
-routing is still pending."
-repair-branch,reload-hydration,high,no,"Evidence supports downscope rather than repair, and branch repair is heavy while discovery protected=no.",reload-hydration,"Evidence supports downscope rather than repair, and branch repair is heavy while
+publish-ready,PR07C/repaired-head-9617d576,P0,no,"Publication is blocked by missing manifest row, same-head validation/build evidence, benchmark-canary closure, seed routing, and discovery protected=no.",PR07C/repaired-head-9617d576,"Publication is blocked by missing manifest row, same-head validation/build
+evidence, benchmark-canary closure, seed routing, and discovery protected=no."
+publish-ready,aggregate-all-merged-ready,P0,no,"Aggregate publication inherits PR07C manifest, validation, canary, seed-routing, and discovery-protection blockers.",aggregate-all-merged-ready,"Aggregate publication inherits PR07C manifest, validation, canary, seed-routing,
+and discovery-protection blockers."
+launch-owner-matrix,pr07c-owner-matrix,high,no,Runtime-held-consumed; PR07C inclusion no longer depends on owner-matrix relaunch absent newer owner evidence.,pr07c-owner-matrix,"Runtime-held-consumed; PR07C inclusion no longer depends on owner-matrix
+relaunch absent newer owner evidence."
+repair-branch,reload-hydration,high,no,Downscope evidence stands; branch repair would be heavy diagnostic churn while discovery protected=no.,reload-hydration,"Downscope evidence stands; branch repair would be heavy diagnostic churn while
 discovery protected=no."
-publish-ready,reload-hydration,high,no,Raw deferred publication is blocked by replay-backed downscope and missing build or exact validation.,reload-hydration,"Raw deferred publication is blocked by replay-backed downscope and missing build
-or exact validation."
-launch-owner-matrix,reload-hydration,high,no,Owner work would duplicate diagnostic churn while replay-backed downscope stands.,reload-hydration,"Owner work would duplicate diagnostic churn while replay-backed downscope
-stands."
+publish-ready,reload-hydration,high,no,Raw deferred publication is blocked by replay-backed downscope and missing promotion-grade validation.,reload-hydration,"Raw deferred publication is blocked by replay-backed downscope and missing
+promotion-grade validation."
+launch-owner-matrix,reload-hydration,high,no,Owner work would repeat diagnostic churn while replay-backed downscope stands.,reload-hydration,Owner work would repeat diagnostic churn while replay-backed downscope stands.
+launch-branch-repair,RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING:self-presence-ui-signals,P0,no,Heavy branch repair waits while discovery protected=no.,RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING:self-presence-ui-signals,Heavy branch repair waits while discovery protected=no.
+launch-branch-repair,block_validation_entity_reference_mismatch:seed-1010001,high,no,Heavy branch repair waits for exact conclusion and discovery protected=yes.,block_validation_entity_reference_mismatch:seed-1010001,Heavy branch repair waits for exact conclusion and discovery protected=yes.
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Broader alternate remains held because canonical PR06B minimal is already published.,ready/rtc-pr06b-malformed-save-request-payload,"Broader alternate remains held because canonical PR06B minimal is already
 published."
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Non-PR14B alternate remains held because on-PR14B PR15A is already published.,ready/rtc-pr15a-fallback-group-move-green,Non-PR14B alternate remains held because on-PR14B PR15A is already published.
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Non-PR14B alternate remains held because on-PR14B PR15B is already published.,ready/rtc-pr15b-fallback-group-insert-anchor-green,Non-PR14B alternate remains held because on-PR14B PR15B is already published.
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Non-PR14B alternate remains held because on-PR14B PR15C is already published.,ready/rtc-pr15c-fallback-group-delete-green,Non-PR14B alternate remains held because on-PR14B PR15C is already published.
-launch-branch-repair,RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING:self-presence,high,no,Heavy branch repair waits while discovery protected=no; consume analysis-only blocker routing first.,RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING:self-presence,"Heavy branch repair waits while discovery protected=no; consume analysis-only
-blocker routing first."
