@@ -1,32 +1,39 @@
 action,target,priority,allowed,reason
-repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/current-push-manifest,P0,yes,Cheap next product-progress step; current manifest is header-only while same-head build/type evidence exists for repaired PR07C.
-include-candidate-stack,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,"Current policy includes PR07C as net-risk-reducing, but only via the repaired build-clean head."
-publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Block publication until non-header manifest exists and benchmark-canary current-run closure is green or explicitly downscoped.
-exact-validate,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Hold heavy PR validation while discovery is marginal and canary closure remains open.
+repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,Complete exact same-head repaired PR07C manifest rows from the existing job manifest; this is cheap publication manifest work.
+include-candidate-stack,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,Current policy says repaired PR07C is net-risk-reducing; include only the build-clean 9617d576 head.
+publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Blocked until exact manifest credit is complete and benchmark-canary forced rows are current-run green or explicitly downscoped.
+run-exact-validation,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Heavy PR validation waits while discovery is marginal; do cheap manifest repair first.
+repair-branch,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Build-clean repaired branch already exists at the target SHA.
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9.
-publish-ready,aggregate-all-merged-ready,P0,no,Aggregate inherits the PR07C manifest gap and open benchmark-canary current-run gate.
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner matrix is runtime-held and consumed; relaunch only with newer owner evidence.
-launch-branch-repair,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Repaired branch already exists at the target SHA; missing artifact is manifest proof.
-reserve-discovery,global-discovery-reserve,P0,yes,"Discovery is marginal at 4 active vs min 3 with protected=no; allow cheap manifest and analysis/control work, hold heavy PR jobs."
-materialize-current-run-canary,benchmark-canary/open-primary-forced-rows,P0,yes,Protected canary closure is required for promotion; keep scheduling focused on open forced rows only.
-repair-harness,benchmark-canary/sync-fault-helper,P0,yes,Fix or gate missing failNextSyncRequest and delayNextSyncRequest before crediting protected canary failures.
-update-controller-rule,benchmark-canary/current-run-closure,P0,yes,Do not close PR07C or aggregate from retained or historical evidence; require current_run_green=yes or explicit_downscope=yes.
+publish-ready,aggregate-all-merged-ready,P0,no,"Aggregate publication inherits PR07C manifest, build-preflight, and benchmark-canary closure gates."
+launch-branch-repair,benchmark-canary/sync-fault-helper,P0,yes,Minimal helper repair or gating for failNextSyncRequest and delayNextSyncRequest TypeErrors removes a concrete canary blocker.
+reserve-discovery,global-discovery-reserve,P0,yes,Discovery is only 4 active sessions versus minimum 3 with protection off; block heavy PR jobs.
+reserve-discovery,benchmark-canary/open-primary-forced-rows,P0,yes,Keep protected canary capacity on primary or promotion-blocked forced rows until direct current-run green or explicit downscope.
+reserve-discovery,benchmark-canary/disabled-open-forced-rows,P0,yes,Materialize or explicitly downscope disabled open forced rows before breadth or reference-only work.
+reserve-discovery,benchmark-canary/novelty-http-large-post-lifecycle-completion,P0,no,Latest status shows this specific row direct current-run green; avoid duplicate materialization.
+update-controller-rule,benchmark-canary/current-run-closure-accounting,P0,yes,Credit closure only from direct current-run green evidence or explicit downscope.
 update-controller-rule,ready-finalized-build-preflight,P0,yes,"Require same-head build/type proof plus non-header manifest before ready, finalized, aggregate, or browser-lane publication credit."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Canonical PR06B minimal is already published; full variant adds duplicate stack churn.
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,PR14B-based canonical PR15A variant is already published.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,PR14B-based canonical PR15B variant is already published.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,PR14B-based canonical PR15C variant is already published.
-terminalize-downscope,reload-hydration,P0,yes,Consume replay-backed downscope into PR progress and replace stale needs-product-decision and active replay rows.
-repair-branch,reload-hydration,P0,no,Would repeat terminally downscoped diagnostic work without newer same-head final-UI product evidence.
-publish-ready,reload-hydration,P0,no,No fresh same-head product-owned evidence remains after consumed replay-backed downscope.
-launch-owner-matrix,reload-hydration,P0,no,No newer owner or product evidence justifies owner-matrix work.
-cooldown-diagnostic,stale-valid-deferred-manifests,medium,yes,Keep stale valid manifests downscoped unless fresh owner/product evidence appears.
-publish-ready,pre-save-search-live-collapse,medium,no,Stale diagnostic manifest is not promotion-grade owner or product evidence.
-publish-ready,rich-text-suffix-corruption,medium,no,No deterministic product-owned first-loss evidence is available.
+update-controller-rule,publishable-state-gate,P0,yes,Do not label PR07C or aggregate publishable while publish-ready is blocked.
+update-controller-rule,productive-action/live-artifact-satisfaction,P0,yes,Dedupe high-priority manifest rows only after current artifacts contain the expected exact rows.
+update-controller-rule,reload-hydration-terminal-state,P0,yes,"Consume replay-backed terminal downscope and suppress stale needs-product-decision, repair, replay, owner-matrix, and publish rows."
+cooldown-diagnostic,reload-hydration,P0,yes,Terminal downscope stands unless newer same-head final-UI product evidence appears.
+repair-branch,reload-hydration,P0,no,No newer same-head final-UI product evidence exists after terminal downscope.
+publish-ready,reload-hydration,P0,no,No product-publishable reload-hydration evidence remains after consumed downscope.
+launch-owner-matrix,reload-hydration,P0,no,No newer owner or product evidence justifies matrix work.
+cooldown-diagnostic,stale-valid-deferred-manifests,medium,yes,"Keep pre-save-search-live-collapse, rich-text-suffix-corruption, malformed-save-payload, and http-room-isolation downscoped pending fresh evidence."
+publish-ready,pre-save-search-live-collapse,medium,no,Stale diagnostic manifest lacks repeatable core/search first-loss evidence.
+publish-ready,rich-text-suffix-corruption,medium,no,No deterministic product-owned suffix/content first-loss ledger is available.
 publish-ready,malformed-save-payload,medium,no,Raw deferred family is covered by published canonical PR06B minimal.
-publish-ready,http-room-isolation,medium,no,Raw deferred family is covered by published PR02A and lacks fresh product evidence.
-oracle-retarget,self-presence-rendered-overlay,high,yes,Allow one bounded product-keyed oracle retarget to bridge browser selection payloads to rendered overlay assertions.
-launch-broad-lower-level,lower-level/http-awareness+client-overlay-zero-yield,high,no,Do not broaden lower-level capacity while current-root product_yield is zero and product_failure_key is empty.
-update-controller-rule,lower-level/product-yield-accounting,high,yes,Credit lower-level only from current-root product_yield with a non-empty canonical RTC product or active-blocker key.
-cooldown-diagnostic,productive-analysis/pre-oracle-preflight-only,high,yes,No-progress pre-oracle and preflight-only continuations should not consume product-progress slots.
-update-controller-rule,productive-action/satisfied-row-dedupe,high,yes,"Collapse repeated already-decided PR07C, canary, reload-hydration, deferred, lower-level, and no-progress rows."
+publish-ready,http-room-isolation,medium,no,Raw deferred family is covered by published PR02A and lacks fresh healthy-user product evidence.
+cooldown-diagnostic,duplicate-ready-variants,high,yes,Prefer canonical already-published product branches over duplicate full or non-PR14B variants.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Canonical PR06B minimal is already published; full variant is duplicate stack churn.
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,PR14B-based canonical PR15A branch is already published.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,PR14B-based canonical PR15B branch is already published.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,PR14B-based canonical PR15C branch is already published.
+reserve-discovery,lower-level/http-awareness-self-presence,P0,yes,"Allow one bounded oracle-gated current-root pass; credit only canonical product key, active blocker key, or explicit downscope."
+reserve-discovery,lower-level/rendered-overlay-dom-self-presence,high,yes,Allow one bounded non-smoke retarget from existing product-key smoke evidence while broad lower-level expansion stays held.
+update-controller-rule,lower-level/product-yield-accounting,high,yes,Count lower-level work as progress only with product_yield=1 and a canonical RTC or active-blocker product key.
+update-controller-rule,lower-level/rendered-overlay-dom-self-presence,P1,yes,"Route rendered-overlay product key to blocker or fix triage, or explicit downscope."
+cooldown-diagnostic,lower-level/broad-productless-expansion,high,yes,Hold broad productless lower-level repeats until bounded current-root evidence produces product yield or explicit downscope.
+cooldown-diagnostic,productive-analysis/pre-oracle-preflight-only,high,yes,"No-progress continuations do not change heads, remove blockers, prove ownership, publish, or evidence downscope."

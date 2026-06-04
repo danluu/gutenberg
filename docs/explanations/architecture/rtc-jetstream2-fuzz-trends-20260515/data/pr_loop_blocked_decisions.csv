@@ -1,30 +1,28 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Block publication until non-header manifest exists and benchmark-canary current-run closure is green or explicitly downscoped.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Block publication until non-header manifest exists and benchmark-canary
-current-run closure is green or explicitly downscoped."
-exact-validate,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Hold heavy PR validation while discovery is marginal and canary closure remains open.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Hold heavy PR validation while discovery is marginal and canary closure remains
-open."
+publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Blocked until exact manifest credit is complete and benchmark-canary forced rows are current-run green or explicitly downscoped.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Blocked until exact manifest credit is complete and benchmark-canary forced rows
+are current-run green or explicitly downscoped."
+run-exact-validation,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Heavy PR validation waits while discovery is marginal; do cheap manifest repair first.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Heavy PR validation waits while discovery is marginal; do cheap manifest repair
+first."
+repair-branch,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Build-clean repaired branch already exists at the target SHA.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,Build-clean repaired branch already exists at the target SHA.
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale direct PR07C head is superseded by repaired build-clean head
 9617d576354444657e7278c0dd9abc5d4f05dcb9."
-publish-ready,aggregate-all-merged-ready,P0,no,Aggregate inherits the PR07C manifest gap and open benchmark-canary current-run gate.,aggregate-all-merged-ready,"Aggregate inherits the PR07C manifest gap and open benchmark-canary current-run
-gate."
 launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner matrix is runtime-held and consumed; relaunch only with newer owner evidence.,PR07C/HOLD-07C,"Owner matrix is runtime-held and consumed; relaunch only with newer owner
 evidence."
-launch-branch-repair,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Repaired branch already exists at the target SHA; missing artifact is manifest proof.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Repaired branch already exists at the target SHA; missing artifact is manifest
-proof."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Canonical PR06B minimal is already published; full variant adds duplicate stack churn.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical PR06B minimal is already published; full variant adds duplicate stack
-churn."
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,PR14B-based canonical PR15A variant is already published.,ready/rtc-pr15a-fallback-group-move-green,PR14B-based canonical PR15A variant is already published.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,PR14B-based canonical PR15B variant is already published.,ready/rtc-pr15b-fallback-group-insert-anchor-green,PR14B-based canonical PR15B variant is already published.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,PR14B-based canonical PR15C variant is already published.,ready/rtc-pr15c-fallback-group-delete-green,PR14B-based canonical PR15C variant is already published.
-repair-branch,reload-hydration,P0,no,Would repeat terminally downscoped diagnostic work without newer same-head final-UI product evidence.,reload-hydration,"Would repeat terminally downscoped diagnostic work without newer same-head
-final-UI product evidence."
-publish-ready,reload-hydration,P0,no,No fresh same-head product-owned evidence remains after consumed replay-backed downscope.,reload-hydration,"No fresh same-head product-owned evidence remains after consumed replay-backed
+publish-ready,aggregate-all-merged-ready,P0,no,"Aggregate publication inherits PR07C manifest, build-preflight, and benchmark-canary closure gates.",aggregate-all-merged-ready,"Aggregate publication inherits PR07C manifest, build-preflight, and
+benchmark-canary closure gates."
+reserve-discovery,benchmark-canary/novelty-http-large-post-lifecycle-completion,P0,no,Latest status shows this specific row direct current-run green; avoid duplicate materialization.,benchmark-canary/novelty-http-large-post-lifecycle-completion,"Latest status shows this specific row direct current-run green; avoid duplicate
+materialization."
+repair-branch,reload-hydration,P0,no,No newer same-head final-UI product evidence exists after terminal downscope.,reload-hydration,No newer same-head final-UI product evidence exists after terminal downscope.
+publish-ready,reload-hydration,P0,no,No product-publishable reload-hydration evidence remains after consumed downscope.,reload-hydration,"No product-publishable reload-hydration evidence remains after consumed
 downscope."
-launch-owner-matrix,reload-hydration,P0,no,No newer owner or product evidence justifies owner-matrix work.,reload-hydration,No newer owner or product evidence justifies owner-matrix work.
-publish-ready,pre-save-search-live-collapse,medium,no,Stale diagnostic manifest is not promotion-grade owner or product evidence.,pre-save-search-live-collapse,Stale diagnostic manifest is not promotion-grade owner or product evidence.
-publish-ready,rich-text-suffix-corruption,medium,no,No deterministic product-owned first-loss evidence is available.,rich-text-suffix-corruption,No deterministic product-owned first-loss evidence is available.
+launch-owner-matrix,reload-hydration,P0,no,No newer owner or product evidence justifies matrix work.,reload-hydration,No newer owner or product evidence justifies matrix work.
+publish-ready,pre-save-search-live-collapse,medium,no,Stale diagnostic manifest lacks repeatable core/search first-loss evidence.,pre-save-search-live-collapse,Stale diagnostic manifest lacks repeatable core/search first-loss evidence.
+publish-ready,rich-text-suffix-corruption,medium,no,No deterministic product-owned suffix/content first-loss ledger is available.,rich-text-suffix-corruption,No deterministic product-owned suffix/content first-loss ledger is available.
 publish-ready,malformed-save-payload,medium,no,Raw deferred family is covered by published canonical PR06B minimal.,malformed-save-payload,Raw deferred family is covered by published canonical PR06B minimal.
-publish-ready,http-room-isolation,medium,no,Raw deferred family is covered by published PR02A and lacks fresh product evidence.,http-room-isolation,"Raw deferred family is covered by published PR02A and lacks fresh product
-evidence."
-launch-broad-lower-level,lower-level/http-awareness+client-overlay-zero-yield,high,no,Do not broaden lower-level capacity while current-root product_yield is zero and product_failure_key is empty.,lower-level/http-awareness+client-overlay-zero-yield,"Do not broaden lower-level capacity while current-root product_yield is zero and
-product_failure_key is empty."
+publish-ready,http-room-isolation,medium,no,Raw deferred family is covered by published PR02A and lacks fresh healthy-user product evidence.,http-room-isolation,"Raw deferred family is covered by published PR02A and lacks fresh healthy-user
+product evidence."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Canonical PR06B minimal is already published; full variant is duplicate stack churn.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical PR06B minimal is already published; full variant is duplicate stack
+churn."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,PR14B-based canonical PR15A branch is already published.,ready/rtc-pr15a-fallback-group-move-green,PR14B-based canonical PR15A branch is already published.
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,PR14B-based canonical PR15B branch is already published.,ready/rtc-pr15b-fallback-group-insert-anchor-green,PR14B-based canonical PR15B branch is already published.
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,PR14B-based canonical PR15C branch is already published.,ready/rtc-pr15c-fallback-group-delete-green,PR14B-based canonical PR15C branch is already published.

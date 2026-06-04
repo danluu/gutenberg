@@ -1,1 +1,3 @@
-source_branch,source_commit,intended_danluu_branch,base_ref,files_changed,insertions,deletions,validation_summary,reason
+source_branch,source_commit,intended_danluu_branch,base_ref,files_changed,insertions,deletions,validation_summary,reason,net_loc,branch_short
+repair/pr07c-exact-stack-build-20260525T004721Z,9617d576354444657e7278c0dd9abc5d4f05dcb9,danluu/rtc-pr-progress-repair-pr07c-exact-stack-build-20260525T004721Z,ready/rtc-pr07b-save-response-manager-base-record,14,1092,84,build/type repaired PR07C branch; benchmark-minimum setup/build and 13 behavior rows passed for 9617d576; git diff --check clean; owner matrix remains non-claiming,current policy includes build-clean PR07C as net-risk-reducing save/reload candidate and suppresses the stale unbuilt ready head,1008,"repair/pr07c exact stack build
+20260525T004721Z"
