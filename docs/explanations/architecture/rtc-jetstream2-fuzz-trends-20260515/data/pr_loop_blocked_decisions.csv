@@ -1,20 +1,28 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,blocked until same-head manifest/build evidence exists and benchmark-canary current-run closure is green or explicitly downscoped,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"blocked until same-head manifest/build evidence exists and benchmark-canary
-current-run closure is green or explicitly downscoped"
-run-exact-validation,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,heavy exact/browser work waits because discovery_protected=no and benchmark-canary closure is open,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"heavy exact/browser work waits because discovery_protected=no and
-benchmark-canary closure is open"
-publish-ready,aggregate-all-merged-ready,P0,no,blocked by PR07C same-head gate and open benchmark-canary primary or promotion-blocked rows,aggregate-all-merged-ready,"blocked by PR07C same-head gate and open benchmark-canary primary or
-promotion-blocked rows"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"stale direct PR07C head is superseded by repaired build-clean head
-9617d576354444657e7278c0dd9abc5d4f05dcb9"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held-consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime-held-consumed; relaunch only with newer owner evidence
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,canonical PR06B minimal branch is already published; broader alternate remains held,ready/rtc-pr06b-malformed-save-request-payload,"canonical PR06B minimal branch is already published; broader alternate remains
-held"
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,on-PR14B PR15A variant is already published; alternate remains held,ready/rtc-pr15a-fallback-group-move-green,on-PR14B PR15A variant is already published; alternate remains held
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,on-PR14B PR15B variant is already published; alternate remains held,ready/rtc-pr15b-fallback-group-insert-anchor-green,on-PR14B PR15B variant is already published; alternate remains held
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,on-PR14B PR15C variant is already published; alternate remains held,ready/rtc-pr15c-fallback-group-delete-green,on-PR14B PR15C variant is already published; alternate remains held
-repair-branch,reload-hydration,P0,no,downscoped; repair would repeat diagnostic churn without newer same-head final-ui product-owned evidence,reload-hydration,"downscoped; repair would repeat diagnostic churn without newer same-head
-final-ui product-owned evidence"
-publish-ready,reload-hydration,P0,no,stale deferred candidate lacks promotion-grade same-head validation and owner evidence,reload-hydration,"stale deferred candidate lacks promotion-grade same-head validation and owner
-evidence"
-launch-owner-matrix,reload-hydration,P0,no,downscoped; owner-matrix relaunch would repeat consumed diagnostic work,reload-hydration,downscoped; owner-matrix relaunch would repeat consumed diagnostic work
+publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Blocked until same-head manifest/build evidence exists and benchmark-canary current-run closure is green or explicitly downscoped.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Blocked until same-head manifest/build evidence exists and benchmark-canary
+current-run closure is green or explicitly downscoped."
+publish-ready,aggregate-all-merged-ready,P0,no,Blocked by PR07C manifest/build gate plus benchmark-canary current-run closure.,aggregate-all-merged-ready,Blocked by PR07C manifest/build gate plus benchmark-canary current-run closure.
+run-exact-validation,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Heavy PR exact/browser validation should wait because discovery reserve is marginal and publication gates are not satisfied.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Heavy PR exact/browser validation should wait because discovery reserve is
+marginal and publication gates are not satisfied."
+launch-branch-repair,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Repaired build-clean head already exists; missing work is manifest/evidence materialization.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Repaired build-clean head already exists; missing work is manifest/evidence
+materialization."
+launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner matrix is runtime-held and consumed; relaunch only if newer owner evidence appears.,PR07C/HOLD-07C,"Owner matrix is runtime-held and consumed; relaunch only if newer owner evidence
+appears."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale direct PR07C head is superseded by repaired build-clean head
+9617d576354444657e7278c0dd9abc5d4f05dcb9."
+launch-heavy-pr-jobs,global-pr-browser-exact-validation,P0,no,Preserve discovery reserve while canary closure is open; heavy PR jobs are not allowed in this resource state.,global-pr-browser-exact-validation,"Preserve discovery reserve while canary closure is open; heavy PR jobs are not
+allowed in this resource state."
+repair-branch,reload-hydration,P0,no,Replay-backed downscope exists; branch repair would repeat diagnostic churn.,reload-hydration,Replay-backed downscope exists; branch repair would repeat diagnostic churn.
+publish-ready,reload-hydration,P0,no,Downscoped deferred family lacks promotion-grade same-head product validation.,reload-hydration,Downscoped deferred family lacks promotion-grade same-head product validation.
+launch-owner-matrix,reload-hydration,P0,no,No newer same-head final-ui product-owned evidence justifies relaunch.,reload-hydration,No newer same-head final-ui product-owned evidence justifies relaunch.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Canonical minimal PR06B branch is already published; full variant adds stack churn.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical minimal PR06B branch is already published; full variant adds stack
+churn."
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,PR14B-based canonical PR15A variant is already published; alternate adds stack churn.,ready/rtc-pr15a-fallback-group-move-green,"PR14B-based canonical PR15A variant is already published; alternate adds stack
+churn."
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,PR14B-based canonical PR15B variant is already published; alternate adds stack churn.,ready/rtc-pr15b-fallback-group-insert-anchor-green,"PR14B-based canonical PR15B variant is already published; alternate adds stack
+churn."
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,PR14B-based canonical PR15C variant is already published; alternate adds stack churn.,ready/rtc-pr15c-fallback-group-delete-green,"PR14B-based canonical PR15C variant is already published; alternate adds stack
+churn."
+repair-branch,published-ready-product-branches,high,no,No concrete current failed published branch requires repair.,published-ready-product-branches,No concrete current failed published branch requires repair.
+publish-ready,canonical-ready-product-branches,high,no,Already published by local machine; duplicate publication is not product progress.,canonical-ready-product-branches,"Already published by local machine; duplicate publication is not product
+progress."
