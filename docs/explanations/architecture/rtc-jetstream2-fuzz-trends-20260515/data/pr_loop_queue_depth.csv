@@ -1,14 +1,14 @@
 queue,state,class,priority,depth
 PR progress items,needs-product-decision,deferred-family,high,1
 PR progress items,diagnostic,deferred-family,medium,2
-PR progress items,held-by-controller,ready-product-pr,high,4
+PR progress items,held-by-controller,ready-product-pr,high,5
 PR progress items,published,ready-product-pr,high,13
 PR progress items,superseded-by-repair,ready-product-pr,low,1
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
-controller decisions,allowed,control decision,P0,12
-controller decisions,blocked,control decision,P0,6
-controller decisions,allowed,control decision,high,4
-controller decisions,blocked,control decision,high,8
+controller decisions,allowed,control decision,P0,15
+controller decisions,blocked,control decision,P0,8
+controller decisions,allowed,control decision,high,3
+controller decisions,blocked,control decision,high,5
 controller decisions,allowed,control decision,medium,3
 critical blockers,active,control-feedback,high,1
 critical blockers,active,coverage-confidence,high,1

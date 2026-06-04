@@ -1,34 +1,35 @@
 action,target,priority,allowed,reason
-reserve-discovery,global-discovery-reserve,P0,yes,"active_discovery=4 min=3 discovery_protected=no; preserve discovery and allow only cheap controller, indexing, publication-manifest, or analysis work"
-update-controller-rule,published-real-fix-candidate-set,high,yes,keep already-published ready product PRs in the candidate set with lightweight fuzz validation; no duplicate publication needed
-repair-ready,PR07C/repaired-head-9617d576/current-push-manifest,P0,yes,next product-progress slot; materialize one same-head nonheader row for repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9
-repair-ready,PR07C/repaired-head-9617d576/build-evidence-index,P0,yes,index existing same-head build/type or exact-build evidence only; do not launch a new heavy build or browser run while discovery is unprotected
-update-controller-rule,PR07C/repaired-head-9617d576/candidate-selection,P0,yes,current policy includes repaired PR07C as net-risk-reducing and suppresses the stale direct PR07C head
-publish-ready,PR07C/repaired-head-9617d576,P0,no,"blocked by missing same-head manifest/build evidence, open benchmark-canary closure, and discovery_protected=no"
-launch-branch-repair,PR07C/repaired-head-9617d576/new-build-or-browser-validation,P0,no,"heavy PR build/browser validation waits for cheap evidence indexing, benchmark-canary closure, and protected discovery"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9
-repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,do not repair stale direct PR07C; route all PR07C work through repaired head 9617d576
-launch-owner-matrix,pr07c-owner-matrix,high,no,runtime-held-consumed; relaunch only with newer owner evidence
-publish-ready,aggregate-all-merged-ready,P0,no,"inherits PR07C same-head evidence, benchmark-canary, and discovery gates"
-update-controller-rule,ready-finalized-build-preflight,P0,yes,require same-head npm build/type or exact-build evidence before ready/finalized RTC publication or browser-lane credit
-update-controller-rule,benchmark-canary/collaborationUtils.waitForConvergence,P0,yes,repair or shim helper/API mismatch before crediting forced benchmark-canary browser coverage
-update-controller-rule,benchmark-canary/forced-primary-materialization,P0,yes,materialize and pin every promotion_blocked forced or status-only canary row until current_run_green=yes or explicit_downscope=yes
-launch-branch-repair,benchmark-canary/forced-browser-rerun,P0,no,"heavy browser rerun waits for helper repair, forced-row materialization, and protected discovery"
-cooldown-diagnostic,reload-hydration/critical-path-blocker,P0,yes,consume replay-backed downscope and terminalize held/gated reload-hydration blocker
-update-controller-rule,reload-hydration/pr-progress-projection,P0,yes,"project replay-backed downscope into PR progress and suppress repair, publication, owner-matrix, and replay until newer same-head product evidence appears"
-repair-branch,reload-hydration,high,no,no newer same-head final-ui product-owned evidence; repair would repeat diagnostic churn
-publish-ready,reload-hydration,high,no,downscoped and lacks promotion-grade same-head validation/build evidence
-launch-owner-matrix,reload-hydration,high,no,downscoped; no newer owner evidence
-cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,diagnostic downscope consumed; reopen only with repeatable core/search product-owned first-loss evidence
-cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,diagnostic downscope consumed; reopen only with deterministic suffix/content product-owned evidence
-cooldown-diagnostic,malformed-save-payload+http-room-isolation,medium,yes,raw families are superseded by published PR06B minimal and PR02A
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,canonical PR06B minimal is already published; broader alternate remains controller-held
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,PR15A on PR14B is already published; non-PR14B alternate remains held
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,PR15B on PR14B is already published; non-PR14B alternate remains held
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,PR15C on PR14B is already published; non-PR14B alternate remains held
-cooldown-diagnostic,productive-analysis/pre-oracle-preflight-only,high,yes,recent productive-analysis continuations are no-progress pre-oracle or preflight-only artifacts
-update-controller-rule,productive-feed-action-normalization,P0,yes,normalize nonstandard feed actions into valid controller actions and keep P0/high feed rows visible
-update-controller-rule,coverage-guided-lower-level/self-presence-overlay,P0,yes,retain browser-payload to rendered-overlay bridge and canonical RTC product_failure_key accounting
-reserve-discovery,self-presence-rendered-overlay,high,yes,after bridge/accounting exists allow exactly one bounded non-smoke run; do not broaden lower-level capacity without product_yield
-cooldown-diagnostic,coverage-guided-lower-level/http-awareness-selection-propagation+client-overlay-projection,high,yes,keep productless roots capped until fresh status emits product_yield with a canonical RTC product key
-reserve-discovery,lower-level-and-browser-discovery-reserve,P0,yes,"retain coverage-guided, focused, strict, protocol, lower-level, browser, existing-code, and existing-PR fuzzing reserve"
+reserve-discovery,global-discovery-reserve,P0,yes,active_discovery=4_min=3_discovery_protected=no;allow_only_cheap_bookkeeping_analysis_and_existing_coverage_reserve;heavy_PR_jobs_wait
+update-controller-rule,candidate-stack/include-repaired-PR07C,P0,yes,current_policy_includes_repaired_PR07C_as_net-risk-reducing_unless_current_concrete_regression
+repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/current-push-manifest,P0,yes,next_product_progress_slot;materialize_one_same-head_nonheader_row
+repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/build-evidence-index,P0,yes,index_existing_same-head_npm-build_or_exact-build_type_evidence;do_not_launch_heavy_build
+repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/exact-validation-plan,P0,yes,analysis_only_plan_allowed;browser_e2e_validation_waits_for_gates
+launch-branch-repair,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/exact-validation,P0,no,heavy_PR_validation_waits_for_discovery_protection_same-head_evidence_and_current-run_canary_closure
+publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,blocked_until_same-head_manifest_build_evidence_and_current-run_benchmark_canary_closure
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,stale_direct_head_superseded_by_repaired_build-clean_head
+launch-owner-matrix,pr07c-owner-matrix,high,no,runtime-held-consumed;reopen_only_with_newer_owner_evidence
+publish-ready,aggregate-all-merged-ready,P0,no,blocked_by_PR07C_same-head_gate_and_benchmark-canary_current-run_gate
+publish-ready,published-ready-product-prs-manifest,high,yes,cheap_publication_manifest_for_already_published_real-fix_branches
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,canonical_PR06B_minimal_already_published;broader_alternate_held
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,PR15A_on_PR14B_variant_already_published;non_PR14B_alternate_held
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,PR15B_on_PR14B_variant_already_published;non_PR14B_alternate_held
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,PR15C_on_PR14B_variant_already_published;non_PR14B_alternate_held
+cooldown-diagnostic,reload-hydration,P0,yes,replay-backed_seed_7800014_downscope_consumed;reopen_only_with_newer_same-head_final-ui_product_evidence
+repair-branch,reload-hydration,P0,no,rejected_as_diagnostic_churn_after_replay-backed_downscope
+publish-ready,reload-hydration,P0,no,downscoped_and_lacks_promotion-grade_same-head_validation_build_or_owner_evidence
+launch-owner-matrix,reload-hydration,P0,no,downscoped_no_newer_same-head_final-ui_product-owned_evidence
+cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,explicit_diagnostic_downscope;reopen_only_with_repeatable_core_search_product-owned_first-loss_evidence
+cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,explicit_diagnostic_downscope;reopen_only_with_deterministic_suffix_content_product-owned_evidence
+cooldown-diagnostic,malformed-save-payload+http-room-isolation,medium,yes,raw_families_superseded_by_published_PR06B_minimal_and_PR02A
+cooldown-diagnostic,productive-analysis/pre-oracle-preflight-only,high,yes,recent_continuations_are_no-progress_pre-oracle_or_preflight-only_artifacts
+update-controller-rule,ready-finalized-build-preflight,P0,yes,require_same-head_npm_build_or_exact-build_type_evidence_before_publication_or_browser_credit
+update-controller-rule,benchmark-canary/current-run-closure,P0,yes,block_PR07C_and_aggregate_until_primary_rows_current-run_green_or_explicitly_downscoped
+reserve-discovery,benchmark-canary/current-run-primary-closure,P0,yes,keep_protected_coverage_slots_on_open_primary_rows_until_current-run_green_or_explicit_downscope
+reserve-discovery,benchmark-canary/primary-slot-retarget,P0,yes,retarget_protected_slots_from_closed_or_nonprimary_rows_to_open_primary_rows
+reserve-discovery,benchmark-canary/novelty-http-large-post-lifecycle-completion,P0,yes,materialize_live_forced_primary_group_or_write_explicit_downscope
+repair-branch,benchmark-canary/collaborationUtils.waitForConvergence,P0,yes,smallest_helper_repair_or_no-product_classification_before_forced_browser_credit
+launch-branch-repair,benchmark-canary/forced-browser-rerun,P0,no,heavy_browser_rerun_waits_for_helper_repair_primary_materialization_current-run_closure_and_discovery_protection
+cooldown-diagnostic,coverage-guided-lower-level/http-awareness-selection-propagation+client-overlay-projection,P0,yes,zero_product_yield_and_empty_product_failure_key;keep_broad_lower-level_capacity_capped
+reserve-discovery,coverage-guided-lower-level/rendered-overlay-dom-bounded-nonsmoke,high,yes,allow_exactly_one_bounded_non-smoke_retarget;require_canonical_RTC_product_key_or_explicit_downscope
+update-controller-rule,coverage-guided-lower-level/rendered-overlay-dom-accounting,P0,yes,credit_smoke_as_oracle_bridge_only;do_not_broaden_without_non-smoke_product-keyed_yield
+update-controller-rule,productive-feed-action-normalization,P0,yes,normalize_feed_action_kinds_into_valid_controller_actions_or_explicit_rejections
