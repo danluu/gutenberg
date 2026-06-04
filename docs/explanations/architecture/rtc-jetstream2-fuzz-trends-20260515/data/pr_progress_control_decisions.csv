@@ -1,35 +1,27 @@
 action,target,priority,allowed,reason
-reserve-discovery,global-discovery-reserve,P0,yes,active_discovery=4_min=3_discovery_protected=no;allow_only_cheap_bookkeeping_analysis_and_existing_coverage_reserve;heavy_PR_jobs_wait
-update-controller-rule,candidate-stack/include-repaired-PR07C,P0,yes,current_policy_includes_repaired_PR07C_as_net-risk-reducing_unless_current_concrete_regression
-repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/current-push-manifest,P0,yes,next_product_progress_slot;materialize_one_same-head_nonheader_row
-repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/build-evidence-index,P0,yes,index_existing_same-head_npm-build_or_exact-build_type_evidence;do_not_launch_heavy_build
-repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/exact-validation-plan,P0,yes,analysis_only_plan_allowed;browser_e2e_validation_waits_for_gates
-launch-branch-repair,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/exact-validation,P0,no,heavy_PR_validation_waits_for_discovery_protection_same-head_evidence_and_current-run_canary_closure
-publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,blocked_until_same-head_manifest_build_evidence_and_current-run_benchmark_canary_closure
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,stale_direct_head_superseded_by_repaired_build-clean_head
-launch-owner-matrix,pr07c-owner-matrix,high,no,runtime-held-consumed;reopen_only_with_newer_owner_evidence
-publish-ready,aggregate-all-merged-ready,P0,no,blocked_by_PR07C_same-head_gate_and_benchmark-canary_current-run_gate
-publish-ready,published-ready-product-prs-manifest,high,yes,cheap_publication_manifest_for_already_published_real-fix_branches
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,canonical_PR06B_minimal_already_published;broader_alternate_held
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,PR15A_on_PR14B_variant_already_published;non_PR14B_alternate_held
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,PR15B_on_PR14B_variant_already_published;non_PR14B_alternate_held
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,PR15C_on_PR14B_variant_already_published;non_PR14B_alternate_held
-cooldown-diagnostic,reload-hydration,P0,yes,replay-backed_seed_7800014_downscope_consumed;reopen_only_with_newer_same-head_final-ui_product_evidence
-repair-branch,reload-hydration,P0,no,rejected_as_diagnostic_churn_after_replay-backed_downscope
-publish-ready,reload-hydration,P0,no,downscoped_and_lacks_promotion-grade_same-head_validation_build_or_owner_evidence
-launch-owner-matrix,reload-hydration,P0,no,downscoped_no_newer_same-head_final-ui_product-owned_evidence
-cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,explicit_diagnostic_downscope;reopen_only_with_repeatable_core_search_product-owned_first-loss_evidence
-cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,explicit_diagnostic_downscope;reopen_only_with_deterministic_suffix_content_product-owned_evidence
-cooldown-diagnostic,malformed-save-payload+http-room-isolation,medium,yes,raw_families_superseded_by_published_PR06B_minimal_and_PR02A
-cooldown-diagnostic,productive-analysis/pre-oracle-preflight-only,high,yes,recent_continuations_are_no-progress_pre-oracle_or_preflight-only_artifacts
-update-controller-rule,ready-finalized-build-preflight,P0,yes,require_same-head_npm_build_or_exact-build_type_evidence_before_publication_or_browser_credit
-update-controller-rule,benchmark-canary/current-run-closure,P0,yes,block_PR07C_and_aggregate_until_primary_rows_current-run_green_or_explicitly_downscoped
-reserve-discovery,benchmark-canary/current-run-primary-closure,P0,yes,keep_protected_coverage_slots_on_open_primary_rows_until_current-run_green_or_explicit_downscope
-reserve-discovery,benchmark-canary/primary-slot-retarget,P0,yes,retarget_protected_slots_from_closed_or_nonprimary_rows_to_open_primary_rows
-reserve-discovery,benchmark-canary/novelty-http-large-post-lifecycle-completion,P0,yes,materialize_live_forced_primary_group_or_write_explicit_downscope
-repair-branch,benchmark-canary/collaborationUtils.waitForConvergence,P0,yes,smallest_helper_repair_or_no-product_classification_before_forced_browser_credit
-launch-branch-repair,benchmark-canary/forced-browser-rerun,P0,no,heavy_browser_rerun_waits_for_helper_repair_primary_materialization_current-run_closure_and_discovery_protection
-cooldown-diagnostic,coverage-guided-lower-level/http-awareness-selection-propagation+client-overlay-projection,P0,yes,zero_product_yield_and_empty_product_failure_key;keep_broad_lower-level_capacity_capped
-reserve-discovery,coverage-guided-lower-level/rendered-overlay-dom-bounded-nonsmoke,high,yes,allow_exactly_one_bounded_non-smoke_retarget;require_canonical_RTC_product_key_or_explicit_downscope
-update-controller-rule,coverage-guided-lower-level/rendered-overlay-dom-accounting,P0,yes,credit_smoke_as_oracle_bridge_only;do_not_broaden_without_non-smoke_product-keyed_yield
-update-controller-rule,productive-feed-action-normalization,P0,yes,normalize_feed_action_kinds_into_valid_controller_actions_or_explicit_rejections
+include-candidate-stack,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,"current promotion policy says repaired PR07C is net-risk-reducing; include repaired head, not stale direct PR07C head"
+repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/current-push-manifest,P0,yes,cheap product-progress slot; materialize exactly one same-head nonheader manifest row and index existing same-head build/type or exact-build evidence
+repair-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9/exact-validation-plan,P0,yes,analysis-only planning is allowed while heavy validation waits for discovery and canary gates
+publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,blocked until same-head manifest/build evidence exists and benchmark-canary current-run closure is green or explicitly downscoped
+run-exact-validation,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,heavy exact/browser work waits because discovery_protected=no and benchmark-canary closure is open
+publish-ready,aggregate-all-merged-ready,P0,no,blocked by PR07C same-head gate and open benchmark-canary primary or promotion-blocked rows
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held-consumed; relaunch only with newer owner evidence
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,canonical PR06B minimal branch is already published; broader alternate remains held
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,on-PR14B PR15A variant is already published; alternate remains held
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,on-PR14B PR15B variant is already published; alternate remains held
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,on-PR14B PR15C variant is already published; alternate remains held
+cooldown-diagnostic,reload-hydration,P0,yes,consume replay-backed downscope for seed 7800014 and terminalize held or gated blocker state
+repair-branch,reload-hydration,P0,no,downscoped; repair would repeat diagnostic churn without newer same-head final-ui product-owned evidence
+publish-ready,reload-hydration,P0,no,stale deferred candidate lacks promotion-grade same-head validation and owner evidence
+launch-owner-matrix,reload-hydration,P0,no,downscoped; owner-matrix relaunch would repeat consumed diagnostic work
+cooldown-diagnostic,stale-valid-deferred-manifests,medium,yes,"pre-save-search-live-collapse, rich-text-suffix-corruption, malformed-save-payload, and http-room-isolation stay suppressed until fresh product-owned evidence"
+cooldown-diagnostic,productive-analysis/pre-oracle-preflight-only,high,yes,recent continuations are no-progress pre-oracle or preflight-only artifacts
+reserve-discovery,global-discovery-reserve,P0,yes,active_discovery=4 and min=3 but discovery_protected=no; allow cheap PR bookkeeping only and block heavy PR jobs
+reserve-discovery,benchmark-canary/open-forced-rows,P0,yes,keep protected capacity on forced primary and promotion-blocked rows until direct current-run green or explicit downscope exists
+reserve-discovery,benchmark-canary/novelty-http-large-post-lifecycle-completion,P0,yes,row is promotion-blocked and disabled/open; materialize a policy-active current-run row or write explicit downscope before publication gates close
+update-controller-rule,ready-finalized-build-preflight,P0,yes,require same-head npm build or equivalent exact-build/type evidence before ready/finalized publication or browser-lane credit
+update-controller-rule,current-push-manifest/materialization-invariant,P0,yes,header-only manifest with a P0 PR candidate forces same-head nonheader materialization
+update-controller-rule,benchmark-canary/current-run-closure,P0,yes,retained or prior-root evidence must not release PR07C or aggregate publication gates
+update-controller-rule,lower-level/product-yield-accounting,P1,yes,"credit lower-level only with fresh current-root status and canonical product_failure_key, not feature-only coverage deltas"
+cooldown-diagnostic,coverage-guided-lower-level/http-awareness+client-overlay-broad-zero-yield,P1,yes,hold broad zero-yield repeats; relaunch only as bounded seeded work or after fresh canonical product_failure_key evidence
