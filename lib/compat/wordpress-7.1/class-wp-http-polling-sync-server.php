@@ -232,7 +232,16 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				// Check that the client_id is not already owned by another user.
 				$existing_awareness = $this->storage->get_awareness_state( $room );
 				foreach ( $existing_awareness as $entry ) {
-					if ( $client_id === $entry['client_id'] && $wp_user_id !== $entry['wp_user_id'] ) {
+					if (
+						! is_array( $entry ) ||
+						! isset( $entry['client_id'], $entry['wp_user_id'] ) ||
+						! is_numeric( $entry['client_id'] ) ||
+						! is_numeric( $entry['wp_user_id'] )
+					) {
+						continue;
+					}
+
+					if ( $client_id === (int) $entry['client_id'] && $wp_user_id !== (int) $entry['wp_user_id'] ) {
 						return new WP_Error(
 							'rest_cannot_edit',
 							__( 'Client ID is already in use by another user.', 'gutenberg' ),
@@ -446,13 +455,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				return true;
 			}
 
-			foreach ( array_keys( $value ) as $key ) {
-				if ( is_int( $key ) ) {
-					return false;
-				}
-			}
-
-			return true;
+			return array_keys( $value ) !== range( 0, count( $value ) - 1 );
 		}
 
 		/**
@@ -488,16 +491,61 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		private function is_collaborator_info( $value ): bool {
 			return (
 				is_array( $value ) &&
-				$this->is_object_like_array( $value ) &&
-				isset( $value['id'], $value['name'], $value['slug'], $value['avatar_urls'], $value['browserType'], $value['enteredAt'] ) &&
-				is_numeric( $value['id'] ) &&
-				is_string( $value['name'] ) &&
-				is_string( $value['slug'] ) &&
-				is_array( $value['avatar_urls'] ) &&
-				$this->is_string_record( $value['avatar_urls'] ) &&
+					$this->is_object_like_array( $value ) &&
+					isset( $value['id'], $value['name'], $value['slug'], $value['avatar_urls'], $value['browserType'], $value['enteredAt'] ) &&
+					is_numeric( $value['id'] ) &&
+					is_string( $value['name'] ) &&
+					is_string( $value['slug'] ) &&
+					is_array( $value['avatar_urls'] ) &&
+					$this->is_string_record( $value['avatar_urls'] ) &&
 				is_string( $value['browserType'] ) &&
 				is_numeric( $value['enteredAt'] )
 			);
+		}
+
+		/**
+		 * Checks whether editor state has the top-level shape accepted by the PHP boundary.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param mixed $value The value to check.
+		 * @return bool True when the value is valid editor state.
+		 */
+		private function is_editor_state( $value ): bool {
+			return is_array( $value ) && $this->is_object_like_array( $value );
+		}
+
+		/**
+		 * Checks whether an awareness state is safe to store and fan out.
+		 *
+		 * Empty and identity-less awareness is accepted by the request boundary
+		 * for current-client compatibility, but it is not publishable to peers.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param mixed $awareness_update Awareness state.
+		 * @return bool True when the value can be stored and returned.
+		 */
+		private function is_publishable_awareness_update( $awareness_update ): bool {
+			if ( ! is_array( $awareness_update ) || ! $this->is_object_like_array( $awareness_update ) ) {
+				return false;
+			}
+
+			foreach ( array_keys( $awareness_update ) as $field ) {
+				if ( ! in_array( $field, self::ALLOWED_AWARENESS_FIELDS, true ) ) {
+					return false;
+				}
+			}
+
+			if ( ! $this->is_collaborator_info( $awareness_update['collaboratorInfo'] ?? null ) ) {
+				return false;
+			}
+
+			if ( isset( $awareness_update['editorState'] ) && ! $this->is_editor_state( $awareness_update['editorState'] ) ) {
+				return false;
+			}
+
+			return true;
 		}
 
 		/**
@@ -531,7 +579,11 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				}
 			}
 
-			if ( ! $this->is_collaborator_info( $awareness_update['collaboratorInfo'] ?? null ) ) {
+			if ( array() === $awareness_update ) {
+				return true;
+			}
+
+			if ( isset( $awareness_update['collaboratorInfo'] ) && ! $this->is_collaborator_info( $awareness_update['collaboratorInfo'] ) ) {
 				return new WP_Error(
 					'rest_invalid_param',
 					__( 'Invalid awareness state.', 'gutenberg' ),
@@ -541,7 +593,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 
 			if (
 				isset( $awareness_update['editorState'] ) &&
-				( ! is_array( $awareness_update['editorState'] ) || ! $this->is_object_like_array( $awareness_update['editorState'] ) )
+				! $this->is_editor_state( $awareness_update['editorState'] )
 			) {
 				return new WP_Error(
 					'rest_invalid_param',
@@ -551,6 +603,22 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Converts request awareness into the state that can be stored and returned.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<string, mixed>|null $awareness_update Awareness state.
+		 * @return array<string, mixed>|null Publishable awareness state, or null for no-op/disconnect.
+		 */
+		private function normalize_awareness_update( ?array $awareness_update ): ?array {
+			if ( null === $awareness_update || ! $this->is_publishable_awareness_update( $awareness_update ) ) {
+				return null;
+			}
+
+			return $awareness_update;
 		}
 
 		/**
@@ -569,6 +637,18 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 			$current_time       = time();
 
 			foreach ( $existing_awareness as $entry ) {
+				if (
+					! is_array( $entry ) ||
+					! isset( $entry['client_id'], $entry['state'], $entry['updated_at'], $entry['wp_user_id'] ) ||
+					! is_numeric( $entry['client_id'] ) ||
+					! is_numeric( $entry['updated_at'] )
+				) {
+					continue;
+				}
+
+				$entry['client_id']  = (int) $entry['client_id'];
+				$entry['updated_at'] = (int) $entry['updated_at'];
+
 				// Remove this client's entry (it will be updated below).
 				if ( $client_id === $entry['client_id'] ) {
 					continue;
@@ -579,8 +659,14 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 					continue;
 				}
 
+				if ( ! $this->is_publishable_awareness_update( $entry['state'] ) ) {
+					continue;
+				}
+
 				$updated_awareness[] = $entry;
 			}
+
+			$awareness_update = $this->normalize_awareness_update( $awareness_update );
 
 			// Add this client's awareness state.
 			if ( null !== $awareness_update ) {

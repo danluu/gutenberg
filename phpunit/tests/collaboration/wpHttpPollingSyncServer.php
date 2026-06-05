@@ -460,7 +460,7 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 				'rooms' => array(
 					array(
 						'after'     => 0,
-						'awareness' => array( 'user' => 'test' ),
+						'awareness' => null,
 						'client_id' => 1,
 						'room'      => $this->get_post_room(),
 						'updates'   => array(
@@ -494,7 +494,7 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 				'rooms' => array(
 					array(
 						'after'     => 0,
-						'awareness' => array( 'user' => 'test' ),
+						'awareness' => null,
 						'client_id' => 1,
 						'room'      => $this->get_post_room(),
 						'updates'   => array(
@@ -528,7 +528,7 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 				'rooms' => array(
 					array(
 						'after'     => 0,
-						'awareness' => array( 'user' => 'test' ),
+						'awareness' => null,
 						// 'client_id' deliberately omitted.
 						'room'      => $this->get_post_room(),
 						'updates'   => array(),
@@ -576,7 +576,7 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 				'rooms' => array(
 					array(
 						'after'     => 0,
-						'awareness' => array( 'user' => 'test' ),
+						'awareness' => null,
 						'client_id' => 1,
 						'room'      => $this->get_post_room(),
 						'updates'   => array(
@@ -1072,7 +1072,7 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		$this->assertSame( $awareness, $data['rooms'][0]['awareness'][1] );
 	}
 
-	public function test_sync_rejects_awareness_without_collaborator_info() {
+	public function test_sync_ignores_awareness_without_collaborator_info() {
 		wp_set_current_user( self::$editor_id );
 
 		$response = $this->dispatch_sync(
@@ -1086,7 +1086,26 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 			)
 		);
 
-		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertEmpty( $response->get_data()['rooms'][0]['awareness'] );
+	}
+
+	public function test_sync_ignores_empty_awareness() {
+		wp_set_current_user( self::$editor_id );
+
+		$response = $this->dispatch_sync(
+			array(
+				$this->build_raw_room(
+					$this->get_post_room(),
+					1,
+					0,
+					array()
+				),
+			)
+		);
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertEmpty( $response->get_data()['rooms'][0]['awareness'] );
 	}
 
 	public function test_sync_rejects_unknown_awareness_fields() {
@@ -1129,6 +1148,95 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		);
 
 		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
+	}
+
+	public function test_sync_accepts_numeric_avatar_size_keys() {
+		wp_set_current_user( self::$editor_id );
+
+		$collaborator_info = $this->build_collaborator_info(
+			array(
+				'avatar_urls' => array(
+					'24' => 'https://example.com/avatar-24.jpg',
+					'48' => 'https://example.com/avatar-48.jpg',
+					'96' => 'https://example.com/avatar-96.jpg',
+				),
+			)
+		);
+
+		$response = $this->dispatch_sync(
+			array(
+				$this->build_raw_room(
+					$this->get_post_room(),
+					1,
+					0,
+					array( 'collaboratorInfo' => $collaborator_info )
+				),
+			)
+		);
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( $collaborator_info, $response->get_data()['rooms'][0]['awareness'][1]['collaboratorInfo'] );
+	}
+
+	public function test_sync_rejects_list_avatar_urls() {
+		wp_set_current_user( self::$editor_id );
+
+		$response = $this->dispatch_sync(
+			array(
+				$this->build_raw_room(
+					$this->get_post_room(),
+					1,
+					0,
+					array(
+						'collaboratorInfo' => $this->build_collaborator_info(
+							array(
+								'avatar_urls' => array(
+									'https://example.com/avatar-24.jpg',
+									'https://example.com/avatar-48.jpg',
+								),
+							)
+						),
+					)
+				),
+			)
+		);
+
+		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
+	}
+
+	public function test_sync_omits_malformed_stored_awareness() {
+		wp_set_current_user( self::$editor_id );
+
+		$room    = $this->get_post_room();
+		$storage = new WP_Sync_Post_Meta_Storage();
+		$storage->set_awareness_state(
+			$room,
+			array(
+				array(
+					'client_id'  => 7,
+					'state'      => array( 'unexpected' => 'field' ),
+					'updated_at' => time(),
+					'wp_user_id' => self::$editor_id,
+				),
+				array(
+					'client_id'  => 8,
+					'state'      => 'not-an-array',
+					'updated_at' => time(),
+					'wp_user_id' => self::$editor_id,
+				),
+			)
+		);
+
+		$response  = $this->dispatch_sync(
+			array(
+				$this->build_room( $room, 1, 0 ),
+			)
+		);
+		$awareness = $response->get_data()['rooms'][0]['awareness'];
+
+		$this->assertArrayNotHasKey( 7, $awareness );
+		$this->assertArrayNotHasKey( 8, $awareness );
+		$this->assertArrayHasKey( 1, $awareness );
 	}
 
 	public function test_sync_awareness_shows_multiple_clients() {

@@ -140,7 +140,19 @@ Single endpoint for bidirectional sync including awareness. Clients send their u
       "room": "postType/post:123",
       "client_id": 12345,
       "after": 1704123456000,
-      "awareness": { "cursor": { "x": 10, "y": 20 } },
+      "awareness": {
+        "collaboratorInfo": {
+          "id": 1,
+          "name": "Editor",
+          "slug": "editor",
+          "avatar_urls": {
+            "24": "https://example.com/avatar-24.jpg"
+          },
+          "browserType": "Chrome",
+          "enteredAt": 1704123456000
+        },
+        "editorState": { "selection": null }
+      },
       "updates": [
         { "type": "update", "data": "base64-encoded-yjs-update" }
       ]
@@ -158,8 +170,19 @@ Single endpoint for bidirectional sync including awareness. Clients send their u
       "room": "postType/post:123",
       "end_cursor": 1704123457000,
       "awareness": {
-        "12345": { "cursor": { "x": 10, "y": 20 } },
-        "67890": { "cursor": { "x": 50, "y": 60 } }
+        "12345": {
+          "collaboratorInfo": {
+            "id": 1,
+            "name": "Editor",
+            "slug": "editor",
+            "avatar_urls": {
+              "24": "https://example.com/avatar-24.jpg"
+            },
+            "browserType": "Chrome",
+            "enteredAt": 1704123456000
+          },
+          "editorState": { "selection": null }
+        }
       },
       "updates": [
         { "type": "update", "data": "base64-encoded-yjs-update" }
@@ -175,7 +198,7 @@ Single endpoint for bidirectional sync including awareness. Clients send their u
 - `room`: Entity identifier in format `{entity_kind}/{entity_name}:{object_id}`
 - `client_id`: Unique client identifier (from `Y.Doc.clientID`)
 - `after`: Cursor timestamp; only receive updates newer than this
-- `awareness`: Client's awareness state (or null to disconnect)
+- `awareness`: Client's awareness state (or null to disconnect). The PHP endpoint rejects malformed non-empty awareness and ignores empty or identity-less startup awareness instead of storing it.
 - `end_cursor`: New cursor to use in next request
 - `should_compact`: Boolean indicating whether this client should compact
 - `updates`: Array of typed updates with base64-encoded Yjs data
