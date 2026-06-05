@@ -221,7 +221,16 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				// Check that the client_id is not already owned by another user.
 				$existing_awareness = $this->storage->get_awareness_state( $room );
 				foreach ( $existing_awareness as $entry ) {
-					if ( $client_id === $entry['client_id'] && $wp_user_id !== $entry['wp_user_id'] ) {
+					if (
+						! is_array( $entry ) ||
+						! isset( $entry['client_id'], $entry['wp_user_id'] ) ||
+						! is_numeric( $entry['client_id'] ) ||
+						! is_numeric( $entry['wp_user_id'] )
+					) {
+						continue;
+					}
+
+					if ( $client_id === (int) $entry['client_id'] && $wp_user_id !== (int) $entry['wp_user_id'] ) {
 						return new WP_Error(
 							'rest_cannot_edit',
 							__( 'Client ID is already in use by another user.', 'gutenberg' ),
@@ -489,7 +498,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 			return array(
 				'avatar_urls' => $avatar_urls,
 				'browserType' => $browser_type,
-				'enteredAt'   => $entered_at ?? time() * 1000,
+				'enteredAt'   => $entered_at ?? (int) floor( microtime( true ) * 1000 ),
 				'id'          => $user->ID,
 				'name'        => $this->get_collaborator_display_name( $user ),
 				'slug'        => $user->user_nicename,
@@ -563,9 +572,19 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		 */
 		private function normalize_stored_awareness_entry( array $entry ): ?array {
 			if (
-				! isset( $entry['state'], $entry['wp_user_id'], $entry['updated_at'] ) ||
-				! is_array( $entry['state'] )
+				! isset( $entry['client_id'], $entry['state'], $entry['wp_user_id'], $entry['updated_at'] ) ||
+				! is_array( $entry['state'] ) ||
+				! is_numeric( $entry['client_id'] ) ||
+				! is_numeric( $entry['wp_user_id'] ) ||
+				! is_numeric( $entry['updated_at'] )
 			) {
+				return null;
+			}
+
+			$entry['client_id']  = (int) $entry['client_id'];
+			$entry['wp_user_id'] = (int) $entry['wp_user_id'];
+			$entry['updated_at'] = (int) $entry['updated_at'];
+			if ( $entry['client_id'] <= 0 || $entry['wp_user_id'] <= 0 || $entry['updated_at'] <= 0 ) {
 				return null;
 			}
 
@@ -599,6 +618,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 			$updated_awareness   = array();
 			$current_time        = time();
 			$previous_entered_at = null;
+			$wp_user_id          = get_current_user_id();
 
 			foreach ( $existing_awareness as $entry ) {
 				$entry = $this->normalize_stored_awareness_entry( $entry );
@@ -606,14 +626,14 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 					continue;
 				}
 
-				// Remove this client's entry (it will be updated below).
-				if ( $client_id === $entry['client_id'] ) {
-					$previous_entered_at = $entry['state']['collaboratorInfo']['enteredAt'];
+				// Remove entries that have expired.
+				if ( $current_time - $entry['updated_at'] >= self::AWARENESS_TIMEOUT ) {
 					continue;
 				}
 
-				// Remove entries that have expired.
-				if ( $current_time - $entry['updated_at'] >= self::AWARENESS_TIMEOUT ) {
+				// Remove this client's entry (it will be updated below).
+				if ( $client_id === $entry['client_id'] ) {
+					$previous_entered_at = $entry['state']['collaboratorInfo']['enteredAt'];
 					continue;
 				}
 
@@ -624,7 +644,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 			if ( null !== $awareness_update ) {
 				$state = $this->normalize_awareness_state(
 					$awareness_update,
-					get_current_user_id(),
+					$wp_user_id,
 					$previous_entered_at
 				);
 				if ( null !== $state ) {
@@ -632,7 +652,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 						'client_id'  => $client_id,
 						'state'      => $state,
 						'updated_at' => $current_time,
-						'wp_user_id' => get_current_user_id(),
+						'wp_user_id' => $wp_user_id,
 					);
 				}
 			}

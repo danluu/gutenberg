@@ -65,7 +65,7 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 	 */
 	private function build_room( $room, $client_id = 1, $cursor = 0, $awareness = array(), $updates = array() ) {
 		if ( empty( $awareness ) ) {
-			$awareness = array( 'user' => 'test' );
+			$awareness = array( 'editorState' => array() );
 		}
 
 		return array(
@@ -96,6 +96,39 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 	 */
 	private function get_post_room() {
 		return 'postType/post:' . self::$post_id;
+	}
+
+	/**
+	 * Asserts that collaborator info was built from canonical WordPress user data.
+	 *
+	 * @param array       $info                  Collaborator info.
+	 * @param int         $user_id               WordPress user ID.
+	 * @param string|null $expected_browser_type Expected browser type, or null to skip.
+	 * @param int|null    $expected_entered_at   Expected enteredAt, or null to check shape only.
+	 */
+	private function assert_canonical_collaborator_info( $info, $user_id, $expected_browser_type = null, $expected_entered_at = null ) {
+		$user = get_userdata( $user_id );
+		$this->assertInstanceOf( WP_User::class, $user );
+
+		$expected_name = $user->display_name;
+		if ( '' === $expected_name ) {
+			$expected_name = '' !== $user->user_login ? $user->user_login : (string) $user->ID;
+		}
+
+		$this->assertSame( $user->ID, $info['id'] );
+		$this->assertSame( $expected_name, $info['name'] );
+		$this->assertSame( $user->user_nicename, $info['slug'] );
+		$this->assertSame( rest_get_avatar_urls( $user ), $info['avatar_urls'] );
+		$this->assertIsInt( $info['enteredAt'] );
+		$this->assertGreaterThan( 0, $info['enteredAt'] );
+
+		if ( null !== $expected_browser_type ) {
+			$this->assertSame( $expected_browser_type, $info['browserType'] );
+		}
+
+		if ( null !== $expected_entered_at ) {
+			$this->assertSame( $expected_entered_at, $info['enteredAt'] );
+		}
 	}
 
 	/*
@@ -1005,13 +1038,21 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 	 * Awareness tests.
 	 */
 
+	/**
+	 * @ticket 77678
+	 */
 	public function test_sync_awareness_returned() {
 		wp_set_current_user( self::$editor_id );
+		$_SERVER['HTTP_USER_AGENT'] = 'Mozilla/5.0 Chrome/125.0';
 
 		$awareness = array(
 			'collaboratorInfo' => array(
-				'id'   => 999999,
-				'name' => 'Spoofed User',
+				'avatar_urls' => array( 24 => 'https://example.com/spoofed.jpg' ),
+				'browserType' => 'Spoofed Browser',
+				'enteredAt'   => 1234,
+				'id'          => 999999,
+				'name'        => 'Spoofed User',
+				'slug'        => 'spoofed-user',
 			),
 			'editorState'      => array( 'cursor' => 'here' ),
 		);
@@ -1024,10 +1065,12 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 1, $data['rooms'][0]['awareness'] );
 		$this->assertSame( array( 'cursor' => 'here' ), $data['rooms'][0]['awareness'][1]['editorState'] );
-		$this->assertSame( self::$editor_id, $data['rooms'][0]['awareness'][1]['collaboratorInfo']['id'] );
-		$this->assertNotSame( 'Spoofed User', $data['rooms'][0]['awareness'][1]['collaboratorInfo']['name'] );
+		$this->assert_canonical_collaborator_info( $data['rooms'][0]['awareness'][1]['collaboratorInfo'], self::$editor_id, 'Chrome' );
 	}
 
+	/**
+	 * @ticket 77678
+	 */
 	public function test_sync_awareness_shows_multiple_clients() {
 		wp_set_current_user( self::$editor_id );
 
@@ -1036,14 +1079,14 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		// Client 1 connects.
 		$this->dispatch_sync(
 			array(
-				$this->build_room( $room, 1, 0, array( 'name' => 'Client 1' ) ),
+				$this->build_room( $room, 1, 0, array( 'editorState' => array( 'label' => 'Client 1' ) ) ),
 			)
 		);
 
 		// Client 2 connects.
 		$response = $this->dispatch_sync(
 			array(
-				$this->build_room( $room, 2, 0, array( 'name' => 'Client 2' ) ),
+				$this->build_room( $room, 2, 0, array( 'editorState' => array( 'label' => 'Client 2' ) ) ),
 			)
 		);
 
@@ -1052,12 +1095,15 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 
 		$this->assertArrayHasKey( 1, $awareness );
 		$this->assertArrayHasKey( 2, $awareness );
-		$this->assertSame( 'Client 1', $awareness[1]['name'] );
-		$this->assertSame( 'Client 2', $awareness[2]['name'] );
-		$this->assertSame( self::$editor_id, $awareness[1]['collaboratorInfo']['id'] );
-		$this->assertSame( self::$editor_id, $awareness[2]['collaboratorInfo']['id'] );
+		$this->assertSame( array( 'label' => 'Client 1' ), $awareness[1]['editorState'] );
+		$this->assertSame( array( 'label' => 'Client 2' ), $awareness[2]['editorState'] );
+		$this->assert_canonical_collaborator_info( $awareness[1]['collaboratorInfo'], self::$editor_id );
+		$this->assert_canonical_collaborator_info( $awareness[2]['collaboratorInfo'], self::$editor_id );
 	}
 
+	/**
+	 * @ticket 77678
+	 */
 	public function test_sync_awareness_updates_existing_client() {
 		wp_set_current_user( self::$editor_id );
 
@@ -1066,14 +1112,14 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		// Client 1 connects with initial awareness.
 		$this->dispatch_sync(
 			array(
-				$this->build_room( $room, 1, 0, array( 'cursor' => 'start' ) ),
+				$this->build_room( $room, 1, 0, array( 'editorState' => array( 'cursor' => 'start' ) ) ),
 			)
 		);
 
 		// Client 1 updates its awareness.
 		$response = $this->dispatch_sync(
 			array(
-				$this->build_room( $room, 1, 0, array( 'cursor' => 'updated' ) ),
+				$this->build_room( $room, 1, 0, array( 'editorState' => array( 'cursor' => 'updated' ) ) ),
 			)
 		);
 
@@ -1082,8 +1128,107 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 
 		// Should have exactly one entry for client 1 with updated state.
 		$this->assertCount( 1, $awareness );
-		$this->assertSame( 'updated', $awareness[1]['cursor'] );
-		$this->assertSame( self::$editor_id, $awareness[1]['collaboratorInfo']['id'] );
+		$this->assertSame( array( 'cursor' => 'updated' ), $awareness[1]['editorState'] );
+		$this->assert_canonical_collaborator_info( $awareness[1]['collaboratorInfo'], self::$editor_id );
+	}
+
+	/**
+	 * @ticket 77678
+	 */
+	public function test_sync_awareness_preserves_entered_at_for_active_same_client() {
+		wp_set_current_user( self::$editor_id );
+
+		$room = $this->get_post_room();
+
+		$response   = $this->dispatch_sync(
+			array(
+				$this->build_room( $room, 1, 0, array( 'editorState' => array( 'cursor' => 'start' ) ) ),
+			)
+		);
+		$entered_at = $response->get_data()['rooms'][0]['awareness'][1]['collaboratorInfo']['enteredAt'];
+
+		$response  = $this->dispatch_sync(
+			array(
+				$this->build_room( $room, 1, 0, array( 'editorState' => array( 'cursor' => 'updated' ) ) ),
+			)
+		);
+		$awareness = $response->get_data()['rooms'][0]['awareness'];
+
+		$this->assertSame( array( 'cursor' => 'updated' ), $awareness[1]['editorState'] );
+		$this->assert_canonical_collaborator_info( $awareness[1]['collaboratorInfo'], self::$editor_id, null, $entered_at );
+	}
+
+	/**
+	 * @ticket 77678
+	 */
+	public function test_sync_awareness_resets_entered_at_for_expired_same_client() {
+		wp_set_current_user( self::$editor_id );
+
+		$room           = $this->get_post_room();
+		$old_entered_at = 1234;
+		$storage        = new WP_Sync_Post_Meta_Storage();
+		$storage->set_awareness_state(
+			$room,
+			array(
+				array(
+					'client_id'  => 1,
+					'state'      => array(
+						'collaboratorInfo' => array( 'enteredAt' => $old_entered_at ),
+						'editorState'      => array( 'cursor' => 'stale' ),
+					),
+					'updated_at' => time() - WP_HTTP_Polling_Sync_Server::AWARENESS_TIMEOUT - 1,
+					'wp_user_id' => self::$editor_id,
+				),
+			)
+		);
+
+		$response  = $this->dispatch_sync(
+			array(
+				$this->build_room( $room, 1, 0, array( 'editorState' => array( 'cursor' => 'fresh' ) ) ),
+			)
+		);
+		$awareness = $response->get_data()['rooms'][0]['awareness'];
+
+		$this->assertSame( array( 'cursor' => 'fresh' ), $awareness[1]['editorState'] );
+		$this->assertNotSame( $old_entered_at, $awareness[1]['collaboratorInfo']['enteredAt'] );
+		$this->assertGreaterThan( $old_entered_at, $awareness[1]['collaboratorInfo']['enteredAt'] );
+	}
+
+	/**
+	 * @ticket 77678
+	 */
+	public function test_sync_awareness_skips_malformed_stored_entries() {
+		wp_set_current_user( self::$editor_id );
+
+		$room    = $this->get_post_room();
+		$storage = new WP_Sync_Post_Meta_Storage();
+		$storage->set_awareness_state(
+			$room,
+			array(
+				array(
+					'client_id'  => 7,
+					'state'      => 'not-an-array',
+					'updated_at' => time(),
+					'wp_user_id' => self::$editor_id,
+				),
+				array(
+					'client_id'  => 8,
+					'state'      => array( 'editorState' => array( 'cursor' => 'missing-user' ) ),
+					'updated_at' => time(),
+				),
+			)
+		);
+
+		$response  = $this->dispatch_sync(
+			array(
+				$this->build_room( $room, 2, 0, array( 'editorState' => array( 'cursor' => 'current' ) ) ),
+			)
+		);
+		$awareness = $response->get_data()['rooms'][0]['awareness'];
+
+		$this->assertArrayNotHasKey( 7, $awareness );
+		$this->assertArrayNotHasKey( 8, $awareness );
+		$this->assertArrayHasKey( 2, $awareness );
 	}
 
 	public function test_sync_awareness_client_id_cannot_be_used_by_another_user() {

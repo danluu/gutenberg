@@ -5,9 +5,15 @@
  * @package gutenberg
  */
 
-if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
+if ( ! interface_exists( 'WP_Sync_Storage' ) ) {
 	require_once __DIR__ . '/interface-wp-sync-storage.php';
+}
+
+if ( ! class_exists( 'WP_Sync_Post_Meta_Storage' ) ) {
 	require_once __DIR__ . '/class-wp-sync-post-meta-storage.php';
+}
+
+if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 	require_once __DIR__ . '/class-wp-http-polling-sync-server.php';
 }
 
