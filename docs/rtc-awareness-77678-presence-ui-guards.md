@@ -1,6 +1,7 @@
 # Issue 77678: Collaborator presence UI guards
 
-Code branch: `codex/77678-presence-ui-guards`
+Code branch:
+[`codex/77678-presence-ui-guards`](https://github.com/danluu/gutenberg/tree/codex/77678-presence-ui-guards)
 
 Code branch head: `03412d8ccb6`
 
