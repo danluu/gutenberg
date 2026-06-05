@@ -19,6 +19,14 @@ function isAvatarUrls( value: unknown ): value is Record< string, string > {
 	);
 }
 
+function isSafeInteger( value: unknown ): value is number {
+	return 'number' === typeof value && Number.isSafeInteger( value );
+}
+
+function isFiniteNumber( value: unknown ): value is number {
+	return 'number' === typeof value && Number.isFinite( value );
+}
+
 export function hasRenderableCollaboratorInfo(
 	collaboratorState: unknown
 ): collaboratorState is PostEditorAwarenessState {
@@ -32,11 +40,16 @@ export function hasRenderableCollaboratorInfo(
 	}
 
 	return (
-		'number' === typeof collaboratorInfo.id &&
+		isSafeInteger( collaboratorState.clientId ) &&
+		collaboratorState.clientId >= 0 &&
+		'boolean' === typeof collaboratorState.isConnected &&
+		'boolean' === typeof collaboratorState.isMe &&
+		isSafeInteger( collaboratorInfo.id ) &&
+		collaboratorInfo.id > 0 &&
 		'string' === typeof collaboratorInfo.name &&
 		'string' === typeof collaboratorInfo.slug &&
 		isAvatarUrls( collaboratorInfo.avatar_urls ) &&
 		'string' === typeof collaboratorInfo.browserType &&
-		'number' === typeof collaboratorInfo.enteredAt
+		isFiniteNumber( collaboratorInfo.enteredAt )
 	);
 }

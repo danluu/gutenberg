@@ -48,4 +48,49 @@ describe( 'hasRenderableCollaboratorInfo', () => {
 			} )
 		).toBe( false );
 	} );
+
+	it( 'rejects malformed enhanced state fields', () => {
+		expect(
+			hasRenderableCollaboratorInfo( {
+				...validCollaborator,
+				clientId: Number.NaN,
+			} )
+		).toBe( false );
+
+		expect(
+			hasRenderableCollaboratorInfo( {
+				...validCollaborator,
+				isConnected: 'true',
+			} )
+		).toBe( false );
+
+		expect(
+			hasRenderableCollaboratorInfo( {
+				...validCollaborator,
+				isMe: null,
+			} )
+		).toBe( false );
+	} );
+
+	it( 'rejects malformed collaborator info numbers', () => {
+		expect(
+			hasRenderableCollaboratorInfo( {
+				...validCollaborator,
+				collaboratorInfo: {
+					...validCollaborator.collaboratorInfo,
+					id: 100.5,
+				},
+			} )
+		).toBe( false );
+
+		expect(
+			hasRenderableCollaboratorInfo( {
+				...validCollaborator,
+				collaboratorInfo: {
+					...validCollaborator.collaboratorInfo,
+					enteredAt: Number.POSITIVE_INFINITY,
+				},
+			} )
+		).toBe( false );
+	} );
 } );
