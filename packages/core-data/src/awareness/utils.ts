@@ -60,6 +60,41 @@ export function areMapsEqual< Key, Value >(
 	return true;
 }
 
+export function isObjectRecord(
+	value: unknown
+): value is Record< string, unknown > {
+	return (
+		'object' === typeof value && null !== value && ! Array.isArray( value )
+	);
+}
+
+function isStringRecord( value: unknown ): value is Record< string, string > {
+	if ( ! isObjectRecord( value ) ) {
+		return false;
+	}
+
+	return Object.values( value ).every(
+		( recordValue ) => 'string' === typeof recordValue
+	);
+}
+
+export function isCollaboratorInfo(
+	value: unknown
+): value is CollaboratorInfo {
+	if ( ! isObjectRecord( value ) ) {
+		return false;
+	}
+
+	return (
+		'number' === typeof value.id &&
+		'string' === typeof value.name &&
+		'string' === typeof value.slug &&
+		isStringRecord( value.avatar_urls ) &&
+		'string' === typeof value.browserType &&
+		'number' === typeof value.enteredAt
+	);
+}
+
 /**
  * Check if two collaborator infos are equal.
  *

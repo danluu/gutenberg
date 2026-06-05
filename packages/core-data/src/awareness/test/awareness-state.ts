@@ -347,6 +347,31 @@ describe( 'AwarenessState', () => {
 			awareness.testUpdateSubscribers();
 		} );
 
+		test( 'should reject remote states with unknown fields', () => {
+			expect(
+				awareness.getValidatedRemoteState( {
+					name: 'Test',
+					count: 1,
+					unexpected: 'field',
+				} )
+			).toBeNull();
+		} );
+
+		test( 'should not publish non-empty malformed remote state to subscribers', () => {
+			awareness.setUp();
+			const callback = jest.fn();
+			awareness.onStateChange( callback );
+
+			awareness.getStates().set( 123, {
+				unexpected: 'missing known fields',
+			} as any );
+
+			expect( () => awareness.testUpdateSubscribers() ).not.toThrow();
+			expect( callback ).not.toHaveBeenCalled();
+			expect( awareness.getStates().has( 123 ) ).toBe( false );
+			expect( awareness.getSeenStates().has( 123 ) ).toBe( false );
+		} );
+
 		test( 'should include enhanced state properties', () => {
 			awareness.setUp();
 			let receivedStates: EnhancedState< TestState >[] = [];
