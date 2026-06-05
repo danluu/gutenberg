@@ -1,6 +1,7 @@
 # Issue 77678: Server-provided collaborator info
 
-Code branch: `codex/77678-server-collaborator-info`
+Code branch:
+[`codex/77678-server-collaborator-info`](https://github.com/danluu/gutenberg/tree/codex/77678-server-collaborator-info)
 
 Code branch head: `ccc10b714d8`
 
