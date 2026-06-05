@@ -1,6 +1,7 @@
 # Issue 77678: Client awareness boundary validation
 
-Code branch: `codex/77678-awareness-boundary-validation`
+Code branch:
+[`codex/77678-awareness-boundary-validation`](https://github.com/danluu/gutenberg/tree/codex/77678-awareness-boundary-validation)
 
 Code branch head: `70b7a452dca`
 
