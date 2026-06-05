@@ -96,6 +96,17 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		const UPDATE_TYPE_UPDATE = 'update';
 
 		/**
+		 * Client-provided awareness fields accepted by the server.
+		 *
+		 * @since 7.0.0
+		 * @var string[]
+		 */
+		const ALLOWED_AWARENESS_FIELDS = array(
+			'collaboratorInfo',
+			'editorState',
+		);
+
+		/**
 		 * Storage backend for sync updates.
 		 *
 		 * @since 7.0.0
@@ -281,6 +292,13 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				);
 			}
 
+			foreach ( $request['rooms'] as $room ) {
+				$result = $this->validate_awareness_update( $room['awareness'] );
+				if ( is_wp_error( $result ) ) {
+					return $result;
+				}
+			}
+
 			return true;
 		}
 
@@ -304,6 +322,11 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 				$client_id = $room_request['client_id'];
 				$cursor    = $room_request['after'];
 				$room      = $room_request['room'];
+
+				$validation_result = $this->validate_awareness_update( $awareness );
+				if ( is_wp_error( $validation_result ) ) {
+					return $validation_result;
+				}
 
 				// Merge awareness state.
 				$merged_awareness = $this->process_awareness_update( $room, $client_id, $awareness );
@@ -408,6 +431,126 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 			);
 
 			return in_array( $entity_kind, $allowed_collection_entity_kinds, true );
+		}
+
+		/**
+		 * Checks whether an array came from a JSON object rather than a JSON list.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<mixed> $value The value to check.
+		 * @return bool True for object-like arrays, false for list-like arrays.
+		 */
+		private function is_object_like_array( array $value ): bool {
+			if ( array() === $value ) {
+				return true;
+			}
+
+			foreach ( array_keys( $value ) as $key ) {
+				if ( is_int( $key ) ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Checks whether an array contains only string values.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param array<mixed> $value The value to check.
+		 * @return bool True when all values are strings.
+		 */
+		private function is_string_record( array $value ): bool {
+			if ( ! $this->is_object_like_array( $value ) ) {
+				return false;
+			}
+
+			foreach ( $value as $record_value ) {
+				if ( ! is_string( $record_value ) ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Checks whether collaborator info has the shape the editor UI renders.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param mixed $value The value to check.
+		 * @return bool True when the value is valid collaborator info.
+		 */
+		private function is_collaborator_info( $value ): bool {
+			return (
+				is_array( $value ) &&
+				$this->is_object_like_array( $value ) &&
+				isset( $value['id'], $value['name'], $value['slug'], $value['avatar_urls'], $value['browserType'], $value['enteredAt'] ) &&
+				is_numeric( $value['id'] ) &&
+				is_string( $value['name'] ) &&
+				is_string( $value['slug'] ) &&
+				is_array( $value['avatar_urls'] ) &&
+				$this->is_string_record( $value['avatar_urls'] ) &&
+				is_string( $value['browserType'] ) &&
+				is_numeric( $value['enteredAt'] )
+			);
+		}
+
+		/**
+		 * Validates client-provided awareness before it is stored or fanned out.
+		 *
+		 * @since 7.0.0
+		 *
+		 * @param mixed $awareness_update Awareness state sent by the client.
+		 * @return true|WP_Error True when valid, otherwise an error.
+		 */
+		private function validate_awareness_update( $awareness_update ) {
+			if ( null === $awareness_update ) {
+				return true;
+			}
+
+			if ( ! is_array( $awareness_update ) || ! $this->is_object_like_array( $awareness_update ) ) {
+				return new WP_Error(
+					'rest_invalid_param',
+					__( 'Invalid awareness state.', 'gutenberg' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			foreach ( array_keys( $awareness_update ) as $field ) {
+				if ( ! in_array( $field, self::ALLOWED_AWARENESS_FIELDS, true ) ) {
+					return new WP_Error(
+						'rest_invalid_param',
+						__( 'Invalid awareness state.', 'gutenberg' ),
+						array( 'status' => 400 )
+					);
+				}
+			}
+
+			if ( ! $this->is_collaborator_info( $awareness_update['collaboratorInfo'] ?? null ) ) {
+				return new WP_Error(
+					'rest_invalid_param',
+					__( 'Invalid awareness state.', 'gutenberg' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if (
+				isset( $awareness_update['editorState'] ) &&
+				( ! is_array( $awareness_update['editorState'] ) || ! $this->is_object_like_array( $awareness_update['editorState'] ) )
+			) {
+				return new WP_Error(
+					'rest_invalid_param',
+					__( 'Invalid awareness state.', 'gutenberg' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			return true;
 		}
 
 		/**

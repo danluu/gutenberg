@@ -64,10 +64,59 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 	 * @return array Room request data.
 	 */
 	private function build_room( $room, $client_id = 1, $cursor = 0, $awareness = array(), $updates = array() ) {
-		if ( empty( $awareness ) ) {
-			$awareness = array( 'user' => 'test' );
+		if (
+			null !== $awareness &&
+			! empty( $awareness ) &&
+			! array_key_exists( 'collaboratorInfo', $awareness ) &&
+			! array_key_exists( 'editorState', $awareness )
+		) {
+			$awareness = array( 'editorState' => $awareness );
 		}
 
+		if ( null !== $awareness && ! array_key_exists( 'collaboratorInfo', $awareness ) ) {
+			$awareness['collaboratorInfo'] = $this->build_collaborator_info();
+		}
+
+		return array(
+			'after'     => $cursor,
+			'awareness' => $awareness,
+			'client_id' => $client_id,
+			'room'      => $room,
+			'updates'   => $updates,
+		);
+	}
+
+	/**
+	 * Builds collaborator info with the shape expected by the awareness protocol.
+	 *
+	 * @param array $overrides Fields to override.
+	 * @return array Collaborator info.
+	 */
+	private function build_collaborator_info( $overrides = array() ) {
+		return array_merge(
+			array(
+				'avatar_urls' => array( '24' => 'https://example.com/avatar.jpg' ),
+				'browserType' => 'Chrome',
+				'enteredAt'   => 1704067200000,
+				'id'          => self::$editor_id,
+				'name'        => 'Editor',
+				'slug'        => 'editor',
+			),
+			$overrides
+		);
+	}
+
+	/**
+	 * Builds a room request without adapting test awareness into the protocol shape.
+	 *
+	 * @param string $room      Room identifier.
+	 * @param int    $client_id Client ID.
+	 * @param int    $cursor    Cursor value for the 'after' parameter.
+	 * @param mixed  $awareness Awareness state.
+	 * @param array  $updates   Array of updates.
+	 * @return array Room request data.
+	 */
+	private function build_raw_room( $room, $client_id = 1, $cursor = 0, $awareness = array(), $updates = array() ) {
 		return array(
 			'after'     => $cursor,
 			'awareness' => $awareness,
@@ -1008,7 +1057,10 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 	public function test_sync_awareness_returned() {
 		wp_set_current_user( self::$editor_id );
 
-		$awareness = array( 'name' => 'Editor' );
+		$awareness = array(
+			'collaboratorInfo' => $this->build_collaborator_info(),
+			'editorState'      => array( 'cursor' => 'here' ),
+		);
 		$response  = $this->dispatch_sync(
 			array(
 				$this->build_room( $this->get_post_room(), 1, 0, $awareness ),
@@ -1018,6 +1070,65 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 		$data = $response->get_data();
 		$this->assertArrayHasKey( 1, $data['rooms'][0]['awareness'] );
 		$this->assertSame( $awareness, $data['rooms'][0]['awareness'][1] );
+	}
+
+	public function test_sync_rejects_awareness_without_collaborator_info() {
+		wp_set_current_user( self::$editor_id );
+
+		$response = $this->dispatch_sync(
+			array(
+				$this->build_raw_room(
+					$this->get_post_room(),
+					1,
+					0,
+					array( 'editorState' => array( 'cursor' => 'here' ) )
+				),
+			)
+		);
+
+		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
+	}
+
+	public function test_sync_rejects_unknown_awareness_fields() {
+		wp_set_current_user( self::$editor_id );
+
+		$response = $this->dispatch_sync(
+			array(
+				$this->build_raw_room(
+					$this->get_post_room(),
+					1,
+					0,
+					array(
+						'collaboratorInfo' => $this->build_collaborator_info(),
+						'unexpected'       => 'field',
+					)
+				),
+			)
+		);
+
+		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
+	}
+
+	public function test_sync_rejects_malformed_collaborator_info() {
+		wp_set_current_user( self::$editor_id );
+
+		$response = $this->dispatch_sync(
+			array(
+				$this->build_raw_room(
+					$this->get_post_room(),
+					1,
+					0,
+					array(
+						'collaboratorInfo' => array(
+							'id'   => self::$editor_id,
+							'name' => 'Missing required fields',
+						),
+					)
+				),
+			)
+		);
+
+		$this->assertErrorResponse( 'rest_invalid_param', $response, 400 );
 	}
 
 	public function test_sync_awareness_shows_multiple_clients() {
@@ -1044,8 +1155,10 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 
 		$this->assertArrayHasKey( 1, $awareness );
 		$this->assertArrayHasKey( 2, $awareness );
-		$this->assertSame( array( 'name' => 'Client 1' ), $awareness[1] );
-		$this->assertSame( array( 'name' => 'Client 2' ), $awareness[2] );
+		$this->assertSame( array( 'name' => 'Client 1' ), $awareness[1]['editorState'] );
+		$this->assertSame( array( 'name' => 'Client 2' ), $awareness[2]['editorState'] );
+		$this->assertSame( self::$editor_id, $awareness[1]['collaboratorInfo']['id'] );
+		$this->assertSame( self::$editor_id, $awareness[2]['collaboratorInfo']['id'] );
 	}
 
 	public function test_sync_awareness_updates_existing_client() {
@@ -1072,7 +1185,8 @@ class Tests_Collaboration_WpHttpPollingSyncServer extends WP_Test_REST_Controlle
 
 		// Should have exactly one entry for client 1 with updated state.
 		$this->assertCount( 1, $awareness );
-		$this->assertSame( array( 'cursor' => 'updated' ), $awareness[1] );
+		$this->assertSame( array( 'cursor' => 'updated' ), $awareness[1]['editorState'] );
+		$this->assertSame( self::$editor_id, $awareness[1]['collaboratorInfo']['id'] );
 	}
 
 	public function test_sync_awareness_client_id_cannot_be_used_by_another_user() {
