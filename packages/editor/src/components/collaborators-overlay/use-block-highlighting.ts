@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from '@wordpress/element';
  */
 import { unlock } from '../../lock-unlock';
 import { getAvatarBorderColor } from '../collab-sidebar/utils';
+import { hasRenderableCollaboratorInfo } from '../collaborators-presence/utils';
 import { getAvatarUrl } from './get-avatar-url';
 import { useDebouncedRecompute } from './use-debounced-recompute';
 
@@ -86,6 +87,7 @@ export function useBlockHighlighting(
 		// same block, only the first one gets the highlight and avatar label.
 		const seen = new Set< string >();
 		const blocksToHighlight = userStates
+			.filter( hasRenderableCollaboratorInfo )
 			.filter( ( userState: ActiveCollaborator ) => {
 				const isWholeBlockSelected =
 					userState.editorState?.selection?.type ===

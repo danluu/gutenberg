@@ -8,6 +8,7 @@ import Avatar from './avatar';
 import { getAvatarUrl } from '../collaborators-overlay/get-avatar-url';
 import { getAvatarBorderColor } from '../collab-sidebar/utils';
 import { type CursorRegistry } from '../collaborators-overlay/cursor-registry';
+import { hasRenderableCollaboratorInfo } from './utils';
 
 interface CollaboratorsListProps {
 	activeCollaborators: PostEditorAwarenessState[];
@@ -32,6 +33,10 @@ export function CollaboratorsList( {
 	setIsPopoverVisible,
 	cursorRegistry,
 }: CollaboratorsListProps ) {
+	const renderableCollaborators = activeCollaborators.filter(
+		hasRenderableCollaboratorInfo
+	);
+
 	const handleCollaboratorClick = ( clientId: number ) => {
 		const success = cursorRegistry.scrollToCursor( clientId, {
 			behavior: 'smooth',
@@ -58,7 +63,7 @@ export function CollaboratorsList( {
 				<div className="editor-collaborators-presence__list-header">
 					<div className="editor-collaborators-presence__list-header-title">
 						{ __( 'Collaborators' ) }
-						<span>{ activeCollaborators.length }</span>
+						<span>{ renderableCollaborators.length }</span>
 					</div>
 					<div className="editor-collaborators-presence__list-header-action">
 						<Button
@@ -71,7 +76,7 @@ export function CollaboratorsList( {
 					</div>
 				</div>
 				<div className="editor-collaborators-presence__list-items">
-					{ activeCollaborators.map( ( collaboratorState ) => {
+					{ renderableCollaborators.map( ( collaboratorState ) => {
 						const isCurrentUser = collaboratorState.isMe;
 						return (
 							<button

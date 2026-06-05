@@ -17,6 +17,7 @@ import { store as preferencesStore } from '@wordpress/preferences';
  */
 import { unlock } from '../../lock-unlock';
 import { store as editorStore } from '../../store';
+import { hasRenderableCollaboratorInfo } from './utils';
 
 const { useOnCollaboratorJoin, useOnCollaboratorLeave, useOnPostSave } =
 	unlock( privateApis );
@@ -105,6 +106,13 @@ export function useCollaboratorNotifications(
 				collaborator: PostEditorAwarenessState,
 				me?: PostEditorAwarenessState
 			) => {
+				if (
+					! hasRenderableCollaboratorInfo( collaborator ) ||
+					( me && ! hasRenderableCollaboratorInfo( me ) )
+				) {
+					return;
+				}
+
 				/*
 				 * Skip collaborators who were present before the current user
 				 * joined. Their enteredAt is earlier than ours, meaning we're
@@ -141,6 +149,10 @@ export function useCollaboratorNotifications(
 		effectivePostType,
 		useCallback(
 			( collaborator: PostEditorAwarenessState ) => {
+				if ( ! hasRenderableCollaboratorInfo( collaborator ) ) {
+					return;
+				}
+
 				void createNotice(
 					'info',
 					sprintf(
@@ -168,7 +180,10 @@ export function useCollaboratorNotifications(
 				saver: PostEditorAwarenessState,
 				prevEvent: PostSaveEvent | null
 			) => {
-				if ( ! postStatus ) {
+				if (
+					! postStatus ||
+					! hasRenderableCollaboratorInfo( saver )
+				) {
 					return;
 				}
 

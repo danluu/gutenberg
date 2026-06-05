@@ -11,6 +11,7 @@ import { store as preferencesStore } from '@wordpress/preferences';
 import { unlock } from '../../lock-unlock';
 import { getAvatarUrl } from './get-avatar-url';
 import { getAvatarBorderColor } from '../collab-sidebar/utils';
+import { hasRenderableCollaboratorInfo } from '../collaborators-presence/utils';
 import { computeSelectionVisual } from './compute-selection';
 import { useDebouncedRecompute } from './use-debounced-recompute';
 import type { SelectionRect } from './cursor-dom-utils';
@@ -92,11 +93,15 @@ export function useRenderCursors(
 
 		const results: CursorData[] = [];
 
-		const hasOtherCollaborators = sortedUsers.some(
+		const renderableUsers = sortedUsers.filter(
+			hasRenderableCollaboratorInfo
+		);
+
+		const hasOtherCollaborators = renderableUsers.some(
 			( u: ActiveCollaborator ) => ! u.isMe
 		);
 
-		sortedUsers.forEach( ( user: ActiveCollaborator ) => {
+		renderableUsers.forEach( ( user: ActiveCollaborator ) => {
 			if ( user.isMe && ( ! showOwnCursor || ! hasOtherCollaborators ) ) {
 				return;
 			}

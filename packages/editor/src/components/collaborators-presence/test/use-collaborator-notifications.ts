@@ -211,6 +211,19 @@ describe( 'useCollaboratorNotifications', () => {
 
 			expect( mockCreateNotice ).not.toHaveBeenCalled();
 		} );
+
+		it( 'skips malformed join notification state', () => {
+			renderHook( () => useCollaboratorNotifications( 123, 'post' ) );
+
+			expect( () =>
+				mockOnJoinCallback?.(
+					{ clientId: 2, isMe: false, isConnected: true },
+					makeMe()
+				)
+			).not.toThrow();
+
+			expect( mockCreateNotice ).not.toHaveBeenCalled();
+		} );
 	} );
 
 	describe( 'collaborator leave notifications', () => {
@@ -230,6 +243,20 @@ describe( 'useCollaboratorNotifications', () => {
 					id: 'collab-user-exited-100',
 				} )
 			);
+		} );
+
+		it( 'skips malformed leave notification state', () => {
+			renderHook( () => useCollaboratorNotifications( 123, 'post' ) );
+
+			expect( () =>
+				mockOnLeaveCallback?.( {
+					clientId: 2,
+					isMe: false,
+					isConnected: false,
+				} )
+			).not.toThrow();
+
+			expect( mockCreateNotice ).not.toHaveBeenCalled();
 		} );
 	} );
 
@@ -364,6 +391,24 @@ describe( 'useCollaboratorNotifications', () => {
 				alice,
 				null
 			);
+
+			expect( mockCreateNotice ).not.toHaveBeenCalled();
+		} );
+
+		it( 'skips malformed post save notification state', () => {
+			renderHook( () => useCollaboratorNotifications( 123, 'post' ) );
+
+			expect( () =>
+				mockOnPostSaveCallback?.(
+					{
+						savedAt: Date.now(),
+						savedByClientId: 2,
+						postStatus: undefined,
+					},
+					{ clientId: 2, isMe: false, isConnected: true },
+					null
+				)
+			).not.toThrow();
 
 			expect( mockCreateNotice ).not.toHaveBeenCalled();
 		} );
