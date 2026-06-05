@@ -1,6 +1,7 @@
 # Issue 77678: REST awareness payload validation
 
-Code branch: `codex/77678-rest-awareness-validation`
+Code branch:
+[`codex/77678-rest-awareness-validation`](https://github.com/danluu/gutenberg/tree/codex/77678-rest-awareness-validation)
 
 Code branch head: `2c54b945821`
 
