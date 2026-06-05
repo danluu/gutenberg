@@ -84,6 +84,13 @@ export class PostEditorAwareness extends BaseAwarenessState< PostEditorState > {
 			return null;
 		}
 
+		if (
+			undefined !== state.editorState?.selection &&
+			! isSelectionState( state.editorState.selection )
+		) {
+			return null;
+		}
+
 		return state;
 	}
 
@@ -468,5 +475,54 @@ function areBlockSelectionsEqual(
 		a.clientId === b.clientId &&
 		a.attributeKey === b.attributeKey &&
 		a.offset === b.offset
+	);
+}
+
+function isSelectionState( value: unknown ): value is SelectionState {
+	if ( ! isObjectRecord( value ) || typeof value.type !== 'string' ) {
+		return false;
+	}
+
+	switch ( value.type ) {
+		case SelectionType.None:
+			return true;
+
+		case SelectionType.Cursor:
+			return isCursorPosition( value.cursorPosition );
+
+		case SelectionType.SelectionInOneBlock:
+		case SelectionType.SelectionInMultipleBlocks:
+			return (
+				isCursorPosition( value.cursorStartPosition ) &&
+				isCursorPosition( value.cursorEndPosition ) &&
+				isSelectionDirection( value.selectionDirection )
+			);
+
+		case SelectionType.WholeBlock:
+			return isObjectRecord( value.blockPosition );
+	}
+
+	return false;
+}
+
+function isCursorPosition( value: unknown ): boolean {
+	if ( ! isObjectRecord( value ) ) {
+		return false;
+	}
+
+	return (
+		isObjectRecord( value.relativePosition ) &&
+		typeof value.absoluteOffset === 'number' &&
+		Number.isFinite( value.absoluteOffset ) &&
+		( undefined === value.attributeKey ||
+			typeof value.attributeKey === 'string' )
+	);
+}
+
+function isSelectionDirection( value: unknown ): boolean {
+	return (
+		undefined === value ||
+		value === SelectionDirection.Forward ||
+		value === SelectionDirection.Backward
 	);
 }

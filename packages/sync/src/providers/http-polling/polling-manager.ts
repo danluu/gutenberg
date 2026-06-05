@@ -90,6 +90,7 @@ interface RoomState {
 	isPrimaryRoom: boolean;
 	localAwarenessState: LocalAwarenessState;
 	log: LogFunction;
+	normalizeAwarenessUpdate: ( state: AwarenessState ) => AwarenessState;
 	onStatusChange: ( status: ConnectionStatus ) => void;
 	processAwarenessUpdate: ( state: AwarenessState ) => void;
 	processDocUpdate: ( update: SyncUpdate ) => SyncUpdate | void;
@@ -248,6 +249,64 @@ function getRemoteAwarenessStateNormalizer(
 	return normalizeGenericRemoteAwarenessState;
 }
 
+function isValidAwarenessClientId( clientId: number ): boolean {
+	return Number.isSafeInteger( clientId ) && clientId >= 0;
+}
+
+function normalizeAwarenessUpdate(
+	state: AwarenessState,
+	awareness: Awareness,
+	normalizeRemoteState: RemoteAwarenessStateNormalizer
+): AwarenessState {
+	const normalizedState: AwarenessState = {};
+
+	Object.entries( state ).forEach( ( [ clientIdString, awarenessState ] ) => {
+		const clientId = Number( clientIdString );
+
+		if ( ! isValidAwarenessClientId( clientId ) ) {
+			return;
+		}
+
+		if ( clientId === awareness.clientID ) {
+			normalizedState[ clientIdString ] = awarenessState;
+			return;
+		}
+
+		if ( null === awarenessState ) {
+			normalizedState[ clientIdString ] = null;
+			return;
+		}
+
+		const remoteState = normalizeRemoteState( awarenessState );
+
+		if ( null === remoteState ) {
+			return;
+		}
+
+		normalizedState[ clientIdString ] = remoteState;
+	} );
+
+	return normalizedState;
+}
+
+function getRemoteAwarenessClientIds(
+	awareness: AwarenessState,
+	localClientId: number
+): number[] {
+	return Object.entries( awareness )
+		.map( ( [ clientIdString, awarenessState ] ) => ( {
+			clientId: Number( clientIdString ),
+			awarenessState,
+		} ) )
+		.filter(
+			( { clientId, awarenessState } ) =>
+				isValidAwarenessClientId( clientId ) &&
+				clientId !== localClientId &&
+				null !== awarenessState
+		)
+		.map( ( { clientId } ) => clientId );
+}
+
 /**
  * Create a compaction update by merging existing updates. This preserves
  * the original operation metadata (client IDs, logical clocks) so that
@@ -329,7 +388,8 @@ function processAwarenessUpdate(
 	// Removed clients are missing from the server state.
 	const removed = new Set< number >(
 		Array.from( currentStates.keys() ).filter(
-			( clientId ) => ! state[ clientId ]
+			( clientId ) =>
+				clientId !== awareness.clientID && ! state[ clientId ]
 		)
 	);
 
@@ -343,7 +403,6 @@ function processAwarenessUpdate(
 
 		// A null state should be removed by the server, but handle it here just in case.
 		if ( null === awarenessState ) {
-			currentStates.delete( clientId );
 			removed.add( clientId );
 			return;
 		}
@@ -351,7 +410,6 @@ function processAwarenessUpdate(
 		const normalizedState = normalizeRemoteState( awarenessState );
 
 		if ( null === normalizedState ) {
-			currentStates.delete( clientId );
 			removed.add( clientId );
 			return;
 		}
@@ -459,7 +517,8 @@ function checkConnectionLimit(
 		roomState.room
 	);
 
-	const clientCount = Object.keys( awareness ).length;
+	const clientCount =
+		getRemoteAwarenessClientIds( awareness, roomState.clientId ).length + 1;
 	const validatedLimit = intValueOrDefault(
 		maxClientsPerRoom,
 		DEFAULT_CLIENT_LIMIT_PER_ROOM
@@ -765,9 +824,12 @@ function poll(): void {
 
 				const roomState = roomStates.get( room.room )!;
 				roomState.endCursor = room.end_cursor;
+				const normalizedAwareness = roomState.normalizeAwarenessUpdate(
+					room.awareness
+				);
 
 				// If a limit is exceeded, disconnect immediately without processing updates.
-				if ( checkConnectionLimit( room.awareness, roomState ) ) {
+				if ( checkConnectionLimit( normalizedAwareness, roomState ) ) {
 					roomState.onStatusChange( {
 						status: 'disconnected',
 						error: new ConnectionError(
@@ -780,7 +842,7 @@ function poll(): void {
 				}
 
 				// Process awareness update.
-				roomState.processAwarenessUpdate( room.awareness );
+				roomState.processAwarenessUpdate( normalizedAwareness );
 
 				// If there is another collaborator on the primary entity,
 				// resume all room queues for the next poll and increase
@@ -790,7 +852,10 @@ function poll(): void {
 				// collection rooms (e.g. root/comment) can also sync.
 				if (
 					roomState.isPrimaryRoom &&
-					Object.keys( room.awareness ).length > 1
+					getRemoteAwarenessClientIds(
+						normalizedAwareness,
+						roomState.clientId
+					).length > 0
 				) {
 					hasCollaborators = true;
 					roomStates.forEach( ( state ) => {
@@ -1097,6 +1162,8 @@ function registerRoom( {
 		isPrimaryRoom,
 		localAwarenessState: awareness.getLocalState() ?? {},
 		log,
+		normalizeAwarenessUpdate: ( state: AwarenessState ) =>
+			normalizeAwarenessUpdate( state, awareness, normalizeRemoteState ),
 		onStatusChange,
 		processAwarenessUpdate: ( state: AwarenessState ) =>
 			processAwarenessUpdate( state, awareness, normalizeRemoteState ),

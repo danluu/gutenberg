@@ -57,6 +57,19 @@ abstract class AwarenessWithEqualityChecks<
 	/** CUSTOM METHODS */
 
 	/**
+	 * Check whether a field has an explicit own-property equality handler.
+	 * @param field - The field to check.
+	 */
+	protected hasEqualityFieldCheck(
+		field: string | number | symbol
+	): field is keyof State {
+		return Object.prototype.hasOwnProperty.call(
+			this.equalityFieldChecks,
+			field
+		);
+	}
+
+	/**
 	 * Determine if a field value has changed using the provided equality checks.
 	 * @param field  - The field to check.
 	 * @param value1 - The first value to compare.
@@ -73,7 +86,7 @@ abstract class AwarenessWithEqualityChecks<
 			return value1 === value2;
 		}
 
-		if ( field in this.equalityFieldChecks ) {
+		if ( this.hasEqualityFieldCheck( field ) ) {
 			const fn = this.equalityFieldChecks[ field ];
 			return fn( value1, value2 );
 		}
@@ -223,7 +236,7 @@ export abstract class AwarenessState<
 		}
 
 		for ( const field of Object.keys( rawState ) ) {
-			if ( ! ( field in this.equalityFieldChecks ) ) {
+			if ( ! this.hasEqualityFieldCheck( field ) ) {
 				return null;
 			}
 		}
@@ -327,7 +340,8 @@ export abstract class AwarenessState<
 
 			if (
 				isObjectRecord( rawState ) &&
-				Object.keys( rawState ).length > 0
+				Object.keys( rawState ).length > 0 &&
+				clientId !== this.clientID
 			) {
 				states.delete( clientId );
 				this.seenStates.delete( clientId );

@@ -114,6 +114,15 @@ function createMockAwareness(
 	};
 }
 
+function requireCollaboratorInfo( state: unknown ): object | null {
+	return 'object' === typeof state &&
+		null !== state &&
+		! Array.isArray( state ) &&
+		'collaboratorInfo' in state
+		? state
+		: null;
+}
+
 function simulateVisibilityChange( state: string ) {
 	Object.defineProperty( document, 'visibilityState', {
 		configurable: true,
@@ -161,6 +170,7 @@ describe( 'polling-manager', () => {
 		typeof import('../utils').postSyncUpdateNonBlocking
 	>;
 	let mockApplyFilters: jest.Mock;
+	let mockRemoveAwarenessStates: jest.Mock;
 
 	beforeEach( () => {
 		jest.useFakeTimers();
@@ -173,6 +183,8 @@ describe( 'polling-manager', () => {
 			mockPostSyncUpdateNonBlocking =
 				require( '../utils' ).postSyncUpdateNonBlocking;
 			mockApplyFilters = require( '@wordpress/hooks' ).applyFilters;
+			mockRemoveAwarenessStates =
+				require( 'y-protocols/awareness' ).removeAwarenessStates;
 		} );
 	} );
 
@@ -188,14 +200,10 @@ describe( 'polling-manager', () => {
 	describe( 'awareness update processing', () => {
 		it( 'drops malformed remote awareness when the awareness implementation provides a validator', async () => {
 			const currentStates = new Map< number, object >();
-			const awareness = createMockAwareness( currentStates, ( state ) => {
-				return 'object' === typeof state &&
-					null !== state &&
-					! Array.isArray( state ) &&
-					'collaboratorInfo' in state
-					? state
-					: null;
-			} );
+			const awareness = createMockAwareness(
+				currentStates,
+				requireCollaboratorInfo
+			);
 
 			mockPostSyncUpdate.mockResolvedValue( {
 				rooms: [
@@ -227,6 +235,60 @@ describe( 'polling-manager', () => {
 					added: [ 2 ],
 				} ),
 			] );
+		} );
+
+		it( 'removes a tracked remote client when the server replaces it with malformed awareness', async () => {
+			const currentStates = new Map< number, object >( [
+				[ 2, { collaboratorInfo: { id: 200 } } ],
+			] );
+			const awareness = createMockAwareness(
+				currentStates,
+				requireCollaboratorInfo
+			);
+			mockRemoveAwarenessStates.mockImplementationOnce(
+				(
+					awarenessInstance: typeof awareness,
+					clientIds: number[]
+				) => {
+					expect( awarenessInstance.getStates().has( 2 ) ).toBe(
+						true
+					);
+					clientIds.forEach( ( clientId ) => {
+						awarenessInstance.getStates().delete( clientId );
+					} );
+				}
+			);
+
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness: {
+							2: { unexpected: 'missing collaboratorInfo' },
+						},
+						updates: [],
+					},
+				],
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 1 ),
+				awareness,
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( mockRemoveAwarenessStates ).toHaveBeenCalledWith(
+				awareness,
+				[ 2 ],
+				'polling-manager'
+			);
+			expect( currentStates.has( 2 ) ).toBe( false );
 		} );
 	} );
 
@@ -395,6 +457,51 @@ describe( 'polling-manager', () => {
 				room: 'test-room',
 				doc: createMockDoc( 1 ),
 				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( onStatusChange ).not.toHaveBeenCalledWith(
+				expect.objectContaining( {
+					error: expect.objectContaining( {
+						code: 'connection-limit-exceeded',
+					} ),
+				} )
+			);
+		} );
+
+		it( 'ignores invalid remote awareness when checking the connection limit', async () => {
+			// DEFAULT_CLIENT_LIMIT_PER_ROOM is 3. Only client 2 is valid, so this
+			// should count as self + one collaborator.
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness: {
+							1: { collaboratorInfo: { id: 100 } },
+							2: { collaboratorInfo: { id: 200 } },
+							3: { unexpected: 'missing collaboratorInfo' },
+							4: { unexpected: 'missing collaboratorInfo' },
+							5: { unexpected: 'missing collaboratorInfo' },
+						},
+						updates: [],
+					},
+				],
+			} );
+
+			const onStatusChange = jest.fn();
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(
+					new Map(),
+					requireCollaboratorInfo
+				),
 				log: jest.fn(),
 				onStatusChange,
 				onSync: jest.fn(),
@@ -749,6 +856,58 @@ describe( 'polling-manager', () => {
 			await jest.advanceTimersByTimeAsync( 0 );
 
 			// Second poll: collection room queue should still be paused.
+			await jest.advanceTimersByTimeAsync( 4000 );
+
+			const secondCallPayload = mockPostSyncUpdate.mock.calls[ 1 ][ 0 ];
+			const collectionRoom = secondCallPayload.rooms.find(
+				( r: { room: string } ) => r.room === 'collection-room'
+			);
+			expect( collectionRoom!.updates ).toEqual( [] );
+		} );
+
+		it( 'does not resume non-primary room queues for invalid remote awareness', async () => {
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'primary-room',
+						end_cursor: 1,
+						awareness: {
+							1: { collaboratorInfo: { id: 100 } },
+							2: { unexpected: 'missing collaboratorInfo' },
+						},
+						updates: [],
+					},
+					{
+						room: 'collection-room',
+						end_cursor: 1,
+						awareness: {},
+						updates: [],
+					},
+				],
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'primary-room',
+				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(
+					new Map(),
+					requireCollaboratorInfo
+				),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'collection-room',
+				doc: createMockDoc( 2 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
 			await jest.advanceTimersByTimeAsync( 4000 );
 
 			const secondCallPayload = mockPostSyncUpdate.mock.calls[ 1 ][ 0 ];

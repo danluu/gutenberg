@@ -583,6 +583,56 @@ describe( 'PostEditorAwareness', () => {
 		} );
 	} );
 
+	describe( 'remote state validation', () => {
+		const createRemoteState = ( editorState?: object ) => ( {
+			collaboratorInfo: {
+				id: 1,
+				name: 'Test User',
+				slug: 'test-user',
+				avatar_urls: mockAvatarUrls,
+				browserType: 'Chrome',
+				enteredAt: 1704067200000,
+			},
+			...( undefined === editorState ? {} : { editorState } ),
+		} );
+
+		test( 'should accept a valid selection state', () => {
+			const awareness = new PostEditorAwareness(
+				doc,
+				'postType',
+				'post',
+				123
+			);
+
+			const state = createRemoteState( {
+				selection: { type: SelectionType.None },
+			} );
+
+			expect( awareness.getValidatedRemoteState( state ) ).toEqual(
+				state
+			);
+		} );
+
+		test( 'should reject a malformed selection state', () => {
+			const awareness = new PostEditorAwareness(
+				doc,
+				'postType',
+				'post',
+				123
+			);
+
+			expect(
+				awareness.getValidatedRemoteState(
+					createRemoteState( {
+						selection: {
+							type: SelectionType.Cursor,
+						},
+					} )
+				)
+			).toBeNull();
+		} );
+	} );
+
 	describe( 'convertSelectionStateToAbsolute', () => {
 		const defaultEditorBlocks = [
 			{

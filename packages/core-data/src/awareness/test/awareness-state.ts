@@ -343,8 +343,7 @@ describe( 'AwarenessState', () => {
 	describe( 'updateSubscribers', () => {
 		test( 'should not call subscribers when no subscriptions exist', () => {
 			awareness.setUp();
-			// This should not throw
-			awareness.testUpdateSubscribers();
+			expect( () => awareness.testUpdateSubscribers() ).not.toThrow();
 		} );
 
 		test( 'should reject remote states with unknown fields', () => {
@@ -353,6 +352,14 @@ describe( 'AwarenessState', () => {
 					name: 'Test',
 					count: 1,
 					unexpected: 'field',
+				} )
+			).toBeNull();
+		} );
+
+		test( 'should reject remote states with inherited equality-field names', () => {
+			expect(
+				awareness.getValidatedRemoteState( {
+					toString: 'unexpected inherited field',
 				} )
 			).toBeNull();
 		} );
@@ -370,6 +377,22 @@ describe( 'AwarenessState', () => {
 			expect( callback ).not.toHaveBeenCalled();
 			expect( awareness.getStates().has( 123 ) ).toBe( false );
 			expect( awareness.getSeenStates().has( 123 ) ).toBe( false );
+		} );
+
+		test( 'should not delete the local client state when it is not yet valid', () => {
+			awareness.setUp();
+			const callback = jest.fn();
+			awareness.onStateChange( callback );
+
+			awareness.getStates().set( awareness.clientID, {
+				unexpected: 'local state still initializing',
+			} as any );
+
+			expect( () => awareness.testUpdateSubscribers() ).not.toThrow();
+			expect( callback ).not.toHaveBeenCalled();
+			expect( awareness.getStates().has( awareness.clientID ) ).toBe(
+				true
+			);
 		} );
 
 		test( 'should include enhanced state properties', () => {
