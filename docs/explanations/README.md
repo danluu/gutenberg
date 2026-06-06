@@ -10,3 +10,4 @@
 -   [Why is Playwright the tool of choice for end-to-end tests?](/docs/explanations/architecture/automated-testing.md)
 -   [What’s the difference between the different editor packages? What’s the purpose of each package?](/docs/explanations/architecture/modularity.md#whats-the-difference-between-the-different-editor-packages-whats-the-purpose-of-each-package)
 -   [Template and template parts flows](/docs/explanations/architecture/full-site-editing-templates.md)
+-   [Template Part Query ID Normalization Repeated Dirty Save Report](/docs/explanations/template-part-queryid-normalization-repeat-dirty-save/README.md)

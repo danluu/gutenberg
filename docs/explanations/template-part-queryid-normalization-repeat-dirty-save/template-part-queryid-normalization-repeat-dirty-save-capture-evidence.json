@@ -1,0 +1,68 @@
+{
+  "baseURL": "http://localhost:8896",
+  "environment": {
+    "activeTheme": "twentytwentyfive",
+    "activePlugins": [
+      "gutenberg/gutenberg.php"
+    ],
+    "coreVersion": "7.1-alpha-62469"
+  },
+  "templateAfterSetup": {
+    "singlePostExists": true,
+    "singlePostSource": "custom",
+    "singlePostHasSidebar": true,
+    "sidebarSource": "theme",
+    "sidebarContentHasQueryId": false,
+    "sidebarContent": "<!-- wp:pattern {\"slug\":\"twentytwentyfive/hidden-sidebar\"} /-->\n"
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "postId": 171,
+      "dirtyAfterOpen": [
+        "wp_template_part:Sidebar"
+      ],
+      "dirtyAfterEdit": [
+        "post:Query ID repeat demo edited 1",
+        "wp_template_part:Sidebar"
+      ],
+      "dirtyAtSavePanel": [
+        "post:Query ID repeat demo edited 1",
+        "wp_template_part:Sidebar"
+      ],
+      "savePanelExcerpt": "Are you ready to save?\n\nThere are 2 site changes waiting to be saved.\n\nTemplate Part\nSidebar\nPosts\nThe following has been modified.\nQuery ID repeat demo edited 1\nPost\nTitle\nCycle 1: click Save.\nExpected: save only the post title change.\nBug: the save panel also offers a Template Part > Sidebar change.\n1. Turn on View > Show template. / 2. Cycle 1: dirty records after opening. / 3. Cycle 1: edit only the post title. / 4. Cycle 1: click Save.",
+      "templateAfterPostOnlySave": {
+        "singlePostExists": true,
+        "singlePostSource": "custom",
+        "singlePostHasSidebar": true,
+        "sidebarSource": "theme",
+        "sidebarContentHasQueryId": false,
+        "sidebarContent": "<!-- wp:pattern {\"slug\":\"twentytwentyfive/hidden-sidebar\"} /-->\n"
+      }
+    },
+    {
+      "cycle": 2,
+      "postId": 175,
+      "dirtyAfterOpen": [
+        "wp_template_part:Sidebar"
+      ],
+      "dirtyAfterEdit": [
+        "post:Query ID repeat demo edited 2",
+        "wp_template_part:Sidebar"
+      ],
+      "dirtyAtSavePanel": [
+        "post:Query ID repeat demo edited 2",
+        "wp_template_part:Sidebar"
+      ],
+      "savePanelExcerpt": "Are you ready to save?\n\nThere are 2 site changes waiting to be saved.\n\nTemplate Part\nSidebar\nPosts\nThe following has been modified.\nQuery ID repeat demo edited 2\nPost\nTitle\nCycle 2: click Save.\nExpected: save only the post title change.\nBug: the save panel also offers a Template Part > Sidebar change.\n1. Cycle 2: open a normal published post. / 2. Cycle 2: dirty records after opening. / 3. Cycle 2: edit only the post title. / 4. Cycle 2: click Save.",
+      "templateAfterPostOnlySave": {
+        "singlePostExists": true,
+        "singlePostSource": "custom",
+        "singlePostHasSidebar": true,
+        "sidebarSource": "theme",
+        "sidebarContentHasQueryId": false,
+        "sidebarContent": "<!-- wp:pattern {\"slug\":\"twentytwentyfive/hidden-sidebar\"} /-->\n"
+      }
+    }
+  ]
+}

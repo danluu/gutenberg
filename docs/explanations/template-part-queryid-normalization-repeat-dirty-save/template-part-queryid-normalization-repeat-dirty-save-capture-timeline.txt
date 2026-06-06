@@ -1,0 +1,84 @@
+1. Log in as an editor/admin.
+   - This is a normal WordPress admin session.
+
+2. Normal setup: create a Single Posts template.
+   - The user uses the Site Editor template flow.
+   - They choose the stock TT5 pattern: "News blog single post with sidebar".
+
+3. Choose the stock sidebar single-post design.
+   - This design references the Sidebar template part.
+   - The Sidebar part resolves TT5 hidden-sidebar, which contains a Query block without queryId.
+
+4. Save the template.
+   - Expected: a custom Single Posts template is saved.
+   - The Sidebar template part remains a theme part, not something the user edited.
+
+5. Template setup state after saving.
+   - Single Posts template source: custom
+   - Sidebar source: theme
+   - Sidebar saved content has queryId: false
+
+6. Cycle 1: open a normal published post.
+   - The user will enable Show template once.
+
+7. Turn on View > Show template.
+   - This is the normal post-editor control that reveals the surrounding template.
+   - It should not make unrelated template parts look edited.
+
+8. Cycle 1: dirty records after opening.
+   - Dirty records: wp_template_part:Sidebar
+   - Sidebar is dirty before the user edits the post body/title.
+
+9. Cycle 1: edit only the post title.
+   - No Sidebar/template-part block is selected or edited.
+   - The following Save panel should only need to save the post.
+
+10. Cycle 1: click Save.
+   - Expected: save only the post title change.
+   - Bug: the save panel also offers a Template Part > Sidebar change.
+
+11. Cycle 1: unexpected Sidebar save row is visible.
+   - The user edited only the post title.
+   - Saving Sidebar would persist an editor normalization, not an intentional user edit.
+   - Are you ready to save? There are 2 site changes waiting to be saved. Template Part Sidebar Posts The following has been modified. Query ID repeat demo edited 1 Post Title Cycle 1: 
+
+12. Cycle 1: uncheck Sidebar and save only the post.
+   - This is a normal user response to an unexpected site-wide save row.
+   - Because Sidebar is not saved, the underlying theme part still lacks queryId.
+
+13. Cycle 1: post-only save completed.
+   - Sidebar still has queryId in saved content: false
+   - Next cycle shows the same unexpected Sidebar row comes back.
+
+14. Cycle 2: open a normal published post.
+   - Show template persists; the user does not touch the View menu this time.
+
+15. Cycle 2: dirty records after opening.
+   - Dirty records: wp_template_part:Sidebar
+   - Sidebar is dirty before the user edits the post body/title.
+
+16. Cycle 2: edit only the post title.
+   - No Sidebar/template-part block is selected or edited.
+   - The following Save panel should only need to save the post.
+
+17. Cycle 2: click Save.
+   - Expected: save only the post title change.
+   - Bug: the save panel also offers a Template Part > Sidebar change.
+
+18. Cycle 2: unexpected Sidebar save row is visible.
+   - The user edited only the post title.
+   - Saving Sidebar would persist an editor normalization, not an intentional user edit.
+   - Are you ready to save? There are 2 site changes waiting to be saved. Template Part Sidebar Posts The following has been modified. Query ID repeat demo edited 2 Post Title Cycle 2: 
+
+19. Cycle 2: uncheck Sidebar and save only the post.
+   - This is a normal user response to an unexpected site-wide save row.
+   - Because Sidebar is not saved, the underlying theme part still lacks queryId.
+
+20. Cycle 2: post-only save completed.
+   - Sidebar still has queryId in saved content: false
+   - The repeated Sidebar row demonstrates the recurring failure mode.
+
+21. Bug demonstrated.
+   - The user edited only post titles.
+   - The editor repeatedly offered to save Sidebar because loading the template normalized a Query block.
+   - That is surprising because Sidebar was not edited by the user.
