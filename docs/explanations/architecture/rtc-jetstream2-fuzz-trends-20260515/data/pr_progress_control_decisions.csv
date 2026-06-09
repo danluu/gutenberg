@@ -1,42 +1,36 @@
 action,target,priority,allowed,reason
-include-candidate,PR07C,P0,yes,Required cheap manifest accounting for the net-risk-reducing PR07C candidate; does not grant publication credit.
-include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,Required same-head repaired PR07C proof accounting for the stale long-lived progress loop.
-repair-ready,PR07C/current-build-clean-preflight@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,Next product-progress slot; run exactly one bounded same-head non-browser build/type preflight.
-repair-ready,PR07C/current-build-clean-preflight@9617d576354444657e7278c0dd9abc5d4f05dcb9#duplicates,P0,no,"Collapse duplicate build-type-preflight, promotion-preflight, schedule-preflight, and repeated repair-ready rows into the single allowed preflight."
-publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Hold publication until same-head preflight is green and current forced canary rows are direct green or explicitly downscoped.
-publish-ready,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Hold all-merged promotion on PR07C preflight plus current benchmark-canary closure.
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9.
-launch-owner-matrix,PR07C/HOLD-07C,high,no,Owner matrix is runtime-held and consumed; reopen only with newer owner evidence.
-launch-branch-repair,PR07C/repaired-head@9617d576354444657e7278c0dd9abc5d4f05dcb9,high,no,Repaired branch already exists and is manifest-materialized; remaining useful work is proof.
-repair-ready,pa-exact-novelty-http-existing-post-crdt-metadata/active-owner,P0,yes,Reconcile and consume the singleton active exact repair/downscope owner; require classification.tsv plus report.md.
-repair-ready,pa-exact-novelty-http-existing-post-crdt-metadata#duplicates,P0,no,Do not launch a second exact-owner while the active continuation can still produce required artifacts.
-repair-ready,benchmark-canary-fuzzer-gap,P0,no,Keep this coverage-owned; it must not absorb branch repair ownership.
-reserve-discovery,benchmark-canary/run-20260609T105341Z,P0,yes,Preserve forced canary coverage until every promotion-blocked forced row has direct current-run green or explicit downscope.
-reserve-discovery,novelty-http-large-post-lifecycle-completion@run-20260609T105341Z,P0,yes,Status-only forced row must be materialized or explicitly downscoped before promotion credit.
-reserve-discovery,novelty-ws-collaboration-ui-signals@run-20260609T105341Z,P0,yes,Disabled or unmaterialized forced row still blocks promotion credit.
-reserve-discovery,novelty-ws-multi-reload-lifecycle@run-20260609T105341Z,P0,yes,Forced row cannot close from retained or stale evidence alone.
-reserve-discovery,novelty-ws-parser-serialization@run-20260609T105341Z,P0,yes,Forced row cannot close from retained or stale evidence alone.
-reserve-discovery,benchmark-canary/prior-run-rows@082522-093557-102140,P0,no,Superseded as controller target by current root run-20260609T105341Z; do not grant stale-run promotion credit.
-reserve-discovery,existing-code-and-existing-PR-fuzzing,P0,yes,Discovery is only one session above floor and not protected; preserve discovery reserve.
-repair-ready,heavy-pr-browser-benchmark-reruns,P0,no,Block heavy PR jobs while discovery_protected=no and PR07C/canary gates remain open.
-repair-ready,lower-level/existing-post-crdt-http/current-bounded-proof,P0,no,"Active exact-owner owns repair/downscope; lower-level output gets PR credit only with product key, blocker key, repair, or downscope evidence."
-repair-ready,lower-level/rendered-overlay-dom-self-presence/current-bounded-proof,high,yes,"Allow one bounded proof only if it can emit retained product keys, active blocker evidence, repair evidence, or explicit downscope."
-repair-ready,lower-level/self-presence-ui-signals#duplicates,high,no,Collapse repeated self-presence oracle rows into the single bounded rendered-overlay proof path.
-cooldown-diagnostic,lower-level/productless-feature-only-credit,high,yes,Productless lower-level output is freshness-only and earns no PR or broad scheduling credit.
-publish-ready,canonical-ready-product-prs,high,no,Canonical ready branches are already locally published; republishing does not move product progress.
-cooldown-diagnostic,canonical-ready-product-prs,high,yes,Keep fuzz validation active but suppress republish churn.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already-published canonical PR06B minimal branch.
-cooldown-diagnostic,ready/rtc-pr06b-malformed-save-request-payload,high,yes,Suppress raw malformed-save variant churn in favor of PR06B minimal.
-publish-ready,ready/rtc-pr15a+pr15b+pr15c-direct-variants,high,no,On-PR14B PR15 variants are canonical and published; direct variants remain held.
-cooldown-diagnostic,ready/rtc-pr15a+pr15b+pr15c-direct-variants,high,yes,Cool duplicate direct PR15 diagnostics in favor of published on-PR14B variants.
-cooldown-diagnostic,reload-hydration,high,yes,Replay-backed downscope consumed; reopen only with newer same-head final-ui product evidence.
-cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,Explicit diagnostic downscope consumed; reopen only with repeatable core/search first-loss evidence.
-cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,Explicit diagnostic downscope consumed; reopen only with deterministic suffix/content first-loss evidence.
-cooldown-diagnostic,malformed-save-payload,high,yes,Raw deferred malformed-save heads are covered by canonical PR06B minimal.
-cooldown-diagnostic,http-room-isolation,high,yes,Ready PR02A exists; reopen only with fresh healthy-user HTTP room-isolation product evidence.
-update-controller-rule,productive-analysis-single-flight,P0,yes,"Map every P0/high Productive Analysis row to one allowed action or explicit duplicate, stale, or held rejection."
-update-controller-rule,action-kind-normalization,P0,yes,"Normalize schedule-preflight, build-type-preflight, and promotion-preflight into repair-ready preflight decisions."
-update-controller-rule,current-run-canary-materialization-gate,P0,yes,Promotion credit requires current-run green evidence or explicit downscope for forced benchmark-canary rows.
-update-controller-rule,discovery-reserve-protection,P0,yes,Block heavy PR jobs while discovery_protected=no and active discovery is only one above minimum.
-update-controller-rule,exact-owner-result-consumption,P0,yes,Consume active exact-owner results instead of relaunching duplicates.
-update-controller-rule,lower-level-product-key-credit-only,high,yes,"Lower-level work earns PR or scheduling credit only with retained product-key, blocker, repair, or downscope evidence."
+include-candidate,PR07C,P0,yes,Current promotion policy says PR07C is net-risk-reducing; keep the broad candidate row materialized for manifest accounting without granting publication credit.
+include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,Manifest compatibility requires the exact repaired PR07C head row so same-head proof accounting does not fall back to the stale direct head.
+repair-ready,PR07C/current-build-clean-preflight@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,Next product-progress slot; run exactly one bounded same-head non-browser build/type preflight on repaired PR07C.
+repair-ready,PR07C/current-build-clean-preflight@9617d576354444657e7278c0dd9abc5d4f05dcb9#duplicate-feed-rows,P0,no,Collapse repeated PR07C preflight and promotion-gate feed rows into the singleton allowed preflight.
+publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Hold publication until same-head build/type proof is green and current-root forced canaries close or downscope.
+publish-ready,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Exact-stack promotion remains blocked by PR07C build proof plus benchmark-canary current-run closure.
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head lacks the build/type repair and is superseded by repaired head 9617d576.
+repair-branch,PR07C/repaired-head-after-red-preflight,P0,no,No red same-head preflight evidence exists yet; route here only if the singleton preflight fails.
+launch-branch-repair,PR07C/repaired-head@9617d576354444657e7278c0dd9abc5d4f05dcb9,high,no,Repaired branch already exists; launch repair only after concrete red same-head preflight evidence.
+launch-owner-matrix,PR07C/HOLD-07C,high,no,Owner matrix is runtime-held and consumed; relaunch only with newer owner evidence.
+publish-ready,canonical-ready-product-prs,high,no,Canonical ready product PRs are already locally published; republishing is churn.
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already-published PR06B minimal.
+publish-ready,ready/rtc-pr15a+pr15b+pr15c-direct-variants,high,no,On-PR14B PR15 variants are canonical and published; direct variants remain duplicate held heads.
+reserve-discovery,benchmark-canary/current-run-forced-groups@run-20260609T191942Z,P0,yes,Keep coverage-owned current-root forced canary capacity until each promotion-blocked or primary row has current_run_green=yes or explicit_downscope=yes.
+reserve-discovery,benchmark-canary/absent-promotion-blocked-rows@run-20260609T191942Z,P0,yes,Materialize or explicitly downscope novelty-http-large-post-lifecycle-completion and novelty-ws-collaboration-ui-signals before breadth or reference work.
+reserve-discovery,benchmark-canary/stale-feed-rows@run-20260609T162805Z+run-20260609T183410Z,P0,no,Older root-specific canary retarget rows are superseded by current root run-20260609T191942Z.
+reserve-discovery,existing-code-and-existing-PR-fuzzing,P0,yes,"Preserve coverage-guided, focused, strict, protocol, lower-level, browser, existing-code, and existing-PR fuzzing reserve."
+repair-ready,heavy-browser-or-benchmark-PR-reruns,P0,no,Discovery is not protected and benchmark-canary-fuzzer-gap is open; heavy PR jobs wait.
+repair-ready,pa-exact-novelty-http-existing-post-crdt-metadata#consume-singleton,high,yes,Consume completed product_bug_reduced singleton artifacts and clear duplicate runnable blocker state.
+repair-ready,pa-exact-novelty-http-existing-post-crdt-metadata#focused-seed-1220004,high,yes,Route follow-up only to focused seed 1220004 replay triage.
+cooldown-diagnostic,pa-exact-novelty-http-existing-post-crdt-metadata#generic-continuations,high,yes,Suppress duplicate productive-analysis continuations after singleton exact status consumption.
+reserve-discovery,lower-level/self-presence-rendered-overlay-consume,high,yes,Consume rendered-overlay product_yield=1 evidence as the singleton bridge proof before launching more self-presence capacity.
+cooldown-diagnostic,lower-level/self-presence-overlay-oracle-bridge#duplicate-retargets,high,yes,Rendered-overlay evidence satisfies the singleton bridge route; suppress broad duplicate retries.
+cooldown-diagnostic,lower-level/productless-http-awareness-client-overlay,high,yes,Product_yield=0 with empty product_failure_key gets cooldown-only credit.
+cooldown-diagnostic,reload-hydration,high,yes,Replay-backed downscope is consumed; reopen only with newer same-head final-ui product evidence.
+cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,Diagnostic downscope is consumed; reopen only with repeatable core/search first-loss evidence.
+cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,Diagnostic downscope is consumed; reopen only with deterministic suffix/content first-loss evidence.
+cooldown-diagnostic,malformed-save-payload,high,yes,Canonical PR06B minimal is published; raw malformed-save heads are superseded.
+cooldown-diagnostic,http-room-isolation,high,yes,Ready PR02A is published; reopen only with fresh healthy-user HTTP room-isolation product evidence.
+update-controller-rule,pr07c-single-flight-build-preflight,P0,yes,Treat all PR07C preflight and promotion-gate feed rows as one singleton same-head job.
+update-controller-rule,ready-finalized-build-clean-before-promotion,P0,yes,Require same-head product build/type proof before repaired or finalized RTC branches enter maintainer-facing promotion.
+update-controller-rule,pr07c-red-preflight-routes-to-branch-repair,P0,yes,"Route concrete red PR07C preflight output to PR07C branch repair, not benchmark reruns."
+update-controller-rule,current-run-canary-materialization-gate@run-20260609T191942Z,P0,yes,Block publication and exact-stack promotion until current-root forced canaries are green or explicitly downscoped.
+update-controller-rule,discovery-reserve-protection,P0,yes,Allow cheap accounting and the singleton preflight; block heavy PR jobs while discovery_protected=no.
+update-controller-rule,lower-level-product-key-credit-only,high,yes,"Credit lower-level work only for retained product keys, active-blocker evidence, or explicit downscope."
