@@ -1,28 +1,29 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Blocked until exact manifest credit is complete and benchmark-canary forced rows are current-run green or explicitly downscoped.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Blocked until exact manifest credit is complete and benchmark-canary forced rows
-are current-run green or explicitly downscoped."
-run-exact-validation,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Heavy PR validation waits while discovery is marginal; do cheap manifest repair first.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,"Heavy PR validation waits while discovery is marginal; do cheap manifest repair
-first."
-repair-branch,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Build-clean repaired branch already exists at the target SHA.,PR07C/repaired-head-9617d576354444657e7278c0dd9abc5d4f05dcb9,Build-clean repaired branch already exists at the target SHA.
+repair-ready,PR07C/current-build-clean-preflight@9617d576354444657e7278c0dd9abc5d4f05dcb9#duplicates,P0,no,"Collapse duplicate build-type-preflight, promotion-preflight, schedule-preflight, and repeated repair-ready rows into the single allowed preflight.",PR07C/current-build-clean-preflight@9617d576354444657e7278c0dd9abc5d4f05dcb9#duplicates,"Collapse duplicate build-type-preflight, promotion-preflight,
+schedule-preflight, and repeated repair-ready rows into the single allowed
+preflight."
+publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Hold publication until same-head preflight is green and current forced canary rows are direct green or explicitly downscoped.,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,"Hold publication until same-head preflight is green and current forced canary
+rows are direct green or explicitly downscoped."
+publish-ready,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Hold all-merged promotion on PR07C preflight plus current benchmark-canary closure.,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,"Hold all-merged promotion on PR07C preflight plus current benchmark-canary
+closure."
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale direct PR07C head is superseded by repaired build-clean head
 9617d576354444657e7278c0dd9abc5d4f05dcb9."
-launch-owner-matrix,PR07C/HOLD-07C,P0,no,Owner matrix is runtime-held and consumed; relaunch only with newer owner evidence.,PR07C/HOLD-07C,"Owner matrix is runtime-held and consumed; relaunch only with newer owner
+launch-owner-matrix,PR07C/HOLD-07C,high,no,Owner matrix is runtime-held and consumed; reopen only with newer owner evidence.,PR07C/HOLD-07C,"Owner matrix is runtime-held and consumed; reopen only with newer owner
 evidence."
-publish-ready,aggregate-all-merged-ready,P0,no,"Aggregate publication inherits PR07C manifest, build-preflight, and benchmark-canary closure gates.",aggregate-all-merged-ready,"Aggregate publication inherits PR07C manifest, build-preflight, and
-benchmark-canary closure gates."
-reserve-discovery,benchmark-canary/novelty-http-large-post-lifecycle-completion,P0,no,Latest status shows this specific row direct current-run green; avoid duplicate materialization.,benchmark-canary/novelty-http-large-post-lifecycle-completion,"Latest status shows this specific row direct current-run green; avoid duplicate
-materialization."
-repair-branch,reload-hydration,P0,no,No newer same-head final-UI product evidence exists after terminal downscope.,reload-hydration,No newer same-head final-UI product evidence exists after terminal downscope.
-publish-ready,reload-hydration,P0,no,No product-publishable reload-hydration evidence remains after consumed downscope.,reload-hydration,"No product-publishable reload-hydration evidence remains after consumed
-downscope."
-launch-owner-matrix,reload-hydration,P0,no,No newer owner or product evidence justifies matrix work.,reload-hydration,No newer owner or product evidence justifies matrix work.
-publish-ready,pre-save-search-live-collapse,medium,no,Stale diagnostic manifest lacks repeatable core/search first-loss evidence.,pre-save-search-live-collapse,Stale diagnostic manifest lacks repeatable core/search first-loss evidence.
-publish-ready,rich-text-suffix-corruption,medium,no,No deterministic product-owned suffix/content first-loss ledger is available.,rich-text-suffix-corruption,No deterministic product-owned suffix/content first-loss ledger is available.
-publish-ready,malformed-save-payload,medium,no,Raw deferred family is covered by published canonical PR06B minimal.,malformed-save-payload,Raw deferred family is covered by published canonical PR06B minimal.
-publish-ready,http-room-isolation,medium,no,Raw deferred family is covered by published PR02A and lacks fresh healthy-user product evidence.,http-room-isolation,"Raw deferred family is covered by published PR02A and lacks fresh healthy-user
-product evidence."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Canonical PR06B minimal is already published; full variant is duplicate stack churn.,ready/rtc-pr06b-malformed-save-request-payload,"Canonical PR06B minimal is already published; full variant is duplicate stack
-churn."
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,PR14B-based canonical PR15A branch is already published.,ready/rtc-pr15a-fallback-group-move-green,PR14B-based canonical PR15A branch is already published.
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,PR14B-based canonical PR15B branch is already published.,ready/rtc-pr15b-fallback-group-insert-anchor-green,PR14B-based canonical PR15B branch is already published.
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,PR14B-based canonical PR15C branch is already published.,ready/rtc-pr15c-fallback-group-delete-green,PR14B-based canonical PR15C branch is already published.
+launch-branch-repair,PR07C/repaired-head@9617d576354444657e7278c0dd9abc5d4f05dcb9,high,no,Repaired branch already exists and is manifest-materialized; remaining useful work is proof.,PR07C/repaired-head@9617d576354444657e7278c0dd9abc5d4f05dcb9,"Repaired branch already exists and is manifest-materialized; remaining useful
+work is proof."
+repair-ready,pa-exact-novelty-http-existing-post-crdt-metadata#duplicates,P0,no,Do not launch a second exact-owner while the active continuation can still produce required artifacts.,pa-exact-novelty-http-existing-post-crdt-metadata#duplicates,"Do not launch a second exact-owner while the active continuation can still
+produce required artifacts."
+repair-ready,benchmark-canary-fuzzer-gap,P0,no,Keep this coverage-owned; it must not absorb branch repair ownership.,benchmark-canary-fuzzer-gap,Keep this coverage-owned; it must not absorb branch repair ownership.
+reserve-discovery,benchmark-canary/prior-run-rows@082522-093557-102140,P0,no,Superseded as controller target by current root run-20260609T105341Z; do not grant stale-run promotion credit.,benchmark-canary/prior-run-rows@082522-093557-102140,"Superseded as controller target by current root run-20260609T105341Z; do not
+grant stale-run promotion credit."
+repair-ready,heavy-pr-browser-benchmark-reruns,P0,no,Block heavy PR jobs while discovery_protected=no and PR07C/canary gates remain open.,heavy-pr-browser-benchmark-reruns,"Block heavy PR jobs while discovery_protected=no and PR07C/canary gates remain
+open."
+repair-ready,lower-level/existing-post-crdt-http/current-bounded-proof,P0,no,"Active exact-owner owns repair/downscope; lower-level output gets PR credit only with product key, blocker key, repair, or downscope evidence.",lower-level/existing-post-crdt-http/current-bounded-proof,"Active exact-owner owns repair/downscope; lower-level output gets PR credit only
+with product key, blocker key, repair, or downscope evidence."
+repair-ready,lower-level/self-presence-ui-signals#duplicates,high,no,Collapse repeated self-presence oracle rows into the single bounded rendered-overlay proof path.,lower-level/self-presence-ui-signals#duplicates,"Collapse repeated self-presence oracle rows into the single bounded
+rendered-overlay proof path."
+publish-ready,canonical-ready-product-prs,high,no,Canonical ready branches are already locally published; republishing does not move product progress.,canonical-ready-product-prs,"Canonical ready branches are already locally published; republishing does not
+move product progress."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already-published canonical PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already-published canonical PR06B minimal branch.
+publish-ready,ready/rtc-pr15a+pr15b+pr15c-direct-variants,high,no,On-PR14B PR15 variants are canonical and published; direct variants remain held.,ready/rtc-pr15a+pr15b+pr15c-direct-variants,On-PR14B PR15 variants are canonical and published; direct variants remain held.
