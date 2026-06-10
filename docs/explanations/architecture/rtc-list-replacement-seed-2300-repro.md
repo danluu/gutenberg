@@ -2,7 +2,7 @@
 
 This documents the published, checkoutable repro attempt for the list replacement failure observed by the seed 2300 RTC oracle. The repro is e2e-first: the important path is the deterministic seed, revision restore, RTC reload, and save oracle.
 
-Post-publication verification on 2026-06-10 found that the published command currently passes in a clean checkout and in the original repro environment. See [Bisect Check](#bisect-check) before using this as a failing endpoint.
+Post-publication verification on 2026-06-10 found that the published focused command currently passes in a clean checkout and in the original repro environment. The original broad fuzzer endpoint still reproduces, and a first-parent bisect of that endpoint confirmed `85cbd148b1c71bc0bfc28943e6d1c9d1e2fddbb5` as the first bad commit. See [Bisect Check](#bisect-check) before citing a breaking commit.
 
 ## Published Repro Code
 
@@ -54,31 +54,31 @@ npm run test:e2e -- --config=playwright.rtc-repro-video.config.ts --project=chro
 
 The spec saves an old revision containing sentinel list content, saves a later edit that replaces a list item and appends extra blocks, restores the old revision through REST, reloads the RTC editor, and saves again.
 
-The assertion is intended to fail if the RTC editor, or the post persisted after the RTC save, still contains the later list replacement markers instead of the restored revision content. As noted in [Bisect Check](#bisect-check), the currently published command passed during verification and therefore cannot yet serve as the bad side of a product-code bisect.
+The assertion is intended to fail if the RTC editor, or the post persisted after the RTC save, still contains the later list replacement markers instead of the restored revision content. As noted in [Bisect Check](#bisect-check), the currently published focused command passed during verification and therefore was not used as the bad side of the confirmed bisect. The confirmed bisect used the original broad fuzzer endpoint that still reproduces the marker-duplication failure.
 
 ## Video Evidence
 
 Primary local video:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-repro-seed-2300-v2.webm
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/actual-failure-screens-self-heal-repro-seed-2300.webm
 ```
 
 This is a 3840x2160 moving-panel stitched video. It keeps all major panels visible over time:
 
-- The top row contains three moving editor videos from the same failing fuzz run, aligned so the pages reach the failure together.
+- The top row starts with three moving editor videos from the same failing fuzz run, then switches at the failure point to the exact Playwright failure screenshots: `test-failed-1.png`, `test-failed-2.png`, and `test-failed-3.png`.
 - The bottom-left panel is a large same-seed visible inspection artifact that scrolls the duplicated visual lists and then switches to code view.
-- The bottom-right panel records the synchronized seed path and oracle transition.
+- The bottom-right panel records the synchronized seed path and shows the actual oracle error: `RTC editor invariant failure during reload-convergence step 5`.
 - The final section keeps the failure state on screen with a wait timer. The duplicated markers do not self-heal: post-reload edited content equals serialized content, all pages have the same canonical hash, and the same-seed code view continues to show duplicated list markup.
 - The video is intentionally based on the fresh failing run artifacts, not a hand-written mockup.
 
 Sampled verification frames from the same render:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-v2-frame-5s.png
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-v2-frame-47s.png
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-v2-frame-62s.png
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-v2-frame-72s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/actual-failure-screens-frame-5s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/actual-failure-screens-frame-48s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/actual-failure-screens-frame-62s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/actual-failure-screens-frame-72s.png
 ```
 
 ## Observed Failure
@@ -93,9 +93,9 @@ The run failed on the initial attempt and both retries at `reload-convergence st
 
 ## Bisect Check
 
-Status: no breaking commit confirmed.
+Status: breaking commit confirmed for the original broad fuzzer endpoint, not for the published focused command.
 
-On 2026-06-10, the published checkoutable repro was rebuilt and rerun before bisecting. The bad endpoint required for a valid `git bisect` did not reproduce:
+On 2026-06-10, the published checkoutable focused repro was rebuilt and rerun before bisecting. That command did not reproduce:
 
 - Exact published repro commit `237463e9a9ce0dae92133c2c8e1a7de5343b036f`, rebuilt in `/tmp/gutenberg-trunk-list-replace-fuzz-20260610`, wp-env at `http://localhost:8898`: the documented command passed.
 - Same documented command in the original repro worktree `/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610`, wp-env at `http://localhost:8889`: passed.
@@ -113,7 +113,7 @@ The earlier broad fuzzer command still reproduced the marker-duplication failure
 /Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-2300-norev-20260610T131556
 ```
 
-However, the same broad fuzzer check passed in clean rebuilt wp-env worktrees, including a same-basename worktree. A parent/child product-code check around the previously suspected trunk commit also passed on both sides:
+However, the same broad fuzzer check passed in clean rebuilt wp-env worktrees, including a same-basename worktree. A parent/child product-code check around the previously suspected trunk commit also passed on both sides in the clean rebuilt environment:
 
 - Parent `4c728f9aa8af2b4fdcca0c55d175acd9420dbaa6`: passed.
 - Child `05bf6da85b4d5ec7465f59c0c915614bddbae70d` / PR #78891, "RTC: Add separate doc persistence endpoint": passed.
@@ -125,4 +125,26 @@ Artifacts:
 /tmp/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/tmp-sameslug-child-05bf6da-norev-2300-20260610T133853
 ```
 
-Conclusion: do not cite `05bf6da85b4d5ec7465f59c0c915614bddbae70d` as the confirmed breaking commit for seed `2300`. The visible failure artifacts remain useful evidence, but the published command must first be made to fail from a clean checkout before a product-code bisect can produce a defensible introduction commit.
+That clean-environment check means `05bf6da85b4d5ec7465f59c0c915614bddbae70d` should not be cited as the confirmed breaking commit for seed `2300`.
+
+The original reproducing worktree and wp-env did provide a valid bad endpoint for the broad fuzzer. A first-parent bisect from known-good `e1e460ae2c8224cf9b3772a4a578cb7c1b4a009f` to known-bad `fb04417bf884258e7f86f9488832b526a4a013c76` found:
+
+- First bad: `85cbd148b1c71bc0bfc28943e6d1c9d1e2fddbb5`, "RTC: Attach sync observers after hydrating persisted CRDT doc (#77966)".
+- First-parent parent: `64575b44eb6a18f9324a84a634d70ddbaee3b748`, "RTC: Fix compaction unit test (#77986)".
+- Changed file: `packages/sync/src/manager.ts`.
+
+Confirmation runs with the stable broad fuzzer classifier:
+
+- Parent `64575b44eb6a18f9324a84a634d70ddbaee3b748`: passed.
+- Child `85cbd148b1c71bc0bfc28943e6d1c9d1e2fddbb5`: failed with `RTC editor invariant failure during reload-convergence step 5` and `list-revision-replacement-marker-isolation`.
+
+Artifacts:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/bisect-seed-2300/64575b44eb6a-20260610T152259
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/bisect-seed-2300/85cbd148b1c7-20260610T152652
+```
+
+Bisect classifier details: the confirmed bisect used `WP_BASE_URL=http://localhost:8889`, `GUTENBERG_RTC_BROWSER_ACTION_PROFILE=list-revision-replacement`, seed `2300`, `GUTENBERG_RTC_BROWSER_STEPS=14`, `GUTENBERG_RTC_BROWSER_OPERATION_LEDGER_MODE=shadow`, `GUTENBERG_RTC_BROWSER_SKIP_GLOBAL_POST_CLEANUP=1`, and `GUTENBERG_RTC_BROWSER_DISABLE_REVISION_RESTORE=1`. The harness was recovered from the original reproducer overlay and patched only to tolerate absent optional RTC websocket provider test plugins on older commits.
+
+Conclusion: cite `85cbd148b1c71bc0bfc28943e6d1c9d1e2fddbb5` as the confirmed first bad commit for the original broad fuzzer/original wp-env endpoint. Do not cite `05bf6da85b4d5ec7465f59c0c915614bddbae70d` as the first bad commit. The focused published command still needs follow-up because it passes even though the broader original endpoint reproduces.
