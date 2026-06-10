@@ -132,9 +132,60 @@ keeping the snapshot mutation and only removing this inner loop also fixes the
 repro. That makes the loop, not the snapshot serialization itself, the direct
 cause.
 
-## How It Was Introduced
+## Trunk Audit
 
-The same loop appears in the local PR-stack history at:
+The exact bad loop does not appear on first-parent `origin/trunk`.
+
+These searches returned no first-parent trunk commits:
+
+```bash
+git log --first-parent -S'newEdits[ key ] = crdtValue' origin/trunk -- packages/core-data/src/entities.js
+git log --first-parent -S'crdtSnapshotSyncManager' origin/trunk -- packages/core-data/src/entities.js
+git log --first-parent -S'latestRecordForCRDTSnapshot' origin/trunk -- packages/core-data/src/entities.js
+```
+
+Current `origin/trunk`
+[`2cbccc116ba`](https://github.com/WordPress/gutenberg/commit/2cbccc116ba)
+also passes the two checked window-2 seeds under the final persistence oracle:
+
+| Commit | Seed | Result |
+| --- | --- | --- |
+| `2cbccc116ba` | `8970053` | good |
+| `2cbccc116ba` | `8970017` | good |
+
+The parent of
+[`05bf6da85b4`](https://github.com/WordPress/gutenberg/commit/05bf6da85b4)
+(`#78891`) also passed seed `8970053`.
+
+So there is no trunk commit hash or WordPress PR that introduced the exact
+window-2 bug isolated here. It was introduced by the uncommitted dirty RTC
+product overlay / danluu PR-stack code path, not by current first-parent trunk.
+
+## Related Trunk PRs
+
+The adjacent trunk CRDT persistence history is:
+
+- [`2d8b22633dd`](https://github.com/WordPress/gutenberg/commit/2d8b22633dd3889e1a4405dcc7ebfd4bb8dbf71c),
+  [WordPress/gutenberg#72373](https://github.com/WordPress/gutenberg/pull/72373):
+  introduced CRDT persistence for collaborative editing.
+- [`83a8f448995`](https://github.com/WordPress/gutenberg/commit/83a8f448995bede00097ac61a340b12e3e09401b),
+  [WordPress/gutenberg#75846](https://github.com/WordPress/gutenberg/pull/75846):
+  moved the WordPress CRDT meta key from `sync` to `core-data`.
+- [`8051e14451c`](https://github.com/WordPress/gutenberg/commit/8051e14451cf85c5e6713bf2098149f30229e47b),
+  [WordPress/gutenberg#75975](https://github.com/WordPress/gutenberg/pull/75975):
+  made CRDT document creation asynchronous so pending deferred Y.Doc updates
+  flush before save-time serialization.
+- [`05bf6da85b4`](https://github.com/WordPress/gutenberg/commit/05bf6da85b4d5ec7465f59c0c915614bddbae70d),
+  [WordPress/gutenberg#78891](https://github.com/WordPress/gutenberg/pull/78891):
+  added a separate CRDT document persistence endpoint.
+
+These are useful context, but they are not the first bad trunk commit for this
+window-2 repro because the repro passes on current trunk and the isolated bad
+loop is absent from trunk history.
+
+## Local PR-Stack Introduction
+
+The same loop appears in the local/danluu PR-stack history at:
 
 [`f89f5c4583f206bc6ddf1cf539d2f95ef2f8bf27`](https://github.com/danluu/gutenberg/commit/f89f5c4583f206bc6ddf1cf539d2f95ef2f8bf27)
 (`Snapshot RTC save payload before CRDT persistence`).
@@ -162,9 +213,9 @@ Related public WordPress PR refs in the older stale-save ancestry are:
 - [`origin/pr/78251`](https://github.com/WordPress/gutenberg/pull/78251):
   nested cursor awareness merge input in the same stale-save branch ancestry.
 
-The exact currently reproduced window-2 failure is not a clean committed
-current-branch regression. It is introduced by the uncommitted dirty RTC product
-overlay applied on top of clean `2f59cd94b1b`, and the minimal source is the
+The exact currently reproduced window-2 failure is not a clean committed trunk
+regression. It is introduced by the uncommitted dirty RTC product overlay
+applied on top of clean `2f59cd94b1b`, and the minimal source is the
 `newEdits[ key ] = crdtValue` reconciliation loop above.
 
 ## Notes About Commit-Level Testing
