@@ -1,202 +1,159 @@
-# RTC PR Progress Controller
+# RTC Jetstream2 PR Status For Maintainers
 
-- updated: 2026-06-10T18:20:53Z
-- cycle sleep seconds: 120
-- max active PR jobs: 2
-- active PR jobs: 0
-- active discovery sessions: 4
-- min discovery sessions: 3
-- discovery protected: no
-- resource reason: deadline_benchmark_canary_cap
-- latest persona run: /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/persona-runs/20260610T181411Z
+Snapshot: `2026-06-10T18:23:05Z`
 
-## Current Decisions
-action                            target                                                                                                                                  priority  allowed  reason
-reserve-discovery                 existing-code-and-existing-PR-fuzzing                                                                                                   P0        yes      active_discovery=4,min=3,discovery_protected=no; preserve discovery reserve and current fuzzing
-reserve-discovery                 heavy-pr-browser-validation                                                                                                             P0        no       discovery reserve is marginal and current canary is open; allow cheap manifest/accounting/analysis only
-materialize-forced-canary-groups  benchmark-canary/current-root@run-20260610T160049Z                                                                                      P0        yes      latest status has ten forced rows current_run_green=no and explicit_downscope=no; keep canary capacity until direct current-run green or explicit downscope
-update-controller-rule            benchmark-canary/latest-current-root-dispatch-preflight                                                                                 P0        yes      reread latest current-root canary before any RTC push; run-20260610T160049Z supersedes stale 145026 close/publish rows
-update-controller-rule            benchmark-canary/direct-current-run-closure-only                                                                                        P0        yes      retained_product_evidence and exact-stack green do not close promotion gate; require current_run_green=yes or explicit_downscope=yes
-update-controller-rule            ready-finalized-build-preflight                                                                                                         P0        yes      require same-head build-clean preflight before ready/finalized publication or browser coverage credit
-include-candidate                 PR07C                                                                                                                                   P0        yes      current policy includes PR07C as a net-risk-reducing candidate; accounting only, not owner-matrix proof or publication
-include-candidate                 repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9                                                P0        yes      manifest accounting compatibility requires the exact repaired PR07C head; cheap materialization is allowed under reserve
-include-candidate                 candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9                                  P0        yes      materialize same-head candidate stack for accounting; publication remains gated
-repair-ready                      repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9                                                P0        yes      run same-head build/preflight and exact non-browser validation/repair accounting
-publish-ready                     PR07C/repaired-build-clean-head@9617d576354444657e7278c0dd9abc5d4f05dcb9                                                                P0        no       latest current canary has open forced rows and build-clean preflight is still required
-publish-ready                     candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9                                  P0        no       same-SHA candidate inherits current canary and build-preflight gates
-publish-ready                     ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd                                                        P0        no       stale direct PR07C head lacks build/type repair and is superseded
-repair-branch                     ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd                                                        P0        no       repaired build-clean PR07C branch already exists
-launch-owner-matrix               PR07C/HOLD-07C                                                                                                                          high      no       runtime-held/consumed; reopen only with newer owner evidence
-repair-ready                      self-presence/rendered-overlay-dom@repair/pa-self-presence-overlay-root-attr-20260610T114902Z@8fe539ccadf7d2c38b2b058bf4e499318051007a  high      yes      next non-P0 product-progress slot; bounded validation/accounting or exact downscope only
-launch-branch-repair              self-presence/rendered-overlay-dom                                                                                                      high      no       canonical 114902Z repair branch already exists; another branch is duplicate churn
-cooldown-diagnostic               self-presence/duplicate-proof-and-113059Z-alias                                                                                         high      yes      fold same-SHA aliases and duplicate proof into canonical 114902Z accounting
-publish-ready                     ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-direct-variants                                                                         high      no       canonical on-PR14B PR15 branches are already published
-cooldown-diagnostic               ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-direct-variants                                                                         high      yes      held direct variants are duplicate publication/validation churn
-publish-ready                     ready/rtc-pr06b-malformed-save-request-payload                                                                                          high      no       superseded by already-published minimal PR06B
-cooldown-diagnostic               ready/rtc-pr06b-malformed-save-request-payload                                                                                          high      yes      full PR06B should not consume publication/validation slots
-update-controller-rule            deferred-family-terminal-downscope                                                                                                      high      yes      downscoped state must veto scheduling before fairness duplicate-head manifest or launch-budget checks
-cooldown-diagnostic               reload-hydration+pre-save-search-live-collapse+rich-text-suffix-corruption+malformed-save-payload+http-room-isolation                   high      yes      terminal downscope/supersession stands absent newer family-specific exact product evidence
-update-controller-rule            lower-level/rendered-overlay-dom-self-presence                                                                                          high      yes      credit RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING product-key evidence and require one bounded 4x16 canary before broad capacity
-cooldown-diagnostic               lower-level/http-awareness-client-overlay-productless                                                                                   high      yes      productless roots remain freshness-only; do not grant broad capacity from zero-yield summaries
+This page summarizes the Jetstream2 RTC branch set in maintainer-readable form.
+It is derived from the live PR progress controller; the raw controller dump and
+TSVs are linked at the end for audit.
 
-## Progress Table
-generated_at          item_id                                                             kind              priority  status                 branch_or_target                                             head_sha                                  next_action                                                                                                                            evidence
-2026-06-10T18:20:41Z  branch-ready-rtc-pr02a-http-room-isolation-regression               ready-product-pr  high      published              ready/rtc-pr02a-http-room-isolation-regression               9303a7715cf3                              already published by local machine after branch repair; keep validating against fuzz                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150633Z/validations/branch-ready-rtc-pr02a-http-room-isolation-regression/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr03b-browser-revision-restore-crdt-invalidation   ready-product-pr  high      published              ready/rtc-pr03b-browser-revision-restore-crdt-invalidation   cbab481fe760                              already published by local machine after branch repair; keep validating against fuzz                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T133507Z/validations/branch-ready-rtc-pr03b-browser-revision-restore-crdt-invalidation/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr06b-malformed-save-request-payload-minimal       ready-product-pr  high      published              ready/rtc-pr06b-malformed-save-request-payload-minimal       7b123e0ef233                              already published by local machine; keep validating against fuzz                                                                       /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150633Z/validations/branch-ready-rtc-pr06b-malformed-save-request-payload-minimal/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr06b-malformed-save-request-payload               ready-product-pr  low       superseded             ready/rtc-pr06b-malformed-save-request-payload               87e0ed20ab8e                              controller policy says this candidate is superseded by an already-published canonical branch                                           /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T145219Z/validations/branch-ready-rtc-pr06b-malformed-save-request-payload/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr07b-save-response-manager-base-record            ready-product-pr  high      published              ready/rtc-pr07b-save-response-manager-base-record            c2592d5fd583                              already published by local machine after branch repair; keep validating against fuzz                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T145219Z/validations/branch-ready-rtc-pr07b-save-response-manager-base-record/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr07c-reload-record-snapshots                      ready-product-pr  low       superseded-by-repair   ready/rtc-pr07c-reload-record-snapshots                      2f8247258316bde60869c06c383090904e9426bd  stale direct PR07C head is superseded by the repaired build-clean PR07C branch                                                         /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150048Z/validations/branch-ready-rtc-pr07c-reload-record-snapshots/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr09-store-lock-fairness                           ready-product-pr  high      published              ready/rtc-pr09-store-lock-fairness                           87b82b3be657                              already published by local machine after branch repair; keep validating against fuzz                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T145219Z/validations/branch-ready-rtc-pr09-store-lock-fairness/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr10-crdt-block-rebase                             ready-product-pr  high      published              ready/rtc-pr10-crdt-block-rebase                             ba7235bc8825                              already published by local machine after branch repair; keep validating against fuzz                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T145219Z/validations/branch-ready-rtc-pr10-crdt-block-rebase/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr11a-stale-base-record-block-append               ready-product-pr  high      published              ready/rtc-pr11a-stale-base-record-block-append               78f6df2a91a2                              already published by local machine after branch repair; keep validating against fuzz                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T145220Z/validations/branch-ready-rtc-pr11a-stale-base-record-block-append/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr11b-stale-base-block-delete                      ready-product-pr  high      published              ready/rtc-pr11b-stale-base-block-delete                      0cdcd5ffca89                              already published by local machine after branch repair; keep validating against fuzz                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T145513Z/validations/branch-ready-rtc-pr11b-stale-base-block-delete/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr14b-table-query-array-local-suffix-append        ready-product-pr  high      published              ready/rtc-pr14b-table-query-array-local-suffix-append        c3d45173ed99                              already published by local machine; keep validating against fuzz                                                                       /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150048Z/validations/branch-ready-rtc-pr14b-table-query-array-local-suffix-append/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr14-table-body-array-green                        ready-product-pr  high      published              ready/rtc-pr14-table-body-array-green                        9b090fc7e660                              already published by local machine after branch repair; keep validating against fuzz                                                   /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150633Z/validations/branch-ready-rtc-pr14-table-body-array-green/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr15a-fallback-group-move-green-on-pr14b           ready-product-pr  high      published              ready/rtc-pr15a-fallback-group-move-green-on-pr14b           125b5d030d8c                              already published by local machine; keep validating against fuzz                                                                       /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150048Z/validations/branch-ready-rtc-pr15a-fallback-group-move-green-on-pr14b/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr15a-fallback-group-move-green                    ready-product-pr  high      held-by-controller     ready/rtc-pr15a-fallback-group-move-green                    76a45dafd157                              controller decision currently blocks publication                                                                                       /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150634Z/validations/branch-ready-rtc-pr15a-fallback-group-move-green/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b  ready-product-pr  high      published              ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b  acb367667da1                              already published by local machine; keep validating against fuzz                                                                       /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150048Z/validations/branch-ready-rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr15b-fallback-group-insert-anchor-green           ready-product-pr  high      held-by-controller     ready/rtc-pr15b-fallback-group-insert-anchor-green           34af1b4f9430                              controller decision currently blocks publication                                                                                       /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150634Z/validations/branch-ready-rtc-pr15b-fallback-group-insert-anchor-green/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr15c-fallback-group-delete-green-on-pr14b         ready-product-pr  high      published              ready/rtc-pr15c-fallback-group-delete-green-on-pr14b         8decb9081f9f                              already published by local machine; keep validating against fuzz                                                                       /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T150048Z/validations/branch-ready-rtc-pr15c-fallback-group-delete-green-on-pr14b/report.md
-2026-06-10T18:20:41Z  branch-ready-rtc-pr15c-fallback-group-delete-green                  ready-product-pr  high      held-by-controller     ready/rtc-pr15c-fallback-group-delete-green                  921f093cc47b                              controller decision currently blocks publication                                                                                       /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260517T145219Z/validations/branch-ready-rtc-pr15c-fallback-group-delete-green/report.md
-2026-06-10T18:20:41Z  productive-analysis-action-pr07c-repaired-head-9617d576             ready-product-pr  high      held-by-controller     repair/pr07c-exact-stack-build-20260525T004721Z              9617d576354444657e7278c0dd9abc5d4f05dcb9  controller decision currently blocks publication                                                                                       /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/jobs/pr07c-owner-matrix-20260528T041939Z/report.md
-2026-06-10T18:20:41Z  pr07c-owner-matrix                                                  runtime-gated-pr  high      runtime-held-consumed  PR07C/HOLD-07C                                                                                         do not relaunch owner matrix until newer owner evidence appears; repair setup or run exact replay instead                              /media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515/runs/20260518T170339Z/jobs/outputs/rtc-cycle380-pr07c-owner-replay-after-browser-ready/report.md
-2026-06-10T18:20:41Z  reload-hydration                                                    deferred-family   high      downscoped             reload-hydration                                                                                       replay-backed downscope consumed; suppress generic reload-hydration relaunch unless newer same-head final-ui product evidence appears  2026-06-10T18:15:22Z                                                                                                                                                                  reload-hydration               downscoped  replay-backed downscope consumed for seed 7800014 final-ui-witness; suppress generic reload-hydration relaunch until newer same-head final-ui product evidence appears  /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260610T160049Z deferred_control=downscoped:replay-backed-downscope classification=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260528T201206Z/continuations/reload-hydration-reproducer-reacquire/classification.tsv artifact=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260528T201206Z/continuations/reload-hydration-reproducer-reacquire/artifacts/exact-current-head-2/rtc-behavioral-coverage-7800014.json
-2026-06-10T18:20:41Z  pre-save-search-live-collapse                                       deferred-family   medium    downscoped             pre-save-search-live-collapse                                                                          deferred-control downscope consumed; reopen only with repeatable core/search first-loss evidence                                       2026-06-10T18:15:22Z                                                                                                                                                                  pre-save-search-live-collapse  downscoped  explicit diagnostic downscope report consumed; suppress product promotion and generic relaunch until repeatable core/search first-loss evidence appears                 /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260610T160049Z deferred_control=downscoped:explicit-diagnostic-report=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/cycles/20260528T025551Z/pre-save-search-live-collapse/pre-save-search-live-collapse.report.md manifest=age_seconds=1176755 hold_seconds=43200 validity=valid path=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/cycles/20260528T025551Z/pre-save-search-live-collapse/push-manifest.tsv
-2026-06-10T18:20:41Z  rich-text-suffix-corruption                                         deferred-family   medium    downscoped             rich-text-suffix-corruption                                                                            deferred-control downscope consumed; reopen only with deterministic suffix/content first-loss evidence                                 2026-06-10T18:15:22Z                                                                                                                                                                  rich-text-suffix-corruption    downscoped  explicit diagnostic downscope report consumed; suppress generic relaunch until a suffix/content ledger proves deterministic product-owned first loss                    /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260610T160049Z deferred_control=downscoped:explicit-diagnostic-report=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/cycles/20260528T045646Z/rich-text-suffix-corruption/rich-text-suffix-corruption.report.md manifest=age_seconds=1265083 hold_seconds=43200 validity=valid path=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516/cycles/20260527T023803Z/rich-text-suffix-corruption/push-manifest.tsv
+## Short Version
 
-## Branch Links
-- branch-ready-rtc-pr02a-http-room-isolation-regression: [ready/rtc-pr02a-http-room-isolation-regression](https://github.com/danluu/gutenberg/tree/ready/rtc-pr02a-http-room-isolation-regression) status=published head=9303a7715cf3
-- branch-ready-rtc-pr03b-browser-revision-restore-crdt-invalidation: [ready/rtc-pr03b-browser-revision-restore-crdt-invalidation](https://github.com/danluu/gutenberg/tree/ready/rtc-pr03b-browser-revision-restore-crdt-invalidation) status=published head=cbab481fe760
-- branch-ready-rtc-pr06b-malformed-save-request-payload-minimal: [ready/rtc-pr06b-malformed-save-request-payload-minimal](https://github.com/danluu/gutenberg/tree/ready/rtc-pr06b-malformed-save-request-payload-minimal) status=published head=7b123e0ef233
-- branch-ready-rtc-pr06b-malformed-save-request-payload: [ready/rtc-pr06b-malformed-save-request-payload](https://github.com/danluu/gutenberg/tree/ready/rtc-pr06b-malformed-save-request-payload) status=superseded head=87e0ed20ab8e
-- branch-ready-rtc-pr07b-save-response-manager-base-record: [ready/rtc-pr07b-save-response-manager-base-record](https://github.com/danluu/gutenberg/tree/ready/rtc-pr07b-save-response-manager-base-record) status=published head=c2592d5fd583
-- branch-ready-rtc-pr07c-reload-record-snapshots: [ready/rtc-pr07c-reload-record-snapshots](https://github.com/danluu/gutenberg/tree/ready/rtc-pr07c-reload-record-snapshots) status=superseded-by-repair head=2f8247258316bde60869c06c383090904e9426bd
-- branch-ready-rtc-pr09-store-lock-fairness: [ready/rtc-pr09-store-lock-fairness](https://github.com/danluu/gutenberg/tree/ready/rtc-pr09-store-lock-fairness) status=published head=87b82b3be657
-- branch-ready-rtc-pr10-crdt-block-rebase: [ready/rtc-pr10-crdt-block-rebase](https://github.com/danluu/gutenberg/tree/ready/rtc-pr10-crdt-block-rebase) status=published head=ba7235bc8825
-- branch-ready-rtc-pr11a-stale-base-record-block-append: [ready/rtc-pr11a-stale-base-record-block-append](https://github.com/danluu/gutenberg/tree/ready/rtc-pr11a-stale-base-record-block-append) status=published head=78f6df2a91a2
-- branch-ready-rtc-pr11b-stale-base-block-delete: [ready/rtc-pr11b-stale-base-block-delete](https://github.com/danluu/gutenberg/tree/ready/rtc-pr11b-stale-base-block-delete) status=published head=0cdcd5ffca89
-- branch-ready-rtc-pr14b-table-query-array-local-suffix-append: [ready/rtc-pr14b-table-query-array-local-suffix-append](https://github.com/danluu/gutenberg/tree/ready/rtc-pr14b-table-query-array-local-suffix-append) status=published head=c3d45173ed99
-- branch-ready-rtc-pr14-table-body-array-green: [ready/rtc-pr14-table-body-array-green](https://github.com/danluu/gutenberg/tree/ready/rtc-pr14-table-body-array-green) status=published head=9b090fc7e660
-- branch-ready-rtc-pr15a-fallback-group-move-green-on-pr14b: [ready/rtc-pr15a-fallback-group-move-green-on-pr14b](https://github.com/danluu/gutenberg/tree/ready/rtc-pr15a-fallback-group-move-green-on-pr14b) status=published head=125b5d030d8c
-- branch-ready-rtc-pr15a-fallback-group-move-green: [ready/rtc-pr15a-fallback-group-move-green](https://github.com/danluu/gutenberg/tree/ready/rtc-pr15a-fallback-group-move-green) status=held-by-controller head=76a45dafd157
-- branch-ready-rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b: [ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b](https://github.com/danluu/gutenberg/tree/ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b) status=published head=acb367667da1
-- branch-ready-rtc-pr15b-fallback-group-insert-anchor-green: [ready/rtc-pr15b-fallback-group-insert-anchor-green](https://github.com/danluu/gutenberg/tree/ready/rtc-pr15b-fallback-group-insert-anchor-green) status=held-by-controller head=34af1b4f9430
-- branch-ready-rtc-pr15c-fallback-group-delete-green-on-pr14b: [ready/rtc-pr15c-fallback-group-delete-green-on-pr14b](https://github.com/danluu/gutenberg/tree/ready/rtc-pr15c-fallback-group-delete-green-on-pr14b) status=published head=8decb9081f9f
-- branch-ready-rtc-pr15c-fallback-group-delete-green: [ready/rtc-pr15c-fallback-group-delete-green](https://github.com/danluu/gutenberg/tree/ready/rtc-pr15c-fallback-group-delete-green) status=held-by-controller head=921f093cc47b
+There is a reviewable set of small public branches on `danluu/gutenberg`. The
+large all-merge branch exists for integration and reproduction, not for normal
+review.
 
-## Controller Push Manifest
-source_branch	source_commit	intended_danluu_branch	base_ref	files_changed	insertions	deletions	validation_summary	reason
-repair/pr07c-exact-stack-build-20260525T004721Z	9617d576354444657e7278c0dd9abc5d4f05dcb9	danluu/rtc-pr-progress-repair-pr07c-exact-stack-build-20260525T004721Z	ready/rtc-pr07b-save-response-manager-base-record	14	1092	84	controller decision selected this repaired/candidate branch; exact validation and forced coverage gates still apply	include-candidate decision materialized a concrete branch row
-candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z	9617d576354444657e7278c0dd9abc5d4f05dcb9	danluu/rtc-pr-progress-candidate-rtc-risk-reducing-pr07c-all-merged-20260525T183601Z	origin/trunk	1049	68027	9148	controller decision selected this repaired/candidate branch; exact validation and forced coverage gates still apply	include-candidate decision materialized a concrete branch row
+Published here means the branch exists on the `danluu` remote and is being kept
+under fuzz/validation. It does not mean a WordPress/Gutenberg pull request has
+already been opened upstream.
 
-## Active Sessions
-rtc-coverage-guided-analysis: 1 windows (created Wed Jun 10 16:01:13 2026)
-rtc-coverage-guided-novelty: 1 windows (created Wed Jun 10 16:01:13 2026)
-rtc-coverage-guided-supervisor: 1 windows (created Wed Jun 10 16:03:26 2026)
-rtc-coverage-guided-watchdog: 1 windows (created Wed Jun 10 16:01:13 2026)
-rtc-productive-lane-benchmark-to-fuzz-closure-20260610T182005Z-3992198-13552: 1 windows (created Wed Jun 10 18:20:05 2026)
-rtc-productive-lane-deferred-family-reducer-20260610T182005Z-3992198-21179: 1 windows (created Wed Jun 10 18:20:05 2026)
-rtc-productive-lane-lower-level-yield-retarget-20260610T182005Z-3992198-21971: 1 windows (created Wed Jun 10 18:20:05 2026)
+Current blocker for filing/promotion is not branch publication. The controller
+is holding promotion because the latest benchmark canary root
+`run-20260610T160049Z` still has open forced rows
+(`current_run_green=no`, `explicit_downscope=no`) and build-clean preflight is
+required before ready/finalized publication.
 
-## Recent Log
-[2026-06-10T15:26:11Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:28:23Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:30:34Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:32:44Z] launched persona controller round 20260610T153244Z
-[2026-06-10T15:32:46Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:34:58Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:37:09Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:39:21Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:41:30Z] launched persona controller round 20260610T154130Z
-[2026-06-10T15:41:32Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:43:43Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:45:53Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:48:03Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:50:12Z] launched persona controller round 20260610T155012Z
-[2026-06-10T15:50:15Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:52:26Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:54:38Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:56:50Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T15:59:01Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:01:12Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:03:21Z] launched persona controller round 20260610T160320Z
-[2026-06-10T16:03:23Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:05:33Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:07:43Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:09:53Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:12:02Z] launched persona controller round 20260610T161202Z
-[2026-06-10T16:12:04Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:14:16Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:16:28Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:18:40Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:20:50Z] launched persona controller round 20260610T162049Z
-[2026-06-10T16:20:52Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:23:04Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:25:16Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:27:28Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:29:38Z] launched persona controller round 20260610T162937Z
-[2026-06-10T16:29:40Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:31:52Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:34:04Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:36:16Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:38:25Z] launched persona controller round 20260610T163825Z
-[2026-06-10T16:38:27Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:40:37Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:42:48Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:44:58Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:47:06Z] launched persona controller round 20260610T164706Z
-[2026-06-10T16:47:09Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:49:19Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:51:29Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:53:39Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:55:47Z] launched persona controller round 20260610T165547Z
-[2026-06-10T16:55:50Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T16:58:00Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:00:10Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:02:20Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:04:29Z] launched persona controller round 20260610T170429Z
-[2026-06-10T17:04:32Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:06:43Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:08:55Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:11:07Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:13:16Z] launched persona controller round 20260610T171316Z
-[2026-06-10T17:13:18Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:15:29Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:17:39Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:19:49Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:21:58Z] launched persona controller round 20260610T172158Z
-[2026-06-10T17:22:00Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:24:11Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:26:21Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:28:32Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:30:40Z] launched persona controller round 20260610T173040Z
-[2026-06-10T17:30:42Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:32:53Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:35:04Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:37:14Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:39:23Z] launched persona controller round 20260610T173922Z
-[2026-06-10T17:39:25Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:41:35Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:43:45Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:45:56Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:48:05Z] launched persona controller round 20260610T174804Z
-[2026-06-10T17:48:07Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:50:17Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:52:27Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:54:38Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:56:47Z] launched persona controller round 20260610T175646Z
-[2026-06-10T17:56:49Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T17:58:59Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:01:09Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:03:20Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:05:28Z] launched persona controller round 20260610T180528Z
-[2026-06-10T18:05:31Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:07:41Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:09:52Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:12:02Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:14:12Z] launched persona controller round 20260610T181411Z
-[2026-06-10T18:14:14Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:16:26Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:18:37Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
-[2026-06-10T18:20:49Z] not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence
+## What This Stack Is About
+
+This is an RTC correctness stack produced from the Jetstream2 fuzzing run. The
+current public branches cover:
+
+- HTTP room isolation and malformed save payload handling.
+- Browser revision restore and save-response/base-record behavior.
+- Core-data lock fairness and CRDT block rebase behavior.
+- Stale-base append/delete handling.
+- Table body/query-array and fallback-group move/insert/delete convergence.
+
+The maintainer review question is whether each small branch is a reasonable
+isolated fix with the right base and test shape. The all-merge branch answers a
+different question: whether the current selected set behaves correctly when
+combined.
+
+## Branches To Use
+
+Use the all-merge branch to reproduce the whole candidate stack:
+
+- Full candidate stack:
+  [`candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z`](https://github.com/danluu/gutenberg/tree/candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z)
+  at `9617d576354444657e7278c0dd9abc5d4f05dcb9`.
+
+The all-merge branch is large (`1049` files, `+68027/-9148` against
+`origin/trunk` in the current controller manifest). It should be treated as an
+integration target and final-behavior reproducer. The review path should be the
+smaller branches below.
+
+## Recommended Review Order
+
+1. Early RTC/HTTP/save-manager correctness:
+   PR02A, PR03B, PR06B-minimal, PR07B.
+2. Core-data and CRDT ordering:
+   PR09, PR10, PR11A, PR11B.
+3. Table/fallback-group sequence:
+   PR14, PR14B, then the on-PR14B PR15A/PR15B/PR15C branches.
+
+The PR15 direct variants are intentionally not the review target. Use the
+`*-on-pr14b` branches because the controller has already selected those as the
+canonical published sequence.
+
+## Reviewable Sub-PR Branches
+
+| Area | Public branch | Head | Maintainer note |
+| --- | --- | --- | --- |
+| HTTP room isolation sidecar | [`danluu/rtc-pr-progress-rtc-pr02a-http-room-isolation-regression`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr02a-http-room-isolation-regression) | `9303a7715cf3` | Published after branch repair; keep validating against fuzz. |
+| Browser revision restore / CRDT invalidation | [`danluu/rtc-pr-progress-rtc-pr03b-browser-revision-restore-crdt-invalidation`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr03b-browser-revision-restore-crdt-invalidation) | `cbab481fe760` | Published after branch repair; keep validating against fuzz. |
+| Malformed save request payload, minimal fix | [`danluu/rtc-pr-progress-rtc-pr06b-malformed-save-request-payload-minimal`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr06b-malformed-save-request-payload-minimal) | `7b123e0ef233` | Canonical minimal PR06B; the full PR06B branch is superseded. |
+| Save response manager base record | [`danluu/rtc-pr-progress-rtc-pr07b-save-response-manager-base-record`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr07b-save-response-manager-base-record) | `c2592d5fd583` | Published after branch repair; keep validating against fuzz. |
+| Store lock fairness | [`danluu/rtc-pr-progress-rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr09-store-lock-fairness) | `87b82b3be657` | Published after branch repair; keep validating against fuzz. |
+| CRDT block rebase | [`danluu/rtc-pr-progress-rtc-pr10-crdt-block-rebase`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr10-crdt-block-rebase) | `ba7235bc8825` | Published after branch repair; keep validating against fuzz. |
+| Stale-base record block append | [`danluu/rtc-pr-progress-rtc-pr11a-stale-base-record-block-append`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr11a-stale-base-record-block-append) | `78f6df2a91a2` | Published after branch repair; keep validating against fuzz. |
+| Stale-base block delete | [`danluu/rtc-pr-progress-rtc-pr11b-stale-base-block-delete`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr11b-stale-base-block-delete) | `0cdcd5ffca89` | Published after branch repair; keep validating against fuzz. |
+| Table body array merge | [`danluu/rtc-pr-progress-rtc-pr14-table-body-array-green`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr14-table-body-array-green) | `9b090fc7e660` | Review as part of the PR14/PR14B/PR15 sequence. |
+| Table query-array local suffix append | [`danluu/rtc-pr-progress-rtc-pr14b-table-query-array-local-suffix-append`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr14b-table-query-array-local-suffix-append) | `c3d45173ed99` | Canonical bridge before the PR15 fallback-group tail. |
+| Fallback-group move on PR14B | [`danluu/rtc-pr-progress-rtc-pr15a-fallback-group-move-green-on-pr14b`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr15a-fallback-group-move-green-on-pr14b) | `125b5d030d8c` | Canonical PR15A branch; use this instead of the direct variant. |
+| Fallback-group insert-anchor on PR14B | [`danluu/rtc-pr-progress-rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b) | `acb367667da1` | Canonical PR15B branch; use this instead of the direct variant. |
+| Fallback-group delete on PR14B | [`danluu/rtc-pr-progress-rtc-pr15c-fallback-group-delete-green-on-pr14b`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr15c-fallback-group-delete-green-on-pr14b) | `8decb9081f9f` | Canonical PR15C branch; use this instead of the direct variant. |
+
+## Held Or Non-Review Targets
+
+These are useful for understanding the controller state, but they should not be
+used as the maintainer review path right now.
+
+| Branch or family | Public link if available | Status | Why it is not the review target |
+| --- | --- | --- | --- |
+| Repaired PR07C head | [`repair/pr07c-exact-stack-build-20260525T004721Z`](https://github.com/danluu/gutenberg/tree/repair/pr07c-exact-stack-build-20260525T004721Z) and [`danluu/rtc-pr-progress-repair-pr07c-exact-stack-build-20260525T004721Z`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-repair-pr07c-exact-stack-build-20260525T004721Z) | Held by controller | Same head as the all-merge candidate; exact validation and current canary gates still apply. |
+| Stale direct PR07C reload snapshots | [`danluu/rtc-pr-progress-rtc-pr07c-reload-record-snapshots`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr07c-reload-record-snapshots) | Superseded by repair | The direct branch lacks the build/type repair and is superseded by the repaired PR07C head. |
+| PR15A/PR15B/PR15C direct variants | Internal `ready/rtc-pr15*` targets | Held by controller | The canonical on-PR14B variants are already published; reviewing direct variants would duplicate work and use the wrong base. |
+| Full PR06B malformed-save branch | Internal `ready/rtc-pr06b-malformed-save-request-payload` target | Superseded | The minimal PR06B branch is the canonical review target. |
+| Reload hydration, pre-save search/live-collapse, rich-text suffix corruption | No public review branch in this status set | Downscoped | The controller consumed explicit downscope evidence and suppresses generic relaunch until newer exact product evidence appears. |
+
+## Why Filing Is Currently Gated
+
+The controller has selected the branch set and has materialized the all-merge
+candidate, but promotion is blocked by current validation policy:
+
+- Current canary gate is open for
+  `benchmark-canary/current-root@run-20260610T160049Z`.
+- The controller requires direct `current_run_green=yes` or
+  `explicit_downscope=yes` before publication decisions can close.
+- Ready/finalized promotion now requires same-head build-clean preflight.
+- Heavy browser PR validation is temporarily held because discovery reserve is
+  marginal; cheap manifest/accounting/exact non-browser work is still allowed.
+
+This is intentionally conservative: old retained product evidence and exact
+stack green are not allowed to close a new current-root publication gate by
+themselves.
+
+## Validation Claims
+
+The published sub-PR branches have controller evidence rows and are being kept
+under fuzz validation. The raw evidence paths are in
+[`raw-controller-status.md`](rtc-jetstream2-pr-progress-status-20260515/raw-controller-status.md)
+and
+[`current-pr-progress.tsv`](rtc-jetstream2-pr-progress-status-20260515/current-pr-progress.tsv).
+
+This page does not claim upstream CI has passed, that WordPress/Gutenberg PRs
+are filed, or that the all-merge candidate is ready to merge. The current
+controller state explicitly says PR07C and the all-merge candidate still inherit
+the current canary and build-preflight gates.
+
+## What A Maintainer Should Review First
+
+Start with the smaller published branches, not the all-merge branch. The
+smallest low-risk review sequence is:
+
+1. [`danluu/rtc-pr-progress-rtc-pr02a-http-room-isolation-regression`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr02a-http-room-isolation-regression)
+2. [`danluu/rtc-pr-progress-rtc-pr03b-browser-revision-restore-crdt-invalidation`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr03b-browser-revision-restore-crdt-invalidation)
+3. [`danluu/rtc-pr-progress-rtc-pr06b-malformed-save-request-payload-minimal`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr06b-malformed-save-request-payload-minimal)
+4. [`danluu/rtc-pr-progress-rtc-pr07b-save-response-manager-base-record`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr07b-save-response-manager-base-record)
+
+After those, review the ordered CRDT/table tail:
+
+1. PR09 store lock fairness.
+2. PR10 CRDT block rebase.
+3. PR11A and PR11B stale-base fixes.
+4. PR14, PR14B, PR15A-on-PR14B, PR15B-on-PR14B, PR15C-on-PR14B.
+
+Use the all-merge branch only when you want to reproduce the complete combined
+state or compare the stack-level behavior.
+
+## Raw Evidence And Machine-Readable State
+
+- Raw controller status:
+  [`raw-controller-status.md`](rtc-jetstream2-pr-progress-status-20260515/raw-controller-status.md)
+- Current progress table:
+  [`current-pr-progress.tsv`](rtc-jetstream2-pr-progress-status-20260515/current-pr-progress.tsv)
+- Controller decisions:
+  [`current-control-decisions.tsv`](rtc-jetstream2-pr-progress-status-20260515/current-control-decisions.tsv)
+- Current push manifest:
+  [`current-push-manifest.tsv`](rtc-jetstream2-pr-progress-status-20260515/current-push-manifest.tsv)
+- Trend graphs:
+  [`rtc-jetstream2-fuzz-trend-analysis-20260515.md`](https://github.com/danluu/gutenberg/blob/explain/rtc-jetstream2-fuzz-progress-20260515/docs/explanations/architecture/rtc-jetstream2-fuzz-trend-analysis-20260515.md)
