@@ -176,4 +176,23 @@ The earlier persisted-CRDT work made this interaction possible:
 
 The fix direction should not be to reintroduce accidental observer timing. A safer fix would make the load sequence explicit: after persisted CRDT hydration and any invalidation repair, decide whether the edited record must be updated from the live Y.Doc, and perform that update through a named path with tests. The regression test should cover a persisted CRDT reload followed by a nested/list item replacement, then assert both the editor block tree and the saved post content contain exactly one copy of each sentinel marker.
 
+## PR #78274 Check
+
+[PR #78274](https://github.com/WordPress/gutenberg/pull/78274), [`2c8c8a72993d0115d1b8711a49b38bea30d87ad7`](https://github.com/WordPress/gutenberg/commit/2c8c8a72993d0115d1b8711a49b38bea30d87ad7), "Split RTC list move convergence fix", does **not** fix this seed `2300` failure.
+
+The PR is downstream of the introducing commit: [`85cbd148b1c71bc0bfc28943e6d1c9d1e2fddbb5`](https://github.com/WordPress/gutenberg/commit/85cbd148b1c71bc0bfc28943e6d1c9d1e2fddbb5) is an ancestor of the PR base [`382292082c267673594982838ac5624ffd20e7bc`](https://github.com/WordPress/gutenberg/commit/382292082c267673594982838ac5624ffd20e7bc). The same broad fuzzer classifier was run on the PR base and PR head:
+
+- PR base `382292082c267673594982838ac5624ffd20e7bc`: failed with the target `reload-convergence step 5` / `list-revision-replacement-marker-isolation` invariant.
+- PR head `2c8c8a72993d0115d1b8711a49b38bea30d87ad7`: a default-timeout run first timed out waiting for reload readiness; a rerun with 60s convergence/discovery timeouts reached the oracle and failed with the same `reload-convergence step 5` / `list-revision-replacement-marker-isolation` invariant.
+
+Artifacts:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/bisect-seed-2300/382292082c26-20260610T153613
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/bisect-seed-2300/2c8c8a72993d-20260610T153833
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/bisect-seed-2300/2c8c8a72993d-longtimeout-20260610T154010
+```
+
+This is consistent with the code. PR #78274 adds block-identity/rebase logic for list move convergence and remote-key reconciliation in the sync manager. That is relevant to concurrent list movement, but it does not replace the post-hydration editor-store synchronization side effect removed by PR #77966. The persisted-reload list-replacement marker duplication still reproduces on the PR head.
+
 Conclusion: cite `85cbd148b1c71bc0bfc28943e6d1c9d1e2fddbb5` as the confirmed first bad commit for the original broad fuzzer/original wp-env endpoint. Do not cite `05bf6da85b4d5ec7465f59c0c915614bddbae70d` as the first bad commit. The focused published command still needs follow-up because it passes even though the broader original endpoint reproduces.
