@@ -61,23 +61,24 @@ The assertion is intended to fail if the RTC editor, or the post persisted after
 Primary local video:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/moving-panels-repro-seed-2300.webm
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-repro-seed-2300-v2.webm
 ```
 
-This is a moving-panel stitched video. It keeps all major panels active over time:
+This is a 3840x2160 moving-panel stitched video. It keeps all major panels visible over time:
 
 - The top row contains three moving editor videos from the same failing fuzz run, aligned so the pages reach the failure together.
-- The bottom-left panel is a moving same-seed visible inspection artifact that scrolls the duplicated visual lists and then switches to code view.
+- The bottom-left panel is a large same-seed visible inspection artifact that scrolls the duplicated visual lists and then switches to code view.
 - The bottom-right panel records the synchronized seed path and oracle transition.
+- The final section keeps the failure state on screen with a wait timer. The duplicated markers do not self-heal: post-reload edited content equals serialized content, all pages have the same canonical hash, and the same-seed code view continues to show duplicated list markup.
 - The video is intentionally based on the fresh failing run artifacts, not a hand-written mockup.
 
 Sampled verification frames from the same render:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/moving-panels-frame-5s.png
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/moving-panels-frame-16s.png
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/moving-panels-frame-32s.png
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/moving-panels-frame-45s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-v2-frame-5s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-v2-frame-47s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-v2-frame-62s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-multipanel-fuzz-seed-2300-20260610T204223Z/highres-self-heal-v2-frame-72s.png
 ```
 
 ## Observed Failure
