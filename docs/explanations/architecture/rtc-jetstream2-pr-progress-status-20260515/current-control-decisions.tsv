@@ -1,0 +1,28 @@
+action	target	priority	allowed	reason
+reserve-discovery	existing-code-and-existing-PR-fuzzing	P0	yes	active_discovery=4,min=3,discovery_protected=no; preserve coverage-guided focused strict protocol lower-level and browser discovery reserve
+reserve-discovery	heavy-pr-browser-validation	P0	no	discovery reserve is marginal and the latest benchmark-canary current-root floor is open; allow only cheap manifest accounting and exact non-browser PR work
+materialize-forced-canary-groups	benchmark-canary/current-root@run-20260610T160049Z	P0	yes	slot_floor=10 and all forced rows are scheduled=no supervisor_status=disabled active_run_dirs=0 current_run_green=no
+update-controller-rule	benchmark-canary/latest-current-root-dispatch-preflight	P0	yes	run-20260610T160049Z supersedes stale run-20260610T145026Z closure or publish rows before any RTC push
+update-controller-rule	benchmark-canary/direct-current-run-closure-only	P0	yes	require direct current_run_green=yes or explicit_downscope=yes; retained_product_evidence and exact-stack green are not publication closure
+update-controller-rule	ready-finalized-build-preflight	P0	yes	ready or finalized RTC promotion requires build-clean preflight before publish
+include-candidate	PR07C	P0	yes	current policy says PR07C is net-risk-reducing; this is accounting/materialization only while the current canary gate is open
+include-candidate	repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9	P0	yes	manifest compatibility requires the exact repaired PR07C row for same-head proof accounting; cheap publication manifest generation is allowed
+include-candidate	candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9	P0	yes	keep same-SHA all-merged candidate materialized for accounting only; publication still depends on current canary closure
+repair-ready	repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9	P0	yes	allow exact non-browser validation and repair accounting for repaired PR07C while publication remains canary-gated
+publish-ready	PR07C/repaired-build-clean-head@9617d576354444657e7278c0dd9abc5d4f05dcb9	P0	no	latest run-20260610T160049Z canary floor has forced rows current_run_green=no and explicit_downscope=no
+publish-ready	candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9	P0	no	same-SHA all-merged candidate inherits the open latest-current-root canary publication gate
+publish-ready	ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd	P0	no	stale direct PR07C head lacks the build/type repair and is superseded by the repaired exact-stack branch
+repair-branch	ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd	P0	no	repaired build-clean PR07C branch already exists
+launch-owner-matrix	PR07C/HOLD-07C	high	no	owner matrix is runtime-held and consumed; reopen only with newer owner evidence
+repair-ready	self-presence/rendered-overlay-dom@repair/pa-self-presence-overlay-root-attr-20260610T114902Z	high	yes	next product-progress slot; run bounded validation promotion accounting or exact downscope only
+launch-branch-repair	self-presence/rendered-overlay-dom	high	no	canonical 114902Z repair branch already exists; another repair branch is duplicate churn
+cooldown-diagnostic	self-presence/duplicate-proof-and-113059Z-alias	high	yes	fold same-SHA aliases and duplicate proof into canonical 114902Z repair accounting
+publish-ready	ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-direct-variants	high	no	canonical on-PR14B PR15 branches are already published
+cooldown-diagnostic	ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-direct-variants	high	yes	held direct variants are duplicate publication and validation churn
+publish-ready	ready/rtc-pr06b-malformed-save-request-payload	high	no	full PR06B is superseded by already-published minimal PR06B
+cooldown-diagnostic	ready/rtc-pr06b-malformed-save-request-payload	high	yes	superseded full PR06B should not consume validation or publication slots
+update-controller-rule	deferred-family-terminal-downscope	high	yes	state=downscoped must veto scheduling before fairness duplicate-head manifest or launch-budget checks
+cooldown-diagnostic	reload-hydration+pre-save-search-live-collapse+rich-text-suffix-corruption+malformed-save-payload+http-room-isolation	high	yes	terminal downscope or supersession stands absent newer family-specific exact product evidence
+update-controller-rule	lower-level/rendered-overlay-dom-self-presence	high	yes	credit RTC_COLLABORATOR_CURSOR_VISUAL_BROWSER_PARITY_MISSING product-key evidence in level-mix accounting
+launch-lower-level-broad	lower-level/http-awareness-client-overlay-productless	high	no	productless roots remain freshness-only; wait for the self-presence oracle bridge and one bounded canary before broad lower-level capacity
+cooldown-diagnostic	lower-level/http-awareness-client-overlay-productless	high	yes	productless roots stay freshness-only; do not broaden lower-level capacity from zero-yield summaries
