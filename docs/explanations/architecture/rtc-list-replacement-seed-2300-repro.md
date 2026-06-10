@@ -31,11 +31,15 @@ That means the issue is not just a visual rendering artifact. The editor/code-st
 
 ## Video
 
-Primary all-screens annotated video:
+Primary all-relevant-screens annotated video:
+
+`/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/all-relevant-screens-repro-seed-2300.webm`
+
+This is the reviewer-facing video. It keeps the relevant evidence visible at the same time: post-reload visual editor content, post-reload code view content, three e2e editor pages at failure, before/after marker counts, and the step-by-step seed timeline. It shows how the seed reaches the reload, why the oracle expected each sentinel once, and where the reloaded editor/code state contains duplicated list items.
+
+Earlier three-page annotated video:
 
 `/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-video-seed-2300-20260610T192624Z/annotated-repro-seed-2300-all-screens.webm`
-
-This is the reviewer-facing video. It shows the three editor sessions at the same time, with a running annotated log for setup, each action, why that action matters, the reload, and the final duplicated-marker failure. The last frame shows all three editor pages reporting the same duplicated marker counts.
 
 Single-page annotated video:
 
