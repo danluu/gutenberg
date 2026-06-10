@@ -755,8 +755,8 @@ if ( file.exists( bug_findings_path ) ) {
 					TRUE ~ FALSE
 				),
 				classification = replace_na( classification, "unknown" ),
-				candidate_status = replace_na( candidate_status, "" ),
-				recommended_action = replace_na( recommended_action, "" ),
+				candidate_status = replace_na( as.character( candidate_status ), "" ),
+				recommended_action = replace_na( as.character( recommended_action ), "" ),
 				profile = replace_na( profile, "unknown" ),
 				fuzz_level = replace_na( fuzz_level, "other" ),
 				fuzz_level = factor(

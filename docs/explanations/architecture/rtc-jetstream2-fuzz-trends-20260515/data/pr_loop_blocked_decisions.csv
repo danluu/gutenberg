@@ -1,24 +1,18 @@
 action,target,priority,allowed,reason,target_label,reason_label
-repair-ready,PR07C/current-build-clean-preflight@9617d576354444657e7278c0dd9abc5d4f05dcb9#duplicate-feed-rows,P0,no,Collapse repeated PR07C preflight and promotion-gate feed rows into the singleton allowed preflight.,PR07C/current-build-clean-preflight@9617d576354444657e7278c0dd9abc5d4f05dcb9#duplicate-feed-rows,"Collapse repeated PR07C preflight and promotion-gate feed rows into the
-singleton allowed preflight."
-publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Hold publication until same-head build/type proof is green and current-root forced canaries close or downscope.,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,"Hold publication until same-head build/type proof is green and current-root
-forced canaries close or downscope."
-publish-ready,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,Exact-stack promotion remains blocked by PR07C build proof plus benchmark-canary current-run closure.,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,"Exact-stack promotion remains blocked by PR07C build proof plus benchmark-canary
-current-run closure."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,Stale direct PR07C head lacks the build/type repair and is superseded by repaired head 9617d576.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale direct PR07C head lacks the build/type repair and is superseded by
-repaired head 9617d576."
-repair-branch,PR07C/repaired-head-after-red-preflight,P0,no,No red same-head preflight evidence exists yet; route here only if the singleton preflight fails.,PR07C/repaired-head-after-red-preflight,"No red same-head preflight evidence exists yet; route here only if the singleton
-preflight fails."
-launch-branch-repair,PR07C/repaired-head@9617d576354444657e7278c0dd9abc5d4f05dcb9,high,no,Repaired branch already exists; launch repair only after concrete red same-head preflight evidence.,PR07C/repaired-head@9617d576354444657e7278c0dd9abc5d4f05dcb9,"Repaired branch already exists; launch repair only after concrete red same-head
-preflight evidence."
-launch-owner-matrix,PR07C/HOLD-07C,high,no,Owner matrix is runtime-held and consumed; relaunch only with newer owner evidence.,PR07C/HOLD-07C,"Owner matrix is runtime-held and consumed; relaunch only with newer owner
-evidence."
-publish-ready,canonical-ready-product-prs,high,no,Canonical ready product PRs are already locally published; republishing is churn.,canonical-ready-product-prs,"Canonical ready product PRs are already locally published; republishing is
-churn."
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by already-published PR06B minimal.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already-published PR06B minimal.
-publish-ready,ready/rtc-pr15a+pr15b+pr15c-direct-variants,high,no,On-PR14B PR15 variants are canonical and published; direct variants remain duplicate held heads.,ready/rtc-pr15a+pr15b+pr15c-direct-variants,"On-PR14B PR15 variants are canonical and published; direct variants remain
-duplicate held heads."
-reserve-discovery,benchmark-canary/stale-feed-rows@run-20260609T162805Z+run-20260609T183410Z,P0,no,Older root-specific canary retarget rows are superseded by current root run-20260609T191942Z.,benchmark-canary/stale-feed-rows@run-20260609T162805Z+run-20260609T183410Z,"Older root-specific canary retarget rows are superseded by current root
-run-20260609T191942Z."
-repair-ready,heavy-browser-or-benchmark-PR-reruns,P0,no,Discovery is not protected and benchmark-canary-fuzzer-gap is open; heavy PR jobs wait.,heavy-browser-or-benchmark-PR-reruns,"Discovery is not protected and benchmark-canary-fuzzer-gap is open; heavy PR
-jobs wait."
+publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,newest current-root canary run-20260610T160049Z has 10 forced promotion-blocked rows with current_run_green=no,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,"newest current-root canary run-20260610T160049Z has 10 forced promotion-blocked
+rows with current_run_green=no"
+publish-ready,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,same-head candidate inherits the open current-root canary publication gate,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,same-head candidate inherits the open current-root canary publication gate
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,stale direct PR07C head lacks the build/type repair and is superseded by the repaired head,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"stale direct PR07C head lacks the build/type repair and is superseded by the
+repaired head"
+repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,build-clean PR07C repair already exists at 9617d576354444657e7278c0dd9abc5d4f05dcb9,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"build-clean PR07C repair already exists at
+9617d576354444657e7278c0dd9abc5d4f05dcb9"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; no newer owner evidence is present,PR07C/HOLD-07C,owner matrix is runtime-held and consumed; no newer owner evidence is present
+publish-ready,repair/pa-self-presence-overlay-root-attr-20260610T114902Z@8fe539ccadf7d2c38b2b058bf4e499318051007a,high,no,needs focused validation or promotion accounting before publication,repair/pa-self-presence-overlay-root-attr-20260610T114902Z@8fe539ccadf7d2c38b2b058bf4e499318051007a,needs focused validation or promotion accounting before publication
+launch-branch-repair,self-presence/rendered-overlay-dom,high,no,canonical 114902Z repair branch already exists; another branch would duplicate work,self-presence/rendered-overlay-dom,"canonical 114902Z repair branch already exists; another branch would duplicate
+work"
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,duplicate full PR06B is superseded by the already-published canonical minimal PR06B,ready/rtc-pr06b-malformed-save-request-payload,"duplicate full PR06B is superseded by the already-published canonical minimal
+PR06B"
+publish-ready,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-direct-variants,high,no,canonical on-PR14B PR15 branches are already published,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-direct-variants,canonical on-PR14B PR15 branches are already published
+reserve-discovery,benchmark-canary/current-root@run-20260610T145026Z,P0,no,superseded by newer run-20260610T160049Z; stale close rows cannot publish PR07C,benchmark-canary/current-root@run-20260610T145026Z,superseded by newer run-20260610T160049Z; stale close rows cannot publish PR07C
+reserve-discovery,heavy-pr-browser-validation,P0,no,current canary floor is open and discovery reserve is thin; allow only cheap PR accounting or analysis-only work,heavy-pr-browser-validation,"current canary floor is open and discovery reserve is thin; allow only cheap PR
+accounting or analysis-only work"

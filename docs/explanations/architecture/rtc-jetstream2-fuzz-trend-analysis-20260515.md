@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-06-09T20:31:36Z`
+Snapshot generated: `2026-06-10T18:20:20Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The refreshed CSVs and plots are committed
@@ -15,49 +15,49 @@ index snapshots. CPU and load-average CSVs are populated from sysstat when avail
 ## High-Level Readout
 
 The graph-refresh pipeline is current through the last completed monitor pass
-at `2026-06-09T19:46:11Z`. There are `5,698` monitor
+at `2026-06-10T16:25:26Z`. There are `5,745` monitor
 passes from `2026-05-15T01:21:42Z` onward. Cumulative coverage record
 observations rose from `782` to
-`516,906`, current-scan coverage files rose from
-`272` to `11,293`, and
+`525,692`, current-scan coverage files rose from
+`272` to `10,800`, and
 unmet goals are `10` of `136`.
 
 Live health needs a bounded read. The latest plotted current-output duplicate
-share is `0.5`, while historical duplicate
-share is `1`. Current summary startup
+share is `0.3333`, while historical duplicate
+share is `0`. Current summary startup
 failures are `0`, quality issues are
 `0`, and free memory is
-`221.5GiB`. Because this snapshot has no
+`224.3GiB`. Because this snapshot has no
 `current_run_accounting.csv`, treat the current duplicate/noise value as a
 current-output signal that needs direct current-run triage, not as broad proof
 of product duplicate failures.
 
-The latest CPU/load telemetry sample has CPU utilization `15.5`, load1/load5/load15 `17.92`/`18.31`/`19.22`, and `64` logical cores.
+The latest CPU/load telemetry sample has CPU utilization `35.1`, load1/load5/load15 `23.25`/`25.46`/`23.21`, and `64` logical cores.
 
-The latest disk sample is `2026-06-09T20:29:49Z`: root has `112.0GiB` free and is `21.0%` used; the data volume has `285.3GiB` free and is `91.9%` used.
+The latest disk sample is `2026-06-10T16:37:23Z`: root has `112.1GiB` free and is `21.0%` used; the data volume has `264.1GiB` free and is `92.5%` used.
 
-The latest graph-counted fuzzing mix is: `browser-e2e=31 lanes/31 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups; protocol-server=1 lanes/1 groups`.
+The latest graph-counted fuzzing mix is: `browser-e2e=34 lanes/34 groups; unit-property=1 lanes/1 groups; coverage-guided-lower-level=1 lanes/1 groups; protocol-server=1 lanes/1 groups`.
 Browser/e2e remains the dominant live surface, with bounded lower-level and
 protocol-server coverage still active.
 
 Approximate execution counts now total
-`18,617,504` individual test or case executions.
+`18,617,519` individual test or case executions.
 The latest cumulative/rate summary is:
-`browser-e2e=675596 cumulative/4 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=5838464 cumulative/0 per-hour; coverage-guided-lower-level=623766 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=11479678 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
+`browser-e2e=675611 cumulative/252 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=5838464 cumulative/0 per-hour; coverage-guided-lower-level=623766 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=11479678 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
 because they are reconstructed from batch metadata or legacy batch-count fields.
 
 Bug and candidate output graphing is current. The latest summary has
-`44` triaged bug-finding rows,
-`26` unique likely-real findings,
-`912` bug-output rows, and
-`663` unique output candidates.
+`43` triaged bug-finding rows,
+`27` unique likely-real findings,
+`934` bug-output rows, and
+`687` unique output candidates.
 
 PR-controller graph inputs are present. The controller snapshot has
 `23` items:
 `deferred-family/downscoped/high=1; deferred-family/downscoped/medium=2; ready-product-pr/held-by-controller/high=4; ready-product-pr/published/high=13; ready-product-pr/superseded/low=1; ready-product-pr/superseded-by-repair/low=1; runtime-gated-pr/runtime-held-consumed/high=1`. The artifact index contributes
 `5,042` rows. The critical-path snapshot has
 `7` blockers:
-`active=1; runnable=1; terminal=5`.
+`runnable=1; terminal=6`.
 
 The suggested PR net-LOC graph has
 `1` snapshot with a latest total of
@@ -93,7 +93,7 @@ The disk free-space data is populated in `data/disk_free_space.csv`.
 
 ![Coverage goal progress](rtc-jetstream2-fuzz-trends-20260515/plots/coverage-goal-progress.png)
 
-Current enabled groups: `novelty-http-rtc-reference-oracle,novelty-http-large-post-lifecycle,novelty-ws-parser-transform,novelty-ws-parser-serialization,novelty-http-same-user-stale-draft,novelty-http-large-post-lifecycle-completion,novelty-http-table-stale-snapshot,novelty-http-title-reload-convergence,novelty-http-existing-post-crdt-metadata,novelty-ws-media-cross-entity,novelty-ws-permissions-auth-locks,novelty-ws-long-session-large-doc`.
+Current enabled groups: `novelty-http-rtc-reference-oracle,novelty-http-large-post-lifecycle,novelty-http-title-reload-convergence,novelty-http-same-user-stale-draft,novelty-http-table-stale-snapshot,novelty-http-existing-post-crdt-metadata,novelty-http-persistence-probe,novelty-ws-parser-serialization,novelty-ws-multi-reload-lifecycle,novelty-ws-collaboration-ui-signals,novelty-http-large-post-lifecycle-completion`.
 
 The largest unmet goals are tracked in `data/coverage_goals.csv`; review that
 CSV with the coverage-goal plot before adding another broad class of actions.
@@ -172,7 +172,7 @@ state above; size alone does not imply that a branch is fileable or publishable.
 - Treat current-run duplicate/noise separately from historical aggregate
   duplicate/noise.
 - Because `current_run_accounting.csv` is absent, verify the current output root
-  directly before making broad claims from `duplicateShareCurrent=0.5`.
+  directly before making broad claims from `duplicateShareCurrent=0.3333`.
 - Prioritize completion-depth fixes for profiles with many records but low
   success rate before adding another broad class of actions.
 - Challenge whether the current fuzzing mix is too browser/e2e-heavy. If it is,
