@@ -53,3 +53,36 @@ npm run test:e2e -- --config=playwright.rtc-repro-video.config.ts --project=chro
 The spec saves an old revision containing sentinel list content, saves a later edit that replaces a list item and appends extra blocks, restores the old revision through REST, reloads the RTC editor, and saves again.
 
 The assertion fails if the RTC editor, or the post persisted after the RTC save, still contains the later list replacement markers instead of the restored revision content. On a fix, the same command should pass without weakening the revision/content assertions.
+
+## Video Evidence
+
+Primary local video:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-repro-seed-2300-v2.webm
+```
+
+This is a stage-synced stitched video. It keeps the relevant screens visible together while the annotated log advances:
+
+- The left/right panels change from the initial expected content, to the fresh Playwright run, to reload failure evidence, to visual-editor duplicate content, and finally to code-editor duplicate content.
+- The lower log records the seed path and the oracle counts while those panels change.
+- The video is intentionally based on the fresh failing run artifacts, not a hand-written mockup.
+
+Sampled verification frames from the same render:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-v2-frame-8s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-v2-frame-28s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-v2-frame-36s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-v2-frame-52s.png
+```
+
+## Observed Failure
+
+Fresh visible rerun:
+
+```text
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z
+```
+
+The run failed on the initial attempt and both retries at `reload-convergence step 5` for seed `2300`. The post persisted by WordPress still had one copy of each `rtc-list-2300-{first,second,third}-{1,2,3}` marker after the revision restore, but the reloaded RTC editor state reported two copies of every marker on all three editor pages. That is the mismatch the oracle uses: the server-side restored post content is single-copy, while the RTC editor state reloads duplicate list content and would save the duplicated state back.
