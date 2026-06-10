@@ -147,14 +147,14 @@ Confidence: medium. I have not completed a product-code bisect with this repro. 
 
 The failure is not list-block-specific. Before reload, the three editor sessions converge. The corruption appears after save/autosave pressure, persisted RTC state, and editor reload. That points at the persisted-CRDT materialization/reload pipeline rather than ordinary list editing.
 
-The most relevant introduction point on trunk is [05bf6da85b4d5ec7465f59c0c915614bddbae70d](https://github.com/WordPress/gutenberg/commit/05bf6da85b4d5ec7465f59c0c915614bddbae70d), [PR #78891](https://github.com/WordPress/gutenberg/pull/78891), "RTC: Add separate doc persistence endpoint." That commit added the separate CRDT document persistence endpoint, including `WP_Sync_Save_Server`, `packages/core-data/src/utils/save-crdt-doc.js`, and persistence support in `packages/sync/src/manager.ts`. This is the trunk PR that made the current persisted CRDT document path available.
+The relevant trunk introduction point identified so far is [05bf6da85b4d5ec7465f59c0c915614bddbae70d](https://github.com/WordPress/gutenberg/commit/05bf6da85b4d5ec7465f59c0c915614bddbae70d), [PR #78891](https://github.com/WordPress/gutenberg/pull/78891), "RTC: Add separate doc persistence endpoint." That commit is an ancestor of `origin/trunk` and added the separate CRDT document persistence endpoint, including `WP_Sync_Save_Server`, `packages/core-data/src/utils/save-crdt-doc.js`, and persistence support in `packages/sync/src/manager.ts`. This is the trunk PR that made the current persisted CRDT document path available.
 
-The semantics that make this class of bug possible appear to come from the PR07C save/reload snapshot lineage that #78891 builds on:
+I previously checked PR07C save/reload snapshot commits as possible history context, but they should not be described as trunk introduction history. These commits are not ancestors of `origin/trunk` in this checkout:
 
 - [2f8247258316bde60869c06c383090904e9426bd](https://github.com/WordPress/gutenberg/commit/2f8247258316bde60869c06c383090904e9426bd), "Fix RTC PR07C save/reload convergence", changed `packages/core-data/src/actions.js`, `packages/core-data/src/entities.js`, and added `packages/core-data/src/utils/crdt-blocks.ts`.
 - [b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638](https://github.com/WordPress/gutenberg/commit/b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638), "Preserve RTC record snapshots through reload", changed record snapshot and sync-manager handling through reload.
 
-GitHub only associated an upstream PR with `05bf6da85b4d5ec7465f59c0c915614bddbae70d` / #78891 for the commits checked here. The PR07C commits above appear in local RTC stack branches but did not resolve to public PR numbers through GitHub's commit-to-PR metadata.
+Those PR07C commits can still be useful for design comparison because they touch the same conceptual area, but they are not evidence for how the bug was introduced on trunk. GitHub only associated an upstream PR with `05bf6da85b4d5ec7465f59c0c915614bddbae70d` / #78891 for the commits checked here.
 
 Two additional local/Jetstream-only commits are relevant context but did not resolve to public GitHub commit URLs in this checkout: `69df480bc3dcfe99e7fe09afbbcd9990dba006da`, "Reconcile persisted CRDT after provider sync", and `4c0a229302a295459fa33affe0304f4d5ee7890b`, "Materialize CRDT content for collaborative saves."
 
