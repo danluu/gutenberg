@@ -132,60 +132,71 @@ keeping the snapshot mutation and only removing this inner loop also fixes the
 repro. That makes the loop, not the snapshot serialization itself, the direct
 cause.
 
-## Trunk Audit
+## Trunk Introduction
 
-The exact bad loop does not appear on first-parent `origin/trunk`.
+The trunk-introducing commit for the stale-window save/persistence bug is:
 
-These searches returned no first-parent trunk commits:
+[`2d8b22633dd3889e1a4405dcc7ebfd4bb8dbf71c`](https://github.com/WordPress/gutenberg/commit/2d8b22633dd3889e1a4405dcc7ebfd4bb8dbf71c)
+from [WordPress/gutenberg#72373](https://github.com/WordPress/gutenberg/pull/72373),
+`Real-time collaboration: Implement CRDT persistence for collaborative editing`.
 
-```bash
-git log --first-parent -S'newEdits[ key ] = crdtValue' origin/trunk -- packages/core-data/src/entities.js
-git log --first-parent -S'crdtSnapshotSyncManager' origin/trunk -- packages/core-data/src/entities.js
-git log --first-parent -S'latestRecordForCRDTSnapshot' origin/trunk -- packages/core-data/src/entities.js
-```
+That commit added the save-time behavior that made the stale-window overwrite
+class possible on trunk:
 
-Current `origin/trunk`
-[`2cbccc116ba`](https://github.com/WordPress/gutenberg/commit/2cbccc116ba)
-also passes the two checked window-2 seeds under the final persistence oracle:
+- `prePersistPostType` started adding persisted CRDT document meta to normal
+  post saves.
+- `SyncManager#createMeta` serialized the local Y.Doc for the post.
+- The normal REST save still sent the editor window's full serialized `content`
+  snapshot.
+- There was no save-time fetch/rebase against the latest server record and
+  persisted CRDT document before constructing the outgoing REST payload.
 
-| Commit | Seed | Result |
-| --- | --- | --- |
-| `2cbccc116ba` | `8970053` | good |
-| `2cbccc116ba` | `8970017` | good |
+The exact local `newEdits[ key ] = crdtValue` loop isolated above is not the
+trunk introduction. It is an attempted local/PR-stack repair path for this
+same stale-window class. The underlying trunk issue predates that local loop.
 
-The parent of
-[`05bf6da85b4`](https://github.com/WordPress/gutenberg/commit/05bf6da85b4)
-(`#78891`) also passed seed `8970053`.
+## Why This Commit
 
-So there is no trunk commit hash or WordPress PR that introduced the exact
-window-2 bug isolated here. It was introduced by the uncommitted dirty RTC
-product overlay / danluu PR-stack code path, not by current first-parent trunk.
+The public stale-save PR describes the introduction as an architectural gap
+across multiple RTC changes, but identifies
+[`2d8b22633dd`](https://github.com/WordPress/gutenberg/commit/2d8b22633dd3889e1a4405dcc7ebfd4bb8dbf71c)
+/ [#72373](https://github.com/WordPress/gutenberg/pull/72373) as the commit
+that added the important save-time behavior: serializing the local CRDT document
+through `prePersistPostType` and persisting it in post meta as `_crdt_document`
+during a normal toolbar save.
 
-## Related Trunk PRs
+The prerequisite trunk commits are:
 
-The adjacent trunk CRDT persistence history is:
+- [`c214929139f50337250efe2bb24ff82c3ff2b6aa`](https://github.com/WordPress/gutenberg/commit/c214929139f50337250efe2bb24ff82c3ff2b6aa),
+  [WordPress/gutenberg#72114](https://github.com/WordPress/gutenberg/pull/72114):
+  made syncing a side concern layered over normal editor/core-data state. This
+  left normal saves sending full serialized `content` snapshots.
+- [`84019935998c16f877e976ad85e84748355d7282`](https://github.com/WordPress/gutenberg/commit/84019935998c16f877e976ad85e84748355d7282),
+  [WordPress/gutenberg#72262](https://github.com/WordPress/gutenberg/pull/72262):
+  introduced the post-entity CRDT block merge path that operates on full block
+  snapshots.
 
-- [`2d8b22633dd`](https://github.com/WordPress/gutenberg/commit/2d8b22633dd3889e1a4405dcc7ebfd4bb8dbf71c),
-  [WordPress/gutenberg#72373](https://github.com/WordPress/gutenberg/pull/72373):
-  introduced CRDT persistence for collaborative editing.
-- [`83a8f448995`](https://github.com/WordPress/gutenberg/commit/83a8f448995bede00097ac61a340b12e3e09401b),
-  [WordPress/gutenberg#75846](https://github.com/WordPress/gutenberg/pull/75846):
-  moved the WordPress CRDT meta key from `sync` to `core-data`.
-- [`8051e14451c`](https://github.com/WordPress/gutenberg/commit/8051e14451cf85c5e6713bf2098149f30229e47b),
+Those commits are prerequisites, but
+[`2d8b22633dd`](https://github.com/WordPress/gutenberg/commit/2d8b22633dd3889e1a4405dcc7ebfd4bb8dbf71c)
+is the first trunk commit where a stale editor window can persist its stale
+local CRDT document during a normal post save without first rebasing against the
+latest saved server state.
+
+Later related trunk commits:
+
+- [`8051e14451cf85c5e6713bf2098149f30229e47b`](https://github.com/WordPress/gutenberg/commit/8051e14451cf85c5e6713bf2098149f30229e47b),
   [WordPress/gutenberg#75975](https://github.com/WordPress/gutenberg/pull/75975):
-  made CRDT document creation asynchronous so pending deferred Y.Doc updates
-  flush before save-time serialization.
-- [`05bf6da85b4`](https://github.com/WordPress/gutenberg/commit/05bf6da85b4d5ec7465f59c0c915614bddbae70d),
+  fixed a different stale-doc problem by flushing deferred local Y.Doc updates
+  before serialization. It did not fetch and merge a newer server CRDT document
+  from another same-account/support window before saving.
+- [`05bf6da85b4d5ec7465f59c0c915614bddbae70d`](https://github.com/WordPress/gutenberg/commit/05bf6da85b4d5ec7465f59c0c915614bddbae70d),
   [WordPress/gutenberg#78891](https://github.com/WordPress/gutenberg/pull/78891):
-  added a separate CRDT document persistence endpoint.
+  added a separate CRDT document persistence endpoint. This is adjacent
+  persistence work, not the introduction.
 
-These are useful context, but they are not the first bad trunk commit for this
-window-2 repro because the repro passes on current trunk and the isolated bad
-loop is absent from trunk history.
+## Local PR-Stack Hunk
 
-## Local PR-Stack Introduction
-
-The same loop appears in the local/danluu PR-stack history at:
+The local loop appears in the danluu PR-stack history at:
 
 [`f89f5c4583f206bc6ddf1cf539d2f95ef2f8bf27`](https://github.com/danluu/gutenberg/commit/f89f5c4583f206bc6ddf1cf539d2f95ef2f8bf27)
 (`Snapshot RTC save payload before CRDT persistence`).
@@ -202,7 +213,7 @@ I did not find a corresponding public `origin/pr/*` ref for `f89f5c4583f`
 itself. It appears to be from the danluu RTC PR-stack artifact branch set rather
 than a WordPress/gutenberg pull request ref.
 
-Related public WordPress PR refs in the older stale-save ancestry are:
+Related public WordPress PR refs in this stale-save ancestry are:
 
 - [`origin/pr/77876`](https://github.com/WordPress/gutenberg/pull/77876):
   stale save regression coverage.
@@ -213,19 +224,22 @@ Related public WordPress PR refs in the older stale-save ancestry are:
 - [`origin/pr/78251`](https://github.com/WordPress/gutenberg/pull/78251):
   nested cursor awareness merge input in the same stale-save branch ancestry.
 
-The exact currently reproduced window-2 failure is not a clean committed trunk
-regression. It is introduced by the uncommitted dirty RTC product overlay
-applied on top of clean `2f59cd94b1b`, and the minimal source is the
-`newEdits[ key ] = crdtValue` reconciliation loop above.
+The local hunk bisect above is still useful for evaluating the PR-stack repair
+attempt, but it is not the trunk introduction. The trunk introduction is
+[`2d8b22633dd`](https://github.com/WordPress/gutenberg/commit/2d8b22633dd3889e1a4405dcc7ebfd4bb8dbf71c)
+from [WordPress/gutenberg#72373](https://github.com/WordPress/gutenberg/pull/72373).
 
 ## Notes About Commit-Level Testing
 
-I also tested `f89f5c4583f` and its parent
+I also tested the local repair-stack commit `f89f5c4583f` and its parent
 [`b68ca0bf04eb4675c4699abc7d78922a5b634a7c`](https://github.com/danluu/gutenberg/commit/b68ca0bf04eb4675c4699abc7d78922a5b634a7c)
 with the modern final-persistence oracle. Both were already bad under that
-modern oracle, so the historical branch cannot provide a clean good/bad boundary
-for this exact oracle. The reliable boundary for window 2 is the overlay/hunk
-bisect against clean `2f59cd94b1b`.
+modern oracle, so the local branch cannot provide a clean committed good/bad
+boundary for the repair-stack hunk. That result should not be used as the trunk
+introduction. The trunk introduction is the save-time CRDT persistence behavior
+added by
+[`2d8b22633dd`](https://github.com/WordPress/gutenberg/commit/2d8b22633dd3889e1a4405dcc7ebfd4bb8dbf71c)
+from [WordPress/gutenberg#72373](https://github.com/WordPress/gutenberg/pull/72373).
 
 The branch path later carried the loop through commits such as:
 
