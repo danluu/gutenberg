@@ -31,11 +31,17 @@ That means the issue is not just a visual rendering artifact. The editor/code-st
 
 ## Video
 
-Annotated video:
+Primary all-screens annotated video:
+
+`/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-video-seed-2300-20260610T192624Z/annotated-repro-seed-2300-all-screens.webm`
+
+This is the reviewer-facing video. It shows the three editor sessions at the same time, with a running annotated log for setup, each action, why that action matters, the reload, and the final duplicated-marker failure. The last frame shows all three editor pages reporting the same duplicated marker counts.
+
+Single-page annotated video:
 
 `/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-video-seed-2300-20260610T192624Z/annotated-repro-seed-2300.webm`
 
-The video is an annotated recording of the exact failing e2e run. It includes a running log for setup, each action, why that action matters, the reload, and the final duplicated-marker failure.
+This is the earlier one-page annotation pass for the same failing run.
 
 Raw Playwright video:
 
@@ -135,6 +141,27 @@ This repro targets that class of failure directly:
 
 The repro does not prove this is the exact same production bug on the user's Atomic site. It does show that current trunk has a deterministic RTC/list persistence corruption path in the same behavioral class.
 
+## How This Was Introduced
+
+Confidence: medium. I have not completed a product-code bisect with this repro. The current evidence is from the failing path, local commit history, and the files touched by the RTC save/reload stack.
+
+The failure is not list-block-specific. Before reload, the three editor sessions converge. The corruption appears after save/autosave pressure, persisted RTC state, and editor reload. That points at the persisted-CRDT materialization/reload pipeline rather than ordinary list editing.
+
+The most relevant introduction point on trunk is [05bf6da85b4d5ec7465f59c0c915614bddbae70d](https://github.com/WordPress/gutenberg/commit/05bf6da85b4d5ec7465f59c0c915614bddbae70d), [PR #78891](https://github.com/WordPress/gutenberg/pull/78891), "RTC: Add separate doc persistence endpoint." That commit added the separate CRDT document persistence endpoint, including `WP_Sync_Save_Server`, `packages/core-data/src/utils/save-crdt-doc.js`, and persistence support in `packages/sync/src/manager.ts`. This is the trunk PR that made the current persisted CRDT document path available.
+
+The semantics that make this class of bug possible appear to come from the PR07C save/reload snapshot lineage that #78891 builds on:
+
+- [2f8247258316bde60869c06c383090904e9426bd](https://github.com/WordPress/gutenberg/commit/2f8247258316bde60869c06c383090904e9426bd), "Fix RTC PR07C save/reload convergence", changed `packages/core-data/src/actions.js`, `packages/core-data/src/entities.js`, and added `packages/core-data/src/utils/crdt-blocks.ts`.
+- [b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638](https://github.com/WordPress/gutenberg/commit/b8ca68ad22c01ffa19cbe08a8d56651e5d1ea638), "Preserve RTC record snapshots through reload", changed record snapshot and sync-manager handling through reload.
+
+GitHub only associated an upstream PR with `05bf6da85b4d5ec7465f59c0c915614bddbae70d` / #78891 for the commits checked here. The PR07C commits above appear in local RTC stack branches but did not resolve to public PR numbers through GitHub's commit-to-PR metadata.
+
+Two additional local/Jetstream-only commits are relevant context but did not resolve to public GitHub commit URLs in this checkout: `69df480bc3dcfe99e7fe09afbbcd9990dba006da`, "Reconcile persisted CRDT after provider sync", and `4c0a229302a295459fa33affe0304f4d5ee7890b`, "Materialize CRDT content for collaborative saves."
+
+The user report also mentions revision restore. That part is adjacent but likely not the immediate cause of seed `2300`, because this repro fails at reload before a revision restore step is needed. The related revision-restore commit is [8294c3bb7aabab16266af25d428b3e0559646607](https://github.com/WordPress/gutenberg/commit/8294c3bb7aabab16266af25d428b3e0559646607), "Restore revisions as authoritative CRDT snapshots." It should stay in scope for follow-up because the production report says restored revisions later picked up content from other lists.
+
+The PHP comments in the RTC autosave path explicitly describe the failure mode to guard against: if edits are applied to the post and then re-applied to the CRDT on reload, edits can be duplicated. Seed `2300` is consistent with that class of failure: the list sentinels are correct before reload and duplicated after persisted RTC state is reloaded.
+
 ## Secondary Atomic-Shim Finding
 
 An Atomic-like shim lane also produced a separate reproducible failure on seed `6300` with `GUTENBERG_RTC_BROWSER_ATOMIC_SITE_SHIM=1`.
@@ -154,4 +181,3 @@ The seed `2300` repro failed in the original primary run and in two automatic re
 - `artifacts/rtc-browser-fuzz/list-replacement-parallel2-20260610T191402Z/lane-0/seed-2300/analysis-2-deeper-recheck/replay.json`
 
 The video run also reproduced the same failure on the initial attempt and both Playwright retries.
-
