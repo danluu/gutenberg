@@ -59,22 +59,25 @@ The assertion fails if the RTC editor, or the post persisted after the RTC save,
 Primary local video:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-repro-seed-2300-v2.webm
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/constant-panels-repro-seed-2300.webm
 ```
 
-This is a stage-synced stitched video. It keeps the relevant screens visible together while the annotated log advances:
+This is a constant-panel stitched video. It keeps the same four evidence screens visible for the whole video while the annotated log advances:
 
-- The left/right panels change from the initial expected content, to the fresh Playwright run, to reload failure evidence, to visual-editor duplicate content, and finally to code-editor duplicate content.
-- The lower log records the seed path and the oracle counts while those panels change.
+- The upper-left panel is the original Playwright recording from the fresh failing seed run.
+- The lower-left panel keeps all three editor pages visible at the invariant failure.
+- The middle panel keeps the post-reload visual editor on the duplicated list content.
+- The right panel keeps the post-reload code view on the duplicated block markup.
+- The lower log records the seed path and the oracle counts without cutting between screen layouts.
 - The video is intentionally based on the fresh failing run artifacts, not a hand-written mockup.
 
 Sampled verification frames from the same render:
 
 ```text
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-v2-frame-8s.png
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-v2-frame-28s.png
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-v2-frame-36s.png
-/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/stage-synced-v2-frame-52s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/constant-panels-frame-5s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/constant-panels-frame-20s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/constant-panels-frame-38s.png
+/Users/danluu/dev/fuzz/gutenberg-trunk-list-replace-fuzz-20260610/test/e2e/artifacts/repro-visible-seed-2300-20260610T195150Z/visible-editor-capture-probe/constant-panels-frame-49s.png
 ```
 
 ## Observed Failure
