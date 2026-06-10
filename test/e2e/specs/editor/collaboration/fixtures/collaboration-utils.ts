@@ -52,6 +52,49 @@ export const SECOND_USER: UserCredentials = {
 
 const BASE_URL = process.env.WP_BASE_URL || 'http://localhost:8889';
 const USE_TEST_WS_PROVIDER = process.env.GUTENBERG_RTC_TEST_WS_PROVIDER === '1';
+export const USE_ATOMIC_SITE_SHIM =
+	process.env.GUTENBERG_RTC_BROWSER_ATOMIC_SITE_SHIM === '1';
+
+type AtomicSiteShimWindow = Window & {
+	_wpAtomicSiteShimEnabled?: boolean;
+	wpcom?: {
+		atomicSiteShim?: {
+			enabled?: boolean;
+		};
+	};
+};
+
+export async function setAtomicSiteShimCookie( page: Page ) {
+	if ( ! USE_ATOMIC_SITE_SHIM ) {
+		return;
+	}
+
+	await page.context().addCookies( [
+		{
+			name: 'gutenberg_test_atomic_site_shim',
+			value: '1',
+			url: BASE_URL,
+		},
+	] );
+}
+
+export async function waitForAtomicSiteShimReady( page: Page ) {
+	if ( ! USE_ATOMIC_SITE_SHIM ) {
+		return;
+	}
+
+	await page.waitForFunction(
+		() => {
+			const atomicWindow = window as AtomicSiteShimWindow;
+			return (
+				atomicWindow._wpAtomicSiteShimEnabled === true &&
+				atomicWindow.wpcom?.atomicSiteShim?.enabled === true
+			);
+		},
+		undefined,
+		{ timeout: 15000 }
+	);
+}
 
 export default class CollaborationUtils {
 	private admin: Admin;
@@ -89,7 +132,9 @@ export default class CollaborationUtils {
 	 * @param postId The post ID to open.
 	 */
 	async openPost( postId: number ) {
+		await setAtomicSiteShimCookie( this.primaryPage );
 		await this.admin.editPost( postId );
+		await waitForAtomicSiteShimReady( this.primaryPage );
 		await this.waitForCollaborationReady( this.primaryPage );
 	}
 
@@ -114,6 +159,7 @@ export default class CollaborationUtils {
 				: {} ),
 		} );
 		const newPage = await context.newPage();
+		await setAtomicSiteShimCookie( newPage );
 
 		// Log in via the WordPress login form.
 		await newPage.goto( '/wp-login.php' );
@@ -129,6 +175,7 @@ export default class CollaborationUtils {
 		await newPage.waitForFunction(
 			() => window?.wp?.data && window?.wp?.blocks
 		);
+		await waitForAtomicSiteShimReady( newPage );
 		await newPage.evaluate( () => {
 			window.wp.data
 				.dispatch( 'core/preferences' )
