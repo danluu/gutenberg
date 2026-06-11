@@ -222,6 +222,30 @@ no verified branch link are not file-ready.
 
 The refresh also overlays exact public progress branches from `pr_progress_current.csv` when the controller has a row-specific `danluu/rtc-pr-progress-*` ref. These progress links show current publication/evidence refs; they do not override owner, benchmark, branch-link-audit, or fuzz gates in the status cell.
 
+### Core vs Gutenberg Change Scope
+
+Use two counts when describing how much of the current split changes WordPress
+Core runtime code versus Gutenberg-only validation/support code.
+
+| Count basis | Measured surface | Core-portable product changes | Gutenberg-only validation/support changes | Not counted |
+| --- | --- | --- | --- | --- |
+| Aggregate ready-stack benchmark branch | Diff from [`rtc-pr-stack-20260519T161502Z-base`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-base) to [`rtc-pr-stack-20260519T161502Z-all-ready-merged`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-all-ready-merged) | 10 files, +4,203 / -228 | 14 files, +5,819 / -86 | Rows not present in that aggregate branch |
+| Row-level active audited PR links | 13 active rows with verified `Files / diff` entries in this table | 13 files, +1,925 / -138 | 13 files, +2,804 / -8 | 20 active `TBD` rows and all prior-art/evidence-only rows |
+
+For this count, "Core-portable product changes" means production files under
+`lib/compat/wordpress-7.0/` or production package source in `packages/blocks/`,
+`packages/core-data/`, and `packages/sync/`. "Gutenberg-only
+validation/support changes" means unit, PHP, e2e, and harness files under
+`packages/*/test`, `phpunit/tests`, `packages/e2e-tests/plugins`, and
+`test/e2e/config`. Those validation/support files are necessary for the
+Gutenberg PRs, but they should not be quoted as WordPress Core runtime changes.
+
+The aggregate branch is the better "whole ready stack" size estimate. The
+row-level count is stricter: it only counts active proposed rows whose branch
+link audit already published concrete file paths and diffs. Rows still marked
+`TBD` need their own branch-link audit before their Core-vs-Gutenberg size can
+be quoted.
+
 ### Main Ready Lane
 
 | PR | Scope | Audit branch link | Files / diff | Current status |
