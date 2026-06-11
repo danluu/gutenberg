@@ -221,6 +221,7 @@ function createHandlers( blocks: Block[] ) {
 			id: 1,
 			blocks: cloneBlocks( editedBlocks ),
 		} ) ),
+		onUndoStackChange: jest.fn(),
 		onStatusChange: jest.fn(),
 		persistCRDTDoc: jest.fn(),
 		refetchRecord: jest.fn( async () => {} ),

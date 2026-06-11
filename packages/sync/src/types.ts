@@ -137,6 +137,7 @@ export interface RecordHandlers {
 		options?: { undoIgnore?: boolean; __unstableSkipSyncUpdate?: boolean }
 	) => void;
 	getEditedRecord: () => Promise< ObjectData >;
+	onUndoStackChange: ( state: SyncUndoStackState ) => void;
 	onStatusChange: OnStatusChangeCallback;
 	persistCRDTDoc: () => void;
 	refetchRecord: () => Promise< void >;
@@ -216,7 +217,15 @@ export interface SyncManager {
 export interface SyncUndoManager extends WPUndoManager< ObjectData > {
 	addToScope: (
 		ymap: Y.Map< any >,
-		handlers: Pick< RecordHandlers, 'addUndoMeta' | 'restoreUndoMeta' >
+		handlers: Pick<
+			RecordHandlers,
+			'addUndoMeta' | 'onUndoStackChange' | 'restoreUndoMeta'
+		>
 	) => void;
 	stopCapturing: () => void;
+}
+
+export interface SyncUndoStackState {
+	hasRedo: boolean;
+	hasUndo: boolean;
 }

@@ -411,6 +411,7 @@ export function createSyncManager( debug = false ): SyncManager {
 			addUndoMeta: debugWrap( handlers.addUndoMeta ),
 			editRecord: debugWrap( handlers.editRecord ),
 			getEditedRecord: debugWrap( handlers.getEditedRecord ),
+			onUndoStackChange: debugWrap( handlers.onUndoStackChange ),
 			onStatusChange: debugWrap( handlers.onStatusChange ),
 			persistCRDTDoc: debugWrap( handlers.persistCRDTDoc ),
 			refetchRecord: debugWrap( handlers.refetchRecord ),
@@ -530,9 +531,10 @@ export function createSyncManager( debug = false ): SyncManager {
 			undoManager = createUndoManager();
 		}
 
-		const { addUndoMeta, restoreUndoMeta } = handlers;
+		const { addUndoMeta, onUndoStackChange, restoreUndoMeta } = handlers;
 		undoManager.addToScope( recordMap, {
 			addUndoMeta,
+			onUndoStackChange,
 			restoreUndoMeta,
 		} );
 

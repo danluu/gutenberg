@@ -1353,8 +1353,19 @@ describe( 'PostEditorAwareness', () => {
 				},
 			};
 
-			const result =
-				awareness.convertSelectionStateToAbsolute( selection );
+			const result = awareness.convertSelectionStateToAbsolute(
+				selection,
+				[
+					{
+						clientId: 'local-paragraph',
+						innerBlocks: [],
+					},
+					{
+						clientId: 'local-card-list',
+						innerBlocks: [],
+					},
+				]
+			);
 
 			expect( result.richTextOffset ).toBe( initialOffset );
 			expect( result.localClientId ).toBe( 'local-card-list' );
