@@ -14,9 +14,11 @@ import { store as preferencesStore } from '@wordpress/preferences';
  */
 
 import * as actions from '../actions';
-import { restoreRevision } from '../private-actions';
+import {
+	restoreRevision,
+	updateDeviceTypeForViewportState,
+} from '../private-actions';
 import { store as editorStore } from '..';
-import { unlock } from '../../lock-unlock';
 
 const postId = 44;
 
@@ -70,11 +72,12 @@ describe( 'Post actions', () => {
 		it( 'updates the editor device type for a viewport state', () => {
 			const registry = createRegistryWithStores();
 
-			unlock(
-				registry.dispatch( editorStore )
-			).updateDeviceTypeForViewportState( {
+			updateDeviceTypeForViewportState( {
 				viewport: 'mobile',
 				showStateOnCanvas: true,
+			} )( {
+				dispatch: registry.dispatch( editorStore ),
+				registry,
 			} );
 
 			expect( registry.select( editorStore ).getDeviceType() ).toBe(
@@ -86,11 +89,12 @@ describe( 'Post actions', () => {
 			const registry = createRegistryWithStores();
 			registry.dispatch( editorStore ).setDeviceType( 'Tablet' );
 
-			unlock(
-				registry.dispatch( editorStore )
-			).updateDeviceTypeForViewportState( {
+			updateDeviceTypeForViewportState( {
 				viewport: 'mobile',
 				showStateOnCanvas: false,
+			} )( {
+				dispatch: registry.dispatch( editorStore ),
+				registry,
 			} );
 
 			expect( registry.select( editorStore ).getDeviceType() ).toBe(

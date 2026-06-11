@@ -422,6 +422,8 @@ export function createSyncManager( debug = false ): SyncManager {
 		const stateMap = ydoc.getMap( CRDT_STATE_MAP_KEY );
 		const now = Date.now();
 		let providerResults: ProviderCreatorResult[] = [];
+		let hasObserversAttached = false;
+		let isEntityUnloaded = false;
 		let isObservingProviderBootstrapRemoteState = true;
 		const markProviderSyncedRemoteState = (
 			transaction: Y.Transaction
@@ -449,11 +451,14 @@ export function createSyncManager( debug = false ): SyncManager {
 		// Clean up providers and in-memory state when the entity is unloaded.
 		const unload = (): void => {
 			log( 'loadEntity', 'unloading', entityId );
+			isEntityUnloaded = true;
 			stopObservingProviderBootstrapRemoteState();
 			providerResults.forEach( ( result ) => result.destroy() );
 			handlers.onStatusChange( null );
-			recordMap.unobserveDeep( onRecordUpdate );
-			stateMap.unobserve( onStateMapUpdate );
+			if ( hasObserversAttached ) {
+				recordMap.unobserveDeep( onRecordUpdate );
+				stateMap.unobserve( onStateMapUpdate );
+			}
 			ydoc.destroy();
 			entityStates.delete( entityId );
 		};
@@ -563,10 +568,25 @@ export function createSyncManager( debug = false ): SyncManager {
 			} )
 		);
 
+		if ( isEntityUnloaded ) {
+			log( 'loadEntity', 'unloaded during connect, aborting', entityId );
+			providerResults.forEach( ( result ) => result.destroy() );
+			return;
+		}
+
 		// Give providers one event loop turn to flush bootstrap updates that can
 		// be queued immediately after their initial sync signal. Otherwise, stale
 		// persisted state may be applied before remote peer state is observed.
 		await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
+
+		if ( isEntityUnloaded ) {
+			log(
+				'loadEntity',
+				'unloaded after bootstrap wait, aborting',
+				entityId
+			);
+			return;
+		}
 
 		try {
 			// Initialize the Yjs document with the necessary CRDT state.
@@ -580,6 +600,7 @@ export function createSyncManager( debug = false ): SyncManager {
 			// Attach observers.
 			recordMap.observeDeep( onRecordUpdate );
 			stateMap.observe( onStateMapUpdate );
+			hasObserversAttached = true;
 
 			// Reflect CRDT-normalized runtime values, such as hidden table row
 			// identities, back into the local edited record after it exists in the
@@ -626,13 +647,18 @@ export function createSyncManager( debug = false ): SyncManager {
 		const stateMap = ydoc.getMap( CRDT_STATE_MAP_KEY );
 		const now = Date.now();
 		let providerResults: ProviderCreatorResult[] = [];
+		let hasObserversAttached = false;
+		let isCollectionUnloaded = false;
 
 		// Clean up providers and in-memory state when the entity is unloaded.
 		const unload = (): void => {
 			log( 'loadCollection', 'unloading', entityId );
+			isCollectionUnloaded = true;
 			providerResults.forEach( ( result ) => result.destroy() );
 			handlers.onStatusChange( null );
-			stateMap.unobserve( onStateMapUpdate );
+			if ( hasObserversAttached ) {
+				stateMap.unobserve( onStateMapUpdate );
+			}
 			ydoc.destroy();
 			collectionStates.delete( objectType );
 		};
@@ -690,8 +716,19 @@ export function createSyncManager( debug = false ): SyncManager {
 			} )
 		);
 
+		if ( isCollectionUnloaded ) {
+			log(
+				'loadCollection',
+				'unloaded during connect, aborting',
+				entityId
+			);
+			providerResults.forEach( ( result ) => result.destroy() );
+			return;
+		}
+
 		// Attach observers.
 		stateMap.observe( onStateMapUpdate );
+		hasObserversAttached = true;
 
 		// Initialize the Yjs document with the necessary CRDT state.
 		initializeYjsDoc( ydoc );
@@ -942,7 +979,7 @@ export function createSyncManager( debug = false ): SyncManager {
 		changes: Partial< ObjectData >,
 		origin: string,
 		options: SyncManagerUpdateOptions = {},
-		scheduledRemoteKeyVersions: Map< string, number > = new Map()
+		scheduledRemoteKeyVersions?: Map< string, number >
 	): void {
 		const { isSave = false, isNewUndoLevel = false } = options;
 		const entityId = getEntityId( objectType, objectId );
@@ -950,6 +987,9 @@ export function createSyncManager( debug = false ): SyncManager {
 
 		if ( entityState ) {
 			const { syncConfig, ydoc } = entityState;
+			const remoteKeyVersionsAtUpdate =
+				scheduledRemoteKeyVersions ??
+				getScheduledRemoteKeyVersions( entityState, changes );
 			let changesToApply = changes;
 
 			if ( entityState.reconcilingRemoteKeys.size > 0 ) {
@@ -983,7 +1023,7 @@ export function createSyncManager( debug = false ): SyncManager {
 						return (
 							( entityState.remoteKeyVersions.get( key ) ??
 								0 ) ===
-							( scheduledRemoteKeyVersions.get( key ) ?? 0 )
+							( remoteKeyVersionsAtUpdate.get( key ) ?? 0 )
 						);
 					} )
 				);
@@ -1159,30 +1199,6 @@ export function createSyncManager( debug = false ): SyncManager {
 		} );
 	}
 
-	function scheduleUpdateCRDTDoc(
-		objectType: ObjectType,
-		objectId: ObjectID | null,
-		changes: Partial< ObjectData >,
-		origin: string,
-		options: SyncManagerUpdateOptions = {}
-	): void {
-		const scheduledRemoteKeyVersions = getScheduledRemoteKeyVersions(
-			entityStates.get( getEntityId( objectType, objectId ) ),
-			changes
-		);
-
-		setTimeout( () => {
-			updateCRDTDoc(
-				objectType,
-				objectId,
-				changes,
-				origin,
-				options,
-				scheduledRemoteKeyVersions
-			);
-		}, 0 );
-	}
-
 	async function applyPersistedCRDTDoc(
 		objectType: ObjectType,
 		objectId: ObjectID,
@@ -1340,6 +1356,6 @@ export function createSyncManager( debug = false ): SyncManager {
 		},
 		unload: debugWrap( unloadEntity ),
 		unloadAll: debugWrap( unloadAll ),
-		update: debugWrap( scheduleUpdateCRDTDoc ),
+		update: debugWrap( updateCRDTDoc ),
 	};
 }
