@@ -216,11 +216,11 @@ exists only so the repaired PR13A compare has the correct source base.
 
 ## Proposed PR Split
 
-Every proposed row either uses a clickable branch link from the verified
-branch-link audit or explicitly says `No verified branch link yet`. Rows with
-no verified branch link are not file-ready.
+Every proposed row now uses a clickable GitHub branch link from the verified
+branch-link audit, an exact public progress ref, or an exact public stack ref.
+A future row with no verified branch link would not be file-ready.
 
-The refresh also overlays exact public progress branches from `pr_progress_current.csv` when the controller has a row-specific `danluu/rtc-pr-progress-*` ref. These progress links show current publication/evidence refs; they do not override owner, benchmark, branch-link-audit, or fuzz gates in the status cell.
+The refresh also overlays exact public progress branches from `pr_progress_current.csv` when the controller has a row-specific `danluu/rtc-pr-progress-*` ref, and exact public stack refs when the row has a matching `rtc-pr-stack-20260519T161502Z-*` branch. These links show current publication/evidence refs; they do not override owner, benchmark, branch-link-audit, or fuzz gates in the status cell.
 
 ### Core vs Gutenberg Change Scope
 
@@ -230,7 +230,7 @@ Core runtime code versus Gutenberg-only validation/support code.
 | Count basis | Measured surface | Core-portable product changes | Gutenberg-only validation/support changes | Not counted |
 | --- | --- | --- | --- | --- |
 | Aggregate ready-stack benchmark branch | Diff from [`rtc-pr-stack-20260519T161502Z-base`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-base) to [`rtc-pr-stack-20260519T161502Z-all-ready-merged`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-all-ready-merged) | 10 files, +4,203 / -228 | 14 files, +5,819 / -86 | Rows not present in that aggregate branch |
-| Row-level active audited PR links | 13 active rows with verified `Files / diff` entries in this table | 13 files, +1,925 / -138 | 13 files, +2,804 / -8 | 20 active `TBD` rows and all prior-art/evidence-only rows |
+| Row-level active concrete PR/progress/stack links | 33 active rows with measured `Files / diff` entries in this table | 31 files, +4,142 / -216 | 34 files, +5,601 / -16 | Prior-art/evidence-only rows; no active `TBD` rows remain |
 
 For this count, "Core-portable product changes" means production files under
 `lib/compat/wordpress-7.0/` or production package source in `packages/blocks/`,
@@ -242,9 +242,11 @@ Gutenberg PRs, but they should not be quoted as WordPress Core runtime changes.
 
 The aggregate branch is the better "whole ready stack" size estimate. The
 row-level count is stricter: it only counts active proposed rows whose branch
-link audit already published concrete file paths and diffs. Rows still marked
-`TBD` need their own branch-link audit before their Core-vs-Gutenberg size can
-be quoted.
+link audit, exact public progress ref, or exact public stack ref already
+published concrete file paths and diffs. As of this refresh, every active row
+in the Main Ready Lane and CRDT/Data-Loss Lane has a public GitHub link and a
+measured file/diff size; deferred items still need semantic and owner
+validation before filing.
 
 ### Main Ready Lane
 
@@ -252,19 +254,19 @@ be quoted.
 | --- | --- | --- | --- | --- |
 | PR 1 | HTTP polling generated update size guard | [`review/rtc-pr01-http-polling-generated-update-size`](https://github.com/danluu/gutenberg/tree/review/rtc-pr01-http-polling-generated-update-size) | 2 files, +181 / -19 | verified content; Cycle428 local manifest audit complete; GitHub filing still blocked |
 | PR 2 | HTTP polling storage read window | [`review/rtc-pr02-http-polling-storage-read-window`](https://github.com/danluu/gutenberg/tree/review/rtc-pr02-http-polling-storage-read-window) | 2 files, +57 / -5 | verified content; Cycle428 local manifest audit complete; GitHub filing still blocked |
-| PR 2A | HTTP room-isolation sidecar | [`danluu/rtc-pr-progress-rtc-pr02a-http-room-isolation-regression`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr02a-http-room-isolation-regression) | TBD | active sidecar candidate; needs deferred closeout proof that it covers HTTP room isolation and a pushed/audited ref; current progress: published at `9303a7715cf3`; already published by local machine after branch repair; keep validating against fuzz |
+| PR 2A | HTTP room-isolation sidecar | [`danluu/rtc-pr-progress-rtc-pr02a-http-room-isolation-regression`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr02a-http-room-isolation-regression) | 1 file, +115 / -0 | active sidecar candidate; needs deferred closeout proof that it covers HTTP room isolation and a pushed/audited ref; current progress: published at `9303a7715cf3`; already published by local machine after branch repair; keep validating against fuzz |
 | PR 3 | Revision restore CRDT meta reset | [`review/rtc-pr03-revision-restore-crdt-reset`](https://github.com/danluu/gutenberg/tree/review/rtc-pr03-revision-restore-crdt-reset) | 2 files, +58 / -5 | verified content; released by lower-boundary classification and local manifest audit |
 | PR 4 | Persisted CRDT save-meta idempotence | [`review/rtc-pr04-crdt-save-meta-idempotence`](https://github.com/danluu/gutenberg/tree/review/rtc-pr04-crdt-save-meta-idempotence) | 2 files, +160 / -1 | verified content; Cycle428 local manifest audit complete; GitHub filing still blocked |
-| PR 5A | Entity/reference normalization equivalence | No verified branch link yet | TBD | active split row in Cycle428 manifest; aggregate PR5 is prior art only |
-| PR 5B | Parser/rich-text HTML equivalence | No verified branch link yet | TBD | active split row; compare strict/rich-text signals here before naming PR18x |
-| PR 5C | Preserve-whitespace linebreak equivalence | No verified branch link yet | TBD | active split row; compare strict/rich-text signals here before naming PR18x |
-| PR 5D | Clean semicolonless/entity-validation after PR5C | No verified branch link yet | TBD | active split row; must stay the clean semicolonless/entity branch; reject fallback/PR15-tailed PR05D manifests |
-| PR 6A | Save-request payload guard subhead `705d84c` | No verified branch link yet | TBD | active split row; do not confuse with the older persisted-empty-content PR6A audit row |
-| PR 6B | Save-request payload guard subhead `d127d3d` | No verified branch link yet | TBD | active split row; progress branch is evidence only |
-| PR 6C | Save-request payload guard subhead `d4041cc` | No verified branch link yet | TBD | active split row |
-| PR 6D | Save-request payload guard subhead `e072401` | No verified branch link yet | TBD | active split row; PR09 and PR06E ancestry still need GitHub branch-link proof before filing |
-| PR 6E | Malformed outgoing RTC save sidecar from PR06D | No verified branch link yet | TBD | sidecar must hang from PR06D, not PR07; needs deferred closeout proof that it covers malformed-save |
-| HARNESS-WS-CONFIG-022004 | WebSocket harness configuration sidecar | No verified branch link yet | TBD | harness-only; not a product fix and not final-stack validation |
+| PR 5A | Entity/reference normalization equivalence | [`rtc-pr-stack-20260519T161502Z-pr05a-entity-reference-normalization`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr05a-entity-reference-normalization) | 2 files, +226 / -3 | active split row in Cycle428 manifest; aggregate PR5 is prior art only; exact public stack ref verified at `a9094aa94446` |
+| PR 5B | Parser/rich-text HTML equivalence | [`rtc-pr-stack-20260519T161502Z-pr05b-parser-rich-text-equivalence`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr05b-parser-rich-text-equivalence) | 2 files, +925 / -42 | active split row; compare strict/rich-text signals here before naming PR18x; exact public stack ref verified at `e1fda090dce3` |
+| PR 5C | Preserve-whitespace linebreak equivalence | [`rtc-pr-stack-20260519T161502Z-pr05c-preserve-whitespace-linebreak-equivalence`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr05c-preserve-whitespace-linebreak-equivalence) | 2 files, +287 / -15 | active split row; compare strict/rich-text signals here before naming PR18x; exact public stack ref verified at `6a2eba716e07` |
+| PR 5D | Clean semicolonless/entity-validation after PR5C | [`rtc-pr-stack-20260519T161502Z-pr05d-semicolonless-entity-equivalence`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr05d-semicolonless-entity-equivalence) | 2 files, +33 / -0 | active split row; must stay the clean semicolonless/entity branch; reject fallback/PR15-tailed PR05D manifests; exact public stack ref verified at `27c6e7924217` |
+| PR 6A | Save-request payload guard subhead `705d84c` | [`rtc-pr-stack-20260519T161502Z-pr06a-empty-crdt-block-save-guard`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr06a-empty-crdt-block-save-guard) | 2 files, +116 / -0 | active split row; do not confuse with the older persisted-empty-content PR6A audit row; exact public stack ref verified at `705d84c03b93` |
+| PR 6B | Save-request payload guard subhead `d127d3d` | [`rtc-pr-stack-20260519T161502Z-pr06b-stale-raw-save-payload-repair`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr06b-stale-raw-save-payload-repair) | 2 files, +344 / -1 | active split row; exact public stack ref verified at `d127d3d2422a`; older progress branch is evidence only |
+| PR 6C | Save-request payload guard subhead `d4041cc` | [`rtc-pr-stack-20260519T161502Z-pr06c-save-projection-content-guard`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr06c-save-projection-content-guard) | 2 files, +278 / -5 | active split row; exact public stack ref verified at `d4041cccdd42` |
+| PR 6D | Save-request payload guard subhead `e072401` | [`rtc-pr-stack-20260519T161502Z-pr06d-persisted-empty-content-guard`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr06d-persisted-empty-content-guard) | 2 files, +63 / -0 | active split row; exact public stack ref verified at `e0724015e958`; PR09 and PR06E ancestry still need final filing audit |
+| PR 6E | Malformed outgoing RTC save sidecar from PR06D | [`rtc-pr-stack-20260519T161502Z-sidecar-pr06e-malformed-save-payload-sidecar`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-sidecar-pr06e-malformed-save-payload-sidecar) | 2 files, +272 / -4 | sidecar must hang from PR06D, not PR07; needs deferred closeout proof that it covers malformed-save; exact public stack ref verified at `ab31a873f5fe` |
+| HARNESS-WS-CONFIG-022004 | WebSocket harness configuration sidecar | [`rtc-pr-stack-20260519T161502Z-harness-ws-runtime-config-host-map-022004`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-harness-ws-runtime-config-host-map-022004) | 2 files, +180 / -6 | harness-only; not a product fix and not final-stack validation; exact public stack ref verified at `e8c05fad7127` |
 
 ### CRDT/Data-Loss Lane
 
@@ -272,19 +274,19 @@ be quoted.
 | --- | --- | --- | --- | --- |
 | PR 9 | Core-data lock fairness from PR06D | [`danluu/rtc-pr-progress-rtc-pr09-store-lock-fairness`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr09-store-lock-fairness) | 2 files, +185 / -2 | verified content; Cycle428 local manifest audit complete; GitHub filing still blocked; current progress: published at `87b82b3be657`; already published by local machine after branch repair; keep validating against fuzz |
 | PR 10 | CRDT block reconciliation foundation after PR9 | [`danluu/rtc-pr-progress-rtc-pr10-crdt-block-rebase`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr10-crdt-block-rebase) | 2 files, +145 / -4 | verified content; current progress: published at `ba7235bc8825`; already published by local machine after branch repair; keep validating against fuzz |
-| PR 11A | Explicit-base top-level operation subhead `9376ea9` | [`danluu/rtc-pr-progress-rtc-pr11a-stale-base-record-block-append`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr11a-stale-base-record-block-append) | TBD | active split row; grouped PR11 is aggregate prior art only; current progress: published at `78f6df2a91a2`; already published by local machine after branch repair; keep validating against fuzz |
-| PR 11B | Explicit-base top-level operation subhead `3d228d0` | [`danluu/rtc-pr-progress-rtc-pr11b-stale-base-block-delete`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr11b-stale-base-block-delete) | TBD | active split row; current progress: published at `0cdcd5ffca89`; already published by local machine after branch repair; keep validating against fuzz |
-| PR 11C | Explicit-base top-level operation subhead `eb02980` | No verified branch link yet | TBD | active split row |
-| PR 11D | Explicit-base top-level operation subhead `0f18951` | No verified branch link yet | TBD | active split row |
-| PR 11E | Explicit-base top-level operation subhead `75e065` | No verified branch link yet | TBD | active split row |
-| PR 12A | Previous-local-cache operation subhead `fa13d1` | No verified branch link yet | TBD | active split row; grouped PR12 is aggregate prior art only |
-| PR 12B | Previous-local-cache operation subhead `80d6a4` | No verified branch link yet | TBD | active split row |
-| PR 12C | Previous-local-cache operation subhead `95d3a0` | No verified branch link yet | TBD | active split row |
+| PR 11A | Explicit-base top-level operation subhead `9376ea9` | [`danluu/rtc-pr-progress-rtc-pr11a-stale-base-record-block-append`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr11a-stale-base-record-block-append) | 2 files, +257 / -3 | active split row; grouped PR11 is aggregate prior art only; current progress: published at `78f6df2a91a2`; already published by local machine after branch repair; keep validating against fuzz |
+| PR 11B | Explicit-base top-level operation subhead `3d228d0` | [`danluu/rtc-pr-progress-rtc-pr11b-stale-base-block-delete`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr11b-stale-base-block-delete) | 2 files, +240 / -2 | active split row; current progress: published at `0cdcd5ffca89`; already published by local machine after branch repair; keep validating against fuzz |
+| PR 11C | Explicit-base top-level operation subhead `eb02980` | [`rtc-pr-stack-20260519T161502Z-pr11c-stale-base-middle-insert`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr11c-stale-base-middle-insert) | 2 files, +220 / -0 | active split row; exact public stack ref verified at `eb029803ae91` |
+| PR 11D | Explicit-base top-level operation subhead `0f18951` | [`rtc-pr-stack-20260519T161502Z-pr11d-stale-top-level-move-reorder`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr11d-stale-top-level-move-reorder) | 2 files, +259 / -0 | active split row; exact public stack ref verified at `0f1895180abb` |
+| PR 11E | Explicit-base top-level operation subhead `75e065` | [`rtc-pr-stack-20260519T161502Z-pr11e-insert-anchor-after-delete`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr11e-insert-anchor-after-delete) | 2 files, +170 / -0 | active split row; exact public stack ref verified at `75e0653fcae7` |
+| PR 12A | Previous-local-cache operation subhead `fa13d1` | [`rtc-pr-stack-20260519T161502Z-pr12a-previous-local-block-deletes`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr12a-previous-local-block-deletes) | 2 files, +256 / -1 | active split row; grouped PR12 is aggregate prior art only; exact public stack ref verified at `fa13d1bd3b37` |
+| PR 12B | Previous-local-cache operation subhead `80d6a4` | [`rtc-pr-stack-20260519T161502Z-pr12b-previous-local-block-reorders`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr12b-previous-local-block-reorders) | 2 files, +298 / -1 | active split row; exact public stack ref verified at `80d6a4bc8ab3` |
+| PR 12C | Previous-local-cache operation subhead `95d3a0` | [`rtc-pr-stack-20260519T161502Z-pr12c-previous-local-delete-reorders`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-pr12c-previous-local-delete-reorders) | 2 files, +332 / -0 | active split row; exact public stack ref verified at `95d3a046bab5` |
 | PR 13A | Observed-delete top-level provenance | [`review/rtc-pr13a-observed-delete-provenance-repaired`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13a-observed-delete-provenance-repaired) | 2 files, +1151 / -25 | repaired verified content; use this audited ref for PR13A |
 | PR 13B | Cross-parent source retirement | [`review/rtc-pr13b-source-retirement`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13b-source-retirement) | 2 files, +1672 / -4 | repaired verified content; use this audited ref for PR13B unless a later audit publishes PR13B0-B3 links |
 | PR 13C | Stale block identity smear guard | [`review/rtc-pr13c-stale-block-identity-smear-guard`](https://github.com/danluu/gutenberg/tree/review/rtc-pr13c-stale-block-identity-smear-guard) | 2 files, +345 / -51 | repaired verified content; use this audited ref for PR13C unless a later audit publishes PR13B0-B3 links |
 | PR 14 | Table body nested array merge | [`danluu/rtc-pr-progress-rtc-pr14-table-body-array-green`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr14-table-body-array-green) | 2 files, +294 / -18 | verified content; seed `7110017` still shows PR14 alone is incomplete; current progress: published at `9b090fc7e660`; already published by local machine after branch repair; keep validating against fuzz |
-| PR 14B | Stale-shorter query-array local suffix append after PR14 | [`danluu/rtc-pr-progress-rtc-pr14b-table-query-array-local-suffix-append`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr14b-table-query-array-local-suffix-append) | TBD | required before active PR15A-C; needs final-PR14B materialization/audit; current progress: published at `c3d45173ed99`; already published by local machine; keep validating against fuzz |
+| PR 14B | Stale-shorter query-array local suffix append after PR14 | [`danluu/rtc-pr-progress-rtc-pr14b-table-query-array-local-suffix-append`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr14b-table-query-array-local-suffix-append) | 2 files, +143 / -3 | required before active PR15A-C; needs final-PR14B materialization/audit; current progress: published at `c3d45173ed99`; already published by local machine; keep validating against fuzz |
 | PR 15A | Fallback-group move green on PR14B | [`danluu/rtc-pr-progress-rtc-pr15a-fallback-group-move-green-on-pr14b`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr15a-fallback-group-move-green-on-pr14b) | 2 files, +123 / -4 | verified component content; filing still waits on exact publication links, owner gates, and final validation; current progress: published at `125b5d030d8c`; already published by local machine; keep validating against fuzz |
 | PR 15B | Fallback-group insert-anchor green on PR14B | [`danluu/rtc-pr-progress-rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b) | 2 files, +197 / -4 | verified component content; filing still waits on exact publication links, owner gates, and final validation; current progress: published at `acb367667da1`; already published by local machine; keep validating against fuzz |
 | PR 15C | Fallback-group delete green on PR14B | [`danluu/rtc-pr-progress-rtc-pr15c-fallback-group-delete-green-on-pr14b`](https://github.com/danluu/gutenberg/tree/danluu/rtc-pr-progress-rtc-pr15c-fallback-group-delete-green-on-pr14b) | 2 files, +161 / -4 | canonical endpoint; Cycle432 reload replay failures mean reload hydration is still an owner-comparison/evidence queue, not a PR15C filing blocker by itself; current progress: published at `8decb9081f9f`; already published by local machine; keep validating against fuzz |
@@ -312,7 +314,7 @@ These rows must not be described as fixed or filing-ready.
 
 | Family | Rows / refs | Current status | Next evidence gate |
 | --- | --- | --- | --- |
-| Missing verified active refs | PR05A-D, PR06A-D, PR06E, PR11C-E, PR12A-C, exact refreshed stack refs, `HARNESS-WS-CONFIG-022004` | rows with exact public progress refs now link to `danluu/rtc-pr-progress-*`; rows without row-specific public progress or branch-link-audit refs still say `No verified branch link yet`; local `044015Z` and `081123Z` publication/finalization evidence is not a verified GitHub branch-link audit | Publish/fetch/audit explicit GitHub refs for every active row that still lacks a row-specific progress or verified audit link |
+| Active branch-link coverage | PR05A-D, PR06A-D, PR06E, PR11C-E, PR12A-C, and `HARNESS-WS-CONFIG-022004` now link to exact public `rtc-pr-stack-20260519T161502Z-*` refs; PR02A, PR11A-B, PR14B, and PR15A-C keep their exact public progress refs; older review rows keep their verified review refs | no active row currently says `No verified branch link yet` or `TBD`; these GitHub links resolve the report-size bookkeeping, not semantic filing readiness | Keep future filing audits tied to these exact public refs or newer audited replacements |
 | ENTITY-SERIALIZATION-1000009 | seed `1000009`, lower-boundary rows | completed lower-boundary evidence classifies this as `base-or-harness-pre-stack`, not a PR02/PR05/PR07/PR18x product owner | Keep out of product PR split unless a newer row-bearing report contradicts the classification |
 | Strict persistence parity repair | strict `8fb598778357`, seed `6000007` | top non-`1020002` likely-real queue; Cycle444 produced nonzero row-bearing artifacts but `strict-head-not-reproduced` and `owner=undetermined`; Cycle446 launched one strict-head reproduction repair job and its report is pending | Consume `runs/20260519T082842Z/jobs/outputs/rtc-cycle446-strict-8fb598778357-seed6000007-head-reproduction-repair/report.md` when nonempty; require row-bearing `branch-inputs.tsv`, `replay-runs.tsv`, `owner-matrix.tsv`, `first-divergence.tsv`, `classification.tsv`, and `manifest-audit.tsv` before assigning ownership |
 | Next strict owner queue | strict `c5c009f618b2`, seed `6000034` | next strict likely-real owner-comparison queue; not a named PR and not `PR18x` | Do not launch until seed `6000007` has durable owner rows or is explicitly classified stale/inactionable |
@@ -321,7 +323,7 @@ These rows must not be described as fixed or filing-ready.
 | RLH-A / raw reload hydration | `RLH-A`, raw reload heads, `RLH-CLEAN`, `PR07B0`, `PR07C`, older deferred candidates including `ba186c18166b` | evidence-only/downscope; Cycle432 row-bearing replay shows `PR15C`, `RLH-CLEAN`, `PR07B0`, and `PR07C` all fail seeds `6000007` and `966001`; older raw/deferred candidates are stale relative to the clean `081123Z` candidate | Keep raw reload and PR07 arms out of filing; use only fresh strict replay and verified clean refs for any future promotion |
 | Seed `1020002` WebSocket marker divergence | final-stack repair/reclassification lane | blocks final-stack fuzzing, filing, rebuilt validation, and its own repair/reclassification only | Repair or explicitly reclassify before final-stack validation and filing; do not serialize independent work behind it |
 | PR07 runtime / owner gate | PR07A/B arms and raw PR07D variants | non-fileable owner-comparison fork; raw `PR07D` remains excluded | Require row-bearing owner matrices with first-divergence evidence, current endpoint controls, clean refs, and branch audit before promotion |
-| Deferred closeout | PR02A HTTP room isolation, PR06E malformed-save, reload downscope | still evidence/placement work; not a reason to block strict `6000007` repair or branch-link audit | Verify PR02A covers HTTP room isolation, PR06E covers malformed-save, and reload candidates remain downscope/evidence-only unless strict replay proves otherwise |
+| Deferred closeout | PR02A HTTP room isolation, PR06E malformed-save, reload downscope | still evidence/placement work; not a reason to block strict `6000007` repair or link/size bookkeeping | Verify PR02A covers HTTP room isolation, PR06E covers malformed-save, and reload candidates remain downscope/evidence-only unless strict replay proves otherwise |
 | Pre-save search/live-collapse | search/live-collapse candidates, diagnostic branch around `5cc25e...` | Cycle438 pre-save diagnostic hardening verified base/head/manifest agreement and `diff_check=pass`; this is local-machine diagnostic publication evidence only, not product promotion | Run focused replay/validation before adding any PR row |
 | PR05E and rich-text/parser reductions | PR05E text, rich-text suffix around `868cd...`, parser/linebreak candidates, `PR18x` | rich-text suffix remains diagnostic and still needs fresh row-bearing hardening or replay output; latest guidance still says do not name `PR18x` until PR05B/PR05C/clean PR05D and other plausible owners are compared | Harden the diagnostic manifest first, then compare against lower controls and clean split heads before promotion |
 | PR15D endpoint/control | stale Cycle324/Cycle325/Cycle376 PR15D rows and later repaired endpoint manifests | blocked/control-only; current endpoint remains PR15C | Accept PR15D only with fresh current-base head/bundle/manifest proof after PR15C |
@@ -616,9 +618,9 @@ Before filing any maintainer-facing PR:
 2. Preserve that audit's exclusions for raw deferred heads, raw `PR07D`, stale
    `PR15D`, `PR17`, `PR18`, `PR18x`, fallback tails, runtime-gated
    reload-hydration refs, validation-local-delete refs, and seed `1020002`.
-3. Publish/fetch/audit explicit product refs for every row that currently says
-   `No verified branch link yet`, including `HARNESS-WS-CONFIG-022004` if it
-   is to be filed as a harness-only sidecar.
+3. Use the public branch links in the active tables as the current branch-link
+   baseline. If a row is replaced, publish/fetch/audit the replacement GitHub
+   ref and update its file/diff size before filing.
 4. Prove `PR06D -> PR06E`, `PR07 !-> PR06E`, `PR06D -> PR09`, accepted PR07
    fork non-ancestry where required, old HOLD non-ancestry, only the corrected
    clean PR05D path, and PR15A/B/C after final PR14B materialization.
@@ -627,7 +629,7 @@ Before filing any maintainer-facing PR:
 6. Keep the untracked reload-hydration gate spec out of filing branches and
    push allow-lists unless it is deliberately copied into a clean evidence
    worktree.
-7. After branch-link audit for missing rows, PR15C endpoint materialization,
+7. After any replacement branch-link audit, PR15C endpoint materialization,
    PR15D control-only proof or fresh rejection, reload-marker replay/downscope,
    seed `1020002` repair or reclassification, upstream rebase, and PR CI land,
    rebuild the combined validation stack from explicit accepted heads. Then run
@@ -650,8 +652,9 @@ Useful bounded work now:
 - keep `RLH-6000007-candidate` blocked until strict replay proves owner and
   green behavior; do not file it as `PR16` or move it to `PR06F` from the
   current evidence;
-- publish/fetch/audit explicit GitHub refs for every proposed row that still
-  says `No verified branch link yet`;
+- keep active row branch links and file/diff sizes current by updating any row
+  whose audited ref changes; no active row is currently missing a GitHub link or
+  measured size;
 - run focused deferred closeout for PR02A HTTP room isolation, PR06E
   malformed-save, and reload downscope without treating that as a product PR;
 - harden the remaining rich-text suffix diagnostic manifest and run focused
