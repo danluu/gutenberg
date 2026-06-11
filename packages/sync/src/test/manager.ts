@@ -1224,9 +1224,12 @@ describe( 'SyncManager', () => {
 			await new Promise( ( resolve ) => setTimeout( resolve, 0 ) );
 
 			expect( handlers.editRecord ).toHaveBeenCalledTimes( 1 );
-			expect( handlers.editRecord ).toHaveBeenCalledWith( {
-				remoteField: 'Remote value',
-			} );
+			expect( handlers.editRecord ).toHaveBeenCalledWith(
+				{
+					remoteField: 'Remote value',
+				},
+				{ __unstableSkipSyncUpdate: true }
+			);
 		} );
 
 		it( 'does not update when entity is not loaded', async () => {
@@ -1625,7 +1628,7 @@ describe( 'SyncManager', () => {
 			);
 		} );
 
-		it( 'filters stale local keys before the edited record lookup resolves', async () => {
+		it( 'applies local keys before the edited record lookup resolves', async () => {
 			let capturedDoc: Y.Doc | null = null;
 			mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
 				capturedDoc = ydoc;
@@ -1694,6 +1697,7 @@ describe( 'SyncManager', () => {
 				capturedDoc as unknown as Y.Doc,
 				{
 					content: 'Local content edit',
+					title: mockRecord.title,
 				}
 			);
 
