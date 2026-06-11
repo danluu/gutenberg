@@ -105,6 +105,7 @@ describe( 'SyncManager', () => {
 			getEditedRecord: jest.fn( async () =>
 				Promise.resolve( mockRecord )
 			),
+			onUndoStackChange: jest.fn(),
 			onStatusChange: jest.fn(),
 			persistCRDTDoc: jest.fn(),
 			refetchRecord: jest.fn( async () => Promise.resolve() ),

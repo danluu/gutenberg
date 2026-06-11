@@ -1204,13 +1204,20 @@ describe( 'crdt', () => {
 				},
 			];
 			const generatedBlocks = staleBlocks.map( ( block ) => {
-				const generatedBlock: Block & {
-					__unstableBlockSource?: unknown;
-				} = { ...block, isValid: true };
-				delete generatedBlock.__unstableBlockSource;
-				delete generatedBlock.originalContent;
-				delete generatedBlock.validationIssues;
-				return generatedBlock;
+				const {
+					__unstableBlockSource,
+					originalContent,
+					validationIssues,
+					...generatedBlock
+				} = block;
+				void __unstableBlockSource;
+				void originalContent;
+				void validationIssues;
+				return {
+					...generatedBlock,
+					innerBlocks: generatedBlock.innerBlocks as Block[],
+					isValid: true,
+				};
 			} );
 			const persistedContent = [
 				'<!-- wp:paragraph -->',
