@@ -334,6 +334,9 @@ describe( 'polling-manager', () => {
 					code: 'connection-limit-exceeded',
 				} ),
 			} );
+			expect( onStatusChange ).not.toHaveBeenCalledWith( {
+				status: 'connected',
+			} );
 			expect( mockDoAction ).toHaveBeenCalledWith(
 				'sync.metricEvent',
 				'rtc_room_join_blocked',

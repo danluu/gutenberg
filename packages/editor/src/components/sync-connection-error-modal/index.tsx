@@ -85,23 +85,27 @@ function getPluginHandledContext( result: unknown ): {
 		plugin_active: pluginActive,
 		plugin_context_source: pluginContextSource,
 	} = result as PluginContext & { handled?: boolean };
+	const pluginContext: PluginContext = {};
+
+	if ( typeof pluginSlug === 'string' ) {
+		pluginContext.plugin_slug = pluginSlug;
+	}
+	if ( typeof pluginVersion === 'string' ) {
+		pluginContext.plugin_version = pluginVersion;
+	}
+	if ( typeof pluginRole === 'string' ) {
+		pluginContext.plugin_role = pluginRole;
+	}
+	if ( typeof pluginActive === 'boolean' ) {
+		pluginContext.plugin_active = pluginActive;
+	}
+	if ( typeof pluginContextSource === 'string' ) {
+		pluginContext.plugin_context_source = pluginContextSource;
+	}
 
 	return {
 		isHandledByPlugin: handled !== false,
-		pluginContext: {
-			plugin_slug:
-				typeof pluginSlug === 'string' ? pluginSlug : undefined,
-			plugin_version:
-				typeof pluginVersion === 'string' ? pluginVersion : undefined,
-			plugin_role:
-				typeof pluginRole === 'string' ? pluginRole : undefined,
-			plugin_active:
-				typeof pluginActive === 'boolean' ? pluginActive : undefined,
-			plugin_context_source:
-				typeof pluginContextSource === 'string'
-					? pluginContextSource
-					: undefined,
-		},
+		pluginContext,
 	};
 }
 

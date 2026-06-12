@@ -706,20 +706,10 @@ function poll(): void {
 		try {
 			const { rooms } = await postSyncUpdate( payload );
 
-			// Emit 'connected' status.
+			// Reset request success state.
 			consecutiveFailures = 0;
 			isManualRetry = false;
 			syncRequestBodySizeLimit = MAX_SYNC_REQUEST_BODY_SIZE_IN_BYTES;
-			roomsInRequest.forEach( ( state ) => {
-				// Skip rooms unregistered during the await (e.g. the
-				// size-limit handler in onDocUpdate). Their terminal
-				// status was already set by whatever unregistered them.
-				if ( roomStates.get( state.room ) !== state ) {
-					return;
-				}
-
-				state.onStatusChange( { status: 'connected' } );
-			} );
 
 			// Reset before checking each room
 			hasCollaborators = false;
@@ -762,6 +752,8 @@ function poll(): void {
 					unregisterRoom( room.room );
 					return;
 				}
+
+				roomState.onStatusChange( { status: 'connected' } );
 
 				// Process awareness update.
 				roomState.processAwarenessUpdate( room.awareness );

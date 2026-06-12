@@ -228,7 +228,6 @@ export function createSyncMetricsSession() {
 
 	let initialProperties: SyncMetricProperties = {};
 	let hasStarted = false;
-	let hasConnected = false;
 	let hasJoined = false;
 	let hasEnded = false;
 	let startedAt = 0;
@@ -394,10 +393,6 @@ export function createSyncMetricsSession() {
 			const now = Date.now();
 			if ( connectedStartedAt === null ) {
 				connectedStartedAt = now;
-			}
-
-			if ( ! hasConnected ) {
-				hasConnected = true;
 			}
 
 			if ( ! hasJoined ) {
@@ -592,15 +587,17 @@ export function createSyncMetricsSession() {
 		const disconnectedDuration = getDisconnectedDurationMs( now );
 		const collaborativeDuration = getCollaborativeDurationMs( now );
 
-		recordSessionMetricEvent( 'rtc_room_left', {
-			leave_reason: reason,
-			session_duration_ms: sessionDurationMs,
-			connected_duration_ms: connectedDuration,
-			participant_count_before_leave:
-				lastPresenceProperties?.participant_count,
-			distinct_user_count_before_leave:
-				lastPresenceProperties?.distinct_user_count,
-		} );
+		if ( hasJoined ) {
+			recordSessionMetricEvent( 'rtc_room_left', {
+				leave_reason: reason,
+				session_duration_ms: sessionDurationMs,
+				connected_duration_ms: connectedDuration,
+				participant_count_before_leave:
+					lastPresenceProperties?.participant_count,
+				distinct_user_count_before_leave:
+					lastPresenceProperties?.distinct_user_count,
+			} );
+		}
 
 		recordSessionMetricEvent( 'rtc_session_ended', {
 			end_reason: reason,
@@ -608,7 +605,7 @@ export function createSyncMetricsSession() {
 			connected_duration_ms: connectedDuration,
 			disconnected_duration_ms: disconnectedDuration,
 			collaborative_duration_ms: collaborativeDuration,
-			connected: hasConnected,
+			connected: hasJoined,
 			peak_participant_count: peakParticipantCount,
 			peak_distinct_user_count: peakDistinctUserCount,
 			peak_current_user_active_instance_count:
@@ -638,7 +635,6 @@ export function createSyncMetricsSession() {
 
 		initialProperties = {};
 		hasStarted = false;
-		hasConnected = false;
 		hasJoined = false;
 		hasEnded = false;
 		startedAt = 0;

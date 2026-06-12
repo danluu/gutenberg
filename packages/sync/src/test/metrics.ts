@@ -148,6 +148,29 @@ describe( 'sync metrics', () => {
 		] );
 	} );
 
+	it( 'does not record room left when the room never joined', () => {
+		const session = createSyncMetricsSession();
+		const wrappedOnStatusChange = session.wrapStatusChangeHandler(
+			jest.fn()
+		);
+
+		session.ensureStarted( { initial_entity_scope: 'record' } );
+		wrappedOnStatusChange( {
+			status: 'disconnected',
+			error: new ConnectionError( ConnectionErrorCode.UNKNOWN_ERROR ),
+		} );
+		session.endSession( 'unload_all' );
+
+		expect( events.map( ( event ) => event.eventName ) ).toEqual( [
+			'rtc_room_join_attempted',
+			'rtc_connection_problem',
+			'rtc_session_ended',
+		] );
+		expect( events[ 2 ].properties ).toMatchObject( {
+			connected: false,
+		} );
+	} );
+
 	it( 'derives raw room presence counts from awareness state', () => {
 		expect(
 			getObjectRoomPresenceProperties(
