@@ -12,8 +12,6 @@ import {
 } from './hooks/use-post-editor-awareness-state';
 import { lock } from './lock-unlock';
 import {
-	getCountBucket,
-	getDurationBucket,
 	normalizeConnectionErrorCode,
 	recordSyncMetricEvent,
 	retrySyncConnection,
@@ -26,8 +24,6 @@ import {
 const lockedApis = {
 	useEntityRecordsWithPermissions,
 	RECEIVE_INTERMEDIATE_RESULTS,
-	getCountBucket,
-	getDurationBucket,
 	normalizeConnectionErrorCode,
 	recordSyncMetricEvent,
 	retrySyncConnection,

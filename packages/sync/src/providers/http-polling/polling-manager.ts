@@ -41,8 +41,7 @@ import {
 	type UpdateQueue,
 } from './types';
 import {
-	getByteSizeBucket,
-	getCountBucket,
+	getObjectRoomPresenceProperties,
 	normalizeConnectionErrorCode,
 	recordSyncMetricEvent,
 } from '../../metrics';
@@ -735,17 +734,22 @@ function poll(): void {
 
 				// If a limit is exceeded, disconnect immediately without processing updates.
 				if ( checkConnectionLimit( room.awareness, roomState ) ) {
-					recordSyncMetricEvent( 'rtc_limit_hit', {
-						limit_type: 'connection',
+					const configuredParticipantLimit =
+						getMaxClientsPerRoom( roomState );
+					recordSyncMetricEvent( 'rtc_room_join_blocked', {
+						event_emitter: 'client',
+						block_reason: 'participant_limit',
 						connection_error_code: normalizeConnectionErrorCode(
 							ConnectionErrorCode.CONNECTION_LIMIT_EXCEEDED
 						),
-						observed_count_bucket: getCountBucket(
-							Object.keys( room.awareness ).length
+						...getObjectRoomPresenceProperties(
+							room.awareness,
+							roomState.clientId
 						),
-						configured_limit_bucket: getCountBucket(
-							getMaxClientsPerRoom( roomState )
-						),
+						configured_participant_limit:
+							configuredParticipantLimit,
+						limit_remaining: 0,
+						count_basis: 'client_awareness_response',
 					} );
 
 					roomState.onStatusChange( {
@@ -1042,15 +1046,14 @@ function registerRoom( {
 				updateSizeInBytes: update.byteLength,
 			} );
 
-			recordSyncMetricEvent( 'rtc_limit_hit', {
-				limit_type: 'document_size',
+			recordSyncMetricEvent( 'rtc_room_join_blocked', {
+				event_emitter: 'client',
+				block_reason: 'document_size',
 				connection_error_code: normalizeConnectionErrorCode(
 					ConnectionErrorCode.DOCUMENT_SIZE_LIMIT_EXCEEDED
 				),
-				observed_size_bucket: getByteSizeBucket( update.byteLength ),
-				configured_size_bucket: getByteSizeBucket(
-					MAX_UPDATE_SIZE_IN_BYTES
-				),
+				observed_size_bytes: update.byteLength,
+				configured_size_bytes: MAX_UPDATE_SIZE_IN_BYTES,
 			} );
 
 			state.onStatusChange( {

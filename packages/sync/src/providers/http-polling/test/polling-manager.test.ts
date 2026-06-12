@@ -213,13 +213,13 @@ describe( 'polling-manager', () => {
 			} );
 			expect( mockDoAction ).toHaveBeenCalledWith(
 				'sync.metricEvent',
-				'rtc_limit_hit',
+				'rtc_room_join_blocked',
 				expect.objectContaining( {
 					schema_version: 1,
-					limit_type: 'document_size',
+					block_reason: 'document_size',
 					connection_error_code: 'document_size_limit_exceeded',
-					observed_size_bucket: 'lt_1kb',
-					configured_size_bucket: 'lt_1kb',
+					observed_size_bytes: 11,
+					configured_size_bytes: 10,
 				} )
 			);
 		} );
@@ -336,13 +336,18 @@ describe( 'polling-manager', () => {
 			} );
 			expect( mockDoAction ).toHaveBeenCalledWith(
 				'sync.metricEvent',
-				'rtc_limit_hit',
+				'rtc_room_join_blocked',
 				expect.objectContaining( {
 					schema_version: 1,
-					limit_type: 'connection',
+					block_reason: 'participant_limit',
 					connection_error_code: 'connection_limit_exceeded',
-					observed_count_bucket: '3_4',
-					configured_limit_bucket: '3_4',
+					participant_count: 4,
+					distinct_user_count: 4,
+					current_user_active_instance_count: 1,
+					other_distinct_user_count: 3,
+					duplicate_user_instance_count: 0,
+					configured_participant_limit: 3,
+					limit_remaining: 0,
 				} )
 			);
 		} );

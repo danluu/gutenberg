@@ -23,8 +23,7 @@ import { ConnectionError, ConnectionErrorCode } from '../errors';
 import {
 	SYNC_METRIC_EVENT_ACTION,
 	createSyncMetricsSession,
-	getCountBucket,
-	getDurationBucket,
+	getObjectRoomPresenceProperties,
 	normalizeConnectionErrorCode,
 	recordSyncMetricEvent,
 } from '../metrics';
@@ -52,16 +51,16 @@ describe( 'sync metrics', () => {
 	} );
 
 	it( 'records a schema version on metric events', () => {
-		recordSyncMetricEvent( 'rtc_session_started', {
-			initial_entity_scope: 'record',
+		recordSyncMetricEvent( 'rtc_room_join_attempted', {
+			entity_scope: 'record',
 		} );
 
 		expect( events ).toEqual( [
 			{
-				eventName: 'rtc_session_started',
+				eventName: 'rtc_room_join_attempted',
 				properties: {
 					schema_version: 1,
-					initial_entity_scope: 'record',
+					entity_scope: 'record',
 				},
 			},
 		] );
@@ -79,22 +78,6 @@ describe( 'sync metrics', () => {
 			)
 		).toBe( 'connection_limit_exceeded' );
 		expect( normalizeConnectionErrorCode() ).toBe( 'unknown_error' );
-	} );
-
-	it( 'buckets counts and durations', () => {
-		expect( getCountBucket( 0 ) ).toBe( '0' );
-		expect( getCountBucket( 4 ) ).toBe( '3_4' );
-		expect( getCountBucket( 5 ) ).toBe( '5_9' );
-		expect( getCountBucket( 10 ) ).toBe( '10_14' );
-		expect( getCountBucket( 15 ) ).toBe( '15_19' );
-		expect( getCountBucket( 20 ) ).toBe( '20_24' );
-		expect( getCountBucket( 25 ) ).toBe( '25_29' );
-		expect( getCountBucket( 30 ) ).toBe( '30_plus' );
-
-		expect( getDurationBucket( 1000 ) ).toBe( 'lt_2s' );
-		expect( getDurationBucket( 2000 ) ).toBe( '2_10s' );
-		expect( getDurationBucket( 30000 ) ).toBe( '30_60s' );
-		expect( getDurationBucket( 1800000 ) ).toBe( '30m_plus' );
 	} );
 
 	it( 'deduplicates connection problems within a disconnected episode', () => {
@@ -127,16 +110,20 @@ describe( 'sync metrics', () => {
 
 		expect( onStatusChange ).toHaveBeenCalledTimes( 4 );
 		expect( events.map( ( event ) => event.eventName ) ).toEqual( [
-			'rtc_session_started',
-			'rtc_session_connected',
+			'rtc_room_join_attempted',
+			'rtc_room_joined',
 			'rtc_connection_problem',
 			'rtc_connection_recovered',
 		] );
 		expect( events[ 2 ].properties ).toMatchObject( {
 			connection_error_code: 'connection_expired',
 			can_manually_retry: true,
-			consecutive_failures_bucket: '1',
-			will_auto_retry_bucket: '2_10s',
+			consecutive_failure_count: 1,
+			will_auto_retry_in_ms: 2000,
+		} );
+		expect( events[ 3 ].properties ).toMatchObject( {
+			previous_connection_error_code: 'connection_expired',
+			recovery_time_ms: 0,
 		} );
 	} );
 
@@ -156,15 +143,36 @@ describe( 'sync metrics', () => {
 		} );
 
 		expect( events.map( ( event ) => event.eventName ) ).toEqual( [
-			'rtc_session_started',
-			'rtc_session_connected',
+			'rtc_room_join_attempted',
+			'rtc_room_joined',
 		] );
 	} );
 
-	it( 'records primary awareness occupancy buckets', () => {
+	it( 'derives raw room presence counts from awareness state', () => {
+		expect(
+			getObjectRoomPresenceProperties(
+				{
+					1: { collaboratorInfo: { id: 100 } },
+					2: { collaboratorInfo: { id: 100 } },
+					3: { collaboratorInfo: { id: 200 } },
+				},
+				1
+			)
+		).toEqual( {
+			participant_count: 3,
+			distinct_user_count: 2,
+			current_user_active_instance_count: 2,
+			other_distinct_user_count: 1,
+			duplicate_user_instance_count: 1,
+		} );
+	} );
+
+	it( 'records primary awareness peak counts', () => {
 		const session = createSyncMetricsSession();
 		const changeCallbacks = new Set< () => void >();
-		const states = new Map< number, object >( [ [ 1, {} ] ] );
+		const states = new Map< number, object >( [
+			[ 1, { collaboratorInfo: { id: 100 } } ],
+		] );
 		const awareness = {
 			clientID: 1,
 			getStates: () => states,
@@ -181,57 +189,59 @@ describe( 'sync metrics', () => {
 		} as unknown as Awareness;
 
 		const stopObserving = session.observePrimaryAwareness( awareness );
-		states.set( 2, {} );
+		session.ensureStarted( { entity_scope: 'record' } );
+		states.set( 2, { collaboratorInfo: { id: 100 } } );
 		changeCallbacks.forEach( ( callback ) => callback() );
-		states.set( 3, {} );
+		states.set( 3, { collaboratorInfo: { id: 200 } } );
 		changeCallbacks.forEach( ( callback ) => callback() );
 		stopObserving();
-		states.set( 4, {} );
+		states.set( 4, { collaboratorInfo: { id: 300 } } );
 		changeCallbacks.forEach( ( callback ) => callback() );
-
-		expect( events ).toEqual( [
-			{
-				eventName: 'rtc_collaboration_observed',
-				properties: {
-					schema_version: 1,
-					remote_collaborators_bucket: '1',
-				},
-			},
-			{
-				eventName: 'rtc_room_occupancy_sampled',
-				properties: {
-					schema_version: 1,
-					remote_collaborators_bucket: '1',
-					room_scope: 'primary',
-				},
-			},
-			{
-				eventName: 'rtc_room_occupancy_sampled',
-				properties: {
-					schema_version: 1,
-					remote_collaborators_bucket: '2',
-					room_scope: 'primary',
-				},
-			},
-		] );
-	} );
-
-	it( 'records a bucketed session summary with edit activity', () => {
-		const session = createSyncMetricsSession();
-
-		session.ensureStarted( { initial_entity_scope: 'record' } );
-		session.recordLocalEditActivity( 1 );
-		session.recordRemoteEditActivity( 1 );
 		session.endSession( 'unload_all' );
 
 		expect( events[ events.length - 1 ] ).toMatchObject( {
-			eventName: 'rtc_session_summary',
+			eventName: 'rtc_session_ended',
 			properties: {
 				schema_version: 1,
-				summary_reason: 'unload_all',
-				local_edit_activity_count_bucket: '1',
-				remote_edit_activity_count_bucket: '1',
-				simultaneous_editing_observed: true,
+				peak_participant_count: 3,
+				peak_distinct_user_count: 2,
+				peak_current_user_active_instance_count: 2,
+				peak_duplicate_user_instance_count: 1,
+			},
+		} );
+	} );
+
+	it( 'records raw edit activity windows and session end summary', () => {
+		const session = createSyncMetricsSession();
+
+		session.ensureStarted( { entity_scope: 'record' } );
+		session.recordLocalEditActivity( 2 );
+		session.recordRemoteEditActivity( 3 );
+		session.endSession( 'unload_all' );
+
+		expect(
+			events.find(
+				( event ) => event.eventName === 'rtc_edit_activity_window'
+			)
+		).toMatchObject( {
+			properties: {
+				local_edit_operation_count: 1,
+				remote_edit_operation_count: 1,
+				local_changed_field_count: 2,
+				remote_changed_field_count: 3,
+				simultaneous_edit_activity_observed: true,
+			},
+		} );
+		expect( events[ events.length - 1 ] ).toMatchObject( {
+			eventName: 'rtc_session_ended',
+			properties: {
+				schema_version: 1,
+				end_reason: 'unload_all',
+				local_edit_operation_count: 1,
+				remote_edit_operation_count: 1,
+				local_changed_field_count: 2,
+				remote_changed_field_count: 3,
+				simultaneous_edit_activity_observed: true,
 			},
 		} );
 	} );

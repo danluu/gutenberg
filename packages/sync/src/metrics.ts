@@ -17,18 +17,54 @@ import type { ConnectionStatus, OnStatusChangeCallback } from './types';
 export const SYNC_METRIC_EVENT_ACTION = 'sync.metricEvent';
 export const SYNC_METRIC_SCHEMA_VERSION = 1;
 
+const EDIT_ACTIVITY_WINDOW_MS = 60000;
+
 type SyncMetricProperties = Record< string, unknown >;
 
 type SummaryReason = 'pagehide' | 'unload_all';
+
+type CollaboratorId = string | number;
+
+interface RoomPresenceProperties {
+	participant_count: number;
+	distinct_user_count?: number;
+	current_user_active_instance_count?: number;
+	other_distinct_user_count?: number;
+	duplicate_user_instance_count?: number;
+}
+
+function omitUndefinedProperties(
+	properties: SyncMetricProperties
+): SyncMetricProperties {
+	return Object.fromEntries(
+		Object.entries( properties ).filter(
+			( [ , value ] ) => value !== undefined
+		)
+	);
+}
+
+function createEphemeralId(): string {
+	if ( globalThis.crypto?.randomUUID ) {
+		return globalThis.crypto.randomUUID();
+	}
+
+	return `${ Date.now().toString( 36 ) }-${ Math.random()
+		.toString( 36 )
+		.slice( 2 ) }`;
+}
 
 export function recordSyncMetricEvent(
 	eventName: string,
 	properties: SyncMetricProperties = {}
 ): void {
-	doAction( SYNC_METRIC_EVENT_ACTION, eventName, {
-		schema_version: SYNC_METRIC_SCHEMA_VERSION,
-		...properties,
-	} );
+	doAction(
+		SYNC_METRIC_EVENT_ACTION,
+		eventName,
+		omitUndefinedProperties( {
+			schema_version: SYNC_METRIC_SCHEMA_VERSION,
+			...properties,
+		} )
+	);
 }
 
 export function normalizeConnectionErrorCode(
@@ -52,84 +88,6 @@ export function normalizeConnectionErrorCode(
 	}
 }
 
-export function getCountBucket( count: number | undefined ): string {
-	if ( count === undefined || count < 0 ) {
-		return 'unknown';
-	}
-	if ( count === 0 ) {
-		return '0';
-	}
-	if ( count === 1 ) {
-		return '1';
-	}
-	if ( count === 2 ) {
-		return '2';
-	}
-	if ( count <= 4 ) {
-		return '3_4';
-	}
-	if ( count <= 9 ) {
-		return '5_9';
-	}
-	if ( count <= 14 ) {
-		return '10_14';
-	}
-	if ( count <= 19 ) {
-		return '15_19';
-	}
-	if ( count <= 24 ) {
-		return '20_24';
-	}
-	if ( count <= 29 ) {
-		return '25_29';
-	}
-	return '30_plus';
-}
-
-export function getDurationBucket( durationInMs: number | undefined ): string {
-	if ( durationInMs === undefined || durationInMs < 0 ) {
-		return 'unknown';
-	}
-	if ( durationInMs < 2000 ) {
-		return 'lt_2s';
-	}
-	if ( durationInMs < 10000 ) {
-		return '2_10s';
-	}
-	if ( durationInMs < 30000 ) {
-		return '10_30s';
-	}
-	if ( durationInMs < 60000 ) {
-		return '30_60s';
-	}
-	if ( durationInMs < 300000 ) {
-		return '1_5m';
-	}
-	if ( durationInMs < 1800000 ) {
-		return '5_30m';
-	}
-	return '30m_plus';
-}
-
-export function getByteSizeBucket( sizeInBytes: number | undefined ): string {
-	if ( sizeInBytes === undefined || sizeInBytes < 0 ) {
-		return 'unknown';
-	}
-	if ( sizeInBytes < 1024 ) {
-		return 'lt_1kb';
-	}
-	if ( sizeInBytes < 10240 ) {
-		return '1_10kb';
-	}
-	if ( sizeInBytes < 102400 ) {
-		return '10_100kb';
-	}
-	if ( sizeInBytes < 1048576 ) {
-		return '100kb_1mb';
-	}
-	return '1mb_plus';
-}
-
 function getVisibilityState(): string {
 	if ( typeof document === 'undefined' ) {
 		return 'unknown';
@@ -146,6 +104,104 @@ function getNetworkState(): string {
 	return navigator.onLine ? 'online' : 'offline';
 }
 
+function getCollaboratorId( state: unknown ): CollaboratorId | undefined {
+	if ( ! state || typeof state !== 'object' ) {
+		return undefined;
+	}
+
+	const awarenessState = state as {
+		collaboratorInfo?: { id?: CollaboratorId | null };
+	};
+	const id = awarenessState.collaboratorInfo?.id;
+
+	if ( id === null || id === undefined ) {
+		return undefined;
+	}
+
+	return id;
+}
+
+function areSameClientId(
+	clientId: unknown,
+	expectedClientId: unknown
+): boolean {
+	return String( clientId ) === String( expectedClientId );
+}
+
+function getRoomPresencePropertiesFromEntries(
+	entries: Iterable< [ unknown, unknown ] >,
+	localClientId?: unknown
+): RoomPresenceProperties {
+	const states = Array.from( entries );
+	const participantCount = states.length;
+	const collaboratorIds: CollaboratorId[] = [];
+	let localCollaboratorId: CollaboratorId | undefined;
+	let hasMissingCollaboratorId = false;
+
+	states.forEach( ( [ clientId, state ] ) => {
+		const collaboratorId = getCollaboratorId( state );
+		if ( collaboratorId === undefined ) {
+			hasMissingCollaboratorId = true;
+			return;
+		}
+
+		collaboratorIds.push( collaboratorId );
+
+		if (
+			localClientId !== undefined &&
+			areSameClientId( clientId, localClientId )
+		) {
+			localCollaboratorId = collaboratorId;
+		}
+	} );
+
+	if ( hasMissingCollaboratorId ) {
+		return {
+			participant_count: participantCount,
+		};
+	}
+
+	const distinctUserCount = new Set(
+		collaboratorIds.map( ( id ) => String( id ) )
+	).size;
+	const properties: RoomPresenceProperties = {
+		participant_count: participantCount,
+		distinct_user_count: distinctUserCount,
+		duplicate_user_instance_count: participantCount - distinctUserCount,
+	};
+
+	if ( localCollaboratorId !== undefined ) {
+		const currentUserActiveInstanceCount = collaboratorIds.filter(
+			( id ) => String( id ) === String( localCollaboratorId )
+		).length;
+		properties.current_user_active_instance_count =
+			currentUserActiveInstanceCount;
+		properties.other_distinct_user_count =
+			distinctUserCount > 0 ? distinctUserCount - 1 : 0;
+	}
+
+	return properties;
+}
+
+export function getAwarenessRoomPresenceProperties(
+	awareness: Awareness
+): RoomPresenceProperties {
+	return getRoomPresencePropertiesFromEntries(
+		awareness.getStates().entries(),
+		awareness.clientID
+	);
+}
+
+export function getObjectRoomPresenceProperties(
+	awareness: Record< string, unknown >,
+	localClientId?: string | number
+): RoomPresenceProperties {
+	return getRoomPresencePropertiesFromEntries(
+		Object.entries( awareness ),
+		localClientId
+	);
+}
+
 function getStatusProperties( status: ConnectionStatus ) {
 	if ( status.status !== 'disconnected' ) {
 		return {};
@@ -157,29 +213,66 @@ function getStatusProperties( status: ConnectionStatus ) {
 		),
 		can_manually_retry: status.canManuallyRetry === true,
 		background_retries_failed: status.backgroundRetriesFailed === true,
-		consecutive_failures_bucket: getCountBucket(
-			status.consecutiveFailures
-		),
-		will_auto_retry_bucket: getDurationBucket( status.willAutoRetryInMs ),
+		consecutive_failure_count: status.consecutiveFailures,
+		will_auto_retry_in_ms: status.willAutoRetryInMs,
 		visibility_state: getVisibilityState(),
 		network_state: getNetworkState(),
 	};
 }
 
 export function createSyncMetricsSession() {
+	const sessionProperties = {
+		rtc_session_id: createEphemeralId(),
+		editor_instance_id: createEphemeralId(),
+	};
+
+	let initialProperties: SyncMetricProperties = {};
 	let hasStarted = false;
 	let hasConnected = false;
+	let hasJoined = false;
+	let hasEnded = false;
 	let startedAt = 0;
 	let activeProblemStartedAt: number | null = null;
+	let activeProblemId: string | null = null;
+	let activeProblemErrorCode: string | undefined;
+	let connectedStartedAt: number | null = null;
+	let connectedDurationMs = 0;
+	let disconnectedDurationMs = 0;
+	let collaborationStartedAt: number | null = null;
+	let collaborativeDurationMs = 0;
 	let connectionProblemCount = 0;
 	let connectionRecoveryCount = 0;
-	let localEditActivityCount = 0;
-	let remoteEditActivityCount = 0;
+	let localEditOperationCount = 0;
+	let remoteEditOperationCount = 0;
+	let localChangedFieldCount = 0;
+	let remoteChangedFieldCount = 0;
+	let localEditActivityWindowCount = 0;
+	let remoteEditActivityWindowCount = 0;
+	let simultaneousEditActivityWindowCount = 0;
 	let endedStatus = 'unknown';
 	let pageHideListenerRegistered = false;
 	let suppressedStatusMetrics = 0;
-	let hasObservedCollaboration = false;
-	const observedOccupancyBuckets: Set< string > = new Set();
+	let lastPresenceProperties: RoomPresenceProperties | undefined;
+	let peakParticipantCount = 0;
+	let peakDistinctUserCount: number | undefined;
+	let peakCurrentUserActiveInstanceCount: number | undefined;
+	let peakDuplicateUserInstanceCount: number | undefined;
+	let editWindowStartedAt: number | null = null;
+	let editWindowLocalOperationCount = 0;
+	let editWindowRemoteOperationCount = 0;
+	let editWindowLocalChangedFieldCount = 0;
+	let editWindowRemoteChangedFieldCount = 0;
+
+	function recordSessionMetricEvent(
+		eventName: string,
+		properties: SyncMetricProperties = {}
+	): void {
+		recordSyncMetricEvent( eventName, {
+			...sessionProperties,
+			...initialProperties,
+			...properties,
+		} );
+	}
 
 	function ensureStarted( properties: SyncMetricProperties = {} ): void {
 		if ( hasStarted ) {
@@ -188,8 +281,13 @@ export function createSyncMetricsSession() {
 
 		hasStarted = true;
 		startedAt = Date.now();
+		initialProperties = properties;
 
-		recordSyncMetricEvent( 'rtc_session_started', properties );
+		recordSessionMetricEvent( 'rtc_room_join_attempted', {
+			attempt_number: 1,
+			attempt_source: 'initial_load',
+			event_emitter: 'client',
+		} );
 
 		if ( typeof window !== 'undefined' && ! pageHideListenerRegistered ) {
 			window.addEventListener( 'pagehide', handlePageHide );
@@ -201,29 +299,129 @@ export function createSyncMetricsSession() {
 		recordSummary( 'pagehide' );
 	}
 
+	function getConnectedDurationMs( now = Date.now() ): number {
+		return (
+			connectedDurationMs +
+			( connectedStartedAt === null ? 0 : now - connectedStartedAt )
+		);
+	}
+
+	function getDisconnectedDurationMs( now = Date.now() ): number {
+		return (
+			disconnectedDurationMs +
+			( activeProblemStartedAt === null
+				? 0
+				: now - activeProblemStartedAt )
+		);
+	}
+
+	function getCollaborativeDurationMs( now = Date.now() ): number {
+		return (
+			collaborativeDurationMs +
+			( collaborationStartedAt === null
+				? 0
+				: now - collaborationStartedAt )
+		);
+	}
+
+	function updatePresencePeaks(
+		presenceProperties: RoomPresenceProperties
+	): void {
+		peakParticipantCount = Math.max(
+			peakParticipantCount,
+			presenceProperties.participant_count
+		);
+
+		if ( presenceProperties.distinct_user_count !== undefined ) {
+			peakDistinctUserCount = Math.max(
+				peakDistinctUserCount ?? 0,
+				presenceProperties.distinct_user_count
+			);
+		}
+
+		if (
+			presenceProperties.current_user_active_instance_count !== undefined
+		) {
+			peakCurrentUserActiveInstanceCount = Math.max(
+				peakCurrentUserActiveInstanceCount ?? 0,
+				presenceProperties.current_user_active_instance_count
+			);
+		}
+
+		if ( presenceProperties.duplicate_user_instance_count !== undefined ) {
+			peakDuplicateUserInstanceCount = Math.max(
+				peakDuplicateUserInstanceCount ?? 0,
+				presenceProperties.duplicate_user_instance_count
+			);
+		}
+	}
+
+	function updateCollaborativeDuration(
+		nextPresenceProperties: RoomPresenceProperties
+	): void {
+		const now = Date.now();
+		const wasCollaborating =
+			( lastPresenceProperties?.participant_count ?? 0 ) > 1;
+		const isCollaborating = nextPresenceProperties.participant_count > 1;
+
+		if ( ! wasCollaborating && isCollaborating ) {
+			collaborationStartedAt = now;
+		}
+
+		if (
+			wasCollaborating &&
+			! isCollaborating &&
+			collaborationStartedAt !== null
+		) {
+			collaborativeDurationMs += now - collaborationStartedAt;
+			collaborationStartedAt = null;
+		}
+	}
+
+	function updatePresence(
+		presenceProperties: RoomPresenceProperties
+	): void {
+		updateCollaborativeDuration( presenceProperties );
+		lastPresenceProperties = presenceProperties;
+		updatePresencePeaks( presenceProperties );
+	}
+
 	function recordStatusChange( status: ConnectionStatus ): void {
 		ensureStarted();
 		endedStatus = status.status;
 
 		if ( status.status === 'connected' ) {
+			const now = Date.now();
+			if ( connectedStartedAt === null ) {
+				connectedStartedAt = now;
+			}
+
 			if ( ! hasConnected ) {
 				hasConnected = true;
-				recordSyncMetricEvent( 'rtc_session_connected', {
-					time_to_connect_bucket: getDurationBucket(
-						Date.now() - startedAt
-					),
+			}
+
+			if ( ! hasJoined ) {
+				hasJoined = true;
+				recordSessionMetricEvent( 'rtc_room_joined', {
+					time_to_connect_ms: now - startedAt,
+					event_emitter: 'client',
+					...lastPresenceProperties,
 				} );
 			}
 
 			if ( activeProblemStartedAt !== null ) {
 				connectionRecoveryCount++;
-				recordSyncMetricEvent( 'rtc_connection_recovered', {
-					recovery_time_bucket: getDurationBucket(
-						Date.now() - activeProblemStartedAt
-					),
+				disconnectedDurationMs += now - activeProblemStartedAt;
+				recordSessionMetricEvent( 'rtc_connection_recovered', {
+					rtc_problem_id: activeProblemId,
+					previous_connection_error_code: activeProblemErrorCode,
+					recovery_time_ms: now - activeProblemStartedAt,
 					recovered_by: 'automatic',
+					...lastPresenceProperties,
 				} );
 				activeProblemStartedAt = null;
+				activeProblemId = null;
+				activeProblemErrorCode = undefined;
 			}
 			return;
 		}
@@ -232,10 +430,22 @@ export function createSyncMetricsSession() {
 			status.status === 'disconnected' &&
 			activeProblemStartedAt === null
 		) {
-			activeProblemStartedAt = Date.now();
+			const now = Date.now();
+			if ( connectedStartedAt !== null ) {
+				connectedDurationMs += now - connectedStartedAt;
+				connectedStartedAt = null;
+			}
+
+			activeProblemStartedAt = now;
+			activeProblemId = createEphemeralId();
+			activeProblemErrorCode = normalizeConnectionErrorCode(
+				status.error?.code
+			);
 			connectionProblemCount++;
-			recordSyncMetricEvent( 'rtc_connection_problem', {
+			recordSessionMetricEvent( 'rtc_connection_problem', {
+				rtc_problem_id: activeProblemId,
 				...getStatusProperties( status ),
+				...lastPresenceProperties,
 			} );
 		}
 	}
@@ -261,44 +471,85 @@ export function createSyncMetricsSession() {
 		}
 	}
 
-	function recordAwarenessOccupancy( awareness: Awareness ): void {
-		const remoteCollaboratorCount = Array.from(
-			awareness.getStates().keys()
-		).filter( ( clientId ) => clientId !== awareness.clientID ).length;
+	function recordAwarenessPresence( awareness: Awareness ): void {
+		const presenceProperties =
+			getAwarenessRoomPresenceProperties( awareness );
 
-		if ( remoteCollaboratorCount <= 0 ) {
+		if ( presenceProperties.participant_count <= 0 ) {
 			return;
 		}
 
-		const remoteCollaboratorsBucket = getCountBucket(
-			remoteCollaboratorCount
-		);
-
-		if ( ! hasObservedCollaboration ) {
-			hasObservedCollaboration = true;
-			recordSyncMetricEvent( 'rtc_collaboration_observed', {
-				remote_collaborators_bucket: remoteCollaboratorsBucket,
-			} );
-		}
-
-		if ( observedOccupancyBuckets.has( remoteCollaboratorsBucket ) ) {
-			return;
-		}
-
-		observedOccupancyBuckets.add( remoteCollaboratorsBucket );
-		recordSyncMetricEvent( 'rtc_room_occupancy_sampled', {
-			remote_collaborators_bucket: remoteCollaboratorsBucket,
-			room_scope: 'primary',
-		} );
+		updatePresence( presenceProperties );
 	}
 
 	function observePrimaryAwareness( awareness: Awareness ): () => void {
-		const recordOccupancy = () => recordAwarenessOccupancy( awareness );
+		const recordPresence = () => recordAwarenessPresence( awareness );
 
-		recordOccupancy();
-		awareness.on( 'change', recordOccupancy );
+		recordPresence();
+		awareness.on( 'change', recordPresence );
 
-		return () => awareness.off( 'change', recordOccupancy );
+		return () => awareness.off( 'change', recordPresence );
+	}
+
+	function flushEditActivityWindow( now = Date.now() ): void {
+		if ( editWindowStartedAt === null ) {
+			return;
+		}
+
+		if (
+			editWindowLocalOperationCount === 0 &&
+			editWindowRemoteOperationCount === 0
+		) {
+			editWindowStartedAt = null;
+			return;
+		}
+
+		const hadLocalEditActivity = editWindowLocalOperationCount > 0;
+		const hadRemoteEditActivity = editWindowRemoteOperationCount > 0;
+		const simultaneousEditActivityObserved =
+			hadLocalEditActivity && hadRemoteEditActivity;
+
+		if ( hadLocalEditActivity ) {
+			localEditActivityWindowCount++;
+		}
+		if ( hadRemoteEditActivity ) {
+			remoteEditActivityWindowCount++;
+		}
+		if ( simultaneousEditActivityObserved ) {
+			simultaneousEditActivityWindowCount++;
+		}
+
+		recordSessionMetricEvent( 'rtc_edit_activity_window', {
+			window_duration_ms: now - editWindowStartedAt,
+			...lastPresenceProperties,
+			local_edit_operation_count: editWindowLocalOperationCount,
+			remote_edit_operation_count: editWindowRemoteOperationCount,
+			local_changed_field_count: editWindowLocalChangedFieldCount,
+			remote_changed_field_count: editWindowRemoteChangedFieldCount,
+			had_local_edit_activity: hadLocalEditActivity,
+			had_remote_edit_activity: hadRemoteEditActivity,
+			simultaneous_edit_activity_observed:
+				simultaneousEditActivityObserved,
+		} );
+
+		editWindowStartedAt = null;
+		editWindowLocalOperationCount = 0;
+		editWindowRemoteOperationCount = 0;
+		editWindowLocalChangedFieldCount = 0;
+		editWindowRemoteChangedFieldCount = 0;
+	}
+
+	function ensureEditActivityWindow( now = Date.now() ): void {
+		if (
+			editWindowStartedAt !== null &&
+			now - editWindowStartedAt >= EDIT_ACTIVITY_WINDOW_MS
+		) {
+			flushEditActivityWindow( now );
+		}
+
+		if ( editWindowStartedAt === null ) {
+			editWindowStartedAt = now;
+		}
 	}
 
 	function recordLocalEditActivity( changedKeyCount: number ): void {
@@ -307,7 +558,11 @@ export function createSyncMetricsSession() {
 		}
 
 		ensureStarted();
-		localEditActivityCount++;
+		ensureEditActivityWindow();
+		localEditOperationCount++;
+		localChangedFieldCount += changedKeyCount;
+		editWindowLocalOperationCount++;
+		editWindowLocalChangedFieldCount += changedKeyCount;
 	}
 
 	function recordRemoteEditActivity( changedKeyCount: number ): void {
@@ -316,32 +571,61 @@ export function createSyncMetricsSession() {
 		}
 
 		ensureStarted();
-		remoteEditActivityCount++;
+		ensureEditActivityWindow();
+		remoteEditOperationCount++;
+		remoteChangedFieldCount += changedKeyCount;
+		editWindowRemoteOperationCount++;
+		editWindowRemoteChangedFieldCount += changedKeyCount;
 	}
 
 	function recordSummary( reason: SummaryReason ): void {
-		if ( ! hasStarted ) {
+		if ( ! hasStarted || hasEnded ) {
 			return;
 		}
 
-		recordSyncMetricEvent( 'rtc_session_summary', {
-			summary_reason: reason,
-			duration_bucket: getDurationBucket( Date.now() - startedAt ),
+		hasEnded = true;
+		const now = Date.now();
+		flushEditActivityWindow( now );
+
+		const sessionDurationMs = now - startedAt;
+		const connectedDuration = getConnectedDurationMs( now );
+		const disconnectedDuration = getDisconnectedDurationMs( now );
+		const collaborativeDuration = getCollaborativeDurationMs( now );
+
+		recordSessionMetricEvent( 'rtc_room_left', {
+			leave_reason: reason,
+			session_duration_ms: sessionDurationMs,
+			connected_duration_ms: connectedDuration,
+			participant_count_before_leave:
+				lastPresenceProperties?.participant_count,
+			distinct_user_count_before_leave:
+				lastPresenceProperties?.distinct_user_count,
+		} );
+
+		recordSessionMetricEvent( 'rtc_session_ended', {
+			end_reason: reason,
+			session_duration_ms: sessionDurationMs,
+			connected_duration_ms: connectedDuration,
+			disconnected_duration_ms: disconnectedDuration,
+			collaborative_duration_ms: collaborativeDuration,
 			connected: hasConnected,
-			connection_problem_count_bucket: getCountBucket(
-				connectionProblemCount
-			),
-			connection_recovery_count_bucket: getCountBucket(
-				connectionRecoveryCount
-			),
-			local_edit_activity_count_bucket: getCountBucket(
-				localEditActivityCount
-			),
-			remote_edit_activity_count_bucket: getCountBucket(
-				remoteEditActivityCount
-			),
-			simultaneous_editing_observed:
-				localEditActivityCount > 0 && remoteEditActivityCount > 0,
+			peak_participant_count: peakParticipantCount,
+			peak_distinct_user_count: peakDistinctUserCount,
+			peak_current_user_active_instance_count:
+				peakCurrentUserActiveInstanceCount,
+			peak_duplicate_user_instance_count: peakDuplicateUserInstanceCount,
+			connection_problem_count: connectionProblemCount,
+			connection_recovery_count: connectionRecoveryCount,
+			local_edit_operation_count: localEditOperationCount,
+			remote_edit_operation_count: remoteEditOperationCount,
+			local_changed_field_count: localChangedFieldCount,
+			remote_changed_field_count: remoteChangedFieldCount,
+			local_edit_activity_window_count: localEditActivityWindowCount,
+			remote_edit_activity_window_count: remoteEditActivityWindowCount,
+			simultaneous_edit_activity_window_count:
+				simultaneousEditActivityWindowCount,
+			simultaneous_edit_activity_observed:
+				localEditOperationCount > 0 && remoteEditOperationCount > 0,
 			ended_status: endedStatus,
 		} );
 	}
@@ -352,17 +636,40 @@ export function createSyncMetricsSession() {
 			pageHideListenerRegistered = false;
 		}
 
+		initialProperties = {};
 		hasStarted = false;
 		hasConnected = false;
+		hasJoined = false;
+		hasEnded = false;
 		startedAt = 0;
 		activeProblemStartedAt = null;
+		activeProblemId = null;
+		activeProblemErrorCode = undefined;
+		connectedStartedAt = null;
+		connectedDurationMs = 0;
+		disconnectedDurationMs = 0;
+		collaborationStartedAt = null;
+		collaborativeDurationMs = 0;
 		connectionProblemCount = 0;
 		connectionRecoveryCount = 0;
-		localEditActivityCount = 0;
-		remoteEditActivityCount = 0;
+		localEditOperationCount = 0;
+		remoteEditOperationCount = 0;
+		localChangedFieldCount = 0;
+		remoteChangedFieldCount = 0;
+		localEditActivityWindowCount = 0;
+		remoteEditActivityWindowCount = 0;
+		simultaneousEditActivityWindowCount = 0;
 		endedStatus = 'unknown';
-		hasObservedCollaboration = false;
-		observedOccupancyBuckets.clear();
+		lastPresenceProperties = undefined;
+		peakParticipantCount = 0;
+		peakDistinctUserCount = undefined;
+		peakCurrentUserActiveInstanceCount = undefined;
+		peakDuplicateUserInstanceCount = undefined;
+		editWindowStartedAt = null;
+		editWindowLocalOperationCount = 0;
+		editWindowRemoteOperationCount = 0;
+		editWindowLocalChangedFieldCount = 0;
+		editWindowRemoteChangedFieldCount = 0;
 	}
 
 	function endSession( reason: SummaryReason ): void {

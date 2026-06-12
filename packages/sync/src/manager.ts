@@ -194,7 +194,10 @@ export function createSyncManager( debug = false ): SyncManager {
 		};
 
 		metricsSession.ensureStarted( {
-			initial_entity_scope: 'record',
+			entity_scope: 'record',
+			object_type: objectType,
+			object_id: objectId,
+			room_scope: 'primary',
 		} );
 
 		const ydoc = createYjsDoc( { objectType } );
@@ -390,7 +393,9 @@ export function createSyncManager( debug = false ): SyncManager {
 		};
 
 		metricsSession.ensureStarted( {
-			initial_entity_scope: 'collection',
+			entity_scope: 'collection',
+			object_type: objectType,
+			room_scope: 'collection',
 		} );
 
 		const ydoc = createYjsDoc( { collection: true, objectType } );

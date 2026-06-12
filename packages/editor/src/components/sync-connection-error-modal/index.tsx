@@ -9,7 +9,7 @@ import {
 	store as coreDataStore,
 	privateApis as coreDataPrivateApis,
 } from '@wordpress/core-data';
-// @ts-expect-error - No type declarations available for @wordpress/block-editor
+// @ts-ignore No type declarations available for @wordpress/block-editor.
 // prettier-ignore
 import { privateApis, store as blockEditorStore } from '@wordpress/block-editor';
 import {
@@ -35,8 +35,6 @@ import { useRetryCountdown } from './use-retry-countdown';
 
 const { BlockCanvasCover } = unlock( privateApis );
 const {
-	getCountBucket,
-	getDurationBucket,
 	normalizeConnectionErrorCode,
 	recordSyncMetricEvent,
 	retrySyncConnection,
@@ -51,6 +49,60 @@ function getModalType( errorCode?: string ): string {
 	}
 
 	return 'connection_lost';
+}
+
+type PluginContext = {
+	plugin_slug?: string;
+	plugin_version?: string;
+	plugin_role?: string;
+	plugin_active?: boolean;
+	plugin_context_source?: string;
+};
+
+function getPluginHandledContext( result: unknown ): {
+	isHandledByPlugin: boolean;
+	pluginContext: PluginContext;
+} {
+	if ( result === false ) {
+		return {
+			isHandledByPlugin: false,
+			pluginContext: {},
+		};
+	}
+
+	if ( ! result || typeof result !== 'object' ) {
+		return {
+			isHandledByPlugin: true,
+			pluginContext: {},
+		};
+	}
+
+	const {
+		handled,
+		plugin_slug: pluginSlug,
+		plugin_version: pluginVersion,
+		plugin_role: pluginRole,
+		plugin_active: pluginActive,
+		plugin_context_source: pluginContextSource,
+	} = result as PluginContext & { handled?: boolean };
+
+	return {
+		isHandledByPlugin: handled !== false,
+		pluginContext: {
+			plugin_slug:
+				typeof pluginSlug === 'string' ? pluginSlug : undefined,
+			plugin_version:
+				typeof pluginVersion === 'string' ? pluginVersion : undefined,
+			plugin_role:
+				typeof pluginRole === 'string' ? pluginRole : undefined,
+			plugin_active:
+				typeof pluginActive === 'boolean' ? pluginActive : undefined,
+			plugin_context_source:
+				typeof pluginContextSource === 'string'
+					? pluginContextSource
+					: undefined,
+		},
+	};
 }
 
 /**
@@ -198,14 +250,16 @@ export function SyncConnectionErrorModal() {
 	//     }
 	// );
 	// ```
-	const isHandledByPlugin =
-		isModalCandidate &&
-		! canRetry &&
-		applyFilters(
-			'editor.isSyncConnectionErrorHandled',
-			false,
-			error?.code
-		) !== false;
+	const pluginHandledResult =
+		isModalCandidate && ! canRetry
+			? applyFilters(
+					'editor.isSyncConnectionErrorHandled',
+					false,
+					error?.code
+			  )
+			: false;
+	const { isHandledByPlugin, pluginContext } =
+		getPluginHandledContext( pluginHandledResult );
 	const shouldShowModal = isModalCandidate && ! isHandledByPlugin;
 	const modalViewType = isHandledByPlugin
 		? 'plugin_handled'
@@ -236,6 +290,8 @@ export function SyncConnectionErrorModal() {
 					? connectionStatus.backgroundRetriesFailed === true
 					: false,
 			handled_by_plugin: isHandledByPlugin,
+			plugin_context_available: Object.keys( pluginContext ).length > 0,
+			...pluginContext,
 		} );
 	}, [
 		connectionStatus,
@@ -244,6 +300,7 @@ export function SyncConnectionErrorModal() {
 		isManualRetryAvailable,
 		modalViewKey,
 		modalViewType,
+		pluginContext,
 	] );
 
 	useEffect( () => {
@@ -266,12 +323,9 @@ export function SyncConnectionErrorModal() {
 				previous_connection_error_code: normalizeConnectionErrorCode(
 					manualRetryErrorCodeRef.current
 				),
-				time_to_result_bucket: getDurationBucket(
-					Date.now() - manualRetryStartedAtRef.current
-				),
-				retry_attempt_bucket: getCountBucket(
-					manualRetryAttemptCountRef.current
-				),
+				retry_time_to_result_ms:
+					Date.now() - manualRetryStartedAtRef.current,
+				retry_attempt_number: manualRetryAttemptCountRef.current,
 			} );
 			manualRetryStartedAtRef.current = null;
 			manualRetrySawConnectingRef.current = false;
@@ -287,12 +341,9 @@ export function SyncConnectionErrorModal() {
 			previous_connection_error_code: normalizeConnectionErrorCode(
 				manualRetryErrorCodeRef.current
 			),
-			time_to_result_bucket: getDurationBucket(
-				Date.now() - manualRetryStartedAtRef.current
-			),
-			retry_attempt_bucket: getCountBucket(
-				manualRetryAttemptCountRef.current
-			),
+			retry_time_to_result_ms:
+				Date.now() - manualRetryStartedAtRef.current,
+			retry_attempt_number: manualRetryAttemptCountRef.current,
 		} );
 		manualRetryStartedAtRef.current = null;
 		manualRetrySawConnectingRef.current = false;
@@ -314,9 +365,7 @@ export function SyncConnectionErrorModal() {
 					connection_error_code: normalizeConnectionErrorCode(
 						error?.code
 					),
-					retry_attempt_bucket: getCountBucket(
-						manualRetryAttemptCountRef.current
-					),
+					retry_attempt_number: manualRetryAttemptCountRef.current,
 				} );
 				onManualRetry();
 				retrySyncConnection();
