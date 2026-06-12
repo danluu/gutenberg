@@ -385,9 +385,8 @@ export function createSyncManager( debug = false ): SyncManager {
 		handlers = {
 			...handlers,
 			onStatusChange: metricsSession.wrapStatusChangeHandler(
-				debugWrap( handlers.onStatusChange )
+				handlers.onStatusChange
 			),
-			refetchRecords: debugWrap( handlers.refetchRecords ),
 		};
 
 		metricsSession.ensureStarted( {
