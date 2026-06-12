@@ -100,6 +100,9 @@ Use scalar event properties for RTC-specific context:
 - `event_emitter`, such as `client` or `server`;
 - `rollout_group`, if used;
 - `plan_group`, if needed for packaging analysis.
+- `plugin_context_available`, when plugin inventory or causal plugin context can
+  be attached;
+- `active_plugin_count`, when available.
 
 `rtc_session_id` and `editor_instance_id` must be random, per-load values. Do
 not derive them from user IDs, site IDs, post IDs, room names, tokens, or other
@@ -145,6 +148,45 @@ If a dashboard needs stable buckets, compute them downstream from the numeric
 value. If a bucket property is added for convenience, keep the numeric property
 as the source of truth.
 
+### Plugin context
+
+Record plugin context when it is available because it is important for debugging
+and error tracking. Keep it Tracks-consistent by using scalar event properties
+or separate rows, not arrays or JSON blobs.
+
+When one plugin is directly involved in an event, attach scalar properties to
+that event:
+
+- `plugin_slug`;
+- `plugin_version`;
+- `plugin_role`, such as `rtc_provider`, `connection_error_handler`,
+  `editor_extension`, `transport_override`, or `unknown`;
+- `plugin_active`;
+- `plugin_context_source`, such as `server_inventory`, `client_registry`,
+  `filter_callback`, or `known_integration`.
+
+Examples:
+
+- a plugin suppresses the default connection modal through
+  `editor.isSyncConnectionErrorHandled`;
+- a plugin provides or overrides RTC transport behavior;
+- a plugin is identified by server-side diagnostics as the source of an RTC
+  permission, token, REST, or sync failure.
+
+When the active plugin set is needed for correlation, emit a separate
+`wpcom_rtc_plugin_context_observed` row per plugin instead of attaching
+`plugins: [ ... ]` to another event. Emit those rows only once per RTC session
+when one of these is true:
+
+- an RTC connection problem occurs;
+- an RTC join is blocked;
+- an RTC error modal is shown;
+- a transport fallback occurs;
+- a small sampled healthy-session baseline is needed for denominator analysis.
+
+This gives analysts plugin-level joins without making the main event payloads
+large or hard to register.
+
 ## Tracks events
 
 All events should be registered and validated with descriptions, owners, code
@@ -164,6 +206,8 @@ Suggested properties:
 - `preferred_transport`;
 - `fallback_reason`;
 - `kill_switch_active`.
+- `plugin_context_available`;
+- `active_plugin_count`.
 
 ### `wpcom_rtc_room_join_attempted`
 
@@ -273,6 +317,7 @@ Suggested properties:
 - `will_auto_retry_in_ms`;
 - `visibility_state`;
 - `network_state`.
+- plugin context fields, if a plugin is directly implicated.
 
 ### `wpcom_rtc_connection_recovered`
 
@@ -306,6 +351,7 @@ Suggested properties:
 - `can_manually_retry`;
 - `background_retries_failed`;
 - `handled_by_plugin`.
+- plugin context fields, if a plugin handled or caused the modal.
 
 ### `wpcom_rtc_connection_modal_action`
 
@@ -319,6 +365,28 @@ Suggested properties:
   or `plugin_action`;
 - `connection_error_code`;
 - `retry_attempt_number`;
+- plugin context fields, if the action is plugin-provided.
+
+### `wpcom_rtc_plugin_context_observed`
+
+Fire one row per plugin when plugin context is needed for RTC debugging or error
+correlation. Do not fire this for every editor load by default unless volume and
+privacy review explicitly allow it.
+
+Suggested properties:
+
+- common identity/context properties;
+- `plugin_slug`;
+- `plugin_version`;
+- `plugin_role`, such as `rtc_provider`, `connection_error_handler`,
+  `editor_extension`, `transport_override`, `active_plugin`, or `unknown`;
+- `plugin_active`;
+- `plugin_context_reason`, such as `connection_problem`, `join_blocked`,
+  `modal_viewed`, `transport_fallback`, or `healthy_session_sample`;
+- `connection_error_code`, when applicable;
+- `block_reason`, when applicable;
+- `transport`;
+- `provider`.
 
 ### `wpcom_rtc_manual_retry_result`
 
@@ -411,6 +479,10 @@ properties:
 - room names;
 - Yjs payload details.
 
+Structured logs may include richer plugin diagnostics when needed, but the
+Tracks layer should still record plugin slug/version context when available so
+product and support analysis can correlate RTC failures with installed plugins.
+
 ## Privacy and data minimization
 
 It is acceptable and useful to rely on normal Tracks user and blog identity for
@@ -424,7 +496,10 @@ Do record:
 - `post_id` as a scalar event property;
 - random per-load/session IDs;
 - scalar counts and durations;
-- allowlisted enum values.
+- allowlisted enum values;
+- plugin slugs and versions when available, either as scalar properties on a
+  plugin-causal event or as one row per plugin in
+  `wpcom_rtc_plugin_context_observed`.
 
 Do not record:
 
@@ -442,7 +517,6 @@ Do not record:
 - tokens;
 - raw error text;
 - stack traces;
-- plugin slugs unless explicitly approved and allowlisted;
 - stable hashes of forbidden values.
 
 If `post_id` is considered too sensitive for a specific surface, use a
@@ -544,6 +618,8 @@ The review changed the plan in the following ways:
   scalar event properties and queryable lifecycle rows.
 - Privacy: rely on normal Tracks identity, but do not store lists of other users,
   names, emails, titles, content, room names, or protocol client IDs.
+- Debugging/support: record plugin slug and version context when available, using
+  scalar properties or one row per plugin rather than arrays.
 - Reliability engineering: make server-side join, blocked, and leave events the
   source of truth; use MC Stats or StatsD for operational counters.
 - Gutenberg/package maintainer: keep WP.com Tracks calls out of generic
