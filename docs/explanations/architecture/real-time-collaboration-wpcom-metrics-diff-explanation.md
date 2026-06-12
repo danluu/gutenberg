@@ -78,6 +78,17 @@ It emits:
 - `rtc_connection_recovered` when a disconnected episode returns to connected;
 - `rtc_session_summary` on `pagehide` or `unloadAll`.
 
+The manager also observes the first synced entity's awareness object as the
+primary collaboration surface. This emits:
+
+- `rtc_collaboration_observed` once a remote collaborator is present;
+- `rtc_room_occupancy_sampled` when the primary awareness object first reaches a
+  new remote-collaborator bucket.
+
+This is provider-generic. It works for HTTP polling and should also work for
+WebSocket providers as long as the provider updates the same awareness object
+created by the sync manager.
+
 The manager also increments session-summary counters for:
 
 - local edit activity, when local changes are applied to the CRDT document;
@@ -100,47 +111,26 @@ inflate connection-problem metrics.
 
 ### `packages/sync/src/providers/http-polling/polling-manager.ts`
 
-The HTTP polling manager is the code path that has room awareness and knows
-about HTTP-polling-specific limits. The implementation adds three metric
-families here.
+The HTTP polling manager knows about HTTP-polling-specific limits. The
+implementation adds limit-hit metrics here.
 
-First, collaborator occupancy:
-
-- `rtc_collaboration_observed` fires once when the primary room has at least one
-  remote collaborator.
-- `rtc_room_occupancy_sampled` fires when the primary room first reaches a new
-  remote-collaborator bucket.
-
-This answers distribution questions such as:
-
-- how many sessions reached 1 remote collaborator;
-- how many reached 2;
-- how many reached 3 to 4;
-- how many reached 5 to 9;
-- how many reached 10 to 14;
-- how many reached 15 to 19;
-- how many reached 20 to 24;
-- how many reached 25 to 29;
-- how many reached 30 or more.
-
-It does not record room IDs, collaborator IDs, user IDs, names, or emails.
-
-Second, connection-limit failures:
+First, connection-limit failures:
 
 - `rtc_limit_hit` fires before disconnecting for
   `connection-limit-exceeded`;
 - payload includes `limit_type: "connection"`,
   `observed_count_bucket`, and `configured_limit_bucket`.
 
-Third, document-size failures:
+Second, document-size failures:
 
 - `rtc_limit_hit` fires before disconnecting for
   `document-size-limit-exceeded`;
 - payload includes `limit_type: "document_size"`,
   `observed_size_bucket`, and `configured_size_bucket`.
 
-The implementation resets per-session occupancy state when the last polling
-room unregisters, so a later editor session can emit its own occupancy buckets.
+Collaborator occupancy is not recorded here because that would only cover HTTP
+polling. Occupancy is recorded by the sync manager from the provider-agnostic
+awareness object.
 
 ### `packages/editor/src/components/sync-connection-error-modal/index.tsx`
 
@@ -196,6 +186,7 @@ lower-level internals directly.
 - event schema version;
 - connection error normalization;
 - count and duration buckets;
+- provider-generic primary awareness occupancy;
 - disconnected episode deduping;
 - suppression of cleanup disconnects;
 - session summary edit-activity buckets.
@@ -204,9 +195,7 @@ lower-level internals directly.
 covers:
 
 - `rtc_limit_hit` for document-size failures;
-- `rtc_limit_hit` for collaborator-limit failures;
-- `rtc_collaboration_observed` and `rtc_room_occupancy_sampled` when the
-  primary room has remote collaborators.
+- `rtc_limit_hit` for collaborator-limit failures.
 
 ## Event coverage in the implementation
 
@@ -264,11 +253,10 @@ high-cardinality tracking and unnecessary personal data.
 
 ## Known limitations
 
-The implementation observes the primary HTTP polling room using the existing
-"first loaded room is primary" assumption. This matches the current connection
-limit logic, but it is still an approximation. If Gutenberg later adds explicit
-primary entity annotations, occupancy metrics should move to that stronger
-signal.
+The implementation observes the first synced entity's awareness object as the
+primary collaboration surface. This is still an approximation. If Gutenberg
+later adds explicit primary entity annotations, occupancy metrics should move to
+that stronger signal.
 
 `simultaneous_editing_observed` is session-level. It means the session observed
 both local edit activity and remote-applied edit activity. It is not a

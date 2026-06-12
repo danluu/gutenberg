@@ -258,7 +258,7 @@ Suggested properties:
 The initial implementation should support distribution queries without high-cardinality identifiers:
 
 - "sessions that reached at least N collaborators" should use `peak_remote_collaborators_bucket` or `wpcom_rtc_room_occupancy_sampled`;
-- "rooms with at least N remote collaborators" should use bucketed occupancy samples from primary RTC rooms;
+- "rooms with at least N remote collaborators" should use bucketed occupancy samples from the primary RTC awareness surface;
 - "sessions with simultaneous editors" should mean remote collaborators were present while the local user had edit activity;
 - "sessions with simultaneous edits" should mean local edit activity and remote-applied edit activity were both observed in the same session.
 
