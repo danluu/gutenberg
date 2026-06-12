@@ -1341,6 +1341,46 @@ describe( 'polling-manager', () => {
 			expect( mockPostSyncUpdate ).toHaveBeenCalledTimes( 1 );
 		} );
 
+		it( 'does not mark a re-registered room connected from a stale response', async () => {
+			const deferred = createDeferred< SyncResponse >();
+			mockPostSyncUpdate.mockReturnValueOnce( deferred.promise );
+
+			const oldOnStatusChange = jest.fn();
+			const newOnStatusChange = jest.fn();
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: oldOnStatusChange,
+				onSync: jest.fn(),
+			} );
+			oldOnStatusChange.mockClear();
+
+			pollingManager.unregisterRoom( 'test-room', {
+				sendDisconnectSignal: false,
+			} );
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 2 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: newOnStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			deferred.resolve( syncResponse );
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( oldOnStatusChange ).not.toHaveBeenCalledWith( {
+				status: 'connected',
+			} );
+			expect( newOnStatusChange ).not.toHaveBeenCalledWith( {
+				status: 'connected',
+			} );
+		} );
+
 		it( 'repolls immediately when tab becomes visible with a pending timeout', async () => {
 			mockPostSyncUpdate.mockResolvedValue( syncResponse );
 

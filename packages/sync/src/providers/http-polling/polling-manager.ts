@@ -702,6 +702,29 @@ function poll(): void {
 		roomsInRequest.forEach( ( state ) => {
 			state.onStatusChange( { status: 'connecting' } );
 		} );
+		const roomsInRequestByName = new Map(
+			roomsInRequest.map( ( state ) => [ state.room, state ] )
+		);
+		const connectedStatusEmitted = new Set< RoomState >();
+
+		const emitConnectedStatus = ( state: RoomState ): void => {
+			// Skip rooms unregistered during the await (e.g. the size-limit
+			// handler in onDocUpdate). Their terminal status was already set
+			// by whatever unregistered them.
+			if ( roomStates.get( state.room ) !== state ) {
+				return;
+			}
+
+			if (
+				roomsInRequestByName.get( state.room ) !== state ||
+				connectedStatusEmitted.has( state )
+			) {
+				return;
+			}
+
+			state.onStatusChange( { status: 'connected' } );
+			connectedStatusEmitted.add( state );
+		};
 
 		try {
 			const { rooms } = await postSyncUpdate( payload );
@@ -753,7 +776,7 @@ function poll(): void {
 					return;
 				}
 
-				roomState.onStatusChange( { status: 'connected' } );
+				emitConnectedStatus( roomState );
 
 				// Process awareness update.
 				roomState.processAwarenessUpdate( room.awareness );
@@ -813,6 +836,8 @@ function poll(): void {
 					);
 				}
 			} );
+
+			roomsInRequest.forEach( emitConnectedStatus );
 
 			// Recalculate polling interval.
 			if ( isActiveBrowser && hasCollaborators ) {
