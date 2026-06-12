@@ -227,10 +227,10 @@ The refresh also overlays exact public progress branches from `pr_progress_curre
 Use two counts when describing how much of the current split changes WordPress
 Core runtime code versus Gutenberg-only validation/support code.
 
-| Count basis | Measured surface | Core-portable product changes | Gutenberg-only validation/support changes | Not counted |
-| --- | --- | --- | --- | --- |
-| Aggregate ready-stack benchmark branch | Diff from [`rtc-pr-stack-20260519T161502Z-base`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-base) to [`rtc-pr-stack-20260519T161502Z-all-ready-merged`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-all-ready-merged) | 10 files, +4,203 / -228 | 14 files, +5,819 / -86 | Rows not present in that aggregate branch |
-| Row-level active concrete PR/progress/stack links | 33 active rows with measured `Files / diff` entries in this table | 31 files, +4,142 / -216 | 34 files, +5,601 / -16 | Prior-art/evidence-only rows; all active rows now have measured sizes |
+| Count basis | Measured surface | `lib/compat` product changes | Other Core-portable product changes | Core-portable product total | Gutenberg-only validation/support changes | Not counted |
+| --- | --- | --- | --- | --- | --- | --- |
+| Aggregate ready-stack benchmark branch | Diff from [`rtc-pr-stack-20260519T161502Z-base`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-base) to [`rtc-pr-stack-20260519T161502Z-all-ready-merged`](https://github.com/danluu/gutenberg/tree/rtc-pr-stack-20260519T161502Z-all-ready-merged) | 2 files, +43 / -10 | 8 files, +4,160 / -218 | 10 files, +4,203 / -228 | 14 files, +5,819 / -86 | Rows not present in that aggregate branch |
+| Row-level active concrete PR/progress/stack links | 33 active rows with measured `Files / diff` entries in this table | 2 files, +43 / -10 | 29 files, +4,099 / -206 | 31 files, +4,142 / -216 | 34 files, +5,601 / -16 | Prior-art/evidence-only rows; all active rows now have measured sizes |
 
 For this count, "Core-portable product changes" means production files under
 `lib/compat/wordpress-7.0/` or production package source in `packages/blocks/`,
@@ -239,6 +239,14 @@ validation/support changes" means unit, PHP, e2e, and harness files under
 `packages/*/test`, `phpunit/tests`, `packages/e2e-tests/plugins`, and
 `test/e2e/config`. Those validation/support files are necessary for the
 Gutenberg PRs, but they should not be quoted as WordPress Core runtime changes.
+
+The `lib/compat` product slice is limited to WordPress 7.0 compatibility
+shims:
+
+| Active row | `lib/compat` path | Diff |
+| --- | --- | --- |
+| PR 2 | `lib/compat/wordpress-7.0/class-wp-sync-post-meta-storage.php` | +19 / -5 |
+| PR 3 | `lib/compat/wordpress-7.0/collaboration.php` | +24 / -5 |
 
 The aggregate branch is the better "whole ready stack" size estimate. The
 row-level count is stricter: it only counts active proposed rows whose branch
