@@ -9,9 +9,10 @@ import {
 	store as coreDataStore,
 	privateApis as coreDataPrivateApis,
 } from '@wordpress/core-data';
-// @ts-expect-error - No type declarations available for @wordpress/block-editor
-// prettier-ignore
-import { privateApis, store as blockEditorStore } from '@wordpress/block-editor';
+import {
+	privateApis,
+	store as blockEditorStore,
+} from '@wordpress/block-editor';
 import {
 	Button,
 	Modal,
@@ -19,7 +20,7 @@ import {
 	__experimentalVStack as VStack,
 } from '@wordpress/components';
 import { applyFilters } from '@wordpress/hooks';
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect, useRef } from '@wordpress/element';
 import { __, sprintf, _n } from '@wordpress/i18n';
 
 /**
@@ -34,10 +35,24 @@ import { unlock } from '../../lock-unlock';
 import { useRetryCountdown } from './use-retry-countdown';
 
 const { BlockCanvasCover } = unlock( privateApis );
-const { retrySyncConnection } = unlock( coreDataPrivateApis );
+const {
+	getCountBucket,
+	getDurationBucket,
+	normalizeConnectionErrorCode,
+	recordSyncMetricEvent,
+	retrySyncConnection,
+} = unlock( coreDataPrivateApis );
 
 // Debounce time for initial disconnected status to allow connection to establish.
 const INITIAL_DISCONNECTED_DEBOUNCE_MS = 20000;
+
+function getModalType( errorCode?: string ): string {
+	if ( errorCode === 'connection-limit-exceeded' ) {
+		return 'too_many_editors';
+	}
+
+	return 'connection_lost';
+}
 
 /**
  * Sync connection modal that displays when any entity reports a disconnection.
@@ -50,6 +65,11 @@ export function SyncConnectionErrorModal() {
 	const [ showModal, setShowModal ] = useState( false );
 	const [ isManualRetryAvailable, setIsManualRetryAvailable ] =
 		useState( false );
+	const recordedModalViewKeyRef = useRef< string | null >( null );
+	const manualRetryStartedAtRef = useRef< number | null >( null );
+	const manualRetryAttemptCountRef = useRef( 0 );
+	const manualRetryErrorCodeRef = useRef< string | undefined >();
+	const manualRetrySawConnectingRef = useRef( false );
 
 	const { connectionStatus, isCollaborationEnabled, postType } = useSelect(
 		( selectFn ) => {
@@ -73,10 +93,27 @@ export function SyncConnectionErrorModal() {
 	const { onManualRetry, secondsRemaining } =
 		useRetryCountdown( connectionStatus );
 
-	const copyButtonRef = useCopyToClipboard( () => {
-		const blocks = select( blockEditorStore ).getBlocks();
-		return serialize( blocks );
-	} );
+	const copyButtonRef = useCopyToClipboard(
+		() => {
+			const blocks = select( blockEditorStore ).getBlocks();
+			return serialize( blocks );
+		},
+		() => {
+			recordSyncMetricEvent( 'rtc_connection_modal_action', {
+				action: 'copy_post_content',
+				modal_type: getModalType(
+					connectionStatus?.status === 'disconnected'
+						? connectionStatus.error?.code
+						: undefined
+				),
+				connection_error_code: normalizeConnectionErrorCode(
+					connectionStatus?.status === 'disconnected'
+						? connectionStatus.error?.code
+						: undefined
+				),
+			} );
+		}
+	);
 
 	// Set hasInitialized after a debounce to give extra time on initial load.
 	useEffect( () => {
@@ -135,50 +172,139 @@ export function SyncConnectionErrorModal() {
 		'error' in connectionStatus &&
 		connectionStatus.error?.code === PROTOCOL_MISMATCH;
 
-	if (
-		! isCollaborationEnabled ||
-		( ! hasInitialized && ! isProtocolMismatch ) ||
-		! showModal
-	) {
-		return null;
-	}
-
 	const error =
 		connectionStatus && 'error' in connectionStatus
 			? connectionStatus?.error
 			: undefined;
-
+	const modalType = getModalType( error?.code );
+	const isModalCandidate =
+		isCollaborationEnabled &&
+		( hasInitialized || isProtocolMismatch ) &&
+		showModal;
 	// For unrecoverable errors (no retry available), allow plugins to handle
 	// the error themselves. If a plugin returns a value other than false, it
 	// signals that it has taken over error display and the default modal is
 	// suppressed.
-	//
-	// @example
-	// ```js
-	// wp.hooks.addFilter(
-	//     'editor.isSyncConnectionErrorHandled',
-	//     'my-plugin/handle-sync-error',
-	//     ( isHandled, errorCode ) => {
-	//         if ( errorCode === 'connection-limit-exceeded' ) {
-	//             return true; // Plugin handles this error via its own UI.
-	//         }
-	//         return isHandled;
-	//     }
-	// );
-	// ```
-	if (
+	const isHandledByPlugin =
+		isModalCandidate &&
 		! canRetry &&
 		applyFilters(
 			'editor.isSyncConnectionErrorHandled',
 			false,
 			error?.code
-		) !== false
-	) {
+		) !== false;
+	const shouldShowModal = isModalCandidate && ! isHandledByPlugin;
+	const modalViewType = isHandledByPlugin
+		? 'plugin_handled'
+		: shouldShowModal
+		? modalType
+		: null;
+	const modalViewKey = modalViewType
+		? `${ modalViewType }:${ error?.code ?? '' }`
+		: null;
+
+	useEffect( () => {
+		if ( ! modalViewType || ! modalViewKey ) {
+			recordedModalViewKeyRef.current = null;
+			return;
+		}
+
+		if ( recordedModalViewKeyRef.current === modalViewKey ) {
+			return;
+		}
+
+		recordedModalViewKeyRef.current = modalViewKey;
+		recordSyncMetricEvent( 'rtc_connection_modal_viewed', {
+			modal_type: modalViewType,
+			connection_error_code: normalizeConnectionErrorCode( error?.code ),
+			can_manually_retry: isManualRetryAvailable,
+			background_retries_failed:
+				connectionStatus?.status === 'disconnected'
+					? connectionStatus.backgroundRetriesFailed === true
+					: false,
+			handled_by_plugin: isHandledByPlugin,
+		} );
+	}, [
+		connectionStatus,
+		error?.code,
+		isHandledByPlugin,
+		isManualRetryAvailable,
+		modalViewKey,
+		modalViewType,
+	] );
+
+	useEffect( () => {
+		if ( manualRetryStartedAtRef.current === null ) {
+			return;
+		}
+
+		if ( connectionStatus?.status === 'connecting' ) {
+			manualRetrySawConnectingRef.current = true;
+			return;
+		}
+
+		if (
+			connectionStatus?.status === 'disconnected' &&
+			connectionStatus.backgroundRetriesFailed &&
+			manualRetrySawConnectingRef.current
+		) {
+			recordSyncMetricEvent( 'rtc_manual_retry_result', {
+				result: 'failed',
+				previous_connection_error_code: normalizeConnectionErrorCode(
+					manualRetryErrorCodeRef.current
+				),
+				time_to_result_bucket: getDurationBucket(
+					Date.now() - manualRetryStartedAtRef.current
+				),
+				retry_attempt_bucket: getCountBucket(
+					manualRetryAttemptCountRef.current
+				),
+			} );
+			manualRetryStartedAtRef.current = null;
+			manualRetrySawConnectingRef.current = false;
+			return;
+		}
+
+		if ( connectionStatus?.status !== 'connected' ) {
+			return;
+		}
+
+		recordSyncMetricEvent( 'rtc_manual_retry_result', {
+			result: 'connected',
+			previous_connection_error_code: normalizeConnectionErrorCode(
+				manualRetryErrorCodeRef.current
+			),
+			time_to_result_bucket: getDurationBucket(
+				Date.now() - manualRetryStartedAtRef.current
+			),
+			retry_attempt_bucket: getCountBucket(
+				manualRetryAttemptCountRef.current
+			),
+		} );
+		manualRetryStartedAtRef.current = null;
+		manualRetrySawConnectingRef.current = false;
+	}, [ connectionStatus ] );
+
+	if ( ! shouldShowModal ) {
 		return null;
 	}
 
 	const manualRetry = isManualRetryAvailable
 		? () => {
+				manualRetryAttemptCountRef.current++;
+				manualRetryStartedAtRef.current = Date.now();
+				manualRetryErrorCodeRef.current = error?.code;
+				manualRetrySawConnectingRef.current = false;
+				recordSyncMetricEvent( 'rtc_connection_modal_action', {
+					action: 'retry',
+					modal_type: modalType,
+					connection_error_code: normalizeConnectionErrorCode(
+						error?.code
+					),
+					retry_attempt_bucket: getCountBucket(
+						manualRetryAttemptCountRef.current
+					),
+				} );
 				onManualRetry();
 				retrySyncConnection();
 		  }
@@ -232,6 +358,19 @@ export function SyncConnectionErrorModal() {
 							href={ editPostHref }
 							isDestructive
 							variant="tertiary"
+							onClick={ () => {
+								recordSyncMetricEvent(
+									'rtc_connection_modal_action',
+									{
+										action: 'back_to_posts',
+										modal_type: modalType,
+										connection_error_code:
+											normalizeConnectionErrorCode(
+												error?.code
+											),
+									}
+								);
+							} }
 						>
 							{ sprintf(
 								/* translators: %s: Post type name (e.g., "Posts", "Pages"). */

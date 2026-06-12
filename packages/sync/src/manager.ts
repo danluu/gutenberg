@@ -15,6 +15,7 @@ import {
 } from './config';
 import { logPerformanceTiming, passThru } from './performance';
 import { getProviderCreators } from './providers';
+import { createSyncMetricsSession } from './metrics';
 import type {
 	CollectionHandlers,
 	CRDTDoc,
@@ -81,6 +82,7 @@ export function createSyncManager( debug = false ): SyncManager {
 	const debugWrap = debug ? logPerformanceTiming : passThru;
 	const collectionStates: Map< ObjectType, CollectionState > = new Map();
 	const entityStates: Map< EntityID, EntityState > = new Map();
+	const metricsSession = createSyncMetricsSession();
 
 	/**
 	 * A "sync-aware" undo manager for all synced entities. It is lazily created
@@ -178,7 +180,9 @@ export function createSyncManager( debug = false ): SyncManager {
 			addUndoMeta: debugWrap( handlers.addUndoMeta ),
 			editRecord: debugWrap( handlers.editRecord ),
 			getEditedRecord: debugWrap( handlers.getEditedRecord ),
-			onStatusChange: debugWrap( handlers.onStatusChange ),
+			onStatusChange: metricsSession.wrapStatusChangeHandler(
+				debugWrap( handlers.onStatusChange )
+			),
 			persistCRDTDoc: debugWrap( handlers.persistCRDTDoc ),
 			refetchRecord: debugWrap( handlers.refetchRecord ),
 			restoreUndoMeta: debugWrap( handlers.restoreUndoMeta ),
@@ -187,6 +191,10 @@ export function createSyncManager( debug = false ): SyncManager {
 				? debugWrap( handlers.onUndoStackChange )
 				: undefined,
 		};
+
+		metricsSession.ensureStarted( {
+			initial_entity_scope: 'record',
+		} );
 
 		const ydoc = createYjsDoc( { objectType } );
 		const recordMap = ydoc.getMap( CRDT_RECORD_MAP_KEY );
@@ -204,7 +212,9 @@ export function createSyncManager( debug = false ): SyncManager {
 		const unload = (): void => {
 			log( 'loadEntity', 'unloading', entityId );
 			isEntityUnloaded = true;
-			providerResults?.forEach( ( result ) => result.destroy() );
+			metricsSession.withSuppressedStatusMetrics( () => {
+				providerResults?.forEach( ( result ) => result.destroy() );
+			} );
 			handlers.onStatusChange( null );
 			if ( hasObserversAttached ) {
 				recordMap.unobserveDeep( onRecordUpdate );
@@ -360,6 +370,18 @@ export function createSyncManager( debug = false ): SyncManager {
 
 		log( 'loadCollection', 'loading', entityId );
 
+		handlers = {
+			...handlers,
+			onStatusChange: metricsSession.wrapStatusChangeHandler(
+				debugWrap( handlers.onStatusChange )
+			),
+			refetchRecords: debugWrap( handlers.refetchRecords ),
+		};
+
+		metricsSession.ensureStarted( {
+			initial_entity_scope: 'collection',
+		} );
+
 		const ydoc = createYjsDoc( { collection: true, objectType } );
 		const stateMap = ydoc.getMap( CRDT_STATE_MAP_KEY );
 		const now = Date.now();
@@ -375,7 +397,9 @@ export function createSyncManager( debug = false ): SyncManager {
 		const unload = (): void => {
 			log( 'loadCollection', 'unloading', entityId );
 			isCollectionUnloaded = true;
-			providerResults?.forEach( ( result ) => result.destroy() );
+			metricsSession.withSuppressedStatusMetrics( () => {
+				providerResults?.forEach( ( result ) => result.destroy() );
+			} );
 			handlers.onStatusChange( null );
 			if ( hasObserversAttached ) {
 				stateMap.unobserve( onStateMapUpdate );
@@ -667,6 +691,10 @@ export function createSyncManager( debug = false ): SyncManager {
 					markEntityAsSaved( ydoc );
 				}
 			}, origin );
+
+			metricsSession.recordLocalEditActivity(
+				Object.keys( changes ).length
+			);
 		}
 
 		if ( collectionState && isSave ) {
@@ -713,6 +741,7 @@ export function createSyncManager( debug = false ): SyncManager {
 		log( 'updateEntityRecord', 'changes', entityId, {
 			changedKeys,
 		} );
+		metricsSession.recordRemoteEditActivity( changedKeys.length );
 		handlers.editRecord( changes );
 	}
 
@@ -736,6 +765,11 @@ export function createSyncManager( debug = false ): SyncManager {
 		return serializeCrdtDoc( entityState.ydoc );
 	}
 
+	function _unloadAll(): void {
+		unloadAll();
+		metricsSession.endSession( 'unload_all' );
+	}
+
 	// Collect internal functions so that they can be wrapped before calling.
 	const internal = {
 		applyPersistedCrdtDoc: debugWrap( _applyPersistedCrdtDoc ),
@@ -753,7 +787,7 @@ export function createSyncManager( debug = false ): SyncManager {
 			return undoManager;
 		},
 		unload: debugWrap( unloadEntity ),
-		unloadAll: debugWrap( unloadAll ),
+		unloadAll: debugWrap( _unloadAll ),
 		update: debugWrap( updateCRDTDoc ),
 	};
 }

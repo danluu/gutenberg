@@ -10,6 +10,12 @@ import {
 import { ConnectionErrorCode } from './errors';
 import { lock } from './lock-unlock';
 import { createSyncManager } from './manager';
+import {
+	getCountBucket,
+	getDurationBucket,
+	normalizeConnectionErrorCode,
+	recordSyncMetricEvent,
+} from './metrics';
 import { pollingManager } from './providers/http-polling/polling-manager';
 import { default as Delta } from './quill-delta/Delta';
 
@@ -23,5 +29,9 @@ lock( privateApis, {
 	CRDT_RECORD_MAP_KEY,
 	LOCAL_EDITOR_ORIGIN,
 	LOCAL_UNDO_IGNORED_ORIGIN,
+	getCountBucket,
+	getDurationBucket,
+	normalizeConnectionErrorCode,
+	recordSyncMetricEvent,
 	retrySyncConnection: () => pollingManager.retryNow(),
 } );

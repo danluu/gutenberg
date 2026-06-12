@@ -40,6 +40,7 @@ jest.mock( '@wordpress/hooks', () => ( {
 	applyFilters: jest.fn(
 		( _hook: string, defaultValue: unknown ) => defaultValue
 	),
+	doAction: jest.fn(),
 } ) );
 
 jest.mock( '../config', () => ( {
@@ -157,8 +158,10 @@ describe( 'polling-manager', () => {
 		typeof import('../utils').postSyncUpdateNonBlocking
 	>;
 	let mockApplyFilters: jest.Mock;
+	let mockDoAction: jest.Mock;
 
 	beforeEach( () => {
+		jest.clearAllMocks();
 		jest.useFakeTimers();
 
 		// Use isolateModules so each test gets fresh module-level state
@@ -169,6 +172,7 @@ describe( 'polling-manager', () => {
 			mockPostSyncUpdateNonBlocking =
 				require( '../utils' ).postSyncUpdateNonBlocking;
 			mockApplyFilters = require( '@wordpress/hooks' ).applyFilters;
+			mockDoAction = require( '@wordpress/hooks' ).doAction;
 		} );
 	} );
 
@@ -207,6 +211,17 @@ describe( 'polling-manager', () => {
 					code: 'document-size-limit-exceeded',
 				} ),
 			} );
+			expect( mockDoAction ).toHaveBeenCalledWith(
+				'sync.metricEvent',
+				'rtc_limit_hit',
+				expect.objectContaining( {
+					schema_version: 1,
+					limit_type: 'document_size',
+					connection_error_code: 'document_size_limit_exceeded',
+					observed_size_bucket: 'lt_1kb',
+					configured_size_bucket: 'lt_1kb',
+				} )
+			);
 		} );
 
 		it( 'unregisters the room when the limit is exceeded', async () => {
@@ -319,6 +334,17 @@ describe( 'polling-manager', () => {
 					code: 'connection-limit-exceeded',
 				} ),
 			} );
+			expect( mockDoAction ).toHaveBeenCalledWith(
+				'sync.metricEvent',
+				'rtc_limit_hit',
+				expect.objectContaining( {
+					schema_version: 1,
+					limit_type: 'connection',
+					connection_error_code: 'connection_limit_exceeded',
+					observed_count_bucket: '3_4',
+					configured_limit_bucket: '3_4',
+				} )
+			);
 		} );
 
 		it( 'allows connection when clients are at or under the limit', async () => {
@@ -358,6 +384,54 @@ describe( 'polling-manager', () => {
 					error: expect.objectContaining( {
 						code: 'connection-limit-exceeded',
 					} ),
+				} )
+			);
+		} );
+
+		it( 'records primary room occupancy when collaborators are present', async () => {
+			const awareness = {
+				1: { collaboratorInfo: { id: 100 } },
+				2: { collaboratorInfo: { id: 200 } },
+				3: { collaboratorInfo: { id: 300 } },
+			};
+
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness,
+						updates: [],
+					},
+				],
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( mockDoAction ).toHaveBeenCalledWith(
+				'sync.metricEvent',
+				'rtc_collaboration_observed',
+				expect.objectContaining( {
+					schema_version: 1,
+					remote_collaborators_bucket: '2',
+				} )
+			);
+			expect( mockDoAction ).toHaveBeenCalledWith(
+				'sync.metricEvent',
+				'rtc_room_occupancy_sampled',
+				expect.objectContaining( {
+					schema_version: 1,
+					remote_collaborators_bucket: '2',
+					room_scope: 'primary',
 				} )
 			);
 		} );

@@ -41,6 +41,12 @@ import {
 	type UpdateQueue,
 } from './types';
 import {
+	getByteSizeBucket,
+	getCountBucket,
+	normalizeConnectionErrorCode,
+	recordSyncMetricEvent,
+} from '../../metrics';
+import {
 	base64ToUint8Array,
 	createSyncUpdate,
 	createUpdateQueue,
@@ -407,11 +413,7 @@ function checkConnectionLimit(
 	// Limits are only enforced on the initial connection.
 	hasCheckedConnectionLimit = true;
 
-	const maxClientsPerRoom = applyFilters(
-		'sync.pollingProvider.maxClientsPerRoom',
-		DEFAULT_CLIENT_LIMIT_PER_ROOM,
-		roomState.room
-	);
+	const maxClientsPerRoom = getMaxClientsPerRoom( roomState );
 
 	const clientCount = Object.keys( awareness ).length;
 	const validatedLimit = intValueOrDefault(
@@ -432,17 +434,60 @@ function checkConnectionLimit(
 	return false;
 }
 
+function getMaxClientsPerRoom( roomState: RoomState ): number {
+	return intValueOrDefault(
+		applyFilters(
+			'sync.pollingProvider.maxClientsPerRoom',
+			DEFAULT_CLIENT_LIMIT_PER_ROOM,
+			roomState.room
+		),
+		DEFAULT_CLIENT_LIMIT_PER_ROOM
+	);
+}
+
 let areListenersRegistered = false;
 let consecutiveFailures = 0;
 let hasCheckedConnectionLimit = false;
 let isManualRetry = false;
 let hasCollaborators = false;
+let hasObservedCollaboration = false;
 let isActiveBrowser = 'visible' === document.visibilityState;
 let isPolling = false;
 let isUnloadPending = false;
 let pollInterval = POLLING_INTERVAL_IN_MS;
 let pollingTimeoutId: ReturnType< typeof setTimeout > | null = null;
 let syncRequestBodySizeLimit = MAX_SYNC_REQUEST_BODY_SIZE_IN_BYTES;
+const observedPrimaryRoomOccupancyBuckets: Set< string > = new Set();
+
+function recordPrimaryRoomOccupancy(
+	remoteCollaboratorCount: number,
+	roomState: RoomState
+): void {
+	if ( ! roomState.isPrimaryRoom || remoteCollaboratorCount <= 0 ) {
+		return;
+	}
+
+	const remoteCollaboratorsBucket = getCountBucket( remoteCollaboratorCount );
+
+	if ( ! hasObservedCollaboration ) {
+		hasObservedCollaboration = true;
+		recordSyncMetricEvent( 'rtc_collaboration_observed', {
+			remote_collaborators_bucket: remoteCollaboratorsBucket,
+		} );
+	}
+
+	if (
+		observedPrimaryRoomOccupancyBuckets.has( remoteCollaboratorsBucket )
+	) {
+		return;
+	}
+
+	observedPrimaryRoomOccupancyBuckets.add( remoteCollaboratorsBucket );
+	recordSyncMetricEvent( 'rtc_room_occupancy_sampled', {
+		remote_collaborators_bucket: remoteCollaboratorsBucket,
+		room_scope: 'primary',
+	} );
+}
 
 // When more rooms are registered than the server allows per request
 // (MAX_ROOMS_PER_REQUEST), the primary room is sent every poll and the
@@ -722,6 +767,19 @@ function poll(): void {
 
 				// If a limit is exceeded, disconnect immediately without processing updates.
 				if ( checkConnectionLimit( room.awareness, roomState ) ) {
+					recordSyncMetricEvent( 'rtc_limit_hit', {
+						limit_type: 'connection',
+						connection_error_code: normalizeConnectionErrorCode(
+							ConnectionErrorCode.CONNECTION_LIMIT_EXCEEDED
+						),
+						observed_count_bucket: getCountBucket(
+							Object.keys( room.awareness ).length
+						),
+						configured_limit_bucket: getCountBucket(
+							getMaxClientsPerRoom( roomState )
+						),
+					} );
+
 					roomState.onStatusChange( {
 						status: 'disconnected',
 						error: new ConnectionError(
@@ -747,6 +805,10 @@ function poll(): void {
 					Object.keys( room.awareness ).length > 1
 				) {
 					hasCollaborators = true;
+					recordPrimaryRoomOccupancy(
+						Object.keys( room.awareness ).length - 1,
+						roomState
+					);
 					roomStates.forEach( ( state ) => {
 						state.updateQueue.resume();
 					} );
@@ -1016,6 +1078,17 @@ function registerRoom( {
 				updateSizeInBytes: update.byteLength,
 			} );
 
+			recordSyncMetricEvent( 'rtc_limit_hit', {
+				limit_type: 'document_size',
+				connection_error_code: normalizeConnectionErrorCode(
+					ConnectionErrorCode.DOCUMENT_SIZE_LIMIT_EXCEEDED
+				),
+				observed_size_bucket: getByteSizeBucket( update.byteLength ),
+				configured_size_bucket: getByteSizeBucket(
+					MAX_UPDATE_SIZE_IN_BYTES
+				),
+			} );
+
 			state.onStatusChange( {
 				status: 'disconnected',
 				error: new ConnectionError(
@@ -1111,6 +1184,8 @@ function unregisterRoom(
 		);
 		areListenersRegistered = false;
 		hasCheckedConnectionLimit = false;
+		hasObservedCollaboration = false;
+		observedPrimaryRoomOccupancyBuckets.clear();
 		consecutiveFailures = 0;
 		roomOverflowOffset = 0;
 		syncRequestBodySizeLimit = MAX_SYNC_REQUEST_BODY_SIZE_IN_BYTES;

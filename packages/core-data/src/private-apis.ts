@@ -11,7 +11,13 @@ import {
 	useOnPostSave,
 } from './hooks/use-post-editor-awareness-state';
 import { lock } from './lock-unlock';
-import { retrySyncConnection } from './sync';
+import {
+	getCountBucket,
+	getDurationBucket,
+	normalizeConnectionErrorCode,
+	recordSyncMetricEvent,
+	retrySyncConnection,
+} from './sync';
 import {
 	SelectionType,
 	SelectionDirection,
@@ -20,6 +26,10 @@ import {
 const lockedApis = {
 	useEntityRecordsWithPermissions,
 	RECEIVE_INTERMEDIATE_RESULTS,
+	getCountBucket,
+	getDurationBucket,
+	normalizeConnectionErrorCode,
+	recordSyncMetricEvent,
 	retrySyncConnection,
 	useActiveCollaborators,
 	useResolvedSelection,
