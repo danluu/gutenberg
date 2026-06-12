@@ -450,44 +450,12 @@ let consecutiveFailures = 0;
 let hasCheckedConnectionLimit = false;
 let isManualRetry = false;
 let hasCollaborators = false;
-let hasObservedCollaboration = false;
 let isActiveBrowser = 'visible' === document.visibilityState;
 let isPolling = false;
 let isUnloadPending = false;
 let pollInterval = POLLING_INTERVAL_IN_MS;
 let pollingTimeoutId: ReturnType< typeof setTimeout > | null = null;
 let syncRequestBodySizeLimit = MAX_SYNC_REQUEST_BODY_SIZE_IN_BYTES;
-const observedPrimaryRoomOccupancyBuckets: Set< string > = new Set();
-
-function recordPrimaryRoomOccupancy(
-	remoteCollaboratorCount: number,
-	roomState: RoomState
-): void {
-	if ( ! roomState.isPrimaryRoom || remoteCollaboratorCount <= 0 ) {
-		return;
-	}
-
-	const remoteCollaboratorsBucket = getCountBucket( remoteCollaboratorCount );
-
-	if ( ! hasObservedCollaboration ) {
-		hasObservedCollaboration = true;
-		recordSyncMetricEvent( 'rtc_collaboration_observed', {
-			remote_collaborators_bucket: remoteCollaboratorsBucket,
-		} );
-	}
-
-	if (
-		observedPrimaryRoomOccupancyBuckets.has( remoteCollaboratorsBucket )
-	) {
-		return;
-	}
-
-	observedPrimaryRoomOccupancyBuckets.add( remoteCollaboratorsBucket );
-	recordSyncMetricEvent( 'rtc_room_occupancy_sampled', {
-		remote_collaborators_bucket: remoteCollaboratorsBucket,
-		room_scope: 'primary',
-	} );
-}
 
 // When more rooms are registered than the server allows per request
 // (MAX_ROOMS_PER_REQUEST), the primary room is sent every poll and the
@@ -805,10 +773,6 @@ function poll(): void {
 					Object.keys( room.awareness ).length > 1
 				) {
 					hasCollaborators = true;
-					recordPrimaryRoomOccupancy(
-						Object.keys( room.awareness ).length - 1,
-						roomState
-					);
 					roomStates.forEach( ( state ) => {
 						state.updateQueue.resume();
 					} );
@@ -1184,8 +1148,6 @@ function unregisterRoom(
 		);
 		areListenersRegistered = false;
 		hasCheckedConnectionLimit = false;
-		hasObservedCollaboration = false;
-		observedPrimaryRoomOccupancyBuckets.clear();
 		consecutiveFailures = 0;
 		roomOverflowOffset = 0;
 		syncRequestBodySizeLimit = MAX_SYNC_REQUEST_BODY_SIZE_IN_BYTES;

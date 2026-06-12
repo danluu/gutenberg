@@ -83,6 +83,7 @@ export function createSyncManager( debug = false ): SyncManager {
 	const collectionStates: Map< ObjectType, CollectionState > = new Map();
 	const entityStates: Map< EntityID, EntityState > = new Map();
 	const metricsSession = createSyncMetricsSession();
+	let stopObservingPrimaryAwareness: ( () => void ) | undefined;
 
 	/**
 	 * A "sync-aware" undo manager for all synced entities. It is lazily created
@@ -220,12 +221,23 @@ export function createSyncManager( debug = false ): SyncManager {
 				recordMap.unobserveDeep( onRecordUpdate );
 				stateMap.unobserve( onStateMapUpdate );
 			}
+			if ( stopObservingAwareness ) {
+				stopObservingAwareness();
+				stopObservingPrimaryAwareness = undefined;
+			}
 			ydoc.destroy();
 			entityStates.delete( entityId );
 		};
 
 		// If the sync config supports awareness, create it.
 		const awareness = syncConfig.createAwareness?.( ydoc, objectId );
+		const stopObservingAwareness =
+			awareness && ! stopObservingPrimaryAwareness
+				? metricsSession.observePrimaryAwareness( awareness )
+				: undefined;
+		if ( stopObservingAwareness ) {
+			stopObservingPrimaryAwareness = stopObservingAwareness;
+		}
 
 		// When the CRDT document is updated by an UndoManager or a connection (not
 		// a local origin), update the local store.

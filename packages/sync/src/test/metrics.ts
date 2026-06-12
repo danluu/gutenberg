@@ -9,6 +9,7 @@ import {
 	it,
 	jest,
 } from '@jest/globals';
+import type { Awareness } from 'y-protocols/awareness';
 
 /**
  * WordPress dependencies
@@ -157,6 +158,61 @@ describe( 'sync metrics', () => {
 		expect( events.map( ( event ) => event.eventName ) ).toEqual( [
 			'rtc_session_started',
 			'rtc_session_connected',
+		] );
+	} );
+
+	it( 'records primary awareness occupancy buckets', () => {
+		const session = createSyncMetricsSession();
+		const changeCallbacks = new Set< () => void >();
+		const states = new Map< number, object >( [ [ 1, {} ] ] );
+		const awareness = {
+			clientID: 1,
+			getStates: () => states,
+			on: jest.fn( ( event: string, callback: () => void ) => {
+				if ( event === 'change' ) {
+					changeCallbacks.add( callback );
+				}
+			} ),
+			off: jest.fn( ( event: string, callback: () => void ) => {
+				if ( event === 'change' ) {
+					changeCallbacks.delete( callback );
+				}
+			} ),
+		} as unknown as Awareness;
+
+		const stopObserving = session.observePrimaryAwareness( awareness );
+		states.set( 2, {} );
+		changeCallbacks.forEach( ( callback ) => callback() );
+		states.set( 3, {} );
+		changeCallbacks.forEach( ( callback ) => callback() );
+		stopObserving();
+		states.set( 4, {} );
+		changeCallbacks.forEach( ( callback ) => callback() );
+
+		expect( events ).toEqual( [
+			{
+				eventName: 'rtc_collaboration_observed',
+				properties: {
+					schema_version: 1,
+					remote_collaborators_bucket: '1',
+				},
+			},
+			{
+				eventName: 'rtc_room_occupancy_sampled',
+				properties: {
+					schema_version: 1,
+					remote_collaborators_bucket: '1',
+					room_scope: 'primary',
+				},
+			},
+			{
+				eventName: 'rtc_room_occupancy_sampled',
+				properties: {
+					schema_version: 1,
+					remote_collaborators_bucket: '2',
+					room_scope: 'primary',
+				},
+			},
 		] );
 	} );
 

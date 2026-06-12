@@ -388,54 +388,6 @@ describe( 'polling-manager', () => {
 			);
 		} );
 
-		it( 'records primary room occupancy when collaborators are present', async () => {
-			const awareness = {
-				1: { collaboratorInfo: { id: 100 } },
-				2: { collaboratorInfo: { id: 200 } },
-				3: { collaboratorInfo: { id: 300 } },
-			};
-
-			mockPostSyncUpdate.mockResolvedValue( {
-				rooms: [
-					{
-						room: 'test-room',
-						end_cursor: 1,
-						awareness,
-						updates: [],
-					},
-				],
-			} );
-
-			pollingManager.registerRoom( {
-				room: 'test-room',
-				doc: createMockDoc( 1 ),
-				awareness: createMockAwareness(),
-				log: jest.fn(),
-				onStatusChange: jest.fn(),
-				onSync: jest.fn(),
-			} );
-
-			await jest.advanceTimersByTimeAsync( 0 );
-
-			expect( mockDoAction ).toHaveBeenCalledWith(
-				'sync.metricEvent',
-				'rtc_collaboration_observed',
-				expect.objectContaining( {
-					schema_version: 1,
-					remote_collaborators_bucket: '2',
-				} )
-			);
-			expect( mockDoAction ).toHaveBeenCalledWith(
-				'sync.metricEvent',
-				'rtc_room_occupancy_sampled',
-				expect.objectContaining( {
-					schema_version: 1,
-					remote_collaborators_bucket: '2',
-					room_scope: 'primary',
-				} )
-			);
-		} );
-
 		it( 'does not enforce limits on the second registered room', async () => {
 			// Register a first room (which consumes the enforceConnectionLimit flag).
 			mockPostSyncUpdate.mockResolvedValue( {

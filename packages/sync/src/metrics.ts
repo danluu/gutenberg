@@ -4,6 +4,11 @@
 import { doAction } from '@wordpress/hooks';
 
 /**
+ * External dependencies
+ */
+import type { Awareness } from 'y-protocols/awareness';
+
+/**
  * Internal dependencies
  */
 import { ConnectionErrorCode } from './errors';
@@ -173,6 +178,8 @@ export function createSyncMetricsSession() {
 	let endedStatus = 'unknown';
 	let pageHideListenerRegistered = false;
 	let suppressedStatusMetrics = 0;
+	let hasObservedCollaboration = false;
+	const observedOccupancyBuckets: Set< string > = new Set();
 
 	function ensureStarted( properties: SyncMetricProperties = {} ): void {
 		if ( hasStarted ) {
@@ -254,6 +261,46 @@ export function createSyncMetricsSession() {
 		}
 	}
 
+	function recordAwarenessOccupancy( awareness: Awareness ): void {
+		const remoteCollaboratorCount = Array.from(
+			awareness.getStates().keys()
+		).filter( ( clientId ) => clientId !== awareness.clientID ).length;
+
+		if ( remoteCollaboratorCount <= 0 ) {
+			return;
+		}
+
+		const remoteCollaboratorsBucket = getCountBucket(
+			remoteCollaboratorCount
+		);
+
+		if ( ! hasObservedCollaboration ) {
+			hasObservedCollaboration = true;
+			recordSyncMetricEvent( 'rtc_collaboration_observed', {
+				remote_collaborators_bucket: remoteCollaboratorsBucket,
+			} );
+		}
+
+		if ( observedOccupancyBuckets.has( remoteCollaboratorsBucket ) ) {
+			return;
+		}
+
+		observedOccupancyBuckets.add( remoteCollaboratorsBucket );
+		recordSyncMetricEvent( 'rtc_room_occupancy_sampled', {
+			remote_collaborators_bucket: remoteCollaboratorsBucket,
+			room_scope: 'primary',
+		} );
+	}
+
+	function observePrimaryAwareness( awareness: Awareness ): () => void {
+		const recordOccupancy = () => recordAwarenessOccupancy( awareness );
+
+		recordOccupancy();
+		awareness.on( 'change', recordOccupancy );
+
+		return () => awareness.off( 'change', recordOccupancy );
+	}
+
 	function recordLocalEditActivity( changedKeyCount: number ): void {
 		if ( changedKeyCount <= 0 ) {
 			return;
@@ -314,6 +361,8 @@ export function createSyncMetricsSession() {
 		localEditActivityCount = 0;
 		remoteEditActivityCount = 0;
 		endedStatus = 'unknown';
+		hasObservedCollaboration = false;
+		observedOccupancyBuckets.clear();
 	}
 
 	function endSession( reason: SummaryReason ): void {
@@ -326,6 +375,7 @@ export function createSyncMetricsSession() {
 		ensureStarted,
 		recordLocalEditActivity,
 		recordRemoteEditActivity,
+		observePrimaryAwareness,
 		wrapStatusChangeHandler,
 		withSuppressedStatusMetrics,
 	};
