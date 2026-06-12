@@ -84,7 +84,11 @@ describe( 'sync metrics', () => {
 		expect( getCountBucket( 0 ) ).toBe( '0' );
 		expect( getCountBucket( 4 ) ).toBe( '3_4' );
 		expect( getCountBucket( 5 ) ).toBe( '5_9' );
-		expect( getCountBucket( 10 ) ).toBe( '10_plus' );
+		expect( getCountBucket( 10 ) ).toBe( '10_14' );
+		expect( getCountBucket( 15 ) ).toBe( '15_19' );
+		expect( getCountBucket( 20 ) ).toBe( '20_24' );
+		expect( getCountBucket( 25 ) ).toBe( '25_29' );
+		expect( getCountBucket( 30 ) ).toBe( '30_plus' );
 
 		expect( getDurationBucket( 1000 ) ).toBe( 'lt_2s' );
 		expect( getDurationBucket( 2000 ) ).toBe( '2_10s' );

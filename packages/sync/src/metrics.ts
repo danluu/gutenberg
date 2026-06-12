@@ -66,7 +66,19 @@ export function getCountBucket( count: number | undefined ): string {
 	if ( count <= 9 ) {
 		return '5_9';
 	}
-	return '10_plus';
+	if ( count <= 14 ) {
+		return '10_14';
+	}
+	if ( count <= 19 ) {
+		return '15_19';
+	}
+	if ( count <= 24 ) {
+		return '20_24';
+	}
+	if ( count <= 29 ) {
+		return '25_29';
+	}
+	return '30_plus';
 }
 
 export function getDurationBucket( durationInMs: number | undefined ): string {
