@@ -7,6 +7,12 @@ implementation without mixing explanatory material into the code branch.
 
 ## High-level shape
 
+Status note: this implementation diff predates the revised Tracks event-log plan
+in `real-time-collaboration-wpcom-metrics-plan.md`. Treat it as a generic
+Gutenberg signal prototype, not as the final WordPress.com Tracks event schema.
+The revised plan prefers scalar row-level Tracks events with user, blog, post,
+session, raw count, and raw duration fields recorded in WordPress.com-owned code.
+
 The implementation adds generic RTC metric signals to Gutenberg. It does not
 record WordPress.com Tracks events or MC Stats directly. Instead, it emits a
 single JavaScript hook action:
@@ -234,11 +240,10 @@ The hook approach keeps the implementation generic:
 - tests can assert metric behavior without loading WP.com analytics code;
 - privacy constraints can be enforced at the generic signal boundary.
 
-## Why the diff uses buckets
+## Why the prototype diff uses buckets
 
-The metrics plan requires the ability to query collaborator distributions, such
-as sessions with at least 5 or 10 collaborators. The implementation supports
-this through buckets rather than exact IDs or exact room membership:
+The prototype implementation used buckets to keep the generic Gutenberg signal
+small and low-cardinality:
 
 - `3_4`;
 - `5_9`;
@@ -248,8 +253,11 @@ this through buckets rather than exact IDs or exact room membership:
 - `25_29`;
 - `30_plus`.
 
-This is enough for product and reliability questions while avoiding
-high-cardinality tracking and unnecessary personal data.
+The revised WordPress.com Tracks plan should not use these buckets as the source
+of truth. Tracks should store exact scalar counts and durations where they are
+small, bounded, and not sensitive, then derive buckets downstream in SQL or
+Looker. Bucket properties can still be added later as convenience fields if a
+specific Tracks tool or dashboard needs them.
 
 ## Known limitations
 
