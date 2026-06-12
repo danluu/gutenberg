@@ -44,7 +44,8 @@ event names and bucketed or allowlisted values.
 
 Important bucket helpers:
 
-- `getCountBucket()`: `0`, `1`, `2`, `3_4`, `5_9`, `10_plus`, `unknown`;
+- `getCountBucket()`: `0`, `1`, `2`, `3_4`, `5_9`, `10_14`,
+  `15_19`, `20_24`, `25_29`, `30_plus`, `unknown`;
 - `getDurationBucket()`: `lt_2s`, `2_10s`, `10_30s`, `30_60s`, `1_5m`,
   `5_30m`, `30m_plus`, `unknown`;
 - `getByteSizeBucket()`: `lt_1kb`, `1_10kb`, `10_100kb`, `100kb_1mb`,
@@ -116,7 +117,11 @@ This answers distribution questions such as:
 - how many reached 2;
 - how many reached 3 to 4;
 - how many reached 5 to 9;
-- how many reached 10 or more.
+- how many reached 10 to 14;
+- how many reached 15 to 19;
+- how many reached 20 to 24;
+- how many reached 25 to 29;
+- how many reached 30 or more.
 
 It does not record room IDs, collaborator IDs, user IDs, names, or emails.
 
@@ -248,7 +253,11 @@ this through buckets rather than exact IDs or exact room membership:
 
 - `3_4`;
 - `5_9`;
-- `10_plus`.
+- `10_14`;
+- `15_19`;
+- `20_24`;
+- `25_29`;
+- `30_plus`.
 
 This is enough for product and reliability questions while avoiding
 high-cardinality tracking and unnecessary personal data.
@@ -284,4 +293,3 @@ The following typechecks still fail on unrelated existing files:
 - `npx tsc -p packages/editor/tsconfig.json --noEmit`
 
 The touched core-data and editor files are not part of those reported failures.
-

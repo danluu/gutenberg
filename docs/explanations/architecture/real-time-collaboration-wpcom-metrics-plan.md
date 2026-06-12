@@ -262,6 +262,12 @@ The initial implementation should support distribution queries without high-card
 - "sessions with simultaneous editors" should mean remote collaborators were present while the local user had edit activity;
 - "sessions with simultaneous edits" should mean local edit activity and remote-applied edit activity were both observed in the same session.
 
+Until the current WordPress.com maximum collaborator limit is available to the
+metrics code, use collaborator buckets up to `30_plus`: `0`, `1`, `2`, `3_4`,
+`5_9`, `10_14`, `15_19`, `20_24`, `25_29`, and `30_plus`. If the allowed
+maximum is later confirmed or increased, revise the upper buckets rather than
+collapsing all higher occupancy into `10_plus`.
+
 The implementation should not attempt to count every keystroke or every Yjs update as a product metric. It should keep session-level counters and emit only bucketed summaries.
 
 ## Error taxonomy
