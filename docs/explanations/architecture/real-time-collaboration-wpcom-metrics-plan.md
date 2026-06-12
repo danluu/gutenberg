@@ -10,8 +10,23 @@ The first implementation should answer four questions:
 2. How often does RTC become an actual collaborative editing session?
 3. How often do users hit visible failure states, especially the connection lost modal?
 4. Which broad failure class is responsible when RTC fails or falls back?
+5. What is the distribution of concurrent collaborators in RTC rooms?
+6. How often do sessions have local and remote edit activity while collaborators are present?
 
 Alerting is explicitly out of scope for the initial implementation. The first phase should collect clean events and counters, validate them against known forced failure cases, and build dashboards only after the data contract is stable.
+
+## Phase naming
+
+This document uses "V1" to mean the first metrics schema and implementation phase. It is not a permanent API name and does not imply that all future metrics are already designed.
+
+Expected later phases are:
+
+- reliability refinements after validating V1 against forced failure cases;
+- pricing and upgrade attribution after reliability is healthy;
+- transport cost analysis after usage volume is understood;
+- deeper collaboration-shape metrics if V1 shows substantial multi-editor usage.
+
+Every event should include a `schema_version` value so consumers can distinguish V1 data from later schema revisions.
 
 ## Primary metric
 
@@ -99,6 +114,21 @@ Suggested properties:
 - `transport`
 - `time_to_first_collaborator_bucket`
 - `remote_collaborators_bucket`
+
+### `wpcom_rtc_room_occupancy_sampled`
+
+Fire when a room first enters a higher remote-collaborator bucket during the session. Do not fire on every awareness update.
+
+This event supports queries such as "how many sessions reached at least five collaborators?" and "how many sessions reached at least ten collaborators?" without recording collaborator IDs or room IDs.
+
+Suggested properties:
+
+- `rtc_session_id`
+- `transport`
+- `remote_collaborators_bucket`
+- `room_scope`
+- `had_local_edit_activity`
+- `had_remote_edit_activity`
 
 ### `wpcom_rtc_connection_problem`
 
@@ -212,12 +242,27 @@ Suggested properties:
 - `disconnected_duration_bucket`
 - `active_collab_duration_bucket`
 - `saw_remote_collaborator`
+- `peak_remote_collaborators_bucket`
 - `max_remote_collaborators_bucket`
+- `local_edit_activity_count_bucket`
+- `remote_edit_activity_count_bucket`
+- `simultaneous_editing_observed`
 - `disconnect_count_bucket`
 - `modal_count_bucket`
 - `manual_retry_count_bucket`
 - `ended_status`
 - `session_outcome`
+
+## Concurrent collaborators and edit activity
+
+The initial implementation should support distribution queries without high-cardinality identifiers:
+
+- "sessions that reached at least N collaborators" should use `peak_remote_collaborators_bucket` or `wpcom_rtc_room_occupancy_sampled`;
+- "rooms with at least N remote collaborators" should use bucketed occupancy samples from primary RTC rooms;
+- "sessions with simultaneous editors" should mean remote collaborators were present while the local user had edit activity;
+- "sessions with simultaneous edits" should mean local edit activity and remote-applied edit activity were both observed in the same session.
+
+The implementation should not attempt to count every keystroke or every Yjs update as a product metric. It should keep session-level counters and emit only bucketed summaries.
 
 ## Error taxonomy
 
@@ -296,4 +341,3 @@ Use bucketed counts, bucketed durations, and allowlisted enum values. If `rtc_se
    - backgrounded mobile Safari;
    - desktop app;
    - local user fallback.
-
