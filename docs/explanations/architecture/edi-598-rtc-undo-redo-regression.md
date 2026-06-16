@@ -294,3 +294,131 @@ plans, cross-review of the first-pass plans, and final reconciliation of the
 second-pass recommendations. The final outputs converged on the active synced
 entity scope invariant above and rejected selector-level
 `collaborationSupported` gating as the primary fix.
+
+## PR Branch Minimality Review
+
+Branch reviewed:
+
+- Branch: `try/rtc-undo-meta-regression-pr`
+- Commit: `94cf40eba799a77505a23a14d3e47f41976625a1`
+- Remote: `danluu`
+
+After the PR branch was created, I ran another three-round tmux review against
+the actual branch diff: 11 first-pass `codex exec` reviews, 11 cross-reviews of
+those reports, and 11 final reconciliation reviews. The review goal was to find
+new issues introduced by the PR branch and identify whether the patch can be
+made smaller.
+
+The branch fixes the target metabox path, but the current diff is larger than
+the minimum needed for this regression. The strongest recommendation is to ship
+the metabox-disable undo recovery as a narrow cleanup fix, not as a broad
+collaboration lifecycle rewrite.
+
+### Main findings
+
+1. Do not ship generic individual `unload()` clearing as-is.
+
+   The current PR clears `SyncManager.undoManager` after the final individual
+   `unload()` call as well as after `unloadAll()`. That is a wider lifecycle
+   change than the metabox regression. Delete/direct unload paths can call
+   `getSyncManager()?.unload()` without also dispatching
+   `__unstableNotifySyncUndoManagerChange( { hasUndo: false, hasRedo: false } )`.
+   A later synced entity reload can expose a fresh empty sync undo manager while
+   core-data selectors still read stale `syncUndoManagerState`.
+
+   Minimal plan: clear `undoManager` from `unloadAll()` only in this PR. If
+   generic final-entity `unload()` should also clear it, add a separate
+   core-data notification/reset path and tests for delete/direct unload plus
+   reload.
+
+2. Keep the single-record resolver guard, but treat it as one-way hardening.
+
+   The `getEntityRecord` guard prevents a later entity resolver from recreating
+   sync and a sync undo manager after incompatible metaboxes have disabled
+   collaboration. That is relevant to this bug.
+
+   Caveat: resolver fulfillment does not invalidate on
+   `SET_COLLABORATION_SUPPORTED`. If collaboration can be set back to true in
+   the same editor session, a record resolved while unsupported will not
+   automatically load sync later. The current metabox path appears to be
+   effectively one-way for the page, so this guard is acceptable with that
+   assumption.
+
+3. Remove the collection resolver guard.
+
+   `loadCollection()` does not create or expose the sync undo manager; entity
+   `load()` does. The `getEntityRecords` / `loadCollection` guard is broader
+   "unsupported means no sync providers" policy, not required for restoring undo
+   after metaboxes disable RTC.
+
+4. Remove selector fallback tests from the PR.
+
+   The new `getUndoManager()`, `hasUndo()`, and `hasRedo()` fallback tests assert
+   behavior already present on trunk: when `getSyncManager()?.undoManager` is
+   absent, core-data falls back to the default undo manager. The actual change
+   to protect is making `SyncManager.undoManager` absent after metabox-triggered
+   `unloadAll()`.
+
+5. Keep the e2e scenario, but it can be leaner.
+
+   The important browser regression test is: wait for metaboxes to disable
+   collaboration, insert a block, press primary undo, and assert the block is
+   gone. The Undo button assertion is not vacuous in this stack; Playwright
+   treats `aria-disabled` as disabled. It is still redundant next to the store
+   poll and actual keyboard undo. Keep one undo-availability signal at most, or
+   scope the button assertion explicitly.
+
+6. Do not describe this as a complete collaboration kill switch.
+
+   The document-size path can set `collaborationSupported` false from the
+   reducer without going through `setCollaborationSupported( false )`,
+   `unloadAll()`, or the sync undo-state reset. That is not the metabox bug, but
+   it means this PR should not claim that every unsupported-collaboration state
+   tears down sync.
+
+### Updated minimal plan
+
+Production changes:
+
+1. Keep the `setCollaborationSupported( false )` sync undo-state reset after the
+   existing `unloadAll()` call:
+
+   ```js
+   dispatch.__unstableNotifySyncUndoManagerChange( {
+    hasUndo: false,
+    hasRedo: false,
+   } );
+   ```
+
+2. Make `SyncManager.unloadAll()` clear `undoManager` after entity states are
+   unloaded and cleared, so core-data falls back to the default undo manager
+   after metaboxes disable RTC.
+
+3. Do not clear `undoManager` from generic individual `unload()` in this
+   regression PR unless a general core-data reset/notification path is added.
+
+4. Keep the `getEntityRecord` guard against sync reload while collaboration is
+   unsupported.
+
+5. Remove the `getEntityRecords` / `loadCollection` collaboration guard.
+
+Tests:
+
+1. Keep one private-action test proving `setCollaborationSupported( false )`
+   unloads sync and resets cached sync undo flags.
+
+2. Keep one sync-manager unit test proving `unloadAll()` makes
+   `manager.undoManager` undefined.
+
+3. Keep one resolver test proving `getEntityRecord` does not call
+   `syncManager.load()` when `isCollaborationSupported()` is false, if the entity
+   guard remains.
+
+4. Keep one browser regression test in
+   `test/e2e/specs/editor/collaboration/collaboration-metabox-lock.spec.ts`:
+   wait for collaboration disabled, insert a block, undo, and verify the block
+   is gone.
+
+5. Drop collection resolver tests, selector fallback tests, individual-unload
+   tests, lazy/baseline manager tests that only document pre-existing behavior,
+   and redundant e2e undo assertions.
