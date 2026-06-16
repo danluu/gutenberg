@@ -141,3 +141,156 @@ level is recorded. The toolbar therefore stays disabled and Cmd+Z has no effect.
 - The current failing behavior is not introduced by the later visible RTC
   changes in `#78864` or `#78984`; both sides of those boundaries already
   reproduce.
+
+## Fix Plan
+
+The fix should enforce the sync undo lifetime invariant, not special-case the
+Undo button or gate undo selectors on the collaboration support flag.
+
+Invariant:
+
+`getSyncManager()?.undoManager` should be exposed only while at least one synced
+entity scope is loaded and capable of capturing Yjs undo history. Once all
+synced entity docs have been unloaded, core-data should naturally fall back to
+the default `state.undoManager`.
+
+### Required implementation
+
+1. Update `packages/sync/src/manager.ts`.
+
+   In `createSyncManager()`, make the private `undoManager` follow loaded
+   entity scope lifetime:
+
+   - In `unloadEntity()`, after `entityStates.get( entityId )?.unload()`, set
+     `undoManager = undefined` only when `entityStates.size === 0`.
+   - In `unloadAll()`, set `undoManager = undefined` after all entity states
+     have been unloaded and cleared.
+   - Do not let collection state keep sync undo alive. `loadCollection()` does
+     not add scopes to `SyncUndoManager`; entity record maps are the undo scopes.
+   - Optionally make the `undoManager` getter defensive by returning
+     `undefined` when `entityStates.size === 0`, but still clear the field so a
+     later valid load creates a fresh manager.
+
+2. Update `packages/core-data/src/private-actions.js`.
+
+   In `setCollaborationSupported( false )`, keep the `getSyncManager().unloadAll()`
+   behavior added by `#78145`, and after unloading dispatch the existing private
+   action:
+
+   ```js
+   dispatch.__unstableNotifySyncUndoManagerChange( {
+    hasUndo: false,
+    hasRedo: false,
+   } );
+   ```
+
+   This reset is defensive. Once `SyncManager.undoManager` is absent, selectors
+   should ignore `syncUndoManagerState`, but clearing the mirrored state avoids
+   stale UI state if sync is later re-created.
+
+3. Add narrow resolver hardening in `packages/core-data/src/resolvers.js`.
+
+   Prevent resolver-driven sync from being re-created after the store has already
+   declared collaboration unsupported:
+
+   - In the `getEntityRecord` resolver, guard `getSyncManager()?.load(...)` with
+     `select.isCollaborationSupported?.() !== false`.
+   - In the `getEntityRecords` resolver, apply the same guard before
+     `getSyncManager()?.loadCollection(...)`.
+
+   Keep this as load-start prevention only. Do not gate `editEntityRecord()` or
+   save-path `getSyncManager()?.update()` calls on `collaborationSupported`;
+   already-loaded Yjs docs may still be the valid undo backend in non-metabox
+   failure paths.
+
+4. Leave these selectors structurally unchanged:
+
+   - `packages/core-data/src/private-selectors.ts` `getUndoManager()`
+   - `packages/core-data/src/selectors.ts` `hasUndo()`
+   - `packages/core-data/src/selectors.ts` `hasRedo()`
+
+   They already have the correct contract once `getSyncManager()?.undoManager`
+   becomes absent: use sync undo when it exists, otherwise use the default undo
+   manager.
+
+### Behavior after the fix
+
+Before the fix, incompatible meta boxes call `setCollaborationSupported( false )`
+and `unloadAll()` destroys the synced entity docs, but the stale sync undo
+manager remains visible. Core-data continues to route undo recording and
+availability through `SyncUndoManager`; `SyncUndoManager.addRecord()` is a no-op,
+so `core.hasUndo()` stays false and Cmd/Ctrl+Z does nothing.
+
+After the fix, unloading the last synced entity removes the exposed sync undo
+manager. Local edits after RTC is disabled for incompatible meta boxes record
+into the fallback `WPUndoManager`; `core.hasUndo()` and
+`core/editor.hasEditorUndo()` become true, the toolbar Undo button enables, and
+Cmd/Ctrl+Z removes the typed paragraph.
+
+Normal RTC editing with loaded synced entities should continue to use
+`SyncUndoManager`. RTC-off editing should remain unchanged.
+
+### Tests to add
+
+Unit coverage:
+
+- `packages/sync/src/test/manager.ts`
+  - `undoManager` is undefined before load.
+  - `undoManager` is defined after an entity load.
+  - `undoManager` remains defined after unloading one of two loaded entities.
+  - `undoManager` is undefined after unloading the last entity.
+  - `undoManager` is undefined after `unloadAll()`.
+  - An unload during pending provider creation does not leave `undoManager`
+    exposed.
+  - A valid reload after unload creates a fresh undo manager.
+  - A collection load alone does not keep `undoManager` alive.
+- `packages/core-data/src/test/private-selectors.js`
+  - When the sync manager object exists but `undoManager` is undefined,
+    `getUndoManager()` returns fallback `state.undoManager`.
+- `packages/core-data/src/test/selectors.js`
+  - When the sync manager has no undo manager, `hasUndo()` and `hasRedo()` call
+    the fallback manager and ignore stale `syncUndoManagerState`.
+- `packages/core-data/src/test/private-actions.js` or equivalent action coverage
+  - `setCollaborationSupported( false )` calls `unloadAll()` when a sync manager
+    exists and resets sync undo state to `{ hasUndo: false, hasRedo: false }`.
+- `packages/core-data/src/test/resolvers.js`
+  - When `isCollaborationSupported()` is false, `getEntityRecord` does not call
+    `syncManager.load()`.
+  - When `isCollaborationSupported()` is false, `getEntityRecords` does not call
+    `syncManager.loadCollection()`.
+
+Browser regression coverage:
+
+- Extend `test/e2e/specs/editor/collaboration/collaboration-metabox-lock.spec.ts`.
+- Activate `gutenberg-test-plugin-meta-box`.
+- Open a draft with RTC enabled.
+- Wait until collaboration is disabled for the post.
+- Type paragraph content.
+- Assert `wp.data.select( 'core' ).hasUndo()` is true.
+- Assert `wp.data.select( 'core/editor' ).hasEditorUndo()` is true.
+- Assert the Undo toolbar button is enabled.
+- Press primary undo and verify the typed paragraph is removed.
+
+### Risks and non-goals
+
+- Do not make `collaborationSupported === false` the primary condition in
+  `getUndoManager()`, `hasUndo()`, or `hasRedo()`. That fixes this repro but is
+  the wrong predicate: document-size failures also set collaboration unsupported
+  while active local Yjs state may still exist.
+- Do not gate `editEntityRecord()` or save-path sync updates globally on
+  `collaborationSupported`. If an entity is still actively synced, updates
+  should continue to reach its CRDT doc.
+- The main implementation risk is clearing sync undo too aggressively while
+  another synced entity is still loaded. The multi-entity unload test is
+  mandatory.
+- Rollback is not the preferred fix. It would restore undo, but would also undo
+  `#78145`'s intended protection against RTC with incompatible classic meta
+  boxes.
+
+### Analysis process
+
+I ran three rounds of independent `codex exec` analyses in tmux: initial fix
+plans, cross-review of the first-pass plans, and final reconciliation of the
+second-pass recommendations. The final outputs converged on the active synced
+entity scope invariant above and rejected selector-level
+`collaborationSupported` gating as the primary fix.
