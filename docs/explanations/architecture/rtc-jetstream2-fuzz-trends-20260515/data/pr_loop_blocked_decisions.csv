@@ -1,18 +1,29 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,newest current-root canary run-20260610T160049Z has 10 forced promotion-blocked rows with current_run_green=no,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,"newest current-root canary run-20260610T160049Z has 10 forced promotion-blocked
-rows with current_run_green=no"
-publish-ready,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,same-head candidate inherits the open current-root canary publication gate,candidate/rtc-risk-reducing-pr07c-all-merged-20260525T183601Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,same-head candidate inherits the open current-root canary publication gate
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,stale direct PR07C head lacks the build/type repair and is superseded by the repaired head,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"stale direct PR07C head lacks the build/type repair and is superseded by the
-repaired head"
-repair-branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,build-clean PR07C repair already exists at 9617d576354444657e7278c0dd9abc5d4f05dcb9,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"build-clean PR07C repair already exists at
-9617d576354444657e7278c0dd9abc5d4f05dcb9"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; no newer owner evidence is present,PR07C/HOLD-07C,owner matrix is runtime-held and consumed; no newer owner evidence is present
-publish-ready,repair/pa-self-presence-overlay-root-attr-20260610T114902Z@8fe539ccadf7d2c38b2b058bf4e499318051007a,high,no,needs focused validation or promotion accounting before publication,repair/pa-self-presence-overlay-root-attr-20260610T114902Z@8fe539ccadf7d2c38b2b058bf4e499318051007a,needs focused validation or promotion accounting before publication
-launch-branch-repair,self-presence/rendered-overlay-dom,high,no,canonical 114902Z repair branch already exists; another branch would duplicate work,self-presence/rendered-overlay-dom,"canonical 114902Z repair branch already exists; another branch would duplicate
-work"
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,duplicate full PR06B is superseded by the already-published canonical minimal PR06B,ready/rtc-pr06b-malformed-save-request-payload,"duplicate full PR06B is superseded by the already-published canonical minimal
-PR06B"
-publish-ready,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-direct-variants,high,no,canonical on-PR14B PR15 branches are already published,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c-direct-variants,canonical on-PR14B PR15 branches are already published
-reserve-discovery,benchmark-canary/current-root@run-20260610T145026Z,P0,no,superseded by newer run-20260610T160049Z; stale close rows cannot publish PR07C,benchmark-canary/current-root@run-20260610T145026Z,superseded by newer run-20260610T160049Z; stale close rows cannot publish PR07C
-reserve-discovery,heavy-pr-browser-validation,P0,no,current canary floor is open and discovery reserve is thin; allow only cheap PR accounting or analysis-only work,heavy-pr-browser-validation,"current canary floor is open and discovery reserve is thin; allow only cheap PR
-accounting or analysis-only work"
+launch-branch-repair,generic-heavy-pr-work,P0,no,discovery reserve is unprotected and active critical continuations already consume product-progress capacity,generic-heavy-pr-work,"discovery reserve is unprotected and active critical continuations already
+consume product-progress capacity"
+launch-branch-repair,benchmark-canary/novelty-http-large-post-lifecycle,P0,no,do not launch a parallel branch-changing child while same-user and aggregate canary continuations are active and discovery reserve is unprotected,benchmark-canary/novelty-http-large-post-lifecycle,"do not launch a parallel branch-changing child while same-user and aggregate
+canary continuations are active and discovery reserve is unprotected"
+launch-branch-repair,benchmark-canary/novelty-ws-multi-reload-lifecycle,high,no,do not branch-repair while current-run green unless live reread selects it as non-green,benchmark-canary/novelty-ws-multi-reload-lifecycle,"do not branch-repair while current-run green unless live reread selects it as
+non-green"
+launch-branch-repair,benchmark-canary/status-only-open,P1,no,status-only rows without retained or nonzero product evidence are not branch-repair candidates,benchmark-canary/status-only-open,"status-only rows without retained or nonzero product evidence are not
+branch-repair candidates"
+publish-ready,final-rtc-stack,P0,no,benchmark canary promotion-blocked rows still lack same-head exact-stack green proof or explicit_downscope=yes,final-rtc-stack,"benchmark canary promotion-blocked rows still lack same-head exact-stack green
+proof or explicit_downscope=yes"
+publish-ready,snapshot-publication,P0,no,maintainer snapshot waits for canary repair or downscope plus exact-stack closure,snapshot-publication,"maintainer snapshot waits for canary repair or downscope plus exact-stack
+closure"
+publish-ready,PR07C,P0,no,current benchmark-canary status has 9 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260619T151019Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 9
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260619T151019Z/benchmark-canary-coverage-status.tsv"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,stale direct PR07C head is superseded by the repaired build-clean candidate head,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by the repaired build-clean candidate head
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime hold was consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime hold was consumed; relaunch only with newer owner evidence
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,held duplicate; canonical PR06B minimal branch is already published,ready/rtc-pr06b-malformed-save-request-payload,held duplicate; canonical PR06B minimal branch is already published
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,held duplicate; canonical on-PR14B PR15A branch is already published,ready/rtc-pr15a-fallback-group-move-green,held duplicate; canonical on-PR14B PR15A branch is already published
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,held duplicate; canonical on-PR14B PR15B branch is already published,ready/rtc-pr15b-fallback-group-insert-anchor-green,held duplicate; canonical on-PR14B PR15B branch is already published
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,held duplicate; canonical on-PR14B PR15C branch is already published,ready/rtc-pr15c-fallback-group-delete-green,held duplicate; canonical on-PR14B PR15C branch is already published
+launch-branch-repair,reload-hydration/heavy-exact-replay,high,no,wait behind active benchmark-canary product slot and unprotected discovery reserve,reload-hydration/heavy-exact-replay,"wait behind active benchmark-canary product slot and unprotected discovery
+reserve"
+launch-branch-repair,lower-level/productless-expansion,high,no,stale or missing lower-level roots plus open canary blockers do not justify broad expansion,lower-level/productless-expansion,"stale or missing lower-level roots plus open canary blockers do not justify
+broad expansion"
+hold-publication,PR07C,P0,no,current benchmark-canary status has 9 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260619T151019Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 9
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260619T151019Z/benchmark-canary-coverage-status.tsv"
