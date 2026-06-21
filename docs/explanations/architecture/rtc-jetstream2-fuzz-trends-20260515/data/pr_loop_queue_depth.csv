@@ -1,14 +1,16 @@
 queue,state,class,priority,depth
 PR progress items,needs-product-decision,deferred-family,high,1
 PR progress items,downscoped,deferred-family,medium,2
-PR progress items,held-by-controller,ready-product-pr,high,4
+PR progress items,held-by-controller,ready-product-pr,high,3
 PR progress items,published,ready-product-pr,high,14
+PR progress items,superseded,ready-product-pr,low,1
 PR progress items,superseded-by-repair,ready-product-pr,low,1
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
-controller decisions,allowed,control decision,P0,15
-controller decisions,blocked,control decision,P0,6
-controller decisions,allowed,control decision,high,10
-controller decisions,blocked,control decision,high,14
+controller decisions,allowed,control decision,P0,17
+controller decisions,blocked,control decision,P0,7
+controller decisions,allowed,control decision,high,12
+controller decisions,blocked,control decision,high,7
+controller decisions,blocked,control decision,low,2
 controller decisions,allowed,control decision,medium,4
 critical blockers,runnable,control-feedback,high,1
 critical blockers,held,deferred-family,high,1
@@ -16,9 +18,11 @@ critical blockers,runnable,exact-stack-promotion,high,1
 critical blockers,runnable,final-stack-join,high,1
 critical blockers,terminal,owner-evidence,high,1
 critical blockers,active,product-repair,high,1
+critical blockers,active,productive-exact-blocker,high,1
 critical blockers,terminal,reducer,high,2
 critical job queue,terminal,browser-e2e,high,1
-critical job queue,active,codex-analysis,high,1
+critical job queue,active,codex-analysis,high,2
 critical job queue,gated,codex-analysis,high,1
 critical job queue,runnable,codex-analysis,high,3
 critical lanes,queued,codex-analysis,lane,4
+active sessions,active,critical-continuation,critical-continuation,1
