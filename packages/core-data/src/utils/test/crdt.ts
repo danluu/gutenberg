@@ -73,6 +73,7 @@ const {
 
 import { createElement, RawHTML } from '@wordpress/element';
 import { RichTextData } from '@wordpress/rich-text';
+import type { RawBlock } from '@wordpress/blocks';
 
 /**
  * Internal dependencies
@@ -90,6 +91,22 @@ import type { Block, YBlock, YBlockRecord, YBlocks } from '../crdt-blocks';
 import { updateSelectionHistory } from '../crdt-selection';
 import { createYMap, getRootMap, type YMapWrap } from '../crdt-utils';
 import type { Post } from '../../entity-types';
+
+type GeneratedBlockForTest< T > = Omit<
+	T,
+	'__unstableBlockSource' | 'originalContent' | 'validationIssues'
+> & {
+	__unstableBlockSource?: RawBlock;
+	originalContent?: string;
+	validationIssues?: { log: Function; args: unknown[] }[];
+};
+
+function expectConsole() {
+	return expect( console ) as unknown as {
+		toHaveErrored: () => void;
+		toHaveWarned: () => void;
+	};
+}
 
 function renderRichTextValue( value?: string | RichTextData ): string {
 	return typeof value === 'string' ? value : value?.toHTMLString() ?? '';
@@ -861,7 +878,10 @@ describe( 'crdt', () => {
 			].join( '\n' );
 			const blocks = parse( originalContent );
 			const generatedBlocks = blocks.map( ( block ) => {
-				const generatedBlock = { ...block, isValid: true };
+				const generatedBlock: GeneratedBlockForTest< typeof block > = {
+					...block,
+					isValid: true,
+				};
 				delete generatedBlock.__unstableBlockSource;
 				delete generatedBlock.originalContent;
 				delete generatedBlock.validationIssues;
@@ -873,8 +893,8 @@ describe( 'crdt', () => {
 			expect( __unstableSerializeAndClean( blocks ).trim() ).not.toBe(
 				persistedContent
 			);
-			expect( console ).toHaveWarned();
-			expect( console ).toHaveErrored();
+			expectConsole().toHaveWarned();
+			expectConsole().toHaveErrored();
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -932,8 +952,8 @@ describe( 'crdt', () => {
 			].join( '\n' );
 			const blocks = parse( originalContent );
 
-			expect( console ).toHaveWarned();
-			expect( console ).toHaveErrored();
+			expectConsole().toHaveWarned();
+			expectConsole().toHaveErrored();
 
 			applyPostChangesToCRDTDoc(
 				doc,
@@ -990,7 +1010,10 @@ describe( 'crdt', () => {
 				},
 			];
 			const generatedBlocks = staleBlocks.map( ( block ) => {
-				const generatedBlock = { ...block, isValid: true };
+				const generatedBlock: GeneratedBlockForTest< typeof block > = {
+					...block,
+					isValid: true,
+				};
 				delete generatedBlock.__unstableBlockSource;
 				delete generatedBlock.originalContent;
 				delete generatedBlock.validationIssues;

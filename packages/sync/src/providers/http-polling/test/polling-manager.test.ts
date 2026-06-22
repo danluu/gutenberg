@@ -9,7 +9,7 @@ import {
 	it,
 	jest,
 } from '@jest/globals';
-import { type SyncPayload, type SyncResponse } from '../types';
+import { SyncUpdateType, type SyncPayload, type SyncResponse } from '../types';
 
 // Mock all external dependencies before imports.
 jest.mock( 'yjs', () => ( {
@@ -291,7 +291,7 @@ describe( 'polling-manager', () => {
 						awareness: {},
 						updates: [
 							{
-								type: 'sync_step1',
+								type: SyncUpdateType.SYNC_STEP_1,
 								data: 'AQ==',
 							},
 						],
