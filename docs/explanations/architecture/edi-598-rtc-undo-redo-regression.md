@@ -8,19 +8,20 @@ third-party plugins with classic meta boxes.
 
 The regression was introduced by:
 
-- Commit: `de0dde644b0691f029509161afdeaafa868a53bf`
-- PR: `#78145`
+- Commit: [`de0dde644b0691f029509161afdeaafa868a53bf`][commit-de0dde644b0]
+- PR: [#78145][pr-78145]
 - Title: `Fix: Disable collab sync when incompatible meta boxes are present.`
 
-The parent commit, `db03118bfc5`, does not reproduce the issue. The introducing
-commit, `de0dde644b0`, does reproduce it.
+The parent commit, [`db03118bfc5`][commit-db03118bfc5], does not reproduce the
+issue. The introducing commit, [`de0dde644b0`][commit-de0dde644b0], does
+reproduce it.
 
 ## Local Environment
 
 The reproduction used a fresh trunk worktree:
 
 - Worktree: `/Users/danluu/dev/fuzz/gutenberg-trunk-codex-20260616T051559Z`
-- Current trunk base: `7d8e02165f2`
+- Current trunk base: [`7d8e02165f2`][commit-7d8e02165f2]
 - WordPress: `7.1-alpha-62504`
 - Gutenberg plugin: `23.4.0-rc.1`
 - RTC option: `wp_collaboration_enabled=1`
@@ -60,7 +61,7 @@ The automated browser probe did the following:
 
 ### Current trunk controls
 
-On `7d8e02165f2`:
+On [`7d8e02165f2`][commit-7d8e02165f2]:
 
 | Setup | Result |
 | --- | --- |
@@ -84,27 +85,27 @@ Minimal repro with Advanced Ads:
 
 | Commit | Relation | Result after typing | Cmd+Z |
 | --- | --- | --- | --- |
-| `db03118bfc5` | Parent of `#78145` | Undo enabled | Clears paragraph text |
-| `de0dde644b0` | `#78145` | Undo disabled | No effect |
+| [`db03118bfc5`][commit-db03118bfc5] | Parent of [#78145][pr-78145] | Undo enabled | Clears paragraph text |
+| [`de0dde644b0`][commit-de0dde644b0] | [#78145][pr-78145] | Undo disabled | No effect |
 
 Public plugin subset repro with Advanced Ads + AIOSEO + PostX/free:
 
 | Commit | Relation | Result after typing | Cmd+Z |
 | --- | --- | --- | --- |
-| `db03118bfc5` | Parent of `#78145` | Undo enabled | Clears paragraph text |
-| `de0dde644b0` | `#78145` | Undo disabled | No effect |
+| [`db03118bfc5`][commit-db03118bfc5] | Parent of [#78145][pr-78145] | Undo enabled | Clears paragraph text |
+| [`de0dde644b0`][commit-de0dde644b0] | [#78145][pr-78145] | Undo disabled | No effect |
 
 Additional parallel candidate checks:
 
 | Boundary | Before | After | Finding |
 | --- | --- | --- | --- |
-| `#78864` (`cd4513491ec`) | `ac1566bd9ac` reproduced | `cd4513491ec` reproduced | Not introducer |
-| `#78984` (`e11c0788f01`) | `d83ec0f1e11` reproduced | `e11c0788f01` reproduced | Not introducer |
+| [#78864][pr-78864] ([`cd4513491ec`][commit-cd4513491ec]) | [`ac1566bd9ac`][commit-ac1566bd9ac] reproduced | [`cd4513491ec`][commit-cd4513491ec] reproduced | Not introducer |
+| [#78984][pr-78984] ([`e11c0788f01`][commit-e11c0788f01]) | [`d83ec0f1e11`][commit-d83ec0f1e11] reproduced | [`e11c0788f01`][commit-e11c0788f01] reproduced | Not introducer |
 
 ## Likely Mechanism
 
 The issue appears to be an interaction between the sync-aware undo manager and
-the meta-box compatibility fallback added in `#78145`.
+the meta-box compatibility fallback added in [#78145][pr-78145].
 
 Relevant current code paths:
 
@@ -112,7 +113,7 @@ Relevant current code paths:
   calls `setCollaborationSupported( false )` when RTC is enabled and any active
   meta box lacks `__rtc_compatible`.
 - `packages/core-data/src/private-actions.js` handles that action and, after
-  `#78145`, calls `getSyncManager().unloadAll()` when collaboration becomes
+  [#78145][pr-78145], calls `getSyncManager().unloadAll()` when collaboration becomes
   unsupported.
 - `packages/core-data/src/private-selectors.ts` still returns
   `getSyncManager()?.undoManager ?? state.undoManager`.
@@ -121,15 +122,17 @@ Relevant current code paths:
 - `packages/sync/src/undo-manager.ts` makes `addRecord()` a no-op because Yjs is
   expected to track changes for synced entities.
 
-Before `#78145`, the synced post entity remained loaded even when a plugin added
-classic meta boxes, so Yjs captured the local paragraph edit and Undo worked.
+Before [#78145][pr-78145], the synced post entity remained loaded even when a
+plugin added classic meta boxes, so Yjs captured the local paragraph edit and
+Undo worked.
 
-After `#78145`, the incompatible-meta-box path unloads synced entities after the
-sync manager and its undo manager have already been created. Later post-content
-edits still go through the sync undo manager path, but that manager is no longer
-tracking a scoped CRDT document for the post. Because `addRecord()` is a no-op
-for the sync undo manager and the fallback `WPUndoManager` is bypassed, no undo
-level is recorded. The toolbar therefore stays disabled and Cmd+Z has no effect.
+After [#78145][pr-78145], the incompatible-meta-box path unloads synced entities
+after the sync manager and its undo manager have already been created. Later
+post-content edits still go through the sync undo manager path, but that manager
+is no longer tracking a scoped CRDT document for the post. Because `addRecord()`
+is a no-op for the sync undo manager and the fallback `WPUndoManager` is
+bypassed, no undo level is recorded. The toolbar therefore stays disabled and
+Cmd+Z has no effect.
 
 ## Notes
 
@@ -139,8 +142,8 @@ level is recorded. The toolbar therefore stays disabled and Cmd+Z has no effect.
 - PostX Pro could not be tested locally because it is not available through
   WordPress.org.
 - The current failing behavior is not introduced by the later visible RTC
-  changes in `#78864` or `#78984`; both sides of those boundaries already
-  reproduce.
+  changes in [#78864][pr-78864] or [#78984][pr-78984]; both sides of those
+  boundaries already reproduce.
 
 ## Fix Plan
 
@@ -174,7 +177,7 @@ the default `state.undoManager`.
 2. Update `packages/core-data/src/private-actions.js`.
 
    In `setCollaborationSupported( false )`, keep the `getSyncManager().unloadAll()`
-   behavior added by `#78145`, and after unloading dispatch the existing private
+   behavior added by [#78145][pr-78145], and after unloading dispatch the existing private
    action:
 
    ```js
@@ -284,8 +287,8 @@ Browser regression coverage:
   another synced entity is still loaded. The multi-entity unload test is
   mandatory.
 - Rollback is not the preferred fix. It would restore undo, but would also undo
-  `#78145`'s intended protection against RTC with incompatible classic meta
-  boxes.
+  [#78145][pr-78145]'s intended protection against RTC with incompatible
+  classic meta boxes.
 
 ### Analysis process
 
@@ -300,8 +303,8 @@ entity scope invariant above and rejected selector-level
 Branch reviewed:
 
 - Branch: `try/rtc-undo-meta-regression-pr`
-- Commit: `94cf40eba799a77505a23a14d3e47f41976625a1`
-- Remote: `danluu`
+- Commit: [`94cf40eba799a77505a23a14d3e47f41976625a1`][commit-94cf40eba7-danluu]
+- Remote: [`danluu`][danluu-try-rtc-undo-meta-regression-pr]
 
 After the PR branch was created, I ran another three-round tmux review against
 the actual branch diff: 11 first-pass `codex exec` reviews, 11 cross-reviews of
@@ -422,3 +425,16 @@ Tests:
 5. Drop collection resolver tests, selector fallback tests, individual-unload
    tests, lazy/baseline manager tests that only document pre-existing behavior,
    and redundant e2e undo assertions.
+
+[commit-7d8e02165f2]: https://github.com/WordPress/gutenberg/commit/7d8e02165f201f251835683e73aed07c600ce230
+[commit-ac1566bd9ac]: https://github.com/WordPress/gutenberg/commit/ac1566bd9ac5a8e4b26e4d2093bea4a5525ae001
+[commit-cd4513491ec]: https://github.com/WordPress/gutenberg/commit/cd4513491ec3375b7e6debba59e0fac1820e8c96
+[commit-d83ec0f1e11]: https://github.com/WordPress/gutenberg/commit/d83ec0f1e11a32c670933bf5695a4e87a6cd0ce6
+[commit-db03118bfc5]: https://github.com/WordPress/gutenberg/commit/db03118bfc5ef89f3b3cc74917f2e5b2bf0a66fe
+[commit-de0dde644b0]: https://github.com/WordPress/gutenberg/commit/de0dde644b0691f029509161afdeaafa868a53bf
+[commit-e11c0788f01]: https://github.com/WordPress/gutenberg/commit/e11c0788f0116409c32076fcc19ef7cb3dc08209
+[commit-94cf40eba7-danluu]: https://github.com/danluu/gutenberg/commit/94cf40eba799a77505a23a14d3e47f41976625a1
+[danluu-try-rtc-undo-meta-regression-pr]: https://github.com/danluu/gutenberg/tree/try/rtc-undo-meta-regression-pr
+[pr-78145]: https://github.com/WordPress/gutenberg/pull/78145
+[pr-78864]: https://github.com/WordPress/gutenberg/pull/78864
+[pr-78984]: https://github.com/WordPress/gutenberg/pull/78984
