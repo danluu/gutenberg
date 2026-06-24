@@ -1,10 +1,10 @@
-# EDI-598 RTC Undo/Redo Regression Notes
+# RTC Undo/Redo Regression Notes
 
 ## Summary
 
-EDI-598 reports that Undo and Redo stay disabled in the post editor when the
-Gutenberg plugin's real-time collaboration (RTC) support is enabled alongside
-third-party plugins with classic meta boxes.
+Undo and Redo stay disabled in the post editor when the Gutenberg plugin's
+real-time collaboration (RTC) support is enabled alongside third-party plugins
+with classic meta boxes.
 
 The regression was introduced by:
 
