@@ -754,11 +754,11 @@ if ( file.exists( bug_findings_path ) ) {
 					str_detect( str_to_lower( coalesce( recommended_action, "" ) ), "duplicate|merge_with_duplicate" ) ~ TRUE,
 					TRUE ~ FALSE
 				),
-				classification = replace_na( classification, "unknown" ),
-				candidate_status = replace_na( candidate_status, "" ),
-				recommended_action = replace_na( recommended_action, "" ),
-				profile = replace_na( profile, "unknown" ),
-				fuzz_level = replace_na( fuzz_level, "other" ),
+				classification = replace_na( as.character( classification ), "unknown" ),
+				candidate_status = replace_na( as.character( candidate_status ), "" ),
+				recommended_action = replace_na( as.character( recommended_action ), "" ),
+				profile = replace_na( as.character( profile ), "unknown" ),
+				fuzz_level = replace_na( as.character( fuzz_level ), "other" ),
 				fuzz_level = factor(
 					fuzz_level,
 					levels = c(

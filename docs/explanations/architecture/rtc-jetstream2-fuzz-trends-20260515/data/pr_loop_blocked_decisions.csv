@@ -1,21 +1,24 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-product-failure/second-heavy-lane,P0,no,active_aggregate_lane_exists_and_discovery_reserve_is_unprotected,benchmark-canary-product-failure/second-heavy-lane,active_aggregate_lane_exists_and_discovery_reserve_is_unprotected
-launch-branch-repair,benchmark-canary/fuzzer-gap-heavy-rerun,high,no,discovery_unprotected_and_P0_aggregate_repair_active,benchmark-canary/fuzzer-gap-heavy-rerun,discovery_unprotected_and_P0_aggregate_repair_active
-publish-ready,final-rtc-stack,P0,no,current_benchmark-canary_gate_open;_8_qualifying_rows_lack_same-head_green_or_explicit_downscope,final-rtc-stack,current_benchmark-canary_gate_open;_8_qualifying_rows_lack_same-head_green_or_explicit_downscope
-publish-ready,maintainer-snapshot,P0,no,wait_for_same-head_green_or_evidence-backed_downscope_on_all_qualifying_canary_rows,maintainer-snapshot,wait_for_same-head_green_or_evidence-backed_downscope_on_all_qualifying_canary_rows
-publish-ready,PR07C/final-publication-credit,P0,no,current benchmark-canary status has 8 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260621T114906Z/benchmark-canary-coverage-status.tsv,PR07C/final-publication-credit,"current benchmark-canary status has 8
+publish-ready,reload-hydration/manifest-consumed-claim,P0,no,current-push-manifest still lacks exact head e8b64d56a18586be22e7922a9f6c144bd5b8d431,reload-hydration/manifest-consumed-claim,"current-push-manifest still lacks exact head
+e8b64d56a18586be22e7922a9f6c144bd5b8d431"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner-matrix evidence is consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner-matrix evidence is consumed; reopen only with newer concrete owner
+evidence"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9,ready/rtc-pr07c-reload-record-snapshots,"stale direct PR07C head is superseded by repaired build-clean head
+9617d576354444657e7278c0dd9abc5d4f05dcb9"
+launch-branch-repair,benchmark-canary/fuzzer-gap/exact-stack-or-browser-replay,high,no,"heavy replay waits for build-clean preflight, aggregate product disposition, and a healthy discovery reserve",benchmark-canary/fuzzer-gap/exact-stack-or-browser-replay,"heavy replay waits for build-clean preflight, aggregate product disposition, and
+a healthy discovery reserve"
+launch-branch-repair,benchmark-canary/per-group-fanout,high,no,use one aggregate benchmark-canary-product-failure owner instead of standalone per-group launches,benchmark-canary/per-group-fanout,"use one aggregate benchmark-canary-product-failure owner instead of standalone
+per-group launches"
+launch-branch-repair,lower-level/broad-productless-expansion,high,no,heavy productless expansion is not PR progress under disk pressure without fresh product-keyed or active-blocker-keyed yield,lower-level/broad-productless-expansion,"heavy productless expansion is not PR progress under disk pressure without fresh
+product-keyed or active-blocker-keyed yield"
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
+publish-ready,final-rtc-stack,P0,no,blocked on reload-hydration manifest disposition plus benchmark-canary product and exact-stack closure,final-rtc-stack,"blocked on reload-hydration manifest disposition plus benchmark-canary product
+and exact-stack closure"
+publish-ready,maintainer-snapshot,P0,no,"blocked until exact manifest accounting, build preflight, and benchmark-canary closure are current",maintainer-snapshot,"blocked until exact manifest accounting, build preflight, and benchmark-canary
+closure are current"
+hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T061135Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 10
 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260621T114906Z/benchmark-canary-coverage-status.tsv"
-publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,current benchmark-canary status has 8 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260621T114906Z/benchmark-canary-coverage-status.tsv,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,"current benchmark-canary status has 8
-promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260621T114906Z/benchmark-canary-coverage-status.tsv"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale_direct_head_superseded_by_repaired_build-clean_PR07C_head,ready/rtc-pr07c-reload-record-snapshots,stale_direct_head_superseded_by_repaired_build-clean_PR07C_head
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime_hold_consumed;_reopen_only_with_newer_owner_evidence,PR07C/HOLD-07C,runtime_hold_consumed;_reopen_only_with_newer_owner_evidence
-launch-branch-repair,PR07C/new-heavy-browser-or-duplicate-validation,P0,no,discovery_unprotected_and_no_new_concrete_PR07C_regression,PR07C/new-heavy-browser-or-duplicate-validation,discovery_unprotected_and_no_new_concrete_PR07C_regression
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded_by_published_PR06B_minimal_branch,ready/rtc-pr06b-malformed-save-request-payload,superseded_by_published_PR06B_minimal_branch
-publish-ready,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c_non_pr14b_variants,high,no,superseded_by_published_PR14B-based_variants,ready/rtc-pr15a+ready/rtc-pr15b+ready/rtc-pr15c_non_pr14b_variants,superseded_by_published_PR14B-based_variants
-publish-ready,deferred/rtc-reload-hydration-20260621T130529Z@c842b72f530170f9906eb744d180d505259d3cb5,high,no,diagnostic_manifest_only;_needs_exact_replay_owner_evidence_green_stack_adoption_or_explicit_downscope,deferred/rtc-reload-hydration-20260621T130529Z@c842b72f530170f9906eb744d180d505259d3cb5,diagnostic_manifest_only;_needs_exact_replay_owner_evidence_green_stack_adoption_or_explicit_downscope
-launch-branch-repair,reload-hydration/exact-stack-replay,high,no,discovery_unprotected_and_P0_canary_gate_open,reload-hydration/exact-stack-replay,discovery_unprotected_and_P0_canary_gate_open
-launch-branch-repair,lower-level/current-root-bounded-bridge,high,no,wait_for_authority_refresh_plus_protected_capacity_or_cleared_P0_gate,lower-level/current-root-bounded-bridge,wait_for_authority_refresh_plus_protected_capacity_or_cleared_P0_gate
-launch-branch-repair,PR17/seed-1020002-heavy-duplicate,high,no,discovery_unprotected_and_existing_cheap_proof_path_available,PR17/seed-1020002-heavy-duplicate,discovery_unprotected_and_existing_cheap_proof_path_available
-hold-publication,PR07C,P0,no,current_benchmark-canary_gate_open;_8_qualifying_rows_lack_same-head_green_or_explicit_downscope,PR07C,current_benchmark-canary_gate_open;_8_qualifying_rows_lack_same-head_green_or_explicit_downscope
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T061135Z/benchmark-canary-coverage-status.tsv"
