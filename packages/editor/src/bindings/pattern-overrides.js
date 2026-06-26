@@ -11,22 +11,29 @@ const CONTENT = 'content';
 export default {
 	name: 'core/pattern-overrides',
 	getValues( { select, clientId, context, bindings } ) {
-		const patternOverridesContent = context[ 'pattern/overrides' ];
+		const patternOverridesContent = context?.[ 'pattern/overrides' ];
 		const { getBlockAttributes } = select( blockEditorStore );
 		const currentBlockAttributes = getBlockAttributes( clientId );
 
 		const overridesValues = {};
 		for ( const attributeName of Object.keys( bindings ) ) {
+			const blockName = currentBlockAttributes?.metadata?.name;
+			const blockOverrides =
+				patternOverridesContent &&
+				typeof patternOverridesContent === 'object' &&
+				blockName
+					? patternOverridesContent[ blockName ]
+					: undefined;
 			const overridableValue =
-				patternOverridesContent?.[
-					currentBlockAttributes?.metadata?.name
-				]?.[ attributeName ];
+				blockOverrides && typeof blockOverrides === 'object'
+					? blockOverrides[ attributeName ]
+					: undefined;
 
 			// If it has not been overridden, return the original value.
 			// Check undefined because empty string is a valid value.
 			if ( overridableValue === undefined ) {
 				overridesValues[ attributeName ] =
-					currentBlockAttributes[ attributeName ];
+					currentBlockAttributes?.[ attributeName ];
 				continue;
 			} else {
 				overridesValues[ attributeName ] =

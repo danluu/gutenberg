@@ -163,6 +163,7 @@ export interface SyncConfig {
 		objectType: ObjectType,
 		objectId: ObjectID | null
 	) => boolean;
+	supportsPersistence?: boolean;
 }
 
 export interface SyncManager {

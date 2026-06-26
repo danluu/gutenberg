@@ -54,7 +54,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		/**
 		 * Maximum target size (in bytes) of the response body.
 		 *
-		 * @since 7.0.0
+		 * @since 7.1.0
 		 * @var int
 		 */
 		const MAX_RESPONSE_BODY_SIZE = 16 * MB_IN_BYTES;
@@ -62,7 +62,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		/**
 		 * Per-room headroom for response metadata outside returned update rows.
 		 *
-		 * @since 7.0.0
+		 * @since 7.1.0
 		 * @var int
 		 */
 		const RESPONSE_BODY_ROOM_HEADROOM = 8 * 1024;
@@ -517,7 +517,7 @@ if ( ! class_exists( 'WP_HTTP_Polling_Sync_Server' ) ) {
 		/**
 		 * Calculates the remaining serialized update budget for a room response.
 		 *
-		 * @since 7.0.0
+		 * @since 7.1.0
 		 *
 		 * @param array<string, mixed> $response            Response built so far.
 		 * @param array<string, mixed> $empty_room_response Room response without updates.

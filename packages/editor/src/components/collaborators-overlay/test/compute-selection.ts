@@ -4,19 +4,30 @@
 import { computeSelectionVisual } from '../compute-selection';
 import { getCursorPosition, getSelectionRects } from '../cursor-dom-utils';
 
-jest.mock( '@wordpress/core-data', () => ( {
-	SelectionDirection: {
-		Backward: 'backward',
-		Forward: 'forward',
-	},
-	SelectionType: {
-		None: 'none',
-		Cursor: 'cursor',
-		SelectionInOneBlock: 'selection-in-one-block',
-		SelectionInMultipleBlocks: 'selection-in-multiple-blocks',
-		WholeBlock: 'whole-block',
-	},
-} ) );
+jest.mock( '@wordpress/core-data', () => {
+	const { __dangerousOptInToUnstableAPIsOnlyForCoreModules } =
+		jest.requireActual( '@wordpress/private-apis' );
+	const { lock } = __dangerousOptInToUnstableAPIsOnlyForCoreModules(
+		'I acknowledge private features are not for use in themes or plugins and doing so will break in the next version of WordPress.',
+		'@wordpress/core-data'
+	);
+	const privateApis = {};
+	lock( privateApis, {
+		SelectionDirection: {
+			Backward: 'backward',
+			Forward: 'forward',
+		},
+		SelectionType: {
+			None: 'none',
+			Cursor: 'cursor',
+			SelectionInOneBlock: 'selection-in-one-block',
+			SelectionInMultipleBlocks: 'selection-in-multiple-blocks',
+			WholeBlock: 'whole-block',
+		},
+	} );
+
+	return { privateApis };
+} );
 
 jest.mock( '../cursor-dom-utils', () => ( {
 	getCursorPosition: jest.fn( () => ( {

@@ -23,6 +23,7 @@ import {
 	getUserPermissionsFromAllowHeader,
 	ALLOWED_RESOURCE_ACTIONS,
 	RECEIVE_INTERMEDIATE_RESULTS,
+	clearUnchangedEdits,
 	isNumericID,
 	normalizeQueryForResolution,
 	saveCRDTDoc,
@@ -194,8 +195,13 @@ export const getEntityRecord =
 					} );
 				}
 
+				const syncManager =
+					select?.isCollaborationSupported?.() === false
+						? undefined
+						: getSyncManager();
+
 				// Load the entity record for syncing. Do not await promise.
-				void getSyncManager()?.load(
+				void syncManager?.load(
 					entityConfig.syncConfig,
 					objectType,
 					objectId,
@@ -207,12 +213,22 @@ export const getEntityRecord =
 								return;
 							}
 
+							const persistedRecord = select.getRawEntityRecord(
+								kind,
+								name,
+								key
+							);
+							const normalizedEdits = clearUnchangedEdits(
+								edits,
+								persistedRecord
+							);
+
 							dispatch( {
 								type: 'EDIT_ENTITY_RECORD',
 								kind,
 								name,
 								recordId: key,
-								edits,
+								edits: normalizedEdits,
 								meta: {
 									undo: undefined,
 								},
@@ -1355,14 +1371,24 @@ export const getEditorAssets =
 /**
  * Requests view config for a given entity type from the REST API.
  *
- * @param {string} kind Entity kind.
- * @param {string} name Entity name.
+ * @param {string}    kind           Entity kind.
+ * @param {string}    name           Entity name.
+ * @param {?Object}   options        Optional options.
+ * @param {?string[]} options.fields Optional subset of top-level config
+ *                                   properties to request, mapped to the REST
+ *                                   API `_fields` parameter. When omitted, the
+ *                                   full config is requested.
  */
 export const getViewConfig =
-	( kind, name ) =>
+	( kind, name, options = {} ) =>
 	async ( { dispatch } ) => {
+		const query = { kind, name };
+		const fields = getNormalizedCommaSeparable( options.fields );
+		if ( fields?.length ) {
+			query._fields = fields.join( ',' );
+		}
 		const config = await apiFetch( {
-			path: addQueryArgs( '/wp/v2/view-config', { kind, name } ),
+			path: addQueryArgs( '/wp/v2/view-config', query ),
 		} );
 		dispatch.receiveViewConfig( kind, name, config );
 	};

@@ -1214,7 +1214,10 @@ describe( 'prePersistPostType', () => {
 			123,
 			latestRecord
 		);
-		expect( syncManager.getCRDTRecordData ).not.toHaveBeenCalled();
+		expect( syncManager.getCRDTRecordData ).toHaveBeenCalledWith(
+			'postType/page',
+			123
+		);
 		expect( result ).toEqual( {
 			meta: {
 				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]:

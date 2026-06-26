@@ -73,7 +73,7 @@ describe( 'Post actions', () => {
 			const registry = createRegistryWithStores();
 
 			updateDeviceTypeForViewportState( {
-				viewport: 'mobile',
+				viewport: '@mobile',
 				showStateOnCanvas: true,
 			} )( {
 				dispatch: registry.dispatch( editorStore ),
@@ -90,7 +90,7 @@ describe( 'Post actions', () => {
 			registry.dispatch( editorStore ).setDeviceType( 'Tablet' );
 
 			updateDeviceTypeForViewportState( {
-				viewport: 'mobile',
+				viewport: '@mobile',
 				showStateOnCanvas: false,
 			} )( {
 				dispatch: registry.dispatch( editorStore ),

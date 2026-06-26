@@ -859,15 +859,8 @@ export const prePersistPostType = async (
 			newEdits
 		);
 		const snapshotSyncManager = syncManager ?? getSyncManager();
-		const hasBasePersistedCRDTDoc = Boolean(
-			latestPersistedCRDTDoc ||
-				persistedRecord?.meta?.[
-					POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE
-				]
-		);
 		const shouldReuseCRDTBlockClientIds =
 			snapshotSyncManager?.update &&
-			hasBasePersistedCRDTDoc &&
 			'content' in snapshotEdits &&
 			getRawPostValue( snapshotEdits.content ) !== undefined;
 		const currentCRDTRecord = shouldReuseCRDTBlockClientIds
@@ -1027,6 +1020,9 @@ async function loadPostTypeEntities() {
 		 * @type {import('@wordpress/sync').SyncConfig}
 		 */
 		entity.syncConfig = {
+			// Save a CRDT document with this entity.
+			supportsPersistence: true,
+
 			shouldSync: () =>
 				! window._wpCollaborationDisabledPostTypes?.includes( name ),
 
