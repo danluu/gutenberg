@@ -277,6 +277,23 @@ export function setAvailableMetaBoxesPerLocation( metaBoxesPerLocation ) {
 	};
 }
 
+function removeTinyMCESelectionBookmarks() {
+	document
+		.querySelectorAll( 'textarea.wp-editor-area' )
+		.forEach( ( textarea ) => {
+			if ( ! textarea.value.includes( 'mce_SELRES_' ) ) {
+				return;
+			}
+
+			const container = document.createElement( 'div' );
+			container.innerHTML = textarea.value;
+			container
+				.querySelectorAll( '[data-mce-type="bookmark"]' )
+				.forEach( ( bookmark ) => bookmark.remove() );
+			textarea.value = container.innerHTML;
+		} );
+}
+
 /**
  * Update a metabox.
  */
@@ -290,6 +307,7 @@ export const requestMetaBoxUpdates =
 		// Saves the wp_editor fields.
 		if ( window.tinyMCE ) {
 			window.tinyMCE.triggerSave();
+			removeTinyMCESelectionBookmarks();
 		}
 
 		// We gather the base form data.

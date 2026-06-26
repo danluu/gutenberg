@@ -3,6 +3,12 @@
  */
 const { test, expect } = require( '@wordpress/e2e-test-utils-playwright' );
 
+const waitForTinyMCEEditor = ( page ) =>
+	page.waitForFunction( () => {
+		const editor = window.tinyMCE?.get( 'test_tinymce_id' );
+		return !! editor?.getBody?.() && ! editor?.isHidden?.();
+	} );
+
 test.describe( 'WP Editor Meta Boxes', () => {
 	test.beforeAll( async ( { requestUtils } ) => {
 		await requestUtils.activatePlugin(
@@ -34,9 +40,7 @@ test.describe( 'WP Editor Meta Boxes', () => {
 		// This ensures getSelection() won't return null when TinyMCE tries
 		// to restore cursor position during subsequent mode switches.
 		await page.locator( 'role=button[name="Visual"i]' ).click();
-		await page.waitForFunction(
-			() => window.tinyMCE?.get( 'test_tinymce_id' )?.initialized
-		);
+		await waitForTinyMCEEditor( page );
 
 		// Switch to Code mode and type into the textarea.
 		await page.locator( 'role=button[name="Code"i]' ).click();
@@ -45,9 +49,7 @@ test.describe( 'WP Editor Meta Boxes', () => {
 
 		// Switch back to Visual mode and wait for re-initialization.
 		await page.locator( 'role=button[name="Visual"i]' ).click();
-		await page.waitForFunction(
-			() => window.tinyMCE?.get( 'test_tinymce_id' )?.initialized
-		);
+		await waitForTinyMCEEditor( page );
 
 		await editor.publishPost();
 		await page.reload();

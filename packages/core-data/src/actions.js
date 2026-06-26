@@ -1,6 +1,7 @@
 /**
  * External dependencies
  */
+import fastDeepEqual from 'fast-deep-equal/es6/index.js';
 import { v4 as uuid } from 'uuid';
 
 /**
@@ -25,6 +26,8 @@ import {
 	getSyncManager,
 } from './sync';
 import logEntityDeprecation from './utils/log-entity-deprecation';
+import { parsedBlocksCache, getCacheKey } from './parsed-blocks-cache';
+import { deserializeBlockAttributes } from './utils/crdt-blocks';
 
 function addTitleToAutoDraft( record ) {
 	return record.status === 'auto-draft' ? { ...record, title: '' } : record;
@@ -272,6 +275,40 @@ function getRecordWithoutPersistedCRDTDocumentSnapshotRawAttributes(
 				: nextRecord,
 		record
 	);
+}
+
+function primePersistedCRDTSaveResponseBlockCache(
+	entityConfig,
+	kind,
+	name,
+	recordId,
+	record,
+	syncManager,
+	objectType
+) {
+	const content = getRawAttributeValue(
+		entityConfig,
+		'content',
+		record?.content
+	);
+	if ( typeof content !== 'string' ) {
+		return;
+	}
+
+	const crdtRecord = syncManager?.getCRDTRecordData?.( objectType, recordId );
+	if ( ! Array.isArray( crdtRecord?.blocks ) ) {
+		return;
+	}
+
+	const crdtContent = getSerializedCRDTBlockContent( crdtRecord );
+	if ( ! areRawAttributeValuesEqual( 'content', content, crdtContent ) ) {
+		return;
+	}
+
+	parsedBlocksCache.set( getCacheKey( kind, name, recordId ), {
+		content,
+		blocks: deserializeBlockAttributes( crdtRecord.blocks ),
+	} );
 }
 
 function getGuardedSaveResponseRecords(
@@ -1340,6 +1377,18 @@ export const saveEntityRecord =
 							edits,
 							receiveRecord
 						);
+
+					if ( shouldHydrateFromSavedCRDTDocument ) {
+						primePersistedCRDTSaveResponseBlockCache(
+							entityConfig,
+							kind,
+							name,
+							recordId,
+							receiveRecord,
+							syncManager,
+							objectType
+						);
+					}
 
 					dispatch.receiveEntityRecords(
 						kind,

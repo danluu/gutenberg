@@ -74,7 +74,7 @@ if ( class_exists( 'WP_REST_Controller' ) ) {
 	require __DIR__ . '/compat/wordpress-7.1/class-wp-icon-collections-registry.php';
 	require __DIR__ . '/compat/wordpress-7.1/rest-api.php';
 	require __DIR__ . '/compat/wordpress-7.1/collaboration.php';
-	require __DIR__ . '/compat/wordpress-7.1/block-bindings.php';
+	require_once __DIR__ . '/compat/wordpress-7.1/block-bindings.php';
 	require __DIR__ . '/compat/wordpress-7.1/block-comments.php';
 
 	// Plugin specific code.
@@ -124,6 +124,7 @@ require __DIR__ . '/compat/wordpress-7.1/media.php';
 require __DIR__ . '/compat/wordpress-7.1/preload.php';
 require __DIR__ . '/compat/wordpress-7.1/classic-block.php';
 require __DIR__ . '/compat/wordpress-7.1/icons.php';
+require_once __DIR__ . '/compat/wordpress-7.1/block-bindings.php';
 
 // Experimental features.
 require __DIR__ . '/experimental/omnibar/load.php';
