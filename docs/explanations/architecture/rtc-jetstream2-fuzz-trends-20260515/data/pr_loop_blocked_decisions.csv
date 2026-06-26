@@ -1,25 +1,20 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration/manifest-consumed-claim,P0,no,current-push-manifest still lacks e8b64d56a18586be22e7922a9f6c144bd5b8d431,reload-hydration/manifest-consumed-claim,current-push-manifest still lacks e8b64d56a18586be22e7922a9f6c144bd5b8d431
-launch-branch-repair,benchmark-canary-product-failure,P0,no,do not launch product repair from stale rows while live status has zero qualifying product evidence,benchmark-canary-product-failure,"do not launch product repair from stale rows while live status has zero
-qualifying product evidence"
-launch-branch-repair,benchmark-canary/novelty-http-same-user-stale-draft,P0,no,stale per-group repair is superseded by live zero-product benchmark status,benchmark-canary/novelty-http-same-user-stale-draft,stale per-group repair is superseded by live zero-product benchmark status
-launch-branch-repair,benchmark-canary/novelty-http-table-stale-snapshot,P0,no,stale per-group repair is superseded by live zero-product benchmark status,benchmark-canary/novelty-http-table-stale-snapshot,stale per-group repair is superseded by live zero-product benchmark status
-launch-branch-repair,benchmark-canary/fuzzer-gap/exact-stack-or-browser-replay,high,no,"heavy replay waits for build-clean preflight, exact-stack blocker accounting, and preserved discovery reserve",benchmark-canary/fuzzer-gap/exact-stack-or-browser-replay,"heavy replay waits for build-clean preflight, exact-stack blocker accounting,
-and preserved discovery reserve"
-launch-branch-repair,lower-level/broad-productless-expansion,high,no,not PR progress and consumes reserve without fresh product-keyed yield,lower-level/broad-productless-expansion,not PR progress and consumes reserve without fresh product-keyed yield
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner-matrix evidence is consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner-matrix evidence is consumed; reopen only with newer concrete owner
+publish-ready,reload-hydration/manifest-consumed-claim,P0,no,current-push-manifest contains repaired PR07C only; reload head is not disposed,reload-hydration/manifest-consumed-claim,current-push-manifest contains repaired PR07C only; reload head is not disposed
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal/consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner matrix is terminal/consumed; reopen only with newer concrete owner
 evidence"
-publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,high,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T064927Z/benchmark-canary-coverage-status.tsv,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,"current benchmark-canary status has 10
-promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T064927Z/benchmark-canary-coverage-status.tsv"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean head,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean head
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by the repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by the repaired build-clean branch
+launch-branch-repair,benchmark-canary/fuzzer-gap/heavy-exact-stack-or-browser-replay,P0,no,wait for clean build/type preflight and preserved discovery reserve,benchmark-canary/fuzzer-gap/heavy-exact-stack-or-browser-replay,wait for clean build/type preflight and preserved discovery reserve
+launch-branch-repair,benchmark-canary-product-failure,P0,no,current live canary rows have zero retained/product evidence and no product-failure coverage_state,benchmark-canary-product-failure,"current live canary rows have zero retained/product evidence and no
+product-failure coverage_state"
+launch-branch-repair,lower-level/broad-productless-expansion,high,no,no fresh product-keyed yield; require classification/downscope before adding broad lower-level capacity,lower-level/broad-productless-expansion,"no fresh product-keyed yield; require classification/downscope before adding
+broad lower-level capacity"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
-publish-ready,final-rtc-stack,P0,no,blocked on reload-hydration manifest disposition plus benchmark-canary exact-stack/build closure,final-rtc-stack,"blocked on reload-hydration manifest disposition plus benchmark-canary
-exact-stack/build closure"
-publish-ready,maintainer-snapshot,P0,no,blocked until exact manifest accounting and benchmark-canary closure are current,maintainer-snapshot,blocked until exact manifest accounting and benchmark-canary closure are current
-hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T064927Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 10
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR14B-based variant
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by published PR14B-based variant
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by published PR14B-based variant
+publish-ready,final-rtc-stack,P0,no,blocked on reload-hydration manifest disposition and benchmark-canary exact-stack closure,final-rtc-stack,"blocked on reload-hydration manifest disposition and benchmark-canary
+exact-stack closure"
+publish-ready,maintainer-snapshot,P0,no,blocked until reload accounting and benchmark-canary closure are current,maintainer-snapshot,blocked until reload accounting and benchmark-canary closure are current
+hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T105229Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 10
 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T064927Z/benchmark-canary-coverage-status.tsv"
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T105229Z/benchmark-canary-coverage-status.tsv"
