@@ -1,26 +1,17 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,PR07C/final-publication-credit,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T144915Z/benchmark-canary-coverage-status.tsv,PR07C/final-publication-credit,"current benchmark-canary status has 10
-promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T144915Z/benchmark-canary-coverage-status.tsv"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head lacks repair commit and is superseded by repaired branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head lacks repair commit and is superseded by repaired branch
+launch-branch-repair,broad-final-stack-pr-jobs,P0,no,discovery reserve is thin and disk pressure is high; broad heavy PR jobs wait unless discovery remains healthy above reserve,broad-final-stack-pr-jobs,"discovery reserve is thin and disk pressure is high; broad heavy PR jobs wait
+unless discovery remains healthy above reserve"
+publish-ready,reload-hydration/older-same-head-manifests,P0,no,dispose duplicate same-head manifests through the latest exact valid manifest first,reload-hydration/older-same-head-manifests,"dispose duplicate same-head manifests through the latest exact valid manifest
+first"
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal and consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner matrix is terminal and consumed; reopen only with newer concrete owner
 evidence"
-launch-branch-repair,benchmark-canary/product-repair-fanout,P0,no,current live evidence has retained_product_evidence=no product_evidence_records=0 and no product-failure state,benchmark-canary/product-repair-fanout,"current live evidence has retained_product_evidence=no
-product_evidence_records=0 and no product-failure state"
-publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration manifest disposition and benchmark-canary forced-row closure are recorded,final-rtc-stack,"blocked until reload-hydration manifest disposition and benchmark-canary
-forced-row closure are recorded"
-publish-ready,maintainer-snapshot,P0,no,blocked until final stack includes reload accounting plus canary current-run green/downscope evidence,maintainer-snapshot,"blocked until final stack includes reload accounting plus canary current-run
-green/downscope evidence"
-launch-branch-repair,lower-level/table-query-array-crdt-raw-expansion,high,no,product_yield=0 and product_failure_key_rows=0; classify or downscope before more raw expansion,lower-level/table-query-array-crdt-raw-expansion,"product_yield=0 and product_failure_key_rows=0; classify or downscope before
-more raw expansion"
-launch-branch-repair,lower-level/post-crdt-save-dirty-broad,high,no,blocked until divergence repair/downscope lands or accounting emits a nonempty product key,lower-level/post-crdt-save-dirty-broad,"blocked until divergence repair/downscope lands or accounting emits a nonempty
-product key"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by published PR14B-based variant
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by published PR14B-based variant
-launch-branch-repair,broad-heavy-pr-browser-work,high,no,discovery reserve is thin and not protected; deny broad heavy PR/browser work unless a fresh reread shows reserve remains healthy and work is critical,broad-heavy-pr-browser-work,"discovery reserve is thin and not protected; deny broad heavy PR/browser work
-unless a fresh reread shows reserve remains healthy and work is critical"
-hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T144915Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 10
-promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T144915Z/benchmark-canary-coverage-status.tsv"
+launch-branch-repair,lower-level/post-crdt-save-dirty-broad,high,no,broad relaunch waits for repair/downscope or a fresh nonempty product key,lower-level/post-crdt-save-dirty-broad,broad relaunch waits for repair/downscope or a fresh nonempty product key
+publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration disposition plus benchmark-canary repair/downscope or exact-stack green evidence,final-rtc-stack,"blocked until reload-hydration disposition plus benchmark-canary
+repair/downscope or exact-stack green evidence"
+publish-ready,maintainer-snapshot,P0,no,blocked until final stack manifest accounting and benchmark-canary closure evidence exist,maintainer-snapshot,"blocked until final stack manifest accounting and benchmark-canary closure
+evidence exist"
