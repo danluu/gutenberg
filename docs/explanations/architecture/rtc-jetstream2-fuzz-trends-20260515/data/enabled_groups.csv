@@ -1475,3 +1475,4 @@ timestamp,group,group_family
 2026-06-26T05:39:41Z,novelty-ws-many-user-lifecycle-completion,lifecycle
 2026-06-26T05:50:50Z,novelty-ws-three-user-late-join,lifecycle
 2026-06-26T05:57:23Z,novelty-ws-real-user-save-reload,real-user
+2026-06-26T14:07:51Z,novelty-ws-real-user-rich-text,real-user

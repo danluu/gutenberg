@@ -1,20 +1,26 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,reload-hydration/manifest-consumed-claim,P0,no,current-push-manifest contains repaired PR07C only; reload head is not disposed,reload-hydration/manifest-consumed-claim,current-push-manifest contains repaired PR07C only; reload head is not disposed
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal/consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner matrix is terminal/consumed; reopen only with newer concrete owner
+publish-ready,PR07C/final-publication-credit,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T144915Z/benchmark-canary-coverage-status.tsv,PR07C/final-publication-credit,"current benchmark-canary status has 10
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T144915Z/benchmark-canary-coverage-status.tsv"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head lacks repair commit and is superseded by repaired branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head lacks repair commit and is superseded by repaired branch
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal and consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner matrix is terminal and consumed; reopen only with newer concrete owner
 evidence"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by the repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by the repaired build-clean branch
-launch-branch-repair,benchmark-canary/fuzzer-gap/heavy-exact-stack-or-browser-replay,P0,no,wait for clean build/type preflight and preserved discovery reserve,benchmark-canary/fuzzer-gap/heavy-exact-stack-or-browser-replay,wait for clean build/type preflight and preserved discovery reserve
-launch-branch-repair,benchmark-canary-product-failure,P0,no,current live canary rows have zero retained/product evidence and no product-failure coverage_state,benchmark-canary-product-failure,"current live canary rows have zero retained/product evidence and no
-product-failure coverage_state"
-launch-branch-repair,lower-level/broad-productless-expansion,high,no,no fresh product-keyed yield; require classification/downscope before adding broad lower-level capacity,lower-level/broad-productless-expansion,"no fresh product-keyed yield; require classification/downscope before adding
-broad lower-level capacity"
+launch-branch-repair,benchmark-canary/product-repair-fanout,P0,no,current live evidence has retained_product_evidence=no product_evidence_records=0 and no product-failure state,benchmark-canary/product-repair-fanout,"current live evidence has retained_product_evidence=no
+product_evidence_records=0 and no product-failure state"
+publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration manifest disposition and benchmark-canary forced-row closure are recorded,final-rtc-stack,"blocked until reload-hydration manifest disposition and benchmark-canary
+forced-row closure are recorded"
+publish-ready,maintainer-snapshot,P0,no,blocked until final stack includes reload accounting plus canary current-run green/downscope evidence,maintainer-snapshot,"blocked until final stack includes reload accounting plus canary current-run
+green/downscope evidence"
+launch-branch-repair,lower-level/table-query-array-crdt-raw-expansion,high,no,product_yield=0 and product_failure_key_rows=0; classify or downscope before more raw expansion,lower-level/table-query-array-crdt-raw-expansion,"product_yield=0 and product_failure_key_rows=0; classify or downscope before
+more raw expansion"
+launch-branch-repair,lower-level/post-crdt-save-dirty-broad,high,no,blocked until divergence repair/downscope lands or accounting emits a nonempty product key,lower-level/post-crdt-save-dirty-broad,"blocked until divergence repair/downscope lands or accounting emits a nonempty
+product key"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by published PR14B-based variant
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by published PR14B-based variant
-publish-ready,final-rtc-stack,P0,no,blocked on reload-hydration manifest disposition and benchmark-canary exact-stack closure,final-rtc-stack,"blocked on reload-hydration manifest disposition and benchmark-canary
-exact-stack closure"
-publish-ready,maintainer-snapshot,P0,no,blocked until reload accounting and benchmark-canary closure are current,maintainer-snapshot,blocked until reload accounting and benchmark-canary closure are current
-hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T105229Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 10
+launch-branch-repair,broad-heavy-pr-browser-work,high,no,discovery reserve is thin and not protected; deny broad heavy PR/browser work unless a fresh reread shows reserve remains healthy and work is critical,broad-heavy-pr-browser-work,"discovery reserve is thin and not protected; deny broad heavy PR/browser work
+unless a fresh reread shows reserve remains healthy and work is critical"
+hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T144915Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 10
 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T105229Z/benchmark-canary-coverage-status.tsv"
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260626T144915Z/benchmark-canary-coverage-status.tsv"
