@@ -1,38 +1,46 @@
 action,target,priority,allowed,reason
 reserve-discovery,coverage-guided+focused+strict+protocol+lower-level+browser+existing-code+existing-pr,P0,yes,"active_discovery=4 meets min=3; discovery_protected=no, resource_reason=disk_high_pressure; discovery reserve healthy; preserve reserve while allowing cheap PR progress"
-publish-ready,deferred/rtc-reload-hydration-20260626T135824Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,yes,next product-progress slot; exact held manifest is valid and absent from current-push-manifest.tsv
-publish-ready,deferred/reload-hydration,P0,yes,"family alias for exact reload-hydration manifest adoption, publication, exact-stack replay disposition, evidence-backed reject, or downscope"
-cooldown-diagnostic,reload-hydration/duplicate-same-head-replay-and-generic-reanalysis,P0,yes,manifest disposition is the blocker; duplicate e8b64d56 replay and generic analysis do not move branch state
-include-candidate,PR07C,P0,yes,current promotion policy keeps PR07C as net-risk-reducing despite consumed owner evidence
-include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,required exact repaired PR07C head for same-head proof accounting
-repair-ready,PR07C/repaired-head-exact-validation,P0,yes,"validate and account for the repaired build-clean PR07C head, not the stale direct ready head"
+update-controller-rule,discovery-reserve/heavy-pr-gate,P0,yes,cheap publication manifest generation and analysis may proceed; broad heavy PR jobs wait during disk pressure or unhealthy discovery reserve
+launch-branch-repair,broad-final-stack-pr-fanout,P0,no,disk_high_pressure and thin discovery headroom make broad heavy PR fanout inappropriate
+publish-ready,deferred/rtc-reload-hydration-20260627T021707Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,yes,latest valid held reload-hydration manifest is build-clean and absent from current-push-manifest.tsv
+publish-ready,deferred/rtc-reload-hydration-20260626T135824Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,yes,same-head older feed target; satisfy by adopting or publishing e8b64d56a18586be22e7922a9f6c144bd5b8d431 or writing explicit reject/downscope
+publish-ready,reload-hydration,P0,yes,family alias for exact manifest disposition; adopt/publish exact head or write evidence-backed rejection/downscope
+cooldown-diagnostic,reload-hydration/duplicate-same-head-replay-and-generic-reanalysis,P0,yes,duplicate replay and generic analysis cannot move state before exact manifest disposition
+launch-owner-matrix,reload-hydration,high,no,manifest disposition is the blocker; owner probing would delay product movement
+update-controller-rule,reload-hydration/manifest-before-replay,P0,yes,"require manifest adoption, publication, rejection, exact-stack disposition, green stack adoption, owner evidence, or downscope before duplicate replay"
+repair-branch,benchmark-canary-product-failure,P0,yes,retained benchmark-canary product evidence blocks promotion; keep one aggregate repair owner
+repair-branch,repair/benchmark-canary-fuzzer-gap-pr25-build-types-20260626T143155Z@1edc1fbd321a95c4626523bd56534c21b5db4f33,P0,yes,active exact-stack repair owner; advance it or a direct successor
+repair-branch,benchmark-canary/novelty-http-title-reload-convergence,P0,yes,"largest retained product-evidence row; first bounded repair, reduction, active-blocker adoption, or downscope slice"
+repair-branch,benchmark-canary/novelty-http-large-post-lifecycle,high,yes,second dominant retained product-evidence row after title-reload disposition
+repair-ready,benchmark-canary/retained-tail-rows,high,yes,"parser serialization, multi-reload lifecycle, same-user stale draft, and table stale snapshot stay under aggregate repair/downscope accounting"
+publish-ready,benchmark-canary/fuzzer-gap-exact-stack-closure,P0,no,retained product evidence still blocks exact-stack promotion and maintainer snapshot publication
+cooldown-diagnostic,benchmark-canary/current-run-green-or-generic-coverage-retarget,P0,yes,"current_run_green, coverage_ready, lower-level substitution, and generic retarget do not clear retained product evidence"
+launch-branch-repair,benchmark-canary/duplicate-repair-owner,P0,no,active aggregate repair owner already exists; duplicate owner or per-group fanout is churn
+update-controller-rule,benchmark-canary/product-evidence-over-current-run-green,P0,yes,"retained product evidence clears only by repair proof, same-head replay, active blocker adoption, classification, or evidence-backed downscope"
+update-controller-rule,benchmark-canary/single-active-repair-owner,P0,yes,route duplicate benchmark rows to the active aggregate owner instead of launching parallel repairs
+include-candidate,PR07C,P0,yes,current promotion policy says repaired PR07C is net-risk-reducing and should remain in the candidate stack
+include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,exact repaired build-clean PR07C head required for same-head proof accounting
+repair-ready,PR07C/repaired-head-exact-validation,P0,yes,"validate or repair against the repaired build-clean PR07C head, not the stale direct branch"
+publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,already published/materialized; keep included and validate rather than republish
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal-consumed; reopen only with newer concrete owner evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by the repaired build-clean candidate
-repair-branch,benchmark-canary-product-failure,P0,yes,continue one bounded aggregate repair for retained benchmark-canary product-evidence rows
-repair-branch,repair/benchmark-canary-fuzzer-gap-pr25-build-types-20260626T143155Z@1edc1fbd321a95c4626523bd56534c21b5db4f33,P0,yes,"active repair branch; fix or evidence-downscope the core-data crdt.ts blocker, then rerun same-head exact-stack canary rows"
-repair-branch,benchmark-canary/novelty-http-title-reload-convergence,P0,yes,first repair slice; active scheduled live-forced row with the largest retained product-evidence count
-repair-branch,benchmark-canary/novelty-http-large-post-lifecycle,P0,yes,second repair slice after title-reload if aggregate blocker remains
-repair-ready,benchmark-canary/fuzzer-gap-exact-stack-closure,P0,yes,"clear only with repair proof, same-head exact-stack green replay, active blocker adoption, or evidence-backed downscope"
-cooldown-diagnostic,benchmark-canary/current-run-green-or-generic-coverage-retarget,P0,yes,current_run_green and coverage_ready do not clear retained product evidence or exact-stack promotion blocking
-repair-ready,pr17-1020002/proof-reclassify,high,yes,analysis-only proof can remove a final-stack blocker without consuming discovery reserve
-repair-ready,lower-level/table-query-array-crdt-yield-accounting,high,yes,"disposition RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE as repaired, active-blocker-adopted, or explicitly downscoped"
-launch-branch-repair,lower-level/table-query-array-crdt,high,yes,allow one bounded repair or downscope accounting path for the canonical product key
-cooldown-diagnostic,lower-level/table-query-array-crdt-raw-expansion,high,yes,audit shows one canonical product key followed by repeated known and zero-new-feature repros
-launch-branch-repair,lower-level/productless-broad-relaunch,high,no,productless broad relaunch spends discovery reserve without moving a product PR
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by the already-published PR06B minimal branch
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by the already-published PR14B-based variant
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by the already-published PR14B-based variant
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by the already-published PR14B-based variant
-cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,already explicitly downscoped; reopen only with repeatable core search first-loss evidence
-cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,already explicitly downscoped; reopen only with deterministic suffix content first-loss evidence
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch
+publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration disposition and benchmark-canary retained evidence clear
+publish-ready,maintainer-snapshot,P0,no,blocked until final-stack accounting and same-head exact-stack canary evidence clear
+repair-ready,pr17-1020002/proof-reclassify,high,yes,analysis-only proof can remove a final-stack join blocker without consuming discovery reserve
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant
+repair-ready,lower-level/canonical-crdt-yield-accounting,high,yes,disposition RTC_TABLE_QUERY_ARRAY_CRDT_DIVERGENCE and RTC_POST_CRDT_SAVE_DIRTY_DIVERGENCE before raw expansion
+launch-branch-repair,lower-level/table-query-array-crdt,high,yes,"allow one bounded repair, active-blocker adoption, or explicit downscope path"
+launch-branch-repair,lower-level/post-crdt-save-dirty,high,yes,"allow one bounded repair, active-blocker adoption, or explicit downscope path"
+reserve-discovery,lower-level/self-presence-rendered-overlay-oracle,high,yes,"allow at most one bounded bridge that emits a canonical product key, active-blocker key, or downscope record"
+cooldown-diagnostic,lower-level/table-query-array-crdt-raw-expansion,high,yes,productless raw expansion waits for canonical-key disposition
+cooldown-diagnostic,lower-level/post-crdt-save-dirty-raw-expansion,high,yes,productless raw expansion waits for canonical-key disposition
+launch-branch-repair,lower-level/productless-broad-relaunch,high,no,broad productless relaunch spends discovery reserve without moving a product PR
+update-controller-rule,lower-level/product-key-before-raw-expansion,high,yes,"raw lower-level expansion waits for canonical product-key repair, active-blocker adoption, or downscope"
+cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,already downscoped; reopen only with repeatable core/search first-loss evidence
+cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,already downscoped; reopen only with deterministic suffix/content first-loss evidence
 cooldown-diagnostic,malformed-save-payload,medium,yes,covered by canonical published PR06B minimal branch
 cooldown-diagnostic,http-room-isolation,medium,yes,covered by published PR02A absent fresh healthy-user room-isolation evidence
-publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration disposition and benchmark-canary exact-stack repair or downscope evidence exist
-publish-ready,maintainer-snapshot,P0,no,blocked until final-stack manifest accounting and benchmark-canary closure evidence exist
-launch-branch-repair,broad-final-stack-pr-fanout,P0,no,heavy PR fanout waits under disk_high_pressure and thin discovery reserve
-update-controller-rule,productive-analysis/feed-dedup-explicit-disposition,P0,yes,dedupe repeated P0 and high Productive Analysis rows only after explicit TSV allow or reject by distinct target
-update-controller-rule,productive-analysis/local-publisher-normalization,P0,yes,treat local-publisher manifest-adoption and manifest-disposition rows as publish-ready PR-progress work
-update-controller-rule,reload-hydration/manifest-before-replay,P0,yes,"require exact manifest adoption, rejection, replay disposition, or downscope before duplicate same-head replay"
-update-controller-rule,benchmark-canary/product-evidence-over-current-run-green,P0,yes,"retained product evidence clears only through repair proof, exact-stack replay, active blocker adoption, or evidence-backed downscope"
-update-controller-rule,lower-level/product-key-before-raw-expansion,high,yes,"raw lower-level expansion waits for product-key repair, blocker adoption, or downscope accounting"
-update-controller-rule,discovery-reserve/heavy-pr-gate,P0,yes,cheap publication and analysis-only work may proceed; broad heavy PR jobs wait during disk pressure or unhealthy discovery reserve
+update-controller-rule,productive-analysis/feed-dedup-explicit-disposition,P0,yes,dedupe repeated feed rows only after each distinct high-priority target has explicit TSV disposition

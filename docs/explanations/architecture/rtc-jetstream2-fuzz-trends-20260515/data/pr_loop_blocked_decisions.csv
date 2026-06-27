@@ -1,14 +1,21 @@
 action,target,priority,allowed,reason,target_label,reason_label
+launch-branch-repair,broad-final-stack-pr-fanout,P0,no,disk_high_pressure and thin discovery headroom make broad heavy PR fanout inappropriate,broad-final-stack-pr-fanout,"disk_high_pressure and thin discovery headroom make broad heavy PR fanout
+inappropriate"
+launch-owner-matrix,reload-hydration,high,no,manifest disposition is the blocker; owner probing would delay product movement,reload-hydration,manifest disposition is the blocker; owner probing would delay product movement
+publish-ready,benchmark-canary/fuzzer-gap-exact-stack-closure,P0,no,retained product evidence still blocks exact-stack promotion and maintainer snapshot publication,benchmark-canary/fuzzer-gap-exact-stack-closure,"retained product evidence still blocks exact-stack promotion and maintainer
+snapshot publication"
+launch-branch-repair,benchmark-canary/duplicate-repair-owner,P0,no,active aggregate repair owner already exists; duplicate owner or per-group fanout is churn,benchmark-canary/duplicate-repair-owner,"active aggregate repair owner already exists; duplicate owner or per-group
+fanout is churn"
+publish-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,no,already published/materialized; keep included and validate rather than republish,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,already published/materialized; keep included and validate rather than republish
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal-consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner matrix is terminal-consumed; reopen only with newer concrete owner
 evidence"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by the repaired build-clean candidate,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by the repaired build-clean candidate
-launch-branch-repair,lower-level/productless-broad-relaunch,high,no,productless broad relaunch spends discovery reserve without moving a product PR,lower-level/productless-broad-relaunch,productless broad relaunch spends discovery reserve without moving a product PR
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by the already-published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by the already-published PR06B minimal branch
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by the already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by the already-published PR14B-based variant
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by the already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by the already-published PR14B-based variant
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by the already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by the already-published PR14B-based variant
-publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration disposition and benchmark-canary exact-stack repair or downscope evidence exist,final-rtc-stack,"blocked until reload-hydration disposition and benchmark-canary exact-stack
-repair or downscope evidence exist"
-publish-ready,maintainer-snapshot,P0,no,blocked until final-stack manifest accounting and benchmark-canary closure evidence exist,maintainer-snapshot,"blocked until final-stack manifest accounting and benchmark-canary closure
-evidence exist"
-launch-branch-repair,broad-final-stack-pr-fanout,P0,no,heavy PR fanout waits under disk_high_pressure and thin discovery reserve,broad-final-stack-pr-fanout,heavy PR fanout waits under disk_high_pressure and thin discovery reserve
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
+publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration disposition and benchmark-canary retained evidence clear,final-rtc-stack,"blocked until reload-hydration disposition and benchmark-canary retained
+evidence clear"
+publish-ready,maintainer-snapshot,P0,no,blocked until final-stack accounting and same-head exact-stack canary evidence clear,maintainer-snapshot,"blocked until final-stack accounting and same-head exact-stack canary evidence
+clear"
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
+launch-branch-repair,lower-level/productless-broad-relaunch,high,no,broad productless relaunch spends discovery reserve without moving a product PR,lower-level/productless-broad-relaunch,broad productless relaunch spends discovery reserve without moving a product PR
