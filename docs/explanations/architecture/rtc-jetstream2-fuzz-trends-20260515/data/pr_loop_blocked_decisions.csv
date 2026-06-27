@@ -1,23 +1,21 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal-consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner matrix is terminal-consumed; reopen only with newer concrete owner
+launch-branch-repair,heavy-pr-job/discovery-unhealthy,P0,no,heavy PR jobs are blocked when discovery is at min reserve or disk pressure worsens unless they are cheap manifest/accounting or analysis-only,heavy-pr-job/discovery-unhealthy,"heavy PR jobs are blocked when discovery is at min reserve or disk pressure
+worsens unless they are cheap manifest/accounting or analysis-only"
+launch-owner-matrix,reload-hydration,high,no,owner probing before exact-head manifest disposition is duplicate diagnostic churn,reload-hydration,"owner probing before exact-head manifest disposition is duplicate diagnostic
+churn"
+launch-branch-repair,reload-hydration/generic-deferred-relaunch,high,no,valid single-flight exact-head manifest exists; disposition it first,reload-hydration/generic-deferred-relaunch,valid single-flight exact-head manifest exists; disposition it first
+publish-ready,benchmark-canary/exact-stack-promotion,P0,no,retained product evidence remains; require repair/downscope plus same-head exact-stack green proof,benchmark-canary/exact-stack-promotion,"retained product evidence remains; require repair/downscope plus same-head
+exact-stack green proof"
+publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration is dispositioned and benchmark-canary retained evidence is repaired or downscoped,final-rtc-stack,"blocked until reload-hydration is dispositioned and benchmark-canary retained
+evidence is repaired or downscoped"
+publish-ready,maintainer-snapshot,P0,no,blocked until final stack has same-head green proof or explicit downscope,maintainer-snapshot,blocked until final stack has same-head green proof or explicit downscope
+launch-branch-repair,benchmark-canary/per-row-owner-fanout,P0,no,disk pressure and thin discovery reserve require one aggregate owner instead of per-row fanout,benchmark-canary/per-row-owner-fanout,"disk pressure and thin discovery reserve require one aggregate owner instead of
+per-row fanout"
+launch-branch-repair,lower-level/productless-broad-relaunch,high,no,broad lower-level relaunch spends reserve without product PR progress,lower-level/productless-broad-relaunch,broad lower-level relaunch spends reserve without product PR progress
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held-consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner matrix is runtime-held-consumed; reopen only with newer concrete owner
 evidence"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by the repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by the repaired build-clean branch
-launch-owner-matrix,reload-hydration,high,no,owner probing before exact-head manifest disposition does not change branch or blocker state,reload-hydration,"owner probing before exact-head manifest disposition does not change branch or
-blocker state"
-launch-branch-repair,reload-hydration/generic-deferred-launch,high,no,valid manifest hold exists; generic relaunch is diagnostic churn,reload-hydration/generic-deferred-launch,valid manifest hold exists; generic relaunch is diagnostic churn
-launch-branch-repair,benchmark-canary/duplicate-repair-owner,P0,no,active aggregate benchmark-canary repair owner exists; duplicate owners and per-row fanout are churn,benchmark-canary/duplicate-repair-owner,"active aggregate benchmark-canary repair owner exists; duplicate owners and
-per-row fanout are churn"
-publish-ready,benchmark-canary/fuzzer-gap-exact-stack-closure,P0,no,retained product evidence and same-head exact-stack proof still block promotion,benchmark-canary/fuzzer-gap-exact-stack-closure,retained product evidence and same-head exact-stack proof still block promotion
-launch-branch-repair,lower-level/productless-broad-relaunch,high,no,broad lower-level relaunch spends discovery reserve without moving a product PR,lower-level/productless-broad-relaunch,broad lower-level relaunch spends discovery reserve without moving a product PR
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
-launch-branch-repair,discovery-unhealthy/heavy-pr-job,P0,no,heavy PR jobs wait if discovery drops to reserve or disk pressure worsens; cheap manifest and analysis-only work are exempt,discovery-unhealthy/heavy-pr-job,"heavy PR jobs wait if discovery drops to reserve or disk pressure worsens; cheap
-manifest and analysis-only work are exempt"
-launch-branch-repair,broad-final-stack-pr-fanout,P0,no,disk_high_pressure and thin unprotected discovery reserve make broad heavy fanout inappropriate,broad-final-stack-pr-fanout,"disk_high_pressure and thin unprotected discovery reserve make broad heavy
-fanout inappropriate"
-publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration disposition benchmark-canary repair evidence PR07C exact validation and same-head canary proof clear,final-rtc-stack,"blocked until reload-hydration disposition benchmark-canary repair evidence
-PR07C exact validation and same-head canary proof clear"
-publish-ready,maintainer-snapshot,P0,no,blocked until final-stack accounting and exact same-head benchmark-canary evidence are green,maintainer-snapshot,"blocked until final-stack accounting and exact same-head benchmark-canary
-evidence are green"

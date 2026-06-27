@@ -1,8 +1,8 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
 real-world-editor-usability,4554,686,0,0.15063680281071584,other
 plain-editor-product-smoke,4057,3972,0,0.9790485580478185,other
-large-post-three-user-http-lifecycle,3914,784,0,0.2003065917220235,lifecycle
-session-lifecycle,2942,1156,0,0.3929299796057104,lifecycle
+large-post-three-user-http-lifecycle,3979,817,0,0.20532797185222418,lifecycle
+session-lifecycle,3098,1247,0,0.4025177533892834,lifecycle
 persistence-no-title,1581,938,0,0.5932953826691967,persistence
 collaboration-ui-signals,1129,441,0,0.3906111603188663,other
 parser-serialization,1081,1025,0,0.9481961147086031,parser
