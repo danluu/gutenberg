@@ -1,22 +1,20 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,reload-hydration,P0,no,rejected until exact-head publication rejection downscope green-stack adoption or fresh owner evidence lands,reload-hydration,"rejected until exact-head publication rejection downscope green-stack adoption
-or fresh owner evidence lands"
-launch-branch-repair,reload-hydration/generic-deferred-relaunch,P0,no,valid single-flight manifest already exists; generic relaunch is duplicate churn,reload-hydration/generic-deferred-relaunch,valid single-flight manifest already exists; generic relaunch is duplicate churn
+launch-owner-matrix,reload-hydration,P0,no,exact-head manifest disposition must land before more owner probing,reload-hydration,exact-head manifest disposition must land before more owner probing
+launch-branch-repair,reload-hydration/generic-deferred-relaunch,P0,no,duplicate same-head work while valid reload-hydration manifest remains undisposed,reload-hydration/generic-deferred-relaunch,"duplicate same-head work while valid reload-hydration manifest remains
+undisposed"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,runtime-held consumed; reopen only with newer concrete owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held owner evidence already consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"runtime-held owner evidence already consumed; reopen only with newer concrete
-owner evidence"
-launch-branch-repair,benchmark-canary/per-row-owner-fanout,P0,no,disk pressure and active aggregate owner make per-row fanout duplicate heavy work,benchmark-canary/per-row-owner-fanout,"disk pressure and active aggregate owner make per-row fanout duplicate heavy
+launch-branch-repair,benchmark-canary/per-row-owner-fanout,P0,no,disk pressure plus active aggregate owner makes heavy per-row fanout duplicate work,benchmark-canary/per-row-owner-fanout,"disk pressure plus active aggregate owner makes heavy per-row fanout duplicate
 work"
-publish-ready,benchmark-canary/exact-stack-promotion,P0,no,blocked until retained product evidence is repaired classified adopted or downscoped with same-head proof,benchmark-canary/exact-stack-promotion,"blocked until retained product evidence is repaired classified adopted or
-downscoped with same-head proof"
-launch-branch-repair,lower-level/productless-broad-relaunch,high,no,broad relaunch spends disk without product/blocker accounting or downscope,lower-level/productless-broad-relaunch,broad relaunch spends disk without product/blocker accounting or downscope
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
-publish-ready,final-rtc-stack,P0,no,blocked by reload-hydration exact-head disposition and benchmark-canary retained-evidence closure,final-rtc-stack,"blocked by reload-hydration exact-head disposition and benchmark-canary
-retained-evidence closure"
-publish-ready,maintainer-snapshot,P0,no,blocked until final stack has same-head green proof or explicit downscope evidence,maintainer-snapshot,"blocked until final stack has same-head green proof or explicit downscope
-evidence"
-launch-branch-repair,heavy-pr-fanout-under-disk-pressure,P0,no,allow cheap publication/accounting analysis-only work and one aggregate repair owner; hold broad heavy PR jobs,heavy-pr-fanout-under-disk-pressure,"allow cheap publication/accounting analysis-only work and one aggregate repair
-owner; hold broad heavy PR jobs"
+publish-ready,benchmark-canary/exact-stack-promotion,P0,no,blocked until retained product evidence is disposed and same-head exact-stack proof is green,benchmark-canary/exact-stack-promotion,"blocked until retained product evidence is disposed and same-head exact-stack
+proof is green"
+publish-ready,final-rtc-stack,P0,no,blocked by reload-hydration disposition benchmark-canary retained evidence build preflight and same-head exact proof,final-rtc-stack,"blocked by reload-hydration disposition benchmark-canary retained evidence build
+preflight and same-head exact proof"
+publish-ready,maintainer-snapshot,P0,no,blocked until final stack has build/type preflight and same-head benchmark proof or explicit downscopes,maintainer-snapshot,"blocked until final stack has build/type preflight and same-head benchmark proof
+or explicit downscopes"
+launch-branch-repair,lower-level/productless-broad-relaunch,high,no,reject until product-key bridge active-blocker adoption repair branch or explicit downscope exists,lower-level/productless-broad-relaunch,"reject until product-key bridge active-blocker adoption repair branch or
+explicit downscope exists"
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by published canonical PR06B minimal branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR14B-based variant
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by published PR14B-based variant
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by published PR14B-based variant
