@@ -1,21 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,heavy-pr-job/discovery-unhealthy,P0,no,heavy PR jobs are blocked when discovery is at min reserve or disk pressure worsens unless they are cheap manifest/accounting or analysis-only,heavy-pr-job/discovery-unhealthy,"heavy PR jobs are blocked when discovery is at min reserve or disk pressure
-worsens unless they are cheap manifest/accounting or analysis-only"
-launch-owner-matrix,reload-hydration,high,no,owner probing before exact-head manifest disposition is duplicate diagnostic churn,reload-hydration,"owner probing before exact-head manifest disposition is duplicate diagnostic
-churn"
-launch-branch-repair,reload-hydration/generic-deferred-relaunch,high,no,valid single-flight exact-head manifest exists; disposition it first,reload-hydration/generic-deferred-relaunch,valid single-flight exact-head manifest exists; disposition it first
-publish-ready,benchmark-canary/exact-stack-promotion,P0,no,retained product evidence remains; require repair/downscope plus same-head exact-stack green proof,benchmark-canary/exact-stack-promotion,"retained product evidence remains; require repair/downscope plus same-head
-exact-stack green proof"
-publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration is dispositioned and benchmark-canary retained evidence is repaired or downscoped,final-rtc-stack,"blocked until reload-hydration is dispositioned and benchmark-canary retained
-evidence is repaired or downscoped"
-publish-ready,maintainer-snapshot,P0,no,blocked until final stack has same-head green proof or explicit downscope,maintainer-snapshot,blocked until final stack has same-head green proof or explicit downscope
-launch-branch-repair,benchmark-canary/per-row-owner-fanout,P0,no,disk pressure and thin discovery reserve require one aggregate owner instead of per-row fanout,benchmark-canary/per-row-owner-fanout,"disk pressure and thin discovery reserve require one aggregate owner instead of
-per-row fanout"
-launch-branch-repair,lower-level/productless-broad-relaunch,high,no,broad lower-level relaunch spends reserve without product PR progress,lower-level/productless-broad-relaunch,broad lower-level relaunch spends reserve without product PR progress
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held-consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"owner matrix is runtime-held-consumed; reopen only with newer concrete owner
-evidence"
+launch-owner-matrix,reload-hydration,P0,no,rejected until exact-head publication rejection downscope green-stack adoption or fresh owner evidence lands,reload-hydration,"rejected until exact-head publication rejection downscope green-stack adoption
+or fresh owner evidence lands"
+launch-branch-repair,reload-hydration/generic-deferred-relaunch,P0,no,valid single-flight manifest already exists; generic relaunch is duplicate churn,reload-hydration/generic-deferred-relaunch,valid single-flight manifest already exists; generic relaunch is duplicate churn
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published PR06B minimal branch
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held owner evidence already consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"runtime-held owner evidence already consumed; reopen only with newer concrete
+owner evidence"
+launch-branch-repair,benchmark-canary/per-row-owner-fanout,P0,no,disk pressure and active aggregate owner make per-row fanout duplicate heavy work,benchmark-canary/per-row-owner-fanout,"disk pressure and active aggregate owner make per-row fanout duplicate heavy
+work"
+publish-ready,benchmark-canary/exact-stack-promotion,P0,no,blocked until retained product evidence is repaired classified adopted or downscoped with same-head proof,benchmark-canary/exact-stack-promotion,"blocked until retained product evidence is repaired classified adopted or
+downscoped with same-head proof"
+launch-branch-repair,lower-level/productless-broad-relaunch,high,no,broad relaunch spends disk without product/blocker accounting or downscope,lower-level/productless-broad-relaunch,broad relaunch spends disk without product/blocker accounting or downscope
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
+publish-ready,final-rtc-stack,P0,no,blocked by reload-hydration exact-head disposition and benchmark-canary retained-evidence closure,final-rtc-stack,"blocked by reload-hydration exact-head disposition and benchmark-canary
+retained-evidence closure"
+publish-ready,maintainer-snapshot,P0,no,blocked until final stack has same-head green proof or explicit downscope evidence,maintainer-snapshot,"blocked until final stack has same-head green proof or explicit downscope
+evidence"
+launch-branch-repair,heavy-pr-fanout-under-disk-pressure,P0,no,allow cheap publication/accounting analysis-only work and one aggregate repair owner; hold broad heavy PR jobs,heavy-pr-fanout-under-disk-pressure,"allow cheap publication/accounting analysis-only work and one aggregate repair
+owner; hold broad heavy PR jobs"
