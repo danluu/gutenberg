@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-06-27T19:06:34Z`
+Snapshot generated: `2026-06-27T23:07:38Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The refreshed CSVs and plots are committed
@@ -15,11 +15,11 @@ index snapshots. CPU and load-average CSVs are populated from sysstat when avail
 ## High-Level Readout
 
 The graph-refresh pipeline is current through the last completed monitor pass
-at `2026-06-27T19:04:41Z`. There are `1,323` monitor
+at `2026-06-27T23:04:06Z`. There are `1,384` monitor
 passes from `2026-06-23T12:08:03Z` onward. Cumulative coverage record
 observations rose from `515` to
-`21,763`, current-scan coverage files rose from
-`890` to `504`, and
+`22,002`, current-scan coverage files rose from
+`890` to `744`, and
 unmet goals are `36` of `138`.
 
 Live health needs a bounded read. The latest plotted current-output duplicate
@@ -27,30 +27,30 @@ share is `0`, while historical duplicate
 share is `0`. Current summary startup
 failures are `0`, quality issues are
 `0`, and free memory is
-`210.7GiB`. Because this snapshot has no
+`210.2GiB`. Because this snapshot has no
 `current_run_accounting.csv`, treat the current duplicate/noise value as a
 current-output signal that needs direct current-run triage, not as broad proof
 of product duplicate failures.
 
-The latest CPU/load telemetry sample has CPU utilization `20.5`, load1/load5/load15 `9.27`/`10.53`/`10.67`, and `64` logical cores.
+The latest CPU/load telemetry sample has CPU utilization `17.1`, load1/load5/load15 `12.58`/`11.44`/`10.99`, and `64` logical cores.
 
-The latest disk sample is `2026-06-27T19:05:50Z`: root has `80.2GiB` free and is `43.5%` used; the data volume has `58.0GiB` free and is `98.4%` used.
+The latest disk sample is `2026-06-27T23:06:55Z`: root has `79.7GiB` free and is `43.8%` used; the data volume has `55.4GiB` free and is `98.4%` used.
 
 The latest graph-counted fuzzing mix is: `browser-e2e=2 lanes/2 groups; protocol-server=1 lanes/1 groups`.
 Browser/e2e remains the dominant live surface, with bounded lower-level and
 protocol-server coverage still active.
 
 Approximate execution counts now total
-`12,465,127` individual test or case executions.
+`12,576,025` individual test or case executions.
 The latest cumulative/rate summary is:
-`browser-e2e=193 cumulative/32 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=12464934 cumulative/11232 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
+`browser-e2e=435 cumulative/32 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=12575590 cumulative/13520 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
 because they are reconstructed from batch metadata or legacy batch-count fields.
 
 Bug and candidate output graphing is current. The latest summary has
 `3` triaged bug-finding rows,
 `3` unique likely-real findings,
-`28` bug-output rows, and
-`28` unique output candidates.
+`41` bug-output rows, and
+`41` unique output candidates.
 
 PR-controller graph inputs are present. The controller snapshot has
 `23` items:

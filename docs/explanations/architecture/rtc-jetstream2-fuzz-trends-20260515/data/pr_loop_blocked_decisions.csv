@@ -1,19 +1,20 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,reload-hydration,P0,no,exact-head manifest disposition must land before more owner probing,reload-hydration,exact-head manifest disposition must land before more owner probing
-launch-branch-repair,reload-hydration/generic-deferred-relaunch,P0,no,duplicate same-head work while valid reload-hydration manifest remains undisposed,reload-hydration/generic-deferred-relaunch,"duplicate same-head work while valid reload-hydration manifest remains
-undisposed"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,runtime-held consumed; reopen only with newer concrete owner evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
+launch-branch-repair,heavy-pr-jobs/discovery-below-floor,P0,no,"if active discovery drops below 3, heavy PR jobs wait while cheap publication manifests and analysis-only work may continue",heavy-pr-jobs/discovery-below-floor,"if active discovery drops below 3, heavy PR jobs wait while cheap publication
+manifests and analysis-only work may continue"
+publish-ready,deferred/rtc-reload-hydration-20260626T135824Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,high,no,older same-head manifest; route through newer 20260627 exact-head disposition,deferred/rtc-reload-hydration-20260626T135824Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,older same-head manifest; route through newer 20260627 exact-head disposition
+launch-owner-matrix,reload-hydration,P0,no,"dispose exact manifest first by publish/adopt, exact-stack replay, fresh owner evidence, green-stack adoption, or explicit downscope",reload-hydration,"dispose exact manifest first by publish/adopt, exact-stack replay, fresh owner
+evidence, green-stack adoption, or explicit downscope"
+launch-branch-repair,reload-hydration/generic-deferred-relaunch,P0,no,valid same-head manifest already exists and disk pressure is active,reload-hydration/generic-deferred-relaunch,valid same-head manifest already exists and disk pressure is active
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held owner matrix is consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"runtime-held owner matrix is consumed; reopen only with newer concrete owner
+evidence"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean candidate,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean candidate
 launch-branch-repair,benchmark-canary/per-row-owner-fanout,P0,no,disk pressure plus active aggregate owner makes heavy per-row fanout duplicate work,benchmark-canary/per-row-owner-fanout,"disk pressure plus active aggregate owner makes heavy per-row fanout duplicate
 work"
-publish-ready,benchmark-canary/exact-stack-promotion,P0,no,blocked until retained product evidence is disposed and same-head exact-stack proof is green,benchmark-canary/exact-stack-promotion,"blocked until retained product evidence is disposed and same-head exact-stack
-proof is green"
-publish-ready,final-rtc-stack,P0,no,blocked by reload-hydration disposition benchmark-canary retained evidence build preflight and same-head exact proof,final-rtc-stack,"blocked by reload-hydration disposition benchmark-canary retained evidence build
-preflight and same-head exact proof"
-publish-ready,maintainer-snapshot,P0,no,blocked until final stack has build/type preflight and same-head benchmark proof or explicit downscopes,maintainer-snapshot,"blocked until final stack has build/type preflight and same-head benchmark proof
-or explicit downscopes"
-launch-branch-repair,lower-level/productless-broad-relaunch,high,no,reject until product-key bridge active-blocker adoption repair branch or explicit downscope exists,lower-level/productless-broad-relaunch,"reject until product-key bridge active-blocker adoption repair branch or
-explicit downscope exists"
+publish-ready,benchmark-canary/exact-stack-promotion,P0,no,blocked until retained product evidence is disposed and same-head exact-stack green proof exists,benchmark-canary/exact-stack-promotion,"blocked until retained product evidence is disposed and same-head exact-stack
+green proof exists"
+publish-ready,final-rtc-stack,P0,no,blocked by benchmark-canary retained evidence and exact-stack proof gate,final-rtc-stack,blocked by benchmark-canary retained evidence and exact-stack proof gate
+publish-ready,maintainer-snapshot,P0,no,blocked until final stack has build/type preflight plus same-head benchmark proof or evidence-backed downscopes,maintainer-snapshot,"blocked until final stack has build/type preflight plus same-head benchmark
+proof or evidence-backed downscopes"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by published canonical PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by published PR14B-based variant

@@ -7,8 +7,8 @@ PR progress items,superseded,ready-product-pr,low,1
 PR progress items,superseded-by-repair,ready-product-pr,low,1
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
 controller decisions,allowed,control decision,P0,19
-controller decisions,blocked,control decision,P0,6
-controller decisions,allowed,control decision,high,9
+controller decisions,blocked,control decision,P0,7
+controller decisions,allowed,control decision,high,8
 controller decisions,blocked,control decision,high,5
 controller decisions,blocked,control decision,low,2
 controller decisions,allowed,control decision,medium,4
