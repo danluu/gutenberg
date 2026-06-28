@@ -1,17 +1,33 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,heavy-pr-work/discovery-unhealthy,P0,no,block_heavy_PR_work_if_active_discovery_drops_below_3_except_cheap_manifest_or_analysis_only,heavy-pr-work/discovery-unhealthy,block_heavy_PR_work_if_active_discovery_drops_below_3_except_cheap_manifest_or_analysis_only
-launch-branch-repair,heavy-pr-work/duplicate-fanout-under-disk-pressure,P0,no,disk_high_pressure_and_active_aggregate_owner_make_duplicate_heavy_fanout_unsafe,heavy-pr-work/duplicate-fanout-under-disk-pressure,disk_high_pressure_and_active_aggregate_owner_make_duplicate_heavy_fanout_unsafe
-launch-owner-matrix,reload-hydration,P0,no,valid_unconsumed_manifest_makes_owner_probe_non_branch_changing_churn,reload-hydration,valid_unconsumed_manifest_makes_owner_probe_non_branch_changing_churn
-launch-branch-repair,reload-hydration/generic-reanalysis,P0,no,wait_for_publish_adopt_same_head_reject_exact_replay_green_stack_adoption_or_downscope,reload-hydration/generic-reanalysis,wait_for_publish_adopt_same_head_reject_exact_replay_green_stack_adoption_or_downscope
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime_held_consumed_reopen_only_with_new_concrete_owner_evidence,PR07C/HOLD-07C,runtime_held_consumed_reopen_only_with_new_concrete_owner_evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale_direct_head_superseded_by_repaired_build_clean_candidate,ready/rtc-pr07c-reload-record-snapshots,stale_direct_head_superseded_by_repaired_build_clean_candidate
-repair-branch,benchmark-canary/retained-tail,P0,no,serialize_tail_until_active_slice_disposed_or_live_reread_reorders,benchmark-canary/retained-tail,serialize_tail_until_active_slice_disposed_or_live_reread_reorders
-launch-branch-repair,benchmark-canary/per-row-heavy-fanout,P0,no,disk_high_pressure_and_active_aggregate_owner_block_duplicate_fanout,benchmark-canary/per-row-heavy-fanout,disk_high_pressure_and_active_aggregate_owner_block_duplicate_fanout
-publish-ready,benchmark-canary/exact-stack-promotion,P0,no,blocked_until_retained_product_evidence_disposed_and_same_head_exact_stack_proof_attached,benchmark-canary/exact-stack-promotion,blocked_until_retained_product_evidence_disposed_and_same_head_exact_stack_proof_attached
-publish-ready,final-rtc-stack,P0,no,blocked_by_reload_hydration_manifest_gap_and_benchmark_canary_retained_evidence,final-rtc-stack,blocked_by_reload_hydration_manifest_gap_and_benchmark_canary_retained_evidence
-publish-ready,maintainer-snapshot,P0,no,blocked_until_reload_hydration_and_benchmark_canary_dispositions_are_current,maintainer-snapshot,blocked_until_reload_hydration_and_benchmark_canary_dispositions_are_current
-repair-ready,pr17-1020002,high,no,terminal_downscope_reopen_only_with_fresh_product_evidence_newer_than_classification,pr17-1020002,terminal_downscope_reopen_only_with_fresh_product_evidence_newer_than_classification
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded_by_published_canonical_PR06B_minimal,ready/rtc-pr06b-malformed-save-request-payload,superseded_by_published_canonical_PR06B_minimal
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded_by_published_PR14B_based_variant,ready/rtc-pr15a-fallback-group-move-green,superseded_by_published_PR14B_based_variant
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded_by_published_PR14B_based_variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded_by_published_PR14B_based_variant
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded_by_published_PR14B_based_variant,ready/rtc-pr15c-fallback-group-delete-green,superseded_by_published_PR14B_based_variant
+publish-ready,deferred/rtc-reload-hydration-20260628T025501Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,no,superseded by newer valid same-head manifest 20260628T151404Z,deferred/rtc-reload-hydration-20260628T025501Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,superseded by newer valid same-head manifest 20260628T151404Z
+launch-owner-matrix,reload-hydration,P0,no,diagnostic-only work will not change branch state before manifest publish reject adopt or downscope,reload-hydration,"diagnostic-only work will not change branch state before manifest publish reject
+adopt or downscope"
+launch-branch-repair,reload-hydration/generic-exact-replay,P0,no,duplicate same-head replay waits for manifest disposition,reload-hydration/generic-exact-replay,duplicate same-head replay waits for manifest disposition
+publish-ready,PR07C/final-stack,P0,no,current benchmark-canary status has 4 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260628T171237Z/benchmark-canary-coverage-status.tsv,PR07C/final-stack,"current benchmark-canary status has 4
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260628T171237Z/benchmark-canary-coverage-status.tsv"
+publish-ready,final-rtc-stack,P0,no,blocked by reload-hydration manifest disposition and benchmark-canary product/status blockers,final-rtc-stack,"blocked by reload-hydration manifest disposition and benchmark-canary
+product/status blockers"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held owner matrix already consumed; reopen only with newer concrete owner evidence,PR07C/HOLD-07C,"runtime-held owner matrix already consumed; reopen only with newer concrete
+owner evidence"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
+repair-branch,benchmark-canary/novelty-http-large-post-lifecycle,P0,no,covered by aggregate owner; do not add separate fanout while same-user slice is active unless live reread reorders,benchmark-canary/novelty-http-large-post-lifecycle,"covered by aggregate owner; do not add separate fanout while same-user slice is
+active unless live reread reorders"
+repair-branch,benchmark-canary/novelty-http-table-stale-snapshot,high,no,covered by aggregate owner; dispatch must reread live status before any separate slot,benchmark-canary/novelty-http-table-stale-snapshot,"covered by aggregate owner; dispatch must reread live status before any separate
+slot"
+repair-branch,benchmark-canary/novelty-http-title-reload-convergence,P0,no,covered by aggregate owner; current_run_green alone does not clear retained evidence,benchmark-canary/novelty-http-title-reload-convergence,"covered by aggregate owner; current_run_green alone does not clear retained
+evidence"
+repair-branch,benchmark-canary/novelty-http-existing-post-crdt-metadata,P0,no,covered by aggregate owner; serialize tail rows under disk pressure,benchmark-canary/novelty-http-existing-post-crdt-metadata,covered by aggregate owner; serialize tail rows under disk pressure
+launch-branch-repair,lower-level/table-query-array-crdt-raw-same-corpus-expansion,high,no,not product branch repair before product-key accounting disposition changes blocker state,lower-level/table-query-array-crdt-raw-same-corpus-expansion,"not product branch repair before product-key accounting disposition changes
+blocker state"
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
+repair-ready,pr17-1020002,high,no,terminal downscope; reopen only with fresh product evidence newer than classification,pr17-1020002,"terminal downscope; reopen only with fresh product evidence newer than
+classification"
+launch-heavy-pr-job,generic-new-pr-fanout,high,no,disk pressure is severe and discovery reserve is narrow; allow only cheap publication active product repair or analysis-only disposition,generic-new-pr-fanout,"disk pressure is severe and discovery reserve is narrow; allow only cheap
+publication active product repair or analysis-only disposition"
+hold-publication,PR07C,P0,no,current benchmark-canary status has 4 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260628T171237Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 4
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260628T171237Z/benchmark-canary-coverage-status.tsv"

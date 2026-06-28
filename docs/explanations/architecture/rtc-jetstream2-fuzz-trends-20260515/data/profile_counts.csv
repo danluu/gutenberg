@@ -2,12 +2,12 @@ profile,records_seen,successful_records,startup_failures,success_rate,profile_fa
 real-world-editor-usability,5204,786,0,0.15103766333589547,other
 large-post-three-user-http-lifecycle,4922,1048,0,0.21292157659488012,lifecycle
 session-lifecycle,4134,1749,0,0.4230769230769231,lifecycle
-plain-editor-product-smoke,4107,4022,0,0.9793036279522767,other
+plain-editor-product-smoke,4107,4022,0,0.9793036279522768,other
 persistence-no-title,1699,1045,0,0.6150676868746321,persistence
 collaboration-ui-signals,1284,494,0,0.3847352024922118,other
 parser-serialization,1255,1178,0,0.9386454183266932,parser
-rtc-reference-oracle,830,390,0,0.46987951807228917,other
-revision-persistence,550,1,0,0.0018181818181818182,persistence
+rtc-reference-oracle,830,390,0,0.4698795180722892,other
+revision-persistence,550,1,0,0.00181818181818181,persistence
 full,288,25,0,0.08680555555555555,block-structure
 multi-reload-lifecycle,126,17,0,0.1349206349206349,lifecycle
 table-stale-snapshot-http,68,9,0,0.1323529411764706,other
