@@ -1,2 +1,4 @@
 session,class,started_hint
-rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260626T143155Z,critical-continuation,
+rtc-critical-continuation-benchmark-canary-product-failure-20260628T070129Z,critical-continuation,
+rtc-critical-continuation-pa-exact-benchmark-canary-product-failure-20260628T070651Z,critical-continuation,
+rtc-pr-finalize-job-20260628T070539Z,finalization,
