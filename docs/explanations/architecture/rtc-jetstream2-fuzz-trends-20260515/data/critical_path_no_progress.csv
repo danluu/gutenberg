@@ -1,3 +1,2 @@
 artifact_path,reason,size,mtime,associated_job,rejected_at,item_id
-/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/current-actions.tsv,zero_current_input,0,1782673108,productive_analysis_actions,2026-06-28T19:05:26Z,productive_analysis_actions
-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260628T183621Z/continuations/pa-exact-benchmark-canary-product-failure/report.md,zero_executor_artifact,0,1782672104,unknown,2026-06-28T19:05:26Z,pa-exact-benchmark-canary-product-failure
+/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260628T183621Z/continuations/pa-exact-benchmark-canary-product-failure/report.md,zero_executor_artifact,0,1782672104,unknown,2026-06-29T00:45:19Z,pa-exact-benchmark-canary-product-failure

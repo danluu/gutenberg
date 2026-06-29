@@ -1,3 +1,2 @@
 item_id,reason,rejections
 pa-exact-benchmark-canary-product-failure,zero_executor_artifact,1
-productive_analysis_actions,zero_current_input,1
