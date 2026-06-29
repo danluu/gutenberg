@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-06-29T04:49:34Z`
+Snapshot generated: `2026-06-29T08:50:58Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The refreshed CSVs and plots are committed
@@ -32,9 +32,9 @@ failures are `0`, quality issues are
 current-output signal that needs direct current-run triage, not as broad proof
 of product duplicate failures.
 
-The latest CPU/load telemetry sample has CPU utilization `3.3`, load1/load5/load15 `2.29`/`3.04`/`3.13`, and `64` logical cores.
+The latest CPU/load telemetry sample has CPU utilization `2.4`, load1/load5/load15 `1.51`/`NA`/`NA`, and `64` logical cores.
 
-The latest disk sample is `2026-06-29T04:48:47Z`: root has `82.6GiB` free and is `41.8%` used; the data volume has `0.0GiB` free and is `100.0%` used.
+The latest disk sample is `2026-06-29T08:50:05Z`: root has `82.6GiB` free and is `41.8%` used; the data volume has `0.0GiB` free and is `100.0%` used.
 
 The latest graph-counted fuzzing mix is: `browser-e2e=2 lanes/2 groups; protocol-server=1 lanes/1 groups`.
 Browser/e2e remains the dominant live surface, with bounded lower-level and
@@ -49,15 +49,15 @@ because they are reconstructed from batch metadata or legacy batch-count fields.
 Bug and candidate output graphing is current. The latest summary has
 `5` triaged bug-finding rows,
 `2` unique likely-real findings,
-`86` bug-output rows, and
-`84` unique output candidates.
+`85` bug-output rows, and
+`83` unique output candidates.
 
 PR-controller graph inputs are present. The controller snapshot has
-`23` items:
-`deferred-family/needs-product-decision/high=1; deferred-family/downscoped/medium=2; ready-product-pr/held-by-controller/high=3; ready-product-pr/published/high=14; ready-product-pr/superseded/low=1; ready-product-pr/superseded-by-repair/low=1; runtime-gated-pr/runtime-held-consumed/high=1`. The artifact index contributes
+`0` items:
+`NA`. The artifact index contributes
 `5,042` rows. The critical-path snapshot has
-`7` blockers:
-`active=1; queued=1; runnable=2; terminal=3`.
+`6` blockers:
+`active=1; queued=2; terminal=3`.
 
 The suggested PR net-LOC graph has
 `1` snapshot with a latest total of
@@ -152,8 +152,8 @@ CSV with the coverage-goal plot before adding another broad class of actions.
 
 ![PR loop no-progress artifacts](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-no-progress-artifacts.png)
 
-The current controller has `1`
-publishable branches and `1,008` net LOC
+The current controller has `0`
+publishable branches and `0` net LOC
 in `data/pr_progress_push_manifest.csv`; publication remains policy-gated
 unless the controller and critical-path evidence agree.
 

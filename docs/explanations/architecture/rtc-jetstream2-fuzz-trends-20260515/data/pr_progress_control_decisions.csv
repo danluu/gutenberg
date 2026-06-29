@@ -1,32 +1,31 @@
 action,target,priority,allowed,reason
 reserve-discovery,coverage-guided+focused+strict+protocol+lower-level+browser+existing-code+existing-pr,P0,yes,"active_discovery=1 below min=3; discovery_protected=yes, resource_reason=disk_severe_pressure; preserve reserve before heavy PR jobs"
-update-controller-rule,discovery-reserve-hard-gate,P0,yes,block heavy PR browser owner-matrix branch-repair fanout while active_discovery<3; allow cheap publication manifest/accounting and bounded analysis-only jobs
 publish-ready,reload-hydration,P0,yes,next product-progress slot; valid held manifest exists and current-push-manifest lacks exact head e8b64d56a18586be22e7922a9f6c144bd5b8d431
-publish-ready,deferred/rtc-reload-hydration-20260628T151404Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,yes,materialize or adopt exact head to danluu/rtc-reload-hydration-saved-crdt-hydration-20260623T120526Z or emit evidence-backed reject/downscope
-repair-ready,reload-hydration/evidence-backed-reject-or-downscope,P0,yes,analysis-only fallback if publication is blocked; disposes held manifest and releases deferred hold
+publish-ready,deferred/rtc-reload-hydration-20260628T151404Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,yes,cheap publication or adoption to danluu/rtc-reload-hydration-saved-crdt-hydration-20260623T120526Z changes branch state without spending discovery reserve
+repair-ready,reload-hydration/evidence-backed-reject-or-downscope,P0,yes,allowed fallback if publication or adoption is blocked; disposes held manifest and releases same-family hold
 cooldown-diagnostic,reload-hydration/owner-probes+generic-reanalysis+duplicate-same-head-replay,P0,yes,manifest disposition is pending; duplicate diagnostics do not change branch or blocker state
-launch-owner-matrix,reload-hydration,P0,no,heavy duplicate diagnostic while reload-hydration manifest is pending and discovery reserve is unhealthy
+launch-owner-matrix,reload-hydration,P0,no,heavy duplicate diagnostic while exact-head manifest is pending and discovery reserve is unhealthy
 launch-branch-repair,reload-hydration/generic-exact-replay,P0,no,heavy replay waits for manifest disposition and discovery reserve recovery
-include-candidate,PR07C,P0,yes,current promotion policy says repaired PR07C is net-risk-reducing; cheap candidate accounting only
-include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,exact repaired PR07C head must be materialized for same-head proof accounting
-repair-ready,PR07C/repaired-head-accounting,P0,yes,keep repaired head accounted without reopening owner proof or granting publication credit
+include-candidate,PR07C,P0,yes,"current policy includes PR07C as net-risk-reducing; cheap manifest accounting only, not publication credit"
+include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,compatibility row needed so stale controller materializes the repaired build-clean PR07C head
+repair-ready,PR07C/repaired-head-accounting,P0,yes,keep repaired head accounted without reopening owner proof or using stale direct PR07C head
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal and consumed; reopen only with newer owner evidence
 launch-branch-repair,PR07C/exact-browser-validation,high,no,heavy validation waits for discovery reserve recovery and benchmark-canary closure
+publish-ready,PR07C-publication-credit,P0,no,repaired-head accounting is not publication credit while benchmark-canary closure remains blocked
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch
-reserve-discovery,benchmark-canary/open-status-blockers,high,yes,keep protected canary capacity on 10 promotion_blocked rows when resources recover; product repair only if current evidence appears
-repair-ready,benchmark-canary-product-failure/current-run-reread,high,yes,analysis-only reread allowed; route to product repair only if current retained product evidence or product-failure coverage_state appears
-launch-branch-repair,benchmark-canary-product-failure/stale-product-repair-fanout,P0,no,current rows have product_evidence_records=0 retained_product_evidence=no and no product-failure coverage_state
-cooldown-diagnostic,benchmark-canary-product-failure/zero-evidence-continuations,high,yes,recent continuations are zero/no-product evidence; keep as coverage/status closure
-publish-ready,final-rtc-stack,P0,no,blocked until benchmark-canary closure has zero open promotion_blocked rows or all current rows are green/downscoped
-publish-ready,PR07C-publication-credit,P0,no,blocked by benchmark-canary closure; inclusion/accounting does not clear publication credit
-repair-ready,pr17-1020002/proof-or-reclassify,high,yes,bounded analysis-only blocker clearance can clear or downgrade final-stack-join without broad browser work
-launch-branch-repair,pr17-1020002/heavy-browser-fanout,high,no,heavy PR/browser fanout waits while discovery reserve is unhealthy
-repair-ready,lower-level/table-query-array-crdt-canonical-disposition,high,yes,"analysis/accounting slice maps canonical failures to product key, blocker, repair handoff, or downscope before raw expansion"
-cooldown-diagnostic,lower-level/table-query-array-crdt-raw-same-corpus-expansion,high,yes,2146 rows and 68672 inputs produced zero product_yield/product_failure_key rows
-repair-ready,lower-level/post-crdt-save-dirty-canonical-disposition,high,yes,"analysis/accounting slice collapses canonical keys into product accounting, active blocker, repair handoff, or downscope"
-cooldown-diagnostic,lower-level/post-crdt-save-dirty-fuzzing+corpus-promotion,high,yes,124 reproducible canonical rows produced zero product_yield/product_failure_key rows
-repair-ready,lower-level/self-presence-rendered-overlay-oracle-bridge,high,yes,analysis-only accounting bridge may map rendered-overlay and HTTP-awareness signals to product failure keys
-cooldown-diagnostic,lower-level/self-presence-broad-productless-expansion,high,yes,"cap broad expansion until accounting yields product key, active blocker, repair handoff, or downscope"
+reserve-discovery,benchmark-canary/open-status-blockers,high,yes,protect canary coverage capacity for 10 promotion-blocked rows until current_run_green=yes or explicit_downscope=yes
+repair-ready,benchmark-canary-product-failure/current-run-reread,high,yes,analysis-only reread allowed; reroute to product repair only if refreshed row gains retained product evidence or product-failure state
+launch-branch-repair,benchmark-canary-product-failure/stale-product-repair-fanout,P0,no,"current rows have product_evidence_records=0, retained_product_evidence=no, and no product-failure coverage_state"
+cooldown-diagnostic,benchmark-canary-product-failure/zero-evidence-continuations,high,yes,recent product-repair continuations are diagnostic churn until current evidence appears
+publish-ready,final-rtc-stack,P0,no,blocked until benchmark-canary status has zero open promotion_blocked rows or every blocked row is green or explicitly downscoped
+repair-ready,pr17-1020002/proof-or-reclassify,high,yes,bounded analysis-only proof can clear or downgrade final-stack-join without heavy browser fanout
+launch-branch-repair,pr17-1020002/heavy-browser-fanout,high,no,heavy browser fanout waits while discovery reserve is unhealthy
+repair-ready,lower-level/table-query-array-crdt-audit-product-key-confirmation,high,yes,bounded audit product_yield=1 confirmation before repair/blocker accounting or explicit downscope
+cooldown-diagnostic,lower-level/table-query-array-crdt-raw-same-corpus-expansion,high,yes,"raw expansion stays disabled until audit key is confirmed, handed off, or downscoped"
+repair-ready,lower-level/post-crdt-save-dirty-audit-product-key-confirmation,high,yes,bounded audit product_yield=1 confirmation before repair/blocker accounting or explicit downscope
+cooldown-diagnostic,lower-level/post-crdt-save-dirty-fuzzing+corpus-promotion,high,yes,hold further fuzzing and corpus promotion until audit product-key disposition exists
+repair-ready,lower-level/self-presence-rendered-overlay-oracle-bridge,high,yes,bounded analysis bridge may map rendered-overlay and HTTP-awareness signals to product failure keys
+cooldown-diagnostic,lower-level/self-presence-broad-productless-expansion,high,yes,"cap broad expansion until oracle bridge yields product key, active blocker, repair handoff, or downscope"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published minimal PR06B branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant
@@ -35,11 +34,11 @@ cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,already downscoped;
 cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,already downscoped; reopen only with deterministic suffix/content first-loss evidence
 cooldown-diagnostic,malformed-save-payload,medium,yes,covered by published PR06B minimal without fresh product evidence
 cooldown-diagnostic,http-room-isolation,medium,yes,covered by published PR02A without fresh healthy-user product evidence
-update-controller-rule,manifest-disposition-before-same-family-relaunch,P0,yes,"publish/adopt/reject/downscope valid manifests before owner probes, generic replay, or same-family relaunch"
-update-controller-rule,exact-head-manifest-materialization,P0,yes,publication/adoption is consumed only when current-push-manifest contains exact head or evidence-backed reject/downscope exists
-update-controller-rule,current-canary-product-evidence-before-repair,P0,yes,benchmark-canary product repair requires current retained product evidence or product-failure coverage_state
-update-controller-rule,final-stack-canary-closure-gate,P0,yes,final stack and PR07C publication credit require all current canary rows green/downscoped
-update-controller-rule,lower-level-product-key-before-raw-expansion,high,yes,raw lower-level expansion waits for oracle accounting and product-key disposition
-update-controller-rule,action-vocabulary-normalization,high,yes,map manifest-adoption branch-publication promotion-gate coverage-retarget coverage-materialization oracle-accounting-retarget and proof-or-reclassify into valid controller actions
-update-controller-rule,productive-feed-duplicate-coalescing,P0,yes,coalesce repeated feed rows while preserving distinct high-priority allow/reject targets
+update-controller-rule,discovery-reserve-hard-gate,P0,yes,"block heavy PR browser owner-matrix and branch-repair fanout while active_discovery<3; allow cheap publication, manifest accounting, and analysis-only jobs"
+update-controller-rule,manifest-disposition-before-same-family-relaunch,P0,yes,"publish, adopt, reject, or downscope valid manifests before owner probes, generic replay, or same-family relaunch"
+update-controller-rule,exact-head-manifest-materialization,P0,yes,publication or adoption is consumed only when current-push-manifest contains exact head or evidence-backed reject/downscope exists
+update-controller-rule,current-canary-product-evidence-before-repair,P0,yes,"benchmark product repair requires retained product evidence, nonzero product_evidence_records, or product-failure coverage_state"
+update-controller-rule,final-stack-canary-closure-gate,P0,yes,final stack and PR07C publication credit require benchmark-canary closure; exact-stack green alone is insufficient
+update-controller-rule,lower-level-audit-product-key-before-raw-expansion,high,yes,consume audit product_yield seeds with bounded confirmation before raw lower-level expansion or corpus promotion
+update-controller-rule,productive-feed-duplicate-coalescing,high,yes,coalesce repeated productive-analysis rows while preserving distinct high-priority allow and reject targets
 hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260628T185607Z/benchmark-canary-coverage-status.tsv

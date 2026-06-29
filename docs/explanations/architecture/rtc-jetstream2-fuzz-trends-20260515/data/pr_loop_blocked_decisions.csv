@@ -1,18 +1,18 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,reload-hydration,P0,no,heavy duplicate diagnostic while reload-hydration manifest is pending and discovery reserve is unhealthy,reload-hydration,"heavy duplicate diagnostic while reload-hydration manifest is pending and
-discovery reserve is unhealthy"
+launch-owner-matrix,reload-hydration,P0,no,heavy duplicate diagnostic while exact-head manifest is pending and discovery reserve is unhealthy,reload-hydration,"heavy duplicate diagnostic while exact-head manifest is pending and discovery
+reserve is unhealthy"
 launch-branch-repair,reload-hydration/generic-exact-replay,P0,no,heavy replay waits for manifest disposition and discovery reserve recovery,reload-hydration/generic-exact-replay,heavy replay waits for manifest disposition and discovery reserve recovery
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal and consumed; reopen only with newer owner evidence,PR07C/HOLD-07C,owner matrix is terminal and consumed; reopen only with newer owner evidence
 launch-branch-repair,PR07C/exact-browser-validation,high,no,heavy validation waits for discovery reserve recovery and benchmark-canary closure,PR07C/exact-browser-validation,"heavy validation waits for discovery reserve recovery and benchmark-canary
 closure"
+publish-ready,PR07C-publication-credit,P0,no,repaired-head accounting is not publication credit while benchmark-canary closure remains blocked,PR07C-publication-credit,"repaired-head accounting is not publication credit while benchmark-canary
+closure remains blocked"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
-launch-branch-repair,benchmark-canary-product-failure/stale-product-repair-fanout,P0,no,current rows have product_evidence_records=0 retained_product_evidence=no and no product-failure coverage_state,benchmark-canary-product-failure/stale-product-repair-fanout,"current rows have product_evidence_records=0 retained_product_evidence=no and no
-product-failure coverage_state"
-publish-ready,final-rtc-stack,P0,no,blocked until benchmark-canary closure has zero open promotion_blocked rows or all current rows are green/downscoped,final-rtc-stack,"blocked until benchmark-canary closure has zero open promotion_blocked rows or
-all current rows are green/downscoped"
-publish-ready,PR07C-publication-credit,P0,no,blocked by benchmark-canary closure; inclusion/accounting does not clear publication credit,PR07C-publication-credit,"blocked by benchmark-canary closure; inclusion/accounting does not clear
-publication credit"
-launch-branch-repair,pr17-1020002/heavy-browser-fanout,high,no,heavy PR/browser fanout waits while discovery reserve is unhealthy,pr17-1020002/heavy-browser-fanout,heavy PR/browser fanout waits while discovery reserve is unhealthy
+launch-branch-repair,benchmark-canary-product-failure/stale-product-repair-fanout,P0,no,"current rows have product_evidence_records=0, retained_product_evidence=no, and no product-failure coverage_state",benchmark-canary-product-failure/stale-product-repair-fanout,"current rows have product_evidence_records=0, retained_product_evidence=no, and
+no product-failure coverage_state"
+publish-ready,final-rtc-stack,P0,no,blocked until benchmark-canary status has zero open promotion_blocked rows or every blocked row is green or explicitly downscoped,final-rtc-stack,"blocked until benchmark-canary status has zero open promotion_blocked rows or
+every blocked row is green or explicitly downscoped"
+launch-branch-repair,pr17-1020002/heavy-browser-fanout,high,no,heavy browser fanout waits while discovery reserve is unhealthy,pr17-1020002/heavy-browser-fanout,heavy browser fanout waits while discovery reserve is unhealthy
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published minimal PR06B branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published minimal PR06B branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
