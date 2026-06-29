@@ -1,4 +1,4 @@
-generated_at_utc: 2026-06-29T00:48:18Z
+generated_at_utc: 2026-06-29T04:49:34Z
 monitor_passes: 1650
 first_pass_utc: 2026-06-23T12:08:03Z
 last_pass_utc: 2026-06-28T18:36:45Z
@@ -16,10 +16,10 @@ duplicate_share_historical_last: 1
 summary_startup_failures_last: 0
 quality_issues_last: 0
 memory_free_gb_last: 213.4
-cpu_utilization_last: 3.2
-load_1_last: 2.73
-load_5_last: 3.14
-load_15_last: 3.2
+cpu_utilization_last: 3.3
+load_1_last: 2.29
+load_5_last: 3.04
+load_15_last: 3.13
 core_count: 64
 enabled_group_events: 1816
 enabled_groups_current: novelty-http-plain-editor-product-smoke,novelty-http-real-world-editor-usability
@@ -47,14 +47,14 @@ pr_progress_controller_items: 23
 pr_progress_state_counts: deferred-family/needs-product-decision/high=1; deferred-family/downscoped/medium=2; ready-product-pr/held-by-controller/high=3; ready-product-pr/published/high=14; ready-product-pr/superseded/low=1; ready-product-pr/superseded-by-repair/low=1; runtime-gated-pr/runtime-held-consumed/high=1
 pr_progress_publishable_branches: 1
 pr_progress_publishable_net_loc: 1008
-pr_progress_controller_events: other=85; persona round launched=15
+pr_progress_controller_events: other=88; persona round launched=12
 artifact_index_rows: 5042
 artifact_index_scope_rows: 25
 critical_blockers: 7
-critical_blocker_states: active=1; held=1; runnable=2; terminal=3
-pr_loop_queue_depth: PR progress items/needs-product-decision=1; PR progress items/downscoped=2; PR progress items/held-by-controller=3; PR progress items/published=14; PR progress items/superseded=1; PR progress items/superseded-by-repair=1; PR progress items/runtime-held-consumed=1; controller decisions/allowed=15; controller decisions/blocked=6; controller decisions/allowed=5; controller decisions/blocked=5; controller decisions/blocked=2; controller decisions/allowed=4; critical blockers/runnable=1; critical blockers/active=1; critical blockers/held=1; critical blockers/runnable=1; critical blockers/terminal=1; critical blockers/terminal=2; critical job queue/terminal=1; critical job queue/active=1; critical job queue/gated=1; critical job queue/runnable=1; critical lanes/active=1; critical lanes/queued=1
-pr_loop_blocked_decisions: 13
-pr_loop_blocked_decision_types: hold-publication/P0=1; launch-branch-repair/P0=2; launch-branch-repair/high=1; launch-owner-matrix/P0=1; launch-owner-matrix/high=1; publish-ready/P0=2; publish-ready/high=3; publish-ready/low=2
+critical_blocker_states: active=1; queued=1; runnable=2; terminal=3
+pr_loop_queue_depth: PR progress items/needs-product-decision=1; PR progress items/downscoped=2; PR progress items/held-by-controller=3; PR progress items/published=14; PR progress items/superseded=1; PR progress items/superseded-by-repair=1; PR progress items/runtime-held-consumed=1; controller decisions/allowed=14; controller decisions/blocked=6; controller decisions/allowed=12; controller decisions/blocked=6; controller decisions/blocked=2; controller decisions/allowed=4; critical blockers/runnable=1; critical blockers/active=1; critical blockers/queued=1; critical blockers/runnable=1; critical blockers/terminal=1; critical blockers/terminal=2; critical job queue/terminal=1; critical job queue/active=1; critical job queue/queued=1; critical job queue/runnable=1; critical lanes/active=1; critical lanes/queued=1
+pr_loop_blocked_decisions: 14
+pr_loop_blocked_decision_types: hold-publication/P0=1; launch-branch-repair/P0=2; launch-branch-repair/high=2; launch-owner-matrix/P0=1; launch-owner-matrix/high=1; publish-ready/P0=2; publish-ready/high=3; publish-ready/low=2
 critical_repeated_validation_failures: deferred/rtc-http-room-isolation-20260517T023739Z fail=28 pass=0; deferred/rtc-pre-save-search-live-collapse-20260517T022131Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T035704Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T042707Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T045710Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T055716Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T062719Z fail=28 pass=0; deferred/rtc-rich-text-suffix-corruption-20260517T022133Z fail=28 pass=0
 critical_no_progress_artifacts: 1
 critical_no_progress_top: pa-exact-benchmark-canary-product-failure/zero_executor_artifact=1
