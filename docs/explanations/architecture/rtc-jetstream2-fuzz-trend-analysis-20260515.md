@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-06-29T08:50:58Z`
+Snapshot generated: `2026-06-29T12:52:07Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The refreshed CSVs and plots are committed
@@ -32,32 +32,32 @@ failures are `0`, quality issues are
 current-output signal that needs direct current-run triage, not as broad proof
 of product duplicate failures.
 
-The latest CPU/load telemetry sample has CPU utilization `2.4`, load1/load5/load15 `1.51`/`NA`/`NA`, and `64` logical cores.
+The latest CPU/load telemetry sample has CPU utilization `7.7`, load1/load5/load15 `3.16`/`4.58`/`5.18`, and `64` logical cores.
 
-The latest disk sample is `2026-06-29T08:50:05Z`: root has `82.6GiB` free and is `41.8%` used; the data volume has `0.0GiB` free and is `100.0%` used.
+The latest disk sample is `2026-06-29T12:51:20Z`: root has `81.8GiB` free and is `42.4%` used; the data volume has `1.2GiB` free and is `100.0%` used.
 
 The latest graph-counted fuzzing mix is: `browser-e2e=2 lanes/2 groups; protocol-server=1 lanes/1 groups`.
 Browser/e2e remains the dominant live surface, with bounded lower-level and
 protocol-server coverage still active.
 
 Approximate execution counts now total
-`13,112,006` individual test or case executions.
+`13,111,060` individual test or case executions.
 The latest cumulative/rate summary is:
-`browser-e2e=946 cumulative/0 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=13111060 cumulative/20696 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
+`browser-e2e=0 cumulative/0 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=13111060 cumulative/20696 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
 because they are reconstructed from batch metadata or legacy batch-count fields.
 
 Bug and candidate output graphing is current. The latest summary has
-`5` triaged bug-finding rows,
-`2` unique likely-real findings,
-`85` bug-output rows, and
-`83` unique output candidates.
+`0` triaged bug-finding rows,
+`0` unique likely-real findings,
+`0` bug-output rows, and
+`0` unique output candidates.
 
 PR-controller graph inputs are present. The controller snapshot has
-`0` items:
-`NA`. The artifact index contributes
+`23` items:
+`deferred-family/needs-product-decision/high=1; deferred-family/downscoped/medium=2; ready-product-pr/held-by-controller/high=3; ready-product-pr/published/high=14; ready-product-pr/superseded/low=1; ready-product-pr/superseded-by-repair/low=1; runtime-gated-pr/runtime-held-consumed/high=1`. The artifact index contributes
 `5,042` rows. The critical-path snapshot has
-`6` blockers:
-`active=1; queued=2; terminal=3`.
+`7` blockers:
+`active=1; held=1; runnable=1; terminal=4`.
 
 The suggested PR net-LOC graph has
 `1` snapshot with a latest total of
@@ -152,8 +152,8 @@ CSV with the coverage-goal plot before adding another broad class of actions.
 
 ![PR loop no-progress artifacts](rtc-jetstream2-fuzz-trends-20260515/plots/pr-loop-no-progress-artifacts.png)
 
-The current controller has `0`
-publishable branches and `0` net LOC
+The current controller has `2`
+publishable branches and `1,253` net LOC
 in `data/pr_progress_push_manifest.csv`; publication remains policy-gated
 unless the controller and critical-path evidence agree.
 

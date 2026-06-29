@@ -1,22 +1,26 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,reload-hydration,P0,no,heavy duplicate diagnostic while exact-head manifest is pending and discovery reserve is unhealthy,reload-hydration,"heavy duplicate diagnostic while exact-head manifest is pending and discovery
+launch-owner-matrix,reload-hydration,P0,no,duplicate heavy diagnostic while exact-head manifest is unresolved and discovery reserve is unhealthy,reload-hydration,"duplicate heavy diagnostic while exact-head manifest is unresolved and discovery
 reserve is unhealthy"
-launch-branch-repair,reload-hydration/generic-exact-replay,P0,no,heavy replay waits for manifest disposition and discovery reserve recovery,reload-hydration/generic-exact-replay,heavy replay waits for manifest disposition and discovery reserve recovery
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is terminal and consumed; reopen only with newer owner evidence,PR07C/HOLD-07C,owner matrix is terminal and consumed; reopen only with newer owner evidence
-launch-branch-repair,PR07C/exact-browser-validation,high,no,heavy validation waits for discovery reserve recovery and benchmark-canary closure,PR07C/exact-browser-validation,"heavy validation waits for discovery reserve recovery and benchmark-canary
-closure"
-publish-ready,PR07C-publication-credit,P0,no,repaired-head accounting is not publication credit while benchmark-canary closure remains blocked,PR07C-publication-credit,"repaired-head accounting is not publication credit while benchmark-canary
-closure remains blocked"
+launch-branch-repair,reload-hydration/generic-exact-replay,P0,no,heavy replay waits for manifest disposition and active_discovery>=3,reload-hydration/generic-exact-replay,heavy replay waits for manifest disposition and active_discovery>=3
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held owner matrix was consumed; reopen only with newer owner evidence and healthy discovery reserve,PR07C/HOLD-07C,"runtime-held owner matrix was consumed; reopen only with newer owner evidence
+and healthy discovery reserve"
+launch-branch-repair,PR07C/exact-validation-or-repair,P0,no,heavy exact validation or repair waits for discovery reserve recovery; repaired head is already materialized for cheap accounting,PR07C/exact-validation-or-repair,"heavy exact validation or repair waits for discovery reserve recovery; repaired
+head is already materialized for cheap accounting"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
-launch-branch-repair,benchmark-canary-product-failure/stale-product-repair-fanout,P0,no,"current rows have product_evidence_records=0, retained_product_evidence=no, and no product-failure coverage_state",benchmark-canary-product-failure/stale-product-repair-fanout,"current rows have product_evidence_records=0, retained_product_evidence=no, and
-no product-failure coverage_state"
-publish-ready,final-rtc-stack,P0,no,blocked until benchmark-canary status has zero open promotion_blocked rows or every blocked row is green or explicitly downscoped,final-rtc-stack,"blocked until benchmark-canary status has zero open promotion_blocked rows or
-every blocked row is green or explicitly downscoped"
-launch-branch-repair,pr17-1020002/heavy-browser-fanout,high,no,heavy browser fanout waits while discovery reserve is unhealthy,pr17-1020002/heavy-browser-fanout,heavy browser fanout waits while discovery reserve is unhealthy
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published minimal PR06B branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published minimal PR06B branch
+publish-ready,PR07C-publication-credit,P0,no,repaired PR07C remains candidate material but publication credit is blocked by benchmark-canary current-run closure,PR07C-publication-credit,"repaired PR07C remains candidate material but publication credit is blocked by
+benchmark-canary current-run closure"
+launch-branch-repair,benchmark-canary-product-failure/stale-product-repair-fanout,P0,no,no refreshed product-failure evidence; fanout would be stale churn under unhealthy discovery reserve,benchmark-canary-product-failure/stale-product-repair-fanout,"no refreshed product-failure evidence; fanout would be stale churn under
+unhealthy discovery reserve"
+publish-ready,final-rtc-stack,P0,no,blocked until benchmark-canary rows close by current_run_green=yes or explicit_downscope=yes,final-rtc-stack,"blocked until benchmark-canary rows close by current_run_green=yes or
+explicit_downscope=yes"
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical minimal PR06B branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical minimal PR06B branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
+repair-ready,pr17-1020002/proof-or-reclassify,high,no,terminal downscope; reopen only with fresh product evidence newer than classification.tsv,pr17-1020002/proof-or-reclassify,"terminal downscope; reopen only with fresh product evidence newer than
+classification.tsv"
+repair-ready,seed-5200005-reducer,high,no,terminal or resolved; reopen only with fresh newer product-owned evidence,seed-5200005-reducer,terminal or resolved; reopen only with fresh newer product-owned evidence
+repair-ready,seed-1060015-reducer,high,no,terminal downscope; reopen only with fresh newer product-owned evidence,seed-1060015-reducer,terminal downscope; reopen only with fresh newer product-owned evidence
 hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260628T185607Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 10
 promotion-blocked rows lacking current_run_green=yes or
 explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260628T185607Z/benchmark-canary-coverage-status.tsv"

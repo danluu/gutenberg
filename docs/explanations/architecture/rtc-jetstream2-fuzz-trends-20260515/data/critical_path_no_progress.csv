@@ -1,2 +1,1 @@
-artifact_path,reason,size,mtime,associated_job,rejected_at,item_id
-/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521/current-actions.tsv,zero_current_input,0,1782712185,productive_analysis_actions,2026-06-29T05:51:35Z,productive_analysis_actions
+artifact_path,reason,size,mtime,associated_job,rejected_at
