@@ -2018,3 +2018,4 @@ timestamp,group,group_family
 2026-07-01T14:49:12Z,novelty-ws-same-user-separate-context-lifecycle,lifecycle
 2026-07-01T14:49:12Z,novelty-ws-media-cross-entity,async/media
 2026-07-01T14:49:12Z,novelty-ws-many-user-lifecycle-completion,lifecycle
+2026-07-01T19:30:23Z,novelty-ws-many-user-lifecycle,lifecycle
