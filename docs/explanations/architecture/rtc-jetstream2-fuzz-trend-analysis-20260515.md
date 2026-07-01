@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-06-29T12:52:07Z`
+Snapshot generated: `2026-07-01T04:55:48Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The refreshed CSVs and plots are committed
@@ -15,49 +15,49 @@ index snapshots. CPU and load-average CSVs are populated from sysstat when avail
 ## High-Level Readout
 
 The graph-refresh pipeline is current through the last completed monitor pass
-at `2026-06-28T18:36:45Z`. There are `1,650` monitor
+at `2026-07-01T04:51:07Z`. There are `1,674` monitor
 passes from `2026-06-23T12:08:03Z` onward. Cumulative coverage record
 observations rose from `515` to
-`25,340`, current-scan coverage files rose from
-`890` to `1,514`, and
-unmet goals are `40` of `138`.
+`25,100`, current-scan coverage files rose from
+`890` to `756`, and
+unmet goals are `54` of `138`.
 
 Live health needs a bounded read. The latest plotted current-output duplicate
 share is `0`, while historical duplicate
-share is `1`. Current summary startup
+share is `0.25`. Current summary startup
 failures are `0`, quality issues are
-`0`, and free memory is
-`213.4GiB`. Because this snapshot has no
+`1`, and free memory is
+`205.4GiB`. Because this snapshot has no
 `current_run_accounting.csv`, treat the current duplicate/noise value as a
 current-output signal that needs direct current-run triage, not as broad proof
 of product duplicate failures.
 
-The latest CPU/load telemetry sample has CPU utilization `7.7`, load1/load5/load15 `3.16`/`4.58`/`5.18`, and `64` logical cores.
+The latest CPU/load telemetry sample has CPU utilization `30.8`, load1/load5/load15 `31.67`/`30.74`/`30.71`, and `64` logical cores.
 
-The latest disk sample is `2026-06-29T12:51:20Z`: root has `81.8GiB` free and is `42.4%` used; the data volume has `1.2GiB` free and is `100.0%` used.
+The latest disk sample is `2026-07-01T04:54:58Z`: root has `79.3GiB` free and is `44.1%` used; the data volume has `976.8GiB` free and is `72.4%` used.
 
-The latest graph-counted fuzzing mix is: `browser-e2e=2 lanes/2 groups; protocol-server=1 lanes/1 groups`.
+The latest graph-counted fuzzing mix is: `browser-e2e=11 lanes/11 groups; protocol-server=1 lanes/1 groups`.
 Browser/e2e remains the dominant live surface, with bounded lower-level and
 protocol-server coverage still active.
 
 Approximate execution counts now total
-`13,111,060` individual test or case executions.
+`13,111,510` individual test or case executions.
 The latest cumulative/rate summary is:
-`browser-e2e=0 cumulative/0 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=13111060 cumulative/20696 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
+`browser-e2e=450 cumulative/284 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=13111060 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour`. Some lower-level rows are approximate
 because they are reconstructed from batch metadata or legacy batch-count fields.
 
 Bug and candidate output graphing is current. The latest summary has
-`0` triaged bug-finding rows,
-`0` unique likely-real findings,
-`0` bug-output rows, and
-`0` unique output candidates.
+`8` triaged bug-finding rows,
+`5` unique likely-real findings,
+`143` bug-output rows, and
+`140` unique output candidates.
 
 PR-controller graph inputs are present. The controller snapshot has
 `23` items:
 `deferred-family/needs-product-decision/high=1; deferred-family/downscoped/medium=2; ready-product-pr/held-by-controller/high=3; ready-product-pr/published/high=14; ready-product-pr/superseded/low=1; ready-product-pr/superseded-by-repair/low=1; runtime-gated-pr/runtime-held-consumed/high=1`. The artifact index contributes
 `5,042` rows. The critical-path snapshot has
-`7` blockers:
-`active=1; held=1; runnable=1; terminal=4`.
+`9` blockers:
+`active=2; held=1; runnable=1; terminal=5`.
 
 The suggested PR net-LOC graph has
 `1` snapshot with a latest total of
@@ -93,7 +93,7 @@ The disk free-space data is populated in `data/disk_free_space.csv`.
 
 ![Coverage goal progress](rtc-jetstream2-fuzz-trends-20260515/plots/coverage-goal-progress.png)
 
-Current enabled groups: `novelty-http-plain-editor-product-smoke,novelty-http-real-world-editor-usability`.
+Current enabled groups: `novelty-http-large-post-lifecycle,novelty-http-title-reload-convergence,novelty-http-same-user-stale-draft,novelty-http-table-stale-snapshot,novelty-http-existing-post-crdt-metadata,novelty-http-persistence-probe,novelty-ws-parser-serialization,novelty-ws-multi-reload-lifecycle,novelty-ws-collaboration-ui-signals,novelty-http-large-post-lifecycle-completion,novelty-ws-async-server-blocks`.
 
 The largest unmet goals are tracked in `data/coverage_goals.csv`; review that
 CSV with the coverage-goal plot before adding another broad class of actions.
