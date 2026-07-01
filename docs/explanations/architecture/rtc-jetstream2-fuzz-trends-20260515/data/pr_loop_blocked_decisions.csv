@@ -1,15 +1,16 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held-consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime-held-consumed; relaunch only with newer owner evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by the repaired build-clean head,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by the repaired build-clean head
-publish-ready,PR07C-publication-credit,P0,no,"candidate accounting remains allowed, but publication credit waits on benchmark-canary retained-product-evidence closure",PR07C-publication-credit,"candidate accounting remains allowed, but publication credit waits on
-benchmark-canary retained-product-evidence closure"
-publish-ready,final-rtc-stack,P0,no,retained benchmark-canary product evidence remains open despite exact-stack green evidence,final-rtc-stack,"retained benchmark-canary product evidence remains open despite exact-stack
-green evidence"
-launch-branch-repair,benchmark-canary/product-repair-fanout,P0,no,reject broad fanout; use one bounded retained-evidence repair/downscope path,benchmark-canary/product-repair-fanout,reject broad fanout; use one bounded retained-evidence repair/downscope path
-launch-branch-repair,lower-level/table-query-array-crdt,high,no,wait for representative current failure reduction or fresh retained product evidence,lower-level/table-query-array-crdt,"wait for representative current failure reduction or fresh retained product
-evidence"
-launch-branch-repair,lower-level/post-crdt-save-dirty,high,no,wait for representative current failure reduction or fresh retained product evidence,lower-level/post-crdt-save-dirty,"wait for representative current failure reduction or fresh retained product
-evidence"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held owner matrix is consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime-held owner matrix is consumed; relaunch only with newer owner evidence
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by the repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by the repaired build-clean branch
+publish-ready,PR07C-publication-credit,P0,no,benchmark-canary retained product-evidence gate remains open,PR07C-publication-credit,benchmark-canary retained product-evidence gate remains open
+repair-branch,benchmark-canary/novelty-http-table-stale-snapshot,high,no,concrete reduced handoff exists but should wait behind parser/entity and multi-reload dispositions,benchmark-canary/novelty-http-table-stale-snapshot,"concrete reduced handoff exists but should wait behind parser/entity and
+multi-reload dispositions"
+launch-branch-repair,benchmark-canary/product-repair-fanout,P0,no,broad per-group fanout duplicates aggregate repair and risks the discovery reserve,benchmark-canary/product-repair-fanout,"broad per-group fanout duplicates aggregate repair and risks the discovery
+reserve"
+publish-ready,final-rtc-stack,P0,no,retained benchmark-canary product-evidence blocker remains open,final-rtc-stack,retained benchmark-canary product-evidence blocker remains open
+publish-ready,final-maintainer-snapshot,P0,no,snapshot gate remains blocked until benchmark-canary evidence is repaired or downscoped,final-maintainer-snapshot,"snapshot gate remains blocked until benchmark-canary evidence is repaired or
+downscoped"
+launch-branch-repair,lower-level/table-query-array-crdt,high,no,wait for current representative product-owned failure or explicit downscope,lower-level/table-query-array-crdt,wait for current representative product-owned failure or explicit downscope
+launch-branch-repair,lower-level/post-crdt-save-dirty,high,no,wait for current representative product-owned failure or explicit downscope,lower-level/post-crdt-save-dirty,wait for current representative product-owned failure or explicit downscope
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
