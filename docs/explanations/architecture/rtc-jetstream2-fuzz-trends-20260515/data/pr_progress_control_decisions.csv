@@ -1,43 +1,46 @@
 action,target,priority,allowed,reason
-reserve-discovery,coverage-guided+focused+strict+protocol+lower-level+browser+existing-code+existing-pr,P0,yes,active_discovery=4 meets min=3; discovery_protected=no; preserve reserve while allowing cheap PR progress and bounded targeted repair
-update-controller-rule,discovery-reserve-hard-gate,P0,yes,if active_discovery drops below 3 reject heavy PR jobs except cheap publication/accounting manifest generation and analysis-only work
-publish-ready,reload-hydration,P0,yes,next product-progress slot; valid held manifest needs publish/adopt/reject/downscope disposition
-publish-ready,deferred/rtc-reload-hydration-20260701T042147Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,yes,Productive Analysis repeatedly targets this exact held manifest for disposition
-publish-ready,deferred/rtc-reload-hydration-20260629T085029Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,yes,same exact head is already in current-push-manifest with build and focused-test evidence
-cooldown-diagnostic,reload-hydration/reducer+owner-probe+same-family-reanalysis,P0,yes,diagnostics cannot move product state until the held manifest is disposed
-update-controller-rule,reload-hydration/manifest-disposition-before-relaunch,P0,yes,require publish/adopt/reject/exact replay/owner evidence/green stack adoption/downscope before relaunching reload diagnostics
-repair-branch,benchmark-canary-product-failure,P0,yes,active aggregate retained-product-evidence blocker remains open; repair or evidence-backed downscope required before final publication
-repair-branch,benchmark-canary/novelty-ws-multi-reload-lifecycle,P0,yes,next focused repair inside aggregate owner after active parser-serialization drains; largest retained bucket in latest feed
-repair-branch,benchmark-canary/novelty-ws-parser-serialization,high,yes,active continuation owns this repair; keep as product repair and do not duplicate launch
-repair-branch,benchmark-canary/novelty-http-persistence-probe,high,yes,retained product evidence remains; queue bounded representative repair or evidence-backed downscope behind active focused work
-repair-branch,benchmark-canary/novelty-http-same-user-stale-draft,high,yes,active continuation exists; keep as product repair and avoid duplicate launch
-repair-branch,benchmark-canary/novelty-http-table-stale-snapshot,high,yes,exact artifact exists and retained evidence remains; queue after higher retained buckets
-launch-branch-repair,benchmark-canary/product-repair-broad-fanout,P0,no,broad fanout duplicates aggregate ownership and risks discovery reserve without clearing blockers faster
-cooldown-diagnostic,benchmark-canary/current_run_green_or_coverage_retarget_closure,P0,yes,current-run green or equivalent coverage cannot clear retained product evidence
-update-controller-rule,benchmark-canary/retained-product-evidence-closure,P0,yes,close only with product-failure-triage exact-blocker-status classification repair-branch and same-head repair adoption or evidence-backed downscope
-publish-ready,final-rtc-stack,P0,no,benchmark-canary retained product-evidence blocker remains open
-publish-ready,final-maintainer-snapshot,P0,no,benchmark-canary retained product-evidence blocker remains open
-include-candidate,PR07C,P0,yes,current policy includes PR07C as net-risk-reducing unless concrete attributable regression appears
-include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,exact repaired build-clean PR07C head is required for stale-controller manifest proof accounting
-repair-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,keep repaired PR07C head as candidate; direct ready head remains superseded
-run-exact-validation,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,exact validation and forced coverage gates still apply to the net-risk-reducing PR07C candidate while discovery reserve is healthy
-update-controller-rule,PR07C/removal-gate,high,yes,remove PR07C only on concrete attributable regression from exact validation benchmark rows focused replay or current fuzzing
+reserve-discovery,coverage-guided+focused+strict+protocol+lower-level+browser+existing-code+existing-pr,P0,yes,"active_discovery=4 meets min=3; discovery_protected=no, resource_reason=deadline_benchmark_canary_cap; discovery reserve healthy; preserve reserve while allowing cheap PR progress"
+update-controller-rule,discovery-reserve-hard-gate,P0,yes,"if active_discovery drops below 3, reject new heavy PR jobs; allow cheap publication, manifest, rule, and analysis-only work"
+publish-ready,reload-hydration,P0,yes,next product-progress slot; valid held manifest can change branch state and clear single-flight hold
+publish-ready,deferred/rtc-reload-hydration-20260701T042147Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,yes,"publish or adopt exact validated head to danluu/rtc-reload-hydration-saved-crdt-hydration-20260623T120526Z, or write explicit reject/downscope"
+publish-ready,deferred/rtc-reload-hydration-20260629T085029Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,high,yes,same exact head is already in current-push-manifest; keep as accounting support after current manifest disposition
+cooldown-diagnostic,reload-hydration/reducer+owner-probe+same-family-reanalysis,P0,yes,valid manifest is held; more diagnostics cannot move product state before disposition
+update-controller-rule,reload-hydration/manifest-disposition-before-relaunch,P0,yes,require publish/adopt/reject/downscope before relaunching reload-hydration diagnostics
+include-candidate,PR07C,P0,yes,current promotion policy says repaired PR07C is net-risk-reducing; materialize candidate accounting row
+include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,materialize exact build-clean repaired PR07C head for same-head proof accounting
+repair-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,keep repaired PR07C head under exact validation and repair accounting gates
+validate-exact,PR07C/repaired-head-exact-stack,P0,yes,run exact validation and focused replay on repaired head; remove only for concrete regression attributable to PR07C stack
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; reopen only with newer owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch
-publish-ready,PR07C-publication-credit,P0,no,benchmark-canary retained product-evidence gate still blocks publication credit
+publish-ready,PR07C-publication-credit,P0,no,candidate inclusion is not final publication credit while reload-hydration and benchmark-canary blockers remain open
+repair-branch,benchmark-canary-product-failure,P0,yes,keep single aggregate product-repair blocker for live retained/nonzero product-evidence rows; reread status at dispatch
+repair-branch,benchmark-canary/novelty-ws-parser-serialization,P0,yes,active focused repair remains valid; seed 1010251 same-head replay is still red and must repair or downscope
+repair-branch,benchmark-canary/novelty-ws-multi-reload-lifecycle,high,yes,next focused canary row after parser if live ordering still holds
+repair-branch,benchmark-canary/novelty-http-persistence-probe,high,yes,retained product evidence remains under aggregate repair owner
+repair-branch,benchmark-canary/novelty-http-same-user-stale-draft,high,yes,retained product evidence remains under aggregate repair owner
+repair-branch,benchmark-canary/novelty-http-title-reload-convergence,high,yes,retained product evidence remains; candidate reload-oriented follow-up after manifest disposition
+repair-branch,benchmark-canary/novelty-ws-collaboration-ui-signals,high,yes,retained product evidence remains and current-run green-only closure is insufficient
+repair-branch,benchmark-canary/novelty-http-large-post-lifecycle,high,yes,retained product evidence remains under aggregate repair owner
+cooldown-diagnostic,benchmark-canary/current_run_green_or_generic_coverage_closure,P0,yes,"current_run_green, equivalent coverage, and generic retargeting do not clear retained product evidence"
+launch-branch-repair,benchmark-canary/product-repair-broad-fanout,P0,no,use one aggregate owner plus one focused repair lane; broad fanout burns capacity
+update-controller-rule,benchmark-canary-product-failure/zero-evidence-closure,P0,no,reject stale zero-evidence closure because newer live status/persona reports retain product evidence
+update-controller-rule,benchmark-canary/live-status-precedence,P0,yes,reread live benchmark-canary status at dispatch and let newer retained product evidence override stale controller rows
+update-controller-rule,benchmark-canary/retained-product-evidence-closure,P0,yes,"clear only with triage, exact-blocker status, classification, repair branch, and same-head replay/adoption or explicit downscope"
+coverage-materialization,benchmark-canary/status-only-unmaterialized,high,yes,keep nonproduct status-only canaries under coverage-controller and reroute if refreshed rows gain product evidence
+update-controller-rule,lower-level/table-query-array-crdt-yield-accounting,high,yes,"require product_yield, product_failure_key, or explicit downscope before branch-repair credit"
+cooldown-diagnostic,lower-level/table-query-array-crdt-same-corpus-expansion,high,yes,2146 attempts have zero product_yield and zero product_failure_key; same-corpus expansion is diagnostic churn
+launch-branch-repair,lower-level/table-query-array-crdt,high,no,productless lower-level evidence does not justify branch repair while reload and canary blockers remain active
+publish-ready,final-rtc-stack,P0,no,reload-hydration disposition and benchmark-canary repair/downscope remain open
+publish-ready,final-maintainer-snapshot,P0,no,wait for reload disposition plus benchmark-canary same-head repair/adoption or explicit downscope
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant
-update-controller-rule,controller-action-vocabulary-normalization,high,yes,map Productive Analysis product-repair to repair-branch and branch-publication to publish-ready
-update-controller-rule,productive-feed-materialization,P0,yes,every P0 or high Productive Analysis PR-progress target must appear as allowed or rejected in controller TSV
-update-controller-rule,lower-level/productless-yield-oracle-hold,high,yes,hold broad productless lower-level expansion while benchmark-canary-product-failure is active
-update-controller-rule,lower-level/table-query-array-crdt-yield-accounting,high,yes,require product_yield product_failure_key or explicit downscope before capacity credit or branch repair
-cooldown-diagnostic,lower-level/table-query-array-crdt-same-corpus-expansion,high,yes,2146 attempts with zero product_yield and zero product_failure_key is diagnostic churn
-launch-branch-repair,lower-level/table-query-array-crdt,high,no,no current product_yield or product_failure_key justifies PR branch repair
-cooldown-diagnostic,lower-level/http-awareness+client-overlay+rendered-overlay-broadening,high,yes,productless or stale evidence should not displace retained benchmark-canary product repair
-cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,already explicitly downscoped; reopen only with repeatable core/search first-loss evidence
-cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,already explicitly downscoped; reopen only with deterministic suffix/content first-loss evidence
-cooldown-diagnostic,malformed-save-payload,medium,yes,canonical PR06B minimal branch is already published and raw deferred heads are superseded
-cooldown-diagnostic,http-room-isolation,medium,yes,ready PR02A is already published and no fresh product evidence is present
-keep-validating,published-ready-product-prs,high,yes,canonical ready product branches are already published; keep fuzz validation active without duplicate publication jobs
+cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,already downscoped; reopen only with repeatable core/search first-loss evidence
+cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,already downscoped; reopen only with deterministic suffix/content first-loss evidence
+cooldown-diagnostic,malformed-save-payload,medium,yes,canonical PR06B minimal is published and raw deferred heads are superseded
+cooldown-diagnostic,http-room-isolation,medium,yes,ready PR02A is published and no fresh healthy-user HTTP room-isolation product evidence is present
+validate-fuzz,published-ready-real-fix-branches,high,yes,"PR02A, PR03B, PR06B-minimal, PR07B, PR09, PR10, PR11A/B, PR14, PR14B, and PR15A-C-on-PR14B are published; continue fuzz validation only"
+update-controller-rule,productive-feed-materialization,P0,yes,every P0/high Productive Analysis PR-progress target must appear as allowed or rejected in controller TSV
+update-controller-rule,controller-action-vocabulary-normalization,high,yes,"map branch-publication to publish-ready, product-repair to repair-branch, and coverage-materialization to coverage/reserve rows"
+hold-publication,PR07C,P0,no,current benchmark-canary status has 4 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260701T155457Z/benchmark-canary-coverage-status.tsv

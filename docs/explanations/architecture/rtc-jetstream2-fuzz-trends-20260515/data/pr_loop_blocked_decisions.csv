@@ -1,13 +1,21 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary/product-repair-broad-fanout,P0,no,broad fanout duplicates aggregate ownership and risks discovery reserve without clearing blockers faster,benchmark-canary/product-repair-broad-fanout,"broad fanout duplicates aggregate ownership and risks discovery reserve without
-clearing blockers faster"
-publish-ready,final-rtc-stack,P0,no,benchmark-canary retained product-evidence blocker remains open,final-rtc-stack,benchmark-canary retained product-evidence blocker remains open
-publish-ready,final-maintainer-snapshot,P0,no,benchmark-canary retained product-evidence blocker remains open,final-maintainer-snapshot,benchmark-canary retained product-evidence blocker remains open
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; reopen only with newer owner evidence,PR07C/HOLD-07C,owner matrix is runtime-held and consumed; reopen only with newer owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
-publish-ready,PR07C-publication-credit,P0,no,benchmark-canary retained product-evidence gate still blocks publication credit,PR07C-publication-credit,benchmark-canary retained product-evidence gate still blocks publication credit
+publish-ready,PR07C-publication-credit,P0,no,candidate inclusion is not final publication credit while reload-hydration and benchmark-canary blockers remain open,PR07C-publication-credit,"candidate inclusion is not final publication credit while reload-hydration and
+benchmark-canary blockers remain open"
+launch-branch-repair,benchmark-canary/product-repair-broad-fanout,P0,no,use one aggregate owner plus one focused repair lane; broad fanout burns capacity,benchmark-canary/product-repair-broad-fanout,"use one aggregate owner plus one focused repair lane; broad fanout burns
+capacity"
+update-controller-rule,benchmark-canary-product-failure/zero-evidence-closure,P0,no,reject stale zero-evidence closure because newer live status/persona reports retain product evidence,benchmark-canary-product-failure/zero-evidence-closure,"reject stale zero-evidence closure because newer live status/persona reports
+retain product evidence"
+launch-branch-repair,lower-level/table-query-array-crdt,high,no,productless lower-level evidence does not justify branch repair while reload and canary blockers remain active,lower-level/table-query-array-crdt,"productless lower-level evidence does not justify branch repair while reload and
+canary blockers remain active"
+publish-ready,final-rtc-stack,P0,no,reload-hydration disposition and benchmark-canary repair/downscope remain open,final-rtc-stack,reload-hydration disposition and benchmark-canary repair/downscope remain open
+publish-ready,final-maintainer-snapshot,P0,no,wait for reload disposition plus benchmark-canary same-head repair/adoption or explicit downscope,final-maintainer-snapshot,"wait for reload disposition plus benchmark-canary same-head repair/adoption or
+explicit downscope"
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
 publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
 publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
-launch-branch-repair,lower-level/table-query-array-crdt,high,no,no current product_yield or product_failure_key justifies PR branch repair,lower-level/table-query-array-crdt,no current product_yield or product_failure_key justifies PR branch repair
+hold-publication,PR07C,P0,no,current benchmark-canary status has 4 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260701T155457Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 4
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260701T155457Z/benchmark-canary-coverage-status.tsv"
