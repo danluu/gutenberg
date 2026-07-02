@@ -216,7 +216,7 @@ PY
 }
 
 adopt_tmux() {
-	local candidate session lease_id artifact
+	local candidate session lease_id artifact lease_rc attempt
 	candidate="$(current_candidate)"
 	mkdir -p "$ARTIFACT_DIR/$candidate/legacy-leases"
 	tmux -L "$TMUX_SOCKET" list-sessions -F '#{session_name}' 2>/dev/null |
@@ -236,18 +236,25 @@ adopt_tmux() {
 				capture_rc=$?
 				printf '%s legacy lease bridge capture failed session=%s rc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$session" "$capture_rc" >&2
 			fi
-			if timeout 20 node "$SCHEDULER" --db "$DB" lease-start \
-				--id "$lease_id" \
-				--worker "$session" \
-				--kind legacy-tmux \
-				--candidate "$candidate" \
-				--ttl-seconds 180 \
-				--artifact-dir "$artifact" \
-				--cleanup-state adopted >/dev/null; then
-				:
-			else
-				lease_rc=$?
-				printf '%s legacy lease bridge lease-start failed session=%s rc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$session" "$lease_rc" >&2
+			lease_rc=1
+			for attempt in 1 2 3; do
+				if timeout 20 node "$SCHEDULER" --db "$DB" lease-start \
+					--id "$lease_id" \
+					--worker "$session" \
+					--kind legacy-tmux \
+					--candidate "$candidate" \
+					--ttl-seconds 180 \
+					--artifact-dir "$artifact" \
+					--cleanup-state adopted >/dev/null; then
+					lease_rc=0
+					break
+				else
+					lease_rc=$?
+				fi
+				sleep "$attempt"
+			done
+			if [ "$lease_rc" -ne 0 ]; then
+				printf '%s legacy lease bridge lease-start failed session=%s rc=%s attempts=3\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$session" "$lease_rc" >&2
 			fi
 		done
 	return 0
@@ -333,6 +340,7 @@ EOF
 	cat > "$evidence_loop_script" <<EOF
 #!/usr/bin/env bash
 set +e
+sleep 20
 while true; do
 	printf '%s legacy evidence bridge start\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$BASE/legacy-bridge.log"
 	RTC_REPO="$REPO" \\
