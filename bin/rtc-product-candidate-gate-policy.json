@@ -1,0 +1,166 @@
+{
+	"version": "2026-07-02.1",
+	"description": "Deterministic gate policy for the JS2 RTC product-candidate merge train.",
+	"required_product_gates": [
+		"preflight",
+		"P0_smoke",
+		"product_acceptance",
+		"rtc_conformance"
+	],
+	"profiles": {
+		"plain-wp-fast": {
+			"run_for": [
+				"every-slice",
+				"every-accumulated-candidate"
+			],
+			"purpose": "Plain WordPress human-testable editor readiness."
+		},
+		"jetpack-local-fast": {
+			"run_for": [
+				"every-accumulated-candidate",
+				"jetpack-auth-readonly-wpcom-risk"
+			],
+			"purpose": "Local deployment realism for Jetpack, auth, sandbox, and read-only risks."
+		},
+		"rtc-local": {
+			"run_for": [
+				"rtc-affecting-slice",
+				"every-accumulated-rtc-candidate"
+			],
+			"purpose": "RTC off/on equivalence and multi-window convergence."
+		},
+		"wpcom-deploy-smoke": {
+			"run_for": [
+				"wpcom-publication",
+				"jetpack-auth-readonly-deploy-sensitive-change",
+				"prior-wpcom-only-failure"
+			],
+			"purpose": "Scoped WP.com publication readiness. This does not redefine plain-WP human-testability."
+		},
+		"exact-stack-replay": {
+			"run_for": [
+				"named-blocker",
+				"fix-validation",
+				"promotion-validation",
+				"publication-validation"
+			],
+			"purpose": "Exact SHA/profile replay for named evidence only."
+		}
+	},
+	"risk_triggers": [
+		{
+			"match": [
+				"packages/blocks/**",
+				"packages/block-serialization-*/**",
+				"parser",
+				"serialization"
+			],
+			"require": [
+				"product_acceptance:parser-fixtures",
+				"product_acceptance:save-reload"
+			]
+		},
+		{
+			"match": [
+				"packages/editor/**",
+				"packages/core-data/**",
+				"dirty",
+				"autosave",
+				"save",
+				"reload",
+				"title"
+			],
+			"require": [
+				"product_acceptance:lifecycle",
+				"product_acceptance:dirty-state",
+				"product_acceptance:title-reload-convergence"
+			]
+		},
+		{
+			"match": [
+				"collaboration",
+				"rtc",
+				"crdt",
+				"websocket",
+				"multi-tab",
+				"multi-window"
+			],
+			"require": [
+				"rtc_conformance:rtc-off-reference",
+				"rtc_conformance:single-user-equivalence",
+				"rtc_conformance:same-user-two-tab",
+				"rtc_conformance:multi-context-convergence",
+				"rtc_conformance:ordered-concurrency"
+			]
+		},
+		{
+			"match": [
+				"jetpack",
+				"wpcom",
+				"sandbox",
+				"read-only",
+				"auth",
+				"deployment"
+			],
+			"require": [
+				"jetpack-local-fast:P0_smoke",
+				"wpcom-deploy-smoke:publication_validation"
+			]
+		},
+		{
+			"match": [
+				"unknown-shared-editor-code",
+				"large-cross-package-change"
+			],
+			"require": [
+				"product_acceptance:full",
+				"rtc_conformance:full"
+			]
+		}
+	],
+	"p0_smoke": [
+		"post-new loads",
+		"existing-post editor loads",
+		"canvas writable",
+		"no white screen",
+		"no fatal JavaScript/PHP/REST/bootstrap/websocket error",
+		"no unexpected SANDBOXED [READ-ONLY]",
+		"basic title and body edit",
+		"Save Draft completes"
+	],
+	"product_acceptance": [
+		"Save Draft reload, persistence, and dirty-state clear",
+		"publish and update lifecycle",
+		"existing post edit, update, and reload",
+		"title reload convergence",
+		"parser serialize-parse-serialize",
+		"existing-post CRDT metadata init and preservation",
+		"table edit/save/reload stale snapshot fixture",
+		"large-post load/edit/save/reload",
+		"fixture for every severe human-found regression"
+	],
+	"rtc_conformance": [
+		"RTC-off reference flow",
+		"RTC-on single-user equivalence",
+		"same-user two-tab convergence",
+		"multi-user/multi-context websocket convergence",
+		"cross-window propagation",
+		"ordered concurrent title/body/table schedules",
+		"disconnect/reconnect convergence",
+		"collaborative save/reload",
+		"takeover modal with retained trace/video"
+	],
+	"oracle_snapshot_fields": [
+		"editor store",
+		"block-editor store",
+		"REST/DB post state",
+		"serialized blocks",
+		"title/body/status",
+		"dirty/autosave/save state",
+		"lock/read-only state",
+		"CRDT metadata",
+		"websocket schedule/order",
+		"client convergence",
+		"quiescence"
+	]
+}
