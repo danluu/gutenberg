@@ -230,6 +230,40 @@ bin/rtc-product-candidate-controller-remote.sh expire-leases
 
 Use `expire-leases --kill` only after verifying the lease owns the process group and namespace.
 
+## Legacy Bridge
+
+During migration, old JS2 tmux/controller loops may still be running. They must be visible in the scheduler ledger even before each legacy executor is rewritten to acquire its own lease.
+
+Start the compatibility bridge:
+
+```bash
+export RTC_REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
+export RTC_SCHEDULER_BASE=/media/volume/danluu-fuzz-data/rtc-product-candidate-scheduler-20260702
+export RTC_SCHEDULER_DB=$RTC_SCHEDULER_BASE/ledger.sqlite
+
+bin/rtc-product-candidate-legacy-bridge-remote.sh start
+```
+
+Run one import manually:
+
+```bash
+bin/rtc-product-candidate-legacy-bridge-remote.sh once
+```
+
+The bridge does three things:
+
+- Records `preflight/js2-legacy-bridge` from current repo SHA, coverage status, disk/inode, and Docker checks.
+- Imports `benchmark-canary-coverage-status.tsv` as scheduler `product_acceptance` / `rtc_conformance` gate evidence.
+- Adopts active `rtc-*` tmux sessions as short-lived `legacy-tmux` leases.
+
+Imported legacy green rows are intentionally marked stale until same-profile trunk control and exact-stack scheduler evidence are recorded. This prevents the old system from accidentally certifying a candidate as human-testable while still making the useful evidence visible.
+
+Stop the bridge:
+
+```bash
+bin/rtc-product-candidate-legacy-bridge-remote.sh stop
+```
+
 ## Readiness And Promotion
 
 Check readiness:

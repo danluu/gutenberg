@@ -613,7 +613,7 @@ function commandLeaseStart( db, options ) {
 	const leaseId = options.id || `L-${ sha256Text( `${ worker }\n${ kind }\n${ timestamp }\n${ process.pid }` ).slice( 0, 16 ) }`;
 	withLock( db, () => {
 		sqlite( db, `
-INSERT INTO lease(id, worker, kind, candidate_id, manifest_path, process_group, pid, worktree, docker_namespace, ports, artifact_dir, heartbeat_at, ttl_at, created_at, updated_at)
+INSERT INTO lease(id, worker, kind, candidate_id, manifest_path, process_group, pid, worktree, docker_namespace, ports, artifact_dir, heartbeat_at, ttl_at, cleanup_state, created_at, updated_at)
 VALUES (
 	${ sqlString( leaseId ) },
 	${ sqlString( worker ) },
@@ -628,9 +628,26 @@ VALUES (
 	${ sqlString( options[ 'artifact-dir' ] || '' ) },
 	${ sqlString( timestamp ) },
 	${ sqlString( ttlAt ) },
+	${ sqlString( options[ 'cleanup-state' ] || 'owned' ) },
 	${ sqlString( timestamp ) },
 	${ sqlString( timestamp ) }
-);
+)
+ON CONFLICT(id) DO UPDATE SET
+	worker = excluded.worker,
+	kind = excluded.kind,
+	candidate_id = excluded.candidate_id,
+	manifest_path = excluded.manifest_path,
+	process_group = excluded.process_group,
+	pid = excluded.pid,
+	worktree = excluded.worktree,
+	docker_namespace = excluded.docker_namespace,
+	ports = excluded.ports,
+	artifact_dir = excluded.artifact_dir,
+	result = 'running',
+	heartbeat_at = excluded.heartbeat_at,
+	ttl_at = excluded.ttl_at,
+	cleanup_state = excluded.cleanup_state,
+	updated_at = excluded.updated_at;
 ` );
 	} );
 	console.log( leaseId );
