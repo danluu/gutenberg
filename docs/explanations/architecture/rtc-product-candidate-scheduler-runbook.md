@@ -228,7 +228,7 @@ Periodically:
 bin/rtc-product-candidate-controller-remote.sh expire-leases
 ```
 
-Use `expire-leases --kill` only after verifying the lease owns the process group and namespace.
+Use `expire-leases --kill` only after verifying the lease owns the process group and namespace. Adopted legacy tmux leases are visibility-only; expiry marks them stale/released and never kills them.
 
 ## Legacy Bridge
 

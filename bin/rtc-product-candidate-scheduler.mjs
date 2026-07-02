@@ -686,19 +686,25 @@ function commandExpireLeases( db, options ) {
 	ensureDb( db );
 	const timestamp = nowIso();
 	const stale = query( db, `
-SELECT id, pid, process_group
+SELECT id, pid, process_group, cleanup_state
 FROM lease
 WHERE result = 'running' AND ttl_at < ${ sqlString( timestamp ) };
 ` );
 	withLock( db, () => {
 		sqlite( db, `
 UPDATE lease
-SET result = 'stale', cleanup_state = 'needs-cleanup', updated_at = ${ sqlString( timestamp ) }
+SET result = 'stale',
+	cleanup_state = CASE WHEN cleanup_state = 'adopted' THEN 'released' ELSE 'needs-cleanup' END,
+	updated_at = ${ sqlString( timestamp ) }
 WHERE result = 'running' AND ttl_at < ${ sqlString( timestamp ) };
 ` );
 	} );
 	if ( options.kill ) {
 		for ( const lease of stale ) {
+			if ( lease.cleanup_state === 'adopted' ) {
+				console.log( `not killing adopted lease ${ lease.id }` );
+				continue;
+			}
 			const pgid = Number( lease.process_group || lease.pid );
 			if ( Number.isFinite( pgid ) && pgid > 1 ) {
 				try {
