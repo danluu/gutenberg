@@ -223,6 +223,9 @@ adopt_tmux() {
 				rtc-*) ;;
 				*) continue ;;
 			esac
+			case "$session" in
+				"$LEGACY_SESSION_NAME"|"$LEASE_SESSION_NAME"|"$EVIDENCE_SESSION_NAME"|rtc-product-candidate-*) continue ;;
+			esac
 			lease_id="legacy-$(printf '%s' "$session" | shasum -a 256 | awk '{print substr($1,1,16)}')"
 			artifact="$ARTIFACT_DIR/$candidate/legacy-leases/$session.txt"
 			tmux -L "$TMUX_SOCKET" capture-pane -pt "$session:0.0" -S -80 > "$artifact" 2>/dev/null || true
