@@ -1,20 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-product-failure,P0,no,duplicate heavy launch would fan out the active aggregate repair owner,benchmark-canary-product-failure,duplicate heavy launch would fan out the active aggregate repair owner
-launch-branch-repair,benchmark-canary/novelty-http-rtc-reference-oracle,high,no,duplicate exact-owner launch is churn; only bounded same-head seed 1260103 replay remains valid if required,benchmark-canary/novelty-http-rtc-reference-oracle,"duplicate exact-owner launch is churn; only bounded same-head seed 1260103
-replay remains valid if required"
-repair-branch,benchmark-canary/status-only-open-blockers,high,no,"product_evidence_records=0 rows are coverage and promotion gates, not PR repair credit",benchmark-canary/status-only-open-blockers,"product_evidence_records=0 rows are coverage and promotion gates, not PR repair
-credit"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is consumed/runtime-held; reopen only with newer owner evidence,PR07C/HOLD-07C,owner matrix is consumed/runtime-held; reopen only with newer owner evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean branch
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,raw PR06B branch is superseded by already-published PR06B minimal,ready/rtc-pr06b-malformed-save-request-payload,raw PR06B branch is superseded by already-published PR06B minimal
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,raw PR15A branch is superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,raw PR15A branch is superseded by already-published PR14B-based variant
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,raw PR15B branch is superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,raw PR15B branch is superseded by already-published PR14B-based variant
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,raw PR15C branch is superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,raw PR15C branch is superseded by already-published PR14B-based variant
-repair-branch,lower-level/table-query-array-crdt,high,no,current accounting has product_yield_nonzero=0 and product_failure_key_nonempty=0,lower-level/table-query-array-crdt,"current accounting has product_yield_nonzero=0 and
-product_failure_key_nonempty=0"
-publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration disposition/proof benchmark-canary repair/downscope PR07C accounting and status-only coverage gates close,final-rtc-stack,"blocked until reload-hydration disposition/proof benchmark-canary
-repair/downscope PR07C accounting and status-only coverage gates close"
-publish-ready,final-maintainer-snapshot,P0,no,blocked on the same final-stack evidence set,final-maintainer-snapshot,blocked on the same final-stack evidence set
-hold-publication,PR07C,P0,no,current benchmark-canary status has 2 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260702T043946Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 2
+launch-branch-repair,benchmark-canary-product-failure,P0,no,active aggregate continuation already owns this blocker; duplicate heavy launch would fragment closure,benchmark-canary-product-failure,"active aggregate continuation already owns this blocker; duplicate heavy launch
+would fragment closure"
+launch-branch-repair,benchmark-canary/novelty-http-rtc-reference-oracle,high,no,separate exact owner duplicates the active aggregate product repair path,benchmark-canary/novelty-http-rtc-reference-oracle,separate exact owner duplicates the active aggregate product repair path
+repair-branch,benchmark-canary/novelty-http-large-post-lifecycle-completion,high,no,product_evidence_records=0 and retained_product_evidence=no; not PR repair credit unless product evidence appears,benchmark-canary/novelty-http-large-post-lifecycle-completion,"product_evidence_records=0 and retained_product_evidence=no; not PR repair
+credit unless product evidence appears"
+launch-branch-repair,reload-hydration,high,no,valid manifest and single-flight hold exist; generic relaunch is diagnostic churn,reload-hydration,"valid manifest and single-flight hold exist; generic relaunch is diagnostic
+churn"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held owner matrix is consumed; reopen only with newer owner evidence,PR07C/HOLD-07C,runtime-held owner matrix is consumed; reopen only with newer owner evidence
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean head,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean head
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,raw PR06B is superseded by already-published PR06B minimal,ready/rtc-pr06b-malformed-save-request-payload,raw PR06B is superseded by already-published PR06B minimal
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,raw PR15A is superseded by published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,raw PR15A is superseded by published PR14B-based variant
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,raw PR15B is superseded by published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,raw PR15B is superseded by published PR14B-based variant
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,raw PR15C is superseded by published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,raw PR15C is superseded by published PR14B-based variant
+repair-branch,lower-level/table-query-array-crdt-yield-accounting,high,no,product_yield_nonzero=0 and product_failure_key_nonempty=0; classify existing representatives or downscope first,lower-level/table-query-array-crdt-yield-accounting,"product_yield_nonzero=0 and product_failure_key_nonempty=0; classify existing
+representatives or downscope first"
+publish-ready,final-rtc-stack,P0,no,blocked by benchmark-canary product repair status-only canary coverage reload-hydration proof and PR07C exact gates,final-rtc-stack,"blocked by benchmark-canary product repair status-only canary coverage
+reload-hydration proof and PR07C exact gates"
+publish-ready,final-maintainer-snapshot,P0,no,blocked by same unresolved evidence gates as final RTC stack,final-maintainer-snapshot,blocked by same unresolved evidence gates as final RTC stack
+hold-publication,PR07C,P0,no,current benchmark-canary status has 1 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260702T043946Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 1
 promotion-blocked rows lacking current_run_green=yes or
 explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260702T043946Z/benchmark-canary-coverage-status.tsv"
