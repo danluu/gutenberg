@@ -24,9 +24,10 @@ COVERAGE_BASE="${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-
 TMUX_SOCKET="${RTC_TMUX_SOCKET:-rtc-fuzz}"
 BRIDGE="${RTC_LEGACY_BRIDGE_BIN:-$SCRIPT_DIR/$(basename "$0")}"
 LEGACY_SESSION_NAME="${RTC_LEGACY_BRIDGE_SESSION:-rtc-product-candidate-legacy-bridge-loop}"
-ANCHOR_SESSION_NAME="${RTC_BRIDGE_ANCHOR_SESSION:-rtc-product-candidate-bridge-anchor}"
 LEASE_SESSION_NAME="${RTC_LEASE_BRIDGE_SESSION:-rtc-product-candidate-lease-bridge-loop}"
 EVIDENCE_SESSION_NAME="${RTC_EVIDENCE_BRIDGE_SESSION:-rtc-product-candidate-evidence-bridge-loop}"
+LEASE_PID_FILE="${RTC_LEASE_BRIDGE_PID_FILE:-$BASE/legacy-lease-bridge.pid}"
+EVIDENCE_PID_FILE="${RTC_EVIDENCE_BRIDGE_PID_FILE:-$BASE/legacy-evidence-bridge.pid}"
 ARTIFACT_DIR="${RTC_SCHEDULER_ARTIFACT_DIR:-$BASE/artifacts}"
 
 usage() {
@@ -225,7 +226,7 @@ adopt_tmux() {
 				*) continue ;;
 			esac
 			case "$session" in
-				"$LEGACY_SESSION_NAME"|"$ANCHOR_SESSION_NAME"|"$LEASE_SESSION_NAME"|"$EVIDENCE_SESSION_NAME"|rtc-product-candidate-*) continue ;;
+				"$LEGACY_SESSION_NAME"|"$LEASE_SESSION_NAME"|"$EVIDENCE_SESSION_NAME"|rtc-product-candidate-*) continue ;;
 			esac
 			lease_id="legacy-$(printf '%s' "$session" | shasum -a 256 | awk '{print substr($1,1,16)}')"
 			artifact="$ARTIFACT_DIR/$candidate/legacy-leases/$session.txt"
@@ -252,6 +253,45 @@ refresh() {
 	import_coverage
 }
 
+pid_is_running() {
+	local pid_file="$1" pid
+	if [ ! -s "$pid_file" ]; then
+		return 1
+	fi
+	pid="$(cat "$pid_file" 2>/dev/null || true)"
+	case "$pid" in
+		''|*[!0-9]*) return 1 ;;
+	esac
+	kill -0 "$pid" 2>/dev/null
+}
+
+start_background_loop() {
+	local name="$1" script="$2" pid_file="$3"
+	if pid_is_running "$pid_file"; then
+		echo "$name already running pid=$(cat "$pid_file")"
+		return
+	fi
+	nohup bash "$script" >> "$BASE/legacy-bridge.log" 2>&1 < /dev/null &
+	echo "$!" > "$pid_file"
+	echo "started $name pid=$(cat "$pid_file")"
+}
+
+stop_background_loop() {
+	local name="$1" pid_file="$2" pid
+	if [ ! -s "$pid_file" ]; then
+		return
+	fi
+	pid="$(cat "$pid_file" 2>/dev/null || true)"
+	case "$pid" in
+		''|*[!0-9]*) rm -f "$pid_file"; return ;;
+	esac
+	if kill -0 "$pid" 2>/dev/null; then
+		kill "$pid" 2>/dev/null || true
+		echo "stopped $name pid=$pid"
+	fi
+	rm -f "$pid_file"
+}
+
 start_loop() {
 	local lease_loop_script="$BASE/legacy-lease-bridge-loop.sh"
 	local evidence_loop_script="$BASE/legacy-evidence-bridge-loop.sh"
@@ -259,16 +299,9 @@ start_loop() {
 		echo "stopping obsolete $LEGACY_SESSION_NAME"
 		tmux -L "$TMUX_SOCKET" kill-session -t "$LEGACY_SESSION_NAME" 2>/dev/null || true
 	fi
-	if tmux -L "$TMUX_SOCKET" has-session -t "$ANCHOR_SESSION_NAME" 2>/dev/null; then
-		echo "$ANCHOR_SESSION_NAME already running"
-	else
-		tmux -L "$TMUX_SOCKET" new-session -d -s "$ANCHOR_SESSION_NAME" "while true; do sleep 3600; done"
-		echo "started $ANCHOR_SESSION_NAME"
-	fi
-	if tmux -L "$TMUX_SOCKET" has-session -t "$LEASE_SESSION_NAME" 2>/dev/null; then
-		echo "$LEASE_SESSION_NAME already running"
-	else
-		cat > "$lease_loop_script" <<EOF
+	tmux -L "$TMUX_SOCKET" kill-session -t "$LEASE_SESSION_NAME" 2>/dev/null || true
+	tmux -L "$TMUX_SOCKET" kill-session -t "$EVIDENCE_SESSION_NAME" 2>/dev/null || true
+	cat > "$lease_loop_script" <<EOF
 #!/usr/bin/env bash
 set +e
 while true; do
@@ -285,14 +318,8 @@ while true; do
 	sleep 60
 done
 EOF
-		chmod +x "$lease_loop_script"
-		tmux -L "$TMUX_SOCKET" new-session -d -s "$LEASE_SESSION_NAME" "bash '$lease_loop_script'"
-		echo "started $LEASE_SESSION_NAME"
-	fi
-	if tmux -L "$TMUX_SOCKET" has-session -t "$EVIDENCE_SESSION_NAME" 2>/dev/null; then
-		echo "$EVIDENCE_SESSION_NAME already running"
-	else
-		cat > "$evidence_loop_script" <<EOF
+	chmod +x "$lease_loop_script"
+	cat > "$evidence_loop_script" <<EOF
 #!/usr/bin/env bash
 set +e
 while true; do
@@ -317,23 +344,31 @@ while true; do
 	sleep 300
 done
 EOF
-		chmod +x "$evidence_loop_script"
-		tmux -L "$TMUX_SOCKET" new-session -d -s "$EVIDENCE_SESSION_NAME" "bash '$evidence_loop_script'"
-		echo "started $EVIDENCE_SESSION_NAME"
-	fi
+	chmod +x "$evidence_loop_script"
+	start_background_loop "$LEASE_SESSION_NAME" "$lease_loop_script" "$LEASE_PID_FILE"
+	start_background_loop "$EVIDENCE_SESSION_NAME" "$evidence_loop_script" "$EVIDENCE_PID_FILE"
 }
 
 stop_loop() {
 	tmux -L "$TMUX_SOCKET" kill-session -t "$LEGACY_SESSION_NAME" 2>/dev/null || true
-	tmux -L "$TMUX_SOCKET" kill-session -t "$ANCHOR_SESSION_NAME" 2>/dev/null || true
 	tmux -L "$TMUX_SOCKET" kill-session -t "$LEASE_SESSION_NAME" 2>/dev/null || true
 	tmux -L "$TMUX_SOCKET" kill-session -t "$EVIDENCE_SESSION_NAME" 2>/dev/null || true
+	stop_background_loop "$LEASE_SESSION_NAME" "$LEASE_PID_FILE"
+	stop_background_loop "$EVIDENCE_SESSION_NAME" "$EVIDENCE_PID_FILE"
 	echo "stopped bridge loops"
 }
 
 status_loop() {
-	tmux -L "$TMUX_SOCKET" list-sessions 2>/dev/null |
-		grep -E "(${LEGACY_SESSION_NAME}|${ANCHOR_SESSION_NAME}|${LEASE_SESSION_NAME}|${EVIDENCE_SESSION_NAME})" || true
+	if pid_is_running "$LEASE_PID_FILE"; then
+		echo "$LEASE_SESSION_NAME pid=$(cat "$LEASE_PID_FILE") running"
+	else
+		echo "$LEASE_SESSION_NAME stopped"
+	fi
+	if pid_is_running "$EVIDENCE_PID_FILE"; then
+		echo "$EVIDENCE_SESSION_NAME pid=$(cat "$EVIDENCE_PID_FILE") running"
+	else
+		echo "$EVIDENCE_SESSION_NAME stopped"
+	fi
 	tail -80 "$BASE/legacy-bridge.log" 2>/dev/null || true
 }
 

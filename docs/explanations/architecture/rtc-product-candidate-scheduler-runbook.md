@@ -258,13 +258,12 @@ The bridge does three things:
 - Imports `benchmark-canary-coverage-status.tsv` as scheduler `product_acceptance` / `rtc_conformance` gate evidence.
 - Adopts active `rtc-*` tmux sessions as short-lived `legacy-tmux` leases.
 
-`start` runs this as one tmux anchor plus two tmux loops:
+`start` runs this as two background loops with PID files:
 
-- `rtc-product-candidate-bridge-anchor` keeps the `rtc-fuzz` tmux server alive when no legacy worker session is currently present.
-- `rtc-product-candidate-lease-bridge-loop` refreshes adopted legacy tmux leases once per minute.
-- `rtc-product-candidate-evidence-bridge-loop` refreshes preflight and benchmark-canary evidence every five minutes.
+- `$RTC_SCHEDULER_BASE/legacy-lease-bridge.pid` refreshes adopted legacy tmux leases once per minute.
+- `$RTC_SCHEDULER_BASE/legacy-evidence-bridge.pid` refreshes preflight and benchmark-canary evidence every five minutes.
 
-The anchor is not fuzzing work and is skipped by lease adoption. The lease loop is intentionally separate from the evidence loop so slow or failing evidence import cannot make active legacy work disappear from scheduler status.
+The bridge does not run its own tmux sessions because it observes the `rtc-fuzz` tmux server and must not destabilize that server. The lease loop is intentionally separate from the evidence loop so slow or failing evidence import cannot make active legacy work disappear from scheduler status.
 
 Imported legacy green rows are intentionally marked stale until same-profile trunk control and exact-stack scheduler evidence are recorded. This prevents the old system from accidentally certifying a candidate as human-testable while still making the useful evidence visible.
 
