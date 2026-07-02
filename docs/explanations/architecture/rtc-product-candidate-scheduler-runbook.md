@@ -265,6 +265,8 @@ The bridge does three things:
 
 The bridge does not run its own tmux sessions because it observes the `rtc-fuzz` tmux server and must not destabilize that server. The lease loop is intentionally separate from the evidence loop so slow or failing evidence import cannot make active legacy work disappear from scheduler status.
 
+Pane capture is disabled by default. The bridge writes a small per-session marker artifact instead of calling `tmux capture-pane`, because pane capture has been observed to destabilize the shared `rtc-fuzz` tmux server on JS2. Set `RTC_LEGACY_BRIDGE_CAPTURE_PANES=1` only for a short diagnostic run.
+
 Imported legacy green rows are intentionally marked stale until same-profile trunk control and exact-stack scheduler evidence are recorded. This prevents the old system from accidentally certifying a candidate as human-testable while still making the useful evidence visible.
 
 Stop the bridge:

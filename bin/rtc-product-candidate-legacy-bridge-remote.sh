@@ -28,6 +28,7 @@ LEASE_SESSION_NAME="${RTC_LEASE_BRIDGE_SESSION:-rtc-product-candidate-lease-brid
 EVIDENCE_SESSION_NAME="${RTC_EVIDENCE_BRIDGE_SESSION:-rtc-product-candidate-evidence-bridge-loop}"
 LEASE_PID_FILE="${RTC_LEASE_BRIDGE_PID_FILE:-$BASE/legacy-lease-bridge.pid}"
 EVIDENCE_PID_FILE="${RTC_EVIDENCE_BRIDGE_PID_FILE:-$BASE/legacy-evidence-bridge.pid}"
+CAPTURE_PANES="${RTC_LEGACY_BRIDGE_CAPTURE_PANES:-0}"
 ARTIFACT_DIR="${RTC_SCHEDULER_ARTIFACT_DIR:-$BASE/artifacts}"
 
 usage() {
@@ -230,11 +231,15 @@ adopt_tmux() {
 			esac
 			lease_id="legacy-$(printf '%s' "$session" | shasum -a 256 | awk '{print substr($1,1,16)}')"
 			artifact="$ARTIFACT_DIR/$candidate/legacy-leases/$session.txt"
-			if timeout 8 tmux -L "$TMUX_SOCKET" capture-pane -pt "$session:0.0" -S -80 > "$artifact" 2>/dev/null; then
-				:
+			if [ "$CAPTURE_PANES" = "1" ]; then
+				if timeout 8 tmux -L "$TMUX_SOCKET" capture-pane -pt "$session:0.0" -S -80 > "$artifact" 2>/dev/null; then
+					:
+				else
+					capture_rc=$?
+					printf '%s legacy lease bridge capture failed session=%s rc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$session" "$capture_rc" >&2
+				fi
 			else
-				capture_rc=$?
-				printf '%s legacy lease bridge capture failed session=%s rc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$session" "$capture_rc" >&2
+				printf 'pane capture disabled; session=%s updated=%s\n' "$session" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$artifact"
 			fi
 			lease_rc=1
 			for attempt in 1 2 3; do
