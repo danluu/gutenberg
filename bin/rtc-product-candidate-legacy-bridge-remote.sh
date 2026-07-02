@@ -230,18 +230,40 @@ adopt_tmux() {
 }
 
 once() {
-	record_preflight
-	import_coverage
-	adopt_tmux
+	refresh
 	scheduler status
 }
 
+refresh() {
+	record_preflight
+	import_coverage
+	adopt_tmux
+}
+
 start_loop() {
+	local loop_script="$BASE/legacy-bridge-loop.sh"
 	if tmux -L "$TMUX_SOCKET" has-session -t "$SESSION_NAME" 2>/dev/null; then
 		echo "$SESSION_NAME already running"
 		return
 	fi
-	tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION_NAME" "while true; do RTC_REPO='$REPO' RTC_SCHEDULER_BASE='$BASE' RTC_SCHEDULER_DB='$DB' RTC_SCHEDULER_BIN='$SCHEDULER' RTC_COVERAGE_BASE='$COVERAGE_BASE' '$0' once >> '$BASE/legacy-bridge.log' 2>&1; sleep 60; done"
+	cat > "$loop_script" <<EOF
+#!/usr/bin/env bash
+set +e
+while true; do
+	printf '%s legacy bridge refresh start\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$BASE/legacy-bridge.log"
+	RTC_REPO="$REPO" \\
+	RTC_SCHEDULER_BASE="$BASE" \\
+	RTC_SCHEDULER_DB="$DB" \\
+	RTC_SCHEDULER_BIN="$SCHEDULER" \\
+	RTC_COVERAGE_BASE="$COVERAGE_BASE" \\
+	"$0" refresh >> "$BASE/legacy-bridge.log" 2>&1
+	rc=\$?
+	printf '%s legacy bridge refresh done rc=%s\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" "\$rc" >> "$BASE/legacy-bridge.log"
+	sleep 60
+done
+EOF
+	chmod +x "$loop_script"
+	tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION_NAME" "bash '$loop_script'"
 	echo "started $SESSION_NAME"
 }
 
@@ -276,6 +298,9 @@ case "${1:-}" in
 		;;
 	adopt-tmux)
 		adopt_tmux
+		;;
+	refresh)
+		refresh
 		;;
 	""|-h|--help|help)
 		usage
