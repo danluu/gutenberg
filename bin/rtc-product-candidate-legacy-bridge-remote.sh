@@ -24,6 +24,7 @@ COVERAGE_BASE="${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-
 TMUX_SOCKET="${RTC_TMUX_SOCKET:-rtc-fuzz}"
 BRIDGE="${RTC_LEGACY_BRIDGE_BIN:-$SCRIPT_DIR/$(basename "$0")}"
 LEGACY_SESSION_NAME="${RTC_LEGACY_BRIDGE_SESSION:-rtc-product-candidate-legacy-bridge-loop}"
+ANCHOR_SESSION_NAME="${RTC_BRIDGE_ANCHOR_SESSION:-rtc-product-candidate-bridge-anchor}"
 LEASE_SESSION_NAME="${RTC_LEASE_BRIDGE_SESSION:-rtc-product-candidate-lease-bridge-loop}"
 EVIDENCE_SESSION_NAME="${RTC_EVIDENCE_BRIDGE_SESSION:-rtc-product-candidate-evidence-bridge-loop}"
 ARTIFACT_DIR="${RTC_SCHEDULER_ARTIFACT_DIR:-$BASE/artifacts}"
@@ -224,7 +225,7 @@ adopt_tmux() {
 				*) continue ;;
 			esac
 			case "$session" in
-				"$LEGACY_SESSION_NAME"|"$LEASE_SESSION_NAME"|"$EVIDENCE_SESSION_NAME"|rtc-product-candidate-*) continue ;;
+				"$LEGACY_SESSION_NAME"|"$ANCHOR_SESSION_NAME"|"$LEASE_SESSION_NAME"|"$EVIDENCE_SESSION_NAME"|rtc-product-candidate-*) continue ;;
 			esac
 			lease_id="legacy-$(printf '%s' "$session" | shasum -a 256 | awk '{print substr($1,1,16)}')"
 			artifact="$ARTIFACT_DIR/$candidate/legacy-leases/$session.txt"
@@ -257,6 +258,12 @@ start_loop() {
 	if tmux -L "$TMUX_SOCKET" has-session -t "$LEGACY_SESSION_NAME" 2>/dev/null; then
 		echo "stopping obsolete $LEGACY_SESSION_NAME"
 		tmux -L "$TMUX_SOCKET" kill-session -t "$LEGACY_SESSION_NAME" 2>/dev/null || true
+	fi
+	if tmux -L "$TMUX_SOCKET" has-session -t "$ANCHOR_SESSION_NAME" 2>/dev/null; then
+		echo "$ANCHOR_SESSION_NAME already running"
+	else
+		tmux -L "$TMUX_SOCKET" new-session -d -s "$ANCHOR_SESSION_NAME" "while true; do sleep 3600; done"
+		echo "started $ANCHOR_SESSION_NAME"
 	fi
 	if tmux -L "$TMUX_SOCKET" has-session -t "$LEASE_SESSION_NAME" 2>/dev/null; then
 		echo "$LEASE_SESSION_NAME already running"
@@ -318,6 +325,7 @@ EOF
 
 stop_loop() {
 	tmux -L "$TMUX_SOCKET" kill-session -t "$LEGACY_SESSION_NAME" 2>/dev/null || true
+	tmux -L "$TMUX_SOCKET" kill-session -t "$ANCHOR_SESSION_NAME" 2>/dev/null || true
 	tmux -L "$TMUX_SOCKET" kill-session -t "$LEASE_SESSION_NAME" 2>/dev/null || true
 	tmux -L "$TMUX_SOCKET" kill-session -t "$EVIDENCE_SESSION_NAME" 2>/dev/null || true
 	echo "stopped bridge loops"
@@ -325,7 +333,7 @@ stop_loop() {
 
 status_loop() {
 	tmux -L "$TMUX_SOCKET" list-sessions 2>/dev/null |
-		grep -E "(${LEGACY_SESSION_NAME}|${LEASE_SESSION_NAME}|${EVIDENCE_SESSION_NAME})" || true
+		grep -E "(${LEGACY_SESSION_NAME}|${ANCHOR_SESSION_NAME}|${LEASE_SESSION_NAME}|${EVIDENCE_SESSION_NAME})" || true
 	tail -80 "$BASE/legacy-bridge.log" 2>/dev/null || true
 }
 
