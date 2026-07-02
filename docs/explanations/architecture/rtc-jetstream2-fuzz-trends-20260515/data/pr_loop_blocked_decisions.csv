@@ -1,21 +1,24 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,reload-hydration/generic-reducer-owner-probe,P0,no,valid manifest is pending; generic heavy relaunch is duplicate work until disposition or newer owner evidence,reload-hydration/generic-reducer-owner-probe,"valid manifest is pending; generic heavy relaunch is duplicate work until
-disposition or newer owner evidence"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held-consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime-held-consumed; relaunch only with newer owner evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean head,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean head
-launch-branch-repair,benchmark-canary/product-repair-broad-fanout,P0,no,aggregate and focused repair lanes already exist; broad heavy fanout would duplicate work,benchmark-canary/product-repair-broad-fanout,"aggregate and focused repair lanes already exist; broad heavy fanout would
-duplicate work"
-launch-branch-repair,lower-level/table-query-array-crdt,high,no,no branch-repair credit until product-keyed evidence or explicit downscope exists,lower-level/table-query-array-crdt,"no branch-repair credit until product-keyed evidence or explicit downscope
-exists"
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,superseded by already-published PR14B-based variant
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by already-published PR14B-based variant
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by already-published PR14B-based variant
-launch-branch-repair,heavy-pr-jobs-while-discovery-unhealthy,P0,no,do not allow heavy PR jobs when active discovery is below minimum; cheap publication/accounting and analysis-only remain allowed,heavy-pr-jobs-while-discovery-unhealthy,"do not allow heavy PR jobs when active discovery is below minimum; cheap
-publication/accounting and analysis-only remain allowed"
-publish-ready,final-rtc-stack,P0,no,blocked until reload-hydration disposition and benchmark-canary retained product/status closure,final-rtc-stack,"blocked until reload-hydration disposition and benchmark-canary retained
-product/status closure"
-publish-ready,final-maintainer-snapshot,P0,no,blocked until reload-hydration disposition and benchmark-canary retained product/status closure,final-maintainer-snapshot,"blocked until reload-hydration disposition and benchmark-canary retained
-product/status closure"
-hold-publication,PR07C,P0,no,final PR07C publication credit remains blocked until exact validation and benchmark-canary closure gates clear,PR07C,"final PR07C publication credit remains blocked until exact validation and
-benchmark-canary closure gates clear"
+launch-branch-repair,heavy-pr-jobs-while-discovery-below-min,P0,no,Block heavy PR jobs whenever active discovery drops below 3; cheap publication manifest generation and analysis-only accounting may continue,heavy-pr-jobs-while-discovery-below-min,"Block heavy PR jobs whenever active discovery drops below 3; cheap publication
+manifest generation and analysis-only accounting may continue"
+launch-branch-repair,benchmark-canary/product-repair-broad-fanout,P0,no,Focused aggregate and oracle repair paths exist; broad fanout risks discovery reserve without removing a distinct blocker,benchmark-canary/product-repair-broad-fanout,"Focused aggregate and oracle repair paths exist; broad fanout risks discovery
+reserve without removing a distinct blocker"
+repair-branch,benchmark-canary/status-only-open,high,no,Status-only rows are not product PR repair work unless new product evidence appears,benchmark-canary/status-only-open,"Status-only rows are not product PR repair work unless new product evidence
+appears"
+launch-branch-repair,reload-hydration/generic-reducer-owner-probe,P0,no,"Reject unless manifest adoption fails, validation expires, or fresh owner/product evidence appears",reload-hydration/generic-reducer-owner-probe,"Reject unless manifest adoption fails, validation expires, or fresh
+owner/product evidence appears"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,Runtime-held owner matrix is consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,Runtime-held owner matrix is consumed; relaunch only with newer owner evidence
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,Stale direct PR07C head is superseded by repaired build-clean head,ready/rtc-pr07c-reload-record-snapshots,Stale direct PR07C head is superseded by repaired build-clean head
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,Superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already-published canonical PR06B minimal branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,Superseded by already-published PR14B-based variant,ready/rtc-pr15a-fallback-group-move-green,Superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,Superseded by already-published PR14B-based variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,Superseded by already-published PR14B-based variant
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,Superseded by already-published PR14B-based variant,ready/rtc-pr15c-fallback-group-delete-green,Superseded by already-published PR14B-based variant
+launch-branch-repair,lower-level/table-query-array-crdt,high,no,Reject until a reproducible representative maps to product evidence or an explicit diagnostic downscope,lower-level/table-query-array-crdt,"Reject until a reproducible representative maps to product evidence or an
+explicit diagnostic downscope"
+publish-ready,final-rtc-stack,P0,no,Blocked until benchmark-canary retained-product and rtc-reference-oracle repair/downscope closure plus reload-hydration disposition reconciliation,final-rtc-stack,"Blocked until benchmark-canary retained-product and rtc-reference-oracle
+repair/downscope closure plus reload-hydration disposition reconciliation"
+publish-ready,final-maintainer-snapshot,P0,no,Blocked until final stack has canary/oracle closure evidence and deliberate downscopes are named,final-maintainer-snapshot,"Blocked until final stack has canary/oracle closure evidence and deliberate
+downscopes are named"
+hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260702T043946Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 10
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260702T043946Z/benchmark-canary-coverage-status.tsv"
