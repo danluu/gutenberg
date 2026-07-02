@@ -230,15 +230,17 @@ adopt_tmux() {
 			esac
 			lease_id="legacy-$(printf '%s' "$session" | shasum -a 256 | awk '{print substr($1,1,16)}')"
 			artifact="$ARTIFACT_DIR/$candidate/legacy-leases/$session.txt"
-			tmux -L "$TMUX_SOCKET" capture-pane -pt "$session:0.0" -S -80 > "$artifact" 2>/dev/null || true
-			scheduler lease-start \
+			timeout 8 tmux -L "$TMUX_SOCKET" capture-pane -pt "$session:0.0" -S -80 > "$artifact" 2>/dev/null ||
+				printf '%s legacy lease bridge capture failed session=%s rc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$session" "$?" >&2
+			timeout 20 node "$SCHEDULER" --db "$DB" lease-start \
 				--id "$lease_id" \
 				--worker "$session" \
 				--kind legacy-tmux \
 				--candidate "$candidate" \
 				--ttl-seconds 180 \
 				--artifact-dir "$artifact" \
-				--cleanup-state adopted >/dev/null
+				--cleanup-state adopted >/dev/null ||
+				printf '%s legacy lease bridge lease-start failed session=%s rc=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$session" "$?" >&2
 		done
 }
 
