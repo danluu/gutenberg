@@ -17,7 +17,10 @@ BASE="${RTC_SCHEDULER_BASE:-/media/volume/danluu-fuzz-data/rtc-product-candidate
 DB="${RTC_SCHEDULER_DB:-$BASE/ledger.sqlite}"
 COVERAGE_BASE="${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}"
 TMUX_SOCKET="${RTC_TMUX_SOCKET:-rtc-fuzz}"
-SESSION_NAME="${RTC_LEGACY_BRIDGE_SESSION:-rtc-product-candidate-legacy-bridge-loop}"
+BRIDGE="${RTC_LEGACY_BRIDGE_BIN:-$SCRIPT_DIR/$(basename "$0")}"
+LEGACY_SESSION_NAME="${RTC_LEGACY_BRIDGE_SESSION:-rtc-product-candidate-legacy-bridge-loop}"
+LEASE_SESSION_NAME="${RTC_LEASE_BRIDGE_SESSION:-rtc-product-candidate-lease-bridge-loop}"
+EVIDENCE_SESSION_NAME="${RTC_EVIDENCE_BRIDGE_SESSION:-rtc-product-candidate-evidence-bridge-loop}"
 ARTIFACT_DIR="${RTC_SCHEDULER_ARTIFACT_DIR:-$BASE/artifacts}"
 
 usage() {
@@ -26,8 +29,8 @@ Usage: $(basename "$0") <command>
 
 Commands:
   once              Import current legacy state once.
-  start             Start the tmux bridge loop.
-  stop              Stop the tmux bridge loop.
+  start             Start the tmux bridge loops.
+  stop              Stop the tmux bridge loops.
   status            Show bridge loop status.
   record-preflight  Record scheduler preflight from JS2 resource/current-SHA checks.
   import-coverage   Import current benchmark-canary coverage status.
@@ -235,45 +238,86 @@ once() {
 }
 
 refresh() {
+	adopt_tmux
 	record_preflight
 	import_coverage
-	adopt_tmux
 }
 
 start_loop() {
-	local loop_script="$BASE/legacy-bridge-loop.sh"
-	if tmux -L "$TMUX_SOCKET" has-session -t "$SESSION_NAME" 2>/dev/null; then
-		echo "$SESSION_NAME already running"
-		return
+	local lease_loop_script="$BASE/legacy-lease-bridge-loop.sh"
+	local evidence_loop_script="$BASE/legacy-evidence-bridge-loop.sh"
+	if tmux -L "$TMUX_SOCKET" has-session -t "$LEGACY_SESSION_NAME" 2>/dev/null; then
+		echo "stopping obsolete $LEGACY_SESSION_NAME"
+		tmux -L "$TMUX_SOCKET" kill-session -t "$LEGACY_SESSION_NAME" 2>/dev/null || true
 	fi
-	cat > "$loop_script" <<EOF
+	if tmux -L "$TMUX_SOCKET" has-session -t "$LEASE_SESSION_NAME" 2>/dev/null; then
+		echo "$LEASE_SESSION_NAME already running"
+	else
+		cat > "$lease_loop_script" <<EOF
 #!/usr/bin/env bash
 set +e
 while true; do
-	printf '%s legacy bridge refresh start\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$BASE/legacy-bridge.log"
+	printf '%s legacy lease bridge start\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$BASE/legacy-bridge.log"
 	RTC_REPO="$REPO" \\
 	RTC_SCHEDULER_BASE="$BASE" \\
 	RTC_SCHEDULER_DB="$DB" \\
 	RTC_SCHEDULER_BIN="$SCHEDULER" \\
 	RTC_COVERAGE_BASE="$COVERAGE_BASE" \\
-	"$0" refresh >> "$BASE/legacy-bridge.log" 2>&1
+	RTC_LEGACY_BRIDGE_BIN="$BRIDGE" \\
+	"$BRIDGE" adopt-tmux >> "$BASE/legacy-bridge.log" 2>&1
 	rc=\$?
-	printf '%s legacy bridge refresh done rc=%s\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" "\$rc" >> "$BASE/legacy-bridge.log"
+	printf '%s legacy lease bridge done rc=%s\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" "\$rc" >> "$BASE/legacy-bridge.log"
 	sleep 60
 done
 EOF
-	chmod +x "$loop_script"
-	tmux -L "$TMUX_SOCKET" new-session -d -s "$SESSION_NAME" "bash '$loop_script'"
-	echo "started $SESSION_NAME"
+		chmod +x "$lease_loop_script"
+		tmux -L "$TMUX_SOCKET" new-session -d -s "$LEASE_SESSION_NAME" "bash '$lease_loop_script'"
+		echo "started $LEASE_SESSION_NAME"
+	fi
+	if tmux -L "$TMUX_SOCKET" has-session -t "$EVIDENCE_SESSION_NAME" 2>/dev/null; then
+		echo "$EVIDENCE_SESSION_NAME already running"
+	else
+		cat > "$evidence_loop_script" <<EOF
+#!/usr/bin/env bash
+set +e
+while true; do
+	printf '%s legacy evidence bridge start\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$BASE/legacy-bridge.log"
+	RTC_REPO="$REPO" \\
+	RTC_SCHEDULER_BASE="$BASE" \\
+	RTC_SCHEDULER_DB="$DB" \\
+	RTC_SCHEDULER_BIN="$SCHEDULER" \\
+	RTC_COVERAGE_BASE="$COVERAGE_BASE" \\
+	RTC_LEGACY_BRIDGE_BIN="$BRIDGE" \\
+	timeout 120 "$BRIDGE" record-preflight >> "$BASE/legacy-bridge.log" 2>&1
+	preflight_rc=\$?
+	RTC_REPO="$REPO" \\
+	RTC_SCHEDULER_BASE="$BASE" \\
+	RTC_SCHEDULER_DB="$DB" \\
+	RTC_SCHEDULER_BIN="$SCHEDULER" \\
+	RTC_COVERAGE_BASE="$COVERAGE_BASE" \\
+	RTC_LEGACY_BRIDGE_BIN="$BRIDGE" \\
+	timeout 240 "$BRIDGE" import-coverage >> "$BASE/legacy-bridge.log" 2>&1
+	import_rc=\$?
+	printf '%s legacy evidence bridge done preflight_rc=%s import_rc=%s\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" "\$preflight_rc" "\$import_rc" >> "$BASE/legacy-bridge.log"
+	sleep 300
+done
+EOF
+		chmod +x "$evidence_loop_script"
+		tmux -L "$TMUX_SOCKET" new-session -d -s "$EVIDENCE_SESSION_NAME" "bash '$evidence_loop_script'"
+		echo "started $EVIDENCE_SESSION_NAME"
+	fi
 }
 
 stop_loop() {
-	tmux -L "$TMUX_SOCKET" kill-session -t "$SESSION_NAME" 2>/dev/null || true
-	echo "stopped $SESSION_NAME"
+	tmux -L "$TMUX_SOCKET" kill-session -t "$LEGACY_SESSION_NAME" 2>/dev/null || true
+	tmux -L "$TMUX_SOCKET" kill-session -t "$LEASE_SESSION_NAME" 2>/dev/null || true
+	tmux -L "$TMUX_SOCKET" kill-session -t "$EVIDENCE_SESSION_NAME" 2>/dev/null || true
+	echo "stopped bridge loops"
 }
 
 status_loop() {
-	tmux -L "$TMUX_SOCKET" list-sessions 2>/dev/null | grep -F "$SESSION_NAME" || true
+	tmux -L "$TMUX_SOCKET" list-sessions 2>/dev/null |
+		grep -E "(${LEGACY_SESSION_NAME}|${LEASE_SESSION_NAME}|${EVIDENCE_SESSION_NAME})" || true
 	tail -80 "$BASE/legacy-bridge.log" 2>/dev/null || true
 }
 
