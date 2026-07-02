@@ -244,6 +244,8 @@ export RTC_SCHEDULER_DB=$RTC_SCHEDULER_BASE/ledger.sqlite
 bin/rtc-product-candidate-legacy-bridge-remote.sh start
 ```
 
+On JS2, `RTC_REPO` defaults to `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo` if present. Set it explicitly when testing a different product checkout. The scheduler binary is resolved from the checkout containing the bridge script unless `RTC_SCHEDULER_BIN` is set.
+
 Run one import manually:
 
 ```bash

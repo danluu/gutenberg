@@ -11,8 +11,13 @@ set -euo pipefail
 # materializing exact-stack/coverage gaps as named blockers.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO="${RTC_REPO:-$(cd "$SCRIPT_DIR/.." && pwd)}"
-SCHEDULER="${RTC_SCHEDULER_BIN:-$REPO/bin/rtc-product-candidate-scheduler.mjs}"
+SCHEDULER_REPO="$(cd "$SCRIPT_DIR/.." && pwd)"
+DEFAULT_RTC_REPO="/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo"
+if [ ! -d "$DEFAULT_RTC_REPO/.git" ]; then
+	DEFAULT_RTC_REPO="$SCHEDULER_REPO"
+fi
+REPO="${RTC_REPO:-$DEFAULT_RTC_REPO}"
+SCHEDULER="${RTC_SCHEDULER_BIN:-$SCHEDULER_REPO/bin/rtc-product-candidate-scheduler.mjs}"
 BASE="${RTC_SCHEDULER_BASE:-/media/volume/danluu-fuzz-data/rtc-product-candidate-scheduler-20260702}"
 DB="${RTC_SCHEDULER_DB:-$BASE/ledger.sqlite}"
 COVERAGE_BASE="${RTC_COVERAGE_BASE:-/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515}"
