@@ -294,7 +294,11 @@ start_background_loop() {
 		echo "$name already running pid=$(cat "$pid_file")"
 		return
 	fi
-	nohup bash "$script" >> "$BASE/legacy-bridge.log" 2>&1 < /dev/null &
+	if command -v setsid >/dev/null 2>&1; then
+		nohup setsid bash "$script" >> "$BASE/legacy-bridge.log" 2>&1 < /dev/null &
+	else
+		nohup bash "$script" >> "$BASE/legacy-bridge.log" 2>&1 < /dev/null &
+	fi
 	echo "$!" > "$pid_file"
 	echo "started $name pid=$(cat "$pid_file")"
 }
