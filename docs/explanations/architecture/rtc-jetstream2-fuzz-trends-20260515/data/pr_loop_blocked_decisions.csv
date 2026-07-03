@@ -1,31 +1,27 @@
 action,target,priority,allowed,reason,target_label,reason_label
-publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,retained benchmark-canary product evidence still blocks final stack publication despite green current-run rows,final-rtc-stack/benchmark-canary-closure,"retained benchmark-canary product evidence still blocks final stack publication
-despite green current-run rows"
-publish-ready,final-maintainer-snapshot,P0,no,"wait for benchmark-canary retained-evidence closure, build preflight, and branch/downscope accounting",final-maintainer-snapshot,"wait for benchmark-canary retained-evidence closure, build preflight, and
-branch/downscope accounting"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; reopen only with newer owner evidence,PR07C/HOLD-07C,owner matrix is runtime-held and consumed; reopen only with newer owner evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,low,no,stale direct PR07C head is superseded by repaired build-clean candidate head,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by repaired build-clean candidate head
-publish-ready,PR07C-publication-credit,P0,no,current benchmark-canary status has 0,PR07C-publication-credit,current benchmark-canary status has 0
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-repair-branch,lower-level/table-query-array-crdt-yield-accounting,high,no,branch-repair credit is premature until product-keyed yield appears or downscope lands,lower-level/table-query-array-crdt-yield-accounting,"branch-repair credit is premature until product-keyed yield appears or downscope
-lands"
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by published canonical PR06B minimal branch
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,high,no,superseded by published PR14B-based PR15A variant,ready/rtc-pr15a-fallback-group-move-green,superseded by published PR14B-based PR15A variant
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,high,no,superseded by published PR14B-based PR15B variant,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by published PR14B-based PR15B variant
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,high,no,superseded by published PR14B-based PR15C variant,ready/rtc-pr15c-fallback-group-delete-green,superseded by published PR14B-based PR15C variant
-hold-publication,PR07C,P0,no,current benchmark-canary status has 0,PR07C,current benchmark-canary status has 0
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
-0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T040901Z/benchmark-canary-coverage-status.tsv,,,,,,
+repair-branch,benchmark-canary/novelty-http-large-post-lifecycle-completion,high,no,keep tied large-post evidence under the aggregate owner until the selected child clears or dispatch reread selects it,benchmark-canary/novelty-http-large-post-lifecycle-completion,"keep tied large-post evidence under the aggregate owner until the selected child
+clears or dispatch reread selects it"
+repair-branch,benchmark-canary/novelty-http-existing-post-crdt-metadata,high,no,not selected for this single-flight slot; reselect only if dispatch reread makes it leading or tied,benchmark-canary/novelty-http-existing-post-crdt-metadata,"not selected for this single-flight slot; reselect only if dispatch reread makes
+it leading or tied"
+repair-branch,benchmark-canary/novelty-http-persistence-probe,high,no,not selected for this single-flight slot; avoid duplicate focused fanout,benchmark-canary/novelty-http-persistence-probe,not selected for this single-flight slot; avoid duplicate focused fanout
+repair-branch,benchmark-canary/novelty-http-table-stale-snapshot,high,no,not selected for this single-flight slot; avoid per-group fanout,benchmark-canary/novelty-http-table-stale-snapshot,not selected for this single-flight slot; avoid per-group fanout
+publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,blocked by open canary materialization and retained product-evidence disposition,final-rtc-stack/benchmark-canary-closure,blocked by open canary materialization and retained product-evidence disposition
+publish-ready,final-maintainer-snapshot,P0,no,same benchmark-canary closure gate blocks maintainer-facing publication,final-maintainer-snapshot,same benchmark-canary closure gate blocks maintainer-facing publication
+publish-ready,PR07C-publication-credit,P0,no,current benchmark-canary status has 2 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T085739Z/benchmark-canary-coverage-status.tsv,PR07C-publication-credit,"current benchmark-canary status has 2
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T085739Z/benchmark-canary-coverage-status.tsv"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,stale direct PR07C head is superseded by the repaired build-clean head,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head is superseded by the repaired build-clean head
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held-consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime-held-consumed; relaunch only with newer owner evidence
+publish-ready,ready-product-real-fix-branches,high,no,canonical real-fix branches are already published or superseded; duplicate publication is churn,ready-product-real-fix-branches,"canonical real-fix branches are already published or superseded; duplicate
+publication is churn"
+publish-ready,held-superseded-product-branches,high,no,PR06B full and PR15A/B/C non-on-PR14B variants are held or superseded by published canonical variants,held-superseded-product-branches,"PR06B full and PR15A/B/C non-on-PR14B variants are held or superseded by
+published canonical variants"
+repair-branch,lower-level/table-query-array-crdt-yield-accounting,high,no,branch repair credit is premature while product_yield_nonzero=0 and product_failure_key_nonempty=0,lower-level/table-query-array-crdt-yield-accounting,"branch repair credit is premature while product_yield_nonzero=0 and
+product_failure_key_nonempty=0"
+repair-ready,deferred/reload-hydration@e8b64d56a18586be22e7922a9f6c144bd5b8d431,P0,no,manifest-adopted and build-clean; do not spend the next product slot on duplicate proof absent newer blocker evidence,deferred/reload-hydration@e8b64d56a18586be22e7922a9f6c144bd5b8d431,"manifest-adopted and build-clean; do not spend the next product slot on
+duplicate proof absent newer blocker evidence"
+launch-branch-repair,any-heavy-pr-fanout-while-discovery-at-or-below-reserve,P0,no,heavy PR work must wait if it would reduce active discovery to the reserve floor or below,any-heavy-pr-fanout-while-discovery-at-or-below-reserve,"heavy PR work must wait if it would reduce active discovery to the reserve floor
+or below"
+hold-publication,PR07C,P0,no,current benchmark-canary status has 2 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T085739Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 2
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260703T085739Z/benchmark-canary-coverage-status.tsv"
