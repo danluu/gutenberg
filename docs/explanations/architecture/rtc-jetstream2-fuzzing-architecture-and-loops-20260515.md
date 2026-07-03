@@ -2,6 +2,8 @@
 
 Snapshot time: `2026-05-21T23:03Z`
 
+Blocker-history update: `2026-07-03T04:50Z`
+
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
 
@@ -35,6 +37,54 @@ durable evidence, and leaves enough state for another process to reject stale or
 incorrect interpretations. Graphs and prose reports are not the API by
 themselves; controller decisions must be traceable to TSV, JSON, or run
 artifacts under the data root.
+
+## Blocker Age And Failed Mitigations
+
+As of 2026-07-03 UTC, the JS2 RTC fuzz pipeline has been dealing with the same
+broad blocker class for roughly six weeks. The durable fuzzing roots started
+around 2026-05-15, the benchmark canary feedback root started on 2026-05-20,
+and the all-merge fuzz stack started on 2026-05-26. The specific stale feedback
+that most recently kept reopening work was last written on 2026-05-24 in
+`/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520/current-feedback.tsv`,
+so it was about 40 days old by 2026-07-03 and referred to the older
+`2f8247258316bde60869c06c383090904e9426bd` candidate, not the current rebased
+all-merge branch head.
+
+The repeated failure mode was not simply lack of CPU or lack of fuzzing volume.
+Several mitigations were tried and were insufficient:
+
+- raising browser fuzz caps and resuming lanes, which increased activity but did
+  not clear false control-plane gates;
+- scheduler tweaks, which could not help while inherited benchmark feedback was
+  being interpreted as live product failure evidence;
+- exact-stack or benchmark reruns by themselves, because coverage-status rows
+  and inherited `current-feedback.tsv` rows could still be converted into
+  blockers;
+- treating `exact_stack_green` as product confidence, which confused repair
+  evidence for a known stack with current-run product coverage;
+- product repair fanout, which wasted Codex cycles when stale, green, or
+  non-promotion-blocking rows were accepted as open product blockers;
+- killing tmux sessions only, which missed orphaned Codex process groups that
+  active-job detection later adopted;
+- productive-analysis classifications alone, which churned while feedback
+  hashes and mtimes reopened rows;
+- hardcoded monitor restart wrappers, which could restart a monitor against an
+  old output directory;
+- broad directory/artifact scans, which were too slow and noisy for health
+  decisions.
+
+The July 2026 recurrence guards are now: ignore stale or inherited feedback that
+does not match the current branch head; never infer exact-stack blockers from
+coverage-status rows or reason prose; require open, non-green,
+`promotion_blocked=yes` product evidence before launching product repair; keep
+`downscoped_to_coverage_materialization` terminal when the live canary has no
+effective product blocker; kill orphaned process groups as well as tmux
+sessions; and read the current output directory dynamically when restarting the
+novelty monitor.
+
+When CPU is unexpectedly idle or a blocker looks old, check blocker age and live
+evidence first. The detailed checklist and commands are in
+[`real-time-collaboration-fuzzing-pipeline-runbook.md`](real-time-collaboration-fuzzing-pipeline-runbook.md).
 
 ## Two-Host System Map
 
