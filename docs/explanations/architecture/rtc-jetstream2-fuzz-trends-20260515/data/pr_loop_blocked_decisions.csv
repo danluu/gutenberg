@@ -1,31 +1,25 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary/novelty-http-table-stale-snapshot,high,no,"older materialized feeds selected this row, but the current root must be reread after materialization before a concrete focused branch repair launches",benchmark-canary/novelty-http-table-stale-snapshot,"older materialized feeds selected this row, but the current root must be reread
-after materialization before a concrete focused branch repair launches"
-launch-branch-repair,benchmark-canary/novelty-http-large-post-lifecycle,high,no,current root has this lane running with 0 records; wait for materialized current evidence or aggregate owner disposition,benchmark-canary/novelty-http-large-post-lifecycle,"current root has this lane running with 0 records; wait for materialized current
-evidence or aggregate owner disposition"
-launch-branch-repair,benchmark-canary/novelty-ws-parser-serialization,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-ws-parser-serialization,"do not launch duplicate per-row canary work before the dispatch reread selects
-one current leading row"
-launch-branch-repair,benchmark-canary/novelty-http-persistence-probe,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-http-persistence-probe,"do not launch duplicate per-row canary work before the dispatch reread selects
-one current leading row"
-launch-branch-repair,benchmark-canary/novelty-http-title-reload-convergence,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-http-title-reload-convergence,"do not launch duplicate per-row canary work before the dispatch reread selects
-one current leading row"
-launch-branch-repair,benchmark-canary/novelty-http-same-user-stale-draft,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-http-same-user-stale-draft,"do not launch duplicate per-row canary work before the dispatch reread selects
-one current leading row"
-launch-branch-repair,benchmark-canary/novelty-http-existing-post-crdt-metadata,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-http-existing-post-crdt-metadata,"do not launch duplicate per-row canary work before the dispatch reread selects
-one current leading row"
-launch-branch-repair,benchmark-canary/novelty-ws-collaboration-ui-signals,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-ws-collaboration-ui-signals,"do not launch duplicate per-row canary work before the dispatch reread selects
-one current leading row"
-launch-branch-repair,benchmark-canary/novelty-ws-multi-reload-lifecycle,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-ws-multi-reload-lifecycle,"do not launch duplicate per-row canary work before the dispatch reread selects
-one current leading row"
-publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,"final publication remains blocked until current canary rows are green/downscoped and retained product evidence is repaired, adopted, retired by same-head proof, or explicitly downscoped",final-rtc-stack/benchmark-canary-closure,"final publication remains blocked until current canary rows are green/downscoped
-and retained product evidence is repaired, adopted, retired by same-head proof,
-or explicitly downscoped"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,direct PR07C head is superseded by the repaired build-clean candidate head,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,direct PR07C head is superseded by the repaired build-clean candidate head
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime hold was consumed; relaunch only if newer owner evidence appears,PR07C/HOLD-07C,runtime hold was consumed; relaunch only if newer owner evidence appears
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,medium,no,superseded by the published minimal PR06B branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by the published minimal PR06B branch
-publish-ready,ready/rtc-pr15a-fallback-group-move-green,medium,no,superseded by the PR14B-based canonical PR15A branch,ready/rtc-pr15a-fallback-group-move-green,superseded by the PR14B-based canonical PR15A branch
-publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,medium,no,superseded by the PR14B-based canonical PR15B branch,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by the PR14B-based canonical PR15B branch
-publish-ready,ready/rtc-pr15c-fallback-group-delete-green,medium,no,superseded by the PR14B-based canonical PR15C branch,ready/rtc-pr15c-fallback-group-delete-green,superseded by the PR14B-based canonical PR15C branch
-hold-publication,PR07C,P0,no,current benchmark-canary status has 1 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260704T100850Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 1
-promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260704T100850Z/benchmark-canary-coverage-status.tsv"
+launch-branch-repair,benchmark-canary/novelty-http-persistence-probe,high,no,older contrarian tie-break is stale relative to later reports; allow only if dispatch reread makes it the single leading or tied-leading retained/nonzero row,benchmark-canary/novelty-http-persistence-probe,"older contrarian tie-break is stale relative to later reports; allow only if
+dispatch reread makes it the single leading or tied-leading retained/nonzero row"
+launch-branch-repair,benchmark-canary/novelty-ws-multi-reload-lifecycle,high,no,retained evidence may exist but it is not the selected current leader; duplicate focused children are diagnostic churn,benchmark-canary/novelty-ws-multi-reload-lifecycle,"retained evidence may exist but it is not the selected current leader; duplicate
+focused children are diagnostic churn"
+launch-branch-repair,benchmark-canary/novelty-ws-parser-serialization,high,no,stale focused target for this cycle; do not relaunch unless dispatch reread reselects it as leading or tied-leading,benchmark-canary/novelty-ws-parser-serialization,"stale focused target for this cycle; do not relaunch unless dispatch reread
+reselects it as leading or tied-leading"
+launch-branch-repair,benchmark-canary/novelty-http-table-stale-snapshot,high,no,below current focused priority; keep under the aggregate owner unless dispatch reread changes ranking,benchmark-canary/novelty-http-table-stale-snapshot,"below current focused priority; keep under the aggregate owner unless dispatch
+reread changes ranking"
+cooldown-diagnostic,benchmark-canary-product-failure,P0,no,do not cool the aggregate while retained/nonzero/product-failure canary evidence may remain,benchmark-canary-product-failure,"do not cool the aggregate while retained/nonzero/product-failure canary evidence
+may remain"
+update-controller-rule,benchmark-canary-product-failure/suppress-stale-product-repair,P0,no,reject stale zero-evidence suppression for this cycle because later materialized reads requalified retained/nonzero product evidence,benchmark-canary-product-failure/suppress-stale-product-repair,"reject stale zero-evidence suppression for this cycle because later materialized
+reads requalified retained/nonzero product evidence"
+update-controller-rule,benchmark-canary-product-failure/materialized-zero-evidence,P0,no,materialized-zero suppression is not allowed here; bootstrap or all-status-only zeroes are not closure proof,benchmark-canary-product-failure/materialized-zero-evidence,"materialized-zero suppression is not allowed here; bootstrap or all-status-only
+zeroes are not closure proof"
+publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,"hold final stack and maintainer snapshot until retained canary evidence is repaired, adopted, same-head retired, or explicitly downscoped with proof",final-rtc-stack/benchmark-canary-closure,"hold final stack and maintainer snapshot until retained canary evidence is
+repaired, adopted, same-head retired, or explicitly downscoped with proof"
+publish-ready,PR07C/final-stack,P0,no,"PR07C remains included as candidate material, but publication credit waits on benchmark-canary product-evidence closure",PR07C/final-stack,"PR07C remains included as candidate material, but publication credit waits on
+benchmark-canary product-evidence closure"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime owner matrix hold is consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime owner matrix hold is consumed; relaunch only with newer owner evidence
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head is superseded by repaired build-clean branch
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,full PR06B remains held because minimal PR06B is canonical,ready/rtc-pr06b-malformed-save-request-payload,full PR06B remains held because minimal PR06B is canonical
+publish-ready,ready/rtc-pr15-standalone-fallback-variants,high,no,standalone PR15 variants remain held in favor of PR14B-based variants,ready/rtc-pr15-standalone-fallback-variants,standalone PR15 variants remain held in favor of PR14B-based variants
+launch-branch-repair,heavy-pr-fanout,P0,no,broad CPU-heavy PR fanout duplicates canary churn and risks the discovery reserve,heavy-pr-fanout,"broad CPU-heavy PR fanout duplicates canary churn and risks the discovery
+reserve"

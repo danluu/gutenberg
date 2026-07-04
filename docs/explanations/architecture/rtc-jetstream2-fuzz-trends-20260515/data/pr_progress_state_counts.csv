@@ -1,6 +1,6 @@
 kind,priority,status,items
 deferred-family,medium,downscoped,2
+ready-product-pr,high,held-by-controller,4
 ready-product-pr,high,published,14
-ready-product-pr,low,superseded,4
 ready-product-pr,low,superseded-by-repair,1
 runtime-gated-pr,high,runtime-held-consumed,1
