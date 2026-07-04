@@ -1,2 +1,3 @@
 item_id,reason,rejections
+pa-exact-benchmark-canary-product-failure,pre_oracle_or_preflight_only,1
 productive-analysis-action,pre_oracle_or_preflight_only,1
