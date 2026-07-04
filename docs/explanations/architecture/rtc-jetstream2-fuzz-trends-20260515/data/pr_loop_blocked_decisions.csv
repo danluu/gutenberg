@@ -1,22 +1,31 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,heavy-pr-fanout,P0,no,discovery margin is thin; broad CPU-heavy PR fanout would risk starving protected discovery,heavy-pr-fanout,"discovery margin is thin; broad CPU-heavy PR fanout would risk starving
-protected discovery"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,P0,no,direct PR07C head is superseded by the repaired build/type-clean candidate,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,direct PR07C head is superseded by the repaired build/type-clean candidate
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime hold is consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime hold is consumed; relaunch only with newer owner evidence
-launch-branch-repair,benchmark-canary/novelty-http-existing-post-crdt-metadata,high,no,competing canary child; suppress fanout unless live reread selects it instead of the current focused child,benchmark-canary/novelty-http-existing-post-crdt-metadata,"competing canary child; suppress fanout unless live reread selects it instead of
-the current focused child"
-launch-branch-repair,benchmark-canary/novelty-http-persistence-probe,high,no,competing canary child; aggregate owner plus one focused child is the cap,benchmark-canary/novelty-http-persistence-probe,competing canary child; aggregate owner plus one focused child is the cap
-launch-branch-repair,benchmark-canary/novelty-http-same-user-stale-draft,high,no,competing canary child; keep under aggregate owner or coverage closure unless live reread selects it,benchmark-canary/novelty-http-same-user-stale-draft,"competing canary child; keep under aggregate owner or coverage closure unless
-live reread selects it"
-launch-branch-repair,benchmark-canary/novelty-ws-multi-reload-lifecycle,high,no,competing canary child; do not fan out duplicate focused repairs,benchmark-canary/novelty-ws-multi-reload-lifecycle,competing canary child; do not fan out duplicate focused repairs
-launch-branch-repair,benchmark-canary/novelty-http-rtc-reference-oracle,high,no,no current materialized rtc-reference-oracle row qualifies,benchmark-canary/novelty-http-rtc-reference-oracle,no current materialized rtc-reference-oracle row qualifies
-publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,final stack still lacks benchmark-canary closure or evidence-backed downscope for all required rows,final-rtc-stack/benchmark-canary-closure,"final stack still lacks benchmark-canary closure or evidence-backed downscope
-for all required rows"
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,full PR06B remains held because the minimal branch is canonical,ready/rtc-pr06b-malformed-save-request-payload,full PR06B remains held because the minimal branch is canonical
-publish-ready,ready/rtc-pr15-standalone-fallback-variants,high,no,standalone PR15 variants remain held in favor of PR14B-based variants,ready/rtc-pr15-standalone-fallback-variants,standalone PR15 variants remain held in favor of PR14B-based variants
-repair-branch,lower-level/table-query-array-crdt-branch-credit,high,no,branch credit is premature until classifier/accounting adoption is consumed,lower-level/table-query-array-crdt-branch-credit,branch credit is premature until classifier/accounting adoption is consumed
-hold-publication,PR07C,P0,no,current benchmark-canary status has 0 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260704T045047Z/benchmark-canary-coverage-status.tsv 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260704T045047Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 0 0
+launch-branch-repair,benchmark-canary/novelty-http-table-stale-snapshot,high,no,"older materialized feeds selected this row, but the current root must be reread after materialization before a concrete focused branch repair launches",benchmark-canary/novelty-http-table-stale-snapshot,"older materialized feeds selected this row, but the current root must be reread
+after materialization before a concrete focused branch repair launches"
+launch-branch-repair,benchmark-canary/novelty-http-large-post-lifecycle,high,no,current root has this lane running with 0 records; wait for materialized current evidence or aggregate owner disposition,benchmark-canary/novelty-http-large-post-lifecycle,"current root has this lane running with 0 records; wait for materialized current
+evidence or aggregate owner disposition"
+launch-branch-repair,benchmark-canary/novelty-ws-parser-serialization,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-ws-parser-serialization,"do not launch duplicate per-row canary work before the dispatch reread selects
+one current leading row"
+launch-branch-repair,benchmark-canary/novelty-http-persistence-probe,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-http-persistence-probe,"do not launch duplicate per-row canary work before the dispatch reread selects
+one current leading row"
+launch-branch-repair,benchmark-canary/novelty-http-title-reload-convergence,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-http-title-reload-convergence,"do not launch duplicate per-row canary work before the dispatch reread selects
+one current leading row"
+launch-branch-repair,benchmark-canary/novelty-http-same-user-stale-draft,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-http-same-user-stale-draft,"do not launch duplicate per-row canary work before the dispatch reread selects
+one current leading row"
+launch-branch-repair,benchmark-canary/novelty-http-existing-post-crdt-metadata,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-http-existing-post-crdt-metadata,"do not launch duplicate per-row canary work before the dispatch reread selects
+one current leading row"
+launch-branch-repair,benchmark-canary/novelty-ws-collaboration-ui-signals,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-ws-collaboration-ui-signals,"do not launch duplicate per-row canary work before the dispatch reread selects
+one current leading row"
+launch-branch-repair,benchmark-canary/novelty-ws-multi-reload-lifecycle,high,no,do not launch duplicate per-row canary work before the dispatch reread selects one current leading row,benchmark-canary/novelty-ws-multi-reload-lifecycle,"do not launch duplicate per-row canary work before the dispatch reread selects
+one current leading row"
+publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,"final publication remains blocked until current canary rows are green/downscoped and retained product evidence is repaired, adopted, retired by same-head proof, or explicitly downscoped",final-rtc-stack/benchmark-canary-closure,"final publication remains blocked until current canary rows are green/downscoped
+and retained product evidence is repaired, adopted, retired by same-head proof,
+or explicitly downscoped"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,direct PR07C head is superseded by the repaired build-clean candidate head,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,direct PR07C head is superseded by the repaired build-clean candidate head
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime hold was consumed; relaunch only if newer owner evidence appears,PR07C/HOLD-07C,runtime hold was consumed; relaunch only if newer owner evidence appears
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,medium,no,superseded by the published minimal PR06B branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by the published minimal PR06B branch
+publish-ready,ready/rtc-pr15a-fallback-group-move-green,medium,no,superseded by the PR14B-based canonical PR15A branch,ready/rtc-pr15a-fallback-group-move-green,superseded by the PR14B-based canonical PR15A branch
+publish-ready,ready/rtc-pr15b-fallback-group-insert-anchor-green,medium,no,superseded by the PR14B-based canonical PR15B branch,ready/rtc-pr15b-fallback-group-insert-anchor-green,superseded by the PR14B-based canonical PR15B branch
+publish-ready,ready/rtc-pr15c-fallback-group-delete-green,medium,no,superseded by the PR14B-based canonical PR15C branch,ready/rtc-pr15c-fallback-group-delete-green,superseded by the PR14B-based canonical PR15C branch
+hold-publication,PR07C,P0,no,current benchmark-canary status has 1 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260704T100850Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 1
 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260704T045047Z/benchmark-canary-coverage-status.tsv
-0 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260704T045047Z/benchmark-canary-coverage-status.tsv"
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260704T100850Z/benchmark-canary-coverage-status.tsv"
