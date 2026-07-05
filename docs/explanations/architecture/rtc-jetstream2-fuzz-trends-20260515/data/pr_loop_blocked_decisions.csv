@@ -1,23 +1,24 @@
 action,target,priority,allowed,reason,target_label,reason_label
-reserve-discovery,heavy-pr-work-when-discovery-below-reserve,P0,no,"if active discovery drops below 3, block heavy PR work except cheap publication manifest/accounting and analysis-only work",heavy-pr-work-when-discovery-below-reserve,"if active discovery drops below 3, block heavy PR work except cheap publication
-manifest/accounting and analysis-only work"
-launch-branch-repair,benchmark-canary/stale-focused-siblings,high,no,duplicate focused canary children are churn while one aggregate owner and one live-selected focused child are enough,benchmark-canary/stale-focused-siblings,"duplicate focused canary children are churn while one aggregate owner and one
-live-selected focused child are enough"
-publish-ready,final-rtc-stack/benchmark-canary-product-evidence,P0,no,"retained or nonzero canary product evidence blocks final publication until repaired, adopted, same-head-retired, or explicitly downscoped with evidence",final-rtc-stack/benchmark-canary-product-evidence,"retained or nonzero canary product evidence blocks final publication until
-repaired, adopted, same-head-retired, or explicitly downscoped with evidence"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; reopen only with newer owner evidence,PR07C/HOLD-07C,owner matrix is runtime-held and consumed; reopen only with newer owner evidence
-publish-ready,PR07C,P0,no,current benchmark-canary status has 0 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T055544Z/benchmark-canary-coverage-status.tsv 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T055544Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 0 0
+reserve-discovery,heavy-pr-work-when-discovery-below-3,P0,no,heavy PR or browser work must wait if discovery drops below reserve; cheap manifest generation and analysis-only accounting may continue,heavy-pr-work-when-discovery-below-3,"heavy PR or browser work must wait if discovery drops below reserve; cheap
+manifest generation and analysis-only accounting may continue"
+launch-branch-repair,benchmark-canary/novelty-ws-multi-reload-lifecycle,high,no,serialize behind seed 1260001 unless dispatch reread makes it the single top focused retained-product target,benchmark-canary/novelty-ws-multi-reload-lifecycle,"serialize behind seed 1260001 unless dispatch reread makes it the single top
+focused retained-product target"
+launch-branch-repair,benchmark-canary/novelty-http-table-stale-snapshot,high,no,do not launch stale focused siblings ahead of the active P0 oracle seed path,benchmark-canary/novelty-http-table-stale-snapshot,do not launch stale focused siblings ahead of the active P0 oracle seed path
+launch-branch-repair,benchmark-canary/focused-sibling-fanout,high,no,allow one aggregate owner and at most one focused child selected by dispatch-time evidence,benchmark-canary/focused-sibling-fanout,"allow one aggregate owner and at most one focused child selected by
+dispatch-time evidence"
+repair-branch,benchmark-canary-product-failure/current-root-zero-product-retire,P0,no,bootstrap-zero reads with active rows zero current records zero or all status-only rows must not retire retained product blockers,benchmark-canary-product-failure/current-root-zero-product-retire,"bootstrap-zero reads with active rows zero current records zero or all
+status-only rows must not retire retained product blockers"
+publish-ready,final-rtc-stack/benchmark-canary-product-evidence,P0,no,retained product evidence remains and must be repaired adopted same-head-retired or explicitly downscoped with evidence,final-rtc-stack/benchmark-canary-product-evidence,"retained product evidence remains and must be repaired adopted same-head-retired
+or explicitly downscoped with evidence"
+publish-ready,final-rtc-stack,P0,no,final publication remains blocked by benchmark-canary product-evidence disposition,final-rtc-stack,"final publication remains blocked by benchmark-canary product-evidence
+disposition"
+publish-ready,PR07C/final-stack-publication-credit,P0,no,current benchmark-canary status has 1 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T102459Z/benchmark-canary-coverage-status.tsv,PR07C/final-stack-publication-credit,"current benchmark-canary status has 1
 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T055544Z/benchmark-canary-coverage-status.tsv
-0 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T055544Z/benchmark-canary-coverage-status.tsv"
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T102459Z/benchmark-canary-coverage-status.tsv"
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,low,no,stale direct PR07C head is superseded by the repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head is superseded by the repaired build-clean branch
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,full PR06B remains held; ready/rtc-pr06b-malformed-save-request-payload-minimal is the canonical published variant,ready/rtc-pr06b-malformed-save-request-payload,"full PR06B remains held; ready/rtc-pr06b-malformed-save-request-payload-minimal
-is the canonical published variant"
-publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,standalone PR15 variants remain held in favor of already-published PR14B-based variants,ready/rtc-pr15a+15b+15c-standalone,"standalone PR15 variants remain held in favor of already-published PR14B-based
-variants"
-hold-publication,PR07C,P0,no,current benchmark-canary status has 0 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T055544Z/benchmark-canary-coverage-status.tsv 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T055544Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 0 0
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; reopen only with newer owner evidence,PR07C/HOLD-07C,owner matrix is runtime-held and consumed; reopen only with newer owner evidence
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,full PR06B remains held because PR06B minimal is the canonical selected branch,ready/rtc-pr06b-malformed-save-request-payload,full PR06B remains held because PR06B minimal is the canonical selected branch
+publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,standalone PR15 variants remain held in favor of PR14B-based variants,ready/rtc-pr15a+15b+15c-standalone,standalone PR15 variants remain held in favor of PR14B-based variants
+hold-publication,PR07C,P0,no,current benchmark-canary status has 1 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T102459Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 1
 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T055544Z/benchmark-canary-coverage-status.tsv
-0 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T055544Z/benchmark-canary-coverage-status.tsv"
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260705T102459Z/benchmark-canary-coverage-status.tsv"
