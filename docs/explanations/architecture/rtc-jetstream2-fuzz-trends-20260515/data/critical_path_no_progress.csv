@@ -1,2 +1,1 @@
-artifact_path,reason,size,mtime,associated_job,rejected_at,item_id
-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260704T154226Z/continuations/pa-exact-benchmark-canary-product-failure/report.md,pre_oracle_or_preflight_only,1363,1783180490,unknown,2026-07-05T02:37:02Z,pa-exact-benchmark-canary-product-failure
+artifact_path,reason,size,mtime,associated_job,rejected_at

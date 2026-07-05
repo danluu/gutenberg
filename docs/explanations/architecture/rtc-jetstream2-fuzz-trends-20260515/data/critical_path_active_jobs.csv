@@ -1,4 +1,5 @@
 session,class,started_hint
-rtc-critical-continuation-pa-exact-benchmark-canary-novelty-http-table-sta-20260705T022906Z,critical-continuation,
-rtc-critical-continuation-productive-analysis-action-20260705T023559Z,critical-continuation,
+rtc-critical-continuation-benchmark-canary-product-failure-20260705T063044Z,critical-continuation,
+rtc-critical-continuation-pa-exact-benchmark-canary-product-failure-20260705T063701Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
+rtc-pr-finalize-job-20260705T063232Z,finalization,
