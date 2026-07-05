@@ -4,27 +4,25 @@ PR progress items,held-by-controller,ready-product-pr,high,4
 PR progress items,published,ready-product-pr,high,14
 PR progress items,superseded-by-repair,ready-product-pr,low,1
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
-controller decisions,allowed,control decision,P0,12
-controller decisions,blocked,control decision,P0,6
+controller decisions,allowed,control decision,P0,8
+controller decisions,blocked,control decision,P0,5
 controller decisions,allowed,control decision,high,9
-controller decisions,blocked,control decision,high,6
+controller decisions,blocked,control decision,high,8
 controller decisions,blocked,control decision,low,1
 controller decisions,allowed,control decision,medium,4
-critical blockers,active,control-feedback,high,1
-critical blockers,active,coverage-confidence,high,1
+critical blockers,runnable,control-feedback,high,1
 critical blockers,terminal,deferred-family,high,1
+critical blockers,terminal,exact-stack-promotion,high,1
 critical blockers,terminal,final-stack-join,high,1
 critical blockers,terminal,owner-evidence,high,1
 critical blockers,active,product-repair,high,1
-critical blockers,active,productive-exact-blocker,high,1
-critical blockers,runnable,productive-exact-blocker,high,1
+critical blockers,active,productive-exact-blocker,high,2
 critical blockers,terminal,reducer,high,2
 critical job queue,terminal,browser-e2e,high,1
-critical job queue,active,codex-analysis,high,4
+critical job queue,active,codex-analysis,high,3
 critical job queue,runnable,codex-analysis,high,1
-critical job queue,terminal,codex-analysis,high,1
-critical lanes,active,codex-analysis,lane,1
+critical job queue,terminal,codex-analysis,high,2
 critical lanes,queued,codex-analysis,lane,2
-active sessions,active,analysis,analysis,1
+critical lanes,terminal,codex-analysis,lane,1
 active sessions,active,critical-continuation,critical-continuation,2
 active sessions,active,finalization,finalization,1

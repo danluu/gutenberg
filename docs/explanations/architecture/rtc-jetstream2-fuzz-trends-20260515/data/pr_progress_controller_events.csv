@@ -1,101 +1,101 @@
 timestamp,message,event_type
-2026-07-05T07:50:11Z,launched persona controller round 20260705T075011Z,persona round launched
-2026-07-05T07:50:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T07:52:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T07:54:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T07:56:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T07:58:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:00:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:02:34Z,launched persona controller round 20260705T080234Z,persona round launched
-2026-07-05T08:02:35Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:04:39Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:06:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:08:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:10:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:12:54Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:14:58Z,launched persona controller round 20260705T081458Z,persona round launched
-2026-07-05T08:14:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:17:03Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:19:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:21:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:23:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:25:18Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:27:21Z,launched persona controller round 20260705T082721Z,persona round launched
-2026-07-05T08:27:22Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:29:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:31:30Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:33:33Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:35:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:37:41Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:39:44Z,launched persona controller round 20260705T083944Z,persona round launched
-2026-07-05T08:39:45Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:41:49Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:43:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:45:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:48:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:50:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:52:09Z,launched persona controller round 20260705T085209Z,persona round launched
-2026-07-05T08:52:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:54:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:56:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T08:58:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:00:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:02:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:04:32Z,launched persona controller round 20260705T090432Z,persona round launched
-2026-07-05T09:04:33Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:06:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:08:40Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:10:44Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:12:47Z,launched persona controller round 20260705T091246Z,persona round launched
-2026-07-05T09:12:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:14:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:16:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:18:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:21:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:23:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:25:10Z,launched persona controller round 20260705T092509Z,persona round launched
-2026-07-05T09:25:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:27:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:29:18Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:31:22Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:33:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:35:30Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:37:33Z,launched persona controller round 20260705T093733Z,persona round launched
-2026-07-05T09:37:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:39:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:41:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:43:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:45:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:47:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:49:59Z,launched persona controller round 20260705T094959Z,persona round launched
-2026-07-05T09:50:00Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:52:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:54:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:56:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T09:58:18Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:00:22Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:02:26Z,launched persona controller round 20260705T100226Z,persona round launched
-2026-07-05T10:02:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:04:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:06:35Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:08:40Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:10:44Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:12:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:14:51Z,launched persona controller round 20260705T101451Z,persona round launched
-2026-07-05T10:14:52Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:16:56Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:19:00Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:21:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:23:07Z,launched persona controller round 20260705T102307Z,persona round launched
-2026-07-05T10:23:08Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:25:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:27:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:29:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:31:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:33:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:35:30Z,launched persona controller round 20260705T103530Z,persona round launched
-2026-07-05T10:35:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:37:35Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:39:39Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:41:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-05T10:43:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T11:52:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T11:54:05Z,launched persona controller round 20260705T115405Z,persona round launched
+2026-07-05T11:54:06Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T11:56:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T11:58:13Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:00:16Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:02:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:04:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:06:26Z,launched persona controller round 20260705T120626Z,persona round launched
+2026-07-05T12:06:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:08:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:10:35Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:12:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:14:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:16:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:18:49Z,launched persona controller round 20260705T121849Z,persona round launched
+2026-07-05T12:18:50Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:20:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:23:18Z,PR progress controller started pid=3860476,controller start
+2026-07-05T12:23:21Z,launched persona controller round 20260705T122320Z,persona round launched
+2026-07-05T12:23:21Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:25:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:27:30Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:29:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:31:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:33:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:35:47Z,launched persona controller round 20260705T123546Z,persona round launched
+2026-07-05T12:35:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:37:52Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:39:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:42:01Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:44:06Z,launched persona controller round 20260705T124405Z,persona round launched
+2026-07-05T12:44:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:46:11Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:48:16Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:50:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:52:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:54:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:56:33Z,launched persona controller round 20260705T125633Z,persona round launched
+2026-07-05T12:56:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T12:58:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:00:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:02:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:04:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:06:56Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:09:00Z,launched persona controller round 20260705T130859Z,persona round launched
+2026-07-05T13:09:00Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:11:05Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:13:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:15:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:17:18Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:19:23Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:21:27Z,launched persona controller round 20260705T132126Z,persona round launched
+2026-07-05T13:21:28Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:23:32Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:25:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:27:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:29:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:31:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:33:54Z,launched persona controller round 20260705T133354Z,persona round launched
+2026-07-05T13:33:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:35:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:38:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:40:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:42:13Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:44:17Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:46:21Z,launched persona controller round 20260705T134621Z,persona round launched
+2026-07-05T13:46:22Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:48:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:50:31Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:52:36Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:54:41Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:56:45Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T13:58:49Z,launched persona controller round 20260705T135849Z,persona round launched
+2026-07-05T13:58:50Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:00:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:02:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:05:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:07:08Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:09:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:11:16Z,launched persona controller round 20260705T141116Z,persona round launched
+2026-07-05T14:11:17Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:13:21Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:15:25Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:17:30Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:19:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:21:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:23:43Z,launched persona controller round 20260705T142342Z,persona round launched
+2026-07-05T14:23:44Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:25:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:27:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:29:58Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:32:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:34:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:36:11Z,launched persona controller round 20260705T143610Z,persona round launched
+2026-07-05T14:36:12Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:38:17Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:40:21Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:42:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-05T14:44:30Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
