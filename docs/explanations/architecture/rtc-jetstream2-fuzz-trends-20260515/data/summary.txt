@@ -1,62 +1,62 @@
-generated_at_utc: 2026-07-06T02:53:29Z
-monitor_passes: 2378
+generated_at_utc: 2026-07-06T06:55:39Z
+monitor_passes: 2405
 first_pass_utc: 2026-06-23T12:08:03Z
-last_pass_utc: 2026-07-06T02:48:12Z
+last_pass_utc: 2026-07-06T06:52:24Z
 coverage_records_seen_first: 515
-coverage_records_seen_last: 92982
-coverage_records_seen_delta: 92467
+coverage_records_seen_last: 94639
+coverage_records_seen_delta: 94124
 coverage_files_first: 890
-coverage_files_last: 7909
-coverage_files_delta: 7019
+coverage_files_last: 8296
+coverage_files_delta: 7406
 unmet_coverage_first: 40
-unmet_coverage_last: 13
+unmet_coverage_last: 12
 likely_real_max: 6
 duplicate_share_current_last: 0
-duplicate_share_historical_last: 0.1563
+duplicate_share_historical_last: 0.1515
 summary_startup_failures_last: 0
 quality_issues_last: 0
-memory_free_gb_last: 201.4
-cpu_utilization_last: 35.8
-load_1_last: 33.24
-load_5_last: 30.54
-load_15_last: 29.64
+memory_free_gb_last: 206.2
+cpu_utilization_last: 33.2
+load_1_last: 22.55
+load_5_last: 24.65
+load_15_last: 25.94
 core_count: 64
-enabled_group_events: 4234
-enabled_groups_current: novelty-ws-common-blocks,novelty-http-plain-editor-product-smoke,novelty-http-real-world-editor-usability,novelty-ws-same-user-lifecycle,novelty-ws-same-user-separate-context-lifecycle,novelty-http-rtc-reference-oracle,novelty-ws-collaboration-ui-signals,novelty-http-existing-post-crdt-metadata,novelty-ws-parser-transform,novelty-ws-multi-reload-lifecycle-completion,novelty-ws-media-cross-entity-completion,novelty-ws-media-cross-entity,novelty-ws-block-gauntlet,novelty-ws-long-session-large-doc,novelty-ws-structure,novelty-http-persistence-probe,novelty-ws-permissions-auth-locks
+enabled_group_events: 4348
+enabled_groups_current: novelty-ws-common-blocks,novelty-http-plain-editor-product-smoke,novelty-http-real-world-editor-usability,novelty-ws-same-user-lifecycle,novelty-ws-same-user-separate-context-lifecycle,novelty-http-rtc-reference-oracle,novelty-ws-collaboration-ui-signals,novelty-http-table-stale-snapshot,novelty-http-existing-post-crdt-metadata,novelty-ws-parser-transform,novelty-ws-multi-reload-lifecycle,novelty-ws-multi-reload-lifecycle-completion,novelty-ws-media-cross-entity-completion,novelty-ws-media-cross-entity,novelty-ws-block-gauntlet,novelty-ws-async-server-blocks,novelty-ws-structure,novelty-http-persistence-probe,novelty-ws-permissions-auth-locks
 fuzz_level_mix_snapshots: 813
 fuzz_level_mix_campaigns: coverage-guided,protocol-server
-fuzz_level_mix_latest: browser-e2e=16 lanes/16 groups; protocol-server=1 lanes/1 groups
-fuzz_level_test_executions: 13130856
+fuzz_level_mix_latest: browser-e2e=19 lanes/19 groups; protocol-server=1 lanes/1 groups
+fuzz_level_test_executions: 13130176
 fuzz_level_test_executions_has_approximate_rows: FALSE
-fuzz_level_execution_latest: browser-e2e=19796 cumulative/276 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=13111060 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
-bug_findings_rows: 266
-bug_findings_unique_likely_real: 115
-bug_findings_unique_candidate_signals: 122
-bug_outputs_rows: 668
-bug_outputs_unique_candidates: 545
-bug_effectiveness_latest: backend-api=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=115 likely-real/314.6 runner-hours/36.55 per-100-runner-hours; coverage-guided-lower-level=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; other=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 likely-real/221.7 runner-hours/0.00 per-100-runner-hours; transport-integration=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; unit-property=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours
-failure_candidate_effectiveness_latest: backend-api=0 failed-attempts/0.0 per-100-runner-hours; browser-e2e=4 039 failed-attempts/1 283.7 per-100-runner-hours; coverage-guided-lower-level=0 failed-attempts/0.0 per-100-runner-hours; fuzz-assertion=0 failed-attempts/0.0 per-100-runner-hours; other=0 failed-attempts/0.0 per-100-runner-hours; protocol-server=89 642 failed-attempts/40 429.8 per-100-runner-hours; transport-integration=0 failed-attempts/0.0 per-100-runner-hours; unit-property=0 failed-attempts/0.0 per-100-runner-hours
-bug_output_effectiveness_latest: backend-api=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=545 unique-candidates/314.6 runner-hours/173.21 per-100-runner-hours; coverage-guided-lower-level=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; other=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 unique-candidates/221.7 runner-hours/0.00 per-100-runner-hours; transport-integration=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; unit-property=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours
+fuzz_level_execution_latest: browser-e2e=19116 cumulative/256 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=13111060 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+bug_findings_rows: 252
+bug_findings_unique_likely_real: 105
+bug_findings_unique_candidate_signals: 110
+bug_outputs_rows: 635
+bug_outputs_unique_candidates: 515
+bug_effectiveness_latest: backend-api=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=105 likely-real/295.6 runner-hours/35.52 per-100-runner-hours; coverage-guided-lower-level=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; other=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 likely-real/221.7 runner-hours/0.00 per-100-runner-hours; transport-integration=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; unit-property=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours
+failure_candidate_effectiveness_latest: backend-api=0 failed-attempts/0.0 per-100-runner-hours; browser-e2e=3 981 failed-attempts/1 346.6 per-100-runner-hours; coverage-guided-lower-level=0 failed-attempts/0.0 per-100-runner-hours; fuzz-assertion=0 failed-attempts/0.0 per-100-runner-hours; other=0 failed-attempts/0.0 per-100-runner-hours; protocol-server=89 642 failed-attempts/40 429.8 per-100-runner-hours; transport-integration=0 failed-attempts/0.0 per-100-runner-hours; unit-property=0 failed-attempts/0.0 per-100-runner-hours
+bug_output_effectiveness_latest: backend-api=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=515 unique-candidates/295.6 runner-hours/174.20 per-100-runner-hours; coverage-guided-lower-level=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; other=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 unique-candidates/221.7 runner-hours/0.00 per-100-runner-hours; transport-integration=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; unit-property=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours
 profiles_seen: 23
 goals_total: 162
-goals_unmet: 13
+goals_unmet: 12
 pr_review_events: 10945
 pr_suggested_net_loc_snapshots: 1
 pr_suggested_net_loc_latest_total: 4583
 pr_progress_controller_items: 22
-pr_progress_state_counts: deferred-family/downscoped/medium=2; ready-product-pr/held-by-controller/high=4; ready-product-pr/published/high=14; ready-product-pr/superseded-by-repair/low=1; runtime-gated-pr/runtime-held-consumed/high=1
+pr_progress_state_counts: deferred-family/downscoped/medium=2; ready-product-pr/held-by-controller/high=3; ready-product-pr/published/high=14; ready-product-pr/superseded/low=1; ready-product-pr/superseded-by-repair/low=1; runtime-gated-pr/runtime-held-consumed/high=1
 pr_progress_publishable_branches: 2
 pr_progress_publishable_net_loc: 1253
-pr_progress_controller_events: other=90; persona round launched=10
+pr_progress_controller_events: other=93; persona round launched=7
 artifact_index_rows: 5042
 artifact_index_scope_rows: 25
-critical_blockers: 10
-critical_blocker_states: active=2; runnable=2; terminal=6
-pr_loop_queue_depth: PR progress items/downscoped=2; PR progress items/held-by-controller=4; PR progress items/published=14; PR progress items/superseded-by-repair=1; PR progress items/runtime-held-consumed=1; controller decisions/allowed=7; controller decisions/blocked=4; controller decisions/allowed=9; controller decisions/blocked=10; controller decisions/allowed=4; critical blockers/runnable=1; critical blockers/terminal=1; critical blockers/terminal=1; critical blockers/terminal=1; critical blockers/terminal=1; critical blockers/active=1; critical blockers/active=1; critical blockers/runnable=1; critical blockers/terminal=2; critical job queue/terminal=1; critical job queue/active=2; critical job queue/runnable=2; critical job queue/terminal=2; critical lanes/queued=2; critical lanes/terminal=1; active sessions/active=2; active sessions/active=1
-pr_loop_blocked_decisions: 14
-pr_loop_blocked_decision_types: hold-publication/P0=1; launch-branch-repair/P0=1; launch-owner-matrix/high=1; publish-ready/P0=2; publish-ready/high=4; repair-branch/high=5
+critical_blockers: 9
+critical_blocker_states: runnable=4; terminal=5
+pr_loop_queue_depth: PR progress items/downscoped=2; PR progress items/held-by-controller=3; PR progress items/published=14; PR progress items/superseded=1; PR progress items/superseded-by-repair=1; PR progress items/runtime-held-consumed=1; controller decisions/allowed=11; controller decisions/blocked=6; controller decisions/allowed=6; controller decisions/blocked=9; controller decisions/allowed=4; critical blockers/runnable=1; critical blockers/terminal=1; critical blockers/terminal=1; critical blockers/runnable=1; critical blockers/terminal=1; critical blockers/runnable=1; critical blockers/runnable=1; critical blockers/terminal=2; critical job queue/terminal=1; critical job queue/runnable=3; critical job queue/terminal=2; critical lanes/queued=2; critical lanes/terminal=1; active sessions/active=1
+pr_loop_blocked_decisions: 15
+pr_loop_blocked_decision_types: hold-publication/P0=1; launch-branch-repair/P0=1; launch-branch-repair/high=4; launch-owner-matrix/high=1; publish-ready/P0=3; publish-ready/high=4; update-controller-rule/P0=1
 critical_repeated_validation_failures: deferred/rtc-http-room-isolation-20260517T023739Z fail=28 pass=0; deferred/rtc-pre-save-search-live-collapse-20260517T022131Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T035704Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T042707Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T045710Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T055716Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T062719Z fail=28 pass=0; deferred/rtc-rich-text-suffix-corruption-20260517T022133Z fail=28 pass=0
-critical_no_progress_artifacts: 0
-critical_no_progress_top: NA
+critical_no_progress_artifacts: 1
+critical_no_progress_top: pa-exact-benchmark-canary-product-failure/pre_oracle_or_preflight_only=1
 critical_terminal_ledger_rows: 4
 local_publisher_events: 0
