@@ -57,6 +57,9 @@ CODEX_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_CODEX_TIMEOUT_SECONDS:-5400}
 ENABLE_BROWSER_PREFLIGHT=${RTC_CRITICAL_PR_EXECUTOR_ENABLE_BROWSER_PREFLIGHT:-1}
 RECONCILE_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_RECONCILE_TIMEOUT_SECONDS:-300}
 FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS:-12}
+COVERAGE_STARTUP_PENDING_MAX_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_COVERAGE_STARTUP_PENDING_MAX_SECONDS:-900}
+COVERAGE_NOVELTY_STATE_MAX_BYTES=${RTC_CRITICAL_PR_EXECUTOR_COVERAGE_NOVELTY_STATE_MAX_BYTES:-268435456}
+COVERAGE_MONITOR_FAILURE_SCAN_LINES=${RTC_CRITICAL_PR_EXECUTOR_COVERAGE_MONITOR_FAILURE_SCAN_LINES:-400}
 WORKTREE_PRUNE_RETENTION_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE_PRUNE_RETENTION_SECONDS:-172800}
 WORKTREE_PRUNE_PRESSURE_RETENTION_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE_PRUNE_PRESSURE_RETENTION_SECONDS:-21600}
 WORKTREE_PRUNE_MAX_DELETE_PER_PASS=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE_PRUNE_MAX_DELETE_PER_PASS:-250}
@@ -1746,10 +1749,97 @@ latest_coverage_novelty_status() {
 	printf '%s\n' "$status"
 }
 
+latest_coverage_novelty_log() {
+	local output_dir log_file
+	output_dir=$(latest_coverage_output_dir || true)
+	[ -n "$output_dir" ] || return 1
+	log_file="${output_dir%/}/novelty-monitor.log"
+	[ -s "$log_file" ] || return 1
+	printf '%s\n' "$log_file"
+}
+
+latest_coverage_state_file() {
+	local output_dir state_file
+	output_dir=$(latest_coverage_output_dir || true)
+	[ -n "$output_dir" ] || return 1
+	state_file="${output_dir%/}/novelty-state.json"
+	[ -s "$state_file" ] || return 1
+	printf '%s\n' "$state_file"
+}
+
+latest_coverage_supervisor_state_file() {
+	local output_dir state_file
+	output_dir=$(latest_coverage_output_dir || true)
+	[ -n "$output_dir" ] || return 1
+	state_file="${output_dir%/}/supervisor-state.json"
+	[ -s "$state_file" ] || return 1
+	printf '%s\n' "$state_file"
+}
+
+coverage_run_age_seconds() {
+	local output_dir base stamp epoch now
+	output_dir=$(latest_coverage_output_dir || true)
+	[ -n "$output_dir" ] || {
+		printf '0'
+		return
+	}
+	base=${output_dir##*/}
+	stamp=${base#run-}
+	if [[ "$stamp" =~ ^[0-9]{8}T[0-9]{6}Z$ ]]; then
+		epoch=$(date -u -d "${stamp:0:4}-${stamp:4:2}-${stamp:6:2} ${stamp:9:2}:${stamp:11:2}:${stamp:13:2}" +%s 2>/dev/null || printf '0')
+	else
+		epoch=$(file_mtime "$output_dir")
+	fi
+	now=$(date -u +%s)
+	if [ "${epoch:-0}" -gt 0 ] && [ "$now" -ge "$epoch" ]; then
+		printf '%s' "$(( now - epoch ))"
+	else
+		printf '0'
+	fi
+}
+
+coverage_startup_pending_stale_open() {
+	local status age
+	status=$(latest_coverage_novelty_status || true)
+	[ -n "$status" ] && [ -s "$status" ] || return 1
+	grep -q 'pending until first pass' "$status" || return 1
+	age=$(coverage_run_age_seconds)
+	[ "${age:-0}" -ge "$COVERAGE_STARTUP_PENDING_MAX_SECONDS" ] || return 1
+	return 0
+}
+
+coverage_monitor_pass_failure_open() {
+	local log_file
+	log_file=$(latest_coverage_novelty_log || true)
+	[ -n "$log_file" ] && [ -s "$log_file" ] || return 1
+	tail -n "$COVERAGE_MONITOR_FAILURE_SCAN_LINES" "$log_file" 2>/dev/null |
+		grep -Eiq 'pass failed:|RangeError: Invalid string length|JavaScript heap out of memory|Cannot create a string longer than'
+}
+
+coverage_state_oversized_open() {
+	local state_file size
+	state_file=$(latest_coverage_state_file || true)
+	[ -n "$state_file" ] && [ -s "$state_file" ] || return 1
+	size=$(file_size "$state_file")
+	[ "${size:-0}" -gt "$COVERAGE_NOVELTY_STATE_MAX_BYTES" ]
+}
+
+coverage_supervisor_state_missing_open() {
+	coverage_startup_pending_stale_open || return 1
+	latest_coverage_supervisor_state_file >/dev/null 2>&1 && return 1
+	return 0
+}
+
 coverage_materialization_liveness_open() {
 	local status
 	status=$(latest_coverage_novelty_status || true)
 	[ -n "$status" ] && [ -s "$status" ] || return 1
+	if coverage_monitor_pass_failure_open ||
+		coverage_startup_pending_stale_open ||
+		coverage_state_oversized_open ||
+		coverage_supervisor_state_missing_open; then
+		return 0
+	fi
 	awk '
 		/- unmet goals:/ { unmet = $4 + 0 }
 		/- current-run active dirs:/ { active_dirs = $5 + 0 }
@@ -1776,13 +1866,27 @@ coverage_materialization_liveness_open() {
 }
 
 coverage_materialization_liveness_summary() {
-	local status
+	local status log_file state_file state_size supervisor_state run_age failure_summary startup_pending
 	status=$(latest_coverage_novelty_status || true)
 	[ -n "$status" ] && [ -s "$status" ] || {
 		printf 'novelty-status.md missing under %s' "$(latest_coverage_output_dir 2>/dev/null || printf "$COVERAGE_BASE/current-output-dir.txt")"
 		return 0
 	}
-	awk '
+	log_file=$(latest_coverage_novelty_log || true)
+	state_file=$(latest_coverage_state_file || true)
+	supervisor_state=$(latest_coverage_supervisor_state_file || true)
+	state_size=0
+	[ -n "$state_file" ] && state_size=$(file_size "$state_file")
+	run_age=$(coverage_run_age_seconds)
+	startup_pending=$(grep -q 'pending until first pass' "$status" && printf yes || printf no)
+	failure_summary=""
+	if [ -n "$log_file" ] && [ -s "$log_file" ]; then
+		failure_summary=$(tail -n "$COVERAGE_MONITOR_FAILURE_SCAN_LINES" "$log_file" 2>/dev/null |
+			grep -E 'pass failed:|RangeError: Invalid string length|JavaScript heap out of memory|Cannot create a string longer than' |
+			tail -1 |
+			tr '\t\r\n' '   ' || true)
+	fi
+	awk -v run_age="$run_age" -v startup_pending="$startup_pending" -v state_size="$state_size" -v state_max="$COVERAGE_NOVELTY_STATE_MAX_BYTES" -v supervisor_state="${supervisor_state:-missing}" -v failure_summary="${failure_summary:-none}" '
 		/- unmet goals:/ { unmet = $4 + 0 }
 		/- current-run active dirs:/ { active_dirs = $5 + 0 }
 		/- current-run records by profile:/ { records = $0; sub(/^.*: /, "", records) }
@@ -1790,7 +1894,13 @@ coverage_materialization_liveness_summary() {
 		/- quality issue passes:/ { quality = $0; sub(/^.*: /, "", quality) }
 		/enabled profile "block-gauntlet" has produced 0 ingested behavioral records/ { block_gauntlet_zero = "yes" }
 		END {
-			printf "unmet_goals=%s active_dirs=%s records=%s successful_records=%s quality_issue_passes=%s block_gauntlet_zero=%s status=%s",
+			printf "run_age_seconds=%s startup_pending=%s state_bytes=%s state_max_bytes=%s supervisor_state=%s monitor_failure=%s unmet_goals=%s active_dirs=%s records=%s successful_records=%s quality_issue_passes=%s block_gauntlet_zero=%s status=%s",
+				run_age,
+				startup_pending,
+				state_size,
+				state_max,
+				supervisor_state,
+				failure_summary,
 				unmet + 0,
 				active_dirs + 0,
 				(records == "" ? "unknown" : records),
@@ -1867,7 +1977,7 @@ benchmark_product_failures_open() {
 			explicit_downscope = idx["explicit_downscope"] ? $(idx["explicit_downscope"]) : ""
 			promotion_blocked = idx["promotion_blocked"] ? $(idx["promotion_blocked"]) : ""
 			current_run_green = idx["current_run_green"] ? $(idx["current_run_green"]) : ""
-			if (promotion_blocked == "yes" && current_run_green != "yes" && is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope)) {
+			if (is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope)) {
 				found = 1
 			}
 		}
@@ -1902,7 +2012,7 @@ benchmark_canary_group_product_failure_open() {
 			explicit_downscope = idx["explicit_downscope"] ? $(idx["explicit_downscope"]) : ""
 			promotion_blocked = idx["promotion_blocked"] ? $(idx["promotion_blocked"]) : ""
 			current_run_green = idx["current_run_green"] ? $(idx["current_run_green"]) : ""
-			if (promotion_blocked == "yes" && current_run_green != "yes" && is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope)) {
+			if (is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope)) {
 				found = 1
 			}
 		}
@@ -1935,7 +2045,7 @@ benchmark_product_failure_signature() {
 			explicit_downscope = idx["explicit_downscope"] ? $(idx["explicit_downscope"]) : ""
 			promotion_blocked = idx["promotion_blocked"] ? $(idx["promotion_blocked"]) : ""
 			current_run_green = idx["current_run_green"] ? $(idx["current_run_green"]) : ""
-			if (promotion_blocked == "yes" && current_run_green != "yes" && is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope)) {
+			if (is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope)) {
 				print group_name "\t" cases "\t" coverage_state
 			}
 		}
@@ -1966,7 +2076,7 @@ benchmark_product_failure_summary() {
 			explicit_downscope = idx["explicit_downscope"] ? $(idx["explicit_downscope"]) : ""
 			promotion_blocked = idx["promotion_blocked"] ? $(idx["promotion_blocked"]) : ""
 			current_run_green = idx["current_run_green"] ? $(idx["current_run_green"]) : ""
-			if (promotion_blocked == "yes" && current_run_green != "yes" && is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope)) {
+			if (is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope)) {
 				rows++
 				total += product_records
 				if (!seen[group_name]++) {
@@ -2659,7 +2769,7 @@ write_blockers_and_queue() {
 	coverage_liveness_state=$([ -n "$coverage_liveness_active" ] && printf active || printf runnable)
 	coverage_liveness_summary=$(coverage_materialization_liveness_summary || true)
 	coverage_liveness_result=$([ -n "$coverage_liveness_active" ] && printf coverage_liveness_repair_active || printf coverage_liveness_repair_required)
-	coverage_liveness_artifacts=novelty-status.md,supervisor-groups.json,coverage-change.tsv,classification.tsv
+	coverage_liveness_artifacts=novelty-status.md,novelty-monitor.log,novelty-state.json,supervisor-state.json,supervisor-groups.json,coverage-change.tsv,classification.tsv
 	benchmark_state=$([ -n "$benchmark_active" ] && printf active || printf runnable)
 	benchmark_kind=coverage-promotion
 	benchmark_action=coverage-gap-repair
@@ -3607,7 +3717,7 @@ launch_continuation_jobs() {
 			"coverage-materialization-liveness" \
 			"coverage-materialization-liveness-$(file_hash "$(latest_coverage_novelty_status)" | cut -c1-12)" \
 			"coverage-materialization-liveness|materialization-liveness|coverage-liveness" \
-			"coverage-guided materialization liveness repair: current novelty status has unmet goals but zero current-run active dirs, zero current-run records, and zero successful current-run records. Inspect the bounded current output root, supervisor-groups.json, coverage-change.tsv, and classification.tsv; fix the scheduler/materializer/controller path so enabled profiles produce ingested behavioral records or write an explicit downscope with evidence." \
+			"coverage-guided materialization liveness repair: current novelty status, monitor log, supervisor state, or state-file size indicates unhealthy materialization. This includes stale startup first-pass pending, repeated novelty monitor pass failures such as RangeError/heap/string serialization failures, missing supervisor-state.json, oversized novelty-state.json, or zero current-run active dirs/records after a pass. Inspect the bounded current output root, novelty-monitor.log, novelty-state.json, supervisor-state.json, supervisor-groups.json, coverage-change.tsv, and classification.tsv; fix the scheduler/materializer/controller path so enabled profiles produce ingested behavioral records or write an explicit downscope with evidence." \
 			1
 	fi
 	if ! lane_terminal_suppressed pr17-1020002; then
