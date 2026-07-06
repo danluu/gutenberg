@@ -1,42 +1,42 @@
-generated_at_utc: 2026-07-06T10:57:51Z
-monitor_passes: 2431
+generated_at_utc: 2026-07-06T14:59:58Z
+monitor_passes: 2455
 first_pass_utc: 2026-06-23T12:08:03Z
-last_pass_utc: 2026-07-06T10:53:47Z
+last_pass_utc: 2026-07-06T14:49:51Z
 coverage_records_seen_first: 515
-coverage_records_seen_last: 96422
-coverage_records_seen_delta: 95907
+coverage_records_seen_last: 98446
+coverage_records_seen_delta: 97931
 coverage_files_first: 890
-coverage_files_last: 9540
-coverage_files_delta: 8650
+coverage_files_last: 10486
+coverage_files_delta: 9596
 unmet_coverage_first: 40
 unmet_coverage_last: 10
 likely_real_max: 6
-duplicate_share_current_last: 1
-duplicate_share_historical_last: 0.129
+duplicate_share_current_last: 0.25
+duplicate_share_historical_last: 0.1351
 summary_startup_failures_last: 0
 quality_issues_last: 0
-memory_free_gb_last: 202.6
-cpu_utilization_last: 37
-load_1_last: 41.54
-load_5_last: 36.4
-load_15_last: 32.06
+memory_free_gb_last: 187.8
+cpu_utilization_last: 15.6
+load_1_last: 7.01
+load_5_last: 20.37
+load_15_last: 31.73
 core_count: 64
-enabled_group_events: 4410
-enabled_groups_current: novelty-ws-common-blocks,novelty-ws-collaboration-ui-signals,novelty-http-plain-editor-product-smoke,novelty-http-real-world-editor-usability,novelty-ws-same-user-lifecycle,novelty-ws-same-user-separate-context-lifecycle,novelty-http-rtc-reference-oracle,novelty-ws-revision-recovery,novelty-http-table-stale-snapshot,novelty-http-existing-post-crdt-metadata,novelty-ws-parser-serialization,novelty-ws-parser-transform,novelty-ws-multi-reload-lifecycle,novelty-ws-media-cross-entity-completion,novelty-ws-media-cross-entity,novelty-ws-three-user-late-join,novelty-ws-block-gauntlet,novelty-ws-async-server-blocks,novelty-ws-long-session-large-doc,novelty-ws-structure,novelty-http-persistence-probe
-fuzz_level_mix_snapshots: 813
+enabled_group_events: 4449
+enabled_groups_current: novelty-ws-real-user-coverage-bridge,novelty-ws-real-user-reload-diversity,novelty-ws-real-user-save-reload,novelty-ws-real-user-editing,novelty-ws-real-user-rich-text,novelty-ws-common-blocks
+fuzz_level_mix_snapshots: 812
 fuzz_level_mix_campaigns: coverage-guided,protocol-server
-fuzz_level_mix_latest: browser-e2e=16 lanes/16 groups; protocol-server=1 lanes/1 groups
-fuzz_level_test_executions: 13130360
+fuzz_level_mix_latest: browser-e2e=13 lanes/6 groups; protocol-server=1 lanes/1 groups
+fuzz_level_test_executions: 13131449
 fuzz_level_test_executions_has_approximate_rows: FALSE
-fuzz_level_execution_latest: browser-e2e=19300 cumulative/356 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=13111060 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
-bug_findings_rows: 257
-bug_findings_unique_likely_real: 106
-bug_findings_unique_candidate_signals: 110
-bug_outputs_rows: 622
-bug_outputs_unique_candidates: 498
-bug_effectiveness_latest: backend-api=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=105 likely-real/291.6 runner-hours/36.01 per-100-runner-hours; coverage-guided-lower-level=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; other=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 likely-real/221.7 runner-hours/0.00 per-100-runner-hours; transport-integration=1 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; unit-property=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours
-failure_candidate_effectiveness_latest: backend-api=0 failed-attempts/0.0 per-100-runner-hours; browser-e2e=4 036 failed-attempts/1 384.2 per-100-runner-hours; coverage-guided-lower-level=0 failed-attempts/0.0 per-100-runner-hours; fuzz-assertion=0 failed-attempts/0.0 per-100-runner-hours; other=0 failed-attempts/0.0 per-100-runner-hours; protocol-server=89 642 failed-attempts/40 429.8 per-100-runner-hours; transport-integration=0 failed-attempts/0.0 per-100-runner-hours; unit-property=0 failed-attempts/0.0 per-100-runner-hours
-bug_output_effectiveness_latest: backend-api=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=469 unique-candidates/291.6 runner-hours/160.85 per-100-runner-hours; coverage-guided-lower-level=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; other=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 unique-candidates/221.7 runner-hours/0.00 per-100-runner-hours; transport-integration=29 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; unit-property=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours
+fuzz_level_execution_latest: browser-e2e=20389 cumulative/232 per-hour; transport-integration=0 cumulative/0 per-hour; unit-property=0 cumulative/0 per-hour; coverage-guided-lower-level=0 cumulative/0 per-hour; backend-api=0 cumulative/0 per-hour; protocol-server=13111060 cumulative/0 per-hour; fuzz-assertion=0 cumulative/0 per-hour; other=0 cumulative/0 per-hour
+bug_findings_rows: 266
+bug_findings_unique_likely_real: 111
+bug_findings_unique_candidate_signals: 115
+bug_outputs_rows: 644
+bug_outputs_unique_candidates: 516
+bug_effectiveness_latest: backend-api=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=110 likely-real/316.0 runner-hours/34.81 per-100-runner-hours; coverage-guided-lower-level=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; other=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 likely-real/221.7 runner-hours/0.00 per-100-runner-hours; transport-integration=1 likely-real/0.0 runner-hours/0.00 per-100-runner-hours; unit-property=0 likely-real/0.0 runner-hours/0.00 per-100-runner-hours
+failure_candidate_effectiveness_latest: backend-api=0 failed-attempts/0.0 per-100-runner-hours; browser-e2e=4 339 failed-attempts/1 373.2 per-100-runner-hours; coverage-guided-lower-level=0 failed-attempts/0.0 per-100-runner-hours; fuzz-assertion=0 failed-attempts/0.0 per-100-runner-hours; other=0 failed-attempts/0.0 per-100-runner-hours; protocol-server=89 642 failed-attempts/40 429.8 per-100-runner-hours; transport-integration=0 failed-attempts/0.0 per-100-runner-hours; unit-property=0 failed-attempts/0.0 per-100-runner-hours
+bug_output_effectiveness_latest: backend-api=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; browser-e2e=488 unique-candidates/316.0 runner-hours/154.44 per-100-runner-hours; coverage-guided-lower-level=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; fuzz-assertion=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; other=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; protocol-server=0 unique-candidates/221.7 runner-hours/0.00 per-100-runner-hours; transport-integration=28 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours; unit-property=0 unique-candidates/0.0 runner-hours/0.00 per-100-runner-hours
 profiles_seen: 23
 goals_total: 162
 goals_unmet: 10
@@ -50,11 +50,11 @@ pr_progress_publishable_net_loc: 1253
 pr_progress_controller_events: other=85; persona round launched=15
 artifact_index_rows: 5042
 artifact_index_scope_rows: 25
-critical_blockers: 10
-critical_blocker_states: active=2; runnable=4; terminal=4
-pr_loop_queue_depth: PR progress items/downscoped=2; PR progress items/held-by-controller=3; PR progress items/published=14; PR progress items/superseded=1; PR progress items/superseded-by-repair=1; PR progress items/runtime-held-consumed=1; controller decisions/allowed=9; controller decisions/blocked=5; controller decisions/allowed=8; controller decisions/blocked=4; critical blockers/active=1; critical blockers/active=1; critical blockers/terminal=1; critical blockers/runnable=1; critical blockers/terminal=1; critical blockers/runnable=1; critical blockers/runnable=2; critical blockers/terminal=2; critical job queue/terminal=1; critical job queue/active=2; critical job queue/runnable=3; critical job queue/terminal=1; critical lanes/active=1; critical lanes/queued=2; active sessions/active=1; active sessions/active=1
-pr_loop_blocked_decisions: 9
-pr_loop_blocked_decision_types: cooldown-diagnostic/P0=1; hold-publication/P0=1; launch-branch-repair/P0=1; launch-owner-matrix/high=1; publish-ready/P0=1; publish-ready/high=3; repair-branch/P0=1
+critical_blockers: 7
+critical_blocker_states: active=1; runnable=2; terminal=4
+pr_loop_queue_depth: PR progress items/downscoped=2; PR progress items/held-by-controller=3; PR progress items/published=14; PR progress items/superseded=1; PR progress items/superseded-by-repair=1; PR progress items/runtime-held-consumed=1; controller decisions/allowed=11; controller decisions/blocked=3; controller decisions/allowed=9; controller decisions/blocked=9; critical blockers/runnable=1; critical blockers/active=1; critical blockers/terminal=1; critical blockers/runnable=1; critical blockers/terminal=1; critical blockers/terminal=2; critical job queue/terminal=1; critical job queue/active=1; critical job queue/runnable=1; critical job queue/terminal=1; critical lanes/active=1; critical lanes/queued=1; active sessions/active=1
+pr_loop_blocked_decisions: 12
+pr_loop_blocked_decision_types: hold-publication/P0=1; launch-branch-repair/P0=1; launch-branch-repair/high=1; launch-owner-matrix/high=1; publish-ready/P0=1; publish-ready/high=3; repair-branch/high=2; repair-ready/high=2
 critical_repeated_validation_failures: deferred/rtc-http-room-isolation-20260517T023739Z fail=28 pass=0; deferred/rtc-pre-save-search-live-collapse-20260517T022131Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T035704Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T042707Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T045710Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T055716Z fail=28 pass=0; deferred/rtc-reload-hydration-20260517T062719Z fail=28 pass=0; deferred/rtc-rich-text-suffix-corruption-20260517T022133Z fail=28 pass=0
 critical_no_progress_artifacts: 2
 critical_no_progress_top: benchmark-canary-product-failure/pre_oracle_or_preflight_only=1; pa-exact-benchmark-canary-product-failure/pre_oracle_or_preflight_only=1

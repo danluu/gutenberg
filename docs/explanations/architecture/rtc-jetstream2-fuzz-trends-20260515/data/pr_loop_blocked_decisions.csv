@@ -1,19 +1,25 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,heavy-pr-browser-work-while-discovery-below-min,P0,no,heavy PR or browser jobs must wait if active discovery drops below 3; only cheap manifest/accounting or analysis-only work may bypass the reserve,heavy-pr-browser-work-while-discovery-below-min,"heavy PR or browser jobs must wait if active discovery drops below 3; only cheap
-manifest/accounting or analysis-only work may bypass the reserve"
-repair-branch,benchmark-canary-product-failure,P0,no,"current synthesis treats the latest canary root as materialized rather than bootstrap-empty; reopen only if dispatch reread finds retained product evidence, nonzero product_evidence_records, or product-failure coverage_state",benchmark-canary-product-failure,"current synthesis treats the latest canary root as materialized rather than
-bootstrap-empty; reopen only if dispatch reread finds retained product evidence,
-nonzero product_evidence_records, or product-failure coverage_state"
-cooldown-diagnostic,benchmark-canary-product-failure-zero-product-bootstrap,P0,no,"do not cool or retire product evidence from a fresh, empty, or status-only bootstrap root lacking active/current materialization",benchmark-canary-product-failure-zero-product-bootstrap,"do not cool or retire product evidence from a fresh, empty, or status-only
-bootstrap root lacking active/current materialization"
-publish-ready,final-rtc-stack/benchmark-canary-product-evidence,P0,no,"final-stack publication and snapshot credit remain blocked until current canary gates are green, downscoped, repaired, retired, or materially cleared",final-rtc-stack/benchmark-canary-product-evidence,"final-stack publication and snapshot credit remain blocked until current canary
-gates are green, downscoped, repaired, retired, or materially cleared"
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,"owner matrix is runtime-held and consumed; relaunch only with newer owner
-evidence"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,stale direct PR07C head is superseded by the repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots,stale direct PR07C head is superseded by the repaired build-clean branch
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already-published canonical minimal PR06B branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical minimal PR06B branch
-publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,PR14B-based variants are already published; standalone PR15 variants need fresh product evidence,ready/rtc-pr15a+15b+15c-standalone,"PR14B-based variants are already published; standalone PR15 variants need fresh
-product evidence"
-hold-publication,PR07C,P0,no,current benchmark-canary status has 1 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260706T103607Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 1
+launch-branch-repair,heavy-pr-browser-work-while-discovery-below-min,P0,no,Reject heavy PR/browser work if live scheduling would reduce active discovery below 3 or consume protected canary capacity.,heavy-pr-browser-work-while-discovery-below-min,"Reject heavy PR/browser work if live scheduling would reduce active discovery
+below 3 or consume protected canary capacity."
+repair-branch,benchmark-canary/novelty-ws-multi-reload-lifecycle,high,no,Cool sibling focused fanout; aggregate owner covers retained product evidence while table-stale is selected.,benchmark-canary/novelty-ws-multi-reload-lifecycle,"Cool sibling focused fanout; aggregate owner covers retained product evidence
+while table-stale is selected."
+repair-branch,benchmark-canary/novelty-ws-collaboration-ui-signals,high,no,"Live row is zero-product and promotion-blocked, so route to materialization/downscope rather than product repair.",benchmark-canary/novelty-ws-collaboration-ui-signals,"Live row is zero-product and promotion-blocked, so route to
+materialization/downscope rather than product repair."
+repair-ready,benchmark-canary/ws-repo-prep-materialization,high,no,Superseded by the concrete novelty-ws-collaboration-ui-signals materialization blocker.,benchmark-canary/ws-repo-prep-materialization,"Superseded by the concrete novelty-ws-collaboration-ui-signals materialization
+blocker."
+publish-ready,final-rtc-stack/benchmark-canary-gate,P0,no,Publication is blocked by retained canary product evidence plus one unmaterialized forced canary row.,final-rtc-stack/benchmark-canary-gate,"Publication is blocked by retained canary product evidence plus one
+unmaterialized forced canary row."
+launch-owner-matrix,PR07C/HOLD-07C,high,no,Owner matrix is runtime-held and consumed; relaunch only with newer owner evidence.,PR07C/HOLD-07C,"Owner matrix is runtime-held and consumed; relaunch only with newer owner
+evidence."
+publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,Direct PR07C head is stale and superseded by the repaired build-clean candidate branch.,ready/rtc-pr07c-reload-record-snapshots,"Direct PR07C head is stale and superseded by the repaired build-clean candidate
+branch."
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,Superseded by the already-published canonical minimal PR06B branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by the already-published canonical minimal PR06B branch.
+publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,PR14B-based PR15 variants are published; standalone variants remain controller-held without fresh product evidence.,ready/rtc-pr15a+15b+15c-standalone,"PR14B-based PR15 variants are published; standalone variants remain
+controller-held without fresh product evidence."
+repair-ready,deferred/reload-hydration,high,no,"Manifest branch is adopted; residual pressure belongs to exact-stack and benchmark-canary proof, not another deferred reducer.",deferred/reload-hydration,"Manifest branch is adopted; residual pressure belongs to exact-stack and
+benchmark-canary proof, not another deferred reducer."
+launch-branch-repair,pr17-1020002,high,no,"Not the next slot; wait until P0 canary aggregate, selected focused child, and materialization blockers are covered.",pr17-1020002,"Not the next slot; wait until P0 canary aggregate, selected focused child, and
+materialization blockers are covered."
+hold-publication,PR07C,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260706T145354Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 10
 promotion-blocked rows lacking current_run_green=yes or
-explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260706T103607Z/benchmark-canary-coverage-status.tsv"
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260706T145354Z/benchmark-canary-coverage-status.tsv"
