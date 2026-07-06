@@ -1,37 +1,27 @@
 action,target,priority,allowed,reason
-reserve-discovery,coverage-guided+focused+strict+protocol+lower-level+browser+existing-code+existing-pr,P0,yes,"active_discovery=4 meets min=3; discovery_protected=no, resource_reason=deadline_benchmark_canary_finalization_ceiling; discovery reserve healthy; preserve reserve while allowing cheap PR progress"
-launch-branch-repair,heavy-pr-browser-work-while-discovery-below-min,P0,no,"if active discovery drops below 3, hold heavy PR/browser jobs; only cheap publication manifest accounting or analysis-only work may continue"
-repair-branch,benchmark-canary-product-failure,P0,yes,"keep exactly one aggregate product-repair owner while any live canary row has retained_product_evidence=yes, product_evidence_records>0, or coverage_state containing product-failure"
-launch-branch-repair,benchmark-canary/novelty-http-same-user-stale-draft,P0,yes,use as the single focused canary child only if dispatch reread still shows retained_product_evidence=yes or product_evidence_records>0; current live status shows product_evidence_records=6
-cooldown-diagnostic,benchmark-canary/duplicate-aggregate-product-repair,P0,yes,dedupe repeated aggregate Productive Analysis rows into one open owner without closing the blocker
-cooldown-diagnostic,benchmark-canary/focused-sibling-fanout,high,yes,allow at most one focused canary child selected from live materialized evidence; sibling fanout is diagnostic churn
-update-controller-rule,benchmark-canary/stale-product-repair-from-bootstrap-zero,P0,no,"do not declare product evidence stale or close product repair because a fresh root has zero current records, zero active canary rows, or status-only rows"
-update-controller-rule,benchmark-canary-bootstrap-materialization-guard,P0,yes,"active_rows=0, current_records=0, all-status-only rows, or bootstrap zero snapshots must not clear retained product blockers or suppress aggregate repair"
-update-controller-rule,benchmark-canary-live-reread-before-decision,P0,yes,"reread current-output-dir and benchmark-canary TSV before launch, cooldown, repair, inclusion, or publication decisions"
-update-controller-rule,status-only-not-product-clearance,P0,yes,"current_run_green or status_only is repair context only unless paired with material clear proof, same-head evidence retirement, validated repair, product-owned adoption, or explicit downscope"
-publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,"final stack remains held until benchmark-canary blockers are repaired, materially cleared, retired by same-head proof, adopted, or explicitly downscoped"
-publish-ready,final-rtc-stack,P0,no,publication waits for benchmark-canary closure and exact validation; bootstrap zero records are not green proof
-include-candidate,PR07C,P0,yes,"current policy includes PR07C as a net-risk-reducing candidate stack input; accounting only, not publication credit"
-include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,materialize the exact repaired build-clean PR07C head required for same-head proof accounting
-repair-branch,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,run exact validation or repair against the repaired PR07C candidate head before any publication credit
-repair-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,keep repaired build-clean PR07C as exact-stack proof input while canary closure remains gated
-publish-ready,PR07C,P0,no,current benchmark-canary status has 0 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260706T062654Z/benchmark-canary-coverage-status.tsv 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260706T062654Z/benchmark-canary-coverage-status.tsv
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; reopen only with newer owner evidence
+reserve-discovery,coverage-guided+focused+strict+protocol+lower-level+browser+existing-code+existing-pr,P0,yes,active_discovery=4 meets min=3; preserve the reserve while allowing one PR-progress slot
+launch-branch-repair,heavy-pr-browser-work-while-discovery-below-min,P0,no,heavy PR or browser jobs must wait if active discovery drops below 3; only cheap manifest/accounting or analysis-only work may bypass the reserve
+launch-branch-repair,pr17-1020002,high,yes,next product-moving branch slot; require classification.tsv and report.md proving the final-stack join or terminally reclassifying seed 1020002
+repair-branch,benchmark-canary-product-failure,P0,no,"current synthesis treats the latest canary root as materialized rather than bootstrap-empty; reopen only if dispatch reread finds retained product evidence, nonzero product_evidence_records, or product-failure coverage_state"
+cooldown-diagnostic,benchmark-canary-product-failure-stale-product-repair,P0,yes,cool stale aggregate product-repair rows for this cycle because the materialized root has active/current rows and no retained/nonzero/product-failure evidence; this is not based on zero active rows or zero current records
+cooldown-diagnostic,benchmark-canary-product-failure-zero-product-bootstrap,P0,no,"do not cool or retire product evidence from a fresh, empty, or status-only bootstrap root lacking active/current materialization"
+cooldown-diagnostic,benchmark-canary/focused-product-repair-siblings,high,yes,cool focused canary sibling fanout unless a dispatch-time reread selects exactly one retained/nonzero/product-failure leader under an aggregate owner
+reserve-discovery,benchmark-canary-fuzzer-gap,high,yes,keep forced canary coverage/materialization running under discovery reserve until blocked or status-only rows are green or explicitly downscoped
+publish-ready,final-rtc-stack/benchmark-canary-product-evidence,P0,no,"final-stack publication and snapshot credit remain blocked until current canary gates are green, downscoped, repaired, retired, or materially cleared"
+include-candidate,PR07C,P0,yes,operator policy includes PR07C as net-risk-reducing; lack of owner proof is not enough to exclude it
+include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,manifest accounting must materialize the repaired build-clean PR07C head for same-head proof accounting
+launch-branch-repair,PR07C/exact-validation-and-repair,P0,yes,run exact validation or repair on the repaired PR07C-containing stack; this does not reopen owner matrix or clear canary gates
+repair-ready,repair/pr07c-exact-stack-build-20260525T004721Z,P0,yes,keep repaired build-clean PR07C candidate in accounting and validation
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; relaunch only with newer owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots,high,no,stale direct PR07C head is superseded by the repaired build-clean branch
-repair-branch,pr17-1020002,high,yes,secondary product-progress slot after preserving the P0 canary owner; proof or reclassify the runnable final-stack join blocker
-repair-ready,lower-level/table-query-array-crdt-product-key-classifier,high,yes,"repair or explicitly downscope product_yield/product_failure_key accounting before lower-level branch credit, corpus promotion, or broader allocation"
-cooldown-diagnostic,lower-level/broad-productless-expansion,high,yes,raw lower-level divergence without repaired product-key accounting is diagnostic churn
-repair-ready,deferred/rtc-reload-hydration-20260702T185613Z@e8b64d56a18586be22e7922a9f6c144bd5b8d431,high,yes,adopted build-tested reload-hydration manifest remains exact-stack and benchmark proof input
-cooldown-diagnostic,reload-hydration/generic-deferred-reducer,high,yes,manifest is adopted; generic reducer relaunch needs newer reload-hydration product evidence
-launch-branch-repair,benchmark-canary/novelty-http-table-stale-snapshot,high,no,do not launch as a sibling focused child unless dispatch reread reselects it with retained or nonzero product evidence after the chosen child clears
-launch-branch-repair,benchmark-canary/novelty-ws-parser-serialization,high,no,do not launch as a sibling focused child unless dispatch reread reselects it with retained or nonzero product evidence after the chosen child clears
-launch-branch-repair,benchmark-canary/novelty-http-rtc-reference-oracle,high,no,material triage remains under the aggregate owner; no focused relaunch without newer live evidence or a concrete repair artifact
-launch-branch-repair,benchmark-canary/novelty-http-large-post-lifecycle,high,no,current materialized status is green with no retained product evidence; do not spend the focused product slot on stale selection
-publish-ready,already-published-ready-product-prs,high,no,duplicate publication of branches already published by the local machine is not product progress
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already-published canonical PR06B minimal branch
-publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,PR14B-based variants are published; standalone variants need fresh product evidence before publication
-cooldown-diagnostic,pre-save-search-live-collapse,medium,yes,downscope consumed; reopen only with repeatable core/search first-loss evidence
-cooldown-diagnostic,rich-text-suffix-corruption,medium,yes,downscope consumed; reopen only with deterministic suffix/content first-loss evidence
-cooldown-diagnostic,malformed-save-payload,medium,yes,canonical PR06B minimal is published; raw family needs fresh product evidence
-cooldown-diagnostic,http-room-isolation,medium,yes,PR02A is published; relaunch only with fresh healthy-user HTTP room-isolation product evidence
-hold-publication,PR07C,P0,no,current benchmark-canary status has 0 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260706T062654Z/benchmark-canary-coverage-status.tsv 0 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260706T062654Z/benchmark-canary-coverage-status.tsv
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,high,no,superseded by already-published canonical minimal PR06B branch
+publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,PR14B-based variants are already published; standalone PR15 variants need fresh product evidence
+publish-ready,deferred/rtc-reload-hydration-20260702T185613Z,high,yes,validated manifest-adopted branch may remain an exact-stack input; it does not clear benchmark-canary gates
+cooldown-diagnostic,deferred-families/adopted-or-downscoped,high,yes,reload-hydration is adopted and listed deferred families are downscoped; relaunch only with newer family-specific product evidence
+repair-ready,lower-level/table-query-array-crdt-product-key-classifier,high,yes,consume or explicitly downscope product_yield/product_failure_key accounting before lower-level credit or broader allocation
+cooldown-diagnostic,lower-level/broad-productless-expansion,high,yes,broad lower-level expansion before classifier accounting is resolved is diagnostic churn
+cooldown-diagnostic,already-published-ready-product-prs,high,yes,duplicate publication or validation of already-published ready branches is not product progress
+update-controller-rule,benchmark-canary-materialized-zero-vs-bootstrap-zero,P0,yes,"zero product evidence may cool product-repair only after active rows, current records, and non-empty materialization are present; bootstrap zero must not clear blockers"
+update-controller-rule,benchmark-canary-dispatch-reread-and-dedupe,P0,yes,"reread current-output-dir and status TSV before launch, cooldown, or publication; keep at most one aggregate owner and one focused child"
+update-controller-rule,publication-gate-product-and-coverage,P0,yes,publication requires no retained/nonzero/product-failure evidence and no blocked forced canary rows unless explicitly downscoped or otherwise materially closed
+hold-publication,PR07C,P0,no,current benchmark-canary status has 1 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260706T103607Z/benchmark-canary-coverage-status.tsv
