@@ -99,6 +99,12 @@ The July 2026 fixes that are meant to prevent recurrence are:
     missing after startup, or `novelty-state.json` exceeds the configured size
     guard. It emits one `coverage-materialization-liveness` blocker with direct
     artifacts instead of letting the system burn cycles on the same root.
+-   The PR progress controller refreshes benchmark-canary publication gates from
+    the current `benchmark-canary-coverage-status.tsv` every cycle. Zero open
+    promotion gates must not render as a blocking `0 0` count, retained product
+    evidence blocks publication until repaired or downscoped, and materialized
+    retained product evidence re-enables the aggregate product-repair owner when
+    the discovery reserve is healthy.
 
 Use these checks when a blocker looks old or CPU is unexpectedly idle:
 

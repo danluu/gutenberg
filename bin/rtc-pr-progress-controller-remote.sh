@@ -626,43 +626,120 @@ current_benchmark_canary_open_publish_gate_count() {
 		}
 		END {
 			print blocked + 0
-			exit blocked ? 0 : 1
 		}
 	' "$status_file"
 }
 
 current_benchmark_canary_open_publish_gate() {
-	local status_file=${1:-}
-	current_benchmark_canary_open_publish_gate_count "$status_file" >/dev/null
+	local status_file=${1:-} count
+	count=$(current_benchmark_canary_open_publish_gate_count "$status_file" 2>/dev/null) || return 1
+	[ "${count:-0}" -gt 0 ]
 }
 
 
 refresh_benchmark_canary_decisions() {
-	local status_file count rows_with_records tmp
+	local status_file count summary rows_with_records rows_with_product_evidence product_evidence_records retained_rows current_activity_rows green_rows total_rows discovery_active discovery_ok tmp
 	status_file=$(current_benchmark_canary_status_file || true)
 	[ -n "${status_file:-}" ] || return 0
 	[ -s "$DECISIONS" ] || return 0
-	count=$(current_benchmark_canary_open_publish_gate_count "$status_file" 2>/dev/null || printf '0')
-	rows_with_records=$(awk -F '\t' '
+	count=$(current_benchmark_canary_open_publish_gate_count "$status_file" 2>/dev/null || true)
+	count=${count:-0}
+	summary=$(awk -F '\t' '
 		NR == 1 {
 			for (i = 1; i <= NF; i++) col[$i] = i
 			next
 		}
-		col["current_run_group_records"] && ($(col["current_run_group_records"]) + 0) > 0 { records++ }
-		END { print records + 0 }
-	' "$status_file" 2>/dev/null || printf '0')
+		{
+			rows++
+			if (col["current_run_group_records"] && ($(col["current_run_group_records"]) + 0) > 0) records++
+			if (col["current_run_successful_group_records"] && ($(col["current_run_successful_group_records"]) + 0) > 0) activity++
+			if (col["active"] && tolower($(col["active"])) ~ /^(yes|true|1)$/) activity++
+			if (col["current_run_green"] && tolower($(col["current_run_green"])) ~ /^(yes|true|1)$/) green++
+			if (col["retained_product_evidence"] && tolower($(col["retained_product_evidence"])) ~ /^(yes|true|1)$/) retained++
+			if (col["product_evidence_records"] && ($(col["product_evidence_records"]) + 0) > 0 &&
+				col["retained_product_evidence"] && tolower($(col["retained_product_evidence"])) ~ /^(yes|true|1)$/) {
+				product_rows++
+				product_records += $(col["product_evidence_records"]) + 0
+			}
+		}
+		END {
+			printf "%d\t%d\t%d\t%d\t%d\t%d\t%d\n", records + 0, product_rows + 0, product_records + 0, retained + 0, activity + 0, green + 0, rows + 0
+		}
+	' "$status_file" 2>/dev/null || printf '0\t0\t0\t0\t0\t0\t0')
+	IFS=$'\t' read -r rows_with_records rows_with_product_evidence product_evidence_records retained_rows current_activity_rows green_rows total_rows <<< "$summary"
+	discovery_active=$(discovery_active_sessions 2>/dev/null || printf '0')
+	case "$discovery_active" in
+		''|*[!0-9]*) discovery_active=0 ;;
+	esac
+	discovery_ok=no
+	if [ "$discovery_active" -ge "$MIN_DISCOVERY_SESSIONS" ]; then
+		discovery_ok=yes
+	fi
 	tmp="$DECISIONS.$$.canary-refresh"
-	awk -F '\t' -v OFS='\t' -v count="$count" -v status="$status_file" -v rows_with_records="$rows_with_records" '
+	awk -F '\t' -v OFS='\t' \
+		-v count="$count" \
+		-v status="$status_file" \
+		-v rows_with_records="$rows_with_records" \
+		-v rows_with_product_evidence="$rows_with_product_evidence" \
+		-v product_evidence_records="$product_evidence_records" \
+		-v current_activity_rows="$current_activity_rows" \
+		-v discovery_active="$discovery_active" \
+		-v min_discovery="$MIN_DISCOVERY_SESSIONS" \
+		-v discovery_ok="$discovery_ok" '
+		function promotion_reason() {
+			return "current benchmark-canary status has " count " promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: " status
+		}
+		function product_reason() {
+			return "current benchmark-canary status has " product_evidence_records " retained product-evidence records across " rows_with_product_evidence " row(s); repair or explicit downscope required before publication: " status
+		}
+		function clear_reason() {
+			return "current benchmark-canary promotion gate is clear and no retained product-evidence rows remain: " status
+		}
+		function canary_publish_target(target) {
+			return target ~ /^(PR07C($|[@\/])|PR07C-publication-credit$|repair\/pr07c-exact-stack-build-[^@]+@|candidate\/rtc-risk-reducing-pr07c-all-merged-[^@]+@)/ ||
+				target == "final-rtc-stack/benchmark-canary-gate" ||
+				target == "PR07C/final-rtc-stack"
+		}
 		NR == 1 { print; next }
-		$1 == "publish-ready" &&
-			$2 ~ /^(PR07C($|[@\/])|PR07C-publication-credit$|repair\/pr07c-exact-stack-build-[^@]+@|candidate\/rtc-risk-reducing-pr07c-all-merged-[^@]+@)/ {
-			$4 = "no"
-			$5 = "current benchmark-canary status has " count " promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: " status
+		$1 == "publish-ready" && canary_publish_target($2) {
+			if ((count + 0) > 0) {
+				$4 = "no"
+				$5 = promotion_reason()
+			} else if ((product_evidence_records + 0) > 0) {
+				$4 = "no"
+				$5 = product_reason()
+			} else {
+				$4 = "yes"
+				$5 = clear_reason()
+			}
 		}
 		$1 == "hold-publication" && $2 == "PR07C" {
-			$4 = "no"
-			$5 = "current benchmark-canary status has " count " promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: " status
+			if ((count + 0) > 0) {
+				$4 = "no"
+				$5 = promotion_reason()
+			} else if ((product_evidence_records + 0) > 0) {
+				$4 = "no"
+				$5 = product_reason()
+			} else {
+				$4 = "yes"
+				$5 = clear_reason()
+			}
 			hold = 1
+		}
+		$1 == "repair-branch" && $2 == "benchmark-canary-product-failure" {
+			if ((product_evidence_records + 0) > 0 && (current_activity_rows + 0) > 0 && discovery_ok == "yes") {
+				$4 = "yes"
+				$5 = "materialized retained benchmark-canary product evidence exists (" product_evidence_records " records across " rows_with_product_evidence " row(s)); discovery reserve active=" discovery_active " min=" min_discovery "; launch aggregate repair/downscope owner: " status
+			} else if ((product_evidence_records + 0) > 0) {
+				$4 = "no"
+				$5 = "retained product evidence exists but repair waits for materialized current activity and discovery reserve; activity_rows=" current_activity_rows " discovery_active=" discovery_active " min=" min_discovery ": " status
+			}
+		}
+		$1 == "repair-branch" && $2 == "benchmark-canary/focused-child-after-materialized-reread" {
+			if ((product_evidence_records + 0) > 0 && (current_activity_rows + 0) > 0 && discovery_ok == "yes") {
+				$4 = "yes"
+				$5 = "allow one live-reread-selected focused benchmark-canary child under the aggregate repair owner; retained product evidence=" product_evidence_records " records, discovery_active=" discovery_active " min=" min_discovery ": " status
+			}
 		}
 		rows_with_records == 0 && $1 == "cooldown-diagnostic" && $2 == "benchmark-canary-product-failure/stale-product-repair-owners" {
 			$4 = "no"
@@ -674,8 +751,12 @@ refresh_benchmark_canary_decisions() {
 		}
 		{ print }
 		END {
-			if (count > 0 && !hold) {
-				print "hold-publication", "PR07C", "P0", "no", "current benchmark-canary status has " count " promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: " status
+			if (!hold) {
+				if ((count + 0) > 0) {
+					print "hold-publication", "PR07C", "P0", "no", promotion_reason()
+				} else if ((product_evidence_records + 0) > 0) {
+					print "hold-publication", "PR07C", "P0", "no", product_reason()
+				}
 			}
 		}
 	' "$DECISIONS" > "$tmp"
