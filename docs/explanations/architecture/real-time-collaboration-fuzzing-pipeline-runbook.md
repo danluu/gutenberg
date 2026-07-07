@@ -88,6 +88,17 @@ The July 2026 fixes that are meant to prevent recurrence are:
     loop is declared idle or relaunched.
 -   The novelty monitor restart wrapper reads the current output directory at
     restart time instead of embedding an old run path.
+-   The novelty monitor bounds persisted state-change history and the serialized
+    state body before every `novelty-state.json` write. If inherited state bloat
+    or a JavaScript string/heap serialization failure is present, it writes an
+    emergency-compacted state instead of leaving the first full pass permanently
+    pending.
+-   The critical-path executor treats coverage materialization as unhealthy when
+    startup stays pending too long, monitor logs show repeated pass failures or
+    `RangeError`/heap/string serialization failures, `supervisor-state.json` is
+    missing after startup, or `novelty-state.json` exceeds the configured size
+    guard. It emits one `coverage-materialization-liveness` blocker with direct
+    artifacts instead of letting the system burn cycles on the same root.
 
 Use these checks when a blocker looks old or CPU is unexpectedly idle:
 
@@ -390,9 +401,11 @@ fuzzing level so trend graphs can show the new executions.
 ## Jetstream Remote Scripts
 
 The Jetstream2 run uses `/media/volume/danluu-fuzz-data` for the repository and
-run roots. Keep the reusable scripts on `danluu/try/jetstream-fuzz`, then copy
-them from a local checkout to the remote machine because the remote fuzz host is
-not expected to have GitHub write access.
+run roots. Keep deployable reusable scripts on `danluu/try/jetstream-fuzz`, and
+mirror the audited scripts/runbook snapshot on
+`danluu/explain/rtc-jetstream2-fuzz-progress-20260515`. Copy scripts from a
+local checkout to the remote machine because the remote fuzz host is not expected
+to have GitHub write access.
 
 ```bash
 JETSTREAM=exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org
@@ -573,8 +586,13 @@ The remote launchers are intentionally split by ownership:
     publish a non-empty `report.md` only on completion, so zero-byte reports are
     stale execution failures rather than ambiguous in-progress artifacts. The
     no-progress scan also suppresses active continuation artifacts until the
-    owning tmux session exits. It writes local-host handoff artifacts only and
-    never pushes from Jetstream.
+    owning tmux session exits. It also opens `coverage-materialization-liveness`
+    when the current coverage-guided root stays in first-pass startup too long,
+    lacks `supervisor-state.json`, repeatedly fails novelty-monitor passes,
+    grows an oversized `novelty-state.json`, or has zero materialized browser
+    work after startup. The continuation prompt for that blocker names the exact
+    run directory and includes novelty monitor, state, and supervisor artifacts.
+    It writes local-host handoff artifacts only and never pushes from Jetstream.
 -   `rtc-productive-analysis-loop-remote.sh` runs targeted analysis lanes for
     PR blocker routing, benchmark-to-fuzzer closure, deferred-family reduction,
     and lower-level fuzzing yield retargeting. Its output is not just prose:
@@ -1816,6 +1834,21 @@ Optional expansion controls:
     issues persist and the host has no headroom, keep the current gap groups
     running and rotate out extra canary/top-off groups so browser slots produce
     completed coverage records instead of startup stalls.
+-   `RTC_FUZZ_NOVELTY_STATE_CHANGE_HISTORY_LIMIT=5000`: maximum retained
+    `state.changes` entries. Set lower only for emergency recovery; large values
+    can make state writes fail before a pass can complete.
+-   `RTC_FUZZ_NOVELTY_STATE_JSON_SOFT_MAX_BYTES=67108864`: soft serialized-size
+    guard for `novelty-state.json`. When exceeded, the monitor compacts
+    change-history entries before writing state.
+-   `RTC_CRITICAL_PR_EXECUTOR_COVERAGE_STARTUP_PENDING_MAX_SECONDS=900`:
+    first-pass startup grace period before the critical-path executor may open a
+    materialization-liveness blocker.
+-   `RTC_CRITICAL_PR_EXECUTOR_COVERAGE_NOVELTY_STATE_MAX_BYTES=268435456`:
+    hard operational size guard for `novelty-state.json` used by the
+    critical-path executor health check.
+-   `RTC_CRITICAL_PR_EXECUTOR_COVERAGE_MONITOR_FAILURE_SCAN_LINES=400`: number
+    of recent novelty-monitor log lines scanned for pass-failure,
+    `RangeError`, heap, or string-allocation signatures.
 
 Example durable novelty monitor:
 
@@ -1856,6 +1889,27 @@ session watchdog treats that timestamp as the health heartbeat for
 `rtc-coverage-guided-novelty`; the structural watchdog separately escalates
 missing/stale full-pass timestamps and recent `JavaScript heap out of memory` /
 `Reached heap limit` log signatures.
+
+The critical-path executor is the second-line health check for this path. It
+opens `coverage-materialization-liveness` when the current coverage-guided root
+is older than the startup grace period and still lacks a completed pass, when the
+novelty monitor has recent pass failures such as `RangeError: Invalid string
+length`, when `novelty-state.json` is oversized, or when the generated
+supervisor state is missing after startup. Use these targeted checks before
+restarting or truncating anything:
+
+```bash
+OUT=$( cat /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/current-output-dir.txt )
+stat -c '%s %y %n' "$OUT/novelty-state.json" "$OUT/supervisor-state.json"
+tail -200 "$OUT/novelty-monitor.log" | rg 'pass failed|RangeError|heap|Cannot create a string'
+awk -F '\t' 'NR==1 || $1=="coverage-materialization-liveness"' \
+	/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/blockers.tsv \
+	/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/queue.tsv
+```
+
+Do not manually truncate `novelty-state.json` unless the monitor cannot start at
+all. Prefer the built-in state compaction path so cumulative coverage counters,
+auto goals, and restart provenance survive.
 
 Automatic coverage-goal expansion is persisted in
 `novelty-state.json.autoCoverageGoals` and
