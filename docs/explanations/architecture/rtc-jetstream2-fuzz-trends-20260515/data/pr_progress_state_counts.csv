@@ -4,4 +4,5 @@ ready-product-pr,high,held-by-controller,3
 ready-product-pr,high,published,14
 ready-product-pr,low,superseded,1
 ready-product-pr,low,superseded-by-repair,1
+repair-branch-adoption,high,needs-validation,4
 runtime-gated-pr,high,runtime-held-consumed,1

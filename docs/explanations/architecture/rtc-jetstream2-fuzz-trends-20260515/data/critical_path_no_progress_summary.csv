@@ -1,2 +1,2 @@
 item_id,reason,rejections
-pa-exact-benchmark-canary-product-failure,pre_oracle_or_preflight_only,1
+benchmark-canary-repair-branch-adoption,zero_executor_artifact,2
