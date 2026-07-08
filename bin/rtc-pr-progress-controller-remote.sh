@@ -1282,6 +1282,65 @@ safe_destination_for_branch() {
 	printf 'danluu/rtc-pr-progress-%s' "$suffix"
 }
 
+repair_adoption_destination_for_branch() {
+	local branch=$1 suffix
+	case "$branch" in
+		repair/*)
+			suffix=${branch#repair/}
+			suffix=$(printf '%s' "$suffix" |
+				tr '/_' '--' |
+				tr -cd 'A-Za-z0-9.-')
+			printf 'danluu/rtc-%s' "$suffix"
+			;;
+		*)
+			safe_destination_for_branch "$branch"
+			;;
+	esac
+}
+
+print_repair_adoption_manifest_rows() {
+	local rc_branch=js2/all-merged-rebased-20260701
+	local lane repair_branch adopted_branch source_repo source_head central_head state next_action classification_path report_path
+	local branch head resolved_head base files insertions deletions dest summary reason rc_head
+	[ -s "$CRITICAL_REPAIR_ADOPTIONS" ] || return 0
+	awk -F '\t' 'NR > 1 && $8 ~ /^(central_present|central_present_alias|imported)$/ { print }' "$CRITICAL_REPAIR_ADOPTIONS" |
+	while IFS=$'\t' read -r _generated_at lane repair_branch adopted_branch source_repo source_head central_head state next_action classification_path report_path; do
+		branch=${adopted_branch:-$repair_branch}
+		head=${central_head:-$source_head}
+		[ -n "$branch" ] && [ -n "$head" ] || continue
+		resolved_head=$(git -C "$SRC" rev-parse --verify --quiet "$branch" 2>/dev/null || true)
+		[ -n "$resolved_head" ] || continue
+		same_commit_prefix "$resolved_head" "$head" || continue
+		base=$(git -C "$SRC" merge-base "$rc_branch" "$branch" 2>/dev/null || true)
+		if [ -z "$base" ]; then
+			base=$(git -C "$SRC" rev-parse "$head^" 2>/dev/null || true)
+		fi
+		[ -n "$base" ] && ! same_commit_prefix "$base" "$head" || continue
+		files=$(git -C "$SRC" diff --numstat "$base..$branch" 2>/dev/null | wc -l | tr -d ' ' || printf '0')
+		insertions=$(git -C "$SRC" diff --numstat "$base..$branch" 2>/dev/null | awk '{ s += $1 } END { print s + 0 }' || printf '0')
+		deletions=$(git -C "$SRC" diff --numstat "$base..$branch" 2>/dev/null | awk '{ s += $2 } END { print s + 0 }' || printf '0')
+		[ "$files" -gt 0 ] || continue
+		[ "$files" -le 20 ] || continue
+		[ $(( insertions + deletions )) -le 3000 ] || continue
+		summary="repair-branch adoption validated; exact replay and benchmark canary gates still apply"
+		reason="repair-adoption lane=$lane state=$state classification=$classification_path report=$report_path"
+		dest=$(repair_adoption_destination_for_branch "$branch")
+		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+			"$branch" "$head" "$dest" "$base" "$files" "$insertions" "$deletions" "$summary" "$reason"
+
+		rc_head=$(branch_current_head "$rc_branch")
+		if [ -z "$rc_head" ] && [ -n "$source_repo" ] && git -C "$source_repo" rev-parse --git-dir >/dev/null 2>&1; then
+			rc_head=$(git -C "$source_repo" rev-parse --verify --quiet "$rc_branch" 2>/dev/null || true)
+		fi
+		if [ -n "$rc_head" ] && same_commit_prefix "$rc_head" "$base"; then
+			printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+				"$branch" "$head" "$rc_branch" "$base" "$files" "$insertions" "$deletions" \
+				"fast-forward release-candidate branch with validated repair adoption" "$reason"
+		fi
+	done |
+		awk -F '\t' '!seen[$1 "\t" $2 "\t" $3]++'
+}
+
 append_requested_pr07c_repaired_manifest_row() {
 	local output_file=$1 policy_ref branch expected_head head base files insertions deletions dest
 	[ -s "$DECISIONS" ] || return 0
@@ -1399,6 +1458,7 @@ write_controller_push_manifest() {
 				publish_allowed_by_controller "$branch" "$head" || continue
 				printf '%s\n' "$row"
 			done
+		print_repair_adoption_manifest_rows
 		print_reload_hydration_manifest_if_adopted
 		if [ -s "$DECISIONS" ]; then
 				awk -F '\t' '
@@ -1556,7 +1616,7 @@ write_controller_push_manifest() {
 	append_requested_pr07c_repaired_manifest_row "$tmp"
 	awk -F '\t' '
 		NR == 1 { print; next }
-		NF >= 9 && !seen[$1 "\t" $2]++ { print }
+		NF >= 9 && !seen[$1 "\t" $2 "\t" $3]++ { print }
 	' "$tmp" > "$tmp.dedup"
 	mv "$tmp.dedup" "$tmp"
 	mv "$tmp" "$PUSH_MANIFEST"
