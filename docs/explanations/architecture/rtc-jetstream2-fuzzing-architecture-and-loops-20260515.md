@@ -1,8 +1,8 @@
 # RTC Jetstream2 fuzzing architecture and active loops
 
-Snapshot time: `2026-05-21T23:03Z`
+Snapshot time: `2026-07-08T03:49Z`
 
-Blocker-history update: `2026-07-03T04:50Z`
+Blocker-history update: `2026-07-08T03:49Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -13,8 +13,13 @@ Jetstream data root:
 Remote working repo used by most loops:
 `/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo`
 
-Reusable Jetstream scripts and this runbook are kept on:
-[`try/jetstream-fuzz`](https://github.com/danluu/gutenberg/tree/try/jetstream-fuzz)
+Reusable Jetstream scripts, this runbook, and the published explanation docs are
+kept on:
+[`explain/rtc-jetstream2-fuzz-progress-20260515`](https://github.com/danluu/gutenberg/tree/explain/rtc-jetstream2-fuzz-progress-20260515)
+
+Older fuzz-bootstrap scripts may still exist on
+[`try/jetstream-fuzz`](https://github.com/danluu/gutenberg/tree/try/jetstream-fuzz),
+but the `explain/*` branch is the current published runbook/status branch.
 
 Primary progress and graph docs:
 
@@ -38,9 +43,109 @@ incorrect interpretations. Graphs and prose reports are not the API by
 themselves; controller decisions must be traceable to TSV, JSON, or run
 artifacts under the data root.
 
+## 2026-07-08 Live Update
+
+The current JS2 run is no longer just producing analysis loops. The control
+plane now has an explicit repair-branch adoption path and fail-closed checks for
+continuations that claim to have created a repair branch. At this snapshot:
+
+- `rtc-critical-path-pr-executor-loop` is running in the `rtc-fuzz` tmux socket
+  and refreshed `current-critical-path-status.md` at `2026-07-08T03:49:01Z`.
+- `rtc-pr-progress-controller-loop` is running in the same tmux socket and
+  refreshed `current-pr-progress-controller-status.md` at
+  `2026-07-08T03:48:12Z`.
+- The current coverage-guided run root is
+  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T033457Z`.
+- The PR progress controller reports `active discovery sessions: 4`,
+  `min discovery sessions: 3`, `max active PR jobs: 2`, and resource reason
+  `deadline_benchmark_canary_finalization_ceiling`.
+- The critical-path executor reports `max active continuations: 3`,
+  `max active validations: 6`, `cycle sleep seconds: 60`, and
+  `reconcile timeout seconds: 300`.
+- `repair/benchmark-canary-richtext-entity-canonical-20260708T025216Z` is the
+  current committed repair branch requiring validation/adoption. It resolves to
+  `a51898eb5ee1d0f0cd009baebeb73f5e00558112`.
+- Two earlier continuation claims are now explicitly marked
+  `invalid-no-committed-delta` because their branch labels pointed at the
+  continuation source head instead of a committed repair delta.
+- The current benchmark canary product blocker is
+  `novelty-ws-multi-reload-lifecycle`, with five retained product evidence
+  records in `benchmark-canary-coverage-status.tsv`.
+
+Current controller topology:
+
+```mermaid
+flowchart TB
+    subgraph JS2["Jetstream2 rtc-fuzz tmux socket"]
+        Coverage[rtc-coverage-guided-supervisor]
+        Novelty[rtc-coverage-guided-novelty]
+        Analysis[rtc-coverage-guided-analysis]
+        Critical[rtc-critical-path-pr-executor-loop]
+        PRProgress[rtc-pr-progress-controller-loop]
+        Continuations[bounded critical continuation sessions]
+    end
+
+    RunRoot[(current coverage run root)]
+    Status[(current status TSV/MD files)]
+    Decisions[(current-control-decisions.tsv)]
+    Adoptions[(current-repair-branch-adoptions.tsv)]
+    PRTable[(current-pr-progress.tsv)]
+
+    Coverage --> RunRoot
+    Novelty --> RunRoot
+    Analysis --> RunRoot
+    RunRoot --> Critical
+    RunRoot --> PRProgress
+    PRProgress --> Decisions
+    Decisions --> Critical
+    Critical --> Continuations
+    Continuations --> Adoptions
+    Adoptions --> Critical
+    Adoptions --> PRProgress
+    Critical --> Status
+    PRProgress --> PRTable
+```
+
+Repair branch adoption path:
+
+```mermaid
+flowchart LR
+    Continuation[continuation report] --> Claim{repair_branch_created?}
+    Claim -->|missing repair-branch.txt| Invalid[repair_branch_invalid]
+    Claim -->|branch does not resolve| Invalid
+    Claim -->|head equals start head| Invalid
+    Claim -->|committed delta| Adoption[current-repair-branch-adoptions.tsv]
+
+    Adoption --> Central{central validation ref present?}
+    Central -->|missing| Import[import source branch without overwriting conflicts]
+    Central -->|present| Validate[branch validation lane]
+    Import --> Validate
+
+    Validate --> Result{validated?}
+    Result -->|yes| Publish[publish or consume push manifest]
+    Result -->|needs replay| Replay[bounded exact replay, e.g. parser seed 1010203]
+    Result -->|no| Reject[explicit rejection with evidence]
+
+    Publish --> AllMerge[current all-merge candidate]
+    Replay --> AllMerge
+    Reject --> Status[terminal status row]
+```
+
+Current feeds and speeds:
+
+| Loop or feed | Current cadence / cap | Current state |
+| --- | --- | --- |
+| `rtc-critical-path-pr-executor-loop` | 60 second cycle, 300 second reconcile timeout | Running; opens/updates blockers and bounded continuation jobs |
+| Critical continuations | Max 3 active | `pr07c-browser-env` and a fresh `pa-exact-benchmark-canary-product-failure` continuation were active around this snapshot |
+| Critical validations | Max 6 active | Used for adopted repair branches and ready branch checks |
+| `rtc-pr-progress-controller-loop` | 120 second cycle, max 2 active PR jobs | Running; reserves discovery and exposes repair-adoption rows |
+| Discovery reserve | Minimum 3 active discovery sessions | Healthy at 4 active discovery sessions |
+| Coverage-guided novelty | Current run root updates status every monitor pass | Running; current canary status had seven forced rows, five green/status-only rows, and one live product blocker |
+| Repair adoption feed | Rewritten each critical reconcile | One valid committed branch, two invalid no-delta branch labels |
+
 ## Blocker Age And Failed Mitigations
 
-As of 2026-07-03 UTC, the JS2 RTC fuzz pipeline has been dealing with the same
+As of 2026-07-08 UTC, the JS2 RTC fuzz pipeline has been dealing with the same
 broad blocker class for roughly six weeks. The durable fuzzing roots started
 around 2026-05-15, the benchmark canary feedback root started on 2026-05-20,
 and the all-merge fuzz stack started on 2026-05-26. The specific stale feedback
@@ -80,7 +185,12 @@ coverage-status rows or reason prose; require open, non-green,
 `downscoped_to_coverage_materialization` terminal when the live canary has no
 effective product blocker; kill orphaned process groups as well as tmux
 sessions; and read the current output directory dynamically when restarting the
-novelty monitor.
+novelty monitor. The additional 2026-07-08 guards make
+`repair_branch_created` fail closed unless a committed branch head differs from
+the continuation start head, surface repair-branch adoption as first-class PR
+progress rows, cache continuation classification lookups, and report
+parentless PR-progress controllers as `running without tmux` until the `start`
+path clears matching stale lock holders and relaunches the durable session.
 
 When CPU is unexpectedly idle or a blocker looks old, check blocker age and live
 evidence first. The detailed checklist and commands are in
@@ -195,22 +305,25 @@ flowchart TB
 Current autoscaler status at the snapshot:
 
 ```text
-updated: 2026-05-21T23:02:04Z
-cpu_percent: 67.6
-load1: 49.90 / 64 cores
-load5: 48.40 / 64 cores
-load15: 47.73 / 64 cores
-mem_available_gib: 422.7
-root_disk_available_gib: 92.3
-data_disk_available_gib: 505.4
-docker_root_dir: /media/volume/danluu-fuzz-data/docker-data-root
-enabled_groups: 5
-current_budget: target=3 max=4
-desired_budget: target=5 max=6
-materialized_running_groups: 1
-supervisor_status_counts: running:1|starting:4
+updated: 2026-07-08T03:49:29Z
+cpu_percent: 50.4
+load1: 47.36 / 64 cores
+load5: 38.42 / 64 cores
+load15: 32.39 / 64 cores
+mem_available_gib: 196.2
+root_disk_available_gib: 68.9
+data_disk_available_gib: 280.3
+docker_root_dir: /var/lib/docker
+enabled_groups: 16
+current_budget: target=16 max=16
+desired_budget: target=16 max=16
+materialized_active_run_dirs: 11
+materialized_running_groups: 14
+paused_infra_startup_groups: 0
+supervisor_state_age_seconds: 25
+supervisor_status_counts: disabled:6|recovering:3|running:11|waiting-repo-prep:2
 last_action: observe
-reason: modest_headroom
+reason: deadline_benchmark_canary_finalization_ceiling
 ```
 
 The resource controller is responsible for capacity and scale only. It should
@@ -284,11 +397,12 @@ flowchart TB
     AssertNoise --> Events
 ```
 
-At this snapshot, the active lower-level coverage-guided lane visible in tmux is
-`rtc-coverage-guided-lower-level-http-polling-manager`. Productive analysis is
-feeding it canary-derived reload and persisted-CRDT oracles instead of allowing
-generic polling-manager exploration to count as progress for the benchmark
-canary gap.
+At this snapshot, lower-level work is primarily represented by productive
+analysis action rows and controller retargeting, not by a single obvious
+dedicated lower-level tmux session in the filtered live-session view. When a
+lower-level lane is active, it should consume canary-derived reload,
+parser/serialization, and persisted-CRDT oracles instead of allowing generic
+exploration to count as progress for the benchmark canary gap.
 
 Lower-level and protocol work should be evaluated by bug output and oracle
 quality, not just by wrapper invocation counts.
@@ -322,26 +436,33 @@ flowchart LR
 Current PR progress controller status at the snapshot:
 
 ```text
-updated: 2026-05-21T23:02:19Z
+updated: 2026-07-08T03:50:16Z
 cycle sleep seconds: 120
 max active PR jobs: 2
 active PR jobs: 0
-active discovery sessions: 19
+active discovery sessions: 4
 min discovery sessions: 3
-resource reason: modest_headroom
+discovery protected: no
+resource reason: deadline_benchmark_canary_finalization_ceiling
 ```
 
 Important live PR/progress decisions:
 
-- Keep the maintainer snapshot blocked until exact-stack focused HTTP benchmark
-  rows are green.
-- Treat `benchmark-canary-fuzzer-gap` as exact-stack closure work, not generic
-  coverage churn.
-- Keep `PR07C` held unless newer product-owned owner evidence appears.
-- Hard-gate over-budget deferred families unless the next job has a new product
-  fix head, owner evidence, exact-stack green evidence, or explicit downscope.
-- Bind productive-analysis P0 rows to controller TSV actions or explicit
-  rejections.
+- Reserve at least three discovery sessions; the reserve is currently healthy
+  with four active discovery sessions.
+- Treat
+  `repair/benchmark-canary-richtext-entity-canonical-20260708T025216Z@a51898eb5ee1d0f0cd009baebeb73f5e00558112`
+  as the next P0 product-progress repair branch to validate, adopt, publish, or
+  explicitly reject.
+- Keep the aggregate `benchmark-canary-product-failure` blocker open until live
+  materialized canary evidence is repaired or explicitly downscoped.
+- Block duplicate heavy benchmark-canary repair while the central-present
+  repair branch and canary materialization are pending.
+- Keep `benchmark-canary-fuzzer-gap` consuming protected capacity until every
+  promotion-blocked or status-only primary canary row is current-run green or
+  explicitly downscoped.
+- Select at most one focused canary child after a materialized reread; otherwise
+  keep the aggregate owner to avoid sibling fanout churn.
 
 ## Productive Analysis Loop
 
@@ -371,15 +492,19 @@ flowchart TB
 At the snapshot:
 
 ```text
-updated: 2026-05-21T23:03:10Z
+updated: 2026-07-08T03:44:36Z
 active lane jobs: 4
-current action rows: 16
-high-priority controller rows: 13
+current action rows: 79
+high-priority controller rows: 71
 ```
 
 The loop currently emits actions for exact-stack benchmark-canary closure,
-deferred-family hard gates, PR07C owner-evidence consumption, terminal reducer
-classification consumption, and lower-level oracle retargeting.
+benchmark-canary product repair, deferred-family hard gates, PR07C
+owner-evidence consumption, terminal reducer classification consumption,
+publication holds, and lower-level oracle retargeting. Current P0 rows keep the
+aggregate `benchmark-canary-product-failure` owner open until a live reread
+shows no retained/nonzero/product-failure rows or a validated repair/downscope
+clears them.
 
 ## Local Machine Loops
 
@@ -456,52 +581,30 @@ coverage and local triage into the Jetstream control plane.
 
 ## Active Jetstream Loop Inventory
 
-Current Jetstream tmux sessions at the snapshot included:
+Current Jetstream tmux sessions at `2026-07-08T03:50Z`:
 
 ```text
-rtc-backend-api-fuzz
+rtc-cov-analysis-novelty-http-large-post-lifecycle-gen-1-20260708T033738Z
+rtc-cov-analysis-novelty-http-title-reload-convergence-gen-1-20260708T033831Z
+rtc-cov-analysis-novelty-ws-real-user-rich-text-gen-1-20260708T034551Z
 rtc-coverage-guided-analysis
-rtc-coverage-guided-lower-level-http-polling-manager
 rtc-coverage-guided-novelty
 rtc-coverage-guided-supervisor
 rtc-coverage-guided-watchdog
+rtc-critical-continuation-pa-exact-benchmark-canary-product-failure-20260708T034902Z
+rtc-critical-continuation-pr07c-browser-env-20260708T034005Z
 rtc-critical-path-pr-executor-loop
-rtc-deferred-job-rich-text-suffix-corruption-20260521T225501Z
-rtc-deferred-work-promotion-loop
-rtc-disk-maintenance
-rtc-duplicate-noise-persona-loop
-rtc-focused-shards-analysis
-rtc-focused-shards-analysis-append-benchmark-canary-fuzzer-gap-20260521T2250Z
-rtc-focused-shards-append-benchmark-canary-fuzzer-gap-20260521T2250Z
-rtc-focused-shards-gap-codex-loop
-rtc-focused-shards-watchdog-append-benchmark-canary-fuzzer-gap-20260521T2250Z
-rtc-fuzz-level-mix-persona-loop
-rtc-fuzz-level-mix-persona-loop-watchdog
-rtc-fuzz-only-asserts-loop
-rtc-fuzz-strict-expansion
-rtc-fuzz-strict-expansion-analysis
-rtc-fuzz-strict-expansion-watchdog
-rtc-gap-booster
-rtc-gap-booster-analysis
-rtc-gap-booster-watchdog
-rtc-lower-level-fuzz-loop
-rtc-native-action-20260521T224354Z
-rtc-native-harness-persona-loop
-rtc-operator-correctness-fuzz-operator-correctness-20260519T214500Z
-rtc-operator-correctness-watchdog-operator-correctness-20260519T214500Z
-rtc-pr-finalization-loop
+rtc-pr-finalize-job-20260708T035005Z
 rtc-pr-progress-controller-loop
-rtc-productive-analysis-loop
-rtc-protocol-server-fuzz
-rtc-protocol-server-persona-loop
-rtc-resource-autoscaler
-rtc-structural-issue-watchdog
+rtc-pr-progress-persona-marc-brooker-20260708T034809Z
+rtc-pr-progress-synthesis-20260708T034809Z
 ```
 
 Short-lived persona worker sessions also appear during PR progress, duplicate
-noise review, deferred work, native/protocol work, and targeted repair. Those
-are not durable owners; the durable owner loops above must adopt, time out, or
-replace them.
+noise review, deferred work, native/protocol work, and targeted repair. The
+`rtc-cov-analysis-*` and `rtc-critical-continuation-*` rows above are short-lived
+work sessions from the current cycle, not durable owners. The durable owner
+loops must adopt, time out, or replace them.
 
 ## Current Data Roots
 
