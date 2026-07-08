@@ -3701,6 +3701,13 @@ Required classification TSV: $classification
 Required validation TSV: ${report%/*}/validation.tsv
 Required repair branch file: ${report%/*}/repair-branch.txt
 Required push manifest, if adoption is accepted: ${report%/*}/push-manifest.tsv
+Candidate source repo: $CONTINUATION_SRC
+Validation/cache repo: $SRC
+
+Dependency rule:
+- Use the source_repo column from $REPAIR_ADOPTIONS as the primary git and dependency source for the adopted branch; if that is absent, use $CONTINUATION_SRC.
+- If you create a detached validation worktree outside that source repo, symlink node_modules and vendor from the same source repo before running npm, Jest, Playwright, or wp-env commands.
+- Do not symlink node_modules from $SRC unless the adopted branch source_repo is $SRC or you first prove the required module resolves from $SRC. A stale validation/cache dependency tree is an infrastructure problem, not a product failure or repair rejection.
 
 Task:
 1. Read the latest repair-branch adoption table first:
@@ -3712,11 +3719,11 @@ Task:
    - product-failure-triage.tsv or exact-blocker-status.tsv if present in the same directory.
 2. This lane exists because repair branches were being created without entering the validation/publication path. Do not do broad triage and do not launch broad fuzzing.
 3. Validate that the adopted branch is a durable committed repair:
-   - the branch resolves in $SRC;
+   - the branch resolves in the adoption row's source_repo, $CONTINUATION_SRC, or $SRC, in that order;
    - the branch head is not just the all-merge base head with no committed delta;
    - the relevant changed files match the reported product failure or exact blocker;
    - any focused validation in the source report is real, not only wp-env start/status.
-4. If the branch is a real committed fix, run the smallest relevant validation you can afford: unit test, focused replay, or exact artifact check. If it needs to be merged into the current all-merge candidate, create a new non-destructive branch in $SRC with the repair applied; do not rewrite active fuzzing refs.
+4. If the branch is a real committed fix, run the smallest relevant validation you can afford: unit test, focused replay, or exact artifact check. If dependency resolution fails before the test starts, first repair the validation worktree dependency symlinks or install the missing dependency in the selected dependency source, then rerun the focused validation. If it needs to be merged into the current all-merge candidate, create a new non-destructive branch in the selected source repo with the repair applied; do not rewrite active fuzzing refs.
 5. If the branch is only an alias for the current all-merge head, contains no committed delta, cannot be fetched, or only has uncommitted work, reject it explicitly and point back to the producer lane.
 6. If accepted for local publication/validation, write ${report%/*}/push-manifest.tsv with header:
    source_branch	source_commit	intended_danluu_branch	base_ref	files_changed	insertions	deletions	validation_summary	reason
