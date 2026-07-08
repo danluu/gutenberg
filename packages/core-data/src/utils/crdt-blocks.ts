@@ -97,6 +97,14 @@ const ARRAY_ELEMENT_ID_SYMBOL = Symbol( 'wpSyncArrayElementId' );
 const serializableBlocksCache = new WeakMap< WeakKey, Block[] >();
 const previousLocalBlocksCache = new WeakMap< YBlocks, Block[] >();
 
+function normalizeRichTextHTMLString( value: string ): string {
+	try {
+		return RichTextData.fromHTMLString( value ).toHTMLString();
+	} catch {
+		return value;
+	}
+}
+
 /**
  * Recursively walk an attribute value and convert any RichTextData instances
  * to their string (HTML) representation. This is necessary for array-type and
@@ -107,7 +115,7 @@ const previousLocalBlocksCache = new WeakMap< YBlocks, Block[] >();
  */
 function serializeAttributeValue( value: unknown ): unknown {
 	if ( value instanceof RichTextData ) {
-		return value.valueOf();
+		return normalizeRichTextHTMLString( value.valueOf() );
 	}
 
 	// e.g. core/table `body`: [ { cells: [ { content: RichTextData } ] } ]
@@ -354,7 +362,9 @@ function createYValueFromSchema(
 	}
 
 	if ( schema.type === 'rich-text' ) {
-		return new Y.Text( value?.toString() ?? '' );
+		return new Y.Text(
+			normalizeRichTextHTMLString( value?.toString() ?? '' )
+		);
 	}
 
 	if ( schema.type === 'array' && schema.query && Array.isArray( value ) ) {
@@ -2130,10 +2140,15 @@ function mergeYValue(
 		typeof newVal === 'string' &&
 		currentVal instanceof Y.Text
 	) {
+		const normalizedNewVal = normalizeRichTextHTMLString( newVal );
 		mergeRichTextUpdate(
 			currentVal,
-			newVal,
-			resolveRichTextCursorPosition( cursorPosition, cursorScope, newVal )
+			normalizedNewVal,
+			resolveRichTextCursorPosition(
+				cursorPosition,
+				cursorScope,
+				normalizedNewVal
+			)
 		);
 	} else if (
 		schema?.type === 'array' &&

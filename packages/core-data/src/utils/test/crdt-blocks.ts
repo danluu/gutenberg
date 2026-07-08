@@ -165,6 +165,30 @@ describe( 'crdt-blocks', () => {
 			expect( content.toString() ).toBe( 'Hello World' );
 		} );
 
+		it( 'normalizes rich-text entity spellings before syncing blocks', () => {
+			const rawContent =
+				'Entity refs: &copy and &nbsp gap <abbr title="fish &amp chips &copy 2026">abbr</abbr>';
+			const normalizedContent =
+				RichTextData.fromHTMLString( rawContent ).toHTMLString();
+			const incomingBlocks: Block[] = [
+				{
+					name: 'core/paragraph',
+					attributes: { content: rawContent },
+					innerBlocks: [],
+				},
+			];
+
+			expect( normalizedContent ).not.toBe( rawContent );
+
+			mergeCrdtBlocks( yblocks, incomingBlocks, null );
+
+			const attrs = yblocks
+				.get( 0 )
+				.get( 'attributes' ) as YBlockAttributes;
+			const content = attrs.get( 'content' ) as Y.Text;
+			expect( content.toString() ).toBe( normalizedContent );
+		} );
+
 		it( 'syncs innerContent of static inner-content blocks into the Y.Doc', () => {
 			const incomingBlocks: Block[] = [
 				{
@@ -1809,6 +1833,43 @@ describe( 'crdt-blocks', () => {
 			);
 
 			doc2.destroy();
+		} );
+
+		it( 'normalizes nested rich-text entity spellings in table cells', () => {
+			const rawContent = 'Cell refs: &copy and &nbsp gap';
+			const normalizedContent =
+				RichTextData.fromHTMLString( rawContent ).toHTMLString();
+			const tableBlocks: Block[] = [
+				{
+					name: 'core/table',
+					attributes: {
+						body: [
+							{
+								cells: [
+									{
+										content: rawContent,
+										tag: 'td',
+									},
+								],
+							},
+						],
+					},
+					innerBlocks: [],
+				},
+			];
+
+			expect( normalizedContent ).not.toBe( rawContent );
+
+			mergeCrdtBlocks( yblocks, tableBlocks, null );
+
+			const attrs = yblocks
+				.get( 0 )
+				.get( 'attributes' ) as YBlockAttributes;
+			const body = (
+				attrs.get( 'body' ) as Y.Array< unknown >
+			 ).toJSON() as { cells: { content: string; tag: string }[] }[];
+
+			expect( body[ 0 ].cells[ 0 ].content ).toBe( normalizedContent );
 		} );
 
 		it( 'stores table body as nested Y types (Y.Array of Y.Maps with Y.Text)', () => {
