@@ -533,6 +533,24 @@ function checkConnectionLimit(
 	return false;
 }
 
+function hasCollaboratingPeer( awareness: AwarenessState ): boolean {
+	return Object.keys( awareness ).length > 1;
+}
+
+function isObjectRoom( room: string ): boolean {
+	return room.includes( ':' );
+}
+
+function shouldResumeQueuesForRoom(
+	awareness: AwarenessState,
+	roomState: RoomState
+): boolean {
+	return (
+		hasCollaboratingPeer( awareness ) &&
+		( roomState.isPrimaryRoom || isObjectRoom( roomState.room ) )
+	);
+}
+
 let areListenersRegistered = false;
 let consecutiveFailures = 0;
 let hasCheckedConnectionLimit = false;
@@ -864,13 +882,11 @@ function poll(): void {
 				// If there is another collaborator on the primary entity,
 				// resume all room queues for the next poll and increase
 				// polling frequency. We only check the primary room to
-				// avoid false positives from shared collection rooms
-				// (e.g. taxonomy/category), but resume all queues so
-				// collection rooms (e.g. root/comment) can also sync.
-				if (
-					roomState.isPrimaryRoom &&
-					Object.keys( room.awareness ).length > 1
-				) {
+				// avoid false positives from shared collection rooms (e.g.
+				// taxonomy/category). Object rooms are also eligible because the
+				// first loaded room can be a collection while the edited post room
+				// still needs to flush its queued bootstrap and local updates.
+				if ( shouldResumeQueuesForRoom( room.awareness, roomState ) ) {
 					hasCollaborators = true;
 					roomStates.forEach( ( state ) => {
 						state.updateQueue.resume();

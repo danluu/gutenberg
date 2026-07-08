@@ -918,6 +918,79 @@ describe( 'polling-manager', () => {
 			expect( collectionRoom!.updates.length ).toBeGreaterThan( 0 );
 		} );
 
+		it( 'resumes queues when collaborators are detected on a non-primary object room', async () => {
+			// First poll: a collection registered before the edited post, but
+			// only the object room has actual collaborators.
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'postType/post',
+						end_cursor: 1,
+						awareness: {},
+						updates: [],
+					},
+					{
+						room: 'postType/post:123',
+						end_cursor: 1,
+						awareness: {
+							1: { collaboratorInfo: { id: 100 } },
+							2: { collaboratorInfo: { id: 200 } },
+						},
+						updates: [],
+					},
+				],
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'postType/post',
+				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			pollingManager.registerRoom( {
+				room: 'postType/post:123',
+				doc: createMockDoc( 2 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			// First poll detects collaborators on the object room and resumes all queues.
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'postType/post',
+						end_cursor: 2,
+						awareness: {},
+						updates: [],
+					},
+					{
+						room: 'postType/post:123',
+						end_cursor: 2,
+						awareness: {
+							1: { collaboratorInfo: { id: 100 } },
+							2: { collaboratorInfo: { id: 200 } },
+						},
+						updates: [],
+					},
+				],
+			} );
+
+			await jest.advanceTimersByTimeAsync( 1000 );
+
+			const secondCallPayload = mockPostSyncUpdate.mock.calls[ 1 ][ 0 ];
+			const objectRoom = secondCallPayload.rooms.find(
+				( r: { room: string } ) => r.room === 'postType/post:123'
+			);
+			expect( objectRoom!.updates.length ).toBeGreaterThan( 0 );
+		} );
+
 		it( 'does not resume non-primary room queues when no collaborators are detected', async () => {
 			// Only 1 client (self) — no collaborators.
 			mockPostSyncUpdate.mockResolvedValue( {
