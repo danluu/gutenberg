@@ -1106,7 +1106,7 @@ write_progress_table() {
 					source_head = $6
 					central_head = $7
 					state = $8
-					next = $9
+					next_action = $9
 					classification = $10
 					report = $11
 					branch = adopted_branch != "" ? adopted_branch : repair_branch
@@ -1115,16 +1115,16 @@ write_progress_table() {
 					status = state
 					if (state ~ /^(central_present|central_present_alias|imported)$/) {
 						status = "needs-validation"
-						next = "validate adopted repair branch, merge into the current all-merge candidate if appropriate, or reject with exact evidence"
+						next_action = "validate adopted repair branch, merge into the current all-merge candidate if appropriate, or reject with exact evidence"
 					} else if (state == "missing-source-branch") {
 						status = "invalid-repair-branch"
 					} else if (state ~ /(failed|conflict)/) {
 						status = "blocked"
 					}
 					evidence = "lane=" lane " state=" state " classification=" classification " report=" report
-					gsub(/\t/, " ", next)
+					gsub(/\t/, " ", next_action)
 					gsub(/\t/, " ", evidence)
-					print now "\trepair-branch-adoption:" repair_branch "\trepair-branch-adoption\t" priority "\t" status "\t" branch "\t" head "\t" next "\t" evidence
+					print now "\trepair-branch-adoption:" repair_branch "\trepair-branch-adoption\t" priority "\t" status "\t" branch "\t" head "\t" next_action "\t" evidence
 				}
 			' "$CRITICAL_REPAIR_ADOPTIONS" 2>/dev/null || true
 		fi
