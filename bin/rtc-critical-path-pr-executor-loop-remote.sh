@@ -41,7 +41,7 @@ ACTIVE_SPLIT_FILE=$PR_SPLIT_BASE/current-pr-split.md
 LAUNCHES=$BASE/logs/launches.tsv
 LOG=$BASE/logs/critical-path-pr-executor.log
 LOCK_FILE=$BASE/critical-path-pr-executor.lock
-RECONCILE_LOCK_FILE=$BASE/critical-path-pr-executor-reconcile.lock
+RECONCILE_LOCK_FILE=$BASE/critical-path-pr-executor-reconcile.v2.lock
 PID_FILE=$BASE/critical-path-pr-executor.pid
 RUNTIME_SCRIPT=$BASE/rtc-critical-path-pr-executor-loop.sh
 WORKTREE_PRUNE_PID_FILE=$BASE/worktree-prune.pid
@@ -1479,6 +1479,13 @@ has_session() {
 	tmux_sessions | grep -Fxq "$1"
 }
 
+tmux_new_session_detached() {
+	local session=$1 command=$2
+	# Reconcile runs hold fd 8 and the main loop holds fd 9. Detached tmux
+	# sessions are long-lived, so close both fds before execing tmux.
+	tmux new-session -d -s "$session" "$command" 8>&- 9>&-
+}
+
 critical_executor_lock_holders() {
 	fuser "$LOCK_FILE" 2>/dev/null | tr -s ' ' ' ' | sed 's/^ //; s/ $//' || true
 }
@@ -2729,7 +2736,7 @@ EOF
 	chmod +x "$runner"
 	append_launch feedback-refresh "$session" "$dedupe" "$run_dir"
 	json_event launch "benchmark feedback refresh command=$command session=$session"
-	tmux new-session -d -s "$session" "bash '$runner'"
+	tmux_new_session_detached "$session" "bash '$runner'"
 }
 
 benchmark_classification_only_coverage_repaired() {
@@ -3742,7 +3749,7 @@ EOF
 	chmod +x "$runner"
 	append_launch validation "$session" "$dedupe" "$run_dir"
 	json_event launch "validation $lane_id $branch session=$session"
-	tmux new-session -d -s "$session" "bash '$runner' 2> '$log_file'"
+	tmux_new_session_detached "$session" "bash '$runner' 2> '$log_file'"
 }
 
 write_continuation_prompt() {
@@ -4474,7 +4481,7 @@ EOF
 	chmod +x "$runner"
 	append_launch continuation "$session" "$dedupe" "$run_dir"
 	json_event launch "continuation $lane session=$session"
-	tmux new-session -d -s "$session" "bash '$runner'"
+	tmux_new_session_detached "$session" "bash '$runner'"
 }
 
 launch_continuation_jobs() {
@@ -4891,7 +4898,7 @@ case "${1:-start}" in
 			echo "$SESSION already running"
 		else
 			clear_stale_executor_lock_holders
-			tmux new-session -d -s "$SESSION" "$RUNTIME_SCRIPT run"
+			tmux_new_session_detached "$SESSION" "$RUNTIME_SCRIPT run"
 			echo "$SESSION started"
 		fi
 		;;
