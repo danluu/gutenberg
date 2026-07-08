@@ -1,8 +1,8 @@
 # RTC Jetstream2 fuzzing architecture and active loops
 
-Snapshot time: `2026-07-08T03:49Z`
+Snapshot time: `2026-07-08T18:25Z`
 
-Blocker-history update: `2026-07-08T03:49Z`
+Blocker-history update: `2026-07-08T18:25Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -46,31 +46,39 @@ artifacts under the data root.
 ## 2026-07-08 Live Update
 
 The current JS2 run is no longer just producing analysis loops. The control
-plane now has an explicit repair-branch adoption path and fail-closed checks for
-continuations that claim to have created a repair branch. At this snapshot:
+plane now has an explicit repair-branch adoption path, fail-closed checks for
+continuations that claim to have created a repair branch, bounded continuation
+prompts, and recovery for orphaned continuation processes. At this snapshot:
 
 - `rtc-critical-path-pr-executor-loop` is running in the `rtc-fuzz` tmux socket
-  and refreshed `current-critical-path-status.md` at `2026-07-08T03:49:01Z`.
-- `rtc-pr-progress-controller-loop` is running in the same tmux socket and
-  refreshed `current-pr-progress-controller-status.md` at
-  `2026-07-08T03:48:12Z`.
+  with the v2 reconcile lock path
+  `/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/critical-path-pr-executor-reconcile.v2.lock`.
+- Detached critical-path tmux launches close reconcile fd 8 and main-loop fd 9
+  before `tmux new-session`, so long-lived continuation, validation,
+  feedback-refresh, and controller sessions cannot inherit executor locks.
+- `rtc-pr-progress-controller-loop` is expected to run in the same tmux socket;
+  its status path explicitly reports a singleton running without tmux when a
+  stale pid or lock holder exists.
 - The current coverage-guided run root is
-  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T033457Z`.
-- The PR progress controller reports `active discovery sessions: 4`,
-  `min discovery sessions: 3`, `max active PR jobs: 2`, and resource reason
-  `deadline_benchmark_canary_finalization_ceiling`.
+  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T173449Z`.
 - The critical-path executor reports `max active continuations: 3`,
   `max active validations: 6`, `cycle sleep seconds: 60`, and
   `reconcile timeout seconds: 300`.
-- `repair/benchmark-canary-richtext-entity-canonical-20260708T025216Z` is the
-  current committed repair branch requiring validation/adoption. It resolves to
-  `a51898eb5ee1d0f0cd009baebeb73f5e00558112`.
-- Two earlier continuation claims are now explicitly marked
-  `invalid-no-committed-delta` because their branch labels pointed at the
-  continuation source head instead of a committed repair delta.
-- The current benchmark canary product blocker is
-  `novelty-ws-multi-reload-lifecycle`, with five retained product evidence
-  records in `benchmark-canary-coverage-status.tsv`.
+- The all-merge candidate branch is `js2/all-merged-rebased-20260701` at
+  `efe27afe3aebe2a9c04e95fd696de1ed052dfebc`.
+- The latest candidate fast-forwards in the previous 48 hours landed two fix
+  branches and four commits: rich-text entity normalization, HTTP polling queue
+  resume for object rooms, faster HTTP collaborator polling in background tabs,
+  and recoverable HTTP polling retry logging.
+- The plain editor product smoke lane is a publication gate. A stale orphaned
+  pre-guard smoke continuation was killed, recorded as `stale_orphan_killed`,
+  and relaunched as
+  `rtc-critical-continuation-plain-editor-product-smoke-20260708T174348Z` with
+  the bounded search prompt.
+- Current known benchmark progress blocker:
+  `benchmark-canary-fuzzer-gap`, owned by the coverage controller until the
+  current run has green evidence or explicit downscope for every open
+  promotion-blocking/status-only primary forced canary row.
 
 Current controller topology:
 
@@ -104,6 +112,26 @@ flowchart TB
     Adoptions --> PRProgress
     Critical --> Status
     PRProgress --> PRTable
+```
+
+Critical-path continuation recovery path:
+
+```mermaid
+flowchart TD
+    Launch[critical continuation tmux session] --> Codex[Codex process in continuation worktree]
+    Launch --> Prompt[bounded prompt with repository/artifact search limits]
+    Codex --> Artifacts[classification.tsv, validation.tsv, report.md, repair-branch.txt]
+
+    Codex -->|tmux gone, parent PID 1, grace exceeded| Orphan[stale orphan detector]
+    Orphan --> Kill[kill process group]
+    Kill --> Stale[write stale_orphan_killed artifacts]
+    Stale --> Relaunch{blocker still open?}
+    Relaunch -->|yes| NewPrompt[relaunch immediately, bypass recent-launch dedupe]
+    Relaunch -->|no| Terminal[leave terminal evidence]
+
+    Critical[critical executor reconcile] --> Lock[v2 reconcile lock]
+    Critical --> TmuxWrap[tmux_new_session_detached closes fd 8 and fd 9]
+    TmuxWrap --> Launch
 ```
 
 Repair branch adoption path:
@@ -191,6 +219,10 @@ the continuation start head, surface repair-branch adoption as first-class PR
 progress rows, cache continuation classification lookups, and report
 parentless PR-progress controllers as `running without tmux` until the `start`
 path clears matching stale lock holders and relaunches the durable session.
+The late 2026-07-08 critical-path guardrail adds bounded continuation prompts,
+`stale_orphan_killed` artifacts for orphaned Codex processes, immediate relaunch
+after stale-orphan cleanup, and v2 reconcile locking with fd-closing tmux
+launches so long-lived tmux children cannot hold the reconcile lock.
 
 When CPU is unexpectedly idle or a blocker looks old, check blocker age and live
 evidence first. The detailed checklist and commands are in

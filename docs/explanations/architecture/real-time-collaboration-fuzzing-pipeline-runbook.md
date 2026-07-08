@@ -155,6 +155,33 @@ The July 2026 fixes that are meant to prevent recurrence are:
     before relaunching the durable `rtc-pr-progress-controller-loop` session, so
     a parentless controller cannot make health checks falsely report either
     healthy supervision or a cleanly stopped loop.
+-   Critical-path continuation prompts now include a shared
+    "Repository and artifact search limits" block. Continuations must read the
+    current output pointer, status files, and exact lane artifacts before
+    inspecting source; broad `find`, repository-wide `rg`, large log dumps, and
+    historical artifact walks are treated as infrastructure failures. A
+    continuation that cannot proceed with bounded evidence should write
+    `blocked_specific` instead of scanning.
+-   The critical-path executor kills stale orphaned continuation Codex processes
+    that have lost their tmux session, are parented by PID 1, and exceed the
+    configured grace period
+    `RTC_CRITICAL_PR_EXECUTOR_ORPHANED_CONTINUATION_GRACE_SECONDS` (default
+    180 seconds). Cleanup writes `classification.tsv`, `validation.tsv`,
+    `report.md`, `repair-branch.txt`, and `rc` with
+    `stale_orphan_killed`, so the failed attempt is visible in the normal
+    artifact stream instead of silently blocking the lane.
+-   `stale_orphan_killed` is a relaunchable infrastructure failure. The normal
+    `RTC_CRITICAL_PR_EXECUTOR_MIN_TASK_INTERVAL_SECONDS` dedupe delay is
+    bypassed for a lane whose latest classification is `stale_orphan_killed`,
+    allowing the same blocker to relaunch immediately with the current bounded
+    prompt.
+-   Detached tmux launches now go through a wrapper that closes reconcile fd 8
+    and main-loop fd 9 before `tmux new-session`. This prevents long-lived
+    validation, continuation, feedback-refresh, and controller sessions from
+    inheriting the executor's locks. The live reconcile lock path moved to
+    `critical-path-pr-executor-reconcile.v2.lock` so old tmux server file
+    descriptors on `critical-path-pr-executor-reconcile.lock` cannot block new
+    reconciles.
 
 Use these checks when a blocker looks old or CPU is unexpectedly idle:
 
@@ -168,6 +195,8 @@ rg -n 'novelty-http-plain-editor-product-smoke|plain-editor-product-smoke' "$OUT
 /tmp/start_rtc_pr_progress_controller.sh status | sed -n '1,12p'
 /tmp/start_rtc_critical_path_pr_executor_loop.sh status | sed -n '1,12p'
 pgrep -af 'rtc-critical|productive-analysis|codex'
+fuser /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/critical-path-pr-executor-reconcile.v2.lock 2>/dev/null || true
+tmux -L rtc-fuzz list-sessions | rg 'rtc-critical-continuation|rtc-coverage-guided'
 ```
 
 A healthy current canary state has current-run green evidence for the required
@@ -175,6 +204,27 @@ primary groups, zero effective `promotion_blocked` rows, zero exact-stack
 blockers, and no orphaned critical/productive-analysis Codex processes. Retained
 product evidence is useful context, but it is not an open blocker unless the
 current row is non-green and promotion-blocking.
+
+If `current-critical-path-status.md` shows a critical continuation as active
+but there is no corresponding `tmux -L rtc-fuzz` session, inspect the matching
+worktree process before assuming useful work is still running:
+
+```bash
+BASE=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517
+for pid in $( pgrep -f 'codex .*exec --skip-git-repo-check' ); do
+    cwd=$( readlink "/proc/$pid/cwd" 2>/dev/null || true )
+    case "$cwd" in
+        "$BASE"/worktrees/continuation-*)
+            ps -p "$pid" -o pid,ppid,pgid,stat,etime,args
+            echo "cwd=$cwd"
+            ;;
+    esac
+done
+```
+
+The executor should clean stale orphaned continuations during the next
+reconcile. If it does not, first check the v2 reconcile lock and the executor
+syntax with `bash -n` before killing anything manually.
 
 ## Base Branch
 
