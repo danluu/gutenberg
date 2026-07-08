@@ -1040,6 +1040,19 @@ latest_continuation_classification() {
 		sed -n '1p'
 }
 
+latest_continuation_class() {
+	local lane=$1 classification
+	classification=$(latest_continuation_classification "$lane" || true)
+	[ -s "$classification" ] || return 1
+	awk -F '\t' -v lane="$lane" 'NR > 1 && $1 == lane { print $2; exit }' "$classification" 2>/dev/null
+}
+
+latest_continuation_was_stale_orphan_killed() {
+	local lane=$1 class
+	class=$(latest_continuation_class "$lane" || true)
+	[ "$class" = "stale_orphan_killed" ]
+}
+
 continuation_source_repo() {
 	local continuation_dir=$1 source_log source
 	source_log=$continuation_dir/source-repo.log
@@ -4357,7 +4370,7 @@ launch_continuation_job() {
 		active=$(benchmark_exact_stack_active || true)
 	fi
 	[ -z "$active" ] || return 0
-	if task_recently_launched "$dedupe" "$MIN_TASK_INTERVAL_SECONDS"; then
+	if task_recently_launched "$dedupe" "$MIN_TASK_INTERVAL_SECONDS" && ! latest_continuation_was_stale_orphan_killed "$lane"; then
 		return 0
 	fi
 	active_continuations=$(( $(active_count_matching '^rtc-critical-continuation-') + $(active_continuation_process_count) ))
