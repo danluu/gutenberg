@@ -1126,6 +1126,7 @@ repair_branch_adoption_consumed() {
 repair_branch_adoption_open() {
 	local state
 	[ -s "$REPAIR_ADOPTIONS" ] || return 1
+	repair_branch_adopted_to_release_candidate && return 1
 	state=$(awk -F '\t' 'NR > 1 { state = $8 } END { print state }' "$REPAIR_ADOPTIONS" 2>/dev/null)
 	case "$state" in
 		central_present|central_present_alias|imported|fetch_failed|name_conflict)
@@ -1135,6 +1136,46 @@ repair_branch_adoption_open() {
 			return 1
 			;;
 	esac
+}
+
+repair_branch_adopted_to_release_candidate() {
+	local rc_branch=js2/all-merged-rebased-20260701 row repair_branch adopted_branch source_repo source_head central_head state head rc_head
+	[ -s "$REPAIR_ADOPTIONS" ] || return 1
+	row=$(
+		awk -F '\t' '
+			NR > 1 && $8 ~ /^(central_present|central_present_alias|imported)$/ {
+				row = $0
+			}
+			END {
+				if (row != "") print row
+			}
+		' "$REPAIR_ADOPTIONS" 2>/dev/null
+	)
+	[ -n "$row" ] || return 1
+	IFS=$'\t' read -r _generated_at _lane repair_branch adopted_branch source_repo source_head central_head state _next_action _classification _report <<< "$row"
+	head=${central_head:-$source_head}
+	[ -n "$head" ] || return 1
+	if [ -s "$LOCAL_PUBLISH_MANIFEST" ] &&
+		awk -F '\t' -v head="$head" -v repair_branch="$repair_branch" -v adopted_branch="$adopted_branch" '
+			NR > 1 && $4 == "refs/heads/js2/all-merged-rebased-20260701" &&
+				($5 == head || index($5, head) == 1 || index(head, $5) == 1) &&
+				($6 == repair_branch || (adopted_branch != "" && $6 == adopted_branch)) &&
+				$9 ~ /^(pushed|already_present|exact-local-confirmed)$/ {
+				found = 1
+			}
+			END { exit found ? 0 : 1 }
+		' "$LOCAL_PUBLISH_MANIFEST"; then
+		return 0
+	fi
+	for repo in "$SRC" "$CONTINUATION_SRC" "$source_repo"; do
+		[ -n "$repo" ] || continue
+		git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || continue
+		rc_head=$(git -C "$repo" rev-parse --verify --quiet "$rc_branch^{commit}" 2>/dev/null || true)
+		if [ -n "$rc_head" ] && [ "$rc_head" = "$head" ]; then
+			return 0
+		fi
+	done
+	return 1
 }
 
 repair_branch_adoption_summary() {
@@ -2886,6 +2927,7 @@ write_repair_branch_adoptions() {
 
 adopted_repair_branches() {
 	[ -s "$REPAIR_ADOPTIONS" ] || return 0
+	repair_branch_adopted_to_release_candidate && return 0
 	awk -F '\t' '
 		NR > 1 && $8 ~ /^(central_present|central_present_alias|imported)$/ && $4 != "" {
 			key = $4 "\t" $7
@@ -3218,6 +3260,9 @@ write_blockers_and_queue() {
 	benchmark_product_result=$([ -n "$benchmark_product_active" ] && printf product_failure_repair_active || printf product_failure_repair_required)
 	benchmark_product_artifacts=product-failure-triage.tsv,exact-blocker-status.tsv,classification.tsv,repair-branch.txt
 	repair_adoption_active=$(active_work_matching 'benchmark-canary-repair-branch-adoption|repair-branch-adoption' || true)
+	if repair_branch_adopted_to_release_candidate; then
+		repair_adoption_active=""
+	fi
 	repair_adoption_state=$([ -n "$repair_adoption_active" ] && printf active || { repair_branch_adoption_open && printf runnable || printf terminal; })
 	repair_adoption_result=$([ -n "$repair_adoption_active" ] && printf repair_branch_adoption_active || { repair_branch_adoption_open && printf repair_branch_adoption_required || printf no_pending_repair_branch; })
 	repair_adoption_summary=$(repair_branch_adoption_summary || true)
