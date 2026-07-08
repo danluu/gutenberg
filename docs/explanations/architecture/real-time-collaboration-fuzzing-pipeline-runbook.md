@@ -16,6 +16,57 @@ The pipeline has four durable parts:
 For a long run, treat each durable part as a service with a tmux owner. Do not
 leave one-shot commands as the only copy of an important process.
 
+## Current Operator Snapshot
+
+Snapshot time: `2026-07-08T18:25Z`
+
+The active all-merge candidate is `js2/all-merged-rebased-20260701` at
+`efe27afe3aebe2a9c04e95fd696de1ed052dfebc`. The coverage-guided pointer file
+currently resolves to
+`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T180419Z`.
+
+The current publication blockers are intentionally concrete:
+
+-   `benchmark-canary-fuzzer-gap`: three forced HTTP canary rows had direct
+    current-run green evidence at `2026-07-08T18:23Z`, while
+    `novelty-http-large-post-lifecycle` remained open and promotion-blocking.
+-   `benchmark-canary-product-failure`: retained product evidence is still
+    present for `novelty-http-large-post-lifecycle-completion`,
+    `novelty-http-persistence-probe`, and
+    `novelty-http-title-reload-convergence`.
+-   `plain-editor-product-smoke`: this is a first-class publication gate. It is
+    not satisfied by `wp-env` startup/status logs; the gate needs a successful
+    real edit/save/reload artifact.
+-   `pa-exact-benchmark-canary-product-failure`: one current repair-adoption
+    row is in `central_present` state and must be validated, merged into the
+    all-merge candidate, converted into a push manifest, or rejected with exact
+    evidence.
+
+Use this gate map for the current run:
+
+```mermaid
+flowchart TB
+    Branch[js2/all-merged-rebased-20260701] --> RunRoot[current coverage run pointer]
+    RunRoot --> Canary[benchmark-canary-coverage-status.tsv]
+    RunRoot --> Smoke[novelty-status.md plain editor smoke]
+    RunRoot --> Product[retained product evidence]
+
+    Canary --> CanaryOpen{forced rows green or downscoped?}
+    Smoke --> SmokeOpen{real edit/save/reload artifact?}
+    Product --> ProductOpen{product evidence repaired or downscoped?}
+
+    CanaryOpen -->|no| CoverageBlocker[benchmark-canary-fuzzer-gap]
+    SmokeOpen -->|no| SmokeBlocker[plain-editor-product-smoke]
+    ProductOpen -->|no| RepairBlocker[benchmark-canary-product-failure]
+
+    CoverageBlocker --> Executor[critical-path executor]
+    SmokeBlocker --> Executor
+    RepairBlocker --> Executor
+    Executor --> Continuations[bounded continuation sessions]
+    Continuations --> Adoption[current-repair-branch-adoptions.tsv]
+    Adoption --> Branch
+```
+
 ## Blocker Age And Mitigation History
 
 As of 2026-07-03 UTC, the pipeline has been affected by the same broad

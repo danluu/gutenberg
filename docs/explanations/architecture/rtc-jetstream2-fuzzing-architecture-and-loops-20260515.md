@@ -60,7 +60,7 @@ prompts, and recovery for orphaned continuation processes. At this snapshot:
   its status path explicitly reports a singleton running without tmux when a
   stale pid or lock holder exists.
 - The current coverage-guided run root is
-  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T173449Z`.
+  `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T180419Z`.
 - The critical-path executor reports `max active continuations: 3`,
   `max active validations: 6`, `cycle sleep seconds: 60`, and
   `reconcile timeout seconds: 300`.
@@ -72,13 +72,24 @@ prompts, and recovery for orphaned continuation processes. At this snapshot:
   and recoverable HTTP polling retry logging.
 - The plain editor product smoke lane is a publication gate. A stale orphaned
   pre-guard smoke continuation was killed, recorded as `stale_orphan_killed`,
-  and relaunched as
-  `rtc-critical-continuation-plain-editor-product-smoke-20260708T174348Z` with
+  and the current active smoke continuation is
+  `rtc-critical-continuation-plain-editor-product-smoke-20260708T182113Z` with
   the bounded search prompt.
 - Current known benchmark progress blocker:
   `benchmark-canary-fuzzer-gap`, owned by the coverage controller until the
   current run has green evidence or explicit downscope for every open
-  promotion-blocking/status-only primary forced canary row.
+  promotion-blocking/status-only primary forced canary row. At
+  `2026-07-08T18:23Z`, three forced HTTP canary rows had direct current-run
+  green evidence, while `novelty-http-large-post-lifecycle` remained open and
+  promotion-blocking.
+- Current known product-repair blocker:
+  `benchmark-canary-product-failure`, with product evidence in
+  `novelty-http-large-post-lifecycle-completion`,
+  `novelty-http-persistence-probe`, and
+  `novelty-http-title-reload-convergence`. The latest repair-adoption row is
+  `pa-exact-benchmark-canary-product-failure` in `central_present` state; it
+  must still be validated, merged into the candidate, converted into a push
+  manifest, or rejected with exact evidence.
 
 Current controller topology:
 
@@ -159,17 +170,48 @@ flowchart LR
     Reject --> Status[terminal status row]
 ```
 
+Current publication gate path:
+
+```mermaid
+flowchart TB
+    Candidate[js2/all-merged-rebased-20260701 at efe27afe] --> CoverageRun[coverage-guided run run-20260708T180419Z]
+    CoverageRun --> CanaryStatus[benchmark-canary-coverage-status.tsv]
+    CoverageRun --> SmokeStatus[novelty-status.md plain-editor smoke row]
+    CoverageRun --> ProductEvidence[current product-failure evidence]
+
+    CanaryStatus --> CanaryGate{all forced canaries current-run green or downscoped?}
+    SmokeStatus --> SmokeGate{plain editor edit/save/reload green?}
+    ProductEvidence --> ProductGate{product failures repaired or downscoped?}
+
+    CanaryGate -->|no| FuzzerGap[benchmark-canary-fuzzer-gap]
+    SmokeGate -->|no| PlainSmoke[plain-editor-product-smoke continuation]
+    ProductGate -->|no| ProductRepair[benchmark-canary-product-failure repair/adoption]
+
+    FuzzerGap --> Critical[critical-path executor]
+    PlainSmoke --> Critical
+    ProductRepair --> Critical
+    Critical --> Adoption[current-repair-branch-adoptions.tsv]
+    Adoption --> Candidate
+
+    CanaryGate -->|yes| PublishReady[publication confidence]
+    SmokeGate -->|yes| PublishReady
+    ProductGate -->|yes| PublishReady
+    PublishReady --> MaintainerPR[human-reviewable PR set]
+```
+
 Current feeds and speeds:
 
 | Loop or feed | Current cadence / cap | Current state |
 | --- | --- | --- |
 | `rtc-critical-path-pr-executor-loop` | 60 second cycle, 300 second reconcile timeout | Running; opens/updates blockers and bounded continuation jobs |
-| Critical continuations | Max 3 active | `pr07c-browser-env` and a fresh `pa-exact-benchmark-canary-product-failure` continuation were active around this snapshot |
+| Critical continuations | Max 3 active | `plain-editor-product-smoke` and `productive-analysis-action` were active around this snapshot |
 | Critical validations | Max 6 active | Used for adopted repair branches and ready branch checks |
 | `rtc-pr-progress-controller-loop` | 120 second cycle, max 2 active PR jobs | Running; reserves discovery and exposes repair-adoption rows |
 | Discovery reserve | Minimum 3 active discovery sessions | Healthy at 4 active discovery sessions |
-| Coverage-guided novelty | Current run root updates status every monitor pass | Running; current canary status had seven forced rows, five green/status-only rows, and one live product blocker |
-| Repair adoption feed | Rewritten each critical reconcile | One valid committed branch, two invalid no-delta branch labels |
+| Coverage-guided novelty | Current run root updates status every monitor pass | Running; current canary status has four forced HTTP rows, three current-run green rows, and one promotion-blocking open row |
+| Plain editor smoke | Publication gate | Active; current novelty status still lacks a successful plain-editor edit/save/reload smoke artifact |
+| Product repair feed | Rewritten each critical reconcile | Open for three retained product-evidence groups until repaired or explicitly downscoped |
+| Repair adoption feed | Rewritten each critical reconcile | One `central_present` adoption row waiting for validation, merge/push-manifest handling, or exact rejection |
 
 ## Blocker Age And Failed Mitigations
 
@@ -613,30 +655,24 @@ coverage and local triage into the Jetstream control plane.
 
 ## Active Jetstream Loop Inventory
 
-Current Jetstream tmux sessions at `2026-07-08T03:50Z`:
+Current Jetstream tmux sessions at `2026-07-08T18:23Z`:
 
 ```text
-rtc-cov-analysis-novelty-http-large-post-lifecycle-gen-1-20260708T033738Z
-rtc-cov-analysis-novelty-http-title-reload-convergence-gen-1-20260708T033831Z
-rtc-cov-analysis-novelty-ws-real-user-rich-text-gen-1-20260708T034551Z
 rtc-coverage-guided-analysis
 rtc-coverage-guided-novelty
 rtc-coverage-guided-supervisor
 rtc-coverage-guided-watchdog
-rtc-critical-continuation-pa-exact-benchmark-canary-product-failure-20260708T034902Z
-rtc-critical-continuation-pr07c-browser-env-20260708T034005Z
+rtc-critical-continuation-plain-editor-product-smoke-20260708T182113Z
+rtc-critical-continuation-productive-analysis-action-20260708T182136Z
 rtc-critical-path-pr-executor-loop
-rtc-pr-finalize-job-20260708T035005Z
 rtc-pr-progress-controller-loop
-rtc-pr-progress-persona-marc-brooker-20260708T034809Z
-rtc-pr-progress-synthesis-20260708T034809Z
 ```
 
 Short-lived persona worker sessions also appear during PR progress, duplicate
 noise review, deferred work, native/protocol work, and targeted repair. The
-`rtc-cov-analysis-*` and `rtc-critical-continuation-*` rows above are short-lived
-work sessions from the current cycle, not durable owners. The durable owner
-loops must adopt, time out, or replace them.
+`rtc-critical-continuation-*` rows above are short-lived work sessions from the
+current cycle, not durable owners. The durable owner loops must adopt, time out,
+or replace them.
 
 ## Current Data Roots
 
