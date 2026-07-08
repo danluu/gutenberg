@@ -73,6 +73,7 @@ WORKTREE_PRUNE_EMERGENCY_FREE_GIB=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE_PRUNE_EMER
 WORKTREE_PRUNE_EMERGENCY_MAX_DELETE_PER_PASS=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE_PRUNE_EMERGENCY_MAX_DELETE_PER_PASS:-2000}
 WORKTREE_PRUNE_PARALLEL=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE_PRUNE_PARALLEL:-1}
 WORKTREE_PRUNE_PRESSURE_PARALLEL=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE_PRUNE_PRESSURE_PARALLEL:-3}
+ORPHANED_CONTINUATION_GRACE_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_ORPHANED_CONTINUATION_GRACE_SECONDS:-180}
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$BASE/worktrees" "$TMUX_WRAP"
 install_tmux_wrapper() {
@@ -1534,6 +1535,107 @@ active_session_matching() {
 	tmux_sessions | rg -i "$pattern" | sed -n '1p'
 }
 
+continuation_worktree_parts() {
+	local cwd=$1 name slug ts
+	name=${cwd##*/}
+	case "$name" in
+		continuation-*) ;;
+		*) return 1 ;;
+	esac
+	ts=$(printf '%s\n' "$name" | sed -n 's/^continuation-\(.*\)-\(20[0-9]\{6\}T[0-9]\{6\}Z\)$/\2/p')
+	[ -n "$ts" ] || return 1
+	slug=$(printf '%s\n' "$name" | sed -n 's/^continuation-\(.*\)-20[0-9]\{6\}T[0-9]\{6\}Z$/\1/p' | sed 's/-$//')
+	[ -n "$slug" ] || return 1
+	printf '%s\t%s\t%s\t%s\n' "$name" "$slug" "$ts" "$BASE/runs/$ts/continuations/$slug"
+}
+
+process_elapsed_seconds() {
+	local pid=$1 elapsed
+	elapsed=$(ps -o etimes= -p "$pid" 2>/dev/null | awk '{ print $1 + 0 }')
+	printf '%s\n' "${elapsed:-0}"
+}
+
+continuation_process_is_stale_orphan() {
+	local pid=$1 cwd=$2 parts _name slug ts _run_dir ppid elapsed session
+	parts=$(continuation_worktree_parts "$cwd" 2>/dev/null || true)
+	[ -n "$parts" ] || return 1
+	IFS=$'\t' read -r _name slug ts _run_dir <<EOF
+$parts
+EOF
+	session="rtc-critical-continuation-$slug-$ts"
+	has_session "$session" && return 1
+	ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | awk '{ print $1 + 0 }')
+	[ "${ppid:-0}" -eq 1 ] || return 1
+	elapsed=$(process_elapsed_seconds "$pid")
+	[ "${elapsed:-0}" -ge "$ORPHANED_CONTINUATION_GRACE_SECONDS" ]
+}
+
+write_stale_orphan_continuation_artifacts() {
+	local pid=$1 cwd=$2 parts name slug ts run_dir classification report validation repair rc now args elapsed
+	parts=$(continuation_worktree_parts "$cwd" 2>/dev/null || true)
+	[ -n "$parts" ] || return 0
+	IFS=$'\t' read -r name slug ts run_dir <<EOF
+$parts
+EOF
+	mkdir -p "$run_dir"
+	classification=$run_dir/classification.tsv
+	report=$run_dir/report.md
+	validation=$run_dir/validation.tsv
+	repair=$run_dir/repair-branch.txt
+	rc=$run_dir/rc
+	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+	args=$(ps -o args= -p "$pid" 2>/dev/null | tr '\t\r\n' '   ' || true)
+	elapsed=$(process_elapsed_seconds "$pid")
+	if [ ! -s "$report" ]; then
+		{
+			echo "# Stale Orphan Continuation Killed"
+			echo
+			echo "- lane: $slug"
+			echo "- timestamp: $now"
+			echo "- pid: $pid"
+			echo "- elapsed_seconds: ${elapsed:-0}"
+			echo "- worktree: $cwd"
+			echo "- reason: tmux session was gone, process was orphaned under PID 1, and no durable classification had been produced."
+			echo "- args: ${args:-unknown}"
+		} > "$report"
+	fi
+	if [ ! -s "$validation" ]; then
+		printf 'check\tresult\tdetail\tartifact_path\n' > "$validation"
+		printf 'tmux_session\tFAIL\tNo rtc-critical-continuation tmux session remained for %s.\t%s\n' "$name" "$report" >> "$validation"
+		printf 'orphaned_process\tFAIL\tpid=%s elapsed_seconds=%s parent=1 args=%s\t%s\n' "$pid" "${elapsed:-0}" "${args:-unknown}" "$report" >> "$validation"
+	fi
+	if [ ! -s "$classification" ]; then
+		printf 'lane_id\tclassification\tevidence\tnext_action\tartifact_path\n' > "$classification"
+		printf '%s\tstale_orphan_killed\torphaned continuation pid=%s had no tmux session after %ss and produced no durable classification\trelaunch this lane with the current bounded prompt if the blocker is still open\t%s\n' "$slug" "$pid" "${elapsed:-0}" "$report" >> "$classification"
+	fi
+	[ -s "$repair" ] || printf 'NONE\n' > "$repair"
+	[ -s "$rc" ] || printf '124\n' > "$rc"
+}
+
+cleanup_stale_continuation_processes() {
+	local pid cwd elapsed
+	command -v pgrep >/dev/null 2>&1 || return 0
+	while IFS= read -r pid; do
+		[ -n "$pid" ] || continue
+		cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null || true)
+		case "$cwd" in
+			"$BASE"/worktrees/continuation-*) ;;
+			*) continue ;;
+		esac
+		continuation_process_is_stale_orphan "$pid" "$cwd" || continue
+		elapsed=$(process_elapsed_seconds "$pid")
+		log "killing stale orphaned continuation pid=$pid elapsed=${elapsed:-0}s cwd=$cwd"
+		write_stale_orphan_continuation_artifacts "$pid" "$cwd"
+		pkill -TERM -P "$pid" 2>/dev/null || true
+		kill "$pid" 2>/dev/null || true
+		sleep 1
+		if kill -0 "$pid" 2>/dev/null; then
+			pkill -KILL -P "$pid" 2>/dev/null || true
+			kill -KILL "$pid" 2>/dev/null || true
+		fi
+	done < <(pgrep -f 'codex .*exec --skip-git-repo-check' 2>/dev/null || true)
+}
+
 active_continuation_process_matching() {
 	local pattern=$1
 	local pid cwd name
@@ -1543,6 +1645,9 @@ active_continuation_process_matching() {
 		cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null || true)
 		case "$cwd" in
 			"$BASE"/worktrees/continuation-*)
+				if continuation_process_is_stale_orphan "$pid" "$cwd"; then
+					continue
+				fi
 				name=${cwd##*/}
 				if printf '%s\n%s\n' "$name" "$cwd" | grep -Eiq -- "$pattern"; then
 					printf 'process:%s:%s\n' "$pid" "$name"
@@ -1848,6 +1953,9 @@ active_continuation_process_count() {
 		cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null || true)
 		case "$cwd" in
 			"$BASE"/worktrees/continuation-*)
+				if continuation_process_is_stale_orphan "$pid" "$cwd"; then
+					continue
+				fi
 				printf '%s\n' "$cwd"
 				;;
 		esac
@@ -4708,6 +4816,7 @@ reconcile_once() {
 		return 0
 	fi
 	prune_stale_worktrees_if_needed || true
+	cleanup_stale_continuation_processes || true
 	write_branch_export_headers
 	write_continuation_classification_cache
 	write_inputs
