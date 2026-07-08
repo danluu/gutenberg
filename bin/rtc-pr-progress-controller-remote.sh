@@ -1167,7 +1167,19 @@ write_progress_table() {
 			done
 		fi
 		if [ -s "$CRITICAL_REPAIR_ADOPTIONS" ]; then
-			awk -F '\t' -v now="$now" '
+			awk -F '\t' -v now="$now" -v publish_manifest="$LOCAL_PUBLISH_MANIFEST" -v rc_ref="refs/heads/js2/all-merged-rebased-20260701" '
+				BEGIN {
+					while ((getline line < publish_manifest) > 0) {
+						split(line, published, "\t")
+						key = published[6] "\t" published[5]
+						if (published[4] == rc_ref && published[9] == "pushed") {
+							rc_published[key] = 1
+						} else if (published[9] == "pushed") {
+							standalone_published[key] = 1
+						}
+					}
+					close(publish_manifest)
+				}
 				NR == 1 { next }
 				{
 					lane = $2
@@ -1184,8 +1196,17 @@ write_progress_table() {
 					priority = "high"
 					status = state
 					if (state ~ /^(central_present|central_present_alias|imported)$/) {
-						status = "needs-validation"
-						next_action = "validate adopted repair branch, merge into the current all-merge candidate if appropriate, or reject with exact evidence"
+						publish_key = branch "\t" head
+						if (rc_published[publish_key]) {
+							status = "adopted-to-release-candidate"
+							next_action = "release-candidate branch contains the validated repair; run exact replay and benchmark-canary gate before clearing product blockers"
+						} else if (standalone_published[publish_key]) {
+							status = "published-standalone"
+							next_action = "standalone repair branch is published; fast-forward the release-candidate branch or reject with exact evidence"
+						} else {
+							status = "needs-validation"
+							next_action = "validate adopted repair branch, merge into the current all-merge candidate if appropriate, or reject with exact evidence"
+						}
 					} else if (state == "missing-source-branch") {
 						status = "invalid-repair-branch"
 					} else if (state ~ /(failed|conflict)/) {
