@@ -1050,6 +1050,24 @@ continuation_source_repo() {
 	fi
 }
 
+continuation_start_head() {
+	local continuation_dir=$1 source_repo=$2 source_log worktree_log start abbrev
+	source_log=$continuation_dir/source-repo.log
+	worktree_log=$continuation_dir/worktree.log
+	start=$(sed -n 's/^continuation_start_head=//p' "$source_log" 2>/dev/null | tail -1)
+	if [ -n "$start" ]; then
+		git -C "$source_repo" rev-parse --verify --quiet "$start^{commit}" 2>/dev/null && return 0
+	fi
+	abbrev=$(sed -n 's/^Preparing worktree (detached HEAD \([0-9a-f]\{7,\}\)).*/\1/p' "$worktree_log" 2>/dev/null | tail -1)
+	if [ -z "$abbrev" ]; then
+		abbrev=$(sed -n 's/^HEAD is now at \([0-9a-f]\{7,\}\) .*/\1/p' "$worktree_log" 2>/dev/null | tail -1)
+	fi
+	if [ -n "$abbrev" ]; then
+		git -C "$source_repo" rev-parse --verify --quiet "$abbrev^{commit}" 2>/dev/null && return 0
+	fi
+	return 1
+}
+
 repair_branch_created_records() {
 	recent_executor_run_dirs |
 		while IFS= read -r run_dir; do
@@ -1058,7 +1076,7 @@ repair_branch_created_records() {
 		sort -n |
 		tail -80 |
 		while IFS=$'\t' read -r mtime repair_file; do
-			local dir lane classification branch source_repo source_head report
+			local dir lane classification branch source_repo source_head source_start_head report
 			dir=${repair_file%/*}
 			lane=${dir##*/}
 			classification=$dir/classification.tsv
@@ -1071,8 +1089,9 @@ repair_branch_created_records() {
 			git check-ref-format --branch "$branch" >/dev/null 2>&1 || continue
 			source_repo=$(continuation_source_repo "$dir")
 			source_head=$(git -C "$source_repo" rev-parse --verify --quiet "$branch^{commit}" 2>/dev/null || true)
-			printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-				"$mtime" "$lane" "$branch" "$source_repo" "$source_head" "$dir" "$classification" "$report"
+			source_start_head=$(continuation_start_head "$dir" "$source_repo" || true)
+			printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+				"$mtime" "$lane" "$branch" "$source_repo" "$source_head" "$source_start_head" "$dir" "$classification" "$report"
 		done
 }
 
@@ -2832,15 +2851,14 @@ write_repair_branch_adoptions() {
 	{
 		printf 'generated_at\tlane_id\trepair_branch\tadopted_branch\tsource_repo\tsource_head\tcentral_head\tstate\tnext_action\tclassification_path\treport_path\n'
 		repair_branch_created_records |
-			while IFS=$'\t' read -r mtime lane branch source_repo source_head dir classification report; do
-				local adopted_branch adoption_state adoption_detail central_head next_action adoption source_current_head
+			while IFS=$'\t' read -r mtime lane branch source_repo source_head source_start_head dir classification report; do
+				local adopted_branch adoption_state adoption_detail central_head next_action adoption
 				if [ -z "$source_head" ]; then
 					printf '%s\t%s\t%s\t\t%s\t\t\tmissing-source-branch\trepair_branch_created is invalid: repair branch does not resolve in source repo\t%s\t%s\n' \
 						"$now" "$lane" "$branch" "$source_repo" "$classification" "$report"
 					continue
 				fi
-				source_current_head=$(git -C "$source_repo" rev-parse HEAD 2>/dev/null || true)
-				if [ -n "$source_current_head" ] && [ "$source_head" = "$source_current_head" ]; then
+				if [ -n "$source_start_head" ] && [ "$source_head" = "$source_start_head" ]; then
 					printf '%s\t%s\t%s\t\t%s\t%s\t\tinvalid-no-committed-delta\trepair_branch_created is invalid: branch points at the continuation source HEAD and has no committed repair delta\t%s\t%s\n' \
 						"$now" "$lane" "$branch" "$source_repo" "$source_head" "$classification" "$report"
 					continue
@@ -4095,12 +4113,16 @@ launch_continuation_job() {
 		continuation_src="$SRC"
 	fi
 	mkdir -p "$run_dir"
-	printf 'continuation_src=%s\n' "$continuation_src" > "$run_dir/source-repo.log"
+	base_head=$(git -C "$continuation_src" rev-parse HEAD 2>/dev/null || true)
+	{
+		printf 'continuation_src=%s\n' "$continuation_src"
+		printf 'continuation_start_head=%s\n' "$base_head"
+	} > "$run_dir/source-repo.log"
 	if ! git -C "$continuation_src" worktree add --detach "$worktree" HEAD > "$run_dir/worktree.log" 2>&1; then
 		log "failed to create continuation worktree for $lane from $continuation_src; see $run_dir/worktree.log"
 		return 0
 	fi
-	base_head=$(git -C "$worktree" rev-parse HEAD 2>/dev/null || true)
+	base_head=${base_head:-$(git -C "$worktree" rev-parse HEAD 2>/dev/null || true)}
 	for dependency_dir in node_modules vendor; do
 		if [ -d "$continuation_src/$dependency_dir" ] && [ ! -e "$worktree/$dependency_dir" ]; then
 			ln -s "$continuation_src/$dependency_dir" "$worktree/$dependency_dir" >> "$run_dir/worktree.log" 2>&1 || true

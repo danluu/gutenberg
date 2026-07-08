@@ -834,6 +834,50 @@ refresh_benchmark_canary_decisions() {
 	mv "$tmp" "$DECISIONS"
 }
 
+refresh_repair_adoption_decisions() {
+	local tmp
+	[ -s "$DECISIONS" ] || return 0
+	[ -s "$PROGRESS" ] || return 0
+	tmp="$DECISIONS.$$.repair-adoption-refresh"
+	awk -F '\t' -v OFS='\t' -v progress="$PROGRESS" '
+		BEGIN {
+			while ((getline line < progress) > 0) {
+				split(line, row, "\t")
+				if (row[3] != "repair-branch-adoption") {
+					continue
+				}
+				key = row[6] "\t" row[7]
+				status[key] = row[5]
+				next_action[key] = row[8]
+			}
+			close(progress)
+		}
+		NR == 1 { print; next }
+		$1 == "repair-branch" && index($2, "@") > 0 {
+			branch = substr($2, 1, index($2, "@") - 1)
+			head = substr($2, index($2, "@") + 1)
+			key = branch "\t" head
+			if (key in status) {
+				if (status[key] ~ /^(adopted-to-release-candidate|published-standalone|published)$/) {
+					next
+				}
+				if (status[key] ~ /^invalid/) {
+					$4 = "no"
+					$5 = "current progress marks this repair branch " status[key] "; " next_action[key]
+				} else if (status[key] == "needs-validation") {
+					$4 = "yes"
+					$5 = "current progress marks this repair branch needs-validation; validate/adopt exactly or reject with evidence"
+				} else if (status[key] != "") {
+					$4 = "no"
+					$5 = "current progress marks this repair branch " status[key] "; wait for a fresh valid repair-adoption state"
+				}
+			}
+		}
+		{ print }
+	' "$DECISIONS" > "$tmp"
+	mv "$tmp" "$DECISIONS"
+}
+
 progress_branch_published() {
 	local branch=$1 head=${2:-} dest manifest=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
 	[ -s "$manifest" ] || return 1
@@ -1332,11 +1376,22 @@ print_repair_adoption_manifest_rows() {
 		resolved_head=$(git -C "$SRC" rev-parse --verify --quiet "$branch" 2>/dev/null || true)
 		[ -n "$resolved_head" ] || continue
 		same_commit_prefix "$resolved_head" "$head" || continue
+		rc_head=$(branch_current_head "$rc_branch")
+		if [ -z "$rc_head" ] && [ -n "$source_repo" ] && git -C "$source_repo" rev-parse --git-dir >/dev/null 2>&1; then
+			rc_head=$(git -C "$source_repo" rev-parse --verify --quiet "$rc_branch" 2>/dev/null || true)
+		fi
 		base=$(git -C "$SRC" merge-base "$rc_branch" "$branch" 2>/dev/null || true)
 		if [ -z "$base" ]; then
 			base=$(git -C "$SRC" rev-parse "$head^" 2>/dev/null || true)
 		fi
-		[ -n "$base" ] && ! same_commit_prefix "$base" "$head" || continue
+		if [ -n "$base" ] && same_commit_prefix "$base" "$head"; then
+			if [ -n "$rc_head" ] && same_commit_prefix "$rc_head" "$head"; then
+				base=$(git -C "$SRC" rev-parse "$head^" 2>/dev/null || true)
+			else
+				continue
+			fi
+		fi
+		[ -n "$base" ] || continue
 		files=$(git -C "$SRC" diff --numstat "$base..$branch" 2>/dev/null | wc -l | tr -d ' ' || printf '0')
 		insertions=$(git -C "$SRC" diff --numstat "$base..$branch" 2>/dev/null | awk '{ s += $1 } END { print s + 0 }' || printf '0')
 		deletions=$(git -C "$SRC" diff --numstat "$base..$branch" 2>/dev/null | awk '{ s += $2 } END { print s + 0 }' || printf '0')
@@ -1349,14 +1404,14 @@ print_repair_adoption_manifest_rows() {
 		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
 			"$branch" "$head" "$dest" "$base" "$files" "$insertions" "$deletions" "$summary" "$reason"
 
-		rc_head=$(branch_current_head "$rc_branch")
-		if [ -z "$rc_head" ] && [ -n "$source_repo" ] && git -C "$source_repo" rev-parse --git-dir >/dev/null 2>&1; then
-			rc_head=$(git -C "$source_repo" rev-parse --verify --quiet "$rc_branch" 2>/dev/null || true)
-		fi
 		if [ -n "$rc_head" ] && same_commit_prefix "$rc_head" "$base"; then
 			printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
 				"$branch" "$head" "$rc_branch" "$base" "$files" "$insertions" "$deletions" \
 				"fast-forward release-candidate branch with validated repair adoption" "$reason"
+		elif [ -n "$rc_head" ] && same_commit_prefix "$rc_head" "$head"; then
+			printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+				"$branch" "$head" "$rc_branch" "$base" "$files" "$insertions" "$deletions" \
+				"release-candidate branch already contains validated repair adoption" "$reason"
 		fi
 	done |
 		awk -F '\t' '!seen[$1 "\t" $2 "\t" $3]++'
@@ -2299,6 +2354,7 @@ run_once() {
 	write_controller_push_manifest
 	collect_context
 	refresh_benchmark_canary_decisions
+	refresh_repair_adoption_decisions
 	if [ "$PERSONA_EVERY_CYCLES" -gt 0 ] && [ $(( cycle % PERSONA_EVERY_CYCLES )) -eq 0 ]; then
 		launch_persona_round
 	fi
@@ -2309,6 +2365,7 @@ run_once() {
 	write_controller_push_manifest
 	collect_context
 	refresh_benchmark_canary_decisions
+	refresh_repair_adoption_decisions
 	write_status
 }
 
