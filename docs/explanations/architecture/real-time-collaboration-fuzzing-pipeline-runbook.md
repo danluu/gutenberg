@@ -118,6 +118,37 @@ The July 2026 fixes that are meant to prevent recurrence are:
     only veto the aggregate when the controller still allows that focused target,
     and the aggregate productive-analysis row must not suppress the aggregate
     product-repair lane itself.
+-   A continuation may only report `repair_branch_created` when it created a
+    committed branch whose head differs from the continuation start head.
+    Alias-only branch labels, uncommitted worktree edits, missing source refs,
+    or `repair-branch.txt` without a resolvable branch are rewritten to
+    `repair_branch_invalid` by the critical-path executor. The guard writes
+    `repair-branch-head.tsv` next to the continuation report so the failure is
+    auditable.
+-   Continuation repair branches now flow through
+    `/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/current-repair-branch-adoptions.tsv`.
+    The executor imports source-only committed repair branches into the central
+    validation repo without overwriting conflicting refs, exposes them as
+    branch-validation lanes, and opens `benchmark-canary-repair-branch-adoption`
+    until the branch is validated, merged into the current all-merge candidate,
+    converted into a push manifest, or explicitly rejected.
+-   Critical-path continuation classification fallback scans are disabled by
+    default and, when explicitly enabled for one-off forensic work with
+    `RTC_CRITICAL_PR_EXECUTOR_ENABLE_CLASSIFICATION_FALLBACK_SCAN=1`, bounded by
+    `RTC_CRITICAL_PR_EXECUTOR_RECENT_RUN_SCAN_LIMIT` after checking the artifact
+    index and launch ledger. A stale or missing index must not make every
+    blocker/status cycle walk hundreds of historical continuation directories.
+    The launch-ledger lookup itself is bounded by
+    `RTC_CRITICAL_PR_EXECUTOR_RECENT_LAUNCH_SCAN_LINES`; full-ledger scans belong
+    in one-off diagnosis, not the hot status loop. Each reconcile writes
+    `current-continuation-classifications.tsv` once and hot blocker predicates
+    read that cache instead of repeatedly scanning the launch ledger.
+-   The plain editor product smoke profile is a publication gate, not a
+    background liveness check. `plain-editor-product-smoke` blocks snapshot
+    publication, exact-stack promotion, maintainer PR-set progress, and PR17
+    proof while the current `novelty-status.md` row preserves product-evidence
+    failures or lacks a successful real edit/save/reload record. `wp-env`
+    start/status logs alone are not smoke evidence.
 
 Use these checks when a blocker looks old or CPU is unexpectedly idle:
 
@@ -126,6 +157,8 @@ OUT=$( cat /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/current-o
 stat -c '%y %n' /media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520/current-feedback.tsv
 sed -n '1,12p' "$OUT/benchmark-canary-coverage-floor.tsv"
 awk 'BEGIN { FS = "\\t" } NR==1 || $9=="yes" || $10=="yes" { print }' "$OUT/benchmark-canary-coverage-status.tsv"
+sed -n '1,80p' /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/current-repair-branch-adoptions.tsv
+rg -n 'novelty-http-plain-editor-product-smoke|plain-editor-product-smoke' "$OUT/novelty-status.md"
 pgrep -af 'rtc-critical|productive-analysis|codex'
 ```
 

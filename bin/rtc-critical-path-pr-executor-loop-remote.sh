@@ -33,6 +33,8 @@ NO_PROGRESS=$BASE/no-progress.tsv
 BRANCH_AUDIT=$BASE/current-branch-audit.tsv
 PUSH_MANIFEST=$BASE/current-push-manifest.tsv
 VALIDATION_MATRIX=$BASE/current-validation-matrix.tsv
+REPAIR_ADOPTIONS=$BASE/current-repair-branch-adoptions.tsv
+CONTINUATION_CLASSIFICATIONS=$BASE/current-continuation-classifications.tsv
 EVENTS=$BASE/events.ndjson
 TERMINAL_LEDGER=$BASE/terminal-ledger.tsv
 ACTIVE_SPLIT_FILE=$PR_SPLIT_BASE/current-pr-split.md
@@ -57,6 +59,9 @@ CODEX_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_CODEX_TIMEOUT_SECONDS:-5400}
 ENABLE_BROWSER_PREFLIGHT=${RTC_CRITICAL_PR_EXECUTOR_ENABLE_BROWSER_PREFLIGHT:-1}
 RECONCILE_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_RECONCILE_TIMEOUT_SECONDS:-300}
 FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_FRESH_EVIDENCE_SCAN_TIMEOUT_SECONDS:-12}
+RECENT_EXECUTOR_RUN_SCAN_LIMIT=${RTC_CRITICAL_PR_EXECUTOR_RECENT_RUN_SCAN_LIMIT:-40}
+ENABLE_CLASSIFICATION_FALLBACK_SCAN=${RTC_CRITICAL_PR_EXECUTOR_ENABLE_CLASSIFICATION_FALLBACK_SCAN:-0}
+RECENT_LAUNCH_SCAN_LINES=${RTC_CRITICAL_PR_EXECUTOR_RECENT_LAUNCH_SCAN_LINES:-2000}
 COVERAGE_STARTUP_PENDING_MAX_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_COVERAGE_STARTUP_PENDING_MAX_SECONDS:-900}
 COVERAGE_NOVELTY_STATE_MAX_BYTES=${RTC_CRITICAL_PR_EXECUTOR_COVERAGE_NOVELTY_STATE_MAX_BYTES:-268435456}
 COVERAGE_MONITOR_FAILURE_SCAN_LINES=${RTC_CRITICAL_PR_EXECUTOR_COVERAGE_MONITOR_FAILURE_SCAN_LINES:-400}
@@ -792,12 +797,13 @@ latest_launched_continuation_classification() {
 	local lane=$1 suffix
 	[ -s "$LAUNCHES" ] || return 1
 	suffix="/continuations/$lane"
+	tail -n "$RECENT_LAUNCH_SCAN_LINES" "$LAUNCHES" 2>/dev/null |
 	awk -F '\t' -v suffix="$suffix" '
 		$2 == "continuation" && length($5) >= length(suffix) &&
 			substr($5, length($5) - length(suffix) + 1) == suffix {
 			print $5 "/classification.tsv"
 		}
-	' "$LAUNCHES" 2>/dev/null |
+	' |
 		while IFS= read -r classification; do
 			[ -s "$classification" ] || continue
 			printf '%s\t%s\n' "$(file_mtime "$classification")" "$classification"
@@ -805,6 +811,54 @@ latest_launched_continuation_classification() {
 		sort -n |
 		tail -1 |
 		cut -f2-
+}
+
+write_continuation_classification_cache() {
+	local tmp=$CONTINUATION_CLASSIFICATIONS.$$.tmp
+	{
+		printf 'mtime\tlane_id\tclassification_path\tsource\n'
+		if artifact_index_fresh; then
+			awk -F '\t' '
+				NR > 1 && $4 == "classification" && $6 ~ /\/continuations\/[^/]+\/classification[.]tsv$/ {
+					path = $6
+					lane = path
+					sub(/^.*\/continuations\//, "", lane)
+					sub(/\/classification[.]tsv$/, "", lane)
+					print $1 "\t" lane "\t" path "\tartifact-index"
+				}
+			' "$ARTIFACT_INDEX_ARTIFACTS" 2>/dev/null || true
+		fi
+		if [ -s "$LAUNCHES" ]; then
+			tail -n "$RECENT_LAUNCH_SCAN_LINES" "$LAUNCHES" 2>/dev/null |
+				awk -F '\t' '
+					$2 == "continuation" && $5 ~ /\/continuations\/[^/]+$/ {
+						path = $5 "/classification.tsv"
+						lane = $5
+						sub(/^.*\/continuations\//, "", lane)
+						print lane "\t" path
+					}
+				' |
+				while IFS=$'\t' read -r lane path; do
+					[ -s "$path" ] || continue
+					printf '%s\t%s\t%s\tlaunch-ledger\n' "$(file_mtime "$path")" "$lane" "$path"
+				done
+		fi
+	} |
+		awk -F '\t' '
+			NR == 1 { next }
+			NF >= 4 && $1 ~ /^[0-9]+([.][0-9]+)?$/ {
+				key = $2
+				if (!(key in best) || $1 + 0 > best[key] + 0) {
+					best[key] = $1
+					row[key] = $0
+				}
+			}
+			END {
+				print "mtime\tlane_id\tclassification_path\tsource"
+				for (key in row) print row[key]
+			}
+		' > "$tmp"
+	atomic_move "$tmp" "$CONTINUATION_CLASSIFICATIONS"
 }
 
 input_status() {
@@ -917,7 +971,7 @@ recent_executor_run_dirs() {
 	find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\t%p\n' 2>/dev/null |
 		awk -F '\t' '$1 ~ /^[0-9]{8}T[0-9]{6}Z$/ { print }' |
 		sort |
-		tail -160 |
+		tail -"$RECENT_EXECUTOR_RUN_SCAN_LIMIT" |
 		cut -f2-
 }
 
@@ -950,7 +1004,15 @@ latest_progress_unblock_artifact() {
 }
 
 latest_continuation_classification() {
-	local lane=$1 indexed launched
+	local lane=$1 indexed launched cached
+	if [ -s "$CONTINUATION_CLASSIFICATIONS" ]; then
+		cached=$(awk -F '\t' -v lane="$lane" 'NR > 1 && $2 == lane { print $3; exit }' "$CONTINUATION_CLASSIFICATIONS" 2>/dev/null || true)
+		if [ -n "$cached" ] && [ -s "$cached" ]; then
+			printf '%s\n' "$cached"
+			return 0
+		fi
+		return 1
+	fi
 	{
 		indexed=$(latest_indexed_artifact classification "continuations/${lane}/classification[.]tsv$" || true)
 		if [ -n "$indexed" ] && [ -s "$indexed" ]; then
@@ -960,19 +1022,123 @@ latest_continuation_classification() {
 		if [ -n "$launched" ] && [ -s "$launched" ]; then
 			printf '%s\t%s\n' "$(file_mtime "$launched")" "$launched"
 		fi
-		find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\t%p\n' 2>/dev/null |
-			awk -F '\t' '$1 ~ /^[0-9]{8}T[0-9]{6}Z$/ { print }' |
-			sort |
-			tail -160 |
-			cut -f2- |
-			while IFS= read -r run_dir; do
-				find "$run_dir/continuations/$lane" -maxdepth 1 -type f -name 'classification.tsv' -size +0c -printf '%T@\t%p\n' 2>/dev/null
-			done
+		if [ "$ENABLE_CLASSIFICATION_FALLBACK_SCAN" = 1 ]; then
+			find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d -printf '%f\t%p\n' 2>/dev/null |
+				awk -F '\t' '$1 ~ /^[0-9]{8}T[0-9]{6}Z$/ { print }' |
+				sort |
+				tail -"$RECENT_EXECUTOR_RUN_SCAN_LIMIT" |
+				cut -f2- |
+				while IFS= read -r run_dir; do
+					find "$run_dir/continuations/$lane" -maxdepth 1 -type f -name 'classification.tsv' -size +0c -printf '%T@\t%p\n' 2>/dev/null
+				done
+		fi
 	} |
 		sort -n |
 		tail -1 |
 		cut -f2- |
 		sed -n '1p'
+}
+
+continuation_source_repo() {
+	local continuation_dir=$1 source_log source
+	source_log=$continuation_dir/source-repo.log
+	source=$(sed -n 's/^continuation_src=//p' "$source_log" 2>/dev/null | tail -1)
+	if [ -n "$source" ]; then
+		printf '%s\n' "$source"
+	else
+		printf '%s\n' "$CONTINUATION_SRC"
+	fi
+}
+
+repair_branch_created_records() {
+	recent_executor_run_dirs |
+		while IFS= read -r run_dir; do
+			find "$run_dir/continuations" -mindepth 2 -maxdepth 2 -name repair-branch.txt -type f -size +0c -printf '%T@\t%p\n' 2>/dev/null || true
+		done |
+		sort -n |
+		tail -80 |
+		while IFS=$'\t' read -r mtime repair_file; do
+			local dir lane classification branch source_repo source_head report
+			dir=${repair_file%/*}
+			lane=${dir##*/}
+			classification=$dir/classification.tsv
+			report=$dir/report.md
+			[ -s "$classification" ] || continue
+			awk -F '\t' 'NR > 1 && $2 ~ /^(repair_branch_created|fix_branch_created)$/ { found = 1 } END { exit found ? 0 : 1 }' "$classification" 2>/dev/null || continue
+			branch=$(sed -n '1p' "$repair_file" 2>/dev/null | tr -d '\r')
+			[ -n "$branch" ] || continue
+			[ "$branch" != "NONE" ] || continue
+			git check-ref-format --branch "$branch" >/dev/null 2>&1 || continue
+			source_repo=$(continuation_source_repo "$dir")
+			source_head=$(git -C "$source_repo" rev-parse --verify --quiet "$branch^{commit}" 2>/dev/null || true)
+			printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+				"$mtime" "$lane" "$branch" "$source_repo" "$source_head" "$dir" "$classification" "$report"
+		done
+}
+
+latest_repair_branch_created_record() {
+	repair_branch_created_records |
+		sort -n |
+		tail -1
+}
+
+latest_repair_branch_adoption_classification() {
+	latest_continuation_classification benchmark-canary-repair-branch-adoption
+}
+
+repair_branch_adoption_consumed() {
+	local record_mtime=$1 classification class class_mtime
+	classification=$(latest_repair_branch_adoption_classification || true)
+	[ -s "$classification" ] || return 1
+	class_mtime=$(file_mtime "$classification")
+	awk_mtime=${record_mtime%.*}
+	[ "$class_mtime" -ge "${awk_mtime:-0}" ] || return 1
+	class=$(awk -F '\t' 'NR > 1 && $1 == "benchmark-canary-repair-branch-adoption" { print $2; exit }' "$classification" 2>/dev/null)
+	case "$class" in
+		repair_branch_adopted|repair_branch_rejected|repair_branch_invalid|no_pending_repair_branch)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+repair_branch_adoption_open() {
+	local state
+	[ -s "$REPAIR_ADOPTIONS" ] || return 1
+	state=$(awk -F '\t' 'NR > 1 { state = $8 } END { print state }' "$REPAIR_ADOPTIONS" 2>/dev/null)
+	case "$state" in
+		central_present|central_present_alias|imported|fetch_failed|name_conflict)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+repair_branch_adoption_summary() {
+	[ -s "$REPAIR_ADOPTIONS" ] || return 1
+	awk -F '\t' '
+		NR > 1 {
+			lane = $2
+			branch = $3
+			adopted = $4
+			source = $5
+			source_head = $6
+			central_head = $7
+			state = $8
+			classification = $10
+			report = $11
+		}
+		END {
+			if (branch != "") {
+				printf "lane=%s branch=%s adopted_branch=%s state=%s source=%s source_head=%s central_head=%s classification=%s report=%s",
+					lane, branch, adopted ? adopted : "none", state, source, source_head ? source_head : "missing", central_head ? central_head : "missing", classification, report
+			}
+		}
+	' "$REPAIR_ADOPTIONS" 2>/dev/null
 }
 
 latest_pr07c_owner_replay_ready_report() {
@@ -2033,6 +2199,53 @@ coverage_materialization_liveness_summary() {
 	' "$status"
 }
 
+plain_editor_product_smoke_open() {
+	local status
+	status=$(latest_coverage_novelty_status || true)
+	[ -n "$status" ] && [ -s "$status" ] || return 0
+	awk '
+		/- successful records by profile:/ {
+			if ($0 ~ /"plain-editor-product-smoke":[1-9][0-9]*/) success = 1
+		}
+		/novelty-http-plain-editor-product-smoke:/ {
+			if ($0 ~ /(product-evidence|collaboration_non_convergence|raw-family|assertion|untriaged|failure|error|timeout)/) red = 1
+		}
+		END {
+			if (!success || red) exit 0
+			exit 1
+		}
+	' "$status"
+}
+
+plain_editor_product_smoke_summary() {
+	local status
+	status=$(latest_coverage_novelty_status || true)
+	[ -n "$status" ] && [ -s "$status" ] || {
+		printf 'novelty-status.md missing under %s' "$(latest_coverage_output_dir 2>/dev/null || printf "$COVERAGE_BASE/current-output-dir.txt")"
+		return 0
+	}
+	awk '
+		/- successful records by profile:/ {
+			if (match($0, /"plain-editor-product-smoke":[0-9]+/)) {
+				success = substr($0, RSTART, RLENGTH)
+			}
+		}
+		/novelty-http-plain-editor-product-smoke:/ {
+			line = $0
+			sub(/^- /, "", line)
+			if (length(line) > 420) line = substr(line, 1, 420) "..."
+			latest = line
+		}
+		END {
+			if (latest != "") {
+				printf "%s; %s", success ? success : "plain-editor-product-smoke success missing", latest
+			} else {
+				printf "%s; no current plain-editor-product-smoke gate line", success ? success : "plain-editor-product-smoke success missing"
+			}
+		}
+	' "$status"
+}
+
 benchmark_forced_coverage_open() {
 	local status
 	status=$(latest_benchmark_coverage_status || true)
@@ -2438,6 +2651,9 @@ publication_class_for_branch() {
 		ready/rtc-*|review/rtc-*|pr/rtc-*)
 			printf 'product-candidate'
 			;;
+		rtc/*|rtc-*|repair/rtc-*|repair/adopted-*|repair/benchmark-canary-*|rtc-benchmark-*)
+			printf 'needs-classification'
+			;;
 		finalize/rtc-*|validation/rtc-*)
 			printf 'validation-only'
 			;;
@@ -2484,6 +2700,7 @@ latest_progress_unblock	artifact	${latest_progress_unblock:-missing}
 latest_deferred_report	report	${latest_deferred_report:-missing}
 latest_coverage_status	status	${latest_coverage:-missing}/novelty-status.md
 latest_local_publish_manifest	publication	$LOCAL_PUBLISH_MANIFEST
+repair_branch_adoptions	status	$REPAIR_ADOPTIONS
 EOF
 	} > "$tmp"
 	atomic_move "$tmp" "$INPUTS"
@@ -2577,6 +2794,91 @@ write_terminal_ledger() {
 	atomic_move "$tmp" "$TERMINAL_LEDGER"
 }
 
+adopt_repair_branch_to_src() {
+	local branch=$1 source_repo=$2 source_head=$3 dest_branch=$branch central_head fetch_log
+	[ -n "$branch" ] || return 1
+	[ -n "$source_repo" ] || return 1
+	[ -n "$source_head" ] || return 1
+	git check-ref-format --branch "$branch" >/dev/null 2>&1 || return 1
+	central_head=$(git -C "$SRC" rev-parse --verify --quiet "$branch^{commit}" 2>/dev/null || true)
+	if [ -n "$central_head" ]; then
+		if [ "$central_head" = "$source_head" ]; then
+			printf '%s\tcentral_present\tcentral branch already points at source repair head\n' "$branch"
+			return 0
+		fi
+		dest_branch="repair/adopted-$(slugify "$branch" | cut -c1-44)-$(printf '%s' "$source_head" | cut -c1-12)"
+		central_head=$(git -C "$SRC" rev-parse --verify --quiet "$dest_branch^{commit}" 2>/dev/null || true)
+		if [ -n "$central_head" ]; then
+			if [ "$central_head" = "$source_head" ]; then
+				printf '%s\tcentral_present_alias\tcentral alias already points at source repair head\n' "$dest_branch"
+				return 0
+			fi
+			printf '%s\tname_conflict\tbranch and alias exist with different heads\n' "$dest_branch"
+			return 1
+		fi
+	fi
+	fetch_log=$BASE/logs/repair-branch-adoptions.log
+	if git -C "$SRC" fetch "$source_repo" "refs/heads/$branch:refs/heads/$dest_branch" >> "$fetch_log" 2>&1; then
+		printf '%s\timported\timported from %s\n' "$dest_branch" "$source_repo"
+		return 0
+	fi
+	printf '%s\tfetch_failed\tsee %s\n' "$dest_branch" "$fetch_log"
+	return 1
+}
+
+write_repair_branch_adoptions() {
+	local tmp=$REPAIR_ADOPTIONS.$$.tmp now
+	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+	{
+		printf 'generated_at\tlane_id\trepair_branch\tadopted_branch\tsource_repo\tsource_head\tcentral_head\tstate\tnext_action\tclassification_path\treport_path\n'
+		repair_branch_created_records |
+			while IFS=$'\t' read -r mtime lane branch source_repo source_head dir classification report; do
+				local adopted_branch adoption_state adoption_detail central_head next_action adoption source_current_head
+				if [ -z "$source_head" ]; then
+					printf '%s\t%s\t%s\t\t%s\t\t\tmissing-source-branch\trepair_branch_created is invalid: repair branch does not resolve in source repo\t%s\t%s\n' \
+						"$now" "$lane" "$branch" "$source_repo" "$classification" "$report"
+					continue
+				fi
+				source_current_head=$(git -C "$source_repo" rev-parse HEAD 2>/dev/null || true)
+				if [ -n "$source_current_head" ] && [ "$source_head" = "$source_current_head" ]; then
+					printf '%s\t%s\t%s\t\t%s\t%s\t\tinvalid-no-committed-delta\trepair_branch_created is invalid: branch points at the continuation source HEAD and has no committed repair delta\t%s\t%s\n' \
+						"$now" "$lane" "$branch" "$source_repo" "$source_head" "$classification" "$report"
+					continue
+				fi
+				adoption=$(adopt_repair_branch_to_src "$branch" "$source_repo" "$source_head" || true)
+				adopted_branch=$(printf '%s' "$adoption" | cut -f1)
+				adoption_state=$(printf '%s' "$adoption" | cut -f2)
+				adoption_detail=$(printf '%s' "$adoption" | cut -f3-)
+				central_head=$(git -C "$SRC" rev-parse --verify --quiet "$adopted_branch^{commit}" 2>/dev/null || true)
+				case "$adoption_state" in
+					central_present|central_present_alias|imported)
+						next_action='validate adopted branch and either merge into the current all-merge candidate, write a push manifest, or reject with exact evidence'
+						;;
+					*)
+						next_action="adoption failed: $adoption_detail"
+						;;
+				esac
+				printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+					"$now" "$lane" "$branch" "$adopted_branch" "$source_repo" "$source_head" "${central_head:-}" \
+					"$adoption_state" "$next_action" "$classification" "$report"
+			done
+	} > "$tmp"
+	atomic_move "$tmp" "$REPAIR_ADOPTIONS"
+}
+
+adopted_repair_branches() {
+	[ -s "$REPAIR_ADOPTIONS" ] || return 0
+	awk -F '\t' '
+		NR > 1 && $8 ~ /^(central_present|central_present_alias|imported)$/ && $4 != "" {
+			key = $4 "\t" $7
+			row[key] = $4
+		}
+		END {
+			for (key in row) print row[key]
+		}
+	' "$REPAIR_ADOPTIONS" | sort
+}
+
 write_lanes() {
 	local tmp=$LANES.$$.tmp branch base_ref base_sha head_sha lane_id pr_id publication_class state output_dir
 	{
@@ -2591,6 +2893,18 @@ write_lanes() {
 			publication_class=$(publication_class_for_branch "$branch")
 			output_dir="$BASE/runs/branch-validation/$lane_id"
 			printf '%s\t%s\tbranch-validation\t%s\t%s\t%s\t%s\t%s\t%s\tgit-export\tnone\tqueued\t%s\n' \
+				"$lane_id" "$pr_id" "$publication_class" "$SRC" "$branch" "$base_ref" "$base_sha" "$head_sha" "$output_dir"
+		done
+		for branch in $(adopted_repair_branches); do
+			head_sha=$(git -C "$SRC" rev-parse --short=12 "$branch" 2>/dev/null || true)
+			[ -n "$head_sha" ] || continue
+			base_ref=$(branch_base_ref "$branch")
+			base_sha=$(git -C "$SRC" rev-parse --short=12 "$base_ref" 2>/dev/null || true)
+			lane_id="repair-branch-$(slugify "$branch" | cut -c1-56)"
+			pr_id=$(pr_id_for_branch "$branch")
+			publication_class=$(publication_class_for_branch "$branch")
+			output_dir="$BASE/runs/branch-validation/$lane_id"
+			printf '%s\t%s\tbranch-validation\t%s\t%s\t%s\t%s\t%s\t%s\tgit-export\trepair-branch-adoption\tqueued\t%s\n' \
 				"$lane_id" "$pr_id" "$publication_class" "$SRC" "$branch" "$base_ref" "$base_sha" "$head_sha" "$output_dir"
 		done
 		base_ref=$(resolve_base_ref)
@@ -2657,7 +2971,7 @@ deferred_family_control_field() {
 
 write_blockers_and_queue() {
 	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reload_followup_active reload_repair_active reload_reacquire_active reason pr07c_active pr07c_report benchmark_active benchmark_state benchmark_kind benchmark_action benchmark_result benchmark_artifacts benchmark_next productive_active reload_control_state reload_hold_reason reload_blocker_state reload_blocked_by reload_next reload_queue_state reload_queue_result reload_queue_action reload_completed_root reload_followup_needed reload_product_bug reload_product_artifact reload_repair_blocked reload_repair_artifact reload_reacquire_needed reload_reacquire_status reload_reacquire_artifact reload_reacquire_downscoped coverage_liveness_active coverage_liveness_state coverage_liveness_summary coverage_liveness_result coverage_liveness_artifacts coverage_liveness_status
-	local benchmark_product_active benchmark_product_state benchmark_product_summary benchmark_product_result benchmark_product_artifacts
+	local benchmark_product_active benchmark_product_state benchmark_product_summary benchmark_product_result benchmark_product_artifacts repair_adoption_active repair_adoption_state repair_adoption_result repair_adoption_summary plain_smoke_state plain_smoke_summary
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	pr17_active=$(active_work_matching '1020002|pr17' || true)
 	s5200005=$(active_work_matching '5200005' || true)
@@ -2885,6 +3199,12 @@ write_blockers_and_queue() {
 	benchmark_product_summary=$(benchmark_product_failure_summary || true)
 	benchmark_product_result=$([ -n "$benchmark_product_active" ] && printf product_failure_repair_active || printf product_failure_repair_required)
 	benchmark_product_artifacts=product-failure-triage.tsv,exact-blocker-status.tsv,classification.tsv,repair-branch.txt
+	repair_adoption_active=$(active_work_matching 'benchmark-canary-repair-branch-adoption|repair-branch-adoption' || true)
+	repair_adoption_state=$([ -n "$repair_adoption_active" ] && printf active || { repair_branch_adoption_open && printf runnable || printf terminal; })
+	repair_adoption_result=$([ -n "$repair_adoption_active" ] && printf repair_branch_adoption_active || { repair_branch_adoption_open && printf repair_branch_adoption_required || printf no_pending_repair_branch; })
+	repair_adoption_summary=$(repair_branch_adoption_summary || true)
+	plain_smoke_state=$(plain_editor_product_smoke_open && printf runnable || printf terminal)
+	plain_smoke_summary=$(plain_editor_product_smoke_summary || true)
 	coverage_liveness_active=$(active_work_matching 'coverage-materialization-liveness|materialization-liveness|coverage-liveness' || true)
 	coverage_liveness_status=$(latest_coverage_novelty_status || true)
 	coverage_liveness_state=$([ -n "$coverage_liveness_active" ] && printf active || printf runnable)
@@ -2929,6 +3249,14 @@ write_blockers_and_queue() {
 		if benchmark_feedback_present; then
 			printf 'benchmark-canary-fuzzer-gap\t%s\thigh\t%s\tbenchmark-canary\tcoverage-confidence,snapshot-publication,exact-stack-promotion\tfuzzer-feedback\t%s\t%s\t%s\t%s\n' \
 				"$benchmark_kind" "$benchmark_state" "$benchmark_artifacts" "${benchmark_active:-}" "$benchmark_next" "$now"
+			if repair_branch_adoption_open || [ -n "$repair_adoption_active" ]; then
+				printf 'benchmark-canary-repair-branch-adoption\trepair-branch-adoption\thigh\t%s\tbenchmark-canary-continuation\tsnapshot-publication,exact-stack-promotion,maintainer-pr-set\t%s\trepair-branch.txt,classification.tsv,current-repair-branch-adoptions.tsv,validation.tsv,push-manifest.tsv\t%s\tadopt, validate, merge, or explicitly reject the latest committed benchmark-canary continuation repair branch; %s\t%s\n' \
+					"$repair_adoption_state" \
+					"$([ -n "$repair_adoption_active" ] && printf active-job || printf repair-branch-created)" \
+					"${repair_adoption_active:-}" \
+					"${repair_adoption_summary:-no pending repair branch}" \
+					"$now"
+			fi
 			if benchmark_product_failures_open; then
 				printf 'benchmark-canary-product-failure\tproduct-repair\thigh\t%s\tbenchmark-canary-product-evidence\tsnapshot-publication,exact-stack-promotion,maintainer-pr-set\tproduct-evidence\t%s\t%s\treduce or repair current-run benchmark canary product failures; %s\t%s\n' \
 					"$benchmark_product_state" "$benchmark_product_artifacts" "${benchmark_product_active:-}" "${benchmark_product_summary:-no-summary}" "$now"
@@ -2943,6 +3271,10 @@ write_blockers_and_queue() {
 				"${coverage_liveness_summary:-status=${coverage_liveness_status:-missing}}" \
 				"$now"
 		fi
+		if plain_editor_product_smoke_open; then
+			printf 'plain-editor-product-smoke\treal-editor-smoke\thigh\t%s\tcoverage-guided\tsnapshot-publication,exact-stack-promotion,maintainer-pr-set,PR17\tplain-editor-product-smoke\tcurrent novelty-status.md,successful edit/save/reload artifact,classification.tsv\t\tplain editor product smoke is not green enough for PR publication; %s\t%s\n' \
+				"$plain_smoke_state" "${plain_smoke_summary:-missing smoke summary}" "$now"
+		fi
 		if productive_analysis_feedback_present; then
 			if productive_analysis_resolved_by_active_artifacts; then
 				printf 'productive-analysis-action\tcontrol-feedback\thigh\tterminal\tproductive-analysis\tcritical-path,pr-progress,deferred,coverage,level-mix\tactive-artifacts\tclassification.tsv,critical-path-feedback.tsv\t\tlatest productive-analysis feedback is already consumed by active controller/fuzzer artifacts; reopen only when productive-analysis feedback changes\t%s\n' "$now"
@@ -2955,6 +3287,9 @@ write_blockers_and_queue() {
 		fi
 		if pr17_suppressed_terminal; then
 			printf 'pr17-1020002\tfinal-stack-join\thigh\tterminal\tpr_split/finalization\tfinal-stack-validation,filing\tterminal-ledger\tclassification.tsv\t\tterminal downscope; reopen only with fresh product evidence newer than classification.tsv\t%s\n' "$now"
+		elif plain_editor_product_smoke_open; then
+			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tplain-editor-product-smoke\tclassification.tsv,report.md\t\thold behind plain-editor-product-smoke until the real editor edit/save/reload smoke lane has current successful evidence and no preserved product-evidence/failure line; then proof-or-reclassify PR17 seed 1020002\t%s\n' \
+				"$now"
 		elif benchmark_product_failures_open; then
 			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tbenchmark-canary-product-failure\tclassification.tsv,report.md\t\thold behind benchmark-canary-product-failure until %s has no retained_product_evidence=yes, product_evidence_records greater than 0, or coverage_state containing product-failure; then proof-or-reclassify PR17 seed 1020002\t%s\n' \
 				"${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt}" "$now"
@@ -3030,6 +3365,10 @@ write_blockers_and_queue() {
 		if benchmark_feedback_present; then
 			printf 'job-benchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\tbenchmark-canary-fuzzer-gap\t%s\tbenchmark-canary-fuzzer-gap\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/benchmark-canary-fuzzer-gap\t%s\t\t%s\t\t%s\n' \
 				"$benchmark_action" "$benchmark_state" "${benchmark_active:-}" "$BASE" "$now" "$now" "$benchmark_result"
+			if repair_branch_adoption_open || [ -n "$repair_adoption_active" ]; then
+				printf 'job-benchmark-canary-repair-branch-adoption\tbenchmark-canary-repair-branch-adoption\tbenchmark-canary-repair-branch-adoption\trepair-branch-adoption\tbenchmark-canary-repair-branch-adoption\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/benchmark-canary-repair-branch-adoption\t%s\t\t%s\t\t%s\n' \
+					"$repair_adoption_state" "${repair_adoption_active:-}" "$BASE" "$now" "$now" "$repair_adoption_result"
+			fi
 			if benchmark_product_failures_open; then
 				printf 'job-benchmark-canary-product-failure\tbenchmark-canary-product-failure\tbenchmark-canary-product-failure\tproduct-repair\tbenchmark-canary-product-failure\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/benchmark-canary-product-failure\t%s\t\t%s\t\t%s\n' \
 					"$benchmark_product_state" "${benchmark_product_active:-}" "$BASE" "$now" "$now" "$benchmark_product_result"
@@ -3038,6 +3377,10 @@ write_blockers_and_queue() {
 		if coverage_materialization_liveness_open; then
 			printf 'job-coverage-materialization-liveness\tcoverage-materialization-liveness\tcoverage-materialization-liveness\tcoverage-liveness-repair\tcoverage-materialization-liveness\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/coverage-materialization-liveness\t%s\t\t%s\t\t%s\n' \
 				"$coverage_liveness_state" "${coverage_liveness_active:-}" "$BASE" "$now" "$now" "$coverage_liveness_result"
+		fi
+		if plain_editor_product_smoke_open; then
+			printf 'job-plain-editor-product-smoke\tplain-editor-product-smoke\tplain-editor-product-smoke\treal-editor-smoke-gate\tplain-editor-product-smoke\tbrowser-e2e\thigh\t%s\t0\t\t\t%s/runs/plain-editor-product-smoke\t%s\t\t%s\t\tplain_editor_smoke_gate_open\n' \
+				"$plain_smoke_state" "$BASE" "$now" "$now"
 		fi
 			if productive_analysis_feedback_present; then
 				if productive_analysis_resolved_by_active_artifacts; then
@@ -3243,7 +3586,7 @@ Task:
 4. Treat this as a bounded same-head repair-or-downscope job. Do not run broad fuzzing and do not stop shared loops.
 5. If the evidence already has an active equivalent exact replay, adopt it and write the session/artifact path. If not, run only the smallest replay, code inspection, or repair step needed for this exact seed/family.
 6. If a browser/wp-env replay is needed, use a dependency-installed worktree or explicitly verify node_modules/.bin/wp-scripts exists before launching. Reserve a unique WP_ENV_HOME under $BASE/wp-env plus unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT; do not reuse localhost:8889. Run npm run wp-env status/start as needed and verify wp-login.php is not an Apache 404 before classifying a product failure.
-7. If a concrete product fix is isolated, create only a new non-destructive local branch in this worktree. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+7. If a concrete product fix is isolated, create only a new non-destructive local branch in this worktree, commit the fix on that branch, and verify the branch head differs from the continuation start head. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
 8. Produce durable artifacts:
    - Write a concise report to $report.
    - Write ${report%/*}/exact-blocker-status.tsv with header: blocker_id,result,evidence,next_action,artifact_path.
@@ -3251,7 +3594,7 @@ Task:
    - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
 9. Classification rules:
    - Use exact_replay_green only if the same-head bounded replay for this seed/family passes or the forced row has direct current-run green evidence.
-   - Use repair_branch_created only if a local branch exists and validation points to that fix.
+   - Use repair_branch_created only if a local branch exists, the fix is committed on that branch, the branch head differs from the continuation start head, and validation points to that fix.
    - Use exact_replay_downscoped only with explicit evidence that the row should be removed/downscoped.
    - Use product_bug_reduced if a stable product reproducer exists but no safe fix was created.
    - Use adopted_active_artifact if a current active job is the exact equivalent.
@@ -3262,6 +3605,52 @@ EOF
 			return
 			;;
 	esac
+	if [ "$lane" = "benchmark-canary-repair-branch-adoption" ]; then
+		cat > "$prompt" <<EOF
+You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+Lane: $lane
+Goal: $goal
+Report path: $report
+Required classification TSV: $classification
+Required validation TSV: ${report%/*}/validation.tsv
+Required repair branch file: ${report%/*}/repair-branch.txt
+Required push manifest, if adoption is accepted: ${report%/*}/push-manifest.tsv
+
+Task:
+1. Read the latest repair-branch adoption table first:
+   - $REPAIR_ADOPTIONS
+   Then read only the matching latest source artifacts named there:
+   - repair-branch.txt
+   - classification.tsv
+   - report.md
+   - product-failure-triage.tsv or exact-blocker-status.tsv if present in the same directory.
+2. This lane exists because repair branches were being created without entering the validation/publication path. Do not do broad triage and do not launch broad fuzzing.
+3. Validate that the adopted branch is a durable committed repair:
+   - the branch resolves in $SRC;
+   - the branch head is not just the all-merge base head with no committed delta;
+   - the relevant changed files match the reported product failure or exact blocker;
+   - any focused validation in the source report is real, not only wp-env start/status.
+4. If the branch is a real committed fix, run the smallest relevant validation you can afford: unit test, focused replay, or exact artifact check. If it needs to be merged into the current all-merge candidate, create a new non-destructive branch in $SRC with the repair applied; do not rewrite active fuzzing refs.
+5. If the branch is only an alias for the current all-merge head, contains no committed delta, cannot be fetched, or only has uncommitted work, reject it explicitly and point back to the producer lane.
+6. If accepted for local publication/validation, write ${report%/*}/push-manifest.tsv with header:
+   source_branch	source_commit	intended_danluu_branch	base_ref	files_changed	insertions	deletions	validation_summary	reason
+   Only include a manifest row when the committed diff is narrow and validation supports adoption. Otherwise omit the manifest and explain why.
+7. Produce durable artifacts:
+   - Write a concise report to $report.
+   - Write ${report%/*}/validation.tsv with header: check,result,detail,artifact_path.
+   - Write $classification with header: lane_id,classification,evidence,next_action,artifact_path.
+   - Write ${report%/*}/repair-branch.txt containing the accepted/adopted branch name or NONE.
+8. Classification rules:
+   - Use repair_branch_adopted only if a committed branch in $SRC was validated or converted into a repaired candidate branch and the next publication/validation path is explicit.
+   - Use repair_branch_rejected if the branch has no committed delta, is an alias-only label, or does not correspond to the failure it claims to fix.
+   - Use repair_branch_invalid for missing source refs, bad branch names, uncommitted-only work, or branch/source mismatch.
+   - Use blocked_specific only with an exact failed command or missing artifact needed next.
+
+Passive prose without validation.tsv, repair-branch.txt, and classification.tsv is a failure.
+EOF
+		return
+	fi
 	if [ "$lane" = "benchmark-canary-product-failure" ]; then
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
@@ -3291,7 +3680,7 @@ Task:
 4. Prioritize rtc-reference-oracle first, then other rows with the highest product_evidence_records. The RTC reference oracle means RTC-on converged to a result that disagrees with the RTC-off reference; that is a correctness oracle failure.
 5. Run only bounded same-head replay, code inspection, or reducer work needed to produce a concrete next repair step. Do not launch broad fuzzing and do not stop shared loops.
 6. If a browser/wp-env replay is needed, use a dependency-installed worktree or explicitly verify node_modules/.bin/wp-scripts exists before launching. Reserve a unique WP_ENV_HOME under $BASE/wp-env plus unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT; do not reuse localhost:8889. Run npm run wp-env status/start as needed and verify wp-login.php is not an Apache 404 before classifying a product failure.
-7. If a concrete product fix is isolated, create only a new non-destructive local branch in this worktree. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+7. If a concrete product fix is isolated, create only a new non-destructive local branch in this worktree, commit the fix on that branch, and verify the branch head differs from the continuation start head. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
 8. Produce durable artifacts:
    - Write a concise report to $report.
    - Write ${report%/*}/product-failure-triage.tsv with header: group,cases,transport,product_evidence_records,coverage_state,evidence,next_action,owner_result.
@@ -3299,7 +3688,7 @@ Task:
    - Write $classification with header: lane_id,classification,evidence,next_action,artifact_path.
    - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
 9. Classification rules:
-   - Use repair_branch_created only if a local branch exists and focused evidence points to it.
+   - Use repair_branch_created only if a local branch exists, the fix is committed on that branch, the branch head differs from the continuation start head, and focused evidence points to it.
    - Use product_bug_reduced if a stable product reproducer or exact failing row is reduced but no safe fix was created.
    - Use exact_replay_green only if the same-head bounded replay or current forced row is green after the product failure disappeared.
    - Use exact_replay_downscoped only with explicit evidence that the row should be removed/downscoped.
@@ -3396,7 +3785,7 @@ Task:
    - title reload lane;
    - existing-post CRDT reload lane;
    - large HTTP lifecycle lane.
-5. If failures are persistent product bugs in the candidate, create or advance a new non-destructive local repair branch in this worktree. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+5. If failures are persistent product bugs in the candidate, create or advance a new non-destructive local repair branch in this worktree, commit the fix on that branch, and verify the branch head differs from the continuation start head. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
 6. If failures are fuzzer noise or already-invalid seeds, write the downscope/rejection reason with exact artifact paths. Do not call it green without evidence.
 7. If more replay is needed, provide the exact bounded command and why the completed run was insufficient.
 8. Produce durable artifacts:
@@ -3406,7 +3795,7 @@ Task:
    - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
 9. Classification rules:
    - Use exact_replay_green only if all three exact replay lanes have no product or unexplained uncertain failures.
-   - Use repair_branch_created only if a local branch exists and focused evidence points to a product fix.
+   - Use repair_branch_created only if a local branch exists, the fix is committed on that branch, the branch head differs from the continuation start head, and focused evidence points to a product fix.
    - Use exact_replay_downscoped only if remaining failures are explicitly non-product or invalid-seed noise with artifact paths.
    - Use exact_replay_needs_more_evidence only with an exact bounded replay command and the artifact that made the current evidence insufficient.
    - Use blocked_specific only with an exact missing artifact or command, not "wait for cooldown".
@@ -3435,7 +3824,7 @@ Task:
    - existing-post CRDT seed 7735007;
    - large HTTP lifecycle seed 7800014.
 3. Do not run broad fuzzing. Do not stop shared loops. Reuse the exact candidate worktrees and ports if alive; if a port is dead, record that and run the narrowest equivalent with unique ports.
-4. Decide whether the failures are product bugs in the reload-hydration candidate, test/harness diagnostics, invalid seeds, or still unresolved. If a concrete product fix is isolated, create only a new non-destructive local repair branch in this worktree. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+4. Decide whether the failures are product bugs in the reload-hydration candidate, test/harness diagnostics, invalid seeds, or still unresolved. If a concrete product fix is isolated, create only a new non-destructive local repair branch in this worktree, commit the fix on that branch, and verify the branch head differs from the continuation start head. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
 5. Produce durable artifacts:
    - Write a concise report to $report.
    - Write ${report%/*}/validation.tsv with header: check,result,detail,artifact_path.
@@ -3443,7 +3832,7 @@ Task:
    - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
 6. Classification rules:
    - Use followup_product_bug if the bounded replay confirms a candidate product bug and no repair branch was created.
-   - Use repair_branch_created only if a local branch exists and validation points to that fix.
+   - Use repair_branch_created only if a local branch exists, the fix is committed on that branch, the branch head differs from the continuation start head, and validation points to that fix.
    - Use followup_downscoped only if the bounded replay proves the failures are non-product, invalid-seed, or harness-only, with artifact paths.
    - Use followup_green only if the bounded replay passes both confirmed seeds and explains why the prior uncertain failures no longer block.
    - Use blocked_specific only with an exact failing command or missing artifact.
@@ -3470,14 +3859,14 @@ Task:
    - artifacts under the same reload-hydration-followup directory.
 2. Focus on the confirmed remaining product signal: large HTTP lifecycle seed 7800014 fails exact replay with RTC fuzz-only marker-set divergence during final-ui-witness-sweep; the same seed passes when only GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP=0 is set.
 3. Do not run broad fuzzing and do not stop shared loops. Run only bounded reproductions, reductions, code inspection, or targeted tests needed to isolate whether this is a product bug in reload hydration, a stale witness oracle, or a smaller existing bug family.
-4. If a concrete low-risk product fix is isolated, create a new non-destructive local branch in this worktree and validate it against the reduced reproducer. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+4. If a concrete low-risk product fix is isolated, create a new non-destructive local branch in this worktree, commit the fix on that branch, verify the branch head differs from the continuation start head, and validate it against the reduced reproducer. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
 5. Produce durable artifacts:
    - Write a concise issue/fix report to $report.
    - Write ${report%/*}/validation.tsv with header: check,result,detail,artifact_path.
    - Write $classification with header: lane_id,classification,evidence,next_action,artifact_path.
    - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
 6. Classification rules:
-   - Use repair_branch_created only if a local branch exists and validation points to that fix.
+   - Use repair_branch_created only if a local branch exists, the fix is committed on that branch, the branch head differs from the continuation start head, and validation points to that fix.
    - Use product_bug_reduced if a smaller stable product reproducer exists but no safe fix was created.
    - Use oracle_downscoped only if the final witness check is proven wrong without hiding real marker divergence.
    - Use blocked_specific only with the exact command, log, and missing prerequisite.
@@ -3512,7 +3901,7 @@ Task:
 3. Reacquire, downscope, or keep blocked for the same-head seed 7800014 final-ui-witness divergence. Prefer the current reload-hydration candidate worktree at $DEFERRED_BASE/worktrees/reload-hydration-20260526T024231Z if it is clean; otherwise create only a new non-destructive worktree/branch.
 4. Do not run broad fuzzing and do not stop shared loops. Use bounded isolated reproductions only. If a browser/wp-env replay is needed, use a dependency-installed worktree or verify node_modules/.bin/wp-scripts exists first. Reserve a unique WP_ENV_HOME under $BASE/wp-env plus unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT; do not reuse localhost:8889. Run npm run wp-env status/start as needed and verify wp-login.php is not an Apache 404 before interpreting product behavior.
 5. If the final-ui-witness divergence reproduces stably, preserve exact commands/logs and classify exact_reproducer_reacquired. If the same-head isolated replay passes enough to invalidate the old final-ui failure, classify replay_backed_downscope or exact_reproducer_not_reproduced with exact evidence. If only a different product family reproduces, classify product_bug_reduced and route it separately.
-6. Do not create a product-code repair branch unless a stable same-head final-ui-witness failure is reacquired and a concrete low-risk fix is isolated. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+6. Do not create a product-code repair branch unless a stable same-head final-ui-witness failure is reacquired and a concrete low-risk fix is isolated. If you create one, commit the fix and verify the branch head differs from the continuation start head. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
 7. Produce durable artifacts:
    - Write a concise report to $report.
    - Write ${report%/*}/reacquire-evidence.tsv with header: check,result,detail,artifact_path.
@@ -3560,7 +3949,7 @@ Task:
    - whether wp-core-data is enqueued and whether the inline script attached by gutenberg_inject_real_time_collaboration_setting is present in the rendered editor HTML;
    - whether the replay clone's .wp-env.json, plugin activation, or checkout shape prevents the injection.
 5. You may run focused environment probes, wp-env commands, and a bounded PR07C readiness replay when resources permit. Do not run broad fuzzing. Reserve unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT if starting wp-env. Do not stop shared fuzzing loops.
-6. If a fix is needed, create only a new non-destructive local branch in this worktree, for example repair/rtc-pr07c-collaboration-readiness-<timestamp>. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+6. If a fix is needed, create only a new non-destructive local branch in this worktree, for example repair/rtc-pr07c-collaboration-readiness-<timestamp>, commit the fix on that branch, and verify the branch head differs from the continuation start head. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
 7. Produce durable artifacts:
    - Write a concise report to $report.
    - Write ${report%/*}/validation.tsv with header: check, result, detail.
@@ -3568,7 +3957,7 @@ Task:
    - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
 8. Classification rules:
    - Use repaired_ready only if a focused replay reaches the seeded action/reload/checkpoint phase, or if a minimal readiness probe proves window._wpCollaborationEnabled true and the remaining command to run owner replay is exact.
-   - Use repair_branch_created if you created a local branch and validation proves the readiness injection issue is fixed.
+   - Use repair_branch_created if you created a local branch, committed the fix on that branch, verified the branch head differs from the continuation start head, and validation proves the readiness injection issue is fixed.
    - Use repair_blocked only with a specific failing check and an exact next command/artifact path.
    - Do not use resolved_by_active_artifact_runtime_readiness_not_product for this lane; that is the old structural failure.
 
@@ -3602,7 +3991,7 @@ Task:
 3. Treat this as a bounded same-head repair-or-downscope job. Do not run broad fuzzing and do not stop shared loops.
 4. If the evidence already has an active equivalent exact replay, adopt it and write the session/artifact path. If not, run only the smallest replay, code inspection, or repair step needed for this exact seed/family.
 5. If a browser/wp-env replay is needed, use a dependency-installed worktree or explicitly verify node_modules/.bin/wp-scripts exists before launching. Reserve a unique WP_ENV_HOME under $BASE/wp-env plus unique WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT; do not reuse localhost:8889. Run npm run wp-env status/start as needed and verify wp-login.php is not an Apache 404 before classifying a product failure.
-6. If a concrete product fix is isolated, create only a new non-destructive local branch in this worktree. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+6. If a concrete product fix is isolated, create only a new non-destructive local branch in this worktree, commit the fix on that branch, and verify the branch head differs from the continuation start head. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
 7. Produce durable artifacts:
    - Write a concise report to $report.
    - Write ${report%/*}/exact-blocker-status.tsv with header: blocker_id,result,evidence,next_action,artifact_path.
@@ -3610,7 +3999,7 @@ Task:
    - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
 8. Classification rules:
    - Use exact_replay_green only if the same-head bounded replay for this seed/family passes or the forced row has direct current-run green evidence.
-   - Use repair_branch_created only if a local branch exists and validation points to that fix.
+   - Use repair_branch_created only if a local branch exists, the fix is committed on that branch, the branch head differs from the continuation start head, and validation points to that fix.
    - Use exact_replay_downscoped only with explicit evidence that the row should be removed/downscoped.
    - Use product_bug_reduced if a stable product reproducer exists but no safe fix was created.
    - Use adopted_active_artifact if a current active job is the exact equivalent.
@@ -3680,7 +4069,7 @@ copy_generated_rtc_fuzz_harness() {
 launch_continuation_job() {
 	local lane=$1 dedupe=$2 active_pattern=$3 goal=$4
 	local force=${5:-0}
-	local active active_continuations session ts run_dir worktree prompt report classification stderr rc runner slug codex_output
+	local active active_continuations session ts run_dir worktree prompt report classification stderr rc runner slug codex_output base_head
 	active=$(active_work_matching "$active_pattern" || true)
 	if [ "$lane" = "benchmark-canary-fuzzer-gap" ] && [ -z "$active" ]; then
 		active=$(benchmark_exact_stack_active || true)
@@ -3711,6 +4100,7 @@ launch_continuation_job() {
 		log "failed to create continuation worktree for $lane from $continuation_src; see $run_dir/worktree.log"
 		return 0
 	fi
+	base_head=$(git -C "$worktree" rev-parse HEAD 2>/dev/null || true)
 	for dependency_dir in node_modules vendor; do
 		if [ -d "$continuation_src/$dependency_dir" ] && [ ! -e "$worktree/$dependency_dir" ]; then
 			ln -s "$continuation_src/$dependency_dir" "$worktree/$dependency_dir" >> "$run_dir/worktree.log" 2>&1 || true
@@ -3766,6 +4156,38 @@ fi
 if [ ! -s "$classification" ]; then
 	printf 'lane_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"
 	printf '%s\\tno_progress\\tmissing classification artifact or empty Codex output; review stderr/report and rerun bounded continuation only if no newer evidence exists\\t%s\\n' "$lane" "$report" >> "$classification"
+fi
+if awk -F '\t' 'NR > 1 && \$2 ~ /^(repair_branch_created|fix_branch_created)$/ { found = 1 } END { exit found ? 0 : 1 }' "$classification" 2>/dev/null; then
+	repair_file="${report%/*}/repair-branch.txt"
+	branch=\$(sed -n '1p' "\$repair_file" 2>/dev/null | tr -d '\r')
+	branch_head=""
+	invalid_reason=""
+	if [ -z "\$branch" ] || [ "\$branch" = "NONE" ]; then
+		invalid_reason="repair_branch_created_without_branch_name"
+	elif ! git check-ref-format --branch "\$branch" >/dev/null 2>&1; then
+		invalid_reason="repair_branch_created_bad_branch_name"
+	else
+		branch_head=\$(git -C "$worktree" rev-parse --verify --quiet "\$branch^{commit}" 2>/dev/null || true)
+		if [ -z "\$branch_head" ]; then
+			invalid_reason="repair_branch_created_branch_does_not_resolve"
+		elif [ -n "$base_head" ] && [ "\$branch_head" = "$base_head" ]; then
+			invalid_reason="repair_branch_created_no_committed_delta_from_start_head"
+		fi
+	fi
+	{
+		printf 'lane_id\\trepair_branch\\tstart_head\\tbranch_head\\tresult\\tdetail\\n'
+		if [ -n "\$invalid_reason" ]; then
+			printf '%s\\t%s\\t%s\\t%s\\tinvalid\\t%s\\n' "$lane" "\${branch:-}" "$base_head" "\${branch_head:-}" "\$invalid_reason"
+		else
+			printf '%s\\t%s\\t%s\\t%s\\tvalid\\tcommitted repair branch differs from start head\\n' "$lane" "\$branch" "$base_head" "\$branch_head"
+		fi
+	} > "${report%/*}/repair-branch-head.tsv"
+	if [ -n "\$invalid_reason" ]; then
+		cp "$classification" "$classification.before-repair-branch-guard" 2>/dev/null || true
+		printf 'lane_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"
+		printf '%s\\trepair_branch_invalid\\t%s; previous classification saved at %s.before-repair-branch-guard\\tcreate a committed repair branch whose head differs from the continuation start head, or classify product_bug_reduced/blocked_specific without claiming a branch\\t%s\\n' "$lane" "\$invalid_reason" "$classification" "${report%/*}/repair-branch-head.tsv" >> "$classification"
+		printf 'NONE\\n' > "\$repair_file"
+	fi
 fi
 printf '%s\\n' "\$code" > "$rc"
 exit 0
@@ -3825,6 +4247,15 @@ launch_continuation_jobs() {
 			"benchmark-canary-exact-stack-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" | cut -c1-12)" \
 			"benchmark-canary-fuzzer-gap|benchmark-canary" \
 			"exact-stack promotion repair: current benchmark canary has promotion_blocked rows; do not clear this blocker with coverage_repaired alone. Create/advance a product fix branch or exact-stack replay evidence and write exact-stack-status.tsv/classification.tsv." \
+			1
+	fi
+	if repair_branch_adoption_open; then
+		benchmark_product_summary=$(repair_branch_adoption_summary || true)
+		launch_continuation_job \
+			"benchmark-canary-repair-branch-adoption" \
+			"benchmark-canary-repair-branch-adoption-$(hash_key "$benchmark_product_summary")" \
+			"benchmark-canary-repair-branch-adoption|repair-branch-adoption" \
+			"adopt or reject the latest benchmark-canary continuation repair branch before launching more generic product reduction. Evidence: ${benchmark_product_summary:-missing repair branch adoption summary}. Read $REPAIR_ADOPTIONS and write validation.tsv, repair-branch.txt, classification.tsv, and push-manifest.tsv only if the branch is a durable committed fix." \
 			1
 	fi
 	if benchmark_product_failures_open; then
@@ -4074,6 +4505,12 @@ write_status() {
 		echo "## Push Manifest Tail"
 		tail -40 "$PUSH_MANIFEST" 2>/dev/null || true
 		echo
+		echo "## Repair Branch Adoptions"
+		column -t -s $'\t' "$REPAIR_ADOPTIONS" 2>/dev/null | sed -n '1,80p' || sed -n '1,80p' "$REPAIR_ADOPTIONS" 2>/dev/null || true
+		echo
+		echo "## Continuation Classification Cache"
+		column -t -s $'\t' "$CONTINUATION_CLASSIFICATIONS" 2>/dev/null | sed -n '1,80p' || sed -n '1,80p' "$CONTINUATION_CLASSIFICATIONS" 2>/dev/null || true
+		echo
 		echo "## No-Progress Artifacts"
 		sed -n '1,80p' "$NO_PROGRESS" 2>/dev/null || true
 		echo
@@ -4091,9 +4528,11 @@ reconcile_once() {
 	fi
 	prune_stale_worktrees_if_needed || true
 	write_branch_export_headers
+	write_continuation_classification_cache
 	write_inputs
 	write_no_progress
 	write_terminal_ledger
+	write_repair_branch_adoptions
 	write_lanes
 	write_blockers_and_queue
 	write_active_jobs

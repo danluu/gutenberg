@@ -8,6 +8,7 @@ TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
 SRC=${RTC_PR_PROGRESS_SRC:-/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo}
 BASE=${RTC_PR_PROGRESS_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518}
 CRITICAL_BASE=${RTC_PR_PROGRESS_CRITICAL_BASE:-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517}
+CRITICAL_REPAIR_ADOPTIONS=$CRITICAL_BASE/current-repair-branch-adoptions.tsv
 PR_SPLIT_BASE=${RTC_PR_PROGRESS_PR_SPLIT_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515}
 DEFERRED_BASE=${RTC_PR_PROGRESS_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516}
 CANONICAL_DEFERRED_BASE=${RTC_PR_PROGRESS_CANONICAL_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516}
@@ -1094,6 +1095,38 @@ write_progress_table() {
 						;;
 				esac
 			done
+		fi
+		if [ -s "$CRITICAL_REPAIR_ADOPTIONS" ]; then
+			awk -F '\t' -v now="$now" '
+				NR == 1 { next }
+				{
+					lane = $2
+					repair_branch = $3
+					adopted_branch = $4
+					source_head = $6
+					central_head = $7
+					state = $8
+					next = $9
+					classification = $10
+					report = $11
+					branch = adopted_branch != "" ? adopted_branch : repair_branch
+					head = central_head != "" ? central_head : source_head
+					priority = "high"
+					status = state
+					if (state ~ /^(central_present|central_present_alias|imported)$/) {
+						status = "needs-validation"
+						next = "validate adopted repair branch, merge into the current all-merge candidate if appropriate, or reject with exact evidence"
+					} else if (state == "missing-source-branch") {
+						status = "invalid-repair-branch"
+					} else if (state ~ /(failed|conflict)/) {
+						status = "blocked"
+					}
+					evidence = "lane=" lane " state=" state " classification=" classification " report=" report
+					gsub(/\t/, " ", next)
+					gsub(/\t/, " ", evidence)
+					print now "\trepair-branch-adoption:" repair_branch "\trepair-branch-adoption\t" priority "\t" status "\t" branch "\t" head "\t" next "\t" evidence
+				}
+			' "$CRITICAL_REPAIR_ADOPTIONS" 2>/dev/null || true
 		fi
 		if pr07c_owner_matrix_needed; then
 			pr07c_report=$(latest_pr07c_owner_report || true)
