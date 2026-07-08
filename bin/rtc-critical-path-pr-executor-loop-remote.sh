@@ -2259,12 +2259,33 @@ coverage_materialization_liveness_summary() {
 	' "$status"
 }
 
+plain_editor_product_smoke_resolved_by_continuation() {
+	local status=${1:-} classification class class_mtime status_mtime
+	classification=$(latest_continuation_classification plain-editor-product-smoke || true)
+	[ -s "$classification" ] || return 1
+	class=$(awk -F '\t' 'NR > 1 && $1 == "plain-editor-product-smoke" { print $2; exit }' "$classification" 2>/dev/null)
+	case "$class" in
+		smoke_green|harness_or_scheduler_repaired)
+			;;
+		*)
+			return 1
+			;;
+	esac
+	class_mtime=$(file_mtime "$classification")
+	if [ -n "$status" ] && [ -s "$status" ]; then
+		status_mtime=$(file_mtime "$status")
+		[ "${class_mtime:-0}" -ge "${status_mtime:-0}" ] || return 1
+	fi
+	return 0
+}
+
 plain_editor_product_smoke_open() {
 	local status
 	status=$(latest_coverage_novelty_status || true)
+	plain_editor_product_smoke_resolved_by_continuation "$status" && return 1
 	[ -n "$status" ] && [ -s "$status" ] || return 0
 	awk '
-		/- successful records by profile:/ {
+		/- current-run successful records by profile:/ {
 			if ($0 ~ /"plain-editor-product-smoke":[1-9][0-9]*/) success = 1
 		}
 		/novelty-http-plain-editor-product-smoke:/ {
@@ -2285,7 +2306,7 @@ plain_editor_product_smoke_summary() {
 		return 0
 	}
 	awk '
-		/- successful records by profile:/ {
+		/- current-run successful records by profile:/ {
 			if (match($0, /"plain-editor-product-smoke":[0-9]+/)) {
 				success = substr($0, RSTART, RLENGTH)
 			}
@@ -3031,7 +3052,7 @@ deferred_family_control_field() {
 
 write_blockers_and_queue() {
 	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reload_followup_active reload_repair_active reload_reacquire_active reason pr07c_active pr07c_report benchmark_active benchmark_state benchmark_kind benchmark_action benchmark_result benchmark_artifacts benchmark_next productive_active reload_control_state reload_hold_reason reload_blocker_state reload_blocked_by reload_next reload_queue_state reload_queue_result reload_queue_action reload_completed_root reload_followup_needed reload_product_bug reload_product_artifact reload_repair_blocked reload_repair_artifact reload_reacquire_needed reload_reacquire_status reload_reacquire_artifact reload_reacquire_downscoped coverage_liveness_active coverage_liveness_state coverage_liveness_summary coverage_liveness_result coverage_liveness_artifacts coverage_liveness_status
-	local benchmark_product_active benchmark_product_state benchmark_product_summary benchmark_product_result benchmark_product_artifacts repair_adoption_active repair_adoption_state repair_adoption_result repair_adoption_summary plain_smoke_state plain_smoke_summary
+	local benchmark_product_active benchmark_product_state benchmark_product_summary benchmark_product_result benchmark_product_artifacts repair_adoption_active repair_adoption_state repair_adoption_result repair_adoption_summary plain_smoke_active plain_smoke_state plain_smoke_summary
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	pr17_active=$(active_work_matching '1020002|pr17' || true)
 	s5200005=$(active_work_matching '5200005' || true)
@@ -3266,7 +3287,8 @@ write_blockers_and_queue() {
 	repair_adoption_state=$([ -n "$repair_adoption_active" ] && printf active || { repair_branch_adoption_open && printf runnable || printf terminal; })
 	repair_adoption_result=$([ -n "$repair_adoption_active" ] && printf repair_branch_adoption_active || { repair_branch_adoption_open && printf repair_branch_adoption_required || printf no_pending_repair_branch; })
 	repair_adoption_summary=$(repair_branch_adoption_summary || true)
-	plain_smoke_state=$(plain_editor_product_smoke_open && printf runnable || printf terminal)
+	plain_smoke_active=$(active_work_matching 'plain-editor-product-smoke|real-editor-smoke' || true)
+	plain_smoke_state=$([ -n "$plain_smoke_active" ] && printf active || { plain_editor_product_smoke_open && printf runnable || printf terminal; })
 	plain_smoke_summary=$(plain_editor_product_smoke_summary || true)
 	coverage_liveness_active=$(active_work_matching 'coverage-materialization-liveness|materialization-liveness|coverage-liveness' || true)
 	coverage_liveness_status=$(latest_coverage_novelty_status || true)
@@ -3335,8 +3357,8 @@ write_blockers_and_queue() {
 				"$now"
 		fi
 		if plain_editor_product_smoke_open; then
-			printf 'plain-editor-product-smoke\treal-editor-smoke\thigh\t%s\tcoverage-guided\tsnapshot-publication,exact-stack-promotion,maintainer-pr-set,PR17\tplain-editor-product-smoke\tcurrent novelty-status.md,successful edit/save/reload artifact,classification.tsv\t\tplain editor product smoke is not green enough for PR publication; %s\t%s\n' \
-				"$plain_smoke_state" "${plain_smoke_summary:-missing smoke summary}" "$now"
+			printf 'plain-editor-product-smoke\treal-editor-smoke\thigh\t%s\tcoverage-guided\tsnapshot-publication,exact-stack-promotion,maintainer-pr-set,PR17\tplain-editor-product-smoke\tcurrent novelty-status.md,successful edit/save/reload artifact,classification.tsv\t%s\tplain editor product smoke is not green enough for PR publication; %s\t%s\n' \
+				"$plain_smoke_state" "${plain_smoke_active:-}" "${plain_smoke_summary:-missing smoke summary}" "$now"
 		fi
 		if productive_analysis_feedback_present; then
 			if productive_analysis_resolved_by_active_artifacts; then
@@ -3442,8 +3464,8 @@ write_blockers_and_queue() {
 				"$coverage_liveness_state" "${coverage_liveness_active:-}" "$BASE" "$now" "$now" "$coverage_liveness_result"
 		fi
 		if plain_editor_product_smoke_open; then
-			printf 'job-plain-editor-product-smoke\tplain-editor-product-smoke\tplain-editor-product-smoke\treal-editor-smoke-gate\tplain-editor-product-smoke\tbrowser-e2e\thigh\t%s\t0\t\t\t%s/runs/plain-editor-product-smoke\t%s\t\t%s\t\tplain_editor_smoke_gate_open\n' \
-				"$plain_smoke_state" "$BASE" "$now" "$now"
+			printf 'job-plain-editor-product-smoke\tplain-editor-product-smoke\tplain-editor-product-smoke\treal-editor-smoke-gate\tplain-editor-product-smoke\tbrowser-e2e\thigh\t%s\t0\t%s\t\t%s/runs/plain-editor-product-smoke\t%s\t\t%s\t\tplain_editor_smoke_gate_open\n' \
+				"$plain_smoke_state" "${plain_smoke_active:-}" "$BASE" "$now" "$now"
 		fi
 			if productive_analysis_feedback_present; then
 				if productive_analysis_resolved_by_active_artifacts; then
@@ -3759,6 +3781,48 @@ Task:
    - Use blocked_specific only with the exact failed command or missing artifact needed next.
 
 Passive prose without product-failure-triage.tsv, exact-blocker-status.tsv, repair-branch.txt, and classification.tsv is a failure.
+EOF
+		return
+	fi
+	if [ "$lane" = "plain-editor-product-smoke" ]; then
+		cat > "$prompt" <<EOF
+You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+Lane: $lane
+Goal: make the plain editor product smoke gate actionable and green, or produce an exact product/harness blocker with artifacts. This gate protects the human workflow: open post-new.php, edit title/body, save draft, reload/open the editor, and verify the editor remains usable and clean.
+Report path: $report
+Required classification TSV: $classification
+Required validation TSV: ${report%/*}/validation.tsv
+Required repair branch file: ${report%/*}/repair-branch.txt
+
+Task:
+1. Read the bounded current state:
+   - $STATUS
+   - $BLOCKERS
+   - $QUEUE
+   - $COVERAGE_BASE/current-output-dir.txt
+   - the current novelty-status.md and novelty-monitor.log under the current coverage output dir.
+2. Inspect the plain editor smoke inputs only:
+   - group: novelty-http-plain-editor-product-smoke
+   - action profile: plain-editor-product-smoke
+   - related harness code in $SRC/bin/rtc-browser-fuzz-novelty-monitor.mjs and the collaboration e2e smoke harness copied into the worktree when needed.
+3. If current coverage is running this profile, wait only long enough to read its current artifact rows, then classify from evidence. Do not launch broad fuzzing.
+4. If the profile is not being scheduled or no current gate line can be produced, repair the scheduler/profile wiring or run the smallest direct same-head smoke command needed to generate proof. Use unique WP_ENV_HOME, WP_ENV_PORT, WP_ENV_TESTS_PORT, and WP_ENV_PHPMYADMIN_PORT if starting wp-env. Do not reuse localhost:8889.
+5. A green result requires artifact-backed proof of successful post-new edit, Save draft, and reload/open verification with the editor not dirty and not read-only/sandboxed. Do not mark green on wp-env start/status alone.
+6. If a product bug is reproduced, reduce it to the smallest stable smoke case. If a safe fix is isolated, create a new non-destructive local repair branch in this worktree, commit the fix, and verify the branch head differs from the continuation start head. Do not rewrite active fuzzing refs and do not push to GitHub from Jetstream.
+7. Produce durable artifacts:
+   - Write a concise report to $report.
+   - Write ${report%/*}/validation.tsv with header: check,result,detail,artifact_path.
+   - Write $classification with header: lane_id,classification,evidence,next_action,artifact_path.
+   - Write ${report%/*}/repair-branch.txt containing the local branch name or NONE.
+8. Classification rules:
+   - Use smoke_green only with current same-head artifact proof of edit/save/reload usability.
+   - Use repair_branch_created only if a committed local branch fixes a product or scheduler issue and validation points to it.
+   - Use product_bug_reduced if the smoke workflow reliably reproduces a product bug but no safe fix was created.
+   - Use harness_or_scheduler_repaired if the issue was only missing smoke scheduling and the gate now emits current proof.
+   - Use blocked_specific only with an exact failed command or missing artifact needed next.
+
+Passive prose without validation.tsv, repair-branch.txt, and classification.tsv is a failure.
 EOF
 		return
 	fi
@@ -4269,6 +4333,7 @@ launch_continuation_jobs() {
 	local reload_completed_root reload_completed_mtime
 	local generated_at action_id target_loop priority action_kind family_or_pr evidence_path next_action control_path blocker_id active_pattern
 	local benchmark_product_status benchmark_product_summary benchmark_product_signature
+	local plain_smoke_summary
 	local focused_exact_open=0 aggregate_benchmark_repair_allowed=0
 	if benchmark_product_repair_allowed_by_controller; then
 		aggregate_benchmark_repair_allowed=1
@@ -4346,6 +4411,15 @@ launch_continuation_jobs() {
 			"coverage-materialization-liveness-$(file_hash "$(latest_coverage_novelty_status)" | cut -c1-12)" \
 			"coverage-materialization-liveness|materialization-liveness|coverage-liveness" \
 			"coverage-guided materialization liveness repair: current novelty status, monitor log, supervisor state, or state-file size indicates unhealthy materialization. This includes stale startup first-pass pending, repeated novelty monitor pass failures such as RangeError/heap/string serialization failures, missing supervisor-state.json, oversized novelty-state.json, or zero current-run active dirs/records after a pass. Inspect the bounded current output root, novelty-monitor.log, novelty-state.json, supervisor-state.json, supervisor-groups.json, coverage-change.tsv, and classification.tsv; fix the scheduler/materializer/controller path so enabled profiles produce ingested behavioral records or write an explicit downscope with evidence." \
+			1
+	fi
+	if plain_editor_product_smoke_open && allow_critical_browser_preflight; then
+		plain_smoke_summary=$(plain_editor_product_smoke_summary || true)
+		launch_continuation_job \
+			"plain-editor-product-smoke" \
+			"plain-editor-product-smoke-$(hash_key "$plain_smoke_summary")" \
+			"plain-editor-product-smoke|real-editor-smoke" \
+			"plain editor product smoke gate is open: ${plain_smoke_summary:-missing smoke summary}. Produce current same-head edit/save/reload proof, repair smoke scheduling, or reduce/create a product fix branch. This gate must not remain a passive runnable status row." \
 			1
 	fi
 	if ! lane_terminal_suppressed pr17-1020002; then
