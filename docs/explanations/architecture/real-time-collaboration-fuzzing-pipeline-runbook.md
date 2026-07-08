@@ -58,6 +58,13 @@ What was tried but was not sufficient:
     accepted stale, green, or non-promotion-blocking product rows. Those jobs
     burned Codex cycles on aggregate/focused blockers that no longer had live
     failing product evidence.
+-   After the PR progress controller re-enabled the aggregate
+    `benchmark-canary-product-failure` repair owner on 2026-07-07, the
+    critical-path executor still suppressed it for about three hours behind
+    stale focused benchmark-canary exact children and the aggregate
+    productive-analysis row itself. That left the blocker runnable but not
+    productively active until the executor started honoring the live controller
+    decision at dispatch.
 -   Killing tmux sessions alone did not clear the stall. Some Codex children had
     become orphaned process groups, and active-job detection continued to adopt
     them as live work.
@@ -105,6 +112,12 @@ The July 2026 fixes that are meant to prevent recurrence are:
     evidence blocks publication until repaired or downscoped, and materialized
     retained product evidence re-enables the aggregate product-repair owner when
     the discovery reserve is healthy.
+-   The critical-path executor honors the PR progress controller's live
+    aggregate `benchmark-canary-product-failure` repair decision before applying
+    focused exact-blocker suppression. Stale focused benchmark-canary children
+    only veto the aggregate when the controller still allows that focused target,
+    and the aggregate productive-analysis row must not suppress the aggregate
+    product-repair lane itself.
 
 Use these checks when a blocker looks old or CPU is unexpectedly idle:
 

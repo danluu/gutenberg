@@ -511,18 +511,139 @@ productive_analysis_exact_blocker_open() {
 	return 1
 }
 
+pr_progress_decision_allows() {
+	local action=$1 target=$2 decisions=$PR_PROGRESS_BASE/current-control-decisions.tsv
+	[ -s "$decisions" ] || return 1
+	awk -F '\t' -v action="$action" -v target="$target" '
+		NR == 1 {
+			for (i = 1; i <= NF; i++) {
+				cols[$i] = i
+			}
+			action_col = cols["action"]
+			target_col = cols["target"]
+			allowed_col = cols["allowed"]
+			next
+		}
+		action_col && target_col && allowed_col &&
+		$(action_col) == action && $(target_col) == target {
+			allowed = tolower($(allowed_col))
+			found = 1
+		}
+		END {
+			exit(found && (allowed == "yes" || allowed == "true" || allowed == "allow" || allowed == "allowed" || allowed == "1") ? 0 : 1)
+		}
+	' "$decisions" 2>/dev/null
+}
+
+pr_progress_decision_blocks() {
+	local action=$1 target=$2 decisions=$PR_PROGRESS_BASE/current-control-decisions.tsv
+	[ -s "$decisions" ] || return 1
+	awk -F '\t' -v action="$action" -v target="$target" '
+		NR == 1 {
+			for (i = 1; i <= NF; i++) {
+				cols[$i] = i
+			}
+			action_col = cols["action"]
+			target_col = cols["target"]
+			allowed_col = cols["allowed"]
+			next
+		}
+		action_col && target_col && allowed_col &&
+		$(action_col) == action && $(target_col) == target {
+			allowed = tolower($(allowed_col))
+			found = 1
+		}
+		END {
+			exit(found && (allowed == "no" || allowed == "false" || allowed == "block" || allowed == "blocked" || allowed == "0") ? 0 : 1)
+		}
+	' "$decisions" 2>/dev/null
+}
+
+benchmark_product_repair_allowed_by_controller() {
+	pr_progress_decision_allows launch-branch-repair benchmark-canary-product-failure ||
+		pr_progress_decision_allows repair-branch benchmark-canary-product-failure ||
+		pr_progress_decision_allows repair-ready benchmark-canary-product-failure ||
+		pr_progress_decision_allows product-repair benchmark-canary-product-failure
+}
+
+benchmark_canary_focus_target_for_blocker() {
+	local blocker_id=$1 group
+	case "$blocker_id" in
+		pa-exact-benchmark-canary-*)
+			group=${blocker_id#pa-exact-benchmark-canary-}
+			;;
+		*)
+			return 1
+			;;
+	esac
+	case "$group" in
+		novelty-http-large-post-lifecycle-completion*)
+			printf 'benchmark-canary/novelty-http-large-post-lifecycle-completion'
+			;;
+		novelty-http-large-post-lifecycle*)
+			printf 'benchmark-canary/novelty-http-large-post-lifecycle'
+			;;
+		novelty-http-title-reload-convergence*)
+			printf 'benchmark-canary/novelty-http-title-reload-convergence'
+			;;
+		novelty-http-same-user-stale-draft*)
+			printf 'benchmark-canary/novelty-http-same-user-stale-draft'
+			;;
+		novelty-http-persistence-probe*)
+			printf 'benchmark-canary/novelty-http-persistence-probe'
+			;;
+		novelty-http-rtc-reference-oracle*)
+			printf 'benchmark-canary/novelty-http-rtc-reference-oracle'
+			;;
+		novelty-ws-multi-reload-lifecycle*)
+			printf 'benchmark-canary/novelty-ws-multi-reload-lifecycle'
+			;;
+		novelty-ws-parser-serialization*)
+			printf 'benchmark-canary/novelty-ws-parser-serialization'
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
+benchmark_canary_focused_blocker_suppresses() {
+	local blocker_id=$1 target
+	target=$(benchmark_canary_focus_target_for_blocker "$blocker_id" || true)
+	[ -n "$target" ] || return 0
+	if pr_progress_decision_blocks repair-ready "$target" ||
+		pr_progress_decision_blocks launch-branch-repair "$target" ||
+		pr_progress_decision_blocks repair-branch "$target"; then
+		return 1
+	fi
+	if pr_progress_decision_allows repair-ready "$target" ||
+		pr_progress_decision_allows launch-branch-repair "$target" ||
+		pr_progress_decision_allows repair-branch "$target"; then
+		return 0
+	fi
+	return 0
+}
+
 focused_benchmark_canary_blocker_open() {
+	local blocker_id
 	[ -s "$BLOCKERS" ] || return 1
-	awk -F '	' '
+	while IFS=$'\t' read -r blocker_id; do
+		[ -n "$blocker_id" ] || continue
+		if benchmark_canary_focused_blocker_suppresses "$blocker_id"; then
+			return 0
+		fi
+	done < <(
+		awk -F '\t' '
 		NR > 1 &&
 		$1 ~ /^pa-exact-benchmark-canary-/ &&
 		$1 != "pa-exact-benchmark-canary-product-failure" &&
 		$4 != "terminal" &&
 		$4 != "held" {
-			found = 1
+			print $1
 		}
-		END { exit(found ? 0 : 1) }
-	' "$BLOCKERS"
+		' "$BLOCKERS"
+	)
+	return 1
 }
 
 productive_analysis_exact_blocker_suppressed() {
@@ -2834,6 +2955,12 @@ write_blockers_and_queue() {
 		fi
 		if pr17_suppressed_terminal; then
 			printf 'pr17-1020002\tfinal-stack-join\thigh\tterminal\tpr_split/finalization\tfinal-stack-validation,filing\tterminal-ledger\tclassification.tsv\t\tterminal downscope; reopen only with fresh product evidence newer than classification.tsv\t%s\n' "$now"
+		elif benchmark_product_failures_open; then
+			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tbenchmark-canary-product-failure\tclassification.tsv,report.md\t\thold behind benchmark-canary-product-failure until %s has no retained_product_evidence=yes, product_evidence_records greater than 0, or coverage_state containing product-failure; then proof-or-reclassify PR17 seed 1020002\t%s\n' \
+				"${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt}" "$now"
+		elif [ "$benchmark_result" = forced_coverage_active ]; then
+			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tbenchmark-canary-fuzzer-gap\tclassification.tsv,report.md\t\thold behind benchmark-canary-fuzzer-gap until %s has no promotion_blocked=yes row lacking current_run_green=yes or explicit_downscope=yes; then proof-or-reclassify PR17 seed 1020002\t%s\n' \
+				"${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt}" "$now"
 		else
 			printf 'pr17-1020002\tfinal-stack-join\thigh\t%s\tpr_split/finalization\tfinal-stack-validation,filing\t%s\tclassification.tsv,report.md\t%s\tproof-or-reclassify PR17 seed 1020002\t%s\n' \
 				"$([ -n "$pr17_active" ] && printf active || printf runnable)" \
@@ -3653,7 +3780,10 @@ launch_continuation_jobs() {
 	local reload_completed_root reload_completed_mtime
 	local generated_at action_id target_loop priority action_kind family_or_pr evidence_path next_action control_path blocker_id active_pattern
 	local benchmark_product_status benchmark_product_summary benchmark_product_signature
-	local focused_exact_open=0
+	local focused_exact_open=0 aggregate_benchmark_repair_allowed=0
+	if benchmark_product_repair_allowed_by_controller; then
+		aggregate_benchmark_repair_allowed=1
+	fi
 	if productive_analysis_exact_blocker_open || focused_benchmark_canary_blocker_open; then
 		focused_exact_open=1
 	fi
@@ -3665,7 +3795,7 @@ launch_continuation_jobs() {
 		fi
 		case "$blocker_id" in
 			pa-exact-benchmark-canary-product-failure)
-				if focused_benchmark_canary_blocker_open; then
+				if focused_benchmark_canary_blocker_open && [ "$aggregate_benchmark_repair_allowed" -ne 1 ]; then
 					log "pa-exact benchmark-canary-product-failure suppressed while focused benchmark canary blockers are open"
 					continue
 				fi
@@ -3698,7 +3828,7 @@ launch_continuation_jobs() {
 			1
 	fi
 	if benchmark_product_failures_open; then
-		if [ "$focused_exact_open" -eq 1 ]; then
+		if [ "$focused_exact_open" -eq 1 ] && [ "$aggregate_benchmark_repair_allowed" -ne 1 ]; then
 			log "benchmark-canary-product-failure aggregate repair suppressed while focused productive exact blockers are open"
 		else
 			benchmark_product_status=$(latest_benchmark_coverage_status || true)
