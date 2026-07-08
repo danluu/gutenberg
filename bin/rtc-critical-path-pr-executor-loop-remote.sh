@@ -3638,11 +3638,22 @@ EOF
 }
 
 write_continuation_prompt() {
-	local prompt=$1 report=$2 classification=$3 lane=$4 goal=$5
+	local prompt=$1 report=$2 classification=$3 lane=$4 goal=$5 prompt_search_limits
+	prompt_search_limits=$(cat <<'PROMPT_SEARCH_LIMITS'
+Repository and artifact search limits:
+- Do not run broad `find`, `rg`, `grep`, `ls -R`, or shell globs over the repository, current run root, historical artifact roots, test/e2e/artifacts, or parent directories.
+- Do not dump `summary.ndjson`, `events.ndjson`, `events.jsonl`, `command.log`, Playwright traces, or large stderr/report files. Use exact seed/profile extractors or line-bounded commands against one known path.
+- When you need current-run evidence, first read `current-output-dir.txt`, `novelty-status.md`, supervisor state, and exact `lanes.json` or `state.json` paths for the relevant group/profile. Inspect only the matching group, seed, lane, and artifact paths.
+- If you must search source code, search specific files named by the lane or use `git ls-files <specific-pattern>` first, then inspect only the resulting small file list.
+- Any broad scan that prints unrelated repo files or historical artifacts is an infrastructure failure; stop, write `blocked_specific` with the exact missing bounded artifact or command, and do not continue scanning.
+PROMPT_SEARCH_LIMITS
+)
 	case "$lane" in
 		pa-exact-*)
 			cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+$prompt_search_limits
 
 Lane: $lane
 Goal: $goal
@@ -3693,6 +3704,8 @@ EOF
 	if [ "$lane" = "benchmark-canary-repair-branch-adoption" ]; then
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+$prompt_search_limits
 
 Lane: $lane
 Goal: $goal
@@ -3747,6 +3760,8 @@ EOF
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
+$prompt_search_limits
+
 Lane: $lane
 Goal: $goal
 Report path: $report
@@ -3795,6 +3810,8 @@ EOF
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
+$prompt_search_limits
+
 Lane: $lane
 Goal: make the plain editor product smoke gate actionable and green, or produce an exact product/harness blocker with artifacts. This gate protects the human workflow: open post-new.php, edit title/body, save draft, reload/open the editor, and verify the editor remains usable and clean.
 Report path: $report
@@ -3836,6 +3853,8 @@ EOF
 	if [ "$lane" = "benchmark-canary-fuzzer-gap" ]; then
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+$prompt_search_limits
 
 Lane: $lane
 Goal: treat benchmark canary failures as exact-stack promotion blockers, not as coverage-only bookkeeping. Repair the product/PR stack or promotion process until the same stack gets exact-stack green evidence.
@@ -3893,6 +3912,8 @@ EOF
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
+$prompt_search_limits
+
 Lane: $lane
 Goal: $goal
 Report path: $report
@@ -3942,6 +3963,8 @@ EOF
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
+$prompt_search_limits
+
 Lane: $lane
 Goal: $goal
 Report path: $report
@@ -3979,6 +4002,8 @@ EOF
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
+$prompt_search_limits
+
 Lane: $lane
 Goal: $goal
 Report path: $report
@@ -4012,6 +4037,8 @@ EOF
 	if [ "$lane" = "reload-hydration-reproducer-reacquire" ]; then
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+$prompt_search_limits
 
 Lane: $lane
 Goal: $goal
@@ -4055,6 +4082,8 @@ EOF
 	if [ "$lane" = "pr07c-browser-env" ]; then
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+$prompt_search_limits
 
 Lane: $lane
 Goal: repair the PR07C browser/runtime environment so owner-proof replay can run. The known failure is "Timed out waiting for collaboration to become ready" with window._wpCollaborationEnabled null while wp.data/wp.blocks/editor state are loaded.
@@ -4103,6 +4132,8 @@ This job exists to make PR07C evidence runnable. Passive classification without 
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
+$prompt_search_limits
+
 Lane: $lane
 Goal: $goal
 Report path: $report
@@ -4145,6 +4176,8 @@ EOF
 	fi
 	cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
+
+$prompt_search_limits
 
 Lane: $lane
 Goal: $goal
