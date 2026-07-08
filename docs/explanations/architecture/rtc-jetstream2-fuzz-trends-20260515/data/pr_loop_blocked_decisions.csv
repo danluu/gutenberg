@@ -1,28 +1,30 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,benchmark-canary-product-failure,P0,no,bootstrap guard: zero current_run_group_records is not evidence that product blockers disappeared; keep active aggregate/exact owners and coverage materialization instead of launching duplicate heavy repair: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T031254Z/benchmark-canary-coverage-status.tsv,benchmark-canary-product-failure,"bootstrap guard: zero current_run_group_records is not evidence that
-product blockers disappeared; keep active aggregate/exact owners
-and coverage materialization instead of launching duplicate heavy
-repair: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T031254Z/benchmark-canary-coverage-status.tsv"
-repair-ready,benchmark-canary/novelty-http-title-reload-convergence,P0,no,do not launch from stale feed rows as a sibling; eligible only through the singleton live-reread selector,benchmark-canary/novelty-http-title-reload-convergence,"do not launch from stale feed rows as a sibling; eligible only through the
-singleton live-reread selector"
-repair-ready,benchmark-canary/novelty-http-large-post-lifecycle,P0,no,do not launch from stale feed rows as a sibling; eligible only through the singleton live-reread selector,benchmark-canary/novelty-http-large-post-lifecycle,"do not launch from stale feed rows as a sibling; eligible only through the
-singleton live-reread selector"
-repair-ready,benchmark-canary/novelty-http-large-post-lifecycle-completion,P0,no,do not launch from stale feed rows as a sibling; pair with large-post only if the singleton repair pass selects that surface,benchmark-canary/novelty-http-large-post-lifecycle-completion,"do not launch from stale feed rows as a sibling; pair with large-post only if
-the singleton repair pass selects that surface"
-repair-ready,benchmark-canary/novelty-http-persistence-probe,high,no,not a standalone focused slot; keep under the aggregate owner unless a fresh live reread selects it,benchmark-canary/novelty-http-persistence-probe,"not a standalone focused slot; keep under the aggregate owner unless a fresh
-live reread selects it"
-repair-ready,benchmark-canary/novelty-http-same-user-stale-draft,high,no,not a standalone focused slot; keep under the aggregate owner unless a fresh live reread selects it,benchmark-canary/novelty-http-same-user-stale-draft,"not a standalone focused slot; keep under the aggregate owner unless a fresh
-live reread selects it"
-repair-ready,benchmark-canary/novelty-ws-multi-reload-lifecycle,high,no,not a standalone focused slot; keep under the aggregate owner unless a fresh live reread selects it,benchmark-canary/novelty-ws-multi-reload-lifecycle,"not a standalone focused slot; keep under the aggregate owner unless a fresh
-live reread selects it"
-publish-ready,PR17-1020002,P0,no,final-stack join remains held behind benchmark-canary-product-failure,PR17-1020002,final-stack join remains held behind benchmark-canary-product-failure
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner evidence is consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,owner evidence is consumed; relaunch only with newer owner evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,low,no,stale direct PR07C head is superseded by the repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head is superseded by the repaired build-clean branch
-publish-ready,ready-product-prs/repeat-publication,high,no,ready product branches are already published; repeat publication is status churn,ready-product-prs/repeat-publication,ready product branches are already published; repeat publication is status churn
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,full PR06B is superseded by the published minimal branch,ready/rtc-pr06b-malformed-save-request-payload,full PR06B is superseded by the published minimal branch
-publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,standalone PR15 heads duplicate published PR14B-based variants and remain controller-held,ready/rtc-pr15a+15b+15c-standalone,"standalone PR15 heads duplicate published PR14B-based variants and remain
-controller-held"
-publish-ready,deferred/rtc-reload-hydration,high,no,adopted manifest branch remains publication-gated by benchmark-canary-product-failure,deferred/rtc-reload-hydration,"adopted manifest branch remains publication-gated by
-benchmark-canary-product-failure"
-launch-branch-repair,other-heavy-pr-work,high,no,heavy non-canary PR work waits behind the P0 canary path; cheap manifest accounting and analysis-only work may continue,other-heavy-pr-work,"heavy non-canary PR work waits behind the P0 canary path; cheap manifest
-accounting and analysis-only work may continue"
+publish-ready,benchmark-canary-product-failure/zero-product-bootstrap-clearance,P0,no,do not clear product evidence or publication gates from an unmaterialized/bootstrap canary root alone,benchmark-canary-product-failure/zero-product-bootstrap-clearance,"do not clear product evidence or publication gates from an
+unmaterialized/bootstrap canary root alone"
+publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,hold final stack snapshot maintainer PR set exact-stack clearance deferred clearance and PR07C credit until canary closure has materialized evidence,final-rtc-stack/benchmark-canary-closure,"hold final stack snapshot maintainer PR set exact-stack clearance deferred
+clearance and PR07C credit until canary closure has materialized evidence"
+publish-ready,final-rtc-stack/plain-editor-product-smoke,high,no,active smoke gate is not green; consume existing result rather than publishing around it,final-rtc-stack/plain-editor-product-smoke,"active smoke gate is not green; consume existing result rather than publishing
+around it"
+launch-branch-repair,benchmark-canary-product-failure/duplicate-aggregate,P0,no,adopted repair branch is the selected path; duplicate aggregate launches add churn,benchmark-canary-product-failure/duplicate-aggregate,"adopted repair branch is the selected path; duplicate aggregate launches add
+churn"
+launch-branch-repair,benchmark-canary/novelty-http-rtc-reference-oracle,P0,no,do not spend a separate sibling slot before adopted-head validation exits,benchmark-canary/novelty-http-rtc-reference-oracle,do not spend a separate sibling slot before adopted-head validation exits
+launch-branch-repair,benchmark-canary/focused-sibling-fanout,high,no,defer title persistence parser and large-post fanout until a dispatch reread selects one qualifying child after adopted validation,benchmark-canary/focused-sibling-fanout,"defer title persistence parser and large-post fanout until a dispatch reread
+selects one qualifying child after adopted validation"
+launch-branch-repair,plain-editor-product-smoke/duplicates,high,no,duplicate browser-heavy smoke relaunches should wait for the active smoke gate result,plain-editor-product-smoke/duplicates,"duplicate browser-heavy smoke relaunches should wait for the active smoke gate
+result"
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix evidence is consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,owner matrix evidence is consumed; relaunch only with newer owner evidence
+publish-ready,PR07C/publication-credit,P0,no,current benchmark-canary status has 4 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T070943Z/benchmark-canary-coverage-status.tsv,PR07C/publication-credit,"current benchmark-canary status has 4
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T070943Z/benchmark-canary-coverage-status.tsv"
+publish-ready,ready-product-prs/repeat-publication,high,no,listed ready real-fix branches are already locally published,ready-product-prs/repeat-publication,listed ready real-fix branches are already locally published
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head is superseded by repaired build-clean branch
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,full PR06B branch is superseded by already-published canonical minimal branch,ready/rtc-pr06b-malformed-save-request-payload,full PR06B branch is superseded by already-published canonical minimal branch
+publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,standalone PR15 heads duplicate already-published PR14B-based variants and remain controller-held,ready/rtc-pr15a+15b+15c-standalone,"standalone PR15 heads duplicate already-published PR14B-based variants and
+remain controller-held"
+publish-ready,deferred-families/publication-clearance,high,no,deferred publication clearance remains blocked by benchmark-canary and smoke gates,deferred-families/publication-clearance,"deferred publication clearance remains blocked by benchmark-canary and smoke
+gates"
+launch-branch-repair,lower-level/productless-expansion,high,no,broad productless lower-level expansion is low value while classifier accounting and publication gates remain unresolved,lower-level/productless-expansion,"broad productless lower-level expansion is low value while classifier accounting
+and publication gates remain unresolved"
+hold-publication,PR07C,P0,no,current benchmark-canary status has 4 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T070943Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 4
+promotion-blocked rows lacking current_run_green=yes or
+explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T070943Z/benchmark-canary-coverage-status.tsv"
