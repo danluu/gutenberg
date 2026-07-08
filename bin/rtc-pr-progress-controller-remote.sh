@@ -98,6 +98,76 @@ active_session_matching() {
 	tmux_sessions | awk -F: -v pattern="$pattern" '$1 ~ pattern { print $1; found = 1; exit } END { exit found ? 0 : 1 }'
 }
 
+controller_lock_holders() {
+	fuser "$LOCK" 2>/dev/null | tr -s ' ' ' ' | sed 's/^ //; s/ $//' || true
+}
+
+is_pr_progress_controller_process() {
+	local pid=$1 args
+	args=$(ps -o args= -p "$pid" 2>/dev/null || true)
+	case "$args" in
+		*"rtc-pr-progress-controller-remote.sh"*|*"rtc-pr-progress-controller-loop.sh"*|*"/tmp/start_rtc_pr_progress_controller.sh"*|sleep\ *|*/sleep\ *)
+			return 0
+			;;
+	esac
+	return 1
+}
+
+controller_pid_alive() {
+	local pid=$1
+	[ -n "$pid" ] || return 1
+	kill -0 "$pid" 2>/dev/null || return 1
+	is_pr_progress_controller_process "$pid"
+}
+
+controller_orphan_summary() {
+	local pid holders
+	pid=$(cat "$PID_FILE" 2>/dev/null || true)
+	holders=$(controller_lock_holders)
+	if controller_pid_alive "$pid"; then
+		printf 'pid=%s lock_holders=%s' "$pid" "${holders:-none}"
+		return 0
+	fi
+	if [ -n "$holders" ]; then
+		printf 'pidfile=%s lock_holders=%s' "${pid:-none}" "$holders"
+		return 0
+	fi
+	return 1
+}
+
+clear_stale_controller_lock_holders() {
+	local holders pid waited remaining
+	tmux has-session -t "$SESSION" 2>/dev/null && return 0
+	holders=$(controller_lock_holders)
+	[ -n "$holders" ] || return 0
+
+	log "clearing stale PR progress controller lock holders without tmux session holders=$holders"
+	for pid in $holders; do
+		[ "$pid" != "$$" ] || continue
+		if is_pr_progress_controller_process "$pid"; then
+			kill "$pid" 2>/dev/null || true
+		else
+			log "leaving non-controller lock holder pid=$pid args=$(ps -o args= -p "$pid" 2>/dev/null || true)"
+		fi
+	done
+
+	waited=0
+	while [ "$waited" -lt 10 ]; do
+		remaining=$(controller_lock_holders)
+		[ -z "$remaining" ] && return 0
+		sleep 1
+		waited=$(( waited + 1 ))
+	done
+
+	for pid in $remaining; do
+		[ "$pid" != "$$" ] || continue
+		if is_pr_progress_controller_process "$pid"; then
+			log "force-clearing stale PR progress controller lock holder pid=$pid"
+			kill -KILL "$pid" 2>/dev/null || true
+		fi
+	done
+}
+
 resource_reason() {
 	sed -n 's/^- reason: //p' "$RESOURCE_BASE/resource-autoscaler-status.md" 2>/dev/null | tail -1 | awk 'NF { print; found = 1 } END { if (!found) print "unknown" }'
 }
@@ -2181,6 +2251,7 @@ case "${1:-start}" in
 		if tmux has-session -t "$SESSION" 2>/dev/null; then
 			echo "$SESSION already running"
 		else
+			clear_stale_controller_lock_holders
 			tmux new-session -d -s "$SESSION" "$0 run"
 			echo "$SESSION started"
 		fi
@@ -2222,6 +2293,8 @@ case "${1:-start}" in
 	status)
 		if tmux has-session -t "$SESSION" 2>/dev/null; then
 			echo "$SESSION running"
+		elif summary=$(controller_orphan_summary); then
+			echo "$SESSION running without tmux ($summary)"
 		else
 			echo "$SESSION not running"
 		fi

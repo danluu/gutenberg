@@ -149,6 +149,12 @@ The July 2026 fixes that are meant to prevent recurrence are:
     proof while the current `novelty-status.md` row preserves product-evidence
     failures or lacks a successful real edit/save/reload record. `wp-env`
     start/status logs alone are not smoke evidence.
+-   The PR progress controller reports an explicit "running without tmux" state
+    when the singleton lock or pid file is live but the named tmux session is
+    missing. Its `start` path clears only matching stale controller lock holders
+    before relaunching the durable `rtc-pr-progress-controller-loop` session, so
+    a parentless controller cannot make health checks falsely report either
+    healthy supervision or a cleanly stopped loop.
 
 Use these checks when a blocker looks old or CPU is unexpectedly idle:
 
@@ -159,6 +165,8 @@ sed -n '1,12p' "$OUT/benchmark-canary-coverage-floor.tsv"
 awk 'BEGIN { FS = "\\t" } NR==1 || $9=="yes" || $10=="yes" { print }' "$OUT/benchmark-canary-coverage-status.tsv"
 sed -n '1,80p' /media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/current-repair-branch-adoptions.tsv
 rg -n 'novelty-http-plain-editor-product-smoke|plain-editor-product-smoke' "$OUT/novelty-status.md"
+/tmp/start_rtc_pr_progress_controller.sh status | sed -n '1,12p'
+/tmp/start_rtc_critical_path_pr_executor_loop.sh status | sed -n '1,12p'
 pgrep -af 'rtc-critical|productive-analysis|codex'
 ```
 
