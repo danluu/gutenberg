@@ -551,6 +551,18 @@ function shouldResumeQueuesForRoom(
 	);
 }
 
+function getNextPollInterval( hasKnownCollaborators: boolean ): number {
+	if ( hasKnownCollaborators ) {
+		return POLLING_INTERVAL_WITH_COLLABORATORS_IN_MS;
+	}
+
+	if ( isActiveBrowser ) {
+		return POLLING_INTERVAL_IN_MS;
+	}
+
+	return POLLING_INTERVAL_BACKGROUND_TAB_IN_MS;
+}
+
 let areListenersRegistered = false;
 let consecutiveFailures = 0;
 let hasCheckedConnectionLimit = false;
@@ -935,14 +947,7 @@ function poll(): void {
 				}
 			} );
 
-			// Recalculate polling interval.
-			if ( isActiveBrowser && hasCollaborators ) {
-				pollInterval = POLLING_INTERVAL_WITH_COLLABORATORS_IN_MS;
-			} else if ( isActiveBrowser ) {
-				pollInterval = POLLING_INTERVAL_IN_MS;
-			} else {
-				pollInterval = POLLING_INTERVAL_BACKGROUND_TAB_IN_MS;
-			}
+			pollInterval = getNextPollInterval( hasCollaborators );
 		} catch ( error ) {
 			// A 403 response means the user does not have permission to
 			// sync a specific entity. Silently unregister the affected
