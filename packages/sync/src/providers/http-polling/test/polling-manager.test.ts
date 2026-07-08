@@ -1610,6 +1610,32 @@ describe( 'polling-manager', () => {
 			};
 			expect( thirdCallPayload.rooms[ 0 ].updates ).toHaveLength( 0 );
 		} );
+
+		it( 'logs retryable post failures as warnings', async () => {
+			mockPostSyncUpdate.mockResolvedValueOnce( syncResponse );
+
+			const log = jest.fn();
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(),
+				log,
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			mockPostSyncUpdate.mockRejectedValueOnce( new Error( 'timeout' ) );
+			await jest.advanceTimersByTimeAsync( 4000 );
+
+			expect( log ).toHaveBeenCalledWith(
+				'Error posting sync update, will retry with backoff',
+				expect.objectContaining( { nextPoll: 2000 } ),
+				'warn',
+				true
+			);
+		} );
 	} );
 
 	describe( 'visibility change', () => {
