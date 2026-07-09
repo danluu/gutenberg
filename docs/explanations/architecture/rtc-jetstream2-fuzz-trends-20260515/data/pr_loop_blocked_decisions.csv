@@ -1,16 +1,27 @@
 action,target,priority,allowed,reason,target_label,reason_label
-launch-branch-repair,lower-level/productless-expansion-current-root,high,no,"Hold broad productless expansion until classifier accounting emits a canonical product or active-blocker key, or is explicitly downscoped.",lower-level/productless-expansion-current-root,"Hold broad productless expansion until classifier accounting emits a canonical
-product or active-blocker key, or is explicitly downscoped."
-launch-deferred-reanalysis,deferred/adopted-or-downscoped,high,no,Suppress generic deferred relaunch for adopted or downscoped families unless fresh product-owned first-loss evidence appears.,deferred/adopted-or-downscoped,"Suppress generic deferred relaunch for adopted or downscoped families unless
-fresh product-owned first-loss evidence appears."
-launch-owner-matrix,PR07C/HOLD-07C,high,no,Owner matrix is runtime-held and consumed; relaunch only with newer owner evidence.,PR07C/HOLD-07C,"Owner matrix is runtime-held and consumed; relaunch only with newer owner
-evidence."
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,low,no,Stale direct PR07C head is superseded by repaired build-clean head 9617d576354444657e7278c0dd9abc5d4f05dcb9.,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,"Stale direct PR07C head is superseded by repaired build-clean head
-9617d576354444657e7278c0dd9abc5d4f05dcb9."
-publish-ready,ready-product-prs/repeat-publication,high,no,Repeating already published heads changes no branch head and removes no blocker.,ready-product-prs/repeat-publication,Repeating already published heads changes no branch head and removes no blocker.
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,Superseded by already published canonical PR06B minimal branch.,ready/rtc-pr06b-malformed-save-request-payload,Superseded by already published canonical PR06B minimal branch.
-publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,Standalone PR15 heads duplicate already published PR14B-based variants.,ready/rtc-pr15a+15b+15c-standalone,Standalone PR15 heads duplicate already published PR14B-based variants.
-publish-ready,final-rtc-stack/current-candidate,P0,no,Final publication remains blocked by retained benchmark-canary product evidence and plain-editor smoke proof.,final-rtc-stack/current-candidate,"Final publication remains blocked by retained benchmark-canary product evidence
-and plain-editor smoke proof."
-launch-branch-repair,additional-heavy-pr-fanout,P0,no,Do not add broad heavy PR fanout while canary repair is open or if discovery would fall below three active sessions.,additional-heavy-pr-fanout,"Do not add broad heavy PR fanout while canary repair is open or if discovery
-would fall below three active sessions."
+repair-branch,benchmark-canary/novelty-http-large-post-lifecycle-seed-1140009,P0,no,"large-post still belongs under the aggregate owner, but current reread puts title reload ahead at 47 vs 43 product records; avoid duplicate focused repair",benchmark-canary/novelty-http-large-post-lifecycle-seed-1140009,"large-post still belongs under the aggregate owner, but current reread puts
+title reload ahead at 47 vs 43 product records; avoid duplicate focused repair"
+repair-branch,benchmark-canary/novelty-http-large-post-lifecycle-seed-1140007,P0,no,stale focused seed superseded by seed 1140009 and not selected by current materialized counts,benchmark-canary/novelty-http-large-post-lifecycle-seed-1140007,"stale focused seed superseded by seed 1140009 and not selected by current
+materialized counts"
+publish-ready,final-rtc-stack/current-candidate,P0,no,hold final stack publication until benchmark-canary retained product evidence and plain-editor smoke close with materialized evidence,final-rtc-stack/current-candidate,"hold final stack publication until benchmark-canary retained product evidence
+and plain-editor smoke close with materialized evidence"
+publish-ready,maintainer-snapshot/current-candidate,P0,no,hold maintainer snapshot until final candidate has canary closure or evidence-backed downscopes plus smoke closure,maintainer-snapshot/current-candidate,"hold maintainer snapshot until final candidate has canary closure or
+evidence-backed downscopes plus smoke closure"
+publish-ready,PR07C/final-publication,P0,no,current benchmark-canary status has 90 retained product-evidence records across 2 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T025555Z/benchmark-canary-coverage-status.tsv,PR07C/final-publication,"current benchmark-canary status has 90 retained product-evidence
+records across 2 row(s); repair or explicit downscope required before
+publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T025555Z/benchmark-canary-coverage-status.tsv"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head is superseded by repaired build-clean branch
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner evidence is runtime-held and consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,"owner evidence is runtime-held and consumed; relaunch only with newer owner
+evidence"
+launch-branch-repair,deferred/adopted-or-downscoped,high,no,reject generic deferred relaunch without newer product-owned first-loss evidence,deferred/adopted-or-downscoped,reject generic deferred relaunch without newer product-owned first-loss evidence
+launch-branch-repair,lower-level/productless-expansion-current-root,high,no,hold broad expansion until classifier emits canonical product key evidence or records explicit downscope,lower-level/productless-expansion-current-root,"hold broad expansion until classifier emits canonical product key evidence or
+records explicit downscope"
+publish-ready,ready-product-prs/repeat-publication,high,no,"already-published product heads need validation and accounting, not repeat publication",ready-product-prs/repeat-publication,"already-published product heads need validation and accounting, not repeat
+publication"
+publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,standalone PR15 variants duplicate already-published PR14B-based variants,ready/rtc-pr15a+15b+15c-standalone,standalone PR15 variants duplicate already-published PR14B-based variants
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
+launch-branch-repair,additional-heavy-pr-fanout,P0,no,"avoid broad heavy PR fanout while canary repair and smoke gates are open, and never spend below the discovery reserve",additional-heavy-pr-fanout,"avoid broad heavy PR fanout while canary repair and smoke gates are open, and
+never spend below the discovery reserve"
+hold-publication,PR07C,P0,no,current benchmark-canary status has 90 retained product-evidence records across 2 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T025555Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 90 retained product-evidence
+records across 2 row(s); repair or explicit downscope required before
+publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T025555Z/benchmark-canary-coverage-status.tsv"
