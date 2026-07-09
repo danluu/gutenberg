@@ -1,22 +1,29 @@
 action,target,priority,allowed,reason,target_label,reason_label
-repair-branch,benchmark-canary/novelty-http-persistence-probe,high,no,aggregate-covered this cycle; promote only if live reread makes it the retained/nonzero focused leader after large-post closes,benchmark-canary/novelty-http-persistence-probe,"aggregate-covered this cycle; promote only if live reread makes it the
-retained/nonzero focused leader after large-post closes"
-repair-branch,benchmark-canary/novelty-http-title-reload-convergence,high,no,aggregate-covered this cycle; earlier focused title rows are stale relative to the current large-post focus,benchmark-canary/novelty-http-title-reload-convergence,"aggregate-covered this cycle; earlier focused title rows are stale relative to
-the current large-post focus"
-repair-branch,benchmark-canary/novelty-http-large-post-lifecycle-completion,high,no,fold into aggregate and large-post owner; zero/status-only rows do not earn a focused slot,benchmark-canary/novelty-http-large-post-lifecycle-completion,"fold into aggregate and large-post owner; zero/status-only rows do not earn a
-focused slot"
-repair-branch,benchmark-canary/novelty-http-rtc-reference-oracle-seed1260001,high,no,no current live canary row; keep backlog or second slot after current retained rows close,benchmark-canary/novelty-http-rtc-reference-oracle-seed1260001,"no current live canary row; keep backlog or second slot after current retained
-rows close"
-publish-ready,final-rtc-stack/current-candidate,P0,no,blocked by benchmark-canary product closure/materialization and plain-editor smoke success gate,final-rtc-stack/current-candidate,"blocked by benchmark-canary product closure/materialization and plain-editor
-smoke success gate"
-publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,canary closure artifacts are still required before publication,final-rtc-stack/benchmark-canary-closure,canary closure artifacts are still required before publication
-launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held-consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime-held-consumed; relaunch only with newer owner evidence
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,stale direct PR07C head lacks the build/type repair; use repaired head only,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head lacks the build/type repair; use repaired head only
-launch-branch-repair,deferred/generic-relaunch,high,no,"deferred families are adopted, downscoped, or superseded absent fresh product evidence",deferred/generic-relaunch,"deferred families are adopted, downscoped, or superseded absent fresh product
+publish-ready,PR07C,P0,no,current benchmark-canary status has 26 retained product-evidence records across 4 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T142054Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 26 retained product-evidence
+records across 4 row(s); repair or explicit downscope required before
+publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T142054Z/benchmark-canary-coverage-status.tsv"
+publish-ready,final-rtc-stack/current-candidate,P0,no,blocked by current benchmark-canary retained product evidence until closure artifacts or stable materialized zero qualifying evidence exist,final-rtc-stack/current-candidate,"blocked by current benchmark-canary retained product evidence until closure
+artifacts or stable materialized zero qualifying evidence exist"
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,stale direct PR07C head lacks the build/type repair commit,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head lacks the build/type repair commit
+launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,"owner matrix is runtime-held and consumed; relaunch only with newer owner
 evidence"
-launch-branch-repair,lower-level/productless-expansion-current-root,high,no,wait for canonical product keys or explicit downscope,lower-level/productless-expansion-current-root,wait for canonical product keys or explicit downscope
-publish-ready,ready-product-prs/repeat-publication,high,no,canonical real-fix branches are already published; repeat publication removes no blocker,ready-product-prs/repeat-publication,"canonical real-fix branches are already published; repeat publication removes no
-blocker"
+repair-branch,benchmark-canary/novelty-http-large-post-lifecycle-completion,high,no,aggregate-covered until large-post reaches terminal disposition or live reread promotes this row,benchmark-canary/novelty-http-large-post-lifecycle-completion,"aggregate-covered until large-post reaches terminal disposition or live reread
+promotes this row"
+repair-branch,benchmark-canary/novelty-http-persistence-probe,high,no,aggregate-covered until large-post reaches terminal disposition or live reread promotes this row,benchmark-canary/novelty-http-persistence-probe,"aggregate-covered until large-post reaches terminal disposition or live reread
+promotes this row"
+repair-branch,benchmark-canary/novelty-http-title-reload-convergence,high,no,aggregate-covered until large-post reaches terminal disposition or live reread promotes this row,benchmark-canary/novelty-http-title-reload-convergence,"aggregate-covered until large-post reaches terminal disposition or live reread
+promotes this row"
+repair-branch,benchmark-canary/rtc-reference-oracle,high,no,no current materialized retained or nonzero oracle row in the controller context,benchmark-canary/rtc-reference-oracle,no current materialized retained or nonzero oracle row in the controller context
+repair-ready,plain-editor-product-smoke/success-gate,high,no,classification is smoke_green with direct same-head confirmation; no repair slot needed,plain-editor-product-smoke/success-gate,"classification is smoke_green with direct same-head confirmation; no repair slot
+needed"
+launch-branch-repair,deferred/generic-relaunch,high,no,"current deferred families are adopted, downscoped, or superseded; require newer product evidence",deferred/generic-relaunch,"current deferred families are adopted, downscoped, or superseded; require newer
+product evidence"
+launch-branch-repair,lower-level/productless-expansion-current-root,high,no,hold broad productless expansion until canonical product keys emit or explicit downscope is recorded,lower-level/productless-expansion-current-root,"hold broad productless expansion until canonical product keys emit or explicit
+downscope is recorded"
+publish-ready,ready-product-prs/repeat-publication,high,no,canonical ready branches are already published locally; repeat publication audits remove no current blocker,ready-product-prs/repeat-publication,"canonical ready branches are already published locally; repeat publication
+audits remove no current blocker"
 publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,standalone variants duplicate already-published PR14B-based variants,ready/rtc-pr15a+15b+15c-standalone,standalone variants duplicate already-published PR14B-based variants
-publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
-launch-branch-repair,heavy-pr-work-when-discovery-below-3,P0,no,heavy PR jobs must not consume the protected discovery reserve,heavy-pr-work-when-discovery-below-3,heavy PR jobs must not consume the protected discovery reserve
+publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published PR06B minimal branch
+hold-publication,PR07C,P0,no,current benchmark-canary status has 26 retained product-evidence records across 4 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T142054Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 26 retained product-evidence
+records across 4 row(s); repair or explicit downscope required before
+publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T142054Z/benchmark-canary-coverage-status.tsv"
