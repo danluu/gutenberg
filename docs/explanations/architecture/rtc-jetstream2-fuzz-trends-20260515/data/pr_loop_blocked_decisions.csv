@@ -1,27 +1,22 @@
 action,target,priority,allowed,reason,target_label,reason_label
-repair-branch,benchmark-canary/novelty-http-large-post-lifecycle-seed-1140009,P0,no,"large-post still belongs under the aggregate owner, but current reread puts title reload ahead at 47 vs 43 product records; avoid duplicate focused repair",benchmark-canary/novelty-http-large-post-lifecycle-seed-1140009,"large-post still belongs under the aggregate owner, but current reread puts
-title reload ahead at 47 vs 43 product records; avoid duplicate focused repair"
-repair-branch,benchmark-canary/novelty-http-large-post-lifecycle-seed-1140007,P0,no,stale focused seed superseded by seed 1140009 and not selected by current materialized counts,benchmark-canary/novelty-http-large-post-lifecycle-seed-1140007,"stale focused seed superseded by seed 1140009 and not selected by current
-materialized counts"
-publish-ready,final-rtc-stack/current-candidate,P0,no,hold final stack publication until benchmark-canary retained product evidence and plain-editor smoke close with materialized evidence,final-rtc-stack/current-candidate,"hold final stack publication until benchmark-canary retained product evidence
-and plain-editor smoke close with materialized evidence"
-publish-ready,maintainer-snapshot/current-candidate,P0,no,hold maintainer snapshot until final candidate has canary closure or evidence-backed downscopes plus smoke closure,maintainer-snapshot/current-candidate,"hold maintainer snapshot until final candidate has canary closure or
-evidence-backed downscopes plus smoke closure"
-publish-ready,PR07C/final-publication,P0,no,current benchmark-canary status has 90 retained product-evidence records across 2 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T025555Z/benchmark-canary-coverage-status.tsv,PR07C/final-publication,"current benchmark-canary status has 90 retained product-evidence
-records across 2 row(s); repair or explicit downscope required before
-publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T025555Z/benchmark-canary-coverage-status.tsv"
-publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,low,no,stale direct PR07C head is superseded by repaired build-clean branch,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head is superseded by repaired build-clean branch
-launch-owner-matrix,PR07C/HOLD-07C,high,no,owner evidence is runtime-held and consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,"owner evidence is runtime-held and consumed; relaunch only with newer owner
+repair-branch,benchmark-canary/novelty-http-persistence-probe,high,no,aggregate-covered this cycle; promote only if live reread makes it the retained/nonzero focused leader after large-post closes,benchmark-canary/novelty-http-persistence-probe,"aggregate-covered this cycle; promote only if live reread makes it the
+retained/nonzero focused leader after large-post closes"
+repair-branch,benchmark-canary/novelty-http-title-reload-convergence,high,no,aggregate-covered this cycle; earlier focused title rows are stale relative to the current large-post focus,benchmark-canary/novelty-http-title-reload-convergence,"aggregate-covered this cycle; earlier focused title rows are stale relative to
+the current large-post focus"
+repair-branch,benchmark-canary/novelty-http-large-post-lifecycle-completion,high,no,fold into aggregate and large-post owner; zero/status-only rows do not earn a focused slot,benchmark-canary/novelty-http-large-post-lifecycle-completion,"fold into aggregate and large-post owner; zero/status-only rows do not earn a
+focused slot"
+repair-branch,benchmark-canary/novelty-http-rtc-reference-oracle-seed1260001,high,no,no current live canary row; keep backlog or second slot after current retained rows close,benchmark-canary/novelty-http-rtc-reference-oracle-seed1260001,"no current live canary row; keep backlog or second slot after current retained
+rows close"
+publish-ready,final-rtc-stack/current-candidate,P0,no,blocked by benchmark-canary product closure/materialization and plain-editor smoke success gate,final-rtc-stack/current-candidate,"blocked by benchmark-canary product closure/materialization and plain-editor
+smoke success gate"
+publish-ready,final-rtc-stack/benchmark-canary-closure,P0,no,canary closure artifacts are still required before publication,final-rtc-stack/benchmark-canary-closure,canary closure artifacts are still required before publication
+launch-owner-matrix,PR07C/HOLD-07C,high,no,runtime-held-consumed; relaunch only with newer owner evidence,PR07C/HOLD-07C,runtime-held-consumed; relaunch only with newer owner evidence
+publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,stale direct PR07C head lacks the build/type repair; use repaired head only,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head lacks the build/type repair; use repaired head only
+launch-branch-repair,deferred/generic-relaunch,high,no,"deferred families are adopted, downscoped, or superseded absent fresh product evidence",deferred/generic-relaunch,"deferred families are adopted, downscoped, or superseded absent fresh product
 evidence"
-launch-branch-repair,deferred/adopted-or-downscoped,high,no,reject generic deferred relaunch without newer product-owned first-loss evidence,deferred/adopted-or-downscoped,reject generic deferred relaunch without newer product-owned first-loss evidence
-launch-branch-repair,lower-level/productless-expansion-current-root,high,no,hold broad expansion until classifier emits canonical product key evidence or records explicit downscope,lower-level/productless-expansion-current-root,"hold broad expansion until classifier emits canonical product key evidence or
-records explicit downscope"
-publish-ready,ready-product-prs/repeat-publication,high,no,"already-published product heads need validation and accounting, not repeat publication",ready-product-prs/repeat-publication,"already-published product heads need validation and accounting, not repeat
-publication"
-publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,standalone PR15 variants duplicate already-published PR14B-based variants,ready/rtc-pr15a+15b+15c-standalone,standalone PR15 variants duplicate already-published PR14B-based variants
+launch-branch-repair,lower-level/productless-expansion-current-root,high,no,wait for canonical product keys or explicit downscope,lower-level/productless-expansion-current-root,wait for canonical product keys or explicit downscope
+publish-ready,ready-product-prs/repeat-publication,high,no,canonical real-fix branches are already published; repeat publication removes no blocker,ready-product-prs/repeat-publication,"canonical real-fix branches are already published; repeat publication removes no
+blocker"
+publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,standalone variants duplicate already-published PR14B-based variants,ready/rtc-pr15a+15b+15c-standalone,standalone variants duplicate already-published PR14B-based variants
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch,ready/rtc-pr06b-malformed-save-request-payload,superseded by already-published canonical PR06B minimal branch
-launch-branch-repair,additional-heavy-pr-fanout,P0,no,"avoid broad heavy PR fanout while canary repair and smoke gates are open, and never spend below the discovery reserve",additional-heavy-pr-fanout,"avoid broad heavy PR fanout while canary repair and smoke gates are open, and
-never spend below the discovery reserve"
-hold-publication,PR07C,P0,no,current benchmark-canary status has 90 retained product-evidence records across 2 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T025555Z/benchmark-canary-coverage-status.tsv,PR07C,"current benchmark-canary status has 90 retained product-evidence
-records across 2 row(s); repair or explicit downscope required before
-publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260709T025555Z/benchmark-canary-coverage-status.tsv"
+launch-branch-repair,heavy-pr-work-when-discovery-below-3,P0,no,heavy PR jobs must not consume the protected discovery reserve,heavy-pr-work-when-discovery-below-3,heavy PR jobs must not consume the protected discovery reserve
