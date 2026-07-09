@@ -1061,8 +1061,7 @@ function poll(): void {
 					state.log(
 						'Error posting sync update, will retry with backoff',
 						{ error, nextPoll: pollInterval },
-						'warn',
-						true // force
+						'warn'
 					);
 				}
 

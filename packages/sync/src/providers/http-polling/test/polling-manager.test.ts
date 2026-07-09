@@ -1611,7 +1611,7 @@ describe( 'polling-manager', () => {
 			expect( thirdCallPayload.rooms[ 0 ].updates ).toHaveLength( 0 );
 		} );
 
-		it( 'logs retryable post failures as warnings', async () => {
+		it( 'logs retryable post failures as non-forced warnings', async () => {
 			mockPostSyncUpdate.mockResolvedValueOnce( syncResponse );
 
 			const log = jest.fn();
@@ -1632,8 +1632,7 @@ describe( 'polling-manager', () => {
 			expect( log ).toHaveBeenCalledWith(
 				'Error posting sync update, will retry with backoff',
 				expect.objectContaining( { nextPoll: 2000 } ),
-				'warn',
-				true
+				'warn'
 			);
 		} );
 	} );
