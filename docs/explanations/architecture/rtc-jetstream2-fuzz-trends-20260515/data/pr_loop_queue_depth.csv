@@ -5,7 +5,9 @@ PR progress items,published,ready-product-pr,high,14
 PR progress items,superseded,ready-product-pr,low,1
 PR progress items,superseded-by-repair,ready-product-pr,low,1
 PR progress items,already-in-release-candidate,repair-branch-adoption,high,2
-PR progress items,stale-candidate-base,repair-branch-adoption,high,2
+PR progress items,needs-validation,repair-branch-adoption,high,1
+PR progress items,published-standalone,repair-branch-adoption,high,1
+PR progress items,stale-candidate-base,repair-branch-adoption,high,1
 PR progress items,runtime-held-consumed,runtime-gated-pr,high,1
 controller decisions,allowed,control decision,P0,17
 controller decisions,blocked,control decision,P0,5
@@ -19,14 +21,17 @@ critical blockers,active,exact-stack-promotion,high,1
 critical blockers,held,final-stack-join,high,1
 critical blockers,terminal,owner-evidence,high,1
 critical blockers,active,product-repair,high,1
-critical blockers,active,productive-exact-blocker,high,2
+critical blockers,active,productive-exact-blocker,high,1
+critical blockers,runnable,productive-exact-blocker,high,1
 critical blockers,terminal,reducer,high,2
+critical blockers,active,repair-branch-adoption,high,1
 critical job queue,terminal,browser-e2e,high,1
 critical job queue,active,codex-analysis,high,4
 critical job queue,held,codex-analysis,high,1
-critical job queue,runnable,codex-analysis,high,1
+critical job queue,runnable,codex-analysis,high,2
 critical job queue,terminal,codex-analysis,high,1
+critical job queue,queued,git-export,medium,2
 critical lanes,queued,codex-analysis,lane,4
+critical lanes,queued,git-export,lane,2
 active sessions,active,analysis,analysis,1
-active sessions,active,critical-continuation,critical-continuation,4
-active sessions,active,finalization,finalization,1
+active sessions,active,critical-continuation,critical-continuation,3
