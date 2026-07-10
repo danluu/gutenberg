@@ -889,6 +889,60 @@ describe( 'crdt', () => {
 			expect( changes ).toHaveProperty( 'blocks' );
 		} );
 
+		it( 'excludes unchanged live blocks when edited content already matches the CRDT blocks', () => {
+			registerBlockType( 'core/paragraph', {
+				apiVersion: 3,
+				category: 'text',
+				title: 'Paragraph',
+				attributes: {
+					content: {
+						type: 'rich-text',
+						source: 'rich-text',
+						selector: 'p',
+					},
+				},
+				save: ( {
+					attributes,
+				}: {
+					attributes: { content?: string | RichTextData };
+				} ) =>
+					createElement(
+						'p',
+						null,
+						createElement(
+							RawHTML,
+							null,
+							renderRichTextValue( attributes.content )
+						)
+					),
+			} );
+
+			const content = [
+				'<!-- wp:paragraph -->',
+				'<p>Already synchronized.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: parse( content ) } as PostChanges,
+				defaultSyncedProperties
+			);
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					content: {
+						raw: serializeBlocksForTest( parse( content ) ),
+						rendered: serializeBlocksForTest( parse( content ) ),
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).not.toHaveProperty( 'blocks' );
+		} );
+
 		it( 'returns rich-text block attributes as RichTextData, not strings', () => {
 			// Simulate User A writing a paragraph block into the CRDT doc.
 			addBlockToDoc( map, 'block-1', 'Hello world' );

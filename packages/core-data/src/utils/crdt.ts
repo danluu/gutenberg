@@ -522,6 +522,22 @@ export function getPostChangesFromCRDTDoc(
 						);
 					}
 
+					if ( editedRecord.content ) {
+						const blocksJson = ymap.get( 'blocks' )?.toJSON() ?? [];
+						const editedContent = getRawValue(
+							editedRecord.content
+						);
+
+						if (
+							! hasPersistedBlockContentChanged(
+								blocksJson,
+								editedContent
+							)
+						) {
+							return false;
+						}
+					}
+
 					return true;
 				}
 
