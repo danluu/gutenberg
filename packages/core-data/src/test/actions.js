@@ -977,6 +977,59 @@ describe( 'saveEntityRecord', () => {
 		expect( result ).toBe( updatedRecord );
 	} );
 
+	it( 'persists a synced post CRDT document through the sync save endpoint after a successful save', async () => {
+		const post = { id: 10, title: 'new post' };
+		const configs = [
+			{
+				name: 'post',
+				kind: 'postType',
+				baseURL: '/wp/v2/posts',
+				syncConfig: { supportsPersistence: true },
+			},
+		];
+		const syncManager = {
+			createPersistedCRDTDoc: jest.fn( () =>
+				Promise.resolve( 'serialized-crdt-doc' )
+			),
+			update: jest.fn(),
+		};
+		const select = {
+			getRawEntityRecord: () => ( { id: 10, title: 'old post' } ),
+		};
+		const resolveSelect = { getEntitiesConfig: jest.fn( () => configs ) };
+		const updatedRecord = { ...post, id: 10 };
+
+		apiFetch
+			.mockImplementationOnce( () => updatedRecord )
+			.mockImplementationOnce( () => ( {} ) );
+		getSyncManager.mockReturnValue( syncManager );
+
+		const result = await saveEntityRecord(
+			'postType',
+			'post',
+			post
+		)( { select, dispatch, resolveSelect } );
+
+		expect( apiFetch ).toHaveBeenNthCalledWith( 1, {
+			path: '/wp/v2/posts/10',
+			method: 'PUT',
+			data: post,
+		} );
+		expect( apiFetch ).toHaveBeenNthCalledWith( 2, {
+			path: '/wp-sync/v1/save',
+			method: 'POST',
+			data: {
+				room: 'postType/post:10',
+				doc: 'serialized-crdt-doc',
+			},
+		} );
+		expect( syncManager.createPersistedCRDTDoc ).toHaveBeenCalledWith(
+			'postType/post',
+			10
+		);
+		expect( result ).toBe( updatedRecord );
+	} );
+
 	it( 'receives only saved meta when a CRDT persistence save returns stale post fields', async () => {
 		const liveSyncState = {
 			isSaved: false,

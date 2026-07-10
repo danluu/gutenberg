@@ -15,7 +15,12 @@ import deprecated from '@wordpress/deprecated';
 /**
  * Internal dependencies
  */
-import { clearUnchangedEdits, getNestedValue, setNestedValue } from './utils';
+import {
+	clearUnchangedEdits,
+	getNestedValue,
+	saveCRDTDoc,
+	setNestedValue,
+} from './utils';
 import { receiveItems, removeItems, receiveQueriedItems } from './queried-data';
 import { DEFAULT_ENTITY_KEY } from './entities';
 import { createBatch } from './batch';
@@ -1431,6 +1436,18 @@ export const saveEntityRecord =
 							LOCAL_UNDO_IGNORED_ORIGIN,
 							{ isSave: true }
 						);
+						if (
+							entityConfig.syncConfig.supportsPersistence &&
+							recordId
+						) {
+							try {
+								await saveCRDTDoc( objectType, recordId );
+							} catch {
+								// The entity save already succeeded. A failed
+								// background CRDT snapshot should not turn it
+								// into a user-visible save failure.
+							}
+						}
 					}
 				}
 			} catch ( _error ) {
