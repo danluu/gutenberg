@@ -1580,6 +1580,53 @@ function isYArrayEqualToPlainArray(
 	);
 }
 
+function mergeYArrayAnchoredInsertion(
+	yArray: Y.Array< unknown >,
+	newValue: unknown[],
+	query: Record< string, BlockAttributeSchema >
+): boolean {
+	if ( newValue.length <= yArray.length ) {
+		return false;
+	}
+
+	const currentLength = yArray.length;
+	const prefixMatches = Array.from( { length: currentLength } ).every(
+		( _value, index ) =>
+			areArrayElementsEqual( newValue[ index ], yArray.get( index ) )
+	);
+
+	if ( prefixMatches ) {
+		yArray.insert(
+			currentLength,
+			newValue
+				.slice( currentLength )
+				.map( ( item ) => createYMapFromQuery( query, item, true ) )
+		);
+		return true;
+	}
+
+	const suffixOffset = newValue.length - currentLength;
+	const suffixMatches = Array.from( { length: currentLength } ).every(
+		( _value, index ) =>
+			areArrayElementsEqual(
+				newValue[ suffixOffset + index ],
+				yArray.get( index )
+			)
+	);
+
+	if ( suffixMatches ) {
+		yArray.insert(
+			0,
+			newValue
+				.slice( 0, suffixOffset )
+				.map( ( item ) => createYMapFromQuery( query, item, true ) )
+		);
+		return true;
+	}
+
+	return false;
+}
+
 function hasSharedArrayElementAnchor(
 	firstElement: unknown,
 	secondElement: unknown
@@ -1836,6 +1883,10 @@ function mergeYArray(
 	}
 
 	const query = schema.query;
+
+	if ( mergeYArrayAnchoredInsertion( yArray, newValue, query ) ) {
+		return;
+	}
 
 	if (
 		Array.isArray( baseValue ) &&
