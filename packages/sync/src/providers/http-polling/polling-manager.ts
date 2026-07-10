@@ -1193,10 +1193,19 @@ function registerRoom( {
 	const replacedState = roomStates.get( room );
 	if ( replacedState ) {
 		// A new provider can be created before the previous async load has
-		// finished tearing down. Replace the stale registration immediately so
-		// the new document can bootstrap instead of leaving the room unowned.
+		// finished tearing down. Preserve the predecessor document before
+		// detaching its listener and clearing its queue: it may contain a local
+		// update that has not reached the server yet. Applying the full Yjs state
+		// is idempotent and also covers updates already taken by an in-flight
+		// request, whose response belongs to the predecessor registration.
+		const predecessorUpdate = replacedState.createCompactionUpdate();
 		replacedState.unregister();
 		roomStates.delete( room );
+		Y.applyUpdateV2(
+			doc,
+			base64ToUint8Array( predecessorUpdate.data ),
+			POLLING_MANAGER_ORIGIN
+		);
 	}
 
 	// Note: Queue is initially paused. Call .resume() to unpause.

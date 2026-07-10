@@ -158,6 +158,7 @@ describe( 'polling-manager', () => {
 	>;
 	let mockApplyFilters: jest.Mock;
 	let mockEncoding: jest.Mocked< typeof import('lib0/encoding') >;
+	let mockSyncProtocol: jest.Mocked< typeof import('y-protocols/sync') >;
 	let mockYjs: jest.Mocked< typeof import('yjs') >;
 
 	beforeEach( () => {
@@ -172,6 +173,7 @@ describe( 'polling-manager', () => {
 				require( '../utils' ).postSyncUpdateNonBlocking;
 			mockApplyFilters = require( '@wordpress/hooks' ).applyFilters;
 			mockEncoding = require( 'lib0/encoding' );
+			mockSyncProtocol = require( 'y-protocols/sync' );
 			mockYjs = require( 'yjs' );
 		} );
 	} );
@@ -1537,6 +1539,57 @@ describe( 'polling-manager', () => {
 	} );
 
 	describe( 'error recovery', () => {
+		it( 'merges predecessor state before bootstrapping its replacement', () => {
+			mockPostSyncUpdate.mockResolvedValue( syncResponse );
+			mockYjs.encodeStateAsUpdateV2.mockReturnValueOnce(
+				new Uint8Array( [ 7, 8, 9 ] )
+			);
+
+			const firstDoc = createMockDoc( 1 );
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: firstDoc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			// Queue a local update while the first request is still in flight.
+			getOnDocUpdate( firstDoc )(
+				new Uint8Array( [ 1, 2, 3 ] ),
+				'local-editor'
+			);
+
+			const secondDoc = createMockDoc( 2 );
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: secondDoc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			expect( mockYjs.encodeStateAsUpdateV2 ).toHaveBeenCalledWith(
+				firstDoc
+			);
+			expect( mockYjs.applyUpdateV2 ).toHaveBeenCalledWith(
+				secondDoc,
+				new Uint8Array( [ 7, 8, 9 ] ),
+				'polling-manager'
+			);
+
+			const applyOrder =
+				mockYjs.applyUpdateV2.mock.invocationCallOrder[ 0 ];
+			const successorBootstrapOrder =
+				mockSyncProtocol.writeSyncStep1.mock.invocationCallOrder[
+					mockSyncProtocol.writeSyncStep1.mock.invocationCallOrder
+						.length - 1
+				];
+			expect( applyOrder ).toBeLessThan( successorBootstrapOrder );
+		} );
+
 		it( 'keeps a replacement room live when the previous provider cleans up', async () => {
 			const firstRequest = createDeferred< SyncResponse >();
 			mockPostSyncUpdate
