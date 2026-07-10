@@ -2068,10 +2068,69 @@ function mergeYArrayWithBase(
 			baseValue,
 			newValue
 		);
+		let deleteIndex = preferredDeleteIndex;
+		if ( deleteIndex === undefined && right > 0 ) {
+			deleteIndex = baseValue.length - right - 1;
+		} else if ( deleteIndex === undefined && left > 0 ) {
+			deleteIndex = left;
+		}
 
-		if ( preferredDeleteIndex !== undefined ) {
-			left = preferredDeleteIndex;
-			right = baseValue.length - preferredDeleteIndex - 1;
+		if ( deleteIndex !== undefined ) {
+			if ( preferredDeleteIndex !== undefined ) {
+				left = preferredDeleteIndex;
+				right = baseValue.length - preferredDeleteIndex - 1;
+			}
+
+			// HTML source mode has no rich-text cursor to identify its local
+			// target. If its stale snapshot both omits one row and changes a
+			// surviving row, preserve the ambiguous missing row and merge only
+			// the local value changes. A deletion-only snapshot still follows the
+			// structural delete path below.
+			const localChanges = newValue
+				.map( ( newElement, index ) => {
+					const baseIndex = index < deleteIndex ? index : index + 1;
+
+					return {
+						baseIndex,
+						newElement,
+					};
+				} )
+				.filter(
+					( { baseIndex, newElement } ) =>
+						! arePlainValuesEqual(
+							baseValue[ baseIndex ],
+							newElement
+						)
+				);
+
+			if ( localChanges.length > 0 ) {
+				for ( const { baseIndex, newElement } of localChanges ) {
+					const currentElement = yArray.get( baseIndex );
+
+					if (
+						! ( currentElement instanceof Y.Map ) ||
+						! isRecord( newElement )
+					) {
+						return false;
+					}
+
+					mergeYMapValues(
+						currentElement,
+						newElement,
+						query,
+						cursorPosition,
+						appendCursorScopeKey(
+							cursorScope,
+							baseIndex.toString()
+						),
+						isRecord( baseValue[ baseIndex ] )
+							? baseValue[ baseIndex ]
+							: undefined
+					);
+				}
+
+				return true;
+			}
 		}
 	}
 

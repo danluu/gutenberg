@@ -370,6 +370,38 @@ describe( 'stale query-array block snapshots', () => {
 		expect( getTableBody( yblocksA ) ).toHaveLength( 2 );
 	} );
 
+	it( 'preserves an ambiguous remote row when a no-cursor snapshot also edits a surviving cell', () => {
+		const { docA, docB, yblocksA, yblocksB } = createSyncedDocs( [
+			[ 'A1' ],
+			[ 'A2' ],
+		] );
+
+		const explicitBaseWithRemoteRow = [
+			tableBlock( [ [ 'A1' ], [ 'remote-A-new' ], [ 'A2' ] ] ),
+		];
+
+		mergeCrdtBlocks(
+			yblocksB,
+			[ tableBlock( [ [ 'A1' ], [ 'remote-A-new' ], [ 'A2' ] ] ) ],
+			null
+		);
+		syncDocs( docB, docA );
+		expect( getTableBody( yblocksA ) ).toHaveLength( 3 );
+
+		mergeCrdtBlocks(
+			yblocksA,
+			[ tableBlock( [ [ 'local-A1' ], [ 'A2' ] ] ) ],
+			null,
+			explicitBaseWithRemoteRow
+		);
+
+		const body = getTableBody( yblocksA );
+		expect( body ).toHaveLength( 3 );
+		expect( body[ 0 ].cells[ 0 ].content ).toBe( 'local-A1' );
+		expect( body[ 1 ].cells[ 0 ].content ).toBe( 'remote-A-new' );
+		expect( body[ 2 ].cells[ 0 ].content ).toBe( 'A2' );
+	} );
+
 	it( 'does not resurrect a remotely deleted row from a stale local snapshot', () => {
 		const { docA, docB, yblocksA, yblocksB } = createSyncedDocs( [
 			[ 'A1' ],
