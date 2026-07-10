@@ -499,38 +499,37 @@ interface CollaboratorAwarenessState {
 	collaboratorInfo?: { id?: number | string };
 }
 
+function getCollaboratorId(
+	state: LocalAwarenessState
+): number | string | undefined {
+	const collaboratorId = ( state as CollaboratorAwarenessState | null )
+		?.collaboratorInfo?.id;
+
+	return typeof collaboratorId === 'number' ||
+		typeof collaboratorId === 'string'
+		? collaboratorId
+		: undefined;
+}
+
 /**
  * Count distinct editors in an awareness response.
  *
  * A reload can briefly leave the previous Yjs client in server awareness until
  * its disconnect beacon arrives or the 30-second server timeout expires. Both
  * client IDs represent the same editor and must not trip the connection limit.
- * The current client can also appear before its collaborator identity has been
- * initialized. Defer counting that state until it has a stable identity; other
- * unidentified clients still count by client ID.
+ * States without a stable collaborator ID still count by client ID.
  *
- * @param awareness       The awareness state from the server response.
- * @param currentClientId The Yjs client ID for the current room registration.
+ * @param awareness The awareness state from the server response.
  * @return The number of distinct editors represented by the response.
  */
-function countAwarenessEditors(
-	awareness: AwarenessState,
-	currentClientId: number
-): number {
+function countAwarenessEditors( awareness: AwarenessState ): number {
 	const editorIdentities = new Set< string >();
 
 	for ( const [ clientId, state ] of Object.entries( awareness ) ) {
-		const collaboratorId = ( state as CollaboratorAwarenessState | null )
-			?.collaboratorInfo?.id;
-		const hasCollaboratorId =
-			typeof collaboratorId === 'number' ||
-			typeof collaboratorId === 'string';
-		if ( ! hasCollaboratorId && clientId === String( currentClientId ) ) {
-			continue;
-		}
+		const collaboratorId = getCollaboratorId( state );
 
 		editorIdentities.add(
-			hasCollaboratorId
+			collaboratorId !== undefined
 				? `collaborator:${ collaboratorId }`
 				: `client:${ clientId }`
 		);
@@ -554,7 +553,18 @@ function checkConnectionLimit(
 		return false;
 	}
 
-	// Limits are only enforced on the initial connection.
+	// A replacement provider can make its first request before awareness has
+	// initialized. Defer the one-time check until its stable identity is present,
+	// so a stale pre-reload client can be deduplicated without permanently
+	// allowing a genuine additional editor.
+	const currentCollaboratorId = getCollaboratorId(
+		awareness[ String( roomState.clientId ) ]
+	);
+	if ( currentCollaboratorId === undefined ) {
+		return false;
+	}
+
+	// Limits are only enforced on the first response with a stable identity.
 	hasCheckedConnectionLimit = true;
 
 	const maxClientsPerRoom = applyFilters(
@@ -563,7 +573,7 @@ function checkConnectionLimit(
 		roomState.room
 	);
 
-	const clientCount = countAwarenessEditors( awareness, roomState.clientId );
+	const clientCount = countAwarenessEditors( awareness );
 	const validatedLimit = intValueOrDefault(
 		maxClientsPerRoom,
 		DEFAULT_CLIENT_LIMIT_PER_ROOM
