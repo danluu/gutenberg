@@ -59,6 +59,20 @@ class Tests_Collaboration_WpSyncSaveServer extends WP_Test_REST_Controller_Testc
 	}
 
 	/**
+	 * Dispatches a CRDT document save request using direct params.
+	 *
+	 * @param string $room Room identifier.
+	 * @param string $doc  Serialized CRDT document.
+	 * @return WP_REST_Response Response object.
+	 */
+	private function dispatch_save_params( $room, $doc ) {
+		$request = new WP_REST_Request( 'POST', '/wp-sync/v1/save' );
+		$request->set_param( 'room', $room );
+		$request->set_param( 'doc', $doc );
+		return rest_get_server()->dispatch( $request );
+	}
+
+	/**
 	 * Returns the default room identifier for the test post.
 	 *
 	 * @return string Room identifier.
@@ -184,6 +198,28 @@ class Tests_Collaboration_WpSyncSaveServer extends WP_Test_REST_Controller_Testc
 
 		$this->assertSame( 200, $response->get_status() );
 		$this->assertSame( 'serialized-crdt-doc', get_post_meta( self::$post_id, WP_Sync_Save_Server::CRDT_DOC_META_KEY, true ) );
+	}
+
+	public function test_save_allows_unchanged_json_crdt_doc_meta() {
+		wp_set_current_user( self::$editor_id );
+		$doc = wp_json_encode(
+			array(
+				'document'       => 'AQIDBA==',
+				'recordSnapshot' => array(
+					'content' => '<!-- wp:paragraph --><p>RTC "quoted" content</p><!-- /wp:paragraph -->',
+					'title'   => 'RTC "quoted" title',
+				),
+				'updateId'       => 123,
+				'version'        => 'reduction',
+			)
+		);
+
+		$first_response  = $this->dispatch_save_params( $this->get_post_room(), $doc );
+		$second_response = $this->dispatch_save_params( $this->get_post_room(), $doc );
+
+		$this->assertSame( 200, $first_response->get_status() );
+		$this->assertSame( 200, $second_response->get_status() );
+		$this->assertSame( $doc, get_post_meta( self::$post_id, WP_Sync_Save_Server::CRDT_DOC_META_KEY, true ) );
 	}
 
 	public function test_save_rejects_taxonomy_entity() {

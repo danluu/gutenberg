@@ -125,7 +125,7 @@ if ( ! class_exists( 'WP_Sync_Save_Server' ) ) {
 
 			$doc = $request['doc'];
 
-			$updated = update_post_meta( $post_id, self::CRDT_DOC_META_KEY, $doc );
+			$updated = update_post_meta( $post_id, self::CRDT_DOC_META_KEY, wp_slash( $doc ) );
 			if ( false === $updated && get_post_meta( $post_id, self::CRDT_DOC_META_KEY, true ) !== $doc ) {
 				return new WP_Error(
 					'rest_crdt_save_failed',
