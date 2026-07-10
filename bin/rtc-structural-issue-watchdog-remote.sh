@@ -74,7 +74,7 @@ TERMINATE_RUNAWAY_SCANS=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_SCANS:-1}
 ANALYSIS_LOW_WORKER_MAX_LOAD_PER_CORE=${RTC_STRUCTURAL_WATCHDOG_ANALYSIS_LOW_WORKER_MAX_LOAD_PER_CORE:-1.0}
 ANALYSIS_MAX_CODEX_WORKERS=${RTC_STRUCTURAL_WATCHDOG_ANALYSIS_MAX_CODEX_WORKERS:-8}
 REQUIRE_LEVEL_MIX_REVIEW=${RTC_JETSTREAM_ENABLE_LEVEL_MIX_REVIEW:-0}
-REQUIRE_DUPLICATE_NOISE_REVIEW=${RTC_JETSTREAM_ENABLE_DUPLICATE_NOISE_REVIEW:-1}
+REQUIRE_DUPLICATE_NOISE_REVIEW=${RTC_JETSTREAM_ENABLE_DUPLICATE_NOISE_REVIEW:-0}
 REQUIRE_NATIVE_PROTOCOL_REVIEW=${RTC_JETSTREAM_ENABLE_NATIVE_PROTOCOL_REVIEW:-0}
 REQUIRE_ASSERT_REVIEW=${RTC_JETSTREAM_ENABLE_ASSERT_REVIEW:-0}
 
@@ -722,10 +722,12 @@ check_coverage_process_ownership() {
 }
 
 check_retained_first_green_honored() {
-	local out=$1 coverage_root=$2 state_path issues critical_blocker
+	local out=$1 coverage_root=$2 state_path manifest_path issues critical_blocker
 	state_path=$coverage_root/novelty-state.json
+	manifest_path=$coverage_root/source-manifest.tsv
 	[ -s "$state_path" ] || return 0
-	issues=$(node - "$state_path" "$coverage_root" <<'NODE'
+	[ -s "$manifest_path" ] || return 0
+	issues=$(node - "$state_path" "$coverage_root" "$manifest_path" <<'NODE'
 const fs = require( 'fs' );
 let state;
 try {
@@ -733,9 +735,17 @@ try {
 } catch {
 	process.exit( 0 );
 }
-if ( state.benchmarkCanaryRecordCountsOutputDir !== process.argv[ 3 ] ) {
-	process.exit( 0 );
+const manifest = {};
+for ( const line of fs.readFileSync( process.argv[ 4 ], 'utf8' ).split( /\r?\n/ ) ) {
+	const [ key, ...rest ] = line.split( '\t' );
+	if ( key ) {
+		manifest[ key ] = rest.join( '\t' );
+	}
 }
+const evidenceScope =
+	manifest.candidate_head && manifest.state_compatibility_sha256
+		? `${ manifest.candidate_head }:${ manifest.state_compatibility_sha256 }`
+		: `output:${ process.argv[ 3 ] }`;
 const requiredGroups = [
 	'novelty-http-plain-editor-product-smoke',
 	'novelty-http-real-world-editor-usability',
@@ -743,14 +753,66 @@ const requiredGroups = [
 const satisfied = new Set(
 	state.satisfiedRequiredFirstGreenProductGroups ?? []
 );
-for ( const group of requiredGroups ) {
-	const success = Number(
-		state.benchmarkCanaryRetainedSuccessfulRecordCountsByGroup?.[
-			group
-		] ?? 0
+const pending = new Set(
+	state.pendingRequiredFirstGreenProductGroups ?? []
+);
+const marker = new Set(
+	String( state.satisfiedRequiredFirstGreenProductGroupMarker ?? '' )
+		.split( ',' )
+		.map( ( value ) => value.trim() )
+		.filter( Boolean )
+);
+const scopedHistory = new Set(
+	( state.changes ?? [] ).flatMap( ( change ) =>
+		change?.evidenceScope === evidenceScope &&
+		[ 'scope-required-product-first-green', 'honor-retained-required-product-first-green' ].includes(
+			change.action
+		) &&
+		Array.isArray( change.groups )
+			? change.groups
+			: []
+	)
+);
+const protectedSatisfied = new Set(
+	state.protectedSatisfiedRequiredFirstGreenProductGroups ?? []
+);
+for ( const group of state.publishedSatisfiedRequiredFirstGreenProductGroups ?? [] ) {
+	if ( ! protectedSatisfied.has( group ) ) {
+		process.stdout.write( `${ group }:republished_as_generic_backfill\n` );
+	}
+}
+if (
+	( satisfied.size > 0 || scopedHistory.size > 0 ) &&
+	state.satisfiedRequiredFirstGreenProductEvidenceScope !== evidenceScope
+) {
+	process.stdout.write(
+		`scope:mismatch=${ state.satisfiedRequiredFirstGreenProductEvidenceScope ?? 'missing' }:expected=${ evidenceScope }\n`
 	);
-	if ( success > 0 && ! satisfied.has( group ) ) {
-		process.stdout.write( `${ group }:retained_success=${ success }\n` );
+}
+for ( const group of requiredGroups ) {
+	const currentOutputSuccess = Math.max(
+		Number( state.currentRunSuccessfulRecordCountsByGroup?.[ group ] ?? 0 ),
+		state.benchmarkCanaryRecordCountsOutputDir === process.argv[ 3 ]
+			? Number(
+					state.benchmarkCanaryRetainedSuccessfulRecordCountsByGroup?.[
+						group
+					] ?? 0
+			  )
+			: 0
+	);
+	if ( currentOutputSuccess > 0 && ! satisfied.has( group ) ) {
+		process.stdout.write(
+			`${ group }:current_output_success=${ currentOutputSuccess }\n`
+		);
+	}
+	if ( scopedHistory.has( group ) && ! satisfied.has( group ) ) {
+		process.stdout.write( `${ group }:durable_history_not_honored\n` );
+	}
+	if ( satisfied.has( group ) && ! marker.has( group ) ) {
+		process.stdout.write( `${ group }:marker_missing\n` );
+	}
+	if ( satisfied.has( group ) && pending.has( group ) ) {
+		process.stdout.write( `${ group }:also_pending_first_green\n` );
 	}
 }
 NODE
@@ -758,7 +820,7 @@ NODE
 	if [ -n "$issues" ]; then
 		emit_finding "$out" high "coverage-guided" "retained-first-green-not-honored" \
 			"root=$coverage_root issues=$(printf '%s' "$issues" | paste -sd, -) state=$state_path" \
-			"use current-output retained success counters for required product first-green scheduling so rotating a successful run directory cannot reopen the gate"
+			"keep required product first-green success monotonic within one candidate/state-compatibility scope so rotating an output root cannot reopen the gate"
 	fi
 	if node - "$state_path" <<'NODE'
 const fs = require( 'fs' );
@@ -822,6 +884,116 @@ check_deadline_budget_consistency() {
 		emit_finding "$out" high "resource-autoscaler" "deadline-budget-policy-mismatch" \
 			"run=$root current=$current_target/$current_max desired=$desired_target/$desired_max cap=$cap" \
 			"treat the current deadline-capped run budget as authoritative; do not replace a same-head root with a larger request that the coverage start policy will clamp back down"
+	fi
+}
+
+check_optional_browser_breadth_floor_contract() {
+	local out=$1 guard_source=$REPO/bin/rtc-jetstream-guard-remote.sh source issues=''
+	if ! grep -Fq 'if [[ "$desired" =~ ^[0-9]+$ ]] && [ "$desired" -gt 0 ] && [ "$desired" -lt "$min" ]; then' "$guard_source" 2>/dev/null ||
+		! grep -Fq 'min=$desired' "$guard_source" 2>/dev/null; then
+		emit_finding "$out" high "guard" "optional-browser-impossible-breadth-floor" \
+			"guard=$guard_source configured_floor=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-10}" \
+			"clamp the optional-pool breadth prerequisite to the autoscaler's positive desired coverage budget so a deliberate deadline cap cannot disable every optional browser pool"
+	fi
+	if ! grep -Fq 'OPTIONAL_STRICT_ENABLED_NAMES=${RTC_GUARD_OPTIONAL_STRICT_ENABLED_NAMES:-' "$guard_source" 2>/dev/null ||
+		! grep -Fq 'OPTIONAL_FOCUSED_ENABLED_NAMES=${RTC_GUARD_OPTIONAL_FOCUSED_ENABLED_NAMES:-' "$guard_source" 2>/dev/null; then
+		emit_finding "$out" high "guard" "optional-browser-unbounded-startup-fanout" \
+			"guard=$guard_source" \
+			"keep explicit bounded strict and focused profile sets in guard-managed optional starts so spare-capacity admission cannot launch every legacy profile at once"
+	fi
+	for source in \
+		"$REPO/bin/rtc-strict-expansion-start-remote.sh" \
+		"$REPO/bin/rtc-focused-shards-start-remote.sh" \
+		"$REPO/bin/rtc-gap-booster-start-remote.sh"; do
+		grep -Fq 'RTC_FUZZ_TRIAGE_MAX_PARALLEL=1' "$source" 2>/dev/null || issues="${issues}${issues:+,}$source:triage"
+		grep -Fq 'RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=1' "$source" 2>/dev/null || issues="${issues}${issues:+,}$source:live"
+	done
+	if ! grep -Fq '"$STRICT_EXPANSION_BASE"/repos-*/*' "$guard_source" 2>/dev/null ||
+		! grep -Fq '"$FOCUSED_SHARDS_BASE"/repos-*/*' "$guard_source" 2>/dev/null ||
+		! grep -Fq '"$GAP_BOOSTER_BASE"/repos-*/*' "$guard_source" 2>/dev/null ||
+		! grep -Fq 'optional_analysis_admission_allows' "$guard_source" 2>/dev/null ||
+		! grep -Fq 'tmux_session_owning_pid' "$guard_source" 2>/dev/null ||
+		! grep -Fq "tmux list-panes -a -F \$'#{session_name}\\t#{pane_pid}'" "$guard_source" 2>/dev/null ||
+		! grep -Fq "tmux list-panes -a -F \$'#{session_name}\\t#{pane_current_path}'" "$guard_source" 2>/dev/null; then
+		issues="${issues}${issues:+,}$guard_source:global-trim"
+	fi
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "analysis-productivity" "optional-browser-analysis-fanout-unbounded" \
+			"$issues" \
+			"limit optional browser triage and live analysis to one worker per pool and let the guard trim Codex workers from every optional browser repo when the global cap is exceeded"
+	fi
+}
+
+check_gate_only_timeout_contract() {
+	local out=$1 source issues=''
+	for source in \
+		"$REPO/bin/rtc-browser-fuzz-analysis-tier.mjs" \
+		"$REPO/bin/rtc-browser-fuzz-deep-analysis-tier.mjs"; do
+		if ! grep -Fq "detached: process.platform !== 'win32'" "$source" 2>/dev/null ||
+			! grep -Fq "process.kill( -child.pid, signal )" "$source" 2>/dev/null ||
+			! grep -Fq "terminateGateOnlyTriageChild( child, 'SIGKILL' )" "$source" 2>/dev/null; then
+			issues="${issues}${issues:+,}$source"
+		fi
+	done
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "coverage-guided" "gate-only-timeout-leaks-descendants" \
+			"sources=$issues" \
+			"spawn gate-only refreshes in their own process group and escalate timeout termination from SIGTERM to SIGKILL for the complete group so metadata refreshes cannot leave stale scanners or descendants"
+	fi
+}
+
+check_optional_pool_launcher_sync() {
+	local out=$1 relative stable canonical launcher_key
+	while read -r relative stable; do
+		canonical=$REPO/$relative
+		launcher_key=${stable##*/}
+		if [ ! -x "$canonical" ]; then
+			emit_finding "$out" high "guard" "optional-pool-versioned-launcher-missing-$launcher_key" \
+				"canonical=$canonical stable=$stable" \
+				"restore the versioned optional-pool launcher before admitting that pool"
+			continue
+		fi
+		if [ ! -x "$stable" ] || ! cmp -s "$canonical" "$stable"; then
+			emit_finding "$out" high "guard" "optional-pool-stable-launcher-missing-or-stale-$launcher_key" \
+				"canonical=$canonical stable=$stable" \
+				"let the guard atomically refresh the stable launcher from the versioned source, then retry the optional pool"
+		fi
+	done <<'LAUNCHERS'
+bin/rtc-strict-expansion-start-remote.sh /tmp/start_rtc_strict_expansion.sh
+bin/rtc-focused-shards-start-remote.sh /tmp/start_rtc_focused_shards.sh
+bin/rtc-focused-shards-cleanup-remote.sh /tmp/cleanup_rtc_focused_shards.sh
+bin/rtc-focused-shards-gap-codex-loop-remote.sh /tmp/start_rtc_focused_gap_codex_loop.sh
+bin/rtc-gap-booster-start-remote.sh /tmp/start_rtc_gap_booster.sh
+LAUNCHERS
+}
+
+check_docker_network_capacity() {
+	local out=$1 reaper=$REPO/bin/rtc-docker-network-reaper-remote.mjs guard=$REPO/bin/rtc-jetstream-guard-remote.sh
+	local count trigger=${RTC_DOCKER_NETWORK_REAPER_TRIGGER_COUNT:-24}
+	if [ ! -x "$reaper" ]; then
+		emit_finding "$out" high "docker" "network-reaper-missing" \
+			"reaper=$reaper" \
+			"restore the bounded ownership-aware stale wp-env project reaper"
+		return
+	fi
+	if ! grep -Fq 'DOCKER_NETWORK_REAPER_TRIGGER_COUNT=${RTC_DOCKER_NETWORK_REAPER_TRIGGER_COUNT:-24}' "$guard" 2>/dev/null ||
+		! grep -Fq 'RTC_DOCKER_NETWORK_REAPER_TARGET_COUNT=${RTC_DOCKER_NETWORK_REAPER_TARGET_COUNT:-20}' "$guard" 2>/dev/null ||
+		! grep -Fq 'RTC_DOCKER_NETWORK_REAPER_MAX_PROJECTS=${RTC_DOCKER_NETWORK_REAPER_MAX_PROJECTS:-4}' "$guard" 2>/dev/null ||
+		! grep -Fq 'RTC_DOCKER_NETWORK_REAPER_EMPTY_RETENTION_SECONDS=${RTC_DOCKER_NETWORK_REAPER_EMPTY_RETENTION_SECONDS:-300}' "$guard" 2>/dev/null ||
+		! grep -Fq 'setsid timeout 90 "$NODE_BIN/node" "$DOCKER_NETWORK_REAPER"' "$guard" 2>/dev/null ||
+		! grep -Fq 'child_pid_is_group=1' "$guard" 2>/dev/null ||
+		! grep -Fq "'20'," "$reaper" 2>/dev/null; then
+		emit_finding "$out" high "docker" "network-reaper-trigger-exceeds-optional-admission-limit" \
+			"guard=$guard optional_limit=24" \
+			"run stale continuation cleanup at 24 networks with a target of 20, before strict and focused optional-pool admission blocks at 24"
+		return
+	fi
+	count=$(docker network ls -q 2>/dev/null | wc -l | tr -d ' ')
+	[[ "$count" =~ ^[0-9]+$ ]] || return
+	if [ "$count" -ge "$trigger" ]; then
+		emit_finding "$out" high "docker" "network-pool-near-exhaustion" \
+			"networks=$count trigger=$trigger status=/media/volume/danluu-fuzz-data/rtc-docker-network-reaper-20260710/current-status.json" \
+			"run the bounded stale wp-env project reaper and keep optional starts blocked until Docker has subnet headroom"
 	fi
 }
 
@@ -1141,6 +1313,15 @@ critical_script_has_repair_adoption_progress_support() {
 	rg -q 'Do not run unscoped `git status`' "$script" || return 1
 }
 
+critical_script_has_candidate_scoped_dedupe_support() {
+	local script=$1
+	[ -s "$script" ] || return 1
+	grep -Fq 'candidate_key=${candidate_head:0:12}' "$script" || return 1
+	grep -Fq 'benchmark-canary-exact-stack-$candidate_key-' "$script" || return 1
+	grep -Fq 'benchmark-canary-product-failure-$candidate_key-' "$script" || return 1
+	grep -Fq 'productive-exact-v3-$candidate_key-$blocker_id' "$script" || return 1
+}
+
 critical_script_sha() {
 	local script=$1
 	if [ -s "$script" ]; then
@@ -1156,6 +1337,7 @@ sync_critical_executor_copies_if_safe() {
 	critical_script_has_benchmark_refresh_support "$CRITICAL_REPO_SCRIPT" || return 1
 	critical_script_has_stable_runtime_support "$CRITICAL_REPO_SCRIPT" || return 1
 	critical_script_has_repair_adoption_progress_support "$CRITICAL_REPO_SCRIPT" || return 1
+	critical_script_has_candidate_scoped_dedupe_support "$CRITICAL_REPO_SCRIPT" || return 1
 	bash -n "$CRITICAL_REPO_SCRIPT" >/dev/null 2>&1 || return 1
 	for target in "$CRITICAL_DEPLOYED_SCRIPT" "$CRITICAL_TMP_SCRIPT"; do
 		if [ ! -s "$target" ] || ! cmp -s "$CRITICAL_REPO_SCRIPT" "$target"; then
@@ -1204,10 +1386,13 @@ check_critical_path_script_copies() {
 	critical_script_has_repair_adoption_progress_support "$CRITICAL_REPO_SCRIPT" || missing_support=1
 	critical_script_has_repair_adoption_progress_support "$CRITICAL_DEPLOYED_SCRIPT" || missing_support=1
 	critical_script_has_repair_adoption_progress_support "$CRITICAL_TMP_SCRIPT" || missing_support=1
+	critical_script_has_candidate_scoped_dedupe_support "$CRITICAL_REPO_SCRIPT" || missing_support=1
+	critical_script_has_candidate_scoped_dedupe_support "$CRITICAL_DEPLOYED_SCRIPT" || missing_support=1
+	critical_script_has_candidate_scoped_dedupe_support "$CRITICAL_TMP_SCRIPT" || missing_support=1
 	if [ "$missing_support" = 1 ]; then
 		emit_finding "$out" high "critical-path" "critical-executor-required-support-missing" \
 			"repo=$CRITICAL_REPO_SCRIPT sha=$repo_sha deployed=$CRITICAL_DEPLOYED_SCRIPT sha=$deployed_sha tmp=$CRITICAL_TMP_SCRIPT sha=$tmp_sha" \
-			"restore every required critical-path invariant, including terminal PR ownership, benchmark refresh delivery, repair adoption, and generated-harness overlay stripping; synchronize all copies and restart rtc-critical-path-pr-executor-loop"
+			"restore every required critical-path invariant, including terminal PR ownership, benchmark refresh delivery, candidate-scoped continuation dedupe, repair adoption, and generated-harness overlay stripping; synchronize all copies and restart rtc-critical-path-pr-executor-loop"
 	fi
 	if [ "$repo_sha" != "missing" ] && { [ "$repo_sha" != "$deployed_sha" ] || [ "$repo_sha" != "$tmp_sha" ]; }; then
 		emit_finding "$out" high "critical-path" "critical-executor-script-copy-drift" \
@@ -1908,9 +2093,12 @@ NODE
 }
 
 check_gate_only_triage_processes() {
-	local out=$1 issues
-	issues=$(node <<'NODE'
+	local out=$1 analysis_issues stalled_issues orphan_issues
+	local -a gate_only_issue_groups=()
+	readarray -t gate_only_issue_groups < <(node <<'NODE'
 const { execFileSync } = require( 'child_process' );
+const fs = require( 'fs' );
+const os = require( 'os' );
 const rows = execFileSync( 'ps', [ '-eo', 'pid=,ppid=,etimes=,args=' ], {
 	encoding: 'utf8',
 } )
@@ -1924,10 +2112,44 @@ const rows = execFileSync( 'ps', [ '-eo', 'pid=,ppid=,etimes=,args=' ], {
 		args: match[ 4 ],
 	} ) );
 const byPid = new Map( rows.map( ( row ) => [ row.pid, row ] ) );
+const clockTicks = Number(
+	execFileSync( 'getconf', [ 'CLK_TCK' ], { encoding: 'utf8' } ).trim()
+);
+const processAge = ( pid ) => {
+	try {
+		const stat = fs.readFileSync( `/proc/${ pid }/stat`, 'utf8' );
+		const fields = stat.slice( stat.lastIndexOf( ') ' ) + 2 ).split( /\s+/ );
+		const startTicks = Number( fields[ 19 ] );
+		if ( ! Number.isFinite( startTicks ) || ! Number.isFinite( clockTicks ) ) {
+			return null;
+		}
+		return Math.max( 0, Math.floor( os.uptime() - startTicks / clockTicks ) );
+	} catch {
+		return null;
+	}
+};
+const isAlive = ( pid ) => {
+	try {
+		process.kill( pid, 0 );
+		return true;
+	} catch {
+		return false;
+	}
+};
 const watchers = rows.filter( ( row ) =>
 	/rtc-browser-fuzz-triage-watcher[.]mjs .*--gate-only/.test( row.args )
 );
+const analysisIssues = [];
+const stalledIssues = [];
+const orphanIssues = [];
 for ( const watcher of watchers ) {
+	if ( ! isAlive( watcher.pid ) ) {
+		continue;
+	}
+	const age = processAge( watcher.pid );
+	if ( age === null ) {
+		continue;
+	}
 	const codexDescendants = rows.filter( ( row ) => {
 		if ( ! /(?:^|[/ ])codex(?: |$).*\bexec\b/.test( row.args ) ) {
 			return false;
@@ -1941,12 +2163,14 @@ for ( const watcher of watchers ) {
 		}
 		return false;
 	} );
-	if ( watcher.age >= 60 || codexDescendants.length > 0 ) {
-		process.stdout.write(
-			`pid=${ watcher.pid }:age=${ watcher.age }:codex=${ codexDescendants
+	if ( codexDescendants.length > 0 ) {
+		analysisIssues.push(
+			`pid=${ watcher.pid }:age=${ age }:codex=${ codexDescendants
 				.map( ( row ) => row.pid )
-				.join( ',' ) || 'none' }\n`
+				.join( ',' ) }`
 		);
+	} else if ( age >= 180 ) {
+		stalledIssues.push( `pid=${ watcher.pid }:age=${ age }` );
 	}
 }
 for ( const row of rows ) {
@@ -1955,15 +2179,29 @@ for ( const row of rows ) {
 		row.args.includes( '.triage-watcher/signatures/' ) &&
 		( row.ppid === 1 || ! byPid.has( row.ppid ) )
 	) {
-		process.stdout.write( `orphan-codex=${ row.pid }:age=${ row.age }\n` );
+		const age = processAge( row.pid );
+		if ( age !== null && isAlive( row.pid ) ) {
+			orphanIssues.push( `orphan-codex=${ row.pid }:age=${ age }` );
+		}
 	}
 }
+process.stdout.write( `${ analysisIssues.join( ',' ) }\n` );
+process.stdout.write( `${ stalledIssues.join( ',' ) }\n` );
+process.stdout.write( `${ orphanIssues.join( ',' ) }\n` );
 NODE
 	)
-	if [ -n "$issues" ]; then
+	analysis_issues=${gate_only_issue_groups[0]:-}
+	stalled_issues=${gate_only_issue_groups[1]:-}
+	orphan_issues=${gate_only_issue_groups[2]:-}
+	if [ -n "$analysis_issues" ] || [ -n "$orphan_issues" ]; then
 		emit_finding "$out" high "coverage-guided" "gate-only-triage-launched-analysis" \
-			"processes=$(printf '%s' "$issues" | paste -sd, -)" \
+			"processes=$(printf '%s,%s' "$analysis_issues" "$orphan_issues" | sed 's/^,//;s/,$//')" \
 			"make --gate-only update signature state without launching Codex, bound refresh concurrency and timeout, terminate the complete gate-refresh process group on timeout, and retire orphaned gate-refresh Codex descendants"
+	fi
+	if [ -n "$stalled_issues" ]; then
+		emit_finding "$out" high "coverage-guided" "gate-only-triage-stalled" \
+			"processes=$stalled_issues" \
+			"terminate the complete stale gate-refresh process group, preserve the bounded timeout and SIGKILL escalation in every caller, and inspect the exact current-run state file that made the metadata-only refresh exceed three minutes"
 	fi
 }
 
@@ -1984,6 +2222,63 @@ check_codex_frozen_candidate_cwd() {
 			"terminate the offending job, restore versioned harness files from the matching control hash, route coverage guidance to the writable harness checkout, and route failure analysis to the generation's disposable isolated repo"
 	fi
 	return 0
+}
+
+check_codex_control_repo_cwd() {
+	local out=$1 pid cwd issues=''
+	for pid in $(pgrep -f 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true); do
+		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
+		[ "$cwd" = "$REPO" ] || continue
+		issues="${issues}${issues:+,}pid=$pid:cwd=$cwd"
+	done
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "automation-control" "codex-writing-live-control-repo" \
+			"$issues" \
+			"terminate the live-control writer and relaunch diagnostics read-only or repairs in a disposable proposal workspace; never mutate the harness source used to validate an active generation"
+	fi
+}
+
+check_repair_writer_isolation_contract() {
+	local out=$1 structural=$REPO/bin/rtc-structural-issue-watchdog-remote.sh
+	local guard=$REPO/bin/rtc-jetstream-guard-remote.sh launcher=$REPO/bin/rtc-coverage-guided-start-remote.sh
+	local duplicate_noise=$REPO/bin/rtc-duplicate-noise-persona-loop-remote.sh
+	local focused_gap=$REPO/bin/rtc-focused-shards-gap-codex-loop-remote.sh
+	local productive_analysis=$REPO/bin/rtc-productive-analysis-loop-remote.sh
+	local pr_progress=$REPO/bin/rtc-pr-progress-controller-remote.sh issues='' pr_progress_danger_count
+	grep -Fq -- '-s workspace-write' "$structural" 2>/dev/null || issues="${issues}${issues:+,}structural_workspace_sandbox_missing"
+	grep -Fq 'cd "$workspace"' "$structural" 2>/dev/null || issues="${issues}${issues:+,}structural_proposal_workspace_missing"
+	if sed -n '/^launch_repair_jobs() {/,/^write_status() {/p' "$structural" 2>/dev/null |
+		grep -Fq -- '-s danger-full-access'; then
+		issues="${issues}${issues:+,}structural_danger_full_access"
+	fi
+	grep -Fq -- '-s read-only' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_read_only_diagnostic_missing"
+	grep -Fq 'stop_codex_in_control_repo' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_live_writer_stop_missing"
+	grep -Fq 'restore_control_harness_from_frozen' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_frozen_restore_missing"
+	grep -Fq 'ENABLE_DUPLICATE_NOISE_REVIEW=${RTC_JETSTREAM_ENABLE_DUPLICATE_NOISE_REVIEW:-0}' "$guard" 2>/dev/null || issues="${issues}${issues:+,}duplicate_noise_default_enabled"
+	grep -Fq -- '-s read-only' "$duplicate_noise" 2>/dev/null || issues="${issues}${issues:+,}duplicate_noise_read_only_missing"
+	if grep -Fq -- '-s danger-full-access' "$duplicate_noise" 2>/dev/null; then
+		issues="${issues}${issues:+,}duplicate_noise_live_writer_enabled"
+	fi
+	grep -Fq 'cd "$lane_dir"' "$productive_analysis" 2>/dev/null || issues="${issues}${issues:+,}productive_analysis_workspace_missing"
+	grep -Fq -- '-s workspace-write' "$productive_analysis" 2>/dev/null || issues="${issues}${issues:+,}productive_analysis_workspace_sandbox_missing"
+	if grep -Fq -- '-s danger-full-access' "$productive_analysis" 2>/dev/null; then
+		issues="${issues}${issues:+,}productive_analysis_live_writer_enabled"
+	fi
+	grep -Fq 'ENABLE_FOCUSED_GAP_CODEX=${RTC_JETSTREAM_ENABLE_FOCUSED_GAP_CODEX:-0}' "$guard" 2>/dev/null || issues="${issues}${issues:+,}focused_gap_default_enabled"
+	grep -Fq -- '-s read-only' "$focused_gap" 2>/dev/null || issues="${issues}${issues:+,}focused_gap_read_only_missing"
+	if grep -Fq -- '-s danger-full-access' "$focused_gap" 2>/dev/null; then
+		issues="${issues}${issues:+,}focused_gap_live_writer_enabled"
+	fi
+	pr_progress_danger_count=$(grep -Fc -- '-s danger-full-access' "$pr_progress" 2>/dev/null || true)
+	[ "$pr_progress_danger_count" = 1 ] || issues="${issues}${issues:+,}pr_progress_unisolated_danger_count=$pr_progress_danger_count"
+	grep -Fq 'cd "$worktree"' "$pr_progress" 2>/dev/null || issues="${issues}${issues:+,}pr_progress_repair_worktree_missing"
+	grep -Fq 'git -C "$SRC" worktree add --detach "$worktree" "$branch"' "$pr_progress" 2>/dev/null || issues="${issues}${issues:+,}pr_progress_repair_worktree_setup_missing"
+	grep -Fq "export RTC_FUZZ_NOVELTY_COVERAGE_CODEX='0'" "$launcher" 2>/dev/null || issues="${issues}${issues:+,}coverage_guidance_writer_enabled"
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "automation-control" "live-control-writer-isolation-missing" \
+			"$issues structural=$structural guard=$guard launcher=$launcher" \
+			"keep active-generation harness sources immutable: use disposable workspace-write proposal directories for repairs, read-only guard diagnostics, disabled in-generation guidance, and frozen-source restoration for drift"
+	fi
 }
 
 check_plain_editor_false_green() {
@@ -2403,6 +2698,10 @@ detect_findings() {
 	check_tmux_capture_guard "$tmp"
 	check_coverage_process_ownership "$tmp"
 	check_deadline_budget_consistency "$tmp"
+	check_optional_browser_breadth_floor_contract "$tmp"
+	check_gate_only_timeout_contract "$tmp"
+	check_optional_pool_launcher_sync "$tmp"
+	check_docker_network_capacity "$tmp"
 	check_novelty_monitor_budget_policy_contract "$tmp"
 	check_resource_budget_application_consistency "$tmp"
 	check_actionable_product_failure_bridge "$tmp"
@@ -2429,6 +2728,8 @@ detect_findings() {
 	fi
 	check_gate_only_triage_processes "$tmp"
 	check_codex_frozen_candidate_cwd "$tmp"
+	check_codex_control_repo_cwd "$tmp"
+	check_repair_writer_isolation_contract "$tmp"
 	check_active_continuation_vendor_mounts "$tmp"
 	check_stuck_critical_cleanup "$tmp"
 	check_unknown_action_profile_startup_failures "$tmp"
@@ -2468,7 +2769,7 @@ recent_repair_for_key() {
 }
 
 write_repair_prompt() {
-	local prompt=$1 report=$2 finding_line=$3 key=$4
+	local prompt=$1 report=$2 finding_line=$3 key=$4 workspace=$5 baseline=$6
 	cat > "$prompt" <<PROMPT
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
@@ -2506,9 +2807,9 @@ Task:
 	   - $ANALYSIS_PRODUCTIVITY_REPORT
 	   - $ARTIFACT_INDEX_ARTIFACTS when it is relevant and fresh enough for the question
 	   - tmux -L rtc-fuzz list-sessions -F '#S'
-3. If a minimal safe fix is clear, apply it to scripts under $REPO/bin and the relevant deployed /tmp launcher, run focused syntax checks, and restart only the affected loop. Do not stop broad fuzzing or unrelated loops.
-4. For critical-path executor issues, keep the repo script, deployed script, and /tmp guard restart script synchronized unless evidence proves one copy is intentionally different.
-5. If the fix belongs in the script branch, leave a patch or exact file list in the report so the local publisher can persist it to danluu/try/jetstream-fuzz.
+3. If a minimal safe fix is clear, edit only the proposal copies under $workspace/bin. The live repo, deployed controller scripts, /tmp launchers, and running loops are read-only evidence for this job.
+4. For critical-path executor issues, make the proposed change in $workspace/bin/rtc-critical-path-pr-executor-loop-remote.sh and document which deployed copies would need synchronization after review.
+5. The runner will create a patch by comparing $baseline with $workspace. Include the exact proposed file list, validation commands, and restart scope in the report so the local publisher can review and persist it.
 6. Do not classify the issue as fixed unless the invariant that fired this finding is no longer true.
 7. For runaway scan findings, identify the controller or graph path that launched the scan and replace it with the artifact index, a current-run-only scan, or a bounded command. Do not just terminate the process.
 8. For analysis-productivity findings, decide whether more Codex analysis would actually advance PR/fuzzer work. If yes, fix the admission/cooldown/session-accounting problem and launch targeted unblock analysis. If no, write the exact reason and the invariant that should prevent future false alarms.
@@ -2519,6 +2820,7 @@ Guardrails:
 - Do not use behavior-disabling flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
 - Do not run broad browser fuzzing from this repair job.
 - Prefer bounded shell probes and exact source edits.
+- Do not write outside $workspace. Do not modify $REPO, $CRITICAL_DEPLOYED_SCRIPT, $CRITICAL_TMP_SCRIPT, /tmp launchers, status artifacts, ledgers, or tmux sessions.
 - Do not run historical or aggregate scans such as \`du -shx\` over /media/volume/danluu-fuzz-data, /tmp, /var/tmp, /home/exouser, the repo root, or old runs. Use current status files, launch ledgers, the artifact index, current-output-dir, or one exact current-run path instead.
 - If size or disk evidence is necessary, prefer \`df -h\` or \`stat\` on exact files. Any \`du\`, \`find\`, \`rg\`, or \`grep\` must be limited to one current-run/artifact path and bounded with \`timeout\`, \`-maxdepth\`, \`-m\`, or an equivalent small script.
 - For runaway scan findings, record the controller/session path that launched the scan, patch that path to use the bounded/indexed probe, then verify $RUNAWAY_SCAN_REPORT no longer lists the process.
@@ -2527,6 +2829,7 @@ PROMPT
 
 launch_repair_jobs() {
 	local line severity component key evidence next_action issue_key session ts run_dir prompt report stderr runner
+	local workspace baseline proposal proposal_status source destination
 	awk -F '\t' 'NR > 1 && $2 == "high" { print }' "$FINDINGS" |
 		while IFS=$'\t' read -r _ts severity component key evidence next_action; do
 			[ -n "$key" ] || continue
@@ -2547,17 +2850,27 @@ launch_repair_jobs() {
 				continue
 			fi
 			run_dir="$BASE/runs/$ts-$issue_key"
-			mkdir -p "$run_dir"
+			workspace="$run_dir/workspace"
+			baseline="$run_dir/baseline"
+			proposal="$run_dir/proposed.patch"
+			proposal_status="$run_dir/proposal-status.tsv"
+			mkdir -p "$workspace/bin" "$baseline/bin"
+			for source in "$REPO"/bin/rtc-*; do
+				[ -f "$source" ] || continue
+				destination=${source##*/}
+				cp -p "$source" "$workspace/bin/$destination"
+				cp -p "$source" "$baseline/bin/$destination"
+			done
 			prompt="$run_dir/prompt.md"
 			report="$run_dir/report.md"
 			stderr="$run_dir/stderr.log"
 			runner="$run_dir/run.sh"
 			line=$(printf '%s\t%s\t%s\t%s\t%s\t%s' "$_ts" "$severity" "$component" "$key" "$evidence" "$next_action")
-			write_repair_prompt "$prompt" "$report" "$line" "$issue_key"
+			write_repair_prompt "$prompt" "$report" "$line" "$issue_key" "$workspace" "$baseline"
 			cat > "$runner" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$REPO"
+cd "$workspace"
 child_pid=
 cleanup() {
 	if [ -n "\$child_pid" ] && kill -0 "\$child_pid" 2>/dev/null; then
@@ -2567,7 +2880,7 @@ cleanup() {
 }
 trap 'cleanup; exit 0' HUP INT TERM
 trap cleanup EXIT
-setsid timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" &
+setsid timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s workspace-write < "$prompt" > "$report" 2> "$stderr" &
 child_pid=\$!
 printf '%s\n' "\$child_pid" > "$run_dir/codex.pid"
 set +e
@@ -2575,6 +2888,31 @@ wait "\$child_pid"
 set -e
 child_pid=
 rm -f "$run_dir/codex.pid"
+set +e
+diff -ruN "$baseline" "$workspace" > "$proposal"
+diff_rc=\$?
+set -e
+validation=pass
+if [ "\$diff_rc" -gt 1 ]; then
+	validation=diff_failed
+elif [ -s "$proposal" ]; then
+	for script in "$workspace"/bin/rtc-*.sh; do
+		[ -f "\$script" ] || continue
+		bash -n "\$script" || validation=failed
+	done
+	for script in "$workspace"/bin/rtc-*.mjs; do
+		[ -f "\$script" ] || continue
+		"$NODE_BIN/node" --check "\$script" || validation=failed
+	done
+fi
+{
+	printf 'timestamp\tresult\tvalidation\tpatch\n'
+	if [ -s "$proposal" ]; then
+		printf '%s\tproposal_ready\t%s\t%s\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" "\$validation" "$proposal"
+	else
+		printf '%s\tno_change\t%s\t%s\n' "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" "\$validation" "$proposal"
+	fi
+} > "$proposal_status"
 EOF
 			chmod +x "$runner"
 			printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$issue_key" "$session" "$key" "$run_dir" >> "$REPAIR_LEDGER"

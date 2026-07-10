@@ -252,6 +252,7 @@ async function refreshGateOnlyTriageState() {
 		[ TRIAGE_WATCHER_PATH, RUN_DIR, '--once', '--gate-only' ],
 		{
 			cwd: REPO_ROOT,
+			detached: process.platform !== 'win32',
 			env: getGateOnlyTriageEnv(),
 			stdio: [ 'ignore', 'pipe', 'pipe' ],
 		}
@@ -268,11 +269,14 @@ async function refreshGateOnlyTriageState() {
 	} );
 
 	let timedOut = false;
+	let killTimer = null;
 	const timeout = setTimeout( () => {
 		timedOut = true;
-		try {
-			child.kill( 'SIGTERM' );
-		} catch {}
+		terminateGateOnlyTriageChild( child, 'SIGTERM' );
+		killTimer = setTimeout( () => {
+			terminateGateOnlyTriageChild( child, 'SIGKILL' );
+		}, 5000 );
+		killTimer.unref();
 	}, TRIAGE_GATE_TIMEOUT_MS );
 
 	const exitCode = await new Promise( ( resolve, reject ) => {
@@ -280,6 +284,7 @@ async function refreshGateOnlyTriageState() {
 		child.on( 'close', ( code ) => resolve( code ) );
 	} );
 	clearTimeout( timeout );
+	clearTimeout( killTimer );
 
 	const result = {
 		status: exitCode === 0 && ! timedOut ? 'ok' : 'failed',
@@ -296,6 +301,21 @@ async function refreshGateOnlyTriageState() {
 	}
 
 	return result;
+}
+
+function terminateGateOnlyTriageChild( child, signal ) {
+	if ( ! child?.pid ) {
+		return;
+	}
+	if ( process.platform !== 'win32' ) {
+		try {
+			process.kill( -child.pid, signal );
+			return;
+		} catch {}
+	}
+	try {
+		child.kill( signal );
+	} catch {}
 }
 
 function isPathInsideRoot( filePath, root ) {

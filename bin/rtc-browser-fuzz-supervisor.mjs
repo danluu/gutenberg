@@ -1690,6 +1690,11 @@ async function retryWpEnvStartAfterNetworkPoolExhaustion(
 	if ( ! pruned ) {
 		return startResult;
 	}
+	await cleanPartialWpEnvCheckoutsBeforeStartRetry(
+		group,
+		`${ action }-partial-checkout-cleanup`,
+		startResult.output
+	);
 	await event( {
 		group: group.name,
 		kind: 'repair',
@@ -2041,7 +2046,36 @@ async function pruneDockerNetworksForWpEnvStartup( group, reason, output ) {
 	}
 
 	await log(
-		`${ group.name }: wp-env start exhausted Docker address pools; pruning unused Docker networks before retry.`
+		`${ group.name }: wp-env start exhausted Docker address pools; pruning stopped containers and unused Docker networks before retry.`
+	);
+	const containerPrune = await runCommand( {
+		command: 'docker',
+		args: [ 'container', 'prune', '-f' ],
+		cwd: group.repoRoot,
+		env: buildEnv( group ),
+		timeoutMs: 3 * 60 * 1000,
+		logPath: path.join(
+			OUTPUT_DIR,
+			`${ group.name }-docker-stopped-container-prune.log`
+		),
+	} );
+	await event( {
+		group: group.name,
+		kind: 'repair',
+		action: 'docker-stopped-container-prune',
+		reason,
+		ok: containerPrune.ok,
+		code: containerPrune.code,
+		output: getOutputSnippet( containerPrune.output ),
+	} );
+	if ( ! containerPrune.ok ) {
+		await log(
+			`${ group.name }: stopped-container prune failed while repairing Docker address pool exhaustion; attempting network prune anyway.`
+		);
+	}
+
+	await log(
+		`${ group.name }: pruning unused Docker networks after stopped-container cleanup.`
 	);
 	const result = await runCommand( {
 		command: 'docker',

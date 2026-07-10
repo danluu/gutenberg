@@ -232,8 +232,12 @@ source-provenance failures, not by a lack of candidate bugs:
     leaked descendants pushed analysis over its worker cap. Gate-only now updates
     signature state without launching Codex, refreshes run with bounded
     concurrency and a 30-second timeout, and timeout/shutdown terminates the whole
-    refresh process group. Structural health reports any gate-only watcher that
-    lives for a minute or has a Codex descendant.
+    refresh process group. The analysis and deep-analysis callers use the same
+    process-group termination with a five-second `SIGKILL` fallback. Structural
+    health reports a real Codex descendant immediately and reports a metadata-only
+    refresh separately only after it remains live for three minutes; process age
+    comes from `/proc`, so an exiting PID or wrapped `ps etimes` value cannot
+    create a false multi-year stall.
 -   Full novelty passes can still be doing bounded triage when the supervisor
     discovers a product failure. The 60-second status heartbeat now synchronizes
     product-failure quarantine and republishes the producer set immediately.
@@ -256,11 +260,14 @@ source-provenance failures, not by a lack of candidate bugs:
     a runner/oracle fix could be disabled and later republished with the old
     harness; this is why the replacement reference-oracle lane still emitted the
     pre-fix `kind=infra` record. The monitor now content-hashes a bounded overlay
-    of `bin/rtc-*`, editor collaboration tests/config, wp-env config, and the test
-    provider; it atomically synchronizes changed files, records a per-repo
-    manifest, and terminates lanes that loaded stale code. Supervisor admission
-    requires the published overlay signature, and structural health compares
-    critical files in every published repo with the frozen candidate.
+    of browser-runtime scripts, editor collaboration tests/config, wp-env config,
+    and the test provider; it atomically synchronizes changed files, records a
+    per-repo manifest, and terminates lanes that loaded stale code. Guard,
+    scheduler, PR, and runbook controller scripts are deliberately excluded, so
+    an operational controller deployment cannot invalidate every browser repo.
+    Supervisor admission requires the published overlay signature, and structural
+    health compares critical files in every published repo with the frozen
+    candidate.
 -   A live harness deployment briefly changes the frozen file before atomically
     replacing `source-manifest.tsv`. The guard previously interpreted that
     seconds-long window as durable drift and replaced the same-candidate campaign
@@ -574,14 +581,140 @@ previous 403 remains an open ancestor-head `likely_real` record with signature
 `benchmark-canary-product-failure`. The new CRDT persistence fix is unrelated
 to either unresolved failure, so the branch is not yet ready for human review.
 
-After the discovery artifacts were durable, the final hard-budget source
-contract intentionally replaced that root once. Active root
-`run-20260710T065736Z` remains on candidate `7e9dbc66`, records novelty monitor
-`b4576372`, and has matching locked/effective/run budgets of `5/5` with exactly
-five published groups. The unchanged state-compatibility hash carried
-`satisfiedRequiredFirstGreenProductGroups`, so the eight passing product-smoke
-seeds were not discarded or rerun. `run-20260710T063249Z` remains an observed
-analysis source for both newly found large-post failures.
+After the discovery artifacts were durable, the hard-budget source contract
+intentionally replaced that root. The reload exposed a second scheduler defect:
+plain-editor first-green was initially carried, then lost when current-output
+retained counters were reset. A July 10 follow-up audit traced that evidence
+through every consumer. The monitor now keeps first-green monotonic within a
+`candidate_head:state_compatibility_sha256` scope, migrates legacy same-scope
+change history, computes pending gates from the durable set, excludes satisfied
+gates from generic backfill, and lets deadline benchmark closure consume the
+same marker. Candidate or evidence-contract changes still reset the proof.
+
+The fail-closed source checker now requires the hard-budget, first-green,
+strict-cap ownership, and control-plane overlay contracts. Structural health
+reports scope mismatch, marker shrinkage, satisfied-plus-pending state, or
+generic republication. Controlled contract migrations culminated in active
+root `run-20260710T082725Z`, still on candidate `7e9dbc66`, state compatibility
+`ecafc266`, and novelty monitor `4766449f`. Its locked/effective/run budget is
+`5/5`. Both required human workflows remain satisfied in the scoped durable
+marker and are neither pending nor republished as generic backfill. The eight
+passing product-smoke seeds remain durable evidence rather than being discarded
+on an operational root change. Discovery root
+`run-20260710T063249Z` remains an observed analysis source for both newly found
+large-post failures.
+
+The next aggregate repair produced
+`352b0431394f6717fb79f1d52e877519a605bb1b` (`Fix RTC save hydration dirty
+block edits`). It suppresses a redundant live `blocks` edit when the edited
+post content already serializes to the same CRDT block document and adds focused
+regression coverage. The isolated adoption worktree passed the complete focused
+CRDT utility suite: 56 tests in one suite, plus `git diff --check`. The local
+publisher compare-and-swap fast-forwarded
+`js2/all-merged-rebased-20260701` from `7e9dbc66` to `352b0431`; JS2 observed the
+ref change and began exact-head validation. After the final scheduler deployment,
+the authoritative root is `run-20260710T092541Z`, with candidate `352b0431`,
+novelty monitor `b3aff546`, state compatibility `ecafc266`, and a `5/5` startup
+budget. New-head plain-editor seed `1255001` passed the real title, paragraph,
+Save draft, reload, and edit-URL workflow in 16.8 seconds and satisfied the
+candidate-scoped first-green marker. Large-post seed `1140001`, which had exposed
+the dirty-save failure on `7e9dbc66`, then passed in 173 seconds with three
+users, 25 actions, two injected 503s, four reloads, three save checkpoints,
+final convergence/persistence, and revision restore. The candidate-scoped exact
+replay continuation is running the required repetitions before it may close the
+retained signature.
+
+The final source-churn audit found that two diagnostic paths still violated the
+frozen-generation model. Structural repair Codex ran with `danger-full-access`
+from the live validation checkout, and the generated novelty monitor still
+enabled coverage-guidance Codex in that same checkout. A valid structural repair
+could therefore change monitor or supervisor hashes underneath a run and cause
+another root replacement. In-generation coverage guidance is now disabled.
+Guard diagnostics are read-only, and structural repairs receive copies of the
+versioned `bin/rtc-*` scripts in a per-run `workspace` plus an immutable
+`baseline`. They can produce `proposed.patch` and `proposal-status.tsv`, but
+cannot write the live checkout, deployed scripts, status artifacts, or tmux
+sessions. The guard terminates any Codex whose cwd is the live control repo and
+restores aged control-file drift from the current generation's exact frozen hash
+instead of accepting it as an implicit deployment. Structural health checks all
+of these contracts.
+
+The same cwd audit covered every controller-owned Codex launcher. Productive
+analysis now runs with `workspace-write` in its lane directory. Focused-gap and
+duplicate/noise reviews default off and are read-only when explicitly enabled.
+PR-progress persona/report jobs use read-only or per-run workspace sandboxes;
+the one legitimate branch-repair path first creates a detached Git worktree and
+may write only there. Critical repair Codex continues to use its existing
+dedicated continuation worktree.
+
+The same audit found an impossible cross-controller prerequisite: the
+autoscaler intentionally requested a deadline-capped `5/5` primary budget while
+the guard required breadth 10 before starting any optional fuzz pool. The guard
+now uses the smaller positive desired budget as its effective prerequisite.
+This preserves the five-group primary cap while allowing strict, focused, and
+gap-booster work to use idle CPU; ordinary pressure and shed cooldowns still
+take precedence. The first admitted starts exposed missing stable `/tmp`
+launchers. Optional-pool admission now refreshes all four launchers from their
+versioned validation-repo sources, and structural health checks both the breadth
+clamp and launcher hashes. The initial legacy defaults tried to start 31 strict
+and focused groups, causing broad `wp-env` startup backoff. Guard-managed starts
+now select three complementary strict profiles and three focused profiles; the
+six one-lane gap-booster groups remain independently pressure-sheddable. The
+focused cleanup helper is now versioned and self-refreshed, and strict applies
+its profile filter before copying isolated repos and dependencies.
+
+Those starts also exposed Docker subnet exhaustion: 33 Compose networks were
+present, mostly completed continuation environments from July 5-9 whose
+containers were still running, so ordinary `docker network prune` removed
+nothing. A bounded ownership-aware reaper now runs before optional admission.
+It considers every old `wp-env-*` Compose project, protects active
+environment/process/run/session owners, gives attached projects 30 minutes and
+empty networks five minutes of retention, checkpoints after each candidate, and
+removes at most four projects per guard pass with a 20-second Compose timeout.
+The guard tracks that bounded reaper as a process group and terminates it on
+shutdown instead of leaving cleanup detached.
+Cleanup now starts at 24 networks and targets 20, matching the strict/focused
+admission boundary. The July 10 generalized dry-run selected eight stale
+projects and no active projects; bounded applies reduced the live count from 28
+to 19 without removing an active owner. Gap booster has the largest reserve and
+is admitted only when that reserve is available; strict/focused use a smaller
+reserve, while the global near-exhaustion threshold drives structural health.
+
+Analysis fanout had a similar ownership bug. Sixteen leaf Codex workers could be
+active while the nominal cap was eight because the guard trimmed only primary
+coverage repos, while focused and strict run-specific analysis sessions spawned
+independently. The guard now counts leaf `codex` processes, reserves four slots
+for repair/adoption/finalization, pauses optional analysis launchers above the
+cap, terminates their owning tmux jobs rather than only a respawning leaf, and
+admits optional analysis again only below the start threshold. Optional local
+triage/live-analysis fanout is one and focused deep analysis is off by default.
+The tmux ownership query passes a real tab delimiter; the previous literal
+`\t` made every session/path split fail and silently degraded cleanup to leaf
+termination.
+The legacy duplicate/noise persona loop is also off by default; when explicitly
+enabled, its reviews and feedback action are read-only proposals rather than
+live-checkout edits.
+Browser fuzz supervisors continue running while analysis is deferred.
+
+The final scheduler audit found one more source of setup churn. Under the strict
+five-group deadline cap, the zero-coverage loop could pause and terminate a live
+group before the final publication planner ran; the planner could then select a
+different replacement. Strict-cap rotation is now owned only by the final
+budgeted publication plan. This keeps removal and replacement atomic from the
+supervisor's perspective and prevents repeated `wp-env` setup for groups that
+never receive a published slot. The isolated overlay was narrowed at the same
+time from 321 broad paths to 275 browser-runtime paths, so deploying guard,
+structural, PR-progress, or runbook controllers no longer stops active lanes.
+
+The first new-head reconcile exposed a related cooldown bug: exact-stack and
+product-repair continuation dedupe keys included the feedback/signature hash but
+not the release-candidate head. A continuation completed on `7e9dbc66` could
+therefore suppress the required `352b0431` replay for 30 minutes. Exact-stack,
+focused exact, and aggregate product-repair keys now include the first 12
+characters of the current candidate head. The executor immediately launched
+`benchmark-canary-exact-stack-352b0431394f-*` and the focused `1140001` replay;
+structural health requires this candidate-scoped contract in every canonical,
+deployed, and `/tmp` executor copy.
 
 The source invariant is recorded in every run's `source-manifest.tsv`. It names
 the candidate ref/head/tree, exact product worktree, control and harness
@@ -595,7 +728,7 @@ changes.
 ```mermaid
 flowchart TB
     Ref[js2/all-merged-rebased-20260701] --> Exact[exact detached candidate worktree]
-    Harness[writable validation and harness control] --> Frozen[frozen named harness overlay]
+    Harness[versioned harness control] --> Frozen[frozen named harness overlay]
     Frozen --> Exact
     Deps[commit-keyed npm ci and production build] --> Exact
     Exact --> G1[disposable plain-editor repo]
@@ -613,8 +746,10 @@ flowchart TB
         Live[live failure analysis in disposable group repo]
     end
 
-    Guidance[coverage-guidance Codex] --> Harness
-    Guidance -. reads only .-> Exact
+    Finding[structural finding] --> Repair[Codex in disposable proposal workspace]
+    Harness -. copied baseline .-> Repair
+    Repair --> Patch[proposed.patch plus proposal-status.tsv]
+    Patch --> Review[local review and explicit deployment]
 
     G1 --> Supervisor
     G2 --> Supervisor
@@ -627,22 +762,23 @@ flowchart TB
 
 Current feeds and speeds after the audit:
 
-| Control                         | Value                                                                                                                                                                                                                                                                                        |
-| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Browser publication budget      | 5 groups at the current benchmark cap                                                                                                                                                                                                                                                        |
-| Mandatory product workflows     | Plain-editor current-root smoke is mandatory; duplicate real-world first-green yields to open exact canaries when the five-slot cap is saturated                                                                                                                                             |
-| Supervisor poll                 | 60 seconds                                                                                                                                                                                                                                                                                   |
-| Autoscaler/guard poll           | about 120 seconds                                                                                                                                                                                                                                                                            |
-| Materialization startup grace   | 900 seconds                                                                                                                                                                                                                                                                                  |
-| Core restart cooldown           | 120 seconds                                                                                                                                                                                                                                                                                  |
-| Optional restart cooldown       | 900 seconds                                                                                                                                                                                                                                                                                  |
-| Productive-analysis concurrency | 1 lane                                                                                                                                                                                                                                                                                       |
-| Live analysis concurrency       | 1 evidence-triggered worker per admitted generation; optional workers are shed above the global cap                                                                                                                                                                                          |
-| Structural Codex cap            | 8 leaf workers; wrappers are not counted                                                                                                                                                                                                                                                     |
-| Current product failures        | Ancestor signature `a107212124cc` is the intermittent side-by-side HTTP polling 403/room-unregister failure; current-head signature `14a056a2aa04` is a three-user large-post save that never becomes clean after convergence; both are open actionable JSON records on candidate `7e9dbc66` |
-| Exact dependency install        | about 49 seconds on first use per head                                                                                                                                                                                                                                                       |
-| Exact production build          | about 63 seconds on first use per head                                                                                                                                                                                                                                                       |
-| Isolated group repo preparation | about 6-22 seconds per group with full harness-content hashing, serialized in the background                                                                                                                                                                                                 |
+| Control                         | Value                                                                                                                                                                                                                         |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Browser publication budget      | 5 groups at the current benchmark cap                                                                                                                                                                                         |
+| Mandatory product workflows     | Plain-editor current-root smoke is mandatory; duplicate real-world first-green yields to open exact canaries when the five-slot cap is saturated                                                                              |
+| Supervisor poll                 | 60 seconds                                                                                                                                                                                                                    |
+| Autoscaler/guard poll           | about 120 seconds                                                                                                                                                                                                             |
+| Materialization startup grace   | 900 seconds                                                                                                                                                                                                                   |
+| Core restart cooldown           | 120 seconds                                                                                                                                                                                                                   |
+| Optional restart cooldown       | 900 seconds                                                                                                                                                                                                                   |
+| Productive-analysis concurrency | 1 lane                                                                                                                                                                                                                        |
+| Live analysis concurrency       | 1 evidence-triggered worker per admitted generation; optional launchers pause over the 8-worker global cap and restart only below 4 workers                                                                                   |
+| Structural Codex cap            | 8 leaf workers; wrappers are not counted                                                                                                                                                                                      |
+| Current product failures        | Candidate `352b0431` is under exact replay; prior-head signatures `14a056a2aa04` and `22f90dde2c0f` remain retained until the new fix proves them green, while ancestor `a107212124cc` remains unresolved historical evidence |
+| Docker network control          | Cleanup trigger/target `24/20`; 19 live networks after bounded cleanup; maximum 4 stale projects per pass; 20-second Compose timeout; 30-minute attached and 5-minute empty-network retention                                 |
+| Exact dependency install        | about 49 seconds on first use per head                                                                                                                                                                                        |
+| Exact production build          | about 63 seconds on first use per head                                                                                                                                                                                        |
+| Isolated group repo preparation | about 6-22 seconds per group with a 275-path browser-runtime overlay, serialized in the background; operational controller changes are excluded                                                                               |
 
 ## 2026-07-08 Live Update
 
@@ -775,7 +911,7 @@ Current publication gate path:
 
 ```mermaid
 flowchart TB
-    Candidate[js2/all-merged-rebased-20260701 at 7e9dbc66] --> CoverageRun[coverage-guided run run-20260710T065736Z]
+    Candidate[js2/all-merged-rebased-20260701 at 352b0431] --> CoverageRun[coverage-guided run run-20260710T092541Z]
     CoverageRun --> CanaryStatus[benchmark-canary-coverage-status.tsv]
     CoverageRun --> SmokeStatus[novelty-status.md plain-editor smoke row]
     CoverageRun --> ProductEvidence[current product-failure evidence]
@@ -802,17 +938,17 @@ flowchart TB
 
 Current feeds and speeds:
 
-| Loop or feed                         | Current cadence / cap                                                 | Current state                                                                                                                                                                                                                                     |
-| ------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `rtc-critical-path-pr-executor-loop` | 60 second cycle, 300 second reconcile timeout                         | Running; opens/updates blockers and bounded continuation jobs                                                                                                                                                                                     |
-| Critical continuations               | Max 3 product repairs active, with one forced gate overflow available | Exact RTC plain-editor, title-reload, and aggregate benchmark product repair/proof continuations are active; held PR17 work is no longer admitted                                                                                                 |
-| Critical validations                 | Max 6 active                                                          | Used for adopted repair branches and ready branch checks                                                                                                                                                                                          |
-| `rtc-pr-progress-controller-loop`    | 120 second cycle, max 2 active PR jobs                                | Running; reserves discovery and exposes repair-adoption rows                                                                                                                                                                                      |
-| Discovery reserve                    | Minimum 3 active discovery sessions                                   | Healthy at 4 active discovery sessions                                                                                                                                                                                                            |
-| Coverage-guided novelty              | Current run root updates status every monitor pass                    | Running on hardened root `run-20260710T065736Z` at candidate `7e9dbc66`; locked/effective/run/autoscaler budgets are `5/5`, exactly five groups are published, and discovery root `063249Z` remains an analysis input                             |
-| Plain editor smoke                   | Publication gate                                                      | Exact `7e9dbc66` passed all four human workflows in `1.3m` and seeds `1255001` through `1255008`; retained first-green closed this gate, while the separate intermittent side-by-side 403 remains open until repaired or explicitly dispositioned |
-| Product repair feed                  | Rewritten each critical reconcile                                     | The aggregate owner carries ancestor 403 `a107212124cc` and current-head dirty-save `14a056a2aa04`; each requires a relevant repair with three same-head green repetitions, exact rejection, or explicit downscope                                |
-| Repair adoption feed                 | Rewritten each critical reconcile                                     | Commits `7853d517` and `7e9dbc66` were validated, normalized to the release-candidate destination, published locally, synchronized back to JS2, and selected by the coverage guard                                                                |
+| Loop or feed                         | Current cadence / cap                                                 | Current state                                                                                                                                                                                    |
+| ------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `rtc-critical-path-pr-executor-loop` | 60 second cycle, 300 second reconcile timeout                         | Running; opens/updates blockers and bounded continuation jobs                                                                                                                                    |
+| Critical continuations               | Max 3 product repairs active, with one forced gate overflow available | Aggregate benchmark product repair and productive-analysis continuations are active; held PR17 work is not admitted while candidate product failures remain open                                 |
+| Critical validations                 | Max 6 active                                                          | Used for adopted repair branches and ready branch checks                                                                                                                                         |
+| `rtc-pr-progress-controller-loop`    | 120 second cycle, max 2 active PR jobs                                | Running; reserves discovery and exposes repair-adoption rows                                                                                                                                     |
+| Discovery reserve                    | Minimum 3 active discovery sessions                                   | Healthy at 4 active discovery sessions                                                                                                                                                           |
+| Coverage-guided novelty              | Current run root updates status every monitor pass                    | Running on immutable root `run-20260710T092541Z` at candidate `352b0431`; budget is `5/5`; startup published the plain-editor gate plus four exact benchmark canaries under the narrowed overlay |
+| Plain editor smoke                   | Publication gate                                                      | Exact `352b0431` seed `1255001` passed the real Save draft/reload/edit-URL workflow in 16.8 seconds and established the new candidate-scoped first-green                                         |
+| Product repair feed                  | Rewritten each critical reconcile                                     | Prior-head large-post seed `1140001` passed once on exact `352b0431` in 173 seconds; candidate-scoped repeated replay is active before signatures `14a056a2aa04`/`22f90dde2c0f` can close        |
+| Repair adoption feed                 | Rewritten each critical reconcile                                     | Commits `7853d517`, `7e9dbc66`, and `352b0431` were validated, normalized to the release-candidate destination, published locally, synchronized back to JS2, and selected by the coverage guard  |
 
 ## Blocker Age And Failed Mitigations
 

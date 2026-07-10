@@ -1962,8 +1962,8 @@ launch_persona_round() {
 		cat > "$runner" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$SRC"
-timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" || true
+cd "$run_dir"
+timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s read-only < "$prompt" > "$report" 2> "$stderr" || true
 EOF
 		chmod +x "$runner"
 		tmux new-session -d -s "rtc-pr-progress-persona-$slug-$ts" "bash '$runner'"
@@ -2009,8 +2009,8 @@ deadline=\$(( \$(date -u +%s) + $PERSONA_TIMEOUT_SECONDS ))
 while [ "\$(find "$run_dir/reports" -type f -name '*.md' -size +0c 2>/dev/null | wc -l | tr -d ' ')" -lt "${#PERSONAS[@]}" ] && [ "\$(date -u +%s)" -lt "\$deadline" ]; do
 	sleep 10
 done
-cd "$SRC"
-timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$synthesis_prompt" > "$synthesis_report" 2> "$synthesis_stderr" || true
+cd "$run_dir"
+timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s workspace-write < "$synthesis_prompt" > "$synthesis_report" 2> "$synthesis_stderr" || true
 if [ ! -s "$run_dir/control-decisions.tsv" ]; then
 	printf 'action\\ttarget\\tpriority\\tallowed\\treason\\n' > "$run_dir/control-decisions.tsv"
 	canary_status=\$(cat "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
@@ -2192,8 +2192,8 @@ PROMPT
 	cat > "$runner" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$SRC"
-timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" || true
+cd "$run_dir"
+timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s workspace-write < "$prompt" > "$report" 2> "$stderr" || true
 if [ ! -s "$classification" ]; then
 	printf 'item_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"
 	printf 'pr07c-owner-matrix\\tneeds_exact_replay\\tmissing classification from controller job\\treview report/stderr and rerun bounded owner matrix\\t%s\\n' "$report" >> "$classification"
@@ -2278,7 +2278,7 @@ write_manifest_only_branch_repair() {
 }
 
 launch_branch_repair_job() {
-	local row branch head evidence ts slug run_dir prompt report stderr classification runner active_jobs
+	local row branch head evidence ts slug run_dir prompt report stderr classification runner active_jobs worktree
 	branch_repair_active && {
 		log "not launching branch repair: branch repair job already active"
 		return 0
@@ -2320,6 +2320,20 @@ launch_branch_repair_job() {
 	classification="$run_dir/classification.tsv"
 	stderr="$run_dir/stderr.log"
 	runner="$run_dir/run.sh"
+	worktree="$run_dir/worktree"
+	if ! git -C "$SRC" worktree add --detach "$worktree" "$branch" > "$run_dir/worktree-add.log" 2>&1; then
+		{
+			echo "# Branch Repair Setup Failed"
+			echo
+			echo "- branch: $branch"
+			echo "- source: $SRC"
+			echo "- worktree: $worktree"
+			echo "- log: $run_dir/worktree-add.log"
+		} > "$report"
+		printf 'item_id\tclassification\tevidence\tnext_action\tartifact_path\n' > "$classification"
+		printf '%s\tstill_blocked\tisolated worktree setup failed\treview worktree-add.log and retry without touching the live control checkout\t%s\n' "$branch" "$report" >> "$classification"
+		return 0
+	fi
 	cat > "$prompt" <<PROMPT
 You are running inside Jetstream2 on the Gutenberg RTC PR progress controller.
 Do not use API subagents. Work in this one Codex process.
@@ -2329,7 +2343,8 @@ Goal: repair a product PR branch that failed critical-path diff/base validation.
 Branch: $branch
 Head: $head
 Original validation report: $evidence
-Repo: $SRC
+Source repo (read-only): $SRC
+Isolated repair worktree (the only repository you may edit): $worktree
 
 Required outputs:
 - report: $report
@@ -2350,11 +2365,12 @@ source_branch	source_commit	intended_danluu_branch	base_ref	files_changed	insert
 
 Keep this bounded. Prefer git ancestry/range-diff/diffstat checks and small
 manifest/base repairs. Do not run broad fuzzing. Do not stop discovery fuzzers.
+Do not edit the source repo or deployed controller scripts.
 PROMPT
 	cat > "$runner" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$SRC"
+cd "$worktree"
 timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" || true
 if [ ! -s "$classification" ]; then
 	printf 'item_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"

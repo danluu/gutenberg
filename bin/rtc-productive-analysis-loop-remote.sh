@@ -344,9 +344,9 @@ start_lane() {
 	cat > "$runner" <<EOF
 #!/usr/bin/env bash
 set -euo pipefail
-cd "$SRC"
+cd "$lane_dir"
 set +e
-timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c model_reasoning_effort="$REASONING" -s danger-full-access < "$prompt" > "$report.stdout" 2> "$stderr"
+timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c model_reasoning_effort="$REASONING" -s workspace-write < "$prompt" > "$report.stdout" 2> "$stderr"
 code=\$?
 set -e
 if [ ! -s "$actions" ]; then

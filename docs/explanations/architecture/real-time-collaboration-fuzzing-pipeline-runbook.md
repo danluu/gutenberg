@@ -18,12 +18,12 @@ leave one-shot commands as the only copy of an important process.
 
 ## Current Operator Snapshot
 
-Snapshot time: `2026-07-10T06:59Z`
+Snapshot time: `2026-07-10T09:26Z`
 
 The active all-merge candidate is `js2/all-merged-rebased-20260701` at
-`7e9dbc66da7ca4052f3167c47d19d025229de172`. The coverage-guided pointer file
-currently resolves to
-the authoritative current run; always read it rather than embedding a run name:
+`352b0431394f6717fb79f1d52e877519a605bb1b`. The coverage-guided pointer file
+currently resolves to `run-20260710T092541Z`; always read it rather than relying
+on that snapshot name:
 
 ```bash
 cat /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/current-output-dir.txt
@@ -35,14 +35,18 @@ candidate ref, not the mutable dirty checkout. The persistent candidate source
 is `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/candidate-source`.
 Its exact `npm ci` dependencies and production build are reused for the same
 head; isolated group repos copy product/build files and symlink that dependency
-set. The versioned `bin/rtc-*` harness comes from the validation repo and is
-frozen into that worktree. The monitor and live-analysis processes must run from
-the frozen worktree, and the manifest hashes for the monitor, runner,
+set. The versioned harness comes from the validation repo and is frozen into
+that worktree. Isolated group overlays include browser-runtime files only;
+guard, scheduler, PR, and runbook controller scripts must not invalidate active
+browser repos. The monitor and live-analysis processes must run from the frozen
+worktree, and the manifest hashes for the monitor, runner,
 supervisor, live-analysis monitor, and triage watcher must match its files. The
 live-analysis coordinator may read the frozen tree, but every Codex child must
-run from the matching generation's disposable isolated group repo. Coverage
-guidance is the exception that may edit harness code: it runs from the writable
-validation repo and treats `candidate-source` as read-only.
+run from the matching generation's disposable isolated group repo. There is no
+live-checkout write exception: in-generation coverage guidance is disabled.
+Structural repair uses a disposable proposal workspace, and guard diagnostics
+are read-only. Versioned harness changes are reviewed and deployed explicitly,
+then a controlled generation restart records their new hashes.
 
 Operational invariants added by the July 10 audit:
 
@@ -54,6 +58,19 @@ Operational invariants added by the July 10 audit:
     `list-*`, `show-*`, and `display-message` instead.
 -   `RTC_COVERAGE_FORCE_RESTART=1` is one-shot. Child monitors and the permanent
     session watchdog must see zero or an unset value.
+-   No Codex process may use the live validation checkout as a writable cwd. The
+    guard terminates one if found; structural health reports it. A structural
+    repair edits only its `runs/<timestamp>-<key>/workspace`, leaves
+    `proposed.patch` and `proposal-status.tsv`, and cannot restart services.
+-   Productive-analysis Codex uses its per-lane directory with
+    `workspace-write`. Focused-gap reviews are off by default and read-only when
+    enabled. PR-progress report/persona jobs use read-only or per-run workspace
+    sandboxes; a branch-repair job must create a detached Git worktree under its
+    run directory before using a writable sandbox.
+-   Keep `RTC_JETSTREAM_ENABLE_DUPLICATE_NOISE_REVIEW=0` during normal fuzzing.
+    Current-run duplicate/noise metrics and gate-only triage still run. An
+    explicitly enabled persona round is read-only and must route a concrete
+    proposal through an isolated structural/critical adoption path.
 -   Do not remediate zero materialization during the first 900 seconds of a run.
 -   Do not publish more groups than the active resource budget.
     `RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS` is a hard ceiling during bootstrap and
@@ -61,9 +78,21 @@ Operational invariants added by the July 10 audit:
     they may not add slots. Structural health compares both the current group
     file and recent monitor publication decisions with the locked maximum.
     `rtc-browser-fuzz-novelty-policy-check.mjs` is a fail-closed source admission
-    check in both the launcher and guard. If guidance weakens the contract, the
-    guard stops its writer and atomically restores the frozen validated monitor
-    without replacing the current run.
+    check in both the launcher and guard. It protects the hard slot cap and the
+    candidate/compatibility-scoped first-green carry. Coverage guidance must
+    remain disabled. If the live control copy drifts from an aged active
+    generation, the guard stops control-cwd writers and atomically restores the
+    frozen validated file without replacing the current run.
+-   Under a deadline or strict producer cap, only the final budgeted publication
+    planner may rotate zero-coverage groups. Do not pause or terminate an
+    incumbent in an earlier scheduling loop: the final planner may choose a
+    different replacement, wasting the incumbent's `wp-env` and browser setup.
+    The fail-closed novelty policy checker enforces this single-owner rule.
+-   Isolated repo manifests include browser runner, triage/analysis helpers,
+    collaboration tests/config, provider, and WebSocket test server. They exclude
+    novelty/supervisor control scripts and every operational `rtc-*` controller.
+    A control deployment must not terminate browser lanes unless it changes a
+    browser-runtime file.
 -   Snapshot `current-budget.env` while holding the serialized coverage-start
     lock and apply those concurrency/cap fields unchanged. Benchmark feedback may
     choose lanes, but the launcher must not recalculate concurrency after the
@@ -73,10 +102,13 @@ Operational invariants added by the July 10 audit:
     snapshot so a split-brain budget fails visibly.
 -   Do not rotate plain-editor or real-world product smoke before each has a
     successful current-run record.
--   Retained current-root success still satisfies that first-green requirement
-    after its producer directory rotates out. Record the satisfied groups in
-    `satisfiedRequiredFirstGreenProductGroups`; do not republish the same gate
-    because active-only counters returned to zero.
+-   First-green success is monotonic for one candidate head and
+    `state_compatibility_sha256`. Record the evidence scope and satisfied groups
+    in novelty state; do not republish the same gate because a producer directory
+    or output root rotated and active-only counters returned to zero. Candidate
+    or evidence-contract changes reset the gate and require a new green. Deadline
+    benchmark closure must consume the same scoped marker; it must not pin the
+    satisfied smoke lane merely because the operational output directory changed.
 -   Human product smoke and every `wp-env`/Docker topology mutation share the
     root-local kernel lock `.network-topology.lock`. Classify a preflight from
     the full command output; `ERR_NETWORK_CHANGED` is an invalid environment
@@ -171,13 +203,24 @@ Operational invariants added by the July 10 audit:
     Codex prompt. Otherwise example commands are executed by the controller while
     it writes the prompt.
 -   Limit first- and second-level live analysis to one worker per admitted
-    generation. If total leaf Codex workers still exceed the global cap, stop the
-    newest optional generation-analysis workers before repair, adoption, or
-    finalization workers.
+    generation. Count leaf `codex` processes, not timeout/node wrappers. If total
+    workers exceed eight, pause optional analysis launchers and terminate their
+    owning tmux jobs before repair, adoption, or finalization workers. Do not
+    restart optional analysis until the count is below four; browser fuzzing
+    itself remains active.
+-   Every gate-only triage caller must spawn the refresh in its own process group
+    and escalate timeout cleanup from `SIGTERM` to `SIGKILL`. Health distinguishes
+    a forbidden Codex descendant from a metadata-only refresh stalled for three
+    minutes and calculates age from `/proc`, not an unchecked `ps etimes` value.
 -   A `repair_branch_adopted` manifest is not trusted to choose its own final
     destination. The critical controller retargets only a strict descendant of
     the current candidate to `js2/all-merged-rebased-20260701`, removes no-op and
     stale/sibling rows, and records the decision in `manifest-normalization.tsv`.
+-   Exact-stack, focused exact, and aggregate product-repair continuation dedupe
+    keys include the current release-candidate head. Feedback/signature hashes
+    alone are insufficient: an old-head completion must not impose its 30-minute
+    cooldown on exact replay after an accepted candidate fast-forward. Structural
+    health verifies the candidate-scoped key in all three executor copies.
 -   Generated collaboration fuzz specs are harness overlays, not product fixes.
     Every continuation records `generated-harness-overlay-paths.txt`; the result
     guard strips those paths and amends the repair commit before adoption, while
@@ -250,6 +293,19 @@ after entity save`). The clean product-only commit changes two core-data
     was rejected because it accidentally included a generated 14,170-line fuzz
     spec; deterministic overlay stripping and product-only extraction produced
     the accepted branch.
+-   The aggregate product-repair lane then produced `352b0431` (`Fix RTC save
+hydration dirty block edits`). It is a strict descendant of `7e9dbc66`,
+    changes only `packages/core-data/src/utils/crdt.ts` and its focused test, and
+    passed all 56 tests in that suite plus `git diff --check` in an isolated
+    adoption worktree. The local publisher compare-and-swap fast-forwarded both
+    GitHub and the JS2 candidate ref. Exact candidate replay in
+    `run-20260710T092541Z` established first-green when seed `1255001` passed the
+    real Save draft/reload/edit-URL workflow in 16.8 seconds. The formerly failing
+    large-post seed `1140001` also passed once in 173 seconds, including three
+    users, two injected 503s, four reloads, final persistence, and revision
+    restore. Candidate-scoped repeated replay remains required to close or retain
+    the prior dirty-save signatures; one green and unit success do not make the
+    branch review-ready.
 -   Discovery root `run-20260710T063249Z` tested exact candidate `7e9dbc66`.
     Its locked startup budget, effective budget, and current run script all
     agree on `5/5`, the deadline cap is one, and exactly
@@ -825,6 +881,7 @@ git archive --format=tar FETCH_HEAD \
 	bin/rtc-browser-*.schema.json \
 	bin/rtc-browser-fuzz-analysis-guard-bin \
 	bin/rtc-browser-fuzz-*.mjs \
+	bin/rtc-docker-network-reaper-remote.mjs \
 	bin/rtc-coverage-guided-lower-level-runner.mjs \
 	bin/rtc-fuzz-*.mjs \
 	bin/rtc-test-ws-sync-server.mjs \
@@ -926,6 +983,39 @@ The remote launchers are intentionally split by ownership:
     below the configured floor. This prevents optional browser pools from
     consuming the browser lane budget while the active coverage-guided run is
     too narrow.
+    When a deliberate deadline policy sets a smaller positive desired budget,
+    the guard clamps its optional-pool prerequisite to that desired target. A
+    satisfied `5/5` cap therefore permits optional fuzz pools under headroom;
+    pressure, a real primary materialization deficit, or a recent shed still
+    blocks them. Structural health rejects guard source that loses this clamp.
+    Optional-pool admission also refreshes missing or stale stable `/tmp`
+    launchers from their versioned validation-repo scripts before execution;
+    focused cleanup is covered by the same rule, and structural health compares
+    all five script pairs.
+    Guard-managed strict and focused starts each select three complementary
+    profiles by default. Do not restore their unbounded legacy defaults: dozens
+    of simultaneous `wp-env` starts create infrastructure backoff, exhaust
+    Docker subnets, and reduce primary materialization. Override the profile lists explicitly only for a
+    bounded experiment. Strict setup applies its filter before repo/dependency
+    copying, not only when writing the final group file.
+-   Docker subnet capacity is a producer resource. The guard runs
+    `rtc-docker-network-reaper-remote.mjs` before optional admission and blocks
+    optional starts above the network threshold. The reaper considers old
+    `wp-env-*` Compose projects, protects active `WP_ENV_HOME`, process,
+    run-root, and tmux owners, and removes at most four projects per pass.
+    Attached projects have a 30-minute retention window; empty networks have a
+    five-minute window. Each Compose down is bounded to 20 seconds before the
+    container/network fallback, and status is checkpointed after every
+    candidate so guard supervision cannot disappear behind a long cleanup. The
+    guard tracks the reaper as a process group, bounds the whole pass to 90
+    seconds, and terminates that group on `guard stop`.
+    `docker network prune` alone is insufficient because leaked projects can
+    still have running containers.
+    Optional admission is pool-specific: gap booster requires substantial subnet
+    headroom, strict/focused require a smaller reserve, and the global threshold
+    denotes near-exhaustion. The cleanup trigger/target is `24/20`, matching the
+    strict/focused block boundary; do not set cleanup above the admission limit.
+    Completed projects without a live owner become eligible after retention.
     The autoscaler also checks Docker's daemon data root every cycle. The
     expected Jetstream2 value is
     `/media/volume/danluu-fuzz-data/docker-data-root`; if Docker reports a
@@ -1032,9 +1122,14 @@ The remote launchers are intentionally split by ownership:
     queues with low Codex fanout under low load. It writes
     `/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518/current-structural-watchdog-status.md`
     and launches bounded `rtc-structural-repair-*` Codex jobs for high-severity
-    findings. Those jobs may patch Jetstream scripts and restart only the
-    affected loop, then leave file lists or patches for persistence to
-    `try/jetstream-fuzz`.
+    findings. Those jobs run with `workspace-write` inside a per-run proposal
+    directory populated from the versioned `bin/rtc-*` scripts. They must not
+    patch the live validation checkout, deployed controller copies, status
+    artifacts, or tmux sessions. The runner compares the proposal workspace with
+    its immutable baseline, syntax-checks changed scripts, and writes
+    `proposed.patch` plus `proposal-status.tsv` for explicit local review and
+    persistence. Structural health flags any Codex cwd equal to the live control
+    checkout and verifies this isolation contract in source.
 -   `rtc-jetstream-guard-remote.sh` is the top-level guard. Run it in tmux and
     let it restart missing sessions instead of manually restarting individual
     fuzzers. The guard supervises coverage-guided, strict-expansion, focused
@@ -1046,7 +1141,19 @@ The remote launchers are intentionally split by ownership:
     analysis loop, the structural watchdog, and the resource autoscaler. It uses
     exact tmux session-name checks and treats a coverage-guided novelty run with
     an empty work queue and clear current-run noise as a materialization stall
-    to restart and escalate.
+    to restart and escalate. It also treats the active generation as immutable:
+    in-generation coverage guidance is disabled, guard Codex diagnostics are
+    read-only, aged harness-control drift is restored from the generation's
+    frozen hash, and any Codex writing from the live control cwd is terminated.
+    Optional analysis is paused by owning tmux session above the eight-leaf
+    global cap and is not relaunched until fewer than four workers remain;
+    browser fuzz supervisors continue while analysis waits. The legacy
+    duplicate/noise persona loop defaults off. If explicitly enabled, its
+    review, synthesis, and feedback-action Codex jobs are read-only and may
+    propose but never apply live harness changes.
+    Tmux pane ownership formats must use an actual tab (`$'...\t...'`), not a
+    literal backslash-t; otherwise the session/path parser cannot terminate the
+    owning job and leaf Codex processes immediately respawn.
 
 Start or refresh the guard after installing the launchers. `stop` exits the
 guard process after killing its sleeping child, so a refresh should not leave an
@@ -1210,6 +1317,15 @@ browser/e2e materialization when the machine is under pressure.
 Long fuzz and triage campaigns can leave old `wp-env` Docker Compose projects
 behind. Stopped containers can keep old compose networks attached, which can
 eventually exhaust Docker/OrbStack bridge network address space.
+
+On Jetstream2, the guard's fast capacity path is
+`rtc-docker-network-reaper-remote.mjs`: trigger at 24 networks, target 20,
+maximum four projects per pass, 20-second Compose timeout, active-owner checks,
+30-minute attached-project retention, and five-minute empty-network retention.
+Inspect
+`/media/volume/danluu-fuzz-data/rtc-docker-network-reaper-20260710/current-status.json`
+before manual cleanup. The older utility below is the slower 24-hour
+disk-hygiene path and has different safety rules.
 
 The watchdog runs a conservative cleanup pass by default:
 
@@ -1795,15 +1911,15 @@ startup, or the current-run duplicate-share denominator. Product-evidence
 failures after users/actions/reload/save/revision/fault operations must remain
 visible.
 
-The duplicate/noise persona loop treats current-run duplicate dominance as a
-hard action gate. If `novelty-status.md` reports top duplicate family share
-`>= 0.50` with at least three current-run signatures, that is action-needed even
-when likely-real or product-evidence representatives are visible. The loop must
-preserve at least one representative and then fix the producer/consumer leak with
-family caps, producer rotation, or live-analysis accounting. If
-`pre_action_bootstrap_stall` is still the current-run top family after strict
-startup suppression, the next feedback action must make or restart a bounded
-control-plane change instead of only writing analysis.
+Current-run duplicate dominance remains a structural signal. If
+`novelty-status.md` reports top duplicate family share `>= 0.50` with at least
+three current-run signatures, preserve at least one representative and route a
+producer/consumer fix through the isolated structural or critical controller.
+The optional duplicate/noise persona loop is disabled by default because its
+legacy action pass wrote the live harness checkout and its persona fanout
+competed with product repair. When explicitly enabled for diagnosis, it is
+read-only and emits a proposal; it does not edit or restart the active
+generation.
 
 The PR split review loop has a separate parallel-progress gate. A final-stack
 blocker such as seed `1020002` may stop filing, final-stack fuzz, and rebuilt

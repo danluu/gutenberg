@@ -10,6 +10,9 @@ BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 COVERAGE_START_LOCK=$COVERAGE_BASE/start-v2.lock
 FOCUSED_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515
+FOCUSED_SHARDS_BASE=$FOCUSED_BASE
+STRICT_EXPANSION_BASE=/media/volume/danluu-fuzz-data/rtc-fuzz-strict-expansion-20260515
+GAP_BOOSTER_BASE=/media/volume/danluu-fuzz-data/rtc-gap-booster-20260515
 LOWER_LEVEL_BASE=/media/volume/danluu-fuzz-data/rtc-lower-level-fuzz-20260516
 CG_LOWER_LEVEL_B64_HOLD_FILE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-lower-level-20260516/holds/coverage-guided-lower-level-rich-text-crdt.hold
 CG_LOWER_LEVEL_B64_GROUP=coverage-guided-lower-level-rich-text-crdt
@@ -51,6 +54,10 @@ STRUCTURAL_BASE=/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518
 STRUCTURAL_HOLD_FILE=$BASE/disable-structural-watchdog
 DISK_MAINTENANCE_HOLD_FILE=$BASE/disable-disk-maintenance
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
+DOCKER_NETWORK_REAPER=$REPO/bin/rtc-docker-network-reaper-remote.mjs
+DOCKER_NETWORK_REAPER_TRIGGER_COUNT=${RTC_DOCKER_NETWORK_REAPER_TRIGGER_COUNT:-24}
+OPTIONAL_STRICT_ENABLED_NAMES=${RTC_GUARD_OPTIONAL_STRICT_ENABLED_NAMES:-ws-collaboration-ui-signals,http-same-user-stale-draft,http-large-lifecycle}
+OPTIONAL_FOCUSED_ENABLED_NAMES=${RTC_GUARD_OPTIONAL_FOCUSED_ENABLED_NAMES:-rich-text-b,auth-locks-a,existing-post-crdt-http}
 PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 GLOBAL_ADMISSION=$RESOURCE_BASE/rtc-global-cpu-admission.sh
@@ -63,7 +70,8 @@ NOVELTY_POLICY_CHECK=$REPO/bin/rtc-browser-fuzz-novelty-policy-check.mjs
 EVENTS=$LOG_DIR/restart-events.tsv
 TMUX_SERVER_PID_FILE=$BASE/rtc-fuzz-server.pid
 TMUX_SERVER_EVENTS=$LOG_DIR/tmux-server-events.tsv
-ENABLE_DUPLICATE_NOISE_REVIEW=${RTC_JETSTREAM_ENABLE_DUPLICATE_NOISE_REVIEW:-1}
+ENABLE_DUPLICATE_NOISE_REVIEW=${RTC_JETSTREAM_ENABLE_DUPLICATE_NOISE_REVIEW:-0}
+ENABLE_FOCUSED_GAP_CODEX=${RTC_JETSTREAM_ENABLE_FOCUSED_GAP_CODEX:-0}
 ENABLE_LEVEL_MIX_REVIEW=${RTC_JETSTREAM_ENABLE_LEVEL_MIX_REVIEW:-0}
 ENABLE_NATIVE_PROTOCOL_REVIEW=${RTC_JETSTREAM_ENABLE_NATIVE_PROTOCOL_REVIEW:-0}
 ENABLE_ASSERT_REVIEW=${RTC_JETSTREAM_ENABLE_ASSERT_REVIEW:-0}
@@ -133,21 +141,79 @@ pr_progress_controller_runtime_healthy() {
 }
 
 active_codex_worker_count() {
-	{ pgrep -af 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true; } |
-		awk 'END { print NR + 0 }'
+	pgrep -x codex 2>/dev/null | awk 'END { print NR + 0 }'
+}
+
+optional_analysis_admission_allows() {
+	local workers limit=${RTC_GUARD_OPTIONAL_ANALYSIS_START_MAX_WORKERS:-$(( MAX_CODEX_WORKERS - 4 ))}
+	workers=$(active_codex_worker_count)
+	[ "$limit" -ge 0 ] || limit=0
+	if [ "$workers" -ge "$limit" ]; then
+		log "optional analysis admission deferred workers=$workers start_limit=$limit cap=$MAX_CODEX_WORKERS"
+		return 1
+	fi
+	return 0
+}
+
+tmux_session_owning_pid() {
+	local target=$1 session pane ancestor parent
+	while IFS=$'\t' read -r session pane; do
+		[ -n "$session" ] && [[ "$pane" =~ ^[0-9]+$ ]] || continue
+		ancestor=$target
+		while [[ "$ancestor" =~ ^[0-9]+$ ]] && [ "$ancestor" -gt 1 ]; do
+			[ "$ancestor" = "$pane" ] && {
+				printf '%s\n' "$session"
+				return 0
+			}
+			parent=$(awk '/^PPid:/ { print $2; exit }' "/proc/$ancestor/status" 2>/dev/null || true)
+			[ -n "$parent" ] && [ "$parent" != "$ancestor" ] || break
+			ancestor=$parent
+		done
+	done < <(tmux list-panes -a -F $'#{session_name}\t#{pane_pid}' 2>/dev/null || true)
+	return 1
 }
 
 trim_optional_live_analysis_codex() {
-	local workers pid cwd age
+	local workers pid cwd age session path
 	workers=$(pgrep -x codex 2>/dev/null | awk 'END { print NR + 0 }')
 	[ "$workers" -gt "$MAX_CODEX_WORKERS" ] || return 0
+	for session in rtc-focused-shards-analysis rtc-fuzz-strict-expansion-analysis rtc-gap-booster-analysis; do
+		if has_session "$session"; then
+			log "pausing optional analysis launcher over global cap session=$session workers=$workers cap=$MAX_CODEX_WORKERS"
+			tmux kill-session -t "$session" 2>/dev/null || true
+		fi
+	done
+	while IFS=$'\t' read -r session path; do
+		case "$path" in
+			"$STRICT_EXPANSION_BASE"/repos-*/*|"$FOCUSED_SHARDS_BASE"/repos-*/*|"$GAP_BOOSTER_BASE"/repos-*/*)
+				case "$session" in
+					rtc-focused-analysis-*|rtc-strict-analysis-*|rtc-gap-analysis-*|rtc-analysis-live-*|rtc-analysis-deep-*)
+						log "stopping optional analysis job session over global cap session=$session path=$path workers=$workers cap=$MAX_CODEX_WORKERS"
+						tmux kill-session -t "$session" 2>/dev/null || true
+						;;
+				esac
+				;;
+		esac
+	done < <(tmux list-panes -a -F $'#{session_name}\t#{pane_current_path}' 2>/dev/null || true)
 	while read -r age pid; do
 		[ -n "$pid" ] || continue
 		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
 		case "$cwd" in
-			"$COVERAGE_BASE"/run-*/repos/*)
-				log "stopping optional live-analysis Codex over global cap pid=$pid cwd=$cwd age=${age}s workers=$workers cap=$MAX_CODEX_WORKERS"
-				kill -TERM "$pid" 2>/dev/null || true
+			"$COVERAGE_BASE"/run-*/repos/*|\
+			"$STRICT_EXPANSION_BASE"/repos-*/*|\
+			"$FOCUSED_SHARDS_BASE"/repos-*/*|\
+			"$GAP_BOOSTER_BASE"/repos-*/*)
+				session=$(tmux_session_owning_pid "$pid" || true)
+				case "$session" in
+					rtc-focused-analysis-*|rtc-strict-analysis-*|rtc-gap-analysis-*|rtc-analysis-live-*|rtc-analysis-deep-*)
+						log "stopping optional analysis session over global cap session=$session pid=$pid cwd=$cwd age=${age}s workers=$workers cap=$MAX_CODEX_WORKERS"
+						tmux kill-session -t "$session" 2>/dev/null || true
+						;;
+					*)
+						log "stopping optional live-analysis Codex over global cap pid=$pid cwd=$cwd age=${age}s workers=$workers cap=$MAX_CODEX_WORKERS"
+						kill -TERM "$pid" 2>/dev/null || true
+						;;
+				esac
 				workers=$(( workers - 1 ))
 				[ "$workers" -le "$MAX_CODEX_WORKERS" ] && break
 				;;
@@ -199,6 +265,12 @@ stop_disabled_orphan_codex() {
 }
 
 stop_disabled_analysis_loops() {
+	if [ "$ENABLE_DUPLICATE_NOISE_REVIEW" != "1" ]; then
+		stop_sessions_matching '^rtc-duplicate-noise-persona-loop$|^rtc-dup-'
+	fi
+	if [ "$ENABLE_FOCUSED_GAP_CODEX" != "1" ]; then
+		stop_sessions_matching '^rtc-focused-shards-gap-codex-loop$|^rtc-focused-gap-codex-'
+	fi
 	if [ "$ENABLE_LEVEL_MIX_REVIEW" != "1" ]; then
 		stop_sessions_matching '^rtc-fuzz-level-mix-persona-loop(-watchdog)?$|^rtc-level-mix-'
 	fi
@@ -511,9 +583,16 @@ start_coverage_guided_lower_level_b64_or_replacement() {
 coverage_breadth_restart_block_reason() {
 	local status=$RESOURCE_BASE/resource-autoscaler-status.md
 	local min=${RTC_RESOURCE_AUTOSCALER_MIN_COVERAGE_BREADTH_GROUPS:-10}
-	local enabled current
+	local enabled current desired
 	enabled=$(sed -n 's/^- enabled_groups: \([0-9][0-9]*\).*/\1/p' "$status" 2>/dev/null | tail -1)
 	current=$(sed -n 's/^- current_budget: target=\([0-9][0-9]*\).*/\1/p' "$status" 2>/dev/null | tail -1)
+	desired=$(sed -n 's/^- desired_budget: target=\([0-9][0-9]*\).*/\1/p' "$status" 2>/dev/null | tail -1)
+	# The desired coverage budget is a hard ceiling for this prerequisite. A
+	# deliberate deadline cap below the legacy breadth floor must not disable
+	# every optional browser pool indefinitely.
+	if [[ "$desired" =~ ^[0-9]+$ ]] && [ "$desired" -gt 0 ] && [ "$desired" -lt "$min" ]; then
+		min=$desired
+	fi
 	if [[ "$enabled" =~ ^[0-9]+$ ]] && [ "$enabled" -lt "$min" ]; then
 		printf 'coverage_breadth_enabled=%s min=%s\n' "$enabled" "$min"
 		return 0
@@ -525,10 +604,39 @@ coverage_breadth_restart_block_reason() {
 	return 1
 }
 
+run_docker_network_maintenance() {
+	[ -x "$DOCKER_NETWORK_REAPER" ] || return 0
+	RTC_DOCKER_NETWORK_REAPER_TRIGGER_COUNT="$DOCKER_NETWORK_REAPER_TRIGGER_COUNT" \
+		RTC_DOCKER_NETWORK_REAPER_TARGET_COUNT=${RTC_DOCKER_NETWORK_REAPER_TARGET_COUNT:-20} \
+		RTC_DOCKER_NETWORK_REAPER_MAX_PROJECTS=${RTC_DOCKER_NETWORK_REAPER_MAX_PROJECTS:-4} \
+		RTC_DOCKER_NETWORK_REAPER_RETENTION_SECONDS=${RTC_DOCKER_NETWORK_REAPER_RETENTION_SECONDS:-1800} \
+		RTC_DOCKER_NETWORK_REAPER_EMPTY_RETENTION_SECONDS=${RTC_DOCKER_NETWORK_REAPER_EMPTY_RETENTION_SECONDS:-300} \
+		setsid timeout 90 "$NODE_BIN/node" "$DOCKER_NETWORK_REAPER" >> "$LOG_DIR/docker-network-reaper.log" 2>&1 &
+	child_pid=$!
+	child_pid_is_group=1
+	if ! wait "$child_pid"; then
+		log "Docker network reaper failed or timed out"
+	fi
+	child_pid=""
+	child_pid_is_group=0
+}
+
 optional_browser_restart_block_reason() {
+	local pool=${1:-optional-browser}
 	local status=$RESOURCE_BASE/resource-autoscaler-status.md
 	local shed_last=$RESOURCE_BASE/optional-browser-shed-last-epoch
-	local reason last now age grace load cores current desired
+	local reason last now age grace load cores current desired network_count network_limit
+
+	network_count=$(docker network ls -q 2>/dev/null | wc -l | tr -d ' ')
+	network_limit=$DOCKER_NETWORK_REAPER_TRIGGER_COUNT
+	case "$pool" in
+		strict|focused) network_limit=${RTC_GUARD_OPTIONAL_CORE_NETWORK_LIMIT:-24} ;;
+		gap-booster) network_limit=${RTC_GUARD_GAP_BOOSTER_NETWORK_LIMIT:-20} ;;
+	esac
+	if [[ "$network_count" =~ ^[0-9]+$ ]] && [ "$network_count" -ge "$network_limit" ]; then
+		printf 'docker_network_count=%s limit=%s pool=%s\n' "$network_count" "$network_limit" "$pool"
+		return 0
+	fi
 
 	reason=$(sed -n 's/^- reason: //p' "$status" 2>/dev/null | tail -1)
 	if coverage_breadth_restart_block_reason; then
@@ -709,7 +817,7 @@ reattach_browser_pool_if_live() {
 
 	log "reattaching browser pool pool=$pool live_lanes=$live_count reason=$reason root=$run"
 	if ! has_session "$supervisor_session"; then
-		tmux new-session -d -s "$supervisor_session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1 RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=\"$run\" RTC_FUZZ_SUPERVISOR_GROUPS_PATH=\"$run/supervisor-groups.json\" RTC_FUZZ_SUPERVISOR_CURRENT_OUTPUT_POINTER=\"$base/current-output-dir.txt\" RTC_FUZZ_SUPERVISOR_DURATION_HOURS=12 RTC_FUZZ_SUPERVISOR_POLL_MS=60000 RTC_FUZZ_INLINE_CODEX=0 RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP=1 RTC_FUZZ_LOW_DISK_MODE=1 RTC_FUZZ_PLAYWRIGHT_VIDEO=off; node bin/rtc-browser-fuzz-supervisor.mjs >> \"$base/logs/supervisor.log\" 2>&1'" ||
+		tmux new-session -d -s "$supervisor_session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1 RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=\"$run\" RTC_FUZZ_SUPERVISOR_GROUPS_PATH=\"$run/supervisor-groups.json\" RTC_FUZZ_SUPERVISOR_CURRENT_OUTPUT_POINTER=\"$base/current-output-dir.txt\" RTC_FUZZ_SUPERVISOR_DURATION_HOURS=12 RTC_FUZZ_SUPERVISOR_POLL_MS=60000 RTC_FUZZ_TRIAGE_MAX_PARALLEL=1 RTC_FUZZ_INLINE_CODEX=0 RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP=1 RTC_FUZZ_LOW_DISK_MODE=1 RTC_FUZZ_PLAYWRIGHT_VIDEO=off; node bin/rtc-browser-fuzz-supervisor.mjs >> \"$base/logs/supervisor.log\" 2>&1'" ||
 			return 1
 	fi
 	if ! has_session "$watchdog_session"; then
@@ -717,8 +825,10 @@ reattach_browser_pool_if_live() {
 			return 1
 	fi
 	if ! has_session "$analysis_session"; then
-		tmux new-session -d -s "$analysis_session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_LIVE_ANALYSIS_REPO_ROOT=\"$REPO\" RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=4 RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=\"$analysis_prefix\" node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$run\" >> \"$base/logs/analysis.log\" 2>&1; code=\$?; printf \"ANALYSIS_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$base/logs/analysis.log\"; sleep 30; done'" ||
-			return 1
+		if optional_analysis_admission_allows; then
+			tmux new-session -d -s "$analysis_session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_LIVE_ANALYSIS_REPO_ROOT=\"$REPO\" RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=1 RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=\"$analysis_prefix\" node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$run\" >> \"$base/logs/analysis.log\" 2>&1; code=\$?; printf \"ANALYSIS_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$base/logs/analysis.log\"; sleep 30; done'" ||
+				return 1
+		fi
 	fi
 	return 0
 }
@@ -727,7 +837,7 @@ maybe_restart_optional_browser_pool() {
 	local pool=$1
 	local reason=$2
 	local block_reason
-	if block_reason=$(optional_browser_restart_block_reason); then
+	if block_reason=$(optional_browser_restart_block_reason "$pool"); then
 		log "skipping optional browser pool restart/reattach under resource pressure pool=$pool reason=$reason block=$block_reason"
 		return
 	fi
@@ -752,8 +862,10 @@ restart_focused_sidecars() {
 	fi
 
 	if ! has_session rtc-focused-shards-analysis; then
-		tmux new-session -d -s rtc-focused-shards-analysis "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_LIVE_ANALYSIS_REPO_ROOT=\"$REPO\" RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=4 RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=rtc-focused-analysis RTC_FUZZ_LIVE_ANALYSIS_ENABLE_DEEP=1 RTC_FUZZ_LIVE_DEEP_ANALYSIS_MAX_PARALLEL=2 node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$run\" >> \"$FOCUSED_BASE/logs/analysis.log\" 2>&1; code=\$?; printf \"ANALYSIS_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$FOCUSED_BASE/logs/analysis.log\"; sleep 30; done'" ||
-			log "focused analysis sidecar start failed"
+		if optional_analysis_admission_allows; then
+			tmux new-session -d -s rtc-focused-shards-analysis "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\" CI=1; while true; do RTC_FUZZ_LIVE_ANALYSIS_REPO_ROOT=\"$REPO\" RTC_FUZZ_LIVE_ANALYSIS_INTERVAL_MS=120000 RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL=1 RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS=4 RTC_FUZZ_LIVE_ANALYSIS_CODEX_TIMEOUT_MS=2700000 RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX=rtc-focused-analysis RTC_FUZZ_LIVE_ANALYSIS_ENABLE_DEEP=0 RTC_FUZZ_LIVE_DEEP_ANALYSIS_MAX_PARALLEL=1 node bin/rtc-browser-fuzz-live-analysis-monitor.mjs \"$run\" >> \"$FOCUSED_BASE/logs/analysis.log\" 2>&1; code=\$?; printf \"ANALYSIS_EXIT:%s %s\\n\" \"\$code\" \"\$(date -u +%Y-%m-%dT%H:%M:%SZ)\" >> \"$FOCUSED_BASE/logs/analysis.log\"; sleep 30; done'" ||
+				log "focused analysis sidecar start failed"
+		fi
 	fi
 }
 
@@ -845,6 +957,16 @@ stop_codex_in_frozen_candidate() {
 	done
 }
 
+stop_codex_in_control_repo() {
+	local pid cwd
+	for pid in $(pgrep -f 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true); do
+		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
+		[ "$cwd" = "$REPO" ] || continue
+		log "stopping Codex with writable cwd in live harness control repo pid=$pid cwd=$cwd"
+		kill -TERM "$pid" 2>/dev/null || true
+	done
+}
+
 restore_frozen_harness_from_control() {
 	local product_repo=$1 relative=$2 expected_hash=$3 canonical source_hash destination tmp restored_hash
 	canonical=$REPO/$relative
@@ -871,34 +993,41 @@ novelty_monitor_policy_valid() {
 }
 
 stop_coverage_guidance_writers() {
-	local session pid cwd
+	local session
 	while IFS= read -r session; do
 		[ -n "$session" ] || continue
 		log "stopping coverage guidance session after rejected budget-policy edit session=$session"
 		tmux kill-session -t "$session" 2>/dev/null || true
 	done < <(tmux list-sessions -F '#S' 2>/dev/null | grep '^rtc-coverage-guidance-codex-' || true)
-	for pid in $(pgrep -f 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true); do
-		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
-		[ "$cwd" = "$REPO" ] || continue
-		log "stopping orphaned coverage guidance writer after rejected budget-policy edit pid=$pid cwd=$cwd"
-		kill -TERM "$pid" 2>/dev/null || true
-	done
+	stop_codex_in_control_repo
 }
 
-restore_control_novelty_monitor_from_frozen() {
-	local product_repo=$1 expected_hash=$2 source destination source_hash tmp restored_hash
-	source=$product_repo/bin/rtc-browser-fuzz-novelty-monitor.mjs
-	destination=$REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs
-	novelty_monitor_policy_valid "$source" || return 1
+restore_control_harness_from_frozen() {
+	local product_repo=$1 relative=$2 expected_hash=$3 source destination source_hash tmp restored_hash
+	source=$product_repo/$relative
+	destination=$REPO/$relative
+	[ -f "$source" ] || return 1
 	source_hash=$(sha256sum "$source" 2>/dev/null | awk '{ print $1 }')
 	[ -n "$expected_hash" ] && [ "$source_hash" = "$expected_hash" ] || return 1
+	if [ "$relative" = bin/rtc-browser-fuzz-novelty-monitor.mjs ]; then
+		novelty_monitor_policy_valid "$source" || return 1
+	fi
 	stop_coverage_guidance_writers
-	tmp=$(mktemp "$REPO/bin/.guard-control-restore.XXXXXX")
+	mkdir -p "$(dirname "$destination")"
+	tmp=$(mktemp "$(dirname "$destination")/.guard-control-restore.XXXXXX")
 	cp -p "$source" "$tmp"
 	mv -f "$tmp" "$destination"
 	restored_hash=$(sha256sum "$destination" 2>/dev/null | awk '{ print $1 }')
 	[ "$restored_hash" = "$expected_hash" ] || return 1
-	log "rejected novelty monitor budget-policy regression and restored validated frozen control source hash=$expected_hash"
+	log "restored drifted live harness control file from frozen generation path=$relative hash=$expected_hash"
+}
+
+restore_control_novelty_monitor_from_frozen() {
+	local product_repo=$1 expected_hash=$2
+	restore_control_harness_from_frozen \
+		"$product_repo" \
+		bin/rtc-browser-fuzz-novelty-monitor.mjs \
+		"$expected_hash"
 }
 
 coverage_candidate_source_problem() {
@@ -932,7 +1061,7 @@ coverage_candidate_source_problem() {
 	}
 	if ! novelty_monitor_policy_valid "$product_repo/bin/rtc-browser-fuzz-novelty-monitor.mjs"; then
 		policy_error=$("$NODE_BIN/node" "$NOVELTY_POLICY_CHECK" "$product_repo/bin/rtc-browser-fuzz-novelty-monitor.mjs" 2>&1 || true)
-		printf 'frozen novelty monitor violates hard supervisor budget policy: %s' "${policy_error:-unknown policy-check failure}"
+		printf 'frozen novelty monitor violates hard scheduling policy: %s' "${policy_error:-unknown policy-check failure}"
 		return 0
 	fi
 	monitor_repo=$(awk -F '\t' '$1 == "monitor_repo" { print $2; exit }' "$manifest")
@@ -948,6 +1077,10 @@ coverage_candidate_source_problem() {
 		printf 'coverage guidance is not isolated in writable harness control repo=%s' "$REPO"
 		return 0
 	}
+	grep -Fqx "export RTC_FUZZ_NOVELTY_COVERAGE_CODEX='0'" "$root/run-monitor.sh" 2>/dev/null || {
+		printf 'in-generation coverage guidance writer is enabled'
+		return 0
+	}
 	grep -Fqx "export RTC_FUZZ_NOVELTY_CURRENT_OUTPUT_POINTER='$COVERAGE_BASE/current-output-dir.txt'" "$root/run-monitor.sh" 2>/dev/null || {
 		printf 'novelty monitor does not enforce current output pointer=%s' "$COVERAGE_BASE/current-output-dir.txt"
 		return 0
@@ -961,7 +1094,7 @@ coverage_candidate_source_problem() {
 	if ! novelty_monitor_policy_valid "$REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs"; then
 		policy_error=$("$NODE_BIN/node" "$NOVELTY_POLICY_CHECK" "$REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs" 2>&1 || true)
 		if ! restore_control_novelty_monitor_from_frozen "$product_repo" "$expected_hash"; then
-			printf 'control novelty monitor violates hard supervisor budget policy and restore failed: %s' "${policy_error:-unknown policy-check failure}"
+			printf 'control novelty monitor violates hard scheduling policy and restore failed: %s' "${policy_error:-unknown policy-check failure}"
 			return 0
 		fi
 	fi
@@ -994,7 +1127,10 @@ coverage_candidate_source_problem() {
 				log "deferring fresh versioned harness advance path=$relative age=${control_age}s grace=${HARNESS_UPDATE_GRACE_SECONDS}s control=$control_hash frozen=$expected_hash"
 				return 1
 			fi
-			printf 'versioned harness advanced path=%s control=%s frozen=%s' "$relative" "$control_hash" "$expected_hash"
+			if restore_control_harness_from_frozen "$product_repo" "$relative" "$expected_hash"; then
+				continue
+			fi
+			printf 'versioned harness drift restore failed path=%s control=%s frozen=%s' "$relative" "$control_hash" "$expected_hash"
 			return 0
 		fi
 	done
@@ -1292,13 +1428,33 @@ Inspect these logs and current tmux/process state:
 
 Task:
 1. Determine why the supervised fuzzing pool is repeatedly disappearing or stalling.
-2. Make the smallest useful operational or harness fix if one is evident.
+2. Identify the smallest useful operational or harness fix if one is evident, but do not edit live files or restart loops from this diagnostic job.
 3. Do not add behavior-disable flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
-4. Run focused checks for any changed files.
+4. Include exact proposed edits and focused validation commands in the report.
 5. Write a concise report to: $report
 PROMPT
 	log "launching $session for repeated restarts in $pool: $reason"
-	tmux new-session -d -s "$session" "bash -lc 'cd \"$REPO\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m gpt-5.5 -c model_reasoning_effort=xhigh -s danger-full-access < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
+	tmux new-session -d -s "$session" "bash -lc 'cd \"$LOG_DIR\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m gpt-5.5 -c model_reasoning_effort=xhigh -s read-only < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
+}
+
+refresh_stable_script() {
+	local relative=$1 stable=$2 canonical=$REPO/$relative
+	if [ -x "$canonical" ] && { [ ! -x "$stable" ] || ! cmp -s "$canonical" "$stable"; }; then
+		install -m 755 "$canonical" "$stable" || true
+	fi
+	[ -x "$stable" ]
+}
+
+run_versioned_launcher() {
+	local relative=$1 stable=$2 canonical=$REPO/$relative
+	refresh_stable_script "$relative" "$stable" || true
+	if [ -x "$stable" ]; then
+		"$stable"
+	elif [ -x "$canonical" ]; then
+		"$canonical"
+	else
+		return 1
+	fi
 }
 
 restart_pool() {
@@ -1319,16 +1475,19 @@ restart_pool() {
 			bash "$REPO/bin/rtc-coverage-guided-watchdog-start-remote.sh" >> "$LOG_DIR/coverage-watchdog-start.log" 2>&1 || log "coverage watchdog start failed"
 			;;
 		strict)
-			/tmp/start_rtc_strict_expansion.sh >> "$LOG_DIR/strict-start.log" 2>&1 || log "strict start failed"
+			RTC_STRICT_EXPANSION_ENABLED_NAMES="$OPTIONAL_STRICT_ENABLED_NAMES" \
+				run_versioned_launcher bin/rtc-strict-expansion-start-remote.sh /tmp/start_rtc_strict_expansion.sh >> "$LOG_DIR/strict-start.log" 2>&1 || log "strict start failed"
 			;;
 		focused)
-			/tmp/start_rtc_focused_shards.sh >> "$LOG_DIR/focused-start.log" 2>&1 || log "focused start failed"
+			refresh_stable_script bin/rtc-focused-shards-cleanup-remote.sh /tmp/cleanup_rtc_focused_shards.sh || true
+			RTC_FOCUSED_SHARDS_ENABLED_NAMES="$OPTIONAL_FOCUSED_ENABLED_NAMES" \
+				run_versioned_launcher bin/rtc-focused-shards-start-remote.sh /tmp/start_rtc_focused_shards.sh >> "$LOG_DIR/focused-start.log" 2>&1 || log "focused start failed"
 			;;
 		focused-gap)
-			/tmp/start_rtc_focused_gap_codex_loop.sh >> "$LOG_DIR/focused-gap-start.log" 2>&1 || log "focused gap loop start failed"
+			run_versioned_launcher bin/rtc-focused-shards-gap-codex-loop-remote.sh /tmp/start_rtc_focused_gap_codex_loop.sh >> "$LOG_DIR/focused-gap-start.log" 2>&1 || log "focused gap loop start failed"
 			;;
 		gap-booster)
-			/tmp/start_rtc_gap_booster.sh >> "$LOG_DIR/gap-booster-start.log" 2>&1 || log "gap booster start failed"
+			run_versioned_launcher bin/rtc-gap-booster-start-remote.sh /tmp/start_rtc_gap_booster.sh >> "$LOG_DIR/gap-booster-start.log" 2>&1 || log "gap booster start failed"
 			;;
 		lower-level)
 			if ! has_lower_level_session; then
@@ -1467,9 +1626,14 @@ run_loop() {
 run_loop_locked() {
 	printf '%s\n' "$$" > "$PID_FILE"
 	child_pid=""
+	child_pid_is_group=0
 	cleanup() {
 		if [ -n "$child_pid" ]; then
-			kill "$child_pid" 2>/dev/null || true
+			if [ "$child_pid_is_group" = 1 ]; then
+				kill -TERM -- "-$child_pid" 2>/dev/null || kill "$child_pid" 2>/dev/null || true
+			else
+				kill "$child_pid" 2>/dev/null || true
+			fi
 			wait "$child_pid" 2>/dev/null || true
 		fi
 		rm -f "$PID_FILE"
@@ -1480,9 +1644,11 @@ run_loop_locked() {
 	log "guard loop started pid=$$"
 	while true; do
 		check_tmux_server_generation
+		stop_codex_in_control_repo
 		stop_stale_coverage_monitors
 		stop_disabled_analysis_loops
 		trim_optional_live_analysis_codex
+		run_docker_network_maintenance
 		coverage_needs_restart=0
 			if ! has_session rtc-coverage-guided-novelty; then
 				if coverage_start_in_progress; then
@@ -1536,7 +1702,7 @@ run_loop_locked() {
 				restart_focused_sidecars >> "$LOG_DIR/focused-sidecars-start.log" 2>&1 ||
 					log "focused sidecar restart failed"
 			fi
-			if ! has_session rtc-focused-shards-gap-codex-loop; then
+			if [ "$ENABLE_FOCUSED_GAP_CODEX" = "1" ] && ! has_session rtc-focused-shards-gap-codex-loop; then
 				restart_pool focused-gap "missing focused Codex gap loop"
 			fi
 		fi
@@ -1620,6 +1786,7 @@ run_loop_locked() {
 
 		sleep 120 &
 		child_pid=$!
+		child_pid_is_group=0
 		wait "$child_pid" 2>/dev/null || true
 		child_pid=""
 	done

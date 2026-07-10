@@ -120,6 +120,13 @@ const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 const CURRENT_RUN_DIRS = [ OUTPUT_DIR ];
 let currentRunCoverageRoots = CURRENT_RUN_DIRS;
 const CURRENT_REPO_HEAD_COMMIT = getGitOutput( [ 'rev-parse', 'HEAD' ] );
+const SOURCE_MANIFEST = readKeyValueTsvFileSync(
+	path.join( OUTPUT_DIR, 'source-manifest.tsv' )
+);
+const CURRENT_FIRST_GREEN_PRODUCT_EVIDENCE_SCOPE =
+	SOURCE_MANIFEST.candidate_head && SOURCE_MANIFEST.state_compatibility_sha256
+		? `${ SOURCE_MANIFEST.candidate_head }:${ SOURCE_MANIFEST.state_compatibility_sha256 }`
+		: `output:${ path.resolve( OUTPUT_DIR ) }`;
 const INCLUDE_EXTERNAL_IMPORTS =
 	process.env.RTC_FUZZ_NOVELTY_INCLUDE_EXTERNAL_IMPORTS === '1';
 const ARTIFACT_SCAN_IGNORED_DIRS = new Set( [
@@ -1158,6 +1165,7 @@ function getDynamicCoverageGapReservedGroupLimit() {
 	const candidateGroups = uniqueStringList( [
 		...getCoverageQualityRepairPriorityGroups(),
 		...harnessWorkGroups,
+		...BRANCH_RISK_COVERAGE_GAP_PRIORITY_GROUPS,
 		...getDeficitRankedCoverageGapGroups(),
 		...getBootstrapSuccessDeficitGroups(),
 		...zeroCoverageGoalGroups,
@@ -1220,6 +1228,7 @@ function getCoverageGapPublicationCandidateGroups() {
 	return uniqueStringList( [
 		...getCoverageQualityRepairPriorityGroups(),
 		...harnessWorkGroups,
+		...BRANCH_RISK_COVERAGE_GAP_PRIORITY_GROUPS,
 		...getDeficitRankedCoverageGapGroups(),
 		...recommendedGroups,
 		...getBootstrapSuccessDeficitGroups(),
@@ -1400,6 +1409,13 @@ const PRODUCTIVE_FALLBACK_GROUPS = [
 	'novelty-ws-real-user-save-reload',
 	'novelty-ws-real-user-editing',
 	'novelty-ws-real-user-rich-text',
+];
+
+const BRANCH_RISK_COVERAGE_GAP_PRIORITY_GROUPS = [
+	'novelty-http-table-stale-snapshot',
+	TABLE_STALE_SNAPSHOT_COMPLETION_GROUP,
+	'novelty-http-existing-post-crdt-metadata',
+	'novelty-ws-revision-recovery',
 ];
 
 const DEFAULT_REQUIRED_COVERAGE_BREADTH_GROUPS = [
@@ -2426,12 +2442,12 @@ const PROFILE_GROUPS = [
 		name: 'novelty-ws-many-user-lifecycle-completion',
 		actionProfile: 'many-user-lifecycle',
 		startSeed: 1180001,
-		stepCount: 8,
+		stepCount: 10,
 		collectCdpCoverage: false,
 		env: {
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_ACTION_SEQUENCE:
-				'append-paragraph,assert-presence-list,edit-paragraph,append-paragraph,assert-presence-list,edit-paragraph,append-paragraph,assert-presence-list',
+				'append-paragraph,assert-presence-list,assert-selection-cursor,edit-paragraph,append-paragraph,assert-presence-list,assert-selection-cursor,edit-paragraph,append-paragraph,assert-presence-list',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '11',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '0',
@@ -2637,6 +2653,8 @@ const PROFILE_GROUPS = [
 		stepCount: 6,
 		collectCdpCoverage: true,
 		env: {
+			GUTENBERG_RTC_BROWSER_ACTION_SEQUENCE:
+				'table-stale-snapshot-html,append-paragraph,table-stale-snapshot-html,edit-table-array-attributes,table-stale-snapshot-html,concurrent-paragraphs',
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '1',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
@@ -2856,6 +2874,50 @@ const state = ( await readJsonFile( STATE_PATH ) ) ?? {
 };
 state.fileOffsets ??= {};
 state.changes ??= [];
+state.satisfiedRequiredFirstGreenProductGroups ??= [];
+const previousFirstGreenProductEvidenceScope =
+	state.satisfiedRequiredFirstGreenProductEvidenceScope;
+let durableSatisfiedRequiredFirstGreenProductGroups = uniqueStringList(
+	state.satisfiedRequiredFirstGreenProductGroups
+).filter( ( group ) => REQUIRED_FIRST_GREEN_PRODUCT_GROUPS.has( group ) );
+if ( ! previousFirstGreenProductEvidenceScope ) {
+	// Older state recorded this durable transition only in the change log.
+	// The launcher copies state only for the same candidate/evidence contract.
+	durableSatisfiedRequiredFirstGreenProductGroups = uniqueStringList( [
+		...durableSatisfiedRequiredFirstGreenProductGroups,
+		...state.changes.flatMap( ( change ) =>
+			change?.action === 'honor-retained-required-product-first-green' &&
+			Array.isArray( change.groups )
+				? change.groups
+				: []
+		),
+	] ).filter( ( group ) => REQUIRED_FIRST_GREEN_PRODUCT_GROUPS.has( group ) );
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'scope-required-product-first-green',
+		groups: durableSatisfiedRequiredFirstGreenProductGroups,
+		evidenceScope: CURRENT_FIRST_GREEN_PRODUCT_EVIDENCE_SCOPE,
+		reason: 'migrated same-candidate first-green history into a monotonic candidate/evidence-contract-scoped gate',
+	} );
+} else if (
+	previousFirstGreenProductEvidenceScope !==
+	CURRENT_FIRST_GREEN_PRODUCT_EVIDENCE_SCOPE
+) {
+	durableSatisfiedRequiredFirstGreenProductGroups = [];
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'reset-required-product-first-green-scope',
+		previousEvidenceScope: previousFirstGreenProductEvidenceScope,
+		evidenceScope: CURRENT_FIRST_GREEN_PRODUCT_EVIDENCE_SCOPE,
+		reason: 'candidate head or state compatibility changed; require new first-green product evidence',
+	} );
+}
+state.satisfiedRequiredFirstGreenProductEvidenceScope =
+	CURRENT_FIRST_GREEN_PRODUCT_EVIDENCE_SCOPE;
+state.satisfiedRequiredFirstGreenProductGroups =
+	durableSatisfiedRequiredFirstGreenProductGroups;
+state.satisfiedRequiredFirstGreenProductGroupMarker =
+	durableSatisfiedRequiredFirstGreenProductGroups.join( ',' );
 state.expansionPolicyVersion ??= 0;
 if ( state.expansionPolicyVersion !== EXPANSION_POLICY_VERSION ) {
 	state.enabledGroups ??= [];
@@ -4504,7 +4566,21 @@ function hasBenchmarkCanaryDeadlineClosureEvidence( group ) {
 	);
 }
 
+function hasScopedRequiredProductFirstGreenEvidence( group ) {
+	return (
+		REQUIRED_FIRST_GREEN_PRODUCT_GROUPS.has( group ) &&
+		state.satisfiedRequiredFirstGreenProductEvidenceScope ===
+			CURRENT_FIRST_GREEN_PRODUCT_EVIDENCE_SCOPE &&
+		( state.satisfiedRequiredFirstGreenProductGroups ?? [] ).includes(
+			group
+		)
+	);
+}
+
 function hasBenchmarkCanaryClosureEvidence( group ) {
+	if ( hasScopedRequiredProductFirstGreenEvidence( group ) ) {
+		return true;
+	}
 	if (
 		isDeadlineBenchmarkCanaryBudgetCapActive() &&
 		isBenchmarkCanaryForcedGroup( group )
@@ -4610,6 +4686,18 @@ function getBenchmarkCanarySchedulingLimit() {
 		);
 	}
 	return MAX_ENABLED_GROUPS;
+}
+
+function getDeadlineSupervisorGroupLimit( benchmarkCanarySchedulingLimit ) {
+	if ( ! isDeadlineBenchmarkCanaryBudgetCapActive() ) {
+		return MAX_ENABLED_GROUPS;
+	}
+
+	return Math.min(
+		MAX_ENABLED_GROUPS,
+		benchmarkCanarySchedulingLimit +
+			getEffectiveCoverageGapReservedGroupLimit()
+	);
 }
 
 function getUnblockedBenchmarkCanaryDeficitGroups(
@@ -14904,7 +14992,14 @@ const NOVELTY_GROUP_HARNESS_OVERLAY_PATHS = [
 	'test/e2e/config/rtc-websocket-setup.ts',
 	'test/e2e/specs/editor/collaboration',
 	'packages/e2e-tests/plugins/rtc-websocket-provider',
+	'bin/rtc-browser-fuzz-analysis-guard-bin',
 ];
+const NOVELTY_GROUP_CONTROL_PLANE_BIN_FILES = new Set( [
+	'rtc-browser-fuzz-live-analysis-monitor.mjs',
+	'rtc-browser-fuzz-novelty-monitor.mjs',
+	'rtc-browser-fuzz-novelty-policy-check.mjs',
+	'rtc-browser-fuzz-supervisor.mjs',
+] );
 const NOVELTY_GROUP_HARNESS_MANIFEST = '.js2-harness-overlay-manifest.json';
 let noveltyGroupHarnessOverlayManifestPromise = null;
 
@@ -14947,7 +15042,11 @@ async function getNoveltyGroupHarnessOverlayManifest() {
 		for ( const entry of binEntries
 			.filter(
 				( candidate ) =>
-					candidate.name.startsWith( 'rtc-' ) &&
+					( ( candidate.name.startsWith( 'rtc-browser-' ) &&
+						! NOVELTY_GROUP_CONTROL_PLANE_BIN_FILES.has(
+							candidate.name
+						) ) ||
+						candidate.name === 'rtc-test-ws-sync-server.mjs' ) &&
 					( candidate.isFile() || candidate.isSymbolicLink() )
 			)
 			.sort( ( left, right ) =>
@@ -15381,12 +15480,20 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 			? getBenchmarkCanarySchedulingLimit()
 			: MAX_ENABLED_GROUPS;
 	const baseSupervisorGroupLimit = isDeadlineBenchmarkCanaryBudgetCapActive()
-		? benchmarkCanarySchedulingLimit
+		? getDeadlineSupervisorGroupLimit( benchmarkCanarySchedulingLimit )
 		: MAX_ENABLED_GROUPS;
+	const previouslySatisfiedRequiredFirstGreenProductGroups = new Set(
+		state.satisfiedRequiredFirstGreenProductEvidenceScope ===
+		CURRENT_FIRST_GREEN_PRODUCT_EVIDENCE_SCOPE
+			? state.satisfiedRequiredFirstGreenProductGroups ?? []
+			: []
+	);
 	const satisfiedRequiredFirstGreenProductGroups = [
 		...REQUIRED_FIRST_GREEN_PRODUCT_GROUPS,
 	].filter(
-		( group ) => getCurrentOutputSuccessfulGroupRecordCount( group ) > 0
+		( group ) =>
+			previouslySatisfiedRequiredFirstGreenProductGroups.has( group ) ||
+			getCurrentOutputSuccessfulGroupRecordCount( group ) > 0
 	);
 	const satisfiedFirstGreenMarker =
 		satisfiedRequiredFirstGreenProductGroups.join( ',' );
@@ -15400,18 +15507,26 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 			at: new Date().toISOString(),
 			action: 'honor-retained-required-product-first-green',
 			groups: satisfiedRequiredFirstGreenProductGroups,
-			reason: 'current-output success remains a satisfied publication gate after its run directory leaves the active producer set',
+			evidenceScope: CURRENT_FIRST_GREEN_PRODUCT_EVIDENCE_SCOPE,
+			reason: 'same-candidate success remains a satisfied publication gate after its output root or run directory leaves the active producer set',
 		} );
 	}
+	state.satisfiedRequiredFirstGreenProductEvidenceScope =
+		CURRENT_FIRST_GREEN_PRODUCT_EVIDENCE_SCOPE;
 	state.satisfiedRequiredFirstGreenProductGroups =
 		satisfiedRequiredFirstGreenProductGroups;
+	const satisfiedRequiredFirstGreenProductGroupSet = new Set(
+		satisfiedRequiredFirstGreenProductGroups
+	);
 	const rawRequiredFirstGreenProductGroups = [
 		...REQUIRED_FIRST_GREEN_PRODUCT_GROUPS,
 	].filter(
 		( group ) =>
 			enabled.has( group ) &&
-			getCurrentOutputSuccessfulGroupRecordCount( group ) === 0
+			! satisfiedRequiredFirstGreenProductGroupSet.has( group )
 	);
+	state.pendingRequiredFirstGreenProductGroups =
+		rawRequiredFirstGreenProductGroups;
 	const protectedBenchmarkGroupsInOrder = uniqueStringList( [
 		...protectedBenchmarkCanaryGroupsForBudget.filter( ( group ) =>
 			enabled.has( group )
@@ -15461,12 +15576,18 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 	const protectedBenchmarkGroupSet = new Set(
 		protectedBenchmarkGroupsInOrder
 	);
-	const orderedRawWithoutProtectedBenchmarkGroups = rawOrderedGroups.filter(
-		( group ) => ! protectedBenchmarkGroupSet.has( group )
-	);
+	const orderedRawWithoutSatisfiedFirstGreenProductGroups =
+		rawOrderedGroups.filter(
+			( group ) =>
+				! satisfiedRequiredFirstGreenProductGroupSet.has( group )
+		);
+	const orderedRawWithoutProtectedBenchmarkGroups =
+		orderedRawWithoutSatisfiedFirstGreenProductGroups.filter(
+			( group ) => ! protectedBenchmarkGroupSet.has( group )
+		);
 	const orderedCandidatesWithProtectedBenchmarkGroups = uniqueStringList( [
 		...protectedBenchmarkGroupsInOrder,
-		...rawOrderedGroups,
+		...orderedRawWithoutSatisfiedFirstGreenProductGroups,
 	] );
 	const deadlineCoverageGapReservedGroups = uniqueStringList( [
 		...protectedBenchmarkGroupsInOrder,
@@ -15509,6 +15630,14 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 		)
 	);
 	const publishedGroups = orderedGroups.slice( 0, supervisorGroupLimit );
+	state.publishedSatisfiedRequiredFirstGreenProductGroups =
+		publishedGroups.filter( ( group ) =>
+			satisfiedRequiredFirstGreenProductGroupSet.has( group )
+		);
+	state.protectedSatisfiedRequiredFirstGreenProductGroups =
+		protectedBenchmarkGroupsInOrder.filter( ( group ) =>
+			satisfiedRequiredFirstGreenProductGroupSet.has( group )
+		);
 	const expectedProtectedBenchmarkGroups =
 		protectedBenchmarkGroupsInOrder.slice(
 			0,
@@ -18499,7 +18628,11 @@ async function applyPolicy(
 		}${ representative }); do not evict another browser group for zero-coverage rotation until the held producer is paused/rotated while product-evidence representatives stay visible`;
 	}
 
-	for ( const group of ZERO_COVERAGE_PRIORITY_GROUPS ) {
+	const zeroCoverageRotationGroups =
+		isDeadlineBenchmarkCanaryBudgetCapActive() || STRICT_PRODUCER_BUDGET_CAP
+			? []
+			: ZERO_COVERAGE_PRIORITY_GROUPS;
+	for ( const group of zeroCoverageRotationGroups ) {
 		if ( enabled.has( group ) ) {
 			continue;
 		}

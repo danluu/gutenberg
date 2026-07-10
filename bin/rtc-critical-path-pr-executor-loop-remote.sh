@@ -1673,7 +1673,13 @@ clear_stale_executor_lock_holders() {
 
 active_session_matching() {
 	local pattern=$1
-	tmux_sessions | rg -i "$pattern" | sed -n '1p'
+	tmux_sessions |
+		rg -i "$pattern" |
+		while IFS= read -r session; do
+			critical_session_is_retired "$session" && continue
+			printf '%s\n' "$session"
+			return 0
+		done
 }
 
 continuation_worktree_parts() {
@@ -1814,6 +1820,15 @@ active_work_matching() {
 		return 0
 	fi
 	return 1
+}
+
+critical_active_tmux_sessions() {
+	tmux_sessions |
+		awk '/^(rtc-critical-|rtc-benchmark-canary-feedback-refresh-|rtc-pr-finalize-job-|rtc-deferred-job-|rtc-cycle|rtc-analysis-live-|rtc-prsplit-progress-unblock|rtc-fuzz-level-mix|rtc-coverage-guidance)/ { print }' |
+		while IFS= read -r session; do
+			critical_session_is_retired "$session" && continue
+			printf '%s\n' "$session"
+		done
 }
 
 active_reload_hydration_exact_session() {
@@ -2084,10 +2099,17 @@ active_count_matching() {
 }
 
 active_continuation_identity_count() {
-	local pid cwd name
+	local pid cwd name session
 	{
 		tmux list-sessions -F '#S' 2>/dev/null |
-			sed -n 's/^rtc-critical-continuation-//p'
+			while IFS= read -r session; do
+				case "$session" in
+					rtc-critical-continuation-*) ;;
+					*) continue ;;
+				esac
+				critical_session_is_retired "$session" && continue
+				printf '%s\n' "${session#rtc-critical-continuation-}"
+			done
 		if command -v pgrep >/dev/null 2>&1; then
 			while IFS= read -r pid; do
 				[ -n "$pid" ] || continue
@@ -2096,6 +2118,11 @@ active_continuation_identity_count() {
 					"$BASE"/worktrees/continuation-*)
 						continuation_process_is_stale_orphan "$pid" "$cwd" && continue
 						name=${cwd##*/continuation-}
+						case "$name" in
+							plain-editor-product-smoke-20[0-9][0-9][0-9][0-9][0-9][0-9]T[0-9][0-9][0-9][0-9][0-9][0-9]Z)
+								plain_editor_product_smoke_terminal_by_retained_success && continue
+								;;
+						esac
 						printf '%s\n' "$name"
 						;;
 				esac
@@ -2667,6 +2694,85 @@ plain_editor_product_smoke_summary() {
 	' "$status"
 }
 
+plain_editor_product_smoke_terminal_by_retained_success() {
+	plain_editor_product_failure_retained && return 1
+	plain_editor_product_smoke_retained_success >/dev/null
+}
+
+plain_editor_product_smoke_session() {
+	case "${1:-}" in
+		rtc-critical-continuation-plain-editor-product-smoke-20[0-9][0-9][0-9][0-9][0-9][0-9]T[0-9][0-9][0-9][0-9][0-9][0-9]Z|\
+		continuation-plain-editor-product-smoke-20[0-9][0-9][0-9][0-9][0-9][0-9]T[0-9][0-9][0-9][0-9][0-9][0-9]Z)
+			return 0
+			;;
+	esac
+	return 1
+}
+
+critical_session_is_retired() {
+	local session=${1:-}
+	plain_editor_product_smoke_session "$session" || return 1
+	plain_editor_product_smoke_terminal_by_retained_success
+}
+
+plain_editor_product_smoke_session_run_dir() {
+	local session=${1:-} ts
+	ts=$(printf '%s\n' "$session" | sed -n 's/^rtc-critical-continuation-plain-editor-product-smoke-\(20[0-9]\{6\}T[0-9]\{6\}Z\)$/\1/p')
+	if [ -z "$ts" ]; then
+		ts=$(printf '%s\n' "$session" | sed -n 's/^continuation-plain-editor-product-smoke-\(20[0-9]\{6\}T[0-9]\{6\}Z\)$/\1/p')
+	fi
+	[ -n "$ts" ] || return 1
+	printf '%s/runs/%s/continuations/plain-editor-product-smoke\n' "$BASE" "$ts"
+}
+
+write_plain_editor_product_smoke_retirement_artifacts() {
+	local session=$1 run_dir classification report validation repair rc now summary
+	run_dir=$(plain_editor_product_smoke_session_run_dir "$session" 2>/dev/null || true)
+	[ -n "$run_dir" ] || return 0
+	mkdir -p "$run_dir"
+	classification=$run_dir/classification.tsv
+	report=$run_dir/report.md
+	validation=$run_dir/validation.tsv
+	repair=$run_dir/repair-branch.txt
+	rc=$run_dir/rc
+	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+	summary=$(plain_editor_product_smoke_summary || true)
+	if [ ! -s "$report" ]; then
+		{
+			echo "# Plain Editor Product Smoke Retired"
+			echo
+			echo "- lane: plain-editor-product-smoke"
+			echo "- timestamp: $now"
+			echo "- session: $session"
+			echo "- reason: retained first-green product smoke marker is satisfied and no product-failure quarantine is retained."
+			echo "- evidence: ${summary:-plain-editor-product-smoke retained success marker present}"
+		} > "$report"
+	fi
+	if [ ! -s "$validation" ]; then
+		printf 'check\tresult\tdetail\tartifact_path\n' > "$validation"
+		printf 'retained_first_green\tPASS\t%s\t%s\n' "${summary:-plain-editor-product-smoke retained success marker present}" "$report" >> "$validation"
+		printf 'product_failure_quarantine\tPASS\tno plain-editor product-failure quarantine retained\t%s\n' "$report" >> "$validation"
+	fi
+	if [ ! -s "$classification" ]; then
+		printf 'lane_id\tclassification\tevidence\tnext_action\tartifact_path\n' > "$classification"
+		printf 'plain-editor-product-smoke\tsuperseded_by_retained_first_green\t%s\treopen only with newer product-failure quarantine or loss of the satisfied first-green marker\t%s\n' "${summary:-plain-editor-product-smoke retained success marker present}" "$report" >> "$classification"
+	fi
+	[ -s "$repair" ] || printf 'NONE\n' > "$repair"
+	[ -s "$rc" ] || printf '0\n' > "$rc"
+}
+
+retire_satisfied_plain_editor_product_smoke_sessions() {
+	local session
+	plain_editor_product_smoke_terminal_by_retained_success || return 0
+	tmux_sessions |
+		while IFS= read -r session; do
+			plain_editor_product_smoke_session "$session" || continue
+			log "retiring superseded plain-editor-product-smoke continuation session=$session"
+			write_plain_editor_product_smoke_retirement_artifacts "$session"
+			tmux kill-session -t "$session" 2>/dev/null || true
+		done
+}
+
 benchmark_forced_coverage_open() {
 	local status
 	status=$(latest_benchmark_coverage_status || true)
@@ -2952,6 +3058,9 @@ benchmark_product_failure_summary() {
 
 benchmark_effective_promotion_blocked() {
 	benchmark_promotion_blocked || return 1
+	if benchmark_forced_coverage_open; then
+		return 0
+	fi
 	! benchmark_exact_stack_green_current
 }
 
@@ -2967,17 +3076,12 @@ benchmark_feedback_refresh_active() {
 
 benchmark_exact_stack_active() {
 	local hit
-	hit=$(benchmark_feedback_refresh_active || true)
-	if [ -n "$hit" ]; then
-		printf '%s\n' "$hit"
-		return 0
-	fi
 	hit=$(active_work_matching '^rtc-critical-continuation-benchmark-canary-fuzzer-gap|benchmark-canary-fuzzer-gap' || true)
 	if [ -n "$hit" ]; then
 		printf '%s\n' "$hit"
 		return 0
 	fi
-	pgrep -af '[e]xact-stack-worktrees.*(title-reload-http|existing-post-crdt|large-http|ws-code-editor|code-editor)' 2>/dev/null | sed -n '1p'
+	return 1
 }
 
 latest_benchmark_classification() {
@@ -3466,12 +3570,12 @@ write_lanes() {
 			printf 'seed-1060015-reducer\tPR05?\treducer\tvalidation-only\t%s\t1060015\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/1060015-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
 		if benchmark_feedback_present; then
-			if benchmark_exact_stack_green_current && benchmark_forced_coverage_open; then
+			if benchmark_effective_promotion_blocked; then
+				printf 'benchmark-canary-fuzzer-gap\tPROCESS\texact-stack-promotion-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,exact-stack\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+			elif benchmark_exact_stack_green_current && benchmark_forced_coverage_open; then
 				printf 'benchmark-canary-fuzzer-gap\tPROCESS\tcoverage-confidence\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,forced-coverage\tactive\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 			elif benchmark_exact_stack_green_current; then
 				printf 'benchmark-canary-fuzzer-gap\tPROCESS\texact-stack-promotion-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,exact-stack\tterminal\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
-			elif benchmark_effective_promotion_blocked; then
-				printf 'benchmark-canary-fuzzer-gap\tPROCESS\texact-stack-promotion-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,exact-stack\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 			else
 				printf 'benchmark-canary-fuzzer-gap\tPROCESS\tcoverage-gap-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 			fi
@@ -3761,7 +3865,13 @@ write_blockers_and_queue() {
 	benchmark_result=pending
 	benchmark_artifacts=fuzzer-feedback.md,fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv
 	benchmark_next='consume benchmark canary feedback; add or repair equivalent fuzz coverage and validate the fixed stack under that coverage before maintainer snapshot publication'
-	if benchmark_exact_stack_green_current && benchmark_forced_coverage_open; then
+	if benchmark_effective_promotion_blocked; then
+		benchmark_kind=exact-stack-promotion
+		benchmark_action=exact-stack-repair
+		benchmark_artifacts=fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv,exact-stack-status.tsv,repair-branch.txt
+		benchmark_next='promotion is blocked on the exact all-merged stack; do not clear with coverage_repaired alone; create or advance a product fix branch and prove exact-stack green before maintainer snapshot publication'
+		benchmark_result=$([ -n "$benchmark_active" ] && printf exact_stack_repair_active || printf exact_stack_repair_required)
+	elif benchmark_exact_stack_green_current && benchmark_forced_coverage_open; then
 		benchmark_state=active
 		benchmark_kind=coverage-confidence
 		benchmark_action=coverage-retarget
@@ -3776,12 +3886,6 @@ write_blockers_and_queue() {
 		benchmark_artifacts=fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv,exact-stack-status.tsv,repair-branch.txt
 		benchmark_next='current benchmark canary feedback has fresh exact-stack green evidence; reopen only when current-feedback.tsv changes or new promotion_blocked rows appear'
 		benchmark_result=exact_stack_green
-	elif benchmark_effective_promotion_blocked; then
-		benchmark_kind=exact-stack-promotion
-		benchmark_action=exact-stack-repair
-		benchmark_artifacts=fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv,exact-stack-status.tsv,repair-branch.txt
-		benchmark_next='promotion is blocked on the exact all-merged stack; do not clear with coverage_repaired alone; create or advance a product fix branch and prove exact-stack green before maintainer snapshot publication'
-		benchmark_result=$([ -n "$benchmark_active" ] && printf exact_stack_repair_active || printf exact_stack_repair_required)
 	fi
 	pr17_queue_state=runnable
 	pr17_queue_result=pending
@@ -3791,7 +3895,7 @@ write_blockers_and_queue() {
 	elif benchmark_product_failures_open; then
 		pr17_queue_state=held
 		pr17_queue_result=held_by_benchmark_product_failure
-	elif [ "$benchmark_result" = forced_coverage_active ]; then
+	elif [ "$benchmark_result" = forced_coverage_active ] || [[ "$benchmark_result" == exact_stack_repair_* ]]; then
 		pr17_queue_state=held
 		pr17_queue_result=held_by_benchmark_canary_fuzzer_gap
 	elif [ -n "$pr17_active" ]; then
@@ -3852,7 +3956,7 @@ write_blockers_and_queue() {
 		elif benchmark_product_failures_open; then
 			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tbenchmark-canary-product-failure\tclassification.tsv,report.md\t\thold behind benchmark-canary-product-failure until %s has no retained_product_evidence=yes, product_evidence_records greater than 0, or coverage_state containing product-failure; then proof-or-reclassify PR17 seed 1020002\t%s\n' \
 				"${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt}" "$now"
-		elif [ "$benchmark_result" = forced_coverage_active ]; then
+		elif [ "$benchmark_result" = forced_coverage_active ] || [[ "$benchmark_result" == exact_stack_repair_* ]]; then
 			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tbenchmark-canary-fuzzer-gap\tclassification.tsv,report.md\t\thold behind benchmark-canary-fuzzer-gap until %s has no promotion_blocked=yes row lacking current_run_green=yes or explicit_downscope=yes; then proof-or-reclassify PR17 seed 1020002\t%s\n' \
 				"${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt}" "$now"
 		else
@@ -3967,8 +4071,7 @@ write_active_jobs() {
 	local tmp=$ACTIVE_JOBS.$$.tmp
 		{
 			printf 'session\tclass\tstarted_hint\n'
-			tmux_sessions |
-				awk '/^(rtc-critical-|rtc-benchmark-canary-feedback-refresh-|rtc-pr-finalize-job-|rtc-deferred-job-|rtc-cycle|rtc-analysis-live-|rtc-prsplit-progress-unblock|rtc-fuzz-level-mix|rtc-coverage-guidance)/ { print }' |
+			critical_active_tmux_sessions |
 				while IFS= read -r session; do
 				case "$session" in
 					rtc-critical-validate-*) printf '%s\tcritical-validation\t\n' "$session" ;;
@@ -5064,12 +5167,24 @@ launch_continuation_jobs() {
 	local generated_at action_id target_loop priority action_kind family_or_pr evidence_path next_action control_path blocker_id active_pattern
 	local benchmark_product_status benchmark_product_summary benchmark_product_signature analysis_product_failure_evidence
 	local plain_smoke_summary plain_smoke_class plain_smoke_classification
-	local focused_exact_open=0 aggregate_benchmark_repair_allowed=0
+	local candidate_head candidate_key focused_exact_open=0 aggregate_benchmark_repair_allowed=0
+	candidate_head=$(analysis_product_failure_candidate_head)
+	candidate_key=${candidate_head:0:12}
+	[ -n "$candidate_key" ] || candidate_key=unknown-candidate
 	if benchmark_product_repair_allowed_by_controller; then
 		aggregate_benchmark_repair_allowed=1
 	fi
 	if productive_analysis_exact_blocker_open || focused_benchmark_canary_blocker_open; then
 		focused_exact_open=1
+	fi
+	if benchmark_feedback_present && benchmark_effective_promotion_blocked; then
+		launch_benchmark_feedback_refresh || true
+		launch_continuation_job \
+			"benchmark-canary-fuzzer-gap" \
+			"benchmark-canary-exact-stack-$candidate_key-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" | cut -c1-12)" \
+			"benchmark-canary-fuzzer-gap" \
+			"exact-stack promotion repair: current benchmark canary has promotion_blocked rows; do not clear this blocker with coverage_repaired alone. Create/advance a product fix branch or exact-stack replay evidence and write exact-stack-status.tsv/classification.tsv." \
+			1
 	fi
 	while IFS=$'\t' read -r generated_at action_id target_loop priority action_kind family_or_pr evidence_path next_action control_path; do
 		[ -n "$family_or_pr" ] || continue
@@ -5086,7 +5201,7 @@ launch_continuation_jobs() {
 				active_pattern=$(slugify "$blocker_id" | cut -c1-48)
 				launch_continuation_job \
 					"$blocker_id" \
-					"productive-exact-v3-$blocker_id" \
+					"productive-exact-v3-$candidate_key-$blocker_id" \
 					"$active_pattern" \
 					"productive-analysis exact blocker $action_id for $family_or_pr. Evidence: $evidence_path. Required action: $next_action" \
 					1
@@ -5095,22 +5210,13 @@ launch_continuation_jobs() {
 				active_pattern=$(slugify "$blocker_id" | cut -c1-48)
 				launch_continuation_job \
 					"$blocker_id" \
-					"productive-exact-v3-$blocker_id" \
+					"productive-exact-v3-$candidate_key-$blocker_id" \
 					"$active_pattern" \
 					"productive-analysis exact blocker $action_id for $family_or_pr. Evidence: $evidence_path. Required action: $next_action" \
 					1
 				;;
 		esac
 	done < <(productive_analysis_exact_blocker_rows || true)
-	if benchmark_feedback_present && benchmark_effective_promotion_blocked; then
-		launch_benchmark_feedback_refresh || true
-		launch_continuation_job \
-			"benchmark-canary-fuzzer-gap" \
-			"benchmark-canary-exact-stack-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" | cut -c1-12)" \
-			"benchmark-canary-fuzzer-gap|benchmark-canary" \
-			"exact-stack promotion repair: current benchmark canary has promotion_blocked rows; do not clear this blocker with coverage_repaired alone. Create/advance a product fix branch or exact-stack replay evidence and write exact-stack-status.tsv/classification.tsv." \
-			1
-	fi
 	if repair_branch_adoption_open; then
 		benchmark_product_summary=$(repair_branch_adoption_summary || true)
 		launch_continuation_job \
@@ -5132,7 +5238,7 @@ launch_continuation_jobs() {
 			analysis_product_failure_evidence=$(analysis_product_failure_records | cut -f5 | paste -sd, -)
 			launch_continuation_job \
 				"benchmark-canary-product-failure" \
-				"benchmark-canary-product-failure-$(hash_key "$benchmark_product_signature")" \
+				"benchmark-canary-product-failure-$candidate_key-$(hash_key "$benchmark_product_signature")" \
 				"$BENCHMARK_PRODUCT_REPAIR_ACTIVE_PATTERN" \
 				"benchmark canary product-failure repair: ${benchmark_product_summary:-no-summary}. Evidence: benchmark=${benchmark_product_status:-missing} actionable_analysis=${analysis_product_failure_evidence:-missing}. Reduce or repair the current product-failure rows; start with rtc-reference-oracle if present; write product-failure-triage.tsv, exact-blocker-status.tsv, repair-branch.txt, and classification.tsv." \
 				1
@@ -5245,8 +5351,8 @@ launch_continuation_jobs() {
 	if benchmark_feedback_present && ! benchmark_effective_promotion_blocked && ! benchmark_exact_stack_green_current; then
 		launch_continuation_job \
 			"benchmark-canary-fuzzer-gap" \
-			"benchmark-canary-fuzzer-gap-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" | cut -c1-12)" \
-			"benchmark-canary-fuzzer-gap|benchmark-canary" \
+			"benchmark-canary-fuzzer-gap-$candidate_key-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.md" | cut -c1-12)" \
+			"benchmark-canary-fuzzer-gap" \
 			"consume benchmark canary feedback as a fuzzer/promotion-process gap; add or repair equivalent fuzz coverage or create a local fix branch, with durable coverage-change and classification artifacts"
 	fi
 	if productive_analysis_feedback_present && ! productive_analysis_resolved_by_active_artifacts; then
@@ -5394,7 +5500,7 @@ write_status() {
 		echo "- worktree prune: $(tail -1 "$WORKTREE_PRUNE_STATUS" 2>/dev/null || printf none)"
 		echo
 		echo "## Active Critical Jobs"
-		tmux_sessions | rg '^rtc-critical-(validate|continuation)-|^rtc-benchmark-canary-feedback-refresh-' || true
+		critical_active_tmux_sessions | rg '^rtc-critical-(validate|continuation)-|^rtc-benchmark-canary-feedback-refresh-' || true
 		echo
 		echo "## Current Blockers"
 		column -t -s $'\t' "$BLOCKERS" 2>/dev/null | sed -n '1,80p' || sed -n '1,80p' "$BLOCKERS" 2>/dev/null || true
@@ -5431,6 +5537,7 @@ reconcile_once() {
 	fi
 	prune_stale_worktrees_if_needed || true
 	cleanup_stale_continuation_processes || true
+	retire_satisfied_plain_editor_product_smoke_sessions || true
 	sync_release_candidate_from_local_publish_manifest || true
 	normalize_completed_repair_adoption_manifests || true
 	write_branch_export_headers

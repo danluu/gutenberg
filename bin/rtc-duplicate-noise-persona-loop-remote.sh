@@ -367,8 +367,8 @@ EOF
 #!/usr/bin/env bash
 set -uo pipefail
 exec 8>&- 2>/dev/null || true
-cd "$FUZZ_REPO" || exit 1
-timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+cd "$run_dir" || exit 1
+timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s read-only < "$prompt" > "$out" 2> "$err"
 rc=\$?
 echo "\$rc" > "$rc_file"
 exit "\$rc"
@@ -438,8 +438,8 @@ EOF
 
   (
     exec 8>&- 2>/dev/null || true
-    cd "$FUZZ_REPO" || exit 1
-    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+    cd "$run_dir" || exit 1
+    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s read-only < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
   )
 }
@@ -455,7 +455,7 @@ run_feedback_action() {
   recent_runs="$(find "$BASE/runs" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | sort | tail -2)"
 
   cat > "$prompt" <<EOF
-Task: apply the duplicate/noise remediation feedback after two continuous persona iterations.
+Task: propose a duplicate/noise remediation after two continuous persona iterations.
 
 Cycle index: $cycle_index
 
@@ -466,35 +466,14 @@ $recent_runs
 
 Use the persona reviews and syntheses from those two runs to implement the smallest safe fix that reduces duplicate/noise dominated fuzzing. The target is the active Jetstream2 RTC fuzzer, not WordPress product fixes.
 
-The current duplicate/noise action gate in context.md is binding. If it is ACTION-NEEDED, do not stop at analysis or scheduling advice. Apply a bounded code/config/restart change that prevents the leaking family from being queued, analyzed, or counted as productive triage, unless doing so would hide product-evidence failures. If no safe change exists, write the exact blocker and the next experiment that would remove it.
+The current duplicate/noise action gate in context.md is binding. If it is ACTION-NEEDED, provide an exact bounded code/config proposal that prevents the leaking family from being queued, analyzed, or counted as productive triage, unless doing so would hide product-evidence failures. Do not edit files or restart loops from this review job. Structural or critical-path controllers must adopt a reviewed proposal in an isolated workspace.
 
-You may edit only:
-- $FUZZ_REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs
-- $FUZZ_REPO/bin/rtc-browser-fuzz-supervisor.mjs
-- $FUZZ_REPO/bin/rtc-browser-fuzz-session-watchdog.mjs
-- $FUZZ_REPO/bin/rtc-browser-fuzz-triage-watcher.mjs
-- $FUZZ_REPO/bin/rtc-browser-fuzz-analysis-tier.mjs
-- $FUZZ_REPO/bin/rtc-browser-fuzz-deep-analysis-tier.mjs
-- $FUZZ_REPO/bin/rtc-browser-fuzz-live-analysis-monitor.mjs
-- $FUZZ_REPO/bin/rtc-browser-failure-analysis.mjs
-- $FUZZ_REPO/bin/rtc-browser-deep-triage.mjs
-- files under $BASE
-
-Do not edit product code or proposed RTC PR fix branches.
-
-If code changes are made:
-- run syntax checks for changed .mjs files;
-- write a patch/stat/status artifact under $run_dir/artifacts/;
-- restart or arrange restart of the active coverage-guided monitor/supervisor only if needed for the change to take effect;
-- do not hide likely-real failures. Only gate or down-rank families that are proven pre-action/bootstrap/triage noise or historical duplicates.
-- verify the whole duplicate/noise consumer path, not only the graph metric. Strict pre-action startup signatures with zero users, zero actions, and no reload/save/revision/fault/operation/product evidence must not remain queued for triage, analysis-tier, deep-analysis-tier, or live-analysis session startup. Product-evidence failures must remain visible.
-
-If the safe action is only a config/scheduling restart, perform it and record why.
+Verify the whole duplicate/noise consumer path, not only the graph metric. Strict pre-action startup signatures with zero users, zero actions, and no reload/save/revision/fault/operation/product evidence must not remain queued for triage, analysis-tier, deep-analysis-tier, or live-analysis session startup. Product-evidence failures must remain visible.
 
 Return:
-1. What was changed.
-2. Validation commands and results.
-3. Restart/session actions taken.
+1. Exact proposed changes.
+2. Validation commands to run.
+3. Required restart/session scope.
 4. Current duplicate/noise status after the action, if measurable.
 5. Remaining risk.
 EOF
@@ -502,8 +481,8 @@ EOF
   mkdir -p "$run_dir/artifacts"
   (
     exec 8>&- 2>/dev/null || true
-    cd "$FUZZ_REPO" || exit 1
-    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s danger-full-access < "$prompt" > "$out" 2> "$err"
+    cd "$run_dir" || exit 1
+    timeout --kill-after=60s "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN" -a never exec --skip-git-repo-check -m "$MODEL" -c "model_reasoning_effort=$REASONING" -s read-only < "$prompt" > "$out" 2> "$err"
     echo "$?" > "$rc_file"
   )
   cp "$out" "$BASE/latest-feedback-action.md" 2>/dev/null || true
