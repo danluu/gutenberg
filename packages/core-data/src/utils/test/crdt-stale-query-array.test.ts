@@ -204,7 +204,7 @@ describe( 'stale query-array block snapshots', () => {
 		).toBe( true );
 	} );
 
-	it( 'preserves seed 1240001 local table marker through the table, paragraph, table sequence', () => {
+	it( 'supersedes the prior local cell while preserving remote rows through repeated stale table writes', () => {
 		const docLocal = new Y.Doc();
 		const docRemote = new Y.Doc();
 		docs.push( docLocal, docRemote );
@@ -291,6 +291,11 @@ describe( 'stale query-array block snapshots', () => {
 		syncDocs( docLocal, docRemote );
 
 		const body = getTableBody( yblocksLocal );
+		const cellContents = body.flatMap( ( row ) =>
+			row.cells.map( ( cell ) => cell.content )
+		);
+		expect( cellContents ).not.toContain( step0Local );
+		expect( cellContents ).toContain( step0Remote );
 		expect(
 			body.some( ( row ) =>
 				row.cells.some( ( cell ) => cell.content === step2Local )
