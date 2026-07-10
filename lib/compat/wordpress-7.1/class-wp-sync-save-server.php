@@ -125,7 +125,9 @@ if ( ! class_exists( 'WP_Sync_Save_Server' ) ) {
 
 			$doc = $request['doc'];
 
-			$updated = update_post_meta( $post_id, self::CRDT_DOC_META_KEY, $doc );
+			// Serialized CRDT documents are JSON strings; preserve escaped
+			// characters through WordPress' meta unslashing on write.
+			$updated = update_post_meta( $post_id, self::CRDT_DOC_META_KEY, wp_slash( $doc ) );
 			if ( false === $updated && get_post_meta( $post_id, self::CRDT_DOC_META_KEY, true ) !== $doc ) {
 				return new WP_Error(
 					'rest_crdt_save_failed',
