@@ -2862,7 +2862,7 @@ async function launchCodexAnalysisJob( sourceState, state, signature ) {
 			'-C',
 			REPO_ROOT,
 			'-m',
-			'gpt-5.4',
+			'gpt-5.6-sol',
 			'-c',
 			'model_reasoning_effort="high"',
 			'--dangerously-bypass-approvals-and-sandbox',

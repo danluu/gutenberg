@@ -42,8 +42,12 @@ PERSONA_EVERY_CYCLES=${RTC_PR_PROGRESS_PERSONA_EVERY_CYCLES:-0}
 MAX_ACTIVE_PR_JOBS=${RTC_PR_PROGRESS_MAX_ACTIVE_PR_JOBS:-2}
 MIN_DISCOVERY_SESSIONS=${RTC_PR_PROGRESS_MIN_DISCOVERY_SESSIONS:-3}
 PR07C_OWNER_CONSUMED_TTL_SECONDS=${RTC_PR_PROGRESS_PR07C_OWNER_CONSUMED_TTL_SECONDS:-0}
-CODEX_MODEL=${RTC_PR_PROGRESS_CODEX_MODEL:-gpt-5.5}
-CODEX_REASONING_EFFORT=${RTC_PR_PROGRESS_CODEX_REASONING_EFFORT:-xhigh}
+CODEX_MODEL=${RTC_PR_PROGRESS_CODEX_MODEL:-gpt-5.6-sol}
+CODEX_REASONING_EFFORT=${RTC_PR_PROGRESS_CODEX_REASONING_EFFORT:-}
+PERSONA_CODEX_REASONING_EFFORT=${RTC_PR_PROGRESS_PERSONA_CODEX_REASONING_EFFORT:-${CODEX_REASONING_EFFORT:-high}}
+SYNTHESIS_CODEX_REASONING_EFFORT=${RTC_PR_PROGRESS_SYNTHESIS_CODEX_REASONING_EFFORT:-${CODEX_REASONING_EFFORT:-xhigh}}
+OWNER_CODEX_REASONING_EFFORT=${RTC_PR_PROGRESS_OWNER_CODEX_REASONING_EFFORT:-${CODEX_REASONING_EFFORT:-xhigh}}
+REPAIR_CODEX_REASONING_EFFORT=${RTC_PR_PROGRESS_REPAIR_CODEX_REASONING_EFFORT:-${CODEX_REASONING_EFFORT:-max}}
 CODEX_TIMEOUT_SECONDS=${RTC_PR_PROGRESS_CODEX_TIMEOUT_SECONDS:-5400}
 PERSONA_TIMEOUT_SECONDS=${RTC_PR_PROGRESS_PERSONA_TIMEOUT_SECONDS:-3600}
 JOB_SCAN_LIMIT=${RTC_PR_PROGRESS_JOB_SCAN_LIMIT:-120}
@@ -1963,7 +1967,7 @@ launch_persona_round() {
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$run_dir"
-timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s read-only < "$prompt" > "$report" 2> "$stderr" || true
+timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$PERSONA_CODEX_REASONING_EFFORT" -s read-only < "$prompt" > "$report" 2> "$stderr" || true
 EOF
 		chmod +x "$runner"
 		tmux new-session -d -s "rtc-pr-progress-persona-$slug-$ts" "bash '$runner'"
@@ -2010,7 +2014,7 @@ while [ "\$(find "$run_dir/reports" -type f -name '*.md' -size +0c 2>/dev/null |
 	sleep 10
 done
 cd "$run_dir"
-timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s workspace-write < "$synthesis_prompt" > "$synthesis_report" 2> "$synthesis_stderr" || true
+timeout "$PERSONA_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$SYNTHESIS_CODEX_REASONING_EFFORT" -s workspace-write < "$synthesis_prompt" > "$synthesis_report" 2> "$synthesis_stderr" || true
 if [ ! -s "$run_dir/control-decisions.tsv" ]; then
 	printf 'action\\ttarget\\tpriority\\tallowed\\treason\\n' > "$run_dir/control-decisions.tsv"
 	canary_status=\$(cat "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
@@ -2193,7 +2197,7 @@ PROMPT
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$run_dir"
-timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s workspace-write < "$prompt" > "$report" 2> "$stderr" || true
+timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$OWNER_CODEX_REASONING_EFFORT" -s workspace-write < "$prompt" > "$report" 2> "$stderr" || true
 if [ ! -s "$classification" ]; then
 	printf 'item_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"
 	printf 'pr07c-owner-matrix\\tneeds_exact_replay\\tmissing classification from controller job\\treview report/stderr and rerun bounded owner matrix\\t%s\\n' "$report" >> "$classification"
@@ -2371,7 +2375,7 @@ PROMPT
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$worktree"
-timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" || true
+timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$REPAIR_CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" || true
 if [ ! -s "$classification" ]; then
 	printf 'item_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"
 	printf '%s\\tstill_blocked\\tmissing classification from branch repair job\\treview report/stderr\\t%s\\n' "$branch" "$report" >> "$classification"

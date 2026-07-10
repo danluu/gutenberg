@@ -78,6 +78,10 @@ ENABLE_ASSERT_REVIEW=${RTC_JETSTREAM_ENABLE_ASSERT_REVIEW:-0}
 ENABLE_PR_PROGRESS_PERSONAS=${RTC_JETSTREAM_ENABLE_PR_PROGRESS_PERSONAS:-0}
 ENABLE_GUARD_CODEX=${RTC_JETSTREAM_ENABLE_GUARD_CODEX:-0}
 MAX_CODEX_WORKERS=${RTC_JETSTREAM_MAX_CODEX_WORKERS:-8}
+CODEX_EXPECTED_MODEL=${RTC_JETSTREAM_CODEX_EXPECTED_MODEL:-gpt-5.6-sol}
+CODEX_MINIMUM_VERSION=${RTC_JETSTREAM_CODEX_MINIMUM_VERSION:-0.144.1}
+CODEX_MODEL_POLICY_REPORT=$BASE/current-codex-model-policy.tsv
+CODEX_MODEL_POLICY_STATE=$BASE/current-codex-model-policy.state
 
 mkdir -p "$LOG_DIR"
 
@@ -142,6 +146,80 @@ pr_progress_controller_runtime_healthy() {
 
 active_codex_worker_count() {
 	pgrep -x codex 2>/dev/null | awk 'END { print NR + 0 }'
+}
+
+version_at_least() {
+	local actual=$1 minimum=$2
+	[ "$(printf '%s\n%s\n' "$minimum" "$actual" | sort -V | sed -n '1p')" = "$minimum" ]
+}
+
+audit_codex_model_policy() {
+	local tmp=$CODEX_MODEL_POLICY_REPORT.$$.tmp
+	local cli_version status=healthy drift=0 file pid model effort cwd session previous_state current_state
+	local files=(
+		"$REPO/bin/rtc-browser-fuzz-analysis-tier.mjs"
+		"$REPO/bin/rtc-browser-fuzz-deep-analysis-tier.mjs"
+		"$REPO/bin/rtc-browser-fuzz-live-analysis-monitor.mjs"
+		"$REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs"
+		"$REPO/bin/rtc-browser-fuzz-runner.mjs"
+		"$REPO/bin/rtc-browser-fuzz-triage-watcher.mjs"
+		"$REPO/bin/rtc-coverage-gap-closure-start-remote.sh"
+		"$REPO/bin/rtc-critical-path-pr-executor-loop-remote.sh"
+		"$REPO/bin/rtc-deferred-work-promotion-runtime-remote.sh"
+		"$REPO/bin/rtc-duplicate-noise-persona-loop-remote.sh"
+		"$REPO/bin/rtc-focused-shards-gap-codex-loop-remote.sh"
+		"$REPO/bin/rtc-fuzz-level-mix-persona-loop-remote.sh"
+		"$REPO/bin/rtc-fuzz-only-asserts-loop-remote.sh"
+		"$REPO/bin/rtc-jetstream-guard-remote.sh"
+		"$REPO/bin/rtc-native-assert-protocol-work-start-remote.sh"
+		"$REPO/bin/rtc-pr-finalization-loop-remote.sh"
+		"$REPO/bin/rtc-pr-progress-controller-remote.sh"
+		"$REPO/bin/rtc-pr-split-review-loop-remote.sh"
+		"$REPO/bin/rtc-productive-analysis-loop-remote.sh"
+		"$REPO/bin/rtc-structural-issue-watchdog-remote.sh"
+		"$REPO/bin/rtc-trend-run-codex-refresh.sh"
+	)
+	printf 'kind\tid\tmodel\treasoning_effort\tstatus\tdetail\n' > "$tmp"
+
+	cli_version=$("$CODEX_BIN_DIR/codex" --version 2>/dev/null | awk '{ print $2; exit }')
+	status=healthy
+	if [ -z "$cli_version" ] || ! version_at_least "$cli_version" "$CODEX_MINIMUM_VERSION"; then
+		status=drift
+		drift=$(( drift + 1 ))
+	fi
+	printf 'cli\t%s\t%s\t\t%s\tminimum=%s\n' "$CODEX_BIN_DIR/codex" "$cli_version" "$status" "$CODEX_MINIMUM_VERSION" >> "$tmp"
+
+	for file in "${files[@]}"; do
+		[ -f "$file" ] || continue
+		if rg -q 'gpt-5\.[0-5]([^-0-9]|$)' "$file"; then
+			printf 'source\t%s\t\t\tdrift\tcontains pre-5.6 model reference\n' "${file##*/}" >> "$tmp"
+			drift=$(( drift + 1 ))
+		fi
+	done
+
+	while IFS= read -r pid; do
+		[ -r "/proc/$pid/cmdline" ] || continue
+		model=$(tr '\0' '\n' < "/proc/$pid/cmdline" | awk 'previous == "-m" || previous == "--model" { print; exit } { previous = $0 }')
+		[ -n "$model" ] || continue
+		effort=$(tr '\0' '\n' < "/proc/$pid/cmdline" | sed -n 's/^model_reasoning_effort=//p' | sed -n '1p' | tr -d '"')
+		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
+		session=$(tmux_session_owning_pid "$pid" || true)
+		status=healthy
+		if [ "$model" != "$CODEX_EXPECTED_MODEL" ]; then
+			status=drift
+			drift=$(( drift + 1 ))
+		fi
+		printf 'worker\t%s\t%s\t%s\t%s\tsession=%s cwd=%s\n' "$pid" "$model" "${effort:-default}" "$status" "${session:-none}" "${cwd:-unknown}" >> "$tmp"
+	done < <(pgrep -x codex 2>/dev/null || true)
+
+	mv "$tmp" "$CODEX_MODEL_POLICY_REPORT"
+	current_state=healthy
+	[ "$drift" -eq 0 ] || current_state="drift:$drift"
+	previous_state=$(cat "$CODEX_MODEL_POLICY_STATE" 2>/dev/null || true)
+	printf '%s\n' "$current_state" > "$CODEX_MODEL_POLICY_STATE"
+	if [ "$current_state" != "$previous_state" ]; then
+		log "Codex model policy state=$current_state expected_model=$CODEX_EXPECTED_MODEL report=$CODEX_MODEL_POLICY_REPORT"
+	fi
 }
 
 optional_analysis_admission_allows() {
@@ -1434,7 +1512,7 @@ Task:
 5. Write a concise report to: $report
 PROMPT
 	log "launching $session for repeated restarts in $pool: $reason"
-	tmux new-session -d -s "$session" "bash -lc 'cd \"$LOG_DIR\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m gpt-5.5 -c model_reasoning_effort=xhigh -s read-only < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
+	tmux new-session -d -s "$session" "bash -lc 'cd \"$LOG_DIR\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m gpt-5.6-sol -c model_reasoning_effort=xhigh -s read-only < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
 }
 
 refresh_stable_script() {
@@ -1516,49 +1594,17 @@ restart_pool() {
 				log "duplicate/noise persona loop start failed"
 			;;
 		level-mix)
-			if [ -x "$LEVEL_MIX_BASE/rtc-fuzz-level-mix-persona-loop.sh" ] && [ -x "$LEVEL_MIX_BASE/rtc-fuzz-level-mix-watchdog.sh" ]; then
-				if ! has_session rtc-fuzz-level-mix-persona-loop; then
-					tmux new-session -d -s rtc-fuzz-level-mix-persona-loop "$LEVEL_MIX_BASE/rtc-fuzz-level-mix-persona-loop.sh" ||
-						log "level-mix loop start failed"
-				fi
-				if ! has_session rtc-fuzz-level-mix-persona-loop-watchdog; then
-					tmux new-session -d -s rtc-fuzz-level-mix-persona-loop-watchdog "$LEVEL_MIX_BASE/rtc-fuzz-level-mix-watchdog.sh" ||
-						log "level-mix watchdog start failed"
-				fi
-			else
-				bash "$REPO/bin/rtc-fuzz-level-mix-persona-loop-remote.sh" >> "$LOG_DIR/level-mix-start.log" 2>&1 || log "level-mix loop start failed"
-			fi
+			bash "$REPO/bin/rtc-fuzz-level-mix-persona-loop-remote.sh" >> "$LOG_DIR/level-mix-start.log" 2>&1 || log "level-mix loop start failed"
 			;;
 		native-protocol)
-			if [ -x "$NATIVE_ASSERT_BASE/native-harness-persona-loop.sh" ] && [ -x "$NATIVE_ASSERT_BASE/protocol/protocol-server-persona-loop.sh" ]; then
-				if ! has_session rtc-native-harness-persona-loop; then
-					tmux new-session -d -s rtc-native-harness-persona-loop "$NATIVE_ASSERT_BASE/native-harness-persona-loop.sh" ||
-						log "native harness loop start failed"
-				fi
-				if ! has_session rtc-protocol-server-persona-loop; then
-					tmux new-session -d -s rtc-protocol-server-persona-loop "$NATIVE_ASSERT_BASE/protocol/protocol-server-persona-loop.sh" ||
-						log "protocol server loop start failed"
-				fi
-			else
-				bash "$REPO/bin/rtc-native-assert-protocol-work-start-remote.sh" >> "$LOG_DIR/native-protocol-start.log" 2>&1 || log "native/protocol loop start failed"
-			fi
+			bash "$REPO/bin/rtc-native-assert-protocol-work-start-remote.sh" >> "$LOG_DIR/native-protocol-start.log" 2>&1 || log "native/protocol loop start failed"
 			;;
 		asserts)
-			if [ -x /tmp/start_rtc_fuzz_only_asserts_loop.sh ]; then
-				/tmp/start_rtc_fuzz_only_asserts_loop.sh >> "$LOG_DIR/fuzz-only-asserts-start.log" 2>&1 || log "fuzz-only asserts loop start failed"
-			else
-				cd "$REPO"
-				bash "$REPO/bin/rtc-fuzz-only-asserts-loop-remote.sh" >> "$LOG_DIR/fuzz-only-asserts-start.log" 2>&1 || log "fuzz-only asserts loop start failed"
-			fi
+			run_versioned_launcher bin/rtc-fuzz-only-asserts-loop-remote.sh /tmp/start_rtc_fuzz_only_asserts_loop.sh >> "$LOG_DIR/fuzz-only-asserts-start.log" 2>&1 || log "fuzz-only asserts loop start failed"
 			;;
 		deferred)
 			stop_unsupervised_deferred_controller
-			if [ -x /tmp/start_rtc_deferred_work_promotion_loop.sh ]; then
-				/tmp/start_rtc_deferred_work_promotion_loop.sh >> "$LOG_DIR/deferred-work-start.log" 2>&1 || log "deferred work promotion loop start failed"
-			else
-				cd "$REPO"
-				bash "$REPO/bin/rtc-deferred-work-promotion-loop-remote.sh" >> "$LOG_DIR/deferred-work-start.log" 2>&1 || log "deferred work promotion loop start failed"
-			fi
+			run_versioned_launcher bin/rtc-deferred-work-promotion-loop-remote.sh /tmp/start_rtc_deferred_work_promotion_loop.sh >> "$LOG_DIR/deferred-work-start.log" 2>&1 || log "deferred work promotion loop start failed"
 			;;
 		pr-progress)
 			mkdir -p "$PR_PROGRESS_BASE"
@@ -1567,12 +1613,7 @@ restart_pool() {
 				"$PR_PROGRESS_BASE/rtc-pr-progress-controller.sh" start >> "$LOG_DIR/pr-progress-controller-start.log" 2>&1 || log "PR progress controller start failed"
 			;;
 		finalization)
-			if [ -x /tmp/start_rtc_pr_finalization_loop.sh ]; then
-				/tmp/start_rtc_pr_finalization_loop.sh >> "$LOG_DIR/pr-finalization-start.log" 2>&1 || log "PR finalization loop start failed"
-			else
-				cd "$REPO"
-				bash "$REPO/bin/rtc-pr-finalization-loop-remote.sh" >> "$LOG_DIR/pr-finalization-start.log" 2>&1 || log "PR finalization loop start failed"
-			fi
+			run_versioned_launcher bin/rtc-pr-finalization-loop-remote.sh /tmp/start_rtc_pr_finalization_loop.sh >> "$LOG_DIR/pr-finalization-start.log" 2>&1 || log "PR finalization loop start failed"
 			;;
 		critical-pr)
 			cd "$REPO"
@@ -1606,12 +1647,7 @@ restart_pool() {
 				log "structural watchdog restart skipped hold=$STRUCTURAL_HOLD_FILE"
 				return 0
 			fi
-			if [ -x /tmp/start_rtc_structural_watchdog.sh ]; then
-				/tmp/start_rtc_structural_watchdog.sh >> "$LOG_DIR/structural-watchdog-start.log" 2>&1 || log "structural watchdog start failed"
-			else
-				cd "$REPO"
-				bash "$REPO/bin/rtc-structural-issue-watchdog-remote.sh" start >> "$LOG_DIR/structural-watchdog-start.log" 2>&1 || log "structural watchdog start failed"
-			fi
+			run_versioned_launcher bin/rtc-structural-issue-watchdog-remote.sh /tmp/start_rtc_structural_watchdog.sh >> "$LOG_DIR/structural-watchdog-start.log" 2>&1 || log "structural watchdog start failed"
 			;;
 	esac
 }
@@ -1644,6 +1680,7 @@ run_loop_locked() {
 	log "guard loop started pid=$$"
 	while true; do
 		check_tmux_server_generation
+		audit_codex_model_policy
 		stop_codex_in_control_repo
 		stop_stale_coverage_monitors
 		stop_disabled_analysis_loops

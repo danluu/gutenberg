@@ -171,7 +171,7 @@ Task:
 PROMPT
 
 	printf '[%s] launching %s reason=%s records=%s prev=%s\n' "$now" "$session" "$reason" "$records" "$prev_records" >> "$LOG"
-	tmux new-session -d -s "$session" "bash -lc 'cd \"$BASE/logs\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m gpt-5.5 -c model_reasoning_effort=xhigh -s read-only < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
+	tmux new-session -d -s "$session" "bash -lc 'cd \"$BASE/logs\"; export PATH=\"$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:\$PATH\"; \"$CODEX_BIN_DIR/codex\" -a never exec --skip-git-repo-check -m gpt-5.6-sol -c model_reasoning_effort=xhigh -s read-only < \"$prompt\" > \"$report\" 2> \"$codex_log\"'"
 	sleep 600
 done
 LOOP

@@ -104,7 +104,7 @@ const DEEP_ANALYSIS_INTERVAL_MS = getPositiveIntegerEnv(
 	45000
 );
 const DEEP_ANALYSIS_MODEL =
-	process.env.RTC_FUZZ_LIVE_DEEP_ANALYSIS_MODEL ?? 'gpt-5.4';
+	process.env.RTC_FUZZ_LIVE_DEEP_ANALYSIS_MODEL ?? 'gpt-5.6-sol';
 const DEEP_ANALYSIS_REASONING_EFFORT =
 	process.env.RTC_FUZZ_LIVE_DEEP_ANALYSIS_REASONING_EFFORT ?? 'xhigh';
 const DEFAULT_TMUX_PREFIX = `rtc-analysis-live-${ crypto

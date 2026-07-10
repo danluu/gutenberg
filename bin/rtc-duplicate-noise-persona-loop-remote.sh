@@ -8,7 +8,7 @@ OPERATOR_ALERT="${RTC_OPERATOR_ALERT_PATH:-/media/volume/danluu-fuzz-data/rtc-op
 
 CODEX_BIN="${CODEX_BIN:-/home/exouser/.npm-global/bin/codex}"
 SESSION="${RTC_DUP_NOISE_SESSION:-rtc-duplicate-noise-persona-loop}"
-MODEL="${RTC_DUP_NOISE_MODEL:-gpt-5.5}"
+MODEL="${RTC_DUP_NOISE_MODEL:-gpt-5.6-sol}"
 REASONING="${RTC_DUP_NOISE_REASONING:-xhigh}"
 INTERVAL_SECONDS="${RTC_DUP_NOISE_INTERVAL_SECONDS:-300}"
 MAX_PARALLEL="${RTC_DUP_NOISE_MAX_PARALLEL:-2}"

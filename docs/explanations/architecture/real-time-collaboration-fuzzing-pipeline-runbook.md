@@ -176,6 +176,20 @@ Operational invariants added by the July 10 audit:
     jobs and can suppress forced repair work at the concurrency cap.
 -   Count Codex workers by leaf worker processes. A timeout wrapper, Node launcher,
     and native Codex process are one worker, not three.
+-   JS2 uses Codex CLI `0.144.1` or newer and model `gpt-5.6-sol` for every
+    unattended agent. Use `high` for high-volume first-pass classification and
+    persona review, `xhigh` for deep triage, synthesis, planning, and read-only
+    diagnosis, and `max` for code-changing repair, adoption, deferred promotion,
+    finalization, or coverage-harness work. Do not use `ultra` in controller-owned
+    jobs: it enables automatic task delegation, which escapes the pipeline's leaf
+    worker accounting and eight-worker cap. The global Codex default is `xhigh`;
+    launchers must set `max` explicitly for repair roles.
+-   The guard writes
+    `/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515/current-codex-model-policy.tsv`.
+    It reports a CLI below `0.144.1`, pre-5.6 model references in canonical
+    launchers, and active workers on another model. Model drift is visible but
+    does not terminate an in-flight writable worker; repair work must reach a
+    checkpoint before the owning controller is replaced.
 -   Repair adoption is a commit-ancestry fact as well as a publish-manifest fact.
     If the repair commit is already an ancestor of the release candidate, report
     `adopted-to-release-candidate` and require replay; do not queue another merge.

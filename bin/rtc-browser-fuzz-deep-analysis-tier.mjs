@@ -38,7 +38,7 @@ if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 			'  RTC_FUZZ_DEEP_ANALYSIS_MAX_PARALLEL=4',
 			'  RTC_FUZZ_DEEP_ANALYSIS_CODEX_TIMEOUT_MS=5400000',
 			'  RTC_FUZZ_DEEP_ANALYSIS_STATE_DIR=<run>/.triage-watcher/deep-analysis-tier',
-			'  RTC_FUZZ_DEEP_ANALYSIS_MODEL=gpt-5.4',
+			'  RTC_FUZZ_DEEP_ANALYSIS_MODEL=gpt-5.6-sol',
 			'  RTC_FUZZ_DEEP_ANALYSIS_REASONING_EFFORT=xhigh',
 		].join( '\n' ) + '\n'
 	);
@@ -93,7 +93,8 @@ const TRANSIENT_CODEX_STARTUP_BACKOFF_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_DEEP_ANALYSIS_TRANSIENT_CODEX_STARTUP_BACKOFF_MS',
 	5 * 60 * 1000
 );
-const CODEX_MODEL = process.env.RTC_FUZZ_DEEP_ANALYSIS_MODEL ?? 'gpt-5.4';
+const CODEX_MODEL =
+	process.env.RTC_FUZZ_DEEP_ANALYSIS_MODEL ?? 'gpt-5.6-sol';
 const REASONING_EFFORT =
 	process.env.RTC_FUZZ_DEEP_ANALYSIS_REASONING_EFFORT ?? 'xhigh';
 const MAX_PER_SEMANTIC_FAMILY = getPositiveIntegerEnv(

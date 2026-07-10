@@ -1576,7 +1576,7 @@ async function runCodexFailureAnalysis( {
 			'-C',
 			REPO_ROOT,
 			'-m',
-			'gpt-5.4',
+			'gpt-5.6-sol',
 			'-c',
 			'model_reasoning_effort="xhigh"',
 			'--dangerously-bypass-approvals-and-sandbox',

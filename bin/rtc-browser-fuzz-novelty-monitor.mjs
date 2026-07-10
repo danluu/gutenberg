@@ -562,9 +562,9 @@ const COVERAGE_GUIDANCE_CODEX_CWD =
 	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD ?? CONTROL_REPO_ROOT;
 const CODEX_BIN = process.env.RTC_FUZZ_CODEX_BIN ?? 'codex';
 const CODEX_MODEL =
-	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_MODEL ?? 'gpt-5.5';
+	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_MODEL ?? 'gpt-5.6-sol';
 const CODEX_REASONING_EFFORT =
-	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_REASONING_EFFORT ?? 'xhigh';
+	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_REASONING_EFFORT ?? 'max';
 const TRIAGE_DUPLICATE_SHARE_HOLD = getPositiveNumberEnv(
 	'RTC_FUZZ_NOVELTY_TRIAGE_DUPLICATE_SHARE_HOLD',
 	0.5
@@ -18629,7 +18629,8 @@ async function applyPolicy(
 	}
 
 	const zeroCoverageRotationGroups =
-		isDeadlineBenchmarkCanaryBudgetCapActive() || STRICT_PRODUCER_BUDGET_CAP
+		isDeadlineBenchmarkCanaryBudgetCapActive() ||
+		STRICT_PRODUCER_BUDGET_CAP
 			? []
 			: ZERO_COVERAGE_PRIORITY_GROUPS;
 	for ( const group of zeroCoverageRotationGroups ) {
