@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import crypto from 'crypto';
 import fs from 'fs/promises';
 import { readFileSync } from 'fs';
 import path from 'path';
@@ -45,6 +46,15 @@ const END_AT = Date.now() + DURATION_HOURS * 60 * 60 * 1000;
 const STATE_PATH = path.join( OUTPUT_DIR, 'supervisor-state.json' );
 const LOG_PATH = path.join( OUTPUT_DIR, 'supervisor.log' );
 const EVENTS_PATH = path.join( OUTPUT_DIR, 'events.ndjson' );
+const NETWORK_TOPOLOGY_LOCK_FILE =
+	process.env.RTC_FUZZ_NETWORK_TOPOLOGY_LOCK_FILE ??
+	( process.platform === 'linux'
+		? path.join( OUTPUT_DIR, '.network-topology.lock' )
+		: null );
+const NETWORK_TOPOLOGY_LOCK_WAIT_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NETWORK_TOPOLOGY_LOCK_WAIT_MS',
+	20 * 60 * 1000
+);
 const ACTIVE_GROUP_STATUSES = new Set( [
 	'starting',
 	'launching',
@@ -447,9 +457,18 @@ async function waitForGroupRepoPreparation( groupState ) {
 				)
 		  )
 		: null;
+	const harnessDestinationSignature =
+		group.harnessOverlaySignature &&
+		harnessManifest?.signature === group.harnessOverlaySignature
+			? await getHarnessOverlaySignatureForRoot(
+					group.repoRoot,
+					harnessManifest.files
+			  )
+			: null;
 	const harnessReady =
 		! group.harnessOverlaySignature ||
-		harnessManifest?.signature === group.harnessOverlaySignature;
+		( harnessManifest?.signature === group.harnessOverlaySignature &&
+			harnessDestinationSignature === group.harnessOverlaySignature );
 	if ( packageReady && harnessReady ) {
 		if ( groupState.status === 'waiting-repo-prep' ) {
 			groupState.status = 'recovering';
@@ -476,7 +495,7 @@ async function waitForGroupRepoPreparation( groupState ) {
 	}
 	groupState.status = 'waiting-repo-prep';
 	groupState.lastReason = packageReady
-		? 'waiting for isolated repo harness synchronization before launch'
+		? 'waiting for isolated repo harness content synchronization before launch'
 		: 'waiting for isolated repo preparation before launch';
 	groupState.activeRunDirs = [];
 	groupState.currentRunDir = null;
@@ -858,15 +877,29 @@ async function cleanupRemovedGroupWpEnvResources( groupState, reason ) {
 	return cleanupOk && removeNetworks.ok;
 }
 
-async function runCommand( {
+async function runCommandUnlocked( {
 	command,
 	args,
 	cwd,
 	env = {},
 	timeoutMs = 120000,
 	logPath = null,
+	networkTopologyLock = false,
 } ) {
-	const child = spawn( command, args, {
+	const useNetworkTopologyLock =
+		networkTopologyLock && NETWORK_TOPOLOGY_LOCK_FILE;
+	const spawnCommand = useNetworkTopologyLock ? '/usr/bin/flock' : command;
+	const spawnArgs = useNetworkTopologyLock
+		? [
+				'--wait',
+				String( Math.ceil( NETWORK_TOPOLOGY_LOCK_WAIT_MS / 1000 ) ),
+				'--no-fork',
+				NETWORK_TOPOLOGY_LOCK_FILE,
+				command,
+				...args,
+		  ]
+		: args;
+	const child = spawn( spawnCommand, spawnArgs, {
 		cwd,
 		env,
 		stdio: [ 'ignore', 'pipe', 'pipe' ],
@@ -913,6 +946,13 @@ async function runCommand( {
 		...result,
 		ok: result.code === 0 && ! result.timedOut,
 	};
+}
+
+async function runCommand( options ) {
+	return runCommandUnlocked( {
+		...options,
+		networkTopologyLock: options.command === 'docker',
+	} );
 }
 
 const LOCAL_WP_ENV_THEME_MAPPINGS = {
@@ -975,14 +1015,21 @@ async function normalizeWpEnvLocalThemeMappings( group ) {
 
 async function runWpEnv( group, args, options = {} ) {
 	await normalizeWpEnvLocalThemeMappings( group );
-	return runCommand( {
+	const commandOptions = {
 		command: 'npm',
 		args: [ 'run', 'wp-env-test', '--', ...args ],
 		cwd: group.repoRoot,
 		env: buildEnv( group ),
 		timeoutMs: options.timeoutMs ?? 180000,
 		logPath: options.logPath ?? null,
-	} );
+	};
+	if ( [ 'start', 'stop', 'destroy', 'clean' ].includes( args[ 0 ] ) ) {
+		return runCommandUnlocked( {
+			...commandOptions,
+			networkTopologyLock: true,
+		} );
+	}
+	return runCommand( commandOptions );
 }
 
 function summarizeWpEnvStartFailure( group, result, logFileName ) {
@@ -3261,6 +3308,12 @@ function groupEnvForLaunch(
 
 	return buildEnv( group, {
 		...transportEnv,
+		...( NETWORK_TOPOLOGY_LOCK_FILE
+			? {
+					RTC_FUZZ_NETWORK_TOPOLOGY_LOCK_FILE:
+						NETWORK_TOPOLOGY_LOCK_FILE,
+			  }
+			: {} ),
 		RTC_FUZZ_BASE_URL: baseUrl,
 		WP_BASE_URL: baseUrl,
 		RTC_FUZZ_OUTPUT_DIR: runDir,
@@ -3386,6 +3439,33 @@ async function readJsonFile( filePath ) {
 	} catch {
 		return null;
 	}
+}
+
+async function getHarnessOverlaySignatureForRoot( root, files ) {
+	if ( ! Array.isArray( files ) ) {
+		return null;
+	}
+	const hash = crypto.createHash( 'sha256' );
+	for ( const relativePath of files ) {
+		const filePath = path.join( root, relativePath );
+		let stat;
+		try {
+			stat = await fs.lstat( filePath );
+			hash.update( relativePath );
+			hash.update( '\0' );
+			hash.update( String( stat.mode & 0o777 ) );
+			hash.update( '\0' );
+			if ( stat.isSymbolicLink() ) {
+				hash.update( await fs.readlink( filePath ) );
+			} else {
+				hash.update( await fs.readFile( filePath ) );
+			}
+			hash.update( '\0' );
+		} catch {
+			return null;
+		}
+	}
+	return hash.digest( 'hex' );
 }
 
 async function findSummaryFiles( runDir ) {

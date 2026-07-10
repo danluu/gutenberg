@@ -6,6 +6,8 @@ MANIFEST=${RTC_LOCAL_PUBLISH_MANIFEST:-/media/volume/danluu-fuzz-data/rtc-pr-pro
 LEDGER=${RTC_LOCAL_PUBLISH_LEDGER:-/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/latest-local-publish-manifest.tsv}
 DANLUU_REMOTE=${RTC_LOCAL_PUBLISH_REMOTE:-danluu}
 SOURCE_REPOS_TEXT=${RTC_LOCAL_PUBLISH_SOURCE_REPOS:-/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo /media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo}
+JS2_CANDIDATE_REPO=${RTC_LOCAL_PUBLISH_JS2_CANDIDATE_REPO:-/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo}
+JS2_CANDIDATE_BRANCH=${RTC_LOCAL_PUBLISH_JS2_CANDIDATE_BRANCH:-js2/all-merged-rebased-20260701}
 DRY_RUN=${RTC_LOCAL_PR_BRANCH_PUBLISHER_DRY_RUN:-0}
 SLEEP_SECONDS=${RTC_LOCAL_PR_BRANCH_PUBLISHER_SLEEP_SECONDS:-300}
 
@@ -117,6 +119,28 @@ append_ledger_row() {
 	LEDGER_CHANGED=1
 }
 
+sync_js2_candidate_ref() {
+	local dest_ref=$1 commit=$2 expected_ref
+	expected_ref=$(full_ref "$JS2_CANDIDATE_BRANCH")
+	[ "$dest_ref" = "$expected_ref" ] || return 0
+	ssh -o BatchMode=yes -o ConnectTimeout=15 "$JS2_HOST" bash -s -- \
+		"$JS2_CANDIDATE_REPO" "$expected_ref" "$commit" <<'REMOTE'
+set -euo pipefail
+repo=$1
+ref=$2
+commit=$3
+git -C "$repo" cat-file -e "$commit^{commit}"
+current=$(git -C "$repo" rev-parse --verify "$ref^{commit}")
+if [ "$current" = "$commit" ]; then
+	printf 'JS2 candidate already synchronized: %s %s\n' "$ref" "$commit"
+	exit 0
+fi
+git -C "$repo" merge-base --is-ancestor "$current" "$commit"
+git -C "$repo" update-ref "$ref" "$commit" "$current"
+printf 'synchronized JS2 candidate: %s %s -> %s\n' "$ref" "$current" "$commit"
+REMOTE
+}
+
 process_manifest() {
 	local source_branch source_commit dest base_ref files insertions deletions validation_summary reason
 	local dest_ref resolved_commit base_commit current_remote status
@@ -168,7 +192,10 @@ process_manifest() {
 			if [ "$current_remote" = "$resolved_commit" ]; then
 				status=already_present
 				printf 'already present: %s %s\n' "$dest_ref" "$resolved_commit"
-				[ "$DRY_RUN" = "1" ] || append_ledger_row "$dest_ref" "$resolved_commit" "$source_branch" "$status" "local publisher confirmed destination already present on danluu"
+				if [ "$DRY_RUN" != "1" ]; then
+					append_ledger_row "$dest_ref" "$resolved_commit" "$source_branch" "$status" "local publisher confirmed destination already present on danluu"
+					sync_js2_candidate_ref "$dest_ref" "$resolved_commit"
+				fi
 				continue
 			fi
 			git cat-file -e "$current_remote^{commit}" 2>/dev/null ||
@@ -187,6 +214,7 @@ process_manifest() {
 
 		git push "$DANLUU_REMOTE" "$resolved_commit:$dest_ref"
 		append_ledger_row "$dest_ref" "$resolved_commit" "$source_branch" pushed "local publisher consumed JS2 push manifest and pushed from this machine"
+		sync_js2_candidate_ref "$dest_ref" "$resolved_commit"
 	done 3< "$LOCAL_MANIFEST"
 }
 

@@ -18,10 +18,10 @@ leave one-shot commands as the only copy of an important process.
 
 ## Current Operator Snapshot
 
-Snapshot time: `2026-07-10T01:20Z`
+Snapshot time: `2026-07-10T06:59Z`
 
 The active all-merge candidate is `js2/all-merged-rebased-20260701` at
-`1582cdec4f27f5a3c3639436adcf092df438b787`. The coverage-guided pointer file
+`7e9dbc66da7ca4052f3167c47d19d025229de172`. The coverage-guided pointer file
 currently resolves to
 the authoritative current run; always read it rather than embedding a run name:
 
@@ -37,58 +37,170 @@ Its exact `npm ci` dependencies and production build are reused for the same
 head; isolated group repos copy product/build files and symlink that dependency
 set. The versioned `bin/rtc-*` harness comes from the validation repo and is
 frozen into that worktree. The monitor and live-analysis processes must run from
-the frozen worktree, and the manifest hashes for the monitor, supervisor, and
-triage watcher must match its files.
+the frozen worktree, and the manifest hashes for the monitor, runner,
+supervisor, live-analysis monitor, and triage watcher must match its files. The
+live-analysis coordinator may read the frozen tree, but every Codex child must
+run from the matching generation's disposable isolated group repo. Coverage
+guidance is the exception that may edit harness code: it runs from the writable
+validation repo and treats `candidate-source` as read-only.
 
 Operational invariants added by the July 10 audit:
 
-- `rtc-fuzz` owns browser/core services; `rtc-analysis` owns live analysis.
-- Never run `capture-pane` against `rtc-fuzz`; the wrapper rejects it because
-  the installed tmux build has twice dumped core in that command.
-- `RTC_COVERAGE_FORCE_RESTART=1` is one-shot. Child monitors and the permanent
-  session watchdog must see zero or an unset value.
-- Do not remediate zero materialization during the first 900 seconds of a run.
-- Do not publish more groups than the active resource budget.
-- Do not rotate plain-editor or real-world product smoke before each has a
-  successful current-run record.
-- Pass `RTC_FUZZ_SUPERVISOR_CURRENT_OUTPUT_POINTER` to every supervisor. A
-  supervisor that no longer owns the path named by `current-output-dir.txt`
-  must terminate its lanes and exit.
-- A stopped lane with failed behavioral product evidence is not an
-  infrastructure restart. Quarantine the group as `paused-product-failure`
-  until the candidate changes, remove it from the runnable producer budget,
-  backfill the slot, and leave the durable failure to the critical repair
-  controller.
-- Exactly one novelty monitor may own a run root. Its
-  `.novelty-monitor-process.json` lock prevents an orphan and a replacement from
-  racing on scheduler state.
-- A missing novelty tmux session does not by itself justify replacing the run.
-  The guard first validates source provenance and supervisor state, terminates a
-  matching orphan, and runs `reattach-coverage-once` against the same root.
-- The generic session watchdog must use the same reattach-first command. A full
-  launcher restart is the fallback only when reattach rejects the current root.
-  `reattach-coverage-once` is safe to call when the session is already healthy.
-- Product-failure quarantine is candidate-scoped, not run-root-scoped. Preserve
-  the carried list when a fresh supervisor has no rows, exclude it from bootstrap
-  selection, and clear it only when the candidate head changes.
-- Versioned controller scripts in the validation repo take precedence over
-  `/tmp/start_*` wrappers. The guard verifies that PR progress uses the installed
-  runtime with `RTC_PR_PROGRESS_PERSONA_EVERY_CYCLES=0` unless personas were
-  explicitly enabled.
-- Count critical continuations by the union of normalized tmux-session and
-  worktree identities. Adding session and process counts double-counts normal
-  jobs and can suppress forced repair work at the concurrency cap.
-- Count Codex workers by leaf worker processes. A timeout wrapper, Node launcher,
-  and native Codex process are one worker, not three.
-- Repair adoption is a commit-ancestry fact as well as a publish-manifest fact.
-  If the repair commit is already an ancestor of the release candidate, report
-  `adopted-to-release-candidate` and require replay; do not queue another merge.
-- A repeated plain-editor `blocked_specific` result must advance to server-side
-  evidence. The follow-up writes `server-error.tsv` with the wp-sync response,
-  callback, source location, and PHP stack before it may classify or repair.
-- A tmux session disappearing is not enough to declare a singleton stopped.
-  Clear validated orphan lock holders for productive analysis, deferred work,
-  and resource autoscaling before relaunch.
+-   `rtc-fuzz` owns browser/core services; `rtc-analysis` owns live analysis.
+-   Never run `capture-pane` on this host. A disposable-socket probe also crashed
+    the installed tmux build, so the versioned wrapper and
+    `/usr/local/bin/tmux` reject both `capture-pane` and `capturep` for every
+    socket, including explicit `-L` and `-S` forms. Read status artifacts or use
+    `list-*`, `show-*`, and `display-message` instead.
+-   `RTC_COVERAGE_FORCE_RESTART=1` is one-shot. Child monitors and the permanent
+    session watchdog must see zero or an unset value.
+-   Do not remediate zero materialization during the first 900 seconds of a run.
+-   Do not publish more groups than the active resource budget.
+    `RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS` is a hard ceiling during bootstrap and
+    steady state. Coverage-gap reserves may reorder or replace budgeted groups;
+    they may not add slots. Structural health compares both the current group
+    file and recent monitor publication decisions with the locked maximum.
+    `rtc-browser-fuzz-novelty-policy-check.mjs` is a fail-closed source admission
+    check in both the launcher and guard. If guidance weakens the contract, the
+    guard stops its writer and atomically restores the frozen validated monitor
+    without replacing the current run.
+-   Snapshot `current-budget.env` while holding the serialized coverage-start
+    lock and apply those concurrency/cap fields unchanged. Benchmark feedback may
+    choose lanes, but the launcher must not recalculate concurrency after the
+    snapshot. Autoscaler write/restart helpers likewise apply the main loop's
+    decision without re-reading a mutable benchmark floor. Structural health
+    compares the decision, global budget, generated run script, and startup
+    snapshot so a split-brain budget fails visibly.
+-   Do not rotate plain-editor or real-world product smoke before each has a
+    successful current-run record.
+-   Retained current-root success still satisfies that first-green requirement
+    after its producer directory rotates out. Record the satisfied groups in
+    `satisfiedRequiredFirstGreenProductGroups`; do not republish the same gate
+    because active-only counters returned to zero.
+-   Human product smoke and every `wp-env`/Docker topology mutation share the
+    root-local kernel lock `.network-topology.lock`. Classify a preflight from
+    the full command output; `ERR_NETWORK_CHANGED` is an invalid environment
+    run, not candidate product evidence. Match explicit harness/environment
+    failures rather than command-line tokens such as `playwright.config.ts`, and
+    retain an 80-line failure excerpt so the runtime error is not discarded.
+-   Pass `RTC_FUZZ_SUPERVISOR_CURRENT_OUTPUT_POINTER` to every supervisor. A
+    supervisor that no longer owns the path named by `current-output-dir.txt`
+    must terminate its lanes and exit.
+-   A stopped lane with failed behavioral product evidence is not an
+    infrastructure restart. Quarantine the group as `paused-product-failure`
+    until the candidate changes, remove it from the runnable producer budget,
+    backfill the slot, and leave the durable failure to the critical repair
+    controller.
+-   `productFailureRunDirs` remain live analysis inputs after their producer is
+    paused. The live monitor, first-level analysis tier, and deep-analysis tier
+    must retain one owner through handoff instead of marking the source stale
+    because it left `activeRunDirs`.
+-   Candidate-keyed `likely_real` product failures remain open across unrelated
+    descendant candidate advances. The critical executor scans the current head
+    and ancestor-head JSON directories, dedupes group/signature pairs, and keeps
+    one aggregate product-repair owner until a relevant fix has three exact
+    same-head green repetitions or an explicit source-backed downscope.
+-   Normalize both the frozen candidate repo and the derived isolated group repo
+    to `<REPO_ROOT>` before hashing a failure. Two one-shot watchers must not
+    launch duplicate analysis for the same summary record under different path
+    spellings.
+-   Exactly one novelty monitor may own a run root. Its
+    `.novelty-monitor-process.json` lock prevents an orphan and a replacement from
+    racing on scheduler state.
+-   A missing novelty tmux session does not by itself justify replacing the run.
+    The guard first validates source provenance and supervisor state, terminates a
+    matching orphan, and runs `reattach-coverage-once` against the same root.
+-   The generic session watchdog must use the same reattach-first command. A full
+    launcher restart is the fallback only when reattach rejects the current root.
+    `reattach-coverage-once` is safe to call when the session is already healthy.
+-   Every novelty monitor receives the authoritative output pointer. The launcher
+    and guard terminate monitors whose `RTC_FUZZ_NOVELTY_OUTPUT_DIR` no longer
+    matches it, including the build-time race where the session watchdog
+    reattached the previous root before the pointer moved.
+-   Product-failure quarantine is candidate-and-evidence-contract scoped, not
+    merely run-root-scoped. Preserve the carried list when a fresh supervisor has
+    no rows, but reset scheduling state when either the candidate head or
+    `state_compatibility_sha256` changes. The compatibility hash covers the
+    runner, supervisor, human-smoke spec, and fuzz spec; historical roots may
+    remain aggregate coverage inputs after this reset.
+-   No Codex process may have a current directory inside `candidate-source`.
+    Refuse live analysis when a disposable group repo is unavailable, and replace
+    an existing analysis tmux session if its pane directory is not that repo.
+-   A declared frozen harness hash mismatch does not require throwing away a run
+    when the validation repo still has the exact manifest hash. Stop an offending
+    candidate-rooted Codex process and atomically restore that one file in place;
+    replace the run only when exact restoration or another source invariant
+    fails.
+-   If a critical harness file intentionally advances in the writable validation
+    checkout, wait through the publication grace and perform one controlled run
+    reload so the new frozen manifest adopts it. Do not copy it into a live
+    candidate snapshot in place.
+-   Versioned controller scripts in the validation repo take precedence over
+    `/tmp/start_*` wrappers. The guard verifies that PR progress uses the installed
+    runtime with `RTC_PR_PROGRESS_PERSONA_EVERY_CYCLES=0` unless personas were
+    explicitly enabled.
+-   Count critical continuations by the union of normalized tmux-session and
+    worktree identities. Adding session and process counts double-counts normal
+    jobs and can suppress forced repair work at the concurrency cap.
+-   Count Codex workers by leaf worker processes. A timeout wrapper, Node launcher,
+    and native Codex process are one worker, not three.
+-   Repair adoption is a commit-ancestry fact as well as a publish-manifest fact.
+    If the repair commit is already an ancestor of the release candidate, report
+    `adopted-to-release-candidate` and require replay; do not queue another merge.
+-   A repeated plain-editor `blocked_specific` result must advance to server-side
+    evidence. The follow-up writes `server-error.tsv` with the wp-sync response,
+    callback, source location, and PHP stack before it may classify or repair.
+-   A plain WordPress edit/save/reload pass is not proof for the RTC product-smoke
+    gate. `smoke_green` and `harness_or_scheduler_repaired` require
+    `rtc-save-proof.tsv` with a `wp-sync-save`, `success`, 2xx row for the exact
+    release-candidate head. `server-error.tsv` with `result=not_reached`, or any
+    retained plain-editor product-failure quarantine, keeps the gate open.
+-   The generic zero-active/zero-record materialization heuristic must not open
+    before the 900-second coverage startup grace. Explicit monitor crashes,
+    oversized state, and stale first-pass/supervisor state remain immediate after
+    their own bounded checks.
+-   A continuation's `vendor` must be a real directory inside its worktree, not
+    an absolute symlink to the source checkout. Use a hard-linked snapshot so the
+    wp-env container can load `vendor/autoload.php` from the mounted plugin path.
+-   Detached adoption-validation worktrees follow the same rule: symlink
+    `node_modules`, but populate the tracked `vendor` directory with an
+    in-worktree hard-linked snapshot. Bound isolated `wp-env start` to 300 seconds
+    and cleanup to 120 seconds; structural health terminates a continuation-local
+    startup still present after 600 seconds.
+-   Escape Markdown backticks in any unquoted shell heredoc used to generate a
+    Codex prompt. Otherwise example commands are executed by the controller while
+    it writes the prompt.
+-   Limit first- and second-level live analysis to one worker per admitted
+    generation. If total leaf Codex workers still exceed the global cap, stop the
+    newest optional generation-analysis workers before repair, adoption, or
+    finalization workers.
+-   A `repair_branch_adopted` manifest is not trusted to choose its own final
+    destination. The critical controller retargets only a strict descendant of
+    the current candidate to `js2/all-merged-rebased-20260701`, removes no-op and
+    stale/sibling rows, and records the decision in `manifest-normalization.tsv`.
+-   Generated collaboration fuzz specs are harness overlays, not product fixes.
+    Every continuation records `generated-harness-overlay-paths.txt`; the result
+    guard strips those paths and amends the repair commit before adoption, while
+    the adoption prompt and structural health reject any contaminated branch that
+    survives. Agent prompts use path-scoped status and diff commands only.
+-   The local publisher pushes from the operator machine and then compare-and-swap
+    fast-forwards the JS2 candidate ref after GitHub confirms the exact commit.
+    The guard checks candidate-head changes before applying control-harness grace,
+    so coverage switches immediately instead of waiting for another repair job.
+-   Harness-overlay drift is actionable only for an active lane. Publication
+    intentionally precedes asynchronous isolated-repo preparation, and the
+    supervisor already blocks launch on the expected overlay signature.
+-   A tmux session disappearing is not enough to declare a singleton stopped.
+    Clear validated orphan lock holders for productive analysis, deferred work,
+    and resource autoscaling before relaunch.
+-   Deferred recovery must include PIDs returned by `fuser` on
+    `deferred-work-promotion-loop.lock`. Killing only the controller shell can
+    leave its reparented `sleep 900` child holding fd 9; terminate the validated
+    process group, clear the stale PID file, and then create one tmux owner.
+-   During a serialized coverage replacement, structural checks that depend on
+    the new pointer skip while `start-v2.lock` is held. Planned candidate-head or
+    versioned-harness transitions are excluded from repeated-restart alerts; real
+    repeated restarts still fail health.
 
 Quick provenance and health check:
 
@@ -96,6 +208,10 @@ Quick provenance and health check:
 OUT=$(cat /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/current-output-dir.txt)
 cat "$OUT/source-manifest.tsv"
 sha256sum "$OUT"/../candidate-source/bin/rtc-browser-fuzz-{novelty-monitor,supervisor,triage-watcher}.mjs
+grep -F 'state_compatibility_sha256' "$OUT/source-manifest.tsv"
+lslocks -o PID,COMMAND,PATH | grep "$(basename "$OUT")/.network-topology" || true
+grep -F 'RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD' "$OUT/run-monitor.sh"
+for pid in $(pgrep -x codex); do printf '%s ' "$pid"; readlink -f "/proc/$pid/cwd"; done
 tmux -L rtc-fuzz list-sessions -F '#{session_name}'
 tmux -L rtc-analysis list-sessions -F '#{session_name}'
 node -e 'const fs=require("fs"); const x=JSON.parse(fs.readFileSync(process.argv[1])); console.log(x.map((g)=>g.name))' "$OUT/supervisor-groups.json"
@@ -103,21 +219,72 @@ node -e 'const fs=require("fs"); const x=JSON.parse(fs.readFileSync(process.argv
 
 The current publication blockers are intentionally concrete:
 
--   `benchmark-canary-fuzzer-gap`: three forced HTTP canary rows had direct
-    current-run green evidence at `2026-07-08T18:23Z`, while
-    `novelty-http-large-post-lifecycle` remained open and promotion-blocking.
--   `benchmark-canary-product-failure`: retained product evidence is still
-    present for `novelty-http-large-post-lifecycle-completion`,
-    `novelty-http-persistence-probe`, and
-    `novelty-http-title-reload-convergence`.
--   `plain-editor-product-smoke`: this is a first-class publication gate. It is
-    not satisfied by `wp-env` startup/status logs. Seed `1255001` reproduced an
-    RTC save endpoint HTTP 500 in the exact-candidate run, so the gate remains
-    open until a repair produces a successful real edit/save/reload artifact.
--   `pa-exact-benchmark-canary-product-failure`: one current repair-adoption
-    row is in `central_present` state and must be validated, merged into the
-    all-merge candidate, converted into a push manifest, or rejected with exact
-    evidence.
+-   Clean roots `run-20260710T044632Z` and `run-20260710T045153Z` proved that
+    the shared network lock works: their four human workflows passed in `1.2m`
+    and `1.3m`, with zero `ERR_NETWORK_CHANGED` records. They are historical
+    positive evidence, not sufficient release evidence by themselves.
+-   Repetition in `run-20260710T050542Z` found an intermittent, user-visible
+    failure in the recorded side-by-side workflow: three tests passed, but both
+    editors received HTTP 403 from `/wp-json/wp-sync/v1/updates` and logged
+    `Permission denied, unregistering room`. The analysis tier classified this
+    as a high-confidence RTC product bug for a valid collaborator-authored
+    draft, not a page-boot failure.
+-   The runner initially wrote that failure as `infra` because full-output
+    classification matched the literal `--config playwright.config.ts`
+    invocation. That false-infra route, duplicate path hashes, and stale-source
+    analysis handoff are fixed. Structural health now checks all three
+    invariants.
+-   Historical corrected root `run-20260710T053847Z` on exact candidate
+    `7853d517` kept its locked startup budget, effective budget, generated
+    monitor, and consecutive autoscaler decisions at `5/5`. All four human
+    workflows, including the recorded side-by-side selection workflow, passed
+    in `1.2m`; seeds `1255001` and `1255002` then passed. This is positive
+    evidence, but it does not close the intermittent 403 because the failing
+    `run-20260710T050542Z` behavior has not been repaired or explicitly
+    downscoped.
+-   The candidate then advanced to `7e9dbc66` (`Persist synced CRDT document
+after entity save`). The clean product-only commit changes two core-data
+    files with 71 insertions and one deletion. Its focused unit test passed
+    (`1` passed, `48` skipped), and the producing repair also passed the
+    production build and exact RTC save/reload smoke. The first proposed branch
+    was rejected because it accidentally included a generated 14,170-line fuzz
+    spec; deterministic overlay stripping and product-only extraction produced
+    the accepted branch.
+-   Discovery root `run-20260710T063249Z` tested exact candidate `7e9dbc66`.
+    Its locked startup budget, effective budget, and current run script all
+    agree on `5/5`, the deadline cap is one, and exactly
+    five groups were published from startup. All four human workflows passed in
+    `1.3m`, followed by eight passing edit/save/reload seeds (`1255001` through
+    `1255008`). Retained first-green closed the plain-editor gate and rotated
+    its slot to the forced canaries. The large-post completion variant produced
+    two green records. The primary variant then found seed `1140001`, where a
+    normal three-user HTTP collaboration converged but `savePost()` left blocks,
+    content, title, and selection dirty for 15 seconds. First-level analysis
+    classified canonical signature `14a056a2aa04` as `likely_real` and wrote an
+    open current-candidate actionable JSON. Seed `1140002` separately failed
+    60-second collaborative convergence and remains under analysis.
+-   Active root `run-20260710T065736Z` is the one deliberate same-head
+    replacement for the final hard-budget policy. Its manifest records monitor
+    `b4576372`; locked, effective, and run budgets are `5/5`, exactly five groups
+    are published, and retained first-green still satisfies the completed
+    plain-editor gate. The discovery root remains an observed analysis input.
+-   `benchmark-canary-fuzzer-gap` and retained title-reload product evidence
+    remain open until current-root exact canaries finish or a same-head repair
+    or explicit downscope is recorded. Old-head sibling rows are
+    `stale-candidate-base`; incorporated commits must not be republished.
+-   The 403 record is stored under ancestor head `7853d517`, signature
+    `a107212124cc`, but is deliberately carried into current-head blocker
+    `benchmark-canary-product-failure`. The aggregate repair lane has the exact
+    JSON path and remains the owner; an unrelated candidate fast-forward or one
+    green replay cannot clear it.
+-   Critical reconcile now carries both actionable rows: the ancestor 403 and
+    current-head large-post dirty-save signature `14a056a2aa04`. The latter has
+    an exact seed/replay/trace and deep-triage handoff; it is not being collapsed
+    into coverage-only status.
+-   The producer's bounded REST proof for `7853d517` returned HTTP 200 and
+    preserved the newer stored document. A fresh isolated focused PHPUnit
+    startup did not complete, so that suite remains an explicit validation gap
+    rather than a claimed pass.
 
 Use this gate map for the current run:
 

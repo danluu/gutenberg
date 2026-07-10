@@ -92,6 +92,12 @@ const HTTP_HEALTH_TIMEOUT_MS = getPositiveIntegerEnv(
 	10000
 );
 const BASE_URL = process.env.RTC_FUZZ_BASE_URL ?? process.env.WP_BASE_URL ?? '';
+const NETWORK_TOPOLOGY_LOCK_FILE =
+	process.env.RTC_FUZZ_NETWORK_TOPOLOGY_LOCK_FILE ?? null;
+const NETWORK_TOPOLOGY_LOCK_WAIT_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_NETWORK_TOPOLOGY_LOCK_WAIT_MS',
+	20 * 60 * 1000
+);
 const DISABLE_SYNC_FAULTS =
 	process.env.RTC_FUZZ_DISABLE_SYNC_FAULTS ??
 	process.env.GUTENBERG_RTC_BROWSER_DISABLE_SYNC_FAULTS ??
@@ -350,10 +356,24 @@ async function runCombinedCommand( {
 	logPath,
 	timeoutMs,
 	cwd = REPO_ROOT,
+	networkTopologyLock = false,
 } ) {
 	await fs.mkdir( path.dirname( logPath ), { recursive: true } );
 	const start = Date.now();
-	const child = spawn( command, args, {
+	const useNetworkTopologyLock =
+		networkTopologyLock && NETWORK_TOPOLOGY_LOCK_FILE;
+	const spawnCommand = useNetworkTopologyLock ? '/usr/bin/flock' : command;
+	const spawnArgs = useNetworkTopologyLock
+		? [
+				'--wait',
+				String( Math.ceil( NETWORK_TOPOLOGY_LOCK_WAIT_MS / 1000 ) ),
+				'--no-fork',
+				NETWORK_TOPOLOGY_LOCK_FILE,
+				command,
+				...args,
+		  ]
+		: args;
+	const child = spawn( spawnCommand, spawnArgs, {
 		cwd,
 		env,
 		stdio: [ 'ignore', 'pipe', 'pipe' ],
@@ -401,7 +421,6 @@ async function runCombinedCommand( {
 		logPath,
 	};
 }
-
 async function runCodexCommand( {
 	command,
 	args,
@@ -647,6 +666,7 @@ async function runFullPreflight( label ) {
 		),
 		logPath: smokeLogPath,
 		timeoutMs: Math.max( RUN_TIMEOUT_MS, 4 * 60 * 1000 ),
+		networkTopologyLock: true,
 	} );
 	return {
 		...smokeResult,
@@ -805,7 +825,7 @@ async function stopForInfraFailure( { seed = null, stage, result } ) {
 
 async function stopForPreflightFailure( { seed = null, stage, result } ) {
 	const failureSnippet = extractFailureSnippet( result.output );
-	const localClassification = classifyLocalFailure( failureSnippet );
+	const localClassification = classifyLocalFailure( result.output );
 	if (
 		result.preflightKind !== 'human-product-smoke' ||
 		isInfraLocalClassification( localClassification )
@@ -888,21 +908,25 @@ function extractFailureSnippet( output ) {
 	}
 
 	const lines = trimmed.split( '\n' );
-	return lines.slice( -40 ).join( '\n' );
+	return lines.slice( -80 ).join( '\n' );
 }
 
-function classifyLocalFailure( failureSnippet ) {
+function classifyLocalFailure( failureOutput ) {
+	if ( /ERR_NETWORK_CHANGED/i.test( failureOutput ) ) {
+		return 'environment';
+	}
+
 	if (
-		/No tests found|Cannot find module|ENOENT|playwright\.config|ERR_MODULE_NOT_FOUND|Missing script|Cannot find file/i.test(
-			failureSnippet
+		/No tests found|Cannot find module|ENOENT|ERR_MODULE_NOT_FOUND|Missing script|Cannot find file|(?:cannot|failed to) (?:load|read|resolve).*playwright\.config/i.test(
+			failureOutput
 		)
 	) {
 		return 'harness';
 	}
 
 	if (
-		/ECONNREFUSED|docker|wp-env|timed out waiting|browser has been closed|Target page, context or browser has been closed/i.test(
-			failureSnippet
+		/ECONNREFUSED|(?:docker(?: compose)?|wp-env).{0,80}(?:failed|error|exited|unhealthy)|(?:failed|unable) to (?:start|stop).{0,60}(?:docker|wp-env)|browser has been closed|Target page, context or browser has been closed/i.test(
+			failureOutput
 		)
 	) {
 		return 'environment';

@@ -456,6 +456,41 @@ function getActiveRunDirs( supervisorState ) {
 				group: group.name ?? null,
 				status: group.status ?? null,
 				runDir: dir,
+				repoRoot: group.repoRoot ?? null,
+			} );
+		}
+	}
+
+	return dirs;
+}
+
+function getRetainedProductFailureRunDirs( supervisorState ) {
+	const dirs = [];
+	const seen = new Set();
+
+	for ( const group of supervisorState?.groups ?? [] ) {
+		const productFailureRecords = Number(
+			group.productFailureRecords ?? 0
+		);
+		if (
+			! group.productFailureAt &&
+			( ! Number.isFinite( productFailureRecords ) ||
+				productFailureRecords <= 0 )
+		) {
+			continue;
+		}
+
+		for ( const runDir of group.productFailureRunDirs ?? [] ) {
+			const resolved = runDir ? path.resolve( runDir ) : '';
+			if ( ! resolved || seen.has( resolved ) ) {
+				continue;
+			}
+			seen.add( resolved );
+			dirs.push( {
+				group: group.name ?? null,
+				status: 'retained-product-failure',
+				runDir: resolved,
+				repoRoot: group.repoRoot ?? null,
 			} );
 		}
 	}
@@ -514,6 +549,10 @@ async function getNoAnalysisDrainRunDirs( activeRunDirs ) {
 			group: noAnalysis.group ?? null,
 			status: 'no-analysis-drain',
 			runDir,
+			repoRoot: inferIsolatedAnalysisRepoRoot( {
+				group: noAnalysis.group ?? null,
+				runDir,
+			} ),
 		} );
 	}
 
@@ -572,6 +611,7 @@ function getSupervisorNoAnalysisDrainRunDirs( supervisorState, activeRunDirs ) {
 				group: group.name ?? null,
 				status: group.noAnalysisReasonKind ?? 'no-analysis-drain',
 				runDir: resolved,
+				repoRoot: group.repoRoot ?? null,
 			} );
 		}
 	}
@@ -594,6 +634,47 @@ function mergeRunDirRecords( records ) {
 		} );
 	}
 	return merged;
+}
+
+const ISOLATED_ANALYSIS_REQUIRED_FILES = [
+	'package.json',
+	'bin/rtc-browser-fuzz-triage-watcher.mjs',
+	'bin/rtc-browser-fuzz-analysis-tier.mjs',
+	'bin/rtc-browser-fuzz-deep-analysis-tier.mjs',
+];
+
+function inferIsolatedAnalysisRepoRoot( record ) {
+	const candidates = [];
+	if ( record?.repoRoot ) {
+		candidates.push( path.resolve( record.repoRoot ) );
+	}
+	if (
+		record?.runDir &&
+		record?.group &&
+		path.basename( record.group ) === record.group
+	) {
+		candidates.push(
+			path.join(
+				path.dirname( path.resolve( record.runDir ) ),
+				'repos',
+				record.group
+			)
+		);
+	}
+
+	for ( const candidate of new Set( candidates ) ) {
+		if ( candidate === path.resolve( REPO_ROOT ) ) {
+			continue;
+		}
+		if (
+			ISOLATED_ANALYSIS_REQUIRED_FILES.every( ( relativePath ) =>
+				fsSync.existsSync( path.join( candidate, relativePath ) )
+			)
+		) {
+			return candidate;
+		}
+	}
+	return null;
 }
 
 async function getProductEvidenceLaunchDrainRunDirs(
@@ -1245,6 +1326,8 @@ function isNoAnalysisSignatureLiveAdmitted( signature, noAnalysis ) {
 
 async function getLiveRunDirScopes( supervisorState ) {
 	const supervisorActiveRunDirs = getActiveRunDirs( supervisorState );
+	const retainedProductFailureRunDirs =
+		getRetainedProductFailureRunDirs( supervisorState );
 	const activeRunDirs = [];
 	const activeNoAnalysisDrainRunDirs = [];
 	for ( const record of supervisorActiveRunDirs ) {
@@ -1266,6 +1349,7 @@ async function getLiveRunDirScopes( supervisorState ) {
 		activeRunDirs
 	);
 	const drainRunDirs = mergeRunDirRecords( [
+		...retainedProductFailureRunDirs,
 		...activeNoAnalysisDrainRunDirs,
 		...supervisorDrainRunDirs,
 		...( await getNoAnalysisDrainRunDirs( [
@@ -1301,11 +1385,13 @@ async function getLiveRunDirScopes( supervisorState ) {
 	return {
 		launchRunDirs: mergeRunDirRecords( [
 			...activeRunDirs,
+			...retainedProductFailureRunDirs,
 			...productEvidenceLaunchDrainRunDirs,
 		] ),
 		drainRunDirs,
 		allRunDirs: mergeRunDirRecords( [
 			...activeRunDirs,
+			...retainedProductFailureRunDirs,
 			...productEvidenceLaunchDrainRunDirs,
 			...drainRunDirs,
 		] ),
@@ -1557,7 +1643,7 @@ function getResolvedCurrentOutputPointerPathForChild() {
 	return null;
 }
 
-function buildAnalysisCommand( runDir ) {
+function buildAnalysisCommand( runDir, analysisRepoRoot ) {
 	const analysisLogPath = path.join(
 		runDir,
 		'.triage-watcher/analysis-tier/analysis-tier.log'
@@ -1565,7 +1651,7 @@ function buildAnalysisCommand( runDir ) {
 	const currentOutputPointerPath =
 		getResolvedCurrentOutputPointerPathForChild();
 	return [
-		`cd ${ shellQuote( REPO_ROOT ) }`,
+		`cd ${ shellQuote( analysisRepoRoot ) }`,
 		`mkdir -p ${ shellQuote( path.dirname( analysisLogPath ) ) }`,
 		'while true; do',
 		`export RTC_FUZZ_ANALYSIS_MAX_PARALLEL=${ shellQuote(
@@ -1581,6 +1667,9 @@ function buildAnalysisCommand( runDir ) {
 			ANALYSIS_CODEX_TIMEOUT_MS
 		) }`,
 		`export RTC_FUZZ_ANALYSIS_MAX_PER_FAMILY=${ shellQuote( 1 ) }`,
+		`export RTC_FUZZ_ANALYSIS_PRODUCT_FAILURE_BASE=${ shellQuote(
+			path.join( CAMPAIGN_ROOT, 'actionable-product-failures' )
+		) }`,
 		...( currentOutputPointerPath
 			? [
 					`export RTC_FUZZ_ANALYSIS_CURRENT_OUTPUT_POINTER=${ shellQuote(
@@ -1591,9 +1680,14 @@ function buildAnalysisCommand( runDir ) {
 		`export RTC_FUZZ_ANALYSIS_SUPERVISOR_STATE_PATH=${ shellQuote(
 			SUPERVISOR_STATE_PATH
 		) }`,
-		`node bin/rtc-browser-fuzz-analysis-tier.mjs ${ shellQuote(
-			runDir
-		) } >> ${ shellQuote( analysisLogPath ) } 2>&1`,
+		`node ${ shellQuote(
+			path.join(
+				analysisRepoRoot,
+				'bin/rtc-browser-fuzz-analysis-tier.mjs'
+			)
+		) } ${ shellQuote( runDir ) } >> ${ shellQuote(
+			analysisLogPath
+		) } 2>&1`,
 		'code=$?',
 		'echo ANALYSIS_EXIT:$code $(date -u +%Y-%m-%dT%H:%M:%SZ)',
 		'sleep 30',
@@ -1601,7 +1695,7 @@ function buildAnalysisCommand( runDir ) {
 	].join( '\n' );
 }
 
-function buildDeepAnalysisCommand( runDir ) {
+function buildDeepAnalysisCommand( runDir, analysisRepoRoot ) {
 	const deepAnalysisLogPath = path.join(
 		runDir,
 		'.triage-watcher/deep-analysis-tier/deep-analysis-tier.log'
@@ -1609,7 +1703,7 @@ function buildDeepAnalysisCommand( runDir ) {
 	const currentOutputPointerPath =
 		getResolvedCurrentOutputPointerPathForChild();
 	return [
-		`cd ${ shellQuote( REPO_ROOT ) }`,
+		`cd ${ shellQuote( analysisRepoRoot ) }`,
 		`mkdir -p ${ shellQuote( path.dirname( deepAnalysisLogPath ) ) }`,
 		'while true; do',
 		`export RTC_FUZZ_DEEP_ANALYSIS_MAX_PARALLEL=${ shellQuote(
@@ -1640,9 +1734,14 @@ function buildDeepAnalysisCommand( runDir ) {
 		`export RTC_FUZZ_DEEP_ANALYSIS_SUPERVISOR_STATE_PATH=${ shellQuote(
 			SUPERVISOR_STATE_PATH
 		) }`,
-		`node bin/rtc-browser-fuzz-deep-analysis-tier.mjs ${ shellQuote(
-			runDir
-		) } >> ${ shellQuote( deepAnalysisLogPath ) } 2>&1`,
+		`node ${ shellQuote(
+			path.join(
+				analysisRepoRoot,
+				'bin/rtc-browser-fuzz-deep-analysis-tier.mjs'
+			)
+		) } ${ shellQuote( runDir ) } >> ${ shellQuote(
+			deepAnalysisLogPath
+		) } 2>&1`,
 		'code=$?',
 		'echo DEEP_ANALYSIS_EXIT:$code $(date -u +%Y-%m-%dT%H:%M:%SZ)',
 		'sleep 45',
@@ -1650,8 +1749,58 @@ function buildDeepAnalysisCommand( runDir ) {
 	].join( '\n' );
 }
 
-async function ensureAnalysisSession( runDir ) {
+async function tmuxSessionUsesRepoRoot( sessionName, analysisRepoRoot ) {
+	const result = await runCommand( 'tmux', [
+		'list-panes',
+		'-t',
+		sessionName,
+		'-F',
+		'#{pane_current_path}',
+	] );
+	return (
+		result.ok &&
+		result.stdout
+			.split( '\n' )
+			.some(
+				( currentPath ) =>
+					currentPath &&
+					path.resolve( currentPath ) ===
+						path.resolve( analysisRepoRoot )
+			)
+	);
+}
+
+async function replaceAnalysisSessionWithWrongRepo(
+	sessionName,
+	runDir,
+	analysisRepoRoot,
+	tierName
+) {
+	if ( ! ( await hasTmuxSession( sessionName ) ) ) {
+		return false;
+	}
+	if ( await tmuxSessionUsesRepoRoot( sessionName, analysisRepoRoot ) ) {
+		return false;
+	}
+	await runCommand( 'tmux', [ 'kill-session', '-t', sessionName ] );
+	await event( {
+		kind: 'analysis-session-wrong-repo-replaced',
+		tierName,
+		runDir,
+		sessionName,
+		analysisRepoRoot,
+	} );
+	return true;
+}
+
+async function ensureAnalysisSession( runDir, analysisRepoRoot ) {
 	const sessionName = sessionNameForRunDir( runDir );
+	await replaceAnalysisSessionWithWrongRepo(
+		sessionName,
+		runDir,
+		analysisRepoRoot,
+		'analysis-tier'
+	);
 	if ( await hasTmuxSession( sessionName ) ) {
 		return {
 			sessionName,
@@ -1659,13 +1808,17 @@ async function ensureAnalysisSession( runDir ) {
 		};
 	}
 
-	const result = await runCommand( 'tmux', [
-		'new-session',
-		'-d',
-		'-s',
-		sessionName,
-		buildAnalysisCommand( runDir ),
-	] );
+	const result = await runCommand(
+		'tmux',
+		[
+			'new-session',
+			'-d',
+			'-s',
+			sessionName,
+			buildAnalysisCommand( runDir, analysisRepoRoot ),
+		],
+		{ cwd: analysisRepoRoot }
+	);
 
 	if ( ! result.ok ) {
 		await event( {
@@ -1686,6 +1839,7 @@ async function ensureAnalysisSession( runDir ) {
 		kind: 'analysis-session-started',
 		runDir,
 		sessionName,
+		analysisRepoRoot,
 	} );
 	return {
 		sessionName,
@@ -1693,8 +1847,14 @@ async function ensureAnalysisSession( runDir ) {
 	};
 }
 
-async function ensureDeepAnalysisSession( runDir ) {
+async function ensureDeepAnalysisSession( runDir, analysisRepoRoot ) {
 	const sessionName = sessionNameForRunDir( runDir, DEEP_TMUX_PREFIX );
+	await replaceAnalysisSessionWithWrongRepo(
+		sessionName,
+		runDir,
+		analysisRepoRoot,
+		'deep-analysis-tier'
+	);
 	if ( await hasTmuxSession( sessionName ) ) {
 		return {
 			sessionName,
@@ -1702,13 +1862,17 @@ async function ensureDeepAnalysisSession( runDir ) {
 		};
 	}
 
-	const result = await runCommand( 'tmux', [
-		'new-session',
-		'-d',
-		'-s',
-		sessionName,
-		buildDeepAnalysisCommand( runDir ),
-	] );
+	const result = await runCommand(
+		'tmux',
+		[
+			'new-session',
+			'-d',
+			'-s',
+			sessionName,
+			buildDeepAnalysisCommand( runDir, analysisRepoRoot ),
+		],
+		{ cwd: analysisRepoRoot }
+	);
 
 	if ( ! result.ok ) {
 		await event( {
@@ -1729,6 +1893,7 @@ async function ensureDeepAnalysisSession( runDir ) {
 		kind: 'deep-analysis-session-started',
 		runDir,
 		sessionName,
+		analysisRepoRoot,
 	} );
 	return {
 		sessionName,
@@ -2483,18 +2648,23 @@ async function getDeepAnalysisCandidateFamilyKeys(
 	return [ ...familyKeys ];
 }
 
-async function runGateOnlyWatcher( runDir ) {
+async function runGateOnlyWatcher( runDir, analysisRepoRoot = null ) {
+	const watcherRepoRoot = analysisRepoRoot ?? REPO_ROOT;
 	const currentOutputPointerPath =
 		getResolvedCurrentOutputPointerPathForChild();
 	const result = await runCommand(
 		process.execPath,
 		[
-			path.join( REPO_ROOT, 'bin/rtc-browser-fuzz-triage-watcher.mjs' ),
+			path.join(
+				watcherRepoRoot,
+				'bin/rtc-browser-fuzz-triage-watcher.mjs'
+			),
 			runDir,
 			'--once',
 			'--gate-only',
 		],
 		{
+			cwd: watcherRepoRoot,
 			env: {
 				...process.env,
 				RTC_FUZZ_TRIAGE_MAX_PARALLEL: '1',
@@ -2530,17 +2700,25 @@ async function runGateOnlyWatcher( runDir ) {
 	return result.stdout.trim();
 }
 
-async function runFamilyCapHousekeepingAnalysis( runDir, familyKeys = [] ) {
+async function runFamilyCapHousekeepingAnalysis(
+	runDir,
+	analysisRepoRoot,
+	familyKeys = []
+) {
 	const currentOutputPointerPath =
 		getResolvedCurrentOutputPointerPathForChild();
 	const result = await runCommand(
 		process.execPath,
 		[
-			path.join( REPO_ROOT, 'bin/rtc-browser-fuzz-analysis-tier.mjs' ),
+			path.join(
+				analysisRepoRoot,
+				'bin/rtc-browser-fuzz-analysis-tier.mjs'
+			),
 			runDir,
 			'--once',
 		],
 		{
+			cwd: analysisRepoRoot,
 			env: {
 				...process.env,
 				RTC_FUZZ_ANALYSIS_MAX_PARALLEL: '1',
@@ -2578,11 +2756,11 @@ async function runFamilyCapHousekeepingAnalysis( runDir, familyKeys = [] ) {
 	};
 }
 
-async function runGateOnlyWatcherNonFatal( runDir ) {
+async function runGateOnlyWatcherNonFatal( runDir, analysisRepoRoot = null ) {
 	try {
 		return {
 			ok: true,
-			output: await runGateOnlyWatcher( runDir ),
+			output: await runGateOnlyWatcher( runDir, analysisRepoRoot ),
 			error: null,
 		};
 	} catch ( error ) {
@@ -2590,6 +2768,7 @@ async function runGateOnlyWatcherNonFatal( runDir ) {
 		await event( {
 			kind: 'gate-only-nonfatal',
 			runDir,
+			analysisRepoRoot,
 			error: message,
 		} );
 		return {
@@ -4123,10 +4302,20 @@ async function monitorOnce() {
 			await getCurrentOutputFamilyCountRunDirs( runDirScopes.allRunDirs )
 		) );
 
-	for ( const { group, status, runDir } of runDirScopes.allRunDirs ) {
+	for ( const {
+		group,
+		status,
+		runDir,
+		repoRoot,
+	} of runDirScopes.allRunDirs ) {
 		const isAnalysisLaunchScope = launchRunDirSet.has(
 			path.resolve( runDir )
 		);
+		const analysisRepoRoot = inferIsolatedAnalysisRepoRoot( {
+			group,
+			runDir,
+			repoRoot,
+		} );
 		if ( ! fsSync.existsSync( runDir ) ) {
 			actions.push( {
 				group,
@@ -4138,7 +4327,10 @@ async function monitorOnce() {
 			continue;
 		}
 
-		const gateRefresh = await runGateOnlyWatcherNonFatal( runDir );
+		const gateRefresh = await runGateOnlyWatcherNonFatal(
+			runDir,
+			analysisRepoRoot
+		);
 		const gateOutput = gateRefresh.output;
 		const noAnalysis = await readNoAnalysisSentinel( runDir );
 		const triageState = await readJsonFile(
@@ -4171,6 +4363,7 @@ async function monitorOnce() {
 		if ( ! gateRefresh.ok ) {
 			const shouldKeepSessionAfterGateFailure =
 				isAnalysisLaunchScope &&
+				Boolean( analysisRepoRoot ) &&
 				! noAnalysis &&
 				hasGateFailureProtectedProductEvidenceWork(
 					triageState,
@@ -4249,6 +4442,38 @@ async function monitorOnce() {
 			} );
 			continue;
 		}
+		if ( ! analysisRepoRoot ) {
+			const stoppedSessions = await stopAnalysisSessionsForRunDir(
+				runDir,
+				'no disposable isolated analysis repo is available; refusing to run Codex from the frozen candidate source'
+			);
+			const summary = await summarizeRunDir(
+				runDir,
+				currentOutputFamilyCounts
+			);
+			summaries.push( {
+				group,
+				status,
+				launchScope: true,
+				...summary,
+				analysisRepoRoot: null,
+				analysisSession: null,
+				deepAnalysisSession: null,
+			} );
+			actions.push( {
+				group,
+				status,
+				runDir,
+				repoRoot: repoRoot ?? null,
+				action: 'skipped-analysis-no-isolated-repo',
+				launchScope: true,
+				producerNoAnalysis: noAnalysis,
+				gateOutput,
+				triageActionability,
+				stoppedSessions,
+			} );
+			continue;
+		}
 		if (
 			! triageActionability.shouldStartAnalysis &&
 			! triageActionability.shouldKeepAnalysisSession &&
@@ -4257,10 +4482,13 @@ async function monitorOnce() {
 		) {
 			const housekeeping = await runFamilyCapHousekeepingAnalysis(
 				runDir,
+				analysisRepoRoot,
 				triageActionability.familyCapHousekeepingFamilyKeys
 			);
-			const secondGateRefresh =
-				await runGateOnlyWatcherNonFatal( runDir );
+			const secondGateRefresh = await runGateOnlyWatcherNonFatal(
+				runDir,
+				analysisRepoRoot
+			);
 			const stoppedSessions = await stopAnalysisSessionsForRunDir(
 				runDir,
 				'current-output family-cap housekeeping completed without live analysis work'
@@ -4334,7 +4562,10 @@ async function monitorOnce() {
 			continue;
 		}
 
-		const finalGateRefresh = await runGateOnlyWatcherNonFatal( runDir );
+		const finalGateRefresh = await runGateOnlyWatcherNonFatal(
+			runDir,
+			analysisRepoRoot
+		);
 		const finalNoAnalysis = await readNoAnalysisSentinel( runDir );
 		const finalTriageState = await readJsonFile(
 			path.join( runDir, '.triage-watcher/state.json' )
@@ -4405,6 +4636,7 @@ async function monitorOnce() {
 		) {
 			const housekeeping = await runFamilyCapHousekeepingAnalysis(
 				runDir,
+				analysisRepoRoot,
 				finalTriageActionability.familyCapHousekeepingFamilyKeys
 			);
 			const stoppedSessions = await stopAnalysisSessionsForRunDir(
@@ -4485,7 +4717,7 @@ async function monitorOnce() {
 		const analysisSession =
 			finalTriageActionability.shouldStartAnalysis ||
 			finalTriageActionability.shouldKeepAnalysisSession
-				? await ensureAnalysisSession( runDir )
+				? await ensureAnalysisSession( runDir, analysisRepoRoot )
 				: null;
 		const stoppedAnalysisSession =
 			! finalTriageActionability.shouldStartAnalysis &&
@@ -4505,7 +4737,7 @@ async function monitorOnce() {
 			}
 		}
 		const deepAnalysisSession = finalShouldStartDeepAnalysis
-			? await ensureDeepAnalysisSession( runDir )
+			? await ensureDeepAnalysisSession( runDir, analysisRepoRoot )
 			: null;
 		if ( deepAnalysisSession ) {
 			for ( const familyKey of finalDeepAnalysisFamilyKeys ) {
@@ -4521,7 +4753,10 @@ async function monitorOnce() {
 					runDir,
 					'no first-level completed candidate currently needs deep analysis'
 			  );
-		const secondGateRefresh = await runGateOnlyWatcherNonFatal( runDir );
+		const secondGateRefresh = await runGateOnlyWatcherNonFatal(
+			runDir,
+			analysisRepoRoot
+		);
 		const secondGateOutput = secondGateRefresh.output;
 		const summary = await summarizeRunDir(
 			runDir,

@@ -1938,16 +1938,9 @@ write_budget_env() {
 	[[ "$slot_floor" =~ ^[0-9]+$ ]] || slot_floor=0
 	reserve_floor=$(benchmark_canary_reserve_floor)
 	[[ "$reserve_floor" =~ ^[0-9]+$ ]] || reserve_floor=0
-	if [ "$slot_floor" -gt 0 ]; then
-		[[ "${target:-0}" =~ ^[0-9]+$ ]] || target=0
-		[[ "${max:-0}" =~ ^[0-9]+$ ]] || max=0
-		[ "$target" -lt "$slot_floor" ] && target=$slot_floor
-		[ "$max" -lt "$slot_floor" ] && max=$slot_floor
-	fi
-	if [ "${target:-0}" -le 0 ] && [ "${max:-0}" -le 0 ] && [ "$slot_floor" -gt 0 ]; then
-		target=$slot_floor
-		max=$slot_floor
-	fi
+	[[ "${target:-0}" =~ ^[0-9]+$ ]] || target=0
+	[[ "${max:-0}" =~ ^[0-9]+$ ]] || max=$target
+	[ "$max" -lt "$target" ] && max=$target
 	if [ "${target:-0}" -le 0 ] && [ "${max:-0}" -le 0 ]; then
 		min_enabled_browser_lanes=''
 		allow_empty_materialization_no_product_startup_canary=0
@@ -1972,6 +1965,8 @@ write_budget_env() {
 			benchmark_canary_ws_backfill_slots=0
 		fi
 		benchmark_canary_sticky_group_limit=$low_budget_canary_limit
+		benchmark_canary_slot_floor=''
+		benchmark_canary_strict_slot_floor=''
 		zero_coverage_benchmark_canary_min_active_groups=$low_budget_canary_limit
 		deadline_coverage_gap_reserved_groups=0
 		deadline_benchmark_canary_budget_cap=1
@@ -2002,6 +1997,7 @@ write_budget_env() {
 		fi
 		if [[ "$slot_floor" =~ ^[0-9]+$ ]] && [ "$slot_floor" -gt 0 ]; then
 			benchmark_canary_slot_floor=$slot_floor
+			[ "$benchmark_canary_slot_floor" -gt "$target" ] && benchmark_canary_slot_floor=$target
 			benchmark_canary_strict_slot_floor=1
 		fi
 		if [[ "$slot_floor" =~ ^[0-9]+$ ]] && [ "$slot_floor" -ge 10 ]; then
@@ -2138,10 +2134,6 @@ let maxNumber = Math.max( 0, Number.parseInt( max, 10 ) || 0 );
 		coverageBootstrapReserveSlots,
 		coveragePromotionBlockedCount
 	);
-if ( benchmarkCanarySlotFloorNumber > 0 ) {
-	targetNumber = Math.max( targetNumber, benchmarkCanarySlotFloorNumber );
-	maxNumber = Math.max( maxNumber, benchmarkCanarySlotFloorNumber );
-}
 const targetValue = String( targetNumber );
 const maxValue = String( maxNumber );
 const disabledBudget = targetNumber <= 0 && maxNumber <= 0;
@@ -2195,7 +2187,9 @@ const benchmarkCanaryStickyGroupLimit = disabledBudget
 	? lowBudgetCanaryLimit
 	: '';
 const benchmarkCanarySlotFloor =
-	! disabledBudget && maxNumber > 5 ? String( maxNumber ) : '';
+	! disabledBudget && targetNumber > 5
+		? String( Math.min( targetNumber, benchmarkCanarySlotFloorNumber || targetNumber ) )
+		: '';
 const benchmarkCanaryStrictSlotFloor = benchmarkCanarySlotFloor ? '1' : '0';
 const zeroCoverageBenchmarkCanaryMinActiveGroups = disabledBudget
 	? '0'
@@ -2289,21 +2283,12 @@ NODE
 
 apply_in_place_coverage_budget() {
 	local desired_target=$1 desired_max=$2 reason=$3 mode=${4:-ordinary}
-	local latest groups_path before after sticky_limit slot_floor
+	local latest groups_path before after sticky_limit
+	local budget_target budget_max run_target run_max
 	[[ "$desired_target" =~ ^[0-9]+$ ]] || desired_target=1
 	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=$desired_target
 	if [ "$desired_max" -lt "$desired_target" ]; then
 		desired_max=$desired_target
-	fi
-	slot_floor=$(benchmark_canary_slot_floor 2>/dev/null || printf '0')
-	[[ "$slot_floor" =~ ^[0-9]+$ ]] || slot_floor=0
-	if [ "$slot_floor" -gt 0 ]; then
-		if [ "$desired_target" -lt "$slot_floor" ]; then
-			desired_target=$slot_floor
-		fi
-		if [ "$desired_max" -lt "$slot_floor" ]; then
-			desired_max=$slot_floor
-		fi
 	fi
 	coverage_root_live_for_in_place_budget || return 1
 	latest=$(latest_run)
@@ -2312,6 +2297,15 @@ apply_in_place_coverage_budget() {
 	write_budget_env "$desired_target" "$desired_max" 1.02
 	sticky_limit=$(budget_env_value RTC_FUZZ_NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT '')
 	rewrite_current_run_budget_exports "$desired_target" "$desired_max"
+	budget_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$BUDGET_ENV" | tail -1)
+	budget_max=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$BUDGET_ENV" | tail -1)
+	run_target=$(run_script_value RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS '')
+	run_max=$(run_script_value RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS '')
+	if [ "$budget_target" != "$desired_target" ] || [ "$budget_max" != "$desired_max" ] ||
+			[ "$run_target" != "$desired_target" ] || [ "$run_max" != "$desired_max" ]; then
+		echo "[$(stamp)] rejected divergent in-place budget requested=$desired_target/$desired_max budget=${budget_target:-missing}/${budget_max:-missing} run=${run_target:-missing}/${run_max:-missing} reason=$reason root=$latest" >> "$LOG"
+		return 1
+	fi
 	node - "$groups_path" "$latest/novelty-state.json" "$desired_max" "$mode" "$sticky_limit" "$reason" "$POLICY_REQUIRED_COVERAGE_GROUPS" <<'NODE'
 const fs = require( 'fs' );
 const [
@@ -2513,14 +2507,6 @@ restart_coverage() {
 	[[ "$slot_floor" =~ ^[0-9]+$ ]] || slot_floor=0
 	reserve_floor=$(benchmark_canary_reserve_floor)
 	[[ "$reserve_floor" =~ ^[0-9]+$ ]] || reserve_floor=0
-	if [ "$slot_floor" -gt 0 ]; then
-		if [ "${desired_target:-0}" -lt "$slot_floor" ]; then
-			desired_target=$slot_floor
-		fi
-		if [ "${desired_max:-0}" -lt "$slot_floor" ]; then
-			desired_max=$slot_floor
-		fi
-	fi
 	if [ "${desired_target:-0}" -le 0 ] && [ "${desired_max:-0}" -le 0 ]; then
 		min_enabled_browser_lanes=''
 		allow_empty_materialization_no_product_startup_canary=0
@@ -2579,6 +2565,7 @@ restart_coverage() {
 		fi
 		if [[ "$slot_floor" =~ ^[0-9]+$ ]] && [ "$slot_floor" -gt 0 ]; then
 			benchmark_canary_slot_floor=$slot_floor
+			[ "$benchmark_canary_slot_floor" -gt "$desired_target" ] && benchmark_canary_slot_floor=$desired_target
 			benchmark_canary_strict_slot_floor=1
 		fi
 		if [[ "$slot_floor" =~ ^[0-9]+$ ]] && [ "$slot_floor" -ge 10 ]; then
@@ -2841,11 +2828,15 @@ while true; do
 			down_streak=0
 			if [ "$reason" = "deadline_benchmark_canary_cap" ] && {
 				[ "${materialized_running_groups:-0}" -ge "$desired_target" ] ||
-					[ "${materialized_active_run_dirs:-0}" -ge "$desired_target" ] ||
+			[ "${materialized_active_run_dirs:-0}" -ge "$desired_target" ] ||
 					[ "${enabled:-0}" -ge "$desired_target" ]
 			}; then
 				action=deadline_benchmark_canary_cap_restore_in_place
-				apply_in_place_coverage_budget "$desired_target" "$desired_max" "$reason" up || true
+				if ! apply_in_place_coverage_budget "$desired_target" "$desired_max" "$reason" up; then
+					action=deadline_benchmark_canary_cap_restore_after_divergence
+					restart_coverage "$desired_target" "$desired_max" "$reason"
+					last_restart_epoch=$(epoch)
+				fi
 				up_streak=0
 			elif [ "$reason" = "deadline_benchmark_canary_cap" ]; then
 				action=deadline_benchmark_canary_cap_restore
@@ -2860,7 +2851,11 @@ while true; do
 				[ "${materialized_active_run_dirs:-0}" -ge "$desired_target" ] ||
 				[ "${enabled:-0}" -ge "$desired_target" ]; then
 				action=restore_coverage_breadth_floor_in_place
-				apply_in_place_coverage_budget "$desired_target" "$desired_max" coverage_breadth_floor up || true
+				if ! apply_in_place_coverage_budget "$desired_target" "$desired_max" coverage_breadth_floor up; then
+					action=restore_coverage_breadth_floor_after_divergence
+					restart_coverage "$desired_target" "$desired_max" coverage_breadth_floor
+					last_restart_epoch=$(epoch)
+				fi
 				up_streak=0
 			elif [ $(( $(epoch) - last_restart_epoch )) -lt "$STARTUP_RAMP_SECONDS" ]; then
 				action=coverage_breadth_floor_ramp_cooldown
@@ -2886,7 +2881,11 @@ while true; do
 				[ "${materialized_active_run_dirs:-0}" -ge "$desired_target" ] ||
 				[ "${enabled:-0}" -ge "$desired_target" ]; then
 				action=scale_up_in_place
-				apply_in_place_coverage_budget "$desired_target" "$desired_max" "$reason" up || true
+				if ! apply_in_place_coverage_budget "$desired_target" "$desired_max" "$reason" up; then
+					action=scale_up_after_divergence
+					restart_coverage "$desired_target" "$desired_max" "$reason"
+					last_restart_epoch=$(epoch)
+				fi
 			else
 				action=scale_up
 				restart_coverage "$desired_target" "$desired_max" "$reason"

@@ -16,6 +16,14 @@ MAX_OBSERVED_ROOTS=${RTC_FUZZ_NOVELTY_MAX_OBSERVED_ROOTS:-20}
 mkdir -p "$TMUX_WRAP" "$BASE/logs"
 exec 8>"$START_LOCK"
 flock 8
+BUDGET_ENV=${RTC_RESOURCE_BUDGET_ENV:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/current-budget.env}
+BUDGET_ENV_SNAPSHOT=$(mktemp "$BASE/logs/resource-budget-start.XXXXXX.env")
+trap 'rm -f "$BUDGET_ENV_SNAPSHOT"' EXIT
+if [ -f "$BUDGET_ENV" ]; then
+	cp "$BUDGET_ENV" "$BUDGET_ENV_SNAPSHOT"
+else
+	: > "$BUDGET_ENV_SNAPSHOT"
+fi
 cat > "$TMUX_WRAP/tmux" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -38,6 +46,15 @@ chmod +x "$TMUX_WRAP/tmux"
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 export RTC_FUZZ_LOW_DISK_MODE="${RTC_FUZZ_LOW_DISK_MODE:-1}"
 
+NOVELTY_POLICY_CHECK=$HARNESS_REPO/bin/rtc-browser-fuzz-novelty-policy-check.mjs
+NOVELTY_MONITOR_SOURCE=$HARNESS_REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs
+if [ ! -f "$NOVELTY_POLICY_CHECK" ] ||
+	! "$NODE_BIN/node" "$NOVELTY_POLICY_CHECK" "$NOVELTY_MONITOR_SOURCE" >> "$BASE/logs/start.log" 2>&1; then
+	printf '[%s] refusing coverage start: novelty monitor does not satisfy the hard supervisor budget policy source=%s checker=%s\n' \
+		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$NOVELTY_MONITOR_SOURCE" "$NOVELTY_POLICY_CHECK" >> "$BASE/logs/start.log"
+	exit 1
+fi
+
 positive_integer_or_default() {
 	local value=$1
 	local fallback=$2
@@ -52,6 +69,34 @@ positive_integer_or_default() {
 	else
 		printf '%s\n' "$fallback"
 	fi
+}
+
+state_compatibility_sha256() {
+	local harness_root=$1 product_root=$2 relative source
+	{
+		for relative in \
+			bin/rtc-browser-fuzz-runner.mjs \
+			bin/rtc-browser-fuzz-supervisor.mjs
+		do
+			source=$harness_root/$relative
+			if [ -f "$source" ]; then
+				printf '%s\t%s\n' "$relative" "$(sha256sum "$source" | awk '{ print $1 }')"
+			else
+				printf '%s\tmissing\n' "$relative"
+			fi
+		done
+		for relative in \
+			test/e2e/specs/editor/collaboration/collaboration-human-smoke.spec.ts \
+			test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts
+		do
+			source=$product_root/$relative
+			if [ -f "$source" ]; then
+				printf '%s\t%s\n' "$relative" "$(sha256sum "$source" | awk '{ print $1 }')"
+			else
+				printf '%s\tmissing\n' "$relative"
+			fi
+		done
+	} | sha256sum | awk '{ print $1 }'
 }
 
 terminate_previous_coverage_processes() {
@@ -182,6 +227,9 @@ prepare_exact_candidate_source() {
 		printf 'runner_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-runner.mjs" | awk '{ print $1 }')"
 		printf 'supervisor_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-supervisor.mjs" | awk '{ print $1 }')"
 		printf 'triage_watcher_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-triage-watcher.mjs" | awk '{ print $1 }')"
+		printf 'state_compatibility_sha256\t%s\n' "$(state_compatibility_sha256 "$PRODUCT_REPO" "$PRODUCT_REPO")"
+		printf 'resource_budget_at_start_sha256\t%s\n' "$(sha256sum "$OUT/resource-budget-at-start.env" | awk '{ print $1 }')"
+		printf 'resource_budget_source\t%s\n' "$(cat "$OUT/resource-budget-source.txt")"
 		printf 'control_dirty_paths\t%s\n' "$(wc -l < "$OUT/control-repo-status.txt" | tr -d ' ')"
 		printf 'overlay_paths\t%s\n' "$(wc -l < "$OUT/harness-overlay-paths.txt" | tr -d ' ')"
 	} > "$OUT/source-manifest.tsv"
@@ -204,6 +252,10 @@ CURRENT_REPO_HEAD=$(git -C "$REPO" rev-parse "$CANDIDATE_REF" 2>/dev/null || tru
 CURRENT_REPO_BRANCH=${CANDIDATE_REF#refs/heads/}
 PREVIOUS_COVERAGE_HEAD=
 PREVIOUS_COVERAGE_AGE_SECONDS=999999
+PREVIOUS_STATE_COMPATIBILITY_SHA256=
+CURRENT_STATE_COMPATIBILITY_SHA256=$(state_compatibility_sha256 "$HARNESS_REPO" "$REPO")
+STATE_COMPATIBILITY_CHANGED=0
+FORCE_RESTART=${RTC_COVERAGE_FORCE_RESTART:-0}
 SAME_HEAD_REATTACH_MAX_AGE_SECONDS=${RTC_COVERAGE_SAME_HEAD_REATTACH_MAX_AGE_SECONDS:-46800}
 if [ -n "$PREVIOUS_COVERAGE" ]; then
 	if [ -f "$PREVIOUS_COVERAGE/source-head.txt" ]; then
@@ -218,8 +270,20 @@ if [ -n "$PREVIOUS_COVERAGE" ]; then
 		pointer_mtime=$(stat -c %Y "$BASE/current-output-dir.txt" 2>/dev/null || printf 0)
 		PREVIOUS_COVERAGE_AGE_SECONDS=$(( $(date -u +%s) - pointer_mtime ))
 	fi
+	if [ -s "$PREVIOUS_COVERAGE/source-manifest.tsv" ]; then
+		PREVIOUS_STATE_COMPATIBILITY_SHA256=$(awk -F '\t' '$1 == "state_compatibility_sha256" { print $2; exit }' "$PREVIOUS_COVERAGE/source-manifest.tsv")
+	fi
 fi
-if [ "${RTC_COVERAGE_FORCE_RESTART:-0}" != "1" ] &&
+if [ -n "$PREVIOUS_STATE_COMPATIBILITY_SHA256" ] &&
+	[ "$PREVIOUS_STATE_COMPATIBILITY_SHA256" != "$CURRENT_STATE_COMPATIBILITY_SHA256" ]; then
+	STATE_COMPATIBILITY_CHANGED=1
+elif [ "$FORCE_RESTART" = 1 ] &&
+	[ -n "$PREVIOUS_COVERAGE" ] &&
+	[ -z "$PREVIOUS_STATE_COMPATIBILITY_SHA256" ]; then
+	STATE_COMPATIBILITY_CHANGED=1
+fi
+if [ "$FORCE_RESTART" != "1" ] &&
+	[ "$STATE_COMPATIBILITY_CHANGED" != 1 ] &&
 	[ -n "$PREVIOUS_COVERAGE" ] &&
 	[ -d "$PREVIOUS_COVERAGE" ] &&
 	[ -x "$PREVIOUS_COVERAGE/run-monitor.sh" ] &&
@@ -248,8 +312,22 @@ if [ "$DISABLE_STATE_CARRYOVER" != "1" ] &&
 	INCLUDE_HISTORICAL_ROOTS=0
 	CARRYOVER_DISABLED_REASON="source head changed from $PREVIOUS_COVERAGE_HEAD to $CURRENT_REPO_HEAD"
 fi
+if [ "$DISABLE_STATE_CARRYOVER" != "1" ] &&
+	[ "$STATE_COMPATIBILITY_CHANGED" = 1 ]; then
+	DISABLE_STATE_CARRYOVER=1
+	# Historical roots remain useful for aggregate coverage, but scheduler and
+	# product-gate state from the old evidence contract must not be copied.
+	INCLUDE_HISTORICAL_ROOTS=1
+	CARRYOVER_DISABLED_REASON="state compatibility changed from ${PREVIOUS_STATE_COMPATIBILITY_SHA256:-missing} to $CURRENT_STATE_COMPATIBILITY_SHA256"
+fi
 OUT=$BASE/run-$(date -u +%Y%m%dT%H%M%SZ)
 mkdir -p "$OUT"
+cp "$BUDGET_ENV_SNAPSHOT" "$OUT/resource-budget-at-start.env"
+if [ "${RTC_FUZZ_NOVELTY_PREFER_EXPLICIT_BUDGET:-0}" = 1 ]; then
+	printf 'explicit-environment\n' > "$OUT/resource-budget-source.txt"
+else
+	printf 'start-lock-snapshot\n' > "$OUT/resource-budget-source.txt"
+fi
 printf '%s\n' "$CURRENT_REPO_HEAD" > "$OUT/source-head.txt"
 printf '%s\n' "$CURRENT_REPO_BRANCH" > "$OUT/source-branch.txt"
 if [ -x "$CLEANUP_SCRIPT" ]; then
@@ -263,6 +341,16 @@ fi
 terminate_previous_coverage_processes "$PREVIOUS_COVERAGE"
 prepare_exact_candidate_source
 printf '%s\n' "$OUT" > "$BASE/current-output-dir.txt"
+
+# A session watchdog can reattach the previous root while a new candidate build
+# is still in progress. Retire that owner immediately after the pointer moves.
+for monitor_pid in $(pgrep -f '[n]ode bin/rtc-browser-fuzz-novelty-monitor[.]mjs' 2>/dev/null || true); do
+	[ -r "/proc/$monitor_pid/environ" ] || continue
+	monitor_output=$(tr '\0' '\n' < "/proc/$monitor_pid/environ" | sed -n 's/^RTC_FUZZ_NOVELTY_OUTPUT_DIR=//p' | head -1)
+	[ -n "$monitor_output" ] && [ "$monitor_output" != "$OUT" ] || continue
+	printf 'stopping stale novelty monitor pid=%s output=%s current=%s\n' "$monitor_pid" "$monitor_output" "$OUT"
+	kill -TERM "$monitor_pid" 2>/dev/null || true
+done
 {
 	printf '# RTC Novelty Monitor\n\n'
 	printf 'Updated: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -342,7 +430,6 @@ OBSERVED=$(paste -sd: "$OUT/observed-roots.txt")
 if [ "$DISABLE_STATE_CARRYOVER" != "1" ] && [ -n "$PREVIOUS_COVERAGE" ] && [ -f "$PREVIOUS_COVERAGE/novelty-state.json" ]; then
 	cp "$PREVIOUS_COVERAGE/novelty-state.json" "$OUT/novelty-state.json"
 fi
-BUDGET_ENV=${RTC_RESOURCE_BUDGET_ENV:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516/current-budget.env}
 EXPLICIT_NOVELTY_TARGET_ENABLED_GROUPS=${RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS-}
 EXPLICIT_NOVELTY_MAX_ENABLED_GROUPS=${RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS-}
 EXPLICIT_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS=${RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS-}
@@ -369,9 +456,9 @@ EXPLICIT_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP=${RTC_FUZZ_NOVELTY_DEADLIN
 EXPLICIT_NOVELTY_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY=${RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY-}
 EXPLICIT_BENCHMARK_CANARY_FEEDBACK_BASE=${RTC_FUZZ_BENCHMARK_CANARY_FEEDBACK_BASE-}
 BUDGET_ENV_LOADED=0
-if [ -f "$BUDGET_ENV" ]; then
+if [ -s "$BUDGET_ENV_SNAPSHOT" ]; then
 	# shellcheck disable=SC1090
-	. "$BUDGET_ENV"
+	. "$BUDGET_ENV_SNAPSHOT"
 	BUDGET_ENV_LOADED=1
 fi
 if [ "$BUDGET_ENV_LOADED" = "1" ] && [ "${RTC_FUZZ_NOVELTY_PREFER_EXPLICIT_BUDGET:-0}" != "1" ]; then
@@ -490,6 +577,24 @@ NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS=${RTC_FUZZ_NOVELTY_DEADLINE_COVERA
 NOVELTY_DEADLINE_COVERAGE_GAP_MIN_RESERVED_GROUPS=${RTC_FUZZ_NOVELTY_DEADLINE_COVERAGE_GAP_MIN_RESERVED_GROUPS:-}
 NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP=${RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP:-0}
 NOVELTY_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY=${RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY:-}
+START_BUDGET_AUTHORITATIVE=0
+if [ "$BUDGET_ENV_LOADED" = 1 ] || [ "${RTC_FUZZ_NOVELTY_PREFER_EXPLICIT_BUDGET:-0}" = 1 ]; then
+	START_BUDGET_AUTHORITATIVE=1
+fi
+START_BUDGET_TARGET_ENABLED_GROUPS=$NOVELTY_TARGET_ENABLED_GROUPS
+START_BUDGET_MAX_ENABLED_GROUPS=$NOVELTY_MAX_ENABLED_GROUPS
+START_BUDGET_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS=$NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS
+START_BUDGET_COVERAGE_GUIDED_MAX_ENABLED_GROUPS=$NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS
+START_BUDGET_COVERAGE_QUALITY_MAX_ENABLED_GROUPS=$NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS
+START_BUDGET_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS=$NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS
+START_BUDGET_BENCHMARK_CANARY_WS_BACKFILL_SLOTS=$NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS
+START_BUDGET_BENCHMARK_CANARY_STICKY_GROUP_LIMIT=$NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT
+START_BUDGET_BENCHMARK_CANARY_SLOT_FLOOR=$NOVELTY_BENCHMARK_CANARY_SLOT_FLOOR
+START_BUDGET_BENCHMARK_CANARY_STRICT_SLOT_FLOOR=$NOVELTY_BENCHMARK_CANARY_STRICT_SLOT_FLOOR
+START_BUDGET_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS=$NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS
+START_BUDGET_DEADLINE_COVERAGE_GAP_MIN_RESERVED_GROUPS=$NOVELTY_DEADLINE_COVERAGE_GAP_MIN_RESERVED_GROUPS
+START_BUDGET_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP=$NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP
+START_BUDGET_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY=$NOVELTY_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY
 case "${NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT:-}" in
 	0|1|2)
 		NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS="$NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT"
@@ -1095,6 +1200,40 @@ if [ -z "$NOVELTY_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY" ]; then
 		NOVELTY_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY=0
 	fi
 fi
+if [ "$START_BUDGET_AUTHORITATIVE" = 1 ]; then
+	# The autoscaler owns budget policy. This launcher only snapshots and applies
+	# that decision; benchmark feedback below chooses lanes, not concurrency.
+	NOVELTY_TARGET_ENABLED_GROUPS=$START_BUDGET_TARGET_ENABLED_GROUPS
+	NOVELTY_MAX_ENABLED_GROUPS=$START_BUDGET_MAX_ENABLED_GROUPS
+	NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS=$START_BUDGET_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS
+	NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS=$START_BUDGET_COVERAGE_GUIDED_MAX_ENABLED_GROUPS
+	NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS=$START_BUDGET_COVERAGE_QUALITY_MAX_ENABLED_GROUPS
+	NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS=$START_BUDGET_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS
+	NOVELTY_BENCHMARK_CANARY_WS_BACKFILL_SLOTS=$START_BUDGET_BENCHMARK_CANARY_WS_BACKFILL_SLOTS
+	NOVELTY_BENCHMARK_CANARY_STICKY_GROUP_LIMIT=$START_BUDGET_BENCHMARK_CANARY_STICKY_GROUP_LIMIT
+	NOVELTY_BENCHMARK_CANARY_SLOT_FLOOR=$START_BUDGET_BENCHMARK_CANARY_SLOT_FLOOR
+	NOVELTY_BENCHMARK_CANARY_STRICT_SLOT_FLOOR=$START_BUDGET_BENCHMARK_CANARY_STRICT_SLOT_FLOOR
+	NOVELTY_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS=$START_BUDGET_DEADLINE_COVERAGE_GAP_RESERVED_GROUPS
+	NOVELTY_DEADLINE_COVERAGE_GAP_MIN_RESERVED_GROUPS=$START_BUDGET_DEADLINE_COVERAGE_GAP_MIN_RESERVED_GROUPS
+	DEADLINE_BENCHMARK_CANARY_BUDGET_CAP=$START_BUDGET_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP
+	NOVELTY_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY=$START_BUDGET_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY
+	{
+		printf 'feedback_tsv\t%s\n' "$BENCHMARK_FEEDBACK_TSV"
+		printf 'budget_source\t%s\n' "$(cat "$OUT/resource-budget-source.txt")"
+		printf 'authoritative_start_budget\t1\n'
+		printf 'primary_group_count\t%s\n' "$BENCHMARK_CANARY_PRIMARY_GROUP_COUNT"
+		printf 'promotion_blocked_group_count\t%s\n' "$BENCHMARK_CANARY_PROMOTION_BLOCKED_GROUP_COUNT"
+		printf 'slot_floor\t%s\n' "$NOVELTY_BENCHMARK_CANARY_SLOT_FLOOR"
+		printf 'target_enabled_groups\t%s\n' "$NOVELTY_TARGET_ENABLED_GROUPS"
+		printf 'max_enabled_groups\t%s\n' "$NOVELTY_MAX_ENABLED_GROUPS"
+		printf 'coverage_guided_target_enabled_groups\t%s\n' "$NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS"
+		printf 'coverage_guided_max_enabled_groups\t%s\n' "$NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS"
+		printf 'coverage_quality_max_enabled_groups\t%s\n' "$NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS"
+		printf 'deadline_benchmark_canary_budget_cap\t%s\n' "$DEADLINE_BENCHMARK_CANARY_BUDGET_CAP"
+		printf 'benchmark_canary_bootstrap_reserve_slots\t%s\n' "$NOVELTY_BENCHMARK_CANARY_BOOTSTRAP_RESERVE_SLOTS"
+		printf 'promotion_blocked_groups\t%s\n' "$(printf '%s\n' "$BENCHMARK_CANARY_PROMOTION_BLOCKED_GROUPS" | paste -sd, -)"
+	} > "$OUT/benchmark-canary-coverage-floor.tsv"
+fi
 RUN_SCRIPT="$OUT/run-monitor.sh"
 RESOURCE_AUTOSCALER_BASE=${RTC_RESOURCE_AUTOSCALER_BASE:-/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516}
 RESOURCE_AUTOSCALER_BUDGET_ENV="$RESOURCE_AUTOSCALER_BASE/current-budget.env"
@@ -1123,6 +1262,7 @@ export RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BOOTSTRAP_ONLY='$NOVELTY_DEADL
 export RTC_FUZZ_BENCHMARK_CANARY_FEEDBACK_BASE='$BENCHMARK_FEEDBACK_BASE'
 export RTC_FUZZ_BENCHMARK_CANARY_FEEDBACK_TSV='$BENCHMARK_FEEDBACK_TSV'
 BUDGET
+cp "$RESOURCE_AUTOSCALER_BUDGET_ENV.tmp" "$OUT/resource-budget-effective-at-start.env"
 mv "$RESOURCE_AUTOSCALER_BUDGET_ENV.tmp" "$RESOURCE_AUTOSCALER_BUDGET_ENV"
 cat > "$RUN_SCRIPT" <<RUN
 #!/usr/bin/env bash
@@ -1131,6 +1271,7 @@ cd '$PRODUCT_REPO'
 export PATH='$CODEX_BIN_DIR':'$TMUX_WRAP':'$NODE_BIN':\$PATH
 export CI=1
 export RTC_FUZZ_NOVELTY_OUTPUT_DIR='$OUT'
+export RTC_FUZZ_NOVELTY_CURRENT_OUTPUT_POINTER='$BASE/current-output-dir.txt'
 export RTC_FUZZ_NOVELTY_REPO_ROOT='$PRODUCT_REPO'
 export RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS='$OBSERVED'
 export RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION='rtc-coverage-guided-supervisor'
@@ -1174,7 +1315,7 @@ export RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD='3'
 export RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_BATCH_SIZE='12'
 export RTC_FUZZ_NOVELTY_INCLUDE_RECHECK_COVERAGE='1'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX='1'
-export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD='$PRODUCT_REPO'
+export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD='$HARNESS_REPO'
 export RTC_FUZZ_CODEX_BIN='$CODEX_BIN_DIR/codex'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_INTERVAL_MINUTES='$NOVELTY_CODEX_INTERVAL_MINUTES'
 export RTC_FUZZ_NOVELTY_COVERAGE_GUIDANCE_STALL_PASSES='2'
@@ -1201,8 +1342,9 @@ export RTC_TMUX_SOCKET='rtc-analysis'
 export RTC_FUZZ_LIVE_ANALYSIS_CURRENT_OUTPUT_POINTER='$BASE/current-output-dir.txt'
 export RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX='rtc-cov-analysis'
 export RTC_FUZZ_LIVE_DEEP_ANALYSIS_TMUX_PREFIX='rtc-cov-deep'
-export RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL='2'
+export RTC_FUZZ_LIVE_ANALYSIS_MAX_PARALLEL='1'
 export RTC_FUZZ_LIVE_ANALYSIS_MAX_ATTEMPTS='4'
+export RTC_FUZZ_LIVE_DEEP_ANALYSIS_MAX_PARALLEL='1'
 node bin/rtc-browser-fuzz-live-analysis-monitor.mjs '$OUT' >> '$BASE/logs/live-analysis-monitor.log' 2>&1
 code=\$?
 stamp=\$(date -u +%Y-%m-%dT%H:%M:%SZ)

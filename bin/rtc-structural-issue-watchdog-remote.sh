@@ -22,6 +22,7 @@ RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
 CANDIDATE_REPO=/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo
 CANDIDATE_BRANCH=js2/all-merged-rebased-20260701
+NOVELTY_POLICY_CHECK=$REPO/bin/rtc-browser-fuzz-novelty-policy-check.mjs
 LOCAL_PUBLISH_LEDGER=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
 DUP_NOISE_BASE=/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516
 ARTIFACT_INDEX_BASE=/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518
@@ -80,32 +81,68 @@ REQUIRE_ASSERT_REVIEW=${RTC_JETSTREAM_ENABLE_ASSERT_REVIEW:-0}
 mkdir -p "$BASE/logs" "$BASE/runs" "$TMUX_WRAP"
 touch "$EVENTS" "$REPAIR_LEDGER" "$RUNAWAY_SCAN_KILL_LEDGER"
 ensure_tmux_wrapper() {
-	local wrapper="$TMUX_WRAP/tmux"
+	local wrapper="$TMUX_WRAP/tmux" user_wrapper="$CODEX_BIN_DIR/tmux"
 	local tmp
 	tmp=$(mktemp "$TMUX_WRAP/tmux.XXXXXX")
 	cat > "$tmp" <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
 socket=${RTC_TMUX_SOCKET:-rtc-fuzz}
-case "${1:-}" in
-	capture-pane)
-		if [ "$socket" = rtc-fuzz ]; then
-			printf 'capture-pane is disabled on the RTC core tmux socket\n' >&2
-			exit 1
-		fi
-		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+explicit_socket=0
+tmux_command=
+args=( "$@" )
+index=0
+while [ "$index" -lt "${#args[@]}" ]; do
+	arg=${args[$index]}
+	case "$arg" in
+		-L|-S|-c|-f|-T)
+			next_index=$(( index + 1 ))
+			[ "$next_index" -lt "${#args[@]}" ] || break
+			case "$arg" in
+				-L) socket=${args[$next_index]}; explicit_socket=1 ;;
+				-S) socket=${args[$next_index]##*/}; explicit_socket=1 ;;
+			esac
+			index=$(( index + 2 ))
+			;;
+		-L*) socket=${arg#-L}; explicit_socket=1; index=$(( index + 1 )) ;;
+		-S*) socket=${arg##*/}; explicit_socket=1; index=$(( index + 1 )) ;;
+		--)
+			index=$(( index + 1 ))
+			[ "$index" -ge "${#args[@]}" ] || tmux_command=${args[$index]}
+			break
+			;;
+		-*) index=$(( index + 1 )) ;;
+		*) tmux_command=$arg; break ;;
+	esac
+done
+lock_socket=$(printf '%s' "$socket" | tr -c 'A-Za-z0-9_.-' '_')
+tmux_args=( "$@" )
+if [ "$explicit_socket" -eq 0 ]; then
+	tmux_args=( -L "$socket" "$@" )
+fi
+	case "$tmux_command" in
+	capture-pane|capturep)
+		printf 'capture-pane is disabled because it crashes tmux on this host\n' >&2
+		exit 1
 		;;
-	display-message|has-session|list-*|show-*)
-		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+	display-message|displayp|has-session|has|list-*|show-*)
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${lock_socket}.client.lock" /usr/bin/tmux "${tmux_args[@]}"
 		;;
 esac
-exec /usr/bin/tmux -L "$socket" "$@"
+exec /usr/bin/tmux "${tmux_args[@]}"
 SH
 	chmod +x "$tmp"
 	if [ -f "$wrapper" ] && cmp -s "$tmp" "$wrapper"; then
 		rm -f "$tmp"
 	else
 		mv -f "$tmp" "$wrapper"
+	fi
+	mkdir -p "$CODEX_BIN_DIR"
+	if [ ! -f "$user_wrapper" ] || ! cmp -s "$wrapper" "$user_wrapper"; then
+		tmp=$(mktemp "$CODEX_BIN_DIR/tmux.XXXXXX")
+		cp "$wrapper" "$tmp"
+		chmod 755 "$tmp"
+		mv -f "$tmp" "$user_wrapper"
 	fi
 }
 ensure_tmux_wrapper
@@ -116,8 +153,11 @@ log() {
 }
 
 terminate_runaway_pid() {
-	local pid=$1
-	pkill -TERM -P "$pid" 2>/dev/null || true
+	local pid=$1 child
+	while IFS= read -r child; do
+		[ -n "$child" ] || continue
+		terminate_runaway_pid "$child"
+	done < <(pgrep -P "$pid" 2>/dev/null || true)
 	kill "$pid" 2>/dev/null || true
 }
 
@@ -268,6 +308,40 @@ coverage_supervisor_session_live_after_grace() {
 
 active_repair_count() {
 	tmux_sessions | awk '/^rtc-structural-repair-/ { count++ } END { print count + 0 }'
+}
+
+cleanup_orphaned_structural_repair_processes() {
+	local _epoch _key session _finding run_dir pid_file pid pgid
+	[ -s "$REPAIR_LEDGER" ] || return 0
+	tail -n 200 "$REPAIR_LEDGER" 2>/dev/null |
+		while IFS=$'\t' read -r _epoch _key session _finding run_dir; do
+			[ -n "$session" ] && [ -n "$run_dir" ] || continue
+			pid_file=$run_dir/codex.pid
+			[ -s "$pid_file" ] || continue
+			pid=$(sed -n '1p' "$pid_file" 2>/dev/null || true)
+			if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+				rm -f "$pid_file"
+				continue
+			fi
+			has_session "$session" && continue
+			pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ' || true)
+			log "terminating orphaned structural repair process session=$session pid=$pid pgid=${pgid:-missing} run=$run_dir"
+			if [ -n "$pgid" ] && [ "$pgid" = "$pid" ]; then
+				kill -TERM -- "-$pgid" 2>/dev/null || true
+			else
+				terminate_runaway_pid "$pid"
+			fi
+			sleep 2
+			if kill -0 "$pid" 2>/dev/null; then
+				if [ -n "$pgid" ] && [ "$pgid" = "$pid" ]; then
+					kill -KILL -- "-$pgid" 2>/dev/null || true
+				else
+					kill -KILL "$pid" 2>/dev/null || true
+				fi
+			fi
+			rm -f "$pid_file"
+		done
+	return 0
 }
 
 slugify() {
@@ -647,11 +721,93 @@ check_coverage_process_ownership() {
 	fi
 }
 
+check_retained_first_green_honored() {
+	local out=$1 coverage_root=$2 state_path issues critical_blocker
+	state_path=$coverage_root/novelty-state.json
+	[ -s "$state_path" ] || return 0
+	issues=$(node - "$state_path" "$coverage_root" <<'NODE'
+const fs = require( 'fs' );
+let state;
+try {
+	state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+} catch {
+	process.exit( 0 );
+}
+if ( state.benchmarkCanaryRecordCountsOutputDir !== process.argv[ 3 ] ) {
+	process.exit( 0 );
+}
+const requiredGroups = [
+	'novelty-http-plain-editor-product-smoke',
+	'novelty-http-real-world-editor-usability',
+];
+const satisfied = new Set(
+	state.satisfiedRequiredFirstGreenProductGroups ?? []
+);
+for ( const group of requiredGroups ) {
+	const success = Number(
+		state.benchmarkCanaryRetainedSuccessfulRecordCountsByGroup?.[
+			group
+		] ?? 0
+	);
+	if ( success > 0 && ! satisfied.has( group ) ) {
+		process.stdout.write( `${ group }:retained_success=${ success }\n` );
+	}
+}
+NODE
+	)
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "coverage-guided" "retained-first-green-not-honored" \
+			"root=$coverage_root issues=$(printf '%s' "$issues" | paste -sd, -) state=$state_path" \
+			"use current-output retained success counters for required product first-green scheduling so rotating a successful run directory cannot reopen the gate"
+	fi
+	if node - "$state_path" <<'NODE'
+const fs = require( 'fs' );
+let state;
+try {
+	state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+} catch {
+	process.exit( 1 );
+}
+const group = 'novelty-http-plain-editor-product-smoke';
+const satisfied = new Set(
+	state.satisfiedRequiredFirstGreenProductGroups ?? []
+);
+const quarantined = new Set( [
+	...( Array.isArray( state.productFailureQuarantinedGroups )
+		? state.productFailureQuarantinedGroups
+		: [] ),
+	...String( state.productFailureQuarantineMarker ?? '' )
+		.split( ',' )
+		.map( ( value ) => value.trim() )
+		.filter( Boolean ),
+] );
+process.exit( satisfied.has( group ) && ! quarantined.has( group ) ? 0 : 1 );
+NODE
+	then
+		critical_blocker=$(awk -F '\t' '
+			NR > 1 && $1 == "plain-editor-product-smoke" && $4 !~ /^(terminal|resolved)$/ {
+				print
+				exit
+			}
+		' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null || true)
+		if [ -n "$critical_blocker" ]; then
+			emit_finding "$out" high "critical-path" "retained-first-green-not-consumed" \
+				"root=$coverage_root state=$state_path blocker=$critical_blocker" \
+				"make the critical-path plain-editor gate consume novelty-state durable success or the satisfied first-green marker after checking retained product-failure quarantine; reconcile and retire any superseded smoke continuation"
+		fi
+	fi
+	return 0
+}
+
 check_deadline_budget_consistency() {
-	local out=$1 root run_script cap current_target current_max desired_line desired_target desired_max
+	local out=$1 root run_script cap current_target current_max desired_line desired_target desired_max pointer_age
 	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
 	run_script=${root:+$root/run-monitor.sh}
 	[ -n "$run_script" ] && [ -s "$run_script" ] || return
+	pointer_age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt" || printf 999999)
+	if [ "$pointer_age" -lt 300 ]; then
+		return
+	fi
 	cap=$(sed -n "s/^export RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
 	[ "$cap" = 1 ] || return
 	current_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
@@ -666,6 +822,267 @@ check_deadline_budget_consistency() {
 		emit_finding "$out" high "resource-autoscaler" "deadline-budget-policy-mismatch" \
 			"run=$root current=$current_target/$current_max desired=$desired_target/$desired_max cap=$cap" \
 			"treat the current deadline-capped run budget as authoritative; do not replace a same-head root with a larger request that the coverage start policy will clamp back down"
+	fi
+}
+
+check_supervisor_publication_budget() {
+	local out=$1 coverage_root=$2 run_script=$coverage_root/run-monitor.sh state_path=$coverage_root/novelty-state.json
+	local groups_path=$coverage_root/supervisor-groups.json max_groups issues root_started_at
+	[ -s "$run_script" ] && [ -s "$state_path" ] || return 0
+	max_groups=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([0-9][0-9]*\)'.*/\1/p" "$run_script" | tail -1)
+	[[ "$max_groups" =~ ^[0-9]+$ ]] || return 0
+	root_started_at=$(stat -c %Y "$coverage_root/source-manifest.tsv" 2>/dev/null || printf 0)
+	issues=$(node - "$state_path" "$groups_path" "$max_groups" "$root_started_at" <<'NODE'
+const fs = require( 'fs' );
+const statePath = process.argv[ 2 ];
+const groupsPath = process.argv[ 3 ];
+const maxGroups = Number( process.argv[ 4 ] );
+const rootStartedAt = Number( process.argv[ 5 ] ) * 1000;
+let state;
+try {
+	state = JSON.parse( fs.readFileSync( statePath, 'utf8' ) );
+} catch {
+	process.exit( 0 );
+}
+try {
+	const groups = JSON.parse( fs.readFileSync( groupsPath, 'utf8' ) );
+	if ( Array.isArray( groups ) && groups.length > maxGroups ) {
+		process.stdout.write(
+			`published_groups=${ groups.length }:max=${ maxGroups }\n`
+		);
+	}
+} catch {}
+const cutoff = Date.now() - 15 * 60 * 1000;
+const oversizedDecisions = ( state.changes ?? [] ).filter( ( change ) => {
+	if ( change?.action !== 'cap-supervisor-groups-to-effective-budget' ) {
+		return false;
+	}
+	const at = Date.parse( change.at ?? '' );
+	return (
+		Number.isFinite( at ) &&
+		at >= Math.max( cutoff, rootStartedAt ) &&
+		Number( change.maxEnabledGroups ?? 0 ) > maxGroups
+	);
+} );
+if ( oversizedDecisions.length > 0 ) {
+	const latest = oversizedDecisions.at( -1 );
+	process.stdout.write(
+		`recent_monitor_limit=${ latest.maxEnabledGroups }:max=${ maxGroups }:at=${ latest.at }\n`
+	);
+}
+NODE
+	)
+	[ -n "$issues" ] || return 0
+	emit_finding "$out" high "coverage-guided" "supervisor-publication-exceeds-start-budget" \
+		"root=$coverage_root issues=$(printf '%s' "$issues" | paste -sd, -) run_script=$run_script state=$state_path" \
+		"keep the locked startup max authoritative when publishing supervisor groups; coverage-gap reserves must reorder or replace budgeted slots, never add slots that the autoscaler must trim"
+}
+
+check_novelty_monitor_budget_policy_contract() {
+	local out=$1 source issues=''
+	if [ ! -f "$NOVELTY_POLICY_CHECK" ]; then
+		emit_finding "$out" high "coverage-guided" "novelty-budget-policy-check-missing" \
+			"checker=$NOVELTY_POLICY_CHECK" \
+			"restore the executable novelty monitor policy check and require it in both coverage start and guard admission"
+		return 0
+	fi
+	for source in \
+		"$REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs" \
+		"$COVERAGE_BASE/candidate-source/bin/rtc-browser-fuzz-novelty-monitor.mjs"
+	do
+		[ -f "$source" ] || continue
+		if ! "$NODE_BIN/node" "$NOVELTY_POLICY_CHECK" "$source" >/dev/null 2>&1; then
+			issues="${issues}${issues:+,}$source"
+		fi
+	done
+	[ -z "$issues" ] || emit_finding "$out" high "coverage-guided" "novelty-budget-policy-contract-failed" \
+		"sources=$issues checker=$NOVELTY_POLICY_CHECK" \
+		"stop the coverage-guidance writer, restore the last frozen validated monitor, and keep MAX_ENABLED_GROUPS as the hard bootstrap and steady-state publication ceiling"
+}
+
+check_tmux_capture_guard() {
+	local out=$1 canonical=$CODEX_BIN_DIR/tmux global=/usr/local/bin/tmux issues=''
+	if [ ! -x "$canonical" ] ||
+		! grep -Fq 'capture-pane is disabled because it crashes tmux on this host' "$canonical" 2>/dev/null ||
+		! grep -Fq 'capture-pane|capturep' "$canonical" 2>/dev/null; then
+		issues="user_wrapper=${canonical}:missing-or-unsafe"
+	fi
+	if [ ! -x "$global" ] || ! cmp -s "$canonical" "$global"; then
+		issues="${issues}${issues:+,}global_wrapper=${global}:missing-or-drifted"
+	fi
+	[ -z "$issues" ] || emit_finding "$out" high "tmux" "capture-pane-crash-guard-missing" \
+		"$issues" \
+		"install the versioned safe tmux wrapper at /usr/local/bin/tmux and the operator user bin so capture-pane and capturep are rejected even with explicit -L or -S socket selection"
+}
+
+check_resource_budget_application_consistency() {
+	local out=$1 status=$RESOURCE_BASE/resource-autoscaler-status.md
+	local root run_script status_age action desired_line desired_target desired_max
+	local budget_target budget_max run_target run_max
+	[ -s "$status" ] || return
+	status_age=$(file_age_seconds "$status" || printf 999999)
+	[ "$status_age" -le 600 ] || return
+	action=$(sed -n 's/^- last_action: //p' "$status" | tail -1)
+	case "$action" in
+		*in_place*) ;;
+		*) return ;;
+	esac
+	desired_line=$(sed -n 's/^- desired_budget: target=\([0-9][0-9]*\) max=\([0-9][0-9]*\).*/\1 \2/p' "$status" | tail -1)
+	read -r desired_target desired_max <<< "${desired_line:-0 0}"
+	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
+	run_script=${root:+$root/run-monitor.sh}
+	[ -s "$run_script" ] || return
+	budget_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$RESOURCE_BASE/current-budget.env" | tail -1)
+	budget_max=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$RESOURCE_BASE/current-budget.env" | tail -1)
+	run_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
+	run_max=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
+	if [ "$budget_target" != "$desired_target" ] || [ "$budget_max" != "$desired_max" ] ||
+			[ "$run_target" != "$desired_target" ] || [ "$run_max" != "$desired_max" ]; then
+		emit_finding "$out" high "resource-autoscaler" "resource-budget-application-diverged" \
+			"status=$status action=$action desired=$desired_target/$desired_max budget=${budget_target:-missing}/${budget_max:-missing} run=${run_target:-missing}/${run_max:-missing} root=$root" \
+			"make budget executors apply the already-decided target without re-reading mutable benchmark floors; reject and repair any write whose persisted budget differs from the decision"
+	fi
+}
+
+check_actionable_product_failure_bridge() {
+	local out=$1 candidate_head failure_dir origin_head snapshot count newest_epoch newest_age blocker
+	local -a failure_dirs=()
+	if ! grep -Fq 'ACTIONABLE_PRODUCT_FAILURE_BASE' "$CRITICAL_REPO_SCRIPT" 2>/dev/null; then
+		emit_finding "$out" high "critical-path" "actionable-product-failure-bridge-missing" \
+			"script=$CRITICAL_REPO_SCRIPT" \
+			"make candidate-keyed likely-real analysis results durable inputs to benchmark-canary-product-failure instead of relying only on the runner's initial classification"
+		return 0
+	fi
+	if ! grep -Fq 'merge-base --is-ancestor "$origin_head" "$candidate_head"' "$CRITICAL_REPO_SCRIPT" 2>/dev/null; then
+		emit_finding "$out" high "critical-path" "actionable-product-failure-descendant-carry-missing" \
+			"script=$CRITICAL_REPO_SCRIPT" \
+			"carry open likely-real records from ancestor candidate heads into descendant candidate blockers until repeated same-head repair proof or an explicit source-backed downscope resolves them"
+		return 0
+	fi
+	coverage_start_in_progress && return 0
+	candidate_head=$(git -C "$CANDIDATE_REPO" rev-parse --verify --quiet "refs/heads/$CANDIDATE_BRANCH^{commit}" 2>/dev/null || true)
+	[ -n "$candidate_head" ] || return 0
+	failure_dir=$COVERAGE_BASE/actionable-product-failures/$candidate_head
+	[ ! -d "$failure_dir" ] || failure_dirs+=( "$failure_dir" )
+	if [ -d "$COVERAGE_BASE/actionable-product-failures" ]; then
+		for failure_dir in "$COVERAGE_BASE/actionable-product-failures"/*; do
+			[ -d "$failure_dir" ] || continue
+			origin_head=${failure_dir##*/}
+			[[ "$origin_head" =~ ^[0-9a-f]{40}$ ]] || continue
+			[ "$origin_head" != "$candidate_head" ] || continue
+			git -C "$CANDIDATE_REPO" cat-file -e "$origin_head^{commit}" 2>/dev/null || continue
+			git -C "$CANDIDATE_REPO" merge-base --is-ancestor "$origin_head" "$candidate_head" 2>/dev/null || continue
+			failure_dirs+=( "$failure_dir" )
+		done
+	fi
+	[ "${#failure_dirs[@]}" -gt 0 ] || return 0
+	snapshot=$("$NODE_BIN/node" - "${failure_dirs[@]}" <<'NODE'
+const fs = require( 'fs' );
+const path = require( 'path' );
+let count = 0;
+let newest = 0;
+const seen = new Set();
+for ( const directory of process.argv.slice( 2 ) ) {
+	for ( const name of fs.readdirSync( directory ) ) {
+		if ( ! name.endsWith( '.json' ) ) continue;
+		const file = path.join( directory, name );
+		try {
+			const record = JSON.parse( fs.readFileSync( file, 'utf8' ) );
+			if (
+				record.status !== 'open' ||
+				record.classification !== 'likely_real'
+			) continue;
+			const key = `${ record.group ?? '' }\t${ record.signature ?? '' }`;
+			if ( seen.has( key ) ) continue;
+			seen.add( key );
+			count++;
+			newest = Math.max( newest, fs.statSync( file ).mtimeMs );
+		} catch {}
+	}
+}
+process.stdout.write( `${ count }\t${ Math.floor( newest / 1000 ) }\n` );
+NODE
+	)
+	read -r count newest_epoch <<< "${snapshot:-0 0}"
+	[[ "$count" =~ ^[0-9]+$ ]] || count=0
+	[ "$count" -gt 0 ] || return 0
+	[[ "${newest_epoch:-}" =~ ^[0-9]+$ ]] || newest_epoch=0
+	newest_age=$(( $(date -u +%s) - newest_epoch ))
+	[ "$newest_age" -ge 180 ] || return 0
+	blocker=$(awk -F '\t' 'NR > 1 && $1 == "benchmark-canary-product-failure" && $4 !~ /^(terminal|resolved)$/ { print; exit }' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null || true)
+	if [ -z "$blocker" ]; then
+		emit_finding "$out" high "critical-path" "actionable-product-failure-not-routed" \
+			"candidate=$candidate_head open_records=$count age=${newest_age}s dirs=$(IFS=,; printf '%s' "${failure_dirs[*]}") blockers=$CRITICAL_BASE/blockers.tsv" \
+			"reconcile current and ancestor candidate likely-real analysis records into a benchmark-canary-product-failure blocker and launch one bounded repair/reduction owner"
+	fi
+	return 0
+}
+
+check_coverage_start_budget_snapshot() {
+	local out=$1 coverage_root=$2 start_script=$REPO/bin/rtc-coverage-guided-start-remote.sh
+	local manifest=$coverage_root/source-manifest.tsv snapshot=$coverage_root/resource-budget-at-start.env
+	local effective=$coverage_root/resource-budget-effective-at-start.env source mismatch='' snapshot_value effective_value name
+	local root_age effective_target effective_max current_target current_max effective_cap current_cap run_script
+	if [ ! -s "$start_script" ] || ! grep -Fq 'BUDGET_ENV_SNAPSHOT' "$start_script"; then
+		emit_finding "$out" high "coverage-guided" "coverage-start-budget-not-snapshotted" \
+			"script=$start_script" \
+			"snapshot current-budget.env while holding the serialized coverage start lock, before candidate preparation or pointer movement, so the autoscaler cannot change the replacement run budget mid-start"
+		return
+	fi
+	[ -s "$manifest" ] || return
+	grep -q '^resource_budget_at_start_sha256[[:space:]]' "$manifest" || return
+	if [ ! -s "$snapshot" ] || [ ! -s "$effective" ] || [ ! -s "$coverage_root/resource-budget-source.txt" ]; then
+		emit_finding "$out" high "coverage-guided" "coverage-start-budget-evidence-missing" \
+			"root=$coverage_root snapshot=$snapshot effective=$effective source=$coverage_root/resource-budget-source.txt" \
+			"persist the start-lock budget snapshot, effective launch budget, and precedence source in every new coverage root"
+		return
+	fi
+	source=$(sed -n '1p' "$coverage_root/resource-budget-source.txt")
+	if [ "$source" = start-lock-snapshot ]; then
+		for name in \
+			RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS \
+			RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS \
+			RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_TARGET_ENABLED_GROUPS \
+			RTC_FUZZ_NOVELTY_COVERAGE_GUIDED_MAX_ENABLED_GROUPS \
+			RTC_FUZZ_NOVELTY_COVERAGE_QUALITY_MAX_ENABLED_GROUPS \
+			RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP
+		do
+			snapshot_value=$(sed -n "s/^export $name='\([^']*\)'.*/\1/p" "$snapshot" | tail -1)
+			effective_value=$(sed -n "s/^export $name='\([^']*\)'.*/\1/p" "$effective" | tail -1)
+			if [ -n "$snapshot_value" ] && [ "$snapshot_value" != "$effective_value" ]; then
+				mismatch="${mismatch}${mismatch:+,}$name:${snapshot_value}->${effective_value:-missing}"
+			fi
+		done
+		if [ -n "$mismatch" ]; then
+			emit_finding "$out" high "coverage-guided" "coverage-start-budget-changed-after-snapshot" \
+				"root=$coverage_root mismatch=$mismatch snapshot=$snapshot effective=$effective" \
+				"keep the start-lock resource budget immutable through pointer movement, exact candidate preparation, and generated monitor publication; let the autoscaler adjust only after the run is live"
+		fi
+	fi
+
+	run_script=$coverage_root/run-monitor.sh
+	[ -s "$run_script" ] || return
+	root_age=$(file_age_seconds "$manifest" || printf 999999)
+	[ "$root_age" -lt "$COVERAGE_FULL_PASS_START_GRACE_SECONDS" ] || return
+	effective_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$effective" | tail -1)
+	effective_max=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$effective" | tail -1)
+	effective_cap=$(sed -n "s/^export RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP='\([^']*\)'.*/\1/p" "$effective" | tail -1)
+	current_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
+	current_max=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
+	current_cap=$(sed -n "s/^export RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
+	[[ "$effective_target" =~ ^[0-9]+$ ]] || effective_target=0
+	[[ "$effective_max" =~ ^[0-9]+$ ]] || effective_max=0
+	[[ "$current_target" =~ ^[0-9]+$ ]] || current_target=0
+	[[ "$current_max" =~ ^[0-9]+$ ]] || current_max=0
+	if [ "$current_target" -gt "$effective_target" ] || [ "$current_max" -gt "$effective_max" ]; then
+		emit_finding "$out" high "resource-autoscaler" "coverage-start-budget-increased-during-startup" \
+			"root=$coverage_root age=${root_age}s source=$source effective=$effective_target/$effective_max current=$current_target/$current_max" \
+			"hold upward budget changes until startup grace ends; downscaling may proceed, but mutable benchmark floors must not expand a newly launched root"
+	fi
+	if [ "$effective_cap" = 1 ] && [ "$current_cap" != 1 ]; then
+		emit_finding "$out" high "resource-autoscaler" "coverage-start-deadline-cap-lost" \
+			"root=$coverage_root age=${root_age}s source=$source effective_cap=$effective_cap current_cap=${current_cap:-missing}" \
+			"preserve the recorded deadline cap throughout startup and reject any in-place budget rewrite that clears it"
 	fi
 }
 
@@ -719,6 +1136,9 @@ critical_script_has_repair_adoption_progress_support() {
 	rg -q 'stale-candidate-base' "$script" || return 1
 	rg -q 'placeholder_entry=.*! -name .gitignore' "$script" || return 1
 	rg -q 'rmdir "\$worktree/\$dependency_dir"' "$script" || return 1
+	rg -q 'generated-harness-overlay-paths[.]txt' "$script" || return 1
+	rg -q 'amend-without-generated-harness-overlay' "$script" || return 1
+	rg -q 'Do not run unscoped `git status`' "$script" || return 1
 }
 
 critical_script_sha() {
@@ -787,7 +1207,7 @@ check_critical_path_script_copies() {
 	if [ "$missing_support" = 1 ]; then
 		emit_finding "$out" high "critical-path" "critical-executor-required-support-missing" \
 			"repo=$CRITICAL_REPO_SCRIPT sha=$repo_sha deployed=$CRITICAL_DEPLOYED_SCRIPT sha=$deployed_sha tmp=$CRITICAL_TMP_SCRIPT sha=$tmp_sha" \
-			"patch all critical-path executor copies so repaired_ready closes pr07c-browser-env and benchmark refresh handoffs are launched, then restart rtc-critical-path-pr-executor-loop"
+			"restore every required critical-path invariant, including terminal PR ownership, benchmark refresh delivery, repair adoption, and generated-harness overlay stripping; synchronize all copies and restart rtc-critical-path-pr-executor-loop"
 	fi
 	if [ "$repo_sha" != "missing" ] && { [ "$repo_sha" != "$deployed_sha" ] || [ "$repo_sha" != "$tmp_sha" ]; }; then
 		emit_finding "$out" high "critical-path" "critical-executor-script-copy-drift" \
@@ -869,6 +1289,35 @@ check_repair_publication_progress() {
 		fi
 		return 0
 	done 3< "$PR_PROGRESS_PUSH_MANIFEST"
+}
+
+check_repair_branch_harness_contamination() {
+	local out=$1 adoptions=$CRITICAL_BASE/current-repair-branch-adoptions.tsv row
+	local _generated lane branch _adopted source_repo source_head _central state _next _classification _report
+	local candidate_head issues rel lines
+	[ -s "$adoptions" ] || return 0
+	row=$(awk -F '\t' 'NR > 1 { row = $0 } END { print row }' "$adoptions" 2>/dev/null || true)
+	[ -n "$row" ] || return 0
+	IFS=$'\t' read -r _generated lane branch _adopted source_repo source_head _central state _next _classification _report <<< "$row"
+	[ -n "$branch" ] && [ -n "$source_repo" ] && [ -n "$source_head" ] || return 0
+	git -C "$source_repo" cat-file -e "$source_head^{commit}" 2>/dev/null || return 0
+	candidate_head=$(git -C "$CANDIDATE_REPO" rev-parse --verify --quiet "$CANDIDATE_BRANCH^{commit}" 2>/dev/null || true)
+	[ -n "$candidate_head" ] || return 0
+	issues=''
+	for rel in \
+		test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts \
+		test/e2e/specs/editor/collaboration/collaboration-human-smoke.spec.ts \
+		test/e2e/specs/editor/collaboration/collaboration-rtc-reference.spec.ts
+	do
+		git -C "$source_repo" cat-file -e "$candidate_head:$rel" 2>/dev/null && continue
+		git -C "$source_repo" cat-file -e "$source_head:$rel" 2>/dev/null || continue
+		lines=$(git -C "$source_repo" show "$source_head:$rel" 2>/dev/null | wc -l | tr -d ' ')
+		issues="${issues}${issues:+,}$rel:added_lines=${lines:-unknown}"
+	done
+	[ -n "$issues" ] || return 0
+	emit_finding "$out" high "critical-path" "repair-branch-generated-harness-contamination" \
+		"lane=$lane branch=$branch head=$source_head state=$state candidate=$candidate_head overlays=$issues" \
+		"create a clean product-only branch from the current candidate, copy only the intended product and focused product-test delta, validate it, and keep generated fuzz harness overlays out of the publication manifest"
 }
 
 check_benchmark_canary_promotion_invariants() {
@@ -967,7 +1416,7 @@ check_benchmark_canary_promotion_invariants() {
 					value("retained_product_evidence") != "yes" &&
 					value("scheduled") == "yes" &&
 				value("active") != "yes" &&
-				value("supervisor_status") ~ /^(paused-startup-stall|paused-infra-startup|paused-product-failure|disabled)$/ {
+				value("supervisor_status") ~ /^(paused-startup-stall|paused-infra-startup|paused-product-failure)$/ {
 				print $(column["group"])
 			}
 		' "$coverage_status" | paste -sd, -)
@@ -1001,6 +1450,7 @@ check_loop_statuses() {
 check_coverage_supervisor_root_agreement() {
 	local out=$1 coverage_root=$2 status status_output age state_output state_session scoped_session suffix
 	[ -n "$coverage_root" ] && [ -d "$coverage_root" ] || return
+	coverage_start_in_progress && return
 	age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt" || printf 999999)
 	if [ "$age" -lt 420 ]; then
 		return
@@ -1040,6 +1490,18 @@ check_coverage_supervisor_root_agreement() {
 			emit_finding "$out" high "coverage-guided" "supervisor-session-missing" "$coverage_root expected=rtc-coverage-guided-supervisor or $scoped_session" "restart the coverage supervisor for the current root"
 		fi
 	fi
+}
+
+coverage_start_in_progress() {
+	local lock=$COVERAGE_BASE/start-v2.lock fd
+	exec {fd}>"$lock"
+	if flock -n "$fd"; then
+		flock -u "$fd" || true
+		exec {fd}>&-
+		return 1
+	fi
+	exec {fd}>&-
+	return 0
 }
 
 check_promotion_preflight_relaunch_loops() {
@@ -1095,6 +1557,163 @@ NODE
 		emit_finding "$out" high "coverage-guided" "promotion-human-smoke-same-seed-relaunch" \
 			"root=$coverage_root loops=$(printf '%s' "$loops" | paste -sd, -)" \
 			"classify executed human product-smoke editor/runtime failures as behavioral product evidence, quarantine the run, and preserve the product stop reason instead of writing kind=infra and relaunching the same seed"
+	fi
+}
+
+check_human_smoke_network_stability() {
+	local out=$1 coverage_root=$2 state_path issues network_issues misclassified_issues source_issues=''
+	state_path=$coverage_root/supervisor-state.json
+	[ -s "$state_path" ] || return
+	for source_file in \
+		"$COVERAGE_BASE/candidate-source/bin/rtc-browser-fuzz-runner.mjs" \
+		"$COVERAGE_BASE/candidate-source/bin/rtc-browser-fuzz-supervisor.mjs"
+	do
+		if [ ! -s "$source_file" ] || ! grep -Fq 'RTC_FUZZ_NETWORK_TOPOLOGY_LOCK_FILE' "$source_file"; then
+			source_issues="${source_issues}${source_issues:+,}${source_file}:missing-network-lock"
+		fi
+	done
+	if [ -n "$source_issues" ]; then
+		emit_finding "$out" high "coverage-guided" "human-smoke-network-lock-missing" \
+			"root=$coverage_root files=$source_issues" \
+			"freeze the shared flock-based network-topology lock into both the runner and supervisor so Docker network creation cannot interrupt a human product-smoke browser reload"
+	fi
+
+	issues=$(node - "$state_path" <<'NODE'
+const fs = require( 'fs' );
+const path = require( 'path' );
+const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+const runDirs = new Set();
+for ( const group of state.groups ?? [] ) {
+	for ( const runDir of [
+		group.currentRunDir,
+		...( group.activeRunDirs ?? [] ),
+		...( group.productFailureRunDirs ?? [] ),
+	] ) {
+		if ( typeof runDir === 'string' && runDir ) {
+			runDirs.add( runDir );
+		}
+	}
+}
+for ( const runDir of runDirs ) {
+	let laneNames = [];
+	try {
+		laneNames = fs
+			.readdirSync( runDir, { withFileTypes: true } )
+			.filter( ( entry ) => entry.isDirectory() && /^lane-\d+$/.test( entry.name ) )
+			.map( ( entry ) => entry.name );
+	} catch {
+		continue;
+	}
+	for ( const laneName of laneNames ) {
+		const summaryPath = path.join( runDir, laneName, 'summary.ndjson' );
+		let records = [];
+		try {
+			records = fs
+				.readFileSync( summaryPath, 'utf8' )
+				.trim()
+				.split( /\r?\n/ )
+				.filter( Boolean )
+				.slice( -20 )
+				.map( ( line ) => JSON.parse( line ) );
+		} catch {
+			continue;
+		}
+		for ( const record of records ) {
+			if ( typeof record.logPath !== 'string' ) {
+				continue;
+			}
+			let log = '';
+			try {
+				log = fs.readFileSync( record.logPath, 'utf8' );
+			} catch {}
+			if (
+				record.preflightKind !== 'human-product-smoke' ||
+				record.localClassification !== 'product-or-test' ||
+				! /ERR_NETWORK_CHANGED/i.test( log )
+			) {
+				if (
+					record.kind === 'infra' &&
+					/(?:^|-)preflight$/.test( String( record.stage ?? '' ) ) &&
+					/Unexpected browser runtime errors|Permission denied, unregistering room|\b[1-9][0-9]* failed\b/i.test( log ) &&
+					! /ERR_NETWORK_CHANGED|ECONNREFUSED|browser has been closed|Target page, context or browser has been closed/i.test( log )
+				) {
+					process.stdout.write(
+						`false-infra\t${ path.basename( runDir ) }/${ laneName }:${ record.logPath }\n`
+					);
+				}
+				continue;
+			}
+			process.stdout.write(
+				`network\t${ path.basename( runDir ) }/${ laneName }:${ record.logPath }\n`
+			);
+		}
+	}
+}
+NODE
+)
+	network_issues=$(printf '%s\n' "$issues" | awk -F '\t' '$1 == "network" { print $2 }' | paste -sd, -)
+	misclassified_issues=$(printf '%s\n' "$issues" | awk -F '\t' '$1 == "false-infra" { print $2 }' | paste -sd, -)
+	if [ -n "$network_issues" ]; then
+		emit_finding "$out" high "coverage-guided" "network-churn-misclassified-product" \
+			"root=$coverage_root records=$network_issues" \
+			"classify human-smoke failures from the full command output, treat ERR_NETWORK_CHANGED as environment evidence, and serialize smoke execution against wp-env and Docker topology mutations"
+	fi
+	if [ -n "$misclassified_issues" ]; then
+		emit_finding "$out" high "coverage-guided" "human-smoke-product-misclassified-infra" \
+			"root=$coverage_root records=$misclassified_issues" \
+			"tighten full-output failure classification so command-line tokens such as --config playwright.config.ts cannot demote a completed Playwright assertion or RTC permission failure to infrastructure; rerun the human smoke and preserve product quarantine"
+	fi
+}
+
+check_product_failure_analysis_ownership() {
+	local out=$1 coverage_root=$2 state_path issues
+	state_path=$coverage_root/supervisor-state.json
+	[ -s "$state_path" ] || return
+	issues=$(node - "$state_path" <<'NODE'
+const fs = require( 'fs' );
+const path = require( 'path' );
+const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+for ( const group of state.groups ?? [] ) {
+	const productFailureRecords = Number( group.productFailureRecords ?? 0 );
+	if (
+		! group.productFailureAt &&
+		( ! Number.isFinite( productFailureRecords ) ||
+			productFailureRecords <= 0 )
+	) {
+		continue;
+	}
+	for ( const runDir of group.productFailureRunDirs ?? [] ) {
+		for ( const tier of [ 'analysis-tier', 'deep-analysis-tier' ] ) {
+			const tierStatePath = path.join(
+				runDir,
+				'.triage-watcher',
+				tier,
+				'state.json'
+			);
+			let tierState;
+			try {
+				tierState = JSON.parse( fs.readFileSync( tierStatePath, 'utf8' ) );
+			} catch {
+				continue;
+			}
+			const staleJobs = Object.values( tierState.jobs ?? {} )
+				.filter( ( job ) => job?.status === 'stale-source' )
+				.map( ( job ) => job.hash )
+				.filter( Boolean );
+			if ( staleJobs.length > 0 ) {
+				process.stdout.write(
+					`${ group.name }:${ path.basename( runDir ) }:${ tier }:${ staleJobs.join( ',' ) }\n`
+				);
+			}
+		}
+	}
+}
+NODE
+)
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "analysis-ownership" "quarantined-product-failure-became-stale-source" \
+			"root=$coverage_root issues=$(printf '%s' "$issues" | paste -sd, -) state=$state_path" \
+			"include supervisor productFailureRunDirs in live-analysis launch scopes and in both analysis-tier supervisor-live sets; retain one first-level and deep handoff owner after the producer pauses"
 	fi
 }
 
@@ -1245,6 +1864,15 @@ for ( const group of groups ) {
 	if ( groupState?.status === 'waiting-repo-prep' ) {
 		continue;
 	}
+	const hasActiveLane =
+		Boolean( groupState?.currentRunDir ) ||
+		( groupState?.activeRunDirs ?? [] ).length > 0;
+	if ( ! hasActiveLane ) {
+		// Publication intentionally precedes asynchronous isolated-repo prep.
+		// The supervisor enforces the manifest before launch, so a missing or
+		// stale overlay is actionable here only after a lane is actually active.
+		continue;
+	}
 	let manifestSignature = 'missing';
 	try {
 		manifestSignature = JSON.parse(
@@ -1337,6 +1965,140 @@ NODE
 			"processes=$(printf '%s' "$issues" | paste -sd, -)" \
 			"make --gate-only update signature state without launching Codex, bound refresh concurrency and timeout, terminate the complete gate-refresh process group on timeout, and retire orphaned gate-refresh Codex descendants"
 	fi
+}
+
+check_codex_frozen_candidate_cwd() {
+	local out=$1 candidate=$COVERAGE_BASE/candidate-source pid cwd issues=''
+	[ -d "$candidate" ] || return 0
+	for pid in $(pgrep -f 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true); do
+		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
+		case "$cwd" in
+			"$candidate"|"$candidate"/*)
+				issues="${issues}${issues:+,}pid=$pid:cwd=$cwd"
+				;;
+		esac
+	done
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "coverage-guided" "codex-writing-frozen-candidate" \
+			"$issues" \
+			"terminate the offending job, restore versioned harness files from the matching control hash, route coverage guidance to the writable harness checkout, and route failure analysis to the generation's disposable isolated repo"
+	fi
+	return 0
+}
+
+check_plain_editor_false_green() {
+	local out=$1 coverage_root=$2 launches classification class proof candidate_head retained=0 proof_valid=0
+	launches=$CRITICAL_BASE/logs/launches.tsv
+	[ -s "$launches" ] || return 0
+	classification=$(
+		tail -n 2000 "$launches" 2>/dev/null |
+			awk -F '\t' '
+				$2 == "continuation" && $5 ~ /\/continuations\/plain-editor-product-smoke$/ {
+					path = $5 "/classification.tsv"
+				}
+				END { if (path != "") print path }
+			'
+	)
+	[ -s "$classification" ] || return 0
+	class=$(awk -F '\t' 'NR > 1 && $1 == "plain-editor-product-smoke" { print $2; exit }' "$classification" 2>/dev/null || true)
+	case "$class" in
+		smoke_green|harness_or_scheduler_repaired) ;;
+		*) return 0 ;;
+	esac
+	if [ -s "$coverage_root/novelty-state.json" ]; then
+		if node - "$coverage_root/novelty-state.json" <<'NODE'
+const fs = require( 'fs' );
+let state;
+try {
+	state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+} catch {
+	process.exit( 1 );
+}
+const groups = new Set( [
+	...( state.productFailureQuarantinedGroups ?? [] ),
+	...String( state.productFailureQuarantineMarker ?? '' ).split( ',' ),
+].map( ( value ) => String( value ).trim() ).filter( Boolean ) );
+process.exit( groups.has( 'novelty-http-plain-editor-product-smoke' ) ? 0 : 1 );
+NODE
+		then
+			retained=1
+		fi
+	fi
+	proof=${classification%/*}/rtc-save-proof.tsv
+	candidate_head=$(git -C "$CANDIDATE_REPO" rev-parse --verify --quiet "refs/heads/$CANDIDATE_BRANCH^{commit}" 2>/dev/null || true)
+	if [ -s "$proof" ] && [ -n "$candidate_head" ] && awk -F '\t' -v head="$candidate_head" '
+		NR > 1 && $1 == "wp-sync-save" && $2 == "success" &&
+			$3 ~ /^2[0-9][0-9]$/ && $4 == head && $5 != "" { found = 1 }
+		END { exit found ? 0 : 1 }
+	' "$proof" 2>/dev/null; then
+		proof_valid=1
+	fi
+	if [ "$retained" -eq 1 ] || [ "$proof_valid" -ne 1 ]; then
+		emit_finding "$out" high "critical-path" "plain-editor-green-without-exact-rtc-proof" \
+			"classification=$classification class=$class retained_product_failure=$retained rtc_save_proof=$proof proof_valid=$proof_valid candidate=$candidate_head" \
+			"keep the publication gate open, require an RTC-enabled wp-sync save 2xx artifact for the exact candidate, and reject a plain non-RTC save/reload or result=not_reached as green"
+	fi
+	return 0
+}
+
+check_active_continuation_vendor_mounts() {
+	local out=$1 session pane_pid run_script run_dir worktree vendor_path target issues=''
+	while IFS= read -r session; do
+		[ -n "$session" ] || continue
+		worktree=$(tmux list-panes -t "$session" -F '#{pane_current_path}' 2>/dev/null | sed -n '1p')
+		if [ -n "$worktree" ] && [ -L "$worktree/vendor" ]; then
+			target=$(readlink "$worktree/vendor" 2>/dev/null || true)
+			issues="${issues}${issues:+,}session=$session:vendor=$worktree/vendor:target=$target"
+		fi
+
+		pane_pid=$(tmux list-panes -t "$session" -F '#{pane_pid}' 2>/dev/null | sed -n '1p')
+		[ -n "$pane_pid" ] || continue
+		run_script=$(tr '\0' '\n' < "/proc/$pane_pid/cmdline" 2>/dev/null | awk '/\/run[.]sh$/ { print; exit }' || true)
+		[ -n "$run_script" ] || continue
+		run_dir=${run_script%/run.sh}
+		for vendor_path in "$run_dir/validation-worktree/vendor" "$run_dir/validation-worktree/vendor/vendor"; do
+			[ -L "$vendor_path" ] || continue
+			target=$(readlink "$vendor_path" 2>/dev/null || true)
+			issues="${issues}${issues:+,}session=$session:vendor=$vendor_path:target=$target"
+		done
+	done < <(tmux_sessions | grep '^rtc-critical-continuation-' || true)
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "critical-path" "active-continuation-vendor-not-container-visible" \
+			"$issues" \
+			"replace the host-absolute vendor symlink with an in-worktree hard-linked dependency snapshot so wp-env container PHP can load vendor/autoload.php"
+	fi
+	return 0
+}
+
+check_stuck_critical_cleanup() {
+	local out=$1 pid ppid age args cwd issues=''
+	while read -r pid ppid age args; do
+		[ -n "$pid" ] || continue
+		kill -0 "$pid" 2>/dev/null || continue
+		case "$args" in
+			*"$CRITICAL_BASE/wp-env/"*'wp-env'*' stop'*|*"$CRITICAL_BASE/wp-env/"*'docker compose'*' down'*)
+				[ "${age:-0}" -ge 180 ] || continue
+				terminate_runaway_pid "$pid"
+				issues="${issues}${issues:+,}kind=cleanup:pid=$pid:age=${age}s:args=$args"
+				;;
+			*wp-env*' start'*)
+				[ "${age:-0}" -ge 600 ] || continue
+				cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
+				case "$cwd" in
+					"$CRITICAL_BASE"/runs/*/continuations/*|"$CRITICAL_BASE"/worktrees/continuation-*) ;;
+					*) continue ;;
+				esac
+				terminate_runaway_pid "$pid"
+				issues="${issues}${issues:+,}kind=startup:pid=$pid:age=${age}s:cwd=$cwd:args=$args"
+				;;
+		esac
+	done < <(ps -eo pid=,ppid=,etimes=,args= 2>/dev/null | awk '{ pid=$1; ppid=$2; age=$3; $1=$2=$3=""; sub(/^ +/, ""); print pid, ppid, age, $0 }')
+	if [ -n "$issues" ]; then
+		emit_finding "$out" medium "critical-path" "stuck-isolated-wp-env-terminated" \
+			"$issues" \
+			"keep isolated wp-env startup and cleanup bounded so environment setup cannot hold a repair or adoption slot indefinitely"
+	fi
+	return 0
 }
 
 check_coverage_novelty_full_pass_health() {
@@ -1638,27 +2400,42 @@ detect_findings() {
 	} > "$tmp"
 	check_runaway_scans "$tmp"
 	check_exact_sessions "$tmp"
+	check_tmux_capture_guard "$tmp"
 	check_coverage_process_ownership "$tmp"
 	check_deadline_budget_consistency "$tmp"
+	check_novelty_monitor_budget_policy_contract "$tmp"
+	check_resource_budget_application_consistency "$tmp"
+	check_actionable_product_failure_bridge "$tmp"
 	check_critical_path_invariants "$tmp"
 	check_repair_publication_progress "$tmp"
+	check_repair_branch_harness_contamination "$tmp"
 	check_benchmark_canary_promotion_invariants "$tmp"
 	check_loop_statuses "$tmp"
 	if [ -s "$COVERAGE_BASE/current-output-dir.txt" ]; then
 		coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
+		check_coverage_start_budget_snapshot "$tmp" "$coverage_root"
+		check_supervisor_publication_budget "$tmp" "$coverage_root"
 		check_coverage_supervisor_root_agreement "$tmp" "$coverage_root"
 		check_supervisor_disabled_cleanup_memoization "$tmp" "$coverage_root"
 		check_product_failure_quarantine_slots "$tmp" "$coverage_root"
 		check_published_startup_stall_holds "$tmp" "$coverage_root"
 		check_published_group_harness_drift "$tmp" "$coverage_root"
+		check_retained_first_green_honored "$tmp" "$coverage_root"
 		check_promotion_preflight_relaunch_loops "$tmp" "$coverage_root"
+		check_human_smoke_network_stability "$tmp" "$coverage_root"
+		check_product_failure_analysis_ownership "$tmp" "$coverage_root"
+		check_plain_editor_false_green "$tmp" "$coverage_root"
 		check_coverage_novelty_full_pass_health "$tmp" "$coverage_root"
 	fi
 	check_gate_only_triage_processes "$tmp"
+	check_codex_frozen_candidate_cwd "$tmp"
+	check_active_continuation_vendor_mounts "$tmp"
+	check_stuck_critical_cleanup "$tmp"
 	check_unknown_action_profile_startup_failures "$tmp"
 	check_current_run_duplicate_noise "$tmp"
 	if recent_log_matches "$GUARD_BASE/logs/guard.log" 1800 'restart requested pool=.*reason='; then
 		awk -F '\t' -v cutoff=$(( $(date -u +%s) - 1800 )) '
+			$3 ~ /^candidate source invariant failed: (versioned harness advanced|candidate branch advanced)/ { next }
 			$1 >= cutoff { count[$2]++ }
 			END {
 				for (pool in count) {
@@ -1742,8 +2519,8 @@ Guardrails:
 - Do not use behavior-disabling flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.
 - Do not run broad browser fuzzing from this repair job.
 - Prefer bounded shell probes and exact source edits.
-- Do not run historical or aggregate scans such as `du -shx` over /media/volume/danluu-fuzz-data, /tmp, /var/tmp, /home/exouser, the repo root, or old runs. Use current status files, launch ledgers, the artifact index, current-output-dir, or one exact current-run path instead.
-- If size or disk evidence is necessary, prefer `df -h` or `stat` on exact files. Any `du`, `find`, `rg`, or `grep` must be limited to one current-run/artifact path and bounded with `timeout`, `-maxdepth`, `-m`, or an equivalent small script.
+- Do not run historical or aggregate scans such as \`du -shx\` over /media/volume/danluu-fuzz-data, /tmp, /var/tmp, /home/exouser, the repo root, or old runs. Use current status files, launch ledgers, the artifact index, current-output-dir, or one exact current-run path instead.
+- If size or disk evidence is necessary, prefer \`df -h\` or \`stat\` on exact files. Any \`du\`, \`find\`, \`rg\`, or \`grep\` must be limited to one current-run/artifact path and bounded with \`timeout\`, \`-maxdepth\`, \`-m\`, or an equivalent small script.
 - For runaway scan findings, record the controller/session path that launched the scan, patch that path to use the bounded/indexed probe, then verify $RUNAWAY_SCAN_REPORT no longer lists the process.
 PROMPT
 }
@@ -1781,7 +2558,23 @@ launch_repair_jobs() {
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$REPO"
-timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" || true
+child_pid=
+cleanup() {
+	if [ -n "\$child_pid" ] && kill -0 "\$child_pid" 2>/dev/null; then
+		kill -TERM -- "-\$child_pid" 2>/dev/null || kill -TERM "\$child_pid" 2>/dev/null || true
+	fi
+	rm -f "$run_dir/codex.pid"
+}
+trap 'cleanup; exit 0' HUP INT TERM
+trap cleanup EXIT
+setsid timeout "$CODEX_TIMEOUT_SECONDS" "$CODEX_BIN_DIR/codex" -a never exec --skip-git-repo-check -m "$CODEX_MODEL" -c model_reasoning_effort="$CODEX_REASONING_EFFORT" -s danger-full-access < "$prompt" > "$report" 2> "$stderr" &
+child_pid=\$!
+printf '%s\n' "\$child_pid" > "$run_dir/codex.pid"
+set +e
+wait "\$child_pid"
+set -e
+child_pid=
+rm -f "$run_dir/codex.pid"
 EOF
 			chmod +x "$runner"
 			printf '%s\t%s\t%s\t%s\t%s\n' "$(date -u +%s)" "$issue_key" "$session" "$key" "$run_dir" >> "$REPAIR_LEDGER"
@@ -1821,7 +2614,9 @@ write_status() {
 }
 
 run_once() {
+	ensure_tmux_wrapper
 	sync_critical_executor_copies_if_safe || true
+	cleanup_orphaned_structural_repair_processes || true
 	detect_findings
 	launch_repair_jobs
 	write_status

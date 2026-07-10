@@ -55,6 +55,7 @@ const positionalArgs = args.filter( ( arg ) => ! arg.startsWith( '--' ) );
 const RUN_DIR = path.resolve(
 	positionalArgs[ 0 ] ?? process.env.RTC_FUZZ_TRIAGE_RUN_DIR ?? ''
 );
+const ISOLATED_REPOS_ROOT = path.join( path.dirname( RUN_DIR ), 'repos' );
 
 if ( ! RUN_DIR ) {
 	throw new Error(
@@ -256,6 +257,22 @@ function stripAnsi( value ) {
 	return value.replace( /\u001b\[[0-9;]*m/g, '' );
 }
 
+function escapeRegExp( value ) {
+	return value.replace( /[.*+?^${}()|[\]\\]/g, '\\$&' );
+}
+
+function normalizeRepoPaths( value ) {
+	return value
+		.replaceAll( REPO_ROOT, '<REPO_ROOT>' )
+		.replace(
+			new RegExp(
+				`${ escapeRegExp( ISOLATED_REPOS_ROOT ) }/[^/\\s:]+`,
+				'g'
+			),
+			'<REPO_ROOT>'
+		);
+}
+
 function getFailureText( record ) {
 	if ( record.failureSnippet ) {
 		return record.failureSnippet;
@@ -307,22 +324,23 @@ function normalizeFailureText( text ) {
 	const restError = text.match( /code: '([^']+)'/ )?.[ 0 ];
 	const stackLocation = text.match( /at [^(]+\(([^:()]+:\d+):\d+\)/ )?.[ 1 ];
 
-	return [
-		timeout,
-		assertion,
-		restError,
-		stackLocation,
-		text
-			.split( '\n' )
-			.map( ( line ) => line.trim() )
+	return normalizeRepoPaths(
+		[
+			timeout,
+			assertion,
+			restError,
+			stackLocation,
+			text
+				.split( '\n' )
+				.map( ( line ) => line.trim() )
+				.filter( Boolean )
+				.slice( -12 )
+				.join( '\n' ),
+		]
 			.filter( Boolean )
-			.slice( -12 )
-			.join( '\n' ),
-	]
-		.filter( Boolean )
-		.join( '\n' )
-		.replaceAll( RUN_DIR, '<RUN_DIR>' )
-		.replaceAll( REPO_ROOT, '<REPO_ROOT>' );
+			.join( '\n' )
+			.replaceAll( RUN_DIR, '<RUN_DIR>' )
+	);
 }
 
 function groupCandidatesBySignature( candidates ) {

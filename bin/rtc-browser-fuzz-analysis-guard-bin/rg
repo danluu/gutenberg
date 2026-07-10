@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="${RTC_FUZZ_ANALYSIS_REPO_ROOT:-}"
+run_dir="${RTC_FUZZ_ANALYSIS_RUN_DIR:-}"
+job_dir="${RTC_FUZZ_ANALYSIS_JOB_DIR:-}"
+
+refuse_command_log() {
+	echo "rtc analysis guard: refusing raw rg over command.log '$1'" >&2
+	echo "rtc analysis guard: use: node bin/rtc-browser-fuzz-command-log-probe.mjs '$1' --pattern '<regex>'" >&2
+	exit 64
+}
+
+for arg in "$@"; do
+	case "$arg" in
+		.|"$repo_root"|/media|/media/volume|/media/volume/danluu-fuzz-data)
+			echo "rtc analysis guard: refusing broad rg rooted at '$arg'" >&2
+			exit 64
+			;;
+		artifacts|./artifacts|artifacts/rtc-browser-fuzz|./artifacts/rtc-browser-fuzz|test/e2e/artifacts|./test/e2e/artifacts)
+			echo "rtc analysis guard: refusing broad rg rooted at '$arg'" >&2
+			exit 64
+			;;
+	esac
+
+	case "$arg" in
+		*command.log)
+			if [ -f "$arg" ]; then
+				if { [ -n "$run_dir" ] && [[ "$arg" == "$run_dir"/* ]]; } ||
+					{ [ -n "$job_dir" ] && [[ "$arg" == "$job_dir"/* ]]; }; then
+					refuse_command_log "$arg"
+				fi
+				echo "rtc analysis guard: refusing command.log outside the current analysis run '$arg'" >&2
+				exit 64
+			fi
+			;;
+	esac
+
+	if [ -n "$repo_root" ]; then
+		case "$arg" in
+			"$repo_root"/artifacts|"$repo_root"/artifacts/rtc-browser-fuzz|"$repo_root"/test/e2e/artifacts)
+				echo "rtc analysis guard: refusing broad rg rooted at '$arg'" >&2
+				exit 64
+				;;
+		esac
+	fi
+done
+
+real_rg="${RTC_FUZZ_ANALYSIS_REAL_RG:-}"
+if [ -z "$real_rg" ]; then
+	for candidate in \
+		/usr/bin/rg \
+		/opt/homebrew/bin/rg \
+		/usr/local/bin/rg \
+		"$HOME/.nvm/versions/node/v20.19.0/lib/node_modules/@openai/codex/node_modules/@openai/codex-darwin-arm64/vendor/aarch64-apple-darwin/path/rg"
+	do
+		if [ -x "$candidate" ]; then
+			real_rg="$candidate"
+			break
+		fi
+	done
+fi
+
+if [ -z "$real_rg" ]; then
+	echo "rtc analysis guard: could not locate real rg" >&2
+	exit 127
+fi
+
+exec "$real_rg" "$@"

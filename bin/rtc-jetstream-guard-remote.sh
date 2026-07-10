@@ -52,12 +52,14 @@ STRUCTURAL_HOLD_FILE=$BASE/disable-structural-watchdog
 DISK_MAINTENANCE_HOLD_FILE=$BASE/disable-disk-maintenance
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
+DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 GLOBAL_ADMISSION=$RESOURCE_BASE/rtc-global-cpu-admission.sh
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-core-wrapper/bin
 LOG_DIR=$BASE/logs
 PID_FILE=$BASE/guard.pid
 LOCK_FILE=${RTC_JETSTREAM_GUARD_LOCK_FILE:-$BASE/guard-v2.lock}
 HARNESS_UPDATE_GRACE_SECONDS=${RTC_GUARD_HARNESS_UPDATE_GRACE_SECONDS:-180}
+NOVELTY_POLICY_CHECK=$REPO/bin/rtc-browser-fuzz-novelty-policy-check.mjs
 EVENTS=$LOG_DIR/restart-events.tsv
 TMUX_SERVER_PID_FILE=$BASE/rtc-fuzz-server.pid
 TMUX_SERVER_EVENTS=$LOG_DIR/tmux-server-events.tsv
@@ -133,6 +135,29 @@ pr_progress_controller_runtime_healthy() {
 active_codex_worker_count() {
 	{ pgrep -af 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true; } |
 		awk 'END { print NR + 0 }'
+}
+
+trim_optional_live_analysis_codex() {
+	local workers pid cwd age
+	workers=$(pgrep -x codex 2>/dev/null | awk 'END { print NR + 0 }')
+	[ "$workers" -gt "$MAX_CODEX_WORKERS" ] || return 0
+	while read -r age pid; do
+		[ -n "$pid" ] || continue
+		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
+		case "$cwd" in
+			"$COVERAGE_BASE"/run-*/repos/*)
+				log "stopping optional live-analysis Codex over global cap pid=$pid cwd=$cwd age=${age}s workers=$workers cap=$MAX_CODEX_WORKERS"
+				kill -TERM "$pid" 2>/dev/null || true
+				workers=$(( workers - 1 ))
+				[ "$workers" -le "$MAX_CODEX_WORKERS" ] && break
+				;;
+		esac
+	done < <(
+		ps -C codex -o etimes=,pid= 2>/dev/null |
+			awk '{ print $1, $2 }' |
+			sort -n
+	)
+	return 0
 }
 
 stop_sessions_matching() {
@@ -298,32 +323,52 @@ stop_unsupervised_resource_autoscaler() {
 }
 
 deferred_controller_pids() {
-	ps -eo pid=,args= | awk '
+	{
+		ps -eo pid=,args= | awk '
 		index($0, "/rtc-deferred-work-promotion-20260516/deferred-work-promotion-loop.sh") {
 			print $1
 		}
-	'
+		'
+		fuser "$DEFERRED_BASE/deferred-work-promotion-loop.lock" 2>/dev/null || true
+	} | tr ' ' '\n' | awk '/^[0-9]+$/ && !seen[$1]++ { print $1 }'
 }
 
 stop_unsupervised_deferred_controller() {
-	local pids pid waited
+	local pids pid pgid waited
 	pids=$(deferred_controller_pids)
-	[ -n "$pids" ] || return 0
+	if [ -z "$pids" ]; then
+		rm -f "$DEFERRED_BASE/deferred-work-promotion-loop.pid"
+		return 0
+	fi
 	for pid in $pids; do
-		log "stopping unsupervised deferred-work controller pid=$pid"
-		kill -TERM "$pid" 2>/dev/null || true
+		pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | awk '{ print $1 }')
+		log "stopping unsupervised deferred-work controller pid=$pid pgid=${pgid:-unknown}"
+		if [ -n "$pgid" ] && [ "$pgid" != "1" ] && [ "$pgid" != "$$" ]; then
+			kill -TERM -- "-$pgid" 2>/dev/null || true
+		else
+			kill -TERM "$pid" 2>/dev/null || true
+		fi
 	done
 	waited=0
 	while [ "$waited" -lt 10 ]; do
 		pids=$(deferred_controller_pids)
-		[ -z "$pids" ] && return 0
+		if [ -z "$pids" ]; then
+			rm -f "$DEFERRED_BASE/deferred-work-promotion-loop.pid"
+			return 0
+		fi
 		sleep 1
 		waited=$(( waited + 1 ))
 	done
 	for pid in $pids; do
-		log "force-stopping unsupervised deferred-work controller pid=$pid"
-		kill -KILL "$pid" 2>/dev/null || true
+		pgid=$(ps -o pgid= -p "$pid" 2>/dev/null | awk '{ print $1 }')
+		log "force-stopping unsupervised deferred-work controller pid=$pid pgid=${pgid:-unknown}"
+		if [ -n "$pgid" ] && [ "$pgid" != "1" ] && [ "$pgid" != "$$" ]; then
+			kill -KILL -- "-$pgid" 2>/dev/null || true
+		else
+			kill -KILL "$pid" 2>/dev/null || true
+		fi
 	done
+	rm -f "$DEFERRED_BASE/deferred-work-promotion-loop.pid"
 }
 
 coverage_supervisor_state_matches_current_root() {
@@ -787,9 +832,78 @@ coverage_start_in_progress() {
 	return 1
 }
 
+stop_codex_in_frozen_candidate() {
+	local product_repo=$1 pid cwd
+	for pid in $(pgrep -f 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true); do
+		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
+		case "$cwd" in
+			"$product_repo"|"$product_repo"/*)
+				log "stopping Codex with writable cwd inside frozen candidate pid=$pid cwd=$cwd"
+				kill -TERM "$pid" 2>/dev/null || true
+				;;
+		esac
+	done
+}
+
+restore_frozen_harness_from_control() {
+	local product_repo=$1 relative=$2 expected_hash=$3 canonical source_hash destination tmp restored_hash
+	canonical=$REPO/$relative
+	destination=$product_repo/$relative
+	[ -f "$canonical" ] || return 1
+	source_hash=$(sha256sum "$canonical" 2>/dev/null | awk '{ print $1 }')
+	[ -n "$expected_hash" ] && [ "$source_hash" = "$expected_hash" ] || return 1
+
+	stop_codex_in_frozen_candidate "$product_repo"
+	mkdir -p "$(dirname "$destination")"
+	tmp=$(mktemp "$(dirname "$destination")/.guard-restore.XXXXXX")
+	cp -p "$canonical" "$tmp"
+	mv -f "$tmp" "$destination"
+	restored_hash=$(sha256sum "$destination" 2>/dev/null | awk '{ print $1 }')
+	[ "$restored_hash" = "$expected_hash" ] || return 1
+	log "restored frozen harness file from matching control source path=$relative hash=$expected_hash without replacing current run"
+	return 0
+}
+
+novelty_monitor_policy_valid() {
+	local source=$1
+	[ -f "$NOVELTY_POLICY_CHECK" ] && [ -f "$source" ] || return 1
+	"$NODE_BIN/node" "$NOVELTY_POLICY_CHECK" "$source" >/dev/null 2>&1
+}
+
+stop_coverage_guidance_writers() {
+	local session pid cwd
+	while IFS= read -r session; do
+		[ -n "$session" ] || continue
+		log "stopping coverage guidance session after rejected budget-policy edit session=$session"
+		tmux kill-session -t "$session" 2>/dev/null || true
+	done < <(tmux list-sessions -F '#S' 2>/dev/null | grep '^rtc-coverage-guidance-codex-' || true)
+	for pid in $(pgrep -f 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true); do
+		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
+		[ "$cwd" = "$REPO" ] || continue
+		log "stopping orphaned coverage guidance writer after rejected budget-policy edit pid=$pid cwd=$cwd"
+		kill -TERM "$pid" 2>/dev/null || true
+	done
+}
+
+restore_control_novelty_monitor_from_frozen() {
+	local product_repo=$1 expected_hash=$2 source destination source_hash tmp restored_hash
+	source=$product_repo/bin/rtc-browser-fuzz-novelty-monitor.mjs
+	destination=$REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs
+	novelty_monitor_policy_valid "$source" || return 1
+	source_hash=$(sha256sum "$source" 2>/dev/null | awk '{ print $1 }')
+	[ -n "$expected_hash" ] && [ "$source_hash" = "$expected_hash" ] || return 1
+	stop_coverage_guidance_writers
+	tmp=$(mktemp "$REPO/bin/.guard-control-restore.XXXXXX")
+	cp -p "$source" "$tmp"
+	mv -f "$tmp" "$destination"
+	restored_hash=$(sha256sum "$destination" 2>/dev/null | awk '{ print $1 }')
+	[ "$restored_hash" = "$expected_hash" ] || return 1
+	log "rejected novelty monitor budget-policy regression and restored validated frozen control source hash=$expected_hash"
+}
+
 coverage_candidate_source_problem() {
 	local root manifest product_repo monitor_repo expected_head actual_head control_head mode unexpected
-	local field relative expected_hash actual_hash actual_age
+	local field relative expected_hash actual_hash actual_age control_hash control_age policy_error
 	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
 	[ -n "$root" ] && [ -d "$root" ] || {
 		printf 'current output root is missing'
@@ -816,6 +930,11 @@ coverage_candidate_source_problem() {
 		printf 'candidate snapshot head=%s expected=%s' "${actual_head:-missing}" "$expected_head"
 		return 0
 	}
+	if ! novelty_monitor_policy_valid "$product_repo/bin/rtc-browser-fuzz-novelty-monitor.mjs"; then
+		policy_error=$("$NODE_BIN/node" "$NOVELTY_POLICY_CHECK" "$product_repo/bin/rtc-browser-fuzz-novelty-monitor.mjs" 2>&1 || true)
+		printf 'frozen novelty monitor violates hard supervisor budget policy: %s' "${policy_error:-unknown policy-check failure}"
+		return 0
+	fi
 	monitor_repo=$(awk -F '\t' '$1 == "monitor_repo" { print $2; exit }' "$manifest")
 	[ "$monitor_repo" = "$product_repo" ] || {
 		printf 'monitor repo=%s expected frozen product repo=%s' "${monitor_repo:-missing}" "$product_repo"
@@ -825,6 +944,27 @@ coverage_candidate_source_problem() {
 		printf 'run monitor does not execute from frozen product repo=%s' "$product_repo"
 		return 0
 	}
+	grep -Fqx "export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD='$REPO'" "$root/run-monitor.sh" 2>/dev/null || {
+		printf 'coverage guidance is not isolated in writable harness control repo=%s' "$REPO"
+		return 0
+	}
+	grep -Fqx "export RTC_FUZZ_NOVELTY_CURRENT_OUTPUT_POINTER='$COVERAGE_BASE/current-output-dir.txt'" "$root/run-monitor.sh" 2>/dev/null || {
+		printf 'novelty monitor does not enforce current output pointer=%s' "$COVERAGE_BASE/current-output-dir.txt"
+		return 0
+	}
+	control_head=$(git -C "$CANDIDATE_REPO" rev-parse "$CANDIDATE_REF" 2>/dev/null || true)
+	[ "$control_head" = "$expected_head" ] || {
+		printf 'candidate branch advanced to %s while run tests %s' "${control_head:-missing}" "$expected_head"
+		return 0
+	}
+	expected_hash=$(awk -F '\t' '$1 == "novelty_monitor_sha256" { print $2; exit }' "$manifest")
+	if ! novelty_monitor_policy_valid "$REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs"; then
+		policy_error=$("$NODE_BIN/node" "$NOVELTY_POLICY_CHECK" "$REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs" 2>&1 || true)
+		if ! restore_control_novelty_monitor_from_frozen "$product_repo" "$expected_hash"; then
+			printf 'control novelty monitor violates hard supervisor budget policy and restore failed: %s' "${policy_error:-unknown policy-check failure}"
+			return 0
+		fi
+	fi
 	for field in novelty_monitor_sha256 live_analysis_monitor_sha256 runner_sha256 supervisor_sha256 triage_watcher_sha256; do
 		case "$field" in
 			novelty_monitor_sha256) relative=bin/rtc-browser-fuzz-novelty-monitor.mjs ;;
@@ -836,6 +976,9 @@ coverage_candidate_source_problem() {
 		expected_hash=$(awk -F '\t' -v key="$field" '$1 == key { print $2; exit }' "$manifest")
 		actual_hash=$(sha256sum "$product_repo/$relative" 2>/dev/null | awk '{ print $1 }')
 		[ -n "$expected_hash" ] && [ "$actual_hash" = "$expected_hash" ] || {
+			if restore_frozen_harness_from_control "$product_repo" "$relative" "$expected_hash"; then
+				continue
+			fi
 			actual_age=$(file_age_seconds "$product_repo/$relative" 2>/dev/null || printf 999999)
 			if [ -n "$expected_hash" ] && [ "$actual_age" -lt "$HARNESS_UPDATE_GRACE_SECONDS" ]; then
 				log "deferring fresh harness hash mismatch during publication path=$relative age=${actual_age}s grace=${HARNESS_UPDATE_GRACE_SECONDS}s actual=${actual_hash:-missing} expected=$expected_hash"
@@ -844,12 +987,17 @@ coverage_candidate_source_problem() {
 			printf 'frozen harness hash mismatch path=%s actual=%s expected=%s' "$relative" "${actual_hash:-missing}" "${expected_hash:-missing}"
 			return 0
 		}
+		control_hash=$(sha256sum "$REPO/$relative" 2>/dev/null | awk '{ print $1 }')
+		if [ -n "$control_hash" ] && [ "$control_hash" != "$expected_hash" ]; then
+			control_age=$(file_age_seconds "$REPO/$relative" 2>/dev/null || printf 999999)
+			if [ "$control_age" -lt "$HARNESS_UPDATE_GRACE_SECONDS" ]; then
+				log "deferring fresh versioned harness advance path=$relative age=${control_age}s grace=${HARNESS_UPDATE_GRACE_SECONDS}s control=$control_hash frozen=$expected_hash"
+				return 1
+			fi
+			printf 'versioned harness advanced path=%s control=%s frozen=%s' "$relative" "$control_hash" "$expected_hash"
+			return 0
+		fi
 	done
-	control_head=$(git -C "$CANDIDATE_REPO" rev-parse "$CANDIDATE_REF" 2>/dev/null || true)
-	[ "$control_head" = "$expected_head" ] || {
-		printf 'candidate branch advanced to %s while run tests %s' "${control_head:-missing}" "$expected_head"
-		return 0
-	}
 	unexpected=$(
 		git -C "$product_repo" diff --name-only HEAD 2>/dev/null |
 			awk '
@@ -880,6 +1028,20 @@ coverage_monitor_pid_for_root() {
 		fi
 	done
 	return 1
+}
+
+stop_stale_coverage_monitors() {
+	local current_root pid output_root
+	current_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
+	[ -n "$current_root" ] || return 0
+	for pid in $(pgrep -f '[n]ode bin/rtc-browser-fuzz-novelty-monitor[.]mjs' 2>/dev/null || true); do
+		[ -r "/proc/$pid/environ" ] || continue
+		output_root=$(tr '\0' '\n' < "/proc/$pid/environ" | sed -n 's/^RTC_FUZZ_NOVELTY_OUTPUT_DIR=//p' | head -1)
+		[ -n "$output_root" ] && [ "$output_root" != "$current_root" ] || continue
+		log "stopping stale-root novelty monitor pid=$pid output=$output_root current=$current_root"
+		kill -TERM "$pid" 2>/dev/null || true
+	done
+	return 0
 }
 
 reattach_current_coverage_run() {
@@ -1318,7 +1480,9 @@ run_loop_locked() {
 	log "guard loop started pid=$$"
 	while true; do
 		check_tmux_server_generation
+		stop_stale_coverage_monitors
 		stop_disabled_analysis_loops
+		trim_optional_live_analysis_codex
 		coverage_needs_restart=0
 			if ! has_session rtc-coverage-guided-novelty; then
 				if coverage_start_in_progress; then

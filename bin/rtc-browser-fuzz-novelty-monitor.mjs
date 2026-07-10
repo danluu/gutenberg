@@ -552,7 +552,7 @@ const COVERAGE_GUIDANCE_CODEX_SESSION_PREFIX =
 	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_SESSION_PREFIX ??
 	'rtc-coverage-guidance-codex';
 const COVERAGE_GUIDANCE_CODEX_CWD =
-	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD ?? REPO_ROOT;
+	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD ?? CONTROL_REPO_ROOT;
 const CODEX_BIN = process.env.RTC_FUZZ_CODEX_BIN ?? 'codex';
 const CODEX_MODEL =
 	process.env.RTC_FUZZ_NOVELTY_COVERAGE_CODEX_MODEL ?? 'gpt-5.5';
@@ -1271,19 +1271,11 @@ function getPolicyProtectedSupervisorGroupLimit( baseLimit, groups ) {
 	const exactStackCanaryCapFilled =
 		normalizedBaseLimit > 0 &&
 		openCanaryFloorGroups.length >= normalizedBaseLimit;
-	const coverageGapReservedGroupCount =
-		getCoverageGapReservedGroups( groups ).length;
-	if ( STRICT_PRODUCER_BUDGET_CAP ) {
-		if ( exactStackCanaryCapFilled ) {
-			return Math.min(
-				groupCount,
-				normalizedBaseLimit + coverageGapReservedGroupCount
-			);
-		}
-		return Math.min(
-			groupCount,
-			normalizedBaseLimit + coverageGapReservedGroupCount
-		);
+	if (
+		isDeadlineBenchmarkCanaryBudgetCapActive() ||
+		STRICT_PRODUCER_BUDGET_CAP
+	) {
+		return Math.min( groupCount, normalizedBaseLimit );
 	}
 	const coverageGapReservedPublicationLimit =
 		getCoverageGapReservedPublicationLimit( groups );
@@ -1482,13 +1474,21 @@ const MATERIALIZATION_FLOOR_GROUPS = [
 	'novelty-http-rtc-reference-oracle',
 	'novelty-ws-collaboration-ui-signals',
 	'novelty-ws-revision-recovery',
+	'novelty-ws-async-server-blocks',
+	MEDIA_CROSS_ENTITY_COMPLETION_GROUP,
+	'novelty-ws-media-cross-entity',
+	'novelty-ws-permissions-auth-locks',
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-many-user-lifecycle',
 	'novelty-ws-thirty-user-lifecycle',
 	THIRTY_USER_LIFECYCLE_COMPLETION_GROUP,
-	MEDIA_CROSS_ENTITY_COMPLETION_GROUP,
 ];
 const ZERO_COVERAGE_PRIORITY_GROUPS = [
+	'novelty-ws-revision-recovery',
+	'novelty-ws-async-server-blocks',
+	MEDIA_CROSS_ENTITY_COMPLETION_GROUP,
+	'novelty-ws-media-cross-entity',
+	'novelty-ws-permissions-auth-locks',
 	'novelty-ws-thirty-user-lifecycle',
 	THIRTY_USER_LIFECYCLE_COMPLETION_GROUP,
 	'novelty-ws-collaboration-ui-signals',
@@ -1497,7 +1497,6 @@ const ZERO_COVERAGE_PRIORITY_GROUPS = [
 	'novelty-ws-same-user-separate-context-lifecycle',
 	'novelty-ws-many-user-lifecycle-completion',
 	'novelty-ws-many-user-lifecycle',
-	'novelty-ws-revision-recovery',
 	'novelty-http-table-stale-snapshot',
 	TABLE_STALE_SNAPSHOT_COMPLETION_GROUP,
 	'novelty-http-large-post-lifecycle-completion',
@@ -2400,7 +2399,7 @@ const PROFILE_GROUPS = [
 		env: {
 			GUTENBERG_RTC_BROWSER_ENABLE_LIFECYCLE_EVENTS: '1',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
-			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '11',
 			GUTENBERG_RTC_BROWSER_FINAL_PERSISTENCE_ORACLE: 'fail',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '1',
 			GUTENBERG_RTC_BROWSER_EDITED_CONTENT_MARKER_TIMEOUT_MS: '45000',
@@ -2434,7 +2433,7 @@ const PROFILE_GROUPS = [
 			GUTENBERG_RTC_BROWSER_ACTION_SEQUENCE:
 				'append-paragraph,assert-presence-list,edit-paragraph,append-paragraph,assert-presence-list,edit-paragraph,append-paragraph,assert-presence-list',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '3',
-			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '10',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '11',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '0',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '6',
@@ -2468,7 +2467,7 @@ const PROFILE_GROUPS = [
 				'append-paragraph,assert-presence-list,edit-paragraph,append-paragraph,assert-presence-list,edit-paragraph',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '1',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_DELAY_MS: '1000',
-			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '28',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '29',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '0',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '4',
@@ -2505,7 +2504,7 @@ const PROFILE_GROUPS = [
 				'append-paragraph,append-paragraph,edit-paragraph,append-paragraph',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_SIZE: '2',
 			GUTENBERG_RTC_BROWSER_COLLABORATOR_JOIN_BATCH_DELAY_MS: '500',
-			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '28',
+			GUTENBERG_RTC_BROWSER_EXTRA_COLLABORATORS: '29',
 			GUTENBERG_RTC_BROWSER_FINAL_UI_WITNESS_SWEEP: '0',
 			GUTENBERG_RTC_BROWSER_FORCE_LATE_JOIN_STEP: '1',
 			GUTENBERG_RTC_BROWSER_FORCE_SAVE_STEPS: '3',
@@ -4217,6 +4216,30 @@ function hasBenchmarkCanarySuccessfulCurrentRunRecord( group ) {
 
 function hasBenchmarkCanaryCurrentRunRecord( group ) {
 	return ( state.currentRunRecordCountsByGroup?.[ group ] ?? 0 ) > 0;
+}
+
+function getCurrentOutputGroupRecordCount( group ) {
+	const retainedCount =
+		state.benchmarkCanaryRecordCountsOutputDir === OUTPUT_DIR
+			? state.benchmarkCanaryRetainedRecordCountsByGroup?.[ group ] ?? 0
+			: 0;
+	return Math.max(
+		state.currentRunRecordCountsByGroup?.[ group ] ?? 0,
+		retainedCount
+	);
+}
+
+function getCurrentOutputSuccessfulGroupRecordCount( group ) {
+	const retainedCount =
+		state.benchmarkCanaryRecordCountsOutputDir === OUTPUT_DIR
+			? state.benchmarkCanaryRetainedSuccessfulRecordCountsByGroup?.[
+					group
+			  ] ?? 0
+			: 0;
+	return Math.max(
+		state.currentRunSuccessfulRecordCountsByGroup?.[ group ] ?? 0,
+		retainedCount
+	);
 }
 
 function hasBenchmarkCanaryRetainedCurrentRootSuccess( group ) {
@@ -14960,6 +14983,32 @@ async function getNoveltyGroupHarnessOverlayManifest() {
 	return noveltyGroupHarnessOverlayManifestPromise;
 }
 
+async function getHarnessOverlaySignatureForRoot( root, files ) {
+	if ( ! Array.isArray( files ) ) {
+		return null;
+	}
+	const hash = crypto.createHash( 'sha256' );
+	for ( const relativePath of files ) {
+		const filePath = path.join( root, relativePath );
+		try {
+			const stat = await fs.lstat( filePath );
+			hash.update( relativePath );
+			hash.update( '\0' );
+			hash.update( String( stat.mode & 0o777 ) );
+			hash.update( '\0' );
+			if ( stat.isSymbolicLink() ) {
+				hash.update( await fs.readlink( filePath ) );
+			} else {
+				hash.update( await fs.readFile( filePath ) );
+			}
+			hash.update( '\0' );
+		} catch {
+			return null;
+		}
+	}
+	return hash.digest( 'hex' );
+}
+
 async function copyHarnessOverlayFileAtomic( relativePath, destinationRoot ) {
 	const sourcePath = path.join( REPO_ROOT, relativePath );
 	const destinationPath = path.join( destinationRoot, relativePath );
@@ -14986,9 +15035,29 @@ async function syncNoveltyGroupHarnessOverlay( group ) {
 	);
 	const previousManifest = await readJsonFile( manifestPath );
 	if ( previousManifest?.signature === manifest.signature ) {
-		return false;
+		const destinationSignature = await getHarnessOverlaySignatureForRoot(
+			group.repoRoot,
+			manifest.files
+		);
+		if ( destinationSignature === manifest.signature ) {
+			return false;
+		}
 	}
 
+	await writeJsonFileAtomic( manifestPath, {
+		...manifest,
+		signature: `syncing:${ manifest.signature }`,
+		previousSignature: previousManifest?.signature ?? null,
+		syncStartedAt: new Date().toISOString(),
+	} );
+	await terminateGroupLanes(
+		group.name,
+		'isolated group harness changed; stop any active lane before replacing runner and editor-oracle files',
+		{
+			action: 'terminate-stale-isolated-harness-lanes',
+			logLabel: 'stale isolated harness group',
+		}
+	);
 	for ( const relativePath of manifest.files ) {
 		await copyHarnessOverlayFileAtomic( relativePath, group.repoRoot );
 	}
@@ -15010,14 +15079,6 @@ async function syncNoveltyGroupHarnessOverlay( group ) {
 		fileCount: manifest.files.length,
 		reason: 'existing isolated group repos must run the same versioned harness as the frozen candidate instead of retaining stale runner, launcher, triage, or editor-oracle files',
 	} );
-	await terminateGroupLanes(
-		group.name,
-		'isolated group harness changed; restart any active lane so it loads the synchronized runner and editor-oracle files',
-		{
-			action: 'terminate-stale-isolated-harness-lanes',
-			logLabel: 'stale isolated harness group',
-		}
-	);
 	return true;
 }
 
@@ -15190,6 +15251,30 @@ function queueNoveltyGroupRepoPrep(
 	} );
 }
 
+async function syncReusableNoveltyGroupHarnessOverlaysBeforePublication(
+	groups
+) {
+	if ( ! REPOS_BASE ) {
+		return;
+	}
+	for ( const group of groups ) {
+		if ( ! group?.repoRoot || group.repoRoot === REPO_ROOT ) {
+			continue;
+		}
+		try {
+			await fs.access( path.join( group.repoRoot, 'package.json' ) );
+		} catch {
+			continue;
+		}
+		const changed = await syncNoveltyGroupHarnessOverlay( group );
+		if ( changed ) {
+			await log(
+				`synchronized isolated novelty harness overlay for ${ group.name } before supervisor publication: ${ group.repoRoot }`
+			);
+		}
+	}
+}
+
 async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 	if ( PRODUCER_BUDGET_DISABLED ) {
 		state.enabledGroups = [];
@@ -15298,13 +15383,34 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 	const baseSupervisorGroupLimit = isDeadlineBenchmarkCanaryBudgetCapActive()
 		? benchmarkCanarySchedulingLimit
 		: MAX_ENABLED_GROUPS;
-	const requiredFirstGreenProductGroups = [
+	const satisfiedRequiredFirstGreenProductGroups = [
+		...REQUIRED_FIRST_GREEN_PRODUCT_GROUPS,
+	].filter(
+		( group ) => getCurrentOutputSuccessfulGroupRecordCount( group ) > 0
+	);
+	const satisfiedFirstGreenMarker =
+		satisfiedRequiredFirstGreenProductGroups.join( ',' );
+	if (
+		state.satisfiedRequiredFirstGreenProductGroupMarker !==
+		satisfiedFirstGreenMarker
+	) {
+		state.satisfiedRequiredFirstGreenProductGroupMarker =
+			satisfiedFirstGreenMarker;
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'honor-retained-required-product-first-green',
+			groups: satisfiedRequiredFirstGreenProductGroups,
+			reason: 'current-output success remains a satisfied publication gate after its run directory leaves the active producer set',
+		} );
+	}
+	state.satisfiedRequiredFirstGreenProductGroups =
+		satisfiedRequiredFirstGreenProductGroups;
+	const rawRequiredFirstGreenProductGroups = [
 		...REQUIRED_FIRST_GREEN_PRODUCT_GROUPS,
 	].filter(
 		( group ) =>
 			enabled.has( group ) &&
-			( state.currentRunSuccessfulRecordCountsByGroup?.[ group ] ??
-				0 ) === 0
+			getCurrentOutputSuccessfulGroupRecordCount( group ) === 0
 	);
 	const protectedBenchmarkGroupsInOrder = uniqueStringList( [
 		...protectedBenchmarkCanaryGroupsForBudget.filter( ( group ) =>
@@ -15319,14 +15425,69 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 			  )
 			: [] ),
 	] );
+	const benchmarkProtectedSlotsAfterPlainSmoke = Math.max(
+		0,
+		baseSupervisorGroupLimit -
+			( rawRequiredFirstGreenProductGroups.includes(
+				PLAIN_EDITOR_PRODUCT_SMOKE_GROUP
+			)
+				? 1
+				: 0 )
+	);
+	const benchmarkCanaryPublicationSlotsSaturated =
+		isDeadlineBenchmarkCanaryBudgetCapActive() &&
+		protectedBenchmarkGroupsInOrder.length > 0 &&
+		protectedBenchmarkGroupsInOrder.length >=
+			benchmarkProtectedSlotsAfterPlainSmoke;
+	const requiredFirstGreenProductGroups =
+		benchmarkCanaryPublicationSlotsSaturated
+			? rawRequiredFirstGreenProductGroups.filter(
+					( group ) => group === PLAIN_EDITOR_PRODUCT_SMOKE_GROUP
+			  )
+			: rawRequiredFirstGreenProductGroups;
+	const deferredFirstGreenProductGroups =
+		rawRequiredFirstGreenProductGroups.filter(
+			( group ) => ! requiredFirstGreenProductGroups.includes( group )
+		);
+	if ( deferredFirstGreenProductGroups.length > 0 ) {
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'defer-product-first-green-behind-open-benchmark-canaries',
+			groups: deferredFirstGreenProductGroups,
+			protectedBenchmarkGroups: protectedBenchmarkGroupsInOrder,
+			reason: 'deadline benchmark-canary cap is saturated; only the plain editor smoke gate may preempt open promotion-blocked canaries before exact-stack publication can move',
+		} );
+	}
+	const protectedBenchmarkGroupSet = new Set(
+		protectedBenchmarkGroupsInOrder
+	);
+	const orderedRawWithoutProtectedBenchmarkGroups = rawOrderedGroups.filter(
+		( group ) => ! protectedBenchmarkGroupSet.has( group )
+	);
+	const orderedCandidatesWithProtectedBenchmarkGroups = uniqueStringList( [
+		...protectedBenchmarkGroupsInOrder,
+		...rawOrderedGroups,
+	] );
+	const deadlineCoverageGapReservedGroups = uniqueStringList( [
+		...protectedBenchmarkGroupsInOrder,
+		...orderSupervisorGroupsWithCoverageGapReserve(
+			orderedRawWithoutProtectedBenchmarkGroups,
+			Math.max(
+				0,
+				baseSupervisorGroupLimit -
+					protectedBenchmarkGroupsInOrder.length
+			)
+		),
+	] );
 	const orderedGroups = uniqueStringList( [
 		...requiredFirstGreenProductGroups,
 		...( isDeadlineBenchmarkCanaryBudgetCapActive()
-			? [ ...protectedBenchmarkGroupsInOrder, ...rawOrderedGroups ]
+			? deadlineCoverageGapReservedGroups
 			: orderSupervisorGroupsWithCoverageGapReserve(
-					[ ...protectedBenchmarkGroupsInOrder, ...rawOrderedGroups ],
+					orderedCandidatesWithProtectedBenchmarkGroups,
 					baseSupervisorGroupLimit
 			  ) ),
+		...deferredFirstGreenProductGroups,
 	] );
 	if (
 		protectedBenchmarkCanaryGroupsForBudget.length > 0 &&
@@ -15417,6 +15578,7 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 			}
 			return group;
 		} );
+	await syncReusableNoveltyGroupHarnessOverlaysBeforePublication( groups );
 	await writeJsonFileAtomic( GROUPS_PATH, groups );
 	queueNoveltyGroupRepoPrep(
 		groups,
@@ -16328,7 +16490,11 @@ async function applyPolicy(
 	}
 
 	function getEnabledGroupBudgetLimit( group = null ) {
-		if ( group && hasCoverageGapPriorityForPass( group ) ) {
+		if (
+			group &&
+			hasCoverageGapPriorityForPass( group ) &&
+			! isDeadlineBenchmarkCanaryBudgetCapActive()
+		) {
 			return (
 				MAX_ENABLED_GROUPS + getEffectiveCoverageGapReservedGroupLimit()
 			);
@@ -16703,10 +16869,9 @@ async function applyPolicy(
 			const candidateSupervisorState =
 				supervisorGroupsByName.get( candidate );
 			const candidateCurrentRunRecords =
-				state.currentRunRecordCountsByGroup?.[ candidate ] ?? 0;
+				getCurrentOutputGroupRecordCount( candidate );
 			const candidateCurrentRunSuccessfulRecords =
-				state.currentRunSuccessfulRecordCountsByGroup?.[ candidate ] ??
-				0;
+				getCurrentOutputSuccessfulGroupRecordCount( candidate );
 			const candidateIsMaterializing =
 				( candidateSupervisorState?.activeRunDirs ?? [] ).length > 0 ||
 				/^(waiting-repo-prep|starting|running|restarting)$/.test(
@@ -18777,10 +18942,8 @@ async function applyPolicy(
 		}
 	}
 
-	if (
-		enabled.size >
-		MAX_ENABLED_GROUPS + getEffectiveCoverageGapReservedGroupLimit()
-	) {
+	const maxEnabledGroupBudgetLimit = MAX_ENABLED_GROUPS;
+	if ( enabled.size > maxEnabledGroupBudgetLimit ) {
 		const maxBudgetPauseOrder = [
 			'novelty-http-persistence-probe',
 			'novelty-ws-structure',
@@ -18806,10 +18969,7 @@ async function applyPolicy(
 		];
 
 		for ( const group of maxBudgetPauseOrder ) {
-			if (
-				enabled.size <=
-				MAX_ENABLED_GROUPS + getEffectiveCoverageGapReservedGroupLimit()
-			) {
+			if ( enabled.size <= maxEnabledGroupBudgetLimit ) {
 				break;
 			}
 			if (
@@ -20056,6 +20216,41 @@ async function ensureBootstrapSupervisorGroups() {
 			reason: 'active benchmark canary feedback must materialize equivalent fuzz lanes before generic breadth groups on a fresh coverage-guided supervisor',
 		} );
 	}
+	const coverageGapBootstrapStart = selected.length;
+	if ( benchmarkCanaryBootstrapOnly ) {
+		const coverageGapBootstrapCandidates =
+			getCoverageGapPublicationCandidateGroups();
+		const coverageGapBootstrapLimit =
+			getPolicyProtectedSupervisorGroupLimit(
+				Math.max( 1, benchmarkCanarySchedulingLimit ),
+				uniqueStringList( [
+					...selected,
+					...coverageGapBootstrapCandidates,
+				] )
+			);
+		for ( const group of coverageGapBootstrapCandidates ) {
+			if ( selected.length >= coverageGapBootstrapLimit ) {
+				break;
+			}
+			addGroup( group, {
+				successDeficitBootstrap:
+					SUCCESS_DEFICIT_BOOTSTRAP_GROUP_SET.has( group ),
+			} );
+		}
+	}
+	const coverageGapBootstrapGroups = selected
+		.slice( coverageGapBootstrapStart )
+		.filter( hasCoverageGapPublicationPriority );
+	if ( coverageGapBootstrapGroups.length > 0 ) {
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'bootstrap-coverage-gap-reserved-supervisor-groups',
+			groups: coverageGapBootstrapGroups,
+			benchmarkCanarySchedulingLimit,
+			reservedGroupLimit: getEffectiveCoverageGapReservedGroupLimit(),
+			reason: 'deadline benchmark-canary bootstrap is active, but coverage guidance still has zero-hit RTC gaps; publish reserved gap producers alongside exact canaries instead of leaving branch-risk invariants idle',
+		} );
+	}
 	if ( benchmarkCanaryBootstrapOnly ) {
 		state.changes.push( {
 			at: new Date().toISOString(),
@@ -20214,14 +20409,18 @@ async function ensureBootstrapSupervisorGroups() {
 		addEmptyMaterializationStartupNoiseCanary();
 	}
 
+	const policyProtectedSupervisorGroupLimit =
+		getPolicyProtectedSupervisorGroupLimit(
+			Math.max( 1, benchmarkCanarySchedulingLimit ),
+			selected
+		);
+	const maxSupervisorGroupPublicationLimit = MAX_ENABLED_GROUPS;
 	const groups = selected.slice(
 		0,
 		Math.min(
-			MAX_ENABLED_GROUPS,
-			getPolicyProtectedSupervisorGroupLimit(
-				Math.max( 1, benchmarkCanarySchedulingLimit ),
-				selected
-			)
+			selected.length,
+			policyProtectedSupervisorGroupLimit,
+			maxSupervisorGroupPublicationLimit
 		)
 	);
 	if ( groups.length === 0 ) {
@@ -20721,9 +20920,12 @@ function buildCoverageCodexPrompt( guidance, reportPath ) {
 		'You are running inside a long-lived RTC browser fuzzing loop.',
 		'Do not use API subagents. Work locally. Keep any code changes narrow and reviewable.',
 		'Your task is to make the fuzz harness add missing coverage, not to reduce coverage or suppress failures.',
+		`The exact candidate product snapshot at ${ REPO_ROOT } is read-only. Never edit, format, reset, clean, or check out files there.`,
+		`The writable harness/control checkout is ${ COVERAGE_GUIDANCE_CODEX_CWD }. Make any harness or policy edits only there.`,
 		'Never add or recommend behavior-disable flags such as DISABLE_SYNC_FAULTS, DISABLE_PARSER_STRESS, DISABLE_REVISION_RESTORE, DISABLE_RELOAD, or DISABLE_RANDOM_RELOAD.',
 		'',
-		`Repo root: ${ REPO_ROOT }`,
+		`Read-only candidate product snapshot: ${ REPO_ROOT }`,
+		`Writable harness/control checkout: ${ COVERAGE_GUIDANCE_CODEX_CWD }`,
 		`Novelty output dir: ${ OUTPUT_DIR }`,
 		`Groups path: ${ GROUPS_PATH }`,
 		`Novelty state: ${ STATE_PATH }`,
@@ -21781,7 +21983,10 @@ async function runPass() {
 			...forcedSupervisorGroups,
 			...eligibleCoverageGapSupervisorGroups,
 		] );
-		if ( STRICT_PRODUCER_BUDGET_CAP ) {
+		if (
+			STRICT_PRODUCER_BUDGET_CAP ||
+			isDeadlineBenchmarkCanaryBudgetCapActive()
+		) {
 			const requiredSupervisorBaseLimit = exactStackCanaryCapFilled
 				? benchmarkCanarySchedulingLimit
 				: MAX_ENABLED_GROUPS;
