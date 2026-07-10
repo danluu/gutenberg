@@ -499,29 +499,51 @@ interface CollaboratorAwarenessState {
 	collaboratorInfo?: { id?: number | string };
 }
 
+function getCollaboratorId(
+	state: LocalAwarenessState
+): number | string | undefined {
+	const collaboratorId = ( state as CollaboratorAwarenessState | null )
+		?.collaboratorInfo?.id;
+
+	return typeof collaboratorId === 'number' ||
+		typeof collaboratorId === 'string'
+		? collaboratorId
+		: undefined;
+}
+
 /**
  * Count distinct editors in an awareness response.
  *
  * A reload can briefly leave the previous Yjs client in server awareness until
  * its disconnect beacon arrives or the 30-second server timeout expires. Both
  * client IDs represent the same editor and must not trip the connection limit.
- * States without a stable collaborator ID still count by client ID.
+ * The first response for the replacement client can contain the awareness state
+ * sent before collaborator metadata resolved. Use the now-resolved local state
+ * for that client so it can still be deduplicated with its stale predecessor.
+ * Other states without a stable collaborator ID still count by client ID.
  *
  * @param awareness The awareness state from the server response.
+ * @param roomState The room state corresponding to the awareness response.
  * @return The number of distinct editors represented by the response.
  */
-function countAwarenessEditors( awareness: AwarenessState ): number {
+function countAwarenessEditors(
+	awareness: AwarenessState,
+	roomState: RoomState
+): number {
 	const editorIdentities = new Set< string >();
+	const localCollaboratorId = getCollaboratorId(
+		roomState.localAwarenessState
+	);
 
 	for ( const [ clientId, state ] of Object.entries( awareness ) ) {
-		const collaboratorId = ( state as CollaboratorAwarenessState | null )
-			?.collaboratorInfo?.id;
-		const hasCollaboratorId =
-			typeof collaboratorId === 'number' ||
-			typeof collaboratorId === 'string';
+		const collaboratorId =
+			getCollaboratorId( state ) ??
+			( Number( clientId ) === roomState.clientId
+				? localCollaboratorId
+				: undefined );
 
 		editorIdentities.add(
-			hasCollaboratorId
+			collaboratorId !== undefined
 				? `collaborator:${ collaboratorId }`
 				: `client:${ clientId }`
 		);
@@ -554,7 +576,7 @@ function checkConnectionLimit(
 		roomState.room
 	);
 
-	const clientCount = countAwarenessEditors( awareness );
+	const clientCount = countAwarenessEditors( awareness, roomState );
 	const validatedLimit = intValueOrDefault(
 		maxClientsPerRoom,
 		DEFAULT_CLIENT_LIMIT_PER_ROOM

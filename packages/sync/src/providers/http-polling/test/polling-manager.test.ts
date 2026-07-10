@@ -99,10 +99,10 @@ function getOnDocUpdate( doc: ReturnType< typeof createMockDoc > ) {
 	return call[ 1 ] as ( update: Uint8Array, origin: unknown ) => void;
 }
 
-function createMockAwareness() {
+function createMockAwareness( localState: object = {} ) {
 	return {
 		clientID: 1,
-		getLocalState: jest.fn( () => ( {} ) ),
+		getLocalState: jest.fn( () => localState ),
 		getStates: jest.fn( () => new Map() ),
 		on: jest.fn(),
 		off: jest.fn(),
@@ -587,6 +587,49 @@ describe( 'polling-manager', () => {
 				room: 'test-room',
 				doc: createMockDoc( 4 ),
 				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( onStatusChange ).not.toHaveBeenCalledWith(
+				expect.objectContaining( {
+					error: expect.objectContaining( {
+						code: 'connection-limit-exceeded',
+					} ),
+				} )
+			);
+		} );
+
+		it( 'uses resolved local identity when a reload response lacks it', async () => {
+			const awareness = {
+				1: { collaboratorInfo: { id: 100 } },
+				2: { collaboratorInfo: { id: 200 } },
+				3: { collaboratorInfo: { id: 300 } },
+				4: {},
+			};
+
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness,
+						updates: [],
+					},
+				],
+			} );
+
+			const onStatusChange = jest.fn();
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 4 ),
+				awareness: createMockAwareness( {
+					collaboratorInfo: { id: 100 },
+				} ),
 				log: jest.fn(),
 				onStatusChange,
 				onSync: jest.fn(),
