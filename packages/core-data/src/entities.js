@@ -188,6 +188,23 @@ function areSerializedBlocksEqualAt( blocksA, blocksB, index ) {
 	);
 }
 
+function isPartialRichTextBlock( partialBlock, completeBlock ) {
+	if ( partialBlock.name !== completeBlock.name ) {
+		return false;
+	}
+
+	const partialContent = partialBlock.attributes?.content;
+	const completeContent = completeBlock.attributes?.content;
+
+	return (
+		typeof partialContent === 'string' &&
+		typeof completeContent === 'string' &&
+		partialContent.length > 0 &&
+		partialContent !== completeContent &&
+		completeContent.startsWith( partialContent )
+	);
+}
+
 function mergeStaleSerializedBlockContent(
 	baseContent,
 	latestContent,
@@ -302,10 +319,34 @@ function mergeStaleSerializedBlockContent(
 			}
 		}
 
-		return __unstableSerializeAndClean( [
-			...localBlocks,
-			...latestBlocks.slice( baseBlocks.length ),
-		] );
+		const mergedBlocks = [ ...localBlocks ];
+
+		for ( const latestBlock of latestBlocks.slice( baseBlocks.length ) ) {
+			if (
+				mergedBlocks.some(
+					( localBlock ) =>
+						localBlock.name === latestBlock.name &&
+						getSerializedBlockValue( localBlock ) ===
+							getSerializedBlockValue( latestBlock )
+				)
+			) {
+				continue;
+			}
+
+			const partialIndex = mergedBlocks.findIndex(
+				( localBlock, index ) =>
+					index >= baseBlocks.length &&
+					isPartialRichTextBlock( localBlock, latestBlock )
+			);
+
+			if ( partialIndex === -1 ) {
+				mergedBlocks.push( latestBlock );
+			} else {
+				mergedBlocks[ partialIndex ] = latestBlock;
+			}
+		}
+
+		return __unstableSerializeAndClean( mergedBlocks );
 	}
 
 	if (
@@ -800,18 +841,20 @@ export const prePersistPostType = async (
 
 			if (
 				locallyChangedSavedFieldSet.has( 'content' ) &&
-				! shouldPreserveRevisionRestoreContent &&
-				! ( 'content' in newEdits )
+				! shouldPreserveRevisionRestoreContent
 			) {
+				const outgoingContent = getRawPostValue(
+					'content' in newEdits ? newEdits.content : edits.content
+				);
 				const mergedContent = mergeStaleSerializedBlockContent(
 					getRawPostValue( persistedRecord?.content ),
 					getRawPostValue( latestRecord?.content ),
-					getRawPostValue( edits.content )
+					outgoingContent
 				);
 
 				if (
 					mergedContent !== undefined &&
-					mergedContent !== getRawPostValue( edits.content )
+					mergedContent !== outgoingContent
 				) {
 					newEdits.content = mergedContent;
 				}
