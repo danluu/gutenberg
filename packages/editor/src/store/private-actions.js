@@ -670,6 +670,35 @@ export function setShowRevisionDiff( showDiff ) {
 }
 
 /**
+ * Wait for an in-flight post save to finish before starting a revision restore.
+ *
+ * @param {Object} select   Editor store selectors.
+ * @param {Object} registry Data registry.
+ *
+ * @return {Promise<void>} Promise resolved when no post save is in progress.
+ */
+function waitForPostSaveToFinish( select, registry ) {
+	if ( ! select.isSavingPost() ) {
+		return Promise.resolve();
+	}
+
+	return new Promise( ( resolve ) => {
+		let unsubscribe = () => {};
+		const finishIfReady = () => {
+			if ( select.isSavingPost() ) {
+				return;
+			}
+
+			unsubscribe();
+			resolve();
+		};
+
+		unsubscribe = registry.subscribe( finishIfReady );
+		finishIfReady();
+	} );
+}
+
+/**
  * Restore a revision by replacing the current content with the revision's content
  * and auto-saving.
  *
@@ -713,6 +742,12 @@ export const restoreRevision =
 			return;
 		}
 
+		// Applying the restored edits while an autosave is in flight can cause the
+		// explicit main-post save below to be rejected as not saveable. Serialize
+		// the restore behind the active save so it cannot report success without
+		// persisting the selected revision.
+		await waitForPostSaveToFinish( select, registry );
+
 		// Build the edits object with all restorable fields from the revision.
 		const edits = {
 			blocks: parse( revision.content.raw ),
@@ -735,10 +770,13 @@ export const restoreRevision =
 		dispatch.setCurrentRevisionId( null );
 
 		// Save the post to persist the restored revision.
-		await dispatch.savePost( {
+		const didSave = await dispatch.savePost( {
 			__unstableIsRevisionRestore: true,
 			__unstableRevisionRestoreEdits: edits,
 		} );
+		if ( ! didSave ) {
+			return;
+		}
 
 		// Show success notice.
 		registry.dispatch( noticesStore ).createSuccessNotice(
