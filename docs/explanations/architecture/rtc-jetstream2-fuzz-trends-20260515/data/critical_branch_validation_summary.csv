@@ -55,17 +55,28 @@ ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,0,33,33,"pr15c fallback gro
 on pr14b"
 ready/rtc-pr06b-malformed-save-request-payload-minimal,0,20,20,"pr06b malformed save request
 payload minimal"
+repair/benchmark-canary-empty-crdt-bootstrap-20260710T153450Z,0,13,13,"repair/benchmark canary empty crdt
+bootstrap 20260710T153450Z"
 ready/rtc-pr15a-fallback-group-move-green,0,6,6,pr15a fallback group move green
 ready/rtc-pr15b-fallback-group-insert-anchor-green,0,6,6,"pr15b fallback group insert anchor
 green"
+repair/benchmark-canary-http-room-update-handoff-20260710T1623Z,0,6,6,"repair/benchmark canary http room
+update handoff 20260710T1623Z"
+repair/pa-exact-benchmark-canary-product-failure-aggregate-20260710T142200Z,0,6,6,"repair/pa exact benchmark
+canary product failure aggregate
+20260710T142200Z"
+repair/pa-exact-benchmark-canary-product-failure-owner-20260710T181028Z,0,6,6,"repair/pa exact benchmark
+canary product failure owner
+20260710T181028Z"
 ready/rtc-pr06b-malformed-save-request-payload,0,5,5,"pr06b malformed save request
 payload"
 ready/rtc-pr15c-fallback-group-delete-green,0,5,5,pr15c fallback group delete green
+repair/benchmark-canary-empty-crdt-invalidation-20260710T143612Z,0,5,5,"repair/benchmark canary empty crdt
+invalidation 20260710T143612Z"
+repair/benchmark-canary-http-convergence-20260710T153138Z,0,5,5,"repair/benchmark canary http
+convergence 20260710T153138Z"
 repair/benchmark-canary-http-room-reregistration-20260710T120017Z,0,5,5,"repair/benchmark canary http room
 reregistration 20260710T120017Z"
-repair/pa-exact-benchmark-canary-product-failure-aggregate-20260710T142200Z,0,3,3,"repair/pa exact benchmark
-canary product failure aggregate
-20260710T142200Z"
 repair/pa-exact-http-room-reregistration-20260710T121053Z,0,3,3,"repair/pa exact http room
 reregistration 20260710T121053Z"
 repair/pa-exact-http-room-reregistration-20260710T130542Z,0,3,3,"repair/pa exact http room
@@ -76,8 +87,6 @@ repair/benchmark-canary-empty-crdt-reload-20260710T093611Z,0,2,2,"repair/benchma
 reload 20260710T093611Z"
 repair/plain-editor-product-smoke-rtc-save-proof-20260710T045453Z,0,2,2,"repair/plain editor product smoke
 rtc save proof 20260710T045453Z"
-repair/benchmark-canary-empty-crdt-invalidation-20260710T143612Z,0,1,1,"repair/benchmark canary empty crdt
-invalidation 20260710T143612Z"
 repair/benchmark-canary-fuzzer-gap-http-room-owner-20260710T131420Z,0,1,1,"repair/benchmark canary fuzzer gap
 http room owner 20260710T131420Z"
 repair/benchmark-canary-product-failure-live-block-dirty-20260710T085052Z,0,1,1,"repair/benchmark canary product

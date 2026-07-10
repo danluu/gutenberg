@@ -18,7 +18,7 @@ include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444
 repair-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,preserve build-clean repaired PR07C exact-head validation and accounting without bypassing canary gates
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; reopen only with newer owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,stale direct PR07C head lacks the build/type repair
-publish-ready,PR07C/final-publication-credit,P0,no,current benchmark-canary status has 181 retained product-evidence records across 5 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260710T134902Z/benchmark-canary-coverage-status.tsv
+publish-ready,PR07C/final-publication-credit,P0,no,current benchmark-canary status has 558 retained product-evidence records across 5 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260710T134902Z/benchmark-canary-coverage-status.tsv
 repair-ready,lower-level/table-query-array-crdt-product-key-classifier,high,yes,run bounded classifier/accounting repair plus one non-browser audit-v4 verification
 launch-branch-repair,lower-level/productless-expansion-current-root,high,no,"no branch, corpus, or blocker credit until canonical product keys or explicit downscope exist"
 cooldown-diagnostic,lower-level/productless-expansion-current-root,high,yes,broad productless lower-level expansion is diagnostic churn while classifier repair is pending
@@ -43,4 +43,4 @@ update-controller-rule,repair-adoption-before-new-diagnostics,P0,yes,validated r
 update-controller-rule,pr07c-manifest-accounting,P0,yes,emit include-candidate rows for PR07C and the exact repaired PR07C head for stale controller compatibility
 update-controller-rule,productive-action-verb-normalization,high,yes,"map product-repair, repair-branch-adoption, publish-repair-branch, classifier-accounting, and accounting-oracle-repair onto valid controller actions"
 update-controller-rule,discovery-hard-reserve,P0,yes,do not consume protected discovery capacity for heavy PR or browser work
-hold-publication,PR07C,P0,no,current benchmark-canary status has 181 retained product-evidence records across 5 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260710T134902Z/benchmark-canary-coverage-status.tsv
+hold-publication,PR07C,P0,no,current benchmark-canary status has 558 retained product-evidence records across 5 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260710T134902Z/benchmark-canary-coverage-status.tsv

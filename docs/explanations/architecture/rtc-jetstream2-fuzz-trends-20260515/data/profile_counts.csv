@@ -1,9 +1,10 @@
 profile,records_seen,successful_records,startup_failures,success_rate,profile_family
-table-stale-snapshot-http,130,2,0,0.015384615384615385,other
-multi-reload-lifecycle,89,51,0,0.5730337078651685,lifecycle
-session-lifecycle,57,27,0,0.47368421052631576,lifecycle
-large-post-three-user-http-lifecycle,25,9,0,0.36,lifecycle
-persistence-no-title,15,10,0,0.6666666666666666,persistence
+multi-reload-lifecycle,410,256,0,0.624390243902439,lifecycle
+session-lifecycle,340,212,0,0.6235294117647059,lifecycle
+table-stale-snapshot-http,300,41,0,0.13666666666666666,other
+persistence-no-title,109,77,0,0.7064220183486238,persistence
+large-post-three-user-http-lifecycle,94,34,0,0.3617021276595745,lifecycle
 parser-serialization,5,1,0,0.2,parser
 plain-editor-product-smoke,2,2,0,1,other
 collaboration-ui-signals,2,1,0,0.5,other
+real-world-editor-usability,2,1,0,0.5,other
