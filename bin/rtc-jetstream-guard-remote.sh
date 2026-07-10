@@ -60,6 +60,7 @@ OPTIONAL_STRICT_ENABLED_NAMES=${RTC_GUARD_OPTIONAL_STRICT_ENABLED_NAMES:-ws-coll
 OPTIONAL_FOCUSED_ENABLED_NAMES=${RTC_GUARD_OPTIONAL_FOCUSED_ENABLED_NAMES:-rich-text-b,auth-locks-a,existing-post-crdt-http}
 PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
+FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 GLOBAL_ADMISSION=$RESOURCE_BASE/rtc-global-cpu-admission.sh
 TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-core-wrapper/bin
 LOG_DIR=$BASE/logs
@@ -519,6 +520,38 @@ stop_unsupervised_deferred_controller() {
 		fi
 	done
 	rm -f "$DEFERRED_BASE/deferred-work-promotion-loop.pid"
+}
+
+finalization_controller_pids() {
+	local pid script argc
+	for pid in $(pgrep -f "$FINALIZATION_BASE/pr-finalization-loop.sh" 2>/dev/null || true); do
+		[ -r "/proc/$pid/cmdline" ] || continue
+		script=$(tr '\0' '\n' < "/proc/$pid/cmdline" | sed -n '2p')
+		argc=$(tr '\0' '\n' < "/proc/$pid/cmdline" | awk 'NF { count++ } END { print count + 0 }')
+		[ "$script" = "$FINALIZATION_BASE/pr-finalization-loop.sh" ] && [ "$argc" -eq 2 ] || continue
+		printf '%s\n' "$pid"
+	done
+}
+
+stop_orphaned_finalization_controllers() {
+	local supervised pids pid waited=0
+	supervised=$(tmux list-panes -t rtc-pr-finalization-loop -F '#{pane_pid}' 2>/dev/null | sed -n '1p')
+	pids=$(finalization_controller_pids)
+	for pid in $pids; do
+		[ "$pid" != "$supervised" ] || continue
+		log "stopping orphaned PR finalization controller pid=$pid supervised=${supervised:-none}"
+		kill -TERM "$pid" 2>/dev/null || true
+	done
+	while [ "$waited" -lt 10 ]; do
+		pids=$(finalization_controller_pids | awk -v supervised="$supervised" '$1 != supervised')
+		[ -z "$pids" ] && return 0
+		sleep 1
+		waited=$(( waited + 1 ))
+	done
+	for pid in $pids; do
+		log "force-stopping orphaned PR finalization controller pid=$pid supervised=${supervised:-none}"
+		kill -KILL "$pid" 2>/dev/null || true
+	done
 }
 
 coverage_supervisor_state_matches_current_root() {
@@ -1613,6 +1646,7 @@ restart_pool() {
 				"$PR_PROGRESS_BASE/rtc-pr-progress-controller.sh" start >> "$LOG_DIR/pr-progress-controller-start.log" 2>&1 || log "PR progress controller start failed"
 			;;
 		finalization)
+			stop_orphaned_finalization_controllers
 			run_versioned_launcher bin/rtc-pr-finalization-loop-remote.sh /tmp/start_rtc_pr_finalization_loop.sh >> "$LOG_DIR/pr-finalization-start.log" 2>&1 || log "PR finalization loop start failed"
 			;;
 		critical-pr)
@@ -1681,6 +1715,7 @@ run_loop_locked() {
 	while true; do
 		check_tmux_server_generation
 		audit_codex_model_policy
+		stop_orphaned_finalization_controllers
 		stop_codex_in_control_repo
 		stop_stale_coverage_monitors
 		stop_disabled_analysis_loops

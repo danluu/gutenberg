@@ -190,6 +190,11 @@ Operational invariants added by the July 10 audit:
     launchers, and active workers on another model. Model drift is visible but
     does not terminate an in-flight writable worker; repair work must reach a
     checkpoint before the owning controller is replaced.
+-   PR finalization is a singleton service. Its generated runtime holds
+    `pr-finalization-loop.lock`, records `pr-finalization-loop.pid`, and closes
+    the lock descriptor in sleeps. The launcher and guard terminate exact-argv
+    orphan controllers before starting or supervising the tmux owner; an old
+    orphan must never keep launching jobs with stale model or branch policy.
 -   Repair adoption is a commit-ancestry fact as well as a publish-manifest fact.
     If the repair commit is already an ancestor of the release candidate, report
     `adopted-to-release-candidate` and require replay; do not queue another merge.

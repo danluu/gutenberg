@@ -18,6 +18,37 @@ export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
 tmux kill-session -t rtc-pr-finalization-loop 2>/dev/null || true
 
+controller_pids() {
+	local pid script argc
+	for pid in $(pgrep -f "$BASE/pr-finalization-loop.sh" 2>/dev/null || true); do
+		[ -r "/proc/$pid/cmdline" ] || continue
+		script=$(tr '\0' '\n' < "/proc/$pid/cmdline" | sed -n '2p')
+		argc=$(tr '\0' '\n' < "/proc/$pid/cmdline" | awk 'NF { count++ } END { print count + 0 }')
+		[ "$script" = "$BASE/pr-finalization-loop.sh" ] && [ "$argc" -eq 2 ] || continue
+		printf '%s\n' "$pid"
+	done
+}
+
+stop_orphaned_controllers() {
+	local pids pid waited=0
+	pids=$(controller_pids)
+	[ -n "$pids" ] || return 0
+	for pid in $pids; do
+		kill -TERM "$pid" 2>/dev/null || true
+	done
+	while [ "$waited" -lt 10 ]; do
+		pids=$(controller_pids)
+		[ -z "$pids" ] && return 0
+		sleep 1
+		waited=$(( waited + 1 ))
+	done
+	for pid in $pids; do
+		kill -KILL "$pid" 2>/dev/null || true
+	done
+}
+
+stop_orphaned_controllers
+
 cat > "$BASE/pr-finalization-loop.sh" <<'LOOP'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -38,6 +69,8 @@ BENCHMARK_HARNESS_SRC=${RTC_PR_FINALIZATION_BENCHMARK_HARNESS_SRC:-$BASE/benchma
 LOG="$BASE/logs/pr-finalization-loop.log"
 STATE="$BASE/logs/finalization-launches.tsv"
 STATUS="$BASE/current-finalization-status.md"
+LOCK_FILE="$BASE/pr-finalization-loop.lock"
+PID_FILE="$BASE/pr-finalization-loop.pid"
 MAX_ACTIVE_JOBS=${RTC_PR_FINALIZATION_MAX_ACTIVE_JOBS:-1}
 CYCLE_SLEEP_SECONDS=${RTC_PR_FINALIZATION_CYCLE_SLEEP_SECONDS:-300}
 MIN_INTERVAL_SECONDS=${RTC_PR_FINALIZATION_MIN_INTERVAL_SECONDS:-1800}
@@ -917,6 +950,18 @@ write_status() {
 	mv "$STATUS.tmp" "$STATUS"
 }
 
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+	log "another PR finalization loop holds $LOCK_FILE"
+	exit 0
+fi
+printf '%s\n' "$$" > "$PID_FILE"
+cleanup_loop() {
+	rm -f "$PID_FILE"
+}
+trap cleanup_loop EXIT
+trap 'exit 0' HUP INT TERM
+
 log "PR finalization loop started pid=$$"
 while true; do
 	write_status
@@ -929,7 +974,7 @@ while true; do
 		log "finalization launch skipped active=$(active_finalization_sessions)"
 	fi
 	write_status
-	sleep "$CYCLE_SLEEP_SECONDS"
+	sleep "$CYCLE_SLEEP_SECONDS" 9>&-
 done
 LOOP
 
