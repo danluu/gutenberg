@@ -456,6 +456,17 @@ function hasPersistedBlockContentChanged(
 	}
 }
 
+function isEmptyPersistedBlockTreeStale(
+	blocks: YBlocks | undefined,
+	persistedContent: string | undefined
+): boolean {
+	return (
+		blocks instanceof Y.Array &&
+		blocks.length === 0 &&
+		( persistedContent?.trim() ?? '' ) !== ''
+	);
+}
+
 /**
  * Given a local Y.Doc that *may* contain changes from remote peers, compare
  * against the local record and determine if there are changes (edits) we want
@@ -506,7 +517,8 @@ export function getPostChangesFromCRDTDoc(
 						ydoc.meta?.get( CRDT_DOC_META_PERSISTENCE_KEY ) &&
 						editedRecord.content
 					) {
-						const blocksJson = ymap.get( 'blocks' )?.toJSON() ?? [];
+						const persistedBlocks = ymap.get( 'blocks' );
+						const blocksJson = persistedBlocks?.toJSON() ?? [];
 						const editedRecordBlocks = (
 							editedRecord as PostWithTransientBlocks
 						 ).blocks;
@@ -515,6 +527,15 @@ export function getPostChangesFromCRDTDoc(
 						)
 							? serializeBlocks( editedRecordBlocks ).trim()
 							: getRawValue( editedRecord.content );
+
+						if (
+							isEmptyPersistedBlockTreeStale(
+								persistedBlocks,
+								persistedContent
+							)
+						) {
+							return false;
+						}
 
 						return hasPersistedBlockContentChanged(
 							blocksJson,

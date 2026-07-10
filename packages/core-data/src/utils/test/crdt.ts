@@ -1161,6 +1161,58 @@ describe( 'crdt', () => {
 			expect( changes ).toHaveProperty( 'blocks' );
 		} );
 
+		it( 'does not hydrate non-empty persisted content from an empty persisted CRDT block tree', () => {
+			registerBlockType( 'core/paragraph', {
+				apiVersion: 3,
+				category: 'text',
+				title: 'Paragraph',
+				attributes: {
+					content: {
+						type: 'rich-text',
+						source: 'rich-text',
+						selector: 'p',
+					},
+				},
+				save: ( {
+					attributes,
+				}: {
+					attributes: { content?: string | RichTextData };
+				} ) =>
+					createElement(
+						'p',
+						null,
+						createElement(
+							RawHTML,
+							null,
+							renderRichTextValue( attributes.content )
+						)
+					),
+			} );
+
+			const persistedContent = [
+				'<!-- wp:paragraph -->',
+				'<p>Saved marker from post content.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+
+			map.set( 'blocks', new Y.Array< YBlock >() );
+			doc.meta?.set( CRDT_DOC_META_PERSISTENCE_KEY, true );
+
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					blocks: parse( persistedContent ),
+					content: {
+						raw: persistedContent,
+						rendered: persistedContent,
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( changes ).not.toHaveProperty( 'blocks' );
+		} );
+
 		it( 'hydrates stale transient blocks when persisted content already matches the CRDT blocks', () => {
 			registerBlockType( 'core/paragraph', {
 				apiVersion: 3,
