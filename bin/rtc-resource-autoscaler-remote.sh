@@ -393,21 +393,28 @@ session_running() {
 }
 
 cleanup_orphan_monitors() {
-	local pids
+	local latest pids pid output_root ppid session_live=0
 	# A live tmux pane can briefly leave the monitor with PPID 1 while startup
 	# wrappers are rotating. Killing that process resets the active output root
 	# before the first novelty pass can finish, which makes current-run
 	# duplicate/noise accounting look permanently "pending".
-	if session_running; then
-		return
-	fi
-	pids=$(ps -eo pid,ppid,cmd | awk '/node bin\/rtc-browser-fuzz-novelty-monitor\.mjs/ && $2 == 1 { print $1 }')
+	latest=$(latest_run)
+	session_running && session_live=1
+	pids=$(pgrep -f '[n]ode bin/rtc-browser-fuzz-novelty-monitor[.]mjs' 2>/dev/null || true)
 	if [ -z "$pids" ]; then
 		return
 	fi
 	for pid in $pids; do
-		echo "[$(stamp)] killing orphan novelty monitor pid=$pid" >> "$LOG"
-		kill -9 "$pid" 2>/dev/null || true
+		[ -r "/proc/$pid/environ" ] || continue
+		output_root=$(tr '\0' '\n' < "/proc/$pid/environ" | sed -n 's/^RTC_FUZZ_NOVELTY_OUTPUT_DIR=//p' | head -1)
+		ppid=$(ps -o ppid= -p "$pid" 2>/dev/null | tr -d ' ' || true)
+		if [ -n "$output_root" ] && [ -n "$latest" ] && [ "$output_root" != "$latest" ]; then
+			echo "[$(stamp)] killing stale-root novelty monitor pid=$pid output=$output_root current=$latest" >> "$LOG"
+			kill -TERM "$pid" 2>/dev/null || true
+		elif [ "$session_live" = 0 ] && [ "$ppid" = 1 ]; then
+			echo "[$(stamp)] killing orphan novelty monitor pid=$pid output=${output_root:-unknown}" >> "$LOG"
+			kill -TERM "$pid" 2>/dev/null || true
+		fi
 	done
 }
 
@@ -2709,6 +2716,15 @@ while true; do
 	read -r desired_target desired_max <<<"$(apply_coverage_breadth_floor "$desired_target" "$desired_max" "$reason")"
 	read -r desired_target desired_max reason <<<"$(apply_deadline_benchmark_canary_budget_cap "$desired_target" "$desired_max" "$reason" "$disk_avail" "$root_disk_avail" "$cpu" "$load" "$load_five" "$ncpu")"
 	read -r desired_target desired_max reason <<<"$(apply_benchmark_canary_finalization_ceiling "$desired_target" "$desired_max" "$reason")"
+	# The coverage start policy may intentionally clamp a promotion-gated run to
+	# five protected canaries. Asking that immutable monitor process for a larger
+	# budget only replaces the same-head root and gets clamped back to five.
+	if [ "$(run_script_value RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP 0)" = 1 ] &&
+			[ "${target:-0}" -gt 0 ] && [ "${desired_target:-0}" -gt "${target:-0}" ]; then
+		desired_target=$target
+		desired_max=$max
+		reason=deadline_benchmark_canary_cap
+	fi
 	browser_live_lanes=$(live_browser_lane_pids_all_roots)
 	e2e_floor=${RTC_RESOURCE_AUTOSCALER_E2E_MIN_LIVE_LANES:-24}
 	e2e_repair_target=${RTC_RESOURCE_AUTOSCALER_E2E_REPAIR_TARGET_GROUPS:-9}

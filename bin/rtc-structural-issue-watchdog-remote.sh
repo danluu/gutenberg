@@ -615,6 +615,54 @@ check_exact_sessions() {
 	done
 }
 
+check_coverage_process_ownership() {
+	local out=$1 current_root pid output_root stale_pids=() current_pids=()
+	current_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
+	[ -n "$current_root" ] || return
+	for pid in $(pgrep -f '[n]ode bin/rtc-browser-fuzz-novelty-monitor[.]mjs' 2>/dev/null || true); do
+		[ -r "/proc/$pid/environ" ] || continue
+		output_root=$(tr '\0' '\n' < "/proc/$pid/environ" | sed -n 's/^RTC_FUZZ_NOVELTY_OUTPUT_DIR=//p' | head -1)
+		[ -n "$output_root" ] || continue
+		if [ "$output_root" = "$current_root" ]; then
+			current_pids+=( "$pid" )
+		else
+			stale_pids+=( "$pid:$output_root" )
+		fi
+	done
+	if [ "${#stale_pids[@]}" -gt 0 ]; then
+		emit_finding "$out" high "coverage-guided" "stale-root-novelty-monitor" \
+			"current=$current_root stale=$(IFS=,; printf '%s' "${stale_pids[*]}")" \
+			"terminate monitors whose RTC_FUZZ_NOVELTY_OUTPUT_DIR differs from current-output-dir.txt; keep pointer self-termination and stale-root cleanup enabled"
+	fi
+	if [ "${#current_pids[@]}" -gt 1 ]; then
+		emit_finding "$out" high "coverage-guided" "multiple-current-root-novelty-monitors" \
+			"current=$current_root pids=$(IFS=,; printf '%s' "${current_pids[*]}")" \
+			"enforce one process-lock owner for the current root and terminate duplicate monitor process groups"
+	fi
+}
+
+check_deadline_budget_consistency() {
+	local out=$1 root run_script cap current_target current_max desired_line desired_target desired_max
+	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
+	run_script=${root:+$root/run-monitor.sh}
+	[ -n "$run_script" ] && [ -s "$run_script" ] || return
+	cap=$(sed -n "s/^export RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
+	[ "$cap" = 1 ] || return
+	current_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
+	current_max=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
+	desired_line=$(sed -n 's/^- desired_budget: target=\([0-9][0-9]*\) max=\([0-9][0-9]*\).*/\1 \2/p' "$RESOURCE_BASE/resource-autoscaler-status.md" | tail -1)
+	read -r desired_target desired_max <<< "${desired_line:-0 0}"
+	[[ "$current_target" =~ ^[0-9]+$ ]] || current_target=0
+	[[ "$current_max" =~ ^[0-9]+$ ]] || current_max=0
+	[[ "$desired_target" =~ ^[0-9]+$ ]] || desired_target=0
+	[[ "$desired_max" =~ ^[0-9]+$ ]] || desired_max=0
+	if [ "$desired_target" -gt "$current_target" ] || [ "$desired_max" -gt "$current_max" ]; then
+		emit_finding "$out" high "resource-autoscaler" "deadline-budget-policy-mismatch" \
+			"run=$root current=$current_target/$current_max desired=$desired_target/$desired_max cap=$cap" \
+			"treat the current deadline-capped run budget as authoritative; do not replace a same-head root with a larger request that the coverage start policy will clamp back down"
+	fi
+}
+
 latest_pr07c_classification() {
 	recent_critical_run_dirs |
 		while IFS= read -r run_dir; do
@@ -766,9 +814,23 @@ check_critical_path_invariants() {
 }
 
 check_benchmark_canary_promotion_invariants() {
-	local out=$1 active classification status_line queue_line exact_green_line
+	local out=$1 active classification status_line queue_line exact_green_line coverage_root coverage_status unscheduled_groups
 	benchmark_promotion_blocked || return
+	status_line=$(awk -F '\t' '$1 == "benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null || true)
+	queue_line=$(awk -F '\t' '$1 == "job-benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/queue.tsv" 2>/dev/null || true)
 	active=$(benchmark_exact_stack_repair_active || true)
+	if [ -z "$active" ] && awk -F '\t' '
+		NR == 1 {
+			for (i = 1; i <= NF; i++) column[tolower($i)] = i
+			next
+		}
+		$1 == "benchmark-canary-fuzzer-gap" &&
+			tolower($(column["state"])) == "active" &&
+			$(column["active_session"]) == "coverage-controller" { found = 1 }
+		END { exit found ? 0 : 1 }
+	' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null; then
+		active=coverage-controller
+	fi
 	if [ -z "$active" ]; then
 		emit_finding "$out" high "benchmark-canary" "exact-stack-promotion-blocked-no-active-repair" \
 			"$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" \
@@ -780,8 +842,6 @@ check_benchmark_canary_promotion_invariants() {
 			"$classification with active_feedback=$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" \
 			"change the controller state machine so coverage_repaired cannot close benchmark-canary promotion blockers; require exact-stack-status.tsv and exact_stack_green or a fix branch"
 	fi
-	status_line=$(awk -F '\t' '$1 == "benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null || true)
-	queue_line=$(awk -F '\t' '$1 == "job-benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/queue.tsv" 2>/dev/null || true)
 	if printf '%s\n%s\n' "$status_line" "$queue_line" | rg -q 'coverage-gap-repair|coverage-promotion'; then
 		emit_finding "$out" high "benchmark-canary" "promotion-blocker-modeled-as-coverage-only" \
 			"blocker=${status_line:-missing} queue=${queue_line:-missing}" \
@@ -791,10 +851,39 @@ check_benchmark_canary_promotion_invariants() {
 	if [ -n "$classification" ] && [ -s "$classification" ]; then
 		exact_green_line=$(awk -F '\t' 'NR > 1 && $2 == "exact_stack_green" { print; found = 1 } END { exit found ? 0 : 1 }' "$classification" 2>/dev/null || true)
 	fi
-	if [ -n "$exact_green_line" ] && benchmark_promotion_blocked; then
+	if [ -n "$exact_green_line" ] && benchmark_promotion_blocked && [ "$active" != coverage-controller ]; then
 		emit_finding "$out" high "benchmark-canary" "exact-green-contradicts-current-feedback" \
 			"classification=$classification green=$exact_green_line feedback=$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" \
 			"refresh current-feedback.tsv from exact-stack rerun or reject stale exact_stack_green classification"
+	fi
+	coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
+	coverage_status=${coverage_root:+$coverage_root/benchmark-canary-coverage-status.tsv}
+	unscheduled_groups=
+	if [ -n "$coverage_status" ] && [ -s "$coverage_status" ]; then
+		unscheduled_groups=$(awk -F '\t' '
+			NR == 1 {
+				for (i = 1; i <= NF; i++) {
+					name = tolower($i)
+					gsub(/\r$/, "", name)
+					column[name] = i
+				}
+				next
+			}
+			function value(name) {
+				return (name in column) ? tolower($(column[name])) : ""
+			}
+			value("promotion_blocked") == "yes" &&
+				value("current_run_green") != "yes" &&
+				value("explicit_downscope") != "yes" &&
+				value("scheduled") != "yes" {
+				print $(column["group"])
+			}
+		' "$coverage_status" | paste -sd, -)
+	fi
+	if [ -n "$unscheduled_groups" ]; then
+		emit_finding "$out" high "benchmark-canary" "promotion-blocker-not-scheduled" \
+			"status=$coverage_status groups=$unscheduled_groups" \
+			"make current-root open promotion status override deferred closure history and publish protected benchmark groups ahead of generic coverage-gap backfill at the final producer cap"
 	fi
 }
 
@@ -1160,6 +1249,8 @@ detect_findings() {
 	} > "$tmp"
 	check_runaway_scans "$tmp"
 	check_exact_sessions "$tmp"
+	check_coverage_process_ownership "$tmp"
+	check_deadline_budget_consistency "$tmp"
 	check_critical_path_invariants "$tmp"
 	check_benchmark_canary_promotion_invariants "$tmp"
 	check_loop_statuses "$tmp"

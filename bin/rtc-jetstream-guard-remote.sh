@@ -875,6 +875,10 @@ coverage_monitor_pid_for_root() {
 
 reattach_current_coverage_run() {
 	local root pid waited
+	if coverage_start_in_progress; then
+		log "coverage reattach skipped because a serialized coverage start is in progress"
+		return 0
+	fi
 	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
 	[ -n "$root" ] && [ -d "$root" ] && [ -x "$root/run-monitor.sh" ] || return 1
 	coverage_supervisor_state_matches_current_root "$root" || return 1

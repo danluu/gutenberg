@@ -42,6 +42,8 @@ const BENCHMARK_CANARY_COVERAGE_FLOOR_PATH = path.join(
 const CURRENT_OUTPUT_POINTER_PATH =
 	process.env.RTC_FUZZ_NOVELTY_CURRENT_OUTPUT_POINTER ??
 	path.join( path.dirname( OUTPUT_DIR ), 'current-output-dir.txt' );
+const ENFORCE_CURRENT_OUTPUT_POINTER =
+	process.env.RTC_FUZZ_NOVELTY_CURRENT_OUTPUT_POINTER !== undefined;
 const BENCHMARK_CANARY_FEEDBACK_BASE =
 	process.env.RTC_FUZZ_BENCHMARK_CANARY_FEEDBACK_BASE ??
 	process.env.RTC_BENCHMARK_CANARY_FEEDBACK_BASE ??
@@ -4615,6 +4617,7 @@ function getDeferredBenchmarkCanaryForcedGroupSet() {
 		].filter(
 			( group ) =>
 				! hasOpenBenchmarkCanaryPromotionBlocker( group ) &&
+				! hasCurrentOpenBenchmarkCanaryCoverageStatusRow( group ) &&
 				! isDeadlineP0BenchmarkCanaryGroup( group ) &&
 				! isDeadlineFinalizationProtectedBenchmarkCanaryGroup( group )
 		)
@@ -15094,27 +15097,27 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 			( state.currentRunSuccessfulRecordCountsByGroup?.[ group ] ??
 				0 ) === 0
 	);
+	const protectedBenchmarkGroupsInOrder = uniqueStringList( [
+		...protectedBenchmarkCanaryGroupsForBudget.filter( ( group ) =>
+			enabled.has( group )
+		),
+		...( isDeadlineBenchmarkCanaryBudgetCapActive()
+			? [ ...enabled ].filter(
+					( group ) =>
+						PROFILE_BY_GROUP[ group ] &&
+						! deferredBenchmarkCanaryGroups.has( group ) &&
+						shouldProtectOpenBenchmarkCanaryPromotionGroup( group )
+			  )
+			: [] ),
+	] );
 	const orderedGroups = uniqueStringList( [
 		...requiredFirstGreenProductGroups,
-		...orderSupervisorGroupsWithCoverageGapReserve(
-			[
-				...protectedBenchmarkCanaryGroupsForBudget.filter( ( group ) =>
-					enabled.has( group )
-				),
-				...( isDeadlineBenchmarkCanaryBudgetCapActive()
-					? [ ...enabled ].filter(
-							( group ) =>
-								PROFILE_BY_GROUP[ group ] &&
-								! deferredBenchmarkCanaryGroups.has( group ) &&
-								shouldProtectOpenBenchmarkCanaryPromotionGroup(
-									group
-								)
-					  )
-					: [] ),
-				...rawOrderedGroups,
-			],
-			baseSupervisorGroupLimit
-		),
+		...( isDeadlineBenchmarkCanaryBudgetCapActive()
+			? [ ...protectedBenchmarkGroupsInOrder, ...rawOrderedGroups ]
+			: orderSupervisorGroupsWithCoverageGapReserve(
+					[ ...protectedBenchmarkGroupsInOrder, ...rawOrderedGroups ],
+					baseSupervisorGroupLimit
+			  ) ),
 	] );
 	if (
 		protectedBenchmarkCanaryGroupsForBudget.length > 0 &&
@@ -15136,6 +15139,39 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 		)
 	);
 	const publishedGroups = orderedGroups.slice( 0, supervisorGroupLimit );
+	const expectedProtectedBenchmarkGroups =
+		protectedBenchmarkGroupsInOrder.slice(
+			0,
+			Math.max(
+				0,
+				supervisorGroupLimit - requiredFirstGreenProductGroups.length
+			)
+		);
+	const missingProtectedBenchmarkGroups =
+		expectedProtectedBenchmarkGroups.filter(
+			( group ) => ! publishedGroups.includes( group )
+		);
+	const protectedPublicationMarker =
+		missingProtectedBenchmarkGroups.join( ',' );
+	if (
+		state.missingProtectedBenchmarkPublicationMarker !==
+		protectedPublicationMarker
+	) {
+		state.missingProtectedBenchmarkPublicationMarker =
+			protectedPublicationMarker;
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: missingProtectedBenchmarkGroups.length
+				? 'protected-benchmark-canary-publication-invariant-failed'
+				: 'protected-benchmark-canary-publication-invariant-satisfied',
+			groups: missingProtectedBenchmarkGroups,
+			expectedGroups: expectedProtectedBenchmarkGroups,
+			publishedGroups,
+			reason: missingProtectedBenchmarkGroups.length
+				? 'current-candidate promotion blockers were displaced after final producer-budget ordering'
+				: 'all protected benchmark canaries that fit after mandatory product smoke are ahead of generic coverage-gap backfill',
+		} );
+	}
 	if ( orderedGroups.length > publishedGroups.length ) {
 		state.changes.push( {
 			at: new Date().toISOString(),
@@ -22008,6 +22044,23 @@ let fatalExitInProgress = false;
 let shutdownRequested = false;
 let processLockOwned = false;
 
+async function currentOutputPointerMatches() {
+	if ( ! ENFORCE_CURRENT_OUTPUT_POINTER ) {
+		return true;
+	}
+	try {
+		const currentOutput = (
+			await fs.readFile( CURRENT_OUTPUT_POINTER_PATH, 'utf8' )
+		).trim();
+		return (
+			currentOutput.length > 0 &&
+			path.resolve( currentOutput ) === path.resolve( OUTPUT_DIR )
+		);
+	} catch {
+		return false;
+	}
+}
+
 async function acquireProcessLock() {
 	for ( let attempt = 0; attempt < 2; attempt++ ) {
 		try {
@@ -22078,6 +22131,11 @@ async function logFatalAndExit( message, exitCode ) {
 }
 
 async function main() {
+	if ( ! ( await currentOutputPointerMatches() ) ) {
+		throw new Error(
+			`refusing to start stale novelty monitor: pointer=${ CURRENT_OUTPUT_POINTER_PATH } output=${ OUTPUT_DIR }`
+		);
+	}
 	await acquireProcessLock();
 	try {
 		await log(
@@ -22094,6 +22152,17 @@ async function main() {
 			} );
 		}, STARTUP_STATUS_HEARTBEAT_MS );
 		statusHeartbeat.unref?.();
+		const pointerHeartbeat = setInterval( () => {
+			void currentOutputPointerMatches().then( ( matches ) => {
+				if ( ! matches ) {
+					void logFatalAndExit(
+						`novelty monitor exiting because current output pointer no longer names this root: pointer=${ CURRENT_OUTPUT_POINTER_PATH } output=${ OUTPUT_DIR }`,
+						0
+					);
+				}
+			} );
+		}, 5000 );
+		pointerHeartbeat.unref?.();
 		try {
 			while ( ! shutdownRequested && Date.now() < END_AT ) {
 				try {
@@ -22107,6 +22176,7 @@ async function main() {
 			}
 		} finally {
 			clearInterval( statusHeartbeat );
+			clearInterval( pointerHeartbeat );
 		}
 		if ( shutdownRequested ) {
 			await log( 'RTC novelty monitor exiting after signal shutdown.' );

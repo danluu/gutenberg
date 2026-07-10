@@ -1,8 +1,8 @@
 # RTC Jetstream2 fuzzing architecture and active loops
 
-Snapshot time: `2026-07-10T01:20Z`
+Snapshot time: `2026-07-10T01:46Z`
 
-Blocker-history update: `2026-07-10T01:20Z`
+Blocker-history update: `2026-07-10T01:46Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -154,6 +154,32 @@ source-provenance failures, not by a lack of candidate bugs:
   create a focused fix branch or a source-backed `product_bug_reduced` artifact.
   The runner rewrites a repeat result to `followup_incomplete` when that artifact
   is absent.
+- Same-candidate closure history marked four benchmark lanes deferred while
+  current-root status correctly required fresh proof. Generic coverage-gap
+  reservation then consumed the final five producer slots and displaced all
+  four promotion blockers. Current open status now overrides deferred history,
+  protected promotion lanes are ordered ahead of generic backfill at the final
+  cap, and both the monitor and structural watchdog report a publication
+  invariant when an open blocker is not scheduled.
+- The resource autoscaler requested a 12-group productive budget after startup
+  grace, while the deadline start policy authoritatively clamped the same run
+  back to five groups. Every attempted scale-up therefore replaced the
+  same-head root, lost current-run proof, and still returned to five groups.
+  The autoscaler now treats the active deadline-capped run budget as
+  authoritative. The guard will not reattach an old root while the serialized
+  coverage start lock is held, stale-root novelty monitors terminate when the
+  current-output pointer changes, and the structural watchdog detects both
+  stale monitor ownership and deadline-budget disagreement.
+- PR17 was correctly held behind the plain-editor and benchmark gates in
+  `blockers.tsv`, but its queue row and launch condition ignored that state.
+  Queue state now mirrors the blocker, and launch admission requires the
+  blocker row itself to be `runnable`, so a held final-stack proof cannot consume
+  a Codex worker.
+- A plain-editor save follow-up can fail before the save request is reached.
+  Future continuations must write `server-error.tsv` immediately; a pre-save
+  readiness failure is recorded as `not_reached` with the earliest source
+  evidence and reduced directly instead of waiting for a nonexistent REST
+  response.
 
 The first exact-candidate run found a reproducible product failure within
 minutes: `/wp-json/wp-sync/v1/save` returned HTTP 500 during the plain-editor
@@ -167,10 +193,15 @@ both plain-editor and real-world editor workflows and quarantined each after
 generation 1. Before the final recovery change, the generic watchdog replaced
 that root with `run-20260710T010645Z`. The current root retained both failures,
 disabled both generation-1 groups with two product-failure records each, and
-backfilled all five runnable producer slots. A deliberate novelty-session-loss
-test changed the monitor PID while preserving the root, pointer mtime, frozen
-harness cwd, and quarantine list. The bounded server-error repair continuation
-is actively rerunning the focused human smoke with save-response capture.
+backfilled all five runnable producer slots. A later contradictory autoscaler
+scale-up replaced that root with `run-20260710T013149Z`; this exposed the final
+same-head root-churn bug described above. After repair, the monitor was replaced
+in place while preserving the `run-20260710T013149Z` root and pointer mtime. Its
+published set contains all four current promotion blockers plus one backfill
+lane, and all four blocker rows report `scheduled=yes`. The bounded plain-editor
+repair has produced a direct reproducer, save-response artifact, failing PHP
+regression check, and fresh build while it works toward a committed repair
+branch.
 
 The source invariant is recorded in every run's `source-manifest.tsv`. It names
 the candidate ref/head/tree, exact product worktree, control and harness
@@ -390,14 +421,14 @@ Current feeds and speeds:
 | Loop or feed | Current cadence / cap | Current state |
 | --- | --- | --- |
 | `rtc-critical-path-pr-executor-loop` | 60 second cycle, 300 second reconcile timeout | Running; opens/updates blockers and bounded continuation jobs |
-| Critical continuations | Max 3 active | `plain-editor-product-smoke` and `productive-analysis-action` were active around this snapshot |
+| Critical continuations | Max 3 active | One evidence-owned `plain-editor-product-smoke` repair is active; held PR17 work is no longer admitted |
 | Critical validations | Max 6 active | Used for adopted repair branches and ready branch checks |
 | `rtc-pr-progress-controller-loop` | 120 second cycle, max 2 active PR jobs | Running; reserves discovery and exposes repair-adoption rows |
 | Discovery reserve | Minimum 3 active discovery sessions | Healthy at 4 active discovery sessions |
-| Coverage-guided novelty | Current run root updates status every monitor pass | Running; current canary status has four forced HTTP rows, three current-run green rows, and one promotion-blocking open row |
-| Plain editor smoke | Publication gate | Active; current novelty status still lacks a successful plain-editor edit/save/reload smoke artifact |
-| Product repair feed | Rewritten each critical reconcile | Open for three retained product-evidence groups until repaired or explicitly downscoped |
-| Repair adoption feed | Rewritten each critical reconcile | One `central_present` adoption row waiting for validation, merge/push-manifest handling, or exact rejection |
+| Coverage-guided novelty | Current run root updates status every monitor pass | Running on `run-20260710T013149Z`; four promotion blockers are scheduled in a five-group budget |
+| Plain editor smoke | Publication gate | Active; direct reproducer, response artifact, failing regression test, and build exist, but no committed repair branch yet |
+| Product repair feed | Rewritten each critical reconcile | Plain-editor repair is active; quarantined smoke failures remain publication gates rather than consuming producer slots |
+| Repair adoption feed | Rewritten each critical reconcile | No unadopted validated repair branch at this snapshot; the previous repair is already an ancestor of the release candidate |
 
 ## Blocker Age And Failed Mitigations
 

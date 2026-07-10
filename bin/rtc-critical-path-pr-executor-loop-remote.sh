@@ -3229,7 +3229,7 @@ deferred_family_control_field() {
 }
 
 write_blockers_and_queue() {
-	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active s5200005 s1060015 reload_active reload_followup_active reload_repair_active reload_reacquire_active reason pr07c_active pr07c_report benchmark_active benchmark_state benchmark_kind benchmark_action benchmark_result benchmark_artifacts benchmark_next productive_active reload_control_state reload_hold_reason reload_blocker_state reload_blocked_by reload_next reload_queue_state reload_queue_result reload_queue_action reload_completed_root reload_followup_needed reload_product_bug reload_product_artifact reload_repair_blocked reload_repair_artifact reload_reacquire_needed reload_reacquire_status reload_reacquire_artifact reload_reacquire_downscoped coverage_liveness_active coverage_liveness_state coverage_liveness_summary coverage_liveness_result coverage_liveness_artifacts coverage_liveness_status
+	local blockers_tmp=$BLOCKERS.$$.tmp queue_tmp=$QUEUE.$$.tmp now pr17_active pr17_queue_state pr17_queue_result s5200005 s1060015 reload_active reload_followup_active reload_repair_active reload_reacquire_active reason pr07c_active pr07c_report benchmark_active benchmark_state benchmark_kind benchmark_action benchmark_result benchmark_artifacts benchmark_next productive_active reload_control_state reload_hold_reason reload_blocker_state reload_blocked_by reload_next reload_queue_state reload_queue_result reload_queue_action reload_completed_root reload_followup_needed reload_product_bug reload_product_artifact reload_repair_blocked reload_repair_artifact reload_reacquire_needed reload_reacquire_status reload_reacquire_artifact reload_reacquire_downscoped coverage_liveness_active coverage_liveness_state coverage_liveness_summary coverage_liveness_result coverage_liveness_artifacts coverage_liveness_status
 	local benchmark_product_active benchmark_product_state benchmark_product_summary benchmark_product_result benchmark_product_artifacts repair_adoption_active repair_adoption_state repair_adoption_result repair_adoption_summary plain_smoke_active plain_smoke_state plain_smoke_summary
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 	pr17_active=$(active_work_matching '1020002|pr17' || true)
@@ -3502,6 +3502,21 @@ write_blockers_and_queue() {
 		benchmark_next='promotion is blocked on the exact all-merged stack; do not clear with coverage_repaired alone; create or advance a product fix branch and prove exact-stack green before maintainer snapshot publication'
 		benchmark_result=$([ -n "$benchmark_active" ] && printf exact_stack_repair_active || printf exact_stack_repair_required)
 	fi
+	pr17_queue_state=runnable
+	pr17_queue_result=pending
+	if plain_editor_product_smoke_open; then
+		pr17_queue_state=held
+		pr17_queue_result=held_by_plain_editor_product_smoke
+	elif benchmark_product_failures_open; then
+		pr17_queue_state=held
+		pr17_queue_result=held_by_benchmark_product_failure
+	elif [ "$benchmark_result" = forced_coverage_active ]; then
+		pr17_queue_state=held
+		pr17_queue_result=held_by_benchmark_canary_fuzzer_gap
+	elif [ -n "$pr17_active" ]; then
+		pr17_queue_state=active
+		pr17_queue_result=adopted
+	fi
 	pr07c_report=$(latest_pr07c_owner_replay_ready_report || true)
 	if [ -z "$pr07c_report" ] && pr07c_readiness_resolved; then
 		pr07c_report=$(latest_lane_classification pr07c-browser-env || true)
@@ -3604,7 +3619,7 @@ write_blockers_and_queue() {
 		printf 'job_id\tlane_id\tblocker_id\taction_kind\tdedupe_key\tresource_class\tpriority\tstate\tattempt\tsession\tworktree\toutput_dir\tcreated_at\tstarted_at\tupdated_at\texit_code\tresult\n'
 		if ! lane_terminal_suppressed pr17-1020002; then
 			printf 'job-pr17-1020002\tpr17-1020002\tpr17-1020002\tproof-reclassify\tpr17-1020002-proof\tcodex-analysis\thigh\t%s\t0\t%s\t\t%s/runs/pr17-1020002\t%s\t\t%s\t\t%s\n' \
-				"$([ -n "$pr17_active" ] && printf active || printf runnable)" "${pr17_active:-}" "$BASE" "$now" "$now" "$([ -n "$pr17_active" ] && printf adopted || printf pending)"
+				"$pr17_queue_state" "${pr17_active:-}" "$BASE" "$now" "$now" "$pr17_queue_result"
 		fi
 		if pr07c_owner_matrix_consumed_by_progress; then
 			printf 'job-pr07c-owner-matrix\tpr07c-owner-matrix\tpr07c-owner-matrix\towner-matrix\tpr07c-owner-matrix\tbrowser-e2e\thigh\tterminal\t0\t\t\t%s/runs/pr07c-owner-matrix\t%s\t\t%s\t\tprogress_controller_runtime_held\n' "$BASE" "$now" "$now"
@@ -4003,11 +4018,11 @@ Previous artifact: ${previous_artifact:-$previous_classification}
 Previous next action: ${previous_next_action:-missing}
 
 Do not repeat the prior smoke-only reproduction or return the same missing-stack blocker. Before classifying:
-1. Reproduce only the failing save/edit test and capture the /wp-json/wp-sync/v1/save response body plus the matching WordPress/PHP error and stack. Enable an isolated WP_DEBUG_LOG if the normal wp-env logs do not contain it.
-2. Locate the exact wp-sync/v1/save route callback and the source line that throws or returns HTTP 500. Inspect only those named PHP/REST files.
-3. Write ${report%/*}/server-error.tsv with header: request,result,http_status,error_code,owning_callback,source_location,evidence_path.
-4. Add the smallest focused regression check that fails for this mechanism. If the defect is in product code and the fix is safe, commit the fix on a local repair branch and rerun the focused check plus the one smoke test.
-5. If no safe fix is possible after obtaining the stack, use product_bug_reduced with the callback/source location and server-error.tsv. blocked_specific is allowed only for a new external prerequisite after executing its exact bounded collection command; it is not valid for the previously requested server stack.
+1. Reproduce only the smallest failing edit/save workflow. Immediately write ${report%/*}/server-error.tsv with header: request,result,http_status,error_code,owning_callback,source_location,evidence_path.
+2. If /wp-json/wp-sync/v1/save is reached, capture its response body plus the matching WordPress/PHP error and stack. Enable an isolated WP_DEBUG_LOG if the normal wp-env logs do not contain it, then locate the exact route callback and source line that throws or returns an error.
+3. If save is not reached because editor startup/readiness fails first, write request=wp-sync-save, result=not_reached, http_status=not_observed, error_code=<earliest failure code>, owning_callback=not_reached, and the earliest failing source location/evidence. Reduce that earlier failure instead of waiting for a nonexistent save response.
+4. Add the smallest focused regression check that fails for the observed mechanism. If the defect is in product code and the fix is safe, commit the fix on a local repair branch and rerun the focused check plus the one smoke test.
+5. If no safe fix is possible after reducing the earliest failure, use product_bug_reduced with the callback/source location (or explicit not_reached evidence) and server-error.tsv. blocked_specific is allowed only for a new external prerequisite after executing its exact bounded collection command; it is not valid for a previously requested server stack that the workflow never reached.
 EOF
 					)
 					;;
@@ -4688,7 +4703,8 @@ launch_continuation_jobs() {
 				;;
 		esac
 	fi
-	if ! lane_terminal_suppressed pr17-1020002; then
+	if ! lane_terminal_suppressed pr17-1020002 &&
+		awk -F '\t' '$1 == "pr17-1020002" && $4 == "runnable" { found = 1 } END { exit(found ? 0 : 1) }' "$BLOCKERS"; then
 		launch_continuation_job \
 			"pr17-1020002" \
 			"pr17-1020002-proof" \
