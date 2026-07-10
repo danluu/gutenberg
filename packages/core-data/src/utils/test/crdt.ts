@@ -1161,7 +1161,7 @@ describe( 'crdt', () => {
 			expect( changes ).toHaveProperty( 'blocks' );
 		} );
 
-		it( 'does not hydrate non-empty persisted content from an empty persisted CRDT block tree', () => {
+		it( 'invalidates an empty persisted CRDT block tree when persisted content is non-empty', () => {
 			registerBlockType( 'core/paragraph', {
 				apiVersion: 3,
 				category: 'text',
@@ -1210,7 +1210,9 @@ describe( 'crdt', () => {
 				defaultSyncedProperties
 			);
 
-			expect( changes ).not.toHaveProperty( 'blocks' );
+			// The sync manager uses the changed key as an invalidation signal and
+			// repopulates the CRDT document from the persisted entity record.
+			expect( changes ).toHaveProperty( 'blocks', [] );
 		} );
 
 		it( 'hydrates stale transient blocks when persisted content already matches the CRDT blocks', () => {
