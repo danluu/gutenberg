@@ -7,9 +7,12 @@ import path from 'path';
 import { execFileSync, spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 
-const REPO_ROOT = path.resolve(
+const CONTROL_REPO_ROOT = path.resolve(
 	path.dirname( fileURLToPath( import.meta.url ) ),
 	'..'
+);
+const REPO_ROOT = path.resolve(
+	process.env.RTC_FUZZ_NOVELTY_REPO_ROOT ?? CONTROL_REPO_ROOT
 );
 const OUTPUT_DIR =
 	process.env.RTC_FUZZ_NOVELTY_OUTPUT_DIR ??
@@ -22,6 +25,10 @@ const GROUPS_PATH =
 	process.env.RTC_FUZZ_NOVELTY_GROUPS_PATH ??
 	path.join( OUTPUT_DIR, 'supervisor-groups.json' );
 const STATE_PATH = path.join( OUTPUT_DIR, 'novelty-state.json' );
+const PROCESS_LOCK_PATH = path.join(
+	OUTPUT_DIR,
+	'.novelty-monitor-process.json'
+);
 const STATUS_PATH = path.join( OUTPUT_DIR, 'novelty-status.md' );
 const LOG_PATH = path.join( OUTPUT_DIR, 'novelty-monitor.log' );
 const BENCHMARK_CANARY_COVERAGE_STATUS_PATH = path.join(
@@ -132,6 +139,10 @@ const PLAIN_EDITOR_PRODUCT_SMOKE_GROUP =
 	'novelty-http-plain-editor-product-smoke';
 const REAL_WORLD_EDITOR_USABILITY_GROUP =
 	'novelty-http-real-world-editor-usability';
+const REQUIRED_FIRST_GREEN_PRODUCT_GROUPS = new Set( [
+	PLAIN_EDITOR_PRODUCT_SMOKE_GROUP,
+	REAL_WORLD_EDITOR_USABILITY_GROUP,
+] );
 const RTC_REFERENCE_ORACLE_GROUP = 'novelty-http-rtc-reference-oracle';
 const MEDIA_CROSS_ENTITY_COMPLETION_GROUP =
 	'novelty-ws-media-cross-entity-completion';
@@ -5320,8 +5331,7 @@ function getSupervisorGroupPublicationNoiseBlock( group ) {
 		) {
 			state.changes.push( {
 				at: new Date().toISOString(),
-				action:
-					'bypass-supervisor-publication-stalled-coverage-gap-duplicate-hold',
+				action: 'bypass-supervisor-publication-stalled-coverage-gap-duplicate-hold',
 				group,
 				family: currentRunDuplicateHold.family,
 				source: currentRunDuplicateHold.source,
@@ -5445,8 +5455,7 @@ function getSupervisorGroupPublicationNoiseBlock( group ) {
 		) {
 			state.changes.push( {
 				at: new Date().toISOString(),
-				action:
-					'bypass-supervisor-publication-stalled-coverage-gap-noise-pause',
+				action: 'bypass-supervisor-publication-stalled-coverage-gap-noise-pause',
 				group,
 				family: activeNoisePause.family,
 				source: activeNoisePause.source,
@@ -5952,6 +5961,39 @@ async function readSupervisorState() {
 		return null;
 	}
 	return supervisorState;
+}
+
+function syncProductFailureQuarantines( supervisorState ) {
+	const detectedGroups = ( supervisorState?.groups ?? [] )
+		.filter(
+			( groupState ) =>
+				groupState.status === 'paused-product-failure' ||
+				Boolean( groupState.productFailureAt )
+		)
+		.map( ( groupState ) => groupState.name )
+		.filter( Boolean )
+		.sort();
+	// State is carried only when the candidate head is unchanged. Keep an
+	// actionable product failure quarantined across supervisor and run-root
+	// restarts; a fresh supervisor has no failure rows yet and must not erase it.
+	const groups = uniqueStringList( [
+		...( state.productFailureQuarantinedGroups ?? [] ),
+		...detectedGroups,
+	] ).sort();
+	const marker = groups.join( ',' );
+	if ( state.productFailureQuarantineMarker !== marker ) {
+		state.productFailureQuarantineMarker = marker;
+		state.changes.push( {
+			at: new Date().toISOString(),
+			action: 'sync-product-failure-quarantines',
+			groups,
+			reason: groups.length
+				? 'actionable product failures remain publication gates but must not consume browser worker slots until the candidate changes'
+				: 'no current-candidate product-failure quarantines remain',
+		} );
+	}
+	state.productFailureQuarantinedGroups = groups;
+	return new Set( groups );
 }
 
 async function readSupervisorStateAfterStartup() {
@@ -14796,10 +14838,13 @@ async function ensureNoveltyGroupRepo( group ) {
 				'dest=$2',
 				'if command -v rsync >/dev/null 2>&1; then',
 				'  set +e',
-				'  rsync -a --delete --link-dest="$src" --exclude=/artifacts "$src"/ "$dest"/',
+				'  rsync -a --delete --exclude=/artifacts --exclude=/node_modules --exclude=/vendor "$src"/ "$dest"/',
 				'  code=$?',
 				'  set -e',
 				'  if [ "$code" -eq 0 ] || [ "$code" -eq 24 ]; then',
+				'    for dependency in node_modules vendor; do',
+				'      [ ! -e "$src/$dependency" ] || ln -s "$src/$dependency" "$dest/$dependency"',
+				'    done',
 				'    exit 0',
 				'  fi',
 				'  exit "$code"',
@@ -14807,9 +14852,9 @@ async function ensureNoveltyGroupRepo( group ) {
 				'shopt -s dotglob nullglob',
 				'for item in "$src"/*; do',
 				'  name=${item##*/}',
-				'  case "$name" in artifacts) continue ;; esac',
+				'  case "$name" in artifacts|node_modules|vendor) continue ;; esac',
 				'  for attempt in 1 2 3; do',
-				'    if cp -al "$item" "$dest/"; then',
+				'    if cp -a --reflink=auto "$item" "$dest/"; then',
 				'      break',
 				'    fi',
 				'    if [ ! -e "$item" ] && [ ! -L "$item" ]; then',
@@ -14821,6 +14866,9 @@ async function ensureNoveltyGroupRepo( group ) {
 				'    fi',
 				'    sleep 1',
 				'  done',
+				'done',
+				'for dependency in node_modules vendor; do',
+				'  [ ! -e "$src/$dependency" ] || ln -s "$src/$dependency" "$dest/$dependency"',
 				'done',
 			].join( '\n' ),
 			'bash',
@@ -14967,6 +15015,9 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 	for ( const group of getCoverageGapPublicationCandidateGroups() ) {
 		enabled.add( group );
 	}
+	for ( const group of state.productFailureQuarantinedGroups ?? [] ) {
+		enabled.delete( group );
+	}
 	const deferredPolicyRequiredGroups =
 		POLICY_REQUIRED_BOOTSTRAP_GROUPS.filter(
 			( group ) => ! activePolicyRequiredGroupSet.has( group )
@@ -15035,25 +15086,36 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 	const baseSupervisorGroupLimit = isDeadlineBenchmarkCanaryBudgetCapActive()
 		? benchmarkCanarySchedulingLimit
 		: MAX_ENABLED_GROUPS;
-	const orderedGroups = orderSupervisorGroupsWithCoverageGapReserve(
-		[
-			...protectedBenchmarkCanaryGroupsForBudget.filter( ( group ) =>
-				enabled.has( group )
-			),
-			...( isDeadlineBenchmarkCanaryBudgetCapActive()
-				? [ ...enabled ].filter(
-						( group ) =>
-							PROFILE_BY_GROUP[ group ] &&
-							! deferredBenchmarkCanaryGroups.has( group ) &&
-							shouldProtectOpenBenchmarkCanaryPromotionGroup(
-								group
-							)
-				  )
-				: [] ),
-			...rawOrderedGroups,
-		],
-		baseSupervisorGroupLimit
+	const requiredFirstGreenProductGroups = [
+		...REQUIRED_FIRST_GREEN_PRODUCT_GROUPS,
+	].filter(
+		( group ) =>
+			enabled.has( group ) &&
+			( state.currentRunSuccessfulRecordCountsByGroup?.[ group ] ??
+				0 ) === 0
 	);
+	const orderedGroups = uniqueStringList( [
+		...requiredFirstGreenProductGroups,
+		...orderSupervisorGroupsWithCoverageGapReserve(
+			[
+				...protectedBenchmarkCanaryGroupsForBudget.filter( ( group ) =>
+					enabled.has( group )
+				),
+				...( isDeadlineBenchmarkCanaryBudgetCapActive()
+					? [ ...enabled ].filter(
+							( group ) =>
+								PROFILE_BY_GROUP[ group ] &&
+								! deferredBenchmarkCanaryGroups.has( group ) &&
+								shouldProtectOpenBenchmarkCanaryPromotionGroup(
+									group
+								)
+					  )
+					: [] ),
+				...rawOrderedGroups,
+			],
+			baseSupervisorGroupLimit
+		),
+	] );
 	if (
 		protectedBenchmarkCanaryGroupsForBudget.length > 0 &&
 		rawOrderedGroups[ 0 ] !== protectedBenchmarkCanaryGroupsForBudget[ 0 ]
@@ -15066,9 +15128,12 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 			reason: 'current benchmark-canary exact-stack rows are still promotion-blocked; under the deadline cap these rows must consume publication slots before generic bootstrap/product-smoke groups',
 		} );
 	}
-	const supervisorGroupLimit = getPolicyProtectedSupervisorGroupLimit(
+	const supervisorGroupLimit = Math.min(
 		baseSupervisorGroupLimit,
-		orderedGroups
+		getPolicyProtectedSupervisorGroupLimit(
+			baseSupervisorGroupLimit,
+			orderedGroups
+		)
 	);
 	const publishedGroups = orderedGroups.slice( 0, supervisorGroupLimit );
 	if ( orderedGroups.length > publishedGroups.length ) {
@@ -15118,6 +15183,11 @@ async function applyPolicy(
 	supervisorState = null
 ) {
 	const enabled = new Set( state.enabledGroups );
+	const productFailureQuarantines =
+		syncProductFailureQuarantines( supervisorState );
+	for ( const group of productFailureQuarantines ) {
+		enabled.delete( group );
+	}
 	const supervisorGroupsByName = new Map(
 		( supervisorState?.groups ?? [] ).map( ( groupState ) => [
 			groupState.name,
@@ -16212,7 +16282,9 @@ async function applyPolicy(
 				getEnabledBrowserLaneCountWithPlannedRemoval( plannedRemoval );
 			const materializationRescue = shouldUseEmptyMaterializationRescue(
 				group,
-				{ plannedRemoval }
+				{
+					plannedRemoval,
+				}
 			);
 			const enabledForFloor = await enableGroup(
 				group,
@@ -16362,6 +16434,18 @@ async function applyPolicy(
 				shouldProtectOpenBenchmarkCanaryPromotionGroup( candidate );
 			const candidateIsRequiredBreadth =
 				isRequiredCoverageBreadthGroup( candidate );
+			const candidateSupervisorState =
+				supervisorGroupsByName.get( candidate );
+			const candidateCurrentRunRecords =
+				state.currentRunRecordCountsByGroup?.[ candidate ] ?? 0;
+			const candidateCurrentRunSuccessfulRecords =
+				state.currentRunSuccessfulRecordCountsByGroup?.[ candidate ] ??
+				0;
+			const candidateIsMaterializing =
+				( candidateSupervisorState?.activeRunDirs ?? [] ).length > 0 ||
+				/^(waiting-repo-prep|starting|running|restarting)$/.test(
+					candidateSupervisorState?.status ?? ''
+				);
 			if (
 				candidate === group ||
 				! enabled.has( candidate ) ||
@@ -16372,6 +16456,35 @@ async function applyPolicy(
 				hasSuccessDeficit( candidate ) ||
 				recommendedGroupsForPass.has( candidate )
 			) {
+				continue;
+			}
+			if (
+				REQUIRED_FIRST_GREEN_PRODUCT_GROUPS.has( candidate ) &&
+				candidateCurrentRunSuccessfulRecords === 0
+			) {
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'preserve-required-product-smoke-until-first-green',
+					group: candidate,
+					requestedReplacement: group,
+					currentRunRecords: candidateCurrentRunRecords,
+					reason: 'the candidate cannot be reviewable until the basic human editor workflow has a successful current-run record',
+				} );
+				continue;
+			}
+			if (
+				candidateCurrentRunRecords === 0 &&
+				candidateIsMaterializing
+			) {
+				state.changes.push( {
+					at: new Date().toISOString(),
+					action: 'preserve-materializing-group-until-first-record',
+					group: candidate,
+					requestedReplacement: group,
+					supervisorStatus:
+						candidateSupervisorState?.status ?? 'active-run-dir',
+					reason: 'do not discard repository/wp-env/browser startup work before the group emits its first current-run record',
+				} );
 				continue;
 			}
 
@@ -16677,8 +16790,7 @@ async function applyPolicy(
 					delete state.pausedGroups[ group ];
 					state.changes.push( {
 						at: new Date().toISOString(),
-						action:
-							'bypass-stalled-coverage-gap-stored-noise-pause',
+						action: 'bypass-stalled-coverage-gap-stored-noise-pause',
 						group,
 						reason: getStalledCoverageGuidanceGapReason( group ),
 						sourcePauseAt: activeStoredNoisePause.at,
@@ -18158,8 +18270,7 @@ async function applyPolicy(
 				delete state.pausedGroups?.[ group ];
 				state.changes.push( {
 					at: new Date().toISOString(),
-					action:
-						'bypass-recommended-stalled-coverage-gap-duplicate-cooldown',
+					action: 'bypass-recommended-stalled-coverage-gap-duplicate-cooldown',
 					group,
 					reason: getStalledCoverageGuidanceGapReason( group ),
 					sourcePauseAt: activeNoisePause.at,
@@ -18243,8 +18354,7 @@ async function applyPolicy(
 			) {
 				state.changes.push( {
 					at: new Date().toISOString(),
-					action:
-						'bypass-recommended-stalled-coverage-gap-duplicate-hold',
+					action: 'bypass-recommended-stalled-coverage-gap-duplicate-hold',
 					group,
 					family: effectiveProductEvidenceDuplicateFamilyHold.family,
 					source: effectiveProductEvidenceDuplicateFamilyHold.source,
@@ -18818,6 +18928,9 @@ async function ensureSupervisor( resources ) {
 		`cd ${ shellQuote( REPO_ROOT ) }`,
 		`export RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=${ shellQuote( OUTPUT_DIR ) }`,
 		`export RTC_FUZZ_SUPERVISOR_GROUPS_PATH=${ shellQuote( GROUPS_PATH ) }`,
+		`export RTC_FUZZ_SUPERVISOR_CURRENT_OUTPUT_POINTER=${ shellQuote(
+			CURRENT_OUTPUT_POINTER_PATH
+		) }`,
 		`export RTC_FUZZ_SUPERVISOR_DURATION_HOURS=${ shellQuote(
 			String( Math.max( 0.1, ( END_AT - Date.now() ) / 3600000 ) )
 		) }`,
@@ -18923,6 +19036,9 @@ async function ensureBootstrapSupervisorGroups() {
 
 	const selected = [];
 	const seen = new Set();
+	const productFailureQuarantines = new Set(
+		state.productFailureQuarantinedGroups ?? []
+	);
 	const bootstrapActiveDuplicateNoiseHold = withRunDirProducerGroups(
 		getCurrentRunDuplicateNoiseHold( state.triageYieldCurrent ),
 		state.currentRunDirs ?? []
@@ -19008,6 +19124,9 @@ async function ensureBootstrapSupervisorGroups() {
 			hold.source
 		}); preserving product-evidence signatures without requeueing the held lifecycle/reload producer`;
 	const addGroup = ( group, options = {} ) => {
+		if ( productFailureQuarantines.has( group ) ) {
+			return;
+		}
 		const activeNoisePause = getActiveNoisePauseCooldown( group );
 		const duplicateFamilyHoldBlock =
 			getBootstrapDuplicateFamilyHoldBlock( group );
@@ -19831,9 +19950,12 @@ async function ensureBootstrapSupervisorGroups() {
 
 	const groups = selected.slice(
 		0,
-		getPolicyProtectedSupervisorGroupLimit(
-			Math.max( 1, benchmarkCanarySchedulingLimit ),
-			selected
+		Math.min(
+			MAX_ENABLED_GROUPS,
+			getPolicyProtectedSupervisorGroupLimit(
+				Math.max( 1, benchmarkCanarySchedulingLimit ),
+				selected
+			)
 		)
 	);
 	if ( groups.length === 0 ) {
@@ -21342,6 +21464,7 @@ async function runPass() {
 	if ( START_SUPERVISOR ) {
 		supervisorState = await readSupervisorStateAfterStartup();
 	}
+	syncProductFailureQuarantines( supervisorState );
 	await syncSupervisorStartupStallPauses( supervisorState );
 	if ( START_SUPERVISOR && PRODUCER_BUDGET_DISABLED ) {
 		const publishedGroups = await readJsonFile( GROUPS_PATH );
@@ -21883,6 +22006,58 @@ function exitCodeForSignal( signal ) {
 
 let fatalExitInProgress = false;
 let shutdownRequested = false;
+let processLockOwned = false;
+
+async function acquireProcessLock() {
+	for ( let attempt = 0; attempt < 2; attempt++ ) {
+		try {
+			const handle = await fs.open( PROCESS_LOCK_PATH, 'wx' );
+			await handle.writeFile(
+				JSON.stringify( {
+					pid: process.pid,
+					startedAt: new Date().toISOString(),
+					outputDir: OUTPUT_DIR,
+				} ) + '\n'
+			);
+			await handle.close();
+			processLockOwned = true;
+			return;
+		} catch ( error ) {
+			if ( error.code !== 'EEXIST' ) {
+				throw error;
+			}
+			const existing = await readJsonFile( PROCESS_LOCK_PATH );
+			const existingPid = Number( existing?.pid );
+			if ( Number.isInteger( existingPid ) && existingPid > 0 ) {
+				try {
+					process.kill( existingPid, 0 );
+					throw new Error(
+						`novelty monitor already owns ${ OUTPUT_DIR } with pid=${ existingPid }`
+					);
+				} catch ( processError ) {
+					if ( processError.code !== 'ESRCH' ) {
+						throw processError;
+					}
+				}
+			}
+			await fs.unlink( PROCESS_LOCK_PATH ).catch( () => {} );
+		}
+	}
+	throw new Error(
+		`could not acquire novelty monitor lock ${ PROCESS_LOCK_PATH }`
+	);
+}
+
+async function releaseProcessLock() {
+	if ( ! processLockOwned ) {
+		return;
+	}
+	const existing = await readJsonFile( PROCESS_LOCK_PATH );
+	if ( Number( existing?.pid ) === process.pid ) {
+		await fs.unlink( PROCESS_LOCK_PATH ).catch( () => {} );
+	}
+	processLockOwned = false;
+}
 
 async function logFatalAndExit( message, exitCode ) {
 	if ( fatalExitInProgress ) {
@@ -21898,40 +22073,50 @@ async function logFatalAndExit( message, exitCode ) {
 			}\n${ message }\n`
 		);
 	}
+	await releaseProcessLock();
 	process.exit( exitCode );
 }
 
 async function main() {
-	await log(
-		`RTC novelty monitor started, outputDir=${ OUTPUT_DIR }, observed=${ OBSERVED_RUN_DIRS.join(
-			','
-		) }`
-	);
-	await writeStartupStatus();
-	const statusHeartbeat = setInterval( () => {
-		void writeStatusHeartbeat().catch( ( error ) => {
-			void log(
-				`status heartbeat failed: ${ error.stack ?? error.message }`
-			).catch( () => {} );
-		} );
-	}, STARTUP_STATUS_HEARTBEAT_MS );
-	statusHeartbeat.unref?.();
+	await acquireProcessLock();
 	try {
-		while ( ! shutdownRequested && Date.now() < END_AT ) {
-			try {
-				await runPass();
-			} catch ( error ) {
-				await log( `pass failed: ${ error.stack ?? error.message }` );
+		await log(
+			`RTC novelty monitor started, outputDir=${ OUTPUT_DIR }, observed=${ OBSERVED_RUN_DIRS.join(
+				','
+			) }`
+		);
+		await writeStartupStatus();
+		const statusHeartbeat = setInterval( () => {
+			void writeStatusHeartbeat().catch( ( error ) => {
+				void log(
+					`status heartbeat failed: ${ error.stack ?? error.message }`
+				).catch( () => {} );
+			} );
+		}, STARTUP_STATUS_HEARTBEAT_MS );
+		statusHeartbeat.unref?.();
+		try {
+			while ( ! shutdownRequested && Date.now() < END_AT ) {
+				try {
+					await runPass();
+				} catch ( error ) {
+					await log(
+						`pass failed: ${ error.stack ?? error.message }`
+					);
+				}
+				await sleep( INTERVAL_MS );
 			}
-			await sleep( INTERVAL_MS );
+		} finally {
+			clearInterval( statusHeartbeat );
+		}
+		if ( shutdownRequested ) {
+			await log( 'RTC novelty monitor exiting after signal shutdown.' );
+		} else {
+			await log(
+				'RTC novelty monitor exiting after requested duration.'
+			);
 		}
 	} finally {
-		clearInterval( statusHeartbeat );
-	}
-	if ( shutdownRequested ) {
-		await log( 'RTC novelty monitor exiting after signal shutdown.' );
-	} else {
-		await log( 'RTC novelty monitor exiting after requested duration.' );
+		await releaseProcessLock();
 	}
 }
 

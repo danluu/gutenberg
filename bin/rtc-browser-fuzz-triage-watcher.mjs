@@ -288,6 +288,16 @@ function normalizeFailureText( text ) {
 	if ( /rest_meta_database_error/.test( text ) ) {
 		return 'rest_meta_database_error wp_persisted_preferences';
 	}
+	if (
+		/wp-json\/wp-sync\/v1\/save[^\n]*[\s\S]{0,500}500 \(Internal Server Error\)|500 \(Internal Server Error\)[\s\S]{0,500}wp-json\/wp-sync\/v1\/save/i.test(
+			text
+		)
+	) {
+		return 'RTC save REST 500 wp-json/wp-sync/v1/save browser runtime error';
+	}
+	if ( /Unexpected browser runtime errors:/i.test( text ) ) {
+		return 'browser runtime error during human product smoke';
+	}
 
 	const timeout = text.match( /TimeoutError: [^\n]+/ )?.[ 0 ];
 	const assertion = text.match( /Error: expect\([^\n]+/ )?.[ 0 ];

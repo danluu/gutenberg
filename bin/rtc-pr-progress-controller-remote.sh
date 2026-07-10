@@ -3,7 +3,7 @@ set -euo pipefail
 
 NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
 CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
-TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
+TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-core-wrapper/bin
 
 SRC=${RTC_PR_PROGRESS_SRC:-/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo}
 BASE=${RTC_PR_PROGRESS_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518}
@@ -37,7 +37,7 @@ LOCK=$BASE/controller.lock
 PID_FILE=$BASE/controller.pid
 
 CYCLE_SLEEP_SECONDS=${RTC_PR_PROGRESS_CYCLE_SLEEP_SECONDS:-120}
-PERSONA_EVERY_CYCLES=${RTC_PR_PROGRESS_PERSONA_EVERY_CYCLES:-2}
+PERSONA_EVERY_CYCLES=${RTC_PR_PROGRESS_PERSONA_EVERY_CYCLES:-0}
 MAX_ACTIVE_PR_JOBS=${RTC_PR_PROGRESS_MAX_ACTIVE_PR_JOBS:-2}
 MIN_DISCOVERY_SESSIONS=${RTC_PR_PROGRESS_MIN_DISCOVERY_SESSIONS:-3}
 PR07C_OWNER_CONSUMED_TTL_SECONDS=${RTC_PR_PROGRESS_PR07C_OWNER_CONSUMED_TTL_SECONDS:-0}
@@ -62,7 +62,21 @@ PERSONAS=(
 mkdir -p "$BASE/logs" "$BASE/cycles" "$BASE/jobs" "$BASE/persona-runs" "$TMUX_WRAP"
 cat > "$TMUX_WRAP/tmux" <<'SH'
 #!/usr/bin/env bash
-exec /usr/bin/tmux -L rtc-fuzz "$@"
+set -euo pipefail
+socket=${RTC_TMUX_SOCKET:-rtc-fuzz}
+case "${1:-}" in
+	capture-pane)
+		if [ "$socket" = rtc-fuzz ]; then
+			printf 'capture-pane is disabled on the RTC core tmux socket\n' >&2
+			exit 1
+		fi
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+	display-message|has-session|list-*|show-*)
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+esac
+exec /usr/bin/tmux -L "$socket" "$@"
 SH
 chmod +x "$TMUX_WRAP/tmux"
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
@@ -1132,7 +1146,20 @@ pr07c_owner_matrix_needed() {
 
 write_progress_table() {
 	local tmp=$PROGRESS.$$.tmp now source class branch base head current_head allowed reason report pr07c_report reload_status reload_next reload_evidence reload_downscope_reason deferred_control deferred_status
+	local repair_rc_head repair_rc_ancestor_heads
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+	repair_rc_ancestor_heads=$(
+		awk -F '\t' 'NR > 1 && $8 ~ /^(central_present|central_present_alias|imported)$/ { print $5 "\t" ($7 != "" ? $7 : $6) }' "$CRITICAL_REPAIR_ADOPTIONS" 2>/dev/null |
+			while IFS=$'\t' read -r repair_source_repo repair_head; do
+				[ -n "$repair_head" ] || continue
+				repair_rc_head=$(git -C "$repair_source_repo" rev-parse --verify --quiet js2/all-merged-rebased-20260701^{commit} 2>/dev/null || true)
+				if [ -n "$repair_rc_head" ] && git -C "$repair_source_repo" merge-base --is-ancestor "$repair_head" "$repair_rc_head" 2>/dev/null; then
+					printf '%s\n' "$repair_head"
+				fi
+			done |
+			sort -u |
+			paste -sd, -
+	)
 	deferred_control=$(deferred_file current-deferred-control.tsv)
 	deferred_status=$(deferred_file current-deferred-status.md)
 	reload_downscope_reason=$(deferred_downscope_reason reload-hydration 2>/dev/null || true)
@@ -1211,7 +1238,7 @@ write_progress_table() {
 			done
 		fi
 		if [ -s "$CRITICAL_REPAIR_ADOPTIONS" ]; then
-			awk -F '\t' -v now="$now" -v publish_manifest="$LOCAL_PUBLISH_MANIFEST" -v rc_ref="refs/heads/js2/all-merged-rebased-20260701" '
+			awk -F '\t' -v now="$now" -v publish_manifest="$LOCAL_PUBLISH_MANIFEST" -v rc_ref="refs/heads/js2/all-merged-rebased-20260701" -v rc_ancestor_heads="$repair_rc_ancestor_heads" '
 				BEGIN {
 					while ((getline line < publish_manifest) > 0) {
 						split(line, published, "\t")
@@ -1241,7 +1268,7 @@ write_progress_table() {
 					status = state
 					if (state ~ /^(central_present|central_present_alias|imported)$/) {
 						publish_key = branch "\t" head
-						if (rc_published[publish_key]) {
+						if (index("," rc_ancestor_heads ",", "," head ",") > 0 || rc_published[publish_key]) {
 							status = "adopted-to-release-candidate"
 							next_action = "release-candidate branch contains the validated repair; run exact replay and benchmark-canary gate before clearing product blockers"
 						} else if (standalone_published[publish_key]) {
@@ -2390,7 +2417,8 @@ case "${1:-start}" in
 			echo "$SESSION already running"
 		else
 			clear_stale_controller_lock_holders
-			tmux new-session -d -s "$SESSION" "$0 run"
+			tmux new-session -d -s "$SESSION" \
+				"env RTC_PR_PROGRESS_PERSONA_EVERY_CYCLES='$PERSONA_EVERY_CYCLES' '$0' run"
 			echo "$SESSION started"
 		fi
 		;;

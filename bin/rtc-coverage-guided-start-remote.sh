@@ -3,10 +3,13 @@ set -euo pipefail
 
 NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
 CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
-TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
+TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-core-wrapper/bin
 REPO=/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo
+HARNESS_REPO=${RTC_COVERAGE_HARNESS_REPO:-/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo}
+CANDIDATE_REF=${RTC_COVERAGE_CANDIDATE_REF:-refs/heads/js2/all-merged-rebased-20260701}
 CLEANUP_SCRIPT=${RTC_COVERAGE_GUIDED_CLEANUP_SCRIPT:-/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo/bin/rtc-coverage-guided-cleanup-remote.sh}
 BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
+PRODUCT_REPO=$BASE/candidate-source
 CUMULATIVE_ROOTS_FILE="$BASE/cumulative-observed-roots.txt"
 START_LOCK="$BASE/start-v2.lock"
 MAX_OBSERVED_ROOTS=${RTC_FUZZ_NOVELTY_MAX_OBSERVED_ROOTS:-20}
@@ -15,7 +18,21 @@ exec 8>"$START_LOCK"
 flock 8
 cat > "$TMUX_WRAP/tmux" <<'SH'
 #!/usr/bin/env bash
-exec /usr/bin/tmux -L rtc-fuzz "$@"
+set -euo pipefail
+socket=${RTC_TMUX_SOCKET:-rtc-fuzz}
+case "${1:-}" in
+	capture-pane)
+		if [ "$socket" = rtc-fuzz ]; then
+			printf 'capture-pane is disabled on the RTC core tmux socket\n' >&2
+			exit 1
+		fi
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+	display-message|has-session|list-*|show-*)
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+esac
+exec /usr/bin/tmux -L "$socket" "$@"
 SH
 chmod +x "$TMUX_WRAP/tmux"
 export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
@@ -37,6 +54,137 @@ positive_integer_or_default() {
 	fi
 }
 
+terminate_previous_coverage_processes() {
+	local previous=$1 pid
+	local pids=()
+	[ -n "$previous" ] && [ -d "$previous" ] || return 0
+	mapfile -t pids < <(
+		ps -eo pid=,comm=,args= |
+			awk -v root="$previous" '
+				index($0, root) == 0 { next }
+				$2 == "node" && $0 ~ /(rtc-browser-fuzz-(runner|supervisor|novelty-monitor)|wp-env start|playwright)/ { print $1; next }
+				$2 ~ /^docker(-compose)?$/ { print $1; next }
+				$2 == "bash" && $0 ~ /(run-monitor[.]sh|run-live-analysis[.]sh)/ { print $1 }
+			'
+	)
+	for pid in "${pids[@]}"; do
+		[ -n "$pid" ] && [ "$pid" != "$$" ] || continue
+		printf '[%s] stopping stale process from previous coverage root pid=%s root=%s\n' \
+			"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$pid" "$previous" >> "$BASE/logs/start.log"
+		kill -TERM "$pid" 2>/dev/null || true
+	done
+	[ "${#pids[@]}" -eq 0 ] || sleep 2
+	for pid in "${pids[@]}"; do
+		[ -n "$pid" ] && [ "$pid" != "$$" ] || continue
+		kill -KILL "$pid" 2>/dev/null || true
+	done
+}
+
+copy_harness_overlay_path() {
+	local relative=$1 source_root=${2:-$REPO} source destination
+	source=$source_root/$relative
+	destination=$PRODUCT_REPO/$relative
+	[ -e "$source" ] || return 0
+	mkdir -p "$(dirname "$destination")"
+	if [ -d "$source" ]; then
+		mkdir -p "$destination"
+		rsync -a "$source"/ "$destination"/
+	else
+		cp -a "$source" "$destination"
+	fi
+	printf '%s\n' "$relative" >> "$OUT/harness-overlay-paths.txt"
+}
+
+prepare_exact_candidate_source() {
+	local path existing_head
+	[ -n "$CURRENT_REPO_HEAD" ] || {
+		printf 'cannot prepare exact candidate source without a Git head\n' >&2
+		return 1
+	}
+
+	existing_head=$(git -C "$PRODUCT_REPO" rev-parse HEAD 2>/dev/null || true)
+	if [ "$existing_head" != "$CURRENT_REPO_HEAD" ]; then
+		git -C "$REPO" worktree remove --force "$PRODUCT_REPO" >/dev/null 2>&1 || true
+		rm -rf "$PRODUCT_REPO"
+		git -C "$REPO" worktree prune >/dev/null 2>&1 || true
+		git -C "$REPO" worktree add --detach "$PRODUCT_REPO" "$CURRENT_REPO_HEAD" \
+			> "$OUT/candidate-worktree.log" 2>&1
+	else
+		printf 'reused exact candidate worktree head=%s\n' "$existing_head" \
+			> "$OUT/candidate-worktree.log"
+	fi
+
+	: > "$OUT/harness-overlay-paths.txt"
+	shopt -s nullglob
+	for path in "$HARNESS_REPO"/bin/rtc-*; do
+		copy_harness_overlay_path "${path#"$HARNESS_REPO"/}" "$HARNESS_REPO"
+	done
+	shopt -u nullglob
+	for path in \
+		bin/packages/build-vendors.mjs \
+		.wp-env.test.json \
+		packages/env/lib/runtime/docker/build-docker-compose-config.js \
+		test/e2e/config/global-setup.ts \
+		test/e2e/config/rtc-websocket-setup.ts \
+		test/e2e/specs/editor/collaboration \
+		packages/e2e-tests/plugins/rtc-websocket-provider
+	do
+		copy_harness_overlay_path "$path"
+	done
+
+	if [ "$(cat "$PRODUCT_REPO/.js2-candidate-deps-head" 2>/dev/null || true)" != "$CURRENT_REPO_HEAD" ] ||
+		[ ! -x "$PRODUCT_REPO/node_modules/.bin/wp-build" ]; then
+		rm -rf "$PRODUCT_REPO/node_modules"
+		(
+			cd "$PRODUCT_REPO"
+			npm ci
+		) > "$OUT/candidate-dependencies.log" 2>&1
+		printf '%s\n' "$CURRENT_REPO_HEAD" > "$PRODUCT_REPO/.js2-candidate-deps-head"
+	else
+		printf 'reused exact candidate dependencies head=%s\n' "$CURRENT_REPO_HEAD" \
+			> "$OUT/candidate-dependencies.log"
+	fi
+
+	for path in vendor build; do
+		if [ -e "$REPO/$path" ] && [ ! -e "$PRODUCT_REPO/$path" ]; then
+			ln -s "$REPO/$path" "$PRODUCT_REPO/$path"
+			printf '%s\n' "$path (dependency symlink)" >> "$OUT/harness-overlay-paths.txt"
+		fi
+	done
+
+	if [ ! -s "$PRODUCT_REPO/packages/e2e-test-utils-playwright/build/index.js" ] ||
+		[ ! -d "$PRODUCT_REPO/build/scripts" ]; then
+		printf '[%s] building exact candidate source head=%s\n' \
+			"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$CURRENT_REPO_HEAD" \
+			> "$OUT/candidate-build.log"
+		(
+			cd "$PRODUCT_REPO"
+			npm run build -- --skip-types
+		) >> "$OUT/candidate-build.log" 2>&1
+	else
+		printf 'reused exact candidate build head=%s\n' "$CURRENT_REPO_HEAD" \
+			> "$OUT/candidate-build.log"
+	fi
+
+	git -C "$REPO" status --porcelain=v1 -uall > "$OUT/control-repo-status.txt"
+	git -C "$PRODUCT_REPO" status --porcelain=v1 -uall > "$OUT/candidate-source-status.txt"
+	{
+		printf 'mode\texact-candidate-plus-harness-overlay\n'
+		printf 'candidate_head\t%s\n' "$CURRENT_REPO_HEAD"
+		printf 'candidate_tree\t%s\n' "$(git -C "$PRODUCT_REPO" rev-parse HEAD^{tree})"
+		printf 'candidate_branch\t%s\n' "$CURRENT_REPO_BRANCH"
+		printf 'product_repo\t%s\n' "$PRODUCT_REPO"
+		printf 'control_repo\t%s\n' "$REPO"
+		printf 'harness_repo\t%s\n' "$HARNESS_REPO"
+		printf 'monitor_repo\t%s\n' "$PRODUCT_REPO"
+		printf 'novelty_monitor_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs" | awk '{ print $1 }')"
+		printf 'supervisor_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-supervisor.mjs" | awk '{ print $1 }')"
+		printf 'triage_watcher_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-triage-watcher.mjs" | awk '{ print $1 }')"
+		printf 'control_dirty_paths\t%s\n' "$(wc -l < "$OUT/control-repo-status.txt" | tr -d ' ')"
+		printf 'overlay_paths\t%s\n' "$(wc -l < "$OUT/harness-overlay-paths.txt" | tr -d ' ')"
+	} > "$OUT/source-manifest.tsv"
+}
+
 SHARED_GUTENBERG_BUILD=${RTC_SHARED_GUTENBERG_BUILD:-/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/gutenberg/build}
 if [ ! -e "$REPO/build/scripts/block-library" ] && [ -e "$SHARED_GUTENBERG_BUILD/scripts/block-library" ]; then
 	mkdir -p "$REPO/build"
@@ -50,8 +198,8 @@ FOCUSED=$(cat /media/volume/danluu-fuzz-data/rtc-fuzz-focused-shards-20260515/cu
 GAP_BOOSTER=$(cat /media/volume/danluu-fuzz-data/rtc-gap-booster-20260515/current-run-root.txt 2>/dev/null || true)
 PREVIOUS_COVERAGE=$(cat "$BASE/current-output-dir.txt" 2>/dev/null || true)
 DISABLE_STATE_CARRYOVER=${RTC_FUZZ_NOVELTY_DISABLE_STATE_CARRYOVER:-0}
-CURRENT_REPO_HEAD=$(git -C "$REPO" rev-parse HEAD 2>/dev/null || true)
-CURRENT_REPO_BRANCH=$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || true)
+CURRENT_REPO_HEAD=$(git -C "$REPO" rev-parse "$CANDIDATE_REF" 2>/dev/null || true)
+CURRENT_REPO_BRANCH=${CANDIDATE_REF#refs/heads/}
 PREVIOUS_COVERAGE_HEAD=
 if [ -n "$PREVIOUS_COVERAGE" ]; then
 	if [ -f "$PREVIOUS_COVERAGE/source-head.txt" ]; then
@@ -63,6 +211,20 @@ if [ -n "$PREVIOUS_COVERAGE" ]; then
 		fi
 	fi
 fi
+if [ "${RTC_COVERAGE_FORCE_RESTART:-0}" != "1" ] &&
+	tmux has-session -t rtc-coverage-guided-novelty 2>/dev/null &&
+	[ -n "$PREVIOUS_COVERAGE" ] &&
+	[ -d "$PREVIOUS_COVERAGE" ] &&
+	[ -n "$CURRENT_REPO_HEAD" ] &&
+	[ "$CURRENT_REPO_HEAD" = "$PREVIOUS_COVERAGE_HEAD" ]; then
+	printf '[%s] coverage-guided run already active at %s head=%s; set RTC_COVERAGE_FORCE_RESTART=1 for a deliberate replacement\n' \
+		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$PREVIOUS_COVERAGE" "$CURRENT_REPO_HEAD" >> "$BASE/logs/start.log"
+	printf 'OUT=%s\n' "$PREVIOUS_COVERAGE"
+	exit 0
+fi
+# Force is a one-shot admission decision for this launcher. Never leak it into
+# long-lived monitor, watchdog, or controller processes.
+export RTC_COVERAGE_FORCE_RESTART=0
 CARRYOVER_DISABLED_REASON=
 INCLUDE_HISTORICAL_ROOTS=1
 if [ "$DISABLE_STATE_CARRYOVER" = "1" ]; then
@@ -88,6 +250,8 @@ else
 	tmux kill-session -t rtc-coverage-guided-novelty 2>/dev/null || true
 	tmux kill-session -t rtc-coverage-guided-supervisor 2>/dev/null || true
 fi
+terminate_previous_coverage_processes "$PREVIOUS_COVERAGE"
+prepare_exact_candidate_source
 printf '%s\n' "$OUT" > "$BASE/current-output-dir.txt"
 {
 	printf '# RTC Novelty Monitor\n\n'
@@ -953,10 +1117,11 @@ mv "$RESOURCE_AUTOSCALER_BUDGET_ENV.tmp" "$RESOURCE_AUTOSCALER_BUDGET_ENV"
 cat > "$RUN_SCRIPT" <<RUN
 #!/usr/bin/env bash
 set -u
-cd '$REPO'
+cd '$PRODUCT_REPO'
 export PATH='$CODEX_BIN_DIR':'$TMUX_WRAP':'$NODE_BIN':\$PATH
 export CI=1
 export RTC_FUZZ_NOVELTY_OUTPUT_DIR='$OUT'
+export RTC_FUZZ_NOVELTY_REPO_ROOT='$PRODUCT_REPO'
 export RTC_FUZZ_NOVELTY_OBSERVED_RUN_DIRS='$OBSERVED'
 export RTC_FUZZ_NOVELTY_SUPERVISOR_SESSION='rtc-coverage-guided-supervisor'
 export RTC_FUZZ_NOVELTY_BASE_URL='http://localhost:16600'
@@ -999,7 +1164,7 @@ export RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_THRESHOLD='3'
 export RTC_FUZZ_NOVELTY_AUTO_GOAL_EXPANSION_BATCH_SIZE='12'
 export RTC_FUZZ_NOVELTY_INCLUDE_RECHECK_COVERAGE='1'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX='1'
-export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD='$REPO'
+export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_CWD='$PRODUCT_REPO'
 export RTC_FUZZ_CODEX_BIN='$CODEX_BIN_DIR/codex'
 export RTC_FUZZ_NOVELTY_COVERAGE_CODEX_INTERVAL_MINUTES='$NOVELTY_CODEX_INTERVAL_MINUTES'
 export RTC_FUZZ_NOVELTY_COVERAGE_GUIDANCE_STALL_PASSES='2'
@@ -1019,9 +1184,10 @@ LIVE_ANALYSIS_SCRIPT="$OUT/run-live-analysis.sh"
 cat > "$LIVE_ANALYSIS_SCRIPT" <<RUN
 #!/usr/bin/env bash
 set -u
-cd '$REPO'
+cd '$PRODUCT_REPO'
 export PATH='$CODEX_BIN_DIR':'$TMUX_WRAP':'$NODE_BIN':\$PATH
 export CI=1
+export RTC_TMUX_SOCKET='rtc-analysis'
 export RTC_FUZZ_LIVE_ANALYSIS_CURRENT_OUTPUT_POINTER='$BASE/current-output-dir.txt'
 export RTC_FUZZ_LIVE_ANALYSIS_TMUX_PREFIX='rtc-cov-analysis'
 export RTC_FUZZ_LIVE_DEEP_ANALYSIS_TMUX_PREFIX='rtc-cov-deep'
@@ -1041,7 +1207,8 @@ chmod +x "$LIVE_ANALYSIS_SCRIPT"
 # the long-lived tmux server cannot inherit it and block later restarts.
 tmux new-session -d -s rtc-coverage-guided-novelty "$RUN_SCRIPT" 8>&-
 tmux kill-session -t rtc-coverage-guided-analysis 2>/dev/null 8>&- || true
-tmux new-session -d -s rtc-coverage-guided-analysis "$LIVE_ANALYSIS_SCRIPT" 8>&-
+RTC_TMUX_SOCKET=rtc-analysis tmux kill-session -t rtc-coverage-guided-analysis 2>/dev/null 8>&- || true
+RTC_TMUX_SOCKET=rtc-analysis tmux new-session -d -s rtc-coverage-guided-analysis "$LIVE_ANALYSIS_SCRIPT" 8>&-
 echo "OUT=$OUT"
 tmux ls 8>&- | grep -E 'rtc-coverage-guided|rtc-fuzz-strict|rtc-fuzz-iso' || true
 

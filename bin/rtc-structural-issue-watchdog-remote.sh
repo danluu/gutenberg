@@ -3,7 +3,7 @@ set -euo pipefail
 
 NODE_BIN=/media/volume/danluu-fuzz-data/rtc-e2e-setup-20260514/.local/node-v20.19.0-linux-x64/bin
 CODEX_BIN_DIR=${HOME:-/home/exouser}/.local/bin
-TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-wrapper/bin
+TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-core-wrapper/bin
 REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 BASE=/media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518
 
@@ -52,7 +52,7 @@ ANALYSIS_PRODUCTIVITY_REPORT=$BASE/current-analysis-productivity.tsv
 
 CYCLE_SLEEP_SECONDS=${RTC_STRUCTURAL_WATCHDOG_CYCLE_SLEEP_SECONDS:-300}
 REPAIR_COOLDOWN_SECONDS=${RTC_STRUCTURAL_WATCHDOG_REPAIR_COOLDOWN_SECONDS:-1800}
-MAX_ACTIVE_REPAIRS=${RTC_STRUCTURAL_WATCHDOG_MAX_ACTIVE_REPAIRS:-3}
+MAX_ACTIVE_REPAIRS=${RTC_STRUCTURAL_WATCHDOG_MAX_ACTIVE_REPAIRS:-1}
 CODEX_TIMEOUT_SECONDS=${RTC_STRUCTURAL_WATCHDOG_CODEX_TIMEOUT_SECONDS:-5400}
 CODEX_MODEL=${RTC_STRUCTURAL_WATCHDOG_CODEX_MODEL:-gpt-5.5}
 CODEX_REASONING_EFFORT=${RTC_STRUCTURAL_WATCHDOG_CODEX_REASONING_EFFORT:-xhigh}
@@ -65,6 +65,11 @@ TERMINATE_RUNAWAY_RG=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_RG:-1}
 TERMINATE_RUNAWAY_TEXT_SEARCH=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_TEXT_SEARCH:-$TERMINATE_RUNAWAY_RG}
 TERMINATE_RUNAWAY_SCANS=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_SCANS:-1}
 ANALYSIS_LOW_WORKER_MAX_LOAD_PER_CORE=${RTC_STRUCTURAL_WATCHDOG_ANALYSIS_LOW_WORKER_MAX_LOAD_PER_CORE:-1.0}
+ANALYSIS_MAX_CODEX_WORKERS=${RTC_STRUCTURAL_WATCHDOG_ANALYSIS_MAX_CODEX_WORKERS:-8}
+REQUIRE_LEVEL_MIX_REVIEW=${RTC_JETSTREAM_ENABLE_LEVEL_MIX_REVIEW:-0}
+REQUIRE_DUPLICATE_NOISE_REVIEW=${RTC_JETSTREAM_ENABLE_DUPLICATE_NOISE_REVIEW:-1}
+REQUIRE_NATIVE_PROTOCOL_REVIEW=${RTC_JETSTREAM_ENABLE_NATIVE_PROTOCOL_REVIEW:-0}
+REQUIRE_ASSERT_REVIEW=${RTC_JETSTREAM_ENABLE_ASSERT_REVIEW:-0}
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$TMUX_WRAP"
 touch "$EVENTS" "$REPAIR_LEDGER" "$RUNAWAY_SCAN_KILL_LEDGER"
@@ -74,7 +79,21 @@ ensure_tmux_wrapper() {
 	tmp=$(mktemp "$TMUX_WRAP/tmux.XXXXXX")
 	cat > "$tmp" <<'SH'
 #!/usr/bin/env bash
-exec /usr/bin/tmux -L rtc-fuzz "$@"
+set -euo pipefail
+socket=${RTC_TMUX_SOCKET:-rtc-fuzz}
+case "${1:-}" in
+	capture-pane)
+		if [ "$socket" = rtc-fuzz ]; then
+			printf 'capture-pane is disabled on the RTC core tmux socket\n' >&2
+			exit 1
+		fi
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+	display-message|has-session|list-*|show-*)
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+esac
+exec /usr/bin/tmux -L "$socket" "$@"
 SH
 	chmod +x "$tmp"
 	if [ -f "$wrapper" ] && cmp -s "$tmp" "$wrapper"; then
@@ -378,6 +397,30 @@ count_lines_after_header() {
 	fi
 }
 
+count_active_codex_workers() {
+	local pid child child_command has_codex_child count=0
+	local -a candidate_pids=()
+	mapfile -t candidate_pids < <(
+		pgrep -f 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true
+	)
+	for pid in "${candidate_pids[@]}"; do
+		[ -r "/proc/$pid/cmdline" ] || continue
+		has_codex_child=0
+		while IFS= read -r child; do
+			[ -r "/proc/$child/cmdline" ] || continue
+			child_command=$(tr '\0' ' ' < "/proc/$child/cmdline")
+			if printf '%s\n' "$child_command" | grep -Eq 'codex .*exec|/codex .*exec|codex -a .*exec'; then
+				has_codex_child=1
+				break
+			fi
+		done < <(pgrep -P "$pid" 2>/dev/null || true)
+		if [ "$has_codex_child" -eq 0 ]; then
+			count=$(( count + 1 ))
+		fi
+	done
+	printf '%s\n' "$count"
+}
+
 eligible_structural_repair_count() {
 	local findings=$1 count=0 _ts severity component key evidence next_action issue_key
 	while IFS=$'\t' read -r _ts severity component key evidence next_action; do
@@ -396,7 +439,7 @@ check_analysis_productivity() {
 	high_findings=$(awk -F '\t' 'NR > 1 && $2 == "high" { count++ } END { print count + 0 }' "$out" 2>/dev/null || printf 0)
 	eligible_repairs=$(eligible_structural_repair_count "$out")
 	active_repairs=$(active_repair_count)
-	codex_workers=$({ pgrep -af 'codex .*exec|/codex .*exec|codex -a .*exec' 2>/dev/null || true; } | awk 'END { print NR + 0 }')
+	codex_workers=$(count_active_codex_workers)
 	controller_sessions=$(tmux_sessions | rg -c '(analysis|persona|codex-loop|structural-repair|pr-progress|critical-path|deferred|finalization)' 2>/dev/null || printf 0)
 	critical_queue=$(count_lines_after_header "$CRITICAL_BASE/queue.tsv")
 	deferred_queue=$(count_lines_after_header "$DEFERRED_BASE/current-deferred-queue.tsv")
@@ -419,6 +462,11 @@ check_analysis_productivity() {
 		emit_finding "$out" high "analysis-productivity" "queued-pr-work-low-codex-fanout" \
 			"$ANALYSIS_PRODUCTIVITY_REPORT critical_queue=$critical_queue deferred_queue=$deferred_queue controller_sessions=$controller_sessions codex_workers=$codex_workers load1=$load1 cores=$cores" \
 			"inspect PR/deferred controller admission and launch targeted unblock/finalization analysis for queued work rather than leaving only passive controllers alive"
+	fi
+	if [ "$codex_workers" -gt "$ANALYSIS_MAX_CODEX_WORKERS" ]; then
+		emit_finding "$out" high "analysis-productivity" "codex-fanout-over-cap" \
+			"$ANALYSIS_PRODUCTIVITY_REPORT codex_workers=$codex_workers cap=$ANALYSIS_MAX_CODEX_WORKERS load1=$load1 cores=$cores" \
+			"stop optional persona/review rounds, preserve targeted failure analysis and repair owners, and verify the guard keeps Codex worker count at or below the cap"
 	fi
 }
 
@@ -469,20 +517,9 @@ check_status_freshness() {
 	fi
 }
 
-collapse_evidence() {
-	tr '\n\t' '  ' | sed 's/  */ /g' | cut -c1-700
-}
-
 check_productive_analysis_health() {
-	local out=$1 pane evidence
+	local out=$1
 
-	pane=$(tmux capture-pane -pt rtc-productive-analysis-loop:0 -S -200 2>/dev/null || true)
-	if printf '%s\n' "$pane" | rg -qi 'cannot stat .*[.]tmp|duplicate session: rtc-productive-lane-'; then
-		evidence=$(printf '%s\n' "$pane" | rg -i 'cannot stat .*[.]tmp|duplicate session: rtc-productive-lane-' | collapse_evidence)
-		emit_finding "$out" high "productive-analysis" "temp-or-duplicate-session-error" \
-			"pane=rtc-productive-analysis-loop evidence=${evidence:-matched}" \
-			"patch productive-analysis to use per-write mktemp files, unique lane session names, logged non-fatal launch failures, and restart rtc-productive-analysis-loop"
-	fi
 	if log_matches_after_last_start "$PRODUCTIVE_ANALYSIS_BASE/logs/productive-analysis-loop.log" 'productive-analysis loop started' 'cannot stat .*[.]tmp|duplicate session: rtc-productive-lane-|cycle failed rc='; then
 		emit_finding "$out" high "productive-analysis" "recent-cycle-or-launch-error" \
 			"$PRODUCTIVE_ANALYSIS_BASE/logs/productive-analysis-loop.log" \
@@ -552,17 +589,22 @@ check_browser_pool_supervisor_freshness() {
 
 check_exact_sessions() {
 	local out=$1 name prefix_matches
-	for name in \
+	local required_sessions=(
 		rtc-coverage-guided-novelty \
 		rtc-coverage-guided-watchdog \
-		rtc-fuzz-level-mix-persona-loop \
-		rtc-fuzz-level-mix-persona-loop-watchdog \
-		rtc-duplicate-noise-persona-loop \
 		rtc-deferred-work-promotion-loop \
 		rtc-pr-progress-controller-loop \
 		rtc-pr-finalization-loop \
 		rtc-critical-path-pr-executor-loop \
-		rtc-resource-autoscaler; do
+		rtc-resource-autoscaler
+	)
+	if [ "$REQUIRE_LEVEL_MIX_REVIEW" = "1" ]; then
+		required_sessions+=(rtc-fuzz-level-mix-persona-loop rtc-fuzz-level-mix-persona-loop-watchdog)
+	fi
+	if [ "$REQUIRE_DUPLICATE_NOISE_REVIEW" = "1" ]; then
+		required_sessions+=(rtc-duplicate-noise-persona-loop)
+	fi
+	for name in "${required_sessions[@]}"; do
 		if has_session "$name"; then
 			continue
 		fi
@@ -1070,17 +1112,21 @@ guard_pool_currently_satisfied() {
 			coverage_guided_lower_level_satisfied
 			;;
 		duplicate-noise)
+			[ "$REQUIRE_DUPLICATE_NOISE_REVIEW" = "1" ] || return 0
 			has_session rtc-duplicate-noise-persona-loop
 			;;
 		level-mix)
+			[ "$REQUIRE_LEVEL_MIX_REVIEW" = "1" ] || return 0
 			has_session rtc-fuzz-level-mix-persona-loop &&
 				has_session rtc-fuzz-level-mix-persona-loop-watchdog
 			;;
 		native-protocol)
+			[ "$REQUIRE_NATIVE_PROTOCOL_REVIEW" = "1" ] || return 0
 			has_session rtc-native-harness-persona-loop &&
 				has_session rtc-protocol-server-persona-loop
 			;;
 		asserts)
+			[ "$REQUIRE_ASSERT_REVIEW" = "1" ] || return 0
 			has_session rtc-fuzz-only-asserts-loop
 			;;
 		deferred)
@@ -1220,6 +1266,10 @@ launch_repair_jobs() {
 	awk -F '\t' 'NR > 1 && $2 == "high" { print }' "$FINDINGS" |
 		while IFS=$'\t' read -r _ts severity component key evidence next_action; do
 			[ -n "$key" ] || continue
+			if [ "$component" = "analysis-productivity" ] && [ "$key" = "codex-fanout-over-cap" ]; then
+				log "recorded analysis over-fanout without launching another Codex repair key=$key evidence=$evidence"
+				continue
+			fi
 			issue_key=$(repair_issue_key "$component" "$key" "$evidence")
 			if recent_repair_for_key "$issue_key"; then
 				continue

@@ -7,7 +7,7 @@ SRC=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 CONTINUATION_SRC=${RTC_CRITICAL_PR_EXECUTOR_CONTINUATION_SRC:-/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo}
 SOURCE_SCRIPT=$SRC/bin/rtc-critical-path-pr-executor-loop-remote.sh
 BASE=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517
-TMUX_WRAP=$BASE/tmux-wrapper/bin
+TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-core-wrapper/bin
 PR_SPLIT_BASE=/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515
 FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 LOCAL_PUBLISH_MANIFEST=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
@@ -80,7 +80,21 @@ install_tmux_wrapper() {
 	local wrapper=$TMUX_WRAP/tmux tmp
 	if [ -f "$wrapper" ] && cmp -s "$wrapper" - <<'SH'
 #!/usr/bin/env bash
-exec /usr/bin/tmux -L rtc-fuzz "$@"
+set -euo pipefail
+socket=${RTC_TMUX_SOCKET:-rtc-fuzz}
+case "${1:-}" in
+	capture-pane)
+		if [ "$socket" = rtc-fuzz ]; then
+			printf 'capture-pane is disabled on the RTC core tmux socket\n' >&2
+			exit 1
+		fi
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+	display-message|has-session|list-*|show-*)
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+esac
+exec /usr/bin/tmux -L "$socket" "$@"
 SH
 	then
 		chmod +x "$wrapper"
@@ -89,7 +103,21 @@ SH
 	tmp=$(mktemp "$TMUX_WRAP/tmux.XXXXXX.tmp")
 	cat > "$tmp" <<'SH'
 #!/usr/bin/env bash
-exec /usr/bin/tmux -L rtc-fuzz "$@"
+set -euo pipefail
+socket=${RTC_TMUX_SOCKET:-rtc-fuzz}
+case "${1:-}" in
+	capture-pane)
+		if [ "$socket" = rtc-fuzz ]; then
+			printf 'capture-pane is disabled on the RTC core tmux socket\n' >&2
+			exit 1
+		fi
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+	display-message|has-session|list-*|show-*)
+		exec flock -w 30 "/tmp/rtc-tmux-${UID}-${socket}.client.lock" /usr/bin/tmux -L "$socket" "$@"
+		;;
+esac
+exec /usr/bin/tmux -L "$socket" "$@"
 SH
 	chmod +x "$tmp"
 	mv -f "$tmp" "$wrapper"
@@ -814,6 +842,27 @@ latest_launched_continuation_classification() {
 		cut -f2-
 }
 
+latest_plain_editor_repair_classification() {
+	local suffix=/continuations/plain-editor-product-smoke
+	[ -s "$LAUNCHES" ] || return 1
+	tail -n "$RECENT_LAUNCH_SCAN_LINES" "$LAUNCHES" 2>/dev/null |
+		awk -F '\t' -v suffix="$suffix" '
+			$2 == "continuation" && length($5) >= length(suffix) &&
+				substr($5, length($5) - length(suffix) + 1) == suffix {
+					print $5 "/classification.tsv"
+				}
+		' |
+		while IFS= read -r classification; do
+			[ -s "$classification" ] || continue
+			if awk -F '\t' 'NR > 1 && $1 == "plain-editor-product-smoke" && $2 ~ /^(blocked_specific|product_bug_reduced)$/ { found = 1 } END { exit found ? 0 : 1 }' "$classification" 2>/dev/null; then
+				printf '%s\t%s\n' "$(file_mtime "$classification")" "$classification"
+			fi
+		done |
+		sort -n |
+		tail -1 |
+		cut -f2-
+}
+
 write_continuation_classification_cache() {
 	local tmp=$CONTINUATION_CLASSIFICATIONS.$$.tmp
 	{
@@ -1185,7 +1234,7 @@ repair_branch_adopted_to_release_candidate() {
 		[ -n "$repo" ] || continue
 		git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || continue
 		rc_head=$(git -C "$repo" rev-parse --verify --quiet "$rc_branch^{commit}" 2>/dev/null || true)
-		if [ -n "$rc_head" ] && [ "$rc_head" = "$head" ]; then
+		if [ -n "$rc_head" ] && git -C "$repo" merge-base --is-ancestor "$head" "$rc_head" 2>/dev/null; then
 			return 0
 		fi
 	done
@@ -1962,24 +2011,25 @@ active_count_matching() {
 	tmux_sessions | awk -v pat="$pattern" 'tolower($0) ~ tolower(pat) { count++ } END { print count + 0 }'
 }
 
-active_continuation_process_count() {
-	local pid cwd
-	command -v pgrep >/dev/null 2>&1 || {
-		printf '0\n'
-		return 0
-	}
-	while IFS= read -r pid; do
-		[ -n "$pid" ] || continue
-		cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null || true)
-		case "$cwd" in
-			"$BASE"/worktrees/continuation-*)
-				if continuation_process_is_stale_orphan "$pid" "$cwd"; then
-					continue
-				fi
-				printf '%s\n' "$cwd"
-				;;
-		esac
-	done < <(pgrep -f 'codex .*exec --skip-git-repo-check' 2>/dev/null || true) | sort -u | wc -l | awk '{ print $1 + 0 }'
+active_continuation_identity_count() {
+	local pid cwd name
+	{
+		tmux list-sessions -F '#S' 2>/dev/null |
+			sed -n 's/^rtc-critical-continuation-//p'
+		if command -v pgrep >/dev/null 2>&1; then
+			while IFS= read -r pid; do
+				[ -n "$pid" ] || continue
+				cwd=$(readlink "/proc/$pid/cwd" 2>/dev/null || true)
+				case "$cwd" in
+					"$BASE"/worktrees/continuation-*)
+						continuation_process_is_stale_orphan "$pid" "$cwd" && continue
+						name=${cwd##*/continuation-}
+						printf '%s\n' "$name"
+						;;
+				esac
+			done < <(pgrep -f 'codex .*exec --skip-git-repo-check' 2>/dev/null || true)
+		fi
+	} | awk 'NF && !seen[$0]++ { count++ } END { print count + 0 }'
 }
 
 task_recently_launched() {
@@ -3415,7 +3465,7 @@ write_blockers_and_queue() {
 	repair_adoption_state=$([ -n "$repair_adoption_active" ] && printf active || { repair_branch_adoption_open && printf runnable || printf terminal; })
 	repair_adoption_result=$([ -n "$repair_adoption_active" ] && printf repair_branch_adoption_active || { repair_branch_adoption_open && printf repair_branch_adoption_required || printf no_pending_repair_branch; })
 	repair_adoption_summary=$(repair_branch_adoption_summary || true)
-	plain_smoke_active=$(active_work_matching 'plain-editor-product-smoke|real-editor-smoke' || true)
+	plain_smoke_active=$(active_work_matching '^rtc-critical-continuation-plain-editor-product-smoke-|^continuation-plain-editor-product-smoke-' || true)
 	plain_smoke_state=$([ -n "$plain_smoke_active" ] && printf active || { plain_editor_product_smoke_open && printf runnable || printf terminal; })
 	plain_smoke_summary=$(plain_editor_product_smoke_summary || true)
 	coverage_liveness_active=$(active_work_matching 'coverage-materialization-liveness|materialization-liveness|coverage-liveness' || true)
@@ -3767,6 +3817,7 @@ EOF
 
 write_continuation_prompt() {
 	local prompt=$1 report=$2 classification=$3 lane=$4 goal=$5 prompt_search_limits
+	local previous_classification previous_class previous_next_action previous_artifact plain_followup
 	prompt_search_limits=$(cat <<'PROMPT_SEARCH_LIMITS'
 Repository and artifact search limits:
 - Do not run broad `find`, `rg`, `grep`, `ls -R`, or shell globs over the repository, current run root, historical artifact roots, test/e2e/artifacts, or parent directories.
@@ -3935,6 +3986,33 @@ EOF
 		return
 	fi
 	if [ "$lane" = "plain-editor-product-smoke" ]; then
+		plain_followup=""
+		previous_classification=$(latest_plain_editor_repair_classification || true)
+		if [ -s "$previous_classification" ]; then
+			IFS=$'\t' read -r previous_class previous_next_action previous_artifact < <(
+				awk -F '\t' 'NR > 1 && $1 == "plain-editor-product-smoke" { print $2 "\t" $4 "\t" $5; exit }' "$previous_classification"
+			)
+			case "$previous_class" in
+				blocked_specific|product_bug_reduced)
+					printf '%s\n' "$previous_classification" > "${report%/*}/require-server-error"
+					plain_followup=$(cat <<EOF
+
+This is a mandatory repair follow-up to a completed classification-only pass.
+Previous classification: $previous_class
+Previous artifact: ${previous_artifact:-$previous_classification}
+Previous next action: ${previous_next_action:-missing}
+
+Do not repeat the prior smoke-only reproduction or return the same missing-stack blocker. Before classifying:
+1. Reproduce only the failing save/edit test and capture the /wp-json/wp-sync/v1/save response body plus the matching WordPress/PHP error and stack. Enable an isolated WP_DEBUG_LOG if the normal wp-env logs do not contain it.
+2. Locate the exact wp-sync/v1/save route callback and the source line that throws or returns HTTP 500. Inspect only those named PHP/REST files.
+3. Write ${report%/*}/server-error.tsv with header: request,result,http_status,error_code,owning_callback,source_location,evidence_path.
+4. Add the smallest focused regression check that fails for this mechanism. If the defect is in product code and the fix is safe, commit the fix on a local repair branch and rerun the focused check plus the one smoke test.
+5. If no safe fix is possible after obtaining the stack, use product_bug_reduced with the callback/source location and server-error.tsv. blocked_specific is allowed only for a new external prerequisite after executing its exact bounded collection command; it is not valid for the previously requested server stack.
+EOF
+					)
+					;;
+			esac
+		fi
 		cat > "$prompt" <<EOF
 You are running inside Jetstream2 on the Gutenberg RTC fuzzing project. Do not use API subagents. Work in this one Codex process.
 
@@ -3946,6 +4024,7 @@ Report path: $report
 Required classification TSV: $classification
 Required validation TSV: ${report%/*}/validation.tsv
 Required repair branch file: ${report%/*}/repair-branch.txt
+$plain_followup
 
 Task:
 1. Read the bounded current state:
@@ -3972,7 +4051,7 @@ Task:
    - Use repair_branch_created only if a committed local branch fixes a product or scheduler issue and validation points to it.
    - Use product_bug_reduced if the smoke workflow reliably reproduces a product bug but no safe fix was created.
    - Use harness_or_scheduler_repaired if the issue was only missing smoke scheduling and the gate now emits current proof.
-   - Use blocked_specific only with an exact failed command or missing artifact needed next.
+   - Use blocked_specific only with a new exact failed command or missing external artifact needed next. It may not repeat a blocker already named by the previous completed classification.
 
 Passive prose without validation.tsv, repair-branch.txt, and classification.tsv is a failure.
 EOF
@@ -4373,7 +4452,7 @@ launch_continuation_job() {
 	if task_recently_launched "$dedupe" "$MIN_TASK_INTERVAL_SECONDS" && ! latest_continuation_was_stale_orphan_killed "$lane"; then
 		return 0
 	fi
-	active_continuations=$(( $(active_count_matching '^rtc-critical-continuation-') + $(active_continuation_process_count) ))
+	active_continuations=$(active_continuation_identity_count)
 	if [ "$active_continuations" -ge "$MAX_ACTIVE_CONTINUATIONS" ] && [ "$force" != 1 ]; then
 		return 0
 	fi
@@ -4456,6 +4535,11 @@ if [ ! -s "$classification" ]; then
 	printf 'lane_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"
 	printf '%s\\tno_progress\\tmissing classification artifact or empty Codex output; review stderr/report and rerun bounded continuation only if no newer evidence exists\\t%s\\n' "$lane" "$report" >> "$classification"
 fi
+if [ -f "${report%/*}/require-server-error" ] && [ ! -s "${report%/*}/server-error.tsv" ]; then
+	cp "$classification" "$classification.before-server-error-guard" 2>/dev/null || true
+	printf 'lane_id\\tclassification\\tevidence\\tnext_action\\tartifact_path\\n' > "$classification"
+	printf '%s\\tfollowup_incomplete\\trepeated repair pass omitted required server-error.tsv; previous classification saved at %s.before-server-error-guard\\tcapture the wp-sync save response body and matching PHP stack/callback before another classification\\t%s\\n' "$lane" "$classification" "${report%/*}/require-server-error" >> "$classification"
+fi
 if awk -F '\t' 'NR > 1 && \$2 ~ /^(repair_branch_created|fix_branch_created)$/ { found = 1 } END { exit found ? 0 : 1 }' "$classification" 2>/dev/null; then
 	repair_file="${report%/*}/repair-branch.txt"
 	branch=\$(sed -n '1p' "\$repair_file" 2>/dev/null | tr -d '\r')
@@ -4501,7 +4585,7 @@ launch_continuation_jobs() {
 	local reload_completed_root reload_completed_mtime
 	local generated_at action_id target_loop priority action_kind family_or_pr evidence_path next_action control_path blocker_id active_pattern
 	local benchmark_product_status benchmark_product_summary benchmark_product_signature
-	local plain_smoke_summary
+	local plain_smoke_summary plain_smoke_class plain_smoke_classification
 	local focused_exact_open=0 aggregate_benchmark_repair_allowed=0
 	if benchmark_product_repair_allowed_by_controller; then
 		aggregate_benchmark_repair_allowed=1
@@ -4583,12 +4667,26 @@ launch_continuation_jobs() {
 	fi
 	if plain_editor_product_smoke_open && allow_critical_browser_preflight; then
 		plain_smoke_summary=$(plain_editor_product_smoke_summary || true)
-		launch_continuation_job \
-			"plain-editor-product-smoke" \
-			"plain-editor-product-smoke-$(hash_key "$plain_smoke_summary")" \
-			"plain-editor-product-smoke|real-editor-smoke" \
-			"plain editor product smoke gate is open: ${plain_smoke_summary:-missing smoke summary}. Produce current same-head edit/save/reload proof, repair smoke scheduling, or reduce/create a product fix branch. This gate must not remain a passive runnable status row." \
-			1
+		plain_smoke_classification=$(latest_plain_editor_repair_classification || true)
+		plain_smoke_class=$(awk -F '\t' 'NR > 1 && $1 == "plain-editor-product-smoke" { print $2; exit }' "$plain_smoke_classification" 2>/dev/null || true)
+		case "$plain_smoke_class" in
+			blocked_specific|product_bug_reduced)
+				launch_continuation_job \
+					"plain-editor-product-smoke" \
+					"plain-editor-product-smoke-server-error-v1-$(file_hash "$plain_smoke_classification" | cut -c1-12)" \
+					"^rtc-critical-continuation-plain-editor-product-smoke-|^continuation-plain-editor-product-smoke-" \
+					"plain editor product smoke repair follow-up: collect the wp-sync save response and PHP stack/callback requested by ${plain_smoke_classification:-the previous classification}, then create a focused fix branch or a source-backed product_bug_reduced artifact. Do not repeat the same blocked_specific result." \
+					1
+				;;
+			*)
+				launch_continuation_job \
+					"plain-editor-product-smoke" \
+					"plain-editor-product-smoke-$(hash_key "$plain_smoke_summary")" \
+					"^rtc-critical-continuation-plain-editor-product-smoke-|^continuation-plain-editor-product-smoke-" \
+					"plain editor product smoke gate is open: ${plain_smoke_summary:-missing smoke summary}. Produce current same-head edit/save/reload proof, repair smoke scheduling, or reduce/create a product fix branch. This gate must not remain a passive runnable status row." \
+					1
+				;;
+		esac
 	fi
 	if ! lane_terminal_suppressed pr17-1020002; then
 		launch_continuation_job \

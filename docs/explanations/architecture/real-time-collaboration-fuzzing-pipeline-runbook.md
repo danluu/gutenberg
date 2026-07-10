@@ -18,12 +18,88 @@ leave one-shot commands as the only copy of an important process.
 
 ## Current Operator Snapshot
 
-Snapshot time: `2026-07-08T18:25Z`
+Snapshot time: `2026-07-10T01:20Z`
 
 The active all-merge candidate is `js2/all-merged-rebased-20260701` at
-`efe27afe3aebe2a9c04e95fd696de1ed052dfebc`. The coverage-guided pointer file
+`1582cdec4f27f5a3c3639436adcf092df438b787`. The coverage-guided pointer file
 currently resolves to
-`/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260708T180419Z`.
+the authoritative current run; always read it rather than embedding a run name:
+
+```bash
+cat /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/current-output-dir.txt
+```
+
+Every current run must contain `source-manifest.tsv` with mode
+`exact-candidate-plus-harness-overlay`. The product tree comes from the named
+candidate ref, not the mutable dirty checkout. The persistent candidate source
+is `/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/candidate-source`.
+Its exact `npm ci` dependencies and production build are reused for the same
+head; isolated group repos copy product/build files and symlink that dependency
+set. The versioned `bin/rtc-*` harness comes from the validation repo and is
+frozen into that worktree. The monitor and live-analysis processes must run from
+the frozen worktree, and the manifest hashes for the monitor, supervisor, and
+triage watcher must match its files.
+
+Operational invariants added by the July 10 audit:
+
+- `rtc-fuzz` owns browser/core services; `rtc-analysis` owns live analysis.
+- Never run `capture-pane` against `rtc-fuzz`; the wrapper rejects it because
+  the installed tmux build has twice dumped core in that command.
+- `RTC_COVERAGE_FORCE_RESTART=1` is one-shot. Child monitors and the permanent
+  session watchdog must see zero or an unset value.
+- Do not remediate zero materialization during the first 900 seconds of a run.
+- Do not publish more groups than the active resource budget.
+- Do not rotate plain-editor or real-world product smoke before each has a
+  successful current-run record.
+- Pass `RTC_FUZZ_SUPERVISOR_CURRENT_OUTPUT_POINTER` to every supervisor. A
+  supervisor that no longer owns the path named by `current-output-dir.txt`
+  must terminate its lanes and exit.
+- A stopped lane with failed behavioral product evidence is not an
+  infrastructure restart. Quarantine the group as `paused-product-failure`
+  until the candidate changes, remove it from the runnable producer budget,
+  backfill the slot, and leave the durable failure to the critical repair
+  controller.
+- Exactly one novelty monitor may own a run root. Its
+  `.novelty-monitor-process.json` lock prevents an orphan and a replacement from
+  racing on scheduler state.
+- A missing novelty tmux session does not by itself justify replacing the run.
+  The guard first validates source provenance and supervisor state, terminates a
+  matching orphan, and runs `reattach-coverage-once` against the same root.
+- The generic session watchdog must use the same reattach-first command. A full
+  launcher restart is the fallback only when reattach rejects the current root.
+  `reattach-coverage-once` is safe to call when the session is already healthy.
+- Product-failure quarantine is candidate-scoped, not run-root-scoped. Preserve
+  the carried list when a fresh supervisor has no rows, exclude it from bootstrap
+  selection, and clear it only when the candidate head changes.
+- Versioned controller scripts in the validation repo take precedence over
+  `/tmp/start_*` wrappers. The guard verifies that PR progress uses the installed
+  runtime with `RTC_PR_PROGRESS_PERSONA_EVERY_CYCLES=0` unless personas were
+  explicitly enabled.
+- Count critical continuations by the union of normalized tmux-session and
+  worktree identities. Adding session and process counts double-counts normal
+  jobs and can suppress forced repair work at the concurrency cap.
+- Count Codex workers by leaf worker processes. A timeout wrapper, Node launcher,
+  and native Codex process are one worker, not three.
+- Repair adoption is a commit-ancestry fact as well as a publish-manifest fact.
+  If the repair commit is already an ancestor of the release candidate, report
+  `adopted-to-release-candidate` and require replay; do not queue another merge.
+- A repeated plain-editor `blocked_specific` result must advance to server-side
+  evidence. The follow-up writes `server-error.tsv` with the wp-sync response,
+  callback, source location, and PHP stack before it may classify or repair.
+- A tmux session disappearing is not enough to declare a singleton stopped.
+  Clear validated orphan lock holders for productive analysis, deferred work,
+  and resource autoscaling before relaunch.
+
+Quick provenance and health check:
+
+```bash
+OUT=$(cat /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/current-output-dir.txt)
+cat "$OUT/source-manifest.tsv"
+sha256sum "$OUT"/../candidate-source/bin/rtc-browser-fuzz-{novelty-monitor,supervisor,triage-watcher}.mjs
+tmux -L rtc-fuzz list-sessions -F '#{session_name}'
+tmux -L rtc-analysis list-sessions -F '#{session_name}'
+node -e 'const fs=require("fs"); const x=JSON.parse(fs.readFileSync(process.argv[1])); console.log(x.map((g)=>g.name))' "$OUT/supervisor-groups.json"
+```
 
 The current publication blockers are intentionally concrete:
 
@@ -35,8 +111,9 @@ The current publication blockers are intentionally concrete:
     `novelty-http-persistence-probe`, and
     `novelty-http-title-reload-convergence`.
 -   `plain-editor-product-smoke`: this is a first-class publication gate. It is
-    not satisfied by `wp-env` startup/status logs; the gate needs a successful
-    real edit/save/reload artifact.
+    not satisfied by `wp-env` startup/status logs. Seed `1255001` reproduced an
+    RTC save endpoint HTTP 500 in the exact-candidate run, so the gate remains
+    open until a repair produces a successful real edit/save/reload artifact.
 -   `pa-exact-benchmark-canary-product-failure`: one current repair-adoption
     row is in `central_present` state and must be validated, merged into the
     all-merge candidate, converted into a push manifest, or rejected with exact
@@ -359,7 +436,8 @@ fighting each other and makes recovery auditable.
 
 -   `rtc-browser-fuzz-supervisor.mjs` owns active fuzz groups, lane replacement,
     shared `wp-env` health repair, WS relay startup, and per-group plugin
-    activation.
+    activation. It also quarantines groups with failed product evidence so one
+    candidate bug cannot consume repeated generations of the same seed.
 -   `rtc-browser-fuzz-watchdog.mjs` owns supervisor liveness checks and stale
     stopped `wp-env` cleanup. It should restart a missing or stale supervisor,
     not run fuzz lanes itself.
@@ -372,7 +450,9 @@ fighting each other and makes recovery auditable.
 -   `rtc-browser-fuzz-triage-watcher.mjs` without `--gate-only` owns
     browser-heavy repro work. Keep its parallelism low.
 -   `rtc-browser-fuzz-novelty-monitor.mjs` owns novelty-guided group generation
-    and the novelty supervisor session.
+    and the novelty supervisor session. It has one process owner per run root;
+    quarantined product failures remain gates but do not consume its runnable
+    group budget.
 -   A periodic Codex monitor owns human-readable status updates and bounded job
     adjustments. It should append every decision to `monitor-status.md`.
 
@@ -638,7 +718,8 @@ The remote launchers are intentionally split by ownership:
     feedback.
 -   `rtc-coverage-guided-watchdog-start-remote.sh` runs
     `rtc-browser-fuzz-session-watchdog.mjs` and restarts the coverage-guided
-    session through the stable `/tmp` launchers.
+    session through `rtc-jetstream-guard-remote.sh reattach-coverage-once`; only
+    an invalid/missing current root falls back to a new coverage launch.
 -   `rtc-resource-autoscaler-remote.sh` watches CPU, memory, requested
     coverage-guided budget, and browser/e2e materialization. It does not treat
     requested budget as success unless `supervisor-state.json` shows live run
@@ -1322,7 +1403,9 @@ Create a durable run root and write the group config there.
 
 ```bash
 export RUN_ROOT=/path/to/gutenberg/artifacts/rtc-browser-fuzz/mixed-http-ws-supervised-$( date -u +%Y%m%d-%H%M )
+export RUN_POINTER="$( dirname "$RUN_ROOT" )/current-output-dir.txt"
 mkdir -p "$RUN_ROOT"
+printf '%s\n' "$RUN_ROOT" > "$RUN_POINTER"
 $EDITOR "$RUN_ROOT/supervisor-groups.json"
 ```
 
@@ -1335,6 +1418,7 @@ tmux new-session -d -s rtc-fuzz-supervisor "bash -lc '
 cd /path/to/gutenberg
 export RTC_FUZZ_SUPERVISOR_OUTPUT_DIR=\"$RUN_ROOT\"
 export RTC_FUZZ_SUPERVISOR_GROUPS_PATH=\"$RUN_ROOT/supervisor-groups.json\"
+export RTC_FUZZ_SUPERVISOR_CURRENT_OUTPUT_POINTER=\"$RUN_POINTER\"
 export RTC_FUZZ_SUPERVISOR_DURATION_HOURS=14
 export RTC_FUZZ_SUPERVISOR_POLL_MS=60000
 while true; do

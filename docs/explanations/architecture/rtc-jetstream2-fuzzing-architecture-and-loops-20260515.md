@@ -1,8 +1,8 @@
 # RTC Jetstream2 fuzzing architecture and active loops
 
-Snapshot time: `2026-07-08T18:25Z`
+Snapshot time: `2026-07-10T01:20Z`
 
-Blocker-history update: `2026-07-08T18:25Z`
+Blocker-history update: `2026-07-10T01:20Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -42,6 +42,192 @@ durable evidence, and leaves enough state for another process to reject stale or
 incorrect interpretations. Graphs and prose reports are not the API by
 themselves; controller decisions must be traceable to TSV, JSON, or run
 artifacts under the data root.
+
+## 2026-07-10 Effectiveness Audit And Repair
+
+The July 9-10 audit found that low useful output was caused by control-plane and
+source-provenance failures, not by a lack of candidate bugs:
+
+- Six-persona review loops ran continuously and consumed roughly 17 CPU cores,
+  while browser tests used roughly two. Generic reviews are now opt-in;
+  evidence-owned critical repair remains active and productive analysis defaults
+  to one lane.
+- The novelty monitor advertised more groups than the resource budget, and the
+  autoscaler repeatedly removed groups while repository, WordPress, and browser
+  setup was still running. Publication is now capped at the effective budget,
+  materializing groups are retained through their first record, and plain-editor
+  plus real-world product smoke reserve slots until each has a current-run green.
+- Isolated repo preparation copied a dirty checkout with over one thousand
+  generated/untracked paths and took minutes. The product under test is now an
+  exact detached worktree of
+  `refs/heads/js2/all-merged-rebased-20260701`; only named test-harness paths are
+  overlaid. Independent 140 MB group copies prepared in about two seconds each.
+- The exact checkout initially had no ignored build output. Reusing build output
+  and `node_modules` from the dirty checkout was not valid: the first exact build
+  proved dependency skew through a `colorjs` API mismatch and missing
+  `wasm-vips`. A commit-keyed `npm ci` took about 49 seconds and the exact
+  production build took about 63 seconds. That snapshot and dependency set are
+  reused, while group repos symlink the exact dependencies.
+- A one-shot `RTC_COVERAGE_FORCE_RESTART=1` leaked into the permanent session
+  watchdog, causing every normal recovery to replace the run it had just
+  started. The launcher now clears the flag before spawning children and the
+  watchdog explicitly sets it to zero.
+- The productive-analysis, deferred-promotion, and resource-autoscaler loops
+  survived tmux loss as parentless singleton lock holders. Their recovery paths
+  now terminate only validated matching orphan controllers before relaunch.
+- Core recovery was suppressed for 15 minutes by the same cooldown as optional
+  analysis. Required controllers now use a 120-second cooldown; optional work
+  retains the 900-second cooldown.
+- The autoscaler treated a two-minute setup as failed materialization and also
+  fought the launcher's five-slot benchmark policy with an immediate 12-slot
+  restart. A 900-second startup grace now blocks materialization remediation and
+  upward budget replacement while still allowing pressure-driven scale-down.
+- The shared tmux server dumped core at `2026-07-09T23:29:27Z` and again at
+  `2026-07-10T00:00:10Z` in `cmd_capture_pane_exec`. Live analysis moved to the
+  `rtc-analysis` socket, read-only clients are serialized, and `capture-pane` is
+  rejected on the `rtc-fuzz` core socket. The outside guard records server PID
+  replacement and restores required services.
+- Supervisor launch commands did not pass the authoritative
+  `current-output-dir.txt` pointer. A surviving supervisor therefore could not
+  reject its own stale output after a run replacement. Novelty and guard launch
+  paths now pass the pointer and the supervisor exits after terminating stale
+  lanes when the pointer no longer names its output directory.
+- A failed human smoke preflight wrote actionable behavioral evidence, but its
+  lane exit was still reported as `runner-error`. The supervisor relaunched the
+  same seed and repeated the same expensive browser workflow. It now counts
+  failed product-evidence records separately and moves that group to
+  `paused-product-failure` for the lifetime of the candidate. The critical
+  repair controller owns the one actionable failure; other groups continue.
+- Quarantined failures initially still counted against the five-group producer
+  budget. The novelty scheduler now keeps those failures as publication gates
+  in durable state while removing them from `supervisor-groups.json`; it
+  backfills the vacated slots with runnable coverage groups.
+- A fresh run root initially erased that quarantine because its empty supervisor
+  state replaced the carried scheduler list. Quarantines are now monotonic for
+  one candidate head, survive supervisor/run-root replacement, and are excluded
+  during bootstrap as well as normal publication. A candidate-head change is
+  the operation that clears them.
+- Killing a novelty tmux session could leave its Node child parented by PID 1.
+  A replacement then raced the orphan while both rewrote `novelty-state.json`
+  and `supervisor-groups.json`. Each run now has an exclusive
+  `.novelty-monitor-process.json` owner. The guard validates provenance, stops a
+  matching orphan, and reattaches the monitor to the same run before considering
+  a full campaign replacement.
+- The generic session watchdog still bypassed that guard and launched a new run
+  whenever the tmux session disappeared. Its recovery command now tries
+  `reattach-coverage-once` first and creates a new campaign only when the current
+  root or provenance is invalid. Reattach is idempotent and counts only monitor
+  processes that own the named root.
+- The generated monitor ran from the mutable all-merge control checkout even
+  though its product source pointed at the exact candidate worktree. Runtime
+  `bin/rtc-*` files now come from the validation/scripts repo, are frozen into
+  the candidate worktree, and both the monitor and live analysis execute there.
+  `source-manifest.tsv` records the monitor repo and SHA-256 hashes for the
+  novelty monitor, supervisor, and triage watcher; the guard rejects drift.
+- The guard preferred `/tmp/start_rtc_pr_progress_controller.sh`, whose stale
+  default launched six PR personas and a synthesis job every two cycles. It now
+  installs the versioned controller from the validation repo, propagates a zero
+  persona cadence, verifies the live controller path/environment, and replaces
+  stale runtimes automatically. Versioned critical and productive-analysis
+  launchers also take precedence over `/tmp` copies.
+- The supervisor iterated a dynamically reordered group array by numeric index,
+  which could skip the newly promoted product-smoke gate for a full startup
+  pass. It now processes each group name once per pass, even when policy changes
+  order during serialized setup.
+- Active-continuation accounting added tmux sessions and their matching Codex
+  worktrees, double-counting every repair and silently suppressing the next
+  forced repair at the cap. It now counts the union of normalized session and
+  worktree identities. Plain-editor ownership also matches only its critical
+  continuation session/worktree, not every triage command line that happens to
+  mention the group name.
+- Structural health counted the timeout wrapper, JavaScript launcher, and native
+  Codex binary as three workers. It now counts only leaf Codex workers, avoiding
+  false over-cap alerts and unnecessary analysis suppression.
+- PR status could leave an already incorporated repair at `needs-validation`
+  because it trusted only the local push manifest. Both critical routing and the
+  human-readable PR table now treat a repair commit that is an ancestor of the
+  current release-candidate head as `adopted-to-release-candidate`.
+- The first plain-editor continuation reproduced the product failure but ended
+  `blocked_specific` after asking for the REST/PHP stack. A repeat now enters a
+  distinct server-error repair pass: it must capture the wp-sync response,
+  owning callback, source location, and PHP stack in `server-error.tsv`, then
+  create a focused fix branch or a source-backed `product_bug_reduced` artifact.
+  The runner rewrites a repeat result to `followup_incomplete` when that artifact
+  is absent.
+
+The first exact-candidate run found a reproducible product failure within
+minutes: `/wp-json/wp-sync/v1/save` returned HTTP 500 during the plain-editor
+save/reload/collaborator smoke workflow. The run wrote a failed behavioral
+record for seed `1255001`, promoted `plain-editor-product-smoke` to a publication
+gate, and launched a bounded critical continuation. The triage normalizer now
+classifies this family as `rtc-save-rest-500` instead of `unknown`.
+
+Run `run-20260710T004959Z` independently reproduced failed product evidence in
+both plain-editor and real-world editor workflows and quarantined each after
+generation 1. Before the final recovery change, the generic watchdog replaced
+that root with `run-20260710T010645Z`. The current root retained both failures,
+disabled both generation-1 groups with two product-failure records each, and
+backfilled all five runnable producer slots. A deliberate novelty-session-loss
+test changed the monitor PID while preserving the root, pointer mtime, frozen
+harness cwd, and quarantine list. The bounded server-error repair continuation
+is actively rerunning the focused human smoke with save-response capture.
+
+The source invariant is recorded in every run's `source-manifest.tsv`. It names
+the candidate ref/head/tree, exact product worktree, control and harness
+checkouts, overlay count, monitor worktree, critical harness hashes, and mode
+`exact-candidate-plus-harness-overlay`. The guard restarts a run when the named
+candidate ref advances, the snapshot head differs, the manifest is absent, the
+monitor is not executing from the frozen worktree, a harness hash differs, or
+an undeclared product path changes.
+
+```mermaid
+flowchart TB
+    Ref[js2/all-merged-rebased-20260701] --> Exact[exact detached candidate worktree]
+    Harness[versioned validation harness] --> Frozen[frozen named harness overlay]
+    Frozen --> Exact
+    Deps[commit-keyed npm ci and production build] --> Exact
+    Exact --> G1[plain-editor product smoke]
+    Exact --> G2[real-world editor usability]
+    Exact --> G3[RTC collaboration groups]
+
+    subgraph Core[rtc-fuzz core socket]
+        Monitor[novelty monitor]
+        Supervisor[browser supervisor]
+        Resource[resource autoscaler]
+        Watchdog[session watchdog]
+    end
+
+    subgraph Analysis[rtc-analysis socket]
+        Live[live failure analysis]
+    end
+
+    G1 --> Supervisor
+    G2 --> Supervisor
+    G3 --> Supervisor
+    Supervisor --> Monitor
+    Monitor --> Live
+    Guard[outside-tmux guard] --> Core
+    Guard --> Analysis
+```
+
+Current feeds and speeds after the audit:
+
+| Control | Value |
+| --- | --- |
+| Browser publication budget | 5 groups at the current benchmark cap |
+| Mandatory product workflows | 2 slots until first current-run green |
+| Supervisor poll | 60 seconds |
+| Autoscaler/guard poll | about 120 seconds |
+| Materialization startup grace | 900 seconds |
+| Core restart cooldown | 120 seconds |
+| Optional restart cooldown | 900 seconds |
+| Productive-analysis concurrency | 1 lane |
+| Live analysis concurrency | 2 evidence-triggered jobs |
+| Structural Codex cap | 8 leaf workers; wrappers are not counted |
+| Current product failures | 2 quarantined generation-1 groups, 2 records each |
+| Exact dependency install | about 49 seconds on first use per head |
+| Exact production build | about 63 seconds on first use per head |
+| Isolated group repo preparation | about 2 seconds per group after caching |
 
 ## 2026-07-08 Live Update
 
