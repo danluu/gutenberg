@@ -57,6 +57,7 @@ TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-core-wrapper/bin
 LOG_DIR=$BASE/logs
 PID_FILE=$BASE/guard.pid
 LOCK_FILE=${RTC_JETSTREAM_GUARD_LOCK_FILE:-$BASE/guard-v2.lock}
+HARNESS_UPDATE_GRACE_SECONDS=${RTC_GUARD_HARNESS_UPDATE_GRACE_SECONDS:-180}
 EVENTS=$LOG_DIR/restart-events.tsv
 TMUX_SERVER_PID_FILE=$BASE/rtc-fuzz-server.pid
 TMUX_SERVER_EVENTS=$LOG_DIR/tmux-server-events.tsv
@@ -114,6 +115,7 @@ has_session() {
 
 pr_progress_controller_runtime_healthy() {
 	local pid args cadence
+	cmp -s "$REPO/bin/rtc-pr-progress-controller-remote.sh" "$PR_PROGRESS_BASE/rtc-pr-progress-controller.sh" || return 1
 	pid=$(tmux list-panes -t rtc-pr-progress-controller-loop -F '#{pane_pid}' 2>/dev/null | sed -n '1p')
 	[ -n "$pid" ] || return 1
 	args=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
@@ -787,7 +789,7 @@ coverage_start_in_progress() {
 
 coverage_candidate_source_problem() {
 	local root manifest product_repo monitor_repo expected_head actual_head control_head mode unexpected
-	local field relative expected_hash actual_hash
+	local field relative expected_hash actual_hash actual_age
 	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
 	[ -n "$root" ] && [ -d "$root" ] || {
 		printf 'current output root is missing'
@@ -823,15 +825,22 @@ coverage_candidate_source_problem() {
 		printf 'run monitor does not execute from frozen product repo=%s' "$product_repo"
 		return 0
 	}
-	for field in novelty_monitor_sha256 supervisor_sha256 triage_watcher_sha256; do
+	for field in novelty_monitor_sha256 live_analysis_monitor_sha256 runner_sha256 supervisor_sha256 triage_watcher_sha256; do
 		case "$field" in
 			novelty_monitor_sha256) relative=bin/rtc-browser-fuzz-novelty-monitor.mjs ;;
+			live_analysis_monitor_sha256) relative=bin/rtc-browser-fuzz-live-analysis-monitor.mjs ;;
+			runner_sha256) relative=bin/rtc-browser-fuzz-runner.mjs ;;
 			supervisor_sha256) relative=bin/rtc-browser-fuzz-supervisor.mjs ;;
 			triage_watcher_sha256) relative=bin/rtc-browser-fuzz-triage-watcher.mjs ;;
 		esac
 		expected_hash=$(awk -F '\t' -v key="$field" '$1 == key { print $2; exit }' "$manifest")
 		actual_hash=$(sha256sum "$product_repo/$relative" 2>/dev/null | awk '{ print $1 }')
 		[ -n "$expected_hash" ] && [ "$actual_hash" = "$expected_hash" ] || {
+			actual_age=$(file_age_seconds "$product_repo/$relative" 2>/dev/null || printf 999999)
+			if [ -n "$expected_hash" ] && [ "$actual_age" -lt "$HARNESS_UPDATE_GRACE_SECONDS" ]; then
+				log "deferring fresh harness hash mismatch during publication path=$relative age=${actual_age}s grace=${HARNESS_UPDATE_GRACE_SECONDS}s actual=${actual_hash:-missing} expected=$expected_hash"
+				return 1
+			fi
 			printf 'frozen harness hash mismatch path=%s actual=%s expected=%s' "$relative" "${actual_hash:-missing}" "${expected_hash:-missing}"
 			return 0
 		}

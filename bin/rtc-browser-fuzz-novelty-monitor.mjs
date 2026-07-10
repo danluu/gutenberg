@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import crypto from 'crypto';
 import fs from 'fs/promises';
 import { readFileSync } from 'fs';
 import os from 'os';
@@ -394,8 +395,13 @@ const REFRESH_CURRENT_RUN_TRIAGE_GATES =
 	process.env.RTC_FUZZ_NOVELTY_REFRESH_CURRENT_TRIAGE_GATES !== '0';
 const TRIAGE_GATE_REFRESH_TIMEOUT_MS = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_TRIAGE_GATE_REFRESH_TIMEOUT_MS',
-	120000
+	30000
 );
+const TRIAGE_GATE_REFRESH_MAX_PARALLEL = getPositiveIntegerEnv(
+	'RTC_FUZZ_NOVELTY_TRIAGE_GATE_REFRESH_MAX_PARALLEL',
+	4
+);
+const activeGateOnlyTriageChildren = new Set();
 const STARTUP_FAILURE_LIMIT = getPositiveIntegerEnv(
 	'RTC_FUZZ_NOVELTY_STARTUP_FAILURE_LIMIT',
 	2
@@ -5999,6 +6005,30 @@ function syncProductFailureQuarantines( supervisorState ) {
 	return new Set( groups );
 }
 
+async function syncProductFailureQuarantinesAndRepublish(
+	supervisorState,
+	source
+) {
+	const previousMarker = state.productFailureQuarantineMarker ?? '';
+	const quarantines = syncProductFailureQuarantines( supervisorState );
+	if ( state.productFailureQuarantineMarker === previousMarker ) {
+		return quarantines;
+	}
+
+	if ( START_SUPERVISOR && ! PRODUCER_BUDGET_DISABLED ) {
+		await writeSupervisorGroupsForEnabledGroups(
+			state.enabledGroups ?? []
+		);
+	}
+	await writeJsonFileAtomic( STATE_PATH, state );
+	await log(
+		`Republished supervisor groups after ${ source } discovered product-failure quarantines: ${ [
+			...quarantines,
+		].join( ',' ) }.`
+	);
+	return quarantines;
+}
+
 async function readSupervisorStateAfterStartup() {
 	let supervisorState = await readSupervisorState();
 	if (
@@ -6703,6 +6733,9 @@ async function writeBenchmarkCanaryCoverageTelemetry(
 	const recordCountsByGroup = {};
 	const successfulRecordCountsByGroup = {};
 	const recordCountsByTransport = {};
+	const productFailureQuarantinedGroupSet = new Set(
+		state.productFailureQuarantinedGroups ?? []
+	);
 	for ( const group of groups ) {
 		const groupState = groupStateByName.get( group );
 		const activeRunDirs = uniquePathList( groupState?.activeRunDirs ?? [] );
@@ -6775,11 +6808,14 @@ async function writeBenchmarkCanaryCoverageTelemetry(
 		const supervisorProductEvidenceRecords = Number(
 			groupState?.startupStallNoiseSummary?.productEvidenceRecords ?? 0
 		);
+		const quarantinedProductEvidenceRecords =
+			productFailureQuarantinedGroupSet.has( group ) ? 1 : 0;
 		const productEvidenceRecords = Math.max(
 			noAnalysisProductEvidenceRecords,
 			Number.isFinite( supervisorProductEvidenceRecords )
 				? supervisorProductEvidenceRecords
-				: 0
+				: 0,
+			quarantinedProductEvidenceRecords
 		);
 		const retainedCurrentRootSuccess = retainedSuccessfulGroupRecords > 0;
 		const directCurrentRunGreen = currentRunSuccessfulGroupRecords > 0;
@@ -7618,18 +7654,28 @@ async function refreshCurrentRunTriageGates( runDirs ) {
 		OUTPUT_DIR,
 		'supervisor-state.json'
 	);
-	for ( const runDir of dirs ) {
-		const result = await runGateOnlyTriageWatcher(
-			runDir,
-			supervisorStatePath
-		);
-		results.push( result );
-		if ( ! result.ok ) {
-			await log(
-				`current-run gate-only triage refresh failed for ${ runDir }: exit=${ result.exitCode } signal=${ result.signal } timedOut=${ result.timedOut } stderr=${ result.stderrTail }`
-			);
+	let nextIndex = 0;
+	const workers = Array.from(
+		{
+			length: Math.min( TRIAGE_GATE_REFRESH_MAX_PARALLEL, dirs.length ),
+		},
+		async () => {
+			while ( nextIndex < dirs.length ) {
+				const runDir = dirs[ nextIndex++ ];
+				const result = await runGateOnlyTriageWatcher(
+					runDir,
+					supervisorStatePath
+				);
+				results.push( result );
+				if ( ! result.ok ) {
+					await log(
+						`current-run gate-only triage refresh failed for ${ runDir }: exit=${ result.exitCode } signal=${ result.signal } timedOut=${ result.timedOut } stderr=${ result.stderrTail }`
+					);
+				}
+			}
 		}
-	}
+	);
+	await Promise.all( workers );
 
 	return {
 		enabled: true,
@@ -7663,6 +7709,7 @@ function runGateOnlyTriageWatcher( runDir, supervisorStatePath ) {
 			],
 			{
 				cwd: REPO_ROOT,
+				detached: process.platform !== 'win32',
 				env: {
 					...process.env,
 					RTC_FUZZ_TRIAGE_SUPERVISOR_STATE_PATH: supervisorStatePath,
@@ -7672,12 +7719,14 @@ function runGateOnlyTriageWatcher( runDir, supervisorStatePath ) {
 				stdio: [ 'ignore', 'pipe', 'pipe' ],
 			}
 		);
+		activeGateOnlyTriageChildren.add( child );
 
 		const finish = ( result ) => {
 			if ( settled ) {
 				return;
 			}
 			settled = true;
+			activeGateOnlyTriageChildren.delete( child );
 			clearTimeout( timeout );
 			clearTimeout( killTimer );
 			resolve( {
@@ -7691,13 +7740,9 @@ function runGateOnlyTriageWatcher( runDir, supervisorStatePath ) {
 
 		const timeout = setTimeout( () => {
 			timedOut = true;
-			try {
-				child.kill( 'SIGTERM' );
-			} catch {}
+			terminateGateOnlyTriageChild( child, 'SIGTERM' );
 			killTimer = setTimeout( () => {
-				try {
-					child.kill( 'SIGKILL' );
-				} catch {}
+				terminateGateOnlyTriageChild( child, 'SIGKILL' );
 			}, 5000 );
 			killTimer.unref();
 		}, TRIAGE_GATE_REFRESH_TIMEOUT_MS );
@@ -7727,6 +7772,21 @@ function runGateOnlyTriageWatcher( runDir, supervisorStatePath ) {
 			} );
 		} );
 	} );
+}
+
+function terminateGateOnlyTriageChild( child, signal ) {
+	if ( ! child?.pid ) {
+		return;
+	}
+	if ( process.platform !== 'win32' ) {
+		try {
+			process.kill( -child.pid, signal );
+			return;
+		} catch {}
+	}
+	try {
+		child.kill( signal );
+	} catch {}
 }
 
 function tailText( value, maxLength = 4000 ) {
@@ -14814,12 +14874,160 @@ function buildGroup( profile ) {
 	};
 }
 
+const NOVELTY_GROUP_HARNESS_OVERLAY_PATHS = [
+	'.wp-env.test.json',
+	'packages/env/lib/runtime/docker/build-docker-compose-config.js',
+	'test/e2e/config/global-setup.ts',
+	'test/e2e/config/rtc-websocket-setup.ts',
+	'test/e2e/specs/editor/collaboration',
+	'packages/e2e-tests/plugins/rtc-websocket-provider',
+];
+const NOVELTY_GROUP_HARNESS_MANIFEST = '.js2-harness-overlay-manifest.json';
+let noveltyGroupHarnessOverlayManifestPromise = null;
+
+async function collectHarnessOverlayFiles( relativePath, files ) {
+	const sourcePath = path.join( REPO_ROOT, relativePath );
+	let stat;
+	try {
+		stat = await fs.lstat( sourcePath );
+	} catch ( error ) {
+		if ( error?.code === 'ENOENT' ) {
+			return;
+		}
+		throw error;
+	}
+	if ( ! stat.isDirectory() ) {
+		files.push( relativePath );
+		return;
+	}
+
+	const entries = await fs.readdir( sourcePath, { withFileTypes: true } );
+	for ( const entry of entries.sort( ( left, right ) =>
+		left.name.localeCompare( right.name )
+	) ) {
+		await collectHarnessOverlayFiles(
+			path.join( relativePath, entry.name ),
+			files
+		);
+	}
+}
+
+async function getNoveltyGroupHarnessOverlayManifest() {
+	if ( noveltyGroupHarnessOverlayManifestPromise ) {
+		return noveltyGroupHarnessOverlayManifestPromise;
+	}
+	noveltyGroupHarnessOverlayManifestPromise = ( async () => {
+		const files = [];
+		const binEntries = await fs.readdir( path.join( REPO_ROOT, 'bin' ), {
+			withFileTypes: true,
+		} );
+		for ( const entry of binEntries
+			.filter(
+				( candidate ) =>
+					candidate.name.startsWith( 'rtc-' ) &&
+					( candidate.isFile() || candidate.isSymbolicLink() )
+			)
+			.sort( ( left, right ) =>
+				left.name.localeCompare( right.name )
+			) ) {
+			files.push( path.join( 'bin', entry.name ) );
+		}
+		for ( const relativePath of NOVELTY_GROUP_HARNESS_OVERLAY_PATHS ) {
+			await collectHarnessOverlayFiles( relativePath, files );
+		}
+
+		const uniqueFiles = uniqueStringList( files ).sort();
+		const hash = crypto.createHash( 'sha256' );
+		for ( const relativePath of uniqueFiles ) {
+			const sourcePath = path.join( REPO_ROOT, relativePath );
+			const stat = await fs.lstat( sourcePath );
+			hash.update( relativePath );
+			hash.update( '\0' );
+			hash.update( String( stat.mode & 0o777 ) );
+			hash.update( '\0' );
+			if ( stat.isSymbolicLink() ) {
+				hash.update( await fs.readlink( sourcePath ) );
+			} else {
+				hash.update( await fs.readFile( sourcePath ) );
+			}
+			hash.update( '\0' );
+		}
+		return {
+			signature: hash.digest( 'hex' ),
+			files: uniqueFiles,
+		};
+	} )();
+	return noveltyGroupHarnessOverlayManifestPromise;
+}
+
+async function copyHarnessOverlayFileAtomic( relativePath, destinationRoot ) {
+	const sourcePath = path.join( REPO_ROOT, relativePath );
+	const destinationPath = path.join( destinationRoot, relativePath );
+	const stat = await fs.lstat( sourcePath );
+	const temporaryPath = `${ destinationPath }.js2-sync-${
+		process.pid
+	}-${ Math.random().toString( 16 ).slice( 2 ) }`;
+	await fs.mkdir( path.dirname( destinationPath ), { recursive: true } );
+	await fs.rm( temporaryPath, { force: true, recursive: true } );
+	if ( stat.isSymbolicLink() ) {
+		await fs.symlink( await fs.readlink( sourcePath ), temporaryPath );
+	} else {
+		await fs.copyFile( sourcePath, temporaryPath );
+		await fs.chmod( temporaryPath, stat.mode & 0o777 );
+	}
+	await fs.rename( temporaryPath, destinationPath );
+}
+
+async function syncNoveltyGroupHarnessOverlay( group ) {
+	const manifest = await getNoveltyGroupHarnessOverlayManifest();
+	const manifestPath = path.join(
+		group.repoRoot,
+		NOVELTY_GROUP_HARNESS_MANIFEST
+	);
+	const previousManifest = await readJsonFile( manifestPath );
+	if ( previousManifest?.signature === manifest.signature ) {
+		return false;
+	}
+
+	for ( const relativePath of manifest.files ) {
+		await copyHarnessOverlayFileAtomic( relativePath, group.repoRoot );
+	}
+	for ( const relativePath of previousManifest?.files ?? [] ) {
+		if ( ! manifest.files.includes( relativePath ) ) {
+			await fs.rm( path.join( group.repoRoot, relativePath ), {
+				force: true,
+				recursive: true,
+			} );
+		}
+	}
+	await writeJsonFileAtomic( manifestPath, manifest );
+	state.changes.push( {
+		at: new Date().toISOString(),
+		action: 'sync-isolated-novelty-harness-overlay',
+		group: group.name,
+		repoRoot: group.repoRoot,
+		signature: manifest.signature,
+		fileCount: manifest.files.length,
+		reason: 'existing isolated group repos must run the same versioned harness as the frozen candidate instead of retaining stale runner, launcher, triage, or editor-oracle files',
+	} );
+	await terminateGroupLanes(
+		group.name,
+		'isolated group harness changed; restart any active lane so it loads the synchronized runner and editor-oracle files',
+		{
+			action: 'terminate-stale-isolated-harness-lanes',
+			logLabel: 'stale isolated harness group',
+		}
+	);
+	return true;
+}
+
 async function ensureNoveltyGroupRepo( group ) {
 	if ( ! REPOS_BASE || group.repoRoot === REPO_ROOT ) {
 		return;
 	}
 	try {
 		await fs.access( path.join( group.repoRoot, 'package.json' ) );
+		await syncNoveltyGroupHarnessOverlay( group );
 		return;
 	} catch {}
 
@@ -14894,6 +15102,7 @@ async function ensureNoveltyGroupRepo( group ) {
 		);
 	}
 	await fs.rename( tmpRepoRoot, group.repoRoot );
+	await syncNoveltyGroupHarnessOverlay( group );
 }
 
 const queuedNoveltyRepoPrepRoots = new Set();
@@ -15183,10 +15392,31 @@ async function writeSupervisorGroupsForEnabledGroups( enabledGroups ) {
 		} );
 	}
 	state.enabledGroups = publishedGroups;
+	const harnessOverlaySignature = REPOS_BASE
+		? ( await getNoveltyGroupHarnessOverlayManifest() ).signature
+		: null;
 	const groups = publishedGroups
 		.map( ( group ) => groupProfilesByName.get( group ) )
 		.filter( Boolean )
-		.map( buildGroup );
+		.map( ( profile ) => {
+			const group = buildGroup( profile );
+			if ( harnessOverlaySignature ) {
+				group.harnessOverlaySignature = harnessOverlaySignature;
+			}
+			if (
+				shouldProtectOpenBenchmarkCanaryPromotionGroup( group.name ) ||
+				activePolicyRequiredGroupSet.has( group.name )
+			) {
+				group.env = {
+					...( group.env ?? {} ),
+					RTC_FUZZ_SUPERVISOR_BYPASS_NO_PRODUCT_STARTUP_STALL_GUARD:
+						'1',
+					RTC_FUZZ_SUPERVISOR_BYPASS_STARTUP_STALL_COOLDOWN: '1',
+					RTC_FUZZ_SUPERVISOR_BYPASS_STARTUP_STALL_SEED_DRAIN: '1',
+				};
+			}
+			return group;
+		} );
 	await writeJsonFileAtomic( GROUPS_PATH, groups );
 	queueNoveltyGroupRepoPrep(
 		groups,
@@ -21266,6 +21496,10 @@ async function writeStatusHeartbeat() {
 	}
 	const activeRunDirs = await refreshCurrentRunDirsFromSupervisorHeartbeat();
 	const supervisorState = await readSupervisorState();
+	await syncProductFailureQuarantinesAndRepublish(
+		supervisorState,
+		'status heartbeat'
+	);
 	const activeRunDirsIncludingPausedNoAnalysis =
 		state.currentRunDirsIncludingPausedNoAnalysis ?? activeRunDirs;
 	const evidenceRunDirs = uniquePathList( [
@@ -21500,7 +21734,10 @@ async function runPass() {
 	if ( START_SUPERVISOR ) {
 		supervisorState = await readSupervisorStateAfterStartup();
 	}
-	syncProductFailureQuarantines( supervisorState );
+	await syncProductFailureQuarantinesAndRepublish(
+		supervisorState,
+		'full-pass preflight'
+	);
 	await syncSupervisorStartupStallPauses( supervisorState );
 	if ( START_SUPERVISOR && PRODUCER_BUDGET_DISABLED ) {
 		const publishedGroups = await readJsonFile( GROUPS_PATH );
@@ -22208,6 +22445,9 @@ process.on( 'unhandledRejection', ( reason ) => {
 for ( const signal of [ 'SIGHUP', 'SIGINT', 'SIGTERM' ] ) {
 	process.once( signal, () => {
 		shutdownRequested = true;
+		for ( const child of activeGateOnlyTriageChildren ) {
+			terminateGateOnlyTriageChild( child, 'SIGTERM' );
+		}
 		process.exitCode = exitCodeForSignal( signal );
 		void log( `RTC novelty monitor received ${ signal }; exiting.` );
 	} );

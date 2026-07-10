@@ -74,6 +74,7 @@ WORKTREE_PRUNE_EMERGENCY_MAX_DELETE_PER_PASS=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE
 WORKTREE_PRUNE_PARALLEL=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE_PRUNE_PARALLEL:-1}
 WORKTREE_PRUNE_PRESSURE_PARALLEL=${RTC_CRITICAL_PR_EXECUTOR_WORKTREE_PRUNE_PRESSURE_PARALLEL:-3}
 ORPHANED_CONTINUATION_GRACE_SECONDS=${RTC_CRITICAL_PR_EXECUTOR_ORPHANED_CONTINUATION_GRACE_SECONDS:-180}
+RELEASE_CANDIDATE_BRANCH=${RTC_CRITICAL_PR_EXECUTOR_RELEASE_CANDIDATE_BRANCH:-js2/all-merged-rebased-20260701}
 
 mkdir -p "$BASE/logs" "$BASE/runs" "$BASE/worktrees" "$TMUX_WRAP"
 install_tmux_wrapper() {
@@ -1202,7 +1203,7 @@ repair_branch_adoption_open() {
 }
 
 repair_branch_adopted_to_release_candidate() {
-	local rc_branch=js2/all-merged-rebased-20260701 row repair_branch adopted_branch source_repo source_head central_head state head rc_head
+	local rc_branch=$RELEASE_CANDIDATE_BRANCH row repair_branch adopted_branch source_repo source_head central_head state head rc_head
 	[ -s "$REPAIR_ADOPTIONS" ] || return 1
 	row=$(
 		awk -F '\t' '
@@ -1239,6 +1240,15 @@ repair_branch_adopted_to_release_candidate() {
 		fi
 	done
 	return 1
+}
+
+repair_branch_base_ref() {
+	local branch=$1 base
+	base=$(git -C "$CONTINUATION_SRC" merge-base "$RELEASE_CANDIDATE_BRANCH" "$branch" 2>/dev/null || true)
+	if [ -z "$base" ]; then
+		base=$(git -C "$SRC" rev-parse --verify --quiet "$branch^" 2>/dev/null || true)
+	fi
+	printf '%s' "$base"
 }
 
 repair_branch_adoption_summary() {
@@ -2910,7 +2920,7 @@ publication_class_for_branch() {
 		ready/rtc-*|review/rtc-*|pr/rtc-*)
 			printf 'product-candidate'
 			;;
-		rtc/*|rtc-*|repair/rtc-*|repair/adopted-*|repair/benchmark-canary-*|rtc-benchmark-*)
+		rtc/*|rtc-*|repair/*|rtc-benchmark-*)
 			printf 'needs-classification'
 			;;
 		finalize/rtc-*|validation/rtc-*)
@@ -3086,8 +3096,9 @@ adopt_repair_branch_to_src() {
 }
 
 write_repair_branch_adoptions() {
-	local tmp=$REPAIR_ADOPTIONS.$$.tmp now
+	local tmp=$REPAIR_ADOPTIONS.$$.tmp now current_candidate_head
 	now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+	current_candidate_head=$(git -C "$CONTINUATION_SRC" rev-parse --verify --quiet "$RELEASE_CANDIDATE_BRANCH^{commit}" 2>/dev/null || true)
 	{
 		printf 'generated_at\tlane_id\trepair_branch\tadopted_branch\tsource_repo\tsource_head\tcentral_head\tstate\tnext_action\tclassification_path\treport_path\n'
 		repair_branch_created_records |
@@ -3101,6 +3112,20 @@ write_repair_branch_adoptions() {
 				if [ -n "$source_start_head" ] && [ "$source_head" = "$source_start_head" ]; then
 					printf '%s\t%s\t%s\t\t%s\t%s\t\tinvalid-no-committed-delta\trepair_branch_created is invalid: branch points at the continuation source HEAD and has no committed repair delta\t%s\t%s\n' \
 						"$now" "$lane" "$branch" "$source_repo" "$source_head" "$classification" "$report"
+					continue
+				fi
+				if [ -n "$current_candidate_head" ] &&
+					git -C "$source_repo" cat-file -e "$current_candidate_head^{commit}" 2>/dev/null &&
+					git -C "$source_repo" merge-base --is-ancestor "$source_head" "$current_candidate_head" 2>/dev/null; then
+					printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\talready-in-release-candidate\trepair head is already an ancestor of the current release candidate; require fresh same-head product proof before reopening\t%s\t%s\n' \
+						"$now" "$lane" "$branch" "$branch" "$source_repo" "$source_head" "$source_head" "$classification" "$report"
+					continue
+				fi
+				if [ -n "$current_candidate_head" ] &&
+					git -C "$source_repo" cat-file -e "$current_candidate_head^{commit}" 2>/dev/null &&
+					! git -C "$source_repo" merge-base --is-ancestor "$current_candidate_head" "$source_head" 2>/dev/null; then
+					printf '%s\t%s\t%s\t\t%s\t%s\t\tstale-candidate-base\trepair is not based on current candidate %s; reproduce on the current candidate and create a descendant repair instead of adopting a sibling commit\t%s\t%s\n' \
+						"$now" "$lane" "$branch" "$source_repo" "$source_head" "$current_candidate_head" "$classification" "$report"
 					continue
 				fi
 				adoption=$(adopt_repair_branch_to_src "$branch" "$source_repo" "$source_head" || true)
@@ -3157,7 +3182,8 @@ write_lanes() {
 		for branch in $(adopted_repair_branches); do
 			head_sha=$(git -C "$SRC" rev-parse --short=12 "$branch" 2>/dev/null || true)
 			[ -n "$head_sha" ] || continue
-			base_ref=$(branch_base_ref "$branch")
+			base_ref=$(repair_branch_base_ref "$branch")
+			[ -n "$base_ref" ] || continue
 			base_sha=$(git -C "$SRC" rev-parse --short=12 "$base_ref" 2>/dev/null || true)
 			lane_id="repair-branch-$(slugify "$branch" | cut -c1-56)"
 			pr_id=$(pr_id_for_branch "$branch")
@@ -3755,9 +3781,17 @@ worktree_rc=\$?
 set -e
 if [ "\$worktree_rc" -eq 0 ]; then
 	for dependency_dir in node_modules vendor; do
-		if [ -d "\$SRC/\$dependency_dir" ] && [ ! -e "\$WORKTREE/\$dependency_dir" ]; then
-			ln -s "\$SRC/\$dependency_dir" "\$WORKTREE/\$dependency_dir" >> "\$(dirname "\$REPORT")/worktree.log" 2>&1 || true
+		[ -d "\$SRC/\$dependency_dir" ] || continue
+		[ ! -L "\$WORKTREE/\$dependency_dir" ] || continue
+		if [ -d "\$WORKTREE/\$dependency_dir" ]; then
+			placeholder_entry=\$(find "\$WORKTREE/\$dependency_dir" -mindepth 1 -maxdepth 1 ! -name .gitignore -print -quit 2>/dev/null || true)
+			[ -z "\$placeholder_entry" ] || continue
+			rm -f "\$WORKTREE/\$dependency_dir/.gitignore"
+			rmdir "\$WORKTREE/\$dependency_dir" 2>/dev/null || continue
+		elif [ -e "\$WORKTREE/\$dependency_dir" ]; then
+			continue
 		fi
+		ln -s "\$SRC/\$dependency_dir" "\$WORKTREE/\$dependency_dir" >> "\$(dirname "\$REPORT")/worktree.log" 2>&1 || true
 	done
 fi
 if [ "\$worktree_rc" -ne 0 ]; then
@@ -4458,7 +4492,7 @@ copy_generated_rtc_fuzz_harness() {
 launch_continuation_job() {
 	local lane=$1 dedupe=$2 active_pattern=$3 goal=$4
 	local force=${5:-0}
-	local active active_continuations session ts run_dir worktree prompt report classification stderr rc runner slug codex_output base_head
+	local active active_continuations session ts run_dir worktree prompt report classification stderr rc runner slug codex_output base_head placeholder_entry
 	active=$(active_work_matching "$active_pattern" || true)
 	if [ "$lane" = "benchmark-canary-fuzzer-gap" ] && [ -z "$active" ]; then
 		active=$(benchmark_exact_stack_active || true)
@@ -4495,9 +4529,17 @@ launch_continuation_job() {
 	fi
 	base_head=${base_head:-$(git -C "$worktree" rev-parse HEAD 2>/dev/null || true)}
 	for dependency_dir in node_modules vendor; do
-		if [ -d "$continuation_src/$dependency_dir" ] && [ ! -e "$worktree/$dependency_dir" ]; then
-			ln -s "$continuation_src/$dependency_dir" "$worktree/$dependency_dir" >> "$run_dir/worktree.log" 2>&1 || true
+		[ -d "$continuation_src/$dependency_dir" ] || continue
+		[ ! -L "$worktree/$dependency_dir" ] || continue
+		if [ -d "$worktree/$dependency_dir" ]; then
+			placeholder_entry=$(find "$worktree/$dependency_dir" -mindepth 1 -maxdepth 1 ! -name .gitignore -print -quit 2>/dev/null || true)
+			[ -z "$placeholder_entry" ] || continue
+			rm -f "$worktree/$dependency_dir/.gitignore"
+			rmdir "$worktree/$dependency_dir" 2>/dev/null || continue
+		elif [ -e "$worktree/$dependency_dir" ]; then
+			continue
 		fi
+		ln -s "$continuation_src/$dependency_dir" "$worktree/$dependency_dir" >> "$run_dir/worktree.log" 2>&1 || true
 	done
 	copy_generated_rtc_fuzz_harness "$continuation_src" "$worktree" "$run_dir"
 	prompt="$run_dir/prompt.md"
@@ -4794,6 +4836,18 @@ launch_validation_jobs() {
 	local active branch lane_id base_ref publication_class head_sha
 	active=$(active_count_matching '^rtc-critical-validate-')
 	[ "$active" -lt "$MAX_ACTIVE_VALIDATIONS" ] || return 0
+	while IFS= read -r branch; do
+		[ -n "$branch" ] || continue
+		active=$(active_count_matching '^rtc-critical-validate-')
+		[ "$active" -lt "$MAX_ACTIVE_VALIDATIONS" ] || break
+		head_sha=$(git -C "$SRC" rev-parse --short=12 "$branch" 2>/dev/null || true)
+		[ -n "$head_sha" ] || continue
+		base_ref=$(repair_branch_base_ref "$branch")
+		[ -n "$base_ref" ] || continue
+		lane_id="repair-branch-$(slugify "$branch" | cut -c1-56)"
+		publication_class=$(publication_class_for_branch "$branch")
+		launch_validation_job "$lane_id" "$branch" "$base_ref" "$publication_class" "$head_sha" || true
+	done < <(adopted_repair_branches)
 	while IFS= read -r branch; do
 		[ -n "$branch" ] || continue
 		active=$(active_count_matching '^rtc-critical-validate-')

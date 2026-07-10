@@ -25,6 +25,10 @@ const DURATION_HOURS = getPositiveNumberEnv(
 	getPositiveNumberEnv( 'RTC_FUZZ_DURATION_HOURS', 14 )
 );
 const POLL_MS = getPositiveIntegerEnv( 'RTC_FUZZ_SUPERVISOR_POLL_MS', 60000 );
+const REMOVED_GROUP_CLEANUP_RETRY_MS = getPositiveIntegerEnv(
+	'RTC_FUZZ_SUPERVISOR_REMOVED_GROUP_CLEANUP_RETRY_MS',
+	15 * 60 * 1000
+);
 const REPLACEMENT_SEED_SEARCH_LIMIT = getPositiveIntegerEnv(
 	'RTC_FUZZ_SUPERVISOR_REPLACEMENT_SEED_SEARCH_LIMIT',
 	10000
@@ -432,7 +436,21 @@ async function waitForGroupRepoPreparation( groupState ) {
 	if ( group.repoRoot === REPO_ROOT ) {
 		return false;
 	}
-	if ( await fileExists( path.join( group.repoRoot, 'package.json' ) ) ) {
+	const packageReady = await fileExists(
+		path.join( group.repoRoot, 'package.json' )
+	);
+	const harnessManifest = group.harnessOverlaySignature
+		? await readJsonFile(
+				path.join(
+					group.repoRoot,
+					'.js2-harness-overlay-manifest.json'
+				)
+		  )
+		: null;
+	const harnessReady =
+		! group.harnessOverlaySignature ||
+		harnessManifest?.signature === group.harnessOverlaySignature;
+	if ( packageReady && harnessReady ) {
 		if ( groupState.status === 'waiting-repo-prep' ) {
 			groupState.status = 'recovering';
 			groupState.lastReason = 'isolated repo preparation completed';
@@ -457,8 +475,9 @@ async function waitForGroupRepoPreparation( groupState ) {
 		} );
 	}
 	groupState.status = 'waiting-repo-prep';
-	groupState.lastReason =
-		'waiting for isolated repo preparation before launch';
+	groupState.lastReason = packageReady
+		? 'waiting for isolated repo harness synchronization before launch'
+		: 'waiting for isolated repo preparation before launch';
 	groupState.activeRunDirs = [];
 	groupState.currentRunDir = null;
 	await writeState();
@@ -488,6 +507,11 @@ async function syncGroupConfigs() {
 			} );
 			continue;
 		}
+
+		// A group that returns to policy needs a fresh cleanup decision the next
+		// time it is removed. Clear the prior removal's durable memo now.
+		delete existingGroupState.removedResourcesCleanupAt;
+		delete existingGroupState.removedResourcesCleanupOk;
 
 		if ( existingGroupState.status === 'disabled' ) {
 			if ( existingGroupState.productFailureAt ) {
@@ -590,11 +614,17 @@ function shouldBypassStartupStallCooldown( group, groupState = null ) {
 	}
 	const bypassSeedDrain =
 		group?.env?.RTC_FUZZ_SUPERVISOR_BYPASS_STARTUP_STALL_SEED_DRAIN === '1';
+	const bypassNoProductGuard =
+		group?.env
+			?.RTC_FUZZ_SUPERVISOR_BYPASS_NO_PRODUCT_STARTUP_STALL_GUARD === '1';
 	if (
 		groupState &&
 		( hasNoProductStartupStallDrainCooldown( groupState ) ||
 			isNoProductStartupStallNoiseState( groupState ) )
 	) {
+		if ( bypassNoProductGuard ) {
+			return true;
+		}
 		if (
 			bypassSeedDrain &&
 			isBypassableStartupStallSeedDrain( groupState )
@@ -608,6 +638,7 @@ function shouldBypassStartupStallCooldown( group, groupState = null ) {
 
 async function disableRemovedGroupState( groupState ) {
 	const reason = 'removed-from-groups-policy';
+	const wasDisabled = groupState.status === 'disabled';
 	const preserveStartupStallPause =
 		getStartupStallPauseUntilMs( groupState ) > Date.now();
 	const preserveStartupStallDrain =
@@ -629,10 +660,7 @@ async function disableRemovedGroupState( groupState ) {
 			'terminate-removed-group-lane'
 		);
 	}
-	if (
-		groupState.status !== 'disabled' ||
-		groupState.lastReason !== reason
-	) {
+	if ( ! wasDisabled ) {
 		await event( {
 			group: groupState.name,
 			kind: 'policy',
@@ -641,7 +669,23 @@ async function disableRemovedGroupState( groupState ) {
 			activeRunDirs,
 		} );
 	}
-	await cleanupRemovedGroupWpEnvResources( groupState, reason );
+	const priorCleanupAtMs = Date.parse(
+		groupState.removedResourcesCleanupAt ?? ''
+	);
+	const cleanupRetryDue =
+		groupState.removedResourcesCleanupOk === false &&
+		( ! Number.isFinite( priorCleanupAtMs ) ||
+			Date.now() - priorCleanupAtMs >= REMOVED_GROUP_CLEANUP_RETRY_MS );
+	if (
+		activeRunDirs.length > 0 ||
+		! wasDisabled ||
+		! Number.isFinite( priorCleanupAtMs ) ||
+		cleanupRetryDue
+	) {
+		groupState.removedResourcesCleanupOk =
+			await cleanupRemovedGroupWpEnvResources( groupState, reason );
+		groupState.removedResourcesCleanupAt = new Date().toISOString();
+	}
 	groupState.status = 'disabled';
 	groupState.lastReason =
 		preserveStartupStallState || groupState.productFailureAt
@@ -711,6 +755,7 @@ async function cleanupRemovedGroupWpEnvResources( groupState, reason ) {
 			`${ groupState.name }-removed-wp-env-container-scan.log`
 		),
 	} );
+	let cleanupOk = containerList.ok;
 	if ( containerList.ok ) {
 		const containerIds = containerList.output
 			.split( '\n' )
@@ -746,6 +791,7 @@ async function cleanupRemovedGroupWpEnvResources( groupState, reason ) {
 				code: removeContainers.code,
 				output: getOutputSnippet( removeContainers.output ),
 			} );
+			cleanupOk = cleanupOk && removeContainers.ok;
 		}
 	} else {
 		await event( {
@@ -779,7 +825,7 @@ async function cleanupRemovedGroupWpEnvResources( groupState, reason ) {
 			code: networkList.code,
 			output: getOutputSnippet( networkList.output ),
 		} );
-		return;
+		return false;
 	}
 
 	const networkNames = networkList.output
@@ -787,7 +833,7 @@ async function cleanupRemovedGroupWpEnvResources( groupState, reason ) {
 		.map( ( line ) => line.trim() )
 		.filter( ( name ) => resourceNamePattern.test( name ) );
 	if ( networkNames.length === 0 ) {
-		return;
+		return cleanupOk;
 	}
 	const removeNetworks = await runCommand( {
 		command: 'docker',
@@ -809,6 +855,7 @@ async function cleanupRemovedGroupWpEnvResources( groupState, reason ) {
 		code: removeNetworks.code,
 		output: getOutputSnippet( removeNetworks.output ),
 	} );
+	return cleanupOk && removeNetworks.ok;
 }
 
 async function runCommand( {

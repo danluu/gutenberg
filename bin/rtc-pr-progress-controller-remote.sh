@@ -9,6 +9,7 @@ SRC=${RTC_PR_PROGRESS_SRC:-/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20
 BASE=${RTC_PR_PROGRESS_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518}
 CRITICAL_BASE=${RTC_PR_PROGRESS_CRITICAL_BASE:-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517}
 CRITICAL_REPAIR_ADOPTIONS=$CRITICAL_BASE/current-repair-branch-adoptions.tsv
+CRITICAL_LAUNCHES=$CRITICAL_BASE/logs/launches.tsv
 PR_SPLIT_BASE=${RTC_PR_PROGRESS_PR_SPLIT_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515}
 DEFERRED_BASE=${RTC_PR_PROGRESS_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516}
 CANONICAL_DEFERRED_BASE=${RTC_PR_PROGRESS_CANONICAL_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516}
@@ -48,6 +49,7 @@ PERSONA_TIMEOUT_SECONDS=${RTC_PR_PROGRESS_PERSONA_TIMEOUT_SECONDS:-3600}
 JOB_SCAN_LIMIT=${RTC_PR_PROGRESS_JOB_SCAN_LIMIT:-120}
 PR_SPLIT_RUN_SCAN_LIMIT=${RTC_PR_PROGRESS_PR_SPLIT_RUN_SCAN_LIMIT:-80}
 CRITICAL_RUN_SCAN_LIMIT=${RTC_PR_PROGRESS_CRITICAL_RUN_SCAN_LIMIT:-3000}
+CRITICAL_LAUNCH_SCAN_LINES=${RTC_PR_PROGRESS_CRITICAL_LAUNCH_SCAN_LINES:-2000}
 ARTIFACT_INDEX_MAX_AGE_SECONDS=${RTC_PR_PROGRESS_ARTIFACT_INDEX_MAX_AGE_SECONDS:-3600}
 
 PERSONAS=(
@@ -1390,10 +1392,40 @@ repair_adoption_destination_for_branch() {
 	esac
 }
 
+validated_repair_adoption_manifest() {
+	local branch=$1 head=$2
+	[ -s "$CRITICAL_LAUNCHES" ] || return 1
+	tail -n "$CRITICAL_LAUNCH_SCAN_LINES" "$CRITICAL_LAUNCHES" 2>/dev/null |
+		awk -F '\t' '
+			$2 == "continuation" && $5 ~ /\/continuations\/benchmark-canary-repair-branch-adoption$/ {
+				print $5
+			}
+		' |
+		while IFS= read -r run_dir; do
+			local classification=$run_dir/classification.tsv manifest=$run_dir/push-manifest.tsv
+			[ -s "$classification" ] && [ -s "$manifest" ] || continue
+			awk -F '\t' '
+				NR > 1 && $1 == "benchmark-canary-repair-branch-adoption" && $2 == "repair_branch_adopted" {
+					found = 1
+				}
+				END { exit found ? 0 : 1 }
+			' "$classification" 2>/dev/null || continue
+			awk -F '\t' -v branch="$branch" -v head="$head" '
+				NR > 1 && $1 == branch &&
+					($2 == head || index($2, head) == 1 || index(head, $2) == 1) {
+					found = 1
+				}
+				END { exit found ? 0 : 1 }
+			' "$manifest" 2>/dev/null || continue
+			printf '%s\n' "$manifest"
+		done |
+		tail -1
+}
+
 print_repair_adoption_manifest_rows() {
 	local rc_branch=js2/all-merged-rebased-20260701
 	local lane repair_branch adopted_branch source_repo source_head central_head state next_action classification_path report_path
-	local branch head resolved_head base files insertions deletions dest summary reason rc_head
+	local branch head resolved_head base files insertions deletions dest summary reason rc_head validation_manifest
 	[ -s "$CRITICAL_REPAIR_ADOPTIONS" ] || return 0
 	awk -F '\t' 'NR > 1 && $8 ~ /^(central_present|central_present_alias|imported)$/ { print }' "$CRITICAL_REPAIR_ADOPTIONS" |
 	while IFS=$'\t' read -r _generated_at lane repair_branch adopted_branch source_repo source_head central_head state next_action classification_path report_path; do
@@ -1403,6 +1435,8 @@ print_repair_adoption_manifest_rows() {
 		resolved_head=$(git -C "$SRC" rev-parse --verify --quiet "$branch" 2>/dev/null || true)
 		[ -n "$resolved_head" ] || continue
 		same_commit_prefix "$resolved_head" "$head" || continue
+		validation_manifest=$(validated_repair_adoption_manifest "$branch" "$head" || true)
+		[ -n "$validation_manifest" ] || continue
 		rc_head=$(branch_current_head "$rc_branch")
 		if [ -z "$rc_head" ] && [ -n "$source_repo" ] && git -C "$source_repo" rev-parse --git-dir >/dev/null 2>&1; then
 			rc_head=$(git -C "$source_repo" rev-parse --verify --quiet "$rc_branch" 2>/dev/null || true)
@@ -1426,7 +1460,7 @@ print_repair_adoption_manifest_rows() {
 		[ "$files" -le 20 ] || continue
 		[ $(( insertions + deletions )) -le 3000 ] || continue
 		summary="repair-branch adoption validated; exact replay and benchmark canary gates still apply"
-		reason="repair-adoption lane=$lane state=$state classification=$classification_path report=$report_path"
+		reason="repair-adoption lane=$lane state=$state classification=$classification_path report=$report_path validation_manifest=$validation_manifest"
 		dest=$(repair_adoption_destination_for_branch "$branch")
 		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
 			"$branch" "$head" "$dest" "$base" "$files" "$insertions" "$deletions" "$summary" "$reason"

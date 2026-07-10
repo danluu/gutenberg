@@ -31,7 +31,7 @@ const DAEMON = args.includes( '--daemon' );
 if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 	process.stdout.write(
 		[
-			'Usage: node bin/rtc-browser-fuzz-triage-watcher.mjs <run-output-dir> [--once] [--daemon]',
+			'Usage: node bin/rtc-browser-fuzz-triage-watcher.mjs <run-output-dir> [--once] [--gate-only] [--daemon]',
 			'',
 			'Scans RTC browser fuzz artifacts, dedupes failures, and launches',
 			'independent Codex deep-triage jobs for distinct failure signatures.',
@@ -42,12 +42,15 @@ if ( args.includes( '--help' ) || args.includes( '-h' ) ) {
 			'  RTC_FUZZ_TRIAGE_REPRO_HOURS=3',
 			'  RTC_FUZZ_TRIAGE_CODEX_TIMEOUT_MS=<derived from repro hours>',
 			'  RTC_FUZZ_TRIAGE_STATE_DIR=<run-output-dir>/.triage-watcher',
+			'',
+			'--gate-only updates signature/gate state without launching Codex triage.',
 		].join( '\n' ) + '\n'
 	);
 	process.exit( 0 );
 }
 
 const ONCE = args.includes( '--once' );
+const GATE_ONLY = args.includes( '--gate-only' );
 const positionalArgs = args.filter( ( arg ) => ! arg.startsWith( '--' ) );
 const RUN_DIR = path.resolve(
 	positionalArgs[ 0 ] ?? process.env.RTC_FUZZ_TRIAGE_RUN_DIR ?? ''
@@ -694,12 +697,16 @@ async function runScanCycle() {
 	const groups = groupCandidatesBySignature( candidates );
 	await updateDiscoveredSignatures( state, groups );
 	await reconcileExternallyCompletedJobs( state );
-	await launchQueuedJobs( state );
+	if ( ! GATE_ONLY ) {
+		await launchQueuedJobs( state );
+	}
 	await writeState( state );
 	process.stdout.write(
 		`[${ new Date().toISOString() }] candidates=${
 			candidates.length
-		} signatures=${ groups.length } active=${ activeJobs.size }\n`
+		} signatures=${ groups.length } active=${
+			activeJobs.size
+		} gateOnly=${ GATE_ONLY }\n`
 	);
 }
 

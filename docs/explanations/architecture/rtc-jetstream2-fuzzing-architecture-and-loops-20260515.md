@@ -1,8 +1,8 @@
 # RTC Jetstream2 fuzzing architecture and active loops
 
-Snapshot time: `2026-07-10T01:46Z`
+Snapshot time: `2026-07-10T03:22Z`
 
-Blocker-history update: `2026-07-10T01:46Z`
+Blocker-history update: `2026-07-10T03:22Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -123,7 +123,8 @@ source-provenance failures, not by a lack of candidate bugs:
   `bin/rtc-*` files now come from the validation/scripts repo, are frozen into
   the candidate worktree, and both the monitor and live analysis execute there.
   `source-manifest.tsv` records the monitor repo and SHA-256 hashes for the
-  novelty monitor, supervisor, and triage watcher; the guard rejects drift.
+  novelty monitor, live-analysis monitor, runner, supervisor, and triage
+  watcher; the guard rejects drift.
 - The guard preferred `/tmp/start_rtc_pr_progress_controller.sh`, whose stale
   default launched six PR personas and a synthesis job every two cycles. It now
   installs the versioned controller from the validation repo, propagates a zero
@@ -180,6 +181,122 @@ source-provenance failures, not by a lack of candidate bugs:
   readiness failure is recorded as `not_reached` with the earliest source
   evidence and reduced directly instead of waiting for a nonexistent REST
   response.
+- A protected canary could remain in `supervisor-groups.json` and report
+  `scheduled=yes` while the supervisor held it for six hours after one
+  no-product startup-noise seed. Open promotion groups now bypass both the
+  startup-stall cooldown and its seed-drain hold, so the failed seed is marked
+  no-analysis and the next seed runs. Structural health separately reports
+  promotion rows that are scheduled but paused.
+- The runner labeled every full preflight failure `kind=infra`, including a
+  human product smoke where three tests passed and the editor workflow produced
+  runtime errors and HTTP 500. Those records caused same-seed relaunch loops
+  instead of product quarantine and repair routing. Test-list, harness, and
+  environment failures remain infra; an executed human smoke with actionable
+  editor failure now writes failed behavioral coverage and `real-bug` evidence,
+  preserves its product stop reason, and feeds the existing quarantine/critical
+  repair path.
+- The browser runner itself was missing from the source manifest. Its live copy
+  had accumulated useful runtime fixes that were neither present on the
+  published scripts branch nor protected from drift, so a campaign could change
+  classification behavior without failing source validation. The live runner is
+  now preserved on the scripts branch, hashed in every run manifest, and checked
+  by the guard alongside the monitor, supervisor, and triage watcher.
+- Dynamic group synchronization disabled old groups correctly, but also ran two
+  Docker inventory commands for every already-disabled group before every
+  active group. Eight historical groups turned a nominal 60-second supervisor
+  poll into minutes of repeated cleanup scans and delayed both seed advancement
+  and product quarantine. Removed-group cleanup is now memoized per policy
+  transition, failed cleanup retries have a 15-minute backoff, and structural
+  health reports a mature run whose disabled groups lack cleanup memos.
+- The novelty monitor invoked the triage watcher with `--gate-only`, but the
+  watcher ignored that flag and launched an xhigh Codex deep-triage job for each
+  current run. Refreshes then timed out serially after two minutes and killed
+  only the parent, so a five-group pass could spend ten minutes in triage while
+  leaked descendants pushed analysis over its worker cap. Gate-only now updates
+  signature state without launching Codex, refreshes run with bounded
+  concurrency and a 30-second timeout, and timeout/shutdown terminates the whole
+  refresh process group. Structural health reports any gate-only watcher that
+  lives for a minute or has a Codex descendant.
+- Full novelty passes can still be doing bounded triage when the supervisor
+  discovers a product failure. The 60-second status heartbeat now synchronizes
+  product-failure quarantine and republishes the producer set immediately.
+  Quarantined groups remain release gates, but they no longer consume browser
+  slots; structural health reports a quarantine retained in
+  `supervisor-groups.json` for more than two minutes.
+- Policy-required usability/oracle groups could bypass the monitor's publication
+  noise filter but still enter the supervisor without startup-stall bypass
+  flags. A selected group then occupied a slot during the same six-hour hold
+  that publication had intentionally bypassed. The seed-drain flags were not
+  enough when the group had already entered the full no-product guard, so
+  published policy-required/open-promotion groups now carry an explicit
+  no-product-guard bypass and advance past the failed seed. Health reports any
+  published group left in a startup-stall hold for two minutes.
+- The live-analysis monitor was another active runtime file present only in the
+  mutable JS2 checkouts. It is now preserved on the scripts branch and included
+  in the run manifest/guard hash invariant, so its gate and analysis admission
+  behavior cannot drift silently from the published runbook.
+- Isolated group reuse checked only for `package.json`. A group prepared before
+  a runner/oracle fix could be disabled and later republished with the old
+  harness; this is why the replacement reference-oracle lane still emitted the
+  pre-fix `kind=infra` record. The monitor now content-hashes a bounded overlay
+  of `bin/rtc-*`, editor collaboration tests/config, wp-env config, and the test
+  provider; it atomically synchronizes changed files, records a per-repo
+  manifest, and terminates lanes that loaded stale code. Supervisor admission
+  requires the published overlay signature, and structural health compares
+  critical files in every published repo with the frozen candidate.
+- A live harness deployment briefly changes the frozen file before atomically
+  replacing `source-manifest.tsv`. The guard previously interpreted that
+  seconds-long window as durable drift and replaced the same-candidate campaign
+  at `2026-07-10T02:42:50Z`. Fresh hash mismatches now receive a 180-second
+  publication grace; if the manifest is still inconsistent after the grace,
+  the normal forced restart remains in effect.
+- Same-candidate product quarantines survived a run-root replacement, but the
+  benchmark status writer only counted evidence still present in current run
+  directories. Health therefore reported four intentionally quarantined lanes
+  as unscheduled. The carried quarantine set now contributes retained product
+  evidence, preserving the release gate without demanding another producer
+  slot or spawning a false structural repair.
+- The local publisher read its TSV with standard input attached to the whole
+  loop. The first `ssh` probe consumed the remaining rows, so standalone repair
+  publication could work while the following release-candidate destination was
+  silently skipped. Manifest reads now use a dedicated file descriptor and
+  remote probes close standard input. A persistent local publisher is running,
+  and the structural watchdog reports either an unpublished validated repair or
+  a published commit that has not reached the JS2 candidate ref after ten
+  minutes.
+- Repair branches appeared in `queue.tsv`, but `launch_validation_jobs` only
+  iterated the static candidate branch set. Adopted repair branches are now the
+  first validation class admitted under the six-job cap. Empty tracked
+  `vendor/` directories also prevented dependency symlinks and made focused PHP
+  validation look unavailable; empty dependency placeholders are now replaced
+  with links to the matching source checkout.
+- Adopted branch export initially compared repairs with Gutenberg trunk. That
+  turned a one-line fix into a 5,035-file diff and a false `diff-check rc=2`.
+  Repair validation now uses the merge base with the current all-merge
+  candidate, falling back to the repair parent only when the candidate ref is
+  unavailable.
+- PR progress previously treated `central_present` as sufficient validation
+  and emitted publish rows before the adoption continuation accepted the fix.
+  It now requires a matching `repair_branch_adopted` classification and
+  `push-manifest.tsv` for the exact branch and commit. The guard also compares
+  the versioned PR-progress controller with its runtime copy and replaces drift.
+- The launcher preserved a same-head root only while the novelty tmux session
+  existed. A session-watchdog start could therefore race a guard reattach and
+  replace a valid campaign during a brief monitor deployment. A fresh valid
+  same-head root is now preserved for reattachment for up to 13 hours even when
+  its tmux session is momentarily absent; only an explicit forced restart or a
+  candidate-head change replaces it. Structural promotion scheduling also has a
+  five-minute startup grace so mandatory human gates do not create a false
+  unscheduled-canary repair while the first supervisor pass is still serially
+  starting WordPress environments.
+- Repair adoption was branch-aware but not candidate-aware. After `5a33df1e`
+  still failed, workers could continue adopting sibling commits based on
+  `1582cdec` that contained the same ineffective patch. Adoption state now
+  marks a repair already present in the release candidate as terminal evidence,
+  marks old-head siblings `stale-candidate-base`, and admits only descendants of
+  the current candidate to validation/publication. Current repair worktrees also
+  replace the tracked `vendor/.gitignore` placeholder with the matching source
+  dependency tree, so focused PHP tests are actually available.
 
 The first exact-candidate run found a reproducible product failure within
 minutes: `/wp-json/wp-sync/v1/save` returned HTTP 500 during the plain-editor
@@ -190,18 +307,31 @@ classifies this family as `rtc-save-rest-500` instead of `unknown`.
 
 Run `run-20260710T004959Z` independently reproduced failed product evidence in
 both plain-editor and real-world editor workflows and quarantined each after
-generation 1. Before the final recovery change, the generic watchdog replaced
-that root with `run-20260710T010645Z`. The current root retained both failures,
-disabled both generation-1 groups with two product-failure records each, and
-backfilled all five runnable producer slots. A later contradictory autoscaler
-scale-up replaced that root with `run-20260710T013149Z`; this exposed the final
-same-head root-churn bug described above. After repair, the monitor was replaced
-in place while preserving the `run-20260710T013149Z` root and pointer mtime. Its
-published set contains all four current promotion blockers plus one backfill
-lane, and all four blocker rows report `scheduled=yes`. The bounded plain-editor
-repair has produced a direct reproducer, save-response artifact, failing PHP
-regression check, and fresh build while it works toward a committed repair
-branch.
+generation 1. Later same-head runs expanded that quarantine to nine product
+workflow/canary groups while continuing to backfill runnable producer slots.
+Those failures produced three committed repair heads for the same
+`/wp-sync/v1/save` meta-unslashing bug. Two independent reductions changed the
+failing `200/500 rest_crdt_save_failed` sequence to `200/200`, and the repair
+tree also passed a direct plain-editor edit/save/reload smoke.
+
+At `2026-07-10T03:00Z`, the repaired local publisher fast-forwarded
+`js2/all-merged-rebased-20260701` from `1582cdec4f27` to
+`5a33df1eb773`. JS2 then started exact-candidate run
+`run-20260710T030340Z` at that head. Its initial five slots are the plain-editor
+product smoke, real-world editor usability, large-post lifecycle, title reload
+convergence, and persistence probe. All five reproduced the same
+`/wp-sync/v1/save` HTTP 500; the plain-editor result arrived about 90 seconds
+after its runner started, and each lane was classified as a real product bug
+and quarantined after generation 1. Three bounded repair jobs based on
+`5a33df1e` launched within minutes. This proves that the prior direct reduction
+was insufficient while also demonstrating that the repaired product gate now
+catches the discrepancy promptly.
+
+A controlled monitor deployment exposed the final same-head start race and
+created `run-20260710T031406Z` before the launcher guard above was installed.
+That run retained all five quarantines, completed a full pass with 288 carried
+records, and backfilled five runnable groups. A direct no-force launcher test
+then preserved the exact root and pointer, confirming the race fix.
 
 The source invariant is recorded in every run's `source-manifest.tsv`. It names
 the candidate ref/head/tree, exact product worktree, control and harness
@@ -255,7 +385,7 @@ Current feeds and speeds after the audit:
 | Productive-analysis concurrency | 1 lane |
 | Live analysis concurrency | 2 evidence-triggered jobs |
 | Structural Codex cap | 8 leaf workers; wrappers are not counted |
-| Current product failures | 2 quarantined generation-1 groups, 2 records each |
+| Current product failures | 5 generation-1 groups on `5a33df1e`, all the same save HTTP 500 family; 3 same-head repair jobs active |
 | Exact dependency install | about 49 seconds on first use per head |
 | Exact production build | about 63 seconds on first use per head |
 | Isolated group repo preparation | about 2 seconds per group after caching |
@@ -391,7 +521,7 @@ Current publication gate path:
 
 ```mermaid
 flowchart TB
-    Candidate[js2/all-merged-rebased-20260701 at efe27afe] --> CoverageRun[coverage-guided run run-20260708T180419Z]
+    Candidate[js2/all-merged-rebased-20260701 at 5a33df1e] --> CoverageRun[coverage-guided run run-20260710T031406Z]
     CoverageRun --> CanaryStatus[benchmark-canary-coverage-status.tsv]
     CoverageRun --> SmokeStatus[novelty-status.md plain-editor smoke row]
     CoverageRun --> ProductEvidence[current product-failure evidence]
@@ -425,10 +555,10 @@ Current feeds and speeds:
 | Critical validations | Max 6 active | Used for adopted repair branches and ready branch checks |
 | `rtc-pr-progress-controller-loop` | 120 second cycle, max 2 active PR jobs | Running; reserves discovery and exposes repair-adoption rows |
 | Discovery reserve | Minimum 3 active discovery sessions | Healthy at 4 active discovery sessions |
-| Coverage-guided novelty | Current run root updates status every monitor pass | Running on `run-20260710T013149Z`; four promotion blockers are scheduled in a five-group budget |
-| Plain editor smoke | Publication gate | Active; direct reproducer, response artifact, failing regression test, and build exist, but no committed repair branch yet |
-| Product repair feed | Rewritten each critical reconcile | Plain-editor repair is active; quarantined smoke failures remain publication gates rather than consuming producer slots |
-| Repair adoption feed | Rewritten each critical reconcile | No unadopted validated repair branch at this snapshot; the previous repair is already an ancestor of the release candidate |
+| Coverage-guided novelty | Current run root updates status every monitor pass | Running on `run-20260710T031406Z`; five product failures are quarantined and five runnable replacement groups are materializing |
+| Plain editor smoke | Publication gate | Failed on repaired candidate in about 90 seconds with the same save HTTP 500; correctly retained as a release gate |
+| Product repair feed | Rewritten each critical reconcile | Three current-head repairs started within minutes; sibling prior-head repairs no longer consume fuzz slots |
+| Repair adoption feed | Rewritten each critical reconcile | Exact adoption manifests are required; `5a33df1e` was published locally and adopted into the release candidate |
 
 ## Blocker Age And Failed Mitigations
 

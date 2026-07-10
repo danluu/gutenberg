@@ -61,7 +61,7 @@ ensure_commit_from_js2() {
 		return 0
 	fi
 	for repo in "${SOURCE_REPOS[@]}"; do
-		if ssh -o BatchMode=yes -o ConnectTimeout=15 "$JS2_HOST" \
+		if ssh -n -o BatchMode=yes -o ConnectTimeout=15 "$JS2_HOST" \
 			git -C "$repo" cat-file -e "$commit^{commit}" 2>/dev/null; then
 			git fetch --no-tags "$JS2_HOST:$repo" "$branch" >/dev/null 2>&1 ||
 				git fetch --no-tags "$JS2_HOST:$repo" "$commit" >/dev/null 2>&1 ||
@@ -76,7 +76,7 @@ ensure_ref_from_js2() {
 	local ref=$1 repo
 	git rev-parse --verify --quiet "$ref^{commit}" >/dev/null && return 0
 	for repo in "${SOURCE_REPOS[@]}"; do
-		if ssh -o BatchMode=yes -o ConnectTimeout=15 "$JS2_HOST" \
+		if ssh -n -o BatchMode=yes -o ConnectTimeout=15 "$JS2_HOST" \
 			git -C "$repo" rev-parse --verify --quiet "$ref^{commit}" >/dev/null 2>&1; then
 			git fetch --no-tags "$JS2_HOST:$repo" "$ref" >/dev/null 2>&1 || true
 			git rev-parse --verify --quiet "$ref^{commit}" >/dev/null && return 0
@@ -121,7 +121,7 @@ process_manifest() {
 	local source_branch source_commit dest base_ref files insertions deletions validation_summary reason
 	local dest_ref resolved_commit base_commit current_remote status
 
-	while IFS=$'\t' read -r source_branch source_commit dest base_ref files insertions deletions validation_summary reason; do
+	while IFS=$'\t' read -r source_branch source_commit dest base_ref files insertions deletions validation_summary reason <&3; do
 		[ "$source_branch" != "source_branch" ] || continue
 		[ -n "$source_branch" ] && [ -n "$source_commit" ] && [ -n "$dest" ] || continue
 
@@ -187,7 +187,7 @@ process_manifest() {
 
 		git push "$DANLUU_REMOTE" "$resolved_commit:$dest_ref"
 		append_ledger_row "$dest_ref" "$resolved_commit" "$source_branch" pushed "local publisher consumed JS2 push manifest and pushed from this machine"
-	done < "$LOCAL_MANIFEST"
+	done 3< "$LOCAL_MANIFEST"
 }
 
 run_once() {

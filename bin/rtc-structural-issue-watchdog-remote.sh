@@ -14,11 +14,15 @@ CRITICAL_TMP_SCRIPT=/tmp/start_rtc_critical_path_pr_executor_loop.sh
 FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
+PR_PROGRESS_PUSH_MANIFEST=$PR_PROGRESS_BASE/current-push-manifest.tsv
 PRODUCTIVE_ANALYSIS_BASE=/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 BENCHMARK_FEEDBACK_BASE=/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
+CANDIDATE_REPO=/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo
+CANDIDATE_BRANCH=js2/all-merged-rebased-20260701
+LOCAL_PUBLISH_LEDGER=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
 DUP_NOISE_BASE=/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516
 ARTIFACT_INDEX_BASE=/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518
 ARTIFACT_INDEX_ARTIFACTS=$ARTIFACT_INDEX_BASE/current-artifacts.tsv
@@ -59,6 +63,8 @@ CODEX_REASONING_EFFORT=${RTC_STRUCTURAL_WATCHDOG_CODEX_REASONING_EFFORT:-xhigh}
 COVERAGE_FULL_PASS_MAX_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_FULL_PASS_MAX_AGE_SECONDS:-1800}
 COVERAGE_FULL_PASS_START_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_FULL_PASS_START_GRACE_SECONDS:-900}
 COVERAGE_HEAP_FAILURE_WINDOW_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_HEAP_FAILURE_WINDOW_SECONDS:-1800}
+REPAIR_PUBLICATION_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_REPAIR_PUBLICATION_GRACE_SECONDS:-600}
+PROMOTION_SCHEDULING_START_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_PROMOTION_SCHEDULING_START_GRACE_SECONDS:-300}
 RUNAWAY_SCAN_MIN_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_MIN_AGE_SECONDS:-1800}
 RUNAWAY_SCAN_TARGET_ROOTS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_ROOTS:-/media/volume/danluu-fuzz-data:/home/exouser/.codex}
 TERMINATE_RUNAWAY_RG=${RTC_STRUCTURAL_WATCHDOG_TERMINATE_RUNAWAY_RG:-1}
@@ -705,6 +711,16 @@ critical_script_has_stable_runtime_support() {
 	rg -q 'critical-path PR executor loop exiting rc=' "$script" || return 1
 }
 
+critical_script_has_repair_adoption_progress_support() {
+	local script=$1
+	[ -s "$script" ] || return 1
+	rg -q 'done < <\(adopted_repair_branches\)' "$script" || return 1
+	rg -q 'repair_branch_base_ref' "$script" || return 1
+	rg -q 'stale-candidate-base' "$script" || return 1
+	rg -q 'placeholder_entry=.*! -name .gitignore' "$script" || return 1
+	rg -q 'rmdir "\$worktree/\$dependency_dir"' "$script" || return 1
+}
+
 critical_script_sha() {
 	local script=$1
 	if [ -s "$script" ]; then
@@ -719,6 +735,7 @@ sync_critical_executor_copies_if_safe() {
 	critical_script_has_pr07c_terminal_support "$CRITICAL_REPO_SCRIPT" || return 1
 	critical_script_has_benchmark_refresh_support "$CRITICAL_REPO_SCRIPT" || return 1
 	critical_script_has_stable_runtime_support "$CRITICAL_REPO_SCRIPT" || return 1
+	critical_script_has_repair_adoption_progress_support "$CRITICAL_REPO_SCRIPT" || return 1
 	bash -n "$CRITICAL_REPO_SCRIPT" >/dev/null 2>&1 || return 1
 	for target in "$CRITICAL_DEPLOYED_SCRIPT" "$CRITICAL_TMP_SCRIPT"; do
 		if [ ! -s "$target" ] || ! cmp -s "$CRITICAL_REPO_SCRIPT" "$target"; then
@@ -764,6 +781,9 @@ check_critical_path_script_copies() {
 	critical_script_has_stable_runtime_support "$CRITICAL_REPO_SCRIPT" || missing_support=1
 	critical_script_has_stable_runtime_support "$CRITICAL_DEPLOYED_SCRIPT" || missing_support=1
 	critical_script_has_stable_runtime_support "$CRITICAL_TMP_SCRIPT" || missing_support=1
+	critical_script_has_repair_adoption_progress_support "$CRITICAL_REPO_SCRIPT" || missing_support=1
+	critical_script_has_repair_adoption_progress_support "$CRITICAL_DEPLOYED_SCRIPT" || missing_support=1
+	critical_script_has_repair_adoption_progress_support "$CRITICAL_TMP_SCRIPT" || missing_support=1
 	if [ "$missing_support" = 1 ]; then
 		emit_finding "$out" high "critical-path" "critical-executor-required-support-missing" \
 			"repo=$CRITICAL_REPO_SCRIPT sha=$repo_sha deployed=$CRITICAL_DEPLOYED_SCRIPT sha=$deployed_sha tmp=$CRITICAL_TMP_SCRIPT sha=$tmp_sha" \
@@ -813,8 +833,46 @@ check_critical_path_invariants() {
 	fi
 }
 
+check_repair_publication_progress() {
+	local out=$1 candidate_head now source_branch source_commit destination base_ref _files _insertions _deletions _validation _reason
+	local commit_time age destination_ref published
+	[ -s "$PR_PROGRESS_PUSH_MANIFEST" ] || return 0
+	candidate_head=$(git -C "$CANDIDATE_REPO" rev-parse --verify --quiet "$CANDIDATE_BRANCH^{commit}" 2>/dev/null || true)
+	[ -n "$candidate_head" ] || return 0
+	now=$(date -u +%s)
+	while IFS=$'\t' read -r source_branch source_commit destination base_ref _files _insertions _deletions _validation _reason <&3; do
+		[ "$source_branch" != source_branch ] || continue
+		[ "$destination" = "$CANDIDATE_BRANCH" ] || continue
+		git -C "$CANDIDATE_REPO" cat-file -e "$source_commit^{commit}" 2>/dev/null || continue
+		if git -C "$CANDIDATE_REPO" merge-base --is-ancestor "$source_commit" "$candidate_head" 2>/dev/null; then
+			continue
+		fi
+		git -C "$CANDIDATE_REPO" merge-base --is-ancestor "$candidate_head" "$source_commit" 2>/dev/null || continue
+		commit_time=$(git -C "$CANDIDATE_REPO" show -s --format=%ct "$source_commit" 2>/dev/null || printf 0)
+		age=$(( now - commit_time ))
+		[ "$age" -ge "$REPAIR_PUBLICATION_GRACE_SECONDS" ] || continue
+		destination_ref="refs/heads/$destination"
+		published=$(awk -F '\t' -v destination="$destination_ref" -v commit="$source_commit" '
+			$4 == destination && $5 == commit && $9 ~ /^(pushed|already_present|exact-local-confirmed)$/ {
+				print $9
+				exit
+			}
+		' "$LOCAL_PUBLISH_LEDGER" 2>/dev/null || true)
+		if [ -n "$published" ]; then
+			emit_finding "$out" high "publication" "release-candidate-publish-not-synced" \
+				"source=$source_branch commit=$source_commit destination=$destination_ref ledger=$published candidate=$candidate_head age=${age}s" \
+				"fast-forward the JS2 candidate ref to the locally published commit so the guard starts same-head validation"
+		else
+			emit_finding "$out" high "publication" "validated-repair-awaiting-local-publication" \
+				"source=$source_branch commit=$source_commit destination=$destination_ref candidate=$candidate_head age=${age}s manifest=$PR_PROGRESS_PUSH_MANIFEST" \
+				"run the local PR branch publisher from the local machine and write its publish ledger back to JS2"
+		fi
+		return 0
+	done 3< "$PR_PROGRESS_PUSH_MANIFEST"
+}
+
 check_benchmark_canary_promotion_invariants() {
-	local out=$1 active classification status_line queue_line exact_green_line coverage_root coverage_status unscheduled_groups
+	local out=$1 active classification status_line queue_line exact_green_line coverage_root coverage_status coverage_root_age unscheduled_groups paused_groups
 	benchmark_promotion_blocked || return
 	status_line=$(awk -F '\t' '$1 == "benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null || true)
 	queue_line=$(awk -F '\t' '$1 == "job-benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/queue.tsv" 2>/dev/null || true)
@@ -858,8 +916,10 @@ check_benchmark_canary_promotion_invariants() {
 	fi
 	coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
 	coverage_status=${coverage_root:+$coverage_root/benchmark-canary-coverage-status.tsv}
+	coverage_root_age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || printf 0)
 	unscheduled_groups=
-	if [ -n "$coverage_status" ] && [ -s "$coverage_status" ]; then
+	if [ -n "$coverage_status" ] && [ -s "$coverage_status" ] &&
+		[ "$coverage_root_age" -ge "$PROMOTION_SCHEDULING_START_GRACE_SECONDS" ]; then
 		unscheduled_groups=$(awk -F '\t' '
 			NR == 1 {
 				for (i = 1; i <= NF; i++) {
@@ -872,10 +932,11 @@ check_benchmark_canary_promotion_invariants() {
 			function value(name) {
 				return (name in column) ? tolower($(column[name])) : ""
 			}
-			value("promotion_blocked") == "yes" &&
-				value("current_run_green") != "yes" &&
-				value("explicit_downscope") != "yes" &&
-				value("scheduled") != "yes" {
+				value("promotion_blocked") == "yes" &&
+					value("current_run_green") != "yes" &&
+					value("explicit_downscope") != "yes" &&
+					value("retained_product_evidence") != "yes" &&
+					value("scheduled") != "yes" {
 				print $(column["group"])
 			}
 		' "$coverage_status" | paste -sd, -)
@@ -884,6 +945,37 @@ check_benchmark_canary_promotion_invariants() {
 		emit_finding "$out" high "benchmark-canary" "promotion-blocker-not-scheduled" \
 			"status=$coverage_status groups=$unscheduled_groups" \
 			"make current-root open promotion status override deferred closure history and publish protected benchmark groups ahead of generic coverage-gap backfill at the final producer cap"
+	fi
+	paused_groups=
+	if [ -n "$coverage_status" ] && [ -s "$coverage_status" ] &&
+		[ "$coverage_root_age" -ge "$PROMOTION_SCHEDULING_START_GRACE_SECONDS" ]; then
+		paused_groups=$(awk -F '\t' '
+			NR == 1 {
+				for (i = 1; i <= NF; i++) {
+					name = tolower($i)
+					gsub(/\r$/, "", name)
+					column[name] = i
+				}
+				next
+			}
+			function value(name) {
+				return (name in column) ? tolower($(column[name])) : ""
+			}
+				value("promotion_blocked") == "yes" &&
+					value("current_run_green") != "yes" &&
+					value("explicit_downscope") != "yes" &&
+					value("retained_product_evidence") != "yes" &&
+					value("scheduled") == "yes" &&
+				value("active") != "yes" &&
+				value("supervisor_status") ~ /^(paused-startup-stall|paused-infra-startup|paused-product-failure|disabled)$/ {
+				print $(column["group"])
+			}
+		' "$coverage_status" | paste -sd, -)
+	fi
+	if [ -n "$paused_groups" ]; then
+		emit_finding "$out" high "benchmark-canary" "promotion-blocker-scheduled-but-paused" \
+			"status=$coverage_status groups=$paused_groups" \
+			"keep open promotion groups ahead of generic backfill and bypass no-product startup-stall seed-drain cooldown so scheduled rows execute the next seed instead of holding for hours"
 	fi
 }
 
@@ -947,6 +1039,303 @@ check_coverage_supervisor_root_agreement() {
 		if ! coverage_supervisor_session_live_after_grace "$coverage_root"; then
 			emit_finding "$out" high "coverage-guided" "supervisor-session-missing" "$coverage_root expected=rtc-coverage-guided-supervisor or $scoped_session" "restart the coverage supervisor for the current root"
 		fi
+	fi
+}
+
+check_promotion_preflight_relaunch_loops() {
+	local out=$1 coverage_root=$2 state_path status_path loops
+	state_path=$coverage_root/supervisor-state.json
+	status_path=$coverage_root/benchmark-canary-coverage-status.tsv
+	[ -s "$state_path" ] && [ -s "$status_path" ] || return
+	loops=$(node - "$state_path" "$status_path" <<'NODE'
+const fs = require( 'fs' );
+const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+const lines = fs
+	.readFileSync( process.argv[ 3 ], 'utf8' )
+	.trim()
+	.split( /\r?\n/ );
+const header = ( lines.shift() ?? '' ).split( '\t' );
+const index = new Map( header.map( ( name, i ) => [ name, i ] ) );
+const openGroups = new Set(
+	lines
+		.map( ( line ) => line.split( '\t' ) )
+		.filter(
+			( row ) =>
+				row[ index.get( 'promotion_blocked' ) ] === 'yes' &&
+				row[ index.get( 'current_run_green' ) ] !== 'yes' &&
+				row[ index.get( 'explicit_downscope' ) ] !== 'yes'
+		)
+		.map( ( row ) => row[ index.get( 'group' ) ] )
+);
+	for ( const group of state.groups ?? [] ) {
+		if (
+			! openGroups.has( group.name ) ||
+			group.status === 'paused-product-failure' ||
+			Boolean( group.productFailureAt ) ||
+			! /startup preflight failed/i.test( group.lastReason ?? '' )
+	) {
+		continue;
+	}
+	const launches = ( group.launches ?? [] ).slice( -4 );
+	const seeds = launches.map( ( launch ) => launch.startSeed );
+	if (
+		seeds.length >= 3 &&
+		seeds.every(
+			( seed ) => Number.isFinite( Number( seed ) ) && seed === seeds[ 0 ]
+		)
+	) {
+		process.stdout.write(
+			`${ group.name }:seed=${ seeds[ 0 ] }:launches=${ seeds.length }\n`
+		);
+	}
+}
+NODE
+)
+	if [ -n "$loops" ]; then
+		emit_finding "$out" high "coverage-guided" "promotion-human-smoke-same-seed-relaunch" \
+			"root=$coverage_root loops=$(printf '%s' "$loops" | paste -sd, -)" \
+			"classify executed human product-smoke editor/runtime failures as behavioral product evidence, quarantine the run, and preserve the product stop reason instead of writing kind=infra and relaunching the same seed"
+	fi
+}
+
+check_supervisor_disabled_cleanup_memoization() {
+	local out=$1 coverage_root=$2 state_path missing
+	state_path=$coverage_root/supervisor-state.json
+	[ -s "$state_path" ] || return
+	missing=$(node - "$state_path" <<'NODE'
+const fs = require( 'fs' );
+const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+const startedAtMs = Date.parse( state.startedAt ?? '' );
+if ( ! Number.isFinite( startedAtMs ) || Date.now() - startedAtMs < 15 * 60 * 1000 ) {
+	process.exit( 0 );
+}
+for ( const group of state.groups ?? [] ) {
+	if (
+		group.status === 'disabled' &&
+		! group.removedResourcesCleanupAt
+	) {
+		process.stdout.write( `${ group.name }\n` );
+	}
+}
+NODE
+	)
+	if [ -n "$missing" ]; then
+		emit_finding "$out" high "coverage-guided" "disabled-group-cleanup-not-memoized" \
+			"root=$coverage_root groups=$(printf '%s' "$missing" | paste -sd, -)" \
+			"run removed-group Docker cleanup once per policy transition, persist its result in supervisor state, and back off failed cleanup retries instead of rescanning every disabled group before every active group"
+	fi
+}
+
+check_product_failure_quarantine_slots() {
+	local out=$1 coverage_root=$2 state_path groups_path retained
+	state_path=$coverage_root/supervisor-state.json
+	groups_path=$coverage_root/supervisor-groups.json
+	[ -s "$state_path" ] && [ -s "$groups_path" ] || return
+	retained=$(node - "$state_path" "$groups_path" <<'NODE'
+const fs = require( 'fs' );
+const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+const published = new Set(
+	JSON.parse( fs.readFileSync( process.argv[ 3 ], 'utf8' ) )
+		.map( ( group ) => group?.name )
+		.filter( Boolean )
+);
+for ( const group of state.groups ?? [] ) {
+	if (
+		! published.has( group.name ) ||
+		( group.status !== 'paused-product-failure' && ! group.productFailureAt )
+	) {
+		continue;
+	}
+	const failureAtMs = Date.parse( group.productFailureAt ?? '' );
+	if ( Number.isFinite( failureAtMs ) && Date.now() - failureAtMs < 120000 ) {
+		continue;
+	}
+	process.stdout.write( `${ group.name }\n` );
+}
+NODE
+	)
+	if [ -n "$retained" ]; then
+		emit_finding "$out" high "coverage-guided" "product-failure-quarantine-consuming-slot" \
+			"root=$coverage_root groups=$(printf '%s' "$retained" | paste -sd, -)" \
+			"keep actionable product failures as release gates but remove their groups from supervisor-groups.json within one status heartbeat and backfill the released producer slots"
+	fi
+}
+
+check_published_startup_stall_holds() {
+	local out=$1 coverage_root=$2 state_path groups_path held
+	state_path=$coverage_root/supervisor-state.json
+	groups_path=$coverage_root/supervisor-groups.json
+	[ -s "$state_path" ] && [ -s "$groups_path" ] || return
+	held=$(node - "$state_path" "$groups_path" <<'NODE'
+const fs = require( 'fs' );
+const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+const configs = new Map(
+	JSON.parse( fs.readFileSync( process.argv[ 3 ], 'utf8' ) ).map( ( group ) => [
+		group.name,
+		group,
+	] )
+);
+for ( const group of state.groups ?? [] ) {
+	const config = configs.get( group.name );
+	if ( group.status !== 'paused-startup-stall' || ! config ) {
+		continue;
+	}
+	const pausedAtMs = Date.parse(
+		group.startupStallPausedAt ?? group.startupStallDrainRecordedAt ?? ''
+	);
+	if ( Number.isFinite( pausedAtMs ) && Date.now() - pausedAtMs < 120000 ) {
+		continue;
+	}
+	const isSeedDrain =
+		Number( group.startupStallSeedDrainCount ?? 0 ) > 0 ||
+		/seed drain/i.test( group.lastReason ?? '' );
+	const bypassesSeedDrain =
+		config.env?.RTC_FUZZ_SUPERVISOR_BYPASS_STARTUP_STALL_COOLDOWN === '1' &&
+		config.env?.RTC_FUZZ_SUPERVISOR_BYPASS_STARTUP_STALL_SEED_DRAIN === '1';
+	const bypassesNoProductGuard =
+		config.env
+			?.RTC_FUZZ_SUPERVISOR_BYPASS_NO_PRODUCT_STARTUP_STALL_GUARD === '1';
+	if ( bypassesNoProductGuard || ( isSeedDrain && bypassesSeedDrain ) ) {
+		continue;
+	}
+	process.stdout.write( `${ group.name }\n` );
+}
+NODE
+	)
+	if [ -n "$held" ]; then
+		emit_finding "$out" high "coverage-guided" "published-group-held-by-startup-cooldown" \
+			"root=$coverage_root groups=$(printf '%s' "$held" | paste -sd, -)" \
+			"remove optional paused groups from supervisor-groups.json or give policy-required/open-promotion groups the explicit no-product-guard bypass so they advance past the failed seed instead of consuming a six-hour hold"
+	fi
+}
+
+check_published_group_harness_drift() {
+	local out=$1 coverage_root=$2 state_path groups_path drift
+	state_path=$coverage_root/supervisor-state.json
+	groups_path=$coverage_root/supervisor-groups.json
+	[ -s "$state_path" ] && [ -s "$groups_path" ] || return
+	drift=$(node - "$state_path" "$groups_path" "$COVERAGE_BASE/candidate-source" <<'NODE'
+const fs = require( 'fs' );
+const crypto = require( 'crypto' );
+const path = require( 'path' );
+const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
+const groups = JSON.parse( fs.readFileSync( process.argv[ 3 ], 'utf8' ) );
+const candidate = process.argv[ 4 ];
+const stateByName = new Map(
+	( state.groups ?? [] ).map( ( group ) => [ group.name, group ] )
+);
+const criticalFiles = [
+	'bin/rtc-browser-fuzz-runner.mjs',
+	'bin/rtc-browser-fuzz-launcher.mjs',
+	'bin/rtc-browser-fuzz-triage-watcher.mjs',
+	'test/e2e/specs/editor/collaboration/collaboration-human-smoke.spec.ts',
+];
+const digest = ( filePath ) => {
+	try {
+		return crypto.createHash( 'sha256' ).update( fs.readFileSync( filePath ) ).digest( 'hex' );
+	} catch {
+		return 'missing';
+	}
+};
+const expected = new Map(
+	criticalFiles.map( ( relative ) => [ relative, digest( path.join( candidate, relative ) ) ] )
+);
+for ( const group of groups ) {
+	const groupState = stateByName.get( group.name );
+	if ( groupState?.status === 'waiting-repo-prep' ) {
+		continue;
+	}
+	let manifestSignature = 'missing';
+	try {
+		manifestSignature = JSON.parse(
+			fs.readFileSync(
+				path.join( group.repoRoot, '.js2-harness-overlay-manifest.json' ),
+				'utf8'
+			)
+		).signature ?? 'missing';
+	} catch {}
+	const mismatches = criticalFiles.filter(
+		( relative ) =>
+			digest( path.join( group.repoRoot, relative ) ) !== expected.get( relative )
+	);
+	if (
+		( group.harnessOverlaySignature &&
+			manifestSignature !== group.harnessOverlaySignature ) ||
+		mismatches.length > 0
+	) {
+		process.stdout.write(
+			`${ group.name }:manifest=${ manifestSignature }:expected=${
+				group.harnessOverlaySignature ?? 'unspecified'
+			}:files=${ mismatches.join( ',' ) || 'none' }\n`
+		);
+	}
+}
+NODE
+	)
+	if [ -n "$drift" ]; then
+		emit_finding "$out" high "coverage-guided" "published-group-harness-drift" \
+			"root=$coverage_root drift=$(printf '%s' "$drift" | paste -sd, -)" \
+			"content-hash and atomically synchronize the bounded rtc/editor harness overlay before a reused isolated repo becomes launchable, terminate lanes that loaded stale harness code, and require the expected overlay signature in supervisor admission"
+	fi
+}
+
+check_gate_only_triage_processes() {
+	local out=$1 issues
+	issues=$(node <<'NODE'
+const { execFileSync } = require( 'child_process' );
+const rows = execFileSync( 'ps', [ '-eo', 'pid=,ppid=,etimes=,args=' ], {
+	encoding: 'utf8',
+} )
+	.split( /\n/ )
+	.map( ( line ) => line.match( /^\s*(\d+)\s+(\d+)\s+(\d+)\s+(.*)$/ ) )
+	.filter( Boolean )
+	.map( ( match ) => ( {
+		pid: Number( match[ 1 ] ),
+		ppid: Number( match[ 2 ] ),
+		age: Number( match[ 3 ] ),
+		args: match[ 4 ],
+	} ) );
+const byPid = new Map( rows.map( ( row ) => [ row.pid, row ] ) );
+const watchers = rows.filter( ( row ) =>
+	/rtc-browser-fuzz-triage-watcher[.]mjs .*--gate-only/.test( row.args )
+);
+for ( const watcher of watchers ) {
+	const codexDescendants = rows.filter( ( row ) => {
+		if ( ! /(?:^|[/ ])codex(?: |$).*\bexec\b/.test( row.args ) ) {
+			return false;
+		}
+		let ancestor = byPid.get( row.ppid );
+		for ( let depth = 0; ancestor && depth < 16; depth++ ) {
+			if ( ancestor.pid === watcher.pid ) {
+				return true;
+			}
+			ancestor = byPid.get( ancestor.ppid );
+		}
+		return false;
+	} );
+	if ( watcher.age >= 60 || codexDescendants.length > 0 ) {
+		process.stdout.write(
+			`pid=${ watcher.pid }:age=${ watcher.age }:codex=${ codexDescendants
+				.map( ( row ) => row.pid )
+				.join( ',' ) || 'none' }\n`
+		);
+	}
+}
+for ( const row of rows ) {
+	if (
+		/(?:^|[/ ])codex(?: |$).*\bexec\b/.test( row.args ) &&
+		row.args.includes( '.triage-watcher/signatures/' ) &&
+		( row.ppid === 1 || ! byPid.has( row.ppid ) )
+	) {
+		process.stdout.write( `orphan-codex=${ row.pid }:age=${ row.age }\n` );
+	}
+}
+NODE
+	)
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "coverage-guided" "gate-only-triage-launched-analysis" \
+			"processes=$(printf '%s' "$issues" | paste -sd, -)" \
+			"make --gate-only update signature state without launching Codex, bound refresh concurrency and timeout, terminate the complete gate-refresh process group on timeout, and retire orphaned gate-refresh Codex descendants"
 	fi
 }
 
@@ -1252,13 +1641,20 @@ detect_findings() {
 	check_coverage_process_ownership "$tmp"
 	check_deadline_budget_consistency "$tmp"
 	check_critical_path_invariants "$tmp"
+	check_repair_publication_progress "$tmp"
 	check_benchmark_canary_promotion_invariants "$tmp"
 	check_loop_statuses "$tmp"
 	if [ -s "$COVERAGE_BASE/current-output-dir.txt" ]; then
 		coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
 		check_coverage_supervisor_root_agreement "$tmp" "$coverage_root"
+		check_supervisor_disabled_cleanup_memoization "$tmp" "$coverage_root"
+		check_product_failure_quarantine_slots "$tmp" "$coverage_root"
+		check_published_startup_stall_holds "$tmp" "$coverage_root"
+		check_published_group_harness_drift "$tmp" "$coverage_root"
+		check_promotion_preflight_relaunch_loops "$tmp" "$coverage_root"
 		check_coverage_novelty_full_pass_health "$tmp" "$coverage_root"
 	fi
+	check_gate_only_triage_processes "$tmp"
 	check_unknown_action_profile_startup_failures "$tmp"
 	check_current_run_duplicate_noise "$tmp"
 	if recent_log_matches "$GUARD_BASE/logs/guard.log" 1800 'restart requested pool=.*reason='; then

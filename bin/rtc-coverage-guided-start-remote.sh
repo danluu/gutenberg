@@ -178,6 +178,8 @@ prepare_exact_candidate_source() {
 		printf 'harness_repo\t%s\n' "$HARNESS_REPO"
 		printf 'monitor_repo\t%s\n' "$PRODUCT_REPO"
 		printf 'novelty_monitor_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-novelty-monitor.mjs" | awk '{ print $1 }')"
+		printf 'live_analysis_monitor_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-live-analysis-monitor.mjs" | awk '{ print $1 }')"
+		printf 'runner_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-runner.mjs" | awk '{ print $1 }')"
 		printf 'supervisor_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-supervisor.mjs" | awk '{ print $1 }')"
 		printf 'triage_watcher_sha256\t%s\n' "$(sha256sum "$PRODUCT_REPO/bin/rtc-browser-fuzz-triage-watcher.mjs" | awk '{ print $1 }')"
 		printf 'control_dirty_paths\t%s\n' "$(wc -l < "$OUT/control-repo-status.txt" | tr -d ' ')"
@@ -201,6 +203,8 @@ DISABLE_STATE_CARRYOVER=${RTC_FUZZ_NOVELTY_DISABLE_STATE_CARRYOVER:-0}
 CURRENT_REPO_HEAD=$(git -C "$REPO" rev-parse "$CANDIDATE_REF" 2>/dev/null || true)
 CURRENT_REPO_BRANCH=${CANDIDATE_REF#refs/heads/}
 PREVIOUS_COVERAGE_HEAD=
+PREVIOUS_COVERAGE_AGE_SECONDS=999999
+SAME_HEAD_REATTACH_MAX_AGE_SECONDS=${RTC_COVERAGE_SAME_HEAD_REATTACH_MAX_AGE_SECONDS:-46800}
 if [ -n "$PREVIOUS_COVERAGE" ]; then
 	if [ -f "$PREVIOUS_COVERAGE/source-head.txt" ]; then
 		PREVIOUS_COVERAGE_HEAD=$(sed -n '1p' "$PREVIOUS_COVERAGE/source-head.txt" 2>/dev/null || true)
@@ -210,15 +214,21 @@ if [ -n "$PREVIOUS_COVERAGE" ]; then
 			PREVIOUS_COVERAGE_HEAD=$(git -C "$previous_repo" rev-parse HEAD 2>/dev/null || true)
 		fi
 	fi
+	if [ -f "$BASE/current-output-dir.txt" ]; then
+		pointer_mtime=$(stat -c %Y "$BASE/current-output-dir.txt" 2>/dev/null || printf 0)
+		PREVIOUS_COVERAGE_AGE_SECONDS=$(( $(date -u +%s) - pointer_mtime ))
+	fi
 fi
 if [ "${RTC_COVERAGE_FORCE_RESTART:-0}" != "1" ] &&
-	tmux has-session -t rtc-coverage-guided-novelty 2>/dev/null &&
 	[ -n "$PREVIOUS_COVERAGE" ] &&
 	[ -d "$PREVIOUS_COVERAGE" ] &&
+	[ -x "$PREVIOUS_COVERAGE/run-monitor.sh" ] &&
 	[ -n "$CURRENT_REPO_HEAD" ] &&
-	[ "$CURRENT_REPO_HEAD" = "$PREVIOUS_COVERAGE_HEAD" ]; then
-	printf '[%s] coverage-guided run already active at %s head=%s; set RTC_COVERAGE_FORCE_RESTART=1 for a deliberate replacement\n' \
-		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$PREVIOUS_COVERAGE" "$CURRENT_REPO_HEAD" >> "$BASE/logs/start.log"
+	[ "$CURRENT_REPO_HEAD" = "$PREVIOUS_COVERAGE_HEAD" ] &&
+	[ "$PREVIOUS_COVERAGE_AGE_SECONDS" -ge 0 ] &&
+	[ "$PREVIOUS_COVERAGE_AGE_SECONDS" -lt "$SAME_HEAD_REATTACH_MAX_AGE_SECONDS" ]; then
+	printf '[%s] same-head current root preserved for reattach at %s head=%s age=%ss; set RTC_COVERAGE_FORCE_RESTART=1 for a deliberate replacement\n' \
+		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$PREVIOUS_COVERAGE" "$CURRENT_REPO_HEAD" "$PREVIOUS_COVERAGE_AGE_SECONDS" >> "$BASE/logs/start.log"
 	printf 'OUT=%s\n' "$PREVIOUS_COVERAGE"
 	exit 0
 fi
