@@ -14,6 +14,7 @@ import {
 	CRDT_STATE_MAP_SAVED_AT_KEY as SAVED_AT_KEY,
 	CRDT_STATE_MAP_SAVED_BY_KEY as SAVED_BY_KEY,
 	LOCAL_SYNC_MANAGER_ORIGIN,
+	LOCAL_UNDO_IGNORED_ORIGIN,
 } from './config';
 import { logPerformanceTiming, passThru } from './performance';
 import { getProviderCreators } from './providers';
@@ -1290,12 +1291,15 @@ export function createSyncManager( debug = false ): SyncManager {
 				) {
 					changes.content = record.content;
 				}
+				// These invalidations came from a successful entity save and must
+				// reach already-open peers. The sync-manager origin is reserved for
+				// local bootstrap work and is ignored by the HTTP polling provider.
 				entityState.ydoc.transact( () => {
 					entityState.syncConfig.applyChangesToCRDTDoc(
 						entityState.ydoc,
 						changes
 					);
-				}, LOCAL_SYNC_MANAGER_ORIGIN );
+				}, LOCAL_UNDO_IGNORED_ORIGIN );
 			} else {
 				const update = Y.encodeStateAsUpdateV2( tempDoc );
 				Y.applyUpdateV2( entityState.ydoc, update );
