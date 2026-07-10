@@ -505,12 +505,18 @@ interface CollaboratorAwarenessState {
  * A reload can briefly leave the previous Yjs client in server awareness until
  * its disconnect beacon arrives or the 30-second server timeout expires. Both
  * client IDs represent the same editor and must not trip the connection limit.
- * States without a stable collaborator ID still count by client ID.
+ * The current client can also appear before its collaborator identity has been
+ * initialized. Defer counting that state until it has a stable identity; other
+ * unidentified clients still count by client ID.
  *
- * @param awareness The awareness state from the server response.
+ * @param awareness       The awareness state from the server response.
+ * @param currentClientId The Yjs client ID for the current room registration.
  * @return The number of distinct editors represented by the response.
  */
-function countAwarenessEditors( awareness: AwarenessState ): number {
+function countAwarenessEditors(
+	awareness: AwarenessState,
+	currentClientId: number
+): number {
 	const editorIdentities = new Set< string >();
 
 	for ( const [ clientId, state ] of Object.entries( awareness ) ) {
@@ -519,6 +525,9 @@ function countAwarenessEditors( awareness: AwarenessState ): number {
 		const hasCollaboratorId =
 			typeof collaboratorId === 'number' ||
 			typeof collaboratorId === 'string';
+		if ( ! hasCollaboratorId && clientId === String( currentClientId ) ) {
+			continue;
+		}
 
 		editorIdentities.add(
 			hasCollaboratorId
@@ -554,7 +563,7 @@ function checkConnectionLimit(
 		roomState.room
 	);
 
-	const clientCount = countAwarenessEditors( awareness );
+	const clientCount = countAwarenessEditors( awareness, roomState.clientId );
 	const validatedLimit = intValueOrDefault(
 		maxClientsPerRoom,
 		DEFAULT_CLIENT_LIMIT_PER_ROOM

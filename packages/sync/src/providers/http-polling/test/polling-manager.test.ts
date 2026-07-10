@@ -603,6 +603,47 @@ describe( 'polling-manager', () => {
 			);
 		} );
 
+		it( 'does not count the current reload client before awareness initializes', async () => {
+			const awareness = {
+				1: { collaboratorInfo: { id: 100 } },
+				2: { collaboratorInfo: { id: 200 } },
+				3: { collaboratorInfo: { id: 300 } },
+				4: {},
+			};
+
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness,
+						updates: [],
+					},
+				],
+			} );
+
+			const onStatusChange = jest.fn();
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 4 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( onStatusChange ).not.toHaveBeenCalledWith(
+				expect.objectContaining( {
+					error: expect.objectContaining( {
+						code: 'connection-limit-exceeded',
+					} ),
+				} )
+			);
+		} );
+
 		it( 'does not enforce limits on the second registered room', async () => {
 			// Register a first room (which consumes the enforceConnectionLimit flag).
 			mockPostSyncUpdate.mockResolvedValue( {
