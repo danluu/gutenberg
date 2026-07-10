@@ -247,7 +247,7 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 	} );
 
-	it( 'does not append a stale suffix when the base tail anchor is absent', () => {
+	it( 'keeps a fresh local suffix when the base tail anchor is absent', () => {
 		const baseBlocks = [
 			paragraph( 'base-start', 'Alpha' ),
 			paragraph( 'base-tail', 'Beta' ),
@@ -268,11 +268,13 @@ describe( 'stale top-level block snapshots', () => {
 		expect( contentsOf( yblocks ) ).toEqual( [
 			'Alpha',
 			'Beta',
+			'Local suffix',
 			'Remote tail',
 		] );
 		expect( clientIdsOf( yblocks ) ).toEqual( [
 			'base-start',
 			'replacement',
+			'local-appended',
 			'remote-tail',
 		] );
 	} );

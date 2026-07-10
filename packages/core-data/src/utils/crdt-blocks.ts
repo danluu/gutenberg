@@ -1136,16 +1136,26 @@ function mergeYBlocksLocalSuffixAppend(
 		return;
 	}
 
-	let anchorIndex = findStrictYBlockIndex(
-		yblocks,
-		baseBlocks[ baseBlocks.length - 1 ]
-	);
+	let anchorIndex = -1;
 
-	if ( anchorIndex === -1 && yblocks.length === baseBlocks.length ) {
-		anchorIndex = findEquivalentYBlockIndex(
-			yblocks,
-			baseBlocks[ baseBlocks.length - 1 ]
-		);
+	// The base tail can disappear while a local editor is recovering from a
+	// failed poll or a peer reload. The suffix is still a fresh local action and
+	// must not be dropped with that stale tail. Anchor it after the nearest
+	// surviving base block, preferring identity but accepting a semantically
+	// equivalent replacement. This preserves remote replacements/deletions while
+	// retaining the local append.
+	for ( let index = baseBlocks.length - 1; index >= 0; index-- ) {
+		anchorIndex = findStrictYBlockIndex( yblocks, baseBlocks[ index ] );
+		if ( anchorIndex === -1 ) {
+			anchorIndex = findEquivalentYBlockIndex(
+				yblocks,
+				baseBlocks[ index ]
+			);
+		}
+
+		if ( anchorIndex !== -1 ) {
+			break;
+		}
 	}
 
 	if ( anchorIndex === -1 ) {
