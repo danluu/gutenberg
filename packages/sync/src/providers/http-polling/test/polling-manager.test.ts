@@ -69,7 +69,7 @@ interface PollingManager {
 		log: () => void;
 		onStatusChange: () => void;
 		onSync: () => void;
-	} ) => void;
+	} ) => () => void;
 	unregisterRoom: (
 		room: string,
 		options?: { sendDisconnectSignal?: boolean }
@@ -545,6 +545,47 @@ describe( 'polling-manager', () => {
 			pollingManager.registerRoom( {
 				room: 'test-room',
 				doc: createMockDoc( 1 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( onStatusChange ).not.toHaveBeenCalledWith(
+				expect.objectContaining( {
+					error: expect.objectContaining( {
+						code: 'connection-limit-exceeded',
+					} ),
+				} )
+			);
+		} );
+
+		it( 'does not count a stale reload client as another editor', async () => {
+			const awareness = {
+				1: { collaboratorInfo: { id: 100 } },
+				2: { collaboratorInfo: { id: 200 } },
+				3: { collaboratorInfo: { id: 300 } },
+				4: { collaboratorInfo: { id: 100 } },
+			};
+
+			mockPostSyncUpdate.mockResolvedValue( {
+				rooms: [
+					{
+						room: 'test-room',
+						end_cursor: 1,
+						awareness,
+						updates: [],
+					},
+				],
+			} );
+
+			const onStatusChange = jest.fn();
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 4 ),
 				awareness: createMockAwareness(),
 				log: jest.fn(),
 				onStatusChange,
@@ -1365,6 +1406,66 @@ describe( 'polling-manager', () => {
 	} );
 
 	describe( 'error recovery', () => {
+		it( 'keeps a replacement room live when the previous provider cleans up', async () => {
+			const firstRequest = createDeferred< SyncResponse >();
+			mockPostSyncUpdate
+				.mockReturnValueOnce( firstRequest.promise )
+				.mockResolvedValue( syncResponse );
+
+			const firstDoc = createMockDoc( 1 );
+			const unregisterFirst = pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: firstDoc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			const secondDoc = createMockDoc( 2 );
+			const unregisterSecond = pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: secondDoc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			expect( firstDoc.off ).toHaveBeenCalledWith(
+				'updateV2',
+				expect.any( Function )
+			);
+			expect( secondDoc.on ).toHaveBeenCalledWith(
+				'updateV2',
+				expect.any( Function )
+			);
+
+			unregisterFirst();
+			expect( secondDoc.off ).not.toHaveBeenCalled();
+			expect( mockPostSyncUpdateNonBlocking ).not.toHaveBeenCalled();
+
+			firstRequest.resolve( syncResponse );
+			await jest.advanceTimersByTimeAsync( 0 );
+			await jest.advanceTimersByTimeAsync( 4000 );
+
+			expect( mockPostSyncUpdate ).toHaveBeenCalledTimes( 2 );
+			expect(
+				mockPostSyncUpdate.mock.calls[ 1 ][ 0 ].rooms[ 0 ]
+			).toEqual(
+				expect.objectContaining( {
+					client_id: 2,
+					room: 'test-room',
+				} )
+			);
+
+			unregisterSecond();
+			expect( secondDoc.off ).toHaveBeenCalledWith(
+				'updateV2',
+				expect.any( Function )
+			);
+		} );
+
 		it( 'splits outgoing updates so a poll stays within the request body budget', async () => {
 			mockPostSyncUpdate.mockImplementation(
 				async ( payload: SyncPayload ): Promise< SyncResponse > => ( {

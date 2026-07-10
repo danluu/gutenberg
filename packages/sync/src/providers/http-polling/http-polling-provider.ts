@@ -38,6 +38,7 @@ class HttpPollingProvider extends ObservableV2< HttpPollingEvents > {
 	protected awareness: Awareness;
 	protected status: ConnectionStatus[ 'status' ] = 'disconnected';
 	protected synced = false;
+	protected unregisterRoom?: () => void;
 
 	public constructor( protected options: ProviderOptions ) {
 		super();
@@ -51,9 +52,13 @@ class HttpPollingProvider extends ObservableV2< HttpPollingEvents > {
 	 * Connect to the endpoint and initialize sync.
 	 */
 	public connect(): void {
+		if ( this.unregisterRoom ) {
+			return;
+		}
+
 		this.log( 'Connecting' );
 
-		pollingManager.registerRoom( {
+		this.unregisterRoom = pollingManager.registerRoom( {
 			room: this.options.room,
 			doc: this.options.ydoc,
 			awareness: this.awareness,
@@ -77,7 +82,8 @@ class HttpPollingProvider extends ObservableV2< HttpPollingEvents > {
 	public disconnect(): void {
 		this.log( 'Disconnecting' );
 
-		pollingManager.unregisterRoom( this.options.room );
+		this.unregisterRoom?.();
+		this.unregisterRoom = undefined;
 		this.emitStatus( { status: 'disconnected' } );
 	}
 

@@ -61,7 +61,7 @@ type LogFunction = (
 ) => void;
 
 interface PollingManager {
-	registerRoom: ( options: RegisterRoomOptions ) => void;
+	registerRoom: ( options: RegisterRoomOptions ) => () => void;
 	retryNow: () => void;
 	unregisterRoom: (
 		room: string,
@@ -151,12 +151,14 @@ function isProtocolMismatchError( error: unknown ): error is WPRestError {
  * If the error does not include room details, it is treated as a generic auth
  * failure and all rooms are unregistered.
  *
- * @param error          The forbidden error, narrowed via isForbiddenError.
- * @param requestedRooms The rooms that were in the failing request.
+ * @param error               The forbidden error, narrowed via isForbiddenError.
+ * @param requestedRooms      The rooms that were in the failing request.
+ * @param requestedRoomStates The room registrations used by that request.
  */
 function handleForbiddenError(
 	error: WPRestError,
-	requestedRooms: SyncPayload[ 'rooms' ]
+	requestedRooms: SyncPayload[ 'rooms' ],
+	requestedRoomStates: Map< string, RoomState >
 ): void {
 	const requestedRoomNames = new Set(
 		requestedRooms.map( ( room ) => room.room )
@@ -168,7 +170,7 @@ function handleForbiddenError(
 	if ( forbiddenRooms.length > 0 ) {
 		for ( const room of forbiddenRooms ) {
 			const state = roomStates.get( room );
-			if ( state ) {
+			if ( state && requestedRoomStates.get( room ) === state ) {
 				state.log(
 					'Permission denied, unregistering room',
 					{ error },
@@ -185,10 +187,13 @@ function handleForbiddenError(
 			if ( forbiddenRooms.includes( room.room ) ) {
 				continue;
 			}
-			if ( ! roomStates.has( room.room ) ) {
+			const remainingState = roomStates.get( room.room );
+			if (
+				! remainingState ||
+				requestedRoomStates.get( room.room ) !== remainingState
+			) {
 				continue;
 			}
-			const remainingState = roomStates.get( room.room )!;
 			if ( room.updates.length > 0 ) {
 				remainingState.updateQueue.restore( room.updates );
 			}
@@ -490,6 +495,41 @@ function processDocUpdate(
 	}
 }
 
+interface CollaboratorAwarenessState {
+	collaboratorInfo?: { id?: number | string };
+}
+
+/**
+ * Count distinct editors in an awareness response.
+ *
+ * A reload can briefly leave the previous Yjs client in server awareness until
+ * its disconnect beacon arrives or the 30-second server timeout expires. Both
+ * client IDs represent the same editor and must not trip the connection limit.
+ * States without a stable collaborator ID still count by client ID.
+ *
+ * @param awareness The awareness state from the server response.
+ * @return The number of distinct editors represented by the response.
+ */
+function countAwarenessEditors( awareness: AwarenessState ): number {
+	const editorIdentities = new Set< string >();
+
+	for ( const [ clientId, state ] of Object.entries( awareness ) ) {
+		const collaboratorId = ( state as CollaboratorAwarenessState | null )
+			?.collaboratorInfo?.id;
+		const hasCollaboratorId =
+			typeof collaboratorId === 'number' ||
+			typeof collaboratorId === 'string';
+
+		editorIdentities.add(
+			hasCollaboratorId
+				? `collaborator:${ collaboratorId }`
+				: `client:${ clientId }`
+		);
+	}
+
+	return editorIdentities.size;
+}
+
 /**
  * Check whether the awareness state exceeds the configured connection limit.
  *
@@ -514,7 +554,7 @@ function checkConnectionLimit(
 		roomState.room
 	);
 
-	const clientCount = Object.keys( awareness ).length;
+	const clientCount = countAwarenessEditors( awareness );
 	const validatedLimit = intValueOrDefault(
 		maxClientsPerRoom,
 		DEFAULT_CLIENT_LIMIT_PER_ROOM
@@ -808,13 +848,21 @@ function buildPayloadForRequest( selectedRoomStates: RoomState[] ): {
 	return { payload, roomsInRequest };
 }
 
-function restoreExactUpdates( payload: SyncPayload ): void {
+function restoreExactUpdates(
+	payload: SyncPayload,
+	requestedRoomStates: Map< string, RoomState >
+): void {
 	for ( const room of payload.rooms ) {
-		if ( ! roomStates.has( room.room ) || room.updates.length === 0 ) {
+		const state = roomStates.get( room.room );
+		if (
+			! state ||
+			requestedRoomStates.get( room.room ) !== state ||
+			room.updates.length === 0
+		) {
 			continue;
 		}
 
-		roomStates.get( room.room )!.updateQueue.restoreExact( room.updates );
+		state.updateQueue.restoreExact( room.updates );
 	}
 }
 
@@ -838,6 +886,9 @@ function poll(): void {
 		// the serialized body below the server's aggregate request-size limit.
 		const { payload, roomsInRequest } = buildPayloadForRequest(
 			selectRoomsForRequest()
+		);
+		const requestedRoomStates = new Map(
+			roomsInRequest.map( ( state ) => [ state.room, state ] )
 		);
 
 		// Emit 'connecting' status only for rooms in this request. Rooms
@@ -868,11 +919,15 @@ function poll(): void {
 			hasCollaborators = false;
 
 			rooms.forEach( ( room ) => {
-				if ( ! roomStates.has( room.room ) ) {
+				const roomState = roomStates.get( room.room );
+				if (
+					! roomState ||
+					( requestedRoomStates.has( room.room ) &&
+						requestedRoomStates.get( room.room ) !== roomState )
+				) {
 					return;
 				}
 
-				const roomState = roomStates.get( room.room )!;
 				roomState.endCursor = room.end_cursor;
 
 				// If a limit is exceeded, disconnect immediately without processing updates.
@@ -953,7 +1008,11 @@ function poll(): void {
 			// sync a specific entity. Silently unregister the affected
 			// room(s) and let polling continue for the rest.
 			if ( isForbiddenError( error ) ) {
-				handleForbiddenError( error, payload.rooms );
+				handleForbiddenError(
+					error,
+					payload.rooms,
+					requestedRoomStates
+				);
 
 				// If every room was unregistered, stop the poll loop
 				// instead of scheduling another tick. Reset isPolling
@@ -970,14 +1029,18 @@ function poll(): void {
 				pollInterval = hasCollaborators
 					? ERROR_RETRY_DELAYS_WITH_COLLABORATORS_MS[ 0 ]
 					: ERROR_RETRY_DELAYS_SOLO_MS[ 0 ];
-				restoreExactUpdates( payload );
+				restoreExactUpdates( payload, requestedRoomStates );
 
 				for ( const room of payload.rooms ) {
-					if ( ! roomStates.has( room.room ) ) {
+					const state = roomStates.get( room.room );
+					if (
+						! state ||
+						requestedRoomStates.get( room.room ) !== state
+					) {
 						continue;
 					}
 
-					roomStates.get( room.room )!.log(
+					state.log(
 						'Sync request body too large, retrying with smaller batches',
 						{
 							error,
@@ -1042,11 +1105,13 @@ function poll(): void {
 				// them; if it didn't, the compaction includes them. Updates not seen by
 				// this client are preserved in both cases.
 				for ( const room of payload.rooms ) {
-					if ( ! roomStates.has( room.room ) ) {
+					const state = roomStates.get( room.room );
+					if (
+						! state ||
+						requestedRoomStates.get( room.room ) !== state
+					) {
 						continue;
 					}
-
-					const state = roomStates.get( room.room )!;
 
 					if ( room.updates.length > 0 && state.endCursor > 0 ) {
 						state.updateQueue.clear();
@@ -1105,9 +1170,14 @@ function registerRoom( {
 	log,
 	onSync,
 	onStatusChange,
-}: RegisterRoomOptions ): void {
-	if ( roomStates.has( room ) ) {
-		return;
+}: RegisterRoomOptions ): () => void {
+	const replacedState = roomStates.get( room );
+	if ( replacedState ) {
+		// A new provider can be created before the previous async load has
+		// finished tearing down. Replace the stale registration immediately so
+		// the new document can bootstrap instead of leaving the room unowned.
+		replacedState.unregister();
+		roomStates.delete( room );
 	}
 
 	// Note: Queue is initially paused. Call .resume() to unpause.
@@ -1144,7 +1214,7 @@ function registerRoom( {
 	 * How might this approach be improved? We could develop some way to annotate
 	 * entity loading so that the consumer can indicate which entity is primary.
 	 */
-	const isPrimaryRoom = 0 === roomStates.size;
+	const isPrimaryRoom = replacedState?.isPrimaryRoom ?? 0 === roomStates.size;
 
 	function onAwarenessUpdate(): void {
 		roomState.localAwarenessState = awareness.getLocalState() ?? {};
@@ -1214,6 +1284,17 @@ function registerRoom( {
 	if ( ! isPolling ) {
 		poll();
 	}
+
+	return () => {
+		// Cleanup from a replaced provider may arrive after its successor has
+		// registered. Only the registration that currently owns the room may
+		// remove it.
+		if ( roomStates.get( room ) !== roomState ) {
+			return;
+		}
+
+		unregisterRoom( room );
+	};
 }
 
 function unregisterRoom(
