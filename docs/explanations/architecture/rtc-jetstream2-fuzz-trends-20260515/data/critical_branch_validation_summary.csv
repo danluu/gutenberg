@@ -63,13 +63,24 @@ payload"
 ready/rtc-pr15c-fallback-group-delete-green,0,5,5,pr15c fallback group delete green
 fix/rtc-title-reload-stale-save-noop-20260710T033120Z,0,2,2,"fix/rtc title reload stale save
 noop 20260710T033120Z"
+repair/benchmark-canary-empty-crdt-reload-20260710T093611Z,0,2,2,"repair/benchmark canary empty crdt
+reload 20260710T093611Z"
 repair/plain-editor-product-smoke-rtc-save-proof-20260710T045453Z,0,2,2,"repair/plain editor product smoke
 rtc save proof 20260710T045453Z"
+repair/benchmark-canary-product-failure-live-block-dirty-20260710T085052Z,0,1,1,"repair/benchmark canary product
+failure live block dirty
+20260710T085052Z"
 repair/benchmark-canary-product-failure-stale-save-noop-20260710T035625Z,0,1,1,"repair/benchmark canary
 product failure stale save noop
 20260710T035625Z"
+repair/benchmark-canary-table-query-array-current-20260710T101033Z,0,1,1,"repair/benchmark canary
+table query array current
+20260710T101033Z"
 repair/pa-exact-benchmark-canary-product-failure-sync-save-slash-20260710T024254Z,0,1,1,"repair/pa exact benchmark canary
 product failure sync save slash
 20260710T024254Z"
+repair/pa-exact-table-stale-snapshot-query-array-20260710T092944Z,0,1,1,"repair/pa exact table
+stale snapshot query array
+20260710T092944Z"
 repair/plain-editor-crdt-persist-product-only-20260710T0615Z,0,1,1,"repair/plain editor crdt persist
 product only 20260710T0615Z"

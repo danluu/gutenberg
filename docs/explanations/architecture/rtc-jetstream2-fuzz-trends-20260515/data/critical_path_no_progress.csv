@@ -1,1 +1,3 @@
-artifact_path,reason,size,mtime,associated_job,rejected_at
+artifact_path,reason,size,mtime,associated_job,rejected_at,item_id
+/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260710T095203Z/continuations/benchmark-canary-fuzzer-gap/clean-build-cc4020c3abc4/node_modules/human-signals/CHANGELOG.md,zero_executor_artifact,0,1783677804,unknown,2026-07-10T11:41:14Z,benchmark-canary-fuzzer-gap
+/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260710T100244Z/validations/repair-branch-repair-benchmark-canary-empty-crdt-reload-20260710t09361/numstat.tsv,zero_executor_artifact,0,1783677766,unknown,2026-07-10T11:41:14Z,repair-branch-repair-benchmark-canary-empty-crdt-reload-20260710t09361

@@ -1,4 +1,7 @@
 session,class,started_hint
-rtc-critical-continuation-pa-exact-benchmark-canary-product-failure-20260710T073612Z,critical-continuation,
-rtc-critical-continuation-productive-analysis-action-20260710T073650Z,critical-continuation,
+rtc-critical-continuation-benchmark-canary-fuzzer-gap-20260710T111915Z,critical-continuation,
+rtc-critical-continuation-benchmark-canary-product-failure-20260710T113822Z,critical-continuation,
+rtc-critical-continuation-pa-exact-benchmark-canary-novelty-http-large-pos-20260710T111737Z,critical-continuation,
+rtc-critical-continuation-pa-exact-benchmark-canary-product-failure-20260710T110101Z,critical-continuation,
 rtc-critical-path-pr-executor-loop,analysis,
+rtc-pr-finalize-job-20260710T111037Z,finalization,

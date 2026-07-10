@@ -1,101 +1,101 @@
 timestamp,message,event_type
-2026-07-10T06:15:54Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:16:39Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:17:41Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:17:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:18:44Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:19:47Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:20:05Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:20:49Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:21:52Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:22:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:22:54Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:23:57Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:24:16Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:25:00Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:26:02Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:26:21Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:27:05Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:28:07Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:28:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:29:10Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:30:12Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:30:32Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:31:15Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:32:18Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:32:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:33:20Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:34:23Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:34:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:35:25Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:36:28Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:36:47Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:37:30Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T06:38:33Z,PR progress controller started pid=1044612,controller start
-2026-07-10T06:38:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:40:41Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:42:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:44:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:46:55Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:49:00Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:51:05Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:53:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:55:14Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:57:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T06:59:24Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:01:28Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:03:33Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:04:38Z,clearing stale PR progress controller lock holders without tmux session holders=1044612 1751444,other
-2026-07-10T07:04:38Z,PR progress controller started pid=1785137,controller start
-2026-07-10T07:04:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:04:44Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:05:47Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:06:46Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:06:49Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:07:52Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:08:51Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:08:54Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:09:57Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:10:56Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:11:00Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:12:02Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:13:01Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:13:05Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:14:08Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:15:05Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:15:10Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:16:14Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:17:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:17:16Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:18:18Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:19:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:19:21Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:20:24Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:21:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:21:26Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:22:29Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:23:24Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:23:31Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:24:34Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:25:29Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:25:36Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:26:39Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:27:34Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:27:42Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:28:44Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:29:38Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:29:47Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:30:49Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:31:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:31:52Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:32:55Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:33:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:33:57Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:35:00Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:35:52Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:36:03Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:37:05Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:37:57Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
-2026-07-10T07:38:08Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:39:11Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
-2026-07-10T07:40:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:31:27Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:31:38Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:32:40Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:33:32Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:33:43Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:34:45Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:35:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:35:48Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:36:51Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:37:43Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:37:53Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:38:56Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:39:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:39:58Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:41:01Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:41:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:42:04Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:43:06Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:43:59Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:44:09Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:45:12Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:46:05Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:46:15Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:47:17Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:48:10Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:48:20Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:49:23Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:50:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:50:26Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:51:28Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:52:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:52:31Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:53:34Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:54:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:54:36Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:55:39Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:56:32Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:56:42Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:57:44Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:58:37Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T10:58:47Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T10:59:49Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:00:42Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:00:52Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:01:54Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:02:48Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:02:57Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:04:00Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:04:53Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:05:02Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:06:05Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:06:58Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:07:08Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:08:10Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:09:04Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:09:13Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:10:15Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:11:09Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:11:18Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:12:21Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:13:15Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:13:24Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:14:26Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:15:20Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:15:29Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:16:32Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:17:26Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:17:35Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:18:38Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:19:32Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:19:40Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:20:44Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:21:39Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:21:47Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:22:50Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:23:45Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:23:53Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:24:56Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:25:50Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:26:00Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:27:02Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:27:56Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:28:05Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:29:08Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:30:02Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:30:12Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:31:15Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:32:07Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:32:18Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:33:22Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:34:13Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:34:25Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:35:28Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:36:19Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:36:31Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:37:34Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:38:24Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
+2026-07-10T11:38:36Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:39:39Z,another PR progress controller already holds /media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/controller.lock,other
+2026-07-10T11:40:30Z,not launching PR07C owner matrix: latest no-promote classification already consumed current owner evidence,other
