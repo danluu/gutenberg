@@ -430,10 +430,16 @@ export function createSyncManager( debug = false ): SyncManager {
 		const markProviderSyncedRemoteState = (
 			transaction: Y.Transaction
 		): void => {
-			if ( transaction.local ) {
+			if (
+				transaction.local ||
+				transaction.changedParentTypes.size === 0
+			) {
 				return;
 			}
 
+			// Providers can apply an empty sync update while bootstrapping a room.
+			// That advances no shared type and must not suppress initialization from
+			// the persisted entity record.
 			ydoc.meta?.set(
 				CRDT_DOC_META_HAS_PROVIDER_SYNCED_REMOTE_STATE,
 				true
@@ -598,7 +604,11 @@ export function createSyncManager( debug = false ): SyncManager {
 			// Get and apply the persisted CRDT document, if it exists. Observers are
 			// attached after this load-time CRDT initialization so local hydration
 			// does not trigger a redundant CRDT-to-store update.
-			internal.applyPersistedCrdtDoc( objectType, objectId, record );
+			await internal.applyPersistedCrdtDoc(
+				objectType,
+				objectId,
+				record
+			);
 
 			// Attach observers.
 			recordMap.observeDeep( onRecordUpdate );
@@ -801,12 +811,12 @@ export function createSyncManager( debug = false ): SyncManager {
 	 * @param {ObjectData} record     Entity record representing this object type.
 	 * @param {Object}     options    Options for applying the persisted CRDT document.
 	 */
-	function _applyPersistedCrdtDoc(
+	async function _applyPersistedCrdtDoc(
 		objectType: ObjectType,
 		objectId: ObjectID,
 		record: ObjectData,
 		options: ApplyPersistedCrdtDocOptions = {}
-	): void {
+	): Promise< void > {
 		const { shouldPersist = true } = options;
 		const entityId = getEntityId( objectType, objectId );
 		const entityState = entityStates.get( entityId );
@@ -851,10 +861,10 @@ export function createSyncManager( debug = false ): SyncManager {
 			// calling `syncManager.createPersistedCRDTDoc`.
 			targetDoc.transact( () => {
 				applyChangesToCRDTDoc( targetDoc, record );
-				if ( shouldPersist ) {
-					handlers.persistCRDTDoc();
-				}
 			}, LOCAL_SYNC_MANAGER_ORIGIN );
+			if ( shouldPersist ) {
+				await handlers.persistCRDTDoc();
+			}
 			return;
 		}
 
@@ -918,10 +928,10 @@ export function createSyncManager( debug = false ): SyncManager {
 		// `syncManager.createPersistedCRDTDoc`.
 		targetDoc.transact( () => {
 			applyChangesToCRDTDoc( targetDoc, changes );
-			if ( shouldPersist ) {
-				handlers.persistCRDTDoc();
-			}
 		}, LOCAL_SYNC_MANAGER_ORIGIN );
+		if ( shouldPersist ) {
+			await handlers.persistCRDTDoc();
+		}
 	}
 
 	/**
@@ -1214,7 +1224,7 @@ export function createSyncManager( debug = false ): SyncManager {
 			? Y.encodeStateVector( entityState.ydoc )
 			: null;
 
-		internal.applyPersistedCrdtDoc( objectType, objectId, record, {
+		await internal.applyPersistedCrdtDoc( objectType, objectId, record, {
 			shouldPersist: false,
 		} );
 		await internal.updateEntityRecord( objectType, objectId );
