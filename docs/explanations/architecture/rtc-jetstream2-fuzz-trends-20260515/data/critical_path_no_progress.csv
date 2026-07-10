@@ -1,2 +1,1 @@
-artifact_path,reason,size,mtime,associated_job,rejected_at,item_id
-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260710T030738Z/validations/repair-branch-repair-plain-editor-product-smoke-wp-sync-save-slash/numstat.tsv,zero_executor_artifact,0,1783652860,unknown,2026-07-10T03:36:27Z,repair-branch-repair-plain-editor-product-smoke-wp-sync-save-slash
+artifact_path,reason,size,mtime,associated_job,rejected_at
