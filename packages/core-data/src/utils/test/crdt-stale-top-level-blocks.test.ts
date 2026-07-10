@@ -160,6 +160,35 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 	} );
 
+	it( 'appends after a semantic tail when earlier blocks also drifted', () => {
+		const baseBlocks = [
+			paragraph( 'intro', 'Alpha' ),
+			paragraph( 'stale-tail', 'Beta' ),
+		];
+		const currentBlocks = [
+			paragraph( 'reconciled-intro', 'Alpha canonicalized' ),
+			paragraph( 'reconciled-tail', 'Beta' ),
+		];
+		const blocksWithLocalAppend = [
+			...baseBlocks,
+			paragraph( 'checkpoint-paragraph', 'Checkpoint paragraph' ),
+		];
+
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		mergeCrdtBlocks( yblocks, blocksWithLocalAppend, null, baseBlocks );
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha canonicalized',
+			'Beta',
+			'Checkpoint paragraph',
+		] );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'reconciled-intro',
+			'reconciled-tail',
+			'checkpoint-paragraph',
+		] );
+	} );
+
 	it( 'inserts a missing local checkpoint paragraph before an already-present suffix block', () => {
 		const baseBlocks = [
 			paragraph( 'intro', 'Alpha' ),

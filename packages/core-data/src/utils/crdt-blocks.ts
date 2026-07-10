@@ -1136,10 +1136,17 @@ function mergeYBlocksLocalSuffixAppend(
 		return;
 	}
 
-	const anchorIndex = findStrictYBlockIndex(
+	let anchorIndex = findStrictYBlockIndex(
 		yblocks,
 		baseBlocks[ baseBlocks.length - 1 ]
 	);
+
+	if ( anchorIndex === -1 && yblocks.length === baseBlocks.length ) {
+		anchorIndex = findEquivalentYBlockIndex(
+			yblocks,
+			baseBlocks[ baseBlocks.length - 1 ]
+		);
+	}
 
 	if ( anchorIndex === -1 ) {
 		return;
