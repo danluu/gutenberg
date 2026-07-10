@@ -213,6 +213,62 @@ function mergeStaleSerializedBlockContent(
 		return;
 	}
 
+	// A polling update can reach the local entity record while a stale editor
+	// window is still typing a separate block. In that case the local save can
+	// contain every base block unchanged, plus a local insertion, while the
+	// latest REST record contains a completed version of one of those base
+	// blocks. Rebase the remote completion onto the matching unchanged local
+	// block without dropping local insertions.
+	if (
+		baseBlocks.length === latestBlocks.length &&
+		localBlocks.length > baseBlocks.length
+	) {
+		const localIndexes = [];
+		let searchStart = 0;
+
+		for ( const baseBlock of baseBlocks ) {
+			const baseValue = getSerializedBlockValue( baseBlock );
+			const localIndex = localBlocks.findIndex(
+				( localBlock, index ) =>
+					index >= searchStart &&
+					localBlock.name === baseBlock.name &&
+					getSerializedBlockValue( localBlock ) === baseValue
+			);
+
+			if ( localIndex === -1 ) {
+				localIndexes.length = 0;
+				break;
+			}
+
+			localIndexes.push( localIndex );
+			searchStart = localIndex + 1;
+		}
+
+		if ( localIndexes.length === baseBlocks.length ) {
+			const mergedLocalBlocks = [ ...localBlocks ];
+			let didMergeRemoteChange = false;
+
+			for ( let index = 0; index < baseBlocks.length; index++ ) {
+				if ( baseBlocks[ index ].name !== latestBlocks[ index ].name ) {
+					return;
+				}
+
+				if (
+					getSerializedBlockValue( baseBlocks[ index ] ) !==
+					getSerializedBlockValue( latestBlocks[ index ] )
+				) {
+					mergedLocalBlocks[ localIndexes[ index ] ] =
+						latestBlocks[ index ];
+					didMergeRemoteChange = true;
+				}
+			}
+
+			if ( didMergeRemoteChange ) {
+				return __unstableSerializeAndClean( mergedLocalBlocks );
+			}
+		}
+	}
+
 	if (
 		latestBlocks.length > localBlocks.length &&
 		baseBlocks.length === latestBlocks.length

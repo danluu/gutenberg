@@ -1137,6 +1137,57 @@ describe( 'prePersistPostType', () => {
 		} );
 	} );
 
+	it( 'preserves a local insertion when the latest record completes a partially received block', async () => {
+		const partialRemote = 'remote paragraph partial';
+		const completedRemote = 'remote paragraph completed';
+		const latestRecord = {
+			id: 123,
+			content: {
+				raw: pageContent( [ 'Initial body', completedRemote ] ),
+			},
+			meta: {
+				[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'latest-doc',
+			},
+		};
+		const syncManager = {
+			applyPersistedCRDTDoc: jest.fn().mockResolvedValue( false ),
+			createPersistedCRDTDoc: jest.fn().mockResolvedValue( 'merged-doc' ),
+			getCRDTRecordData: jest.fn( () => ( {
+				content: latestRecord.content.raw,
+			} ) ),
+		};
+		apiFetch.mockResolvedValue( latestRecord );
+		getSyncManager.mockReturnValue( syncManager );
+		window._wpCollaborationEnabled = true;
+
+		const result = await prePersistPostType(
+			{
+				id: 123,
+				status: 'publish',
+				content: {
+					raw: pageContent( [ 'Initial body', partialRemote ] ),
+				},
+			},
+			{
+				content: pageContent( [
+					'Initial body',
+					'local stale-window edit',
+					partialRemote,
+				] ),
+			},
+			'page',
+			false,
+			'/wp/v2/pages'
+		);
+
+		expect( result.content ).toContain( 'local stale-window edit' );
+		expect( result.content ).toContain( completedRemote );
+		expect( result.content ).not.toContain( partialRemote );
+		expect( result.meta ).toEqual( {
+			[ POST_META_KEY_FOR_CRDT_DOC_PERSISTENCE ]: 'merged-doc',
+		} );
+	} );
+
 	it( 'does not merge stale serialized content edits when the same block changed locally and remotely', async () => {
 		const latestRecord = {
 			id: 123,
