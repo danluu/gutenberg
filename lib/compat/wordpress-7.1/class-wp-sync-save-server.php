@@ -127,6 +127,10 @@ if ( ! class_exists( 'WP_Sync_Save_Server' ) ) {
 
 			$updated = update_post_meta( $post_id, self::CRDT_DOC_META_KEY, wp_slash( $doc ) );
 			if ( false === $updated && get_post_meta( $post_id, self::CRDT_DOC_META_KEY, true ) !== $doc ) {
+				if ( $this->is_stale_crdt_document_save( $post_id, $doc ) ) {
+					return array();
+				}
+
 				return new WP_Error(
 					'rest_crdt_save_failed',
 					__( 'Failed to save CRDT document.', 'gutenberg' ),
@@ -150,6 +154,27 @@ if ( ! class_exists( 'WP_Sync_Save_Server' ) ) {
 		private function can_user_persist_crdt_doc( string $entity_kind, string $entity_name, ?string $object_id ): bool {
 			$post_id = WP_Sync_Config::get_crdt_doc_persistence_post_id( $entity_kind, $entity_name, $object_id );
 			return null !== $post_id && current_user_can( 'edit_post', $post_id );
+		}
+
+		/**
+		 * Checks whether a failed CRDT document write was rejected as stale.
+		 *
+		 * Stale background snapshots should not overwrite a newer persisted
+		 * document, but they also should not surface as generic 500 errors.
+		 *
+		 * @since 7.1.0
+		 *
+		 * @param int    $post_id Post ID.
+		 * @param string $doc     Serialized CRDT document.
+		 * @return bool True when the write was rejected as stale.
+		 */
+		private function is_stale_crdt_document_save( int $post_id, string $doc ): bool {
+			if ( ! function_exists( 'gutenberg_validate_persisted_crdt_document_base_version' ) ) {
+				return false;
+			}
+
+			$result = gutenberg_validate_persisted_crdt_document_base_version( $post_id, $doc );
+			return is_wp_error( $result ) && 'rest_crdt_document_stale' === $result->get_error_code();
 		}
 	}
 }

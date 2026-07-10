@@ -81,6 +81,26 @@ class Tests_Collaboration_WpSyncSaveServer extends WP_Test_REST_Controller_Testc
 		return 'postType/post:' . self::$post_id;
 	}
 
+	/**
+	 * Creates a persisted CRDT document meta value.
+	 *
+	 * @param string      $document     Document payload.
+	 * @param string|null $base_version Optional base version.
+	 * @return string Persisted CRDT document meta value.
+	 */
+	private function create_crdt_document_meta_value( string $document, ?string $base_version = null ): string {
+		$value = array(
+			'document' => $document,
+			'updateId' => 123,
+		);
+
+		if ( null !== $base_version ) {
+			$value['baseVersion'] = $base_version;
+		}
+
+		return wp_json_encode( $value );
+	}
+
 	public function test_register_routes() {
 		$routes = rest_get_server()->get_routes();
 		$this->assertArrayHasKey( '/wp-sync/v1/save', $routes );
@@ -220,6 +240,20 @@ class Tests_Collaboration_WpSyncSaveServer extends WP_Test_REST_Controller_Testc
 		$this->assertSame( 200, $first_response->get_status() );
 		$this->assertSame( 200, $second_response->get_status() );
 		$this->assertSame( $doc, get_post_meta( self::$post_id, WP_Sync_Save_Server::CRDT_DOC_META_KEY, true ) );
+	}
+
+	public function test_save_ignores_stale_crdt_doc_meta() {
+		wp_set_current_user( self::$editor_id );
+
+		$current_doc = $this->create_crdt_document_meta_value( 'current-document' );
+		$stale_doc   = $this->create_crdt_document_meta_value( 'stale-document' );
+		update_post_meta( self::$post_id, WP_Sync_Save_Server::CRDT_DOC_META_KEY, $current_doc );
+
+		$response = $this->dispatch_save_params( $this->get_post_room(), $stale_doc );
+
+		$this->assertSame( 200, $response->get_status() );
+		$this->assertSame( array(), $response->get_data() );
+		$this->assertSame( $current_doc, get_post_meta( self::$post_id, WP_Sync_Save_Server::CRDT_DOC_META_KEY, true ) );
 	}
 
 	public function test_save_rejects_taxonomy_entity() {
