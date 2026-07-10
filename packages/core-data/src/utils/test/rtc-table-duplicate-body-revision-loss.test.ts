@@ -223,7 +223,7 @@ function createHandlers( blocks: Block[] ) {
 		} ) ),
 		onUndoStackChange: jest.fn(),
 		onStatusChange: jest.fn(),
-		persistCRDTDoc: jest.fn(),
+		persistCRDTDoc: jest.fn< () => void >(),
 		refetchRecord: jest.fn( async () => {} ),
 		restoreUndoMeta: jest.fn(),
 	};

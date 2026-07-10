@@ -352,6 +352,38 @@ describe( 'SyncManager', () => {
 				);
 			} );
 
+			it( 'applies the current record when the provider bootstrap update is empty', async () => {
+				mockProviderCreator.mockImplementation( async ( { ydoc } ) => {
+					setTimeout( () => {
+						const remoteDoc = new Y.Doc();
+						remoteDoc.getMap( CRDT_RECORD_MAP_KEY );
+						Y.applyUpdateV2(
+							ydoc,
+							Y.encodeStateAsUpdateV2( remoteDoc )
+						);
+						remoteDoc.destroy();
+					}, 0 );
+					return mockProviderResult;
+				} );
+
+				const manager = createSyncManager();
+
+				await manager.load(
+					mockSyncConfig,
+					'post',
+					'123',
+					mockRecord,
+					mockHandlers
+				);
+
+				expect(
+					mockSyncConfig.applyChangesToCRDTDoc
+				).toHaveBeenCalledWith( expect.any( Y.Doc ), mockRecord );
+				expect( mockHandlers.persistCRDTDoc ).toHaveBeenCalledTimes(
+					1
+				);
+			} );
+
 			it( 'ignores stale record invalidations covered by persisted record snapshots', async () => {
 				mockRecord = {
 					...mockRecord,

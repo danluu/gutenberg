@@ -292,6 +292,15 @@ export const getEntityRecord =
 										`${ kind }/${ name }`,
 										entityId
 									);
+									dispatch.receiveEntityRecords(
+										kind,
+										name,
+										await apiFetch( {
+											path,
+											parse: true,
+										} ),
+										query
+									);
 								} );
 						},
 						addUndoMeta: ( ydoc, meta ) => {

@@ -139,7 +139,7 @@ export interface RecordHandlers {
 	getEditedRecord: () => Promise< ObjectData >;
 	onUndoStackChange: ( state: SyncUndoStackState ) => void;
 	onStatusChange: OnStatusChangeCallback;
-	persistCRDTDoc: () => void;
+	persistCRDTDoc: () => void | Promise< void >;
 	refetchRecord: () => Promise< void >;
 	restoreUndoMeta: ( ydoc: Y.Doc, meta: Map< string, any > ) => void;
 }
