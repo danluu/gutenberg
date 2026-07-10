@@ -1571,12 +1571,16 @@ describe( 'polling-manager', () => {
 				onSync: jest.fn(),
 			} );
 
-			expect( mockYjs.encodeStateAsUpdateV2 ).toHaveBeenCalledWith(
+			expect( mockYjs.encodeStateAsUpdateV2.mock.calls[ 0 ]?.[ 0 ] ).toBe(
 				firstDoc
 			);
-			expect( mockYjs.applyUpdateV2 ).toHaveBeenCalledWith(
-				secondDoc,
-				new Uint8Array( [ 7, 8, 9 ] ),
+			expect( mockYjs.applyUpdateV2.mock.calls[ 0 ]?.[ 0 ] ).toBe(
+				secondDoc
+			);
+			expect( mockYjs.applyUpdateV2.mock.calls[ 0 ]?.[ 1 ] ).toEqual(
+				new Uint8Array( [ 7, 8, 9 ] )
+			);
+			expect( mockYjs.applyUpdateV2.mock.calls[ 0 ]?.[ 2 ] ).toBe(
 				'polling-manager'
 			);
 
