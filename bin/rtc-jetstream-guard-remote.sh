@@ -305,6 +305,36 @@ trim_optional_live_analysis_codex() {
 	return 0
 }
 
+stop_noncompliant_optional_analysis_codex() {
+	local pid model cwd session
+	while IFS= read -r pid; do
+		[ -r "/proc/$pid/cmdline" ] || continue
+		model=$(tr '\0' '\n' < "/proc/$pid/cmdline" | awk 'previous == "-m" || previous == "--model" { print; exit } { previous = $0 }')
+		[ -n "$model" ] && [ "$model" != "$CODEX_EXPECTED_MODEL" ] || continue
+		cwd=$(readlink -f "/proc/$pid/cwd" 2>/dev/null || true)
+		case "$cwd" in
+			"$COVERAGE_BASE"/run-*/repos/*|\
+			"$STRICT_EXPANSION_BASE"/repos-*/*|\
+			"$FOCUSED_SHARDS_BASE"/repos-*/*|\
+			"$GAP_BOOSTER_BASE"/repos-*/*)
+				session=$(
+					tmux list-panes -a -F $'#{session_name}\t#{pane_current_path}' 2>/dev/null |
+						awk -F '\t' -v cwd="$cwd" '
+							$2 == cwd && $1 ~ /^rtc-(focused|strict|gap)-analysis-/ { print $1; exit }
+						'
+				)
+				if [ -n "$session" ]; then
+					log "stopping noncompliant optional analysis session=$session pid=$pid model=$model expected=$CODEX_EXPECTED_MODEL cwd=$cwd"
+					tmux kill-session -t "$session" 2>/dev/null || true
+				else
+					log "stopping noncompliant optional analysis worker pid=$pid model=$model expected=$CODEX_EXPECTED_MODEL cwd=$cwd"
+					kill -TERM "$pid" 2>/dev/null || true
+				fi
+				;;
+		esac
+	done < <(pgrep -x codex 2>/dev/null || true)
+}
+
 stop_sessions_matching() {
 	local pattern=$1 session
 	while IFS= read -r session; do
@@ -1556,6 +1586,19 @@ refresh_stable_script() {
 	[ -x "$stable" ]
 }
 
+refresh_optional_stable_launchers() {
+	local relative stable
+	while IFS=$'\t' read -r relative stable; do
+		refresh_stable_script "$relative" "$stable" || true
+	done <<'LAUNCHERS'
+bin/rtc-strict-expansion-start-remote.sh	/tmp/start_rtc_strict_expansion.sh
+bin/rtc-focused-shards-start-remote.sh	/tmp/start_rtc_focused_shards.sh
+bin/rtc-focused-shards-cleanup-remote.sh	/tmp/cleanup_rtc_focused_shards.sh
+bin/rtc-focused-shards-gap-codex-loop-remote.sh	/tmp/start_rtc_focused_gap_codex_loop.sh
+bin/rtc-gap-booster-start-remote.sh	/tmp/start_rtc_gap_booster.sh
+LAUNCHERS
+}
+
 run_versioned_launcher() {
 	local relative=$1 stable=$2 canonical=$REPO/$relative
 	refresh_stable_script "$relative" "$stable" || true
@@ -1715,11 +1758,13 @@ run_loop_locked() {
 	while true; do
 		check_tmux_server_generation
 		audit_codex_model_policy
+		stop_noncompliant_optional_analysis_codex
 		stop_orphaned_finalization_controllers
 		stop_codex_in_control_repo
 		stop_stale_coverage_monitors
 		stop_disabled_analysis_loops
 		trim_optional_live_analysis_codex
+		refresh_optional_stable_launchers
 		run_docker_network_maintenance
 		coverage_needs_restart=0
 			if ! has_session rtc-coverage-guided-novelty; then

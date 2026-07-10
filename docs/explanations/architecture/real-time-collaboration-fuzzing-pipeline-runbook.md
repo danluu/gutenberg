@@ -190,6 +190,12 @@ Operational invariants added by the July 10 audit:
     launchers, and active workers on another model. Model drift is visible but
     does not terminate an in-flight writable worker; repair work must reach a
     checkpoint before the owning controller is replaced.
+-   Guard and structural supervision are reciprocal. The structural watchdog
+    verifies the guard PID and exact `run-locked` command every cycle and starts
+    it through the guard's stale-lock cleanup when absent. The guard removes
+    optional analysis sessions on a non-policy model even below the worker cap,
+    trims optional fanout above the cap, and refreshes stable optional launchers
+    from their versioned sources before considering a pool restart.
 -   PR finalization is a singleton service. Its generated runtime holds
     `pr-finalization-loop.lock`, records `pr-finalization-loop.pid`, and closes
     the lock descriptor in sleeps. The launcher and guard terminate exact-argv

@@ -20,6 +20,9 @@ COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 BENCHMARK_FEEDBACK_BASE=/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520
 RESOURCE_BASE=/media/volume/danluu-fuzz-data/rtc-resource-autoscaler-20260516
 GUARD_BASE=/media/volume/danluu-fuzz-data/rtc-jetstream-guard-20260515
+GUARD_SCRIPT=$REPO/bin/rtc-jetstream-guard-remote.sh
+GUARD_PID_FILE=$GUARD_BASE/guard.pid
+GUARD_RECOVERY_LOG=$BASE/logs/guard-recovery.log
 CANDIDATE_REPO=/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo
 CANDIDATE_BRANCH=js2/all-merged-rebased-20260701
 NOVELTY_POLICY_CHECK=$REPO/bin/rtc-browser-fuzz-novelty-policy-check.mjs
@@ -150,6 +153,42 @@ export PATH="$CODEX_BIN_DIR:$TMUX_WRAP:$NODE_BIN:$PATH"
 
 log() {
 	printf '[%s] %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" >> "$LOG"
+}
+
+guard_loop_healthy() {
+	local pid args
+	pid=$(cat "$GUARD_PID_FILE" 2>/dev/null || true)
+	[[ "$pid" =~ ^[0-9]+$ ]] && kill -0 "$pid" 2>/dev/null || return 1
+	args=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null || true)
+	case "$args" in
+		*"$GUARD_SCRIPT"*' run-locked'*) return 0 ;;
+		*) return 1 ;;
+	esac
+}
+
+ensure_guard_loop() {
+	guard_loop_healthy && return 0
+	log "guard loop missing or stale; requesting restart script=$GUARD_SCRIPT"
+	if [ ! -x "$GUARD_SCRIPT" ]; then
+		log "guard restart unavailable script=$GUARD_SCRIPT"
+		return 1
+	fi
+	bash "$GUARD_SCRIPT" start >> "$GUARD_RECOVERY_LOG" 2>&1 || true
+	sleep 3
+	if guard_loop_healthy; then
+		log "guard loop recovered pid=$(cat "$GUARD_PID_FILE")"
+		return 0
+	fi
+	log "guard restart failed script=$GUARD_SCRIPT log=$GUARD_RECOVERY_LOG"
+	return 1
+}
+
+check_guard_loop_health() {
+	local out=$1
+	guard_loop_healthy && return 0
+	emit_finding "$out" high "guard" "guard-loop-not-running" \
+		"script=$GUARD_SCRIPT pid_file=$GUARD_PID_FILE recovery_log=$GUARD_RECOVERY_LOG" \
+		"restart the guard through its stale-lock cleanup and verify its heartbeat, model-policy report, and worker-cap enforcement advance"
 }
 
 terminate_runaway_pid() {
@@ -2696,6 +2735,7 @@ detect_findings() {
 	check_runaway_scans "$tmp"
 	check_exact_sessions "$tmp"
 	check_tmux_capture_guard "$tmp"
+	check_guard_loop_health "$tmp"
 	check_coverage_process_ownership "$tmp"
 	check_deadline_budget_consistency "$tmp"
 	check_optional_browser_breadth_floor_contract "$tmp"
@@ -2953,6 +2993,7 @@ write_status() {
 
 run_once() {
 	ensure_tmux_wrapper
+	ensure_guard_loop || true
 	sync_critical_executor_copies_if_safe || true
 	cleanup_orphaned_structural_repair_processes || true
 	detect_findings
