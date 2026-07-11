@@ -1,8 +1,8 @@
 # RTC Jetstream2 fuzzing architecture and active loops
 
-Snapshot time: `2026-07-11T05:01Z`
+Snapshot time: `2026-07-11T05:08Z`
 
-Blocker-history update: `2026-07-11T05:01Z`
+Blocker-history update: `2026-07-11T05:08Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -336,6 +336,12 @@ source-provenance failures, not by a lack of candidate bugs:
     coverage could accept the result. Forced coverage now has first ownership and
     is reported as `coverage-confidence`; exact-stack repair becomes runnable only
     after every required row is green or explicitly downscoped.
+-   Harness-drift health used to treat the overlay writer's temporary
+    `syncing:<expected-signature>` manifest as permanent drift. It could sample
+    that normal transition while all critical files already matched, then launch
+    an unnecessary repair. The watchdog now allows only that exact matching
+    sentinel for 120 seconds with zero file mismatches; stale syncs and real hash
+    divergence still fail.
 -   Full novelty passes can still be doing bounded triage when the supervisor
     discovers a product failure. The 60-second status heartbeat now synchronizes
     product-failure quarantine and republishes the producer set immediately.

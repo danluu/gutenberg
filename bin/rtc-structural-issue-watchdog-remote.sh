@@ -71,6 +71,7 @@ COVERAGE_FULL_PASS_START_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_FULL_P
 COVERAGE_HEAP_FAILURE_WINDOW_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_HEAP_FAILURE_WINDOW_SECONDS:-1800}
 REPAIR_PUBLICATION_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_REPAIR_PUBLICATION_GRACE_SECONDS:-600}
 LOCAL_PUBLISH_STATUS_MAX_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_LOCAL_PUBLISH_STATUS_MAX_AGE_SECONDS:-900}
+HARNESS_SYNC_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_HARNESS_SYNC_GRACE_SECONDS:-120}
 PROMOTION_SCHEDULING_START_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_PROMOTION_SCHEDULING_START_GRACE_SECONDS:-300}
 RUNAWAY_SCAN_MIN_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_MIN_AGE_SECONDS:-1800}
 RUNAWAY_SCAN_TARGET_ROOTS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_ROOTS:-/media/volume/danluu-fuzz-data:/home/exouser/.codex}
@@ -2243,13 +2244,14 @@ check_published_group_harness_drift() {
 	state_path=$coverage_root/supervisor-state.json
 	groups_path=$coverage_root/supervisor-groups.json
 	[ -s "$state_path" ] && [ -s "$groups_path" ] || return 0
-	drift=$(node - "$state_path" "$groups_path" "$COVERAGE_BASE/candidate-source" <<'NODE'
+	drift=$(node - "$state_path" "$groups_path" "$COVERAGE_BASE/candidate-source" "$HARNESS_SYNC_GRACE_SECONDS" <<'NODE'
 const fs = require( 'fs' );
 const crypto = require( 'crypto' );
 const path = require( 'path' );
 const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
 const groups = JSON.parse( fs.readFileSync( process.argv[ 3 ], 'utf8' ) );
 const candidate = process.argv[ 4 ];
+const syncGraceMs = Number( process.argv[ 5 ] ) * 1000;
 const stateByName = new Map(
 	( state.groups ?? [] ).map( ( group ) => [ group.name, group ] )
 );
@@ -2283,19 +2285,32 @@ for ( const group of groups ) {
 		// stale overlay is actionable here only after a lane is actually active.
 		continue;
 	}
+	const manifestPath = path.join(
+		group.repoRoot,
+		'.js2-harness-overlay-manifest.json'
+	);
 	let manifestSignature = 'missing';
+	let manifestAgeMs = Number.POSITIVE_INFINITY;
 	try {
 		manifestSignature = JSON.parse(
-			fs.readFileSync(
-				path.join( group.repoRoot, '.js2-harness-overlay-manifest.json' ),
-				'utf8'
-			)
+			fs.readFileSync( manifestPath, 'utf8' )
 		).signature ?? 'missing';
+		manifestAgeMs = Math.max(
+			0,
+			Date.now() - fs.statSync( manifestPath ).mtimeMs
+		);
 	} catch {}
 	const mismatches = criticalFiles.filter(
 		( relative ) =>
 			digest( path.join( group.repoRoot, relative ) ) !== expected.get( relative )
 	);
+	const matchingSyncInProgress =
+		manifestSignature === `syncing:${ group.harnessOverlaySignature }` &&
+		mismatches.length === 0 &&
+		manifestAgeMs <= syncGraceMs;
+	if ( matchingSyncInProgress ) {
+		continue;
+	}
 	if (
 		( group.harnessOverlaySignature &&
 			manifestSignature !== group.harnessOverlaySignature ) ||
@@ -2304,6 +2319,7 @@ for ( const group of groups ) {
 		process.stdout.write(
 			`${ group.name }:manifest=${ manifestSignature }:expected=${
 				group.harnessOverlaySignature ?? 'unspecified'
+			}:manifest_age_seconds=${ Math.floor( manifestAgeMs / 1000 )
 			}:files=${ mismatches.join( ',' ) || 'none' }\n`
 		);
 	}

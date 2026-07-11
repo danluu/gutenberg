@@ -18,7 +18,7 @@ leave one-shot commands as the only copy of an important process.
 
 ## Current Operator Snapshot
 
-Snapshot time: `2026-07-11T05:01Z`
+Snapshot time: `2026-07-11T05:08Z`
 
 The active all-merge candidate is `js2/all-merged-rebased-20260701` at
 `a4bb48b9ad471000c7eaae4694c3310c15e43280`. This is the validated monotonic
@@ -292,6 +292,13 @@ Operational invariants added by the July 10 audit:
     slot on a result coverage cannot yet accept. Keep the lane classified as
     `coverage-confidence`, let the coverage controller finish or explicitly
     downscope every forced row, and only then admit exact-stack repair work.
+-   Isolated-repo overlay sync writes a short-lived
+    `syncing:<expected-signature>` manifest sentinel before atomically publishing
+    the final manifest. Structural health grants that exact sentinel at most 120
+    seconds of grace, and only while every critical file hash already matches.
+    A stale sentinel, a different expected signature, or any mismatched file is
+    still harness drift. This prevents a normal sync transition from launching a
+    structural repair without weakening stale-drift detection.
 -   A `repair_branch_adopted` manifest is not trusted to choose its own final
     destination. The critical controller retargets only a strict descendant of
     the current candidate to `js2/all-merged-rebased-20260701`, removes no-op and
