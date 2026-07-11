@@ -499,6 +499,18 @@ interface CollaboratorAwarenessState {
 	collaboratorInfo?: { id?: number | string };
 }
 
+function getCollaboratorId(
+	state: LocalAwarenessState | undefined
+): number | string | undefined {
+	const collaboratorId = ( state as CollaboratorAwarenessState | null )
+		?.collaboratorInfo?.id;
+
+	return typeof collaboratorId === 'number' ||
+		typeof collaboratorId === 'string'
+		? collaboratorId
+		: undefined;
+}
+
 /**
  * Count distinct editors in an awareness response.
  *
@@ -514,14 +526,10 @@ function countAwarenessEditors( awareness: AwarenessState ): number {
 	const editorIdentities = new Set< string >();
 
 	for ( const [ clientId, state ] of Object.entries( awareness ) ) {
-		const collaboratorId = ( state as CollaboratorAwarenessState | null )
-			?.collaboratorInfo?.id;
-		const hasCollaboratorId =
-			typeof collaboratorId === 'number' ||
-			typeof collaboratorId === 'string';
+		const collaboratorId = getCollaboratorId( state );
 
 		editorIdentities.add(
-			hasCollaboratorId
+			undefined !== collaboratorId
 				? `collaborator:${ collaboratorId }`
 				: `client:${ clientId }`
 		);
@@ -542,6 +550,18 @@ function checkConnectionLimit(
 	roomState: RoomState
 ): boolean {
 	if ( ! roomState.isPrimaryRoom || hasCheckedConnectionLimit ) {
+		return false;
+	}
+
+	// A replacement client initially publishes an empty awareness state. The
+	// server can still include the previous client, with its stable collaborator
+	// ID, until the reload disconnect is processed. Counting that response would
+	// treat the same editor as two people. Wait until the current Yjs client has a
+	// stable identity so countAwarenessEditors() can deduplicate the pair.
+	if (
+		undefined ===
+		getCollaboratorId( awareness[ roomState.clientId.toString() ] )
+	) {
 		return false;
 	}
 
@@ -1180,6 +1200,26 @@ function registerRoom( {
 		roomStates.delete( room );
 	}
 
+	const currentPrimaryState = Array.from( roomStates.values() ).find(
+		( state ) => state.isPrimaryRoom
+	);
+	let isPrimaryRoom = replacedState?.isPrimaryRoom ?? 0 === roomStates.size;
+
+	// Collections and auxiliary rooms can load before the edited entity. Prefer
+	// the first object room as primary so connection limits are evaluated against
+	// collaborator awareness for the document being edited, not anonymous
+	// awareness from rooms such as root/comment.
+	if (
+		! isPrimaryRoom &&
+		isObjectRoom( room ) &&
+		currentPrimaryState &&
+		! isObjectRoom( currentPrimaryState.room )
+	) {
+		currentPrimaryState.isPrimaryRoom = false;
+		isPrimaryRoom = true;
+		hasCheckedConnectionLimit = false;
+	}
+
 	// Note: Queue is initially paused. Call .resume() to unpause.
 	const updateQueue = createUpdateQueue( [ createSyncStep1Update( doc ) ] );
 
@@ -1214,8 +1254,6 @@ function registerRoom( {
 	 * How might this approach be improved? We could develop some way to annotate
 	 * entity loading so that the consumer can indicate which entity is primary.
 	 */
-	const isPrimaryRoom = replacedState?.isPrimaryRoom ?? 0 === roomStates.size;
-
 	function onAwarenessUpdate(): void {
 		roomState.localAwarenessState = awareness.getLocalState() ?? {};
 	}
