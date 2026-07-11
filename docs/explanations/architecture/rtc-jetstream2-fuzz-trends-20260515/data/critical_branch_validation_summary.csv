@@ -55,8 +55,17 @@ ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,0,33,33,"pr15c fallback gro
 on pr14b"
 ready/rtc-pr06b-malformed-save-request-payload-minimal,0,20,20,"pr06b malformed save request
 payload minimal"
-repair/benchmark-canary-empty-crdt-bootstrap-20260710T153450Z,0,13,13,"repair/benchmark canary empty crdt
+repair/benchmark-canary-empty-crdt-bootstrap-20260710T153450Z,0,15,15,"repair/benchmark canary empty crdt
 bootstrap 20260710T153450Z"
+repair/benchmark-canary-combined-product-repairs-20260710T210241Z,0,11,11,"repair/benchmark canary combined
+product repairs 20260710T210241Z"
+repair/benchmark-canary-large-post-recovery-20260710T221526Z,0,11,11,"repair/benchmark canary large post
+recovery 20260710T221526Z"
+repair/benchmark-canary-revision-restore-autosave-20260710T204206Z,0,7,7,"repair/benchmark canary revision
+restore autosave 20260710T204206Z"
+repair/pa-exact-benchmark-canary-product-failure-owner-20260710T181028Z,0,7,7,"repair/pa exact benchmark
+canary product failure owner
+20260710T181028Z"
 ready/rtc-pr15a-fallback-group-move-green,0,6,6,pr15a fallback group move green
 ready/rtc-pr15b-fallback-group-insert-anchor-green,0,6,6,"pr15b fallback group insert anchor
 green"
@@ -65,9 +74,6 @@ update handoff 20260710T1623Z"
 repair/pa-exact-benchmark-canary-product-failure-aggregate-20260710T142200Z,0,6,6,"repair/pa exact benchmark
 canary product failure aggregate
 20260710T142200Z"
-repair/pa-exact-benchmark-canary-product-failure-owner-20260710T181028Z,0,6,6,"repair/pa exact benchmark
-canary product failure owner
-20260710T181028Z"
 ready/rtc-pr06b-malformed-save-request-payload,0,5,5,"pr06b malformed save request
 payload"
 ready/rtc-pr15c-fallback-group-delete-green,0,5,5,pr15c fallback group delete green
@@ -77,6 +83,13 @@ repair/benchmark-canary-http-convergence-20260710T153138Z,0,5,5,"repair/benchmar
 convergence 20260710T153138Z"
 repair/benchmark-canary-http-room-reregistration-20260710T120017Z,0,5,5,"repair/benchmark canary http room
 reregistration 20260710T120017Z"
+repair/benchmark-canary-same-user-stale-delete-20260710T201941Z,0,5,5,"repair/benchmark canary same user
+stale delete 20260710T201941Z"
+repair/benchmark-canary-combine-http-limit-large-post-20260711T031913Z,0,3,3,"repair/benchmark canary
+combine http limit large post
+20260711T031913Z"
+repair/benchmark-canary-exact-stack-build-20260710T190627Z,0,3,3,"repair/benchmark canary exact
+stack build 20260710T190627Z"
 repair/pa-exact-http-room-reregistration-20260710T121053Z,0,3,3,"repair/pa exact http room
 reregistration 20260710T121053Z"
 repair/pa-exact-http-room-reregistration-20260710T130542Z,0,3,3,"repair/pa exact http room
@@ -87,8 +100,22 @@ repair/benchmark-canary-empty-crdt-reload-20260710T093611Z,0,2,2,"repair/benchma
 reload 20260710T093611Z"
 repair/plain-editor-product-smoke-rtc-save-proof-20260710T045453Z,0,2,2,"repair/plain editor product smoke
 rtc save proof 20260710T045453Z"
+repair/adopted-repair-benchmark-canary-exact-stack-build-20-1fac7689c429,0,1,1,"repair/adopted repair benchmark
+canary exact stack build 20
+1fac7689c429"
+repair/adopted-repair-benchmark-canary-exact-stack-build-20-2f6b4eeaaedb,0,1,1,"repair/adopted repair benchmark
+canary exact stack build 20
+2f6b4eeaaedb"
+repair/adopted-repair-benchmark-canary-exact-stack-build-20-b8054e048cf2,0,1,1,"repair/adopted repair benchmark
+canary exact stack build 20
+b8054e048cf2"
+repair/adopted-repair-benchmark-canary-exact-stack-build-20-ff4124e09f20,0,1,1,"repair/adopted repair benchmark
+canary exact stack build 20
+ff4124e09f20"
 repair/benchmark-canary-fuzzer-gap-http-room-owner-20260710T131420Z,0,1,1,"repair/benchmark canary fuzzer gap
 http room owner 20260710T131420Z"
+repair/benchmark-canary-http-limit-identity-20260711T025156Z,0,1,1,"repair/benchmark canary http limit
+identity 20260711T025156Z"
 repair/benchmark-canary-product-failure-live-block-dirty-20260710T085052Z,0,1,1,"repair/benchmark canary product
 failure live block dirty
 20260710T085052Z"
@@ -100,6 +127,9 @@ table query array current
 20260710T101033Z"
 repair/benchmark-canary-table-stale-descendant-20260710T124658Z,0,1,1,"repair/benchmark canary table
 stale descendant 20260710T124658Z"
+repair/benchmark-canary-visual-revisions-stale-selection-20260711T034700Z,0,1,1,"repair/benchmark canary visual
+revisions stale selection
+20260711T034700Z"
 repair/pa-exact-benchmark-canary-product-failure-sync-save-slash-20260710T024254Z,0,1,1,"repair/pa exact benchmark canary
 product failure sync save slash
 20260710T024254Z"

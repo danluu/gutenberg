@@ -1,6 +1,6 @@
 action,target,priority,allowed,reason
-publish-ready,repair/pa-exact-benchmark-canary-product-failure-20260709T174207Z@1582cdec4f27f5a3c3639436adcf092df438b787,P0,yes,next product-progress slot; current manifest has validated repair-adoption rows for the real canary repair branch
-publish-ready,js2/all-merged-rebased-20260701<-repair/pa-exact-benchmark-canary-product-failure-20260709T174207Z@1582cdec4f27f5a3c3639436adcf092df438b787,P0,yes,fast-forward or confirm the all-merged candidate with the validated canary repair before more diagnostics
+publish-ready,repair/pa-exact-benchmark-canary-product-failure-20260709T174207Z@1582cdec4f27f5a3c3639436adcf092df438b787,P0,no,superseded by productive-analysis action prbr-20260710T225939Z-replace-stale-canary-publication-owner; preferred repair owner is repair/benchmark-canary-combined-product-repairs-20260710T210241Z@28cbd9e48878a6799ecdde1d960c589303da12e5
+publish-ready,js2/all-merged-rebased-20260701<-repair/pa-exact-benchmark-canary-product-failure-20260709T174207Z@1582cdec4f27f5a3c3639436adcf092df438b787,P0,no,superseded by productive-analysis action prbr-20260710T225939Z-replace-stale-canary-publication-owner; preferred repair owner is repair/benchmark-canary-combined-product-repairs-20260710T210241Z@28cbd9e48878a6799ecdde1d960c589303da12e5
 repair-ready,benchmark-canary-repair-branch-adoption,P0,yes,"validate, publish, merge, or exactly reject the adopted canary repair branch before duplicate canary work"
 repair-ready,benchmark-canary-product-failure,P0,yes,"keep one aggregate canary repair/downscope owner until repair, exact rejection, explicit downscope, product retirement, or stable materialized zero"
 repair-branch,benchmark-canary/focused-retained-nonzero-leader-after-reread,high,yes,"after repair adoption and fresh live TSV reread, run at most one focused child only if a canary row remains retained or nonzero"
@@ -18,7 +18,7 @@ include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444
 repair-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,preserve build-clean repaired PR07C exact-head validation and accounting without bypassing canary gates
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; reopen only with newer owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,stale direct PR07C head lacks the build/type repair
-publish-ready,PR07C/final-publication-credit,P0,no,current benchmark-canary status has 558 retained product-evidence records across 5 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260710T134902Z/benchmark-canary-coverage-status.tsv
+publish-ready,PR07C/final-publication-credit,P0,no,current benchmark-canary status has 2 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260711T043332Z/benchmark-canary-coverage-status.tsv
 repair-ready,lower-level/table-query-array-crdt-product-key-classifier,high,yes,run bounded classifier/accounting repair plus one non-browser audit-v4 verification
 launch-branch-repair,lower-level/productless-expansion-current-root,high,no,"no branch, corpus, or blocker credit until canonical product keys or explicit downscope exist"
 cooldown-diagnostic,lower-level/productless-expansion-current-root,high,yes,broad productless lower-level expansion is diagnostic churn while classifier repair is pending
@@ -32,7 +32,7 @@ cooldown-diagnostic,ready-product-prs/repeat-publication,high,yes,cool repeated 
 publish-ready,ready/rtc-pr15a+15b+15c-standalone,high,no,standalone variants duplicate already-published PR14B-based variants
 cooldown-diagnostic,ready/rtc-pr15a+15b+15c-standalone,high,yes,keep standalone PR15 variants cooled unless PR14B-based variants regress
 publish-ready,ready/rtc-pr06b-malformed-save-request-payload,low,no,superseded by already-published canonical PR06B minimal branch
-reserve-discovery,coverage-guided+focused+strict+protocol+lower-level+browser+existing-code+existing-pr,P0,yes,"active_discovery=10 meets min=3; discovery_protected=no, resource_reason=deadline_benchmark_canary_cap; discovery reserve healthy; preserve reserve while allowing cheap PR progress"
+reserve-discovery,coverage-guided+focused+strict+protocol+lower-level+browser+existing-code+existing-pr,P0,yes,"active_discovery=0 below min=3; discovery_protected=yes, resource_reason=deadline_benchmark_canary_cap; preserve reserve before heavy PR jobs"
 publish-ready,cheap-manifest-publication-under-discovery-reserve,P0,yes,cheap publication/adoption manifest work may proceed even if heavy jobs are held for discovery reserve
 repair-ready,analysis-only-under-discovery-reserve,high,yes,analysis-only bookkeeping may proceed if it does not launch heavy browser or PR jobs
 launch-branch-repair,heavy-pr-or-browser-work-when-discovery-below-3,P0,no,defer heavy PR/browser work below discovery reserve; cheap manifest publication and analysis-only work are excepted
@@ -43,4 +43,4 @@ update-controller-rule,repair-adoption-before-new-diagnostics,P0,yes,validated r
 update-controller-rule,pr07c-manifest-accounting,P0,yes,emit include-candidate rows for PR07C and the exact repaired PR07C head for stale controller compatibility
 update-controller-rule,productive-action-verb-normalization,high,yes,"map product-repair, repair-branch-adoption, publish-repair-branch, classifier-accounting, and accounting-oracle-repair onto valid controller actions"
 update-controller-rule,discovery-hard-reserve,P0,yes,do not consume protected discovery capacity for heavy PR or browser work
-hold-publication,PR07C,P0,no,current benchmark-canary status has 558 retained product-evidence records across 5 row(s); repair or explicit downscope required before publication: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260710T134902Z/benchmark-canary-coverage-status.tsv
+hold-publication,PR07C,P0,no,current benchmark-canary status has 2 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260711T043332Z/benchmark-canary-coverage-status.tsv
