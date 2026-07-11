@@ -15,6 +15,7 @@ FINALIZATION_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
 DEFERRED_BASE=/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516
 PR_PROGRESS_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
 PR_PROGRESS_PUSH_MANIFEST=$PR_PROGRESS_BASE/current-push-manifest.tsv
+LOCAL_PUBLISH_STATUS=$PR_PROGRESS_BASE/local-publisher-status.tsv
 PRODUCTIVE_ANALYSIS_BASE=/media/volume/danluu-fuzz-data/rtc-productive-analysis-20260521
 COVERAGE_BASE=/media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515
 BENCHMARK_FEEDBACK_BASE=/media/volume/danluu-fuzz-data/rtc-benchmark-canary-feedback-20260520
@@ -27,6 +28,7 @@ CANDIDATE_REPO=/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T19542
 CANDIDATE_BRANCH=js2/all-merged-rebased-20260701
 NOVELTY_POLICY_CHECK=$REPO/bin/rtc-browser-fuzz-novelty-policy-check.mjs
 LOCAL_PUBLISH_LEDGER=$FINALIZATION_BASE/latest-local-publish-manifest.tsv
+VALIDATED_ADOPTION_DISPOSITIONS=${RTC_STRUCTURAL_WATCHDOG_ADOPTION_DISPOSITIONS:-$CRITICAL_BASE/validated-adoption-dispositions.tsv}
 DUP_NOISE_BASE=/media/volume/danluu-fuzz-data/rtc-duplicate-noise-persona-loop-20260516
 ARTIFACT_INDEX_BASE=/media/volume/danluu-fuzz-data/rtc-artifact-index-20260518
 ARTIFACT_INDEX_ARTIFACTS=$ARTIFACT_INDEX_BASE/current-artifacts.tsv
@@ -68,6 +70,7 @@ COVERAGE_FULL_PASS_MAX_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_FULL_PASS_
 COVERAGE_FULL_PASS_START_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_FULL_PASS_START_GRACE_SECONDS:-900}
 COVERAGE_HEAP_FAILURE_WINDOW_SECONDS=${RTC_STRUCTURAL_WATCHDOG_COVERAGE_HEAP_FAILURE_WINDOW_SECONDS:-1800}
 REPAIR_PUBLICATION_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_REPAIR_PUBLICATION_GRACE_SECONDS:-600}
+LOCAL_PUBLISH_STATUS_MAX_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_LOCAL_PUBLISH_STATUS_MAX_AGE_SECONDS:-900}
 PROMOTION_SCHEDULING_START_GRACE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_PROMOTION_SCHEDULING_START_GRACE_SECONDS:-300}
 RUNAWAY_SCAN_MIN_AGE_SECONDS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_MIN_AGE_SECONDS:-1800}
 RUNAWAY_SCAN_TARGET_ROOTS=${RTC_STRUCTURAL_WATCHDOG_RUNAWAY_SCAN_ROOTS:-/media/volume/danluu-fuzz-data:/home/exouser/.codex}
@@ -436,7 +439,7 @@ recent_log_matches() {
 
 check_runaway_scans() {
 	local out=$1 tmp=$RUNAWAY_SCAN_REPORT.$$.tmp ps_tmp=$BASE/ps-snapshot.$$.txt pid severity command age pcpu pmem evidence
-	ps -ww -eo pid=,ppid=,etimes=,pcpu=,pmem=,comm=,args= > "$ps_tmp" 2>/dev/null || : > "$ps_tmp"
+	ps -ww -eo pid=,ppid=,pcpu=,pmem=,comm=,args= > "$ps_tmp" 2>/dev/null || : > "$ps_tmp"
 	python3 - "$RUNAWAY_SCAN_MIN_AGE_SECONDS" "$RUNAWAY_SCAN_TARGET_ROOTS" "$ps_tmp" > "$tmp" <<'PY'
 import os
 import re
@@ -447,21 +450,37 @@ roots = [root for root in sys.argv[2].split(":") if root]
 ps_path = sys.argv[3]
 scan_names = {"rg", "grep", "egrep", "fgrep", "find", "du"}
 now = os.popen("date -u +%Y-%m-%dT%H:%M:%SZ").read().strip()
+clock_ticks = os.sysconf(os.sysconf_names["SC_CLK_TCK"])
+with open("/proc/uptime", encoding="ascii") as uptime_file:
+    uptime = float(uptime_file.read().split()[0])
+
+
+def process_age_seconds(pid):
+    try:
+        with open(f"/proc/{pid}/stat", encoding="ascii") as stat_file:
+            stat = stat_file.read()
+        fields = stat[stat.rfind(") ") + 2:].split()
+        start_ticks = int(fields[19])
+    except (FileNotFoundError, IndexError, PermissionError, ValueError):
+        return None
+    return max(0, int(uptime - (start_ticks / clock_ticks)))
 
 print("timestamp\tseverity\tpid\tppid\tage_seconds\tcpu_percent\tmem_percent\tcommand\targs")
 for raw in open(ps_path, encoding="utf-8", errors="replace"):
     line = raw.strip()
     if not line:
         continue
-    parts = line.split(None, 6)
-    if len(parts) < 7:
+    parts = line.split(None, 5)
+    if len(parts) < 6:
         continue
-    pid, ppid, age_s, cpu_s, mem_s, comm, args = parts
+    pid, ppid, cpu_s, mem_s, comm, args = parts
     try:
-        age = int(float(age_s))
         cpu = float(cpu_s)
         mem = float(mem_s)
     except ValueError:
+        continue
+    age = process_age_seconds(pid)
+    if age is None:
         continue
     if age < min_age:
         continue
@@ -623,12 +642,12 @@ check_status_freshness() {
 			if [ -d "$parent_dir" ]; then
 				parent_age=$(file_age_seconds "$parent_dir" || printf 999999)
 				if [ "$parent_age" -le "$max_age" ]; then
-					return
+					return 0
 				fi
 			fi
 			emit_finding "$out" high "$component" "missing-status" "$file" "restore status generation for $component"
 		fi
-		return
+		return 0
 	fi
 	age=$(file_age_seconds "$file" || printf 999999)
 	if [ "$age" -gt "$max_age" ] && { [ -z "$session" ] || has_session "$session"; }; then
@@ -737,7 +756,7 @@ check_exact_sessions() {
 check_coverage_process_ownership() {
 	local out=$1 current_root pid output_root stale_pids=() current_pids=()
 	current_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
-	[ -n "$current_root" ] || return
+	[ -n "$current_root" ] || return 0
 	for pid in $(pgrep -f '[n]ode bin/rtc-browser-fuzz-novelty-monitor[.]mjs' 2>/dev/null || true); do
 		[ -r "/proc/$pid/environ" ] || continue
 		output_root=$(tr '\0' '\n' < "/proc/$pid/environ" | sed -n 's/^RTC_FUZZ_NOVELTY_OUTPUT_DIR=//p' | head -1)
@@ -904,13 +923,13 @@ check_deadline_budget_consistency() {
 	local out=$1 root run_script cap current_target current_max desired_line desired_target desired_max pointer_age
 	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
 	run_script=${root:+$root/run-monitor.sh}
-	[ -n "$run_script" ] && [ -s "$run_script" ] || return
+	[ -n "$run_script" ] && [ -s "$run_script" ] || return 0
 	pointer_age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt" || printf 999999)
 	if [ "$pointer_age" -lt 300 ]; then
-		return
+		return 0
 	fi
 	cap=$(sed -n "s/^export RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
-	[ "$cap" = 1 ] || return
+	[ "$cap" = 1 ] || return 0
 	current_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
 	current_max=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
 	desired_line=$(sed -n 's/^- desired_budget: target=\([0-9][0-9]*\) max=\([0-9][0-9]*\).*/\1 \2/p' "$RESOURCE_BASE/resource-autoscaler-status.md" | tail -1)
@@ -1013,7 +1032,7 @@ check_docker_network_capacity() {
 		emit_finding "$out" high "docker" "network-reaper-missing" \
 			"reaper=$reaper" \
 			"restore the bounded ownership-aware stale wp-env project reaper"
-		return
+		return 0
 	fi
 	if ! grep -Fq 'DOCKER_NETWORK_REAPER_TRIGGER_COUNT=${RTC_DOCKER_NETWORK_REAPER_TRIGGER_COUNT:-24}' "$guard" 2>/dev/null ||
 		! grep -Fq 'RTC_DOCKER_NETWORK_REAPER_TARGET_COUNT=${RTC_DOCKER_NETWORK_REAPER_TARGET_COUNT:-20}' "$guard" 2>/dev/null ||
@@ -1025,10 +1044,10 @@ check_docker_network_capacity() {
 		emit_finding "$out" high "docker" "network-reaper-trigger-exceeds-optional-admission-limit" \
 			"guard=$guard optional_limit=24" \
 			"run stale continuation cleanup at 24 networks with a target of 20, before strict and focused optional-pool admission blocks at 24"
-		return
+		return 0
 	fi
 	count=$(docker network ls -q 2>/dev/null | wc -l | tr -d ' ')
-	[[ "$count" =~ ^[0-9]+$ ]] || return
+	[[ "$count" =~ ^[0-9]+$ ]] || return 0
 	if [ "$count" -ge "$trigger" ]; then
 		emit_finding "$out" high "docker" "network-pool-near-exhaustion" \
 			"networks=$count trigger=$trigger status=/media/volume/danluu-fuzz-data/rtc-docker-network-reaper-20260710/current-status.json" \
@@ -1130,9 +1149,9 @@ check_resource_budget_application_consistency() {
 	local out=$1 status=$RESOURCE_BASE/resource-autoscaler-status.md
 	local root run_script status_age action desired_line desired_target desired_max
 	local budget_target budget_max run_target run_max
-	[ -s "$status" ] || return
+	[ -s "$status" ] || return 0
 	status_age=$(file_age_seconds "$status" || printf 999999)
-	[ "$status_age" -le 600 ] || return
+	[ "$status_age" -le 600 ] || return 0
 	action=$(sed -n 's/^- last_action: //p' "$status" | tail -1)
 	case "$action" in
 		*in_place*) ;;
@@ -1142,7 +1161,7 @@ check_resource_budget_application_consistency() {
 	read -r desired_target desired_max <<< "${desired_line:-0 0}"
 	root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt" 2>/dev/null || true)
 	run_script=${root:+$root/run-monitor.sh}
-	[ -s "$run_script" ] || return
+	[ -s "$run_script" ] || return 0
 	budget_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$RESOURCE_BASE/current-budget.env" | tail -1)
 	budget_max=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$RESOURCE_BASE/current-budget.env" | tail -1)
 	run_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$run_script" | tail -1)
@@ -1238,15 +1257,15 @@ check_coverage_start_budget_snapshot() {
 		emit_finding "$out" high "coverage-guided" "coverage-start-budget-not-snapshotted" \
 			"script=$start_script" \
 			"snapshot current-budget.env while holding the serialized coverage start lock, before candidate preparation or pointer movement, so the autoscaler cannot change the replacement run budget mid-start"
-		return
+		return 0
 	fi
-	[ -s "$manifest" ] || return
-	grep -q '^resource_budget_at_start_sha256[[:space:]]' "$manifest" || return
+	[ -s "$manifest" ] || return 0
+	grep -q '^resource_budget_at_start_sha256[[:space:]]' "$manifest" || return 0
 	if [ ! -s "$snapshot" ] || [ ! -s "$effective" ] || [ ! -s "$coverage_root/resource-budget-source.txt" ]; then
 		emit_finding "$out" high "coverage-guided" "coverage-start-budget-evidence-missing" \
 			"root=$coverage_root snapshot=$snapshot effective=$effective source=$coverage_root/resource-budget-source.txt" \
 			"persist the start-lock budget snapshot, effective launch budget, and precedence source in every new coverage root"
-		return
+		return 0
 	fi
 	source=$(sed -n '1p' "$coverage_root/resource-budget-source.txt")
 	if [ "$source" = start-lock-snapshot ]; then
@@ -1272,9 +1291,9 @@ check_coverage_start_budget_snapshot() {
 	fi
 
 	run_script=$coverage_root/run-monitor.sh
-	[ -s "$run_script" ] || return
+	[ -s "$run_script" ] || return 0
 	root_age=$(file_age_seconds "$manifest" || printf 999999)
-	[ "$root_age" -lt "$COVERAGE_FULL_PASS_START_GRACE_SECONDS" ] || return
+	[ "$root_age" -lt "$COVERAGE_FULL_PASS_START_GRACE_SECONDS" ] || return 0
 	effective_target=$(sed -n "s/^export RTC_FUZZ_NOVELTY_TARGET_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$effective" | tail -1)
 	effective_max=$(sed -n "s/^export RTC_FUZZ_NOVELTY_MAX_ENABLED_GROUPS='\([^']*\)'.*/\1/p" "$effective" | tail -1)
 	effective_cap=$(sed -n "s/^export RTC_FUZZ_NOVELTY_DEADLINE_BENCHMARK_CANARY_BUDGET_CAP='\([^']*\)'.*/\1/p" "$effective" | tail -1)
@@ -1515,6 +1534,131 @@ check_repair_publication_progress() {
 	done 3< "$PR_PROGRESS_PUSH_MANIFEST"
 }
 
+check_local_publisher_health() {
+	local out=$1 updated_at state _manifest_sha _manifest_rows rc_rows rc_manifest_head remote_rc_head js2_rc_head _ledger_rows detail
+	local updated_epoch now age
+	if [ ! -s "$LOCAL_PUBLISH_STATUS" ]; then
+		emit_finding "$out" high "publication" "local-publisher-heartbeat-missing" \
+			"status=$LOCAL_PUBLISH_STATUS" \
+			"start the durable local publisher on the operator machine and require it to upload a heartbeat after every manifest cycle"
+		return 0
+	fi
+	IFS=$'\t' read -r updated_at state _manifest_sha _manifest_rows rc_rows rc_manifest_head remote_rc_head js2_rc_head _ledger_rows detail < <(sed -n '2p' "$LOCAL_PUBLISH_STATUS")
+	updated_epoch=$(date -u -d "$updated_at" +%s 2>/dev/null || printf 0)
+	now=$(date -u +%s)
+	age=$(( now - updated_epoch ))
+	if [ "$updated_epoch" -le 0 ] || [ "$age" -gt "$LOCAL_PUBLISH_STATUS_MAX_AGE_SECONDS" ]; then
+		emit_finding "$out" high "publication" "local-publisher-heartbeat-stale" \
+			"status=$LOCAL_PUBLISH_STATUS updated_at=${updated_at:-missing} age=${age}s max=${LOCAL_PUBLISH_STATUS_MAX_AGE_SECONDS}s" \
+			"restart the local publisher and inspect its log; a live validated RC manifest must not wait silently for an operator-side process"
+		return 0
+	fi
+	if [ "$state" != healthy ]; then
+		emit_finding "$out" high "publication" "local-publisher-cycle-failed" \
+			"status=$LOCAL_PUBLISH_STATUS state=${state:-missing} detail=${detail:-missing}" \
+			"repair the local publisher cycle before allowing another repair-adoption handoff"
+		return 0
+	fi
+	if [ "${rc_rows:-0}" -gt 0 ] && [ -n "$rc_manifest_head" ] &&
+		{ [ "$remote_rc_head" != "$rc_manifest_head" ] || [ "$js2_rc_head" != "$rc_manifest_head" ]; }; then
+		emit_finding "$out" high "publication" "local-publisher-rc-row-unacknowledged" \
+			"status=$LOCAL_PUBLISH_STATUS manifest_head=$rc_manifest_head remote_head=${remote_rc_head:-missing} js2_head=${js2_rc_head:-missing}" \
+			"consume the validated RC row with a fast-forward push and synchronize the exact JS2 candidate ref before starting sibling repair work"
+	fi
+}
+
+validated_adoption_patch_equivalent() {
+	local source_commit=$1 candidate_head=$2 merge_base cherry
+	merge_base=$(git -C "$CANDIDATE_REPO" merge-base "$source_commit" "$candidate_head" 2>/dev/null || true)
+	[ -n "$merge_base" ] || return 1
+	[ "$(git -C "$CANDIDATE_REPO" rev-list --count --merges "$merge_base..$source_commit" 2>/dev/null || printf 1)" = 0 ] || return 1
+	cherry=$(git -C "$CANDIDATE_REPO" cherry "$candidate_head" "$source_commit" 2>/dev/null || true)
+	[ -n "$cherry" ] || return 1
+	! printf '%s\n' "$cherry" | grep -q '^+ '
+}
+
+validated_adoption_disposition_satisfied() {
+	local source_commit=$1 candidate_head=$2 disposition replacement_commit
+	[ -s "$VALIDATED_ADOPTION_DISPOSITIONS" ] || return 1
+	while IFS=$'\t' read -r disposition replacement_commit; do
+		case "$disposition" in
+		patch-equivalent|semantically-superseded) ;;
+		*) continue ;;
+		esac
+		[[ "$replacement_commit" =~ ^[0-9a-f]{40}$ ]] || continue
+		git -C "$CANDIDATE_REPO" merge-base --is-ancestor "$replacement_commit" "$candidate_head" 2>/dev/null && return 0
+	done < <(
+		awk -F '\t' -v source="$source_commit" '
+			NR > 1 && $2 == source { print $3 "\t" $4 }
+		' "$VALIDATED_ADOPTION_DISPOSITIONS" 2>/dev/null
+	)
+	return 1
+}
+
+check_validated_adoption_delivery_invariants() {
+	local out=$1 manifest_dir classification manifest source_branch source_commit destination base_ref
+	local candidate_head manifest_epoch now age pr_row detail
+	local dropped_count=0 sibling_count=0 dropped='' siblings=''
+	declare -A seen_commits=()
+	[ -s "$CRITICAL_BASE/logs/launches.tsv" ] || return 0
+	candidate_head=$(git -C "$CANDIDATE_REPO" rev-parse --verify --quiet "$CANDIDATE_BRANCH^{commit}" 2>/dev/null || true)
+	[ -n "$candidate_head" ] || return 0
+	now=$(date -u +%s)
+	while IFS=$'\t' read -r manifest_epoch source_branch source_commit destination base_ref manifest; do
+		[ -z "${seen_commits[$source_commit]:-}" ] || continue
+		seen_commits[$source_commit]=1
+		git -C "$CANDIDATE_REPO" cat-file -e "$source_commit^{commit}" 2>/dev/null || continue
+		git -C "$CANDIDATE_REPO" merge-base --is-ancestor "$source_commit" "$candidate_head" 2>/dev/null && continue
+		validated_adoption_patch_equivalent "$source_commit" "$candidate_head" && continue
+		validated_adoption_disposition_satisfied "$source_commit" "$candidate_head" && continue
+		age=$(( now - manifest_epoch ))
+		[ "$age" -ge "$REPAIR_PUBLICATION_GRACE_SECONDS" ] || continue
+		if git -C "$CANDIDATE_REPO" merge-base --is-ancestor "$candidate_head" "$source_commit" 2>/dev/null; then
+			pr_row=$(awk -F '\t' -v source="$source_branch" -v commit="$source_commit" -v dest="$CANDIDATE_BRANCH" '
+				NR > 1 && $1 == source && $2 == commit && ($3 == dest || $3 == "refs/heads/" dest) { print; exit }
+			' "$PR_PROGRESS_PUSH_MANIFEST" 2>/dev/null || true)
+			[ -n "$pr_row" ] && continue
+			dropped_count=$(( dropped_count + 1 ))
+			if [ "$dropped_count" -le 8 ]; then
+				detail="${source_branch}@${source_commit:0:12}:$manifest"
+				dropped="${dropped}${dropped:+,}${detail}"
+			fi
+		else
+			sibling_count=$(( sibling_count + 1 ))
+			if [ "$sibling_count" -le 8 ]; then
+				detail="${source_branch}@${source_commit:0:12}:$manifest"
+				siblings="${siblings}${siblings:+,}${detail}"
+			fi
+		fi
+	done < <(
+		tail -n 2000 "$CRITICAL_BASE/logs/launches.tsv" 2>/dev/null |
+			awk -F '\t' '$2 == "continuation" && $5 ~ /\/continuations\/benchmark-canary-repair-branch-adoption$/ { print $5 }' |
+			sort -u |
+			while IFS= read -r manifest_dir; do
+				classification=$manifest_dir/classification.tsv
+				manifest=$manifest_dir/push-manifest.tsv
+				[ -s "$classification" ] && [ -s "$manifest" ] || continue
+				awk -F '\t' 'NR > 1 && $1 == "benchmark-canary-repair-branch-adoption" && $2 == "repair_branch_adopted" { found = 1 } END { exit found ? 0 : 1 }' "$classification" 2>/dev/null || continue
+				awk -F '\t' -v path="$manifest" -v mtime="$(stat -c %Y "$manifest" 2>/dev/null || printf 0)" -v dest="$CANDIDATE_BRANCH" '
+					NR > 1 && ($3 == dest || $3 == "refs/heads/" dest) && $2 ~ /^[0-9a-f]{40}$/ {
+						print mtime "\t" $1 "\t" $2 "\t" $3 "\t" $4 "\t" path
+					}
+				' "$manifest" 2>/dev/null
+			done |
+			sort -t $'\t' -k1,1nr
+	)
+	if [ "$dropped_count" -gt 0 ]; then
+		emit_finding "$out" high "publication" "validated-repair-destination-dropped" \
+			"candidate=$candidate_head unresolved_count=$dropped_count repairs=$dropped pr_manifest=$PR_PROGRESS_PUSH_MANIFEST" \
+			"preserve every explicit release-candidate destination from validated adoption manifests; compute the full range from the current candidate and fail closed if normalization drops any pending descendant"
+	fi
+	if [ "$sibling_count" -gt 0 ]; then
+		emit_finding "$out" high "publication" "validated-repair-bypassed-by-sibling-candidate" \
+			"candidate=$candidate_head unresolved_count=$sibling_count repairs=$siblings dispositions=$VALIDATED_ADOPTION_DISPOSITIONS" \
+			"create one aggregate descendant containing every unresolved validated repair and the current candidate, validate that exact head, record semantic supersessions durably, and serialize future repair writers behind adoption receipts"
+	fi
+}
+
 check_repair_branch_harness_contamination() {
 	local out=$1 adoptions=$CRITICAL_BASE/current-repair-branch-adoptions.tsv row
 	local _generated lane branch _adopted source_repo source_head _central state _next _classification _report
@@ -1544,9 +1688,51 @@ check_repair_branch_harness_contamination() {
 		"create a clean product-only branch from the current candidate, copy only the intended product and focused product-test delta, validate it, and keep generated fuzz harness overlays out of the publication manifest"
 }
 
+benchmark_exact_green_replacement_adopted() {
+	local candidate_head receipt classification exact_status replacement_head manifest_dir
+	candidate_head=$(git -C "$CANDIDATE_REPO" rev-parse --verify --quiet "$CANDIDATE_BRANCH^{commit}" 2>/dev/null || true)
+	[ -n "$candidate_head" ] || return 1
+	# A fresh in-progress continuation must not hide an older complete replacement
+	# matrix. Search only the bounded launch ledger and consume exact artifact paths.
+	receipt=$(
+		tail -n 2000 "$CRITICAL_BASE/logs/launches.tsv" 2>/dev/null |
+			awk -F '\t' '$2 == "continuation" && $5 ~ /\/continuations\/benchmark-canary-fuzzer-gap$/ { print $1 "\t" $5 }' |
+			sort -t $'\t' -k1,1nr |
+			while IFS=$'\t' read -r _epoch manifest_dir; do
+				classification=$manifest_dir/classification.tsv
+				[ -s "$classification" ] || continue
+				exact_status=$(awk -F '\t' 'NR > 1 && $2 == "exact_stack_green" { print $5; exit }' "$classification" 2>/dev/null || true)
+				[ -s "$exact_status" ] || continue
+				replacement_head=$(awk -F '\t' '
+					NR == 1 { next }
+					$4 !~ /^(downscoped_replacement_green|passed|green)$/ { bad = 1 }
+					$3 ~ /^[0-9a-f]{40}$/ {
+						if (head != "" && head != $3) bad = 1
+						head = $3
+						rows++
+					}
+					END {
+						if (rows > 0 && !bad) print head
+						exit (rows > 0 && !bad) ? 0 : 1
+					}
+				' "$exact_status" 2>/dev/null || true)
+				[ -n "$replacement_head" ] || continue
+				if git -C "$CANDIDATE_REPO" merge-base --is-ancestor "$replacement_head" "$candidate_head" 2>/dev/null; then
+					printf '%s\t%s\n' "$replacement_head" "$exact_status"
+					break
+				fi
+			done
+	)
+	[ -n "$receipt" ]
+}
+
 check_benchmark_canary_promotion_invariants() {
 	local out=$1 active classification status_line queue_line exact_green_line coverage_root coverage_status coverage_root_age unscheduled_groups paused_groups
-	benchmark_promotion_blocked || return
+	benchmark_promotion_blocked || return 0
+	# current-feedback.tsv is historical maintainer input. A complete replacement
+	# matrix on an ancestor of the live candidate is a durable downscope receipt,
+	# so it must not relaunch the old exact-stack repair forever.
+	benchmark_exact_green_replacement_adopted && return 0
 	status_line=$(awk -F '\t' '$1 == "benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/blockers.tsv" 2>/dev/null || true)
 	queue_line=$(awk -F '\t' '$1 == "job-benchmark-canary-fuzzer-gap" { print; found = 1 } END { exit found ? 0 : 1 }' "$CRITICAL_BASE/queue.tsv" 2>/dev/null || true)
 	active=$(benchmark_exact_stack_repair_active || true)
@@ -1673,11 +1859,11 @@ check_loop_statuses() {
 
 check_coverage_supervisor_root_agreement() {
 	local out=$1 coverage_root=$2 status status_output age state_output state_session scoped_session suffix
-	[ -n "$coverage_root" ] && [ -d "$coverage_root" ] || return
-	coverage_start_in_progress && return
+	[ -n "$coverage_root" ] && [ -d "$coverage_root" ] || return 0
+	coverage_start_in_progress && return 0
 	age=$(file_age_seconds "$COVERAGE_BASE/current-output-dir.txt" || printf 999999)
 	if [ "$age" -lt 420 ]; then
-		return
+		return 0
 	fi
 	status="$coverage_root/novelty-status.md"
 	if [ -s "$status" ]; then
@@ -1688,7 +1874,7 @@ check_coverage_supervisor_root_agreement() {
 	fi
 	if [ ! -s "$coverage_root/supervisor-state.json" ]; then
 		emit_finding "$out" high "coverage-guided" "missing-supervisor-state" "$coverage_root/supervisor-state.json" "ensure the coverage supervisor writes current-root state before treating the run as healthy"
-		return
+		return 0
 	fi
 	state_output=$(
 		node -e "const fs = require('fs'); try { const state = JSON.parse(fs.readFileSync(process.argv[1], 'utf8')); if (typeof state.outputDir === 'string') process.stdout.write(state.outputDir); } catch {}" \
@@ -1732,7 +1918,7 @@ check_promotion_preflight_relaunch_loops() {
 	local out=$1 coverage_root=$2 state_path status_path loops
 	state_path=$coverage_root/supervisor-state.json
 	status_path=$coverage_root/benchmark-canary-coverage-status.tsv
-	[ -s "$state_path" ] && [ -s "$status_path" ] || return
+	[ -s "$state_path" ] && [ -s "$status_path" ] || return 0
 	loops=$(node - "$state_path" "$status_path" <<'NODE'
 const fs = require( 'fs' );
 const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
@@ -1787,7 +1973,7 @@ NODE
 check_human_smoke_network_stability() {
 	local out=$1 coverage_root=$2 state_path issues network_issues misclassified_issues source_issues=''
 	state_path=$coverage_root/supervisor-state.json
-	[ -s "$state_path" ] || return
+	[ -s "$state_path" ] || return 0
 	for source_file in \
 		"$COVERAGE_BASE/candidate-source/bin/rtc-browser-fuzz-runner.mjs" \
 		"$COVERAGE_BASE/candidate-source/bin/rtc-browser-fuzz-supervisor.mjs"
@@ -1892,7 +2078,7 @@ NODE
 check_product_failure_analysis_ownership() {
 	local out=$1 coverage_root=$2 state_path issues
 	state_path=$coverage_root/supervisor-state.json
-	[ -s "$state_path" ] || return
+	[ -s "$state_path" ] || return 0
 	issues=$(node - "$state_path" <<'NODE'
 const fs = require( 'fs' );
 const path = require( 'path' );
@@ -1944,7 +2130,7 @@ NODE
 check_supervisor_disabled_cleanup_memoization() {
 	local out=$1 coverage_root=$2 state_path missing
 	state_path=$coverage_root/supervisor-state.json
-	[ -s "$state_path" ] || return
+	[ -s "$state_path" ] || return 0
 	missing=$(node - "$state_path" <<'NODE'
 const fs = require( 'fs' );
 const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
@@ -1973,7 +2159,7 @@ check_product_failure_quarantine_slots() {
 	local out=$1 coverage_root=$2 state_path groups_path retained
 	state_path=$coverage_root/supervisor-state.json
 	groups_path=$coverage_root/supervisor-groups.json
-	[ -s "$state_path" ] && [ -s "$groups_path" ] || return
+	[ -s "$state_path" ] && [ -s "$groups_path" ] || return 0
 	retained=$(node - "$state_path" "$groups_path" <<'NODE'
 const fs = require( 'fs' );
 const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
@@ -2008,7 +2194,7 @@ check_published_startup_stall_holds() {
 	local out=$1 coverage_root=$2 state_path groups_path held
 	state_path=$coverage_root/supervisor-state.json
 	groups_path=$coverage_root/supervisor-groups.json
-	[ -s "$state_path" ] && [ -s "$groups_path" ] || return
+	[ -s "$state_path" ] && [ -s "$groups_path" ] || return 0
 	held=$(node - "$state_path" "$groups_path" <<'NODE'
 const fs = require( 'fs' );
 const state = JSON.parse( fs.readFileSync( process.argv[ 2 ], 'utf8' ) );
@@ -2056,7 +2242,7 @@ check_published_group_harness_drift() {
 	local out=$1 coverage_root=$2 state_path groups_path drift
 	state_path=$coverage_root/supervisor-state.json
 	groups_path=$coverage_root/supervisor-groups.json
-	[ -s "$state_path" ] && [ -s "$groups_path" ] || return
+	[ -s "$state_path" ] && [ -s "$groups_path" ] || return 0
 	drift=$(node - "$state_path" "$groups_path" "$COVERAGE_BASE/candidate-source" <<'NODE'
 const fs = require( 'fs' );
 const crypto = require( 'crypto' );
@@ -2283,15 +2469,26 @@ check_repair_writer_isolation_contract() {
 	local duplicate_noise=$REPO/bin/rtc-duplicate-noise-persona-loop-remote.sh
 	local focused_gap=$REPO/bin/rtc-focused-shards-gap-codex-loop-remote.sh
 	local productive_analysis=$REPO/bin/rtc-productive-analysis-loop-remote.sh
-	local pr_progress=$REPO/bin/rtc-pr-progress-controller-remote.sh issues='' pr_progress_danger_count
+	local pr_progress=$REPO/bin/rtc-pr-progress-controller-remote.sh
+	local local_publisher=$REPO/bin/rtc-local-pr-branch-publisher-loop.sh
+	local issues='' pr_progress_danger_count loop_name loop_script
 	grep -Fq -- '-s workspace-write' "$structural" 2>/dev/null || issues="${issues}${issues:+,}structural_workspace_sandbox_missing"
 	grep -Fq 'cd "$workspace"' "$structural" 2>/dev/null || issues="${issues}${issues:+,}structural_proposal_workspace_missing"
+	grep -Fq 'flock -n --close "$LOCK_FILE" "$0" run-locked' "$structural" 2>/dev/null || issues="${issues}${issues:+,}structural_lock_close_on_exec_missing"
+	grep -Fq 'def process_age_seconds(pid):' "$structural" 2>/dev/null || issues="${issues}${issues:+,}structural_proc_age_missing"
+	grep -Fq 'with open("/proc/uptime"' "$structural" 2>/dev/null || issues="${issues}${issues:+,}structural_proc_uptime_missing"
+	if sed -n '/^check_runaway_scans() {/,/^check_analysis_productivity() {/p' "$structural" 2>/dev/null |
+		grep -Fq 'etimes='; then
+		issues="${issues}${issues:+,}structural_runaway_scan_uses_ps_etimes"
+	fi
 	if sed -n '/^launch_repair_jobs() {/,/^write_status() {/p' "$structural" 2>/dev/null |
 		grep -Fq -- '-s danger-full-access'; then
 		issues="${issues}${issues:+,}structural_danger_full_access"
 	fi
 	grep -Fq -- '-s read-only' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_read_only_diagnostic_missing"
 	grep -Fq 'stop_codex_in_control_repo' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_live_writer_stop_missing"
+	grep -Fq "stop_sessions_matching '^rtc-(focused|strict|gap)-analysis-|^rtc-analysis-(live|deep)-'" "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_optional_analysis_session_fallback_missing"
+	grep -Fq 'OPTIONAL_ANALYSIS_CAP_HOLD_FILE=$BASE/optional-analysis-cap-hold.tsv' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_optional_analysis_cap_hold_missing"
 	grep -Fq 'restore_control_harness_from_frozen' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_frozen_restore_missing"
 	grep -Fq 'ENABLE_DUPLICATE_NOISE_REVIEW=${RTC_JETSTREAM_ENABLE_DUPLICATE_NOISE_REVIEW:-0}' "$guard" 2>/dev/null || issues="${issues}${issues:+,}duplicate_noise_default_enabled"
 	grep -Fq -- '-s read-only' "$duplicate_noise" 2>/dev/null || issues="${issues}${issues:+,}duplicate_noise_read_only_missing"
@@ -2313,6 +2510,21 @@ check_repair_writer_isolation_contract() {
 	grep -Fq 'cd "$worktree"' "$pr_progress" 2>/dev/null || issues="${issues}${issues:+,}pr_progress_repair_worktree_missing"
 	grep -Fq 'git -C "$SRC" worktree add --detach "$worktree" "$branch"' "$pr_progress" 2>/dev/null || issues="${issues}${issues:+,}pr_progress_repair_worktree_setup_missing"
 	grep -Fq "export RTC_FUZZ_NOVELTY_COVERAGE_CODEX='0'" "$launcher" 2>/dev/null || issues="${issues}${issues:+,}coverage_guidance_writer_enabled"
+	while IFS=$'\t' read -r loop_name loop_script; do
+		[ -s "$loop_script" ] || {
+			issues="${issues}${issues:+,}${loop_name}_strict_cycle_script_missing"
+			continue
+		}
+		grep -Fq 'cycle_rc=$?' "$loop_script" 2>/dev/null || issues="${issues}${issues:+,}${loop_name}_strict_cycle_status_missing"
+		if grep -Eq 'run_once[[:space:]]*\|\|' "$loop_script" 2>/dev/null; then
+			issues="${issues}${issues:+,}${loop_name}_conditional_errexit_disabled"
+		fi
+	done <<EOF
+structural	$structural
+pr_progress	$pr_progress
+productive_analysis	$productive_analysis
+local_publisher	$local_publisher
+EOF
 	if [ -n "$issues" ]; then
 		emit_finding "$out" high "automation-control" "live-control-writer-isolation-missing" \
 			"$issues structural=$structural guard=$guard launcher=$launcher" \
@@ -2437,7 +2649,7 @@ check_stuck_critical_cleanup() {
 
 check_coverage_novelty_full_pass_health() {
 	local out=$1 coverage_root=$2 state_path output_age now pass_info last_full last_updated last_triage pass_epoch pass_age
-	[ -n "$coverage_root" ] && [ -d "$coverage_root" ] || return
+	[ -n "$coverage_root" ] && [ -d "$coverage_root" ] || return 0
 	state_path="$coverage_root/novelty-state.json"
 	output_age=$(file_age_seconds "$coverage_root" || printf 999999)
 	if [ ! -s "$state_path" ]; then
@@ -2446,7 +2658,7 @@ check_coverage_novelty_full_pass_health() {
 				"$state_path output=$coverage_root" \
 				"restore novelty-state generation and make the session watchdog require completed full novelty passes"
 		fi
-		return
+		return 0
 	fi
 	pass_info=$(
 		node - "$state_path" <<'NODE'
@@ -2532,11 +2744,11 @@ check_unknown_action_profile_startup_failures() {
 
 check_current_run_duplicate_noise() {
 	local out=$1 coverage_root status
-	[ -s "$COVERAGE_BASE/current-output-dir.txt" ] || return
+	[ -s "$COVERAGE_BASE/current-output-dir.txt" ] || return 0
 	coverage_root=$(sed -n '1p' "$COVERAGE_BASE/current-output-dir.txt")
-	[ -n "$coverage_root" ] || return
+	[ -n "$coverage_root" ] || return 0
 	status="$coverage_root/novelty-status.md"
-	[ -s "$status" ] || return
+	[ -s "$status" ] || return 0
 	awk -F ': ' '
 		/^## Triage Yield$/ {
 			in_section = 1
@@ -2746,6 +2958,8 @@ detect_findings() {
 	check_resource_budget_application_consistency "$tmp"
 	check_actionable_product_failure_bridge "$tmp"
 	check_critical_path_invariants "$tmp"
+	check_local_publisher_health "$tmp"
+	check_validated_adoption_delivery_invariants "$tmp"
 	check_repair_publication_progress "$tmp"
 	check_repair_branch_harness_contamination "$tmp"
 	check_benchmark_canary_promotion_invariants "$tmp"
@@ -3002,16 +3216,37 @@ run_once() {
 }
 
 run_loop() {
-	exec 9>"$LOCK_FILE"
-	if ! flock -n 9; then
+	# Keep the singleton descriptor in flock's parent process. --close prevents
+	# guard restarts, tmux repairs, sleeps, and other children from inheriting it.
+	if ! flock -n --close "$LOCK_FILE" "$0" run-locked; then
 		log "another structural watchdog already holds $LOCK_FILE"
 		exit 0
 	fi
+}
+
+run_loop_locked() {
 	printf '%s\n' "$$" > "$PID_FILE"
-	trap 'rm -f "$PID_FILE"' EXIT
+	cleanup_run_loop() {
+		if [ "$(cat "$PID_FILE" 2>/dev/null || true)" = "$$" ]; then
+			rm -f "$PID_FILE"
+		fi
+	}
+	trap cleanup_run_loop EXIT
+	trap 'exit 0' HUP INT TERM
 	log "structural watchdog started pid=$$"
 	while true; do
-		run_once || log "structural watchdog pass failed"
+		# Keep errexit active inside the cycle. Calling a function on the left
+		# side of `||` disables Bash's errexit behavior throughout that function.
+		set +e
+		(
+			set -e
+			run_once
+		)
+		cycle_rc=$?
+		set -e
+		if [ "$cycle_rc" -ne 0 ]; then
+			log "structural watchdog pass failed rc=$cycle_rc"
+		fi
 		sleep "$CYCLE_SLEEP_SECONDS"
 	done
 }
@@ -3022,11 +3257,21 @@ case "${1:-start}" in
 			echo "$SESSION already running"
 		else
 			tmux new-session -d -s "$SESSION" "$0 run"
-			echo "$SESSION started"
+			sleep 1
+			if has_session "$SESSION" && [ -s "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+				echo "$SESSION started pid=$(cat "$PID_FILE")"
+			else
+				log "structural watchdog failed to remain running after start request"
+				echo "$SESSION failed to start; inspect $LOG" >&2
+				exit 1
+			fi
 		fi
 		;;
 	run)
 		run_loop
+		;;
+	run-locked)
+		run_loop_locked
 		;;
 	once)
 		run_once

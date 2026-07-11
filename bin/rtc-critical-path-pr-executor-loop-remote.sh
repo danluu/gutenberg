@@ -399,9 +399,11 @@ productive_analysis_exact_blocker_rows() {
 				is_exact = 0
 			}
 			is_singleton_repair = (action == "repair-or-downscope" || action == "focused-owner-replay" || action == "focused-exact-or-downscope") ? 1 : 0
+			# The aggregate family already has one live-TSV repair lane; only
+			# group-specific feedback should create a competing exact blocker.
 			is_benchmark_repair = 0
 			if ((action == "repair-ready" || action == "retarget-blocker" || action == "product-repair" || action == "repair-product-failure") &&
-				(family ~ /^benchmark-canary\// || family ~ /^pa-exact-benchmark-canary-.*seed-[0-9]+$/ || family == "benchmark-canary-product-failure")) {
+				(family ~ /^benchmark-canary\// || family ~ /^pa-exact-benchmark-canary-.*seed-[0-9]+$/)) {
 				is_benchmark_repair = 1
 			}
 		}
@@ -491,6 +493,42 @@ productive_analysis_priority() {
 		P1|medium) printf 'medium' ;;
 		*) printf 'low' ;;
 	esac
+}
+
+benchmark_canary_primary_product_failure_group() {
+	local status
+	status=$(latest_benchmark_coverage_status || true)
+	[ -n "$status" ] && [ -s "$status" ] || return 1
+	awk -F '\t' '
+		function is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope) {
+			return explicit_downscope != "yes" &&
+				coverage_state !~ /downscope/ &&
+				(product_records > 0 ||
+					retained_product_evidence == "yes" ||
+					coverage_state ~ /product-failure/)
+		}
+		NR == 1 {
+			for (i = 1; i <= NF; i++) idx[$i] = i
+			next
+		}
+		NR > 1 {
+			group_name = idx["group"] ? $(idx["group"]) : ""
+			product_records = idx["product_evidence_records"] ? $(idx["product_evidence_records"]) + 0 : 0
+			retained_product_evidence = idx["retained_product_evidence"] ? $(idx["retained_product_evidence"]) : ""
+			coverage_state = idx["coverage_state"] ? $(idx["coverage_state"]) : ""
+			explicit_downscope = idx["explicit_downscope"] ? $(idx["explicit_downscope"]) : ""
+			if (group_name != "" && is_product_failure(product_records, retained_product_evidence, coverage_state, explicit_downscope) &&
+				(!found || product_records > max_records || (product_records == max_records && group_name < selected_group))) {
+				found = 1
+				max_records = product_records
+				selected_group = group_name
+			}
+		}
+		END {
+			if (found) print selected_group
+			exit found ? 0 : 1
+		}
+	' "$status"
 }
 
 latest_exact_blocker_classification() {
@@ -685,7 +723,7 @@ focused_benchmark_canary_blocker_open() {
 
 productive_analysis_exact_blocker_suppressed() {
 	local blocker_id=${1:-} action_kind=${2:-} evidence_path=${3:-} next_action=${4:-} generated_at=${5:-}
-	local status benchmark_group
+	local status benchmark_group focus_target primary_group
 	if productive_analysis_exact_blocker_consumed "$blocker_id" "$generated_at"; then
 		return 0
 	fi
@@ -698,7 +736,21 @@ productive_analysis_exact_blocker_suppressed() {
 			;;
 		pa-exact-benchmark-canary-*)
 			benchmark_group=${blocker_id#pa-exact-benchmark-canary-}
+			focus_target=$(benchmark_canary_focus_target_for_blocker "$blocker_id" || true)
+			if [ -n "$focus_target" ]; then
+				benchmark_group=${focus_target#benchmark-canary/}
+			fi
+			# Productive-analysis feedback owns one focused canary slot. Keep
+			# every focused writer closed until aggregate adoption is complete,
+			# then expose only the largest qualifying row from the fresh live TSV.
+			if repair_branch_adoption_open || benchmark_exact_stack_active >/dev/null; then
+				return 0
+			fi
 			if ! benchmark_canary_group_product_failure_open "$benchmark_group"; then
+				return 0
+			fi
+			primary_group=$(benchmark_canary_primary_product_failure_group || true)
+			if [ -n "$primary_group" ] && [ "$benchmark_group" != "$primary_group" ]; then
 				return 0
 			fi
 			return 1
@@ -1186,6 +1238,50 @@ repair_branch_adoption_consumed() {
 		*)
 			return 1
 			;;
+	esac
+}
+
+validated_repair_adoption_publication_state() {
+	local adoption_row classification manifest manifest_row
+	local repair_branch adopted_branch source_head central_head branch head
+	local source_branch source_commit intended_branch candidate_head
+	[ -s "$REPAIR_ADOPTIONS" ] || return 1
+	adoption_row=$(awk -F '\t' 'NR > 1 && $8 ~ /^(central_present|central_present_alias|imported)$/ { row = $0 } END { if (row != "") print row }' "$REPAIR_ADOPTIONS" 2>/dev/null || true)
+	[ -n "$adoption_row" ] || return 1
+	IFS=$'\t' read -r _generated_at _lane repair_branch adopted_branch _source_repo source_head central_head _state _next_action _classification _report <<< "$adoption_row"
+	branch=${adopted_branch:-$repair_branch}
+	head=${central_head:-$source_head}
+	[ -n "$branch" ] && [ -n "$head" ] || return 1
+
+	classification=$(latest_repair_branch_adoption_classification || true)
+	[ -s "$classification" ] || return 1
+	awk -F '\t' 'NR > 1 && $1 == "benchmark-canary-repair-branch-adoption" && $2 == "repair_branch_adopted" { found = 1 } END { exit found ? 0 : 1 }' "$classification" 2>/dev/null || return 1
+	manifest=${classification%/*}/push-manifest.tsv
+	[ -s "$manifest" ] || return 1
+	manifest_row=$(awk -F '\t' -v branch="$branch" -v head="$head" '
+		NR > 1 && $1 == branch && ($2 == head || index($2, head) == 1 || index(head, $2) == 1) { print; exit }
+	' "$manifest" 2>/dev/null || true)
+	[ -n "$manifest_row" ] || return 1
+	IFS=$'\t' read -r source_branch source_commit intended_branch _rest <<< "$manifest_row"
+	[ "$intended_branch" = "$RELEASE_CANDIDATE_BRANCH" ] || return 1
+	git -C "$CONTINUATION_SRC" cat-file -e "$source_commit^{commit}" 2>/dev/null || return 1
+	candidate_head=$(git -C "$CONTINUATION_SRC" rev-parse --verify --quiet "$RELEASE_CANDIDATE_BRANCH^{commit}" 2>/dev/null || true)
+	[ -n "$candidate_head" ] || return 1
+	if git -C "$CONTINUATION_SRC" merge-base --is-ancestor "$source_commit" "$candidate_head" 2>/dev/null; then
+		printf 'adopted\t%s\t%s\t%s\n' "$source_branch" "$source_commit" "$manifest"
+	elif git -C "$CONTINUATION_SRC" merge-base --is-ancestor "$candidate_head" "$source_commit" 2>/dev/null; then
+		printf 'awaiting-publication\t%s\t%s\t%s\n' "$source_branch" "$source_commit" "$manifest"
+	else
+		printf 'stale-sibling\t%s\t%s\t%s\n' "$source_branch" "$source_commit" "$manifest"
+	fi
+}
+
+repair_branch_adoption_awaiting_publication() {
+	local state
+	state=$(validated_repair_adoption_publication_state 2>/dev/null || true)
+	case "$state" in
+		awaiting-publication$'\t'*) return 0 ;;
+		*) return 1 ;;
 	esac
 }
 
@@ -3356,7 +3452,7 @@ write_no_progress() {
 				fi
 				printf '%s\tzero_executor_artifact\t%s\t%s\tunknown\t%s\n' "$file" "$(file_size "$file")" "$(file_mtime "$file")" "$rejected_at"
 			done
-		if benchmark_effective_promotion_blocked; then
+		if benchmark_effective_promotion_blocked && ! benchmark_forced_coverage_open; then
 			if ! benchmark_exact_stack_active >/dev/null; then
 				printf '%s\texact_stack_promotion_blocked_without_active_repair\t%s\t%s\tbenchmark-canary-fuzzer-gap\t%s\n' \
 					"$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" "$(file_size "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv")" "$(file_mtime "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv")" "$rejected_at"
@@ -3570,10 +3666,10 @@ write_lanes() {
 			printf 'seed-1060015-reducer\tPR05?\treducer\tvalidation-only\t%s\t1060015\t%s\t%s\t\tcodex-analysis\tnone\tadopt-or-queue\t%s/runs/1060015-reducer\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 		fi
 		if benchmark_feedback_present; then
-			if benchmark_effective_promotion_blocked; then
-				printf 'benchmark-canary-fuzzer-gap\tPROCESS\texact-stack-promotion-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,exact-stack\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
-			elif benchmark_exact_stack_green_current && benchmark_forced_coverage_open; then
+			if benchmark_forced_coverage_open; then
 				printf 'benchmark-canary-fuzzer-gap\tPROCESS\tcoverage-confidence\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,forced-coverage\tactive\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
+			elif benchmark_effective_promotion_blocked; then
+				printf 'benchmark-canary-fuzzer-gap\tPROCESS\texact-stack-promotion-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,exact-stack\tqueued\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 			elif benchmark_exact_stack_green_current; then
 				printf 'benchmark-canary-fuzzer-gap\tPROCESS\texact-stack-promotion-repair\tvalidation-only\t%s\tbenchmark-canary-feedback\t%s\t%s\t\tcodex-analysis\tfeedback,exact-stack\tterminal\t%s/runs/benchmark-canary-fuzzer-gap\n' "$SRC" "$base_ref" "$base_sha" "$BASE"
 			else
@@ -3839,16 +3935,38 @@ write_blockers_and_queue() {
 	benchmark_active=$(benchmark_exact_stack_active || true)
 	benchmark_coverage_status=$(latest_benchmark_coverage_status || true)
 	benchmark_product_active=$(active_work_matching "$BENCHMARK_PRODUCT_REPAIR_ACTIVE_PATTERN" || true)
-	benchmark_product_state=$([ -n "$benchmark_product_active" ] && printf active || printf runnable)
 	benchmark_product_summary=$(benchmark_product_failure_summary || true)
-	benchmark_product_result=$([ -n "$benchmark_product_active" ] && printf product_failure_repair_active || printf product_failure_repair_required)
+	if [ -n "$benchmark_product_active" ]; then
+		benchmark_product_state=active
+		benchmark_product_result=product_failure_repair_active
+		benchmark_product_blocked_by=active-job
+	elif repair_branch_adoption_open; then
+		benchmark_product_state=held
+		benchmark_product_result=held_by_repair_branch_adoption
+		benchmark_product_blocked_by=repair-branch-adoption
+	else
+		benchmark_product_state=runnable
+		benchmark_product_result=product_failure_repair_required
+		benchmark_product_blocked_by=product-evidence
+	fi
 	benchmark_product_artifacts=product-failure-triage.tsv,exact-blocker-status.tsv,classification.tsv,repair-branch.txt
 	repair_adoption_active=$(active_work_matching 'benchmark-canary-repair-branch-adoption|repair-branch-adoption' || true)
 	if repair_branch_adopted_to_release_candidate; then
 		repair_adoption_active=""
 	fi
-	repair_adoption_state=$([ -n "$repair_adoption_active" ] && printf active || { repair_branch_adoption_open && printf runnable || printf terminal; })
-	repair_adoption_result=$([ -n "$repair_adoption_active" ] && printf repair_branch_adoption_active || { repair_branch_adoption_open && printf repair_branch_adoption_required || printf no_pending_repair_branch; })
+	if [ -n "$repair_adoption_active" ]; then
+		repair_adoption_state=active
+		repair_adoption_result=repair_branch_adoption_active
+	elif repair_branch_adoption_awaiting_publication; then
+		repair_adoption_state=held
+		repair_adoption_result=awaiting_local_publication
+	elif repair_branch_adoption_open; then
+		repair_adoption_state=runnable
+		repair_adoption_result=repair_branch_adoption_required
+	else
+		repair_adoption_state=terminal
+		repair_adoption_result=no_pending_repair_branch
+	fi
 	repair_adoption_summary=$(repair_branch_adoption_summary || true)
 	plain_smoke_active=$(active_work_matching '^rtc-critical-continuation-plain-editor-product-smoke-|^continuation-plain-editor-product-smoke-' || true)
 	plain_smoke_state=$([ -n "$plain_smoke_active" ] && printf active || { plain_editor_product_smoke_open && printf runnable || printf terminal; })
@@ -3865,20 +3983,20 @@ write_blockers_and_queue() {
 	benchmark_result=pending
 	benchmark_artifacts=fuzzer-feedback.md,fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv
 	benchmark_next='consume benchmark canary feedback; add or repair equivalent fuzz coverage and validate the fixed stack under that coverage before maintainer snapshot publication'
-	if benchmark_effective_promotion_blocked; then
+	if benchmark_forced_coverage_open; then
+		benchmark_state=active
+		benchmark_kind=coverage-confidence
+		benchmark_action=coverage-retarget
+		benchmark_active=coverage-controller
+		benchmark_artifacts=fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv,exact-stack-status.tsv,benchmark-canary-coverage-status.tsv
+		benchmark_next="coverage owns the current gate; consume ${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt}, finish scheduled forced groups, and rotate unscheduled forced groups into freed slots until every promotion-blocked or status-only primary forced canary row has current-run success or explicit downscope; only then evaluate exact-stack repair"
+		benchmark_result=forced_coverage_active
+	elif benchmark_effective_promotion_blocked; then
 		benchmark_kind=exact-stack-promotion
 		benchmark_action=exact-stack-repair
 		benchmark_artifacts=fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv,exact-stack-status.tsv,repair-branch.txt
 		benchmark_next='promotion is blocked on the exact all-merged stack; do not clear with coverage_repaired alone; create or advance a product fix branch and prove exact-stack green before maintainer snapshot publication'
 		benchmark_result=$([ -n "$benchmark_active" ] && printf exact_stack_repair_active || printf exact_stack_repair_required)
-	elif benchmark_exact_stack_green_current && benchmark_forced_coverage_open; then
-		benchmark_state=active
-		benchmark_kind=coverage-confidence
-		benchmark_action=coverage-retarget
-		benchmark_active=${benchmark_active:-coverage-controller}
-		benchmark_artifacts=fuzzer-feedback.tsv,coverage-change.tsv,classification.tsv,exact-stack-status.tsv,benchmark-canary-coverage-status.tsv
-		benchmark_next="exact-stack green is repair evidence only; consume ${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt} until every promotion-blocked or status-only primary forced canary row has current-run success or explicit downscope"
-		benchmark_result=forced_coverage_active
 	elif benchmark_exact_stack_green_current; then
 		benchmark_state=terminal
 		benchmark_kind=exact-stack-promotion
@@ -3921,8 +4039,8 @@ write_blockers_and_queue() {
 					"$now"
 			fi
 			if benchmark_product_failures_open; then
-				printf 'benchmark-canary-product-failure\tproduct-repair\thigh\t%s\tbenchmark-canary-product-evidence\tsnapshot-publication,exact-stack-promotion,maintainer-pr-set\tproduct-evidence\t%s\t%s\treduce or repair current-run benchmark canary product failures; %s\t%s\n' \
-					"$benchmark_product_state" "$benchmark_product_artifacts" "${benchmark_product_active:-}" "${benchmark_product_summary:-no-summary}" "$now"
+				printf 'benchmark-canary-product-failure\tproduct-repair\thigh\t%s\tbenchmark-canary-product-evidence\tsnapshot-publication,exact-stack-promotion,maintainer-pr-set\t%s\t%s\t%s\treduce or repair current-run benchmark canary product failures; %s\t%s\n' \
+					"$benchmark_product_state" "$benchmark_product_blocked_by" "$benchmark_product_artifacts" "${benchmark_product_active:-}" "${benchmark_product_summary:-no-summary}" "$now"
 			fi
 		fi
 		if coverage_materialization_liveness_open; then
@@ -3954,8 +4072,8 @@ write_blockers_and_queue() {
 			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tplain-editor-product-smoke\tclassification.tsv,report.md\t\thold behind plain-editor-product-smoke until the real editor edit/save/reload smoke lane has current successful evidence and no preserved product-evidence/failure line; then proof-or-reclassify PR17 seed 1020002\t%s\n' \
 				"$now"
 		elif benchmark_product_failures_open; then
-			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tbenchmark-canary-product-failure\tclassification.tsv,report.md\t\thold behind benchmark-canary-product-failure until %s has no retained_product_evidence=yes, product_evidence_records greater than 0, or coverage_state containing product-failure; then proof-or-reclassify PR17 seed 1020002\t%s\n' \
-				"${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt}" "$now"
+			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tbenchmark-canary-product-failure\tclassification.tsv,report.md\t\thold behind benchmark-canary-product-failure until %s has no retained_product_evidence=yes, product_evidence_records greater than 0, or coverage_state containing product-failure and %s has no open likely_real record for the current release-candidate commit or an ancestor commit; after both product-evidence sources clear, keep PR17 held behind benchmark-canary-fuzzer-gap while promotion rows remain unresolved, and proof-or-reclassify PR17 seed 1020002 only after that gate also clears\t%s\n' \
+				"${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt}" "$ACTIONABLE_PRODUCT_FAILURE_BASE" "$now"
 		elif [ "$benchmark_result" = forced_coverage_active ] || [[ "$benchmark_result" == exact_stack_repair_* ]]; then
 			printf 'pr17-1020002\tfinal-stack-join\thigh\theld\tpr_split/finalization\tfinal-stack-validation,filing\tbenchmark-canary-fuzzer-gap\tclassification.tsv,report.md\t\thold behind benchmark-canary-fuzzer-gap until %s has no promotion_blocked=yes row lacking current_run_green=yes or explicit_downscope=yes; then proof-or-reclassify PR17 seed 1020002\t%s\n' \
 				"${benchmark_coverage_status:-$COVERAGE_BASE/current-output-dir.txt}" "$now"
@@ -4963,17 +5081,28 @@ launch_continuation_job() {
 	session="rtc-critical-continuation-$slug-$ts"
 	run_dir="$BASE/runs/$ts/continuations/$slug"
 	worktree="$BASE/worktrees/continuation-$slug-$ts"
-	local continuation_src="$CONTINUATION_SRC"
+	local continuation_src="$CONTINUATION_SRC" continuation_ref=HEAD
 	if [ ! -d "$continuation_src/.git" ]; then
 		continuation_src="$SRC"
 	fi
+	case "$lane" in
+		benchmark-canary-*|pa-exact-benchmark-canary-*) continuation_ref=$RELEASE_CANDIDATE_BRANCH ;;
+	esac
 	mkdir -p "$run_dir"
-	base_head=$(git -C "$continuation_src" rev-parse HEAD 2>/dev/null || true)
+	base_head=$(git -C "$continuation_src" rev-parse --verify --quiet "$continuation_ref^{commit}" 2>/dev/null || true)
+	if [ -z "$base_head" ]; then
+		if [ "$continuation_ref" != HEAD ]; then
+			log "refusing to launch candidate-writing continuation lane=$lane missing_ref=$continuation_ref repo=$continuation_src"
+			return 0
+		fi
+		base_head=$(git -C "$continuation_src" rev-parse HEAD 2>/dev/null || true)
+	fi
 	{
 		printf 'continuation_src=%s\n' "$continuation_src"
+		printf 'continuation_ref=%s\n' "$continuation_ref"
 		printf 'continuation_start_head=%s\n' "$base_head"
 	} > "$run_dir/source-repo.log"
-	if ! git -C "$continuation_src" worktree add --detach "$worktree" HEAD > "$run_dir/worktree.log" 2>&1; then
+	if ! git -C "$continuation_src" worktree add --detach "$worktree" "$base_head" > "$run_dir/worktree.log" 2>&1; then
 		log "failed to create continuation worktree for $lane from $continuation_src; see $run_dir/worktree.log"
 		return 0
 	fi
@@ -5136,6 +5265,20 @@ if awk -F '\t' 'NR > 1 && \$2 ~ /^(repair_branch_created|fix_branch_created)$/ {
 			if [ -z "\$invalid_reason" ] && [ "\$branch_head" = "$base_head" ]; then
 				invalid_reason="repair_branch_created_no_committed_product_delta_after_overlay_cleanup"
 			fi
+			if [ -z "\$invalid_reason" ]; then
+				case "$lane" in
+					benchmark-canary-*|pa-exact-benchmark-canary-*)
+						candidate_head_now=\$(git -C "$continuation_src" rev-parse --verify --quiet "$RELEASE_CANDIDATE_BRANCH^{commit}" 2>/dev/null || true)
+						if [ -n "\$candidate_head_now" ] && [ "\$candidate_head_now" != "$base_head" ]; then
+							if git -C "$worktree" merge-base --is-ancestor "\$branch_head" "\$candidate_head_now" 2>/dev/null; then
+								invalid_reason="repair_branch_already_contained_in_current_candidate:\$candidate_head_now"
+							elif ! git -C "$worktree" merge-base --is-ancestor "\$candidate_head_now" "\$branch_head" 2>/dev/null; then
+								invalid_reason="repair_branch_stale_sibling_of_current_candidate:start=$base_head current=\$candidate_head_now"
+							fi
+						fi
+						;;
+				esac
+			fi
 		fi
 	fi
 	{
@@ -5177,14 +5320,18 @@ launch_continuation_jobs() {
 	if productive_analysis_exact_blocker_open || focused_benchmark_canary_blocker_open; then
 		focused_exact_open=1
 	fi
-	if benchmark_feedback_present && benchmark_effective_promotion_blocked; then
-		launch_benchmark_feedback_refresh || true
-		launch_continuation_job \
-			"benchmark-canary-fuzzer-gap" \
-			"benchmark-canary-exact-stack-$candidate_key-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" | cut -c1-12)" \
-			"benchmark-canary-fuzzer-gap" \
-			"exact-stack promotion repair: current benchmark canary has promotion_blocked rows; do not clear this blocker with coverage_repaired alone. Create/advance a product fix branch or exact-stack replay evidence and write exact-stack-status.tsv/classification.tsv." \
-			1
+	if benchmark_feedback_present && benchmark_effective_promotion_blocked && ! benchmark_forced_coverage_open; then
+		if repair_branch_adoption_open; then
+			log "benchmark-canary-fuzzer-gap held until the pending repair branch is adopted to the release candidate"
+		else
+			launch_benchmark_feedback_refresh || true
+			launch_continuation_job \
+				"benchmark-canary-fuzzer-gap" \
+				"benchmark-canary-exact-stack-$candidate_key-$(file_hash "$BENCHMARK_FEEDBACK_BASE/current-feedback.tsv" | cut -c1-12)" \
+				"benchmark-canary-fuzzer-gap" \
+				"exact-stack promotion repair: current benchmark canary has promotion_blocked rows; do not clear this blocker with coverage_repaired alone. Create/advance a product fix branch or exact-stack replay evidence and write exact-stack-status.tsv/classification.tsv." \
+				1
+		fi
 	fi
 	while IFS=$'\t' read -r generated_at action_id target_loop priority action_kind family_or_pr evidence_path next_action control_path; do
 		[ -n "$family_or_pr" ] || continue
@@ -5192,6 +5339,14 @@ launch_continuation_jobs() {
 		if productive_analysis_exact_blocker_suppressed "$blocker_id" "$action_kind" "$evidence_path" "$next_action" "$generated_at"; then
 			continue
 		fi
+		case "$blocker_id" in
+			pa-exact-benchmark-canary-*)
+				if benchmark_exact_stack_active >/dev/null || repair_branch_adoption_open; then
+					log "$blocker_id suppressed while the aggregate exact-stack repair or its adoption owns benchmark-canary replay/repair work"
+					continue
+				fi
+				;;
+		esac
 		case "$blocker_id" in
 			pa-exact-benchmark-canary-product-failure)
 				if focused_benchmark_canary_blocker_open && [ "$aggregate_benchmark_repair_allowed" -ne 1 ]; then
@@ -5219,15 +5374,21 @@ launch_continuation_jobs() {
 	done < <(productive_analysis_exact_blocker_rows || true)
 	if repair_branch_adoption_open; then
 		benchmark_product_summary=$(repair_branch_adoption_summary || true)
-		launch_continuation_job \
-			"benchmark-canary-repair-branch-adoption" \
-			"benchmark-canary-repair-branch-adoption-$(hash_key "$benchmark_product_summary")" \
-			"benchmark-canary-repair-branch-adoption|repair-branch-adoption" \
-			"adopt or reject the latest benchmark-canary continuation repair branch before launching more generic product reduction. Evidence: ${benchmark_product_summary:-missing repair branch adoption summary}. Read $REPAIR_ADOPTIONS and write validation.tsv, repair-branch.txt, classification.tsv, and push-manifest.tsv only if the branch is a durable committed fix." \
-			1
+		if repair_branch_adoption_awaiting_publication; then
+			log "benchmark-canary repair adoption validated and awaiting local publication; suppressing duplicate adoption worker"
+		else
+			launch_continuation_job \
+				"benchmark-canary-repair-branch-adoption" \
+				"benchmark-canary-repair-branch-adoption-$(hash_key "$benchmark_product_summary")" \
+				"benchmark-canary-repair-branch-adoption|repair-branch-adoption" \
+				"adopt or reject the latest benchmark-canary continuation repair branch before launching more generic product reduction. Evidence: ${benchmark_product_summary:-missing repair branch adoption summary}. Read $REPAIR_ADOPTIONS and write validation.tsv, repair-branch.txt, classification.tsv, and push-manifest.tsv only if the branch is a durable committed fix." \
+				1
+		fi
 	fi
 	if benchmark_product_failures_open; then
-		if [ "$focused_exact_open" -eq 1 ] &&
+		if repair_branch_adoption_open; then
+			log "benchmark-canary-product-failure held until the pending repair branch is adopted to the release candidate"
+		elif [ "$focused_exact_open" -eq 1 ] &&
 			[ "$aggregate_benchmark_repair_allowed" -ne 1 ] &&
 			! analysis_product_failures_open; then
 			log "benchmark-canary-product-failure aggregate repair suppressed while focused productive exact blockers are open"

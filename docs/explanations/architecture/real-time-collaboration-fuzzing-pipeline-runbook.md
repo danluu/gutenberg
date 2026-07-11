@@ -18,16 +18,23 @@ leave one-shot commands as the only copy of an important process.
 
 ## Current Operator Snapshot
 
-Snapshot time: `2026-07-10T09:26Z`
+Snapshot time: `2026-07-11T05:01Z`
 
 The active all-merge candidate is `js2/all-merged-rebased-20260701` at
-`352b0431394f6717fb79f1d52e877519a605bb1b`. The coverage-guided pointer file
-currently resolves to `run-20260710T092541Z`; always read it rather than relying
-on that snapshot name:
+`a4bb48b9ad471000c7eaae4694c3310c15e43280`. This is the validated monotonic
+aggregate of the previously bypassed `d065892a` repair line and the newer
+`17c7e68f` candidate line. Coverage replacement is serialized behind
+`start-v2.lock`; always read the pointer rather than relying on a snapshot run
+name:
 
 ```bash
 cat /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/current-output-dir.txt
 ```
+
+At this snapshot the pointer is `run-20260711T043332Z`, whose
+`source-manifest.tsv` names exact candidate `a4bb48b9`. The serialized build and
+pointer transition completed, five protected canary groups are running, and all
+newly launched critical worktrees use the same head.
 
 Every current run must contain `source-manifest.tsv` with mode
 `exact-candidate-plus-harness-overlay`. The product tree comes from the named
@@ -204,6 +211,23 @@ Operational invariants added by the July 10 audit:
 -   Repair adoption is a commit-ancestry fact as well as a publish-manifest fact.
     If the repair commit is already an ancestor of the release candidate, report
     `adopted-to-release-candidate` and require replay; do not queue another merge.
+-   A validated adoption is not complete until the release-candidate destination
+    has a durable local-publisher receipt. A standalone review branch is not that
+    receipt. While an adoption is `awaiting-publication`, exact-stack, product,
+    focused, and aggregate candidate writers stay held so a sibling cannot move
+    the release candidate around the validated head.
+-   Preserve an explicit `js2/all-merged-rebased-20260701` row from the validated
+    adoption manifest when its source is a strict descendant of the current
+    candidate. Compute validation and diff statistics over the full current-RC to
+    source range, not the continuation's narrow repair base. Manifest generation
+    fails closed if normalization drops that destination. If the candidate has
+    already moved to a sibling, mark the adoption stale and build one validated
+    aggregate descendant; never force-push or silently publish only the side
+    branch.
+-   Every repair continuation starts from the exact release-candidate ref. Before
+    accepting its output, invalidate it when the candidate moved and the repair is
+    neither an ancestor nor a descendant of the new head. This prevents a stale
+    worktree from winning a later fast-forward race.
 -   A repeated plain-editor `blocked_specific` result must advance to server-side
     evidence. The follow-up writes `server-error.tsv` with the wp-sync response,
     callback, source location, and PHP stack before it may classify or repair.
@@ -233,10 +257,41 @@ Operational invariants added by the July 10 audit:
     owning tmux jobs before repair, adoption, or finalization workers. Do not
     restart optional analysis until the count is below four; browser fuzzing
     itself remains active.
+-   Per-generation analysis tmux sessions are autonomous loops. When the global
+    worker cap is exceeded, stop them by their exact optional session prefixes as
+    well as through pane/cwd ownership. The guard writes
+    `rtc-jetstream-guard-20260515/optional-analysis-cap-hold.tsv` and blocks
+    optional launcher admission for 900 seconds after a trim. Without that hold,
+    the launchers can recreate 8-10 workers between two-minute guard passes and
+    turn the cap into a sawtooth instead of a bound.
 -   Every gate-only triage caller must spawn the refresh in its own process group
     and escalate timeout cleanup from `SIGTERM` to `SIGKILL`. Health distinguishes
     a forbidden Codex descendant from a metadata-only refresh stalled for three
     minutes and calculates age from `/proc`, not an unchecked `ps etimes` value.
+-   Apply that `/proc/<pid>/stat` and `/proc/uptime` rule to runaway scan
+    detection as well. A wrapped `ps etimes` value once turned a seconds-old,
+    bounded status probe into a false multi-year runaway and launched an
+    unnecessary repair. If the PID exits between the process snapshot and the
+    `/proc` read, skip it instead of manufacturing an age.
+-   Never call a strict-mode cycle as `run_once || log ...` or directly from an
+    `if` condition. Bash disables `errexit` inside a function used in those
+    conditional positions, so failed commands can produce partial manifests or
+    stale status while the loop appears healthy. Run each cycle in an explicit
+    subshell with `set -e`, temporarily disable `errexit` only in the parent to
+    collect `cycle_rc`, and log that exact status. Structural health statically
+    checks this contract for the structural watchdog, PR controller, productive
+    analysis, and local publisher.
+-   Health checks that intentionally have nothing to inspect must use
+    `return 0`. A bare `return` after a failed guard such as
+    `[ "$age" -lt "$grace" ] || return` propagates status 1 and aborts a real
+    strict pass. This was hidden by the conditional-`errexit` bug until the loop
+    was corrected.
+-   Forced current-run benchmark coverage owns the promotion gate while any
+    required row is still open. Do not launch another exact-stack repair merely
+    because historical feedback says `promotion_blocked`; that spends a Codex
+    slot on a result coverage cannot yet accept. Keep the lane classified as
+    `coverage-confidence`, let the coverage controller finish or explicitly
+    downscope every forced row, and only then admit exact-stack repair work.
 -   A `repair_branch_adopted` manifest is not trusted to choose its own final
     destination. The critical controller retargets only a strict descendant of
     the current candidate to `js2/all-merged-rebased-20260701`, removes no-op and
@@ -255,6 +310,16 @@ Operational invariants added by the July 10 audit:
     fast-forwards the JS2 candidate ref after GitHub confirms the exact commit.
     The guard checks candidate-head changes before applying control-harness grace,
     so coverage switches immediately instead of waiting for another repair job.
+-   The local publisher writes
+    `rtc-pr-progress-controller-20260518/local-publisher-status.tsv` after every
+    cycle. Structural health requires a fresh healthy heartbeat and agreement
+    among the manifest RC head, GitHub RC head, and JS2 RC head. A successful
+    adoption without an RC row, a sibling candidate that bypasses it, or a stale
+    publisher heartbeat is a high-severity structural finding.
+-   The structural watchdog singleton must use `flock --close ... run-locked`.
+    Only the dedicated `flock` parent may own `structural-watchdog.lock`; the
+    guard, repair tmux sessions, and sleeps must not inherit it. Startup now waits
+    for a live `run-locked` PID and fails visibly if the session exits.
 -   Harness-overlay drift is actionable only for an active lane. Publication
     intentionally precedes asynchronous isolated-repo preparation, and the
     supervisor already blocks launch on the expected overlay signature.
@@ -391,6 +456,98 @@ flowchart TB
     Continuations --> Adoption[current-repair-branch-adoptions.tsv]
     Adoption --> Branch
 ```
+
+## 2026-07-11 Monotonic Delivery Incident
+
+The candidate pipeline had a last-mile correctness failure even though repair
+generation and validation were working. Repair `d065892a` passed the focused
+test set and production build, and its adoption continuation wrote an explicit
+release-candidate destination. PR-progress normalization reconstructed that row
+from the continuation's narrow base, however, instead of preserving the
+validated destination. Because the live candidate was not equal to that narrow
+base, normalization emitted only a standalone branch row and silently dropped
+`js2/all-merged-rebased-20260701`.
+
+This caused three secondary failures:
+
+-   The local publisher correctly pushed what it received, but it had no RC row
+    to consume and no heartbeat proving that the RC destination was absent.
+-   The critical executor treated the successful adoption worker as available
+    for relaunch and admitted more candidate-writing siblings while publication
+    was unresolved. Siblings `938d54a` and then `17c7e68f` advanced the candidate
+    without containing `d065892a`.
+-   Structural health kept interpreting May 24 `current-feedback.tsv` as live
+    even after the complete exact-green replacement was adopted, while its own
+    singleton lock leaked into a guard process and prevented clean restart.
+
+The repair makes delivery a monotonic, receipt-driven state machine:
+
+```mermaid
+flowchart LR
+    Repair[committed repair] --> Validate[exact validation]
+    Validate --> Adopt[repair_branch_adopted]
+    Adopt --> Normalize[normalize validated manifest]
+    Normalize --> Descendant{source descends current RC?}
+    Descendant -->|yes| RCRow[review row plus exact RC row]
+    Descendant -->|no, sibling| Aggregate[build and validate aggregate descendant]
+    Aggregate --> RCRow
+    RCRow --> Assert[fail closed if RC row disappears]
+    Assert --> Local[local publisher]
+    Local --> GitHub[fast-forward GitHub refs]
+    GitHub --> CAS[compare-and-swap JS2 RC ref]
+    CAS --> Receipt[durable publish ledger and heartbeat]
+    Receipt --> Replay[new exact-candidate fuzz run]
+
+    Adopt --> Hold[awaiting-publication]
+    Hold --> WriterGate[hold sibling candidate writers]
+    Receipt --> WriterGate
+```
+
+Recovery merged both lines at
+`a4bb48b9ad471000c7eaae4694c3310c15e43280`. The aggregate changes 16 files
+relative to `17c7e68f`, passed seven focused suites with 237 tests, and passed a
+full isolated `npm run build`. At `2026-07-11T04:33Z`, the local publisher
+fast-forwarded both
+`danluu/rtc-benchmark-canary-monotonic-aggregate-20260711T0415Z` and
+`js2/all-merged-rebased-20260701` to that exact commit, synchronized the JS2
+candidate ref, and wrote both receipt rows.
+
+A bounded audit of the last 2,000 launch-ledger rows then found ten older
+validated sibling heads. Seven were automatically proven patch-equivalent to
+the candidate with `git cherry`. The remaining three behaviors were present in
+stronger integrated replacements: non-forced retry warnings in `1582cdec`,
+reload identity/connection-limit handling in `938d54a8`, and CRDT bootstrap,
+entity refresh, and provider-state preservation through `37eb51f4`. Those
+source-to-replacement decisions are recorded in
+`rtc-critical-path-pr-executor-20260517/validated-adoption-dispositions.tsv`.
+Structural health accepts a disposition only while its replacement is an
+ancestor of the live candidate; it reports every other unresolved validated
+head together so recovery produces one aggregate instead of one repair loop per
+historical manifest.
+
+The May 24 benchmark feedback had one more "latest file wins" failure. A new
+in-progress continuation could hide the complete `d065892a` exact-green matrix
+and reopen old promotion rows. The watchdog now searches the same bounded launch
+ledger for complete exact-stack status artifacts whose single replacement head
+is an ancestor of the candidate. Newer incomplete classifications cannot erase
+that durable receipt.
+
+Use these bounded checks when delivery appears stalled:
+
+```bash
+CANDIDATE_REPO=/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo
+PR_BASE=/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518
+FINAL_BASE=/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516
+
+git -C "$CANDIDATE_REPO" rev-parse js2/all-merged-rebased-20260701
+cat "$PR_BASE/local-publisher-status.tsv"
+tail -n 20 "$FINAL_BASE/latest-local-publish-manifest.tsv"
+fuser /media/volume/danluu-fuzz-data/rtc-structural-watchdog-20260518/structural-watchdog.lock
+```
+
+For the structural lock, inspect each returned PID. The healthy owner is one
+`flock -n --close ... run-locked` process. A guard, Codex worker, or `sleep`
+holding that file descriptor is an inheritance regression.
 
 ## Blocker Age And Mitigation History
 
@@ -2750,14 +2907,14 @@ lanes, but they must share state. In particular:
     manifest in review context. A feedback action that creates no independent
     progress now launches a bounded progress-unblock job, not only actions that
     contain obvious wait-only wording.
--   Local branch publication should be invoked by the same local loop that
-    publishes
-    `docs/explanations/architecture/rtc-jetstream2-fix-pr-status-20260515.md`.
-    The helper is `bin/rtc-local-pr-branch-publisher-loop.sh`; use `once` mode
-    after a status refresh rather than running it as a separate polling daemon.
-    It reads Jetstream push manifests, asks Codex for a conservative push plan,
-    validates refs and SHAs deterministically, pushes safe branches to `danluu`,
-    and writes the resulting local publish manifest back to Jetstream.
+-   Local branch publication runs durably on the GitHub-capable operator machine
+    through `bin/rtc-local-pr-branch-publisher-loop.sh start`. It reads the JS2
+    manifest, validates refs, SHAs, ancestry, and `git diff --check`, pushes only
+    fast-forwards to `danluu`, compare-and-swap updates the JS2 candidate, writes
+    the receipt ledger, and uploads `local-publisher-status.tsv` every cycle.
+    Use `plan` before a controlled recovery manifest and `once` to consume that
+    exact manifest. Do not infer publication from a completed JS2 adoption worker
+    or from a standalone review branch.
 -   The maintainer snapshot and benchmark docs are protected by the local
     benchmark canary helper
     `bin/rtc-maintainer-snapshot-benchmark-gate-loop.sh`. Run it on a local

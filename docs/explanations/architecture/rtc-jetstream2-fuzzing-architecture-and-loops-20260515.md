@@ -1,8 +1,8 @@
 # RTC Jetstream2 fuzzing architecture and active loops
 
-Snapshot time: `2026-07-10T06:59Z`
+Snapshot time: `2026-07-11T05:01Z`
 
-Blocker-history update: `2026-07-10T06:59Z`
+Blocker-history update: `2026-07-11T05:01Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -42,6 +42,81 @@ durable evidence, and leaves enough state for another process to reject stale or
 incorrect interpretations. Graphs and prose reports are not the API by
 themselves; controller decisions must be traceable to TSV, JSON, or run
 artifacts under the data root.
+
+## 2026-07-11 Monotonic Candidate Delivery Repair
+
+The latest stall was in repair delivery, not repair discovery. Validated repair
+`d065892a` had a release-candidate destination in its adoption manifest, but PR
+progress rebuilt the row using the repair's narrow base. Because that base did
+not equal the live candidate, the final dedupe silently retained only a
+standalone review branch. While publication was unresolved, the critical
+executor relaunched the successful adoption lane and admitted sibling repair
+writers. The candidate advanced through `938d54a` to `17c7e68f` without the
+validated repair.
+
+The new contract is monotonic and receipt-driven:
+
+-   Manifest normalization preserves the exact validated adoption row. A strict
+    descendant receives an RC row measured from the current RC, and generation
+    fails if a pending validated descendant disappears from the final manifest.
+-   `published-standalone` is not terminal adoption. The critical executor keeps
+    the result in `awaiting-publication` until the RC publish receipt appears and
+    holds candidate-writing siblings during that interval.
+-   Every repair writer starts at the named RC ref. A result based on an old
+    sibling is invalidated after the candidate moves; already-contained work is
+    terminal rather than republished.
+-   The local publisher writes a fresh status heartbeat containing manifest,
+    remote RC, JS2 RC, and ledger state. Structural health reports a missing or
+    stale publisher, a dropped validated RC row, or a candidate that bypassed a
+    validated sibling.
+-   Historical benchmark feedback stops reopening work after a complete
+    exact-green replacement is an ancestor of the candidate. The lookup scans
+    bounded launch-ledger artifact paths rather than only the latest
+    classification, so a new in-progress worker cannot hide a durable green
+    matrix.
+-   Historical sibling reconciliation is explicit. Patch-equivalent source
+    ranges are recognized automatically; semantic integrations require a row in
+    `validated-adoption-dispositions.tsv` whose replacement commit is an
+    ancestor of the live candidate. Unresolved heads are reported as one
+    aggregate set rather than surfacing one old manifest per watchdog pass.
+-   The structural watchdog now holds its singleton through an external
+    `flock --close` parent. Its guard restart, tmux repairs, and sleeps cannot
+    inherit the lock; startup verifies that the `run-locked` child remains live.
+
+The recovery aggregate
+[`danluu/rtc-benchmark-canary-monotonic-aggregate-20260711T0415Z`](https://github.com/danluu/gutenberg/tree/danluu/rtc-benchmark-canary-monotonic-aggregate-20260711T0415Z)
+merges `d065892a` and `17c7e68f` at `a4bb48b9`. Seven focused suites and 237
+tests passed, followed by a full isolated production build. At
+`2026-07-11T04:33Z`, both the review branch and
+`js2/all-merged-rebased-20260701` were fast-forwarded to that exact commit, JS2
+was synchronized by compare-and-swap, and both durable receipt rows were
+written.
+
+After candidate replacement, the worker-cap audit exposed an independent
+oscillation: optional analysis launchers recreated autonomous per-generation
+workers immediately after each guard trim. The guard now stops those sessions
+by exact optional prefixes and writes a 900-second
+`optional-analysis-cap-hold.tsv`. During the hold it can keep browser producers
+running while reserving Codex capacity for candidate repair and adoption.
+
+```mermaid
+flowchart LR
+    Failure[product evidence] --> Repair[repair branch]
+    Repair --> Validation[exact validation]
+    Validation --> Adoption[validated adoption manifest]
+    Adoption --> Normalizer[RC-preserving normalizer]
+    Normalizer --> Assertion{RC row retained?}
+    Assertion -->|no| Fail[fail closed]
+    Assertion -->|yes| Publisher[local publisher plus heartbeat]
+    Publisher --> GitHub[GitHub fast-forward]
+    GitHub --> JS2[JS2 compare-and-swap]
+    JS2 --> Receipt[durable RC receipt]
+    Receipt --> Coverage[exact-head coverage replacement]
+
+    Adoption --> Hold[awaiting-publication]
+    Hold --> Gate[hold sibling writers]
+    Receipt --> Gate
+```
 
 ## 2026-07-10 Effectiveness Audit And Repair
 
@@ -238,6 +313,29 @@ source-provenance failures, not by a lack of candidate bugs:
     refresh separately only after it remains live for three minutes; process age
     comes from `/proc`, so an exiting PID or wrapped `ps etimes` value cannot
     create a false multi-year stall.
+-   Runaway-scan health now uses the same `/proc/<pid>/stat` start time and
+    `/proc/uptime` clock. The old `ps etimes` path once classified a seconds-old,
+    bounded current-run probe as a multi-year scan, launched a false structural
+    repair, and risked terminating useful status work. A PID that disappears
+    during inspection is ignored.
+-   The structural watchdog, PR progress controller, productive-analysis loop,
+    and local publisher used `run_once || log ...` (or the equivalent conditional
+    call). In Bash that placement disables `errexit` throughout `run_once`, so a
+    failed command could leave partial control artifacts while the loop kept
+    looking alive. Each cycle now runs in a strict subshell; only the parent
+    temporarily accepts and records its exit status. Structural health rejects
+    canonical scripts that restore the conditional form or omit `cycle_rc`.
+-   The strict-cycle conversion exposed report-only checks whose no-op guards
+    used a bare `return`, accidentally propagating the failed guard's status.
+    Those paths now return zero explicitly. A staged strict one-pass check is a
+    deployment gate, so this class of latent failure is found before a watchdog
+    copy replaces the live one.
+-   Promotion scheduling previously let historical `promotion_blocked` feedback
+    launch an exact-stack Codex repair while required current-run forced coverage
+    was still open. That duplicated ownership and consumed repair capacity before
+    coverage could accept the result. Forced coverage now has first ownership and
+    is reported as `coverage-confidence`; exact-stack repair becomes runnable only
+    after every required row is green or explicitly downscoped.
 -   Full novelty passes can still be doing bounded triage when the supervisor
     discovers a product failure. The 60-second status heartbeat now synchronizes
     product-failure quarantine and republishes the producer set immediately.
@@ -772,9 +870,9 @@ Current feeds and speeds after the audit:
 | Core restart cooldown           | 120 seconds                                                                                                                                                                                                                   |
 | Optional restart cooldown       | 900 seconds                                                                                                                                                                                                                   |
 | Productive-analysis concurrency | 1 lane                                                                                                                                                                                                                        |
-| Live analysis concurrency       | 1 evidence-triggered worker per admitted generation; optional launchers pause over the 8-worker global cap and restart only below 4 workers                                                                                   |
+| Live analysis concurrency       | 1 evidence-triggered worker per admitted generation; optional launchers pause over the 8-worker global cap, remain held for 900 seconds after a trim, and restart only below 4 workers                                       |
 | Structural Codex cap            | 8 leaf workers; wrappers are not counted                                                                                                                                                                                      |
-| Current product failures        | Candidate `352b0431` is under exact replay; prior-head signatures `14a056a2aa04` and `22f90dde2c0f` remain retained until the new fix proves them green, while ancestor `a107212124cc` remains unresolved historical evidence |
+| Current product failures        | Candidate `a4bb48b9` is under exact replay; prior-head actionable evidence remains retained until same-head repetitions or an explicit source-backed disposition close it                                                     |
 | Docker network control          | Cleanup trigger/target `24/20`; 19 live networks after bounded cleanup; maximum 4 stale projects per pass; 20-second Compose timeout; 30-minute attached and 5-minute empty-network retention                                 |
 | Exact dependency install        | about 49 seconds on first use per head                                                                                                                                                                                        |
 | Exact production build          | about 63 seconds on first use per head                                                                                                                                                                                        |
@@ -911,7 +1009,7 @@ Current publication gate path:
 
 ```mermaid
 flowchart TB
-    Candidate[js2/all-merged-rebased-20260701 at 352b0431] --> CoverageRun[coverage-guided run run-20260710T092541Z]
+    Candidate[js2/all-merged-rebased-20260701 at a4bb48b9] --> CoverageRun[coverage-guided run run-20260711T043332Z]
     CoverageRun --> CanaryStatus[benchmark-canary-coverage-status.tsv]
     CoverageRun --> SmokeStatus[novelty-status.md plain-editor smoke row]
     CoverageRun --> ProductEvidence[current product-failure evidence]
@@ -940,15 +1038,15 @@ Current feeds and speeds:
 
 | Loop or feed                         | Current cadence / cap                                                 | Current state                                                                                                                                                                                    |
 | ------------------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `rtc-critical-path-pr-executor-loop` | 60 second cycle, 300 second reconcile timeout                         | Running; opens/updates blockers and bounded continuation jobs                                                                                                                                    |
-| Critical continuations               | Max 3 product repairs active, with one forced gate overflow available | Aggregate benchmark product repair and productive-analysis continuations are active; held PR17 work is not admitted while candidate product failures remain open                                 |
+| `rtc-critical-path-pr-executor-loop` | 60 second cycle, 300 second reconcile timeout                         | Running; every current repair worktree was verified at exact candidate `a4bb48b9`                                                                                                                 |
+| Critical continuations               | Max 3 product repairs active, with one forced gate overflow available | Exact-stack and aggregate product-repair owners retain priority; sibling writers are held while a validated adoption awaits its RC receipt                                                        |
 | Critical validations                 | Max 6 active                                                          | Used for adopted repair branches and ready branch checks                                                                                                                                         |
 | `rtc-pr-progress-controller-loop`    | 120 second cycle, max 2 active PR jobs                                | Running; reserves discovery and exposes repair-adoption rows                                                                                                                                     |
 | Discovery reserve                    | Minimum 3 active discovery sessions                                   | Healthy at 4 active discovery sessions                                                                                                                                                           |
-| Coverage-guided novelty              | Current run root updates status every monitor pass                    | Running on immutable root `run-20260710T092541Z` at candidate `352b0431`; budget is `5/5`; startup published the plain-editor gate plus four exact benchmark canaries under the narrowed overlay |
-| Plain editor smoke                   | Publication gate                                                      | Exact `352b0431` seed `1255001` passed the real Save draft/reload/edit-URL workflow in 16.8 seconds and established the new candidate-scoped first-green                                         |
-| Product repair feed                  | Rewritten each critical reconcile                                     | Prior-head large-post seed `1140001` passed once on exact `352b0431` in 173 seconds; candidate-scoped repeated replay is active before signatures `14a056a2aa04`/`22f90dde2c0f` can close        |
-| Repair adoption feed                 | Rewritten each critical reconcile                                     | Commits `7853d517`, `7e9dbc66`, and `352b0431` were validated, normalized to the release-candidate destination, published locally, synchronized back to JS2, and selected by the coverage guard  |
+| Coverage-guided novelty              | Current run root updates status every monitor pass                    | Running on immutable root `run-20260711T043332Z` at candidate `a4bb48b9`; five protected canary groups are running after the retained smoke gate was consumed                                       |
+| Plain editor smoke                   | Publication gate                                                      | Candidate-scoped retained first-green is represented in novelty state and the critical blocker was reconciled; fresh same-head fuzzing continues                                                  |
+| Product repair feed                  | Rewritten each critical reconcile                                     | Exact-head workers consume retained actionable evidence while the new run produces same-head records                                                                                             |
+| Repair adoption feed                 | Rewritten each critical reconcile                                     | Aggregate `a4bb48b9` was validated, published to both review and RC branches, synchronized to JS2, receipted, and selected by the coverage guard                                                    |
 
 ## Blocker Age And Failed Mitigations
 

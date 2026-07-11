@@ -4,6 +4,7 @@ set -euo pipefail
 JS2_HOST=${RTC_LOCAL_PUBLISH_JS2_HOST:-danluu-fuzzer-cpu}
 MANIFEST=${RTC_LOCAL_PUBLISH_MANIFEST:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/current-push-manifest.tsv}
 LEDGER=${RTC_LOCAL_PUBLISH_LEDGER:-/media/volume/danluu-fuzz-data/rtc-pr-finalization-20260516/latest-local-publish-manifest.tsv}
+STATUS=${RTC_LOCAL_PUBLISH_STATUS:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518/local-publisher-status.tsv}
 DANLUU_REMOTE=${RTC_LOCAL_PUBLISH_REMOTE:-danluu}
 SOURCE_REPOS_TEXT=${RTC_LOCAL_PUBLISH_SOURCE_REPOS:-/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo /media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo}
 JS2_CANDIDATE_REPO=${RTC_LOCAL_PUBLISH_JS2_CANDIDATE_REPO:-/media/volume/danluu-fuzz-data/rtc-all-merged-fuzz-20260526T195420Z/repo}
@@ -141,6 +142,42 @@ printf 'synchronized JS2 candidate: %s %s -> %s\n' "$ref" "$current" "$commit"
 REMOTE
 }
 
+write_remote_status() {
+	local state=$1 detail=${2:-} status_file manifest_hash manifest_rows rc_rows rc_manifest_head
+	local remote_rc_head js2_rc_head ledger_rows expected_ref
+	status_file=$(mktemp "${TMPDIR:-/tmp}/rtc-local-publisher-status.XXXXXX")
+	expected_ref=$(full_ref "$JS2_CANDIDATE_BRANCH")
+	manifest_hash=$(git hash-object "$LOCAL_MANIFEST" 2>/dev/null || printf missing)
+	manifest_rows=$(awk 'NR > 1 { count++ } END { print count + 0 }' "$LOCAL_MANIFEST" 2>/dev/null || printf 0)
+	rc_rows=$(awk -F '\t' -v branch="$JS2_CANDIDATE_BRANCH" 'NR > 1 && ($3 == branch || $3 == "refs/heads/" branch) { count++ } END { print count + 0 }' "$LOCAL_MANIFEST" 2>/dev/null || printf 0)
+	rc_manifest_head=$(awk -F '\t' -v branch="$JS2_CANDIDATE_BRANCH" 'NR > 1 && ($3 == branch || $3 == "refs/heads/" branch) { head = $2 } END { print head }' "$LOCAL_MANIFEST" 2>/dev/null || true)
+	remote_rc_head=$(remote_head "$expected_ref" || true)
+	js2_rc_head=$(ssh -n -o BatchMode=yes -o ConnectTimeout=15 "$JS2_HOST" \
+		git -C "$JS2_CANDIDATE_REPO" rev-parse --verify --quiet "$expected_ref^{commit}" 2>/dev/null || true)
+	ledger_rows=$(awk 'NR > 1 { count++ } END { print count + 0 }' "$LOCAL_LEDGER" 2>/dev/null || printf 0)
+	detail=$(printf '%s' "$detail" | tr '\t\r\n' '   ')
+	{
+		printf 'updated_at\tstate\tmanifest_sha\tmanifest_rows\trc_rows\trc_manifest_head\tremote_rc_head\tjs2_rc_head\tledger_rows\tdetail\n'
+		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+			"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$state" "$manifest_hash" "$manifest_rows" "$rc_rows" \
+			"$rc_manifest_head" "$remote_rc_head" "$js2_rc_head" "$ledger_rows" "$detail"
+	} > "$status_file"
+	scp -q "$status_file" "$JS2_HOST:$STATUS"
+	rm -f "$status_file"
+}
+
+write_failure_status() {
+	local detail=${1:-publisher cycle failed} status_file
+	status_file=$(mktemp "${TMPDIR:-/tmp}/rtc-local-publisher-failure.XXXXXX")
+	detail=$(printf '%s' "$detail" | tr '\t\r\n' '   ')
+	{
+		printf 'updated_at\tstate\tmanifest_sha\tmanifest_rows\trc_rows\trc_manifest_head\tremote_rc_head\tjs2_rc_head\tledger_rows\tdetail\n'
+		printf '%s\tfailed\t\t0\t0\t\t\t\t0\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$detail"
+	} > "$status_file"
+	scp -q "$status_file" "$JS2_HOST:$STATUS" 2>/dev/null || true
+	rm -f "$status_file"
+}
+
 process_manifest() {
 	local source_branch source_commit dest base_ref files insertions deletions validation_summary reason
 	local dest_ref resolved_commit base_commit current_remote status
@@ -236,6 +273,9 @@ run_once() {
 		scp -q "$LOCAL_LEDGER" "$JS2_HOST:$LEDGER"
 		printf 'updated JS2 publish ledger: %s:%s\n' "$JS2_HOST" "$LEDGER"
 	fi
+	if [ "$DRY_RUN" != "1" ]; then
+		write_remote_status healthy "manifest consumed and candidate synchronization checks completed"
+	fi
 }
 
 MODE=${1:-once}
@@ -251,7 +291,19 @@ case "$MODE" in
 		;;
 	start)
 		while true; do
-			run_once || true
+			# A function invoked directly in an `if` condition disables Bash's
+			# errexit semantics throughout that function. Run the cycle in an
+			# explicit subshell while the parent temporarily accepts its status.
+			set +e
+			(
+				set -e
+				run_once
+			)
+			cycle_rc=$?
+			set -e
+			if [ "$cycle_rc" -ne 0 ]; then
+				write_failure_status "run_once failed; inspect local publisher log"
+			fi
 			sleep "$SLEEP_SECONDS"
 		done
 		;;

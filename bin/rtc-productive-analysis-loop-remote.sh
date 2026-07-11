@@ -502,7 +502,18 @@ run_loop_locked() {
 	trap 'rm -f "$PID_FILE"; exit 0' INT TERM EXIT
 	log "productive-analysis loop started pid=$$"
 	while true; do
-		run_once || log "cycle failed rc=$?"
+		# Preserve strict-mode behavior inside the cycle. A function called on
+		# the left side of `||` silently loses Bash's errexit semantics.
+		set +e
+		(
+			set -e
+			run_once
+		)
+		cycle_rc=$?
+		set -e
+		if [ "$cycle_rc" -ne 0 ]; then
+			log "cycle failed rc=$cycle_rc"
+		fi
 		sleep "$CYCLE_SLEEP_SECONDS"
 	done
 }

@@ -8,8 +8,8 @@ TMUX_WRAP=/media/volume/danluu-fuzz-data/rtc-tmux-core-wrapper/bin
 SRC=${RTC_PR_PROGRESS_SRC:-/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo}
 BASE=${RTC_PR_PROGRESS_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-progress-controller-20260518}
 CRITICAL_BASE=${RTC_PR_PROGRESS_CRITICAL_BASE:-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517}
-CRITICAL_REPAIR_ADOPTIONS=$CRITICAL_BASE/current-repair-branch-adoptions.tsv
-CRITICAL_LAUNCHES=$CRITICAL_BASE/logs/launches.tsv
+CRITICAL_REPAIR_ADOPTIONS=${RTC_PR_PROGRESS_CRITICAL_REPAIR_ADOPTIONS:-$CRITICAL_BASE/current-repair-branch-adoptions.tsv}
+CRITICAL_LAUNCHES=${RTC_PR_PROGRESS_CRITICAL_LAUNCHES:-$CRITICAL_BASE/logs/launches.tsv}
 PR_SPLIT_BASE=${RTC_PR_PROGRESS_PR_SPLIT_BASE:-/media/volume/danluu-fuzz-data/rtc-pr-split-review-20260515}
 DEFERRED_BASE=${RTC_PR_PROGRESS_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516}
 CANONICAL_DEFERRED_BASE=${RTC_PR_PROGRESS_CANONICAL_DEFERRED_BASE:-/media/volume/danluu-fuzz-data/rtc-deferred-work-promotion-20260516}
@@ -878,10 +878,14 @@ refresh_repair_adoption_decisions() {
 			head = substr($2, index($2, "@") + 1)
 			key = branch "\t" head
 			if (key in status) {
-				if (status[key] ~ /^(adopted-to-release-candidate|published-standalone|published)$/) {
+				if (status[key] ~ /^(adopted-to-release-candidate|published)$/) {
 					next
 				}
-				if (status[key] ~ /^invalid/) {
+				if (status[key] == "published-standalone") {
+					$4 = "yes"
+					$5 = "standalone alias is published but release-candidate adoption is incomplete; preserve the validated RC manifest row until the publish ledger acknowledges that destination"
+				}
+				else if (status[key] ~ /^invalid/) {
 					$4 = "no"
 					$5 = "current progress marks this repair branch " status[key] "; " next_action[key]
 				} else if (status[key] == "needs-validation") {
@@ -1430,36 +1434,48 @@ print_repair_adoption_manifest_rows() {
 	local rc_branch=js2/all-merged-rebased-20260701
 	local lane repair_branch adopted_branch source_repo source_head central_head state next_action classification_path report_path
 	local branch head resolved_head base files insertions deletions dest summary reason rc_head validation_manifest
+	local validation_row validation_branch validation_head validation_destination validation_base source_git
+	local rc_files rc_insertions rc_deletions
 	[ -s "$CRITICAL_REPAIR_ADOPTIONS" ] || return 0
 	awk -F '\t' 'NR > 1 && $8 ~ /^(central_present|central_present_alias|imported)$/ { print }' "$CRITICAL_REPAIR_ADOPTIONS" |
 	while IFS=$'\t' read -r _generated_at lane repair_branch adopted_branch source_repo source_head central_head state next_action classification_path report_path; do
 		branch=${adopted_branch:-$repair_branch}
 		head=${central_head:-$source_head}
 		[ -n "$branch" ] && [ -n "$head" ] || continue
-		resolved_head=$(git -C "$SRC" rev-parse --verify --quiet "$branch" 2>/dev/null || true)
+		source_git=$source_repo
+		if [ -z "$source_git" ] || ! git -C "$source_git" rev-parse --git-dir >/dev/null 2>&1; then
+			source_git=$SRC
+		fi
+		resolved_head=$(git -C "$source_git" rev-parse --verify --quiet "$branch^{commit}" 2>/dev/null || true)
+		if [ -z "$resolved_head" ]; then
+			resolved_head=$(git -C "$SRC" rev-parse --verify --quiet "$branch^{commit}" 2>/dev/null || true)
+		fi
 		[ -n "$resolved_head" ] || continue
 		same_commit_prefix "$resolved_head" "$head" || continue
 		validation_manifest=$(validated_repair_adoption_manifest "$branch" "$head" || true)
 		[ -n "$validation_manifest" ] || continue
+		validation_row=$(awk -F '\t' -v branch="$branch" -v head="$head" '
+			NR > 1 && $1 == branch && ($2 == head || index($2, head) == 1 || index(head, $2) == 1) { print; exit }
+		' "$validation_manifest" 2>/dev/null || true)
+		[ -n "$validation_row" ] || continue
+		IFS=$'\t' read -r validation_branch validation_head validation_destination validation_base _validation_rest <<< "$validation_row"
+		same_commit_prefix "$validation_head" "$head" || continue
 		rc_head=$(branch_current_head "$rc_branch")
-		if [ -z "$rc_head" ] && [ -n "$source_repo" ] && git -C "$source_repo" rev-parse --git-dir >/dev/null 2>&1; then
-			rc_head=$(git -C "$source_repo" rev-parse --verify --quiet "$rc_branch" 2>/dev/null || true)
+		if [ -z "$rc_head" ]; then
+			rc_head=$(git -C "$source_git" rev-parse --verify --quiet "$rc_branch^{commit}" 2>/dev/null || true)
 		fi
-		base=$(git -C "$SRC" merge-base "$rc_branch" "$branch" 2>/dev/null || true)
-		if [ -z "$base" ]; then
-			base=$(git -C "$SRC" rev-parse "$head^" 2>/dev/null || true)
+		base=$validation_base
+		if [ -z "$base" ] || ! git -C "$source_git" cat-file -e "$base^{commit}" 2>/dev/null ||
+			! git -C "$source_git" merge-base --is-ancestor "$base" "$head" 2>/dev/null; then
+			base=$(git -C "$source_git" rev-parse "$head^" 2>/dev/null || true)
 		fi
 		if [ -n "$base" ] && same_commit_prefix "$base" "$head"; then
-			if [ -n "$rc_head" ] && same_commit_prefix "$rc_head" "$head"; then
-				base=$(git -C "$SRC" rev-parse "$head^" 2>/dev/null || true)
-			else
-				continue
-			fi
+			continue
 		fi
 		[ -n "$base" ] || continue
-		files=$(git -C "$SRC" diff --numstat "$base..$branch" 2>/dev/null | wc -l | tr -d ' ' || printf '0')
-		insertions=$(git -C "$SRC" diff --numstat "$base..$branch" 2>/dev/null | awk '{ s += $1 } END { print s + 0 }' || printf '0')
-		deletions=$(git -C "$SRC" diff --numstat "$base..$branch" 2>/dev/null | awk '{ s += $2 } END { print s + 0 }' || printf '0')
+		files=$(git -C "$source_git" diff --numstat "$base..$head" 2>/dev/null | wc -l | tr -d ' ' || printf '0')
+		insertions=$(git -C "$source_git" diff --numstat "$base..$head" 2>/dev/null | awk '{ s += $1 } END { print s + 0 }' || printf '0')
+		deletions=$(git -C "$source_git" diff --numstat "$base..$head" 2>/dev/null | awk '{ s += $2 } END { print s + 0 }' || printf '0')
 		[ "$files" -gt 0 ] || continue
 		[ "$files" -le 20 ] || continue
 		[ $(( insertions + deletions )) -le 3000 ] || continue
@@ -1469,17 +1485,68 @@ print_repair_adoption_manifest_rows() {
 		printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
 			"$branch" "$head" "$dest" "$base" "$files" "$insertions" "$deletions" "$summary" "$reason"
 
-		if [ -n "$rc_head" ] && same_commit_prefix "$rc_head" "$base"; then
+		# The validated adoption manifest is authoritative about RC intent. Its
+		# base describes the narrow repair tip and need not equal the current RC
+		# when the handoff contains an already-validated aggregate stack.
+		if [ "$validation_destination" = "$rc_branch" ] && [ -n "$rc_head" ] &&
+			! git -C "$source_git" merge-base --is-ancestor "$head" "$rc_head" 2>/dev/null &&
+			git -C "$source_git" merge-base --is-ancestor "$rc_head" "$head" 2>/dev/null; then
+			rc_files=$(git -C "$source_git" diff --numstat "$rc_head..$head" 2>/dev/null | wc -l | tr -d ' ' || printf '0')
+			rc_insertions=$(git -C "$source_git" diff --numstat "$rc_head..$head" 2>/dev/null | awk '{ s += $1 } END { print s + 0 }' || printf '0')
+			rc_deletions=$(git -C "$source_git" diff --numstat "$rc_head..$head" 2>/dev/null | awk '{ s += $2 } END { print s + 0 }' || printf '0')
+			[ "$rc_files" -gt 0 ] || continue
+			[ "$rc_files" -le "${RTC_PR_PROGRESS_REPAIR_ADOPTION_MAX_RC_FILES:-60}" ] || continue
+			[ $(( rc_insertions + rc_deletions )) -le "${RTC_PR_PROGRESS_REPAIR_ADOPTION_MAX_RC_CHANGES:-10000}" ] || continue
 			printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-				"$branch" "$head" "$rc_branch" "$base" "$files" "$insertions" "$deletions" \
-				"fast-forward release-candidate branch with validated repair adoption" "$reason"
-		elif [ -n "$rc_head" ] && same_commit_prefix "$rc_head" "$head"; then
-			printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-				"$branch" "$head" "$rc_branch" "$base" "$files" "$insertions" "$deletions" \
-				"release-candidate branch already contains validated repair adoption" "$reason"
+				"$branch" "$head" "$rc_branch" "$rc_head" "$rc_files" "$rc_insertions" "$rc_deletions" \
+				"fast-forward release-candidate branch with explicitly validated repair adoption" "$reason"
 		fi
 	done |
 		awk -F '\t' '!seen[$1 "\t" $2 "\t" $3]++'
+}
+
+assert_release_candidate_adoption_manifest_rows() {
+	local manifest=$1 rc_branch=js2/all-merged-rebased-20260701
+	local repair_branch adopted_branch source_repo source_head central_head branch head
+	local validation_manifest validation_row intended rc_head source_git candidate_repo
+	[ -s "$CRITICAL_REPAIR_ADOPTIONS" ] || return 0
+	while IFS=$'\t' read -r _generated _lane repair_branch adopted_branch source_repo source_head central_head _state _next _class _report; do
+		branch=${adopted_branch:-$repair_branch}
+		head=${central_head:-$source_head}
+		[ -n "$branch" ] && [ -n "$head" ] || continue
+		validation_manifest=$(validated_repair_adoption_manifest "$branch" "$head" || true)
+		[ -s "$validation_manifest" ] || continue
+		validation_row=$(awk -F '\t' -v branch="$branch" -v head="$head" 'NR > 1 && $1 == branch && ($2 == head || index($2, head) == 1 || index(head, $2) == 1) { print; exit }' "$validation_manifest" 2>/dev/null || true)
+		[ -n "$validation_row" ] || continue
+		intended=$(printf '%s\n' "$validation_row" | cut -f3)
+		[ "$intended" = "$rc_branch" ] || continue
+		rc_head=$(branch_current_head "$rc_branch")
+		[ -n "$rc_head" ] || {
+			log "cannot assert validated release-candidate adoption because destination is missing branch=$rc_branch source=$branch commit=$head"
+			return 1
+		}
+		source_git=
+		for candidate_repo in "$source_repo" "$SRC"; do
+			[ -n "$candidate_repo" ] || continue
+			git -C "$candidate_repo" cat-file -e "$head^{commit}" 2>/dev/null || continue
+			git -C "$candidate_repo" cat-file -e "$rc_head^{commit}" 2>/dev/null || continue
+			source_git=$candidate_repo
+			break
+		done
+		[ -n "$source_git" ] || {
+			log "cannot assert validated release-candidate adoption ancestry source=$branch commit=$head candidate=$rc_head"
+			return 1
+		}
+		git -C "$source_git" merge-base --is-ancestor "$head" "$rc_head" 2>/dev/null && continue
+		git -C "$source_git" merge-base --is-ancestor "$rc_head" "$head" 2>/dev/null || continue
+		awk -F '\t' -v branch="$branch" -v head="$head" -v dest="$rc_branch" '
+			NR > 1 && $1 == branch && $3 == dest && ($2 == head || index($2, head) == 1 || index(head, $2) == 1) { found = 1 }
+			END { exit found ? 0 : 1 }
+		' "$manifest" 2>/dev/null || {
+			log "validated release-candidate adoption row missing source=$branch commit=$head destination=$rc_branch validation_manifest=$validation_manifest output=$manifest"
+			return 1
+		}
+	done < <(awk -F '\t' 'NR > 1 && $8 ~ /^(central_present|central_present_alias|imported)$/ { print }' "$CRITICAL_REPAIR_ADOPTIONS" 2>/dev/null)
 }
 
 append_requested_pr07c_repaired_manifest_row() {
@@ -1760,6 +1827,10 @@ write_controller_push_manifest() {
 		NF >= 9 && !seen[$1 "\t" $2 "\t" $3]++ { print }
 	' "$tmp" > "$tmp.dedup"
 	mv "$tmp.dedup" "$tmp"
+	if ! assert_release_candidate_adoption_manifest_rows "$tmp"; then
+		rm -f "$tmp"
+		return 1
+	fi
 	mv "$tmp" "$PUSH_MANIFEST"
 }
 
@@ -2460,7 +2531,18 @@ run_loop() {
 	trap 'rm -f "$PID_FILE"' EXIT
 	log "PR progress controller started pid=$$"
 	while true; do
-		run_once || log "controller run_once failed rc=$?"
+		# Preserve strict-mode behavior inside the cycle. A function called on
+		# the left side of `||` silently loses Bash's errexit semantics.
+		set +e
+		(
+			set -e
+			run_once
+		)
+		cycle_rc=$?
+		set -e
+		if [ "$cycle_rc" -ne 0 ]; then
+			log "controller run_once failed rc=$cycle_rc"
+		fi
 		sleep "$CYCLE_SLEEP_SECONDS"
 	done
 }

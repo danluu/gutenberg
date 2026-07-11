@@ -79,6 +79,8 @@ ENABLE_ASSERT_REVIEW=${RTC_JETSTREAM_ENABLE_ASSERT_REVIEW:-0}
 ENABLE_PR_PROGRESS_PERSONAS=${RTC_JETSTREAM_ENABLE_PR_PROGRESS_PERSONAS:-0}
 ENABLE_GUARD_CODEX=${RTC_JETSTREAM_ENABLE_GUARD_CODEX:-0}
 MAX_CODEX_WORKERS=${RTC_JETSTREAM_MAX_CODEX_WORKERS:-8}
+OPTIONAL_ANALYSIS_CAP_HOLD_SECONDS=${RTC_GUARD_OPTIONAL_ANALYSIS_CAP_HOLD_SECONDS:-900}
+OPTIONAL_ANALYSIS_CAP_HOLD_FILE=$BASE/optional-analysis-cap-hold.tsv
 CODEX_EXPECTED_MODEL=${RTC_JETSTREAM_CODEX_EXPECTED_MODEL:-gpt-5.6-sol}
 CODEX_MINIMUM_VERSION=${RTC_JETSTREAM_CODEX_MINIMUM_VERSION:-0.144.1}
 CODEX_MODEL_POLICY_REPORT=$BASE/current-codex-model-policy.tsv
@@ -224,7 +226,16 @@ audit_codex_model_policy() {
 }
 
 optional_analysis_admission_allows() {
-	local workers limit=${RTC_GUARD_OPTIONAL_ANALYSIS_START_MAX_WORKERS:-$(( MAX_CODEX_WORKERS - 4 ))}
+	local workers now hold_until limit=${RTC_GUARD_OPTIONAL_ANALYSIS_START_MAX_WORKERS:-$(( MAX_CODEX_WORKERS - 4 ))}
+	now=$(date -u +%s)
+	hold_until=$(awk -F '\t' 'NR == 2 { print $1; exit }' "$OPTIONAL_ANALYSIS_CAP_HOLD_FILE" 2>/dev/null || true)
+	if [[ "$hold_until" =~ ^[0-9]+$ ]] && [ "$hold_until" -gt "$now" ]; then
+		log "optional analysis admission deferred by cap hold remaining=$(( hold_until - now ))s hold=$OPTIONAL_ANALYSIS_CAP_HOLD_FILE"
+		return 1
+	fi
+	if [ -s "$OPTIONAL_ANALYSIS_CAP_HOLD_FILE" ]; then
+		rm -f "$OPTIONAL_ANALYSIS_CAP_HOLD_FILE"
+	fi
 	workers=$(active_codex_worker_count)
 	[ "$limit" -ge 0 ] || limit=0
 	if [ "$workers" -ge "$limit" ]; then
@@ -253,15 +264,28 @@ tmux_session_owning_pid() {
 }
 
 trim_optional_live_analysis_codex() {
-	local workers pid cwd age session path
+	local workers pid cwd age session path now hold_until hold_tmp
 	workers=$(pgrep -x codex 2>/dev/null | awk 'END { print NR + 0 }')
 	[ "$workers" -gt "$MAX_CODEX_WORKERS" ] || return 0
+	now=$(date -u +%s)
+	hold_until=$(( now + OPTIONAL_ANALYSIS_CAP_HOLD_SECONDS ))
+	hold_tmp=$OPTIONAL_ANALYSIS_CAP_HOLD_FILE.$$.tmp
+	{
+		printf 'hold_until_epoch\tcreated_at\tworkers\tcap\treason\n'
+		printf '%s\t%s\t%s\t%s\tglobal-worker-cap-exceeded\n' \
+			"$hold_until" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$workers" "$MAX_CODEX_WORKERS"
+	} > "$hold_tmp"
+	mv "$hold_tmp" "$OPTIONAL_ANALYSIS_CAP_HOLD_FILE"
+	log "holding optional analysis after cap trim workers=$workers cap=$MAX_CODEX_WORKERS seconds=$OPTIONAL_ANALYSIS_CAP_HOLD_SECONDS hold=$OPTIONAL_ANALYSIS_CAP_HOLD_FILE"
 	for session in rtc-focused-shards-analysis rtc-fuzz-strict-expansion-analysis rtc-gap-booster-analysis; do
 		if has_session "$session"; then
 			log "pausing optional analysis launcher over global cap session=$session workers=$workers cap=$MAX_CODEX_WORKERS"
 			tmux kill-session -t "$session" 2>/dev/null || true
 		fi
 	done
+	# Per-generation analysis sessions are autonomous loops. A transient failure
+	# to map pane cwd must not leave them respawning after their launcher is gone.
+	stop_sessions_matching '^rtc-(focused|strict|gap)-analysis-|^rtc-analysis-(live|deep)-'
 	while IFS=$'\t' read -r session path; do
 		case "$path" in
 			"$STRICT_EXPANSION_BASE"/repos-*/*|"$FOCUSED_SHARDS_BASE"/repos-*/*|"$GAP_BOOSTER_BASE"/repos-*/*)
