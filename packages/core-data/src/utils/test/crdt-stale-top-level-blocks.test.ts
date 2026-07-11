@@ -160,6 +160,35 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 	} );
 
+	it( 'appends after a semantic tail when earlier blocks also drifted', () => {
+		const baseBlocks = [
+			paragraph( 'intro', 'Alpha' ),
+			paragraph( 'stale-tail', 'Beta' ),
+		];
+		const currentBlocks = [
+			paragraph( 'reconciled-intro', 'Alpha canonicalized' ),
+			paragraph( 'reconciled-tail', 'Beta' ),
+		];
+		const blocksWithLocalAppend = [
+			...baseBlocks,
+			paragraph( 'checkpoint-paragraph', 'Checkpoint paragraph' ),
+		];
+
+		mergeCrdtBlocks( yblocks, currentBlocks, null );
+		mergeCrdtBlocks( yblocks, blocksWithLocalAppend, null, baseBlocks );
+
+		expect( contentsOf( yblocks ) ).toEqual( [
+			'Alpha canonicalized',
+			'Beta',
+			'Checkpoint paragraph',
+		] );
+		expect( clientIdsOf( yblocks ) ).toEqual( [
+			'reconciled-intro',
+			'reconciled-tail',
+			'checkpoint-paragraph',
+		] );
+	} );
+
 	it( 'inserts a missing local checkpoint paragraph before an already-present suffix block', () => {
 		const baseBlocks = [
 			paragraph( 'intro', 'Alpha' ),
@@ -218,7 +247,7 @@ describe( 'stale top-level block snapshots', () => {
 		] );
 	} );
 
-	it( 'does not append a stale suffix when the base tail anchor is absent', () => {
+	it( 'keeps a fresh local suffix when the base tail anchor is absent', () => {
 		const baseBlocks = [
 			paragraph( 'base-start', 'Alpha' ),
 			paragraph( 'base-tail', 'Beta' ),
@@ -239,11 +268,13 @@ describe( 'stale top-level block snapshots', () => {
 		expect( contentsOf( yblocks ) ).toEqual( [
 			'Alpha',
 			'Beta',
+			'Local suffix',
 			'Remote tail',
 		] );
 		expect( clientIdsOf( yblocks ) ).toEqual( [
 			'base-start',
 			'replacement',
+			'local-appended',
 			'remote-tail',
 		] );
 	} );

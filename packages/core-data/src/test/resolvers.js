@@ -326,6 +326,10 @@ describe( 'getEntityRecord', () => {
 	it( 'persistCRDTDoc saves post CRDT docs through the sync endpoint', async () => {
 		const SERIALIZED_DOC = 'serialized-crdt-doc';
 		const POST_RECORD = { id: 1, title: 'Test Post', meta: {} };
+		const REFETCHED_RECORD = {
+			...POST_RECORD,
+			meta: { _crdt_document: SERIALIZED_DOC },
+		};
 		const EDITED_RECORD = {
 			id: 1,
 			title: 'Edited Post',
@@ -359,7 +363,8 @@ describe( 'getEntityRecord', () => {
 
 		triggerFetch
 			.mockImplementationOnce( () => POST_RESPONSE )
-			.mockImplementationOnce( () => [] );
+			.mockImplementationOnce( () => [] )
+			.mockImplementationOnce( () => REFETCHED_RECORD );
 
 		await getEntityRecord(
 			'postType',
@@ -386,7 +391,7 @@ describe( 'getEntityRecord', () => {
 			'postType/post',
 			1
 		);
-		expect( triggerFetch ).toHaveBeenLastCalledWith( {
+		expect( triggerFetch ).toHaveBeenNthCalledWith( 2, {
 			path: '/wp-sync/v1/save',
 			method: 'POST',
 			data: {
@@ -394,6 +399,16 @@ describe( 'getEntityRecord', () => {
 				doc: SERIALIZED_DOC,
 			},
 		} );
+		expect( triggerFetch ).toHaveBeenNthCalledWith( 3, {
+			path: '/wp/v2/posts/1?context=edit',
+			parse: true,
+		} );
+		expect( dispatch.receiveEntityRecords ).toHaveBeenLastCalledWith(
+			'postType',
+			'post',
+			REFETCHED_RECORD,
+			undefined
+		);
 		expect( syncManager.update ).not.toHaveBeenCalled();
 		expect( dispatch.saveEntityRecord ).not.toHaveBeenCalled();
 	} );
@@ -401,6 +416,10 @@ describe( 'getEntityRecord', () => {
 	it( 'persistCRDTDoc persists post CRDT docs even when there are no unsaved edits', async () => {
 		const SERIALIZED_DOC = 'serialized-crdt-doc';
 		const POST_RECORD = { id: 1, title: 'Test Post', meta: {} };
+		const REFETCHED_RECORD = {
+			...POST_RECORD,
+			meta: { _crdt_document: SERIALIZED_DOC },
+		};
 		const POST_RESPONSE = {
 			json: () => Promise.resolve( POST_RECORD ),
 		};
@@ -429,7 +448,8 @@ describe( 'getEntityRecord', () => {
 
 		triggerFetch
 			.mockImplementationOnce( () => POST_RESPONSE )
-			.mockImplementationOnce( () => [] );
+			.mockImplementationOnce( () => [] )
+			.mockImplementationOnce( () => REFETCHED_RECORD );
 
 		await getEntityRecord(
 			'postType',
@@ -446,7 +466,7 @@ describe( 'getEntityRecord', () => {
 		// Call persistCRDTDoc and wait for the internal promise chain.
 		await handlers.persistCRDTDoc();
 
-		expect( triggerFetch ).toHaveBeenLastCalledWith( {
+		expect( triggerFetch ).toHaveBeenNthCalledWith( 2, {
 			path: '/wp-sync/v1/save',
 			method: 'POST',
 			data: {
@@ -454,6 +474,16 @@ describe( 'getEntityRecord', () => {
 				doc: SERIALIZED_DOC,
 			},
 		} );
+		expect( triggerFetch ).toHaveBeenNthCalledWith( 3, {
+			path: '/wp/v2/posts/1?context=edit',
+			parse: true,
+		} );
+		expect( dispatch.receiveEntityRecords ).toHaveBeenLastCalledWith(
+			'postType',
+			'post',
+			REFETCHED_RECORD,
+			undefined
+		);
 		expect( syncManager.update ).not.toHaveBeenCalled();
 		expect( dispatch.saveEntityRecord ).not.toHaveBeenCalled();
 	} );

@@ -204,7 +204,7 @@ describe( 'stale query-array block snapshots', () => {
 		).toBe( true );
 	} );
 
-	it( 'preserves seed 1240001 local table marker through the table, paragraph, table sequence', () => {
+	it( 'supersedes the prior local cell while preserving remote rows through repeated stale table writes', () => {
 		const docLocal = new Y.Doc();
 		const docRemote = new Y.Doc();
 		docs.push( docLocal, docRemote );
@@ -291,6 +291,11 @@ describe( 'stale query-array block snapshots', () => {
 		syncDocs( docLocal, docRemote );
 
 		const body = getTableBody( yblocksLocal );
+		const cellContents = body.flatMap( ( row ) =>
+			row.cells.map( ( cell ) => cell.content )
+		);
+		expect( cellContents ).not.toContain( step0Local );
+		expect( cellContents ).toContain( step0Remote );
 		expect(
 			body.some( ( row ) =>
 				row.cells.some( ( cell ) => cell.content === step2Local )
@@ -363,6 +368,38 @@ describe( 'stale query-array block snapshots', () => {
 		);
 
 		expect( getTableBody( yblocksA ) ).toHaveLength( 2 );
+	} );
+
+	it( 'preserves an ambiguous remote row when a no-cursor snapshot also edits a surviving cell', () => {
+		const { docA, docB, yblocksA, yblocksB } = createSyncedDocs( [
+			[ 'A1' ],
+			[ 'A2' ],
+		] );
+
+		const explicitBaseWithRemoteRow = [
+			tableBlock( [ [ 'A1' ], [ 'remote-A-new' ], [ 'A2' ] ] ),
+		];
+
+		mergeCrdtBlocks(
+			yblocksB,
+			[ tableBlock( [ [ 'A1' ], [ 'remote-A-new' ], [ 'A2' ] ] ) ],
+			null
+		);
+		syncDocs( docB, docA );
+		expect( getTableBody( yblocksA ) ).toHaveLength( 3 );
+
+		mergeCrdtBlocks(
+			yblocksA,
+			[ tableBlock( [ [ 'local-A1' ], [ 'A2' ] ] ) ],
+			null,
+			explicitBaseWithRemoteRow
+		);
+
+		const body = getTableBody( yblocksA );
+		expect( body ).toHaveLength( 3 );
+		expect( body[ 0 ].cells[ 0 ].content ).toBe( 'local-A1' );
+		expect( body[ 1 ].cells[ 0 ].content ).toBe( 'remote-A-new' );
+		expect( body[ 2 ].cells[ 0 ].content ).toBe( 'A2' );
 	} );
 
 	it( 'does not resurrect a remotely deleted row from a stale local snapshot', () => {

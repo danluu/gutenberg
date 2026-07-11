@@ -553,19 +553,18 @@ function checkConnectionLimit(
 		return false;
 	}
 
-	// A replacement client initially publishes an empty awareness state. The
-	// server can still include the previous client, with its stable collaborator
-	// ID, until the reload disconnect is processed. Counting that response would
-	// treat the same editor as two people. Wait until the current Yjs client has a
-	// stable identity so countAwarenessEditors() can deduplicate the pair.
-	if (
-		undefined ===
-		getCollaboratorId( awareness[ roomState.clientId.toString() ] )
-	) {
+	// A replacement provider can make its first request before awareness has
+	// initialized. Defer the one-time check until its stable identity is present,
+	// so a stale pre-reload client can be deduplicated without permanently
+	// allowing a genuine additional editor.
+	const currentCollaboratorId = getCollaboratorId(
+		awareness[ String( roomState.clientId ) ]
+	);
+	if ( undefined === currentCollaboratorId ) {
 		return false;
 	}
 
-	// Limits are only enforced on the initial connection.
+	// Limits are only enforced on the first response with a stable identity.
 	hasCheckedConnectionLimit = true;
 
 	const maxClientsPerRoom = applyFilters(
@@ -1194,10 +1193,19 @@ function registerRoom( {
 	const replacedState = roomStates.get( room );
 	if ( replacedState ) {
 		// A new provider can be created before the previous async load has
-		// finished tearing down. Replace the stale registration immediately so
-		// the new document can bootstrap instead of leaving the room unowned.
+		// finished tearing down. Preserve the predecessor document before
+		// detaching its listener and clearing its queue: it may contain a local
+		// update that has not reached the server yet. Applying the full Yjs state
+		// is idempotent and also covers updates already taken by an in-flight
+		// request, whose response belongs to the predecessor registration.
+		const predecessorUpdate = replacedState.createCompactionUpdate();
 		replacedState.unregister();
 		roomStates.delete( room );
+		Y.applyUpdateV2(
+			doc,
+			base64ToUint8Array( predecessorUpdate.data ),
+			POLLING_MANAGER_ORIGIN
+		);
 	}
 
 	const currentPrimaryState = Array.from( roomStates.values() ).find(

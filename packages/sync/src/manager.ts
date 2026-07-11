@@ -14,6 +14,7 @@ import {
 	CRDT_STATE_MAP_SAVED_AT_KEY as SAVED_AT_KEY,
 	CRDT_STATE_MAP_SAVED_BY_KEY as SAVED_BY_KEY,
 	LOCAL_SYNC_MANAGER_ORIGIN,
+	LOCAL_UNDO_IGNORED_ORIGIN,
 } from './config';
 import { logPerformanceTiming, passThru } from './performance';
 import { getProviderCreators } from './providers';
@@ -429,10 +430,16 @@ export function createSyncManager( debug = false ): SyncManager {
 		const markProviderSyncedRemoteState = (
 			transaction: Y.Transaction
 		): void => {
-			if ( transaction.local ) {
+			if (
+				transaction.local ||
+				transaction.changedParentTypes.size === 0
+			) {
 				return;
 			}
 
+			// Providers can apply an empty sync update while bootstrapping a room.
+			// That advances no shared type and must not suppress initialization from
+			// the persisted entity record.
 			ydoc.meta?.set(
 				CRDT_DOC_META_HAS_PROVIDER_SYNCED_REMOTE_STATE,
 				true
@@ -597,7 +604,11 @@ export function createSyncManager( debug = false ): SyncManager {
 			// Get and apply the persisted CRDT document, if it exists. Observers are
 			// attached after this load-time CRDT initialization so local hydration
 			// does not trigger a redundant CRDT-to-store update.
-			internal.applyPersistedCrdtDoc( objectType, objectId, record );
+			await internal.applyPersistedCrdtDoc(
+				objectType,
+				objectId,
+				record
+			);
 
 			// Attach observers.
 			recordMap.observeDeep( onRecordUpdate );
@@ -800,12 +811,12 @@ export function createSyncManager( debug = false ): SyncManager {
 	 * @param {ObjectData} record     Entity record representing this object type.
 	 * @param {Object}     options    Options for applying the persisted CRDT document.
 	 */
-	function _applyPersistedCrdtDoc(
+	async function _applyPersistedCrdtDoc(
 		objectType: ObjectType,
 		objectId: ObjectID,
 		record: ObjectData,
 		options: ApplyPersistedCrdtDocOptions = {}
-	): void {
+	): Promise< void > {
 		const { shouldPersist = true } = options;
 		const entityId = getEntityId( objectType, objectId );
 		const entityState = entityStates.get( entityId );
@@ -850,10 +861,10 @@ export function createSyncManager( debug = false ): SyncManager {
 			// calling `syncManager.createPersistedCRDTDoc`.
 			targetDoc.transact( () => {
 				applyChangesToCRDTDoc( targetDoc, record );
-				if ( shouldPersist ) {
-					handlers.persistCRDTDoc();
-				}
 			}, LOCAL_SYNC_MANAGER_ORIGIN );
+			if ( shouldPersist ) {
+				await handlers.persistCRDTDoc();
+			}
 			return;
 		}
 
@@ -917,10 +928,10 @@ export function createSyncManager( debug = false ): SyncManager {
 		// `syncManager.createPersistedCRDTDoc`.
 		targetDoc.transact( () => {
 			applyChangesToCRDTDoc( targetDoc, changes );
-			if ( shouldPersist ) {
-				handlers.persistCRDTDoc();
-			}
 		}, LOCAL_SYNC_MANAGER_ORIGIN );
+		if ( shouldPersist ) {
+			await handlers.persistCRDTDoc();
+		}
 	}
 
 	/**
@@ -1213,7 +1224,7 @@ export function createSyncManager( debug = false ): SyncManager {
 			? Y.encodeStateVector( entityState.ydoc )
 			: null;
 
-		internal.applyPersistedCrdtDoc( objectType, objectId, record, {
+		await internal.applyPersistedCrdtDoc( objectType, objectId, record, {
 			shouldPersist: false,
 		} );
 		await internal.updateEntityRecord( objectType, objectId );
@@ -1290,12 +1301,15 @@ export function createSyncManager( debug = false ): SyncManager {
 				) {
 					changes.content = record.content;
 				}
+				// These invalidations came from a successful entity save and must
+				// reach already-open peers. The sync-manager origin is reserved for
+				// local bootstrap work and is ignored by the HTTP polling provider.
 				entityState.ydoc.transact( () => {
 					entityState.syncConfig.applyChangesToCRDTDoc(
 						entityState.ydoc,
 						changes
 					);
-				}, LOCAL_SYNC_MANAGER_ORIGIN );
+				}, LOCAL_UNDO_IGNORED_ORIGIN );
 			} else {
 				const update = Y.encodeStateAsUpdateV2( tempDoc );
 				Y.applyUpdateV2( entityState.ydoc, update );

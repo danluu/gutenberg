@@ -158,6 +158,7 @@ describe( 'polling-manager', () => {
 	>;
 	let mockApplyFilters: jest.Mock;
 	let mockEncoding: jest.Mocked< typeof import('lib0/encoding') >;
+	let mockSyncProtocol: jest.Mocked< typeof import('y-protocols/sync') >;
 	let mockYjs: jest.Mocked< typeof import('yjs') >;
 
 	beforeEach( () => {
@@ -172,6 +173,7 @@ describe( 'polling-manager', () => {
 				require( '../utils' ).postSyncUpdateNonBlocking;
 			mockApplyFilters = require( '@wordpress/hooks' ).applyFilters;
 			mockEncoding = require( 'lib0/encoding' );
+			mockSyncProtocol = require( 'y-protocols/sync' );
 			mockYjs = require( 'yjs' );
 		} );
 	} );
@@ -603,25 +605,41 @@ describe( 'polling-manager', () => {
 			);
 		} );
 
-		it( 'waits for a replacement client identity before checking the limit', async () => {
-			const onStatusChange = jest.fn();
-			const staleReloadAwareness = {
+		it( 'does not count the current reload client before awareness initializes', async () => {
+			const initialAwareness = {
 				1: { collaboratorInfo: { id: 100 } },
 				2: { collaboratorInfo: { id: 200 } },
 				3: { collaboratorInfo: { id: 300 } },
 				4: {},
 			};
+			const initializedAwareness = {
+				...initialAwareness,
+				4: { collaboratorInfo: { id: 100 } },
+			};
 
-			mockPostSyncUpdate.mockResolvedValueOnce( {
-				rooms: [
-					{
-						room: 'test-room',
-						end_cursor: 1,
-						awareness: staleReloadAwareness,
-						updates: [],
-					},
-				],
-			} );
+			mockPostSyncUpdate
+				.mockResolvedValueOnce( {
+					rooms: [
+						{
+							room: 'test-room',
+							end_cursor: 1,
+							awareness: initialAwareness,
+							updates: [],
+						},
+					],
+				} )
+				.mockResolvedValue( {
+					rooms: [
+						{
+							room: 'test-room',
+							end_cursor: 2,
+							awareness: initializedAwareness,
+							updates: [],
+						},
+					],
+				} );
+
+			const onStatusChange = jest.fn();
 
 			pollingManager.registerRoom( {
 				room: 'test-room',
@@ -642,20 +660,6 @@ describe( 'polling-manager', () => {
 				} )
 			);
 
-			mockPostSyncUpdate.mockResolvedValue( {
-				rooms: [
-					{
-						room: 'test-room',
-						end_cursor: 2,
-						awareness: {
-							...staleReloadAwareness,
-							4: { collaboratorInfo: { id: 100 } },
-						},
-						updates: [],
-					},
-				],
-			} );
-
 			await jest.advanceTimersByTimeAsync( 1000 );
 
 			expect( onStatusChange ).not.toHaveBeenCalledWith(
@@ -665,6 +669,71 @@ describe( 'polling-manager', () => {
 					} ),
 				} )
 			);
+		} );
+
+		it( 'rejects a genuine fourth editor after its awareness initializes', async () => {
+			const initialAwareness = {
+				1: { collaboratorInfo: { id: 100 } },
+				2: { collaboratorInfo: { id: 200 } },
+				3: { collaboratorInfo: { id: 300 } },
+				4: {},
+			};
+			const initializedAwareness = {
+				...initialAwareness,
+				4: { collaboratorInfo: { id: 400 } },
+			};
+
+			mockPostSyncUpdate
+				.mockResolvedValueOnce( {
+					rooms: [
+						{
+							room: 'test-room',
+							end_cursor: 1,
+							awareness: initialAwareness,
+							updates: [],
+						},
+					],
+				} )
+				.mockResolvedValue( {
+					rooms: [
+						{
+							room: 'test-room',
+							end_cursor: 2,
+							awareness: initializedAwareness,
+							updates: [],
+						},
+					],
+				} );
+
+			const onStatusChange = jest.fn();
+
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: createMockDoc( 4 ),
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange,
+				onSync: jest.fn(),
+			} );
+
+			await jest.advanceTimersByTimeAsync( 0 );
+
+			expect( onStatusChange ).not.toHaveBeenCalledWith(
+				expect.objectContaining( {
+					error: expect.objectContaining( {
+						code: 'connection-limit-exceeded',
+					} ),
+				} )
+			);
+
+			await jest.advanceTimersByTimeAsync( 1000 );
+
+			expect( onStatusChange ).toHaveBeenCalledWith( {
+				status: 'disconnected',
+				error: expect.objectContaining( {
+					code: 'connection-limit-exceeded',
+				} ),
+			} );
 		} );
 
 		it( 'checks an object room instead of an earlier auxiliary room', async () => {
@@ -1547,6 +1616,61 @@ describe( 'polling-manager', () => {
 	} );
 
 	describe( 'error recovery', () => {
+		it( 'merges predecessor state before bootstrapping its replacement', () => {
+			mockPostSyncUpdate.mockResolvedValue( syncResponse );
+			mockYjs.encodeStateAsUpdateV2.mockReturnValueOnce(
+				new Uint8Array( [ 7, 8, 9 ] )
+			);
+
+			const firstDoc = createMockDoc( 1 );
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: firstDoc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			// Queue a local update while the first request is still in flight.
+			getOnDocUpdate( firstDoc )(
+				new Uint8Array( [ 1, 2, 3 ] ),
+				'local-editor'
+			);
+
+			const secondDoc = createMockDoc( 2 );
+			pollingManager.registerRoom( {
+				room: 'test-room',
+				doc: secondDoc,
+				awareness: createMockAwareness(),
+				log: jest.fn(),
+				onStatusChange: jest.fn(),
+				onSync: jest.fn(),
+			} );
+
+			expect( mockYjs.encodeStateAsUpdateV2.mock.calls[ 0 ]?.[ 0 ] ).toBe(
+				firstDoc
+			);
+			expect( mockYjs.applyUpdateV2.mock.calls[ 0 ]?.[ 0 ] ).toBe(
+				secondDoc
+			);
+			expect( mockYjs.applyUpdateV2.mock.calls[ 0 ]?.[ 1 ] ).toEqual(
+				new Uint8Array( [ 7, 8, 9 ] )
+			);
+			expect( mockYjs.applyUpdateV2.mock.calls[ 0 ]?.[ 2 ] ).toBe(
+				'polling-manager'
+			);
+
+			const applyOrder =
+				mockYjs.applyUpdateV2.mock.invocationCallOrder[ 0 ];
+			const successorBootstrapOrder =
+				mockSyncProtocol.writeSyncStep1.mock.invocationCallOrder[
+					mockSyncProtocol.writeSyncStep1.mock.invocationCallOrder
+						.length - 1
+				];
+			expect( applyOrder ).toBeLessThan( successorBootstrapOrder );
+		} );
+
 		it( 'keeps a replacement room live when the previous provider cleans up', async () => {
 			const firstRequest = createDeferred< SyncResponse >();
 			mockPostSyncUpdate

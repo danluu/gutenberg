@@ -127,7 +127,7 @@ describe( 'Post actions', () => {
 			const createSuccessNotice = jest.fn();
 			const dispatch = {
 				editPost: jest.fn(),
-				savePost: jest.fn(),
+				savePost: jest.fn().mockResolvedValue( true ),
 				setCurrentRevisionId: jest.fn(),
 			};
 			const registry = {
@@ -152,6 +152,7 @@ describe( 'Post actions', () => {
 			const select = {
 				getCurrentPostId: () => postId,
 				getCurrentPostType: () => 'post',
+				isSavingPost: () => false,
 			};
 
 			await restoreRevision( revision.id )( {
@@ -173,6 +174,100 @@ describe( 'Post actions', () => {
 				__unstableIsRevisionRestore: true,
 				__unstableRevisionRestoreEdits: edits,
 			} );
+			expect( createSuccessNotice ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		it( 'waits for an in-flight save before applying and saving a revision', async () => {
+			const revision = {
+				id: 77,
+				date: '2026-05-22T20:15:00',
+				content: {
+					raw: '<!-- wp:paragraph --><p>Old</p><!-- /wp:paragraph -->',
+				},
+			};
+			let isSavingPost = true;
+			let onRegistryChange;
+			const unsubscribe = jest.fn();
+			const dispatch = {
+				editPost: jest.fn(),
+				savePost: jest.fn().mockResolvedValue( true ),
+				setCurrentRevisionId: jest.fn(),
+			};
+			const registry = {
+				select: () => ( {
+					getEntityConfig: () => ( { revisionKey: 'id' } ),
+				} ),
+				resolveSelect: () => ( {
+					getRevision: jest.fn().mockResolvedValue( revision ),
+				} ),
+				dispatch: () => ( { createSuccessNotice: jest.fn() } ),
+				subscribe: jest.fn( ( callback ) => {
+					onRegistryChange = callback;
+					return unsubscribe;
+				} ),
+			};
+			const select = {
+				getCurrentPostId: () => postId,
+				getCurrentPostType: () => 'post',
+				isSavingPost: () => isSavingPost,
+			};
+
+			const restorePromise = restoreRevision( revision.id )( {
+				select,
+				dispatch,
+				registry,
+			} );
+			await Promise.resolve();
+			await Promise.resolve();
+
+			expect( registry.subscribe ).toHaveBeenCalledTimes( 1 );
+			expect( dispatch.editPost ).not.toHaveBeenCalled();
+
+			isSavingPost = false;
+			onRegistryChange();
+			await restorePromise;
+
+			expect( unsubscribe ).toHaveBeenCalledTimes( 1 );
+			expect( dispatch.editPost ).toHaveBeenCalledTimes( 1 );
+			expect( dispatch.savePost ).toHaveBeenCalledTimes( 1 );
+		} );
+
+		it( 'does not report success when the revision save is skipped', async () => {
+			const revision = {
+				id: 77,
+				date: '2026-05-22T20:15:00',
+				content: {
+					raw: '<!-- wp:paragraph --><p>Old</p><!-- /wp:paragraph -->',
+				},
+			};
+			const createSuccessNotice = jest.fn();
+			const dispatch = {
+				editPost: jest.fn(),
+				savePost: jest.fn().mockResolvedValue( false ),
+				setCurrentRevisionId: jest.fn(),
+			};
+			const registry = {
+				select: () => ( {
+					getEntityConfig: () => ( { revisionKey: 'id' } ),
+				} ),
+				resolveSelect: () => ( {
+					getRevision: jest.fn().mockResolvedValue( revision ),
+				} ),
+				dispatch: () => ( { createSuccessNotice } ),
+			};
+			const select = {
+				getCurrentPostId: () => postId,
+				getCurrentPostType: () => 'post',
+				isSavingPost: () => false,
+			};
+
+			await restoreRevision( revision.id )( {
+				select,
+				dispatch,
+				registry,
+			} );
+
+			expect( createSuccessNotice ).not.toHaveBeenCalled();
 		} );
 	} );
 
@@ -275,6 +370,14 @@ describe( 'Post actions', () => {
 	} );
 
 	describe( 'savePost()', () => {
+		it( 'reports when a post save is skipped', async () => {
+			const didSave = await actions.savePost()( {
+				select: { isEditedPostSaveable: () => false },
+			} );
+
+			expect( didSave ).toBe( false );
+		} );
+
 		it( 'saves a modified post', async () => {
 			const post = {
 				id: postId,
@@ -331,7 +434,8 @@ describe( 'Post actions', () => {
 			);
 
 			// Save the post.
-			await registry.dispatch( editorStore ).savePost();
+			const didSave = await registry.dispatch( editorStore ).savePost();
+			expect( didSave ).toBe( true );
 
 			// Check the new content.
 			const content = registry

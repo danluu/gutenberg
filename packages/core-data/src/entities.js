@@ -188,6 +188,23 @@ function areSerializedBlocksEqualAt( blocksA, blocksB, index ) {
 	);
 }
 
+function isPartialRichTextBlock( partialBlock, completeBlock ) {
+	if ( partialBlock.name !== completeBlock.name ) {
+		return false;
+	}
+
+	const partialContent = partialBlock.attributes?.content;
+	const completeContent = completeBlock.attributes?.content;
+
+	return (
+		typeof partialContent === 'string' &&
+		typeof completeContent === 'string' &&
+		partialContent.length > 0 &&
+		partialContent !== completeContent &&
+		completeContent.startsWith( partialContent )
+	);
+}
+
 function mergeStaleSerializedBlockContent(
 	baseContent,
 	latestContent,
@@ -211,6 +228,62 @@ function mergeStaleSerializedBlockContent(
 		! localBlocks.length
 	) {
 		return;
+	}
+
+	// A polling update can reach the local entity record while a stale editor
+	// window is still typing a separate block. In that case the local save can
+	// contain every base block unchanged, plus a local insertion, while the
+	// latest REST record contains a completed version of one of those base
+	// blocks. Rebase the remote completion onto the matching unchanged local
+	// block without dropping local insertions.
+	if (
+		baseBlocks.length === latestBlocks.length &&
+		localBlocks.length > baseBlocks.length
+	) {
+		const localIndexes = [];
+		let searchStart = 0;
+
+		for ( const baseBlock of baseBlocks ) {
+			const baseValue = getSerializedBlockValue( baseBlock );
+			const localIndex = localBlocks.findIndex(
+				( localBlock, index ) =>
+					index >= searchStart &&
+					localBlock.name === baseBlock.name &&
+					getSerializedBlockValue( localBlock ) === baseValue
+			);
+
+			if ( localIndex === -1 ) {
+				localIndexes.length = 0;
+				break;
+			}
+
+			localIndexes.push( localIndex );
+			searchStart = localIndex + 1;
+		}
+
+		if ( localIndexes.length === baseBlocks.length ) {
+			const mergedLocalBlocks = [ ...localBlocks ];
+			let didMergeRemoteChange = false;
+
+			for ( let index = 0; index < baseBlocks.length; index++ ) {
+				if ( baseBlocks[ index ].name !== latestBlocks[ index ].name ) {
+					return;
+				}
+
+				if (
+					getSerializedBlockValue( baseBlocks[ index ] ) !==
+					getSerializedBlockValue( latestBlocks[ index ] )
+				) {
+					mergedLocalBlocks[ localIndexes[ index ] ] =
+						latestBlocks[ index ];
+					didMergeRemoteChange = true;
+				}
+			}
+
+			if ( didMergeRemoteChange ) {
+				return __unstableSerializeAndClean( mergedLocalBlocks );
+			}
+		}
 	}
 
 	if (
@@ -246,10 +319,34 @@ function mergeStaleSerializedBlockContent(
 			}
 		}
 
-		return __unstableSerializeAndClean( [
-			...localBlocks,
-			...latestBlocks.slice( baseBlocks.length ),
-		] );
+		const mergedBlocks = [ ...localBlocks ];
+
+		for ( const latestBlock of latestBlocks.slice( baseBlocks.length ) ) {
+			if (
+				mergedBlocks.some(
+					( localBlock ) =>
+						localBlock.name === latestBlock.name &&
+						getSerializedBlockValue( localBlock ) ===
+							getSerializedBlockValue( latestBlock )
+				)
+			) {
+				continue;
+			}
+
+			const partialIndex = mergedBlocks.findIndex(
+				( localBlock, index ) =>
+					index >= baseBlocks.length &&
+					isPartialRichTextBlock( localBlock, latestBlock )
+			);
+
+			if ( partialIndex === -1 ) {
+				mergedBlocks.push( latestBlock );
+			} else {
+				mergedBlocks[ partialIndex ] = latestBlock;
+			}
+		}
+
+		return __unstableSerializeAndClean( mergedBlocks );
 	}
 
 	if (
@@ -744,18 +841,20 @@ export const prePersistPostType = async (
 
 			if (
 				locallyChangedSavedFieldSet.has( 'content' ) &&
-				! shouldPreserveRevisionRestoreContent &&
-				! ( 'content' in newEdits )
+				! shouldPreserveRevisionRestoreContent
 			) {
+				const outgoingContent = getRawPostValue(
+					'content' in newEdits ? newEdits.content : edits.content
+				);
 				const mergedContent = mergeStaleSerializedBlockContent(
 					getRawPostValue( persistedRecord?.content ),
 					getRawPostValue( latestRecord?.content ),
-					getRawPostValue( edits.content )
+					outgoingContent
 				);
 
 				if (
 					mergedContent !== undefined &&
-					mergedContent !== getRawPostValue( edits.content )
+					mergedContent !== outgoingContent
 				) {
 					newEdits.content = mergedContent;
 				}

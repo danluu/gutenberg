@@ -943,6 +943,74 @@ describe( 'crdt', () => {
 			expect( changes ).not.toHaveProperty( 'blocks' );
 		} );
 
+		it( 'returns a remote block deletion when transient blocks are newer than edited content', () => {
+			registerBlockType( 'core/paragraph', {
+				apiVersion: 3,
+				category: 'text',
+				title: 'Paragraph',
+				attributes: {
+					content: {
+						type: 'rich-text',
+						source: 'rich-text',
+						selector: 'p',
+					},
+				},
+				save: ( {
+					attributes,
+				}: {
+					attributes: { content?: string | RichTextData };
+				} ) =>
+					createElement(
+						'p',
+						null,
+						createElement(
+							RawHTML,
+							null,
+							renderRichTextValue( attributes.content )
+						)
+					),
+			} );
+
+			const retainedContent = [
+				'<!-- wp:paragraph -->',
+				'<p>Retained.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+			const deletedContent = [
+				retainedContent,
+				'',
+				'<!-- wp:paragraph -->',
+				'<p>Deleted remotely.</p>',
+				'<!-- /wp:paragraph -->',
+			].join( '\n' );
+			const retainedBlocks = parse( retainedContent );
+			const staleTransientBlocks = parse( deletedContent );
+
+			applyPostChangesToCRDTDoc(
+				doc,
+				{ blocks: retainedBlocks } as PostChanges,
+				defaultSyncedProperties
+			);
+
+			const serializedRetainedBlocks =
+				serializeBlocksForTest( retainedBlocks );
+			const changes = getPostChangesFromCRDTDoc(
+				doc,
+				{
+					blocks: staleTransientBlocks,
+					content: {
+						raw: serializedRetainedBlocks,
+						rendered: serializedRetainedBlocks,
+					},
+				} as unknown as Post,
+				defaultSyncedProperties
+			);
+
+			expect( serializeBlocksForTest( changes.blocks ?? [] ) ).toBe(
+				serializedRetainedBlocks
+			);
+		} );
+
 		it( 'returns rich-text block attributes as RichTextData, not strings', () => {
 			// Simulate User A writing a paragraph block into the CRDT doc.
 			addBlockToDoc( map, 'block-1', 'Hello world' );

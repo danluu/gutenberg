@@ -23,6 +23,7 @@ import {
 	CRDT_STATE_MAP_SAVED_AT_KEY as SAVED_AT_KEY,
 	CRDT_STATE_MAP_SAVED_BY_KEY as SAVED_BY_KEY,
 	LOCAL_EDITOR_ORIGIN,
+	LOCAL_UNDO_IGNORED_ORIGIN,
 } from '../config';
 import { getProviderCreators } from '../providers';
 import type {
@@ -682,6 +683,11 @@ describe( 'SyncManager', () => {
 					mockRecord,
 					mockHandlers
 				);
+				const ydoc = mockProviderCreator.mock.calls[ 0 ][ 0 ].ydoc;
+				const updateOrigins: unknown[] = [];
+				ydoc.on( 'updateV2', ( _update, origin ) => {
+					updateOrigins.push( origin );
+				} );
 
 				const staleCRDTDocument = createPersistedCRDTDoc(
 					{ content: 'stale crdt content' },
@@ -719,6 +725,7 @@ describe( 'SyncManager', () => {
 					{ content: 'stale crdt content' },
 					expect.anything()
 				);
+				expect( updateOrigins ).toContain( LOCAL_UNDO_IGNORED_ORIGIN );
 			} );
 
 			it( 'reuses the base persisted CRDT doc when only save metadata changed', async () => {
