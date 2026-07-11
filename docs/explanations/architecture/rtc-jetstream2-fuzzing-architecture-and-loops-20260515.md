@@ -1,8 +1,8 @@
 # RTC Jetstream2 fuzzing architecture and active loops
 
-Snapshot time: `2026-07-11T05:08Z`
+Snapshot time: `2026-07-11T07:03Z`
 
-Blocker-history update: `2026-07-11T05:08Z`
+Blocker-history update: `2026-07-11T07:03Z`
 
 Remote host:
 `exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org`
@@ -42,6 +42,38 @@ durable evidence, and leaves enough state for another process to reject stale or
 incorrect interpretations. Graphs and prose reports are not the API by
 themselves; controller decisions must be traceable to TSV, JSON, or run
 artifacts under the data root.
+
+## Current Script Publication Contract
+
+The explanation branch is also the canonical operational-script snapshot. At
+this update its 60 direct `bin/rtc-*.sh`, `bin/rtc-*.mjs`, and
+`bin/rtc-*.json` files are byte-identical to the JS2 validation repo: 35 shell
+scripts, 21 JavaScript modules, and 4 JSON schemas. The trend refresh and
+maintainer benchmark gate are operator-host loops stored on JS2 for
+reproducibility, not services launched there. Stable `/tmp/start_*` and durable
+controller copies match their corresponding canonical files. The JS2 repo also
+contains many timestamped backup files; those are intentionally excluded
+because publishing them would make recovery debris look deployable.
+
+This audit repaired a publication gap in which 19 live JS2 utilities and 2
+documented operator loops were absent from the branch, while 8 active files were
+older there. The synchronized set now
+includes backend/API and protocol runners, lower-level coverage runners,
+browser/session watchdogs, disk and wp-env cleanup, trend evidence collectors,
+explicit-seed launcher recovery, user-hit-likelihood schemas, persistent
+promotion-blocker policy, and the six-slot budget's reserved coverage-gap lane.
+The runbook's deployment commands now fetch this branch and install Codex CLI
+`0.144.1`, matching the live guard minimum; `try/jetstream-fuzz` remains only a
+legacy recovery point.
+
+The audit also found 12 of 22 documented recovery launchers missing or stale,
+plus stale resource-autoscaler and generated finalization runtimes. A healthy
+canonical checkout had therefore hidden a broken future restart path and two
+old live controller parents. The guard now refreshes the complete launcher set
+each cycle, validates resource/deferred/finalization runtime bodies, and restarts
+only a stale controller parent. Structural health verifies both the live hashes
+and the self-healing code contract. It also runs the guard's launcher self-check
+under `set -u`, covering argument-resolution failures that syntax checks miss.
 
 ## 2026-07-11 Monotonic Candidate Delivery Repair
 
@@ -1117,8 +1149,7 @@ evidence first. The detailed checklist and commands are in
 flowchart TB
     User[human requests] --> Local[local machine]
     Local --> GitHub[(danluu/gutenberg)]
-    GitHub --> Explain[explain/rtc-jetstream2-fuzz-progress-20260515]
-    GitHub --> Scripts[try/jetstream-fuzz]
+    GitHub --> Snapshot[explain branch: scripts, runbook, and status]
     GitHub --> Branches[ready and stack branches]
 
     subgraph LocalHost["local machine"]

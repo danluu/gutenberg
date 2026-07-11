@@ -3672,6 +3672,8 @@ async function readBenchmarkCanarySourceOverrideFeedbackRows() {
 	const sourceRows = await readBenchmarkCanaryFeedbackSourceOverrideRows();
 	const feedbackPaths = uniquePathList(
 		sourceRows.flatMap( ( row ) => [
+			row.authoritative_feedback_tsv,
+			row.explicit_feedback_tsv,
 			row.latest_feedback_tsv,
 			row.selected_feedback_tsv,
 		] )
@@ -3697,9 +3699,13 @@ async function readBenchmarkCanaryFeedbackRows() {
 		readBenchmarkCanarySourceOverrideFeedbackRows(),
 	] );
 	const rows = [ ...primaryRows, ...overrideRows ];
+	// A newer candidate head is not evidence that an older failing stack was
+	// repaired. Keep promotion blockers until exact replacement proof or an
+	// explicit downscope updates the feedback/control rows.
 	const freshRows = rows.filter(
 		( row ) =>
-			isBenchmarkCanaryFeedbackFreshForCurrentHead( row ) &&
+			( isBenchmarkCanaryFeedbackFreshForCurrentHead( row ) ||
+				isBenchmarkCanaryFeedbackPromotionBlockedRow( row ) ) &&
 			! isCurrentFeedbackExactStackCoverageStatusRow( row )
 	);
 	state.benchmarkCanaryStaleFeedbackRowsIgnored =
@@ -4178,9 +4184,9 @@ function getBenchmarkCanaryExplicitBlocker( group ) {
 }
 
 function hasBenchmarkCanaryExactStackPromotionBlocker( group ) {
-	if ( hasBenchmarkCanaryClosureEvidence( group ) ) {
-		return false;
-	}
+	// Equivalent coverage can close the fuzz-coverage requirement, but it must
+	// not close an exact-stack promotion blocker. Only exact-stack green
+	// evidence or an explicit downscope may remove the feedback row.
 	if (
 		getCurrentBenchmarkCanaryCoverageStatusRowsForGroup( group ).some(
 			( row ) =>

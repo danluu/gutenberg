@@ -1279,6 +1279,10 @@ apply_deadline_benchmark_canary_budget_cap() {
 	slot_floor=$(benchmark_canary_slot_floor)
 	[[ "$slot_floor" =~ ^[0-9]+$ ]] || slot_floor=0
 	if [ "$slot_floor" -gt 0 ]; then
+		if [ "$evidence_extra_budget" = 1 ] && [ "$slot_floor" -ge 5 ]; then
+			printf '%s %s %s\n' "$(( slot_floor + 1 ))" "$(( slot_floor + 1 ))" deadline_benchmark_canary_cap
+			return
+		fi
 		if [ "$evidence_extra_budget" = 1 ] && [ "$slot_floor" -lt 4 ]; then
 			printf '%s %s %s\n' 4 5 deadline_benchmark_canary_cap
 			return
@@ -1983,6 +1987,19 @@ write_budget_env() {
 		zero_coverage_benchmark_canary_min_active_groups=$deadline_canary_limit
 		deadline_coverage_gap_reserved_groups=0
 		deadline_benchmark_canary_budget_cap=1
+	elif [ "${max:-0}" -le 6 ] && benchmark_canary_feedback_active; then
+		local deadline_canary_limit=$target
+		[[ "$deadline_canary_limit" =~ ^[0-9]+$ ]] || deadline_canary_limit=5
+		[ "$deadline_canary_limit" -lt 1 ] && deadline_canary_limit=1
+		[ "$deadline_canary_limit" -gt $(( max - 1 )) ] && deadline_canary_limit=$(( max - 1 ))
+		benchmark_canary_bootstrap_reserve_slots=$deadline_canary_limit
+		benchmark_canary_ws_backfill_slots=0
+		benchmark_canary_sticky_group_limit=''
+		benchmark_canary_slot_floor=$deadline_canary_limit
+		benchmark_canary_strict_slot_floor=''
+		zero_coverage_benchmark_canary_min_active_groups=$deadline_canary_limit
+		deadline_coverage_gap_reserved_groups=1
+		deadline_benchmark_canary_budget_cap=1
 	else
 		case "${benchmark_canary_sticky_group_limit:-}" in
 			''|0|1|2|3)
@@ -2138,14 +2155,24 @@ const targetValue = String( targetNumber );
 const maxValue = String( maxNumber );
 const disabledBudget = targetNumber <= 0 && maxNumber <= 0;
 const strictLowBudget = ! disabledBudget && maxNumber <= 4;
-const deadlineBudgetCap = ! disabledBudget && maxNumber <= 5;
+const deadlineBudgetCap = ! disabledBudget && maxNumber <= 6;
 const lowBudgetCanaryLimit = strictLowBudget
 	? String( Math.max( 1, Math.min( 3, targetNumber || 1, maxNumber || 1 ) ) )
 	: '';
 const deadlineCanaryLimit =
 	! strictLowBudget && deadlineBudgetCap
-		? String( Math.max( 1, Math.min( targetNumber || 4, maxNumber || 5 ) ) )
+		? String(
+				Math.max(
+					1,
+					Math.min(
+						targetNumber || ( maxNumber >= 6 ? 5 : 4 ),
+						maxNumber >= 6 ? maxNumber - 1 : maxNumber || 5
+					)
+				)
+		  )
 		: '';
+const deadlineCoverageGapReservedSlot =
+	! strictLowBudget && deadlineBudgetCap && maxNumber >= 6 ? '1' : '0';
 const lowBudgetWsBackfillSlots =
 	strictLowBudget &&
 	Number.parseInt( lowBudgetCanaryLimit, 10 ) >= 3 &&
@@ -2162,11 +2189,11 @@ const lowBudgetWsBackfillSlots =
 		: '0';
 	const benchmarkCanaryBootstrapReserveSlots = disabledBudget
 		? '0'
-		: strictLowBudget
-		? '1'
-		: deadlineBudgetCap
-		? String( maxNumber )
-		: String(
+	: strictLowBudget
+	? '1'
+	: deadlineBudgetCap
+	? deadlineCanaryLimit
+	: String(
 				Math.max(
 					6,
 					Math.min( maxNumber, benchmarkCanaryReservedSlotNumber || 6 )
@@ -2188,7 +2215,15 @@ const benchmarkCanaryStickyGroupLimit = disabledBudget
 	: '';
 const benchmarkCanarySlotFloor =
 	! disabledBudget && targetNumber > 5
-		? String( Math.min( targetNumber, benchmarkCanarySlotFloorNumber || targetNumber ) )
+		? String(
+				Math.min(
+					targetNumber,
+					benchmarkCanarySlotFloorNumber ||
+						( deadlineBudgetCap
+							? Number.parseInt( deadlineCanaryLimit, 10 )
+							: targetNumber )
+				)
+		  )
 		: '';
 const benchmarkCanaryStrictSlotFloor = benchmarkCanarySlotFloor ? '1' : '0';
 const zeroCoverageBenchmarkCanaryMinActiveGroups = disabledBudget
@@ -2199,8 +2234,10 @@ const zeroCoverageBenchmarkCanaryMinActiveGroups = disabledBudget
 	? deadlineCanaryLimit
 	: '1';
 const deadlineCoverageGapReservedGroups =
-	disabledBudget || strictLowBudget || deadlineBudgetCap
+	disabledBudget || strictLowBudget
 		? '0'
+		: deadlineBudgetCap
+		? deadlineCoverageGapReservedSlot
 		: existingDeadlineReserve;
 const deadlineBenchmarkCanaryBudgetCap =
 	! disabledBudget && ( strictLowBudget || deadlineBudgetCap ) ? '1' : '0';
@@ -2550,6 +2587,19 @@ restart_coverage() {
 		benchmark_canary_strict_slot_floor=''
 		zero_coverage_benchmark_canary_min_active_groups=$deadline_canary_limit
 		deadline_coverage_gap_reserved_groups=0
+		deadline_benchmark_canary_budget_cap=1
+	elif [ "${desired_max:-0}" -le 6 ] && benchmark_canary_feedback_active; then
+		local deadline_canary_limit=$desired_target
+		[[ "$deadline_canary_limit" =~ ^[0-9]+$ ]] || deadline_canary_limit=5
+		[ "$deadline_canary_limit" -lt 1 ] && deadline_canary_limit=1
+		[ "$deadline_canary_limit" -gt $(( desired_max - 1 )) ] && deadline_canary_limit=$(( desired_max - 1 ))
+		benchmark_canary_bootstrap_reserve_slots=$deadline_canary_limit
+		benchmark_canary_ws_backfill_slots=0
+		benchmark_canary_sticky_group_limit=''
+		benchmark_canary_slot_floor=$deadline_canary_limit
+		benchmark_canary_strict_slot_floor=''
+		zero_coverage_benchmark_canary_min_active_groups=$deadline_canary_limit
+		deadline_coverage_gap_reserved_groups=1
 		deadline_benchmark_canary_budget_cap=1
 	else
 		case "${benchmark_canary_sticky_group_limit:-}" in

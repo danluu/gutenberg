@@ -147,6 +147,35 @@ pr_progress_controller_runtime_healthy() {
 	return 0
 }
 
+resource_autoscaler_runtime_healthy() {
+	cmp -s \
+		"$REPO/bin/rtc-resource-autoscaler-remote.sh" \
+		"$RESOURCE_BASE/rtc-resource-autoscaler.sh"
+}
+
+deferred_work_runtime_healthy() {
+	cmp -s \
+		"$REPO/bin/rtc-deferred-work-promotion-runtime-remote.sh" \
+		"$DEFERRED_BASE/deferred-work-promotion-loop.sh"
+}
+
+finalization_runtime_healthy() {
+	local canonical=$REPO/bin/rtc-pr-finalization-loop-remote.sh
+	local runtime=$FINALIZATION_BASE/pr-finalization-loop.sh expected actual
+	[ -s "$canonical" ] && [ -s "$runtime" ] || return 1
+	expected=$(
+		awk '
+			/^cat > "\$BASE\/pr-finalization-loop[.]sh" <</ { emit = 1; next }
+			emit && /^LOOP$/ { exit }
+			emit { print }
+		' "$canonical" |
+			sha256sum |
+			awk '{ print $1 }'
+	)
+	actual=$(sha256sum "$runtime" 2>/dev/null | awk '{ print $1 }')
+	[ -n "$expected" ] && [ "$expected" = "$actual" ]
+}
+
 active_codex_worker_count() {
 	pgrep -x codex 2>/dev/null | awk 'END { print NR + 0 }'
 }
@@ -1603,14 +1632,17 @@ PROMPT
 }
 
 refresh_stable_script() {
-	local relative=$1 stable=$2 canonical=$REPO/$relative
+	local relative stable canonical
+	relative=$1
+	stable=$2
+	canonical=$REPO/$relative
 	if [ -x "$canonical" ] && { [ ! -x "$stable" ] || ! cmp -s "$canonical" "$stable"; }; then
 		install -m 755 "$canonical" "$stable" || true
 	fi
 	[ -x "$stable" ]
 }
 
-refresh_optional_stable_launchers() {
+refresh_stable_launchers() {
 	local relative stable
 	while IFS=$'\t' read -r relative stable; do
 		refresh_stable_script "$relative" "$stable" || true
@@ -1620,11 +1652,35 @@ bin/rtc-focused-shards-start-remote.sh	/tmp/start_rtc_focused_shards.sh
 bin/rtc-focused-shards-cleanup-remote.sh	/tmp/cleanup_rtc_focused_shards.sh
 bin/rtc-focused-shards-gap-codex-loop-remote.sh	/tmp/start_rtc_focused_gap_codex_loop.sh
 bin/rtc-gap-booster-start-remote.sh	/tmp/start_rtc_gap_booster.sh
+bin/rtc-coverage-guided-start-remote.sh	/tmp/start_rtc_coverage_guided_remote.sh
+bin/rtc-coverage-guided-lower-level-start-remote.sh	/tmp/start_rtc_coverage_guided_lower_level.sh
+bin/rtc-coverage-guided-cleanup-remote.sh	/tmp/cleanup_rtc_coverage_guided_remote.sh
+bin/rtc-coverage-guided-watchdog-start-remote.sh	/tmp/start_rtc_coverage_guided_watchdog_remote.sh
+bin/rtc-resource-autoscaler-remote.sh	/tmp/start_rtc_resource_autoscaler.sh
+bin/rtc-disk-maintenance-remote.sh	/tmp/start_rtc_disk_maintenance.sh
+bin/rtc-fuzz-only-asserts-loop-remote.sh	/tmp/start_rtc_fuzz_only_asserts_loop.sh
+bin/rtc-duplicate-noise-persona-loop-remote.sh	/tmp/start_rtc_duplicate_noise_persona_loop.sh
+bin/rtc-fuzz-level-mix-persona-loop-remote.sh	/tmp/start_rtc_fuzz_level_mix_persona_loop.sh
+bin/rtc-native-assert-protocol-work-start-remote.sh	/tmp/start_rtc_native_assert_protocol_work.sh
+bin/rtc-deferred-work-promotion-loop-remote.sh	/tmp/start_rtc_deferred_work_promotion_loop.sh
+bin/rtc-pr-progress-controller-remote.sh	/tmp/start_rtc_pr_progress_controller.sh
+bin/rtc-pr-finalization-loop-remote.sh	/tmp/start_rtc_pr_finalization_loop.sh
+bin/rtc-critical-path-pr-executor-loop-remote.sh	/tmp/start_rtc_critical_path_pr_executor_loop.sh
+bin/rtc-productive-analysis-loop-remote.sh	/tmp/start_rtc_productive_analysis_loop.sh
+bin/rtc-structural-issue-watchdog-remote.sh	/tmp/start_rtc_structural_watchdog.sh
+bin/rtc-jetstream-guard-remote.sh	/tmp/start_rtc_jetstream_guard.sh
 LAUNCHERS
 }
 
 run_versioned_launcher() {
-	local relative=$1 stable=$2 canonical=$REPO/$relative
+	local relative stable canonical
+	relative=$1
+	stable=$2
+	canonical=$REPO/$relative
+	if [ "${RTC_GUARD_LAUNCHER_DRY_RUN:-0}" = 1 ]; then
+		[ -x "$canonical" ]
+		return
+	fi
 	refresh_stable_script "$relative" "$stable" || true
 	if [ -x "$stable" ]; then
 		"$stable"
@@ -1633,6 +1689,14 @@ run_versioned_launcher() {
 	else
 		return 1
 	fi
+}
+
+guard_self_check() {
+	RTC_GUARD_LAUNCHER_DRY_RUN=1 \
+		run_versioned_launcher \
+		bin/rtc-jetstream-guard-remote.sh \
+		/tmp/start_rtc_jetstream_guard.sh
+	printf 'guard self-check: valid\n'
 }
 
 restart_pool() {
@@ -1725,6 +1789,7 @@ restart_pool() {
 			bin/rtc-productive-analysis-loop-remote.sh start >> "$LOG_DIR/productive-analysis-start.log" 2>&1 || log "productive analysis loop start failed"
 			;;
 		resource)
+			install -m 755 "$REPO/bin/rtc-resource-autoscaler-remote.sh" "$RESOURCE_BASE/rtc-resource-autoscaler.sh"
 			tmux kill-session -t rtc-resource-autoscaler 2>/dev/null || true
 			stop_unsupervised_resource_autoscaler
 			tmux new-session -d -s rtc-resource-autoscaler "bash -lc '$RESOURCE_BASE/rtc-resource-autoscaler.sh >> \"$LOG_DIR/resource-autoscaler-start.log\" 2>&1'" ||
@@ -1788,7 +1853,7 @@ run_loop_locked() {
 		stop_stale_coverage_monitors
 		stop_disabled_analysis_loops
 		trim_optional_live_analysis_codex
-		refresh_optional_stable_launchers
+		refresh_stable_launchers
 		run_docker_network_maintenance
 		coverage_needs_restart=0
 			if ! has_session rtc-coverage-guided-novelty; then
@@ -1885,7 +1950,10 @@ run_loop_locked() {
 			restart_pool asserts "missing fuzz-only assertion loop"
 		fi
 
-		if ! has_session rtc-deferred-work-promotion-loop; then
+		if has_session rtc-deferred-work-promotion-loop && ! deferred_work_runtime_healthy; then
+			log "replacing stale deferred work runtime"
+			restart_pool deferred "stale deferred work runtime"
+		elif ! has_session rtc-deferred-work-promotion-loop; then
 			restart_pool deferred "missing deferred work promotion loop"
 		fi
 
@@ -1897,7 +1965,10 @@ run_loop_locked() {
 			restart_pool pr-progress "missing PR progress controller loop"
 		fi
 
-		if ! has_session rtc-pr-finalization-loop; then
+		if has_session rtc-pr-finalization-loop && ! finalization_runtime_healthy; then
+			log "replacing stale PR finalization runtime"
+			restart_pool finalization "stale PR finalization runtime"
+		elif ! has_session rtc-pr-finalization-loop; then
 			restart_pool finalization "missing PR finalization loop"
 		fi
 
@@ -1909,7 +1980,10 @@ run_loop_locked() {
 			restart_pool productive-analysis "missing productive analysis loop"
 		fi
 
-		if ! has_session rtc-resource-autoscaler; then
+		if has_session rtc-resource-autoscaler && ! resource_autoscaler_runtime_healthy; then
+			log "replacing stale resource autoscaler runtime"
+			restart_pool resource "stale resource autoscaler runtime"
+		elif ! has_session rtc-resource-autoscaler; then
 			restart_pool resource "missing resource autoscaler"
 		fi
 
@@ -1968,11 +2042,14 @@ case "${1:-start}" in
 			echo "not running"
 		fi
 		;;
+	self-check)
+		guard_self_check
+		;;
 	reattach-coverage-once)
 		reattach_current_coverage_run
 		;;
 	*)
-		echo "usage: $0 [start|run|stop|status|reattach-coverage-once]" >&2
+		echo "usage: $0 [start|run|stop|status|self-check|reattach-coverage-once]" >&2
 		exit 2
 		;;
 esac

@@ -26,11 +26,16 @@ const SHARED_PATH = [
 	process.env.PATH ?? '',
 ].join( path.delimiter );
 const START_SEED = getPositiveIntegerEnv( 'RTC_FUZZ_START_SEED', 1007 );
+const START_SEEDS = getOptionalPositiveIntegerListEnv( 'RTC_FUZZ_START_SEEDS' );
 const STEP_COUNT = getPositiveIntegerEnv( 'RTC_FUZZ_STEP_COUNT', 12 );
 const DURATION_HOURS = getPositiveNumberEnv( 'RTC_FUZZ_DURATION_HOURS', 12 );
 const LANE_COUNT = getPositiveIntegerEnv(
 	'RTC_FUZZ_PARALLEL_LANES',
 	getPerformanceCoreCount()
+);
+const TOTAL_SEED_STRIDE = getPositiveIntegerEnv(
+	'RTC_FUZZ_TOTAL_SEED_STRIDE',
+	LANE_COUNT
 );
 const OUTPUT_DIR =
 	process.env.RTC_FUZZ_OUTPUT_DIR ??
@@ -39,6 +44,21 @@ const OUTPUT_DIR =
 		'artifacts/rtc-browser-fuzz',
 		`background-${ createTimestamp() }`
 	);
+const WP_ENV_CONFIG_PATH = getWpEnvConfigPath();
+
+function getWpEnvConfigPath() {
+	if ( process.env.RTC_FUZZ_WP_ENV_CONFIG_PATH ) {
+		return process.env.RTC_FUZZ_WP_ENV_CONFIG_PATH;
+	}
+	if ( process.env.WP_ENV_CONFIG ) {
+		return process.env.WP_ENV_CONFIG;
+	}
+	return path.join( REPO_ROOT, '.wp-env.test.json' );
+}
+
+function getWpEnvCommandArgs( args ) {
+	return [ 'exec', '--', 'wp-env', '--config', WP_ENV_CONFIG_PATH, ...args ];
+}
 
 function getPositiveIntegerEnv( name, fallback ) {
 	const rawValue = process.env[ name ];
@@ -70,6 +90,31 @@ function getPositiveNumberEnv( name, fallback ) {
 	}
 
 	return parsedValue;
+}
+
+function getOptionalPositiveIntegerListEnv( name ) {
+	const rawValue = process.env[ name ];
+
+	if ( ! rawValue ) {
+		return null;
+	}
+
+	const values = rawValue
+		.split( ',' )
+		.map( ( value ) => value.trim() )
+		.filter( Boolean )
+		.map( ( value ) => Number.parseInt( value, 10 ) );
+
+	if (
+		values.length === 0 ||
+		values.some( ( value ) => ! Number.isInteger( value ) || value <= 0 )
+	) {
+		throw new Error(
+			`Expected ${ name } to be a comma-separated list of positive integers.`
+		);
+	}
+
+	return values;
 }
 
 async function resolveExecutable( preferredPath, executableName ) {
@@ -141,7 +186,7 @@ async function ensureLocalNodeToolchain() {
 async function runWpEnvStatusCheck() {
 	const result = spawn(
 		RESOLVED_NPM_BIN,
-		[ 'run', 'wp-env-test', '--', 'status' ],
+		getWpEnvCommandArgs( [ 'status' ] ),
 		{
 			cwd: REPO_ROOT,
 			env: {
@@ -152,25 +197,33 @@ async function runWpEnvStatusCheck() {
 		}
 	);
 	const chunks = [];
+	const timeout = setTimeout( () => {
+		result.kill( 'SIGTERM' );
+		setTimeout( () => result.kill( 'SIGKILL' ), 5000 ).unref();
+	}, 120000 );
 
 	result.stdout.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
 	result.stderr.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
 
 	const { code } = await new Promise( ( resolve, reject ) => {
 		result.on( 'error', reject );
-		result.on( 'close', ( exitCode ) => resolve( { code: exitCode } ) );
+		result.on( 'close', ( exitCode ) => {
+			clearTimeout( timeout );
+			resolve( { code: exitCode } );
+		} );
 	} );
 
 	if ( code !== 0 || ! chunks.join( '' ).includes( 'status: running' ) ) {
 		throw new Error(
-			'wp-env-test is not running. Start it before launching parallel fuzz lanes.'
+			`wp-env is not running for config ${ WP_ENV_CONFIG_PATH }. Start it before launching parallel fuzz lanes.\n${ chunks.join(
+				''
+			) }`
 		);
 	}
 }
 
 async function runWpInstallHealthCheck() {
-	const requiredPluginPath =
-		'gutenberg-test-plugins/disable-animations.php';
+	const requiredPluginPath = 'gutenberg-test-plugins/disable-animations.php';
 	const requiredTheme = 'twentytwentyone';
 	const php = [
 		`$plugin = WP_PLUGIN_DIR . '/${ requiredPluginPath }';`,
@@ -180,16 +233,7 @@ async function runWpInstallHealthCheck() {
 	].join( ' ' );
 	const result = spawn(
 		RESOLVED_NPM_BIN,
-		[
-			'run',
-			'wp-env-test',
-			'--',
-			'run',
-			'cli',
-			'wp',
-			'eval',
-			php,
-		],
+		getWpEnvCommandArgs( [ 'run', 'cli', 'wp', 'eval', php ] ),
 		{
 			cwd: REPO_ROOT,
 			env: {
@@ -219,7 +263,149 @@ async function runWpInstallHealthCheck() {
 
 	if ( code !== 0 || ! output.includes( 'rtc-fuzz-health-ok' ) ) {
 		throw new Error(
-			`wp-env-test install health check failed before launch.\n${ output }`
+			`wp-env install health check failed before launch for config ${ WP_ENV_CONFIG_PATH }.\n${ output }`
+		);
+	}
+}
+
+async function runWpEnvLifecycleCommand( action, timeoutMs ) {
+	const result = spawn(
+		RESOLVED_NPM_BIN,
+		getWpEnvCommandArgs( [ action ] ),
+		{
+			cwd: REPO_ROOT,
+			env: {
+				...process.env,
+				PATH: SHARED_PATH,
+			},
+			stdio: [ 'ignore', 'pipe', 'pipe' ],
+		}
+	);
+	const chunks = [];
+	const timeout = setTimeout( () => {
+		result.kill( 'SIGTERM' );
+		setTimeout( () => result.kill( 'SIGKILL' ), 5000 ).unref();
+	}, timeoutMs );
+
+	result.stdout.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
+	result.stderr.on( 'data', ( chunk ) => chunks.push( chunk.toString() ) );
+
+	const { code } = await new Promise( ( resolve, reject ) => {
+		result.on( 'error', reject );
+		result.on( 'close', ( exitCode ) => {
+			clearTimeout( timeout );
+			resolve( { code: exitCode } );
+		} );
+	} );
+
+	return {
+		code,
+		output: chunks.join( '' ),
+	};
+}
+
+function truncateOutput( output ) {
+	const trimmed = String( output ?? '' ).trim();
+	if ( trimmed.length <= 4000 ) {
+		return trimmed;
+	}
+	return `${ trimmed.slice( 0, 4000 ) }\n...<truncated>`;
+}
+
+async function wait( milliseconds ) {
+	await new Promise( ( resolve ) => setTimeout( resolve, milliseconds ) );
+}
+
+function looksLikeWpEnvCloneDestinationConflict( output ) {
+	return /destination path '([^']+)' already exists and is not an empty directory/i.test(
+		String( output ?? '' )
+	);
+}
+
+function getWpEnvCloneDestinationConflictPath( output ) {
+	const match = String( output ?? '' ).match(
+		/destination path '([^']+)' already exists and is not an empty directory/i
+	);
+	return match ? path.resolve( match[ 1 ] ) : null;
+}
+
+function isPathInsideDirectory( parentDir, childPath ) {
+	const relative = path.relative(
+		path.resolve( parentDir ),
+		path.resolve( childPath )
+	);
+	return (
+		!! relative &&
+		! relative.startsWith( '..' ) &&
+		! path.isAbsolute( relative )
+	);
+}
+
+async function cleanPartialWpEnvCheckoutAfterCloneConflict( output ) {
+	if ( ! looksLikeWpEnvCloneDestinationConflict( output ) ) {
+		return false;
+	}
+	const wpEnvHome = process.env.WP_ENV_HOME
+		? path.resolve( process.env.WP_ENV_HOME )
+		: null;
+	const conflictPath = getWpEnvCloneDestinationConflictPath( output );
+	if (
+		! wpEnvHome ||
+		! conflictPath ||
+		! isPathInsideDirectory( wpEnvHome, conflictPath )
+	) {
+		return false;
+	}
+
+	await fs.rm( conflictPath, { recursive: true, force: true } );
+	process.stderr.write(
+		`removed partial wp-env checkout before health-recovery retry: ${ conflictPath }\n`
+	);
+	return true;
+}
+
+async function refreshWpEnvAfterFailedHealthCheck( error ) {
+	process.stderr.write(
+		`wp-env install health check failed for config ${ WP_ENV_CONFIG_PATH }; restarting wp-env once before launching lanes.\n${ truncateOutput(
+			error.stack ?? error.message
+		) }\n`
+	);
+
+	const stopResult = await runWpEnvLifecycleCommand( 'stop', 120000 );
+	if ( stopResult.code !== 0 ) {
+		process.stderr.write(
+			`wp-env stop exited with code=${ stopResult.code } during health recovery.\n${ truncateOutput(
+				stopResult.output
+			) }\n`
+		);
+	}
+
+	let startResult = await runWpEnvLifecycleCommand( 'start', 10 * 60 * 1000 );
+	if ( startResult.code !== 0 ) {
+		process.stderr.write(
+			`wp-env start exited with code=${ startResult.code } during health recovery; retrying once after cleanup.\n${ truncateOutput(
+				startResult.output
+			) }\n`
+		);
+		await wait( 10000 );
+		const retryStopResult = await runWpEnvLifecycleCommand( 'stop', 120000 );
+		if ( retryStopResult.code !== 0 ) {
+			process.stderr.write(
+				`wp-env retry stop exited with code=${ retryStopResult.code } during health recovery.\n${ truncateOutput(
+					retryStopResult.output
+				) }\n`
+			);
+		}
+		await cleanPartialWpEnvCheckoutAfterCloneConflict( startResult.output );
+		await wait( 10000 );
+		startResult = await runWpEnvLifecycleCommand(
+			'start',
+			10 * 60 * 1000
+		);
+	}
+	if ( startResult.code !== 0 ) {
+		throw new Error(
+			`wp-env restart failed during health recovery for config ${ WP_ENV_CONFIG_PATH }.\n${ startResult.output }`
 		);
 	}
 }
@@ -227,8 +413,20 @@ async function runWpInstallHealthCheck() {
 async function main() {
 	await ensureLocalNodeToolchain();
 	await runWpEnvStatusCheck();
-	await runWpInstallHealthCheck();
+	try {
+		await runWpInstallHealthCheck();
+	} catch ( error ) {
+		await refreshWpEnvAfterFailedHealthCheck( error );
+		await runWpEnvStatusCheck();
+		await runWpInstallHealthCheck();
+	}
 	await fs.mkdir( OUTPUT_DIR, { recursive: true } );
+
+	if ( START_SEEDS && START_SEEDS.length !== LANE_COUNT ) {
+		throw new Error(
+			`RTC_FUZZ_START_SEEDS has ${ START_SEEDS.length } entries, but RTC_FUZZ_PARALLEL_LANES is ${ LANE_COUNT }.`
+		);
+	}
 
 	const lanes = [];
 	for ( let laneIndex = 0; laneIndex < LANE_COUNT; laneIndex++ ) {
@@ -237,7 +435,7 @@ async function main() {
 		await fs.mkdir( laneOutputDir, { recursive: true } );
 		const launcherLogPath = path.join( laneOutputDir, 'launcher.log' );
 		const launcherLog = await fs.open( launcherLogPath, 'a' );
-		const laneSeed = START_SEED + laneIndex;
+		const laneSeed = START_SEEDS?.[ laneIndex ] ?? START_SEED + laneIndex;
 		const child = spawn(
 			RESOLVED_NODE_BIN,
 			[ 'bin/rtc-browser-fuzz-runner.mjs' ],
@@ -250,7 +448,7 @@ async function main() {
 					PATH: SHARED_PATH,
 					RTC_FUZZ_DURATION_HOURS: String( DURATION_HOURS ),
 					RTC_FUZZ_OUTPUT_DIR: laneOutputDir,
-					RTC_FUZZ_SEED_STRIDE: String( LANE_COUNT ),
+					RTC_FUZZ_SEED_STRIDE: String( TOTAL_SEED_STRIDE ),
 					RTC_FUZZ_START_SEED: String( laneSeed ),
 					RTC_FUZZ_STEP_COUNT: String( STEP_COUNT ),
 					RTC_FUZZ_LANE_LABEL: laneLabel,
@@ -271,7 +469,7 @@ async function main() {
 			outputDir: laneOutputDir,
 			pid: child.pid,
 			startSeed: laneSeed,
-			seedStride: LANE_COUNT,
+			seedStride: TOTAL_SEED_STRIDE,
 		} );
 	}
 
@@ -288,11 +486,14 @@ async function main() {
 		skipGlobalPostCleanup:
 			( process.env.RTC_FUZZ_SKIP_GLOBAL_POST_CLEANUP ?? '1' ) === '1',
 		healthProbe: 'launcher-wp-cli-install-check-runner-http-liveness',
+		wpEnvConfigPath: WP_ENV_CONFIG_PATH,
 		healthCheckIntervalSeeds:
 			process.env.RTC_FUZZ_HEALTH_CHECK_INTERVAL_SEEDS ?? '1',
 		httpHealthTimeoutMs:
 			process.env.RTC_FUZZ_HTTP_HEALTH_TIMEOUT_MS ?? '10000',
 		startSeed: START_SEED,
+		startSeeds: START_SEEDS,
+		totalSeedStride: TOTAL_SEED_STRIDE,
 		stepCount: STEP_COUNT,
 		lanes,
 	};

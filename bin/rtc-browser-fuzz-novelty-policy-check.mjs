@@ -76,11 +76,33 @@ const requiredContracts = [
 		pattern:
 			/function hasBenchmarkCanaryClosureEvidence\(\s*group\s*\)\s*\{\s*if\s*\(\s*hasScopedRequiredProductFirstGreenEvidence\(\s*group\s*\)\s*\)\s*\{\s*return true;/s,
 	},
+	{
+		name: 'stale-head-promotion-blocker-retention',
+		pattern:
+			/function readBenchmarkCanaryFeedbackRows\(\)[\s\S]*?isBenchmarkCanaryFeedbackFreshForCurrentHead\(\s*row\s*\)\s*\|\|\s*isBenchmarkCanaryFeedbackPromotionBlockedRow\(\s*row\s*\)/s,
+	},
+	{
+		name: 'authoritative-feedback-source-union',
+		pattern:
+			/sourceRows\.flatMap\(\s*\(\s*row\s*\)\s*=>\s*\[\s*row\.authoritative_feedback_tsv,\s*row\.explicit_feedback_tsv,\s*row\.latest_feedback_tsv,\s*row\.selected_feedback_tsv,/s,
+	},
 ];
 
 const missing = requiredContracts
 	.filter( ( contract ) => ! contract.pattern.test( source ) )
 	.map( ( contract ) => contract.name );
+
+const exactStackPromotionBlockerBody = source.match(
+	/function hasBenchmarkCanaryExactStackPromotionBlocker\(\s*group\s*\)\s*\{(?<body>[\s\S]*?)\n\}\n\nfunction isBenchmarkCanaryExplicitlyBlocked/
+)?.groups?.body;
+if (
+	! exactStackPromotionBlockerBody ||
+	/hasBenchmarkCanaryClosureEvidence\s*\(/.test(
+		exactStackPromotionBlockerBody
+	)
+) {
+	missing.push( 'exact-stack-blocker-independent-of-coverage-closure' );
+}
 
 if ( missing.length > 0 ) {
 	console.error(

@@ -18,7 +18,7 @@ leave one-shot commands as the only copy of an important process.
 
 ## Current Operator Snapshot
 
-Snapshot time: `2026-07-11T05:08Z`
+Snapshot time: `2026-07-11T07:03Z`
 
 The active all-merge candidate is `js2/all-merged-rebased-20260701` at
 `a4bb48b9ad471000c7eaae4694c3310c15e43280`. This is the validated monotonic
@@ -35,6 +35,25 @@ At this snapshot the pointer is `run-20260711T043332Z`, whose
 `source-manifest.tsv` names exact candidate `a4bb48b9`. The serialized build and
 pointer transition completed, five protected canary groups are running, and all
 newly launched critical worktrees use the same head.
+
+The audited operational snapshot contains 60 active top-level RTC files: 35
+shell scripts, 21 JavaScript modules, and 4 JSON schemas. Their hashes match the
+canonical JS2 validation repo. Two scripts in that set, the trend refresh loop
+and maintainer benchmark gate, execute only on a GitHub-capable local host but
+are stored on JS2 for reproducibility. Timestamped `.bak`, `.pre-*`, and
+`.before-*` files on JS2 are recovery artifacts, not deployable source, and are
+deliberately excluded from the branch.
+
+Canonical source equality is not enough: recovery launchers and generated
+controller runtimes must match too. The guard refreshes all 22 documented
+`/tmp/start_*` and cleanup launchers every cycle. It compares the resource
+autoscaler runtime directly, the deferred loop against its separate runtime
+source, and the finalization loop against the runtime body embedded in its
+launcher. On drift it replaces only the controller parent and preserves active
+child jobs. Structural health independently checks the same launcher and runtime
+contracts and executes the guard's side-effect-free launcher self-check. The
+self-check exercises `set -u` argument resolution, which catches runtime-only
+shell failures that `bash -n` cannot detect.
 
 Every current run must contain `source-manifest.tsv` with mode
 `exact-candidate-plus-harness-overlay`. The product tree comes from the named
@@ -201,8 +220,8 @@ Operational invariants added by the July 10 audit:
     verifies the guard PID and exact `run-locked` command every cycle and starts
     it through the guard's stale-lock cleanup when absent. The guard removes
     optional analysis sessions on a non-policy model even below the worker cap,
-    trims optional fanout above the cap, and refreshes stable optional launchers
-    from their versioned sources before considering a pool restart.
+    trims optional fanout above the cap, and refreshes all stable recovery
+    launchers from their versioned sources before considering a pool restart.
 -   PR finalization is a singleton service. Its generated runtime holds
     `pr-finalization-loop.lock`, records `pr-finalization-loop.pid`, and closes
     the lock descriptor in sleeps. The launcher and guard terminate exact-argv
@@ -802,11 +821,13 @@ The excluded commit check should report that the fuzz base does not contain
 `7cbe36591fa2c2986693c9c90f2606e65b567aff` unless that commit later lands in
 trunk or becomes part of the intended PR set.
 
-5. Push the fuzzer code and base metadata to `danluu` so the run can be
-   reconstructed elsewhere.
+5. Push the fixed product/fuzzer base to a dedicated dated ref so the run can be
+   reconstructed elsewhere. Do not overwrite the operational scripts/runbook
+   snapshot with a candidate base.
 
 ```bash
-git push danluu HEAD:try/jetstream-fuzz
+BASE_REF=js2/fuzz-base-$( date -u +%Y%m%dT%H%M%SZ )
+git push danluu HEAD:"$BASE_REF"
 ```
 
 Keep a short base note in the run root, for example `base-update.md`, with:
@@ -1054,26 +1075,43 @@ fuzzing level so trend graphs can show the new executions.
 ## Jetstream Remote Scripts
 
 The Jetstream2 run uses `/media/volume/danluu-fuzz-data` for the repository and
-run roots. Keep deployable reusable scripts on `danluu/try/jetstream-fuzz`, and
-mirror the audited scripts/runbook snapshot on
-`danluu/explain/rtc-jetstream2-fuzz-progress-20260515`. Copy scripts from a
-local checkout to the remote machine because the remote fuzz host is not expected
-to have GitHub write access.
+run roots. The canonical audited scripts and runbook live together on
+`danluu/explain/rtc-jetstream2-fuzz-progress-20260515`; the older
+`danluu/try/jetstream-fuzz` branch is a legacy recovery point, not the live
+deployment source. Copy scripts from a local checkout to the remote machine
+because the remote fuzz host is not expected to have GitHub write access.
+
+The active publication set is the direct `bin/rtc-*.sh`, `bin/rtc-*.mjs`, and
+`bin/rtc-*.json` files. Do not copy similarly named backup files into Git. Audit
+the canonical set without walking run or artifact directories:
 
 ```bash
 JETSTREAM=exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org
 REMOTE_REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
 
-git fetch danluu try/jetstream-fuzz
+for f in bin/rtc-*.sh bin/rtc-*.mjs bin/rtc-*.json; do
+	[ -f "$f" ] || continue
+	printf '%s  %s\n' "$( sha256sum "$f" | cut -d' ' -f1 )" "${f##*/}"
+done | sort -k2 > /tmp/rtc-active-local.sha256
+
+ssh "$JETSTREAM" 'for f in '"$REMOTE_REPO"'/bin/rtc-*.sh '"$REMOTE_REPO"'/bin/rtc-*.mjs '"$REMOTE_REPO"'/bin/rtc-*.json; do
+	[ -f "$f" ] || continue
+	printf "%s  %s\n" "$( sha256sum "$f" | cut -d" " -f1 )" "${f##*/}"
+done' | sort -k2 > /tmp/rtc-active-js2.sha256
+
+diff -u /tmp/rtc-active-local.sha256 /tmp/rtc-active-js2.sha256
+```
+
+```bash
+JETSTREAM=exouser@danluu-fuzzer.cis251402.projects.jetstream-cloud.org
+REMOTE_REPO=/media/volume/danluu-fuzz-data/rtc-fuzz-validation-20260515/repo
+
+git fetch danluu explain/rtc-jetstream2-fuzz-progress-20260515
 git archive --format=tar FETCH_HEAD \
-	bin/rtc-*-remote.sh \
-	bin/rtc-browser-*.schema.json \
+	bin/rtc-*.sh \
+	bin/rtc-*.mjs \
+	bin/rtc-*.json \
 	bin/rtc-browser-fuzz-analysis-guard-bin \
-	bin/rtc-browser-fuzz-*.mjs \
-	bin/rtc-docker-network-reaper-remote.mjs \
-	bin/rtc-coverage-guided-lower-level-runner.mjs \
-	bin/rtc-fuzz-*.mjs \
-	bin/rtc-test-ws-sync-server.mjs \
 	packages/blocks/src/api/parser/test/rtc-block-parser-serialization.coverage-fuzz.test.js \
 	packages/core-data/src/utils/test/rtc-rich-text-crdt-merge.coverage-fuzz.test.js \
 	test/e2e/playwright.rtc-websocket.config.ts \
@@ -1090,7 +1128,7 @@ these names directly when it detects a missing or stale service.
 ssh "$JETSTREAM" "
 REMOTE_REPO='$REMOTE_REPO'
 mkdir -p \"\${HOME:-/home/exouser}/.local/bin\"
-npm install -g --prefix \"\${HOME:-/home/exouser}/.local\" @openai/codex@0.130.0
+npm install -g --prefix \"\${HOME:-/home/exouser}/.local\" @openai/codex@0.144.1
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-start-remote.sh\" /tmp/start_rtc_coverage_guided_remote.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-lower-level-start-remote.sh\" /tmp/start_rtc_coverage_guided_lower_level.sh
 install -m 755 \"\$REMOTE_REPO/bin/rtc-coverage-guided-cleanup-remote.sh\" /tmp/cleanup_rtc_coverage_guided_remote.sh
@@ -1177,10 +1215,10 @@ The remote launchers are intentionally split by ownership:
     satisfied `5/5` cap therefore permits optional fuzz pools under headroom;
     pressure, a real primary materialization deficit, or a recent shed still
     blocks them. Structural health rejects guard source that loses this clamp.
-    Optional-pool admission also refreshes missing or stale stable `/tmp`
-    launchers from their versioned validation-repo scripts before execution;
-    focused cleanup is covered by the same rule, and structural health compares
-    all five script pairs.
+    Every guard cycle refreshes all 22 documented stable `/tmp` launchers from
+    their versioned validation-repo scripts before any recovery needs them.
+    Optional-pool admission therefore cannot execute an older launcher, and
+    structural health independently compares every canonical/stable pair.
     Guard-managed strict and focused starts each select three complementary
     profiles by default. Do not restore their unbounded legacy defaults: dozens
     of simultaneous `wp-env` starts create infrastructure backoff, exhaust
@@ -2835,15 +2873,15 @@ For another machine, hand off:
 
 ## Remote Publishing
 
-Keep the reproducible fuzzer code on `danluu/try/jetstream-fuzz`:
+Keep the audited operational scripts and their runbook on the same canonical
+snapshot branch:
 
 ```bash
-git push danluu HEAD:try/jetstream-fuzz
+git push danluu HEAD:explain/rtc-jetstream2-fuzz-progress-20260515
 ```
 
-Run status and human-readable explanations should be published on a separate
-explanation branch so they do not churn the fuzzer branch. Use a branch name
-with a date and run id, for example:
+Large candidate/product branches and artifact trees remain separate. For a
+different run, create a dated explanation branch, for example:
 
 ```bash
 git switch -c explain/rtc-fuzz-run-$( date -u +%Y%m%d )

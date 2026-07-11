@@ -1001,21 +1001,21 @@ check_gate_only_timeout_contract() {
 	fi
 }
 
-check_optional_pool_launcher_sync() {
+check_stable_launcher_sync() {
 	local out=$1 relative stable canonical launcher_key
 	while read -r relative stable; do
 		canonical=$REPO/$relative
 		launcher_key=${stable##*/}
 		if [ ! -x "$canonical" ]; then
-			emit_finding "$out" high "guard" "optional-pool-versioned-launcher-missing-$launcher_key" \
+			emit_finding "$out" high "guard" "versioned-launcher-missing-$launcher_key" \
 				"canonical=$canonical stable=$stable" \
-				"restore the versioned optional-pool launcher before admitting that pool"
+				"restore the versioned launcher before relying on guard recovery"
 			continue
 		fi
 		if [ ! -x "$stable" ] || ! cmp -s "$canonical" "$stable"; then
-			emit_finding "$out" high "guard" "optional-pool-stable-launcher-missing-or-stale-$launcher_key" \
+			emit_finding "$out" high "guard" "stable-launcher-missing-or-stale-$launcher_key" \
 				"canonical=$canonical stable=$stable" \
-				"let the guard atomically refresh the stable launcher from the versioned source, then retry the optional pool"
+				"let the guard atomically refresh every stable launcher from versioned source before a recovery is needed"
 		fi
 	done <<'LAUNCHERS'
 bin/rtc-strict-expansion-start-remote.sh /tmp/start_rtc_strict_expansion.sh
@@ -1023,7 +1023,56 @@ bin/rtc-focused-shards-start-remote.sh /tmp/start_rtc_focused_shards.sh
 bin/rtc-focused-shards-cleanup-remote.sh /tmp/cleanup_rtc_focused_shards.sh
 bin/rtc-focused-shards-gap-codex-loop-remote.sh /tmp/start_rtc_focused_gap_codex_loop.sh
 bin/rtc-gap-booster-start-remote.sh /tmp/start_rtc_gap_booster.sh
+bin/rtc-coverage-guided-start-remote.sh /tmp/start_rtc_coverage_guided_remote.sh
+bin/rtc-coverage-guided-lower-level-start-remote.sh /tmp/start_rtc_coverage_guided_lower_level.sh
+bin/rtc-coverage-guided-cleanup-remote.sh /tmp/cleanup_rtc_coverage_guided_remote.sh
+bin/rtc-coverage-guided-watchdog-start-remote.sh /tmp/start_rtc_coverage_guided_watchdog_remote.sh
+bin/rtc-resource-autoscaler-remote.sh /tmp/start_rtc_resource_autoscaler.sh
+bin/rtc-disk-maintenance-remote.sh /tmp/start_rtc_disk_maintenance.sh
+bin/rtc-fuzz-only-asserts-loop-remote.sh /tmp/start_rtc_fuzz_only_asserts_loop.sh
+bin/rtc-duplicate-noise-persona-loop-remote.sh /tmp/start_rtc_duplicate_noise_persona_loop.sh
+bin/rtc-fuzz-level-mix-persona-loop-remote.sh /tmp/start_rtc_fuzz_level_mix_persona_loop.sh
+bin/rtc-native-assert-protocol-work-start-remote.sh /tmp/start_rtc_native_assert_protocol_work.sh
+bin/rtc-deferred-work-promotion-loop-remote.sh /tmp/start_rtc_deferred_work_promotion_loop.sh
+bin/rtc-pr-progress-controller-remote.sh /tmp/start_rtc_pr_progress_controller.sh
+bin/rtc-pr-finalization-loop-remote.sh /tmp/start_rtc_pr_finalization_loop.sh
+bin/rtc-critical-path-pr-executor-loop-remote.sh /tmp/start_rtc_critical_path_pr_executor_loop.sh
+bin/rtc-productive-analysis-loop-remote.sh /tmp/start_rtc_productive_analysis_loop.sh
+bin/rtc-structural-issue-watchdog-remote.sh /tmp/start_rtc_structural_watchdog.sh
+bin/rtc-jetstream-guard-remote.sh /tmp/start_rtc_jetstream_guard.sh
 LAUNCHERS
+}
+
+check_control_runtime_sync() {
+	local out=$1 issues='' expected actual
+	if ! cmp -s \
+		"$REPO/bin/rtc-resource-autoscaler-remote.sh" \
+		"$RESOURCE_BASE/rtc-resource-autoscaler.sh"; then
+		issues="${issues}${issues:+,}resource-autoscaler"
+	fi
+	if ! cmp -s \
+		"$REPO/bin/rtc-deferred-work-promotion-runtime-remote.sh" \
+		"$DEFERRED_BASE/deferred-work-promotion-loop.sh"; then
+		issues="${issues}${issues:+,}deferred-work"
+	fi
+	expected=$(
+		awk '
+			/^cat > "\$BASE\/pr-finalization-loop[.]sh" <</ { emit = 1; next }
+			emit && /^LOOP$/ { exit }
+			emit { print }
+		' "$REPO/bin/rtc-pr-finalization-loop-remote.sh" 2>/dev/null |
+			sha256sum |
+			awk '{ print $1 }'
+	)
+	actual=$(sha256sum "$FINALIZATION_BASE/pr-finalization-loop.sh" 2>/dev/null | awk '{ print $1 }')
+	if [ -z "$expected" ] || [ "$expected" != "$actual" ]; then
+		issues="${issues}${issues:+,}pr-finalization"
+	fi
+	if [ -n "$issues" ]; then
+		emit_finding "$out" high "guard" "stale-control-runtime" \
+			"controllers=$issues" \
+			"refresh the durable runtime from canonical source and restart only its controller session; preserve active child jobs"
+	fi
 }
 
 check_docker_network_capacity() {
@@ -2505,6 +2554,13 @@ check_repair_writer_isolation_contract() {
 	grep -Fq 'stop_codex_in_control_repo' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_live_writer_stop_missing"
 	grep -Fq "stop_sessions_matching '^rtc-(focused|strict|gap)-analysis-|^rtc-analysis-(live|deep)-'" "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_optional_analysis_session_fallback_missing"
 	grep -Fq 'OPTIONAL_ANALYSIS_CAP_HOLD_FILE=$BASE/optional-analysis-cap-hold.tsv' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_optional_analysis_cap_hold_missing"
+	grep -Fq 'refresh_stable_launchers' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_full_stable_launcher_refresh_missing"
+	grep -Fq 'resource_autoscaler_runtime_healthy' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_resource_runtime_check_missing"
+	grep -Fq 'deferred_work_runtime_healthy' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_deferred_runtime_check_missing"
+	grep -Fq 'finalization_runtime_healthy' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_finalization_runtime_check_missing"
+	if ! bash "$guard" self-check >/dev/null 2>&1; then
+		issues="${issues}${issues:+,}guard_launcher_runtime_self_check_failed"
+	fi
 	grep -Fq 'restore_control_harness_from_frozen' "$guard" 2>/dev/null || issues="${issues}${issues:+,}guard_frozen_restore_missing"
 	grep -Fq 'ENABLE_DUPLICATE_NOISE_REVIEW=${RTC_JETSTREAM_ENABLE_DUPLICATE_NOISE_REVIEW:-0}' "$guard" 2>/dev/null || issues="${issues}${issues:+,}duplicate_noise_default_enabled"
 	grep -Fq -- '-s read-only' "$duplicate_noise" 2>/dev/null || issues="${issues}${issues:+,}duplicate_noise_read_only_missing"
@@ -2968,7 +3024,8 @@ detect_findings() {
 	check_deadline_budget_consistency "$tmp"
 	check_optional_browser_breadth_floor_contract "$tmp"
 	check_gate_only_timeout_contract "$tmp"
-	check_optional_pool_launcher_sync "$tmp"
+	check_stable_launcher_sync "$tmp"
+	check_control_runtime_sync "$tmp"
 	check_docker_network_capacity "$tmp"
 	check_novelty_monitor_budget_policy_contract "$tmp"
 	check_resource_budget_application_consistency "$tmp"

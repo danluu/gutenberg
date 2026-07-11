@@ -711,7 +711,7 @@ latest_benchmark_feedback_with_blockers() {
 
 select_benchmark_feedback_source() {
 	local explicit_count
-	local authoritative_count
+	local authoritative_count=0
 	local explicit_feedback_tsv=$BENCHMARK_FEEDBACK_TSV
 	local coverage_status_count=0
 	local coverage_status_tsv=$PREVIOUS_BENCHMARK_COVERAGE_STATUS_TSV
@@ -771,6 +771,8 @@ select_benchmark_feedback_source() {
 		printf 'reason\t%s\n' "$selected_reason"
 		printf 'explicit_feedback_tsv\t%s\n' "$explicit_feedback_tsv"
 		printf 'explicit_blocker_count\t%s\n' "$explicit_count"
+		printf 'authoritative_feedback_tsv\t%s\n' "$AUTHORITATIVE_BENCHMARK_FEEDBACK_TSV"
+		printf 'authoritative_blocker_count\t%s\n' "$authoritative_count"
 		printf 'selected_feedback_tsv\t%s\n' "$BENCHMARK_FEEDBACK_TSV"
 		printf 'selected_blocker_count\t%s\n' "$selected_count"
 		printf 'latest_feedback_tsv\t%s\n' "$latest_feedback_tsv"
