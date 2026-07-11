@@ -15,7 +15,7 @@ import { store as preferencesStore } from '@wordpress/preferences';
 
 import { store as editorStore } from '..';
 import * as actions from '../actions';
-import { restoreRevision } from '../private-actions';
+import { openRevisionPreview, restoreRevision } from '../private-actions';
 import { unlock } from '../../lock-unlock';
 
 const postId = 44;
@@ -173,6 +173,104 @@ describe( 'Post actions', () => {
 				__unstableIsRevisionRestore: true,
 				__unstableRevisionRestoreEdits: edits,
 			} );
+		} );
+	} );
+
+	describe( 'openRevisionPreview()', () => {
+		function createRevisionPreviewContext( revisions ) {
+			let currentRevisionId = 33;
+			const getRevisions = jest.fn().mockResolvedValue( revisions );
+			const dispatch = {
+				setCurrentRevisionId: jest.fn( ( revisionId ) => {
+					currentRevisionId = revisionId;
+				} ),
+			};
+			const select = {
+				getCurrentPostId: () => postId,
+				getCurrentPostType: () => 'post',
+				getCurrentRevisionId: () => currentRevisionId,
+				getRevisionPage: () => 1,
+			};
+			const registry = {
+				select: ( store ) => {
+					if ( store === coreStore ) {
+						return {
+							getEntityConfig: () => ( { revisionKey: 'id' } ),
+						};
+					}
+				},
+				resolveSelect: ( store ) => {
+					if ( store === coreStore ) {
+						return { getRevisions };
+					}
+				},
+			};
+
+			return {
+				dispatch,
+				getRevisions,
+				registry,
+				select,
+				setCurrentRevisionId: ( revisionId ) => {
+					currentRevisionId = revisionId;
+				},
+			};
+		}
+
+		it( 'selects the newest revision when the post revision ID is stale', async () => {
+			const context = createRevisionPreviewContext( [
+				{ id: 34 },
+				{ id: 32 },
+			] );
+
+			await openRevisionPreview( 33 )( context );
+
+			expect( context.dispatch.setCurrentRevisionId.mock.calls ).toEqual(
+				[ [ 33 ], [ 34 ] ]
+			);
+			expect( context.getRevisions ).toHaveBeenCalledWith(
+				'postType',
+				'post',
+				postId,
+				expect.objectContaining( { page: 1, order: 'desc' } )
+			);
+		} );
+
+		it( 'keeps a revision ID that is present in the live list', async () => {
+			const context = createRevisionPreviewContext( [
+				{ id: 34 },
+				{ id: 33 },
+			] );
+
+			await openRevisionPreview( 33 )( context );
+
+			expect(
+				context.dispatch.setCurrentRevisionId
+			).toHaveBeenCalledTimes( 1 );
+			expect(
+				context.dispatch.setCurrentRevisionId
+			).toHaveBeenCalledWith( 33 );
+		} );
+
+		it( 'does not overwrite a revision selected while the list loads', async () => {
+			let resolveRevisions;
+			const revisionsPromise = new Promise( ( resolve ) => {
+				resolveRevisions = resolve;
+			} );
+			const context = createRevisionPreviewContext( [] );
+			context.getRevisions.mockReturnValue( revisionsPromise );
+
+			const opening = openRevisionPreview( 33 )( context );
+			context.setCurrentRevisionId( 32 );
+			resolveRevisions( [ { id: 34 }, { id: 32 } ] );
+			await opening;
+
+			expect(
+				context.dispatch.setCurrentRevisionId
+			).toHaveBeenCalledTimes( 1 );
+			expect(
+				context.dispatch.setCurrentRevisionId
+			).toHaveBeenCalledWith( 33 );
 		} );
 	} );
 

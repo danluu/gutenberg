@@ -39,7 +39,7 @@ function usePostLastRevisionInfo() {
 function PostLastRevision() {
 	const { lastRevisionId, revisionsCount, disableVisualRevisions } =
 		usePostLastRevisionInfo();
-	const { setCurrentRevisionId } = unlock( useDispatch( editorStore ) );
+	const { openRevisionPreview } = unlock( useDispatch( editorStore ) );
 
 	const buttonProps = disableVisualRevisions
 		? {
@@ -47,7 +47,7 @@ function PostLastRevision() {
 					revision: lastRevisionId,
 				} ),
 		  }
-		: { onClick: () => setCurrentRevisionId( lastRevisionId ) };
+		: { onClick: () => openRevisionPreview( lastRevisionId ) };
 
 	return (
 		<PostLastRevisionCheck>
@@ -70,7 +70,7 @@ function PostLastRevision() {
 export function PrivatePostLastRevision() {
 	const { lastRevisionId, revisionsCount, disableVisualRevisions } =
 		usePostLastRevisionInfo();
-	const { setCurrentRevisionId } = unlock( useDispatch( editorStore ) );
+	const { openRevisionPreview } = unlock( useDispatch( editorStore ) );
 
 	const buttonProps = disableVisualRevisions
 		? {
@@ -78,7 +78,7 @@ export function PrivatePostLastRevision() {
 					revision: lastRevisionId,
 				} ),
 		  }
-		: { onClick: () => setCurrentRevisionId( lastRevisionId ) };
+		: { onClick: () => openRevisionPreview( lastRevisionId ) };
 
 	return (
 		<PostLastRevisionCheck>

@@ -624,6 +624,55 @@ export function setCurrentRevisionId( revisionId ) {
 }
 
 /**
+ * Enter revisions preview mode and reconcile a stale last-revision ID with the
+ * newest revision returned by the revisions endpoint.
+ *
+ * The post entity's predecessor-version link can lag behind the revision list
+ * after another editor saves. Enter revisions mode immediately with that ID so
+ * the loading UI remains responsive, then replace it only when page 1 has
+ * resolved and proves that the ID is no longer available.
+ *
+ * @param {number} revisionId The last revision ID from the post entity.
+ */
+export const openRevisionPreview =
+	( revisionId ) =>
+	async ( { dispatch, select, registry } ) => {
+		const postType = select.getCurrentPostType();
+		const postId = select.getCurrentPostId();
+		const entityConfig = registry
+			.select( coreStore )
+			.getEntityConfig( 'postType', postType );
+		const revisionKey = entityConfig?.revisionKey || 'id';
+
+		dispatch.setCurrentRevisionId( revisionId );
+
+		const revisions = await registry
+			.resolveSelect( coreStore )
+			.getRevisions(
+				'postType',
+				postType,
+				postId,
+				buildRevisionsPageQuery( revisionKey, 1 )
+			);
+
+		const selectionChanged =
+			select.getCurrentPostType() !== postType ||
+			select.getCurrentPostId() !== postId ||
+			select.getCurrentRevisionId() !== revisionId ||
+			select.getRevisionPage() !== 1;
+		if ( selectionChanged || ! revisions?.length ) {
+			return;
+		}
+
+		const revisionIsAvailable = revisions.some(
+			( revision ) => revision[ revisionKey ] === revisionId
+		);
+		if ( ! revisionIsAvailable ) {
+			dispatch.setCurrentRevisionId( revisions[ 0 ][ revisionKey ] );
+		}
+	};
+
+/**
  * Set the current revisions page number and select the newest
  * revision on that page once it loads.
  *
