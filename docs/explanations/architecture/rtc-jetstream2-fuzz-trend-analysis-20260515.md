@@ -1,6 +1,6 @@
 # RTC Jetstream2 fuzz trend analysis
 
-Snapshot generated: `2026-07-13T08:13:06Z`
+Snapshot generated: `2026-07-13T12:14:39Z`
 
 This report summarizes the Jetstream2 RTC fuzzing, coverage-guidance,
 resource, and PR-progress logs. The refreshed CSVs and plots are committed
@@ -34,7 +34,7 @@ of product duplicate failures.
 
 The latest CPU/load telemetry sample has CPU utilization `8.7`, load1/load5/load15 `6.83`/`15.55`/`22.96`, and `64` logical cores.
 
-The latest disk sample is `2026-07-13T08:11:50Z`: root has `42.5GiB` free and is `70.0%` used; the data volume has `258.1GiB` free and is `92.7%` used.
+The latest disk sample is `2026-07-13T12:13:26Z`: root has `42.5GiB` free and is `70.1%` used; the data volume has `256.4GiB` free and is `92.8%` used.
 
 The latest graph-counted fuzzing mix is: `browser-e2e=24 lanes/17 groups; unit-property=1 lanes/1 groups; protocol-server=1 lanes/1 groups`.
 Browser/e2e remains the dominant live surface, with bounded lower-level and
