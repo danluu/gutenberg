@@ -10,10 +10,12 @@ repair/benchmark-canary-combined-product-repairs-20260710T210241Z@28cbd9e48878a6
 repair-branch,benchmark-canary/duplicate-focused-children,P0,no,do not fan out focused canary children while the aggregate owner and adoption disposition are pending,benchmark-canary/duplicate-focused-children,"do not fan out focused canary children while the aggregate owner and adoption
 disposition are pending"
 launch-branch-repair,benchmark-canary/rtc-reference-oracle,high,no,no materialized qualifying current canary oracle row exists,benchmark-canary/rtc-reference-oracle,no materialized qualifying current canary oracle row exists
-launch-branch-repair,pr17-1020002,high,no,hold branch work behind benchmark-canary disposition and current plain-editor smoke proof,pr17-1020002,"hold branch work behind benchmark-canary disposition and current plain-editor
-smoke proof"
-publish-ready,final-rtc-stack/current-candidate,P0,no,final publication waits for canary repair/downscope plus plain-editor smoke closure,final-rtc-stack/current-candidate,"final publication waits for canary repair/downscope plus plain-editor smoke
-closure"
+launch-branch-repair,pr17-1020002,high,no,plain-editor smoke prerequisite retired by productive-analysis action prbr-20260714T041229Z-retire-plain-editor-edge; preserve this decision while evaluating only the remaining benchmark-canary product and coverage gates,pr17-1020002,"plain-editor smoke prerequisite retired by productive-analysis action
+prbr-20260714T041229Z-retire-plain-editor-edge; preserve this decision while
+evaluating only the remaining benchmark-canary product and coverage gates"
+publish-ready,final-rtc-stack/current-candidate,P0,no,plain-editor smoke prerequisite retired by productive-analysis action prbr-20260714T041229Z-retire-plain-editor-edge; preserve this decision while evaluating only the remaining benchmark-canary product and coverage gates,final-rtc-stack/current-candidate,"plain-editor smoke prerequisite retired by productive-analysis action
+prbr-20260714T041229Z-retire-plain-editor-edge; preserve this decision while
+evaluating only the remaining benchmark-canary product and coverage gates"
 launch-owner-matrix,PR07C/HOLD-07C,high,no,owner matrix is runtime-held and consumed; reopen only with newer owner evidence,PR07C/HOLD-07C,owner matrix is runtime-held and consumed; reopen only with newer owner evidence
 publish-ready,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,high,no,stale direct PR07C head lacks the build/type repair,ready/rtc-pr07c-reload-record-snapshots@2f8247258316bde60869c06c383090904e9426bd,stale direct PR07C head lacks the build/type repair
 publish-ready,PR07C/final-publication-credit,P0,no,current benchmark-canary status has 10 promotion-blocked rows lacking current_run_green=yes or explicit_downscope=yes: /media/volume/danluu-fuzz-data/rtc-coverage-guided-20260515/run-20260714T030357Z/benchmark-canary-coverage-status.tsv,PR07C/final-publication-credit,"current benchmark-canary status has 10

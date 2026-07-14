@@ -9,10 +9,9 @@ launch-branch-repair,benchmark-canary/rtc-reference-oracle,high,no,no materializ
 cooldown-diagnostic,benchmark-canary/duplicate-focused-children,P0,yes,cap canary work at one aggregate owner plus at most one focused retained/nonzero child
 cooldown-diagnostic,benchmark-canary/status-only-or-bootstrap-clearance,P0,yes,"current_run_green, status_only, zero product records, or partial bootstrap materialization do not clear forced canary blockers"
 repair-ready,benchmark-canary-fuzzer-gap,high,yes,consume the current canary status until every promotion-blocked forced row has current-run success or explicit downscope
-repair-ready,plain-editor-product-smoke,high,yes,"keep the active real-editor smoke gate because it blocks PR17, exact-stack promotion, and final publication"
-cooldown-diagnostic,plain-editor-product-smoke/duplicate-relaunch,high,yes,active smoke lane is already running; duplicate relaunch would add noise without new evidence
-launch-branch-repair,pr17-1020002,high,no,hold branch work behind benchmark-canary disposition and current plain-editor smoke proof
-publish-ready,final-rtc-stack/current-candidate,P0,no,final publication waits for canary repair/downscope plus plain-editor smoke closure
+launch-branch-repair,pr17-1020002,high,no,plain-editor smoke prerequisite retired by productive-analysis action prbr-20260714T041229Z-retire-plain-editor-edge; preserve this decision while evaluating only the remaining benchmark-canary product and coverage gates
+publish-ready,final-rtc-stack/current-candidate,P0,no,plain-editor smoke prerequisite retired by productive-analysis action prbr-20260714T041229Z-retire-plain-editor-edge; preserve this decision while evaluating only the remaining benchmark-canary product and coverage gates
+cooldown-diagnostic,plain-editor-product-smoke,high,yes,terminal superseded_by_retained_first_green classification consumed by productive-analysis action prbr-20260714T041229Z-retire-plain-editor-edge; suppress relaunch unless a newer product-failure quarantine appears or the retained first-green marker is lost; evidence=/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260711T043656Z/continuations/plain-editor-product-smoke/classification.tsv
 include-candidate,PR07C,P0,yes,current policy includes PR07C as net-risk-reducing; materialize broad candidate accounting
 include-candidate,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,compatibility row required for same-head repaired PR07C proof accounting
 repair-ready,repair/pr07c-exact-stack-build-20260525T004721Z@9617d576354444657e7278c0dd9abc5d4f05dcb9,P0,yes,preserve build-clean repaired PR07C exact-head validation and accounting without bypassing canary gates
