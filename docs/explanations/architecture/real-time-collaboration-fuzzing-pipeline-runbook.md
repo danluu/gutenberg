@@ -1262,6 +1262,13 @@ The remote launchers are intentionally split by ownership:
 -   `rtc-strict-expansion-start-remote.sh`, `rtc-focused-shards-start-remote.sh`,
     and `rtc-gap-booster-start-remote.sh` start independent fuzz campaigns for
     high-value gaps.
+    Strict-expansion WS profiles use the WS product checkout, but the launcher
+    replaces every `bin/rtc-*` path and the complete collaboration E2E test
+    directory with the versioned HTTP/control harness. It verifies every copied
+    file or directory before starting the supervisor. Fast, repeated
+    zero-coverage infra failures such as `unknown option '--video'` indicate
+    harness skew; compare the isolated repo's runner hash with the control
+    repo's runner hash and restart through the versioned launcher.
 -   `rtc-focused-shards-gap-codex-loop-remote.sh` keeps Codex analysis focused
     on deferred coverage gaps and feeds the results back into the focused shard
     setup.

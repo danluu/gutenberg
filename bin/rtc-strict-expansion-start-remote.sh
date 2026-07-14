@@ -307,26 +307,44 @@ copy_repo_with_retry() {
 	return 1
 }
 
-rtc_browser_harness_files=(
-	test/e2e/specs/editor/collaboration/collaboration-fuzz.spec.ts
-)
-
 sync_rtc_browser_harness_from_http_source() {
 	local dest=$1
 	local label=$2
 	local rel source_path dest_path
+	local source_paths=()
 
-	for rel in "${rtc_browser_harness_files[@]}"; do
-		source_path="$HTTP_SRC/$rel"
+	shopt -s nullglob
+	source_paths=( "$HTTP_SRC"/bin/rtc-* )
+	shopt -u nullglob
+	source_paths+=(
+		"$HTTP_SRC/test/e2e/specs/editor/collaboration"
+	)
+
+	for source_path in "${source_paths[@]}"; do
+		rel=${source_path#"$HTTP_SRC"/}
 		dest_path="$dest/$rel"
-		if [ ! -f "$source_path" ]; then
+		if [ ! -e "$source_path" ]; then
 			printf 'strict expansion source harness file missing profile=%s path=%s\n' "$label" "$source_path" >&2
 			return 1
 		fi
 		mkdir -p "${dest_path%/*}"
-		rm -f "$dest_path"
-		cp -p "$source_path" "$dest_path"
+		rm -rf "$dest_path"
+		cp -a "$source_path" "$dest_path"
+		if [ -d "$source_path" ]; then
+			if ! diff -qr "$source_path" "$dest_path" >/dev/null; then
+				printf 'strict expansion harness directory verification failed profile=%s path=%s\n' "$label" "$rel" >&2
+				return 1
+			fi
+		elif ! cmp -s "$source_path" "$dest_path"; then
+			printf 'strict expansion harness file verification failed profile=%s path=%s\n' "$label" "$rel" >&2
+			return 1
+		fi
 	done
+
+	if [ "${#source_paths[@]}" -lt 2 ]; then
+		printf 'strict expansion source harness set is unexpectedly empty profile=%s source=%s\n' "$label" "$HTTP_SRC" >&2
+		return 1
+	fi
 }
 
 profiles=(
