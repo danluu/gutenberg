@@ -1,2 +1,1 @@
-artifact_path,reason,size,mtime,associated_job,rejected_at,item_id
-/media/volume/danluu-fuzz-data/rtc-critical-path-pr-executor-20260517/runs/20260711T043356Z/continuations/benchmark-canary-fuzzer-gap/validation-worktree-a4bb/node_modules/human-signals/CHANGELOG.md,zero_executor_artifact,0,1783745497,unknown,2026-07-11T07:13:34Z,benchmark-canary-fuzzer-gap
+artifact_path,reason,size,mtime,associated_job,rejected_at
