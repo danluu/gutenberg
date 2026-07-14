@@ -53,6 +53,8 @@ ready/rtc-pr15b-fallback-group-insert-anchor-green-on-pr14b,0,33,33,"pr15b fallb
 green on pr14b"
 ready/rtc-pr15c-fallback-group-delete-green-on-pr14b,0,33,33,"pr15c fallback group delete green
 on pr14b"
+repair/pa-exact-same-user-delete-1150141-20260714,0,21,21,"repair/pa exact same user delete
+1150141 20260714"
 ready/rtc-pr06b-malformed-save-request-payload-minimal,0,20,20,"pr06b malformed save request
 payload minimal"
 repair/benchmark-canary-empty-crdt-bootstrap-20260710T153450Z,0,15,15,"repair/benchmark canary empty crdt
