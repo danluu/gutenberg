@@ -2,43 +2,67 @@
 
 ## Result
 
-This is now a real, persistent reproduction of
-[Gutenberg #80262](https://github.com/WordPress/gutenberg/issues/80262) on the
-reporter's hosted
-[WordPress Playground URL](https://playground.wordpress.net/?wp=trunk&gutenberg-branch=trunk).
-It uses only ordinary Site Editor controls and a normal period of browser
-inactivity. It does not stop or update a service worker, intercept a request,
-change the DOM, mock a browser property, or mutate a Gutenberg store.
+This branch now has a real, persistent, **localhost-only Playwright
+reproduction** of
+[Gutenberg #80262](https://github.com/WordPress/gutenberg/issues/80262). It
+self-hosts the official browser Playground distribution and a local Gutenberg
+ZIP, starts both WordPress and the browser from local files, and blocks all
+non-loopback browser DNS. It never connects to `playground.wordpress.net` or
+another remote Playground at runtime.
 
-The canonical run reproduced the reporter's first sequence:
+The reduced reproduction follows the
+[updated issue comment](https://github.com/WordPress/gutenberg/issues/80262#issuecomment-4983397095):
+the manual attempt took long enough that the blank preview and exception had
+already appeared by the time the user reached **Design > Identity**. The
+responsive Title edit, Dusk variation, Review changes dialog, and Save step in
+the original report are therefore not trigger conditions.
 
-1. In the **Blog Home** template editor, open **Document Overview > List
-   View**, select the parent **Query Loop** block, and click **Edit pattern**
-   in its block toolbar. Switch the editor's preview to **Mobile**, enable
-   **Responsive styles**, select the first post's **Title** block, and set its
-   **Font size** to **Medium**.
-2. Apply the Twenty Twenty-Five **Dusk** style variation.
-3. Open **Review changes** and leave the tab untouched for 45 seconds.
-4. Click **Save**, wait for **Saved**, and click **Identity**.
+The local Playwright sequence is deliberately small:
 
-In this step, **Query Loop** means the parent block for the repeating list of
-posts on the Blog Home template. It is easiest to select from **List View**
-because clicking a visible post heading in the canvas selects the child Title
-block instead. **Title** means a post-title block inside that list, such as the
-“Hello world!” heading; it does not mean the website title. Enabling
-**Responsive styles** while **Mobile** is selected makes the new font size a
-mobile-specific value rather than changing the title at every screen size.
+1. Start a fresh, headless local Playground and enter the Site Editor using
+   its visible controls.
+2. If a full template editor opens, click **Open Navigation**, followed by
+   **Back** or **Go to Site Editor** as presented, until the root **Design**
+   screen is visible.
+3. Confirm that the Design preview iframe is populated and that the local
+   Playground service worker is running.
+4. Disconnect every Playwright/CDP process for 45 seconds. Chrome and the tab
+   remain running, with no debugger keeping the worker alive.
+5. Reconnect after Chrome has naturally retired the worker, and click the
+   visible **Identity** control with trusted Playwright mouse input.
+6. Observe the Identity heading and a persistently blank preview five seconds
+   later.
 
-The Identity canvas was blank immediately, after one second, and after five
-seconds. At five seconds the iframe was still connected, but its
-`contentDocument`, `documentElement`, and body were all unavailable. The
-browser logged the reporter's exact exception from the same production asset
-and location:
+No step stops or updates a service worker, intercepts a request, changes the
+DOM, mocks a browser property, mutates a Gutenberg store, or invokes a Site
+Editor action through JavaScript. JavaScript instrumentation is passive: it
+records errors and reads the iframe state without causing the failure.
+
+The qualifying local run started with a healthy Design iframe, observed the
+service worker present before idle and naturally absent after idle, then
+received `wp-includes/empty.html` from the restarted worker without a
+`Document-Isolation-Policy` header. Five seconds after the trusted Identity
+click, the iframe was still connected but `contentDocument` was null. The
+local run also captured the reporter's exact exception from the same
+production asset and location:
 
 ```text
 TypeError: Cannot destructure property 'documentElement' of 'N' as it is null.
-    at HTMLIFrameElement.I (.../block-editor/index.min.js?ver=ae8f14e90632f9e1151b:122:927)
+    at HTMLIFrameElement.I (.../block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927)
 ```
+
+The Playwright test intentionally asserts the healthy behavior, so it fails
+when the local run reproduces the bug. This meets the substance of
+[Alec's reproduction criteria](https://github.com/WordPress/gutenberg/issues/77716#issuecomment-4464309206):
+the human steps are stated, the checked-in end-to-end test fails on the bug,
+the precondition is explicit, and the test records both the visible failure
+and its service-worker/network/exception evidence.
+
+## Earlier hosted evidence
+
+The checked-in video and screenshot predate the localhost-only test. They are
+retained because they show the complete interaction and annotations, but they
+are no longer required to execute the reproduction.
 
 The screenshot in [`issue-80262-natural-blank.png`](./issue-80262-natural-blank.png)
 was taken five seconds after the canonical **Identity** click.
@@ -66,14 +90,45 @@ The older
 the blank Styles canvas. It begins only after the disconnected idle period, so
 the annotated video supersedes it as the complete evidence record.
 
-This satisfies the substance of
-[Alec's reproduction criteria](https://github.com/WordPress/gutenberg/issues/77716#issuecomment-4464309206):
-there are human steps, a runnable failing end-to-end probe, fresh-profile hit
-rates, visual evidence, and an explicit disclosure of the automation and idle
-precondition. The earlier forced iframe-detach experiment is retained only as
-mechanism coverage and is not counted as the real reproduction.
+## Manual localhost reproduction
 
-## Manual reproduction
+Use a self-hosted browser Playground built from the official
+[host-your-own-Playground instructions](https://wordpress.github.io/wordpress-playground/developers/architecture/host-your-own-playground/),
+a local Gutenberg plugin ZIP, and a fresh Chrome profile. Configure the
+blueprint with `networking: false`; do not use Playground's `trunk` or
+`nightly` WordPress aliases because those aliases fetch a remote WordPress
+build. The checked-in test uses Playground's bundled `beta` WordPress build,
+PHP 8.2, Twenty Twenty-Five, and the local Gutenberg ZIP.
+
+Keep DevTools closed until after the failure. An attached debugger can keep a
+service worker alive and hide the required lifecycle transition.
+
+1. Open the self-hosted Playground's loopback URL in a fresh Chrome profile
+   and wait for WordPress to finish loading.
+2. If WordPress is not already showing the Site Editor, click **Site Editor**
+   (or **Edit site**) in the black admin bar at the top.
+3. Reach the root Design screen. If a full template editor is open, click the
+   **Open Navigation** left-arrow button in the editor's upper-left corner. If
+   the next screen is the Templates list rather than the Design root, click
+   the upper-left **Go to Site Editor** button. Some versions label that
+   intermediate control **Back**. Repeat only until the left navigation shows
+   **Design** choices such as **Identity**, **Navigation**, **Styles**, and
+   **Pages**.
+4. Confirm that the large site preview on the right is visibly populated.
+5. Leave the tab completely untouched for at least 45 seconds.
+6. In the left Design navigation, click **Identity**. The Identity heading
+   appears, but its large preview remains blank. Open DevTools only now to
+   inspect the exception.
+
+This is what “go to the Blog Home template editor” meant in the original,
+longer report: from **Design > Identity**, click **Edit** above the site
+preview, or use **Design > Templates > Blog Home > Edit**. Neither route nor
+editing the Blog Home Query Loop is needed by the reduced reproduction.
+
+### Historical longer hosted route
+
+The following preserves the original reporter-like route for comparison. It
+is not needed by the localhost-only test.
 
 Use Chrome 137 or newer. Keep DevTools closed until after the failure; an
 attached debugger can keep a service worker alive and hide the precondition.
@@ -131,6 +186,61 @@ completed fresh-profile attempt as well.
 
 ## Runnable failing repro
 
+The primary repro is
+[`issue-80262-local-playground-repro.cjs`](./issue-80262-local-playground-repro.cjs),
+with the regression assertion in
+[`issue-80262-local-playground.spec.js`](./issue-80262-local-playground.spec.js)
+and its isolated
+[`issue-80262-local-playground.config.cjs`](./issue-80262-local-playground.config.cjs).
+It needs two inputs already present on disk:
+
+-   the root of a built self-hosted Playground web distribution, containing
+    at least `index.html` and `sw.js`; and
+-   a locally built Gutenberg plugin ZIP. In this repository,
+    `NO_CHECKS=1 npm run build:plugin-zip` writes `gutenberg.zip` at the
+    repository root.
+
+Run the standalone helper from the Gutenberg repository root:
+
+```bash
+LOCAL_PLAYGROUND_DIST=/absolute/path/to/wasm-wordpress-net \
+LOCAL_GUTENBERG_ZIP=/absolute/path/to/gutenberg.zip \
+node test/e2e/specs/site-editor/issue-80262-local-playground-repro.cjs
+```
+
+Or run the checked-in Playwright regression test:
+
+```bash
+LOCAL_PLAYGROUND_DIST=/absolute/path/to/wasm-wordpress-net \
+LOCAL_GUTENBERG_ZIP=/absolute/path/to/gutenberg.zip \
+npx playwright test \
+    --config=test/e2e/specs/site-editor/issue-80262-local-playground.config.cjs
+```
+
+The helper starts an ephemeral static server bound to `127.0.0.1`, serves the
+Playground distribution, blueprint, and Gutenberg ZIP itself, and launches
+raw headless Chromium. Chrome's host resolver maps every non-loopback host to
+`NOTFOUND`. The result is rejected if any unexpected external request is
+attempted or any external request receives a successful response. The helper
+therefore cannot silently fall back to the hosted Playground.
+
+Each automation phase is a separate short-lived Node process. The first uses
+Playwright to perform visible setup clicks and verify the healthy baseline,
+then exits without closing Chrome. No Playwright driver or CDP socket exists
+during the 45-second idle. A second process reconnects and performs the
+visible **Identity** click. `locator.click()` produces browser-trusted pointer
+input; the test does not call Gutenberg actions or invoke the control's DOM
+handler.
+
+The standalone helper exits 1 for a successful reproduction, 0 when the
+canvas remains healthy, and 2 when a precondition is inconclusive. The
+Playwright wrapper asserts the healthy result and therefore fails on an
+affected build. Large fresh profiles and run artifacts are deleted on normal
+completion, timeout, interruption, and process signals. Set `KEEP_ARTIFACTS=1`
+only when a `result.json` and failure screenshot are needed.
+
+### Historical hosted helper
+
 `issue-80262-playground-lifecycle-repro.cjs` launches the repository's bundled
 Chrome for Testing in headless mode, performs normal UI clicks, disconnects
 every automation/CDP client for the 45-second idle interval, and reconnects
@@ -185,7 +295,7 @@ fixtures. It invokes the raw-browser probe and asserts the healthy behavior, so
 it fails against the affected hosted trunk. A normal continuously attached
 Playwright page suppresses the lifecycle being tested.
 
-### Automation disclosure
+### Hosted-helper automation disclosure
 
 The setup and post-idle observations use Puppeteer/CDP, but the interaction is
 browser-trusted mouse input at the center of visible controls. JavaScript is
@@ -196,8 +306,26 @@ to the service-worker target.
 
 ## Repetition and environment
 
-All completed trigger attempts used a new browser profile and deleted that
-profile afterward. Results on 2026-07-15 UTC were:
+Every local helper run used a new browser profile and deleted it afterward.
+The first three completed executions of the final localhost-only helper all
+qualified, including the standalone helper, the kept-evidence run, and the
+Playwright wrapper. The kept-evidence run took 58.2 seconds and passed every
+recorded check:
+
+| Flow                          | Environment                                    | Result                |
+| ----------------------------- | ---------------------------------------------- | --------------------- |
+| Local Design idle -> Identity | Self-hosted Playground, Chrome for Testing 145 | 3/3 persistent blanks |
+
+In the kept-evidence run, the healthy pre-idle canvas contained 18 body
+children. After 45 seconds with all automation clients disconnected, all ten
+checks were true: healthy baseline, worker present then absent, exact
+exception, missing-DIP `empty.html`, connected null document at five seconds,
+failure during idle, blank Identity preview, Identity route and heading, and
+loopback-only execution. There were 228 local static requests and no
+successful external response.
+
+The earlier hosted runs also used new profiles that were deleted afterward.
+Their results on 2026-07-15 UTC were:
 
 | Flow                                                           | Browser                                     | Result                |
 | -------------------------------------------------------------- | ------------------------------------------- | --------------------- |
@@ -275,9 +403,12 @@ missing-DIP response, and persistent null canvas remained unchanged.
 
 ## Console comparison
 
-Yes: the natural canonical reproduction emits the relevant console messages
-from the reporter's screenshot, not merely a similar artificial error. It
-logged the exact exception shown above and logged this warning twice:
+Yes: the natural localhost-only Playwright reproduction emits the exact
+`documentElement` TypeError from the reporter's screenshot, not merely a
+similar artificial error. It came from the local Gutenberg asset
+`block-editor/index.min.js?ver=4b2c4bdfdd0eedf5e84b:122:927`. The earlier
+hosted natural reproduction emitted that same error and also logged this
+warning twice:
 
 ```text
 global-styles-css-custom-properties-inline-css was added to the iframe incorrectly.
@@ -359,6 +490,11 @@ Playground state-loss fix is necessary for the persistent report.
 
 ## Other probes retained on this branch
 
+`issue-80262-local-playground-repro.cjs` and
+`issue-80262-local-playground.spec.js` are the canonical real reproduction.
+They replace the hosted Playground dependency while retaining the real
+browser-Playground service-worker lifecycle.
+
 `issue-80262-human-flows.spec.js` contains the two reporter flows for a local
 `wp-env`. Both stayed healthy in that non-Playground environment (`2 passed`),
 which is expected now that the missing Playground lifecycle is understood.
@@ -367,4 +503,4 @@ which is expected now that the missing Playground lifecycle is understood.
 during a native load event. It makes the same Gutenberg source line throw, but
 the iframe later reloads and recovers. That test is non-human mechanism coverage
 and must not be presented as the persistent reproduction. The hosted
-Playground lifecycle probe above is the canonical real repro.
+Playground lifecycle probe is retained as historical confirmation only.
